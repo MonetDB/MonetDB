@@ -653,18 +653,20 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, boo
 {
 	assert(!sa);
 	objectset *os = SA_NEW(sa, objectset);
-	*os = (objectset) {
-		.refcnt = 1,
-		.sa = sa,
-		.destroy = destroy,
-		.temporary = temporary,
-		.unique = unique,
-		.concurrent = concurrent,
-		.nested = nested,
-		.store = store
-	};
-	os->destroy = destroy;
-	MT_rwlock_init(&os->rw_lock, "sa_readers_lock");
+	if (os) {
+		*os = (objectset) {
+			.refcnt = 1,
+			.sa = sa,
+			.destroy = destroy,
+			.temporary = temporary,
+			.unique = unique,
+			.concurrent = concurrent,
+			.nested = nested,
+			.store = store
+		};
+		os->destroy = destroy;
+		MT_rwlock_init(&os->rw_lock, "sa_readers_lock");
+	}
 
 	return os;
 }

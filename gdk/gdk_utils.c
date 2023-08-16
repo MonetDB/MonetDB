@@ -646,14 +646,26 @@ MT_init(void)
 				break;
 			*p = 0;
 			if (strncmp(buf, "0::", 3) == 0) {
-				size_t l;
-
 				/* cgroup v2 entry */
-				l = strconcat_len(pth, sizeof(pth),
-						  cgr2, buf + 3, "/", NULL);
+				p = stpcpy(pth, cgr2);
+				q = stpcpy(stpcpy(p, buf + 3), "/");
 				/* hard limit */
-				strcpy(pth + l, "memory.max");
+				strcpy(q, "memory.max");
 				f = fopen(pth, "r");
+				while (f == NULL && q > p) {
+					/* go up the hierarchy until we
+					 * find the file or the
+					 * hierarchy runs out */
+					*--q = 0; /* zap the slash */
+					q = strrchr(p, '/');
+					if (q == NULL || q == p) {
+						/* position after the slash */
+						q = p + 1;
+						break;
+					}
+					strcpy(++q, "memory.max");
+					f = fopen(pth, "r");
+				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
@@ -663,7 +675,7 @@ MT_init(void)
 					fclose(f);
 				}
 				/* soft high limit */
-				strcpy(pth + l, "memory.high");
+				strcpy(q, "memory.high");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
@@ -674,7 +686,7 @@ MT_init(void)
 					fclose(f);
 				}
 				/* soft low limit */
-				strcpy(pth + l, "memory.low");
+				strcpy(q, "memory.low");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem > 0 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
@@ -686,7 +698,7 @@ MT_init(void)
 				}
 				/* limit of memory+swap usage
 				 * we use this as maximum virtual memory size */
-				strcpy(pth + l, "memory.swap.max");
+				strcpy(q, "memory.swap.max");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1

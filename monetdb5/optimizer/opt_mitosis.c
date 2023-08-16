@@ -234,7 +234,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	schema = getVarConstant(mb, getArg(target, 2)).val.sval;
 	table = getVarConstant(mb, getArg(target, 3)).val.sval;
-	for (i = 0; i < limit; i++) {
+	for (i = 0; mb->errors == NULL && i < limit; i++) {
 		int upd = 0, qtpe, rtpe = 0, qv, rv;
 		InstrPtr matq, matr = NULL;
 		p = old[i];

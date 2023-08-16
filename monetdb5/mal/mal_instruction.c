@@ -305,62 +305,37 @@ copyMalBlk(MalBlkPtr old)
 	}
 
 	mb->vsize = old->vsize;
-	mb->vtop = old->vtop;
 	mb->vid = old->vid;
 
 	/* copy all variable records */
 	for (i = 0; i < old->vtop; i++) {
 		mb->var[i] = old->var[i];
-		if (!VALcopy(&(mb->var[i].value), &(old->var[i].value))) {
-			while (--i >= 0)
-				VALclear(&mb->var[i].value);
-			GDKfree(mb->var);
-			GDKfree(mb);
-			return NULL;
+		if (VALcopy(&(mb->var[i].value), &(old->var[i].value)) == NULL) {
+			mb->vtop = i;
+			goto bailout;
 		}
 	}
+	mb->vtop = old->vtop;
 
 	mb->stmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * old->ssize);
-
 	if (mb->stmt == NULL) {
-		for (i = 0; i < old->vtop; i++)
-			VALclear(&mb->var[i].value);
-		GDKfree(mb->var);
-		GDKfree(mb);
-		return NULL;
+		goto bailout;
 	}
 
-	mb->stop = old->stop;
 	mb->ssize = old->ssize;
 	assert(old->stop < old->ssize);
 	for (i = 0; i < old->stop; i++) {
 		mb->stmt[i] = copyInstruction(old->stmt[i]);
-		if (!mb->stmt[i]) {
-			while (--i >= 0) {
-				freeInstruction(mb->stmt[i]);
-				mb->stmt[i] = NULL;
-			}
-			for (i = 0; i < old->vtop; i++)
-				VALclear(&mb->var[i].value);
-			GDKfree(mb->var);
-			GDKfree(mb->stmt);
-			GDKfree(mb);
-			return NULL;
+		if (mb->stmt[i] == NULL) {
+			mb->stop = i;
+			goto bailout;
 		}
 	}
-	mb->help = old->help ? GDKstrdup(old->help) : NULL;
-	if (old->help && !mb->help) {
-		for (i = 0; i < old->stop; i++) {
-			freeInstruction(mb->stmt[i]);
-			mb->stmt[i] = NULL;
-		}
-		for (i = 0; i < old->vtop; i++)
-			VALclear(&mb->var[i].value);
-		GDKfree(mb->var);
-		GDKfree(mb->stmt);
-		GDKfree(mb);
-		return NULL;
+	mb->stop = old->stop;
+	if (old->help && (mb->help = GDKstrdup(old->help)) == NULL) {
+		goto bailout;
 	}
+
 	strcpy_len(mb->binding, old->binding, sizeof(mb->binding));
 	mb->errors = old->errors ? GDKstrdup(old->errors) : 0;
 	mb->tag = old->tag;
@@ -372,25 +347,31 @@ copyMalBlk(MalBlkPtr old)
 	mb->inlineProp = old->inlineProp;
 	mb->unsafeProp = old->unsafeProp;
 	return mb;
+
+  bailout:
+	for (i = 0; i < old->stop; i++)
+		freeInstruction(mb->stmt[i]);
+	for (i = 0; i < old->vtop; i++)
+		VALclear(&mb->var[i].value);
+	GDKfree(mb->var);
+	GDKfree(mb->stmt);
+	GDKfree(mb);
+	return NULL;
 }
 
 void
 addtoMalBlkHistory(MalBlkPtr mb)
 {
-	MalBlkPtr cpy, h;
-
 	if (mb->keephistory) {
-		cpy = copyMalBlk(mb);
+		MalBlkPtr cpy = copyMalBlk(mb);
 		if (cpy == NULL)
 			return;				/* ignore history */
 		cpy->history = NULL;
-		if (mb->history == NULL)
-			mb->history = cpy;
-		else {
-			for (h = mb; h->history; h = h->history)
-				;
-			h->history = cpy;
-		}
+		/* append to the linked list */
+		MalBlkPtr *h = &mb->history;
+		while (*h)
+			h = &(*h)->history;
+		*h = cpy;
 	}
 }
 
@@ -780,6 +761,8 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
 	int n;
 	int kind = REFMARKER;
+	if (mb->errors)
+		return -1;
 	if (len >= IDLENGTH) {
 		mb->errors = createMalException(mb, 0, TYPE, "newVariable: id too long");
 		return -1;
@@ -813,7 +796,8 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 		res = newTmpVariable(tm, getVarType(mb, x));
 		if (*mb->var[x].name)
 			strcpy(tm->var[x].name, mb->var[x].name);	/* res = newVariable(tm, getVarName(mb, x), strlen(getVarName(mb,x)), getVarType(mb, x)); */
-	} if (res < 0)
+	}
+	if (res < 0)
 		return res;
 	if (isVarFixed(mb, x))
 		setVarFixed(tm, res);
@@ -1157,8 +1141,6 @@ setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid)
 	if (p == NULL || mb->errors)
 		return p;
 	p = pushArgument(mb, p, varid);	/* make space */
-	if (p == NULL)
-		return NULL;
 	for (i = p->argc - 1; i > idx; i--)
 		getArg(p, i) = getArg(p, i - 1);
 	getArg(p, i) = varid;
@@ -1174,8 +1156,7 @@ pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
 		p->argv[0] = varid;
 		return p;
 	}
-	if ((p = setArgument(mb, p, p->retc, varid)) == NULL)
-		return NULL;
+	p = setArgument(mb, p, p->retc, varid);
 	p->retc++;
 	return p;
 }
@@ -1195,7 +1176,10 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 	v = findVariable(mb, name);
 	if (v < 0) {
 		size_t namelen = strlen(name);
-		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {	/* set the MAL block to erroneous and simply return without doing anything *//* mb->errors already set */
+		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
+			/* set the MAL block to erroneous and simply return without
+			 * doing anything */
+			/* mb->errors already set */
 			return p;
 		}
 	}
@@ -1273,7 +1257,14 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 	extra = mb->vsize - mb->vtop;	/* the extra variables already known */
 	if (mb->stop + 1 >= mb->ssize) {
 		int s = ((mb->ssize + extra) / MALCHUNK + 1) * MALCHUNK;
-		if (resizeMalBlk(mb, s) < 0) {	/* we are now left with the situation that the new * instruction is dangling. * The hack is to take an instruction out of the block that * is likely not referenced independently. * The last resort is to take the first, which should always * be there. * This assumes that no references are kept elsewhere to the * statement. */
+		if (resizeMalBlk(mb, s) < 0) {
+			/* we are now left with the situation that the new
+			 * instruction is dangling.  The hack is to take an
+			 * instruction out of the block that is likely not
+			 * referenced independently.  The last resort is to take the
+			 * first, which should always be there.  This assumes that
+			 * no references are kept elsewhere to the statement. */
+			assert(mb->errors != NULL);
 			for (i = 1; i < mb->stop; i++) {
 				q = getInstrPtr(mb, i);
 				if (q->token == REMsymbol) {

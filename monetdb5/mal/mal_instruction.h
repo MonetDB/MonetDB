@@ -59,28 +59,28 @@ setFunctionId(InstrPtr p, const char *s)
 #define getInstrPtr(M,I)	(M)->stmt[I]
 #define putInstrPtr(M,I,P)	(M)->stmt[I] = P
 #define getSignature(S)		getInstrPtr((S)->def,0)
-#define isMain(M)			((getInstrPtr(M,0))->fcnname== putName("main",4))
+#define isMain(M)			((getInstrPtr(M,0))->fcnname == putName("main",4))
 #define getFcnName(M)		getFunctionId(getInstrPtr(M,0))
 #define getArgCount(M)		getInstrPtr(M,0)->argc
 #define getModName(M)		getModuleId(getInstrPtr(M,0))
 #define getPrgSize(M)		(M)->stop
 
-#define getVar(M,I)		(&(M)->var[I])
+#define getVar(M,I)			(&(M)->var[I])
 #define getVarType(M,I)		((M)->var[I].type)
 mal_export char *getVarName(MalBlkPtr mb, int idx);
 
 #define getVarKind(M,I)		((M)->var[I].kind)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I].type)
-#define setVarType(M,I,V)	((M)->var[I].type = V)
-#define setVarKind(M,I,V)	((M)->var[I].kind = V)	/* either _, X, or C */
+#define setVarType(M,I,V)	((M)->var[I].type = (V))
+#define setVarKind(M,I,V)	((M)->var[I].kind = (V))	/* either _, X, or C */
 
 #define clrVarFixed(M,I)	((M)->var[I].fixedtype = 0)
-#define setVarFixed(M,I)	((M)->var[I].fixedtype =1)
+#define setVarFixed(M,I)	((M)->var[I].fixedtype = 1)
 #define isVarFixed(M,I)		((M)->var[I].fixedtype)
 
 #define clrVarCleanup(M,I)	((M)->var[I].cleanup = 0)
 #define setVarCleanup(M,I)	((M)->var[I].cleanup = 1)
-#define isVarCleanup(M,I)	((M)->var[I].cleanup )
+#define isVarCleanup(M,I)	((M)->var[I].cleanup)
 
 #define isTmpVar(M,I)		(getVarKind(M,I) == REFMARKER)
 
@@ -88,7 +88,7 @@ mal_export char *getVarName(MalBlkPtr mb, int idx);
 #define setVarUsed(M,I)		((M)->var[I].used = 1)
 #define isVarUsed(M,I)		((M)->var[I].used)
 
-#define clrVarDisabled(M,I)	((M)->var[I].disabled= 0 )
+#define clrVarDisabled(M,I)	((M)->var[I].disabled = 0)
 #define setVarDisabled(M,I)	((M)->var[I].disabled = 1)
 #define isVarDisabled(M,I)	((M)->var[I].disabled)
 
@@ -104,40 +104,40 @@ mal_export char *getVarName(MalBlkPtr mb, int idx);
 #define setVarConstant(M,I)	((M)->var[I].constant = 1)
 #define isVarConstant(M,I)	((M)->var[I].constant)
 
-#define setVarDeclared(M,I,X)	((M)->var[I].declared = X )
+#define setVarDeclared(M,I,X)	((M)->var[I].declared = (X))
 #define getVarDeclared(M,I)	((M)->var[I].declared)
 
-#define setVarUpdated(M,I,X)	((M)->var[I].updated = X )
+#define setVarUpdated(M,I,X)	((M)->var[I].updated = (X))
 #define getVarUpdated(M,I)	((M)->var[I].updated)
 
-#define setVarEolife(M,I,X)	((M)->var[I].eolife = X )
+#define setVarEolife(M,I,X)	((M)->var[I].eolife = (X))
 #define getVarEolife(M,I)	((M)->var[I].eolife)
 
-#define setVarScope(M,I,S)	((M)->var[I].depth = S)
+#define setVarScope(M,I,S)	((M)->var[I].depth = (S))
 #define getVarScope(M,I)	((M)->var[I].depth)
 
 #define clrVarCList(M,I)	((M)->var[I].kind = REFMARKER)
 #define setVarCList(M,I)	((M)->var[I].kind = REFMARKERC)
-#define isVarCList(M,I)		((M)->var[I].kind  == REFMARKERC)
+#define isVarCList(M,I)		((M)->var[I].kind == REFMARKERC)
 
 #define getVarConstant(M,I)	((M)->var[I].value)
 #define getVarValue(M,I)	VALget(&(M)->var[I].value)
 
-#define setRowCnt(M,I,C)	(M)->var[I].rowcnt = C
+#define setRowCnt(M,I,C)	((M)->var[I].rowcnt = (C))
 #define getRowCnt(M,I)		((M)->var[I].rowcnt)
 
-#define getVarSTC(M,I)			((M)->var[I].stc)
+#define getVarSTC(M,I)		((M)->var[I].stc)
 
-#define getDestVar(P)		(P)->argv[0]
-#define setDestVar(P,X)		(P)->argv[0]  =X
+#define getDestVar(P)		((P)->argv[0])
+#define setDestVar(P,X)		((P)->argv[0] = (X))
 #define setDestType(M,P,V)	setVarType((M),getDestVar(P),V)
-#define getDestType(M,P)	destinationType((M),(P))
+#define getDestType(M,P)	destinationType(M,P)
 #define getArg(P,I)			(P)->argv[I]
-#define setArg(P,I,R)		(P)->argv[I]= R
+#define setArg(P,I,R)		((P)->argv[I] = (R))
 #define getArgName(M,P,I)	getVarName((M),(P)->argv[I])
 #define getArgType(M,P,I)	getVarType((M),(P)->argv[I])
 #define getArgGDKType(M,P,I) getVarGDKType((M),(P)->argv[I])
-#define getGDKType(T)		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
+#define getGDKType(T)		((T) <= TYPE_str ? (T) : ((T) == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 mal_export void addMalException(MalBlkPtr mb, str msg);
 mal_export void mal_instruction_reset(void);
@@ -207,14 +207,14 @@ mal_export void setPolymorphic(InstrPtr p, int tpe, int force);
 #define functionExit(X)  ((X)->token == ENDsymbol)
 
 #define blockStart(X)   ((X)->barrier && (((X)->barrier == BARRIERsymbol || \
-										   (X)->barrier == CATCHsymbol )))
+										   (X)->barrier == CATCHsymbol)))
 #define blockExit(X) ((X)->barrier == EXITsymbol)
 #define blockReturn(X) ((X)->barrier == RETURNsymbol)
 #define blockCntrl(X) ((X)->barrier== LEAVEsymbol ||	\
 					   (X)->barrier== REDOsymbol ||		\
-					   (X)->barrier== RETURNsymbol )
+					   (X)->barrier== RETURNsymbol)
 #define isLinearFlow(X)  (!(blockStart(X) || blockExit(X) || \
-				(X)->barrier== LEAVEsymbol ||  (X)->barrier== REDOsymbol ))
+				(X)->barrier== LEAVEsymbol ||  (X)->barrier== REDOsymbol))
 
 mal_export void strBeforeCall(ValPtr v, ValPtr bak);
 mal_export void strAfterCall(ValPtr v, ValPtr bak);

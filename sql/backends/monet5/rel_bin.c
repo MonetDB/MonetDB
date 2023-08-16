@@ -52,8 +52,11 @@ add_to_rowcount_accumulator(backend *be, int nr)
 	}
 
 	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
-	if (q == NULL)
+	if (q == NULL) {
+		if (be->mvc->sa->eb.enabled)
+			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 		return -1;
+	}
 	q = pushArgument(be->mb, q, be->rowcount);
 	q = pushArgument(be->mb, q, nr);
 	pushInstruction(be->mb, q);
@@ -161,16 +164,18 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 		return NULL;
 	if (!l->ht && list_length(l) > HASH_MIN_SIZE) {
 		l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
-		if (l->ht == NULL)
-			return NULL;
+		if (l->ht != NULL) {
+			for (n = l->h; n; n = n->next) {
+				const char *nme = column_name(be->mvc->sa, n->data);
+				if (nme) {
+					int key = hash_key(nme);
 
-		for (n = l->h; n; n = n->next) {
-			const char *nme = column_name(be->mvc->sa, n->data);
-			if (nme) {
-				int key = hash_key(nme);
-
-				if (hash_add(l->ht, key, n->data) == NULL)
-					return NULL;
+					if (hash_add(l->ht, key, n->data) == NULL) {
+						hash_destroy(l->ht);
+						l->ht = NULL;
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -1188,21 +1193,26 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	int new_count_var = newTmpVariable(mb, TYPE_oid);
 
 	InstrPtr p = newStmt(mb, sqlRef, importColumnRef);
-	if (p == NULL)
+	if (p != NULL) {
+		setArgType(mb, p, 0, bat_type);
+		p = pushReturn(mb, p, new_count_var);
+		//
+		p = pushStr(mb, p, method);
+		p = pushInt(mb, p, width);
+		p = pushArgument(mb, p, bswap_stmt->nr);
+		p = pushArgument(mb, p, file_stmt->nr);
+		p = pushArgument(mb, p, onclient_stmt->nr);
+		if (*count_var < 0)
+			p = pushOid(mb, p, 0);
+		else
+			p = pushArgument(mb, p, *count_var);
+		pushInstruction(mb, p);
+	}
+	if (p == NULL || mb->errors) {
+		if (be->mvc->sa->eb.enabled)
+			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 		return sql_error(be->mvc, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	setArgType(mb, p, 0, bat_type);
-	p = pushReturn(mb, p, new_count_var);
-	//
-	p = pushStr(mb, p, method);
-	p = pushInt(mb, p, width);
-	p = pushArgument(mb, p, bswap_stmt->nr);
-	p = pushArgument(mb, p, file_stmt->nr);
-	p = pushArgument(mb, p, onclient_stmt->nr);
-	if (*count_var < 0)
-		p = pushOid(mb, p, 0);
-	else
-		p = pushArgument(mb, p, *count_var);
-	pushInstruction(mb, p);
+	}
 
 	*count_var = new_count_var;
 
@@ -2379,8 +2389,11 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					if (ops)
 						narg += list_length(ops);
 					InstrPtr q = newStmtArgs(be->mb, sqlRef, "unionfunc", narg);
-					if (q == NULL)
+					if (q == NULL) {
+						if (be->mvc->sa->eb.enabled)
+							eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 						return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 					/* Generate output rowid column and output of function f */
 					for (i=0; m; m = m->next, i++) {
 						sql_exp *e = m->data;
@@ -6790,6 +6803,11 @@ rel_bin(backend *be, sql_rel *rel)
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
 
+	if (be->mb->errors) {
+		if (be->mvc->sa->eb.enabled)
+			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors, 1000);
+		return NULL;
+	}
 	return s;
 }
 

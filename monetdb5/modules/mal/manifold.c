@@ -222,6 +222,8 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 	MalBlkPtr nmb;
 	MALfcn fcn;
 
+	if (mb->errors)
+		return NULL;
 	if (getArgType(mb, pci, pci->retc) == TYPE_lng) {
 		// TODO: trivial case
 		return NULL;
@@ -231,15 +233,16 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 		return NULL;
 	// We need a private MAL context to resolve the function call
 	nmb = newMalBlk(2);
-	if (nmb == NULL)
+	if (nmb == NULL) {
+		mb->errors = createException(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;
+	}
 	// the scalar function
 	q = newStmt(nmb,
 				getVarConstant(mb, getArg(pci, pci->retc)).val.sval,
 				getVarConstant(mb, getArg(pci, pci->retc + 1)).val.sval);
 	if (q == NULL) {
-		freeMalBlk(nmb);
-		return NULL;
+		goto bailout;
 	}
 	// Prepare the single result variable
 	tpe = getBatType(getArgType(mb, pci, 0));
@@ -251,10 +254,18 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 	// extract their scalar argument type
 	for (i = pci->retc + 2; i < pci->argc; i++) {
 		tpe = getBatType(getArgType(mb, pci, i));
-		q = pushArgument(nmb, q, k = newTmpVariable(nmb, tpe));
+		k = newTmpVariable(nmb, tpe);
+		if (k < 0) {
+			freeInstruction(q);
+			goto bailout;
+		}
+		q = pushArgument(nmb, q, k);
 		setVarFixed(nmb, k);
 	}
 	pushInstruction(nmb, q);
+
+	if (nmb->errors)
+		goto bailout;
 
 /*
 	TRC_DEBUG(MAL_SERVER, "Manifold operation\n");
@@ -263,7 +274,9 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 */
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->usermodule, nmb, q, getPC(nmb, q), TRUE);
-	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
+	if (nmb->errors)
+		goto bailout;
+	if (q->fcn == NULL || q->token != CMDcall ||
 		(checkprops && q->blk && q->blk->unsafeProp))
 		fcn = NULL;
 	else {
@@ -280,6 +293,15 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 
 	freeMalBlk(nmb);
 	return fcn;
+
+  bailout:
+	/* there was an error, perhaps it's in nmb->errors */
+	assert(mb->errors == NULL);
+	if ((mb->errors = nmb->errors) == NULL)
+		mb->errors = createException(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	nmb->errors = NULL;
+	freeMalBlk(nmb);
+	return NULL;
 }
 
 /*
@@ -297,8 +319,14 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MALfcn fcn;
 
 	fcn = MANIFOLDtypecheck(cntxt, mb, pci, 0);
-	if (fcn == NULL)
+	if (fcn == NULL) {
+		if (mb->errors) {
+			msg = mb->errors;
+			mb->errors = NULL;
+			return msg;
+		}
 		throw(MAL, "mal.manifold", "Illegal manifold function call");
+	}
 
 	mat = (MULTIarg *) GDKzalloc(sizeof(MULTIarg) * pci->argc);
 	if (mat == NULL)

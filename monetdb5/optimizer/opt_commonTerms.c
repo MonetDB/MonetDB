@@ -24,16 +24,14 @@
  * Speed up simple insert operations by skipping the common terms.
 */
 
-static int
-isProjectConst(InstrPtr p)
+static inline bool __attribute__((__pure__))
+isProjectConst(const InstrRecord *p)
 {
-	if (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef)
-		return TRUE;
-	return FALSE;
+	return (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef);
 }
 
-static int
-hashInstruction(MalBlkPtr mb, InstrPtr p)
+static int __attribute__((__pure__))
+hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 {
 	int i;
 	for (i = p->argc - 1; i >= p->retc; i--)
@@ -86,7 +84,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		goto wrapup;
 	}
 
-	for (i = 0; i < limit; i++) {
+	for (i = 0; mb->errors == NULL && i < limit; i++) {
 		p = old[i];
 		duplicate = 0;
 
@@ -96,10 +94,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		if (p->token == ENDsymbol) {
 			pushInstruction(mb, p);
-			/* wrap up the remainder */
-			for (i++; i < limit; i++)
-				if (old[i])
-					pushInstruction(mb, old[i]);
+			old[i] = NULL;
 			break;
 		}
 		/*
@@ -120,6 +115,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d]: %d %d\n", i, barrier,
 					  p->retc == p->argc);
 			pushInstruction(mb, p);
+			old[i] = NULL;
 			continue;
 		}
 
@@ -130,16 +126,20 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			memset(hash, 0, sizeof(int) * mb->vtop);
 		}
 		/* side-effect producing operators can never be replaced */
-		/* the same holds for function calls without an argument, it is unclear where the results comes from (e.g. clock()) */
+		/* the same holds for function calls without an argument, it is
+		 * unclear where the results comes from (e.g. clock()) */
 		if (mayhaveSideEffects(cntxt, mb, p, TRUE) || p->argc == p->retc) {
 			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d] side-effect: %d\n", i,
 					  p->retc == p->argc);
 			pushInstruction(mb, p);
+			old[i] = NULL;
 			continue;
 		}
-		/* simple SQL bind operations need not be merged, they are cheap and/or can be duplicated eliminated elsewhere cheaper */
+		/* simple SQL bind operations need not be merged, they are cheap
+		 * and/or can be duplicated eliminated elsewhere cheaper */
 		if (getModuleId(p) == sqlRef && getFunctionId(p) != tidRef) {
 			pushInstruction(mb, p);
+			old[i] = NULL;
 			continue;
 		}
 
@@ -153,13 +153,15 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		if (h < 0) {
 			pushInstruction(mb, p);
+			old[i] = NULL;
 			continue;
 		}
 
 		bailout = 1024;			// don't run over long collision list
 		/* Look into the hash structure for matching instructions */
-		for (j = hash[h]; j > 0 && bailout-- > 0; j = list[j])
-			if ((q = getInstrPtr(mb, j)) && getFunctionId(q) == getFunctionId(p)
+		for (j = hash[h]; j > 0 && bailout-- > 0; j = list[j]) {
+			if ((q = getInstrPtr(mb, j))
+				&& getFunctionId(q) == getFunctionId(p)
 				&& getModuleId(q) == getModuleId(p)) {
 				TRC_DEBUG(MAL_OPTIMIZER,
 						  "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n", j,
@@ -176,9 +178,13 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				 * handled by the alias removal part. All arguments should
 				 * be assigned their value before instruction p.
 				 */
-				if (hasSameArguments(mb, p, q) && hasSameSignature(mb, p, q) && !hasCommonResults(p, q) && !isUnsafeFunction(q) && !isUpdateInstruction(q) && !isProjectConst(q) &&	/* disable project(x,val), as its used for the result of case statements */
-					isLinearFlow(q)
-						) {
+				if (hasSameArguments(mb, p, q)
+					&& hasSameSignature(mb, p, q)
+					&& !hasCommonResults(p, q)
+					&& !isUnsafeFunction(q)
+					&& !isUpdateInstruction(q)
+					&& !isProjectConst(q) &&	/* disable project(x,val), as its used for the result of case statements */
+					isLinearFlow(q)) {
 					if (safetyBarrier(p, q)) {
 						TRC_DEBUG(MAL_OPTIMIZER, "Safety barrier reached\n");
 						break;
@@ -199,17 +205,17 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					actions++;
 					break;		/* end of search */
 				}
-			}
-
-			else if (isUpdateInstruction(p)) {
+			} else if (isUpdateInstruction(p)) {
 				TRC_DEBUG(MAL_OPTIMIZER, "Skipped: %d %d\n",
 						  mayhaveSideEffects(cntxt, mb, q, TRUE),
 						  isUpdateInstruction(p));
 				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
 			}
+		}
 
 		if (duplicate) {
 			pushInstruction(mb, p);
+			old[i] = NULL;
 			continue;
 		}
 		/* update the hash structure with another candidate for re-use */
@@ -224,6 +230,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			list[i] = hash[h];
 			hash[h] = i;
 			pushInstruction(mb, p);
+			old[i] = NULL;
 		}
 	}
 	for (; i < slimit; i++)

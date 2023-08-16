@@ -219,6 +219,8 @@ newExitStmt(MalBlkPtr mb, const char *nme)
 InstrPtr
 pushEndInstruction(MalBlkPtr mb)
 {
+	if (mb->errors)
+		return NULL;
 	InstrPtr q = newInstruction(mb, NULL, NULL);
 
 	if (q == NULL)
@@ -229,6 +231,8 @@ pushEndInstruction(MalBlkPtr mb)
 	q->retc = 0;
 	q->argv[0] = 0;
 	pushInstruction(mb, q);
+	if (mb->errors)
+		return NULL;
 	return q;
 }
 
@@ -253,8 +257,8 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_int;
 	cst.val.ival = val;
 	cst.len = 0;
@@ -285,8 +289,8 @@ pushBte(MalBlkPtr mb, InstrPtr q, bte val)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_bte;
 	cst.val.btval = val;
 	cst.len = 0;
@@ -317,8 +321,8 @@ pushOid(MalBlkPtr mb, InstrPtr q, oid val)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_oid;
 	cst.val.oval = val;
 	cst.len = 0;
@@ -334,8 +338,8 @@ pushVoid(MalBlkPtr mb, InstrPtr q)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_void;
 	cst.val.oval = oid_nil;
 	cst.len = 0;
@@ -366,8 +370,8 @@ pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_lng;
 	cst.val.lval = val;
 	cst.len = 0;
@@ -398,8 +402,8 @@ pushSht(MalBlkPtr mb, InstrPtr q, sht val)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_sht;
 	cst.val.shval = val;
 	cst.len = 0;
@@ -431,8 +435,8 @@ pushHge(MalBlkPtr mb, InstrPtr q, hge val)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_hge;
 	cst.val.hval = val;
 	cst.len = 0;
@@ -464,8 +468,8 @@ pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_dbl;
 	cst.val.dval = val;
 	cst.len = 0;
@@ -496,8 +500,8 @@ pushFlt(MalBlkPtr mb, InstrPtr q, flt val)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_flt;
 	cst.val.fval = val;
 	cst.len = 0;
@@ -530,8 +534,8 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	if (VALinit(&cst, TYPE_str, Val) == NULL) {
 		str msg = createException(MAL, "pushStr",
 								  "Can not allocate string variable");
@@ -566,8 +570,8 @@ pushBit(MalBlkPtr mb, InstrPtr q, bit val)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_bit;
 	cst.val.btval = val;
 	cst.len = 0;
@@ -583,12 +587,12 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.len = 0;
 	if (!isaBatType(tpe) && tpe != TYPE_bat) {
 		assert(tpe < MAXATOMS);	/* in particular, tpe!=TYPE_any */
-		if (!tpe) {
+		if (tpe == TYPE_void) {
 			cst.vtype = TYPE_void;
 			cst.val.oval = oid_nil;
 		} else {
@@ -619,28 +623,27 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	ValRecord cst;
 	str msg;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	idx = getAtomIndex(tpe, strlen(tpe), TYPE_any);
 	if (idx < 0 || idx >= GDKatomcnt || idx >= MAXATOMS) {
-		str msg = createException(MAL, "pushNilType",
-								  "Can not allocate type variable");
-		addMalException(mb, msg);
-		freeException(msg);
+		msg = createException(MAL, "pushNilType",
+							  "Can not allocate type variable");
 	} else {
 		cst.vtype = TYPE_void;
 		cst.val.oval = oid_nil;
 		cst.len = 0;
 		msg = convertConstant(idx, &cst);
-		if (msg != MAL_SUCCEED) {
-			addMalException(mb, msg);
-			freeException(msg);
-		} else {
+		if (msg == MAL_SUCCEED) {
 			_t = defConstant(mb, idx, &cst);
 			if (_t >= 0) {
 				return pushArgument(mb, q, _t);
 			}
 		}
+	}
+	if (msg) {
+		addMalException(mb, msg);
+		freeException(msg);
 	}
 	return q;
 }
@@ -652,8 +655,8 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 	ValRecord cst;
 	str msg;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_void;
 	cst.val.oval = oid_nil;
 	cst.len = 0;
@@ -677,8 +680,8 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 	ValRecord cst;
 	str msg;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	cst.vtype = TYPE_int;
 	cst.val.ival = 0;
 	cst.len = 0;
@@ -697,8 +700,8 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 InstrPtr
 pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe)
 {
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	setModuleId(q, getName("bat"));
 	setFunctionId(q, getName("new"));
 
@@ -714,8 +717,8 @@ pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 	int _t;
 	ValRecord cst;
 
-	if (q == NULL)
-		return NULL;
+	if (q == NULL || mb->errors)
+		return q;
 	if (VALcopy(&cst, vr) == NULL) {
 		str msg = createException(MAL, "pushValue", "Can not allocate variable");
 		addMalException(mb, msg);

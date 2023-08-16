@@ -41,6 +41,7 @@ MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 procdebug = False
 verbosity = 0
 approve = False
+stop_crash = False
 
 initdb = None
 single_in_memory = False
@@ -1442,6 +1443,9 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         body_bad.append(bodyline)
                 if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
                     oktests.append(TST)
+                if stop_crash and FtErr in (F_SEGV, F_ABRT):
+                    interrupted = True
+                    break
         except KeyboardInterrupt:
             print('\nInterrupted')
             interrupted = True
@@ -3484,6 +3488,7 @@ def main(argv) :
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
+    parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
     global produce_html
     if produce_html:
         parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
@@ -3503,6 +3508,8 @@ def main(argv) :
     procdebug = opts.procdebug
     global approve
     approve = opts.approve
+    global stop_crash
+    stop_crash = opts.stop_crash
     produce_html = opts.produce_html
     addreqs = False
     testweb = opts.testweb

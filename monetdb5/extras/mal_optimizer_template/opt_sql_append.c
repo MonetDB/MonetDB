@@ -201,6 +201,12 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				q2 = pushArgument(mb, q2, getArg(p, 5));
 				q2 = pushLng(mb, q2, 0);
 				q2 = pushArgument(mb, q2, getArg(q1, 0));
+				if (mb->errors) {
+					freeInstruction(q1);
+					freeInstruction(q2);
+					i--;
+					break;
+				}
 				pushInstruction(mb, q1);
 				pushInstruction(mb, q2);
 
