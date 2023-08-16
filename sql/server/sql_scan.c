@@ -976,17 +976,49 @@ number(mvc * c, int cur)
 	 * [0-9]+                           -- (decimal) INTEGER
 	 */
 	lc->started = 1;
-	if (cur == '0' && (cur = scanner_getc(lc)) == 'o') {
+	int is_literal_integer = 0;
+	if (cur == '0') {
+		switch ((cur = scanner_getc(lc))) {
+		case 'b':
+			is_literal_integer = BINARYNUM;
+			break;
+		case 'o':
+			is_literal_integer = OCTALNUM;
+			break;
+		case 'x':
+			is_literal_integer = HEXADECIMALNUM;
+			break;
+		}
+	}
+
+	if (is_literal_integer == BINARYNUM) {
 		cur = scanner_getc(lc);
-		while (cur != EOF && isdigit(cur) && cur < '8') {
-			token = OCTAL;
+		while (cur != EOF && isdigit(cur) && cur < '2') {
+			token = BINARYNUM;
 			cur = scanner_getc(lc);
 		}
 
 		if (cur == EOF)
 			return cur;
 
-		if (token != OCTAL) {
+		if (token != BINARYNUM) {
+			/* 0b not followed by a binary digit: show 'b' as erroneous */
+			utf8_putchar(lc, cur);
+			cur = 'b';
+			token = 0;
+		}
+	}
+	else if (is_literal_integer == OCTALNUM) {
+		cur = scanner_getc(lc);
+		while (cur != EOF && isdigit(cur) && cur < '8') {
+			token = OCTALNUM;
+			cur = scanner_getc(lc);
+		}
+
+		if (cur == EOF)
+			return cur;
+
+		if (token != OCTALNUM) {
 			/* 0o not followed by a octal digit: show 'o' as erroneous */
 			utf8_putchar(lc, cur);
 			cur = 'o';
@@ -996,17 +1028,17 @@ number(mvc * c, int cur)
 	/* after this block, cur contains the first character after the
 	 * parsed number (which may be the first causing it not to be a number);
 	 * it token == 0 after this block, a parse error was detected */
-	else if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
+	else if (is_literal_integer == HEXADECIMALNUM) {
 		cur = scanner_getc(lc);
 		while (cur != EOF && iswxdigit(cur)) {
-			token = HEXADECIMAL;
+			token = HEXADECIMALNUM;
 			cur = scanner_getc(lc);
 		}
 
 		if (cur == EOF)
 			return cur;
 
-		if (token != HEXADECIMAL) {
+		if (token != HEXADECIMALNUM) {
 			/* 0x not followed by a hex digit: show 'x' as erroneous */
 			utf8_putchar(lc, cur);
 			cur = 'x';
