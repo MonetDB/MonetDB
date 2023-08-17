@@ -71,7 +71,6 @@ fileexists(const char *path)
 MALfcn
 getAddress(const char *modname, const char *fcnname)
 {
-	void *dl;
 	MALfcn adr;
 	int idx = 0;
 	static int prev = -1;
@@ -103,46 +102,23 @@ getAddress(const char *modname, const char *fcnname)
 			}
 		}
 
-	if (lastfile) {
-		/* first should be monetdb5 */
-		assert(strcmp(filesLoaded[0].modname, "monetdb5") == 0
-			   || strcmp(filesLoaded[0].modname, "embedded") == 0);
-		adr = (MALfcn) dlsym(filesLoaded[0].handle, fcnname);
-		if (adr != NULL) {
-			prev = 0;
-			return adr;			/* found it */
+	if (lastfile == 0) {
+		char *msg = loadLibrary("monetdb5", 1);
+		if (msg) {
+			freeException(msg);
+			return NULL;
 		}
-		return NULL;
 	}
-	/*
-	 * Try the program libraries at large or run through all
-	 * loaded files and try to resolve the functionname again.
-	 *
-	 * the first argument must be the same as the base name of the
-	 * library that is created in src/tools */
-#ifdef __APPLE__
-	dl = mdlopen(SO_PREFIX "monetdb5" SO_EXT, RTLD_NOW | RTLD_GLOBAL);
-#else
-	dl = dlopen(SO_PREFIX "monetdb5" SO_EXT, RTLD_NOW | RTLD_GLOBAL);
-#endif
-	if (dl == NULL)
-		return NULL;
 
-	adr = (MALfcn) dlsym(dl, fcnname);
-	filesLoaded[lastfile].modname = GDKstrdup("libmonetdb5");
-	if (filesLoaded[lastfile].modname == NULL) {
-		dlclose(dl);
-		return NULL;
+	/* first should be monetdb5 */
+	assert(strcmp(filesLoaded[0].modname, "monetdb5") == 0
+		   || strcmp(filesLoaded[0].modname, "embedded") == 0);
+	adr = (MALfcn) dlsym(filesLoaded[0].handle, fcnname);
+	if (adr != NULL) {
+		prev = 0;
+		return adr;			/* found it */
 	}
-	filesLoaded[lastfile].fullname = GDKstrdup("libmonetdb5");
-	if (filesLoaded[lastfile].fullname == NULL) {
-		dlclose(dl);
-		GDKfree(filesLoaded[lastfile].modname);
-		return NULL;
-	}
-	filesLoaded[lastfile].handle = dl;
-	lastfile++;
-	return adr;
+	return NULL;
 }
 
 /*
