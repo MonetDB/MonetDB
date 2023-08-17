@@ -158,6 +158,7 @@
 #cmakedefine HAVE_SETSID 1
 #cmakedefine HAVE_SHUTDOWN 1
 #cmakedefine HAVE_SIGACTION 1
+#cmakedefine HAVE_SIGLONGJMP 1
 #cmakedefine HAVE_STPCPY 1
 #cmakedefine HAVE_STRCASESTR 1
 #cmakedefine HAVE_STRNCASECMP 1
