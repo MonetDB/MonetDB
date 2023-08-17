@@ -1201,8 +1201,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	*be = bebackup;
 	c->curprg = symbackup;
 	m->sa->eb = ebsave;
-	if (m->sa->eb.enabled)
-		eb_error(&m->sa->eb, m->errstr[0] ? m->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return -1;
 }
 

@@ -3482,6 +3482,11 @@ main(int argc, char **argv)
 #endif
 			mnstr_printf(toConsole, "using mapi library %s\n",
 						 mapi_get_mapi_version());
+			free(dotfile.user);
+			free(dotfile.passwd);
+			free(dotfile.dbname);
+			free(dotfile.host);
+			free(dotfile.output);
 			return 0;
 		}
 		case 'w':

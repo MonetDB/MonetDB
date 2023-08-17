@@ -101,7 +101,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		const char *caller_revision = (const char *) (void *) mb;
 		const char *p = mercurial_revision();
 		if (p && strcmp(p, caller_revision) != 0) {
-			throw(MAL, "sq;.start", "incompatible versions: caller is %s, GDK is %s\n", caller_revision, p);
+			throw(MAL, "sql.start", "incompatible versions: caller is %s, GDK is %s\n", caller_revision, p);
 		}
 	}
 
