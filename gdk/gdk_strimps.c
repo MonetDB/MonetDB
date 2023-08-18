@@ -114,8 +114,6 @@ typedef struct {
 
 typedef struct {
 	uint64_t cnt;
-	uint64_t mask;
-	size_t idx;
 } PairHistogramElem;
 
 
@@ -128,12 +126,13 @@ typedef struct {
 #undef UTF8STRIMPS		/* Not using utf8 for now */
 #ifdef UTF8STRIMPS
 static bool
-pair_equal(CharPair *p1, CharPair *p2) {
+pair_equal(const CharPair *p1, const CharPair *p2)
+{
 	if(p1->psize != p2->psize)
 		return false;
 
 	for(size_t i = 0; i < p1->psize; i++)
-		if (*(p1->pbytes + i) != *(p2->pbytes + i))
+		if (p1->pbytes[i] != p2->pbytes[i])
 			return false;
 
 	return true;
@@ -154,19 +153,20 @@ pair_equal(CharPair *p1, CharPair *p2) {
 #define pairToIndex(b1, b2) (size_t)(((uint16_t)b2)<<8 | ((uint16_t)b1))
 
 inline static size_t
-bytes2histindex(uint8_t *bytes, uint8_t psize) {
+bytes2histindex(uint8_t *bytes, uint8_t psize)
+{
 	(void)psize;
 	return pairToIndex(bytes[0], bytes[1]);
 }
 
 inline static bool
-pair_at(PairIterator *pi, CharPair *p)
+pair_at(const PairIterator *pi, CharPair *p)
 {
 	if (pi->pos >= pi->lim - 1)
 		return false;
 
-	p->pbytes[0] = (uint8_t)tolower(*(pi->s + pi->pos));
-	p->pbytes[1] = (uint8_t)tolower(*(pi->s + pi->pos + 1));
+	p->pbytes[0] = (uint8_t)tolower((unsigned char) pi->s[pi->pos]);
+	p->pbytes[1] = (uint8_t)tolower((unsigned char) pi->s[pi->pos + 1]);
 
 	p->psize = 2;
 	p->idx = pairToIndex(p->pbytes[0], p->pbytes[1]);
@@ -185,19 +185,19 @@ next_pair(PairIterator *pi)
 /* Returns true if the specified char is ignored.
  */
 inline static bool
-ignored(CharPair *p, uint8_t elm)
+ignored(const CharPair *p, uint8_t elm)
 {
 	assert(elm == 0 || elm == 1);
 	return isIgnored(p->pbytes[elm]);
 }
 
-static strimp_masks_t
-STRMPget_mask(Strimps *r, uint64_t idx)
+inline static strimp_masks_t
+STRMPget_mask(const Strimps *r, uint64_t idx)
 {
 	return r->masks[idx];
 }
 
-static void
+inline static void
 STRMPset_mask(Strimps *r, uint64_t idx, strimp_masks_t val)
 {
 	r->masks[idx] = val;
@@ -208,10 +208,10 @@ STRMPset_mask(Strimps *r, uint64_t idx, strimp_masks_t val)
  * corresponding to the index of the pair in the strimp header, or is 0
  * if the pair does not occur.
  */
-static uint64_t
-STRMPpairLookup(Strimps *s, CharPair *p)
+inline static uint64_t
+STRMPpairLookup(const Strimps *s, const CharPair *p)
 {
-	return STRMPget_mask(s, pairToIndex(p->pbytes[0], p->pbytes[1]));
+	return STRMPget_mask(s, p->idx);
 }
 
 
@@ -255,7 +255,7 @@ STRMPmakebitstring(const char *s, Strimps *r)
 
 
 static void
-STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
+STRMPchoosePairs(const PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 {
 	lng t0 = 0;
 	size_t i;
@@ -277,10 +277,10 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 		}
 	}
 
-	for(i = 0; i < STRIMP_HEADER_SIZE; i++) {
-		cp[i].pbytes[1] = (uint8_t)(hist[indices[i]].idx & 0xFF);
-		cp[i].pbytes[0] = (uint8_t)((hist[indices[i]].idx >> 8) & 0xFF);
-		cp[i].idx = hist[indices[i]].idx;
+	for(i = 0; i < STRIMP_PAIRS; i++) {
+		cp[i].pbytes[1] = (uint8_t)(indices[i] & 0xFF);
+		cp[i].pbytes[0] = (uint8_t)((indices[i] >> 8) & 0xFF);
+		cp[i].idx = indices[i];
 		cp[i].psize = 2;
 		cp[i].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - i - 1);
 	}
@@ -304,8 +304,8 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	oid x;
 	size_t hlen;
 	PairHistogramElem *hist;
-	PairIterator pi, *pip;
-	CharPair cp, *cpp;
+	PairIterator pi;
+	CharPair cp;
 	struct canditer ci;
 	size_t values = 0;
 	bool res;
@@ -319,20 +319,12 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	}
 
 	hlen = STRIMP_HISTSIZE;
-	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
+	if ((hist = (PairHistogramElem *)GDKzalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
 		return false;
-	}
-
-	for(hidx = 0; hidx < hlen; hidx++) {
-		hist[hidx].cnt = 0;
-		hist[hidx].mask = 0;
-		hist[hidx].idx = hidx;
 	}
 
 	// Create Histogram
 	bi = bat_iterator(b);
-	pip = &pi;
-	cpp = &cp;
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
 		const char *cs = BUNtvar(bi, x);
@@ -343,14 +335,14 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 			if (pi.lim < 2) {
 				continue;
 			}
-			while (pair_at(pip, cpp)) {
-				if(ignored(cpp, 1)) {
+			while (pair_at(&pi, &cp)) {
+				if(ignored(&cp, 1)) {
 					/* Skip this AND the next pair
 					 * if the second char of the
 					 * pair is ignored.
 					 */
-					next_pair(pip);
-				} else if (ignored(cpp, 0)) {
+					next_pair(&pi);
+				} else if (ignored(&cp, 0)) {
 					/* Skip this pair if the first
 					 * char is ignored. This should
 					 * only happen at the beginnig
@@ -361,8 +353,8 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 					;
 
 				} else {
-					/* hidx = histogram_index(hist, hlen, cpp); */
-					hidx = cpp->idx;
+					/* hidx = histogram_index(hist, hlen, &cp); */
+					hidx = cp.idx;
 #ifndef UTF8STRINGS
 					assert(hidx < hlen);
 #else
@@ -375,7 +367,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 						values++;
 					hist[hidx].cnt++;
 				}
-				next_pair(pip);
+				next_pair(&pi);
 			}
 		}
 	}
@@ -754,7 +746,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 			return NULL;
 		}
 
-		for (size_t i = 0; i < STRIMP_HEADER_SIZE - 1; i++) {
+		for (size_t i = 0; i < STRIMP_PAIRS; i++) {
 			r->masks[hpairs[i].idx] = hpairs[i].mask;
 		}
 
