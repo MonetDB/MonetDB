@@ -1309,12 +1309,14 @@ SQLparser_body(Client c, backend *be)
 			if (m->emode != m_prepare && be->subbackend && be->subbackend->check(be->subbackend, r)) {
 				res_table *rt = NULL;
 				if (be->subbackend->exec(be->subbackend, r, be->result_id++, &rt) == NULL) { /* on error fall back */
+					be->subbackend->reset(be->subbackend);
 					if (rt) {
 						rt->next = be->results;
 						be->results = rt;
 					}
 					return NULL;
 				}
+				be->subbackend->reset(be->subbackend);
 			}
 
 			Tbegin = GDKusec();
@@ -1527,8 +1529,10 @@ SQLengine_(Client c)
 	if (msg || c->mode <= FINISHCLIENT)
 		return msg;
 
-	if (be && be->subbackend)
-		be->subbackend->reset(be->subbackend);
+	if (c->curprg->def->stop == 1) {
+		sqlcleanup(be, 0);
+		return NULL;
+	}
 	return SQLengineIntern(c, be);
 }
 
