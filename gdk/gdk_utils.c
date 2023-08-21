@@ -1650,7 +1650,7 @@ GDK_find_self(void)
 	return (Thread) MT_thread_getdata();
 }
 
-static Thread
+Thread
 THRnew(const char *name, MT_Id pid)
 {
 	for (Thread s = GDKthreads; s < GDKthreads + THREADS; s++) {

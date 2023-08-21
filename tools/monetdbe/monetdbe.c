@@ -89,6 +89,7 @@ embedded_type(int t) {
 typedef struct {
 	Client c;
 	char *msg;
+	int registered_thread;	/* 1 = registered in monetdbe_open, 2 = done by GDK (also deregister done there) */
 	monetdbe_data_blob blob_null;
 	monetdbe_data_date date_null;
 	monetdbe_data_time time_null;
@@ -543,6 +544,10 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Embedded MonetDB is not started"));
 		goto cleanup;
 	}
+	if (!mdbe->registered_thread) {
+		MT_thread_setdata(THRnew( "monetdbe client thread", 1));
+		mdbe->registered_thread = 1;
+	}
 	mdbe->c = MCinitClient((oid) 0, 0, 0);
 	if (!MCvalid(mdbe->c)) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Failed to initialize client"));
@@ -916,6 +921,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 		 */
 		assert(!is_remote||url==NULL);
 		monetdbe_startup(mdbe, url, opts);
+		mdbe->registered_thread = 2;
 	} else if (!is_remote && !urls_matches(monetdbe_embedded_url, url)) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open", "monetdbe_open currently only one active database is supported"));
 	}
@@ -947,6 +953,10 @@ monetdbe_close(monetdbe_database dbhdl)
 
 	err = (monetdbe_close_internal(mdbe) || err);
 
+	if (mdbe->registered_thread == 1) {
+		THRdel( MT_thread_getdata() );
+		mdbe->registered_thread = 0;
+	}
 	if (!open_dbs)
 		monetdbe_shutdown_internal();
 	MT_lock_unset(&embedded_lock);
