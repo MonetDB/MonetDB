@@ -3520,6 +3520,26 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
 
+	if (!sname && strcmp(fname, "field") == 0) { /* map into join */
+		sql_exp *le = exps->h->data;
+		set_freevar(le, 1);
+		list_remove_data(exps, NULL, le);
+		sql_exp *re = exp_values(sql->sa, exps);
+		exp_label(sql->sa, re, ++sql->label);
+		sql_rel *r = rel_project(sql->sa, NULL, append(sa_list(sql->sa), re));
+		sql_exp *id = NULL;
+		rel_add_identity(sql, r, &id);
+		re = exp_ref(sql, re);
+		id = exp_ref(sql, id);
+		if (r) {
+			r->nrcols = list_length(exps);
+			sql_exp *e = exp_compare(sql->sa, le, re, cmp_equal);
+			r = rel_select(sql->sa, r, e);
+			r = rel_project(sql->sa, r, append(sa_list(sql->sa), exp_convert(sql->sa, id, exp_subtype(id), sql_bind_localtype("int"))));
+			re = exp_rel(sql, r);
+			return re;
+		}
+	}
 	/* first try aggregate */
 	if (find_func(sql, sname, fname, nr_args, F_AGGR, false, NULL, NULL)) { /* We have to pass the arguments properly, so skip call to rel_aggr */
 		/* reset error */
