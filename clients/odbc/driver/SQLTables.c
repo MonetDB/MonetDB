@@ -234,7 +234,7 @@ MNDBTables(ODBCStmt *stmt,
 						strcpy(buf, "LOCAL TEMPORARY TABLE");
 					}
 					pos += snprintf(query + pos, querylen - pos, "'%s',", buf);
- 					j = 0;
+					j = 0;
 				} else if (j < sizeof(buf) &&
 					   TableType[i] != '\'' &&
 					   (TableType[i] != ' ' ||

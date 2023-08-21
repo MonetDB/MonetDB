@@ -89,7 +89,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Jun2023/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jun2023-SP1/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -118,7 +118,7 @@ BuildRequires: pkgconfig(readline)
 BuildRequires: pkgconfig(cfitsio)
 %endif
 %if %{with geos}
-BuildRequires: geos-devel >= 3.4.0
+BuildRequires: geos-devel >= 3.10.0
 %endif
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
@@ -860,6 +860,48 @@ fi
 %endif
 
 %changelog
+* Tue Jul 18 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.5-20230718
+- Rebuilt.
+- GH#7388: Query results in large cross product
+- GH#7394: BBPextend: ERROR: trying to extend BAT pool beyond the limit
+  (163840000)
+
+* Thu Jun 22 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.5-20230718
+- sql: An upgrade that both creates a new .snapshot user and extends the
+  sys.db_user_info table with (among others) a password column did
+  these in such a way that the passord value for the new user was NULL.
+  This is fixed by updating the password.
+
+* Thu Jun 22 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.5-20230718
+- monetdb5: There is now a new option --set tablet_threads=N to limit the number
+  of threads used for a COPY INTO from CSV file query.  This option can
+  also be set for a specific database using the monetdb command using
+  the ncopyintothreads property.
+
+* Thu Jun 22 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.3-20230622
+- Rebuilt.
+- GH#7344: Database upgrade failure due to user object dependency on
+  system procedure
+- GH#7378: MonetDB server crashes at sql_trans_copy_key
+- GH#7379: MonetDB server 11.46.0 crashes at cs_bind_ubat
+- GH#7380: MonetDB server 11.46.0 crashes at `BLOBcmp`
+- GH#7381: MonetDB server 11.46.0 crashes at `log_create_delta`
+- GH#7382: MonetDB server 11.46.0 crashes at `gc_col`
+- GH#7383: MonetDB server 11.46.0 crashes at `list_append`
+- GH#7384: MonetDB server 11.46.0 crashes at `__nss_database_lookup`
+- GH#7386: MonetDB server 11.46.0 crashes in `rel_deps`
+- GH#7387: MonetDB server 11.46.0 crashes in `rel_sequences`
+
+* Tue Jun 20 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.3-20230622
+- clients: The COPY INTO from file ON CLIENT was extended to also look for a
+  relative path name relative to the file from which the query was read.
+  This is only possible if the name of the query file is known, so when
+  it is specified on the command line or read using the interactive
+  \< command.
+
+* Fri Jun 16 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.47.3-20230622
+- sql: Add MAX_MEMORY and MAX_WORKERS options to the ALTER USER statement
+
 * Fri Jun 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.1-20230616
 - Rebuilt.
 - GH#7311: Missing `REGEXP_REPLACE` function.

@@ -1198,8 +1198,10 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 
 		fmt[i].c = BATdescriptor(c->b);
 		if (fmt[i].c == NULL) {
-			while (--i >= 1)
+			while (--i >= 1) {
+				bat_iterator_end(&fmt[i].ci);
 				BBPunfix(fmt[i].c->batCacheid);
+			}
 			GDKfree(fmt);
 			GDKfree(tres);
 			return -2;

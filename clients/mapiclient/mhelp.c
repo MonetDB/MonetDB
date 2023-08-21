@@ -83,9 +83,10 @@ SQLhelp sqlhelp1[] = {
 	 "Change a user's login name or password or default schema",
 	 "ALTER USER ident RENAME TO ident\n"
 	 "ALTER USER SET [ENCRYPTED | UNENCRYPTED] PASSWORD string USING OLD PASSWORD string\n"
-	 "ALTER USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string\n"
-	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SET SCHEMA ident\n"
-	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SCHEMA PATH string [DEFAULT ROLE ident]",
+	 "ALTER USER ident\n"
+	 "    [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string]\n"
+	 "    [SET SCHEMA ident] [SCHEMA PATH string] [DEFAULT ROLE ident]\n"
+	 "    [MAX_MEMORY posbytes | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"ANALYZE",
@@ -249,7 +250,8 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE USER",
 	 "Create a new database user",
 	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string [SCHEMA ident] [SCHEMA PATH string]\n"
-	 "[MAX_MEMORY poslng] [MAX_WORKERS posint] [OPTIMIZER string] [DEFAULT ROLE ident]",
+	 "[MAX_MEMORY posbytes | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]\n"
+	 "[OPTIMIZER string] [DEFAULT ROLE ident]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"CREATE VIEW",
@@ -482,8 +484,7 @@ SQLhelp sqlhelp1[] = {
 	 "[ HAVING condition [',' ...] ]\n"
 	 "[ { UNION | INTERSECT | EXCEPT } [ ALL | DISTINCT ] [ CORRESPONDING ] select ]\n"
 	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
-	 "[ LIMIT { count | param } ]\n"
-	 "[ OFFSET { count | param } ]\n"
+	 "[ limit_offset_clause | offset_fetchfirst_clause ]\n"
 	 "[ SAMPLE size [ SEED size ] ]",
 	 "cte_list,expression,group_by_element,window_definition",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/table-expressions/"},
@@ -742,7 +743,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"language_keyword",
 	 NULL,
-	 "C | CPP | R | PYTHON | PYTHON_MAP | PYTHON3 | PYTHON3_MAP",
+	 "C | CPP | R | PYTHON | PYTHON3",
 	 NULL,
 	 NULL},
 	{"match_options",
@@ -830,8 +831,8 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"query_expression",
 	 NULL,
-	 "select_no_parens [ order_by_clause ] [ limit_clause ] [ offset_clause ] [ sample_clause ]",
-	 "select_no_parens,order_by_clause,limit_clause,offset_clause,sample_clause",
+	 "select_no_parens [ order_by_clause ] [ limit_offset_clause | offset_fetchfirst_clause ] [ sample_clause ]",
+	 "select_no_parens",
 	 NULL},
 	{"select_no_parens",
 	 NULL,
@@ -839,6 +840,21 @@ SQLhelp sqlhelp2[] = {
 	 "| select_no_parens { UNION | EXCEPT | INTERSECT } [ ALL | DISTINCT ] [ corresponding ] select_no_parens\n"
 	 "| '(' select_no_parens ')' }",
 	 "column_exp_commalist,from_clause,window_clause,where_clause,group_by_clause,having_clause,corresponding",
+	 NULL},
+	{"order_by_clause",
+	 NULL,
+	 "ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...]",
+	 "",
+	 NULL},
+	{"limit_offset_clause",
+	 NULL,
+	 "[ LIMIT { count | param } ]  [ OFFSET { count | param } ]",
+	 "",
+	 NULL},
+	{"offset_fetchfirst_clause",
+	 NULL,
+	 "[ OFFSET { count | param } [ {ROW|ROWS} ] ]  [ FETCH {FIRST|NEXT} [ count | param ] {ROW|ROWS} ONLY ]",
+	 "",
 	 NULL},
 	{"corresponding",
 	 NULL,

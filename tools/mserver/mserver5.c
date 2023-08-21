@@ -9,7 +9,7 @@
  */
 
 #include "monetdb_config.h"
-#include <string.h> /* strerror */
+#include <string.h>				/* strerror */
 #include <locale.h>
 #include "monet_options.h"
 #include "mal.h"
@@ -35,8 +35,8 @@
 #endif
 
 #ifdef _MSC_VER
-#include <Psapi.h>      /* for GetModuleFileName */
-#include <crtdbg.h>	/* for _CRT_ERROR, _CRT_ASSERT */
+#include <Psapi.h>				/* for GetModuleFileName */
+#include <crtdbg.h>				/* for _CRT_ERROR, _CRT_ASSERT */
 #endif
 
 #ifdef _CRTDBG_MAP_ALLOC
@@ -61,12 +61,9 @@ mserver_abort()
 
 #ifdef _MSC_VER
 static void
-mserver_invalid_parameter_handler(
-	const wchar_t *expression,
-	const wchar_t *function,
-	const wchar_t *file,
-	unsigned int line,
-	uintptr_t reserved)
+mserver_invalid_parameter_handler(const wchar_t *expression,
+								  const wchar_t *function, const wchar_t *file,
+								  unsigned int line, uintptr_t reserved)
 {
 	(void) expression;
 	(void) function;
@@ -120,7 +117,7 @@ static void
 monet_hello(void)
 {
 	double sz_mem_h;
-	char  *qc = " kMGTPE";
+	char *qc = " kMGTPE";
 	int qi = 0;
 
 	printf("# MonetDB 5 server v%s", GDKversion());
@@ -137,14 +134,13 @@ monet_hello(void)
 	printf("\n# This is an unreleased version");
 #endif
 	printf("\n# Serving database '%s', using %d thread%s\n",
-			GDKgetenv("gdk_dbname"),
-			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
-	printf("# Compiled for %s/%zubit%s\n",
-			HOST, sizeof(ptr) * 8,
+		   GDKgetenv("gdk_dbname"), GDKnr_threads,
+		   (GDKnr_threads != 1) ? "s" : "");
+	printf("# Compiled for %s/%zubit%s\n", HOST, sizeof(ptr) * 8,
 #ifdef HAVE_HGE
-			" with 128bit integers"
+		   " with 128bit integers"
 #else
-			""
+		   ""
 #endif
 			);
 	sz_mem_h = (double) MT_npages() * MT_pagesize();
@@ -167,8 +163,8 @@ monet_hello(void)
 			sz_mem_h /= 1024.0;
 			qi++;
 		}
-		printf("# Virtual memory usage limited to %.3f %ciB\n",
-		       sz_mem_h, qc[qi]);
+		printf("# Virtual memory usage limited to %.3f %ciB\n", sz_mem_h,
+			   qc[qi]);
 	}
 #ifdef MONET_GLOBAL_DEBUG
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
@@ -180,26 +176,20 @@ monet_hello(void)
 
 	// The properties shipped through the performance profiler
 	(void) snprintf(monet_characteristics, sizeof(monet_characteristics),
-			"{\n"
-			"\"version\":\"%s\",\n"
-			"\"release\":\"%s\",\n"
-			"\"host\":\"%s\",\n"
-			"\"threads\":\"%d\",\n"
-			"\"memory\":\"%.3f %cB\",\n"
-			"\"oid\":\"%zu\",\n"
-			"\"packages\":["
+					"{\n" "\"version\":\"%s\",\n" "\"release\":\"%s\",\n"
+					"\"host\":\"%s\",\n" "\"threads\":\"%d\",\n"
+					"\"memory\":\"%.3f %cB\",\n" "\"oid\":\"%zu\",\n"
+					"\"packages\":["
 #ifdef HAVE_HGE
-			"\"huge\""
+					"\"huge\""
 #endif
-			"]\n}",
-			GDKversion(),
+					"]\n}", GDKversion(),
 #ifdef MONETDB_RELEASE
-			MONETDB_RELEASE,
+					MONETDB_RELEASE,
 #else
-			"unreleased",
+					"unreleased",
 #endif
-			HOST, GDKnr_threads,
-			sz_mem_h, qc[qi], sizeof(oid) * 8);
+					HOST, GDKnr_threads, sz_mem_h, qc[qi], sizeof(oid) * 8);
 	fflush(stdout);
 }
 
@@ -227,17 +217,19 @@ monet_init(opt *set, int setlen, bool embedded)
 	const char *version = GDKlibversion();
 	sscanf(version, "%d.%d.%d", &maj, &min, &patch);
 	if (maj != GDK_VERSION_MAJOR || min < GDK_VERSION_MINOR) {
-		fprintf(stderr, "Linked GDK library not compatible with the one this was compiled with\n");
-		fprintf(stderr, "Linked version: %s, compiled version: %s\n",
-				version, GDK_VERSION);
+		fprintf(stderr,
+				"Linked GDK library not compatible with the one this was compiled with\n");
+		fprintf(stderr, "Linked version: %s, compiled version: %s\n", version,
+				GDK_VERSION);
 		return 0;
 	}
 	version = mal_version();
 	sscanf(version, "%d.%d.%d", &maj, &min, &patch);
 	if (maj != MONETDB5_VERSION_MAJOR || min < MONETDB5_VERSION_MINOR) {
-		fprintf(stderr, "Linked MonetDB5 library not compatible with the one this was compiled with\n");
-		fprintf(stderr, "Linked version: %s, compiled version: %s\n",
-				version, MONETDB5_VERSION);
+		fprintf(stderr,
+				"Linked MonetDB5 library not compatible with the one this was compiled with\n");
+		fprintf(stderr, "Linked version: %s, compiled version: %s\n", version,
+				MONETDB5_VERSION);
 		return 0;
 	}
 
@@ -252,12 +244,14 @@ monet_init(opt *set, int setlen, bool embedded)
 	return 1;
 }
 
-static void emergencyBreakpoint(void)
+static void
+emergencyBreakpoint(void)
 {
 	/* just a handle to break after system initialization for GDB */
 }
 
 static volatile sig_atomic_t interrupted = 0;
+static volatile sig_atomic_t usr1_interrupted = 0;
 
 #ifdef _MSC_VER
 static BOOL WINAPI
@@ -273,6 +267,12 @@ handler(int sig)
 {
 	(void) sig;
 	interrupted = 1;
+}
+static void
+handler_usr1(int sig)
+{
+	(void) sig;
+	usr1_interrupted = 1;
 }
 #endif
 
@@ -316,37 +316,37 @@ main(int argc, char **av)
 	bool inmemory = false;
 	bool readpwdxit = false;
 	static const struct option long_options[] = {
-		{ "config", required_argument, NULL, 'c' },
-		{ "dbextra", required_argument, NULL, 0 },
-		{ "dbpath", required_argument, NULL, 0 },
-		{ "dbtrace", required_argument, NULL, 0 },
-		{ "debug", optional_argument, NULL, 'd' },
-		{ "help", no_argument, NULL, '?' },
-		{ "in-memory", no_argument, NULL, 0 },
-		{ "readonly", no_argument, NULL, 'r' },
-		{ "set", required_argument, NULL, 's' },
-		{ "single-user", no_argument, NULL, 0 },
-		{ "version", no_argument, NULL, 0 },
+		{"config", required_argument, NULL, 'c'},
+		{"dbextra", required_argument, NULL, 0},
+		{"dbpath", required_argument, NULL, 0},
+		{"dbtrace", required_argument, NULL, 0},
+		{"debug", optional_argument, NULL, 'd'},
+		{"help", no_argument, NULL, '?'},
+		{"in-memory", no_argument, NULL, 0},
+		{"readonly", no_argument, NULL, 'r'},
+		{"set", required_argument, NULL, 's'},
+		{"single-user", no_argument, NULL, 0},
+		{"version", no_argument, NULL, 0},
 
-		{ "algorithms", no_argument, NULL, 0 },
-		{ "forcemito", no_argument, NULL, 0 },
-		{ "heaps", no_argument, NULL, 0 },
-		{ "io", no_argument, NULL, 0 },
-		{ "memory", no_argument, NULL, 0 },
-		{ "modules", no_argument, NULL, 0 },
-		{ "performance", no_argument, NULL, 0 },
-		{ "properties", no_argument, NULL, 0 },
-		{ "threads", no_argument, NULL, 0 },
-		{ "transactions", no_argument, NULL, 0 },
+		{"algorithms", no_argument, NULL, 0},
+		{"forcemito", no_argument, NULL, 0},
+		{"heaps", no_argument, NULL, 0},
+		{"io", no_argument, NULL, 0},
+		{"memory", no_argument, NULL, 0},
+		{"modules", no_argument, NULL, 0},
+		{"performance", no_argument, NULL, 0},
+		{"properties", no_argument, NULL, 0},
+		{"threads", no_argument, NULL, 0},
+		{"transactions", no_argument, NULL, 0},
 
-		{ "read-password-initialize-and-exit", no_argument, NULL, 0 },
-		{ "loadmodule", required_argument, NULL, 0 },
+		{"read-password-initialize-and-exit", no_argument, NULL, 0},
+		{"loadmodule", required_argument, NULL, 0},
 
-		{ NULL, 0, NULL, 0 }
+		{NULL, 0, NULL, 0}
 	};
 
 #define MAX_MODULES 32
-	char *modules[MAX_MODULES+1];
+	char *modules[MAX_MODULES + 1];
 	int mods = 0;
 
 	modules[mods++] = "sql";
@@ -371,6 +371,7 @@ main(int argc, char **av)
 #ifdef HAVE_NETCDF
 	modules[mods++] = "netcdf";
 #endif
+	modules[mods++] = "csv";
 #ifdef HAVE_SHP
 	modules[mods++] = "shp";
 #endif
@@ -393,7 +394,7 @@ main(int argc, char **av)
 
 	if (MT_getcwd(monet_cwd, FILENAME_MAX - 1) == NULL) {
 		perror("pwd");
-		fprintf(stderr,"monet_init: could not determine current directory\n");
+		fprintf(stderr, "monet_init: could not determine current directory\n");
 		exit(-1);
 	}
 
@@ -409,7 +410,7 @@ main(int argc, char **av)
 		int option_index = 0;
 
 		int c = getopt_long(argc, av, "c:d::rs:t::v::?",
-				long_options, &option_index);
+							long_options, &option_index);
 
 		if (c == -1)
 			break;
@@ -423,20 +424,23 @@ main(int argc, char **av)
 			if (strcmp(long_options[option_index].name, "dbpath") == 0) {
 				size_t optarglen = strlen(optarg);
 				/* remove trailing directory separator */
-				while (optarglen > 0 &&
-				       (optarg[optarglen - 1] == '/' ||
-					optarg[optarglen - 1] == '\\'))
+				while (optarglen > 0
+					   && (optarg[optarglen - 1] == '/'
+						   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
 				dbpath = absolute_path(optarg);
-				if( dbpath == NULL)
-					fprintf(stderr, "#error: can not allocate memory for dbpath\n");
+				if (dbpath == NULL)
+					fprintf(stderr,
+							"#error: can not allocate memory for dbpath\n");
 				else
-					setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbpath);
+					setlen = mo_add_option(&set, setlen, opt_cmdline,
+										   "gdk_dbpath", dbpath);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbextra") == 0) {
 				if (dbextra)
-					fprintf(stderr, "#warning: ignoring multiple --dbextra arguments\n");
+					fprintf(stderr,
+							"#warning: ignoring multiple --dbextra arguments\n");
 				else
 					dbextra = optarg;
 				break;
@@ -445,20 +449,23 @@ main(int argc, char **av)
 			if (strcmp(long_options[option_index].name, "dbtrace") == 0) {
 				size_t optarglen = strlen(optarg);
 				/* remove trailing directory separator */
-				while (optarglen > 0 &&
-				       (optarg[optarglen - 1] == '/' ||
-					optarg[optarglen - 1] == '\\'))
+				while (optarglen > 0
+					   && (optarg[optarglen - 1] == '/'
+						   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
 				dbtrace = absolute_path(optarg);
-				if(dbtrace == NULL)
-					fprintf(stderr, "#error: can not allocate memory for dbtrace\n");
+				if (dbtrace == NULL)
+					fprintf(stderr,
+							"#error: can not allocate memory for dbtrace\n");
 				else
-					setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbtrace", dbtrace);
+					setlen = mo_add_option(&set, setlen, opt_cmdline,
+										   "gdk_dbtrace", dbtrace);
 				break;
 			}
 
 			if (strcmp(long_options[option_index].name, "single-user") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_single_user", "yes");
+				setlen = mo_add_option(&set, setlen, opt_cmdline,
+									   "gdk_single_user", "yes");
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "version") == 0) {
@@ -506,15 +513,18 @@ main(int argc, char **av)
 				grpdebug |= GRPtransactions;
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "read-password-initialize-and-exit") == 0) {
+			if (strcmp
+				(long_options[option_index].name,
+				 "read-password-initialize-and-exit") == 0) {
 				readpwdxit = true;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "loadmodule") == 0) {
 				if (mods < MAX_MODULES)
-					modules[mods++]=optarg;
+					modules[mods++] = optarg;
 				else
-					fprintf(stderr, "ERROR: maximum number of modules reached\n");
+					fprintf(stderr,
+							"ERROR: maximum number of modules reached\n");
 				break;
 			}
 			usage(prog, -1);
@@ -537,28 +547,32 @@ main(int argc, char **av)
 			}
 			break;
 		case 'r':
-			setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_readonly", "yes");
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_readonly",
+								   "yes");
 			break;
-		case 's': {
+		case 's':{
 			/* should add option to a list */
 			/* coverity[var_deref_model] */
 			char *tmp = strchr(optarg, '=');
 
 			if (tmp) {
 				*tmp = '\0';
-				setlen = mo_add_option(&set, setlen, opt_cmdline, optarg, tmp + 1);
+				setlen = mo_add_option(&set, setlen, opt_cmdline, optarg,
+									   tmp + 1);
 			} else
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
-			}
+		}
 			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
 			   it: if -? or --help, exit with 0, else with -1 */
-			usage(prog, strcmp(av[optind - 1], "-?") == 0 || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
+			usage(prog, strcmp(av[optind - 1], "-?") == 0
+				  || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
-			fprintf(stderr, "ERROR: getopt returned character "
-				"code '%c' 0%o\n", c, (unsigned) (uint8_t) c);
+			fprintf(stderr,
+					"ERROR: getopt returned character " "code '%c' 0%o\n", c,
+					(unsigned) (uint8_t) c);
 			usage(prog, -1);
 		}
 	}
@@ -573,17 +587,20 @@ main(int argc, char **av)
 		mo_print_options(set, setlen);
 
 	if (dbpath && inmemory) {
-		fprintf(stderr, "!ERROR: both dbpath and in-memory must not be set at the same time\n");
+		fprintf(stderr,
+				"!ERROR: both dbpath and in-memory must not be set at the same time\n");
 		exit(1);
 	}
 
 	if (inmemory && readpwdxit) {
-		fprintf(stderr, "!ERROR: cannot have both in-memory and read-password-initialize-and-exit\n");
+		fprintf(stderr,
+				"!ERROR: cannot have both in-memory and read-password-initialize-and-exit\n");
 		exit(1);
 	}
 
 	if (inmemory) {
-		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), true) != GDK_SUCCEED) {
+		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), true) !=
+			GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
 			exit(1);
 		}
@@ -591,12 +608,14 @@ main(int argc, char **av)
 		if (dbpath == NULL) {
 			dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
 			if (dbpath == NULL) {
-				fprintf(stderr, "!ERROR: cannot allocate memory for database directory \n");
+				fprintf(stderr,
+						"!ERROR: cannot allocate memory for database directory \n");
 				exit(1);
 			}
 		}
-		if (BBPaddfarm(dbpath, 1U << PERSISTENT, true) != GDK_SUCCEED ||
-		    BBPaddfarm(dbextra ? dbextra : dbpath, 1U << TRANSIENT, true) != GDK_SUCCEED) {
+		if (BBPaddfarm(dbpath, 1U << PERSISTENT, true) != GDK_SUCCEED
+			|| BBPaddfarm(dbextra ? dbextra : dbpath, 1U << TRANSIENT,
+						  true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add farm\n");
 			exit(1);
 		}
@@ -606,13 +625,14 @@ main(int argc, char **av)
 	if (dbtrace) {
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
 		if (!inmemory && GDKcreatedir(dbtrace) != GDK_SUCCEED) {
-			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
+			fprintf(stderr, "!ERROR: cannot create directory for %s\n",
+					dbtrace);
 			exit(1);
 		}
 		GDKfree(dbtrace);
 	}
 
-	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
+	GDKsetdebug(debug | grpdebug);	/* add the algorithm tracers */
 	if (monet_init(set, setlen, false) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
@@ -621,14 +641,14 @@ main(int argc, char **av)
 	}
 	mo_free_options(set, setlen);
 
-	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED ||
-	    GDKsetenv("monet_release",
+	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED
+		|| GDKsetenv("monet_release",
 #ifdef MONETDB_RELEASE
-		      MONETDB_RELEASE
+					 MONETDB_RELEASE
 #else
-		      "unreleased"
+					 "unreleased"
 #endif
-		    ) != GDK_SUCCEED) {
+		) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: GDKsetenv failed\n");
 		exit(1);
 	}
@@ -642,8 +662,8 @@ main(int argc, char **av)
 		size_t pref;
 		/* "remove" common prefix of configured BIN and LIB
 		 * directories from LIBDIR */
-		for (pref = 0; LIBDIR[pref] != 0 && BINDIR[pref] == LIBDIR[pref]; pref++)
-			;
+		for (pref = 0; LIBDIR[pref] != 0 && BINDIR[pref] == LIBDIR[pref];
+			 pref++) ;
 		const char *libdirs[] = {
 			&LIBDIR[pref],
 			"lib",
@@ -661,8 +681,10 @@ main(int argc, char **av)
 			if (p != NULL) {
 				*p = '\0';
 				for (int i = 0; libdirs[i] != NULL; i++) {
-					int len = snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
-									   binpath, DIR_SEP, libdirs[i], DIR_SEP);
+					int len =
+							snprintf(prmodpath, sizeof(prmodpath),
+									 "%s%c%s%cmonetdb5",
+									 binpath, DIR_SEP, libdirs[i], DIR_SEP);
 					if (len == -1 || len >= FILENAME_MAX)
 						continue;
 					if (MT_stat(prmodpath, &sb) == 0) {
@@ -682,8 +704,8 @@ main(int argc, char **av)
 				   "allow finding modules\n");
 			fflush(stdout);
 		}
-		if (modpath != NULL &&
-		    GDKsetenv("monet_mod_path", modpath) != GDK_SUCCEED) {
+		if (modpath != NULL
+			&& GDKsetenv("monet_mod_path", modpath) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: GDKsetenv failed\n");
 			exit(1);
 		}
@@ -713,10 +735,16 @@ main(int argc, char **av)
 		(void) sigemptyset(&sa.sa_mask);
 		sa.sa_flags = 0;
 		sa.sa_handler = handler;
-		if (sigaction(SIGINT, &sa, NULL) == -1 ||
-		    sigaction(SIGQUIT, &sa, NULL) == -1 ||
-		    sigaction(SIGTERM, &sa, NULL) == -1) {
+		if (sigaction(SIGINT, &sa, NULL) == -1
+			|| sigaction(SIGQUIT, &sa, NULL) == -1
+			|| sigaction(SIGTERM, &sa, NULL) == -1) {
 			fprintf(stderr, "!unable to create signal handlers\n");
+		}
+		(void) sigemptyset(&sa.sa_mask);
+		sa.sa_flags = 0;
+		sa.sa_handler = handler_usr1;
+		if (sigaction(SIGUSR1, &sa, NULL) == -1) {
+			fprintf(stderr, "!unable to create signal handler for SIGUSR1\n");
 		}
 	}
 #else
@@ -724,14 +752,16 @@ main(int argc, char **av)
 	if (!SetConsoleCtrlHandler(winhandler, TRUE))
 		fprintf(stderr, "!unable to create console control handler\n");
 #else
-	if(signal(SIGINT, handler) == SIG_ERR)
+	if (signal(SIGINT, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
 #ifdef SIGQUIT
-	if(signal(SIGQUIT, handler) == SIG_ERR)
+	if (signal(SIGQUIT, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
 #endif
-	if(signal(SIGTERM, handler) == SIG_ERR)
+	if (signal(SIGTERM, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
+	if (signal(SIGUSR1, handler_usr1) == SIG_ERR)
+		fprintf(stderr, "!unable to create signal handler for SIGUSR1\n");
 #endif
 #endif
 
@@ -757,24 +787,24 @@ main(int argc, char **av)
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
 			if ((secretf = MT_fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
-				fprintf(stderr,
-					"unable to open vault_key_file %s: %s\n",
-					GDKgetenv("monet_vault_key"), strerror(errno));
+				fprintf(stderr, "unable to open vault_key_file %s: %s\n",
+						GDKgetenv("monet_vault_key"), strerror(errno));
 				/* don't show this as a crash */
 				msab_registerStop();
 				exit(1);
 			}
 			len = fread(secret, 1, sizeof(secret), secretf);
 			secret[len] = '\0';
-			len = strlen(secret); /* secret can contain null-bytes */
+			len = strlen(secret);	/* secret can contain null-bytes */
 			if (len == 0) {
 				fprintf(stderr, "vault key has zero-length!\n");
 				/* don't show this as a crash */
 				msab_registerStop();
 				exit(1);
 			} else if (len < 5) {
-				fprintf(stderr, "#warning: your vault key is too short "
-								"(%zu), enlarge your vault key!\n", len);
+				fprintf(stderr,
+						"#warning: your vault key is too short "
+						"(%zu), enlarge your vault key!\n", len);
 			}
 			fclose(secretf);
 		}
@@ -801,7 +831,8 @@ main(int argc, char **av)
 	}
 
 	modules[mods++] = 0;
-	if (mal_init(modules, false, readpwdxit ? secret : NULL, mercurial_revision())) {
+	if (mal_init
+		(modules, false, readpwdxit ? secret : NULL, mercurial_revision())) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();
@@ -827,7 +858,13 @@ main(int argc, char **av)
 
 	/* why busy wait ? */
 	while (!interrupted && !GDKexiting()) {
-		MT_sleep_ms(100);
+		if (usr1_interrupted) {
+			usr1_interrupted = 0;
+			/* print some useful information */
+			GDKprintinfo();
+			fflush(stdout);
+		}
+		MT_sleep_ms(100);		/* pause(), except for sys.shutdown() */
 	}
 
 	/* mal_exit calls exit, so statements after this call will

@@ -31,15 +31,15 @@
 
 QueryQueue QRYqueue = NULL;
 size_t qsize = 0;
-static oid qtag= 1;		// A unique query identifier
+static oid qtag = 1;			// A unique query identifier
 
-UserStats  USRstats = NULL;
+UserStats USRstats = NULL;
 size_t usrstatscnt = 0;
 
 static inline void
 clearUSRstats(size_t idx)
 {
-	USRstats[idx] = (struct USERSTAT) {0};
+	USRstats[idx] = (struct USERSTAT) { 0 };
 }
 
 /*
@@ -59,34 +59,40 @@ getUSRstatsIdx(MalBlkPtr mb, oid user)
 			return i;
 
 	/* expand USRstats */
-	tmp = (UserStats) GDKrealloc(USRstats, sizeof (struct USERSTAT) * (size_t) (usrstatscnt += MAL_MAXCLIENTS));
+	tmp = (UserStats) GDKrealloc(USRstats,
+								 sizeof(struct USERSTAT) *
+								 (size_t) (usrstatscnt += MAL_MAXCLIENTS));
 	if (tmp == NULL) {
 		/* It's not a fatal error if we can't extend USRstats.
 		 * We don't want to affect existing USRstats. */
-		addMalException(mb,"getUSRstatsIdx" MAL_MALLOC_FAIL);
+		addMalException(mb, "getUSRstatsIdx" MAL_MALLOC_FAIL);
 		return (size_t) -1;
 	}
 	USRstats = tmp;
-	for ( ; i < usrstatscnt; i++)
+	for (; i < usrstatscnt; i++)
 		clearUSRstats(i);
 	return usrstatscnt - MAL_MAXCLIENTS;
 }
 
 static void
-updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t finished, str query)
+updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started,
+				time_t finished, str query)
 {
 	// don't keep stats for context without username
- 	if (cntxt->username == NULL)
- 		return;
+	if (cntxt->username == NULL)
+		return;
 
 	size_t idx = getUSRstatsIdx(mb, cntxt->user);
 
 	if (idx == (size_t) -1) {
-		addMalException(mb, "updateUserStats" "Failed to get an entry in user statistics");
+		addMalException(mb,
+						"updateUserStats"
+						"Failed to get an entry in user statistics");
 		return;
 	}
 
-	if (USRstats[idx].username == NULL || USRstats[idx].user != cntxt->user || strcmp(USRstats[idx].username, cntxt->username) != 0) {
+	if (USRstats[idx].username == NULL || USRstats[idx].user != cntxt->user
+		|| strcmp(USRstats[idx].username, cntxt->username) != 0) {
 		GDKfree(USRstats[idx].username);
 		GDKfree(USRstats[idx].maxquery);
 		clearUSRstats(idx);
@@ -112,7 +118,7 @@ dropUSRstats(void)
 {
 	size_t i;
 	MT_lock_set(&mal_delayLock);
-	for(i = 0; i < usrstatscnt; i++) {
+	for (i = 0; i < usrstatscnt; i++) {
 		GDKfree(USRstats[i].username);
 		GDKfree(USRstats[i].maxquery);
 		clearUSRstats(i);
@@ -127,10 +133,11 @@ static str
 isaSQLquery(MalBlkPtr mb)
 {
 	if (mb) {
-		for (int i = 1; i< mb->stop; i++) {
-			InstrPtr p = getInstrPtr(mb,i);
-			if (getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
-				return getVarConstant(mb,getArg(p,1)).val.sval;
+		for (int i = 1; i < mb->stop; i++) {
+			InstrPtr p = getInstrPtr(mb, i);
+			if (getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0
+				&& idcmp(getFunctionId(p), "define") == 0)
+				return getVarConstant(mb, getArg(p, 1)).val.sval;
 		}
 	}
 	return NULL;
@@ -147,14 +154,14 @@ isaSQLquery(MalBlkPtr mb)
 static inline void
 clearQRYqueue(size_t idx)
 {
-	QRYqueue[idx] = (struct QRYQUEUE) {0};
+	QRYqueue[idx] = (struct QRYQUEUE) { 0 };
 }
 
 static void
 dropQRYqueue(void)
 {
 	MT_lock_set(&mal_delayLock);
-	for(size_t i = 0; i < qsize; i++) {
+	for (size_t i = 0; i < qsize; i++) {
 		GDKfree(QRYqueue[i].query);
 		GDKfree(QRYqueue[i].username);
 		clearQRYqueue(i);
@@ -192,33 +199,35 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 
 	if (USRstats == NULL) {
 		usrstatscnt = MAL_MAXCLIENTS;
-		USRstats = (UserStats) GDKzalloc( sizeof (struct USERSTAT) * usrstatscnt);
+		USRstats = (UserStats) GDKzalloc(sizeof(struct USERSTAT) * usrstatscnt);
 		if (USRstats == NULL) {
-			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
+			addMalException(mb, "runtimeProfileInit" MAL_MALLOC_FAIL);
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
 	}
 
 	if (QRYqueue == NULL) {
-		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= MAL_MAXCLIENTS));
+		QRYqueue = (QueryQueue) GDKzalloc(sizeof(struct QRYQUEUE) *
+										  (qsize = MAL_MAXCLIENTS));
 
 		if (QRYqueue == NULL) {
-			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
+			addMalException(mb, "runtimeProfileInit" MAL_MALLOC_FAIL);
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
 	}
 	for (i = 0; i < qsize; i++) {
-		paused += QRYqueue[i].status && (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
+		paused += QRYqueue[i].status && (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r');	/* running, prepared or paused */
 	}
 	if (qsize - paused < (size_t) MAL_MAXCLIENTS) {
 		qsize += MAL_MAXCLIENTS;
 		QueryQueue tmp;
-		tmp = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
+		tmp = (QueryQueue) GDKrealloc(QRYqueue,
+									  sizeof(struct QRYQUEUE) * qsize);
 		if (tmp == NULL) {
-			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-			qsize -= MAL_MAXCLIENTS; /* undo increment */
+			addMalException(mb, "runtimeProfileInit" MAL_MALLOC_FAIL);
+			qsize -= MAL_MAXCLIENTS;	/* undo increment */
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
@@ -226,7 +235,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		for (i = qsize - MAL_MAXCLIENTS; i < qsize; i++)
 			clearQRYqueue(i);
 	}
-
 	// add new invocation
 	for (i = 0; i < qsize; i++) {
 		size_t j = qlast;
@@ -234,22 +242,21 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			qlast = 0;
 		if (QRYqueue[j].stk == NULL ||
 			QRYqueue[j].status == NULL ||
-			(QRYqueue[j].status[0] != 'r' &&
-			 QRYqueue[j].status[0] != 'p')) {
+			(QRYqueue[j].status[0] != 'r' && QRYqueue[j].status[0] != 'p')) {
 			QRYqueue[j].mb = mb;
 			QRYqueue[j].tag = stk->tag = mb->tag;
-			QRYqueue[j].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
+			QRYqueue[j].stk = stk;	// for status pause 'p'/running '0'/ quiting 'q'
 			QRYqueue[j].finished = 0;
 			QRYqueue[j].start = time(0);
 			q = isaSQLquery(mb);
 			GDKfree(QRYqueue[j].query);
-			QRYqueue[j].query = GDKstrdup(q); /* NULL in, NULL out */
+			QRYqueue[j].query = GDKstrdup(q);	/* NULL in, NULL out */
 			GDKfree(QRYqueue[j].username);
 			if (!GDKembedded())
 				QRYqueue[j].username = GDKstrdup(cntxt->username);
 			QRYqueue[j].idx = cntxt->idx;
 			/* give the MB upperbound by addition of 1 MB */
-			QRYqueue[j].memory = 1 + (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
+			QRYqueue[j].memory = 1 + (int) (stk->memory / LL_CONSTANT(1048576));	/* Convert to MB */
 			QRYqueue[j].workers = (int) 1;	/* this is the first one */
 			QRYqueue[j].status = "running";
 			QRYqueue[j].cntxt = cntxt;
@@ -288,12 +295,13 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			QRYqueue[i].finished = time(0);
 			QRYqueue[i].workers = (int) ATOMIC_GET(&mb->workers);
 			/* give the MB upperbound by addition of 1 MB */
-			QRYqueue[i].memory = 1 + (int)(mb->memory / LL_CONSTANT(1048576));
+			QRYqueue[i].memory = 1 + (int) (mb->memory / LL_CONSTANT(1048576));
 			QRYqueue[i].cntxt = NULL;
 			QRYqueue[i].stk = NULL;
 			QRYqueue[i].mb = NULL;
 			QRYqueue[i].ticks = GDKusec() - QRYqueue[i].ticks;
-			updateUserStats(cntxt, mb, QRYqueue[i].ticks, QRYqueue[i].start, QRYqueue[i].finished, QRYqueue[i].query);
+			updateUserStats(cntxt, mb, QRYqueue[i].ticks, QRYqueue[i].start,
+							QRYqueue[i].finished, QRYqueue[i].query);
 			// assume that the user is now idle
 			MT_lock_unset(&mal_delayLock);
 			MT_lock_set(&mal_contextLock);
@@ -310,11 +318,15 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	if (!found) {
 		assert(0);
 		TRC_INFO_IF(MAL_SERVER) {
-			TRC_INFO_ENDIF(MAL_SERVER, "runtimeProfilerFinish: stk (%p) not found in QRYqueue", stk);
+			TRC_INFO_ENDIF(MAL_SERVER,
+						   "runtimeProfilerFinish: stk (%p) not found in QRYqueue",
+						   stk);
 			for (i = 0; i < qsize; i++) {
 				// print some info. of queries not "finished"
 				if (strcmp(QRYqueue[i].status, "finished") != 0) {
-					TRC_INFO_ENDIF(MAL_SERVER, "QRYqueue[%zu]: stk(%p), tag("OIDFMT"), username(%s), start(%ld), status(%s), query(%s)",
+					TRC_INFO_ENDIF(MAL_SERVER,
+								   "QRYqueue[%zu]: stk(%p), tag(" OIDFMT
+								   "), username(%s), start(%ld), status(%s), query(%s)",
 								   i, QRYqueue[i].stk, QRYqueue[i].tag,
 								   QRYqueue[i].username, QRYqueue[i].start,
 								   QRYqueue[i].status, QRYqueue[i].query);
@@ -343,13 +355,14 @@ Workingset workingset[THREADS];
 
 /* At the start of each MAL stmt */
 void
-runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
+runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+					RuntimeProfile prof)
 {
 	int tid = THRgettid();
 	lng clk = GDKusec();
 
 	assert(pci);
-	/* keep track on the instructions taken in progress for stethoscope*/
+	/* keep track on the instructions taken in progress for stethoscope */
 	if (tid > 0 && tid <= THREADS) {
 		tid--;
 		if (profilerStatus) {
@@ -374,31 +387,33 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 
 /* At the end of each MAL stmt */
 void
-runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
+runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+				   RuntimeProfile prof)
 {
 	int tid = THRgettid();
 	lng ticks = GDKusec();
 
-	/* keep track on the instructions in progress*/
+	/* keep track on the instructions in progress */
 	if (tid > 0 && tid <= THREADS) {
 		tid--;
 		if (profilerStatus) {
 			MT_lock_set(&mal_profileLock);
-			workingset[tid] = (struct WORKINGSET) {0};
+			workingset[tid] = (struct WORKINGSET) { 0 };
 			MT_lock_unset(&mal_profileLock);
-		} else{
-			workingset[tid] = (struct WORKINGSET) {0};
+		} else {
+			workingset[tid] = (struct WORKINGSET) { 0 };
 		}
 	}
 
-	if (profilerStatus > 0 )
-		profilerEvent(&(struct MalEvent) {cntxt, mb, stk, pci, ticks, ticks - prof->ticks},
+	if (profilerStatus > 0)
+		profilerEvent(&(struct MalEvent) { cntxt, mb, stk, pci, ticks,
+					  ticks - prof->ticks },
 					  NULL);
 	if (cntxt->sqlprofiler)
 		sqlProfilerEvent(cntxt, mb, stk, pci, ticks, ticks - prof->ticks);
 	if (profilerStatus < 0) {
 		/* delay profiling until you encounter start of MAL function */
-		if (getInstrPtr(mb,0) == pci)
+		if (getInstrPtr(mb, 0) == pci)
 			profilerStatus = 1;
 	}
 }
@@ -414,7 +429,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 lng
 getBatSpace(BAT *b)
 {
-	lng space=0;
+	lng space = 0;
 	if (b == NULL)
 		return 0;
 	space += BATcount(b) << b->tshift;

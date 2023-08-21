@@ -43,28 +43,29 @@
 #include "mal_interpreter.h"
 #include "opt_prelude.h"
 
-#define optcall(TEST, OPT) \
-	do { \
-		if (TEST) { \
-			if ((msg = OPT(cntxt, mb, stk, pci)) != MAL_SUCCEED) \
-				goto bailout; \
+#define optcall(TEST, OPT)												\
+	do {																\
+		if (TEST) {														\
+			if ((msg = OPT(cntxt, mb, stk, pci)) != MAL_SUCCEED)		\
+				goto bailout;											\
 			actions += *(int*)getVarValue(mb, getArg(pci, pci->argc - 1)); \
 			delArgument(pci, pci->argc - 1); /* keep number of argc low, so 'pci' is not reallocated */ \
-		} \
+		}																\
 	} while (0)
 
 str
-OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							 InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int generator = 0, multiplex = 0, actions = 0;
 
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
-	for( int i=0; i<mb->stop; i++){
-		InstrPtr q = getInstrPtr(mb,i);
-		if( getModuleId(q) == generatorRef)
+	for (int i = 0; i < mb->stop; i++) {
+		InstrPtr q = getInstrPtr(mb, i);
+		if (getModuleId(q) == generatorRef)
 			generator = 1;
-		if ( getFunctionId(q) == multiplexRef)
+		if (getFunctionId(q) == multiplexRef)
 			multiplex = 1;
 	}
 
@@ -81,24 +82,25 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
-	/* keep actions taken as a fake argument*/
-bailout:
+	/* keep actions taken as a fake argument */
+  bailout:
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }
 
 str
-OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							 InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int generator = 0, multiplex = 0, actions = 0;
 
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
-	for( int i=0; i<mb->stop; i++){
-		InstrPtr q = getInstrPtr(mb,i);
-		if( getModuleId(q) == generatorRef)
+	for (int i = 0; i < mb->stop; i++) {
+		InstrPtr q = getInstrPtr(mb, i);
+		if (getModuleId(q) == generatorRef)
 			generator = 1;
-		if ( getFunctionId(q) == multiplexRef)
+		if (getFunctionId(q) == multiplexRef)
 			multiplex = 1;
 	}
 
@@ -134,8 +136,8 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
-	/* keep actions taken as a fake argument*/
-bailout:
+	/* keep actions taken as a fake argument */
+  bailout:
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }

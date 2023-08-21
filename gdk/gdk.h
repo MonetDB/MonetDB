@@ -355,6 +355,13 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #include "stream.h"
 #include "mstring.h"
 
+#ifdef HAVE_RTREE
+#ifndef SIZEOF_RTREE_COORD_T
+#define SIZEOF_RTREE_COORD_T 4
+#endif
+#include <rtree.h>
+#endif
+
 #undef MIN
 #undef MAX
 #define MAX(A,B)	((A)<(B)?(B):(A))
@@ -567,6 +574,10 @@ typedef struct Hash Hash;
 typedef struct Imprints Imprints;
 typedef struct Strimps Strimps;
 
+#ifdef HAVE_RTREE
+typedef struct RTree RTree;
+#endif
+
 /*
  * @+ Binary Association Tables
  * Having gone to the previous preliminary definitions, we will now
@@ -735,6 +746,9 @@ typedef struct {
 	BUN baseoff;		/* offset in heap->base (in whole items) */
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
+#ifdef HAVE_RTREE
+	RTree *rtree;		/* rtree geometric index */
+#endif
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
 	Strimps *strimps;	/* string imprint index  */
@@ -792,7 +806,7 @@ typedef struct BAT {
 	 batTransient:1,	/* should the BAT persist on disk? */
 	 batCopiedtodisk:1;	/* once written */
 	uint16_t selcnt;	/* how often used in equi select without hash */
-	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
+	uint16_t unused;	/* value=0 for now (sneakily used by mat.c) */
 
 	/* delta status administration */
 	BUN batInserted;	/* start of inserted elements */
@@ -833,6 +847,9 @@ typedef struct BAT {
 #define tsink		T.sink
 #define tprops		T.props
 #define tstrimps	T.strimps
+#ifdef HAVE_RTREE
+#define trtree		T.rtree
+#endif
 
 #define TSKdestroy(b) if (b->tsink && b->tsink->destroy) { b->tsink->destroy(b->tsink); b->tsink = NULL; }
 #define TSKfree(b)    TSKdestroy(b)
@@ -1640,20 +1657,20 @@ BATsettrivprop(BAT *b)
 static inline void
 BATnegateprops(BAT *b)
 {
-    /* disable all properties here */
-    b->tnonil = false;
-    b->tnil = false;
-    if (b->ttype) {
-        b->tsorted = false;
-        b->trevsorted = false;
-        b->tnosorted = 0;
-        b->tnorevsorted = 0;
-    }
-    b->tseqbase = oid_nil;
-    b->tkey = false;
-    b->tnokey[0] = 0;
-    b->tnokey[1] = 0;
-    b->tmaxpos = b->tminpos = BUN_NONE;
+	/* disable all properties here */
+	b->tnonil = false;
+	b->tnil = false;
+	if (b->ttype) {
+		b->tsorted = false;
+		b->trevsorted = false;
+		b->tnosorted = 0;
+		b->tnorevsorted = 0;
+	}
+	b->tseqbase = oid_nil;
+	b->tkey = false;
+	b->tnokey[0] = 0;
+	b->tnokey[1] = 0;
+	b->tmaxpos = b->tminpos = BUN_NONE;
 }
 
 /*
@@ -1896,6 +1913,28 @@ gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 gdk_export void STRMPdestroy(BAT *b);
 gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATsetstrimps(BAT *b);
+
+/* Rtree structure functions */
+#ifdef HAVE_RTREE
+//TODO REMOVE
+typedef struct mbr_t {
+	float xmin;
+	float ymin;
+	float xmax;
+	float ymax;
+
+} mbr_t;
+
+gdk_export bool RTREEexists(BAT *b);
+gdk_export bool RTREEexists_bid(bat *bid);
+gdk_export gdk_return BATrtree(BAT *wkb, BAT* mbr);
+gdk_export BUN* RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit);
+gdk_export void RTREEdecref(BAT *b);
+gdk_export void RTREEincref(BAT *b);
+#endif
+
+gdk_export void RTREEdestroy(BAT *b);
+gdk_export void RTREEfree(BAT *b);
 
 /* The ordered index structure */
 
@@ -2195,7 +2234,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 		if (!(f)) {						\
 			MT_lock_set(&(x)->theaplock);			\
 			if ((x)->batRestricted == BAT_READ ||		\
-		  	   ((ATOMIC_GET(&(x)->theap->refs) & HEAPREFS) > 1)) { \
+			   ((ATOMIC_GET(&(x)->theap->refs) & HEAPREFS) > 1)) { \
 				GDKerror("access denied to %s, aborting.\n", BATgetId(x)); \
 				MT_lock_unset(&(x)->theaplock);		\
 				return (e);				\
@@ -2407,20 +2446,32 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
  * on each iteration */
 #define TIMEOUT_LOOP_IDX(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
-			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
+			if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
+				TIMEOFFSET = -1;			\
+				break;					\
+			} else						\
+				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
  * incrementing it on each iteration */
 #define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
-			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
+			if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
+				TIMEOFFSET = -1;			\
+				break;					\
+			} else						\
+				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* there is no user-visible loop variable */
 #define TIMEOUT_LOOP(REPEATS, TIMEOFFSET)				\
-	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
-		for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
+	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
+		if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
+			TIMEOFFSET = -1;				\
+			break;						\
+		} else							\
+			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
 
 /* break out of the loop (cannot use do/while trick here) */
 #define TIMEOUT_LOOP_BREAK			\

@@ -18,19 +18,19 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	BAT *b;
 	BUN c;
 	size_t _s;
-	BATiter bi = {0};
+	BATiter bi;
 	const void *p = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "sql.zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
 	c = BATcount(b);
 	if (c == 0) {
+		bi = bat_iterator(NULL);
 		p = ATOMnilptr(b->ttype);
 	} else if (c == 1 || (c > 1 && *err == false)) {
 		bi = bat_iterator(b);
 		p = BUNtail(bi, 0);
 	} else {
-		p = NULL;
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.zero_or_one", SQLSTATE(21000) "Cardinality violation, scalar value expected");
 	}
@@ -41,8 +41,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 		_s = ATOMlen(ATOMtype(b->ttype), p);
 		*(ptr *) ret = GDKmalloc(_s);
 		if (*(ptr *) ret == NULL) {
-			if (bi.b)
-				bat_iterator_end(&bi);
+			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.zero_or_one", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -50,8 +49,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		if ((*(BAT **) ret = BATdescriptor(bid)) == NULL){
-			if (bi.b)
-				bat_iterator_end(&bi);
+			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
 		}
@@ -70,8 +68,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	} else {
 		memcpy(ret, p, _s);
 	}
-	if (bi.b)
-		bat_iterator_end(&bi);
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -898,7 +895,7 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (bret) {
 		if (!(res = COLnew(r->hseqbase, TYPE_bit, o, TRANSIENT))) {
 			msg = createException(SQL, "sql.all <>", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout1;
 		}
 		bit *restrict res_l = (bit*) Tloc(res, 0);
 
@@ -990,6 +987,7 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+  bailout1:
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
 

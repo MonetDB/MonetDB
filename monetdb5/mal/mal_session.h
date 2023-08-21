@@ -14,9 +14,12 @@
 #include "mal_client.h"
 #include "mal_resolve.h"
 
-mal_export str malBootstrap(char *modules[], bool embedded, const char *initpasswd);
+mal_export str malBootstrap(char *modules[], bool embedded,
+							const char *initpasswd);
 mal_export str MSinitClientPrg(Client cntxt, const char *mod, const char *nme);
-mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize);
+mal_export void MSscheduleClient(str command, str challenge, bstream *fin,
+								 stream *fout, protocol_version protocol,
+								 size_t blocksize);
 
 mal_export str MALinitClient(Client c);
 mal_export str MALexitClient(Client c);

@@ -541,7 +541,7 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 						else
 							res = LOG_ERR;
 					} else if (BUNappend(uid, h, true) != GDK_SUCCEED ||
-					   	BUNappend(r, t, true) != GDK_SUCCEED)
+						BUNappend(r, t, true) != GDK_SUCCEED)
 						res = LOG_ERR;
 				}
 			} else {
@@ -1175,7 +1175,8 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 				err = LOG_ERR;
 			else
 				err = log_read_updates(lg, tr, &l, name, tpe, id, pax);
-		} 	break;
+			break;
+		}
 		case LOG_CREATE:
 			if (name == NULL || tr == NULL)
 				err = LOG_EOF;

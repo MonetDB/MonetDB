@@ -36,6 +36,15 @@ with tempfile.TemporaryDirectory() as farm_dir:
             mdb.execute("""COPY 15000 RECORDS INTO orders from r'{}/sql/benchmarks/tpch/SF-0.01/orders.tbl' USING DELIMITERS '|','\n','"';""".format(os.getenv('TSTSRCBASE'))).assertSucceeded()
             mdb.execute("""COPY 15000 RECORDS INTO orders from r'{}/sql/benchmarks/tpch/SF-0.01/orders.tbl' USING DELIMITERS '|','\n','"';""".format(os.getenv('TSTSRCBASE'))).assertSucceeded()
             mdb.execute("""COPY 15000 RECORDS INTO orders from r'{}/sql/benchmarks/tpch/SF-0.01/orders.tbl' USING DELIMITERS '|','\n','"';""".format(os.getenv('TSTSRCBASE'))).assertSucceeded()
+        s.communicate()
+
+    with process.server(mapiport='0', dbname='db1',
+                        dbfarm=fdir,
+                        stdin=process.PIPE,
+                        stdout=process.PIPE,
+                        stderr=process.PIPE) as s:
+        with SQLTestCase() as mdb:
+            mdb.connect(database='db1', port=s.dbport, username='monetdb', password='monetdb')
             # Create strimp
             mdb.execute("ALTER TABLE orders SET READ ONLY;")
             mdb.execute("CREATE IMPRINTS INDEX o_comment_strimp ON orders(o_comment);")

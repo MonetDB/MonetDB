@@ -32,11 +32,6 @@ typedef struct {
 
 typedef struct {
 	PyObject_HEAD Client cntxt;
-	bit mapped; /* indicates whether or not the connection is in a forked
-				 * process
-				 * (i.e. have to use interprocess communication to transfer
-				 * query results)
-				 */
 	QueryStruct *query_ptr;
 	int query_sem;
 } Py_ConnectionObject;
@@ -46,8 +41,7 @@ extern PyTypeObject Py_ConnectionType;
 #define Py_Connection_Check(op) (Py_TYPE(op) == &Py_ConnectionType)
 #define Py_Connection_CheckExact(op) (Py_TYPE(op) == &Py_ConnectionType)
 
-PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
-							   int query_sem);
+PyObject *Py_Connection_Create(Client cntxt, QueryStruct *query_ptr, int query_sem);
 
 str _connection_init(void);
 str _connection_query(Client cntxt, const char *query, res_table **result);

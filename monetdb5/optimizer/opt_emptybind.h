@@ -13,6 +13,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-extern str OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+									  InstrPtr p);
 
 #endif

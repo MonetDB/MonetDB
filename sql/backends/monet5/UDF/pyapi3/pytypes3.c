@@ -228,27 +228,33 @@ int BatType_ToPyType(int type)
 
 bool PyType_IsPandasDataFrame(PyObject *object)
 {
-	PyObject *str = PyObject_Str(PyObject_Type(object));
+	PyObject *type = PyObject_Type(object);
+	PyObject *str = PyObject_Str(type);
 	bool ret = strcmp(PyUnicode_AsUTF8(str),
 					  "<class 'pandas.core.frame.DataFrame'>") == 0;
 	Py_DECREF(str);
+	Py_DECREF(type);
 	return ret;
 }
 
 bool PyType_IsNumpyMaskedArray(PyObject *object)
 {
-	PyObject *str = PyObject_Str(PyObject_Type(object));
+	PyObject *type = PyObject_Type(object);
+	PyObject *str = PyObject_Str(type);
 	bool ret = strcmp(PyUnicode_AsUTF8(str),
 					  "<class 'numpy.ma.core.MaskedArray'>") == 0;
 	Py_DECREF(str);
+	Py_DECREF(type);
 	return ret;
 }
 
 bool PyType_IsLazyArray(PyObject *object)
 {
-	PyObject *str = PyObject_Str(PyObject_Type(object));
+	PyObject *type = PyObject_Type(object);
+	PyObject *str = PyObject_Str(type);
 	bool ret = strcmp(PyUnicode_AsUTF8(str), "<class 'lazyarray'>") == 0;
 	Py_DECREF(str);
+	Py_DECREF(type);
 	return ret;
 }
 

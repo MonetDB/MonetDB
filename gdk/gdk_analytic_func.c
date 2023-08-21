@@ -90,7 +90,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree,
 		TPE *rb = (TPE*)Tloc(r, 0);				\
 		if (p) {						\
 			while (i < cnt) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 ntile##IMP##TPE:							\
 					NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION); \
 				}					\
@@ -1191,7 +1191,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		TPE *restrict bp = (TPE*)bi.base, *rb = (TPE*)Tloc(r, 0); \
 		if (p) {						\
 			while (i < cnt) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 minmaxfixed##TPE##IMP:							\
 					ANALYTICAL_MIN_MAX_CALC_FIXED_##IMP(TPE, MIN_MAX); \
 				}					\
@@ -1240,7 +1240,7 @@ minmaxfixed##TPE##IMP:							\
 		default: {						\
 			if (p) {					\
 				while (i < cnt) {			\
-					if (np[i]) 	{		\
+					if (np[i]) {			\
 minmaxvarsized##IMP:							\
 						ANALYTICAL_MIN_MAX_CALC_OTHERS_##IMP(GT_LT); \
 					}				\
@@ -1289,7 +1289,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 		case 5: /* all rows */					\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, ALL_ROWS); \
 			break;						\
-		case 6: /* current row */ 				\
+		case 6: /* current row */				\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW); \
 			break;						\
 		default:						\
@@ -1552,7 +1552,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		TPE *restrict bp = (TPE*) bheap;			\
 		if (p) {						\
 			while (i < cnt) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 count##TPE##IMP:							\
 					ANALYTICAL_COUNT_FIXED_##IMP(TPE); \
 				}					\
@@ -1601,7 +1601,7 @@ count##TPE##IMP:							\
 		default: {						\
 			if (p) {					\
 				while (i < cnt) {			\
-					if (np[i]) 	{		\
+					if (np[i]) {			\
 countothers##IMP:							\
 						ANALYTICAL_COUNT_OTHERS_##IMP; \
 					}				\
@@ -1817,7 +1817,7 @@ cleanup:
 		TPE2 *rb = (TPE2*)Tloc(r, 0);			\
 		if (p) {					\
 			while (i < cnt) {			\
-				if (np[i]) 	{		\
+				if (np[i]) {			\
 sum##TPE1##TPE2##IMP:						\
 					IMP(TPE1, TPE2);	\
 				}				\
@@ -2317,7 +2317,7 @@ nosupport:
 		TPE2 *rb = (TPE2*)Tloc(r, 0);				\
 		if (p) {						\
 			while (i < cnt) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 prod##TPE1##TPE2##IMP:							\
 					IMP(TPE1, TPE2, TPE3_OR_REAL_IMP); \
 				}					\

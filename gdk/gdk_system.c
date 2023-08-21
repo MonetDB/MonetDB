@@ -140,7 +140,7 @@ GDKlockstatistics(int what)
 	int n = 0;
 
 	if (ATOMIC_TAS(&GDKlocklistlock) != 0) {
-		fprintf(stderr, "GDKlocklistlock is set, so cannot access lock list\n");
+		printf("GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
 	if (what == -1) {
@@ -153,27 +153,28 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	fprintf(stderr, "%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-		"lock name", "count", "content", "sleep",
-		"locked", "locker", "thread");
+	printf("%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+	       "lock name", "count", "content", "sleep",
+	       "locked", "locker", "thread");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && ATOMIC_GET(&l->contention)) ||
 		    (what == 3 && lock_isset(l)))
-			fprintf(stderr, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
-				l->name, l->count,
-				(size_t) ATOMIC_GET(&l->contention),
-				(size_t) ATOMIC_GET(&l->sleep),
-				lock_isset(l) ? "locked" : "",
-				l->locker ? l->locker : "",
-				l->thread ? l->thread : "");
+			printf("%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
+			       l->name, l->count,
+			       (size_t) ATOMIC_GET(&l->contention),
+			       (size_t) ATOMIC_GET(&l->sleep),
+			       lock_isset(l) ? "locked" : "",
+			       l->locker ? l->locker : "",
+			       l->thread ? l->thread : "");
 	}
-	fprintf(stderr, "Number of locks: %d\n", n);
-	fprintf(stderr, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
-	fprintf(stderr, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
-	fprintf(stderr, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
+	printf("Number of locks: %d\n", n);
+	printf("Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
+	printf("Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
+	printf("Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
+	fflush(stdout);
 	ATOMIC_CLEAR(&GDKlocklistlock);
 }
 
@@ -199,7 +200,7 @@ static struct winthread {
 	char algorithm[512];	/* the algorithm used in the last operation */
 	size_t algolen;		/* length of string in .algorithm */
 	ATOMIC_TYPE exited;
-	bool detached:1, waiting:1;
+	bool detached:1, waiting:1, limit_override:1;
 	char threadname[MT_NAME_LEN];
 	QryCtx *qry_ctx;
 } *winthreads = NULL;
@@ -238,7 +239,7 @@ dump_threads(void)
 		TRC_DEBUG_IF(THRD)
 			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
 		else
-			fprintf(stderr, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+			printf("%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
 	}
 	LeaveCriticalSection(&winthread_cs);
 }
@@ -405,8 +406,16 @@ MT_thread_setworking(const char *work)
 		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
-	if (w)
-		w->working = work;
+	if (w) {
+		if (work == NULL)
+			w->working = NULL;
+		else if (strcmp(work, "store locked") == 0)
+			w->limit_override = true;
+		else if (strcmp(work, "store unlocked") == 0)
+			w->limit_override = false;
+		else
+			w->working = work;
+	}
 }
 
 void
@@ -447,7 +456,7 @@ MT_thread_override_limits(void)
 		return false;
 	struct winthread *w = TlsGetValue(threadslot);
 
-	return w && w->working && strcmp(w->working, "store locked") == 0;
+	return w && w->limit_override;
 }
 
 static void
@@ -673,7 +682,7 @@ static struct posthread {
 	pthread_t tid;
 	MT_Id mtid;
 	ATOMIC_TYPE exited;
-	bool detached:1, waiting:1;
+	bool detached:1, waiting:1, limit_override:1;
 	QryCtx *qry_ctx;
 } *posthreads = NULL;
 static struct posthread mainthread = {
@@ -714,7 +723,7 @@ dump_threads(void)
 		TRC_DEBUG_IF(THRD)
 			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
 		else
-			fprintf(stderr, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+			printf("%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
 	}
 	pthread_mutex_unlock(&posthread_lock);
 }
@@ -880,8 +889,16 @@ MT_thread_setworking(const char *work)
 		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
-	if (p)
-		p->working = work;
+	if (p) {
+		if (work == NULL)
+			p->working = NULL;
+		else if (strcmp(work, "store locked") == 0)
+			p->limit_override = true;
+		else if (strcmp(work, "store unlocked") == 0)
+			p->limit_override = false;
+		else
+			p->working = work;
+	}
 }
 
 void
@@ -922,7 +939,7 @@ MT_thread_override_limits(void)
 		return false;
 	struct posthread *p = pthread_getspecific(threadkey);
 
-	return p && p->working && strcmp(p->working, "store locked") == 0;
+	return p && p->limit_override;
 }
 
 #ifdef HAVE_PTHREAD_SIGMASK

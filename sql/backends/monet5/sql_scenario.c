@@ -102,7 +102,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		const char *caller_revision = (const char *) (void *) mb;
 		const char *p = mercurial_revision();
 		if (p && strcmp(p, caller_revision) != 0) {
-			throw(MAL, "sq;.start", "incompatible versions: caller is %s, GDK is %s\n", caller_revision, p);
+			throw(MAL, "sql.start", "incompatible versions: caller is %s, GDK is %s\n", caller_revision, p);
 		}
 	}
 
@@ -757,6 +757,8 @@ handle_error(mvc *m, int pstatus, str msg)
 	else if (new) {
 		newmsg = createException(SQL, "sql.execute", "%s", new);
 		GDKfree(new);
+	} else {
+		newmsg = createException(SQL, "sql.execute", MAL_MALLOC_FAIL);
 	}
 	return newmsg;
 }
@@ -1200,40 +1202,21 @@ SQLchannelcmd(Client c, backend *be)
 #define MAX_QUERY 	(64*1024*1024)
 
 static str
-SQLparser(Client c, backend *be)
+SQLparser_body(Client c, backend *be)
 {
-	assert (be->language != 'X');
 	str msg = MAL_SUCCEED;
 	mvc *m = be->mvc;
 	lng Tbegin = 0, Tend = 0;
 
-	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
-		c->mode = FINISHCLIENT;
-		return msg;
-	}
 	int pstatus = m->session->status;
 
-	/* sqlparse needs sql allocator to be available.  It can be NULL at
-	 * this point if this is a recursive call. */
-	if (!m->sa)
-		m->sa = sa_create(m->pa);
-	if (!m->sa) {
-		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
-	}
-	if (eb_savepoint(&m->sa->eb)) {
-		sa_reset(m->sa);
-
-		throw(SQL, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL " for SQL allocator");
-	}
-
+	int err = 0;
 	m->type = Q_PARSE;
 	m->emode = m_normal;
 	m->emod = mod_none;
 	c->query = NULL;
 	Tbegin = GDKusec();
 
-	int err = 0;
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
@@ -1320,30 +1303,46 @@ SQLparser(Client c, backend *be)
 		be->vtop = oldvtop;
 		be->vid = oldvid;
 		(void)runtimeProfileSetTag(c); /* generate and set the tag in the mal block of the clients current program. */
-		if (m->emode != m_prepare) {
+		if (m->emode != m_prepare || (m->emode == m_prepare && (m->emod & mod_exec) && is_ddl(r->op)) /* direct execution prepare */) {
 			scanner_query_processed(&(m->scanner));
 
 			err = 0;
 			setVarType(c->curprg->def, 0, 0);
-			if (be->subbackend && be->subbackend->check(be->subbackend, r)) {
+			if (m->emode != m_prepare && be->subbackend && be->subbackend->check(be->subbackend, r)) {
 				res_table *rt = NULL;
 				if (be->subbackend->exec(be->subbackend, r, be->result_id++, &rt) == NULL) { /* on error fall back */
+					be->subbackend->reset(be->subbackend);
 					if (rt) {
 						rt->next = be->results;
 						be->results = rt;
 					}
 					return NULL;
 				}
+				be->subbackend->reset(be->subbackend);
 			}
 
 			Tbegin = GDKusec();
 
 			int opt = 0;
-			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
+			if (m->emode == m_prepare && (m->emod & mod_exec)) {
+				/* generated the named parameters for the placeholders */
+				if (backend_dumpstmt(be, c->curprg->def, r->r, !(m->emod & mod_exec), 0, c->query) < 0) {
+					msg = handle_error(m, 0, msg);
+					err = 1;
+					MSresetInstructions(c->curprg->def, oldstop);
+					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				}
+				r = r->l;
+				m->emode = m_normal;
+				m->emod &= ~mod_exec;
+			}
+			if (!err && backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
 				msg = handle_error(m, 0, msg);
 				err = 1;
 				MSresetInstructions(c->curprg->def, oldstop);
 				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				freeException(c->curprg->def->errors);
+				c->curprg->def->errors = NULL;
 			} else
 				opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
 
@@ -1443,6 +1442,7 @@ SQLparser(Client c, backend *be)
 					be->q->name = NULL; /* later remove cleanup from mal from qc code */
 					qc_delete(m->qc, be->q);
 				}
+				be->result_id = be->q->id;
 				be->q = NULL;
 			}
 			if (err)
@@ -1453,11 +1453,49 @@ SQLparser(Client c, backend *be)
 		}
 	}
 finalize:
+	if (m->sa)
+		eb_init(&m->sa->eb); /* exiting the scope where the exception buffer can be used */
 	if (msg) {
 		sqlcleanup(be, 0);
 		c->query = NULL;
 	}
 	return msg;
+}
+
+static str
+SQLparser(Client c, backend *be)
+{
+	mvc *m = be->mvc;
+	char *msg;
+
+	assert (be->language != 'X');
+
+	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
+		c->mode = FINISHCLIENT;
+		return msg;
+	}
+
+	/* sqlparse needs sql allocator to be available.  It can be NULL at
+	 * this point if this is a recursive call. */
+	if (m->sa == NULL)
+		m->sa = sa_create(m->pa);
+	if (m->sa == NULL) {
+		c->mode = FINISHCLIENT;
+		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
+	}
+	if (eb_savepoint(&m->sa->eb)) {
+		msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
+		eb_init(&m->sa->eb);
+		sa_reset(m->sa);
+		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
+			freeException(c->curprg->def->errors);
+			c->curprg->def->errors = NULL;
+		}
+		sqlcleanup(be, 0);
+		c->query = NULL;
+		return msg;
+	}
+	return SQLparser_body(c, be);
 }
 
 str
@@ -1493,8 +1531,10 @@ SQLengine_(Client c)
 	if (msg || c->mode <= FINISHCLIENT)
 		return msg;
 
-	if (be && be->subbackend)
-		be->subbackend->reset(be->subbackend);
+	if (c->curprg->def->stop == 1) {
+		sqlcleanup(be, 0);
+		return NULL;
+	}
 	return SQLengineIntern(c, be);
 }
 

@@ -646,14 +646,26 @@ MT_init(void)
 				break;
 			*p = 0;
 			if (strncmp(buf, "0::", 3) == 0) {
-				size_t l;
-
 				/* cgroup v2 entry */
-				l = strconcat_len(pth, sizeof(pth),
-						  cgr2, buf + 3, "/", NULL);
+				p = stpcpy(pth, cgr2);
+				q = stpcpy(stpcpy(p, buf + 3), "/");
 				/* hard limit */
-				strcpy(pth + l, "memory.max");
+				strcpy(q, "memory.max");
 				f = fopen(pth, "r");
+				while (f == NULL && q > p) {
+					/* go up the hierarchy until we
+					 * find the file or the
+					 * hierarchy runs out */
+					*--q = 0; /* zap the slash */
+					q = strrchr(p, '/');
+					if (q == NULL || q == p) {
+						/* position after the slash */
+						q = p + 1;
+						break;
+					}
+					strcpy(++q, "memory.max");
+					f = fopen(pth, "r");
+				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
@@ -663,7 +675,7 @@ MT_init(void)
 					fclose(f);
 				}
 				/* soft high limit */
-				strcpy(pth + l, "memory.high");
+				strcpy(q, "memory.high");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
@@ -674,7 +686,7 @@ MT_init(void)
 					fclose(f);
 				}
 				/* soft low limit */
-				strcpy(pth + l, "memory.low");
+				strcpy(q, "memory.low");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem > 0 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
@@ -686,7 +698,7 @@ MT_init(void)
 				}
 				/* limit of memory+swap usage
 				 * we use this as maximum virtual memory size */
-				strcpy(pth + l, "memory.swap.max");
+				strcpy(q, "memory.swap.max");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
@@ -1622,10 +1634,14 @@ THRget(int tid)
 static inline uintptr_t
 THRsp(void)
 {
+#if defined(__GNUC__) || defined(__clang__)
+	return (uintptr_t) __builtin_frame_address(0);
+#else
 	int l = 0;
 	uintptr_t sp = (uintptr_t) (&l);
 
 	return sp;
+#endif
 }
 
 static inline Thread
@@ -1900,6 +1916,9 @@ GDKvm_cursize(void)
 #define DEBUG_SPACE	16
 #endif
 
+/* malloc smaller than this aren't subject to the GDK_vm_maxsize test */
+#define SMALL_MALLOC	256
+
 static void *
 GDKmalloc_internal(size_t size, bool clear)
 {
@@ -1920,11 +1939,14 @@ GDKmalloc_internal(size_t size, bool clear)
 		return NULL;
 	}
 #endif
-	if (GDKvm_cursize() + size >= GDK_vm_maxsize &&
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
+	if (size > SMALL_MALLOC &&
+	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
+#endif
 
 	/* pad to multiple of eight bytes and add some extra space to
 	 * write real size in front; when debugging, also allocate
@@ -2022,14 +2044,14 @@ GDKfree(void *s)
 	asize = ((size_t *) s)[-1]; /* how much allocated last */
 
 #if !defined(NDEBUG) && !defined(SANITIZER)
+	size_t *p = s;
 	assert((asize & 2) == 0);   /* check against duplicate free */
+	size_t size = p[-2];
+	assert(((size + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
 	/* check for out-of-bounds writes */
-	{
-		size_t i = ((size_t *) s)[-2]; /* how much asked for last */
-		for (; i < asize - MALLOC_EXTRA_SPACE; i++)
-			assert(((char *) s)[i] == '\xBD');
-	}
-	((size_t *) s)[-1] |= 2; /* indicate area is freed */
+	for (size_t i = size; i < asize - MALLOC_EXTRA_SPACE; i++)
+		assert(((char *) s)[i] == '\xBD');
+	p[-1] |= 2;		/* indicate area is freed */
 
 	/* overwrite memory that is to be freed with a pattern that
 	 * will help us recognize access to already freed memory in
@@ -2048,8 +2070,8 @@ GDKrealloc(void *s, size_t size)
 	size_t nsize, asize;
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	size_t osize;
-	size_t *os;
 #endif
+	size_t *os = s;
 
 	assert(size != 0);
 
@@ -2057,27 +2079,27 @@ GDKrealloc(void *s, size_t size)
 		return GDKmalloc(size);
 
 	nsize = (size + 7) & ~7;
-	asize = ((size_t *) s)[-1]; /* how much allocated last */
+	asize = os[-1];		/* how much allocated last */
 
-	if (nsize > asize &&
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
+	if (size > SMALL_MALLOC &&
+	    nsize > asize &&
 	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
+#endif
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
-	osize = ((size_t *) s)[-2]; /* how much asked for last */
-	{
-		size_t i;
-		for (i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
-			assert(((char *) s)[i] == '\xBD');
-	}
+	osize = os[-2];		/* how much asked for last */
+	assert(((osize + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
+	for (size_t i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
+		assert(((char *) s)[i] == '\xBD');
 	/* if shrinking, write debug pattern into to-be-freed memory */
 	DEADBEEFCHK if (size < osize)
 		memset((char *) s + size, '\xDB', osize - size);
-	os = s;
 	os[-1] |= 2;		/* indicate area is freed */
 #endif
 	s = realloc((char *) s - MALLOC_EXTRA_SPACE,
@@ -2085,6 +2107,8 @@ GDKrealloc(void *s, size_t size)
 	if (s == NULL) {
 #if !defined(NDEBUG) && !defined(SANITIZER)
 		os[-1] &= ~2;	/* not freed after all */
+		assert(os[-1] == asize);
+		assert(os[-2] == osize);
 #endif
 		GDKsyserror("realloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
 		return NULL;
@@ -2098,7 +2122,7 @@ GDKrealloc(void *s, size_t size)
 	((size_t *) s)[-2] = size;
 	/* if growing, initialize new memory with debug pattern */
 	DEADBEEFCHK if (size > osize)
- 		memset((char *) s + osize, '\xBD', size - osize);
+		memset((char *) s + osize, '\xBD', size - osize);
 	/* write pattern to help find out-of-bounds writes */
 	memset((char *) s + size, '\xBD', nsize + DEBUG_SPACE - size);
 #endif
@@ -2137,11 +2161,13 @@ GDKmmap(const char *path, int mode, size_t len)
 {
 	void *ret;
 
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
 	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
 		return NULL;
 	}
+#endif
 	ret = MT_mmap(path, mode, len);
 	if (ret != NULL)
 		meminc(len);
@@ -2168,12 +2194,14 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *ret;
 
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
 	if (*new_size > old_size &&
 	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
 		return NULL;
 	}
+#endif
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret != NULL) {
 		memdec(old_size);
@@ -2182,4 +2210,18 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
 	}
 	return ret;
+}
+
+/* print some potentially interesting information */
+void
+GDKprintinfo(void)
+{
+	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
+	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
+	printf("Virtual memory allocated: %zu, of which %zu with malloc (limit: %zu)\n", vmallocated + allocated, allocated, GDK_vm_maxsize);
+	BBPprintinfo();
+#ifdef LOCK_STATS
+	GDKlockstatistics(3);
+#endif
+	dump_threads();
 }

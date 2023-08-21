@@ -37,6 +37,7 @@ extern sql_rel *rel_base_bind_column_( sql_rel *rel, const char *cname);
 extern sql_exp *rel_base_bind_column( mvc *sql, sql_rel *rel, const char *cname, int no_tname);
 extern sql_rel *rel_base_bind_column2_( sql_rel *rel, const char *tname, const char *cname);
 extern sql_exp *rel_base_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname);
+extern sql_exp *rel_base_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, const char *cname);
 
 extern list *rel_base_projection( mvc *sql, sql_rel *rel, int intern);
 extern list *rel_base_project_all( mvc *sql, sql_rel *rel, char *tname); /* select * from t */

@@ -15,29 +15,29 @@
 str
 OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr p=0;
+	InstrPtr p = 0;
 	int actions = 0;
 	str msg = MAL_SUCCEED;
 
-	(void)cntxt;
-	(void)stk;
+	(void) cntxt;
+	(void) stk;
 	(void) p;
 
 	actions = mb->vtop;
-	trimMalVariables(mb,0);
+	trimMalVariables(mb, 0);
 	actions = actions - mb->vtop;
 
 	/* Defense line against incorrect plans */
 	/* plan is not changed */
 	/* plan is not changed */
 	//if( actions > 0){
-		//msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		//if (!msg)
-	//	msg = chkFlow(mb);
-		//if (!msg)
-		// 	msg = chkDeclarations(mb);
+	//msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	//if (!msg)
+	//      msg = chkFlow(mb);
+	//if (!msg)
+	//      msg = chkDeclarations(mb);
 	//}
-	/* keep actions taken as a fake argument*/
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
 	return msg;

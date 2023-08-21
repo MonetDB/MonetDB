@@ -27,7 +27,8 @@
 #define orderidx_export extern
 #endif
 
-orderidx_export str OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces);
+orderidx_export str OIDXcreateImplementation(Client cntxt, int tpe, BAT *b,
+											 int pieces);
 orderidx_export str OIDXdropImplementation(Client cntxt, BAT *b);
 
 #endif /* _OIDX_H */

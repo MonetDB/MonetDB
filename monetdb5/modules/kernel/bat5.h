@@ -17,7 +17,7 @@
 mal_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role);
 mal_export str BKCmirror(bat *ret, const bat *bid);
 mal_export str BKCsetPersistent(void *r, const bat *bid);
-mal_export str BKCsetName(void *r, const bat *bid, const char * const *s);
+mal_export str BKCsetName(void *r, const bat *bid, const char *const *s);
 mal_export str BKCshrinkBAT(bat *ret, const bat *bid, const bat *did);
 mal_export str BKCreuseBAT(bat *ret, const bat *bid, const bat *did);
 #endif /*_BAT_H_*/

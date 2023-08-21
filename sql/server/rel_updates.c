@@ -97,7 +97,12 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	assert(is_project(ins->op) || ins->op == op_table);
 	if (list_length(i->columns) <= 1 || non_updatable_index(i->type)) {
 		/* dummy append */
-		inserts->r = ins = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 1, 1));
+		list *exps = rel_projections(sql, ins, NULL, 1, 1);
+		if (!exps)
+			return NULL;
+		inserts->r = ins = rel_project(sql->sa, ins, exps);
+		if (!ins)
+			return NULL;
 		list_append(ins->exps, exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label));
 		return inserts;
 	}
@@ -254,9 +259,11 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 		sql_idx *i = n->data;
 
 		if (hash_index(i->type) || non_updatable_index(i->type)) {
-			rel_insert_hash_idx(sql, alias, i, inserts);
+			if (rel_insert_hash_idx(sql, alias, i, inserts) == NULL)
+				return NULL;
 		} else if (i->type == join_idx) {
-			rel_insert_join_idx(sql, alias, i, inserts);
+			if (rel_insert_join_idx(sql, alias, i, inserts) == NULL)
+				return NULL;
 		}
 	}
 	if (inserts->r != p) {

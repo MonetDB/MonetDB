@@ -1824,7 +1824,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		lvars = li.vh->base;
 		rvars = ri.vh->base;
 	} else {
-		assert(ri.vh == NULL);
+		assert(ri.vh == NULL || ri.type == TYPE_void);
 		lvars = rvars = NULL;
 	}
 	/* if the var pointer is not NULL, then so is the val pointer */

@@ -283,10 +283,12 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	}
 
 	if (bn->tvheap && width == 0 && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
+		HEAPfree(bn->theap, true);
 		goto bailout;
 	}
 	DELTAinit(bn);
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {
+		/* cannot happen, function always returns success */
 		goto bailout;
 	}
 	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
@@ -587,6 +589,7 @@ BATclear(BAT *b, bool force)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
+	RTREEdestroy(b);
 	PROPdestroy(b);
 	TSKdestroy(b);
 
@@ -679,6 +682,7 @@ BATfree(BAT *b)
 	IMPSfree(b);
 	OIDXfree(b);
 	STRMPfree(b);
+	RTREEfree(b);
 	TSKfree(b);
 	MT_lock_set(&b->theaplock);
 	if (b->tident && !default_ident(b->tident))
@@ -897,12 +901,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else if (!slowcopy) {
 			/* case (3): just copy the heaps */
 			if (bn->tvheap && HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED) {
- 				goto bunins_failed;
- 			}
+				goto bunins_failed;
+			}
 			memcpy(bn->theap->base, bi.base, bi.hfree);
 			bn->theap->free = bi.hfree;
 			bn->theap->dirty = true;
- 			if (bn->tvheap) {
+			if (bn->tvheap) {
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
 				bn->tvheap->free = bi.vhfree;
 				bn->tvheap->dirty = true;
@@ -1379,9 +1383,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrunlock(&b->thashlock);
 
-	IMPSdestroy(b); /* no support for inserts in imprints yet */
+	IMPSdestroy(b);		/* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-	STRMPdestroy(b); 	/* TODO: use STRMPappendBitstring */
+	STRMPdestroy(b);	/* TODO: use STRMPappendBitstring */
+	RTREEdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -1626,6 +1631,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		OIDXdestroy(b);
 		IMPSdestroy(b);
 		STRMPdestroy(b);
+		RTREEdestroy(b);
 
 		if (b->tvheap && b->ttype) {
 			var_t _d;
@@ -2720,7 +2726,7 @@ BATassertProps(BAT *b)
 		} else {
 			if (b->tvheap != NULL) {
 				/* candidate list with exceptions */
-				assert(b->batRole == TRANSIENT);
+				assert(b->batRole == TRANSIENT || b->batRole == SYSTRANS);
 				assert(b->tvheap->free <= b->tvheap->size);
 				assert(b->tvheap->free >= sizeof(ccand_t));
 				assert((negoid_cand(b) && ccand_free(b) % SIZEOF_OID == 0) || mask_cand(b));

@@ -56,6 +56,7 @@ default
 HAVE_GEOM?keys
 
 like_tests
+more_like_tests
 
 news
 timezone
@@ -69,6 +70,7 @@ create_in_schema
 null-byte-hang
 orderby_limit
 orderby_non_selection_column
+limit_offset_fetchfirst
 
 psm
 

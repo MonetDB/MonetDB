@@ -18,6 +18,7 @@
 #include "mal_function.h"
 #include "mal_exception.h"
 
-extern str OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+								  InstrPtr pci);
 
 #endif

@@ -277,9 +277,18 @@ MNDBPrepare(ODBCStmt *stmt,
 		    rec->sql_desc_concise_type == SQL_LONGVARCHAR ||
 		    rec->sql_desc_concise_type == SQL_WCHAR ||
 		    rec->sql_desc_concise_type == SQL_WVARCHAR ||
-		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR)
+		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR) {
 			rec->sql_desc_case_sensitive = SQL_TRUE;
-		else
+
+			/* For large varchar column definitions conditionally
+			 * change type to SQL_WLONGVARCHAR when mapToLongVarchar is set (e.g. to 4000)
+			 * This is a workaround for MS SQL Server linked server
+			 * which can not handle large varchars (ref: SUPPORT-747) */
+			if (rec->sql_desc_concise_type == SQL_WVARCHAR
+			 && stmt->Dbc->mapToLongVarchar > 0
+			 && rec->sql_desc_length > (SQLULEN) stmt->Dbc->mapToLongVarchar)
+				rec->sql_desc_concise_type = SQL_WLONGVARCHAR;
+		} else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
 
 		rec->sql_desc_local_type_name = NULL;

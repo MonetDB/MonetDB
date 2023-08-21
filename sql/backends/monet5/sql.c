@@ -520,7 +520,7 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	const char *sname = *getArgReference_str(stk, pci, 3);
 	const char *tname = *getArgReference_str(stk, pci, 4);
-	lng cnt = *(lng*)getArgReference_lng(stk, pci, 5);
+	lng cnt = *getArgReference_lng(stk, pci, 5);
 	BAT *pos = NULL;
 	sql_schema *s;
 	sql_table *t;
@@ -557,7 +557,7 @@ mvc_add_dependency_change(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	mvc *m = NULL;
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *tname = *getArgReference_str(stk, pci, 2);
-	lng cnt = *(lng*)getArgReference_lng(stk, pci, 3);
+	lng cnt = *getArgReference_lng(stk, pci, 3);
 	sql_schema *s;
 	sql_table *t;
 
@@ -996,7 +996,7 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_sequence *seq;
 	bat *res = getArgReference_bat(stk, pci, 0);
-	BUN card = *(BUN*)getArgReference_lng(stk, pci, 1);
+	BUN card = (BUN)*getArgReference_lng(stk, pci, 1);
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *seqname = *getArgReference_str(stk, pci, 3);
 	BAT *r = NULL;
@@ -1792,7 +1792,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	const char *cname = *getArgReference_str(stk, pci, 4);
-	BUN offset = *(BUN*)getArgReference_oid(stk, pci, 5);
+	BUN offset = (BUN)*getArgReference_oid(stk, pci, 5);
 	bat Pos = *getArgReference_bat(stk, pci, 6);
 	ptr ins = getArgReference(stk, pci, 7);
 	int tpe = getArgType(mb, pci, 7), log_res = LOG_OK;
@@ -4592,6 +4592,13 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bat *b = getArgReference_bat(stk, pci, j);
 			if (!(input[i] = BATdescriptor(*b))) {
 				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+				while (i > 0) {
+					i--;
+					bat_iterator_end(&bi[i]);
+					BBPunfix(input[i]->batCacheid);
+				}
+				GDKfree(input);
+				input = NULL;
 				goto finalize;
 			}
 			bi[i] = bat_iterator(input[i]);
@@ -4699,14 +4706,15 @@ finalize:
 				}
 			}
 		GDKfree(res);
-		if (input)
+		if (input) {
 			for (int i = 0; i<nrinput; i++) {
 				if (input[i]) {
 					bat_iterator_end(&bi[i]);
 					BBPunfix(input[i]->batCacheid);
 				}
 			}
-		GDKfree(input);
+			GDKfree(input);
+		}
 		GDKfree(bi);
 	}
 	return ret;
@@ -5862,7 +5870,7 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,10, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("fullname",str), arg("max_memory", lng), arg("max_workers", int), arg("optimizer", str), arg("default_role", str))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,2, arg("sname",str),arg("action",int))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
- pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,7, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("oldpasswrd",str),arg("role",str))),
+ pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,9, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("oldpasswrd",str),arg("role",str),arg("max_memory",lng),arg("max_workers",int))),
  pattern("sqlcatalog", "rename_user", SQLrename_user, false, "Catalog operation rename_user", args(0,3, arg("sname",str),arg("newnme",str),arg("action",int))),
  pattern("sqlcatalog", "create_role", SQLcreate_role, false, "Catalog operation create_role", args(0,3, arg("sname",str),arg("role",str),arg("grator",int))),
  pattern("sqlcatalog", "drop_role", SQLdrop_role, false, "Catalog operation drop_role", args(0,3, arg("auth",str),arg("role",str),arg("action",int))),

@@ -13,8 +13,9 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define MAXSLICES 1024		/* to be refined */
+#define MAXSLICES 1024			/* to be refined */
 
-extern str OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+									InstrPtr p);
 
 #endif

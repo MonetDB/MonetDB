@@ -15,7 +15,8 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-extern str OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+									  InstrPtr pci);
 extern str OPTmultiplexSimple(Client cntxt, MalBlkPtr mb);
 
 #endif

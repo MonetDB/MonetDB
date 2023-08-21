@@ -49,7 +49,7 @@ struct logger {
 
 	// synchronized by combination of store->flush and rotation_lock
 	ulng id;		/* current log output file id */
-	ulng saved_id; 		/* id of last fully handled log file */
+	ulng saved_id;		/* id of last fully handled log file */
 	int tid;		/* current transaction id */
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 

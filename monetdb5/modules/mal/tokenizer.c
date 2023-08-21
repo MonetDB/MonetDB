@@ -55,10 +55,10 @@ struct {
 	BAT *idx, *val;
 } tokenBAT[MAX_TKNZR_DEPTH + 1];
 
-static BAT *TRANS = NULL;   /* the catalog of tokenizers */
+static BAT *TRANS = NULL;		/* the catalog of tokenizers */
 static char name[128];
 
-#if SIZEOF_OID == 4 /* 32-bit oid */
+#if SIZEOF_OID == 4				/* 32-bit oid */
 #define MAX_h ((((oid) 1) << 23) - 1)
 #else /* 64-bit oid */
 #define MAX_h ((((oid) 1) << 55) - 1)
@@ -68,7 +68,8 @@ static char name[128];
 #define GET_d(x) ((sht) ((x) & 255))
 #define GET_h(x) ((x) >> 8)
 
-static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
+static int
+prvlocate(BAT *b, BAT *bidx, oid *prv, str part)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p;
@@ -89,8 +90,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 		BUN q;
 
 		BATloop(b, p, q) {
-			if (BUNtoid(bidx, p) == *prv &&
-				strcmp(BUNtail(bi, p), part) == 0) {
+			if (BUNtoid(bidx, p) == *prv && strcmp(BUNtail(bi, p), part) == 0) {
 				bat_iterator_end(&bi);
 				*prv = (oid) p;
 				return TRUE;
@@ -132,7 +132,7 @@ TKNZRopen(void *ret, str *in)
 		MT_lock_unset(&mal_contextLock);
 		throw(MAL, "tokenizer.open", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	/* now we are sure that none overwrites the tokenizer table*/
+	/* now we are sure that none overwrites the tokenizer table */
 	MT_lock_unset(&mal_contextLock);
 
 	snprintf(name, sizeof(name), "%s", *in);
@@ -140,21 +140,21 @@ TKNZRopen(void *ret, str *in)
 	snprintf(batname, sizeof(batname), "%s_index", name);
 	idx = BBPindex(batname);
 
-	if (idx == 0) { /* new tokenizer */
+	if (idx == 0) {				/* new tokenizer */
 		b = COLnew(0, TYPE_oid, 1024, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "tokenizer.open", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		str msg;
-		if ((msg = BKCsetName(&r, &b->batCacheid, &(const char*){batname})) != MAL_SUCCEED ||
-			(msg = BKCsetPersistent(&r, &b->batCacheid)) != MAL_SUCCEED ||
-			BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
+		if ((msg = BKCsetName(&r, &b->batCacheid, &(const char *) { batname })) != MAL_SUCCEED
+			|| (msg = BKCsetPersistent(&r, &b->batCacheid)) != MAL_SUCCEED
+			|| BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			if (msg)
 				return msg;
 			throw(MAL, "tokenizer.open", GDK_EXCEPTION);
 		}
 		tokenBAT[INDEX].val = b;
-	} else { /* existing tokenizer */
+	} else {					/* existing tokenizer */
 		tokenBAT[INDEX].val = BATdescriptor(idx);
 
 		if (BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
@@ -279,7 +279,7 @@ TKNZRappend(oid *pos, str *s)
 	if (depth > MAX_TKNZR_DEPTH) {
 		GDKfree(url);
 		throw(MAL, "tokenizer",
-				ILLEGAL_ARGUMENT "input string breaks to too many parts");
+			  ILLEGAL_ARGUMENT "input string breaks to too many parts");
 	}
 	if (depth > tokenDepth || tokenBAT[0].val == NULL) {
 		new = tokenDepth;
@@ -294,11 +294,12 @@ TKNZRappend(oid *pos, str *s)
 
 			tokenBAT[i].val = bVal;
 
-			if ((msg = BKCsetName(&r, &bVal->batCacheid, &(const char*){batname})) != MAL_SUCCEED ||
-				(msg = BKCsetPersistent(&r, &bVal->batCacheid)) != MAL_SUCCEED ||
-				BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
+			if ((msg = BKCsetName(&r, &bVal->batCacheid, &(const char *) { batname })) != MAL_SUCCEED
+				|| (msg = BKCsetPersistent(&r, &bVal->batCacheid)) != MAL_SUCCEED
+				|| BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
 				GDKfree(url);
-				return msg ? msg : createException(MAL, "tokenizer.append", GDK_EXCEPTION);
+				return msg ? msg : createException(MAL, "tokenizer.append",
+												   GDK_EXCEPTION);
 			}
 
 			/* make new bat for index */
@@ -311,11 +312,12 @@ TKNZRappend(oid *pos, str *s)
 
 			tokenBAT[i].idx = bIdx;
 
-			if ((msg = BKCsetName(&r, &bIdx->batCacheid, &(const char*){batname})) != MAL_SUCCEED ||
-				(msg = BKCsetPersistent(&r, &bIdx->batCacheid)) != MAL_SUCCEED ||
-				BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
+			if ((msg = BKCsetName(&r, &bIdx->batCacheid, &(const char *) { batname })) != MAL_SUCCEED
+				|| (msg = BKCsetPersistent(&r, &bIdx->batCacheid)) != MAL_SUCCEED
+				|| BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
 				GDKfree(url);
-				return msg ? msg : createException(MAL, "tokenizer.append", GDK_EXCEPTION);
+				return msg ? msg : createException(MAL, "tokenizer.append",
+												   GDK_EXCEPTION);
 			}
 
 		}
@@ -336,7 +338,7 @@ TKNZRappend(oid *pos, str *s)
 
 	if (i == depth) {
 		comp = COMP(prv, depth);
-		*pos = BUNfnd(tokenBAT[INDEX].val, (ptr) & comp);
+		*pos = BUNfnd(tokenBAT[INDEX].val, (ptr) &comp);
 		if (*pos != BUN_NONE) {
 			/* the string is already there */
 			/* printf("The string %s is already there",url); */
@@ -351,18 +353,18 @@ TKNZRappend(oid *pos, str *s)
 		if (idx > MAX_h) {
 			GDKfree(url);
 			throw(MAL, "tokenizer.append",
-					OPERATION_FAILED " no more free oid's");
+				  OPERATION_FAILED " no more free oid's");
 		}
 		if (BUNappend(tokenBAT[i].val, parts[i], false) != GDK_SUCCEED) {
 			GDKfree(url);
 			throw(MAL, "tokenizer.append",
-					OPERATION_FAILED " could not append");
+				  OPERATION_FAILED " could not append");
 		}
 
-		if (BUNappend(tokenBAT[i].idx, (ptr) & prv, false) != GDK_SUCCEED) {
+		if (BUNappend(tokenBAT[i].idx, (ptr) &prv, false) != GDK_SUCCEED) {
 			GDKfree(url);
 			throw(MAL, "tokenizer.append",
-					OPERATION_FAILED " could not append");
+				  OPERATION_FAILED " could not append");
 		}
 
 		prv = (oid) idx;
@@ -389,7 +391,7 @@ TKNZRdepositFile(void *r, str *fnme)
 	int len = 0;
 	char buf[FILENAME_MAX];
 	oid pos;
-	str msg= MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
@@ -400,7 +402,8 @@ TKNZRdepositFile(void *r, str *fnme)
 	else
 		len = snprintf(buf, FILENAME_MAX, "%s/%s", monet_cwd, *fnme);
 	if (len == -1 || len >= FILENAME_MAX)
-		throw(MAL, "tokenizer.depositFile", SQLSTATE(HY013) "tokenizer filename path is too large");
+		throw(MAL, "tokenizer.depositFile",
+			  SQLSTATE(HY013) "tokenizer filename path is too large");
 	/* later, handle directory separator */
 	fs = open_rastream(buf);
 	if (fs == NULL)
@@ -415,8 +418,7 @@ TKNZRdepositFile(void *r, str *fnme)
 		throw(MAL, "tokenizer.depositFile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	while (bstream_read(bs, bs->size - (bs->len - bs->pos)) != 0 &&
-		   mnstr_errnr(bs->s) == MNSTR_NO__ERROR)
-	{
+		   mnstr_errnr(bs->s) == MNSTR_NO__ERROR) {
 		s = bs->buf;
 		for (t = s; *t;) {
 			while (t < bs->buf + bs->len && *t && *t != '\n')
@@ -433,7 +435,7 @@ TKNZRdepositFile(void *r, str *fnme)
 			/* found a string to be processed */
 			*t = 0;
 			msg = TKNZRappend(&pos, &s);
-			if (msg ) {
+			if (msg) {
 				bstream_destroy(bs);
 				close_stream(fs);
 				return msg;
@@ -466,7 +468,7 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 
 	url = (str) GDKmalloc(sizeof(char) *
-			(strlen(*getArgReference_str(stk, pci, 1)) + 1));
+						  (strlen(*getArgReference_str(stk, pci, 1)) + 1));
 	if (url == NULL)
 		throw(MAL, "tokenizer.locate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	strcpy(url, *getArgReference_str(stk, pci, 1));
@@ -479,7 +481,7 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (depth > MAX_TKNZR_DEPTH) {
 		GDKfree(url);
 		throw(MAL, "tokenizer.locate",
-				ILLEGAL_ARGUMENT "strings breaks to too many parts");
+			  ILLEGAL_ARGUMENT "strings breaks to too many parts");
 	} else if (depth > tokenDepth) {
 		pos = oid_nil;
 	} else {
@@ -487,14 +489,15 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (p != BUN_NONE) {
 			prv = (oid) p;
 			for (i = 1; i < depth; i++) {
-				if (!prvlocate(tokenBAT[i].val, tokenBAT[i].idx, (ptr) & prv, parts[i]))
+				if (!prvlocate
+					(tokenBAT[i].val, tokenBAT[i].idx, (ptr) &prv, parts[i]))
 					break;
 			}
 			if (i < depth) {
 				pos = oid_nil;
 			} else {
 				comp = COMP(prv, i);
-				pos = BUNfnd(tokenBAT[INDEX].val, (ptr) & comp);
+				pos = BUNfnd(tokenBAT[INDEX].val, (ptr) &comp);
 			}
 		} else {
 			pos = oid_nil;
@@ -515,7 +518,7 @@ takeOid(oid id, str *val)
 	size_t lngth = 0;
 	str s;
 
-	if (id >= BATcount(tokenBAT[INDEX].val)) {
+	if (id >=BATcount(tokenBAT[INDEX].val)) {
 		throw(MAL, "tokenizer.takeOid", OPERATION_FAILED " illegal oid");
 	}
 
@@ -531,7 +534,7 @@ takeOid(oid id, str *val)
 		lngth += strlen(parts[i]);
 	}
 
-	*val = (str) GDKmalloc(lngth+depth+1);
+	*val = (str) GDKmalloc(lngth + depth + 1);
 	if (*val == NULL) {
 		for (i = 0; i < depth; i++)
 			bat_iterator_end(&iters[i]);
@@ -583,7 +586,7 @@ TKNZRgetIndex(bat *r)
 static str
 TKNZRgetLevel(bat *r, int *level)
 {
-	BAT* view;
+	BAT *view;
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 	if (*level < 0 || *level >= tokenDepth)
@@ -641,9 +644,10 @@ TKNZRgetCardinality(bat *r)
 		}
 		canditer_init(&ci, NULL, en);
 		BBPunfix(en->batCacheid);
-		if (BUNappend(b, &(lng){ci.ncand}, false) != GDK_SUCCEED) {
+		if (BUNappend(b, &(lng) { ci.ncand }, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			throw(MAL, "tokenizer.getCardinality", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "tokenizer.getCardinality",
+				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 

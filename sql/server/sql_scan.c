@@ -132,6 +132,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("NTILE", RANK);
 	failed += keywords_insert("LAG", RANK);
 	failed += keywords_insert("LEAD", RANK);
+	failed += keywords_insert("FETCH", FETCH);
 	failed += keywords_insert("FIRST_VALUE", RANK);
 	failed += keywords_insert("LAST_VALUE", RANK);
 	failed += keywords_insert("NTH_VALUE", RANK);
@@ -582,6 +583,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SQL_TSI_QUARTER", SQL_TSI_QUARTER);
 	failed += keywords_insert("SQL_TSI_YEAR", SQL_TSI_YEAR);
 
+	failed += keywords_insert("LEAST", LEAST);
+	failed += keywords_insert("GREATEST", GREATEST);
 	return failed;
 }
 
@@ -1148,6 +1151,7 @@ int scanner_symbol(mvc * c, int cur)
 	case '^': /* binary xor */
 	case '*':
 	case '?':
+	case ':':
 	case '%':
 	case '+':
 	case '(':
@@ -1512,11 +1516,10 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 	return(token);
 }
 
-/* also see sql_parser.y */
-extern int sqllex( YYSTYPE *yylval, void *m );
+static int scanner( YYSTYPE *yylval, void *m, bool log);
 
-int
-sqllex(YYSTYPE * yylval, void *parm)
+static int
+scanner(YYSTYPE * yylval, void *parm, bool log)
 {
 	int token;
 	mvc *c = (mvc *) parm;
@@ -1529,10 +1532,10 @@ sqllex(YYSTYPE * yylval, void *parm)
 	token = sql_get_next_token(yylval, parm);
 
 	if (token == NOT) {
-		int next = sqllex(yylval, parm);
+		int next = scanner(yylval, parm, false);
 
 		if (next == NOT) {
-			return sqllex(yylval, parm);
+			return scanner(yylval, parm, false);
 		} else if (next == EXISTS) {
 			token = NOT_EXISTS;
 		} else if (next == BETWEEN) {
@@ -1559,9 +1562,18 @@ sqllex(YYSTYPE * yylval, void *parm)
 		}
 	}
 
-	if (lc->log)
+	if (lc->log && log)
 		mnstr_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
 	lc->started += (token != EOF);
 	return token;
+}
+
+/* also see sql_parser.y */
+extern int sqllex(YYSTYPE * yylval, void *parm);
+
+int
+sqllex(YYSTYPE * yylval, void *parm)
+{
+	return scanner(yylval, parm, true);
 }

@@ -5,7 +5,7 @@
 # PROJ_LIBRARIES	- List of libraries when using proj.
 # PROJ_FOUND	- True if proj found.
 
-find_path(PROJ_INCLUDE_DIR NAMES proj_api.h)
+find_path(PROJ_INCLUDE_DIR NAMES proj.h)
 find_library(PROJ_LIBRARIES NAMES proj)
 
 include(FindPackageHandleStandardArgs)

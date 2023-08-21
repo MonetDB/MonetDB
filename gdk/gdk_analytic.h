@@ -75,8 +75,8 @@ gdk_export gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st
 			}						\
 		}							\
 									\
- 		while (current_level < nlevels) { /* for the following levels we have to use the previous level results */ \
-		 	oid prev_tree_offset = tree_offset;		\
+		while (current_level < nlevels) { /* for the following levels we have to use the previous level results */ \
+			oid prev_tree_offset = tree_offset;		\
 			levels_offset[current_level++] = tree_offset;	\
 			for (oid pos = 0; pos < level_size; pos += SEGMENT_TREE_FANOUT) { \
 				oid begin = pos, end = MIN(level_size, pos + SEGMENT_TREE_FANOUT), width = end - begin; \

@@ -470,10 +470,9 @@ typedef enum sql_flang {
 	FUNC_LANG_J = 5,   /* create .. language JAVASCRIPT (not implemented) */
 	/* this should probably be done in a better way */
 	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
-	FUNC_LANG_MAP_PY = 7,   /* create .. language PYTHON_MAP */
 	/* values 8 and 9 were for Python 2 */
 	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
-	FUNC_LANG_MAP_PY3 = 11, /* create .. language PYTHON3_MAP */
+	/* values 7 and 11 where old map python code */
 	FUNC_LANG_CPP = 12      /* create .. language CPP */
 } sql_flang;
 

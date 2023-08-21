@@ -54,17 +54,18 @@
  * The grouping is performed in parallel over slices of the tables.
  * The final pieces are glued together.
  */
-typedef struct{
-	bat *bid;	/* input bats */
-	BAT *candidate; /* list */
+typedef struct {
+	bat *bid;					/* input bats */
+	BAT *candidate;				/* list */
 	BAT **cols;
-	BUN *unique; /* number of different values */
+	BUN *unique;				/* number of different values */
 	int last;
 	BUN size;
 } AGGRtask;
 
-static AGGRtask*
-GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+static AGGRtask *
+GROUPcollect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	AGGRtask *a;
 	int i;
 	BAT *b, *bs, *bh = NULL;
@@ -72,24 +73,27 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	(void) mb;
 	(void) cntxt;
-	a= (AGGRtask *) GDKzalloc(sizeof(*a));
-	if ( a == NULL)
+	a = (AGGRtask *) GDKzalloc(sizeof(*a));
+	if (a == NULL)
 		return NULL;
-	a->bid = (bat*) GDKzalloc(pci->argc * sizeof(bat));
-	a->cols = (BAT**) GDKzalloc(pci->argc * sizeof(BAT*));
+	a->bid = (bat *) GDKzalloc(pci->argc * sizeof(bat));
+	a->cols = (BAT **) GDKzalloc(pci->argc * sizeof(BAT *));
 	a->unique = (BUN *) GDKzalloc(pci->argc * sizeof(BUN));
-	if ( a->cols == NULL || a->bid == NULL || a->unique == NULL){
-		if(a->cols) GDKfree(a->cols);
-		if(a->bid) GDKfree(a->bid);
-		if(a->unique) GDKfree(a->unique);
+	if (a->cols == NULL || a->bid == NULL || a->unique == NULL) {
+		if (a->cols)
+			GDKfree(a->cols);
+		if (a->bid)
+			GDKfree(a->bid);
+		if (a->unique)
+			GDKfree(a->unique);
 		GDKfree(a);
 		return NULL;
 	}
-	for ( i= pci->retc; i< pci->argc; i++, a->last++) {
-		a->bid[a->last] = *getArgReference_bat(stk,pci,i);
-		b = a->cols[a->last]= BATdescriptor(a->bid[a->last]);
-		if ( a->cols[a->last] == NULL){
-			for(a->last--; a->last>=0; a->last--)
+	for (i = pci->retc; i < pci->argc; i++, a->last++) {
+		a->bid[a->last] = *getArgReference_bat(stk, pci, i);
+		b = a->cols[a->last] = BATdescriptor(a->bid[a->last]);
+		if (a->cols[a->last] == NULL) {
+			for (a->last--; a->last >= 0; a->last--)
 				BBPunfix(a->cols[a->last]->batCacheid);
 			GDKfree(a->cols);
 			GDKfree(a->bid);
@@ -97,8 +101,8 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			GDKfree(a);
 			return NULL;
 		}
-		sample = BATcount(b) < 1000 ? BATcount(b): 1000;
-		bs = BATsample( b, sample);
+		sample = BATcount(b) < 1000 ? BATcount(b) : 1000;
+		bs = BATsample(b, sample);
 		if (bs) {
 			bh = BATunique(b, bs);
 			if (bh) {
@@ -107,8 +111,8 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			}
 			BBPunfix(bs->batCacheid);
 		}
-		if ( b->tsorted)
-			a->unique[a->last] = 1000; /* sorting helps grouping */
+		if (b->tsorted)
+			a->unique[a->last] = 1000;	/* sorting helps grouping */
 		a->size = BATcount(b);
 	}
 
@@ -118,31 +122,32 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 static void
 GROUPcollectSort(AGGRtask *a, int start, int finish)
 {
-	int i,j,k;
+	int i, j, k;
 	BAT *b;
 	BUN sample;
 
 	/* sort the columns by decreasing unique */
-	for (i = start; i< finish; i++)
-	for( j = i+1; j<finish; j++)
-	if ( a->unique[i] < a->unique[j]){
-		k =a->bid[i];
-		a->bid[i] = a->bid[j];
-		a->bid[j] = k;
+	for (i = start; i < finish; i++)
+		for (j = i + 1; j < finish; j++)
+			if (a->unique[i] < a->unique[j]) {
+				k = a->bid[i];
+				a->bid[i] = a->bid[j];
+				a->bid[j] = k;
 
-		b= a->cols[i];
-		a->cols[i] = a->cols[j];
-		a->cols[j] = b;
+				b = a->cols[i];
+				a->cols[i] = a->cols[j];
+				a->cols[j] = b;
 
-		sample = a->unique[i];
-		a->unique[i] = a->unique[j];
-		a->unique[j] = sample;
-	}
+				sample = a->unique[i];
+				a->unique[i] = a->unique[j];
+				a->unique[j] = sample;
+			}
 }
 
 static void
-GROUPdelete(AGGRtask *a){
-	for(a->last--; a->last>=0; a->last--){
+GROUPdelete(AGGRtask *a)
+{
+	for (a->last--; a->last >= 0; a->last--) {
 		BBPunfix(a->cols[a->last]->batCacheid);
 	}
 	GDKfree(a->bid);
@@ -171,8 +176,8 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	AGGRtask *aggr;
 
 	aggr = GROUPcollect(cntxt, mb, stk, pci);
-	if( aggr == NULL)
-		throw(MAL,"group.multicolumn", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (aggr == NULL)
+		throw(MAL, "group.multicolumn", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	GROUPcollectSort(aggr, 0, aggr->last);
 
 	/* (grp,ext,hist) := group.group(..) */
@@ -199,7 +204,8 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*grp = 0;
 			*ext = 0;
 			*hist = 0;
-			msg = GRPsubgroup5(grp, ext, hist, &aggr->bid[i], NULL, &oldgrp, &oldext, &oldhist);
+			msg = GRPsubgroup5(grp, ext, hist, &aggr->bid[i], NULL, &oldgrp,
+							   &oldext, &oldhist);
 			BBPrelease(oldgrp);
 			BBPrelease(oldext);
 			BBPrelease(oldhist);

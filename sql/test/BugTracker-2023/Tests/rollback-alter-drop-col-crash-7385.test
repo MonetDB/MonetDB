@@ -1,0 +1,36 @@
+statement ok
+CREATE SCHEMA test
+
+statement ok
+SET SCHEMA test
+
+statement ok
+CREATE TABLE src (src_c1_pkey INT, c1 VARCHAR(100))
+
+statement ok
+START TRANSACTION
+
+statement ok
+DELETE   FROM src
+
+statement ok
+ALTER TABLE src DROP src_c1_pkey
+
+statement error
+INSERT INTO src VALUES(1,1),(2,2),(3,3),(4,4),(6,6),(7,7),(8,8),(9,9),(10,10)
+
+statement error
+COMMIT
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA test CASCADE
+
+statement ok
+CREATE SCHEMA test
+
+statement ok
+DROP SCHEMA test CASCADE
+

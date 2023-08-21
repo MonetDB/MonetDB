@@ -30,7 +30,8 @@ extern int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 extern int hasCommonResults(InstrPtr p, InstrPtr q);
 extern int isUpdateInstruction(InstrPtr p);
 mal_export int hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict);
-extern int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict);
+extern int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p,
+							  int strict);
 extern int isSideEffectFree(MalBlkPtr mb);
 extern int isBlocking(InstrPtr p);
 extern int isFragmentGroup(InstrPtr q);

@@ -1218,7 +1218,7 @@ exp_refers( sql_exp *p, sql_exp *c)
 			if (p->alias.rname && strcmp(p->alias.rname, c->l) != 0)
 				return 0;
 			// if the parent does NOT have a relation name alias compare his relation name with the child's
-			if (!p->alias.rname && strcmp(p->l, c->l) != 0)
+			if (!p->alias.rname && p->l && strcmp(p->l, c->l) != 0)
 				return 0;
 		}
 		return 1;

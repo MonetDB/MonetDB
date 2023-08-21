@@ -1372,7 +1372,7 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 			assert(*len >= strlen("nil") + 1);
 			strcpy(*retval, "nil");
 			return 3;
- 		}
+		}
 		assert(*len >= strlen(str_nil) + 1);
 		strcpy(*retval, str_nil);
 		return 1;
@@ -1493,7 +1493,7 @@ BLOBput(BAT *b, var_t *bun, const void *VAL)
 	char *base = NULL;
 
 	*bun = HEAP_malloc(b, blobsize(val->nitems));
- 	base = b->tvheap->base;
+	base = b->tvheap->base;
 	if (*bun != (var_t) -1) {
 		memcpy(&base[*bun], val, blobsize(val->nitems));
 		b->tvheap->dirty = true;

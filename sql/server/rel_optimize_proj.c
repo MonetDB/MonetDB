@@ -2694,15 +2694,19 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 		}
 
 		darg = arg->h->data;
-		if ((found = exps_find_exp(gbe, darg))) { /* first find if the aggregate argument already exists in the grouping list */
-			darg = exp_ref(v->sql, found);
-		} else {
-			list_append(gbe, darg = exp_copy(v->sql, darg));
-			exp_label(v->sql->sa, darg, ++v->sql->label);
+		if ((found = exps_find_exp(exps, darg)) == NULL) { /* not already in the groups projection list */
+			if ((found = exps_find_exp(gbe, darg))) { /* first find if the aggregate argument already exists in the grouping list */
+				darg = exp_ref(v->sql, found);
+			} else {
+				list_append(gbe, darg = exp_copy(v->sql, darg));
+				exp_label(v->sql->sa, darg, ++v->sql->label);
+				darg = exp_ref(v->sql, darg);
+			}
+			list_append(exps, darg);
 			darg = exp_ref(v->sql, darg);
+		} else {
+			darg = exp_ref(v->sql, found);
 		}
-		list_append(exps, darg);
-		darg = exp_ref(v->sql, darg);
 		arg->h->data = darg;
 		l = rel->l = rel_groupby(v->sql, rel->l, gbe);
 		l->exps = exps;

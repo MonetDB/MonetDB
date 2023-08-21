@@ -12,11 +12,9 @@
 #include "xoshiro256starstar.h"
 
 /* global pseudo random generator state */
-extern random_state_engine mmath_rse
-__attribute__((__visibility__("hidden")));
+extern random_state_engine mmath_rse __attribute__((__visibility__("hidden")));
 /* serialize access to state */
-extern MT_Lock mmath_rse_lock
-__attribute__((__visibility__("hidden")));
+extern MT_Lock mmath_rse_lock __attribute__((__visibility__("hidden")));
 
 /* cotangent value */
 extern double cot(double);

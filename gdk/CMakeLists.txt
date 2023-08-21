@@ -81,7 +81,6 @@ target_sources(bat
   gdk_project.c
   gdk_time.c gdk_time.h
   gdk_unique.c
-  gdk_interprocess.c gdk_interprocess.h
   gdk_firstn.c
   gdk_subquery.c gdk_subquery.h
   gdk_analytic_bounds.c
@@ -89,7 +88,8 @@ target_sources(bat
   gdk_analytic_func.c
   gdk_analytic.h
   gdk_tracer.c gdk_tracer.h
-  gdk_strimps.c gdk_strimps.h
+  gdk_rtree.c
+  gdk_strimps.c
   PUBLIC
   ${gdk_public_headers})
 
@@ -98,6 +98,7 @@ target_include_directories(bat
   $<TARGET_PROPERTY:stream,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:matomic,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:mstring,INTERFACE_INCLUDE_DIRECTORIES>
+  $<$<BOOL:${RTREE_FOUND}>:$<TARGET_PROPERTY:rtree::rtree,INTERFACE_INCLUDE_DIRECTORIES>>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
@@ -109,6 +110,7 @@ target_link_libraries(bat
   monetdb_config_header
   moptions
   mutils
+  $<$<BOOL:${RTREE_FOUND}>:rtree::rtree>
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:ws2_32>
   $<$<BOOL:${KVM_FOUND}>:KVM::KVM>
@@ -141,6 +143,7 @@ install(TARGETS
   EXPORT gdkTargets
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT monetdb
   LIBRARY
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
   COMPONENT monetdb
@@ -151,8 +154,7 @@ install(TARGETS
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT monetdbdev
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  COMPONENT monetdbdev)
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(EXPORT gdkTargets
   FILE gdkTargets.cmake

@@ -78,25 +78,34 @@ bunins_failed:															\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 
-BATwalk(Color,CLRcolor,char *,strNil,color,getAtomIndex("color",5,TYPE_int),bunfastappTYPE(color, bn, &y))
-BATwalk(Str,CLRstr,color,is_color_nil,str,TYPE_str,bunfastapp_nocheckVAR(bn, &y))
-
-BATwalk(Red,CLRred,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(Green,CLRgreen,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(Blue,CLRblue,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-
-BATwalk(Hue,CLRhue,color,is_color_nil,flt,TYPE_flt,bunfastappTYPE(flt, bn, &y))
-BATwalk(Saturation,CLRsaturation,color,is_color_nil,flt,TYPE_flt,bunfastappTYPE(flt, bn, &y))
-BATwalk(Value,CLRvalue,color,is_color_nil,flt,TYPE_flt,bunfastappTYPE(flt, bn, &y))
-
-BATwalk(HueInt,CLRhueInt,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(SaturationInt,CLRsaturationInt,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(ValueInt,CLRvalueInt,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-
-BATwalk(Luminance,CLRluminance,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(Cr,CLRcr,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(Cb,CLRcb,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-
+BATwalk(Color, CLRcolor, char *, strNil, color,
+		getAtomIndex("color", 5, TYPE_int), bunfastappTYPE(color, bn, &y))
+BATwalk(Str, CLRstr, color, is_color_nil, str, TYPE_str,
+		bunfastapp_nocheckVAR(bn, &y))
+BATwalk(Red, CLRred, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Green, CLRgreen, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Blue, CLRblue, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Hue, CLRhue, color, is_color_nil, flt, TYPE_flt,
+		bunfastappTYPE(flt, bn, &y))
+BATwalk(Saturation, CLRsaturation, color, is_color_nil, flt, TYPE_flt,
+		bunfastappTYPE(flt, bn, &y))
+BATwalk(Value, CLRvalue, color, is_color_nil, flt, TYPE_flt,
+		bunfastappTYPE(flt, bn, &y))
+BATwalk(HueInt, CLRhueInt, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(SaturationInt, CLRsaturationInt, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(ValueInt, CLRvalueInt, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Luminance, CLRluminance, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Cr, CLRcr, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Cb, CLRcb, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
 #define BATwalk3(NAME,FUNC,TYPE)										\
 static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 {																		\
@@ -169,11 +178,9 @@ bunins_failed:															\
 		return msg;														\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
-
-BATwalk3(Hsv,CLRhsv,flt)
-BATwalk3(Rgb,CLRrgb,int)
-BATwalk3(ycc,CLRycc,int)
-
+BATwalk3(Hsv, CLRhsv, flt)
+BATwalk3(Rgb, CLRrgb, int)
+BATwalk3(ycc, CLRycc, int)
 #include "mel.h"
 mel_func batcolor_init_funcs[] = {
  command("batcolor", "str", CLRbatStr, false, "Identity mapping for string bats", args(1,2, batarg("",str),batarg("b",color))),

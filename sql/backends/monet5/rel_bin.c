@@ -25,6 +25,7 @@
 #include "bin_partition_by_slice.h"
 #include "bin_partition_by_value.h"
 #include "sql_pp_statement.h"
+#include "rel_file_loader.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
@@ -57,8 +58,11 @@ add_to_rowcount_accumulator(backend *be, int nr)
 	}
 
 	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
-	if (q == NULL)
+	if (q == NULL) {
+		if (be->mvc->sa->eb.enabled)
+			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 		return -1;
+	}
 	q = pushArgument(be->mb, q, be->rowcount);
 	q = pushArgument(be->mb, q, nr);
 	pushInstruction(be->mb, q);
@@ -166,16 +170,18 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 		return NULL;
 	if (!l->ht && list_length(l) > HASH_MIN_SIZE) {
 		l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
-		if (l->ht == NULL)
-			return NULL;
+		if (l->ht != NULL) {
+			for (n = l->h; n; n = n->next) {
+				const char *nme = column_name(be->mvc->sa, n->data);
+				if (nme) {
+					int key = hash_key(nme);
 
-		for (n = l->h; n; n = n->next) {
-			const char *nme = column_name(be->mvc->sa, n->data);
-			if (nme) {
-				int key = hash_key(nme);
-
-				if (hash_add(l->ht, key, n->data) == NULL)
-					return NULL;
+					if (hash_add(l->ht, key, n->data) == NULL) {
+						hash_destroy(l->ht);
+						l->ht = NULL;
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -347,6 +353,8 @@ row2cols(backend *be, stmt *sub)
 	if (sub->nrcols == 0 && sub->key) {
 		node *n;
 		list *l = sa_list(be->mvc->sa);
+		if (l == NULL)
+			return NULL;
 
 		for (n = sub->op4.lval->h; n; n = n->next) {
 			stmt *sc = n->data;
@@ -574,6 +582,8 @@ exp_list(backend *be, list *exps, stmt *l, stmt *r, stmt *grp, stmt *ext, stmt *
 	node *n;
 	list *nl = sa_list(sql->sa);
 
+	if (nl == NULL)
+		return NULL;
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, l, r, grp, ext, cnt, sel, 0, 0, 0);
@@ -824,6 +834,40 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 	if (single_value)
 		return stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2);
 	return res;
+}
+
+static stmt *
+exp2bin_named_placeholders(backend *be, sql_exp *fe)
+{
+	int argc = 0;
+	char arg[IDLENGTH];
+	list *args = fe->l;
+
+	if (list_empty(args))
+		return NULL;
+	for (node *n = args->h; n; n = n->next, argc++) {
+		sql_exp *a = n->data;
+		sql_subtype *t = exp_subtype(a);
+		stmt *s = exp_bin(be, a, NULL, NULL, NULL, NULL, NULL, NULL, 1, 0, 1);
+		InstrPtr q = newAssignment(be->mb);
+
+		if (!q || !t || !s) {
+            sql_error(be->mvc, 10, SQLSTATE(42000) MAL_MALLOC_FAIL);
+			return NULL;
+		}
+        int type = t->type->localtype, varid = 0;
+
+        snprintf(arg, IDLENGTH, "A%d", argc);
+        if ((varid = newVariable(be->mb, arg, strlen(arg), type)) < 0) {
+            sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+			return NULL;
+        }
+		if (q)
+			getDestVar(q) = varid;
+        q = pushArgument(be->mb, q, s->nr);
+		pushInstruction(be->mb, q);
+	}
+	return NULL;
 }
 
 static stmt *
@@ -1155,21 +1199,26 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	int new_count_var = newTmpVariable(mb, TYPE_oid);
 
 	InstrPtr p = newStmt(mb, sqlRef, importColumnRef);
-	if (p == NULL)
+	if (p != NULL) {
+		setArgType(mb, p, 0, bat_type);
+		p = pushReturn(mb, p, new_count_var);
+		//
+		p = pushStr(mb, p, method);
+		p = pushInt(mb, p, width);
+		p = pushArgument(mb, p, bswap_stmt->nr);
+		p = pushArgument(mb, p, file_stmt->nr);
+		p = pushArgument(mb, p, onclient_stmt->nr);
+		if (*count_var < 0)
+			p = pushOid(mb, p, 0);
+		else
+			p = pushArgument(mb, p, *count_var);
+		pushInstruction(mb, p);
+	}
+	if (p == NULL || mb->errors) {
+		if (be->mvc->sa->eb.enabled)
+			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 		return sql_error(be->mvc, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	setArgType(mb, p, 0, bat_type);
-	p = pushReturn(mb, p, new_count_var);
-	//
-	p = pushStr(mb, p, method);
-	p = pushInt(mb, p, width);
-	p = pushArgument(mb, p, bswap_stmt->nr);
-	p = pushArgument(mb, p, file_stmt->nr);
-	p = pushArgument(mb, p, onclient_stmt->nr);
-	if (*count_var < 0)
-		p = pushOid(mb, p, 0);
-	else
-		p = pushArgument(mb, p, *count_var);
-	pushInstruction(mb, p);
+	}
 
 	*count_var = new_count_var;
 
@@ -1237,6 +1286,8 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 	// Emit the columns
 	int count_var = -1;
 	list *columns = sa_list(sql->sa);
+	if (columns == NULL)
+		return NULL;
 	stmt *prototype_stmt = emit_loadcolumn(be, onclient_stmt, bswap_stmt, &count_var, prototype_file, prototype_type);
 	if (!prototype_stmt)
 		return NULL;
@@ -1270,6 +1321,40 @@ is_const_func(sql_subfunc *f, list *attr)
 	    strcmp(f->func->base.name, "quantile_avg") == 0)
 		return true;
 	return false;
+}
+
+static stmt*
+exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
+{
+	assert(left == NULL); (void)left;
+	assert(right == NULL); (void)right;
+	assert(sel == NULL); (void)sel;
+	sql_subfunc *f = fe->f;
+
+	list *arg_list = fe->l;
+	/*
+	list *type_list = f->res;
+	assert(1 + list_length(type_list) == list_length(arg_list));
+	*/
+
+	sql_exp *eexp = arg_list->h->next->data;
+	assert(is_atom(eexp->type));
+	atom *ea = eexp->l;
+	assert(ea->data.vtype == TYPE_str);
+	char *ext = ea->data.val.sval;
+
+	file_loader_t *fl = fl_find(ext);
+	if (!fl)
+		return NULL;
+	sql_exp *fexp = arg_list->h->data;
+	assert(is_atom(fexp->type));
+	atom *fa = fexp->l;
+	assert(fa->data.vtype == TYPE_str);
+	char *filename = fa->data.val.sval;
+	sql_exp *topn = NULL;
+	if (list_length(arg_list) == 3)
+		topn = list_fetch(arg_list, 2);
+	return (stmt*)fl->load(be, f, filename, topn);
 }
 
 stmt *
@@ -1312,6 +1397,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (r->type == st_table && lst->nrcols == 0 && lst->key && e->card > CARD_ATOM) {
 					node *n;
 					list *l = sa_list(sql->sa);
+					if (l == NULL)
+						return NULL;
 
 					for (n=lst->op4.lval->h; n; n = n->next)
 						list_append(l, const_column(be, (stmt*)n->data));
@@ -1386,7 +1473,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else if (e->f) { 		/* values */
 			s = value_list(be, e->f, left, sel);
 		} else { 			/* arguments */
-			s = stmt_varnr(be, e->flag, e->tpe.type?&e->tpe:NULL);
+			sql_subtype *t = e->tpe.type?&e->tpe:NULL;
+			if (!t && 0) {
+				sql_arg *a = sql_bind_paramnr(be->mvc, e->flag);
+				t = a->type.type?&a->type:NULL;
+			}
+			s = stmt_varnr(be, e->flag, t);
 		}
 	}	break;
 	case e_convert: {
@@ -1414,6 +1506,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		stmt *rows = NULL;
 		const char *mod, *fimp;
 
+		if (l == NULL)
+			return NULL;
+
 		/* attempt to instantiate MAL functions now, so we can know if we can push candidate lists */
 		if (f->func->lang == FUNC_LANG_MAL && backend_create_mal_func(be->mvc, f->func) < 0)
 			return NULL;
@@ -1439,6 +1534,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return exp2bin_coalesce(be, e, left, right, sel, depth);
 			if (strcmp(fname, "copyfrombinary") == 0)
 				return exp2bin_copyfrombinary(be, e, left, right, sel);
+			if (strcmp(fname, "file_loader") == 0)
+				return exp2bin_file_loader(be, e, left, right, sel);
+			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
+				return exp2bin_named_placeholders(be, e);
 		}
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
@@ -1503,6 +1602,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				stmt *ngrp = grp;
 				stmt *next = ext;
 				stmt *ncnt = cnt;
+				if (nl == NULL)
+					return NULL;
 				for (en = l->h; en; en = en->next) {
 					stmt *as = en->data;
 					stmt *g = be->pipeline ? stmt_group_partitioned(be, as, ngrp, next, ncnt) : stmt_group(be, as, ngrp, next, ncnt, 1);
@@ -1523,12 +1624,18 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				stmt *u;
 				if (e->shared) {
 					u = stmt_unique_sharedout(be, a, e->shared);
+					if (u == NULL)
+						return NULL;
 					if (grp)
 						u->q = pushArgument(be->mb, u->q, grp->nr);
 				} else {
 					u = stmt_unique(be, a);
+					if (u == NULL)
+						return NULL;
 				}
 				l = sa_list(sql->sa);
+				if (l == NULL)
+					return NULL;
 				if (be->pipeline && grp) {
 					//append(l, stmt_project(be, u, grp));
 					grp = stmt_project(be, u, grp);
@@ -1596,6 +1703,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			int first = 1;
 
 			ops = sa_list(sql->sa);
+			if (ops == NULL)
+				return NULL;
 			args = e->l;
 			for (n = args->h; n; n = n->next) {
 				oldvtop = be->mb->vtop;
@@ -1618,6 +1727,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			}
 			l = stmt_list(be, ops);
 			ops = sa_list(sql->sa);
+			if (ops == NULL)
+				return NULL;
 			args = e->r;
 			for (n = args->h; n; n = n->next) {
 				s = exp_bin(be, n->data, (swapped || !right)?left:right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
@@ -1731,6 +1842,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							s = stmt_bool(be, !is_anti(e));
 						} else {
 							list *args = sa_list(sql->sa);
+							if (args == NULL)
+								return NULL;
 							/* add nil semantics bit */
 							list_append(args, l);
 							list_append(args, r);
@@ -1864,6 +1977,8 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 	list *tl = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
 
+	if (sl == NULL || tl == NULL)
+		return NULL;
 	list_append(sl, a1);
 	list_append(tl, tail_type(a1));
 	list_append(sl, a2);
@@ -1898,6 +2013,8 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 	node *n;
 	stmt *dels = stmt_tid(be, t, 0);
 
+	if (l == NULL || dels == NULL)
+		return NULL;
 	if (aliases) {
 		for (n = aliases->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -1976,6 +2093,8 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	stmt *dels = stmt_tid(be, t, rel->partition), *col = NULL;
 	node *en;
 
+	if (l == NULL || dels == NULL)
+		return NULL;
 	/* add aliases */
 	assert(rel->exps);
 	for (en = rel->exps->h; en && !col; en = en->next) {
@@ -2204,6 +2323,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	if (rel->flag == TRIGGER_WRAPPER) {
 		trigger_input *ti = rel->l;
 		l = sa_list(sql->sa);
+		if (l == NULL)
+			return NULL;
 
 		for (n = ol_first_node(ti->t->columns); n; n = n->next) {
 			sql_column *c = n->data;
@@ -2269,6 +2390,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				return NULL;
 		}
 		l = sa_list(sql->sa);
+		if (l == NULL)
+			return NULL;
 		if (f->func->res) {
 			if (f->func->varres) {
 				for (i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++) {
@@ -2300,8 +2423,11 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					if (ops)
 						narg += list_length(ops);
 					InstrPtr q = newStmtArgs(be->mb, sqlRef, "unionfunc", narg);
-					if (q == NULL)
+					if (q == NULL) {
+						if (be->mvc->sa->eb.enabled)
+							eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 						return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 					/* Generate output rowid column and output of function f */
 					for (i=0; m; m = m->next, i++) {
 						sql_exp *e = m->data;
@@ -2322,6 +2448,10 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					q = pushStr(be->mb, q, mod);
 					q = pushStr(be->mb, q, fcn);
 					psub = stmt_direct_func(be, q);
+					if (psub == NULL) {
+						freeInstruction(q);
+						return NULL;
+					}
 
 					if (ids) /* push input rowids column */
 						q = pushArgument(be->mb, q, ids->nr);
@@ -2390,6 +2520,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 	}
 	l = sa_list(sql->sa);
+	if (l == NULL)
+		return NULL;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
 		const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
@@ -3408,7 +3540,11 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 		stmt *s;
 
 		s = stmt_append(be, create_const_column(be, c1), c2);
+		if (s == NULL)
+			return NULL;
 		s = stmt_alias(be, s, rnme, nme);
+		if (s == NULL)
+			return NULL;
 		list_append(l, s);
 	}
 	sub = stmt_list(be, l);
@@ -3737,9 +3873,13 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	}
 
 	pl = sa_list(sql->sa);
+	if (pl == NULL)
+		return NULL;
 	if (sub)
 		pl->expected_cnt = list_length(sub->op4.lval);
 	psub = stmt_list(be, pl);
+	if (psub == NULL)
+		return NULL;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
 		int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
@@ -3799,6 +3939,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			if (!last) {
 				lpiv = stmt_result(be, limit, 0);
 				lgid = stmt_result(be, limit, 1);
+				if (lpiv == NULL || lgid == NULL)
+					return NULL;
 			}
 		}
 
@@ -4063,8 +4205,12 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	}
 	/* now aggregate */
 	l = sa_list(sql->sa);
+	if (l == NULL)
+		return NULL;
 	aggrs = rel->exps;
 	cursub = stmt_list(be, l);
+	if (cursub == NULL)
+		return NULL;
 
 	//assert(!aggrresults || list_length(aggrresults) == list_length(aggrs) + list_length(rel->r));
 	for (n = aggrs->h; n; n = n->next) {
@@ -7495,6 +7641,11 @@ rel_bin(backend *be, sql_rel *rel)
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
 
+	if (be->mb->errors) {
+		if (be->mvc->sa->eb.enabled)
+			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors, 1000);
+		return NULL;
+	}
 	return s;
 }
 

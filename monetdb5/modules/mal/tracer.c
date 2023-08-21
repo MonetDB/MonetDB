@@ -45,7 +45,7 @@ TRACERreset_component_level(void *ret, str *comp_id)
 {
 	(void) ret;
 	if (GDKtracer_reset_component_level(*comp_id) != GDK_SUCCEED)
-		throw(MAL, "logging.resetcomplevel", ILLEGAL_ARGUMENT"\n");
+		throw(MAL, "logging.resetcomplevel", ILLEGAL_ARGUMENT "\n");
 
 	return MAL_SUCCEED;
 }
@@ -56,7 +56,7 @@ TRACERset_layer_level(void *ret, str *layer_id, str *lvl_id)
 {
 	(void) ret;
 	if (GDKtracer_set_layer_level(*layer_id, *lvl_id) != GDK_SUCCEED)
-		throw(MAL, "logging.setlayerlevel", ILLEGAL_ARGUMENT"\n");
+		throw(MAL, "logging.setlayerlevel", ILLEGAL_ARGUMENT "\n");
 
 	return MAL_SUCCEED;
 }
@@ -67,7 +67,7 @@ TRACERreset_layer_level(void *ret, str *layer_id)
 {
 	(void) ret;
 	if (GDKtracer_reset_layer_level(*layer_id) != GDK_SUCCEED)
-		throw(MAL, "logging.resetlayerlevel", ILLEGAL_ARGUMENT"\n");
+		throw(MAL, "logging.resetlayerlevel", ILLEGAL_ARGUMENT "\n");
 
 	return MAL_SUCCEED;
 }
@@ -78,7 +78,7 @@ TRACERset_flush_level(void *ret, str *lvl_id)
 {
 	(void) ret;
 	if (GDKtracer_set_flush_level(*lvl_id) != GDK_SUCCEED)
-		throw(MAL, "logging.setflushlevel", ILLEGAL_ARGUMENT"\n");
+		throw(MAL, "logging.setflushlevel", ILLEGAL_ARGUMENT "\n");
 
 	return MAL_SUCCEED;
 }
@@ -89,7 +89,7 @@ TRACERreset_flush_level(void *ret)
 {
 	(void) ret;
 	if (GDKtracer_reset_flush_level() != GDK_SUCCEED)
-		throw(MAL, "logging.resetflushlevel", _OPERATION_FAILED"\n");
+		throw(MAL, "logging.resetflushlevel", _OPERATION_FAILED "\n");
 
 	return MAL_SUCCEED;
 }
@@ -100,7 +100,7 @@ TRACERset_adapter(void *ret, str *adapter_id)
 {
 	(void) ret;
 	if (GDKtracer_set_adapter(*adapter_id) != GDK_SUCCEED)
-		throw(MAL, "logging.setadapter", ILLEGAL_ARGUMENT"\n");
+		throw(MAL, "logging.setadapter", ILLEGAL_ARGUMENT "\n");
 
 	return MAL_SUCCEED;
 }
@@ -111,7 +111,7 @@ TRACERreset_adapter(void *ret)
 {
 	(void) ret;
 	if (GDKtracer_reset_adapter() != GDK_SUCCEED)
-		throw(MAL, "logging.resetadapter", _OPERATION_FAILED"\n");
+		throw(MAL, "logging.resetadapter", _OPERATION_FAILED "\n");
 
 	return MAL_SUCCEED;
 }
@@ -132,15 +132,14 @@ TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	component = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
 	log_level = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
 
-	if ( id == NULL || component == NULL || log_level == NULL ) {
+	if (id == NULL || component == NULL || log_level == NULL) {
 		BBPreclaim(id);
 		BBPreclaim(component);
 		BBPreclaim(log_level);
 		throw(MAL, "logging.compinfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-
 	// Fill the BATs
-	if(GDKtracer_fill_comp_info(id, component, log_level) != GDK_SUCCEED) {
+	if (GDKtracer_fill_comp_info(id, component, log_level) != GDK_SUCCEED) {
 		BBPunfix(id->batCacheid);
 		BBPunfix(component->batCacheid);
 		BBPunfix(log_level->batCacheid);

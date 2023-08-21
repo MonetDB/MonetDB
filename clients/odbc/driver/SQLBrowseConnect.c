@@ -53,7 +53,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 {
 	char *key, *attr;
 	char *dsn, *uid, *pwd, *host, *dbname;
-	int port;
+	int port, mapToLongVarchar;
 	SQLSMALLINT len = 0;
 	char buf[1024];
 	int n;
@@ -81,6 +81,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	host = dbc->host ? strdup(dbc->host) : NULL;
 	port = dbc->port;
 	dbname = dbc->dbname ? strdup(dbc->dbname) : NULL;
+	mapToLongVarchar = dbc->mapToLongVarchar;
 
 	while ((n = ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) > 0) {
 		if (strcasecmp(key, "dsn") == 0 && dsn == NULL) {
@@ -106,6 +107,9 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			if (dbname)
 				free(dbname);
 			dbname = attr;
+		} else if (strcasecmp(key, "mapToLongVarchar") == 0 && mapToLongVarchar == 0) {
+			mapToLongVarchar = atoi(attr);
+			free(attr);
 #ifdef ODBCDEBUG
 		} else if (strcasecmp(key, "logfile") == 0 &&
 #ifdef NATIVE_WIN32
@@ -218,13 +222,17 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	}
 
 	if (uid != NULL && pwd != NULL) {
-		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
+		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS,
+				 (SQLCHAR *) uid, SQL_NTS,
+				 (SQLCHAR *) pwd, SQL_NTS,
+				 host, port, dbname,
+				 mapToLongVarchar);
 		if (SQL_SUCCEEDED(rc)) {
 			rc = ODBCConnectionString(rc, dbc, OutConnectionString,
 						  BufferLength,
 						  StringLength2Ptr,
 						  dsn, uid, pwd, host, port,
-						  dbname);
+						  dbname, mapToLongVarchar);
 		}
 	} else {
 		len = (SQLSMALLINT) strconcat_len(

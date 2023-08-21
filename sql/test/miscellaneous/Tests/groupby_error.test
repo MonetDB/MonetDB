@@ -202,8 +202,12 @@ SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2
 67
 58
 
-statement error
+query I rowsort
 SELECT col0 FROM tab0 ORDER BY sys.tab0.col0
+----
+15
+87
+97
 
 statement ok
 drop table tab1

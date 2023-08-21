@@ -40,7 +40,8 @@ static MT_RWLock rt_lock = MT_RWLOCK_INITIALIZER(rt_lock);
 
 static str AUTHdecypherValueLocked(str *ret, const char *value);
 
-void AUTHreset(void)
+void
+AUTHreset(void)
 {
 	MT_rwlock_wrlock(&rt_lock);
 	GDKfree(vaultKey);
@@ -53,12 +54,13 @@ void AUTHreset(void)
  * this function returns an InvalidCredentialsException.
  */
 str
-AUTHrequireAdmin(Client cntxt) {
+AUTHrequireAdmin(Client cntxt)
+{
 	assert(cntxt);
 
 	if (cntxt->user != MAL_ADMIN)
 		throw(MAL, "AUTHrequireAdmin", INVCRED_ACCESS_DENIED);
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /*=== the vault ===*/
@@ -88,7 +90,7 @@ AUTHunlockVault(const char *password)
 		throw(MAL, "unlockVault", SQLSTATE(HY013) MAL_MALLOC_FAIL " vault key");
 	}
 	MT_rwlock_wrunlock(&rt_lock);
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -123,7 +125,7 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
 	w = r = GDKmalloc(sizeof(char) * (strlen(value) + 1));
-	if( r == NULL)
+	if (r == NULL)
 		throw(MAL, "decypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	keylen = strlen(vaultKey);
@@ -149,7 +151,7 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 	*w = '\0';
 
 	*ret = r;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 str
@@ -179,7 +181,7 @@ AUTHcypherValueLocked(str *ret, const char *value)
 	if (vaultKey == NULL)
 		throw(MAL, "cypherValue", "The vault is still locked!");
 	w = r = GDKmalloc(sizeof(char) * (strlen(value) * 2 + 1));
-	if( r == NULL)
+	if (r == NULL)
 		throw(MAL, "cypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	keylen = strlen(vaultKey);
@@ -205,7 +207,7 @@ AUTHcypherValueLocked(str *ret, const char *value)
 	*w = '\0';
 
 	*ret = r;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 str
@@ -236,16 +238,16 @@ AUTHverifyPassword(const char *passwd)
 			  "representation of a %s password hash?",
 			  digestlength(MONETDB5_PASSWDHASH_TOKEN), MONETDB5_PASSWDHASH);
 	}
-	len++; // required in case all the checks above are false
+	len++;						// required in case all the checks above are false
 	while (*p != '\0') {
 		if (!((*p >= 'a' && *p <= 'z') || isdigit((unsigned char) *p)))
 			throw(MAL, "verifyPassword",
-					"password does contain invalid characters, is it a"
-					"lowercase hex representation of a hash?");
+				  "password does contain invalid characters, is it a"
+				  "lowercase hex representation of a hash?");
 		p++;
 	}
 
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 str
@@ -253,4 +255,3 @@ AUTHGeneratePasswordHash(str *res, const char *value)
 {
 	return AUTHcypherValue(res, value);
 }
-

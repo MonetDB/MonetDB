@@ -29,6 +29,10 @@ cmake_dependent_option(CINTEGRATION
   "NOT WIN32"
   OFF)
 
+option(WITH_RTREE
+  "Enable support for rtrees (librtree; default=ON)"
+  ON)
+
 option(PY3INTEGRATION
   "Enable support for Python 3 integration into MonetDB (default=ON)"
   ON)
@@ -73,6 +77,14 @@ option(SANITIZER
 
 option(UNDEFINED
   "Enable support for the GCC undefined sanitizer (default=OFF)"
+  OFF)
+
+option(PGOTRAIN
+  "Enable support for the profile generated optimization training (default=OFF)"
+  OFF)
+
+option(PGOBUILD
+  "Enable support for the profile generated optimization build (using optained data) (default=OFF)"
   OFF)
 
 option(STRICT

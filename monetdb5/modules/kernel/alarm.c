@@ -36,37 +36,37 @@ ALARMusec(lng *ret)
 	return MAL_SUCCEED;
 }
 
-#define SLEEP_SINGLE(TPE) \
-	do { \
+#define SLEEP_SINGLE(TPE)												\
+	do {																\
 		TPE *res = (TPE*) getArgReference(stk, pci, 0), *msecs = (TPE*) getArgReference(stk,pci,1); \
-		if (is_##TPE##_nil(*msecs)) \
+		if (is_##TPE##_nil(*msecs))										\
 			throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
-		if (*msecs < 0) \
+		if (*msecs < 0)													\
 			throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
-		MT_sleep_ms((unsigned int) *msecs); \
-		*res = *msecs; \
+		MT_sleep_ms((unsigned int) *msecs);								\
+		*res = *msecs;													\
 	} while (0)
 
-#define SLEEP_MULTI(TPE) \
-	do { \
-		for (i = 0; i < j ; i++) { \
-			if (is_##TPE##_nil(bb[i])) { \
-				bat_iterator_end(&bi); \
-				BBPreclaim(r); \
-				BBPunfix(b->batCacheid); \
+#define SLEEP_MULTI(TPE)												\
+	do {																\
+		for (i = 0; i < j ; i++) {										\
+			if (is_##TPE##_nil(bb[i])) {								\
+				bat_iterator_end(&bi);									\
+				BBPreclaim(r);											\
+				BBPunfix(b->batCacheid);								\
 				throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
-			} \
-			if (bb[i] < 0) { \
-				bat_iterator_end(&bi); \
-				BBPreclaim(r); \
-				BBPunfix(b->batCacheid); \
+			}															\
+			if (bb[i] < 0) {											\
+				bat_iterator_end(&bi);									\
+				BBPreclaim(r);											\
+				BBPunfix(b->batCacheid);								\
 				throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
-			} \
-		} \
-		for (i = 0; i < j ; i++) { \
-			MT_sleep_ms((unsigned int) bb[i]); \
-			rb[i] = bb[i]; \
-		} \
+			}															\
+		}																\
+		for (i = 0; i < j ; i++) {										\
+			MT_sleep_ms((unsigned int) bb[i]);							\
+			rb[i] = bb[i];												\
+		}																\
 	} while (0)
 
 static str
@@ -77,13 +77,15 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN i, j;
 
 	(void) cntxt;
-	if (getArgType(mb, pci, 0) != TYPE_void && isaBatType(getArgType(mb, pci, 1))) {
+	if (getArgType(mb, pci, 0) != TYPE_void
+		&& isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		bat *bid = getArgReference_bat(stk, pci, 1);
 		tpe = getArgType(mb, pci, 1);
 
 		if (!(b = BATdescriptor(*bid)))
-			throw(MAL, "alarm.sleepr", SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(MAL, "alarm.sleepr",
+				  SQLSTATE(HY005) "Cannot access column descriptor");
 
 		BATiter bi = bat_iterator(b);
 		j = bi.count;
@@ -97,21 +99,23 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		rb = Tloc(r, 0);
 
 		switch (tpe) {
-			case TYPE_bte:
-				SLEEP_MULTI(bte);
-				break;
-			case TYPE_sht:
-				SLEEP_MULTI(sht);
-				break;
-			case TYPE_int:
-				SLEEP_MULTI(int);
-				break;
-			default: {
-				bat_iterator_end(&bi);
-				BBPreclaim(r);
-				BBPunfix(b->batCacheid);
-				throw(MAL, "alarm.sleepr", SQLSTATE(42000) "Sleep function not available for type %s", ATOMname(tpe));
-			}
+		case TYPE_bte:
+			SLEEP_MULTI(bte);
+			break;
+		case TYPE_sht:
+			SLEEP_MULTI(sht);
+			break;
+		case TYPE_int:
+			SLEEP_MULTI(int);
+			break;
+		default:{
+			bat_iterator_end(&bi);
+			BBPreclaim(r);
+			BBPunfix(b->batCacheid);
+			throw(MAL, "alarm.sleepr",
+				  SQLSTATE(42000) "Sleep function not available for type %s",
+				  ATOMname(tpe));
+		}
 		}
 		bat_iterator_end(&bi);
 
@@ -120,17 +124,19 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(r);
 	} else {
 		switch (getArgType(mb, pci, 1)) {
-			case TYPE_bte:
-				SLEEP_SINGLE(bte);
-				break;
-			case TYPE_sht:
-				SLEEP_SINGLE(sht);
-				break;
-			case TYPE_int:
-				SLEEP_SINGLE(int);
-				break;
-			default:
-				throw(MAL, "alarm.sleepr", SQLSTATE(42000) "Sleep function not available for type %s", ATOMname(getArgType(mb, pci, 1)));
+		case TYPE_bte:
+			SLEEP_SINGLE(bte);
+			break;
+		case TYPE_sht:
+			SLEEP_SINGLE(sht);
+			break;
+		case TYPE_int:
+			SLEEP_SINGLE(int);
+			break;
+		default:
+			throw(MAL, "alarm.sleepr",
+				  SQLSTATE(42000) "Sleep function not available for type %s",
+				  ATOMname(getArgType(mb, pci, 1)));
 		}
 	}
 	return MAL_SUCCEED;
@@ -160,8 +166,8 @@ ALARMctime(str *res)
 }
 
 static str
-ALARMepoch(int *res)  /* XXX should be lng */
-{
+ALARMepoch(int *res)
+{								/* XXX should be lng */
 	*res = (int) time(0);
 	return MAL_SUCCEED;
 }

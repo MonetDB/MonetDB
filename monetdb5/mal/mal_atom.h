@@ -14,4 +14,4 @@
 mal_export int malAtomSize(int size, const char *name);
 mal_export void mal_atom_reset(void);
 
-#endif /*  _MAL_ATOM_H*/
+#endif /*  _MAL_ATOM_H */

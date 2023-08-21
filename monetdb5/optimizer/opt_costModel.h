@@ -16,6 +16,7 @@
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-extern str OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+									  InstrPtr pci);
 
 #endif /* _OPT_COSTMODEL_H_ */

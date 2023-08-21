@@ -15,15 +15,16 @@
 
 typedef struct {
 	bat id;
-	char* colname;
-	char* tpename;
+	char *colname;
+	char *tpename;
 	int digits;
 	int scale;
 } columnar_result;
 
 typedef struct {
-	void* context;
-	str (*call) (void* context, char* tblname, columnar_result* columns, size_t  nrcolumns);
+	void *context;
+	str (*call)(void *context, char *tblname, columnar_result * columns,
+				size_t nrcolumns);
 } columnar_result_callback;
 
 mal_export str RMTdisconnect(void *ret, str *conn);

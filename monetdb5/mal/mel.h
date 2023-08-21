@@ -23,21 +23,21 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 	char name[14];
 	char basetype[14];
 	int size;
-	ssize_t (*tostr) (char **, size_t *, const void *, bool);
-	ssize_t (*fromstr) (const char *, size_t *, void **, bool);
-	int (*cmp) (const void *, const void *);
-	int (*nequal) (const void *, const void *);
-	BUN (*hash) (const void *);
-	const void *(*null) (void);
-	void *(*read) (void *, size_t *, stream *, size_t);
-	gdk_return (*write) (const void *, stream *, size_t);
-	var_t (*put) (BAT *, var_t *, const void *);
-	void (*del) (Heap *, var_t *);
-	size_t (*length) (const void *);
-	gdk_return (*heap) (Heap *, size_t);
-	gdk_return (*fix) (const void *);
-	gdk_return (*unfix) (const void *);
-	int (*storage) (void);
+	ssize_t (*tostr)(char **, size_t *, const void *, bool);
+	ssize_t (*fromstr)(const char *, size_t *, void **, bool);
+	int (*cmp)(const void *, const void *);
+	int (*nequal)(const void *, const void *);
+	BUN (*hash)(const void *);
+	const void *(*null)(void);
+	void *(*read)(void *, size_t *, stream *, size_t);
+	gdk_return (*write)(const void *, stream *, size_t);
+	var_t (*put)(BAT *, var_t *, const void *);
+	void (*del)(Heap *, var_t *);
+	size_t (*length)(const void *);
+	gdk_return (*heap)(Heap *, size_t);
+	gdk_return (*fix)(const void *);
+	gdk_return (*unfix)(const void *);
+	int (*storage)(void);
 } mel_atom;
 
 /*strings */
@@ -51,14 +51,14 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define args(RETC,ARGC,...) (mel_arg[ARGC]){__VA_ARGS__}, .retc=RETC, .argc=ARGC
 #define noargs		    NULL, .retc=0, .argc=0
 
-#define arg(n,t) 		{ /*.name=n,*/ .type=# t }
-#define vararg(n,t) 		{ /*.name=n,*/ .type=# t, .vargs=true }
-#define batarg(n,t) 		{ /*.name=n,*/ .type=# t, .isbat=true }
-#define batvararg(n,t) 		{ /*.name=n,*/ .type=# t, .isbat=true, .vargs=true }
-#define argany(n,a) 		{ /*.name=n,*/ .nr=a, }
-#define varargany(n,a) 		{ /*.name=n,*/ .nr=a, .vargs=true, }
-#define batargany(n,a) 		{ /*.name=n,*/ .isbat=true, .nr=a, }
-#define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
+#define arg(n,t)			{ /*.name=n,*/ .type=# t }
+#define vararg(n,t)			{ /*.name=n,*/ .type=# t, .vargs=true }
+#define batarg(n,t)			{ /*.name=n,*/ .type=# t, .isbat=true }
+#define batvararg(n,t)		{ /*.name=n,*/ .type=# t, .isbat=true, .vargs=true }
+#define argany(n,a)			{ /*.name=n,*/ .nr=a, }
+#define varargany(n,a)		{ /*.name=n,*/ .nr=a, .vargs=true, }
+#define batargany(n,a)		{ /*.name=n,*/ .isbat=true, .nr=a, }
+#define batvarargany(n,a)	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
 
 #define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .shared=true, .inout=true }
 #define sharedbatarg(n,t){ /*.name=n,*/ .type=# t, .isbat=true, .shared=true, .inout=true }
@@ -78,10 +78,7 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 	char mod[16];
 	char fcn[30];
 	const char *cname;
-	uint16_t command:1,
-		unsafe:1,
-		retc:6,
-		argc:6;
+	uint16_t command:1, unsafe:1, retc:6, argc:6;
 // comment on MAL instructions should also be available when TRACEing the queries
 	char *comment;
 	union {
@@ -103,32 +100,26 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 
 #define args(RETC,ARGC,...) {__VA_ARGS__}, .retc=RETC, .argc=ARGC
 
-#define arg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t }
-#define vararg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .vargs=true }
-#define batarg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .isbat=true }
-#define batvararg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .isbat=true, .vargs=true }
-#define argany(n,a) 		{ /*.name=n,*/ .nr=a, .type=TYPE_any }
-#define varargany(n,a) 		{ /*.name=n,*/ .nr=a, .vargs=true, .type=TYPE_any }
-#define batargany(n,a) 		{ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any }
-#define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
+#define arg(n,t)			{ /*.name=n,*/ .type=TYPE_##t }
+#define vararg(n,t)			{ /*.name=n,*/ .type=TYPE_##t, .vargs=true }
+#define batarg(n,t)			{ /*.name=n,*/ .type=TYPE_##t, .isbat=true }
+#define batvararg(n,t)		{ /*.name=n,*/ .type=TYPE_##t, .isbat=true, .vargs=true }
+#define argany(n,a)			{ /*.name=n,*/ .nr=a, .type=TYPE_any }
+#define varargany(n,a)		{ /*.name=n,*/ .nr=a, .vargs=true, .type=TYPE_any }
+#define batargany(n,a)		{ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any }
+#define batvarargany(n,a)	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
 
 #define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any, .shared=true, .inout=true }
 #define sharedbatarg(n,t){ /*.name=n,*/ .type=# t, .isbat=true, .shared=true, .inout=true }
 
 typedef struct __attribute__((__designated_init__)) mel_arg {
-	uint16_t type:8,
-		nr:4,
-		isbat:1,
-		vargs:1;
+	uint16_t type:8, nr:4, isbat:1, vargs:1;
 } mel_arg;
 
 typedef struct __attribute__((__designated_init__)) mel_func {
 	char mod[14];
 	char fcn[30];
-	uint16_t command:1,
-		unsafe:1,
-		retc:6,
-		argc:6;
+	uint16_t command:1, unsafe:1, retc:6, argc:6;
 // comment on MAL instructions should also be available when TRACEing the queries
 	char *comment;
 	union {
@@ -140,20 +131,19 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 
 #endif
 
-typedef str(*mel_init)(void);
+typedef str (*mel_init)(void);
 
 typedef struct __attribute__((__designated_init__)) mel_func_arg {
-	uint16_t type:8,
-		nr:4,
-		isbat:1,
-		vargs:1;
+	uint16_t type:8, nr:4, isbat:1, vargs:1;
 } mel_func_arg;
 
 /* var arg of arguments of type mel_func_arg */
-int melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ...);
+int melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
+				const char *fname, bool unsafe, const char *comment, int retc,
+				int argc, ...);
 
 #ifdef SPECS
-typedef struct __attribute__((__designated_init__)) mal_spec{
+typedef struct __attribute__((__designated_init__)) mal_spec {
 	union {
 		MALfcn imp;
 		char *(*pimp)(Client, MalBlkPtr, MalStkPtr, InstrPtr);

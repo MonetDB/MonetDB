@@ -52,9 +52,9 @@
 static str
 io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bstream **ret= (bstream**) getArgReference(stk,pci,0);
+	bstream **ret = (bstream **) getArgReference(stk, pci, 0);
 	(void) mb;
-	if( cntxt->fdin == NULL)
+	if (cntxt->fdin == NULL)
 		throw(MAL, "io.print", SQLSTATE(HY002) "Input channel missing");
 	*ret = cntxt->fdin;
 	return MAL_SUCCEED;
@@ -63,23 +63,24 @@ io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	stream **ret= (stream**) getArgReference(stk,pci,0);
+	stream **ret = (stream **) getArgReference(stk, pci, 0);
 	(void) mb;
-	if( cntxt->fdout == NULL)
+	if (cntxt->fdout == NULL)
 		throw(MAL, "io.print", SQLSTATE(HY002) "Output channel missing");
 	*ret = cntxt->fdout;
 	return MAL_SUCCEED;
 }
 
 static str
-IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat)
+IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
+			str hd, str tl, int nobat)
 {
 	int tpe = getArgType(mb, pci, indx);
 	ptr val = getArgReference(stk, pci, indx);
 	stream *fp = cntxt->fdout;
 
 	(void) mb;
-	if( cntxt->fdout == NULL)
+	if (cntxt->fdout == NULL)
 		throw(MAL, "io.print", SQLSTATE(HY002) "Output channel missing");
 
 	if (tpe == TYPE_any)
@@ -92,13 +93,13 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 			mnstr_printf(fp, "%s", tl);
 		return MAL_SUCCEED;
 	}
-	if (isaBatType(tpe) ) {
+	if (isaBatType(tpe)) {
 		BAT *b;
 
 		if (is_bat_nil(*(bat *) val)) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
-			mnstr_printf(fp,"nil");
+			mnstr_printf(fp, "nil");
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
 			return MAL_SUCCEED;
@@ -146,9 +147,9 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (msg)
 			return msg;
 		for (i = 2; i < p->argc - 1; i++)
-			if ((msg = IOprintBoth(cntxt,mb, stk, p, i, ", ", 0, 1)) != NULL)
+			if ((msg = IOprintBoth(cntxt, mb, stk, p, i, ", ", 0, 1)) != NULL)
 				return msg;
-		msg = IOprintBoth(cntxt,mb, stk, p, i, ", ", "]\n", 1);
+		msg = IOprintBoth(cntxt, mb, stk, p, i, ", ", "]\n", 1);
 	}
 	return msg;
 
@@ -212,9 +213,12 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 
-static const char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
-static const char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
-static const char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
+static const char toofew_error[80] =
+		OPERATION_FAILED " At least %d parameter(s) expected.\n";
+static const char format_error[80] =
+		OPERATION_FAILED " Error in format before param %d.\n";
+static const char type_error[80] =
+		OPERATION_FAILED " Illegal type in param %d.\n";
 
 #define return_error(x)							\
 	do {										\
@@ -237,25 +241,26 @@ IOprintf_(str *res, str format, ...)
 	char *p;
 
 	if (format == NULL) {
-		throw(MAL,"io.printf", ILLEGAL_ARGUMENT " NULL pointer passed as format.\n");
+		throw(MAL, "io.printf",
+			  ILLEGAL_ARGUMENT " NULL pointer passed as format.\n");
 	} else if (strchr(format, '%') == NULL) {
 		*res = GDKstrdup(format);
 		if (*res == NULL)
-			throw(MAL,"io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	buf = dst = (str) GDKmalloc(size = 80);
-	if ( buf == NULL)
-		throw(MAL,"io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (buf == NULL)
+		throw(MAL, "io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*res = NULL;
 
 	add = GDKmalloc(adds);
 	if (add == NULL) {
 		GDKfree(buf);
-		throw(MAL,"io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	va_start(ap,format);
+	va_start(ap, format);
 	for (cur = format; *cur; cur++) {
 		if (paramseen) {
 			char meta[100];
@@ -272,7 +277,8 @@ IOprintf_(str *res, str format, ...)
 			} else if (dotseen == 0 && *cur == '.') {
 				dotseen = 1;
 				continue;
-			} else if (cur == paramseen + 1 && (*cur == '+' || *cur == '-' || *cur == ' ')) {
+			} else if (cur == paramseen + 1
+					   && (*cur == '+' || *cur == '-' || *cur == ' ')) {
 				continue;
 			} else if (*cur == 'l') {
 				cur++;
@@ -344,7 +350,7 @@ IOprintf_(str *res, str format, ...)
 					va_end(ap);
 					return_error(format_error);
 				}
-			largetypes:
+  largetypes:
 				if (type == TYPE_bte) {
 					lval = (lng) *(bte *) p;
 				} else if (type == TYPE_sht) {
@@ -410,7 +416,7 @@ IOprintf_(str *res, str format, ...)
 				}
 				length = strLen(p);
 				width++;
-				prec++;	/* account for '\0' */
+				prec++;			/* account for '\0' */
 				if (dotseen && (size_t) prec < length)
 					length = (size_t) prec;
 				if (length > width)
@@ -466,73 +472,95 @@ IOprintf_(str *res, str format, ...)
 static str
 IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *fmt = getArgReference_str(stk,pci,1);
+	str *fmt = getArgReference_str(stk, pci, 1);
 	str fmt2 = NULL;
-	str msg= MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
-	switch( pci->argc){
-	case 2: msg= IOprintf_(&fmt2,*fmt);
-			break;
-	case 3: msg= IOprintf_(&fmt2,*fmt,G(2));
+	switch (pci->argc) {
+	case 2:
+		msg = IOprintf_(&fmt2, *fmt);
 		break;
-	case 4: msg= IOprintf_(&fmt2,*fmt,G(2),G(3));
+	case 3:
+		msg = IOprintf_(&fmt2, *fmt, G(2));
 		break;
-	case 5: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4));
+	case 4:
+		msg = IOprintf_(&fmt2, *fmt, G(2), G(3));
 		break;
-	case 6: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5));
+	case 5:
+		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4));
 		break;
-	case 7: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6));
+	case 6:
+		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4), G(5));
 		break;
-	case 8: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7));
+	case 7:
+		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4), G(5), G(6));
 		break;
-	case 9: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7),G(8));
+	case 8:
+		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4), G(5), G(6), G(7));
 		break;
-	case 10: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7),G(8),G(9));
+	case 9:
+		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4), G(5), G(6), G(7), G(8));
+		break;
+	case 10:
+		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4), G(5), G(6), G(7), G(8),
+						G(9));
 		break;
 	default:
 		throw(MAL, "io.printf", "Too many arguments to io.printf");
 	}
-	if (msg== MAL_SUCCEED) {
-		mnstr_printf(cntxt->fdout,"%s",fmt2);
+	if (msg == MAL_SUCCEED) {
+		mnstr_printf(cntxt->fdout, "%s", fmt2);
 		GDKfree(fmt2);
 	}
 	return msg;
 }
+
 static str
-IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str *fmt = getArgReference_str(stk,pci,2);
+IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *fmt = getArgReference_str(stk, pci, 2);
 	str fmt2 = NULL;
-	stream *f= (stream *) getArgReference(stk,pci,1);
-	str msg= MAL_SUCCEED;
+	stream *f = (stream *) getArgReference(stk, pci, 1);
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
-	switch( pci->argc){
-	case 3: msg= IOprintf_(&fmt2,*fmt);
+	switch (pci->argc) {
+	case 3:
+		msg = IOprintf_(&fmt2, *fmt);
 		break;
-	case 4: msg= IOprintf_(&fmt2,*fmt,G(3));
+	case 4:
+		msg = IOprintf_(&fmt2, *fmt, G(3));
 		break;
-	case 5: msg= IOprintf_(&fmt2,*fmt,G(3),G(4));
+	case 5:
+		msg = IOprintf_(&fmt2, *fmt, G(3), G(4));
 		break;
-	case 6: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5));
+	case 6:
+		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5));
 		break;
-	case 7: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6));
+	case 7:
+		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5), G(6));
 		break;
-	case 8: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7));
+	case 8:
+		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5), G(6), G(7));
 		break;
-	case 9: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8));
+	case 9:
+		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5), G(6), G(7), G(8));
 		break;
-	case 10: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8),G(9));
+	case 10:
+		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5), G(6), G(7), G(8), G(9));
 		break;
-	case 11: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8),G(9),G(10));
+	case 11:
+		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5), G(6), G(7), G(8), G(9),
+						G(10));
 		break;
 	default:
 		throw(MAL, "io.printf", "Too many arguments to io.printf");
 	}
-	if (msg== MAL_SUCCEED){
-		mnstr_printf(f,"%s",fmt2);
+	if (msg == MAL_SUCCEED) {
+		mnstr_printf(f, "%s", fmt2);
 		GDKfree(fmt2);
 	}
 	return msg;
@@ -551,10 +579,12 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr val;
 
 	(void) cntxt;
-	if ( pci->retc != 1 || pci->argc < 2 || pci->argc >= MAXPARAMS)
-		throw(MAL, "io.table", "INTERNAL ERROR" " assertion error  retc %d  argc %d", pci->retc, pci->argc);
+	if (pci->retc != 1 || pci->argc < 2 || pci->argc >= MAXPARAMS)
+		throw(MAL, "io.table",
+			  "INTERNAL ERROR" " assertion error  retc %d  argc %d", pci->retc,
+			  pci->argc);
 
-	memset(piv, 0, sizeof(BAT*) * MAXPARAMS);
+	memset(piv, 0, sizeof(BAT *) * MAXPARAMS);
 	for (i = 1; i < pci->argc; i++) {
 		tpe = getArgType(mb, pci, i);
 		val = getArgReference(stk, pci, i);
@@ -609,7 +639,7 @@ IOexport(void *ret, bat *bid, str *fnme)
 		throw(MAL, "io.export", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	s = open_wastream(*fnme);
-	if (s == NULL ){
+	if (s == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "io.export", "%s", mnstr_peek_error(NULL));
 	}
@@ -618,7 +648,7 @@ IOexport(void *ret, bat *bid, str *fnme)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "io.export", "%s", mnstr_peek_error(NULL));
 	}
-    BATprintcolumns(s, 1, &b);
+	BATprintcolumns(s, 1, &b);
 	close_stream(s);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -631,9 +661,9 @@ static str
 IOimport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
-	ssize_t (*tconvert) (const char *, size_t *, ptr *, bool);
+	ssize_t (*tconvert)(const char *, size_t *, ptr *, bool);
 	ssize_t n;
-	size_t bufsize = 2048;	/* NIELS:tmp change used to be 1024 */
+	size_t bufsize = 2048;		/* NIELS:tmp change used to be 1024 */
 	char *base, *cur, *end;
 	char *buf;
 	ptr t = 0;
@@ -660,10 +690,10 @@ IOimport(void *ret, bat *bid, str *fnme)
 		struct stat st;
 
 		buf = (char *) GDKmalloc(bufsize);
-		if ( buf == NULL) {
+		if (buf == NULL) {
 			BBPunfix(b->batCacheid);
 			fclose(fp);
-			throw(MAL,"io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
 		if ((fn = fileno(fp)) <= 0) {
@@ -692,7 +722,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 			throw(MAL, "io.import", OPERATION_FAILED ": file too large");
 		}
 #endif
-		base = cur = (char *) GDKmmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);
+		base = cur = GDKmmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);
 		if (cur == NULL) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
@@ -707,41 +737,40 @@ IOimport(void *ret, bat *bid, str *fnme)
 		size_t l;
 
 		/* like p = strchr(cur, '\n') but with extra bounds check */
-		for (p = cur; p < end && *p != '\n'; p++)
-			;
+		for (p = cur; p < end && *p != '\n'; p++) ;
 		l = p - cur;
 
 		if (p < end) {
 			while (src[l - 1] == '\\') {
-				if (buf+bufsize < dst+l) {
+				if (buf + bufsize < dst + l) {
 					size_t len = dst - buf;
-					size_t inc = (size_t) ((dst+l) - buf);
-					char *tmp = GDKrealloc(buf, bufsize = MAX(inc,bufsize)*2);
+					size_t inc = (size_t) ((dst + l) - buf);
+					char *tmp = GDKrealloc(buf, bufsize = MAX(inc, bufsize) * 2);
 					if (tmp == NULL) {
 						BBPunfix(b->batCacheid);
 						GDKfree(buf);
 						GDKfree(t);
 						GDKmunmap(base, end - base);
-						throw(MAL, "io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						throw(MAL, "io.import",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					buf = tmp;
 					dst = buf + len;
 				}
-				memcpy(dst, src, l-1);
+				memcpy(dst, src, l - 1);
 				dst += l - 1;
 				src += l + 1;
-				for (p = src; p < end && *p != '\n'; p++)
-					;
+				for (p = src; p < end && *p != '\n'; p++) ;
 				if (p == end)
 					break;
 				l = p - src;
 			}
 		}
 
-		if (buf+bufsize < dst+l) {
+		if (buf + bufsize < dst + l) {
 			size_t len = dst - buf;
-			size_t inc = (size_t) ((dst+l) - buf);
-			char *tmp = GDKrealloc(buf, bufsize = MAX(inc,bufsize)*2);
+			size_t inc = (size_t) ((dst + l) - buf);
+			char *tmp = GDKrealloc(buf, bufsize = MAX(inc, bufsize) * 2);
 			if (tmp == NULL) {
 				BBPunfix(b->batCacheid);
 				GDKfree(buf);
@@ -756,28 +785,25 @@ IOimport(void *ret, bat *bid, str *fnme)
 		dst[l] = 0;
 		cur = p + 1;
 		/* Parse the line, and insert a BUN.  */
-		for (p = buf; *p && GDKisspace(*p); p++)
-			;
+		for (p = buf; *p && GDKisspace(*p); p++) ;
 		if (*p == '#')
 			continue;
 
-		for (;*p && *p != '['; p++)
-			;
+		for (; *p && *p != '['; p++) ;
 		if (*p)
-			for (p++; *p && GDKisspace(*p); p++)
-				;
+			for (p++; *p && GDKisspace(*p); p++) ;
 		if (*p == 0) {
 			BBPunfix(b->batCacheid);
-			snprintf(msg,sizeof(msg),"error in input %s",buf);
+			snprintf(msg, sizeof(msg), "error in input %s", buf);
 			GDKfree(buf);
 			GDKmunmap(base, end - base);
 			GDKfree(t);
 			throw(MAL, "io.import", "%s", msg);
 		}
-		n = tconvert(p, &lt, (ptr*)&t, true);
+		n = tconvert(p, &lt, (ptr *) &t, true);
 		if (n < 0) {
 			BBPunfix(b->batCacheid);
-			snprintf(msg,sizeof(msg),"error in input %s",buf);
+			snprintf(msg, sizeof(msg), "error in input %s", buf);
 			GDKfree(buf);
 			GDKmunmap(base, end - base);
 			GDKfree(t);
@@ -791,7 +817,6 @@ IOimport(void *ret, bat *bid, str *fnme)
 			GDKmunmap(base, end - base);
 			throw(MAL, "io.import", "insert failed");
 		}
-
 #if 0							/* why do this? any measured effects? */
 /*
  * Unmap already parsed memory, to keep the memory usage low.
@@ -817,7 +842,8 @@ IOimport(void *ret, bat *bid, str *fnme)
 
 
 static str
-IOsetmallocsuccesscount(void *res, lng *count) {
+IOsetmallocsuccesscount(void *res, lng *count)
+{
 	(void) res;
 	GDKsetmallocsuccesscount(*count);
 	return MAL_SUCCEED;

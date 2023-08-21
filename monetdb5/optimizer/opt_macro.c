@@ -67,7 +67,7 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	if (cvar == NULL)
 		return 0;
 	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg * sizeof(*mvar));
-	if (mvar == NULL){
+	if (mvar == NULL) {
 		GDKfree(cvar);
 		return 0;
 	}
@@ -77,7 +77,7 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	for (i = pc; i < lim; i++, k++) {
 		p = getInstrPtr(mb, i);
 		q = getInstrPtr(mc, k);
-		if (malMatch(p, q) == 0){
+		if (malMatch(p, q) == 0) {
 			GDKfree(cvar);
 			GDKfree(mvar);
 			return 0;
@@ -88,11 +88,11 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 		for (j = 0; j < q->argc; j++)
 			mvar[mtop++] = getArg(q, j);
 	}
-	assert(mtop == ctop);	/*shouldn't happen */
+	assert(mtop == ctop);		/*shouldn't happen */
 
 	for (i = 0; i < ctop; i++)
 		for (j = i + 1; j < ctop; j++)
-			if ((cvar[i] == cvar[j]) != (mvar[i] == mvar[j])) {
+			if ((cvar[i] == cvar[j]) !=(mvar[i] == mvar[j])) {
 				GDKfree(cvar);
 				GDKfree(mvar);
 				return 0;
@@ -101,6 +101,7 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	GDKfree(mvar);
 	return 1;
 }
+
 /*
  * Macro expansions
  * The macro expansion routine walks through the MAL code block in search
@@ -114,7 +115,7 @@ int
 inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 {
 	int i, k, l, n;
-	InstrPtr *ns, p,q;
+	InstrPtr *ns, p, q;
 	int *nv;
 
 	p = getInstrPtr(mb, pc);
@@ -122,20 +123,21 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	ns = GDKzalloc((l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
 	if (ns == NULL)
 		return -1;
-	nv = (int*) GDKmalloc(mc->vtop * sizeof(int));
-	if (nv == 0){
+	nv = (int *) GDKmalloc(mc->vtop * sizeof(int));
+	if (nv == 0) {
 		GDKfree(ns);
 		return -1;
 	}
 
 	/* add all variables of the new block to the target environment */
 	for (n = 0; n < mc->vtop; n++) {
-		if (isExceptionVariable(getVarName(mc,n))) {
-			nv[n] = newVariable(mb, getVarName(mc,n), strlen(getVarName(mc,n)), TYPE_str);
-		} else if (isVarTypedef(mc,n)) {
-			nv[n] = newTypeVariable(mb,getVarType(mc,n));
-		} else if (isVarConstant(mc,n)) {
-			nv[n] = cpyConstant(mb,getVar(mc,n));
+		if (isExceptionVariable(getVarName(mc, n))) {
+			nv[n] = newVariable(mb, getVarName(mc, n),
+								strlen(getVarName(mc, n)), TYPE_str);
+		} else if (isVarTypedef(mc, n)) {
+			nv[n] = newTypeVariable(mb, getVarType(mc, n));
+		} else if (isVarConstant(mc, n)) {
+			nv[n] = cpyConstant(mb, getVar(mc, n));
 		} else {
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
 		}
@@ -148,16 +150,16 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	/* use an alias mapping to keep track of the actual arguments */
 	for (n = p->retc; n < p->argc; n++)
-		nv[getArg(q,n)] = getArg(p, n);
+		nv[getArg(q, n)] = getArg(p, n);
 
 	k = 0;
 	/* find the return statement of the inline function */
 	for (i = 1; i < mc->stop - 1; i++) {
 		q = mc->stmt[i];
-		if( q->barrier== RETURNsymbol){
+		if (q->barrier == RETURNsymbol) {
 			/* add the mapping of the return variables */
-			for(n=0; n<p->retc; n++)
-				nv[getArg(q,n)] = getArg(p,n);
+			for (n = 0; n < p->retc; n++)
+				nv[getArg(q, n)] = getArg(p, n);
 		}
 	}
 
@@ -167,12 +169,12 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	for (i = 1; i < mc->stop - 1; i++) {
 		q = mc->stmt[i];
-		if( q->token == ENDsymbol)
+		if (q->token == ENDsymbol)
 			break;
 
 		/* copy the instruction and fix variable references */
 		ns[k] = copyInstruction(q);
-		if( ns[k] == NULL){
+		if (ns[k] == NULL) {
 			GDKfree(nv);
 			GDKfree(ns);
 			return -1;
@@ -182,10 +184,10 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			getArg(ns[k], n) = nv[getArg(q, n)];
 
 		if (q->barrier == RETURNsymbol) {
-			for(n=0; n<q->retc; n++)
-				clrVarFixed(mb,getArg(ns[k],n)); /* for typing */
-			setModuleId(ns[k],getModuleId(q));
-			setFunctionId(ns[k],getFunctionId(q));
+			for (n = 0; n < q->retc; n++)
+				clrVarFixed(mb, getArg(ns[k], n));	/* for typing */
+			setModuleId(ns[k], getModuleId(q));
+			setFunctionId(ns[k], getFunctionId(q));
 			ns[k]->typechk = TYPE_UNKNOWN;
 			ns[k]->barrier = 0;
 			ns[k]->token = ASSIGNsymbol;
@@ -195,15 +197,15 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	/* copy the remainder of the stable part */
 	freeInstruction(p);
-	for (i = pc + 1; i < mb->stop; i++){
+	for (i = pc + 1; i < mb->stop; i++) {
 		ns[k++] = mb->stmt[i];
 	}
 	/* remove any free instruction */
-	for(; i<mb->ssize; i++)
-	if( mb->stmt[i]){
-		freeInstruction(mb->stmt[i]);
-		mb->stmt[i]= 0;
-	}
+	for (; i < mb->ssize; i++)
+		if (mb->stmt[i]) {
+			freeInstruction(mb->stmt[i]);
+			mb->stmt[i] = 0;
+		}
 	GDKfree(mb->stmt);
 	mb->stmt = ns;
 
@@ -237,7 +239,8 @@ MACROvalidate(MalBlkPtr mb)
 		retseen = p->token == RETURNsymbol || p->barrier == RETURNsymbol;
 	}
 	if (retseen && i != mb->stop - 1)
-		throw(MAL, "optimizer.MACROvalidate", SQLSTATE(HY002) MACRO_SYNTAX_ERROR);
+		throw(MAL, "optimizer.MACROvalidate",
+			  SQLSTATE(HY002) MACRO_SYNTAX_ERROR);
 	return MAL_SUCCEED;
 }
 
@@ -257,18 +260,18 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 	}
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 &&
-			getSignature(t)->token == FUNCTIONsymbol) {
-			if (i == last) /* Duplicate macro expansion */
+		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0
+			&& getSignature(t)->token == FUNCTIONsymbol) {
+			if (i == last)		/* Duplicate macro expansion */
 				return cnt;
 
 			last = i;
 			i = inlineMALblock(mb, i, t->def);
-			if( i < 0) /* Allocation failure */
+			if (i < 0)			/* Allocation failure */
 				return cnt;
 
 			cnt++;
-			if (cnt > MAXEXPANSION) /* Too many macro expansions */
+			if (cnt > MAXEXPANSION)	/* Too many macro expansions */
 				return cnt;
 		}
 	}
@@ -298,7 +301,7 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	if (cvar == NULL)
 		return -1;
 	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg * sizeof(*mvar));
-	if (mvar == NULL){
+	if (mvar == NULL) {
 		GDKfree(cvar);
 		return -1;
 	}
@@ -309,16 +312,16 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		q = getInstrPtr(mc, k);
 		for (j = 0; j < q->argc; j++)
 			cvar[ctop++] = getArg(q, j);
-		assert(ctop < mc->vtop *mc->maxarg);
+		assert(ctop < mc->vtop * mc->maxarg);
 
 		for (j = 0; j < p->argc; j++)
 			mvar[mtop++] = getArg(p, j);
 	}
-	assert(mtop == ctop);	/*shouldn't happen */
+	assert(mtop == ctop);		/*shouldn't happen */
 
 	p = getInstrPtr(mb, pc);
 	q = copyInstruction(getInstrPtr(mc, 0));	/* the signature */
-	if( q == NULL){
+	if (q == NULL) {
 		GDKfree(cvar);
 		GDKfree(mvar);
 		return -1;
@@ -332,11 +335,11 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 				q->argv[i] = mvar[j];
 				break;
 			}
-	/* take the return expression  and match the variables*/
+	/* take the return expression  and match the variables */
 	rq = getInstrPtr(mc, mc->stop - 2);
 	for (i = 0; i < rq->retc; i++)
 		for (j = 0; j < ctop; j++)
-			if (rq->argv[i+rq->retc] == cvar[j]) {
+			if (rq->argv[i + rq->retc] == cvar[j]) {
 				q->argv[i] = mvar[j];
 				break;
 			}
@@ -368,19 +371,19 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t, int *actions)
 	int i;
 	str msg = MAL_SUCCEED;
 
-	if (t == NULL )
-		return msg;	/* ignore the call */
+	if (t == NULL)
+		return msg;				/* ignore the call */
 	mc = t->def;
-	if ( mc->stop < 3)
-		return msg;	/* ignore small call */
+	if (mc->stop < 3)
+		return msg;				/* ignore small call */
 
 	/* strip signature, return, and end statements */
 	for (i = 1; i < mb->stop - mc->stop + 3; i++)
 		if (malFcnMatch(mc, mb, i)) {
 			msg = MACROvalidate(mc);
-			if (msg == MAL_SUCCEED){
-				if( replaceMALblock(mb, i, mc) < 0)
-					throw(MAL,"orcam", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			if (msg == MAL_SUCCEED) {
+				if (replaceMALblock(mb, i, mc) < 0)
+					throw(MAL, "orcam", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				(*actions)++;
 			} else
 				break;
@@ -397,41 +400,40 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t, int *actions)
 static int
 OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	MalBlkPtr target= mb;
+	MalBlkPtr target = mb;
 	Module s;
 	Symbol t;
-	str mod,fcn;
+	str mod, fcn;
 	int j, actions = 0;
 
 	(void) stk;
 
-	if( p->argc == 3){
-		mod= getArgDefault(mb,p,1);
-		fcn= getArgDefault(mb,p,2);
+	if (p->argc == 3) {
+		mod = getArgDefault(mb, p, 1);
+		fcn = getArgDefault(mb, p, 2);
 	} else {
-		mod= getArgDefault(mb,p,1);
-		fcn= getArgDefault(mb,p,2);
-		t= findSymbol(cntxt->usermodule, putName(mod), fcn);
-		if( t == 0)
+		mod = getArgDefault(mb, p, 1);
+		fcn = getArgDefault(mb, p, 2);
+		t = findSymbol(cntxt->usermodule, putName(mod), fcn);
+		if (t == 0)
 			return 0;
-		target= t->def;
-		mod= getArgDefault(mb,p,3);
-		fcn= getArgDefault(mb,p,4);
+		target = t->def;
+		mod = getArgDefault(mb, p, 3);
+		fcn = getArgDefault(mb, p, 4);
 	}
 	s = findModule(cntxt->usermodule, putName(mod));
 	if (s == 0)
 		return 0;
-	if (s->space) {
-		j = getSymbolIndex(fcn);
-		for (t = s->space[j]; t != NULL; t = t->peer)
-			if (t->def->errors == 0) {
-				if (getSignature(t)->token == FUNCTIONsymbol){
-					actions += MACROprocessor(cntxt, target, t);
-				}
+	j = getSymbolIndex(fcn);
+	for (t = s->space[j]; t != NULL; t = t->peer)
+		if (t->def->errors == 0) {
+			if (getSignature(t)->token == FUNCTIONsymbol) {
+				actions += MACROprocessor(cntxt, target, t);
 			}
-	}
+		}
 	return actions;
 }
+
 /*
  * The optimizer call infrastructure is identical to the liners
  * function with the exception that here we inline all possible
@@ -439,120 +441,123 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  */
 
 static str
-OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int *actions)
+OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p,
+					   int *actions)
 {
-	MalBlkPtr target= mb;
+	MalBlkPtr target = mb;
 	Module s;
 	Symbol t;
-	str mod,fcn;
+	str mod, fcn;
 	int j;
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
 
-	if( p->argc == 3){
-		mod= getArgDefault(mb,p,1);
-		fcn= getArgDefault(mb,p,2);
+	if (p->argc == 3) {
+		mod = getArgDefault(mb, p, 1);
+		fcn = getArgDefault(mb, p, 2);
 	} else {
-		mod= getArgDefault(mb,p,1);
-		fcn= getArgDefault(mb,p,2);
-		t= findSymbol(cntxt->usermodule, putName(mod), fcn);
-		if( t == 0)
+		mod = getArgDefault(mb, p, 1);
+		fcn = getArgDefault(mb, p, 2);
+		t = findSymbol(cntxt->usermodule, putName(mod), fcn);
+		if (t == 0)
 			return 0;
-		target= t->def;
-		mod= getArgDefault(mb,p,3);
-		fcn= getArgDefault(mb,p,4);
+		target = t->def;
+		mod = getArgDefault(mb, p, 3);
+		fcn = getArgDefault(mb, p, 4);
 	}
 	s = findModule(cntxt->usermodule, putName(mod));
 	if (s == 0)
 		return 0;
-	if (s->space) {
-		j = getSymbolIndex(fcn);
-		for (t = s->space[j]; t != NULL; t = t->peer)
-			if (t->def->errors == 0) {
-				if (getSignature(t)->token == FUNCTIONsymbol) {
-					freeException(msg);
-					msg =ORCAMprocessor(cntxt, target, t, actions);
-				}
+	j = getSymbolIndex(fcn);
+	for (t = s->space[j]; t != NULL; t = t->peer)
+		if (t->def->errors == 0) {
+			if (getSignature(t)->token == FUNCTIONsymbol) {
+				freeException(msg);
+				msg = ORCAMprocessor(cntxt, target, t, actions);
 			}
-	}
+		}
 	return msg;
 }
 
-str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str
+OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
 	Symbol t;
 	str msg = MAL_SUCCEED, mod, fcn;
 	int actions = 0;
 
-	if( p ==NULL )
+	if (p == NULL)
 		return 0;
 	removeInstruction(mb, p);
-	if( p->argc == 3){
-		mod= getArgDefault(mb,p,1);
-		fcn= getArgDefault(mb,p,2);
+	if (p->argc == 3) {
+		mod = getArgDefault(mb, p, 1);
+		fcn = getArgDefault(mb, p, 2);
 	} else {
-		mod= getArgDefault(mb,p,3);
-		fcn= getArgDefault(mb,p,4);
+		mod = getArgDefault(mb, p, 3);
+		fcn = getArgDefault(mb, p, 4);
 	}
-	t= findSymbol(cntxt->usermodule, putName(mod), fcn);
-	if( t == 0)
+	t = findSymbol(cntxt->usermodule, putName(mod), fcn);
+	if (t == 0)
 		return 0;
 
 	msg = MACROvalidate(t->def);
-	if( msg)
+	if (msg)
 		return msg;
-	if( mb->errors == 0)
-		actions = OPTmacroImplementation(cntxt,mb,stk,p);
+	if (mb->errors == 0)
+		actions = OPTmacroImplementation(cntxt, mb, stk, p);
 
 	/* Defense line against incorrect plans */
-	if (actions > 0){
+	if (actions > 0) {
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
-	/* keep actions taken as a fake argument*/
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, p, actions);
 	return msg;
 }
 
-str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str
+OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
 	Symbol t;
 	str msg = MAL_SUCCEED, mod, fcn;
 	int actions = 0;
 
-	if( p ==NULL )
+	if (p == NULL)
 		return 0;
 	removeInstruction(mb, p);
-	if( p->argc == 3){
-		mod= getArgDefault(mb,p,1);
-		fcn= getArgDefault(mb,p,2);
+	if (p->argc == 3) {
+		mod = getArgDefault(mb, p, 1);
+		fcn = getArgDefault(mb, p, 2);
 	} else {
-		mod= getArgDefault(mb,p,3);
-		fcn= getArgDefault(mb,p,4);
+		mod = getArgDefault(mb, p, 3);
+		fcn = getArgDefault(mb, p, 4);
 	}
-	t= findSymbol(cntxt->usermodule, putName(mod), fcn);
-	if( t == 0)
+	t = findSymbol(cntxt->usermodule, putName(mod), fcn);
+	if (t == 0)
 		return 0;
 
 	msg = MACROvalidate(t->def);
-	if( msg)
+	if (msg)
 		return msg;
-	if( mb->errors == 0)
-		msg= OPTorcamImplementation(cntxt,mb,stk,p, &actions);
-	if( msg)
+	if (mb->errors == 0)
+		msg = OPTorcamImplementation(cntxt, mb, stk, p, &actions);
+	if (msg)
 		return msg;
 	/* Defense line against incorrect plans */
-	if (actions > 0){
+	if (actions > 0) {
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
-	/* keep actions taken as a fake argument*/
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, p, actions);
 	return msg;
 }

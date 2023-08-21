@@ -18,7 +18,9 @@
 #include "mal.h"
 #include "mal_client.h"
 
-extern str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk);
-extern str deblockdataflow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
+						  MalStkPtr stk);
+extern str deblockdataflow(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						   InstrPtr pci);
 
-#endif /*  _MAL_DATAFLOW_H*/
+#endif /*  _MAL_DATAFLOW_H */

@@ -78,8 +78,3 @@ grant execute on function difference(string, string) to public;
 create function sys.qgramnormalize(x string)
 returns string external name txtsim.qgramnormalize;
 grant execute on function qgramnormalize(string) to public;
-
--- (DEPRECATED) Normalized edit distance between two strings
-create function sys.similarity(x string, y string)
-returns double external name txtsim.similarity;
-grant execute on function similarity(string, string) to public;

@@ -80,7 +80,7 @@ query TT rowsort
 SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL
 ----
 (empty)
-0:00:01
+0:00:01.234000
 
 statement error
 SELECT '' AS nine, INTERVAL_TBL.* FROM INTERVAL_TBL
@@ -118,12 +118,12 @@ query TT rowsort
 SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL order by f1 desc
 ----
 (empty)
-0:00:01
+0:00:01.234000
 
 query T rowsort
 select avg(f1) from interval_tbl
 ----
-0:00:01
+0:00:01.234000
 
 statement error
 select avg(cast(f1 as double)) from interval_tbl
@@ -137,12 +137,12 @@ select avg(cast(f1 as decimal(22,3))) from interval_tbl
 query T rowsort
 select min(f1) from interval_tbl
 ----
-0:00:01
+0:00:01.234000
 
 query T rowsort
 select max(f1) from interval_tbl
 ----
-0:00:01
+0:00:01.234000
 
 statement error
 select sum(cast(f1 as decimal(22,3))) from interval_tbl

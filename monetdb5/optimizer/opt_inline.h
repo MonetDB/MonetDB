@@ -15,6 +15,7 @@
 #include "mal_interpreter.h"
 #include "opt_macro.h"
 
-extern str OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+								   InstrPtr p);
 
 #endif

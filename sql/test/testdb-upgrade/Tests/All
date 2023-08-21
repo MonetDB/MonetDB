@@ -1,2 +1,2 @@
 HAVE_GEOM&LASTREL&!NOWAL?upgrade
-dump
+!GEOS_VERSION>=3.12?dump

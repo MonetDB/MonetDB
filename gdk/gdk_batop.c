@@ -721,7 +721,9 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
+	RTREEdestroy(b);
 	TSKdestroy(b);
+
 	MT_lock_set(&b->theaplock);
 
 	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
@@ -954,6 +956,7 @@ BATdel(BAT *b, BAT *d)
 	HASHdestroy(b);
 	PROPdestroy(b);
 	STRMPdestroy(b);
+	RTREEdestroy(b);
 	TSKdestroy(b);
 	if (BATtdense(d)) {
 		oid o = d->tseqbase;
@@ -1150,6 +1153,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	STRMPdestroy(b);
+	RTREEdestroy(b);
 	TSKdestroy(b);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
@@ -1409,6 +1413,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			mskSetVal(b, updid, Tmskval(&ni, i));
 		}
+		bi = bat_iterator_nolock(b);
 	} else if (autoincr) {
 		if (pos < b->hseqbase ||
 		    (!mayappend && pos + ni.count > hseqend)) {
@@ -1437,6 +1442,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
+		bi = bat_iterator_nolock(b);
 
 		/* we copy all of n, so if there are nils in n we get
 		 * nils in b (and else we don't know) */
@@ -3013,6 +3019,7 @@ BATrmprop(BAT *b, enum prop_t idx)
 /*
  * The BATcount_no_nil function counts all BUN in a BAT that have a
  * non-nil tail value.
+ * This function does not fail (the callers currently don't check for failure).
  */
 BUN
 BATcount_no_nil(BAT *b, BAT *s)

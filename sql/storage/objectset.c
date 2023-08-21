@@ -166,7 +166,7 @@ hash_delete(sql_hash *h, void *data)
 }
 
 static void
-node_destroy(objectset *os, sqlstore *store, versionhead  *n)
+node_destroy_(objectset *os, sqlstore *store, versionhead  *n)
 {
 	if (!os->sa)
 		_DELETE(n);
@@ -395,11 +395,11 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 	bte state = os_atmc_get_state(ov);
 
 	if (state & name_based_versionhead_owner) {
-		node_destroy(ov->os, store, ov->name_based_head);
+		node_destroy_(ov->os, store, ov->name_based_head);
 	}
 
 	if (state & id_based_versionhead_owner) {
-		node_destroy(ov->os, store, ov->id_based_head);
+		node_destroy_(ov->os, store, ov->id_based_head);
 	}
 
 	if (os->destroy && ov->b)
@@ -653,18 +653,20 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, boo
 {
 	assert(!sa);
 	objectset *os = SA_NEW(sa, objectset);
-	*os = (objectset) {
-		.refcnt = 1,
-		.sa = sa,
-		.destroy = destroy,
-		.temporary = temporary,
-		.unique = unique,
-		.concurrent = concurrent,
-		.nested = nested,
-		.store = store
-	};
-	os->destroy = destroy;
-	MT_rwlock_init(&os->rw_lock, "sa_readers_lock");
+	if (os) {
+		*os = (objectset) {
+			.refcnt = 1,
+			.sa = sa,
+			.destroy = destroy,
+			.temporary = temporary,
+			.unique = unique,
+			.concurrent = concurrent,
+			.nested = nested,
+			.store = store
+		};
+		os->destroy = destroy;
+		MT_rwlock_init(&os->rw_lock, "sa_readers_lock");
+	}
 
 	return os;
 }
@@ -691,14 +693,14 @@ os_destroy(objectset *os, sql_store store)
 			ov = older;
 		}
 		versionhead* hn =n->next;
-		node_destroy(os, store, n);
+		node_destroy_(os, store, n);
 		n = hn;
 	}
 
 	n=os->name_based_h;
 	while(n) {
 		versionhead* hn =n->next;
-		node_destroy(os, store, n);
+		node_destroy_(os, store, n);
 		n = hn;
 	}
 

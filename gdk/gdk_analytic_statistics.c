@@ -306,7 +306,7 @@ avg_fp_deltas(dbl)
 		TPE *restrict bp = (TPE*)bi.base;		\
 		if (p) {					\
 			while (i < cnt) {			\
-				if (np[i]) 	{		\
+				if (np[i]) {			\
 avg##TPE##IMP:							\
 					REAL_IMP(TPE, IMP);	\
 				}				\
@@ -578,7 +578,7 @@ avg_int_deltas(lng)
 		TPE *restrict bp = (TPE*)bi.base, *rb = (TPE *) Tloc(r, 0); \
 		if (p) {						\
 			while (i < cnt) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 avg##TPE##IMP:								\
 					IMP(TPE);			\
 				}					\
@@ -839,7 +839,7 @@ typedef struct stdev_var_deltas {
 	do {							\
 		if (p) {					\
 			while (i < cnt) {			\
-				if (np[i]) 	{		\
+				if (np[i]) {			\
 statistics##TPE##IMP:						\
 					IMP(TPE, SAMPLE, OP);	\
 				}				\

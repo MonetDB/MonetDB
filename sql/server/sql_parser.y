@@ -173,9 +173,8 @@ uescape_xform(char *restrict s, const char *restrict esc)
 %parse-param { mvc *m }
 %lex-param { void *m }
 
-/* only possible from bison 3.6 and up
+/* only possible from bison 3.6 and up */
 %define parse.error verbose
-*/
 
 /* reentrant parser */
 %define api.pure
@@ -235,6 +234,8 @@ int yydebug=1;
 	drop_table_element
 	exec
 	exec_ref
+	arg_list_ref
+	named_arg_list_ref
 	existence_test
 	filter_exp
 	forest_element_value
@@ -263,6 +264,7 @@ int yydebug=1;
 	merge_match_clause
 	merge_stmt
 	merge_update_or_delete
+	multi_arg_func
 	null
 	object_name
 	operation
@@ -274,6 +276,8 @@ int yydebug=1;
 	opt_having_clause
 	opt_limit
 	opt_offset
+	opt_offset_rows
+	opt_fetch
 	opt_order_by_clause
 	opt_over
 	opt_partition_by
@@ -433,6 +437,7 @@ int yydebug=1;
 	XML_PI_target
 	opt_optimizer
 	opt_default_role
+	multi_arg_func_name
 
 %type <l>
 	argument_list
@@ -517,6 +522,7 @@ int yydebug=1;
 	triggered_statement
 	typelist
 	value_commalist
+	named_value_commalist
 	variable_list
 	variable_ref
 	variable_ref_commalist
@@ -651,6 +657,7 @@ int yydebug=1;
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE SNAPSHOT
+%token  LEAST GREATEST
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <operation> ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
@@ -717,8 +724,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHOUT
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND EPOCH ZONE
-%token LIMIT OFFSET SAMPLE SEED
-
+%token LIMIT OFFSET SAMPLE SEED FETCH
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
 %token COPY RECORDS DELIMITERS STDIN STDOUT FWF CLIENT SERVER
@@ -813,10 +819,34 @@ sqlstmt:
 	{
 		(void)yynerrs;
 		if (m->sym) {
-			append_symbol(m->sym->data.lval, $$);
+			append_symbol(m->sym->data.lval, $1);
 			$$ = m->sym;
 		} else {
 			m->sym = $$ = $1;
+		}
+		YYACCEPT;
+	}
+
+ | sql ':' named_arg_list_ref SCOLON
+	{
+		(void)yynerrs;
+		 if (!m->emode) /* don't replace m_deps/instantiate */
+			m->emode = m_prepare;
+		if (m->sym) {
+			append_symbol(m->sym->data.lval, $1);
+			$$ = m->sym;
+		} else {
+			dlist* stmts = L();
+			append_symbol(stmts, $$ = $1);
+			m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
+		}
+		/* call( query, nop(-1, false, parameters) ) */
+		if (m->sym->data.lval) {
+			m->emod |= mod_exec;
+			dlist* l = L();
+			append_symbol(l, m->sym);
+			append_symbol(l, $3);
+			m->sym = _symbol_create_list(SQL_CALL, l);
 		}
 		YYACCEPT;
 	}
@@ -1310,9 +1340,9 @@ alter_statement:
 	  append_string(l, $7);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
- | ALTER USER ident opt_with_encrypted_password user_schema opt_schema_path opt_default_role
+ | ALTER USER ident opt_with_encrypted_password user_schema opt_schema_path opt_default_role opt_max_memory opt_max_workers
 	{ dlist *l = L(), *p = L();
-	  if (!$4 && !$5 && !$6 && !$7) {
+	  if (!$4 && !$5 && !$6 && !$7 && $8 < 0 && $9 < 0) {
 		yyerror(m, "ALTER USER: At least one property should be updated");
 		YYABORT;
 	  }
@@ -1324,6 +1354,8 @@ alter_statement:
 	  append_string(p, NULL);
 	  append_list(l, p);
 	  append_string(l, $7);
+	  append_lng(l, $8);
+	  append_int(l, $9);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER USER ident RENAME TO ident
 	{ dlist *l = L();
@@ -1341,6 +1373,8 @@ alter_statement:
 	  append_string(p, $10);
 	  append_list(l, p);
 	  append_string(l, NULL);
+	  append_lng(l, -1);
+	  append_int(l, -1);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER SCHEMA if_exists ident RENAME TO ident
 	{ dlist *l = L();
@@ -1578,12 +1612,14 @@ role_def:
  ;
 
 opt_max_memory:
-    /* empty */         { $$ = 0; }
+    /* empty */         { $$ = -1; }
+ |  NO MAX_MEMORY       { $$ = 0; }
  |  MAX_MEMORY poslng   { $$ = $2; }
  ;
 
 opt_max_workers:
-    /* empty */         { $$ = 0; }
+    /* empty */         { $$ = -1; }
+ |  NO MAX_WORKERS      { $$ = 0; }
  |  MAX_WORKERS posint  { $$ = $2; }
  ;
 
@@ -2256,12 +2292,7 @@ func_def:
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
 			else if (l == 'P' || l == 'p') {
-				// code does not get cleaner than this people
-				if (strcasecmp($9, "PYTHON_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY;
-				} else if (strcasecmp($9, "PYTHON3_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY3;
-				} else if (strcasecmp($9, "PYTHON3") == 0) {
+				if (strcasecmp($9, "PYTHON3") == 0) {
 					lang = FUNC_LANG_PY3;
 				} else {
 					lang = FUNC_LANG_PY;
@@ -2274,9 +2305,9 @@ func_def:
 				}
 			}
 			else if (l == 'J' || l == 'j')
-				lang = FUNC_LANG_J;
+				lang = FUNC_LANG_J;	/* Javascript */
 			else {
-				sqlformaterror(m, "Language name R, C, PYTHON[3], PYTHON[3]_MAP or J(avascript):expected, received '%c'", l);
+				sqlformaterror(m, "Language name C, CPP, PYTHON, PYTHON3, R or J(avascript) expected, received '%s'", $9);
 			}
 
 			append_list(f, $3);
@@ -3189,6 +3220,12 @@ value_commalist:
 			{ $$ = append_symbol($1, $3); }
  ;
 
+named_value_commalist:
+    ident value		{ $$ = append_string(append_symbol(L(), $2), $1); }
+ |  named_value_commalist ',' ident value
+			{ $$ = append_string(append_symbol($1, $4), $3); }
+ ;
+
 null:
    sqlNULL		{ $$ = _symbol_create(SQL_NULL, NULL ); }
  ;
@@ -3394,8 +3431,36 @@ select_no_parens_orderby:
 			if ($1->token == SQL_SELECT) {
 				SelectNode *s = (SelectNode*)$1;
 				s -> orderby = $2;
-				s -> limit = $3;
 				s -> offset = $4;
+				s -> limit = $3;
+				s -> sample = $5;
+				s -> seed = $6;
+			} else { /* Add extra select * from .. in case of UNION, EXCEPT, INTERSECT */
+				$$ = newSelectNode(
+					SA, 0,
+					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5, $6, NULL);
+			}
+		} else {
+			yyerror(m, "missing SELECT operator");
+			YYABORT;
+		}
+	  }
+	}
+|    select_no_parens opt_order_by_clause opt_offset_rows opt_fetch opt_sample opt_seed
+	 {
+	  $$ = $1;
+	  if ($2 || $3 || $4 || $5 || $6) {
+		if ($1 != NULL &&
+		    ($1->token == SQL_SELECT ||
+		     $1->token == SQL_UNION  ||
+		     $1->token == SQL_EXCEPT ||
+		     $1->token == SQL_INTERSECT)) {
+			if ($1->token == SQL_SELECT) {
+				SelectNode *s = (SelectNode*)$1;
+				s -> orderby = $2;
+				s -> offset = $3;
+				s -> limit = $4;
 				s -> sample = $5;
 				s -> seed = $6;
 			} else { /* Add extra select * from .. in case of UNION, EXCEPT, INTERSECT */
@@ -3503,6 +3568,19 @@ table_ref:
 				  append_int(l, 0);
 				  append_symbol(l, $2);
 				  $$ = _symbol_create_list(SQL_NAME, l); }
+ |  string opt_table_name	{ dlist *l = L();
+				  dlist *f = L();
+				  append_list(f, append_string(L(), "file_loader"));
+ 				  append_int(f, FALSE); /* ignore distinct */
+				  const char *s = $1;
+				  int len = UTF8_strlen(s);
+				  sql_subtype t;
+				  sql_find_subtype(&t, "char", len, 0 );
+				  append_symbol(f, _newAtomNode( _atom_string(&t, s)));
+				  append_symbol(l, _symbol_create_list( SQL_UNOP, f));
+				  append_int(l, 0);
+				  append_symbol(l, $2);
+				  $$ = _symbol_create_list(SQL_TABLE, l); }
  |  func_ref opt_table_name
 			        { dlist *l = L();
 				  append_symbol(l, $1);
@@ -3650,6 +3728,22 @@ opt_order_by_clause:
 		{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
  ;
 
+first_next:
+    FIRST
+ |  NEXT 
+ ;
+
+opt_rows:
+    /* empty */
+ |  rows
+ ;
+
+rows:
+    ROW
+ |  ROWS 
+ ;
+
+/* TODO add support for limit start, end */
 opt_limit:
     /* empty */	{ $$ = NULL; }
  |  LIMIT nonzerolng	{
@@ -3660,12 +3754,35 @@ opt_limit:
  ;
 
 opt_offset:
-	/* empty */	{ $$ = NULL; }
+    /* empty */		{ $$ = NULL; }
  |  OFFSET poslng	{
 			  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2));
 			}
  |  OFFSET param	{ $$ = $2; }
+ ;
+
+opt_offset_rows:
+    /* empty */		{ $$ = NULL; }
+ |  OFFSET poslng opt_rows	{
+			  sql_subtype *t = sql_bind_localtype("lng");
+			  $$ = _newAtomNode( atom_int(SA, t, $2));
+			}
+ |  OFFSET param opt_rows	{ $$ = $2; }
+ ;
+
+opt_fetch:
+    /* empty */	{ $$ = NULL; }
+ |  FETCH first_next nonzerolng rows ONLY {
+			  sql_subtype *t = sql_bind_localtype("lng");
+			  $$ = _newAtomNode( atom_int(SA, t, $3));
+			}
+ |  FETCH first_next param rows ONLY 
+			{ $$ = $3; }
+ |  FETCH first_next rows ONLY {
+			  sql_subtype *t = sql_bind_localtype("lng");
+			  $$ = _newAtomNode( atom_int(SA, t, 1));
+			}
  ;
 
 opt_sample:
@@ -4180,6 +4297,7 @@ value_exp:
  |  string_funcs
  |  XML_value_function
  |  odbc_scalar_func_escape
+ |  multi_arg_func
  ;
 
 param:
@@ -4188,6 +4306,16 @@ param:
 	  int nr = (m->params)?list_length(m->params):0;
 
 	  sql_add_param(m, NULL, NULL);
+	  $$ = _symbol_create_int( SQL_PARAMETER, nr );
+	}
+  | ':' ident
+	{
+	  int nr = sql_bind_param( m, $2);
+
+	  if (nr < 0) {
+	  	nr = (m->params)?list_length(m->params):0;
+	  	sql_add_param(m, $2, NULL);
+	  }
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr );
 	}
   ;
@@ -4917,8 +5045,11 @@ literal:
 		{ sql_subtype t;
 		  atom *a;
 		  int r;
-
-		  r = sql_find_subtype(&t, ($3)?"timetz":"time", $2, 0);
+		  int precision = $2;
+	
+		  if (precision == 1 && strlen($4) > 9)
+			precision += (int) strlen($4) - 9;
+		  r = sql_find_subtype(&t, ($3)?"timetz":"time", precision, 0);
 		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
 			sqlformaterror(m, SQLSTATE(22007) "Incorrect time value (%s)", $4);
 			$$ = NULL;
@@ -5560,6 +5691,7 @@ non_reserved_word:
 
 | ACTION	{ $$ = sa_strdup(SA, "action"); }
 | ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
+| ASC		{ $$ = sa_strdup(SA, "asc"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
 | BIG		{ $$ = sa_strdup(SA, "big"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
@@ -5568,6 +5700,7 @@ non_reserved_word:
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA		{ $$ = sa_strdup(SA, "data"); }
 | DECADE	{ $$ = sa_strdup(SA, "decade"); }
+| DESC		{ $$ = sa_strdup(SA, "desc"); }
 | DIAGNOSTICS	{ $$ = sa_strdup(SA, "diagnostics"); }
 | DOW		{ $$ = sa_strdup(SA, "dow"); }
 | DOY		{ $$ = sa_strdup(SA, "doy"); }
@@ -5760,17 +5893,36 @@ dealloc:
  ;
 
 exec_ref:
-    posint '(' ')'
+    posint arg_list_ref { $$ = $2; $$->data.lval->h->data.i_val = $1; }
+ ;
+
+arg_list_ref:
+    '(' ')'
 	{ dlist *l = L();
-	  append_int(l, $1);
+	  append_int(l, -1);
 	  append_int(l, FALSE); /* ignore distinct */
 	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
-|   posint '(' value_commalist ')'
+ |  '(' value_commalist ')'
 	{ dlist *l = L();
-	  append_int(l, $1);
+	  append_int(l, -1);
 	  append_int(l, FALSE); /* ignore distinct */
-	  append_list(l, $3);
+	  append_list(l, $2);
+	  $$ = _symbol_create_list( SQL_NOP, l ); }
+ ;
+
+named_arg_list_ref:
+    '(' ')'
+	{ dlist *l = L();
+	  append_int(l, -1);
+	  append_int(l, FALSE); /* ignore distinct */
+	  append_list(l, NULL);
+	  $$ = _symbol_create_list( SQL_NOP, l ); }
+ |  '(' named_value_commalist ')'
+	{ dlist *l = L();
+	  append_int(l, -1);
+	  append_int(l, FALSE); /* ignore distinct */
+	  append_list(l, $2);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
 
@@ -6631,6 +6783,28 @@ odbc_tsi_qualifier:
     | SQL_TSI_YEAR
 	{ $$ = iyear; }
 ;
+
+multi_arg_func_name:
+    LEAST	{ $$ = sa_strdup(SA, "least"); }
+ |  GREATEST 	{ $$ = sa_strdup(SA, "greatest"); }		
+ ;
+
+multi_arg_func:
+    multi_arg_func_name '(' case_search_condition_commalist ')' /* create nested calls of binary function */
+		{ dlist *args = $3; 
+		  dnode *f = args->h;
+		  symbol *cur = f->data.sym;
+ 		  for (dnode *dn = f->next; dn; dn = dn->next) {
+			dlist *l = L();
+	  		append_list( l, append_string(L(), $1));
+	  		append_int(l, FALSE); /* ignore distinct */
+	  		append_symbol(l, cur);
+	  		append_symbol(l, dn->data.sym);
+	  		cur = _symbol_create_list( SQL_BINOP, l );
+		  }
+		  $$ = cur;
+	        }
+ ;
 
 %%
 

@@ -319,14 +319,28 @@ sql_update_hugeint(Client c, mvc *sql)
 
 #ifdef HAVE_SHP
 static str
-sql_update_shp(Client c)
+sql_create_shp(Client c)
 {
-	const char *query = "create procedure SHPattach(fname string) external name shp.attach;\ncreate procedure SHPload(fid integer) external name shp.import;\ncreate procedure SHPload(fid integer, filter geometry) external name shp.import;\nupdate sys.functions set system = true where schema_id = 2000 and name in ('shpattach', 'shpload');\n";
+	//Create the new SHPload procedures
+	const char *query = "create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;\n"
+		"create procedure SHPLoad(fname string, tablename string) external name shp.load;\n"
+		"update sys.functions set system = true where schema_id = 2000 and name in ('shpload');";
+	printf("Running database upgrade commands:\n%s\n", query);
+	return SQLstatementIntern(c, query, "update", true, false, NULL);
+}
+#endif
+
+static str
+sql_drop_shp(Client c)
+{
+	//Drop the old SHP procedures (upgrade from version before shpload upgrade)
+	const char *query = "drop procedure if exists SHPattach(string) cascade;\n"
+		"drop procedure if exists SHPload(integer) cascade;\n"
+		"drop procedure if exists SHPload(integer, geometry) cascade;\n";
 	printf("Running database upgrade commands:\n%s\n", query);
 	fflush(stdout);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
-#endif
 
 static str
 sql_update_generator(Client c)
@@ -4666,7 +4680,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 			 BBPrename(u, NULL) != 0 ||
 			 BBPrename(p, NULL) != 0 ||
 			 BBPrename(d, NULL) != 0 ||
-			 TMsubcommit_list(authbats, NULL, 4, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED)) {
+			 TMsubcommit_list(authbats, NULL, 4, -1, -1) != GDK_SUCCEED)) {
 				fprintf(stderr, "Committing removal of old user/password BATs failed\n");
 		}
 		BBPunfix(u->batCacheid);
@@ -5167,32 +5181,30 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 			if (wr)
 				wr->system = 0;
 
-			pos = 0;
-			pos += snprintf(buf + pos, bufsize - pos,
-							"drop procedure if exists wlc.master() cascade;\n"
-							"drop procedure if exists wlc.master(string) cascade;\n"
-							"drop procedure if exists wlc.stop() cascade;\n"
-							"drop procedure if exists wlc.flush() cascade;\n"
-							"drop procedure if exists wlc.beat(int) cascade;\n"
-							"drop function if exists wlc.clock() cascade;\n"
-							"drop function if exists wlc.tick() cascade;\n"
-							"drop procedure if exists wlr.master(string) cascade;\n"
-							"drop procedure if exists wlr.stop() cascade;\n"
-							"drop procedure if exists wlr.accept() cascade;\n"
-							"drop procedure if exists wlr.replicate() cascade;\n"
-							"drop procedure if exists wlr.replicate(timestamp) cascade;\n"
-							"drop procedure if exists wlr.replicate(tinyint) cascade;\n"
-							"drop procedure if exists wlr.replicate(smallint) cascade;\n"
-							"drop procedure if exists wlr.replicate(integer) cascade;\n"
-							"drop procedure if exists wlr.replicate(bigint) cascade;\n"
-							"drop procedure if exists wlr.beat(integer) cascade;\n"
-							"drop function if exists wlr.clock() cascade;\n"
-							"drop function if exists wlr.tick() cascade;\n"
-							"drop schema if exists wlc cascade;\n"
-							"drop schema if exists wlr cascade;\n");
-			assert(pos < bufsize);
-			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+			const char *query =
+				"drop procedure if exists wlc.master() cascade;\n"
+				"drop procedure if exists wlc.master(string) cascade;\n"
+				"drop procedure if exists wlc.stop() cascade;\n"
+				"drop procedure if exists wlc.flush() cascade;\n"
+				"drop procedure if exists wlc.beat(int) cascade;\n"
+				"drop function if exists wlc.clock() cascade;\n"
+				"drop function if exists wlc.tick() cascade;\n"
+				"drop procedure if exists wlr.master(string) cascade;\n"
+				"drop procedure if exists wlr.stop() cascade;\n"
+				"drop procedure if exists wlr.accept() cascade;\n"
+				"drop procedure if exists wlr.replicate() cascade;\n"
+				"drop procedure if exists wlr.replicate(timestamp) cascade;\n"
+				"drop procedure if exists wlr.replicate(tinyint) cascade;\n"
+				"drop procedure if exists wlr.replicate(smallint) cascade;\n"
+				"drop procedure if exists wlr.replicate(integer) cascade;\n"
+				"drop procedure if exists wlr.replicate(bigint) cascade;\n"
+				"drop procedure if exists wlr.beat(integer) cascade;\n"
+				"drop function if exists wlr.clock() cascade;\n"
+				"drop function if exists wlr.tick() cascade;\n"
+				"drop schema if exists wlc cascade;\n"
+				"drop schema if exists wlr cascade;\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		}
 	}
 
@@ -5234,9 +5246,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	/* fixes for handling single quotes in strings so that we can run
 	 * with raw_strings after having created a database without (and
 	 * v.v.) */
-	pos = snprintf(buf, bufsize,
-				   "select id from sys.functions where name = 'dump_table_data' and schema_id = 2000 and func like '%% R'')%%';\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
+	if ((err = SQLstatementIntern(c, "select id from sys.functions where name = 'dump_table_data' and schema_id = 2000 and func like '% R'')%';\n", "update", true, false, &output)) == NULL) {
 		if (((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) || find_sql_table(sql->session->tr, s, "remote_user_info") == NULL) {
 			sql_table *t;
 			if ((t = mvc_bind_table(sql, s, "describe_tables")) != NULL)
@@ -5593,9 +5603,6 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 					   "create function sys.qgramnormalize(x string)\n"
 					   "returns string external name txtsim.qgramnormalize;\n"
 					   "grant execute on function qgramnormalize(string) to public;\n"
-					   "create function sys.similarity(x string, y string)\n"
-					   "returns double external name txtsim.similarity;\n"
-					   "grant execute on function similarity(string, string) to public;\n"
 
 					   "create function asciify(x string)\n"
 					   "returns string external name str.asciify;\n"
@@ -5637,7 +5644,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 					   "external name str.contains;\n"
 					   "grant execute on filter function contains(string, string, boolean) to public;\n"
 
-					   "update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = %d;\n"
+					   "update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize') and schema_id = 2000 and type = %d;\n"
 					   "update sys.functions set system = true where system <> true and name in ('maxlevenshtein', 'minjarowinkler') and schema_id = 2000 and type = %d;\n"
 					   "update sys.functions set system = true where system <> true and name in ('asciify', 'startswith', 'endswith', 'contains') and schema_id = 2000 and type = %d;\n"
 					   "update sys.functions set system = true where system <> true and name in ('startswith', 'endswith', 'contains') and schema_id = 2000 and type = %d;\n"
@@ -5738,7 +5745,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 			BBPrename(rt_uri, NULL) != 0 ||
 			BATmode(rt_deleted, true) != GDK_SUCCEED ||
 			BBPrename(rt_deleted, NULL) != 0 ||
-			TMsubcommit_list(rtauthbats, NULL, 6, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED) {
+			TMsubcommit_list(rtauthbats, NULL, 6, -1, -1) != GDK_SUCCEED) {
 			fprintf(stderr, "Committing removal of old remote user/password BATs failed\n");
 		}
 		BBPunfix(rt_key->batCacheid);
@@ -5750,6 +5757,156 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_default_geom(Client c, mvc *sql, sql_schema *s)
+{
+	sql_subtype tp;
+	char *err = NULL;
+
+	/* the shp module was changed: drop the old stuff if it exists, only
+	 * add the new stuff if the appropriate module is available */
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	/* Drop old SHP procedures */
+	if (sql_bind_func(sql, s->base.name, "shpattach", &tp, NULL, F_PROC, true)) {
+		if ((err = sql_drop_shp(c)) != NULL)
+			return err;
+	}
+	sql->session->status = 0; /* if the shpattach function was not found clean the error */
+	sql->errstr[0] = '\0';
+#ifdef HAVE_GEOM
+	if (backend_has_module(&(int){0}, "geom")) {
+#ifdef HAVE_SHP
+		if (backend_has_module(&(int){0}, "shp")) {
+			/* if shpload with two varchar args does not exist, add the
+			 * procedures */
+			if (!sql_bind_func(sql, s->base.name, "shpload", &tp, &tp, F_PROC, true)) {
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				if ((err = sql_create_shp(c)) != NULL)
+					return err;
+			}
+		}
+#endif
+		sql_find_subtype(&tp, "geometry", 0, 0);
+		if (!sql_bind_func(sql, s->base.name, "st_intersects_noindex", &tp, &tp, F_FILT, true)) {
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+			sql_table *t;
+			if ((t = mvc_bind_table(sql, s, "geometry_columns")) != NULL)
+				t->system = 0;
+			const char *query =
+				"drop function if exists sys.st_intersects(geometry, geometry) cascade;\n"
+				"drop function if exists sys.st_dwithin(geometry, geometry, double) cascade;\n"
+				"drop view if exists sys.geometry_columns cascade;\n"
+				"drop function if exists sys.st_collect(geometry, geometry) cascade;\n"
+				"drop aggregate if exists sys.st_collect(geometry) cascade;\n"
+				"drop aggregate if exists sys.st_makeline(geometry) cascade;\n"
+				"create view sys.geometry_columns as\n"
+				" select cast(null as varchar(1)) as f_table_catalog,\n"
+				"  s.name as f_table_schema,\n"
+				"  t.name as f_table_name,\n"
+				"  c.name as f_geometry_column,\n"
+				"  cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,\n"
+				"  c.type_scale as srid,\n"
+				"  get_type(c.type_digits, 0) as geometry_type\n"
+				" from sys.columns c, sys.tables t, sys.schemas s\n"
+				" where c.table_id = t.id and t.schema_id = s.id\n"
+				"  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));\n"
+				"GRANT SELECT ON sys.geometry_columns TO PUBLIC;\n"
+				"CREATE FUNCTION ST_Collect(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom.\"Collect\";\n"
+				"GRANT EXECUTE ON FUNCTION ST_Collect(Geometry, Geometry) TO PUBLIC;\n"
+				"CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr.\"Collect\";\n"
+				"GRANT EXECUTE ON AGGREGATE ST_Collect(Geometry) TO PUBLIC;\n"
+				"CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom.\"DistanceGeographic\";\n"
+				"GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom.\"DWithinGeographic\";\n"
+				"GRANT EXECUTE ON FILTER ST_DWithinGeographic(Geometry, Geometry, double) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME rtree.\"DWithin\";\n"
+				"GRANT EXECUTE ON FILTER ST_DWithin(Geometry, Geometry, double) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_DWithin_NoIndex(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom.\"DWithin_noindex\";\n"
+				"GRANT EXECUTE ON FILTER ST_DWithin_NoIndex(Geometry, Geometry, double) TO PUBLIC;\n"
+				"CREATE FUNCTION ST_DWithin2(geom1 Geometry, geom2 Geometry, bbox1 mbr, bbox2 mbr, dst double) RETURNS boolean EXTERNAL NAME geom.\"DWithin2\";\n"
+				"GRANT EXECUTE ON FUNCTION ST_DWithin2(Geometry, Geometry, mbr, mbr, double) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom.\"IntersectsGeographic\";\n"
+				"GRANT EXECUTE ON FILTER ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) EXTERNAL NAME rtree.\"Intersects\";\n"
+				"GRANT EXECUTE ON FILTER ST_Intersects(Geometry, Geometry) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_Intersects_NoIndex(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom.\"Intersects_noindex\";\n"
+				"GRANT EXECUTE ON FILTER ST_Intersects_NoIndex(Geometry, Geometry) TO PUBLIC;\n"
+				"CREATE AGGREGATE ST_MakeLine(geom Geometry) RETURNS Geometry external name aggr.\"MakeLine\";\n"
+				"GRANT EXECUTE ON AGGREGATE ST_MakeLine(Geometry) TO PUBLIC;\n"
+				"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('st_collect', 'st_distancegeographic', 'st_dwithingeographic', 'st_dwithin', 'st_dwithin_noindex', 'st_dwithin2', 'st_intersectsgeographic', 'st_intersects', 'st_intersects_noindex', 'st_makeline');\n"
+				"update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'geometry_columns';\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+	}
+#endif
+	return err;
+}
+
+static str
+sql_update_default(Client c, mvc *sql, sql_schema *s)
+{
+	sql_subtype tp;
+	char *err = NULL;
+
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	if (sql_bind_func(sql, s->base.name, "similarity", &tp, &tp, F_FUNC, true)) {
+		const char *query = "drop function sys.similarity(string, string) cascade;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	} else {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+	}
+
+	if (mvc_bind_table(sql, s, "describe_accessible_tables") == NULL) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		const char *query =
+		"create view sys.describe_accessible_tables as\n"
+		" select\n"
+		" schemas.name as schema,\n"
+		" tables.name as table,\n"
+		" table_types.table_type_name as table_type,\n"
+		" privilege_codes.privilege_code_name as privs,\n"
+		" privileges.privileges as privs_code\n"
+		" from privileges\n"
+		" join sys.roles\n"
+		" on privileges.auth_id = roles.id\n"
+		" join sys.tables\n"
+		" on privileges.obj_id = tables.id\n"
+		" join sys.table_types\n"
+		" on tables.type = table_types.table_type_id\n"
+		" join sys.schemas\n"
+		" on tables.schema_id = schemas.id\n"
+		" join sys.privilege_codes\n"
+		" on privileges.privileges = privilege_codes.privilege_code_id\n"
+		" where roles.name = current_role;\n"
+ 		"GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;\n"
+		"update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'describe_accessible_tables';\n"
+
+			"alter table sys.function_languages set read write;\n"
+			"delete from sys.function_languages where language_keyword like 'PYTHON%_MAP';\n"
+			/* for these two, also see load_func() */
+			"update sys.functions set language = language - 1 where language in (7, 11);\n"
+			"update sys.functions set mod = 'pyapi3' where mod in ('pyapi', 'pyapi3map');\n"
+			"commit;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err == MAL_SUCCEED) {
+			query = "alter table sys.function_languages set read only;\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+	}
+
+	return err;
 }
 
 int
@@ -5775,21 +5932,6 @@ SQLupgrades(Client c, mvc *m)
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			return -1;
-		}
-	}
-#endif
-
-#ifdef HAVE_SHP
-	if (backend_has_module(&(int){0}, "shp")) {
-		sql_find_subtype(&tp, "varchar", 0, 0);
-		if (!sql_bind_func(m, s->base.name, "shpattach", &tp, NULL, F_PROC, true)) {
-			m->session->status = 0; /* if the function was not found clean the error */
-			m->errstr[0] = '\0';
-			if ((err = sql_update_shp(c)) != NULL) {
-				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-				freeException(err);
-				return -1;
-			}
 		}
 	}
 #endif
@@ -5954,6 +6096,18 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_jun2023(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
+	}
+
+	if ((err = sql_update_default_geom(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
+	}
+
+	if ((err = sql_update_default(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;

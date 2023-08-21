@@ -18,9 +18,12 @@
 
 #define MAXMODULES  128
 
-mal_export str malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessionlimit, bool with_mapi_server);
-mal_export str malExtraModulesBoot(Client c, str extraMalModules[], char* mal_scripts);
+mal_export str malEmbeddedBoot(int workerlimit, int memorylimit,
+							   int querytimeout, int sessionlimit,
+							   bool with_mapi_server);
+mal_export str malExtraModulesBoot(Client c, str extraMalModules[],
+								   char *mal_scripts);
 mal_export void malEmbeddedReset(void);
 mal_export _Noreturn void malEmbeddedStop(int status);
 
-#endif /*  _MAL_EMBEDDED_H*/
+#endif /*  _MAL_EMBEDDED_H */

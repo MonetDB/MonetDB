@@ -31,8 +31,8 @@ typedef struct NonMalEvent {
 	enum event_phase phase;
 	Client cntxt;
 	ulng clk;
-	ulng* tid;
-	ulng* ts;
+	ulng *tid;
+	ulng *ts;
 	int state;
 	ulng duration;
 } NonMalEvent;
@@ -49,7 +49,7 @@ typedef struct MalEvent {
 mal_export int profilerStatus;
 mal_export int profilerMode;
 
-mal_export void profilerEvent(MalEvent *me, NonMalEvent *nme);
+mal_export void profilerEvent(MalEvent * me, NonMalEvent * nme);
 mal_export oid runtimeProfileSetTag(Client cntxt);
 
 mal_export str startTrace(Client cntxt);
@@ -81,7 +81,8 @@ extern lng getDiskReads(void);
 extern lng getDiskWrites(void);
 extern lng getUserTime(void);
 extern lng getSystemTime(void);
-extern void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
+extern void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle,
+							   lng *iowait);
 #endif
 
 #endif

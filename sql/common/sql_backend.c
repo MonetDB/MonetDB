@@ -78,10 +78,10 @@ backend_schema_has_user(ptr mvc, sql_schema *s)
 
 int
 backend_alter_user(ptr mvc, str user, str passwd, bool enc,
-				   sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id)
+				   sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id, lng max_memory, int max_workers)
 {
 	if (be_funcs.fauser != NULL)
-		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id));
+		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id, max_memory, max_workers));
 	return(FALSE);
 }
 

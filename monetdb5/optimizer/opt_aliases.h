@@ -14,8 +14,7 @@
 #include "opt_support.h"
 #include "mal_exception.h"
 
-extern int OPTisAlias(InstrPtr p);
-extern void OPTaliasRemap(InstrPtr p, int *alias);
-extern str OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+									InstrPtr p);
 
 #endif

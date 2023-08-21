@@ -270,11 +270,11 @@ rel_alter_seq(
 	char *sname = qname_schema(qname);
 	char *name = qname_schema_object(qname);
 	sql_sequence *seq;
-	int start_type = start_list->h->data.i_val;
+	int start_type = start_list?start_list->h->data.i_val:0;
 	sql_rel *r = NULL;
 	sql_exp *val = NULL;
 
-	assert(start_list->h->type == type_int);
+	assert(!start_list || start_list->h->type == type_int);
 	(void) tpe;
 	if (!(seq = find_sequence_on_scope(sql, sname, name, "ALTER SEQUENCE")))
 		return NULL;

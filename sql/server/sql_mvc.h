@@ -215,7 +215,7 @@ extern int mvc_drop_schema(mvc *c, sql_schema *s, int drop_action);
 extern int mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner);
 extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern str mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
-extern int mvc_create_table(sql_table **t, mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
+sql_export int mvc_create_table(sql_table **t, mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
 extern int mvc_create_view(sql_table **t, mvc *m, sql_schema *s, const char *name, int persistence, const char *sql, bit system);
 extern int mvc_create_remote(sql_table **t, mvc *m, sql_schema *s, const char *name, int persistence, const char *loc);
 
@@ -319,8 +319,13 @@ extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
 
 static inline int mvc_highwater(mvc *sql)
 {
-	int l = 0, rc = 0;
+#if defined(__GNUC__) || defined(__clang__)
+	uintptr_t c = (uintptr_t) __builtin_frame_address(0);
+#else
+	int l = 0;
 	uintptr_t c = (uintptr_t) (&l);
+#endif
+	int rc = 0;
 
 	size_t diff = c < sql->sp ? sql->sp - c : c - sql->sp;
 	if (diff > THREAD_STACK_SIZE - 280 * 1024)

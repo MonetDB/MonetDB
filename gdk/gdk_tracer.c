@@ -114,6 +114,8 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 
 	/* we use malloc/free instead of GDKmalloc/GDKfree to avoid
 	 * possible recursion */
+#undef malloc
+#undef free
 	if (dbtrace == NULL) {
 		write_to_tracer = false;
 		if (dbpath == NULL) {
@@ -511,6 +513,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	va_list va;
 	char ts[TS_SIZE];
 	char *msg = NULL;
+	bool isexit;
 	static char file_prefix[] = __FILE__;
 	static size_t prefix_length = (size_t) -1;
 
@@ -548,6 +551,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 					  sizeof(buffer) - bytes_written,
 					  fmt, va);
 	}
+	isexit = strstr(msg, EXITING_MSG) != NULL;
 	va_end(va);
 	if (bytes_written < 0) {
 		if ((adapter_t) ATOMIC_GET(&cur_adapter) != MBEDDED)
@@ -565,7 +569,8 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 			size_t n = strlen(buf);
 			snprintf(buf + n, GDKMAXERRLEN - n,
 				 "%s%s: %s%s%s\n",
-				 GDKERROR, func, msg,
+				 isexit ? "" : GDKERROR,
+				 func, msg,
 				 syserr ? ": " : "",
 				 syserr ? syserr : "");
 		}
@@ -580,7 +585,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		reinit();
 
 	if (level <= M_WARNING || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)) {
-		fprintf(level <= M_ERROR ? stderr : stdout,
+		fprintf(level <= M_ERROR && !isexit ? stderr : stdout,
 			"#%s%s%s: %s: %s: %s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",

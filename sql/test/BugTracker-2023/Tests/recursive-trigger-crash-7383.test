@@ -1,0 +1,8 @@
+statement ok
+create table t1(c1 int auto_increment primary key NOT NULL);
+
+statement ok
+create trigger i1 after insert on t1 for each row insert into t1 values(NULL);
+
+statement error
+insert into t1 values(NULL);

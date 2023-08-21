@@ -19,7 +19,9 @@
 #include "mal.h"
 #include "mal_interpreter.h"
 
-mal_export str CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						   InstrPtr pci);
+mal_export str CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						   InstrPtr pci);
 
 #endif /* _CLIENTS_H */

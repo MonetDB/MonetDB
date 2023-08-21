@@ -113,7 +113,8 @@ ODBCConnectionString(SQLRETURN rc,
 		     const char *pwd,
 		     const char *host,
 		     int port,
-		     const char *database)
+		     const char *database,
+		     int mapToLongVarchar)
 {
 	int n;
 #ifdef ODBCDEBUG
@@ -188,8 +189,19 @@ ODBCConnectionString(SQLRETURN rc,
 	if (database) {
 		if (BufferLength > 0) {
 			n = snprintf((char *) OutConnectionString,
-				     BufferLength,
-				     "DATABASE=%s;", database);
+				     BufferLength, "DATABASE=%s;", database);
+			if (n < 0)
+				n = BufferLength + 1;
+			BufferLength -= n;
+			OutConnectionString += n;
+		} else {
+			BufferLength = -1;
+		}
+	}
+	if (mapToLongVarchar > 0) {
+		if (BufferLength > 0) {
+			n = snprintf((char *) OutConnectionString,
+				     BufferLength, "mapToLongVarchar=%d;", mapToLongVarchar);
 			if (n < 0)
 				n = BufferLength + 1;
 			BufferLength -= n;
@@ -293,7 +305,7 @@ MNDBDriverConnect(ODBCDbc *dbc,
 {
 	char *key, *attr;
 	char *dsn = 0, *uid = 0, *pwd = 0, *host = 0, *database = 0;
-	int port = 0;
+	int port = 0, mapToLongVarchar = 0;
 	SQLRETURN rc;
 	int n;
 
@@ -343,6 +355,9 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		else if (strcasecmp(key, "port") == 0 && port == 0) {
 			port = atoi(attr);
 			free(attr);
+		} else if (strcasecmp(key, "mapToLongVarchar") == 0 && mapToLongVarchar == 0) {
+			mapToLongVarchar = atoi(attr);
+			free(attr);
 #ifdef ODBCDEBUG
 #ifdef NATIVE_WIN32
 		} else if (strcasecmp(key, "logfile") == 0 &&
@@ -389,13 +404,15 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS,
 				 (SQLCHAR *) uid, SQL_NTS,
 				 (SQLCHAR *) pwd, SQL_NTS,
-				 host, port, database);
+				 host, port, database,
+				 mapToLongVarchar);
 	}
 
 	if (SQL_SUCCEEDED(rc)) {
 		rc = ODBCConnectionString(rc, dbc, OutConnectionString,
 					  BufferLength, StringLength2Ptr,
-					  dsn, uid, pwd, host, port, database);
+					  dsn, uid, pwd, host, port, database,
+					  mapToLongVarchar);
 	}
 
 	if (dsn)

@@ -22,7 +22,7 @@ static inline lng
 date_diff_imp(const date d1, const date d2)
 {
 	int diff = date_diff(d1, d2);
-	return is_int_nil(diff) ? lng_nil : (lng) diff * (lng) (24*60*60*1000);
+	return is_int_nil(diff) ? lng_nil : (lng) diff *(lng) (24 * 60 * 60 * 1000);
 }
 
 static inline daytime
@@ -48,8 +48,10 @@ date_sub_msec_interval(date *ret, date d, lng ms)
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_date_nil((*ret = date_add_day(d, (int) (-ms / (24*60*60*1000))))))
-		throw(MAL, "mtime.date_sub_msec_interval", SQLSTATE(22003) "overflow in calculation");
+	if (is_date_nil
+		((*ret = date_add_day(d, (int) (-ms / (24 * 60 * 60 * 1000))))))
+		throw(MAL, "mtime.date_sub_msec_interval",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -60,8 +62,10 @@ date_add_msec_interval(date *ret, date d, lng ms)
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_date_nil((*ret = date_add_day(d, (int) (ms / (24*60*60*1000))))))
-		throw(MAL, "mtime.date_add_msec_interval", SQLSTATE(22003) "overflow in calculation");
+	if (is_date_nil
+		((*ret = date_add_day(d, (int) (ms / (24 * 60 * 60 * 1000))))))
+		throw(MAL, "mtime.date_add_msec_interval",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -73,7 +77,8 @@ timestamp_sub_msec_interval(timestamp *ret, timestamp ts, lng ms)
 		return MAL_SUCCEED;
 	}
 	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, -ms * 1000))))
-		throw(MAL, "mtime.timestamp_sub_msec_interval", SQLSTATE(22003) "overflow in calculation");
+		throw(MAL, "mtime.timestamp_sub_msec_interval",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -85,7 +90,8 @@ timestamp_sub_month_interval(timestamp *ret, timestamp ts, int m)
 		return MAL_SUCCEED;
 	}
 	if (is_timestamp_nil((*ret = timestamp_add_month(ts, -m))))
-		throw(MAL, "mtime.timestamp_sub_month_interval", SQLSTATE(22003) "overflow in calculation");
+		throw(MAL, "mtime.timestamp_sub_month_interval",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -97,7 +103,8 @@ timestamp_add_month_interval(timestamp *ret, timestamp ts, int m)
 		return MAL_SUCCEED;
 	}
 	if (is_timestamp_nil((*ret = timestamp_add_month(ts, m))))
-		throw(MAL, "mtime.timestamp_add_month_interval", SQLSTATE(22003) "overflow in calculation");
+		throw(MAL, "mtime.timestamp_add_month_interval",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -109,7 +116,8 @@ timestamp_add_msec_interval(timestamp *ret, timestamp ts, lng ms)
 		return MAL_SUCCEED;
 	}
 	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
-		throw(MAL, "mtime.timestamp_add_msec_interval", SQLSTATE(22003) "overflow in calculation");
+		throw(MAL, "mtime.timestamp_add_msec_interval",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -120,7 +128,8 @@ odbc_timestamp_add_msec_interval_time(timestamp *ret, daytime t, lng ms)
 	date today = timestamp_date(timestamp_current());
 	timestamp ts = timestamp_create(today, t);
 	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
-		throw(MAL, "mtime.odbc_timestamp_add_msec_interval_time", SQLSTATE(22003) "overflow in calculation");
+		throw(MAL, "mtime.odbc_timestamp_add_msec_interval_time",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -131,7 +140,8 @@ odbc_timestamp_add_month_interval_time(timestamp *ret, daytime t, int m)
 	date today = timestamp_date(timestamp_current());
 	timestamp ts = timestamp_create(today, t);
 	if (is_timestamp_nil((*ret = timestamp_add_month(ts, m))))
-		throw(MAL, "mtime.odbc_timestamp_add_month_interval_time", SQLSTATE(22003) "overflow in calculation");
+		throw(MAL, "mtime.odbc_timestamp_add_month_interval_time",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -141,7 +151,8 @@ odbc_timestamp_add_msec_interval_date(timestamp *ret, date d, lng ms)
 {
 	timestamp ts = timestamp_fromdate(d);
 	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
-		throw(MAL, "mtime.odbc_timestamp_add_msec_interval_date", SQLSTATE(22003) "overflow in calculation");
+		throw(MAL, "mtime.odbc_timestamp_add_msec_interval_date",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -154,7 +165,8 @@ date_submonths(date *ret, date d, int m)
 		return MAL_SUCCEED;
 	}
 	if (is_date_nil((*ret = date_add_month(d, -m))))
-		throw(MAL, "mtime.date_submonths", SQLSTATE(22003) "overflow in calculation");
+		throw(MAL, "mtime.date_submonths",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -166,7 +178,8 @@ date_addmonths(date *ret, date d, int m)
 		return MAL_SUCCEED;
 	}
 	if (is_date_nil((*ret = date_add_month(d, m))))
-		throw(MAL, "mtime.date_addmonths", SQLSTATE(22003) "overflow in calculation");
+		throw(MAL, "mtime.date_addmonths",
+			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
 }
 
@@ -201,6 +214,7 @@ timestamp_century(const timestamp t)
 	else
 		return -((-y - 1) / 100 + 1);
 }
+
 #define timestamp_decade(t) is_timestamp_nil(t) ? int_nil : date_year(timestamp_date(t)) / 10
 #define timestamp_year(t) date_year(timestamp_date(t))
 #define timestamp_quarter(t) is_timestamp_nil(t) ? bte_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1

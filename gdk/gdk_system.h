@@ -223,7 +223,7 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 #define _DBG_LOCK_COUNT_0(l)					\
 	do {							\
 		ATOMIC_INC(&GDKlockcnt);			\
-		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name); 	\
+		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name);	\
 	} while (0)
 
 #define _DBG_LOCK_LOCKER(l)				\
@@ -243,7 +243,7 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 #define _DBG_LOCK_CONTENTION(l)						\
 	do {								\
-		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name); 	\
+		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name);	\
 		ATOMIC_INC(&GDKlockcontentioncnt);			\
 		ATOMIC_INC(&(l)->contention);				\
 	} while (0)
@@ -468,17 +468,17 @@ typedef struct MT_Lock {
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && (_DBG_LOCK_LOCKER(l), true))
 
 #ifdef LOCK_STATS
-#define MT_lock_set(l)					\
-	do {						\
-		_DBG_LOCK_COUNT_0(l);			\
-		if (pthread_mutex_trylock(&(l)->lock) {	\
-			_DBG_LOCK_CONTENTION(l);	\
-			MT_thread_setlockwait(l);	\
-			pthread_mutex_lock(&(l)->lock);	\
-			MT_thread_setlockwait(NULL);	\
-		}					\
-		_DBG_LOCK_LOCKER(l);			\
-		_DBG_LOCK_COUNT_2(l);			\
+#define MT_lock_set(l)						\
+	do {							\
+		_DBG_LOCK_COUNT_0(l);				\
+		if (pthread_mutex_trylock(&(l)->lock)) {	\
+			_DBG_LOCK_CONTENTION(l);		\
+			MT_thread_setlockwait(l);		\
+			pthread_mutex_lock(&(l)->lock);		\
+			MT_thread_setlockwait(NULL);		\
+		}						\
+		_DBG_LOCK_LOCKER(l);				\
+		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
 #else
 #define MT_lock_set(l)				\

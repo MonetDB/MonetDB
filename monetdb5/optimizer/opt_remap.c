@@ -20,8 +20,10 @@
 #include "opt_multiplex.h"
 
 static int
-OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx, Module scope){
-	str mod,fcn;
+OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
+			   Module scope)
+{
+	str mod, fcn;
 	char buf[1024];
 	int i, retc = pci->retc;
 	InstrPtr p;
@@ -30,45 +32,53 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	(void) cntxt;
 	(void) stk;
 	int plus_one = getArgType(mb, pci, pci->retc) == TYPE_lng ? 1 : 0;
-	mod = VALget(&getVar(mb, getArg(pci, retc+0+plus_one))->value);
-	fcn = VALget(&getVar(mb, getArg(pci, retc+1+plus_one))->value);
+	mod = VALget(&getVar(mb, getArg(pci, retc + 0 + plus_one))->value);
+	fcn = VALget(&getVar(mb, getArg(pci, retc + 1 + plus_one))->value);
 
-	if(strncmp(mod,"bat",3)==0)
-		mod+=3;
+	if (strncmp(mod, "bat", 3) == 0)
+		mod += 3;
 
 
-	snprintf(buf,1024,"bat%s",mod);
+	snprintf(buf, 1024, "bat%s", mod);
 	bufName = putName(buf);
 	fcnName = putName(fcn);
-	if(bufName == NULL || fcnName == NULL)
+	if (bufName == NULL || fcnName == NULL)
 		return 0;
 
-	p= newInstructionArgs(mb, bufName, fcnName, pci->argc + 2);
+	p = newInstructionArgs(mb, bufName, fcnName, pci->argc + 2);
 	if (p == NULL)
 		return 0;
 
-	for(i=0; i<pci->retc; i++)
-		if (i<1)
-			getArg(p,i) = getArg(pci,i);
+	for (i = 0; i < pci->retc; i++)
+		if (i < 1)
+			getArg(p, i) = getArg(pci, i);
 		else
-			p = pushReturn(mb, p, getArg(pci,i));
-	p->retc= p->argc= pci->retc;
+			p = pushReturn(mb, p, getArg(pci, i));
+	p->retc = p->argc = pci->retc;
 
 
 
 	if (plus_one) {
-		p = pushArgument(mb,p,getArg(pci,pci->retc)); // cardinality argument
+		p = pushArgument(mb, p, getArg(pci, pci->retc));	// cardinality argument
 	}
 
-	for(i= pci->retc+2+plus_one; i<pci->argc; i++)
-		p= pushArgument(mb,p,getArg(pci,i));
+	for (i = pci->retc + 2 + plus_one; i < pci->argc; i++)
+		p = pushArgument(mb, p, getArg(pci, i));
 	if (p->retc == 1 &&
-		((bufName == batcalcRef &&
-		(fcnName == mulRef || fcnName == divRef || fcnName == plusRef || fcnName == minusRef || fcnName == modRef)) || bufName == batmtimeRef || bufName == batstrRef)) {
+		((bufName == batcalcRef
+		  && (fcnName == mulRef
+			  || fcnName == divRef
+			  || fcnName == plusRef
+			  || fcnName == minusRef
+			  || fcnName == modRef))
+		 || bufName == batmtimeRef
+		 || bufName == batstrRef)) {
 		if (p->argc == 3 &&
 			/* these two filter out unary batcalc.- with a candidate list */
-			getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
-			(getBatType(getArgType(mb, p, 2)) != TYPE_oid && !(isVarConstant(mb, getArg(p, 2)) && getArgType(mb, p, 2) == TYPE_bat))) {
+			getBatType(getArgType(mb, p, 1)) != TYPE_oid
+			&& (getBatType(getArgType(mb, p, 2)) != TYPE_oid
+				&& !(isVarConstant(mb, getArg(p, 2))
+					 && getArgType(mb, p, 2) == TYPE_bat))) {
 			/* add candidate lists */
 			if (isaBatType(getArgType(mb, p, 1)))
 				p = pushNil(mb, p, TYPE_bat);
@@ -78,12 +88,12 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	}
 
 	/* now see if we can resolve the instruction */
-	typeChecker(scope,mb,p,idx,TRUE);
-	if( p->typechk== TYPE_UNKNOWN) {
+	typeChecker(scope, mb, p, idx, TRUE);
+	if (p->typechk == TYPE_UNKNOWN) {
 		freeInstruction(p);
 		return 0;
 	}
-	pushInstruction(mb,p);
+	pushInstruction(mb, p);
 	return 1;
 }
 
@@ -119,55 +129,55 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
  * counterpart.
  */
 static int
-OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
+OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 {
 	MalBlkPtr mq;
 	InstrPtr q = NULL, sig;
 	char buf[1024];
-	int i,j,k,m;
-	int refbat=0, retc = p->retc;
+	int i, j, k, m;
+	int refbat = 0, retc = p->retc;
 	bit *upgrade;
 	str msg;
 
 
-	str mod = VALget(&getVar(mb, getArg(p, retc+0))->value);
-	str fcn = VALget(&getVar(mb, getArg(p, retc+1))->value);
+	str mod = VALget(&getVar(mb, getArg(p, retc + 0))->value);
+	str fcn = VALget(&getVar(mb, getArg(p, retc + 1))->value);
 	//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
 	Symbol s = findSymbolInModule(getModule(putName(mod)), putName(fcn));
 
-	if( s== NULL || !isSideEffectFree(s->def) ||
-		getInstrPtr(s->def,0)->retc != p->retc ) {
+	if (s == NULL || !isSideEffectFree(s->def)
+		|| getInstrPtr(s->def, 0)->retc != p->retc) {
 		return 0;
 	}
 	/*
 	 * Determine the variables to be upgraded and adjust their type
 	 */
-	if((mq = copyMalBlk(s->def)) == NULL) {
+	if ((mq = copyMalBlk(s->def)) == NULL) {
 		return 0;
 	}
-	sig= getInstrPtr(mq,0);
+	sig = getInstrPtr(mq, 0);
 
-	upgrade = (bit*) GDKzalloc(sizeof(bit)*mq->vtop);
-	if( upgrade == NULL) {
+	upgrade = (bit *) GDKzalloc(sizeof(bit) * mq->vtop);
+	if (upgrade == NULL) {
 		freeMalBlk(mq);
 		return 0;
 	}
 
-	setVarType(mq, 0,newBatType(getArgType(mb,p,0)));
-	clrVarFixed(mq,getArg(getInstrPtr(mq,0),0)); /* for typing */
-	upgrade[getArg(getInstrPtr(mq,0),0)] = TRUE;
+	setVarType(mq, 0, newBatType(getArgType(mb, p, 0)));
+	clrVarFixed(mq, getArg(getInstrPtr(mq, 0), 0));	/* for typing */
+	upgrade[getArg(getInstrPtr(mq, 0), 0)] = TRUE;
 
-	for(i=3; i<p->argc; i++){
-		if( !isaBatType( getArgType(mq,sig,i-2)) &&
-			isaBatType( getArgType(mb,p,i)) ){
+	for (i = 3; i < p->argc; i++) {
+		if (!isaBatType(getArgType(mq, sig, i - 2))
+			&& isaBatType(getArgType(mb, p, i))) {
 
-			if( getBatType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
+			if (getBatType(getArgType(mb, p, i)) != getArgType(mq, sig, i - 2)) {
 				goto terminateMX;
 			}
 
-			setVarType(mq, i-2,newBatType(getArgType(mb,p,i)));
-			upgrade[getArg(sig,i-2)]= TRUE;
-			refbat= getArg(sig,i-2);
+			setVarType(mq, i - 2, newBatType(getArgType(mb, p, i)));
+			upgrade[getArg(sig, i - 2)] = TRUE;
+			refbat = getArg(sig, i - 2);
 		}
 	}
 	/*
@@ -175,20 +185,21 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	 * to-be-inlined function for arguments that require
 	 * an upgrade and resolve it afterwards.
 	 */
-	for(i=1; i<mq->stop; i++) {
+	for (i = 1; i < mq->stop; i++) {
 		int fnd = 0;
 
-		q = getInstrPtr(mq,i);
+		q = getInstrPtr(mq, i);
 		if (q->token == ENDsymbol)
 			break;
-		for(j=0; j<q->argc && !fnd; j++)
-			if (upgrade[getArg(q,j)]) {
-				for(k=0; k<q->retc; k++){
-					setVarType(mq,getArg(q,j),newBatType(getArgType(mq, q, j)));
+		for (j = 0; j < q->argc && !fnd; j++)
+			if (upgrade[getArg(q, j)]) {
+				for (k = 0; k < q->retc; k++) {
+					setVarType(mq, getArg(q, j),
+							   newBatType(getArgType(mq, q, j)));
 					/* for typing */
-					clrVarFixed(mq,getArg(q,k));
-					if (!upgrade[getArg(q,k)]) {
-						upgrade[getArg(q,k)]= TRUE;
+					clrVarFixed(mq, getArg(q, k));
+					if (!upgrade[getArg(q, k)]) {
+						upgrade[getArg(q, k)] = TRUE;
 						/* lets restart */
 						i = 0;
 					}
@@ -196,74 +207,80 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 				fnd = 1;
 			}
 		/* nil:type -> nil:bat[:oid,:type] */
-		if (!getModuleId(q) && q->token == ASSIGNsymbol &&
-			q->argc == 2 && isVarConstant(mq, getArg(q,1)) &&
-			upgrade[getArg(q,0)] &&
-			getArgType(mq,q,0) == TYPE_void &&
-			!isaBatType(getArgType(mq, q, 1)) ){
-				/* handle nil assignment */
-				if( ATOMcmp(getArgGDKType(mq, q, 1),
-					VALptr(&getVar(mq, getArg(q,1))->value),
-					ATOMnilptr(getArgType(mq, q, 1))) == 0) {
+		if (!getModuleId(q) && q->token == ASSIGNsymbol && q->argc == 2
+			&& isVarConstant(mq, getArg(q, 1)) && upgrade[getArg(q, 0)]
+			&& getArgType(mq, q, 0) == TYPE_void
+			&& !isaBatType(getArgType(mq, q, 1))) {
+			/* handle nil assignment */
+			if (ATOMcmp
+				(getArgGDKType(mq, q, 1),
+				 VALptr(&getVar(mq, getArg(q, 1))->value),
+				 ATOMnilptr(getArgType(mq, q, 1))) == 0) {
 				ValRecord cst;
 				int tpe = newBatType(getArgType(mq, q, 1));
 
-				setVarType(mq,getArg(q,0),tpe);
+				setVarType(mq, getArg(q, 0), tpe);
 				cst.vtype = TYPE_bat;
 				cst.val.bval = bat_nil;
 				cst.len = 0;
-				m =defConstant(mq, tpe, &cst);
-				if( m >= 0){
-					getArg(q,1) = m;
-					setVarType(mq, getArg(q,1), tpe);
+				m = defConstant(mq, tpe, &cst);
+				if (m >= 0) {
+					getArg(q, 1) = m;
+					setVarType(mq, getArg(q, 1), tpe);
 				}
-			} else{
+			} else {
 				/* handle constant tail setting */
 				int tpe = newBatType(getArgType(mq, q, 1));
 
-				setVarType(mq,getArg(q,0),tpe);
-				setModuleId(q,algebraRef);
-				setFunctionId(q,projectRef);
-				q= pushArgument(mb,q, getArg(q,1));
+				setVarType(mq, getArg(q, 0), tpe);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, projectRef);
+				q = pushArgument(mb, q, getArg(q, 1));
 				mq->stmt[i] = q;
-				getArg(q,1)= refbat;
+				getArg(q, 1) = refbat;
 			}
 		}
 	}
 
 	/* now upgrade the statements */
-	for(i=1; i<mq->stop; i++){
-		q= getInstrPtr(mq,i);
-		if( q->token== ENDsymbol)
+	for (i = 1; i < mq->stop; i++) {
+		q = getInstrPtr(mq, i);
+		if (q->token == ENDsymbol)
 			break;
-		for(j=0; j<q->argc; j++)
-			if ( upgrade[getArg(q,j)]){
-				if ( blockStart(q) ||
-					 q->barrier== REDOsymbol || q->barrier==LEAVEsymbol )
+		for (j = 0; j < q->argc; j++)
+			if (upgrade[getArg(q, j)]) {
+				if (blockStart(q) || q->barrier == REDOsymbol
+					|| q->barrier == LEAVEsymbol)
 					goto terminateMX;
-				if (getModuleId(q)){
-					snprintf(buf,1024,"bat%s",getModuleId(q));
-					setModuleId(q,putName(buf));
+				if (getModuleId(q)) {
+					snprintf(buf, 1024, "bat%s", getModuleId(q));
+					setModuleId(q, putName(buf));
 					q->typechk = TYPE_UNKNOWN;
 					if (q->retc == 1 &&
-						((getModuleId(q) == batcalcRef &&
-						(getFunctionId(q) == mulRef || getFunctionId(q) == divRef || getFunctionId(q) == plusRef || getFunctionId(q) == minusRef || getFunctionId(q) == modRef)) || getModuleId(q) == batmtimeRef || getModuleId(q) == batstrRef)) {
+						((getModuleId(q) == batcalcRef
+						  && (getFunctionId(q) == mulRef
+							  || getFunctionId(q) == divRef
+							  || getFunctionId(q) == plusRef
+							  || getFunctionId(q) == minusRef
+							  || getFunctionId(q) == modRef))
+						 || getModuleId(q) == batmtimeRef
+						 || getModuleId(q) == batstrRef)) {
 						if (q->argc == 3 &&
 							/* these two filter out unary batcalc.- with a candidate list */
-							getBatType(getArgType(mq, q, 1)) != TYPE_oid &&
-							getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
+							getBatType(getArgType(mq, q, 1)) != TYPE_oid
+							&& getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
 							/* add candidate lists */
 							if (isaBatType(getArgType(mq, q, 1)))
 								q = pushNil(mq, q, TYPE_bat);
 							if (isaBatType(getArgType(mq, q, 2)))
 								q = pushNil(mq, q, TYPE_bat);
-						} else if (q->argc == 4 &&
-								   getBatType(getArgType(mq, q, 3)) == TYPE_bit &&
+						} else if (q->argc == 4
+								   && getBatType(getArgType(mq, q, 3)) == TYPE_bit
 								   /* these two filter out unary
-									* batcalc.- with a candidate
-									* list */
-								   getBatType(getArgType(mq, q, 1)) != TYPE_oid &&
-								   getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
+								    * batcalc.- with a candidate
+								    * list */
+								   && getBatType(getArgType(mq, q, 1)) != TYPE_oid
+								   && getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
 							int a = getArg(q, 3);
 							q->argc--;
 							/* add candidate lists */
@@ -276,40 +293,39 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					}
 
 					/* now see if we can resolve the instruction */
-					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
-					if( q->typechk== TYPE_UNKNOWN)
+					typeChecker(cntxt->usermodule, mq, q, i, TRUE);
+					if (q->typechk == TYPE_UNKNOWN)
 						goto terminateMX;
 					break;
 				}
 				/* handle simple upgraded assignments as well */
-				if ( q->token== ASSIGNsymbol &&
-					 q->argc == 2  &&
-					!(isaBatType( getArgType(mq,q,1))) ){
-					setModuleId(q,algebraRef);
-					setFunctionId(q,projectRef);
-					q= pushArgument(mq,q, getArg(q,1));
+				if (q->token == ASSIGNsymbol && q->argc == 2
+					&& !(isaBatType(getArgType(mq, q, 1)))) {
+					setModuleId(q, algebraRef);
+					setFunctionId(q, projectRef);
+					q = pushArgument(mq, q, getArg(q, 1));
 					mq->stmt[i] = q;
-					getArg(q,1)= refbat;
+					getArg(q, 1) = refbat;
 
 					q->typechk = TYPE_UNKNOWN;
-					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
-					if( q->typechk== TYPE_UNKNOWN)
+					typeChecker(cntxt->usermodule, mq, q, i, TRUE);
+					if (q->typechk == TYPE_UNKNOWN)
 						goto terminateMX;
 					break;
 				}
-		}
+			}
 	}
 
 
-	if(mq->errors){
-terminateMX:
+	if (mq->errors) {
+  terminateMX:
 
 		freeMalBlk(mq);
 		GDKfree(upgrade);
 
 		/* ugh ugh, fallback to non inline, but optimized code */
 		msg = OPTmultiplexSimple(cntxt, s->def);
-		if(msg)
+		if (msg)
 			freeException(msg);
 		s->def->inlineProp = 0;
 		return 0;
@@ -320,61 +336,69 @@ terminateMX:
 	 * of the original multiplex.
 	 * But first, shift the arguments of the multiplex.
 	 */
-	delArgument(p,2);
-	delArgument(p,1);
-	inlineMALblock(mb,pc,mq);
+	delArgument(p, 2);
+	delArgument(p, 1);
+	inlineMALblock(mb, pc, mq);
 
 	freeMalBlk(mq);
 	GDKfree(upgrade);
 	return 1;
 }
+
 /*
  * The comparison multiplex operations with a constant head may be supported
  * by reverse of the operation.
  */
-static const struct{
+static const struct {
 	const char *src, *dst;
 	const int len;
-}OperatorMap[]={
-{"<", ">",1},
-{">", "<",1},
-{">=", "<=",2},
-{"<=", ">=",2},
-{"==", "==",2},
-{"!=", "!=",2},
-{0,0,0}};
+} OperatorMap[] = {
+	{"<", ">", 1},
+	{">", "<", 1},
+	{">=", "<=", 2},
+	{"<=", ">=", 2},
+	{"==", "==", 2},
+	{"!=", "!=", 2},
+	{0, 0, 0}
+};
 
 static int
-OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx, Module scope){
+OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+				 int idx, Module scope)
+{
 	char *fcn;
-	int r,i;
+	int r, i;
 	(void) stk;
 	(void) scope;
 
-	if( !isMultiplex(pci) && getArgType(mb, pci, pci->retc) != TYPE_lng &&
-		!isVarConstant(mb,getArg(pci,1)) &&
-		!isVarConstant(mb,getArg(pci,2)) &&
-		!isVarConstant(mb,getArg(pci,4)) &&
-		pci->argc != 5)
-			return 0;
+	if (!isMultiplex(pci) && getArgType(mb, pci, pci->retc) != TYPE_lng
+		&& !isVarConstant(mb, getArg(pci, 1))
+		&& !isVarConstant(mb, getArg(pci, 2))
+		&& !isVarConstant(mb, getArg(pci, 4)) && pci->argc != 5)
+		return 0;
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
-	for(i=0;OperatorMap[i].src;i++)
-	if( strcmp(fcn,OperatorMap[i].src)==0){
-		/* found a candidate for a switch */
-		getVarConstant(mb, getArg(pci, 2)).val.sval = (char *) putNameLen(OperatorMap[i].dst,OperatorMap[i].len);
-		getVarConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
-		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
-		r= OPTremapDirect(cntxt,mb, stk, pci, idx, scope);
+	for (i = 0; OperatorMap[i].src; i++)
+		if (strcmp(fcn, OperatorMap[i].src) == 0) {
+			/* found a candidate for a switch */
+			getVarConstant(mb, getArg(pci, 2)).val.sval = (char *) putNameLen(OperatorMap[i].dst, OperatorMap[i].len);
+			getVarConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
+			r = getArg(pci, 3);
+			getArg(pci, 3) = getArg(pci, 4);
+			getArg(pci, 4) = r;
+			r = OPTremapDirect(cntxt, mb, stk, pci, idx, scope);
 
-		/* always restore the allocated function name */
-		getVarConstant(mb, getArg(pci, 2)).val.sval= fcn;
-		getVarConstant(mb, getArg(pci, 2)).len = strlen(fcn);
+			/* always restore the allocated function name */
+			getVarConstant(mb, getArg(pci, 2)).val.sval = fcn;
+			getVarConstant(mb, getArg(pci, 2)).len = strlen(fcn);
 
-		if (r) return 1;
+			if (r)
+				return 1;
 
-		/* restore the arguments */
-		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
-	}
+			/* restore the arguments */
+			r = getArg(pci, 3);
+			getArg(pci, 3) = getArg(pci, 4);
+			getArg(pci, 4) = r;
+		}
 	return 0;
 }
 
@@ -382,29 +406,31 @@ str
 OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *old, p;
-	int i, limit, slimit, actions= 0;
+	int i, limit, slimit, actions = 0;
 	Module scope = cntxt->usermodule;
 	str msg = MAL_SUCCEED;
 
-	for( i=0; i< mb->stop; i++){
+	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (isMultiplex(p) || (p->argc == 4 && getModuleId(p) == aggrRef && getFunctionId(p) == avgRef)){
+		if (isMultiplex(p)
+			|| (p->argc == 4 && getModuleId(p) == aggrRef
+				&& getFunctionId(p) == avgRef)) {
 			break;
 		}
 	}
-	if( i == mb->stop){
+	if (i == mb->stop) {
 		goto wrapup;
 	}
 
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
-		throw(MAL,"optmizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (newMalBlkStmt(mb, mb->ssize) < 0)
+		throw(MAL, "optmizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (isMultiplex(p)){
+		if (isMultiplex(p)) {
 			/*
 			 * The next step considered is to handle inlined functions.
 			 * It means we have already skipped the most obvious ones,
@@ -412,53 +438,55 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 * geared at handling the PSM code.
 			 */
 			int plus_one = getArgType(mb, p, p->retc) == TYPE_lng ? 1 : 0;
-			str mod = VALget(&getVar(mb, getArg(p, p->retc+0+plus_one))->value);
-			str fcn = VALget(&getVar(mb, getArg(p, p->retc+1+plus_one))->value);
+			str mod = VALget(&getVar(mb, getArg(p, p->retc + 0 + plus_one))-> value);
+			str fcn = VALget(&getVar(mb, getArg(p, p->retc + 1 + plus_one))-> value);
 			//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
-			Symbol s = findSymbolInModule(getModule(putName(mod)),putName(fcn));
+			Symbol s = findSymbolInModule(getModule(putName(mod)), putName(fcn));
 
-			if (s && s->def->inlineProp ){
+			if (s && s->def->inlineProp) {
 				pushInstruction(mb, p);
-				if( OPTmultiplexInline(cntxt,mb,p,mb->stop-1) ){
+				if (OPTmultiplexInline(cntxt, mb, p, mb->stop - 1)) {
 					actions++;
 				}
-			} else if (OPTremapDirect(cntxt, mb, stk, p, i, scope) ||
-				OPTremapSwitched(cntxt, mb, stk, p, i, scope)) {
+			} else if (OPTremapDirect(cntxt, mb, stk, p, i, scope)
+					   || OPTremapSwitched(cntxt, mb, stk, p, i, scope)) {
 				freeInstruction(p);
 				actions++;
 			} else {
 				pushInstruction(mb, p);
 			}
-		} else if (p->argc == 4 &&
-			getModuleId(p) == aggrRef &&
-			getFunctionId(p) == avgRef) {
+		} else if (p->argc == 4 && getModuleId(p) == aggrRef
+				   && getFunctionId(p) == avgRef) {
 			/* group aggr.avg -> aggr.sum/aggr.count */
-			InstrPtr sum, avg,t, iszero;
+			InstrPtr sum, avg, t, iszero;
 			InstrPtr cnt;
 			sum = copyInstruction(p);
 			if (sum == NULL) {
-				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "optimizer.remap",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
 			cnt = copyInstruction(p);
-			if( cnt == NULL){
+			if (cnt == NULL) {
 				freeInstruction(sum);
-				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "optimizer.remap",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
 			setFunctionId(sum, sumRef);
 			setFunctionId(cnt, countRef);
-			getArg(sum,0) = newTmpVariable(mb, getArgType(mb, p, 1));
-			getArg(cnt,0) = newTmpVariable(mb, newBatType(TYPE_lng));
+			getArg(sum, 0) = newTmpVariable(mb, getArgType(mb, p, 1));
+			getArg(cnt, 0) = newTmpVariable(mb, newBatType(TYPE_lng));
 			pushInstruction(mb, sum);
 			pushInstruction(mb, cnt);
 
 			t = newInstruction(mb, batcalcRef, eqRef);
 			if (t == NULL) {
-				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "optimizer.remap",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
-			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_bit));
+			getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_bit));
 			t = pushArgument(mb, t, getDestVar(cnt));
 			t = pushLng(mb, t, 0);
 			pushInstruction(mb, t);
@@ -466,20 +494,22 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			t = newInstruction(mb, batcalcRef, dblRef);
 			if (t == NULL) {
-				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "optimizer.remap",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
-			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
+			getArg(t, 0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = pushArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;
 
 			t = newInstruction(mb, batcalcRef, ifthenelseRef);
 			if (t == NULL) {
-				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "optimizer.remap",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
-			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
+			getArg(t, 0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = pushArgument(mb, t, getDestVar(iszero));
 			t = pushNil(mb, t, TYPE_dbl);
 			t = pushArgument(mb, t, getDestVar(sum));
@@ -488,17 +518,19 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			t = newInstruction(mb, batcalcRef, dblRef);
 			if (t == NULL) {
-				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "optimizer.remap",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
-			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
+			getArg(t, 0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = pushArgument(mb, t, getDestVar(cnt));
 			pushInstruction(mb, t);
 			cnt = t;
 
 			avg = newInstruction(mb, batcalcRef, divRef);
 			if (avg == NULL) {
-				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "optimizer.remap",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
 			getArg(avg, 0) = getArg(p, 0);
@@ -512,21 +544,21 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, p);
 		}
 	}
-	for(; i<slimit; i++)
-		if( old[i])
+	for (; i < slimit; i++)
+		if (old[i])
 			pushInstruction(mb, old[i]);
 	GDKfree(old);
 
 	/* Defense line against incorrect plans */
-	if( msg == MAL_SUCCEED && actions > 0){
+	if (msg == MAL_SUCCEED && actions > 0) {
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
-wrapup:
-	/* keep actions taken as a fake argument*/
+  wrapup:
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }

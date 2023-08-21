@@ -12,16 +12,63 @@ CREATE FUNCTION rvalfunc() RETURNS TABLE(groupcol INTEGER, intcol INTEGER, fltco
 }
 
 statement ok
-CREATE AGGREGATE aggrmedian_int(val integer) RETURNS integer LANGUAGE PYTHON_MAP { return numpy.median(val) }
+CREATE AGGREGATE aggrmedian_int(val integer) RETURNS integer LANGUAGE PYTHON_MAP { 
+	if 'aggr_group' in locals():
+		unique = numpy.unique(aggr_group)
+		x = numpy.zeros(shape=(unique.size))
+		for i in range(0,unique.size):
+			x[i] = numpy.median(val[numpy.where(aggr_group==unique[i])])
+		return(x)
+	else:
+		return numpy.median(val) 
+}
 
 statement ok
-CREATE AGGREGATE aggrmedian_flt(val float) RETURNS integer LANGUAGE PYTHON_MAP { return numpy.median(val) }
+CREATE AGGREGATE aggrmedian_flt(val float) RETURNS integer LANGUAGE PYTHON_MAP { 
+	if 'aggr_group' in locals():
+		unique = numpy.unique(aggr_group)
+		x = numpy.zeros(shape=(unique.size))
+		for i in range(0,unique.size):
+			x[i] = numpy.median(val[numpy.where(aggr_group==unique[i])])
+		return(x)
+	else:
+		return numpy.median(val) 
+}
 
 statement ok
-CREATE AGGREGATE aggrmedian_dbl(val double) RETURNS integer LANGUAGE PYTHON_MAP { return numpy.median(val) }
+CREATE AGGREGATE aggrmedian_dbl(val double) RETURNS integer LANGUAGE PYTHON_MAP { 
+	if 'aggr_group' in locals():
+		unique = numpy.unique(aggr_group)
+		x = numpy.zeros(shape=(unique.size))
+		for i in range(0,unique.size):
+			x[i] = numpy.median(val[numpy.where(aggr_group==unique[i])])
+		return(x)
+	else:
+		return numpy.median(val) 
+}
 
 statement ok
-CREATE AGGREGATE aggrmedian_str(val string) RETURNS integer LANGUAGE PYTHON_MAP { return numpy.median([int(x) for x in val]) }
+CREATE AGGREGATE aggrmedian_str(val string) RETURNS integer LANGUAGE PYTHON_MAP { 
+	if 'aggr_group' in locals():
+		unique = numpy.unique(aggr_group)
+		x = numpy.zeros(shape=(unique.size))
+		for i in range(0,unique.size):
+			x[i] = numpy.median([int(x) for x in val[numpy.where(aggr_group==unique[i])]])
+		return(x)
+	else:
+		return numpy.median([int(x) for x in val]) 
+}
+
+query I nosort
+SELECT groupcol FROM rvalfunc()
+----
+0
+1
+2
+0
+1
+2
+3
 
 query II rowsort
 SELECT groupcol,aggrmedian_int(intcol) FROM rvalfunc() GROUP BY groupcol

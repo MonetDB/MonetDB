@@ -71,7 +71,8 @@
  */
 
 static str
-SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 
 	bat *r, *b;
 	lng sample_size;
@@ -87,19 +88,18 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL, "sample.subuniform", INTERNAL_BAT_ACCESS);
 	}
 
-	if (getArgType(mb, pci, 2) == TYPE_dbl)
-	{
+	if (getArgType(mb, pci, 2) == TYPE_dbl) {
 		dbl pr = *getArgReference_dbl(stk, pci, 2);
 
-		if ( pr < 0.0 || pr > 1.0 ) {
+		if (pr < 0.0 || pr > 1.0) {
 			BBPunfix(bb->batCacheid);
 			throw(MAL, "sample.subuniform", ILLEGAL_ARGUMENT
-					" p should be between 0 and 1.0" );
-		} else if (pr == 0) {/* special case */
+				  " p should be between 0 and 1.0");
+		} else if (pr == 0) {	/* special case */
 			sample_size = 0;
 			// TODO: Add special case for pr == 1.0.
 		} else {
-			sample_size = (lng) (pr*(double)BATcount(bb));
+			sample_size = (lng) (pr * (double) BATcount(bb));
 		}
 	} else {
 		sample_size = *getArgReference_lng(stk, pci, 2);
@@ -108,8 +108,7 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if (pci->argc == 4) {
 		seed = (unsigned) *getArgReference_int(stk, pci, 3);
 		br = BATsample_with_seed(bb, (BUN) sample_size, seed);
-	}
-	else {
+	} else {
 		br = BATsample(bb, (BUN) sample_size);
 	}
 

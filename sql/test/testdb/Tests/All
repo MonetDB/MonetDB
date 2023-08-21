@@ -2,5 +2,5 @@ load
 HAVE_GEOM?load-geom
 !HAVE_HGE&HAVE_GEOM&RELEASERUN?package
 HAVE_HGE&HAVE_GEOM&RELEASERUN?package-hge
-HAVE_GEOM?dump
+HAVE_GEOM&!GEOS_VERSION>=3.12?dump
 !HAVE_GEOM?dump-nogeom

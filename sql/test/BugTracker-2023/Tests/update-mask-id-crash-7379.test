@@ -1,0 +1,24 @@
+statement ok
+CREATE TABLE t2 (c1 int, t1 int, c2 int)
+
+statement ok
+INSERT INTO t2 VALUES(127,255,1),(127,1,2),(-128,0,3),(-128,2,4),(-1,NULL,5)
+
+statement ok
+INSERT INTO t2 VALUES(200,126,1),(250,-127,2)
+
+statement ok
+INSERT INTO t2 VALUES (-128,0,1),(-1,1,1),(-2,2,2),(-3,3,3),(-4,4,4),(-5,5,5),(-6,6,6),(0,0,7),(1,1,8),(2,NULL,9),(3,NULL,10),(127,255,11)
+
+statement ok
+DELETE FROM t2 WHERE c1 IN (-2, 0)
+
+statement ok
+START TRANSACTION
+
+statement ok
+UPDATE t2 SET c2 = c2 + 100
+
+statement ok
+UPDATE t2 SET c2 = c2 + 100
+

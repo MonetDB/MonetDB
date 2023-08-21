@@ -28,6 +28,10 @@ eb_error( exception_buffer *eb, char *msg, int val )
 {
 	eb->code = val;
 	eb->msg = msg;
-	fprintf(stderr, "%s\n", msg?msg:"ERROR");
+	eb->enabled = 0;			/* not any longer... */
+#ifdef HAVE_SIGLONGJMP
+	siglongjmp(eb->state, eb->code);
+#else
 	longjmp(eb->state, eb->code);
+#endif
 }

@@ -514,6 +514,8 @@ main(int argc, char *argv[])
 			snprintf(cnt, sizeof(cnt), "%d", ncpus);
 			kv = findConfKey(_mero_db_props, "nthreads");
 			kv->val = strdup(cnt);
+			kv = findConfKey(_mero_db_props, "ncopyintothreads");
+			kv->val = strdup(cnt);
 		}
 	}
 

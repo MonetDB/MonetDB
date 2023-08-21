@@ -15,13 +15,13 @@
 #include "monetdb_config.h"
 #include "mal_module.h"
 #include "mal_linker.h"
-#include "mal_function.h"	/* for throw() */
-#include "mal_import.h"		/* for slash_2_dir_sep() */
+#include "mal_function.h"		/* for throw() */
+#include "mal_import.h"			/* for slash_2_dir_sep() */
 #include "mal_private.h"
 #include "mal_internal.h"
 
 #include "mutils.h"
-#include <sys/types.h> /* opendir */
+#include <sys/types.h>			/* opendir */
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
@@ -37,7 +37,7 @@
 
 #define MAXMODULES 128
 
-typedef struct{
+typedef struct {
 	str modname;
 	str fullname;
 	void *handle;
@@ -71,19 +71,18 @@ fileexists(const char *path)
 MALfcn
 getAddress(const char *modname, const char *fcnname)
 {
-	void *dl;
 	MALfcn adr;
-	int idx=0;
-	static int prev= -1;
+	int idx = 0;
+	static int prev = -1;
 
 	if ((adr = findFunctionImplementation(fcnname)) != NULL)
 		return adr;
 
 	/* First try the last module loaded */
-	if( prev >= 0 && strcmp(filesLoaded[prev].modname, modname) == 0){ /* test if just pointer compare could work */
+	if (prev >= 0 && strcmp(filesLoaded[prev].modname, modname) == 0) {	/* test if just pointer compare could work */
 		adr = (MALfcn) dlsym(filesLoaded[prev].handle, fcnname);
-		if( adr != NULL)
-			return adr; /* found it */
+		if (adr != NULL)
+			return adr;			/* found it */
 	}
 	/*
 	 * Search for occurrence of the function in any library already loaded.
@@ -91,58 +90,37 @@ getAddress(const char *modname, const char *fcnname)
 	 * the loading time, while the signatures of the functions are still
 	 * obtained from the source-file MAL script.
 	 */
-	for (idx =0; idx < lastfile; idx++)
+	for (idx = 0; idx < lastfile; idx++)
 		if (idx != prev &&		/* skip already searched module */
 			filesLoaded[idx].handle &&
 			strcmp(filesLoaded[idx].modname, modname) == 0 &&
 			(idx == 0 || filesLoaded[idx].handle != filesLoaded[0].handle)) {
 			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
-			if (adr != NULL)  {
+			if (adr != NULL) {
 				prev = idx;
-				return adr; /* found it */
+				return adr;		/* found it */
 			}
 		}
 
-	if (lastfile) {
-		/* first should be monetdb5 */
-		assert(strcmp(filesLoaded[0].modname, "monetdb5") == 0 || strcmp(filesLoaded[0].modname, "embedded") == 0);
-		adr = (MALfcn) dlsym(filesLoaded[0].handle, fcnname);
-		if (adr != NULL)  {
-			prev = 0;
-			return adr; /* found it */
+	if (lastfile == 0) {
+		char *msg = loadLibrary("monetdb5", 1);
+		if (msg) {
+			freeException(msg);
+			return NULL;
 		}
-		return NULL;
 	}
-	/*
-	 * Try the program libraries at large or run through all
-	 * loaded files and try to resolve the functionname again.
-	 *
-	 * the first argument must be the same as the base name of the
-	 * library that is created in src/tools */
-#ifdef __APPLE__
-	dl = mdlopen(SO_PREFIX "monetdb5" SO_EXT, RTLD_NOW | RTLD_GLOBAL);
-#else
-	dl = dlopen(SO_PREFIX "monetdb5" SO_EXT, RTLD_NOW | RTLD_GLOBAL);
-#endif
-	if (dl == NULL)
-		return NULL;
 
-	adr = (MALfcn) dlsym(dl, fcnname);
-	filesLoaded[lastfile].modname = GDKstrdup("libmonetdb5");
-	if(filesLoaded[lastfile].modname == NULL) {
-		dlclose(dl);
-		return NULL;
+	/* first should be monetdb5 */
+	assert(strcmp(filesLoaded[0].modname, "monetdb5") == 0
+		   || strcmp(filesLoaded[0].modname, "embedded") == 0);
+	adr = (MALfcn) dlsym(filesLoaded[0].handle, fcnname);
+	if (adr != NULL) {
+		prev = 0;
+		return adr;			/* found it */
 	}
-	filesLoaded[lastfile].fullname = GDKstrdup("libmonetdb5");
-	if(filesLoaded[lastfile].fullname == NULL) {
-		dlclose(dl);
-		GDKfree(filesLoaded[lastfile].modname);
-		return NULL;
-	}
-	filesLoaded[lastfile].handle = dl;
-	lastfile ++;
-	return adr;
+	return NULL;
 }
+
 /*
  * Module file loading
  * The default location to search for the module is in monet_mod_path
@@ -174,7 +152,7 @@ loadLibrary(const char *filename, int flag)
 
 	is_mod = (!is_monetdb5 && strcmp(filename, "embedded") != 0);
 
-	if (lastfile == 0 && is_mod) { /* first load reference to local functions */
+	if (lastfile == 0 && is_mod) {	/* first load reference to local functions */
 		str msg = loadLibrary("monetdb5", flag);
 		if (msg != MAL_SUCCEED)
 			return msg;
@@ -187,7 +165,7 @@ loadLibrary(const char *filename, int flag)
 
 	for (idx = 0; idx < lastfile; idx++)
 		if (filesLoaded[idx].modname &&
-		    strcmp(filesLoaded[idx].modname, filename) == 0)
+			strcmp(filesLoaded[idx].modname, filename) == 0)
 			/* already loaded */
 			return MAL_SUCCEED;
 
@@ -209,7 +187,8 @@ loadLibrary(const char *filename, int flag)
 		else
 			len = snprintf(nme, FILENAME_MAX, "%s%s%s", SO_PREFIX, s, SO_EXT);
 		if (len == -1 || len >= FILENAME_MAX)
-			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
+			throw(LOADER, "loadLibrary",
+				  RUNTIME_LOAD_ERROR "Library filename path is too large");
 
 #ifdef __APPLE__
 		handle = mdlopen(is_monetdb5 ? NULL : nme, RTLD_NOW | RTLD_GLOBAL);
@@ -231,38 +210,62 @@ loadLibrary(const char *filename, int flag)
 			;
 
 		if (is_mod)
-			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
+			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
+						   (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX,
+						   s, SO_EXT);
 		else
-			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s%s", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
+			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s%s",
+						   (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX,
+						   s, SO_EXT);
 		if (len == -1 || len >= FILENAME_MAX)
-			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
+			throw(LOADER, "loadLibrary",
+				  RUNTIME_LOAD_ERROR "Library filename path is too large");
 		handle = dlopen(nme, mode);
 		if (handle == NULL && fileexists(nme))
-			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
+			throw(LOADER, "loadLibrary",
+				  RUNTIME_LOAD_ERROR
+				  " failed to open library %s (from within file '%s'): %s", s,
+				  nme, dlerror());
 		if (handle == NULL && strcmp(SO_EXT, ".so") != /* DISABLES CODE */ (0)) {
 			/* try .so */
 			if (is_mod)
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s);
+				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
+							   (int) (p - mod_path), mod_path, DIR_SEP,
+							   SO_PREFIX, s);
 			else
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s.so", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s);
+				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s.so",
+							   (int) (p - mod_path), mod_path, DIR_SEP,
+							   SO_PREFIX, s);
 			if (len == -1 || len >= FILENAME_MAX)
-				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
+				throw(LOADER, "loadLibrary",
+					  RUNTIME_LOAD_ERROR "Library filename path is too large");
 			handle = dlopen(nme, mode);
 			if (handle == NULL && fileexists(nme))
-				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
+				throw(LOADER, "loadLibrary",
+					  RUNTIME_LOAD_ERROR
+					  " failed to open library %s (from within file '%s'): %s",
+					  s, nme, dlerror());
 		}
 #ifdef __APPLE__
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
 			if (is_mod)
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s);
+				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
+							   (int) (p - mod_path), mod_path, DIR_SEP,
+							   SO_PREFIX, s);
 			else
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s.bundle", (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX, s);
+				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s.bundle",
+							   (int) (p - mod_path), mod_path, DIR_SEP,
+							   SO_PREFIX, s);
 			if (len == -1 || len >= FILENAME_MAX)
-				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
+				throw(LOADER, "loadLibrary",
+					  RUNTIME_LOAD_ERROR "Library filename path is too large");
 			handle = dlopen(nme, mode);
 			if (handle == NULL && fileexists(nme))
-				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
+				throw(LOADER, "loadLibrary",
+					  RUNTIME_LOAD_ERROR
+					  " failed to open library %s (from within file '%s'): %s",
+					  s, nme, dlerror());
 		}
 #endif
 
@@ -296,8 +299,11 @@ loadLibrary(const char *filename, int flag)
 #ifdef HAVE_SHP
 			&& strcmp(filename, "shp") != 0
 #endif
-			)
-			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not locate library %s (from within file '%s'): %s", s, filename, dlerror());
+				)
+			throw(LOADER, "loadLibrary",
+				  RUNTIME_LOAD_ERROR
+				  " could not locate library %s (from within file '%s'): %s", s,
+				  filename, dlerror());
 	}
 
 	MT_lock_set(&mal_contextLock);
@@ -305,25 +311,28 @@ loadLibrary(const char *filename, int flag)
 		MT_lock_unset(&mal_contextLock);
 		if (handle)
 			dlclose(handle);
-		throw(MAL,"mal.linker", "loadModule internal error, too many modules loaded");
+		throw(MAL, "mal.linker",
+			  "loadModule internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].modname = GDKstrdup(filename);
-		if(filesLoaded[lastfile].modname == NULL) {
+		if (filesLoaded[lastfile].modname == NULL) {
 			MT_lock_unset(&mal_contextLock);
 			if (handle)
 				dlclose(handle);
-			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
+			throw(LOADER, "loadLibrary",
+				  RUNTIME_LOAD_ERROR " could not allocate space");
 		}
 		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
-		if(filesLoaded[lastfile].fullname == NULL) {
+		if (filesLoaded[lastfile].fullname == NULL) {
 			GDKfree(filesLoaded[lastfile].modname);
 			MT_lock_unset(&mal_contextLock);
 			if (handle)
 				dlclose(handle);
-			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
+			throw(LOADER, "loadLibrary",
+				  RUNTIME_LOAD_ERROR " could not allocate space");
 		}
 		filesLoaded[lastfile].handle = handle ? handle : filesLoaded[0].handle;
-		lastfile ++;
+		lastfile++;
 	}
 	MT_lock_unset(&mal_contextLock);
 
@@ -341,9 +350,9 @@ mal_linker_reset(void)
 	int i;
 
 	MT_lock_set(&mal_contextLock);
-	for (i = 0; i < lastfile; i++){
+	for (i = 0; i < lastfile; i++) {
 		if (filesLoaded[i].fullname) {
-			/* dlclose(filesLoaded[i].handle);*/
+			/* dlclose(filesLoaded[i].handle); */
 			GDKfree(filesLoaded[i].modname);
 			GDKfree(filesLoaded[i].fullname);
 		}
@@ -362,11 +371,11 @@ mal_linker_reset(void)
 static int
 cmpstr(const void *_p1, const void *_p2)
 {
-	const char *p1 = *(char* const*)_p1;
-	const char *p2 = *(char* const*)_p2;
+	const char *p1 = *(char *const *) _p1;
+	const char *p2 = *(char *const *) _p2;
 	const char *f1 = strrchr(p1, (int) DIR_SEP);
 	const char *f2 = strrchr(p2, (int) DIR_SEP);
-	return strcmp(f1?f1:p1, f2?f2:p2);
+	return strcmp(f1 ? f1 : p1, f2 ? f2 : p2);
 }
 
 
@@ -378,7 +387,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 	char *fullname;
 	size_t fullnamelen;
 	size_t filelen = strlen(basename) + strlen(ext);
-	str strs[MAXMULTISCRIPT]; /* hardwired limit */
+	str strs[MAXMULTISCRIPT];	/* hardwired limit */
 	int lasts = 0;
 
 	if (mod_path == NULL)
@@ -430,20 +439,22 @@ locate_file(const char *basename, const char *ext, bit recurse)
 				if (strcmp(e->d_name + strlen(e->d_name) - strlen(ext), ext) == 0) {
 					int len;
 					strs[lasts] = GDKmalloc(strlen(fullname) + sizeof(DIR_SEP)
-							+ strlen(e->d_name) + sizeof(PATH_SEP) + 1);
+											+ strlen(e->d_name) +
+											sizeof(PATH_SEP) + 1);
 					if (strs[lasts] == NULL) {
 						while (lasts >= 0)
 							GDKfree(strs[lasts--]);
 						GDKfree(fullname);
-						(void)closedir(rdir);
+						(void) closedir(rdir);
 						return NULL;
 					}
-					len = sprintf(strs[lasts], "%s%c%s%c", fullname, DIR_SEP, e->d_name, PATH_SEP);
+					len = sprintf(strs[lasts], "%s%c%s%c", fullname, DIR_SEP,
+								  e->d_name, PATH_SEP);
 					if (len == -1 || len >= FILENAME_MAX) {
 						while (lasts >= 0)
 							GDKfree(strs[lasts--]);
 						GDKfree(fullname);
-						(void)closedir(rdir);
+						(void) closedir(rdir);
 						return NULL;
 					}
 					lasts++;
@@ -451,7 +462,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 				if (lasts >= MAXMULTISCRIPT)
 					break;
 			}
-			(void)closedir(rdir);
+			(void) closedir(rdir);
 		} else {
 			strcat(fullname + i + 1, ext);
 			if ((fd = MT_open(fullname, O_RDONLY | O_CLOEXEC)) >= 0) {
@@ -475,9 +486,9 @@ locate_file(const char *basename, const char *ext, bit recurse)
 		/* assure that an ordering such as 10_first, 20_second works */
 		qsort(strs, lasts, sizeof(char *), cmpstr);
 		for (c = 0; c < lasts; c++)
-			i += strlen(strs[c]) + 1; /* PATH_SEP or \0 */
+			i += strlen(strs[c]) + 1;	/* PATH_SEP or \0 */
 		tmp = GDKrealloc(fullname, i);
-		if( tmp == NULL){
+		if (tmp == NULL) {
 			GDKfree(fullname);
 			return NULL;
 		}
@@ -514,7 +525,7 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 int
 malLibraryEnabled(const char *name)
 {
-	if (strcmp(name, "pyapi3") == 0 || strcmp(name, "pyapi3map") == 0) {
+	if (strcmp(name, "pyapi3") == 0) {
 		const char *val = GDKgetenv("embedded_py");
 		return val && (strcmp(val, "3") == 0 ||
 					   strcasecmp(val, "true") == 0 ||
@@ -544,7 +555,7 @@ malLibraryEnabled(const char *name)
 char *
 malLibraryHowToEnable(const char *name)
 {
-	if (strcmp(name, "pyapi3") == 0 || strcmp(name, "pyapi3map") == 0) {
+	if (strcmp(name, "pyapi3") == 0) {
 		HOW_TO_ENABLE_ERROR("Python 3", "embedded_py=3");
 	} else if (strcmp(name, "rapi") == 0) {
 		HOW_TO_ENABLE_ERROR("R", "embedded_r=true");

@@ -12,6 +12,7 @@
 #define _MAL_GARBAGE_
 #include "opt_support.h"
 
-extern str OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb,
+											 MalStkPtr stk, InstrPtr pci);
 
 #endif

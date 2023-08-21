@@ -58,6 +58,8 @@ ol_add(objlist *ol, sql_base *data)
 	if (ol->h->size <= sz) {
 		hash_destroy(ol->h);
 		ol->h = hash_new(ol->l->sa, 4*sz, (fkeyvalue)&node_key);
+		if (ol->h == NULL)
+			return -1;
 		for (node *n = ol->l->h; n; n = n->next) {
 			if (hash_add(ol->h, base_key(n->data), n) == NULL)
 				/* No need to clean, ie expect a full transaction rollback */

@@ -20,8 +20,8 @@
  *
  * the functions return the number of NIL values produced (or at
  * least, 0 if no NIL, and != 0 if there were any);
- * the return value is BUN_NONE if there was overflow and a message
- * was generated;
+ * the return value is BUN_NONE if a message was generated
+ * (e.g. overflow or timeout);
  * the return value is BUN_NONE + 1 if the types were not compatible;
  * the return value is BUN_NONE + 2 if inserting a value into a BAT
  * failed (only happens for conversion to str).
@@ -121,9 +121,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				} else					\
 					dst[i] = (TYPE2) v;		\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		} else {						\
-			CAND_LOOP_IDX(ci, i) {				\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -143,8 +142,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			} else						\
 				dst[i] = (TYPE2) v / div;		\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
+	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));		\
 	return nils;							\
 }
 
@@ -316,9 +315,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 					dst[i] = (TYPE2) v;		\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
 		} else if (div == 1) {					\
-			CAND_LOOP_IDX(ci, i) {				\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -334,7 +332,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			}						\
 		} else {						\
 			/* mul == 1 */					\
-			CAND_LOOP_IDX(ci, i) {				\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -370,8 +368,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
+	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));		\
 	return nils;							\
 }
 
@@ -707,10 +705,16 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 	oid x;
 
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	if (atomtostr == BATatoms[TYPE_str].atomToStr) {
 		/* compatible with str, we just copy the value */
 		assert(bi->type != TYPE_void);
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			x = canditer_next(ci) - candoff;
 			src = BUNtvar(*bi, x);
 			if (strNil(src))
@@ -721,7 +725,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 		}
 	} else if (bi->b->tvheap) {
 		assert(bi->type != TYPE_void);
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			x = canditer_next(ci) - candoff;
 			src = BUNtvar(*bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
@@ -737,7 +741,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	} else if (ATOMstorage(bi->type) == TYPE_msk) {
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			const char *v;
 			x = canditer_next(ci) - candoff;
 			v = Tmskval(bi, x) ? "1" : "0";
@@ -745,7 +749,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 				goto bailout;
 		}
 	} else {
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			x = canditer_next(ci) - candoff;
 			src = BUNtloc(*bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
@@ -760,8 +764,9 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	BATsetcount(bn, ci->ncand);
 	GDKfree(dst);
+	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
 	GDKfree(dst);
@@ -782,7 +787,13 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	oid x;
 
-	CAND_LOOP_IDX(ci, i) {
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
+	TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 		x = canditer_next(ci) - candoff;
 		src = BUNtvar(*bi, x);
 		if (strNil(src)) {
@@ -799,8 +810,9 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	BATsetcount(bn, ci->ncand);
 	GDKfree(dst);
+	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
 	GDKfree(dst);
@@ -818,11 +830,17 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	const char *s = NULL;
 
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	if (ATOMstorage(tp) == TYPE_msk) {
 		uint32_t mask = 0;
 		uint32_t *d = dst;
 		int j = 0;
-		CAND_LOOP(ci) {
+		TIMEOUT_LOOP(ci->ncand, timeoffset) {
 			oid x = canditer_next(ci) - candoff;
 			uint32_t v;
 			s = BUNtvar(*bi, x);
@@ -839,12 +857,13 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 				mask = 0;
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 		if (j > 0)
 			*d = mask;
 		return 0;
 	}
 
-	CAND_LOOP(ci) {
+	TIMEOUT_LOOP(ci->ncand, timeoffset) {
 		oid x = canditer_next(ci) - candoff;
 		const char *s = BUNtvar(*bi, x);
 		if (strNil(s)) {
@@ -862,6 +881,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		}
 		dst = (void *) ((char *) dst + len);
 	}
+	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 	return nils;
 
   conversion_failed:
@@ -901,6 +921,12 @@ convert_void_any(oid seq, BAT *bn,
 	size_t len = 0;
 	oid x;
 
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	*reduce = false;
 	assert(!is_oid_nil(seq));
 
@@ -911,11 +937,11 @@ convert_void_any(oid seq, BAT *bn,
 				x = canditer_next(ci) - candoff;
 				((bit *) dst)[0] = x + seq != 0;
 			}
-			CAND_LOOP_IDX(ci, i) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 				((bit *) dst)[i] = 1;
 			}
 		} else {
-			CAND_LOOP_IDX(ci, i) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 				x = canditer_next(ci) - candoff;
 				if (seq + x > GDK_bte_max) {
 					CONV_OVERFLOW(oid, "bte", seq + x);
@@ -926,7 +952,7 @@ convert_void_any(oid seq, BAT *bn,
 		}
 		break;
 	case TYPE_sht:
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			x = canditer_next(ci) - candoff;
 			if (seq + x > GDK_sht_max) {
 				CONV_OVERFLOW(oid, "sht", seq + x);
@@ -936,7 +962,7 @@ convert_void_any(oid seq, BAT *bn,
 		}
 		break;
 	case TYPE_int:
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			x = canditer_next(ci) - candoff;
 #if SIZEOF_OID > SIZEOF_INT
 			if (seq + x > GDK_int_max) {
@@ -947,33 +973,33 @@ convert_void_any(oid seq, BAT *bn,
 		}
 		break;
 	case TYPE_lng:
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			x = canditer_next(ci) - candoff;
 			((lng *) dst)[i] = (lng) (seq + x);
 		}
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			x = canditer_next(ci) - candoff;
 			((hge *) dst)[i] = (hge) (seq + x);
 		}
 		break;
 #endif
 	case TYPE_flt:
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			x = canditer_next(ci) - candoff;
 			((flt *) dst)[i] = (flt) (seq + x);
 		}
 		break;
 	case TYPE_dbl:
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			x = canditer_next(ci) - candoff;
 			((dbl *) dst)[i] = (dbl) (seq + x);
 		}
 		break;
 	case TYPE_str:
-		CAND_LOOP_IDX(ci, i) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 			x = canditer_next(ci) - candoff;
 			if ((*atomtostr)(&s, &len, &(oid){seq + x}, false) < 0)
 				goto bailout;
@@ -986,6 +1012,7 @@ convert_void_any(oid seq, BAT *bn,
 	default:
 		return BUN_NONE + 1;
 	}
+	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 
 	bn->theap->dirty = true;
 	return nils;

@@ -474,7 +474,11 @@ extern sql_table *globaltmp_instantiate(sql_trans *tr, sql_table *t);
 
 #define NR_TABLE_LOCKS 64
 #define NR_COLUMN_LOCKS 512
+#if ATOMIC_LLONG_LOCK_FREE == 2
 #define TRANSACTION_ID_BASE	(1ULL<<63)
+#else
+#define TRANSACTION_ID_BASE	(1UL<<31)
+#endif
 
 typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */
@@ -539,6 +543,7 @@ typedef struct sql_change {
 } sql_change;
 
 extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
+extern void trans_del(sql_trans *tr, sql_base *b);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 
 extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics);

@@ -601,6 +601,26 @@ BEGIN
 		WHERE f.name=functionName AND s.name = schemaName;
 END;
 
+CREATE VIEW sys.describe_accessible_tables AS
+    SELECT
+        schemas.name AS schema,
+        tables.name  AS table,
+        table_types.table_type_name AS table_type,
+        privilege_codes.privilege_code_name AS privs,
+        privileges.privileges AS privs_code
+    FROM privileges
+    JOIN sys.roles
+      ON privileges.auth_id = roles.id
+    JOIN sys.tables
+      ON privileges.obj_id = tables.id
+    JOIN sys.table_types
+      ON tables.type = table_types.table_type_id
+    JOIN sys.schemas
+      ON tables.schema_id = schemas.id
+    JOIN sys.privilege_codes
+      ON privileges.privileges = privilege_codes.privilege_code_id
+    WHERE roles.name = current_role;
+
 GRANT SELECT ON sys.describe_constraints TO PUBLIC;
 GRANT SELECT ON sys.describe_indices TO PUBLIC;
 GRANT SELECT ON sys.describe_column_defaults TO PUBLIC;
@@ -614,3 +634,4 @@ GRANT SELECT ON sys.describe_user_defined_types TO PUBLIC;
 GRANT SELECT ON sys.describe_partition_tables TO PUBLIC;
 GRANT SELECT ON sys.describe_sequences TO PUBLIC;
 GRANT SELECT ON sys.describe_functions TO PUBLIC;
+GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;

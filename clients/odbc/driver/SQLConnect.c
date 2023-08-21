@@ -90,7 +90,8 @@ MNDBConnect(ODBCDbc *dbc,
 	    SQLSMALLINT NameLength3,
 	    const char *host,
 	    int port,
-	    const char *dbname)
+	    const char *dbname,
+	    int mapToLongVarchar)
 {
 	SQLRETURN rc = SQL_SUCCESS;
 	char *dsn = NULL;
@@ -276,6 +277,7 @@ MNDBConnect(ODBCDbc *dbc,
 		if (dbc->dbname != NULL)
 			free(dbc->dbname);
 		dbc->dbname = (char *) dbname; /* discard const */
+		dbc->mapToLongVarchar = mapToLongVarchar;
 		get_serverinfo(dbc);
 		/* set timeout after we're connected */
 		mapi_timeout(mid, dbc->sql_attr_connection_timeout * 1000);
@@ -306,7 +308,7 @@ SQLConnect(SQLHDBC ConnectionHandle,
 			   ServerName, NameLength1,
 			   UserName, NameLength2,
 			   Authentication, NameLength3,
-			   NULL, 0, NULL);
+			   NULL, 0, NULL, 0);
 }
 
 SQLRETURN SQL_API
@@ -357,7 +359,7 @@ SQLConnectW(SQLHDBC ConnectionHandle,
 			 ds, SQL_NTS,
 			 uid, SQL_NTS,
 			 pwd, SQL_NTS,
-			 NULL, 0, NULL);
+			 NULL, 0, NULL, 0);
 
       bailout:
 	if (ds)

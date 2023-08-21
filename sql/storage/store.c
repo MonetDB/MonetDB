@@ -943,13 +943,13 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	} else {
 		v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "mod"), rid, &cbat);
 	}
-	if (strcmp(v, "pyapi") == 0) /* pyapi module no longer used */
+	if (strcmp(v, "pyapi") == 0 ||	 /* pyapi module no longer used */
+		strcmp(v, "pyapi3map") == 0) /* pyapi3map module no longer used */
 		t->mod =_STRDUP("pypapi3");
-	else if (strcmp(v, "pyapimap") == 0) /* pyapimap module no longer used */
-		t->mod =_STRDUP("pyapi3map");
 	else
 		t->mod =_STRDUP(v);
-	if (!update_env) store->table_api.column_find_string_end(cbat);
+	if (!update_env)
+		store->table_api.column_find_string_end(cbat);
 	t->lang = (sql_flang) store->table_api.column_find_int(tr, find_sql_column(funcs, "language"), rid);
 	t->instantiated = t->lang != FUNC_LANG_SQL && t->lang != FUNC_LANG_MAL;
 	t->type = (sql_ftype) store->table_api.column_find_int(tr, find_sql_column(funcs, "type"), rid);
@@ -968,10 +968,10 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	}
 	/* convert old PYTHON2 and PYTHON2_MAP to PYTHON and PYTHON_MAP
 	 * see also function sql_update_jun2020() in sql_upgrades.c */
-	if ((int) t->lang == 8)		/* old FUNC_LANG_PY2 */
+	if ((int) t->lang == 7 || (int) t->lang == 8)		/* MAP_PY old FUNC_LANG_PY2 */
 		t->lang = FUNC_LANG_PY;
-	else if ((int) t->lang == 9)	/* old FUNC_LANG_MAP_PY2 */
-		t->lang = FUNC_LANG_MAP_PY;
+	else if ((int) t->lang == 9 || (int) t->lang == 11)	/* old FUNC_LANG_MAP_PY2 or MAP_PY3 */
+		t->lang = FUNC_LANG_PY;
 	if (LANG_EXT(t->lang)) { /* instantiate functions other than sql and mal */
 		switch(t->type) {
 		case F_AGGR:
@@ -3152,6 +3152,8 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	node *n;
 	int res = LOG_OK;
 
+	if (t == NULL)
+		return LOG_ERR;
 	base_init(NULL, &t->base, ot->base.id, 0, name?name:ot->base.name);
 	t->type = ot->type;
 	t->system = ot->system;
@@ -3395,6 +3397,8 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 
 	if (nk->type == fkey) {
 		sql_key *rkey = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)k)->rkey);
+		if (!rkey)
+			return LOG_ERR;
 
 		if ((res = sql_trans_create_dependency(tr, rkey->base.id, nk->base.id, FKEY_DEPENDENCY)))
 			return res;
@@ -3708,6 +3712,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
+			if (!c)
+				continue;
 			if (c->commit)
 				c->commit(tr, c, 0 /* ie rollback */, oldest);
 			c->ts = commit_ts;
@@ -3716,6 +3722,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
+			if (!c)
+				continue;
 			if (!c->cleanup) {
 				_DELETE(c);
 			} else if (c->cleanup && !c->cleanup(store, c, oldest)) {
@@ -4082,12 +4090,15 @@ sql_trans_commit(sql_trans *tr)
 			node *next = n->next;
 			sql_change *c = n->data;
 
-			if (!c->cleanup || c->cleanup(store, c, oldest)) {
-				_DELETE(c);
-			} else if (tr->parent) { /* need to keep everything */
-				tr->parent->changes = list_add(tr->parent->changes, c);
-			} else {
-				store->changes = list_add(store->changes, c);
+			n->data = NULL;
+			if (c) {
+				if (!c->cleanup || c->cleanup(store, c, oldest)) {
+					_DELETE(c);
+				} else if (tr->parent) { /* need to keep everything */
+					tr->parent->changes = list_add(tr->parent->changes, c);
+				} else {
+					store->changes = list_add(store->changes, c);
+				}
 			}
 			n = next;
 		}
@@ -4106,8 +4117,10 @@ sql_trans_commit(sql_trans *tr)
 				MT_lock_unset(&store->flush);
 		}
 		MT_lock_unset(&store->commit);
-		list_destroy(tr->changes);
-		tr->changes = NULL;
+		if (ok == LOG_OK) {
+			list_destroy(tr->changes);
+			tr->changes = NULL;
+		}
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
 		MT_lock_set(&store->commit);
 		store_lock(store);
@@ -6204,6 +6217,8 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		if ((res = store->storage_api.drop_col(tr, (sql_column*)dup_base(&col->base))))
 			return res;
 
+	if (isNew(col)) /* remove create from changes */
+		trans_del(tr, &col->base);
 	ol_del(t->columns, store, n);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
@@ -7203,12 +7218,13 @@ sql_trans_begin(sql_session *s)
 int
 sql_trans_end(sql_session *s, int ok)
 {
+	int res = SQL_OK;
 	TRC_DEBUG(SQL_STORE, "End of transaction: " ULLFMT "\n", s->tr->tid);
 	if (ok == SQL_OK) {
-		ok = sql_trans_commit(s->tr);
-	} else if (ok == SQL_ERR) { /* if a conflict happened, it was already rollbacked */
-		sql_trans_rollback(s->tr, false);
+		res = sql_trans_commit(s->tr);
 	}
+	if (ok == SQL_ERR || res != SQL_OK) /* if a conflict happened, it was already rollbacked */
+		sql_trans_rollback(s->tr, false);
 	assert(s->tr->active);
 	sqlstore *store = s->tr->store;
 	store_lock(store);
@@ -7229,6 +7245,5 @@ sql_trans_end(sql_session *s, int ok)
 	ATOMIC_SET(&store->oldest, oldest);
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);
-
-	return ok;
+	return res;
 }

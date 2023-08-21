@@ -13,6 +13,8 @@
 
 #include <setjmp.h>
 
+gdk_export void GDKprintinfo(void);
+
 gdk_export const char *GDKgetenv(const char *name);
 
 gdk_export bool GDKgetenv_istext(const char *name, const char* text);
@@ -168,7 +170,7 @@ gdk_export int GDKms(void);
 	({							\
 		void *_ptr = (p);				\
 		size_t _size = (s);				\
-		char _buf[12];					\
+		char _buf[2*sizeof(void*)+3];			\
 		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
 		void *_res = GDKrealloc(_ptr, _size);		\
 		TRC_DEBUG(ALLOC, "GDKrealloc(%s,%zu) -> %p\n",	\
@@ -317,7 +319,7 @@ GDKmunmap_debug(void *ptr, size_t len)
 {
 	gdk_return res = GDKmunmap(ptr, len);
 	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
-			   	  ptr, len, (int) res);
+		  ptr, len, (int) res);
 	return res;
 }
 #define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))
