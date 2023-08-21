@@ -406,6 +406,7 @@ Thread THRget(int tid);
 void *THRgetdata(int);
 int THRgettid(void);
 int THRhighwater(void);
+Thread THRnew(const char *name, MT_Id pid);
 void THRsetdata(int, void *);
 gdk_return TMsubcommit(BAT *bl) __attribute__((__warn_unused_result__));
 gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid) __attribute__((__warn_unused_result__));
