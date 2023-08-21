@@ -24,7 +24,7 @@ MT_Lock mal_namespaceLock = MT_LOCK_INITIALIZER(mal_namespaceLock);
 
 /* taken from gdk_atoms */
 static inline size_t __attribute__((__pure__))
-nme_hash(const char *key, size_t len)
+		nme_hash(const char *key, size_t len)
 {
 	size_t y = 0;
 
@@ -117,8 +117,7 @@ findName(const char *nme, size_t len, bool allocate)
 	if (namespace == NULL || namespace->count == 4096) {
 		struct namespace *ns = GDKmalloc(sizeof(struct namespace));
 		if (ns == NULL) {
-			/* error we cannot recover from */
-			GDKfatal(MAL_MALLOC_FAIL);
+			return NULL;
 		}
 		ns->next = namespace;
 		ns->count = 0;

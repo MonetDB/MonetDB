@@ -797,7 +797,7 @@ typedef struct BAT {
 	 batTransient:1,	/* should the BAT persist on disk? */
 	 batCopiedtodisk:1;	/* once written */
 	uint16_t selcnt;	/* how often used in equi select without hash */
-	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
+	uint16_t unused;	/* value=0 for now (sneakily used by mat.c) */
 
 	/* delta status administration */
 	BUN batInserted;	/* start of inserted elements */
@@ -1644,20 +1644,20 @@ BATsettrivprop(BAT *b)
 static inline void
 BATnegateprops(BAT *b)
 {
-    /* disable all properties here */
-    b->tnonil = false;
-    b->tnil = false;
-    if (b->ttype) {
-        b->tsorted = false;
-        b->trevsorted = false;
-        b->tnosorted = 0;
-        b->tnorevsorted = 0;
-    }
-    b->tseqbase = oid_nil;
-    b->tkey = false;
-    b->tnokey[0] = 0;
-    b->tnokey[1] = 0;
-    b->tmaxpos = b->tminpos = BUN_NONE;
+	/* disable all properties here */
+	b->tnonil = false;
+	b->tnil = false;
+	if (b->ttype) {
+		b->tsorted = false;
+		b->trevsorted = false;
+		b->tnosorted = 0;
+		b->tnorevsorted = 0;
+	}
+	b->tseqbase = oid_nil;
+	b->tkey = false;
+	b->tnokey[0] = 0;
+	b->tnokey[1] = 0;
+	b->tmaxpos = b->tminpos = BUN_NONE;
 }
 
 /*
@@ -2218,7 +2218,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 		if (!(f)) {						\
 			MT_lock_set(&(x)->theaplock);			\
 			if ((x)->batRestricted == BAT_READ ||		\
-		  	   ((ATOMIC_GET(&(x)->theap->refs) & HEAPREFS) > 1)) { \
+			   ((ATOMIC_GET(&(x)->theap->refs) & HEAPREFS) > 1)) { \
 				GDKerror("access denied to %s, aborting.\n", BATgetId(x)); \
 				MT_lock_unset(&(x)->theaplock);		\
 				return (e);				\

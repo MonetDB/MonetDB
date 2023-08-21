@@ -9,7 +9,7 @@
 #]]
 
 # Detect required packages
-find_package(BISON REQUIRED)
+find_package(BISON REQUIRED 3.2)
 find_package(Iconv)
 find_package(Threads)
 

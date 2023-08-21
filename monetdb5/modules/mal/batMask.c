@@ -39,9 +39,10 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "bat.mask", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if( !b->tkey || !b->tsorted ) {
+	if (!b->tkey || !b->tsorted) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "bat.mask", SQLSTATE(HY002) "Input should be unique and in ascending order");
+		throw(SQL, "bat.mask",
+			  SQLSTATE(HY002) "Input should be unique and in ascending order");
 	}
 	if (BATcount(b) == 0) {
 		dst = COLnew(0, TYPE_msk, 0, TRANSIENT);
@@ -51,7 +52,8 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN max = 0;
 		if (b->tsorted) {
 			fst = BUNtoid(b, 0);
-			dst = COLnew(fst, TYPE_msk, BUNtoid(b, BATcount(b) - 1) + 1 - fst, TRANSIENT);
+			dst = COLnew(fst, TYPE_msk, BUNtoid(b, BATcount(b) - 1) + 1 - fst,
+						 TRANSIENT);
 		} else {
 			fst = 0;
 			dst = COLnew(0, TYPE_msk, BATcount(b), TRANSIENT);
@@ -90,7 +92,7 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (dst == NULL)
 		throw(MAL, "mask.mask", GDK_EXCEPTION);
 
-	*ret=  dst->batCacheid;
+	*ret = dst->batCacheid;
 	BBPkeepref(dst);
 	return MAL_SUCCEED;
 }
@@ -117,7 +119,7 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	if (dst == NULL)
 		throw(MAL, "mask.umask", GDK_EXCEPTION);
-	*ret=  dst->batCacheid;
+	*ret = dst->batCacheid;
 	BBPkeepref(dst);
 	return MAL_SUCCEED;
 }

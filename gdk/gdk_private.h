@@ -525,9 +525,15 @@ extern size_t GDK_mmap_pagesize; /* mmap granularity */
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 
+#if ATOMIC_LLONG_LOCK_FREE == 2
 #define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << 63)
 #define DELAYEDREMOVE	((ATOMIC_BASE_TYPE) 1 << 62)
 #define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << 62) - 1)
+#else
+#define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << 31)
+#define DELAYEDREMOVE	((ATOMIC_BASE_TYPE) 1 << 30)
+#define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << 30) - 1)
+#endif
 
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */

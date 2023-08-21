@@ -60,38 +60,39 @@ static struct {
 	int calls;
 	lng timing;
 } codes[] = {
-	{"aliases", &OPTaliasesImplementation,0,0},
-	{"candidates", &OPTcandidatesImplementation,0,0},
-	{"coercions", &OPTcoercionImplementation,0,0},
-	{"commonTerms", &OPTcommonTermsImplementation,0,0},
-	{"constants", &OPTconstantsImplementation,0,0},
-	{"costModel", &OPTcostModelImplementation,0,0},
-	{"dataflow", &OPTdataflowImplementation,0,0},
-	{"deadcode", &OPTdeadcodeImplementation,0,0},
-	{"defaultfast", &OPTdefaultfastImplementation,0,0},
-	{"dict", &OPTdictImplementation,0,0},
-	{"emptybind", &OPTemptybindImplementation,0,0},
-	{"evaluate", &OPTevaluateImplementation,0,0},
-	{"for", &OPTforImplementation,0,0},
-	{"garbageCollector", &OPTgarbageCollectorImplementation,0,0},
-	{"generator", &OPTgeneratorImplementation,0,0},
-	{"inline", &OPTinlineImplementation,0,0},
-	{"matpack", &OPTmatpackImplementation,0,0},
-	{"mergetable", &OPTmergetableImplementation,0,0},
-	{"minimalfast", &OPTminimalfastImplementation,0,0},
-	{"mitosis", &OPTmitosisImplementation,0,0},
-	{"multiplex", &OPTmultiplexImplementation,0,0},
-	{"postfix", &OPTpostfixImplementation,0,0},
-	{"profiler", &OPTprofilerImplementation,0,0},
-	{"projectionpath", &OPTprojectionpathImplementation,0,0},
-	{"pushselect", &OPTpushselectImplementation,0,0},
-	{"querylog", &OPTquerylogImplementation,0,0},
-	{"reduce", &OPTreduceImplementation,0,0},
-	{"remap", &OPTremapImplementation,0,0},
-	{"remoteQueries", &OPTremoteQueriesImplementation,0,0},
-	{"reorder", &OPTreorderImplementation,0,0},
-	{0,0,0,0}
+	{"aliases", &OPTaliasesImplementation, 0, 0},
+	{"candidates", &OPTcandidatesImplementation, 0, 0},
+	{"coercions", &OPTcoercionImplementation, 0, 0},
+	{"commonTerms", &OPTcommonTermsImplementation, 0, 0},
+	{"constants", &OPTconstantsImplementation, 0, 0},
+	{"costModel", &OPTcostModelImplementation, 0, 0},
+	{"dataflow", &OPTdataflowImplementation, 0, 0},
+	{"deadcode", &OPTdeadcodeImplementation, 0, 0},
+	{"defaultfast", &OPTdefaultfastImplementation, 0, 0},
+	{"dict", &OPTdictImplementation, 0, 0},
+	{"emptybind", &OPTemptybindImplementation, 0, 0},
+	{"evaluate", &OPTevaluateImplementation, 0, 0},
+	{"for", &OPTforImplementation, 0, 0},
+	{"garbageCollector", &OPTgarbageCollectorImplementation, 0, 0},
+	{"generator", &OPTgeneratorImplementation, 0, 0},
+	{"inline", &OPTinlineImplementation, 0, 0},
+	{"matpack", &OPTmatpackImplementation, 0, 0},
+	{"mergetable", &OPTmergetableImplementation, 0, 0},
+	{"minimalfast", &OPTminimalfastImplementation, 0, 0},
+	{"mitosis", &OPTmitosisImplementation, 0, 0},
+	{"multiplex", &OPTmultiplexImplementation, 0, 0},
+	{"postfix", &OPTpostfixImplementation, 0, 0},
+	{"profiler", &OPTprofilerImplementation, 0, 0},
+	{"projectionpath", &OPTprojectionpathImplementation, 0, 0},
+	{"pushselect", &OPTpushselectImplementation, 0, 0},
+	{"querylog", &OPTquerylogImplementation, 0, 0},
+	{"reduce", &OPTreduceImplementation, 0, 0},
+	{"remap", &OPTremapImplementation, 0, 0},
+	{"remoteQueries", &OPTremoteQueriesImplementation, 0, 0},
+	{"reorder", &OPTreorderImplementation, 0, 0},
+	{0, 0, 0, 0}
 };
+
 static MT_Lock codeslock = MT_LOCK_INITIALIZER(codeslock);
 
 str
@@ -99,7 +100,7 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme = "optimizer";
 	const char *fcnnme;
-	Symbol s= NULL;
+	Symbol s = NULL;
 	int i;
 	str msg = MAL_SUCCEED;
 	lng clk;
@@ -108,8 +109,9 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (cntxt->mode == FINISHCLIENT)
 		throw(MAL, "optimizer", SQLSTATE(42000) "prematurely stopped client");
 
-	if( p == NULL)
-		throw(MAL, "opt_wrapper", SQLSTATE(HY002) "missing optimizer statement");
+	if (p == NULL)
+		throw(MAL, "opt_wrapper",
+			  SQLSTATE(HY002) "missing optimizer statement");
 
 	if (mb->errors) {
 		msg = mb->errors;
@@ -118,30 +120,31 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	fcnnme = getFunctionId(p);
 
-	if( p && p->argc > 1 ){
-		if( getArgType(mb,p,1) != TYPE_str ||
-			getArgType(mb,p,2) != TYPE_str ||
-			!isVarConstant(mb,getArg(p,1)) ||
-			!isVarConstant(mb,getArg(p,2))
-			)
+	if (p && p->argc > 1) {
+		if (getArgType(mb, p, 1) != TYPE_str
+			|| getArgType(mb, p, 2) != TYPE_str
+			|| !isVarConstant(mb, getArg(p, 1))
+			|| !isVarConstant(mb, getArg(p, 2)))
 			throw(MAL, getFunctionId(p), SQLSTATE(42000) ILLARG_CONSTANTS);
 
-		if( stk != 0){
-			modnme= *getArgReference_str(stk,p,1);
-			fcnnme= *getArgReference_str(stk,p,2);
+		if (stk != NULL) {
+			modnme = *getArgReference_str(stk, p, 1);
+			fcnnme = *getArgReference_str(stk, p, 2);
 		} else {
-			modnme= getArgDefault(mb,p,1);
-			fcnnme= getArgDefault(mb,p,2);
+			modnme = getArgDefault(mb, p, 1);
+			fcnnme = getArgDefault(mb, p, 2);
 		}
 		//removeInstruction(mb, p);
 		p->token = REMsymbol;
-		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
+		s = findSymbol(cntxt->usermodule, putName(modnme), putName(fcnnme));
 
-		if( s == NULL)
-			throw(MAL, getFunctionId(p), SQLSTATE(HY002) RUNTIME_OBJECT_UNDEFINED "%s.%s", modnme, fcnnme);
+		if (s == NULL)
+			throw(MAL, getFunctionId(p),
+				  SQLSTATE(HY002) RUNTIME_OBJECT_UNDEFINED "%s.%s", modnme,
+				  fcnnme);
 		mb = s->def;
-		stk= 0;
-	} else if( p ){
+		stk = NULL;
+	} else if (p) {
 		p->token = REMsymbol;
 	}
 
@@ -149,19 +152,24 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	const char *id = getFunctionId(p);
 	for (i = 0; codes[i].nme != NULL; i++) {
 		if (strcmp(codes[i].nme, id) == 0) {
-			msg = (str)(*codes[i].fcn)(cntxt, mb, stk, p);
-			if (mb->errors) {
-				msg = mb->errors;
-				mb->errors = NULL;
-			}
+			msg = (*codes[i].fcn) (cntxt, mb, stk, p);
 			clk = GDKusec() - clk;
 			MT_lock_set(&codeslock);
 			codes[i].timing += clk;
 			codes[i].calls++;
 			MT_lock_unset(&codeslock);
-			p= pushLng(mb, p, clk);
-			if (msg) {
-				str newmsg = createException(MAL, getFunctionId(p), SQLSTATE(42000) "Error in optimizer %s: %s", getFunctionId(p), msg);
+			p = pushLng(mb, p, clk);
+			if (msg || mb->errors) {
+				/* we can only return one or the other */
+				if (msg)
+					freeException(mb->errors);
+				else
+					msg = mb->errors;
+				mb->errors = NULL;
+				str newmsg = createException(MAL, getFunctionId(p),
+											 SQLSTATE(42000)
+											 "Error in optimizer %s: %s",
+											 getFunctionId(p), msg);
 				freeException(msg);
 				return newmsg;
 			}
@@ -170,19 +178,18 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 	if (codes[i].nme == 0)
-		throw(MAL, fcnnme,  SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
+		throw(MAL, fcnnme,
+			  SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
 
-	if ( mb->errors)
-		throw(MAL, fcnnme, SQLSTATE(42000) PROGRAM_GENERAL "%s.%s %s", modnme, fcnnme, mb->errors);
 	return MAL_SUCCEED;
 }
 
 str
 OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	bat  *nme = getArgReference_bat(stk, p, 0);
-	bat  *cnt = getArgReference_bat(stk, p, 1);
-	bat  *time = getArgReference_bat(stk, p, 2);
+	bat *nme = getArgReference_bat(stk, p, 0);
+	bat *cnt = getArgReference_bat(stk, p, 1);
+	bat *time = getArgReference_bat(stk, p, 2);
 	BAT *n, *c, *t;
 	int i;
 
@@ -191,22 +198,22 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	n = COLnew(0, TYPE_str, 256, TRANSIENT);
 	c = COLnew(0, TYPE_int, 256, TRANSIENT);
 	t = COLnew(0, TYPE_lng, 256, TRANSIENT);
-	if( n == NULL || c == NULL || t == NULL){
+	if (n == NULL || c == NULL || t == NULL) {
 		BBPreclaim(n);
 		BBPreclaim(c);
 		BBPreclaim(t);
-		throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	MT_lock_set(&codeslock);
-	for( i= 0; codes[i].nme; i++){
-		if (BUNappend(n, codes[i].nme, false) != GDK_SUCCEED ||
-			BUNappend(c, &codes[i].calls, false) != GDK_SUCCEED ||
-			BUNappend(t, &codes[i].timing, false) != GDK_SUCCEED) {
+	for (i = 0; codes[i].nme; i++) {
+		if (BUNappend(n, codes[i].nme, false) != GDK_SUCCEED
+			|| BUNappend(c, &codes[i].calls, false) != GDK_SUCCEED
+			|| BUNappend(t, &codes[i].timing, false) != GDK_SUCCEED) {
 			MT_lock_unset(&codeslock);
 			BBPreclaim(n);
 			BBPreclaim(c);
 			BBPreclaim(t);
-			throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	MT_lock_unset(&codeslock);

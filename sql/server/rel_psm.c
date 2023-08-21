@@ -653,6 +653,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 			res = rel_psm_case(query, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CALL:
+			assert(s->type == type_symbol);
 			res = rel_psm_call(query, s->data.sym);
 			break;
 		case SQL_RETURN:
@@ -1515,6 +1516,28 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	return rel;
 }
 
+static list *
+rel_paramlist( sql_query *query, symbol *nop)
+{
+	dnode *ops = nop->data.lval->h->next->next->data.lval->h;
+	list *exps = sa_list(query->sql->sa);
+	exp_kind iek = {type_value, card_column, FALSE};
+
+	for (; ops; ops = ops->next) {
+		sql_exp *e = rel_value_exp(query, NULL, ops->data.sym, sql_farg, iek);
+		if (!e)
+			return NULL;
+		ops = ops->next;
+		sql_arg *a = sql_find_param(query->sql, ops->data.sval);
+		if (!a)
+			return NULL;
+		a->type = *exp_subtype(e);
+		append(exps, e);
+	}
+	return exps;
+}
+
+
 sql_rel *
 rel_psm(sql_query *query, symbol *s)
 {
@@ -1560,7 +1583,17 @@ rel_psm(sql_query *query, symbol *s)
 		return sql_error(sql, 02, SQLSTATE(42000) "Variables cannot be declared on the global scope");
 	case SQL_CALL:
 		sql->type = Q_UPDATE;
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
+		if (s->type == type_list) {
+			list *params = rel_paramlist( query, s->data.lval->h->next->data.sym);
+			if (!params)
+				return NULL;
+			ret = rel_semantic(query, s->data.lval->h->data.sym);
+            query->last_rel = ret;
+			if (ret)
+				ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.lval->h->next->data.sym));
+			ret = rel_list(sql->sa, query->last_rel, ret);
+		} else
+			ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
 		break;
 	case SQL_CREATE_TABLE_LOADER:
 	{

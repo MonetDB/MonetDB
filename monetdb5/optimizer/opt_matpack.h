@@ -16,6 +16,7 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-extern str OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+									InstrPtr pci);
 
 #endif

@@ -13,6 +13,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-extern str OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb,
+										MalStkPtr stk, InstrPtr pci);
 
 #endif

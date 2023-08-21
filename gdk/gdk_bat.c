@@ -899,12 +899,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else if (!slowcopy) {
 			/* case (3): just copy the heaps */
 			if (bn->tvheap && HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED) {
- 				goto bunins_failed;
- 			}
+				goto bunins_failed;
+			}
 			memcpy(bn->theap->base, bi.base, bi.hfree);
 			bn->theap->free = bi.hfree;
 			bn->theap->dirty = true;
- 			if (bn->tvheap) {
+			if (bn->tvheap) {
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
 				bn->tvheap->free = bi.vhfree;
 				bn->tvheap->dirty = true;
@@ -1381,9 +1381,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrunlock(&b->thashlock);
 
-	IMPSdestroy(b); /* no support for inserts in imprints yet */
+	IMPSdestroy(b);		/* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-	STRMPdestroy(b); 	/* TODO: use STRMPappendBitstring */
+	STRMPdestroy(b);	/* TODO: use STRMPappendBitstring */
 	RTREEdestroy(b);
 	return GDK_SUCCEED;
 }

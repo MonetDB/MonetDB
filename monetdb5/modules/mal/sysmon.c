@@ -30,16 +30,18 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
-		throw(MAL, "SYSMONstatistics", SQLSTATE(42000) "Calling from a mclient -lmal.");
+		throw(MAL, "SYSMONstatistics",
+			  SQLSTATE(42000) "Calling from a mclient -lmal.");
 
-	BAT *user, *querycount, *totalticks, *started, *finished, *maxquery, *maxticks;
-	bat *u = getArgReference_bat(stk,pci,0);
-	bat *c = getArgReference_bat(stk,pci,1);
-	bat *t = getArgReference_bat(stk,pci,2);
-	bat *s = getArgReference_bat(stk,pci,3);
-	bat *f = getArgReference_bat(stk,pci,4);
-	bat *m = getArgReference_bat(stk,pci,5);
-	bat *q = getArgReference_bat(stk,pci,6);
+	BAT *user, *querycount, *totalticks, *started, *finished, *maxquery,
+			*maxticks;
+	bat *u = getArgReference_bat(stk, pci, 0);
+	bat *c = getArgReference_bat(stk, pci, 1);
+	bat *t = getArgReference_bat(stk, pci, 2);
+	bat *s = getArgReference_bat(stk, pci, 3);
+	bat *f = getArgReference_bat(stk, pci, 4);
+	bat *m = getArgReference_bat(stk, pci, 5);
+	bat *q = getArgReference_bat(stk, pci, 6);
 	size_t i;
 	timestamp tsn = timestamp_nil;
 	str msg = MAL_SUCCEED;
@@ -51,7 +53,9 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	finished = COLnew(0, TYPE_timestamp, usrstatscnt, TRANSIENT);
 	maxticks = COLnew(0, TYPE_lng, usrstatscnt, TRANSIENT);
 	maxquery = COLnew(0, TYPE_str, usrstatscnt, TRANSIENT);
-	if (user == NULL || querycount == NULL || totalticks == NULL || started == NULL || finished == NULL || maxquery == NULL || maxticks == NULL){
+	if (user == NULL || querycount == NULL || totalticks == NULL
+		|| started == NULL || finished == NULL || maxquery == NULL
+		|| maxticks == NULL) {
 		BBPreclaim(user);
 		BBPreclaim(started);
 		BBPreclaim(querycount);
@@ -66,29 +70,36 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// FIXME: what if there are multiple users with ADMIN privilege?
 	for (i = 0; i < usrstatscnt; i++) {
 		/* We can stop at the first empty entry */
-		if (USRstats[i].username == NULL) break;
+		if (USRstats[i].username == NULL)
+			break;
 
 		if (BUNappend(user, USRstats[i].username, false) != GDK_SUCCEED) {
-			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'user'");
+			msg = createException(MAL, "SYSMONstatistics",
+								  "Failed to append 'user'");
 			goto bailout;
 		}
-		if (BUNappend(querycount, &USRstats[i].querycount, false) != GDK_SUCCEED){
-			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'querycount'");
+		if (BUNappend(querycount, &USRstats[i].querycount, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "SYSMONstatistics",
+								  "Failed to append 'querycount'");
 			goto bailout;
 		}
-		if (BUNappend(totalticks, &USRstats[i].totalticks, false) != GDK_SUCCEED){
-			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'totalticks'");
+		if (BUNappend(totalticks, &USRstats[i].totalticks, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "SYSMONstatistics",
+								  "Failed to append 'totalticks'");
 			goto bailout;
 		}
 		/* convert number of seconds into a timestamp */
-		if (USRstats[i].maxquery != 0){
+		if (USRstats[i].maxquery != 0) {
 			tsn = timestamp_fromtime(USRstats[i].started);
 			if (is_timestamp_nil(tsn)) {
-				msg = createException(MAL, "SYSMONstatistics", SQLSTATE(22003) "failed to convert start time");
+				msg = createException(MAL, "SYSMONstatistics",
+									  SQLSTATE(22003)
+									  "failed to convert start time");
 				goto bailout;
 			}
-			if (BUNappend(started, &tsn, false) != GDK_SUCCEED){
-				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'started'");
+			if (BUNappend(started, &tsn, false) != GDK_SUCCEED) {
+				msg = createException(MAL, "SYSMONstatistics",
+									  "Failed to append 'started'");
 				goto bailout;
 			}
 
@@ -97,38 +108,46 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else {
 				tsn = timestamp_fromtime(USRstats[i].finished);
 				if (is_timestamp_nil(tsn)) {
-					msg = createException(MAL, "SYSMONstatistics", SQLSTATE(22003) "failed to convert finish time");
+					msg = createException(MAL, "SYSMONstatistics",
+										  SQLSTATE(22003)
+										  "failed to convert finish time");
 					goto bailout;
 				}
 			}
-			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED){
-				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'finished'");
+			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED) {
+				msg = createException(MAL, "SYSMONstatistics",
+									  "Failed to append 'finished'");
 				goto bailout;
 			}
 		} else {
 			tsn = timestamp_nil;
-			if (BUNappend(started, &tsn, false) != GDK_SUCCEED){
-				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'started'");
+			if (BUNappend(started, &tsn, false) != GDK_SUCCEED) {
+				msg = createException(MAL, "SYSMONstatistics",
+									  "Failed to append 'started'");
 				goto bailout;
 			}
-			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED){
-				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'finished'");
+			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED) {
+				msg = createException(MAL, "SYSMONstatistics",
+									  "Failed to append 'finished'");
 				goto bailout;
 			}
 		}
 
-		if (BUNappend(maxticks, &USRstats[i].maxticks, false) != GDK_SUCCEED){
-			msg = createException(MAL, "SYSMONstatistics", "Failed to append 'maxticks'");
+		if (BUNappend(maxticks, &USRstats[i].maxticks, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "SYSMONstatistics",
+								  "Failed to append 'maxticks'");
 			goto bailout;
 		}
-		if( USRstats[i].maxquery == 0){
-			if (BUNappend(maxquery, "none", false) != GDK_SUCCEED ){
-				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'maxquery' 1");
+		if (USRstats[i].maxquery == 0) {
+			if (BUNappend(maxquery, "none", false) != GDK_SUCCEED) {
+				msg = createException(MAL, "SYSMONstatistics",
+									  "Failed to append 'maxquery' 1");
 				goto bailout;
 			}
-		}else {
-			if (BUNappend(maxquery, USRstats[i].maxquery, false) != GDK_SUCCEED ){
-				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'maxquery' 2");
+		} else {
+			if (BUNappend(maxquery, USRstats[i].maxquery, false) != GDK_SUCCEED) {
+				msg = createException(MAL, "SYSMONstatistics",
+									  "Failed to append 'maxquery' 2");
 				goto bailout;
 			}
 		}
@@ -150,7 +169,7 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(maxquery);
 	return MAL_SUCCEED;
 
- bailout:
+  bailout:
 	MT_lock_unset(&mal_delayLock);
 	BBPunfix(user->batCacheid);
 	BBPunfix(querycount->batCacheid);
@@ -170,28 +189,29 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
-		throw(MAL, "SYSMONqueue", SQLSTATE(42000) "Calling from a mclient -lmal.");
+		throw(MAL, "SYSMONqueue",
+			  SQLSTATE(42000) "Calling from a mclient -lmal.");
 
-	bat *t = getArgReference_bat(stk,pci,0),
-		*s = getArgReference_bat(stk,pci,1),
-		*u = getArgReference_bat(stk,pci,2),
-		*sd = getArgReference_bat(stk,pci,3),
-		*ss = getArgReference_bat(stk,pci,4),
-		*q = getArgReference_bat(stk,pci,5),
-		*f = getArgReference_bat(stk,pci,6),
-		*w = getArgReference_bat(stk,pci,7),
-		*m = getArgReference_bat(stk,pci,8);
+	bat *t = getArgReference_bat(stk, pci, 0),
+			*s = getArgReference_bat(stk, pci, 1),
+			*u = getArgReference_bat(stk, pci, 2),
+			*sd = getArgReference_bat(stk, pci, 3),
+			*ss = getArgReference_bat(stk, pci, 4),
+			*q = getArgReference_bat(stk, pci, 5),
+			*f = getArgReference_bat(stk, pci, 6),
+			*w = getArgReference_bat(stk, pci, 7),
+			*m = getArgReference_bat(stk, pci, 8);
 
-	BUN sz = (BUN)qsize;
+	BUN sz = (BUN) qsize;
 	BAT *tag = COLnew(0, TYPE_lng, sz, TRANSIENT),
-		*sessionid = COLnew(0, TYPE_int, sz, TRANSIENT),
-		*user = COLnew(0, TYPE_str, sz, TRANSIENT),
-		*started = COLnew(0, TYPE_timestamp, sz, TRANSIENT),
-		*status = COLnew(0, TYPE_str, sz, TRANSIENT),
-		*query = COLnew(0, TYPE_str, sz, TRANSIENT),
-		*finished = COLnew(0, TYPE_timestamp, sz, TRANSIENT),
-		*workers = COLnew(0, TYPE_int, sz, TRANSIENT),
-		*memory = COLnew(0, TYPE_int, sz, TRANSIENT);
+			*sessionid = COLnew(0, TYPE_int, sz, TRANSIENT),
+			*user = COLnew(0, TYPE_str, sz, TRANSIENT),
+			*started = COLnew(0, TYPE_timestamp, sz, TRANSIENT),
+			*status = COLnew(0, TYPE_str, sz, TRANSIENT),
+			*query = COLnew(0, TYPE_str, sz, TRANSIENT),
+			*finished = COLnew(0, TYPE_timestamp, sz, TRANSIENT),
+			*workers = COLnew(0, TYPE_int, sz, TRANSIENT),
+			*memory = COLnew(0, TYPE_int, sz, TRANSIENT);
 
 	lng qtag;
 	int wrk, mem;
@@ -209,7 +229,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (tag == NULL || sessionid == NULL || user == NULL ||
 		query == NULL || started == NULL || finished == NULL ||
-		workers == NULL || memory == NULL){
+		workers == NULL || memory == NULL) {
 		BBPreclaim(tag);
 		BBPreclaim(sessionid);
 		BBPreclaim(user);
@@ -231,18 +251,20 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (QRYqueue[i].query &&
 			((admin && getall) ||
 			 (admin && strcmp(QRYqueue[i].username, userqueue) == 0) ||
-			 ((admin == false) && strcmp(QRYqueue[i].username, cntxt->username) == 0))) {
+			 ((admin == false)
+			  && strcmp(QRYqueue[i].username, cntxt->username) == 0))) {
 			qtag = (lng) QRYqueue[i].tag;
 			if (BUNappend(tag, &qtag, false) != GDK_SUCCEED ||
 				BUNappend(user, QRYqueue[i].username, false) != GDK_SUCCEED ||
-				BUNappend(sessionid, &(QRYqueue[i].idx),false) != GDK_SUCCEED ||
-				BUNappend(query, QRYqueue[i].query, false) != GDK_SUCCEED ||
-				BUNappend(status, QRYqueue[i].status, false) != GDK_SUCCEED)
+				BUNappend(sessionid, &(QRYqueue[i].idx), false) != GDK_SUCCEED
+				|| BUNappend(query, QRYqueue[i].query, false) != GDK_SUCCEED
+				|| BUNappend(status, QRYqueue[i].status, false) != GDK_SUCCEED)
 				goto bailout;
 			/* convert number of seconds into a timestamp */
 			tsn = timestamp_fromtime(QRYqueue[i].start);
 			if (is_timestamp_nil(tsn)) {
-				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "Cannot convert time.");
+				msg = createException(MAL, "SYSMONqueue",
+									  SQLSTATE(22003) "Cannot convert time.");
 				goto bailout;
 			}
 			if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
@@ -252,7 +274,9 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			else {
 				tsn = timestamp_fromtime(QRYqueue[i].finished);
 				if (is_timestamp_nil(tsn)) {
-					msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "Cannot convert time.");
+					msg = createException(MAL, "SYSMONqueue",
+										  SQLSTATE(22003)
+										  "Cannot convert time.");
 					goto bailout;
 				}
 			}
@@ -263,7 +287,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			else
 				wrk = QRYqueue[i].workers;
 			if (QRYqueue[i].mb)
-				mem = (int)(1 + QRYqueue[i].mb->memory / LL_CONSTANT(1048576));
+				mem = (int) (1 + QRYqueue[i].mb->memory / LL_CONSTANT(1048576));
 			else
 				mem = QRYqueue[i].memory;
 			if (BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
@@ -292,7 +316,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(memory);
 	return MAL_SUCCEED;
 
- bailout:
+  bailout:
 	MT_lock_unset(&mal_delayLock);
 	BBPunfix(tag->batCacheid);
 	BBPunfix(sessionid->batCacheid);
@@ -303,7 +327,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(finished->batCacheid);
 	BBPunfix(workers->batCacheid);
 	BBPunfix(memory->batCacheid);
-	return msg ? msg : createException(MAL, "SYSMONqueue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return msg ? msg : createException(MAL, "SYSMONqueue",
+									   SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 static str
@@ -314,7 +339,8 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
-		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Calling from a mclient -lmal.");
+		throw(MAL, "SYSMONpause",
+			  SQLSTATE(42000) "Calling from a mclient -lmal.");
 
 	oid tag = 0;
 	size_t i = 0;
@@ -324,16 +350,18 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	assert(getArgType(mb, pci, 1) == TYPE_lng);
 
-	if ((tag = (oid)*getArgReference_lng(stk, pci, 1)) < 1 )
+	if ((tag = (oid) *getArgReference_lng(stk, pci, 1)) < 1)
 		throw(MAL, "SYSMONpause", SQLSTATE(22003) "Tag must be positive.");
 	if (tag == cntxt->curprg->def->tag)
-		throw(MAL, "SYSMONpause", SQLSTATE(HY009) "SYSMONpause cannot pause itself.");
+		throw(MAL, "SYSMONpause",
+			  SQLSTATE(HY009) "SYSMONpause cannot pause itself.");
 
 	MT_lock_set(&mal_delayLock);
 	for (i = 0; i < qsize; i++) {
 		if (QRYqueue[i].tag == tag) {
 			if (QRYqueue[i].stk) {
-				if (admin || (owner = strcmp(QRYqueue[i].username, cntxt->username)) == 0 ) {
+				if (admin
+					|| (owner = strcmp(QRYqueue[i].username, cntxt->username)) == 0) {
 					QRYqueue[i].stk->status = 'p';
 					QRYqueue[i].status = "paused";
 					paused = true;
@@ -351,8 +379,15 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&mal_delayLock);
 
 	return paused ? MAL_SUCCEED :
-		i == qsize ? createException(MAL, "SYSMONpause", SQLSTATE(42S12) "Tag "OIDFMT" unknown.", tag) :
-		createException(MAL, "SYSMONpause", SQLSTATE(HY009) "Tag "OIDFMT" unknown to the user.", tag);
+			i == qsize ? createException(MAL, "SYSMONpause",
+										 SQLSTATE(42 S12) "Tag " OIDFMT
+										 " unknown.",
+										 tag) : createException(MAL,
+																"SYSMONpause",
+																SQLSTATE(HY009)
+																"Tag " OIDFMT
+																" unknown to the user.",
+																tag);
 }
 
 static str
@@ -363,7 +398,8 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
-		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Calling from a mclient -lmal.");
+		throw(MAL, "SYSMONresume",
+			  SQLSTATE(42000) "Calling from a mclient -lmal.");
 
 	oid tag = 0;
 	size_t i = 0;
@@ -373,16 +409,18 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	assert(getArgType(mb, pci, 1) == TYPE_lng);
 
-	if ((tag = (oid)*getArgReference_lng(stk, pci, 1)) < 1 )
+	if ((tag = (oid) *getArgReference_lng(stk, pci, 1)) < 1)
 		throw(MAL, "SYSMONresume", SQLSTATE(22003) "Tag must be positive.");
 	if (tag == cntxt->curprg->def->tag)
-		throw(MAL, "SYSMONresume", SQLSTATE(HY009) "SYSMONresume cannot pause itself.");
+		throw(MAL, "SYSMONresume",
+			  SQLSTATE(HY009) "SYSMONresume cannot pause itself.");
 
 	MT_lock_set(&mal_delayLock);
 	for (i = 0; i < qsize; i++) {
 		if (QRYqueue[i].tag == tag) {
 			if (QRYqueue[i].stk) {
-				if (admin || (owner = strcmp(QRYqueue[i].username, cntxt->username)) == 0 ) {
+				if (admin
+					|| (owner = strcmp(QRYqueue[i].username, cntxt->username)) == 0) {
 					QRYqueue[i].stk->status = 0;
 					QRYqueue[i].status = "running";
 					paused = true;
@@ -400,8 +438,15 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&mal_delayLock);
 
 	return paused ? MAL_SUCCEED :
-		i == qsize ? createException(MAL, "SYSMONresume", SQLSTATE(42S12) "Tag "OIDFMT" unknown.", tag) :
-		createException(MAL, "SYSMONresume", SQLSTATE(HY009) "Tag "OIDFMT" unknown to the user.", tag);
+			i == qsize ? createException(MAL, "SYSMONresume",
+										 SQLSTATE(42 S12) "Tag " OIDFMT
+										 " unknown.",
+										 tag) : createException(MAL,
+																"SYSMONresume",
+																SQLSTATE(HY009)
+																"Tag " OIDFMT
+																" unknown to the user.",
+																tag);
 }
 
 static str
@@ -412,7 +457,8 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
-		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Calling from a mclient -lmal.");
+		throw(MAL, "SYSMONstop",
+			  SQLSTATE(42000) "Calling from a mclient -lmal.");
 
 	oid tag = 0;
 	size_t i = 0;
@@ -422,16 +468,18 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	assert(getArgType(mb, pci, 1) == TYPE_lng);
 
-	if ((tag = (oid)*getArgReference_lng(stk, pci, 1)) < 1 )
+	if ((tag = (oid) *getArgReference_lng(stk, pci, 1)) < 1)
 		throw(MAL, "SYSMONstop", SQLSTATE(22003) "Tag must be positive.");
 	if (tag == cntxt->curprg->def->tag)
-		throw(MAL, "SYSMONstop", SQLSTATE(HY009) "SYSMONstop cannot pause itself.");
+		throw(MAL, "SYSMONstop",
+			  SQLSTATE(HY009) "SYSMONstop cannot pause itself.");
 
 	MT_lock_set(&mal_delayLock);
 	for (i = 0; i < qsize; i++) {
 		if (QRYqueue[i].tag == tag) {
 			if (QRYqueue[i].stk) {
-				if (admin || (owner = strcmp(QRYqueue[i].username, cntxt->username)) == 0 ) {
+				if (admin
+					|| (owner = strcmp(QRYqueue[i].username, cntxt->username)) == 0) {
 					QRYqueue[i].stk->status = 'q';
 					QRYqueue[i].status = "stopping";
 					paused = true;
@@ -449,8 +497,15 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&mal_delayLock);
 
 	return paused ? MAL_SUCCEED :
-		i == qsize ? createException(MAL, "SYSMONstop", SQLSTATE(42S12) "Tag "OIDFMT" unknown.", tag) :
-		createException(MAL, "SYSMONstop", SQLSTATE(HY009) "Tag "OIDFMT" unknown to the user.", tag);
+			i == qsize ? createException(MAL, "SYSMONstop",
+										 SQLSTATE(42 S12) "Tag " OIDFMT
+										 " unknown.",
+										 tag) : createException(MAL,
+																"SYSMONstop",
+																SQLSTATE(HY009)
+																"Tag " OIDFMT
+																" unknown to the user.",
+																tag);
 }
 
 #include "mel.h"

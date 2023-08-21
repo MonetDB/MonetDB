@@ -1087,6 +1087,33 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 {
 	sql_rel *rp = NULL, *r = rel->l, *rpp = NULL;
 
+	if (is_topn(rel->op) && !rel_is_ref(rel) &&
+			r && r->op == op_table && r->flag != TRIGGER_WRAPPER && !rel_is_ref(r) && r->r) {
+		sql_exp *op = r->r;
+		sql_subfunc *f = op->f;
+
+		if (is_func(op->type) && strcmp(f->func->base.name, "file_loader") == 0 && !sql_func_mod(f->func)[0] && !sql_func_imp(f->func)[0]) {
+			/* push limit, to arguments of file_loader */
+			list *args = op->l;
+			if (list_length(args) == 2) {
+				sql_exp *topN = rel->exps->h->data;
+				sql_exp *offset = rel->exps->h->next? rel->exps->h->next->data:NULL;
+				atom *topn = topN->l;
+				if (offset) {
+						atom *b1 = (atom *)offset->l, *c = atom_add(v->sql->sa, b1, topn);
+
+						if (!c)
+							return rel;
+						if (atom_cmp(c, topn) < 0) /* overflow */
+							return rel;
+						topn = c;
+				}
+				append(args, exp_atom(v->sql->sa, topn));
+				v->changes++;
+			}
+		}
+	}
+
 	if ((is_topn(rel->op) || is_sample(rel->op)) && topn_sample_safe_exps(rel->exps, true)) {
 		sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
 

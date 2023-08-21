@@ -20,6 +20,7 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
-mal_export MALfcn MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops);
+mal_export MALfcn MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci,
+									int checkprops);
 
 #endif /* _MANIFOLD_LIB_ */

@@ -17,7 +17,7 @@
 
 #include "monetdb_config.h"
 #include "mal_module.h"
-#include "mal_function.h"   /* for printFunction() */
+#include "mal_function.h"		/* for printFunction() */
 #include "mal_namespace.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -39,15 +39,14 @@ MALfcn
 findFunctionImplementation(const char *cname)
 {
 	for (int i = 0; i < MODULE_HASH_SIZE; i++) {
-		if (moduleIndex[i] != NULL && moduleIndex[i]->space != NULL) {
+		if (moduleIndex[i] != NULL) {
 			for (int j = 0; j < MAXSCOPE; j++) {
 				Symbol s;
 				if ((s = moduleIndex[i]->space[j]) != NULL) {
 					do {
 						if (s->def &&
 							strcmp(s->def->binding, cname) == 0 &&
-							s->def->stmt &&
-							s->def->stmt[0] &&
+							s->def->stmt &&s->def->stmt[0] &&
 							s->def->stmt[0]->fcn) {
 							return s->def->stmt[0]->fcn;
 						}
@@ -64,19 +63,19 @@ getModules(void)
 {
 	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
 	int i;
-	Module s,n;
+	Module s, n;
 
 	if (!b)
 		return NULL;
-	for( i = 0; i< MODULE_HASH_SIZE; i++){
+	for (i = 0; i < MODULE_HASH_SIZE; i++) {
 		s = moduleIndex[i];
-		while(s){
+		while (s) {
 			if (BUNappend(b, s->name, FALSE) != GDK_SUCCEED) {
 				BBPreclaim(b);
 				return NULL;
 			}
 			n = s->link;
-			while(n)
+			while (n)
 				n = n->link;
 			s = s->link;
 		}
@@ -89,18 +88,19 @@ void
 dumpModules(stream *out)
 {
 	int i;
-	Module s,n;
-	for( i = 0; i< MODULE_HASH_SIZE; i++){
-		s= moduleIndex[i];
-		while(s){
-			mnstr_printf(out,"[%d] module %s\n", i, s->name);
+	Module s, n;
+	for (i = 0; i < MODULE_HASH_SIZE; i++) {
+		s = moduleIndex[i];
+		while (s) {
+			mnstr_printf(out, "[%d] module %s\n", i, s->name);
 			n = s->link;
-			while(n){
-				if( n == s)
-					mnstr_printf(out,"ASSERTION error, double occurrence of symbol in symbol table\n");
-				n= n->link;
+			while (n) {
+				if (n == s)
+					mnstr_printf(out,
+								 "ASSERTION error, double occurrence of symbol in symbol table\n");
+				n = n->link;
 			}
-			s= s->link;
+			s = s->link;
 		}
 	}
 }
@@ -112,10 +112,10 @@ mal_module_reset(void)
 	int i;
 	Module m;
 
-	for(i = 0; i < MODULE_HASH_SIZE; i++) {
-		m= moduleIndex[i];
+	for (i = 0; i < MODULE_HASH_SIZE; i++) {
+		m = moduleIndex[i];
 		moduleIndex[i] = 0;
-		while(m) {
+		while (m) {
 			Module next = m->link;
 			freeModule(m);
 			m = next;
@@ -135,7 +135,7 @@ clrModuleIndex(Module cur)
 	int index = getModuleIndex(cur->name);
 	Module prev = NULL;
 	Module m = moduleIndex[index];
-	while(m) {
+	while (m) {
 		if (m == cur) {
 			if (!prev) {
 				moduleIndex[index] = m->link;
@@ -171,14 +171,14 @@ getModule(const char *name)
 }
 
 void
-getModuleList(Module** out, int* length)
+getModuleList(Module **out, int *length)
 {
 	int i;
 	int moduleCount = 0;
 	int currentIndex = 0;
-	for(i = 0; i < MODULE_HASH_SIZE; i++) {
+	for (i = 0; i < MODULE_HASH_SIZE; i++) {
 		Module m = moduleIndex[i];
-		while(m) {
+		while (m) {
 			moduleCount++;
 			m = m->link;
 		}
@@ -189,9 +189,9 @@ getModuleList(Module** out, int* length)
 	}
 	*length = moduleCount;
 
-	for(i = 0; i < MODULE_HASH_SIZE; i++) {
+	for (i = 0; i < MODULE_HASH_SIZE; i++) {
 		Module m = moduleIndex[i];
-		while(m) {
+		while (m) {
 			(*out)[currentIndex++] = m;
 			m = m->link;
 		}
@@ -199,7 +199,7 @@ getModuleList(Module** out, int* length)
 }
 
 void
-freeModuleList(Module* list)
+freeModuleList(Module *list)
 {
 	GDKfree(list);
 }
@@ -216,16 +216,13 @@ globalModule(const char *nme)
 	// Global modules are not named 'user'
 	assert(strcmp(nme, "user"));
 	nme = putName(nme);
+	if (nme == NULL)
+		return NULL;
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
 		return NULL;
 	cur->name = nme;
 	cur->link = NULL;
-	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
-	if (cur->space == NULL) {
-		GDKfree(cur);
-		return NULL;
-	}
 	addModuleToIndex(cur);
 	return cur;
 }
@@ -241,15 +238,14 @@ userModule(void)
 	if (cur == NULL)
 		return NULL;
 	cur->name = putName("user");
-	cur->link = NULL;
-	cur->space = NULL;
-	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
-	if (cur->space == NULL) {
+	if (cur->name == NULL) {
 		GDKfree(cur);
 		return NULL;
 	}
+	cur->link = NULL;
 	return cur;
 }
+
 /*
  * The scope can be fixed. This is used by the parser.
  * Reading a module often calls for creation first.
@@ -260,9 +256,11 @@ fixModule(const char *nme)
 	Module m;
 
 	m = getModule(nme);
-	if (m) return m;
+	if (m)
+		return m;
 	return globalModule(nme);
 }
+
 /*
  * The freeModule operation throws away a symbol without
  * concerns on it whereabouts in the scope structure.
@@ -273,17 +271,13 @@ freeSubScope(Module scope)
 	int i;
 	Symbol s;
 
-	if (scope->space == NULL)
-		return;
-	for(i = 0; i < MAXSCOPE; i++) {
-		if( scope->space[i]){
-			s= scope->space[i];
+	for (i = 0; i < MAXSCOPE; i++) {
+		if (scope->space[i]) {
+			s = scope->space[i];
 			scope->space[i] = NULL;
 			freeSymbolList(s);
 		}
 	}
-	GDKfree(scope->space);
-	scope->space = 0;
 }
 
 void
@@ -294,15 +288,15 @@ freeModule(Module m)
 	if (m == NULL)
 		return;
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
-		InstrPtr pci = getInstrPtr(s->def,0);
+		InstrPtr pci = getInstrPtr(s->def, 0);
 		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
 			int status = 0;
 			str ret = MAL_SUCCEED;
 
 			assert(pci->fcn != NULL);
-			ret = (*(str (*)(int *))pci->fcn)(&status);
+			ret = (*(str (*)(int *)) pci->fcn) (&status);
 			freeException(ret);
-			(void)status;
+			(void) status;
 		}
 	}
 	freeSubScope(m);
@@ -329,33 +323,27 @@ insertSymbol(Module scope, Symbol prg)
 
 	assert(scope);
 	sig = getSignature(prg);
-	if(getModuleId(sig) && getModuleId(sig)!= scope->name){
+	if (getModuleId(sig) && getModuleId(sig) != scope->name) {
 		/* move the definition to the proper place */
 		/* default scope is the last resort */
-		c= findModule(scope,getModuleId(sig));
-		if ( c )
+		c = findModule(scope, getModuleId(sig));
+		if (c)
 			scope = c;
 	}
 	t = getSymbolIndex(getFunctionId(sig));
-	if( scope->space == NULL) {
-		scope->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
-		if (scope->space == NULL)
-			return;
-	}
-	assert(scope->space);
-	if (scope->space[t] == prg){
+	if (scope->space[t] == prg) {
 		/* already known, last inserted */
 	} else {
-		prg->peer= scope->space[t];
+		prg->peer = scope->space[t];
 		scope->space[t] = prg;
-		if( prg->peer &&
-			idcmp(prg->name,prg->peer->name) == 0)
+		if (prg->peer && idcmp(prg->name, prg->peer->name) == 0)
 			prg->skip = prg->peer->skip;
 		else
 			prg->skip = prg->peer;
 	}
 	assert(prg != prg->peer);
 }
+
 /*
  * Removal of elements from the symbol table should be
  * done with care. For, it should be assured that
@@ -370,11 +358,11 @@ deleteSymbol(Module scope, Symbol prg)
 	int t;
 
 	sig = getSignature(prg);
-	if (getModuleId(sig) && getModuleId(sig)!= scope->name ){
+	if (getModuleId(sig) && getModuleId(sig) != scope->name) {
 		/* move the definition to the proper place */
 		/* default scope is the last resort */
-		Module c= findModule(scope, getModuleId(sig));
-		if(c )
+		Module c = findModule(scope, getModuleId(sig));
+		if (c)
 			scope = c;
 	}
 	t = getSymbolIndex(getFunctionId(sig));
@@ -408,12 +396,15 @@ findModule(Module scope, const char *name)
 {
 	Module def = scope;
 	Module m;
-	if (name == NULL) return scope;
+	if (name == NULL)
+		return scope;
 	m = getModule(name);
-	if (m) return m;
+	if (m)
+		return m;
 
 	/* default is always matched with current */
-	if (def->name == NULL) return NULL;
+	if (def->name == NULL)
+		return NULL;
 	return def;
 }
 
@@ -432,10 +423,12 @@ Symbol
 findSymbolInModule(Module v, const char *fcn)
 {
 	Symbol s;
-	if (v == NULL || fcn == NULL) return NULL;
-	s = v->space[(int)(*fcn)];
+	if (v == NULL || fcn == NULL)
+		return NULL;
+	s = v->space[(int) (*fcn)];
 	while (s != NULL) {
-		if (idcmp(s->name,fcn)==0) return s;
+		if (idcmp(s->name, fcn) == 0)
+			return s;
 		s = s->skip;
 	}
 	return NULL;

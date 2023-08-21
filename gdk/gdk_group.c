@@ -308,7 +308,7 @@
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
-		    	TYPE pw = 0			,	\
+			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
 	/* EQUAL  */	TYPE##_equ(w[p], pw)		,	\
 	/* KEEP   */	pw = w[p]				\

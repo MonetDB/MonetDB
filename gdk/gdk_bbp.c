@@ -3073,11 +3073,14 @@ BATdescriptor(bat i)
 		}
 		if (incref(i, false, false) > 0) {
 			b = BBP_cache(i);
-			if (b == NULL)
+			if (b == NULL) {
 				b = getBBPdescriptor(i);
-		} else {
-			/* if incref fails, we must return NULL */
-			b = NULL;
+				if (b == NULL) {
+					/* if loading failed, we need to
+					 * compensate for the incref */
+					decref(i, false, false, __func__);
+				}
+			}
 		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
@@ -4452,7 +4455,7 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 				return GDK_FAIL;
 			}
 			if (p->next == NULL) {
-			   	p->next = callback;
+				p->next = callback;
 				p = callback->next;
 			} else {
 				p = p->next;
@@ -4488,7 +4491,7 @@ gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
 				prev->next = curr->next;
 			}
 			if (argsfree)
-			       	argsfree(curr->argc, curr->argv);
+				argsfree(curr->argc, curr->argv);
 			GDKfree(curr);
 			curr = NULL;
 			callback_list.cnt -=1;

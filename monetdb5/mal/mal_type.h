@@ -34,7 +34,7 @@
  * derived from the parser to avoid a loop in the define-structure.
  */
 
-#define RAISEsymbol     21	/* flow of control modifiers */
+#define RAISEsymbol     21		/* flow of control modifiers */
 #define CATCHsymbol     22
 #define RETURNsymbol    23
 #define BARRIERsymbol   24
@@ -42,19 +42,19 @@
 #define LEAVEsymbol     26
 #define EXITsymbol      27
 
-#define ASSIGNsymbol    40	/* interpreter entry points */
+#define ASSIGNsymbol    40		/* interpreter entry points */
 #define ENDsymbol       41
 
-#define COMMANDsymbol   61	/* these tokens should be the last group !! */
-#define FUNCTIONsymbol  62	/* the designate the signature start */
-#define PATTERNsymbol   63	/* the MAL self-reflection commands */
+#define COMMANDsymbol   61		/* these tokens should be the last group !! */
+#define FUNCTIONsymbol  62		/* the designate the signature start */
+#define PATTERNsymbol   63		/* the MAL self-reflection commands */
 
-#define FCNcall     50		/* internal symbols */
+#define FCNcall     50			/* internal symbols */
 #define CMDcall     51
 #define THRDcall    52
-#define PATcall     53		/* pattern call */
+#define PATcall     53			/* pattern call */
 
-#define REMsymbol     99	/* commentary to be retained */
+#define REMsymbol     99		/* commentary to be retained */
 
 mal_export str getTypeName(malType tpe);
 mal_export str getTypeIdentifier(malType tpe);

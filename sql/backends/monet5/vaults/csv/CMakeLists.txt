@@ -24,6 +24,7 @@ target_link_libraries(csv
     sql
     monetdb5
     bat
+    stream
   )
 
 set_target_properties(csv

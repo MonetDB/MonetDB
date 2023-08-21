@@ -70,6 +70,7 @@ extern sql_arg *sql_bind_paramnr(mvc *sql, int nr);
  * function */
 extern int set_type_param(mvc *sql, sql_subtype *type, int nr);
 extern void sql_destroy_params(mvc *sql);	/* used in backend */
+extern sql_arg *sql_find_param(mvc *sql, char *name);
 
 extern char *symbol2string(mvc *sql, symbol *s, int expression, char **err);
 //extern char *dlist2string(mvc *sql, dlist *s, int expression, char **err);

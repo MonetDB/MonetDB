@@ -17,7 +17,7 @@
 #include "monetdb_config.h"
 #include "mal_import.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "mal_linker.h"		/* for loadModuleLibrary() */
+#include "mal_linker.h"			/* for loadModuleLibrary() */
 #include "mal_scenario.h"
 #include "mal_parser.h"
 #include "mal_authorize.h"
@@ -50,9 +50,10 @@ mal_startup(void)
  */
 
 void
-mal_module2(const char *name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code)
+mal_module2(const char *name, mel_atom *atoms, mel_func *funcs,
+			mel_init initfunc, const char *code)
 {
-	assert (mel_modules < MAX_MAL_MODULES);
+	assert(mel_modules < MAX_MAL_MODULES);
 	mel_module[mel_modules].name = name;
 	mel_module[mel_modules].atoms = atoms;
 	mel_module[mel_modules].funcs = funcs;
@@ -64,7 +65,7 @@ mal_module2(const char *name, mel_atom *atoms, mel_func *funcs, mel_init initfun
 void
 mal_module(const char *name, mel_atom *atoms, mel_func *funcs)
 {
-	assert (mel_modules < MAX_MAL_MODULES);
+	assert(mel_modules < MAX_MAL_MODULES);
 	mel_module[mel_modules].name = name;
 	mel_module[mel_modules].atoms = atoms;
 	mel_module[mel_modules].funcs = funcs;
@@ -80,9 +81,14 @@ initModule(Client c, const char *name, const char *initpasswd)
 
 	if (!getName(name))
 		return msg;
-	Module m = getModule(putName(name));
-	if (m) { /* run prelude */
-		Symbol s = findSymbolInModule(m, putName("prelude"));
+	if ((name = putName(name)) == NULL)
+		throw(LOADER, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	Module m = getModule(name);
+	if (m) {					/* run prelude */
+		const char *prelude = putName("prelude");
+		if (prelude == NULL)
+			throw(LOADER, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		Symbol s = findSymbolInModule(m, prelude);
 
 		if (s) {
 			InstrPtr pci = getInstrPtr(s->def, 0);
@@ -91,8 +97,8 @@ initModule(Client c, const char *name, const char *initpasswd)
 				int ret = 0;
 
 				assert(pci->fcn != NULL);
-				msg = (*(str (*)(int *))pci->fcn)(&ret);
-				(void)ret;
+				msg = (*(str (*)(int *)) pci->fcn) (&ret);
+				(void) ret;
 			} else if (pci && pci->token == PATTERNsymbol) {
 				void *mb = NULL;
 				assert(pci->fcn != NULL);
@@ -105,7 +111,8 @@ initModule(Client c, const char *name, const char *initpasswd)
 					 * string in order to check that in the callee */
 					mb = (void *) mercurial_revision();
 				}
-				msg = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))pci->fcn)(c, mb, NULL, NULL);
+				msg = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr)) pci->
+					   fcn) (c, mb, NULL, NULL);
 			}
 		}
 	}
@@ -122,15 +129,15 @@ addAtom(mel_atom *atoms)
 	for (; atoms && atoms->name[0]; atoms++) {
 		int i = ATOMallocate(atoms->name);
 		if (is_int_nil(i))
-			throw(TYPE,"addAtom", GDK_EXCEPTION);
+			throw(TYPE, __func__, GDK_EXCEPTION);
 		if (atoms->basetype[0]) {
 			int tpe = ATOMindex(atoms->basetype);
 			if (tpe < 0)
-				throw(TYPE,"addAtom", TYPE_NOT_SUPPORTED);
+				throw(TYPE, __func__, TYPE_NOT_SUPPORTED);
 			BATatoms[i] = BATatoms[tpe];
 			strcpy_len(BATatoms[i].name, atoms->name, sizeof(BATatoms[i].name));
 			BATatoms[i].storage = ATOMstorage(tpe);
-		} else 	{ /* cannot overload void atoms */
+		} else {				/* cannot overload void atoms */
 			BATatoms[i].storage = i;
 			BATatoms[i].linear = false;
 		}
@@ -158,7 +165,7 @@ addAtom(mel_atom *atoms)
 		if (atoms->length)
 			BATatoms[i].atomLen = atoms->length;
 		if (atoms->null) {
-			const void *atmnull = (*atoms->null)();
+			const void *atmnull = (*atoms->null) ();
 
 			BATatoms[i].atomNull = atmnull;
 		}
@@ -167,7 +174,7 @@ addAtom(mel_atom *atoms)
 		if (atoms->put)
 			BATatoms[i].atomPut = atoms->put;
 		if (atoms->storage)
-			BATatoms[i].storage = (*atoms->storage)();
+			BATatoms[i].storage = (*atoms->storage) ();
 		if (atoms->read)
 			BATatoms[i].atomRead = atoms->read;
 		if (atoms->write)
@@ -179,15 +186,15 @@ addAtom(mel_atom *atoms)
 static str
 makeArgument(MalBlkPtr mb, const mel_arg *a, int *idx)
 {
-	int tpe = TYPE_any;//, l;
+	int tpe = TYPE_any;			//, l;
 
 	if (
 #ifdef MEL_STR
-		!a->type[0]
+		   !a->type[0]
 #else
-		a->type == TYPE_any
+		   a->type == TYPE_any
 #endif
-		) {
+			) {
 		if (a->isbat)
 			tpe = newBatType(tpe);
 		if (a->nr > 0)
@@ -195,9 +202,9 @@ makeArgument(MalBlkPtr mb, const mel_arg *a, int *idx)
 	} else {
 		int mask = 0;
 #ifdef MEL_STR
-		tpe = getAtomIndex(a->type, strlen(a->type),-1);
+		tpe = getAtomIndex(a->type, strlen(a->type), -1);
 #else
-		tpe = a->type ;
+		tpe = a->type;
 #endif
 		if (a->isbat)
 			tpe = newBatType(tpe) | mask;
@@ -206,11 +213,18 @@ makeArgument(MalBlkPtr mb, const mel_arg *a, int *idx)
 	  if (a->name) {
 	  *idx = findVariableLength(mb, a->name, l = strlen(a->name));
 	  if (*idx != -1)
-	  throw(LOADER, "addFunctions", "Duplicate argument name %s", a->name);
+	  throw(LOADER, __func__, "Duplicate argument name %s", a->name);
 	  *idx = newVariable(mb, a->name, l, tpe);
 	  } else
 	*/
 	*idx = newTmpVariable(mb, tpe);
+	if (*idx < 0) {
+		char *msg = mb->errors;
+		mb->errors = NULL;
+		if (msg)
+			return msg;
+		throw(LOADER, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -228,13 +242,17 @@ addFunctions(mel_func *fcn)
 	for (; fcn && fcn->mod[0]; fcn++) {
 		assert(fcn->mod);
 		mod = putName(fcn->mod);
+		if (mod == NULL)
+			throw(LOADER, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		c = getModule(mod);
 		if (c == NULL && (c = globalModule(mod)) == NULL)
-			throw(LOADER, "addFunctions", "Module %s can not be created", fcn->mod);
+			throw(LOADER, __func__, "Module %s can not be created", fcn->mod);
 
 		s = newSymbol(fcn->fcn, fcn->command ? COMMANDsymbol : PATTERNsymbol);
 		if (s == NULL)
-			throw(LOADER, "addFunctions", "Can not create symbol for %s.%s missing", fcn->mod, fcn->fcn);
+			throw(LOADER, __func__,
+				  "Can not create symbol for %s.%s missing", fcn->mod,
+				  fcn->fcn);
 		mb = s->def;
 		assert(mb);				/* if this is NULL, s should have been NULL */
 
@@ -245,10 +263,11 @@ addFunctions(mel_func *fcn)
 		 * the code. */
 		mb->statichelp = mb->help = fcn->comment;
 
-		sig = newInstructionArgs(mb, mod, putName(fcn->fcn), fcn->argc + (fcn->retc == 0));
+		sig = newInstructionArgs(mb, mod, putName(fcn->fcn),
+								 fcn->argc + (fcn->retc == 0));
 		if (sig == NULL) {
 			freeSymbol(s);
-			throw(LOADER, "addFunctions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(LOADER, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		sig->retc = 0;
 		sig->argc = 0;
@@ -260,20 +279,23 @@ addFunctions(mel_func *fcn)
 		/* add the return variables */
 		if (fcn->retc == 0) {
 			int idx = newTmpVariable(mb, TYPE_void);
+			if (idx < 0) {
+				freeInstruction(sig);
+				freeSymbol(s);
+				throw(LOADER, __func__, MAL_MALLOC_FAIL);
+			}
 			sig = pushReturn(mb, sig, idx);
-			if (sig == NULL)
-				throw(LOADER, "addFunctions", "Failed to create void return");
 		}
 		int i;
-		for (i = 0; i<fcn->retc; i++) {
-			const mel_arg *a = fcn->args+i;
+		for (i = 0; i < fcn->retc; i++) {
+			const mel_arg *a = fcn->args + i;
 			msg = makeArgument(mb, a, &idx);
-			if (msg)
+			if (msg) {
+				freeInstruction(sig);
+				freeSymbol(s);
 				return msg;
+			}
 			sig = pushReturn(mb, sig, idx);
-			if (sig == NULL)
-				//throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
-				throw(LOADER, "addFunctions", "Failed to keep argument %d", i);
 			int tpe = TYPE_any;
 			if (a->nr > 0) {
 				if (a->isbat)
@@ -286,15 +308,15 @@ addFunctions(mel_func *fcn)
 			}
 		}
 		/* add the arguments */
-		for (i = fcn->retc; i<fcn->argc; i++) {
-			const mel_arg *a = fcn->args+i;
+		for (i = fcn->retc; i < fcn->argc; i++) {
+			const mel_arg *a = fcn->args + i;
 			msg = makeArgument(mb, a, &idx);
-			if (msg)
+			if (msg) {
+				freeInstruction(sig);
+				freeSymbol(s);
 				return msg;
+			}
 			sig = pushArgument(mb, sig, idx);
-			if (sig == NULL)
-				//throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
-				throw(LOADER, "addFunctions", "Failed to keep argument %d", i);
 			int tpe = TYPE_any;
 			if (a->nr > 0) {
 				if (a->isbat)
@@ -306,8 +328,21 @@ addFunctions(mel_func *fcn)
 				setPolymorphic(sig, TYPE_any, TRUE);
 			}
 		}
+		if (mb->errors) {
+			freeInstruction(sig);
+			freeSymbol(s);
+			msg = mb->errors;
+			mb->errors = NULL;
+			return msg;
+		}
 		assert(sig->retc > 0);
 		pushInstruction(mb, sig);
+		if (mb->errors) {
+			freeSymbol(s);
+			msg = mb->errors;
+			mb->errors = NULL;
+			return msg;
+		}
 		insertSymbol(c, s);
 	}
 	return msg;
@@ -332,7 +367,9 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 }
 
 int
-melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ...)
+melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
+			const char *fname, bool unsafe, const char *comment, int retc,
+			int argc, ...)
 {
 	int i, idx;
 	Module c;
@@ -373,25 +410,25 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 	/* add the return variables */
 	if (retc == 0) {
 		idx = newTmpVariable(mb, TYPE_void);
-		sig = pushReturn(mb, sig, idx);
-		if (idx < 0 || sig == NULL) {
+		if (idx < 0) {
 			freeInstruction(sig);
 			freeSymbol(s);
 			return MEL_ERR;
 		}
+		sig = pushReturn(mb, sig, idx);
 	}
 
 	va_start(va, argc);
-	for (i = 0; i<retc; i++) {
+	for (i = 0; i < retc; i++) {
 		mel_func_arg a = va_arg(va, mel_func_arg);
 		idx = makeFuncArgument(mb, &a);
-		sig = pushReturn(mb, sig, idx);
-		if (idx < 0 || sig == NULL) {
+		if (idx < 0) {
 			freeInstruction(sig);
 			freeSymbol(s);
 			va_end(va);
 			return MEL_ERR;
 		}
+		sig = pushReturn(mb, sig, idx);
 		int tpe = TYPE_any;
 		if (a.nr > 0) {
 			if (a.isbat)
@@ -404,16 +441,16 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 		}
 	}
 	/* add the arguments */
-	for (i = retc; i<argc; i++) {
+	for (i = retc; i < argc; i++) {
 		mel_func_arg a = va_arg(va, mel_func_arg);
 		idx = makeFuncArgument(mb, &a);
-		sig = pushArgument(mb, sig, idx);
-		if (idx < 0 || sig == NULL) {
+		if (idx < 0) {
 			freeInstruction(sig);
 			freeSymbol(s);
 			va_end(va);
 			return MEL_ERR;
 		}
+		sig = pushArgument(mb, sig, idx);
 		int tpe = TYPE_any;
 		if (a.nr > 0) {
 			if (a.isbat)
@@ -488,7 +525,8 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 }
 
 str
-malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server, const char *initpasswd)
+malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server,
+				  const char *initpasswd)
 {
 	str msg;
 	int sql = -1, mapi = -1;

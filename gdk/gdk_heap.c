@@ -271,7 +271,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	}
 #endif
 
- 	if (h->storage != STORE_MEM) {
+	if (h->storage != STORE_MEM) {
 		char *p;
 		char *path;
 
@@ -305,8 +305,8 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		if (p) {
 			h->size = size;
 			h->base = p;
- 			return GDK_SUCCEED; /* success */
- 		}
+			return GDK_SUCCEED; /* success */
+		}
 		if (qc != NULL)
 			ATOMIC_SUB(&qc->datasize, xsize);
 		failure = "GDKmremap() failed";

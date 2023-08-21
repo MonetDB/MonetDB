@@ -583,6 +583,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SQL_TSI_QUARTER", SQL_TSI_QUARTER);
 	failed += keywords_insert("SQL_TSI_YEAR", SQL_TSI_YEAR);
 
+	failed += keywords_insert("LEAST", LEAST);
+	failed += keywords_insert("GREATEST", GREATEST);
 	return failed;
 }
 

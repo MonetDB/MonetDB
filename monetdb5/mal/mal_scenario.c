@@ -75,14 +75,15 @@
 #endif
 
 static struct SCENARIO scenarioRec[MAXSCEN] = {
-	{	.name = "mal",
+	{
+		.name = "mal",
 		.language = "mal",
 		.initClient = "MALinitClient",
 		.initClientCmd = (init_client) MALinitClient,
 		.exitClient = "MALexitClient",
 		.exitClientCmd = (exit_client) MALexitClient,
 		.engine = "MALengine",
-		.engineCmd = (engine_fptr)MALengine,
+		.engineCmd = (engine_fptr) MALengine,
 	},
 	{
 		.name = NULL,
@@ -127,7 +128,7 @@ defaultScenario(Client c)
 static void
 print_scenarioCommand(stream *f, str cmd)
 {
-	mnstr_printf(f," \"%s\",", cmd);
+	mnstr_printf(f, " \"%s\",", cmd);
 }
 
 void
@@ -171,11 +172,15 @@ showAllScenarios(stream *f)
 		showScenario(f, scen);
 }
 
-str getScenarioLanguage(Client c){
-	Scenario scen= findScenario(c->scenario);
-	if( scen) return scen->language;
+str
+getScenarioLanguage(Client c)
+{
+	Scenario scen = findScenario(c->scenario);
+	if (scen)
+		return scen->language;
 	return "mal";
 }
+
 /*
  * Changing the scenario for a particular client invalidates the
  * state maintained for the previous scenario.
@@ -196,7 +201,7 @@ fillScenario(Client c, Scenario scen)
 	c->engine = scen->engineCmd;
 	c->initClient = scen->initClientCmd;
 	c->exitClient = scen->exitClientCmd;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /*
@@ -278,7 +283,7 @@ runScenarioBody(Client c)
 		assert(c->curprg->def->errors == NULL);
 	}
 	if (!GDKexiting() && GDKerrbuf && GDKerrbuf[0])
-		mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
+		mnstr_printf(c->fdout, "!GDKerror: %s\n", GDKerrbuf);
 	return c->exitClient(c);
 }
 
@@ -291,7 +296,7 @@ runScenario(Client c)
 		return msg;
 	msg = runScenarioBody(c);
 	if (msg != MAL_SUCCEED &&
-			strcmp(msg,"MALException:client.quit:Server stopped."))
-		mnstr_printf(c->fdout,"!%s\n",msg);
+		strcmp(msg, "MALException:client.quit:Server stopped."))
+		mnstr_printf(c->fdout, "!%s\n", msg);
 	return msg;
 }

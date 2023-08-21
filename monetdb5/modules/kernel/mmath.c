@@ -173,35 +173,31 @@ MATHbinary_ROUND##TYPE(TYPE *res, const TYPE *x, const int *y)	\
 }
 
 
-unopM5(_ACOS,acos)
-unopM5(_ASIN,asin)
-unopM5(_ATAN,atan)
-unopM5(_COS,cos)
-unopM5(_SIN,sin)
-unopM5(_TAN,tan)
-unopM5(_COT,cot)
-unopM5(_RADIANS,radians)
-unopM5(_DEGREES,degrees)
-
-unopM5(_COSH,cosh)
-unopM5(_SINH,sinh)
-unopM5(_TANH,tanh)
-
-unopM5(_EXP,exp)
-unopM5(_LOG,log)
-unopM5(_LOG10,log10)
-unopM5(_LOG2,log2)
-unopM5(_SQRT,sqrt)
-unopM5(_CBRT,cbrt)
-unopM5(_CEIL,ceil)
-unopM5(_FLOOR,floor)
-
-binopM5(_ATAN2,atan2)
-binopM5(_POW,pow)
-binopM5(_LOG,logbs)
-
+unopM5(_ACOS, acos)
+		unopM5(_ASIN, asin)
+		unopM5(_ATAN, atan)
+		unopM5(_COS, cos)
+		unopM5(_SIN, sin)
+		unopM5(_TAN, tan)
+		unopM5(_COT, cot)
+		unopM5(_RADIANS, radians)
+		unopM5(_DEGREES, degrees)
+		unopM5(_COSH, cosh)
+		unopM5(_SINH, sinh)
+		unopM5(_TANH, tanh)
+		unopM5(_EXP, exp)
+		unopM5(_LOG, log)
+		unopM5(_LOG10, log10)
+		unopM5(_LOG2, log2)
+		unopM5(_SQRT, sqrt)
+		unopM5(_CBRT, cbrt)
+		unopM5(_CEIL, ceil)
+		unopM5(_FLOOR, floor)
+		binopM5(_ATAN2, atan2)
+		binopM5(_POW, pow)
+		binopM5(_LOG, logbs)
 static str
-MATHunary_FABSdbl(dbl *res , const dbl *a)
+MATHunary_FABSdbl(dbl *res, const dbl *a)
 {
 	*res = is_dbl_nil(*a) ? dbl_nil : fabs(*a);
 	return MAL_SUCCEED;
@@ -209,7 +205,6 @@ MATHunary_FABSdbl(dbl *res , const dbl *a)
 
 roundM5(dbl)
 roundM5(flt)
-
 static str
 MATHunary_ISNAN(bit *res, const dbl *a)
 {
@@ -291,7 +286,7 @@ MATHsrandint(void *ret, const int *seed)
 {
 	(void) ret;
 	MT_lock_set(&mmath_rse_lock);
-	init_random_state_engine(mmath_rse, (uint64_t) *seed);
+	init_random_state_engine(mmath_rse, (uint64_t) * seed);
 	MT_lock_unset(&mmath_rse_lock);
 	return MAL_SUCCEED;
 }
@@ -304,7 +299,7 @@ MATHsqlrandint(int *res, const int *seed)
 	*res = 0;
 #else
 	MT_lock_set(&mmath_rse_lock);
-	init_random_state_engine(mmath_rse, (uint64_t) *seed);
+	init_random_state_engine(mmath_rse, (uint64_t) * seed);
 	*res = (int) (next(mmath_rse) >> 33);
 	MT_lock_unset(&mmath_rse_lock);
 #endif
