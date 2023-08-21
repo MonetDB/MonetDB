@@ -284,6 +284,7 @@ STRMPchoosePairs(const PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 		cp[i].psize = 2;
 		cp[i].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - i - 1);
 	}
+	cp[STRIMP_PAIRS] = (CharPair) {.psize = 2};
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
 }
