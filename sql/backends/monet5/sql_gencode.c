@@ -1008,7 +1008,7 @@ sql_relation2stmt(backend *be, sql_rel *r, int top)
 static int
 #if defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ <= 8
 /* bug on CentOS 7 (gnuc 4.8.5) where this function gets inlined and
- * the compiler than complains about query getting modified after the
+ * the compiler then complains about query getting modified after the
  * setjmp call; fix is to explicitly prevent inlining */
 __attribute__((__noinline__))
 #endif
