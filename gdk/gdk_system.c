@@ -265,6 +265,72 @@ MT_thread_init(void)
 	return true;
 }
 
+static void
+rm_winthread(struct winthread *w)
+{
+	struct winthread **wp;
+
+	EnterCriticalSection(&winthread_cs);
+	for (wp = &winthreads; *wp && *wp != w; wp = &(*wp)->next)
+		;
+	if (*wp)
+		*wp = w->next;
+	LeaveCriticalSection(&winthread_cs);
+	ATOMIC_DESTROY(&w->exited);
+	free(w);
+}
+
+bool
+MT_thread_register(void)
+{
+	assert(threadslot != TLS_OUT_OF_INDEXES);
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return false;
+
+	struct winthread *w;
+
+	if ((w = TlsGetValue(threadslot)) != NULL)
+		return false;
+
+	w = malloc(sizeof(*w));
+	if (w == NULL)
+		return false;
+
+	EnterCriticalSection(&winthread_cs);
+	*w = (struct winthread) {
+		.detached = false,
+		.tid = GetCurrentThreadId(),
+	};
+	snprintf(w->threadname, sizeof(w->threadname),
+		 "foreign %zu", (MT_Id) w->tid);
+	Thread t = THRnew(w->threadname, w->tid);
+	if (t == NULL) {
+		free(w);
+		LeaveCriticalSection(&winthread_cs);
+		return false;
+	}
+	w->data = t;
+	ATOMIC_INIT(&w->exited, 0);
+	TlsSetValue(threadslot, w);
+	w->next = winthreads;
+	winthreads = w;
+	LeaveCriticalSection(&winthread_cs);
+	return true;
+}
+
+void
+MT_thread_deregister(void)
+{
+	struct winthread *w;
+
+	if ((w = TlsGetValue(threadslot)) == NULL)
+		return;
+
+	THRdel(w->data);
+
+	rm_winthread(w);
+}
+
 static struct winthread *
 find_winthread(DWORD tid)
 {
@@ -457,21 +523,6 @@ MT_thread_override_limits(void)
 	struct winthread *w = TlsGetValue(threadslot);
 
 	return w && w->limit_override;
-}
-
-static void
-rm_winthread(struct winthread *w)
-{
-	struct winthread **wp;
-
-	EnterCriticalSection(&winthread_cs);
-	for (wp = &winthreads; *wp && *wp != w; wp = &(*wp)->next)
-		;
-	if (*wp)
-		*wp = w->next;
-	LeaveCriticalSection(&winthread_cs);
-	ATOMIC_DESTROY(&w->exited);
-	free(w);
 }
 
 static DWORD WINAPI
@@ -696,6 +747,21 @@ static MT_Id MT_thread_id = 1;
 static pthread_key_t threadkey;
 static bool thread_initialized = false;
 
+static void
+rm_posthread(struct posthread *p)
+{
+	struct posthread **pp;
+
+	pthread_mutex_lock(&posthread_lock);
+	for (pp = &posthreads; *pp && *pp != p; pp = &(*pp)->next)
+		;
+	if (*pp)
+		*pp = p->next;
+	ATOMIC_DESTROY(&p->exited);
+	free(p);
+	pthread_mutex_unlock(&posthread_lock);
+}
+
 void
 dump_threads(void)
 {
@@ -744,6 +810,57 @@ MT_thread_init(void)
 		return false;
 	}
 	return true;
+}
+
+bool
+MT_thread_register(void)
+{
+	assert(thread_initialized);
+	if (!thread_initialized)
+		return false;
+
+	struct posthread *p;
+
+	if ((p = pthread_getspecific(threadkey)) != NULL)
+		return false;
+
+	p = malloc(sizeof(*p));
+	if (p == NULL)
+		return false;
+
+	pthread_mutex_lock(&posthread_lock);
+	*p = (struct posthread) {
+		.detached = false,
+		.mtid = ++MT_thread_id,
+		.tid = pthread_self(),
+	};
+	snprintf(p->threadname, sizeof(p->threadname), "foreign %zu", p->mtid);
+	Thread t = THRnew(p->threadname, p->mtid);
+	if (t == NULL) {
+		free(p);
+		pthread_mutex_unlock(&posthread_lock);
+		return false;
+	}
+	p->data = t;
+	ATOMIC_INIT(&p->exited, 0);
+	pthread_setspecific(threadkey, p);
+	p->next = posthreads;
+	posthreads = p;
+	pthread_mutex_unlock(&posthread_lock);
+	return true;
+}
+
+void
+MT_thread_deregister(void)
+{
+	struct posthread *p;
+
+	if ((p = pthread_getspecific(threadkey)) == NULL)
+		return;
+
+	THRdel(p->data);
+
+	rm_posthread(p);
 }
 
 static struct posthread *
@@ -953,27 +1070,6 @@ MT_thread_sigmask(sigset_t *new_mask, sigset_t *orig_mask)
 }
 #endif
 
-static void
-rm_posthread_locked(struct posthread *p)
-{
-	struct posthread **pp;
-
-	for (pp = &posthreads; *pp && *pp != p; pp = &(*pp)->next)
-		;
-	if (*pp)
-		*pp = p->next;
-	ATOMIC_DESTROY(&p->exited);
-	free(p);
-}
-
-static void
-rm_posthread(struct posthread *p)
-{
-	pthread_mutex_lock(&posthread_lock);
-	rm_posthread_locked(p);
-	pthread_mutex_unlock(&posthread_lock);
-}
-
 static void *
 thread_starter(void *arg)
 {
@@ -1002,9 +1098,11 @@ join_threads(void)
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
-				if (self) self->joinwait = p;
+				if (self)
+					self->joinwait = p;
 				pthread_join(p->tid, NULL);
-				if (self) self->joinwait = NULL;
+				if (self)
+					self->joinwait = NULL;
 				rm_posthread(p);
 				waited = true;
 				pthread_mutex_lock(&posthread_lock);
@@ -1029,9 +1127,11 @@ join_detached_threads(void)
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
-				if (self) self->joinwait = p;
+				if (self)
+					self->joinwait = p;
 				pthread_join(p->tid, NULL);
-				if (self) self->joinwait = NULL;
+				if (self)
+					self->joinwait = NULL;
 				rm_posthread(p);
 				waited = true;
 				pthread_mutex_lock(&posthread_lock);

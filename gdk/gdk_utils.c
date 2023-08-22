@@ -1669,6 +1669,7 @@ THRnew(const char *name, MT_Id pid)
 				  (size_t) s->sp);
 			TRC_DEBUG(PAR, "Number of threads: %d\n",
 				  (int) ATOMIC_GET(&GDKnrofthreads) + 1);
+			ATOMIC_INC(&GDKnrofthreads);
 			return s;
 		}
 	}
@@ -1731,10 +1732,10 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 		MT_sema_destroy(&t->sem);
 		GDKfree(t);
 		ATOMIC_SET(&s->pid, 0); /* deallocate */
+		ATOMIC_DEC(&GDKnrofthreads);
 		return 0;
 	}
 	/* must not fail after this: the thread has been started */
-	ATOMIC_INC(&GDKnrofthreads);
 	ATOMIC_SET(&s->pid, pid);
 	/* send new thread on its way */
 	MT_sema_up(&t->sem);
@@ -1814,7 +1815,6 @@ THRinit(void)
 		THRdata[1] = NULL;
 		return -1;
 	}
-	ATOMIC_INC(&GDKnrofthreads);
 	MT_thread_setdata(s);
 	return 0;
 }

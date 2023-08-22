@@ -545,7 +545,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		goto cleanup;
 	}
 	if (!mdbe->registered_thread) {
-		MT_thread_setdata(THRnew( "monetdbe client thread", 1));
+		MT_thread_register();
 		mdbe->registered_thread = 1;
 	}
 	mdbe->c = MCinitClient((oid) 0, 0, 0);
@@ -628,6 +628,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 
 	if (monetdbe_embedded_initialized) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "MonetDBe is already initialized"));
+		GDKfataljumpenable = 0;
 		return;
 	}
 
@@ -954,7 +955,7 @@ monetdbe_close(monetdbe_database dbhdl)
 	err = (monetdbe_close_internal(mdbe) || err);
 
 	if (mdbe->registered_thread == 1) {
-		THRdel( MT_thread_getdata() );
+		MT_thread_deregister();
 		mdbe->registered_thread = 0;
 	}
 	if (!open_dbs)
