@@ -245,12 +245,8 @@ addFunctions(mel_func *fcn)
 		if (mod == NULL)
 			throw(LOADER, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		c = getModule(mod);
-		if (c == NULL) {
-			if (globalModule(mod) == NULL)
-				throw(LOADER, __func__, "Module %s can not be created",
-					  fcn->mod);
-			c = getModule(mod);
-		}
+		if (c == NULL && (c = globalModule(mod)) == NULL)
+			throw(LOADER, __func__, "Module %s can not be created", fcn->mod);
 
 		s = newSymbol(fcn->fcn, fcn->command ? COMMANDsymbol : PATTERNsymbol);
 		if (s == NULL)
@@ -382,11 +378,8 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 	assert(mod);
 	mod = putName(mod);
 	c = getModule(mod);
-	if (c == NULL) {
-		if (globalModule(mod) == NULL)
-			return MEL_ERR;
-		c = getModule(mod);
-	}
+	if (c == NULL && (c = globalModule(mod)) == NULL)
+		return MEL_ERR;
 
 	s = newSymbol(fcn, command ? COMMANDsymbol : PATTERNsymbol);
 	if (s == NULL)
@@ -491,36 +484,34 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 
 	/* Add the signatures, where we now have access to all atoms */
 	for (i = 0; i < mel_modules; i++) {
-		(void) putName(mel_module[i].name);
-		if (!malLibraryEnabled(mel_module[i].name))
+		const char *name = putName(mel_module[i].name);
+		if (!malLibraryEnabled(name))
 			continue;
 		if (mel_module[i].funcs) {
 			msg = addFunctions(mel_module[i].funcs);
-			if (!msg && mel_module[i].code)	/* some modules may also have some function definitions */
-				msg = malIncludeString(c, mel_module[i].name,
-									   (str) mel_module[i].code, listing, NULL);
+			if (!msg && mel_module[i].code) /* some modules may also have some function definitions */
+				msg = malIncludeString(c, name, (str) mel_module[i].code, listing, NULL);
 			if (msg)
 				return msg;
 
 			/* mapi should be last, and sql last before mapi */
-			if (strcmp(mel_module[i].name, "sql") == 0) {
+			if (strcmp(name, "sql") == 0) {
 				*sql = i;
 				continue;
 			}
-			if (strcmp(mel_module[i].name, "mapi") == 0) {
+			if (strcmp(name, "mapi") == 0) {
 				*mapi = i;
 				continue;
 			}
 			if (!mel_module[i].inits) {
-				msg = initModule(c, mel_module[i].name, NULL);
+				msg = initModule(c, name, NULL);
 				if (msg)
 					return msg;
 			}
 		}
 		if (mel_module[i].inits) {
 			/* mapi should be last, and sql last before mapi */
-			if (strcmp(mel_module[i].name, "sql") == 0
-				|| strcmp(mel_module[i].name, "mapi") == 0)
+			if (strcmp(name, "sql") == 0 || strcmp(name, "mapi") == 0)
 				continue;
 			msg = mel_module[i].inits();
 			if (msg)
