@@ -810,7 +810,7 @@ dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_di
 			space = mnstr_printf(toConsole, "INTERVAL MONTH");
 		else
 			fprintf(stderr, "Internal error: unrecognized month interval %s\n", c_type_digits);
-	} else if (strlen(c_type) > 4 && strcmp(c_type+3, "_interval") == 0) {
+	} else if (strcmp(c_type, "day_interval") == 0 || strcmp(c_type, "sec_interval") == 0) {
 		if (strcmp(c_type_digits, "4") == 0)
 			space = mnstr_printf(toConsole, "INTERVAL DAY");
 		else if (strcmp(c_type_digits, "5") == 0)
@@ -1874,7 +1874,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			if (s == NULL)
 				mnstr_printf(toConsole, "NULL");
 			else if (useInserts) {
-				if (strlen(tp) > 4 && strcmp(tp+3, "_interval") == 0) {
+				if (strcmp(tp, "day_interval") == 0 || strcmp(tp, "sec_interval") == 0) {
 					const char *p = strchr(s, '.');
 					if (p == NULL)
 						p = s + strlen(s);
