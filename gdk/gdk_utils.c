@@ -2218,7 +2218,29 @@ GDKprintinfo(void)
 {
 	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
 	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
-	printf("Virtual memory allocated: %zu, of which %zu with malloc (limit: %zu)\n", vmallocated + allocated, allocated, GDK_vm_maxsize);
+
+	printf("Virtual memory allocated: %zu, of which %zu with malloc (limit: %zu)\n",
+	       vmallocated + allocated, allocated, GDK_vm_maxsize);
+#ifdef __linux__
+	int fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
+	if (fd >= 0) {
+		char buf[512];
+		ssize_t s = read(fd, buf, sizeof(buf) - 1);
+		close(fd);
+		if (s > 0) {
+			assert((size_t) s < sizeof(buf));
+			size_t size, resident, shared;
+			buf[s] = 0;
+			if (sscanf(buf, "%zu %zu %zu", &size, &resident, &shared) == 3) {
+				size *= MT_pagesize();
+				resident *= MT_pagesize();
+				shared *= MT_pagesize();
+				printf("Virtual size: %zu, anonymous RSS: %zu, shared RSS: %zu (together: %zu)\n",
+				       size, resident - shared, shared, resident);
+			}
+		}
+	}
+#endif
 	BBPprintinfo();
 #ifdef LOCK_STATS
 	GDKlockstatistics(3);
