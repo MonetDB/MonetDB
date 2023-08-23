@@ -545,7 +545,10 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		goto cleanup;
 	}
 	if (!mdbe->registered_thread) {
-		MT_thread_register();
+		if (!MT_thread_register()) {
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Embedded MonetDB is not started"));
+			goto cleanup;
+		}
 		mdbe->registered_thread = 1;
 	}
 	mdbe->c = MCinitClient((oid) 0, 0, 0);
