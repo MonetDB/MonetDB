@@ -947,6 +947,7 @@ monetdbe_close(monetdbe_database dbhdl)
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
 	int err = 0;
+	int registered_thread = mdbe->registered_thread;
 
 	MT_lock_set(&embedded_lock);
 	if (mdbe->mid)
@@ -954,9 +955,8 @@ monetdbe_close(monetdbe_database dbhdl)
 
 	err = (monetdbe_close_internal(mdbe) || err);
 
-	if (mdbe->registered_thread == 1) {
+	if (registered_thread == 1) {
 		MT_thread_deregister();
-		mdbe->registered_thread = 0;
 	}
 	if (!open_dbs)
 		monetdbe_shutdown_internal();
