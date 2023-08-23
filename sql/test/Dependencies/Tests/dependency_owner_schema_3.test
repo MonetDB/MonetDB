@@ -26,6 +26,9 @@ query TTT rowsort
 SELECT a.name, s.name, 'DEP_SCHEMA' from sys.schemas as s, auths a where s.owner = a.id order by a.name, s.name
 ----
 monetdb
+information_schema
+DEP_SCHEMA
+monetdb
 json
 DEP_SCHEMA
 monetdb
@@ -42,11 +45,8 @@ tmp
 DEP_SCHEMA
 
 query TTT rowsort
-SELECT t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by t.name, v.name
+SELECT distinct t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by t.name, v.name
 ----
-_columns
-columns
-DEP_VIEW
 _columns
 columns
 DEP_VIEW
@@ -55,9 +55,6 @@ describe_indices
 DEP_VIEW
 _columns
 describe_tables
-DEP_VIEW
-_columns
-ids
 DEP_VIEW
 _columns
 ids
@@ -81,13 +78,10 @@ _tables
 ids
 DEP_VIEW
 _tables
-ids
-DEP_VIEW
-_tables
 tables
 DEP_VIEW
 _tables
-tables
+views
 DEP_VIEW
 args
 dependency_args_on_types
@@ -134,6 +128,12 @@ DEP_VIEW
 auths
 roles
 DEP_VIEW
+auths
+schemata
+DEP_VIEW
+columns
+columns
+DEP_VIEW
 columns
 dependency_columns_on_functions
 DEP_VIEW
@@ -171,7 +171,19 @@ columns
 geometry_columns
 DEP_VIEW
 comments
+columns
+DEP_VIEW
+comments
 describe_comments
+DEP_VIEW
+comments
+schemata
+DEP_VIEW
+comments
+tables
+DEP_VIEW
+comments
+views
 DEP_VIEW
 db_user_info
 dependency_schemas_on_users
@@ -386,9 +398,6 @@ DEP_VIEW
 idxs
 ids
 DEP_VIEW
-idxs
-ids
-DEP_VIEW
 keys
 dependency_columns_on_indexes
 DEP_VIEW
@@ -415,12 +424,6 @@ describe_indices
 DEP_VIEW
 keys
 fkeys
-DEP_VIEW
-keys
-fkeys
-DEP_VIEW
-keys
-ids
 DEP_VIEW
 keys
 ids
@@ -478,6 +481,9 @@ describe_partition_tables
 DEP_VIEW
 roles
 describe_accessible_tables
+DEP_VIEW
+schemas
+columns
 DEP_VIEW
 schemas
 dependency_owners_on_schemas
@@ -552,10 +558,19 @@ schemas
 ids
 DEP_VIEW
 schemas
+schemata
+DEP_VIEW
+schemas
 statistics
 DEP_VIEW
 schemas
 storage
+DEP_VIEW
+schemas
+tables
+DEP_VIEW
+schemas
+views
 DEP_VIEW
 sequences
 describe_comments
@@ -592,6 +607,12 @@ describe_tables
 DEP_VIEW
 table_types
 ids
+DEP_VIEW
+table_types
+tables
+DEP_VIEW
+tables
+columns
 DEP_VIEW
 tables
 dependency_columns_on_indexes
@@ -674,6 +695,9 @@ DEP_VIEW
 tables
 storage
 DEP_VIEW
+tables
+tables
+DEP_VIEW
 triggers
 dependency_columns_on_triggers
 DEP_VIEW
@@ -685,9 +709,6 @@ dependency_tables_on_triggers
 DEP_VIEW
 triggers
 describe_triggers
-DEP_VIEW
-triggers
-ids
 DEP_VIEW
 triggers
 ids
@@ -800,9 +821,9 @@ describe_type
 DEP_FUNC
 
 query TTT rowsort
-SELECT c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
+SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-2334 values hashing to 0e003c0fb99cbcd6293ca86c0074447f
+1620 values hashing to 29d0134221c10cbcbdf5930e29ab53d1
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name

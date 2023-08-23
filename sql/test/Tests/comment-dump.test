@@ -96,6 +96,7 @@ COMMENT ON FUNCTION "foo"."f"(INTEGER,INTEGER,INTEGER) IS '2 parms';
 COMMENT ON INDEX "foo"."idx" IS 'index on j';
 COMMENT ON PROCEDURE "foo"."g"() IS 'proc';
 COMMENT ON SCHEMA "foo" IS 'foo foo';
+COMMENT ON SCHEMA "information_schema" IS 'ISO/IEC 9075-11 SQL/Schemata';
 COMMENT ON SEQUENCE "foo"."counter" IS 'counting';
 COMMENT ON TABLE "foo"."tab" IS 'table';
 COMMENT ON VIEW "foo"."sel" IS 'phew';

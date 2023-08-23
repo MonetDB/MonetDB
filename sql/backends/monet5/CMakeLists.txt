@@ -114,7 +114,8 @@ set(include_sql_files
   75_storagemodel
   76_dump
   80_statistics
-  81_tracer)
+  81_tracer
+  91_information_schema)
 
 if(HAVE_HGE)
   list(APPEND include_sql_files
