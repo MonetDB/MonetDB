@@ -369,7 +369,6 @@ ALTER TABLE "sys"."splitted" ADD TABLE "sys"."first_decade" AS PARTITION FROM RA
 ALTER TABLE "sys"."splitted" ADD TABLE "sys"."second_decade" AS PARTITION FROM '2010-01-01 00:00:00.000000' TO '2020-01-01 00:00:00.000000';
 ALTER TABLE "sys"."m1" ADD TABLE "sys"."p1";
 SET SCHEMA "sfoo"; create trigger extra_insert after insert on "sfoo"."tfoo1" referencing new row as new_row for each statement insert into tfoo2(i) values (new_row.i)@;
-COMMENT ON SCHEMA "information_schema" IS 'ISO/IEC 9075-11 SQL/Schemata';
 COMMENT ON SCHEMA "sbar" IS 'This is a comment on a schema';
 COMMENT ON COLUMN "sfoo"."tfoo1"."i" IS 'This is a comment on a column.';
 COMMENT ON INDEX "sys"."ind3" IS 'This is a comment on an index.';

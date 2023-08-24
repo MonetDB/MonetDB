@@ -666,9 +666,6 @@ tables
 describe_column_defaults
 DEP_VIEW
 tables
-describe_comments
-DEP_VIEW
-tables
 describe_privileges
 DEP_VIEW
 tables
@@ -823,7 +820,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-1620 values hashing to 29d0134221c10cbcbdf5930e29ab53d1
+1623 values hashing to 6b21bdd80c4e73ef598244a23a31446a
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name

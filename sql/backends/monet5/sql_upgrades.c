@@ -5861,8 +5861,9 @@ static str
 sql_update_default(Client c, mvc *sql, sql_schema *s)
 {
 	sql_subtype tp;
-	char *err = NULL;
 	sql_schema *info;
+	char *err = NULL;
+	res_table *output = NULL;
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
 	if (sql_bind_func(sql, s->base.name, "similarity", &tp, &tp, F_FUNC, true)) {
@@ -5883,20 +5884,15 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		" select\n"
 		" schemas.name as schema,\n"
 		" tables.name as table,\n"
-		" table_types.table_type_name as table_type,\n"
-		" privilege_codes.privilege_code_name as privs,\n"
-		" privileges.privileges as privs_code\n"
-		" from privileges\n"
-		" join sys.roles\n"
-		" on privileges.auth_id = roles.id\n"
-		" join sys.tables\n"
-		" on privileges.obj_id = tables.id\n"
-		" join sys.table_types\n"
-		" on tables.type = table_types.table_type_id\n"
-		" join sys.schemas\n"
-		" on tables.schema_id = schemas.id\n"
-		" join sys.privilege_codes\n"
-		" on privileges.privileges = privilege_codes.privilege_code_id\n"
+		" tt.table_type_name as table_type,\n"
+		" pc.privilege_code_name as privs,\n"
+		" p.privileges as privs_code\n"
+		" from privileges p\n"
+		" join sys.roles on p.auth_id = roles.id\n"
+		" join sys.tables on p.obj_id = tables.id\n"
+		" join sys.table_types tt on tables.type = tt.table_type_id\n"
+		" join sys.schemas on tables.schema_id = schemas.id\n"
+		" join sys.privilege_codes on p.privileges = pc.privilege_code_id\n"
 		" where roles.name = current_role;\n"
  		"GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;\n"
 		"update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'describe_accessible_tables';\n"
@@ -5917,6 +5913,91 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			fflush(stdout);
 			err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		}
+	}
+
+	/* 52_describe.sql changes to update sys.describe_comments view */
+	if ((err = SQLstatementIntern(c, "select id from sys.tables where name = 'describe_comments' and schema_id = 2000 and query like '% not t.system%';", "update", true, false, &output)) == NULL) {
+		BAT *b;
+		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+			sql_table *t;
+			/* set views internally to non-system to allow drop commands to succeed without error */
+			if ((t = mvc_bind_table(sql, s, "describe_comments")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "dump_comments")) != NULL)
+				t->system = 0;
+
+			const char *cmds =
+			"DROP FUNCTION IF EXISTS sys.dump_database(BOOLEAN) CASCADE;\n"
+			"DROP VIEW IF EXISTS sys.dump_comments CASCADE;\n"
+			"DROP VIEW IF EXISTS sys.describe_comments CASCADE;\n"
+			"CREATE VIEW sys.describe_comments AS\n"
+			"	SELECT o.id AS id, o.tpe AS tpe, o.nme AS fqn, cm.remark AS rem\n"
+			"	FROM (\n"
+			"		SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas WHERE NOT system\n"
+			"		UNION ALL\n"
+			"		SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)\n"
+			"		  FROM sys.schemas s JOIN sys._tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id\n"
+			"		 WHERE NOT t.system\n"
+			"		UNION ALL\n"
+			"		SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys._tables t, sys.schemas s WHERE NOT t.system AND c.table_id = t.id AND t.schema_id = s.id\n"
+			"		UNION ALL\n"
+			"		SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE NOT t.system AND idx.table_id = t.id AND t.schema_id = s.id\n"
+			"		UNION ALL\n"
+			"		SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id\n"
+			"		UNION ALL\n"
+			"		SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf\n"
+			"		 WHERE NOT f.system AND f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id\n"
+			"		) AS o(id, tpe, nme)\n"
+			"	JOIN sys.comments cm ON cm.id = o.id;\n"
+			"GRANT SELECT ON sys.describe_comments TO PUBLIC;\n"
+			"CREATE VIEW sys.dump_comments AS\n"
+			"  SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;\n"
+			"CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)\n"
+			"BEGIN\n"
+			"  SET SCHEMA sys;\n"
+			"  TRUNCATE sys.dump_statements;\n"
+			"  INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');\n"
+			"  INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA \"sys\";');\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;\n"
+			"  --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s\n"
+			"				    FROM (\n"
+			"				      SELECT f.o, f.stmt FROM sys.dump_functions f\n"
+			"				       UNION ALL\n"
+			"				      SELECT t.o, t.stmt FROM sys.dump_tables t\n"
+			"				    ) AS stmts(o, s);\n"
+			"  IF NOT DESCRIBE THEN\n"
+			"    CALL sys.dump_table_data();\n"
+			"  END IF;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;\n"
+			"  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;\n"
+			"  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');\n"
+			"  RETURN sys.dump_statements;\n"
+			"END;\n"
+			"update sys._tables set system = true where schema_id = 2000 and name in ('describe_comments','dump_comments');\n"
+			"update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'dump_database' and type = 5;\n";
+
+			printf("Running database upgrade commands:\n%s\n", cmds);
+			fflush(stdout);
+			err = SQLstatementIntern(c, cmds, "update", true, false, NULL);
+		}
+		res_table_destroy(output);
+		output = NULL;
 	}
 
 	/* 91_information_schema.sql */
