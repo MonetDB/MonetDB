@@ -1613,20 +1613,12 @@ GDKms(void)
  *
  * The first action upon thread creation is to add it to the pool of
  * known threads. This should be done by the thread itself.
- * Subsequently, the thread descriptor can be obtained using THRget.
  * Note that the users should have gained exclusive access already.  A
  * new entry is initialized automatically when not found.  Its file
  * descriptors are the same as for the server and should be
  * subsequently reset.
  */
 void *THRdata[THREADDATA] = { 0 };
-
-Thread
-THRget(int tid)
-{
-	assert(0 < tid && tid <= THREADS);
-	return &GDKthreads[tid - 1];
-}
 
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #pragma warning(disable : 4172)

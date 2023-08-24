@@ -404,7 +404,6 @@ BAT *STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils);
 MT_Id THRcreate(void (*f)(void *), void *arg, enum MT_thr_detach d, const char *name);
 void *THRdata[THREADDATA];
 void THRdel(Thread t);
-Thread THRget(int tid);
 void *THRgetdata(int);
 int THRgettid(void);
 int THRhighwater(void);

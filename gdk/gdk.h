@@ -1998,7 +1998,6 @@ typedef struct threadStruct {
 
 
 gdk_export int THRgettid(void);
-gdk_export Thread THRget(int tid);
 gdk_export MT_Id THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name);
 gdk_export void THRdel(Thread t);
 gdk_export void THRsetdata(int, void *);
