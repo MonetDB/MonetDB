@@ -956,8 +956,6 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 
 	ATOMIC_SET(&GDKstopped, 0);
 
-	mainpid = MT_getpid();
-
 	if (BBPchkfarms() != GDK_SUCCEED)
 		return GDK_FAIL;
 
@@ -1018,6 +1016,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 		/* BBP was locked by BBPexit() */
 		//BBPunlock();
 	}
+	mainpid = MT_getpid();
+
 	GDKtracer_init(dbpath, dbtrace);
 	errno = 0;
 	if (!GDKinmemory(0) && !GDKenvironment(dbpath))
