@@ -618,7 +618,7 @@ const struct {
 		.info = SQL_INFO_SCHEMA_VIEWS,
 		.name = "SQL_INFO_SCHEMA_VIEWS",
 		.type = INTEGER,
-		.i = 0,
+		.i = SQL_ISV_CHARACTER_SETS | SQL_ISV_COLUMNS | SQL_ISV_SCHEMATA | SQL_ISV_TABLES | SQL_ISV_VIEWS,
 	},
 	{
 		.info = SQL_INSERT_STATEMENT,
