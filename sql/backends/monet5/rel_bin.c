@@ -2229,6 +2229,9 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 		args = rel2bin_args(be, rel->l, args);
 		args = rel2bin_args(be, rel->r, args);
 		break;
+	case op_munion:
+		assert(0);
+		break;
 	case op_groupby:
 		if (rel->r)
 			args = exps2bin_args(be, rel->r, args);
@@ -6711,6 +6714,9 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	case op_union:
 		s = rel2bin_union(be, rel, refs);
 		sql->type = Q_TABLE;
+		break;
+	case op_munion:
+		assert(0);
 		break;
 	case op_except:
 		s = rel2bin_except(be, rel, refs);

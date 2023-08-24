@@ -53,6 +53,13 @@ UNION|EXCEPT|INTERSECT
 	-> l		is left relation
 	-> r		is right relation
 
+MUNION
+	(card ATOM, AGGR or MULTI (same card as lower relation))
+    -> exps     is list of projection expressions
+    -> l        is list of union relations
+    -> r        TBD # probably NULL
+    -> flag     TBD
+
 PROJECT  (card ATOM, AGGR or MULTI (same card as lower relation))
 	-> exps 	is list of projection expressions
 	-> l		is relation

@@ -566,6 +566,9 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 			if (rel->r)
 				rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
 			break;
+		case op_munion:
+			assert(0);
+			break;
 		case op_groupby:
 		case op_project:
 		case op_select:

@@ -141,6 +141,9 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 			if (rel->r)
 				rel_find_table_columns(sql, rel->r, t, cols);
 			break;
+		case op_munion:
+			assert(0);
+			break;
 		case op_semi:
 		case op_anti:
 		case op_groupby:

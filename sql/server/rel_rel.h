@@ -79,6 +79,7 @@ extern sql_rel *rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r
 extern sql_rel *rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e);
 extern sql_rel *rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps);
 extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps );
+extern sql_rel *rel_inplace_munion(sql_rel *rel, list *rels);
 extern sql_rel *rel_dup_copy(sql_allocator *sa, sql_rel *rel);
 
 extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, check_type tpe);

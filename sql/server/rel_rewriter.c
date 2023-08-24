@@ -357,6 +357,9 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 		}
 		return NULL;
 
+	case op_munion:
+		assert(0);
+		break;
 	case op_project:
 	case op_groupby:
 		if (!rel->exps)

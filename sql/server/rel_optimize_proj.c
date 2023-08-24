@@ -3312,6 +3312,9 @@ has_no_selectivity(mvc *sql, sql_rel *rel)
 	case op_except:
 	case op_select:
 		return false;
+	case op_munion:
+		assert(0);
+		return false;
 	}
 	return true;
 }

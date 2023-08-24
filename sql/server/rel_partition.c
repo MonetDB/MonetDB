@@ -77,6 +77,9 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 		if (rel->r)
 			find_basetables(sql, rel->r, tables);
 		break;
+	case op_munion:
+		assert(0);
+		break;
 	case op_semi:
 	case op_anti:
 	case op_groupby:

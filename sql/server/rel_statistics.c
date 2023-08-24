@@ -197,6 +197,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 			}
 			return NULL;
 		}
+		case op_munion:
+			assert(0);
+			break;
 		case op_topn:
 		case op_sample:
 			return rel_propagate_column_ref_statistics(sql, rel->l, e);
@@ -786,6 +789,9 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		}
 		break;
 	}
+	case op_munion:
+		assert(0);
+		break;
 	case op_join:
 	case op_left:
 	case op_right:

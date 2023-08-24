@@ -504,6 +504,9 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		if (is_join(rel->op) && rel->attr) /* mark joins */
 			exps_print(sql, fout, rel->attr, depth, refs, 1, 0);
 		break;
+	case op_munion:
+		assert(0);
+		break;
 	case op_project:
 	case op_select:
 	case op_groupby:
@@ -655,6 +658,9 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 			rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
 		}
+		break;
+	case op_munion:
+		assert(0);
 		break;
 	case op_insert:
 	case op_update:

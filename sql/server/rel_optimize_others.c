@@ -620,6 +620,9 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		}
 		break;
 
+	case op_munion:
+		assert(0);
+		break;
 	case op_join:
 	case op_left:
 	case op_right:
@@ -730,6 +733,9 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_semi:
 	case op_anti:
 		return rel;
+	case op_munion:
+		assert(0);
+		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
@@ -790,6 +796,9 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 			rel_dce_refs(sql, rel->l, refs);
 		if (rel->r)
 			rel_dce_refs(sql, rel->r, refs);
+		break;
+	case op_munion:
+		assert(0);
 		break;
 	case op_ddl:
 
@@ -868,6 +877,9 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 			rel_dce_sub(sql, rel);
 		return rel;
 
+	case op_munion:
+		assert(0);
+		break;
 	case op_select:
 		if (rel->l)
 			rel->l = rel_dce_down(sql, rel->l, 0);
@@ -962,6 +974,9 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 			rel->r = rel_add_projects(sql, r);
 		}
 		return rel;
+	case op_munion:
+		assert(0);
+		break;
 	case op_topn:
 	case op_sample:
 	case op_project:

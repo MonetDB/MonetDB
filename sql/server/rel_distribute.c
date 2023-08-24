@@ -47,6 +47,9 @@ has_remote_or_replica( sql_rel *rel )
 	case op_update:
 	case op_delete:
 		return has_remote_or_replica( rel->l ) || has_remote_or_replica( rel->r );
+	case op_munion:
+		assert(0);
+		break;
 	case op_project:
 	case op_select:
 	case op_groupby:
@@ -300,6 +303,9 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 				rel->p = pl;
 			}
 		}
+		break;
+	case op_munion:
+		assert(0);
 		break;
 	case op_project:
 	case op_select:

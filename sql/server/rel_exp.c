@@ -3361,6 +3361,7 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 			(void) sql_error(sql, 10, SQLSTATE(42000) "Cannot set parameter types under set relations at the moment");
 			return -1;
 		}
+		case op_munion:
 		default: /* For table returning functions, the type must be set when the relation is created */
 			return 0;
 	}

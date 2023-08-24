@@ -2406,6 +2406,9 @@ rel_join_order_(visitor *v, sql_rel *rel)
 		rel->l = rel_join_order_(v, rel->l);
 		rel->r = rel_join_order_(v, rel->r);
 		break;
+	case op_munion:
+		assert(0);
+		break;
 	case op_project:
 	case op_select:
 	case op_groupby:

@@ -413,6 +413,9 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		lexps = merge_freevar(lexps, rexps);
 		exps = merge_freevar(exps, lexps);
 		return exps;
+	case op_munion:
+		assert(0);
+		break;
 	case op_ddl:
 	case op_semi:
 	case op_anti:
@@ -2271,6 +2274,9 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 	case op_union: {
 		e->card = CARD_MULTI;
 	} break;
+	case op_munion:
+		assert(0);
+		break;
 	case op_groupby: {
 		switch(e->type) {
 		case e_aggr:

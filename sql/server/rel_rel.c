@@ -116,6 +116,11 @@ rel_destroy_(sql_rel *rel)
 		if (rel->r)
 			rel_destroy(rel->r);
 		break;
+	case op_munion:
+		for (node *n = ((list*)rel->l)->h; n; n = n->next)
+			// TODO: should we check for n->data == NULL?
+			rel_destroy(n->data);
+		break;
 	case op_project:
 	case op_groupby:
 	case op_select:
@@ -196,6 +201,10 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 				rel->r = exps_copy(sql, i->r);
 			}
 		}
+		break;
+	case op_munion:
+		if (i->l)
+			rel->l = list_dup(i->l, (fdup) rel_dup);
 		break;
 	case op_ddl:
 		if (i->flag == ddl_output || i->flag == ddl_create_seq || i->flag == ddl_alter_seq || i->flag == ddl_alter_table || i->flag == ddl_create_table || i->flag == ddl_create_view) {
@@ -557,6 +566,29 @@ rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
 	return rel;
 }
 
+sql_rel *
+rel_inplace_munion(sql_rel *rel, list *rels)
+{
+	rel_destroy_(rel);
+	rel_inplace_reset_props(rel);
+	// TODO: what is the semantics of cardinality? is that right?
+	rel->card = CARD_ATOM;
+	rel->nrcols = 0;
+	if (rels)
+		rel->l = rels;
+	if (rels) {
+		for (node* n = rels->h; n; n = n->next) {
+			sql_rel *r = n->data;
+			// TODO: could we overflow the nrcols this way?
+			rel->nrcols += r->nrcols;
+		}
+	}
+	rel->r = NULL;
+	rel->exps = NULL;
+	rel->op = op_munion;
+	return rel;
+}
+
 /* this function is to be used with the above rel_inplace_* functions */
 sql_rel *
 rel_dup_copy(sql_allocator *sa, sql_rel *rel)
@@ -601,6 +633,11 @@ rel_dup_copy(sql_allocator *sa, sql_rel *rel)
 	case op_truncate:
 		if (nrel->l)
 			rel_dup(nrel->l);
+		break;
+	case op_munion:
+		// TODO: is that even right?
+		if (nrel->l)
+			nrel->l = list_dup(nrel->l, (fdup) rel_dup);
 		break;
 	}
 	return nrel;
@@ -1043,10 +1080,14 @@ exps_reset_props(list *exps, bool setnil)
 	}
 }
 
+/* Return a list with all the projection expressions, that optionaly
+ * refer to the tname relation, anywhere in the relational tree
+ */
 list *
 _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
 {
-	list *lexps, *rexps = NULL, *exps;
+	list *lexps, *rexps = NULL, *exps, *rels;
+	sql_rel *r;
 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1145,6 +1186,37 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				list_hash_clear(lexps);
 		}
 		return lexps;
+	case op_munion:
+		assert(rel->l);
+		/* get the exps from the first relation */
+		rels = rel->l;
+		r = rels->h->data;
+		if (r)
+			exps = _rel_projections(sql, r, tname, settname, intern, basecol);
+		/* for every other relation in the list */
+		// TODO: do we need the assertion here? for no-assert the loop is no-op
+		for (node *n = rels->h->next; n; n = n->next) {
+			rexps = _rel_projections(sql, n->data, tname, settname, intern, basecol);
+			assert(list_length(exps) == list_length(rexps));
+		}
+		/* it's a multi-union (expressions have to be the same in all the operands)
+		 * so we are ok only with the expressions of the first operand
+		 */
+		if (exps) {
+			int label = 0;
+			if (!settname)
+				label = ++sql->label;
+			for (node *en = rels->h; en; en = en->next) {
+				sql_exp *e = en->data;
+
+				e->card = rel->card;
+				if (!settname) /* noname use alias */
+					exp_setrelname(sql->sa, e, label);
+			}
+			if (!settname)
+				list_hash_clear(rel->l);
+		}
+		return exps;
 	case op_ddl:
 	case op_semi:
 	case op_anti:
@@ -1173,6 +1245,7 @@ static int
 rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 {
 	int found = 0;
+	list *rels;
 
 	if (mvc_highwater(sql)) {
 		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1216,6 +1289,16 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 			} else if (rel_base_bind_column_(rel, e->r))
 				found = 1;
 		} else if (rel->exps) {
+			if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
+				found = 1;
+			if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, NULL, 1))
+				found = 1;
+		}
+		break;
+	case op_munion:
+		assert(rel->l);
+		rels = rel->l;
+		for (node *n = rels->h; n && !found; n = n->next) {
 			if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
 				found = 1;
 			if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, NULL, 1))
@@ -1941,6 +2024,12 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 			rel_deps(sql, r->r, refs, l) != 0)
 			return -1;
 		break;
+	case op_munion:
+		for (node *n = ((list*)r->l)->h; n; n = n->next) {
+			if (rel_deps(sql, (sql_rel*)n->data, refs, l) != 0)
+				return -1;
+		}
+		break;
 	case op_project:
 	case op_select:
 	case op_groupby:
@@ -2164,6 +2253,12 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 			if ((rel->r = rel_exp_visitor(v, rel->r, exp_rewriter, topdown, relations_topdown)) == NULL)
 				return NULL;
 		break;
+	case op_munion:
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			if ((n->data = rel_exp_visitor(v, (sql_rel*)n->data, exp_rewriter, topdown, relations_topdown)) == NULL)
+				return NULL;
+		}
+		break;
 	case op_select:
 	case op_topn:
 	case op_sample:
@@ -2376,6 +2471,12 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 		if (rel->r)
 			if ((rel->r = func(v, rel->r, rel_rewriter)) == NULL)
 				return NULL;
+		break;
+	case op_munion:
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			if ((n->data = func(v, (sql_rel*)n->data, rel_rewriter)) == NULL)
+				return NULL;
+		}
 		break;
 	case op_select:
 	case op_topn:
