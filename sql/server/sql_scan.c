@@ -960,6 +960,57 @@ skip_sql_comment(struct scanner * lc)
 
 static int tokenize(mvc * lc, int cur);
 
+static inline bool is_valid_binary_digit(int cur) { return (iswdigit(cur) && cur < '2'); }
+static inline bool is_valid_octal_digit(int cur) { return (iswdigit(cur) && cur < '8'); }
+static inline bool is_valid_hexadecimal_digit(int cur) { return iswxdigit(cur); }
+
+static inline int non_decimal_number(mvc* c, int *token, bool (*is_valid_n_ary_digit)(int), int type, char type2) {
+	struct scanner *lc = &c->scanner;
+	int cur = scanner_getc(lc);
+	bool underscore_allowed = true;
+	int underscore_shifts = 0;
+	while (cur != EOF) {
+		if (cur == '_') {
+			if (underscore_allowed) { // so previous character was not an underscore
+				// we have to apply a swap
+				underscore_shifts++;
+				underscore_allowed = false;
+			}
+			else /* ERROR */ {
+				*token = 0;
+				cur = '_';
+				break;
+			}			
+		}
+		else if (is_valid_n_ary_digit(cur)) {
+			underscore_allowed = true;
+			if (underscore_shifts) {
+				lc->rs->buf[lc->rs->pos+lc->yycur-underscore_shifts-1] = cur; // do shift
+				lc->rs->buf[lc->rs->pos+lc->yycur-1] = ' '; // mark last character with null terminator
+			}
+		}
+		else
+			break;
+		*token = type;
+		cur = scanner_getc(lc);
+	}
+
+	for (int i = 0; i < underscore_shifts; i++)
+		utf8_putchar(lc, ' ');
+
+	if (cur == EOF || cur == '_')
+		return cur;
+
+	if (*token != type) {
+		/* 0b not followed by a n-ary digit: show n-type character as erroneous */
+		utf8_putchar(lc, cur);
+		cur = type2;
+		*token = 0;
+	}
+
+	return cur;
+}
+
 static int
 number(mvc * c, int cur)
 {
@@ -976,76 +1027,25 @@ number(mvc * c, int cur)
 	 * [0-9]+                           -- (decimal) INTEGER
 	 */
 	lc->started = 1;
-	int is_literal_integer = 0;
+	bool is_decimal = true;
 	if (cur == '0') {
 		switch ((cur = scanner_getc(lc))) {
 		case 'b':
-			is_literal_integer = BINARYNUM;
+			if ((cur = non_decimal_number(c, &token, &is_valid_binary_digit			, BINARYNUM		, 'b')) == EOF) return cur;
+			is_decimal = false;
 			break;
 		case 'o':
-			is_literal_integer = OCTALNUM;
+			if ((cur = non_decimal_number(c, &token, &is_valid_octal_digit			, OCTALNUM		, 'o')) == EOF) return cur;
+			is_decimal = false;
 			break;
 		case 'x':
-			is_literal_integer = HEXADECIMALNUM;
+			if ((cur = non_decimal_number(c, &token, &is_valid_hexadecimal_digit	, HEXADECIMALNUM, 'x')) == EOF) return cur;
+			is_decimal = false;
 			break;
 		}
 	}
-
-	if (is_literal_integer == BINARYNUM) {
-		cur = scanner_getc(lc);
-		while (cur != EOF && isdigit(cur) && cur < '2') {
-			token = BINARYNUM;
-			cur = scanner_getc(lc);
-		}
-
-		if (cur == EOF)
-			return cur;
-
-		if (token != BINARYNUM) {
-			/* 0b not followed by a binary digit: show 'b' as erroneous */
-			utf8_putchar(lc, cur);
-			cur = 'b';
-			token = 0;
-		}
-	}
-	else if (is_literal_integer == OCTALNUM) {
-		cur = scanner_getc(lc);
-		while (cur != EOF && isdigit(cur) && cur < '8') {
-			token = OCTALNUM;
-			cur = scanner_getc(lc);
-		}
-
-		if (cur == EOF)
-			return cur;
-
-		if (token != OCTALNUM) {
-			/* 0o not followed by a octal digit: show 'o' as erroneous */
-			utf8_putchar(lc, cur);
-			cur = 'o';
-			token = 0;
-		}
-	}
-	/* after this block, cur contains the first character after the
-	 * parsed number (which may be the first causing it not to be a number);
-	 * it token == 0 after this block, a parse error was detected */
-	else if (is_literal_integer == HEXADECIMALNUM) {
-		cur = scanner_getc(lc);
-		while (cur != EOF && iswxdigit(cur)) {
-			token = HEXADECIMALNUM;
-			cur = scanner_getc(lc);
-		}
-
-		if (cur == EOF)
-			return cur;
-
-		if (token != HEXADECIMALNUM) {
-			/* 0x not followed by a hex digit: show 'x' as erroneous */
-			utf8_putchar(lc, cur);
-			cur = 'x';
-			token = 0;
-		}
-	} else {
-		while (cur != EOF && iswdigit(cur)) {
+	if (is_decimal) {
+		while (cur != EOF && (iswdigit(cur) || cur == '_')) {
 			token = sqlINT;
 			cur = scanner_getc(lc);
 		}
