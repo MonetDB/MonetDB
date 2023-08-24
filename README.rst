@@ -67,7 +67,7 @@ Option          Explanation
 ASSERT          Enable asserts (default=ON for development sources, OFF for tarball installation)
 CINTEGRATION    Enable support for C UDFs (default=ON except on Windows)
 CMAKE_SUMMARY   Show a summary of the cmake configuration (for debug purposes, default=OFF)
-CMAKE_UNITTEST  Build and run the unittest for the build system (default=OFF)
+CMAKE_UNITTESTS Build and run the unittest for the build system (default=OFF)
 FITS            Enable support for FITS
 GEOM            Enable support for geom module
 INT128          Enable support for 128-bit integers
