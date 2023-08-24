@@ -219,6 +219,7 @@ validate_database_handle_noerror(monetdbe_database_internal *mdbe)
 {
 	if (!monetdbe_embedded_initialized || !MCvalid(mdbe->c))
 		return 0;
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	clear_error(mdbe);
 	return 1;
 }
@@ -952,6 +953,7 @@ monetdbe_close(monetdbe_database dbhdl)
 	int err = 0;
 	int registered_thread = mdbe->registered_thread;
 
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	MT_lock_set(&embedded_lock);
 	if (mdbe->mid)
 		err = monetdbe_close_remote(mdbe);
@@ -1559,6 +1561,7 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 		return NULL;
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (mdbe->mid) {
 		mdbe->msg = monetdbe_query_remote(mdbe, query, result, affected_rows, NULL);
 	}
@@ -1578,6 +1581,7 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 
 	int prepare_id = 0;
 
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (!stmt) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_prepare", "Parameter stmt is NULL"));
 		assert(mdbe->msg != MAL_SUCCEED); /* help Coverity */
@@ -1705,6 +1709,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	cq *q = stmt_internal->q;
 	Symbol s = NULL;
 
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		return mdbe->msg;
 
@@ -1747,6 +1752,7 @@ monetdbe_cleanup_statement(monetdbe_database dbhdl, monetdbe_statement *stmt)
 
 	assert(!stmt_internal->mdbe || mdbe == stmt_internal->mdbe);
 
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	for (size_t i = 0; i < stmt_internal->res.nparam + 1; i++) {
 		ValPtr data = &stmt_internal->data[i];
 		VALclear(data);
@@ -1768,7 +1774,7 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	monetdbe_result_internal* res = (monetdbe_result_internal *) result;
 
-
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (!result) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_cleanup_result_internal", "Parameter result is NULL"));
 	} else {
