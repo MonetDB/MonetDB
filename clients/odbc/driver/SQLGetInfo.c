@@ -663,9 +663,46 @@ MNDBGetInfo(ODBCDbc *dbc,
 		 * SQL_CA2_SIMULATE_UNIQUE */
 		break;
 	case SQL_KEYWORDS:
-		/* Returns the MonetDB keywords, i.e. a dump of
-		 * sys.keywords */
-		if ((hdl = mapi_query(dbc->mid, "WITH x(k) AS (SELECT keyword FROM sys.keywords ORDER BY keyword) SELECT group_concat(k, ',') FROM x")) != NULL && mapi_fetch_row(hdl)) {
+		/* A character string that contains a comma-separated list of all data source-specific keywords.
+		 * This list does not contain keywords specific to ODBC or keywords used by both the data source and ODBC.
+		 * This list represents all the reserved keywords; interoperable applications should not use these words in object names.
+		 * Returns the MonetDB sys.keywords minus the ODBC keywords: https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/reserved-keywords */
+		hdl = mapi_query(dbc->mid,
+			"WITH x(k) AS (SELECT keyword FROM sys.keywords WHERE keyword NOT IN ("
+			"'ABSOLUTE','ACTION','ADA','ADD','ALL','ALLOCATE','ALTER','AND','ANY',"
+			"'ARE','AS','ASC','ASSERTION','AT','AUTHORIZATION','AVG',"
+			"'BEGIN','BETWEEN','BIT','BIT_LENGTH','BOTH','BY',"
+			"'CASCADE','CASCADED','CASE','CAST','CATALOG','CHAR','CHAR_LENGTH',"
+			"'CHARACTER','CHARACTER_LENGTH','CHECK','CLOSE','COALESCE',"
+			"'COLLATE','COLLATION','COLUMN','COMMIT','CONNECT','CONNECTION','CONSTRAINT',"
+			"'CONSTRAINTS','CONTINUE','CONVERT','CORRESPONDING','COUNT','CREATE','CROSS',"
+			"'CURRENT','CURRENT_DATE','CURRENT_TIME','CURRENT_TIMESTAMP','CURRENT_USER','CURSOR',"
+			"'DATE','DAY','DEALLOCATE','DEC','DECIMAL','DECLARE','DEFAULT','DEFERRABLE',"
+			"'DEFERRED','DELETE','DESC','DESCRIBE','DESCRIPTOR','DIAGNOSTICS','DISCONNECT',"
+			"'DISTINCT','DOMAIN','DOUBLE','DROP',"
+			"'ELSE','END','END-EXEC','ESCAPE','EXCEPT','EXCEPTION','EXEC','EXECUTE',"
+			"'EXISTS','EXTERNAL','EXTRACT',"
+			"'FALSE','FETCH','FIRST','FLOAT','FOR','FOREIGN','FORTRAN','FOUND','FROM','FULL',"
+			"'GET','GLOBAL','GO','GOTO','GRANT','GROUP','HAVING','HOUR',"
+			"'IDENTITY','IMMEDIATE','IN','INCLUDE','INDEX','INDICATOR','INITIALLY','INNER','INPUT',"
+			"'INSENSITIVE','INSERT','INT','INTEGER','INTERSECT','INTERVAL','INTO','IS','ISOLATION',"
+			"'JOIN','KEY','LANGUAGE','LAST','LEADING','LEFT','LEVEL','LIKE','LOCAL','LOWER',"
+			"'MATCH','MAX','MIN','MINUTE','MODULE','MONTH',"
+			"'NAMES','NATIONAL','NATURAL','NCHAR','NEXT','NO','NONE','NOT','NULL','NULLIF','NUMERIC',"
+			"'OCTET_LENGTH','OF','ON','ONLY','OPEN','OPTION','OR','ORDER','OUTER','OUTPUT','OVERLAPS',"
+			"'PAD','PARTIAL','PASCAL','PLI','POSITION','PRECISION','PREPARE','PRESERVE',"
+			"'PRIMARY','PRIOR','PRIVILEGES','PROCEDURE','PUBLIC',"
+			"'READ','REAL','REFERENCES','RELATIVE','RESTRICT','REVOKE','RIGHT','ROLLBACK','ROWS',"
+			"'SCHEMA','SCROLL','SECOND','SECTION','SELECT','SESSION','SESSION_USER','SET',"
+			"'SIZE','SMALLINT','SOME','SPACE','SQL','SQLCA','SQLCODE','SQLERROR',"
+			"'SQLSTATE','SQLWARNING','SUBSTRING','SUM','SYSTEM_USER',"
+			"'TABLE','TEMPORARY','THEN','TIME','TIMESTAMP','TIMEZONE_HOUR','TIMEZONE_MINUTE',"
+			"'TO','TRAILING','TRANSACTION','TRANSLATE','TRANSLATION','TRIM','TRUE',"
+			"'UNION','UNIQUE','UNKNOWN','UPDATE','UPPER','USAGE','USER','USING',"
+			"'VALUE','VALUES','VARCHAR','VARYING','VIEW',"
+			"'WHEN','WHENEVER','WHERE','WITH','WORK','WRITE',"
+			"'YEAR','ZONE') ORDER BY keyword) SELECT group_concat(k, ',') FROM x");
+		if (hdl != NULL && mapi_fetch_row(hdl)) {
 			sValue = mapi_fetch_field(hdl, 0);
 		} else {
 			addDbcError(dbc, mapi_error(dbc->mid) == MTIMEOUT ? "HYT01" : "HY000", NULL, 0);
