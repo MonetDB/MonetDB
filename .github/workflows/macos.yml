@@ -1,4 +1,4 @@
-name: Linux
+name: MacOS
 
 on:
   push:
@@ -16,17 +16,20 @@ jobs:
       fail-fast: false  # don't stop other jobs
       matrix:
         branch: [ master ]
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           ref: ${{ matrix.branch }}
-      - name: make MonetDB on linux
+      - name: brew packages
+        run: brew install bison
+      - name: make MonetDB on macos
         run: |
           mkdir build
           cd build 
-          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DRINTEGRATION=OFF
+          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DRINTEGRATION=OFF  \
+            -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison
           make install -j3
       - name: ctest 
         run: |
