@@ -310,7 +310,7 @@ MT_thread_init(void)
 		threadslot = TLS_OUT_OF_INDEXES;
 		return false;
 	}
-	InitializeCriticalSection(&mtthread_cs);
+	InitializeCriticalSection(&winthread_cs);
 #endif
 	thread_initialized = true;
 	return true;
