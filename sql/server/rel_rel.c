@@ -757,6 +757,117 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 }
 
 sql_rel *
+rel_setop_n_ary(sql_allocator *sa, list *rels, operator_type setop)
+{
+	// TODO: for now we support only n-ary union
+	assert(setop == op_munion);
+
+	if (!rels)
+		return NULL;
+
+	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
+
+	rel->l = rels;
+	rel->r = NULL;
+	rel->op = setop;
+	rel->exps = NULL;
+	rel->card = CARD_MULTI;
+	// TODO: properly introduce the assertion over rels elements
+	/*assert(l->nrcols == r->nrcols);*/
+	rel->nrcols = ((sql_rel*)rels->h->data)->nrcols;
+	return rel;
+}
+
+sql_rel *
+rel_setop_n_ary_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op)
+{
+	// TODO: for now we support only 2 relation in the list at ->l of
+	// the n-ary operator. In the future this function should be variadic (?)
+	// TODO: for now we support only n-ary union
+	assert(op == op_munion);
+
+	/* NOTE: this is copied logic from rel_setop_check_types. A DRY-er approach
+	 * would be to call rel_setop_check_types which will return a binary
+	 * setop from which we could extract ->l and ->r and add them in a list
+	 * for the op_munion. This is kind of ugly though...
+	 */
+	list *nls = new_exp_list(sql->sa);
+	list *nrs = new_exp_list(sql->sa);
+	node *n, *m;
+	list* rels;
+
+	if(!nls || !nrs)
+		return NULL;
+
+	for (n = ls->h, m = rs->h; n && m; n = n->next, m = m->next) {
+		sql_exp *le = n->data;
+		sql_exp *re = m->data;
+
+		if (rel_convert_types(sql, l, r, &le, &re, 1, type_set) < 0)
+			return NULL;
+		append(nls, le);
+		append(nrs, re);
+	}
+	l = rel_project(sql->sa, l, nls);
+	r = rel_project(sql->sa, r, nrs);
+	set_processed(l);
+	set_processed(r);
+
+	/* create a list with only 2 sql_rel entries for the n-ary set op */
+	rels = sa_list(sql->sa);
+	append(rels, l);
+	append(rels, r);
+
+	return rel_setop_n_ary(sql->sa, rels, op);
+}
+
+void
+rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
+{
+	list *rexps;
+	sql_rel *r;
+
+	/* set the exps properties first */
+	for (node *m = exps->h; m; m = m->next) {
+		/* the nil/no_nil property will be set in the next loop where
+		 * we go through the exps of every rel of the rels. For now no_nil
+		 */
+		sql_exp *e = (sql_exp*)m->data;
+		set_has_no_nil(e);
+		/* remove all the properties on unions on the general case */
+		if (!keep_props) {
+			e->p = NULL;
+			set_not_unique(e);
+		}
+	}
+
+	/* for every relation in the list of relations */
+	for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+		r = n->data;
+		rexps = r->exps;
+
+		if (!is_project(r->op))
+			rexps = rel_projections(sql, r, NULL, 0, 1);
+
+		/* go through the relation's exps */
+		for (node *m = exps->h, *o = rexps->h; m && o; m = m->next, n = n->next) {
+			sql_exp *e = m->data, *f = o->data;
+			/* for multi-union if any operand has nil then set the nil prop for the op exp */
+			if (is_munion(rel->op) && has_nil(f))
+				set_has_nil(e);
+			e->card = CARD_MULTI;
+		}
+	}
+
+	rel->exps = exps;
+	// TODO: probably setting nrcols is redundant as we have allready done
+	// that when we create the setop_n_ary. check rel_setop_n_ary()
+	rel->nrcols = ((sql_rel*)((list*)rel->l)->h->data)->nrcols;
+}
+
+sql_rel *
 rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 {
 	sql_rel *rel = rel_create(sa);

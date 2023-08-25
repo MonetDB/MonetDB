@@ -6103,6 +6103,7 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 	return rel;
 }
 
+/* NOTE: does NOT "set" query but instead generate set ops (union, except, intersect) */
 static sql_rel *
 rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op )
 {
@@ -6125,6 +6126,46 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op )
 		set_processed(rel);
 	}
 	return rel;
+}
+
+/* Generate n-ary set operator */
+static sql_rel *
+rel_setquery_n_ary_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op)
+{
+	/* even though this is for a general n-ary operators in this phase of the query
+	 * processing we gonna have only two operands (so technically it's binary). In
+	 * general this op supports arbitrary number of operands.
+	 */
+	// TODO: for now we support only multi-union
+	assert(op == op_munion);
+
+	mvc *sql = query->sql;
+	sql_rel *rel;
+
+	if (!cols) {
+		// TODO: make rel_setop_n_ary_check_types to accept a list of rels
+		// and a list of lists of exps
+		list *ls, *rs;
+
+		l = rel_unique_names(sql, l);
+		r = rel_unique_names(sql, r);
+		ls = rel_projections(sql, l, NULL, 0, 1);
+		rs = rel_projections(sql, r, NULL, 0, 1);
+		rel = rel_setop_n_ary_check_types(sql, l, r, ls, rs, (operator_type)op);
+	} else {
+		list *rels = sa_list(sql->sa);
+		append(rels, l);
+		append(rels, r);
+		rel = rel_setop_n_ary(sql->sa, rels, (operator_type)op);
+	}
+
+	if (rel) {
+		rel_setop_n_ary_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
+		set_processed(rel);
+	}
+
+	return rel;
+
 }
 
 static sql_rel *
@@ -6168,6 +6209,7 @@ rel_setquery(sql_query *query, symbol *q)
 		if (t2 && distinct)
 			t2 = rel_distinct(t2);
 		res = rel_setquery_(query, t1, t2, corresponding, op_union );
+		/*res = rel_setquery_n_ary_(query, t1, t2, corresponding, op_munion);*/
 	} else if ( q->token == SQL_EXCEPT)
 		res = rel_setquery_(query, t1, t2, corresponding, op_except );
 	else if ( q->token == SQL_INTERSECT)

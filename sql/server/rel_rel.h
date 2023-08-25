@@ -87,6 +87,9 @@ extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sq
 extern sql_rel *rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
 extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
+extern sql_rel *rel_setop_n_ary(sql_allocator *sa, list *rels, operator_type setop);
+extern sql_rel *rel_setop_n_ary_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
+extern void rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
 extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
 
 /* in case e is an constant and rel is a simple project of only e, free rel */
