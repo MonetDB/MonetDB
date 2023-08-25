@@ -2826,6 +2826,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	list *l;
 	node *n , *en;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *res;
+	bool need_project = false;
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
@@ -2838,7 +2839,6 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	left = row2cols(be, left);
 	right = row2cols(be, right);
 
-	assert(!list_empty(rel->exps));
 	list *jexps = mark_joins_last(be->mvc->sa, rel);
 
 	en = jexps->h;
@@ -2846,8 +2846,12 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		printf("# outer cross\n");
 		stmt *l = bin_find_smallest_column(be, left);
 		stmt *r = bin_find_smallest_column(be, right);
-
+		if (list_empty(jexps)) {
+			stmt *limit = stmt_limit(be, r, NULL, NULL, stmt_atom_lng(be, 0), stmt_atom_lng(be, 1), 0, 0, 0, 0, 0);
+			r = stmt_project(be, limit, r);
+		}
 		join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, 0, cmp_all, 0, 0, false, rel->op == op_left?false:true);
+		need_project = true;
 	} else if (!list_empty(jexps)) {
 		/* markthetajoin()
 		 * or left-join followed by markthetaselect */
@@ -2860,7 +2864,6 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		 * if no cmp* join exps, the markjoin, ie also handling empty righ case
 		 */
 		en = en->next;
-		assert(en || (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)));
 		stmt *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 0, 1, 0), *r = NULL;
 		bool swap = false;
 
@@ -2882,7 +2885,6 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			l = r;
 			r = t;
 		}
-		//join = stmt_markjoin(be, l, r);
 		if (en) {
 			int flag = e->flag;
 			if (flag == mark_in)
@@ -2891,8 +2893,21 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 				flag = cmp_notequal;
 			assert(!left->cand);
 			join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, rel->op == op_left?false:true);
-		} else
-			join = stmt_join(be, l, r, 0, e->flag, 0, 0, false);
+		} else {
+			int cmp = e->flag;
+
+			if (cmp != mark_in && cmp != mark_notin && rel->op == op_left) { /* left outer group join */
+				if (list_length(rel->attr) == 1) {
+					sql_exp *e = rel->attr->h->data;
+					if (exp_is_atom(e) && exp_is_true(e)) {
+						cmp = mark_in;
+					} else if (exp_is_atom(e) && exp_is_false(e)) {
+						cmp = mark_notin;
+					}
+				}
+			}
+			join = stmt_join(be, l, r, 0, cmp, 0, 0, false);
+		}
 	}
 	jl = stmt_result(be, join, 0);
 	/* mark result */
@@ -2901,6 +2916,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	if (en) {
 		stmt *sub, *sel = NULL, *osel = NULL;
 		list *nl;
+		need_project = false;
 
 		/* construct relation */
 		nl = sa_list(sql->sa);
@@ -2933,14 +2949,15 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			sql_exp *e = en->data;
 			stmt *l = NULL, *r = NULL;
 			int flag = e->flag;
-			assert (e->type == e_cmp);
-			if (flag == cmp_equal || flag == cmp_notequal || flag == mark_in || flag == mark_notin){
+			bool is_semantics = is_semantics(e);
+			if ((flag == cmp_equal || flag == cmp_notequal || flag == mark_in || flag == mark_notin) && (!is_semantics || en->next)){
 				l = exp_bin(be, e->l, sub, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
 				r = exp_bin(be, e->r, sub, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
 			} else {
 				l = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 				r = stmt_bool(be, true);
 				flag = cmp_equal;
+				is_semantics = false;
 			}
 
 			if (!l || !r) {
@@ -2966,15 +2983,27 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			if (en->next) {
 				if (rel->op == op_left) {
 					/* outerselect(li, rid, [l==r]) */
-					join = stmt_outerselect(be, li, jr, l, r, flag);
+					join = stmt_outerselect(be, li, jr, l, r, flag, is_semantics);
 					sel = stmt_result(be, join, 0);
 					jr = stmt_result(be, join, 1);
 				} else {
 					sel = stmt_uselect(be, l, r, flag, sel, 0, 0);
 				}
 			} else {
-				assert(e->flag == mark_in || e->flag == mark_notin);
-				join = stmt_markselect(be, li, jr, l, r, e->flag);
+				int cmp = e->flag;
+
+				if (cmp != mark_in && cmp != mark_notin && rel->op == op_left) { /* left outer group join */
+					if (list_length(rel->attr) == 1) {
+						sql_exp *e = rel->attr->h->data;
+						if (exp_is_atom(e) && exp_is_true(e)) {
+							cmp = mark_in;
+						} else if (exp_is_atom(e) && exp_is_false(e)) {
+							cmp = mark_notin;
+						}
+					}
+				}
+				assert(cmp == mark_in || cmp == mark_notin);
+				join = stmt_markselect(be, li, jr, l, r, cmp);
 			}
 			/* go back to offset in the table */
 			if (sel && osel)
@@ -3000,19 +3029,28 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		sql_exp *e = rel->attr->h->data;
 		const char *rnme = exp_relname(e);
 		const char *nme = exp_name(e);
-		/*
-		stmt *last = l->t->data;
-		sql_subtype *tp = tail_type(last);
 
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", tp, NULL, F_FUNC, true);
-
-		stmt *s = stmt_unop(be, last, NULL, isnil);
-
-		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
-
-		s = stmt_unop(be, s, NULL, not);
-		*/
+		if (need_project) {
+			bool exist = true;
+			if (list_empty(rel->exps) && rel->op == op_left) { /* left outer group join */
+				if (list_length(rel->attr) == 1) {
+					sql_exp *e = rel->attr->h->data;
+					if (exp_is_atom(e) && exp_is_false(e)) {
+						exist = false;
+					}
+				}
+			}
+			jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, !exist), stmt_bool(be, exist), NULL);
+		} else if (list_length(rel->attr) == 1) {
+			sql_exp *e = rel->attr->h->data;
+			if (exp_is_atom(e)) {
+				bool exist = true;
+				if (exp_is_false(e))
+					exist = false;
+				if (need_no_nil(e))
+					jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, !exist), jr, NULL);
+			}
+		}
 		stmt *s = stmt_alias(be, jr, rnme, nme);
 		list_append(l, s);
 	}

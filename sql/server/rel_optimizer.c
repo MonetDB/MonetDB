@@ -545,7 +545,8 @@ rel_setjoins_2_joingroupby_(visitor *v, sql_rel *rel)
 			rel->op = (me->flag == mark_in)?op_semi:op_anti;
 			return rel;
 		}
-		printf("# setjoins rewrite \n");
+		if (needed)
+			printf("# setjoins rewrite\n");
 	}
 	return rel;
 }

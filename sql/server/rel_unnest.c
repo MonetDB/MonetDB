@@ -1646,7 +1646,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 					rel->r = l;
 					rel->op = op_left;
 					return rel_unnest_dependent(sql, rel);
-				} else if (rel->op == op_left && !rel_has_freevar(sql, rel->r) && rel_dependent_var(sql, rel->r, rel->l)) {
+				} else if (rel->op == op_left && list_empty(rel->attr) && !rel_has_freevar(sql, rel->r) && rel_dependent_var(sql, rel->r, rel->l)) {
 					sql_rel *l = rel->l;
 
 					rel->l = rel->r;
@@ -3423,28 +3423,6 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_exp *
-exp_exist(mvc *sql, sql_exp *le, sql_exp *ne, int exists)
-{
-	sql_subfunc *exists_func = NULL;
-
-	if (!(exists_func = sql_bind_func(sql, "sys", exists ? "sql_exists" : "sql_not_exists", exp_subtype(le), NULL, F_FUNC, true)))
-		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le) ? exp_subtype(le)->type->base.name : "unknown");
-	if (ne) { /* correlated case */
-		if (exists)
-			le = rel_nop_(sql, NULL, ne, exp_atom_bool(sql->sa, exists), exp_atom_bool(sql->sa, !exists), NULL, "sys", "ifthenelse", card_value);
-		else {
-			ne = rel_unop_(sql, NULL, ne, "sys", "not", card_value);
-			le = rel_nop_(sql, NULL, ne, exp_atom_bool(sql->sa, exists), exp_atom_bool(sql->sa, !exists), NULL, "sys", "ifthenelse", card_value);
-		}
-		return le;
-	} else {
-		sql_exp *res = exp_unop(sql->sa, le, exists_func);
-		set_has_no_nil(res);
-		return res;
-	}
-}
-
 /* exp visitor */
 static sql_exp *
 rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
@@ -3458,7 +3436,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		list *l = e->l;
 
 		if (list_length(l) == 1) { /* exp_values */
-			sql_exp *ne = NULL, *ie = l->h->data, *le;
+			sql_exp *ie = l->h->data, *le;
 			sql_rel *sq = NULL;
 
 			if (!exp_is_rel(ie)) { /* exists over a constant or a single value */
@@ -3475,37 +3453,44 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			/* number of expressions in set relations must match the children */
 			if (!is_project(sq->op) || (is_set(sq->op) && list_length(sq->exps) > 1) || (is_simple_project(sq->op) && !list_empty(sq->r)))
 				sq = rel_project(v->sql->sa, sq, rel_projections(v->sql, sq, NULL, 1, 1));
+			if (!sq)
+				return NULL;
 			le = rel_reduce2one_exp(v->sql, sq);
 			le = exp_ref(v->sql, le);
 
-			if (is_project(rel->op) || depth > 0 || is_outerjoin(rel->op)) {
-				sql_subfunc *ea = NULL;
+			if (depth == 1 && is_ddl(rel->op)) { /* exists is at a ddl statment, it must be inside a relation */
 				sq = rel_groupby(v->sql, sq, NULL);
+				sql_subfunc *ea = sql_bind_func(v->sql, "sys", is_exists(sf)?"exist":"not_exist", exp_subtype(le), NULL, F_AGGR, true);
+				le = rel_groupby_add_aggr(v->sql, sq, exp_aggr1(v->sql->sa, le, ea, 0, 0, CARD_AGGR, 0));
+				return exp_rel(v->sql, sq);
+			}
+			if (is_project(rel->op) || depth > 0 || is_outerjoin(rel->op)) {
+				sql_rel *join = NULL, *rewrite = NULL;
 
-				if (exp_is_rel(ie))
-					ie->l = sq;
-				ea = sql_bind_func(v->sql, "sys", is_exists(sf)?"exist":"not_exist", exp_subtype(le), NULL, F_AGGR, true);
-				le = exp_aggr1(v->sql->sa, le, ea, 0, 0, CARD_AGGR, 0);
-				le = rel_groupby_add_aggr(v->sql, sq, le);
-				if (rel_has_freevar(v->sql, sq))
-					ne = le;
-
-				if (exp_has_rel(ie)) {
-					visitor iv = { .sql = v->sql };
-					if (!rewrite_exp_rel(&iv, rel, ie, depth))
-						return NULL;
+				(void)rewrite_inner(v->sql, rel, sq, op_left, &rewrite);
+				exp_reset_props(rewrite, le, is_left(rewrite->op));
+				join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
+				if (!join)
+					return NULL;
+				if (join && !join->exps)
+					join->exps = sa_list(v->sql->sa);
+				v->changes++;
+				if (join) {
+					if (!join->attr)
+						join->attr = sa_list(v->sql->sa);
+					sql_exp *a = exp_atom_bool(v->sql->sa, is_exists(sf));
+					set_no_nil(a);
+					exp_setname(v->sql->sa, a, exp_relname(e), exp_name(e));
+					le = exp_ref(v->sql, a);
+					//set_has_nil(le); /* outerjoins could have introduced nils */
+					le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
+					append(join->attr, a);
+					assert(is_project(rel->op) || depth);
+					if ((is_project(rel->op) || depth))
+						return le;
 				}
-
-				if (is_project(rel->op) && rel_has_freevar(v->sql, sq))
-					if (!(le = exp_exist(v->sql, le, ne, is_exists(sf))))
-						return NULL;
-				if (exp_name(e))
-					exp_prop_alias(v->sql->sa, le, e);
-				set_processed(sq);
-				if (depth == 1 && is_ddl(rel->op)) { /* exists is at a ddl statment, it must be inside a relation */
-					v->changes++;
-					return exp_rel(v->sql, sq);
-				}
+				set_has_nil(le); /* outer joins could have introduced nils */
+				return le;
 			} else { /* rewrite into semi/anti join */
 				(void)rewrite_inner(v->sql, rel, sq, is_exists(sf)?op_semi:op_anti, NULL);
 				v->changes++;

@@ -502,7 +502,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		}
 		nlexps = list_length(exps);
 		/* also handle right hand of join */
-		if (is_join(rel->op) && r->op == op_project && r->l) {
+		if (is_join(rel->op) && r->op == op_project && r->l && list_empty(rel->attr)) {
 			/* Here we also check all expressions of r like above
 			   but also we need to check for ambigious names. */
 
@@ -520,14 +520,14 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 					return rel;
 				}
 			}
-		} else if (is_join(rel->op)) {
+		} else if (is_join(rel->op) && list_empty(rel->attr)) {
 			list *r_exps = rel_projections(v->sql, r, NULL, 1, 1);
 			list_merge(exps, r_exps, (fdup)NULL);
-			if (rel->attr)
-				append(exps, exp_ref(v->sql, rel->attr->h->data));
 		}
+		if (!list_empty(rel->attr))
+			append(exps, exp_ref(v->sql, rel->attr->h->data));
 		/* Here we should check for ambigious names ? */
-		if (is_join(rel->op) && r) {
+		if (is_join(rel->op) && r && list_empty(rel->attr)) {
 			t = (l->op == op_project && l->l)?l->l:l;
 			l_exps = rel_projections(v->sql, t, NULL, 1, 1);
 			/* conflict with old right expressions */

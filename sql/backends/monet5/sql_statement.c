@@ -2063,13 +2063,15 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 }
 
 stmt *
-stmt_outerselect(backend *be, stmt *li, stmt *ri, stmt *l, stmt *r, int cmp)
+stmt_outerselect(backend *be, stmt *li, stmt *ri, stmt *l, stmt *r, int cmp, bool is_semantics)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
 	if ((q = multiplex2(mb, calcRef, convertMultiplexFcn(cmp==cmp_equal?"=":"!="), l->nr, r->nr, TYPE_bit)) == NULL)
 		return NULL;
+	if (is_semantics)
+		q = pushBit(mb, q, TRUE);
 	int p = getDestVar(q);
 
 	q = newStmtArgs(mb, algebraRef, outerselectRef, 6);

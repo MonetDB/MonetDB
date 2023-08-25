@@ -1821,16 +1821,15 @@ exps_count(list *exps)
 static list *
 order_join_expressions(mvc *sql, list *dje, list *rels)
 {
+	node *n;
+	int cnt = list_length(dje);
+
+	if (cnt <= 1)
+		return dje;
+
 	list *res = sa_list(sql->sa);
-	node *n = NULL;
-	int i, *keys, cnt = list_length(dje);
-	void **data;
-
-	if (cnt == 0)
-		return res;
-
-	keys = SA_NEW_ARRAY(sql->ta, int, cnt);
-	data = SA_NEW_ARRAY(sql->ta, void*, cnt);
+	int i, *keys = SA_NEW_ARRAY(sql->ta, int, cnt);
+	void **data = SA_NEW_ARRAY(sql->ta, void*, cnt);
 
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;

@@ -151,6 +151,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 	return BATcrossci(r1p, r2p, &ci1, &ci2);
 }
 
+/* [left] outer cross */
 gdk_return
 BAToutercross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
 {
@@ -164,26 +165,18 @@ BAToutercross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_o
 	}
 
 	if (ci1.ncand == 0) {
-		BAT *bn = COLnew(0, TYPE_void, ci2.ncand, TRANSIENT);
+		BAT *bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return GDK_FAIL;
 		BATtseqbase(bn, oid_nil);
-		BATsetcount(bn, ci2.ncand);
 		*r1p = bn;
 		if (r2p) {
-			if (ci2.ncand == 0) {
-				bn = COLnew(0, TYPE_void, ci2.ncand, TRANSIENT);
-				if (bn != NULL) {
-					BATtseqbase(bn, oid_nil);
-					BATsetcount(bn, ci2.ncand);
-				}
-			} else {
-				bn = canditer_slice(&ci2, 0, ci2.ncand);
-			}
+			bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (bn == NULL) {
 				BBPreclaim(*r1p);
 				return GDK_FAIL;
 			}
+			BATtseqbase(bn, oid_nil);
 			*r2p = bn;
 		}
 		return GDK_SUCCEED;

@@ -40,6 +40,10 @@ JOIN 	(card MULTI)
 	-> l		is left relation
 	-> r		is right relation
 	-> flag		LEFT (keep left order, only used during code generation)
+	-> attr		empty -> normal joins, list of expressions for group joins
+			special case for mark joins if expression is a boolean
+				true/false anyequal/not(anyequal) behaviour
+				if need_no_nil set, exist behaviour
 
 SEMI/ANTI 
 	(card MULTI)
