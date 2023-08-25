@@ -18,11 +18,11 @@ void dump_threads(void)
 	__attribute__((__visibility__("hidden")));
 void join_detached_threads(void)
 	__attribute__((__visibility__("hidden")));
-int MT_kill_thread(MT_Id t)
+bool MT_kill_threads(void)
 	__attribute__((__visibility__("hidden")));
 bool MT_thread_override_limits(void)
 	__attribute__((__visibility__("hidden")));
-Thread THRnew(const char *name, MT_Id pid)
+Thread THRnew(MT_Id pid)
 	__attribute__((__visibility__("hidden")));
 #ifdef NATIVE_WIN32
 #define GDKwinerror(format, ...)					\

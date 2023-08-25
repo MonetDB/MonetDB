@@ -1991,9 +1991,7 @@ typedef struct threadStruct {
 	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
 	bat freebats;		/* linked list of free bats */
 	uint32_t nfreebats;	/* number of free bats in .freebats */
-	char name[MT_NAME_LEN];
 	void *data[THREADDATA];
-	uintptr_t sp;
 } *Thread;
 
 
@@ -2002,7 +2000,7 @@ gdk_export MT_Id THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, 
 gdk_export void THRdel(Thread t);
 gdk_export void THRsetdata(int, void *);
 gdk_export void *THRgetdata(int);
-gdk_export int THRhighwater(void);
+gdk_export bool THRhighwater(void);
 
 gdk_export void *THRdata[THREADDATA];
 

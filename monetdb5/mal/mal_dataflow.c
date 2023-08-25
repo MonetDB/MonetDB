@@ -314,7 +314,7 @@ DFLOWworker(void *T)
 					break;
 				}
 				if (fe->flow->cntxt && fe->flow->cntxt->mythread)
-					MT_thread_setworking(fe->flow->cntxt->mythread->name);
+					MT_thread_setworking(fe->flow->cntxt->mythread);
 			} else
 				fe = fnxt;
 			if (ATOMIC_GET(&exiting)) {

@@ -406,7 +406,7 @@ void *THRdata[THREADDATA];
 void THRdel(Thread t);
 void *THRgetdata(int);
 int THRgettid(void);
-int THRhighwater(void);
+bool THRhighwater(void);
 void THRsetdata(int, void *);
 gdk_return TMsubcommit(BAT *bl) __attribute__((__warn_unused_result__));
 gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid) __attribute__((__warn_unused_result__));

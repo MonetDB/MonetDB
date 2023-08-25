@@ -180,8 +180,6 @@ GDKlockstatistics(int what)
 
 #endif	/* LOCK_STATS */
 
-static void MT_thread_setcondwait(MT_Cond *cond);
-
 static struct mtthread {
 	struct mtthread *next;
 	void (*func) (void *);	/* function to be called */
@@ -207,6 +205,7 @@ static struct mtthread {
 	HANDLE hdl;
 #endif
 	MT_Id tid;
+	uintptr_t sp;
 } *mtthreads = NULL;
 struct mtthread mainthread = {
 	.threadname = "main thread",
@@ -230,6 +229,35 @@ static DWORD threadslot = TLS_OUT_OF_INDEXES;
 #define thread_setself(self)	TlsSetValue(threadslot, self)
 #endif
 static bool thread_initialized = false;
+
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#pragma warning(disable : 4172)
+#endif
+static inline uintptr_t
+THRsp(void)
+{
+#if defined(__GNUC__) || defined(__clang__)
+	return (uintptr_t) __builtin_frame_address(0);
+#else
+	int l = 0;
+	uintptr_t sp = (uintptr_t) (&l);
+
+	return sp;
+#endif
+}
+
+bool
+THRhighwater(void)
+{
+	struct mtthread *s = thread_self();
+	if (s != NULL && s->sp != 0) {
+		uintptr_t c = THRsp();
+		size_t diff = c < s->sp ? s->sp - c : c - s->sp;
+		if (diff > THREAD_STACK_SIZE - 80 * 1024)
+			return true;
+	}
+	return false;
+}
 
 void
 dump_threads(void)
@@ -268,6 +296,7 @@ rm_mtthread(struct mtthread *t)
 {
 	struct mtthread **pt;
 
+	assert(t != &mainthread);
 	thread_lock();
 	for (pt = &mtthreads; *pt && *pt != t; pt = &(*pt)->next)
 		;
@@ -312,6 +341,8 @@ MT_thread_init(void)
 	}
 	InitializeCriticalSection(&winthread_cs);
 #endif
+	mainthread.next = NULL;
+	mtthreads = &mainthread;
 	thread_initialized = true;
 	return true;
 }
@@ -349,7 +380,7 @@ MT_thread_register(void)
 		.refs = 1,
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
-	Thread t = THRnew(self->threadname, self->tid);
+	Thread t = THRnew(self->tid);
 	if (t == NULL) {
 		free(self);
 		thread_unlock();
@@ -466,7 +497,7 @@ MT_thread_setsemawait(MT_Sema *sema)
 		self->semawait = sema;
 }
 
-void
+static void
 MT_thread_setcondwait(MT_Cond *cond)
 {
 	if (!thread_initialized)
@@ -586,6 +617,7 @@ thread_starter(void *arg)
 	void *data = self->data;
 
 	self->data = NULL;
+	self->sp = THRsp();
 	thread_setself(self);
 	(*self->func)(data);
 	ATOMIC_SET(&self->exited, 1);
@@ -824,38 +856,51 @@ MT_join_thread(MT_Id tid)
 	return -1;
 }
 
-int
-MT_kill_thread(MT_Id tid)
+static bool
+MT_kill_thread(struct mtthread *t)
 {
-	struct mtthread *t;
-
-	assert(tid != mainthread.tid);
+	assert(t != thread_self());
 	join_threads();
-	t = find_mtthread(tid);
-	if (t == NULL)
-		return -1;
 #ifdef HAVE_PTHREAD_H
 #ifdef HAVE_PTHREAD_KILL
 	if (pthread_kill(t->hdl, SIGHUP) == 0)
-		return 0;
+		return true;
 #endif
 #else
 	if (t->hdl == NULL) {
 		/* detached thread */
 		HANDLE h;
-		int ret = 0;
+		bool ret = false;
 		h = OpenThread(THREAD_ALL_ACCESS, 0, (DWORD) tid);
 		if (h == NULL)
-			return -1;
+			return false;
 		if (TerminateThread(h, -1))
-			ret = -1;
+			ret = true;
 		CloseHandle(h);
 		return ret;
 	}
 	if (TerminateThread(t->hdl, -1))
-		return 0;
+		return true;
 #endif
-	return -1;
+	return false;
+}
+
+bool
+MT_kill_threads(void)
+{
+	struct mtthread *self = thread_self();
+	bool killed = false;
+
+	assert(self == &mainthread);
+	thread_lock();
+	for (struct mtthread *t = mtthreads; t; t = t->next) {
+		if (t == self)
+			continue;
+		TRC_INFO(GDK, "Killing thread %s\n", t->threadname);
+		killed |= MT_kill_thread(t);
+	}
+	thread_unlock();
+	return killed;
 }
 
 int

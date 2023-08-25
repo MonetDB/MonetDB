@@ -1271,8 +1271,6 @@ GDKprepareExit(void)
 void
 GDKreset(int status)
 {
-	MT_Id pid = MT_getpid();
-
 	assert(GDKexiting());
 
 	if (GDKembedded())
@@ -1300,22 +1298,7 @@ GDKreset(int status)
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
-		bool killed = false;
-		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
-			MT_Id victim;
-			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
-				if (pid && victim != pid) {
-					int e;
-
-					killed = true;
-					e = MT_kill_thread(victim);
-					TRC_INFO(GDK, "Killing thread: %d\n", e);
-					ATOMIC_DEC(&GDKnrofthreads);
-				}
-				ATOMIC_SET(&t->pid, 0);
-			}
-		}
-		assert(ATOMIC_GET(&GDKnrofthreads) <= 1);
+		bool killed = MT_kill_threads();
 		/* all threads ceased running, now we can clean up */
 		if (!killed) {
 			/* we can't clean up after killing threads */
@@ -1620,22 +1603,6 @@ GDKms(void)
  */
 void *THRdata[THREADDATA] = { 0 };
 
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#pragma warning(disable : 4172)
-#endif
-static inline uintptr_t
-THRsp(void)
-{
-#if defined(__GNUC__) || defined(__clang__)
-	return (uintptr_t) __builtin_frame_address(0);
-#else
-	int l = 0;
-	uintptr_t sp = (uintptr_t) (&l);
-
-	return sp;
-#endif
-}
-
 static inline Thread
 GDK_find_self(void)
 {
@@ -1643,7 +1610,7 @@ GDK_find_self(void)
 }
 
 Thread
-THRnew(const char *name, MT_Id pid)
+THRnew(MT_Id pid)
 {
 	for (Thread s = GDKthreads; s < GDKthreads + THREADS; s++) {
 		ATOMIC_BASE_TYPE npid = 0;
@@ -1651,14 +1618,11 @@ THRnew(const char *name, MT_Id pid)
 			/* successfully allocated, fill in rest */
 			s->data[0] = THRdata[0];
 			s->data[1] = THRdata[1];
-			s->sp = THRsp();
 			s->freebats = 0;
 			s->nfreebats = 0;
-			strcpy_len(s->name, name, sizeof(s->name));
-			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
-				  (unsigned) s->tid,
-				  (size_t) ATOMIC_GET(&s->pid),
-				  (size_t) s->sp);
+			TRC_DEBUG(PAR, "%d %zu\n",
+				  s->tid,
+				  (size_t) ATOMIC_GET(&s->pid));
 			TRC_DEBUG(PAR, "Number of threads: %d\n",
 				  (int) ATOMIC_GET(&GDKnrofthreads) + 1);
 			ATOMIC_INC(&GDKnrofthreads);
@@ -1685,7 +1649,6 @@ THRstarter(void *a)
 	void *arg = t->arg;
 
 	MT_sema_down(&t->sem);
-	t->thr->sp = THRsp();
 	MT_thread_setdata(t->thr);
 	(*func)(arg);
 	THRdel(t->thr);
@@ -1705,7 +1668,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 
 	if ((t = GDKmalloc(sizeof(*t))) == NULL)
 		return 0;
-	if ((s = THRnew(name, ~(MT_Id)0)) == NULL) {
+	if ((s = THRnew(~(MT_Id)0)) == NULL) {
 		GDKfree(t);
 		return 0;
 	}
@@ -1744,30 +1707,10 @@ THRdel(Thread t)
 		  (size_t) ATOMIC_GET(&t->pid),
 		  (int) ATOMIC_GET(&GDKnrofthreads));
 
-	t->name[0] = 0;
 	for (int i = 0; i < THREADDATA; i++)
 		t->data[i] = NULL;
-	t->sp = 0;
 	ATOMIC_SET(&t->pid, 0);	/* deallocate */
 	ATOMIC_DEC(&GDKnrofthreads);
-}
-
-int
-THRhighwater(void)
-{
-	uintptr_t c;
-	Thread s;
-	size_t diff;
-	int rc = 0;
-
-	s = GDK_find_self();
-	if (s != NULL) {
-		c = THRsp();
-		diff = c < s->sp ? s->sp - c : c - s->sp;
-		if (diff > THREAD_STACK_SIZE - 80 * 1024)
-			rc = 1;
-	}
-	return rc;
 }
 
 /*
@@ -1778,7 +1721,6 @@ THRhighwater(void)
 static int
 THRinit(void)
 {
-	int i = 0;
 	Thread s;
 	static bool first = true;
 
@@ -1793,13 +1735,13 @@ THRinit(void)
 		return -1;
 	}
 	if (first) {
-		for (i = 0; i < THREADS; i++) {
+		for (int i = 0; i < THREADS; i++) {
 			GDKthreads[i].tid = i + 1;
 			ATOMIC_INIT(&GDKthreads[i].pid, 0);
 		}
 		first = false;
 	}
-	if ((s = THRnew("main thread", MT_getpid())) == NULL) {
+	if ((s = THRnew(MT_getpid())) == NULL) {
 		TRC_CRITICAL(GDK, "THRnew failed\n");
 		mnstr_destroy(THRdata[0]);
 		THRdata[0] = NULL;
