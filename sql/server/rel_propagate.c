@@ -567,7 +567,9 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 				rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
 			break;
 		case op_munion:
-			assert(0);
+			assert(rel->l);
+			for (node *n = ((list*)rel->l)->h; n; n = n->next)
+				n->data = rel_change_base_table(sql, n->data, oldt, newt);
 			break;
 		case op_groupby:
 		case op_project:

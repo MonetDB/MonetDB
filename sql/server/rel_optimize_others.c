@@ -621,7 +621,29 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		break;
 
 	case op_munion:
-		assert(0);
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			// TODO: here we blindly follow the same logic as op_union. RE-evaluate
+			if (proj && (need_distinct(rel) || !rel->exps)) {
+				rel_used(rel);
+				if (!rel->exps) {
+					rel_used(n->data);
+				}
+				rel_mark_used(sql, n->data, 0);
+			} else if (proj && !need_distinct(rel)) {
+				sql_rel *l = n->data;
+
+				positional_exps_mark_used(rel, l);
+				rel_exps_mark_used(sql->sa, rel, l);
+				rel_mark_used(sql, rel->l, 0);
+				/* based on child check set expression list */
+				if (is_project(l->op) && need_distinct(l))
+					positional_exps_mark_used(l, rel);
+				positional_exps_mark_used(rel, n->data);
+				rel_exps_mark_used(sql->sa, rel, n->data);
+				rel_mark_used(sql, n->data, 0);
+			}
+		}
 		break;
 	case op_join:
 	case op_left:
@@ -717,6 +739,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_union:
 	case op_inter:
 	case op_except:
+	case op_munion:
 
 	case op_insert:
 	case op_update:
@@ -733,9 +756,6 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_semi:
 	case op_anti:
 		return rel;
-	case op_munion:
-		assert(0);
-		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
@@ -798,7 +818,9 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 			rel_dce_refs(sql, rel->r, refs);
 		break;
 	case op_munion:
-		assert(0);
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next)
+			rel_dce_refs(sql, n->data, refs);
 		break;
 	case op_ddl:
 
@@ -878,8 +900,13 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 		return rel;
 
 	case op_munion:
-		assert(0);
-		break;
+		if (skip_proj) {
+			for (node *n = ((list*)rel->l)->h; n; n = n->next)
+				n->data = rel_dce_down(sql, n->data, 0);
+		}
+		if (!skip_proj)
+			rel_dce_sub(sql, rel);
+		return rel;
 	case op_select:
 		if (rel->l)
 			rel->l = rel_dce_down(sql, rel->l, 0);
@@ -975,8 +1002,14 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 		}
 		return rel;
 	case op_munion:
-		assert(0);
-		break;
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			sql_rel* r = n->data;
+			if (!is_project(r->op) && !need_distinct(rel))
+				r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+			r = rel_add_projects(sql, r);
+		}
+		return rel;
 	case op_topn:
 	case op_sample:
 	case op_project:

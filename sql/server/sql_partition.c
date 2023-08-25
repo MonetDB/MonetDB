@@ -142,7 +142,8 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 				rel_find_table_columns(sql, rel->r, t, cols);
 			break;
 		case op_munion:
-			assert(0);
+			for (node *n = ((list*)rel->l)->h; n; n = n->next)
+				rel_find_table_columns(sql, n->data, t, cols);
 			break;
 		case op_semi:
 		case op_anti:

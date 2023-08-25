@@ -78,7 +78,9 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 			find_basetables(sql, rel->r, tables);
 		break;
 	case op_munion:
-		assert(0);
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next)
+			find_basetables(sql, n->data, tables);
 		break;
 	case op_semi:
 	case op_anti:

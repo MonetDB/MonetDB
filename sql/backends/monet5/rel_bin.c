@@ -2230,7 +2230,11 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 		args = rel2bin_args(be, rel->r, args);
 		break;
 	case op_munion:
-		assert(0);
+		if (rel->l) {
+			for (node* n = ((list*)rel->l)->h; n; n = n->next) {
+				args = rel2bin_args(be, n->data, args);
+			}
+		}
 		break;
 	case op_groupby:
 		if (rel->r)
@@ -6716,6 +6720,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		sql->type = Q_TABLE;
 		break;
 	case op_munion:
+		// TODO: rel2bin_munion()
 		assert(0);
 		break;
 	case op_except:

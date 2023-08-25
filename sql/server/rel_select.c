@@ -70,8 +70,12 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 			return rel_table_projections( sql, rel->l, tname, level+1);
 		/* fall through */
 	case op_munion:
-		assert(0);
-		break;
+		if (!is_processed(rel) && level == 0) {
+			node *n = ((list*)rel->l)->h;
+			if (n)
+				return rel_table_projections(sql, n->data, tname, level+1);
+		}
+	/* fall through */
 	case op_table:
 	case op_basetable:
 		if (is_basetable(rel->op) && !rel->exps)

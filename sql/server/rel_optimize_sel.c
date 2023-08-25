@@ -2407,7 +2407,9 @@ rel_join_order_(visitor *v, sql_rel *rel)
 		rel->r = rel_join_order_(v, rel->r);
 		break;
 	case op_munion:
-		assert(0);
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next)
+			n->data = rel_join_order_(v, n->data);
 		break;
 	case op_project:
 	case op_select:

@@ -118,7 +118,6 @@ rel_destroy_(sql_rel *rel)
 		break;
 	case op_munion:
 		for (node *n = ((list*)rel->l)->h; n; n = n->next)
-			// TODO: should we check for n->data == NULL?
 			rel_destroy(n->data);
 		break;
 	case op_project:
@@ -467,6 +466,7 @@ rel_first_column(mvc *sql, sql_rel *r)
 	return NULL;
 }
 
+/* rel_inplace_* used to convert a rel node into another flavor */
 static void
 rel_inplace_reset_props(sql_rel *rel)
 {
@@ -572,7 +572,7 @@ rel_inplace_munion(sql_rel *rel, list *rels)
 	rel_destroy_(rel);
 	rel_inplace_reset_props(rel);
 	// TODO: what is the semantics of cardinality? is that right?
-	rel->card = CARD_ATOM;
+	rel->card = CARD_MULTI;
 	rel->nrcols = 0;
 	if (rels)
 		rel->l = rels;
@@ -1190,7 +1190,8 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		assert(rel->l);
 		/* get the exps from the first relation */
 		rels = rel->l;
-		r = rels->h->data;
+		if (rels->h)
+			r = rels->h->data;
 		if (r)
 			exps = _rel_projections(sql, r, tname, settname, intern, basecol);
 		/* for every other relation in the list */
@@ -2026,7 +2027,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		break;
 	case op_munion:
 		for (node *n = ((list*)r->l)->h; n; n = n->next) {
-			if (rel_deps(sql, (sql_rel*)n->data, refs, l) != 0)
+			if (rel_deps(sql, n->data, refs, l) != 0)
 				return -1;
 		}
 		break;
@@ -2255,7 +2256,7 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 		break;
 	case op_munion:
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
-			if ((n->data = rel_exp_visitor(v, (sql_rel*)n->data, exp_rewriter, topdown, relations_topdown)) == NULL)
+			if ((n->data = rel_exp_visitor(v, n->data, exp_rewriter, topdown, relations_topdown)) == NULL)
 				return NULL;
 		}
 		break;
@@ -2474,7 +2475,7 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 		break;
 	case op_munion:
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
-			if ((n->data = func(v, (sql_rel*)n->data, rel_rewriter)) == NULL)
+			if ((n->data = func(v, n->data, rel_rewriter)) == NULL)
 				return NULL;
 		}
 		break;

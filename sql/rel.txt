@@ -57,8 +57,7 @@ MUNION
 	(card ATOM, AGGR or MULTI (same card as lower relation))
     -> exps     is list of projection expressions
     -> l        is list of union relations
-    -> r        TBD # probably NULL
-    -> flag     TBD
+	-> flag		(0) no flags
 
 PROJECT  (card ATOM, AGGR or MULTI (same card as lower relation))
 	-> exps 	is list of projection expressions

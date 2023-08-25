@@ -166,6 +166,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		case op_union:
 		case op_except:
 		case op_inter:
+		case op_munion:
 		case op_project:
 		case op_groupby: {
 			sql_exp *found;
@@ -197,9 +198,6 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 			}
 			return NULL;
 		}
-		case op_munion:
-			assert(0);
-			break;
 		case op_topn:
 		case op_sample:
 			return rel_propagate_column_ref_statistics(sql, rel->l, e);

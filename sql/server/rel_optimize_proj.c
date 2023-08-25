@@ -3310,10 +3310,8 @@ has_no_selectivity(mvc *sql, sql_rel *rel)
 	case op_union:
 	case op_inter:
 	case op_except:
-	case op_select:
-		return false;
 	case op_munion:
-		assert(0);
+	case op_select:
 		return false;
 	}
 	return true;

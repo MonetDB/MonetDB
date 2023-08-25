@@ -48,7 +48,10 @@ has_remote_or_replica( sql_rel *rel )
 	case op_delete:
 		return has_remote_or_replica( rel->l ) || has_remote_or_replica( rel->r );
 	case op_munion:
-		assert(0);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			if (has_remote_or_replica(n->data))
+				return true;
+		}
 		break;
 	case op_project:
 	case op_select:

@@ -505,7 +505,25 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			exps_print(sql, fout, rel->attr, depth, refs, 1, 0);
 		break;
 	case op_munion:
-		assert(0);
+		r = "munion";
+		if (is_dependent(rel))
+			mnstr_printf(fout, "dependent ");
+		if (need_distinct(rel))
+			mnstr_printf(fout, "distinct ");
+		mnstr_printf(fout, "%s (", r);
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			if (rel_is_ref(n->data)) {
+				int nr = find_ref(refs, n->data);
+				print_indent(sql, fout, depth+1, decorate);
+				mnstr_printf(fout, "& REF %d ", nr);
+			} else {
+				rel_print_rel(sql, fout, n->data, depth+1, refs, decorate);
+			}
+		}
+		print_indent(sql, fout, depth, decorate);
+		mnstr_printf(fout, ")");
+		exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
 	case op_project:
 	case op_select:
@@ -660,7 +678,16 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		}
 		break;
 	case op_munion:
-		assert(0);
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			// TODO: do we need to check n->data?
+			if (n->data)
+				rel_print_refs(sql, fout, n->data, depth, refs, decorate);
+			if (n->data && rel_is_ref(n->data) && !find_ref(refs, n->data)) {
+				rel_print_rel(sql, fout, n->data, depth, refs, decorate);
+				list_append(refs, n->data);
+			}
+		}
 		break;
 	case op_insert:
 	case op_update:

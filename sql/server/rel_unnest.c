@@ -414,8 +414,12 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		exps = merge_freevar(exps, lexps);
 		return exps;
 	case op_munion:
-		assert(0);
-		break;
+		exps = exps_freevar(sql, rel->exps);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			lexps = rel_freevar(sql, n->data);
+			exps = merge_freevar(exps, lexps);
+		}
+		return exps;
 	case op_ddl:
 	case op_semi:
 	case op_anti:
