@@ -16,10 +16,10 @@
 
 #include <unistd.h>
 
-static FILE *
+static stream *
 csv_open_file(char* filename)
 {
-	return fopen(filename, "r");
+	return open_rastream(filename);
 }
 
 /* todo handle escapes */
@@ -360,7 +360,7 @@ typedef struct csv_t {
 static str
 csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
 {
-	FILE *file = csv_open_file(filename);
+	stream *file = csv_open_file(filename);
 	char buf[8196+1];
 
 	if(file == NULL)
@@ -371,8 +371,8 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	 * detect types
 	 * detect header
 	 */
-	ssize_t l = fread(buf, 1, 8196, file);
-	fclose(file);
+	ssize_t l = mnstr_read(file, buf, 1, 8196);
+	mnstr_close(file);
 	if (l<0)
 		return RUNTIME_LOAD_ERROR;
 	buf[l] = 0;
@@ -423,7 +423,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 }
 
 static void *
-csv_load(void *BE, sql_subfunc *f, char *filename)
+csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 {
 	backend *be = (backend*)BE;
 	mvc *sql = be->mvc;
@@ -435,9 +435,8 @@ csv_load(void *BE, sql_subfunc *f, char *filename)
 		/* alloc error */
 		return NULL;
 
-	int i;
 	node *n, *nn = f->colnames->h, *tn = f->coltypes->h;
-	for (i=0, n = f->res->h; n; i++, n = n->next, nn = nn->next, tn = tn->next) {
+	for (n = f->res->h; n; n = n->next, nn = nn->next, tn = tn->next) {
 		const char *name = nn->data;
 		sql_subtype *tp = tn->data;
 		sql_column *c = NULL;
@@ -474,7 +473,7 @@ csv_load(void *BE, sql_subfunc *f, char *filename)
                             append(
                                 append(
                                     append(
-                                        append(args,
+                                        append(args, topn?topn:
                                                exp_atom_lng(sql->sa, -1)),
                                         exp_atom_lng(sql->sa, r->has_header?2:1)),
                                     exp_atom_int(sql->sa, 0)),

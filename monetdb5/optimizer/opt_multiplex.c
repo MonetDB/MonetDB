@@ -99,18 +99,14 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	alias = (int *) GDKmalloc(sizeof(int) * pci->maxarg);
 	resB = (int *) GDKmalloc(sizeof(int) * pci->retc);
 	if (alias == NULL || resB == NULL) {
-		GDKfree(alias);
-		GDKfree(resB);
-		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto nomem;
 	}
 
 	/* resB := new(refBat) */
 	for (i = 0; i < pci->retc; i++) {
 		q = newFcnCallArgs(mb, batRef, newRef, 3);
 		if (q == NULL) {
-			GDKfree(alias);
-			GDKfree(resB);
-			throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto nomem;
 		}
 		resB[i] = getArg(q, 0);
 
@@ -126,9 +122,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* barrier (h,r) := iterator.new(refBat); */
 	q = newFcnCall(mb, iteratorRef, newRef);
 	if (q == NULL) {
-		GDKfree(alias);
-		GDKfree(resB);
-		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto nomem;
 	}
 	q->barrier = BARRIERsymbol;
 	hvar = newTmpVariable(mb, TYPE_any);
@@ -143,10 +137,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (getArg(pci, i) != iter &&isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, algebraRef, "fetch");
 			if (q == NULL) {
-				GDKfree(alias);
-				GDKfree(resB);
-				throw(MAL, "optimizer.multiplex",
-					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto nomem;
 			}
 			alias[i] = newTmpVariable(mb, getBatType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
@@ -159,9 +150,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* cr:= mod.CMD($1,...,$n); */
 	q = newFcnCallArgs(mb, mod, fcn, pci->argc - 2 - plus_one);
 	if (q == NULL) {
-		GDKfree(alias);
-		GDKfree(resB);
-		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto nomem;
 	}
 	for (i = 0; i < pci->retc; i++) {
 		int nvar = 0;
@@ -191,9 +180,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < pci->retc; i++) {
 		InstrPtr a = newFcnCall(mb, batRef, appendRef);
 		if (a == NULL) {
-			GDKfree(alias);
-			GDKfree(resB);
-			throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto nomem;
 		}
 		a = pushArgument(mb, a, resB[i]);
 		a = pushArgument(mb, a, getArg(q, i));
@@ -204,9 +191,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* redo (h,r):= iterator.next(refBat); */
 	q = newFcnCall(mb, iteratorRef, nextRef);
 	if (q == NULL) {
-		GDKfree(alias);
-		GDKfree(resB);
-		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto nomem;
 	}
 	q->barrier = REDOsymbol;
 	getArg(q, 0) = hvar;
@@ -216,9 +201,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	q = newAssignment(mb);
 	if (q == NULL) {
-		GDKfree(alias);
-		GDKfree(resB);
-		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto nomem;
 	}
 	q->barrier = EXITsymbol;
 	getArg(q, 0) = hvar;
@@ -228,9 +211,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < pci->retc; i++) {
 		q = newAssignment(mb);
 		if (q == NULL) {
-			GDKfree(alias);
-			GDKfree(resB);
-			throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto nomem;
 		}
 		getArg(q, 0) = getArg(pci, i);
 		(void) pushArgument(mb, q, resB[i]);
@@ -239,6 +220,11 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(alias);
 	GDKfree(resB);
 	return MAL_SUCCEED;
+
+  nomem:
+	GDKfree(alias);
+	GDKfree(resB);
+	throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 /*

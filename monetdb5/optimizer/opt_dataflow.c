@@ -376,7 +376,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* inject new dataflow barriers using a single pass through the program */
 	start = 0;
 	state.type = singleton_region;
-	for (i = 1; i < limit; i++) {
+	for (i = 1; mb->errors == NULL && i < limit; i++) {
 		p = old[i];
 		assert(p);
 		breakpoint = checkBreakpoint(cntxt, mb, &old[start], &old[i], states, &state);
@@ -385,9 +385,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			simple = simpleFlow(old, start, i, &state);
 
 			if (!simple) {
-				flowblock = newTmpVariable(mb, TYPE_bit);
-				q = newFcnCall(mb, languageRef, dataflowRef);
-				if (q == NULL) {
+				if ((flowblock = newTmpVariable(mb, TYPE_bit)) < 0
+					|| (q = newFcnCall(mb, languageRef, dataflowRef)) == NULL) {
 					msg = createException(MAL, "optimizer.dataflow",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -401,6 +400,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			for (j = start; j < i; j++) {
 				q = old[j];
 				pushInstruction(mb, q);
+				old[j] = NULL;
 				// collect BAT variables garbage collected within the block
 				if (!simple)
 					for (k = q->retc; k < q->argc; k++) {
@@ -416,6 +416,13 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 								break;
 							}
 							getArg(r, 0) = newTmpVariable(mb, TYPE_void);
+							if (getArg(r, 0) < 0) {
+								freeInstruction(r);
+								msg = createException(MAL, "optimizer.dataflow",
+													  SQLSTATE(HY013)
+													  MAL_MALLOC_FAIL);
+								break;
+							}
 							r = pushArgument(mb, r, getArg(q, k));
 							pushInstruction(mb, r);
 						}

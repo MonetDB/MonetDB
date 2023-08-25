@@ -646,14 +646,26 @@ MT_init(void)
 				break;
 			*p = 0;
 			if (strncmp(buf, "0::", 3) == 0) {
-				size_t l;
-
 				/* cgroup v2 entry */
-				l = strconcat_len(pth, sizeof(pth),
-						  cgr2, buf + 3, "/", NULL);
+				p = stpcpy(pth, cgr2);
+				q = stpcpy(stpcpy(p, buf + 3), "/");
 				/* hard limit */
-				strcpy(pth + l, "memory.max");
+				strcpy(q, "memory.max");
 				f = fopen(pth, "r");
+				while (f == NULL && q > p) {
+					/* go up the hierarchy until we
+					 * find the file or the
+					 * hierarchy runs out */
+					*--q = 0; /* zap the slash */
+					q = strrchr(p, '/');
+					if (q == NULL || q == p) {
+						/* position after the slash */
+						q = p + 1;
+						break;
+					}
+					strcpy(++q, "memory.max");
+					f = fopen(pth, "r");
+				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
@@ -663,7 +675,7 @@ MT_init(void)
 					fclose(f);
 				}
 				/* soft high limit */
-				strcpy(pth + l, "memory.high");
+				strcpy(q, "memory.high");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
@@ -674,7 +686,7 @@ MT_init(void)
 					fclose(f);
 				}
 				/* soft low limit */
-				strcpy(pth + l, "memory.low");
+				strcpy(q, "memory.low");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem > 0 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
@@ -686,7 +698,7 @@ MT_init(void)
 				}
 				/* limit of memory+swap usage
 				 * we use this as maximum virtual memory size */
-				strcpy(pth + l, "memory.swap.max");
+				strcpy(q, "memory.swap.max");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
@@ -944,8 +956,6 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 
 	ATOMIC_SET(&GDKstopped, 0);
 
-	mainpid = MT_getpid();
-
 	if (BBPchkfarms() != GDK_SUCCEED)
 		return GDK_FAIL;
 
@@ -1006,6 +1016,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 		/* BBP was locked by BBPexit() */
 		//BBPunlock();
 	}
+	mainpid = MT_getpid();
+
 	GDKtracer_init(dbpath, dbtrace);
 	errno = 0;
 	if (!GDKinmemory(0) && !GDKenvironment(dbpath))
@@ -1638,7 +1650,7 @@ GDK_find_self(void)
 	return (Thread) MT_thread_getdata();
 }
 
-static Thread
+Thread
 THRnew(const char *name, MT_Id pid)
 {
 	for (Thread s = GDKthreads; s < GDKthreads + THREADS; s++) {
@@ -1657,6 +1669,7 @@ THRnew(const char *name, MT_Id pid)
 				  (size_t) s->sp);
 			TRC_DEBUG(PAR, "Number of threads: %d\n",
 				  (int) ATOMIC_GET(&GDKnrofthreads) + 1);
+			ATOMIC_INC(&GDKnrofthreads);
 			return s;
 		}
 	}
@@ -1719,10 +1732,10 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 		MT_sema_destroy(&t->sem);
 		GDKfree(t);
 		ATOMIC_SET(&s->pid, 0); /* deallocate */
+		ATOMIC_DEC(&GDKnrofthreads);
 		return 0;
 	}
 	/* must not fail after this: the thread has been started */
-	ATOMIC_INC(&GDKnrofthreads);
 	ATOMIC_SET(&s->pid, pid);
 	/* send new thread on its way */
 	MT_sema_up(&t->sem);
@@ -1802,7 +1815,6 @@ THRinit(void)
 		THRdata[1] = NULL;
 		return -1;
 	}
-	ATOMIC_INC(&GDKnrofthreads);
 	MT_thread_setdata(s);
 	return 0;
 }
@@ -2206,7 +2218,29 @@ GDKprintinfo(void)
 {
 	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
 	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
-	printf("Virtual memory allocated: %zu, of which %zu with malloc (limit: %zu)\n", vmallocated + allocated, allocated, GDK_vm_maxsize);
+
+	printf("Virtual memory allocated: %zu, of which %zu with malloc (limit: %zu)\n",
+	       vmallocated + allocated, allocated, GDK_vm_maxsize);
+#ifdef __linux__
+	int fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
+	if (fd >= 0) {
+		char buf[512];
+		ssize_t s = read(fd, buf, sizeof(buf) - 1);
+		close(fd);
+		if (s > 0) {
+			assert((size_t) s < sizeof(buf));
+			size_t size, resident, shared;
+			buf[s] = 0;
+			if (sscanf(buf, "%zu %zu %zu", &size, &resident, &shared) == 3) {
+				size *= MT_pagesize();
+				resident *= MT_pagesize();
+				shared *= MT_pagesize();
+				printf("Virtual size: %zu, anonymous RSS: %zu, shared RSS: %zu (together: %zu)\n",
+				       size, resident - shared, shared, resident);
+			}
+		}
+	}
+#endif
 	BBPprintinfo();
 #ifdef LOCK_STATS
 	GDKlockstatistics(3);

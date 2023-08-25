@@ -18,26 +18,13 @@ PushArgument(MalBlkPtr mb, InstrPtr p, int arg, int pos)
 	int i;
 
 	p = pushArgument(mb, p, arg);	/* push at end */
-	for (i = p->argc - 1; i > pos; i--)
-		getArg(p, i) = getArg(p, i - 1);
-	getArg(p, pos) = arg;
+	if (mb->errors == NULL) {
+		for (i = p->argc - 1; i > pos; i--)
+			getArg(p, i) = getArg(p, i - 1);
+		getArg(p, pos) = arg;
+	}
 	return p;
 }
-
-#if 0
-static InstrPtr
-PushNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
-{
-	int i, arg;
-
-	p = pushNil(mb, p, tpe);	/* push at end */
-	arg = getArg(p, p->argc - 1);
-	for (i = p->argc - 1; i > pos; i--)
-		getArg(p, i) = getArg(p, i - 1);
-	getArg(p, pos) = arg;
-	return p;
-}
-#endif
 
 static InstrPtr
 ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
@@ -77,34 +64,6 @@ subselect_add(subselect_t *subselects, int tid, int subselect)
 	subselects->subselect[i] = subselect;
 	return i;
 }
-
-#if 0
-static int
-subselect_find_tids(subselect_t *subselects, int subselect)
-{
-	int i;
-
-	for (i = 0; i < subselects->nr; i++) {
-		if (subselects->subselect[i] == subselect) {
-			return subselects->tid[i];
-		}
-	}
-	return -1;
-}
-
-static int
-subselect_find_subselect(subselect_t *subselects, int tid)
-{
-	int i;
-
-	for (i = 0; i < subselects->nr; i++) {
-		if (subselects->tid[i] == tid) {
-			return subselects->subselect[i];
-		}
-	}
-	return -1;
-}
-#endif
 
 static int
 lastbat_arg(MalBlkPtr mb, InstrPtr p)
@@ -163,7 +122,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	old = mb->stmt;
 
 	/* check for bailout conditions */
-	for (i = 1; i < limit; i++) {
+	for (i = 1; mb->errors == NULL && i < limit; i++) {
 		int lastbat;
 		p = old[i];
 
@@ -334,7 +293,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		pushInstruction(mb, old[0]);
 
-		for (i = 1; i < limit; i++) {
+		for (i = 1; mb->errors == NULL && i < limit; i++) {
 			p = old[i];
 
 			/* rewrite batalgebra.like + [theta]select -> likeselect */
@@ -447,128 +406,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			/* inject table ids into subselect
 			 * s = subselect(c, C1..) => subselect(c, t, C1..)
 			 */
-#if 0
-			if (isSelect(p) && p->retc == 1) {
-				int tid = 0;
-
-				if ((tid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) {
-					int lastbat = lastbat_arg(mb, p);
-					if (getArgType(mb, p, lastbat) == TYPE_bat)	/* empty candidate list bat_nil */
-						getArg(p, lastbat) = tid;
-					else
-						p = PushArgument(mb, p, tid, lastbat + 1);
-					/* make sure to resolve again */
-					p->token = ASSIGNsymbol;
-					p->typechk = TYPE_UNKNOWN;
-					p->fcn = NULL;
-					p->blk = NULL;
-					actions++;
-				}
-			} else if ((ATOMIC_GET(&GDKdebug) & PUSHCANDMASK) && isMatJoinOp(p)
-					   && p->retc == 2) {
-				int ltid = 0, rtid = 0, done = 0;
-				int range = 0;
-
-				if ((ltid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0
-					&& (rtid = subselect_find_tids(&subselects, getArg(p, 1))) >= 0) {
-					p = PushArgument(mb, p, ltid, 4 + range);
-					p = PushArgument(mb, p, rtid, 5 + range);
-					done = 1;
-				} else if ((ltid = subselect_find_tids(&subselects,
-													   getArg(p, 0))) >= 0) {
-					p = PushArgument(mb, p, ltid, 4 + range);
-					p = PushNil(mb, p, 5 + range, TYPE_bat);
-					done = 1;
-				} else if ((rtid = subselect_find_tids(&subselects,
-													   getArg(p, 1))) >= 0) {
-					p = PushNil(mb, p, 4 + range, TYPE_bat);
-					p = PushArgument(mb, p, rtid, 5 + range);
-					done = 1;
-				}
-				if (done) {
-					p = pushBit(mb, p, FALSE);	/* do not match nils */
-					p = pushNil(mb, p, TYPE_lng);	/* no estimate */
-
-					/* make sure to resolve again */
-					p->token = ASSIGNsymbol;
-					p->typechk = TYPE_UNKNOWN;
-					p->fcn = NULL;
-					p->blk = NULL;
-					actions++;
-				}
-			}
-			/* Projections involving rewriten table ids need to be flattend
-			 * l = projection(t, c); => l = c;
-			 * and
-			 * l = projection(s, ntids); => l = s;
-			 */
-			else if (getModuleId(p) == algebraRef
-					 && getFunctionId(p) == projectionRef) {
-				int var = getArg(p, 1);
-
-				if (subselect_find_subselect(&subselects, var) > 0) {
-					InstrPtr q = newAssignment(mb);
-					if (q == NULL) {
-						msg = createException(MAL, "",
-											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						break;
-					}
-
-					getArg(q, 0) = getArg(p, 0);
-					(void) pushArgument(mb, q, getArg(p, 2));
-					actions++;
-					pushInstruction(mb, q);
-					freeInstruction(p);
-					continue;
-				} else {		/* deletes/updates use table ids */
-					int var = getArg(p, 2);
-					InstrPtr q = mb->stmt[vars[var]];	/* BEWARE: the optimizer may not add or remove statements ! */
-
-					if (q->token == ASSIGNsymbol) {
-						var = getArg(q, 1);
-						q = mb->stmt[vars[var]];
-					}
-					if (subselect_find_subselect(&subselects, var) > 0) {
-						InstrPtr qq = newAssignment(mb);
-						if (qq == NULL) {
-							msg = createException(MAL, "",
-												  SQLSTATE(HY013)
-												  MAL_MALLOC_FAIL);
-							break;
-						}
-
-						getArg(qq, 0) = getArg(p, 0);
-						(void) pushArgument(mb, qq, getArg(p, 1));
-						actions++;
-						pushInstruction(mb, qq);
-						freeInstruction(p);
-						continue;
-					}
-					/* c = sql.delta(b,uid,uval);
-					 * l = projection(x, c);
-					 * into
-					 * l = sql.projectdelta(x,b,uid,uval);
-					 */
-					else if (getModuleId(q) == sqlRef
-							 && getFunctionId(q) == deltaRef && q->argc == 4) {
-						q = copyInstruction(q);
-						if (q == NULL) {
-							msg = createException(MAL, "optimizer.pushselect",
-												  SQLSTATE(HY013)
-												  MAL_MALLOC_FAIL);
-							break;
-						}
-
-						setFunctionId(q, projectdeltaRef);
-						getArg(q, 0) = getArg(p, 0);
-						q = PushArgument(mb, q, getArg(p, 1), 1);
-						freeInstruction(p);
-						p = q;
-						actions++;
-					}
-				}
-			}
-#endif
 			pushInstruction(mb, p);
 		}
 		for (; i < limit; i++)
@@ -607,7 +444,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	pushInstruction(mb, old[0]);
 
-	for (i = 1; i < limit; i++) {
+	for (i = 1; mb->errors == NULL && i < limit; i++) {
 		int lastbat;
 		p = old[i];
 

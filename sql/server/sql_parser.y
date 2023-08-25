@@ -260,6 +260,7 @@ int yydebug=1;
 	like_predicate
 	like_table
 	literal
+	map_funcs
 	merge_insert
 	merge_match_clause
 	merge_stmt
@@ -680,7 +681,7 @@ int yydebug=1;
 %token XMLPARSE STRIP WHITESPACE XMLPI XMLQUERY PASSING XMLTEXT
 %token NIL REF ABSENT EMPTY DOCUMENT ELEMENT CONTENT XMLNAMESPACES NAMESPACE
 %token XMLVALIDATE RETURNING LOCATION ID ACCORDING XMLSCHEMA URI XMLAGG
-%token FILTER
+%token FIELD FILTER
 
 /* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING
@@ -840,9 +841,13 @@ sqlstmt:
 			append_symbol(stmts, $$ = $1);
 			m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
 		}
+		/* call( query, nop(-1, false, parameters) ) */
 		if (m->sym->data.lval) {
 			m->emod |= mod_exec;
-			append_symbol(m->sym->data.lval, _symbol_create_symbol(SQL_CALL, $3)); 
+			dlist* l = L();
+			append_symbol(l, m->sym);
+			append_symbol(l, $3);
+			m->sym = _symbol_create_list(SQL_CALL, l);
 		}
 		YYACCEPT;
 	}
@@ -1998,8 +2003,14 @@ column_constraint:
 	  $$ = _symbol_create_list( SQL_CONSTRAINT, l ); }
  ;
 
+always_or_by_default:
+	ALWAYS
+   | 	BY DEFAULT
+   ;
+
 generated_column:
-	GENERATED ALWAYS AS IDENTITY serial_opt_params
+		/* we handle both by default and always alike, ie inserts/updates are allowed */
+	GENERATED always_or_by_default AS IDENTITY serial_opt_params
 	{
 		/* handle multi-statements by wrapping them in a list */
 		sql_subtype it;
@@ -4293,8 +4304,19 @@ value_exp:
  |  string_funcs
  |  XML_value_function
  |  odbc_scalar_func_escape
+ |  map_funcs
  |  multi_arg_func
  ;
+
+map_funcs:
+    FIELD '(' search_condition_commalist ')'
+			{ dlist *l = L();
+			  append_list(l,
+				append_string(L(), sa_strdup(SA, "field")));
+			  append_int(l, FALSE); /* ignore distinct */
+			  append_list(l, $3);
+			  $$ = _symbol_create_list( SQL_NOP, l ); }
+  ;
 
 param:
    '?'
@@ -5041,8 +5063,11 @@ literal:
 		{ sql_subtype t;
 		  atom *a;
 		  int r;
-
-		  r = sql_find_subtype(&t, ($3)?"timetz":"time", $2, 0);
+		  int precision = $2;
+	
+		  if (precision == 1 && strlen($4) > 9)
+			precision += (int) strlen($4) - 9;
+		  r = sql_find_subtype(&t, ($3)?"timetz":"time", precision, 0);
 		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
 			sqlformaterror(m, SQLSTATE(22007) "Incorrect time value (%s)", $4);
 			$$ = NULL;
@@ -5701,6 +5726,7 @@ non_reserved_word:
 | EPOCH		{ $$ = sa_strdup(SA, "epoch"); }
 | SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 | FIRST		{ $$ = sa_strdup(SA, "first"); }
+| FIELD		{ $$ = sa_strdup(SA, "field"); }
 | GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 | IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 | INCREMENT	{ $$ = sa_strdup(SA, "increment"); }

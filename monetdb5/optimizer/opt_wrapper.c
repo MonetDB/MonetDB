@@ -121,13 +121,13 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	fcnnme = getFunctionId(p);
 
 	if (p && p->argc > 1) {
-		if (getArgType(mb, p, 1) != TYPE_str || getArgType(mb, p, 2) != TYPE_str
+		if (getArgType(mb, p, 1) != TYPE_str
+			|| getArgType(mb, p, 2) != TYPE_str
 			|| !isVarConstant(mb, getArg(p, 1))
-			|| !isVarConstant(mb, getArg(p, 2))
-				)
+			|| !isVarConstant(mb, getArg(p, 2)))
 			throw(MAL, getFunctionId(p), SQLSTATE(42000) ILLARG_CONSTANTS);
 
-		if (stk != 0) {
+		if (stk != NULL) {
 			modnme = *getArgReference_str(stk, p, 1);
 			fcnnme = *getArgReference_str(stk, p, 2);
 		} else {
@@ -143,7 +143,7 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				  SQLSTATE(HY002) RUNTIME_OBJECT_UNDEFINED "%s.%s", modnme,
 				  fcnnme);
 		mb = s->def;
-		stk = 0;
+		stk = NULL;
 	} else if (p) {
 		p->token = REMsymbol;
 	}
@@ -152,18 +152,20 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	const char *id = getFunctionId(p);
 	for (i = 0; codes[i].nme != NULL; i++) {
 		if (strcmp(codes[i].nme, id) == 0) {
-			msg = (str) (*codes[i].fcn) (cntxt, mb, stk, p);
-			if (mb->errors) {
-				msg = mb->errors;
-				mb->errors = NULL;
-			}
+			msg = (*codes[i].fcn) (cntxt, mb, stk, p);
 			clk = GDKusec() - clk;
 			MT_lock_set(&codeslock);
 			codes[i].timing += clk;
 			codes[i].calls++;
 			MT_lock_unset(&codeslock);
 			p = pushLng(mb, p, clk);
-			if (msg) {
+			if (msg || mb->errors) {
+				/* we can only return one or the other */
+				if (msg)
+					freeException(mb->errors);
+				else
+					msg = mb->errors;
+				mb->errors = NULL;
 				str newmsg = createException(MAL, getFunctionId(p),
 											 SQLSTATE(42000)
 											 "Error in optimizer %s: %s",
@@ -179,9 +181,6 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, fcnnme,
 			  SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
 
-	if (mb->errors)
-		throw(MAL, fcnnme, SQLSTATE(42000) PROGRAM_GENERAL "%s.%s %s", modnme,
-			  fcnnme, mb->errors);
 	return MAL_SUCCEED;
 }
 

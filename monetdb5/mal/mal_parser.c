@@ -1086,6 +1086,10 @@ parseAtom(Client cntxt)
 
 	/* parse: ATOM id:type */
 	modnme = putNameLen(nxt, l);
+	if (modnme == NULL) {
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
+	}
 	advance(cntxt, l);
 	if (currChar(cntxt) != ':')
 		tpe = TYPE_void;		/* no type qualifier */
@@ -1122,6 +1126,10 @@ parseModule(Client cntxt)
 		return -1;
 	}
 	modnme = putNameLen(nxt, l);
+	if (modnme == NULL) {
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
+	}
 	advance(cntxt, l);
 	if (strcmp(modnme, cntxt->usermodule->name) == 0) {
 		// ignore this module definition
@@ -1162,6 +1170,10 @@ parseInclude(Client cntxt)
 		advance(cntxt, x);
 	} else {
 		parseError(cntxt, "<module name> expected\n");
+		return -1;
+	}
+	if (modnme == NULL) {
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 
@@ -1276,6 +1288,10 @@ fcnHeader(Client cntxt, int kind)
 	}
 
 	fnme = putNameLen(((char *) CURRENT(cntxt)), l);
+	if (fnme == NULL) {
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	advance(cntxt, l);
 
 	if (currChar(cntxt) == '.') {
@@ -1295,6 +1311,10 @@ fcnHeader(Client cntxt, int kind)
 			return 0;
 		}
 		fnme = putNameLen(((char *) CURRENT(cntxt)), l);
+		if (fnme == NULL) {
+			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return NULL;
+		}
 		advance(cntxt, l);
 	} else
 		modnme = cntxt->curmodule->name;
@@ -1472,6 +1492,10 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 
 	l = strlen(modnme);
 	modnme = putNameLen(modnme, l);
+	if (modnme == NULL) {
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	if (strcmp(modnme, "user") == 0 || getModule(modnme)) {
 		if (strcmp(modnme, "user") == 0)
 			insertSymbol(cntxt->usermodule, curPrg);
@@ -1878,6 +1902,11 @@ parseAssign(Client cntxt, int cntrl)
 	} else if ((l = idLength(cntxt)) && CURRENT(cntxt)[l] == '.') {
 		/* continue with parseing a function/operator call */
 		arg = putNameLen(CURRENT(cntxt), l);
+		if (arg == NULL) {
+			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			freeInstruction(curInstr);
+			return;
+		}
 		advance(cntxt, l + 1);	/* skip '.' too */
 		setModuleId(curInstr, arg);
 		i = idLength(cntxt);
@@ -1886,6 +1915,11 @@ parseAssign(Client cntxt, int cntrl)
   FCNcallparse2:
 		if (i) {
 			setFunctionId(curInstr, putNameLen(((char *) CURRENT(cntxt)), i));
+			if (getFunctionId(curInstr) == NULL) {
+				parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				freeInstruction(curInstr);
+				return;
+			}
 			advance(cntxt, i);
 		} else {
 			parseError(cntxt, "<functionname> expected\n");
@@ -1919,8 +1953,18 @@ parseAssign(Client cntxt, int cntrl)
 	if ((i = operatorLength(cntxt))) {
 		/* simple arithmetic operator expression */
 		setFunctionId(curInstr, putNameLen(((char *) CURRENT(cntxt)), i));
+		if (getFunctionId(curInstr) == NULL) {
+			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			freeInstruction(curInstr);
+			return;
+		}
 		advance(cntxt, i);
 		curInstr->modname = putName("calc");
+		if (curInstr->modname == NULL) {
+			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			freeInstruction(curInstr);
+			return;
+		}
 		if ((l = idLength(cntxt))
 			&& !(l == 3 && strncmp(CURRENT(cntxt), "nil", 3) == 0)) {
 			GETvariable(freeInstruction(curInstr));
@@ -2020,7 +2064,6 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines,
 				ValRecord cst;
 				if ((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
 					parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					freeInstruction(curInstr);
 					continue;
 				}
 				curInstr->token = REMsymbol;

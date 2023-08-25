@@ -3152,6 +3152,8 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	node *n;
 	int res = LOG_OK;
 
+	if (t == NULL)
+		return LOG_ERR;
 	base_init(NULL, &t->base, ot->base.id, 0, name?name:ot->base.name);
 	t->type = ot->type;
 	t->system = ot->system;
