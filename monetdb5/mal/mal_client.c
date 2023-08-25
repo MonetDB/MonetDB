@@ -315,14 +315,10 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 int
 MCinitClientThread(Client c)
 {
-	Thread t = MT_thread_getdata();
-
 	/*
 	 * The GDK thread administration should be set to reflect use of
 	 * the proper IO descriptors.
 	 */
-	t->data[1] = c->fdin;
-	t->data[0] = c->fdout;
 	c->mythread = MT_thread_getname();
 	c->errbuf = GDKerrbuf;
 	if (c->errbuf == NULL) {
@@ -383,10 +379,10 @@ MCcloseClient(Client c)
 	if (c->errbuf) {
 		/* no client threads in embedded mode */
 		//if (!GDKembedded())
-		GDKsetbuf(0);
+		GDKsetbuf(NULL);
 		if (c->father == NULL)
 			GDKfree(c->errbuf);
-		c->errbuf = 0;
+		c->errbuf = NULL;
 	}
 	if (c->usermodule)
 		freeModule(c->usermodule);

@@ -455,7 +455,7 @@ DFLOWworker(void *T)
 		assert(t->flag == WAITING);
 	}
 	GDKfree(GDKerrbuf);
-	GDKsetbuf(0);
+	GDKsetbuf(NULL);
 }
 
 /*

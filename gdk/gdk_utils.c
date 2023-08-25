@@ -1344,10 +1344,11 @@ GDKreset(int status)
 
 		GDKnr_threads = 0;
 		ATOMIC_SET(&GDKnrofthreads, 0);
-		close_stream((stream *) THRdata[0]);
-		close_stream((stream *) THRdata[1]);
+		close_stream(GDKstdout);
+		close_stream(GDKstdin);
+		GDKstdout = NULL;
+		GDKstdin = NULL;
 
-		memset(THRdata, 0, sizeof(THRdata));
 		gdk_bbp_reset();
 	}
 	ATOMunknown_clean();
@@ -1601,7 +1602,8 @@ GDKms(void)
  * descriptors are the same as for the server and should be
  * subsequently reset.
  */
-void *THRdata[THREADDATA] = { 0 };
+stream *GDKstdout;
+stream *GDKstdin;
 
 static inline Thread
 GDK_find_self(void)
@@ -1616,8 +1618,6 @@ THRnew(MT_Id pid)
 		ATOMIC_BASE_TYPE npid = 0;
 		if (ATOMIC_CAS(&s->pid, &npid, pid)) {
 			/* successfully allocated, fill in rest */
-			s->data[0] = THRdata[0];
-			s->data[1] = THRdata[1];
 			s->freebats = 0;
 			s->nfreebats = 0;
 			TRC_DEBUG(PAR, "%d %zu\n",
@@ -1707,8 +1707,6 @@ THRdel(Thread t)
 		  (size_t) ATOMIC_GET(&t->pid),
 		  (int) ATOMIC_GET(&GDKnrofthreads));
 
-	for (int i = 0; i < THREADDATA; i++)
-		t->data[i] = NULL;
 	ATOMIC_SET(&t->pid, 0);	/* deallocate */
 	ATOMIC_DEC(&GDKnrofthreads);
 }
@@ -1724,14 +1722,14 @@ THRinit(void)
 	Thread s;
 	static bool first = true;
 
-	if ((THRdata[0] = (void *) stdout_wastream()) == NULL) {
+	if ((GDKstdout = stdout_wastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdout failed\n");
 		return -1;
 	}
-	if ((THRdata[1] = (void *) stdin_rastream()) == NULL) {
+	if ((GDKstdin = stdin_rastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdin failed\n");
-		mnstr_destroy(THRdata[0]);
-		THRdata[0] = NULL;
+		mnstr_destroy(GDKstdout);
+		GDKstdout = NULL;
 		return -1;
 	}
 	if (first) {
@@ -1743,37 +1741,14 @@ THRinit(void)
 	}
 	if ((s = THRnew(MT_getpid())) == NULL) {
 		TRC_CRITICAL(GDK, "THRnew failed\n");
-		mnstr_destroy(THRdata[0]);
-		THRdata[0] = NULL;
-		mnstr_destroy(THRdata[1]);
-		THRdata[1] = NULL;
+		mnstr_destroy(GDKstdout);
+		GDKstdout = NULL;
+		mnstr_destroy(GDKstdin);
+		GDKstdin = NULL;
 		return -1;
 	}
 	MT_thread_setdata(s);
 	return 0;
-}
-
-void
-THRsetdata(int n, ptr val)
-{
-	Thread s;
-
-	s = GDK_find_self();
-	if (s) {
-		assert(val == NULL || s->data[n] == NULL);
-		s->data[n] = val;
-	}
-}
-
-void *
-THRgetdata(int n)
-{
-	Thread s;
-	void *d;
-
-	s = GDK_find_self();
-	d = s ? s->data[n] : THRdata[n];
-	return d;
 }
 
 int

@@ -206,6 +206,7 @@ static struct mtthread {
 #endif
 	MT_Id tid;
 	uintptr_t sp;
+	char *errbuf;
 } *mtthreads = NULL;
 struct mtthread mainthread = {
 	.threadname = "main thread",
@@ -431,6 +432,29 @@ MT_thread_getname(void)
 		return mainthread.threadname;
 	self = thread_self();
 	return self ? self->threadname : UNKNOWN_THREAD;
+}
+
+void
+GDKsetbuf(char *errbuf)
+{
+	struct mtthread *self;
+
+	self = thread_self();
+	if (self == NULL)
+		self = &mainthread;
+	assert(errbuf == NULL || self->errbuf == NULL);
+	self->errbuf = errbuf;
+}
+
+char *
+GDKgetbuf(void)
+{
+	struct mtthread *self;
+
+	self = thread_self();
+	if (self == NULL)
+		self = &mainthread;
+	return self->errbuf;
 }
 
 void

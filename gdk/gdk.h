@@ -1991,27 +1991,17 @@ typedef struct threadStruct {
 	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
 	bat freebats;		/* linked list of free bats */
 	uint32_t nfreebats;	/* number of free bats in .freebats */
-	void *data[THREADDATA];
 } *Thread;
 
 
 gdk_export int THRgettid(void);
 gdk_export MT_Id THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name);
 gdk_export void THRdel(Thread t);
-gdk_export void THRsetdata(int, void *);
-gdk_export void *THRgetdata(int);
-gdk_export bool THRhighwater(void);
 
-gdk_export void *THRdata[THREADDATA];
+gdk_export stream *GDKstdout;
+gdk_export stream *GDKstdin;
 
-#define GDKstdout	((stream*)THRdata[0])
-#define GDKstdin	((stream*)THRdata[1])
-
-#define GDKerrbuf	((char*)THRgetdata(2))
-#define GDKsetbuf(x)	THRsetdata(2,(void *)(x))
-
-#define THRget_errbuf(t)	((char*)t->data[2])
-#define THRset_errbuf(t,b)	(t->data[2] = b)
+#define GDKerrbuf	(GDKgetbuf())
 
 static inline bat
 BBPcheck(bat x)
