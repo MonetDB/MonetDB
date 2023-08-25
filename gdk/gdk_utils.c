@@ -1299,6 +1299,8 @@ GDKreset(int status)
 	if (status == 0) {
 		/* they had their chance, now kill them */
 		bool killed = MT_kill_threads();
+		for (int i = 0; i < THREADS; i++)
+			ATOMIC_SET(&GDKthreads[i].pid, 0);
 		/* all threads ceased running, now we can clean up */
 		if (!killed) {
 			/* we can't clean up after killing threads */
@@ -1618,11 +1620,7 @@ THRnew(MT_Id pid)
 		ATOMIC_BASE_TYPE npid = 0;
 		if (ATOMIC_CAS(&s->pid, &npid, pid)) {
 			/* successfully allocated, fill in rest */
-			s->freebats = 0;
-			s->nfreebats = 0;
-			TRC_DEBUG(PAR, "%d %zu\n",
-				  s->tid,
-				  (size_t) ATOMIC_GET(&s->pid));
+			TRC_DEBUG(PAR, "%d %zu\n", s->tid, (size_t) pid);
 			TRC_DEBUG(PAR, "Number of threads: %d\n",
 				  (int) ATOMIC_GET(&GDKnrofthreads) + 1);
 			ATOMIC_INC(&GDKnrofthreads);
@@ -1701,7 +1699,7 @@ void
 THRdel(Thread t)
 {
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
-	BBPrelinquish(t);
+	BBPrelinquish();
 	MT_thread_setdata(NULL);
 	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
 		  (size_t) ATOMIC_GET(&t->pid),
@@ -1710,11 +1708,6 @@ THRdel(Thread t)
 	ATOMIC_SET(&t->pid, 0);	/* deallocate */
 	ATOMIC_DEC(&GDKnrofthreads);
 }
-
-/*
- * I/O is organized per thread, because users may gain access through
- * the network.  The code below should be improved to gain speed.
- */
 
 static int
 THRinit(void)
@@ -1748,6 +1741,9 @@ THRinit(void)
 		return -1;
 	}
 	MT_thread_setdata(s);
+	struct freebats *t = MT_thread_getfreebats();
+	t->freebats = 0;
+	t->nfreebats = 0;
 	return 0;
 }
 

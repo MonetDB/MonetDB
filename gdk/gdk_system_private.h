@@ -38,3 +38,10 @@ Thread THRnew(MT_Id pid)
 		SetLastError(0);					\
 	} while (0)
 #endif
+
+struct freebats {
+	bat freebats;
+	uint32_t nfreebats;
+};
+struct freebats *MT_thread_getfreebats(void)
+	__attribute__((__visibility__("hidden")));

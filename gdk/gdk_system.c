@@ -207,6 +207,7 @@ static struct mtthread {
 	MT_Id tid;
 	uintptr_t sp;
 	char *errbuf;
+	struct freebats freebats;
 } *mtthreads = NULL;
 struct mtthread mainthread = {
 	.threadname = "main thread",
@@ -455,6 +456,17 @@ GDKgetbuf(void)
 	if (self == NULL)
 		self = &mainthread;
 	return self->errbuf;
+}
+
+struct freebats *
+MT_thread_getfreebats(void)
+{
+	struct mtthread *self;
+
+	self = thread_self();
+	if (self == NULL)
+		self = &mainthread;
+	return &self->freebats;
 }
 
 void

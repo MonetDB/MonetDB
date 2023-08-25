@@ -115,7 +115,7 @@ bat BBPinsert(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 void BBPprintinfo(void)
 	__attribute__((__visibility__("hidden")));
-void BBPrelinquish(Thread t)
+void BBPrelinquish(void)
 	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
