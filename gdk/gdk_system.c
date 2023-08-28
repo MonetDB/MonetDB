@@ -824,6 +824,13 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	};
 	ATOMIC_INIT(&self->exited, 0);
 	strcpy_len(self->threadname, threadname, sizeof(self->threadname));
+	char *p;
+	if ((p = strstr(self->threadname, "XXXX")) != NULL) {
+		/* overwrite XXXX with thread ID */
+		char buf[5];
+		snprintf(buf, 5, "%04zu", mtid % 9999);
+		memcpy(p, buf, 4);
+	}
 	TRC_DEBUG(THRD, "Create thread \"%s\"\n", self->threadname);
 #ifdef HAVE_PTHREAD_H
 #ifdef HAVE_PTHREAD_SIGMASK
