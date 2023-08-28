@@ -2720,7 +2720,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  r->thash ? " ignoring existing hash" : "",
 			  swapped ? " (swapped)" : "");
 		if (snprintf(ext, sizeof(ext), "thshjn%x",
-			     (unsigned) THRgettid()) >= (int) sizeof(ext))
+			     (unsigned) MT_getpid()) >= (int) sizeof(ext))
 			goto bailout;
 		if ((hsh = BAThash_impl(r, rci, ext)) == NULL) {
 			goto bailout;
@@ -3199,8 +3199,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			mask = (BUN) 1 << 16;
 		if ((hs.heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
 		    (hs.heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
-		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
-		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
+		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs.heaplink.filename) ||
+		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs.heapbckt.filename) ||
 		    HASHnew(&hs, bi.type, ci.ncand, mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);

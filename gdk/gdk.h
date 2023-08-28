@@ -1987,9 +1987,6 @@ VALptr(const ValRecord *v)
 typedef struct threadStruct *Thread;
 
 
-gdk_export int THRgettid(void);
-gdk_export MT_Id THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name);
-
 gdk_export stream *GDKstdout;
 gdk_export stream *GDKstdin;
 

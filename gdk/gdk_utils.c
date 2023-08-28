@@ -1610,114 +1610,9 @@ GDKms(void)
 stream *GDKstdout;
 stream *GDKstdin;
 
-static inline Thread
-GDK_find_self(void)
-{
-	return (Thread) MT_thread_getdata();
-}
-
-Thread
-THRnew(MT_Id pid)
-{
-	for (int i = 0; i < THREADS; i++) {
-		ATOMIC_BASE_TYPE npid = 0;
-		if (ATOMIC_CAS(&GDKthreads[i].pid, &npid, pid)) {
-			/* successfully allocated, fill in rest */
-			TRC_DEBUG(PAR, "%d %zu\n", i + 1, (size_t) pid);
-			TRC_DEBUG(PAR, "Number of threads: %d\n",
-				  (int) ATOMIC_GET(&GDKnrofthreads) + 1);
-			ATOMIC_INC(&GDKnrofthreads);
-			return &GDKthreads[i];
-		}
-	}
-	TRC_DEBUG(IO_, "Too many threads\n");
-	GDKerror("too many threads\n");
-	return NULL;
-}
-
-struct THRstart {
-	void (*func) (void *);
-	void *arg;
-	MT_Sema sem;
-	Thread thr;
-};
-
-static void
-THRstarter(void *a)
-{
-	struct THRstart *t = a;
-	void (*func) (void *) = t->func;
-	void *arg = t->arg;
-
-	MT_sema_down(&t->sem);
-	MT_thread_setdata(t->thr);
-	(*func)(arg);
-	THRdel(t->thr);
-	MT_sema_destroy(&t->sem);
-	GDKfree(a);
-}
-
-MT_Id
-THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
-{
-	MT_Id pid;
-	Thread s;
-	struct THRstart *t;
-	static ATOMIC_TYPE ctr = ATOMIC_VAR_INIT(0);
-	char semname[32];
-	int len;
-
-	if ((t = GDKmalloc(sizeof(*t))) == NULL)
-		return 0;
-	if ((s = THRnew(~(MT_Id)0)) == NULL) {
-		GDKfree(t);
-		return 0;
-	}
-	*t = (struct THRstart) {
-		.func = f,
-		.arg = arg,
-		.thr = s,
-	};
-	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
-	if (len == -1 || len > (int) sizeof(semname)) {
-		TRC_WARNING(IO_, "Semaphore name is too large\n");
-	}
-	MT_sema_init(&t->sem, 0, semname);
-	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
-		GDKerror("could not start thread\n");
-		MT_sema_destroy(&t->sem);
-		GDKfree(t);
-		ATOMIC_SET(&s->pid, 0); /* deallocate */
-		ATOMIC_DEC(&GDKnrofthreads);
-		return 0;
-	}
-	/* must not fail after this: the thread has been started */
-	ATOMIC_SET(&s->pid, pid);
-	/* send new thread on its way */
-	MT_sema_up(&t->sem);
-	return pid;
-}
-
-void
-THRdel(Thread t)
-{
-	assert(GDKthreads <= t && t < GDKthreads + THREADS);
-	BBPrelinquish();
-	MT_thread_setdata(NULL);
-	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
-		  (size_t) ATOMIC_GET(&t->pid),
-		  (int) ATOMIC_GET(&GDKnrofthreads));
-
-	ATOMIC_SET(&t->pid, 0);	/* deallocate */
-	ATOMIC_DEC(&GDKnrofthreads);
-}
-
 static int
 THRinit(void)
 {
-	Thread s;
-	static bool first = true;
-
 	if ((GDKstdout = stdout_wastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdout failed\n");
 		return -1;
@@ -1728,36 +1623,10 @@ THRinit(void)
 		GDKstdout = NULL;
 		return -1;
 	}
-	if (first) {
-		for (int i = 0; i < THREADS; i++) {
-			ATOMIC_INIT(&GDKthreads[i].pid, 0);
-		}
-		first = false;
-	}
-	if ((s = THRnew(MT_getpid())) == NULL) {
-		TRC_CRITICAL(GDK, "THRnew failed\n");
-		mnstr_destroy(GDKstdout);
-		GDKstdout = NULL;
-		mnstr_destroy(GDKstdin);
-		GDKstdin = NULL;
-		return -1;
-	}
-	MT_thread_setdata(s);
 	struct freebats *t = MT_thread_getfreebats();
 	t->freebats = 0;
 	t->nfreebats = 0;
 	return 0;
-}
-
-int
-THRgettid(void)
-{
-	Thread s;
-	int t;
-
-	s = GDK_find_self();
-	t = s ? (s - GDKthreads) + 1 : 1;
-	return t;
 }
 
 const char *

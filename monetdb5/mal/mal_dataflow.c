@@ -518,8 +518,8 @@ DFLOWinitialize(void)
 		ATOMIC_PTR_SET(&workers[i].cntxt, NULL);
 		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "DFLOWworker%d", i);
-		if ((workers[i].id = THRcreate(DFLOWworker, (void *)&workers[i],
-									   MT_THR_JOINABLE, name)) == 0) {
+		if (MT_create_thread(&workers[i].id, DFLOWworker, (void *)&workers[i],
+							 MT_THR_JOINABLE, name) < 0) {
 			GDKfree(workers[i].errbuf);
 			workers[i].errbuf = NULL;
 			workers[i].flag = IDLE;
@@ -875,8 +875,8 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "DFLOWworker%d", i);
 		if ((workers[i].errbuf = GDKmalloc(GDKMAXERRLEN)) == NULL ||
-			(workers[i].id = THRcreate(DFLOWworker, (void *)&workers[i],
-									   MT_THR_JOINABLE, name)) == 0) {
+			MT_create_thread(&workers[i].id, DFLOWworker, (void *)&workers[i],
+							 MT_THR_JOINABLE, name) < 0) {
 			/* cannot start new thread, run serially */
 			*ret = TRUE;
 			GDKfree(workers[i].errbuf);

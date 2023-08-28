@@ -448,7 +448,7 @@ SERVERlistenThread(SOCKET *Sock)
 		/* generate the challenge string */
 		generateChallenge(data->challenge, 8, 12);
 
-		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
+		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED, name) < 0) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
@@ -980,7 +980,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	/* generate the challenge string */
 	generateChallenge(data->challenge, 8, 12);
 
-	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
+	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED, name) < 0) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);
 		GDKfree(data);

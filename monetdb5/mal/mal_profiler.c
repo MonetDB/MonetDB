@@ -210,8 +210,8 @@ prepareNonMalEvent(Client cntxt, enum event_phase phase, ulng clk, ulng *tstart,
 		goto cleanup_and_exit;
 	if (!logadd(&logbuf, ", \"clk\":" ULLFMT "", mclk))
 		goto cleanup_and_exit;
-	if (!logadd(&logbuf, ", \"thread\":%d, \"phase\":\"%s\"",
-				THRgettid(), phase_descriptions[phase]))
+	if (!logadd(&logbuf, ", \"thread\":%zu, \"phase\":\"%s\"",
+				MT_getpid(), phase_descriptions[phase]))
 		goto cleanup_and_exit;
 	if (tstart && !logadd(&logbuf, ", \"tstart\":" ULLFMT, *tstart))
 		goto cleanup_and_exit;
@@ -311,13 +311,13 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (!logadd(&logbuf, "{"	// fill in later with the event counter
 				"\"sessionid\":\"%d\""
 				",\"clk\":%" PRIu64 ""
-				",\"thread\":%d"
+				",\"thread\":%zu"
 				",\"phase\":\"%s\""
 				",\"pc\":%d"
 				",\"tag\":" OIDFMT,
 				cntxt->idx,
 				mclk,
-				THRgettid(),
+				MT_getpid(),
 				phase_descriptions[MAL_ENGINE],
 				mb ? getPC(mb, pci) : 0, stk ? stk->tag : 0))
 		goto cleanup_and_exit;

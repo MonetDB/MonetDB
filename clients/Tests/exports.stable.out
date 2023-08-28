@@ -405,8 +405,6 @@ BUN SORTfndlast(BAT *b, const void *v);
 gdk_return STRMPcreate(BAT *b, BAT *s);
 void STRMPdestroy(BAT *b);
 BAT *STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils);
-MT_Id THRcreate(void (*f)(void *), void *arg, enum MT_thr_detach d, const char *name);
-int THRgettid(void);
 bool THRhighwater(void);
 gdk_return TMsubcommit(BAT *bl) __attribute__((__warn_unused_result__));
 gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid) __attribute__((__warn_unused_result__));

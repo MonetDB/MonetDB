@@ -1846,7 +1846,10 @@ BBPinit(void)
 		}
 	}
 
-	manager = THRcreate(BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager");
+	if (MT_create_thread(&manager, BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager") < 0) {
+		TRC_CRITICAL(GDK, "Could not start BBPmanager thread.");
+		return GDK_FAIL;
+	}
 	return GDK_SUCCEED;
 
   bailout:
