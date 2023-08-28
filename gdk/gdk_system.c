@@ -907,7 +907,7 @@ MT_kill_thread(struct mtthread *t)
 		/* detached thread */
 		HANDLE h;
 		bool ret = false;
-		h = OpenThread(THREAD_ALL_ACCESS, 0, (DWORD) tid);
+		h = OpenThread(THREAD_ALL_ACCESS, 0, (DWORD) t->tid);
 		if (h == NULL)
 			return false;
 		if (TerminateThread(h, -1))
