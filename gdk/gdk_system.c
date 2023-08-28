@@ -934,7 +934,6 @@ static bool
 MT_kill_thread(struct mtthread *t)
 {
 	assert(t != thread_self());
-	join_threads();
 #ifdef HAVE_PTHREAD_H
 #ifdef HAVE_PTHREAD_KILL
 	if (pthread_kill(t->hdl, SIGHUP) == 0)
@@ -966,6 +965,7 @@ MT_kill_threads(void)
 	bool killed = false;
 
 	assert(self == &mainthread);
+	join_threads();
 	thread_lock();
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
 		if (t == self)
