@@ -1153,6 +1153,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 			return GDK_FAIL;
 		}
 	}
+	if (GDKnr_threads > THREADS)
+		GDKnr_threads = THREADS;
 
 	if (!GDKinmemory(0)) {
 		if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
@@ -1251,7 +1253,6 @@ static ATOMIC_TYPE GDKnrofthreads = ATOMIC_VAR_INIT(0);
 struct threadStruct {
 	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
 };
-static struct threadStruct GDKthreads[THREADS];
 
 bool
 GDKexiting(void)
@@ -1302,8 +1303,6 @@ GDKreset(int status)
 	if (status == 0) {
 		/* they had their chance, now kill them */
 		bool killed = MT_kill_threads();
-		for (int i = 0; i < THREADS; i++)
-			ATOMIC_SET(&GDKthreads[i].pid, 0);
 		/* all threads ceased running, now we can clean up */
 		if (!killed) {
 			/* we can't clean up after killing threads */

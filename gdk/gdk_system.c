@@ -410,7 +410,6 @@ MT_thread_register(void)
 		GDKerror("too many threads\n");
 		return false;
 	}
-	thread_lock();
 	*self = (struct mtthread) {
 		.detached = false,
 #ifdef HAVE_PTHREAD_H
@@ -424,6 +423,7 @@ MT_thread_register(void)
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
 	ATOMIC_INIT(&self->exited, 0);
 	thread_setself(self);
+	thread_lock();
 	self->next = mtthreads;
 	mtthreads = self;
 	thread_unlock();
@@ -477,6 +477,8 @@ GDKsetbuf(char *errbuf)
 		self = &mainthread;
 	assert(errbuf == NULL || self->errbuf == NULL);
 	self->errbuf = errbuf;
+	if (errbuf)
+		*errbuf = 0;		/* start clean */
 }
 
 char *
@@ -765,17 +767,6 @@ join_detached_threads(void)
 	thread_unlock();
 }
 
-#ifdef HAVE_PTHREAD_SIGMASK
-static void
-MT_thread_sigmask(sigset_t *new_mask, sigset_t *orig_mask)
-{
-	/* do not check for errors! */
-	sigdelset(new_mask, SIGQUIT);
-	sigdelset(new_mask, SIGPROF);
-	pthread_sigmask(SIG_SETMASK, new_mask, orig_mask);
-}
-#endif
-
 int
 MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, const char *threadname)
 {
@@ -803,11 +794,13 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	int ret;
 	if ((ret = pthread_attr_init(&attr)) != 0) {
 		GDKsyserr(ret, "Cannot init pthread attr");
+		dealloc_thread(mtid);
 		return -1;
 	}
 	if ((ret = pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE)) != 0) {
 		GDKsyserr(ret, "Cannot set stack size");
 		pthread_attr_destroy(&attr);
+		dealloc_thread(mtid);
 		return -1;
 	}
 #endif
@@ -817,6 +810,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 #ifdef HAVE_PTHREAD_H
 		pthread_attr_destroy(&attr);
 #endif
+		dealloc_thread(mtid);
 		return -1;
 	}
 
@@ -830,38 +824,39 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	};
 	ATOMIC_INIT(&self->exited, 0);
 	strcpy_len(self->threadname, threadname, sizeof(self->threadname));
+	TRC_DEBUG(THRD, "Create thread \"%s\"\n", self->threadname);
+#ifdef HAVE_PTHREAD_H
 #ifdef HAVE_PTHREAD_SIGMASK
 	sigset_t new_mask, orig_mask;
 	(void) sigfillset(&new_mask);
-	MT_thread_sigmask(&new_mask, &orig_mask);
+	sigdelset(&new_mask, SIGQUIT);
+	sigdelset(&new_mask, SIGPROF);
+	pthread_sigmask(SIG_SETMASK, &new_mask, &orig_mask);
 #endif
-	TRC_DEBUG(THRD, "Create thread \"%s\"\n", threadname);
-	thread_lock();
-#ifdef HAVE_PTHREAD_H
 	ret = pthread_create(&self->hdl, &attr, thread_starter, self);
-	if (ret != 0) {
-		thread_unlock();
-		GDKsyserr(ret, "Cannot start thread");
-		free(self);
-	}
 	pthread_attr_destroy(&attr);
 #ifdef HAVE_PTHREAD_SIGMASK
-	MT_thread_sigmask(&orig_mask, NULL);
+	pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
 #endif
-	if (ret != 0)
+	if (ret != 0) {
+		GDKsyserr(ret, "Cannot start thread");
+		free(self);
+		dealloc_thread(mtid);
 		return -1;
+	}
 #else
 	self->hdl = CreateThread(NULL, THREAD_STACK_SIZE, thread_starter, self,
 			      0, &self->wtid);
 	if (self->hdl == NULL) {
 		GDKwinerror("Failed to create thread");
-		thread_unlock();
 		free(self);
+		dealloc_thread(mtid);
 		return -1;
 	}
 #endif
 	/* must not fail after this: the thread has been started */
 	*t = mtid;
+	thread_lock();
 	self->next = mtthreads;
 	mtthreads = self;
 	thread_unlock();
