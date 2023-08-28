@@ -406,7 +406,6 @@ gdk_return STRMPcreate(BAT *b, BAT *s);
 void STRMPdestroy(BAT *b);
 BAT *STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils);
 MT_Id THRcreate(void (*f)(void *), void *arg, enum MT_thr_detach d, const char *name);
-void THRdel(Thread t);
 int THRgettid(void);
 bool THRhighwater(void);
 gdk_return TMsubcommit(BAT *bl) __attribute__((__warn_unused_result__));

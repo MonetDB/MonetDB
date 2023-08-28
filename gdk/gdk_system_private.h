@@ -22,6 +22,8 @@ bool MT_kill_threads(void)
 	__attribute__((__visibility__("hidden")));
 bool MT_thread_override_limits(void)
 	__attribute__((__visibility__("hidden")));
+void THRdel(Thread t)
+	__attribute__((__visibility__("hidden")));
 Thread THRnew(MT_Id pid)
 	__attribute__((__visibility__("hidden")));
 #ifdef NATIVE_WIN32

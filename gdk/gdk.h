@@ -1984,17 +1984,11 @@ VALptr(const ValRecord *v)
 #define THREADS	1024
 #define THREADDATA	3
 
-typedef struct threadStruct {
-	int tid;		/* logical ID by MonetDB; val == index
-				 * into this array + 1 (0 is
-				 * invalid) */
-	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
-} *Thread;
+typedef struct threadStruct *Thread;
 
 
 gdk_export int THRgettid(void);
 gdk_export MT_Id THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name);
-gdk_export void THRdel(Thread t);
 
 gdk_export stream *GDKstdout;
 gdk_export stream *GDKstdin;

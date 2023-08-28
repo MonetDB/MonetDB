@@ -1248,6 +1248,9 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 
 int GDKnr_threads = 0;
 static ATOMIC_TYPE GDKnrofthreads = ATOMIC_VAR_INIT(0);
+struct threadStruct {
+	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
+};
 static struct threadStruct GDKthreads[THREADS];
 
 bool
@@ -1616,15 +1619,15 @@ GDK_find_self(void)
 Thread
 THRnew(MT_Id pid)
 {
-	for (Thread s = GDKthreads; s < GDKthreads + THREADS; s++) {
+	for (int i = 0; i < THREADS; i++) {
 		ATOMIC_BASE_TYPE npid = 0;
-		if (ATOMIC_CAS(&s->pid, &npid, pid)) {
+		if (ATOMIC_CAS(&GDKthreads[i].pid, &npid, pid)) {
 			/* successfully allocated, fill in rest */
-			TRC_DEBUG(PAR, "%d %zu\n", s->tid, (size_t) pid);
+			TRC_DEBUG(PAR, "%d %zu\n", i + 1, (size_t) pid);
 			TRC_DEBUG(PAR, "Number of threads: %d\n",
 				  (int) ATOMIC_GET(&GDKnrofthreads) + 1);
 			ATOMIC_INC(&GDKnrofthreads);
-			return s;
+			return &GDKthreads[i];
 		}
 	}
 	TRC_DEBUG(IO_, "Too many threads\n");
@@ -1727,7 +1730,6 @@ THRinit(void)
 	}
 	if (first) {
 		for (int i = 0; i < THREADS; i++) {
-			GDKthreads[i].tid = i + 1;
 			ATOMIC_INIT(&GDKthreads[i].pid, 0);
 		}
 		first = false;
@@ -1754,7 +1756,7 @@ THRgettid(void)
 	int t;
 
 	s = GDK_find_self();
-	t = s ? s->tid : 1;
+	t = s ? (s - GDKthreads) + 1 : 1;
 	return t;
 }
 
