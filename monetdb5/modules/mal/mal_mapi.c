@@ -228,7 +228,6 @@ doChallenge(void *data)
 static ATOMIC_TYPE nlistener = ATOMIC_VAR_INIT(0);	/* nr of listeners */
 static ATOMIC_TYPE serveractive = ATOMIC_VAR_INIT(0);
 static ATOMIC_TYPE serverexiting = ATOMIC_VAR_INIT(0);	/* listeners should exit */
-static ATOMIC_TYPE threadno = ATOMIC_VAR_INIT(0);	/* thread sequence no */
 
 static void
 SERVERlistenThread(SOCKET *Sock)
