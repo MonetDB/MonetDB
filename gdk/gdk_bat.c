@@ -2901,8 +2901,8 @@ BATassertProps(BAT *b)
 				TRC_WARNING(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
-			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
-			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename)) {
+			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
+			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heapbckt.filename)) {
 				/* cannot happen, see comment in gdk.h
 				 * about sizes near definition of
 				 * BBPINIT */

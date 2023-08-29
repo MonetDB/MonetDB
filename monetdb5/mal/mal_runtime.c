@@ -358,7 +358,7 @@ void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					RuntimeProfile prof)
 {
-	int tid = THRgettid();
+	MT_Id tid = MT_getpid();
 	lng clk = GDKusec();
 
 	assert(pci);
@@ -390,7 +390,7 @@ void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				   RuntimeProfile prof)
 {
-	int tid = THRgettid();
+	MT_Id tid = MT_getpid();
 	lng ticks = GDKusec();
 
 	/* keep track on the instructions in progress */

@@ -18,11 +18,9 @@ void dump_threads(void)
 	__attribute__((__visibility__("hidden")));
 void join_detached_threads(void)
 	__attribute__((__visibility__("hidden")));
-int MT_kill_thread(MT_Id t)
+bool MT_kill_threads(void)
 	__attribute__((__visibility__("hidden")));
 bool MT_thread_override_limits(void)
-	__attribute__((__visibility__("hidden")));
-Thread THRnew(const char *name, MT_Id pid)
 	__attribute__((__visibility__("hidden")));
 #ifdef NATIVE_WIN32
 #define GDKwinerror(format, ...)					\
@@ -38,3 +36,10 @@ Thread THRnew(const char *name, MT_Id pid)
 		SetLastError(0);					\
 	} while (0)
 #endif
+
+struct freebats {
+	bat freebats;
+	uint32_t nfreebats;
+};
+struct freebats *MT_thread_getfreebats(void)
+	__attribute__((__visibility__("hidden")));

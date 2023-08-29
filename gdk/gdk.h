@@ -1984,37 +1984,13 @@ VALptr(const ValRecord *v)
 #define THREADS	1024
 #define THREADDATA	3
 
-typedef struct threadStruct {
-	int tid;		/* logical ID by MonetDB; val == index
-				 * into this array + 1 (0 is
-				 * invalid) */
-	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
-	bat freebats;		/* linked list of free bats */
-	uint32_t nfreebats;	/* number of free bats in .freebats */
-	char name[MT_NAME_LEN];
-	void *data[THREADDATA];
-	uintptr_t sp;
-} *Thread;
+typedef struct threadStruct *Thread;
 
 
-gdk_export int THRgettid(void);
-gdk_export Thread THRget(int tid);
-gdk_export MT_Id THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name);
-gdk_export void THRdel(Thread t);
-gdk_export void THRsetdata(int, void *);
-gdk_export void *THRgetdata(int);
-gdk_export int THRhighwater(void);
+gdk_export stream *GDKstdout;
+gdk_export stream *GDKstdin;
 
-gdk_export void *THRdata[THREADDATA];
-
-#define GDKstdout	((stream*)THRdata[0])
-#define GDKstdin	((stream*)THRdata[1])
-
-#define GDKerrbuf	((char*)THRgetdata(2))
-#define GDKsetbuf(x)	THRsetdata(2,(void *)(x))
-
-#define THRget_errbuf(t)	((char*)t->data[2])
-#define THRset_errbuf(t,b)	(t->data[2] = b)
+#define GDKerrbuf	(GDKgetbuf())
 
 static inline bat
 BBPcheck(bat x)

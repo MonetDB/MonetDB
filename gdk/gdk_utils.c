@@ -1153,6 +1153,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 			return GDK_FAIL;
 		}
 	}
+	if (GDKnr_threads > THREADS)
+		GDKnr_threads = THREADS;
 
 	if (!GDKinmemory(0)) {
 		if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
@@ -1248,7 +1250,9 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 
 int GDKnr_threads = 0;
 static ATOMIC_TYPE GDKnrofthreads = ATOMIC_VAR_INIT(0);
-static struct threadStruct GDKthreads[THREADS];
+struct threadStruct {
+	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
+};
 
 bool
 GDKexiting(void)
@@ -1271,8 +1275,6 @@ GDKprepareExit(void)
 void
 GDKreset(int status)
 {
-	MT_Id pid = MT_getpid();
-
 	assert(GDKexiting());
 
 	if (GDKembedded())
@@ -1300,22 +1302,7 @@ GDKreset(int status)
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
-		bool killed = false;
-		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
-			MT_Id victim;
-			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
-				if (pid && victim != pid) {
-					int e;
-
-					killed = true;
-					e = MT_kill_thread(victim);
-					TRC_INFO(GDK, "Killing thread: %d\n", e);
-					ATOMIC_DEC(&GDKnrofthreads);
-				}
-				ATOMIC_SET(&t->pid, 0);
-			}
-		}
-		assert(ATOMIC_GET(&GDKnrofthreads) <= 1);
+		bool killed = MT_kill_threads();
 		/* all threads ceased running, now we can clean up */
 		if (!killed) {
 			/* we can't clean up after killing threads */
@@ -1361,10 +1348,11 @@ GDKreset(int status)
 
 		GDKnr_threads = 0;
 		ATOMIC_SET(&GDKnrofthreads, 0);
-		close_stream((stream *) THRdata[0]);
-		close_stream((stream *) THRdata[1]);
+		close_stream(GDKstdout);
+		close_stream(GDKstdin);
+		GDKstdout = NULL;
+		GDKstdin = NULL;
 
-		memset(THRdata, 0, sizeof(THRdata));
 		gdk_bbp_reset();
 	}
 	ATOMunknown_clean();
@@ -1613,244 +1601,31 @@ GDKms(void)
  *
  * The first action upon thread creation is to add it to the pool of
  * known threads. This should be done by the thread itself.
- * Subsequently, the thread descriptor can be obtained using THRget.
  * Note that the users should have gained exclusive access already.  A
  * new entry is initialized automatically when not found.  Its file
  * descriptors are the same as for the server and should be
  * subsequently reset.
  */
-void *THRdata[THREADDATA] = { 0 };
-
-Thread
-THRget(int tid)
-{
-	assert(0 < tid && tid <= THREADS);
-	return &GDKthreads[tid - 1];
-}
-
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#pragma warning(disable : 4172)
-#endif
-static inline uintptr_t
-THRsp(void)
-{
-#if defined(__GNUC__) || defined(__clang__)
-	return (uintptr_t) __builtin_frame_address(0);
-#else
-	int l = 0;
-	uintptr_t sp = (uintptr_t) (&l);
-
-	return sp;
-#endif
-}
-
-static inline Thread
-GDK_find_self(void)
-{
-	return (Thread) MT_thread_getdata();
-}
-
-Thread
-THRnew(const char *name, MT_Id pid)
-{
-	for (Thread s = GDKthreads; s < GDKthreads + THREADS; s++) {
-		ATOMIC_BASE_TYPE npid = 0;
-		if (ATOMIC_CAS(&s->pid, &npid, pid)) {
-			/* successfully allocated, fill in rest */
-			s->data[0] = THRdata[0];
-			s->data[1] = THRdata[1];
-			s->sp = THRsp();
-			s->freebats = 0;
-			s->nfreebats = 0;
-			strcpy_len(s->name, name, sizeof(s->name));
-			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
-				  (unsigned) s->tid,
-				  (size_t) ATOMIC_GET(&s->pid),
-				  (size_t) s->sp);
-			TRC_DEBUG(PAR, "Number of threads: %d\n",
-				  (int) ATOMIC_GET(&GDKnrofthreads) + 1);
-			ATOMIC_INC(&GDKnrofthreads);
-			return s;
-		}
-	}
-	TRC_DEBUG(IO_, "Too many threads\n");
-	GDKerror("too many threads\n");
-	return NULL;
-}
-
-struct THRstart {
-	void (*func) (void *);
-	void *arg;
-	MT_Sema sem;
-	Thread thr;
-};
-
-static void
-THRstarter(void *a)
-{
-	struct THRstart *t = a;
-	void (*func) (void *) = t->func;
-	void *arg = t->arg;
-
-	MT_sema_down(&t->sem);
-	t->thr->sp = THRsp();
-	MT_thread_setdata(t->thr);
-	(*func)(arg);
-	THRdel(t->thr);
-	MT_sema_destroy(&t->sem);
-	GDKfree(a);
-}
-
-MT_Id
-THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
-{
-	MT_Id pid;
-	Thread s;
-	struct THRstart *t;
-	static ATOMIC_TYPE ctr = ATOMIC_VAR_INIT(0);
-	char semname[32];
-	int len;
-
-	if ((t = GDKmalloc(sizeof(*t))) == NULL)
-		return 0;
-	if ((s = THRnew(name, ~(MT_Id)0)) == NULL) {
-		GDKfree(t);
-		return 0;
-	}
-	*t = (struct THRstart) {
-		.func = f,
-		.arg = arg,
-		.thr = s,
-	};
-	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
-	if (len == -1 || len > (int) sizeof(semname)) {
-		TRC_WARNING(IO_, "Semaphore name is too large\n");
-	}
-	MT_sema_init(&t->sem, 0, semname);
-	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
-		GDKerror("could not start thread\n");
-		MT_sema_destroy(&t->sem);
-		GDKfree(t);
-		ATOMIC_SET(&s->pid, 0); /* deallocate */
-		ATOMIC_DEC(&GDKnrofthreads);
-		return 0;
-	}
-	/* must not fail after this: the thread has been started */
-	ATOMIC_SET(&s->pid, pid);
-	/* send new thread on its way */
-	MT_sema_up(&t->sem);
-	return pid;
-}
-
-void
-THRdel(Thread t)
-{
-	assert(GDKthreads <= t && t < GDKthreads + THREADS);
-	BBPrelinquish(t);
-	MT_thread_setdata(NULL);
-	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
-		  (size_t) ATOMIC_GET(&t->pid),
-		  (int) ATOMIC_GET(&GDKnrofthreads));
-
-	t->name[0] = 0;
-	for (int i = 0; i < THREADDATA; i++)
-		t->data[i] = NULL;
-	t->sp = 0;
-	ATOMIC_SET(&t->pid, 0);	/* deallocate */
-	ATOMIC_DEC(&GDKnrofthreads);
-}
-
-int
-THRhighwater(void)
-{
-	uintptr_t c;
-	Thread s;
-	size_t diff;
-	int rc = 0;
-
-	s = GDK_find_self();
-	if (s != NULL) {
-		c = THRsp();
-		diff = c < s->sp ? s->sp - c : c - s->sp;
-		if (diff > THREAD_STACK_SIZE - 80 * 1024)
-			rc = 1;
-	}
-	return rc;
-}
-
-/*
- * I/O is organized per thread, because users may gain access through
- * the network.  The code below should be improved to gain speed.
- */
+stream *GDKstdout;
+stream *GDKstdin;
 
 static int
 THRinit(void)
 {
-	int i = 0;
-	Thread s;
-	static bool first = true;
-
-	if ((THRdata[0] = (void *) stdout_wastream()) == NULL) {
+	if ((GDKstdout = stdout_wastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdout failed\n");
 		return -1;
 	}
-	if ((THRdata[1] = (void *) stdin_rastream()) == NULL) {
+	if ((GDKstdin = stdin_rastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdin failed\n");
-		mnstr_destroy(THRdata[0]);
-		THRdata[0] = NULL;
+		mnstr_destroy(GDKstdout);
+		GDKstdout = NULL;
 		return -1;
 	}
-	if (first) {
-		for (i = 0; i < THREADS; i++) {
-			GDKthreads[i].tid = i + 1;
-			ATOMIC_INIT(&GDKthreads[i].pid, 0);
-		}
-		first = false;
-	}
-	if ((s = THRnew("main thread", MT_getpid())) == NULL) {
-		TRC_CRITICAL(GDK, "THRnew failed\n");
-		mnstr_destroy(THRdata[0]);
-		THRdata[0] = NULL;
-		mnstr_destroy(THRdata[1]);
-		THRdata[1] = NULL;
-		return -1;
-	}
-	MT_thread_setdata(s);
+	struct freebats *t = MT_thread_getfreebats();
+	t->freebats = 0;
+	t->nfreebats = 0;
 	return 0;
-}
-
-void
-THRsetdata(int n, ptr val)
-{
-	Thread s;
-
-	s = GDK_find_self();
-	if (s) {
-		assert(val == NULL || s->data[n] == NULL);
-		s->data[n] = val;
-	}
-}
-
-void *
-THRgetdata(int n)
-{
-	Thread s;
-	void *d;
-
-	s = GDK_find_self();
-	d = s ? s->data[n] : THRdata[n];
-	return d;
-}
-
-int
-THRgettid(void)
-{
-	Thread s;
-	int t;
-
-	s = GDK_find_self();
-	t = s ? s->tid : 1;
-	return t;
 }
 
 const char *

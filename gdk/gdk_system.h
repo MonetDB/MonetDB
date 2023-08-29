@@ -171,6 +171,7 @@ typedef struct QryCtx {
 	ATOMIC_BASE_TYPE maxmem;
 } QryCtx;
 
+gdk_export bool THRhighwater(void);
 gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d,
@@ -185,6 +186,8 @@ gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
 gdk_export QryCtx *MT_thread_get_qry_ctx(void);
 gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
+gdk_export void GDKsetbuf(char *);
+gdk_export char *GDKgetbuf(void);
 
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */

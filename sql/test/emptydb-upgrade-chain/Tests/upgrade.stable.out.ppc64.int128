@@ -126,25 +126,20 @@ Running database upgrade commands:
 drop function sys.similarity(string, string) cascade;
 
 Running database upgrade commands:
-create view sys.describe_accessible_tables as
- select
- schemas.name as schema,
- tables.name as table,
- table_types.table_type_name as table_type,
- privilege_codes.privilege_code_name as privs,
- privileges.privileges as privs_code
- from privileges
- join sys.roles
- on privileges.auth_id = roles.id
- join sys.tables
- on privileges.obj_id = tables.id
- join sys.table_types
- on tables.type = table_types.table_type_id
- join sys.schemas
- on tables.schema_id = schemas.id
- join sys.privilege_codes
- on privileges.privileges = privilege_codes.privilege_code_id
- where roles.name = current_role;
+CREATE VIEW sys.describe_accessible_tables AS
+ SELECT
+ schemas.name AS schema,
+ tables.name  AS table,
+ tt.table_type_name AS table_type,
+ pc.privilege_code_name AS privs,
+ p.privileges AS privs_code
+ FROM privileges p
+ JOIN sys.roles ON p.auth_id = roles.id
+ JOIN sys.tables ON p.obj_id = tables.id
+ JOIN sys.table_types tt ON tables.type = tt.table_type_id
+ JOIN sys.schemas ON tables.schema_id = schemas.id
+ JOIN sys.privilege_codes pc ON p.privileges = pc.privilege_code_id
+ WHERE roles.name = current_role;
 GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;
 update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'describe_accessible_tables';
 alter table sys.function_languages set read write;
@@ -155,6 +150,72 @@ commit;
 
 Running database upgrade commands:
 alter table sys.function_languages set read only;
+
+Running database upgrade commands:
+DROP FUNCTION IF EXISTS sys.dump_database(BOOLEAN) CASCADE;
+DROP VIEW IF EXISTS sys.dump_comments CASCADE;
+DROP VIEW IF EXISTS sys.describe_comments CASCADE;
+CREATE VIEW sys.describe_comments AS
+	SELECT o.id AS id, o.tpe AS tpe, o.nme AS fqn, cm.remark AS rem
+	FROM (
+		SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas WHERE NOT system
+		UNION ALL
+		SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
+		  FROM sys.schemas s JOIN sys._tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
+		 WHERE NOT t.system
+		UNION ALL
+		SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys._tables t, sys.schemas s WHERE NOT t.system AND c.table_id = t.id AND t.schema_id = s.id
+		UNION ALL
+		SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE NOT t.system AND idx.table_id = t.id AND t.schema_id = s.id
+		UNION ALL
+		SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
+		UNION ALL
+		SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf
+		 WHERE NOT f.system AND f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
+		) AS o(id, tpe, nme)
+	JOIN sys.comments cm ON cm.id = o.id;
+GRANT SELECT ON sys.describe_comments TO PUBLIC;
+CREATE VIEW sys.dump_comments AS
+  SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;
+CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
+BEGIN
+  SET SCHEMA sys;
+  TRUNCATE sys.dump_statements;
+  INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
+  INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA "sys";');
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
+  --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
+				    FROM (
+				      SELECT f.o, f.stmt FROM sys.dump_functions f
+				       UNION ALL
+				      SELECT t.o, t.stmt FROM sys.dump_tables t
+				    ) AS stmts(o, s);
+  IF NOT DESCRIBE THEN
+    CALL sys.dump_table_data();
+  END IF;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
+  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
+  RETURN sys.dump_statements;
+END;
+update sys._tables set system = true where schema_id = 2000 and name in ('describe_comments','dump_comments');
+update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'dump_database' and type = 5;
 
 Running database upgrade commands:
 CREATE SCHEMA INFORMATION_SCHEMA;
@@ -306,5 +367,4 @@ GRANT SELECT ON TABLE INFORMATION_SCHEMA.COLUMNS TO PUBLIC WITH GRANT OPTION;
 update sys._tables set system = true where system <> true
  and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')
  and name in ('character_sets','schemata','tables','views','columns');
-commit;
 
