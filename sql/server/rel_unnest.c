@@ -2275,12 +2275,10 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 	} break;
 	case op_inter:
 	case op_except:
-	case op_union: {
+	case op_union:
+	case op_munion: {
 		e->card = CARD_MULTI;
 	} break;
-	case op_munion:
-		assert(0);
-		break;
 	case op_groupby: {
 		switch(e->type) {
 		case e_aggr:
