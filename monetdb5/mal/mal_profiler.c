@@ -773,16 +773,17 @@ openProfilerStream(Client cntxt, int m)
 	MT_sleep_ms(200);
 
 	for (j = 0; j < THREADS; j++) {
-		Client c = workingset[j].cntxt;
-		MalBlkPtr m = workingset[j].mb;
-		MalStkPtr s = workingset[j].stk;
-		InstrPtr p = workingset[j].pci;
-		lng t = workingset[j].clock;
-		if (c && m && s && p) {
+		struct MalEvent me = {
+			.cntxt = workingset[j].cntxt,
+			.mb = workingset[j].mb,
+			.stk = workingset[j].stk,
+			.pci = workingset[j].pci,
+			.clk = workingset[j].clock,
+		};
+		if (me.cntxt && me.mb && me.stk && me.pci) {
 			/* show the event  assuming the quintuple is aligned */
 			MT_lock_unset(&mal_profileLock);
-			profilerEvent(&(struct MalEvent) { c, m, s, p, t, 0 },
-						  NULL);
+			profilerEvent(&me, NULL);
 			MT_lock_set(&mal_profileLock);
 		}
 	}
