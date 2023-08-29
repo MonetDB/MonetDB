@@ -367,5 +367,4 @@ GRANT SELECT ON TABLE INFORMATION_SCHEMA.COLUMNS TO PUBLIC WITH GRANT OPTION;
 update sys._tables set system = true where system <> true
  and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')
  and name in ('character_sets','schemata','tables','views','columns');
-commit;
 

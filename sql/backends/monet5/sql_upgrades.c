@@ -6154,8 +6154,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		"\n"
 		"update sys._tables set system = true where system <> true\n"
 		" and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')\n"
-		" and name in ('character_sets','schemata','tables','views','columns');\n"
-		"commit;\n";
+		" and name in ('character_sets','schemata','tables','views','columns');\n";
 		printf("Running database upgrade commands:\n%s\n", cmds);
 		fflush(stdout);
 		err = SQLstatementIntern(c, cmds, "update", true, false, NULL);
