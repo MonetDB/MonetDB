@@ -852,7 +852,7 @@ rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 			rexps = rel_projections(sql, r, NULL, 0, 1);
 
 		/* go through the relation's exps */
-		for (node *m = exps->h, *o = rexps->h; m && o; m = m->next, n = n->next) {
+		for (node *m = exps->h, *o = rexps->h; m && o; m = m->next, o = o->next) {
 			sql_exp *e = m->data, *f = o->data;
 			/* for multi-union if any operand has nil then set the nil prop for the op exp */
 			if (is_munion(rel->op) && has_nil(f))
@@ -1357,7 +1357,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			int label = 0;
 			if (!settname)
 				label = ++sql->label;
-			for (node *en = rels->h; en; en = en->next) {
+			for (node *en = exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
 				e->card = rel->card;
