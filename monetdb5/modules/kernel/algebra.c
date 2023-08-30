@@ -447,13 +447,10 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 			}
 			if (m == TRUE)
 				continue;
-			if (m == FALSE && mi[n] == bit_nil /* empty */) {
-				m = m;
-			} else if ((mi[n] == FALSE && pi[n] == TRUE) /* ie has nil */ || (any && mi[n] == TRUE && pi[n] == bit_nil)) {
+			if ((mi[n] == FALSE && pi[n] == TRUE) /* ie has nil */ || (any && mi[n] == TRUE && pi[n] == bit_nil))
 				has_nil = true;
-			} else {
-				m = (mi[n] == TRUE && pi[n] == TRUE)?TRUE:m;
-			}
+			else if (mi[n] == TRUE && pi[n] == TRUE)
+				m = TRUE;
 		}
 		if (nr) {
 			ri1[q] = c-1;
