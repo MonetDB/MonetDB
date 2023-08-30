@@ -7,3 +7,9 @@
   During the upgrade function definitions will fallback to the normal
   PYTHON language option.
 
+* Mon Jul 17 2023 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Implemented direct masking for strimp construction. The strimps
+  datastructure now keeps an array of 65K 64-bit integers that is zero
+  everywhere except at the indexes that correspond to header pairs. The
+  entry for the nth pair in order has the nth bit of the bitstring
+  on. These can be used to quickly construct bitstrings.
