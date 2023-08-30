@@ -1874,7 +1874,7 @@ push_up_select2(visitor *v, sql_rel *rel)
 		nl->l = push_up_select2(v, nl->l);
 		return nl;
 	}
-	if (is_left(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r) && list_empty(rel->attr)) {
+	if (is_left(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r)) {
 		if (rel->exps)
 			rel->exps = list_merge(rel->exps, r->exps, NULL);
 		else
@@ -1882,33 +1882,6 @@ push_up_select2(visitor *v, sql_rel *rel)
 		r->exps = NULL;
 		rel->r = rel_dup(r->l);
 		rel_destroy(r);
-		rel_bind_vars(v->sql, rel, rel->exps);
-		v->changes++;
-		return rel;
-	}
-	if (is_left(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r) && !list_empty(rel->attr)) {
-		if (rel->exps)
-			rel->exps = list_merge(rel->exps, r->exps, NULL);
-		else
-			rel->exps = r->exps;
-		/* introduce select not null for expressions involved in r->exps */
-		list *nonils = sa_list(v->sql->sa);
-		/* for each exp in the projection of r->l, we test if its used by the r->exps, iff se do a select not null */
-		list *p = rel_projections(v->sql, r->l, NULL, 1, 1);
-		if (p) {
-			for(node *n = p->h; n; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (0 && exps_uses_exp(r->exps, e)) {
-					sql_exp *nil = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
-					sql_exp *nonil = exp_compare(v->sql->sa, e, nil, cmp_notequal);
-					if (nonil)
-						set_semantics(nonil);
-					append(nonils, nonil);
-				}
-			}
-		}
-		r->exps = nonils;
 		rel_bind_vars(v->sql, rel, rel->exps);
 		v->changes++;
 		return rel;
