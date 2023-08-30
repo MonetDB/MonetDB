@@ -275,7 +275,7 @@ SELECT (COUNT(*) > 0) AS has_rows FROM sys.db_user_info
 query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.comments
 ----
-0
+1
 
 statement error
 TRUNCATE TABLE sys.comments
@@ -283,7 +283,7 @@ TRUNCATE TABLE sys.comments
 query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.comments
 ----
-0
+1
 
 query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.auths

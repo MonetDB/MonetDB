@@ -77,8 +77,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			goto bailout;
 		}
 
-		/* rtree functions should not be optimized by mitosis (single-threaded execution) */
-		if ( getModuleId(p) == rtreeRef){
+		/* rtree functions should not be optimized by mitosis
+		 * (single-threaded execution) */
+		if (getModuleId(p) == rtreeRef) {
 			pieces = 0;
 			goto bailout;
 		}

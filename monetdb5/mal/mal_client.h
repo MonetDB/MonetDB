@@ -137,7 +137,7 @@ typedef struct CLIENT {
 	 * identity is retained here for access by others (=father).
 	 */
 	MT_Sema s;					/* sema to (de)activate thread */
-	Thread mythread;
+	const char *mythread;
 	str errbuf;					/* location of GDK exceptions */
 	struct CLIENT *father;
 	/*

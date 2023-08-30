@@ -1846,7 +1846,10 @@ BBPinit(void)
 		}
 	}
 
-	manager = THRcreate(BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager");
+	if (MT_create_thread(&manager, BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager") < 0) {
+		TRC_CRITICAL(GDK, "Could not start BBPmanager thread.");
+		return GDK_FAIL;
+	}
 	return GDK_SUCCEED;
 
   bailout:
@@ -2408,7 +2411,7 @@ BBPinsert(BAT *bn)
 	char dirname[24];
 	bat i;
 	int len = 0;
-	Thread t = (Thread) MT_thread_getdata();
+	struct freebats *t = MT_thread_getfreebats();
 
 	if (t->freebats == 0) {
 		/* critical section: get a new BBP entry */
@@ -2563,7 +2566,7 @@ BBPuncacheit(bat i, bool unloaddesc)
  * BBPclear removes a BAT from the BBP directory forever.
  */
 static inline void
-BBPhandover(Thread t, uint32_t n)
+BBPhandover(struct freebats *t, uint32_t n)
 {
 	bat *p, bid;
 	/* take one bat from our private free list and hand it over to
@@ -2611,7 +2614,7 @@ printlist(bat bid)
 static inline void
 bbpclear(bat i, bool lock)
 {
-	Thread t = (Thread) MT_thread_getdata();
+	struct freebats *t = MT_thread_getfreebats();
 
 	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBP_logical(i));
 	BBPuncacheit(i, true);
@@ -2660,8 +2663,10 @@ BBPclear(bat i)
 }
 
 void
-BBPrelinquish(Thread t)
+BBPrelinquish(void)
 {
+	struct freebats *t = MT_thread_getfreebats();
+
 	if (t->nfreebats == 0)
 		return;
 	MT_lock_set(&GDKcacheLock);

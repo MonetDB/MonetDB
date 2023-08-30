@@ -435,9 +435,8 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 		/* alloc error */
 		return NULL;
 
-	int i;
 	node *n, *nn = f->colnames->h, *tn = f->coltypes->h;
-	for (i=0, n = f->res->h; n; i++, n = n->next, nn = nn->next, tn = tn->next) {
+	for (n = f->res->h; n; n = n->next, nn = nn->next, tn = tn->next) {
 		const char *name = nn->data;
 		sql_subtype *tp = tn->data;
 		sql_column *c = NULL;
