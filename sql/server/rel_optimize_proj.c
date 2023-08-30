@@ -453,7 +453,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		/* Don't rewrite refs, non projections or constant or
 		   order by projections  */
 		if (!l || rel_is_ref(l) || is_topn(l->op) || is_sample(l->op) ||
-		   (is_join(rel->op) && /*exps_has_setjoin(rel->exps)*/ !list_empty(rel->attr)) ||
+		   (is_join(rel->op) && !list_empty(rel->attr)) ||
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statments left joins */) ||
 		   (is_select(rel->op) && l->op != op_project) ||
