@@ -1021,9 +1021,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 					for(m=rel->exps->h; m; m = m->next) {
 						sql_exp *e = m->data;
 
-						if (is_compare(e->type) && (e->flag == mark_in || e->flag == mark_notin))
-							e->flag = (e->flag==mark_in)?cmp_equal:cmp_notequal;
-						else if (op == op_anti && is_compare(e->type) && e->flag == cmp_equal)
+						if (op == op_anti && is_compare(e->type) && e->flag == cmp_equal)
 							e->flag = cmp_notequal;
 						else if (op == op_anti && is_compare(e->type) && e->flag == cmp_notequal)
 							e->flag = cmp_equal;
@@ -1876,7 +1874,7 @@ push_up_select2(visitor *v, sql_rel *rel)
 		nl->l = push_up_select2(v, nl->l);
 		return nl;
 	}
-	if (is_left(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r)) {
+	if (is_left(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r) && list_empty(rel->attr)) {
 		if (rel->exps)
 			rel->exps = list_merge(rel->exps, r->exps, NULL);
 		else
@@ -1884,6 +1882,33 @@ push_up_select2(visitor *v, sql_rel *rel)
 		r->exps = NULL;
 		rel->r = rel_dup(r->l);
 		rel_destroy(r);
+		rel_bind_vars(v->sql, rel, rel->exps);
+		v->changes++;
+		return rel;
+	}
+	if (is_left(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r) && !list_empty(rel->attr)) {
+		if (rel->exps)
+			rel->exps = list_merge(rel->exps, r->exps, NULL);
+		else
+			rel->exps = r->exps;
+		/* introduce select not null for expressions involved in r->exps */
+		list *nonils = sa_list(v->sql->sa);
+		/* for each exp in the projection of r->l, we test if its used by the r->exps, iff se do a select not null */
+		list *p = rel_projections(v->sql, r->l, NULL, 1, 1);
+		if (p) {
+			for(node *n = p->h; n; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (0 && exps_uses_exp(r->exps, e)) {
+					sql_exp *nil = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+					sql_exp *nonil = exp_compare(v->sql->sa, e, nil, cmp_notequal);
+					if (nonil)
+						set_semantics(nonil);
+					append(nonils, nonil);
+				}
+			}
+		}
+		r->exps = nonils;
 		rel_bind_vars(v->sql, rel, rel->exps);
 		v->changes++;
 		return rel;
@@ -3030,6 +3055,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				assert(join && is_join(join->op));
 				if (join && !join->exps)
 					join->exps = sa_list(sql->sa);
+				bool use_any = 0;
 				if (is_tuple) {
 					list *t = le->f;
 					int s1 = list_length(t), s2 = rsq?list_length(rsq->exps):0;
@@ -3043,12 +3069,17 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 						re = exp_ref(sql, re);
 
-						sql_exp *inexp = exp_compare(v->sql->sa, le, re, is_anyequal(sf)?mark_in:mark_notin);
+						sql_exp *inexp = exp_compare(v->sql->sa, le, re, cmp_equal);
+						if (inexp)
+							set_any(inexp);
 						append(join->exps, inexp);
 					}
 					return sql_error(sql, 02, SQLSTATE(42000) "Tuple matching at projections not implemented in the backend yet");
 				} else {
-					sql_exp *inexp = exp_compare(v->sql->sa, le, re, is_anyequal(sf)?mark_in:mark_notin);
+					use_any = true;
+					sql_exp *inexp = exp_compare(v->sql->sa, le, re, cmp_equal);
+					if (inexp)
+						set_any(inexp);
 					exp_set_freevar(sql, le, join);
 					rel_bind_var(sql, join, inexp);
 					append(join->exps, inexp);
@@ -3059,7 +3090,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (join) {
 					if (!join->attr)
 						join->attr = sa_list(sql->sa);
-					sql_exp *a = exp_atom_bool(v->sql->sa, 1);
+					sql_exp *a = exp_atom_bool(v->sql->sa, !use_any?1:is_anyequal(sf));
 					exp_setname(sql->sa, a, exp_relname(e), exp_name(e));
 					re = exp_ref(sql, a);
 					set_has_nil(re); /* outerjoins could have introduced nils */
@@ -3393,13 +3424,12 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 					if (is_values(l)) {
 						assert(is_values(r));
 						list *ll = l->f, *rl = r->f;
-						/* TODO for notin, generate or_exp */
 						for(node *n=ll->h, *m=rl->h; n && m; n=n->next, m=m->next) {
-							e = exp_compare(v->sql->sa, n->data, m->data, cmp_equal );//j->op == op_semi?cmp_equal/*mark_in*/:cmp_notequal/*mark_notin*/);
+							e = exp_compare(v->sql->sa, n->data, m->data, cmp_equal );
 							append(j->exps, e);
 						}
 					} else {
-						e = exp_compare(v->sql->sa, l, r, cmp_equal);//j->op == op_semi?cmp_equal/*mark_in*/:cmp_notequal/*mark_notin*/);
+						e = exp_compare(v->sql->sa, l, r, cmp_equal);
 						if (e && j->op == op_anti)
 							set_semantics(e);
 						append(j->exps, e);
@@ -3482,7 +3512,6 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					set_no_nil(a);
 					exp_setname(v->sql->sa, a, exp_relname(e), exp_name(e));
 					le = exp_ref(v->sql, a);
-					//set_has_nil(le); /* outerjoins could have introduced nils */
 					le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
 					append(join->attr, a);
 					assert(is_project(rel->op) || depth);
@@ -3539,7 +3568,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_exp *cond = l->h->data;
 		sql_exp *then_exp = l->h->next->data;
 		sql_exp *else_exp = l->h->next->next->data;
-		sql_exp *not_cond;//, *cond_is_null;
+		sql_exp *not_cond;
 
 		if (!exp_has_rel(cond) && (exp_has_rel(then_exp) || exp_has_rel(else_exp))) {
 			bool single = false;
@@ -3578,7 +3607,6 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			rsq = rel_project(v->sql->sa, rsq, append(sa_list(v->sql->sa), else_exp));
 			cond = exp_copy(v->sql, cond);
 			exp_set_freevar(v->sql, cond, rsq);
-			//not_cond = exp_compare(v->sql->sa, cond, exp_atom_bool(v->sql->sa, 0), cmp_equal);
 			not_cond = exp_compare(v->sql->sa, cond, exp_atom_bool(v->sql->sa, 1), cmp_notequal);
 			set_semantics(not_cond); /* also compare nulls */
 			set_processed(rsq);

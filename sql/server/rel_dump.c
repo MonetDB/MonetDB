@@ -66,9 +66,6 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
 
-	case mark_in: 		r = "any ="; break;
-	case mark_notin: 	r = "all <>"; break;
-
 	case cmp_all:
 	case cmp_project:
 	case cmp_joined:
@@ -308,6 +305,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, " !");
 			if (is_semantics(e))
 				mnstr_printf(fout, " *");
+			if (is_any(e))
+				mnstr_printf(fout, " +");
 			cmp_print(sql, fout, e->flag);
 
 			mnstr_printf(fout, "(");
@@ -501,7 +500,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
 		exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
-		if (is_join(rel->op) && rel->attr) /* mark joins */
+		if (is_join(rel->op) && rel->attr) /* group joins */
 			exps_print(sql, fout, rel->attr, depth, refs, 1, 0);
 		break;
 	case op_project:
@@ -1107,7 +1106,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	/* atom */
 	case '(':
 		if (b == (r+*pos)) { /* comparison expression */
-			int anti = 0, sym = 0, semantics = 0;
+			int anti = 0, sym = 0, semantics = 0, any = 0;
 			comp_type ctype = cmp_all, ctype2 = cmp_all;
 			list *lexps = NULL, *rexps = NULL, *fexps = NULL;
 			char *sname = NULL, *fname = NULL;
@@ -1125,17 +1124,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				(*pos)++;
 				skipWS(r, pos);
 			}
+			if (r[*pos] == '+') {
+				any = 1;
+				(*pos)++;
+				skipWS(r, pos);
+			}
 
 			switch(r[*pos]) {
-			case 'a':
-				if (strncmp(r+*pos, "any =",  strlen("any =")) == 0) {
-					(*pos)+= (int) strlen("any =");
-					ctype = mark_in;
-				} else if (strncmp(r+*pos, "all <>",  strlen("all <>")) == 0) {
-					(*pos)+= (int) strlen("all <>");
-					ctype = mark_notin;
-				}
-				break;
 			case 'n':
 				if (strncmp(r+*pos, "notin",  strlen("notin")) == 0) {
 					(*pos)+= (int) strlen("notin");
@@ -1211,8 +1206,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				case cmp_lt:
 				case cmp_equal:
 				case cmp_notequal:
-				case mark_in:
-				case mark_notin:
 					if (r[*pos] == '!' || r[*pos] == '<' || r[*pos] == '>') { /* BETWEEN case */
 						if (r[*pos] == '!') { /* ignore next anti */
 							(*pos)++;
@@ -1252,6 +1245,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 						exp = exp_compare(sql->sa, lexps->h->data, rexps->h->data, ctype);
 						if (semantics)
 							set_semantics(exp);
+						if (any)
+							set_any(exp);
 					}
 					if (anti)
 						set_anti(exp);

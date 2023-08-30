@@ -689,14 +689,22 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 	if (sel1->nrcols == 0) {
 		stmt *predicate = bin_find_smallest_column(be, left);
 
-		predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-		sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, 0/*anti*/, 0);
+		if (!reduce) {
+			predicate = stmt_const(be, predicate, sel1);
+		} else {
+			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+			sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, 0/*anti*/, 0);
+		}
 	}
 	if (sel2->nrcols == 0) {
 		stmt *predicate = bin_find_smallest_column(be, left);
 
-		predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-		sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0/*anti*/, 0);
+		if (!reduce) {
+			predicate = stmt_const(be, predicate, sel2);
+		} else {
+			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+			sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0/*anti*/, 0);
+		}
 	}
 	if (!reduce) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true);
@@ -1813,18 +1821,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), is_symmetric(e), reduce);
 			} else {
 				/* value compare or select */
-				if ((!reduce || (l->nrcols == 0 && r->nrcols == 0)) && (e->flag == mark_in || e->flag == mark_notin)) {
-					int in_flag = e->flag==mark_in?1:0;
-					if (is_anti(e))
-						in_flag = !in_flag;
-					sql_subfunc *f = sql_bind_func(sql, "sys", in_flag?"=":"<>", tail_type(l), tail_type(l), F_FUNC, true);
-					assert(f);
-					s = stmt_binop(be, l, r, sel, f);
-					if (l->cand)
-						s->cand = l->cand;
-					if (r->cand)
-						s->cand = r->cand;
-				} else if (!reduce || (l->nrcols == 0 && r->nrcols == 0)) {
+				if (!reduce || (l->nrcols == 0 && r->nrcols == 0)) {
 					sql_subfunc *f = sql_bind_func(sql, "sys", compare_func((comp_type)e->flag, is_anti(e)),
 												   tail_type(l), tail_type(l), F_FUNC, true);
 					assert(f);
@@ -2692,7 +2689,7 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 	if (e->type == e_cmp) {
 		int flag = e->flag;
 		/* check if its a select or join expression, ie use only expressions of one relation left and of the other right (than join) */
-		if (flag < cmp_filter || flag == mark_in || flag == mark_notin) { /* theta and range joins */
+		if (flag < cmp_filter) { /* theta and range joins */
 			/* join or select ? */
 			sql_exp *l = e->l, *r = e->r, *f = e->f;
 
@@ -2777,42 +2774,11 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
 }
 
 
-static int
-exp_is_mark(sql_exp *e)
-{
-	if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin))
-		return 1;
-	return 0;
-}
-
-static list *
-mark_joins_last(sql_allocator *sa, sql_rel *rel)
-{
-	list *exps = sa_list(sa);
-
-	if (!list_empty(rel->exps)) {
-		for (node *n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (!exp_is_mark(e))
-				append(exps, e);
-		}
-		for (node *n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (exp_is_mark(e))
-				append(exps, e);
-		}
-		assert(list_length(exps) == list_length(rel->exps));
-	}
-	return exps;
-}
-
 static bool
 can_outerjoin_exp(sql_rel *rel, sql_exp *e, bool anti)
 {
 	if (can_join_exp(rel, e, anti)) {
-		if (e->flag != cmp_equal && e->flag != mark_in && e->flag != mark_notin && rel->op == op_left)
+		if (e->flag != cmp_equal && rel->op == op_left)
 			return false;
 		return true;
 	}
@@ -2825,8 +2791,18 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	list *l;
 	node *n , *en;
-	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *res;
+	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ls = NULL, *res;
 	bool need_project = false;
+	bool exist = true;
+
+	assert(rel->op == op_left);
+	if (rel->op == op_left) { /* left outer group join */
+		if (list_length(rel->attr) == 1) {
+			sql_exp *e = rel->attr->h->data;
+			if (exp_is_atom(e) && exp_is_false(e))
+				exist = false;
+		}
+	}
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
@@ -2839,30 +2815,21 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	left = row2cols(be, left);
 	right = row2cols(be, right);
 
-	list *jexps = mark_joins_last(be->mvc->sa, rel);
+	list *jexps = rel->exps;
 
-	en = jexps->h;
-	if (list_empty(jexps) || !can_outerjoin_exp(rel, en->data, true)) {
+	en = jexps?jexps->h:NULL;
+	if (1 || list_empty(jexps) || !can_outerjoin_exp(rel, en->data, true)) {
 		printf("# outer cross\n");
 		stmt *l = bin_find_smallest_column(be, left);
 		stmt *r = bin_find_smallest_column(be, right);
-		if (list_empty(jexps)) {
+		if (list_empty(jexps) && list_empty(rel->exps)) {
 			stmt *limit = stmt_limit(be, r, NULL, NULL, stmt_atom_lng(be, 0), stmt_atom_lng(be, 1), 0, 0, 0, 0, 0);
 			r = stmt_project(be, limit, r);
 		}
 		join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, 0, cmp_all, 0, 0, false, rel->op == op_left?false:true);
 		need_project = true;
 	} else if (!list_empty(jexps)) {
-		/* markthetajoin()
-		 * or left-join followed by markthetaselect */
 		sql_exp *e = en->data;
-		/* order list on cmp* exps (ie groups) then mark_* */
-		/* first (left)join on cmp* exps, then
-		 * cmp* exps thetaselect(s)
-		 * then markselects (li, ri (needed for empty right hand side), (P(l1,r1) and/or P(l2,r2)) etc
-		 * with p = { =, <> }
-		 * if no cmp* join exps, the markjoin, ie also handling empty righ case
-		 */
 		en = en->next;
 		stmt *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 0, 1, 0), *r = NULL;
 		bool swap = false;
@@ -2885,28 +2852,12 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			l = r;
 			r = t;
 		}
+		ls = l;
 		if (en) {
-			int flag = e->flag;
-			if (flag == mark_in)
-				flag = cmp_equal;
-			else if (flag == mark_notin)
-				flag = cmp_notequal;
-			assert(!left->cand);
-			join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, rel->op == op_left?false:true);
+			join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_semantics(e), false, rel->op == op_left?false:true);
 		} else {
-			int cmp = e->flag;
-
-			if (cmp != mark_in && cmp != mark_notin && rel->op == op_left) { /* left outer group join */
-				if (list_length(rel->attr) == 1) {
-					sql_exp *e = rel->attr->h->data;
-					if (exp_is_atom(e) && exp_is_true(e)) {
-						cmp = mark_in;
-					} else if (exp_is_atom(e) && exp_is_false(e)) {
-						cmp = mark_notin;
-					}
-				}
-			}
-			join = stmt_join(be, l, r, 0, cmp, 0, 0, false);
+			/* todo mark as mark/outerjoin */
+			join = stmt_join(be, l, r, 0, /*cmp*/cmp_equal, 0, 0, false);
 		}
 	}
 	jl = stmt_result(be, join, 0);
@@ -2916,6 +2867,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	if (en) {
 		stmt *sub, *sel = NULL, *osel = NULL;
 		list *nl;
+
 		need_project = false;
 
 		/* construct relation */
@@ -2940,80 +2892,54 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			s = stmt_alias(be, s, rnme, nme);
 			list_append(nl, s);
 		}
-		sub = stmt_list(be, nl);
+		left = sub = stmt_list(be, nl);
 
-		jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, bit_nil), stmt_bool(be, 0), NULL);
+		/* if any
+		 *		 jr==bit_nil if left == NULL else true/false?
+		 * else simple mark
+		 *		jr = isnull(jr) bit_nil else alse
+		 */
+		if (ls) {
+			stmt *nls = stmt_project(be, jl, ls);
+			jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", nls), stmt_bool(be, bit_nil),
+					sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, 0), stmt_bool(be, 1), NULL),
+					NULL);
+		} else {
+			/* nil == empty, 0 - no match (ie nil), 1 match */
+			jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, bit_nil), stmt_bool(be, 1), NULL);
+		}
 
 		/* continue with non equi-joins */
 		for ( ; en; en = en->next) {
 			sql_exp *e = en->data;
-			stmt *l = NULL, *r = NULL;
-			int flag = e->flag;
-			bool is_semantics = is_semantics(e);
-			if ((flag == cmp_equal || flag == cmp_notequal || flag == mark_in || flag == mark_notin) && (!is_semantics || en->next)){
-				l = exp_bin(be, e->l, sub, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
-				r = exp_bin(be, e->r, sub, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
-			} else {
-				l = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-				r = stmt_bool(be, true);
-				flag = cmp_equal;
-				is_semantics = false;
-			}
+			stmt *p = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
 
-			if (!l || !r) {
+			if (!p) {
 				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 				return NULL;
 			}
-			if (l && l->nrcols == 0) {
-				stmt *nl = stmt_const(be, bin_find_smallest_column(be, sub), l);
-				l = nl;
-			}
+			if (p->nrcols == 0)
+				p = stmt_const(be, bin_find_smallest_column(be, sub), p);
 			if (sel)
-				l = stmt_project(be, sel, column(be, l));
-			if (r->nrcols == 0) {
-				stmt *nr = stmt_const(be, bin_find_smallest_column(be, sub), r);
-				r = nr;
-			}
-			if (sel)
-				r = stmt_project(be, sel, column(be, r));
+				p = stmt_project(be, sel, column(be, p));
 			stmt *li = jl;
 			if (sel)
 				li = stmt_project(be, sel, li);
 			osel = sel;
 			if (en->next) {
-				if (rel->op == op_left) {
-					/* outerselect(li, rid, [l==r]) */
-					join = stmt_outerselect(be, li, jr, l, r, flag, is_semantics);
-					sel = stmt_result(be, join, 0);
-					jr = stmt_result(be, join, 1);
-				} else {
-					sel = stmt_uselect(be, l, r, flag, sel, 0, 0);
-				}
+				join = stmt_outerselect(be, li, jr, p, is_any(e));
 			} else {
-				int cmp = e->flag;
-
-				if (cmp != mark_in && cmp != mark_notin && rel->op == op_left) { /* left outer group join */
-					if (list_length(rel->attr) == 1) {
-						sql_exp *e = rel->attr->h->data;
-						if (exp_is_atom(e) && exp_is_true(e)) {
-							cmp = mark_in;
-						} else if (exp_is_atom(e) && exp_is_false(e)) {
-							cmp = mark_notin;
-						}
-					}
-				}
-				assert(cmp == mark_in || cmp == mark_notin);
-				join = stmt_markselect(be, li, jr, l, r, cmp);
+				join = stmt_markselect(be, li, jr, p, is_any(e));
 			}
+			sel = stmt_result(be, join, 0);
+			jr = stmt_result(be, join, 1);
 			/* go back to offset in the table */
 			if (sel && osel)
 				sel = stmt_project(be, sel, osel);
+			if (!en->next)
+				jl = sel;
 		}
-		jl = stmt_result(be, join, 0);
-		/* mark result */
-		jr = stmt_result(be, join, 1);
 	}
-
 	/* construct relation */
 	l = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
@@ -3031,26 +2957,18 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		const char *nme = exp_name(e);
 
 		if (need_project) {
-			bool exist = true;
-			if (list_empty(rel->exps) && rel->op == op_left) { /* left outer group join */
-				if (list_length(rel->attr) == 1) {
-					sql_exp *e = rel->attr->h->data;
-					if (exp_is_atom(e) && exp_is_false(e)) {
-						exist = false;
-					}
-				}
-			}
 			jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, !exist), stmt_bool(be, exist), NULL);
 		} else if (list_length(rel->attr) == 1) {
 			sql_exp *e = rel->attr->h->data;
-			if (exp_is_atom(e)) {
-				bool exist = true;
-				if (exp_is_false(e))
-					exist = false;
-				if (need_no_nil(e))
-					jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, !exist), jr, NULL);
+			if (exp_is_atom(e) && need_no_nil(e))
+				jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, !exist), jr, NULL);
+			if (!exist) {
+				sql_subtype *bt = sql_bind_localtype("bit");
+				sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
+				jr = stmt_unop(be, jr, NULL, not);
 			}
 		}
+
 		stmt *s = stmt_alias(be, jr, rnme, nme);
 		list_append(l, s);
 	}
@@ -3059,7 +2977,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	return res;
 }
 
-#define is_equi_exp_(e) ((e)->flag == cmp_equal || (e)->flag == mark_in)
+#define is_equi_exp_(e) ((e)->flag == cmp_equal)
 
 static list *
 get_equi_joins_first(mvc *sql, list *exps, int *equality_only)

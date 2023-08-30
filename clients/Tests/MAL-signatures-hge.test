@@ -3500,7 +3500,7 @@ ALGmarkjoin;
 Left mark join with candidate lists, produces left output and mark flag; 
 algebra
 markselect
-command algebra.markselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:any_1], X_3:bat[:any_1], X_4:bit) (X_5:bat[:oid], X_6:bat[:bit]) 
+command algebra.markselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit]) 
 ALGmarkselect;
 Group on group-ids, return aggregated anyequal or allnotequal
 algebra
@@ -3530,7 +3530,7 @@ ALGouterjoin;
 Left outer join with candidate lists
 algebra
 outerselect
-command algebra.outerselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit]) (X_3:bat[:oid], X_4:bat[:bit]) 
+command algebra.outerselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit]) 
 ALGouterselect;
 Per input lid return atleast one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.
 algebra

@@ -1670,16 +1670,11 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		const char *mod = calcRef;
 		const char *op = "=";
 		int k;
-		int notin = 0;
 
 		switch (cmptype) {
-		case mark_in:
 		case cmp_equal:
 			op = "=";
 			break;
-		case mark_notin:
-			notin = 1;
-			/* fall through */
 		case cmp_notequal:
 			op = "!=";
 			break;
@@ -1716,17 +1711,6 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		if (is_semantics)
 			q = pushBit(mb, q, TRUE);
 		k = getDestVar(q);
-
-		if (notin) {
-			q = newStmt(mb, batcalcRef, ifthenelseRef);
-			if (q == NULL)
-				goto bailout;
-			q = pushArgument(mb, q, k);
-			q = pushBit(mb, q, FALSE);
-			q = pushBit(mb, q, TRUE);
-			k = getDestVar(q);
-			pushInstruction(mb, q);
-		}
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		if (q == NULL)
@@ -1775,9 +1759,6 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			}
 			q = pushArgument(mb, q, r);
 			switch (cmptype) {
-			case mark_in:
-			case mark_notin: /* we use a anti join, todo handle null (not) in empty semantics */
-				assert(0);
 			case cmp_equal:
 				q = pushStr(mb, q, anti?"!=":"==");
 				break;
@@ -1892,7 +1873,6 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 	const char *cmd = (type == st_uselect2) ? selectRef : rangejoinRef;
 	stmt *sub = (Sub)?*Sub:NULL;
 
-	assert(cmp != mark_in && cmp != mark_notin);
 	if (op1 == NULL || op2 == NULL || op3 == NULL || op1->nr < 0 || (sub && sub->nr < 0))
 		goto bailout;
 	l = op1->nr;
@@ -2063,22 +2043,17 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 }
 
 stmt *
-stmt_outerselect(backend *be, stmt *li, stmt *ri, stmt *l, stmt *r, int cmp, bool is_semantics)
+stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	if ((q = multiplex2(mb, calcRef, convertMultiplexFcn(cmp==cmp_equal?"=":"!="), l->nr, r->nr, TYPE_bit)) == NULL)
-		return NULL;
-	if (is_semantics)
-		q = pushBit(mb, q, TRUE);
-	int p = getDestVar(q);
-
 	q = newStmtArgs(mb, algebraRef, outerselectRef, 6);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-	q = pushArgument(mb, q, li->nr); /* left ids */
-	q = pushArgument(mb, q, ri->nr); /* right ids */
-	q = pushArgument(mb, q, p); /* predicate */
+	q = pushArgument(mb, q, g->nr); /* group ids */
+	q = pushArgument(mb, q, m->nr); /* mark flag */
+	q = pushArgument(mb, q, p->nr); /* predicate */
+	q = pushBit(mb, q, (any)?TRUE:FALSE);
 	pushInstruction(mb, q);
 
 	if (!q)
@@ -2089,29 +2064,28 @@ stmt_outerselect(backend *be, stmt *li, stmt *ri, stmt *l, stmt *r, int cmp, boo
 		return NULL;
 	}
 
-	s->op1 = li;
-	s->op2 = ri;
+	s->op1 = g;
+	s->op2 = m;
 	s->flag = MARKJOIN;
 	s->key = 0;
-	s->nrcols = li->nrcols;
+	s->nrcols = g->nrcols;
 	s->nr = getDestVar(q);
 	s->q = q;
 	return s;
 }
 
 stmt *
-stmt_markselect(backend *be, stmt *gid, stmt *mask, stmt *l, stmt *r, int cmp)
+stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
 	q = newStmtArgs(mb, algebraRef, markselectRef, 6);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-	q = pushArgument(mb, q, gid->nr); /* left ids */
-	q = pushArgument(mb, q, mask->nr); /* mask */
-	q = pushArgument(mb, q, l->nr);
-	q = pushArgument(mb, q, r->nr);
-	q = pushBit(mb, q, (cmp == mark_in)?TRUE:FALSE);
+	q = pushArgument(mb, q, g->nr); /* left ids */
+	q = pushArgument(mb, q, m->nr); /* mark info mask */
+	q = pushArgument(mb, q, p->nr);	/* predicate */
+	q = pushBit(mb, q, (any)?TRUE:FALSE);
 	pushInstruction(mb, q);
 
 	if (!q)
@@ -2122,11 +2096,11 @@ stmt_markselect(backend *be, stmt *gid, stmt *mask, stmt *l, stmt *r, int cmp)
 		return NULL;
 	}
 
-	s->op1 = gid;
-	s->op2 = mask;
+	s->op1 = g;
+	s->op2 = m;
 	s->flag = MARKJOIN;
 	s->key = 0;
-	s->nrcols = gid->nrcols;
+	s->nrcols = g->nrcols;
 	s->nr = getDestVar(q);
 	s->q = q;
 	return s;
@@ -2334,7 +2308,6 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *sjt = inner?joinRef:outerjoinRef;
-	int mark = 0;
 
 	(void)anti;
 	(void)inner;
@@ -2349,11 +2322,6 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	assert (!single || cmptype == cmp_all);
 
 	switch (cmptype) {
-	case mark_in:
-	case mark_notin: /* we use a anti join, todo handle null (not) in empty */
-		sjt = markjoinRef;
-		mark = 1;
-		/* fall through */
 	case cmp_equal:
 		q = newStmtArgs(mb, algebraRef, sjt, 9);
 		if (q == NULL)
@@ -2369,10 +2337,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 			q = pushNil(mb, q, TYPE_bat);
 		else
 			q = pushArgument(mb, q, rcand->nr);
-		if (mark) {
-			q = pushBit(mb, q, cmptype == mark_in?TRUE:FALSE); /* any (true), all (false) */
-		} else
-			q = pushBit(mb, q, is_semantics?TRUE:FALSE);
+		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 		if (!inner)
 			q = pushBit(mb, q, FALSE); /* not match_one */
 		q = pushNil(mb, q, TYPE_lng);
@@ -2465,8 +2430,6 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	s->op1 = op1;
 	s->op2 = op2;
 	s->flag = cmptype;
-	if (mark)
-		s->flag = MARKJOIN;
 	s->key = 0;
 	s->nrcols = 2;
 	s->nr = getDestVar(q);

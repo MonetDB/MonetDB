@@ -720,7 +720,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 						}
 					}
 				}
-			} else if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e) && !e->f) {
+			} else if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e) && !is_any(e) && !e->f) {
 				/* compute comparisons on atoms */
 				if (exp_is_null(l) || exp_is_null(r)) {
 					e = exp_null(v->sql->sa, sql_bind_localtype("bit"));

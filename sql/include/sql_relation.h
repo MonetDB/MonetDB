@@ -56,6 +56,7 @@ typedef struct expression {
 	 distinct:1,
 
 	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
+	 any:1,			/* = vs any semantics (keep nil results) */
 	 need_no_nil:1,
 	 has_no_nil:1,
 	 unique:1,	/* expression has unique values, but it may have multiple NULL values! */
@@ -239,6 +240,8 @@ typedef enum operator_type {
 #define set_anti(e)  		(e)->anti = 1
 #define is_semantics(e) 	((e)->semantics)
 #define set_semantics(e) 	(e)->semantics = 1
+#define is_any(e)			((e)->any)
+#define set_any(e)			(e)->any = 1
 #define is_symmetric(e) 	((e)->symmetric)
 #define set_symmetric(e) 	(e)->symmetric = 1
 #define is_intern(e) 		((e)->intern)

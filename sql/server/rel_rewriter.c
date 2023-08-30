@@ -205,7 +205,7 @@ rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		int changes = v->changes;
-		rel->exps = exps_simplify_exp(v, rel->exps);
+		rel->exps = list_empty(rel->attr)?exps_simplify_exp(v, rel->exps):rel->exps;
 		/* At a select or inner join relation if the single expression is false, eliminate the inner relations with a dummy projection */
 		if (value_based_opt && (v->changes > changes || cycle == 0) && (is_select(rel->op) || is_innerjoin(rel->op)) &&
 			!is_single(rel) && list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {

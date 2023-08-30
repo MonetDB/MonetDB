@@ -966,7 +966,7 @@ static inline sql_rel *
 rel_push_join_exps_down(visitor *v, sql_rel *rel)
 {
 	/* push select exps part of join expressions down */
-	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) /*|| is_semi(rel->op)*/) && !list_empty(rel->exps)) {
+	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) /*|| is_semi(rel->op)*/) && !list_empty(rel->exps) && list_empty(rel->attr)) {
 		int left = is_innerjoin(rel->op) || is_right(rel->op) || rel->op == op_semi;
 		int right = is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op);
 		sql_rel *jl = rel->l, *ojl = jl, *jr = rel->r, *ojr = jr;
@@ -977,13 +977,13 @@ rel_push_join_exps_down(visitor *v, sql_rel *rel)
 			node *next = n->next;
 			sql_exp *e = n->data;
 
-			if (left && rel_rebind_exp(v->sql, jl, e) && e->flag != mark_notin && e->flag != mark_in) { /* select expressions on left */
+			if (left && rel_rebind_exp(v->sql, jl, e) && !is_any(e)) { /* select expressions on left */
 				if (!is_select(jl->op) || rel_is_ref(jl))
 					rel->l = jl = rel_select(v->sql->sa, jl, NULL);
 				rel_select_add_exp(v->sql->sa, jl, e);
 				list_remove_node(rel->exps, NULL, n);
 				v->changes++;
-			} else if (right && rel_rebind_exp(v->sql, jr, e) && e->flag != mark_notin && e->flag != mark_in) { /* select expressions on right */
+			} else if (right && rel_rebind_exp(v->sql, jr, e) && !is_any(e)) { /* select expressions on right */
 				if (!is_select(jr->op) || rel_is_ref(jr))
 					rel->r = jr = rel_select(v->sql->sa, jr, NULL);
 				rel_select_add_exp(v->sql->sa, jr, e);
@@ -1648,10 +1648,6 @@ exp_count(int *cnt, sql_exp *e)
 		case cmp_or: /* prefer or over functions */
 			*cnt += 3;
 			return 3;
-		case mark_in:
-		case mark_notin:
-			*cnt += 0;
-			return 0;
 		default:
 			return 0;
 		}
@@ -3640,7 +3636,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
 
 		/* don't push down functions inside attribute joins */
-		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter || (is_join(rel->op) && (e->flag == mark_in || e->flag == mark_notin)))
+		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
 			return 0;
 		if (depth > 0) { /* for comparisons under the top ones, they become functions */
 			int lmust = 0;
@@ -3704,7 +3700,7 @@ exp_needs_push_down(sql_rel *rel, sql_exp *e)
 	switch(e->type) {
 	case e_cmp:
 		/* don't push down functions inside attribute joins */
-		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter || (is_join(rel->op) && (e->flag == mark_in || e->flag == mark_notin)))
+		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
 			return 0;
 		return exp_needs_push_down(rel, e->l) || exp_needs_push_down(rel, e->r) || (e->f && exp_needs_push_down(rel, e->f));
 	case e_convert:

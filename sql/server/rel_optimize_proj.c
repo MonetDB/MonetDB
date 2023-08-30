@@ -318,20 +318,6 @@ bind_merge_projects(visitor *v, global_props *gp)
 }
 
 
-static int
-exps_has_setjoin(list *exps)
-{
-	if (!exps)
-		return 0;
-	for(node *n=exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin))
-			return 1;
-	}
-	return 0;
-}
-
 static sql_exp *split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e);
 
 static void
@@ -467,7 +453,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		/* Don't rewrite refs, non projections or constant or
 		   order by projections  */
 		if (!l || rel_is_ref(l) || is_topn(l->op) || is_sample(l->op) ||
-		   (is_join(rel->op) && exps_has_setjoin(rel->exps)) ||
+		   (is_join(rel->op) && /*exps_has_setjoin(rel->exps)*/ !list_empty(rel->attr)) ||
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statments left joins */) ||
 		   (is_select(rel->op) && l->op != op_project) ||
@@ -587,7 +573,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 			l->l = NULL;
 			rel_destroy(l);
 		}
-		if (is_join(rel->op) && r->op == op_project) {
+		if (is_join(rel->op) && r->op == op_project && list_empty(rel->attr)) {
 			/* rewrite rel from rel->r into rel->r->l */
 			if (rel->exps) {
 				for (n = rel->exps->h; n; n = n->next) {

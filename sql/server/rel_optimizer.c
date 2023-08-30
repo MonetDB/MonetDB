@@ -34,22 +34,6 @@ rel_properties(visitor *v, sql_rel *rel)
 		/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
 		gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
 		gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
-	} else if (is_join(rel->op)) {
-		/* check for setjoin rewrite */
-		if (!list_empty(rel->attr)) {
-			gp->needs_setjoin_rewrite = 1;
-			return rel;
-		}
-		if (!list_empty(rel->exps)) {
-			for (node *n = rel->exps->h; n ; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
-					gp->needs_setjoin_rewrite = 1;
-					return rel;
-				}
-			}
-		}
 	}
 	return rel;
 }
@@ -504,68 +488,6 @@ bind_merge_table_rewrite(visitor *v, global_props *gp)
 	return gp->needs_mergetable_rewrite ? rel_merge_table_rewrite : NULL;
 }
 
-static sql_rel *
-rel_setjoins_2_joingroupby_(visitor *v, sql_rel *rel)
-{
-	if (rel && is_join(rel->op) && (!list_empty(rel->exps) || !list_empty(rel->attr))) {
-		sql_exp *me = NULL;
-		bool needed = false, mixed_exps = false;
-
-		if (!list_empty(rel->exps) && !list_empty(rel->attr) && rel->op == op_left) { /* check if some expression mixes left and right */
-			for (node *n = rel->exps->h; n && !mixed_exps; n = n->next) {
-				sql_exp *e = n->data;
-				if (e->type == e_cmp) {
-					if (e->l && !rel_find_exp(rel->l, e->l))
-							mixed_exps = 1;
-					if (e->r && !rel_find_exp(rel->r, e->r))
-							mixed_exps = 1;
-					if (e->f && !rel_find_exp(rel->r, e->f))
-							mixed_exps = 1;
-				}
-			}
-		}
-		if (!list_empty(rel->exps)) {
-			for (node *n = rel->exps->h; n && !needed; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (e->type == e_cmp && e->flag == mark_in) {
-					me = e;
-					needed = true;
-				}
-			}
-		}
-		if (!mixed_exps && needed && rel->op == op_left && v->parent && is_select(v->parent->op)) {
-			printf("# todo optimize left group join into semijoin \n");
-			return rel;
-		}
-		if (!mixed_exps)
-			return rel;
-		if (needed && rel->op == op_join && list_empty(rel->attr)) {
-			assert(0);
-			rel->op = (me->flag == mark_in)?op_semi:op_anti;
-			return rel;
-		}
-		if (needed)
-			printf("# setjoins rewrite\n");
-	}
-	return rel;
-}
-
-static sql_rel *
-rel_setjoins_2_joingroupby(visitor *v, global_props *gp, sql_rel *rel)
-{
-	(void) gp;
-	return rel_visitor_bottomup(v, rel, &rel_setjoins_2_joingroupby_);
-}
-
-run_optimizer
-bind_setjoins_2_joingroupby(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->needs_setjoin_rewrite ? rel_setjoins_2_joingroupby : NULL;
-}
-
-
 /* these optimizers/rewriters run in a cycle loop */
 const sql_optimizer pre_sql_optimizers[] = {
 	{ 0, "split_select", bind_split_select},
@@ -595,7 +517,6 @@ const sql_optimizer pre_sql_optimizers[] = {
 
 /* these optimizers/rewriters only run once after the cycle loop */
 const sql_optimizer post_sql_optimizers[] = {
-	{22, "setjoins_2_joingroupby", bind_setjoins_2_joingroupby},
 	/* Merge table rewrites may introduce remote or replica tables */
 	/* At the moment, make sure the remote table rewriters always run after the merge table one */
 	{23, "rewrite_remote", bind_rewrite_remote},
