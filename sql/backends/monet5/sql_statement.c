@@ -2107,6 +2107,40 @@ stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 }
 
 stmt *
+stmt_markjoin(backend *be, stmt *l, stmt *r, bool any)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q;
+
+	q = newStmtArgs(mb, algebraRef, markjoinRef, 8);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, l->nr); /* left ids */
+	q = pushArgument(mb, q, r->nr); /* mark info mask */
+	q = pushNil(mb, q, TYPE_bat);
+	q = pushNil(mb, q, TYPE_bat);
+	q = pushBit(mb, q, (any)?TRUE:FALSE);
+	q = pushNil(mb, q, TYPE_lng);
+	pushInstruction(mb, q);
+
+	if (!q)
+		return NULL;
+	stmt *s = stmt_create(be->mvc->sa, st_join);
+	if (s == NULL) {
+		freeInstruction(q);
+		return NULL;
+	}
+
+	s->op1 = l;
+	s->op2 = r;
+	s->flag = MARKJOIN;
+	s->key = 0;
+	s->nrcols = l->nrcols;
+	s->nr = getDestVar(q);
+	s->q = q;
+	return s;
+}
+
+stmt *
 stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int symmetric, int reduce)
 {
 	stmt *sel = sub;

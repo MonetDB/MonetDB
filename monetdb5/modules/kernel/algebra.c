@@ -799,6 +799,7 @@ ALGmarkjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 	str res = NULL;
 	bit max_one = false;
 	*r1 = *r2 = 0;
+	(void)any;
 	(void)estimate;
 	/* for now: (left) cross aggr (any-equal) */
 	BAT *rr = BATdescriptor(is_bat_nil(*srid)?*rid:*srid);
@@ -814,7 +815,7 @@ ALGmarkjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 		} else {
 			l = BATdescriptor(*slid);
 		}
-		bit v = *any?false:true;
+		bit v = false;//*any?false:true;
 		BAT *m =  BATconstant( l->hseqbase, TYPE_bit, &v, BATcount(l), TRANSIENT);
 		BBPkeepref(l);
 		BBPkeepref(m);
@@ -843,10 +844,12 @@ ALGmarkjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 			BBPreclaim(rp);
 			BAT *m;
 
-			if (*any)
+			//if (*any)
 				m = BATanyequal_grp(l, r, g, e, NULL);
+				/*
 			else
 				m = BATallnotequal_grp(l, r, g, e, NULL);
+				*/
 
 			BBPreclaim(l);
 			BBPreclaim(r);
@@ -871,6 +874,7 @@ ALGmarkjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 	}
 	return res;
 }
+
 static str
 ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 			 const bat *srid, const bit *nil_matches, const bit *match_one,
