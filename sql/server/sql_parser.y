@@ -1906,6 +1906,7 @@ column_def:
 		}
  |  column serial_or_bigserial
 		{ /* SERIAL = INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY */
+		  /* BIGSERIAL = BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY */
 			/* handle multi-statements by wrapping them in a list */
 			sql_subtype it;
 			dlist* stmts;
