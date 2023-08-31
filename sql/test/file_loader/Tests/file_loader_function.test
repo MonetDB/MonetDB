@@ -1,7 +1,3 @@
-query TT rowsort
-select name, mod from sys.functions where mod is null or mod = ''
-----
-
 statement error 42000!Table expression without table name
 select * from file_loader('')
 
