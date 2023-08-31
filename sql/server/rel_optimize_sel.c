@@ -3592,6 +3592,44 @@ rel_use_index(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_select_leftgroup_2_semi(visitor *v, sql_rel *rel)
+{
+	(void)v;
+	if (rel_is_ref(rel) || !is_select(rel->op) || list_empty(rel->exps))
+		return rel;
+	sql_rel *l = rel->l;
+
+	if (!l || rel_is_ref(l) || !is_left(l->op) || list_empty(l->attr))
+		return rel;
+
+	for(node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_cmp && !is_semantics(e) && !e->f) {
+			list *attrs = l->attr;
+			sql_exp *a = attrs->h->data;
+
+			if (exps_find_exp(l->attr, e->l) && exp_is_true(e->r) && e->flag == cmp_equal /*&& exp_is_true(a)*/) {
+				printf("# optimize select leftgroup -> semi\n");
+				if (!list_empty(l->exps)) {
+					for(node *m = l->exps->h; m; m = m->next) {
+						sql_exp *j = m->data;
+						reset_any(j);
+					}
+				}
+				l->attr = NULL;
+				l->op = exp_is_true(a)?op_semi:op_anti;
+				list_remove_node(rel->exps, NULL, n);
+				rel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
+				list_append(rel->exps, attrs->h->data);
+				v->changes++;
+				return rel;
+			}
+		}
+	}
+	return rel;
+}
 
 static sql_rel *
 rel_optimize_select_and_joins_topdown_(visitor *v, sql_rel *rel)
@@ -3605,6 +3643,7 @@ rel_optimize_select_and_joins_topdown_(visitor *v, sql_rel *rel)
 
 	rel = rel_simplify_fk_joins(v, rel);
 	rel = rel_push_select_down(v, rel);
+	rel = rel_select_leftgroup_2_semi(v, rel);
 	if (rel && rel->l && (is_select(rel->op) || is_join(rel->op)))
 		rel = rel_use_index(v, rel);
 	return rel;

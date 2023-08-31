@@ -242,6 +242,7 @@ typedef enum operator_type {
 #define set_semantics(e) 	(e)->semantics = 1
 #define is_any(e)			((e)->any)
 #define set_any(e)			(e)->any = 1
+#define reset_any(e)		(e)->any = 0
 #define is_symmetric(e) 	((e)->symmetric)
 #define set_symmetric(e) 	(e)->symmetric = 1
 #define is_intern(e) 		((e)->intern)
