@@ -2006,7 +2006,7 @@ column_constraint:
 
 always_or_by_default:
 	ALWAYS
-   | 	BY DEFAULT
+   |	BY DEFAULT
    ;
 
 generated_column:
@@ -3579,11 +3579,11 @@ table_ref:
  |  string opt_table_name	{ dlist *l = L();
 				  dlist *f = L();
 				  append_list(f, append_string(L(), "file_loader"));
- 				  append_int(f, FALSE); /* ignore distinct */
+				  append_int(f, FALSE); /* ignore distinct */
 				  const char *s = $1;
 				  int len = UTF8_strlen(s);
 				  sql_subtype t;
-				  sql_find_subtype(&t, "char", len, 0 );
+				  sql_find_subtype(&t, "char", len, 0);
 				  append_symbol(f, _newAtomNode( _atom_string(&t, s)));
 				  append_symbol(l, _symbol_create_list( SQL_UNOP, f));
 				  append_int(l, 0);
@@ -3738,7 +3738,7 @@ opt_order_by_clause:
 
 first_next:
     FIRST
- |  NEXT 
+ |  NEXT
  ;
 
 opt_rows:
@@ -3748,7 +3748,7 @@ opt_rows:
 
 rows:
     ROW
- |  ROWS 
+ |  ROWS
  ;
 
 /* TODO add support for limit start, end */
@@ -3785,7 +3785,7 @@ opt_fetch:
 			  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $3));
 			}
- |  FETCH first_next param rows ONLY 
+ |  FETCH first_next param rows ONLY
 			{ $$ = $3; }
  |  FETCH first_next rows ONLY {
 			  sql_subtype *t = sql_bind_localtype("lng");
@@ -4332,8 +4332,8 @@ param:
 	  int nr = sql_bind_param( m, $2);
 
 	  if (nr < 0) {
-	  	nr = (m->params)?list_length(m->params):0;
-	  	sql_add_param(m, $2, NULL);
+		nr = (m->params)?list_length(m->params):0;
+		sql_add_param(m, $2, NULL);
 	  }
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr );
 	}
@@ -5065,7 +5065,7 @@ literal:
 		  atom *a;
 		  int r;
 		  int precision = $2;
-	
+
 		  if (precision == 1 && strlen($4) > 9)
 			precision += (int) strlen($4) - 9;
 		  r = sql_find_subtype(&t, ($3)?"timetz":"time", precision, 0);
@@ -6806,24 +6806,24 @@ odbc_tsi_qualifier:
 
 multi_arg_func_name:
     LEAST	{ $$ = sa_strdup(SA, "least"); }
- |  GREATEST 	{ $$ = sa_strdup(SA, "greatest"); }		
+ |  GREATEST	{ $$ = sa_strdup(SA, "greatest"); }
  ;
 
 multi_arg_func:
     multi_arg_func_name '(' case_search_condition_commalist ')' /* create nested calls of binary function */
-		{ dlist *args = $3; 
-		  dnode *f = args->h;
-		  symbol *cur = f->data.sym;
- 		  for (dnode *dn = f->next; dn; dn = dn->next) {
-			dlist *l = L();
-	  		append_list( l, append_string(L(), $1));
-	  		append_int(l, FALSE); /* ignore distinct */
-	  		append_symbol(l, cur);
-	  		append_symbol(l, dn->data.sym);
-	  		cur = _symbol_create_list( SQL_BINOP, l );
-		  }
-		  $$ = cur;
-	        }
+	{ dlist *args = $3;
+	  dnode *f = args->h;
+	  symbol *cur = f->data.sym;
+	  for (dnode *dn = f->next; dn; dn = dn->next) {
+		dlist *l = L();
+		append_list( l, append_string(L(), $1));
+		append_int(l, FALSE); /* ignore distinct */
+		append_symbol(l, cur);
+		append_symbol(l, dn->data.sym);
+		cur = _symbol_create_list( SQL_BINOP, l );
+	  }
+	  $$ = cur;
+	}
  ;
 
 %%
