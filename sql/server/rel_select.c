@@ -539,10 +539,14 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 		return "Filename missing";
 
 	char *ext = strrchr(filename, '.'), *ep = ext;
+
 	if (ext) {
 		ext=ext+1;
 		ext = mkLower(sa_strdup(sql->sa, ext));
 	}
+
+	if (!ext)
+		return "extension missing";
 
 	file_loader_t *fl = fl_find(ext);
 	if (!fl) {
@@ -567,7 +571,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 	sql_subtype *st = sql_bind_localtype("str");
 	sql_exp *ext_exp = exp_atom(sql->sa, atom_string(sql->sa, st, ext));
 	if (!ext_exp)
-		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_MALLOC_FAIL;
 	append(exps, ext_exp);
 	return NULL;
 }
@@ -578,7 +582,7 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 	sql_subfunc *f = NULL;
 	bool found = false;
 
-	if ((f = bind_func_(sql, NULL, "file_loader", tl, F_UNION, false, &found))) {
+	if ((f = bind_func_(sql, NULL, "file_loader", tl, F_UNION, true, &found))) {
 		list *nexps = exps;
 		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1))) {
 			list *res_exps = sa_list(sql->sa);
