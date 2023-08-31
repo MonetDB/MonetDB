@@ -1,0 +1,16 @@
+query TT rowsort
+select name, mod from sys.functions where mod is null or mod = '';
+----
+
+statement error 42000!Table expression without table name
+select * from file_loader('');
+
+statement error 42000!Table expression without table name
+select * from file_loader('filenotfound');
+
+statement error server crash
+select * from sys.file_loader('');
+
+statement error server crash
+select * from sys.file_loader('filenotfound');
+
