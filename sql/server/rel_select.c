@@ -362,8 +362,8 @@ bind_func(mvc *sql, char *sname, char *fname, sql_subtype *t1, sql_subtype *t2, 
 		   ((!t1 && list_length(sql->forward->ops) == 0) ||
 		    (!t2 && list_length(sql->forward->ops) == 1 && subtype_cmp(sql->forward->ops->h->data, t1) == 0) ||
 		    (list_length(sql->forward->ops) == 2 &&
-		     	subtype_cmp(sql->forward->ops->h->data, t1) == 0 &&
-		     	subtype_cmp(sql->forward->ops->h->next->data, t2) == 0)) && type == sql->forward->type) {
+			subtype_cmp(sql->forward->ops->h->data, t1) == 0 &&
+			subtype_cmp(sql->forward->ops->h->next->data, t2) == 0)) && type == sql->forward->type) {
 			return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
 		}
 	}
@@ -1041,7 +1041,7 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 			int needed = !is_simple_project(temp_table->op);
 
 			if (is_basetable(temp_table->op) && !temp_table->exps) {
-			   	if (strcmp(rel_base_name(temp_table), tname) != 0)
+				if (strcmp(rel_base_name(temp_table), tname) != 0)
 					rel_base_rename(temp_table, tname);
 			} else {
 				for (n = temp_table->exps->h; n && !needed; n = n->next) {
@@ -1437,11 +1437,11 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 			}
 		}
- 		query->prev = query->last_exp;
- 		query->last_exp = exp;
- 		query->last_state = f;
+		query->prev = query->last_exp;
+		query->last_exp = exp;
+		query->last_state = f;
 		query->last_rel = *rel;
- 	}
+	}
 	return exp;
 }
 
@@ -2895,7 +2895,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (is_sql_where(f) && is_groupby(rel->op))
 			assert(0);
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
- 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (!rel)
 			return sq;
 		sq = rel_zero_or_one(sql, sq, ek);
@@ -3862,7 +3862,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by", toUpperCopy(uaname, aname));
 	}
 
-	if (!subquery && groupby && groupby->op != op_groupby) { 		/* implicit groupby */
+	if (!subquery && groupby && groupby->op != op_groupby) {		/* implicit groupby */
 		if (!all_freevar && query->last_exp && !is_sql_aggr(query->last_state)) {
 			if (exp_relname(query->last_exp) && exp_name(query->last_exp) && !has_label(query->last_exp))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(query->last_exp), exp_name(query->last_exp));
@@ -4737,8 +4737,7 @@ simple_selection(symbol *sq)
 {
 	if (sq->token == SQL_SELECT) {
 		SelectNode *sn;
-
- 		sn = (SelectNode *) sq;
+		sn = (SelectNode *) sq;
 
 		if (!sn->from && !sn->where && !sn->distinct && !sn->window && dlist_length(sn->selection) == 1)
 			return sn->selection;
@@ -6040,7 +6039,7 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 		return table_ref(query, sq, 0, NULL);
 
 	/* select ... into is currently not handled here ! */
- 	sn = (SelectNode *) sq;
+	sn = (SelectNode *) sq;
 	if (sn->into)
 		return NULL;
 

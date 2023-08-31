@@ -595,7 +595,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		/* Later we should (in case of union all) remove unused
 		 * columns from the projection.
 		 *
- 		 * Project part of union is based on column position.
+		 * Project part of union is based on column position.
 		 */
 		if (proj && (need_distinct(rel) || !rel->exps)) {
 			rel_used(rel);
