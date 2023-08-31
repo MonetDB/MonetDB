@@ -1,15 +1,15 @@
 statement error 42000!Table expression without table name
-select * from '';
+select * from ''
 
 statement error 42000!Table expression without table name
-select * from 'FileNotFound';
+select * from 'FileNotFound'
 
 statement error 42000!Table expression without table name
-select * from '/tmp/FileNotFound';
+select * from '/tmp/FileNotFound'
 
 statement error 42000!Table expression without table name
-select * from '/tmp/FileNotFound.csv';
+select * from '/tmp/FileNotFound.csv'
 
 statement error 42000!Table expression without table name
-select * from '/tmp/FileNotFound.csv.gz';
+select * from '/tmp/FileNotFound.csv.gz'
 
