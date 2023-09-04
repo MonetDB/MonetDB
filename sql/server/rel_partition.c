@@ -189,6 +189,7 @@ rel_partition(mvc *sql, sql_rel *rel)
 
 	switch (rel->op) {
 	case op_basetable:
+	case op_sample:
 		rel->flag = REL_PARTITION;
 		break;
 	case op_project:
@@ -246,7 +247,7 @@ rel_partition(mvc *sql, sql_rel *rel)
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
 			rel_partition(sql, rel->l);
 		break;
-	case op_sample:
+	default:
 		assert(0);
 		break;
 	}
