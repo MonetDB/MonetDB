@@ -1,3 +1,12 @@
+/*
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ */
 
 #include "monetdb_config.h"
 #include "rel_file_loader.h"
@@ -111,21 +120,45 @@ detect_delimiter(const char *buf, char q, int *nr_fields)
 }
 
 typedef enum csv {
- CSV_BOOLEAN = 0,
- CSV_BIGINT,
- CSV_DECIMAL,
- CSV_DOUBLE,
- CSV_TIME,
- CSV_DATE,
- CSV_TIMESTAMP,
- CSV_STRING,
-//later: UUID, INET, JSON etc
+	CSV_BOOLEAN = 0,
+	CSV_BIGINT,
+	CSV_DECIMAL,
+	CSV_DOUBLE,
+	CSV_TIME,
+	CSV_DATE,
+	CSV_TIMESTAMP,
+	CSV_STRING,
+	//later: UUID, INET, JSON, URL etc
 } csv_types_t;
 
 typedef struct csv_type {
 	csv_types_t type;
 	int scale;
 } csv_type;
+
+static char*
+csv_type_map(csv_type ct)
+{
+	switch(ct.type) {
+	case CSV_BOOLEAN:
+		return  "boolean";
+	case CSV_BIGINT:
+		return  "bigint";
+	case CSV_DECIMAL:
+		return  "decimal";
+	case CSV_DOUBLE:
+		return  "double";
+	case CSV_TIME:
+		return  "time";
+	case CSV_DATE:
+		return  "date";
+	case CSV_TIMESTAMP:
+		return  "timestamp";
+	case CSV_STRING:
+		return  "varchar";
+	}
+	return  "varchar";
+}
 
 static bool
 detect_bool(const char *s, const char *e)
@@ -183,7 +216,7 @@ detect_time(const char *s, const char *e)
 	if ((((s[0] == '0' || s[0] == '1') &&
 	      (s[1] >= '0' && s[1] <= '9'))  ||
 	      (s[0] == '2' && (s[1] >= '0' && s[1] <= '3'))) &&
-          (s[3] >= '0' && s[3] <= '5' && s[4] >= '0' && s[4] <= '9'))
+		(s[3] >= '0' && s[3] <= '5' && s[4] >= '0' && s[4] <= '9'))
 		return true;
 	return false;
 }
@@ -317,30 +350,6 @@ get_name(sql_allocator *sa, const char *s, const char *es, const char **E, char 
 	return NULL;
 }
 
-static char*
-csv_type_map(csv_type ct)
-{
-    switch(ct.type) {
-      case CSV_BOOLEAN:
-        return  "boolean";
-      case CSV_BIGINT:
-        return  "bigint";
-      case CSV_DECIMAL:
-        return  "decimal";
-      case CSV_DOUBLE:
-        return  "double";
-      case CSV_TIME:
-        return  "time";
-      case CSV_DATE:
-        return  "date";
-      case CSV_TIMESTAMP:
-        return  "timestamp";
-      case CSV_STRING:
-        return  "varchar";
-	}
-    return  "varchar";
-}
-
 typedef struct csv_t {
 	char sname[1];
 	char quote;
@@ -413,7 +422,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	f->coltypes = typelist;
 	f->colnames = nameslist;
 
-	csv_t* r = (csv_t*)sa_alloc(sql->sa, sizeof(csv_t));
+	csv_t *r = (csv_t *)sa_alloc(sql->sa, sizeof(csv_t));
 	r->sname[0] = 0;
 	r->quote = q;
 	r->delim = d;
@@ -427,7 +436,7 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 {
 	backend *be = (backend*)BE;
 	mvc *sql = be->mvc;
-	csv_t *r = (csv_t*)f->sname;
+	csv_t *r = (csv_t *)f->sname;
 	sql_table *t = NULL;
 
 	if (mvc_create_table( &t, be->mvc, be->mvc->session->tr->tmp/* misuse tmp schema */, f->tname /*gettable name*/, tt_table, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
@@ -459,27 +468,27 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	tsep[1] = 0;
 	ssep[0] = r->quote;
 	ssep[1] = 0;
-    list *args = append( append( append( append( append( new_exp_list(sql->sa),
-        exp_atom_ptr(sql->sa, t)),
-        exp_atom_str(sql->sa, tsep, &tpe)),
-        exp_atom_str(sql->sa, "\n", &tpe)),
-        exp_atom_str(sql->sa, ssep, &tpe)),
-        exp_atom_str(sql->sa, "", &tpe));
+	list *args = append( append( append( append( append( new_exp_list(sql->sa),
+	exp_atom_ptr(sql->sa, t)),
+	exp_atom_str(sql->sa, tsep, &tpe)),
+	exp_atom_str(sql->sa, "\n", &tpe)),
+	exp_atom_str(sql->sa, ssep, &tpe)),
+	exp_atom_str(sql->sa, "", &tpe));
 
-    append( args, exp_atom_str(sql->sa, filename, &tpe));
-    sql_exp *import = exp_op(sql->sa,
-                    append(
-                        append(
-                            append(
-                                append(
-                                    append(
-                                        append(args, topn?topn:
-                                               exp_atom_lng(sql->sa, -1)),
-                                        exp_atom_lng(sql->sa, r->has_header?2:1)),
-                                    exp_atom_int(sql->sa, 0)),
-                                exp_atom_str(sql->sa, NULL, &tpe)),
-                            exp_atom_int(sql->sa, 0)),
-                        exp_atom_int(sql->sa, 0)), cf);
+	append( args, exp_atom_str(sql->sa, filename, &tpe));
+	sql_exp *import = exp_op(sql->sa,
+		append(
+			append(
+			    append(
+			        append(
+			            append(
+			                append(args, topn?topn:
+			                       exp_atom_lng(sql->sa, -1)),
+			                exp_atom_lng(sql->sa, r->has_header?2:1)),
+			            exp_atom_int(sql->sa, 0)),
+			        exp_atom_str(sql->sa, NULL, &tpe)),
+			    exp_atom_int(sql->sa, 0)),
+			exp_atom_int(sql->sa, 0)), cf);
 
 	return exp_bin(be, import, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 }
@@ -487,26 +496,26 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 static str
 CSVprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    (void)cntxt; (void)mb; (void)stk; (void)pci;
+	(void)cntxt; (void)mb; (void)stk; (void)pci;
 
 	fl_register("csv", &csv_relation, &csv_load);
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 static str
 CSVepilogue(void *ret)
 {
 	fl_unregister("csv");
-    (void)ret;
-    return MAL_SUCCEED;
+	(void)ret;
+	return MAL_SUCCEED;
 }
 
 #include "sql_scenario.h"
 #include "mel.h"
 
 static mel_func csv_init_funcs[] = {
- pattern("csv", "prelude", CSVprelude, false, "", noargs),
- command("csv", "epilogue", CSVepilogue, false, "", noargs),
+	pattern("csv", "prelude", CSVprelude, false, "", noargs),
+	command("csv", "epilogue", CSVepilogue, false, "", noargs),
 { .imp=NULL }
 };
 

@@ -1,0 +1,15 @@
+statement error 42000!Table expression without table name
+select * from ''
+
+statement error 42000!Table expression without table name
+select * from 'FileNotFound'
+
+statement error 42000!Table expression without table name
+select * from '/tmp/FileNotFound'
+
+statement error 42000!Table expression without table name
+select * from '/tmp/FileNotFound.csv'
+
+statement error 42000!Table expression without table name
+select * from '/tmp/FileNotFound.csv.gz'
+

@@ -142,22 +142,47 @@ has_groupby(sql_rel *rel)
 {
 	if (!rel)
 		return 0;
-	if (is_groupby(rel->op))
-		return 1;
-	if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op) || is_merge(rel->op))
-		return has_groupby(rel->l) || has_groupby(rel->r);
-	if (is_simple_project(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op))
-		return has_groupby(rel->l);
-	if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op))
-		return has_groupby(rel->r);
-	if (is_ddl(rel->op)) {
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view)
-			return has_groupby(rel->l);
-		if (rel->flag == ddl_list || rel->flag == ddl_exception)
+
+	switch (rel->op) {
+		case op_groupby:
+			return 1;
+		case op_join:
+		case op_left:
+		case op_right:
+		case op_full:
+
+		case op_semi:
+		case op_anti:
+
+		case op_union:
+		case op_inter:
+		case op_except:
+
+		case op_merge:
 			return has_groupby(rel->l) || has_groupby(rel->r);
+		case op_project:
+		case op_select:
+		case op_topn:
+		case op_sample:
+			return has_groupby(rel->l);
+		case op_insert:
+		case op_update:
+		case op_delete:
+		case op_truncate:
+			return has_groupby(rel->r);
+		case op_ddl:
+			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view)
+				return has_groupby(rel->l);
+			if (rel->flag == ddl_list || rel->flag == ddl_exception)
+				return has_groupby(rel->l) || has_groupby(rel->r);
+			return 0;
+		case op_table:
+			if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
+				return has_groupby(rel->l);
+			return 0;
+		case op_basetable:
+			return 0;
 	}
-	if (rel->op == op_table && (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION))
-		return has_groupby(rel->l);
 	return 0;
 }
 
@@ -167,28 +192,52 @@ rel_partition(mvc *sql, sql_rel *rel)
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if (is_basetable(rel->op)) {
+	switch (rel->op) {
+	case op_basetable:
+	case op_sample:
 		rel->flag = REL_PARTITION;
-	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_groupby(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
+		break;
+	case op_project:
+	case op_select:
+	case op_groupby:
+	case op_topn:
 		if (rel->l)
 			rel_partition(sql, rel->l);
-	} else if (is_semi(rel->op) || is_set(rel->op) || is_merge(rel->op)) {
+		break;
+	case op_semi:
+	case op_anti:
+
+	case op_union:
+	case op_inter:
+	case op_except:
+
+	case op_merge:
 		if (rel->l)
 			rel_partition(sql, rel->l);
 		if (rel->r)
 			rel_partition(sql, rel->r);
-	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
+		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+	case op_truncate:
 		if (rel->r && rel->card <= CARD_AGGR)
 			rel_partition(sql, rel->r);
-	} else if (is_join(rel->op)) {
+		break;
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
 		if (has_groupby(rel->l) || has_groupby(rel->r)) {
 			if (rel->l)
 				rel_partition(sql, rel->l);
 			if (rel->r)
 				rel_partition(sql, rel->r);
-		} else
+		} else {
 			_rel_partition(sql, rel);
-	} else if (is_ddl(rel->op)) {
+		}
+		break;
+	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				rel_partition(sql, rel->l);
@@ -198,11 +247,14 @@ rel_partition(mvc *sql, sql_rel *rel)
 			if (rel->r)
 				rel_partition(sql, rel->r);
 		}
-	} else if (rel->op == op_table) {
+		break;
+	case op_table:
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
 			rel_partition(sql, rel->l);
-	} else {
+		break;
+	default:
 		assert(0);
+		break;
 	}
 	return rel;
 }

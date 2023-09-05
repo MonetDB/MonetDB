@@ -1,0 +1,5 @@
+statement error 42000!SELECT: named placeholder ('banana') but named values list is missing
+SELECT :banana;      
+
+statement error 42000!Named placeholder ('pear') not used in the query.
+SELECT :banana : ( pear 'mango' );        
