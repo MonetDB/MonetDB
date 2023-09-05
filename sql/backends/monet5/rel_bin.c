@@ -3427,6 +3427,61 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 }
 
 static stmt *
+rel2bin_munion(backend *be, sql_rel *rel, list *refs)
+{
+	mvc *sql = be->mvc;
+	list *l, *rstmts;
+	node *n, *m;
+	stmt *rel_stmt = NULL, *sub;
+	int i, len;
+
+	/* convert to stmt and store the munion operands in rstmts list */
+	rstmts = sa_list(sql->sa);
+	for (n = ((list*)rel->l)->h; n; n = n->next) {
+		rel_stmt = subrel_bin(be, n->data, refs);
+		rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
+		if (!rel_stmt)
+			return NULL;
+		list_append(rstmts, rel_stmt);
+	}
+
+	/* construct relation */
+	l = sa_list(sql->sa);
+
+	/* for every op4 lval node */
+	len = list_length(((stmt*)rstmts->h->data)->op4.lval);
+	for (i = 0; i < len; i++) {
+		/* extract t and c name from the first stmt */
+		n = list_fetch(((stmt*)rstmts->h->data)->op4.lval, i);
+		stmt *s = n->data;
+		const char *rnme = table_name(sql->sa, s);
+		const char *nme = column_name(sql->sa, s);
+		/* create a const column also from the first stmt */
+		s = create_const_column(be, s);
+		/* for every other rstmt */
+		for (m = rstmts->h->next; m; m = m->next) {
+			n = list_fetch(((stmt*)m->data)->op4.lval, i);
+			s = stmt_append(be, s, n->data);
+			if (s == NULL)
+				return NULL;
+		}
+		// TODO: do we maybe need the alias after every append?
+		s = stmt_alias(be, s, rnme, nme);
+		if (s == NULL)
+			return NULL;
+		list_append(l, s);
+	}
+	sub = stmt_list(be, l);
+
+	sub = rel_rename(be, rel, sub);
+	if (need_distinct(rel))
+		sub = rel2bin_distinct(be, sub, NULL);
+	if (is_single(rel))
+		sub = rel2bin_single(be, sub);
+	return sub;
+}
+
+static stmt *
 rel2bin_union(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
@@ -6734,8 +6789,8 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		sql->type = Q_TABLE;
 		break;
 	case op_munion:
-		// TODO: rel2bin_munion()
-		assert(0);
+		s = rel2bin_munion(be, rel, refs);
+		sql->type = Q_TABLE;
 		break;
 	case op_except:
 		s = rel2bin_except(be, rel, refs);
