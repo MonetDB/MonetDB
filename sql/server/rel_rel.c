@@ -1293,6 +1293,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_union:
 	case op_except:
 	case op_inter:
+	case op_munion:
 		if (is_basetable(rel->op) && !rel->exps)
 			return rel_base_projection(sql, rel, intern);
 		if (rel->exps) {
@@ -1312,6 +1313,40 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 						exp_setrelname(sql->sa, e, label);
 					append(exps, e);
 				}
+			}
+			return exps;
+		}
+		/* differentiate for the munion set op (for now) */
+		if (is_munion(rel->op)) {
+			assert(rel->l);
+			/* get the exps from the first relation */
+			rels = rel->l;
+			if (rels->h)
+				r = rels->h->data;
+			if (r)
+				exps = _rel_projections(sql, r, tname, settname, intern, basecol);
+			/* for every other relation in the list */
+			// TODO: do we need the assertion here? for no-assert the loop is no-op
+			for (node *n = rels->h->next; n; n = n->next) {
+				rexps = _rel_projections(sql, n->data, tname, settname, intern, basecol);
+				assert(list_length(exps) == list_length(rexps));
+			}
+			/* it's a multi-union (expressions have to be the same in all the operands)
+			 * so we are ok only with the expressions of the first operand
+			 */
+			if (exps) {
+				int label = 0;
+				if (!settname)
+					label = ++sql->label;
+				for (node *en = exps->h; en; en = en->next) {
+					sql_exp *e = en->data;
+
+					e->card = rel->card;
+					if (!settname) /* noname use alias */
+						exp_setrelname(sql->sa, e, label);
+				}
+				if (!settname)
+					list_hash_clear(rel->l);
 			}
 			return exps;
 		}
@@ -1336,38 +1371,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				list_hash_clear(lexps);
 		}
 		return lexps;
-	case op_munion:
-		assert(rel->l);
-		/* get the exps from the first relation */
-		rels = rel->l;
-		if (rels->h)
-			r = rels->h->data;
-		if (r)
-			exps = _rel_projections(sql, r, tname, settname, intern, basecol);
-		/* for every other relation in the list */
-		// TODO: do we need the assertion here? for no-assert the loop is no-op
-		for (node *n = rels->h->next; n; n = n->next) {
-			rexps = _rel_projections(sql, n->data, tname, settname, intern, basecol);
-			assert(list_length(exps) == list_length(rexps));
-		}
-		/* it's a multi-union (expressions have to be the same in all the operands)
-		 * so we are ok only with the expressions of the first operand
-		 */
-		if (exps) {
-			int label = 0;
-			if (!settname)
-				label = ++sql->label;
-			for (node *en = exps->h; en; en = en->next) {
-				sql_exp *e = en->data;
 
-				e->card = rel->card;
-				if (!settname) /* noname use alias */
-					exp_setrelname(sql->sa, e, label);
-			}
-			if (!settname)
-				list_hash_clear(rel->l);
-		}
-		return exps;
 	case op_ddl:
 	case op_semi:
 	case op_anti:
