@@ -3453,6 +3453,8 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 	for (i = 0; i < len; i++) {
 		/* extract t and c name from the first stmt */
 		n = list_fetch(((stmt*)rstmts->h->data)->op4.lval, i);
+		if (n == NULL)
+			return NULL;
 		stmt *s = n->data;
 		const char *rnme = table_name(sql->sa, s);
 		const char *nme = column_name(sql->sa, s);
@@ -3461,6 +3463,8 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 		/* for every other rstmt */
 		for (m = rstmts->h->next; m; m = m->next) {
 			n = list_fetch(((stmt*)m->data)->op4.lval, i);
+			if (n == NULL)
+				return NULL;
 			s = stmt_append(be, s, n->data);
 			if (s == NULL)
 				return NULL;
