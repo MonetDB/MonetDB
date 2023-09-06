@@ -43,7 +43,7 @@
  * BATsemijoin
  *	equi-join, but the left output is sorted, and if there are
  *	multiple matches, only one is returned (i.e., the left output
- *	is also key)
+ *	is also key, making it a candidate list)
  * BATthetajoin
  *	theta-join: an extra operator must be provided encoded as an
  *	integer (macros JOIN_EQ, JOIN_NE, JOIN_LT, JOIN_LE, JOIN_GT,
@@ -3768,7 +3768,8 @@ bitmaskjoin(BAT *l, BAT *r,
  * semi: semi join: return one of potentially more than one matches;
  * only_misses: difference: list rows without match on the right;
  * not_in: for implementing NOT IN: if nil on right then there are no matches;
- * max_one: error if there is more than one match. */
+ * max_one: error if there is more than one match;
+ * min_one: error if there are no matches. */
 static gdk_return
 leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	 bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
@@ -4025,6 +4026,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
   doreturn:
 	BBPreclaim(lp);
 	BBPreclaim(rp);
+	if (rc == GDK_SUCCEED && (semi | only_misses))
+		*r1p = virtualize(*r1p);
 	return rc;
 }
 
@@ -4080,7 +4083,7 @@ BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool max_one,
 		     false, true, false, false, max_one, false,
 		     estimate, __func__,
 		     GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0) == GDK_SUCCEED)
-		return virtualize(bn);
+		return bn;
 	return NULL;
 }
 
@@ -4097,7 +4100,7 @@ BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool not_in,
 		     false, false, true, not_in, false, false,
 		     estimate, __func__,
 		     GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0) == GDK_SUCCEED)
-		return virtualize(bn);
+		return bn;
 	return NULL;
 }
 
