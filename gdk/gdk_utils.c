@@ -667,7 +667,9 @@ MT_init(void)
 					f = fopen(pth, "r");
 				}
 				if (f != NULL) {
-					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
 					success = true;
@@ -678,7 +680,9 @@ MT_init(void)
 				strcpy(q, "memory.high");
 				f = fopen(pth, "r");
 				if (f != NULL) {
-					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
 					success = true;
@@ -689,7 +693,9 @@ MT_init(void)
 				strcpy(q, "memory.low");
 				f = fopen(pth, "r");
 				if (f != NULL) {
-					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem > 0 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
 					success = true;
@@ -702,6 +708,7 @@ MT_init(void)
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
 					    && mem < (uint64_t) GDK_vm_maxsize) {
 						GDK_vm_maxsize = (size_t) mem;
 					}
@@ -735,6 +742,7 @@ MT_init(void)
 				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
 					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
@@ -756,6 +764,7 @@ MT_init(void)
 				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
 					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
@@ -778,6 +787,7 @@ MT_init(void)
 				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
 					    && mem < (uint64_t) GDK_vm_maxsize) {
 						GDK_vm_maxsize = (size_t) mem;
 					}
