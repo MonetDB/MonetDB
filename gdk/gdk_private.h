@@ -24,7 +24,7 @@
 #define PERSISTENTSTRIMP 1
 
 /* only check whether we exceed gdk_vm_maxsize when allocating heaps */
-/* #define SIZE_CHECK_IN_HEAPS_ONLY 1 */
+#define SIZE_CHECK_IN_HEAPS_ONLY 1
 
 #include "gdk_system_private.h"
 

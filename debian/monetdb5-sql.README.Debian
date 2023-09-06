@@ -2,7 +2,16 @@
 Usage
 =====
 
-There are multiple ways to use MonetDB5-sql, but this is the most Debianic.
+There are multiple ways to use MonetDB5-sql.
+
+The modern way is to do:
+
+ * Enable and start MonetDB in one go::
+
+   $ sudo systemctl enable --now monetdbd.service
+
+This is the old way using System V init scripts, incompatible with the
+above:
 
  * Set STARTUP to "yes" in /etc/default/monetdb5-sql
 
@@ -10,7 +19,10 @@ There are multiple ways to use MonetDB5-sql, but this is the most Debianic.
  
    $ sudo /etc/init.d/monetdb5-sql start
 
- * Add yourself to the "monetdb" group::
+In either case, do this:
+
+ * Add yourself to the "monetdb" group (after this, logout and back in
+   for this to take effect)::
 
    $ sudo addgroup `whoami` monetdb
 
