@@ -541,12 +541,11 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 	char *ext = strrchr(filename, '.'), *ep = ext;
 
 	if (ext) {
-		ext=ext+1;
+		ext = ext + 1;
 		ext = mkLower(sa_strdup(sql->sa, ext));
 	}
-
 	if (!ext)
-		return "extension missing";
+		return "Filename extension missing";
 
 	file_loader_t *fl = fl_find(ext);
 	if (!fl) {
@@ -563,7 +562,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 			fl = fl_find(ext);
 		}
 		if (!fl)
-			return sa_message(sql->ta, "extension '%s' missing", ext?ext:"");
+			return sa_message(sql->ta, "Filename extension '%s' missing", ext?ext:"");
 	}
 	str err = fl->add_types(sql, f, filename, res_exps, tname);
 	if (err)
