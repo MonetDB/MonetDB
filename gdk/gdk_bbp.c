@@ -1467,10 +1467,11 @@ movestrbats(void)
 }
 #endif
 
-static void
+static bool
 BBPtrim(bool aggressive)
 {
 	int n = 0;
+	bool changed = false;
 	unsigned flag = BBPUNLOADING | BBPSYNCING | BBPSAVING;
 	if (!aggressive)
 		flag |= BBPHOT;
@@ -1501,16 +1502,19 @@ BBPtrim(bool aggressive)
 			if (BBPfree(b) != GDK_SUCCEED)
 				GDKerror("unload failed for bat %d", bid);
 			n++;
+			changed = true;
 		}
 		BBPtmunlock();
 	}
 	TRC_DEBUG(BAT_, "unloaded %d bats%s\n", n, aggressive ? " (also hot)" : "");
+	return changed;
 }
 
 static void
 BBPmanager(void *dummy)
 {
 	(void) dummy;
+	bool changed = true;
 
 	for (;;) {
 		int n = 0;
@@ -1524,12 +1528,12 @@ BBPmanager(void *dummy)
 		}
 		TRC_DEBUG(BAT_, "cleared HOT bit from %d bats\n", n);
 		size_t cur = GDKvm_cursize();
-		for (int i = 0, n = cur > GDK_vm_maxsize / 2 ? 1 : cur > GDK_vm_maxsize / 4 ? 10 : 100; i < n; i++) {
+		for (int i = 0, n = changed && cur > GDK_vm_maxsize / 2 ? 1 : cur > GDK_vm_maxsize / 4 ? 10 : 100; i < n; i++) {
 			MT_sleep_ms(100);
 			if (GDKexiting())
 				return;
 		}
-		BBPtrim(false);
+		changed = BBPtrim(false);
 		BBPcallbacks();
 		if (GDKexiting())
 			return;
