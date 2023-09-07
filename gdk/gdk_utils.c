@@ -1669,7 +1669,7 @@ GDKvm_cursize(void)
 #ifndef NDEBUG
 #define heapdec(_memdelta)							\
 	do {								\
-		ATOMIC_BASE_TYPE old = ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta); \
+		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta); \
 		assert(old >= (ATOMIC_BASE_TYPE) _memdelta);		\
 	} while (0)
 #else
