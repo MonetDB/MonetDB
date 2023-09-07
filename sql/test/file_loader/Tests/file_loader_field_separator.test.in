@@ -1,0 +1,151 @@
+# tests to load cars (4 columns, 4 rows) data files with different field separators: comma , (.csv), pipe | (.psv), tab (.tsv), semicolon ; (.csv)
+
+## next query incorrectly returns error: received 1 columns, expected 4 columns
+query ITTI
+select * from '$QTSTSRCDIR/cars.csv'
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
+## next query incorrectly returns all columns as 1 column data. Should error: received 4 columns, expected 1 columns
+query T
+select * from '$QTSTSRCDIR/cars.csv'
+----
+2000,"Ford","Focus",1994
+2001,"Honda",,
+2004,"Tesla","S3XY",2019
+2014,"Lightyear","0",2022
+
+
+## next query incorrectly returns error: received 1 columns, expected 4 columns
+query ITTI
+select * from file_loader(r'$QTSTSRCDIR/cars.csv')
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
+statement error 42000!syntax error, unexpected YEAR in: "select * from file_loader(...
+select * from file_loader(R'$QTSTSRCDIR/cars.csv') file(id, brand, model, year)
+----
+
+## next query incorrectly returns error: 42000!SELECT: The number of aliases don't match the number of columns (4 != 1)
+query ITTI
+select * from file_loader(r'$QTSTSRCDIR/cars.csv') as cars(id, brand, model, "year")
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
+## next query incorrectly returns all columns as 1 column data. Should error: received 4 columns, expected 1 columns
+query T
+select * from file_loader('$QTSTSRCDIR/cars.csv') cars(cols)
+----
+2000,"Ford","Focus",1994
+2001,"Honda",,
+2004,"Tesla","S3XY",2019
+2014,"Lightyear","0",2022
+
+## next query incorrectly returns error: 42000!SELECT: file_loader function failed 'Filename extension 'psv' missing'
+query ITTI
+select * from file_loader(r'$QTSTSRCDIR/cars.psv') as cars(id, brand, model, "year")
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
+## next query incorrectly returns error: 42000!SELECT: file_loader function failed 'Filename extension 'tsv' missing'
+query ITTI
+select * from file_loader(r'$QTSTSRCDIR/cars.tsv') as cars(id, brand, model, "year")
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
+## next query incorrectly returns error: 42000!SELECT: The number of aliases don't match the number of columns (4 != 1)
+query ITTI
+select * from file_loader(r'$QTSTSRCDIR/cars_semicolon.csv') as cars(id, brand, model, "year")
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
