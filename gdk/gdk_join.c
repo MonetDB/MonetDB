@@ -327,7 +327,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	    (*ATOMcompare(li.type))(v, ATOMnilptr(li.type)) == 0) {
 		/* NIL doesn't match anything */
 		bat_iterator_end(&li);
-		return nomatch(r1p, r2p, l, r, lci, false, false,
+		return nomatch(r1p, r2p, l, r, lci, nil_on_miss, false,
 			       reason, t0);
 	}
 
@@ -344,7 +344,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			return GDK_FAIL;
 		}
 		if (!nil_on_miss)
-			return nomatch(r1p, r2p, l, r, lci, false, false,
+			return nomatch(r1p, r2p, l, r, lci, nil_on_miss, false,
 				       reason, t0);
 		/* special case: return nil on RHS */
 		bncount = 1;
