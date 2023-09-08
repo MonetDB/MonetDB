@@ -2925,15 +2925,18 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		 *		 jr==bit_nil if left == NULL else true/false?
 		 * else simple mark
 		 *		jr = isnull(jr) bit_nil else alse
+		 *
+		 *	ls == NULL -> false
+		 *		m==bit_nil iff left == NULL else true/false
 		 */
 		if (ls) {
 			stmt *nls = stmt_project(be, jl, ls);
-			jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", nls), stmt_bool(be, 0),
-					sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, bit_nil), stmt_bool(be, 1), NULL),
+			jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", nls), stmt_bool(be, bit_nil),
+					sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, 0), stmt_bool(be, 1), NULL),
 					NULL);
 		} else {
-			/* nil == empty, 0 - no match (ie nil), 1 match */
-			jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, bit_nil), stmt_bool(be, 1), NULL);
+			/* 0 == empty (no matches possible), nil - no match (but has nil), 1 match */
+			jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, 0), stmt_bool(be, 1), NULL);
 		}
 
 		/* continue with non equi-joins */

@@ -390,7 +390,7 @@ static str
 ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, const bit *Any)
 {
 	BAT *g = BATdescriptor(*gid); /* oid */
-	BAT *m = BATdescriptor(*mid); /* bit, true: match, nil: empty set, false: nil on left */
+	BAT *m = BATdescriptor(*mid); /* bit, true: match, false: empty set, nil: nil on left */
 	BAT *p = BATdescriptor(*pid); /* bit */
 	BAT *res1 = NULL, *res2 = NULL;
 	bit any = *Any; /* any or normal comparision semantics */
@@ -422,9 +422,9 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 		oid c = g->hseqbase;
 		for (BUN n = 0; n < nr; n++, c++) {
 			ri1[q] = c;
-			if (mi[n] == bit_nil) /* empty */
+			if (mi[n] == FALSE) /* empty */
 				ri2[q] = FALSE;
-			else if (pi[n] == bit_nil || mi[n] == false)
+			else if (pi[n] == bit_nil || mi[n] == bit_nil)
 				ri2[q] = bit_nil;
 			else
 				ri2[q] = (mi[n] == TRUE && pi[n] == TRUE)?TRUE:FALSE;
@@ -447,7 +447,7 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 			}
 			if (m == TRUE)
 				continue;
-			if ((mi[n] == FALSE && pi[n] == TRUE) /* ie has nil */ || (any && mi[n] == TRUE && pi[n] == bit_nil))
+			if ((mi[n] == bit_nil && pi[n] == TRUE) /* ie has nil */ || (any && mi[n] == TRUE && pi[n] == bit_nil))
 				has_nil = true;
 			else if (mi[n] == TRUE && pi[n] == TRUE)
 				m = TRUE;
@@ -483,9 +483,8 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 static str
 ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, const bit *Any)
 {
-	/* for each l-cand in lid, return atleast one, if rid == nil, return nil else pid  */
 	BAT *g = BATdescriptor(*gid); /* oid */
-	BAT *m = BATdescriptor(*mid); /* bit, true: match, nil: empty set, false: nil on left */
+	BAT *m = BATdescriptor(*mid); /* bit, true: match, false: empty set, nil: nil on left */
 	BAT *p = BATdescriptor(*pid); /* bit */
 	BAT *res1 = NULL, *res2 = NULL;
 	bit any = *Any; /* any or normal comparision semantics */
@@ -517,7 +516,7 @@ ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid,
 		oid c = g->hseqbase;
 		for (BUN n = 0; n < nr; n++, c++) {
 			ri1[q] = c;
-			ri2[q] = (mi[n]==bit_nil || pi[n] == FALSE || (!any && pi[n] == bit_nil))?bit_nil:(pi[n] == TRUE)?TRUE:FALSE;
+			ri2[q] = (any && (mi[n] == bit_nil || pi[n] == bit_nil))?bit_nil:(mi[n] == TRUE && pi[n] == TRUE)?TRUE:FALSE;
 			q++;
 		}
 	} else {
@@ -529,7 +528,7 @@ ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid,
 			if (c && cur != gi[n]) {
 				if (!used) {
 					ri1[q] = c-1;
-					ri2[q] = bit_nil;
+					ri2[q] = false;
 					q++;
 				}
 				used = false;
@@ -540,21 +539,21 @@ ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid,
 				ri2[q] = TRUE;
 				used = true;
 				q++;
-			} else if (mi[n] == bit_nil) { /* empty */
-				ri1[q] = c;
-				ri2[q] = bit_nil;
-				used = true;
-				q++;
-			} else if (any && (mi[n] == FALSE /* ie has nil */ || pi[n] == bit_nil)) {
+			} else if (mi[n] == FALSE) { /* empty */
 				ri1[q] = c;
 				ri2[q] = FALSE;
+				used = true;
+				q++;
+			} else if (any && (mi[n] == bit_nil /* ie has nil */ || pi[n] == bit_nil)) {
+				ri1[q] = c;
+				ri2[q] = bit_nil;
 				used = true;
 				q++;
 			}
 		}
 		if (nr && !used) {
 			ri1[q] = c-1;
-			ri2[q] = bit_nil;
+			ri2[q] = FALSE;
 			q++;
 		}
 	}
