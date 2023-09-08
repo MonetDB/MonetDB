@@ -301,11 +301,13 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 static gdk_return
 selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	   struct canditer *lci, struct canditer *rci,
-	   bool nil_matches, lng t0, bool swapped, const char *reason)
+	   bool nil_matches, bool semi, bool max_one, bool min_one,
+	   lng t0, bool swapped, const char *reason)
 {
 	BATiter li = bat_iterator(l);
 	const void *v;
 	BAT *bn = NULL;
+	BUN bncount;
 
 	assert(lci->ncand > 0);
 	assert(lci->ncand == 1 || (li.sorted && li.revsorted));
@@ -334,32 +336,46 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (bn == NULL) {
 		return GDK_FAIL;
 	}
-	if (BATcount(bn) == 0) {
+	bncount = BATcount(bn);
+	if (bncount == 0) {
 		BBPunfix(bn->batCacheid);
+		if (min_one) {
+			GDKerror("not enough matches");
+			return GDK_FAIL;
+		}
 		return nomatch(r1p, r2p, l, r, lci, false, false,
 			       reason, t0);
 	}
-	BAT *r1 = COLnew(0, TYPE_oid, lci->ncand * BATcount(bn), TRANSIENT);
+	if (bncount > 1) {
+		if (semi)
+			bncount = 1;
+		if (max_one) {
+			BBPunfix(bn->batCacheid);
+			GDKerror("more than one match");
+			return GDK_FAIL;
+		}
+	}
+	BAT *r1 = COLnew(0, TYPE_oid, lci->ncand * bncount, TRANSIENT);
 	if (r1 == NULL) {
 		BBPunfix(bn->batCacheid);
 		return GDK_FAIL;
 	}
 	r1->tsorted = true;
 	r1->trevsorted = lci->ncand == 1;
-	r1->tseqbase = BATcount(bn) == 1 && lci->tpe == cand_dense ? o : oid_nil;
-	r1->tkey = BATcount(bn) == 1;
+	r1->tseqbase = bncount == 1 && lci->tpe == cand_dense ? o : oid_nil;
+	r1->tkey = bncount == 1;
 	r1->tnil = false;
 	r1->tnonil = true;
 	BAT *r2 = NULL;
 	if (r2p) {
-		r2 = COLnew(0, TYPE_oid, lci->ncand * BATcount(bn), TRANSIENT);
+		r2 = COLnew(0, TYPE_oid, lci->ncand * bncount, TRANSIENT);
 		if (r2 == NULL) {
 			BBPunfix(bn->batCacheid);
 			BBPreclaim(r1);
 			return GDK_FAIL;
 		}
-		r2->tsorted = lci->ncand == 1 || BATcount(bn) == 1;
-		r2->trevsorted = BATcount(bn) == 1;
+		r2->tsorted = lci->ncand == 1 || bncount == 1;
+		r2->trevsorted = bncount == 1;
 		r2->tseqbase = lci->ncand == 1 && BATtdense(bn) ? bn->tseqbase : oid_nil;
 		r2->tkey = lci->ncand == 1;
 		r2->tnil = false;
@@ -369,7 +385,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		oid *o1p = (oid *) Tloc(r1, 0);
 		oid *o2p = r2 ? (oid *) Tloc(r2, 0) : NULL;
 		oid bno = bn->tseqbase;
-		BUN p, q = BATcount(bn);
+		BUN p, q = bncount;
 
 		do {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
@@ -388,7 +404,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		oid *o1p = (oid *) Tloc(r1, 0);
 		oid *o2p = r2 ? (oid *) Tloc(r2, 0) : NULL;
 		const oid *bnp = (const oid *) Tloc(bn, 0);
-		BUN p, q = BATcount(bn);
+		BUN p, q = bncount;
 
 		do {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
@@ -404,10 +420,10 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			o = canditer_next(lci);
 		} while (!is_oid_nil(o));
 	}
-	BATsetcount(r1, lci->ncand * BATcount(bn));
+	BATsetcount(r1, lci->ncand * bncount);
 	*r1p = r1;
 	if (r2p) {
-		BATsetcount(r2, lci->ncand * BATcount(bn));
+		BATsetcount(r2, lci->ncand * bncount);
 		*r2p = r2;
 	}
 	BBPunfix(bn->batCacheid);
@@ -3865,12 +3881,13 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		goto doreturn;
 	}
 
-	if (!nil_on_miss && !semi && !max_one && !min_one && !only_misses && !not_in &&
+	if (!nil_on_miss && !only_misses && !not_in &&
 	    (lci.ncand == 1 || (BATordered(l) && BATordered_rev(l)) ||
 	     (l->ttype == TYPE_void && is_oid_nil(l->tseqbase)))) {
 		/* single value to join, use select */
 		rc = selectjoin(r1p, r2p, l, r, &lci, &rci,
-				nil_matches, t0, false, func);
+				nil_matches, semi, max_one, min_one,
+				t0, false, func);
 		goto doreturn;
 	} else if (BATtdense(r) && rci.tpe == cand_dense) {
 		/* use special implementation for dense right-hand side */
@@ -4239,12 +4256,14 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	if (lci.ncand == 1 || (BATordered(l) && BATordered_rev(l)) || (l->ttype == TYPE_void && is_oid_nil(l->tseqbase))) {
 		/* single value to join, use select */
 		rc = selectjoin(r1p, r2p, l, r, &lci, &rci,
-				nil_matches, t0, false, __func__);
+				nil_matches, false, false, false,
+				t0, false, __func__);
 		goto doreturn;
 	} else if (rci.ncand == 1 || (BATordered(r) && BATordered_rev(r)) || (r->ttype == TYPE_void && is_oid_nil(r->tseqbase))) {
 		/* single value to join, use select */
 		rc = selectjoin(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
-				nil_matches, t0, true, __func__);
+				nil_matches, false, false, false,
+				t0, true, __func__);
 		if (rc == GDK_SUCCEED && r2p == NULL)
 			BBPunfix(r2->batCacheid);
 		goto doreturn;
