@@ -1518,6 +1518,7 @@ BBPmanager(void *dummy)
 
 	for (;;) {
 		int n = 0;
+		MT_thread_setworking("clearing HOT bits");
 		for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
 			MT_lock_set(&GDKswapLock(bid));
 			if (BBP_refs(bid) == 0 && BBP_lrefs(bid) != 0) {
@@ -1528,12 +1529,15 @@ BBPmanager(void *dummy)
 		}
 		TRC_DEBUG(BAT_, "cleared HOT bit from %d bats\n", n);
 		size_t cur = GDKvm_cursize();
+		MT_thread_setworking("sleeping");
 		for (int i = 0, n = changed && cur > GDK_vm_maxsize / 2 ? 1 : cur > GDK_vm_maxsize / 4 ? 10 : 100; i < n; i++) {
 			MT_sleep_ms(100);
 			if (GDKexiting())
 				return;
 		}
+		MT_thread_setworking("BBPtrim");
 		changed = BBPtrim(false);
+		MT_thread_setworking("BBPcallbacks");
 		BBPcallbacks();
 		if (GDKexiting())
 			return;
