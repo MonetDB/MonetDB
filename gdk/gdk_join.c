@@ -3902,7 +3902,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		goto doreturn;
 	}
 
-	if (!nil_on_miss && !only_misses && !not_in &&
+	if (!only_misses && !not_in &&
 	    (lci.ncand == 1 || (BATordered(l) && BATordered_rev(l)) ||
 	     (l->ttype == TYPE_void && is_oid_nil(l->tseqbase)))) {
 		/* single value to join, use select */
