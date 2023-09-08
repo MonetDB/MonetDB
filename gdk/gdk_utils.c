@@ -689,32 +689,35 @@ MT_init(void)
 					/* assume "max" if not a number */
 					fclose(f);
 				}
-				/* soft low limit */
-				strcpy(q, "memory.low");
-				f = fopen(pth, "r");
-				if (f != NULL) {
-					if (fscanf(f, "%" SCNu64, &mem) == 1
-					    && mem > 0
-					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
-						_MT_npages = (size_t) (mem / _MT_pagesize);
-					}
-					success = true;
-					/* assume "max" if not a number */
-					fclose(f);
-				}
-				/* limit of memory+swap usage
-				 * we use this as maximum virtual memory size */
+				/* limit of swap usage, hard limit
+				 * we use this, together with
+				 * memory.high, as maximum virtual
+				 * memory size */
 				strcpy(q, "memory.swap.max");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
 					    && mem > 0
-					    && mem < (uint64_t) GDK_vm_maxsize) {
+					    && (mem += _MT_npages * _MT_pagesize) < (uint64_t) GDK_vm_maxsize) {
 						GDK_vm_maxsize = (size_t) mem;
 					}
 					success = true;
 					fclose(f);
 				}
+#if 0 /* not sure about using this one */
+				/* limit of swap usage, soft limit */
+				strcpy(q, "memory.swap.high");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
+					    && (mem += _MT_npages * _MT_pagesize) < (uint64_t) GDK_vm_maxsize) {
+						GDK_vm_maxsize = (size_t) mem;
+					}
+					success = true;
+					fclose(f);
+				}
+#endif
 			} else {
 				/* cgroup v1 entry */
 				p = strchr(buf, ':');
