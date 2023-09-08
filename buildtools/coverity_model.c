@@ -126,7 +126,7 @@ GDKmmap(const char *path, int mode, size_t size)
 }
 
 gdk_return
-GDKmunmap(void *p, size_t size)
+GDKmunmap(void *p, int mode, size_t size)
 {
 	int failed;
 	__coverity_free__(p);
@@ -139,7 +139,7 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *p = GDKmmap(path, mode, new_size);
 	if (p) {
-		(void) GDKmunmap(old_address, old_size);
+		(void) GDKmunmap(old_address, mode, old_size);
 	}
 	return p;
 }

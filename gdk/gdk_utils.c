@@ -452,7 +452,7 @@ size_t GDK_mmap_pagesize = MMAP_PAGESIZE; /* mmap granularity */
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
-#define SEG_SIZE(x,y)	((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
+#define SEG_SIZE(x)	((ssize_t) (((x) + _MT_pagesize - 1) & ~(_MT_pagesize - 1)))
 
 /* This block is to provide atomic addition and subtraction to select
  * variables.  We use intrinsic functions (recognized and inlined by
@@ -689,32 +689,35 @@ MT_init(void)
 					/* assume "max" if not a number */
 					fclose(f);
 				}
-				/* soft low limit */
-				strcpy(q, "memory.low");
-				f = fopen(pth, "r");
-				if (f != NULL) {
-					if (fscanf(f, "%" SCNu64, &mem) == 1
-					    && mem > 0
-					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
-						_MT_npages = (size_t) (mem / _MT_pagesize);
-					}
-					success = true;
-					/* assume "max" if not a number */
-					fclose(f);
-				}
-				/* limit of memory+swap usage
-				 * we use this as maximum virtual memory size */
+				/* limit of swap usage, hard limit
+				 * we use this, together with
+				 * memory.high, as maximum virtual
+				 * memory size */
 				strcpy(q, "memory.swap.max");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
 					    && mem > 0
-					    && mem < (uint64_t) GDK_vm_maxsize) {
+					    && (mem += _MT_npages * _MT_pagesize) < (uint64_t) GDK_vm_maxsize) {
 						GDK_vm_maxsize = (size_t) mem;
 					}
 					success = true;
 					fclose(f);
 				}
+#if 0 /* not sure about using this one */
+				/* limit of swap usage, soft limit */
+				strcpy(q, "memory.swap.high");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
+					    && (mem += _MT_npages * _MT_pagesize) < (uint64_t) GDK_vm_maxsize) {
+						GDK_vm_maxsize = (size_t) mem;
+					}
+					success = true;
+					fclose(f);
+				}
+#endif
 			} else {
 				/* cgroup v1 entry */
 				p = strchr(buf, ':');
@@ -1666,13 +1669,30 @@ GDKvm_cursize(void)
 
 #define heapinc(_memdelta)						\
 	ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta)
+#ifndef NDEBUG
+#define heapdec(_memdelta)							\
+	do {								\
+		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta); \
+		assert(old >= (ATOMIC_BASE_TYPE) _memdelta);		\
+	} while (0)
+#else
 #define heapdec(_memdelta)						\
 	ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta)
+#endif
 
 #define meminc(vmdelta)							\
-	ATOMIC_ADD(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
+	ATOMIC_ADD(&GDK_vm_cursize, SEG_SIZE(vmdelta))
+#ifndef NDEBUG
 #define memdec(vmdelta)							\
-	ATOMIC_SUB(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
+	do {								\
+		ssize_t diff = SEG_SIZE(vmdelta);			\
+		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_vm_cursize, diff); \
+		assert(old >= (ATOMIC_BASE_TYPE) diff);			\
+	} while (0)
+#else
+#define memdec(vmdelta)							\
+	ATOMIC_SUB(&GDK_vm_cursize, SEG_SIZE(vmdelta))
+#endif
 
 /* Memory allocation
  *
@@ -1954,22 +1974,29 @@ GDKmmap(const char *path, int mode, size_t len)
 	}
 #endif
 	ret = MT_mmap(path, mode, len);
-	if (ret != NULL)
-		meminc(len);
-	else
+	if (ret != NULL) {
+		if (mode & MMAP_COPY)
+			heapinc(len);
+		else
+			meminc(len);
+	} else
 		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
 	return ret;
 }
 
 #undef GDKmunmap
 gdk_return
-GDKmunmap(void *addr, size_t size)
+GDKmunmap(void *addr, int mode, size_t size)
 {
 	int ret;
 
 	ret = MT_munmap(addr, size);
-	if (ret == 0)
-		memdec(size);
+	if (ret == 0) {
+		if (mode & MMAP_COPY)
+			heapdec(size);
+		else
+			memdec(size);
+	}
 	return ret == 0 ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -1989,8 +2016,13 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #endif
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret != NULL) {
-		memdec(old_size);
-		meminc(*new_size);
+		if (mode & MMAP_COPY) {
+			heapdec(old_size);
+			heapinc(*new_size);
+		} else {
+			memdec(old_size);
+			meminc(*new_size);
+		}
 	} else {
 		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
 	}

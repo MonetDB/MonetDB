@@ -101,23 +101,23 @@ INSERT INTO mct20 VALUES (INTERVAL '1' DAY, DATE '2010-01-01')
 statement error GDK reported error: BATsubcross: more than one match
 select 1 from mct20 where ((select true) union all (select true))
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 select 1 from mct20 inner join (select x.x from (values (true)) x(x)) as nort0(norc0)
 on true and greatest(((select nort0.norc0) union all (select true)), true)
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 select 1 from mct20 inner join (select x.x from (values (true)) x(x)) as nort0(norc0)
 on ((select nort0.norc0) union all (select true))
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 select 1 from mct20 inner join (select x.x from (values (true)) x(x)) as nort0(norc0)
 on true where ((select nort0.norc0) union all (select true))
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 select rank() over (order by ((select mct20.c0) union all (select interval '1' day))) from mct20
 ----
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 select sum(((select mct20.c0) union all (select interval '1' day))) over () from mct20
 ----
 
@@ -125,7 +125,7 @@ statement error GDK reported error: BATsubcross: more than one match
 select sum(((select interval '2' day) union all (select interval '1' day))) over () from mct20
 ----
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 select max(((select mct20.c0) union all (select interval '1' day))) over () from mct20
 ----
 
@@ -519,7 +519,7 @@ statement ok rowcount 4
 INSERT INTO rt3 VALUES (DATE '4153-10-28'),(DATE '2471-08-17'),(DATE '2022-02-08'),(DATE '1970-01-20')
 
 query T nosort
-SELECT (SELECT DATE '2011-10-01' FROM rt3 y RIGHT OUTER JOIN (VALUES (DATE '2010-10-01'), (z.c0)) AS x(x) ON 
+SELECT (SELECT DATE '2011-10-01' FROM rt3 y RIGHT OUTER JOIN (VALUES (DATE '2010-10-01'), (z.c0)) AS x(x) ON
 length('a') > 0 WHERE rt3.c0 = DATE '2012-10-01') FROM rt3, rt3 z
 ----
 NULL
