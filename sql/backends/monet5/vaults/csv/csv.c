@@ -94,7 +94,7 @@ detect_delimiter(const char *buf, char q, int *nr_fields)
 					break;
 			int nr = 1;
 			while( (s = next_delim(s, e, d, q)) != NULL && s<e ) {
-				if (s+1 < e)
+				if (s+1 <= e)
 					nr++;
 				s++;
 			}
@@ -120,7 +120,8 @@ detect_delimiter(const char *buf, char q, int *nr_fields)
 }
 
 typedef enum csv {
-	CSV_BOOLEAN = 0,
+	CSV_NULL = 0,
+	CSV_BOOLEAN,
 	CSV_BIGINT,
 	CSV_DECIMAL,
 	CSV_DOUBLE,
@@ -140,6 +141,8 @@ static char*
 csv_type_map(csv_type ct)
 {
 	switch(ct.type) {
+	case CSV_NULL:
+		return  "null";
 	case CSV_BOOLEAN:
 		return  "boolean";
 	case CSV_BIGINT:
@@ -158,6 +161,15 @@ csv_type_map(csv_type ct)
 		return  "varchar";
 	}
 	return  "varchar";
+}
+
+static bool
+detect_null(const char *s, const char *e)
+{
+	if (e == s)
+		return true;
+	/* TODO parse NULL value(s) */
+	return false;
 }
 
 static bool
@@ -254,12 +266,14 @@ detect_types_row(const char *s, const char *e, char delim, char quote, int nr_fi
 	if (!types)
 		return NULL;
 	for(int i = 0; i< nr_fields; i++) {
-		const char *n = next_delim(s, e, delim, quote);
+		const char *n = (i<nr_fields-1)?next_delim(s, e, delim, quote):e;
 		int scale = 0;
 
 		types[i].type = CSV_STRING;
 		if (n) {
-			if (detect_bool(s,n))
+			if (detect_null(s,n))
+				types[i].type = CSV_NULL;
+			else if (detect_bool(s,n))
 				types[i].type = CSV_BOOLEAN;
 			else if (detect_bigint(s, n))
 				types[i].type = CSV_BIGINT;
@@ -499,6 +513,8 @@ CSVprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt; (void)mb; (void)stk; (void)pci;
 
 	fl_register("csv", &csv_relation, &csv_load);
+	fl_register("tsv", &csv_relation, &csv_load);
+	fl_register("psv", &csv_relation, &csv_load);
 	return MAL_SUCCEED;
 }
 
@@ -506,6 +522,8 @@ static str
 CSVepilogue(void *ret)
 {
 	fl_unregister("csv");
+	fl_unregister("tsv");
+	fl_unregister("psv");
 	(void)ret;
 	return MAL_SUCCEED;
 }
