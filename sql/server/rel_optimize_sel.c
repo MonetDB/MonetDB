@@ -2941,7 +2941,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 	int fk_left = 1;
 
 	/* check for foreign key join */
-	if (list_length(r->exps) != 1)
+	if (list_length(r->exps) != 1 || !list_empty(r->attr))
 		return r;
 	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)) || je->flag != cmp_equal)
 		return r;
@@ -2972,10 +2972,19 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 	(*changes)++;
 	/* if the foreign key column doesn't have NULL values, then return it */
 	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op))) {
+		/* if ->attr, introduce group by on index */
 		if (fk_left) {
 			nr = rel_dup(r->l);
 		} else {
 			nr = rel_dup(r->r);
+		}
+		if (!list_empty(r->attr)) {
+			nr = rel_groupby(sql, nr, NULL);
+			if (nr) {
+				printf("introduced groupby  \n");
+				nr->r = append(sa_list(sql->sa), le);
+				nr->exps = r->attr;
+			}
 		}
 		return nr;
 	}
@@ -3595,7 +3604,6 @@ rel_use_index(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_select_leftgroup_2_semi(visitor *v, sql_rel *rel)
 {
-	(void)v;
 	if (rel_is_ref(rel) || !is_select(rel->op) || list_empty(rel->exps))
 		return rel;
 	sql_rel *l = rel->l;

@@ -386,7 +386,14 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 			exp_mark_used(rel, e, -1);
 		}
 	}
+	if (rel->attr) {
+		for (node *n = rel->attr->h; n; n = n->next) {
+			sql_exp *e = n->data;
 
+			if (e->used)
+				nr += exp_mark_used(subrel, e, -2);
+		}
+	}
 	if (rel->exps) {
 		node *n;
 		int len = list_length(rel->exps), i;
@@ -711,6 +718,31 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 		}
 		return rel;
 
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+		if (list_length(rel->attr) > 1) {
+			for(node *n=rel->attr->h; n && !needed; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (!e->used)
+					needed = 1;
+			}
+			if (!needed)
+				return rel;
+
+			for(node *n=rel->attr->h; n;) {
+				node *next = n->next;
+				sql_exp *e = n->data;
+
+				if (!e->used)
+					list_remove_node(rel->attr, NULL, n);
+				n = next;
+			}
+		}
+		return rel;
+
 	case op_union:
 	case op_inter:
 	case op_except:
@@ -723,10 +755,6 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 
 	case op_select:
 
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
 	case op_semi:
 	case op_anti:
 		return rel;
@@ -884,6 +912,8 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 			rel->l = rel_dce_down(sql, rel->l, 0);
 		if (rel->r)
 			rel->r = rel_dce_down(sql, rel->r, 0);
+		if (!skip_proj && !list_empty(rel->attr))
+			rel_dce_sub(sql, rel);
 		return rel;
 
 	case op_ddl:

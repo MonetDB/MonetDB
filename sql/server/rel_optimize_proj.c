@@ -2879,6 +2879,48 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
+rel_groupjoin(visitor *v, sql_rel *rel)
+{
+	if (!rel || rel_is_ref(rel) || !is_groupby(rel->op) || list_empty(rel->r))
+		return rel;
+
+	sql_rel *j = rel->l;
+	if (!j || rel_is_ref(j) || !is_left(j->op) || !list_empty(rel->attr))
+		return rel;
+	/* check group by exps == equi join exps */
+	list *gbes = rel->r;
+	if (list_length(gbes) != list_length(j->exps))
+		return rel;
+	int nr = 0;
+	for(node *n = gbes->h; n; n = n->next) {
+		sql_exp *gbe = n->data;
+		for(node *m = j->exps->h; m; m = m->next) {
+			sql_exp *je = m->data;
+			if (je->type != e_cmp || je->flag != cmp_equal)
+				return rel;
+			/* check if its a join exp (ie not a selection) */
+			if (!( (!rel_has_exp(j->l, je->l, false) && !rel_has_exp(j->r, je->r, false)) ||
+				   (!rel_has_exp(j->l, je->r, false) && !rel_has_exp(j->r, je->l, false))))
+				return rel;
+			if (exp_match(je->l, gbe)) {
+				nr++;
+			} else if (exp_match(je->r, gbe)) {
+				nr++;
+			}
+		}
+	}
+	if (nr == list_length(gbes)) {
+		printf("#group by converted\n");
+		j = rel_dup(j);
+		j->attr = rel->exps;
+		v->changes++;
+		rel_destroy(rel);
+		return j;
+	}
+	return rel;
+}
+
+static sql_rel *
 rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
 	rel = rel_project_cse(v, rel);
@@ -2902,6 +2944,8 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	if (v->value_based_opt) {
 		rel = rel_simplify_count(v, rel);
 		rel = rel_basecount(v, rel);
+
+		rel = rel_groupjoin(v, rel);
 	}
 	return rel;
 }
