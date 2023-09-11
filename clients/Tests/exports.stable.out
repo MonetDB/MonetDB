@@ -159,6 +159,7 @@ BAT *BATintersectcand(BAT *a, BAT *b);
 gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate) __attribute__((__warn_unused_result__));
 gdk_return BATkey(BAT *b, bool onoff);
 gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate) __attribute__((__warn_unused_result__));
+gdk_return BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate) __attribute__((__warn_unused_result__));
 BAT *BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected);
 void *BATmax(BAT *b, void *aggr);
 void *BATmax_skipnil(BAT *b, void *aggr, bit skipnil);

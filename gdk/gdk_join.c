@@ -110,11 +110,11 @@ joininitresults(BAT **r1p, BAT **r2p, BAT **r3p, BUN lcnt, BUN rcnt,
 		bool lkey, bool rkey, bool semi, bool nil_on_miss,
 		bool only_misses, bool min_one, BUN estimate)
 {
-	BAT *r1, *r2, *r3;
+	BAT *r1 = NULL, *r2 = NULL, *r3 = NULL;
 	BUN maxsize, size;
 
 	/* if nil_on_miss is set, we really need a right output */
-	assert(!nil_on_miss || r2p != NULL);
+	assert(!nil_on_miss || r2p != NULL || r3p != NULL);
 
 	lkey |= lcnt <= 1;
 	rkey |= rcnt <= 1;
@@ -2176,6 +2176,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	while (lci->next < lci->ncand) {
 		GDK_CHECK_TIMEOUT(timeoffset, counter,
 				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		bit mark = defmark;
 		if (lscan == 0) {
 			/* always search r completely */
 			assert(equal_order);
@@ -2357,6 +2358,9 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			/* v is nil and nils don't match anything, set
 			 * to NULL to indicate nil */
 			v = NULL;
+			mark = bit_nil;
+			if (r3)
+				r3->tnil = true;
 		}
 
 		/* First we find the "first" value in r that is "at
@@ -2695,10 +2699,10 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		/* finally the mark output */
 		if (r3) {
 			if (insert_nil) {
-				r3->tnil = rhasnil;
+				r3->tnil |= rhasnil;
 				for (i = 0; i < nl; i++) {
 					for (j = 0; j < nr; j++) {
-						((bit *) r3->theap->base)[r3->batCount++] = defmark;
+						((bit *) r3->theap->base)[r3->batCount++] = mark;
 					}
 				}
 			} else {
@@ -3287,6 +3291,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			r2->tkey = true;
 			r2->tseqbase = 0;
 		}
+	}
+	if (r3) {
+		r3->tnonil = !r3->tnil;
+		BATsetcount(r3, BATcount(r3));
+		assert(BATcount(r1) == BATcount(r3));
 	}
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
@@ -4067,7 +4076,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	/* only_misses implies left output only */
 	assert(!only_misses || r2p == NULL);
 	/* if nil_on_miss is set, we really need a right output */
-	assert(!nil_on_miss || r2p != NULL);
+	assert(!nil_on_miss || r2p != NULL || r3p != NULL);
 	/* if not_in is set, then so is only_misses */
 	assert(!not_in || only_misses);
 	/* if r3p is set, then so is nil_on_miss */
