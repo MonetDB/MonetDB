@@ -505,7 +505,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	}
 	BATsetcount(r1, lci->ncand * bncount);
 	*r1p = r1;
-	if (bn && r2p) {
+	if (r2 && r2p) {
 		BATsetcount(r2, lci->ncand * bncount);
 		*r2p = r2;
 	}
