@@ -422,12 +422,11 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 		oid c = g->hseqbase;
 		for (BUN n = 0; n < nr; n++, c++) {
 			ri1[q] = c;
-			if (mi[n] == FALSE) /* empty */
-				ri2[q] = FALSE;
-			else if (pi[n] == bit_nil || mi[n] == bit_nil)
+			ri2[q] = FALSE;
+			if (pi[n] == TRUE && mi[n] == TRUE)
+				ri2[q] = TRUE;
+			else if ((mi[n] == bit_nil && pi[n] != bit_nil && !any) || (mi[n] != FALSE && pi[n] == bit_nil && any))
 				ri2[q] = bit_nil;
-			else
-				ri2[q] = (mi[n] == TRUE && pi[n] == TRUE)?TRUE:FALSE;
 			q++;
 		}
 	} else {
@@ -447,10 +446,11 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 			}
 			if (m == TRUE)
 				continue;
-			if ((mi[n] == bit_nil && pi[n] == TRUE) /* ie has nil */ || (any && mi[n] == TRUE && pi[n] == bit_nil))
-				has_nil = true;
-			else if (mi[n] == TRUE && pi[n] == TRUE)
+
+			if (pi[n] == TRUE && mi[n] == TRUE)
 				m = TRUE;
+			else if ((mi[n] == bit_nil && pi[n] != bit_nil && !any) || (mi[n] != FALSE && pi[n] == bit_nil && any))
+				has_nil = true;
 		}
 		if (nr) {
 			ri1[q] = c-1;
