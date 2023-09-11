@@ -3868,7 +3868,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 
 	size_t end = segs_end(segs, tr, t);
 
-	if (store->skip_insertonly && t->access == TABLE_APPENDONLY)
+	if (store->insertonly_nowal && t->access == TABLE_APPENDONLY)
 		return LOG_OK;
 
 	if (tr_log_table_start(tr, t) != LOG_OK)
@@ -4072,7 +4072,7 @@ log_update_col( sql_trans *tr, sql_change *change)
 		return LOG_OK;
 	}
 
-	if ((store->skip_insertonly && c->t->access == TABLE_APPENDONLY))
+	if ((store->insertonly_nowal && c->t->access == TABLE_APPENDONLY))
 		return LOG_OK;
 
 	if (!isDeleted(c->t) && !tr->parent) {/* don't write save point commits */
@@ -4185,7 +4185,7 @@ log_update_idx( sql_trans *tr, sql_change *change)
 	sql_idx *i = (sql_idx*)change->obj;
 	assert(!isTempTable(i->t));
 
-	if (isDeleted(i->t) || (store->skip_insertonly && i->t->access == TABLE_APPENDONLY)) {
+	if (isDeleted(i->t) || (store->insertonly_nowal && i->t->access == TABLE_APPENDONLY)) {
 		change->handled = true;
 		return LOG_OK;
 	}
@@ -4243,7 +4243,7 @@ log_update_del( sql_trans *tr, sql_change *change)
 		change->handled = true;
 		return LOG_OK;
 	}
-	if (store->skip_insertonly && t->access == TABLE_APPENDONLY) {
+	if (store->insertonly_nowal && t->access == TABLE_APPENDONLY) {
 		return LOG_OK;
 	}
 

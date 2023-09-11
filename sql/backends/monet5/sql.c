@@ -4349,7 +4349,7 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tables_ids = COLnew(0, TYPE_int, 0, TRANSIENT);
 	rowcounts = COLnew(0, TYPE_lng, 0, TRANSIENT);
 
-	if (!store->skip_insertonly) /* nothing needed, return empty results */
+	if (!store->insertonly_nowal) /* nothing needed, return empty results */
 		goto exit2;
 
 	if (tables == NULL || tables_ids == NULL || rowcounts == NULL || commit_list == NULL || sizes == NULL) {

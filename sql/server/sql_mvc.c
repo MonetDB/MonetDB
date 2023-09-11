@@ -129,7 +129,7 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 }
 
 sql_store
-mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd)
+mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd, int insertonly_nowal)
 {
 	sqlstore *store = NULL;
 	sql_schema *s;
@@ -144,7 +144,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 		return NULL;
 	}
 
-	if ((store = store_init(debug, store_tpe, ro, su)) == NULL) {
+	if ((store = store_init(debug, store_tpe, ro, su, insertonly_nowal)) == NULL) {
 		keyword_exit();
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;

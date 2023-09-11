@@ -2143,7 +2143,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 }
 
 sqlstore *
-store_init(int debug, store_type store_tpe, int readonly, int singleuser)
+store_init(int debug, store_type store_tpe, int readonly, int singleuser, int insertonly_nowal)
 {
 	sql_allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
@@ -2166,7 +2166,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		.readonly = readonly,
 		.singleuser = singleuser,
 		.debug = debug,
-		.skip_insertonly = debug&4,
+		.insertonly_nowal = insertonly_nowal,
 		.transaction = ATOMIC_VAR_INIT(TRANSACTION_ID_BASE),
 		.nr_active = ATOMIC_VAR_INIT(0),
 		.timestamp = ATOMIC_VAR_INIT(0),
