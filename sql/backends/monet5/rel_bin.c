@@ -2816,7 +2816,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	list *l;
 	node *n , *en;
-	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ls = NULL, *res;
+	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *m = NULL, *ls = NULL, *res;
 	bool need_project = false, exist = true, mark = false;
 
 	assert(rel->op == op_left);
@@ -2847,7 +2847,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	list *jexps = get_simple_equi_joins_first(sql, rel, rel->exps, &equality_only);
 
 	en = jexps?jexps->h:NULL;
-	if ((/*list_empty(jexps)*/ list_length(jexps) <= (0+mark) || !gj_outerjoin_exp(rel, en->data)) && !(list_length(jexps) == 1 && is_equi_exp_((sql_exp*)en->data) && can_join_exp(rel, en->data, false))) {
+	if ((/*list_empty(jexps)*/ list_length(jexps) <= (0+mark) || !gj_outerjoin_exp(rel, en->data)) && !(list_length(jexps) >= 1 && is_equi_exp_((sql_exp*)en->data) && can_join_exp(rel, en->data, false))) {
 		printf("# outer cross\n");
 		stmt *l = bin_find_smallest_column(be, left);
 		stmt *r = bin_find_smallest_column(be, right);
@@ -2857,6 +2857,8 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		}
 		join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, 0, cmp_all, 0, 0, false, rel->op == op_left?false:true);
 		need_project = true;
+		jl = stmt_result(be, join, 0);
+		jr = stmt_result(be, join, 1);
 	} else if (!list_empty(jexps)) {
 		sql_exp *e = en->data;
 		en = en->next;
@@ -2881,20 +2883,30 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			l = r;
 			r = t;
 		}
-		ls = l;
+		if (!is_semantics(e) && is_anti(e))
+			ls = l;
 		if (en || !mark) {
 			printf("# outer join\n");
 			/* split out (left)join vs (left)mark-join */
 			/* call 3 result version */
-			join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_any(e)|is_semantics(e), false, rel->op == op_left?false:true);
+			if (mark && is_any(e))
+			{
+				printf("# mark join 2\n");
+				join = stmt_markjoin(be, l, r, 0);
+			}
+			else
+				join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_any(e)|is_semantics(e), false, rel->op == op_left?false:true);
+			jl = stmt_result(be, join, 0);
+			jr = stmt_result(be, join, 1);
+			if (mark && is_any(e))
+				m = stmt_result(be, join, 2);
 		} else {
 			printf("# mark join\n");
-			join = stmt_markjoin(be, l, r, is_any(e));
+			join = stmt_markjoin(be, l, r, 1);
+			jl = stmt_result(be, join, 0);
+			m = stmt_result(be, join, 1);
 		}
 	}
-	jl = stmt_result(be, join, 0);
-	/* mark result */
-	jr = stmt_result(be, join, 1);
 
 	if (en) {
 		stmt *sub, *sel = NULL, *osel = NULL;
@@ -2926,14 +2938,16 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		}
 		left = sub = stmt_list(be, nl);
 
-		if (ls) {
-			stmt *nls = stmt_project(be, jl, ls);
-			jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", nls), stmt_bool(be, bit_nil),
-					sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, 0), stmt_bool(be, 1), NULL),
-					NULL);
-		} else {
-			/* 0 == empty (no matches possible), nil - no match (but has nil), 1 match */
-			jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, 0), stmt_bool(be, 1), NULL);
+		if (!m) {
+			if (ls) {
+				stmt *nls = stmt_project(be, jl, ls);
+					m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", nls), stmt_bool(be, bit_nil),
+						sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, 0), stmt_bool(be, 1), NULL),
+						NULL);
+			} else {
+				/* 0 == empty (no matches possible), nil - no match (but has nil), 1 match */
+				m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, 0), stmt_bool(be, 1), NULL);
+			}
 		}
 
 		/* continue with non equi-joins */
@@ -2954,12 +2968,12 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 				li = stmt_project(be, sel, li);
 			osel = sel;
 			if (en->next) {
-				join = stmt_outerselect(be, li, jr, p, is_any(e));
+				join = stmt_outerselect(be, li, m, p, is_any(e));
 			} else {
-				join = stmt_markselect(be, li, jr, p, is_any(e));
+				join = stmt_markselect(be, li, m, p, is_any(e));
 			}
 			sel = stmt_result(be, join, 0);
-			jr = stmt_result(be, join, 1);
+			m = stmt_result(be, join, 1);
 			/* go back to offset in the table */
 			if (sel && osel)
 				sel = stmt_project(be, sel, osel);
@@ -2998,18 +3012,19 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 
 		if (mark) {
 			if (need_project) {
-				jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, !exist), stmt_bool(be, exist), NULL);
+				m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, !exist), stmt_bool(be, exist), NULL);
 			} else {
+				assert(m);
 				sql_exp *e = rel->attr->h->data;
 				if (exp_is_atom(e) && need_no_nil(e))
-					jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, !exist), jr, NULL);
+					m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", m), stmt_bool(be, !exist), m, NULL);
 				if (!exist) {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
-					jr = stmt_unop(be, jr, NULL, not);
+					m = stmt_unop(be, m, NULL, not);
 				}
 			}
-			stmt *s = stmt_alias(be, jr, rnme, nme);
+			stmt *s = stmt_alias(be, m, rnme, nme);
 			append(l, s);
 		} else {
 			/* group / aggrs */
