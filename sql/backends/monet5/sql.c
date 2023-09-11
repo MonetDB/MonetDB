@@ -4310,6 +4310,164 @@ end:
 }
 
 str
+SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)stk;
+	(void)pci;
+
+	bat *r0 = getArgReference_bat(stk,pci,0),
+		*r1 = getArgReference_bat(stk,pci,1),
+		*r2 = getArgReference_bat(stk,pci,2);
+
+	str msg = MAL_SUCCEED;
+	sqlstore *store = NULL;
+	mvc *m = NULL;
+	sql_trans *tr = NULL;
+	struct os_iter si = {0};
+	node *ncol;
+	storage *t_storage = NULL;
+
+	BAT *bs = NULL, *tables = NULL, *tables_ids = NULL, *rowcounts = NULL;
+
+	int n = 1000;
+	bat *commit_list = GDKmalloc(sizeof(bat) * (n + 1));
+	BUN *sizes = GDKmalloc(sizeof(BUN) * (n + 1));
+
+	commit_list[0] = 0;
+	sizes[0] = 0;
+	int i = 1;
+
+	msg = getSQLContext(cntxt, mb, &m, NULL);
+
+	if (msg)
+		return msg;
+
+	store = m->session->tr->store;
+	tr = m->session->tr;
+
+	tables = COLnew(0, TYPE_str, 0, TRANSIENT);
+	tables_ids = COLnew(0, TYPE_int, 0, TRANSIENT);
+	rowcounts = COLnew(0, TYPE_lng, 0, TRANSIENT);
+
+	if (!store->skip_insertonly) /* nothing needed, return empty results */
+		goto exit2;
+
+	if (tables == NULL || tables_ids == NULL || rowcounts == NULL || commit_list == NULL || sizes == NULL) {
+		msg = createException(SQL, "sql.insertonly_persist", SQLSTATE(HY001));
+		goto exit2;
+	}
+
+	MT_lock_set(&store->commit);
+
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+
+	for (sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
+		sql_schema *s = (sql_schema *) b;
+		str x = s->base.name;
+
+		if (strcmp(x, "sys") == 0 || strcmp(x, "tmp") == 0 ||
+			strcmp(x, "json") == 0 || strcmp(x, "profiler") == 0 ||
+			strcmp(x, "logging") == 0)
+			continue;
+
+		if (s->tables) {
+			struct os_iter oi;
+			os_iterator(&oi, s->tables, tr, NULL);
+
+			for (sql_base *bt = oi_next(&oi); bt; bt = oi_next(&oi)) {
+				sql_table *t = (sql_table *) bt;
+
+				if (isTable(t) && t->access == TABLE_APPENDONLY) {
+					str t_name = t->base.name;
+					sqlid t_id = t->base.id;
+					t_storage = bind_del_data(tr, t, NULL);
+
+					if (ol_first_node(t->columns)) {
+
+						for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
+							sql_column *c = (sql_column *) ncol->data;
+							bs = store->storage_api.bind_col(tr, c, RDONLY);
+
+							if (bs == NULL) {
+								msg = createException(SQL, "insertonly_persist",
+													  SQLSTATE(HY005) "Cannot access column descriptor");
+								goto exit1;
+							}
+
+							if (isVIEW(bs)) {
+								bs = BATdescriptor(VIEWtparent(bs));
+								if (bs == NULL) {
+									msg = createException(SQL, "insertonly_persist",
+														  SQLSTATE(HY005) "Cannot access column descriptor");
+									goto exit1;
+								}
+							}
+
+							if (i == n && ncol->next) {
+								n = n * 2;
+								commit_list = GDKrealloc(commit_list, sizeof(bat) * n);
+								sizes = GDKrealloc(sizes, sizeof(BUN) * n);
+							}
+
+							if (commit_list == NULL || sizes == NULL) {
+								msg = createException(SQL, "insertonly_persist", SQLSTATE(HY001));
+								goto exit2;
+							}
+
+							commit_list[i] = t_storage->cs.bid;
+							commit_list[i+1] = bs->theap->parentid;
+							sizes[i] = !bs->batTransient ? BATcount(bs) : 0;
+							sizes[i+1] = !bs->batTransient ? BATcount(bs) : 0;
+
+							if (BUNappend(tables, t_name, false) != GDK_SUCCEED) {
+								msg = createException(SQL, "insertonly_persist", "Failed to append 'table'");
+								goto exit1;
+							}
+
+							if (BUNappend(tables_ids, &t_id, false) != GDK_SUCCEED) {
+								msg = createException(SQL, "insertonly_persist", "Failed to append 'table_id'");
+								goto exit1;
+							}
+
+							/* if (BUNappend(rowcounts, &(lng){sizes[i]}, false) != GDK_SUCCEED) { */
+							if (BUNappend(rowcounts, sizes + i, false) != GDK_SUCCEED) {
+								msg = createException(SQL, "insertonly_persist", "Failed to append 'rowcount'");
+								goto exit1;
+							}
+
+							i+=2;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED)
+		msg = createException(SQL, "insertonly_persist", GDK_EXCEPTION);
+
+ exit1:
+	MT_lock_unset(&store->commit);
+
+ exit2:
+	GDKfree(commit_list);
+	GDKfree(sizes);
+	if (msg) {
+		BBPreclaim(tables);
+		BBPreclaim(tables_ids);
+		BBPreclaim(rowcounts);
+	} else {
+		*r0 = tables->batCacheid;
+		*r1 = tables_ids->batCacheid;
+		*r2 = rowcounts->batCacheid;
+		BBPkeepref(tables);
+		BBPkeepref(tables_ids);
+		BBPkeepref(rowcounts);
+	}
+	return msg;
+}
+
+str
 SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *sessionid, *user, *statementid, *statement, *created;
@@ -5061,6 +5219,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
+ pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist changes to new data on append only tables.", args(3, 3, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
  pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),
