@@ -636,7 +636,7 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 {
 	BAT *left = NULL, *right = NULL, *right2 = NULL;
 	BAT *candleft = NULL, *candright = NULL;
-	BAT *result1, *result2, *result3;
+	BAT *result1 = NULL, *result2 = NULL, *result3 = NULL;
 	BUN est;
 	const char *err = RUNTIME_OBJECT_MISSING;
 
@@ -678,7 +678,6 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 		assert(rangefunc == NULL);
 		assert(difffunc == NULL);
 		assert(interfunc == NULL);
-		result2 = NULL;
 		if ((*joinfunc)
 			(&result1, r2 ? &result2 : NULL, left, right, candleft, candright,
 			 *nil_matches, est) != GDK_SUCCEED)
@@ -689,7 +688,6 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 		assert(rangefunc == NULL);
 		assert(difffunc == NULL);
 		assert(interfunc == NULL);
-		result2 = NULL;
 		if ((*semifunc)
 			(&result1, r2 ? &result2 : NULL, left, right, candleft, candright,
 			 *nil_matches, *max_one, est) != GDK_SUCCEED)
@@ -699,8 +697,6 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 		assert(rangefunc == NULL);
 		assert(difffunc == NULL);
 		assert(interfunc == NULL);
-		result2 = NULL;
-		result3 = NULL;
 		if ((*markfunc) (&result1, r2 ? &result2 : NULL, &result3,
 						 left, right, candleft, candright, est) != GDK_SUCCEED)
 			goto fail;
@@ -730,13 +726,11 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 		if ((result1 = (*difffunc) (left, right, candleft, candright,
 									*nil_matches, *not_in, est)) == NULL)
 			goto fail;
-		result2 = NULL;
 	} else {
 		assert(r2 == NULL);
 		if ((result1 = (*interfunc) (left, right, candleft, candright,
 									 *nil_matches, *max_one, est)) == NULL)
 			goto fail;
-		result2 = NULL;
 	}
 	*r1 = result1->batCacheid;
 	BBPkeepref(result1);
