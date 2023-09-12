@@ -490,7 +490,7 @@ typedef struct sqlstore {
 	ATOMIC_TYPE oldest;
 	ulng oldest_pending;
 	bool readonly;			/* store is readonly */
-	char singleuser;		/* store is for a single user only (==1 enable, ==2 single user session running) */
+	int8_t singleuser;		/* store is for a single user only (==1 enable, ==2 single user session running) */
 	bool first;				/* just created the db */
 	bool insertonly_nowal;
 	bool initialized;		/* used during bootstrap only */
