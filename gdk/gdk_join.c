@@ -366,6 +366,8 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	BATiter li = bat_iterator(l);
 	const void *v;
 	BAT *bn = NULL;
+	BAT *r1 = NULL;
+	BAT *r2 = NULL;
 	BUN bncount;
 
 	assert(lci->ncand > 0);
@@ -416,99 +418,97 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		if (semi)
 			bncount = 1;
 		if (max_one) {
-			BBPreclaim(bn);
 			GDKerror("more than one match");
-			return GDK_FAIL;
+			goto bailout;
 		}
 	}
-	BAT *r1 = COLnew(0, TYPE_oid, lci->ncand * bncount, TRANSIENT);
-	if (r1 == NULL) {
-		BBPreclaim(bn);
-		return GDK_FAIL;
-	}
+	r1 = COLnew(0, TYPE_oid, lci->ncand * bncount, TRANSIENT);
+	if (r1 == NULL)
+		goto bailout;
 	r1->tsorted = true;
 	r1->trevsorted = lci->ncand == 1;
 	r1->tseqbase = bncount == 1 && lci->tpe == cand_dense ? o : oid_nil;
 	r1->tkey = bncount == 1;
 	r1->tnil = false;
 	r1->tnonil = true;
-	BAT *r2 = NULL;
-	if (r2p) {
-		if (bn)
-			r2 = COLnew(0, TYPE_oid, lci->ncand * bncount, TRANSIENT);
-		else
+	if (bn == NULL) {
+		/* left outer join, no match, we're returning nil in r2 */
+		oid *o1p = (oid *) Tloc(r1, 0);
+		BUN p, q = bncount;
+
+		if (r2p) {
 			r2 = BATconstant(0, TYPE_void, &oid_nil, lci->ncand * bncount, TRANSIENT);
-		if (r2 == NULL) {
-			BBPreclaim(bn);
-			BBPreclaim(r1);
-			return GDK_FAIL;
+			if (r2 == NULL)
+				goto bailout;
+			*r2p = r2;
 		}
-		if (bn) {
+		do {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			for (p = 0; p < q; p++) {
+				*o1p++ = o;
+			}
+			o = canditer_next(lci);
+		} while (!is_oid_nil(o));
+	} else {
+		oid *o1p = (oid *) Tloc(r1, 0);
+		oid *o2p;
+		BUN p, q = bncount;
+
+		if (r2p) {
+			r2 = COLnew(0, TYPE_oid, lci->ncand * bncount, TRANSIENT);
+			if (r2 == NULL)
+				goto bailout;
 			r2->tsorted = lci->ncand == 1 || bncount == 1;
 			r2->trevsorted = bncount == 1;
 			r2->tseqbase = lci->ncand == 1 && BATtdense(bn) ? bn->tseqbase : oid_nil;
 			r2->tkey = lci->ncand == 1;
 			r2->tnil = false;
 			r2->tnonil = true;
+			*r2p = r2;
+			o2p = (oid *) Tloc(r2, 0);
+		} else {
+			o2p = NULL;
 		}
-	}
-	if (bn == NULL) {
-		oid *o1p = (oid *) Tloc(r1, 0);
-		BUN p, q = bncount;
 
-		do {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			for (p = 0; p < q; p++) {
-				*o1p++ = o;
-			}
-			o = canditer_next(lci);
-		} while (!is_oid_nil(o));
-	} else if (BATtdense(bn)) {
-		oid *o1p = (oid *) Tloc(r1, 0);
-		oid *o2p = r2 ? (oid *) Tloc(r2, 0) : NULL;
-		oid bno = bn->tseqbase;
-		BUN p, q = bncount;
+		if (BATtdense(bn)) {
+			oid bno = bn->tseqbase;
 
-		do {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			for (p = 0; p < q; p++) {
-				*o1p++ = o;
-			}
-			if (o2p) {
+			do {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				for (p = 0; p < q; p++) {
-					*o2p++ = bno + p;
+					*o1p++ = o;
 				}
-			}
-			o = canditer_next(lci);
-		} while (!is_oid_nil(o));
-	} else {
-		oid *o1p = (oid *) Tloc(r1, 0);
-		oid *o2p = r2 ? (oid *) Tloc(r2, 0) : NULL;
-		const oid *bnp = (const oid *) Tloc(bn, 0);
-		BUN p, q = bncount;
+				if (o2p) {
+					for (p = 0; p < q; p++) {
+						*o2p++ = bno + p;
+					}
+				}
+				o = canditer_next(lci);
+			} while (!is_oid_nil(o));
+		} else {
+			const oid *bnp = (const oid *) Tloc(bn, 0);
 
-		do {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			for (p = 0; p < q; p++) {
-				*o1p++ = o;
-			}
-			if (o2p) {
+			do {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				for (p = 0; p < q; p++) {
-					*o2p++ = bnp[p];
+					*o1p++ = o;
 				}
-			}
-			o = canditer_next(lci);
-		} while (!is_oid_nil(o));
+				if (o2p) {
+					for (p = 0; p < q; p++) {
+						*o2p++ = bnp[p];
+					}
+				}
+				o = canditer_next(lci);
+			} while (!is_oid_nil(o));
+		}
+		if (r2)
+			BATsetcount(r2, lci->ncand * bncount);
 	}
 	BATsetcount(r1, lci->ncand * bncount);
 	*r1p = r1;
-	if (r2 && r2p) {
-		BATsetcount(r2, lci->ncand * bncount);
-		*r2p = r2;
-	}
 	BAT *r3 = NULL;
 	if (r3p) {
 		bit mark;
@@ -547,8 +547,11 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	return GDK_SUCCEED;
 
   bailout:
+	BBPreclaim(bn);
 	BBPreclaim(r1);
 	BBPreclaim(r2);
+	if (r2p)
+		*r2p = NULL;
 	return GDK_FAIL;
 }
 
