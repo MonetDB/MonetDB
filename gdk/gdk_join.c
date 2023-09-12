@@ -307,6 +307,8 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	BATiter li = bat_iterator(l);
 	const void *v;
 	BAT *bn = NULL;
+	BAT *r1 = NULL;
+	BAT *r2 = NULL;
 	BUN bncount;
 
 	assert(lci->ncand > 0);
@@ -358,7 +360,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			goto bailout;
 		}
 	}
-	BAT *r1 = COLnew(0, TYPE_oid, lci->ncand * bncount, TRANSIENT);
+	r1 = COLnew(0, TYPE_oid, lci->ncand * bncount, TRANSIENT);
 	if (r1 == NULL)
 		goto bailout;
 	r1->tsorted = true;
@@ -367,7 +369,6 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	r1->tkey = bncount == 1;
 	r1->tnil = false;
 	r1->tnonil = true;
-	BAT *r2 = NULL;
 	if (bn == NULL) {
 		/* left outer join, no match, we're returning nil in r2 */
 		oid *o1p = (oid *) Tloc(r1, 0);
