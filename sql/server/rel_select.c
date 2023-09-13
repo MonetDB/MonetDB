@@ -548,12 +548,11 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 	char *ext = strrchr(filename, '.'), *ep = ext;
 
 	if (ext) {
-		ext=ext+1;
+		ext = ext + 1;
 		ext = mkLower(sa_strdup(sql->sa, ext));
 	}
-
 	if (!ext)
-		return "extension missing";
+		return "Filename extension missing";
 
 	file_loader_t *fl = fl_find(ext);
 	if (!fl) {
@@ -570,7 +569,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 			fl = fl_find(ext);
 		}
 		if (!fl)
-			return sa_message(sql->ta, "extension '%s' missing", ext?ext:"");
+			return sa_message(sql->ta, "Filename extension '%s' missing", ext?ext:"");
 	}
 	str err = fl->add_types(sql, f, filename, res_exps, tname);
 	if (err)
@@ -596,12 +595,12 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
 				char *err = file_loader_add_table_column_types(sql, f, nexps, res_exps, tname);
 				if (err)
-					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function type resolutions failed '%s'", err);
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function failed '%s'", err);
 			}
 			sql_exp *e = exp_op(sql->sa, nexps, f);
 			sql_rel *rel = rel_table_func(sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
 			if (rel)
-				rel = rel_project(sql->sa, rel, res_exps);
+				rel = rel_project(sql->sa, rel, exps_copy(sql, res_exps));
 			return rel;
 		}
 	}

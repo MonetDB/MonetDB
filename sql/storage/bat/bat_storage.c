@@ -3905,7 +3905,8 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 				if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 					/* append col*/
 					BAT *ins = temp_descriptor(cs->bid);
-					assert(ins);
+					if (ins == NULL)
+						return LOG_ERR;
 					assert(BATcount(ins) >= cur->end);
 					ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start, nr_appends);
 					bat_destroy(ins);
@@ -3917,7 +3918,8 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 
 		if (ok == GDK_SUCCEED && cs->ebid) {
 			BAT *ins = temp_descriptor(cs->ebid);
-			assert(ins);
+			if (ins == NULL)
+				return LOG_ERR;
 			if (BATcount(ins) > ins->batInserted)
 				ok = log_bat(store->logger, ins, -c->base.id, ins->batInserted, BATcount(ins)-ins->batInserted, 0);
 			BATcommit(ins, BATcount(ins));
@@ -3945,7 +3947,8 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 					if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 						/* append idx */
 						BAT *ins = temp_descriptor(cs->bid);
-						assert(ins);
+						if (ins == NULL)
+							return LOG_ERR;
 						assert(BATcount(ins) >= cur->end);
 						ok = log_bat(store->logger, ins, i->base.id, cur->start, cur->end-cur->start, nr_appends);
 						bat_destroy(ins);

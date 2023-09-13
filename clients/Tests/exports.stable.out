@@ -299,7 +299,7 @@ size_t GDKmem_cursize(void);
 gdk_return GDKmergeidx(BAT *b, BAT **a, int n_ar);
 void *GDKmmap(const char *path, int mode, size_t len) __attribute__((__warn_unused_result__));
 int GDKms(void);
-gdk_return GDKmunmap(void *addr, size_t len);
+gdk_return GDKmunmap(void *addr, int mode, size_t len);
 int GDKnr_threads;
 void GDKprepareExit(void);
 void GDKprintinfo(void);
