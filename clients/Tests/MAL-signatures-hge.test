@@ -51063,56 +51063,6 @@ user_statistics
 pattern sysmon.user_statistics() (X_0:bat[:str], X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:timestamp], X_4:bat[:timestamp], X_5:bat[:lng], X_6:bat[:str]) 
 SYSMONstatistics;
 (empty)
-tokenizer
-append
-command tokenizer.append(X_0:str):oid 
-TKNZRappend;
-tokenize a new string and append it to the tokenizer (duplicate elimination is performed)
-tokenizer
-close
-command tokenizer.close():void 
-TKNZRclose;
-close the current tokenizer store
-tokenizer
-depositFile
-command tokenizer.depositFile(X_0:str):void 
-TKNZRdepositFile;
-batch insertion from a file of strings to tokenize, each string is separated by a new line
-tokenizer
-getCardinality
-command tokenizer.getCardinality():bat[:lng] 
-TKNZRgetCardinality;
-debugging function that returns the unique tokens at each level
-tokenizer
-getCount
-command tokenizer.getCount():bat[:lng] 
-TKNZRgetCount;
-debugging function that returns the size of the bats at each level
-tokenizer
-getIndex
-command tokenizer.getIndex():bat[:oid] 
-TKNZRgetIndex;
-administrative function that returns the INDEX bat
-tokenizer
-getLevel
-command tokenizer.getLevel(X_0:int):bat[:str] 
-TKNZRgetLevel;
-administrative function that returns the bat on level i
-tokenizer
-locate
-pattern tokenizer.locate(X_0:str):oid 
-TKNZRlocate;
-if the given string is in the store returns its oid, otherwise oid_nil
-tokenizer
-open
-command tokenizer.open(X_0:str):void 
-TKNZRopen;
-open the named tokenizer store, a new one is created if the specified name does not exist
-tokenizer
-take
-pattern tokenizer.take(X_0:oid):str 
-TKNZRtakeOid;
-reconstruct and returns the i-th string
 txtsim
 dameraulevenshtein
 pattern txtsim.dameraulevenshtein(X_0:str, X_1:str):int 

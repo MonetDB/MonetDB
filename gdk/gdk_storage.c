@@ -184,7 +184,7 @@ GDKremovedir(int farmid, const char *dirname)
 	closedir(dirp);
 	ret = MT_rmdir(dirnamestr);
 	if (ret != 0)
-		GDKsyserror("rmdir(%s) failed.\n", dirnamestr);
+		GDKsyserror("rmdir(%s) failed\n", dirnamestr);
 	TRC_DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
 	GDKfree(dirnamestr);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
@@ -550,7 +550,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
 					if (n < 0)
-						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, %zu bytes missing.\n", nme, ext ? ext : "", (size_t) n_expected);
+						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, %zu bytes missing\n", nme, ext ? ext : "", (size_t) n_expected);
 #ifndef __COVERITY__
 					/* Coverity doesn't seem to
 					 * recognize that we're just

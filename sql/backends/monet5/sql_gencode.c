@@ -1458,7 +1458,7 @@ backend_create_mal_func(mvc *m, sql_func *f)
 }
 
 static int
-backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops, Module mod, char *fimp)
+backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops, Module mod, char *fimp, bool prepare)
 {
 	mvc *m = be->mvc;
 	Client c = be->client;
@@ -1469,7 +1469,7 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	sql_func *pf = NULL;
 	sql_rel *r;
 
-	r = rel_parse(m, f->s, f->query, m_instantiate);
+	r = rel_parse(m, f->s, f->query, prepare?m_prepare:m_instantiate);
 	if (r)
 		r = sql_processrelation(m, r, 0, 1, 1, 0);
 	if (!r) {
@@ -1478,7 +1478,7 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 
 	backend_reset(be);
 
-	if (f->res) {
+	if (f->res && !prepare) {
 		sql_arg *fres = f->res->h->data;
 		if (f->type == F_UNION) {
 			curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
@@ -1544,7 +1544,7 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	pf = m->forward;
 	m->forward = f;
 	be->fimp = fimp; /* for recursive functions keep the generated name */
-	res = backend_dumpstmt(be, curBlk, r, 0, 1, NULL);
+	res = backend_dumpstmt(be, curBlk, r, prepare, 1, NULL);
 	m->forward = pf;
 	if (res < 0)
 		goto cleanup;
@@ -1617,9 +1617,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	Client c = be->client;
 	Symbol symbackup = c->curprg;
 	backend bebackup = *be;		/* backup current backend */
-	exception_buffer ebsave = m->sa->eb;
+	bool prepare = f->imp;
 	const char *sql_shared_module = putName(sql_shared_module_name);
-	Module mod = getModule(sql_shared_module);
+	const char *sql_private_module = putName(sql_private_module_name);
+	const char *modname = prepare?sql_private_module:sql_shared_module;
+	Module mod = prepare?c->usermodule:getModule(modname);
+	exception_buffer ebsave = m->sa->eb;
 	char befname[IDLENGTH];
 	int nargs;
 	char *fimp;
@@ -1631,7 +1634,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	(void) snprintf(befname, IDLENGTH, "f_" LLFMT, store_function_counter(m->store));
 	TRC_INFO(SQL_PARSER, "Mapping SQL name '%s' to MAL name '%s'\n", f->base.name, befname);
 	nargs = (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0);
-	c->curprg = newFunctionArgs(sql_shared_module, putName(befname), FUNCTIONsymbol, nargs);
+	c->curprg = newFunctionArgs(modname, putName(befname), FUNCTIONsymbol, nargs);
 
 	if ((fimp = _STRDUP(befname)) == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1643,7 +1646,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		sql_error(m, 10, "%s", m->sa->eb.msg);
 		freeSymbol(c->curprg);
 		goto bailout;
-	} else if (backend_create_sql_func_body(be, f, restypes, ops, mod, fimp) < 0) {
+	} else if (backend_create_sql_func_body(be, f, restypes, ops, mod, fimp, prepare) < 0) {
 		goto bailout;
 	}
 	*be = bebackup;
