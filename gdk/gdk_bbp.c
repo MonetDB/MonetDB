@@ -2073,7 +2073,7 @@ BBPdir_first(bool subcommit, lng logno, lng transid,
 		 * replacing the entries for the subcommitted bats */
 		if ((obbpf = GDKfileopen(0, SUBDIR, "BBP", "dir", "r")) == NULL &&
 		    (obbpf = GDKfileopen(0, BAKDIR, "BBP", "dir", "r")) == NULL) {
-			GDKsyserror("subcommit attempted without backup BBP.dir.");
+			GDKsyserror("subcommit attempted without backup BBP.dir");
 			goto bailout;
 		}
 		/* read first three lines */
@@ -2139,7 +2139,7 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 			}
 			n = -1;
 			if (fclose(*obbpfp) == EOF) {
-				GDKsyserror("Closing backup BBP.dir file failed.\n");
+				GDKsyserror("Closing backup BBP.dir file failed\n");
 				GDKclrerr(); /* ignore error */
 			}
 			*obbpfp = NULL;
@@ -2177,7 +2177,7 @@ BBPdir_last(int n, char *buf, size_t bufsize, FILE *obbpf, FILE *nbbpf)
 				goto bailout;
 			}
 			if (fclose(obbpf) == EOF) {
-				GDKsyserror("Closing backup BBP.dir file failed.\n");
+				GDKsyserror("Closing backup BBP.dir file failed\n");
 				GDKclrerr(); /* ignore error */
 			}
 			obbpf = NULL;
@@ -3902,7 +3902,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		     MT_rename(bakdir, deldir) < 0))
 			ret = GDK_FAIL;
 		if (ret != GDK_SUCCEED)
-			GDKsyserror("rename(%s,%s) failed.\n", bakdir, deldir);
+			GDKsyserror("rename(%s,%s) failed\n", bakdir, deldir);
 		TRC_DEBUG(IO_, "rename %s %s = %d\n", bakdir, deldir, (int) ret);
 	}
 
