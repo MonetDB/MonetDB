@@ -2507,6 +2507,8 @@ log_flush(logger *lg, ulng ts)
 		if (updated == NULL) {
 			nupdated = BATcount(lg->catalog_id);
 			allocated = ((nupdated + 31) & ~31) / 8;
+			if (allocated == 0)
+				allocated = 4;
 			updated = GDKzalloc(allocated);
 			if (updated == NULL) {
 				log_unlock(lg);
