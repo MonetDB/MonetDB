@@ -1140,8 +1140,12 @@ exp_is_count(sql_exp *e, sql_rel *rel)
 	if (!e || !rel)
 		return 0;
 	if (is_alias(e->type) && is_project(rel->op)) {
-		sql_exp *ne = rel_find_exp(rel->l, e);
-		return exp_is_count(ne, rel->l);
+		/* if the relop is n-ary (like munion) we need to retrieve its
+		 * first operands which lives in the list at rel->l
+		 */
+		sql_rel *pr = is_munion(rel->op) ? ((list*)rel->l)->h->data : rel->l;
+		sql_exp *ne = rel_find_exp(pr, e);
+		return exp_is_count(ne, pr);
 	}
 	if (is_convert(e->type))
 		return exp_is_count(e->l, rel);
