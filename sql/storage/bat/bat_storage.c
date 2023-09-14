@@ -1631,13 +1631,15 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 
 		if (b == NULL) {
 			res = LOG_ERR;
-		} else if (BATcount(b)==0) {
-			if (BATappend(b, updates, NULL, true) != GDK_SUCCEED) /* alter add column */
+		} else {
+			if (BATcount(b)==0) {
+				if (BATappend(b, updates, NULL, true) != GDK_SUCCEED) /* alter add column */
+					res = LOG_ERR;
+			} else if (BATreplace(b, tids, updates, true) != GDK_SUCCEED)
 				res = LOG_ERR;
-		} else if (BATreplace(b, tids, updates, true) != GDK_SUCCEED)
-			res = LOG_ERR;
-		BBPcold(b->batCacheid);
-		bat_destroy(b);
+			BBPcold(b->batCacheid);
+			bat_destroy(b);
+		}
 	}
 	unlock_table(tr->store, t->base.id);
 	if (otids != tids)

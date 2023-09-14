@@ -15,7 +15,11 @@
 #include <setjmp.h>
 
 typedef struct exception_buffer {
+#ifdef HAVE_SIGLONGJMP
+	sigjmp_buf state;
+#else
 	jmp_buf state;
+#endif
 	int code;
 	char *msg;
 	int enabled;
