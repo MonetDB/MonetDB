@@ -95,9 +95,10 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	BBPreclaim(s);
 	if (e != 0 || ex != 0) {
 		const char *err;
+		char buf[128];
 		BBPunfix(bn->batCacheid);
 		if (e)
-			err = GDKstrerror(e, (char[128]) { 0 }, 128);
+			err = GDKstrerror(e, buf, 128);
 		else if (ex & FE_DIVBYZERO)
 			err = "Divide by zero";
 		else if (ex & FE_OVERFLOW)
