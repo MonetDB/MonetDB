@@ -703,18 +703,6 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	int err = 0;
 	BAT *uv = *UV;
 	BUN cnt = BATcount(ui)+BATcount(oi);
-	BAT *ni = bat_new(TYPE_oid, cnt, SYSTRANS);
-	BAT *nv = uv?bat_new(uv->ttype, cnt, SYSTRANS):NULL;
-
-	if (!ni || (uv && !nv)) {
-		bat_destroy(ni);
-		bat_destroy(nv);
-		bat_destroy(ui);
-		bat_destroy(uv);
-		bat_destroy(oi);
-		bat_destroy(ov);
-		return NULL;
-	}
 	BATiter uvi;
 	BATiter ovi;
 
@@ -736,6 +724,35 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 		uipt = uii.base;
 	if (!BATtdensebi(&oii))
 		oipt = oii.base;
+
+	if (uiseqb == oiseqb && uie == oie) { /* full overlap, no values */
+		if (uv) {
+			bat_iterator_end(&uvi);
+			bat_iterator_end(&ovi);
+		}
+		bat_iterator_end(&uii);
+		bat_iterator_end(&oii);
+		if (uv) {
+			*UV = uv;
+		} else {
+			bat_destroy(uv);
+		}
+		bat_destroy(oi);
+		bat_destroy(ov);
+		return ui;
+	}
+	BAT *ni = bat_new(TYPE_oid, cnt, SYSTRANS);
+	BAT *nv = uv?bat_new(uv->ttype, cnt, SYSTRANS):NULL;
+
+	if (!ni || (uv && !nv)) {
+		bat_destroy(ni);
+		bat_destroy(nv);
+		bat_destroy(ui);
+		bat_destroy(uv);
+		bat_destroy(oi);
+		bat_destroy(ov);
+		return NULL;
+	}
 	while (uip < uie && oip < oie && !err) {
 		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
 		oid oiid = (oipt)?oipt[oip]: oiseqb+oip;
