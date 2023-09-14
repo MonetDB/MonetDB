@@ -439,9 +439,11 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 			} else {
 				lg->rbuf = t;
 				lg->rbufsize = tlen;
-				for (BUN p = 0; p < (BUN) nr; p++) {
-					if (r && BUNappend(r, t, true) != GDK_SUCCEED)
-						res = LOG_ERR;
+				if (r) {
+					for (BUN p = 0; p < (BUN) nr; p++) {
+						if (BUNappend(r, t, true) != GDK_SUCCEED)
+							res = LOG_ERR;
+					}
 				}
 			}
 		} else if (l->flag == LOG_UPDATE_BULK) {
@@ -2505,6 +2507,8 @@ log_flush(logger *lg, ulng ts)
 		if (updated == NULL) {
 			nupdated = BATcount(lg->catalog_id);
 			allocated = ((nupdated + 31) & ~31) / 8;
+			if (allocated == 0)
+				allocated = 4;
 			updated = GDKzalloc(allocated);
 			if (updated == NULL) {
 				log_unlock(lg);

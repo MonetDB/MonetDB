@@ -396,6 +396,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	 */
 	ssize_t l = mnstr_read(file, buf, 1, 8196);
 	mnstr_close(file);
+	mnstr_destroy(file);
 	if (l<0)
 		return RUNTIME_LOAD_ERROR;
 	buf[l] = 0;
