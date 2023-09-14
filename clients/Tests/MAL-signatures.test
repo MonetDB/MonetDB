@@ -39664,3 +39664,8 @@ command xml.xml(X_0:str):xml
 XMLstr2xml;
 Cast the string to an xml compliant string
 
+insertonly_persist
+unsafe pattern sql.insertonly_persist() (X_0:bat[:str], X_1:bat[:lng], X_2:bat[:lng]) 
+SQLinsertonly_persist;
+Persist changes to new data on append only tables.
+sql
