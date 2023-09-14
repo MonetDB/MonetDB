@@ -9,8 +9,8 @@
 create function sys.insertonly_persist()
 returns table(
 	"table" string,
-	"table_id" int,
+	"table_id" bigint,
 	"rowcount" bigint
 )
 external name sql.insertonly_persist;
-grant execute on function sys.insertonly_persist() to public;
+grant execute on function sys.insertonly_persist to public;

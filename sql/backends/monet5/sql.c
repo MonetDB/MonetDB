@@ -4329,6 +4329,17 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BAT *bs = NULL, *tables = NULL, *tables_ids = NULL, *rowcounts = NULL;
 
+	msg = getSQLContext(cntxt, mb, &m, NULL);
+
+	if (msg)
+		return msg;
+
+	if (store->insertonly_nowal == false) {
+		msg = createException(SQL, "sql.insertonly_persist", "Function cannot be used without setting "
+							  "insertonly_persist flag at server startup.");
+		return msg;
+	}
+
 	int n = 1000;
 	bat *commit_list = GDKmalloc(sizeof(bat) * (n + 1));
 	BUN *sizes = GDKmalloc(sizeof(BUN) * (n + 1));
@@ -4337,20 +4348,12 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sizes[0] = 0;
 	int i = 1;
 
-	msg = getSQLContext(cntxt, mb, &m, NULL);
-
-	if (msg)
-		return msg;
-
 	store = m->session->tr->store;
 	tr = m->session->tr;
 
 	tables = COLnew(0, TYPE_str, 0, TRANSIENT);
-	tables_ids = COLnew(0, TYPE_int, 0, TRANSIENT);
+	tables_ids = COLnew(0, TYPE_lng, 0, TRANSIENT);
 	rowcounts = COLnew(0, TYPE_lng, 0, TRANSIENT);
-
-	if (!store->insertonly_nowal) /* nothing needed, return empty results */
-		goto exit2;
 
 	if (tables == NULL || tables_ids == NULL || rowcounts == NULL || commit_list == NULL || sizes == NULL) {
 		msg = createException(SQL, "sql.insertonly_persist", SQLSTATE(HY001));
@@ -4429,7 +4432,6 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								goto exit1;
 							}
 
-							/* if (BUNappend(rowcounts, &(lng){sizes[i]}, false) != GDK_SUCCEED) { */
 							if (BUNappend(rowcounts, sizes + i, false) != GDK_SUCCEED) {
 								msg = createException(SQL, "insertonly_persist", "Failed to append 'rowcount'");
 								goto exit1;
@@ -5219,7 +5221,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
- pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist changes to new data on append only tables.", args(3, 3, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng))),
+ pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist changes to new data on append only tables.", args(3, 3, batarg("table", str), batarg("table_id", lng), batarg("rowcount", lng))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
  pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),
