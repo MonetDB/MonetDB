@@ -257,7 +257,8 @@ logListener(void *x)
 			if (w->pid > 0)
 				nfds += 2;
 		}
-		pfd = malloc(nfds * sizeof(struct pollfd));
+		/* +1 for freebsd compiler issue with stringop-overflow error */
+		pfd = malloc((nfds+1) * sizeof(struct pollfd));
 		nfds = 0;
 		for (w = d; w != NULL; w = w->next) {
 			if (w->pid <= 0)

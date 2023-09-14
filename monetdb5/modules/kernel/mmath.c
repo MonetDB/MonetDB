@@ -96,8 +96,9 @@ MATHunary##NAME##TYPE(TYPE *res, const TYPE *a)						\
 			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
 							   FE_OVERFLOW)) != 0) {				\
 			const char *err;										\
+			char buf[128];											\
 			if (e) {												\
-				err = GDKstrerror(e, (char[128]){0}, 128);			\
+				err = GDKstrerror(e, buf, 128);						\
 			} else if (ex & FE_DIVBYZERO)							\
 				err = "Divide by zero";								\
 			else if (ex & FE_OVERFLOW)								\
@@ -129,8 +130,9 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
 							   FE_OVERFLOW)) != 0) {				\
 			const char *err;										\
+			char buf[128];											\
 			if (e) {												\
-				err = GDKstrerror(e, (char[128]){0}, 128);			\
+				err = GDKstrerror(e, buf, 128);						\
 			} else if (ex & FE_DIVBYZERO)							\
 				err = "Divide by zero";								\
 			else if (ex & FE_OVERFLOW)								\

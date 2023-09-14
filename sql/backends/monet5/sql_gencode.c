@@ -1621,7 +1621,6 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	const char *sql_shared_module = putName(sql_shared_module_name);
 	const char *sql_private_module = putName(sql_private_module_name);
 	const char *modname = prepare?sql_private_module:sql_shared_module;
-	Module mod = prepare?c->usermodule:getModule(modname);
 	exception_buffer ebsave = m->sa->eb;
 	char befname[IDLENGTH];
 	int nargs;
@@ -1646,7 +1645,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		sql_error(m, 10, "%s", m->sa->eb.msg);
 		freeSymbol(c->curprg);
 		goto bailout;
-	} else if (backend_create_sql_func_body(be, f, restypes, ops, mod, fimp, prepare) < 0) {
+	} else if (backend_create_sql_func_body(be, f, restypes, ops, prepare ? c->usermodule : getModule(modname), fimp, prepare) < 0) {
 		goto bailout;
 	}
 	*be = bebackup;
