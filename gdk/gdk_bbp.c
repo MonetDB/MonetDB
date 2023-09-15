@@ -2243,31 +2243,27 @@ BBPdump(void)
 			continue;
 		BAT *b = BBP_desc(i);
 		unsigned status = BBP_status(i);
-		fprintf(stderr,
-			"# %d: " ALGOOPTBATFMT " "
-			"refs=%d lrefs=%d "
-			"status=%u%s",
-			i,
-			ALGOOPTBATPAR(b),
-			BBP_refs(i),
-			BBP_lrefs(i),
-			status,
-			BBP_cache(i) ? "" : " not cached");
+		printf("# %d: " ALGOOPTBATFMT " refs=%d lrefs=%d status=%u%s",
+		       i,
+		       ALGOOPTBATPAR(b),
+		       BBP_refs(i),
+		       BBP_lrefs(i),
+		       status,
+		       BBP_cache(i) ? "" : " not cached");
 		if (b == NULL) {
-			fprintf(stderr, ", no descriptor\n");
+			printf(", no descriptor\n");
 			continue;
 		}
 		if (b->theap) {
 			if (b->theap->parentid != b->batCacheid) {
-				fprintf(stderr, " Theap -> %d", b->theap->parentid);
+				printf(" Theap -> %d", b->theap->parentid);
 			} else {
-				fprintf(stderr,
-					" Theap=[%zu,%zu,f=%d]%s%s",
-					b->theap->free,
-					b->theap->size,
-					b->theap->farmid,
-					b->theap->base == NULL ? "X" : b->theap->storage == STORE_MMAP ? "M" : "",
-					status & BBPSWAPPED ? "(Swapped)" : b->theap->dirty ? "(Dirty)" : "");
+				printf(" Theap=[%zu,%zu,f=%d]%s%s",
+				       b->theap->free,
+				       b->theap->size,
+				       b->theap->farmid,
+				       b->theap->base == NULL ? "X" : b->theap->storage == STORE_MMAP ? "M" : "",
+				       status & BBPSWAPPED ? "(Swapped)" : b->theap->dirty ? "(Dirty)" : "");
 				mem += HEAPmemsize(b->theap);
 				vm += HEAPvmsize(b->theap);
 				n++;
@@ -2275,17 +2271,15 @@ BBPdump(void)
 		}
 		if (b->tvheap) {
 			if (b->tvheap->parentid != b->batCacheid) {
-				fprintf(stderr,
-					" Tvheap -> %d",
-					b->tvheap->parentid);
+				printf(" Tvheap -> %d",
+				       b->tvheap->parentid);
 			} else {
-				fprintf(stderr,
-					" Tvheap=[%zu,%zu,f=%d]%s%s",
-					b->tvheap->free,
-					b->tvheap->size,
-					b->tvheap->farmid,
-					b->tvheap->base == NULL ? "X" : b->tvheap->storage == STORE_MMAP ? "M" : "",
-					b->tvheap->dirty ? "(Dirty)" : "");
+				printf(" Tvheap=[%zu,%zu,f=%d]%s%s",
+				       b->tvheap->free,
+				       b->tvheap->size,
+				       b->tvheap->farmid,
+				       b->tvheap->base == NULL ? "X" : b->tvheap->storage == STORE_MMAP ? "M" : "",
+				       b->tvheap->dirty ? "(Dirty)" : "");
 				mem += HEAPmemsize(b->tvheap);
 				vm += HEAPvmsize(b->tvheap);
 			}
@@ -2294,19 +2288,19 @@ BBPdump(void)
 			if (b->thash && b->thash != (Hash *) 1) {
 				size_t m = HEAPmemsize(&b->thash->heaplink) + HEAPmemsize(&b->thash->heapbckt);
 				size_t v = HEAPvmsize(&b->thash->heaplink) + HEAPvmsize(&b->thash->heapbckt);
-				fprintf(stderr, " Thash=[%zu,%zu,f=%d/%d]", m, v,
-					b->thash->heaplink.farmid,
-					b->thash->heapbckt.farmid);
+				printf(" Thash=[%zu,%zu,f=%d/%d]", m, v,
+				       b->thash->heaplink.farmid,
+				       b->thash->heapbckt.farmid);
 				mem += m;
 				vm += v;
 			}
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
-		fprintf(stderr, " role: %s\n",
-			b->batRole == PERSISTENT ? "persistent" : "transient");
+		printf(" role: %s\n",
+		       b->batRole == PERSISTENT ? "persistent" : "transient");
 	}
-	fprintf(stderr, "# %d bats: mem=%zu, vm=%zu\n", n, mem, vm);
-	fflush(stderr);
+	printf("# %d bats: mem=%zu, vm=%zu\n", n, mem, vm);
+	fflush(stdout);
 }
 
 /*
