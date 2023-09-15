@@ -3076,7 +3076,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
 
     # Try to detect segfaults and the like
     # Try to detect aborts due to too deep recursion
-    for (regexp, msg) in [("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))",
+    for (regexp, msg) in [("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:.]|!FATAL: BATSIGabort:)([ \t]|$))",
                            'segfault'),
                           ("aborted too deep recursion",
                            'recursion'),
