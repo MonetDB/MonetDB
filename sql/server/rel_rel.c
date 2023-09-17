@@ -117,8 +117,10 @@ rel_destroy_(sql_rel *rel)
 			rel_destroy(rel->r);
 		break;
 	case op_munion:
-		for (node *n = ((list*)rel->l)->h; n; n = n->next)
-			rel_destroy(n->data);
+		/* the rel->l might be in purpose NULL see rel_merge_table_rewrite_() */
+		if (rel->l)
+			for (node *n = ((list*)rel->l)->h; n; n = n->next)
+				rel_destroy(n->data);
 		break;
 	case op_project:
 	case op_groupby:
@@ -541,6 +543,21 @@ rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type 
 	rel->op = setop;
 	rel->card = CARD_MULTI;
 	rel_setop_set_exps(sql, rel, exps, false);
+	return rel;
+}
+
+sql_rel *
+rel_inplace_setop_n_ary(mvc *sql, sql_rel *rel, list *rl, operator_type setop, list *exps)
+{
+	// TODO: for now we only deal with munion
+	assert(setop == op_munion);
+	rel_destroy_(rel);
+	rel_inplace_reset_props(rel);
+	/* rl should be a list of relations */
+	rel->l = rl;
+	rel->op = setop;
+	rel->card = CARD_MULTI;
+	rel_setop_n_ary_set_exps(sql, rel, exps, false);
 	return rel;
 }
 

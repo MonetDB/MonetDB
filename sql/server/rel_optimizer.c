@@ -119,6 +119,24 @@ rel_unionize_mt_tables_balanced(visitor *v, sql_rel* mt, list* tables, merge_tab
 }
 
 static sql_rel *
+rel_unionize_mt_tables_munion(visitor *v, sql_rel* mt, list* tables, merge_table_prune_info *info)
+{
+	/* create the list of all the operand rels */
+	list *rels = sa_list(v->sql->sa);
+	for (node *n = tables->h; n; n = n->next) {
+		sql_rel *r = rel_wrap_select_around_table(v, n->data, info);
+		append(rels, r);
+	}
+
+	/* create the munion */
+	sql_rel *mu = rel_setop_n_ary(v->sql->sa, rels, op_munion);
+	rel_setop_n_ary_set_exps(v->sql, mu, rel_projections(v->sql, mt, NULL, 1, 1), true);
+	set_processed(mu);
+
+	return mu;
+}
+
+static sql_rel *
 merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_info *info)
 {
 	if (mvc_highwater(v->sql))
@@ -420,6 +438,12 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			} else {
 				nrel = rel_unionize_mt_tables_balanced(v, mt_rel, tables, info);
 			}
+		} else if (mvc_debug_on(v->sql, 32)) {
+			if (tables->cnt == 1) {
+				nrel = rel_wrap_select_around_table(v, tables->h->data, info);
+			} else {
+				nrel = rel_unionize_mt_tables_munion(v, mt_rel, tables, info);
+			}
 		} else {
 			for (node *n = tables->h; n ; n = n->next) {
 				sql_rel *next = n->data;
@@ -532,6 +556,8 @@ rel_merge_table_rewrite_(visitor *v, sql_rel *rel)
 			/* Always do relation inplace. If the mt relation has more than 1 reference, this is required */
 			if (is_union(nrel->op)) {
 				rel = rel_inplace_setop(v->sql, rel, nrel->l, nrel->r, op_union, nrel->exps);
+			} else if (is_munion(nrel->op)) {
+				rel = rel_inplace_setop_n_ary(v->sql, rel, nrel->l, op_munion, nrel->exps);
 			} else if (is_select(nrel->op)) {
 				rel = rel_inplace_select(rel, nrel->l, nrel->exps);
 			} else if (is_basetable(nrel->op)) {
@@ -541,6 +567,7 @@ rel_merge_table_rewrite_(visitor *v, sql_rel *rel)
 				rel = rel_inplace_project(v->sql->sa, rel, nrel->l, nrel->exps);
 				rel->card = exps_card(nrel->exps);
 			}
+			/* make sure that we do NOT destroy the subrels */
 			nrel->l = nrel->r = NULL;
 			rel_destroy(nrel);
 			v->changes++;
