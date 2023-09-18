@@ -4334,6 +4334,9 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 
+	store = m->session->tr->store;
+	tr = m->session->tr;
+
 	if (store->insertonly_nowal == false) {
 		msg = createException(SQL, "sql.insertonly_persist", "Function cannot be used without setting "
 							  "insertonly_persist flag at server startup.");
@@ -4347,9 +4350,6 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	commit_list[0] = 0;
 	sizes[0] = 0;
 	int i = 1;
-
-	store = m->session->tr->store;
-	tr = m->session->tr;
 
 	tables = COLnew(0, TYPE_str, 0, TRANSIENT);
 	tables_ids = COLnew(0, TYPE_lng, 0, TRANSIENT);
