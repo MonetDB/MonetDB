@@ -2956,50 +2956,110 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 		sql_rel *ul = u->l;
 		sql_rel *ur = u->r;
 
-		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0))
-			return rel;
-		/* don't push project down union of single values */
-		if ((is_project(ul->op) && !ul->l) || (is_project(ur->op) && !ur->l))
+		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0))
 			return rel;
 
-		ul = rel_dup(ul);
-		ur = rel_dup(ur);
+		// TODO: for now we have to differentiate between union and munion
+		if (is_union(u->op)) {
+			/* don't push project down union of single values */
+			if ((is_project(ul->op) && !ul->l) || (is_project(ur->op) && !ur->l))
+				return rel;
 
-		if (!is_project(ul->op))
-			ul = rel_project(v->sql->sa, ul,
-				rel_projections(v->sql, ul, NULL, 1, 1));
-		if (!is_project(ur->op))
-			ur = rel_project(v->sql->sa, ur,
-				rel_projections(v->sql, ur, NULL, 1, 1));
-		need_distinct = (need_distinct &&
-				(!exps_unique(v->sql, ul, ul->exps) || have_nil(ul->exps) ||
-				 !exps_unique(v->sql, ur, ur->exps) || have_nil(ur->exps)));
-		rel_rename_exps(v->sql, u->exps, ul->exps);
-		rel_rename_exps(v->sql, u->exps, ur->exps);
+			ul = rel_dup(ul);
+			ur = rel_dup(ur);
 
-		/* introduce projects under the set */
-		ul = rel_project(v->sql->sa, ul, NULL);
-		if (need_distinct)
-			set_distinct(ul);
-		ur = rel_project(v->sql->sa, ur, NULL);
-		if (need_distinct)
-			set_distinct(ur);
+			if (!is_project(ul->op))
+				ul = rel_project(v->sql->sa, ul,
+					rel_projections(v->sql, ul, NULL, 1, 1));
+			if (!is_project(ur->op))
+				ur = rel_project(v->sql->sa, ur,
+					rel_projections(v->sql, ur, NULL, 1, 1));
+			need_distinct = (need_distinct &&
+					(!exps_unique(v->sql, ul, ul->exps) || have_nil(ul->exps) ||
+					 !exps_unique(v->sql, ur, ur->exps) || have_nil(ur->exps)));
+			rel_rename_exps(v->sql, u->exps, ul->exps);
+			rel_rename_exps(v->sql, u->exps, ur->exps);
 
-		ul->exps = exps_copy(v->sql, p->exps);
-		set_processed(ul);
-		ur->exps = exps_copy(v->sql, p->exps);
-		set_processed(ur);
+			/* introduce projects under the set */
+			ul = rel_project(v->sql->sa, ul, NULL);
+			if (need_distinct)
+				set_distinct(ul);
+			ur = rel_project(v->sql->sa, ur, NULL);
+			if (need_distinct)
+				set_distinct(ur);
 
-		rel = rel_inplace_setop(v->sql, rel, ul, ur, op_union,
-			rel_projections(v->sql, rel, NULL, 1, 1));
-		if (need_distinct)
-			set_distinct(rel);
-		if (is_single(u))
-			set_single(rel);
-		v->changes++;
-		rel->l = rel_merge_projects_(v, rel->l);
-		rel->r = rel_merge_projects_(v, rel->r);
-		return rel;
+			ul->exps = exps_copy(v->sql, p->exps);
+			set_processed(ul);
+			ur->exps = exps_copy(v->sql, p->exps);
+			set_processed(ur);
+
+			rel = rel_inplace_setop(v->sql, rel, ul, ur, op_union,
+				rel_projections(v->sql, rel, NULL, 1, 1));
+			if (need_distinct)
+				set_distinct(rel);
+			if (is_single(u))
+				set_single(rel);
+			v->changes++;
+			rel->l = rel_merge_projects_(v, rel->l);
+			rel->r = rel_merge_projects_(v, rel->r);
+			return rel;
+		} else if (is_munion(u->op)) {
+			sql_rel *r;
+
+			/* don't push project down union of single values */
+			for (node *n = ((list*)u->l)->h; n; n = n->next) {
+				r = n->data;
+				// TODO: does this check make sense?
+				if (is_project(r->op) && !r->l)
+					return rel;
+			}
+
+			for (node *n = ((list*)u->l)->h; n; n = n->next) {
+				/* incr count to make sure that the operand rels are not
+				 * deleted by the subsequent rel_inplace_setop_n_ary */
+				r = rel_dup(n->data);
+				/* introduce projection around each operand if needed */
+				if (!is_project(r->op))
+					r = rel_project(v->sql->sa, r,
+							rel_projections(v->sql, r, NULL, 1, 1));
+				/* check if we need distinct */
+				need_distinct &=
+					(!exps_unique(v->sql, r, r->exps) || have_nil(r->exps));
+				rel_rename_exps(v->sql, u->exps, r->exps);
+			}
+
+			/* once we have checked for need_distinct in every rel we can
+			 * introduce the projects under the munion which are gonna be
+			 * copies of the single project above munion */
+			for (node *n = ((list*)u->l)->h; n; n = n->next) {
+				r = rel_project(v->sql->sa, n->data, NULL);
+				if (need_distinct)
+					set_distinct(r);
+				r->exps = exps_copy(v->sql, p->exps);
+				set_processed(r);
+			}
+
+			/* turn the project-munion on top into munion. munion
+			 * operand rels have already dup'ed so they won't be deleted */
+			rel = rel_inplace_setop_n_ary(v->sql, rel, u->l, op_munion,
+					rel_projections(v->sql, rel, NULL, 1, 1));
+			if (need_distinct)
+				set_distinct(rel);
+			if (is_single(u))
+				set_single(rel);
+
+			v->changes++;
+
+			/* if any operand has two project above then squash them */
+			for (node *n = ((list*)u->l)->h; n; n = n->next) {
+				r = rel_merge_projects_(v, n->data);
+			}
+
+			return rel;
+		} else {
+			/* we need to have either union or munion */
+			assert(0);
+		}
 	}
 	return rel;
 }
