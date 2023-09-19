@@ -4339,7 +4339,7 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (store->insertonly_nowal == false) {
 		msg = createException(SQL, "sql.insertonly_persist", "Function cannot be used without setting "
-							  "insertonly_persist flag at server startup.");
+							  "insertonly_nowal flag at server startup.");
 		return msg;
 	}
 
@@ -4414,11 +4414,11 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 							if (commit_list == NULL || sizes == NULL) {
 								msg = createException(SQL, "insertonly_persist", SQLSTATE(HY001));
-								goto exit2;
+								goto exit1;
 							}
 
 							commit_list[i] = t_storage->cs.bid;
-							commit_list[i+1] = bs->theap->parentid;
+							commit_list[i+1] = bs->batCacheid;
 							sizes[i] = !bs->batTransient ? BATcount(bs) : 0;
 							sizes[i+1] = !bs->batTransient ? BATcount(bs) : 0;
 
