@@ -3452,20 +3452,19 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 	len = list_length(((stmt*)rstmts->h->data)->op4.lval);
 	for (i = 0; i < len; i++) {
 		/* extract t and c name from the first stmt */
-		n = list_fetch(((stmt*)rstmts->h->data)->op4.lval, i);
-		if (n == NULL)
+		stmt *s = list_fetch(((stmt*)rstmts->h->data)->op4.lval, i);
+		if (s == NULL)
 			return NULL;
-		stmt *s = n->data;
 		const char *rnme = table_name(sql->sa, s);
 		const char *nme = column_name(sql->sa, s);
 		/* create a const column also from the first stmt */
 		s = create_const_column(be, s);
 		/* for every other rstmt */
 		for (m = rstmts->h->next; m; m = m->next) {
-			n = list_fetch(((stmt*)m->data)->op4.lval, i);
-			if (n == NULL)
+			stmt *t = list_fetch(((stmt*)m->data)->op4.lval, i);
+			if ( t == NULL)
 				return NULL;
-			s = stmt_append(be, s, n->data);
+			s = stmt_append(be, s, t);
 			if (s == NULL)
 				return NULL;
 		}
