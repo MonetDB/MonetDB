@@ -720,7 +720,7 @@ SQLinit(Client c, const char *initpasswd)
 	}
 
 	SQLrunning = 1;
-	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, SQLstore, MT_THR_DETACHED, "logmanager")) == 0) {
+	if (MT_create_thread(&sqllogthread, mvc_logmanager, SQLstore, MT_THR_DETACHED, "logmanager") < 0) {
 		mvc_exit(SQLstore);
 		SQLstore = NULL;
 		MT_lock_unset(&sql_contextLock);

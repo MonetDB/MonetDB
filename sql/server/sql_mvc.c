@@ -478,18 +478,8 @@ mvc_trans(mvc *m)
 
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	res = sql_trans_begin(m->session);
-
-	if (m->qc && (res || err)) {
-		int seqnr = m->qc->id;
-		if (m->qc)
-			qc_destroy(m->qc);
-		/* TODO Change into recreate all */
-		if (!(m->qc = qc_create(m->pa, m->clientid, seqnr))) {
-			if (m->session->tr->active)
-				(void)sql_trans_end(m->session, SQL_ERR);
-			return -1;
-		}
-	}
+	if (m->qc && (res || err))
+		qc_restart(m->qc);
 	return res;
 }
 

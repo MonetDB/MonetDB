@@ -75,8 +75,8 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
     stable = open(f).readlines()
     if not os.getenv('HAVE_SHP'):
         for i in range(len(stable)):
-            if 'SHPattach' in stable[i]:
-                del stable[i-1:i+5]
+            if 'create procedure SHPLoad' in stable[i]:
+                del stable[i-1:i+3]
                 break
     import difflib
     for line in difflib.unified_diff(stable, srvout, fromfile='test', tofile=f):

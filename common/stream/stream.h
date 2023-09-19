@@ -245,7 +245,7 @@ typedef struct bstream {
 
 stream_export bstream *bstream_create(stream *rs, size_t chunk_size); // used all over
 stream_export void bstream_destroy(bstream *s); // all over
-stream_export ssize_t bstream_read(bstream *s, size_t size); // tablet.c, tokenizer.c
+stream_export ssize_t bstream_read(bstream *s, size_t size); // tablet.c
 stream_export ssize_t bstream_next(bstream *s); // all over
 
 /* Callback stream is a stream where the read and write functions are

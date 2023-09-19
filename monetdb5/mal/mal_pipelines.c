@@ -248,7 +248,7 @@ PIPELINESinitialize(void)
 			break;
 		}
 		snprintf(name, sizeof(name), "PIPELINEworker%d", i);
-		if ((workers[i].id = THRcreate(PIPELINEworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0) {
+		if (MT_create_thread(&workers[i].id, PIPELINEworker, (void *) &workers[i], MT_THR_JOINABLE, name) < 0) {
 			GDKfree(workers[i].errbuf);
 			workers[i].errbuf = NULL;
 			workers[i].flag = IDLE;

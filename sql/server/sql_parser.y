@@ -260,6 +260,7 @@ int yydebug=1;
 	like_predicate
 	like_table
 	literal
+	map_funcs
 	merge_insert
 	merge_match_clause
 	merge_stmt
@@ -680,7 +681,7 @@ int yydebug=1;
 %token XMLPARSE STRIP WHITESPACE XMLPI XMLQUERY PASSING XMLTEXT
 %token NIL REF ABSENT EMPTY DOCUMENT ELEMENT CONTENT XMLNAMESPACES NAMESPACE
 %token XMLVALIDATE RETURNING LOCATION ID ACCORDING XMLSCHEMA URI XMLAGG
-%token FILTER
+%token FIELD FILTER
 
 /* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING
@@ -725,7 +726,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND EPOCH ZONE
 %token LIMIT OFFSET SAMPLE SEED FETCH
-%token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
+%token CASE WHEN THEN ELSE NULLIF COALESCE IFNULL IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
 %token COPY RECORDS DELIMITERS STDIN STDOUT FWF CLIENT SERVER
 %token INDEX REPLACE
@@ -736,7 +737,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token X_BODY
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
 /* odbc tokens */
-%token DAYNAME MONTHNAME TIMESTAMPADD TIMESTAMPDIFF IFNULL
+%token DAYNAME MONTHNAME TIMESTAMPADD TIMESTAMPDIFF 
 /* odbc data type tokens */
 %token <sval>
 	SQL_BIGINT
@@ -1905,6 +1906,7 @@ column_def:
 		}
  |  column serial_or_bigserial
 		{ /* SERIAL = INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY */
+		  /* BIGSERIAL = BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY */
 			/* handle multi-statements by wrapping them in a list */
 			sql_subtype it;
 			dlist* stmts;
@@ -2002,8 +2004,14 @@ column_constraint:
 	  $$ = _symbol_create_list( SQL_CONSTRAINT, l ); }
  ;
 
+always_or_by_default:
+	ALWAYS
+   |	BY DEFAULT
+   ;
+
 generated_column:
-	GENERATED ALWAYS AS IDENTITY serial_opt_params
+		/* we handle both by default and always alike, ie inserts/updates are allowed */
+	GENERATED always_or_by_default AS IDENTITY serial_opt_params
 	{
 		/* handle multi-statements by wrapping them in a list */
 		sql_subtype it;
@@ -3571,11 +3579,11 @@ table_ref:
  |  string opt_table_name	{ dlist *l = L();
 				  dlist *f = L();
 				  append_list(f, append_string(L(), "file_loader"));
- 				  append_int(f, FALSE); /* ignore distinct */
+				  append_int(f, FALSE); /* ignore distinct */
 				  const char *s = $1;
 				  int len = UTF8_strlen(s);
 				  sql_subtype t;
-				  sql_find_subtype(&t, "char", len, 0 );
+				  sql_find_subtype(&t, "char", len, 0);
 				  append_symbol(f, _newAtomNode( _atom_string(&t, s)));
 				  append_symbol(l, _symbol_create_list( SQL_UNOP, f));
 				  append_int(l, 0);
@@ -3730,7 +3738,7 @@ opt_order_by_clause:
 
 first_next:
     FIRST
- |  NEXT 
+ |  NEXT
  ;
 
 opt_rows:
@@ -3740,7 +3748,7 @@ opt_rows:
 
 rows:
     ROW
- |  ROWS 
+ |  ROWS
  ;
 
 /* TODO add support for limit start, end */
@@ -3777,7 +3785,7 @@ opt_fetch:
 			  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $3));
 			}
- |  FETCH first_next param rows ONLY 
+ |  FETCH first_next param rows ONLY
 			{ $$ = $3; }
  |  FETCH first_next rows ONLY {
 			  sql_subtype *t = sql_bind_localtype("lng");
@@ -4297,8 +4305,19 @@ value_exp:
  |  string_funcs
  |  XML_value_function
  |  odbc_scalar_func_escape
+ |  map_funcs
  |  multi_arg_func
  ;
+
+map_funcs:
+    FIELD '(' search_condition_commalist ')'
+			{ dlist *l = L();
+			  append_list(l,
+				append_string(L(), sa_strdup(SA, "field")));
+			  append_int(l, FALSE); /* ignore distinct */
+			  append_list(l, $3);
+			  $$ = _symbol_create_list( SQL_NOP, l ); }
+  ;
 
 param:
    '?'
@@ -4313,8 +4332,8 @@ param:
 	  int nr = sql_bind_param( m, $2);
 
 	  if (nr < 0) {
-	  	nr = (m->params)?list_length(m->params):0;
-	  	sql_add_param(m, $2, NULL);
+		nr = (m->params)?list_length(m->params):0;
+		sql_add_param(m, $2, NULL);
 	  }
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr );
 	}
@@ -5046,7 +5065,7 @@ literal:
 		  atom *a;
 		  int r;
 		  int precision = $2;
-	
+
 		  if (precision == 1 && strlen($4) > 9)
 			precision += (int) strlen($4) - 9;
 		  r = sql_find_subtype(&t, ($3)?"timetz":"time", precision, 0);
@@ -5262,6 +5281,11 @@ cast_exp:
 case_exp:
      NULLIF '(' search_condition ',' search_condition ')'
 		{ $$ = _symbol_create_list(SQL_NULLIF,
+		   append_symbol(
+		    append_symbol(
+		     L(), $3), $5)); }
+ |   IFNULL '(' search_condition ',' search_condition ')'
+		{ $$ = _symbol_create_list(SQL_COALESCE,
 		   append_symbol(
 		    append_symbol(
 		     L(), $3), $5)); }
@@ -5708,6 +5732,7 @@ non_reserved_word:
 | EPOCH		{ $$ = sa_strdup(SA, "epoch"); }
 | SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 | FIRST		{ $$ = sa_strdup(SA, "first"); }
+| FIELD		{ $$ = sa_strdup(SA, "field"); }
 | GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 | IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 | INCREMENT	{ $$ = sa_strdup(SA, "increment"); }
@@ -6786,24 +6811,24 @@ odbc_tsi_qualifier:
 
 multi_arg_func_name:
     LEAST	{ $$ = sa_strdup(SA, "least"); }
- |  GREATEST 	{ $$ = sa_strdup(SA, "greatest"); }		
+ |  GREATEST	{ $$ = sa_strdup(SA, "greatest"); }
  ;
 
 multi_arg_func:
     multi_arg_func_name '(' case_search_condition_commalist ')' /* create nested calls of binary function */
-		{ dlist *args = $3; 
-		  dnode *f = args->h;
-		  symbol *cur = f->data.sym;
- 		  for (dnode *dn = f->next; dn; dn = dn->next) {
-			dlist *l = L();
-	  		append_list( l, append_string(L(), $1));
-	  		append_int(l, FALSE); /* ignore distinct */
-	  		append_symbol(l, cur);
-	  		append_symbol(l, dn->data.sym);
-	  		cur = _symbol_create_list( SQL_BINOP, l );
-		  }
-		  $$ = cur;
-	        }
+	{ dlist *args = $3;
+	  dnode *f = args->h;
+	  symbol *cur = f->data.sym;
+	  for (dnode *dn = f->next; dn; dn = dn->next) {
+		dlist *l = L();
+		append_list( l, append_string(L(), $1));
+		append_int(l, FALSE); /* ignore distinct */
+		append_symbol(l, cur);
+		append_symbol(l, dn->data.sym);
+		cur = _symbol_create_list( SQL_BINOP, l );
+	  }
+	  $$ = cur;
+	}
  ;
 
 %%

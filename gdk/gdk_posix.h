@@ -35,12 +35,6 @@
 #include <direct.h>
 #endif
 
-/*
- * @- virtual memory
- */
-#define MT_VMUNITLOG	16
-#define MT_VMUNITSIZE	(1 << MT_VMUNITLOG)
-
 /* make sure POSIX_MADV_* and posix_madvise() are defined somehow */
 #ifdef HAVE_SYS_MMAN_H
 # ifndef __USE_BSD

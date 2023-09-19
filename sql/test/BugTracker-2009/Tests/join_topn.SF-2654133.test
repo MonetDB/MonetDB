@@ -11,7 +11,7 @@ statement ok
 insert into x (n,s) values (3, 'three')
 
 query TIIIIIIIT rowsort
-select name, schema_id, type, system, commit_action, access, temporary, n, s from tables, x where name in ('schemas', 'tables', 'columns') order by name, n limit 9
+select name, schema_id, type, system, commit_action, access, temporary, n, s from tables, x where name in ('schemas', 'tables', 'columns') and schema_id = 2000 order by name, n limit 9
 ----
 columns
 2000

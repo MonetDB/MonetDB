@@ -32,7 +32,6 @@ target_sources(malmodules
   mal_mapi.c
   remote.c remote.h
   txtsim.c
-  tokenizer.c
   sample.c
   querylog.c querylog.h
   sysmon.c

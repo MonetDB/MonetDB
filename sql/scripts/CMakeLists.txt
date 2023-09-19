@@ -39,6 +39,7 @@ install(FILES
   76_dump.sql
   80_statistics.sql
   81_tracer.sql
+  91_information_schema.sql
   99_system.sql
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5/createdb)
 

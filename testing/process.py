@@ -165,6 +165,54 @@ class _BufferedPipe:
                 break
         return self._empty.join(ret)
 
+# signals that by default produce a core dump, i.e. bad
+# this of course doesn't work on Windows
+_coresigs = set()
+try:
+    _coresigs.add(signal.SIGABRT)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGBUS)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGFPE)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGILL)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGIOT)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGQUIT)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGSEGV)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGSYS)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGTRAP)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGXCPU)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGXFSZ)
+except AttributeError:
+    pass
+
 class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
@@ -181,6 +229,8 @@ class Popen(subprocess.Popen):
         self.terminate()
         self._clean_dotmonetdbfile()
         super().__exit__(exc_type, value, traceback)
+        if self.returncode and self.returncode < 0 and -self.returncode in _coresigs:
+            raise RuntimeError('process exited with coredump generating signal %r' % signal.Signals(-self.returncode))
 
     def __del__(self):
         if self._child_created:

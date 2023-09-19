@@ -6,17 +6,17 @@ select s.name,char_length(s.name), count(*) from schemas s, tables t
 ----
 json
 4
-10
+11
 logging
 7
-10
+11
 profiler
 8
-10
+11
 sys
 3
-10
+11
 tmp
 3
-10
+11
 

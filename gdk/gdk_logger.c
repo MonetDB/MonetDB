@@ -439,9 +439,11 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 			} else {
 				lg->rbuf = t;
 				lg->rbufsize = tlen;
-				for (BUN p = 0; p < (BUN) nr; p++) {
-					if (r && BUNappend(r, t, true) != GDK_SUCCEED)
-						res = LOG_ERR;
+				if (r) {
+					for (BUN p = 0; p < (BUN) nr; p++) {
+						if (BUNappend(r, t, true) != GDK_SUCCEED)
+							res = LOG_ERR;
+					}
 				}
 			}
 		} else if (l->flag == LOG_UPDATE_BULK) {
@@ -2083,6 +2085,12 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 		lg->seqs_val = BATdescriptor(BBPindex(bak));
 		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
 		lg->dseqs = BATdescriptor(BBPindex(bak));
+		if (lg->seqs_id == NULL ||
+		    lg->seqs_val == NULL ||
+		    lg->dseqs == NULL) {
+			GDKerror("Logger_new: cannot load seqs bats");
+			goto error;
+		}
 	} else {
 		lg->seqs_id = logbat_new(TYPE_int, 1, PERSISTENT);
 		lg->seqs_val = logbat_new(TYPE_lng, 1, PERSISTENT);
@@ -2505,6 +2513,8 @@ log_flush(logger *lg, ulng ts)
 		if (updated == NULL) {
 			nupdated = BATcount(lg->catalog_id);
 			allocated = ((nupdated + 31) & ~31) / 8;
+			if (allocated == 0)
+				allocated = 4;
 			updated = GDKzalloc(allocated);
 			if (updated == NULL) {
 				log_unlock(lg);

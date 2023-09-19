@@ -555,7 +555,7 @@ SELECT
 	(SELECT 1 FROM integers i2 INNER JOIN integers i3 on MAX(i3.i) = MIN(i2.i))
 FROM integers i1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 SELECT
     (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
 FROM integers i1
@@ -717,7 +717,7 @@ FROM another_T
 4
 4
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MAX(t1.col1) FROM tbl_ProductSales)))
 FROM another_T t1
@@ -741,7 +741,7 @@ SELECT * FROM evilfunction(1)
 1
 1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MIN(col1))))
 FROM another_T
@@ -751,7 +751,7 @@ SELECT
 	(SELECT outt FROM evilfunction((SELECT MAX(ColID) FROM tbl_ProductSales)))
 FROM another_T
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MAX(t1.col1) FROM tbl_ProductSales)))
 FROM another_T t1

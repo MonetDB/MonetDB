@@ -111,7 +111,7 @@ static bool WriteTextToFile(FILE *f, const char *data)
 
 static _Noreturn void handler(int sig, siginfo_t *si, void *unused)
 {
-	int tid = THRgettid();
+	MT_Id tid = MT_getpid();
 
 	(void)sig;
 	(void)si;
@@ -173,7 +173,7 @@ static void *jump_GDK_malloc(size_t size)
 		return NULL;
 	void *ptr = GDKmalloc(size);
 	if (!ptr && option_enable_longjmp) {
-		longjmp(jump_buffer[THRgettid()-1], 2);
+		longjmp(jump_buffer[MT_getpid()-1], 2);
 	}
 	return ptr;
 }
@@ -181,7 +181,7 @@ static void *jump_GDK_malloc(size_t size)
 static void *add_allocated_region(void *ptr)
 {
 	allocated_region *region;
-	int tid = THRgettid();
+	MT_Id tid = MT_getpid();
 	region = (allocated_region *)ptr;
 	region->next = allocated_regions[tid-1];
 	allocated_regions[tid-1] = region;
@@ -215,7 +215,7 @@ static void wrapped_GDK_free(void* ptr) {
 		}                                                                      \
 		b = COLnew(0, TYPE_##tpename, count, TRANSIENT);                       \
 		if (!b) {                                                              \
-			if (option_enable_longjmp) longjmp(jump_buffer[THRgettid()-1], 2); \
+			if (option_enable_longjmp) longjmp(jump_buffer[MT_getpid()-1], 2); \
 			else return;                                                       \
 		}                                                                      \
 		self->bat = (void*) b;                                                 \
@@ -480,7 +480,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BUN expression_hash = 0, funcname_hash = 0;
 	cached_functions *cached_function;
 	char *function_parameters = NULL;
-	int tid = THRgettid();
+	MT_Id tid = MT_getpid();
 	size_t input_size = 0;
 	bit non_grouped_aggregate = 0;
 

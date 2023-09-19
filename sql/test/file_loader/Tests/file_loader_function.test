@@ -1,0 +1,37 @@
+statement error 42000!SELECT: file_loader function failed 'Filename missing'
+select * from file_loader('')
+
+statement error 42000!SELECT: file_loader function failed 'Filename extension missing'
+select * from file_loader('FileNotFound')
+
+statement error 42000!SELECT: file_loader function failed 'File not found'
+select * from file_loader('/tmp/FileNotFound.csv')
+
+statement error 42000!SELECT: file_loader function failed 'Filename extension 'gz' missing'
+select * from file_loader('/tmp/FileNotFound.gz')
+
+statement error 42000!SELECT: file_loader function failed 'File not found'
+select * from file_loader('/tmp/FileNotFound.csv.gz')
+
+statement error 42000!SELECT: file_loader function failed 'File not found'
+select * from file_loader(R'C:\temp\FileNotFound.csv.gz')
+
+statement error 42000!SELECT: file_loader function failed 'File not found'
+select * from file_loader('/tmp/FileNotFound.csv.gz') as file
+
+statement error 42000!SELECT: file_loader function failed 'File not found'
+select * from file_loader('/tmp/FileNotFound.csv.gz') as file(col1, col2)
+
+statement error 42000!SELECT: file_loader function failed 'File not found'
+select * from file_loader('/tmp/FileNotFound.csv') file(col1, col2)
+
+
+statement error 42000!SELECT: no such table returning function 'sys'.'file_loader'(char)
+select * from sys.file_loader('')
+
+statement error 42000!SELECT: no such table returning function 'sys'.'file_loader'(char(12))
+select * from sys.file_loader('FileNotFound')
+
+statement error 42000!SELECT: no such table returning function 'sys'.'file_loader'(char(16))
+select * from sys.file_loader('FileNotFound.csv')
+

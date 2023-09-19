@@ -750,7 +750,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 						BBPunfix(b->batCacheid);
 						GDKfree(buf);
 						GDKfree(t);
-						GDKmunmap(base, end - base);
+						GDKmunmap(base, MMAP_SEQUENTIAL, end - base);
 						throw(MAL, "io.import",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
@@ -775,7 +775,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 				BBPunfix(b->batCacheid);
 				GDKfree(buf);
 				GDKfree(t);
-				GDKmunmap(base, end - base);
+				GDKmunmap(base, MMAP_SEQUENTIAL, end - base);
 				throw(MAL, "io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			buf = tmp;
@@ -796,7 +796,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 			BBPunfix(b->batCacheid);
 			snprintf(msg, sizeof(msg), "error in input %s", buf);
 			GDKfree(buf);
-			GDKmunmap(base, end - base);
+			GDKmunmap(base, MMAP_SEQUENTIAL, end - base);
 			GDKfree(t);
 			throw(MAL, "io.import", "%s", msg);
 		}
@@ -805,7 +805,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 			BBPunfix(b->batCacheid);
 			snprintf(msg, sizeof(msg), "error in input %s", buf);
 			GDKfree(buf);
-			GDKmunmap(base, end - base);
+			GDKmunmap(base, MMAP_SEQUENTIAL, end - base);
 			GDKfree(t);
 			throw(MAL, "io.import", "%s", msg);
 		}
@@ -814,7 +814,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
 			GDKfree(t);
-			GDKmunmap(base, end - base);
+			GDKmunmap(base, MMAP_SEQUENTIAL, end - base);
 			throw(MAL, "io.import", "insert failed");
 		}
 #if 0							/* why do this? any measured effects? */
@@ -824,7 +824,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 #ifndef WIN32
 #define MAXBUF 40*MT_pagesize()
 		if ((unsigned) (cur - base) > MAXBUF) {
-			GDKmunmap(base, MAXBUF);
+			GDKmunmap(base, MMAP_SEQUENTIAL, MAXBUF);
 			base += MAXBUF;
 		}
 #endif
@@ -834,7 +834,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 	if (t)
 		GDKfree(t);
 	GDKfree(buf);
-	GDKmunmap(base, end - base);
+	GDKmunmap(base, MMAP_SEQUENTIAL, end - base);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

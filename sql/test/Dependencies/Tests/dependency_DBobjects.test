@@ -83,6 +83,9 @@ query TTT rowsort
 SELECT a.name, s.name, 'DEP_SCHEMA' from sys.schemas as s, auths a where s.owner = a.id order by a.name, s.name
 ----
 monetdb
+information_schema
+DEP_SCHEMA
+monetdb
 json
 DEP_SCHEMA
 monetdb

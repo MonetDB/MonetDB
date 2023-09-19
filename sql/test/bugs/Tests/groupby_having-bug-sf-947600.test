@@ -31,12 +31,15 @@ objects
 args
 sequences
 2
+columns
+columns
+1
 functions
 args
 3
 functions
 columns
-3
+4
 functions
 idxs
 6
@@ -51,7 +54,7 @@ sequences
 3
 idxs
 columns
-8
+10
 idxs
 idxs
 4
@@ -63,7 +66,7 @@ objects
 6
 keys
 columns
-8
+10
 keys
 idxs
 12
@@ -87,7 +90,7 @@ objects
 4
 sequences
 columns
-2
+3
 sequences
 idxs
 4

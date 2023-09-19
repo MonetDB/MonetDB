@@ -687,7 +687,11 @@ HEAPfree(Heap *h, bool rmheap)
 			//heap is stored in regular C memory rather than GDK memory,so we call free()
 			free(h->base);
 		} else if (h->storage != STORE_NOWN) {	/* mapped file, or STORE_PRIV */
-			gdk_return ret = GDKmunmap(h->base, h->size);
+			gdk_return ret = GDKmunmap(h->base,
+						   h->storage == STORE_PRIV ?
+						   MMAP_COPY | MMAP_READ | MMAP_WRITE :
+						   MMAP_READ | MMAP_WRITE,
+						   h->size);
 
 			if (ret != GDK_SUCCEED) {
 				GDKsyserror("HEAPfree: %s was not mapped\n",

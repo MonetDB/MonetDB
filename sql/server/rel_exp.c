@@ -1212,16 +1212,18 @@ exp_refers( sql_exp *p, sql_exp *c)
 		// at first they need to have the same expression names
 		if (!p->alias.name || !c->r || strcmp(p->alias.name, c->r) != 0)
 			return 0;
+		if (!c->l)
+			return 1;
 		// then compare the relation names
-		if (c->l) {
+		if (c->l && (p->alias.rname || p->l)) {
 			// if the parent has an alias for the relation name compare with the child's relation name
 			if (p->alias.rname && strcmp(p->alias.rname, c->l) != 0)
 				return 0;
 			// if the parent does NOT have a relation name alias compare his relation name with the child's
-			if (!p->alias.rname && p->l && strcmp(p->l, c->l) != 0)
+			if (!p->alias.rname && p->l && (strcmp(p->l, c->l) != 0 || strcmp(p->alias.name, p->r) !=0))
 				return 0;
+			return 1;
 		}
-		return 1;
 	}
 	return 0;
 }
@@ -1260,24 +1262,24 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 
 	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == CARD_ATOM &&
 	    (e2->flag == cmp_in || e2->flag == cmp_notin))
- 		return exp_match_exp(e1->l, e2->l);
+		return exp_match_exp(e1->l, e2->l);
 	if ((e1->flag == cmp_in || e1->flag == cmp_notin) &&
 	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == CARD_ATOM)
- 		return exp_match_exp(e1->l, e2->l);
+		return exp_match_exp(e1->l, e2->l);
 
 	if ((e1->flag == cmp_in || e1->flag == cmp_notin) &&
 	    (e2->flag == cmp_in || e2->flag == cmp_notin))
- 		return exp_match_exp(e1->l, e2->l);
+		return exp_match_exp(e1->l, e2->l);
 
 	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == CARD_ATOM &&
 	    e2->flag == cmp_or)
- 		return exp_match_col_exps(e1->l, e2->l) &&
- 		       exp_match_col_exps(e1->l, e2->r);
+		return exp_match_col_exps(e1->l, e2->l) &&
+		       exp_match_col_exps(e1->l, e2->r);
 
 	if (e1->flag == cmp_or &&
 	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == CARD_ATOM)
- 		return exp_match_col_exps(e2->l, e1->l) &&
- 		       exp_match_col_exps(e2->l, e1->r);
+		return exp_match_col_exps(e2->l, e1->l) &&
+		       exp_match_col_exps(e2->l, e1->r);
 
 	if (e1->flag == cmp_or && e2->flag == cmp_or) {
 		list *l = e1->l, *r = e1->r;

@@ -26,7 +26,7 @@ table-udf-column-descriptor.Bug-6964
 table-udf-distinct.Bug-6965
 table-udf-on-remote.Bug-6971
 integers-intervals.Bug-6979
-KNOWNFAIL?wrong-key-error.Bug-6982
+wrong-key-error.Bug-6982
 window-function-order.Bug-6997
 semijoin.Bug-7001
 decimal-multiplication.Bug-7003

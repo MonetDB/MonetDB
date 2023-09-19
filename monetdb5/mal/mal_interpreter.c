@@ -595,7 +595,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					const char *q = cntxt->query ? cntxt->query : NULL;
 					TRC_INFO(MAL_SERVER,
 							 "%s: query already running " LLFMT "s: %.200s\n",
-							 cntxt->mythread->name,
+							 cntxt->mythread ? cntxt->mythread : "?",
 							 (lng) (time(0) - cntxt->lastcmd), q ? q : "");
 				}
 			}

@@ -10,3 +10,4 @@ rollback-alter-drop-col-crash-7385
 view-on-alias-crash-7386
 alter-inc-seq-crash-7387
 misc-crashes-7390
+union-query-7401

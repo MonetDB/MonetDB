@@ -70,7 +70,7 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	m->errstr[0] = '\0';
 	m->session->status = 0;
 	/* via views we give access to protected objects */
-	assert(emode == m_instantiate || emode == m_deps);
+	assert(emode == m_instantiate || emode == m_deps || emode == m_prepare);
 	m->user_id = USER_MONETDB;
 
 	(void) sqlparse(m);     /* blindly ignore errors */

@@ -32,3 +32,4 @@ prepare-view
 prepare-mergetable
 insert-prepare.Bug-7230
 prepare-insert-into
+named_placeholders

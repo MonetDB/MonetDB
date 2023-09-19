@@ -61,35 +61,35 @@ the first of the ``cmake`` command lines.  Except when specified
 otherwise, options are ``ON`` when the relevant libraries can be found.
 Available options are:
 
-==============  ===============================================================================================
-Option          Explanation
-==============  ===============================================================================================
-ASSERT          Enable asserts (default=ON for development sources, OFF for tarball installation)
-CINTEGRATION    Enable support for C UDFs (default=ON except on Windows)
-CMAKE_SUMMARY   Show a summary of the cmake configuration (for debug purposes, default=OFF)
-CMAKE_UNITTEST  Build and run the unittest for the build system (default=OFF)
-FITS            Enable support for FITS
-GEOM            Enable support for geom module
-INT128          Enable support for 128-bit integers
-NETCDF          Enable support for netcdf
-ODBC            Compile the MonetDB ODBC driver
-PY3INTEGRATION  Enable support for Python 3 integration into MonetDB
-RINTEGRATION    Enable support for R integration into MonetDB
-SANITIZER       Enable support for the GCC address sanitizer (default=OFF)
-SHP             Enable support for ESRI Shapefiles
-STRICT          Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)
-TESTING         Enable support for testing
-WITH_BZ2        Include bz2 support
-WITH_CMOCKA     Include cmocka support (default=OFF)
-WITH_CURL       Include curl support
-WITH_LZMA       Include lzma support
-WITH_PCRE       Include pcre support
-WITH_PROJ       Include proj support
-WITH_READLINE   Include readline support
-WITH_VALGRIND   Include valgrind support
-WITH_XML2       Include xml2 support
-WITH_ZLIB       Include zlib support
-==============  ===============================================================================================
+=================   ===============================================================================================
+Option              Explanation
+=================   ===============================================================================================
+ASSERT              Enable asserts (default=ON for development sources, OFF for tarball installation)
+CINTEGRATION        Enable support for C UDFs (default=ON except on Windows)
+CMAKE_SUMMARY       Show a summary of the cmake configuration (for debug purposes, default=OFF)
+CMAKE_UNITTESTS     Build and run the unittest for the build system (default=OFF)
+FITS                Enable support for FITS
+GEOM                Enable support for geom module
+INT128              Enable support for 128-bit integers
+NETCDF              Enable support for netcdf
+ODBC                Compile the MonetDB ODBC driver
+PY3INTEGRATION      Enable support for Python 3 integration into MonetDB
+RINTEGRATION        Enable support for R integration into MonetDB
+SANITIZER           Enable support for the GCC address sanitizer (default=OFF)
+SHP                 Enable support for ESRI Shapefiles
+STRICT              Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)
+TESTING             Enable support for testing
+WITH_BZ2            Include bz2 support
+WITH_CMOCKA         Include cmocka support (default=OFF)
+WITH_CURL           Include curl support
+WITH_LZMA           Include lzma support
+WITH_PCRE           Include pcre support
+WITH_PROJ           Include proj support
+WITH_READLINE       Include readline support
+WITH_VALGRIND       Include valgrind support
+WITH_XML2           Include xml2 support
+WITH_ZLIB           Include zlib support
+=================   ===============================================================================================
 
 Required and Optional Packages
 ..............................

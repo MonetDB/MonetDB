@@ -1530,7 +1530,7 @@ rel_paramlist( sql_query *query, symbol *nop)
 		ops = ops->next;
 		sql_arg *a = sql_find_param(query->sql, ops->data.sval);
 		if (!a)
-			return NULL;
+			return sql_error(query->sql, 06, SQLSTATE(42000) "Named placeholder ('%s') not used in the query.", ops->data.sval);
 		a->type = *exp_subtype(e);
 		append(exps, e);
 	}

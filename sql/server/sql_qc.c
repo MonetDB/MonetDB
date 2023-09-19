@@ -39,6 +39,14 @@ cq_delete(int clientid, cq *q)
 		sa_destroy(q->sa);
 }
 
+static void
+cq_restart(int clientid, cq *q)
+{
+	if (q->f->imp)
+		backend_freecode(NULL, clientid, q->f->imp);
+	q->f->instantiated = false;
+}
+
 void
 qc_delete(qc *cache, cq *q)
 {
@@ -75,6 +83,16 @@ qc_clean(qc *cache)
 		cache->q = NULL;
 	}
 }
+
+void
+qc_restart(qc *cache)
+{
+	if (cache) {
+		for (cq *q = cache->q; q; q = q->next)
+			cq_restart(cache->clientid, q);
+	}
+}
+
 
 void
 qc_destroy(qc *cache)
@@ -156,7 +174,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	*f = (sql_func) {
 		.mod = sql_private_module_name,
 		.type = F_PROC,
-		.lang = FUNC_LANG_INT,
+		.lang = FUNC_LANG_SQL,
 		.query = cmd,
 		.ops = params,
 		.res = res,
@@ -165,7 +183,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	f->base.new = 1;
 	f->base.id = n->id;
 	f->base.name = f->imp = name;
-	f->instantiated = TRUE;
+	f->instantiated = true;
 	n->f = f;
 	return n;
 }

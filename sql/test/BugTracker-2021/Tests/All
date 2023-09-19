@@ -1,7 +1,7 @@
 update-from-count.Bug-7079
 remote-table-ranges.Bug-7089
 #KNOWNFAIL?query-too-complex.Bug-7092  # this is a feature request rather than a bug
-KNOWNFAIL?remote-table-rollback.Bug-7094
+remote-table-rollback.Bug-7094
 ntile-wrong-result.Bug-7104
 union-groupby.Bug-7108
 merge-stmt.wrong-error.Bug-7109

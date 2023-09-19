@@ -344,7 +344,7 @@ class SQLLogic:
                     else:
                         self.raise_error('incorrect column type indicator')
                 except TypeError:
-                    self.query_error(query, 'bad column type')
+                    self.query_error(query, f'bad column type {columns[i]} at {i}')
                     return None
             ndata.append(tuple(nrow))
         return ndata
