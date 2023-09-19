@@ -3015,9 +3015,8 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 			}
 
 			for (node *n = ((list*)u->l)->h; n; n = n->next) {
-				/* incr count to make sure that the operand rels are not
-				 * deleted by the subsequent rel_inplace_setop_n_ary */
 				r = rel_dup(n->data);
+
 				/* introduce projection around each operand if needed */
 				if (!is_project(r->op))
 					r = rel_project(v->sql->sa, r,
@@ -3026,21 +3025,32 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 				need_distinct &=
 					(!exps_unique(v->sql, r, r->exps) || have_nil(r->exps));
 				rel_rename_exps(v->sql, u->exps, r->exps);
+
+				rel_destroy(n->data);
+				n->data = r;
 			}
 
 			/* once we have checked for need_distinct in every rel we can
 			 * introduce the projects under the munion which are gonna be
 			 * copies of the single project above munion */
 			for (node *n = ((list*)u->l)->h; n; n = n->next) {
-				r = rel_project(v->sql->sa, n->data, NULL);
+				r = rel_dup(n->data);
+
+				r = rel_project(v->sql->sa, r, NULL);
 				if (need_distinct)
 					set_distinct(r);
 				r->exps = exps_copy(v->sql, p->exps);
 				set_processed(r);
+
+				rel_destroy(n->data);
+				n->data = r;
 			}
 
-			/* turn the project-munion on top into munion. munion
-			 * operand rels have already dup'ed so they won't be deleted */
+			/* turn the project-munion on top into munion. incr operand
+			 * rels count to make sure that they are not deleted by the
+			 * subsequent rel_inplace_setop_n_ary */
+			for (node *n = ((list*)u->l)->h; n; n = n->next)
+				rel_dup(n->data);
 			rel = rel_inplace_setop_n_ary(v->sql, rel, u->l, op_munion,
 					rel_projections(v->sql, rel, NULL, 1, 1));
 			if (need_distinct)
@@ -3052,7 +3062,10 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 
 			/* if any operand has two project above then squash them */
 			for (node *n = ((list*)u->l)->h; n; n = n->next) {
-				r = rel_merge_projects_(v, n->data);
+				r = rel_dup(n->data);
+				r = rel_merge_projects_(v, r);
+				rel_destroy(n->data);
+				n->data = r;
 			}
 
 			return rel;
