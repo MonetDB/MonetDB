@@ -141,8 +141,7 @@ typedef enum ddl_statement {
 	ddl_comment_on,
 	ddl_rename_schema,
 	ddl_rename_table,
-	ddl_rename_column,
-	ddl_maxops /* evaluated to the max value, should be always kept at the bottom */
+	ddl_rename_column
 } ddl_statement;
 
 typedef enum operator_type {
@@ -168,7 +167,7 @@ typedef enum operator_type {
 	op_update,	/* update(l=table, r update expressions) */
 	op_delete,	/* delete(l=table, r delete expression) */
 	op_truncate, /* truncate(l=table) */
-	op_merge
+	op_merge 	 /* IMPORTANT: keep op_merge last */
 } operator_type;
 
 #define is_atom(et) 		(et == e_atom)

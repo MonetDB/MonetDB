@@ -550,7 +550,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
 					if (n < 0)
-						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, %zu bytes missing\n", nme, ext ? ext : "", (size_t) n_expected);
+						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, expected %zu, %zd bytes missing\n", nme, ext ? ext : "", size, n_expected);
 #ifndef __COVERITY__
 					/* Coverity doesn't seem to
 					 * recognize that we're just
@@ -567,7 +567,8 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					/* we couldn't read all, error
 					 * already generated */
 					GDKfree(ret);
-					GDKerror("short read from heap %s%s%s, expected %zu, missing %zd\n", nme, ext ? "." : "", ext ? ext : "", size, n_expected);
+					if (n >= 0) /* don't report error twice  */
+						GDKerror("short read from heap %s%s%s, expected %zu, missing %zd\n", nme, ext ? "." : "", ext ? ext : "", size, n_expected);
 					ret = NULL;
 				}
 #ifndef NDEBUG
@@ -763,13 +764,12 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		}
 		if (size != b->batCount || b->batInserted < b->batCount) {
 			/* if the sizes don't match, the BAT must be dirty */
-			b->batCopiedtodisk = false;
 			b->theap->dirty = true;
 			if (b->tvheap)
 				b->tvheap->dirty = true;
-		} else {
-			b->batCopiedtodisk = true;
 		}
+		/* there is something on disk now */
+		b->batCopiedtodisk = true;
 		MT_lock_unset(&b->theaplock);
 		if (locked &&  b->thash && b->thash != (Hash *) 1)
 			BAThashsave(b, dosync);

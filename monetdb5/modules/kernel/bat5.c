@@ -675,17 +675,16 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
 	return GDK_SUCCEED;
 }
 
-
 static str
-BATinfo(BAT **key, BAT **val, const bat bid)
+BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 {
 	const char *mode, *accessmode;
 	BAT *bk = NULL, *bv = NULL, *b;
 	char bf[oidStrlen];
 	char buf[32];
 
-	if ((b = BATdescriptor(bid)) == NULL) {
-		throw(MAL, "BATinfo", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bat.info", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	bk = COLnew(0, TYPE_str, 128, TRANSIENT);
@@ -694,7 +693,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "bat.info", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	BATiter bi = bat_iterator(b);
@@ -718,11 +717,11 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 		accessmode = "unknown";
 	}
 
-	if (BUNappend(bk, "batId", false) != GDK_SUCCEED ||
-		BUNappend(bv, BATgetId(b), false) != GDK_SUCCEED ||
-		BUNappend(bk, "batCacheid", false) != GDK_SUCCEED ||
-		BUNappend(bv, local_itoa((ssize_t) b->batCacheid, buf),
-				  false) != GDK_SUCCEED
+	if (BUNappend(bk, "batId", false) != GDK_SUCCEED
+		|| BUNappend(bv, BATgetId(b), false) != GDK_SUCCEED
+		|| BUNappend(bk, "batCacheid", false) != GDK_SUCCEED
+		|| BUNappend(bv, local_itoa((ssize_t) b->batCacheid, buf),
+					 false) != GDK_SUCCEED
 		|| BUNappend(bk, "tparentid", false) != GDK_SUCCEED
 		|| BUNappend(bv, local_itoa((ssize_t) bi.h->parentid, buf),
 					 false) != GDK_SUCCEED
@@ -803,7 +802,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "bat.info", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/* dump index information */
 	MT_rwlock_rdlock(&b->thashlock);
@@ -813,25 +812,12 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "bat.info", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	MT_rwlock_rdunlock(&b->thashlock);
 	bat_iterator_end(&bi);
-	*key = bk;
-	*val = bv;
 	assert(BATcount(bk) == BATcount(bv));
-	BBPunfix(bid);
-	return MAL_SUCCEED;
-}
-
-static str
-BKCinfo(bat *ret1, bat *ret2, const bat *bid)
-{
-	BAT *bv, *bk;
-	str msg;
-
-	if ((msg = BATinfo(&bk, &bv, *bid)) != NULL)
-		return msg;
+	BBPunfix(b->batCacheid);
 	*ret1 = bk->batCacheid;
 	BBPkeepref(bk);
 	*ret2 = bv->batCacheid;

@@ -726,7 +726,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND EPOCH ZONE
 %token LIMIT OFFSET SAMPLE SEED FETCH
-%token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
+%token CASE WHEN THEN ELSE NULLIF COALESCE IFNULL IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
 %token COPY RECORDS DELIMITERS STDIN STDOUT FWF CLIENT SERVER
 %token INDEX REPLACE
@@ -737,7 +737,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token X_BODY
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
 /* odbc tokens */
-%token DAYNAME MONTHNAME TIMESTAMPADD TIMESTAMPDIFF IFNULL
+%token DAYNAME MONTHNAME TIMESTAMPADD TIMESTAMPDIFF 
 /* odbc data type tokens */
 %token <sval>
 	SQL_BIGINT
@@ -5281,6 +5281,11 @@ cast_exp:
 case_exp:
      NULLIF '(' search_condition ',' search_condition ')'
 		{ $$ = _symbol_create_list(SQL_NULLIF,
+		   append_symbol(
+		    append_symbol(
+		     L(), $3), $5)); }
+ |   IFNULL '(' search_condition ',' search_condition ')'
+		{ $$ = _symbol_create_list(SQL_COALESCE,
 		   append_symbol(
 		    append_symbol(
 		     L(), $3), $5)); }
