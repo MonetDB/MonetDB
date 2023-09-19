@@ -190,26 +190,28 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 		if (err)
 			return err;
 		BAT *b;
-		if ((b = BATdescriptor(output->cols[0].b)) != NULL) {
-			if (BATcount(b) > 0) {
-				BATiter bi = bat_iterator(b);
-				needsystabfix = * (int *) BUNtloc(bi, 0) != id;
-				bat_iterator_end(&bi);
-			}
-			BBPunfix(b->batCacheid);
-		}
+		b = BATdescriptor(output->cols[0].b);
 		res_table_destroy(output);
+		if (b == NULL)
+			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (BATcount(b) > 0) {
+			BATiter bi = bat_iterator(b);
+			needsystabfix = * (int *) BUNtloc(bi, 0) != id;
+			bat_iterator_end(&bi);
+		}
+		BBPunfix(b->batCacheid);
 		if (i == 0 && !needsystabfix) {
 			snprintf(buf, sizeof(buf),
 					 "select a.type from sys.functions f join sys.args a on f.id = a.func_id where f.name = 'quarter' and f.schema_id = 2000 and a.inout = 0 and a.type = 'int';\n");
 			err = SQLstatementIntern(c, buf, "update", true, false, &output);
 			if (err)
 				return err;
-			if ((b = BATdescriptor(output->cols[0].b)) != NULL) {
-				needsystabfix = BATcount(b) > 0;
-				BBPunfix(b->batCacheid);
-			}
+			b = BATdescriptor(output->cols[0].b);
 			res_table_destroy(output);
+			if (b == NULL)
+				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			needsystabfix = BATcount(b) > 0;
+			BBPunfix(b->batCacheid);
 		}
 		if (needsystabfix)
 			return sql_fix_system_tables(c, m);
@@ -1718,6 +1720,11 @@ sql_update_jun2020_bam(Client c, mvc *m)
 		return err;
 	}
 	b = BATdescriptor(output->cols[0].b);
+	res_table_destroy(output);
+	if (b == NULL) {
+		GDKfree(buf);
+		throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	pos = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.schemas set system = false where name = 'bam';\n"
@@ -1733,20 +1740,17 @@ sql_update_jun2020_bam(Client c, mvc *m)
 			"drop function bam.seq_char cascade;\n"
 			"drop procedure bam.sam_export cascade;\n"
 			"drop procedure bam.bam_export cascade;\n");
-	if (b) {
-		if (BATcount(b) > 0 && *(lng *) Tloc(b, 0) == 0) {
-			/* tables in bam schema are empty: drop them */
-			pos += snprintf(buf + pos, bufsize - pos,
-					"drop table bam.sq cascade;\n"
-					"drop table bam.rg cascade;\n"
-					"drop table bam.pg cascade;\n"
-					"drop table bam.export cascade;\n"
-					"drop table bam.files cascade;\n"
-					"drop schema bam cascade;\n");
-		}
-		BBPunfix(b->batCacheid);
+	if (BATcount(b) > 0 && *(lng *) Tloc(b, 0) == 0) {
+		/* tables in bam schema are empty: drop them */
+		pos += snprintf(buf + pos, bufsize - pos,
+						"drop table bam.sq cascade;\n"
+						"drop table bam.rg cascade;\n"
+						"drop table bam.pg cascade;\n"
+						"drop table bam.export cascade;\n"
+						"drop table bam.files cascade;\n"
+						"drop schema bam cascade;\n");
 	}
-	res_table_destroy(output);
+	BBPunfix(b->batCacheid);
 
 	assert(pos < bufsize);
 
@@ -1958,6 +1962,8 @@ sql_update_oscar(Client c, mvc *sql)
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 		BBPunfix(b->batCacheid);
+	} else {
+		err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	res_table_destroy(output);
 	GDKfree(buf);
@@ -2095,6 +2101,8 @@ sql_update_oct2020(Client c, mvc *sql)
 				goto bailout;
 			err = sql_update_storagemodel(c, sql, true); /* because of day interval addition, we have to recreate the storagmodel views */
 		}
+	} else {
+		err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 bailout:
@@ -3163,6 +3171,8 @@ sql_update_jul2021(Client c, mvc *sql)
 			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
+	} else {
+		err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 bailout:
@@ -3244,6 +3254,8 @@ sql_update_jul2021_5(Client c, mvc *sql)
 				err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 			}
 			BBPunfix(b->batCacheid);
+		} else {
+			err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		res_table_destroy(output);
 	}

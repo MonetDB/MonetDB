@@ -2069,7 +2069,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                 rversion = os.path.join('@LIBR_INCLUDE_DIRS@', 'Rversion.h')
                 if os.path.exists(rversion):
                     with openutf8(rversion, 'r') as f:
-                        res = re.search('#define R_VERSION (?P<rversion>\d+)', f.read())
+                        res = re.search(r'#define R_VERSION (?P<rversion>\d+)', f.read())
                         if res is not None:
                             r_version = res.group('rversion')
                             req_version = cond[11:].split('.')
@@ -2130,7 +2130,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
         reason = "as multiple SQL clients in parallel are currently not supported by %s." % THISFILE
         elem = SkipTest(env, TST, EXT, reason, length)
     else:
-        test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
+        test = re.compile("^"+TST+r"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in listdir(RELSRCDIR):
             if test.match(f):
                 try:
@@ -2159,7 +2159,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                 reason = "as source file '%s` is missing." % TSTSRC
                 elem = SkipTest(env, TST, EXT+".src", reason, length)
                 return TX,Failed,Failed,elem,reason,links
-        test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
+        test = re.compile("^"+TST+r"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
                 f = openutf8(ff,"r")
@@ -2174,7 +2174,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                                % (TSTSRC, ff[:-4], os.getcwd(), err.errno, err.strerror))
                 else:
                     Warn("source file '"+TSTSRC+"` is missing.")
-        test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*\.in$", re.MULTILINE)
+        test = re.compile("^"+TST+r"(_[sp][0-9][0-9])?\..*\.in$", re.MULTILINE)
         for ff in listdir(TSTTRGDIR):
             fff = ff[:-3]
             if test.match(ff) and not os.path.isfile(fff):
@@ -2535,7 +2535,7 @@ def killProc(proc, outfile = None, cmd = None):
                 sym = r'c:\Symbols;'
         elif os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'):
             cdb = r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'
-            if os.path.exists('c:\WINDOWS\Symbols'):
+            if os.path.exists(r'c:\WINDOWS\Symbols'):
                 sym = r'c:\WINDOWS\Symbols;'
         else:
             cdb = None
@@ -3076,11 +3076,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
 
     # Try to detect segfaults and the like
     # Try to detect aborts due to too deep recursion
-    for (regexp, msg) in [("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))",
+    for (regexp, msg) in [("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:.]|!FATAL: BATSIGabort:)([ \t]|$))",
                            'segfault'),
                           ("aborted too deep recursion",
                            'recursion'),
-                          ("mal_mapi\.listen:operation failed: bind to stream socket port",
+                          (r"mal_mapi\.listen:operation failed: bind to stream socket port",
                            'socket')]:
         TO = re.compile(regexp, re.MULTILINE)
         # FIXME: this begs for a much nicer solution (100% copy of below)
@@ -3257,7 +3257,7 @@ os.environ['MAPIHOST'] = HOST
 if os.name == "nt":
     SYST    = "Windows"
     RELEASE = "5.0"
-    r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
+    r = re.compile(r'^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
     if procdebug:
         print('starting process "cmd" "/c" "ver" (inpipe,outpipe)\n')
     with process.Popen('cmd /c ver', stdin=process.PIPE,
@@ -3361,7 +3361,7 @@ if SYST == "Linux":
     elif os.path.isfile('/etc/debian_version'):
         LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
     if not LINUX_DIST:
-        LINUX_DIST = SYST+':'+re.match('^([0-9\.]*)([^0-9\.].*)$', RELEASE).group(1)
+        LINUX_DIST = SYST+':'+re.match(r'^([0-9.]*)([^0-9.].*)$', RELEASE).group(1)
     DIST,VERSION = LINUX_DIST.split(':', 1)
 elif SYST == "SunOS" and os.path.isfile('/etc/release'):
     (DIST,VERSION,rest) = open('/etc/release').readline().strip().split(' ',2)
@@ -3651,7 +3651,7 @@ def main(argv) :
                            stdout=process.PIPE, stderr=process.PIPE,
                            text=True) as proc:
             ruby_out, ruby_err = proc.communicate()
-        ruby_reg = re.compile("^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
+        ruby_reg = re.compile(r"^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
         ruby_ver = ruby_reg.match(ruby_out)
         if ruby_ver and \
            100 * int(ruby_ver.group(1)) + int(ruby_ver.group(2)) >= 109:

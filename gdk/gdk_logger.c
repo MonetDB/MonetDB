@@ -2085,6 +2085,12 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 		lg->seqs_val = BATdescriptor(BBPindex(bak));
 		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
 		lg->dseqs = BATdescriptor(BBPindex(bak));
+		if (lg->seqs_id == NULL ||
+		    lg->seqs_val == NULL ||
+		    lg->dseqs == NULL) {
+			GDKerror("Logger_new: cannot load seqs bats");
+			goto error;
+		}
 	} else {
 		lg->seqs_id = logbat_new(TYPE_int, 1, PERSISTENT);
 		lg->seqs_val = logbat_new(TYPE_lng, 1, PERSISTENT);

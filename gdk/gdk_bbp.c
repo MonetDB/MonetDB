@@ -2247,7 +2247,7 @@ BBPdump(void)
 			continue;
 		BAT *b = BBP_desc(i);
 		unsigned status = BBP_status(i);
-		printf("# %d: " ALGOOPTBATFMT "refs=%d lrefs=%d status=%u%s",
+		printf("# %d: " ALGOOPTBATFMT " refs=%d lrefs=%d status=%u%s",
 		       i,
 		       ALGOOPTBATPAR(b),
 		       BBP_refs(i),
