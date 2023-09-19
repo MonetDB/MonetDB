@@ -3314,7 +3314,9 @@ run_optimizer
 bind_optimize_unions_topdown(visitor *v, global_props *gp)
 {
 	(void) v;
-	return gp->opt_level == 1 && gp->cnt[op_union] ? rel_optimize_unions_topdown : NULL;
+	// TODO: remove this and default to munion
+	int op = mvc_debug_on(v->sql, 32) ? gp->cnt[op_munion] : gp->cnt[op_union];
+	return gp->opt_level == 1 && op ? rel_optimize_unions_topdown : NULL;
 }
 
 
