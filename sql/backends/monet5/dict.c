@@ -134,36 +134,42 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 	BATiter ui = bat_iterator_nolock(u);
 	if (tt == TYPE_bte) {
 		bte *op = (bte*)Tloc(o, 0);
+		bool havenil = false;
 		BATloop(b, p, q) {
 			BUN up = 0;
 			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
 				op[p] = (bte)up;
+				havenil |= is_bte_nil(op[p]);
 			}
 		}
 		BATsetcount(o, BATcount(b));
 		o->tsorted = (u->tsorted && bi.sorted);
 		o->trevsorted = false;
-		o->tnil = bi.nil;
-		o->tnonil = bi.nonil;
+		o->tnil = havenil;
+		o->tnonil = !havenil;
 		o->tkey = bi.key;
 
-		BATmaxminpos_bte(o, (bte) (BATcount(u)-1));
+		if (BATcount(u) > 0)
+			BATmaxminpos_bte(o, (bte) (BATcount(u)-1));
 	} else {
 		sht *op = (sht*)Tloc(o, 0);
+		bool havenil = false;
 		BATloop(b, p, q) {
 			BUN up = 0;
 			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
 				op[p] = (sht)up;
+				havenil |= is_sht_nil(op[p]);
 			}
 		}
 		BATsetcount(o, BATcount(b));
 		o->tsorted = (u->tsorted && bi.sorted);
 		o->trevsorted = false;
-		o->tnil = bi.nil;
-		o->tnonil = bi.nonil;
+		o->tnil = havenil;
+		o->tnonil = !havenil;
 		o->tkey = bi.key;
 
-		BATmaxminpos_sht(o, (sht) (BATcount(u)-1));
+		if (BATcount(u) > 0)
+			BATmaxminpos_sht(o, (sht) (BATcount(u)-1));
 	}
 	bat_iterator_end(&bi);
 	*O = o;
@@ -963,12 +969,14 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "dict.renumber", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	assert(o->ttype == TYPE_bte || o->ttype == TYPE_sht);
+	bool havenil = false;
 	if (o->ttype == TYPE_bte) {
 		unsigned char *np = Tloc(n, 0);
 		unsigned char *op = Tloc(o, 0);
 		unsigned char *mp = Tloc(m, 0);
 		for(BUN i = 0; i<cnt; i++) {
 			np[i] = mp[op[i]];
+			havenil |= is_bte_nil(np[i]);
 		}
 	} else {
 		unsigned short *np = Tloc(n, 0);
@@ -976,12 +984,13 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		unsigned short *mp = Tloc(m, 0);
 		for(BUN i = 0; i<cnt; i++) {
 			np[i] = mp[op[i]];
+			havenil |= is_sht_nil(np[i]);
 		}
 	}
 	BATsetcount(n, cnt);
 	BATnegateprops(n);
-	n->tnil = false;
-	n->tnonil = true;
+	n->tnil = havenil;
+	n->tnonil = !havenil;
 	if (o->ttype == TYPE_bte) {
 		unsigned char *mp = Tloc(m, 0);
 		unsigned char mm = 0;
@@ -1019,6 +1028,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 	int tt = BATcount(dict)>=256?TYPE_sht:TYPE_bte;
 	BUN sz = BATcount(vals), nf = 0;
 	BAT *n = COLnew(0, tt, sz, TRANSIENT);
+	bool havenil = false;
 
 	if (!n || BAThash(dict) != GDK_SUCCEED) {
 		bat_destroy(n);
@@ -1060,6 +1070,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 					/* reinitialize */
 					ui = bat_iterator_nolock(dict);
 					op[i] = (bte) (BATcount(dict)-1);
+					havenil |= is_bte_nil(op[i]);
 				}
 			}
 		}
@@ -1090,6 +1101,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 					/* reinitialize */
 					ui = bat_iterator_nolock(dict);
 					op[i] = (sht) (BATcount(dict)-1);
+					havenil |= is_sht_nil(op[i]);
 				}
 			}
 		}
@@ -1097,8 +1109,8 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 	bat_iterator_end(&bi);
 	BATsetcount(n, sz);
 	BATnegateprops(n);
-	n->tnil = false;
-	n->tnonil = true;
+	n->tnil = havenil;
+	n->tnonil = !havenil;
 	*noffsets = n;
 	return 0;
 }

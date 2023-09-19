@@ -3817,9 +3817,18 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 
 		if (BATordered(b)) {
 			pos = bi.count - 1 + b->hseqbase;
+			if (skipnil && !bi.nonil &&
+			    ATOMcmp(bi.type, BUNtail(bi, bi.count - 1),
+				    ATOMnilptr(bi.type)) == 0)
+				goto slow;
 		} else if (BATordered_rev(b)) {
 			pos = b->hseqbase;
+			if (skipnil && !bi.nonil &&
+			    ATOMcmp(bi.type, BUNtail(bi, 0),
+				    ATOMnilptr(bi.type)) == 0)
+				goto slow;
 		} else {
+		  slow:
 			if (BATcheckorderidx(b)) {
 				MT_lock_set(&b->batIdxLock);
 				oidxh = b->torderidx;

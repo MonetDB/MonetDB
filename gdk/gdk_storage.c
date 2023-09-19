@@ -762,8 +762,8 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 			b->tvheap->wasempty = bi->vh->wasempty;
 			b->tvheap->hasfile |= bi->vh->hasfile;
 		}
-		if (size != b->batCount || b->batInserted < b->batCount) {
-			/* if the sizes don't match, the BAT must be dirty */
+		if (size != b->batCount) {
+			/* if the size doesn't match, the BAT must be dirty */
 			b->theap->dirty = true;
 			if (b->tvheap)
 				b->tvheap->dirty = true;

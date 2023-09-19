@@ -2958,9 +2958,9 @@ decref(bat i, bool logical, bool lock, const char *func)
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
 	unsigned chkflag = BBPSYNCING;
-	size_t cursize;
 	bool swapdirty = false;
 	if (b) {
+		size_t cursize;
 		if ((cursize = GDKvm_cursize()) < (size_t) (GDK_vm_maxsize * 0.75)) {
 			if (!locked) {
 				MT_lock_set(&b->theaplock);
@@ -3189,10 +3189,10 @@ BBPsave(BAT *b)
 		if (lock)
 			MT_lock_unset(&GDKswapLock(bid));
 
-		TRC_DEBUG(IO_, "save %s\n", BATgetId(b));
+		TRC_DEBUG(IO_, "save " ALGOBATFMT "\n", ALGOBATPAR(b));
 
 		/* do the time-consuming work unlocked */
-		if (BBP_status(bid) & BBPEXISTING)
+		if (BBP_status(bid) & BBPEXISTING && b->batInserted > 0)
 			ret = BBPbackup(b, false);
 		if (ret == GDK_SUCCEED) {
 			ret = BATsave(b);
@@ -3331,7 +3331,8 @@ dirty_bat(bat *i, bool subcommit)
 				return b;	/* the bat is loaded, persistent and dirty */
 			}
 			MT_lock_unset(&b->theaplock);
-		}
+		} else if (subcommit)
+			return BBP_desc(*i);
 	}
 	return NULL;
 }
@@ -3590,11 +3591,8 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 static gdk_return
 BBPbackup(BAT *b, bool subcommit)
 {
-	gdk_return rc;
+	gdk_return rc = GDK_SUCCEED;
 
-	if ((rc = BBPprepare(subcommit)) != GDK_SUCCEED) {
-		return rc;
-	}
 	BATiter bi = bat_iterator(b);
 	if (!bi.copiedtodisk || bi.transient) {
 		bat_iterator_end(&bi);
@@ -4107,8 +4105,16 @@ BBPrecover(int farmid)
 			force_move(farmid, BAKDIR, LEFTDIR, dent->d_name);
 		} else {
 			BBPgetsubdir(dstdir, i);
-			if (force_move(farmid, BAKDIR, dstpath, dent->d_name) != GDK_SUCCEED)
+			if (force_move(farmid, BAKDIR, dstpath, dent->d_name) != GDK_SUCCEED) {
 				ret = GDK_FAIL;
+				break;
+			}
+			/* don't trust index files after recovery */
+			GDKunlink(farmid, dstpath, path, "thashl");
+			GDKunlink(farmid, dstpath, path, "thashb");
+			GDKunlink(farmid, dstpath, path, "timprints");
+			GDKunlink(farmid, dstpath, path, "torderidx");
+			GDKunlink(farmid, dstpath, path, "tstrimps");
 		}
 	}
 	closedir(dirp);
