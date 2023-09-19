@@ -4015,7 +4015,7 @@ sql_trans_commit(sql_trans *tr)
 
 		if (log) {
 			const int min_changes = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5 : 1000000;
-			flush = (tr->logchanges > min_changes && list_empty(store->changes));
+			flush = (tr->logchanges > min_changes && list_empty(store->changes) && !store->insertonly_nowal);
 		}
 
 		if (flush)
