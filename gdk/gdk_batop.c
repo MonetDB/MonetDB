@@ -441,7 +441,9 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		memcpy(b->theap->base, ni->base, ni->hfree);
 		memcpy(b->tvheap->base, ni->vh->base, ni->vhfree);
 		b->theap->free = ni->hfree;
+		b->theap->dirty = true;
 		b->tvheap->free = ni->vhfree;
+		b->tvheap->dirty = true;
 		BATsetcount(b, ni->count);
 		b->tnil = ni->nil;
 		b->tnonil = ni->nonil;

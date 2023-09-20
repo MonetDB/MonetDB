@@ -1099,152 +1099,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return rc;
 	}
 
-	MT_lock_set(&b->theaplock);
-	if (count > BATcount(b) / gdk_unique_estimate_keep_fraction)
-		b->tunique_est = 0;
-
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
-	if (b->ttype == TYPE_oid) {
-		/* spend extra effort on oid (possible candidate list) */
-		if (values == NULL || is_oid_nil(((oid *) values)[0])) {
-			b->tnil = true;
-			b->tnonil = false;
-			b->tsorted = false;
-			b->trevsorted = false;
-			b->tkey = false;
-			b->tseqbase = oid_nil;
-		} else {
-			if (b->batCount == 0) {
-				b->tsorted = true;
-				b->trevsorted = true;
-				b->tkey = true;
-				b->tseqbase = count == 1 ? ((oid *) values)[0] : oid_nil;
-				b->tnil = false;
-				b->tnonil = true;
-			} else {
-				if (!is_oid_nil(b->tseqbase) &&
-				    (count > 1 ||
-				     b->tseqbase + b->batCount != ((oid *) values)[0]))
-					b->tseqbase = oid_nil;
-				if (b->tsorted && ((oid *) b->theap->base)[b->batCount - 1] > ((oid *) values)[0]) {
-					b->tsorted = false;
-					if (b->tnosorted == 0)
-						b->tnosorted = b->batCount;
-				}
-				if (b->trevsorted && ((oid *) b->theap->base)[b->batCount - 1] < ((oid *) values)[0]) {
-					b->trevsorted = false;
-					if (b->tnorevsorted == 0)
-						b->tnorevsorted = b->batCount;
-				}
-				if (b->tkey) {
-					if (((oid *) b->theap->base)[b->batCount - 1] == ((oid *) values)[0]) {
-						b->tkey = false;
-						if (b->tnokey[1] == 0) {
-							b->tnokey[0] = b->batCount - 1;
-							b->tnokey[1] = b->batCount;
-						}
-					} else if (!b->tsorted && !b->trevsorted)
-						b->tkey = false;
-				}
-			}
-			for (BUN i = 1; i < count; i++) {
-				if (is_oid_nil(((oid *) values)[i])) {
-					b->tnil = true;
-					b->tnonil = false;
-					b->tsorted = false;
-					b->trevsorted = false;
-					b->tkey = false;
-					b->tseqbase = oid_nil;
-					break;
-				}
-				if (((oid *) values)[i - 1] == ((oid *) values)[i]) {
-					b->tkey = false;
-					if (b->tnokey[1] == 0) {
-						b->tnokey[0] = b->batCount + i - 1;
-						b->tnokey[1] = b->batCount + i;
-					}
-				} else if (((oid *) values)[i - 1] > ((oid *) values)[i]) {
-					b->tsorted = false;
-					if (b->tnosorted == 0)
-						b->tnosorted = b->batCount + i;
-					if (!b->trevsorted)
-						b->tkey = false;
-				} else {
-					if (((oid *) values)[i - 1] + 1 != ((oid *) values)[i])
-						b->tseqbase = oid_nil;
-					b->trevsorted = false;
-					if (b->tnorevsorted == 0)
-						b->tnorevsorted = b->batCount + i;
-					if (!b->tsorted)
-						b->tkey = false;
-				}
-			}
-		}
-	} else if (!ATOMlinear(b->ttype)) {
-		b->tnil = b->tnonil = false;
-		b->tsorted = b->trevsorted = b->tkey = false;
-	} else if (b->batCount == 0) {
-		if (values == NULL) {
-			b->tsorted = b->trevsorted = true;
-			b->tkey = count == 1;
-			b->tnil = true;
-			b->tnonil = false;
-			b->tunique_est = 1;
-		} else {
-			int c;
-			b->tnil = b->tnonil = false;
-			switch (count) {
-			case 1:
-				b->tsorted = b->trevsorted = b->tkey = true;
-				b->tunique_est = 1;
-				break;
-			case 2:
-				if (b->tvheap)
-					c = ATOMcmp(b->ttype,
-						    ((void **) values)[0],
-						    ((void **) values)[1]);
-				else
-					c = ATOMcmp(b->ttype,
-						    values,
-						    (char *) values + b->twidth);
-				b->tsorted = c <= 0;
-				b->tnosorted = !b->tsorted;
-				b->trevsorted = c >= 0;
-				b->tnorevsorted = !b->trevsorted;
-				b->tkey = c != 0;
-				b->tnokey[0] = 0;
-				b->tnokey[1] = !b->tkey;
-				b->tunique_est = (double) (1 + b->tkey);
-				break;
-			default:
-				b->tsorted = b->trevsorted = b->tkey = false;
-				break;
-			}
-		}
-	} else if (b->batCount == 1 && count == 1) {
-		BATiter bi = bat_iterator_nolock(b);
-		if (values != NULL) {
-			if (b->tvheap)
-				t = ((void **) values)[0];
-			else
-				t = values;
-		}
-		int c = ATOMcmp(b->ttype, BUNtail(bi, 0), t);
-		b->tsorted = c <= 0;
-		b->tnosorted = !b->tsorted;
-		b->trevsorted = c >= 0;
-		b->tnorevsorted = !b->trevsorted;
-		b->tkey = c != 0;
-		b->tnokey[0] = 0;
-		b->tnokey[1] = !b->tkey;
-		b->tunique_est = (double) (1 + b->tkey);
-		b->tnil |= values == NULL;
-		b->tnonil = false;
-	} else {
-		b->tnil |= values == NULL;
-		b->tnonil = false;
-		b->tsorted = b->trevsorted = b->tkey = false;
-	}
+	MT_lock_set(&b->theaplock);
 	BATiter bi = bat_iterator_nolock(b);
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
@@ -1375,6 +1231,151 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		nunique = b->thash ? b->thash->nunique : 0;
 	}
 	MT_lock_set(&b->theaplock);
+	if (count > BATcount(b) / gdk_unique_estimate_keep_fraction)
+		b->tunique_est = 0;
+
+	if (b->ttype == TYPE_oid) {
+		/* spend extra effort on oid (possible candidate list) */
+		if (values == NULL || is_oid_nil(((oid *) values)[0])) {
+			b->tnil = true;
+			b->tnonil = false;
+			b->tsorted = false;
+			b->trevsorted = false;
+			b->tkey = false;
+			b->tseqbase = oid_nil;
+		} else {
+			if (b->batCount == 0) {
+				b->tsorted = true;
+				b->trevsorted = true;
+				b->tkey = true;
+				b->tseqbase = count == 1 ? ((oid *) values)[0] : oid_nil;
+				b->tnil = false;
+				b->tnonil = true;
+			} else {
+				if (!is_oid_nil(b->tseqbase) &&
+				    (count > 1 ||
+				     b->tseqbase + b->batCount != ((oid *) values)[0]))
+					b->tseqbase = oid_nil;
+				if (b->tsorted && ((oid *) b->theap->base)[b->batCount - 1] > ((oid *) values)[0]) {
+					b->tsorted = false;
+					if (b->tnosorted == 0)
+						b->tnosorted = b->batCount;
+				}
+				if (b->trevsorted && ((oid *) b->theap->base)[b->batCount - 1] < ((oid *) values)[0]) {
+					b->trevsorted = false;
+					if (b->tnorevsorted == 0)
+						b->tnorevsorted = b->batCount;
+				}
+				if (b->tkey) {
+					if (((oid *) b->theap->base)[b->batCount - 1] == ((oid *) values)[0]) {
+						b->tkey = false;
+						if (b->tnokey[1] == 0) {
+							b->tnokey[0] = b->batCount - 1;
+							b->tnokey[1] = b->batCount;
+						}
+					} else if (!b->tsorted && !b->trevsorted)
+						b->tkey = false;
+				}
+			}
+			for (BUN i = 1; i < count; i++) {
+				if (is_oid_nil(((oid *) values)[i])) {
+					b->tnil = true;
+					b->tnonil = false;
+					b->tsorted = false;
+					b->trevsorted = false;
+					b->tkey = false;
+					b->tseqbase = oid_nil;
+					break;
+				}
+				if (((oid *) values)[i - 1] == ((oid *) values)[i]) {
+					b->tkey = false;
+					if (b->tnokey[1] == 0) {
+						b->tnokey[0] = b->batCount + i - 1;
+						b->tnokey[1] = b->batCount + i;
+					}
+				} else if (((oid *) values)[i - 1] > ((oid *) values)[i]) {
+					b->tsorted = false;
+					if (b->tnosorted == 0)
+						b->tnosorted = b->batCount + i;
+					if (!b->trevsorted)
+						b->tkey = false;
+				} else {
+					if (((oid *) values)[i - 1] + 1 != ((oid *) values)[i])
+						b->tseqbase = oid_nil;
+					b->trevsorted = false;
+					if (b->tnorevsorted == 0)
+						b->tnorevsorted = b->batCount + i;
+					if (!b->tsorted)
+						b->tkey = false;
+				}
+			}
+		}
+	} else if (!ATOMlinear(b->ttype)) {
+		b->tnil = b->tnonil = false;
+		b->tsorted = b->trevsorted = b->tkey = false;
+	} else if (b->batCount == 0) {
+		if (values == NULL) {
+			b->tsorted = b->trevsorted = true;
+			b->tkey = count == 1;
+			b->tnil = true;
+			b->tnonil = false;
+			b->tunique_est = 1;
+		} else {
+			int c;
+			b->tnil = b->tnonil = false;
+			switch (count) {
+			case 1:
+				b->tsorted = b->trevsorted = b->tkey = true;
+				b->tunique_est = 1;
+				break;
+			case 2:
+				if (b->tvheap)
+					c = ATOMcmp(b->ttype,
+						    ((void **) values)[0],
+						    ((void **) values)[1]);
+				else
+					c = ATOMcmp(b->ttype,
+						    values,
+						    (char *) values + b->twidth);
+				b->tsorted = c <= 0;
+				b->tnosorted = !b->tsorted;
+				b->trevsorted = c >= 0;
+				b->tnorevsorted = !b->trevsorted;
+				b->tkey = c != 0;
+				b->tnokey[0] = 0;
+				b->tnokey[1] = !b->tkey;
+				b->tunique_est = (double) (1 + b->tkey);
+				break;
+			default:
+				b->tsorted = b->trevsorted = b->tkey = false;
+				break;
+			}
+		}
+	} else if (b->batCount == 1 && count == 1) {
+		bi = bat_iterator_nolock(b);
+		t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
+		if (values != NULL) {
+			if (b->tvheap)
+				t = ((void **) values)[0];
+			else
+				t = values;
+		}
+		int c = ATOMcmp(b->ttype, BUNtail(bi, 0), t);
+		b->tsorted = c <= 0;
+		b->tnosorted = !b->tsorted;
+		b->trevsorted = c >= 0;
+		b->tnorevsorted = !b->trevsorted;
+		b->tkey = c != 0;
+		b->tnokey[0] = 0;
+		b->tnokey[1] = !b->tkey;
+		b->tunique_est = (double) (1 + b->tkey);
+		b->tnil |= values == NULL;
+		b->tnonil = false;
+	} else {
+		b->tnil |= values == NULL;
+		b->tnonil = false;
+		b->tsorted = b->trevsorted = b->tkey = false;
+	}
 	BATsetcount(b, p);
 	if (nunique != 0)
 		b->tunique_est = (double) nunique;
@@ -2831,10 +2832,12 @@ BATassertProps(BAT *b)
 		if (b->tmaxpos != BUN_NONE) {
 			assert(b->tmaxpos < BATcount(b));
 			maxval = BUNtail(bi, b->tmaxpos);
+			assert(cmpf(maxval, nilp) != 0);
 		}
 		if (b->tminpos != BUN_NONE) {
 			assert(b->tminpos < BATcount(b));
 			minval = BUNtail(bi, b->tminpos);
+			assert(cmpf(minval, nilp) != 0);
 		}
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			/* for now, don't do extra checks for bit mask */
