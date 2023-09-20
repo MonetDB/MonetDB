@@ -837,6 +837,13 @@ sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, ch
 		return r;
 	}
 
+	/* the default role must explicitly granted to the new user */
+	if (role_id) {
+		str r;
+		if ((r = sql_grant_role(sql, user, role, sql->role_id, 0)))
+			return r;
+	}
+
 	return NULL;
 }
 
