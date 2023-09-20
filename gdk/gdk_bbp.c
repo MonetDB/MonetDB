@@ -3508,8 +3508,7 @@ BBPprepare(bool subcommit)
 }
 
 static gdk_return
-do_backup(const char *srcdir, const char *nme, const char *ext,
-	  Heap *h, bool dirty, bool subcommit)
+do_backup(Heap *h, bool dirty, bool subcommit)
 {
 	gdk_return ret = GDK_SUCCEED;
 	char extnew[16];
@@ -3531,6 +3530,16 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 		 * these we write X.new.kill files in the backup
 		 * directory (see heap_move). */
 		gdk_return mvret = GDK_SUCCEED;
+
+		char *srcdir = GDKfilepath(NOFARM, BATDIR, h->filename, NULL);
+		if (srcdir == NULL)
+			return GDK_FAIL;
+		char *nme = strrchr(srcdir, DIR_SEP);
+		assert(nme != NULL);
+		*nme++ = '\0';
+		char *ext = strchr(nme, '.');
+		assert(ext != NULL);
+		*ext++ = '\0';
 
 		strconcat_len(extnew, sizeof(extnew), ext, ".new", NULL);
 		if (dirty &&
@@ -3584,6 +3593,7 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 				ret = GDK_FAIL;
 			}
 		}
+		GDKfree(srcdir);
 	}
 	return ret;
 }
@@ -3593,30 +3603,32 @@ BBPbackup(BAT *b, bool subcommit)
 {
 	gdk_return rc = GDK_SUCCEED;
 
-	BATiter bi = bat_iterator(b);
+	MT_lock_set(&b->theaplock);
+	BATiter bi = bat_iterator_nolock(b);
 	if (!bi.copiedtodisk || bi.transient) {
-		bat_iterator_end(&bi);
+		MT_lock_unset(&b->theaplock);
 		return GDK_SUCCEED;
 	}
-	/* determine location dir and physical suffix */
-	char *srcdir;
-	if ((srcdir = GDKfilepath(NOFARM, BATDIR, BBP_physical(b->batCacheid), NULL)) != NULL) {
-		char *nme = strrchr(srcdir, DIR_SEP);
-		assert(nme != NULL);
-		*nme++ = '\0';	/* split into directory and file name */
+	assert(b->theap->parentid == b->batCacheid);
+	if (b->oldtail) {
+		bi.h = b->oldtail;
+		bi.hdirty = b->oldtail->dirty;
+	}
+#ifndef NDEBUG
+	bi.locked = true;
+#endif
+	HEAPincref(bi.h);
+	if (bi.vh)
+		HEAPincref(bi.vh);
+	MT_lock_unset(&b->theaplock);
 
-		if (bi.type != TYPE_void) {
-			rc = do_backup(srcdir, nme, BATITERtailname(&bi), bi.h,
-				       bi.hdirty, subcommit);
-			if (rc == GDK_SUCCEED && bi.vh != NULL)
-				rc = do_backup(srcdir, nme, "theap", bi.vh,
-					       bi.vhdirty, subcommit);
-		}
-	} else {
-		rc = GDK_FAIL;
+	/* determine location dir and physical suffix */
+	if (bi.type != TYPE_void) {
+		rc = do_backup(bi.h, bi.hdirty, subcommit);
+		if (rc == GDK_SUCCEED && bi.vh != NULL)
+			rc = do_backup(bi.vh, bi.vhdirty, subcommit);
 	}
 	bat_iterator_end(&bi);
-	GDKfree(srcdir);
 	return rc;
 }
 
