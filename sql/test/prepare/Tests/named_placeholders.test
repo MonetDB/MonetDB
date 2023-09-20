@@ -3,3 +3,24 @@ SELECT :banana;
 
 statement error 42000!Named placeholder ('pear') not used in the query.
 SELECT :banana : ( pear 'mango' );        
+
+query T
+SELECT :banana : ( banana 'foo');
+----
+foo
+
+statement ok
+create table tst_table (x int, y int);
+
+statement ok
+insert into tst_table (x, y) values (:x, :y) : (x 1, y 1);
+insert into tst_table (x, y) values (:x, :y) : (x 2, y 4);
+
+query II rowsort
+SELECT x, y from tst_table;
+----
+1
+1
+2
+4
+
