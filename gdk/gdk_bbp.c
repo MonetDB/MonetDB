@@ -3326,7 +3326,7 @@ dirty_bat(bat *i, bool subcommit)
 			    BATcheckmodes(b, false) != GDK_SUCCEED) /* check mmap modes */
 				*i = -*i;	/* error */
 			else if ((BBP_status(*i) & BBPPERSISTENT) &&
-			    (subcommit || BATdirty(b))) {
+				 (subcommit || BATdirty(b))) {
 				MT_lock_unset(&b->theaplock);
 				return b;	/* the bat is loaded, persistent and dirty */
 			}

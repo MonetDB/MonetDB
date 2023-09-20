@@ -668,7 +668,6 @@ gdk_return
 BATsave_iter(BAT *b, BATiter *bi, BUN size)
 {
 	gdk_return err = GDK_SUCCEED;
-	const char *nme;
 	bool dosync;
 	bool locked = false;
 
@@ -694,15 +693,13 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 	}
 
 	/* start saving data */
-	nme = BBP_physical(b->batCacheid);
-	const char *tail = BATITERtailname(bi);
 	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
-			int fd = GDKfdlocate(bi->h->farmid, nme, "rb+", tail);
+			int fd = GDKfdlocate(bi->h->farmid, bi->h->filename, "rb+", NULL);
 			if (fd < 0) {
-				GDKsyserror("cannot open file %s.%s for sync\n",
-					    nme, tail);
+				GDKsyserror("cannot open file %s for sync\n",
+					    bi->h->filename);
 				err = GDK_FAIL;
 			} else {
 				if (
@@ -714,15 +711,15 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 					fsync(fd) < 0
 #endif
 					)
-					GDKsyserror("sync failed for %s.%s\n",
-						    nme, tail);
+					GDKsyserror("sync failed for %s\n",
+						    bi->h->filename);
 				close(fd);
 			}
 			if (bi->vh) {
-				fd = GDKfdlocate(bi->vh->farmid, nme, "rb+", "theap");
+				fd = GDKfdlocate(bi->vh->farmid, bi->vh->filename, "rb+", NULL);
 				if (fd < 0) {
-					GDKsyserror("cannot open file %s.theap for sync\n",
-						    nme);
+					GDKsyserror("cannot open file %s for sync\n",
+						    bi->vh->filename);
 					err = GDK_FAIL;
 				} else {
 					if (
@@ -734,15 +731,18 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 						fsync(fd) < 0
 #endif
 						)
-						GDKsyserror("sync failed for %s.theap\n", nme);
+						GDKsyserror("sync failed for %s\n", bi->vh->filename);
 					close(fd);
 				}
 			}
 		}
 	} else {
-		if (!bi->copiedtodisk || bi->hdirty)
-			if (err == GDK_SUCCEED && bi->type)
-				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
+		const char *nme = BBP_physical(b->batCacheid);
+		if ((!bi->copiedtodisk || bi->hdirty)
+		    && (err == GDK_SUCCEED && bi->type)) {
+			const char *tail = strchr(bi->h->filename, '.') + 1;
+			err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
+		}
 		if (bi->vh
 		    && (!bi->copiedtodisk || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
