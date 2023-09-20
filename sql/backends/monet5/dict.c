@@ -976,7 +976,7 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		unsigned char *mp = Tloc(m, 0);
 		for(BUN i = 0; i<cnt; i++) {
 			np[i] = mp[op[i]];
-			havenil |= is_bte_nil(np[i]);
+			havenil |= np[i] == 128;
 		}
 	} else {
 		unsigned short *np = Tloc(n, 0);
@@ -984,7 +984,7 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		unsigned short *mp = Tloc(m, 0);
 		for(BUN i = 0; i<cnt; i++) {
 			np[i] = mp[op[i]];
-			havenil |= is_sht_nil(np[i]);
+			havenil |= np[i] == 32768;
 		}
 	}
 	BATsetcount(n, cnt);
