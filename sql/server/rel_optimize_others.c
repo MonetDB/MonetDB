@@ -120,7 +120,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
 		if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 			return NULL;
-		while (ne && has_label(ne) && is_simple_project(f->op) && ne->type == e_column) {
+		while (ne && (has_label(ne) || is_selfref(ne) /*inside this list */) && is_simple_project(f->op) && ne->type == e_column) {
 			sql_exp *oe = e, *one = ne;
 
 			e = ne;

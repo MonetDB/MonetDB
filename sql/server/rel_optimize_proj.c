@@ -429,9 +429,18 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	return e;
 }
 
+static int
+exp_match_exp_cmp( sql_exp *e1, sql_exp *e2)
+{
+	if (exp_match_exp(e1,e2))
+		return 0;
+	return -1;
+}
+
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier.
  */
+extern void _rel_print(mvc *sql, sql_rel *rel);
 static sql_rel *
 rel_push_project_up_(visitor *v, sql_rel *rel)
 {
@@ -439,6 +448,28 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		sql_rel *l = rel->l;
 		if (is_simple_project(l->op))
 			return rel_merge_projects_(v, rel);
+		/* find equal column references, later cases are rewritten into references back to the first
+		 * project () [ i.i L1, i.i L2 ] -> project() [ i.i L1, L1 L2 ] */
+		if (list_length(rel->exps) > 1) {
+			list *exps = rel->exps;
+			rel->exps = sa_list(v->sql->sa);
+			node *n = exps->h;
+			list_append(rel->exps, n->data);
+			for(n = n->next; n; n = n->next) {
+				sql_exp *e = n->data;
+				if (e->type == e_column && !is_selfref(e)) {
+					node *m = list_find(rel->exps, e, (fcmp)&exp_match_exp_cmp);
+					if (m) {
+						sql_exp *ne = exp_ref(v->sql, m->data);
+						exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
+						exp_propagate(v->sql->sa, ne, e);
+						set_selfref(ne);
+						e = ne;
+					}
+				}
+				list_append(rel->exps, e);
+			}
+		}
 	}
 
 	/* project/project cleanup is done later */
@@ -677,14 +708,6 @@ bind_push_project_up(visitor *v, global_props *gp)
 
 
 static void split_exps(mvc *sql, list *exps, sql_rel *rel);
-
-static int
-exp_match_exp_cmp( sql_exp *e1, sql_exp *e2)
-{
-	if (exp_match_exp(e1,e2))
-		return 0;
-	return -1;
-}
 
 static int
 exp_refers_cmp( sql_exp *e1, sql_exp *e2)
@@ -2885,7 +2908,7 @@ rel_groupjoin(visitor *v, sql_rel *rel)
 		return rel;
 
 	sql_rel *j = rel->l;
-	if (!j || rel_is_ref(j) || !is_left(j->op) || !list_empty(rel->attr))
+	if (!j || rel_is_ref(j) /*|| !is_left(j->op)*/ || j->op != op_join || list_length(rel->exps) > 1 /* only join because left joins aren't optimized jet (TODO), only length 1 as implementation of groupjoins is missing */ || !list_empty(rel->attr))
 		return rel;
 	/* check group by exps == equi join exps */
 	list *gbes = rel->r;

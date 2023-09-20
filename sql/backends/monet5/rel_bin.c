@@ -2811,7 +2811,6 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl = NULL, *jr = NULL, *m = NULL, *ls = NULL, *res;
 	bool need_project = false, exist = true, mark = false;
 
-	assert(rel->op == op_left);
 	if (rel->op == op_left) { /* left outer group join */
 		if (list_length(rel->attr) == 1) {
 			sql_exp *e = rel->attr->h->data;
@@ -2873,7 +2872,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			l = r;
 			r = t;
 		}
-		if (!is_semantics(e) && is_anti(e))
+		if ((!is_semantics(e) && is_anti(e)) || !mark)
 			ls = l;
 		if (en || !mark) {
 			/* split out (left)join vs (left)mark-join */
@@ -3006,7 +3005,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 				assert(m);
 				sql_exp *e = rel->attr->h->data;
 				if (exp_is_atom(e) && need_no_nil(e))
-					m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", m), stmt_bool(be, !exist), m, NULL);
+					m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", m), stmt_bool(be, false), m, NULL);
 				if (!exist) {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
@@ -3017,7 +3016,8 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			append(l, s);
 		} else {
 			/* group / aggrs */
-			stmt *groupby = stmt_group(be, jl, NULL, NULL, NULL, true);
+			stmt *nls = stmt_project(be, jl, ls);
+			stmt *groupby = stmt_group(be, nls, NULL, NULL, NULL, true);
 			stmt *grp = stmt_result(be, groupby, 0);
 			stmt *ext = stmt_result(be, groupby, 1);
 			stmt *cnt = stmt_result(be, groupby, 2);

@@ -472,8 +472,12 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			r = "intersect";
 		else if (rel->op == op_except)
 			r = "except";
-		else if (!rel->exps && rel->op == op_join)
-			r = "crossproduct";
+		else if (rel->op == op_join) {
+			if (list_empty(rel->exps))
+				r = rel->attr?"group crossproduct":"crossproduct";
+			else
+				r = rel->attr?"group join":"join";
+		}
 
 		if (is_dependent(rel))
 			mnstr_printf(fout, "dependent ");
@@ -2069,34 +2073,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (r[*pos] == '[' && !(rel->r = read_exps(sql, rel, nrel, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		break;
-	case 'g':
-		*pos += (int) strlen("group by");
-		skipWS(r, pos);
-
-		if (r[*pos] != '(')
-			return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing '('\n");
-		(*pos)++;
-		skipWS(r, pos);
-		if (!(nrel = rel_read(sql, r, pos, refs)))
-			return NULL;
-		skipWS(r, pos);
-		if (r[*pos] != ')')
-			return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing ')'\n");
-		(*pos)++;
-		skipWS(r, pos);
-
-		if (!(gexps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
-			return NULL;
-		skipWS(r, pos);
-		rel = rel_groupby(sql, nrel, gexps);
-		rel->exps = new_exp_list(sql->sa); /* empty projection list for now */
-		set_processed(rel); /* don't search beyond the group by */
-		/* first group projected expressions, then group by columns, then left relation projections */
-		if (!(exps = read_exps(sql, rel, nrel, NULL, r, pos, '[', 1, 1)))
-			return NULL;
-		rel->exps = exps;
-		rel->nrcols = list_length(exps);
-		break;
 	case 's':
 	case 'a':
 		if (r[*pos+1] == 'a') {
@@ -2174,8 +2150,44 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			set_processed(rel);
 		}
 		break;
+	case 'g':
+		*pos += (int) strlen("group");
+		skipWS(r, pos);
+
+		if (r[*pos] == 'b') {
+			*pos += (int) strlen("by");
+			skipWS(r, pos);
+
+			if (r[*pos] != '(')
+				return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing '('\n");
+			(*pos)++;
+			skipWS(r, pos);
+			if (!(nrel = rel_read(sql, r, pos, refs)))
+				return NULL;
+			skipWS(r, pos);
+			if (r[*pos] != ')')
+				return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing ')'\n");
+			(*pos)++;
+			skipWS(r, pos);
+
+			if (!(gexps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
+				return NULL;
+			skipWS(r, pos);
+			rel = rel_groupby(sql, nrel, gexps);
+			rel->exps = new_exp_list(sql->sa); /* empty projection list for now */
+			set_processed(rel); /* don't search beyond the group by */
+			/* first group projected expressions, then group by columns, then left relation projections */
+			if (!(exps = read_exps(sql, rel, nrel, NULL, r, pos, '[', 1, 1)))
+				return NULL;
+			rel->exps = exps;
+			rel->nrcols = list_length(exps);
+			break;
+		} else {
+			groupjoin = true;
+		}
+		/* fall through */
 	case 'l':
-		if (strcmp(r+*pos, "left outer join") == 0) {
+		if (strncmp(r+*pos, "left outer join", strlen("left outer join")) == 0) {
 			*pos += (int) strlen("left outer join");
 		} else {
 			groupjoin = true;

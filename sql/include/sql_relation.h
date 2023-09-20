@@ -49,6 +49,7 @@ typedef struct expression {
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:4,	/* free variable, ie binds to the upper dependent join */
 	 intern:1,
+	 selfref:1,		/* set when the expression references a expression in the same projection list */
 	 anti:1,
 	 ascending:1,	/* order direction */
 	 nulls_last:1,	/* return null after all other rows */
@@ -247,6 +248,8 @@ typedef enum operator_type {
 #define set_symmetric(e) 	(e)->symmetric = 1
 #define is_intern(e) 		((e)->intern)
 #define set_intern(e) 		(e)->intern = 1
+#define is_selfref(e) 		((e)->selfref)
+#define set_selfref(e) 		(e)->selfref = 1
 #define is_basecol(e) 		((e)->base)
 #define set_basecol(e) 		(e)->base = 1
 
