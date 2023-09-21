@@ -386,11 +386,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout,
 
 	// at this point username should have being verified
 	c->username = GDKstrdup(user);
-	if (passwd)
-		passwd = GDKstrdup(passwd);
-	if (algo)
-		algo = GDKstrdup(algo);
-	GDKfree(command);
 
 	/* NOTE ABOUT STARTING NEW THREADS
 	 * At this point we have conducted experiments (Jun 2012) with
@@ -412,20 +407,14 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout,
 	if (c->initClient) {
 		if ((msg = c->initClient(c, passwd, challenge, algo)) != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", msg);
-			if (passwd)
-				GDKfree(passwd);
-			if (algo)
-				GDKfree(algo);
+			GDKfree(command);
 			if (c->exitClient)
 				c->exitClient(c);
 			cleanUpScheduleClient(c, NULL, &msg);
 			return;
 		}
 	}
-	if (passwd)
-		GDKfree(passwd);
-	if (algo)
-		GDKfree(algo);
+	GDKfree(command);
 
 	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
 	msg = MSserveClient(c);
