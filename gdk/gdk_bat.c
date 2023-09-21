@@ -1210,10 +1210,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 			nunique = b->thash ? b->thash->nunique : 0;
 		}
-		MT_lock_set(&b->theaplock);
-		b->tminpos = bi.minpos;
-		b->tmaxpos = bi.maxpos;
-		MT_lock_unset(&b->theaplock);
 	} else {
 		for (BUN i = 0; i < count; i++) {
 			gdk_return rc = tfastins_nocheck(b, p, t);
@@ -1229,6 +1225,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		nunique = b->thash ? b->thash->nunique : 0;
 	}
 	MT_lock_set(&b->theaplock);
+	b->tminpos = bi.minpos;
+	b->tmaxpos = bi.maxpos;
 	if (count > BATcount(b) / gdk_unique_estimate_keep_fraction)
 		b->tunique_est = 0;
 
