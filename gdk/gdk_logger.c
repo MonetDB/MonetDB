@@ -1001,15 +1001,17 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 	}
 	if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 		fclose(fp);
-		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 
 	if (log_write_new_types(lg, fp, append) != GDK_SUCCEED) {
 		fclose(fp);
-		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 	if (fflush(fp) < 0 || (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
@@ -1023,12 +1025,14 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 	    )) {
 		GDKsyserror("flushing log file %s failed", filename);
 		fclose(fp);
-		MT_remove(filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 	if (fclose(fp) < 0) {
 		GDKsyserror("closing log file %s failed", filename);
-		MT_remove(filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -1986,7 +1990,8 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 		/* bm_subcommit releases the lock */
 		if (bm_subcommit(lg, NULL, 0) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
-			MT_remove(filename);
+			if (MT_remove(filename) < 0)
+				GDKsyserror("remove %s failed\n", filename);
 			BBPrelease(lg->catalog_bid->batCacheid);
 			BBPrelease(lg->catalog_id->batCacheid);
 			BBPrelease(lg->dcatalog->batCacheid);

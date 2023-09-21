@@ -199,7 +199,8 @@ static struct winthread {
 	char algorithm[512];	/* the algorithm used in the last operation */
 	size_t algolen;		/* length of string in .algorithm */
 	ATOMIC_TYPE exited;
-	bool detached:1, waiting:1, limit_override:1;
+	bool detached:1, waiting:1;
+	bool limit_override;	/* not in bit field because of data races */
 	char threadname[MT_NAME_LEN];
 	QryCtx *qry_ctx;
 } *winthreads = NULL;
@@ -681,7 +682,8 @@ static struct posthread {
 	pthread_t tid;
 	MT_Id mtid;
 	ATOMIC_TYPE exited;
-	bool detached:1, waiting:1, limit_override:1;
+	bool detached:1, waiting:1;
+	bool limit_override;	/* not in bit field because of data races */
 	QryCtx *qry_ctx;
 } *posthreads = NULL;
 static struct posthread mainthread = {
@@ -997,7 +999,7 @@ join_threads(void)
 	do {
 		waited = false;
 		for (struct posthread *p = posthreads; p; p = p->next) {
-			if (p->detached && !p->waiting && ATOMIC_GET(&p->exited)) {
+			if (ATOMIC_GET(&p->exited) && p->detached && !p->waiting) {
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);

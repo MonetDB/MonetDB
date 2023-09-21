@@ -397,7 +397,6 @@ MCcloseClient(Client c)
 		freeModule(c->usermodule);
 	c->usermodule = c->curmodule = 0;
 	c->father = 0;
-	c->idle = c->login = c->lastcmd = 0;
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
@@ -434,6 +433,7 @@ MCcloseClient(Client c)
 	assert(c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
+	c->idle = c->login = c->lastcmd = 0;
 	if (shutdowninprogress) {
 		c->mode = BLOCKCLIENT;
 	} else {
