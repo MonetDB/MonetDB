@@ -304,39 +304,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout,
 		GDKfree(command);
 		return;
 	} else {
-		str err;
-		oid uid = 0;
-		sabdb *stats = NULL;
-
-		if (!GDKinmemory(0) && !GDKembedded()) {
-			err = msab_getMyStatus(&stats);
-			if (err !=NULL) {
-				/* this is kind of awful, but we need to get rid of this
-				 * message */
-				free(err);
-				mnstr_printf(fout, "!internal server error, "
-							 "please try again later\n");
-				exit_streams(fin, fout);
-				GDKfree(command);
-				return;
-			}
-			if (stats->locked) {
-				if (uid == 0) {
-					mnstr_printf(fout, "#server is running in "
-								 "maintenance mode\n");
-				} else {
-					mnstr_printf(fout, "!server is running in "
-								 "maintenance mode, please try again later\n");
-					exit_streams(fin, fout);
-					msab_freeStatus(&stats);
-					GDKfree(command);
-					return;
-				}
-			}
-			msab_freeStatus(&stats);
-		}
-
-		c = MCinitClient(uid, fin, fout);
+		c = MCinitClient(0, fin, fout);
 		if (c == NULL) {
 			if (MCshutdowninprogress())
 				mnstr_printf(fout,
@@ -366,9 +334,9 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout,
 			cleanUpScheduleClient(c, &command, &msg);
 			return;
 		}
-		if (!GDKgetenv_isyes(mal_enableflag) &&
-			(strncasecmp("sql", lang, 3) != 0 && uid != 0)) {
-
+		if (!GDKgetenv_isyes(mal_enableflag)
+			&& strncasecmp("sql", lang, 3) != 0
+			&& strcmp(user, "monetdb") != 0) {
 			mnstr_printf(fout,
 						 "!only the 'monetdb' user can use non-sql languages. "
 						 "run mserver5 with --set %s=yes to change this.\n",
