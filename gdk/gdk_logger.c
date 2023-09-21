@@ -1093,7 +1093,7 @@ log_open_output(logger *lg)
 	ATOMIC_INIT(&new_range->refcount, 1);
 	ATOMIC_INIT(&new_range->last_ts, 0);
 	ATOMIC_INIT(&new_range->flushed_ts, 0);
-	new_range->drops = 0;
+	ATOMIC_INIT(&new_range->drops, 0);
 	new_range->id = lg->id;
 	new_range->next = NULL;
 	logged_range *current = lg->current;
@@ -2312,6 +2312,7 @@ log_destroy(logger *lg)
 		ATOMIC_DESTROY(&p->refcount);
 		ATOMIC_DESTROY(&p->last_ts);
 		ATOMIC_DESTROY(&p->flushed_ts);
+		ATOMIC_DESTROY(&p->drops);
 		GDKfree(p);
 		p = n;
 	}
@@ -2442,7 +2443,7 @@ log_activate(logger *lg)
 	rotation_lock(lg);
 	if (!lg->flushnow &&
 	    !lg->current->next &&
-	    lg->current->drops > 100000 &&
+	    ATOMIC_GET(&lg->current->drops) > 100000 &&
 	    (ulng) ATOMIC_GET(&lg->current->last_ts) > 0 &&
 	    lg->saved_id + 1 == lg->id &&
 	    ATOMIC_GET(&lg->current->refcount) == 1 /* no pending work on this file */ ) {
@@ -2868,7 +2869,7 @@ log_bat_transient(logger *lg, log_id id)
 	BAT *b = BBPquickdesc(bid);
 	assert(b);
 	BUN cnt = BATcount(b);
-	lg->current->drops += cnt;
+	ATOMIC_ADD(&lg->current->drops, cnt);
 	gdk_return r = log_del_bat(lg, bid);
 	log_unlock(lg);
 	if (r != GDK_SUCCEED)
@@ -3011,7 +3012,7 @@ check_rotation_conditions(logger *lg)
 	const lng p = (lng) getfilepos(getFile(lg->current->output_log));
 
 	const lng log_large = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? LOG_MINI : LOG_LARGE;
-	bool res = (lg->saved_id + 1 >= lg->id && lg->current->drops > 100000) || (p > log_large);
+	bool res = (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000) || (p > log_large);
 	if (res)
 		return (ATOMIC_GET(&lg->nr_open_files) < 8);
 	return res;
