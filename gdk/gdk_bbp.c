@@ -3838,10 +3838,10 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
 			if (size > bi.count) /* includes sizes==NULL */
 				size = bi.count;
+			MT_lock_set(&bi.b->theaplock);
 			bi.b->batInserted = size;
 			if (bi.b->ttype >= 0 && ATOMvarsized(bi.b->ttype)) {
 				/* see epilogue() for other part of this */
-				MT_lock_set(&bi.b->theaplock);
 				/* remember the tail we're saving */
 				if (BATsetprop_nolock(bi.b, (enum prop_t) 20, TYPE_ptr, &bi.h) == NULL) {
 					GDKerror("setprop failed\n");
@@ -3851,8 +3851,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 						bi.b->oldtail = (Heap *) 1;
 					HEAPincref(bi.h);
 				}
-				MT_lock_unset(&bi.b->theaplock);
 			}
+			MT_lock_unset(&bi.b->theaplock);
 			if (ret == GDK_SUCCEED && b && size != 0) {
 				/* wait for BBPSAVING so that we
 				 * can set it, wait for
