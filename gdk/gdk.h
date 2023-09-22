@@ -489,7 +489,7 @@ typedef union {
 
 typedef struct {
 	size_t nitems;
-	char data[FLEXIBLE_ARRAY_MEMBER] __attribute__((__nonstring__));
+	char data[] __attribute__((__nonstring__));
 } blob;
 gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
@@ -2455,7 +2455,7 @@ typedef struct gdk_callback {
 	lng last_called; // timestamp GDKusec
 	gdk_return (*func)(int argc, void *argv[]);
 	struct gdk_callback *next;
-	void *argv[FLEXIBLE_ARRAY_MEMBER];
+	void *argv[];
 } gdk_callback;
 
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);

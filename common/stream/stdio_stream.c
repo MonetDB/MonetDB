@@ -264,7 +264,7 @@ cvfilename(const char *filename)
 		if (cd != (iconv_t) -1) {
 			size_t len = strlen(filename);
 			size_t size = 4 * len;
-			ICONV_CONST char *from = (ICONV_CONST char *) filename;
+			char *from = (char *) filename;
 			char *r = malloc(size + 1);
 			char *p = r;
 

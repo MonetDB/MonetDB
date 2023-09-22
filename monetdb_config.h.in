@@ -171,11 +171,6 @@
 #cmakedefine HAVE_PTHREAD_KILL 1
 #cmakedefine HAVE_PTHREAD_SIGMASK 1
 #cmakedefine HAVE_GETOPT 1
-
-#define ICONV_CONST
-#define FLEXIBLE_ARRAY_MEMBER
-#define ENABLE_MAPI 1
-#define HAVE_MAPI 1
 // End Section: monetdb configure defines
 
 // Section: monetdb macro variables
