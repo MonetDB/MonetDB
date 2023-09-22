@@ -3771,5 +3771,11 @@ main(int argc, char **argv)
 	if (priv.buf != NULL)
 		free(priv.buf);
 
+	free(dotfile.user);
+	free(dotfile.passwd);
+	free(dotfile.dbname);
+	free(dotfile.host);
+	free(dotfile.output);
+
 	return c;
 }
