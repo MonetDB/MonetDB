@@ -1,6 +1,13 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Fri Sep 22 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a number of data races (race conditions).
+
+* Mon Sep 18 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a reference counting problem when a BAT could nog be loaded,
+  e.g. because of resource limitations.
+
 * Wed Aug 30 2023 Sjoerd Mullender <sjoerd@acm.org>
 - Only check for virtual memory limits when creating or growing bats,
   not for general memory allocations.  There is (still) too much code
