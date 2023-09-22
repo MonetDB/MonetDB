@@ -3471,11 +3471,7 @@ main(int argc, char **argv)
 #endif
 			mnstr_printf(toConsole, "using mapi library %s\n",
 						 mapi_get_mapi_version());
-			free(dotfile.user);
-			free(dotfile.passwd);
-			free(dotfile.dbname);
-			free(dotfile.host);
-			free(dotfile.output);
+			destroy_dotmonetdb(&dotfile);
 			return 0;
 		}
 		case 'w':
@@ -3771,11 +3767,7 @@ main(int argc, char **argv)
 	if (priv.buf != NULL)
 		free(priv.buf);
 
-	free(dotfile.user);
-	free(dotfile.passwd);
-	free(dotfile.dbname);
-	free(dotfile.host);
-	free(dotfile.output);
+	destroy_dotmonetdb(&dotfile);
 
 	return c;
 }
