@@ -2667,13 +2667,17 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND grantor <> 0 "
 		"ORDER BY name";
 	const char *grants =
+		/* all grants granting roles to users excepting the default role */
 		"SELECT a1.name, "
 		       "a2.name "
 		"FROM sys.auths a1, "
 		     "sys.auths a2, "
-		     "sys.user_role ur "
+		     "sys.user_role ur, "
+		     "sys.db_user_info ui "
 		"WHERE a1.id = ur.login_id "
 		  "AND a2.id = ur.role_id "
+		  "AND a1.name = ui.name "
+		  "AND a2.id <> ui.default_role "
 		"ORDER BY a1.name, a2.name";
 	const char *table_grants =
 		"SELECT s.name, t.name, "
