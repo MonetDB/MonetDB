@@ -58,6 +58,8 @@ gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__visibility__("hidden")));
 BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	__attribute__((__visibility__("hidden")));
+BAT *BATcreatesample(oid hseq, BUN cnt, BUN n, uint64_t seed)
+	__attribute__((__visibility__("hidden")));
 void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATdestroy(BAT *b)
