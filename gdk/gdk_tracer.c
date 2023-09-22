@@ -547,10 +547,14 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 				 func);
 	if (bytes_written > 0 && bytes_written < (int) sizeof(buffer)) {
 		msg = buffer + bytes_written;
-		bytes_written = vsnprintf(msg,
-					  sizeof(buffer) - bytes_written,
-					  fmt, va);
+	} else {
+		/* exceedingly unlikely that we ever come here */
+		msg = buffer;
+		bytes_written = 0;
 	}
+	bytes_written = vsnprintf(msg,
+				  sizeof(buffer) - bytes_written,
+				  fmt, va);
 	isexit = strstr(msg, EXITING_MSG) != NULL;
 	va_end(va);
 	if (bytes_written < 0) {
@@ -576,7 +580,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		}
 	}
 
-	/* don't write to file on embedded case, but set the GDK error buffer */
+	/* don't write to file in embedded case, but set the GDK error buffer */
 	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
 		return;
 

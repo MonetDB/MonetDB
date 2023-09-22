@@ -69,7 +69,7 @@ static stream *toConsole;
 static stream *stdout_stream;
 static stream *stderr_stream;
 static stream *fromConsole = NULL;
-static char *language = NULL;
+static const char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
 static bool echoquery = false;
@@ -2034,32 +2034,32 @@ doRequest(Mapi mid, const char *buf)
 	return errseen;
 }
 
-#define CHECK_RESULT(mid, hdl, buf, fp)				\
-	switch (mapi_error(mid)) {				\
-	case MOK:	/* everything A OK */			\
-		break;						\
+#define CHECK_RESULT(mid, hdl, buf, fp)						\
+	switch (mapi_error(mid)) {								\
+	case MOK:	/* everything A OK */						\
+		break;												\
 	case MERROR:	/* some error, but try to continue */	\
-	case MTIMEOUT:	/* lost contact with the server */	\
-		if (formatter == TABLEformatter) {		\
-			mapi_noexplain(mid, "");		\
-		} else {					\
-			mapi_noexplain(mid, NULL);		\
-		}						\
-		if (hdl) {					\
-			mapi_explain_query(hdl, stderr);	\
-			mapi_close_handle(hdl);			\
-			hdl = NULL;				\
-		} else						\
-			mapi_explain(mid, stderr);		\
-		errseen = true;					\
-		if (mapi_error(mid) == MERROR)			\
-			continue; /* why not in do-while */	\
-		timerEnd();					\
-		if (buf)					\
-			free(buf);				\
-		if (fp)						\
-			close_stream(fp);			\
-		return 1;					\
+	case MTIMEOUT:	/* lost contact with the server */		\
+		if (formatter == TABLEformatter) {					\
+			mapi_noexplain(mid, "");						\
+		} else {											\
+			mapi_noexplain(mid, NULL);						\
+		}													\
+		if (hdl) {											\
+			mapi_explain_query(hdl, stderr);				\
+			mapi_close_handle(hdl);							\
+			hdl = NULL;										\
+		} else												\
+			mapi_explain(mid, stderr);						\
+		errseen = true;										\
+		if (mapi_error(mid) == MERROR)						\
+			continue; /* why not in do-while */				\
+		timerEnd();											\
+		if (buf)											\
+			free(buf);										\
+		if (fp)												\
+			close_stream(fp);								\
+		return 1;											\
 	}
 
 static bool
@@ -3198,12 +3198,12 @@ main(int argc, char **argv)
 #endif
 {
 	int port = 0;
-	char *user = NULL;
-	char *passwd = NULL;
-	char *host = NULL;
-	char *command = NULL;
-	char *dbname = NULL;
-	char *output = NULL;	/* output format as string */
+	const char *user = NULL;
+	const char *passwd = NULL;
+	const char *host = NULL;
+	const char *command = NULL;
+	const char *dbname = NULL;
+	const char *output = NULL;	/* output format as string */
 	DotMonetdb dotfile = {0};
 	stream *s = NULL;
 	bool trace = false;
@@ -3321,7 +3321,7 @@ main(int argc, char **argv)
 			mode = MAL;
 		}
 	} else {
-		language = strdup("sql");
+		language = "sql";
 		mode = SQL;
 	}
 
@@ -3345,9 +3345,7 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			assert(optarg);
-			if (dbname)
-				free(dbname);
-			dbname = strdup(optarg);
+			dbname = optarg;
 			break;
 		case 'D':
 			dump = true;
@@ -3363,9 +3361,7 @@ main(int argc, char **argv)
 #endif
 		case 'f':
 			assert(optarg);
-			if (output != NULL)
-				free(output);
-			output = strdup(optarg);	/* output format */
+			output = optarg;	/* output format */
 			break;
 		case 'h':
 			assert(optarg);
@@ -3383,17 +3379,14 @@ main(int argc, char **argv)
 			if (strcmp(optarg, "sql") == 0 ||
 			    strcmp(optarg, "sq") == 0 ||
 			    strcmp(optarg, "s") == 0) {
-				free(language);
-				language = strdup(optarg);
+				language = "sql";
 				mode = SQL;
 			} else if (strcmp(optarg, "mal") == 0 ||
 				   strcmp(optarg, "ma") == 0) {
-				free(language);
-				language = strdup("mal");
+				language = "mal";
 				mode = MAL;
 			} else if (strcmp(optarg, "msql") == 0) {
-				free(language);
-				language = strdup("msql");
+				language = "msql";
 				mode = MAL;
 			} else {
 				mnstr_printf(stderr_stream, "language option needs to be sql or mal\n");
@@ -3417,9 +3410,7 @@ main(int argc, char **argv)
 			break;
 		case 'P':
 			assert(optarg);
-			if (passwd)
-				free(passwd);
-			passwd = strdup(optarg);
+			passwd = optarg;
 			passwd_set_as_flag = true;
 			break;
 		case 'r':
@@ -3449,9 +3440,7 @@ main(int argc, char **argv)
 			break;
 		case 'u':
 			assert(optarg);
-			if (user)
-				free(user);
-			user = strdup(optarg);
+			user = optarg;
 			user_set_as_flag = true;
 			break;
 		case 'v': {
@@ -3544,15 +3533,20 @@ main(int argc, char **argv)
 	/* when config file would provide defaults */
 	if (user_set_as_flag) {
 		if (passwd && !passwd_set_as_flag) {
-			free(passwd);
 			passwd = NULL;
 		}
 	}
 
-	if (user == NULL)
-		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-	if (passwd == NULL)
-		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
+	char *user_allocated = NULL;
+	if (user == NULL) {
+		user_allocated = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+		user = user_allocated;
+	}
+	char *passwd_allocated = NULL;
+	if (passwd == NULL) {
+		passwd_allocated = simple_prompt("password", BUFSIZ, 0, NULL);
+		passwd = passwd_allocated;
+	}
 
 	c = 0;
 	has_fileargs = optind != argc;
@@ -3564,7 +3558,7 @@ main(int argc, char **argv)
 			s = NULL;
 		}
 		if (s == NULL) {
-			dbname = strdup(argv[optind]);
+			dbname = argv[optind];
 			optind++;
 			has_fileargs = optind != argc;
 		} else {
@@ -3577,14 +3571,12 @@ main(int argc, char **argv)
 	} else {
 		mid = mapi_mapi(host, port, user, passwd, language, dbname);
 	}
-	if (user)
-		free(user);
+	free(user_allocated);
+	user_allocated = NULL;
+	free(passwd_allocated);
+	passwd_allocated = NULL;
 	user = NULL;
-	if (passwd)
-		free(passwd);
 	passwd = NULL;
-	if (dbname)
-		free(dbname);
 	dbname = NULL;
 
 	if (mid == NULL) {
@@ -3600,7 +3592,6 @@ main(int argc, char **argv)
 		setFormatter(output);
 		if (mode == SQL)
 			mapi_set_size_header(mid, strcmp(output, "raw") == 0);
-		free(output);
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
@@ -3673,12 +3664,11 @@ main(int argc, char **argv)
 #if !defined(_MSC_VER) && defined(HAVE_ICONV)
 		/* no need on Windows: using wmain interface */
 		iconv_t cd_in;
-		bool free_command = false;
+		char *command_allocated = NULL;
 
 		if (encoding != NULL &&
 		    (cd_in = iconv_open("utf-8", encoding)) != (iconv_t) -1) {
-			char *savecommand = command;
-			char *from = command;
+			char *from = (char *) command;
 			size_t fromlen = strlen(from);
 			int factor = 4;
 			size_t tolen = factor * fromlen + 1;
@@ -3688,10 +3678,9 @@ main(int argc, char **argv)
 				mnstr_printf(stderr_stream,"Malloc in main failed");
 				exit(2);
 			}
-			free_command = true;
 
 		  try_again:
-			command = to;
+			command_allocated = to;
 			if (iconv(cd_in, &from, &fromlen, &to, &tolen) == (size_t) -1) {
 				switch (errno) {
 				case EILSEQ:
@@ -3700,11 +3689,11 @@ main(int argc, char **argv)
 					exit(-1);
 				case E2BIG:
 					/* output buffer too small */
-					from = savecommand;
+					from = (char *) command;
 					fromlen = strlen(from);
 					factor *= 2;
 					tolen = factor * fromlen + 1;
-					free(command);
+					free(command_allocated);
 					to = malloc(tolen);
 					if (to == NULL) {
 						mnstr_printf(stderr_stream,"Malloc in main failed");
@@ -3719,6 +3708,7 @@ main(int argc, char **argv)
 					break;
 				}
 			}
+			command = command_allocated;
 			*to = 0;
 			iconv_close(cd_in);
 		} else if (encoding)
@@ -3730,8 +3720,7 @@ main(int argc, char **argv)
 		c = doRequest(mid, command);
 		timerEnd();
 #if !defined(_MSC_VER) && defined(HAVE_ICONV)
-		if (free_command)
-			free(command);
+		free(command_allocated);
 #endif
 	}
 

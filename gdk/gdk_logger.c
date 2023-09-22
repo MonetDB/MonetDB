@@ -1001,15 +1001,17 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 	}
 	if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 		fclose(fp);
-		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 
 	if (log_write_new_types(lg, fp, append) != GDK_SUCCEED) {
 		fclose(fp);
-		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 	if (fflush(fp) < 0 || (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
@@ -1023,12 +1025,14 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 	    )) {
 		GDKsyserror("flushing log file %s failed", filename);
 		fclose(fp);
-		MT_remove(filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 	if (fclose(fp) < 0) {
 		GDKsyserror("closing log file %s failed", filename);
-		MT_remove(filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -1089,7 +1093,7 @@ log_open_output(logger *lg)
 	ATOMIC_INIT(&new_range->refcount, 1);
 	ATOMIC_INIT(&new_range->last_ts, 0);
 	ATOMIC_INIT(&new_range->flushed_ts, 0);
-	new_range->drops = 0;
+	ATOMIC_INIT(&new_range->drops, 0);
 	new_range->id = lg->id;
 	new_range->next = NULL;
 	logged_range *current = lg->current;
@@ -1986,7 +1990,8 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 		/* bm_subcommit releases the lock */
 		if (bm_subcommit(lg, NULL, 0) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
-			MT_remove(filename);
+			if (MT_remove(filename) < 0)
+				GDKsyserror("remove %s failed\n", filename);
 			BBPrelease(lg->catalog_bid->batCacheid);
 			BBPrelease(lg->catalog_id->batCacheid);
 			BBPrelease(lg->dcatalog->batCacheid);
@@ -2307,6 +2312,7 @@ log_destroy(logger *lg)
 		ATOMIC_DESTROY(&p->refcount);
 		ATOMIC_DESTROY(&p->last_ts);
 		ATOMIC_DESTROY(&p->flushed_ts);
+		ATOMIC_DESTROY(&p->drops);
 		GDKfree(p);
 		p = n;
 	}
@@ -2437,7 +2443,7 @@ log_activate(logger *lg)
 	rotation_lock(lg);
 	if (!lg->flushnow &&
 	    !lg->current->next &&
-	    lg->current->drops > 100000 &&
+	    ATOMIC_GET(&lg->current->drops) > 100000 &&
 	    (ulng) ATOMIC_GET(&lg->current->last_ts) > 0 &&
 	    lg->saved_id + 1 == lg->id &&
 	    ATOMIC_GET(&lg->current->refcount) == 1 /* no pending work on this file */ ) {
@@ -2863,7 +2869,7 @@ log_bat_transient(logger *lg, log_id id)
 	BAT *b = BBPquickdesc(bid);
 	assert(b);
 	BUN cnt = BATcount(b);
-	lg->current->drops += cnt;
+	ATOMIC_ADD(&lg->current->drops, cnt);
 	gdk_return r = log_del_bat(lg, bid);
 	log_unlock(lg);
 	if (r != GDK_SUCCEED)
@@ -3006,7 +3012,7 @@ check_rotation_conditions(logger *lg)
 	const lng p = (lng) getfilepos(getFile(lg->current->output_log));
 
 	const lng log_large = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? LOG_MINI : LOG_LARGE;
-	bool res = (lg->saved_id + 1 >= lg->id && lg->current->drops > 100000) || (p > log_large);
+	bool res = (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000) || (p > log_large);
 	if (res)
 		return (ATOMIC_GET(&lg->nr_open_files) < 8);
 	return res;

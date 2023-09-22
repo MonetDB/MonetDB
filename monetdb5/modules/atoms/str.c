@@ -5062,8 +5062,10 @@ STRasciify(str *r, const str *s)
 	if ((cd = iconv_open(t, f)) == (iconv_t) (-1))
 		throw(MAL, "str.asciify", "ICONV: cannot convert from (%s) to (%s).", f,
 			  t);
-	if ((*r = out = GDKmalloc(out_len)) == NULL)
+	if ((*r = out = GDKmalloc(out_len)) == NULL) {
+		iconv_close(cd);
 		throw(MAL, "str.asciify", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	str o = out;
 	if (iconv(cd, &in, &in_len, &o, &out_len) == (size_t) -1) {
 		GDKfree(out);

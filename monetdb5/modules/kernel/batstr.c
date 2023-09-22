@@ -5724,15 +5724,21 @@ BATSTRasciify(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "batstr.asciify", "ICONV: cannot convert from (%s) to (%s).",
 			  f, t);
 
-	if (!(b = BATdescriptor(*bid)))
+	if (!(b = BATdescriptor(*bid))) {
+		iconv_close(cd);
 		throw(MAL, "batstr.asciify", RUNTIME_OBJECT_MISSING);
+	}
 
-	if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid)))
+	if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
+		iconv_close(cd);
+		BBPreclaim(b);
 		throw(MAL, "batstr.asciify", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 
 	canditer_init(&ci, b, bs);
 
 	if ((bn = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT)) == NULL) {
+		iconv_close(cd);
 		BBPreclaim(b);
 		BBPreclaim(bs);
 		throw(MAL, "batstr.asciify", GDK_EXCEPTION);
