@@ -6173,7 +6173,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	}
 
 	/* 77_storage.sql */
-	if (!sql_bind_func_(sql, s->base.name, "insertonly_persist", NULL, F_UNION, true)) {
+	if (!sql_bind_func(sql, s->base.name, "insertonly_persist", &tp, NULL, F_UNION, true)) {
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		const char *query =
