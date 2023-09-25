@@ -56,6 +56,9 @@ BATupgrade(BAT *r, BAT *b, bool locked)
 	return err;
 }
 
+/* For varsized BATs, when `u` is still empty, we let `u` share the tvheap of
+ * `b`, so as to avoid copying strings during processing
+ */
 void
 BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 {
@@ -69,7 +72,7 @@ BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 	bat old = 0, new = 0;
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		if (u->tvheap->parentid != u->batCacheid)
-			old = u->tvheap->parentid;
+			old = u->tvheap->parentid; // FIXME: this code is now never executed
 		HEAPdecref(u->tvheap, true);
 		u->tvheap = h;
 		new = h->parentid;
