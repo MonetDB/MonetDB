@@ -3345,6 +3345,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		sql_exp *e = en->data;
 		assert(e->type == e_cmp);
 		stmt *ls = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
+		bool constval = false;
 		if (!ls) {
 			swap = true;
 			ls = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
@@ -3360,23 +3361,26 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			ls = rs;
 			rs = t;
 		}
-		if (ls->nrcols == 0)
+		if (ls->nrcols == 0) {
+			constval = true;
 			ls = stmt_const(be, bin_find_smallest_column(be, left), ls);
+		}
 		if (rs->nrcols == 0)
 			rs = stmt_const(be, bin_find_smallest_column(be, right), rs);
 
 		if (!li)
 			li = ls;
 
-		if (!en->next) {
+		if (!en->next && (constval || stmt_has_null(ls) /*|| stmt_has_null(rs) (change into check for fk)*/)) {
 			assert(e->flag == cmp_equal);
 			join = stmt_tdiff2(be, ls, rs, NULL);
+			jexps = NULL;
 		} else {
 			join = stmt_join_cand(be, ls, rs, NULL, NULL, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
 		}
 		en = en->next;
 	}
-	if (en) {
+	if (en || jexps) {
 		stmt *jl = stmt_result(be, join, 0);
 		stmt *jr = stmt_result(be, join, 1);
 		stmt *nulls = NULL;
@@ -3440,11 +3444,13 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			/* recreate join output */
 			jl = stmt_project(be, sel, jl);
 			join = stmt_tdiff(be, c, jl, NULL);
+		} else {
+			join = stmt_tdiff2(be, c, jl, NULL);
 		}
 		if (nulls)
 			join = stmt_project(be, join, c);
 
-	} else if (list_empty(jexps)) {
+	} else if (jexps && list_empty(jexps)) {
 		stmt *jl = stmt_result(be, join, 0);
 		stmt *c = stmt_mirror(be, bin_find_smallest_column(be, left));
 		join = stmt_tdiff2(be, c, jl, NULL);
@@ -3672,6 +3678,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	if (!semijoin_only) {
 		c = stmt_mirror(be, bin_find_smallest_column(be, left));
 		if (rel->op == op_anti) {
+			assert(0);
 			join = stmt_tdiff(be, c, jl, lcand);
 		} else {
 			if (lcand)
