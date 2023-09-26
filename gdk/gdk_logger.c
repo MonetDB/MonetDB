@@ -13,7 +13,6 @@
 #include "gdk_private.h"
 #include "gdk_logger.h"
 #include "gdk_logger_internals.h"
-/* #include "gdk_utils.h" */
 #include "mutils.h"
 #include <string.h>
 
