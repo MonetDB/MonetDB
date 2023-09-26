@@ -183,6 +183,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (!env) {
 					msg = createException(MAL, "optimizer.evaluate",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					p->barrier = barrier;
 					goto wrapup;
 				}
 				env->keepAlive = TRUE;

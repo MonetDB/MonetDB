@@ -58,6 +58,8 @@ gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__visibility__("hidden")));
 BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	__attribute__((__visibility__("hidden")));
+BAT *BATcreatesample(oid hseq, BUN cnt, BUN n, uint64_t seed)
+	__attribute__((__visibility__("hidden")));
 void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATdestroy(BAT *b)
@@ -300,28 +302,6 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-
-static inline const char *
-BATITERtailname(const BATiter *bi)
-{
-	if (bi->type == TYPE_str) {
-		switch (bi->width) {
-		case 1:
-			return "tail1";
-		case 2:
-			return "tail2";
-		case 4:
-#if SIZEOF_VAR_T == 8
-			return "tail4";
-		case 8:
-#endif
-			break;
-		default:
-			MT_UNREACHABLE();
-		}
-	}
-	return "tail";
-}
 
 static inline bool
 imprintable(int tpe)

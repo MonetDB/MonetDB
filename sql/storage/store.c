@@ -4039,8 +4039,13 @@ sql_trans_commit(sql_trans *tr)
 				}
 				sequences_unlock(store);
 			}
-			if (ok == LOG_OK && store->prev_oid != store->obj_id)
+			if (ok == LOG_OK && store->prev_oid != store->obj_id) {
+				if (!flush)
+					MT_lock_set(&store->flush);
 				ok = store->logger_api.log_tsequence(store, OBJ_SID, store->obj_id);
+				if (!flush)
+					MT_lock_unset(&store->flush);
+			}
 			store->prev_oid = store->obj_id;
 
 

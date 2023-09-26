@@ -24,7 +24,7 @@ typedef struct rel_base_t {
 	sql_table *mt;
 	char *name;
 	int disallowed;	/* ie check per column */
-	uint32_t used[FLEXIBLE_ARRAY_MEMBER];
+	uint32_t used[];
 } rel_base_t;
 
 void
