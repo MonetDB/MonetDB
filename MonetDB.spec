@@ -860,13 +860,16 @@ fi
 %endif
 
 %changelog
+* Wed Sep 27 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.9-20230927
+- Rebuilt.
+- GH#7402: Privileges on merge table not propagated to partition tables
+
 * Mon Sep 25 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
 - Rebuilt.
 - GH#7094: Drop remote tables in transactions and rollback
 - GH#7303: Improve the performance of multi-column filters
 - GH#7400: VM max memory is not check correctly for cgroups v2
 - GH#7401: Column aliases used incorrectly in UNION subqueries
-- GH#7402: Privileges on merge table not propagated to partition tables
 
 * Fri Sep 22 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
 - gdk: Fixed a number of data races (race conditions).
