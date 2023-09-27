@@ -48,3 +48,31 @@ select current_role
 ----
 foo
 
+-- Check if the default role was actually granted to the user  
+@connection(id=foo)
+statement ok
+set role bartender
+
+-- test if a sysadmin can do the same
+statement ok
+create user andy with password 'andy' name 'andy' default role sysadmin
+
+@connection(id=andy, username=andy, password=andy)
+statement ok
+create user bob with password 'bob' name 'bob' default role bartender
+
+@connection(id=bob, username=bob, password=bob)
+query T nosort
+select current_role
+----
+bartender
+
+-- check if the new user has granted the roles
+@connection(id=bob)
+statement ok
+set role bob
+
+@connection(id=bob)
+statement ok
+set role bartender
+

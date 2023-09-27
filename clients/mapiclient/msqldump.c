@@ -60,10 +60,10 @@ main(int argc, char **argv)
 #endif
 {
 	int port = 0;
-	char *user = NULL;
-	char *passwd = NULL;
-	char *host = NULL;
-	char *dbname = NULL;
+	const char *user = NULL;
+	const char *passwd = NULL;
+	const char *host = NULL;
+	const char *dbname = NULL;
 	DotMonetdb dotfile = {0};
 	bool trace = false;
 	bool describe = false;
@@ -117,9 +117,7 @@ main(int argc, char **argv)
 	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NeXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
-			if (user)
-				free(user);
-			user = strdup(optarg);
+			user = optarg;
 			user_set_as_flag = true;
 			break;
 		case 'h':
@@ -130,9 +128,7 @@ main(int argc, char **argv)
 			port = atoi(optarg);
 			break;
 		case 'd':
-			if (dbname)
-				free(dbname);
-			dbname = strdup(optarg);
+			dbname = optarg;
 			break;
 		case 'D':
 			describe = true;
@@ -170,6 +166,7 @@ main(int argc, char **argv)
 				printf(" (hg id: %s)", rev);
 #endif
 			printf("\n");
+			destroy_dotmonetdb(&dotfile);
 			return 0;
 		}
 		case '?':
@@ -183,7 +180,7 @@ main(int argc, char **argv)
 	}
 
 	if (optind == argc - 1)
-		dbname = strdup(argv[optind]);
+		dbname = argv[optind];
 	else if (optind != argc)
 		usage(argv[0], -1);
 
@@ -195,18 +192,25 @@ main(int argc, char **argv)
 		printf("msqldump, please specify a database\n");
 		usage(argv[0], -1);
 	}
-	if (user == NULL)
-		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-	if (passwd == NULL)
-		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
+	char *user_allocated = NULL;
+	if (user == NULL) {
+		user_allocated = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+		user = user_allocated;
+	}
+	char *passwd_allocated = NULL;
+	if (passwd == NULL) {
+		passwd_allocated = simple_prompt("password", BUFSIZ, 0, NULL);
+		passwd = passwd_allocated;
+	}
 
 	mid = mapi_mapi(host, port, user, passwd, "sql", dbname);
-	if (user)
-		free(user);
-	if (passwd)
-		free(passwd);
-	if (dbname)
-		free(dbname);
+	free(user_allocated);
+	user_allocated = NULL;
+	free(passwd_allocated);
+	passwd_allocated = NULL;
+	user = NULL;
+	passwd = NULL;
+	dbname = NULL;
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);
@@ -279,9 +283,12 @@ main(int argc, char **argv)
 	mapi_destroy(mid);
 	if (mnstr_errnr(out) != MNSTR_NO__ERROR) {
 		fprintf(stderr, "%s: %s\n", argv[0], mnstr_peek_error(out));
-		return 1;
+		c = 1;
 	}
 
 	mnstr_destroy(out);
+
+	destroy_dotmonetdb(&dotfile);
+
 	return c;
 }

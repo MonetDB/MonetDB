@@ -129,7 +129,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	getArg(q, 0) = hvar;
 	tvar = newTmpVariable(mb, TYPE_any);
 	q = pushReturn(mb, q, tvar);
-	(void) pushArgument(mb, q, iter);
+	q = pushArgument(mb, q, iter);
 	pushInstruction(mb, q);
 
 	/* $1:= algebra.fetch(Ai,h) or constant */
@@ -196,7 +196,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	q->barrier = REDOsymbol;
 	getArg(q, 0) = hvar;
 	q = pushReturn(mb, q, tvar);
-	(void) pushArgument(mb, q, iter);
+	q = pushArgument(mb, q, iter);
 	pushInstruction(mb, q);
 
 	q = newAssignment(mb);
@@ -205,7 +205,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	q->barrier = EXITsymbol;
 	getArg(q, 0) = hvar;
-	(void) pushReturn(mb, q, tvar);
+	q = pushReturn(mb, q, tvar);
 	pushInstruction(mb, q);
 
 	for (i = 0; i < pci->retc; i++) {
@@ -214,7 +214,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto nomem;
 		}
 		getArg(q, 0) = getArg(pci, i);
-		(void) pushArgument(mb, q, resB[i]);
+		q = pushArgument(mb, q, resB[i]);
 		pushInstruction(mb, q);
 	}
 	GDKfree(alias);

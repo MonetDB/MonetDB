@@ -393,6 +393,25 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 		msg = userCheckCredentials( m, c, pwhash, challenge, algo);
 		if (msg)
 			goto bailout1;
+		if (!GDKinmemory(0) && !GDKembedded()) {
+			sabdb *stats = NULL;
+			bool locked = false;
+			char *err = msab_getMyStatus(&stats);
+			if (err || stats == NULL)
+				free(err);
+			else
+				locked = stats->locked;
+			msab_freeStatus(&stats);
+			if (locked) {
+				if (c->user == 0) {
+					mnstr_printf(c->fdout, "#server is running in "
+								 "maintenance mode\n");
+				} else {
+					msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "server is running in maintenance mode, please try again later\n");
+					goto bailout1;
+				}
+			}
+		}
 
 		switch (monet5_user_set_def_schema(m, c->user, c->username)) {
 			case -1:

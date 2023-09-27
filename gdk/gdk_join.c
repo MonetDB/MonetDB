@@ -3538,22 +3538,26 @@ guess_uniques(BAT *b, struct canditer *ci)
 	BUN cnt1, cnt2;
 	BAT *s1;
 
-	if (b->tkey)
+	MT_lock_set(&b->theaplock);
+	bool key = b->tkey;
+	double unique_est = b->tunique_est;
+	BUN batcount = BATcount(b);
+	MT_lock_unset(&b->theaplock);
+	if (key)
 		return (double) ci->ncand;
 
 	if (ci->s == NULL ||
-	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		MT_lock_set(&b->theaplock);
-		double unique_est = b->tunique_est;
-		MT_lock_unset(&b->theaplock);
+	    (ci->tpe == cand_dense && ci->ncand == batcount)) {
 		if (unique_est != 0) {
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT " use cached value\n",
 				  ALGOBATPAR(b));
 			return unique_est;
 		}
-		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
+		s1 = BATcreatesample(b->hseqbase, batcount, 1000,
+				     (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 	} else {
-		BAT *s2 = BATsample_with_seed(ci->s, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
+		BAT *s2 = BATcreatesample(ci->s->hseqbase, ci->ncand, 1000,
+					  (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 		if (s2 == NULL)
 			return -1;
 		s1 = BATproject(s2, ci->s);
@@ -3573,13 +3577,13 @@ guess_uniques(BAT *b, struct canditer *ci)
 	double B = cnt1 - n1 * A;
 
 	B += A * ci->ncand;
+	MT_lock_set(&b->theaplock);
 	if (ci->s == NULL ||
-	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		MT_lock_set(&b->theaplock);
+	    (ci->tpe == cand_dense && ci->ncand == BATcount(b) && ci->ncand == batcount)) {
 		if (b->tunique_est == 0)
 			b->tunique_est = B;
-		MT_lock_unset(&b->theaplock);
 	}
+	MT_lock_unset(&b->theaplock);
 	return B;
 }
 
