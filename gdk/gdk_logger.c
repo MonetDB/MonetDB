@@ -2293,7 +2293,7 @@ do_flush_range_cleanup(logger *lg)
 			TRC_INFO(WAL, "closing output log %s", mnstr_name(frange->output_log));
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
-			ATOMIC_INC(&lg->nr_open_files);
+			ATOMIC_DEC(&lg->nr_open_files);
 		}
 	}
 	return flast;
