@@ -985,7 +985,7 @@ BBPcheckbats(unsigned bbpversion)
 #endif
 
 unsigned
-BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid)
+BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool allow_hge_upgrade)
 {
 	char buf[BUFSIZ];
 	int sz, ptrsize, oidsize, intsize;
@@ -1031,6 +1031,13 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid)
 	if (intsize > SIZEOF_MAX_INT) {
 		TRC_CRITICAL(GDK, "database created with incompatible server: "
 			     "expected max. integer size %d, got %d.",
+			     SIZEOF_MAX_INT, intsize);
+		return 0;
+	}
+	if (intsize < SIZEOF_MAX_INT && !allow_hge_upgrade) {
+		TRC_CRITICAL(GDK, "database created with incompatible server: "
+			     "expected max. integer size %d, got %d; "
+			     "use --set allow_hge_upgrade=yes to upgrade.",
 			     SIZEOF_MAX_INT, intsize);
 		return 0;
 	}
@@ -1548,7 +1555,7 @@ BBPmanager(void *dummy)
 static MT_Id manager;
 
 gdk_return
-BBPinit(void)
+BBPinit(bool allow_hge_upgrade)
 {
 	FILE *fp = NULL;
 	struct stat st;
@@ -1678,7 +1685,7 @@ BBPinit(void)
 		bbpversion = GDKLIBRARY;
 	} else {
 		lng logno, transid;
-		bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid);
+		bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid, allow_hge_upgrade);
 		if (bbpversion == 0) {
 			ATOMIC_SET(&GDKdebug, dbg);
 			return GDK_FAIL;
@@ -3692,7 +3699,7 @@ BBPcheckBBPdir(void)
 		if (fp == NULL)
 			return;
 	}
-	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid);
+	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid, false);
 	if (bbpversion == 0) {
 		fclose(fp);
 		return;		/* error reading file */
