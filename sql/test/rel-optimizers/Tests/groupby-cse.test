@@ -177,7 +177,7 @@ project (
 | group by (
 | | project (
 | | | table("sys"."foo") [ "foo"."c1", "foo"."c2" ]
-| | ) [ "foo"."c1" as "sq"."c1_alias1", "foo"."c1" as "sq"."c1_alias2", "foo"."c2" as "sq"."c2" ]
+| | ) [ "foo"."c1" as "sq"."c1_alias1", "sq"."c1_alias1" as "sq"."c1_alias2", "foo"."c2" as "sq"."c2" ]
 | ) [ "sq"."c1_alias1", "sq"."c2" ] [ "sq"."c1_alias1", "sq"."c1_alias1" as "sq"."c1_alias2", "sq"."c2", "sys"."count" no nil ("sq"."c1_alias2") NOT NULL as "%1"."%1" ]
 ) [ "sq"."c1_alias1", "sq"."c1_alias2", "sq"."c2", "%1"."%1" NOT NULL ]
 

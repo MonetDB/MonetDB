@@ -42,7 +42,7 @@ atom_bool( sql_allocator *sa, sql_subtype *tpe, bit val)
 	if(!a)
 		return NULL;
 
-	a->isnull = 0;
+	a->isnull = val == bit_nil?true:false;
 	a->tpe = *tpe;
 	a->data.vtype = tpe->type->localtype;
 	a->data.val.btval = val;

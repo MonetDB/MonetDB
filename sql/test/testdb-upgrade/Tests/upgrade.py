@@ -30,7 +30,8 @@ with zipfile.ZipFile(archive) as z:
     z.extractall(path=db)
 
 # start server and dump database
-with process.server(mapiport='0',
+with process.server(args=['--set', 'allow_hge_upgrade=yes'],
+                    mapiport='0',
                     stdin=process.PIPE,
                     stdout=process.PIPE,
                     stderr=process.PIPE) as srv:

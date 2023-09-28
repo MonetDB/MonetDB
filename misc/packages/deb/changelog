@@ -1,3 +1,10 @@
+monetdb (11.47.9) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7402: Privileges on merge table not propagated to partition tables
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 27 Sep 2023 09:04:30 +0200
+
 monetdb (11.47.7) unstable; urgency=low
 
   * Rebuilt.
@@ -5,7 +12,6 @@ monetdb (11.47.7) unstable; urgency=low
   * GH#7303: Improve the performance of multi-column filters
   * GH#7400: VM max memory is not check correctly for cgroups v2
   * GH#7401: Column aliases used incorrectly in UNION subqueries
-  * GH#7402: Privileges on merge table not propagated to partition tables
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 25 Sep 2023 12:24:55 +0200
 
