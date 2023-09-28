@@ -33,3 +33,5 @@ limithack
 shutdown
 
 HAVE_HGE?int_notation_1e5
+
+insertonly_persist
