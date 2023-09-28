@@ -1121,7 +1121,7 @@ log_close_output(logger *lg)
 		close_stream(lg->current->output_log);
 	}
 	lg->current->output_log = NULL;
-	ATOMIC_INC(&lg->nr_open_files);
+	ATOMIC_DEC(&lg->nr_open_files);
 }
 
 static gdk_return
