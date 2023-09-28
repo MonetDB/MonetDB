@@ -21,7 +21,6 @@ typedef struct global_props {
 		needs_mergetable_rewrite:1,
 		needs_remote_replica_rewrite:1,
 		needs_distinct:1,
-		needs_setjoin_rewrite:1,
 		has_special_modify:1, /* Don't prune updates as pruning will possibly result in removing the joins which therefor cannot be used for constraint checking */
 		opt_level:1; /* 0 run necessary rewriters, 1 run all optimizers */
 	uint8_t opt_cycle; /* the optimization cycle number */
@@ -99,7 +98,6 @@ extern run_optimizer bind_push_func_and_select_down(visitor *v, global_props *gp
 extern run_optimizer bind_push_topn_and_sample_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_distinct_project2groupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_merge_table_rewrite(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern run_optimizer bind_setjoins_2_joingroupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_get_statistics(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_join_order2(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_final_optimization_loop(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));

@@ -139,6 +139,7 @@ if(PYTHON3_LIBDIR)
     melcheck.py
     sqllogictest.py
     explain.py
+    plan.py
     mapicursor.py
     malmapi.py
     helpers.py

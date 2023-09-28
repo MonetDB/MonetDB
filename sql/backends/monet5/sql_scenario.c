@@ -1232,7 +1232,7 @@ SQLparser_body(Client c, backend *be)
 	m->emode = m_normal;
 	m->emod = mod_none;
 	c->query = NULL;
-	Tbegin = GDKusec();
+	c->qryctx.starttime = Tbegin = Tend = GDKusec();
 
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
@@ -1261,7 +1261,6 @@ SQLparser_body(Client c, backend *be)
 	 */
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
-	c->qryctx.starttime = Tend = GDKusec();
 	if (profilerStatus > 0) {
 		profilerEvent(NULL,
 					  &(struct NonMalEvent)
@@ -1379,7 +1378,7 @@ SQLparser_body(Client c, backend *be)
 					msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
 
 				if (msg == MAL_SUCCEED && opt) {
-					Tbegin = GDKusec();
+					Tbegin = Tend;
 					msg = SQLoptimizeQuery(c, c->curprg->def);
 					Tend = GDKusec();
 					if (profilerStatus > 0)
