@@ -1,3 +1,7 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Fri Sep 29 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed an installation issue on Debian and Ubuntu introduced in the
+  last build.
+
