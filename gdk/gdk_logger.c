@@ -2996,7 +2996,6 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 #define DBLKSZ		8192
 #define SEGSZ		(64*DBLKSZ)
 
-#define LOG_TINY        (LL_CONSTANT(2))
 #define LOG_MINI	(LL_CONSTANT(2)*1024)
 #define LOG_LARGE	(LL_CONSTANT(2)*1024*1024*1024)
 
@@ -3012,9 +3011,9 @@ check_rotation_conditions(logger *lg)
 		return true;
 	const lng p = (lng) getfilepos(getFile(lg->current->output_log));
 
-	const lng log_large = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? LOG_MINI :
-          GDKgetenv_istrue("insertonly_nowal") ? LOG_TINY : LOG_LARGE;
-	bool res = (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000) || (p > log_large);
+	const lng log_size = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) || GDKgetenv_istrue("insertonly_nowal") ?
+		LOG_MINI : LOG_LARGE;
+	bool res = (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000) || (p > log_size);
 	if (res)
 		return (ATOMIC_GET(&lg->nr_open_files) < 8);
 	return res;
