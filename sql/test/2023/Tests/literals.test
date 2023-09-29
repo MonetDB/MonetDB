@@ -1,0 +1,9 @@
+
+query III rowsort                                                                                                                       
+SELECT 0xFFFF, 0o755, 0b11001111
+----
+
+query II rowsort                                                                                                                       
+SELECT 1_000_000, 0x_FFFF_FFFF
+----
+
