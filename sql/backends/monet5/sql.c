@@ -4327,14 +4327,13 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)stk;
 	(void)pci;
 
-	bool schema_wide = pci->argc == 4 ? true : false;
-	assert(pci->argc == 4 || pci->argc == 5);
+	bool schema_wide = pci->argc == 3 || pci->argc == 4 ? true : false;
 
 	bat *o0 = getArgReference_bat(stk, pci, 0),
 		*o1 = getArgReference_bat(stk, pci, 1),
 		*o2 = getArgReference_bat(stk, pci, 2);
 
-	str i1 = *getArgReference_str(stk, pci, 3);
+	str i1 = schema_wide && pci->argc == 4 ? *getArgReference_str(stk, pci, 3) : NULL;
 	str i2 = !schema_wide ? *getArgReference_str(stk, pci, 4) : NULL;
 
 	str msg = MAL_SUCCEED;
@@ -4358,11 +4357,18 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.insertonly_persist", "Function cannot be used without setting"
 			  " insertonly_nowal flag at server startup.");
 
-	sql_schema *s = mvc_bind_schema(m, i1);
-	if (!s)
-		throw(SQL, "sql.insertonly_persist", SQLSTATE(3F000) "Schema missing %s.", i1);
+	sql_schema *s = NULL;
+	if (i1) {
+		s = mvc_bind_schema(m, i1);
+		if (s == NULL)
+			throw(SQL, "sql.insertonly_persist", SQLSTATE(3F000) "Schema missing %s.", i1);
+	} else {
+		s = m->session->schema;
+		/* throw(SQL, "sql.insertonly_persist", SQLSTATE(3F000) "Schema missing %s.", i1); */
+	}
 
-	if (!mvc_schema_privs(m, s))
+
+	if (pci->argc != 3 && !mvc_schema_privs(m, s))
 		throw(SQL, "sql.insertonly_persist", SQLSTATE(42000) "Access denied for %s to schema '%s'.",
 			  get_string_global_var(m, "current_user"), s->base.name);
 
@@ -4408,9 +4414,6 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						sql_column *c = (sql_column *) ncol->data;
 						bs = store->storage_api.bind_col(tr, c, RDONLY);
 
-						if (bs && isVIEW(bs))
-							bs = BATdescriptor(VIEWtparent(bs));
-
 						if (bs == NULL) {
 							MT_lock_unset(&store->commit);
 							GDKfree(commit_list);
@@ -4418,6 +4421,9 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							BBPnreclaim(3, tables, oids, rowcounts);
 							throw(SQL, "sql.insertonly_persist", "Cannot access column descriptor.");
 						}
+
+						if (isVIEW(bs))
+							bs = BATdescriptor(VIEWtparent(bs));
 
 						if (i == n && ncol->next) {
 							n = n * 2;
@@ -5228,6 +5234,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
+ pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist deltas on append only tables in current schema.", args(3, 3, batarg("table", str), batarg("table_id", lng), batarg("rowcount", lng))),
  pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist deltas on append only tables in schema s.", args(3, 4, batarg("table", str), batarg("table_id", lng), batarg("rowcount", lng), arg("s", str))),
  pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist deltas on append only table in schema s table t.", args(3, 5, batarg("table", str), batarg("table_id", lng), batarg("rowcount", lng), arg("s", str), arg("t", str))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
