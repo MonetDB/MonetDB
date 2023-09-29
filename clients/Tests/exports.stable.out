@@ -214,7 +214,7 @@ BBPrec *BBP[N_BBPINIT];
 gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
 void BBPcold(bat i);
 int BBPfix(bat b);
-unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid);
+unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool allow_hge_upgrade);
 bat BBPindex(const char *nme);
 void BBPkeepref(BAT *b) __attribute__((__nonnull__(1)));
 bat BBPlimit;

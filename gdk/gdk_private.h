@@ -110,7 +110,7 @@ void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPinit(void)
+gdk_return BBPinit(bool allow_hge_upgrade)
 	__attribute__((__visibility__("hidden")));
 bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))

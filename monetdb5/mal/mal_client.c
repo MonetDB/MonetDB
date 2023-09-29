@@ -378,7 +378,6 @@ MCcloseClient(Client c)
 	c->promptlength = -1;
 	if (c->errbuf) {
 		/* no client threads in embedded mode */
-		//if (!GDKembedded())
 		GDKsetbuf(NULL);
 		if (c->father == NULL)
 			GDKfree(c->errbuf);

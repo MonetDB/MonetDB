@@ -88,11 +88,7 @@ retrieveDiagMsg(SQLHANDLE stmt, char * outp, size_t outp_len)
 		/* The message layout is: "[MonetDB][ODBC Driver 11.46.0][MonetDB-Test]error/warning text".
 		   The ODBC driver version numbers changes in time. Overwrite it to get a stable output */
 		if (strncmp(msg, "[MonetDB][ODBC Driver 11.", 25) == 0) {
-			for (int i = 25; msg[i] != ']'; i++) {
-				if (isdigit(msg[i])) {
-					msg[i] = '#';
-				}
-			}
+			return snprintf(outp, outp_len, "SQLstate %s, Errnr %d, Message [MonetDB][ODBC Driver 11.##.#]%s\n", (char*)state, (int)errnr, strchr(msg + 25, ']') + 1);
 		}
 		return snprintf(outp, outp_len, "SQLstate %s, Errnr %d, Message %s\n", (char*)state, (int)errnr, (char*)msg);
 	}

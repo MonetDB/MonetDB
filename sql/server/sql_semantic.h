@@ -19,6 +19,7 @@ typedef struct exp_kind_t {
 	bte type;
 	bte card;
 	bit reduce;
+	bit aggr;	/* passed from outer query */
 } exp_kind;
 
 extern sql_schema *cur_schema(mvc *sql);

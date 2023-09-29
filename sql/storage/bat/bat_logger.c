@@ -3501,7 +3501,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Could not open %s for reading: %s", bbpdir, mnstr_peek_error(NULL));
 		return GDK_FAIL;
 	}
-	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid);
+	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid, false);
 	if (bbpversion == 0)
 		goto end;
 	assert(bbpversion == GDKLIBRARY);

@@ -207,7 +207,6 @@ extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
 
 extern int exp_aggr_is_count(sql_exp *e);
 extern list *check_distinct_exp_names(mvc *sql, list *exps);
-extern void exps_reset_freevar(list *exps);
 
 extern sql_exp *exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
 extern int rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast);
