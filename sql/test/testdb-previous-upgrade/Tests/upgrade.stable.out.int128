@@ -486,25 +486,20 @@ update sys.functions set system = true where system <> true and schema_id = 2000
 update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'geometry_columns';
 
 Running database upgrade commands:
-create view sys.describe_accessible_tables as
- select
- schemas.name as schema,
- tables.name as table,
- table_types.table_type_name as table_type,
- privilege_codes.privilege_code_name as privs,
- privileges.privileges as privs_code
- from privileges
- join sys.roles
- on privileges.auth_id = roles.id
- join sys.tables
- on privileges.obj_id = tables.id
- join sys.table_types
- on tables.type = table_types.table_type_id
- join sys.schemas
- on tables.schema_id = schemas.id
- join sys.privilege_codes
- on privileges.privileges = privilege_codes.privilege_code_id
- where roles.name = current_role;
+CREATE VIEW sys.describe_accessible_tables AS
+ SELECT
+ schemas.name AS schema,
+ tables.name  AS table,
+ tt.table_type_name AS table_type,
+ pc.privilege_code_name AS privs,
+ p.privileges AS privs_code
+ FROM privileges p
+ JOIN sys.roles ON p.auth_id = roles.id
+ JOIN sys.tables ON p.obj_id = tables.id
+ JOIN sys.table_types tt ON tables.type = tt.table_type_id
+ JOIN sys.schemas ON tables.schema_id = schemas.id
+ JOIN sys.privilege_codes pc ON p.privileges = pc.privilege_code_id
+ WHERE roles.name = current_role;
 GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;
 update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'describe_accessible_tables';
 alter table sys.function_languages set read write;
@@ -515,4 +510,221 @@ commit;
 
 Running database upgrade commands:
 alter table sys.function_languages set read only;
+
+Running database upgrade commands:
+DROP FUNCTION IF EXISTS sys.dump_database(BOOLEAN) CASCADE;
+DROP VIEW IF EXISTS sys.dump_comments CASCADE;
+DROP VIEW IF EXISTS sys.describe_comments CASCADE;
+CREATE VIEW sys.describe_comments AS
+	SELECT o.id AS id, o.tpe AS tpe, o.nme AS fqn, cm.remark AS rem
+	FROM (
+		SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas WHERE NOT system
+		UNION ALL
+		SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
+		  FROM sys.schemas s JOIN sys._tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
+		 WHERE NOT t.system
+		UNION ALL
+		SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys._tables t, sys.schemas s WHERE NOT t.system AND c.table_id = t.id AND t.schema_id = s.id
+		UNION ALL
+		SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE NOT t.system AND idx.table_id = t.id AND t.schema_id = s.id
+		UNION ALL
+		SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
+		UNION ALL
+		SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf
+		 WHERE NOT f.system AND f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
+		) AS o(id, tpe, nme)
+	JOIN sys.comments cm ON cm.id = o.id;
+GRANT SELECT ON sys.describe_comments TO PUBLIC;
+CREATE VIEW sys.dump_comments AS
+  SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;
+CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
+BEGIN
+  SET SCHEMA sys;
+  TRUNCATE sys.dump_statements;
+  INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
+  INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA "sys";');
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
+  --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
+				    FROM (
+				      SELECT f.o, f.stmt FROM sys.dump_functions f
+				       UNION ALL
+				      SELECT t.o, t.stmt FROM sys.dump_tables t
+				    ) AS stmts(o, s);
+  IF NOT DESCRIBE THEN
+    CALL sys.dump_table_data();
+  END IF;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
+  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
+  RETURN sys.dump_statements;
+END;
+update sys._tables set system = true where schema_id = 2000 and name in ('describe_comments','dump_comments');
+update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'dump_database' and type = 5;
+
+Running database upgrade commands:
+CREATE SCHEMA INFORMATION_SCHEMA;
+COMMENT ON SCHEMA INFORMATION_SCHEMA IS 'ISO/IEC 9075-11 SQL/Schemata';
+update sys.schemas set system = true where name = 'information_schema';
+CREATE VIEW INFORMATION_SCHEMA.CHARACTER_SETS AS SELECT
+  cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
+  cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
+  cast('UTF-8' AS varchar(16)) AS CHARACTER_SET_NAME,
+  cast('ISO/IEC 10646:2021' AS varchar(20)) AS CHARACTER_REPERTOIRE,
+  cast('UTF-8' AS varchar(16)) AS FORM_OF_USE,
+  cast(NULL AS varchar(1)) AS DEFAULT_COLLATE_CATALOG,
+  cast(NULL AS varchar(1)) AS DEFAULT_COLLATE_SCHEMA,
+  cast(NULL AS varchar(1)) AS DEFAULT_COLLATE_NAME;
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHARACTER_SETS TO PUBLIC WITH GRANT OPTION;
+CREATE VIEW INFORMATION_SCHEMA.SCHEMATA AS SELECT
+  cast(NULL AS varchar(1)) AS CATALOG_NAME,
+  s."name" AS SCHEMA_NAME,
+  a."name" AS SCHEMA_OWNER,
+  cast(NULL AS varchar(1)) AS DEFAULT_CHARACTER_SET_CATALOG,
+  cast(NULL AS varchar(1)) AS DEFAULT_CHARACTER_SET_SCHEMA,
+  cast('UTF-8' AS varchar(16)) AS DEFAULT_CHARACTER_SET_NAME,
+  cast(NULL AS varchar(1)) AS SQL_PATH,
+  -- MonetDB column extensions
+  s."id" AS schema_id,
+  s."system" AS is_system,
+  cm."remark" AS comments
+ FROM sys."schemas" s
+ INNER JOIN sys."auths" a ON s."owner" = a."id"
+ LEFT OUTER JOIN sys."comments" cm ON s."id" = cm."id"
+ ORDER BY s."name";
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.SCHEMATA TO PUBLIC WITH GRANT OPTION;
+CREATE VIEW INFORMATION_SCHEMA.TABLES AS SELECT
+  cast(NULL AS varchar(1)) AS TABLE_CATALOG,
+  s."name" AS TABLE_SCHEMA,
+  t."name" AS TABLE_NAME,
+  tt."table_type_name" AS TABLE_TYPE,
+  cast(NULL AS varchar(1)) AS SELF_REFERENCING_COLUMN_NAME,
+  cast(NULL AS varchar(1)) AS REFERENCE_GENERATION,
+  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_CATALOG,
+  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_SCHEMA,
+  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_NAME,
+  cast(sys.ifthenelse((t."type" IN (0, 3, 7, 20, 30) AND t."access" IN (0, 2)), 'YES', 'NO') AS varchar(3)) AS IS_INSERTABLE_INTO,
+  cast('NO' AS varchar(3)) AS IS_TYPED,
+  cast((CASE t."commit_action" WHEN 1 THEN 'DELETE' WHEN 2 THEN 'PRESERVE' WHEN 3 THEN 'DROP' ELSE NULL END) AS varchar(10)) AS COMMIT_ACTION,
+  -- MonetDB column extensions
+  t."schema_id" AS schema_id,
+  t."id" AS table_id,
+  t."type" AS table_type_id,
+  st."count" AS row_count,
+  t."system" AS is_system,
+  sys.ifthenelse(t."type" IN (1, 11), TRUE, FALSE) AS is_view,
+  t."query" AS query_def,
+  cm."remark" AS comments
+ FROM sys."tables" t
+ INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
+ INNER JOIN sys."table_types" tt ON t."type" = tt."table_type_id"
+ LEFT OUTER JOIN sys."comments" cm ON t."id" = cm."id"
+ LEFT OUTER JOIN (SELECT DISTINCT "schema", "table", "count" FROM sys."statistics"()) st ON (s."name" = st."schema" AND t."name" = st."table")
+ ORDER BY s."name", t."name";
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLES TO PUBLIC WITH GRANT OPTION;
+CREATE VIEW INFORMATION_SCHEMA.VIEWS AS SELECT
+  cast(NULL AS varchar(1)) AS TABLE_CATALOG,
+  s."name" AS TABLE_SCHEMA,
+  t."name" AS TABLE_NAME,
+  t."query" AS VIEW_DEFINITION,
+  cast('NONE' AS varchar(10)) AS CHECK_OPTION,
+  cast('NO' AS varchar(3)) AS IS_UPDATABLE,
+  cast('NO' AS varchar(3)) AS INSERTABLE_INTO,
+  cast('NO' AS varchar(3)) AS IS_TRIGGER_UPDATABLE,
+  cast('NO' AS varchar(3)) AS IS_TRIGGER_DELETABLE,
+  cast('NO' AS varchar(3)) AS IS_TRIGGER_INSERTABLE_INTO,
+  -- MonetDB column extensions
+  t."schema_id" AS schema_id,
+  t."id" AS table_id,
+  cast(sys.ifthenelse(t."system", t."type" + 10 , t."type") AS smallint) AS table_type_id,
+  t."system" AS is_system,
+  cm."remark" AS comments
+ FROM sys."_tables" t
+ INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
+ LEFT OUTER JOIN sys."comments" cm ON t."id" = cm."id"
+ WHERE t."type" = 1
+ ORDER BY s."name", t."name";
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.VIEWS TO PUBLIC WITH GRANT OPTION;
+CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
+  cast(NULL AS varchar(1)) AS TABLE_CATALOG,
+  s."name" AS TABLE_SCHEMA,
+  t."name" AS TABLE_NAME,
+  c."name" AS COLUMN_NAME,
+  cast(c."number" +1 AS int) AS ORDINAL_POSITION,
+  c."default" AS COLUMN_DEFAULT,
+  cast(sys.ifthenelse(c."null", 'YES', 'NO') AS varchar(3)) AS IS_NULLABLE,
+  c."type" AS DATA_TYPE,
+  cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml'), c."type_digits", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,
+  cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml'), c."type_digits" * 3, NULL) AS int) AS CHARACTER_OCTET_LENGTH,
+  cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_digits", NULL) AS int) AS NUMERIC_PRECISION,
+  cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(c."type" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,
+  cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_scale", NULL) AS int) AS NUMERIC_SCALE,
+  cast(sys.ifthenelse(c."type" IN ('date','timestamp','timestamptz','time','timetz'), c."type_scale" -1, NULL) AS int) AS DATETIME_PRECISION,
+  cast(CASE c."type" WHEN 'day_interval' THEN 'interval day' WHEN 'month_interval' THEN 'interval month' WHEN 'sec_interval' THEN 'interval second' ELSE NULL END AS varchar(40)) AS INTERVAL_TYPE,
+  cast(sys.ifthenelse(c."type" IN ('day_interval','month_interval','sec_interval'), c."type_scale" -1, NULL) AS int) AS INTERVAL_PRECISION,
+  cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
+  cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
+  cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml'), 'UTF-8', NULL) AS varchar(16)) AS CHARACTER_SET_NAME,
+  cast(NULL AS varchar(1)) AS COLLATION_CATALOG,
+  cast(NULL AS varchar(1)) AS COLLATION_SCHEMA,
+  cast(NULL AS varchar(1)) AS COLLATION_NAME,
+  cast(NULL AS varchar(1)) AS DOMAIN_CATALOG,
+  cast(NULL AS varchar(1)) AS DOMAIN_SCHEMA,
+  cast(NULL AS varchar(1)) AS DOMAIN_NAME,
+  cast(NULL AS varchar(1)) AS UDT_CATALOG,
+  cast(NULL AS varchar(1)) AS UDT_SCHEMA,
+  cast(NULL AS varchar(1)) AS UDT_NAME,
+  cast(NULL AS varchar(1)) AS SCOPE_CATALOG,
+  cast(NULL AS varchar(1)) AS SCOPE_SCHEMA,
+  cast(NULL AS varchar(1)) AS SCOPE_NAME,
+  cast(NULL AS int) AS MAXIMUM_CARDINALITY,
+  cast(NULL AS varchar(1)) AS DTD_IDENTIFIER,
+  cast('NO' AS varchar(3)) AS IS_SELF_REFERENCING,
+  cast(CASE WHEN c."default" LIKE 'next value for %' THEN 'YES' ELSE 'NO' END AS varchar(3)) AS IS_IDENTITY,
+  cast(NULL AS varchar(10)) AS IDENTITY_GENERATION,
+  cast(NULL AS int) AS IDENTITY_START,
+  cast(NULL AS int) AS IDENTITY_INCREMENT,
+  cast(NULL AS int) AS IDENTITY_MAXIMUM,
+  cast(NULL AS int) AS IDENTITY_MINIMUM,
+  cast(NULL AS varchar(3)) AS IDENTITY_CYCLE,
+  cast('NO' AS varchar(3)) AS IS_GENERATED,
+  cast(NULL AS varchar(1)) AS GENERATION_EXPRESSION,
+  cast('NO' AS varchar(3)) AS IS_SYSTEM_TIME_PERIOD_START,
+  cast('NO' AS varchar(3)) AS IS_SYSTEM_TIME_PERIOD_END,
+  cast('NO' AS varchar(3)) AS SYSTEM_TIME_PERIOD_TIMESTAMP_GENERATION,
+  cast(sys.ifthenelse(t."type" IN (0,3,7,20,30), 'YES', 'NO') AS varchar(3)) AS IS_UPDATABLE,
+  cast(NULL AS varchar(1)) AS DECLARED_DATA_TYPE,
+  cast(NULL AS int) AS DECLARED_NUMERIC_PRECISION,
+  cast(NULL AS int) AS DECLARED_NUMERIC_SCALE,
+  -- MonetDB column extensions
+  t."schema_id" AS schema_id,
+  c."table_id" AS table_id,
+  c."id" AS column_id,
+  t."system" AS is_system,
+  cm."remark" AS comments
+ FROM sys."columns" c
+ INNER JOIN sys."tables" t ON c."table_id" = t."id"
+ INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
+ LEFT OUTER JOIN sys."comments" cm ON c."id" = cm."id"
+ ORDER BY s."name", t."name", c."number";
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.COLUMNS TO PUBLIC WITH GRANT OPTION;
+
+update sys._tables set system = true where system <> true
+ and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')
+ and name in ('character_sets','schemata','tables','views','columns');
 

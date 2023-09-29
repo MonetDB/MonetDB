@@ -31,7 +31,6 @@
  * the module remote.
  */
 #include "monetdb_config.h"
-#ifdef HAVE_MAPI
 #include "mal_client.h"
 #include "mal_session.h"
 #include "mal_exception.h"
@@ -228,7 +227,6 @@ doChallenge(void *data)
 static ATOMIC_TYPE nlistener = ATOMIC_VAR_INIT(0);	/* nr of listeners */
 static ATOMIC_TYPE serveractive = ATOMIC_VAR_INIT(0);
 static ATOMIC_TYPE serverexiting = ATOMIC_VAR_INIT(0);	/* listeners should exit */
-static ATOMIC_TYPE threadno = ATOMIC_VAR_INIT(0);	/* thread sequence no */
 
 static void
 SERVERlistenThread(SOCKET *Sock)
@@ -442,13 +440,11 @@ SERVERlistenThread(SOCKET *Sock)
 			goto stream_alloc_fail;
 		}
 		data->out = s;
-		char name[MT_NAME_LEN];
-		snprintf(name, sizeof(name), "client%d", (int) ATOMIC_INC(&threadno));
 
 		/* generate the challenge string */
 		generateChallenge(data->challenge, 8, 12);
 
-		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
+		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED, "clientXXXX") < 0) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
@@ -974,13 +970,11 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 		GDKfree(data);
 		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	char name[MT_NAME_LEN];
-	snprintf(name, sizeof(name), "client%d", (int) ATOMIC_INC(&threadno));
 
 	/* generate the challenge string */
 	generateChallenge(data->challenge, 8, 12);
 
-	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
+	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED, "clientXXXX") < 0) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);
 		GDKfree(data);
@@ -2146,8 +2140,3 @@ mel_func mal_mapi_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_mal_mapi_mal)
 { mal_module2("mapi", NULL, mal_mapi_init_funcs, MAPIprelude, NULL); }
-
-#else
-// this avoids a compiler warning w.r.t. empty compilation units.
-int SERVERdummy = 42;
-#endif // HAVE_MAPI

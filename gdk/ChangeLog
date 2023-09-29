@@ -1,3 +1,9 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Thu Sep 28 2023 Sjoerd Mullender <sjoerd@acm.org>
+- We now prevent accidental upgrades from a database without 128 bit
+  integers to one with 128 bit integers (also known as HUGEINT) from
+  happening.  Upgrades will only be done if the server is started with
+  the option --set allow_hge_upgrade=yes.
+

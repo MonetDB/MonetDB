@@ -489,7 +489,7 @@ typedef union {
 
 typedef struct {
 	size_t nitems;
-	char data[FLEXIBLE_ARRAY_MEMBER] __attribute__((__nonstring__));
+	char data[] __attribute__((__nonstring__));
 } blob;
 gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
@@ -1984,37 +1984,13 @@ VALptr(const ValRecord *v)
 #define THREADS	1024
 #define THREADDATA	3
 
-typedef struct threadStruct {
-	int tid;		/* logical ID by MonetDB; val == index
-				 * into this array + 1 (0 is
-				 * invalid) */
-	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
-	bat freebats;		/* linked list of free bats */
-	uint32_t nfreebats;	/* number of free bats in .freebats */
-	char name[MT_NAME_LEN];
-	void *data[THREADDATA];
-	uintptr_t sp;
-} *Thread;
+typedef struct threadStruct *Thread;
 
 
-gdk_export int THRgettid(void);
-gdk_export Thread THRget(int tid);
-gdk_export MT_Id THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name);
-gdk_export void THRdel(Thread t);
-gdk_export void THRsetdata(int, void *);
-gdk_export void *THRgetdata(int);
-gdk_export int THRhighwater(void);
+gdk_export stream *GDKstdout;
+gdk_export stream *GDKstdin;
 
-gdk_export void *THRdata[THREADDATA];
-
-#define GDKstdout	((stream*)THRdata[0])
-#define GDKstdin	((stream*)THRdata[1])
-
-#define GDKerrbuf	((char*)THRgetdata(2))
-#define GDKsetbuf(x)	THRsetdata(2,(void *)(x))
-
-#define THRget_errbuf(t)	((char*)t->data[2])
-#define THRset_errbuf(t,b)	(t->data[2] = b)
+#define GDKerrbuf	(GDKgetbuf())
 
 static inline bat
 BBPcheck(bat x)
@@ -2326,8 +2302,12 @@ gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BAToutercross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
+	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool match_one, BUN estimate)
 	__attribute__((__warn_unused_result__));
@@ -2479,7 +2459,7 @@ typedef struct gdk_callback {
 	lng last_called; // timestamp GDKusec
 	gdk_return (*func)(int argc, void *argv[]);
 	struct gdk_callback *next;
-	void *argv[FLEXIBLE_ARRAY_MEMBER];
+	void *argv[];
 } gdk_callback;
 
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);

@@ -184,7 +184,7 @@ GDKremovedir(int farmid, const char *dirname)
 	closedir(dirp);
 	ret = MT_rmdir(dirnamestr);
 	if (ret != 0)
-		GDKsyserror("rmdir(%s) failed.\n", dirnamestr);
+		GDKsyserror("rmdir(%s) failed\n", dirnamestr);
 	TRC_DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
 	GDKfree(dirnamestr);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
@@ -550,7 +550,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
 					if (n < 0)
-						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, %zu bytes missing.\n", nme, ext ? ext : "", (size_t) n_expected);
+						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, expected %zu, %zd bytes missing\n", nme, ext ? ext : "", size, n_expected);
 #ifndef __COVERITY__
 					/* Coverity doesn't seem to
 					 * recognize that we're just
@@ -567,7 +567,8 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					/* we couldn't read all, error
 					 * already generated */
 					GDKfree(ret);
-					GDKerror("short read from heap %s%s%s, expected %zu, missing %zd\n", nme, ext ? "." : "", ext ? ext : "", size, n_expected);
+					if (n >= 0) /* don't report error twice  */
+						GDKerror("short read from heap %s%s%s, expected %zu, missing %zd\n", nme, ext ? "." : "", ext ? ext : "", size, n_expected);
 					ret = NULL;
 				}
 #ifndef NDEBUG
@@ -667,7 +668,6 @@ gdk_return
 BATsave_iter(BAT *b, BATiter *bi, BUN size)
 {
 	gdk_return err = GDK_SUCCEED;
-	const char *nme;
 	bool dosync;
 	bool locked = false;
 
@@ -693,15 +693,13 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 	}
 
 	/* start saving data */
-	nme = BBP_physical(b->batCacheid);
-	const char *tail = BATITERtailname(bi);
 	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
-			int fd = GDKfdlocate(bi->h->farmid, nme, "rb+", tail);
+			int fd = GDKfdlocate(bi->h->farmid, bi->h->filename, "rb+", NULL);
 			if (fd < 0) {
-				GDKsyserror("cannot open file %s.%s for sync\n",
-					    nme, tail);
+				GDKsyserror("cannot open file %s for sync\n",
+					    bi->h->filename);
 				err = GDK_FAIL;
 			} else {
 				if (
@@ -713,15 +711,15 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 					fsync(fd) < 0
 #endif
 					)
-					GDKsyserror("sync failed for %s.%s\n",
-						    nme, tail);
+					GDKsyserror("sync failed for %s\n",
+						    bi->h->filename);
 				close(fd);
 			}
 			if (bi->vh) {
-				fd = GDKfdlocate(bi->vh->farmid, nme, "rb+", "theap");
+				fd = GDKfdlocate(bi->vh->farmid, bi->vh->filename, "rb+", NULL);
 				if (fd < 0) {
-					GDKsyserror("cannot open file %s.theap for sync\n",
-						    nme);
+					GDKsyserror("cannot open file %s for sync\n",
+						    bi->vh->filename);
 					err = GDK_FAIL;
 				} else {
 					if (
@@ -733,15 +731,18 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 						fsync(fd) < 0
 #endif
 						)
-						GDKsyserror("sync failed for %s.theap\n", nme);
+						GDKsyserror("sync failed for %s\n", bi->vh->filename);
 					close(fd);
 				}
 			}
 		}
 	} else {
-		if (!bi->copiedtodisk || bi->hdirty)
-			if (err == GDK_SUCCEED && bi->type)
-				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
+		const char *nme = BBP_physical(b->batCacheid);
+		if ((!bi->copiedtodisk || bi->hdirty)
+		    && (err == GDK_SUCCEED && bi->type)) {
+			const char *tail = strchr(bi->h->filename, '.') + 1;
+			err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
+		}
 		if (bi->vh
 		    && (!bi->copiedtodisk || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
@@ -761,15 +762,14 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 			b->tvheap->wasempty = bi->vh->wasempty;
 			b->tvheap->hasfile |= bi->vh->hasfile;
 		}
-		if (size != b->batCount || b->batInserted < b->batCount) {
-			/* if the sizes don't match, the BAT must be dirty */
-			b->batCopiedtodisk = false;
+		if (size != b->batCount) {
+			/* if the size doesn't match, the BAT must be dirty */
 			b->theap->dirty = true;
 			if (b->tvheap)
 				b->tvheap->dirty = true;
-		} else {
-			b->batCopiedtodisk = true;
 		}
+		/* there is something on disk now */
+		b->batCopiedtodisk = true;
 		MT_lock_unset(&b->theaplock);
 		if (locked &&  b->thash && b->thash != (Hash *) 1)
 			BAThashsave(b, dosync);

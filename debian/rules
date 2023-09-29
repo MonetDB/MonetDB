@@ -48,4 +48,15 @@ override_dh_auto_configure:
 override_dh_auto_test:
 
 override_dh_strip:
-	dh_strip --dbg-package=monetdb-dbg
+	dh_strip --dbgsym-migration='monetdb-dbg (<<11.47.8)'
+
+override_dh_auto_install:
+	dh_auto_install
+	rm debian/tmp/usr/bin/monetdb_mtest.sh
+	rm -r debian/tmp/usr/share/monetdb
+	rm debian/tmp/usr/lib/*/monetdb5/lib_opt_sql_append.so
+	rm debian/tmp/usr/lib/*/monetdb5/lib_microbenchmark*.so
+	rm debian/tmp/usr/lib/*/monetdb5/lib_udf*.so
+
+override_dh_installsystemd:
+	dh_installsystemd --no-enable --no-start

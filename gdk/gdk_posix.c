@@ -301,22 +301,17 @@ MT_getrss(void)
 	/* get RSS on Linux */
 	int fd;
 
-	fd = open("/proc/self/stat", O_RDONLY | O_CLOEXEC);
+	fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
 	if (fd >= 0) {
-		char buf[1024], *r = buf;
-		ssize_t i, sz = read(fd, buf, 1024);
+		char buf[1024];
+		ssize_t sz = read(fd, buf, sizeof(buf) - 1);
 
 		close(fd);
 		if (sz > 0) {
-			for (i = 0; i < 23; i++) {
-				while (*r && (*r == ' ' || *r == '\t'))
-					r++;
-				while (*r && (*r != ' ' && *r != '\t'))
-					r++;
-			}
-			while (*r && (*r == ' ' || *r == '\t'))
-				r++;
-			return ((size_t) atol(r)) * MT_pagesize();
+			buf[sz] = 0;
+			long rss;
+			if (sscanf(buf, "%*d %ld", &rss) >= 1)
+				return (size_t) rss * MT_pagesize();
 		}
 	}
 #endif

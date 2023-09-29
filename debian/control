@@ -5,7 +5,7 @@ Maintainer: MonetDB BV <info@monetdb.org>
 Homepage: https://www.monetdb.org/
 Vcs-Browser: https://dev.monetdb.org/hg/MonetDB/
 Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/
-Build-Depends: debhelper (>= 9), cmake (>= 3.12), bison,
+Build-Depends: debhelper (>= 12), cmake (>= 3.12), bison,
  libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.10.0),
  libpcre3-dev, libreadline-dev, liblzma-dev, liblz4-dev (>= 1.8.0),
  libxml2-dev, pkg-config,
@@ -339,17 +339,3 @@ Description: MonetDB testing Python programs
  testing the MonetDB packages.  You probably don't need this, unless
  you are a developer, but if you do want to test, this is the package
  you need.
-
-Package: monetdb-dbg
-Architecture: any
-Section: debug
-Priority: optional
-Depends: ${misc:Depends}
-Description: Debugging symbols for monetdb packages
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL front end.
- .
- This package contains the debugging symbols for all monetdb binary
- packages.

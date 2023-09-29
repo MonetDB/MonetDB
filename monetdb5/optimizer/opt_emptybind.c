@@ -22,19 +22,17 @@
 #include "opt_deadcode.h"
 #include "mal_builder.h"
 
-#define emptyresult(I)									\
-	do {												\
-		int tpe = getVarType(mb,getArg(p,I));			\
-		clrFunction(p);									\
-		setModuleId(p,batRef);							\
-		setFunctionId(p,newRef);						\
-		p->argc = p->retc;								\
-		p = pushType(mb,p, getBatType(tpe));			\
-		if (p) {										\
-			setVarType(mb, getArg(p,0), tpe);			\
-			setVarFixed(mb, getArg(p,0));				\
-			empty[getArg(p,0)]= i;						\
-		}												\
+#define emptyresult(I)							\
+	do {										\
+		int tpe = getVarType(mb, getArg(p, I));	\
+		clrFunction(p);							\
+		setModuleId(p, batRef);					\
+		setFunctionId(p, newRef);				\
+		p->argc = p->retc;						\
+		p = pushType(mb, p, getBatType(tpe));	\
+		setVarType(mb, getArg(p, 0), tpe);		\
+		setVarFixed(mb, getArg(p, 0));			\
+		empty[getArg(p, 0)]= i;					\
 	} while (0)
 
 
@@ -63,7 +61,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			extras += p->argc;
 	}
 	if (extras == 0) {
-		goto wrapup;
+		(void) pushInt(mb, pci, actions);
+		return msg;
 	}
 	// track of where 'emptybind' results are produced
 	// reserve space for maximal number of emptybat variables created
@@ -86,14 +85,14 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	/* Symbolic evaluation of instructions with empty BAT variables */
 	actions = 0;
-	for (i = 0; i < limit; i++) {
+	for (i = 0; mb->errors == NULL && i < limit; i++) {
 		p = old[i];
+		if (p == NULL)
+			continue;
 
 		pushInstruction(mb, p);
+		old[i] = NULL;
 		if (p->token == ENDsymbol) {
-			for (i++; i < limit; i++)
-				if (old[i])
-					pushInstruction(mb, old[i]);
 			break;
 		}
 
@@ -106,14 +105,15 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			continue;
 		}
 		// any of these instructions leave a non-empty BAT behind
-		if (p && getModuleId(p) == sqlRef && isUpdateInstruction(p)) {
+		if (getModuleId(p) == sqlRef && isUpdateInstruction(p)) {
 			if (etop == esize) {
 				InstrPtr *tmp = updated;
 				updated = GDKrealloc(updated,
 									 (esize += 256) * sizeof(InstrPtr));
 				if (updated == NULL) {
 					GDKfree(tmp);
-					GDKfree(empty);
+					msg = createException(MAL, "optimizer.emptybind",
+										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
 			}
@@ -139,11 +139,13 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (q && getModuleId(q) == sqlRef && isUpdateInstruction(q)) {
 					int c = getFunctionId(q) == claimRef;	/* claim has 2 results */
 					int cl = getFunctionId(q) == clear_tableRef;	/* clear table has no mvc dependency */
-					if (strcmp
-						(getVarConstant(mb, getArg(q, 2 - cl + c)).val.sval,
-						 sch) == 0
-						&& strcmp(getVarConstant(mb, getArg(q, 3 - cl + c)).val.
-								  sval, tbl) == 0) {
+					if (strcmp(getVarConstant(mb, getArg(q,
+														 2 - cl + c)).val.sval,
+							   sch) == 0
+						&& strcmp(getVarConstant(mb,
+												 getArg(q,
+														3 - cl + c)).val.sval,
+								  tbl) == 0) {
 						empty[getArg(p, 0)] = 0;
 						if (p->retc == 2) {
 							empty[getArg(p, 1)] = 0;
@@ -282,6 +284,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 	}
 
+  wrapup:
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
@@ -289,13 +292,13 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	GDKfree(empty);
 	GDKfree(updated);
 	/* Defense line against incorrect plans */
-	msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
+	if (msg == MAL_SUCCEED)
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (msg == MAL_SUCCEED)
 		msg = chkFlow(mb);
-	if (!msg)
+	if (msg == MAL_SUCCEED)
 		msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
-  wrapup:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;

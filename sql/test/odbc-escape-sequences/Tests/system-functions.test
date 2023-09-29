@@ -26,8 +26,20 @@ select { fn IFNULL(NULLIF(3,3), -9.0/+4) }
 ----
 -2.250
 
-statement error
+query I rowsort
+select IFNULL(NULL, 1)
+----
+1
+
+query T rowsort
 select IFNULL('abc', 'def')
+----
+abc
+
+query R rowsort
+select IFNULL(NULLIF(3,3), -9.0/+4)
+----
+-2.250
 
 
 query T rowsort

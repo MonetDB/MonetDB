@@ -673,9 +673,9 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"generated_column",
 	 NULL,
-	 "AUTO_INCREMENT | GENERATED ALWAYS AS IDENTITY [ '(' [ AS data_type] [ START [WITH start]] [INCREMENT BY increment]\n"
-	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE] ')' ] ",
-	 "data_type",
+	 "AUTO_INCREMENT | GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY [ '(' [ AS seq_int_datatype] [ START [WITH start]]\n"
+	 " [INCREMENT BY increment] [MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE] ')' ]",
+	 "seq_int_datatype",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
 	{"global_privileges",
 	 NULL,

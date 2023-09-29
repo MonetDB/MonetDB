@@ -720,7 +720,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 						}
 					}
 				}
-			} else if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e) && !e->f) {
+			} else if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e) && !is_any(e) && !e->f) {
 				/* compute comparisons on atoms */
 				if (exp_is_null(l) || exp_is_null(r)) {
 					e = exp_null(v->sql->sa, sql_bind_localtype("bit"));
@@ -736,6 +736,74 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 					else
 						e = exp_atom_bool(v->sql->sa, (e->flag == cmp_lt || e->flag == cmp_lte || e->flag == cmp_notequal) ? flag : !flag);
 					v->changes++;
+				}
+			}
+		}
+	}
+	return e;
+}
+
+static inline sql_exp *
+rel_remove_alias(visitor *v, sql_rel *rel, sql_exp *e)
+{
+	if (e->type != e_column)
+		return e;
+	if (!rel_is_ref(rel) && rel->op == op_project && rel->l && list_length(rel->exps) > 1) {
+		sql_rel *l = rel->l;
+		if (l->op == op_project) {
+			sql_exp *ne = rel_find_exp(l, e);
+			if (ne && ne->type == e_column && is_selfref(ne)) {
+				sql_exp *nne = NULL;
+				/* found ne in projection, try to find reference in the same list */
+				if (ne->l)
+					nne = exps_bind_column2(l->exps, ne->l, ne->r, NULL);
+				else
+					nne = exps_bind_column(l->exps, ne->r, NULL, NULL, 1);
+				if (nne && nne != ne && list_position(l->exps, nne) < list_position(l->exps, ne)) {
+					e->l = (char*)exp_relname(nne);
+					e->r = (char*)exp_name(nne);
+					v->changes++;
+				}
+			}
+		}
+	}
+	if (!rel_is_ref(rel) && rel->op != op_project) {
+		bool found = false;
+		if ((is_select(rel->op) || is_join(rel->op)) && rel->l && list_length(rel->exps) > 1) {
+			sql_rel *l = rel->l;
+			if (l->op == op_project) {
+				sql_exp *ne = rel_find_exp(l, e);
+				found = true;
+				if (ne && ne->type == e_column && is_selfref(ne)) {
+					sql_exp *nne = NULL;
+					if (ne->l)
+						nne = exps_bind_column2(l->exps, ne->l, ne->r, NULL);
+					else
+						nne = exps_bind_column(l->exps, ne->r, NULL, NULL, 1);
+					if (nne && nne != ne && list_position(l->exps, nne) < list_position(l->exps, ne)) {
+						e->l = (char*)exp_relname(nne);
+						e->r = (char*)exp_name(nne);
+						v->changes++;
+					}
+				}
+			}
+		}
+		if (!found && is_join(rel->op) && rel->r && list_length(rel->exps) > 1 && !is_semi(rel->op)) {
+			sql_rel *l = rel->r;
+			if (l->op == op_project) {
+				sql_exp *ne = rel_find_exp(l, e);
+				found = true;
+				if (ne && ne->type == e_column && is_selfref(ne)) {
+					sql_exp *nne = NULL;
+					if (ne->l)
+						nne = exps_bind_column2(l->exps, ne->l, ne->r, NULL);
+					else
+						nne = exps_bind_column(l->exps, ne->r, NULL, NULL, 1);
+					if (nne && nne != ne && list_position(l->exps, nne) < list_position(l->exps, ne)) {
+						e->l = (char*)exp_relname(nne);
+						e->r = (char*)exp_name(nne);
+						v->changes++;
+					}
 				}
 			}
 		}
@@ -797,6 +865,7 @@ rel_optimize_exps_(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	if (v->value_based_opt)
 		e = rel_simplify_predicates(v, rel, e);
 	e = rel_merge_project_rse(v, rel, e);
+	e = rel_remove_alias(v, rel, e);
 	return e;
 }
 

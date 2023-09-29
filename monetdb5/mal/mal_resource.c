@@ -20,10 +20,14 @@
 /* Memory based admission does not seem to have a major impact so far. */
 static lng memorypool = 0;		/* memory claimed by concurrent threads */
 
+static MT_Lock admissionLock = MT_LOCK_INITIALIZER(admissionLock);
+
 void
 mal_resource_reset(void)
 {
+	MT_lock_set(&admissionLock);
 	memorypool = (lng) MEMORY_THRESHOLD;
+	MT_lock_unset(&admissionLock);
 }
 
 /*
@@ -112,8 +116,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
  * The client context also keeps bounds on the memory claim/client.
  * Surpassing this bound may be a reason to not admit the instruction to proceed.
  */
-static MT_Lock admissionLock = MT_LOCK_INITIALIZER(admissionLock);
-
 bool
 MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				   lng argclaim)

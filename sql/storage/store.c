@@ -3152,6 +3152,8 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	node *n;
 	int res = LOG_OK;
 
+	if (t == NULL)
+		return LOG_ERR;
 	base_init(NULL, &t->base, ot->base.id, 0, name?name:ot->base.name);
 	t->type = ot->type;
 	t->system = ot->system;
@@ -4036,8 +4038,13 @@ sql_trans_commit(sql_trans *tr)
 				}
 				sequences_unlock(store);
 			}
-			if (ok == LOG_OK && store->prev_oid != store->obj_id)
+			if (ok == LOG_OK && store->prev_oid != store->obj_id) {
+				if (!flush)
+					MT_lock_set(&store->flush);
 				ok = store->logger_api.log_tsequence(store, OBJ_SID, store->obj_id);
+				if (!flush)
+					MT_lock_unset(&store->flush);
+			}
 			store->prev_oid = store->obj_id;
 
 
@@ -6733,6 +6740,7 @@ sql_trans_create_idx(sql_idx **i, sql_trans *tr, sql_table *t, const char *name,
 	sql_table *sysidx = find_sql_table(tr, syss, "idxs");
 	int res = LOG_OK;
 
+	assert(it != oph_idx && it != no_idx && it != new_idx_types);
 	assert(name);
 	base_init(NULL, &ni->base, next_oid(tr->store), true, name);
 	ni->type = it;

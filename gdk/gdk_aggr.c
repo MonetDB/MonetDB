@@ -3674,7 +3674,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 			if (oidxh != NULL) {
 				const oid *ords = (const oid *) oidxh->base + ORDERIDXOFF;
 				BUN r;
-				if (!bi.nonil) {
+				if (skipnil && !bi.nonil) {
 					MT_thread_setalgorithm(usepoidx ? "binsearch on parent oidx" : "binsearch on oidx");
 					r = binsearch(ords, 0, bi.type, bi.base,
 						      bi.vh ? bi.vh->base : NULL,
@@ -3817,8 +3817,16 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 
 		if (BATordered(b)) {
 			pos = bi.count - 1 + b->hseqbase;
+			if (skipnil && !bi.nonil &&
+			    ATOMcmp(bi.type, BUNtail(bi, bi.count - 1),
+				    ATOMnilptr(bi.type)) == 0)
+				pos = oid_nil; /* no non-nil values */
 		} else if (BATordered_rev(b)) {
 			pos = b->hseqbase;
+			if (skipnil && !bi.nonil &&
+			    ATOMcmp(bi.type, BUNtail(bi, 0),
+				    ATOMnilptr(bi.type)) == 0)
+				pos = oid_nil; /* no non-nil values */
 		} else {
 			if (BATcheckorderidx(b)) {
 				MT_lock_set(&b->batIdxLock);

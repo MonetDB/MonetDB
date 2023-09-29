@@ -102,9 +102,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	snprintf(name, IDLENGTH, "sort%d", rand() % 1000);
 	snew = newFunction(putName("user"), putName(name), FUNCTIONsymbol);
 	if (snew == NULL) {
-		msg = createException(MAL, "bat.orderidx",
-							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		throw(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	smb = snew->def;
 	q = getInstrPtr(smb, 0);
@@ -114,7 +112,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		goto bailout;
 	}
 	q = pushArgument(smb, q, arg);
-	if (q == NULL || (getArg(q, 0) = newTmpVariable(smb, TYPE_void)) < 0) {
+	if ((getArg(q, 0) = newTmpVariable(smb, TYPE_void)) < 0) {
 		msg = createException(MAL, "bat.orderidx",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -126,20 +124,23 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	 * intermediate variables */
 	pack = newInstruction(0, putName("bat"), putName("orderidx"));
 	if (pack == NULL || (pack->argv[0] = newTmpVariable(smb, TYPE_void)) < 0) {
+		freeInstruction(pack);
 		msg = createException(MAL, "bat.orderidx",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	pack = pushArgument(smb, pack, arg);
-	if (pack == NULL) {
-		msg = createException(MAL, "bat.orderidx",
-							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (smb->errors) {
+		freeInstruction(pack);
+		msg = smb->errors;
+		smb->errors = NULL;
 		goto bailout;
 	}
 	setVarFixed(smb, getArg(pack, 0));
 
 	/* the costly part executed as a parallel block */
 	if ((loopvar = newTmpVariable(smb, TYPE_bit)) < 0) {
+		freeInstruction(pack);
 		msg = createException(MAL, "bat.orderidx",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -158,7 +159,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	cnt = BATcount(b);
 	step = cnt / pieces;
 	o = 0;
-	for (i = 0; i < pieces; i++) {
+	for (i = 0; smb->errors == NULL && i < pieces; i++) {
 		/* add slice instruction */
 		q = newInstruction(smb, algebraRef, putName("slice"));
 		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
@@ -171,12 +172,6 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		setVarType(smb, getArg(q, 0), tpe);
 		setVarFixed(smb, getArg(q, 0));
 		q = pushArgument(smb, q, arg);
-		if (q == NULL) {
-			freeInstruction(pack);
-			msg = createException(MAL, "bat.orderidx",
-								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		pack = pushArgument(smb, pack, getArg(q, 0));
 		q = pushOid(smb, q, o);
 		if (i == pieces - 1) {
@@ -185,15 +180,9 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 			o += step;
 		}
 		q = pushOid(smb, q, o - 1);
-		if (q == NULL) {
-			freeInstruction(pack);
-			msg = createException(MAL, "bat.orderidx",
-								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		pushInstruction(smb, q);
 	}
-	for (i = 0; i < pieces; i++) {
+	for (i = 0; smb->errors == NULL && i < pieces; i++) {
 		/* add sort instruction */
 		q = newInstruction(smb, algebraRef, putName("orderidx"));
 		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
@@ -207,12 +196,6 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		setVarFixed(smb, getArg(q, 0));
 		q = pushArgument(smb, q, pack->argv[2 + i]);
 		q = pushBit(smb, q, 1);
-		if (q == NULL) {
-			freeInstruction(pack);
-			msg = createException(MAL, "bat.orderidx",
-								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		pack->argv[2 + i] = getArg(q, 0);
 		pushInstruction(smb, q);
 	}
@@ -228,6 +211,8 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	q->argv[0] = loopvar;
 	pushInstruction(smb, q);
 	pushEndInstruction(smb);
+	if (smb->errors)
+		goto bailout;
 	msg = chkProgram(cntxt->usermodule, smb);
 	if (msg)
 		goto bailout;
@@ -246,6 +231,10 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	freeStack(newstk);
 	/* get rid of temporary MAL block */
   bailout:
+	if (msg == MAL_SUCCEED && smb->errors) {
+		msg = smb->errors;
+		smb->errors = NULL;
+	}
 	freeSymbol(snew);
 	return msg;
 }

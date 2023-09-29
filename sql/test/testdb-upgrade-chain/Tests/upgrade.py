@@ -30,7 +30,8 @@ with zipfile.ZipFile(archive) as z:
     z.extractall(path=db)
 
 # start server and dump database
-with process.server(mapiport='0',
+with process.server(args=['--set', 'allow_hge_upgrade=yes'],
+                    mapiport='0',
                     stdin=process.PIPE,
                     stdout=process.PIPE,
                     stderr=process.PIPE) as srv:
@@ -75,8 +76,8 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
     stable = open(f).readlines()
     if not os.getenv('HAVE_SHP'):
         for i in range(len(stable)):
-            if 'SHPattach' in stable[i]:
-                del stable[i-1:i+5]
+            if 'create procedure SHPLoad' in stable[i]:
+                del stable[i-1:i+3]
                 break
     import difflib
     for line in difflib.unified_diff(stable, srvout, fromfile='test', tofile=f):

@@ -3494,6 +3494,26 @@ command algebra.likeselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:str, X_4:b
 PCRElikeselect;
 Select all head values of the first input BAT for which the@tail value is "like" the given (SQL-style) pattern and for@which the head value occurs in the tail of the second input@BAT.@Input is a dense-headed BAT, output is a dense-headed BAT with in@the tail the head value of the input BAT for which the@relationship holds.  The output BAT is sorted on the tail value.
 algebra
+markjoin
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:lng) (X_5:bat[:oid], X_6:bat[:bit]) 
+ALGmark2join;
+Mark join with candidate lists
+algebra
+markjoin
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:lng) (X_5:bat[:oid], X_6:bat[:oid], X_7:bat[:bit]) 
+ALGmark3join;
+Mark join with candidate lists
+algebra
+markjoin
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng) (X_6:bat[:oid], X_7:bat[:bit]) 
+ALGmarkjoin;
+Left mark join with candidate lists, produces left output and mark flag; 
+algebra
+markselect
+command algebra.markselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit]) 
+ALGmarkselect;
+Group on group-ids, return aggregated anyequal or allnotequal
+algebra
 not_like
 command algebra.not_like(X_0:str, X_1:str, X_2:str, X_3:bit):bit 
 PCREnotlike;
@@ -3504,6 +3524,11 @@ command algebra.orderidx(X_0:bat[:any_1], X_1:bit):bat[:any_1]
 OIDXorderidx;
 Create an order index
 algebra
+outercrossproduct
+command algebra.outercrossproduct(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bat[:oid], X_3:bat[:oid], X_4:bit) (X_5:bat[:oid], X_6:bat[:oid]) 
+ALGoutercrossproduct3;
+Compute the outer cross product of both input bats
+algebra
 outerjoin
 command algebra.outerjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:bit, X_6:lng):bat[:oid] 
 ALGouterjoin1;
@@ -3513,6 +3538,11 @@ outerjoin
 command algebra.outerjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:bit, X_6:lng) (X_7:bat[:oid], X_8:bat[:oid]) 
 ALGouterjoin;
 Left outer join with candidate lists
+algebra
+outerselect
+command algebra.outerselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit]) 
+ALGouterselect;
+Per input lid return atleast one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.
 algebra
 project
 pattern algebra.project(X_0:bat[:any_1], X_1:any_3):bat[:any_3] 
@@ -51033,56 +51063,6 @@ user_statistics
 pattern sysmon.user_statistics() (X_0:bat[:str], X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:timestamp], X_4:bat[:timestamp], X_5:bat[:lng], X_6:bat[:str]) 
 SYSMONstatistics;
 (empty)
-tokenizer
-append
-command tokenizer.append(X_0:str):oid 
-TKNZRappend;
-tokenize a new string and append it to the tokenizer (duplicate elimination is performed)
-tokenizer
-close
-command tokenizer.close():void 
-TKNZRclose;
-close the current tokenizer store
-tokenizer
-depositFile
-command tokenizer.depositFile(X_0:str):void 
-TKNZRdepositFile;
-batch insertion from a file of strings to tokenize, each string is separated by a new line
-tokenizer
-getCardinality
-command tokenizer.getCardinality():bat[:lng] 
-TKNZRgetCardinality;
-debugging function that returns the unique tokens at each level
-tokenizer
-getCount
-command tokenizer.getCount():bat[:lng] 
-TKNZRgetCount;
-debugging function that returns the size of the bats at each level
-tokenizer
-getIndex
-command tokenizer.getIndex():bat[:oid] 
-TKNZRgetIndex;
-administrative function that returns the INDEX bat
-tokenizer
-getLevel
-command tokenizer.getLevel(X_0:int):bat[:str] 
-TKNZRgetLevel;
-administrative function that returns the bat on level i
-tokenizer
-locate
-pattern tokenizer.locate(X_0:str):oid 
-TKNZRlocate;
-if the given string is in the store returns its oid, otherwise oid_nil
-tokenizer
-open
-command tokenizer.open(X_0:str):void 
-TKNZRopen;
-open the named tokenizer store, a new one is created if the specified name does not exist
-tokenizer
-take
-pattern tokenizer.take(X_0:oid):str 
-TKNZRtakeOid;
-reconstruct and returns the i-th string
 txtsim
 dameraulevenshtein
 pattern txtsim.dameraulevenshtein(X_0:str, X_1:str):int 

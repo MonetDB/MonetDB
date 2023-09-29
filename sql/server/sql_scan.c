@@ -395,6 +395,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("LOADER", sqlLOADER);
 	failed += keywords_insert("REPLACE", REPLACE);
 
+	failed += keywords_insert("FIELD", FIELD);
 	failed += keywords_insert("FILTER", FILTER);
 	failed += keywords_insert("AGGREGATE", AGGREGATE);
 	failed += keywords_insert("RETURNS", RETURNS);

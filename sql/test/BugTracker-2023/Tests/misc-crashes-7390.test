@@ -163,5 +163,13 @@ SELECT * FROM v0 ORDER BY (SELECT -1)
 statement ok
 drop table v0
 
--- TODO: add remaining 10.sql to 40.sql tests and fix bugs
+-- 10.sql
+statement ok
+CREATE TABLE v0 (v1 INT PRIMARY KEY)
 
+query I
+SELECT DISTINCT (SELECT v1 WHERE (5)) >= ANY(9223372036854775807) FROM v0
+----
+
+
+-- TODO: add remaining 11.sql to 40.sql tests and fix bugs

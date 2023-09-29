@@ -474,7 +474,7 @@ extern sql_table *globaltmp_instantiate(sql_trans *tr, sql_table *t);
 
 #define NR_TABLE_LOCKS 64
 #define NR_COLUMN_LOCKS 512
-#define TRANSACTION_ID_BASE	(1ULL<<63)
+#define TRANSACTION_ID_BASE	(1ULL<<(sizeof(ATOMIC_BASE_TYPE) * 8 - 1))
 
 typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */

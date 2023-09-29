@@ -89,6 +89,7 @@ embedded_type(int t) {
 typedef struct {
 	Client c;
 	char *msg;
+	int registered_thread;	/* 1 = registered in monetdbe_open, 2 = done by GDK (also deregister done there) */
 	monetdbe_data_blob blob_null;
 	monetdbe_data_date date_null;
 	monetdbe_data_time time_null;
@@ -218,6 +219,8 @@ validate_database_handle_noerror(monetdbe_database_internal *mdbe)
 {
 	if (!monetdbe_embedded_initialized || !MCvalid(mdbe->c))
 		return 0;
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	clear_error(mdbe);
 	return 1;
 }
@@ -543,6 +546,13 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Embedded MonetDB is not started"));
 		goto cleanup;
 	}
+	if (!mdbe->registered_thread) {
+		if (!MT_thread_register()) {
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Embedded MonetDB is not started"));
+			goto cleanup;
+		}
+		mdbe->registered_thread = 1;
+	}
 	mdbe->c = MCinitClient((oid) 0, 0, 0);
 	if (!MCvalid(mdbe->c)) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Failed to initialize client"));
@@ -623,6 +633,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 
 	if (monetdbe_embedded_initialized) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "MonetDBe is already initialized"));
+		GDKfataljumpenable = 0;
 		return;
 	}
 
@@ -754,8 +765,8 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 	monetdbe_embedded_url = dbdir?GDKstrdup(dbdir):NULL;
 	if (dbdir && !monetdbe_embedded_url)
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL));
-	GDKfataljumpenable = 0;
 cleanup:
+	GDKfataljumpenable = 0;
 	if (mdbe->msg)
 		monetdbe_shutdown_internal();
 }
@@ -916,6 +927,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 		 */
 		assert(!is_remote||url==NULL);
 		monetdbe_startup(mdbe, url, opts);
+		mdbe->registered_thread = 2;
 	} else if (!is_remote && !urls_matches(monetdbe_embedded_url, url)) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open", "monetdbe_open currently only one active database is supported"));
 	}
@@ -940,13 +952,19 @@ monetdbe_close(monetdbe_database dbhdl)
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
 	int err = 0;
+	int registered_thread = mdbe->registered_thread;
 
+	if (mdbe->c)
+		MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	MT_lock_set(&embedded_lock);
 	if (mdbe->mid)
 		err = monetdbe_close_remote(mdbe);
 
 	err = (monetdbe_close_internal(mdbe) || err);
 
+	if (registered_thread == 1) {
+		MT_thread_deregister();
+	}
 	if (!open_dbs)
 		monetdbe_shutdown_internal();
 	MT_lock_unset(&embedded_lock);
@@ -1545,6 +1563,8 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 		return NULL;
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (mdbe->mid) {
 		mdbe->msg = monetdbe_query_remote(mdbe, query, result, affected_rows, NULL);
 	}
@@ -1564,6 +1584,8 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 
 	int prepare_id = 0;
 
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (!stmt) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_prepare", "Parameter stmt is NULL"));
 		assert(mdbe->msg != MAL_SUCCEED); /* help Coverity */
@@ -1691,6 +1713,8 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	cq *q = stmt_internal->q;
 	Symbol s = NULL;
 
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		return mdbe->msg;
 
@@ -1733,6 +1757,8 @@ monetdbe_cleanup_statement(monetdbe_database dbhdl, monetdbe_statement *stmt)
 
 	assert(!stmt_internal->mdbe || mdbe == stmt_internal->mdbe);
 
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	for (size_t i = 0; i < stmt_internal->res.nparam + 1; i++) {
 		ValPtr data = &stmt_internal->data[i];
 		VALclear(data);
@@ -1754,7 +1780,8 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	monetdbe_result_internal* res = (monetdbe_result_internal *) result;
 
-
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (!result) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_cleanup_result_internal", "Parameter result is NULL"));
 	} else {

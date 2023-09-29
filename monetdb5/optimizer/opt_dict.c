@@ -34,7 +34,7 @@ str
 OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, limit, slimit;
-	InstrPtr p = 0, *old = NULL;
+	InstrPtr p = NULL, *old = NULL;
 	int actions = 0;
 	int *varisdict = NULL, *vardictvalue = NULL;
 	bit *dictunique = NULL;
@@ -61,25 +61,26 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(dictunique);
 		throw(MAL, "optimizer.dict", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	// Consolidate the actual need for variables
-	for (i = 0; i < limit; i++) {
+	/* Consolidate the actual need for variables */
+	for (i = 0; mb->errors == NULL && i < limit; i++) {
 		p = old[i];
-		if (p == 0)
-			continue;			//left behind by others?
+		if (p == NULL)
+			continue;			/* left behind by others? */
 		if (p->retc == 1 && getModuleId(p) == dictRef
 			&& getFunctionId(p) == decompressRef) {
-			// remember we have encountered a dict decompress function
+			/* remember we have encountered a dict decompress function */
 			k = getArg(p, 0);
 			varisdict[k] = getArg(p, 1);
 			vardictvalue[k] = getArg(p, 2);
 			dictunique[k] = 1;
 			freeInstruction(p);
+			old[i] = NULL;
 			continue;
 		}
 		bool done = false;
 		for (j = p->retc; j < p->argc; j++) {
 			k = getArg(p, j);
-			if (varisdict[k]) {	// maybe we could delay this usage
+			if (varisdict[k]) {	/* maybe we could delay this usage */
 				if (getModuleId(p) == algebraRef
 					&& getFunctionId(p) == projectionRef) {
 					/* projection(cand, col) with col = dict.decompress(o,u)
@@ -100,6 +101,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					dictunique[l] = dictunique[k];
 					pushInstruction(mb, r);
 					freeInstruction(p);
+					old[i] = NULL;
 					done = true;
 					break;
 				} else if (p->argc == 2 && p->retc == 1
@@ -110,6 +112,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					vardictvalue[l] = vardictvalue[k];
 					dictunique[l] = dictunique[k];
 					freeInstruction(p);
+					old[i] = NULL;
 					done = true;
 					break;
 				} else if (getModuleId(p) == algebraRef
@@ -125,6 +128,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j) = varisdict[k];
 					pushInstruction(mb, r);
 					freeInstruction(p);
+					old[i] = NULL;
 					done = true;
 					break;
 				} else if ((getModuleId(p) == batRef
@@ -142,6 +146,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j) = varisdict[k];
 					pushInstruction(mb, r);
 					freeInstruction(p);
+					old[i] = NULL;
 					done = true;
 					break;
 				} else if (isSelect(p)) {
@@ -227,6 +232,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						pushInstruction(mb, t);
 					}
 					freeInstruction(p);
+					old[i] = NULL;
 					done = true;
 					break;
 				} else if (j == 2 && p->argc > j + 1
@@ -249,6 +255,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j + 1) = varisdict[l];
 					pushInstruction(mb, r);
 					freeInstruction(p);
+					old[i] = NULL;
 					done = true;
 					break;
 				} else if (j == 2 && p->argc > j + 1
@@ -279,6 +286,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					r = pushArgument(mb, r, getArg(p, 7));
 					pushInstruction(mb, r);
 					freeInstruction(p);
+					old[i] = NULL;
 					done = true;
 					break;
 				} else if ((isMapOp(p) || isMap2Op(p))
@@ -303,6 +311,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					dictunique[l] = 0;
 					pushInstruction(mb, r);
 					freeInstruction(p);
+					old[i] = NULL;
 					done = true;
 					break;
 				} else if (getModuleId(p) == groupRef
@@ -336,7 +345,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						r = pushArgument(mb, r, vardictvalue[k]);
 						pushInstruction(mb, r);
 
-						//newvar = renumber(varisdict[k], o);
+						/* newvar = renumber(varisdict[k], o); */
 						getArg(s, 0) = newTmpVariable(mb, tpe);
 						s = pushArgument(mb, s, varisdict[k]);
 						s = pushArgument(mb, s, getArg(r, 0));
@@ -353,6 +362,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j) = input;
 					pushInstruction(mb, r);
 					freeInstruction(p);
+					old[i] = NULL;
 					done = true;
 					break;
 				} else {
@@ -378,8 +388,10 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		if (done)
 			actions++;
-		else
+		else {
 			pushInstruction(mb, p);
+			old[i] = NULL;
+		}
 	}
 
 	for (; i < slimit; i++)

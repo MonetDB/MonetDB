@@ -666,16 +666,15 @@ chkTypes(Module s, MalBlkPtr mb, int silent)
 	int i;
 	str msg = MAL_SUCCEED;
 
-	for (i = 0; i < mb->stop; i++) {
+	for (i = 0; mb->errors == NULL && i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		assert(p != NULL);
 		if (p->typechk != TYPE_RESOLVED)
 			typeChecker(s, mb, p, i, silent);
-		if (mb->errors) {
-			msg = mb->errors;
-			mb->errors = NULL;
-			return msg;
-		}
+	}
+	if (mb->errors) {
+		msg = mb->errors;
+		mb->errors = NULL;
 	}
 	return msg;
 }

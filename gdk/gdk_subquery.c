@@ -448,8 +448,9 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		res->tnil = hasnil != 0;
-		res->tnonil = hasnil == 0;
+		(void)hasnil;
+		res->tnil = false ;//hasnil != 0;
+		res->tnonil = false ;//hasnil == 0;
 	}
 
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",g=" ALGOBATFMT
@@ -500,7 +501,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 		if ((res = COLnew(min, TYPE_bit, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 		ret = (bit *) Tloc(res, 0);
-		memset(ret, FALSE, ngrp * sizeof(bit));
+		memset(ret, TRUE, ngrp * sizeof(bit));
 
 		if (!g || BATtdense(g))
 			gids = NULL;

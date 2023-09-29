@@ -134,7 +134,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	(void) stk;
 
 	if (mb->inlineProp)
-		goto wrapup;
+		return MAL_SUCCEED;
 
 	assigned = (int *) GDKzalloc(sizeof(int) * mb->vtop);
 	if (assigned == NULL)
@@ -147,22 +147,27 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	// arguments are implicitly assigned by context
 	p = getInstrPtr(mb, 0);
-	for (k = p->retc; k < p->argc; k++)
+	for (k = p->retc; k < p->argc; k++) {
+		assert(getArg(p, k) >= 0);
 		assigned[getArg(p, k)]++;
+	}
 	limit = mb->stop;
 	for (i = 1; i < limit; i++) {
 		p = getInstrPtr(mb, i);
 		// The double count emerging from a barrier exit is ignored.
 		if (!blockExit(p) || (blockExit(p) && p->retc != p->argc))
 			for (k = 0; k < p->retc; k++)
-				if (p->retc != p->argc || p->token != ASSIGNsymbol)
+				if (p->retc != p->argc || p->token != ASSIGNsymbol) {
+					assert(getArg(p, k) >= 0);
 					assigned[getArg(p, k)]++;
+				}
 	}
 
 	for (i = 1; i < limit && cntxt->mode != FINISHCLIENT; i++) {
 		p = getInstrPtr(mb, i);
 		// to avoid management of duplicate assignments over multiple blocks
 		// we limit ourselves to evaluation of the first assignment only.
+		assert(getArg(p, 0) >= 0);
 		use = assigned[getArg(p, 0)] == 1 && !(p->argc == p->retc
 											   && blockExit(p));
 		for (k = p->retc; k < p->argc; k++)
@@ -178,6 +183,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (!env) {
 					msg = createException(MAL, "optimizer.evaluate",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					p->barrier = barrier;
 					goto wrapup;
 				}
 				env->keepAlive = TRUE;

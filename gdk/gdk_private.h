@@ -24,7 +24,7 @@
 #define PERSISTENTSTRIMP 1
 
 /* only check whether we exceed gdk_vm_maxsize when allocating heaps */
-/* #define SIZE_CHECK_IN_HEAPS_ONLY 1 */
+#define SIZE_CHECK_IN_HEAPS_ONLY 1
 
 #include "gdk_system_private.h"
 
@@ -57,6 +57,8 @@ gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
+	__attribute__((__visibility__("hidden")));
+BAT *BATcreatesample(oid hseq, BUN cnt, BUN n, uint64_t seed)
 	__attribute__((__visibility__("hidden")));
 void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -108,14 +110,14 @@ void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPinit(void)
+gdk_return BBPinit(bool allow_hge_upgrade)
 	__attribute__((__visibility__("hidden")));
 bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BBPprintinfo(void)
 	__attribute__((__visibility__("hidden")));
-void BBPrelinquish(Thread t)
+void BBPrelinquish(void)
 	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
@@ -300,28 +302,6 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-
-static inline const char *
-BATITERtailname(const BATiter *bi)
-{
-	if (bi->type == TYPE_str) {
-		switch (bi->width) {
-		case 1:
-			return "tail1";
-		case 2:
-			return "tail2";
-		case 4:
-#if SIZEOF_VAR_T == 8
-			return "tail4";
-		case 8:
-#endif
-			break;
-		default:
-			MT_UNREACHABLE();
-		}
-	}
-	return "tail";
-}
 
 static inline bool
 imprintable(int tpe)
@@ -525,9 +505,9 @@ extern size_t GDK_mmap_pagesize; /* mmap granularity */
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 
-#define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << 63)
-#define DELAYEDREMOVE	((ATOMIC_BASE_TYPE) 1 << 62)
-#define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << 62) - 1)
+#define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << (sizeof(ATOMIC_BASE_TYPE) * 8 - 1))
+#define DELAYEDREMOVE	((ATOMIC_BASE_TYPE) 1 << (sizeof(ATOMIC_BASE_TYPE) * 8 - 2))
+#define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << (sizeof(ATOMIC_BASE_TYPE) * 8 - 2)) - 1)
 
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */

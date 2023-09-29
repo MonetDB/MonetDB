@@ -362,8 +362,8 @@ bind_func(mvc *sql, char *sname, char *fname, sql_subtype *t1, sql_subtype *t2, 
 		   ((!t1 && list_length(sql->forward->ops) == 0) ||
 		    (!t2 && list_length(sql->forward->ops) == 1 && subtype_cmp(sql->forward->ops->h->data, t1) == 0) ||
 		    (list_length(sql->forward->ops) == 2 &&
-		     	subtype_cmp(sql->forward->ops->h->data, t1) == 0 &&
-		     	subtype_cmp(sql->forward->ops->h->next->data, t2) == 0)) && type == sql->forward->type) {
+			subtype_cmp(sql->forward->ops->h->data, t1) == 0 &&
+			subtype_cmp(sql->forward->ops->h->next->data, t2) == 0)) && type == sql->forward->type) {
 			return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
 		}
 	}
@@ -529,16 +529,23 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 	sql_exp *file = exps->h->data;
 	if (!exp_is_atom(file))
 		return "Filename missing";
+
 	atom *a = file->l;
 	if (a->data.vtype != TYPE_str || !a->data.val.sval)
 		return "Filename missing";
+
 	char *filename = a->data.val.sval;
+	if (strcmp(filename, "") == 0)
+		return "Filename missing";
+
 	char *ext = strrchr(filename, '.'), *ep = ext;
 
 	if (ext) {
-		ext=ext+1;
+		ext = ext + 1;
 		ext = mkLower(sa_strdup(sql->sa, ext));
 	}
+	if (!ext)
+		return "Filename extension missing";
 
 	file_loader_t *fl = fl_find(ext);
 	if (!fl) {
@@ -555,7 +562,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 			fl = fl_find(ext);
 		}
 		if (!fl)
-			return sa_message(sql->ta, "extension '%s' missing", ext?ext:"");
+			return sa_message(sql->ta, "Filename extension '%s' missing", ext?ext:"");
 	}
 	str err = fl->add_types(sql, f, filename, res_exps, tname);
 	if (err)
@@ -563,7 +570,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 	sql_subtype *st = sql_bind_localtype("str");
 	sql_exp *ext_exp = exp_atom(sql->sa, atom_string(sql->sa, st, ext));
 	if (!ext_exp)
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_MALLOC_FAIL;
 	append(exps, ext_exp);
 	return NULL;
 }
@@ -574,19 +581,19 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 	sql_subfunc *f = NULL;
 	bool found = false;
 
-	if ((f = bind_func_(sql, NULL, "file_loader", tl, F_UNION, false, &found))) {
+	if ((f = bind_func_(sql, NULL, "file_loader", tl, F_UNION, true, &found))) {
 		list *nexps = exps;
 		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1))) {
 			list *res_exps = sa_list(sql->sa);
 			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
 				char *err = file_loader_add_table_column_types(sql, f, nexps, res_exps, tname);
 				if (err)
-					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function type resolutions failed '%s'", err);
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function failed '%s'", err);
 			}
 			sql_exp *e = exp_op(sql->sa, nexps, f);
 			sql_rel *rel = rel_table_func(sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
 			if (rel)
-				rel = rel_project(sql->sa, rel, res_exps);
+				rel = rel_project(sql->sa, rel, exps_copy(sql, res_exps));
 			return rel;
 		}
 	}
@@ -1037,7 +1044,7 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 			int needed = !is_simple_project(temp_table->op);
 
 			if (is_basetable(temp_table->op) && !temp_table->exps) {
-			   	if (strcmp(rel_base_name(temp_table), tname) != 0)
+				if (strcmp(rel_base_name(temp_table), tname) != 0)
 					rel_base_rename(temp_table, tname);
 			} else {
 				for (n = temp_table->exps->h; n && !needed; n = n->next) {
@@ -1433,11 +1440,11 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 			}
 		}
- 		query->prev = query->last_exp;
- 		query->last_exp = exp;
- 		query->last_state = f;
+		query->prev = query->last_exp;
+		query->last_exp = exp;
+		query->last_state = f;
 		query->last_rel = *rel;
- 	}
+	}
 	return exp;
 }
 
@@ -2447,6 +2454,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		rs = rel_value_exp(query, rel, ro, f|sql_farg, ek);
 		if (!rs)
 			return NULL;
+		if (rs->type == e_atom)
+			quantifier = 0;
 
 		if (!exp_is_rel(ls) && !exp_is_rel(rs) && ls->card < rs->card) {
 			sql_exp *swap = ls; /* has to swap parameters like in the rel_logical_exp case */
@@ -2889,7 +2898,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (is_sql_where(f) && is_groupby(rel->op))
 			assert(0);
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
- 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (!rel)
 			return sq;
 		sq = rel_zero_or_one(sql, sq, ek);
@@ -3520,6 +3529,26 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
 
+	if (!sname && strcmp(fname, "field") == 0) { /* map into join */
+		sql_exp *le = exps->h->data;
+		set_freevar(le, 1);
+		list_remove_data(exps, NULL, le);
+		sql_exp *re = exp_values(sql->sa, exps);
+		exp_label(sql->sa, re, ++sql->label);
+		sql_rel *r = rel_project(sql->sa, NULL, append(sa_list(sql->sa), re));
+		sql_exp *id = NULL;
+		rel_add_identity(sql, r, &id);
+		re = exp_ref(sql, re);
+		id = exp_ref(sql, id);
+		if (r) {
+			r->nrcols = list_length(exps);
+			sql_exp *e = exp_compare(sql->sa, le, re, cmp_equal);
+			r = rel_select(sql->sa, r, e);
+			r = rel_project(sql->sa, r, append(sa_list(sql->sa), exp_convert(sql->sa, id, exp_subtype(id), sql_bind_localtype("int"))));
+			re = exp_rel(sql, r);
+			return re;
+		}
+	}
 	/* first try aggregate */
 	if (find_func(sql, sname, fname, nr_args, F_AGGR, false, NULL, NULL)) { /* We have to pass the arguments properly, so skip call to rel_aggr */
 		/* reset error */
@@ -3836,7 +3865,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by", toUpperCopy(uaname, aname));
 	}
 
-	if (!subquery && groupby && groupby->op != op_groupby) { 		/* implicit groupby */
+	if (!subquery && groupby && groupby->op != op_groupby) {		/* implicit groupby */
 		if (!all_freevar && query->last_exp && !is_sql_aggr(query->last_state)) {
 			if (exp_relname(query->last_exp) && exp_name(query->last_exp) && !has_label(query->last_exp))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(query->last_exp), exp_name(query->last_exp));
@@ -4087,7 +4116,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		if (!group && !all_freevar)
 			return e;
 		if (all_freevar) {
-			exps_reset_freevar(exps);
+			rel_bind_vars(sql, groupby->l, exps);
 			assert(!is_simple_project(res->op));
 			e->card = CARD_ATOM;
 			set_freevar(e, all_freevar-1);
@@ -4711,8 +4740,7 @@ simple_selection(symbol *sq)
 {
 	if (sq->token == SQL_SELECT) {
 		SelectNode *sn;
-
- 		sn = (SelectNode *) sq;
+		sn = (SelectNode *) sq;
 
 		if (!sn->from && !sn->where && !sn->distinct && !sn->window && dlist_length(sn->selection) == 1)
 			return sn->selection;
@@ -5410,7 +5438,9 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			r = rel_values(query, se, NULL);
 		} else {
 			assert(se->token == SQL_SELECT);
-			r = rel_subquery(query, se, ek);
+			exp_kind nek = ek;
+			nek.aggr = is_sql_aggr(f);
+			r = rel_subquery(query, se, nek);
 		}
 		if (rel && *rel) {
 			*rel = query_pop_outer(query);
@@ -5440,10 +5470,14 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return NULL;
 	}
 	case SQL_PARAMETER: {
-		if (sql->emode != m_prepare)
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
 		assert(se->type == type_int);
 		sql_arg *a = sql_bind_paramnr(sql, se->data.i_val);
+		if (sql->emode != m_prepare) {
+			if (a && a->name && a->name[0])
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: named placeholder ('%s') but named values list is missing", a->name);
+			else
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
+		}
 		return exp_atom_ref(sql->sa, se->data.i_val, a?&a->type:NULL);
 	}
 	case SQL_NULL:
@@ -5945,7 +5979,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 * and rel_table_exp.
 		 */
 		list *te = NULL;
-		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
+		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals | (ek.aggr?sql_aggr:0));
 
 		if (ce) {
 			pexps = append(pexps, ce);
@@ -6014,7 +6048,7 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 		return table_ref(query, sq, 0, NULL);
 
 	/* select ... into is currently not handled here ! */
- 	sn = (SelectNode *) sq;
+	sn = (SelectNode *) sq;
 	if (sn->into)
 		return NULL;
 
