@@ -54,10 +54,10 @@ select * from books
 query T rowsort
 SELECT json.filter(j,'book.author') FROM books
 ----
-["Evelyn Waugh"]
-["Herman Melville"]
-["J. R. R. Tolkien"]
-["Nigel Rees"]
+"Evelyn Waugh"
+"Herman Melville"
+"J. R. R. Tolkien"
+"Nigel Rees"
 
 query T rowsort
 SELECT json.text(json.filter(j,'book.author')) FROM books

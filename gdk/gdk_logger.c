@@ -2529,9 +2529,9 @@ log_flush(logger *lg, ulng ts)
 					log_unlock(lg);
 					return GDK_FAIL;
 				}
+				updated = p;
 				memset(updated + allocated / 4, 0, a - allocated);
 				allocated = a;
-				updated = p;
 			}
 			nupdated = n;
 		}
