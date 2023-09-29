@@ -960,45 +960,33 @@ skip_sql_comment(struct scanner * lc)
 
 static int tokenize(mvc * lc, int cur);
 
+static inline bool is_valid_decimal_digit(int cur) { return (iswdigit(cur)); }
 static inline bool is_valid_binary_digit(int cur) { return (iswdigit(cur) && cur < '2'); }
 static inline bool is_valid_octal_digit(int cur) { return (iswdigit(cur) && cur < '8'); }
 static inline bool is_valid_hexadecimal_digit(int cur) { return iswxdigit(cur); }
 
-static inline int non_decimal_number(mvc* c, int *token, bool (*is_valid_n_ary_digit)(int), int type, char type2) {
+static inline int check_validity_number(mvc* c, bool initial_underscore_allowed, int *token, bool (*is_valid_n_ary_digit)(int), int type, char type2) {
 	struct scanner *lc = &c->scanner;
 	int cur = scanner_getc(lc);
-	bool underscore_allowed = true;
-	int underscore_shifts = 0;
+	bool underscore_allowed = initial_underscore_allowed;
 	while (cur != EOF) {
 		if (cur == '_') {
-			if (underscore_allowed) { // so previous character was not an underscore
-				// we have to apply a swap
-				underscore_shifts++;
+			if (underscore_allowed) // so previous character was not an underscore
 				underscore_allowed = false;
-			}
 			else /* ERROR */ {
 				*token = 0;
-				cur = '_';
 				break;
 			}			
 		}
-		else if (is_valid_n_ary_digit(cur)) {
+		else if (is_valid_n_ary_digit(cur))
 			underscore_allowed = true;
-			if (underscore_shifts) {
-				lc->rs->buf[lc->rs->pos+lc->yycur-underscore_shifts-1] = cur; // do shift
-				lc->rs->buf[lc->rs->pos+lc->yycur-1] = ' '; // mark last character with null terminator
-			}
-		}
 		else
 			break;
 		*token = type;
 		cur = scanner_getc(lc);
 	}
 
-	for (int i = 0; i < underscore_shifts; i++)
-		utf8_putchar(lc, ' ');
-
-	if (cur == EOF || cur == '_')
+	if (cur == EOF)
 		return cur;
 
 	if (*token != type) {
@@ -1007,7 +995,6 @@ static inline int non_decimal_number(mvc* c, int *token, bool (*is_valid_n_ary_d
 		cur = type2;
 		*token = 0;
 	}
-
 	return cur;
 }
 
@@ -1015,7 +1002,7 @@ static int
 number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
-	int token = cur == '0' ? sqlINT : 0;
+	int token = sqlINT;
 
 	/* a number has one of these forms (expressed in regular expressions):
 	 * 0x[0-9A-Fa-f]+                   -- (hexadecimal) INTEGER
@@ -1031,26 +1018,21 @@ number(mvc * c, int cur)
 	if (cur == '0') {
 		switch ((cur = scanner_getc(lc))) {
 		case 'b':
-			if ((cur = non_decimal_number(c, &token, &is_valid_binary_digit			, BINARYNUM		, 'b')) == EOF) return cur;
+			if ((cur = check_validity_number(c, true, &token, &is_valid_binary_digit			, BINARYNUM		, 'b')) == EOF) return cur;
 			is_decimal = false;
 			break;
 		case 'o':
-			if ((cur = non_decimal_number(c, &token, &is_valid_octal_digit			, OCTALNUM		, 'o')) == EOF) return cur;
+			if ((cur = check_validity_number(c, true, &token, &is_valid_octal_digit			, OCTALNUM		, 'o')) == EOF) return cur;
 			is_decimal = false;
 			break;
 		case 'x':
-			if ((cur = non_decimal_number(c, &token, &is_valid_hexadecimal_digit	, HEXADECIMALNUM, 'x')) == EOF) return cur;
+			if ((cur = check_validity_number(c, true, &token, &is_valid_hexadecimal_digit	, HEXADECIMALNUM, 'x')) == EOF) return cur;
 			is_decimal = false;
 			break;
 		}
 	}
-	if (is_decimal) {
-		while (cur != EOF && (iswdigit(cur) || cur == '_')) {
-			token = sqlINT;
-			cur = scanner_getc(lc);
-		}
-		if (cur == EOF)
-			return cur;
+	if (is_decimal && is_valid_decimal_digit(cur)) {
+		if ((cur = check_validity_number(c, false, &token, &is_valid_decimal_digit	, sqlINT, 'd')) == EOF) return cur;
 		if (cur == '@') {
 			if (token == sqlINT) {
 				cur = scanner_getc(lc);
@@ -1069,48 +1051,20 @@ number(mvc * c, int cur)
 				}
 			}
 		} else {
-			if (cur == '.') {
-				cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-				if (token == sqlINT || iswdigit(cur)) {
-					token = INTNUM;
-					while (cur != EOF && iswdigit(cur))
-						cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-				} else {
-					token = 0;
-				}
-			}
-			if (cur == 'e' || cur == 'E') {
+			if (cur == '.')
+				if ((cur = check_validity_number(c, false, &token, &is_valid_decimal_digit	, INTNUM, 'd')) == EOF) return cur;
+			if (cur == 'e' || cur == 'E')
 				if (token != 0) {
-					cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
+					if ((cur = check_validity_number(c, false, &token, &is_valid_decimal_digit	, APPROXNUM, 'd')) == EOF) return cur;
 					if (cur == '+' || cur == '-')
 						cur = scanner_getc(lc);
-					while (cur != EOF && iswdigit(cur)) {
-						token = APPROXNUM;
-						cur = scanner_getc(lc);
-					}
-					if (cur == EOF)
-						return cur;
-					if (token != APPROXNUM)
-						token = 0;
+					if ((cur = check_validity_number(c, false, &token, &is_valid_decimal_digit	, APPROXNUM, 'd')) == EOF) return cur;
 				}
-			}
 		}
 	}
-
-	if (cur == EOF && lc->rs->buf == NULL) /* malloc failure */
-		return EOF;
-
-	if (cur != EOF) {
-		if (iswalnum(cur) || cur == '_' /* || cur == '"' || cur == '\'' */)
-			token = 0;
-		utf8_putchar(lc, cur);
-	}
+	
+	assert(cur != EOF);
+	utf8_putchar(lc, cur);
 
 	if (token) {
 		return scanner_token(lc, token);
