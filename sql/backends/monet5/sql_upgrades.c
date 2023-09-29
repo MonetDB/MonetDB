@@ -6173,16 +6173,22 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	}
 
 	/* 77_storage.sql */
-	if (!sql_bind_func(sql, s->base.name, "insertonly_persist", &tp, NULL, F_UNION, true)) {
+	if (!sql_bind_func(sql, s->base.name, "insertonly_persist", NULL, NULL, F_UNION, true)) {
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		const char *query =
-			"create function sys.insertonly_persist()\n"
-			"returns table(\"table\" string, \"table_id\" bigint, \"rowcount\" bigint)\n"
-			"external name sql.insertonly_persist;\n"
-			"grant execute on function sys.insertonly_persist() to public;\n"
-			"update sys.functions set system = true where system <> true and\n"
-			"name = 'insertonly_persist' and schema_id = 2000;\n";
+			"CREATE FUNCTION sys.insertonly_persist()\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" BIGINT, \"rowcount\" BIGINT)\n"
+			"EXTERNAL NAME sql.insertonly_persist;\n"
+			"CREATE FUNCTION sys.insertonly_persist(sname STRING)\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" BIGINT, \"rowcount\" BIGINT)\n"
+			"EXTERNAL NAME sql.insertonly_persist(string);\n"
+			"CREATE FUNCTION sys.insertonly_persist(sname STRING, tname STRING)\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" BIGINT, \"rowcount\" BIGINT)\n"
+			"EXTERNAL NAME sql.insertonly_persist(string, string);\n"
+			"GRANT EXECUTE ON FUNCTION sys.insertonly_persist() TO PUBLIC;\n"
+			"UPDATE sys.functions SET system = true WHERE system <> true AND\n"
+			"name = 'insertonly_persist' AND schema_id = 2000;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
