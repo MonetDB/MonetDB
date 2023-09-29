@@ -1,3 +1,10 @@
+* Fri Sep 29 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.11-20230929
+- Rebuilt.
+
+* Fri Sep 29 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.11-20230929
+- MonetDB: Fixed an installation issue on Debian and Ubuntu introduced in the
+  last build.
+
 * Wed Sep 27 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.9-20230927
 - Rebuilt.
 - GH#7402: Privileges on merge table not propagated to partition tables
