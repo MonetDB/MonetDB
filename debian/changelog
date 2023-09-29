@@ -1,3 +1,16 @@
+monetdb (11.47.11) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Sep 2023 12:00:43 +0200
+
+monetdb (11.47.11) unstable; urgency=low
+
+  * MonetDB: Fixed an installation issue on Debian and Ubuntu introduced in the
+    last build.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Sep 2023 12:00:43 +0200
+
 monetdb (11.47.9) unstable; urgency=low
 
   * Rebuilt.
