@@ -522,18 +522,18 @@ JSONappend(JSON *jt, int idx, int nxt)
 #define MAXTERMS 256
 
 typedef enum path_token {
-	ROOT_STEP,
-	CHILD_STEP,
-	INDEX_STEP,
-	ANY_STEP,
-	END_STEP
+	ROOT_STEP,					/* $ */
+	CHILD_STEP,					/* . */
+	INDEX_STEP,					/* [n] */
+	ANY_STEP,					/* .. */
+	END_STEP					/* end of expression */
 } path_token;
 
 typedef struct {
-	path_token token;
-	char *name;
-	size_t namelen;
-	int index;
+	path_token token;			/* Token kind */
+	char *name;					/* specific key */
+	size_t namelen;				/* the size of the key */
+	int index;					/* if index == INT_MAX we got [*] */
 	int first, last;
 } pattern;
 
@@ -588,6 +588,7 @@ JSONcompile(char *expr, pattern terms[])
 			s++;
 			skipblancs(s);
 			if (*s != '*') {
+				/* TODO: Implement [start:step:end] indexing */
 				if (isdigit((unsigned char) *s)) {
 					terms[t].index = atoi(s);
 					terms[t].first = terms[t].last = atoi(s);
@@ -664,7 +665,7 @@ JSONglue(str res, str r, char sep)
 
 /* return NULL on no match, return (str) -1 on (malloc) failure, (str) -2 on stack overflow */
 static str
-JSONmatch(JSON *jt, int ji, pattern *terms, int ti)
+JSONmatch(JSON *jt, int ji, pattern *terms, int ti, bool accumulate)
 {
 	str r = NULL, res = NULL;
 	int i;
@@ -703,7 +704,7 @@ JSONmatch(JSON *jt, int ji, pattern *terms, int ti)
 				|| (cnt >= terms[ti].first && cnt <= terms[ti].last)) {
 				if (terms[ti].token == ANY_STEP) {
 					if (jt->elm[i].child)
-						r = JSONmatch(jt, jt->elm[i].child, terms, ti);
+						r = JSONmatch(jt, jt->elm[i].child, terms, ti, true);
 					else
 						r = 0;
 				} else if (ti + 1 == MAXTERMS) {
@@ -715,8 +716,9 @@ JSONmatch(JSON *jt, int ji, pattern *terms, int ti)
 						r = JSONgetValue(jt, i);
 					if (r == NULL)
 						r = (str) -1;
-				} else
-					r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1);
+				} else {
+					r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1, terms[ti].index == INT_MAX);
+				}
 				if (r == (str) -1 || r == (str) -2) {
 					GDKfree(res);
 					return r;
@@ -742,16 +744,22 @@ JSONmatch(JSON *jt, int ji, pattern *terms, int ti)
 						if (r == NULL)
 							r = (str) -1;
 					} else
-						r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1);
+						r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1, terms[ti].index == INT_MAX);
 					if (r == (str) -1 || r == (str) -2) {
 						GDKfree(res);
 						return r;
 					}
-					res = JSONglue(res, r, ',');
+					if (accumulate) {
+						res = JSONglue(res, r, ',');
+					} else {  // Keep the last matching value
+						if (res)
+							GDKfree(res);
+						res = GDKstrdup(r);
+					}
 				}
 				cnt++;
 			} else if (terms[ti].token == ANY_STEP && jt->elm[i].child) {
-				r = JSONmatch(jt, jt->elm[i].child, terms, ti);
+				r = JSONmatch(jt, jt->elm[i].child, terms, ti, true);
 				if (r == (str) -1 || r == (str) -2) {
 					GDKfree(res);
 					return r;
@@ -791,7 +799,8 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 	if (msg)
 		goto bailout;
 
-	result = s = JSONmatch(jt, 0, terms, tidx);
+	bool accumulate = terms[tidx].token == ANY_STEP || (terms[tidx].name && terms[tidx].name[0] == '*');
+	result = s = JSONmatch(jt, 0, terms, tidx, accumulate);
 	if (s == (char *) -1) {
 		msg = createException(MAL, "JSONfilterInternal",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -803,11 +812,14 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 							  "Expression too complex to parse");
 		goto bailout;
 	}
+	bool return_array = false;
 	// process all other PATH expression
 	for (tidx++; tidx < MAXTERMS && terms[tidx].token; tidx++)
 		if (terms[tidx].token == END_STEP && tidx + 1 < MAXTERMS
 			&& terms[tidx + 1].token) {
-			s = JSONmatch(jt, 0, terms, ++tidx);
+			tidx += 1;
+			accumulate = terms[tidx].token == ANY_STEP || (terms[tidx].name && terms[tidx].name[0] == '*');
+			s = JSONmatch(jt, 0, terms, tidx, accumulate);
 			if (s == (char *) -1) {
 				msg = createException(MAL, "JSONfilterInternal",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -819,6 +831,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 									  "Expression too complex to parse");
 				goto bailout;
 			}
+			return_array = true;
 			result = JSONglue(result, s, ',');
 		}
 	if (result) {
@@ -827,12 +840,33 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 			result[l - 1] = 0;
 	} else
 		l = 3;
-	s = GDKzalloc(l + 3);
-	if (s == NULL) {
-		GDKfree(result);
-		throw(MAL, "JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	for (int i = 0; i < MAXTERMS && terms[i].token; i++) {
+		// pattern contains the .. operator
+		if (terms[i].token == ANY_STEP ||
+			// pattern contains the [*] operator
+			(terms[i].token == CHILD_STEP && terms[i].index == INT_MAX && terms[i].name == NULL)) {
+
+		/* if (terms[i].make_array) { */
+			return_array = true;
+			break;
+		}
 	}
-	snprintf(s, l + 3, "[%s]", (result ? result : ""));
+	if (return_array || accumulate) {
+		s = GDKzalloc(l + 3);
+		if (s == NULL) {
+			GDKfree(result);
+			throw(MAL, "JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		snprintf(s, l + 3, "[%s]", (result ? result : ""));
+	}
+	else if (result == NULL || *result == 0) {
+		s = GDKstrdup("[]");
+	}
+	else {
+		s = GDKzalloc(l + 1);
+		snprintf(s, l + 1, "%s", (result ? result : ""));
+	}
 	GDKfree(result);
 	*ret = s;
 
