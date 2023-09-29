@@ -3039,18 +3039,6 @@ check_distinct_exp_names(mvc *sql, list *exps)
 	return exps;
 }
 
-void
-exps_reset_freevar(list *exps)
-{
-	if (exps)
-		for(node *n=exps->h; n; n=n->next) {
-			sql_exp *e = n->data;
-
-			/*later use case per type */
-			reset_freevar(e);
-		}
-}
-
 static int rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relname, const char *expname);
 
 static int

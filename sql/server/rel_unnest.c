@@ -290,20 +290,23 @@ freevar_equal( sql_exp *e1, sql_exp *e2)
 }
 
 static list *
-merge_freevar(list *l, list *r)
+merge_freevar(list *l, list *r, bool all)
 {
 	if (!l)
 		return r;
 	if (!r)
 		return l;
-	return list_distinct(list_merge(l, r, (fdup)NULL), (fcmp)freevar_equal, (fdup)NULL);
+	r  = list_merge(l, r, (fdup)NULL);
+	if (all)
+		return r;
+	return list_distinct(r, (fcmp)freevar_equal, (fdup)NULL);
 }
 
 static list * exps_freevar(mvc *sql, list *exps);
 static list * rel_freevar(mvc *sql, sql_rel *rel);
 
 static list *
-exp_freevar(mvc *sql, sql_exp *e)
+exp_freevar(mvc *sql, sql_exp *e, bool all)
 {
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -314,7 +317,7 @@ exp_freevar(mvc *sql, sql_exp *e)
 			return append(sa_list(sql->sa), e);
 		break;
 	case e_convert:
-		return exp_freevar(sql, e->l);
+		return exp_freevar(sql, e->l, all);
 	case e_aggr:
 	case e_func:
 		if (e->l)
@@ -324,18 +327,18 @@ exp_freevar(mvc *sql, sql_exp *e)
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			list *l = exps_freevar(sql, e->l);
 			list *r = exps_freevar(sql, e->r);
-			return merge_freevar(l, r);
+			return merge_freevar(l, r, all);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			list *l = exp_freevar(sql, e->l);
+			list *l = exp_freevar(sql, e->l, all);
 			list *r = exps_freevar(sql, e->r);
-			return merge_freevar(l, r);
+			return merge_freevar(l, r, all);
 		} else {
-			list *l = exp_freevar(sql, e->l);
-			list *r = exp_freevar(sql, e->r);
-			l = merge_freevar(l, r);
+			list *l = exp_freevar(sql, e->l, all);
+			list *r = exp_freevar(sql, e->r, all);
+			l = merge_freevar(l, r, all);
 			if (e->f) {
-				r = exp_freevar(sql, e->f);
-				return merge_freevar(l, r);
+				r = exp_freevar(sql, e->f, all);
+				return merge_freevar(l, r, all);
 			}
 			return l;
 		}
@@ -367,9 +370,9 @@ exps_freevar(mvc *sql, list *exps)
 		return NULL;
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		list *var = exp_freevar(sql, e);
+		list *var = exp_freevar(sql, e, false);
 
-		c = merge_freevar(c,var);
+		c = merge_freevar(c,var, false);
 	}
 	return c;
 }
@@ -391,8 +394,8 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		exps = exps_freevar(sql, rel->exps);
 		lexps = rel_freevar(sql, rel->l);
 		rexps = rel_freevar(sql, rel->r);
-		lexps = merge_freevar(lexps, rexps);
-		exps = merge_freevar(exps, lexps);
+		lexps = merge_freevar(lexps, rexps, false);
+		exps = merge_freevar(exps, lexps, false);
 		return exps;
 
 	case op_basetable:
@@ -402,7 +405,7 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		if (rel->flag != TRIGGER_WRAPPER && rel->l)
 			lexps = rel_freevar(sql, rel->l);
 		exps = (rel->flag != TRIGGER_WRAPPER && call)?exps_freevar(sql, call->l):NULL;
-		return merge_freevar(exps, lexps);
+		return merge_freevar(exps, lexps, false);
 	}
 	case op_union:
 	case op_except:
@@ -410,8 +413,8 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		exps = exps_freevar(sql, rel->exps);
 		lexps = rel_freevar(sql, rel->l);
 		rexps = rel_freevar(sql, rel->r);
-		lexps = merge_freevar(lexps, rexps);
-		exps = merge_freevar(exps, lexps);
+		lexps = merge_freevar(lexps, rexps, false);
+		exps = merge_freevar(exps, lexps, false);
 		return exps;
 	case op_ddl:
 	case op_semi:
@@ -430,9 +433,9 @@ rel_freevar(mvc *sql, sql_rel *rel)
 				rexps = exps_freevar(sql, rel->r);
 			else
 				rexps = rel_freevar(sql, rel->r);
-			lexps = merge_freevar(lexps, rexps);
+			lexps = merge_freevar(lexps, rexps, false);
 		}
-		exps = merge_freevar(exps, lexps);
+		exps = merge_freevar(exps, lexps, false);
 		return exps;
 	default:
 		return NULL;
@@ -476,7 +479,7 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 void
 rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	list *fvs = exp_freevar(sql, e);
+	list *fvs = exp_freevar(sql, e, true);
 
 	if (fvs) {
 		node *n;
@@ -490,7 +493,7 @@ rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e)
 	}
 }
 
-static void
+void
 rel_bind_vars(mvc *sql, sql_rel *rel, list *exps)
 {
 	if (list_empty(exps))
@@ -1723,7 +1726,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_set(r->op) && !is_left(rel->op) && is_distinct_set(sql, l, ad)) {
+			if (r && is_set(r->op) && !is_left(rel->op) && rel->op != op_anti && is_distinct_set(sql, l, ad)) {
 				rel = push_up_set(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
