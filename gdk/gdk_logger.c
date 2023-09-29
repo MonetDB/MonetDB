@@ -1038,17 +1038,8 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 	return GDK_SUCCEED;
 }
 
-static inline void
-rotation_lock(logger *lg)
-{
-	MT_lock_set(&lg->rotation_lock);
-}
-
-static inline void
-rotation_unlock(logger *lg)
-{
-	MT_lock_unset(&lg->rotation_lock);
-}
+#define rotation_lock(lg)	MT_lock_set(&(lg)->rotation_lock)
+#define rotation_unlock(lg)	MT_lock_unset(&(lg)->rotation_lock)
 
 static gdk_return
 log_open_output(logger *lg)
@@ -3036,17 +3027,8 @@ log_tend(logger *lg)
 	return result;
 }
 
-static inline void
-flush_lock(logger *lg)
-{
-	MT_lock_set(&lg->flush_lock);
-}
-
-static inline void
-flush_unlock(logger *lg)
-{
-	MT_lock_unset(&lg->flush_lock);
-}
+#define flush_lock(lg)		MT_lock_set(&(lg)->flush_lock)
+#define flush_unlock(lg)	MT_lock_unset(&(lg)->flush_lock)
 
 static inline gdk_return
 do_flush(logged_range *range)
