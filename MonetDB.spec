@@ -7,7 +7,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 %global name MonetDB
-%global version 11.47.10
+%global version 11.47.12
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -860,6 +860,13 @@ fi
 %endif
 
 %changelog
+* Fri Sep 29 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.11-20230929
+- Rebuilt.
+
+* Fri Sep 29 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.11-20230929
+- MonetDB: Fixed an installation issue on Debian and Ubuntu introduced in the
+  last build.
+
 * Wed Sep 27 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.9-20230927
 - Rebuilt.
 - GH#7402: Privileges on merge table not propagated to partition tables
