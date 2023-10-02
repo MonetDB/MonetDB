@@ -388,7 +388,7 @@ exp_rank_op( sql_allocator *sa, list *l, list *gbe, list *obe, sql_subfunc *f )
 	sql_exp *e = exp_create(sa, e_func);
 	if (e == NULL)
 		return NULL;
-	e->card = exps_card(l);
+	e->card = list_empty(l)?CARD_MULTI:exps_card(l);
 	e->l = l;
 	e->r = append(append(sa_list(sa), gbe), obe);
 	e->f = f;
