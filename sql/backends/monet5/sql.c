@@ -4327,7 +4327,8 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)stk;
 	(void)pci;
 
-	bool schema_wide = pci->argc == 3 || pci->argc == 4 ? true : false;
+	bool schema_wide = (pci->argc == 3 || pci->argc == 4),
+		bat_exists = false;
 
 	bat *o0 = getArgReference_bat(stk, pci, 0),
 		*o1 = getArgReference_bat(stk, pci, 1),
@@ -4341,9 +4342,9 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	sql_trans *tr = NULL;
 	node *ncol;
-	storage *t_storage = NULL;
+	storage *t_del = NULL;
 
-	BAT *bs = NULL, *tables = NULL, *oids = NULL, *rowcounts = NULL;
+	BAT *b = NULL, *d = NULL, *tables = NULL, *sqlids = NULL, *rowcounts = NULL;
 
 	msg = getSQLContext(cntxt, mb, &m, NULL);
 
@@ -4364,26 +4365,24 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.insertonly_persist", SQLSTATE(3F000) "Schema missing %s.", i1);
 	} else {
 		s = m->session->schema;
-		/* throw(SQL, "sql.insertonly_persist", SQLSTATE(3F000) "Schema missing %s.", i1); */
 	}
-
 
 	if (pci->argc != 3 && !mvc_schema_privs(m, s))
 		throw(SQL, "sql.insertonly_persist", SQLSTATE(42000) "Access denied for %s to schema '%s'.",
 			  get_string_global_var(m, "current_user"), s->base.name);
 
 	int n = 100;
-	bat *commit_list = GDKmalloc(sizeof(bat) * (n + 1));
-	BUN *sizes = GDKmalloc(sizeof(BUN) * (n + 1));
+	bat *commit_list = GDKzalloc(sizeof(bat) * (n + 1));
+	BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 1));
 
 	tables = COLnew(0, TYPE_str, 0, TRANSIENT);
-	oids = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	sqlids = COLnew(0, TYPE_int, 0, TRANSIENT);
 	rowcounts = COLnew(0, TYPE_lng, 0, TRANSIENT);
 
-	if (commit_list == NULL || sizes == NULL || tables == NULL || oids == NULL || rowcounts == NULL) {
+	if (commit_list == NULL || sizes == NULL || tables == NULL || sqlids == NULL || rowcounts == NULL) {
 		GDKfree(commit_list);
 		GDKfree(sizes);
-		BBPnreclaim(3, tables, oids, rowcounts);
+		BBPnreclaim(3, tables, sqlids, rowcounts);
 		throw(SQL, "sql.insertonly_persist", SQLSTATE(HY001));
 	}
 
@@ -4406,24 +4405,32 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (isTable(t) && t->access == TABLE_APPENDONLY) {
 				str t_name = t->base.name;
 				sqlid t_id = t->base.id;
-				t_storage = bind_del_data(tr, t, NULL);
+				t_del = bind_del_data(tr, t, NULL);
+
+				if (t_del == NULL || (d = BATdescriptor(t_del->cs.bid)) == NULL) {
+					MT_lock_unset(&store->commit);
+					GDKfree(commit_list);
+					GDKfree(sizes);
+					BBPnreclaim(3, tables, sqlids, rowcounts);
+					throw(SQL, "sql.insertonly_persist", "Cannot access %s column storage.", t_name);
+				}
 
 				if (ol_first_node(t->columns)) {
 
 					for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 						sql_column *c = (sql_column *) ncol->data;
-						bs = store->storage_api.bind_col(tr, c, RDONLY);
+						b = store->storage_api.bind_col(tr, c, RDONLY);
 
-						if (bs == NULL) {
+						if (b == NULL) {
 							MT_lock_unset(&store->commit);
 							GDKfree(commit_list);
 							GDKfree(sizes);
-							BBPnreclaim(3, tables, oids, rowcounts);
+							BBPnreclaim(3, tables, sqlids, rowcounts);
 							throw(SQL, "sql.insertonly_persist", "Cannot access column descriptor.");
 						}
 
-						if (isVIEW(bs))
-							bs = BATdescriptor(VIEWtparent(bs));
+						if (isVIEW(b))
+							b = BATdescriptor(VIEWtparent(b));
 
 						if (i == n && ncol->next) {
 							n = n * 2;
@@ -4435,48 +4442,56 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							MT_lock_unset(&store->commit);
 							GDKfree(commit_list);
 							GDKfree(sizes);
-							BBPnreclaim(3, tables, oids, rowcounts);
+							BBPnreclaim(3, tables, sqlids, rowcounts);
 							throw(SQL, "sql.insertonly_persist", SQLSTATE(HY001));
 						}
 
-						commit_list[i] = t_storage->cs.bid;
-						commit_list[i+1] = bs->batCacheid;
-						sizes[i] = !bs->batTransient ? BATcount(bs) : 0;
-						sizes[i+1] = !bs->batTransient ? BATcount(bs) : 0;
+						if (BBP_status(b->batCacheid) & BBPEXISTING) {
+							commit_list[i] = b->batCacheid;
+							sizes[i] = BATcount(b);
+							i++;
+							bat_exists = true;
+						}
 
 						if (BUNappend(tables, t_name, false) != GDK_SUCCEED ||
-							BUNappend(oids, &t_id, false) != GDK_SUCCEED ||
-							BUNappend(rowcounts, sizes + i, false) != GDK_SUCCEED) {
+							BUNappend(sqlids, &t_id, false) != GDK_SUCCEED ||
+							BUNappend(rowcounts, bat_exists ? sizes + (i - 1) : sizes, false) != GDK_SUCCEED) {
 							MT_lock_unset(&store->commit);
 							GDKfree(commit_list);
 							GDKfree(sizes);
-							BBPnreclaim(3, tables, oids, rowcounts);
+							BBPnreclaim(3, tables, sqlids, rowcounts);
 							throw(SQL, "sql.insertonly_persist", SQLSTATE(HY001));
 						}
-
-						i+=2;
 					}
 				}
+
+				if (bat_exists) {
+					commit_list[i] = d->batCacheid;
+					sizes[i] = BATcount(d);
+					i++;
+				}
+
+				bat_exists = false;
 			}
 		}
 	}
 
 	MT_lock_unset(&store->commit);
 
-	if (TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED)
+	if (commit_list[1] > 0 && TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED)
 		msg = createException(SQL, "sql.insertonly_persist", GDK_EXCEPTION);
 
 	GDKfree(commit_list);
 	GDKfree(sizes);
 
 	if (msg) {
-		BBPnreclaim(3, tables, oids, rowcounts);
+		BBPnreclaim(3, tables, sqlids, rowcounts);
 	} else {
 		*o0 = tables->batCacheid;
-		*o1 = oids->batCacheid;
+		*o1 = sqlids->batCacheid;
 		*o2 = rowcounts->batCacheid;
 		BBPkeepref(tables);
-		BBPkeepref(oids);
+		BBPkeepref(sqlids);
 		BBPkeepref(rowcounts);
 	}
 	return msg;
@@ -5234,9 +5249,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
- pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist deltas on append only tables in current schema.", args(3, 3, batarg("table", str), batarg("table_id", lng), batarg("rowcount", lng))),
- pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist deltas on append only tables in schema s.", args(3, 4, batarg("table", str), batarg("table_id", lng), batarg("rowcount", lng), arg("s", str))),
- pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist deltas on append only table in schema s table t.", args(3, 5, batarg("table", str), batarg("table_id", lng), batarg("rowcount", lng), arg("s", str), arg("t", str))),
+ pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist deltas on append only tables in current schema.", args(3, 3, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng))),
+ pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist deltas on append only tables in schema s.", args(3, 4, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng), arg("s", str))),
+ pattern("sql", "insertonly_persist", SQLinsertonly_persist, true, "Persist deltas on append only table in schema s table t.", args(3, 5, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng), arg("s", str), arg("t", str))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
  pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),

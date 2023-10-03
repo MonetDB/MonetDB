@@ -6,29 +6,29 @@
 --
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
-create function sys.insertonly_persist()
-returns table(
-	"table" string,
-	"table_id" bigint,
-	"rowcount" bigint
+CREATE FUNCTION sys.insertonly_persist()
+RETURNS TABLE(
+	"table" STRING,
+	"table_id" INT,
+	"rowcount" BIGINT
 )
-external name sql.insertonly_persist;
-grant execute on function sys.insertonly_persist() to public;
+EXTERNAL NAME sql.insertonly_persist;
+GRANT EXECUTE ON FUNCTION sys.insertonly_persist() TO PUBLIC;
 
-create function sys.insertonly_persist(sname string)
-returns table(
-	"table" string,
-	"table_id" bigint,
-	"rowcount" bigint
+CREATE FUNCTION sys.insertonly_persist(sname STRING)
+RETURNS TABLE(
+	"table" STRING,
+	"table_id" INT,
+	"rowcount" BIGINT
 )
-external name sql.insertonly_persist;
-grant execute on function sys.insertonly_persist(string) to public;
+EXTERNAL NAME sql.insertonly_persist;
+GRANT EXECUTE ON FUNCTION sys.insertonly_persist(string) TO PUBLIC;
 
-create function sys.insertonly_persist(sname string, tname string)
-returns table(
-	"table" string,
-	"table_id" bigint,
-	"rowcount" bigint
+CREATE FUNCTION sys.insertonly_persist(sname STRING, tname STRING)
+RETURNS TABLE(
+	"table" STRING,
+	"table_id" INT,
+	"rowcount" BIGINT
 )
-external name sql.insertonly_persist;
-grant execute on function sys.insertonly_persist(string, string) to public;
+EXTERNAL NAME sql.insertonly_persist;
+GRANT EXECUTE ON FUNCTION sys.insertonly_persist(string, string) TO PUBLIC;
