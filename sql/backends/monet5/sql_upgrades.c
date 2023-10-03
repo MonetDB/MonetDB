@@ -6178,13 +6178,13 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		sql->errstr[0] = '\0';
 		const char *query =
 			"CREATE FUNCTION sys.insertonly_persist()\n"
-			"RETURNS TABLE(\"table\" STRING, \"table_id\" BIGINT, \"rowcount\" BIGINT)\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
 			"EXTERNAL NAME sql.insertonly_persist;\n"
 			"CREATE FUNCTION sys.insertonly_persist(sname STRING)\n"
-			"RETURNS TABLE(\"table\" STRING, \"table_id\" BIGINT, \"rowcount\" BIGINT)\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
 			"EXTERNAL NAME sql.insertonly_persist(string);\n"
 			"CREATE FUNCTION sys.insertonly_persist(sname STRING, tname STRING)\n"
-			"RETURNS TABLE(\"table\" STRING, \"table_id\" BIGINT, \"rowcount\" BIGINT)\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
 			"EXTERNAL NAME sql.insertonly_persist(string, string);\n"
 			"GRANT EXECUTE ON FUNCTION sys.insertonly_persist() TO PUBLIC;\n"
 			"UPDATE sys.functions SET system = true WHERE system <> true AND\n"

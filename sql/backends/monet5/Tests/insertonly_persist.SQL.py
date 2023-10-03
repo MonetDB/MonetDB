@@ -21,8 +21,15 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute("ALTER TABLE foo SET INSERT ONLY").assertSucceeded()
             tc.execute("INSERT INTO foo SELECT * FROM generate_series(0,500)")
             tc.execute("SELECT count(*) FROM foo").assertSucceeded().assertDataResultMatch([(500,)])
+            tc.execute("SELECT * FROM insertonly_persist()").assertSucceeded().assertDataResultMatch([('foo', 7896, 0)])
+            tc.execute("CREATE TABLE bar (x INT)").assertSucceeded()
+            tc.execute("CREATE TABLE barbar (x INT)").assertSucceeded()
+            tc.execute("CREATE TABLE baz (x INT)").assertSucceeded()
+            tc.execute("CREATE TABLE bazbaz (x INT)").assertSucceeded()
+
             tc.execute("SELECT sleep(2000)")
-            tc.execute("SELECT * FROM insertonly_persist('sys')").assertSucceeded().assertDataResultMatch([('foo', 7891, 500)])
+
+            tc.execute("SELECT * FROM insertonly_persist()").assertSucceeded().assertDataResultMatch([('foo', 7896, 500)])
         s.communicate()
 
     with process.server(mapiport='0', dbname='db1',

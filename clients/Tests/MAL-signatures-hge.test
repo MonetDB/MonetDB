@@ -49665,14 +49665,19 @@ SQLinclude;
 Compile and execute a sql statements on the file
 sql
 insertonly_persist
-unsafe pattern sql.insertonly_persist(X_0:str) (X_1:bat[:str], X_2:bat[:lng], X_3:bat[:lng]) 
+unsafe pattern sql.insertonly_persist() (X_0:bat[:str], X_1:bat[:int], X_2:bat[:lng]) 
 SQLinsertonly_persist;
-Persist deltas on append only tables in schema s.
+Persist deltas on append only tables in current schema
 sql
 insertonly_persist
-unsafe pattern sql.insertonly_persist(X_0:str, X_1:str) (X_2:bat[:str], X_3:bat[:lng], X_4:bat[:lng]) 
+unsafe pattern sql.insertonly_persist(X_0:str) (X_1:bat[:str], X_2:bat[:int], X_3:bat[:lng]) 
 SQLinsertonly_persist;
-Persist deltas on append only table in schema s table t.
+Persist deltas on append only tables in schema s
+sql
+insertonly_persist
+unsafe pattern sql.insertonly_persist(X_0:str, X_1:str) (X_2:bat[:str], X_3:bat[:int], X_4:bat[:lng]) 
+SQLinsertonly_persist;
+Persist deltas on append only table in schema s table t
 sql
 lag
 pattern sql.lag(X_0:any_1, X_1:any, X_2:any_1, X_3:bit, X_4:bit):any_1 
