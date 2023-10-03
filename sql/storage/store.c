@@ -6741,6 +6741,7 @@ sql_trans_create_idx(sql_idx **i, sql_trans *tr, sql_table *t, const char *name,
 	sql_table *sysidx = find_sql_table(tr, syss, "idxs");
 	int res = LOG_OK;
 
+	assert(it != oph_idx && it != no_idx && it != new_idx_types);
 	assert(name);
 	base_init(NULL, &ni->base, next_oid(tr->store), true, name);
 	ni->type = it;

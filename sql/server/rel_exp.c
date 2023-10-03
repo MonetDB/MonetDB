@@ -383,7 +383,7 @@ exp_rank_op( sql_allocator *sa, list *l, list *gbe, list *obe, sql_subfunc *f )
 	sql_exp *e = exp_create(sa, e_func);
 	if (e == NULL)
 		return NULL;
-	e->card = exps_card(l);
+	e->card = list_empty(l)?CARD_MULTI:exps_card(l);
 	e->l = l;
 	e->r = append(append(sa_list(sa), gbe), obe);
 	e->f = f;
@@ -3037,18 +3037,6 @@ check_distinct_exp_names(mvc *sql, list *exps)
 	if ((distinct_exps && list_length(distinct_exps) != list_length(exps)) || duplicates)
 		return NULL;
 	return exps;
-}
-
-void
-exps_reset_freevar(list *exps)
-{
-	if (exps)
-		for(node *n=exps->h; n; n=n->next) {
-			sql_exp *e = n->data;
-
-			/*later use case per type */
-			reset_freevar(e);
-		}
 }
 
 static int rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relname, const char *expname);

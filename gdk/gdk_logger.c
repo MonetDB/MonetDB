@@ -1038,17 +1038,8 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 	return GDK_SUCCEED;
 }
 
-static inline void
-rotation_lock(logger *lg)
-{
-	MT_lock_set(&lg->rotation_lock);
-}
-
-static inline void
-rotation_unlock(logger *lg)
-{
-	MT_lock_unset(&lg->rotation_lock);
-}
+#define rotation_lock(lg)	MT_lock_set(&(lg)->rotation_lock)
+#define rotation_unlock(lg)	MT_lock_unset(&(lg)->rotation_lock)
 
 static gdk_return
 log_open_output(logger *lg)
@@ -2285,7 +2276,6 @@ do_flush_range_cleanup(logger *lg)
 	logged_range *flast = frange;
 
 	lg->flush_ranges = flast;
-	rotation_unlock(lg);
 
 	for (frange = first; frange && frange != flast; frange = frange->next) {
 		ATOMIC_DEC(&frange->refcount);
@@ -2296,6 +2286,7 @@ do_flush_range_cleanup(logger *lg)
 			ATOMIC_DEC(&lg->nr_open_files);
 		}
 	}
+	rotation_unlock(lg);
 	return flast;
 }
 
@@ -2416,6 +2407,7 @@ log_next_logfile(logger *lg, ulng ts)
 static void
 log_cleanup_range(logger *lg, ulng id)
 {
+	rotation_lock(lg);
 	while (lg->pending && lg->pending->id <= id) {
 		logged_range *p;
 		p = lg->pending;
@@ -2423,6 +2415,7 @@ log_cleanup_range(logger *lg, ulng id)
 			lg->pending = p->next;
 		GDKfree(p);
 	}
+	rotation_unlock(lg);
 }
 
 static void
@@ -2536,9 +2529,9 @@ log_flush(logger *lg, ulng ts)
 					log_unlock(lg);
 					return GDK_FAIL;
 				}
+				updated = p;
 				memset(updated + allocated / 4, 0, a - allocated);
 				allocated = a;
-				updated = p;
 			}
 			nupdated = n;
 		}
@@ -3037,17 +3030,8 @@ log_tend(logger *lg)
 	return result;
 }
 
-static inline void
-flush_lock(logger *lg)
-{
-	MT_lock_set(&lg->flush_lock);
-}
-
-static inline void
-flush_unlock(logger *lg)
-{
-	MT_lock_unset(&lg->flush_lock);
-}
+#define flush_lock(lg)		MT_lock_set(&(lg)->flush_lock)
+#define flush_unlock(lg)	MT_lock_unset(&(lg)->flush_lock)
 
 static inline gdk_return
 do_flush(logged_range *range)
@@ -3077,6 +3061,7 @@ gdk_return
 log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 {
 	if (lg->flushnow) {
+		rotation_lock(lg);
 		assert(lg->flush_ranges == lg->current);
 		assert(ATOMIC_GET(&lg->current->flushed_ts) == ATOMIC_GET(&lg->current->last_ts));
 		log_tdone(lg, lg->current, commit_ts);
@@ -3086,6 +3071,7 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 		if (log_open_output(lg) != GDK_SUCCEED)
 			GDKfatal("Could not create new log file\n");	/* TODO: does not have to be fatal (yet) */
 		do_rotate(lg);
+		rotation_unlock(lg);
 		(void) do_flush_range_cleanup(lg);
 		assert(lg->flush_ranges == lg->current);
 		return log_commit(lg, NULL, 0);

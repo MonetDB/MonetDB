@@ -21,6 +21,7 @@ extern int rel_has_freevar(mvc *sql, sql_rel *r);
 extern void exp_only_freevar(sql_query *query, sql_exp *e, bool *arguments_correlated, bool *found_one_freevar, list **ungrouped_cols);
 extern void exps_set_freevar(mvc *sql, list *exps, sql_rel *r);
 extern void rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e);
+extern void rel_bind_vars(mvc *sql, sql_rel *rel, list *exps);
 
 extern sql_rel *rel_unnest(mvc *sql, sql_rel *rel);
 

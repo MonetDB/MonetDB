@@ -1101,6 +1101,17 @@ SELECT 1 FROM rt3 LEFT OUTER JOIN (SELECT 1) x(x) ON 1 <> ALL(VALUES (rt3.c0)) w
 ----
 1
 
+query T nosort
+SELECT splitpart(CAST('c' AS STRING(12)), 'a', length('c')) FROM t3 where t3.c0 = 1
+----
+c
+
+# disabled for now...
+#query T nosort
+#SELECT splitpart(CAST('c' AS STRING(12)), 'a', length('c')) FROM rt3 where rt3.c0 = 1
+#----
+#c
+
 query TTT nosort
 (SELECT greatest(JSON '"5mTevdOzH5brfkMv"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM t3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM t3)
 ----
