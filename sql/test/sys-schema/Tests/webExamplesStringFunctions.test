@@ -320,10 +320,15 @@ select endswith('abc', 'BC', true)
 ----
 1
 
-query I
+query R
 select jarowinkler('MonetDB', 'DB3')
 ----
-0
+0.000
+
+query R
+select jarowinkler('MonetDB', 'DB free')
+----
+0.429
 
 query I
 select levenshtein('MonetDB', 'DB3')
@@ -349,6 +354,11 @@ query R
 select similarity('MonetDB', 'DB3')
 ----
 0.400
+
+query R
+select similarity('MonetDB', 'DB free')
+----
+0.286
 
 query T
 select soundex('MonetDB')
