@@ -1030,6 +1030,9 @@ number(mvc * c, int cur)
 			if ((cur = check_validity_number(c, true, &token, &is_valid_hexadecimal_digit	, HEXADECIMALNUM, 'x')) == EOF) return cur;
 			is_decimal = false;
 			break;
+		default:
+			utf8_putchar(lc, cur);
+			cur = '0';
 		}
 	}
 	if (is_decimal && is_valid_decimal_digit(cur)) {
