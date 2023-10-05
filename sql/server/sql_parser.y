@@ -4874,6 +4874,10 @@ literal:
 		  if (len - i < MAX_OCT_DIGITS || (len - i == MAX_OCT_DIGITS && binary[i] < '2'))
 			while (err == 0 && i < len)
 			{
+				if (binary[i] == '_') {
+					i++;
+					continue;
+				}
 				res <<= 1;
 				if (binary[i] == '0' || binary[i] == '1') // TODO: an be asserted
 					res = res + (binary[i] - '0');
@@ -4928,6 +4932,10 @@ literal:
 		  if (len - i < MAX_OCT_DIGITS || (len - i == MAX_OCT_DIGITS && octal[i] < '8'))
 			while (err == 0 && i < len)
 			{
+				if (octal[i] == '_') {
+					i++;
+					continue;
+				}
 				res <<= 3;
 				if ('0' <= octal[i] && octal[i] < '8')
 					res = res + (octal[i] - '0');
@@ -4967,7 +4975,7 @@ literal:
 		  }
 
  }
- |  HEXADECIMALNUM { int len = _strlen($1), i = 2, err = 0;
+ |  HEXADECIMALNUM { int len = _strlen($1), i = 2, err = 0; 
 		  char * hexa = $1;
 		  sql_subtype t;
 #ifdef HAVE_HGE
@@ -4986,6 +4994,10 @@ literal:
 		  if (len - i < MAX_HEX_DIGITS || (len - i == MAX_HEX_DIGITS && hexa[i] < '8'))
 			while (err == 0 && i < len)
 			{
+				if (hexa[i] == '_') {
+					i++;
+					continue;
+				}
 				res <<= 4;
 				if (isdigit((unsigned char) hexa[i]))
 					res = res + (hexa[i] - '0');
@@ -5057,7 +5069,19 @@ literal:
 		  }
 		}
  |  sqlINT
-		{ int digits = _strlen($1), err = 0;
+		{ 
+			char filtered[50] = {0};
+			int j = 0;
+			for (int i = 0; i < 50; i++) {
+				char d = $1[i];
+				if (!d)
+					break;
+				else if (d == '_')
+					continue;
+				filtered[j] = d;
+				++j;
+			}
+			int digits = j, err = 0;
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  size_t len = sizeof(hge);
@@ -5070,10 +5094,10 @@ literal:
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  if (hgeFromStr($1, &len, &p, false) < 0 || is_hge_nil(value))
+		  if (hgeFromStr(filtered, &len, &p, false) < 0 || is_hge_nil(value))
 			err = 2;
 #else
-		  if (lngFromStr($1, &len, &p, false) < 0 || is_lng_nil(value))
+		  if (lngFromStr(filtered, &len, &p, false) < 0 || is_lng_nil(value))
 			err = 2;
 #endif
 

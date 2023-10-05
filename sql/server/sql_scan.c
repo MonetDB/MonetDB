@@ -966,36 +966,37 @@ static inline bool is_valid_binary_digit(int cur) { return (iswdigit(cur) && cur
 static inline bool is_valid_octal_digit(int cur) { return (iswdigit(cur) && cur < '8'); }
 static inline bool is_valid_hexadecimal_digit(int cur) { return iswxdigit(cur); }
 
-static inline int check_validity_number(mvc* c, bool initial_underscore_allowed, int *token, bool (*is_valid_n_ary_digit)(int), int type, char type2) {
+static inline int check_validity_number(mvc* c, int pcur, bool initial_underscore_allowed, int *token, bool (*is_valid_n_ary_digit)(int), int type, char type2) {
 	struct scanner *lc = &c->scanner;
+	(void) type2;
+
+	if (pcur == '_' && !initial_underscore_allowed)  /* ERROR */  {
+		*token = 0;
+		return '_';
+	}
+
 	int cur = scanner_getc(lc);
-	bool underscore_allowed = initial_underscore_allowed;
+	*token = type;
 	while (cur != EOF) {
 		if (cur == '_') {
-			if (underscore_allowed) // so previous character was not an underscore
-				underscore_allowed = false;
-			else /* ERROR */ {
+			if (pcur == '_') /* ERROR */ {
 				*token = 0;
-				break;
-			}			
+				return '_';
+			}
 		}
-		else if (is_valid_n_ary_digit(cur))
-			underscore_allowed = true;
-		else
+		else if (!is_valid_n_ary_digit(cur))
 			break;
-		*token = type;
+		pcur = cur;
 		cur = scanner_getc(lc);
 	}
 
-	if (cur == EOF)
-		return cur;
-
-	if (*token != type) {
+	if (pcur == '_') /* ERROR */ {
 		/* 0b not followed by a n-ary digit: show n-type character as erroneous */
 		utf8_putchar(lc, cur);
-		cur = type2;
 		*token = 0;
+		return '_';
 	}
+
 	return cur;
 }
 
@@ -1019,15 +1020,18 @@ number(mvc * c, int cur)
 	if (cur == '0') {
 		switch ((cur = scanner_getc(lc))) {
 		case 'b':
-			if ((cur = check_validity_number(c, true, &token, &is_valid_binary_digit			, BINARYNUM		, 'b')) == EOF) return cur;
+			cur = scanner_getc(lc);
+			if ((cur = check_validity_number(c, cur, true, &token, &is_valid_binary_digit			, BINARYNUM		, 'b')) == EOF) return cur;
 			is_decimal = false;
 			break;
 		case 'o':
-			if ((cur = check_validity_number(c, true, &token, &is_valid_octal_digit			, OCTALNUM		, 'o')) == EOF) return cur;
+			cur = scanner_getc(lc);
+			if ((cur = check_validity_number(c,  cur, true, &token, &is_valid_octal_digit			, OCTALNUM		, 'o')) == EOF) return cur;
 			is_decimal = false;
 			break;
 		case 'x':
-			if ((cur = check_validity_number(c, true, &token, &is_valid_hexadecimal_digit	, HEXADECIMALNUM, 'x')) == EOF) return cur;
+			cur = scanner_getc(lc);
+			if ((cur = check_validity_number(c,  cur, true, &token, &is_valid_hexadecimal_digit	, HEXADECIMALNUM, 'x')) == EOF) return cur;
 			is_decimal = false;
 			break;
 		default:
@@ -1036,7 +1040,7 @@ number(mvc * c, int cur)
 		}
 	}
 	if (is_decimal && is_valid_decimal_digit(cur)) {
-		if ((cur = check_validity_number(c, false, &token, &is_valid_decimal_digit	, sqlINT, 'd')) == EOF) return cur;
+		if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, sqlINT, 'd')) == EOF) return cur;
 		if (cur == '@') {
 			if (token == sqlINT) {
 				cur = scanner_getc(lc);
@@ -1055,15 +1059,19 @@ number(mvc * c, int cur)
 				}
 			}
 		} else {
-			if (cur == '.')
-				if ((cur = check_validity_number(c, false, &token, &is_valid_decimal_digit	, INTNUM, 'd')) == EOF) return cur;
-			if (cur == 'e' || cur == 'E')
+			if (cur == '.') {
+				cur = scanner_getc(lc);
+				if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, INTNUM, 'd')) == EOF) return cur;
+			}
+			if (cur == 'e' || cur == 'E') {
+				cur = scanner_getc(lc);
 				if (token != 0) {
-					if ((cur = check_validity_number(c, false, &token, &is_valid_decimal_digit	, APPROXNUM, 'd')) == EOF) return cur;
+					if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, APPROXNUM, 'd')) == EOF) return cur;
 					if (cur == '+' || cur == '-')
 						cur = scanner_getc(lc);
-					if ((cur = check_validity_number(c, false, &token, &is_valid_decimal_digit	, APPROXNUM, 'd')) == EOF) return cur;
+					if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, APPROXNUM, 'd')) == EOF) return cur;
 				}
+			}
 		}
 	}
 	
