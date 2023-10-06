@@ -61,6 +61,10 @@ epilogue(int cnt, bat *subcommit, bool locked)
 		BAT *b;
 
 		if (BBP_status(bid) & BBPPERSISTENT) {
+			/* first turn off BBPNEW, then turn on
+			 * BBPEXISTING so that concurrent BATassertProps
+			 * doesn't fail */
+			BBP_status_off(bid, BBPNEW);
 			BBP_status_on(bid, BBPEXISTING);
 		} else if (BBP_status(bid) & BBPDELETED) {
 			/* check mmap modes of bats that are now

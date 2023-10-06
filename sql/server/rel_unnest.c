@@ -2236,7 +2236,7 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 		switch(e->type) {
 		case e_aggr:
 		case e_func: {
-			e->card = exps_card(e->l);
+			e->card = list_empty(e->l)?CARD_MULTI:exps_card(e->l);
 		} break;
 		case e_column: {
 			sql_exp *le = NULL, *re = NULL;
