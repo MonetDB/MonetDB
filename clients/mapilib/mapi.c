@@ -694,74 +694,7 @@
 #include "matomic.h"
 #include "mstring.h"
 
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-#ifdef HAVE_PWD_H
-#include  <pwd.h>
-#endif
-#include  <sys/types.h>
-
-#ifdef HAVE_SYS_UN_H
-# include <sys/un.h>
-# include <sys/stat.h>
-# ifdef HAVE_DIRENT_H
-#  include <dirent.h>
-# endif
-#endif
-#ifdef HAVE_NETDB_H
-# include <netdb.h>
-# include <netinet/in.h>
-#endif
-#ifdef HAVE_SYS_UIO_H
-# include <sys/uio.h>
-#endif
-
-#include <signal.h>
-#include <string.h>
-#include <memory.h>
-#include <time.h>
-#ifdef HAVE_FTIME
-# include <sys/timeb.h>		/* ftime */
-#endif
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>		/* gettimeofday */
-#endif
-
-/* Copied from gdk_posix, but without taking a lock because we don't have access to
- * MT_lock_set/unset here. We just have to hope for the best
- */
-#ifndef HAVE_LOCALTIME_R
-struct tm *
-localtime_r(const time_t *restrict timep, struct tm *restrict result)
-{
-	struct tm *tmp;
-	tmp = localtime(timep);
-	if (tmp)
-		*result = *tmp;
-	return tmp ? result : NULL;
-}
-#endif
-
-/* Copied from gdk_posix, but without taking a lock because we don't have access to
- * MT_lock_set/unset here. We just have to hope for the best
- */
-#ifndef HAVE_GMTIME_R
-struct tm *
-gmtime_r(const time_t *restrict timep, struct tm *restrict result)
-{
-	struct tm *tmp;
-	tmp = gmtime(timep);
-	if (tmp)
-		*result = *tmp;
-	return tmp ? result : NULL;
-}
-#endif
-
-
-#ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif
+#include "mapi_intern.h"
 
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET (-1)
@@ -791,184 +724,6 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 
 #define PLACEHOLDER	'?'
 
-/* number of elements in an array */
-#define NELEM(arr)	(sizeof(arr) / sizeof(arr[0]))
-
-/* three structures used for communicating date/time information */
-/* these structs are deliberately compatible with the ODBC versions
-   SQL_DATE_STRUCT, SQL_TIME_STRUCT, and SQL_TIMESTAMP_STRUCT */
-typedef struct {		/* used by MAPI_DATE */
-	short year;
-	unsigned short month;
-	unsigned short day;
-} MapiDate;
-
-typedef struct {		/* used by MAPI_TIME */
-	unsigned short hour;
-	unsigned short minute;
-	unsigned short second;
-} MapiTime;
-
-typedef struct {		/* used by MAPI_DATETIME */
-	short year;
-	unsigned short month;
-	unsigned short day;
-	unsigned short hour;
-	unsigned short minute;
-	unsigned short second;
-	unsigned int fraction;	/* in 1000 millionths of a second (10e-9) */
-} MapiDateTime;
-
-/* information about the columns in a result set */
-struct MapiColumn {
-	char *tablename;
-	char *columnname;
-	char *columntype;
-	int columnlength;
-	int digits;
-	int scale;
-};
-
-/* information about bound columns */
-struct MapiBinding {
-	void *outparam;		/* pointer to application variable */
-	int outtype;		/* type of application variable */
-	int precision;
-	int scale;
-};
-
-/* information about statement parameters */
-struct MapiParam {
-	void *inparam;		/* pointer to application variable */
-	int *sizeptr;		/* if string, points to length of string or -1 */
-	int intype;		/* type of application variable */
-	int outtype;		/* type of value */
-	int precision;
-	int scale;
-};
-
-/*
- * The row cache contains a string representation of each (non-error) line
- * received from the backend. After a mapi_fetch_row() or mapi_fetch_field()
- * this string has been indexed from the anchor table, which holds a pointer
- * to the start of the field. A sliced version is recognized by looking
- * at the fldcnt table, which tells you the number of fields recognized.
- * Lines received from the server without 'standard' line headers are
- * considered a single field.
- */
-struct MapiRowBuf {
-	int rowlimit;		/* maximum number of rows to cache */
-	int limit;		/* current storage space limit */
-	int writer;
-	int reader;
-	int64_t first;		/* row # of first tuple */
-	int64_t tuplecount;	/* number of tuples in the cache */
-	struct {
-		int fldcnt;	/* actual number of fields in each row */
-		char *rows;	/* string representation of rows received */
-		int tupleindex;	/* index of tuple rows */
-		int64_t tuplerev;	/* reverse map of tupleindex */
-		char **anchors;	/* corresponding field pointers */
-		size_t *lens;	/* corresponding field lenghts */
-	} *line;
-};
-
-struct BlockCache {
-	char *buf;
-	int lim;
-	int nxt;
-	int end;
-	bool eos;		/* end of sequence */
-};
-
-enum mapi_lang_t {
-	LANG_MAL = 0,
-	LANG_SQL = 2,
-	LANG_PROFILER = 3
-};
-
-/* A connection to a server is represented by a struct MapiStruct.  An
-   application can have any number of connections to any number of
-   servers.  Connections are completely independent of each other.
-*/
-struct MapiStruct {
-	char *server;		/* server version */
-	char *hostname;
-	int port;
-	char *username;
-	char *password;
-	char *language;
-	char *database;		/* to obtain from server */
-	char *uri;
-	enum mapi_lang_t languageId;
-	char *motd;		/* welcome message from server */
-
-	char *noexplain;	/* on error, don't explain, only print result */
-	MapiMsg error;		/* Error occurred */
-	char *errorstr;		/* error from server */
-	const char *action;	/* pointer to constant string */
-
-	struct BlockCache blk;
-	bool connected;
-	bool trace;		/* Trace Mapi interaction */
-	int handshake_options;	/* which settings can be sent during challenge/response? */
-	bool auto_commit;
-	bool columnar_protocol;
-	bool sizeheader;
-	int time_zone;		/* seconds EAST of UTC */
-	MapiHdl first;		/* start of doubly-linked list */
-	MapiHdl active;		/* set when not all rows have been received */
-
-	int cachelimit;		/* default maximum number of rows to cache */
-	int redircnt;		/* redirection count, used to cut of redirect loops */
-	int redirmax;		/* maximum redirects before giving up */
-#define MAXREDIR 50
-	char *redirects[MAXREDIR];	/* NULL-terminated list of redirects */
-
-	stream *tracelog;	/* keep a log for inspection */
-	stream *from, *to;
-	uint32_t index;		/* to mark the log records */
-	void *filecontentprivate;
-	void *filecontentprivate_old;
-	char *(*getfilecontent)(void *, const char *, bool, uint64_t, size_t *);
-	char *(*putfilecontent)(void *, const char *, bool, const void *, size_t);
-	char *(*putfilecontent_old)(void *, const char *, const void *, size_t);
-};
-
-struct MapiResultSet {
-	struct MapiResultSet *next;
-	struct MapiStatement *hdl;
-	int tableid;		/* SQL id of current result set */
-	int querytype;		/* type of SQL query */
-	int64_t tuple_count;
-	int64_t row_count;
-	int64_t last_id;
-	int64_t querytime;
-	int64_t maloptimizertime;
-	int64_t sqloptimizertime;
-	int fieldcnt;
-	int maxfields;
-	char *errorstr;		/* error from server */
-	char sqlstate[6];	/* the SQL state code */
-	struct MapiColumn *fields;
-	struct MapiRowBuf cache;
-	bool commentonly;	/* only comments seen so far */
-};
-
-struct MapiStatement {
-	struct MapiStruct *mid;
-	char *template;		/* keep parameterized query text around */
-	char *query;
-	int maxbindings;
-	struct MapiBinding *bindings;
-	int maxparams;
-	struct MapiParam *params;
-	struct MapiResultSet *result, *active, *lastresult;
-	bool needmore;		/* need more input */
-	int *pending_close;
-	int npending_close;
-	MapiHdl prev, next;
-};
 
 #ifdef DEBUG
 #define debugprint(fmt,arg)	printf(fmt,arg)
@@ -1030,37 +785,11 @@ struct MapiStatement {
 
 static int mapi_extend_bindings(MapiHdl hdl, int minbindings);
 static int mapi_extend_params(MapiHdl hdl, int minparams);
-static void close_connection(Mapi mid);
-static MapiMsg read_into_cache(MapiHdl hdl, int lookahead);
-static MapiMsg mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue);
 static int unquote(const char *msg, char **start, const char **next, int endchar, size_t *lenp);
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
 
 static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
-
-#define check_stream(mid, s, msg, e)					\
-	do {								\
-		if ((s) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {	\
-			if (msg != NULL) mapi_log_record(mid, msg);	\
-			mapi_log_record(mid, mnstr_peek_error(s));	\
-			mapi_log_record(mid, __func__);			\
-			close_connection(mid);				\
-			mapi_setError((mid), (msg), __func__, MTIMEOUT); \
-			return (e);					\
-		}							\
-	} while (0)
-#define REALLOC(p, c)							\
-	do {								\
-		if (p) {						\
-			void *tmp = realloc((p), (c) * sizeof(*(p)));	\
-			if (tmp == NULL)				\
-				free(p);				\
-			(p) = tmp;					\
-		} else							\
-			(p) = malloc((c) * sizeof(*(p)));		\
-	} while (0)
-
 /*
  * Blocking
  * --------
@@ -1080,34 +809,26 @@ static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
  * errors, and mapi_explain or mapi_explain_query to print a formatted error
  * report.
  */
-static char nomem[] = "Memory allocation failed";
+char mapi_nomem[] = "Memory allocation failed";
 
-static void
-mapi_clrError(Mapi mid)
-	__attribute__((__nonnull__(1)));
-
-static void
+void
 mapi_clrError(Mapi mid)
 {
 	assert(mid);
-	if (mid->errorstr && mid->errorstr != nomem)
+	if (mid->errorstr && mid->errorstr != mapi_nomem)
 		free(mid->errorstr);
 	mid->action = 0;	/* contains references to constants */
 	mid->error = 0;
 	mid->errorstr = 0;
 }
 
-static MapiMsg
-mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
-	__attribute__((__nonnull__(2))) __attribute__((__nonnull__(3)));
-
-static MapiMsg
+MapiMsg
 mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
 {
 	assert(msg);
 	REALLOC(mid->errorstr, strlen(msg) + 1);
 	if (mid->errorstr == NULL)
-		mid->errorstr = nomem;
+		mid->errorstr = mapi_nomem;
 	else
 		strcpy(mid->errorstr, msg);
 	mid->error = error;
@@ -1457,7 +1178,7 @@ mapi_log_header(Mapi mid, char *mark)
 	mnstr_flush(mid->tracelog, MNSTR_FLUSH_DATA);
 }
 
-static void
+void
 mapi_log_record(Mapi mid, const char *msg)
 {
 	if (mid->tracelog == NULL)
@@ -1656,7 +1377,7 @@ close_result(MapiHdl hdl)
 		result->cache.line = NULL;
 		result->cache.tuplecount = 0;
 	}
-	if (result->errorstr && result->errorstr != nomem)
+	if (result->errorstr && result->errorstr != mapi_nomem)
 		free(result->errorstr);
 	result->errorstr = NULL;
 	memset(result->sqlstate, 0, sizeof(result->sqlstate));
@@ -1696,7 +1417,7 @@ add_error(struct MapiResultSet *result, char *error)
 	}
 	REALLOC(result->errorstr, size + strlen(error) + 2);
 	if (result->errorstr == NULL)
-		result->errorstr = nomem;
+		result->errorstr = mapi_nomem;
 	else {
 		strcpy(result->errorstr + size, error);
 		strcat(result->errorstr + size, "\n");
@@ -1902,7 +1623,7 @@ mapi_close_handle(MapiHdl hdl)
 	return MOK;
 }
 
-static const struct MapiStruct MapiStructDefaults = {
+const struct MapiStruct MapiStructDefaults = {
 	.auto_commit = true,
 	.error = MOK,
 	.languageId = LANG_SQL,
@@ -1972,7 +1693,7 @@ mapi_new(void)
 	return mid;
 }
 
-static void
+void
 parse_uri_query(Mapi mid, char *uri)
 {
 	char *amp;
@@ -2015,7 +1736,7 @@ parse_uri_query(Mapi mid, char *uri)
 }
 
 /* construct the uri field of a Mapi struct */
-static void
+void
 set_uri(Mapi mid)
 {
 	size_t urilen = strlen(mid->hostname) + (mid->database ? strlen(mid->database) : 0) + 32;
@@ -2240,7 +1961,7 @@ mapi_destroy(Mapi mid)
 		(void) mapi_disconnect(mid);
 	if (mid->blk.buf)
 		free(mid->blk.buf);
-	if (mid->errorstr && mid->errorstr != nomem)
+	if (mid->errorstr && mid->errorstr != mapi_nomem)
 		free(mid->errorstr);
 	if (mid->hostname)
 		free(mid->hostname);
@@ -2273,8 +1994,8 @@ mapi_destroy(Mapi mid)
 }
 
 /* (Re-)establish a connection with the server. */
-MapiMsg
-mapi_reconnect(Mapi mid)
+static MapiMsg
+mapi_reconnect_old(Mapi mid)
 {
 	SOCKET s = INVALID_SOCKET;
 	char errbuf[8096];
@@ -2888,7 +2609,7 @@ mapi_reconnect(Mapi mid)
 		mid->errorstr = NULL;
 		mapi_close_handle(hdl);
 		mapi_setError(mid, errorstr, __func__, error);
-		if (errorstr != nomem)
+		if (errorstr != mapi_nomem)
 			free(errorstr);	/* now free it after a copy has been made */
 		close_connection(mid);
 		return mid->error;
@@ -3074,6 +2795,15 @@ mapi_reconnect(Mapi mid)
 	return mid->error;
 }
 
+
+/* (Re-)establish a connection with the server. */
+MapiMsg
+mapi_reconnect(Mapi mid)
+{
+	return mapi_reconnect_old(mid);
+}
+
+
 /* Create a connection handle and connect to the server using the
    specified parameters. */
 Mapi
@@ -3120,7 +2850,7 @@ mapi_resolve(const char *host, int port, const char *pattern)
 	return NULL;
 }
 
-static void
+void
 close_connection(Mapi mid)
 {
 	MapiHdl hdl;
@@ -3450,7 +3180,7 @@ mapi_timeout(Mapi mid, unsigned int timeout)
 	return mapi_set_timeout(mid, timeout, NULL, NULL);
 }
 
-static MapiMsg
+MapiMsg
 mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue)
 {
 	MapiHdl hdl;
@@ -4412,7 +4142,7 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
    lines may cause a new result set to be created in which case all
    subsequent lines are added to that result set.
 */
-static MapiMsg
+MapiMsg
 read_into_cache(MapiHdl hdl, int lookahead)
 {
 	char *line;
