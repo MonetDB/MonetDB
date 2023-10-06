@@ -970,16 +970,21 @@ static inline int check_validity_number(mvc* c, int pcur, bool initial_underscor
 	struct scanner *lc = &c->scanner;
 	(void) type2;
 
-	if (pcur == '_' && !initial_underscore_allowed)  /* ERROR */  {
+	if (pcur == '_' && !initial_underscore_allowed)  /* ERROR: initial underscore not allowed */  {
 		*token = 0;
 		return '_';
+	}
+
+	if ( !(pcur == '_' || is_valid_n_ary_digit(pcur)) ) /* ERROR: first digit is not valid */ {
+		*token = 0;
+		return pcur;
 	}
 
 	int cur = scanner_getc(lc);
 	*token = type;
 	while (cur != EOF) {
 		if (cur == '_') {
-			if (pcur == '_') /* ERROR */ {
+			if (pcur == '_') /* ERROR: multiple consecutive underscores */ {
 				*token = 0;
 				return '_';
 			}
@@ -990,9 +995,7 @@ static inline int check_validity_number(mvc* c, int pcur, bool initial_underscor
 		cur = scanner_getc(lc);
 	}
 
-	if (pcur == '_') /* ERROR */ {
-		/* 0b not followed by a n-ary digit: show n-type character as erroneous */
-		utf8_putchar(lc, cur);
+	if (pcur == '_') /* ERROR: number ends with underscore */ {
 		*token = 0;
 		return '_';
 	}
@@ -1039,7 +1042,7 @@ number(mvc * c, int cur)
 			cur = '0';
 		}
 	}
-	if (is_decimal && is_valid_decimal_digit(cur)) {
+	if (is_decimal) {
 		if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, sqlINT, 'd')) == EOF) return cur;
 		if (cur == '@') {
 			if (token == sqlINT) {
@@ -1063,19 +1066,21 @@ number(mvc * c, int cur)
 				cur = scanner_getc(lc);
 				if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, INTNUM, 'd')) == EOF) return cur;
 			}
+			if (token != 0)
 			if (cur == 'e' || cur == 'E') {
 				cur = scanner_getc(lc);
-				if (token != 0) {
-					if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, APPROXNUM, 'd')) == EOF) return cur;
-					if (cur == '+' || cur == '-')
-						cur = scanner_getc(lc);
-					if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, APPROXNUM, 'd')) == EOF) return cur;
-				}
+				if (cur == '+' || cur == '-')
+					cur = scanner_getc(lc);
+				if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, APPROXNUM, 'd')) == EOF) return cur;
 			}
 		}
 	}
 	
 	assert(cur != EOF);
+
+	if (iswalnum(cur)) /* ERROR: not a valid digit */
+		token = 0;
+
 	utf8_putchar(lc, cur);
 
 	if (token) {
