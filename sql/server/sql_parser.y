@@ -5139,7 +5139,20 @@ literal:
 		  }
 		}
  |  INTNUM
-		{ char *s = sa_strdup(SA, $1);
+		{
+			char filtered[50] = {0};
+			int j = 0;
+			for (int i = 0; i < 50; i++) {
+				char d = $1[i];
+				if (!d)
+					break;
+				else if (d == '_')
+					continue;
+				filtered[j] = d;
+				++j;
+			}
+			char *s = filtered;
+
 			int digits;
 			int scale;
 			int has_errors;
@@ -5157,12 +5170,12 @@ literal:
 				* The float-like value either doesn't fit in integer decimal storage
 				* or it is not a valid float representation.
 				*/
-				char *p = $1;
+				char *p = s;
 				double val;
 
 				errno = 0;
-				val = strtod($1,&p);
-				if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
+				val = strtod(s,&p);
+				if (p == s || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 					sqlformaterror(m, SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 					$$ = NULL;
 					YYABORT;
@@ -5173,13 +5186,25 @@ literal:
 		   }
 		}
  |  APPROXNUM
-		{ sql_subtype t;
-		  char *p = $1;
+		{
+		  char filtered[50] = {0};
+		  int j = 0;
+		  for (int i = 0; i < 50; i++) {
+				char d = $1[i];
+				if (!d)
+					break;
+				else if (d == '_')
+			continue;
+			filtered[j] = d;
+			++j;
+		  }
+		  sql_subtype t;
+		  char *p = filtered;
 		  double val;
 
 		  errno = 0;
-		  val = strtod($1,&p);
-		  if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
+		  val = strtod(filtered,&p);
+		  if (p == filtered || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 			sqlformaterror(m, SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 			$$ = NULL;
 			YYABORT;
