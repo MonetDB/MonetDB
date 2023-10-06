@@ -995,9 +995,12 @@ static inline int check_validity_number(mvc* c, int pcur, bool initial_underscor
 		cur = scanner_getc(lc);
 	}
 
-	if (pcur == '_') /* ERROR: number ends with underscore */ {
+	if (pcur == '_')  {
 		*token = 0;
-		return '_';
+		if (iswalnum(cur))	 /* ERROR: not a valid digit */
+			return cur;
+		else				/* ERROR: number ends with underscore */
+			return '_';
 	}
 
 	return cur;
