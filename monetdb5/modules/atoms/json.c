@@ -1058,6 +1058,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 	str msg;
 	int nxt, idx = JSONnew(jt);
 	const char *string_start = j;
+	int pidx;
 
 	if (jt->error)
 		return idx;
@@ -1095,12 +1096,36 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			int chld = JSONtoken(jt, j, next);
 			if (jt->error)
 				return idx;
-			jt->elm[nxt].child = chld;
-			jt->elm[nxt].value++;
-			jt->elm[nxt].valuelen -= 2;
-			JSONappend(jt, idx, nxt);
-			if (jt->error)
-				return idx;
+
+			/* Search for a duplicate key */
+			for(pidx = nxt - 1; pidx > idx; pidx--) {
+				if (jt->elm[pidx].kind == JSON_ELEMENT &&
+					jt->elm[pidx].valuelen == jt->elm[nxt].valuelen - 2 &&
+					strncmp(jt->elm[pidx].value, jt->elm[nxt].value + 1,
+							jt->elm[nxt].valuelen) == 0) {
+					break;
+				}
+			}
+
+			/* Duplicate found: Change the value of the previous key. */
+			if (pidx > idx) {
+				jt->elm[pidx].child = chld;
+				/* Note that we do not call JSONappend here.
+				 *
+				 * Normally we would de-allocate the old child value and the new key,
+				 * but since we are using an arena provided by JSONnew, we don't need to.
+				 * This might get expensive for big objects with lagre values for
+				 * repeated keys.
+				 */
+
+			} else {
+				jt->elm[nxt].child = chld;
+				jt->elm[nxt].value++;
+				jt->elm[nxt].valuelen -= 2;
+				JSONappend(jt, idx, nxt);
+				if (jt->error)
+					return idx;
+			}
 			j = *next;
 			skipblancs(j);
 			if (*j == '}')
