@@ -977,7 +977,7 @@ static inline int check_validity_number(mvc* c, int pcur, bool initial_underscor
 
 	assert(*token);
 
-	switch (*token) {
+	switch (type) {
 	case BINARYNUM:
 		is_valid_n_ary_digit = &is_valid_binary_digit;
 		break;
@@ -1083,6 +1083,7 @@ number(mvc * c, int cur)
 			}
 		} else {
 			if (cur == '.') {
+				token = INTNUM;
 				cur = scanner_getc(lc);
 				if ((cur = check_validity_number(c, cur, false, &token, INTNUM)) == EOF) return cur;
 			}
