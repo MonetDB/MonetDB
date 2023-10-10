@@ -1078,6 +1078,7 @@ number(mvc * c, int cur)
 		} else {
 			if (cur == '.') {
 				cur = scanner_getc(lc);
+				if (iswalnum(cur)) /* early exit for numerical forms with final . e.g. 10. */
 				if ((cur = check_validity_number(c, cur, false, &token, INTNUM)) == EOF) return cur;
 			}
 			if (token != 0)

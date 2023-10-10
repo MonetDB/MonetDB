@@ -34,6 +34,11 @@ SELECT 2_0.5_0e+1_0+1
 ----
 205000000001
 
+query I rowsort
+SELECT 1_0. + 10.
+----
+20
+
 statement error
 SELECT _100
 
