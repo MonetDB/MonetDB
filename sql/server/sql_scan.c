@@ -966,13 +966,30 @@ static inline bool is_valid_binary_digit(int cur) { return (iswdigit(cur) && cur
 static inline bool is_valid_octal_digit(int cur) { return (iswdigit(cur) && cur < '8'); }
 static inline bool is_valid_hexadecimal_digit(int cur) { return iswxdigit(cur); }
 
-static inline int check_validity_number(mvc* c, int pcur, bool initial_underscore_allowed, int *token, bool (*is_valid_n_ary_digit)(int), int type, char type2) {
+static inline int check_validity_number(mvc* c, int pcur, bool initial_underscore_allowed, int *token, int type) {
 	struct scanner *lc = &c->scanner;
-	(void) type2;
+	bool (*is_valid_n_ary_digit)(int);
 
 	if (pcur == '_' && !initial_underscore_allowed)  /* ERROR: initial underscore not allowed */  {
 		*token = 0;
 		return '_';
+	}
+
+	assert(*token);
+
+	switch (*token) {
+	case BINARYNUM:
+		is_valid_n_ary_digit = &is_valid_binary_digit;
+		break;
+	case OCTALNUM:
+		is_valid_n_ary_digit = &is_valid_octal_digit;
+		break;
+	case HEXADECIMALNUM:
+		is_valid_n_ary_digit = &is_valid_hexadecimal_digit;
+		break;
+	default:
+		is_valid_n_ary_digit = &is_valid_decimal_digit;
+		break;
 	}
 
 	if ( !(pcur == '_' || is_valid_n_ary_digit(pcur)) ) /* ERROR: first digit is not valid */ {
@@ -1027,17 +1044,17 @@ number(mvc * c, int cur)
 		switch ((cur = scanner_getc(lc))) {
 		case 'b':
 			cur = scanner_getc(lc);
-			if ((cur = check_validity_number(c, cur, true, &token, &is_valid_binary_digit			, BINARYNUM		, 'b')) == EOF) return cur;
+			if ((cur = check_validity_number(c, cur, true, &token, BINARYNUM)) == EOF) return cur;
 			is_decimal = false;
 			break;
 		case 'o':
 			cur = scanner_getc(lc);
-			if ((cur = check_validity_number(c,  cur, true, &token, &is_valid_octal_digit			, OCTALNUM		, 'o')) == EOF) return cur;
+			if ((cur = check_validity_number(c,  cur, true, &token, OCTALNUM)) == EOF) return cur;
 			is_decimal = false;
 			break;
 		case 'x':
 			cur = scanner_getc(lc);
-			if ((cur = check_validity_number(c,  cur, true, &token, &is_valid_hexadecimal_digit	, HEXADECIMALNUM, 'x')) == EOF) return cur;
+			if ((cur = check_validity_number(c,  cur, true, &token, HEXADECIMALNUM)) == EOF) return cur;
 			is_decimal = false;
 			break;
 		default:
@@ -1046,7 +1063,7 @@ number(mvc * c, int cur)
 		}
 	}
 	if (is_decimal) {
-		if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, sqlINT, 'd')) == EOF) return cur;
+		if ((cur = check_validity_number(c, cur, false, &token, sqlINT)) == EOF) return cur;
 		if (cur == '@') {
 			if (token == sqlINT) {
 				cur = scanner_getc(lc);
@@ -1067,18 +1084,18 @@ number(mvc * c, int cur)
 		} else {
 			if (cur == '.') {
 				cur = scanner_getc(lc);
-				if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, INTNUM, 'd')) == EOF) return cur;
+				if ((cur = check_validity_number(c, cur, false, &token, INTNUM)) == EOF) return cur;
 			}
 			if (token != 0)
 			if (cur == 'e' || cur == 'E') {
 				cur = scanner_getc(lc);
 				if (cur == '+' || cur == '-')
 					cur = scanner_getc(lc);
-				if ((cur = check_validity_number(c, cur, false, &token, &is_valid_decimal_digit	, APPROXNUM, 'd')) == EOF) return cur;
+				if ((cur = check_validity_number(c, cur, false, &token, APPROXNUM)) == EOF) return cur;
 			}
 		}
 	}
-	
+
 	assert(cur != EOF);
 
 	if (iswalnum(cur)) /* ERROR: not a valid digit */
