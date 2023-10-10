@@ -1634,7 +1634,7 @@ const struct MapiStruct MapiStructDefaults = {
 };
 
 /* Allocate a new connection handle. */
-static Mapi
+Mapi
 mapi_new(void)
 {
 	Mapi mid;
@@ -1945,6 +1945,121 @@ mapi_mapi(const char *host, int port, const char *username,
 
 	return mid;
 }
+
+/* Copy connection parameters from 'src' to 'dest', disconnecting 'dest' first
+ * if necessary.
+ */
+MapiMsg
+mapi_copymapi(Mapi dest, const Mapi src)
+{
+	assert(dest);
+	assert(src);
+
+	if (dest->connected)
+		close_connection(dest);
+
+	char *hostname = NULL;
+	char *username = NULL;
+	char *password = NULL;
+	char *language = NULL;
+	char *database = NULL;
+	char *uri = NULL;
+	char *noexplain = NULL;
+
+	// make all the copies before we touch dest
+	if (src->hostname)
+		if (!(hostname = strdup(src->hostname)))
+			goto bailout;
+	if (src->username)
+		if (!(username = strdup(src->username)))
+			goto bailout;
+	if (src->password)
+		if (!(password = strdup(src->password)))
+			goto bailout;
+	if (src->language)
+		if (!(language = strdup(src->language)))
+			goto bailout;
+	if (src->database)
+		if (!(database = strdup(src->database)))
+			goto bailout;
+	if (src->uri)
+		if (!(uri = strdup(src->uri)))
+			goto bailout;
+	if (src->noexplain)
+		if (!(noexplain = strdup(src->noexplain)))
+			goto bailout;
+
+	dest->hostname = hostname;
+	dest->username = username;
+	dest->password = password;
+	dest->language = language;
+	dest->database = database;
+	dest->uri = uri;
+	dest->noexplain = noexplain;
+
+	dest->port = src->port;
+	dest->languageId = src->languageId;
+	dest->trace = src->trace;
+	dest->auto_commit = src->auto_commit;
+	dest->columnar_protocol = src->columnar_protocol;
+	dest->sizeheader = src->sizeheader;
+	dest->time_zone = src->time_zone;
+	dest->cachelimit = src->cachelimit;
+	dest->redirmax = src->redirmax;
+
+	return MOK;
+
+bailout:
+	free(hostname);
+	free(username);
+	free(password);
+	free(language);
+	free(database);
+	free(uri);
+	free(noexplain);
+	return MERROR;
+}
+
+/* Move connection parameters from 'src' to 'dest', disconnecting 'dest' first
+ * if necessary. This is similar to mapi_copymapi, but it cannot fail because
+ * it does not allocate. Instead, pointers are moved from 'src' to 'dest'
+ * and left NULL in 'src'.
+ */
+void
+mapi_movemapi(Mapi dest, Mapi src)
+{
+	assert(dest);
+	assert(src);
+
+	if (dest->connected)
+		close_connection(dest);
+
+	dest->hostname = src->hostname;
+	src->hostname = NULL;
+	dest->username = src->username;
+	src->username = NULL;
+	dest->password = src->password;
+	src->password = NULL;
+	dest->language = src->language;
+	src->language = NULL;
+	dest->database = src->database;
+	src->database = NULL;
+	dest->uri = src->uri;
+	src->uri = NULL;
+	dest->noexplain = src->noexplain;
+	src->noexplain = NULL;
+
+	dest->port = src->port;
+	dest->languageId = src->languageId;
+	dest->trace = src->trace;
+	dest->auto_commit = src->auto_commit;
+	dest->columnar_protocol = src->columnar_protocol;
+	dest->sizeheader = src->sizeheader;
+	dest->time_zone = src->time_zone;
+	dest->cachelimit = src->cachelimit;
+	dest->redirmax = src->redirmax;
+}
+
 
 /* Close a connection and free all memory associated with the
    connection handle. */
@@ -2800,7 +2915,19 @@ mapi_reconnect_old(Mapi mid)
 MapiMsg
 mapi_reconnect(Mapi mid)
 {
-	return mapi_reconnect_old(mid);
+	long use_old_code = 0;   // use new by default is most convenient
+	const char *envvar = getenv("USE_OLD_CODE");
+	if (envvar) {
+		char *end = NULL;
+		use_old_code = strtol(envvar, &end, 10);
+		if (!*envvar || *end)
+			return mapi_setError(mid, "Invalid env var USE_OLD_CODE", __func__, MERROR);
+	}
+
+	if (use_old_code)
+		return mapi_reconnect_old(mid);
+	else
+		return mapi_reconnectx(mid);
 }
 
 

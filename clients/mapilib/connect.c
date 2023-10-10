@@ -11,19 +11,153 @@
 
 #include "mapi_intern.h"
 
+#ifdef HAVE_SYS_UN_H
+#define DO_UNIX_DOMAIN (1)
+#else
+#define DO_UNIX_DOMAIN (0)
+#endif
+
+static MapiMsg establish_connection(Mapi mid);
+static MapiMsg scan_unix_sockets(Mapi mid);
+static MapiMsg connect_socket(Mapi mid);
+static MapiMsg mapi_handshake(Mapi mid);
+
 /* (Re-)establish a connection with the server. */
 MapiMsg
 mapi_reconnectx(Mapi mid)
 {
+	// If neither host nor port are given, scan the Unix domain sockets in
+	// /tmp and see if any of them serve this database.
+	// Otherwise, just try to connect to what was given.
+	if (mid->hostname == NULL && mid->port == 0)
+		return scan_unix_sockets(mid);
+	else
+		return establish_connection(mid);
+}
+
+#define MAX_SCAN (24)
+
+static MapiMsg
+scan_unix_sockets(Mapi mid)
+{
+	MapiMsg msg;
+	Mapi backup = NULL;
+	struct {
+		int port;
+		int priority;
+	} candidates[MAX_SCAN];
+	int ncandidates = 0;
+	DIR *dir = NULL;
+	struct dirent *entry;
+
+	assert(mid->hostname == NULL && mid->port == 0);
+
+	// We need to preserve the original state because when we attempt to
+	// connect to the sockets we may get redirected, for example to a
+	// different database name. When we move on to the next socket, we
+	// should use the original database name.
+	backup = mapi_new();
+	if (!backup || mapi_copymapi(backup, mid) != MOK) {
+		msg = mapi_setError(mid, "malloc failed", __func__, MERROR);
+		goto wrap_up;
+	}
+
+	uid_t me = getuid();
+	if (DO_UNIX_DOMAIN && (dir = opendir("/tmp"))) {
+		while (ncandidates < MAX_SCAN && (entry = readdir(dir)) != NULL) {
+			const char *basename = entry->d_name;
+			if (strncmp(basename, ".s.monetdb.", 11) != 0 || basename[11] == '\0' || strlen(basename) > 20)
+				continue;
+
+			char *end;
+			long port = strtol(basename + 11, &end, 10);
+			if (port < 1 || port > 65535 || *end)
+				continue;
+			char name[80]; // enough, see checks above
+			sprintf(name, "/tmp/.s.monetdb.%ld", port);
+
+			struct stat st;
+			if (stat(name, &st) < 0 || !S_ISSOCK(st.st_mode))
+				continue;
+
+			candidates[ncandidates].port = port;
+			candidates[ncandidates++].priority = st.st_uid == me ? 0 : 1;
+		}
+	}
+
+	// those owned by us first, then all others
+	for (int round = 0; round < 2; round++) {
+		for (int i = 0; i < ncandidates; i++) {
+			if (candidates[i].priority != round)
+				continue;
+			// mid->hostname = candidates[i].sock_name;
+			// free(mid->hostname);
+			assert(mid->hostname == NULL);
+			mid->port = candidates[i].port;
+			if (establish_connection(mid) == MOK) {
+				msg = MOK;
+				goto wrap_up;
+			} else if (mapi_copymapi(mid, backup) != MOK) {
+				msg = mapi_setError(mid, "malloc failed", __func__, MERROR);
+				goto wrap_up;
+			}
+		}
+	}
+
+	// last-ditch attempt
+	free(mid->hostname);
+	mid->hostname = strdup("localhost");
+	if (!mid->hostname) {
+		msg = mapi_setError(mid, "malloc failed", __func__, MERROR);
+		goto wrap_up;
+	}
+	mid->port = MAPI_PORT;
+	msg = establish_connection(mid);
+
+wrap_up:
+	if (msg != MOK && backup) {
+		mapi_movemapi(mid, backup);
+		mapi_destroy(backup);
+	}
+	if (dir)
+		closedir(dir);
+	return msg;
+}
+
+/* (Re-)establish a connection with the server. */
+static MapiMsg
+establish_connection(Mapi mid)
+{
+	if (mid->connected)
+		close_connection(mid);
+
+	MapiMsg msg = MREDIRECT;
+	while (msg == MREDIRECT) {
+		// Generally at this point we need to set up a new TCP or Unix
+		// domain connection.
+		//
+		// The only exception is if mapi_handshake() below has decided
+		// that the handshake must be restarted on the existing
+		// connection.
+		if (!mid->connected) {
+			msg = connect_socket(mid);
+		}
+		if (msg != MOK)
+			return msg;
+		msg = mapi_handshake(mid);
+	}
+
+	return msg;
+}
+
+static MapiMsg
+connect_socket(Mapi mid)
+{
 	SOCKET s = INVALID_SOCKET;
 	char errbuf[8096];
 	char buf[BLOCK];
-	size_t len;
-	MapiHdl hdl;
 
-	if (mid->connected)
-		close_connection(mid);
-	else if (mid->uri == NULL) {
+	if (mid->uri == NULL) {
 		/* continue work started by mapi_mapi */
 
 		/* connection searching strategy:
@@ -101,76 +235,7 @@ mapi_reconnectx(Mapi mid)
 #endif
 				port = MAPI_PORT;
 			} else {
-				/* case 2b), no host, no port, but a
-				 * dbname, search for meros */
-#ifdef HAVE_SYS_UN_H
-				DIR *d;
-				struct dirent *e;
-				struct stat st;
-				struct {
-					int port;
-					uid_t owner;
-				} socks[24];
-				int i = 0;
-				int len;
-				uid_t me = getuid();
-
-				d = opendir("/tmp");
-				if (d != NULL) {
-					while ((e = readdir(d)) != NULL) {
-						if (strncmp(e->d_name, ".s.monetdb.", 11) != 0)
-							continue;
-						if (snprintf(buf, sizeof(buf), "/tmp/%s", e->d_name) >= (int) sizeof(buf))
-							continue; /* ignore long name */
-						if (stat(buf, &st) != -1 &&
-						    S_ISSOCK(st.st_mode)) {
-							socks[i].owner = st.st_uid;
-							socks[i++].port = atoi(e->d_name + 11);
-						}
-						if (i == NELEM(socks))
-							break;
-					}
-					closedir(d);
-					len = i;
-					/* case 2bI) first those with
-					 * a matching owner */
-					for (i = 0; i < len; i++) {
-						if (socks[i].port != 0 &&
-						    socks[i].owner == me) {
-							/* try this server for the database */
-							snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i].port);
-							if (mid->hostname)
-								free(mid->hostname);
-							mid->hostname = strdup(buf);
-							mid->port = socks[i].port;
-							set_uri(mid);
-							if (mapi_reconnect(mid) == MOK)
-								return MOK;
-							mapi_clrError(mid);
-							socks[i].port = 0; /* don't need to try again */
-						}
-					}
-					/* case 2bII) the other sockets */
-					for (i = 0; i < len; i++) {
-						if (socks[i].port != 0) {
-							/* try this server for the database */
-							snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i].port);
-							if (mid->hostname)
-								free(mid->hostname);
-							mid->hostname = strdup(buf);
-							mid->port = socks[i].port;
-							set_uri(mid);
-							if (mapi_reconnect(mid) == MOK)
-								return MOK;
-							mapi_clrError(mid);
-						}
-					}
-				}
-#endif
-				/* case 2bIII) resort to TCP
-				 * connection on hardwired port */
-				host = "localhost";
-				port = MAPI_PORT;
+				return mapi_setError(mid, "internal error", __func__, MERROR);
 			}
 		}
 		if (host != mid->hostname) {
@@ -362,7 +427,18 @@ mapi_reconnectx(Mapi mid)
 		check_stream(mid, mid->from, "not a block stream", mid->error);
 	}
 
-  try_again_after_redirect:
+	return MOK;
+}
+
+
+static MapiMsg
+mapi_handshake(Mapi mid)
+{
+	char buf[BLOCK];
+	size_t len;
+	MapiHdl hdl;
+
+	  try_again_after_redirect:
 
 	/* consume server challenge */
 	len = mnstr_read_block(mid->from, buf, 1, sizeof(buf));
@@ -744,7 +820,8 @@ mapi_reconnectx(Mapi mid)
 					fr++;
 				}
 				/* reconnect using the new values */
-				return mapi_reconnect(mid);
+				close_connection(mid);
+				return MREDIRECT;
 			} else if (strncmp("mapi:merovingian", red, 16) == 0) {
 				/* this is a proxy "offer", it means we should
 				 * restart the login ritual, without
@@ -811,5 +888,5 @@ mapi_reconnectx(Mapi mid)
 	}
 
 	return mid->error;
-}
 
+}

@@ -297,5 +297,7 @@ MapiMsg mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue);
 
 extern const struct MapiStruct MapiStructDefaults;
 
+Mapi mapi_new(void);
+
 void close_connection(Mapi mid);
 void set_uri(Mapi mid);
