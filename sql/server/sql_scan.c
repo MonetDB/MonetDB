@@ -975,8 +975,6 @@ static inline int check_validity_number(mvc* c, int pcur, bool initial_underscor
 		return '_';
 	}
 
-	assert(*token);
-
 	switch (type) {
 	case BINARYNUM:
 		is_valid_n_ary_digit = &is_valid_binary_digit;
@@ -1039,30 +1037,26 @@ number(mvc * c, int cur)
 	 * [0-9]+                           -- (decimal) INTEGER
 	 */
 	lc->started = 1;
-	bool is_decimal = true;
 	if (cur == '0') {
 		switch ((cur = scanner_getc(lc))) {
 		case 'b':
 			cur = scanner_getc(lc);
 			if ((cur = check_validity_number(c, cur, true, &token, BINARYNUM)) == EOF) return cur;
-			is_decimal = false;
 			break;
 		case 'o':
 			cur = scanner_getc(lc);
 			if ((cur = check_validity_number(c,  cur, true, &token, OCTALNUM)) == EOF) return cur;
-			is_decimal = false;
 			break;
 		case 'x':
 			cur = scanner_getc(lc);
 			if ((cur = check_validity_number(c,  cur, true, &token, HEXADECIMALNUM)) == EOF) return cur;
-			is_decimal = false;
 			break;
 		default:
 			utf8_putchar(lc, cur);
 			cur = '0';
 		}
 	}
-	if (is_decimal) {
+	if (token == sqlINT) {
 		if ((cur = check_validity_number(c, cur, false, &token, sqlINT)) == EOF) return cur;
 		if (cur == '@') {
 			if (token == sqlINT) {
@@ -1083,7 +1077,6 @@ number(mvc * c, int cur)
 			}
 		} else {
 			if (cur == '.') {
-				token = INTNUM;
 				cur = scanner_getc(lc);
 				if ((cur = check_validity_number(c, cur, false, &token, INTNUM)) == EOF) return cur;
 			}
