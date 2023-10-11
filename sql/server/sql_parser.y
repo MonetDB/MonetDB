@@ -5554,11 +5554,7 @@ posint:
 data_type:
     CHARACTER
 			{ sql_find_subtype(&$$, "char", 1, 0); }
- |  varchar
-			{ $$.type = NULL;
-			  yyerror(m, "CHARACTER VARYING needs a mandatory length specification");
-			  YYABORT;
-			}
+ |  varchar		{ sql_find_subtype(&$$, "varchar", 0, 0); }
  |  clob		{ sql_find_subtype(&$$, "clob", 0, 0); }
  |  CHARACTER '(' nonzero ')'
 			{ sql_find_subtype(&$$, "char", $3, 0); }
