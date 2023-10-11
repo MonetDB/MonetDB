@@ -6012,6 +6012,26 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		output = NULL;
 	}
 
+
+	/* 49_strings.sql */
+	sql_find_subtype(&tp, "string", 0, 0);
+	if (sql_bind_func(sql, s->base.name, "btrim", &tp, &tp, F_FUNC, true) == NULL) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		const char *cmds =
+		"create function sys.btrim(x string)\n"
+		"returns string external name str.trim;\n"
+		"grant execute on function btrim(string) to public;\n"
+
+		"create function sys.btrim(x string, y string)\n"
+		"returns string external name str.trim2;\n"
+		"grant execute on function btrim(string, string) to public;\n"
+		;
+		printf("Running database upgrade commands:\n%s\n", cmds);
+		fflush(stdout);
+		err = SQLstatementIntern(c, cmds, "update", true, false, NULL);
+	}
+
 	/* 91_information_schema.sql */
 	info = mvc_bind_schema(sql, "information_schema");
 	if (info == NULL) {
