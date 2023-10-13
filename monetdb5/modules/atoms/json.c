@@ -512,7 +512,8 @@ JSONstr2json(json *ret, str *j)
 {
 	str msg = MAL_SUCCEED;
 	json buf = NULL;
-	size_t ln = strlen(*j);
+	json *p = &buf;
+	size_t ln = strlen(*j)+1;
 	size_t out_size = 0;
 
 	JSON *jt = JSONparse(*j);
@@ -529,7 +530,7 @@ JSONstr2json(json *ret, str *j)
 		goto bailout2;
 	}
 
-	if ((*ret = GDKstrdup(buf)) == NULL) {
+	if ((*ret = GDKstrdup(*p)) == NULL) {
 		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
