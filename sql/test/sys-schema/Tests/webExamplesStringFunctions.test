@@ -1,0 +1,377 @@
+# These apply to MonetDB SQL character string types: character, character varying, varchar, clob and subtypes: json and url.
+# In MonetDB all character strings are **UTF-8** encoded.
+
+query T
+select 'Monet'||'DB'
+----
+MonetDB
+
+query T
+select 'Value: '||42
+----
+Value: 42
+
+query T
+select ascii(R'€')
+----
+8364
+
+query T
+select asciify(R'a € sign')
+----
+a EUR sign
+
+query I
+select char_length(R'2€')
+----
+2
+
+query I
+select character_length(R'2€')
+----
+2
+
+query I
+select charindex('gh', 'highigh')
+----
+3
+
+query I
+select charindex('gh', 'highigh', 4)
+----
+6
+
+query T
+select code(223)
+----
+@
+
+# expected "ß"
+
+query T
+select concat('Front ', 242)
+----
+Front 242
+
+query I
+select contains('abcd', 'bc')
+----
+1
+
+query I
+select contains('abcd', 'BC', true)
+----
+1
+
+query I
+select endswith('abc', 'bc')
+----
+1
+
+query I
+select endswith('abc', 'BC', true)
+----
+1
+
+query T
+select greatest('ab', 'ac')
+----
+ac
+
+query T
+select insert('abcdef', 2, 1, 'XY')
+----
+abXYdef
+
+query T
+select lcase('MonetDB')
+----
+monetdb
+
+query T
+select least('ab', 'ac')
+----
+ab
+
+query T
+select left('MonetDB', 3)
+----
+Mon
+
+query I
+select length('2€')
+----
+2
+
+query I
+select locate('DB', 'MonetDB')
+----
+6
+
+query I
+select locate('DB', 'DBMonetDB', 3)
+----
+8
+
+query T
+select lower('MonetDB')
+----
+monetdb
+
+query T
+select lpad('abc', 6)
+----
+   abc
+
+query T
+select lpad('abc', 6, 'DB')
+----
+DBDabc
+
+query T
+select ltrim(E' \t\fab \tdf ')
+----
+ab @df 
+
+query T
+select ltrim('aabcdaa', 'a')
+----
+bcdaa
+
+query T
+select sys.md5('abc')
+----
+900150983cd24fb0d6963f7d28e17f72
+
+query T
+select sys.ms_stuff('abcdef', 2, 1, 'XY')
+----
+aXYcdef
+
+query I
+select octet_length(R'2€')
+----
+4
+
+query I
+select patindex('%bc%', 'abcd')
+----
+3
+
+query I
+select position('DB' IN 'MonetDB')
+----
+6
+
+query T
+select repeat('kiss,', 3)
+----
+kiss,kiss,kiss,
+
+query T
+select replace('abc', 'b', 'X')
+----
+aXc
+
+query T
+select right('MonetDB', 4)
+----
+etDB
+
+query T
+select rpad('abc', 6) || 'End'
+----
+abc   End
+
+query T
+select rpad('abc', 6, 'DB')
+----
+abcDBD
+
+query T
+select rtrim(E'ab df \t\n')
+----
+ab df
+
+query T
+select rtrim('aabcdaa', 'a')
+----
+aabcd
+
+query T
+select 's' || space(4) || 'e'
+----
+s    e
+
+query T
+select splitpart('a|a|bc|cd', '|', 3)
+----
+bc
+
+query T
+select sql_max('ab', 'ac')
+----
+ac
+
+query T
+select sql_min('ab', 'ac')
+----
+ab
+
+query I
+select startswith('bcd', 'bc')
+----
+1
+
+query I
+select startswith('bcd', 'BC', true)
+----
+1
+
+query T
+select substr('abCde', 3)
+----
+Cde
+
+query T
+select substr('abCde', 2, 3)
+----
+bCd
+
+query T
+select substring('abcde', 3)
+----
+cde
+
+query T
+select substring('abcde', 2, 2)
+----
+bc
+
+query T
+select trim(E' \t\fab df \t\n')
+----
+ab df
+
+query T
+select trim('aabcdaa', 'a')
+----
+bcd
+
+query T
+select "truncate"('Truncate', 4)
+----
+Trun
+
+query T
+select ucase('MonetDB')
+----
+MONETDB
+
+query T
+select upper('MonetDB')
+----
+MONETDB
+
+# Text analysis functions
+
+query I
+select contains('abcd', 'bc')
+----
+1
+
+query I
+select contains('abcd', 'BC', true)
+----
+1
+
+query I
+select dameraulevenshtein('MonetDB', 'DB3')
+----
+6
+
+query I
+select dameraulevenshtein('MonetDB', 'DB3', 4, 2, 1)
+----
+8
+
+query I
+select difference('MonetDB', 'DB3')
+----
+4
+
+query I
+select editdistance('MonetDB', 'DB3')
+----
+6
+
+query I
+select editdistance2('MonetDB', 'DB3')
+----
+6
+
+query I
+select endswith('abc', 'bc')
+----
+1
+
+query I
+select endswith('abc', 'BC', true)
+----
+1
+
+query R
+select jarowinkler('MonetDB', 'DB3')
+----
+0.000
+
+query R
+select jarowinkler('MonetDB', 'DB free')
+----
+0.429
+
+query I
+select levenshtein('MonetDB', 'DB3')
+----
+6
+
+query I
+select levenshtein('MonetDB', 'DB3', 4, 2)
+----
+9
+
+query I
+select levenshtein('MonetDB', 'DB3', 4, 2, 1)
+----
+8
+
+query T
+select qgramnormalize(R'Prize €50!')
+----
+PRIZE 50
+
+query R
+select similarity('MonetDB', 'DB3')
+----
+0.400
+
+query R
+select similarity('MonetDB', 'DB free')
+----
+0.286
+
+query T
+select soundex('MonetDB')
+----
+M533
+
+query I
+select startswith('bcd', 'bc')
+----
+1
+
+query I
+select startswith('bcd', 'BC', true)
+----
+1
+
