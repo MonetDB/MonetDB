@@ -937,6 +937,7 @@ sqltypeinit( sql_allocator *sa)
 	/* needed for indices/clusters oid(schema.table,val) returns max(head(schema.table))+1 */
 	sql_create_func(sa, "rowid", "calc", "rowid", TRUE, TRUE, SCALE_NONE, 0, OID, 3, ANY, STR, STR);
 	sql_create_aggr(sa, "min", "aggr", "min", FALSE, FALSE, ANY, 1, ANY);
+	sql_create_aggr(sa, "any_value", "aggr", "min", FALSE, FALSE, ANY, 1, ANY);
 	sql_create_aggr(sa, "max", "aggr", "max", FALSE, FALSE, ANY, 1, ANY);
 	sql_create_func(sa, "sql_min", "calc", "min", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "sql_max", "calc", "max", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
@@ -1095,6 +1096,7 @@ sqltypeinit( sql_allocator *sa)
 
 	sql_create_analytic(sa, "count", "sql", "count", FALSE, SCALE_NONE, LNG, 2, ANY, BIT);
 	sql_create_analytic(sa, "min", "sql", "min", FALSE, SCALE_NONE, ANY, 1, ANY);
+	sql_create_analytic(sa, "any_value", "sql", "min", FALSE, SCALE_NONE, ANY, 1, ANY);
 	sql_create_analytic(sa, "max", "sql", "max", FALSE, SCALE_NONE, ANY, 1, ANY);
 
 	/* analytical sum for numerical and decimals */
