@@ -133,10 +133,102 @@ JSONfree(JSON *c)
 	GDKfree(c);
 }
 
+static str
+JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
+{
+	char *p = *ret;
+	size_t sz = 0;
+	str msg = MAL_SUCCEED;
+
+	// abort();
+
+	switch(jt->elm[idx].kind) {
+	case JSON_OBJECT:
+		*p++ = '{';
+		*out_size += 1;
+		for(int i = jt->elm[idx].next; i != 0; i = jt->elm[i].next) {
+			sz = 0;
+			msg = JSONtoStorageString(jt, i, &p, &sz);
+			if (msg != MAL_SUCCEED) {
+				return msg;
+			}
+			*out_size += sz;
+			p += sz;
+			*p++ = ',';
+			*p++ = ' ';
+			*out_size += 2;
+		}
+		p -= 2;					/* Overrite the last comma */
+		*out_size -= 2;
+		*p++ = '}';
+		*out_size += 1;
+		break;
+	case JSON_ARRAY:
+		*p++ = '[';
+		*out_size += 1;
+		for(int i = jt->elm[idx].next; i != 0; i = jt->elm[i].next) {
+			sz = 0;
+			msg = JSONtoStorageString(jt, i, &p, &sz);
+			if (msg != MAL_SUCCEED) {
+				return msg;
+			}
+			*out_size += sz;
+			p += sz;
+			*p++ = ',';
+			*p++ = ' ';
+			*out_size += 2;
+		}
+		p -= 2;					/* Overrite the last comma */
+		*out_size -= 2;
+
+		*p++ = ']';
+		*out_size += 1;
+		break;
+	case JSON_ELEMENT:
+		*p++ = '"';
+		strncpy(p, jt->elm[idx].value, jt->elm[idx].valuelen);
+		p += jt->elm[idx].valuelen;
+		*p++ = '"';
+		*p++ = ':';
+		*p++ = ' ';
+		*out_size = jt->elm[idx].valuelen + 4;
+		msg = JSONtoStorageString(jt, jt->elm[idx].child, &p, &sz);
+		if (msg != MAL_SUCCEED) {
+			return msg;
+		}
+		*out_size += sz;
+		p += sz;
+		break;
+	case JSON_NUMBER:
+		/* fall through */
+	case JSON_STRING:
+		strncpy(p, jt->elm[idx].value, jt->elm[idx].valuelen);
+		*out_size += jt->elm[idx].valuelen;
+		p += *out_size;
+		break;
+	case JSON_VALUE:
+		msg = JSONtoStorageString(jt, jt->elm[idx].child, &p, &sz);
+		if (msg != MAL_SUCCEED) {
+			return msg;
+		}
+		*out_size += sz;
+		p += sz;
+		break;
+	default:
+		abort();
+		break;
+	}
+
+	*p = 0;
+
+	return MAL_SUCCEED;
+}
+
 static ssize_t
 JSONfromString(const char *src, size_t *len, void **J, bool external)
 {
 	json *j = (json *) J;
+	json buf = NULL;
 	size_t slen = strlen(src);
 	JSON *jt;
 
@@ -165,6 +257,10 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 		JSONfree(jt);
 		return -1;
 	}
+	buf = GDKmalloc(slen);
+	JSONtoStorageString(jt, 0, &buf, &slen);
+	strncpy(*j, buf - slen, slen);
+	GDKfree(buf);
 	JSONfree(jt);
 
 	return (ssize_t) slen;
@@ -414,13 +510,34 @@ JSON2json(json *ret, const json *j)
 static str
 JSONstr2json(json *ret, str *j)
 {
-	JSON *jt = JSONparse(*j);
+	str msg = MAL_SUCCEED;
+	json buf = NULL;
+	size_t ln = strlen(*j);
+	size_t out_size = 0;
 
+	JSON *jt = JSONparse(*j);
 	CHECK_JSON(jt);
+
+	buf = (json)GDKmalloc(ln);
+	if (buf == NULL) {
+		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout1;
+	}
+
+	msg = JSONtoStorageString(jt, 0, &buf, &out_size);
+	if (msg != MAL_SUCCEED) {
+		goto bailout2;
+	}
+
+	if ((*ret = GDKstrdup(buf)) == NULL) {
+		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+ bailout2:
+	GDKfree(buf);
+ bailout1:
 	JSONfree(jt);
-	if ((*ret = GDKstrdup(*j)) == NULL)
-		throw(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 static str
