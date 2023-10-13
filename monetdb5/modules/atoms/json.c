@@ -1098,7 +1098,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 				return idx;
 
 			/* Search for a duplicate key */
-			for(pidx = nxt - 1; pidx > idx; pidx--) {
+			for(pidx = jt->elm[idx].next; pidx != 0; pidx = jt->elm[pidx].next) {
 				if (jt->elm[pidx].kind == JSON_ELEMENT &&
 					jt->elm[pidx].valuelen == jt->elm[nxt].valuelen - 2 &&
 					strncmp(jt->elm[pidx].value, jt->elm[nxt].value + 1,
@@ -1108,7 +1108,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			}
 
 			/* Duplicate found: Change the value of the previous key. */
-			if (pidx > idx) {
+			if (pidx > 0) {
 				jt->elm[pidx].child = chld;
 				/* Note that we do not call JSONappend here.
 				 *
