@@ -64,7 +64,10 @@ typedef const char *msettings_error;
 
 /* returns NULL if could not allocate */
 msettings *msettings_create(void);
-void msettings_destroy(msettings *mp);
+msettings *msettings_clone(const msettings *mp);
+
+/* always returns NULL */
+msettings *msettings_destroy(msettings *mp);
 
 /* retrieve and set; call abort() on type error */
 
@@ -111,3 +114,8 @@ long msettings_connect_binary(const msettings *mp);
 /* automatically incremented each time the corresponding field is updated */
 long msettings_user_generation(const msettings *mp);
 long msettings_password_generation(const msettings *mp);
+
+/* convenience helpers*/
+bool msettings_lang_is_mal(const msettings *mp);
+bool msettings_lang_is_sql(const msettings *mp);
+bool msettings_lang_is_profiler(const msettings *mp);

@@ -8,6 +8,8 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
+#include "msettings.h"
+
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -217,15 +219,11 @@ enum mapi_lang_t {
    servers.  Connections are completely independent of each other.
 */
 struct MapiStruct {
-	char *server;		/* server version */
-	char *hostname;
-	int port;
-	char *username;
-	char *password;
-	char *language;
-	char *database;		/* to obtain from server */
+	msettings *settings;
+
 	char *uri;
-	enum mapi_lang_t languageId;
+
+	char *server;		/* server version */
 	char *motd;		/* welcome message from server */
 
 	char *noexplain;	/* on error, don't explain, only print result */
@@ -265,6 +263,8 @@ void mapi_clrError(Mapi mid)
 	__attribute__((__nonnull__(1)));
 MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
 	__attribute__((__nonnull__(2))) __attribute__((__nonnull__(3)));
+MapiMsg mapi_PrintError(Mapi mid, const char *action, MapiMsg error, const char *fmt, ...)
+	__attribute__((__nonnull__(2))) __attribute__((__format__(__printf__, 4, 5)));
 void mapi_log_record(Mapi mid, const char *msg);
 
 
@@ -291,7 +291,6 @@ void mapi_log_record(Mapi mid, const char *msg);
 	} while (0)
 
 MapiMsg read_into_cache(MapiHdl hdl, int lookahead);
-void parse_uri_query(Mapi mid, char *uri);
 MapiMsg mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue);
 
 

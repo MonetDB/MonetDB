@@ -470,7 +470,7 @@ parse(msettings *mp, scanner *sc)
 /* update the msettings from the URL. set *error_buffer to NULL and return true
  * if success, set *error_buffer to malloc'ed error message and return false on failure.
  * if return value is true but *error_buffer is NULL, malloc failed. */
-bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer)
+bool msettings_parse_url(msettings *mp, const char *url, char **error_message)
 {
 	bool ok;
 	scanner sc;
@@ -488,15 +488,15 @@ bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer)
 
 	if (parse(mp, &sc)) {
 		// went well
-		if (error_buffer)
-			*error_buffer = NULL;
+		if (error_message)
+			*error_message = NULL;
 		ok = true;
 	} else {
 		// went wrong
 		assert(sc.error_message[0] != '\0');
-		if (error_buffer) {
+		if (error_message) {
 			char *msg = strdup(sc.error_message);
-			*error_buffer = msg;
+			*error_message = msg;
 		}
 		ok = false;
 	}
@@ -506,8 +506,8 @@ bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer)
 	if (new_user_gen > user_gen && new_password_gen == password_gen) {
 		msettings_error msg = msetting_set_string(mp, MP_PASSWORD, "");
 		if (msg) {
-			if (error_buffer)
-				*error_buffer = strdup(msg);
+			if (error_message)
+				*error_message = strdup(msg);
 			ok = false;
 		}
 	}

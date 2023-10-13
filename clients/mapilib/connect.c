@@ -17,9 +17,19 @@
 #define DO_UNIX_DOMAIN (0)
 #endif
 
+#ifdef _MSC_VER
+#define SOCKET_STRERROR()	wsaerror(WSAGetLastError())
+#else
+#define SOCKET_STRERROR()	strerror(errno)
+#endif
+
+
 static MapiMsg establish_connection(Mapi mid);
 static MapiMsg scan_unix_sockets(Mapi mid);
 static MapiMsg connect_socket(Mapi mid);
+static SOCKET connect_socket_unix(Mapi mid, const char *sockname);
+static SOCKET connect_socket_tcp(Mapi mid, const char *host, int port);
+static SOCKET connect_socket_tcp_addr(Mapi mid, struct addrinfo *addr);
 static MapiMsg mapi_handshake(Mapi mid);
 
 /* (Re-)establish a connection with the server. */
@@ -29,7 +39,7 @@ mapi_reconnectx(Mapi mid)
 	// If neither host nor port are given, scan the Unix domain sockets in
 	// /tmp and see if any of them serve this database.
 	// Otherwise, just try to connect to what was given.
-	if (mid->hostname == NULL && mid->port == 0)
+	if (msettings_connect_scan(mid->settings))
 		return scan_unix_sockets(mid);
 	else
 		return establish_connection(mid);
@@ -40,8 +50,6 @@ mapi_reconnectx(Mapi mid)
 static MapiMsg
 scan_unix_sockets(Mapi mid)
 {
-	MapiMsg msg;
-	Mapi backup = NULL;
 	struct {
 		int port;
 		int priority;
@@ -50,18 +58,10 @@ scan_unix_sockets(Mapi mid)
 	DIR *dir = NULL;
 	struct dirent *entry;
 
-	assert(mid->hostname == NULL && mid->port == 0);
+	msettings *original = mid->settings;
+	mid->settings = NULL;  // invalid state, will fix it before use and on return
 
-	// We need to preserve the original state because when we attempt to
-	// connect to the sockets we may get redirected, for example to a
-	// different database name. When we move on to the next socket, we
-	// should use the original database name.
-	backup = mapi_new();
-	if (!backup || mapi_copymapi(backup, mid) != MOK) {
-		msg = mapi_setError(mid, "malloc failed", __func__, MERROR);
-		goto wrap_up;
-	}
-
+	// Make a list of Unix domain sockets in /tmp
 	uid_t me = getuid();
 	if (DO_UNIX_DOMAIN && (dir = opendir("/tmp"))) {
 		while (ncandidates < MAX_SCAN && (entry = readdir(dir)) != NULL) {
@@ -85,43 +85,48 @@ scan_unix_sockets(Mapi mid)
 		}
 	}
 
-	// those owned by us first, then all others
+	// Try those owned by us first, then all others
 	for (int round = 0; round < 2; round++) {
 		for (int i = 0; i < ncandidates; i++) {
 			if (candidates[i].priority != round)
 				continue;
-			// mid->hostname = candidates[i].sock_name;
-			// free(mid->hostname);
-			assert(mid->hostname == NULL);
-			mid->port = candidates[i].port;
-			if (establish_connection(mid) == MOK) {
-				msg = MOK;
-				goto wrap_up;
-			} else if (mapi_copymapi(mid, backup) != MOK) {
-				msg = mapi_setError(mid, "malloc failed", __func__, MERROR);
-				goto wrap_up;
+
+			assert(!mid->connected);
+			assert(mid->settings == NULL);
+			mid->settings = msettings_clone(original);
+			if (!mid->settings) {
+				mid->settings = original;
+				return mapi_setError(mid, "malloc failed", __func__, MERROR);
+			}
+			msettings_error errmsg = msetting_set_long(mid->settings, MP_PORT, candidates[i].port);
+			if (errmsg) {
+				mapi_setError(mid, errmsg, __func__, MERROR);
+				msettings_destroy(mid->settings);
+				mid->settings = original;
+				return MERROR;
+			}
+			MapiMsg msg = establish_connection(mid);
+			if (msg == MOK) {
+				// do not restore original
+				msettings_destroy(original);
+				return MOK;
+			} else {
+				msettings_destroy(mid->settings);
+				mid->settings = NULL;
+				// now we're ready to try another one
 			}
 		}
 	}
 
-	// last-ditch attempt
-	free(mid->hostname);
-	mid->hostname = strdup("localhost");
-	if (!mid->hostname) {
-		msg = mapi_setError(mid, "malloc failed", __func__, MERROR);
-		goto wrap_up;
+	// Last-ditch attempt.
+	// We can now freely modify original
+	assert(mid->settings == NULL);
+	mid->settings = original;
+	msettings_error errmsg = msetting_set_string(mid->settings, MP_HOST, "localhost");
+	if (errmsg) {
+		return mapi_setError(mid, errmsg, __func__, MERROR);
 	}
-	mid->port = MAPI_PORT;
-	msg = establish_connection(mid);
-
-wrap_up:
-	if (msg != MOK && backup) {
-		mapi_movemapi(mid, backup);
-		mapi_destroy(backup);
-	}
-	if (dir)
-		closedir(dir);
-	return msg;
+	return establish_connection(mid);
 }
 
 /* (Re-)establish a connection with the server. */
@@ -154,249 +159,23 @@ static MapiMsg
 connect_socket(Mapi mid)
 {
 	SOCKET s = INVALID_SOCKET;
-	char errbuf[8096];
-	char buf[BLOCK];
 
-	if (mid->uri == NULL) {
-		/* continue work started by mapi_mapi */
+	assert(!mid->connected);
+	const char *sockname = msettings_connect_unix(mid->settings);
+	const char *tcp_host = msettings_connect_tcp(mid->settings);
+	int tcp_port = msettings_connect_port(mid->settings);
 
-		/* connection searching strategy:
-		 * 0) if host and port are given, resort to those
-		 * 1) if no dbname given, make TCP connection
-		 *    (merovingian will complain regardless, so it is
-		 *    more likely an mserver is meant to be directly
-		 *    addressed)
-		 *    a) resort to default (hardwired) port 50000,
-		 *       unless port given, then
-		 *    b) resort to port given
-		 * 2) a dbname is given
-		 *    a) if a port is given, open unix socket for that
-		 *       port, resort to TCP connection if not found
-		 *    b) no port given, start looking for a matching
-		 *       merovingian, by searching through socket
-		 *       files, attempting connect to given dbname
-		 *       I) try available sockets that have a matching
-		 *          owner with the current user
-		 *       II) try other sockets
-		 *       III) resort to TCP connection on hardwired
-		 *            port (localhost:50000)
-		 */
-
-		char *host;
-		int port;
-
-		host = mid->hostname;
-		port = mid->port;
-
-		if (host != NULL && port != 0) {
-			/* case 0), just do what the user told us */
-#ifdef HAVE_SYS_UN_H
-			if (*host == '/') {
-				/* don't stat or anything, the
-				 * mapi_reconnect will return the
-				 * error if it doesn't exist, falling
-				 * back to TCP with a hostname like
-				 * '/var/sockets' won't work anyway */
-				snprintf(buf, sizeof(buf),
-					 "%s/.s.monetdb.%d", host, port);
-				host = buf;
-			}
-#endif
-		} else if (mid->database == NULL) {
-			/* case 1) */
-			if (port == 0)
-				port = MAPI_PORT;	/* case 1a), hardwired default */
-			if (host == NULL)
-				host = "localhost";
-		} else {
-			/* case 2), database name is given */
-			if (port != 0) {
-				/* case 2a), if unix socket found, use
-				 * it, otherwise TCP */
-#ifdef HAVE_SYS_UN_H
-				struct stat st;
-				snprintf(buf, sizeof(buf),
-					 "/tmp/.s.monetdb.%d", port);
-				if (stat(buf, &st) != -1 &&
-				    S_ISSOCK(st.st_mode))
-					host = buf;
-				else
-#endif
-					host = "localhost";
-			} else if (host != NULL) {
-#ifdef HAVE_SYS_UN_H
-				if (*host == '/') {
-					/* see comment above for why
-					 * we don't stat */
-					snprintf(buf, sizeof(buf),
-						 "%s/.s.monetdb.%d", host, MAPI_PORT);
-					host = buf;
-				}
-#endif
-				port = MAPI_PORT;
-			} else {
-				return mapi_setError(mid, "internal error", __func__, MERROR);
-			}
-		}
-		if (host != mid->hostname) {
-			if (mid->hostname)
-				free(mid->hostname);
-			mid->hostname = strdup(host);
-		}
-		mid->port = port;
-		set_uri(mid);
+	assert(*sockname || *tcp_host);
+	if (*sockname) {
+		s = connect_socket_unix(mid, sockname);
 	}
-
-#ifdef HAVE_SYS_UN_H
-	if (mid->hostname && mid->hostname[0] == '/') {
-		struct msghdr msg;
-		struct iovec vec;
-		struct sockaddr_un userver;
-
-		if (strlen(mid->hostname) >= sizeof(userver.sun_path)) {
-			return mapi_setError(mid, "path name too long", __func__, MERROR);
-		}
-
-		if ((s = socket(PF_UNIX, SOCK_STREAM
-#ifdef SOCK_CLOEXEC
-				| SOCK_CLOEXEC
-#endif
-				, 0)) == INVALID_SOCKET) {
-			snprintf(errbuf, sizeof(errbuf),
-				 "opening socket failed: %s",
-#ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
-#else
-				 strerror(errno)
-#endif
-				);
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
-#endif
-		userver = (struct sockaddr_un) {
-			.sun_family = AF_UNIX,
-		};
-		strcpy_len(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
-
-		if (connect(s, (struct sockaddr *) &userver, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
-			snprintf(errbuf, sizeof(errbuf),
-				 "initiating connection on socket failed: %s",
-#ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
-#else
-				 strerror(errno)
-#endif
-				);
-			closesocket(s);
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-
-		/* send first byte, nothing special to happen */
-		msg.msg_name = NULL;
-		msg.msg_namelen = 0;
-		buf[0] = '0';	/* normal */
-		vec.iov_base = buf;
-		vec.iov_len = 1;
-		msg.msg_iov = &vec;
-		msg.msg_iovlen = 1;
-		msg.msg_control = NULL;
-		msg.msg_controllen = 0;
-		msg.msg_flags = 0;
-
-		if (sendmsg(s, &msg, 0) < 0) {
-			snprintf(errbuf, sizeof(errbuf), "could not send initial byte: %s",
-#ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
-#else
-				 strerror(errno)
-#endif
-				);
-			closesocket(s);
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-	} else
-#endif
-	{
-		struct addrinfo hints, *res, *rp;
-		char port[32];
-		int ret;
-
-		if (mid->hostname == NULL)
-			mid->hostname = strdup("localhost");
-		snprintf(port, sizeof(port), "%d", mid->port & 0xFFFF);
-
-		hints = (struct addrinfo) {
-			.ai_family = AF_UNSPEC,
-			.ai_socktype = SOCK_STREAM,
-			.ai_protocol = IPPROTO_TCP,
-		};
-		ret = getaddrinfo(mid->hostname, port, &hints, &res);
-		if (ret) {
-			snprintf(errbuf, sizeof(errbuf), "getaddrinfo failed: %s", gai_strerror(ret));
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-		errbuf[0] = 0;
-		for (rp = res; rp; rp = rp->ai_next) {
-			s = socket(rp->ai_family, rp->ai_socktype
-#ifdef SOCK_CLOEXEC
-				   | SOCK_CLOEXEC
-#endif
-				   , rp->ai_protocol);
-			if (s != INVALID_SOCKET) {
-#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-				(void) fcntl(s, F_SETFD, FD_CLOEXEC);
-#endif
-				if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
-					break;  /* success */
-				closesocket(s);
-			}
-			snprintf(errbuf, sizeof(errbuf),
-				 "could not connect to %s:%s: %s",
-				 mid->hostname, port,
-#ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
-#else
-				 strerror(errno)
-#endif
-				);
-		}
-		freeaddrinfo(res);
-		if (rp == NULL) {
-			if (errbuf[0] == 0) {
-				/* should not happen */
-				snprintf(errbuf, sizeof(errbuf),
-					 "getaddrinfo succeeded but did not return a result");
-			}
-			return mapi_setError(mid, errbuf, __func__, MERROR);
-		}
-		/* compare our own address with that of our peer and
-		 * if they are the same, we were connected to our own
-		 * socket, so then we can't use this connection */
-		union {
-			struct sockaddr_storage ss;
-			struct sockaddr_in i4;
-			struct sockaddr_in6 i6;
-		} myaddr, praddr;
-		socklen_t myaddrlen, praddrlen;
-		myaddrlen = (socklen_t) sizeof(myaddr.ss);
-		praddrlen = (socklen_t) sizeof(praddr.ss);
-		if (getsockname(s, (struct sockaddr *) &myaddr.ss, &myaddrlen) == 0 &&
-		    getpeername(s, (struct sockaddr *) &praddr.ss, &praddrlen) == 0 &&
-		    myaddr.ss.ss_family == praddr.ss.ss_family &&
-		    (myaddr.ss.ss_family == AF_INET
-		     ? myaddr.i4.sin_port == praddr.i4.sin_port
-		     : myaddr.i6.sin6_port == praddr.i6.sin6_port) &&
-		    (myaddr.ss.ss_family == AF_INET
-		     ? myaddr.i4.sin_addr.s_addr == praddr.i4.sin_addr.s_addr
-		     : memcmp(myaddr.i6.sin6_addr.s6_addr,
-			      praddr.i6.sin6_addr.s6_addr,
-			      sizeof(praddr.i6.sin6_addr.s6_addr)) == 0)) {
-			closesocket(s);
-			return mapi_setError(mid, "connected to self",
-					     __func__, MERROR);
-		}
+	if (s == INVALID_SOCKET && *tcp_host) {
+		s = connect_socket_tcp(mid, tcp_host, tcp_port);
+	}
+	if (s == INVALID_SOCKET) {
+		assert(mid->error == MERROR);
+		mid->error = MERROR;
+		return mid->error;
 	}
 
 	mid->to = socket_wstream(s, "Mapi client write");
@@ -430,6 +209,177 @@ connect_socket(Mapi mid)
 	return MOK;
 }
 
+#ifndef HAVE_SYS_UN_H
+static SOCKET
+connect_socket_unix(Mapi mid, const char *sockname)
+{
+	(void)sockname;
+	mapi_setError(mid, "Unix domain sockets not supported", __func__, MERROR);
+	return INVALID_SOCKET;
+}
+#endif
+
+#ifdef HAVE_SYS_UN_H
+
+static SOCKET
+connect_socket_unix(Mapi mid, const char *sockname)
+{
+	struct sockaddr_un userver;
+	if (strlen(sockname) >= sizeof(userver.sun_path)) {
+		mapi_setError(mid, "path name too long", __func__, MERROR);
+		return INVALID_SOCKET;
+	}
+
+	// Create the socket, taking care of CLOEXEC
+
+#ifdef SOCK_CLOEXEC
+	int s = socket(PF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+#else
+	int s = socket(PF_UNIX, SOCK_STREAM, 0);
+#endif
+	if (s == INVALID_SOCKET) {
+		mapi_PrintError(
+			mid, __func__, MERROR,
+			"could not create Unix domain socket: %s", strerror(errno));
+		return INVALID_SOCKET;
+	}
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
+	(void) fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
+
+	// Attempt to connect
+
+	userver = (struct sockaddr_un) {
+		.sun_family = AF_UNIX,
+	};
+	strcpy_len(userver.sun_path, sockname, sizeof(userver.sun_path));
+
+	if (connect(s, (struct sockaddr *) &userver, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
+		closesocket(s);
+		mapi_PrintError(
+			mid, __func__, MERROR,
+			"connect to Unix domain socket failed: %s", strerror(errno));
+		return INVALID_SOCKET;
+	}
+
+	// Send an initial zero (not NUL) to let the server know we're not passing a file
+	// descriptor.
+
+	ssize_t n = send(s, "0", 1, 0);
+	if (n < 1) {
+		// used to be if n < 0 but this makes more sense
+		closesocket(s);
+		mapi_PrintError(
+			mid, __func__, MERROR,
+			"could not send initial '0' on Unix domain socket: %s", strerror(errno));
+		return INVALID_SOCKET;
+	}
+
+	return MOK;
+}
+
+#endif  // end of ifdef HAVE_SYS_UN_H
+
+static SOCKET
+connect_socket_tcp(Mapi mid, const char *host, int port)
+{
+	int ret;
+	char portbuf[10];
+	snprintf(portbuf, sizeof(portbuf), "%d", port);
+
+	struct addrinfo hints = (struct addrinfo) {
+		.ai_family = AF_UNSPEC,
+		.ai_socktype = SOCK_STREAM,
+		.ai_protocol = IPPROTO_TCP,
+	};
+	struct addrinfo *addresses;
+	ret = getaddrinfo(host, portbuf, &hints, &addresses);
+	if (ret != 0) {
+		mapi_PrintError(
+			mid, __func__, MERROR,
+			"getaddrinfo failed: %s", gai_strerror(ret));
+		return INVALID_SOCKET;
+	}
+	if (addresses == NULL) {
+		mapi_PrintError(
+			mid, __func__, MERROR,
+			"getaddrinfo return 0 addresses");
+		return INVALID_SOCKET;
+	}
+
+	assert(addresses);
+	SOCKET s;
+	for (struct addrinfo *addr = addresses; addr; addr = addr->ai_next) {
+		s = connect_socket_tcp_addr(mid, addr);
+		if (s)
+			break;
+	}
+	freeaddrinfo(addresses);
+	if (s == INVALID_SOCKET) {
+		return INVALID_SOCKET;
+	}
+
+	/* compare our own address with that of our peer and
+	 * if they are the same, we were connected to our own
+	 * socket, so then we can't use this connection */
+	union {
+		struct sockaddr_storage ss;
+		struct sockaddr_in i4;
+		struct sockaddr_in6 i6;
+	} myaddr, praddr;
+	socklen_t myaddrlen, praddrlen;
+	myaddrlen = (socklen_t) sizeof(myaddr.ss);
+	praddrlen = (socklen_t) sizeof(praddr.ss);
+	if (getsockname(s, (struct sockaddr *) &myaddr.ss, &myaddrlen) == 0 &&
+		getpeername(s, (struct sockaddr *) &praddr.ss, &praddrlen) == 0 &&
+		myaddr.ss.ss_family == praddr.ss.ss_family &&
+		(myaddr.ss.ss_family == AF_INET
+		? myaddr.i4.sin_port == praddr.i4.sin_port
+		: myaddr.i6.sin6_port == praddr.i6.sin6_port) &&
+		(myaddr.ss.ss_family == AF_INET
+		? myaddr.i4.sin_addr.s_addr == praddr.i4.sin_addr.s_addr
+		: memcmp(myaddr.i6.sin6_addr.s6_addr,
+			praddr.i6.sin6_addr.s6_addr,
+			sizeof(praddr.i6.sin6_addr.s6_addr)) == 0)) {
+		closesocket(s);
+		mapi_setError(mid, "connected to self",
+					__func__, MERROR);
+		return INVALID_SOCKET;
+	}
+
+	return s;
+}
+
+static SOCKET
+connect_socket_tcp_addr(Mapi mid, struct addrinfo *addr)
+{
+	int socktype = addr->ai_socktype;
+#ifdef SOCK_CLOEXEC
+	socktype |= SOCK_CLOEXEC;
+#endif
+
+	SOCKET s =  socket(addr->ai_family, socktype, addr->ai_protocol);
+	if (s == INVALID_SOCKET) {
+		mapi_PrintError(
+			mid, __func__, MERROR,
+			"could not create TCP socket: %s", SOCKET_STRERROR());
+		return INVALID_SOCKET;
+	}
+
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
+	(void) fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
+
+	if (connect(s, addr->ai_addr, addr->ai_addrlen) == SOCKET_ERROR) {
+		mapi_PrintError(
+			mid, __func__, MERROR,
+			"could not connect: %s", SOCKET_STRERROR());
+		closesocket(s);
+		return INVALID_SOCKET;
+	}
+
+	return s;
+}
 
 static MapiMsg
 mapi_handshake(Mapi mid)
@@ -438,7 +388,8 @@ mapi_handshake(Mapi mid)
 	size_t len;
 	MapiHdl hdl;
 
-	  try_again_after_redirect:
+	const char *username = msetting_string(mid->settings, MP_USER);
+	const char *password = msetting_string(mid->settings, MP_PASSWORD);
 
 	/* consume server challenge */
 	len = mnstr_read_block(mid->from, buf, 1, sizeof(buf));
@@ -507,7 +458,7 @@ mapi_handshake(Mapi mid)
 
 	/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
 
-	if (mid->username == NULL || mid->password == NULL) {
+	if (!*username || !*password) {
 		mapi_setError(mid, "username and password must be set",
 				__func__, MERROR);
 		close_connection(mid);
@@ -539,26 +490,26 @@ mapi_handshake(Mapi mid)
 	}
 
 	/* hash password, if not already */
-	if (mid->password[0] != '\1') {
+	if (password[0] != '\1') {
 		char *pwdhash = NULL;
 		if (strcmp(serverhash, "RIPEMD160") == 0) {
-			pwdhash = mcrypt_RIPEMD160Sum(mid->password,
-							strlen(mid->password));
+			pwdhash = mcrypt_RIPEMD160Sum(password,
+							strlen(password));
 		} else if (strcmp(serverhash, "SHA512") == 0) {
-			pwdhash = mcrypt_SHA512Sum(mid->password,
-							strlen(mid->password));
+			pwdhash = mcrypt_SHA512Sum(password,
+							strlen(password));
 		} else if (strcmp(serverhash, "SHA384") == 0) {
-			pwdhash = mcrypt_SHA384Sum(mid->password,
-							strlen(mid->password));
+			pwdhash = mcrypt_SHA384Sum(password,
+							strlen(password));
 		} else if (strcmp(serverhash, "SHA256") == 0) {
-			pwdhash = mcrypt_SHA256Sum(mid->password,
-							strlen(mid->password));
+			pwdhash = mcrypt_SHA256Sum(password,
+							strlen(password));
 		} else if (strcmp(serverhash, "SHA224") == 0) {
-			pwdhash = mcrypt_SHA224Sum(mid->password,
-							strlen(mid->password));
+			pwdhash = mcrypt_SHA224Sum(password,
+							strlen(password));
 		} else if (strcmp(serverhash, "SHA1") == 0) {
-			pwdhash = mcrypt_SHA1Sum(mid->password,
-							strlen(mid->password));
+			pwdhash = mcrypt_SHA1Sum(password,
+							strlen(password));
 		} else {
 			(void)pwdhash;
 			snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
@@ -574,14 +525,24 @@ mapi_handshake(Mapi mid)
 			return mapi_setError(mid, buf, __func__, MERROR);
 		}
 
-		free(mid->password);
-		mid->password = malloc(1 + strlen(pwdhash) + 1);
-		sprintf(mid->password, "\1%s", pwdhash);
+		char *replacement_password = malloc(1 + strlen(pwdhash) + 1);
+		if (replacement_password == NULL) {
+			close_connection(mid);
+			return mapi_setError(mid, "malloc failed", __func__, MERROR);
+		}
+		sprintf(replacement_password, "\1%s", pwdhash);
 		free(pwdhash);
+		msettings_error errmsg = msetting_set_string(mid->settings, MP_PASSWORD, replacement_password);
+		if (errmsg != NULL) {
+			close_connection(mid);
+			return mapi_setError(mid, "could not stow hashed password", __func__, MERROR);
+		}
 	}
 
 
-	char *pw = mid->password + 1;
+	const char *pw = msetting_string(mid->settings, MP_PASSWORD);
+	assert(*pw == '\1');
+	pw++;
 
 	char *hash = NULL;
 	for (; *algs != NULL; algs++) {
@@ -637,10 +598,12 @@ mapi_handshake(Mapi mid)
 #endif
 	/* note: if we make the database field an empty string, it
 		* means we want the default.  However, it *should* be there. */
+	const char *language = msetting_string(mid->settings, MP_LANGUAGE);
+	const char *database = msetting_string(mid->settings, MP_DATABASE);
 	CHECK_SNPRINTF("%s:%s:%s:%s:%s:FILETRANS:",
 			our_endian,
-			mid->username, hash, mid->language,
-			mid->database == NULL ? "" : mid->database);
+			username, hash,
+			language, database);
 
 	if (mid->handshake_options > MAPI_HANDSHAKE_AUTOCOMMIT) {
 		CHECK_SNPRINTF("auto_commit=%d", mid->auto_commit);
@@ -747,10 +710,6 @@ mapi_handshake(Mapi mid)
 		}
 
 		if (*mid->redirects != NULL) {
-			char *red;
-			char *p, *q;
-			char **fr;
-
 			/* redirect, looks like:
 			 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb
 			 * or
@@ -763,95 +722,38 @@ mapi_handshake(Mapi mid)
 				close_connection(mid);
 				return mid->error;
 			}
+			mid->redircnt++;
+
 			/* we only implement following the first */
-			red = mid->redirects[0];
+			char *red = mid->redirects[0];
 
-			/* see if we can possibly handle the redirect */
-			if (strncmp("mapi:monetdb://", red, 15) == 0) {
-				char *db = NULL;
-				/* parse components (we store the args
-				 * immediately in the mid... ok,
-				 * that's dirty) */
-				red += 15; /* "mapi:monetdb://" */
-				p = red;
-				q = NULL;
-				if (*red == '[') {
-					if ((red = strchr(red, ']')) == NULL) {
-						mapi_close_handle(hdl);
-						mapi_setError(mid, "invalid IPv6 hostname", __func__, MERROR);
-						close_connection(mid);
-						return mid->error;
-					}
-				}
-				if ((red = strchr(red, ':')) != NULL) {
-					*red++ = '\0';
-					q = red;
-				} else {
-					red = p;
-				}
-				if ((red = strchr(red, '/')) != NULL) {
-					*red++ = '\0';
-					if (q != NULL) {
-						mid->port = atoi(q);
-						if (mid->port == 0)
-							mid->port = MAPI_PORT;	/* hardwired default */
-					}
-					db = red;
-				} else {
-					red = p;
-					db = NULL;
-				}
-				if (mid->hostname)
-					free(mid->hostname);
-				mid->hostname = strdup(p);
-				if (mid->database)
-					free(mid->database);
-				mid->database = db != NULL ? strdup(db) : NULL;
-
-				parse_uri_query(mid, red);
-
-				mid->redircnt++;
+			char *error_message = NULL;
+			if (!msettings_parse_url(mid->settings, red, &error_message)) {
 				mapi_close_handle(hdl);
-				/* free all redirects */
-				fr = mid->redirects;
-				while (*fr != NULL) {
-					free(*fr);
-					*fr = NULL;
-					fr++;
-				}
-				/* reconnect using the new values */
 				close_connection(mid);
-				return MREDIRECT;
-			} else if (strncmp("mapi:merovingian", red, 16) == 0) {
-				/* this is a proxy "offer", it means we should
-				 * restart the login ritual, without
-				 * disconnecting */
-				parse_uri_query(mid, red + 16);
-				mid->redircnt++;
-				/* free all redirects */
-				fr = mid->redirects;
-				while (*fr != NULL) {
-					free(*fr);
-					*fr = NULL;
-					fr++;
-				}
-				goto try_again_after_redirect;
-			} else {
-				char re[BUFSIZ];
-				snprintf(re, sizeof(re),
-					 "error while parsing redirect: %.100s\n", red);
-				mapi_close_handle(hdl);
-				mapi_setError(mid, re, __func__, MERROR);
-				close_connection(mid);
-				return mid->error;
+				return mapi_PrintError(
+					mid, __func__, MERROR,
+					"%s: %s",
+					error_message ? error_message : "invalid redirect",
+					red);
 			}
+
+			if (strncmp("mapi:merovingian", red, 16) == 0) {
+				// do not close the connection so caller knows to restart handshake
+				assert(mid->connected);
+			} else {
+				close_connection(mid);
+			}
+			return MREDIRECT;
 		}
 	}
 	mapi_close_handle(hdl);
 
 	if (mid->trace)
 		printf("connection established\n");
-	if (mid->languageId != LANG_SQL)
+
+	// I don't understand this assert.
+	if (!msettings_lang_is_sql(mid->settings))
 		return mid->error;
 
 	if (mid->error != MOK)

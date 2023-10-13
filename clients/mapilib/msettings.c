@@ -193,9 +193,12 @@ msettings *msettings_create(void)
 	return mp;
 }
 
-void
+msettings *
 msettings_destroy(msettings *mp)
 {
+	if (mp == NULL)
+		return NULL;
+
 	for (char **p = &mp->dummy_start_string + 1; p < &mp->dummy_end_string; p++) {
 		free(*p);
 	}
@@ -205,6 +208,8 @@ msettings_destroy(msettings *mp)
 	}
 	free(mp->unknown_parameters);
 	free(mp);
+
+	return NULL;
 }
 
 const char*
