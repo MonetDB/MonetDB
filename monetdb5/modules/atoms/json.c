@@ -845,9 +845,9 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 		// pattern contains the .. operator
 		if (terms[i].token == ANY_STEP ||
 			// pattern contains the [*] operator
-			(terms[i].token == CHILD_STEP && terms[i].index == INT_MAX && terms[i].name == NULL)) {
+			(terms[i].token == CHILD_STEP && terms[i].index == INT_MAX && terms[i].name == NULL) ||
+			(terms[i].token == CHILD_STEP && terms[i].index == INT_MAX && *terms[i].name == '*')) {
 
-		/* if (terms[i].make_array) { */
 			return_array = true;
 			break;
 		}
