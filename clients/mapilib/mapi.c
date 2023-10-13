@@ -826,6 +826,7 @@ MapiMsg
 mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
 {
 	assert(msg);
+	my_ad_hoc_log(mid, "error in %s: %s", action, msg);
 	REALLOC(mid->errorstr, strlen(msg) + 1);
 	if (mid->errorstr == NULL)
 		mid->errorstr = mapi_nomem;
@@ -2312,6 +2313,7 @@ mapi_reconnect_old(Mapi mid)
 		};
 		strcpy_len(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
 
+		my_ad_hoc_log(mid, "connecting to Unix socket '%s'", userver.sun_path);
 		if (connect(s, (struct sockaddr *) &userver, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 			snprintf(errbuf, sizeof(errbuf),
 				 "initiating connection on socket failed: %s",
@@ -2380,8 +2382,14 @@ mapi_reconnect_old(Mapi mid)
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 				(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
+				const char *fam
+					= rp->ai_family == AF_INET ? "inet4"
+					: rp->ai_family == AF_INET6 ? "inet6"
+					: "unknown type";
+				my_ad_hoc_log(mid, "connecting to %s TCP socket", fam);
 				if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 					break;  /* success */
+				my_ad_hoc_log(mid, "failed.");
 				closesocket(s);
 			}
 			snprintf(errbuf, sizeof(errbuf),
@@ -2460,6 +2468,7 @@ mapi_reconnect_old(Mapi mid)
 	}
 
   try_again_after_redirect:
+	my_ad_hoc_log(mid, "starting handshake");
 
 	/* consume server challenge */
 	len = mnstr_read_block(mid->from, buf, 1, sizeof(buf));
@@ -2772,6 +2781,7 @@ mapi_reconnect_old(Mapi mid)
 			char *p, *q;
 			char **fr;
 
+			my_ad_hoc_log(mid, "received redirect %s", mid->redirects[0]);
 			/* redirect, looks like:
 			 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb
 			 * or
@@ -2841,6 +2851,7 @@ mapi_reconnect_old(Mapi mid)
 					fr++;
 				}
 				/* reconnect using the new values */
+				my_ad_hoc_log(mid, "following redirect");
 				return mapi_reconnect(mid);
 			} else if (strncmp("mapi:merovingian", red, 16) == 0) {
 				/* this is a proxy "offer", it means we should
@@ -2855,6 +2866,7 @@ mapi_reconnect_old(Mapi mid)
 					*fr = NULL;
 					fr++;
 				}
+				my_ad_hoc_log(mid, "restarting handshake");
 				goto try_again_after_redirect;
 			} else {
 				char re[BUFSIZ];
@@ -2869,6 +2881,7 @@ mapi_reconnect_old(Mapi mid)
 	}
 	mapi_close_handle(hdl);
 
+	my_ad_hoc_log(mid, "connection established");
 	if (mid->trace)
 		printf("connection established\n");
 	if (mid->languageId != LANG_SQL)
@@ -2907,6 +2920,7 @@ mapi_reconnect_old(Mapi mid)
 		mapi_set_time_zone(mid, mid->time_zone);
 	}
 
+	my_ad_hoc_log(mid, "connection ready");
 	return mid->error;
 }
 
@@ -2923,6 +2937,12 @@ mapi_reconnect(Mapi mid)
 		if (!*envvar || *end)
 			return mapi_setError(mid, "Invalid env var USE_OLD_CODE", __func__, MERROR);
 	}
+
+	my_ad_hoc_log(mid, "USE_OLD_CODE=%ld host=%s port=%d",
+		use_old_code,
+		mid->hostname ? mid->hostname : "«NULL»",
+		mid->port
+	);
 
 	if (use_old_code)
 		return mapi_reconnect_old(mid);

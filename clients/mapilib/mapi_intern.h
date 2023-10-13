@@ -301,3 +301,22 @@ Mapi mapi_new(void);
 
 void close_connection(Mapi mid);
 void set_uri(Mapi mid);
+
+
+static inline void my_ad_hoc_log(Mapi mid, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
+
+static inline void
+my_ad_hoc_log(Mapi mid, const char *fmt, ...)
+{
+	const char *var = getenv("MAPI_VERBOSE");
+	if (!var)
+		return;
+
+	va_list ap;
+	va_start(ap, fmt);
+	fprintf(stderr, "mapi %d: ", mid->index);
+	vfprintf(stderr, fmt, ap);
+	fprintf(stderr, "\n");
+	va_end(ap);
+}
