@@ -1986,9 +1986,6 @@ mapi_copymapi(Mapi dest, const Mapi src)
 	if (src->uri)
 		if (!(uri = strdup(src->uri)))
 			goto bailout;
-	if (src->noexplain)
-		if (!(noexplain = strdup(src->noexplain)))
-			goto bailout;
 
 	dest->hostname = hostname;
 	dest->username = username;
@@ -1996,7 +1993,6 @@ mapi_copymapi(Mapi dest, const Mapi src)
 	dest->language = language;
 	dest->database = database;
 	dest->uri = uri;
-	dest->noexplain = noexplain;
 
 	dest->port = src->port;
 	dest->languageId = src->languageId;
@@ -2047,9 +2043,6 @@ mapi_movemapi(Mapi dest, Mapi src)
 	src->database = NULL;
 	dest->uri = src->uri;
 	src->uri = NULL;
-	dest->noexplain = src->noexplain;
-	src->noexplain = NULL;
-
 	dest->port = src->port;
 	dest->languageId = src->languageId;
 	dest->trace = src->trace;
@@ -2089,8 +2082,6 @@ mapi_destroy(Mapi mid)
 		free(mid->language);
 	if (mid->motd)
 		free(mid->motd);
-	if (mid->noexplain)
-		free(mid->noexplain);
 
 	if (mid->database)
 		free(mid->database);
