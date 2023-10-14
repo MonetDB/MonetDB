@@ -36,6 +36,10 @@ static MapiMsg mapi_handshake(Mapi mid);
 MapiMsg
 mapi_reconnectx(Mapi mid)
 {
+	msettings_error err = msettings_validate(mid->settings);
+	if (err)
+		return mapi_setError(mid, err, __func__, MERROR);
+
 	// If neither host nor port are given, scan the Unix domain sockets in
 	// /tmp and see if any of them serve this database.
 	// Otherwise, just try to connect to what was given.
