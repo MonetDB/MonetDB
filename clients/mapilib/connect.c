@@ -281,7 +281,7 @@ connect_socket_unix(Mapi mid, const char *sockname)
 		return INVALID_SOCKET;
 	}
 
-	return MOK;
+	return s;
 }
 
 #endif  // end of ifdef HAVE_SYS_UN_H
