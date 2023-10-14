@@ -65,6 +65,7 @@ typedef const char *msettings_error;
 /* returns NULL if could not allocate */
 msettings *msettings_create(void);
 msettings *msettings_clone(const msettings *mp);
+extern const msettings *msettings_default;
 
 /* always returns NULL */
 msettings *msettings_destroy(msettings *mp);

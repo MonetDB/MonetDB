@@ -235,14 +235,11 @@ struct MapiStruct {
 	bool connected;
 	bool trace;		/* Trace Mapi interaction */
 	int handshake_options;	/* which settings can be sent during challenge/response? */
-	bool auto_commit;
 	bool columnar_protocol;
 	bool sizeheader;
-	int time_zone;		/* seconds EAST of UTC */
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 
-	int cachelimit;		/* default maximum number of rows to cache */
 	int redircnt;		/* redirection count, used to cut of redirect loops */
 	int redirmax;		/* maximum redirects before giving up */
 #define MAXREDIR 50

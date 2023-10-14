@@ -606,10 +606,10 @@ mapi_handshake(Mapi mid)
 			language, database);
 
 	if (mid->handshake_options > MAPI_HANDSHAKE_AUTOCOMMIT) {
-		CHECK_SNPRINTF("auto_commit=%d", mid->auto_commit);
+		CHECK_SNPRINTF("auto_commit=%d", msetting_bool(mid->settings, MP_AUTOCOMMIT));
 	}
 	if (mid->handshake_options > MAPI_HANDSHAKE_REPLY_SIZE) {
-		CHECK_SNPRINTF(",reply_size=%d", mid->cachelimit);
+		CHECK_SNPRINTF(",reply_size=%ld", msetting_long(mid->settings, MP_REPLYSIZE));
 	}
 	if (mid->handshake_options > MAPI_HANDSHAKE_SIZE_HEADER) {
 		CHECK_SNPRINTF(",size_header=%d", mid->sizeheader); // with underscore, despite X command without
@@ -618,7 +618,7 @@ mapi_handshake(Mapi mid)
 		CHECK_SNPRINTF(",columnar_protocol=%d", mid->columnar_protocol);
 	}
 	if (mid->handshake_options > MAPI_HANDSHAKE_TIME_ZONE) {
-		CHECK_SNPRINTF(",time_zone=%d", mid->time_zone);
+		CHECK_SNPRINTF(",time_zone=%ld", msetting_long(mid->settings, MP_TIMEZONE));
 	}
 	if (mid->handshake_options > 0) {
 		CHECK_SNPRINTF(":");
@@ -761,16 +761,18 @@ mapi_handshake(Mapi mid)
 
 	/* use X commands to send options that couldn't be sent in the handshake */
 	/* tell server about auto_complete and cache limit if handshake options weren't used */
-	if (mid->handshake_options <= MAPI_HANDSHAKE_AUTOCOMMIT && mid->auto_commit != MapiStructDefaults.auto_commit) {
+	bool autocommit = msetting_bool(mid->settings, MP_AUTOCOMMIT);
+	if (mid->handshake_options <= MAPI_HANDSHAKE_AUTOCOMMIT && autocommit != msetting_bool(msettings_default, MP_AUTOCOMMIT)) {
 		char buf[2];
-		sprintf(buf, "%d", !!mid->auto_commit);
+		sprintf(buf, "%d", !!autocommit);
 		MapiMsg result = mapi_Xcommand(mid, "auto_commit", buf);
 		if (result != MOK)
 			return mid->error;
 	}
-	if (mid->handshake_options <= MAPI_HANDSHAKE_REPLY_SIZE && mid->cachelimit != MapiStructDefaults.cachelimit) {
+	long replysize = msetting_long(mid->settings, MP_REPLYSIZE);
+	if (mid->handshake_options <= MAPI_HANDSHAKE_REPLY_SIZE && replysize != msetting_long(msettings_default, MP_REPLYSIZE)) {
 		char buf[50];
-		sprintf(buf, "%d", mid->cachelimit);
+		sprintf(buf, "%ld", replysize);
 		MapiMsg result = mapi_Xcommand(mid, "reply_size", buf);
 		if (result != MOK)
 			return mid->error;
@@ -786,7 +788,7 @@ mapi_handshake(Mapi mid)
 	// The reason is that columnar_protocol is very new. If it isn't supported in the handshake it isn't supported at
 	// all so sending the Xcommand would just give an error.
 	if (mid->handshake_options <= MAPI_HANDSHAKE_TIME_ZONE) {
-		mapi_set_time_zone(mid, mid->time_zone);
+		mapi_set_time_zone(mid, msetting_long(mid->settings, MP_TIMEZONE));
 	}
 
 	return mid->error;

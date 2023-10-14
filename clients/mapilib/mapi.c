@@ -1170,7 +1170,7 @@ bool
 mapi_get_autocommit(Mapi mid)
 {
 	mapi_check0(mid);
-	return mid->auto_commit;
+	return msetting_bool(mid->settings, MP_AUTOCOMMIT);
 }
 
 bool
@@ -1184,7 +1184,7 @@ int
 mapi_get_time_zone(Mapi mid)
 {
 	mapi_check0(mid);
-	return mid->time_zone;
+	return msetting_long(mid->settings, MP_TIMEZONE);
 }
 
 static int64_t
@@ -1290,7 +1290,7 @@ new_result(MapiHdl hdl)
 		.tableid = -1,
 		.querytype = -1,
 		.last_id = -1,
-		.cache.rowlimit = hdl->mid->cachelimit,
+		.cache.rowlimit = msetting_long(hdl->mid->settings, MP_REPLYSIZE),
 		.cache.reader = -1,
 		.commentonly = true,
 	};
@@ -1663,9 +1663,7 @@ mapi_close_handle(MapiHdl hdl)
 }
 
 const struct MapiStruct MapiStructDefaults = {
-	.auto_commit = true,
 	.error = MOK,
-	.cachelimit = 100,
 	.redirmax = 10,
 	.blk.eos = false,
 	.blk.lim = BLOCK,
@@ -1698,6 +1696,7 @@ mapi_new(void)
 	mid->blk.buf[mid->blk.lim] = 0;
 
 	/* also the current timezone, seconds EAST of UTC */
+	long time_zone;
 #if defined(_MSC_VER)
 	DYNAMIC_TIME_ZONE_INFORMATION tzinf;
 
@@ -1708,30 +1707,33 @@ mapi_new(void)
 	switch (GetDynamicTimeZoneInformation(&tzinf)) {
 	case TIME_ZONE_ID_STANDARD:	/* using standard time */
 	case TIME_ZONE_ID_UNKNOWN:	/* no daylight saving time in this zone */
-		mid->time_zone = -(int) tzinf.Bias * 60;
+		time_zone = -(int) tzinf.Bias * 60;
 		break;
 	case TIME_ZONE_ID_DAYLIGHT:	/* using daylight saving time */
-		mid->time_zone = -(int) (tzinf.Bias + tzinf.DaylightBias) * 60;
+		time_zone = -(int) (tzinf.Bias + tzinf.DaylightBias) * 60;
 		break;
 	default:					/* aka TIME_ZONE_ID_INVALID */
 		/* call failed, we don't know the time zone */
-		mid->time_zone = 0;
+		time_zone = 0;
 		break;
 	}
 #else
 	time_t t = time(NULL);
 	struct tm *local_tm = localtime_r(&t, &(struct tm){0});
 #ifdef HAVE_TM_GMTOFF
-	mid->time_zone = (int) local_tm->tm_gmtoff;
+	time_zone = local_tm->tm_gmtoff;
 #else
 	struct tm *gm_tm = gmtime_r(&t, &(struct tm){0});
 	time_t gt = mktime(gm_tm);
 	local_tm->tm_isdst=0; /* We need the difference without dst */
 	time_t lt = mktime(local_tm);
 	assert((int64_t) gt - (int64_t) lt >= (int64_t) INT_MIN && (int64_t) gt - (int64_t) lt <= (int64_t) INT_MAX);
-	mid->time_zone = (int) (lt - gt);
+	time_zone = (long) (lt - gt);
 #endif
 #endif
+	msettings_error err =  msetting_set_long(mid->settings, MP_TIMEZONE, time_zone);
+	if (err)
+		mapi_setError(mid, err, __func__, MERROR);
 
 	return mid;
 }
@@ -2634,13 +2636,15 @@ read_line(Mapi mid)
 MapiMsg
 mapi_setAutocommit(Mapi mid, bool autocommit)
 {
-	if (mid->auto_commit == autocommit)
+	if (msetting_bool(mid->settings, MP_AUTOCOMMIT) == autocommit)
 		return MOK;
 	if (!msettings_lang_is_sql(mid->settings)) {
 		mapi_setError(mid, "autocommit only supported in SQL", __func__, MERROR);
 		return MERROR;
 	}
-	mid->auto_commit = autocommit;
+	msettings_error err = msetting_set_bool(mid->settings, MP_AUTOCOMMIT, autocommit);
+	if (err)
+		return mapi_setError(mid, err, __func__, MERROR);
 	if (!mid->connected)
 		return MOK;
 	if (autocommit)
@@ -2652,7 +2656,9 @@ mapi_setAutocommit(Mapi mid, bool autocommit)
 MapiMsg
 mapi_set_time_zone(Mapi mid, int time_zone)
 {
-	mid->time_zone = time_zone;
+	msettings_error err = msetting_set_long(mid->settings, MP_TIMEZONE, time_zone);
+	if (err)
+		return mapi_setError(mid, err, __func__, MERROR);
 	if (!mid->connected)
 		return MOK;
 
@@ -2946,7 +2952,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			result->sqloptimizertime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TRANS:
-			hdl->mid->auto_commit = *nline != 'f';
+			msetting_set_bool(hdl->mid->settings, MP_AUTOCOMMIT, *nline != 'f');
 			break;
 		case Q_UPDATE:
 			result->row_count = strtoll(nline, &nline, 10);
@@ -3590,7 +3596,9 @@ MapiMsg
 mapi_cache_limit(Mapi mid, int limit)
 {
 	/* clean out superflous space TODO */
-	mid->cachelimit = limit;
+	msettings_error err = msetting_set_long(mid->settings, MP_REPLYSIZE, limit);
+	if (err)
+		return mapi_setError(mid, err, __func__, MERROR);
 	if (!mid->connected)
 		return MOK;
 	mapi_check(mid);
