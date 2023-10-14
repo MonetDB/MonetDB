@@ -79,8 +79,6 @@ mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, con
 mapi_export Mapi mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang);
 mapi_export MapiMsg mapi_destroy(Mapi mid)
 	__attribute__((__nonnull__(1)));
-mapi_export MapiMsg mapi_copymapi(Mapi dest, const Mapi src);
-mapi_export void mapi_movemapi(Mapi dest, Mapi src);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 mapi_export char **mapi_resolve(const char *host, int port, const char *pattern);
 mapi_export MapiMsg mapi_disconnect(Mapi mid)
