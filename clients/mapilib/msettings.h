@@ -72,7 +72,8 @@ msettings *msettings_destroy(msettings *mp);
 /* retrieve and set; call abort() on type error */
 
 const char* msetting_string(const msettings *mp, mparm parm);
-msettings_error msetting_set_string(msettings *mp, mparm parm, const char* value);
+msettings_error msetting_set_string(msettings *mp, mparm parm, const char* value)
+	__attribute__((__nonnull__(3)));
 
 long msetting_long(const msettings *mp, mparm parm);
 msettings_error msetting_set_long(msettings *mp, mparm parm, long value);

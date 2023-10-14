@@ -471,8 +471,14 @@ ACCEPT monetdb:///?binary=0100
 EXPECT connect_binary=100
 ```
 
+We take empty to be 'on'
+
 ```test
-REJECT monetdb:///?binary=
+ACCEPT monetdb:///?binary=
+EXPECT connect_binary=65535
+```
+
+```test
 REJECT monetdb:///?binary=-1
 REJECT monetdb:///?binary=1.0
 REJECT monetdb:///?binary=banana

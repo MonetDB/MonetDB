@@ -144,6 +144,9 @@ struct msettings {
 
 	char **unknown_parameters;
 	size_t nr_unknown;
+
+	bool lang_is_mal;
+	bool lang_is_sql;
 	long user_generation;
 	long password_generation;
 	char unix_sock_name_buffer[50];
@@ -151,46 +154,81 @@ struct msettings {
 	bool validated;
 };
 
+static
+const msettings msettings_default_values = {
+	.tls = false,
+	.autocommit = true,
+
+	.port = -1 ,
+	.timezone = 0,
+	.replysize = 100,
+
+	.sock = NULL,
+	.cert = NULL,
+	.clientkey = NULL,
+	.clientcert = NULL,
+	.host = NULL,
+	.database = NULL,
+	.tableschema = NULL,
+	.table = NULL,
+	.certhash = NULL,
+	.user = NULL,
+	.password = NULL,
+	.language = NULL,
+	.schema = NULL,
+	.binary = NULL,
+
+	.unknown_parameters = NULL,
+	.nr_unknown = 0,
+	.lang_is_mal = false,
+	.lang_is_sql = true,
+
+	.validated = false,
+};
+
+const msettings *msettings_default = &msettings_default_values;
+
 msettings *msettings_create(void)
 {
-	char *sql = strdup("sql");
-	char *binary_on = strdup("on");
 	msettings *mp = malloc(sizeof(*mp));
-	if (!sql || !binary_on || !mp) {
-		free(sql);
-		free(binary_on);
+	if (!mp) {
 		free(mp);
 		return NULL;
 	}
-	*mp = (msettings) {
-		.tls = false,
-		.autocommit = true,
-
-		.port = -1 ,
-		.timezone = 0,
-		.replysize = 100,
-
-		.sock = NULL,
-		.cert = NULL,
-		.clientkey = NULL,
-		.clientcert = NULL,
-		.host = NULL,
-		.database = NULL,
-		.tableschema = NULL,
-		.table = NULL,
-		.certhash = NULL,
-		.user = NULL,
-		.password = NULL,
-		.language = sql,
-		.schema = NULL,
-		.binary = binary_on,
-
-		.unknown_parameters = NULL,
-		.nr_unknown = 0,
-		.validated = false,
-	};
-
+	*mp = msettings_default_values;
 	return mp;
+}
+
+msettings *msettings_clone(const msettings *orig)
+{
+	msettings *mp = malloc(sizeof(*mp));
+	if (!mp) {
+		free(mp);
+		return NULL;
+	}
+	*mp = *orig;
+
+	// now we have to very carefully duplicate the strings.
+	// taking care to only free our own ones if that fails
+
+	char **start = &mp->dummy_start_string;
+	char **end = &mp->dummy_end_string;
+	char **p = start;
+	while (p < end) {
+		if (*p != NULL) {
+			*p = strdup(*p);
+			if (*p == NULL)
+				goto bailout;
+		}
+		p++;
+	}
+	return mp;
+
+bailout:
+	for (char **q = start; q < p; q++)
+		free(*q);
+	free(mp);
+	return NULL;
 }
 
 msettings *
@@ -222,14 +260,22 @@ msetting_string(const msettings *mp, mparm parm)
 	if (p >=  &mp->dummy_end_string)
 		FATAL();
 	char *s = *p;
-	return s == NULL ? "" : s;
+
+	if (s == NULL) {
+		if (parm == MP_LANGUAGE)
+			return "sql";
+		else if (parm == MP_BINARY)
+			return "on";
+		return "";
+	}
+	return s;
 }
 
 
 msettings_error
 msetting_set_string(msettings *mp, mparm parm, const char* value)
 {
-	char *v;
+	assert(value != NULL);
 
 	if (mparm_classify(parm) != MPCLASS_STRING)
 		FATAL();
@@ -238,21 +284,33 @@ msetting_set_string(msettings *mp, mparm parm, const char* value)
 	if (p >=  &mp->dummy_end_string)
 		FATAL();
 
-	if (value && *value) {
-		v = strdup(value);
-		if (!v)
-			return "malloc failed";
-	} else {
-		v = NULL;
-	}
-
+	char *v = strdup(value);
+	if (!v)
+		return "malloc failed";
 	free(*p);
 	*p = v;
 
-	if (parm == MP_USER)
-		mp->user_generation++;
-	if (parm == MP_PASSWORD)
-		mp->password_generation++;
+	switch (parm) {
+		case MP_USER:
+			mp->user_generation++;
+			break;
+		case MP_PASSWORD:
+			mp->password_generation++;
+			break;
+		case MP_LANGUAGE:
+			mp->lang_is_mal = false;
+			mp->lang_is_sql = false;
+			// Tricky logic, a mixture of strstr==val and strcmp
+			// strstr==val is a clever way to compute 'startswith'
+			if (strcmp(value, "mal") == 0 || strcmp(value, "msql") == 0)
+				mp->lang_is_mal = true;
+			else if (strstr(value, "sql") == value)
+				mp->lang_is_sql = true;
+			else if (strcmp(value, "`"))
+			break;
+		default:
+			break;
+	}
 
 	mp->validated = false;
 	return NULL;
@@ -626,18 +684,19 @@ msettings_connect_certhash_digits(const msettings *mp)
 long
 msettings_connect_binary(const msettings *mp)
 {
+	const long sufficiently_large = 65535;
 	const char *binary = msetting_string(mp, MP_BINARY);
 
-	// must not be empty
+	// empty is same as true
 	if (binary[0] == '\0')
-		return -1;
+		return sufficiently_large;
 
 	// may be bool
 	int b = msetting_parse_bool(binary);
 	if (b == 0)
 		return 0;
 	if (b == 1)
-		return 65535; // "sufficiently large"
+		return sufficiently_large;
 	assert(b < 0);
 
 	char *end;
@@ -662,3 +721,17 @@ msettings_password_generation(const msettings *mp)
 {
 	return mp->password_generation;
 }
+
+
+bool
+msettings_lang_is_mal(const msettings *mp)
+{
+	return mp->lang_is_mal;
+}
+
+bool
+msettings_lang_is_sql(const msettings *mp)
+{
+	return mp->lang_is_sql;
+}
+
