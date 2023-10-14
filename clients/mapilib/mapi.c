@@ -1867,7 +1867,8 @@ mapi_mapi(const char *host, int port, const char *username,
 			break;
 		if (dbname && (err = msetting_set_string(settings, MP_DATABASE, dbname)))
 			break;
-		err = msetting_set_long(settings, MP_PORT, port);
+		if (port > 0 && (err = msetting_set_long(settings, MP_PORT, port)))
+			break;
 	} while (0);
 	if (err) {
 		mapi_setError(mid, err, __func__, MERROR);

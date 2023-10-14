@@ -103,6 +103,8 @@ scan_unix_sockets(Mapi mid)
 				return mapi_setError(mid, "malloc failed", __func__, MERROR);
 			}
 			msettings_error errmsg = msetting_set_long(mid->settings, MP_PORT, candidates[i].port);
+			if (!errmsg)
+				errmsg = msettings_validate(mid->settings);
 			if (errmsg) {
 				mapi_setError(mid, errmsg, __func__, MERROR);
 				msettings_destroy(mid->settings);
