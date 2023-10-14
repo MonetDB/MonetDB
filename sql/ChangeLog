@@ -8,6 +8,9 @@
    information_schema.views
    information_schema.columns
    information_schema.character_sets
+   information_schema.check_constraints
+   information_schema.table_constraints
+   information_schema.sequences
 
   Most views have been extended (after the standard columns) with MonetDB
   specific information columns such as schema_id, table_id, column_id, etc.

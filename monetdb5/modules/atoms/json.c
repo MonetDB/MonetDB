@@ -637,6 +637,7 @@ JSONgetValue(JSON *jt, int idx)
 	return s;
 }
 
+/* eats res and r */
 static str
 JSONglue(str res, str r, char sep)
 {
@@ -743,8 +744,9 @@ JSONmatch(JSON *jt, int ji, pattern *terms, int ti, bool accumulate)
 						r = JSONgetValue(jt, jt->elm[i].child);
 						if (r == NULL)
 							r = (str) -1;
-					} else
+					} else {
 						r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1, terms[ti].index == INT_MAX);
+					}
 					if (r == (str) -1 || r == (str) -2) {
 						GDKfree(res);
 						return r;
@@ -754,7 +756,7 @@ JSONmatch(JSON *jt, int ji, pattern *terms, int ti, bool accumulate)
 					} else {  // Keep the last matching value
 						if (res)
 							GDKfree(res);
-						res = GDKstrdup(r);
+						res = r;
 					}
 				}
 				cnt++;
@@ -845,9 +847,9 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 		// pattern contains the .. operator
 		if (terms[i].token == ANY_STEP ||
 			// pattern contains the [*] operator
-			(terms[i].token == CHILD_STEP && terms[i].index == INT_MAX && terms[i].name == NULL)) {
+			(terms[i].token == CHILD_STEP && terms[i].index == INT_MAX && terms[i].name == NULL) ||
+			(terms[i].token == CHILD_STEP && terms[i].index == INT_MAX && *terms[i].name == '*')) {
 
-		/* if (terms[i].make_array) { */
 			return_array = true;
 			break;
 		}
@@ -1098,7 +1100,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 				return idx;
 
 			/* Search for a duplicate key */
-			for(pidx = nxt - 1; pidx > idx; pidx--) {
+			for(pidx = jt->elm[idx].next; pidx != 0; pidx = jt->elm[pidx].next) {
 				if (jt->elm[pidx].kind == JSON_ELEMENT &&
 					jt->elm[pidx].valuelen == jt->elm[nxt].valuelen - 2 &&
 					strncmp(jt->elm[pidx].value, jt->elm[nxt].value + 1,
@@ -1108,7 +1110,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			}
 
 			/* Duplicate found: Change the value of the previous key. */
-			if (pidx > idx) {
+			if (pidx > 0) {
 				jt->elm[pidx].child = chld;
 				/* Note that we do not call JSONappend here.
 				 *
