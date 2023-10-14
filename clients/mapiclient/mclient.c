@@ -3562,7 +3562,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
+	if (dbname != NULL && strchr(dbname, ':') != NULL) {
 		mid = mapi_mapiuri(dbname, user, passwd, language);
 	} else {
 		mid = mapi_mapi(host, port, user, passwd, language, dbname);
