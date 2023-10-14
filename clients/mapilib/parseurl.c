@@ -428,12 +428,39 @@ parse_classic_unix(msettings *mp, scanner *sc)
 			return false;
 	}
 
+	// should have consumed everything
+	if (sc->c != '\0' && sc-> c != '#')
+		return unexpected(sc);
+
+	return true;
+}
+
+static bool
+parse_classic_merovingian(msettings *mp, scanner *sc)
+{
+	if (sc->c == '?') {
+		if (!parse_classic_query_parameters(mp, sc))
+			return false;
+	}
+
+	// should have consumed everything
+	if (sc->c != '\0' && sc-> c != '#')
+		return unexpected(sc);
+
 	return true;
 }
 
 static bool
 parse_classic(msettings *mp, scanner *sc)
 {
+	// we accept mapi:merovingian but we don't want to
+	// expose that we do
+	if (sc->p[0] == 'm' && sc->p[1] == 'e') {
+		if (!consume(sc, "merovingian://proxy"))
+			return false;
+		return parse_classic_merovingian(mp, sc);
+	}
+
 	if (!consume(sc, "monetdb://"))
 		return false;
 

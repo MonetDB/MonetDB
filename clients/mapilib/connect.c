@@ -150,9 +150,9 @@ establish_connection(Mapi mid)
 		// connection.
 		if (!mid->connected) {
 			msg = connect_socket(mid);
+			if (msg != MOK)
+				return msg;
 		}
-		if (msg != MOK)
-			return msg;
 		msg = mapi_handshake(mid);
 	}
 
