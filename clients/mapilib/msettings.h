@@ -101,7 +101,7 @@ bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer);
 int msetting_parse_bool(const char *text);
 
 /* return an error message if the validity rules are not satisfied */
-msettings_error msettings_validate(msettings *mp);
+bool msettings_validate(msettings *mp, char **errmsg);
 
 
 /* virtual parameters */

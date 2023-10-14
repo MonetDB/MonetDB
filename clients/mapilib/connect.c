@@ -36,9 +36,12 @@ static MapiMsg mapi_handshake(Mapi mid);
 MapiMsg
 mapi_reconnectx(Mapi mid)
 {
-	msettings_error err = msettings_validate(mid->settings);
-	if (err)
-		return mapi_setError(mid, err, __func__, MERROR);
+	char *err = NULL;
+	if (!msettings_validate(mid->settings, &err)) {
+		mapi_setError(mid, err, __func__, MERROR);
+		free(err);
+		return MERROR;
+	}
 
 	// If neither host nor port are given, scan the Unix domain sockets in
 	// /tmp and see if any of them serve this database.
@@ -103,10 +106,13 @@ scan_unix_sockets(Mapi mid)
 				return mapi_setError(mid, "malloc failed", __func__, MERROR);
 			}
 			msettings_error errmsg = msetting_set_long(mid->settings, MP_PORT, candidates[i].port);
-			if (!errmsg)
-				errmsg = msettings_validate(mid->settings);
+			char *allocated_errmsg = NULL;
+			if (!errmsg && !msettings_validate(mid->settings, &allocated_errmsg)) {
+				errmsg = allocated_errmsg;
+			}
 			if (errmsg) {
 				mapi_setError(mid, errmsg, __func__, MERROR);
+				free(allocated_errmsg);
 				msettings_destroy(mid->settings);
 				mid->settings = original;
 				return MERROR;
@@ -232,7 +238,7 @@ connect_socket_unix(Mapi mid, const char *sockname)
 {
 	struct sockaddr_un userver;
 	if (strlen(sockname) >= sizeof(userver.sun_path)) {
-		mapi_setError(mid, "path name too long", __func__, MERROR);
+		mapi_PrintError(mid, __func__, MERROR, "path name '%s' too long", sockname);
 		return INVALID_SOCKET;
 	}
 
@@ -246,7 +252,7 @@ connect_socket_unix(Mapi mid, const char *sockname)
 	if (s == INVALID_SOCKET) {
 		mapi_PrintError(
 			mid, __func__, MERROR,
-			"could not create Unix domain socket: %s", strerror(errno));
+			"could not create Unix domain socket '%s': %s", sockname, strerror(errno));
 		return INVALID_SOCKET;
 	}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
@@ -264,7 +270,7 @@ connect_socket_unix(Mapi mid, const char *sockname)
 		closesocket(s);
 		mapi_PrintError(
 			mid, __func__, MERROR,
-			"connect to Unix domain socket failed: %s", strerror(errno));
+			"connect to Unix domain socket '%s' failed: %s", sockname, strerror(errno));
 		return INVALID_SOCKET;
 	}
 
@@ -290,8 +296,12 @@ static SOCKET
 connect_socket_tcp(Mapi mid, const char *host, int port)
 {
 	int ret;
+	assert(host);
 	char portbuf[10];
 	snprintf(portbuf, sizeof(portbuf), "%d", port);
+
+	if (host[0] == '/')
+		return mapi_setError(mid, "Setting the socket dir is not supported yet", __func__, MERROR);
 
 	struct addrinfo hints = (struct addrinfo) {
 		.ai_family = AF_UNSPEC,
@@ -303,7 +313,7 @@ connect_socket_tcp(Mapi mid, const char *host, int port)
 	if (ret != 0) {
 		mapi_PrintError(
 			mid, __func__, MERROR,
-			"getaddrinfo failed: %s", gai_strerror(ret));
+			"getaddrinfo %s:%s failed: %s", host, portbuf, gai_strerror(ret));
 		return INVALID_SOCKET;
 	}
 	if (addresses == NULL) {

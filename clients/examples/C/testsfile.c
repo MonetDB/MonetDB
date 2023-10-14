@@ -42,9 +42,10 @@ handle_accept_command(const char *location, char *url)
 		return false;
 	}
 
-	const char *msg = msettings_validate(mp);
-	if (msg != NULL) {
+	char *msg = NULL;
+	if (!msettings_validate(mp, &msg)) {
 		fprintf(stderr, "%s: URL invalid: %s\n", location, msg);
+		free(msg);
 		return false;
 	}
 	return true;
@@ -57,9 +58,11 @@ handle_reject_command(const char *location, char *url)
 	if (!ok)
 		return true;
 
-	const char *msg = msettings_validate(mp);
-	if (msg != NULL)
+	char *msg = NULL;
+	if (!msettings_validate(mp, &msg)) {
+		free(msg);
 		return true;
+	}
 
 	fprintf(stderr, "%s: expected URL to be rejected.\n", location);
 	return false;
@@ -78,10 +81,11 @@ handle_set_command(const char *location, const char *key, const char *value)
 
 static bool
 ensure_valid(const char *location) {
-	const char *msg = msettings_validate(mp);
-	if (msg == NULL)
+	char *msg = NULL;
+	if (msettings_validate(mp, &msg))
 		return true;
 	fprintf(stderr, "%s: invalid parameter state: %s\n", location, msg);
+	free(msg);
 	return false;
 }
 
@@ -172,14 +176,16 @@ handle_expect_command(const char *location, char *key, char *value)
 			fprintf(stderr, "%s: invalid boolean value: %s\n", location, value);
 			return false;
 		}
-		bool expected = x > 0;
-		msettings_error msg = msettings_validate(mp);
-		bool actual = msg == NULL;
-		if (actual != expected) {
+		bool expected_valid = x > 0;
+
+		char * msg = NULL;
+		bool actually_valid = msettings_validate(mp, &msg);
+		free(msg);
+		if (actually_valid != expected_valid) {
 			fprintf(stderr, "%s: expected '%s', found '%s'\n",
 				location,
-				expected ? "true" : "false",
-				actual ? "true" : "false"
+				expected_valid ? "true" : "false",
+				actually_valid ? "true" : "false"
 			);
 			return false;
 		}

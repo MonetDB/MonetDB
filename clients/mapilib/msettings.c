@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +28,32 @@ int msetting_parse_bool(const char *text)
 			return variants[i].value;
 	return -1;
 }
+
+char* allocprintf(const char *fmt, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+
+char *
+allocprintf(const char *fmt, ...)
+{
+	size_t buflen = 80;
+	while (1) {
+		char *buf = malloc(buflen);
+		if (buf == NULL)
+			return NULL;
+		va_list ap;
+		va_start(ap, fmt);
+		int n = vsnprintf(buf, buflen, fmt, ap);
+		va_end(ap);
+		if (n >= 0 && (size_t)n < buflen)
+			return buf;
+		free(buf);
+		if (n < 0)
+			return NULL;
+		buflen = n + 1;
+	}
+}
+
+
 
 
 static const struct { const char *name;  mparm parm; }
@@ -530,19 +557,24 @@ validate_identifier(const char *name)
 	return true;
 }
 
-msettings_error
-msettings_validate(msettings *mp)
+bool
+msettings_validate(msettings *mp, char **errmsg)
 {
 	if (mp->validated)
-		return NULL;
+		return true;
 
 	// 1. The parameters have the types listed in the table in [Section
 	//    Parameters](#parameters).
 	// (this has already been checked)
 
 	// 2. At least one of **sock** and **host** must be empty.
-	if (nonempty(mp, MP_SOCK) && nonempty(mp, MP_HOST))
-		return "With sock=, host must be 'localhost'";
+	if (nonempty(mp, MP_SOCK) && nonempty(mp, MP_HOST)) {
+		*errmsg = allocprintf(
+			"With sock='%s', host must be 'localhost', not '%s'",
+			msetting_string(mp, MP_SOCK),
+			msetting_string(mp, MP_HOST));
+		return false;
+	}
 
 	// 3. The string parameter **binary** must either parse as a boolean or as a
 	//    non-negative integer.
@@ -550,49 +582,64 @@ msettings_validate(msettings *mp)
 	mp->validated = true;
 	long level = msettings_connect_binary(mp);
 	mp->validated = false;
-	if (level < 0)
-		return "invalid value for parameter 'binary'";
+	if (level < 0) {
+		*errmsg = allocprintf("invalid value '%s' for parameter 'binary'", msetting_string(mp, MP_BINARY));
+		return false;
+	}
 
 	// 4. If **sock** is not empty, **tls** must be 'off'.
-	if (nonempty(mp, MP_SOCK) && msetting_bool(mp, MP_TLS))
-		return "TLS cannot be used with Unix domain sockets";
+	if (nonempty(mp, MP_SOCK) && msetting_bool(mp, MP_TLS)) {
+		*errmsg = allocprintf("TLS cannot be used with Unix domain sockets");
+		return false;
+	}
 
 	// 5. If **certhash** is not empty, it must be of the form `{sha256}hexdigits`
 	//    where hexdigits is a non-empty sequence of 0-9, a-f, A-F and colons.
 	const char *certhash_msg = validate_certhash(mp);
-	if (certhash_msg)
-		return certhash_msg;
-
+	if (certhash_msg) {
+		*errmsg = strdup(certhash_msg);
+		return false;
+	}
 	// 6. If **tls** is 'off', **cert** and **certhash** must be 'off' as well.
 	if (nonempty(mp, MP_CERT) || nonempty(mp, MP_CERTHASH))
-		if (!msetting_bool(mp, MP_TLS))
-			return "'cert' and 'certhash' can only be used with monetdbs:";
+		if (!msetting_bool(mp, MP_TLS)) {
+			*errmsg = strdup("'cert' and 'certhash' can only be used with monetdbs:");
+			return false;
+		}
 
 	// 7. Parameters **database**, **tableschema** and **table** must consist only of
 	//    upper- and lowercase letters, digits, dashes and underscores. They must not
 	//    start with a dash.
 	const char *database = msetting_string(mp, MP_DATABASE);
-	if (!validate_identifier(database))
-		return "invalid database name";
+	if (!validate_identifier(database)) {
+		*errmsg = allocprintf("invalid database name '%s'", database);
+		return false;
+	}
 	const char *tableschema = msetting_string(mp, MP_TABLESCHEMA);
-	if (!validate_identifier(tableschema))
-		return "invalid schema name";
+	if (!validate_identifier(tableschema)) {
+		*errmsg = allocprintf("invalid schema name '%s'", tableschema);
+		return false;
+	}
 	const char *table = msetting_string(mp, MP_TABLE);
-	if (!validate_identifier(table))
-		return "invalid table name";
+	if (!validate_identifier(table)) {
+		*errmsg = allocprintf("invalid table name '%s'", table);
+		return false;
+	}
 
 	// 8. Parameter **port** must be -1 or in the range 1-65535.
 	long port = msetting_long(mp, MP_PORT);
 	bool port_ok = (port == -1 || (port >= 1 && port <= 65535));
-	if (!port_ok)
-		return "invalid port";
+	if (!port_ok) {
+		*errmsg = allocprintf("invalid port '%ld'", port);
+		return false;
+	}
 
 	// compute this here so the getter function can take const msettings*
 	long effective_port = msettings_connect_port(mp);
 	snprintf(mp->unix_sock_name_buffer, sizeof(mp->unix_sock_name_buffer), "/tmp/.s.monetdb.%ld", effective_port);
 
 	mp->validated = true;
-	return NULL;
+	return true;
 }
 
 bool
