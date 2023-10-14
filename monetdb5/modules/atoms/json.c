@@ -637,6 +637,7 @@ JSONgetValue(JSON *jt, int idx)
 	return s;
 }
 
+/* eats res and r */
 static str
 JSONglue(str res, str r, char sep)
 {
@@ -743,8 +744,9 @@ JSONmatch(JSON *jt, int ji, pattern *terms, int ti, bool accumulate)
 						r = JSONgetValue(jt, jt->elm[i].child);
 						if (r == NULL)
 							r = (str) -1;
-					} else
+					} else {
 						r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1, terms[ti].index == INT_MAX);
+					}
 					if (r == (str) -1 || r == (str) -2) {
 						GDKfree(res);
 						return r;
@@ -754,7 +756,7 @@ JSONmatch(JSON *jt, int ji, pattern *terms, int ti, bool accumulate)
 					} else {  // Keep the last matching value
 						if (res)
 							GDKfree(res);
-						res = GDKstrdup(r);
+						res = r;
 					}
 				}
 				cnt++;
