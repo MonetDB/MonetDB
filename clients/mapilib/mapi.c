@@ -1687,6 +1687,7 @@ mapi_new(void)
 
 	/* then fill in some details */
 	*mid = MapiStructDefaults;
+	mid->settings = settings;
 	mid->index =  (uint32_t) ATOMIC_ADD(&index, 1); /* for distinctions in log records */
 	if ((mid->blk.buf = malloc(mid->blk.lim + 1)) == NULL) {
 		mapi_destroy(mid);
