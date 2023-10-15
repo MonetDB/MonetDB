@@ -34,7 +34,7 @@ static MapiMsg mapi_handshake(Mapi mid);
 
 /* (Re-)establish a connection with the server. */
 MapiMsg
-mapi_reconnectx(Mapi mid)
+mapi_reconnect(Mapi mid)
 {
 	char *err = NULL;
 	if (!msettings_validate(mid->settings, &err)) {

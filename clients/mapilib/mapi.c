@@ -1914,14 +1914,6 @@ mapi_destroy(Mapi mid)
 	return MOK;
 }
 
-/* (Re-)establish a connection with the server. */
-MapiMsg
-mapi_reconnect(Mapi mid)
-{
-	return mapi_reconnectx(mid);
-}
-
-
 /* Create a connection handle and connect to the server using the
    specified parameters. */
 Mapi
