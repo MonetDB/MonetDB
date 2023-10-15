@@ -5,8 +5,8 @@
 #define MP__STRING_START (300)
 
 typedef enum mparm {
-		MP_UNKNOWN,
-		MP_IGNORE,
+	MP_UNKNOWN,
+	MP_IGNORE,
 
         // bool
         MP_TLS = MP__BOOL_START,
@@ -19,6 +19,7 @@ typedef enum mparm {
 
         // string
         MP_SOCK = MP__STRING_START,
+	MP_SOCKDIR,
         MP_CERT,
         MP_CLIENTKEY,
         MP_CLIENTCERT,
@@ -106,6 +107,7 @@ bool msettings_validate(msettings *mp, char **errmsg);
 
 /* virtual parameters */
 bool msettings_connect_scan(const msettings *mp);
+const char *msettings_connect_sockdir(const msettings *mp);
 const char *msettings_connect_unix(const msettings *mp);
 const char *msettings_connect_tcp(const msettings *mp);
 long msettings_connect_port(const msettings *mp);

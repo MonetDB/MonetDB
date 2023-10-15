@@ -1,4 +1,5 @@
-#define _POSIX_C_SOURCE 200809L
+
+
 
 #include "msettings.h"
 
@@ -73,6 +74,7 @@ by_name[] = {
 	{ .name="fetchsize", .parm=MP_REPLYSIZE },
 	{ .name="schema", .parm=MP_SCHEMA },
 	{ .name="sock", .parm=MP_SOCK },
+	{ .name="sockdir", .parm=MP_SOCKDIR},
 	{ .name="table", .parm=MP_TABLE },
 	{ .name="tableschema", .parm=MP_TABLESCHEMA },
 	{ .name="timezone", .parm=MP_TIMEZONE },
@@ -114,6 +116,7 @@ mparm_name(mparm parm)
 		case MP_REPLYSIZE: return "replysize";
 		case MP_SCHEMA: return "schema";
 		case MP_SOCK: return "sock";
+		case MP_SOCKDIR: return "sockdir";
 		case MP_TABLE: return "table";
 		case MP_TABLESCHEMA: return "tableschema";
 		case MP_TIMEZONE: return "timezone";
@@ -146,14 +149,17 @@ struct msettings {
 	bool autocommit;
 	bool dummy_end_bool;
 
+	// Must match EXACTLY the order of enum mparm
 	long dummy_start_long;
 	long port;
 	long timezone;
 	long replysize;
 	long dummy_end_long;
 
+	// Must match EXACTLY the order of enum mparm
 	char *dummy_start_string;
 	char *sock;
+	char *sockdir;
 	char *cert;
 	char *clientkey;
 	char *clientcert;
@@ -176,7 +182,7 @@ struct msettings {
 	bool lang_is_sql;
 	long user_generation;
 	long password_generation;
-	char unix_sock_name_buffer[50];
+	char *unix_sock_name_buffer;
 	char certhash_digits_buffer[64 + 2 + 1]; // fit more than required plus trailing '\0'
 	bool validated;
 };
@@ -207,9 +213,10 @@ const msettings msettings_default_values = {
 
 	.unknown_parameters = NULL,
 	.nr_unknown = 0,
+
 	.lang_is_mal = false,
 	.lang_is_sql = true,
-
+	.unix_sock_name_buffer = NULL,
 	.validated = false,
 };
 
@@ -229,14 +236,17 @@ msettings *msettings_create(void)
 msettings *msettings_clone(const msettings *orig)
 {
 	msettings *mp = malloc(sizeof(*mp));
-	char **unknowns = calloc(2 * mp->nr_unknown, sizeof(char*));
-	if (!mp || !unknowns) {
+	char **unknowns = calloc(2 * orig->nr_unknown, sizeof(char*));
+	char *cloned_name_buffer = strdup(orig->unix_sock_name_buffer);
+	if (!mp || !unknowns || !cloned_name_buffer) {
 		free(mp);
 		free(unknowns);
+		free(cloned_name_buffer);
 		return NULL;
 	}
 	*mp = *orig;
 	mp->unknown_parameters = unknowns;
+	mp->unix_sock_name_buffer = cloned_name_buffer;
 
 	// now we have to very carefully duplicate the strings.
 	// taking care to only free our own ones if that fails
@@ -253,7 +263,7 @@ msettings *msettings_clone(const msettings *orig)
 		p++;
 	}
 
-	for (int i = 0; i < 2 * mp->nr_unknown; i++) {
+	for (size_t i = 0; i < 2 * mp->nr_unknown; i++) {
 		assert(orig->unknown_parameters[i]);
 		char *u = strdup(orig->unknown_parameters[i]);
 		if (u == NULL)
@@ -266,8 +276,9 @@ msettings *msettings_clone(const msettings *orig)
 bailout:
 	for (char **q = start; q < p; q++)
 		free(*q);
-	for (int i = 0; i < 2 * mp->nr_unknown; i++)
+	for (size_t i = 0; i < 2 * mp->nr_unknown; i++)
 		free(mp->unknown_parameters[i]);
+	free(mp->unix_sock_name_buffer);
 	free(mp);
 	return NULL;
 }
@@ -286,6 +297,7 @@ msettings_destroy(msettings *mp)
 		free(mp->unknown_parameters[2 * i + 1]);
 	}
 	free(mp->unknown_parameters);
+	free(mp->unix_sock_name_buffer);
 	free(mp);
 
 	return NULL;
@@ -649,8 +661,11 @@ msettings_validate(msettings *mp, char **errmsg)
 	}
 
 	// compute this here so the getter function can take const msettings*
+	const char *sockdir = msettings_connect_sockdir(mp);
 	long effective_port = msettings_connect_port(mp);
-	snprintf(mp->unix_sock_name_buffer, sizeof(mp->unix_sock_name_buffer), "/tmp/.s.monetdb.%ld", effective_port);
+	mp->unix_sock_name_buffer = allocprintf("%s/.s.monetdb.%ld", sockdir, effective_port);
+	if (mp->unix_sock_name_buffer == NULL)
+		return false;
 
 	mp->validated = true;
 	return true;
@@ -676,6 +691,16 @@ msettings_connect_scan(const msettings *mp)
 }
 
 const char *
+msettings_connect_sockdir(const msettings *mp)
+{
+	const char *dir = msetting_string(mp, MP_SOCKDIR);
+	if (dir[0] != '\0')
+		return dir;
+	else
+		return "/tmp";
+}
+
+const char *
 msettings_connect_unix(const msettings *mp)
 {
 	assert(mp->validated);
@@ -687,8 +712,11 @@ msettings_connect_unix(const msettings *mp)
 		return sock;
 	if (tls)
 		return "";
-	if (*host == '\0')
+	if (*host == '\0') {
+		// This was precomputed in msettings_validate(),
+		// {sockdir}/.s.monetdb.{port}
 		return mp->unix_sock_name_buffer;
+	}
 	return "";
 }
 

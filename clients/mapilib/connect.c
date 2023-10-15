@@ -65,12 +65,21 @@ scan_unix_sockets(Mapi mid)
 	DIR *dir = NULL;
 	struct dirent *entry;
 
+	const char *sockdir = msettings_connect_sockdir(mid->settings);
+	size_t len = strlen(sockdir);
+	char *namebuf = malloc(len + 50);
+	if (namebuf == NULL)
+		return mapi_setError(mid, "malloc failed", __func__, MERROR);
+	strcpy(namebuf, sockdir);
+	strcpy(namebuf + len, "/.s.monetdb.PORTXXXXX");
+	char *put_port_here = strrchr(namebuf, 'P');
+
 	msettings *original = mid->settings;
 	mid->settings = NULL;  // invalid state, will fix it before use and on return
 
 	// Make a list of Unix domain sockets in /tmp
 	uid_t me = getuid();
-	if (DO_UNIX_DOMAIN && (dir = opendir("/tmp"))) {
+	if (DO_UNIX_DOMAIN && (dir = opendir(sockdir))) {
 		while (ncandidates < MAX_SCAN && (entry = readdir(dir)) != NULL) {
 			const char *basename = entry->d_name;
 			if (strncmp(basename, ".s.monetdb.", 11) != 0 || basename[11] == '\0' || strlen(basename) > 20)
@@ -80,11 +89,10 @@ scan_unix_sockets(Mapi mid)
 			long port = strtol(basename + 11, &end, 10);
 			if (port < 1 || port > 65535 || *end)
 				continue;
-			char name[80]; // enough, see checks above
-			sprintf(name, "/tmp/.s.monetdb.%ld", port);
 
+			sprintf(put_port_here, "%ld", port);
 			struct stat st;
-			if (stat(name, &st) < 0 || !S_ISSOCK(st.st_mode))
+			if (stat(namebuf, &st) < 0 || !S_ISSOCK(st.st_mode))
 				continue;
 
 			candidates[ncandidates].port = port;
@@ -103,6 +111,7 @@ scan_unix_sockets(Mapi mid)
 			mid->settings = msettings_clone(original);
 			if (!mid->settings) {
 				mid->settings = original;
+				free(namebuf);
 				return mapi_setError(mid, "malloc failed", __func__, MERROR);
 			}
 			msettings_error errmsg = msetting_set_long(mid->settings, MP_PORT, candidates[i].port);
@@ -113,6 +122,7 @@ scan_unix_sockets(Mapi mid)
 			if (errmsg) {
 				mapi_setError(mid, errmsg, __func__, MERROR);
 				free(allocated_errmsg);
+				free(namebuf);
 				msettings_destroy(mid->settings);
 				mid->settings = original;
 				return MERROR;
@@ -121,6 +131,7 @@ scan_unix_sockets(Mapi mid)
 			if (msg == MOK) {
 				// do not restore original
 				msettings_destroy(original);
+				free(namebuf);
 				return MOK;
 			} else {
 				msettings_destroy(mid->settings);
@@ -130,11 +141,17 @@ scan_unix_sockets(Mapi mid)
 		}
 	}
 
+	free(namebuf);
+
 	// Last-ditch attempt.
 	// We can now freely modify original
 	assert(mid->settings == NULL);
 	mid->settings = original;
 	msettings_error errmsg = msetting_set_string(mid->settings, MP_HOST, "localhost");
+	char *allocated_errmsg = NULL;
+	if (!errmsg && !msettings_validate(mid->settings, &allocated_errmsg)) {
+		errmsg = allocated_errmsg;
+	}
 	if (errmsg) {
 		return mapi_setError(mid, errmsg, __func__, MERROR);
 	}
@@ -299,9 +316,6 @@ connect_socket_tcp(Mapi mid, const char *host, int port)
 	assert(host);
 	char portbuf[10];
 	snprintf(portbuf, sizeof(portbuf), "%d", port);
-
-	if (host[0] == '/')
-		return mapi_setError(mid, "Setting the socket dir is not supported yet", __func__, MERROR);
 
 	struct addrinfo hints = (struct addrinfo) {
 		.ai_family = AF_UNSPEC,

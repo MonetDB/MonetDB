@@ -1855,9 +1855,17 @@ mapi_mapi(const char *host, int port, const char *username,
 	if (lang == NULL)
 		lang = "sql";
 
+	const char *sockdir = NULL;
+	if (host && host[0] == '/') {
+		sockdir = host;
+		host = NULL;
+	}
+
 	msettings_error err = NULL;
 	do {
 		if (host && (err = msetting_set_string(settings, MP_HOST, host)))
+			break;
+		if (sockdir && (err = msetting_set_string(settings, MP_SOCKDIR, sockdir)))
 			break;
 		if (username && (err = msetting_set_string(settings, MP_USER, username)))
 			break;
