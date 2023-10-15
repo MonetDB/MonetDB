@@ -229,11 +229,14 @@ msettings *msettings_create(void)
 msettings *msettings_clone(const msettings *orig)
 {
 	msettings *mp = malloc(sizeof(*mp));
-	if (!mp) {
+	char **unknowns = calloc(2 * mp->nr_unknown, sizeof(char*));
+	if (!mp || !unknowns) {
 		free(mp);
+		free(unknowns);
 		return NULL;
 	}
 	*mp = *orig;
+	mp->unknown_parameters = unknowns;
 
 	// now we have to very carefully duplicate the strings.
 	// taking care to only free our own ones if that fails
@@ -249,11 +252,22 @@ msettings *msettings_clone(const msettings *orig)
 		}
 		p++;
 	}
+
+	for (int i = 0; i < 2 * mp->nr_unknown; i++) {
+		assert(orig->unknown_parameters[i]);
+		char *u = strdup(orig->unknown_parameters[i]);
+		if (u == NULL)
+			goto bailout;
+		mp->unknown_parameters[i] = u;
+	}
+
 	return mp;
 
 bailout:
 	for (char **q = start; q < p; q++)
 		free(*q);
+	for (int i = 0; i < 2 * mp->nr_unknown; i++)
+		free(mp->unknown_parameters[i]);
 	free(mp);
 	return NULL;
 }
