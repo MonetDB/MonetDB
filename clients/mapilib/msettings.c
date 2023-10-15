@@ -576,7 +576,7 @@ validate_identifier(const char *name)
 	if (first != '_' && !isalpha(first))
 		return false;
 	for (const char *p = name; *p; p++) {
-		bool ok = (isalnum(*p) || *p == '-' || *p == '_');
+		bool ok = (isalnum(*p) || *p == '.' || *p == '-' || *p == '_');
 		if (!ok)
 			return false;
 	}
