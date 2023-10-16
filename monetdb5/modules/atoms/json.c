@@ -155,11 +155,12 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 			*out_size += sz;
 			p += sz;
 			*p++ = ',';
-			*p++ = ' ';
-			*out_size += 2;
+			*out_size += 1;
 		}
-		p -= 2;					/* Overrite the last comma */
-		*out_size -= 2;
+		if (*(p - 1) == ',') {
+			p -= 1;					/* Overrite the last comma if exists */
+			*out_size -= 1;
+		}
 		*p++ = '}';
 		*out_size += 1;
 		break;
@@ -175,11 +176,12 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 			*out_size += sz;
 			p += sz;
 			*p++ = ',';
-			*p++ = ' ';
-			*out_size += 2;
+			*out_size += 1;
 		}
-		p -= 2;					/* Overrite the last comma */
-		*out_size -= 2;
+		if (*(p - 1) == ',') {
+			p -= 1;					/* Overrite the last comma if exists */
+			*out_size -= 1;
+		}
 
 		*p++ = ']';
 		*out_size += 1;
@@ -190,8 +192,7 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 		p += jt->elm[idx].valuelen;
 		*p++ = '"';
 		*p++ = ':';
-		*p++ = ' ';
-		*out_size = jt->elm[idx].valuelen + 4;
+		*out_size = jt->elm[idx].valuelen + 3;
 		msg = JSONtoStorageString(jt, jt->elm[idx].child, &p, &sz);
 		if (msg != MAL_SUCCEED) {
 			return msg;
