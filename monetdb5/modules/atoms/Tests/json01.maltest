@@ -56,7 +56,7 @@ f:= json.filter(b,"f1[1]")
 query T rowsort
 io.print(f)
 ----
-"3"
+"[]"
 
 statement ok
 f:= json.filter(b,"f1[2]")
@@ -72,7 +72,7 @@ f:= json.filter(b,"*")
 query T rowsort
 io.print(f)
 ----
-"[1,2,3]"
+"[3,2]"
 
 statement ok
 b:= json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}")

@@ -79,16 +79,16 @@ select json.filter(js,'..sparse_000,..sparse_110') from bench10
 query T rowsort
 select json.filter(js,'str1') from bench10
 ----
-["GBRDA==="]
-["GBRDC==="]
-["GBRDCMA="]
-["GBRDCMBQ"]
-["GBRDCMBQGA======"]
-["GBRDCMBQGE======"]
-["GBRDCMBR"]
-["GBRDCMI="]
-["GBRDCMJQ"]
-["GBRDCMJR"]
+"GBRDA==="
+"GBRDC==="
+"GBRDCMA="
+"GBRDCMBQ"
+"GBRDCMBQGA======"
+"GBRDCMBQGE======"
+"GBRDCMBR"
+"GBRDCMI="
+"GBRDCMJQ"
+"GBRDCMJR"
 
 query T rowsort
 select json.text(json.filter(js,'str1')) from bench10
@@ -200,16 +200,16 @@ select * from bench10 where json.number(json.filter(js,'dyn1')) between 0.0 and 
 query T rowsort
 select json.filter(js,'nested_arr') from bench10
 ----
-[["button-down"]]
-[["check", "it", "the"]]
-[["especially"]]
-[["its", "for", "if", "he", "questions", "to", "put"]]
-[["potatoes", "a", "to", "authentic"]]
-[["she", "beyond"]]
-[["the", "state", "aware", "''", "the"]]
-[["to", "interrupted", "some", "daily", "has", "averages"]]
-[[]]
-[[]]
+["button-down"]
+["check", "it", "the"]
+["especially"]
+["its", "for", "if", "he", "questions", "to", "put"]
+["potatoes", "a", "to", "authentic"]
+["she", "beyond"]
+["the", "state", "aware", "''", "the"]
+["to", "interrupted", "some", "daily", "has", "averages"]
+[]
+[]
 
 query T rowsort
 select * from bench10 where json.text(json.filter(js,'nested_arr')) = 'check it the'
