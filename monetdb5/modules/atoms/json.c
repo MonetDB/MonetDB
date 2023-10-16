@@ -214,6 +214,11 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 		*out_size += sz;
 		p += sz;
 		break;
+	case JSON_NULL:
+		strncpy(p, "null", 5);
+		*out_size += 4;
+		p += *out_size;
+		break;
 	default:
 		abort();
 		break;
