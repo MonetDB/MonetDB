@@ -1145,7 +1145,6 @@ InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name);
 InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, bit val);
 InstrPtr pushBte(MalBlkPtr mb, InstrPtr q, bte val);
 InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, dbl val);
-InstrPtr pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe);
 InstrPtr pushEndInstruction(MalBlkPtr mb);
 InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, flt val);
 InstrPtr pushHge(MalBlkPtr mb, InstrPtr q, hge val);

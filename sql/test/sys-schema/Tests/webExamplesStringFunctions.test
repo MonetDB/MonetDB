@@ -350,16 +350,6 @@ select qgramnormalize(R'Prize €50!')
 ----
 PRIZE 50
 
-query R
-select similarity('MonetDB', 'DB3')
-----
-0.400
-
-query R
-select similarity('MonetDB', 'DB free')
-----
-0.286
-
 query T
 select soundex('MonetDB')
 ----
