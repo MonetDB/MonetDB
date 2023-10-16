@@ -539,7 +539,6 @@ SQLinit(Client c, const char *initpasswd)
 	char *msg = MAL_SUCCEED, *other = MAL_SUCCEED;
 	bool readonly = GDKgetenv_isyes("gdk_readonly");
 	bool single_user = GDKgetenv_isyes("gdk_single_user");
-	bool insertonly_nowal = GDKgetenv_istrue("insertonly_nowal");
 	static int maybeupgrade = 1;
 	backend *be = NULL;
 	mvc *m = NULL;
@@ -576,7 +575,7 @@ SQLinit(Client c, const char *initpasswd)
 	if (readonly)
 		SQLdebug |= 32;
 
-	if ((SQLstore = mvc_init(SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user, initpasswd, insertonly_nowal)) == NULL) {
+	if ((SQLstore = mvc_init(SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user, initpasswd)) == NULL) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}

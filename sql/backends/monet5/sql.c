@@ -4354,9 +4354,9 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store = m->session->tr->store;
 	tr = m->session->tr;
 
-	if (store->insertonly_nowal == false)
-		throw(SQL, "sql.insertonly_persist", "Function cannot be used without setting"
-			  " insertonly_nowal flag at server startup.");
+	/* if (store->insertonly_nowal == false) */
+		/* throw(SQL, "sql.insertonly_persist", "Function cannot be used without setting" */
+			  /* " insertonly_nowal flag at server startup."); */
 
 	sql_schema *s = NULL;
 	if (i1) {
@@ -4402,7 +4402,7 @@ SQLinsertonly_persist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!schema_wide && strcmp(i2, t->base.name) != 0)
 				continue;
 
-			if (isTable(t) && t->access == TABLE_APPENDONLY) {
+			if (isTable(t) && t->access == TABLE_APPENDONLY && isUnloggedTable(t)) {
 				str t_name = t->base.name;
 				sqlid t_id = t->base.id;
 				t_del = bind_del_data(tr, t, NULL);

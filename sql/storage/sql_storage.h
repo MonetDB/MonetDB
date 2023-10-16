@@ -336,7 +336,7 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern struct sqlstore *store_init(int debug, store_type store, int readonly, int singleuser, int insertonly_nowal);
+extern struct sqlstore *store_init(int debug, store_type store, int readonly, int singleuser);
 extern void store_exit(struct sqlstore *store);
 
 extern void store_suspend_log(struct sqlstore *store);
@@ -492,7 +492,6 @@ typedef struct sqlstore {
 	bool readonly;			/* store is readonly */
 	int8_t singleuser;		/* store is for a single user only (==1 enable, ==2 single user session running) */
 	bool first;				/* just created the db */
-	bool insertonly_nowal;
 	bool initialized;		/* used during bootstrap only */
 	int debug;				/* debug mask */
 	store_type active_type;

@@ -3887,9 +3887,6 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 
 	size_t end = segs_end(segs, tr, t);
 
-	if (store->insertonly_nowal && t->access == TABLE_APPENDONLY)
-		return LOG_OK;
-
 	if (tr_log_table_start(tr, t) != LOG_OK)
 		return LOG_ERR;
 
@@ -4085,7 +4082,6 @@ savepoint_commit_delta( sql_delta *delta, ulng commit_ts)
 static int
 log_update_col( sql_trans *tr, sql_change *change)
 {
-	sqlstore *store = tr->store;
 	sql_column *c = (sql_column*)change->obj;
 	assert(!isTempTable(c->t));
 
@@ -4093,9 +4089,6 @@ log_update_col( sql_trans *tr, sql_change *change)
 		change->handled = true;
 		return LOG_OK;
 	}
-
-	if ((store->insertonly_nowal && c->t->access == TABLE_APPENDONLY))
-		return LOG_OK;
 
 	if (!isDeleted(c->t) && !tr->parent) {/* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&c->t->data);
@@ -4203,11 +4196,10 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 static int
 log_update_idx( sql_trans *tr, sql_change *change)
 {
-	sqlstore *store = tr->store;
 	sql_idx *i = (sql_idx*)change->obj;
 	assert(!isTempTable(i->t));
 
-	if (isDeleted(i->t) || (store->insertonly_nowal && i->t->access == TABLE_APPENDONLY)) {
+	if (isDeleted(i->t)) {
 		change->handled = true;
 		return LOG_OK;
 	}
@@ -4257,15 +4249,11 @@ savepoint_commit_storage( storage *dbat, ulng commit_ts)
 static int
 log_update_del( sql_trans *tr, sql_change *change)
 {
-	sqlstore *store = tr->store;
 	sql_table *t = (sql_table*)change->obj;
 	assert(!isTempTable(t));
 
 	if (isDeleted(t)) {
 		change->handled = true;
-		return LOG_OK;
-	}
-	if (store->insertonly_nowal && t->access == TABLE_APPENDONLY) {
 		return LOG_OK;
 	}
 

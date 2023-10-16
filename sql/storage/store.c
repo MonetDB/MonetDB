@@ -2143,7 +2143,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 }
 
 sqlstore *
-store_init(int debug, store_type store_tpe, int readonly, int singleuser, int insertonly_nowal)
+store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 {
 	sql_allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
@@ -2166,7 +2166,6 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser, int in
 		.readonly = readonly,
 		.singleuser = singleuser,
 		.debug = debug,
-		.insertonly_nowal = insertonly_nowal,
 		.transaction = ATOMIC_VAR_INIT(TRANSACTION_ID_BASE),
 		.nr_active = ATOMIC_VAR_INIT(0),
 		.timestamp = ATOMIC_VAR_INIT(0),
@@ -4015,7 +4014,7 @@ sql_trans_commit(sql_trans *tr)
 
 		if (log) {
 			const int min_changes = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5 : 1000000;
-			flush = (tr->logchanges > min_changes && list_empty(store->changes) && !store->insertonly_nowal);
+			flush = (tr->logchanges > min_changes && list_empty(store->changes));
 		}
 
 		if (flush)
