@@ -16,6 +16,9 @@
 
 #define HT_MIN_SIZE 1024*64*8
 #define HT_MAX_SIZE 1024*1024*1024
+#define HP_MIN_SIZE HT_MIN_SIZE
+#define HP_MAX_SIZE HT_MAX_SIZE
+
 
 #define hash_rehash(ht, p, err) { p->p->status = 1; ht_rehash(ht); err = -11; break; }
 
@@ -107,6 +110,7 @@ typedef struct hash_table {
         void *vals;			/* hash(ed) values */
         hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
 		gid *pgids;			/* id of the parent hash */
+	size_t *cnt;		/* count of each gid */
 
 		struct hash_table *p;	/* parent hash */
         int bits;
@@ -117,8 +121,35 @@ typedef struct hash_table {
 		int nr_allocators;
 } hash_table;
 
+// TODO: probably we can use the same hash_table struct for the payload, but with an obligatory `parent` hash table
+typedef struct hash_payload {
+	Sink s;
+	int type;
+	int width;
+	fcmp cmp;
+	fhsh hsh;
+	flen len;
+	int rehash;
+
+	void *payload;		/* hash(ed) payload values */
+	hash_key_t *gids;   	/* chain of gids (k, ie mark used/-k mark used and value filled) */
+	//gid *pgids;		/* id of the parent hash */
+	size_t *cnt;		/* count of each gid */
+
+	struct hash_table *parent;
+	int bits;
+	ATOMIC_TYPE last;
+	size_t size;
+	gid mask;
+	mallocator **allocators;
+	int nr_allocators;
+} hash_payload;
+
 extern lng str_hsh(str v);
 extern hash_table *ht_create(int type, int size, hash_table *p);
 extern void ht_rehash(hash_table *ht);
+
+extern hash_payload *hp_create(int type, int size, hash_table *parent);
+extern void hp_rehash(hash_payload *hp);
 
 #endif /*_PP_HASH_H_*/

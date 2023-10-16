@@ -1451,7 +1451,43 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			group(bit)
 			group(bte)
 			group(sht)
-			group(int)
+			//group(int)
+                        if (tt == TYPE_int) {
+                                int slots = 0;
+                                gid slot = 0;
+                                int *bp = Tloc(b, 0);
+                                int *vals = h->vals;
+
+                                TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) {
+                                        bool fnd = 0;
+                                        gid k = (gid)_hash_int(bp[i])&h->mask;
+                                        gid g = 0;
+
+                                        for(; !fnd; ) {
+                                                g = ATOMIC_GET(h->gids+k);
+                                                for(;g && vals[g] != bp[i];) {
+                                                        k++;
+                                                        k &= h->mask;
+                                                        g = ATOMIC_GET(h->gids+k);
+                                                }
+                                                if (!g) {
+                                                        if (slots == 0) {
+                                                                slots = private?1:PRE_CLAIM;
+                                                                slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM);
+                                                                if (((slot*100)/70) >= (gid)h->size)
+                                                                        hash_rehash(h, p, err);
+                                                        }
+                                                        slots--;
+                                                        g = ++slot;
+                                                        vals[g] = bp[i];
+                                                        if (!ATOMIC_CAS(h->gids+k, &expected, g))
+                                                                continue;
+                                                }
+                                                fnd = 1;
+                                        }
+                                        gp[i] = g-1;
+                                }
+                        }
 			group(date)
 			group(lng)
 			group(oid)
@@ -1820,7 +1856,44 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			derive(bit)
 			derive(bte)
 			derive(sht)
-			derive(int)
+			//derive(int)
+                        if (tt == TYPE_int) {
+                                int slots = 0;
+                                gid slot = 0;
+                                int *bp = Tloc(b, 0);
+                                int *vals = h->vals;
+
+                                TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) {
+                                        bool fnd = 0;
+                                        gid k = (gid)combine(gi[i], _hash_int(bp[i]))&h->mask;
+                                        gid g = 0;
+
+                                        for(; !fnd; ) {
+                                                g = ATOMIC_GET(h->gids+k);
+                                                for(;g && (pgids[g] != gi[i] || vals[g] != bp[i]);) { // FIXME: what's this magic index 'g'? why do we compare pgids[g] == gi[i], instead of pgids[i] == gi[i]?
+                                                        k++;
+                                                        k &= h->mask;
+                                                        g = ATOMIC_GET(h->gids+k);
+                                                }
+                                                if (!g) {
+                                                        if (slots == 0) {
+                                                                slots = private?1:PRE_CLAIM;
+                                                                slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM);
+                                                                if (((slot*100)/70) >= (gid)h->size)
+                                                                        hash_rehash(h, p, err);
+                                                        }
+                                                        slots--;
+                                                        g = ++slot;
+                                                        vals[g] = bp[i];
+                                                        pgids[g] = gi[i];
+                                                        if (!ATOMIC_CAS(h->gids+k, &expected, g))
+                                                                continue;
+                                                }
+                                                fnd = 1;
+                                        }
+                                        gp[i] = g-1;
+                                }
+                        }
 			derive(date)
 			derive(lng)
 			derive(oid)
@@ -2057,7 +2130,19 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			vproject()
 			project(bte)
 			project(sht)
-			project(int)
+			//project(int)
+			if (ATOMstorage(tt) == TYPE_int) { \
+				int *v = Tloc(b, 0); \
+				int *o = Tloc(r, 0); \
+				if (g->ttype == TYPE_void) { \
+					oid gi = g->tseqbase; \
+					TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+						o[gi + i] = v[i]; \
+				} else { \
+					TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+						o[gp[i]] = v[i]; \
+				} \
+			}
 			project(lng)
 #ifdef HAVE_HGE
 			project(hge)
