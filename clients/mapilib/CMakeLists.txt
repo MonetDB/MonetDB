@@ -11,6 +11,7 @@
 add_library(mapi
   SHARED)
 
+
 # We need to add the public library twice to the target sources, once for
 # the build interface and once for the install interface. This is because
 # of the fact that cmake < 3.13 does not handle relative paths well. If we
@@ -22,6 +23,7 @@ target_sources(mapi
   connect.c
   msettings.c
   parseurl.c
+  $<$<BOOL:${HAVE_OPENSSL}>:connect_openssl.c>
   mapi_intern.h
   PUBLIC
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/mapi.h>

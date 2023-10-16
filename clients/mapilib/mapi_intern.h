@@ -295,6 +295,8 @@ extern const struct MapiStruct MapiStructDefaults;
 
 Mapi mapi_new(void);
 
+MapiMsg wrap_tls(Mapi mid, SOCKET sock);
+
 void close_connection(Mapi mid);
 void set_uri(Mapi mid);
 

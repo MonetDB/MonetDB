@@ -27,8 +27,8 @@
 static MapiMsg establish_connection(Mapi mid);
 static MapiMsg scan_unix_sockets(Mapi mid);
 static MapiMsg connect_socket(Mapi mid);
-static SOCKET connect_socket_unix(Mapi mid, const char *sockname);
-static SOCKET connect_socket_tcp(Mapi mid, const char *host, int port);
+static MapiMsg connect_socket_unix(Mapi mid);
+static MapiMsg connect_socket_tcp(Mapi mid);
 static SOCKET connect_socket_tcp_addr(Mapi mid, struct addrinfo *addr);
 static MapiMsg mapi_handshake(Mapi mid);
 
@@ -42,10 +42,6 @@ mapi_reconnect(Mapi mid)
 		free(err);
 		return MERROR;
 	}
-
-	bool tls = msetting_bool(mid->settings, MP_TLS);
-	if (tls)
-		return mapi_setError(mid, "TLS (monetdbs://...) is not supported yet", __func__, MERROR);
 
 	// If neither host nor port are given, scan the Unix domain sockets in
 	// /tmp and see if any of them serve this database.
@@ -191,76 +187,122 @@ establish_connection(Mapi mid)
 static MapiMsg
 connect_socket(Mapi mid)
 {
-	SOCKET s = INVALID_SOCKET;
-
 	assert(!mid->connected);
 	const char *sockname = msettings_connect_unix(mid->settings);
 	const char *tcp_host = msettings_connect_tcp(mid->settings);
-	int tcp_port = msettings_connect_port(mid->settings);
 
 	assert(*sockname || *tcp_host);
-	if (*sockname) {
-		s = connect_socket_unix(mid, sockname);
-	}
-	if (s == INVALID_SOCKET && *tcp_host) {
-		s = connect_socket_tcp(mid, tcp_host, tcp_port);
-	}
-	if (s == INVALID_SOCKET) {
+	if (*sockname &&  connect_socket_unix(mid) == MOK) {
+		mid->connected = true;
+		return MOK;
+	} else if (*tcp_host && connect_socket_tcp(mid) == MOK) {
+		mid->connected = true;
+		return MOK;
+	} else {
 		assert(mid->error == MERROR);
-		mid->error = MERROR;
+		mid->error = MERROR; // in case assert above was not enabled
 		return mid->error;
 	}
 
-	mid->to = socket_wstream(s, "Mapi client write");
-	mapi_log_record(mid, "Mapi client write");
-	mid->from = socket_rstream(s, "Mapi client read");
-	mapi_log_record(mid, "Mapi client read");
-	check_stream(mid, mid->to, "Cannot open socket for writing", mid->error);
-	check_stream(mid, mid->from, "Cannot open socket for reading", mid->error);
-
-	// Send an even number of NUL '\0' bytes to the server.
-	// This forces an error message when accidentally connecting to a TLS server.
-	// Also, surprisingly it seems to make connection setup slightly faster!
-	static const char zeroes[8] = { 0 };
-	for (ssize_t nleft = sizeof(zeroes); nleft > 0; ) {
-		ssize_t nwritten = mnstr_write(mid->to, zeroes, 1, nleft);
-		if (nwritten < 0)
-			return mapi_setError(mid, "could not send leader block", __func__, MERROR);
-		nleft -= nwritten;
-	}
-
-	mid->connected = true;
-
-	if (!isa_block_stream(mid->to)) {
-		mid->to = block_stream(mid->to);
-		check_stream(mid, mid->to, "not a block stream", mid->error);
-
-		mid->from = block_stream(mid->from);
-		check_stream(mid, mid->from, "not a block stream", mid->error);
-	}
-
-	return MOK;
+	assert(0 && "unreachable");
+	return MERROR;
 }
 
+static MapiMsg
+wrap_socket(Mapi mid, SOCKET sock)
+{
+	// do not use check_stream here yet because the socket is not yet in 'mid'
+	const char *error_message;
+	stream *error_stream;
+
+	stream *rstream = NULL;
+	stream *wstream = NULL;
+	stream *brstream = NULL;
+	stream *bwstream = NULL;
+
+	wstream = socket_wstream(sock, "Mapi client write");
+	if (wstream == NULL || mnstr_errnr(wstream) != MNSTR_NO__ERROR) {
+		error_stream = wstream;
+		error_message = "socket_wstream";
+		goto bailout;
+	}
+	mapi_log_record(mid, "Mapi client write");
+
+	rstream = socket_rstream(sock, "Mapi client write");
+	if (rstream == NULL || mnstr_errnr(rstream) != MNSTR_NO__ERROR) {
+		error_stream = rstream;
+		error_message = "socket_rstream";
+		goto bailout;
+	}
+	mapi_log_record(mid, "Mapi client read");
+
+	// old logic checked for this but that doesn't make sense, does it?
+	assert(!isa_block_stream(wstream));
+
+	bwstream = block_stream(wstream);
+	if (bwstream == NULL || mnstr_errnr(bwstream) != MNSTR_NO__ERROR) {
+		error_stream = bwstream;
+		error_message = "block_stream wstream";
+		goto bailout;
+	}
+	brstream = block_stream(rstream);
+	if (brstream == NULL || mnstr_errnr(brstream) != MNSTR_NO__ERROR) {
+		error_stream = brstream;
+		error_message = "block_stream rstream";
+		goto bailout;
+	}
+
+	mid->to = bwstream;
+	mid->from = brstream;
+	return MOK;
+bailout:
+	// adapted from the check_stream macro
+	mapi_log_record(mid, error_message);
+	mapi_log_record(mid, mnstr_peek_error(error_stream));
+	mapi_log_record(mid, __func__);
+	if (brstream)
+		mnstr_destroy(brstream);
+	if (bwstream)
+		mnstr_destroy(bwstream);
+	if (brstream)
+		mnstr_destroy(brstream);
+	if (bwstream)
+		mnstr_destroy(bwstream);
+	closesocket(sock);
+	// malloc failure is the only way these calls could have failed
+	return mapi_printError(mid, __func__, MERROR, "%s: %s", error_message, mnstr_peek_error(error_stream));
+}
+
+#ifndef HAVE_OPENSSL
+// The real implementation is in connect_openssl.c.
+MapiMsg
+wrap_tls(Mapi mid, SOCKET sock)
+{
+	closesocket(sock);
+	return mapi_setError(mid, "Cannot connect to monetdbs://, not built with OpenSSL support", __func__, MERROR);
+}
+#endif // HAVE_OPENSSL
+
 #ifndef HAVE_SYS_UN_H
-static SOCKET
-connect_socket_unix(Mapi mid, const char *sockname)
+static MapiMsg
+connect_socket_unix(Mapi mid)
 {
 	(void)sockname;
-	mapi_setError(mid, "Unix domain sockets not supported", __func__, MERROR);
-	return INVALID_SOCKET;
+	return mapi_setError(mid, "Unix domain sockets not supported", __func__, MERROR);
 }
 #endif
 
 #ifdef HAVE_SYS_UN_H
 
-static SOCKET
-connect_socket_unix(Mapi mid, const char *sockname)
+static MapiMsg
+connect_socket_unix(Mapi mid)
 {
+	const char *sockname = msettings_connect_unix(mid->settings);
+	assert (*sockname != '\0');
+
 	struct sockaddr_un userver;
 	if (strlen(sockname) >= sizeof(userver.sun_path)) {
-		mapi_printError(mid, __func__, MERROR, "path name '%s' too long", sockname);
-		return INVALID_SOCKET;
+		return mapi_printError(mid, __func__, MERROR, "path name '%s' too long", sockname);
 	}
 
 	// Create the socket, taking care of CLOEXEC
@@ -271,10 +313,9 @@ connect_socket_unix(Mapi mid, const char *sockname)
 	int s = socket(PF_UNIX, SOCK_STREAM, 0);
 #endif
 	if (s == INVALID_SOCKET) {
-		mapi_printError(
+		return mapi_printError(
 			mid, __func__, MERROR,
-			"could not create Unix domain socket '%s': %s", sockname, strerror(errno));
-		return INVALID_SOCKET;
+			"could not create Unix domain socket '%s': %s", sockname, SOCKET_STRERROR());
 	}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 	(void) fcntl(s, F_SETFD, FD_CLOEXEC);
@@ -289,10 +330,9 @@ connect_socket_unix(Mapi mid, const char *sockname)
 
 	if (connect(s, (struct sockaddr *) &userver, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 		closesocket(s);
-		mapi_printError(
+		return mapi_printError(
 			mid, __func__, MERROR,
-			"connect to Unix domain socket '%s' failed: %s", sockname, strerror(errno));
-		return INVALID_SOCKET;
+			"connect to Unix domain socket '%s' failed: %s", sockname, SOCKET_STRERROR());
 	}
 
 	// Send an initial zero (not NUL) to let the server know we're not passing a file
@@ -302,21 +342,25 @@ connect_socket_unix(Mapi mid, const char *sockname)
 	if (n < 1) {
 		// used to be if n < 0 but this makes more sense
 		closesocket(s);
-		mapi_printError(
+		return mapi_printError(
 			mid, __func__, MERROR,
-			"could not send initial '0' on Unix domain socket: %s", strerror(errno));
-		return INVALID_SOCKET;
+			"could not send initial '0' on Unix domain socket: %s", SOCKET_STRERROR());
 	}
 
-	return s;
+	return wrap_socket(mid, s);
 }
 
 #endif  // end of ifdef HAVE_SYS_UN_H
 
-static SOCKET
-connect_socket_tcp(Mapi mid, const char *host, int port)
+static MapiMsg
+connect_socket_tcp(Mapi mid)
 {
 	int ret;
+
+	bool use_tls = msetting_bool(mid->settings, MP_TLS);
+	const char *host = msettings_connect_tcp(mid->settings);
+	int port = msettings_connect_port(mid->settings);
+
 	assert(host);
 	char portbuf[10];
 	snprintf(portbuf, sizeof(portbuf), "%d", port);
@@ -329,16 +373,14 @@ connect_socket_tcp(Mapi mid, const char *host, int port)
 	struct addrinfo *addresses;
 	ret = getaddrinfo(host, portbuf, &hints, &addresses);
 	if (ret != 0) {
-		mapi_printError(
+		return mapi_printError(
 			mid, __func__, MERROR,
 			"getaddrinfo %s:%s failed: %s", host, portbuf, gai_strerror(ret));
-		return INVALID_SOCKET;
 	}
 	if (addresses == NULL) {
-		mapi_printError(
+		return mapi_printError(
 			mid, __func__, MERROR,
 			"getaddrinfo return 0 addresses");
-		return INVALID_SOCKET;
 	}
 
 	assert(addresses);
@@ -350,7 +392,8 @@ connect_socket_tcp(Mapi mid, const char *host, int port)
 	}
 	freeaddrinfo(addresses);
 	if (s == INVALID_SOCKET) {
-		return INVALID_SOCKET;
+		// connect_socket_tcp_addr has already set an error message
+		return MERROR;
 	}
 
 	/* compare our own address with that of our peer and
@@ -376,12 +419,32 @@ connect_socket_tcp(Mapi mid, const char *host, int port)
 			praddr.i6.sin6_addr.s6_addr,
 			sizeof(praddr.i6.sin6_addr.s6_addr)) == 0)) {
 		closesocket(s);
-		mapi_setError(mid, "connected to self",
-					__func__, MERROR);
-		return INVALID_SOCKET;
+		return mapi_setError(mid, "connected to self", __func__, MERROR);
 	}
 
-	return s;
+	if (use_tls) {
+		return wrap_tls(mid, s);
+		closesocket(s);
+		return mapi_setError(mid, "TLS not implemented yet", __func__, MERROR);
+	} else {
+		// Some TLS servers hang if we accidentally make a non-TLS
+		// connection to a TLS server. Sending a bunch of NULs causes
+		// some of them to close the connection instead of hanging.
+		// Also, surprisingly, it seems to make connection setup
+		// slightly faster with non-TLS servers.
+		static const char zeroes[8] = { 0 };
+		ssize_t to_write = sizeof(zeroes);
+		while (to_write > 0) {
+			ssize_t n = send(s, zeroes, to_write, 0);
+			if (n < 0) {
+				closesocket(s);
+				return mapi_printError(mid, __func__, MERROR, "could not send leader block: %s", SOCKET_STRERROR());
+			}
+			to_write -= (size_t)n;
+		}
+		return wrap_socket(mid, s);
+	}
+	assert(0 && "unreachable");
 }
 
 static SOCKET
