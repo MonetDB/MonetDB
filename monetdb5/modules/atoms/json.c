@@ -257,7 +257,7 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 		JSONfree(jt);
 		return -1;
 	}
-	buf = GDKmalloc(slen);
+	buf = GDKmalloc(2*slen + 1);
 	JSONtoStorageString(jt, 0, &buf, &slen);
 	strncpy(*j, buf - slen, slen);
 	GDKfree(buf);
