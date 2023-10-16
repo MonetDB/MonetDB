@@ -259,7 +259,7 @@ connect_socket_unix(Mapi mid, const char *sockname)
 {
 	struct sockaddr_un userver;
 	if (strlen(sockname) >= sizeof(userver.sun_path)) {
-		mapi_PrintError(mid, __func__, MERROR, "path name '%s' too long", sockname);
+		mapi_printError(mid, __func__, MERROR, "path name '%s' too long", sockname);
 		return INVALID_SOCKET;
 	}
 
@@ -271,7 +271,7 @@ connect_socket_unix(Mapi mid, const char *sockname)
 	int s = socket(PF_UNIX, SOCK_STREAM, 0);
 #endif
 	if (s == INVALID_SOCKET) {
-		mapi_PrintError(
+		mapi_printError(
 			mid, __func__, MERROR,
 			"could not create Unix domain socket '%s': %s", sockname, strerror(errno));
 		return INVALID_SOCKET;
@@ -289,7 +289,7 @@ connect_socket_unix(Mapi mid, const char *sockname)
 
 	if (connect(s, (struct sockaddr *) &userver, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 		closesocket(s);
-		mapi_PrintError(
+		mapi_printError(
 			mid, __func__, MERROR,
 			"connect to Unix domain socket '%s' failed: %s", sockname, strerror(errno));
 		return INVALID_SOCKET;
@@ -302,7 +302,7 @@ connect_socket_unix(Mapi mid, const char *sockname)
 	if (n < 1) {
 		// used to be if n < 0 but this makes more sense
 		closesocket(s);
-		mapi_PrintError(
+		mapi_printError(
 			mid, __func__, MERROR,
 			"could not send initial '0' on Unix domain socket: %s", strerror(errno));
 		return INVALID_SOCKET;
@@ -329,13 +329,13 @@ connect_socket_tcp(Mapi mid, const char *host, int port)
 	struct addrinfo *addresses;
 	ret = getaddrinfo(host, portbuf, &hints, &addresses);
 	if (ret != 0) {
-		mapi_PrintError(
+		mapi_printError(
 			mid, __func__, MERROR,
 			"getaddrinfo %s:%s failed: %s", host, portbuf, gai_strerror(ret));
 		return INVALID_SOCKET;
 	}
 	if (addresses == NULL) {
-		mapi_PrintError(
+		mapi_printError(
 			mid, __func__, MERROR,
 			"getaddrinfo return 0 addresses");
 		return INVALID_SOCKET;
@@ -394,7 +394,7 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *addr)
 
 	SOCKET s =  socket(addr->ai_family, socktype, addr->ai_protocol);
 	if (s == INVALID_SOCKET) {
-		mapi_PrintError(
+		mapi_printError(
 			mid, __func__, MERROR,
 			"could not create TCP socket: %s", SOCKET_STRERROR());
 		return INVALID_SOCKET;
@@ -405,7 +405,7 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *addr)
 #endif
 
 	if (connect(s, addr->ai_addr, addr->ai_addrlen) == SOCKET_ERROR) {
-		mapi_PrintError(
+		mapi_printError(
 			mid, __func__, MERROR,
 			"could not connect: %s", SOCKET_STRERROR());
 		closesocket(s);
@@ -765,7 +765,7 @@ mapi_handshake(Mapi mid)
 			if (!msettings_parse_url(mid->settings, red, &error_message)) {
 				mapi_close_handle(hdl);
 				close_connection(mid);
-				return mapi_PrintError(
+				return mapi_printError(
 					mid, __func__, MERROR,
 					"%s: %s",
 					error_message ? error_message : "invalid redirect",

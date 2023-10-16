@@ -260,7 +260,7 @@ void mapi_clrError(Mapi mid)
 	__attribute__((__nonnull__(1)));
 MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
 	__attribute__((__nonnull__(2))) __attribute__((__nonnull__(3)));
-MapiMsg mapi_PrintError(Mapi mid, const char *action, MapiMsg error, const char *fmt, ...)
+MapiMsg mapi_printError(Mapi mid, const char *action, MapiMsg error, const char *fmt, ...)
 	__attribute__((__nonnull__(2))) __attribute__((__format__(__printf__, 4, 5)));
 void mapi_log_record(Mapi mid, const char *msg);
 

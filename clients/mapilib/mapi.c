@@ -837,7 +837,7 @@ mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
 	return mid->error;
 }
 
-MapiMsg mapi_PrintError(Mapi mid, const char *action, MapiMsg error, const char *fmt, ...)
+MapiMsg mapi_printError(Mapi mid, const char *action, MapiMsg error, const char *fmt, ...)
 {
 	size_t size = 81; // just a guess
 
