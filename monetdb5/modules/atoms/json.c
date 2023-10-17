@@ -521,7 +521,7 @@ JSONstr2json(json *ret, str *j)
 {
 	str msg = MAL_SUCCEED;
 	json buf = NULL;
-	json *p = &buf;
+	//json *p = &buf;
 	size_t ln = 2*strlen(*j)+1;
 	size_t out_size = 0;
 
@@ -531,21 +531,18 @@ JSONstr2json(json *ret, str *j)
 	buf = (json)GDKmalloc(ln);
 	if (buf == NULL) {
 		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout1;
+		goto bailout;
 	}
 
 	msg = JSONtoStorageString(jt, 0, &buf, &out_size);
 	if (msg != MAL_SUCCEED) {
-		goto bailout2;
+		GDKfree(buf);
+		goto bailout;
 	}
 
-	if ((*ret = GDKstrdup(*p)) == NULL) {
-		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
+	*ret = buf;
 
- bailout2:
-	GDKfree(buf);
- bailout1:
+ bailout:
 	JSONfree(jt);
 	return msg;
 }
