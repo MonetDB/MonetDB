@@ -12,10 +12,12 @@
 #include "stream.h"
 #include "stream_internal.h"
 
+#include <openssl/ssl.h>
+
 stream *
-openssl_stream(SSL *ssl)
+openssl_stream(const char *hostname, SSL *ssl)
 {
 	(void)ssl;
-	mnstr_set_open_error(NULL, 0, "not implemented yet");
+	mnstr_set_open_error(hostname, 0, "not implemented yet");
 	return NULL;
 }

@@ -92,7 +92,16 @@ wrap_tls(Mapi mid, SOCKET sock)
 	// On error: close 'sock'.
 
 	MapiMsg msg = MOK;
+
 	const msettings *settings = mid->settings;
+	const char *host = msettings_connect_tcp(settings);
+	int port = msettings_connect_port(settings);
+	size_t hostlen = strlen(host);
+	size_t hostportlen = hostlen + 1 + 20;
+	char *hostcolonport = malloc(hostportlen);
+	if (hostcolonport == NULL)
+		return mapi_setError(mid, "malloc failed", __func__, MERROR);
+	snprintf(hostcolonport, hostportlen, "%s:%d", host, port);
 
 	// Clear any earlier errrors
 	do {} while (ERR_get_error() != 0);
@@ -138,8 +147,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 	// from here on 'bio' will be freed through 'ssl'.
 	// On error: free 'ssl'.
 
-	const char *hostname = msettings_connect_tcp(settings);
-	if (!SSL_set_tlsext_host_name(ssl, hostname)) {
+	if (!SSL_set_tlsext_host_name(ssl, host)) {
 		SSL_free(ssl);
 		return croak(mid, __func__, "SSL_set_tlsext_host_name");
 	}
@@ -158,14 +166,14 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak(mid, __func__, "SSL_up_ref");
 	}
 	// On error: free 'ssl' twice
-	stream *rstream = openssl_stream(ssl);
+	stream *rstream = openssl_stream(hostcolonport, ssl);
 	if (rstream == NULL || mnstr_errnr(rstream) != MNSTR_NO__ERROR) {
 		SSL_free(ssl); // drops first ref
 		SSL_free(ssl); // drops second ref
 		return croak(mid, __func__, "openssl_stream: %s", mnstr_peek_error(rstream));
 	}
 	// On error: free 'ssl' and close 'rstream'.
-	stream *wstream = openssl_stream(ssl);
+	stream *wstream = openssl_stream(hostcolonport, ssl);
 	if (wstream == NULL || mnstr_errnr(wstream) != MNSTR_NO__ERROR) {
 		mnstr_close(rstream);
 		SSL_free(ssl);
