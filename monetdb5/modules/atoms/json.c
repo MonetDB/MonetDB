@@ -140,26 +140,22 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 	size_t sz = 0;
 	str msg = MAL_SUCCEED;
 
-	// abort();
-
 	switch(jt->elm[idx].kind) {
 	case JSON_OBJECT:
 		*p++ = '{';
 		*out_size += 1;
 		for(int i = jt->elm[idx].next; i != 0; i = jt->elm[i].next) {
 			sz = 0;
+			if (i != jt->elm[idx].next) {
+				*p++ = ',';
+				*out_size += 1;
+			}
 			msg = JSONtoStorageString(jt, i, &p, &sz);
 			if (msg != MAL_SUCCEED) {
 				return msg;
 			}
 			*out_size += sz;
 			p += sz;
-			*p++ = ',';
-			*out_size += 1;
-		}
-		if (*(p - 1) == ',') {
-			p -= 1;					/* Overrite the last comma if exists */
-			*out_size -= 1;
 		}
 		*p++ = '}';
 		*out_size += 1;
@@ -169,20 +165,17 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 		*out_size += 1;
 		for(int i = jt->elm[idx].next; i != 0; i = jt->elm[i].next) {
 			sz = 0;
+			if (i != jt->elm[idx].next) {
+				*p++ = ',';
+				*out_size += 1;
+			}
 			msg = JSONtoStorageString(jt, i, &p, &sz);
 			if (msg != MAL_SUCCEED) {
 				return msg;
 			}
 			*out_size += sz;
 			p += sz;
-			*p++ = ',';
-			*out_size += 1;
 		}
-		if (*(p - 1) == ',') {
-			p -= 1;					/* Overrite the last comma if exists */
-			*out_size -= 1;
-		}
-
 		*p++ = ']';
 		*out_size += 1;
 		break;
