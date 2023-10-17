@@ -43,6 +43,7 @@ target_link_libraries(mapi
   moptions
   mcrypt
   stream
+  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
   $<$<PLATFORM_ID:Windows>:ws2_32>)
 
 target_compile_definitions(mapi
