@@ -345,7 +345,7 @@ connect_socket_tcp(Mapi mid, const char *host, int port)
 	SOCKET s;
 	for (struct addrinfo *addr = addresses; addr; addr = addr->ai_next) {
 		s = connect_socket_tcp_addr(mid, addr);
-		if (s)
+		if (s != INVALID_SOCKET)
 			break;
 	}
 	freeaddrinfo(addresses);
