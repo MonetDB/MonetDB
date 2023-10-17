@@ -423,6 +423,8 @@ int yydebug=1;
 	opt_null_string
 	opt_to_savepoint
 	opt_uescape
+	opt_trim_type
+	opt_trim_characters
 	opt_using
 	opt_XML_attribute_name
 	restricted_ident
@@ -696,7 +698,7 @@ int yydebug=1;
 %left <operation> ALL ANY NOT_BETWEEN BETWEEN NOT_IN sqlIN NOT_EXISTS EXISTS NOT_LIKE LIKE NOT_ILIKE ILIKE OR SOME
 %left <operation> AND
 %left <sval> COMPARISON /* <> < > <= >= */
-%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
+%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING TROM POSITION SPLIT_PART
 %left <operation> '*' '/' '%'
 %left UMINUS
 %left <operation> '~'
@@ -723,6 +725,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token PATH PRIMARY PRIVILEGES
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
 %token RETURN
+%token LEADING TRAILING BOTH
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHOUT
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
@@ -4503,6 +4506,18 @@ opt_brackets:
  | '(' ')'	{ $$ = 1; }
  ;
 
+opt_trim_type:
+   /* empty */	{ $$ = "btrim"; }
+  | LEADING {$$ = "ltrim"; }
+  | TRAILING {$$ = "rtrim"; }
+  | BOTH {$$ = "btrim"; }
+  ;
+
+opt_trim_characters:
+   /* empty */	{ $$ = " "; }
+  | string {$$ = $1; }
+  ;
+
 string_funcs:
     SUBSTRING '(' scalar_exp FROM scalar_exp FOR scalar_exp ')'
 			{ dlist *l = L();
@@ -4569,6 +4584,19 @@ string_funcs:
 			  append_symbol(ops, $7);
 			  append_list(l, ops);
 			  $$ = _symbol_create_list( SQL_NOP, l ); }
+| TROM '(' opt_trim_type opt_trim_characters FROM scalar_exp  ')'
+			{ dlist *l = L();
+			  append_list(l,
+				append_string(L(), sa_strdup(SA, $3)));
+				append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $6);
+
+			  char* s = $4;
+			  int len = UTF8_strlen(s);
+			  sql_subtype t;
+			  sql_find_subtype(&t, "char", len, 0 );
+			  append_symbol(l, _newAtomNode( _atom_string(&t, s)));
+			  $$ = _symbol_create_list( SQL_BINOP, l ); }
  ;
 
 column_exp_commalist:
