@@ -4608,3 +4608,47 @@ mapi_get_active(Mapi mid)
 {
 	return mid->active;
 }
+
+
+MapiMsg
+mapi_set_streams(Mapi mid, stream *rstream, stream *wstream)
+{
+	// do not use check_stream here yet because the socket is not yet in 'mid'
+	const char *error_message;
+	stream *error_stream;
+
+	assert(!isa_block_stream(rstream));
+	assert(!isa_block_stream(wstream));
+
+	stream *brstream = NULL;
+	stream *bwstream = NULL;
+
+	bwstream = block_stream(wstream);
+	if (bwstream == NULL || mnstr_errnr(bwstream) != MNSTR_NO__ERROR) {
+		error_stream = bwstream;
+		error_message = "block_stream wstream";
+		goto bailout;
+	}
+	brstream = block_stream(rstream);
+	if (brstream == NULL || mnstr_errnr(brstream) != MNSTR_NO__ERROR) {
+		error_stream = brstream;
+		error_message = "block_stream rstream";
+		goto bailout;
+	}
+
+	mid->to = bwstream;
+	mid->from = brstream;
+	return MOK;
+bailout:
+	// adapted from the check_stream macro
+	mapi_log_record(mid, error_message);
+	mapi_log_record(mid, mnstr_peek_error(error_stream));
+	mapi_log_record(mid, __func__);
+	if (brstream)
+		mnstr_destroy(brstream);
+	if (bwstream)
+		mnstr_destroy(bwstream);
+	// malloc failure is the only way these calls could have failed
+	return mapi_printError(mid, __func__, MERROR, "%s: %s", error_message, mnstr_peek_error(error_stream));
+}
+

@@ -212,65 +212,45 @@ static MapiMsg
 wrap_socket(Mapi mid, SOCKET sock)
 {
 	// do not use check_stream here yet because the socket is not yet in 'mid'
-	const char *error_message;
-	stream *error_stream;
-
+	stream *broken_stream = NULL;
+	MapiMsg msg;
 	stream *rstream = NULL;
 	stream *wstream = NULL;
-	stream *brstream = NULL;
-	stream *bwstream = NULL;
 
 	wstream = socket_wstream(sock, "Mapi client write");
 	if (wstream == NULL || mnstr_errnr(wstream) != MNSTR_NO__ERROR) {
-		error_stream = wstream;
-		error_message = "socket_wstream";
+		broken_stream = wstream;
 		goto bailout;
 	}
 	mapi_log_record(mid, "Mapi client write");
 
 	rstream = socket_rstream(sock, "Mapi client write");
 	if (rstream == NULL || mnstr_errnr(rstream) != MNSTR_NO__ERROR) {
-		error_stream = rstream;
-		error_message = "socket_rstream";
+		broken_stream = rstream;
 		goto bailout;
 	}
 	mapi_log_record(mid, "Mapi client read");
 
-	// old logic checked for this but that doesn't make sense, does it?
-	assert(!isa_block_stream(wstream));
+	msg = mapi_set_streams(mid, rstream, wstream);
+	if (msg == MOK)
+		return MOK;
 
-	bwstream = block_stream(wstream);
-	if (bwstream == NULL || mnstr_errnr(bwstream) != MNSTR_NO__ERROR) {
-		error_stream = bwstream;
-		error_message = "block_stream wstream";
-		goto bailout;
-	}
-	brstream = block_stream(rstream);
-	if (brstream == NULL || mnstr_errnr(brstream) != MNSTR_NO__ERROR) {
-		error_stream = brstream;
-		error_message = "block_stream rstream";
-		goto bailout;
-	}
-
-	mid->to = bwstream;
-	mid->from = brstream;
-	return MOK;
 bailout:
-	// adapted from the check_stream macro
-	mapi_log_record(mid, error_message);
-	mapi_log_record(mid, mnstr_peek_error(error_stream));
-	mapi_log_record(mid, __func__);
-	if (brstream)
-		mnstr_destroy(brstream);
-	if (bwstream)
-		mnstr_destroy(bwstream);
-	if (brstream)
-		mnstr_destroy(brstream);
-	if (bwstream)
-		mnstr_destroy(bwstream);
+	if (rstream)
+		mnstr_destroy(rstream);
+	if (wstream)
+		mnstr_destroy(wstream);
 	closesocket(sock);
-	// malloc failure is the only way these calls could have failed
-	return mapi_printError(mid, __func__, MERROR, "%s: %s", error_message, mnstr_peek_error(error_stream));
+	if (broken_stream) {
+		char *error_message = "create stream from socket";
+		mapi_log_record(mid, error_message);
+		mapi_log_record(mid, mnstr_peek_error(broken_stream));
+		mapi_log_record(mid, __func__);
+		// malloc failure is the only way these calls could have failed
+		return mapi_printError(mid, __func__, MERROR, "%s: %s", error_message, mnstr_peek_error(broken_stream));
+	} else {
+		return MERROR;
+	}
 }
 
 #ifndef HAVE_OPENSSL
