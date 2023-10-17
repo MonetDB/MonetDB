@@ -762,7 +762,9 @@ mapi_handshake(Mapi mid)
 			char *red = mid->redirects[0];
 
 			char *error_message = NULL;
-			if (!msettings_parse_url(mid->settings, red, &error_message)) {
+			if (!msettings_parse_url(mid->settings, red, &error_message)
+			    || !msettings_validate(mid->settings, &error_message)
+			) {
 				mapi_close_handle(hdl);
 				close_connection(mid);
 				return mapi_printError(
