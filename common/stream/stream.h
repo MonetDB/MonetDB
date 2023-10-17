@@ -278,7 +278,7 @@ stream_export stream *mapi_request_download(const char *filename, bool binary, b
 stream_export stream *byte_counting_stream(stream *wrapped, uint64_t *counter);
 
 #ifdef HAVE_OPENSSL
-stream_export stream *openssl_stream(const char *hostname, SSL *ssl);
+stream_export stream *openssl_stream(const char *hostname, BIO *bio);
 #endif
 
 

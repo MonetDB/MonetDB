@@ -15,9 +15,9 @@
 #include <openssl/ssl.h>
 
 stream *
-openssl_stream(const char *hostname, SSL *ssl)
+openssl_stream(const char *hostname, BIO *bio)
 {
-	(void)ssl;
+	(void)bio;
 	mnstr_set_open_error(hostname, 0, "not implemented yet");
 	return NULL;
 }

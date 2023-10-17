@@ -117,66 +117,81 @@ wrap_tls(Mapi mid, SOCKET sock)
 	/////////////////////////////////////////////////////////////////////
 	// Create the SSL connection
 
-	SSL *ssl = SSL_new(ctx);
-	if (ssl == NULL) {
-		closesocket(sock);
-		SSL_CTX_free(ctx);
-		return croak(mid, __func__, "SSL_new");
-	}
-	// SSL_new has inc'd the refcount of ctx. We can now drop our ref
-	// so we don't have to call SSL_CTX_free all the time
-	SSL_CTX_free(ctx);
-	// On error: close 'sock' and free 'ssl'.
-
-	BIO *bio = BIO_new_socket(sock, BIO_CLOSE);
+	// BIO 'bio' represents the whole SSL connection.
+	// We will read and write plaintext from it.
+	BIO *bio = BIO_new_ssl(ctx, 1);
 	if (bio == NULL) {
 		closesocket(sock);
-		SSL_free(ssl);
+		SSL_CTX_free(ctx);
+		return croak(mid, __func__, "BIO_new_ssl");
+	}
+	// BIO_new_ssl() inc'd the reference count of ctx so we can drop our
+	// reference here.
+	SSL_CTX_free(ctx);
+	// On error: close 'sock' and free 'bio'
+
+	SSL *ssl = NULL;
+	if (1 != BIO_get_ssl(bio, &ssl)) {
+		closesocket(sock);
+		BIO_free(bio);
+		return croak(mid, __func__, "BIO_get_ssl");
+	}
+	// As far as I know the SSL returned by BIO_get_ssl has not had
+	// its refcount inc'd so we don't need to free it.
+	// On error: close 'sock' and free 'bio'.
+	assert(ssl != NULL);
+
+	// BIO 'sockbio' wraps the socket. OpenSSL will read and write
+	// ciphertext from it.
+	BIO *sockbio = BIO_new_socket(sock, BIO_CLOSE);
+	if (sockbio == NULL) {
+		closesocket(sock);
+		BIO_free_all(bio);
 		return croak(mid, __func__, "BIO_new_socket");
 	}
-	// From here on, 'sock' will be free'd by 'bio'.
-	// On error: free 'bio' and free 'ssl'.
+	// From here on, 'sock' will be free'd by 'sockbio'.
+	// On error: free 'sockbio' and free 'bio'.
 
-	if (!BIO_up_ref(bio)) {
+	if (!BIO_up_ref(sockbio)) {
+		BIO_free_all(sockbio);
 		BIO_free_all(bio);
-		SSL_free(ssl);
-		return croak(mid, __func__, "BIO_up_ref");
+		return croak(mid, __func__, "BIO_up_ref sockbio");
 	}
-	SSL_set0_rbio(ssl, bio); // consumes first ref
-	SSL_set0_wbio(ssl, bio); // consumes second ref
-	// from here on 'bio' will be freed through 'ssl'.
-	// On error: free 'ssl'.
+	SSL_set0_rbio(ssl, sockbio); // consumes first ref
+	SSL_set0_wbio(ssl, sockbio); // consumes second ref
+	// from here on 'sockbio' will be freed through 'ssl' which is freed through 'bio'.
+	// On error: free 'bio'.
 
 	if (!SSL_set_tlsext_host_name(ssl, host)) {
-		SSL_free(ssl);
+		BIO_free_all(bio);
 		return croak(mid, __func__, "SSL_set_tlsext_host_name");
 	}
 
 	// handshake
 	if (1 != SSL_connect(ssl)) {
-		SSL_free(ssl);
+		BIO_free_all(bio);
 		return croak(mid, __func__, "SSL_connect");
 	}
 
 	/////////////////////////////////////////////////////////////////////
 	// Attach the connection to 'mid'
 
-	if (!SSL_up_ref(ssl)) {
-		SSL_free(ssl);
-		return croak(mid, __func__, "SSL_up_ref");
+	if (!BIO_up_ref(bio)) {
+		BIO_free_all(bio);
+		return croak(mid, __func__, "BIO_up_ref bio");
 	}
-	// On error: free 'ssl' twice
-	stream *rstream = openssl_stream(hostcolonport, ssl);
+	// On error: free 'bio' twice
+	stream *rstream = openssl_stream(hostcolonport, bio);
 	if (rstream == NULL || mnstr_errnr(rstream) != MNSTR_NO__ERROR) {
-		SSL_free(ssl); // drops first ref
-		SSL_free(ssl); // drops second ref
+		BIO_free_all(bio); // drops first ref
+		BIO_free_all(bio); // drops second ref
 		return croak(mid, __func__, "openssl_stream: %s", mnstr_peek_error(rstream));
 	}
-	// On error: free 'ssl' and close 'rstream'.
-	stream *wstream = openssl_stream(hostcolonport, ssl);
+	// On error: free 'bio' and close 'rstream'.
+	stream *wstream = openssl_stream(hostcolonport, bio);
 	if (wstream == NULL || mnstr_errnr(wstream) != MNSTR_NO__ERROR) {
+		BIO_free_all(bio);
 		mnstr_close(rstream);
-		SSL_free(ssl);
 		return croak(mid, __func__, "openssl_stream: %s", mnstr_peek_error(wstream));
 	}
 	// On error: free 'rstream' and 'wstream'.

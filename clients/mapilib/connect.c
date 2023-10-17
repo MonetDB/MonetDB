@@ -404,8 +404,6 @@ connect_socket_tcp(Mapi mid)
 
 	if (use_tls) {
 		return wrap_tls(mid, s);
-		closesocket(s);
-		return mapi_setError(mid, "TLS not implemented yet", __func__, MERROR);
 	} else {
 		// Some TLS servers hang if we accidentally make a non-TLS
 		// connection to a TLS server. Sending a bunch of NULs causes
