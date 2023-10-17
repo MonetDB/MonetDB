@@ -28,10 +28,10 @@ select * from jsonparse
 [1,"hello",2]
 [1,2,null,true,false]
 []
-{"f1":1,"f2":2} 
-{"null": null}
+{"f1":1,"f2":2}
+{"null":null}
 {}
-{}  
+{}
 
 statement error
 insert into jsonparse values('{')

@@ -7,7 +7,7 @@ insert into txt values('{"message" : "indoorDeviceLocation", "id" : "00:1b:21:02
 query T rowsort
 select * from txt
 ----
-{"message" : "indoorDeviceLocation", "id" : "00:1b:21:02:30:cd", "dateTime" : "2007-04-05T14:30", "position" : {"X" : "10", "Y" : "10" }}
+{"message":"indoorDeviceLocation","id":"00:1b:21:02:30:cd","dateTime":"2007-04-05T14:30","position":{"X":"10","Y":"10"}}
 
 query T rowsort
 select json.text(json.filter(js, 'message')) from txt
