@@ -181,18 +181,18 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak(mid, __func__, "BIO_up_ref bio");
 	}
 	// On error: free 'bio' twice
-	stream *rstream = openssl_stream(hostcolonport, bio);
+	stream *rstream = openssl_rstream(hostcolonport, bio);
 	if (rstream == NULL || mnstr_errnr(rstream) != MNSTR_NO__ERROR) {
 		BIO_free_all(bio); // drops first ref
 		BIO_free_all(bio); // drops second ref
-		return croak(mid, __func__, "openssl_stream: %s", mnstr_peek_error(rstream));
+		return croak(mid, __func__, "openssl_rstream: %s", mnstr_peek_error(rstream));
 	}
 	// On error: free 'bio' and close 'rstream'.
-	stream *wstream = openssl_stream(hostcolonport, bio);
+	stream *wstream = openssl_wstream(hostcolonport, bio);
 	if (wstream == NULL || mnstr_errnr(wstream) != MNSTR_NO__ERROR) {
 		BIO_free_all(bio);
 		mnstr_close(rstream);
-		return croak(mid, __func__, "openssl_stream: %s", mnstr_peek_error(wstream));
+		return croak(mid, __func__, "openssl_wstream: %s", mnstr_peek_error(wstream));
 	}
 	// On error: free 'rstream' and 'wstream'.
 	msg = mapi_set_streams(mid, rstream, wstream);

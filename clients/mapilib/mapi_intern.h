@@ -271,8 +271,11 @@ void mapi_log_record(Mapi mid, const char *msg);
 			if (msg != NULL) mapi_log_record(mid, msg);	\
 			mapi_log_record(mid, mnstr_peek_error(s));	\
 			mapi_log_record(mid, __func__);			\
+			if (mnstr_peek_error(s))			\
+				mapi_printError((mid), __func__, MTIMEOUT, "%s: %s", (msg), mnstr_peek_error(s)); \
+			else						\
+				mapi_printError((mid), __func__, MTIMEOUT, "%s", (msg)); \
 			close_connection(mid);				\
-			mapi_setError((mid), (msg), __func__, MTIMEOUT); \
 			return (e);					\
 		}							\
 	} while (0)

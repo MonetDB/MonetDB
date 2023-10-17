@@ -469,7 +469,7 @@ mapi_handshake(Mapi mid)
 	/* consume server challenge */
 	len = mnstr_read_block(mid->from, buf, 1, sizeof(buf));
 
-	check_stream(mid, mid->from, "Connection terminated while starting", (mid->blk.eos = true, mid->error));
+	check_stream(mid, mid->from, "Connection terminated while starting handshake", (mid->blk.eos = true, mid->error));
 
 	assert(len < sizeof(buf));
 	buf[len] = 0;
