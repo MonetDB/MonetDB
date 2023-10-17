@@ -256,18 +256,31 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 	}
 	strcpy(*j, src);
 	jt = JSONparse(*j);
-	if (jt == NULL)
+	if (jt == NULL) {
 		return -1;
+	}
 	if (jt->error) {
 		GDKerror("%s", getExceptionMessageAndState(jt->error));
 		JSONfree(jt);
 		return -1;
 	}
 	buf = GDKmalloc(2*slen + 1);
+	if (buf == NULL) {
+		GDKfree(*j);
+		JSONfree(jt);
+		return -1;
+	}
 	JSONtoStorageString(jt, 0, &buf, &slen);
-	strncpy(*j, buf - slen, slen);
-	GDKfree(buf);
 	JSONfree(jt);
+	GDKfree(*j);
+	if ((*j = GDKmalloc(slen + 1)) == NULL) {
+		GDKfree(buf);
+		JSONfree(jt);
+		return -1;
+	}
+	strncpy(*j, buf, slen);
+	*len = slen + 1;
+	GDKfree(buf);
 
 	return (ssize_t) slen;
 }
