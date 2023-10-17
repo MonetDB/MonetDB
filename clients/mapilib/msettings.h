@@ -106,14 +106,20 @@ bool msettings_validate(msettings *mp, char **errmsg);
 
 
 /* virtual parameters */
+enum msetting_tls_verify {
+	verify_none,
+	verify_system,
+	verify_cert,
+	verify_hash,
+};
 bool msettings_connect_scan(const msettings *mp);
 const char *msettings_connect_sockdir(const msettings *mp);
 const char *msettings_connect_unix(const msettings *mp);
 const char *msettings_connect_tcp(const msettings *mp);
 long msettings_connect_port(const msettings *mp);
-const char *msettings_connect_tls_verify(const msettings *mp);
 const char *msettings_connect_certhash_digits(const msettings *mp);
 long msettings_connect_binary(const msettings *mp);
+enum msetting_tls_verify msettings_connect_tls_verify(const msettings *mp);
 
 /* automatically incremented each time the corresponding field is updated */
 long msettings_user_generation(const msettings *mp);

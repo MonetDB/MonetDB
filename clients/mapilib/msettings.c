@@ -746,7 +746,7 @@ msettings_connect_port(const msettings *mp)
 		return port;
 }
 
-const char*
+enum msetting_tls_verify
 msettings_connect_tls_verify(const msettings *mp)
 {
 	assert(mp->validated);
@@ -755,12 +755,12 @@ msettings_connect_tls_verify(const msettings *mp)
 	const char *certhash = msetting_string(mp, MP_CERTHASH);
 
 	if (!tls)
-		return "";
-	if (*certhash)
-		return "hash";
+		return verify_none;
+	if (*certhash) // certhash comes before cert
+		return verify_hash;
 	if (*cert)
-		return "cert";
-	return "system";
+		return verify_cert;
+	return verify_system;
 }
 
 const char*

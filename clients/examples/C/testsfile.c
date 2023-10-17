@@ -166,6 +166,22 @@ expect_string(const char *location, const mparm parm, const char *(*extract)(con
 	return false;
 }
 
+static const char *
+stringify_tls_verify(const msettings *mp)
+{
+	enum msetting_tls_verify verify = msettings_connect_tls_verify(mp);
+	switch (verify) {
+		case verify_none:
+			return "";
+		case verify_system:
+			return "system";
+		case verify_cert:
+			return "cert";
+		case verify_hash:
+			return "hash";
+	}
+	assert(0 && "unreachable");
+}
 
 static bool
 handle_expect_command(const char *location, char *key, char *value)
@@ -201,7 +217,7 @@ handle_expect_command(const char *location, char *key, char *value)
 	if (strcmp("connect_port", key) == 0)
 		return expect_long(location, MP_UNKNOWN, msettings_connect_port, value);
 	if (strcmp("connect_tls_verify", key) == 0)
-		return expect_string(location, MP_UNKNOWN, msettings_connect_tls_verify, value);
+		return expect_string(location, MP_UNKNOWN, stringify_tls_verify, value);
 	if (strcmp("connect_certhash_digits", key) == 0)
 		return expect_string(location, MP_UNKNOWN, msettings_connect_certhash_digits, value);
 	if (strcmp("connect_binary", key) == 0)
