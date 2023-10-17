@@ -265,7 +265,7 @@ gen_json(FILE *f, bool byteswap, long nrecs, char *arg)
 		if (i % 100 == 99) {
 			fputc('\x80', f);
 		} else {
-			fprintf(f, "{\"id\": %ld, \"msg\":\n\"int%ld\"}", i, i);
+			fprintf(f, "{\"id\":%ld,\"msg\":\"int%ld\"}", i, i);
 		}
 		fputc('\0', f);
 	}
