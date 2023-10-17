@@ -521,7 +521,6 @@ JSONstr2json(json *ret, str *j)
 {
 	str msg = MAL_SUCCEED;
 	json buf = NULL;
-	//json *p = &buf;
 	size_t ln = 2*strlen(*j)+1;
 	size_t out_size = 0;
 
