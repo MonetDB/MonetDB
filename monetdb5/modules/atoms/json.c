@@ -270,6 +270,7 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 		JSONfree(jt);
 		return -1;
 	}
+	slen = 0;
 	JSONtoStorageString(jt, 0, &buf, &slen);
 	JSONfree(jt);
 	GDKfree(*j);
@@ -278,11 +279,11 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 		JSONfree(jt);
 		return -1;
 	}
-	strncpy(*j, buf, slen);
+	strncpy(*j, buf, slen + 1);
 	*len = slen + 1;
 	GDKfree(buf);
 
-	return (ssize_t) slen;
+	return (ssize_t) slen + 1;
 }
 
 static ssize_t
