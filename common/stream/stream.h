@@ -31,6 +31,11 @@
 #include <signal.h>
 #include <limits.h>
 
+#ifdef HAVE_OPENSSL
+#include <openssl/ssl.h>
+#endif
+
+
 /* avoid using "#ifdef WIN32" so that this file does not need our config.h */
 #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
 # ifndef LIBSTREAM
@@ -271,6 +276,10 @@ stream_export stream *mapi_request_download(const char *filename, bool binary, b
 
 // write-only
 stream_export stream *byte_counting_stream(stream *wrapped, uint64_t *counter);
+
+#ifdef HAVE_OPENSSL
+stream_export stream *openssl_stream(SSL *ssl);
+#endif
 
 
 #endif /*_STREAM_H_*/
