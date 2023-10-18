@@ -57,11 +57,3 @@ grant execute on filter function contains(string, string) to public;
 create filter function sys.contains(x string, y string, icase boolean)
 external name str.contains;
 grant execute on filter function contains(string, string, boolean) to public;
-
-create function sys.btrim(x string)
-returns string external name str.trim;
-grant execute on function btrim(string) to public;
-
-create function sys.btrim(x string, y string)
-returns string external name str.trim2;
-grant execute on function btrim(string, string) to public;

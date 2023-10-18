@@ -351,7 +351,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("POSITION", POSITION);
 	failed += keywords_insert("SUBSTRING", SUBSTRING);
 	failed += keywords_insert("SPLIT_PART", SPLIT_PART);
-	failed += keywords_insert("TROM", TROM);
+	failed += keywords_insert("TRIM", TRIM);
 	failed += keywords_insert("LEADING", LEADING);
 	failed += keywords_insert("TRAILING", TRAILING);
 	failed += keywords_insert("BOTH", BOTH);

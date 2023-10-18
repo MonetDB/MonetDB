@@ -698,7 +698,7 @@ int yydebug=1;
 %left <operation> ALL ANY NOT_BETWEEN BETWEEN NOT_IN sqlIN NOT_EXISTS EXISTS NOT_LIKE LIKE NOT_ILIKE ILIKE OR SOME
 %left <operation> AND
 %left <sval> COMPARISON /* <> < > <= >= */
-%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING TROM POSITION SPLIT_PART
+%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING TRIM POSITION SPLIT_PART
 %left <operation> '*' '/' '%'
 %left UMINUS
 %left <operation> '~'
@@ -4507,14 +4507,14 @@ opt_brackets:
  ;
 
 opt_trim_type:
-   /* empty */	{ $$ = "btrim"; }
+   /* empty */	{ $$ = NULL; }
   | LEADING {$$ = "ltrim"; }
   | TRAILING {$$ = "rtrim"; }
   | BOTH {$$ = "btrim"; }
   ;
 
 opt_trim_characters:
-   /* empty */	{ $$ = " "; }
+   /* empty */	{ $$ = NULL; }
   | string {$$ = $1; }
   ;
 
@@ -4584,19 +4584,38 @@ string_funcs:
 			  append_symbol(ops, $7);
 			  append_list(l, ops);
 			  $$ = _symbol_create_list( SQL_NOP, l ); }
-| TROM '(' opt_trim_type opt_trim_characters FROM scalar_exp  ')'
+| TRIM '(' opt_trim_type opt_trim_characters FROM scalar_exp  ')'
 			{ dlist *l = L();
+			  if ( $3 == NULL && $4 == NULL ) {
+				sqlformaterror(m, SQLSTATE(2000) "%s", "trim specification or trim characters need to be specified preceding FROM in TRIM");
+				YYABORT;
+			  }
 			  append_list(l,
-				append_string(L(), sa_strdup(SA, $3)));
+				append_string(L(), sa_strdup(SA, $3?$3:"btrim")));
 				append_int(l, FALSE); /* ignore distinct */
 			  append_symbol(l, $6);
 
-			  char* s = $4;
+			  char* s = $4?$4:" ";
 			  int len = UTF8_strlen(s);
 			  sql_subtype t;
 			  sql_find_subtype(&t, "char", len, 0 );
 			  append_symbol(l, _newAtomNode( _atom_string(&t, s)));
 			  $$ = _symbol_create_list( SQL_BINOP, l ); }
+| TRIM '(' scalar_exp ',' scalar_exp  ')'
+			{ dlist *l = L();
+			  append_list(l,
+				append_string(L(), sa_strdup(SA, "btrim")));
+				append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $3);
+			  append_symbol(l, $5);
+			  $$ = _symbol_create_list( SQL_BINOP, l ); }
+| TRIM '(' scalar_exp ')'
+			{ dlist *l = L();
+			  append_list(l,
+				append_string(L(), sa_strdup(SA, "btrim")));
+				append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $3);
+			  $$ = _symbol_create_list( SQL_UNOP, l ); }
  ;
 
 column_exp_commalist:
