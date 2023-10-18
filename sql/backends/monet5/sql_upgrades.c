@@ -6204,6 +6204,34 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		" ORDER BY s.\"name\", t.\"name\", k.\"name\";\n"
 		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
 
+		"CREATE VIEW INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS SELECT\n"
+		"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
+		"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
+		"  fk.\"name\" AS CONSTRAINT_NAME,\n"
+		"  cast(NULL AS varchar(1)) AS UNIQUE_CONSTRAINT_CATALOG,\n"
+		"  uks.\"name\" AS UNIQUE_CONSTRAINT_SCHEMA,\n"
+		"  uk.\"name\" AS UNIQUE_CONSTRAINT_NAME,\n"
+		"  cast('FULL' AS varchar(7)) AS MATCH_OPTION,\n"
+		"  fk.\"update_action\" AS UPDATE_RULE,\n"
+		"  fk.\"delete_action\" AS DELETE_RULE,\n"
+		"  -- MonetDB column extensions\n"
+		"  t.\"schema_id\" AS fk_schema_id,\n"
+		"  t.\"id\" AS fk_table_id,\n"
+		"  t.\"name\" AS fk_table_name,\n"
+		"  fk.\"id\" AS fk_key_id,\n"
+		"  ukt.\"schema_id\" AS uc_schema_id,\n"
+		"  uk.\"table_id\" AS uc_table_id,\n"
+		"  ukt.\"name\" AS uc_table_name,\n"
+		"  uk.\"id\" AS uc_key_id\n"
+		" FROM sys.\"fkeys\" fk\n"
+		" INNER JOIN sys.\"tables\" t ON t.\"id\" = fk.\"table_id\"\n"
+		" INNER JOIN sys.\"schemas\" s ON s.\"id\" = t.\"schema_id\"\n"
+		" LEFT OUTER JOIN sys.\"keys\" uk ON uk.\"id\" = fk.\"rkey\"\n"
+		" LEFT OUTER JOIN sys.\"tables\" ukt ON ukt.\"id\" = uk.\"table_id\"\n"
+		" LEFT OUTER JOIN sys.\"schemas\" uks ON uks.\"id\" = ukt.\"schema_id\"\n"
+		" ORDER BY s.\"name\", t.\"name\", fk.\"name\";\n"
+		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
+
 		"CREATE VIEW INFORMATION_SCHEMA.SEQUENCES AS SELECT\n"
 		"  cast(NULL AS varchar(1)) AS SEQUENCE_CATALOG,\n"
 		"  s.\"name\" AS SEQUENCE_SCHEMA,\n"
@@ -6234,7 +6262,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		"\n"
 		"update sys._tables set system = true where system <> true\n"
 		" and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')\n"
-		" and name in ('character_sets','check_constraints','columns','schemata','sequences','table_constraints','tables','views');\n";
+		" and name in ('character_sets','check_constraints','columns','schemata','sequences','referential_constraints','table_constraints','tables','views');\n";
 		printf("Running database upgrade commands:\n%s\n", cmds);
 		fflush(stdout);
 		err = SQLstatementIntern(c, cmds, "update", true, false, NULL);
