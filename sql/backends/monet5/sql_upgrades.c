@@ -6190,7 +6190,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		"  cast(CASE k.\"type\" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' ELSE NULL END AS varchar(16)) AS CONSTRAINT_TYPE,\n"
 		"  cast('NO' AS varchar(3)) AS IS_DEFERRABLE,\n"
 		"  cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,\n"
-		"  cast('YES' AS varchar(3)) AS  ENFORCED,\n"
+		"  cast('YES' AS varchar(3)) AS ENFORCED,\n"
 		"  -- MonetDB column extensions\n"
 		"  t.\"schema_id\" AS schema_id,\n"
 		"  t.\"id\" AS table_id,\n"

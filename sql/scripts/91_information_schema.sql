@@ -209,7 +209,7 @@ CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT
   cast(CASE k."type" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' ELSE NULL END AS varchar(16)) AS CONSTRAINT_TYPE,
   cast('NO' AS varchar(3)) AS IS_DEFERRABLE,
   cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,
-  cast('YES' AS varchar(3)) AS  ENFORCED,
+  cast('YES' AS varchar(3)) AS ENFORCED,
   -- MonetDB column extensions
   t."schema_id" AS schema_id,
   t."id" AS table_id,
