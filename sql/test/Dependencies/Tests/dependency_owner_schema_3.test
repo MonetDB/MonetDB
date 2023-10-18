@@ -78,6 +78,9 @@ _tables
 ids
 DEP_VIEW
 _tables
+table_constraints
+DEP_VIEW
+_tables
 tables
 DEP_VIEW
 _tables
@@ -178,6 +181,9 @@ describe_comments
 DEP_VIEW
 comments
 schemata
+DEP_VIEW
+comments
+sequences
 DEP_VIEW
 comments
 tables
@@ -428,6 +434,9 @@ DEP_VIEW
 keys
 ids
 DEP_VIEW
+keys
+table_constraints
+DEP_VIEW
 objects
 dependency_columns_on_indexes
 DEP_VIEW
@@ -561,10 +570,16 @@ schemas
 schemata
 DEP_VIEW
 schemas
+sequences
+DEP_VIEW
+schemas
 statistics
 DEP_VIEW
 schemas
 storage
+DEP_VIEW
+schemas
+table_constraints
 DEP_VIEW
 schemas
 tables
@@ -580,6 +595,9 @@ describe_sequences
 DEP_VIEW
 sequences
 ids
+DEP_VIEW
+sequences
+sequences
 DEP_VIEW
 storage
 schemastorage
@@ -820,7 +838,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-1623 values hashing to 6b21bdd80c4e73ef598244a23a31446a
+1677 values hashing to f5071174850041be0fdcc4ca508a68f3
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
