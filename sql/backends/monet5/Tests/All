@@ -34,4 +34,4 @@ shutdown
 
 HAVE_HGE?int_notation_1e5
 
-persist_unlogged
+!NOWAL?persist_unlogged
