@@ -364,19 +364,16 @@ mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt)
 #endif
 
 int
-mnstr_printf(stream *restrict s, const char *restrict format, ...)
+mnstr_vprintf(stream *restrict s, const char *restrict format, va_list ap)
 {
 	char buf[512], *bf = buf;
 	int i = 0;
 	size_t bfsz = sizeof(buf);
-	va_list ap;
 
 	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return -1;
 
-	va_start(ap, format);
 	i = vsnprintf(bf, bfsz, format, ap);
-	va_end(ap);
 	while (i < 0 || (size_t) i >= bfsz) {
 		if (i >= 0)	/* glibc 2.1 */
 			bfsz = (size_t) i + 1;	/* precisely what is needed */
@@ -389,9 +386,7 @@ mnstr_printf(stream *restrict s, const char *restrict format, ...)
 			mnstr_set_error(s, MNSTR_WRITE_ERROR, "malloc failed");
 			return -1;
 		}
-		va_start(ap, format);
 		i = vsnprintf(bf, bfsz, format, ap);
-		va_end(ap);
 	}
 	s->write(s, (void *) bf, (size_t) i, (size_t) 1);
 	if (bf != buf)
@@ -399,3 +394,13 @@ mnstr_printf(stream *restrict s, const char *restrict format, ...)
 	return s->errkind == MNSTR_NO__ERROR ? i : -1;
 }
 
+int
+mnstr_printf(stream *restrict s, const char *restrict format, ...)
+{
+	int ret;
+	va_list ap;
+	va_start(ap, format);
+	ret = mnstr_vprintf(s, format, ap);
+	va_end(ap);
+	return ret;
+}

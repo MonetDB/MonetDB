@@ -203,5 +203,6 @@ wrap_tls(Mapi mid, SOCKET sock)
 	}
 	// 'rstream' and 'wstream' are part of 'mid' now.
 
+	mapi_log_record(mid, "CONN", "TLS handshake succeeded");
 	return MOK;
 }

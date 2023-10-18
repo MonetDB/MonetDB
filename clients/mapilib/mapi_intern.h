@@ -262,15 +262,16 @@ MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg err
 	__attribute__((__nonnull__(2))) __attribute__((__nonnull__(3)));
 MapiMsg mapi_printError(Mapi mid, const char *action, MapiMsg error, const char *fmt, ...)
 	__attribute__((__nonnull__(2))) __attribute__((__format__(__printf__, 4, 5)));
-void mapi_log_record(Mapi mid, const char *msg);
 
+void mapi_impl_log_data(Mapi mid, const char *filename, long line, const char *mark, const char *data, size_t len);
+void mapi_impl_log_record(Mapi mid, const char *filename, long line, const char *mark, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 5, 6)));
+#define mapi_log_data(mid, mark, start, len)  do { if ((mid)->tracelog) mapi_impl_log_data(mid, __func__, __LINE__, mark, start, len); } while (0)
+#define mapi_log_record(mid, mark, ...)  do { if ((mid)->tracelog) mapi_impl_log_record(mid, __func__, __LINE__, mark, __VA_ARGS__); } while (0)
 
 #define check_stream(mid, s, msg, e)					\
 	do {								\
 		if ((s) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {	\
-			if (msg != NULL) mapi_log_record(mid, msg);	\
-			mapi_log_record(mid, mnstr_peek_error(s));	\
-			mapi_log_record(mid, __func__);			\
 			if (mnstr_peek_error(s))			\
 				mapi_printError((mid), __func__, MTIMEOUT, "%s: %s", (msg), mnstr_peek_error(s)); \
 			else						\
@@ -303,22 +304,3 @@ MapiMsg mapi_set_streams(Mapi mid, stream *rstream, stream *wstream);
 
 void close_connection(Mapi mid);
 void set_uri(Mapi mid);
-
-
-static inline void my_ad_hoc_log(Mapi mid, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
-
-static inline void
-my_ad_hoc_log(Mapi mid, const char *fmt, ...)
-{
-	const char *var = getenv("MAPI_VERBOSE");
-	if (!var)
-		return;
-
-	va_list ap;
-	va_start(ap, fmt);
-	fprintf(stderr, "mapi %d: ", mid->index);
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-	va_end(ap);
-}

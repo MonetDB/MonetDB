@@ -11,6 +11,15 @@
 
 #include "mapi_intern.h"
 
+#ifdef HAVE_SYS_SOCKET_H
+# include <arpa/inet.h>			/* addr_in */
+#else /* UNIX specific */
+#ifdef HAVE_WINSOCK_H			/* Windows specific */
+# include <winsock.h>
+#endif
+#endif
+
+
 #ifdef HAVE_SYS_UN_H
 #define DO_UNIX_DOMAIN (1)
 #else
@@ -77,6 +86,8 @@ scan_unix_sockets(Mapi mid)
 	msettings *original = mid->settings;
 	mid->settings = NULL;  // invalid state, will fix it before use and on return
 
+	mapi_log_record(mid, "CONN", "Scanning %s for Unix domain sockets", sockdir);
+
 	// Make a list of Unix domain sockets in /tmp
 	uid_t me = getuid();
 	if (DO_UNIX_DOMAIN && (dir = opendir(sockdir))) {
@@ -99,6 +110,8 @@ scan_unix_sockets(Mapi mid)
 			candidates[ncandidates++].priority = st.st_uid == me ? 0 : 1;
 		}
 	}
+
+	mapi_log_record(mid, "CONN", "Found %d Unix domain sockets", ncandidates);
 
 	// Try those owned by us first, then all others
 	for (int round = 0; round < 2; round++) {
@@ -144,6 +157,8 @@ scan_unix_sockets(Mapi mid)
 	free(namebuf);
 
 	// Last-ditch attempt.
+	mapi_log_record(mid, "CONN", "All %d Unix domain sockets failed. Falling back to TCP", ncandidates);
+
 	// We can now freely modify original
 	assert(mid->settings == NULL);
 	mid->settings = original;
@@ -162,8 +177,10 @@ scan_unix_sockets(Mapi mid)
 static MapiMsg
 establish_connection(Mapi mid)
 {
-	if (mid->connected)
+	if (mid->connected) {
+		mapi_log_record(mid, "CONN", "Found leftover open connection");
 		close_connection(mid);
+	}
 
 	MapiMsg msg = MREDIRECT;
 	while (msg == MREDIRECT) {
@@ -192,20 +209,18 @@ connect_socket(Mapi mid)
 	const char *tcp_host = msettings_connect_tcp(mid->settings);
 
 	assert(*sockname || *tcp_host);
-	if (*sockname &&  connect_socket_unix(mid) == MOK) {
-		mid->connected = true;
-		return MOK;
-	} else if (*tcp_host && connect_socket_tcp(mid) == MOK) {
-		mid->connected = true;
-		return MOK;
-	} else {
+	do {
+		if (*sockname && connect_socket_unix(mid) == MOK)
+			break;
+		if (*tcp_host && connect_socket_tcp(mid) == MOK)
+			break;
 		assert(mid->error == MERROR);
 		mid->error = MERROR; // in case assert above was not enabled
 		return mid->error;
-	}
+	} while (0);
 
-	assert(0 && "unreachable");
-	return MERROR;
+	mid->connected = true;
+	return MOK;
 }
 
 static MapiMsg
@@ -222,18 +237,18 @@ wrap_socket(Mapi mid, SOCKET sock)
 		broken_stream = wstream;
 		goto bailout;
 	}
-	mapi_log_record(mid, "Mapi client write");
 
 	rstream = socket_rstream(sock, "Mapi client write");
 	if (rstream == NULL || mnstr_errnr(rstream) != MNSTR_NO__ERROR) {
 		broken_stream = rstream;
 		goto bailout;
 	}
-	mapi_log_record(mid, "Mapi client read");
 
 	msg = mapi_set_streams(mid, rstream, wstream);
-	if (msg == MOK)
-		return MOK;
+	if (msg != MOK)
+		goto bailout;
+	mapi_log_record(mid, "CONN", "Network connection established");
+	return MOK;
 
 bailout:
 	if (rstream)
@@ -243,9 +258,6 @@ bailout:
 	closesocket(sock);
 	if (broken_stream) {
 		char *error_message = "create stream from socket";
-		mapi_log_record(mid, error_message);
-		mapi_log_record(mid, mnstr_peek_error(broken_stream));
-		mapi_log_record(mid, __func__);
 		// malloc failure is the only way these calls could have failed
 		return mapi_printError(mid, __func__, MERROR, "%s: %s", error_message, mnstr_peek_error(broken_stream));
 	} else {
@@ -279,6 +291,8 @@ connect_socket_unix(Mapi mid)
 {
 	const char *sockname = msettings_connect_unix(mid->settings);
 	assert (*sockname != '\0');
+
+	mapi_log_record(mid, "CONN", "Connecting to Unix domain socket %s", sockname);
 
 	struct sockaddr_un userver;
 	if (strlen(sockname) >= sizeof(userver.sun_path)) {
@@ -345,6 +359,8 @@ connect_socket_tcp(Mapi mid)
 	char portbuf[10];
 	snprintf(portbuf, sizeof(portbuf), "%d", port);
 
+	mapi_log_record(mid, "CONN", "Connecting to %s:%d", host, port);
+
 	struct addrinfo hints = (struct addrinfo) {
 		.ai_family = AF_UNSPEC,
 		.ai_socktype = SOCK_STREAM,
@@ -403,6 +419,7 @@ connect_socket_tcp(Mapi mid)
 	}
 
 	if (use_tls) {
+		mapi_log_record(mid, "CONN", "Network connection established");
 		return wrap_tls(mid, s);
 	} else {
 		// Some TLS servers hang if we accidentally make a non-TLS
@@ -426,14 +443,36 @@ connect_socket_tcp(Mapi mid)
 }
 
 static SOCKET
-connect_socket_tcp_addr(Mapi mid, struct addrinfo *addr)
+connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 {
-	int socktype = addr->ai_socktype;
+	if (mid->tracelog) {
+		char addrbuf[100] = {0};
+		const char *addrtext;
+		int port;
+		if (info->ai_family == AF_INET) {
+			struct sockaddr_in *addr4 = (struct sockaddr_in*)info->ai_addr;
+			port = ntohs(addr4->sin_port);
+			void *addr = &addr4->sin_addr;
+			addrtext = inet_ntop(info->ai_family, addr, addrbuf, sizeof(addrbuf));
+		} else if (info->ai_family == AF_INET6) {
+			struct sockaddr_in6 *addr6 = (struct sockaddr_in6*)info->ai_addr;
+			port = ntohs(addr6->sin6_port);
+			void *addr = &addr6->sin6_addr;
+			addrtext = inet_ntop(info->ai_family, addr, addrbuf, sizeof(addrbuf));
+		} else {
+			port = -1;
+			addrtext = NULL;
+		}
+		mapi_log_record(mid, "CONN", "Trying IP %s port %d", addrtext ? addrtext : "<UNKNOWN>", port);
+	}
+
+
+	int socktype = info->ai_socktype;
 #ifdef SOCK_CLOEXEC
 	socktype |= SOCK_CLOEXEC;
 #endif
 
-	SOCKET s =  socket(addr->ai_family, socktype, addr->ai_protocol);
+	SOCKET s =  socket(info->ai_family, socktype, info->ai_protocol);
 	if (s == INVALID_SOCKET) {
 		mapi_printError(
 			mid, __func__, MERROR,
@@ -445,7 +484,7 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *addr)
 	(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 
-	if (connect(s, addr->ai_addr, addr->ai_addrlen) == SOCKET_ERROR) {
+	if (connect(s, info->ai_addr, info->ai_addrlen) == SOCKET_ERROR) {
 		mapi_printError(
 			mid, __func__, MERROR,
 			"could not connect: %s", SOCKET_STRERROR());
@@ -468,8 +507,9 @@ mapi_handshake(Mapi mid)
 
 	/* consume server challenge */
 	len = mnstr_read_block(mid->from, buf, 1, sizeof(buf));
-
 	check_stream(mid, mid->from, "Connection terminated while starting handshake", (mid->blk.eos = true, mid->error));
+
+	mapi_log_data(mid, "RECV HANDSHAKE", buf, len);
 
 	assert(len < sizeof(buf));
 	buf[len] = 0;
@@ -702,13 +742,9 @@ mapi_handshake(Mapi mid)
 
 	free(hash);
 
-	if (mid->trace) {
-		printf("sending first request [%zu]:%s", sizeof(buf), buf);
-		fflush(stdout);
-	}
 	len = strlen(buf);
+	mapi_log_data(mid, "HANDSHAKE SEND", buf, len);
 	mnstr_write(mid->to, buf, 1, len);
-	mapi_log_record(mid, buf);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", mid->error);
 	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", mid->error);
@@ -817,8 +853,10 @@ mapi_handshake(Mapi mid)
 
 			if (strncmp("mapi:merovingian", red, 16) == 0) {
 				// do not close the connection so caller knows to restart handshake
+				mapi_log_record(mid, "HANDSHAKE", "Restarting handshake on current socket");
 				assert(mid->connected);
 			} else {
+				mapi_log_record(mid, "HANDSHAKE", "Redirected elsewhere, closing socket");
 				close_connection(mid);
 			}
 			return MREDIRECT;

@@ -3597,6 +3597,9 @@ main(int argc, char **argv)
 		}
 	}
 
+	if (logfile)
+		mapi_log(mid, logfile);
+
 	if (mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
 
@@ -3619,9 +3622,6 @@ main(int argc, char **argv)
 	struct privdata priv;
 	priv = (struct privdata) {0};
 	mapi_setfilecallback2(mid, getfile, putfile, &priv);
-
-	if (logfile)
-		mapi_log(mid, logfile);
 
 	mapi_trace(mid, trace);
 	/* give the user a welcome message with some general info */
