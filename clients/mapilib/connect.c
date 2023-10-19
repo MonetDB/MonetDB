@@ -749,6 +749,12 @@ mapi_handshake(Mapi mid)
 	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", mid->error);
 
+	// Clear the redirects before we receive new ones
+	for (char **r = mid->redirects; *r != NULL; r++) {
+		free(*r);
+		*r = NULL;
+	}
+
 	/* consume the welcome message from the server */
 	hdl = mapi_new_handle(mid);
 	if (hdl == NULL) {
