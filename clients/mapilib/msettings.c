@@ -432,9 +432,10 @@ msetting_set_bool(msettings *mp, mparm parm, bool value)
 msettings_error
 msetting_parse(msettings *mp, mparm parm, const char *text)
 {
+	int b; // int not bool because we need to allow for parse errors
 	switch (mparm_classify(parm)) {
 		case MPCLASS_BOOL:
-			int b = msetting_parse_bool(text);
+			b = msetting_parse_bool(text);
 			if (b < 0)
 				return "invalid boolean value";
 			return msetting_set_bool(mp, parm, b);
@@ -457,12 +458,15 @@ msetting_parse(msettings *mp, mparm parm, const char *text)
 char *
 msetting_as_string(msettings *mp, mparm parm)
 {
+	bool b;
+	long l;
+	const char *s;
 	switch (mparm_classify(parm)) {
 		case MPCLASS_BOOL:
-			bool b = msetting_bool(mp, parm);
+			b = msetting_bool(mp, parm);
 			return strdup(b ? "true" : " false");
 		case MPCLASS_LONG:
-			long l = msetting_long(mp, parm);
+			l = msetting_long(mp, parm);
 			int n = 40;
 			char *buf = malloc(n);
 			if (!buf)
@@ -470,7 +474,7 @@ msetting_as_string(msettings *mp, mparm parm)
 			snprintf(buf, n, "%ld", l);
 			return buf;
 		case MPCLASS_STRING:
-			const char *s = msetting_string(mp, parm);
+			s = msetting_string(mp, parm);
 			return strdup(s);
 		default:
 			assert(0 && "unreachable");

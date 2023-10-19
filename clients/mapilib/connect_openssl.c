@@ -59,13 +59,14 @@ make_ssl_context(Mapi mid, SSL_CTX **ctx_out)
 	// Because we use at least TLSv1.3 we don't need to mess with
 	// SSL_CTX_set_cipher_list() and SSL_CTX_set_ciphersuites().
 
+	const char *cert;
 	switch (msettings_connect_tls_verify(mid->settings)) {
 		case verify_none:
 		case verify_hash:
 			SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 			break;
 		case verify_cert:
-			const char *cert = msetting_string(mid->settings, MP_CERT);
+			cert = msetting_string(mid->settings, MP_CERT);
 			if (1 != SSL_CTX_load_verify_file(ctx, cert)) {
 				SSL_CTX_free(ctx);
 				return croak(mid, __func__, "SSL_CTX_load_verify_file: %s", cert);
