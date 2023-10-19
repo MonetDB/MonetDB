@@ -8,6 +8,7 @@
 #include "mcrypt.h"
 #include "matomic.h"
 #include "mstring.h"
+#include "mutils.h"
 
 #include "mapi_intern.h"
 

@@ -43,6 +43,7 @@ target_link_libraries(mapi
   moptions
   mcrypt
   stream
+  mutils
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
   $<$<PLATFORM_ID:Windows>:ws2_32>)
 
