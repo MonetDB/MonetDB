@@ -438,6 +438,12 @@ parse_classic_unix(msettings *mp, scanner *sc)
 static bool
 parse_classic_merovingian(msettings *mp, scanner *sc)
 {
+	if (!consume(sc, "mapi:merovingian://proxy"))
+		return false;
+
+	long user_gen = msettings_user_generation(mp);
+	long password_gen = msettings_password_generation(mp);
+
 	if (sc->c == '?') {
 		if (!parse_classic_query_parameters(mp, sc))
 			return false;
@@ -446,6 +452,11 @@ parse_classic_merovingian(msettings *mp, scanner *sc)
 	// should have consumed everything
 	if (sc->c != '\0' && sc-> c != '#')
 		return unexpected(sc);
+
+	long new_user_gen = msettings_user_generation(mp);
+	long new_password_gen = msettings_password_generation(mp);
+	if (new_user_gen > user_gen || new_password_gen > password_gen)
+		return complain(sc, "MAPI redirect is not allowed to set user or password");
 
 	return true;
 }
@@ -471,7 +482,7 @@ parse_classic(msettings *mp, scanner *sc)
 }
 
 static bool
-parse(msettings *mp, scanner *sc)
+parse_by_scheme(msettings *mp, scanner *sc)
 {
 	// process the scheme
 	char *scheme = scan(sc, generic_special);
@@ -493,50 +504,72 @@ parse(msettings *mp, scanner *sc)
 	}
 }
 
-
-/* update the msettings from the URL. set *error_buffer to NULL and return true
- * if success, set *error_buffer to malloc'ed error message and return false on failure.
- * if return value is true but *error_buffer is NULL, malloc failed. */
-bool msettings_parse_url(msettings *mp, const char *url, char **error_message)
+static bool
+parse(msettings *mp, scanner *sc)
 {
-	bool ok;
-	scanner sc;
-	if (!initialize(&sc, url))
-		return false;
+	// mapi:merovingian:://proxy is not like other URLs,
+	// it designates the existing connection so the core properties
+	// must not be cleared and user and password cannot be changed.
+	bool is_mero = (strncmp(sc->p, "mapi:merovingian:", 16) == 0);
 
-	// clear existing core values
-	msetting_set_bool(mp, MP_TLS, false);
-	msetting_set_string(mp, MP_HOST, "");
-	msetting_set_long(mp, MP_PORT, -1);
-	msetting_set_string(mp, MP_DATABASE, "");
+	if (!is_mero) {
+		// clear existing core values
+		msetting_set_bool(mp, MP_TLS, false);
+		msetting_set_string(mp, MP_HOST, "");
+		msetting_set_long(mp, MP_PORT, -1);
+		msetting_set_string(mp, MP_DATABASE, "");
+	}
 
 	long user_gen = msettings_user_generation(mp);
 	long password_gen = msettings_password_generation(mp);
 
-	if (parse(mp, &sc)) {
-		// went well
-		if (error_message)
-			*error_message = NULL;
-		ok = true;
+	if (is_mero) {
+		if (!parse_classic_merovingian(mp, sc))
+			return false;
 	} else {
-		// went wrong
-		assert(sc.error_message[0] != '\0');
-		if (error_message) {
-			char *msg = strdup(sc.error_message);
-			*error_message = msg;
-		}
-		ok = false;
+		if (!parse_by_scheme(mp, sc))
+			return false;
 	}
 
-	long new_user_gen = msettings_user_generation(mp);
-	long new_password_gen = msettings_password_generation(mp);
-	if (new_user_gen > user_gen && new_password_gen == password_gen) {
+	bool user_changed = (msettings_user_generation(mp) != user_gen);
+	bool password_changed = (msettings_password_generation(mp) != password_gen);
+
+	if (is_mero && (user_changed || password_changed))
+		return complain(sc, "MAPI redirect must not change user or password");
+
+	if (user_changed && !password_changed) {
+		// clear password
 		msettings_error msg = msetting_set_string(mp, MP_PASSWORD, "");
 		if (msg) {
-			if (error_message)
-				*error_message = strdup(msg);
-			ok = false;
+			// failed, report
+			return complain(sc, "%s", msg);
 		}
+	}
+
+	return true;
+}
+
+/* update the msettings from the URL. set *error_buffer to NULL and return true
+ * if success, set *error_buffer to malloc'ed error message and return false on failure.
+ * if return value is true but *error_buffer is NULL, malloc failed. */
+bool msettings_parse_url(msettings *mp, const char *url, char **error_out)
+{
+	bool ok;
+	scanner sc;
+
+	// This function is all about setting up the scanner and copying
+	// error messages out of it.
+
+	if (error_out)
+		*error_out = NULL;
+
+	if (!initialize(&sc, url))
+		return false;
+
+	ok = parse(mp, &sc);
+	if (!ok) {
+		assert(sc.error_message[0] != '\0');
+		*error_out = strdup(sc.error_message);
 	}
 
 	deinitialize(&sc);
