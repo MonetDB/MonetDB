@@ -128,7 +128,7 @@ if(WITH_MALLOC)
 endif()
 
 if(WITH_OPENSSL)
-  find_package(OpenSSL)
+  find_package(OpenSSL 1.1.1)
 endif()
 
 find_package(Sphinx)

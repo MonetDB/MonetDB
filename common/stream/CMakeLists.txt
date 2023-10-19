@@ -39,7 +39,7 @@ target_sources(stream
   fwf.c
   iconv_stream.c
   text_stream.c
-  $<$<BOOL:${HAVE_OPENSSL}>:openssl_stream.c>
+  $<$<BOOL:${OPENSSL_FOUND}>:openssl_stream.c>
   pump.c
   stream.h
   stream_internal.h

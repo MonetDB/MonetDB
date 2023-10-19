@@ -23,7 +23,7 @@ target_sources(mapi
   connect.c
   msettings.c
   parseurl.c
-  $<$<BOOL:${HAVE_OPENSSL}>:connect_openssl.c>
+  $<$<BOOL:${OPENSSL_FOUND}>:connect_openssl.c>
   mapi_intern.h
   PUBLIC
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/mapi.h>
