@@ -179,6 +179,9 @@ stringify_tls_verify(const msettings *mp)
 			return "cert";
 		case verify_hash:
 			return "hash";
+		default:
+			assert(0 && "unknown msetting_tls_verify value");
+			return NULL;
 	}
 	assert(0 && "unreachable");
 }
