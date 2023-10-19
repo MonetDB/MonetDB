@@ -67,7 +67,7 @@ make_ssl_context(Mapi mid, SSL_CTX **ctx_out)
 			break;
 		case verify_cert:
 			cert = msetting_string(mid->settings, MP_CERT);
-			if (1 != SSL_CTX_load_verify_file(ctx, cert)) {
+			if (1 != SSL_CTX_load_verify_locations(ctx, cert, NULL)) {
 				SSL_CTX_free(ctx);
 				return croak(mid, __func__, "SSL_CTX_load_verify_file: %s", cert);
 			}
