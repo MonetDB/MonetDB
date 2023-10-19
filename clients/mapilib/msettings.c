@@ -629,7 +629,7 @@ msettings_validate(msettings *mp, char **errmsg)
 	// 6. If **tls** is 'off', **cert** and **certhash** must be 'off' as well.
 	if (nonempty(mp, MP_CERT) || nonempty(mp, MP_CERTHASH))
 		if (!msetting_bool(mp, MP_TLS)) {
-			*errmsg = strdup("'cert' and 'certhash' can only be used with monetdbs:");
+			*errmsg = strdup("'cert' and 'certhash' can only be used with monetdbs://");
 			return false;
 		}
 
