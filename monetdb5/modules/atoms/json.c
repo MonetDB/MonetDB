@@ -223,56 +223,32 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 	return msg;
 }
 
+static str JSONstr2json(json *ret, const char **j);
+
 static ssize_t
 JSONfromString(const char *src, size_t *len, void **J, bool external)
 {
 	json *buf = (json *) J;
-	size_t slen = strlen(src);
-	size_t olen = 0;
-	json j = GDKmalloc(slen + 1);
-	JSON *jt;
-
-	if (strNil(src) || (external && strncmp(src, "nil", 3) == 0)) {
-		if (*len < 2 || *buf == NULL) {
-			GDKfree(*buf);
-			if ((*buf = GDKmalloc(2)) == NULL)
-				return -1;
-			*len = 2;
-		}
-		strcpy(*buf, str_nil);
-		return strNil(src) ? 1 : 3;
-	}
-	if (*len <= slen || *buf == NULL) {
+	if(*buf) {
 		GDKfree(*buf);
-		if ((*buf = GDKmalloc(slen + 1)) == NULL)
+		*buf = NULL;
+	}
+	if (strNil(src) || (external && strncmp(src, "nil", 3) == 0)) {
+		*buf = GDKstrdup(str_nil);
+		if (*buf == NULL)
 			return -1;
-		*len = slen + 1;
+		*len = 2;
+		return strNil(src) ? 1 : 3;
+	} else {
+		str msg = JSONstr2json(buf, &src);
+		if (msg != MAL_SUCCEED) {
+			GDKerror("%s", getExceptionMessageAndState(msg));
+			freeException(msg);
+			return -1;
+		}
 	}
-	strcpy(j, src);
-	jt = JSONparse(j);
-	if (jt == NULL) {
-		return -1;
-	}
-	if (jt->error) {
-		GDKerror("%s", getExceptionMessageAndState(jt->error));
-		JSONfree(jt);
-		return -1;
-	}
-	*buf = GDKmalloc(slen + 1);
-	if (buf == NULL) {
-		JSONfree(jt);
-		return -1;
-	}
-	if (JSONtoStorageString(jt, 0, buf, &olen) != MAL_SUCCEED) {
-		GDKfree(buf);
-		JSONfree(jt);
-		return -1;
-	}
-	JSONfree(jt);
-	GDKfree(j);
-	*len = olen + 1;
-
-	return (ssize_t) olen + 1;
+	*len = strlen(*buf) + 1;
+	return (ssize_t) *len - 1;
 }
 
 static ssize_t
@@ -517,11 +493,11 @@ JSON2json(json *ret, const json *j)
 }
 
 static str
-JSONstr2json(json *ret, str *j)
+JSONstr2json(json *ret, const char **j)
 {
 	str msg = MAL_SUCCEED;
 	json buf = NULL;
-	size_t ln = 2*strlen(*j)+1;
+	size_t ln = strlen(*j)+1;
 	size_t out_size = 0;
 
 	JSON *jt = JSONparse(*j);
