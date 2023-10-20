@@ -334,10 +334,11 @@ parse_modern(msettings *mp, scanner *sc)
 		do {
 			advance(sc);  // skip ? or &
 
-			char *key;
-			char *value;
+			char *key = NULL;
+			char *value = NULL;
 			if (!scan_query_parameters(sc, &key, &value))
 				return false;
+			assert(key && value);
 
 			if (!percent_decode(sc, "parameter name", key))
 				return false;
@@ -364,10 +365,11 @@ parse_classic_query_parameters(msettings *mp, scanner *sc)
 	do {
 		advance(sc); // skip & or ?
 
-		char *key;
-		char *value;
+		char *key = NULL;
+		char *value = NULL;
 		if (!scan_query_parameters(sc, &key, &value))
 			return false;
+		assert(key && value);
 		mparm parm = mparm_parse(key);
 		msettings_error msg;
 		switch (parm) {
