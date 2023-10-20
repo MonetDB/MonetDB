@@ -4,7 +4,7 @@ js:= calc.json("[{\"book\":{ \"category\": \"reference\", \"author\": \"Nigel Re
 query T rowsort
 io.print(js)
 ----
-"[{\"book\":{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, \"book\":{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, \"book\":{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, \"book\":{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }}, {\"pencil\":{ \"color\": \"red\", \"price\": 19.95 }}]"
+"[{\"book\":{\"category\":\"fiction\",\"author\":\"J. R. R. Tolkien\",\"title\":\"The Lord of the Rings\",\"isbn\":\"0-395-19395-8\",\"price\":22.99}},{\"pencil\":{\"color\":\"red\",\"price\":19.95}}]"
 
 statement ok
 p:= json.filter(js,"[0].book")
@@ -12,7 +12,7 @@ p:= json.filter(js,"[0].book")
 query T rowsort
 io.print(p)
 ----
-"{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }"
+"{\"category\":\"fiction\",\"author\":\"J. R. R. Tolkien\",\"title\":\"The Lord of the Rings\",\"isbn\":\"0-395-19395-8\",\"price\":22.99}"
 
 statement ok
 p:= json.filter(js,"[1].pencil")
@@ -20,7 +20,7 @@ p:= json.filter(js,"[1].pencil")
 query T rowsort
 io.print(p)
 ----
-"{ \"color\": \"red\", \"price\": 19.95 }"
+"{\"color\":\"red\",\"price\":19.95}"
 
 statement ok
 p:= json.filter(js,"..author")
@@ -44,7 +44,7 @@ p:= json.filter(js,"[0].book[0]")
 query T rowsort
 io.print(p)
 ----
-"{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }"
+"{\"category\":\"fiction\",\"author\":\"J. R. R. Tolkien\",\"title\":\"The Lord of the Rings\",\"isbn\":\"0-395-19395-8\",\"price\":22.99}"
 
 statement ok
 p:= json.filter(js,"[0].book[1]")
@@ -79,7 +79,7 @@ io.print(p)
 "[\"fiction\"]"
 
 statement ok
-js := calc.json("[[{\"name\":\"john\"}], {\"name\":\"mary\"}]")
+js := calc.json("[[{\"name\":\"john\"}],{\"name\":\"mary\"}]")
 
 statement ok
 p := json.filter(js,"..name")
