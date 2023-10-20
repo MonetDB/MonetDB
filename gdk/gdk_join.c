@@ -2881,7 +2881,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						APPEND(r2, oid_nil);	\
 					}				\
 					if (r3) {			\
-						r3->tnil = mark == bit_nil; \
+						r3->tnil |= mark == bit_nil; \
 						((bit *) r3->theap->base)[r3->batCount++] = mark; \
 					}				\
 				} else if (min_one) {			\
@@ -3236,7 +3236,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						APPEND(r2, oid_nil);
 					}
 					if (r3) {
-						r3->tnil = mark == bit_nil;
+						r3->tnil |= mark == bit_nil;
 						((bit *) r3->theap->base)[r3->batCount++] = mark;
 					}
 				} else if (min_one) {
