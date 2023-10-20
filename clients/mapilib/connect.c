@@ -885,7 +885,7 @@ mapi_handshake(Mapi mid)
 	/* tell server about auto_complete and cache limit if handshake options weren't used */
 	bool autocommit = msetting_bool(mid->settings, MP_AUTOCOMMIT);
 	if (mid->handshake_options <= MAPI_HANDSHAKE_AUTOCOMMIT && autocommit != msetting_bool(msettings_default, MP_AUTOCOMMIT)) {
-		char buf[2];
+		char buf[50];
 		sprintf(buf, "%d", !!autocommit);
 		MapiMsg result = mapi_Xcommand(mid, "auto_commit", buf);
 		if (result != MOK)
