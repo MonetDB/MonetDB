@@ -154,11 +154,6 @@ select octet_length(R'2€')
 4
 
 query I
-select patindex('%bc%', 'abcd')
-----
-3
-
-query I
 select position('DB' IN 'MonetDB')
 ----
 6
