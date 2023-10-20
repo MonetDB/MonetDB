@@ -88,6 +88,7 @@ add_executable(murltest
 
 target_link_libraries(murltest
   PRIVATE
+  monetdb_config_header
   mapi
 )
 

@@ -143,7 +143,10 @@ wrap_tls(Mapi mid, SOCKET sock)
 
 	// BIO 'sockbio' wraps the socket. OpenSSL will read and write
 	// ciphertext from it.
-	BIO *sockbio = BIO_new_socket(sock, BIO_CLOSE);
+	//
+	// The OpenSSL developers apparently believe that it's safe to cast
+	// SOCKET to int here, see https://github.com/openssl/openssl/blob/openssl-3.1.3/include/internal/sockets.h#L54-L58
+	BIO *sockbio = BIO_new_socket((int)sock, BIO_CLOSE);
 	if (sockbio == NULL) {
 		closesocket(sock);
 		BIO_free_all(bio);

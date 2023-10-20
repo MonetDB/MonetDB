@@ -1,3 +1,4 @@
+#include "monetdb_config.h"
 #include <stdbool.h>
 
 #define MP__BOOL_START (100)

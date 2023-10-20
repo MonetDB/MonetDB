@@ -280,7 +280,6 @@ wrap_tls(Mapi mid, SOCKET sock)
 static MapiMsg
 connect_socket_unix(Mapi mid)
 {
-	(void)sockname;
 	return mapi_setError(mid, "Unix domain sockets not supported", __func__, MERROR);
 }
 #endif
@@ -431,7 +430,7 @@ connect_socket_tcp(Mapi mid)
 		static const char zeroes[8] = { 0 };
 		ssize_t to_write = sizeof(zeroes);
 		while (to_write > 0) {
-			ssize_t n = send(s, zeroes, to_write, 0);
+			ssize_t n = send(s, zeroes, (int)to_write, 0);
 			if (n < 0) {
 				closesocket(s);
 				return mapi_printError(mid, __func__, MERROR, "could not send leader block: %s", SOCKET_STRERROR());

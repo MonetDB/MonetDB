@@ -71,7 +71,11 @@ ostream_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	// iterate in order to read a complete number of items
 	size_t pos = 0;
 	do {
-		int nread = BIO_read(bio, start + pos, size - pos);
+		// pity we cannot use BIO_read_ex, BIO_read takes an int, not size_t
+		size_t to_read = size - pos;
+		if (to_read > INT_MAX)
+			to_read = INT_MAX;
+		int nread = BIO_read(bio, start + pos, (int)to_read);
 		if (nread < 0)
 			return ostream_error(s, MNSTR_READ_ERROR);
 		if (nread == 0) {
@@ -82,7 +86,7 @@ ostream_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 
 		// adjust pos to the smallest multiple of elmsize.
 		// example 1: size=4 pos=7 (-7)%4=1, newsize=8
-		size_t delta = (-pos) % size;
+		size_t delta = (0-pos) % size;
 		if (size - pos > delta)
 			size = pos + delta;
 	} while (pos < size);
@@ -99,7 +103,11 @@ ostream_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	size_t size = elmsize * cnt;
 	size_t pos = 0;
 	while (pos < size) {
-		int nwritten = BIO_write(bio, start + pos, size - pos);
+		// pity we cannot use BIO_write_ex, BIO_write takes an int, not size_t
+		size_t to_write = size - pos;
+		if (to_write > INT_MAX)
+			to_write = INT_MAX;
+		int nwritten = BIO_write(bio, start + pos, (int)to_write);
 		if (nwritten < 0)
 			return ostream_error(s, MNSTR_WRITE_ERROR);
 		if (nwritten == 0 && !BIO_should_retry(bio))
