@@ -24,9 +24,12 @@ croak(Mapi mid, const char *action, const char *fmt, ...)
 
 	unsigned long err = ERR_get_error();
 	const char *errmsg =
+#ifdef ERR_SYSTEM_ERROR
 		ERR_SYSTEM_ERROR(err)
 		? strerror(ERR_GET_REASON(err))
-		: ERR_reason_error_string(err);
+		:
+#endif
+		ERR_reason_error_string(err);
 	if (errmsg)
 		return mapi_printError(mid, action, MERROR, "TLS error: %s: %s", buffer, errmsg);
 	else if (err != 0)
