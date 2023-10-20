@@ -302,5 +302,10 @@ Mapi mapi_new(void);
 MapiMsg wrap_tls(Mapi mid, SOCKET sock);
 MapiMsg mapi_set_streams(Mapi mid, stream *rstream, stream *wstream);
 
+MapiMsg scan_unix_sockets(Mapi mid);
+MapiMsg connect_socket_unix(Mapi mid);
+MapiMsg establish_connection(Mapi mid);
+MapiMsg wrap_socket(Mapi mid, SOCKET sock);
+
 void close_connection(Mapi mid);
 void set_uri(Mapi mid);

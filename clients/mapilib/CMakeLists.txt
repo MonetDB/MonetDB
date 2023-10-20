@@ -23,6 +23,7 @@ target_sources(mapi
   connect.c
   msettings.c
   parseurl.c
+  $<$<BOOL:${HAVE_SYS_UN_H}>:connect_unix.c>
   $<$<BOOL:${OPENSSL_FOUND}>:connect_openssl.c>
   mapi_intern.h
   PUBLIC
