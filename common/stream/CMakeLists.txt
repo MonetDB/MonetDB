@@ -54,7 +54,8 @@ target_include_directories(stream
   $<$<BOOL:${Iconv_IS_BUILT_IN}>:${CMAKE_REQUIRED_INCLUDES}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>
+  $<$<BOOL:${OPENSSL_FOUND}>:${OPENSSL_INCLUDE_DIR}>)
 
 target_compile_definitions(stream
   PRIVATE
