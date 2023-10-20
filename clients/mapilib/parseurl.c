@@ -569,7 +569,8 @@ bool msettings_parse_url(msettings *mp, const char *url, char **error_out)
 	ok = parse(mp, &sc);
 	if (!ok) {
 		assert(sc.error_message[0] != '\0');
-		*error_out = strdup(sc.error_message);
+		if (error_out)
+			*error_out = strdup(sc.error_message);
 	}
 
 	deinitialize(&sc);
