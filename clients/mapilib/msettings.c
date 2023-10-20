@@ -667,6 +667,7 @@ msettings_validate(msettings *mp, char **errmsg)
 	// compute this here so the getter function can take const msettings*
 	const char *sockdir = msettings_connect_sockdir(mp);
 	long effective_port = msettings_connect_port(mp);
+	free(mp->unix_sock_name_buffer);
 	mp->unix_sock_name_buffer = allocprintf("%s/.s.monetdb.%ld", sockdir, effective_port);
 	if (mp->unix_sock_name_buffer == NULL)
 		return false;

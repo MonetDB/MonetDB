@@ -649,6 +649,7 @@ mapi_handshake(Mapi mid)
 		sprintf(replacement_password, "\1%s", pwdhash);
 		free(pwdhash);
 		msettings_error errmsg = msetting_set_string(mid->settings, MP_PASSWORD, replacement_password);
+		free(replacement_password);
 		if (errmsg != NULL) {
 			close_connection(mid);
 			return mapi_setError(mid, "could not stow hashed password", __func__, MERROR);

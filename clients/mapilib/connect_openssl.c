@@ -102,10 +102,6 @@ wrap_tls(Mapi mid, SOCKET sock)
 	int port = msettings_connect_port(settings);
 	size_t hostlen = strlen(host);
 	size_t hostportlen = hostlen + 1 + 20;
-	char *hostcolonport = malloc(hostportlen);
-	if (hostcolonport == NULL)
-		return mapi_setError(mid, "malloc failed", __func__, MERROR);
-	snprintf(hostcolonport, hostportlen, "%s:%d", host, port);
 
 	// Clear any earlier errrors
 	do {} while (ERR_get_error() != 0);
@@ -185,14 +181,21 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak(mid, __func__, "BIO_up_ref bio");
 	}
 	// On error: free 'bio' twice
-	stream *rstream = openssl_rstream(hostcolonport, bio);
+
+	char *hostcolonport = malloc(hostportlen);
+	if (hostcolonport != NULL)
+		snprintf(hostcolonport, hostportlen, "%s:%d", host, port);
+
+	stream *rstream = openssl_rstream(hostcolonport ? hostcolonport : "ssl rstream", bio);
 	if (rstream == NULL || mnstr_errnr(rstream) != MNSTR_NO__ERROR) {
 		BIO_free_all(bio); // drops first ref
 		BIO_free_all(bio); // drops second ref
+		free(hostcolonport);
 		return croak(mid, __func__, "openssl_rstream: %s", mnstr_peek_error(rstream));
 	}
 	// On error: free 'bio' and close 'rstream'.
-	stream *wstream = openssl_wstream(hostcolonport, bio);
+	stream *wstream = openssl_wstream(hostcolonport ? hostcolonport : "ssl wstream", bio);
+	free(hostcolonport);
 	if (wstream == NULL || mnstr_errnr(wstream) != MNSTR_NO__ERROR) {
 		BIO_free_all(bio);
 		mnstr_close(rstream);
