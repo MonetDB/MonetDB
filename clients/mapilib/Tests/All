@@ -1,1 +1,2 @@
 murltest
+HAVE_OPENSSL?tlssecurity
