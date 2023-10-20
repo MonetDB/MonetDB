@@ -337,7 +337,8 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 	(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 
-	if (connect(s, info->ai_addr, info->ai_addrlen) == SOCKET_ERROR) {
+	// cast addrlen to int to satisfy Windows.
+	if (connect(s, info->ai_addr, (int)info->ai_addrlen) == SOCKET_ERROR) {
 		mapi_printError(
 			mid, __func__, MERROR,
 			"could not connect: %s", SOCKET_STRERROR());
