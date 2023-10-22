@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 
 // love it when a task is so straightforward I can use global variables!
 static int start_line = -1;
