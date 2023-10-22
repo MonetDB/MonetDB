@@ -1,9 +1,26 @@
+#ifndef _MSETTINGS_H
+#define _MSETTINGS_H 1
 #include "monetdb_config.h"
 #include <stdbool.h>
 
 #define MP__BOOL_START (100)
 #define MP__LONG_START (200)
 #define MP__STRING_START (300)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* avoid using "#ifdef WIN32" so that this file does not need our config.h */
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMAPI
+#define mapi_export extern __declspec(dllimport)
+#else
+#define mapi_export extern __declspec(dllexport)
+#endif
+#else
+#define mapi_export extern
+#endif
 
 typedef enum mparm {
 	MP_UNKNOWN,
@@ -55,7 +72,7 @@ mparm_classify(mparm parm)
 
 
 /* returns NULL if not found, pointer to mparm if found */
-mparm mparm_parse(const char *name);
+mapi_export mparm mparm_parse(const char *name);
 const char *mparm_name(mparm parm);
 bool mparm_is_core(mparm parm);
 
@@ -65,23 +82,23 @@ typedef struct msettings msettings;
 typedef const char *msettings_error;
 
 /* returns NULL if could not allocate */
-msettings *msettings_create(void);
+mapi_export msettings *msettings_create(void);
 msettings *msettings_clone(const msettings *mp);
 extern const msettings *msettings_default;
 
 /* always returns NULL */
-msettings *msettings_destroy(msettings *mp);
+mapi_export msettings *msettings_destroy(msettings *mp);
 
 /* retrieve and set; call abort() on type error */
 
-const char* msetting_string(const msettings *mp, mparm parm);
+mapi_export const char* msetting_string(const msettings *mp, mparm parm);
 msettings_error msetting_set_string(msettings *mp, mparm parm, const char* value)
 	__attribute__((__nonnull__(3)));
 
-long msetting_long(const msettings *mp, mparm parm);
+mapi_export long msetting_long(const msettings *mp, mparm parm);
 msettings_error msetting_set_long(msettings *mp, mparm parm, long value);
 
-bool msetting_bool(const msettings *mp, mparm parm);
+mapi_export bool msetting_bool(const msettings *mp, mparm parm);
 msettings_error msetting_set_bool(msettings *mp, mparm parm, bool value);
 
 /* parse into the appropriate type, or format into newly malloc'ed string (NULL means malloc failed) */
@@ -92,18 +109,18 @@ char *msetting_as_string(msettings *mp, mparm parm);
 msettings_error msetting_set_ignored(msettings *mp, const char *key, const char *value);
 
 /* store named parameter */
-msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value);
+mapi_export msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value);
 
 /* update the msettings from the URL. set *error_buffer to NULL and return true
  * if success, set *error_buffer to malloc'ed error message and return false on failure.
  * if return value is true but *error_buffer is NULL, malloc failed. */
-bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer);
+mapi_export bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer);
 
 /* 1 = true, 0 = false, -1 = could not parse */
-int msetting_parse_bool(const char *text);
+mapi_export int msetting_parse_bool(const char *text);
 
 /* return an error message if the validity rules are not satisfied */
-bool msettings_validate(msettings *mp, char **errmsg);
+mapi_export bool msettings_validate(msettings *mp, char **errmsg);
 
 
 /* virtual parameters */
@@ -113,14 +130,14 @@ enum msetting_tls_verify {
 	verify_cert,
 	verify_hash,
 };
-bool msettings_connect_scan(const msettings *mp);
-const char *msettings_connect_sockdir(const msettings *mp);
-const char *msettings_connect_unix(const msettings *mp);
-const char *msettings_connect_tcp(const msettings *mp);
-long msettings_connect_port(const msettings *mp);
-const char *msettings_connect_certhash_digits(const msettings *mp);
-long msettings_connect_binary(const msettings *mp);
-enum msetting_tls_verify msettings_connect_tls_verify(const msettings *mp);
+mapi_export bool msettings_connect_scan(const msettings *mp);
+mapi_export const char *msettings_connect_sockdir(const msettings *mp);
+mapi_export const char *msettings_connect_unix(const msettings *mp);
+mapi_export const char *msettings_connect_tcp(const msettings *mp);
+mapi_export long msettings_connect_port(const msettings *mp);
+mapi_export const char *msettings_connect_certhash_digits(const msettings *mp);
+mapi_export long msettings_connect_binary(const msettings *mp);
+mapi_export enum msetting_tls_verify msettings_connect_tls_verify(const msettings *mp);
 
 /* automatically incremented each time the corresponding field is updated */
 long msettings_user_generation(const msettings *mp);
@@ -130,3 +147,8 @@ long msettings_password_generation(const msettings *mp);
 bool msettings_lang_is_mal(const msettings *mp);
 bool msettings_lang_is_sql(const msettings *mp);
 bool msettings_lang_is_profiler(const msettings *mp);
+
+#ifdef __cplusplus
+}
+#endif
+#endif				/* _MSETTINGS_H */
