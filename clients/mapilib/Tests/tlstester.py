@@ -10,13 +10,13 @@ import os
 import socket
 import socketserver
 import ssl
-from ssl import AlertDescription, SSLContext, SSLEOFError, SSLError, TLSVersion
+from ssl import AlertDescription, SSLContext, SSLEOFError, SSLError
 import struct
 import sys
 import tempfile
 from threading import Thread
 import threading
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization, hashes
@@ -84,10 +84,10 @@ argparser.add_argument(
 
 class Certs:
     hostnames: str
-    _files: dict[str, bytes]
-    _keys: dict[x509.Name, rsa.RSAPrivateKey]
-    _certs: dict[x509.Name, x509.Certificate]
-    _parents: dict[x509.Name, x509.Name]
+    _files: Dict[str, bytes]
+    _keys: Dict[x509.Name, rsa.RSAPrivateKey]
+    _certs: Dict[x509.Name, x509.Certificate]
+    _parents: Dict[x509.Name, x509.Name]
 
     def __init__(self, hostnames: List[str]):
         self.hostnames = hostnames
@@ -100,7 +100,7 @@ class Certs:
     def get_file(self, name):
         return self._files.get(name)
 
-    def all(self) -> dict[str, str]:
+    def all(self) -> Dict[str, str]:
         return self._files.copy()
 
     def gen_keys(self):
@@ -223,8 +223,8 @@ class TLSTester:
     hostnames: List[str]
     listen_addr: str
     forward_to: Optional[Tuple[str, int]] = None
-    preassigned: dict[str, int]
-    portmap: dict[str, int]
+    preassigned: Dict[str, int]
+    portmap: Dict[str, int]
     next_port: int
     workers: List[Callable[[], None]]
 
@@ -270,7 +270,7 @@ class TLSTester:
         self.spawn_mapi(
             "tls12",
             only_preassigned,
-            self.ssl_context("server1", tls_version=TLSVersion.TLSv1_2),
+            self.ssl_context("server1", allow_tlsv12=True),
         )
         self.spawn_mapi(
             "clientauth",
@@ -292,14 +292,10 @@ class TLSTester:
             self.spawn_forward("forward", self.ssl_context("server3"))
 
     def ssl_context(
-        self, cert_name: str, tls_version=TLSVersion.TLSv1_3, client_cert=None, hostnames=[]
+        self, cert_name: str, allow_tlsv12=False, client_cert=None, hostnames=[]
     ):
-        context = SSLContext(ssl.PROTOCOL_TLS_SERVER)
-
-        context.minimum_version = tls_version or TLSVersion.TLSv1_3
+        context = make_context(allow_tlsv12)
         context.set_alpn_protocols(["mapi/9"])
-        if tls_version:
-            context.maximum_version = tls_version
 
         def sni_callback(sock, server_name, ctx):
             if hostnames:
@@ -312,7 +308,10 @@ class TLSTester:
                 else:
                     log.debug(f"        client sent server name '{server_name}'")
             return None
-        context.sni_callback = sni_callback
+        try:
+            context.sni_callback = sni_callback
+        except AttributeError:
+            context.set_servername_callback(sni_callback)
 
         # Turns out the ssl API forces us to write the certs to file. Yuk!
         with tempfile.NamedTemporaryFile(mode="wb") as f:
@@ -391,11 +390,34 @@ class TLSTester:
         return port
 
 
+def make_context(allowtlsv12 = False):
+    # Older versions of the ssl module don't have ssl.TLSVersion, so
+    # we have four combinations.
+
+    protocol = ssl.PROTOCOL_TLS_SERVER
+    opts = ssl.OP_NO_SSLv2
+    opts |= ssl.OP_NO_SSLv3
+    opts |= ssl.OP_NO_TLSv1
+    if not allowtlsv12:
+        opts |= ssl.OP_NO_TLSv1_2
+
+    context = SSLContext(protocol)
+    context.options = opts
+
+    if hasattr(context, 'minimum_version'):
+        context.maximum_version = ssl.TLSVersion.TLSv1_3
+        if allowtlsv12:
+            context.minimum_version = ssl.TLSVersion.TLSv1_2
+        else:
+            context.minimum_version = ssl.TLSVersion.TLSv1_3
+
+    return context
+
 class WebHandler(http.server.BaseHTTPRequestHandler):
     certs: Certs
-    portmap: dict[str, int]
+    portmap: Dict[str, int]
 
-    def __init__(self, req, addr, server, certs: Certs, portmap: dict[str, int]):
+    def __init__(self, req, addr, server, certs: Certs, portmap: Dict[str, int]):
         self.certs = certs
         self.portmap = portmap
         super().__init__(req, addr, server)
