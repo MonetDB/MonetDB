@@ -533,7 +533,7 @@ class MapiHandler(socketserver.BaseRequestHandler):
             if last:
                 return True
 
-        log.info("port '{self.name}': incomplete message, EOF after {nread} bytes")
+        log.info(f"port '{self.name}': incomplete message, EOF after {nread} bytes")
         return False
 
     def recv_bytes(self, size):
@@ -637,7 +637,7 @@ class ForwardHandler(socketserver.BaseRequestHandler):
             if last:
                 return True
 
-        log.info("port '{self.name}': incomplete message, EOF after {nread} bytes")
+        log.info(f"port '{self.name}': incomplete message, EOF after {nread} bytes")
         return False
 
     def recv_bytes(self, size):
