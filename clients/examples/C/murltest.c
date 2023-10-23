@@ -3,7 +3,6 @@
 #include "murltest.h"
 
 #include <errno.h>
-#include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,23 +12,20 @@ char *USAGE = "Usage: murltest TESTFILES..";
 static bool
 run_file(const char *filename, int verbose)
 {
-	FILE *to_close, *f;
+	stream *s;
 	if (strcmp(filename, "-") == 0) {
-		f = stdin;
-		to_close = NULL;
+		s = stdin_rastream();
 	} else {
-		f = fopen(filename, "r");
-		if (!f) {
-			fprintf(stderr, "Could not open %s: %s\n", filename, strerror(errno));
+		s = open_rastream(filename);
+		if (!s || mnstr_errnr(s) != MNSTR_NO__ERROR) {
+			fprintf(stderr, "Could not open %s: %s\n", filename, mnstr_peek_error(s));
 			return false;
 		}
-		to_close = f;
 	}
 
-	bool ok = run_tests(filename, f, verbose);
+	bool ok = run_tests(s, verbose);
 
-	if (to_close)
-		fclose(to_close);
+	mnstr_close(s);
 	return ok;
 }
 
@@ -47,6 +43,11 @@ int
 main(int argc, char **argv)
 {
 	int verbose = 0;
+
+	if (mnstr_init() != 0) {
+		fprintf(stderr, "could not initialize libstream\n");
+		return 1;
+	}
 
 	char **files = calloc(argc + 1, sizeof(char*));
 	if (!files)

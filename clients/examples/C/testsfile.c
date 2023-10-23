@@ -4,6 +4,7 @@
 
 #include "murltest.h"
 #include "msettings.h"
+#include "stream.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -363,37 +364,40 @@ handle_line(int lineno, const char *location, char *line, int verbose)
 }
 
 static bool
-run_tests_inner(const char *filename, FILE *f, int verbose)
+run_tests_inner(stream *s, int verbose)
 {
 	int orig_nstarted = nstarted;
+	const char *filename = mnstr_name(s);
 	char *location = malloc(strlen(filename) + 100);
 	strcpy(location, filename);
 	char *location_lineno = &location[strlen(filename)];
 	*location_lineno++ = ':';
 	*location_lineno = '\0';
+	char line_buffer[1024];
 
 	errno = 0;
 
 	int lineno = 0;
-	char *line_buffer = NULL;
-	size_t line_buffer_size = 0;
 
 	while (true) {
 		lineno++;
 		sprintf(location_lineno, "%d", lineno);
-		ssize_t nread = getline(&line_buffer, &line_buffer_size, f);
+		ssize_t nread = mnstr_readline(s, line_buffer, sizeof(line_buffer));
+		if (nread == 0)
+			break;
 		if (nread < 0) {
 			if (errno) {
 				fprintf(stderr, "%s: %s\n", location, strerror(errno));
-				free(line_buffer);
 				free(location);
 				return false;
 			} else {
 				break;
 			}
+		} else if (nread >= (ssize_t)sizeof(line_buffer) - 2) {
+			fprintf(stderr, "%s: line too long\n", location);
+
 		}
 		if (!handle_line(lineno, location, line_buffer, verbose)) {
-			free(line_buffer);
 			free(location);
 			return false;
 		}
@@ -401,7 +405,6 @@ run_tests_inner(const char *filename, FILE *f, int verbose)
 
 	if (mp) {
 		fprintf(stderr, "%s:%d: unterminated code block starts here\n", filename, start_line);
-		free(line_buffer);
 		free(location);
 		return false;
 	}
@@ -410,16 +413,15 @@ run_tests_inner(const char *filename, FILE *f, int verbose)
 		fprintf(stderr, "ran %d succesful tests from %s\n", nstarted - orig_nstarted, filename);
 	}
 
-	free(line_buffer);
 	free(location);
 	return true;
 }
 
 bool
-run_tests(const char *filename, FILE *f, int verbose)
+run_tests(stream *s, int verbose)
 {
 	assert(mp == NULL);
-	bool ok = run_tests_inner(filename, f, verbose);
+	bool ok = run_tests_inner(s, verbose);
 	if (mp) {
 		msettings_destroy(mp);
 		mp = NULL;

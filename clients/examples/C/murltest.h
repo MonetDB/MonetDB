@@ -1,4 +1,5 @@
-#include <stdbool.h>
-#include <stdio.h>
+#include "monetdb_config.h"
 
-bool run_tests(const char *filename, FILE *f, int verbose);
+#include "stream.h"
+
+bool run_tests(stream *s, int verbose);

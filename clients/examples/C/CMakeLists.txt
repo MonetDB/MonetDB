@@ -90,6 +90,7 @@ target_link_libraries(murltest
   PRIVATE
   monetdb_config_header
   mapi
+  stream
 )
 
 install(TARGETS
