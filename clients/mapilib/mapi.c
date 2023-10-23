@@ -693,6 +693,7 @@
 #include "mcrypt.h"
 #include "matomic.h"
 #include "mstring.h"
+#include "mutils.h"
 
 #include "mapi_intern.h"
 
@@ -1219,17 +1220,45 @@ mapi_log_header(Mapi mid, const char *filename, long line, const char *mark)
 void
 mapi_impl_log_record(Mapi mid, const char *filename, long line, const char *mark, const char *fmt, ...)
 {
+	va_list ap;
+
 	if (mid->tracelog == NULL)
 		return;
 
+	size_t needed = 128;
+	size_t to_print;
+	while (1) {
+		if (mid->tracebuffersize < needed) {
+			free(mid->tracebuffer);
+			mid->tracebuffer = malloc(needed);
+			if (mid->tracebuffer) {
+				mid->tracebuffersize = needed;
+			} else {
+				mid->tracebuffersize = 0;
+				to_print = 0;
+				break;
+			}
+		}
+		va_start(ap, fmt);
+		int n = vsnprintf(mid->tracebuffer, mid->tracebuffersize, fmt, ap);
+		va_end(ap);
+		if (n < 0) {
+			to_print = 0;
+			break;
+		}
+		if ((size_t)n < mid->tracebuffersize) {
+			to_print = n;
+			break;
+		}
+		// need to reallocate
+		needed = n + 1;
+	}
+
 	mapi_log_header(mid, filename, line, mark);
-
-	va_list ap;
-	va_start(ap, fmt);
-	mnstr_vprintf(mid->tracelog, fmt, ap);
-	va_end(ap);
-	mnstr_writeChr(mid->tracelog, '\n');
-
+	if (to_print > 0) {
+		mnstr_write(mid->tracelog, mid->tracebuffer, to_print, 1);
+		mnstr_writeChr(mid->tracelog, '\n');
+	}
 	mnstr_flush(mid->tracelog, MNSTR_FLUSH_DATA);
 }
 
@@ -1920,16 +1949,14 @@ mapi_destroy(Mapi mid)
 		(void) mapi_disconnect(mid);
 	if (mid->tracelog)
 		close_stream(mid->tracelog);
-	if (mid->blk.buf)
-		free(mid->blk.buf);
+
+	free(mid->blk.buf);
+	free(mid->motd);
+	free(mid->server);
+	free(mid->uri);
+	free(mid->tracebuffer);
 	if (mid->errorstr && mid->errorstr != mapi_nomem)
 		free(mid->errorstr);
-	if (mid->motd)
-		free(mid->motd);
-	if (mid->server)
-		free(mid->server);
-	if (mid->uri)
-		free(mid->uri);
 
 	msettings_destroy(mid->settings);
 

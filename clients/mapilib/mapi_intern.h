@@ -246,6 +246,9 @@ struct MapiStruct {
 	char *redirects[MAXREDIR];	/* NULL-terminated list of redirects */
 
 	stream *tracelog;	/* keep a log for inspection */
+	char *tracebuffer;	/* used for formatting to tracelog */
+	size_t tracebuffersize; /* allocated size of tracebuffer */
+
 	stream *from, *to;
 	uint32_t index;		/* to mark the log records */
 	void *filecontentprivate;

@@ -137,8 +137,6 @@ stream_export int mnstr_writeLngArray(stream *restrict s, const int64_t *restric
 stream_export int mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt); // unused
 stream_export int mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt); // unused
 #endif
-stream_export int mnstr_vprintf(stream *restrict s, _In_z_ _Printf_format_string_ const char *restrict format, va_list ap)
-	__attribute__(( __format__(__printf__, 2, 0)));
 stream_export int mnstr_printf(stream *restrict s, _In_z_ _Printf_format_string_ const char *restrict format, ...) // USED all over
 	__attribute__((__format__(__printf__, 2, 3)));
 stream_export ssize_t mnstr_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt); // USED all over
