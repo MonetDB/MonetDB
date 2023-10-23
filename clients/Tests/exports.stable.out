@@ -714,6 +714,24 @@ char *mo_find_option(opt *set, int setlen, const char *name);
 void mo_free_options(opt *set, int setlen);
 void mo_print_options(opt *set, int setlen);
 int mo_system_config(opt **Set, int setlen);
+mparm mparm_parse(const char *name);
+bool msetting_bool(const msettings *mp, mparm parm);
+long msetting_long(const msettings *mp, mparm parm);
+int msetting_parse_bool(const char *text);
+msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value);
+const char *msetting_string(const msettings *mp, mparm parm);
+long msettings_connect_binary(const msettings *mp);
+const char *msettings_connect_certhash_digits(const msettings *mp);
+long msettings_connect_port(const msettings *mp);
+bool msettings_connect_scan(const msettings *mp);
+const char *msettings_connect_sockdir(const msettings *mp);
+const char *msettings_connect_tcp(const msettings *mp);
+enum msetting_tls_verify msettings_connect_tls_verify(const msettings *mp);
+const char *msettings_connect_unix(const msettings *mp);
+msettings *msettings_create(void);
+msettings *msettings_destroy(msettings *mp);
+bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer);
+bool msettings_validate(msettings *mp, char **errmsg);
 const char *wsaerror(int);
 
 # monetdb5
