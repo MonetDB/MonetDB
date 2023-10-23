@@ -55,9 +55,9 @@ def attempt(portname: str, expected_error: str, tls=True, **params):
     if params:
         # should be percent-escaped
         url += '?' + '&'.join(f"{k}={v}" for k, v in params.items())
-    logging.debug(f"Connecting to {url}, {expected_error=}")
+    logging.debug(f"Connecting to {url}, expected_error={expected_error}")
     cmd = ['mclient', '-d', url]
-    logging.debug(f"{cmd=}")
+    logging.debug(f"cmd={cmd}")
     proc = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     logging.debug(f"mclient exited with code {proc.returncode}, err={proc.stderr}")
     assert proc.returncode == 2, f"mclient is supposed to exit with status 2, not {proc.returncode}"
@@ -72,7 +72,7 @@ def attempt(portname: str, expected_error: str, tls=True, **params):
         return
     logging.error(f"Unexpected result when connecting to port {port} ('{portname}')")
     logging.error(f"Using URL {url}")
-    message = f"{expected_error=} but {actual_error=}"
+    message = f"expected_error={expected_error} but actual_error={actual_error}"
     logging.error(message)
     raise Exception(message)
 
