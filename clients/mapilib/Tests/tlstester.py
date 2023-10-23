@@ -255,7 +255,7 @@ class TLSTester:
         self.spawn_listeners(only_preassigned=False)
 
     def base_port(self) -> int:
-        return self.get_port("base5")
+        return self.get_port("base")
 
     def get_port(self, name) -> int:
         return self.portmap[name]
