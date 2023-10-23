@@ -48,7 +48,7 @@ server = tlstester.TLSTester(
 server_thread = threading.Thread(target=server.serve_forever, daemon=True)
 server_thread.start()
 
-def attempt(portname: str, expected_error: str, /, tls=True, **params):
+def attempt(portname: str, expected_error: str, tls=True, **params):
     port = server.get_port(portname)
     scheme = 'monetdbs' if tls else 'monetdb'
     url = f"{scheme}://localhost:{port}/demo"
