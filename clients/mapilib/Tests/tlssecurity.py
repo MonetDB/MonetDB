@@ -3,8 +3,13 @@
 import logging
 import os
 import subprocess
+import sys
 import threading
-import time
+
+# On Windows we need to adjust the Python path
+here = os.environ.get('TSTSRCDIR', None)
+if here:
+    sys.path = [ here, *sys.path ]
 
 import tlstester
 
@@ -159,4 +164,4 @@ attempt('server1', 'terminated', tls=False)
 # Uncomment to keep the server running so you
 # can run some experiments from the command line
 
-# logging.warning("sleeping"); time.sleep(86400)
+# logging.warning("sleeping"); import time; time.sleep(86400)
