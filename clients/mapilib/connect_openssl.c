@@ -205,7 +205,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak(mid, __func__, "openssl_wstream: %s", mnstr_peek_error(wstream));
 	}
 	// On error: free 'rstream' and 'wstream'.
-	msg = mapi_set_streams(mid, rstream, wstream);
+	msg = mapi_wrap_streams(mid, rstream, wstream);
 	if (msg != MOK) {
 		mnstr_close(rstream);
 		mnstr_close(wstream);

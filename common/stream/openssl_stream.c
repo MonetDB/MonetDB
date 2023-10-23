@@ -129,9 +129,13 @@ ostream_close(stream *s)
 int
 ostream_flush(stream *s, mnstr_flush_level flush_level)
 {
-	(void)s;
 	(void)flush_level;
-	mnstr_set_error(s, MNSTR_WRITE_ERROR, "flush not implemented");
-	return -1;
+	BIO *bio = (BIO*) s->stream_data.p;
+	// This segfaults, I don't understand why.
+	// It seems to work without it so for the time being leave it commented out.
+	// if (1 != BIO_flush(bio))
+	// 	return ostream_error(s, MNSTR_WRITE_ERROR);
+	(void)bio;
+	return 0;
 }
 

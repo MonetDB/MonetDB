@@ -4614,7 +4614,7 @@ mapi_get_active(Mapi mid)
 
 
 MapiMsg
-mapi_set_streams(Mapi mid, stream *rstream, stream *wstream)
+mapi_wrap_streams(Mapi mid, stream *rstream, stream *wstream)
 {
 	// do not use check_stream here yet because the socket is not yet in 'mid'
 	const char *error_message;
@@ -4622,6 +4622,32 @@ mapi_set_streams(Mapi mid, stream *rstream, stream *wstream)
 
 	assert(!isa_block_stream(rstream));
 	assert(!isa_block_stream(wstream));
+
+	// First send some NUL bytes. If we're accidentally connecting to the wrong
+	// port or protocol this may cause the remote server to close the
+	// connection. If we don't do this, the connection will often hang
+	// because the server expects us to speak first and we expect the server
+	// to speak first.
+	//
+	// Note that a pair of NUL bytes is a no-op message in MAPI.
+	//
+	// Surprisingly, it seems sending these NUL bytes makes non-TLS
+	// connection setup a little faster rather than slower!
+	static const char zeroes[8] = { 0 };
+	ssize_t to_write = sizeof(zeroes);
+	while (to_write > 0) {
+		ssize_t n = mnstr_write(wstream, zeroes, 1, to_write);
+		if (n < 0) {
+			close_connection(mid);
+			return mapi_printError(mid, __func__, MERROR, "could not send leader block: %s", mnstr_peek_error(wstream));
+		}
+		to_write -= (size_t)n;
+	}
+	if (mnstr_flush(wstream, MNSTR_FLUSH_DATA) != 0) {
+		close_connection(mid);
+		return mapi_printError(mid, __func__, MERROR, "could not flush leader block: %s", mnstr_peek_error(wstream));
+	}
+
 
 	stream *brstream = NULL;
 	stream *bwstream = NULL;

@@ -303,7 +303,7 @@ extern const struct MapiStruct MapiStructDefaults;
 Mapi mapi_new(void);
 
 MapiMsg wrap_tls(Mapi mid, SOCKET sock);
-MapiMsg mapi_set_streams(Mapi mid, stream *rstream, stream *wstream);
+MapiMsg mapi_wrap_streams(Mapi mid, stream *rstream, stream *wstream);
 
 MapiMsg scan_unix_sockets(Mapi mid);
 MapiMsg connect_socket_unix(Mapi mid);
