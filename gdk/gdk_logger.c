@@ -2426,7 +2426,7 @@ do_rotate(logger *lg)
 	if (next) {
 		assert(ATOMIC_GET(&next->refcount) == 1);
 		lg->current = next;
-		if (ATOMIC_GET(&cur->refcount) == 1) {
+		if (!LOG_DISABLED(lg) && ATOMIC_GET(&cur->refcount) == 1) {
 			close_stream(cur->output_log);
 			cur->output_log = NULL;
 		}
@@ -3104,7 +3104,7 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 	}
 	/* else somebody else has flushed our log file */
 
-	if (ATOMIC_DEC(&frange->refcount) == 1) {
+	if (ATOMIC_DEC(&frange->refcount) == 1 && !LOG_DISABLED(lg)) {
 		rotation_lock(lg);
 		if (frange != lg->current) {
 			close_stream(frange->output_log);
