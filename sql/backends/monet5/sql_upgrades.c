@@ -5766,9 +5766,13 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		pos = snprintf(buf, bufsize,
+					   "DROP FUNCTION \"timestamp_to_str\" CASCADE;"
 					   "CREATE FUNCTION \"timestamp_to_str\"(d TIMESTAMP, format STRING) RETURNS STRING "
 					   "EXTERNAL NAME mtime.\"timestamp_to_str\";\n"
+					   "CREATE FUNCTION \"timestamp_to_str\"(d TIMESTAMP WITH TIME ZONE, format STRING) RETURNS STRING "
+					   "EXTERNAL NAME mtime.\"timestamp_to_str\";\n"
 					   "GRANT EXECUTE ON FUNCTION \"timestamp_to_str\"(TIMESTAMP, STRING) TO PUBLIC;\n"
+					   "GRANT EXECUTE ON FUNCTION \"timestamp_to_str\"(TIMESTAMP WITH TIME ZONE, STRING) TO PUBLIC;\n"
 					   "UPDATE sys.functions SET system = true WHERE system <> true AND name = 'timestamp_to_str' "
 					   "AND schema_id = 2000 and type = %d;\n", F_FUNC);
 		assert(pos < bufsize);
