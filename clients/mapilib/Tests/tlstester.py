@@ -398,7 +398,9 @@ def make_context(allowtlsv12 = False):
     opts = ssl.OP_NO_SSLv2
     opts |= ssl.OP_NO_SSLv3
     opts |= ssl.OP_NO_TLSv1
-    if not allowtlsv12:
+    if allowtlsv12:
+        opts |= ssl.OP_NO_TLSv1_3
+    else:
         opts |= ssl.OP_NO_TLSv1_2
 
     context = SSLContext(protocol)
@@ -488,7 +490,7 @@ class MapiHandler(socketserver.BaseRequestHandler):
             log.debug(f"port '{self.name}': trying to set up TLS")
             try:
                 self.conn = self.context.wrap_socket(self.request, server_side=True)
-                log.info(f"port '{self.name}': TLS handshake succeeded")
+                log.info(f"port '{self.name}': TLS handshake succeeded: {self.conn.version()}")
             except SSLError as e:
                 log.info(f"port '{self.name}': TLS handshake failed: {e}")
                 return
