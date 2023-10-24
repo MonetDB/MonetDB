@@ -2421,10 +2421,15 @@ log_cleanup_range(logger *lg, ulng id)
 static void
 do_rotate(logger *lg)
 {
-	logged_range *next = lg->current->next;
+	logged_range *cur = lg->current;
+	logged_range *next = cur->next;
 	if (next) {
 		assert(ATOMIC_GET(&next->refcount) == 1);
-		lg->current = lg->current->next;
+		lg->current = next;
+		if (ATOMIC_GET(&cur->refcount) == 1) {
+			close_stream(cur->output_log);
+			cur->output_log = NULL;
+		}
 	}
 }
 
@@ -3099,7 +3104,14 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 	}
 	/* else somebody else has flushed our log file */
 
-	ATOMIC_DEC(&frange->refcount);
+	if (ATOMIC_DEC(&frange->refcount) == 1) {
+		rotation_lock(lg);
+		if (frange != lg->current) {
+			close_stream(frange->output_log);
+			frange->output_log = NULL;
+		}
+		rotation_unlock(lg);
+	}
 
 	if (ATOMIC_DEC(&lg->nr_flushers) == 0) {
 		/* I am the last flusher
