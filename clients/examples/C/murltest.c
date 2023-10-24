@@ -25,7 +25,7 @@ run_file(const char *filename, int verbose)
 
 	bool ok = run_tests(s, verbose);
 
-	mnstr_close(s);
+	close_stream(s);
 	return ok;
 }
 
