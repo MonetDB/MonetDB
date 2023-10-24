@@ -460,7 +460,7 @@ class WebHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(content)
 
 
-class MyTCPServer(socketserver.ForkingTCPServer):
+class MyTCPServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     pass
 
