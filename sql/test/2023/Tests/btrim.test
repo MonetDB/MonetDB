@@ -1,0 +1,7 @@
+
+query TTT rowsort
+SELECT btrim('   abc   '), btrim('ddddabcdd', 'd'), btrim('dededeedabcedeed', 'de');
+----
+abc
+abc
+abc
