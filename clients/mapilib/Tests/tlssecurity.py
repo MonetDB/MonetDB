@@ -6,11 +6,7 @@ import subprocess
 import sys
 import threading
 
-# On Windows we need to adjust the Python path
-here = os.environ.get('TSTSRCDIR', None)
-if here:
-    sys.path = [ here, *sys.path ]
-
+sys.path.append(os.environ.get('TSTSRCDIR','.'))
 import tlstester
 
 logging.basicConfig(level=logging.WARNING)
