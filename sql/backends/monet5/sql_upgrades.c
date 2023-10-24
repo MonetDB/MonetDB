@@ -5766,7 +5766,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		pos = snprintf(buf, bufsize,
-					   "DROP FUNCTION \"timestamp_to_str\" CASCADE;"
+					   "DROP FUNCTION \"timestamp_to_str\" CASCADE;\n"
 					   "CREATE FUNCTION \"timestamp_to_str\"(d TIMESTAMP, format STRING) RETURNS STRING "
 					   "EXTERNAL NAME mtime.\"timestamp_to_str\";\n"
 					   "CREATE FUNCTION \"timestamp_to_str\"(d TIMESTAMP WITH TIME ZONE, format STRING) RETURNS STRING "
