@@ -5761,23 +5761,25 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	}
 
 	sql_find_subtype(&t1, "timestamp", 0, 0);
-	sql_find_subtype(&t2, "string", 0, 0);
+	sql_find_subtype(&t2, "varchar", 0, 0);
+
 	if (!sql_bind_func(sql, "sys", "timestamp_to_str", &t1, &t2, F_FUNC, true)) {
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
-		pos = snprintf(buf, bufsize,
-					   "DROP FUNCTION \"timestamp_to_str\" CASCADE;\n"
-					   "CREATE FUNCTION \"timestamp_to_str\"(d TIMESTAMP, format STRING) RETURNS STRING "
-					   "EXTERNAL NAME mtime.\"timestamp_to_str\";\n"
-					   "CREATE FUNCTION \"timestamp_to_str\"(d TIMESTAMP WITH TIME ZONE, format STRING) RETURNS STRING "
-					   "EXTERNAL NAME mtime.\"timestamp_to_str\";\n"
-					   "GRANT EXECUTE ON FUNCTION \"timestamp_to_str\"(TIMESTAMP, STRING) TO PUBLIC;\n"
-					   "GRANT EXECUTE ON FUNCTION \"timestamp_to_str\"(TIMESTAMP WITH TIME ZONE, STRING) TO PUBLIC;\n"
-					   "UPDATE sys.functions SET system = true WHERE system <> true AND name = 'timestamp_to_str' "
-					   "AND schema_id = 2000 and type = %d;\n", F_FUNC);
-		assert(pos < bufsize);
-		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+
+		char *query = GDKmalloc(512);
+		if (query == NULL)
+			throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		snprintf(query, 512, "CREATE FUNCTION timestamp_to_str(d TIMESTAMP, format STRING) RETURNS STRING "
+				 "EXTERNAL NAME mtime.\"timestamp_to_str\";\n"
+				 "GRANT EXECUTE ON FUNCTION timestamp_to_str(TIMESTAMP, STRING) TO PUBLIC;\n"
+				 "UPDATE sys.functions SET system = true WHERE system <> true AND name = 'timestamp_to_str' "
+				 "AND schema_id = 2000 and type = %d;\n", F_FUNC);
+
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		GDKfree(query);
 	}
 
 	GDKfree(buf);
