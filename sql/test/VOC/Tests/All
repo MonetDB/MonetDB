@@ -1,8 +1,8 @@
 VOCcreate_user
 USER=voc&PASSWD=voc?VOCschema
 USER=voc&PASSWD=voc?VOCinsert
-USER=voc&PASSWD=voc?VOCquery
-USER=voc&PASSWD=voc?VOCmanual_examples
+USER=voc&PASSWD=voc&HAVE_LIBPCRE?VOCquery
+USER=voc&PASSWD=voc&HAVE_LIBPCRE?VOCmanual_examples
 USER=voc&PASSWD=voc?VOCdrop
 VOCdrop_user
 median.Bug-3096
