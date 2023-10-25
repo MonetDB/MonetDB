@@ -435,3 +435,8 @@ update sys.functions set system = true where system <> true and name in ('asciif
 update sys.functions set system = true where system <> true and name in ('startswith', 'endswith', 'contains') and schema_id = 2000 and type = 4;
 delete from sys.triggers where name = 'system_update_tables' and table_id = 2067;
 
+Running database upgrade commands:
+CREATE FUNCTION "timestamp_to_str"(d TIMESTAMP, format STRING) RETURNS STRING EXTERNAL NAME mtime."timestamp_to_str";
+GRANT EXECUTE ON FUNCTION "timestamp_to_str"(TIMESTAMP, STRING) TO PUBLIC;
+UPDATE sys.functions SET system = true WHERE system <> true AND name = 'timestamp_to_str' AND schema_id = 2000 and type = 1;
+
