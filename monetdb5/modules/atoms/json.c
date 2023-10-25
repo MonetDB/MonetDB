@@ -133,41 +133,130 @@ JSONfree(JSON *c)
 	GDKfree(c);
 }
 
+static str
+JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
+{
+	char *p = *ret;
+	size_t sz = 0;
+	str msg = MAL_SUCCEED;
+
+	if (THRhighwater()) {
+		msg = createException(MAL, "json.new",
+									SQLSTATE(42000)
+									"JSON object too complex to render into string.");
+		return msg;
+	}
+
+
+	switch(jt->elm[idx].kind) {
+	case JSON_OBJECT:
+		*p++ = '{';
+		*out_size += 1;
+		for(int i = jt->elm[idx].next; i != 0; i = jt->elm[i].next) {
+			sz = 0;
+			if (i != jt->elm[idx].next) {
+				*p++ = ',';
+				*out_size += 1;
+			}
+			msg = JSONtoStorageString(jt, i, &p, &sz);
+			if (msg != MAL_SUCCEED) {
+				return msg;
+			}
+			*out_size += sz;
+			p += sz;
+		}
+		*p++ = '}';
+		*out_size += 1;
+		break;
+	case JSON_ARRAY:
+		*p++ = '[';
+		*out_size += 1;
+		for(int i = jt->elm[idx].next; i != 0; i = jt->elm[i].next) {
+			sz = 0;
+			if (i != jt->elm[idx].next) {
+				*p++ = ',';
+				*out_size += 1;
+			}
+			msg = JSONtoStorageString(jt, i, &p, &sz);
+			if (msg != MAL_SUCCEED) {
+				return msg;
+			}
+			*out_size += sz;
+			p += sz;
+		}
+		*p++ = ']';
+		*out_size += 1;
+		break;
+	case JSON_ELEMENT:
+		*p++ = '"';
+		strncpy(p, jt->elm[idx].value, jt->elm[idx].valuelen);
+		p += jt->elm[idx].valuelen;
+		*p++ = '"';
+		*p++ = ':';
+		*out_size = jt->elm[idx].valuelen + 3;
+		msg = JSONtoStorageString(jt, jt->elm[idx].child, &p, &sz);
+		if (msg != MAL_SUCCEED) {
+			return msg;
+		}
+		*out_size += sz;
+		p += sz;
+		break;
+	case JSON_NUMBER:
+		/* fall through */
+	case JSON_STRING:
+		strncpy(p, jt->elm[idx].value, jt->elm[idx].valuelen);
+		*out_size += jt->elm[idx].valuelen;
+		p += *out_size;
+		break;
+	case JSON_VALUE:
+		msg = JSONtoStorageString(jt, jt->elm[idx].child, &p, &sz);
+		if (msg != MAL_SUCCEED) {
+			return msg;
+		}
+		*out_size += sz;
+		p += sz;
+		break;
+	case JSON_NULL:
+		strncpy(p, "null", 5);
+		*out_size += 4;
+		p += *out_size;
+		break;
+	default:
+		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		break;
+	}
+
+	*p = 0;
+
+	return msg;
+}
+
+static str JSONstr2json(json *ret, const char **j);
+
 static ssize_t
 JSONfromString(const char *src, size_t *len, void **J, bool external)
 {
-	json *j = (json *) J;
-	size_t slen = strlen(src);
-	JSON *jt;
-
+	json *buf = (json *) J;
+	if(*buf) {
+		GDKfree(*buf);
+		*buf = NULL;
+	}
 	if (strNil(src) || (external && strncmp(src, "nil", 3) == 0)) {
-		if (*len < 2 || *j == NULL) {
-			GDKfree(*j);
-			if ((*j = GDKmalloc(2)) == NULL)
-				return -1;
-			*len = 2;
-		}
-		strcpy(*j, str_nil);
-		return strNil(src) ? 1 : 3;
-	}
-	if (*len <= slen || *j == NULL) {
-		GDKfree(*j);
-		if ((*j = GDKmalloc(slen + 1)) == NULL)
+		*buf = GDKstrdup(str_nil);
+		if (*buf == NULL)
 			return -1;
-		*len = slen + 1;
+		*len = 2;
+		return strNil(src) ? 1 : 3;
+	} else {
+		str msg = JSONstr2json(buf, &src);
+		if (msg != MAL_SUCCEED) {
+			GDKerror("%s", getExceptionMessageAndState(msg));
+			freeException(msg);
+			return -1;
+		}
 	}
-	strcpy(*j, src);
-	jt = JSONparse(*j);
-	if (jt == NULL)
-		return -1;
-	if (jt->error) {
-		GDKerror("%s", getExceptionMessageAndState(jt->error));
-		JSONfree(jt);
-		return -1;
-	}
-	JSONfree(jt);
-
-	return (ssize_t) slen;
+	*len = strlen(*buf) + 1;
+	return (ssize_t) *len - 1;
 }
 
 static ssize_t
@@ -412,15 +501,33 @@ JSON2json(json *ret, const json *j)
 }
 
 static str
-JSONstr2json(json *ret, str *j)
+JSONstr2json(json *ret, const char **j)
 {
-	JSON *jt = JSONparse(*j);
+	str msg = MAL_SUCCEED;
+	json buf = NULL;
+	size_t ln = strlen(*j)+1;
+	size_t out_size = 0;
 
+	JSON *jt = JSONparse(*j);
 	CHECK_JSON(jt);
+
+	buf = (json)GDKmalloc(ln);
+	if (buf == NULL) {
+		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	msg = JSONtoStorageString(jt, 0, &buf, &out_size);
+	if (msg != MAL_SUCCEED) {
+		GDKfree(buf);
+		goto bailout;
+	}
+
+	*ret = buf;
+
+ bailout:
 	JSONfree(jt);
-	if ((*ret = GDKstrdup(*j)) == NULL)
-		throw(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 static str

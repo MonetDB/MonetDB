@@ -16,11 +16,6 @@ select ascii(R'€')
 ----
 8364
 
-query T
-select asciify(R'a € sign')
-----
-a EUR sign
-
 query I
 select char_length(R'2€')
 ----
@@ -152,11 +147,6 @@ query I
 select octet_length(R'2€')
 ----
 4
-
-query I
-select patindex('%bc%', 'abcd')
-----
-3
 
 query I
 select position('DB' IN 'MonetDB')

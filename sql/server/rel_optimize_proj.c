@@ -3069,6 +3069,20 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;
 
+		/* we would like to optimize in place reference rels which point
+		 * to replica tables and let the replica optimizer handle those
+		 * later. otherwise we miss the push join down optimization due
+		 * to the rel_is_ref bailout
+		 */
+		if (rel_is_ref(l) && is_basetable(l->op) && l->l && isReplicaTable((sql_table*)l->l)) {
+			rel->l = rel_copy(v->sql, l, true);
+			rel_destroy(l);
+		}
+		if (rel_is_ref(r) && is_basetable(r->op) && r->l && isReplicaTable((sql_table*)r->l)) {
+			rel->r = rel_copy(v->sql, r, true);
+			rel_destroy(r);
+		}
+
 		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
 			return rel;
 		if (l->op == op_project)
