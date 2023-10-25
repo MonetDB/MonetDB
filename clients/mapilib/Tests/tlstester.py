@@ -512,6 +512,9 @@ class MapiHandler(socketserver.BaseRequestHandler):
             except SSLError as e:
                 log.info(f"port '{self.name}': TLS handshake failed: {e}")
                 return
+            except OSError as e:
+                log.info(f"port '{self.name}': error during TLS handshake: {e}")
+                return
             if self.check_alpn:
                 alpn = self.conn.selected_alpn_protocol()
                 if alpn is None:
