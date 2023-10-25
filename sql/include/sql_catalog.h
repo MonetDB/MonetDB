@@ -166,9 +166,6 @@ typedef enum comp_type {
 	cmp_in = 8,			/* in value list */
 	cmp_notin = 9,			/* not in value list */
 
-	mark_in = 10,			/* mark joins */
-	mark_notin = 11,
-
 	/* The followin cmp_* are only used within stmt (not sql_exp) */
 	cmp_all = 12,			/* special case for crossproducts */
 	cmp_project = 13,		/* special case for projection joins */
@@ -181,8 +178,7 @@ typedef enum comp_type {
 
 #define is_complex_exp(et) ((et) == cmp_or || (et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter)
 
-#define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_notequal || (et) == cmp_in || \
-							 			   (et) == cmp_notin || (et) == mark_in || (et) == mark_notin)
+#define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_notequal || (et) == cmp_in || (et) == cmp_notin)
 
 typedef enum commit_action_t {
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
@@ -471,10 +467,9 @@ typedef enum sql_flang {
 	FUNC_LANG_J = 5,   /* create .. language JAVASCRIPT (not implemented) */
 	/* this should probably be done in a better way */
 	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
-	FUNC_LANG_MAP_PY = 7,   /* create .. language PYTHON_MAP */
 	/* values 8 and 9 were for Python 2 */
 	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
-	FUNC_LANG_MAP_PY3 = 11, /* create .. language PYTHON3_MAP */
+	/* values 7 and 11 where old map python code */
 	FUNC_LANG_CPP = 12      /* create .. language CPP */
 } sql_flang;
 

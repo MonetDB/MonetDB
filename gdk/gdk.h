@@ -489,7 +489,7 @@ typedef union {
 
 typedef struct {
 	size_t nitems;
-	char data[FLEXIBLE_ARRAY_MEMBER] __attribute__((__nonstring__));
+	char data[] __attribute__((__nonstring__));
 } blob;
 gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
@@ -797,7 +797,7 @@ typedef struct BAT {
 	 batTransient:1,	/* should the BAT persist on disk? */
 	 batCopiedtodisk:1;	/* once written */
 	uint16_t selcnt;	/* how often used in equi select without hash */
-	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
+	uint16_t unused;	/* value=0 for now (sneakily used by mat.c) */
 
 	/* delta status administration */
 	BUN batInserted;	/* start of inserted elements */
@@ -1644,20 +1644,20 @@ BATsettrivprop(BAT *b)
 static inline void
 BATnegateprops(BAT *b)
 {
-    /* disable all properties here */
-    b->tnonil = false;
-    b->tnil = false;
-    if (b->ttype) {
-        b->tsorted = false;
-        b->trevsorted = false;
-        b->tnosorted = 0;
-        b->tnorevsorted = 0;
-    }
-    b->tseqbase = oid_nil;
-    b->tkey = false;
-    b->tnokey[0] = 0;
-    b->tnokey[1] = 0;
-    b->tmaxpos = b->tminpos = BUN_NONE;
+	/* disable all properties here */
+	b->tnonil = false;
+	b->tnil = false;
+	if (b->ttype) {
+		b->tsorted = false;
+		b->trevsorted = false;
+		b->tnosorted = 0;
+		b->tnorevsorted = 0;
+	}
+	b->tseqbase = oid_nil;
+	b->tkey = false;
+	b->tnokey[0] = 0;
+	b->tnokey[1] = 0;
+	b->tmaxpos = b->tminpos = BUN_NONE;
 }
 
 /*
@@ -1984,37 +1984,13 @@ VALptr(const ValRecord *v)
 #define THREADS	1024
 #define THREADDATA	3
 
-typedef struct threadStruct {
-	int tid;		/* logical ID by MonetDB; val == index
-				 * into this array + 1 (0 is
-				 * invalid) */
-	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
-	bat freebats;		/* linked list of free bats */
-	uint32_t nfreebats;	/* number of free bats in .freebats */
-	char name[MT_NAME_LEN];
-	void *data[THREADDATA];
-	uintptr_t sp;
-} *Thread;
+typedef struct threadStruct *Thread;
 
 
-gdk_export int THRgettid(void);
-gdk_export Thread THRget(int tid);
-gdk_export MT_Id THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name);
-gdk_export void THRdel(Thread t);
-gdk_export void THRsetdata(int, void *);
-gdk_export void *THRgetdata(int);
-gdk_export int THRhighwater(void);
+gdk_export stream *GDKstdout;
+gdk_export stream *GDKstdin;
 
-gdk_export void *THRdata[THREADDATA];
-
-#define GDKstdout	((stream*)THRdata[0])
-#define GDKstdin	((stream*)THRdata[1])
-
-#define GDKerrbuf	((char*)THRgetdata(2))
-#define GDKsetbuf(x)	THRsetdata(2,(void *)(x))
-
-#define THRget_errbuf(t)	((char*)t->data[2])
-#define THRset_errbuf(t,b)	(t->data[2] = b)
+#define GDKerrbuf	(GDKgetbuf())
 
 static inline bat
 BBPcheck(bat x)
@@ -2218,7 +2194,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 		if (!(f)) {						\
 			MT_lock_set(&(x)->theaplock);			\
 			if ((x)->batRestricted == BAT_READ ||		\
-		  	   ((ATOMIC_GET(&(x)->theap->refs) & HEAPREFS) > 1)) { \
+			   ((ATOMIC_GET(&(x)->theap->refs) & HEAPREFS) > 1)) { \
 				GDKerror("access denied to %s, aborting.\n", BATgetId(x)); \
 				MT_lock_unset(&(x)->theaplock);		\
 				return (e);				\
@@ -2326,8 +2302,12 @@ gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BAToutercross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
+	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool match_one, BUN estimate)
 	__attribute__((__warn_unused_result__));
@@ -2430,20 +2410,32 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
  * on each iteration */
 #define TIMEOUT_LOOP_IDX(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
-			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
+			if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
+				TIMEOFFSET = -1;			\
+				break;					\
+			} else						\
+				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
  * incrementing it on each iteration */
 #define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
-			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
+			if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
+				TIMEOFFSET = -1;			\
+				break;					\
+			} else						\
+				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* there is no user-visible loop variable */
 #define TIMEOUT_LOOP(REPEATS, TIMEOFFSET)				\
-	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
-		for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
+	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
+		if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
+			TIMEOFFSET = -1;				\
+			break;						\
+		} else							\
+			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
 
 /* break out of the loop (cannot use do/while trick here) */
 #define TIMEOUT_LOOP_BREAK			\
@@ -2467,7 +2459,7 @@ typedef struct gdk_callback {
 	lng last_called; // timestamp GDKusec
 	gdk_return (*func)(int argc, void *argv[]);
 	struct gdk_callback *next;
-	void *argv[FLEXIBLE_ARRAY_MEMBER];
+	void *argv[];
 } gdk_callback;
 
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);

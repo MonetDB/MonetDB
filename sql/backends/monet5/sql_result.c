@@ -1202,8 +1202,10 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		if (fmt[i].c == NULL || (c->mask && !fmt[i].mask)) {
 			if (fmt[i].c)
 				BBPunfix(fmt[i].c->batCacheid);
-			while (--i >= 1)
+			while (--i >= 1) {
+				bat_iterator_end(&fmt[i].ci);
 				BBPunfix(fmt[i].c->batCacheid);
+			}
 			GDKfree(fmt);
 			GDKfree(tres);
 			return -2;

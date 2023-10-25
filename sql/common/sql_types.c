@@ -938,6 +938,7 @@ sqltypeinit( sql_allocator *sa)
 	/* needed for indices/clusters oid(schema.table,val) returns max(head(schema.table))+1 */
 	sql_create_func(sa, "rowid", "calc", "rowid", TRUE, TRUE, SCALE_NONE, 0, OID, 3, ANY, STR, STR);
 	sql_create_aggr(sa, "min", "aggr", "min", FALSE, FALSE, ANY, 1, ANY);
+	sql_create_aggr(sa, "any_value", "aggr", "min", FALSE, FALSE, ANY, 1, ANY);
 	sql_create_aggr(sa, "max", "aggr", "max", FALSE, FALSE, ANY, 1, ANY);
 	sql_create_func(sa, "sql_min", "calc", "min", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "sql_max", "calc", "max", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
@@ -1096,6 +1097,7 @@ sqltypeinit( sql_allocator *sa)
 
 	sql_create_analytic(sa, "count", "sql", "count", FALSE, SCALE_NONE, LNG, 2, ANY, BIT);
 	sql_create_analytic(sa, "min", "sql", "min", FALSE, SCALE_NONE, ANY, 1, ANY);
+	sql_create_analytic(sa, "any_value", "sql", "min", FALSE, SCALE_NONE, ANY, 1, ANY);
 	sql_create_analytic(sa, "max", "sql", "max", FALSE, SCALE_NONE, ANY, 1, ANY);
 
 	/* analytical sum for numerical and decimals */
@@ -1512,8 +1514,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "ucase", "str", "toUpper", FALSE, FALSE, INOUT, 0, *t, 1, *t);
 		sql_create_func(sa, "lower", "str", "toLower", FALSE, FALSE, INOUT, 0, *t, 1, *t);
 		sql_create_func(sa, "lcase", "str", "toLower", FALSE, FALSE, INOUT, 0, *t, 1, *t);
-		sql_create_func(sa, "trim", "str", "trim", FALSE, FALSE, INOUT, 0, *t, 1, *t);
-		sql_create_func(sa, "trim", "str", "trim2", FALSE, FALSE, INOUT, 0, *t, 2, *t, *t);
+		sql_create_func(sa, "btrim", "str", "trim", FALSE, FALSE, INOUT, 0, *t, 1, *t);
+		sql_create_func(sa, "btrim", "str", "trim2", FALSE, FALSE, INOUT, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "ltrim", "str", "ltrim", FALSE, FALSE, INOUT, 0, *t, 1, *t);
 		sql_create_func(sa, "ltrim", "str", "ltrim2", FALSE, FALSE, INOUT, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "rtrim", "str", "rtrim", FALSE, FALSE, INOUT, 0, *t, 1, *t);
@@ -1538,6 +1540,10 @@ sqltypeinit( sql_allocator *sa)
 
 	/* bincopyfrom */
 	f = sql_create_union(sa, "copyfrombinary", "", "", TRUE, SCALE_FIX, 0, TABLE, 3, STR, STR, INT);
+	f->varres = 1;
+
+	/* file_loader */
+	f = sql_create_union(sa, "file_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
 	f->varres = 1;
 
 	/* sys_update_schemas, sys_update_tables */

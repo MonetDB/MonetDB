@@ -16,7 +16,6 @@
 
 #include "unicode.h"
 #include "pytypes.h"
-#include "gdk_interprocess.h"
 #include "type_conversion.h"
 #include "formatinput.h"
 
@@ -200,7 +199,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		create_table = true;
 	}
 
-	pConnection = Py_Connection_Create(cntxt, 0, 0, 0);
+	pConnection = Py_Connection_Create(cntxt, 0, 0);
 	pEmit = PyEmit_Create(cols, ncols);
 	if (!pConnection || !pEmit) {
 		msg = createException(MAL, "pyapi3.eval_loader",
@@ -234,7 +233,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		// Now we will add the UDF to the main module
 		d = PyModule_GetDict(pModule);
 		if (code_object == NULL) {
-			v = PyRun_StringFlags(pycall, Py_file_input, d, d, NULL);
+			v = PyRun_StringFlags(pycall, Py_file_input, d, NULL, NULL);
 			if (v == NULL) {
 				msg = PyError_CreateException("Could not parse Python code",
 											  pycall);

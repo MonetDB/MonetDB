@@ -19,6 +19,7 @@ typedef struct exp_kind_t {
 	bte type;
 	bte card;
 	bit reduce;
+	bit aggr;	/* passed from outer query */
 } exp_kind;
 
 extern sql_schema *cur_schema(mvc *sql);
@@ -34,7 +35,7 @@ extern bool find_variable_on_scope(mvc *sql, const char *sname, const char *name
 
 /* These functions find catalog functions according to scoping rules */
 /* The private flag tells to attempt to bind functions that cannot be seen by users */
-extern sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private, sql_subfunc *prev);
+sql_export sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private, sql_subfunc *prev);
 extern sql_subfunc *sql_bind_member(mvc *sql, const char *sname, const char *fname, sql_subtype *tp, sql_ftype type, int nrargs, bool private, sql_subfunc *prev);
 extern sql_subfunc *sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type, bool private);
 extern sql_subfunc *sql_bind_func3(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type, bool private);
@@ -64,11 +65,13 @@ typedef enum {
  * functions and procedures are kept in the param list.  */
 
 extern void sql_add_param(mvc *sql, const char *name, sql_subtype *st);
-extern sql_arg *sql_bind_param(mvc *sql, const char *name);
+extern int sql_bind_param(mvc *sql, const char *name); /* -1 error, 0 nr-1, param */
+extern sql_arg *sql_bind_paramnr(mvc *sql, int nr);
 /* once the type of the '?' parameters is known it's set using the set_type
  * function */
 extern int set_type_param(mvc *sql, sql_subtype *type, int nr);
 extern void sql_destroy_params(mvc *sql);	/* used in backend */
+extern sql_arg *sql_find_param(mvc *sql, char *name);
 
 extern char *symbol2string(mvc *sql, symbol *s, int expression, char **err);
 //extern char *dlist2string(mvc *sql, dlist *s, int expression, char **err);

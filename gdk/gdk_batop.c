@@ -441,7 +441,9 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		memcpy(b->theap->base, ni->base, ni->hfree);
 		memcpy(b->tvheap->base, ni->vh->base, ni->vhfree);
 		b->theap->free = ni->hfree;
+		b->theap->dirty = true;
 		b->tvheap->free = ni->vhfree;
+		b->tvheap->dirty = true;
 		BATsetcount(b, ni->count);
 		b->tnil = ni->nil;
 		b->tnonil = ni->nonil;
@@ -3016,6 +3018,7 @@ BATrmprop(BAT *b, enum prop_t idx)
 /*
  * The BATcount_no_nil function counts all BUN in a BAT that have a
  * non-nil tail value.
+ * This function does not fail (the callers currently don't check for failure).
  */
 BUN
 BATcount_no_nil(BAT *b, BAT *s)

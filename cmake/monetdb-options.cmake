@@ -79,6 +79,14 @@ option(UNDEFINED
   "Enable support for the GCC undefined sanitizer (default=OFF)"
   OFF)
 
+option(PGOTRAIN
+  "Enable support for the profile generated optimization training (default=OFF)"
+  OFF)
+
+option(PGOBUILD
+  "Enable support for the profile generated optimization build (using optained data) (default=OFF)"
+  OFF)
+
 option(STRICT
   "Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)"
   "${DEVELOPMENT}")

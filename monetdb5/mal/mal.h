@@ -48,9 +48,9 @@ mal_export lng MALdebug;
 #define GB (((lng)1024)*1024*1024)
 #define MEMORY_THRESHOLD  (0.2 * GDK_mem_maxsize > 8 * GB?  GDK_mem_maxsize - 8 * GB: 0.8 * GDK_mem_maxsize)
 
-mal_export char     monet_cwd[FILENAME_MAX];
-mal_export char 	monet_characteristics[4096];
-mal_export stream	*maleventstream;
+mal_export char monet_cwd[FILENAME_MAX];
+mal_export char monet_characteristics[4096];
+mal_export stream *maleventstream;
 
 /*
    See gdk/gdk.h for the definition of all debug masks.
@@ -70,7 +70,8 @@ mal_export stream	*maleventstream;
 
 mal_export MT_Lock mal_contextLock;
 
-mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd, const char *caller_revision);
+mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd,
+						const char *caller_revision);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
 mal_export const char *mal_version(void);
@@ -82,15 +83,15 @@ mal_export const char *mal_version(void);
  */
 
 /* Listing modes are globally known */
-#define LIST_INPUT      1       /* echo original input */
-#define LIST_MAL_NAME   2       /* show variable name */
-#define LIST_MAL_TYPE   4       /* show type resolutoin */
-#define LIST_MAL_VALUE  8       /* list bat tuple count */
-#define LIST_MAL_PROPS 16       /* show variable properties */
-#define LIST_MAL_MAPI  32       /* output Mapi compatible output */
-#define LIST_MAL_REMOTE  64       /* output MAL for remote execution */
-#define LIST_MAL_FLOW   128       /* output MAL dataflow dependencies */
-#define LIST_MAL_ALGO	256		  /* output algorithm used */
+#define LIST_INPUT      1		/* echo original input */
+#define LIST_MAL_NAME   2		/* show variable name */
+#define LIST_MAL_TYPE   4		/* show type resolutoin */
+#define LIST_MAL_VALUE  8		/* list bat tuple count */
+#define LIST_MAL_PROPS 16		/* show variable properties */
+#define LIST_MAL_MAPI  32		/* output Mapi compatible output */
+#define LIST_MAL_REMOTE  64		/* output MAL for remote execution */
+#define LIST_MAL_FLOW   128		/* output MAL dataflow dependencies */
+#define LIST_MAL_ALGO	256		/* output algorithm used */
 #define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_FLOW)
 #define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_MAPI)
@@ -116,8 +117,8 @@ typedef struct SYMDEF {
 } *Symbol, SymRecord;
 
 typedef struct VARRECORD {
-	char name[IDLENGTH];			/* use the space for the full name */
-	char kind;				/* Could be either _, X or C to stamp the variable type */
+	char name[IDLENGTH];		/* use the space for the full name */
+	char kind;					/* Could be either _, X or C to stamp the variable type */
 	malType type;				/* internal type signature */
 	bool constant:1,
 		typevar:1,
@@ -131,8 +132,8 @@ typedef struct VARRECORD {
 	int declared;				/* pc index when it was first assigned */
 	int updated;				/* pc index when it was first updated */
 	int eolife;					/* pc index when it should be garbage collected */
-	int stc;				    /* pc index for rendering schema.table.column  */
-	BUN rowcnt;					/* estimated row count*/
+	int stc;					/* pc index for rendering schema.table.column  */
+	BUN rowcnt;					/* estimated row count */
 } *VarPtr, VarRecord;
 
 /* For performance analysis we keep track of the number of calls and
@@ -149,7 +150,7 @@ typedef struct {
 	bte polymorphic;			/* complex type analysis */
 	bit varargs;				/* variable number of arguments */
 	int jump;					/* controlflow program counter */
-	int pc;						/* location in MAL plan for profiler*/
+	int pc;						/* location in MAL plan for profiler */
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
 	/* inline statistics */
@@ -158,53 +159,53 @@ typedef struct {
 	const char *modname;		/* module context, reference into namespace */
 	const char *fcnname;		/* function name, reference into namespace */
 	int argc, retc, maxarg;		/* total and result argument count */
-	int argv[FLEXIBLE_ARRAY_MEMBER]; /* at least a few entries */
+	int argv[];					/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK {
-	char binding[IDLENGTH];	/* related C-function */
-	str help;				/* supportive commentary */
-	str statichelp;			/* static help string should not be freed */
-	oid tag;				/* unique block tag */
+	char binding[IDLENGTH];		/* related C-function */
+	str help;					/* supportive commentary */
+	str statichelp;				/* static help string should not be freed */
+	oid tag;					/* unique block tag */
 	struct MALBLK *alternative;
-	int vtop;				/* next free slot */
-	int vsize;				/* size of variable arena */
-	int vid;	 			/* generate local variable counter */
-	VarRecord *var;			/* Variable table */
-	int stop;				/* next free slot */
-	int ssize;				/* byte size of arena */
+	int vtop;					/* next free slot */
+	int vsize;					/* size of variable arena */
+	int vid;					/* generate local variable counter */
+	VarRecord *var;				/* Variable table */
+	int stop;					/* next free slot */
+	int ssize;					/* byte size of arena */
 	InstrPtr *stmt;				/* Instruction location */
 
-	bool inlineProp:1,		/* inline property */
-	     unsafeProp:1;		/* unsafe property */
+	bool inlineProp:1,			/* inline property */
+	 unsafeProp:1;				/* unsafe property */
 
-	str errors;				/* left over errors */
-	struct MALBLK *history;	/* of optimizer actions */
-	short keephistory;		/* do we need the history at all */
-	int maxarg;				/* keep track on the maximal arguments used */
-	ptr replica;			/* for the replicator tests */
+	str errors;					/* left over errors */
+	struct MALBLK *history;		/* of optimizer actions */
+	short keephistory;			/* do we need the history at all */
+	int maxarg;					/* keep track on the maximal arguments used */
+	ptr replica;				/* for the replicator tests */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
 	ATOMIC_TYPE workers;
-	lng		memory;
-	lng runtime;			/* average execution time of block in ticks */
-	int calls;				/* number of calls */
-	lng optimize;			/* total optimizer time */
+	lng memory;
+	lng runtime;				/* average execution time of block in ticks */
+	int calls;					/* number of calls */
+	lng optimize;				/* total optimizer time */
 } *MalBlkPtr, MalBlkRecord;
 
 #define STACKINCR   128
 #define MAXGLOBALS  (4 * STACKINCR)
 
-typedef int (*DFhook) (void *, void *, void *, void *);
+typedef int (*DFhook)(void *, void *, void *, void *);
 
 typedef struct MALSTK {
 	int stksize;
 	int stktop;
-	int stkbot;			/* the first variable to be initialized */
-	int stkdepth;		/* to protect against runtime stack overflow */
-	int calldepth;		/* to protect against runtime stack overflow */
-	bool keepAlive:1,	/* do not garbage collect when set */
-		 keepTmps:1;	/* also do not garbage collect tmps (needed for interactive debugging only) */
+	int stkbot;					/* the first variable to be initialized */
+	int stkdepth;				/* to protect against runtime stack overflow */
+	int calldepth;				/* to protect against runtime stack overflow */
+	bool keepAlive:1,			/* do not garbage collect when set */
+	 keepTmps:1;				/* also do not garbage collect tmps (needed for interactive debugging only) */
 	/*
 	 * Parallel processing is mostly driven by dataflow, but within this context
 	 * there may be different schemes to take instructions into execution.
@@ -217,15 +218,15 @@ typedef struct MALSTK {
  * It is handy to administer the timing in the stack frame
  * for use in profiling instructions.
  */
-	struct timeval clock;	/* time this stack was created */
-	char status;			/* srunning 'R' suspended 'S', quiting 'Q' */
-	int pcup;				/* saved pc upon a recursive all */
-	oid tag;				/* unique invocation call tag */
-	lng	memory;				/* Actual memory claims for highwater mark */
+	struct timeval clock;		/* time this stack was created */
+	char status;				/* srunning 'R' suspended 'S', quiting 'Q' */
+	int pcup;					/* saved pc upon a recursive all */
+	oid tag;					/* unique invocation call tag */
+	lng memory;					/* Actual memory claims for highwater mark */
 
-	struct MALSTK *up;		/* stack trace list */
-	struct MALBLK *blk;		/* associated definition */
-	ValRecord stk[FLEXIBLE_ARRAY_MEMBER];
+	struct MALSTK *up;			/* stack trace list */
+	struct MALBLK *blk;			/* associated definition */
+	ValRecord stk[];
 } MalStack, *MalStkPtr;
 
-#endif /*  _MAL_H*/
+#endif /*  _MAL_H */

@@ -318,20 +318,6 @@ bind_merge_projects(visitor *v, global_props *gp)
 }
 
 
-static int
-exps_has_setjoin(list *exps)
-{
-	if (!exps)
-		return 0;
-	for(node *n=exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin))
-			return 1;
-	}
-	return 0;
-}
-
 static sql_exp *split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e);
 
 static void
@@ -443,9 +429,18 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	return e;
 }
 
+static int
+exp_match_exp_cmp( sql_exp *e1, sql_exp *e2)
+{
+	if (exp_match_exp(e1,e2))
+		return 0;
+	return -1;
+}
+
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier.
  */
+extern void _rel_print(mvc *sql, sql_rel *rel);
 static sql_rel *
 rel_push_project_up_(visitor *v, sql_rel *rel)
 {
@@ -453,6 +448,28 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		sql_rel *l = rel->l;
 		if (is_simple_project(l->op))
 			return rel_merge_projects_(v, rel);
+		/* find equal column references, later cases are rewritten into references back to the first
+		 * project () [ i.i L1, i.i L2 ] -> project() [ i.i L1, L1 L2 ] */
+		if (list_length(rel->exps) > 1) {
+			list *exps = rel->exps;
+			rel->exps = sa_list(v->sql->sa);
+			node *n = exps->h;
+			list_append(rel->exps, n->data);
+			for(n = n->next; n; n = n->next) {
+				sql_exp *e = n->data;
+				if (e->type == e_column && !is_selfref(e)) {
+					node *m = list_find(rel->exps, e, (fcmp)&exp_match_exp_cmp);
+					if (m) {
+						sql_exp *ne = exp_ref(v->sql, m->data);
+						exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
+						exp_propagate(v->sql->sa, ne, e);
+						set_selfref(ne);
+						e = ne;
+					}
+				}
+				list_append(rel->exps, e);
+			}
+		}
 	}
 
 	/* project/project cleanup is done later */
@@ -467,7 +484,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		/* Don't rewrite refs, non projections or constant or
 		   order by projections  */
 		if (!l || rel_is_ref(l) || is_topn(l->op) || is_sample(l->op) ||
-		   (is_join(rel->op) && exps_has_setjoin(rel->exps)) ||
+		   (is_join(rel->op) && !list_empty(rel->attr)) ||
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statments left joins */) ||
 		   (is_select(rel->op) && l->op != op_project) ||
@@ -502,7 +519,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		}
 		nlexps = list_length(exps);
 		/* also handle right hand of join */
-		if (is_join(rel->op) && r->op == op_project && r->l) {
+		if (is_join(rel->op) && r->op == op_project && r->l && list_empty(rel->attr)) {
 			/* Here we also check all expressions of r like above
 			   but also we need to check for ambigious names. */
 
@@ -520,14 +537,14 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 					return rel;
 				}
 			}
-		} else if (is_join(rel->op)) {
+		} else if (is_join(rel->op) && list_empty(rel->attr)) {
 			list *r_exps = rel_projections(v->sql, r, NULL, 1, 1);
 			list_merge(exps, r_exps, (fdup)NULL);
-			if (rel->attr)
-				append(exps, exp_ref(v->sql, rel->attr->h->data));
 		}
+		if (!list_empty(rel->attr))
+			append(exps, exp_ref(v->sql, rel->attr->h->data));
 		/* Here we should check for ambigious names ? */
-		if (is_join(rel->op) && r) {
+		if (is_join(rel->op) && r && list_empty(rel->attr)) {
 			t = (l->op == op_project && l->l)?l->l:l;
 			l_exps = rel_projections(v->sql, t, NULL, 1, 1);
 			/* conflict with old right expressions */
@@ -587,7 +604,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 			l->l = NULL;
 			rel_destroy(l);
 		}
-		if (is_join(rel->op) && r->op == op_project) {
+		if (is_join(rel->op) && r->op == op_project && list_empty(rel->attr)) {
 			/* rewrite rel from rel->r into rel->r->l */
 			if (rel->exps) {
 				for (n = rel->exps->h; n; n = n->next) {
@@ -691,14 +708,6 @@ bind_push_project_up(visitor *v, global_props *gp)
 
 
 static void split_exps(mvc *sql, list *exps, sql_rel *rel);
-
-static int
-exp_match_exp_cmp( sql_exp *e1, sql_exp *e2)
-{
-	if (exp_match_exp(e1,e2))
-		return 0;
-	return -1;
-}
 
 static int
 exp_refers_cmp( sql_exp *e1, sql_exp *e2)
@@ -2694,15 +2703,19 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 		}
 
 		darg = arg->h->data;
-		if ((found = exps_find_exp(gbe, darg))) { /* first find if the aggregate argument already exists in the grouping list */
-			darg = exp_ref(v->sql, found);
-		} else {
-			list_append(gbe, darg = exp_copy(v->sql, darg));
-			exp_label(v->sql->sa, darg, ++v->sql->label);
+		if ((found = exps_find_exp(exps, darg)) == NULL) { /* not already in the groups projection list */
+			if ((found = exps_find_exp(gbe, darg))) { /* first find if the aggregate argument already exists in the grouping list */
+				darg = exp_ref(v->sql, found);
+			} else {
+				list_append(gbe, darg = exp_copy(v->sql, darg));
+				exp_label(v->sql->sa, darg, ++v->sql->label);
+				darg = exp_ref(v->sql, darg);
+			}
+			list_append(exps, darg);
 			darg = exp_ref(v->sql, darg);
+		} else {
+			darg = exp_ref(v->sql, found);
 		}
-		list_append(exps, darg);
-		darg = exp_ref(v->sql, darg);
 		arg->h->data = darg;
 		l = rel->l = rel_groupby(v->sql, rel->l, gbe);
 		l->exps = exps;
@@ -2889,6 +2902,48 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
+rel_groupjoin(visitor *v, sql_rel *rel)
+{
+	if (!rel || rel_is_ref(rel) || !is_groupby(rel->op) || list_empty(rel->r))
+		return rel;
+
+	sql_rel *j = rel->l;
+	if (!j || rel_is_ref(j) /*|| !is_left(j->op)*/ || j->op != op_join || list_length(rel->exps) > 1 /* only join because left joins aren't optimized jet (TODO), only length 1 as implementation of groupjoins is missing */ || !list_empty(rel->attr))
+		return rel;
+	/* check group by exps == equi join exps */
+	list *gbes = rel->r;
+	if (list_length(gbes) != list_length(j->exps))
+		return rel;
+	int nr = 0;
+	for(node *n = gbes->h; n; n = n->next) {
+		sql_exp *gbe = n->data;
+		for(node *m = j->exps->h; m; m = m->next) {
+			sql_exp *je = m->data;
+			if (je->type != e_cmp || je->flag != cmp_equal)
+				return rel;
+			/* check if its a join exp (ie not a selection) */
+			if (!( (!rel_has_exp(j->l, je->l, false) && !rel_has_exp(j->r, je->r, false)) ||
+				   (!rel_has_exp(j->l, je->r, false) && !rel_has_exp(j->r, je->l, false))))
+				return rel;
+			if (exp_match(je->l, gbe)) {
+				nr++;
+			} else if (exp_match(je->r, gbe)) {
+				nr++;
+			}
+		}
+	}
+	if (nr == list_length(gbes)) {
+		printf("#group by converted\n");
+		j = rel_dup(j);
+		j->attr = rel->exps;
+		v->changes++;
+		rel_destroy(rel);
+		return j;
+	}
+	return rel;
+}
+
+static sql_rel *
 rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
 	rel = rel_project_cse(v, rel);
@@ -2912,6 +2967,8 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	if (v->value_based_opt) {
 		rel = rel_simplify_count(v, rel);
 		rel = rel_basecount(v, rel);
+
+		rel = rel_groupjoin(v, rel);
 	}
 	return rel;
 }
@@ -3011,6 +3068,20 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;
+
+		/* we would like to optimize in place reference rels which point
+		 * to replica tables and let the replica optimizer handle those
+		 * later. otherwise we miss the push join down optimization due
+		 * to the rel_is_ref bailout
+		 */
+		if (rel_is_ref(l) && is_basetable(l->op) && l->l && isReplicaTable((sql_table*)l->l)) {
+			rel->l = rel_copy(v->sql, l, true);
+			rel_destroy(l);
+		}
+		if (rel_is_ref(r) && is_basetable(r->op) && r->l && isReplicaTable((sql_table*)r->l)) {
+			rel->r = rel_copy(v->sql, r, true);
+			rel_destroy(r);
+		}
 
 		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
 			return rel;

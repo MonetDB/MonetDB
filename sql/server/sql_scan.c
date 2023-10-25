@@ -132,6 +132,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("NTILE", RANK);
 	failed += keywords_insert("LAG", RANK);
 	failed += keywords_insert("LEAD", RANK);
+	failed += keywords_insert("FETCH", FETCH);
 	failed += keywords_insert("FIRST_VALUE", RANK);
 	failed += keywords_insert("LAST_VALUE", RANK);
 	failed += keywords_insert("NTH_VALUE", RANK);
@@ -350,6 +351,10 @@ scanner_init_keywords(void)
 	failed += keywords_insert("POSITION", POSITION);
 	failed += keywords_insert("SUBSTRING", SUBSTRING);
 	failed += keywords_insert("SPLIT_PART", SPLIT_PART);
+	failed += keywords_insert("TRIM", TRIM);
+	failed += keywords_insert("LEADING", LEADING);
+	failed += keywords_insert("TRAILING", TRAILING);
+	failed += keywords_insert("BOTH", BOTH);
 
 	failed += keywords_insert("CASE", CASE);
 	failed += keywords_insert("WHEN", WHEN);
@@ -394,6 +399,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("LOADER", sqlLOADER);
 	failed += keywords_insert("REPLACE", REPLACE);
 
+	failed += keywords_insert("FIELD", FIELD);
 	failed += keywords_insert("FILTER", FILTER);
 	failed += keywords_insert("AGGREGATE", AGGREGATE);
 	failed += keywords_insert("RETURNS", RETURNS);
@@ -582,6 +588,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SQL_TSI_QUARTER", SQL_TSI_QUARTER);
 	failed += keywords_insert("SQL_TSI_YEAR", SQL_TSI_YEAR);
 
+	failed += keywords_insert("LEAST", LEAST);
+	failed += keywords_insert("GREATEST", GREATEST);
 	return failed;
 }
 
@@ -957,11 +965,71 @@ skip_sql_comment(struct scanner * lc)
 
 static int tokenize(mvc * lc, int cur);
 
+static inline bool is_valid_decimal_digit(int cur) { return (iswdigit(cur)); }
+static inline bool is_valid_binary_digit(int cur) { return (iswdigit(cur) && cur < '2'); }
+static inline bool is_valid_octal_digit(int cur) { return (iswdigit(cur) && cur < '8'); }
+static inline bool is_valid_hexadecimal_digit(int cur) { return iswxdigit(cur); }
+
+static inline int check_validity_number(mvc* c, int pcur, bool initial_underscore_allowed, int *token, int type) {
+	struct scanner *lc = &c->scanner;
+	bool (*is_valid_n_ary_digit)(int);
+
+	if (pcur == '_' && !initial_underscore_allowed)  /* ERROR: initial underscore not allowed */  {
+		*token = 0;
+		return '_';
+	}
+
+	switch (type) {
+	case BINARYNUM:
+		is_valid_n_ary_digit = &is_valid_binary_digit;
+		break;
+	case OCTALNUM:
+		is_valid_n_ary_digit = &is_valid_octal_digit;
+		break;
+	case HEXADECIMALNUM:
+		is_valid_n_ary_digit = &is_valid_hexadecimal_digit;
+		break;
+	default:
+		is_valid_n_ary_digit = &is_valid_decimal_digit;
+		break;
+	}
+
+	if ( !(pcur == '_' || is_valid_n_ary_digit(pcur)) ) /* ERROR: first digit is not valid */ {
+		*token = 0;
+		return pcur;
+	}
+
+	int cur = scanner_getc(lc);
+	*token = type;
+	while (cur != EOF) {
+		if (cur == '_') {
+			if (pcur == '_') /* ERROR: multiple consecutive underscores */ {
+				*token = 0;
+				return '_';
+			}
+		}
+		else if (!is_valid_n_ary_digit(cur))
+			break;
+		pcur = cur;
+		cur = scanner_getc(lc);
+	}
+
+	if (pcur == '_')  {
+		*token = 0;
+		if (iswalnum(cur))	 /* ERROR: not a valid digit */
+			return cur;
+		else				/* ERROR: number ends with underscore */
+			return '_';
+	}
+
+	return cur;
+}
+
 static int
 number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
-	int token = cur == '0' ? sqlINT : 0;
+	int token = sqlINT;
 
 	/* a number has one of these forms (expressed in regular expressions):
 	 * 0x[0-9A-Fa-f]+                   -- (hexadecimal) INTEGER
@@ -973,32 +1041,27 @@ number(mvc * c, int cur)
 	 * [0-9]+                           -- (decimal) INTEGER
 	 */
 	lc->started = 1;
-	/* after this block, cur contains the first character after the
-	 * parsed number (which may be the first causing it not to be a number);
-	 * it token == 0 after this block, a parse error was detected */
-	if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
-		cur = scanner_getc(lc);
-		while (cur != EOF && iswxdigit(cur)) {
-			token = HEXADECIMAL;
+	if (cur == '0') {
+		switch ((cur = scanner_getc(lc))) {
+		case 'b':
 			cur = scanner_getc(lc);
-		}
-
-		if (cur == EOF)
-			return cur;
-
-		if (token != HEXADECIMAL) {
-			/* 0x not followed by a hex digit: show 'x' as erroneous */
+			if ((cur = check_validity_number(c, cur, true, &token, BINARYNUM)) == EOF) return cur;
+			break;
+		case 'o':
+			cur = scanner_getc(lc);
+			if ((cur = check_validity_number(c,  cur, true, &token, OCTALNUM)) == EOF) return cur;
+			break;
+		case 'x':
+			cur = scanner_getc(lc);
+			if ((cur = check_validity_number(c,  cur, true, &token, HEXADECIMALNUM)) == EOF) return cur;
+			break;
+		default:
 			utf8_putchar(lc, cur);
-			cur = 'x';
-			token = 0;
+			cur = '0';
 		}
-	} else {
-		while (cur != EOF && iswdigit(cur)) {
-			token = sqlINT;
-			cur = scanner_getc(lc);
-		}
-		if (cur == EOF)
-			return cur;
+	}
+	if (token == sqlINT) {
+		if ((cur = check_validity_number(c, cur, false, &token, sqlINT)) == EOF) return cur;
 		if (cur == '@') {
 			if (token == sqlINT) {
 				cur = scanner_getc(lc);
@@ -1019,46 +1082,25 @@ number(mvc * c, int cur)
 		} else {
 			if (cur == '.') {
 				cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-				if (token == sqlINT || iswdigit(cur)) {
-					token = INTNUM;
-					while (cur != EOF && iswdigit(cur))
-						cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-				} else {
-					token = 0;
-				}
+				if (iswalnum(cur)) /* early exit for numerical forms with final . e.g. 10. */
+				if ((cur = check_validity_number(c, cur, false, &token, INTNUM)) == EOF) return cur;
 			}
+			if (token != 0)
 			if (cur == 'e' || cur == 'E') {
-				if (token != 0) {
+				cur = scanner_getc(lc);
+				if (cur == '+' || cur == '-')
 					cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-					if (cur == '+' || cur == '-')
-						cur = scanner_getc(lc);
-					while (cur != EOF && iswdigit(cur)) {
-						token = APPROXNUM;
-						cur = scanner_getc(lc);
-					}
-					if (cur == EOF)
-						return cur;
-					if (token != APPROXNUM)
-						token = 0;
-				}
+				if ((cur = check_validity_number(c, cur, false, &token, APPROXNUM)) == EOF) return cur;
 			}
 		}
 	}
 
-	if (cur == EOF && lc->rs->buf == NULL) /* malloc failure */
-		return EOF;
+	assert(cur != EOF);
 
-	if (cur != EOF) {
-		if (iswalnum(cur) || cur == '_' /* || cur == '"' || cur == '\'' */)
-			token = 0;
-		utf8_putchar(lc, cur);
-	}
+	if (iswalnum(cur)) /* ERROR: not a valid digit */
+		token = 0;
+
+	utf8_putchar(lc, cur);
 
 	if (token) {
 		return scanner_token(lc, token);
@@ -1148,6 +1190,7 @@ int scanner_symbol(mvc * c, int cur)
 	case '^': /* binary xor */
 	case '*':
 	case '?':
+	case ':':
 	case '%':
 	case '+':
 	case '(':
@@ -1512,11 +1555,10 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 	return(token);
 }
 
-/* also see sql_parser.y */
-extern int sqllex( YYSTYPE *yylval, void *m );
+static int scanner( YYSTYPE *yylval, void *m, bool log);
 
-int
-sqllex(YYSTYPE * yylval, void *parm)
+static int
+scanner(YYSTYPE * yylval, void *parm, bool log)
 {
 	int token;
 	mvc *c = (mvc *) parm;
@@ -1529,10 +1571,10 @@ sqllex(YYSTYPE * yylval, void *parm)
 	token = sql_get_next_token(yylval, parm);
 
 	if (token == NOT) {
-		int next = sqllex(yylval, parm);
+		int next = scanner(yylval, parm, false);
 
 		if (next == NOT) {
-			return sqllex(yylval, parm);
+			return scanner(yylval, parm, false);
 		} else if (next == EXISTS) {
 			token = NOT_EXISTS;
 		} else if (next == BETWEEN) {
@@ -1559,9 +1601,18 @@ sqllex(YYSTYPE * yylval, void *parm)
 		}
 	}
 
-	if (lc->log)
+	if (lc->log && log)
 		mnstr_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
 	lc->started += (token != EOF);
 	return token;
+}
+
+/* also see sql_parser.y */
+extern int sqllex(YYSTYPE * yylval, void *parm);
+
+int
+sqllex(YYSTYPE * yylval, void *parm)
+{
+	return scanner(yylval, parm, true);
 }

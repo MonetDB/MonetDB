@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 statement ok
 START TRANSACTION
 
@@ -253,10 +255,10 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT 1 as count FROM t2 JOIN
 ----
 135
 
-query R rowsort
-SELECT sub0.c2 FROM t2 JOIN (SELECT DISTINCT t2.c2, 3 FROM t2) AS sub0(c2,c3) on t2.c2 = sub0.c2
+query I rowsort
+SELECT count(sub0.c2) FROM t2 JOIN (SELECT DISTINCT t2.c2, 3 FROM t2) AS sub0(c2,c3) on t2.c2 = sub0.c2
 ----
-135 values hashing to 39898748a4604c294a5bcb3435b482a0
+135
 
 statement ok
 ROLLBACK

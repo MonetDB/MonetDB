@@ -11,4 +11,5 @@
 add_subdirectory(fits)
 add_subdirectory(netcdf)
 add_subdirectory(shp)
+add_subdirectory(csv)
 

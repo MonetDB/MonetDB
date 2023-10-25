@@ -16,84 +16,101 @@
 #include "opt_matpack.h"
 
 str
-OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						 InstrPtr pci)
 {
 	int v, i, j, limit, slimit;
-	InstrPtr p,q;
+	InstrPtr p, q;
 	int actions = 0;
 	InstrPtr *old = NULL;
 	str msg = MAL_SUCCEED;
 
-	if( isOptimizerUsed(mb, pci, mergetableRef) <= 0){
+	if (isOptimizerUsed(mb, pci, mergetableRef) <= 0) {
 		goto wrapup;
 	}
 
 	(void) cntxt;
-	(void) stk;		/* to fool compilers */
-	for( i = 1; i < mb->stop; i++)
-		if( getModuleId(getInstrPtr(mb,i)) == matRef  && getFunctionId(getInstrPtr(mb,i)) == packRef && isaBatType(getArgType(mb,getInstrPtr(mb,i),1)))
+	(void) stk;					/* to fool compilers */
+	for (i = 1; i < mb->stop; i++)
+		if (getModuleId(getInstrPtr(mb, i)) == matRef
+			&& getFunctionId(getInstrPtr(mb, i)) == packRef
+			&& isaBatType(getArgType(mb, getInstrPtr(mb, i), 1)))
 			break;
-	if( i == mb->stop)
+	if (i == mb->stop)
 		goto wrapup;
 
-	old= mb->stmt;
-	limit= mb->stop;
+	old = mb->stmt;
+	limit = mb->stop;
 	slimit = mb->ssize;
-	if ( newMalBlkStmt(mb,mb->stop) < 0)
-		throw(MAL,"optimizer.matpack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (newMalBlkStmt(mb, mb->stop) < 0)
+		throw(MAL, "optimizer.matpack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	for (i = 0; i < limit; i++) {
+	for (i = 0; mb->errors == NULL && i < limit; i++) {
 		p = old[i];
-		if( getModuleId(p) == matRef  && getFunctionId(p) == packRef && isaBatType(getArgType(mb,p,1))) {
+		if (getModuleId(p) == matRef && getFunctionId(p) == packRef
+			&& isaBatType(getArgType(mb, p, 1))) {
 			q = newInstruction(0, matRef, packIncrementRef);
 			if (q == NULL) {
-				msg = createException(MAL, "optimizer.matpack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "optimizer.matpack",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
-			setDestVar(q, newTmpVariable(mb, getArgType(mb,p,1)));\
-			q = pushArgument(mb, q, getArg(p,1));
-			v = getArg(q,0);
-			q = pushInt(mb,q, p->argc - p->retc);
-			pushInstruction(mb,q);
-			typeChecker(cntxt->usermodule,mb,q, mb->stop-1, TRUE);
+			if (setDestVar(q, newTmpVariable(mb, getArgType(mb, p, 1))) < 0) {
+				freeInstruction(q);
+				msg = createException(MAL, "optimizer.matpack",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
+			q = pushArgument(mb, q, getArg(p, 1));
+			v = getArg(q, 0);
+			q = pushInt(mb, q, p->argc - p->retc);
+			pushInstruction(mb, q);
+			typeChecker(cntxt->usermodule, mb, q, mb->stop - 1, TRUE);
 
-			for ( j = 2; j < p->argc; j++) {
+			for (j = 2; j < p->argc; j++) {
 				q = newInstruction(0, matRef, packIncrementRef);
 				if (q == NULL) {
-					msg = createException(MAL, "optimizer.matpack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "optimizer.matpack",
+										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
 				}
 				q = pushArgument(mb, q, v);
-				q = pushArgument(mb, q, getArg(p,j));
-				setDestVar(q, newTmpVariable(mb, getVarType(mb,v)));
-				v = getArg(q,0);
-				pushInstruction(mb,q);
-				typeChecker(cntxt->usermodule,mb,q, mb->stop-1, TRUE);
+				q = pushArgument(mb, q, getArg(p, j));
+				if (setDestVar(q, newTmpVariable(mb, getVarType(mb, v))) < 0) {
+					freeInstruction(q);
+					msg = createException(MAL, "optimizer.matpack",
+										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					break;
+				}
+				v = getArg(q, 0);
+				pushInstruction(mb, q);
+				typeChecker(cntxt->usermodule, mb, q, mb->stop - 1, TRUE);
 			}
 			if (msg)
 				break;
-			getArg(q,0) = getArg(p,0);
+			getArg(q, 0) = getArg(p, 0);
 			freeInstruction(p);
 			actions++;
 			continue;
 		}
-		pushInstruction(mb,p);
+		pushInstruction(mb, p);
+		old[i] = NULL;
 	}
-	for(; i<slimit; i++)
+	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
 	GDKfree(old);
 
 	/* Defense line against incorrect plans */
-	if( msg == MAL_SUCCEED && actions > 0){
+	if (msg == MAL_SUCCEED && actions > 0) {
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
-wrapup:
-	/* keep actions taken as a fake argument*/
+  wrapup:
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }

@@ -31,99 +31,106 @@
 #include "opt_constants.h"
 
 str
-OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						   InstrPtr pci)
 {
-	int i, j, k = 1, n  = 0, fnd = 0, actions  = 0, limit = 0;
+	int i, j, k = 1, n = 0, fnd = 0, actions = 0, limit = 0;
 	int *alias = NULL, *index = NULL, *cand = NULL;
-	VarPtr x,y, *cst = NULL;
+	VarPtr x, y, *cst = NULL;
 	str msg = MAL_SUCCEED;
 	InstrPtr p, q;
 
-	if( isSimpleSQL(mb)){
+	if (isSimpleSQL(mb)) {
 		goto wrapup;
 	}
-	alias= (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	cand= (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
-	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	alias = (int *) GDKzalloc(sizeof(int) * mb->vtop);
+	cand = (int *) GDKzalloc(sizeof(int) * mb->vtop);
+	cst = (VarPtr *) GDKzalloc(sizeof(VarPtr) * mb->vtop);
+	index = (int *) GDKzalloc(sizeof(int) * mb->vtop);
 
-	if ( alias == NULL || cst == NULL || index == NULL || cand == NULL){
-		msg = createException(MAL,"optimizer.constants", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (alias == NULL || cst == NULL || index == NULL || cand == NULL) {
+		msg = createException(MAL, "optimizer.constants",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 
 	(void) stk;
 	(void) cntxt;
 
-	for(i=0; i<mb->stop; i++){
-		q = getInstrPtr(mb,i);
-		if ( !q) {
+	for (i = 0; i < mb->stop; i++) {
+		q = getInstrPtr(mb, i);
+		if (!q) {
 			continue;
 		}
-		if ( getModuleId(q) == sqlRef && getFunctionId(q) != tidRef) {
+		if (getModuleId(q) == sqlRef && getFunctionId(q) != tidRef) {
 			continue;
 		}
-		if( hasSideEffects(mb, q, 1) )
+		if (hasSideEffects(mb, q, 1))
 			continue;
-		for(k= q->retc; k < q->argc; k++){
-			j = getArg(q,k);
-			if( cand[j] == 0) {
-				cand[j] = isVarConstant(mb, j)  && isVarFixed(mb, j)  && getVarType(mb, j) != TYPE_ptr;
+		for (k = q->retc; k < q->argc; k++) {
+			j = getArg(q, k);
+			if (cand[j] == 0) {
+				cand[j] = isVarConstant(mb, j) && isVarFixed(mb, j)
+						&& getVarType(mb, j) != TYPE_ptr;
 			}
 		}
 	}
 
-	for (i=0; i< mb->vtop; i++)
-		alias[ i]= i;
-	for (i=0; i< mb->vtop; i++)
-		if ( cand[i]) {
-			x= getVar(mb,i);
+	for (i = 0; i < mb->vtop; i++)
+		alias[i] = i;
+	for (i = 0; i < mb->vtop; i++)
+		if (cand[i]) {
+			x = getVar(mb, i);
 			fnd = 0;
-			limit = n - 128; // don't look to far back
-			if ( x->type && x->value.vtype)
-			for( k = n-1; k >= 0 && k > limit; k--){
-				y= cst[k];
-				if ( x->type == y->type &&
-					 x->rowcnt == y->rowcnt &&
-					 x->value.vtype == y->value.vtype &&
-					ATOMcmp(x->value.vtype, VALptr(&x->value), VALptr(&y->value)) == 0){
+			limit = n - 128;	// don't look to far back
+			if (x->type && x->value.vtype)
+				for (k = n - 1; k >= 0 && k > limit; k--) {
+					y = cst[k];
+					if (x->type == y->type && x->rowcnt == y->rowcnt
+						&& x->value.vtype == y->value.vtype
+						&& ATOMcmp(x->value.vtype, VALptr(&x->value),
+								   VALptr(&y->value)) == 0) {
 
-					/* re-use a constant */
-					alias[i]= index[k];
-					fnd=1;
-					actions++;
-					break;
+						/* re-use a constant */
+						alias[i] = index[k];
+						fnd = 1;
+						actions++;
+						break;
+					}
 				}
-			}
-			if ( fnd == 0){
-				cst[n]= x;
-				index[n]= i;
+			if (fnd == 0) {
+				cst[n] = x;
+				index[n] = i;
 				n++;
 			}
 		}
 
 	if (actions)
-		for (i = 0; i < mb->stop; i++){
-			p= getInstrPtr(mb,i);
-			for (k=0; k < p->argc; k++)
-				getArg(p,k) = alias[getArg(p,k)];
+		for (i = 0; i < mb->stop; i++) {
+			p = getInstrPtr(mb, i);
+			for (k = 0; k < p->argc; k++)
+				getArg(p, k) = alias[getArg(p, k)];
 		}
 
 	/* Defense line against incorrect plans */
 	/* Plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if (!msg)
-	// 	msg = chkFlow(mb);
+	//      msg = chkFlow(mb);
 	// if(!msg)
-	// 	msg = chkDeclarations(mb);
+	//      msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
-wrapup:
-	/* keep actions taken as a fake argument*/
+  wrapup:
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	if( cand) GDKfree(cand);
-	if( alias) GDKfree(alias);
-	if( cst) GDKfree(cst);
-	if( index) GDKfree(index);
+	if (cand)
+		GDKfree(cand);
+	if (alias)
+		GDKfree(alias);
+	if (cst)
+		GDKfree(cst);
+	if (index)
+		GDKfree(index);
 	return msg;
 }

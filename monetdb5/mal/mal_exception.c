@@ -17,23 +17,23 @@
 #include "mal_private.h"
 
 static const char *exceptionNames[] = {
-/* 0 */	"MALException",
-/* 1 */	"IllegalArgumentException",
-/* 2 */	"OutOfBoundsException",
-/* 3 */	"IOException",
-/* 4 */	"InvalidCredentialsException",
-/* 5 */	"OptimizerException",
-/* 6 */	"StackOverflowException",
-/* 7 */	"SyntaxException",
-/* 8 */	"TypeException",
-/* 9 */	"LoaderException",
-/*10 */	"ParseException",
-/*11 */	"ArithmeticException",
-/*12 */	"PermissionDeniedException",
-/*13 */	"SQLException",
-/*14 */	"RemoteException",
-/*15 */	"Deprecated operation",
-/*EOE*/	NULL
+/* 0 */ "MALException",
+/* 1 */ "IllegalArgumentException",
+/* 2 */ "OutOfBoundsException",
+/* 3 */ "IOException",
+/* 4 */ "InvalidCredentialsException",
+/* 5 */ "OptimizerException",
+/* 6 */ "StackOverflowException",
+/* 7 */ "SyntaxException",
+/* 8 */ "TypeException",
+/* 9 */ "LoaderException",
+/*10 */ "ParseException",
+/*11 */ "ArithmeticException",
+/*12 */ "PermissionDeniedException",
+/*13 */ "SQLException",
+/*14 */ "RemoteException",
+/*15 */ "Deprecated operation",
+	 /*EOE*/ NULL
 };
 
 bool
@@ -59,11 +59,13 @@ dupError(const char *err)
 char *
 concatErrors(char *err1, const char *err2)
 {
-	size_t len = strlen(err1) + strlen(err2) + 1;
+	size_t len = strlen(err1);
+	bool addnl = err1[len - 1] != '\n';
+	len += strlen(err2) + 1 + addnl;
 	char *new = GDKmalloc(len);
 	if (new == NULL)
 		return err1;
-	strconcat_len(new, len, err1, err2, NULL);
+	strconcat_len(new, len, err1, addnl ? "\n" : "", err2, NULL);
 	freeException(err1);
 	return new;
 }
@@ -74,7 +76,8 @@ concatErrors(char *err1, const char *err2)
  * is good.
  */
 static str __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
-createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
+createExceptionInternal(enum malexception type, const char *fcn,
+						const char *format, va_list ap)
 {
 	size_t msglen;
 	int len;
@@ -86,7 +89,7 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 #endif
 	va_copy(ap2, ap);			/* we need to use it twice */
 	msglen = strlen(exceptionNames[type]) + strlen(fcn) + 2;
-	len = vsnprintf(NULL, 0, format, ap); /* count necessary length */
+	len = vsnprintf(NULL, 0, format, ap);	/* count necessary length */
 	if (len < 0) {
 		TRC_CRITICAL(MAL_SERVER, "called with bad arguments");
 		len = 0;
@@ -126,7 +129,8 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
  * the exceptionNames array.
  */
 str
-createException(enum malexception type, const char *fcn, const char *format, ...)
+createException(enum malexception type, const char *fcn, const char *format,
+				...)
 {
 	va_list ap;
 	str ret = NULL, localGDKerrbuf = GDKerrbuf;
@@ -138,16 +142,19 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		 strncmp(localGDKerrbuf, "GDKrealloc", 10) == 0 ||
 		 strncmp(localGDKerrbuf, "GDKzalloc", 9) == 0 ||
 		 strncmp(localGDKerrbuf, "GDKstrdup", 9) == 0 ||
-		 strncmp(localGDKerrbuf, "allocating too much virtual address space", 41) == 0)) {
+		 strncmp(localGDKerrbuf, "allocating too much virtual address space",
+				 41) == 0)) {
 		/* override errors when the underlying error is memory
 		 * exhaustion, but include whatever it is that the GDK level
 		 * reported */
-		ret = createException(type, fcn, SQLSTATE(HY013) MAL_MALLOC_FAIL ": %s", localGDKerrbuf);
+		ret = createException(type, fcn, SQLSTATE(HY013) MAL_MALLOC_FAIL ": %s",
+							  localGDKerrbuf);
 		GDKclrerr();
 		assert(ret);
 		return ret;
 	}
-	if (localGDKerrbuf && localGDKerrbuf[0] && strcmp(format, GDK_EXCEPTION) == 0) {
+	if (localGDKerrbuf && localGDKerrbuf[0]
+		&& strcmp(format, GDK_EXCEPTION) == 0) {
 		/* for GDK errors, report the underlying error */
 		char *p = localGDKerrbuf;
 		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0) {
@@ -159,7 +166,10 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 				ret = createException(type, fcn, "%s", q + 2);
 		}
 		if (ret == NULL)
-			ret = createException(type, fcn, "GDK reported error: %s", p);
+			ret = createException(type, fcn, "GDK reported%s: %s",
+								  strstr(p,
+										 EXITING_MSG) == NULL ? " error" : "",
+								  p);
 		GDKclrerr();
 		assert(ret);
 		return ret;
@@ -186,11 +196,12 @@ freeException(str msg)
  * is good.
  */
 static str __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
-createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
+createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
+						   char *prev, const char *format, va_list ap)
 {
 	bool addnl = false;
-	const char *s = mb && getInstrPtr(mb,0) ? getModName(mb) : "unknown";
-	const char *fcn = mb && getInstrPtr(mb,0) ? getFcnName(mb) : "unknown";
+	const char *s = mb && getInstrPtr(mb, 0) ? getModName(mb) : "unknown";
+	const char *fcn = mb && getInstrPtr(mb, 0) ? getFcnName(mb) : "unknown";
 	size_t msglen;
 
 	if (prev) {
@@ -246,7 +257,8 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *p
  * malexception enum is not aligned with the exceptionNames array.
  */
 str
-createMalException(MalBlkPtr mb, int pc, enum malexception type, const char *format, ...)
+createMalException(MalBlkPtr mb, int pc, enum malexception type,
+				   const char *format, ...)
 {
 	va_list ap;
 	str ret;
@@ -255,7 +267,7 @@ createMalException(MalBlkPtr mb, int pc, enum malexception type, const char *for
 	ret = createMalExceptionInternal(mb, pc, type, mb->errors, format, ap);
 	va_end(ap);
 
-	return(ret);
+	return (ret);
 }
 
 /**
@@ -284,7 +296,7 @@ getExceptionType(const char *exception)
 		}
 	}
 
-	return(ret);
+	return (ret);
 }
 
 /**
@@ -350,15 +362,14 @@ getExceptionMessage(const char *exception)
 
 	if (strlen(msg) > 6 && msg[5] == '!' &&
 		(isdigit((unsigned char) msg[0]) ||
-	     (msg[0] >= 'A' && msg[0] <= 'Z')) &&
-	    (isdigit((unsigned char) msg[1]) ||
-	     (msg[1] >= 'A' && msg[1] <= 'Z')) &&
-	    (isdigit((unsigned char) msg[2]) ||
-	     (msg[2] >= 'A' && msg[2] <= 'Z')) &&
-	    (isdigit((unsigned char) msg[3]) ||
-	     (msg[3] >= 'A' && msg[3] <= 'Z')) &&
-	    (isdigit((unsigned char) msg[4]) ||
-	     (msg[4] >= 'A' && msg[4] <= 'Z')))
+		 (msg[0] >= 'A' && msg[0] <= 'Z')) &&
+		(isdigit((unsigned char) msg[1]) ||
+		 (msg[1] >= 'A' && msg[1] <= 'Z')) &&
+		(isdigit((unsigned char) msg[2]) ||
+		 (msg[2] >= 'A' && msg[2] <= 'Z')) &&
+		(isdigit((unsigned char) msg[3]) ||
+		 (msg[3] >= 'A' && msg[3] <= 'Z')) &&
+		(isdigit((unsigned char) msg[4]) || (msg[4] >= 'A' && msg[4] <= 'Z')))
 		msg += 6;
 	return msg;
 }

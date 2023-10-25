@@ -241,7 +241,7 @@ static void ctl_handle_client(
 	char buf[8096];
 	char buf2[8096 + 50];
 	char *p, *q;
-	sabdb *stats;
+	sabdb *stats = NULL;
 	int pos = 0;
 	size_t len;
 	err e;

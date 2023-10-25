@@ -129,7 +129,6 @@
 #cmakedefine HAVE_DISPATCH_SEMAPHORE_CREATE 1
 #cmakedefine HAVE_FALLOCATE 1
 #cmakedefine HAVE_FCNTL 1
-#cmakedefine HAVE_FORK 1
 #cmakedefine HAVE_FSYNC 1
 #cmakedefine HAVE_FTIME 1
 #cmakedefine HAVE_GETENTROPY 1
@@ -158,6 +157,7 @@
 #cmakedefine HAVE_SETSID 1
 #cmakedefine HAVE_SHUTDOWN 1
 #cmakedefine HAVE_SIGACTION 1
+#cmakedefine HAVE_SIGLONGJMP 1
 #cmakedefine HAVE_STPCPY 1
 #cmakedefine HAVE_STRCASESTR 1
 #cmakedefine HAVE_STRNCASECMP 1
@@ -166,16 +166,12 @@
 #cmakedefine HAVE_SYSCONF 1
 #cmakedefine HAVE_TASK_INFO 1
 #cmakedefine HAVE_TIMES 1
+#cmakedefine HAVE_TM_GMTOFF 1
 #cmakedefine HAVE_UNAME 1
 // #cmakedefine HAVE_SEMTIMEDOP
 #cmakedefine HAVE_PTHREAD_KILL 1
 #cmakedefine HAVE_PTHREAD_SIGMASK 1
 #cmakedefine HAVE_GETOPT 1
-
-#define ICONV_CONST
-#define FLEXIBLE_ARRAY_MEMBER
-#define ENABLE_MAPI 1
-#define HAVE_MAPI 1
 // End Section: monetdb configure defines
 
 // Section: monetdb macro variables

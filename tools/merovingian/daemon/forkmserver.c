@@ -209,6 +209,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	char usock[512];
 	bool mydoproxy;
 	char nthreads[32];
+	char tabthreads[32];
 	char nclients[32];
 	char pipeline[512];
 	char memmaxsize[64];
@@ -551,6 +552,14 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	if (kv->val != NULL) {
 		snprintf(nthreads, sizeof(nthreads), "--set=gdk_nr_threads=%s", kv->val);
 		argv[c++] = nthreads;
+	}
+
+	kv = findConfKey(ckv, "ncopyintothreads");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "ncopyintothreads");
+	if (kv->val != NULL) {
+		snprintf(tabthreads, sizeof(tabthreads), "--set=tablet_threads=%s", kv->val);
+		argv[c++] = tabthreads;
 	}
 
 	kv = findConfKey(ckv, "nclients");

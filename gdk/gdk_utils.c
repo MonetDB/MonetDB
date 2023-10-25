@@ -452,7 +452,7 @@ size_t GDK_mmap_pagesize = MMAP_PAGESIZE; /* mmap granularity */
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
-#define SEG_SIZE(x,y)	((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
+#define SEG_SIZE(x)	((ssize_t) (((x) + _MT_pagesize - 1) & ~(_MT_pagesize - 1)))
 
 /* This block is to provide atomic addition and subtraction to select
  * variables.  We use intrinsic functions (recognized and inlined by
@@ -646,16 +646,30 @@ MT_init(void)
 				break;
 			*p = 0;
 			if (strncmp(buf, "0::", 3) == 0) {
-				size_t l;
-
 				/* cgroup v2 entry */
-				l = strconcat_len(pth, sizeof(pth),
-						  cgr2, buf + 3, "/", NULL);
+				p = stpcpy(pth, cgr2);
+				q = stpcpy(stpcpy(p, buf + 3), "/");
 				/* hard limit */
-				strcpy(pth + l, "memory.max");
+				strcpy(q, "memory.max");
 				f = fopen(pth, "r");
+				while (f == NULL && q > p) {
+					/* go up the hierarchy until we
+					 * find the file or the
+					 * hierarchy runs out */
+					*--q = 0; /* zap the slash */
+					q = strrchr(p, '/');
+					if (q == NULL || q == p) {
+						/* position after the slash */
+						q = p + 1;
+						break;
+					}
+					strcpy(++q, "memory.max");
+					f = fopen(pth, "r");
+				}
 				if (f != NULL) {
-					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
 					success = true;
@@ -663,39 +677,47 @@ MT_init(void)
 					fclose(f);
 				}
 				/* soft high limit */
-				strcpy(pth + l, "memory.high");
-				f = fopen(pth, "r");
-				if (f != NULL) {
-					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
-						_MT_npages = (size_t) (mem / _MT_pagesize);
-					}
-					success = true;
-					/* assume "max" if not a number */
-					fclose(f);
-				}
-				/* soft low limit */
-				strcpy(pth + l, "memory.low");
-				f = fopen(pth, "r");
-				if (f != NULL) {
-					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem > 0 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
-						_MT_npages = (size_t) (mem / _MT_pagesize);
-					}
-					success = true;
-					/* assume "max" if not a number */
-					fclose(f);
-				}
-				/* limit of memory+swap usage
-				 * we use this as maximum virtual memory size */
-				strcpy(pth + l, "memory.swap.max");
+				strcpy(q, "memory.high");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
-					    && mem < (uint64_t) GDK_vm_maxsize) {
+					    && mem > 0
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+						_MT_npages = (size_t) (mem / _MT_pagesize);
+					}
+					success = true;
+					/* assume "max" if not a number */
+					fclose(f);
+				}
+				/* limit of swap usage, hard limit
+				 * we use this, together with
+				 * memory.high, as maximum virtual
+				 * memory size */
+				strcpy(q, "memory.swap.max");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
+					    && (mem += _MT_npages * _MT_pagesize) < (uint64_t) GDK_vm_maxsize) {
 						GDK_vm_maxsize = (size_t) mem;
 					}
 					success = true;
 					fclose(f);
 				}
+#if 0 /* not sure about using this one */
+				/* limit of swap usage, soft limit */
+				strcpy(q, "memory.swap.high");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
+					    && (mem += _MT_npages * _MT_pagesize) < (uint64_t) GDK_vm_maxsize) {
+						GDK_vm_maxsize = (size_t) mem;
+					}
+					success = true;
+					fclose(f);
+				}
+#endif
 			} else {
 				/* cgroup v1 entry */
 				p = strchr(buf, ':');
@@ -723,6 +745,7 @@ MT_init(void)
 				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
 					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
@@ -744,6 +767,7 @@ MT_init(void)
 				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
 					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
@@ -766,6 +790,7 @@ MT_init(void)
 				}
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem > 0
 					    && mem < (uint64_t) GDK_vm_maxsize) {
 						GDK_vm_maxsize = (size_t) mem;
 					}
@@ -944,8 +969,6 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 
 	ATOMIC_SET(&GDKstopped, 0);
 
-	mainpid = MT_getpid();
-
 	if (BBPchkfarms() != GDK_SUCCEED)
 		return GDK_FAIL;
 
@@ -1006,6 +1029,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 		/* BBP was locked by BBPexit() */
 		//BBPunlock();
 	}
+	mainpid = MT_getpid();
+
 	GDKtracer_init(dbpath, dbtrace);
 	errno = 0;
 	if (!GDKinmemory(0) && !GDKenvironment(dbpath))
@@ -1043,7 +1068,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	else
 #endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
-	if (BBPinit() != GDK_SUCCEED)
+	const char *allow = mo_find_option(set, setlen, "allow_hge_upgrade");
+	if (BBPinit(allow && strcmp(allow, "yes") == 0) != GDK_SUCCEED)
 		return GDK_FAIL;
 	first = false;
 
@@ -1141,6 +1167,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 			return GDK_FAIL;
 		}
 	}
+	if (GDKnr_threads > THREADS)
+		GDKnr_threads = THREADS;
 
 	if (!GDKinmemory(0)) {
 		if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
@@ -1236,7 +1264,9 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 
 int GDKnr_threads = 0;
 static ATOMIC_TYPE GDKnrofthreads = ATOMIC_VAR_INIT(0);
-static struct threadStruct GDKthreads[THREADS];
+struct threadStruct {
+	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
+};
 
 bool
 GDKexiting(void)
@@ -1259,8 +1289,6 @@ GDKprepareExit(void)
 void
 GDKreset(int status)
 {
-	MT_Id pid = MT_getpid();
-
 	assert(GDKexiting());
 
 	if (GDKembedded())
@@ -1288,22 +1316,7 @@ GDKreset(int status)
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
-		bool killed = false;
-		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
-			MT_Id victim;
-			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
-				if (pid && victim != pid) {
-					int e;
-
-					killed = true;
-					e = MT_kill_thread(victim);
-					TRC_INFO(GDK, "Killing thread: %d\n", e);
-					ATOMIC_DEC(&GDKnrofthreads);
-				}
-				ATOMIC_SET(&t->pid, 0);
-			}
-		}
-		assert(ATOMIC_GET(&GDKnrofthreads) <= 1);
+		bool killed = MT_kill_threads();
 		/* all threads ceased running, now we can clean up */
 		if (!killed) {
 			/* we can't clean up after killing threads */
@@ -1349,10 +1362,11 @@ GDKreset(int status)
 
 		GDKnr_threads = 0;
 		ATOMIC_SET(&GDKnrofthreads, 0);
-		close_stream((stream *) THRdata[0]);
-		close_stream((stream *) THRdata[1]);
+		close_stream(GDKstdout);
+		close_stream(GDKstdin);
+		GDKstdout = NULL;
+		GDKstdin = NULL;
 
-		memset(THRdata, 0, sizeof(THRdata));
 		gdk_bbp_reset();
 	}
 	ATOMunknown_clean();
@@ -1601,244 +1615,31 @@ GDKms(void)
  *
  * The first action upon thread creation is to add it to the pool of
  * known threads. This should be done by the thread itself.
- * Subsequently, the thread descriptor can be obtained using THRget.
  * Note that the users should have gained exclusive access already.  A
  * new entry is initialized automatically when not found.  Its file
  * descriptors are the same as for the server and should be
  * subsequently reset.
  */
-void *THRdata[THREADDATA] = { 0 };
-
-Thread
-THRget(int tid)
-{
-	assert(0 < tid && tid <= THREADS);
-	return &GDKthreads[tid - 1];
-}
-
-#if defined(_MSC_VER) && _MSC_VER >= 1900
-#pragma warning(disable : 4172)
-#endif
-static inline uintptr_t
-THRsp(void)
-{
-#if defined(__GNUC__) || defined(__clang__)
-	return (uintptr_t) __builtin_frame_address(0);
-#else
-	int l = 0;
-	uintptr_t sp = (uintptr_t) (&l);
-
-	return sp;
-#endif
-}
-
-static inline Thread
-GDK_find_self(void)
-{
-	return (Thread) MT_thread_getdata();
-}
-
-static Thread
-THRnew(const char *name, MT_Id pid)
-{
-	for (Thread s = GDKthreads; s < GDKthreads + THREADS; s++) {
-		ATOMIC_BASE_TYPE npid = 0;
-		if (ATOMIC_CAS(&s->pid, &npid, pid)) {
-			/* successfully allocated, fill in rest */
-			s->data[0] = THRdata[0];
-			s->data[1] = THRdata[1];
-			s->sp = THRsp();
-			s->freebats = 0;
-			s->nfreebats = 0;
-			strcpy_len(s->name, name, sizeof(s->name));
-			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
-				  (unsigned) s->tid,
-				  (size_t) ATOMIC_GET(&s->pid),
-				  (size_t) s->sp);
-			TRC_DEBUG(PAR, "Number of threads: %d\n",
-				  (int) ATOMIC_GET(&GDKnrofthreads) + 1);
-			return s;
-		}
-	}
-	TRC_DEBUG(IO_, "Too many threads\n");
-	GDKerror("too many threads\n");
-	return NULL;
-}
-
-struct THRstart {
-	void (*func) (void *);
-	void *arg;
-	MT_Sema sem;
-	Thread thr;
-};
-
-static void
-THRstarter(void *a)
-{
-	struct THRstart *t = a;
-	void (*func) (void *) = t->func;
-	void *arg = t->arg;
-
-	MT_sema_down(&t->sem);
-	t->thr->sp = THRsp();
-	MT_thread_setdata(t->thr);
-	(*func)(arg);
-	THRdel(t->thr);
-	MT_sema_destroy(&t->sem);
-	GDKfree(a);
-}
-
-MT_Id
-THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
-{
-	MT_Id pid;
-	Thread s;
-	struct THRstart *t;
-	static ATOMIC_TYPE ctr = ATOMIC_VAR_INIT(0);
-	char semname[32];
-	int len;
-
-	if ((t = GDKmalloc(sizeof(*t))) == NULL)
-		return 0;
-	if ((s = THRnew(name, ~(MT_Id)0)) == NULL) {
-		GDKfree(t);
-		return 0;
-	}
-	*t = (struct THRstart) {
-		.func = f,
-		.arg = arg,
-		.thr = s,
-	};
-	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
-	if (len == -1 || len > (int) sizeof(semname)) {
-		TRC_WARNING(IO_, "Semaphore name is too large\n");
-	}
-	MT_sema_init(&t->sem, 0, semname);
-	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
-		GDKerror("could not start thread\n");
-		MT_sema_destroy(&t->sem);
-		GDKfree(t);
-		ATOMIC_SET(&s->pid, 0); /* deallocate */
-		return 0;
-	}
-	/* must not fail after this: the thread has been started */
-	ATOMIC_INC(&GDKnrofthreads);
-	ATOMIC_SET(&s->pid, pid);
-	/* send new thread on its way */
-	MT_sema_up(&t->sem);
-	return pid;
-}
-
-void
-THRdel(Thread t)
-{
-	assert(GDKthreads <= t && t < GDKthreads + THREADS);
-	BBPrelinquish(t);
-	MT_thread_setdata(NULL);
-	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
-		  (size_t) ATOMIC_GET(&t->pid),
-		  (int) ATOMIC_GET(&GDKnrofthreads));
-
-	t->name[0] = 0;
-	for (int i = 0; i < THREADDATA; i++)
-		t->data[i] = NULL;
-	t->sp = 0;
-	ATOMIC_SET(&t->pid, 0);	/* deallocate */
-	ATOMIC_DEC(&GDKnrofthreads);
-}
-
-int
-THRhighwater(void)
-{
-	uintptr_t c;
-	Thread s;
-	size_t diff;
-	int rc = 0;
-
-	s = GDK_find_self();
-	if (s != NULL) {
-		c = THRsp();
-		diff = c < s->sp ? s->sp - c : c - s->sp;
-		if (diff > THREAD_STACK_SIZE - 80 * 1024)
-			rc = 1;
-	}
-	return rc;
-}
-
-/*
- * I/O is organized per thread, because users may gain access through
- * the network.  The code below should be improved to gain speed.
- */
+stream *GDKstdout;
+stream *GDKstdin;
 
 static int
 THRinit(void)
 {
-	int i = 0;
-	Thread s;
-	static bool first = true;
-
-	if ((THRdata[0] = (void *) stdout_wastream()) == NULL) {
+	if ((GDKstdout = stdout_wastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdout failed\n");
 		return -1;
 	}
-	if ((THRdata[1] = (void *) stdin_rastream()) == NULL) {
+	if ((GDKstdin = stdin_rastream()) == NULL) {
 		TRC_CRITICAL(GDK, "malloc for stdin failed\n");
-		mnstr_destroy(THRdata[0]);
-		THRdata[0] = NULL;
+		mnstr_destroy(GDKstdout);
+		GDKstdout = NULL;
 		return -1;
 	}
-	if (first) {
-		for (i = 0; i < THREADS; i++) {
-			GDKthreads[i].tid = i + 1;
-			ATOMIC_INIT(&GDKthreads[i].pid, 0);
-		}
-		first = false;
-	}
-	if ((s = THRnew("main thread", MT_getpid())) == NULL) {
-		TRC_CRITICAL(GDK, "THRnew failed\n");
-		mnstr_destroy(THRdata[0]);
-		THRdata[0] = NULL;
-		mnstr_destroy(THRdata[1]);
-		THRdata[1] = NULL;
-		return -1;
-	}
-	ATOMIC_INC(&GDKnrofthreads);
-	MT_thread_setdata(s);
+	struct freebats *t = MT_thread_getfreebats();
+	t->freebats = 0;
+	t->nfreebats = 0;
 	return 0;
-}
-
-void
-THRsetdata(int n, ptr val)
-{
-	Thread s;
-
-	s = GDK_find_self();
-	if (s) {
-		assert(val == NULL || s->data[n] == NULL);
-		s->data[n] = val;
-	}
-}
-
-void *
-THRgetdata(int n)
-{
-	Thread s;
-	void *d;
-
-	s = GDK_find_self();
-	d = s ? s->data[n] : THRdata[n];
-	return d;
-}
-
-int
-THRgettid(void)
-{
-	Thread s;
-	int t;
-
-	s = GDK_find_self();
-	t = s ? s->tid : 1;
-	return t;
 }
 
 const char *
@@ -1869,13 +1670,30 @@ GDKvm_cursize(void)
 
 #define heapinc(_memdelta)						\
 	ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta)
+#ifndef NDEBUG
+#define heapdec(_memdelta)							\
+	do {								\
+		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta); \
+		assert(old >= (ATOMIC_BASE_TYPE) _memdelta);		\
+	} while (0)
+#else
 #define heapdec(_memdelta)						\
 	ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta)
+#endif
 
 #define meminc(vmdelta)							\
-	ATOMIC_ADD(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
+	ATOMIC_ADD(&GDK_vm_cursize, SEG_SIZE(vmdelta))
+#ifndef NDEBUG
 #define memdec(vmdelta)							\
-	ATOMIC_SUB(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
+	do {								\
+		ssize_t diff = SEG_SIZE(vmdelta);			\
+		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_vm_cursize, diff); \
+		assert(old >= (ATOMIC_BASE_TYPE) diff);			\
+	} while (0)
+#else
+#define memdec(vmdelta)							\
+	ATOMIC_SUB(&GDK_vm_cursize, SEG_SIZE(vmdelta))
+#endif
 
 /* Memory allocation
  *
@@ -1904,6 +1722,9 @@ GDKvm_cursize(void)
 #define DEBUG_SPACE	16
 #endif
 
+/* malloc smaller than this aren't subject to the GDK_vm_maxsize test */
+#define SMALL_MALLOC	256
+
 static void *
 GDKmalloc_internal(size_t size, bool clear)
 {
@@ -1924,11 +1745,14 @@ GDKmalloc_internal(size_t size, bool clear)
 		return NULL;
 	}
 #endif
-	if (GDKvm_cursize() + size >= GDK_vm_maxsize &&
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
+	if (size > SMALL_MALLOC &&
+	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
+#endif
 
 	/* pad to multiple of eight bytes and add some extra space to
 	 * write real size in front; when debugging, also allocate
@@ -2026,14 +1850,14 @@ GDKfree(void *s)
 	asize = ((size_t *) s)[-1]; /* how much allocated last */
 
 #if !defined(NDEBUG) && !defined(SANITIZER)
+	size_t *p = s;
 	assert((asize & 2) == 0);   /* check against duplicate free */
+	size_t size = p[-2];
+	assert(((size + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
 	/* check for out-of-bounds writes */
-	{
-		size_t i = ((size_t *) s)[-2]; /* how much asked for last */
-		for (; i < asize - MALLOC_EXTRA_SPACE; i++)
-			assert(((char *) s)[i] == '\xBD');
-	}
-	((size_t *) s)[-1] |= 2; /* indicate area is freed */
+	for (size_t i = size; i < asize - MALLOC_EXTRA_SPACE; i++)
+		assert(((char *) s)[i] == '\xBD');
+	p[-1] |= 2;		/* indicate area is freed */
 
 	/* overwrite memory that is to be freed with a pattern that
 	 * will help us recognize access to already freed memory in
@@ -2052,8 +1876,8 @@ GDKrealloc(void *s, size_t size)
 	size_t nsize, asize;
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	size_t osize;
-	size_t *os;
 #endif
+	size_t *os = s;
 
 	assert(size != 0);
 
@@ -2061,27 +1885,27 @@ GDKrealloc(void *s, size_t size)
 		return GDKmalloc(size);
 
 	nsize = (size + 7) & ~7;
-	asize = ((size_t *) s)[-1]; /* how much allocated last */
+	asize = os[-1];		/* how much allocated last */
 
-	if (nsize > asize &&
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
+	if (size > SMALL_MALLOC &&
+	    nsize > asize &&
 	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
+#endif
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
-	osize = ((size_t *) s)[-2]; /* how much asked for last */
-	{
-		size_t i;
-		for (i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
-			assert(((char *) s)[i] == '\xBD');
-	}
+	osize = os[-2];		/* how much asked for last */
+	assert(((osize + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
+	for (size_t i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
+		assert(((char *) s)[i] == '\xBD');
 	/* if shrinking, write debug pattern into to-be-freed memory */
 	DEADBEEFCHK if (size < osize)
 		memset((char *) s + size, '\xDB', osize - size);
-	os = s;
 	os[-1] |= 2;		/* indicate area is freed */
 #endif
 	s = realloc((char *) s - MALLOC_EXTRA_SPACE,
@@ -2089,6 +1913,8 @@ GDKrealloc(void *s, size_t size)
 	if (s == NULL) {
 #if !defined(NDEBUG) && !defined(SANITIZER)
 		os[-1] &= ~2;	/* not freed after all */
+		assert(os[-1] == asize);
+		assert(os[-2] == osize);
 #endif
 		GDKsyserror("realloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
 		return NULL;
@@ -2102,7 +1928,7 @@ GDKrealloc(void *s, size_t size)
 	((size_t *) s)[-2] = size;
 	/* if growing, initialize new memory with debug pattern */
 	DEADBEEFCHK if (size > osize)
- 		memset((char *) s + osize, '\xBD', size - osize);
+		memset((char *) s + osize, '\xBD', size - osize);
 	/* write pattern to help find out-of-bounds writes */
 	memset((char *) s + size, '\xBD', nsize + DEBUG_SPACE - size);
 #endif
@@ -2141,28 +1967,37 @@ GDKmmap(const char *path, int mode, size_t len)
 {
 	void *ret;
 
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
 	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
 		return NULL;
 	}
+#endif
 	ret = MT_mmap(path, mode, len);
-	if (ret != NULL)
-		meminc(len);
-	else
+	if (ret != NULL) {
+		if (mode & MMAP_COPY)
+			heapinc(len);
+		else
+			meminc(len);
+	} else
 		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
 	return ret;
 }
 
 #undef GDKmunmap
 gdk_return
-GDKmunmap(void *addr, size_t size)
+GDKmunmap(void *addr, int mode, size_t size)
 {
 	int ret;
 
 	ret = MT_munmap(addr, size);
-	if (ret == 0)
-		memdec(size);
+	if (ret == 0) {
+		if (mode & MMAP_COPY)
+			heapdec(size);
+		else
+			memdec(size);
+	}
 	return ret == 0 ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -2172,18 +2007,61 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *ret;
 
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
 	if (*new_size > old_size &&
 	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
 		return NULL;
 	}
+#endif
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret != NULL) {
-		memdec(old_size);
-		meminc(*new_size);
+		if (mode & MMAP_COPY) {
+			heapdec(old_size);
+			heapinc(*new_size);
+		} else {
+			memdec(old_size);
+			meminc(*new_size);
+		}
 	} else {
 		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
 	}
 	return ret;
+}
+
+/* print some potentially interesting information */
+void
+GDKprintinfo(void)
+{
+	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
+	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
+
+	printf("Virtual memory allocated: %zu, of which %zu with malloc (limit: %zu)\n",
+	       vmallocated + allocated, allocated, GDK_vm_maxsize);
+#ifdef __linux__
+	int fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
+	if (fd >= 0) {
+		char buf[512];
+		ssize_t s = read(fd, buf, sizeof(buf) - 1);
+		close(fd);
+		if (s > 0) {
+			assert((size_t) s < sizeof(buf));
+			size_t size, resident, shared;
+			buf[s] = 0;
+			if (sscanf(buf, "%zu %zu %zu", &size, &resident, &shared) == 3) {
+				size *= MT_pagesize();
+				resident *= MT_pagesize();
+				shared *= MT_pagesize();
+				printf("Virtual size: %zu, anonymous RSS: %zu, shared RSS: %zu (together: %zu)\n",
+				       size, resident - shared, shared, resident);
+			}
+		}
+	}
+#endif
+	BBPprintinfo();
+#ifdef LOCK_STATS
+	GDKlockstatistics(3);
+#endif
+	dump_threads();
 }

@@ -62,7 +62,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
 
-		/* now deal with the update binds, it is only necessary to identify that there are updats
+		/* now deal with the update binds, it is only necessary to identify that there are updates
 		 * The actual size is not that important */
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef  && p->retc <= 2){
 			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;

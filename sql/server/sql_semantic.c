@@ -50,23 +50,24 @@ sql_add_param(mvc *sql, const char *name, sql_subtype *st)
 	list_append(sql->params, a);
 }
 
-sql_arg *
+int
 sql_bind_param(mvc *sql, const char *name)
 {
 	node *n;
+	int nr = 0;
 
 	if (sql->params) {
-		for (n = sql->params->h; n; n = n->next) {
+		for (n = sql->params->h; n; n = n->next, nr++) {
 			sql_arg *a = n->data;
 
 			if (a->name && strcmp(a->name, name) == 0)
-				return a;
+				return nr;
 		}
 	}
-	return NULL;
+	return -1;
 }
 
-static sql_arg *
+sql_arg *
 sql_bind_paramnr(mvc *sql, int nr)
 {
 	int i=0;
@@ -78,6 +79,17 @@ sql_bind_paramnr(mvc *sql, int nr)
 
 		if (n)
 			return n->data;
+	}
+	return NULL;
+}
+
+sql_arg *
+sql_find_param(mvc *sql, char *name)
+{
+	for (node *n = sql->params->h; n; n = n->next) {
+		sql_arg *a = n->data;
+		if (strcmp(a->name, name) == 0)
+		   return a;
 	}
 	return NULL;
 }
@@ -214,7 +226,8 @@ find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char 
 			if ((*var = stack_find_var_frame(sql, name, level))) { /* check if variable is known from the stack */ \
 				*tpe = &((*var)->var.tpe); \
 				res = true; \
-			} else if ((*a = sql_bind_param(sql, name))) { /* then if it is a parameter */ \
+			} else if ((nr = sql_bind_param(sql, name)) >= 0) { /* then if it is a parameter */ \
+				*a = sql_bind_paramnr(sql, nr); \
 				*tpe = &((*a)->type); \
 				*level = 1; \
 				res = true; \
@@ -236,7 +249,9 @@ find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **
 {
 	const char *objstr = "variable";
 	bool res = false;
+	int nr = 0;
 
+	(void)nr;
 	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000));
 	return res;
 }

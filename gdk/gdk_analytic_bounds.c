@@ -199,7 +199,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 	do {								\
 		if (p) {						\
 			for (; i < cnt; i++) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 				  rows##TPE##IMP##CARD:			\
 					ANALYTICAL_WINDOW_BOUNDS_ROWS##IMP(TPE, LIMIT, UPCAST);	\
 				}					\
@@ -255,7 +255,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 	do {								\
 		if (p) {						\
 			for (; i < cnt; i++) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 				  groups##TPE##IMP##CARD:		\
 					ANALYTICAL_WINDOW_BOUNDS_GROUPS##IMP(TPE, LIMIT, UPCAST); \
 				}					\
@@ -371,7 +371,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		const TPE1 *restrict bp = (TPE1*)bi.base;		\
 		if (np) {						\
 			for (; i < cnt; i++) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 				  range##TPE1##TPE2##IMP##CARD:		\
 					IMP(TPE1, LIMIT, TPE2);		\
 				}					\
@@ -515,7 +515,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 							break;		\
 					}				\
 					rb[k] = j;			\
-				} 					\
+				}					\
 			}						\
 		}							\
 	} while(0)
@@ -564,7 +564,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		const TPE1 *restrict bp = (TPE1*)bi.base;		\
 		if (p) {						\
 			for (; i < cnt; i++) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 				  rangemtime##TPE1##TPE2##IMP##CARD:	\
 					IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
 				}					\
@@ -689,7 +689,7 @@ GDKanalyticalallbounds(BAT *r, BAT *b, BAT *p, bool preceding)
 		const TPE *restrict bp = (TPE*)bi.base;			\
 		if (p) {						\
 			for (; i < cnt; i++) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 				  peers##TPE##IMP:			\
 					ANALYTICAL_WINDOW_BOUNDS_PEERS_FIXED##IMP(TPE, NAN_CHECK); \
 				}					\
@@ -956,6 +956,7 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		if (limit == GDK_lng_max) {
 			bat_iterator_end(&pi);
 			bat_iterator_end(&bi);
+			bat_iterator_end(&li);
 			return GDKanalyticalallbounds(r, b, p, preceding);
 		} else if (is_lng_nil(limit) || limit < 0) { /* this check is needed if the input is empty */
 			goto invalid_bound;

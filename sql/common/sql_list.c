@@ -175,6 +175,8 @@ list_append_node(list *l, node *n)
 list *
 list_append(list *l, void *data)
 {
+	if (l == NULL)
+		return NULL;
 	node *n = node_create(l->sa, data);
 
 	if (n == NULL)

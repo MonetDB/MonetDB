@@ -837,6 +837,17 @@ sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, ch
 		return r;
 	}
 
+	/* the default role must explicitly granted to the new user */
+	if (role_id) {
+		str r;
+		/* - we don't grant the default role WITH ADMIN OPTION hence admin=0
+		 * - we should use sql->role_id instead of sql->user_id otherwise a user with high privs
+		 * (e.g. sysadmin) might not be able to GRANT the DEFAULT ROLE (see sql_grant_role() impl)
+		 */
+		if ((r = sql_grant_role(sql, user, role, sql->role_id, 0)))
+			return r;
+	}
+
 	return NULL;
 }
 

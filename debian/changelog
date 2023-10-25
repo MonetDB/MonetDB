@@ -1,3 +1,139 @@
+monetdb (11.47.11) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Sep 2023 12:00:43 +0200
+
+monetdb (11.47.11) unstable; urgency=low
+
+  * MonetDB: Fixed an installation issue on Debian and Ubuntu introduced in the
+    last build.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Sep 2023 12:00:43 +0200
+
+monetdb (11.47.9) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7402: Privileges on merge table not propagated to partition tables
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 27 Sep 2023 09:04:30 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7094: Drop remote tables in transactions and rollback
+  * GH#7303: Improve the performance of multi-column filters
+  * GH#7400: VM max memory is not check correctly for cgroups v2
+  * GH#7401: Column aliases used incorrectly in UNION subqueries
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 25 Sep 2023 12:24:55 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * gdk: Fixed a number of data races (race conditions).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 22 Sep 2023 12:24:55 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * gdk: Fixed a reference counting problem when a BAT could nog be loaded,
+    e.g. because of resource limitations.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 18 Sep 2023 12:24:55 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * gdk: Only check for virtual memory limits when creating or growing bats,
+    not for general memory allocations.  There is (still) too much code
+    that doesn't properly handle failing allocations, so we need to avoid
+    those as much as possible.  This has mostly an effect if there are
+    virtual memory size restrictions imposed by cgroups (memory.swap.max
+    in cgroups v2, memory.memsw.limit_in_bytes in cgroups v1).
+  * gdk: The low-level commit turned out to always commit every persistent bat
+    in the system.  There is no need for that, it should only commit bats
+    that were changed.  This has now been fixed.
+  * gdk: Implemented timeout/exit checks in a bunch more operators.  Long(er)
+    running operators occasionally check whether they're taking too long
+    (past a user-specified timeout) or whether the server is exiting.
+    This is now done in more places.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 30 Aug 2023 12:24:55 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * MonetDB: Do a lot more error checking, mostly for allocation failures.  More is
+    still needed, though.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 30 Aug 2023 12:24:55 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * MonetDB: Improve performance of the ILIKE operator when the pattern contains only
+    ASCII characters. In this case we do not need to treat any characters as
+    UTF-8 and we can use much faster routines that perform byte comparisons.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Thu, 10 Aug 2023 12:24:55 +0200
+
+monetdb (11.47.5) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7388: Query results in large cross product
+  * GH#7394: BBPextend: ERROR: trying to extend BAT pool beyond the limit
+    (163840000)
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Jul 2023 13:12:19 +0200
+
+monetdb (11.47.5) unstable; urgency=low
+
+  * sql: An upgrade that both creates a new .snapshot user and extends the
+    sys.db_user_info table with (among others) a password column did
+    these in such a way that the passord value for the new user was NULL.
+    This is fixed by updating the password.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 22 Jun 2023 13:12:19 +0200
+
+monetdb (11.47.5) unstable; urgency=low
+
+  * monetdb5: There is now a new option --set tablet_threads=N to limit the number
+    of threads used for a COPY INTO from CSV file query.  This option can
+    also be set for a specific database using the monetdb command using
+    the ncopyintothreads property.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 22 Jun 2023 13:12:19 +0200
+
+monetdb (11.47.3) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7344: Database upgrade failure due to user object dependency on
+    system procedure
+  * GH#7378: MonetDB server crashes at sql_trans_copy_key
+  * GH#7379: MonetDB server 11.46.0 crashes at cs_bind_ubat
+  * GH#7380: MonetDB server 11.46.0 crashes at `BLOBcmp`
+  * GH#7381: MonetDB server 11.46.0 crashes at `log_create_delta`
+  * GH#7382: MonetDB server 11.46.0 crashes at `gc_col`
+  * GH#7383: MonetDB server 11.46.0 crashes at `list_append`
+  * GH#7384: MonetDB server 11.46.0 crashes at `__nss_database_lookup`
+  * GH#7386: MonetDB server 11.46.0 crashes in `rel_deps`
+  * GH#7387: MonetDB server 11.46.0 crashes in `rel_sequences`
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 22 Jun 2023 11:58:29 +0200
+
+monetdb (11.47.3) unstable; urgency=low
+
+  * clients: The COPY INTO from file ON CLIENT was extended to also look for a
+    relative path name relative to the file from which the query was read.
+    This is only possible if the name of the query file is known, so when
+    it is specified on the command line or read using the interactive
+    \< command.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Jun 2023 11:58:29 +0200
+
+monetdb (11.47.3) unstable; urgency=low
+
+  * sql: Add MAX_MEMORY and MAX_WORKERS options to the ALTER USER statement
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Fri, 16 Jun 2023 11:58:29 +0200
+
 monetdb (11.47.1) unstable; urgency=low
 
   * Rebuilt.

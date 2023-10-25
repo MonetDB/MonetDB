@@ -81,7 +81,8 @@ MCinit(void)
 	if (maxclients <= 0) {
 		maxclients = 64;
 		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
-			TRC_CRITICAL(MAL_SERVER, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+			TRC_CRITICAL(MAL_SERVER,
+						 "Initialization failed: " MAL_MALLOC_FAIL "\n");
 			return false;
 		}
 	}
@@ -89,14 +90,15 @@ MCinit(void)
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if (mal_clients == NULL) {
-		TRC_CRITICAL(MAL_SERVER, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+		TRC_CRITICAL(MAL_SERVER,
+					 "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return false;
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++) {
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
 		ATOMIC_INIT(&mal_clients[i].workers, 1);
 		ATOMIC_INIT(&mal_clients[i].qryctx.datasize, 0);
-		mal_clients[i].idx = -1; /* indicate it's available */
+		mal_clients[i].idx = -1;	/* indicate it's available */
 	}
 	return true;
 }
@@ -168,7 +170,7 @@ MCnewClient(void)
 Client
 MCgetClient(int id)
 {
-	if (id < 0 || id >= MAL_MAXCLIENTS)
+	if (id <0 || id >=MAL_MAXCLIENTS)
 		return NULL;
 	return mal_clients + id;
 }
@@ -197,7 +199,7 @@ MCexitClient(Client c)
 	// Remove any left over constant symbols
 	if (c->curprg)
 		resetMalBlk(c->curprg->def);
-	if (c->father == NULL) { /* normal client */
+	if (c->father == NULL) {	/* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
 			close_stream(c->fdout);
 		assert(c->bak == NULL);
@@ -215,7 +217,8 @@ MCexitClient(Client c)
 		lng Tend = GDKusec();
 		profilerEvent(NULL,
 					  &(struct NonMalEvent)
-					  {CLIENT_END, c, Tend,  NULL, NULL, 0, Tend-(c->session)});
+					  { CLIENT_END, c, Tend, NULL, NULL, 0,
+					  Tend - (c->session) });
 	}
 }
 
@@ -250,7 +253,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->usermodule = c->curmodule = 0;
 
 	c->father = NULL;
-	c->idle  = c->login = c->lastcmd = time(0);
+	c->idle = c->login = c->lastcmd = time(0);
 	c->session = GDKusec();
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
@@ -299,7 +302,8 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	if (c && profilerStatus > 0)
 		profilerEvent(NULL,
 					  &(struct NonMalEvent)
-					  {CLIENT_START, c, c->session,  NULL, NULL, 0, 0});
+					  { CLIENT_START, c, c->session, NULL, NULL, 0, 0 }
+	);
 	return c;
 }
 
@@ -311,20 +315,11 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 int
 MCinitClientThread(Client c)
 {
-	Thread t;
-
-	t = MT_thread_getdata();	/* should succeed */
-	if (t == NULL) {
-		MCresetProfiler(c->fdout);
-		return -1;
-	}
 	/*
 	 * The GDK thread administration should be set to reflect use of
 	 * the proper IO descriptors.
 	 */
-	t->data[1] = c->fdin;
-	t->data[0] = c->fdout;
-	c->mythread = t;
+	c->mythread = MT_thread_getname();
 	c->errbuf = GDKerrbuf;
 	if (c->errbuf == NULL) {
 		char *n = GDKzalloc(GDKMAXERRLEN);
@@ -342,7 +337,8 @@ MCinitClientThread(Client c)
 static bool shutdowninprogress = false;
 
 bool
-MCshutdowninprogress(void){
+MCshutdowninprogress(void)
+{
 	MT_lock_set(&mal_contextLock);
 	bool ret = shutdowninprogress;
 	MT_lock_unset(&mal_contextLock);
@@ -382,17 +378,15 @@ MCcloseClient(Client c)
 	c->promptlength = -1;
 	if (c->errbuf) {
 		/* no client threads in embedded mode */
-		//if (!GDKembedded())
-		GDKsetbuf(0);
+		GDKsetbuf(NULL);
 		if (c->father == NULL)
 			GDKfree(c->errbuf);
-		c->errbuf = 0;
+		c->errbuf = NULL;
 	}
 	if (c->usermodule)
 		freeModule(c->usermodule);
 	c->usermodule = c->curmodule = 0;
 	c->father = 0;
-	c->idle = c->login = c->lastcmd = 0;
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
@@ -404,7 +398,7 @@ MCcloseClient(Client c)
 		GDKfree(c->username);
 		c->username = 0;
 	}
-	c->mythread = 0;
+	c->mythread = NULL;
 	if (c->glb) {
 		freeStack(c->glb);
 		c->glb = NULL;
@@ -429,6 +423,7 @@ MCcloseClient(Client c)
 	assert(c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
+	c->idle = c->login = c->lastcmd = 0;
 	if (shutdowninprogress) {
 		c->mode = BLOCKCLIENT;
 	} else {
@@ -479,7 +474,8 @@ MCactiveClients(void)
 	int active = 0;
 
 	MT_lock_set(&mal_contextLock);
-	for (Client cntxt = mal_clients; cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++) {
+	for (Client cntxt = mal_clients; cntxt < mal_clients + MAL_MAXCLIENTS;
+		 cntxt++) {
 		active += (cntxt->idle == 0 && cntxt->mode == RUNCLIENT);
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -489,7 +485,7 @@ MCactiveClients(void)
 str
 MCsuspendClient(int id)
 {
-	if (id < 0 || id >= MAL_MAXCLIENTS)
+	if (id <0 || id >=MAL_MAXCLIENTS)
 		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
 	return MAL_SUCCEED;
 }
@@ -497,7 +493,7 @@ MCsuspendClient(int id)
 str
 MCawakeClient(int id)
 {
-	if (id < 0 || id >= MAL_MAXCLIENTS)
+	if (id <0 || id >=MAL_MAXCLIENTS)
 		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
 	return MAL_SUCCEED;
 }
@@ -544,10 +540,10 @@ MCreadClient(Client c)
 			in->eof = false;
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
-			if (!in->mode) /* read one line at a time in line mode */
+			if (!in->mode)		/* read one line at a time in line mode */
 				break;
 		}
-		if (in->mode) { /* find last new line */
+		if (in->mode) {			/* find last new line */
 			char *p = in->buf + in->len - 1;
 
 			while (p > in->buf && *p != '\n') {

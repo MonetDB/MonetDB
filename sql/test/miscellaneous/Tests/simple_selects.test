@@ -210,11 +210,10 @@ CC
 statement ok
 drop table x
 
-query IIIIIIIIIIIIRRRRIIII rowsort
+query IIIIIIIIIIIIIIII rowsort
 select difference('foobar', 'oobar'), difference(NULL, 'oobar'), difference('foobar', NULL), difference(NULL, NULL),
        editdistance('foobar', 'oobar'), editdistance(NULL, 'oobar'), editdistance('foobar', NULL), editdistance(NULL, NULL),
        editdistance2('foobar', 'oobar'), editdistance2(NULL, 'oobar'), editdistance2('foobar', NULL), editdistance2(NULL, NULL),
-       similarity('foobar', 'oobar'), similarity(NULL, 'oobar'), similarity('foobar', NULL), similarity(NULL, NULL),
        levenshtein('foobar', 'oobar'), levenshtein(NULL, 'oobar'), levenshtein('foobar', NULL), levenshtein(NULL, NULL)
 ----
 1
@@ -226,10 +225,6 @@ NULL
 NULL
 NULL
 1
-NULL
-NULL
-NULL
-0.909
 NULL
 NULL
 NULL
@@ -1120,4 +1115,9 @@ create or replace function scale_down(x decimal(8,2), y int) returns decimal(8,2
 
 statement error 42000!DROP FUNCTION: no such function 'any' (boolean, boolean, boolean)
 drop function "any"(boolean, boolean, boolean)
+
+query I
+select patindex('%bc%', 'abcd')
+----
+3
 

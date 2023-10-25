@@ -17,6 +17,7 @@ mal_export str GRPsubgroup5(bat *ngid, bat *next, bat *nhis,
 							const bat *bid, const bat *sid,
 							const bat *gid, const bat *eid, const bat *hid);
 
-extern str GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid);
+extern str GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid,
+						const bat *gid);
 extern str GRPgroup3(bat *ngid, bat *next, const bat *bid);
 #endif /* _GROUP_H_ */

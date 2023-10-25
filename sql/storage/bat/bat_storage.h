@@ -40,7 +40,7 @@ typedef struct segment {
 	ulng ts;		/* timestamp on this segment, ie tid of some active transaction or commit time of append/delete or
 					   rollback time, ie ready for reuse */
 	ulng oldts;		/* keep previous ts, for rollbacks */
-	struct segment *next;	/* usualy one should be enough */
+	ATOMIC_PTR_TYPE next;	/* usualy one should be enough */
 	struct segment *prev;	/* used in destruction list */
 } segment;
 
@@ -59,5 +59,8 @@ typedef struct storage {
 
 /* initialize bat storage call back functions interface */
 extern void bat_storage_init( store_functions *sf );
+
+storage *
+bind_del_data(sql_trans *tr, sql_table *t, bool *clear);
 
 #endif /*BATSTORAGE_H */

@@ -12,8 +12,9 @@
 #include "monetdb_config.h"
 #include "mal.h"
 
-char 	monet_cwd[FILENAME_MAX] = { 0 };
-char 	monet_characteristics[4096];
+char monet_cwd[FILENAME_MAX] = { 0 };
+
+char monet_characteristics[4096];
 stream *maleventstream = 0;
 
 /* The compile time debugging flags are turned into bit masks, akin to GDK */
@@ -26,7 +27,7 @@ lng MALdebug;
 #include "mal_scenario.h"
 #include "mal_parser.h"
 #include "mal_interpreter.h"
-#include "mal_namespace.h"  /* for initNamespace() */
+#include "mal_namespace.h"		/* for initNamespace() */
 #include "mal_profiler.h"
 #include "mal_client.h"
 #include "msabaoth.h"
@@ -38,10 +39,10 @@ lng MALdebug;
 #include "mal_atom.h"
 #include "mutils.h"
 
-MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER(mal_contextLock);
-MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER(mal_profileLock);
-MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
-MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
+MT_Lock mal_contextLock = MT_LOCK_INITIALIZER(mal_contextLock);
+MT_Lock mal_profileLock = MT_LOCK_INITIALIZER(mal_profileLock);
+MT_Lock mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
+MT_Lock mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
 
 
 const char *
@@ -55,7 +56,8 @@ mal_version(void)
  */
 
 int
-mal_init(char *modules[], bool embedded, const char *initpasswd, const char *caller_revision)
+mal_init(char *modules[], bool embedded, const char *initpasswd,
+		 const char *caller_revision)
 {
 /* Any error encountered here terminates the process
  * with a message sent to stderr
@@ -68,7 +70,8 @@ mal_init(char *modules[], bool embedded, const char *initpasswd, const char *cal
 	const char *version = GDKlibversion();
 	sscanf(version, "%d.%d.%d", &maj, &min, &patch);
 	if (maj != GDK_VERSION_MAJOR || min < GDK_VERSION_MINOR) {
-		TRC_CRITICAL(MAL_SERVER, "Linked GDK library not compatible with the one this was compiled with\n");
+		TRC_CRITICAL(MAL_SERVER,
+					 "Linked GDK library not compatible with the one this was compiled with\n");
 		TRC_CRITICAL(MAL_SERVER, "Linked version: %s, compiled version: %s\n",
 					 version, GDK_VERSION);
 		return -1;
@@ -77,7 +80,9 @@ mal_init(char *modules[], bool embedded, const char *initpasswd, const char *cal
 	if (caller_revision) {
 		const char *p = mercurial_revision();
 		if (p && strcmp(p, caller_revision) != 0) {
-			TRC_CRITICAL(MAL_SERVER, "incompatible versions: caller is %s, MAL is %s\n", caller_revision, p);
+			TRC_CRITICAL(MAL_SERVER,
+						 "incompatible versions: caller is %s, MAL is %s\n",
+						 caller_revision, p);
 			return -1;
 		}
 	}
@@ -87,7 +92,7 @@ mal_init(char *modules[], bool embedded, const char *initpasswd, const char *cal
 	initNamespace();
 
 	err = malBootstrap(modules, embedded, initpasswd);
-	if (err != MAL_SUCCEED) {
+	if (err !=MAL_SUCCEED) {
 		mal_client_reset();
 		TRC_CRITICAL(MAL_SERVER, "%s\n", err);
 		freeException(err);
@@ -108,7 +113,8 @@ mal_init(char *modules[], bool embedded, const char *initpasswd, const char *cal
  * activity first.
  * This function should be called after you have issued sql_reset();
  */
-void mal_reset(void)
+void
+mal_reset(void)
 {
 	GDKprepareExit();
 	MCstopClients(0);
@@ -118,29 +124,29 @@ void mal_reset(void)
 	if (!GDKinmemory(0) && !GDKembedded()) {
 		str err = 0;
 
-		if ((err = msab_wildRetreat()) != NULL) {
+		if ((err = msab_wildRetreat()) !=NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
 		}
-		if ((err = msab_registerStop()) != NULL) {
+		if ((err = msab_registerStop()) !=NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
 		}
 	}
 	mal_dataflow_reset();
 	mal_client_reset();
-  	mal_linker_reset();
+	mal_linker_reset();
 	mal_resource_reset();
 	mal_runtime_reset();
 	mal_module_reset();
 	mal_atom_reset();
 
-	memset((char*)monet_cwd, 0, sizeof(monet_cwd));
-	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));
+	memset((char *) monet_cwd, 0, sizeof(monet_cwd));
+	memset((char *) monet_characteristics, 0, sizeof(monet_characteristics));
 	mal_namespace_reset();
 	/* No need to clean up the namespace, it will simply be extended
 	 * upon restart mal_namespace_reset(); */
-	GDKreset(0);	// terminate all other threads
+	GDKreset(0);				// terminate all other threads
 }
 
 
@@ -152,7 +158,8 @@ void mal_reset(void)
  * For this we mark the client records as BLOCKCLIENT.
  */
 
-void mal_exit(int status)
+void
+mal_exit(int status)
 {
 	mal_reset();
 	exit(status);				/* properly end GDK */

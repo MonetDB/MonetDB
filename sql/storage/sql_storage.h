@@ -476,7 +476,7 @@ extern sql_table *globaltmp_instantiate(sql_trans *tr, sql_table *t);
 
 #define NR_TABLE_LOCKS 64
 #define NR_COLUMN_LOCKS 512
-#define TRANSACTION_ID_BASE	(1ULL<<63)
+#define TRANSACTION_ID_BASE	(1ULL<<(sizeof(ATOMIC_BASE_TYPE) * 8 - 1))
 
 typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */
@@ -491,10 +491,10 @@ typedef struct sqlstore {
 	ATOMIC_TYPE function_counter;/* function counter used during function instantiation */
 	ATOMIC_TYPE oldest;
 	ulng oldest_pending;
-	int readonly;			/* store is readonly */
-	int singleuser;			/* store is for a single user only (==1 enable, ==2 single user session running) */
-	int first;				/* just created the db */
-	int initialized;		/* used during bootstrap only */
+	bool readonly;			/* store is readonly */
+	int8_t singleuser;		/* store is for a single user only (==1 enable, ==2 single user session running) */
+	bool first;				/* just created the db */
+	bool initialized;		/* used during bootstrap only */
 	int debug;				/* debug mask */
 	store_type active_type;
 	list *changes;			/* pending changes to cleanup */

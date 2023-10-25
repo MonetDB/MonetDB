@@ -283,10 +283,12 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	}
 
 	if (bn->tvheap && width == 0 && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
+		HEAPfree(bn->theap, true);
 		goto bailout;
 	}
 	DELTAinit(bn);
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {
+		/* cannot happen, function always returns success */
 		goto bailout;
 	}
 	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
@@ -897,12 +899,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else if (!slowcopy) {
 			/* case (3): just copy the heaps */
 			if (bn->tvheap && HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED) {
- 				goto bunins_failed;
- 			}
+				goto bunins_failed;
+			}
 			memcpy(bn->theap->base, bi.base, bi.hfree);
 			bn->theap->free = bi.hfree;
 			bn->theap->dirty = true;
- 			if (bn->tvheap) {
+			if (bn->tvheap) {
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
 				bn->tvheap->free = bi.vhfree;
 				bn->tvheap->dirty = true;
@@ -1097,11 +1099,139 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			return rc;
 	}
 
+	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	MT_lock_set(&b->theaplock);
+	BATiter bi = bat_iterator_nolock(b);
+	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrlock(&b->thashlock);
+	if (values && b->ttype) {
+		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+		const void *atomnil = ATOMnilptr(b->ttype);
+		const void *minvalp = NULL, *maxvalp = NULL;
+		if (b->tvheap) {
+			if (bi.minpos != BUN_NONE)
+				minvalp = BUNtvar(bi, bi.minpos);
+			if (bi.maxpos != BUN_NONE)
+				maxvalp = BUNtvar(bi, bi.maxpos);
+			const void *vbase = b->tvheap->base;
+			for (BUN i = 0; i < count; i++) {
+				t = ((void **) values)[i];
+				gdk_return rc = tfastins_nocheckVAR(b, p, t);
+				if (rc != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
+					return rc;
+				}
+				if (vbase != b->tvheap->base) {
+					/* tvheap changed location, so
+					 * pointers may need to be
+					 * updated (not if they were
+					 * initialized from t below, but
+					 * we don't know) */
+					BUN minpos = bi.minpos;
+					BUN maxpos = bi.maxpos;
+					MT_lock_set(&b->theaplock);
+					bi = bat_iterator_nolock(b);
+					MT_lock_unset(&b->theaplock);
+					bi.minpos = minpos;
+					bi.maxpos = maxpos;
+					vbase = b->tvheap->base;
+					if (bi.minpos != BUN_NONE)
+						minvalp = BUNtvar(bi, bi.minpos);
+					if (bi.maxpos != BUN_NONE)
+						maxvalp = BUNtvar(bi, bi.maxpos);
+				}
+				if (atomcmp(t, atomnil) != 0) {
+					if (p == 0) {
+						bi.minpos = bi.maxpos = 0;
+						minvalp = maxvalp = t;
+					} else {
+						if (bi.minpos != BUN_NONE &&
+						    atomcmp(minvalp, t) > 0) {
+							bi.minpos = p;
+							minvalp = t;
+						}
+						if (bi.maxpos != BUN_NONE &&
+						    atomcmp(maxvalp, t) < 0) {
+							bi.maxpos = p;
+							maxvalp = t;
+						}
+					}
+				}
+				p++;
+			}
+			if (b->thash) {
+				p -= count;
+				for (BUN i = 0; i < count; i++) {
+					t = ((void **) values)[i];
+					HASHappend_locked(b, p, t);
+					p++;
+				}
+				nunique = b->thash ? b->thash->nunique : 0;
+			}
+		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+			bi.minpos = bi.maxpos = BUN_NONE;
+			minvalp = maxvalp = NULL;
+			for (BUN i = 0; i < count; i++) {
+				t = (void *) ((char *) values + (i << b->tshift));
+				mskSetVal(b, p, *(msk *) t);
+				p++;
+			}
+		} else {
+			if (bi.minpos != BUN_NONE)
+				minvalp = BUNtloc(bi, bi.minpos);
+			if (bi.maxpos != BUN_NONE)
+				maxvalp = BUNtloc(bi, bi.maxpos);
+			for (BUN i = 0; i < count; i++) {
+				t = (void *) ((char *) values + (i << b->tshift));
+				gdk_return rc = tfastins_nocheckFIX(b, p, t);
+				if (rc != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
+					return rc;
+				}
+				if (b->thash) {
+					HASHappend_locked(b, p, t);
+				}
+				if (atomcmp(t, atomnil) != 0) {
+					if (p == 0) {
+						bi.minpos = bi.maxpos = 0;
+						minvalp = maxvalp = t;
+					} else {
+						if (bi.minpos != BUN_NONE &&
+						    atomcmp(minvalp, t) > 0) {
+							bi.minpos = p;
+							minvalp = t;
+						}
+						if (bi.maxpos != BUN_NONE &&
+						    atomcmp(maxvalp, t) < 0) {
+							bi.maxpos = p;
+							maxvalp = t;
+						}
+					}
+				}
+				p++;
+			}
+			nunique = b->thash ? b->thash->nunique : 0;
+		}
+	} else {
+		for (BUN i = 0; i < count; i++) {
+			gdk_return rc = tfastins_nocheck(b, p, t);
+			if (rc != GDK_SUCCEED) {
+				MT_rwlock_wrunlock(&b->thashlock);
+				return rc;
+			}
+			if (b->thash) {
+				HASHappend_locked(b, p, t);
+			}
+			p++;
+		}
+		nunique = b->thash ? b->thash->nunique : 0;
+	}
+	MT_lock_set(&b->theaplock);
+	b->tminpos = bi.minpos;
+	b->tmaxpos = bi.maxpos;
 	if (count > BATcount(b) / gdk_unique_estimate_keep_fraction)
 		b->tunique_est = 0;
 
-	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	if (b->ttype == TYPE_oid) {
 		/* spend extra effort on oid (possible candidate list) */
 		if (values == NULL || is_oid_nil(((oid *) values)[0])) {
@@ -1220,7 +1350,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 		}
 	} else if (b->batCount == 1 && count == 1) {
-		BATiter bi = bat_iterator_nolock(b);
+		bi = bat_iterator_nolock(b);
+		t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 		if (values != NULL) {
 			if (b->tvheap)
 				t = ((void **) values)[0];
@@ -1243,145 +1374,15 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
-	BATiter bi = bat_iterator_nolock(b);
-	MT_lock_unset(&b->theaplock);
-	MT_rwlock_wrlock(&b->thashlock);
-	if (values && b->ttype) {
-		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
-		const void *atomnil = ATOMnilptr(b->ttype);
-		const void *minvalp = NULL, *maxvalp = NULL;
-		if (b->tvheap) {
-			if (bi.minpos != BUN_NONE)
-				minvalp = BUNtvar(bi, bi.minpos);
-			if (bi.maxpos != BUN_NONE)
-				maxvalp = BUNtvar(bi, bi.maxpos);
-			const void *vbase = b->tvheap->base;
-			for (BUN i = 0; i < count; i++) {
-				t = ((void **) values)[i];
-				gdk_return rc = tfastins_nocheckVAR(b, p, t);
-				if (rc != GDK_SUCCEED) {
-					MT_rwlock_wrunlock(&b->thashlock);
-					return rc;
-				}
-				if (vbase != b->tvheap->base) {
-					/* tvheap changed location, so
-					 * pointers may need to be
-					 * updated (not if they were
-					 * initialized from t below, but
-					 * we don't know) */
-					BUN minpos = bi.minpos;
-					BUN maxpos = bi.maxpos;
-					MT_lock_set(&b->theaplock);
-					bi = bat_iterator_nolock(b);
-					MT_lock_unset(&b->theaplock);
-					bi.minpos = minpos;
-					bi.maxpos = maxpos;
-					vbase = b->tvheap->base;
-					if (bi.minpos != BUN_NONE)
-						minvalp = BUNtvar(bi, bi.minpos);
-					if (bi.maxpos != BUN_NONE)
-						maxvalp = BUNtvar(bi, bi.maxpos);
-				}
-				if (!atomnil || atomcmp(t, atomnil) != 0) {
-					if (p == 0) {
-						bi.minpos = bi.maxpos = 0;
-						minvalp = maxvalp = t;
-					} else {
-						if (bi.minpos != BUN_NONE &&
-						    atomcmp(minvalp, t) > 0) {
-							bi.minpos = p;
-							minvalp = t;
-						}
-						if (bi.maxpos != BUN_NONE &&
-						    atomcmp(maxvalp, t) < 0) {
-							bi.maxpos = p;
-							maxvalp = t;
-						}
-					}
-				}
-				p++;
-			}
-			if (b->thash) {
-				p -= count;
-				for (BUN i = 0; i < count; i++) {
-					t = ((void **) values)[i];
-					HASHappend_locked(b, p, t);
-					p++;
-				}
-				nunique = b->thash ? b->thash->nunique : 0;
-			}
-		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
-			bi.minpos = bi.maxpos = BUN_NONE;
-			minvalp = maxvalp = NULL;
-			for (BUN i = 0; i < count; i++) {
-				t = (void *) ((char *) values + (i << b->tshift));
-				mskSetVal(b, p, *(msk *) t);
-				p++;
-			}
-		} else {
-			if (bi.minpos != BUN_NONE)
-				minvalp = BUNtloc(bi, bi.minpos);
-			if (bi.maxpos != BUN_NONE)
-				maxvalp = BUNtloc(bi, bi.maxpos);
-			for (BUN i = 0; i < count; i++) {
-				t = (void *) ((char *) values + (i << b->tshift));
-				gdk_return rc = tfastins_nocheckFIX(b, p, t);
-				if (rc != GDK_SUCCEED) {
-					MT_rwlock_wrunlock(&b->thashlock);
-					return rc;
-				}
-				if (b->thash) {
-					HASHappend_locked(b, p, t);
-				}
-				if (!atomnil || atomcmp(t, atomnil) != 0) {
-					if (p == 0) {
-						bi.minpos = bi.maxpos = 0;
-						minvalp = maxvalp = t;
-					} else {
-						if (bi.minpos != BUN_NONE &&
-						    atomcmp(minvalp, t) > 0) {
-							bi.minpos = p;
-							minvalp = t;
-						}
-						if (bi.maxpos != BUN_NONE &&
-						    atomcmp(maxvalp, t) < 0) {
-							bi.maxpos = p;
-							maxvalp = t;
-						}
-					}
-				}
-				p++;
-			}
-			nunique = b->thash ? b->thash->nunique : 0;
-		}
-		MT_lock_set(&b->theaplock);
-		b->tminpos = bi.minpos;
-		b->tmaxpos = bi.maxpos;
-		MT_lock_unset(&b->theaplock);
-	} else {
-		for (BUN i = 0; i < count; i++) {
-			gdk_return rc = tfastins_nocheck(b, p, t);
-			if (rc != GDK_SUCCEED) {
-				MT_rwlock_wrunlock(&b->thashlock);
-				return rc;
-			}
-			if (b->thash) {
-				HASHappend_locked(b, p, t);
-			}
-			p++;
-		}
-		nunique = b->thash ? b->thash->nunique : 0;
-	}
-	MT_lock_set(&b->theaplock);
 	BATsetcount(b, p);
 	if (nunique != 0)
 		b->tunique_est = (double) nunique;
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrunlock(&b->thashlock);
 
-	IMPSdestroy(b); /* no support for inserts in imprints yet */
+	IMPSdestroy(b);		/* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-	STRMPdestroy(b); 	/* TODO: use STRMPappendBitstring */
+	STRMPdestroy(b);	/* TODO: use STRMPappendBitstring */
 	RTREEdestroy(b);
 	return GDK_SUCCEED;
 }
@@ -2899,8 +2900,8 @@ BATassertProps(BAT *b)
 				TRC_WARNING(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
-			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
-			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename)) {
+			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
+			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heapbckt.filename)) {
 				/* cannot happen, see comment in gdk.h
 				 * about sizes near definition of
 				 * BBPINIT */
