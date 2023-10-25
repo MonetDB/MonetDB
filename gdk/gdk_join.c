@@ -2279,21 +2279,27 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 					}
 					if (maybeextend(r1, r2, r3, nlx, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
 						goto bailout;
+					if (r3)
+						r3->tnil = false;
 					while (nlx > 0) {
 						lv = canditer_next(lci);
 						if (mlci == NULL || canditer_contains(mlci, lv)) {
 							APPEND(r1, lv);
 							if (r2)
 								APPEND(r2, oid_nil);
-							if (r3)
-								((bit *) r3->theap->base)[r3->batCount++] = defmark;
+							if (r3) {
+								if (rhasnil || cmp(VALUE(l, lv - l->hseqbase), nil) == 0) {
+									((bit *) r3->theap->base)[r3->batCount++] = bit_nil;
+									r3->tnil = true;
+								} else {
+									((bit *) r3->theap->base)[r3->batCount++] = 0;
+								}
+							}
 						}
 						nlx--;
 					}
 					if (r1->trevsorted && BATcount(r1) > 1)
 						r1->trevsorted = false;
-					if (r3)
-						r3->tnil = rhasnil;
 				} else {
 					canditer_setidx(lci, lci->next + nlx);
 				}

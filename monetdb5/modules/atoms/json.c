@@ -140,6 +140,14 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 	size_t sz = 0;
 	str msg = MAL_SUCCEED;
 
+	if (THRhighwater()) {
+		msg = createException(MAL, "json.new",
+									SQLSTATE(42000)
+									"JSON object too complex to render into string.");
+		return msg;
+	}
+
+
 	switch(jt->elm[idx].kind) {
 	case JSON_OBJECT:
 		*p++ = '{';
