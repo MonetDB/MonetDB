@@ -2555,7 +2555,7 @@ segments_conflict(sql_trans *tr, segments *segs, int uncommitted)
 
 static int clear_storage(sql_trans *tr, sql_table *t, storage *s);
 
-static storage *
+storage *
 bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 {
 	storage *obat;
@@ -4085,8 +4085,11 @@ log_update_col( sql_trans *tr, sql_change *change)
 	sql_column *c = (sql_column*)change->obj;
 	assert(!isTempTable(c->t));
 
-	if (isDeleted(c->t))
+	if (isDeleted(c->t)) {
 		change->handled = true;
+		return LOG_OK;
+	}
+
 	if (!isDeleted(c->t) && !tr->parent) {/* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&c->t->data);
 		sql_delta *d = ATOMIC_PTR_GET(&c->data);
@@ -4196,8 +4199,11 @@ log_update_idx( sql_trans *tr, sql_change *change)
 	sql_idx *i = (sql_idx*)change->obj;
 	assert(!isTempTable(i->t));
 
-	if (isDeleted(i->t))
+	if (isDeleted(i->t)) {
 		change->handled = true;
+		return LOG_OK;
+	}
+
 	if (!isDeleted(i->t) && !tr->parent) { /* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&i->t->data);
 		sql_delta *d = ATOMIC_PTR_GET(&i->data);
@@ -4246,8 +4252,11 @@ log_update_del( sql_trans *tr, sql_change *change)
 	sql_table *t = (sql_table*)change->obj;
 	assert(!isTempTable(t));
 
-	if (isDeleted(t))
+	if (isDeleted(t)) {
 		change->handled = true;
+		return LOG_OK;
+	}
+
 	if (!isDeleted(t) && !tr->parent) /* don't write save point commits */
 		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data));
 	return LOG_OK;

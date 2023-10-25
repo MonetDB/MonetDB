@@ -113,6 +113,7 @@ set(include_sql_files
   58_hot_snapshot
   75_storagemodel
   76_dump
+  77_storage
   80_statistics
   81_tracer
   91_information_schema)
