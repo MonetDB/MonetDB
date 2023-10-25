@@ -10,8 +10,8 @@ sys.path.append(os.environ.get('TSTSRCDIR','.'))
 import tlstester
 
 level = logging.WARNING
-if sys.platform == 'win32':
-    level=logging.DEBUG
+# if sys.platform == 'win32':
+#     level=logging.DEBUG
 #level = logging.DEBUG
 logging.basicConfig(level=level)
 
