@@ -1271,7 +1271,7 @@ mapi_impl_log_data(Mapi mid, const char *filename, long line, const char *mark, 
 	mapi_log_header(mid, filename, line, mark);
 	mnstr_write(mid->tracelog, start, 1, len);
 	if (len > 0 && start[len - 1] != '\n')
-		mnstr_writeStr(mid->tracelog, "⏎\n");
+		mnstr_writeStr(mid->tracelog, "\u23ce\n");
 	mnstr_flush(mid->tracelog, MNSTR_FLUSH_DATA);
 }
 
