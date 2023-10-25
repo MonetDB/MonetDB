@@ -2837,7 +2837,6 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 
 	en = jexps?jexps->h:NULL;
 	if (list_empty(jexps) || !(is_equi_exp_((sql_exp*)en->data) && can_join_exp(rel, en->data, false))) {
-		printf("# outer cross\n");
 		stmt *l = bin_find_smallest_column(be, left);
 		stmt *r = bin_find_smallest_column(be, right);
 		if (list_empty(jexps)) {
@@ -2878,7 +2877,6 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			/* split out (left)join vs (left)mark-join */
 			/* call 3 result version */
 			if (mark && is_any(e)) {
-				printf("# mark join 3\n");
 				join = stmt_markjoin(be, l, r, 0);
 			} else
 				join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_any(e)|is_semantics(e), false, rel->op == op_left?false:true);
@@ -2887,7 +2885,6 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			if (mark && is_any(e))
 				m = stmt_result(be, join, 2);
 		} else {
-			printf("# mark join 2\n");
 			join = stmt_markjoin(be, l, r, 1);
 			jl = stmt_result(be, join, 0);
 			m = stmt_result(be, join, 1);
@@ -2954,10 +2951,8 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 				li = stmt_project(be, sel, li);
 			osel = sel;
 			if (en->next) {
-				printf("# outer select\n");
 				join = stmt_outerselect(be, li, m, p, is_any(e));
 			} else {
-				printf("# mark select\n");
 				join = stmt_markselect(be, li, m, p, is_any(e));
 			}
 			sel = stmt_result(be, join, 0);

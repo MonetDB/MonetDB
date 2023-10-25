@@ -31,6 +31,7 @@ Welcome to MonetDB's documentation!
    source/cmake
    source/release
    source/developers_handbook
+   source/binary-resultset
 
 Indices and tables
 ==================
