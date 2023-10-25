@@ -318,10 +318,11 @@ class TLSTester:
             context.set_servername_callback(sni_callback)
 
         # Turns out the ssl API forces us to write the certs to file. Yuk!
-        with tempfile.NamedTemporaryFile(mode="wb") as f:
+        with tempfile.NamedTemporaryFile(mode="wb", delete=True, delete_on_close=False) as f:
             f.write(self.certs.get_file(cert_name + ".key"))
             f.write(self.certs.get_file(cert_name + ".crt"))
             f.flush()
+            f.close()   # Cannot open twice on Windows
             context.load_cert_chain(f.name)
 
         if client_cert:
