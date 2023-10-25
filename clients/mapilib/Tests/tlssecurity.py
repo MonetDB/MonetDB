@@ -9,8 +9,11 @@ import threading
 sys.path.append(os.environ.get('TSTSRCDIR','.'))
 import tlstester
 
-logging.basicConfig(level=logging.WARNING)
-# logging.basicConfig(level=logging.DEBUG)
+level = logging.WARNING
+if sys.platform == 'win32':
+    level=logging.DEBUG
+#level = logging.DEBUG
+logging.basicConfig(level=level)
 
 tgtdir = os.environ['TSTTRGDIR']
 assert os.path.isdir(tgtdir)
