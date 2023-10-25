@@ -6268,6 +6268,28 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		err = SQLstatementIntern(c, cmds, "update", true, false, NULL);
 	}
 
+	/* 77_storage.sql */
+	if (!sql_bind_func(sql, s->base.name, "persist_unlogged", NULL, NULL, F_UNION, true)) {
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		const char *query =
+			"CREATE FUNCTION sys.persist_unlogged()\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
+			"EXTERNAL NAME sql.persist_unlogged;\n"
+			"CREATE FUNCTION sys.persist_unlogged(sname STRING)\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
+			"EXTERNAL NAME sql.persist_unlogged(string);\n"
+			"CREATE FUNCTION sys.persist_unlogged(sname STRING, tname STRING)\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
+			"EXTERNAL NAME sql.persist_unlogged(string, string);\n"
+			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged() TO PUBLIC;\n"
+			"UPDATE sys.functions SET system = true WHERE system <> true AND\n"
+			"name = 'persist_unlogged' AND schema_id = 2000;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
+
 	return err;
 }
 

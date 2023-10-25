@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 import http.server
 import io
@@ -69,7 +68,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 def runserver():
     global port
-    addr = ('', 0)
+    addr = ('127.0.0.1', 0)
     srv = http.server.HTTPServer(addr, Handler)
     port = srv.server_port
     print(f"Listening on {port}", file=OUTPUT)

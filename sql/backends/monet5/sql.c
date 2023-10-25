@@ -54,6 +54,18 @@
 #include "mal_authorize.h"
 #include "gdk_cand.h"
 
+static inline void
+BBPnreclaim(int nargs, ...)
+{
+	va_list valist;
+	va_start(valist, nargs);
+	for (int i = 0; i < nargs; i++) {
+		BAT *b = va_arg(valist, BAT *);
+		BBPreclaim(b);
+	}
+	va_end(valist);
+}
+
 static int
 rel_is_table(sql_rel *rel)
 {
@@ -4310,6 +4322,178 @@ end:
 }
 
 str
+SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)stk;
+	(void)pci;
+
+	bool schema_wide = (pci->argc == 3 || pci->argc == 4),
+		bat_exists = false;
+
+	bat *o0 = getArgReference_bat(stk, pci, 0),
+		*o1 = getArgReference_bat(stk, pci, 1),
+		*o2 = getArgReference_bat(stk, pci, 2);
+
+	str i1 = schema_wide && pci->argc == 4 ? *getArgReference_str(stk, pci, 3) : NULL;
+	str i2 = !schema_wide ? *getArgReference_str(stk, pci, 4) : NULL;
+
+	str msg = MAL_SUCCEED;
+	sqlstore *store = NULL;
+	mvc *m = NULL;
+	sql_trans *tr = NULL;
+	node *ncol;
+	storage *t_del = NULL;
+
+	BAT *b = NULL, *d = NULL, *tables = NULL, *sqlids = NULL, *rowcounts = NULL;
+
+	msg = getSQLContext(cntxt, mb, &m, NULL);
+
+	if (msg)
+		return msg;
+
+	store = m->session->tr->store;
+	tr = m->session->tr;
+
+	sql_schema *s = NULL;
+	if (i1) {
+		s = mvc_bind_schema(m, i1);
+		if (s == NULL)
+			throw(SQL, "sql.persist_unlogged", SQLSTATE(3F000) "Schema missing %s.", i1);
+	} else {
+		s = m->session->schema;
+	}
+
+	if (pci->argc != 3 && !mvc_schema_privs(m, s))
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(42000) "Access denied for %s to schema '%s'.",
+			  get_string_global_var(m, "current_user"), s->base.name);
+
+	int n = 100;
+	bat *commit_list = GDKzalloc(sizeof(bat) * (n + 1));
+	BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 1));
+
+	tables = COLnew(0, TYPE_str, 0, TRANSIENT);
+	sqlids = COLnew(0, TYPE_int, 0, TRANSIENT);
+	rowcounts = COLnew(0, TYPE_lng, 0, TRANSIENT);
+
+	if (commit_list == NULL || sizes == NULL || tables == NULL || sqlids == NULL || rowcounts == NULL) {
+		GDKfree(commit_list);
+		GDKfree(sizes);
+		BBPnreclaim(3, tables, sqlids, rowcounts);
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+	}
+
+	commit_list[0] = 0;
+	sizes[0] = 0;
+	int i = 1;
+
+	MT_lock_set(&store->commit);
+
+	if (s->tables) {
+		struct os_iter oi;
+		os_iterator(&oi, s->tables, tr, NULL);
+
+		for (sql_base *bt = oi_next(&oi); bt; bt = oi_next(&oi)) {
+			sql_table *t = (sql_table *) bt;
+
+			if (!schema_wide && strcmp(i2, t->base.name) != 0)
+				continue;
+
+			if (isTable(t) && t->access == TABLE_APPENDONLY && isUnloggedTable(t)) {
+				str t_name = t->base.name;
+				sqlid t_id = t->base.id;
+				t_del = bind_del_data(tr, t, NULL);
+
+				if (t_del == NULL || (d = BATdescriptor(t_del->cs.bid)) == NULL) {
+					MT_lock_unset(&store->commit);
+					GDKfree(commit_list);
+					GDKfree(sizes);
+					BBPnreclaim(3, tables, sqlids, rowcounts);
+					throw(SQL, "sql.persist_unlogged", "Cannot access %s column storage.", t_name);
+				}
+
+				if (ol_first_node(t->columns)) {
+
+					for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
+						sql_column *c = (sql_column *) ncol->data;
+						b = store->storage_api.bind_col(tr, c, RDONLY);
+
+						if (b == NULL) {
+							MT_lock_unset(&store->commit);
+							GDKfree(commit_list);
+							GDKfree(sizes);
+							BBPnreclaim(3, tables, sqlids, rowcounts);
+							throw(SQL, "sql.persist_unlogged", "Cannot access column descriptor.");
+						}
+
+						if (isVIEW(b))
+							b = BATdescriptor(VIEWtparent(b));
+
+						if (i == n && ncol->next) {
+							n = n * 2;
+							commit_list = GDKrealloc(commit_list, sizeof(bat) * n);
+							sizes = GDKrealloc(sizes, sizeof(BUN) * n);
+						}
+
+						if (commit_list == NULL || sizes == NULL) {
+							MT_lock_unset(&store->commit);
+							GDKfree(commit_list);
+							GDKfree(sizes);
+							BBPnreclaim(3, tables, sqlids, rowcounts);
+							throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+						}
+
+						if (BBP_status(b->batCacheid) & BBPEXISTING) {
+							commit_list[i] = b->batCacheid;
+							sizes[i] = BATcount(b);
+							i++;
+							bat_exists = true;
+						}
+
+						if (BUNappend(tables, t_name, false) != GDK_SUCCEED ||
+							BUNappend(sqlids, &t_id, false) != GDK_SUCCEED ||
+							BUNappend(rowcounts, bat_exists ? sizes + (i - 1) : sizes, false) != GDK_SUCCEED) {
+							MT_lock_unset(&store->commit);
+							GDKfree(commit_list);
+							GDKfree(sizes);
+							BBPnreclaim(3, tables, sqlids, rowcounts);
+							throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+						}
+					}
+				}
+
+				if (bat_exists) {
+					commit_list[i] = d->batCacheid;
+					sizes[i] = BATcount(d);
+					i++;
+				}
+
+				bat_exists = false;
+			}
+		}
+	}
+
+	MT_lock_unset(&store->commit);
+
+	if (commit_list[1] > 0 && TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED)
+		msg = createException(SQL, "sql.persist_unlogged", GDK_EXCEPTION);
+
+	GDKfree(commit_list);
+	GDKfree(sizes);
+
+	if (msg) {
+		BBPnreclaim(3, tables, sqlids, rowcounts);
+	} else {
+		*o0 = tables->batCacheid;
+		*o1 = sqlids->batCacheid;
+		*o2 = rowcounts->batCacheid;
+		BBPkeepref(tables);
+		BBPkeepref(sqlids);
+		BBPkeepref(rowcounts);
+	}
+	return msg;
+}
+
+str
 SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *sessionid, *user, *statementid, *statement, *created;
@@ -5061,6 +5245,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
+ pattern("sql", "persist_unlogged", SQLpersist_unlogged, true, "Persist deltas on append only tables in current schema", args(3, 3, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng))),
+ pattern("sql", "persist_unlogged", SQLpersist_unlogged, true, "Persist deltas on append only tables in schema s", args(3, 4, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng), arg("s", str))),
+ pattern("sql", "persist_unlogged", SQLpersist_unlogged, true, "Persist deltas on append only table in schema s table t", args(3, 5, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng), arg("s", str), arg("t", str))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
  pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),
