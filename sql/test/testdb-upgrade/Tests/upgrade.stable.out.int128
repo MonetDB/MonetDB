@@ -457,11 +457,16 @@ RETURNS TABLE("table" STRING, "table_id" INT, "rowcount" BIGINT)
 EXTERNAL NAME sql.persist_unlogged;
 CREATE FUNCTION sys.persist_unlogged(sname STRING)
 RETURNS TABLE("table" STRING, "table_id" INT, "rowcount" BIGINT)
-EXTERNAL NAME sql.persist_unlogged(string);
+EXTERNAL NAME sql.persist_unlogged;
 CREATE FUNCTION sys.persist_unlogged(sname STRING, tname STRING)
 RETURNS TABLE("table" STRING, "table_id" INT, "rowcount" BIGINT)
-EXTERNAL NAME sql.persist_unlogged(string, string);
+EXTERNAL NAME sql.persist_unlogged;
 GRANT EXECUTE ON FUNCTION sys.persist_unlogged() TO PUBLIC;
 UPDATE sys.functions SET system = true WHERE system <> true AND
 name = 'persist_unlogged' AND schema_id = 2000;
+
+Running database upgrade commands:
+CREATE FUNCTION timestamp_to_str(d TIMESTAMP, format STRING) RETURNS STRING EXTERNAL NAME mtime."timestamp_to_str";
+GRANT EXECUTE ON FUNCTION timestamp_to_str(TIMESTAMP, STRING) TO PUBLIC;
+UPDATE sys.functions SET system = true WHERE system <> true AND name = 'timestamp_to_str' AND schema_id = 2000 and type = 1;
 
