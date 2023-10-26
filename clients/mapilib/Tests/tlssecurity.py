@@ -12,8 +12,9 @@ import tlstester
 level = logging.WARNING
 # if sys.platform == 'win32':
 #     level=logging.DEBUG
-#level = logging.DEBUG
+level = logging.DEBUG
 logging.basicConfig(level=level)
+logging.warning("For once this test will fail intentionally")
 
 tgtdir = os.environ['TSTTRGDIR']
 assert os.path.isdir(tgtdir)
@@ -52,13 +53,14 @@ server = tlstester.TLSTester(
 server_thread = threading.Thread(target=server.serve_forever, daemon=True)
 server_thread.start()
 
-def attempt(portname: str, expected_error: str, tls=True, **params):
+def attempt(experiment: str, portname: str, expected_error: str, tls=True, **params):
     port = server.get_port(portname)
     scheme = 'monetdbs' if tls else 'monetdb'
     url = f"{scheme}://localhost:{port}/demo"
     if params:
         # should be percent-escaped
         url += '?' + '&'.join(f"{k}={v}" for k, v in params.items())
+    logging.debug(f"**** START TEST {experiment}")
     logging.debug(f"Connecting to {url}, expected_error={expected_error}")
     cmd = ['mclient', '-d', url]
     logging.debug(f"cmd={cmd}")
@@ -68,14 +70,16 @@ def attempt(portname: str, expected_error: str, tls=True, **params):
     output = str(proc.stderr, 'utf-8').rstrip()
     actual_error = None if 'Sorry, this is not' in output else output
 
+    ok = False
     if expected_error is None and actual_error is None:
-        logging.debug("Test succeeded")
+        ok = True
+    elif  expected_error is not None and actual_error is not None and expected_error in actual_error:
+        ok = True
+    if ok:
+        logging.debug(f"**** END SUCCESFUL TEST {experiment} ")
         return
-    if expected_error is not None and actual_error is not None and expected_error in actual_error:
-        logging.debug("Test succeeded")
-        return
-    logging.error(f"Unexpected result when connecting to port {port} ('{portname}')")
-    logging.error(f"Using URL {url}")
+    logging.error(f"Unexpected result for test {experiment}")
+    logging.error(f"When connecting to port '{portname}' using URL {url}")
     message = f"expected_error={expected_error} but actual_error={actual_error}"
     logging.error(message)
     raise Exception(message)
@@ -89,28 +93,28 @@ def attempt(portname: str, expected_error: str, tls=True, **params):
 #
 # Connect to port 'plain', without using TLS. Have a succesful MAPI exchange.
 
-attempt('plain', None, tls=False)
+attempt('connect_plain', 'plain', None, tls=False)
 
 # connect_tls
 #
 # Connect to port 'server1' over TLS, verifying the connection using ca1.crt.
 # Have a succesful MAPI exchange.
 
-attempt('server1', None, cert=certpath('ca1.crt'))
+attempt('connect_tls', 'server1', None, cert=certpath('ca1.crt'))
 
 # refuse_no_cert
 #
 # Connect to port 'server1' over TLS, without passing a certificate. The
 # connection should fail because ca1.crt is not in the system trust root store.
 
-attempt('server1', "verify failed")
+attempt('refuse_no_cert', 'server1', "verify failed")
 
 # refuse_wrong_cert
 #
 # Connect to port 'server1' over TLS, verifying the connection using ca2.crt.
 # The client should refuse to let the connection proceed.
 
-attempt('server1', 'verify failed', cert=certpath('ca2.crt'))
+attempt('refuse_wrong_cert', 'server1', 'verify failed', cert=certpath('ca2.crt'))
 
 # refuse_tlsv12
 #
@@ -118,14 +122,14 @@ attempt('server1', 'verify failed', cert=certpath('ca2.crt'))
 # client should refuse to let the connection proceed because it should require
 # at least TLSv1.3.
 
-attempt('tls12', 'protocol version', cert=certpath('ca1.crt'))
+attempt('refuse_tlsv12', 'tls12', 'protocol version', cert=certpath('ca1.crt'))
 
 # refuse_expired
 #
 # Connect to port 'expiredcert' over TLS, verifying the connection using
 # ca1.crt. The client should refuse to let the connection proceed.
 
-attempt('expiredcert', 'verify failed', cert=certpath('ca1.crt'))
+attempt('refuse_expired', 'expiredcert', 'verify failed', cert=certpath('ca1.crt'))
 
 # connect_client_auth
 #
@@ -134,19 +138,19 @@ attempt('expiredcert', 'verify failed', cert=certpath('ca1.crt'))
 # exchange.
 
 # TODO
-#attempt('clientauth', None, cert=certpath('ca1.crt'),clientcert=certpath('client2.crt'), clientkey=certpath('client2.key'))
+#attempt('connect_client_auth', 'clientauth', None, cert=certpath('ca1.crt'),clientcert=certpath('client2.crt'), clientkey=certpath('client2.key'))
 
 # fail_plain_to_tls
 #
 # Connect to port 'plain' over TLS. This should fail, not hang.
 
-attempt('plain', 'wrong version number', tls=True)
+attempt('fail_plain_to_tls', 'plain', 'wrong version number', tls=True)
 
 # fail_tls_to_plain
 #
 # Make a plain MAPI connection to port 'server1'. This should fail.
 
-attempt('server1', 'terminated', tls=False)
+attempt('fail_tls_to_plain', 'server1', 'terminated', tls=False)
 
 # connect_trusted
 #
@@ -157,7 +161,7 @@ attempt('server1', 'terminated', tls=False)
 # store. Have a succesful MAPI exchange.
 
 # TODO
-#attempt('server3', None)
+#attempt('connect_trusted', 'server3', None)
 
 
 # Uncomment to keep the server running so you
