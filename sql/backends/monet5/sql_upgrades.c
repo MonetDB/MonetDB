@@ -6315,6 +6315,8 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
 			"EXTERNAL NAME sql.persist_unlogged;\n"
 			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged() TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string, string) TO PUBLIC;\n"
 			"UPDATE sys.functions SET system = true WHERE system <> true AND\n"
 			"name = 'persist_unlogged' AND schema_id = 2000;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
