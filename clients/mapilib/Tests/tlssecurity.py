@@ -12,9 +12,8 @@ import tlstester
 level = logging.WARNING
 # if sys.platform == 'win32':
 #     level=logging.DEBUG
-level = logging.DEBUG
+#level = logging.DEBUG
 logging.basicConfig(level=level)
-logging.warning("For once this test will fail intentionally")
 
 tgtdir = os.environ['TSTTRGDIR']
 assert os.path.isdir(tgtdir)
