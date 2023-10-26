@@ -5179,6 +5179,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	res_table *output;
 	BAT *b;
+	sql_subtype t1, t2;
 
 	(void) sql;
 	if (buf == NULL)
@@ -5546,7 +5547,6 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	/* Add new sysadmin procedure calls: stop, pause and resume with two
 	   arguments, first arg is query OID and second the user username that
 	   the query in bound to. */
-	sql_subtype t1, t2;
 	sql_find_subtype(&t1, "bigint", 64, 0);
 	sql_find_subtype(&t2, "varchar", 0, 0);
 	if (!sql_bind_func(sql, "sys", "pause", &t1, &t2, F_PROC, true)) {
@@ -5777,6 +5777,38 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	}
 
 	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_jun2023_sp3(Client c, mvc *sql, sql_schema *s)
+{
+	(void)s;
+	char *err = NULL;
+	sql_subtype t1, t2;
+
+	sql_find_subtype(&t1, "timestamp", 0, 0);
+	sql_find_subtype(&t2, "varchar", 0, 0);
+
+	if (!sql_bind_func(sql, "sys", "timestamp_to_str", &t1, &t2, F_FUNC, true)) {
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+
+		char *query = GDKmalloc(512);
+		if (query == NULL)
+			throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		snprintf(query, 512, "CREATE FUNCTION timestamp_to_str(d TIMESTAMP, format STRING) RETURNS STRING "
+				 "EXTERNAL NAME mtime.\"timestamp_to_str\";\n"
+				 "GRANT EXECUTE ON FUNCTION timestamp_to_str(TIMESTAMP, STRING) TO PUBLIC;\n"
+				 "UPDATE sys.functions SET system = true WHERE system <> true AND name = 'timestamp_to_str' "
+				 "AND schema_id = 2000 and type = %d;\n", F_FUNC);
+
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		GDKfree(query);
+	}
+
 	return err;		/* usually MAL_SUCCEED */
 }
 
@@ -6278,11 +6310,13 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			"EXTERNAL NAME sql.persist_unlogged;\n"
 			"CREATE FUNCTION sys.persist_unlogged(sname STRING)\n"
 			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
-			"EXTERNAL NAME sql.persist_unlogged(string);\n"
+			"EXTERNAL NAME sql.persist_unlogged;\n"
 			"CREATE FUNCTION sys.persist_unlogged(sname STRING, tname STRING)\n"
 			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
-			"EXTERNAL NAME sql.persist_unlogged(string, string);\n"
+			"EXTERNAL NAME sql.persist_unlogged;\n"
 			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged() TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string, string) TO PUBLIC;\n"
 			"UPDATE sys.functions SET system = true WHERE system <> true AND\n"
 			"name = 'persist_unlogged' AND schema_id = 2000;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
@@ -6474,6 +6508,12 @@ SQLupgrades(Client c, mvc *m)
 	if ((err = sql_update_default(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
+	}
+
+	if ((err = sql_update_jun2023_sp3(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
 	}
 
 	return 0;
