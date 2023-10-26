@@ -534,6 +534,7 @@ exit 0
 %if %{with cintegration}
 %{_libdir}/monetdb5/lib_capi.so
 %endif
+%{_libdir}/monetdb5/lib_csv.so
 %{_libdir}/monetdb5/lib_generator.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
