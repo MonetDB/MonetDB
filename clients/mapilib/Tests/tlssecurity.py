@@ -6,7 +6,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
-
+from hashlib import sha256
 import logging
 import os
 import subprocess
@@ -173,6 +173,37 @@ attempt('connect_server_name', 'sni', None, cert=certpath('ca1.crt'))
 # "mapi/9".
 
 attempt('connect_alpn_mapi9', 'alpn_mapi9', None, cert=certpath('ca1.crt'))
+
+# connect_right_hash
+#
+# Connect to port 'server1' over TLS, with certhash set to a prefix of the hash
+# of the server certificate in DER form. Have a succesful MAPI exchange.
+
+server1hash = sha256(certs.get_file('server1.der')).hexdigest()
+attempt('connect_right_hash', 'server1', None, certhash='{sha256}' + server1hash[:6])
+
+# connect_wrong_hash
+#
+# Connect to port 'server1' over TLS, with certhash set to a syntactically valid
+# hash that is not a prefix of the hash of the server certificate in DER form.
+# This should fail.
+
+first_digit = server1hash[0]
+other_digit = f"{8 ^ int(first_digit, 16):x}"
+wronghash = other_digit + server1hash[1:]
+
+attempt('connect_wrong_hash', 'server1', "does not match certhash", certhash='{sha256}' + wronghash[:6])
+
+
+# connect_ca_hash
+#
+# Connect to port 'server1' over TLS, with certhash set to a prefix of the hash
+# of the CA1 certificate in DER form. This should fail.
+
+ca1hash = sha256(certs.get_file('ca1.der')).hexdigest()
+attempt('connect_ca_hash', 'server1', "does not match certhash", certhash='{sha256}' + ca1hash[:6])
+
+
 
 # connect_trusted
 #

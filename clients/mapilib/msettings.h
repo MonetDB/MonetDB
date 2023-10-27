@@ -54,7 +54,7 @@ typedef enum mparm {
         MP_DATABASE,
         MP_TABLESCHEMA,
         MP_TABLE,
-        MP_CERTHASH,		// TODO implement this
+        MP_CERTHASH,
         MP_USER,
         MP_PASSWORD,
         MP_LANGUAGE,

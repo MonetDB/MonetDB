@@ -8,6 +8,11 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
+
+// Request compatibility with OpenSSL 1.1.1.
+// We need this for the hashing API.
+#define OPENSSL_API_COMPAT 0x10100000L
+
 #include "monetdb_config.h"
 
 
@@ -109,6 +114,63 @@ make_ssl_context(Mapi mid, SSL_CTX **ctx_out)
 	return MOK;
 }
 
+static MapiMsg
+verify_server_certificate_hash(Mapi mid, SSL *ssl, const char *required_prefix)
+{
+	mapi_log_record(mid, "CONN", "verifying certificate hash against prefix '%s'", required_prefix);
+
+	size_t prefix_len = strlen(required_prefix);
+	if (prefix_len > 2 * SHA256_DIGEST_LENGTH)
+		return mapi_setError(mid, "value of certhash= is longer than a sha256 digest", __func__, MERROR);
+
+	X509 *x509 = SSL_get_peer_certificate(ssl);
+	if (x509 == NULL)
+		return mapi_printError(mid, __func__, MERROR, "Server did not send a TLS certificate");
+
+	// Convert to DER
+	unsigned char *buf = NULL;
+	int buflen = i2d_X509(x509, &buf);
+	if (buflen <= 0) {
+		X509_free(x509);
+		return croak_openssl(mid, __func__, "could not convert server certificate to DER");
+	}
+	assert(buf);
+	X509_free(x509);
+
+	// Compute the has of the DER using the deprecated API so we stay
+	// compatible with OpenSSL 1.1.1.
+	SHA256_CTX sha256;
+	if (1 != SHA256_Init(&sha256)) {
+		OPENSSL_free(buf);
+		return mapi_setError(mid, "SHA256_Init", __func__, MERROR);
+	}
+	if (1 != SHA256_Update(&sha256, buf, buflen)) {
+		OPENSSL_free(buf);
+		return mapi_setError(mid, "SHA256_Update", __func__, MERROR);
+	}
+	unsigned char digest[SHA256_DIGEST_LENGTH];
+	if (1 != SHA256_Final(digest, &sha256)) {
+		OPENSSL_free(buf);
+		return mapi_setError(mid, "SHA256_Final", __func__, MERROR);
+	}
+	OPENSSL_free(buf);
+
+	// Make hexadecimal;
+	char hex[2 * SHA256_DIGEST_LENGTH + 1];
+	for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+		snprintf(&hex[2 * i], 3, "%02x", digest[i]);
+	}
+	assert(hex[2 * SHA256_DIGEST_LENGTH] == '\0');
+
+	// Compare the digits
+	if (strncmp(required_prefix, hex, prefix_len) != 0)
+		return mapi_setError(mid, "server certificate does not match certhash= prefix", __func__, MERROR);
+
+	mapi_log_record(mid, "CONN", "server certificate matches certhash");
+	return MOK;
+}
+
+
 MapiMsg
 wrap_tls(Mapi mid, SOCKET sock)
 {
@@ -129,6 +191,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 	const char *clientcert = msetting_string(settings, MP_CLIENTCERT);
 	if (!clientcert[0])
 		clientcert = clientkey;  // this logic should be virtual parameters in the spec!
+	enum msetting_tls_verify verify_method = msettings_connect_tls_verify(settings);
 
 	// Clear any earlier errrors
 	do {} while (ERR_get_error() != 0);
@@ -221,6 +284,15 @@ wrap_tls(Mapi mid, SOCKET sock)
 	if (1 != SSL_connect(ssl)) {
 		BIO_free_all(bio);
 		return croak_openssl(mid, __func__, "SSL_connect handshake");
+	}
+
+	if (verify_method == verify_hash) {
+		const char *required_prefix = msettings_connect_certhash_digits(settings);
+		msg = verify_server_certificate_hash(mid, ssl, required_prefix);
+		if (msg != MOK) {
+			BIO_free_all(bio);
+			return msg;
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////
