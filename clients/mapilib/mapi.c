@@ -1214,7 +1214,7 @@ mapi_log_header(Mapi mid, const char *filename, long line, const char *mark)
 	if (firstcall == 0)
 		firstcall = now;
 	double seconds = (double)(now - firstcall) / 1e6;
-	mnstr_printf(mid->tracelog, "▶ [%u] t=%.3fs %s %s(), line %ld\n", mid->index, seconds, mark, filename, line);
+	mnstr_printf(mid->tracelog, "\342\226\266 [%u] t=%.3fs %s %s(), line %ld\n", mid->index, seconds, mark, filename, line); /* U+25B6: right-pointing triangle */
 }
 
 void
@@ -1271,7 +1271,7 @@ mapi_impl_log_data(Mapi mid, const char *filename, long line, const char *mark, 
 	mapi_log_header(mid, filename, line, mark);
 	mnstr_write(mid->tracelog, start, 1, len);
 	if (len > 0 && start[len - 1] != '\n')
-		mnstr_writeStr(mid->tracelog, "\u23ce\n");
+		mnstr_writeStr(mid->tracelog, "\342\217\216\n"); /* U+23CE: return symbol */
 	mnstr_flush(mid->tracelog, MNSTR_FLUSH_DATA);
 }
 
@@ -4677,4 +4677,3 @@ bailout:
 	// malloc failure is the only way these calls could have failed
 	return mapi_printError(mid, __func__, MERROR, "%s: %s", error_message, mnstr_peek_error(error_stream));
 }
-
