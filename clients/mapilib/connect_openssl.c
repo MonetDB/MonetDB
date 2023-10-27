@@ -204,12 +204,6 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak_openssl(mid, __func__, "SSL_set_alpn_protos");
 	}
 
-        // if target.clientkey:
-        //     ssl_context.load_cert_chain(
-        //         certfile=target.clientcert if target.clientcert is not None else target.clientkey,
-        //         keyfile=target.clientkey,
-        //         password=target.clientkeypassword,
-        //     )
 	assert(clientkey);
 	assert(clientcert);
 	if (clientkey[0]) {
