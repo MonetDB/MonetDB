@@ -9,6 +9,7 @@
  */
 
 
+#include "monetdb_config.h"
 
 #include "msettings.h"
 

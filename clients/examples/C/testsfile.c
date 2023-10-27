@@ -9,7 +9,6 @@
  */
 
 #include "monetdb_config.h"
-#define _POSIX_C_SOURCE 200809L
 
 #include "murltest.h"
 #include "msettings.h"

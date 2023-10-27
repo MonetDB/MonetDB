@@ -63,7 +63,7 @@ add_system_certificates(Mapi mid, SSL_CTX *ctx)
 	X509_STORE *x509_store = SSL_CTX_get_cert_store(ctx);
 	HCERTSTORE sysstore = NULL;
 	const CERT_CONTEXT *item = NULL;
-	
+
 	mapi_log_record(mid, "CONN", "Enumerating system certificates");
 
 	sysstore = CertOpenSystemStoreW(0, L"ROOT");
