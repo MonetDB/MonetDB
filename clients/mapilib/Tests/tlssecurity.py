@@ -19,6 +19,8 @@ import tlstester
 level = logging.WARNING
 # if sys.platform == 'win32':
 #     level=logging.DEBUG
+if '-v' in sys.argv:
+    level = logging.DEBUG
 #level = logging.DEBUG
 logging.basicConfig(level=level)
 
@@ -145,17 +147,17 @@ attempt('refuse_expired', 'expiredcert', 'verify failed', cert=certpath('ca1.crt
 
 attempt('connect_client_auth', 'clientauth', None, cert=certpath('ca1.crt'), clientcert=certpath('client2.crt'), clientkey=certpath('client2.key'))
 
-# fail_plain_to_tls
+# fail_tls_to_plain
 #
 # Connect to port 'plain' over TLS. This should fail, not hang.
 
-attempt('fail_plain_to_tls', 'plain', 'wrong version number', tls=True)
+attempt('fail_tls_to_plain', 'plain', 'wrong version number', tls=True)
 
-# fail_tls_to_plain
+# fail_plain_to_tls
 #
 # Make a plain MAPI connection to port 'server1'. This should fail.
 
-attempt('fail_tls_to_plain', 'server1', 'terminated', tls=False)
+attempt('fail_plain_to_tls', 'server1', 'terminated', tls=False)
 
 # connect_trusted
 #
@@ -164,6 +166,8 @@ attempt('fail_tls_to_plain', 'server1', 'terminated', tls=False)
 # system-specific. Connect to port 'server3' over TLS without passing a
 # certificate to check. The implementation should pick it up from the system
 # store. Have a succesful MAPI exchange.
+#
+# Tested elsewhere, in test systemcertificates
 
 # TODO
 #attempt('connect_trusted', 'server3', None)
