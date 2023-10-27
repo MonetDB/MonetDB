@@ -10,7 +10,6 @@
 
 #ifndef _MSETTINGS_H
 #define _MSETTINGS_H 1
-#include "monetdb_config.h"
 #include <stdbool.h>
 
 #define MP__BOOL_START (100)
