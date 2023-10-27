@@ -380,9 +380,11 @@ MT_thread_add_mylock(MT_Lock *lock)
 void
 MT_thread_del_mylock(MT_Lock *lock)
 {
+	struct winthread *w;
 	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
-	struct winthread *w = TlsGetValue(threadslot);
+		w = &mainthread;
+	else
+		w = TlsGetValue(threadslot);
 
 	if (w) {
 		if (w->mylocks == lock) {
@@ -864,9 +866,11 @@ MT_thread_add_mylock(MT_Lock *lock)
 void
 MT_thread_del_mylock(MT_Lock *lock)
 {
+	struct posthread *p;
 	if (!thread_initialized)
-		return;
-	struct posthread *p = pthread_getspecific(threadkey);
+		p = &mainthread;
+	else
+		p = pthread_getspecific(threadkey);
 
 	if (p) {
 		if (p->mylocks == lock) {
