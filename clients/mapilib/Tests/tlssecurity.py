@@ -159,6 +159,21 @@ attempt('fail_tls_to_plain', 'plain', 'wrong version number', tls=True)
 
 attempt('fail_plain_to_tls', 'server1', 'terminated', tls=False)
 
+# connect_server_name
+#
+# Connect to port 'sni' over TLS. Have a succesful MAPI exchange. This indicates
+# that the implementation sent a correct Server Name Indication.
+
+attempt('connect_server_name', 'sni', None, cert=certpath('ca1.crt'))
+
+# connect_alpn_mapi9
+#
+# Connect to port 'alpn_mapi9' over TLS. Have a succesful MAPI exchange. This
+# indicates that the implementation succesfully negotiated ALPN protocol
+# "mapi/9".
+
+attempt('connect_alpn_mapi9', 'alpn_mapi9', None, cert=certpath('ca1.crt'))
+
 # connect_trusted
 #
 # Only when running in a throwaway environment such as a Docker container:
