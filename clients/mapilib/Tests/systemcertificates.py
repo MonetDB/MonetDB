@@ -16,7 +16,7 @@ import sys
 HOST = 'python.org'
 
 # Run mclient
-cmd = ['mclient', '-d', f"monetdbs://{HOST}:443/demo"]
+cmd = ['mclient', '-L-', '-d', f"monetdbs://{HOST}:443/demo"]
 proc = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 assert proc.returncode == 2, f"mclient is supposed to exit with status 2, not {proc.returncode}"
 
@@ -25,5 +25,7 @@ assert proc.returncode == 2, f"mclient is supposed to exit with status 2, not {p
 #
 # In ASCII, 'H' + 256 * 'T' is 21576.
 if b'21576' not in proc.stderr:
-    print(f"Expected mclient to print an error message containing the number 21576, got:\n{proc.stderr}\n", file=sys.stderr)
+    msg = str(proc.stderr, 'utf-8')
+    print(f"Expected mclient to print an error message containing the number 21576, got:\n--- stderr ---\n{msg}\n---end stderr ---", file=sys.stderr)
     exit(1)
+
