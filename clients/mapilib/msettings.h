@@ -48,8 +48,8 @@ typedef enum mparm {
         MP_SOCK = MP__STRING_START,
 	MP_SOCKDIR,
         MP_CERT,
-        MP_CLIENTKEY,		// TODO implement this
-        MP_CLIENTCERT,		// TODO implement this
+        MP_CLIENTKEY,
+        MP_CLIENTCERT,
         MP_HOST,
         MP_DATABASE,
         MP_TABLESCHEMA,

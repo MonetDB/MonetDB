@@ -125,6 +125,11 @@ wrap_tls(Mapi mid, SOCKET sock)
 	size_t hostlen = strlen(host);
 	size_t hostportlen = hostlen + 1 + 20;
 
+	const char *clientkey = msetting_string(settings, MP_CLIENTKEY);
+	const char *clientcert = msetting_string(settings, MP_CLIENTCERT);
+	if (!clientcert[0])
+		clientcert = clientkey;  // this logic should be virtual parameters in the spec!
+
 	// Clear any earlier errrors
 	do {} while (ERR_get_error() != 0);
 
@@ -192,10 +197,29 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak_openssl(mid, __func__, "SSL_set_tlsext_host_name");
 	}
 
+        // if target.clientkey:
+        //     ssl_context.load_cert_chain(
+        //         certfile=target.clientcert if target.clientcert is not None else target.clientkey,
+        //         keyfile=target.clientkey,
+        //         password=target.clientkeypassword,
+        //     )
+	assert(clientkey);
+	assert(clientcert);
+	if (clientkey[0]) {
+		if (1 != SSL_use_PrivateKey_file(ssl, clientkey, SSL_FILETYPE_PEM)) {
+			BIO_free_all(bio);
+			return croak_openssl(mid, __func__, "SSL_use_PrivateKey_file");
+		}
+		if (1 != SSL_use_certificate_chain_file(ssl, clientcert)) {
+			BIO_free_all(bio);
+			return croak_openssl(mid, __func__, "SSL_use_certificate_chain_file");
+		}
+	}
+
 	// handshake
 	if (1 != SSL_connect(ssl)) {
 		BIO_free_all(bio);
-		return croak_openssl(mid, __func__, "SSL_connect");
+		return croak_openssl(mid, __func__, "SSL_connect handshake");
 	}
 
 	/////////////////////////////////////////////////////////////////////

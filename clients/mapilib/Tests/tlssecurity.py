@@ -143,8 +143,7 @@ attempt('refuse_expired', 'expiredcert', 'verify failed', cert=certpath('ca1.crt
 # Authenticate using client2.key and client2.crt. Have a succesful MAPI
 # exchange.
 
-# TODO
-#attempt('connect_client_auth', 'clientauth', None, cert=certpath('ca1.crt'),clientcert=certpath('client2.crt'), clientkey=certpath('client2.key'))
+attempt('connect_client_auth', 'clientauth', None, cert=certpath('ca1.crt'), clientcert=certpath('client2.crt'), clientkey=certpath('client2.key'))
 
 # fail_plain_to_tls
 #
