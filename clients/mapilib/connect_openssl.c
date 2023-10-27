@@ -197,6 +197,13 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak_openssl(mid, __func__, "SSL_set_tlsext_host_name");
 	}
 
+	unsigned char alpn_vector[] = { 6, 'm', 'a', 'p', 'i', '/', '9' };
+	// NOTE: these functions return 0 on success, not 1!
+	if (0 != SSL_set_alpn_protos(ssl, alpn_vector, sizeof(alpn_vector))) {
+		BIO_free_all(bio);
+		return croak_openssl(mid, __func__, "SSL_set_alpn_protos");
+	}
+
         // if target.clientkey:
         //     ssl_context.load_cert_chain(
         //         certfile=target.clientcert if target.clientcert is not None else target.clientkey,
