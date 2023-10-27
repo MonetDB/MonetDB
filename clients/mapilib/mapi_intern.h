@@ -44,6 +44,11 @@
 # include <sys/time.h>		/* gettimeofday */
 #endif
 
+#ifdef HAVE_OPENSSL
+#include <openssl/ssl.h>
+#endif
+
+
 /* Copied from gdk_posix, but without taking a lock because we don't have access to
  * MT_lock_set/unset here. We just have to hope for the best
  */
@@ -312,3 +317,10 @@ MapiMsg wrap_socket(Mapi mid, SOCKET sock);
 
 void close_connection(Mapi mid);
 void set_uri(Mapi mid);
+
+#ifdef HAVE_OPENSSL
+MapiMsg croak_openssl(Mapi mid, const char *action, const char *fmt, ...)
+	__attribute__(( __format__(__printf__, 3, 4) ));
+
+MapiMsg add_system_certificates(Mapi mid, SSL_CTX *ctx);
+#endif

@@ -25,6 +25,7 @@ target_sources(mapi
   parseurl.c
   $<$<BOOL:${HAVE_SYS_UN_H}>:connect_unix.c>
   $<$<BOOL:${OPENSSL_FOUND}>:connect_openssl.c>
+  $<$<BOOL:${OPENSSL_FOUND}>:$<$<BOOL:${WIN32}>:openssl_windows.c>>
   mapi_intern.h
   PUBLIC
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/mapi.h>
@@ -46,6 +47,7 @@ target_link_libraries(mapi
   stream
   mutils
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
+  $<$<BOOL:${OPENSSL_FOUND}>:$<$<BOOL:${WIN32}>:crypt32>>
   $<$<PLATFORM_ID:Windows>:ws2_32>)
 
 target_compile_definitions(mapi

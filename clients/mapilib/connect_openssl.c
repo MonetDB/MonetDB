@@ -11,10 +11,8 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-static MapiMsg croak(Mapi mid, const char *action, const char *fmt, ...)
-	__attribute__(( __format__(__printf__, 3, 4) ));
-static MapiMsg
-croak(Mapi mid, const char *action, const char *fmt, ...)
+MapiMsg
+croak_openssl(Mapi mid, const char *action, const char *fmt, ...)
 {
 	va_list ap;
 	char buffer[800];
@@ -38,6 +36,16 @@ croak(Mapi mid, const char *action, const char *fmt, ...)
 		return mapi_printError(mid, action, MERROR, "TLS error: %s", buffer);
 }
 
+#ifndef NATIVE_WIN32
+MapiMsg
+add_system_certificates(Mapi mid, SSL_CTX *ctx)
+{
+	(void)mid;
+	(void)ctx;
+	return MOK;
+}
+#endif
+
 static MapiMsg
 make_ssl_context(Mapi mid, SSL_CTX **ctx_out)
 {
@@ -50,10 +58,10 @@ make_ssl_context(Mapi mid, SSL_CTX **ctx_out)
 
 	const SSL_METHOD *method = TLS_method();
 	if (!method)
-		return croak(mid, __func__, "TLS_method");
+		return croak_openssl(mid, __func__, "TLS_method");
 	SSL_CTX *ctx = SSL_CTX_new(method);
 	if (!ctx)
-		return croak(mid, __func__, "SSL_CTX_new");
+		return croak_openssl(mid, __func__, "SSL_CTX_new");
 	// From here on we need to free 'ctx' on failure
 
 	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
@@ -72,13 +80,18 @@ make_ssl_context(Mapi mid, SSL_CTX **ctx_out)
 			cert = msetting_string(mid->settings, MP_CERT);
 			if (1 != SSL_CTX_load_verify_locations(ctx, cert, NULL)) {
 				SSL_CTX_free(ctx);
-				return croak(mid, __func__, "SSL_CTX_load_verify_file: %s", cert);
+				return croak_openssl(mid, __func__, "SSL_CTX_load_verify_file: %s", cert);
 			}
 			break;
 		case verify_system:
 			if (1 != SSL_CTX_set_default_verify_paths(ctx)) {
 				SSL_CTX_free(ctx);
-				return croak(mid, __func__, "SSL_CTX_set_default_verify_paths");
+				return croak_openssl(mid, __func__, "SSL_CTX_set_default_verify_paths");
+			}
+			MapiMsg msg = add_system_certificates(mid, ctx);
+			if (msg != MOK) {
+				SSL_CTX_free(ctx);
+				return msg;
 			}
 			break;
 	}
@@ -123,7 +136,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 	if (bio == NULL) {
 		closesocket(sock);
 		SSL_CTX_free(ctx);
-		return croak(mid, __func__, "BIO_new_ssl");
+		return croak_openssl(mid, __func__, "BIO_new_ssl");
 	}
 	// BIO_new_ssl() inc'd the reference count of ctx so we can drop our
 	// reference here.
@@ -134,7 +147,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 	if (1 != BIO_get_ssl(bio, &ssl)) {
 		closesocket(sock);
 		BIO_free(bio);
-		return croak(mid, __func__, "BIO_get_ssl");
+		return croak_openssl(mid, __func__, "BIO_get_ssl");
 	}
 	// As far as I know the SSL returned by BIO_get_ssl has not had
 	// its refcount inc'd so we don't need to free it.
@@ -150,7 +163,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 	if (sockbio == NULL) {
 		closesocket(sock);
 		BIO_free_all(bio);
-		return croak(mid, __func__, "BIO_new_socket");
+		return croak_openssl(mid, __func__, "BIO_new_socket");
 	}
 	// From here on, 'sock' will be free'd by 'sockbio'.
 	// On error: free 'sockbio' and free 'bio'.
@@ -158,7 +171,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 	if (!BIO_up_ref(sockbio)) {
 		BIO_free_all(sockbio);
 		BIO_free_all(bio);
-		return croak(mid, __func__, "BIO_up_ref sockbio");
+		return croak_openssl(mid, __func__, "BIO_up_ref sockbio");
 	}
 	SSL_set0_rbio(ssl, sockbio); // consumes first ref
 	SSL_set0_wbio(ssl, sockbio); // consumes second ref
@@ -167,13 +180,13 @@ wrap_tls(Mapi mid, SOCKET sock)
 
 	if (!SSL_set_tlsext_host_name(ssl, host)) {
 		BIO_free_all(bio);
-		return croak(mid, __func__, "SSL_set_tlsext_host_name");
+		return croak_openssl(mid, __func__, "SSL_set_tlsext_host_name");
 	}
 
 	// handshake
 	if (1 != SSL_connect(ssl)) {
 		BIO_free_all(bio);
-		return croak(mid, __func__, "SSL_connect");
+		return croak_openssl(mid, __func__, "SSL_connect");
 	}
 
 	/////////////////////////////////////////////////////////////////////
@@ -181,7 +194,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 
 	if (!BIO_up_ref(bio)) {
 		BIO_free_all(bio);
-		return croak(mid, __func__, "BIO_up_ref bio");
+		return croak_openssl(mid, __func__, "BIO_up_ref bio");
 	}
 	// On error: free 'bio' twice
 
@@ -194,7 +207,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 		BIO_free_all(bio); // drops first ref
 		BIO_free_all(bio); // drops second ref
 		free(hostcolonport);
-		return croak(mid, __func__, "openssl_rstream: %s", mnstr_peek_error(rstream));
+		return croak_openssl(mid, __func__, "openssl_rstream: %s", mnstr_peek_error(rstream));
 	}
 	// On error: free 'bio' and close 'rstream'.
 	stream *wstream = openssl_wstream(hostcolonport ? hostcolonport : "ssl wstream", bio);
@@ -202,7 +215,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 	if (wstream == NULL || mnstr_errnr(wstream) != MNSTR_NO__ERROR) {
 		BIO_free_all(bio);
 		mnstr_close(rstream);
-		return croak(mid, __func__, "openssl_wstream: %s", mnstr_peek_error(wstream));
+		return croak_openssl(mid, __func__, "openssl_wstream: %s", mnstr_peek_error(wstream));
 	}
 	// On error: free 'rstream' and 'wstream'.
 	msg = mapi_wrap_streams(mid, rstream, wstream);
