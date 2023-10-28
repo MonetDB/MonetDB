@@ -955,7 +955,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		sql->params = NULL;
 		if (create) {
-			bit side_effect = (list_empty(restype) || list_empty(l)); /* TODO make this more precise? */
+			bit side_effect = (list_empty(restype) || (!vararg && list_empty(l))); /* TODO make this more precise? */
 			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE, side_effect)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
