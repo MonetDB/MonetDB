@@ -49,6 +49,8 @@ jobs:
         run: |
           cd build 
           cmake --build . --target test
+      - name: install pymonetdb
+        run: pip install pymonetdb
       - name: mtest 
         run: |
           cd build 
