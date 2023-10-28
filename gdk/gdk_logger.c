@@ -1642,11 +1642,23 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	lg->catalog_id = noids;
 	lg->dcatalog = ndels;
 
+	/* failing to rename these two bats is not fatal */
+	if (BBPrename(lg->catalog_cnt, NULL) != GDK_SUCCEED)
+		GDKclrerr();
+	if (BBPrename(lg->catalog_lid, NULL) != GDK_SUCCEED)
+		GDKclrerr();
 	BBPunfix(lg->catalog_cnt->batCacheid);
 	BBPunfix(lg->catalog_lid->batCacheid);
 
 	lg->catalog_cnt = ncnts;
 	lg->catalog_lid = nlids;
+	char bak[FILENAME_MAX];
+	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_cnt", NULL);
+	if (BBPrename(lg->catalog_cnt, bak) < 0)
+		GDKclrerr();
+	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_lid", NULL);
+	if (BBPrename(lg->catalog_lid, bak) < 0)
+		GDKclrerr();
 	lg->cnt = BATcount(lg->catalog_bid);
 	lg->deleted -= cleanup;
 	return rcnt;
@@ -2061,16 +2073,24 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 	}
+	/* failing to rename the catalog_cnt and catalog_lid bats is not
+	 * fatal */
 	lg->catalog_cnt = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_cnt == NULL) {
 		GDKerror("failed to create catalog_cnt bat");
 		goto error;
 	}
+	strconcat_len(bak, sizeof(bak), fn, "_catalog_cnt", NULL);
+	if (BBPrename(lg->catalog_cnt, bak) < 0)
+		GDKclrerr();
 	lg->catalog_lid = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_lid == NULL) {
 		GDKerror("failed to create catalog_lid bat");
 		goto error;
 	}
+	strconcat_len(bak, sizeof(bak), fn, "_catalog_lid", NULL);
+	if (BBPrename(lg->catalog_lid, bak) < 0)
+		GDKclrerr();
 	if (bm_get_counts(lg) != GDK_SUCCEED)
 		goto error;
 
