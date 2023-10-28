@@ -49,6 +49,10 @@ jobs:
         run: |
           cd build 
           cmake --build . --target test
+      - name: mtest 
+        run: |
+          cd build 
+          cmake --build . --target mtest
           #-
           #uses: actions/upload-artifact@v3
           #name: Publish Linux binary wheels
