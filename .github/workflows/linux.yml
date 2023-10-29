@@ -54,7 +54,7 @@ jobs:
         run: |
           #cd build 
           #cmake --build . --target mtest
-          Mtest.py -r --debug=0
+          $HOME/${{ matix.branch }}/Mtest.py -r --debug=0
           #-
           #uses: actions/upload-artifact@v3
           #name: Publish Linux binary wheels
