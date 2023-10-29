@@ -1190,7 +1190,7 @@ const char *replaceRef;
 void resetMalBlk(MalBlkPtr mb);
 void resetMalTypes(MalBlkPtr mb, int stop);
 int resizeMalBlk(MalBlkPtr mb, int elements);
-int resolveType(int dsttype, int srctype);
+int resolvedType(int dsttype, int srctype);
 const char *resultSetRef;
 const char *revokeRef;
 const char *revoke_functionRef;
