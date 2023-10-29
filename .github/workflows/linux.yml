@@ -29,7 +29,8 @@ jobs:
         run: |
           mkdir build
           cd build 
-          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DRINTEGRATION=OFF
+          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DRINTEGRATION=OFF \
+            -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'Linux'
       -
@@ -41,7 +42,7 @@ jobs:
           mkdir build
           cd build 
           cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DRINTEGRATION=OFF  \
-            -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison
+            -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'macOS'
       - name: ctest 
