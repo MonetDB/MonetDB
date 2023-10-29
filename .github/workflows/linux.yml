@@ -3,7 +3,6 @@ name: MonetDB build and test
 on:
   push:
     branches: 
-      - '*'
       - 'branches/*'
   pull_request:
   # Allows you to run this workflow manually from the Actions tab
@@ -49,6 +48,13 @@ jobs:
         run: |
           cd build 
           cmake --build . --target test
+      - name: install pymonetdb
+        run: pip3 install pymonetdb
+      - name: mtest 
+        run: |
+          #cd build 
+          #cmake --build . --target mtest
+          $HOME/${{ matix.branch }}/Mtest.py -r --debug=0
           #-
           #uses: actions/upload-artifact@v3
           #name: Publish Linux binary wheels
