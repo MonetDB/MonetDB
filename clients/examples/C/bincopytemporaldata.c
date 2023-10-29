@@ -10,11 +10,32 @@
 
 #include "bincopydata.h"
 
+static const copy_binary_timestamp binary_nil_timestamp = {
+	.time = {
+		.ms = 0xFFFFFFFF,
+		.seconds = 255,
+		.minutes = 255,
+		.hours = 255,
+		.padding = 255,
+	},
+	.date = {
+		.day = 255,
+		.month = 255,
+		.year =-1,
+	},
+};
+
 static copy_binary_timestamp
 random_timestamp(struct rng *rng)
 {
+	copy_binary_timestamp ts;
+	if (rng_next(rng) % 10 == 9) {
+		ts = binary_nil_timestamp;
+		return ts;
+	}
+
 	// the % trick gives a little skew but we don't care
-	copy_binary_timestamp ts = {
+	ts = (copy_binary_timestamp){
 		.time = {
 			.ms = rng_next(rng) % 1000000,
 			.seconds = rng_next(rng) % 60, // 61 ??
@@ -49,8 +70,9 @@ random_timestamp(struct rng *rng)
 }
 
 void
-gen_timestamps(FILE *f, bool byteswap, long nrecs)
+gen_timestamps(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	struct rng rng = my_favorite_rng();
 
 	for (long i = 0; i < nrecs; i++) {
@@ -62,28 +84,31 @@ gen_timestamps(FILE *f, bool byteswap, long nrecs)
 	}
 }
 
-#define GEN_TIMESTAMP_FIELD(name, fld) \
+#define GEN_TIMESTAMP_FIELD(name, typ, fld, nilvalue) \
 	void name \
-		(FILE *f, bool byteswap, long nrecs) \
+		(FILE *f, bool byteswap, long nrecs, char *arg) \
 	{ \
+		(void)arg; \
 		struct rng rng = my_favorite_rng(); \
 	\
 		for (long i = 0; i < nrecs; i++) { \
 			copy_binary_timestamp ts = random_timestamp(&rng); \
+			typ *p = &ts.fld; \
+			typ tmp = ts.date.day == 255 ? nilvalue : *p; \
 			if (byteswap) { \
 				copy_binary_convert_timestamp(&ts); \
 			} \
-			fwrite(&ts.fld, sizeof(ts.fld), 1, f); \
+			fwrite(&tmp, sizeof(tmp), 1, f); \
 		} \
 	}
 
-GEN_TIMESTAMP_FIELD(gen_timestamp_times, time)
-GEN_TIMESTAMP_FIELD(gen_timestamp_dates, date)
+GEN_TIMESTAMP_FIELD(gen_timestamp_times, copy_binary_time, time, binary_nil_timestamp.time)
+GEN_TIMESTAMP_FIELD(gen_timestamp_dates, copy_binary_date, date, binary_nil_timestamp.date)
 
-GEN_TIMESTAMP_FIELD(gen_timestamp_ms, time.ms)
-GEN_TIMESTAMP_FIELD(gen_timestamp_seconds, time.seconds)
-GEN_TIMESTAMP_FIELD(gen_timestamp_minutes, time.minutes)
-GEN_TIMESTAMP_FIELD(gen_timestamp_hours, time.hours)
-GEN_TIMESTAMP_FIELD(gen_timestamp_days, date.day)
-GEN_TIMESTAMP_FIELD(gen_timestamp_months, date.month)
-GEN_TIMESTAMP_FIELD(gen_timestamp_years, date.year)
+GEN_TIMESTAMP_FIELD(gen_timestamp_ms, uint32_t, time.ms, 0x80)
+GEN_TIMESTAMP_FIELD(gen_timestamp_seconds, uint8_t, time.seconds, 0x80)
+GEN_TIMESTAMP_FIELD(gen_timestamp_minutes, uint8_t, time.minutes, 0x80)
+GEN_TIMESTAMP_FIELD(gen_timestamp_hours, uint8_t, time.hours, 0x80)
+GEN_TIMESTAMP_FIELD(gen_timestamp_days, uint8_t, date.day, 0x80)
+GEN_TIMESTAMP_FIELD(gen_timestamp_months, uint8_t, date.month, 0x80)
+GEN_TIMESTAMP_FIELD(gen_timestamp_years, int16_t, date.year, -1)

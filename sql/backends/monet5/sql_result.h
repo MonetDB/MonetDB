@@ -25,11 +25,12 @@ extern int mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng
 extern int mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime, lng maloptimizer);
 extern int mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths, lng starttime, lng maloptimizer);
 extern int mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr);
+extern int mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr);
 
 extern int mvc_export_prepare(backend *b, stream *s);
 
 extern str mvc_import_table(Client cntxt, BAT ***bats, mvc *c, bstream *s, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng nr, lng offset, int best, bool from_stdin, bool escape);
-sql5_export int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type, BAT *order);
+sql5_export int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type);
 
 sql5_export int mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, BAT *b);
 extern int mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype);

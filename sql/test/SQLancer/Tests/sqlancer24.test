@@ -1,0 +1,67 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0 (c0 INT)
+
+query I nosort
+SELECT x.x FROM (VALUES (NULL),(2)) x(x) WHERE 1 <> ALL(VALUES (x.x))
+----
+2
+
+query I nosort
+SELECT 1 FROM (SELECT DISTINCT 1) x(x) WHERE NOT EXISTS ((SELECT 2 WHERE FALSE) EXCEPT (SELECT x.x WHERE FALSE))
+----
+1
+
+# this one is right
+query I nosort
+SELECT NOT EXISTS ((SELECT 2 WHERE FALSE) EXCEPT (SELECT x.x WHERE FALSE)) FROM (SELECT DISTINCT 1) x(x)
+----
+1
+
+query I nosort
+SELECT 1 FROM (SELECT 1) x(x) WHERE (SELECT (SELECT min(CASE WHEN TRUE THEN x.x END)) FROM (SELECT 'a') x(x)) = 'a'
+----
+1
+
+query I nosort
+SELECT 1 FROM (SELECT TRUE) x(x) WHERE FALSE OR NOT EXISTS (SELECT 1 WHERE x.x AND FALSE)
+----
+1
+
+query I nosort
+SELECT 1 FROM (SELECT CAST(NULL AS INT)) x(x) WHERE sql_max(TRUE, EXISTS ((SELECT x.x) INTERSECT (SELECT 1)))
+----
+1
+
+query I nosort
+SELECT 1 FROM (SELECT 1) x(x) CROSS JOIN LATERAL (SELECT 1 WHERE x.x BETWEEN x.x AND x.x) y(y)
+----
+1
+
+query I nosort
+SELECT 1 FROM (SELECT 1) x(x) HAVING min((SELECT x.x)) = 1
+----
+1
+
+query I nosort
+SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING corr((SELECT x.x), (SELECT y.y)) = 0) FROM (SELECT 1) y(y)
+----
+NULL
+
+query I nosort
+SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING corr((SELECT x.x), (SELECT x.x + y.y)) = 0) FROM (SELECT 1) y(y)
+----
+NULL
+
+query I nosort
+SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING corr(1, (SELECT x.x + y.y)) = 0) FROM (SELECT 1) y(y)
+----
+NULL
+
+statement ok
+ROLLBACK
+
+statement error 42000!MIN: aggregate functions cannot be nested
+SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING min(min((SELECT x.x))) = 0) FROM (SELECT 1) y(y)

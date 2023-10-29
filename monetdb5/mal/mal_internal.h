@@ -15,9 +15,7 @@
 #endif
 
 void setqptimeout(lng usecs)
-	__attribute__((__visibility__("hidden")));
-Client setClientContext(Client cntxt)
-	__attribute__((__visibility__("hidden")));
+		__attribute__((__visibility__("hidden")));
 
 extern size_t qsize;
 

@@ -37,6 +37,9 @@ set(QXSOURCE "${CMAKE_SOURCE_DIR}")
 set(QXsysconfdir "${CMAKE_INSTALL_FULL_SYSCONFDIR}")
 set(SOURCE "${CMAKE_SOURCE_DIR}")
 
+if (HAVE_CUDF)
+  set(HAVE_CUDF_FALSE "#")
+endif(HAVE_CUDF)
 if (HAVE_CURL)
   set(HAVE_CURL_FALSE "#")
 endif(HAVE_CURL)
@@ -49,6 +52,9 @@ endif(HAVE_GEOM)
 if (HAVE_HGE)
   set(HAVE_HGE_FALSE "#")
 endif(HAVE_HGE)
+if (HAVE_ICONV)
+  set(HAVE_ICONV_FALSE "#")
+endif(HAVE_ICONV)
 if (HAVE_LIBBZ2)
   set(HAVE_LIBBZ2_FALSE "#")
 endif(HAVE_LIBBZ2)
@@ -91,8 +97,8 @@ endif(HAVE_GETENTROPY)
 if (NOT WIN32)
   set(NOT_WIN32_FALSE "#")
 endif()
-if(NOT ASSERT)
-  set(NOT_ASSERT_FALSE "#")
+if (SANITIZER)
+  set(SANITIZER_FALSE "#")
 endif()
 
 configure_file(Mtest.py.in
@@ -133,6 +139,7 @@ if(PYTHON3_LIBDIR)
     melcheck.py
     sqllogictest.py
     explain.py
+    plan.py
     mapicursor.py
     malmapi.py
     helpers.py
@@ -176,6 +183,13 @@ configure_file(mktest.py
 configure_file(sqllogictest.py
   ${CMAKE_CURRENT_BINARY_DIR}/sqllogictest.py
   COPYONLY)
+
+if (NOT WIN32)
+  add_library(mtest_fallocate SHARED)
+  target_sources(mtest_fallocate PRIVATE fallocate.c)
+  target_link_libraries(mtest_fallocate PRIVATE monetdb_config_header)
+  target_link_libraries(mtest_fallocate)
+endif()
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/mktest.py

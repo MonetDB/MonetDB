@@ -340,38 +340,24 @@ CREATE VIEW sys.fully_qualified_functions AS
 		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
 
 CREATE VIEW sys.describe_comments AS
-		SELECT
-			o.id id,
-			o.tpe tpe,
-			o.nme fqn,
-			c.remark rem
-		FROM (
-			SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas
-
-			UNION ALL
-
-			SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
-			FROM sys.schemas s JOIN sys.tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
-			WHERE s.name <> 'tmp'
-
-			UNION ALL
-
-			SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id
-
-			UNION ALL
-
-			SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE idx.table_id = t.id AND t.schema_id = s.id
-
-			UNION ALL
-
-			SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
-
-			UNION ALL
-
-			SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf WHERE f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
-
-			) AS o(id, tpe, nme)
-			JOIN sys.comments c ON c.id = o.id;
+	SELECT o.id AS id, o.tpe AS tpe, o.nme AS fqn, cm.remark AS rem
+	FROM (
+		SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas WHERE NOT system
+		UNION ALL
+		SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
+		  FROM sys.schemas s JOIN sys._tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
+		 WHERE NOT t.system
+		UNION ALL
+		SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys._tables t, sys.schemas s WHERE NOT t.system AND c.table_id = t.id AND t.schema_id = s.id
+		UNION ALL
+		SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE NOT t.system AND idx.table_id = t.id AND t.schema_id = s.id
+		UNION ALL
+		SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
+		UNION ALL
+		SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf
+		 WHERE NOT f.system AND f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
+		) AS o(id, tpe, nme)
+	JOIN sys.comments cm ON cm.id = o.id;
 
 CREATE VIEW sys.describe_privileges AS
 	SELECT
@@ -601,6 +587,21 @@ BEGIN
 		WHERE f.name=functionName AND s.name = schemaName;
 END;
 
+CREATE VIEW sys.describe_accessible_tables AS
+    SELECT
+        schemas.name AS schema,
+        tables.name  AS table,
+        tt.table_type_name AS table_type,
+        pc.privilege_code_name AS privs,
+        p.privileges AS privs_code
+    FROM privileges p
+    JOIN sys.roles ON p.auth_id = roles.id
+    JOIN sys.tables ON p.obj_id = tables.id
+    JOIN sys.table_types tt ON tables.type = tt.table_type_id
+    JOIN sys.schemas ON tables.schema_id = schemas.id
+    JOIN sys.privilege_codes pc ON p.privileges = pc.privilege_code_id
+    WHERE roles.name = current_role;
+
 GRANT SELECT ON sys.describe_constraints TO PUBLIC;
 GRANT SELECT ON sys.describe_indices TO PUBLIC;
 GRANT SELECT ON sys.describe_column_defaults TO PUBLIC;
@@ -614,3 +615,4 @@ GRANT SELECT ON sys.describe_user_defined_types TO PUBLIC;
 GRANT SELECT ON sys.describe_partition_tables TO PUBLIC;
 GRANT SELECT ON sys.describe_sequences TO PUBLIC;
 GRANT SELECT ON sys.describe_functions TO PUBLIC;
+GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;

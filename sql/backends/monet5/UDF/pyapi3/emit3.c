@@ -13,7 +13,6 @@
 #include "conversion.h"
 #include "convert_loops.h"
 #include "type_conversion.h"
-#include "gdk_interprocess.h"
 #include "gdk_time.h"
 
 #include "unicode.h"
@@ -298,7 +297,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 								msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
 								goto wrapup;
 							}
-						} break;
+							break;
+						}
 					}
 				}
 			} else {

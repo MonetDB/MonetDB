@@ -9,7 +9,7 @@
 #]]
 
 # Detect required packages
-find_package(BISON REQUIRED)
+find_package(BISON REQUIRED 3.2)
 find_package(Iconv)
 find_package(Threads)
 
@@ -18,6 +18,10 @@ if(${CMAKE_VERSION} VERSION_LESS "3.14.0")
   find_package(NumPy)
 else()
   find_package(Python3 COMPONENTS Interpreter Development NumPy)
+endif()
+
+if(WITH_RTREE)
+  find_package(RTree)
 endif()
 
 if(WITH_LZMA)
@@ -56,7 +60,7 @@ if(WITH_LZ4)
 endif()
 
 if(WITH_PROJ)
-  find_package(Proj)
+  find_package(Proj 6.0)
 endif()
 
 if(WITH_SNAPPY)
@@ -82,7 +86,7 @@ endif()
 find_package(KVM)
 
 if(GEOM)
-  find_package(Geos)
+  find_package(Geos 3.10.0)
 endif()
 
 if(SHP)

@@ -83,9 +83,10 @@ SQLhelp sqlhelp1[] = {
 	 "Change a user's login name or password or default schema",
 	 "ALTER USER ident RENAME TO ident\n"
 	 "ALTER USER SET [ENCRYPTED | UNENCRYPTED] PASSWORD string USING OLD PASSWORD string\n"
-	 "ALTER USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string\n"
-	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SET SCHEMA ident\n"
-	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SCHEMA PATH string [DEFAULT ROLE ident]",
+	 "ALTER USER ident\n"
+	 "    [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string]\n"
+	 "    [SET SCHEMA ident] [SCHEMA PATH string] [DEFAULT ROLE ident]\n"
+	 "    [MAX_MEMORY posbytes | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"ANALYZE",
@@ -111,23 +112,32 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/transactions/"},
 	{"COPY BINARY",
 	 "Append binary representations into a table",
-	 "COPY [( BIG | LITTLE | NATIVE) ENDIAN] BINARY INTO qname [column_list] FROM string [',' ...] [ON { CLIENT | SERVER }]",
+	 "COPY [{BIG | LITTLE | NATIVE} ENDIAN] BINARY INTO qname [column_list] FROM string [',' ...] [ON { CLIENT | SERVER }]",
 	 "qname,column_list",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/binary-loading/"},
 	{"COPY INTO",
-	 "Parse a csv file into a table or write a query result to a csv file",
+	 "Write query result data to a csv file or standard output stream",
+	 "COPY query_expression INTO [STDOUT | string [ON { CLIENT | SERVER }]] [separators] [NULL [AS] string]",
+	 "query_expression,separators",
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/export_data/"},
+	{"COPY INTO BINARY",
+	 "Write query result data to binary files",
+	 "COPY query_expression INTO [{BIG | LITTLE | NATIVE} ENDIAN] BINARY string_commalist [ON { CLIENT | SERVER }]",
+	 "query_expression",
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/export_data/"},
+	{"COPY INTO FROM",
+	 "Read csv file(s) or standard input stream data and insert into a table",
 	 "COPY [nrofrecords] INTO qname [column_list] FROM string [',' ...] [headerlist] [ON { CLIENT | SERVER }] [ separators]\n"
 	 " [NULL [AS] string] [BEST EFFORT] [FWF '(' integer [',' ...] ')'\n"
 	 "COPY [nrofrecords] INTO qname [column_list] FROM STDIN [headerlist] [ separators]\n"
-	 " [NULL [AS] string] [BEST EFFORT]\n"
-	 "COPY query_expression INTO [STDOUT | string [ON { CLIENT | SERVER }]] [separators] [NULL [AS] string]",
+	 " [NULL [AS] string] [BEST EFFORT]\n",
 	 "nrofrecords,qname,column_list,headerlist,separators",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/"},
 	{"COPY LOADER",
 	 "Copy into using a user supplied parsing function",
 	 "COPY LOADER INTO qname FROM qname '(' [ scalar_expression ... ] ')'",
 	 "qname,scalar_expression",
-	 NULL},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/loader-functions/"},
 	{"CREATE AGGREGATE",
 	 "Create a user-defined aggregate function. The body of the aggregate function\n"
 	 "can also be defined in other programming languages such as Python, R, C or CPP.",
@@ -228,8 +238,8 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE TRIGGER",
 	 "Define a triggered action for a table data update event",
 	 "CREATE [ OR REPLACE ] TRIGGER ident { BEFORE | AFTER }\n"
-	 " { INSERT | DELETE | TRUNCATE | UPDATE [ OF ident_list ] }\n"
-	 " ON qname [ REFERENCING trigger_reference [...] ] triggered_action",
+	 " { INSERT | DELETE | TRUNCATE | UPDATE [ OF ident_list ] | LOGIN }\n"
+	 " [ ON qname ] [ REFERENCING trigger_reference [...] ] triggered_action",
 	 "qname,ident_list,trigger_reference,triggered_action",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/trigger-definition/"},
 	{"CREATE TYPE",
@@ -240,7 +250,8 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE USER",
 	 "Create a new database user",
 	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string [SCHEMA ident] [SCHEMA PATH string]\n"
-	 "[MAX_MEMORY poslng] [MAX_WORKERS posint] [OPTIMIZER string] [DEFAULT ROLE ident]",
+	 "[MAX_MEMORY posbytes | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]\n"
+	 "[OPTIMIZER string] [DEFAULT ROLE ident]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"CREATE VIEW",
@@ -297,11 +308,6 @@ SQLhelp sqlhelp1[] = {
 	 "DEALLOCATE [ PREPARE ] { intnr | ** | ALL }",
 	 NULL,
 	 NULL},
-	{"DEBUG",
-	 "Debug a SQL statement using MAL debugger",
-	 "DEBUG statement",
-	 NULL,
-	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/debug-sql-stmt/"},
 	{"DECLARE",
 	 "Define a local variable",
 	 "DECLARE ident_list data_type",
@@ -478,8 +484,7 @@ SQLhelp sqlhelp1[] = {
 	 "[ HAVING condition [',' ...] ]\n"
 	 "[ { UNION | INTERSECT | EXCEPT } [ ALL | DISTINCT ] [ CORRESPONDING ] select ]\n"
 	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
-	 "[ LIMIT { count | param } ]\n"
-	 "[ OFFSET { count | param } ]\n"
+	 "[ limit_offset_clause | offset_fetchfirst_clause ]\n"
 	 "[ SAMPLE size [ SEED size ] ]",
 	 "cte_list,expression,group_by_element,window_definition",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/table-expressions/"},
@@ -668,9 +673,9 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"generated_column",
 	 NULL,
-	 "AUTO_INCREMENT | GENERATED ALWAYS AS IDENTITY [ '(' [ AS data_type] [ START [WITH start]] [INCREMENT BY increment]\n"
-	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE] ')' ] ",
-	 "data_type",
+	 "AUTO_INCREMENT | GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY [ '(' [ AS seq_int_datatype] [ START [WITH start]]\n"
+	 " [INCREMENT BY increment] [MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE] ')' ]",
+	 "seq_int_datatype",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
 	{"global_privileges",
 	 NULL,
@@ -738,7 +743,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"language_keyword",
 	 NULL,
-	 "C | CPP | R | PYTHON | PYTHON_MAP | PYTHON3 | PYTHON3_MAP",
+	 "C | CPP | R | PYTHON | PYTHON3",
 	 NULL,
 	 NULL},
 	{"match_options",
@@ -826,8 +831,8 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"query_expression",
 	 NULL,
-	 "select_no_parens [ order_by_clause ] [ limit_clause ] [ offset_clause ] [ sample_clause ]",
-	 "select_no_parens,order_by_clause,limit_clause,offset_clause,sample_clause",
+	 "select_no_parens [ order_by_clause ] [ limit_offset_clause | offset_fetchfirst_clause ] [ sample_clause ]",
+	 "select_no_parens",
 	 NULL},
 	{"select_no_parens",
 	 NULL,
@@ -835,6 +840,21 @@ SQLhelp sqlhelp2[] = {
 	 "| select_no_parens { UNION | EXCEPT | INTERSECT } [ ALL | DISTINCT ] [ corresponding ] select_no_parens\n"
 	 "| '(' select_no_parens ')' }",
 	 "column_exp_commalist,from_clause,window_clause,where_clause,group_by_clause,having_clause,corresponding",
+	 NULL},
+	{"order_by_clause",
+	 NULL,
+	 "ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...]",
+	 "",
+	 NULL},
+	{"limit_offset_clause",
+	 NULL,
+	 "[ LIMIT { count | param } ]  [ OFFSET { count | param } ]",
+	 "",
+	 NULL},
+	{"offset_fetchfirst_clause",
+	 NULL,
+	 "[ OFFSET { count | param } [ {ROW|ROWS} ] ]  [ FETCH {FIRST|NEXT} [ count | param ] {ROW|ROWS} ONLY ]",
+	 "",
 	 NULL},
 	{"corresponding",
 	 NULL,
@@ -950,7 +970,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"triggered_action",
 	 NULL,
-	 "[ FOR [EACH] { ROW | STATEMENT } ]\n"
+	 "[ FOR EACH { ROW | STATEMENT } ]\n"
 	 "[ WHEN '(' search_condition ')' ]\n"
 	 "{ trigger_statement | BEGIN ATOMIC trigger_statement [ ; ... ] END }",
 	 "trigger_statement,search_condition",

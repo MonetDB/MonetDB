@@ -14,43 +14,60 @@
 #define FLUSH_QUEUE_SIZE 2048 /* maximum size of the flush queue, i.e. maximum number of transactions committing simultaneously */
 
 typedef struct logged_range_t {
-	ulng id;			/* log file id */
-	int first_tid;		/* first */
-	int last_tid;		/* last tid */
-	ulng last_ts;		/* last stored timestamp */
+	ulng id;				/* log file id */
+	ATOMIC_TYPE drops;
+	ATOMIC_TYPE last_ts;	/* last stored timestamp */
+	ATOMIC_TYPE flushed_ts;
+	ATOMIC_TYPE refcount;
 	struct logged_range_t *next;
+	stream *output_log;
 } logged_range;
 
 struct logger {
+	// CHECK initialized once
 	int debug;
 	int version;
+	bool inmemory;
+	char *fn;
+	char *dir;
+	preversionfix_fptr prefuncp;
+	postversionfix_fptr postfuncp;
+	void *funcdata;
+	/* we map type names into internal log ids, split in 2 ranges
+	 * (0-127 fixed size types and 129 - 255 varsized) */
+	uint8_t type_nr[256];	/* mapping from logger type id to GDK type nr */
+	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
+
+	// CHECK writer only
+	lng end;
+	ulng* writer_end;
+	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
+	void *rbuf;
+	size_t rbufsize;
+	void *wbuf;
+	size_t wbufsize;
+
+	// synchronized by combination of store->flush and rotation_lock
 	ulng id;		/* current log output file id */
 	ulng saved_id;		/* id of last fully handled log file */
 	int tid;		/* current transaction id */
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
-	bool flushing;
-	bool flushnow;
-	ulng drops;
-	bool request_rotation;
-	logged_range *pending;
+
+	// synchronized by rotation_lock
 	logged_range *current;
+	logged_range *flush_ranges;
 
-	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
-	bool inmemory;
-	char *fn;
-	char *dir;
-	char *local_dir; /* the directory in which the log is written */
-	preversionfix_fptr prefuncp;
-	postversionfix_fptr postfuncp;
-	void *funcdata;
-	stream *output_log;
-	stream *input_log;	/* current stream to flush */
-	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
+	// atomic
+	ATOMIC_TYPE nr_flushers;
+	ATOMIC_TYPE nr_open_files;
 
-	ATOMIC_TYPE refcount; /* Number of active writers and flushers in the logger */ // TODO check refcount in c->log and c->end
-	bool flushing_output_log; /* prevent output_log that is currently being flushed from being closed */
-	MT_Lock rotation_lock;
-	MT_Lock lock;
+	// synchronized by store->flush
+	bool flushnow;
+	bool flushing;		/* log_flush only */
+	logged_range *pending;	/* log_flush only */
+	stream *input_log;	/* log_flush only: current stream to flush */
+
+	// synchronized by lock
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog_bid;	/* int bid column */
 	BAT *catalog_id;	/* object identifier is unique */
@@ -59,26 +76,15 @@ struct logger {
 	BAT *dcatalog;		/* deleted from catalog table */
 	BUN cnt;		/* number of persistent bats, incremented on log flushing */
 	BUN deleted;		/* number of destroyed persistent bats, needed for catalog vacuum */
-
 	BAT *seqs_id;		/* int id column */
 	BAT *seqs_val;		/* lng value column */
 	BAT *dseqs;		/* deleted from seqs table */
 
-	/* we map type names into internal log ids, split in 2 ranges
-	 * (0-127 fixed size types and 129 - 255 varsized) */
-	uint8_t type_nr[256];	/* mapping from logger type id to GDK type nr */
-	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
 
-	void *buf;
-	size_t bufsize;
-
-	/* flush variables */
-	unsigned int flush_queue[FLUSH_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
-	int flush_queue_begin; /* start index of the queue */
-	int flush_queue_length; /* length of the queue */
-	MT_Sema flush_queue_semaphore; /*to protect the queue against ring buffer overflows */
-	MT_Lock flush_queue_lock; /* to protect the queue against concurrent reads and writes */
+	MT_Lock rotation_lock;
+	MT_Lock lock;
 	MT_Lock flush_lock; /* so only one transaction can flush to disk at any given time */
+	MT_Cond excl_flush_cv;
 };
 
 struct old_logger {
@@ -88,7 +94,6 @@ struct old_logger {
 	lng id;
 	int tid;
 	bool with_ids;
-	char *local_dir; /* the directory in which the log is written */
 	stream *log;
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */

@@ -24,20 +24,23 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) cntxt;
 
-	if(pci->argc <= 1)
+	if (pci->argc <= 1)
 		throw(MAL, "algebra.projectionpath", SQLSTATE(HY013) "INTERNAL ERROR");
-	joins = (BAT**)GDKzalloc(pci->argc * sizeof(BAT*));
-	if ( joins == NULL)
+	joins = (BAT **) GDKzalloc(pci->argc * sizeof(BAT *));
+	if (joins == NULL)
 		throw(MAL, "algebra.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (i = pci->retc; i < pci->argc; i++) {
 		bid = *getArgReference_bat(stk, pci, i);
 		b = BATdescriptor(bid);
-		if (b == NULL || (i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid && b->ttype != TYPE_msk)) {
+		if (b == NULL
+			|| (i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid
+				&& b->ttype != TYPE_msk)) {
 			while (--i >= pci->retc)
 				BBPunfix(joins[i - pci->retc]->batCacheid);
 			GDKfree(joins);
 			BBPreclaim(b);
-			throw(MAL, "algebra.projectionpath", "%s", b ? SEMANTIC_TYPE_MISMATCH : INTERNAL_BAT_ACCESS);
+			throw(MAL, "algebra.projectionpath", "%s",
+				  b ? SEMANTIC_TYPE_MISMATCH : INTERNAL_BAT_ACCESS);
 		}
 		joins[i - pci->retc] = b;
 	}
@@ -46,7 +49,7 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = pci->retc; i < pci->argc; i++)
 		BBPunfix(joins[i - pci->retc]->batCacheid);
 	GDKfree(joins);
-	if ( b) {
+	if (b) {
 		*r = b->batCacheid;
 		BBPkeepref(b);
 	} else

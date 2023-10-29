@@ -1,4 +1,6 @@
+# Note: SQL_HUGEINT is not defined in ODBC. This is a MonetDB extension.
+
 query I rowsort
-select { fn convert(1, SQL_HUGEINT) }
+select { fn convert('-2345678901234567890', SQL_HUGEINT) }
 ----
-1
+-2345678901234567890

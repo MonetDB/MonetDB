@@ -257,7 +257,8 @@ logListener(void *x)
 			if (w->pid > 0)
 				nfds += 2;
 		}
-		pfd = malloc(nfds * sizeof(struct pollfd));
+		/* +1 for freebsd compiler issue with stringop-overflow error */
+		pfd = malloc((nfds+1) * sizeof(struct pollfd));
 		nfds = 0;
 		for (w = d; w != NULL; w = w->next) {
 			if (w->pid <= 0)
@@ -513,6 +514,8 @@ main(int argc, char *argv[])
 		if (ncpus > 0) {
 			snprintf(cnt, sizeof(cnt), "%d", ncpus);
 			kv = findConfKey(_mero_db_props, "nthreads");
+			kv->val = strdup(cnt);
+			kv = findConfKey(_mero_db_props, "ncopyintothreads");
 			kv->val = strdup(cnt);
 		}
 	}

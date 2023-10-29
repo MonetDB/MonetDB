@@ -25,7 +25,7 @@ log_base2(unsigned int n)
 sql_hash *
 hash_new(sql_allocator *sa, int size, fkeyvalue key)
 {
-	sql_hash *ht = (sa)?SA_NEW(sa, sql_hash):MNEW(sql_hash);
+	sql_hash *ht = SA_NEW(sa, sql_hash);
 
 	if (ht == NULL)
 		return NULL;
@@ -122,4 +122,3 @@ hash_destroy(sql_hash *h) /* this code should be called for hash tables created 
 	_DELETE(h->buckets);
 	_DELETE(h);
 }
-

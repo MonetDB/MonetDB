@@ -69,7 +69,7 @@ static stream *toConsole;
 static stream *stdout_stream;
 static stream *stderr_stream;
 static stream *fromConsole = NULL;
-static char *language = NULL;
+static const char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
 static bool echoquery = false;
@@ -78,6 +78,7 @@ static char *encoding;
 #endif
 static bool errseen = false;
 static bool allow_remote = false;
+static const char *curfile = NULL;
 
 #define setPrompt() snprintf(promptbuf, sizeof(promptbuf), "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
@@ -126,8 +127,9 @@ static char *pager = 0;		/* use external pager */
 #ifdef HAVE_SIGACTION
 #include <signal.h>		/* to block SIGPIPE */
 #endif
-static int rowsperpage = 0;	/* for SQL pagination */
+static int rowsperpage = -1;	/* for SQL pagination */
 static int pagewidth = 0;	/* -1: take whatever is necessary, >0: limit */
+static int pageheight = 0;	/* -1: take whatever is necessary, >0: limit */
 static bool pagewidthset = false; /* whether the user set the width explicitly */
 static int croppedfields = 0;	/* whatever got cropped/truncated */
 static bool firstcrop = true;	/* first time we see cropping/truncation */
@@ -417,7 +419,21 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				 * and code points marked either F or
 				 * W in EastAsianWidth.txt; this list
 				 * is up-to-date with Unicode 11.0 */
-				if ((0x1100 <= c && c <= 0x115F) ||
+				if ((0x0300 <= c && c <= 0x036F) ||
+					(0x0483 <= c && c <= 0x0489) ||
+					(0x0653 <= c && c <= 0x0655) ||
+					(0x1AB0 <= c && c <= 0x1AFF) ||
+					(0x1DC0 <= c && c <= 0x1DFF) ||
+					(0x20D0 <= c && c <= 0x20FF) ||
+					(0x2DE0 <= c && c <= 0x2DFF) ||
+					(0xA66F <= c && c <= 0xA672) ||
+					(0xA674 <= c && c <= 0xA67D) ||
+					(0xA69E <= c && c <= 0xA69F) ||
+					(0xA8E0 <= c && c <= 0xA8F1) ||
+					(0xFE20 <= c && c <= 0xFE2F) ||
+					c == 0x3099 || c == 0x309A)
+					len--;		/* combining mark */
+				else if ((0x1100 <= c && c <= 0x115F) ||
 				    (0x231A <= c && c <= 0x231B) ||
 				    (0x2329 <= c && c <= 0x232A) ||
 				    (0x23E9 <= c && c <= 0x23EC) ||
@@ -1375,7 +1391,7 @@ SQLdebugRendering(MapiHdl hdl)
 }
 
 static void
-SQLpagemove(int *len, int fields, int *ps, bool *silent)
+SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 {
 	char buf[512];
 	ssize_t sz;
@@ -1388,11 +1404,11 @@ SQLpagemove(int *len, int fields, int *ps, bool *silent)
 		if (buf[0] == 'c')
 			*ps = 0;
 		if (buf[0] == 'q')
-			*silent = true;
+			*skiprest = true;
 		while (sz > 0 && buf[sz - 1] != '\n')
 			sz = mnstr_readline(fromConsole, buf, sizeof(buf));
 	}
-	if (!*silent)
+	if (!*skiprest)
 		SQLseparator(len, fields, '-');
 }
 
@@ -1403,11 +1419,12 @@ SQLrenderer(MapiHdl hdl)
 	int fields, rfields, printfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
-	char buf[50];
 	int ps = rowsperpage;
-	bool silent = false;
-	int64_t rows = 0;
+	bool skiprest = false;
+	int64_t rows;				/* total number of rows */
 
+	if (ps == 0)
+		ps = pageheight;
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
 	rows = mapi_get_row_count(hdl);
@@ -1565,8 +1582,10 @@ SQLrenderer(MapiHdl hdl)
 			break;
 	}
 
-	rows = SQLheader(hdl, len, printfields, fields != printfields);
+	int64_t lines;				/* count number of lines printed for pager */
+	lines = SQLheader(hdl, len, printfields, fields != printfields);
 
+	int64_t nrows = 0;			/* count number of rows printed */
 	while ((rfields = fetch_row(hdl)) != 0) {
 		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 			continue;
@@ -1576,7 +1595,7 @@ SQLrenderer(MapiHdl hdl)
 				     "got %d columns, expected %d, ignoring\n", rfields, fields);
 			continue;
 		}
-		if (silent)
+		if (skiprest)
 			continue;
 		for (i = 0; i < printfields; i++) {
 			rest[i] = mapi_fetch_field(hdl, i);
@@ -1605,22 +1624,24 @@ SQLrenderer(MapiHdl hdl)
 			}
 		}
 
-		if (ps > 0 && rows >= ps && fromConsole != NULL) {
-			SQLpagemove(len, printfields, &ps, &silent);
-			rows = 0;
-			if (silent) {
+		if (ps > 0 && lines >= ps && fromConsole != NULL) {
+			SQLpagemove(len, printfields, &ps, &skiprest);
+			lines = 0;
+			if (skiprest) {
 				mapi_finish(hdl);
 				break;
 			}
 		}
 
-		rows += SQLrow(len, numeric, rest, printfields, 2, 0);
+		nrows++;
+		lines += SQLrow(len, numeric, rest, printfields, 2, 0);
 	}
-	if (fields)
+	if (fields && !skiprest)
 		SQLseparator(len, printfields, '-');
-	rows = mapi_get_row_count(hdl);
-	snprintf(buf, sizeof(buf), "%" PRId64 " rows", rows);
-	mnstr_printf(toConsole, "%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
+	if (skiprest)
+		mnstr_printf(toConsole, "%" PRId64 " of %" PRId64 " tuple%s", nrows, rows, nrows != 1 ? "s" : "");
+	else
+		mnstr_printf(toConsole, "%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
 
 	if (fields != printfields || croppedfields > 0)
 		mnstr_printf(toConsole, " !");
@@ -1735,12 +1756,13 @@ setWidth(void)
 #ifdef TIOCGWINSZ
 		struct winsize ws;
 
-		if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
+		if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0) {
 			pagewidth = ws.ws_col;
-		else
+			pageheight = ws.ws_row;
+		} else
 #endif
 		{
-			pagewidth = -1;
+			pagewidth = pageheight = -1;
 		}
 	}
 }
@@ -2012,32 +2034,32 @@ doRequest(Mapi mid, const char *buf)
 	return errseen;
 }
 
-#define CHECK_RESULT(mid, hdl, buf, fp)				\
-	switch (mapi_error(mid)) {				\
-	case MOK:	/* everything A OK */			\
-		break;						\
+#define CHECK_RESULT(mid, hdl, buf, fp)						\
+	switch (mapi_error(mid)) {								\
+	case MOK:	/* everything A OK */						\
+		break;												\
 	case MERROR:	/* some error, but try to continue */	\
-	case MTIMEOUT:	/* lost contact with the server */	\
-		if (formatter == TABLEformatter) {		\
-			mapi_noexplain(mid, "");		\
-		} else {					\
-			mapi_noexplain(mid, NULL);		\
-		}						\
-		if (hdl) {					\
-			mapi_explain_query(hdl, stderr);	\
-			mapi_close_handle(hdl);			\
-			hdl = NULL;				\
-		} else						\
-			mapi_explain(mid, stderr);		\
-		errseen = true;					\
-		if (mapi_error(mid) == MERROR)			\
-			continue; /* why not in do-while */	\
-		timerEnd();					\
-		if (buf)					\
-			free(buf);				\
-		if (fp)						\
-			close_stream(fp);			\
-		return 1;					\
+	case MTIMEOUT:	/* lost contact with the server */		\
+		if (formatter == TABLEformatter) {					\
+			mapi_noexplain(mid, "");						\
+		} else {											\
+			mapi_noexplain(mid, NULL);						\
+		}													\
+		if (hdl) {											\
+			mapi_explain_query(hdl, stderr);				\
+			mapi_close_handle(hdl);							\
+			hdl = NULL;										\
+		} else												\
+			mapi_explain(mid, stderr);						\
+		errseen = true;										\
+		if (mapi_error(mid) == MERROR)						\
+			continue; /* why not in do-while */				\
+		timerEnd();											\
+		if (buf)											\
+			free(buf);										\
+		if (fp)												\
+			close_stream(fp);								\
+		return 1;											\
 	}
 
 static bool
@@ -2723,8 +2745,14 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						if (s)
 							close_stream(s);
 						mnstr_printf(stderr_stream, "Cannot open %s: %s\n", line, mnstr_peek_error(NULL));
-					} else
+					} else {
+						const char *oldfile = curfile;
+						char *newfile = strdup(line);
+						curfile = newfile;
 						doFile(mid, s, 0, 0, 0);
+						curfile = oldfile;
+						free(newfile);
+					}
 					continue;
 				}
 				case '>':
@@ -2859,7 +2887,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						}
 					} else {
 						setFormatter(line);
-						mapi_set_size_header(mid, strcmp(line, "raw") == 0);
+						if (mode == SQL)
+							mapi_set_size_header(mid, strcmp(line, "raw") == 0);
 					}
 					continue;
 				case 't':
@@ -3011,8 +3040,25 @@ getfile(void *data, const char *filename, bool binary,
 			}
 #endif
 		}
-		if (f == NULL)
-			return (char*) mnstr_peek_error(NULL);
+		if (f == NULL) {
+			if (curfile != NULL) {
+				char *p = strrchr(curfile, '/');
+#ifdef _MSC_VER
+				char *q = strrchr(curfile, '\\');
+				if (p == NULL || (q != NULL && q > p))
+					p = q;
+#endif
+				if (p != NULL) {
+					size_t x = (size_t) (p - curfile) + strlen(filename) + 2;
+					char *b = malloc(x);
+					snprintf(b, x, "%.*s/%s", (int) (p - curfile), curfile, filename);
+					f = binary ? open_rstream(b) : open_rastream(b);
+					free(b);
+				}
+			}
+			if (f == NULL)
+				return (char*) mnstr_peek_error(NULL);
+		}
 		while (offset > 1) {
 			s = mnstr_readline(f, buf, READSIZE);
 			if (s < 0) {
@@ -3152,12 +3198,12 @@ main(int argc, char **argv)
 #endif
 {
 	int port = 0;
-	char *user = NULL;
-	char *passwd = NULL;
-	char *host = NULL;
-	char *command = NULL;
-	char *dbname = NULL;
-	char *output = NULL;	/* output format as string */
+	const char *user = NULL;
+	const char *passwd = NULL;
+	const char *host = NULL;
+	const char *command = NULL;
+	const char *dbname = NULL;
+	const char *output = NULL;	/* output format as string */
 	DotMonetdb dotfile = {0};
 	stream *s = NULL;
 	bool trace = false;
@@ -3275,7 +3321,7 @@ main(int argc, char **argv)
 			mode = MAL;
 		}
 	} else {
-		language = strdup("sql");
+		language = "sql";
 		mode = SQL;
 	}
 
@@ -3299,9 +3345,7 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			assert(optarg);
-			if (dbname)
-				free(dbname);
-			dbname = strdup(optarg);
+			dbname = optarg;
 			break;
 		case 'D':
 			dump = true;
@@ -3317,9 +3361,7 @@ main(int argc, char **argv)
 #endif
 		case 'f':
 			assert(optarg);
-			if (output != NULL)
-				free(output);
-			output = strdup(optarg);	/* output format */
+			output = optarg;	/* output format */
 			break;
 		case 'h':
 			assert(optarg);
@@ -3337,17 +3379,14 @@ main(int argc, char **argv)
 			if (strcmp(optarg, "sql") == 0 ||
 			    strcmp(optarg, "sq") == 0 ||
 			    strcmp(optarg, "s") == 0) {
-				free(language);
-				language = strdup(optarg);
+				language = "sql";
 				mode = SQL;
 			} else if (strcmp(optarg, "mal") == 0 ||
 				   strcmp(optarg, "ma") == 0) {
-				free(language);
-				language = strdup("mal");
+				language = "mal";
 				mode = MAL;
 			} else if (strcmp(optarg, "msql") == 0) {
-				free(language);
-				language = strdup("msql");
+				language = "msql";
 				mode = MAL;
 			} else {
 				mnstr_printf(stderr_stream, "language option needs to be sql or mal\n");
@@ -3371,9 +3410,7 @@ main(int argc, char **argv)
 			break;
 		case 'P':
 			assert(optarg);
-			if (passwd)
-				free(passwd);
-			passwd = strdup(optarg);
+			passwd = optarg;
 			passwd_set_as_flag = true;
 			break;
 		case 'r':
@@ -3403,9 +3440,7 @@ main(int argc, char **argv)
 			break;
 		case 'u':
 			assert(optarg);
-			if (user)
-				free(user);
-			user = strdup(optarg);
+			user = optarg;
 			user_set_as_flag = true;
 			break;
 		case 'v': {
@@ -3436,6 +3471,7 @@ main(int argc, char **argv)
 #endif
 			mnstr_printf(toConsole, "using mapi library %s\n",
 						 mapi_get_mapi_version());
+			destroy_dotmonetdb(&dotfile);
 			return 0;
 		}
 		case 'w':
@@ -3493,29 +3529,36 @@ main(int argc, char **argv)
 	/* when config file would provide defaults */
 	if (user_set_as_flag) {
 		if (passwd && !passwd_set_as_flag) {
-			free(passwd);
 			passwd = NULL;
 		}
 	}
 
-	if (user == NULL)
-		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-	if (passwd == NULL)
-		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
+	char *user_allocated = NULL;
+	if (user == NULL) {
+		user_allocated = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+		user = user_allocated;
+	}
+	char *passwd_allocated = NULL;
+	if (passwd == NULL) {
+		passwd_allocated = simple_prompt("password", BUFSIZ, 0, NULL);
+		passwd = passwd_allocated;
+	}
 
 	c = 0;
 	has_fileargs = optind != argc;
 
-	if (dbname == NULL && has_fileargs) {
+	if (dbname == NULL && has_fileargs && strcmp(argv[optind], "-") != 0) {
 		s = open_rastream(argv[optind]);
 		if (s == NULL || !isfile(getFile(s))) {
 			mnstr_close(s);
 			s = NULL;
 		}
 		if (s == NULL) {
-			dbname = strdup(argv[optind]);
+			dbname = argv[optind];
 			optind++;
 			has_fileargs = optind != argc;
+		} else {
+			curfile = argv[optind];
 		}
 	}
 
@@ -3524,14 +3567,12 @@ main(int argc, char **argv)
 	} else {
 		mid = mapi_mapi(host, port, user, passwd, language, dbname);
 	}
-	if (user)
-		free(user);
+	free(user_allocated);
+	user_allocated = NULL;
+	free(passwd_allocated);
+	passwd_allocated = NULL;
 	user = NULL;
-	if (passwd)
-		free(passwd);
 	passwd = NULL;
-	if (dbname)
-		free(dbname);
 	dbname = NULL;
 
 	if (mid == NULL) {
@@ -3543,6 +3584,18 @@ main(int argc, char **argv)
 	mapi_setAutocommit(mid, autocommit);
 	if (mode == SQL && !settz)
 		mapi_set_time_zone(mid, 0);
+	if (output) {
+		setFormatter(output);
+		if (mode == SQL)
+			mapi_set_size_header(mid, strcmp(output, "raw") == 0);
+	} else {
+		if (mode == SQL) {
+			setFormatter("sql");
+			mapi_set_size_header(mid, false);
+		} else {
+			setFormatter("raw");
+		}
+	}
 
 	if (mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
@@ -3571,19 +3624,6 @@ main(int argc, char **argv)
 		mapi_log(mid, logfile);
 
 	mapi_trace(mid, trace);
-	if (output) {
-		setFormatter(output);
-		mapi_set_size_header(mid, strcmp(output, "raw") == 0);
-		free(output);
-	} else {
-		if (mode == SQL) {
-			setFormatter("sql");
-			mapi_set_size_header(mid, false);
-		} else {
-			setFormatter("raw");
-			mapi_set_size_header(mid, true);
-		}
-	}
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
@@ -3620,12 +3660,11 @@ main(int argc, char **argv)
 #if !defined(_MSC_VER) && defined(HAVE_ICONV)
 		/* no need on Windows: using wmain interface */
 		iconv_t cd_in;
-		bool free_command = false;
+		char *command_allocated = NULL;
 
 		if (encoding != NULL &&
 		    (cd_in = iconv_open("utf-8", encoding)) != (iconv_t) -1) {
-			char *savecommand = command;
-			ICONV_CONST char *from = command;
+			char *from = (char *) command;
 			size_t fromlen = strlen(from);
 			int factor = 4;
 			size_t tolen = factor * fromlen + 1;
@@ -3635,10 +3674,9 @@ main(int argc, char **argv)
 				mnstr_printf(stderr_stream,"Malloc in main failed");
 				exit(2);
 			}
-			free_command = true;
 
 		  try_again:
-			command = to;
+			command_allocated = to;
 			if (iconv(cd_in, &from, &fromlen, &to, &tolen) == (size_t) -1) {
 				switch (errno) {
 				case EILSEQ:
@@ -3647,11 +3685,11 @@ main(int argc, char **argv)
 					exit(-1);
 				case E2BIG:
 					/* output buffer too small */
-					from = savecommand;
+					from = (char *) command;
 					fromlen = strlen(from);
 					factor *= 2;
 					tolen = factor * fromlen + 1;
-					free(command);
+					free(command_allocated);
 					to = malloc(tolen);
 					if (to == NULL) {
 						mnstr_printf(stderr_stream,"Malloc in main failed");
@@ -3666,6 +3704,7 @@ main(int argc, char **argv)
 					break;
 				}
 			}
+			command = command_allocated;
 			*to = 0;
 			iconv_close(cd_in);
 		} else if (encoding)
@@ -3677,8 +3716,7 @@ main(int argc, char **argv)
 		c = doRequest(mid, command);
 		timerEnd();
 #if !defined(_MSC_VER) && defined(HAVE_ICONV)
-		if (free_command)
-			free(command);
+		free(command_allocated);
 #endif
 	}
 
@@ -3688,15 +3726,18 @@ main(int argc, char **argv)
 			const char *arg = argv[optind];
 
 			if (s == NULL) {
-				if (strcmp(arg, "-") == 0)
+				if (strcmp(arg, "-") == 0) {
 					s = stdin_rastream();
-				else
+				} else {
 					s = open_rastream(arg);
+					curfile = arg;
+				}
 			}
 			if (s == NULL) {
 				mnstr_printf(stderr_stream, "%s: cannot open: %s\n", arg, mnstr_peek_error(NULL));
 				c |= 1;
 				optind++;
+				curfile = NULL;
 				continue;
 			}
 			// doFile closes 's'.
@@ -3725,6 +3766,8 @@ main(int argc, char **argv)
 	mnstr_destroy(stderr_stream);
 	if (priv.buf != NULL)
 		free(priv.buf);
+
+	destroy_dotmonetdb(&dotfile);
 
 	return c;
 }

@@ -124,15 +124,15 @@
 #define IMPRINTS_VERSION	2
 #define IMPRINTS_HEADER_SIZE	4 /* nr of size_t fields in header */
 
-#define BINSIZE(B, FUNC, T)			\
-	do {					\
-		switch (B) {			\
-		case 8: FUNC(T,8); break;	\
-		case 16: FUNC(T,16); break;	\
-		case 32: FUNC(T,32); break;	\
-		case 64: FUNC(T,64); break;	\
-		default: assert(0); break;	\
-		}				\
+#define BINSIZE(B, FUNC, T)				\
+	do {						\
+		switch (B) {				\
+		case 8: FUNC(T,8); break;		\
+		case 16: FUNC(T,16); break;		\
+		case 32: FUNC(T,32); break;		\
+		case 64: FUNC(T,64); break;		\
+		default: MT_UNREACHABLE(); break;	\
+		}					\
 	} while (0)
 
 
@@ -253,7 +253,7 @@ imprints_create(BAT *b, BATiter *bi, void *inbins, BUN *stats, bte bits,
 		break;
 	default:
 		/* should never reach here */
-		assert(0);
+		MT_UNREACHABLE();
 	}
 
 	*dictcnt = dcnt;
@@ -306,8 +306,10 @@ BATcheckimprints(BAT *b)
 	if (VIEWtparent(b)) {
 		assert(b->timprints == NULL);
 		b = BATdescriptor(VIEWtparent(b));
-		if (b == NULL)
+		if (b == NULL) {
+			bat_iterator_end(&bi);
 			return false;
+		}
 	}
 
 	if (b->timprints == (Imprints *) 1) {
@@ -409,7 +411,7 @@ BATimpsync(void *arg)
 					((size_t *) hp->base)[0] |= (size_t) 1 << 16;
 					if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
 						failed = ""; /* not failed */
-						if (!(GDKdebug & NOSYNCMASK)) {
+						if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
@@ -430,7 +432,7 @@ BATimpsync(void *arg)
 				((size_t *) hp->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
 				/* sync-on-disk checked bit */
 				((size_t *) hp->base)[0] |= (size_t) 1 << 16;
-				if (!(GDKdebug & NOSYNCMASK) &&
+				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
 					failed = " sync failed";
 					((size_t *) hp->base)[0] &= ~((size_t) IMPRINTS_VERSION << 8);
@@ -636,7 +638,7 @@ BATimprints(BAT *b)
 			break;
 		default:
 			/* should never reach here */
-			assert(0);
+			MT_UNREACHABLE();
 		}
 
 		imprints_create(b, &bi,
@@ -762,9 +764,7 @@ IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict 
 		break;
 	}
 	default:
-		assert(0);
-		(void) inbins;
-		break;
+		MT_UNREACHABLE();
 	}
 	return ret;
 }
@@ -845,7 +845,7 @@ void
 IMPSincref(Imprints *imprints)
 {
 	TRC_DEBUG(ACCELERATOR, "Increment ref count of %s\n", imprints->imprints.filename);
-	(void) ATOMIC_INC(&imprints->imprints.refs);
+	ATOMIC_INC(&imprints->imprints.refs);
 }
 
 #ifndef NDEBUG
@@ -873,7 +873,7 @@ IMPSprint(BAT *b)
 	int i;
 
 	if (!BATcheckimprints(b)) {
-		fprintf(stderr, "No imprint\n");
+		printf("No imprint\n");
 		return;
 	}
 	imprints = b->timprints;
@@ -882,35 +882,35 @@ IMPSprint(BAT *b)
 	max_bins = min_bins + 64;
 	cnt_bins = max_bins + 64;
 
-	fprintf(stderr,
-		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
-		imprints->bits, imprints->impcnt, imprints->dictcnt);
-	fprintf(stderr, "MIN\n");
+	printf("bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
+	       imprints->bits, imprints->impcnt, imprints->dictcnt);
+	printf("MIN\n");
 	for (i = 0; i < imprints->bits; i++) {
-		fprintf(stderr, "[ " BUNFMT " ]\n", min_bins[i]);
+		printf("[ " BUNFMT " ]\n", min_bins[i]);
 	}
 
-	fprintf(stderr, "MAX\n");
+	printf("MAX\n");
 	for (i = 0; i < imprints->bits; i++) {
-		fprintf(stderr, "[ " BUNFMT " ]\n", max_bins[i]);
+		printf("[ " BUNFMT " ]\n", max_bins[i]);
 	}
-	fprintf(stderr, "COUNT\n");
+	printf("COUNT\n");
 	for (i = 0; i < imprints->bits; i++) {
-		fprintf(stderr, "[ " BUNFMT " ]\n", cnt_bins[i]);
+		printf("[ " BUNFMT " ]\n", cnt_bins[i]);
 	}
 	for (dcnt = 0, icnt = 0, pages = 1; dcnt < imprints->dictcnt; dcnt++) {
 		if (d[dcnt].repeat) {
 			BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
 			pages += d[dcnt].cnt;
-			fprintf(stderr, "[ " BUNFMT " ]r %s\n", pages, s);
+			printf("[ " BUNFMT " ]r %s\n", pages, s);
 			icnt++;
 		} else {
 			l = icnt + d[dcnt].cnt;
 			for (; icnt < l; icnt++) {
 				BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
-				fprintf(stderr, "[ " BUNFMT " ]  %s\n", pages++, s);
+				printf("[ " BUNFMT " ]  %s\n", pages++, s);
 			}
 		}
 	}
+	fflush(stdout);
 }
 #endif

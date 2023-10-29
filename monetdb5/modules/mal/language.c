@@ -35,19 +35,19 @@
 #include "mal_dataflow.h"
 
 static str
-MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MALstartDataflow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *ret = getArgReference_bit(stk,pci,0);
-	int pc = getPC(mb,pci);
+	bit *ret = getArgReference_bit(stk, pci, 0);
+	int pc = getPC(mb, pci);
 
-	if ( pc <0 || pc > pci->jump)
-		throw(MAL,"language.dataflow","Illegal statement range");
-	*ret = 0;	/* continue at end of block */
+	if (pc < 0 || pc > pci->jump)
+		throw(MAL, "language.dataflow", "Illegal statement range");
+	*ret = 0;					/* continue at end of block */
 	return runMALdataflow(cntxt, mb, pc, pci->jump, stk);
 }
 
 static str
-MALpass( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MALpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;

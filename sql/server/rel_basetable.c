@@ -24,7 +24,7 @@ typedef struct rel_base_t {
 	sql_table *mt;
 	char *name;
 	int disallowed;	/* ie check per column */
-	uint32_t used[FLEXIBLE_ARRAY_MEMBER];
+	uint32_t used[];
 } rel_base_t;
 
 void
@@ -226,6 +226,15 @@ rel_base_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cn
 		return NULL;
 	sql_column *c = n->data;
 	return bind_col(sql, rel, ba->name?ba->name:t->base.name, c);
+}
+
+sql_exp *
+rel_base_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, const char *cname)
+{
+	sql_table *t = rel->l;
+	if (!t->s || strcmp(t->s->base.name, sname) != 0)
+		return NULL;
+	return rel_base_bind_column2(sql, rel, tname, cname);
 }
 
 list *

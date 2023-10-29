@@ -12,8 +12,6 @@
 #include "gdk.h"
 #include "gdk_system.h"
 
-#include <assert.h>
-
 #define NN (3)
 
 volatile int timeout = 100; // set this to 0 during interactive debugging
@@ -151,9 +149,7 @@ main(void)
 	fprintf(stderr, "\n-- Starting the worker threads\n");
 	for (int i = 0; i < NN; i++) {
 		struct state *st = &states[i];
-		char name[MT_NAME_LEN];
-		snprintf(name, sizeof(name), "worker%d", i);
-		MT_create_thread(&st->id, worker, st, MT_THR_JOINABLE, name);
+		MT_create_thread(&st->id, worker, st, MT_THR_JOINABLE, "workerXXXX");
 	}
 	MT_sleep_ms(100);
 

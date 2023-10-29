@@ -16,7 +16,7 @@ CREATE TABLE "sys"."functions_cpy" (
 )
 
 statement ok
-COPY 1167 RECORDS INTO "sys"."functions_cpy" FROM stdin USING DELIMITERS '|',E'\n','"'
+COPY 1164 RECORDS INTO "sys"."functions_cpy" FROM stdin USING DELIMITERS '|',E'\n','"'
 <COPY_INTO_DATA>
 83|"sql_min"|"min"|"calc"|0|1|false|false|false|0
 84|"sql_max"|"max"|"calc"|0|1|false|false|false|0
@@ -997,21 +997,18 @@ COPY 1167 RECORDS INTO "sys"."functions_cpy" FROM stdin USING DELIMITERS '|',E'\
 1286|"substring"|"substring"|"str"|0|1|false|false|false|0
 1320|"space"|"space"|"str"|0|1|false|false|false|0
 1324|"soundex"|"soundex"|"txtsim"|0|1|false|false|false|0
-1328|"similarity"|"similarity"|"txtsim"|0|1|false|false|false|0
 1335|"strings"|"strings"|"calc"|0|1|false|false|false|0
 1338|"splitpart"|"splitpart"|"str"|0|1|false|false|false|0
 1339|"substring"|"substring"|"str"|0|1|false|false|false|0
 1340|"substring"|"substring"|"str"|0|1|false|false|false|0
 1374|"space"|"space"|"str"|0|1|false|false|false|0
 1378|"soundex"|"soundex"|"txtsim"|0|1|false|false|false|0
-1382|"similarity"|"similarity"|"txtsim"|0|1|false|false|false|0
 1389|"strings"|"strings"|"calc"|0|1|false|false|false|0
 1392|"splitpart"|"splitpart"|"str"|0|1|false|false|false|0
 1393|"substring"|"substring"|"str"|0|1|false|false|false|0
 1394|"substring"|"substring"|"str"|0|1|false|false|false|0
 1428|"space"|"space"|"str"|0|1|false|false|false|0
 1432|"soundex"|"soundex"|"txtsim"|0|1|false|false|false|0
-1436|"similarity"|"similarity"|"txtsim"|0|1|false|false|false|0
 86|"sum"|"sum"|"aggr"|0|3|false|false|false|0
 87|"sum"|"sum"|"aggr"|0|3|false|false|false|0
 88|"sum"|"sum"|"aggr"|0|3|false|false|false|0
@@ -4616,7 +4613,7 @@ COPY 3416 RECORDS INTO "sys"."args_cpy" FROM stdin USING DELIMITERS '|',E'\n','"
 query I rowsort
 SELECT COUNT(*) FROM sys."functions_cpy"
 ----
-1167
+1164
 
 query I rowsort
 SELECT COUNT(*) FROM sys."args_cpy"

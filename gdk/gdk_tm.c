@@ -61,6 +61,10 @@ epilogue(int cnt, bat *subcommit, bool locked)
 		BAT *b;
 
 		if (BBP_status(bid) & BBPPERSISTENT) {
+			/* first turn off BBPNEW, then turn on
+			 * BBPEXISTING so that concurrent BATassertProps
+			 * doesn't fail */
+			BBP_status_off(bid, BBPNEW);
 			BBP_status_on(bid, BBPEXISTING);
 		} else if (BBP_status(bid) & BBPDELETED) {
 			/* check mmap modes of bats that are now
@@ -78,7 +82,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 				/* check mmap modes */
 				MT_lock_set(&b->theaplock);
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					TRC_WARNING(GDK, "BATcheckmodes failed\n");
+					GDKwarning("BATcheckmodes failed\n");
 				MT_lock_unset(&b->theaplock);
 			}
 		}
@@ -207,6 +211,10 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 	}
 	/* lock just prevents other global (sub-)commits */
 	BBPtmlock();
+	if (logno < 0)
+		logno = getBBPlogno();
+	if (transid < 0)
+		transid = getBBPtransid();
 	if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
 		epilogue(cnt, subcommit, false);
 		ret = GDK_SUCCEED;
@@ -239,7 +247,7 @@ TMsubcommit(BAT *b)
 	}
 	bat_iterator_end(&bi);
 
-	ret = TMsubcommit_list(subcommit, NULL, cnt, getBBPlogno(), getBBPtransid());
+	ret = TMsubcommit_list(subcommit, NULL, cnt, -1, -1);
 	GDKfree(subcommit);
 	return ret;
 }

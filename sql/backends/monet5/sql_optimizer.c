@@ -15,7 +15,6 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
-#include "mal_debugger.h"
 #include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
@@ -63,7 +62,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
 
-		/* now deal with the update binds, it is only necessary to identify that there are updats
+		/* now deal with the update binds, it is only necessary to identify that there are updates
 		 * The actual size is not that important */
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef  && p->retc <= 2){
 			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
@@ -140,24 +139,11 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
 	(void) SQLgetSpace(be->mvc, mb, prepare); // detect empty bats.
-	/* The volcano optimizer seems relevant for traditional HDD settings.
-	 * It produced about 8 % improvement onf TPCH SF 100 on a 16G machine.
-	 * In a SSD setting it was counter productive, leading to worse parallel behavior.
-	 * The automatic switch to volcano is now disabled assuming more use of SSD.
-	 * The volcano optimizer pipeline can be used instead
-	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
-		if( space > (lng)(0.8 * MT_npages() * MT_pagesize())  && GDKnr_threads > 1){
-			pipe = "volcano_pipe";
-		}else
-			pipe = "default_pipe";
-	} else
-	*/
 	pipe = pipe? pipe: "default_pipe";
 	msg = addOptimizerPipe(c, mb, pipe);
 	if (msg){
 		return msg;
 	}
-	mb->keephistory |= be->mvc->emod & mod_debug;
 	if (be->no_mitosis) {
 		for (i = mb->stop - 1; i > 0; i--) {
 			q = getInstrPtr(mb, i);
@@ -187,9 +173,7 @@ SQLoptimizeFunction(Client c, MalBlkPtr mb)
 	msg = addOptimizers(c, mb, pipe, TRUE);
 	if (msg)
 		return msg;
-	mb->keephistory |= be->mvc->emod & mod_debug;
 	msg = optimizeMALBlock(c, mb);
-	mb->keephistory = FALSE;
 	return msg;
 }
 
@@ -218,11 +202,6 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	if (msg != MAL_SUCCEED || mb->errors) {
 		if (c->listing)
 			printFunction(c->fdout, mb, 0, c->listing);
-		if (be->mvc->debug) {
-			str omsg = runMALDebugger(c, c->curprg->def);
-			if (omsg != MAL_SUCCEED)
-				freeException(omsg); /* ignore error */
-		}
 		if (mb->errors && msg && msg != mb->errors) { /* if both set, throw mb->errors as the earliest one */
 			freeException(msg);
 			msg = MAL_SUCCEED;
@@ -244,7 +223,6 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 		GDKfree(pipe);
 	if (msg)
 		return msg;
-	mb->keephistory |= be->mvc->emod & mod_debug;
 	msg = optimizeMALBlock(c, mb);
 	return msg;
 }

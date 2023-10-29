@@ -101,6 +101,7 @@ typedef enum {
 	COMP( DELTA )				\
 	COMP( HEAP )				\
 	COMP( IO_ )				\
+	COMP( WAL )				\
 	COMP( PAR )				\
 	COMP( PERF )				\
 	COMP( TEM )				\
@@ -135,14 +136,14 @@ typedef enum {
 /*
  * Logging macros
  */
-gdk_export log_level_t lvl_per_component[];
+gdk_export ATOMIC_TYPE lvl_per_component[];
 
 // If the LOG_LEVEL of the message is one of the following: CRITICAL,
 // ERROR or WARNING it is logged no matter the component. In any other
 // case the component is taken into account
 #define GDK_TRACER_TEST(LOG_LEVEL, COMP)	\
 	(LOG_LEVEL <= M_WARNING  ||		\
-	 lvl_per_component[COMP] >= LOG_LEVEL)
+	 (log_level_t) ATOMIC_GET(&lvl_per_component[COMP]) >= LOG_LEVEL)
 
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)			\

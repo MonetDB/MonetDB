@@ -17,6 +17,7 @@ set(mal_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_function.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_import.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_instruction.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_builder.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_linker.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_listing.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_module.h
@@ -34,11 +35,9 @@ target_sources(mal
   mal.c
   mal_atom.c mal_atom.h
   mal_authorize.c
-  mal_builder.c mal_builder.h
+  mal_builder.c
   mal_client.c
-  mal_debugger.c mal_debugger.h
   mal_exception.c
-  mal_factory.c mal_factory.h
   mal_function.c mal_function.h
   mal_import.c
   mal_runtime.c mal_runtime.h

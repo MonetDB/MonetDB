@@ -1934,14 +1934,40 @@ mapi_new(void)
 	mid->blk.buf[mid->blk.lim] = 0;
 
 	/* also the current timezone, seconds EAST of UTC */
+#if defined(_MSC_VER)
+	DYNAMIC_TIME_ZONE_INFORMATION tzinf;
+
+	/* documentation says: UTC = localtime + Bias (in minutes),
+	 * but experimentation during DST period says, UTC = localtime
+	 * + Bias + DaylightBias, and presumably during non DST
+	 * period, UTC = localtime + Bias */
+	switch (GetDynamicTimeZoneInformation(&tzinf)) {
+	case TIME_ZONE_ID_STANDARD:	/* using standard time */
+	case TIME_ZONE_ID_UNKNOWN:	/* no daylight saving time in this zone */
+		mid->time_zone = -(int) tzinf.Bias * 60;
+		break;
+	case TIME_ZONE_ID_DAYLIGHT:	/* using daylight saving time */
+		mid->time_zone = -(int) (tzinf.Bias + tzinf.DaylightBias) * 60;
+		break;
+	default:					/* aka TIME_ZONE_ID_INVALID */
+		/* call failed, we don't know the time zone */
+		mid->time_zone = 0;
+		break;
+	}
+#else
 	time_t t = time(NULL);
+	struct tm *local_tm = localtime_r(&t, &(struct tm){0});
+#ifdef HAVE_TM_GMTOFF
+	mid->time_zone = (int) local_tm->tm_gmtoff;
+#else
 	struct tm *gm_tm = gmtime_r(&t, &(struct tm){0});
 	time_t gt = mktime(gm_tm);
-	struct tm *local_tm = localtime_r(&t, &(struct tm){0});
 	local_tm->tm_isdst=0; /* We need the difference without dst */
 	time_t lt = mktime(local_tm);
 	assert((int64_t) gt - (int64_t) lt >= (int64_t) INT_MIN && (int64_t) gt - (int64_t) lt <= (int64_t) INT_MAX);
 	mid->time_zone = (int) (lt - gt);
+#endif
+#endif
 
 	return mid;
 }
@@ -2575,6 +2601,17 @@ mapi_reconnect(Mapi mid)
 	mapi_log_record(mid, "Mapi client read");
 	check_stream(mid, mid->to, "Cannot open socket for writing", mid->error);
 	check_stream(mid, mid->from, "Cannot open socket for reading", mid->error);
+
+	// Send an even number of NUL '\0' bytes to the server.
+	// This forces an error message when accidentally connecting to a TLS server.
+	// Also, surprisingly it seems to make connection setup slightly faster!
+	static const char zeroes[8] = { 0 };
+	for (ssize_t nleft = sizeof(zeroes); nleft > 0; ) {
+		ssize_t nwritten = mnstr_write(mid->to, zeroes, 1, nleft);
+		if (nwritten < 0)
+			return mapi_setError(mid, "could not send leader block", __func__, MERROR);
+		nleft -= nwritten;
+	}
 
 	mid->connected = true;
 
@@ -3814,6 +3851,8 @@ mapi_set_size_header(Mapi mid, bool value)
 		mapi_setError(mid, "size header only supported in SQL", __func__, MERROR);
 		return MERROR;
 	}
+	if (mid->sizeheader == value)
+		return MOK;
 	mid->sizeheader = value;
 	if (!mid->connected)
 		return MOK;

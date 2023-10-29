@@ -14,19 +14,22 @@
 #include "mal_client.h"
 #include "mal_resolve.h"
 
-mal_export str malBootstrap(char *modules[], bool embedded, const char *initpasswd);
+mal_export str malBootstrap(char *modules[], bool embedded,
+							const char *initpasswd);
 mal_export str MSinitClientPrg(Client cntxt, const char *mod, const char *nme);
-mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize);
+mal_export void MSscheduleClient(str command, str challenge, bstream *fin,
+								 stream *fout, protocol_version protocol,
+								 size_t blocksize);
 
-mal_export str MALreader(Client c);
 mal_export str MALinitClient(Client c);
 mal_export str MALexitClient(Client c);
 mal_export str MALparser(Client c);
-mal_export str MALengine(Client c);
-mal_export str MALcallback(Client c, str msg);
+mal_export void MALengine(Client c);
 mal_export void MSresetInstructions(MalBlkPtr mb, int start);
 mal_export void MSresetVariables(MalBlkPtr mb);
 mal_export void MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb);
 mal_export int MALcommentsOnly(MalBlkPtr mb);
+
+mal_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 
 #endif /*  _MAL_SESSION_H */

@@ -27,7 +27,8 @@ typedef str identifier;
 
 static int TYPE_identifier;
 
-static str IDprelude(void)
+static str
+IDprelude(void)
 {
 	TYPE_identifier = ATOMindex("identifier");
 	return MAL_SUCCEED;
@@ -84,6 +85,7 @@ IDtoString(char **retval, size_t *len, const void *HANDLE, bool external)
 		memcpy(*retval, handle, hl);
 	return (ssize_t) hl - 1;
 }
+
 /**
  * Returns an identifier, parsed from a string.  The fromStr function is used
  * to parse the string.

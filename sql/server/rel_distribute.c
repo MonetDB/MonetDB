@@ -12,6 +12,7 @@
 #include "rel_optimizer_private.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
+#include "rel_remote.h"
 #include "sql_privileges.h"
 
 static int
@@ -69,10 +70,6 @@ rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_pro
 {
 	node *n, *m;
 	sql_rel *r = rel_basetable(sql, p, t->base.name);
-	int allowed = 1;
-
-	if (!table_privs(sql, p, PRIV_SELECT)) /* Test for privileges */
-		allowed = 0;
 
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
@@ -81,10 +78,6 @@ rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_pro
 		node *nn = ol_find_name(t->columns, nname);
 		if (nn) {
 			sql_column *c = nn->data;
-
-			if (!allowed && !column_privs(sql, ol_fetch(p->columns, c->colnr), PRIV_SELECT))
-				return sql_error(sql, 02, SQLSTATE(42000) "The user %s SELECT permissions on table '%s.%s' don't match %s '%s.%s'", get_string_global_var(sql, "current_user"),
-								 p->s->base.name, p->base.name, TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->s->base.name, t->base.name);
 			rel_base_use(sql, r, c->colnr);
 		} else if (strcmp(nname, TID) == 0) {
 			rel_base_use_tid(sql, r);
@@ -227,12 +220,17 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		/* set_remote() */
+		/* when a basetable wraps a sql_table (->l) which is remote we want to store its remote
+		 * uri to the REMOTE property. As the property is pulled up the tree it can be used in
+		 * the case of binary rel operators (see later switch cases) in order to
+		 * 1. resolve properly (same uri) replica tables in the other subtree (that's why we
+		 *    call the rewrite_replica)
+		 * 2. pull REMOTE over the binary op if the other subtree has a matching uri remote table
+		 */
 		if (t && isRemote(t) && (p = find_prop(rel->p, PROP_REMOTE)) == NULL) {
-			char *local_name = sa_strconcat(v->sql->sa, sa_strconcat(v->sql->sa, t->s->base.name, "."), t->base.name);
 			p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
 			p->id = t->base.id;
-			p->value.pval = local_name;
+			p->value.pval = (void *)mapiuri_uri(t->query, v->sql->sa);
 		}
 	} break;
 	case op_table:
@@ -298,6 +296,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 		if (rel->flag&MERGE_LEFT) /* search for any remote tables but don't propagate over to this relation */
 			return rel;
 
+		/* if both subtrees have the REMOTE property with the same uri then pull it up */
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
 			r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL &&
 			strcmp(pl->value.pval, pr->value.pval) == 0) {

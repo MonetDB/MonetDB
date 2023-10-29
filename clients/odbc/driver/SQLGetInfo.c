@@ -589,28 +589,28 @@ MNDBGetInfo(ODBCDbc *dbc,
 		/* SQL_IK_ASC | SQL_IK_DESC | SQL_IK_ALL */
 		break;
 	case SQL_INFO_SCHEMA_VIEWS:
+		nValue = SQL_ISV_CHARACTER_SETS |
+			SQL_ISV_COLUMNS |
+			SQL_ISV_SCHEMATA |
+			SQL_ISV_TABLES |
+			SQL_ISV_VIEWS;
 		/* SQL_ISV_ASSERTIONS |
-		 * SQL_ISV_CHARACTER_SETS |
 		 * SQL_ISV_CHECK_CONSTRAINTS |
 		 * SQL_ISV_COLLATIONS |
 		 * SQL_ISV_COLUMN_DOMAIN_USAGE |
 		 * SQL_ISV_COLUMN_PRIVILEGES |
-		 * SQL_ISV_COLUMNS |
 		 * SQL_ISV_CONSTRAINT_COLUMN_USAGE |
 		 * SQL_ISV_CONSTRAINT_TABLE_USAGE |
 		 * SQL_ISV_DOMAIN_CONSTRAINTS |
 		 * SQL_ISV_DOMAINS |
 		 * SQL_ISV_KEY_COLUMN_USAGE |
 		 * SQL_ISV_REFERENTIAL_CONSTRAINTS |
-		 * SQL_ISV_SCHEMATA |
 		 * SQL_ISV_SQL_LANGUAGES |
 		 * SQL_ISV_TABLE_CONSTRAINTS |
 		 * SQL_ISV_TABLE_PRIVILEGES |
-		 * SQL_ISV_TABLES |
 		 * SQL_ISV_TRANSLATIONS |
 		 * SQL_ISV_USAGE_PRIVILEGES |
 		 * SQL_ISV_VIEW_COLUMN_USAGE |
-		 * SQL_ISV_VIEWS |
 		 * SQL_ISV_VIEW_TABLE_USAGE */
 		break;
 	case SQL_INSERT_STATEMENT:
@@ -663,9 +663,46 @@ MNDBGetInfo(ODBCDbc *dbc,
 		 * SQL_CA2_SIMULATE_UNIQUE */
 		break;
 	case SQL_KEYWORDS:
-		/* Returns the MonetDB keywords, i.e. a dump of
-		 * sys.keywords */
-		if ((hdl = mapi_query(dbc->mid, "WITH x(k) AS (SELECT keyword FROM sys.keywords ORDER BY keyword) SELECT group_concat(k, ',') FROM x")) != NULL && mapi_fetch_row(hdl)) {
+		/* A character string that contains a comma-separated list of all data source-specific keywords.
+		 * This list does not contain keywords specific to ODBC or keywords used by both the data source and ODBC.
+		 * This list represents all the reserved keywords; interoperable applications should not use these words in object names.
+		 * Returns the MonetDB sys.keywords minus the ODBC keywords: https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/reserved-keywords */
+		hdl = mapi_query(dbc->mid,
+			"WITH x(k) AS (SELECT keyword FROM sys.keywords WHERE keyword NOT IN ("
+			"'ABSOLUTE','ACTION','ADA','ADD','ALL','ALLOCATE','ALTER','AND','ANY',"
+			"'ARE','AS','ASC','ASSERTION','AT','AUTHORIZATION','AVG',"
+			"'BEGIN','BETWEEN','BIT','BIT_LENGTH','BOTH','BY',"
+			"'CASCADE','CASCADED','CASE','CAST','CATALOG','CHAR','CHAR_LENGTH',"
+			"'CHARACTER','CHARACTER_LENGTH','CHECK','CLOSE','COALESCE',"
+			"'COLLATE','COLLATION','COLUMN','COMMIT','CONNECT','CONNECTION','CONSTRAINT',"
+			"'CONSTRAINTS','CONTINUE','CONVERT','CORRESPONDING','COUNT','CREATE','CROSS',"
+			"'CURRENT','CURRENT_DATE','CURRENT_TIME','CURRENT_TIMESTAMP','CURRENT_USER','CURSOR',"
+			"'DATE','DAY','DEALLOCATE','DEC','DECIMAL','DECLARE','DEFAULT','DEFERRABLE',"
+			"'DEFERRED','DELETE','DESC','DESCRIBE','DESCRIPTOR','DIAGNOSTICS','DISCONNECT',"
+			"'DISTINCT','DOMAIN','DOUBLE','DROP',"
+			"'ELSE','END','END-EXEC','ESCAPE','EXCEPT','EXCEPTION','EXEC','EXECUTE',"
+			"'EXISTS','EXTERNAL','EXTRACT',"
+			"'FALSE','FETCH','FIRST','FLOAT','FOR','FOREIGN','FORTRAN','FOUND','FROM','FULL',"
+			"'GET','GLOBAL','GO','GOTO','GRANT','GROUP','HAVING','HOUR',"
+			"'IDENTITY','IMMEDIATE','IN','INCLUDE','INDEX','INDICATOR','INITIALLY','INNER','INPUT',"
+			"'INSENSITIVE','INSERT','INT','INTEGER','INTERSECT','INTERVAL','INTO','IS','ISOLATION',"
+			"'JOIN','KEY','LANGUAGE','LAST','LEADING','LEFT','LEVEL','LIKE','LOCAL','LOWER',"
+			"'MATCH','MAX','MIN','MINUTE','MODULE','MONTH',"
+			"'NAMES','NATIONAL','NATURAL','NCHAR','NEXT','NO','NONE','NOT','NULL','NULLIF','NUMERIC',"
+			"'OCTET_LENGTH','OF','ON','ONLY','OPEN','OPTION','OR','ORDER','OUTER','OUTPUT','OVERLAPS',"
+			"'PAD','PARTIAL','PASCAL','PLI','POSITION','PRECISION','PREPARE','PRESERVE',"
+			"'PRIMARY','PRIOR','PRIVILEGES','PROCEDURE','PUBLIC',"
+			"'READ','REAL','REFERENCES','RELATIVE','RESTRICT','REVOKE','RIGHT','ROLLBACK','ROWS',"
+			"'SCHEMA','SCROLL','SECOND','SECTION','SELECT','SESSION','SESSION_USER','SET',"
+			"'SIZE','SMALLINT','SOME','SPACE','SQL','SQLCA','SQLCODE','SQLERROR',"
+			"'SQLSTATE','SQLWARNING','SUBSTRING','SUM','SYSTEM_USER',"
+			"'TABLE','TEMPORARY','THEN','TIME','TIMESTAMP','TIMEZONE_HOUR','TIMEZONE_MINUTE',"
+			"'TO','TRAILING','TRANSACTION','TRANSLATE','TRANSLATION','TRIM','TRUE',"
+			"'UNION','UNIQUE','UNKNOWN','UPDATE','UPPER','USAGE','USER','USING',"
+			"'VALUE','VALUES','VARCHAR','VARYING','VIEW',"
+			"'WHEN','WHENEVER','WHERE','WITH','WORK','WRITE',"
+			"'YEAR','ZONE') ORDER BY keyword) SELECT group_concat(k, ',') FROM x");
+		if (hdl != NULL && mapi_fetch_row(hdl)) {
 			sValue = mapi_fetch_field(hdl, 0);
 		} else {
 			addDbcError(dbc, mapi_error(dbc->mid) == MTIMEOUT ? "HYT01" : "HY000", NULL, 0);
@@ -839,7 +876,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 		sValue = MONETDB_SERVER_NAME;
 		break;
 	case SQL_SPECIAL_CHARACTERS:
-		sValue = "!$&'()*+,-./:;<=>?@[]^`{|}~";
+		sValue = "!#$%&'()*+,-./:;<=>?@[]^`{|}~";
 		break;
 	case SQL_SQL_CONFORMANCE:
 		nValue = SQL_SC_SQL92_FULL;
@@ -1037,15 +1074,16 @@ MNDBGetInfo(ODBCDbc *dbc,
 		break;
 	case SQL_TIMEDATE_ADD_INTERVALS:
 	case SQL_TIMEDATE_DIFF_INTERVALS:
-		/* SQL_FN_TSI_FRAC_SECOND |
-		 * SQL_FN_TSI_SECOND |
-		 * SQL_FN_TSI_MINUTE |
-		 * SQL_FN_TSI_HOUR |
-		 * SQL_FN_TSI_DAY |
-		 * SQL_FN_TSI_WEEK |
-		 * SQL_FN_TSI_MONTH |
-		 * SQL_FN_TSI_QUARTER |
-		 * SQL_FN_TSI_YEAR */
+		/* when server is 11.46 or higher */
+		nValue = SQL_FN_TSI_FRAC_SECOND |
+			SQL_FN_TSI_SECOND |
+			SQL_FN_TSI_MINUTE |
+			SQL_FN_TSI_HOUR |
+			SQL_FN_TSI_DAY |
+			SQL_FN_TSI_WEEK |
+			SQL_FN_TSI_MONTH |
+			SQL_FN_TSI_QUARTER |
+			SQL_FN_TSI_YEAR;
 		break;
 	case SQL_TIMEDATE_FUNCTIONS:
 		nValue = SQL_FN_TD_CURRENT_DATE |
@@ -1053,7 +1091,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 			SQL_FN_TD_CURRENT_TIMESTAMP |
 			SQL_FN_TD_CURDATE |
 			SQL_FN_TD_CURTIME |
-			/* SQL_FN_TD_DAYNAME | */
+			SQL_FN_TD_DAYNAME |	/* when server is 11.46 or higher */
 			SQL_FN_TD_DAYOFMONTH |
 			SQL_FN_TD_DAYOFWEEK |
 			SQL_FN_TD_DAYOFYEAR |
@@ -1061,12 +1099,12 @@ MNDBGetInfo(ODBCDbc *dbc,
 			SQL_FN_TD_HOUR |
 			SQL_FN_TD_MINUTE |
 			SQL_FN_TD_MONTH |
-			/* SQL_FN_TD_MONTHNAME | */
+			SQL_FN_TD_MONTHNAME |	/* when server is 11.46 or higher */
 			SQL_FN_TD_NOW |
 			SQL_FN_TD_QUARTER |
 			SQL_FN_TD_SECOND |
-			/* SQL_FN_TD_TIMESTAMPADD | */
-			/* SQL_FN_TD_TIMESTAMPDIFF | */
+			SQL_FN_TD_TIMESTAMPADD |	/* when server is 11.46 or higher */
+			SQL_FN_TD_TIMESTAMPDIFF |	/* when server is 11.46 or higher */
 			SQL_FN_TD_WEEK |
 			SQL_FN_TD_YEAR;
 		break;

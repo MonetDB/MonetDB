@@ -494,8 +494,8 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 		if (ht == TYPE_void && l->flag == LOG_INSERT) {
 			lng nr = l->nr;
 			for (; res == LOG_OK && nr > 0; nr--) {
-				size_t tlen = lg->lg->bufsize;
-				void *t = rt(lg->lg->buf, &tlen, lg->log, 1);
+				size_t tlen = lg->lg->rbufsize;
+				void *t = rt(lg->lg->rbuf, &tlen, lg->log, 1);
 
 				if (t == NULL) {
 					/* see if failure was due to
@@ -508,8 +508,8 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 						res = LOG_ERR;
 					break;
 				} else {
-					lg->lg->buf = t;
-					lg->lg->bufsize = tlen;
+					lg->lg->rbuf = t;
+					lg->lg->rbufsize = tlen;
 				}
 				if (BUNappend(r, t, true) != GDK_SUCCEED)
 					res = LOG_ERR;
@@ -525,13 +525,13 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 			if (!pax) {
 				lng nr = l->nr;
 				for (; res == LOG_OK && nr > 0; nr--) {
-					size_t tlen = lg->lg->bufsize;
+					size_t tlen = lg->lg->rbufsize;
 					void *h = rh(hv, &hlen, lg->log, 1);
-					void *t = rt(lg->lg->buf, &tlen, lg->log, 1);
+					void *t = rt(lg->lg->rbuf, &tlen, lg->log, 1);
 
 					if (t != NULL) {
-						lg->lg->buf = t;
-						lg->lg->bufsize = tlen;
+						lg->lg->rbuf = t;
+						lg->lg->rbufsize = tlen;
 					}
 					if (h == NULL)
 						res = LOG_EOF;
@@ -541,7 +541,7 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 						else
 							res = LOG_ERR;
 					} else if (BUNappend(uid, h, true) != GDK_SUCCEED ||
-					   	BUNappend(r, t, true) != GDK_SUCCEED)
+						BUNappend(r, t, true) != GDK_SUCCEED)
 						res = LOG_ERR;
 				}
 			} else {
@@ -573,8 +573,8 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 				}
 				nr = l->nr;
 				for (; res == LOG_OK && nr > 0; nr--) {
-					size_t tlen = lg->lg->bufsize;
-					void *t = rt(lg->lg->buf, &tlen, lg->log, 1);
+					size_t tlen = lg->lg->rbufsize;
+					void *t = rt(lg->lg->rbuf, &tlen, lg->log, 1);
 
 					if (t == NULL) {
 						if (strstr(GDKerrbuf, "malloc") == NULL)
@@ -582,8 +582,8 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 						else
 							res = LOG_ERR;
 					} else {
-						lg->lg->buf = t;
-						lg->lg->bufsize = tlen;
+						lg->lg->rbuf = t;
+						lg->lg->rbufsize = tlen;
 						if (BUNappend(r, t, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 					}
@@ -936,7 +936,7 @@ la_apply(old_logger *lg, logaction *c)
 		ret = la_bat_clear(lg, c);
 		break;
 	default:
-		assert(0);
+		MT_UNREACHABLE();
 	}
 	lg->changes += (ret == GDK_SUCCEED);
 	return ret;
@@ -1027,10 +1027,10 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 	log_return err = LOG_OK;
 	time_t t0, t1;
 	struct stat sb;
-	int dbg = GDKdebug;
+	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 	int fd;
 
-	GDKdebug &= ~CHECKMASK;
+	ATOMIC_AND(&GDKdebug, ~CHECKMASK);
 
 	if (lg->lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
@@ -1041,7 +1041,7 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 	/* if the file doesn't exist, there is nothing to be read back */
 	if (lg->log == NULL || mnstr_errnr(lg->log) != MNSTR_NO__ERROR) {
 		logger_close(lg);
-		GDKdebug = dbg;
+		ATOMIC_SET(&GDKdebug, dbg);
 		*filemissing = true;
 		return GDK_SUCCEED;
 	}
@@ -1049,19 +1049,19 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 	switch (mnstr_read(lg->log, &byteorder, sizeof(byteorder), 1)) {
 	case -1:
 		logger_close(lg);
-		GDKdebug = dbg;
+		ATOMIC_SET(&GDKdebug, dbg);
 		return GDK_FAIL;
 	case 0:
 		/* empty file is ok */
 		logger_close(lg);
-		GDKdebug = dbg;
+		ATOMIC_SET(&GDKdebug, dbg);
 		return GDK_SUCCEED;
 	case 1:
 		/* if not empty, must start with correct byte order mark */
 		if (byteorder != 1234) {
 			TRC_CRITICAL(GDK, "incorrect byte order word in file %s\n", filename);
 			logger_close(lg);
-			GDKdebug = dbg;
+			ATOMIC_SET(&GDKdebug, dbg);
 			return GDK_FAIL;
 		}
 		break;
@@ -1069,7 +1069,7 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 	if ((fd = getFileNo(lg->log)) < 0 || fstat(fd, &sb) < 0) {
 		TRC_CRITICAL(GDK, "fstat on opened file %s failed\n", filename);
 		logger_close(lg);
-		GDKdebug = dbg;
+		ATOMIC_SET(&GDKdebug, dbg);
 		/* If the file could be opened, but fstat fails,
 		 * something weird is going on */
 		return GDK_FAIL;
@@ -1175,7 +1175,8 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 				err = LOG_ERR;
 			else
 				err = log_read_updates(lg, tr, &l, name, tpe, id, pax);
-		} 	break;
+			break;
+		}
 		case LOG_CREATE:
 			if (name == NULL || tr == NULL)
 				err = LOG_EOF;
@@ -1248,7 +1249,7 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 		printf("# Finished reading the write-ahead log '%s'\n", filename);
 		fflush(stdout);
 	}
-	GDKdebug = dbg;
+	ATOMIC_SET(&GDKdebug, dbg);
 	/* we cannot distinguish errors from incomplete transactions
 	 * (even if we would log aborts in the logs). So we simply
 	 * abort and move to the next log file */
@@ -1349,7 +1350,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, catalog_tpe, catalog_oid, dcatalog;
-	int dbg = GDKdebug;
+	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 
 	assert(!LOG_DISABLED(lg));
 
@@ -1518,7 +1519,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 
 		if (snapshots_tid < 0 || dsnapshots < 0)
 			goto error;
-		GDKdebug &= ~CHECKMASK;
+		ATOMIC_AND(&GDKdebug, ~CHECKMASK);
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
 		if (lg->snapshots_bid == NULL) {
 			GDKerror("inconsistent database, snapshots_bid does not exist");
@@ -1529,7 +1530,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 			GDKerror("inconsistent database, snapshots_tid does not exist");
 			goto error;
 		}
-		GDKdebug = dbg;
+		ATOMIC_SET(&GDKdebug, dbg);
 
 		if (dsnapshots) {
 			lg->dsnapshots = BATdescriptor(dsnapshots);
@@ -1658,7 +1659,6 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		BBPrelease(bids[p]);
 	}
 	logbat_destroy(lg->del);
-	GDKfree(lg->local_dir);
 	GDKfree(lg);
 	return GDK_FAIL;
 }

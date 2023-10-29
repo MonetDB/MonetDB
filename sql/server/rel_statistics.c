@@ -503,6 +503,8 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 		if (is_single(l))
 			return rel->exps;
 	}
+	if (!list_empty(rel->attr))
+		return rel->exps;
 	for (node *n = rel->exps->h ; n ; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -572,7 +574,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 					if (lval_max && rval_min)
 						always_true |= !has_nil(le) && !has_nil(re) && (is_anti(e) ? atom_cmp(lval_max, rval_min) > 0 : atom_cmp(lval_max, rval_min) <= 0);
 					break;
-				default: /* Maybe later I can do cmp_in, cmp_notin, mark_in and mark_notin, but don't forget to remove is_theta_exp check up there */
+				default: /* Maybe later I can do cmp_in and cmp_notin but don't forget to remove is_theta_exp check up there */
 					break;
 				}
 			}
@@ -1026,7 +1028,7 @@ run_optimizer
 bind_get_statistics(visitor *v, global_props *gp)
 {
 	(void) v;
-	return gp->opt_level == 1 ? rel_get_statistics : NULL;
+	return (gp->opt_level == 1 && !gp->cnt[op_insert]) ? rel_get_statistics : NULL;
 }
 
 

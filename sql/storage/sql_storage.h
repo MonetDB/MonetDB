@@ -327,7 +327,7 @@ typedef struct logger_functions {
 
 /* we need to add an interface for result_tables later */
 
-extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t querytype, res_table *next, void *order);
+extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t querytype, res_table *next);
 extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *v, bool cache);
 
 extern void res_table_destroy(res_table *t);
@@ -474,7 +474,7 @@ extern sql_table *globaltmp_instantiate(sql_trans *tr, sql_table *t);
 
 #define NR_TABLE_LOCKS 64
 #define NR_COLUMN_LOCKS 512
-#define TRANSACTION_ID_BASE	(1ULL<<63)
+#define TRANSACTION_ID_BASE	(1ULL<<(sizeof(ATOMIC_BASE_TYPE) * 8 - 1))
 
 typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */
@@ -487,12 +487,12 @@ typedef struct sqlstore {
 	ATOMIC_TYPE timestamp;	/* timestamp counter */
 	ATOMIC_TYPE transaction;/* transaction id counter */
 	ATOMIC_TYPE function_counter;/* function counter used during function instantiation */
-	ulng oldest;
+	ATOMIC_TYPE oldest;
 	ulng oldest_pending;
-	int readonly;			/* store is readonly */
-	int singleuser;			/* store is for a single user only (==1 enable, ==2 single user session running) */
-	int first;				/* just created the db */
-	int initialized;		/* used during bootstrap only */
+	bool readonly;			/* store is readonly */
+	int8_t singleuser;		/* store is for a single user only (==1 enable, ==2 single user session running) */
+	bool first;				/* just created the db */
+	bool initialized;		/* used during bootstrap only */
 	int debug;				/* debug mask */
 	store_type active_type;
 	list *changes;			/* pending changes to cleanup */
@@ -539,6 +539,7 @@ typedef struct sql_change {
 } sql_change;
 
 extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
+extern void trans_del(sql_trans *tr, sql_base *b);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 
 extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics);

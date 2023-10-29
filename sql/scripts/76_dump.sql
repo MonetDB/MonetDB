@@ -352,7 +352,7 @@ BEGIN
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
 
   --TODO Improve performance of dump_table_data.
-  --TODO loaders ,procedures, window and filter sys.functions.
+  --TODO loaders, procedures, window and filter sys.functions.
   --TODO look into order dependent group_concat
 
   INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');

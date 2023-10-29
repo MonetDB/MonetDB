@@ -273,7 +273,8 @@ sql_delete_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid gran
 
 	/* select privileges of this auth_id, privilege, obj_id */
 	A = store->table_api.rids_select(tr, priv_auth, &auth_id, &auth_id, priv_priv, &privilege, &privilege, priv_obj, &obj_id, &obj_id, NULL );
-
+	if (!A)
+		throw(SQL, "sql.delete_prive", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	/* remove them */
 	for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(A))
 		log_res = store->table_api.table_delete(tr, privs, rid);
@@ -444,6 +445,8 @@ sql_drop_role(mvc *m, str auth)
 
 	/* select user roles of this role_id */
 	A = store->table_api.rids_select(tr, find_sql_column(user_roles, "role_id"), &role_id, &role_id, NULL);
+	if (!A)
+		throw(SQL, "sql.drop_role", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	/* remove them */
 	for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(A))
 		log_res = store->table_api.table_delete(tr, user_roles, rid);
@@ -834,6 +837,17 @@ sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, ch
 		return r;
 	}
 
+	/* the default role must explicitly granted to the new user */
+	if (role_id) {
+		str r;
+		/* - we don't grant the default role WITH ADMIN OPTION hence admin=0
+		 * - we should use sql->role_id instead of sql->user_id otherwise a user with high privs
+		 * (e.g. sysadmin) might not be able to GRANT the DEFAULT ROLE (see sql_grant_role() impl)
+		 */
+		if ((r = sql_grant_role(sql, user, role, sql->role_id, 0)))
+			return r;
+	}
+
 	return NULL;
 }
 
@@ -865,6 +879,8 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 
 		/* select privileges of this user_id */
 		A = store->table_api.rids_select(tr, find_sql_column(privs, "auth_id"), &user_id, &user_id, NULL);
+		if (!A)
+			throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		/* remove them */
 		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(A))
 			log_res = store->table_api.table_delete(tr, privs, rid);
@@ -874,6 +890,8 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 
 		/* select privileges granted by this user_id */
 		A = store->table_api.rids_select(tr, find_sql_column(privs, "grantor"), &user_id, &user_id, NULL);
+		if (!A)
+			throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		/* remove them */
 		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(A))
 			log_res = store->table_api.table_delete(tr, privs, rid);
@@ -890,6 +908,8 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 
 		/* select user roles of this user_id */
 		A = store->table_api.rids_select(tr, find_sql_column(user_roles, "login_id"), &user_id, &user_id, NULL);
+		if (!A)
+			throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		/* remove them */
 		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(A))
 			log_res = store->table_api.table_delete(tr, user_roles, rid);
@@ -901,6 +921,8 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 
 		/* select users created by this user_id */
 		A = store->table_api.rids_select(tr, find_sql_column(auths, "grantor"), &user_id, &user_id, NULL);
+		if (!A)
+			throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		/* remove them and continue the deletion */
 		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid) && log_res == LOG_OK && msg; rid = store->table_api.rids_next(A)) {
 			sqlid nuid = store->table_api.column_find_sqlid(tr, find_sql_column(auths, "id"), rid);
@@ -938,7 +960,7 @@ sql_drop_user(mvc *sql, char *user)
 }
 
 char *
-sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role)
+sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
 {
 	sql_schema *s = NULL;
 	sqlid schema_id = 0;
@@ -965,7 +987,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char 
 		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id, ddl) != LOG_OK)
 			throw(SQL, "sql.alter_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id) == FALSE)
+	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id, max_memory, max_workers) == FALSE)
 		throw(SQL,"sql.alter_user", SQLSTATE(M0M27) "%s", sql->errstr);
 	return NULL;
 }

@@ -109,7 +109,7 @@
 		p = (tpe*) Tloc(b, 0);											\
 		for( j = 0; j < cnt; j++, p++){								    \
 			*p = mapfun((tpe) access_fun(s)[j]);						\
-			if (na_check){ b->tnil = true; 	b->tnonil = false; 	*p= tpe##_nil;} \
+			if (na_check){ b->tnil = true; b->tnonil = false; *p= tpe##_nil;} \
 			if (j > 0){													\
 				if (b->trevsorted && !is_##tpe##_nil(*p) && (is_##tpe##_nil(prev) || *p > prev)){ \
 					b->trevsorted = false;								\
@@ -171,17 +171,16 @@ bat_to_sexp(BAT* b, int type)
 		case TYPE_int:
 			//Storage is int but the actual defined type may be different
 			switch (type) {
-				case TYPE_int: {
-					// special case: memcpy for int-to-int conversion without NULLs
+			case TYPE_int:
+				// special case: memcpy for int-to-int conversion without NULLs
+				BAT_TO_INTSXP(b, bi, int, varvalue, 1);
+				break;
+			default:
+				if (type == ATOMindex("date")) {
+					BAT_TO_DATESXP(b, bi, int, varvalue, 0);
+				} else {
+					//Type stored as int but no implementation to decode into native R type
 					BAT_TO_INTSXP(b, bi, int, varvalue, 1);
-				} break;
-				default: {
-					if (type == ATOMindex("date")) {
-						BAT_TO_DATESXP(b, bi, int, varvalue, 0);
-					} else {
-						//Type stored as int but no implementation to decode into native R type
-						BAT_TO_INTSXP(b, bi, int, varvalue, 1);
-					}
 				}
 			}
 			break;
@@ -256,7 +255,8 @@ bat_to_sexp(BAT* b, int type)
 				}
 			}
 		}
-	} 	break;
+		break;
+	}
 	}
 	bat_iterator_end(&bi);
 	return varvalue;
@@ -920,6 +920,7 @@ static str RAPIprelude(void) {
 		}
 		MT_lock_unset(&rapiLock);
 		printf("# MonetDB/R   module loaded\n");
+		fflush(stdout);
 	}
 	return MAL_SUCCEED;
 }

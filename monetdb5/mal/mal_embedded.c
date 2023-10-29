@@ -27,7 +27,7 @@
 #include "mal_scenario.h"
 #include "mal_parser.h"
 #include "mal_interpreter.h"
-#include "mal_namespace.h"  /* for initNamespace() */
+#include "mal_namespace.h"		/* for initNamespace() */
 #include "mal_client.h"
 #include "mal_dataflow.h"
 #include "mal_private.h"
@@ -44,13 +44,14 @@
 static bool embeddedinitialized = false;
 
 str
-malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiontimeout, bool with_mapi_server)
+malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
+				int sessiontimeout, bool with_mapi_server)
 {
-	Client c, c_old;
+	Client c;
 	QryCtx *qc_old;
 	str msg = MAL_SUCCEED;
 
-	if( embeddedinitialized )
+	if (embeddedinitialized)
 		return MAL_SUCCEED;
 
 	{
@@ -66,19 +67,19 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		} else {
 			if ((secretf = MT_fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
 				throw(MAL, "malEmbeddedBoot",
-					"unable to open vault_key_file %s: %s\n",
-					GDKgetenv("monet_vault_key"), strerror(errno));
+					  "unable to open vault_key_file %s: %s\n",
+					  GDKgetenv("monet_vault_key"), strerror(errno));
 			}
-			len = fread(secret, 1, sizeof(secret), secretf);
+			len = fread(secret, 1, sizeof(secret) - 1, secretf);
 			fclose(secretf);
 			secret[len] = '\0';
-			len = strlen(secret); /* secret can contain null-bytes */
+			len = strlen(secret);	/* secret can contain null-bytes */
 			if (len == 0) {
 				throw(MAL, "malEmbeddedBoot", "vault key has zero-length!\n");
 			} else if (len < 5) {
 				throw(MAL, "malEmbeddedBoot",
-					"#warning: your vault key is too short "
-					"(%zu), enlarge your vault key!\n", len);
+					  "#warning: your vault key is too short "
+					  "(%zu), enlarge your vault key!\n", len);
 			}
 		}
 		if ((msg = AUTHunlockVault(secret)) != MAL_SUCCEED) {
@@ -88,66 +89,54 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 	}
 
 	if (!MCinit())
-		throw(MAL, "malEmbeddedBoot", "MAL debugger failed to start");
-#ifndef NDEBUG
-	if (!mdbInit()) {
-		mal_client_reset();
-		throw(MAL, "malEmbeddedBoot", "MAL debugger failed to start");
-	}
-#endif
+		throw(MAL, "malEmbeddedBoot", "Failed to initialize clients structure");
 	// monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
-	initParser();
 	initHeartbeat();
 	// initResource();
-	c_old = setClientContext(NULL); //save context
 	qc_old = MT_thread_get_qry_ctx();
 	c = MCinitClient((oid) 0, 0, 0);
-	if(c == NULL)
+	if (c == NULL)
 		throw(MAL, "malEmbeddedBoot", "Failed to initialize client");
 	c->workerlimit = workerlimit;
 	c->memorylimit = memorylimit;
 	c->qryctx.querytimeout = querytimeout * 1000000;	// from sec to usec
 	c->sessiontimeout = sessiontimeout * 1000000;
 	c->curmodule = c->usermodule = userModule();
-	if(c->usermodule == NULL) {
+	if (c->usermodule == NULL) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		throw(MAL, "malEmbeddedBoot", "Failed to initialize client MAL module");
 	}
-	if ( (msg = defaultScenario(c)) ) {
+	if ((msg = defaultScenario(c))) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	if ((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
-	char *modules[5] = { "embedded", "sql", "generator", "udf" };
+	char *modules[6] = { "embedded", "sql", "generator", "udf", "csv" };
 	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server, NULL)) != MAL_SUCCEED) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
+#if 0
 	msg = chkProgram(c->usermodule, c->curprg->def);
-	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
+	if (msg != MAL_SUCCEED || (msg = c->curprg->def->errors) != MAL_SUCCEED) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	msg = MALengine(c);
+#endif
 	if (msg == MAL_SUCCEED)
 		embeddedinitialized = true;
 	MCcloseClient(c);
-	setClientContext(c_old); // restore context
 	MT_thread_set_qry_ctx(qc_old);
 	initProfiler();
 	return msg;
@@ -165,7 +154,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
  */
 
 void
-malEmbeddedReset(void) //remove extra modules and set to non-initialized again
+malEmbeddedReset(void)			//remove extra modules and set to non-initialized again
 {
 	if (!embeddedinitialized)
 		return;
@@ -178,33 +167,29 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 	if (!GDKinmemory(0) && !GDKembedded()) {
 		str err = 0;
 
-		if ((err = msab_wildRetreat()) != NULL) {
+		if ((err = msab_wildRetreat()) !=NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
- 		}
-		if ((err = msab_registerStop()) != NULL) {
+		}
+		if ((err = msab_registerStop()) !=NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
- 		}
+		}
 	}
-	mal_factory_reset();
 	mal_dataflow_reset();
 	mal_client_reset();
-  	mal_linker_reset();
+	mal_linker_reset();
 	mal_resource_reset();
 	mal_runtime_reset();
 	mal_module_reset();
 	mal_atom_reset();
-#ifndef NDEBUG
-	mdbExit();
-#endif
 
-	memset((char*)monet_cwd, 0, sizeof(monet_cwd));
-	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));
+	memset((char *) monet_cwd, 0, sizeof(monet_cwd));
+	memset((char *) monet_characteristics, 0, sizeof(monet_characteristics));
 	mal_namespace_reset();
 	/* No need to clean up the namespace, it will simply be extended
 	 * upon restart mal_namespace_reset(); */
-	GDKreset(0);	// terminate all other threads
+	GDKreset(0);				// terminate all other threads
 	embeddedinitialized = false;
 }
 
@@ -220,5 +205,5 @@ void
 malEmbeddedStop(int status)
 {
 	malEmbeddedReset();
-	exit(status); /* properly end GDK */
+	exit(status);				/* properly end GDK */
 }

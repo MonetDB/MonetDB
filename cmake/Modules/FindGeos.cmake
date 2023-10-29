@@ -14,14 +14,18 @@ find_library(GEOS_LIBRARIES NAMES geos_c geos_c_i)
 
 # Handle the QUIETLY and REQUIRED arguments and set GEOS_FOUND to TRUE if all listed variables are TRUE.
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Geos DEFAULT_MSG GEOS_LIBRARIES GEOS_INCLUDE_DIR)
 
-if(GEOS_FOUND)
+if(GEOS_INCLUDE_DIR AND EXISTS "${GEOS_INCLUDE_DIR}/geos_c.h")
   file(STRINGS "${GEOS_INCLUDE_DIR}/geos_c.h" GEOS_VERSION_LINES REGEX "#define[ \t]+GEOS_VERSION_(MAJOR|MINOR|PATCH)")
   string(REGEX REPLACE ".*GEOS_VERSION_MAJOR *\([0-9]*\).*" "\\1" GEOS_VERSION_MAJOR "${GEOS_VERSION_LINES}")
   string(REGEX REPLACE ".*GEOS_VERSION_MINOR *\([0-9]*\).*" "\\1" GEOS_VERSION_MINOR "${GEOS_VERSION_LINES}")
   string(REGEX REPLACE ".*GEOS_VERSION_PATCH *\([0-9]*\).*" "\\1" GEOS_VERSION_PATCH "${GEOS_VERSION_LINES}")
   set(GEOS_VERSION "${GEOS_VERSION_MAJOR}.${GEOS_VERSION_MINOR}.${GEOS_VERSION_PATCH}")
+endif()
+
+find_package_handle_standard_args(Geos REQUIRED_VARS GEOS_LIBRARIES GEOS_INCLUDE_DIR VERSION_VAR GEOS_VERSION)
+
+if(GEOS_FOUND)
   add_library(Geos::Geos UNKNOWN IMPORTED)
   set_target_properties(Geos::Geos
     PROPERTIES

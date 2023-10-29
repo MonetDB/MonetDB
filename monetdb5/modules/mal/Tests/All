@@ -10,8 +10,6 @@ inspect00
 inspect10
 #inspect40 word size problems on different platforms
 
-register00
-
 mserver00
 
 qgram
@@ -19,10 +17,6 @@ qgram
 groupby00
 
 imprints
-
-call00
-callstring
-callfunction
 
 # flags  is influecend by the Mtest command line 
 
@@ -42,8 +36,6 @@ mapi06
 mapi07
 mapi01
 
-tokenizer00
-
 manifold
 manifoldstr
 #manifoldaggr
@@ -62,3 +54,6 @@ orderidx00
 orderidx01
 orderidx02
 orderidx04
+
+txtsim_levenshtein
+txtsim_jarowinkler

@@ -33,6 +33,7 @@ set(sql_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/sql_mvc.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/sql_parser.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/sql_privileges.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_file_loader.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_optimizer.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_rewriter.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_partition.h>
@@ -43,6 +44,8 @@ set(sql_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_semantic.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_dump.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/opt_backend.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mal_backend.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sql_statement.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_import.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_mem.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_list.h>
@@ -75,7 +78,10 @@ set(sql_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_basetable.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_semantic.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_dump.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/opt_backend.h>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/opt_backend.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/mal_backend.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_statement.h>
+)
 
 #add_library(sql MODULE)
 add_library(sql SHARED)
@@ -101,12 +107,16 @@ set(include_sql_files
   45_uuid
   46_profiler
   47_regexp
+  48_txtsim
+  49_strings
   52_describe
   58_hot_snapshot
   75_storagemodel
   76_dump
+  77_storage
   80_statistics
-  81_tracer)
+  81_tracer
+  91_information_schema)
 
 if(HAVE_HGE)
   list(APPEND include_sql_files
@@ -123,17 +133,18 @@ create_include_object(
 target_sources(sql
   PRIVATE
   sql.c sql.h
-  mal_backend.c mal_backend.h
+  mal_backend.c
   sql_user.c sql_user.h
   sql_scenario.c sql_scenario.h
   sql_execute.c sql_execute.h
   sql_assert.c sql_assert.h
   sql_upgrades.c sql_upgrades.h
   rel_bin.c rel_bin.h
+  rel_physical.c rel_physical.h
   rel_predicates.c rel_predicates.h
   sql_cat.c sql_cat.h
   sql_transaction.c sql_transaction.h
-  sql_statement.c sql_statement.h
+  sql_statement.c
   sql_statistics.c sql_statistics.h
   sql_gencode.c sql_gencode.h
   sql_optimizer.c sql_optimizer.h

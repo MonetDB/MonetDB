@@ -42,7 +42,9 @@ CMDvarSUB(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcsub(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcsub
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.-", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -54,7 +56,9 @@ CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcadd(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcadd
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.+", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -67,7 +71,7 @@ CMDvarADDstr(str *ret, str *s1, str *s2)
 	size_t l1;
 
 	if (strNil(*s1) || strNil(*s2)) {
-		*ret= GDKstrdup(str_nil);
+		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -89,7 +93,7 @@ CMDvarADDstrint(str *ret, str *s1, int *i)
 	size_t len;
 
 	if (strNil(*s1) || is_int_nil(*i)) {
-		*ret= GDKstrdup(str_nil);
+		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -110,7 +114,9 @@ CMDvarMUL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcmul(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcmul
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.*", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -122,7 +128,9 @@ CMDvarDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcdiv(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcdiv
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc./", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -157,7 +165,9 @@ CMDvarMOD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcmod(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcmod
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.%", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -169,7 +179,9 @@ CMDvarLSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalclsh(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalclsh
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.<<", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -181,7 +193,9 @@ CMDvarRSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcrsh(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcrsh
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.>>", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -193,7 +207,9 @@ CMDvarAND(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcand(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcand
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.and", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -205,7 +221,9 @@ CMDvarOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcor(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcor
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.or", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -217,7 +235,9 @@ CMDvarXOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcxor(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcxor
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.xor", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -229,7 +249,9 @@ CMDvarLT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalclt(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalclt
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.<", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -241,7 +263,9 @@ CMDvarLE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcle(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcle
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.<=", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -253,7 +277,9 @@ CMDvarGT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcgt(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcgt
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.>", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -265,7 +291,9 @@ CMDvarGE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcge(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcge
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.>=", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -281,7 +309,7 @@ CMDvarEQ(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				  &stk->stk[getArg(pci, 1)],
 				  &stk->stk[getArg(pci, 2)],
 				  pci->argc == 3 ? false : *getArgReference_bit(stk, pci, 3)
-			) != GDK_SUCCEED)
+		) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.==", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -297,7 +325,7 @@ CMDvarNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				  &stk->stk[getArg(pci, 1)],
 				  &stk->stk[getArg(pci, 2)],
 				  pci->argc == 3 ? false : *getArgReference_bit(stk, pci, 3)
-			) != GDK_SUCCEED)
+		) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.!=", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -309,7 +337,9 @@ CMDvarCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalccmp(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalccmp
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.cmp", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -327,7 +357,10 @@ CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	hinc = *getArgReference_bit(stk, pci, 6);
 	nils_false = *getArgReference_bit(stk, pci, 7);
 	anti = *getArgReference_bit(stk, pci, 8);
-	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], symmetric, linc, hinc, nils_false, anti) != GDK_SUCCEED)
+	if (VARcalcbetween
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+		 &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], symmetric, linc,
+		 hinc, nils_false, anti) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.between", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -353,7 +386,9 @@ CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARconvert(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 0, 0, 0) != GDK_SUCCEED) {
+	if (VARconvert
+		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 0, 0,
+		 0) != GDK_SUCCEED) {
 		snprintf(buf, sizeof(buf), "%s.%s", pci->modname, pci->fcnname);
 		return mythrow(MAL, buf, OPERATION_FAILED);
 	}
@@ -519,8 +554,8 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr p;
 	ptr retval = getArgReference(stk, pci, 0);
 	bit b = stk->stk[getArg(pci, 1)].vtype == TYPE_msk
-		? (bit) *getArgReference_msk(stk, pci, 1)
-		: *getArgReference_bit(stk, pci, 1);
+			? (bit) *getArgReference_msk(stk, pci, 1)
+			: *getArgReference_bit(stk, pci, 1);
 	int t1 = getArgType(mb, pci, 2);
 	int t2 = getArgType(mb, pci, 3);
 
@@ -534,7 +569,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getArgReference(stk, pci, 3);
 	}
 	if (ATOMextern(t1)) {
-		*(ptr **) retval = ATOMdup(t1, *(ptr**)p);
+		*(ptr **) retval = ATOMdup(t1, *(ptr **) p);
 		if (*(ptr **) retval == NULL)
 			throw(MAL, "ifthenelse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else if (t1 == TYPE_void) {
@@ -559,8 +594,8 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
 	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
-		p1 = *(ptr *)p1;
-		p2 = *(ptr *)p2;
+		p1 = *(ptr *) p1;
+		p2 = *(ptr *) p2;
 	}
 	if (ATOMcmp(t, p1, nil) == 0 || ATOMcmp(t, p2, nil) == 0)
 		p1 = nil;
@@ -585,8 +620,8 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
 	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
-		p1 = *(ptr *)p1;
-		p2 = *(ptr *)p2;
+		p1 = *(ptr *) p1;
+		p2 = *(ptr *) p2;
 	}
 	if (ATOMcmp(t, p1, nil) == 0 ||
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
@@ -610,8 +645,8 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
 	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
-		p1 = *(ptr *)p1;
-		p2 = *(ptr *)p2;
+		p1 = *(ptr *) p1;
+		p2 = *(ptr *) p2;
 	}
 	if (ATOMcmp(t, p1, nil) == 0 || ATOMcmp(t, p2, nil) == 0)
 		p1 = nil;
@@ -636,8 +671,8 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
 	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
-		p1 = *(ptr *)p1;
-		p2 = *(ptr *)p2;
+		p1 = *(ptr *) p1;
+		p2 = *(ptr *) p2;
 	}
 	if (ATOMcmp(t, p1, nil) == 0 ||
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
@@ -653,7 +688,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			  const char *func)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	bat bid = * getArgReference_bat(stk, pci, 1);
+	bat bid = *getArgReference_bat(stk, pci, 1);
 	BAT *b;
 	BAT *s = NULL;
 	bool nil_if_empty = true;
@@ -664,9 +699,9 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (pci->argc >= 3) {
 		if (getArgType(mb, pci, 2) == TYPE_bit) {
 			assert(pci->argc == 3);
-			nil_if_empty = * getArgReference_bit(stk, pci, 2);
+			nil_if_empty = *getArgReference_bit(stk, pci, 2);
 		} else {
-			bat sid = * getArgReference_bat(stk, pci, 2);
+			bat sid = *getArgReference_bat(stk, pci, 2);
 			if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
 				BBPunfix(b->batCacheid);
 				throw(MAL, func, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -674,11 +709,11 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			if (pci->argc >= 4) {
 				assert(pci->argc == 4);
 				assert(getArgType(mb, pci, 3) == TYPE_bit);
-				nil_if_empty = * getArgReference_bit(stk, pci, 3);
+				nil_if_empty = *getArgReference_bit(stk, pci, 3);
 			}
 		}
 	}
-	r = (*sumprod)(VALget(ret), ret->vtype, b, s, true, nil_if_empty);
+	r = (*sumprod) (VALget(ret), ret->vtype, b, s, true, nil_if_empty);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (r != GDK_SUCCEED)
@@ -715,8 +750,8 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *skip_nils;
 	BAT *b = NULL, *s = NULL, *avgs, *cnts, *rems;
 
-	(void)cntxt;
-	(void)mb;
+	(void) cntxt;
+	(void) mb;
 
 	/* optional results rest and count */
 	if (arg_type(stk, pci, 1) == TYPE_lng)
@@ -728,8 +763,7 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	skip_nils = getArgReference_bit(stk, pci, 5);
 	b = BATdescriptor(*bid);
 	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
-	if (b == NULL ||
-		(sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
+	if (b == NULL || (sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
 		BBPreclaim(b);
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
@@ -741,26 +775,26 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng xcnt = 0;
 
 		if (avgs->ttype == TYPE_bte) {
-			*(bte*)res = *(bte*) Tloc(avgs, 0);
+			*(bte *) res = *(bte *) Tloc(avgs, 0);
 		} else if (avgs->ttype == TYPE_sht) {
-			*(sht*)res = *(sht*) Tloc(avgs, 0);
+			*(sht *) res = *(sht *) Tloc(avgs, 0);
 		} else if (avgs->ttype == TYPE_int) {
-			*(int*)res = *(int*) Tloc(avgs, 0);
+			*(int *) res = *(int *) Tloc(avgs, 0);
 		} else if (avgs->ttype == TYPE_lng) {
-			*(lng*)res = *(lng*) Tloc(avgs, 0);
+			*(lng *) res = *(lng *) Tloc(avgs, 0);
 #ifdef HAVE_HGE
 		} else if (avgs->ttype == TYPE_hge) {
-			*(hge*)res = *(hge*) Tloc(avgs, 0);
+			*(hge *) res = *(hge *) Tloc(avgs, 0);
 #endif
 		}
 		if (cnt)
-			xcnt = *cnt = *(lng*) Tloc(cnts, 0);
+			xcnt = *cnt = *(lng *) Tloc(cnts, 0);
 		if (rest)
-			*rest = *(lng*) Tloc(rems, 0);
+			*rest = *(lng *) Tloc(rems, 0);
 		if (xcnt == 0)
-			VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
+			VALset(ret, ret->vtype, (ptr) ATOMnilptr(ret->vtype));
 	} else {
-		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
+		VALset(ret, ret->vtype, (ptr) ATOMnilptr(ret->vtype));
 		if (rest)
 			*rest = lng_nil;
 		if (cnt)
@@ -783,8 +817,8 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rid = getArgReference_bat(stk, pci, 2);
 	bat *cid = getArgReference_bat(stk, pci, 3);
 
-	(void)cntxt;
-	(void)mb;
+	(void) cntxt;
+	(void) mb;
 
 	b = BATdescriptor(*bid);
 	r = BATdescriptor(*rid);
@@ -801,20 +835,20 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ptr res = VALget(ret);
 
 		if (avgs->ttype == TYPE_bte) {
-			*(bte*)res = *(bte*) Tloc(avgs, 0);
+			*(bte *) res = *(bte *) Tloc(avgs, 0);
 		} else if (avgs->ttype == TYPE_sht) {
-			*(sht*)res = *(sht*) Tloc(avgs, 0);
+			*(sht *) res = *(sht *) Tloc(avgs, 0);
 		} else if (avgs->ttype == TYPE_int) {
-			*(int*)res = *(int*) Tloc(avgs, 0);
+			*(int *) res = *(int *) Tloc(avgs, 0);
 		} else if (avgs->ttype == TYPE_lng) {
-			*(lng*)res = *(lng*) Tloc(avgs, 0);
+			*(lng *) res = *(lng *) Tloc(avgs, 0);
 #ifdef HAVE_HGE
 		} else if (avgs->ttype == TYPE_hge) {
-			*(hge*)res = *(hge*) Tloc(avgs, 0);
+			*(hge *) res = *(hge *) Tloc(avgs, 0);
 #endif
 		}
 	} else {
-		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
+		VALset(ret, ret->vtype, (ptr) ATOMnilptr(ret->vtype));
 	}
 	BBPreclaim(avgs);
 	BBPunfix(b->batCacheid);
@@ -839,15 +873,17 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.str_group_concat",
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (isaBatType(getArgType(mb, pci, 2))) {
 		sid = *getArgReference_bat(stk, pci, 2);
 		if ((sep = BATdescriptor(sid)) == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			throw(MAL, "aggr.str_group_concat",
+				  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		if (sep->ttype == TYPE_str) { /* the separator bat */
+		if (sep->ttype == TYPE_str) {	/* the separator bat */
 			next_argument = 3;
 			separator = NULL;
 		}
@@ -863,7 +899,8 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
 					BBPunfix(b->batCacheid);
 					BBPunfix(sep->batCacheid);
-					throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+					throw(MAL, "aggr.str_group_concat",
+						  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				}
 			} else {
 				s = sep;
@@ -872,7 +909,7 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (pci->argc >= (next_argument + 2)) {
 				assert(pci->argc == (next_argument + 2));
 				assert(getArgType(mb, pci, (next_argument + 1)) == TYPE_bit);
-				nil_if_empty = * getArgReference_bit(stk, pci, (next_argument + 1));
+				nil_if_empty = *getArgReference_bit(stk, pci, (next_argument + 1));
 			}
 		}
 	}

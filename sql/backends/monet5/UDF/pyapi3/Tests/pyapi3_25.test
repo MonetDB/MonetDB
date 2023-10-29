@@ -22,31 +22,41 @@ language PYTHON_MAP
     return i
 }
 
-statement error
+query I rowsort
 SELECT pyapi25(i) FROM pyapi25table
+-----
+12
+3
+6
+9
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 UPDATE pyapi25multiplication SET i=10
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+query I rowsort
 SELECT pyapi25(i) FROM pyapi25table
+-----
+10
+20
+30
+40
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 DROP FUNCTION pyapi25
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 DROP TABLE pyapi25table
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 DROP TABLE pyapi25multiplication
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 CREATE TABLE pyapi25table(i integer)
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 INSERT INTO pyapi25table VALUES (1), (2), (3), (4)
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 CREATE FUNCTION pyapi25(i integer) returns integer
 language PYTHON
 {
@@ -55,10 +65,15 @@ language PYTHON
     return i
 }
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+query I rowsort
 SELECT pyapi25(i) FROM pyapi25table
+----
+1
+2
+3
+4
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 CREATE FUNCTION pyapi25map(i integer) returns integer
 language PYTHON_MAP
 {
@@ -66,26 +81,41 @@ language PYTHON_MAP
     return i
 }
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+query I rowsort
 SELECT * FROM mytable
+-----
+1
+2
+3
+4
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+query I rowsort
 SELECT pyapi25map(i) FROM pyapi25table
+-----
+1
+2
+3
+4
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+query I rowsort
 SELECT * FROM mytable
+-----
+10
+20
+30
+40
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 CREATE TABLE pyapi25medians(mean DOUBLE)
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 CREATE FUNCTION pyapi25randomtable() returns TABLE(d DOUBLE) LANGUAGE PYTHON
 {
     numpy.random.seed(33)
     return numpy.random.rand(1000000)
 }
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 CREATE FUNCTION pyapi25mediancompute(d DOUBLE) RETURNS DOUBLE
 language PYTHON_MAP
 {
@@ -94,7 +124,7 @@ language PYTHON_MAP
     return 1
 }
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 CREATE FUNCTION pyapi25checker(d DOUBLE) RETURNS BOOL LANGUAGE PYTHON {
     actual_mean = numpy.mean(d)
     numpy.random.seed(33)
@@ -108,24 +138,29 @@ CREATE FUNCTION pyapi25checker(d DOUBLE) RETURNS BOOL LANGUAGE PYTHON {
         return(False)
 }
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 CREATE TABLE randomtable AS SELECT * FROM pyapi25randomtable() WITH DATA
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+query R rowsort
 SELECT pyapi25mediancompute(d) FROM randomtable
+----
+1.000
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+query I rowsort
 SELECT pyapi25checker(mean) FROM pyapi25medians
+----
+1
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 CREATE FUNCTION pyapi25errortable() returns TABLE(d DOUBLE) LANGUAGE PYTHON_MAP
 {
     _conn.execute('SELECT * FROM HOPEFULLYNONEXISTANTTABLE;')
     return 1
 }
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement error
 SELECT * FROM pyapi25errortable()
+----
 
 statement ok
 ROLLBACK

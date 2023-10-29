@@ -18,43 +18,10 @@
 #include "type_conversion.h"
 #include "formatinput.h"
 #include "conversion.h"
-#include "gdk_interprocess.h"
-
-#ifdef HAVE_FORK
-// These libraries are used for PYTHON_MAP when forking is enabled [to start new
-// processes and wait on them]
-#include <sys/types.h>
-#include <sys/wait.h>
-#endif
-
-const char *fork_disableflag = "disable_fork";
-bool option_disable_fork = false;
 
 static PyObject *marshal_module = NULL;
 PyObject *marshal_loads = NULL;
 
-typedef struct _AggrParams{
-	PyInput **pyinput_values;
-	void ****split_bats;
-	size_t **group_counts;
-	str **args;
-	PyObject **connection;
-	PyObject **function;
-	PyObject **column_types_dict;
-	PyObject **result_objects;
-	str *pycall;
-	str msg;
-	size_t base;
-	size_t additional_columns;
-	size_t named_columns;
-	size_t columns;
-	size_t group_count;
-	size_t group_start;
-	size_t group_end;
-	MT_Id thread;
-} AggrParams;
-
-static void ComputeParallelAggregation(AggrParams *p);
 static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  size_t retcols, oid seqbase);
 
@@ -104,10 +71,6 @@ void init_DateTimeAPI(void) {
 	PYAPI3_DateTimeAPI = PyDateTimeAPI;
 }
 
-#ifdef HAVE_FORK
-static bool python_call_active = false;
-#endif
-
 #ifdef WIN32
 static bool enable_zerocopy_input = true;
 static bool enable_zerocopy_output = false;
@@ -117,26 +80,16 @@ static bool enable_zerocopy_output = true;
 #endif
 
 static str
-PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool grouped, bool mapped);
+PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool grouped);
 
 str
 PYAPI3PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	return PyAPIeval(cntxt, mb, stk, pci, false, false);
-}
-
-str
-PYAPI3PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	return PyAPIeval(cntxt, mb, stk, pci, false, true);
+	return PyAPIeval(cntxt, mb, stk, pci, false);
 }
 
 str
 PYAPI3PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	return PyAPIeval(cntxt, mb, stk, pci, true, false);
-}
-
-str
-PYAPI3PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	return PyAPIeval(cntxt, mb, stk, pci, true, true);
+	return PyAPIeval(cntxt, mb, stk, pci, true);
 }
 
 #define NP_SPLIT_BAT(tpe)                                                      \
@@ -178,8 +131,7 @@ PYAPI3PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 //! [CONVERT_BAT] Step 2: It converts the input BATs into Numpy Arrays
 //! [EXECUTE_CODE] Step 3: It executes the Python code using the Numpy arrays as arguments
 //! [RETURN_VALUES] Step 4: It collects the return values and converts them back into BATs
-//! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
-static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool grouped, bool mapped) {
+static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool grouped) {
 	sql_func * sqlfun = NULL;
 	str exprStr = NULL;
 
@@ -198,32 +150,14 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	PyReturn *pyreturn_values = NULL;
 	PyInput *pyinput_values = NULL;
 	oid seqbase = 0;
-#ifdef HAVE_FORK
-	char *mmap_ptr;
-	QueryStruct *query_ptr = NULL;
-	int query_sem = -1;
-	lng mmap_id = -1;
-	size_t memory_size = 0;
-	bool child_process = false;
-	bool holds_gil = !mapped;
-	void **mmap_ptrs = NULL;
-	size_t *mmap_sizes = NULL;
-#endif
-	bool allow_loopback = !mapped;
 	bit varres;
 	int retcols;
 	bool gstate = 0;
 	int unnamedArgs = 0;
-	bool parallel_aggregation = grouped && mapped, freeexprStr = false;
+	bool freeexprStr = false;
 	int argcount = pci->argc;
 
 	char *eval_additional_args[] = {"_columns", "_column_types", "_conn"};
-
-	mapped = false;
-
-#ifndef HAVE_FORK
-	(void)mapped;
-#endif
 
 	if (!pyapiInitialized) {
 		throw(MAL, "pyapi3.eval", SQLSTATE(PY000) "Embedded Python is enabled but an error was "
@@ -236,8 +170,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	if (getArgType(mb, pci, pci->retc) == TYPE_lng) {
 		has_card_arg=1;
 		card = (BUN) *getArgReference_lng(stk, pci, pci->retc);
-	}
-	else {
+	} else {
 		has_card_arg=0;
 		card = 1;
 	}
@@ -254,8 +187,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	}
 
 	if ((pci->argc - (pci->retc + 2 + has_card_arg)) * sizeof(PyInput) > 0) {
-		pyinput_values =
-			GDKzalloc((pci->argc - (pci->retc + 2 + has_card_arg)) * sizeof(PyInput));
+		pyinput_values = GDKzalloc((pci->argc - (pci->retc + 2 + has_card_arg)) * sizeof(PyInput));
 
 		if (pyinput_values == NULL) {
 			GDKfree(args);
@@ -273,13 +205,6 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			args[unnamedArgs++] = GDKstrdup(argname);
 			argnode = argnode->next;
 		}
-		if (parallel_aggregation && unnamedArgs < pci->argc) {
-			argcount = unnamedArgs;
-		} else {
-			parallel_aggregation = false;
-		}
-	} else {
-		parallel_aggregation = false;
 	}
 
 	// We name all the unknown arguments, if grouping is enabled the first
@@ -297,10 +222,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		}
 	}
 
-	// Construct PyInput objects, we do this before any multiprocessing because
-	// there is some locking going on in there, and locking + forking = bad idea
-	// (a thread can fork while another process is in the lock, which means we
-	// can get stuck permanently)
+	// Construct PyInput objects
 	argnode = sqlfun && sqlfun->ops->cnt > 0 ? sqlfun->ops->h : NULL;
 	for (i = pci->retc + 2 + has_card_arg; i < argcount; i++) {
 		PyInput *inp = &pyinput_values[i - (pci->retc + 2 + has_card_arg)];
@@ -351,227 +273,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		}
 	}
 
-#ifdef HAVE_FORK
-	if (!option_disable_fork) {
-		if (!mapped && !parallel_aggregation) {
-			MT_lock_set(&pyapiLock);
-			if (python_call_active) {
-				mapped = true;
-				holds_gil = false;
-			} else {
-				python_call_active = true;
-				holds_gil = true;
-			}
-			MT_lock_unset(&pyapiLock);
-		}
-	} else {
-		mapped = false;
-		holds_gil = true;
-	}
-#endif
-
-#ifdef HAVE_FORK
-	/*[FORK_PROCESS]*/
-	if (mapped) {
-		lng pid;
-		// we need 3 + pci->retc * 2 shared memory spaces
-		// the first is for the header information
-		// the second for query struct information
-		// the third is for query results
-		// the remaining pci->retc * 2 is one for each return BAT, and one for
-		// each return mask array
-		int mmap_count = 4 + pci->retc * 2;
-
-		// create initial shared memory
-		mmap_id = GDKuniqueid(mmap_count);
-
-		mmap_ptrs = GDKzalloc(mmap_count * sizeof(void *));
-		mmap_sizes = GDKzalloc(mmap_count * sizeof(size_t));
-		if (mmap_ptrs == NULL || mmap_sizes == NULL) {
-			msg = createException(MAL, "pyapi3.eval",
-								  SQLSTATE(HY013) MAL_MALLOC_FAIL " mmap values.");
-			goto wrapup;
-		}
-
-		memory_size =
-			pci->retc * sizeof(ReturnBatDescr); // the memory size for the
-												// header files, each process
-												// has one per return value
-
-		assert(memory_size > 0);
-		// create the shared memory for the header
-		mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0]);
-		if (mmap_ptrs[0] == NULL) {
-			msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-			goto wrapup;
-		}
-		mmap_ptr = mmap_ptrs[0];
-
-		// create the cross-process semaphore used for signaling queries
-		// we need two semaphores
-		// the main process waits on the first one (exiting when a query is
-		// requested or the child process is done)
-		// the forked process waits for the second one when it requests a query
-		// (waiting for the result of the query)
-		if (GDKcreatesem(mmap_id, 2, &query_sem) != GDK_SUCCEED) {
-			msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-			goto wrapup;
-		}
-
-		// create the shared memory space for queries
-		mmap_ptrs[1] = GDKinitmmap(mmap_id + 1, sizeof(QueryStruct),
-						 &mmap_sizes[1]);
-		if (mmap_ptrs[1] == NULL) {
-			msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-			goto wrapup;
-		}
-		query_ptr = mmap_ptrs[1];
-		query_ptr->pending_query = false;
-		query_ptr->query[0] = '\0';
-		query_ptr->mmapid = -1;
-		query_ptr->memsize = 0;
-
-		// fork
-		MT_lock_set(&pyapiLock);
-		gstate = Python_ObtainGIL(); // we need the GIL before forking,
-									 // otherwise it can get stuck in the forked
-									 // child
-		if ((pid = fork()) < 0) {
-			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to fork process");
-			MT_lock_unset(&pyapiLock);
-
-			goto wrapup;
-		} else if (pid == 0) {
-			child_process = true;
-			query_ptr = NULL;
-			if ((query_ptr = GDKinitmmap(mmap_id + 1, sizeof(QueryStruct),
-										 NULL)) == NULL) {
-				msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-				goto wrapup;
-			}
-		} else {
-			gstate = Python_ReleaseGIL(gstate);
-		}
-		if (!child_process) {
-			// main process
-			int status;
-			bool success = true;
-			bool sem_success = false;
-			pid_t retcode = 0;
-
-			// release the GIL in the main process
-			MT_lock_unset(&pyapiLock);
-
-			while (true) {
-				// wait for the child to finish
-				// note that we use a timeout here in case the child crashes for
-				// some reason
-				// in this case the semaphore value is never increased, so we
-				// would be stuck otherwise
-				if (GDKchangesemval_timeout(query_sem, 0, -1, 100, &sem_success) != GDK_SUCCEED) {
-					msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-					goto wrapup;
-				}
-				if (sem_success) {
-					break;
-				}
-				retcode = waitpid(pid, &status, WNOHANG);
-				if (retcode > 0)
-					break; // we have successfully waited for the child to exit
-				if (retcode < 0) {
-					// error message
-					const char *err = GDKstrerror(errno, (char[128]){0}, 128);
-					sem_success = 0;
-					errno = 0;
-					msg = createException(
-						MAL, "waitpid",
-						SQLSTATE(PY000) "Error calling waitpid(" LLFMT ", &status, WNOHANG): %s",
-						pid, err);
-					break;
-				}
-			}
-			if (sem_success)
-				waitpid(pid, &status, 0);
-
-			if (status != 0)
-				success = false;
-
-			if (!success) {
-				// a child failed, get the error message from the child
-				ReturnBatDescr *descr = &(((ReturnBatDescr *)mmap_ptr)[0]);
-
-				if (descr->bat_size == 0) {
-					msg = createException(
-						MAL, "pyapi3.eval",
-						SQLSTATE(PY000) "Failure in child process with unknown error.");
-				} else if ((mmap_ptrs[3] = GDKinitmmap(mmap_id + 3, descr->bat_size,
-													   &mmap_sizes[3])) != NULL) {
-					msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "%s",
-										  (char *)mmap_ptrs[3]);
-				} else {
-					msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-				}
-				goto wrapup;
-			}
-
-			// collect return values
-			for (i = 0; i < pci->retc; i++) {
-				PyReturn *ret = &pyreturn_values[i];
-				ReturnBatDescr *descr = &(((ReturnBatDescr *)mmap_ptr)[i]);
-				size_t total_size = 0;
-				bool has_mask = false;
-				ret->count = 0;
-				ret->mmap_id = mmap_id + i + 3;
-				ret->memory_size = 0;
-				ret->result_type = 0;
-
-				ret->count = descr->bat_count;
-				total_size = descr->bat_size;
-
-				ret->memory_size = descr->element_size;
-				ret->result_type = descr->npy_type;
-				has_mask = has_mask || descr->has_mask;
-
-				// get the shared memory address for this return value
-				assert(total_size > 0);
-				mmap_ptrs[i + 3] = GDKinitmmap(mmap_id + i + 3, total_size,
-											   &mmap_sizes[i + 3]);
-				if (mmap_ptrs[i + 3] == NULL) {
-					msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-					goto wrapup;
-				}
-				ret->array_data = mmap_ptrs[i + 3];
-				ret->array_size = mmap_sizes[i + 3];
-				ret->mask_data = NULL;
-				ret->numpy_array = NULL;
-				ret->numpy_mask = NULL;
-				ret->multidimensional = FALSE;
-				if (has_mask) {
-					size_t mask_size = ret->count * sizeof(bool);
-
-					assert(mask_size > 0);
-					mmap_ptrs[pci->retc + (i + 3)] = GDKinitmmap(
-						mmap_id + pci->retc + (i + 3), mask_size,
-						&mmap_sizes[pci->retc + (i + 3)]);
-					if (mmap_ptrs[pci->retc + (i + 3)] == NULL) {
-						msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-						goto wrapup;
-					}
-					ret->mask_data = mmap_ptrs[pci->retc + (i + 3)];
-				}
-			}
-			msg = MAL_SUCCEED;
-
-			goto returnvalues;
-		}
-	}
-#endif
-
 	// After this point we will execute Python Code, so we need to acquire the
 	// GIL
-	if (!mapped) {
-		gstate = Python_ObtainGIL();
-	}
+	gstate = Python_ObtainGIL();
 
 	if (sqlfun) {
 		// Check if exprStr references to a file path or if it contains the
@@ -662,11 +366,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 						(code_object == NULL ? additional_columns : 0));
 	pColumns = PyDict_New();
 	pColumnTypes = PyDict_New();
-#ifdef HAVE_FORK
-	pConnection = Py_Connection_Create(cntxt, !allow_loopback, query_ptr, query_sem);
-#else
-	pConnection = Py_Connection_Create(cntxt, !allow_loopback, 0, 0);
-#endif
+	pConnection = Py_Connection_Create(cntxt, 0, 0);
 
 	// Now we will loop over the input BATs and convert them to python objects
 	for (i = pci->retc + 2 + has_card_arg; i < argcount; i++) {
@@ -726,7 +426,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		// Now we will add the UDF to the main module
 		d = PyModule_GetDict(pModule);
 		if (code_object == NULL) {
-			v = PyRun_StringFlags(pycall, Py_file_input, d, d, NULL);
+			v = PyRun_StringFlags(pycall, Py_file_input, d, NULL, NULL);
 			if (v == NULL) {
 				msg = PyError_CreateException("Could not parse Python code",
 											  pycall);
@@ -749,253 +449,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			}
 		}
 
-		if (parallel_aggregation) {
-			// parallel aggregation, we run the function once for every group in
-			// parallel
-			BAT *aggr_group = NULL, *group_first_occurrence = NULL;
-			size_t group_count, elements, element_it, group_it;
-			size_t *group_counts = NULL;
-			oid *aggr_group_arr = NULL;
-			void ***split_bats = NULL;
-			int named_columns = unnamedArgs - (pci->retc + 2 + has_card_arg);
-			PyObject *aggr_result;
-
-			// release the GIL
-			gstate = Python_ReleaseGIL(gstate);
-
-			// the first unnamed argument has the group numbers for every row
-			aggr_group =
-				BATdescriptor(*getArgReference_bat(stk, pci, unnamedArgs));
-			// the second unnamed argument has the first occurrence of every
-			// group number, we just use this to get the total amount of groups
-			// quickly
-			group_first_occurrence =
-				BATdescriptor(*getArgReference_bat(stk, pci, unnamedArgs + 1));
-			group_count = BATcount(group_first_occurrence);
-			BBPunfix(group_first_occurrence->batCacheid);
-			elements = BATcount(aggr_group); // get the amount of groups
-
-			// now we count, for every group, how many elements it has
-			group_counts = GDKzalloc(group_count * sizeof(size_t));
-			if (group_counts == NULL) {
-				msg = createException(MAL, "pyapi3.eval",
-									  SQLSTATE(HY013) MAL_MALLOC_FAIL " group count array.");
-				goto aggrwrapup;
-			}
-
-			if (BATtvoid(aggr_group)) {
-				for (element_it = 0; element_it < elements; element_it++) {
-					group_counts[element_it]++;
-				}
-			} else {
-				aggr_group_arr = (oid *)aggr_group->theap->base + aggr_group->tbaseoff;
-				for (element_it = 0; element_it < elements; element_it++) {
-					group_counts[aggr_group_arr[element_it]]++;
-				}
-			}
-
-			// now perform the actual splitting of the data, first construct
-			// room for splits for every group
-			// elements are structured as follows:
-			// split_bats [groupnr] [columnnr] [elementnr]
-			split_bats = GDKzalloc(group_count * sizeof(void *));
-			for (group_it = 0; group_it < group_count; group_it++) {
-				split_bats[group_it] =
-					GDKzalloc(sizeof(void *) * named_columns);
-			}
-
-			// now split the columns one by one
-			for (i = 0; i < named_columns; i++) {
-				PyInput input = pyinput_values[i];
-				if (!input.scalar) {
-					BATiter bi = bat_iterator(input.bat);
-					void *basevals = bi.base;
-
-					switch (input.bat_type) {
-						case TYPE_void:
-							NP_SPLIT_BAT(oid);
-							break;
-						case TYPE_bit:
-							NP_SPLIT_BAT(bit);
-							break;
-						case TYPE_bte:
-							NP_SPLIT_BAT(bte);
-							break;
-						case TYPE_sht:
-							NP_SPLIT_BAT(sht);
-							break;
-						case TYPE_int:
-							NP_SPLIT_BAT(int);
-							break;
-						case TYPE_oid:
-							NP_SPLIT_BAT(oid);
-							break;
-						case TYPE_lng:
-							NP_SPLIT_BAT(lng);
-							break;
-						case TYPE_flt:
-							NP_SPLIT_BAT(flt);
-							break;
-						case TYPE_dbl:
-							NP_SPLIT_BAT(dbl);
-							break;
-#ifdef HAVE_HGE
-						case TYPE_hge:
-							basevals =
-								PyArray_BYTES((PyArrayObject *)input.result);
-							NP_SPLIT_BAT(dbl);
-							break;
-#endif
-						case TYPE_str: {
-							PyObject ****ptr = (PyObject ****)split_bats;
-							size_t *temp_indices;
-							PyObject **batcontent = (PyObject **)PyArray_DATA(
-								(PyArrayObject *)input.result);
-							// allocate space for split BAT
-							for (group_it = 0; group_it < group_count;
-								 group_it++) {
-								ptr[group_it][i] =
-									GDKzalloc(group_counts[group_it] *
-											  sizeof(PyObject *));
-							}
-							// iterate over the elements of the current BAT
-							temp_indices =
-								GDKzalloc(sizeof(PyObject *) * group_count);
-							if (BATtvoid(aggr_group)) {
-								for (element_it = 0; element_it < elements;
-									 element_it++) {
-									// append current element to proper group
-									ptr[element_it][i][temp_indices[element_it]++] =
-										batcontent[element_it];
-								}
-							} else {
-								for (element_it = 0; element_it < elements;
-									 element_it++) {
-									// group of current element
-									oid group = aggr_group_arr[element_it];
-									// append current element to proper group
-									ptr[group][i][temp_indices[group]++] =
-										batcontent[element_it];
-								}
-							}
-							GDKfree(temp_indices);
-							break;
-						}
-						default:
-							msg = createException(
-								MAL, "pyapi3.eval", SQLSTATE(PY000) "Unrecognized BAT type %s",
-								BatType_Format(input.bat_type));
-							bat_iterator_end(&bi);
-							goto aggrwrapup;
-					}
-					bat_iterator_end(&bi);
-				}
-			}
-
-			{
-				int res = 0;
-				size_t threads = 8; // GDKgetenv("gdk_nr_threads");
-				size_t thread_it;
-				size_t result_it;
-				AggrParams *parameters;
-				PyObject **results;
-				double current = 0.0;
-				double increment;
-
-				// if there are less groups than threads, limit threads to
-				// amount of groups
-				threads = group_count < threads ? group_count : threads;
-
-				increment = (double)group_count / (double)threads;
-				// start running the threads
-				parameters = GDKzalloc(threads * sizeof(AggrParams));
-				results = GDKzalloc(group_count * sizeof(PyObject *));
-				for (thread_it = 0; thread_it < threads; thread_it++) {
-					AggrParams *params = &parameters[thread_it];
-					params->named_columns = named_columns;
-					params->additional_columns = additional_columns;
-					params->group_count = group_count;
-					params->group_counts = &group_counts;
-					params->pyinput_values = &pyinput_values;
-					params->column_types_dict = &pColumnTypes;
-					params->split_bats = &split_bats;
-					params->base = pci->retc + 2 + has_card_arg;
-					params->function = &pFunc;
-					params->connection = &pConnection;
-					params->pycall = &pycall;
-					params->group_start = (size_t)floor(current);
-					params->group_end = (size_t)floor(current += increment);
-					params->args = &args;
-					params->msg = NULL;
-					params->result_objects = results;
-					res = MT_create_thread(&params->thread,
-										   (void (*)(void *)) &
-											   ComputeParallelAggregation,
-										   params, MT_THR_JOINABLE,
-										   "pyapi_par_aggr");
-					if (res != 0) {
-						msg = createException(MAL, "pyapi3.eval",
-											  SQLSTATE(PY000) "Failed to start thread.");
-						goto aggrwrapup;
-					}
-				}
-				for (thread_it = 0; thread_it < threads; thread_it++) {
-					AggrParams params = parameters[thread_it];
-					int res = MT_join_thread(params.thread);
-					if (res != 0) {
-						msg = createException(MAL, "pyapi3.eval",
-											  "Failed to join thread.");
-						goto aggrwrapup;
-					}
-				}
-
-				for (thread_it = 0; thread_it < threads; thread_it++) {
-					AggrParams params = parameters[thread_it];
-					if (results[thread_it] == NULL || params.msg != NULL) {
-						msg = params.msg;
-						goto wrapup;
-					}
-				}
-
-				// we need the GIL again to group the parameters
-				gstate = Python_ObtainGIL();
-
-				aggr_result = PyList_New(group_count);
-				for (result_it = 0; result_it < group_count; result_it++) {
-					PyList_SetItem(aggr_result, result_it, results[result_it]);
-				}
-				GDKfree(parameters);
-				GDKfree(results);
-			}
-			pResult = PyList_New(1);
-			PyList_SetItem(pResult, 0, aggr_result);
-
-		aggrwrapup:
-			if (group_counts != NULL) {
-				GDKfree(group_counts);
-			}
-			if (split_bats != NULL) {
-				for (group_it = 0; group_it < group_count; group_it++) {
-					if (split_bats[group_it] != NULL) {
-						for (i = 0; i < named_columns; i++) {
-							if (split_bats[group_it][i] != NULL) {
-								GDKfree(split_bats[group_it][i]);
-							}
-						}
-						GDKfree(split_bats[group_it]);
-					}
-				}
-				GDKfree(split_bats);
-			}
-			BBPreclaim(aggr_group);
-			if (msg != MAL_SUCCEED) {
-				goto wrapup;
-			}
-		} else {
-			// The function has been successfully created/compiled, all that
-			// remains is to actually call the function
-			pResult = PyObject_CallObject(pFunc, pArgs);
-		}
+		// The function has been successfully created/compiled, all that
+		// remains is to actually call the function
+		pResult = PyObject_CallObject(pFunc, pArgs);
 
 		Py_DECREF(pFunc);
 		Py_DECREF(pArgs);
@@ -1050,9 +506,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 					}
 					retnames[i] = (char *) PyUnicode_AsUTF8(colname);
 				}
+				Py_DECREF(keys);
 			}
-			pResult =
-				PyDict_CheckForConversion(pResult, retcols, retnames, &msg);
+			pResult = PyDict_CheckForConversion(pResult, retcols, retnames, &msg);
 			if (retnames != NULL)
 				GDKfree(retnames);
 		} else if (varres) {
@@ -1093,140 +549,16 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		goto wrapup;
 	}
 
-#ifdef HAVE_FORK
-	/*[FORKED]*/
-	// This is where the child process stops executing
-	// We have successfully executed the Python function and converted the
-	// result object to a C array
-	// Now all that is left is to copy the C array to shared memory so the main
-	// process can read it and return it
-	if (mapped && child_process) {
-		ReturnBatDescr *ptr;
-
-		// First we will fill in the header information, we will need to get a
-		// pointer to the header data first
-		// The main process has already created the header data for the child
-		// process
-		if ((mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0])) == NULL) {
-			msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-			goto wrapup;
-		}
-
-		// Now we will write data about our result (memory size, type, number of
-		// elements) to the header
-		ptr = (ReturnBatDescr *)mmap_ptrs[0];
-		for (i = 0; i < retcols; i++) {
-			PyReturn *ret = &pyreturn_values[i];
-			ReturnBatDescr *descr = &ptr[i];
-
-			if (ret->result_type == NPY_OBJECT) {
-				// We can't deal with NPY_OBJECT arrays, because these are
-				// 'arrays of pointers', so we can't just copy the content of
-				// the array into shared memory
-				// So if we're dealing with a NPY_OBJECT array, we convert them
-				// to a Numpy Array of type NPY_<TYPE> that corresponds with the
-				// desired BAT type
-				// WARNING: Because we could be converting to a NPY_STRING or
-				// NPY_UNICODE array (if the desired type is TYPE_str or
-				// TYPE_hge), this means that memory usage can explode
-				//   because NPY_STRING/NPY_UNICODE arrays are 2D string arrays
-				//   with fixed string length (so if there's one very large
-				//   string the size explodes quickly)
-				//   if someone has some problem with memory size exploding when
-				//   using PYTHON_MAP but it being fine in regular PYTHON this
-				//   is probably the issue
-				PyInput *inp = &pyinput_values[i - (pci->retc + 2 + has_card_arg)];
-				int bat_type = inp->bat_type;
-				PyObject *new_array = PyArray_FromAny(
-					ret->numpy_array,
-					PyArray_DescrFromType(BatType_ToPyType(bat_type)), 1, 1,
-					NPY_ARRAY_CARRAY | NPY_ARRAY_FORCECAST, NULL);
-				if (new_array == NULL) {
-					msg = createException(MAL, "pyapi3.eval",
-										  SQLSTATE(PY000) "Could not convert the returned "
-										  "NPY_OBJECT array to the desired "
-										  "array of type %s.\n",
-										  BatType_Format(bat_type));
-					goto wrapup;
-				}
-				Py_DECREF(ret->numpy_array); // do we really care about cleaning
-											 // this up, considering this only
-											 // happens in a separate process
-											 // that will be exited soon anyway?
-				ret->numpy_array = new_array;
-				ret->result_type =
-					PyArray_DESCR((PyArrayObject *)ret->numpy_array)->type_num;
-				ret->memory_size =
-					PyArray_DESCR((PyArrayObject *)ret->numpy_array)->elsize;
-				ret->count = PyArray_DIMS((PyArrayObject *)ret->numpy_array)[0];
-				ret->array_data =
-					PyArray_DATA((PyArrayObject *)ret->numpy_array);
-				ret->array_size = ret->memory_size * ret->count;
-			}
-
-			descr->npy_type = ret->result_type;
-			descr->element_size = ret->memory_size;
-			descr->bat_count = ret->count;
-			descr->bat_size = ret->memory_size * ret->count;
-			descr->has_mask = ret->mask_data != NULL;
-
-			if (ret->count > 0) {
-				int memory_size = ret->memory_size * ret->count;
-				char *mem_ptr;
-				// now create shared memory for the return value and copy the
-				// actual values
-				assert(memory_size > 0);
-				if ((mmap_ptrs[i + 3] = GDKinitmmap(mmap_id + i + 3, memory_size,
-													&mmap_sizes[i + 3])) == NULL) {
-					msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-					goto wrapup;
-				}
-				mem_ptr = mmap_ptrs[i + 3];
-				assert(mem_ptr);
-				memcpy(mem_ptr, PyArray_DATA((PyArrayObject *)ret->numpy_array),
-					   memory_size);
-
-				if (descr->has_mask) {
-					bool *mask_ptr;
-					int mask_size = ret->count * sizeof(bool);
-					assert(mask_size > 0);
-					// create a memory space for the mask
-					if ((mmap_ptrs[retcols + (i + 3)] = GDKinitmmap(
-							 mmap_id + retcols + (i + 3), mask_size,
-							 &mmap_sizes[retcols + (i + 3)])) == NULL) {
-						msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-						goto wrapup;
-					}
-					mask_ptr = mmap_ptrs[retcols + i + 3];
-					assert(mask_ptr);
-					memcpy(mask_ptr, ret->mask_data, mask_size);
-				}
-			}
-		}
-		// now free the main process from the semaphore
-		if (GDKchangesemval(query_sem, 0, 1) != GDK_SUCCEED) {
-			msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
-			goto wrapup;
-		}
-		// Exit child process without an error code
-		exit(0);
-	}
-#endif
 	// We are done executing Python code (aside from cleanup), so we can release
 	// the GIL
 	gstate = Python_ReleaseGIL(gstate);
 
-#ifdef HAVE_FORK // This goto is only used for multiprocessing, if HAVE_FORK is
-				 // set to 0 this is unused
-returnvalues:
-#endif
 	/*[RETURN_VALUES]*/
 	argnode = sqlfun && sqlfun->res ? sqlfun->res->h : NULL;
 	for (i = 0; i < retcols; i++) {
 		PyReturn *ret = &pyreturn_values[i];
 		int bat_type = TYPE_any;
-		sql_subtype *sql_subtype =
-			argnode ? &((sql_arg *)argnode->data)->type : NULL;
+		sql_subtype *sql_subtype = argnode ? &((sql_arg *)argnode->data)->type : NULL;
 		if (!varres) {
 			bat_type = getBatType(getArgType(mb, pci, i));
 
@@ -1271,78 +603,6 @@ returnvalues:
 	}
 wrapup:
 
-#ifdef HAVE_FORK
-	if (mapped && child_process) {
-		// If we get here, something went wrong in a child process
-		char *error_mem;
-		ReturnBatDescr *ptr;
-
-		// Now we exit the program with an error code
-		if (GDKchangesemval(query_sem, 0, 1) != GDK_SUCCEED) {
-			exit(1);
-		}
-
-		assert(memory_size > 0);
-		if ((mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0])) == NULL) {
-			exit(1);
-		}
-
-		// To indicate that we failed, we will write information to our header
-		ptr = (ReturnBatDescr *)mmap_ptrs[0];
-		for (i = 0; i < retcols; i++) {
-			ReturnBatDescr *descr = &ptr[i];
-			// We will write descr->npy_type to -1, so other processes can see
-			// that we failed
-			descr->npy_type = -1;
-			// We will write the memory size of our error message to the
-			// bat_size, so the main process can access the shared memory
-			descr->bat_size = (strlen(msg) + 1) * sizeof(char);
-		}
-
-		// Now create the shared memory to write our error message to
-		// We can simply use the slot mmap_id + 3, even though this is normally
-		// used for query return values
-		// This is because, if the process fails, no values will be returned
-		if ((error_mem = GDKinitmmap(mmap_id + 3,
-									 (strlen(msg) + 1) * sizeof(char),
-									 NULL)) == NULL) {
-			exit(1);
-		}
-		strcpy(error_mem, msg);
-		exit(1);
-	}
-#endif
-
-#ifdef HAVE_FORK
-	if (holds_gil) {
-		MT_lock_set(&pyapiLock);
-		python_call_active = false;
-		MT_lock_unset(&pyapiLock);
-	}
-
-	if (mapped) {
-		for (i = 0; i < retcols; i++) {
-			PyReturn *ret = &pyreturn_values[i];
-			if (ret->mmap_id < 0) {
-				// if we directly give the mmap file to a BAT, don't delete the
-				// MMAP file
-				mmap_ptrs[i + 3] = NULL;
-			}
-		}
-		for (i = 0; i < 3 + pci->retc * 2; i++) {
-			if (mmap_ptrs[i] != NULL) {
-				GDKreleasemmap(mmap_ptrs[i], mmap_sizes[i], mmap_id + i);
-			}
-		}
-		if (mmap_ptrs)
-			GDKfree(mmap_ptrs);
-		if (mmap_sizes)
-			GDKfree(mmap_sizes);
-		if (query_sem > 0) {
-			GDKreleasesem(query_sem);
-		}
-	}
-#endif
 	// Actual cleanup
 	// Cleanup input BATs
 	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
@@ -1470,7 +730,6 @@ PYAPI3PyAPIprelude(void) {
 		fprintf(stdout, "# MonetDB/Python%d module loaded\n", 3);
 	}
 	MT_lock_unset(&pyapiLock);
-	option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
 	return MAL_SUCCEED;
 }
 
@@ -1566,149 +825,6 @@ finally:
 						   py_error_string);
 }
 
-static void ComputeParallelAggregation(AggrParams *p)
-{
-	int i;
-	size_t group_it, ai;
-	bool gstate = 0;
-	// now perform the actual aggregation
-	// we perform one aggregation per group
-
-	// we need the GIL to execute the functions
-	gstate = Python_ObtainGIL();
-	for (group_it = p->group_start; group_it < p->group_end; group_it++) {
-		// we first have to construct new
-		PyObject *pArgsPartial =
-			PyTuple_New(p->named_columns + p->additional_columns);
-		PyObject *pColumnsPartial = PyDict_New();
-		PyObject *result;
-		size_t group_elements = (*p->group_counts)[group_it];
-		ai = 0;
-		// iterate over columns
-		for (i = 0; i < (int)p->named_columns; i++) {
-			PyObject *vararray = NULL;
-			PyInput input = (*p->pyinput_values)[i];
-			if (input.scalar) {
-				// scalar not handled yet
-				vararray = input.result;
-			} else {
-				npy_intp elements[1] = {group_elements};
-				switch (input.bat_type) {
-					case TYPE_void:
-						vararray = PyArray_New(
-							&PyArray_Type, 1, elements,
-#if SIZEOF_OID == SIZEOF_INT
-							NPY_UINT
-#else
-							NPY_ULONGLONG
-#endif
-							,
-							NULL,
-							((oid ***)(*p->split_bats))[group_it][i], 0,
-							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
-						break;
-					case TYPE_oid:
-						vararray = PyArray_New(
-							&PyArray_Type, 1, elements,
-#if SIZEOF_OID == SIZEOF_INT
-							NPY_UINT32
-#else
-							NPY_UINT64
-#endif
-							,
-							NULL,
-							((oid ***)(*p->split_bats))[group_it][i], 0,
-							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
-						break;
-					case TYPE_bit:
-						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, NPY_BOOL, NULL,
-							((bit ***)(*p->split_bats))[group_it][i], 0,
-							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
-						break;
-					case TYPE_bte:
-						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, NPY_INT8, NULL,
-							((bte ***)(*p->split_bats))[group_it][i], 0,
-							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
-						break;
-					case TYPE_sht:
-						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, NPY_INT16, NULL,
-							((sht ***)(*p->split_bats))[group_it][i], 0,
-							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
-						break;
-					case TYPE_int:
-						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, NPY_INT32, NULL,
-							((int ***)(*p->split_bats))[group_it][i], 0,
-							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
-						break;
-					case TYPE_lng:
-						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, NPY_INT64, NULL,
-							((lng ***)(*p->split_bats))[group_it][i], 0,
-							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
-						break;
-					case TYPE_flt:
-						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, NPY_FLOAT32, NULL,
-							((flt ***)(*p->split_bats))[group_it][i], 0,
-							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
-						break;
-#ifdef HAVE_HGE
-					case TYPE_hge:
-#endif
-					case TYPE_dbl:
-						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, NPY_FLOAT64, NULL,
-							((dbl ***)(*p->split_bats))[group_it][i], 0,
-							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
-						break;
-					case TYPE_str:
-						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, NPY_OBJECT, NULL,
-							((PyObject ****)(*p->split_bats))[group_it][i], 0,
-							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
-						break;
-				}
-
-				if (vararray == NULL) {
-					p->msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL
-											 " to create NumPy array.");
-					goto wrapup;
-				}
-			}
-			// fill in _columns array
-			PyDict_SetItemString(pColumnsPartial, (*p->args)[p->base + i],
-								 vararray);
-
-			PyTuple_SetItem(pArgsPartial, ai++, vararray);
-		}
-
-		// additional parameters
-		PyTuple_SetItem(pArgsPartial, ai++, pColumnsPartial);
-		PyTuple_SetItem(pArgsPartial, ai++, *p->column_types_dict);
-		Py_INCREF(*p->column_types_dict);
-		PyTuple_SetItem(pArgsPartial, ai++, *p->connection);
-		Py_INCREF(*p->connection);
-
-		// call the aggregation function
-		result = PyObject_CallObject(*p->function, pArgsPartial);
-		Py_DECREF(pArgsPartial);
-
-		if (result == NULL) {
-			p->msg = PyError_CreateException("Python exception", *p->pycall);
-			goto wrapup;
-		}
-		// gather results
-		p->result_objects[group_it] = result;
-	}
-// release the GIL again
-wrapup:
-	gstate = Python_ReleaseGIL(gstate);
-}
-
 static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							 size_t retcols, oid seqbase)
 {
@@ -1763,27 +879,46 @@ bailout:
 	return msg;
 }
 
+static str
+PyAPI3prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    (void)cntxt; (void)mb; (void)stk; (void)pci;
+	return PYAPI3PyAPIprelude();
+}
+
+static str
+PyAPI3epilogue(void *ret)
+{
+    (void)ret;
+	MT_lock_set(&pyapiLock);
+	if (pyapiInitialized) {
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+
+		/* now exit/cleanup */
+		if (0) Py_FinalizeEx();
+		(void)gstate;
+	}
+	MT_lock_unset(&pyapiLock);
+    return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func pyapi3_init_funcs[] = {
- pattern("pyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script returning a single value", args(1,3, argany("",0),arg("fptr",ptr),arg("expr",str))),
+ pattern("pyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script returning a single value", args(1,3, argany("",1),arg("fptr",ptr),arg("expr",str))),
  pattern("pyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("pyapi3", "subeval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("pyapi3", "eval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,3, varargany("",0),arg("fptr",ptr),arg("expr",str))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr", ptr), arg("expr",str),varargany("arg",0))),
- pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
+ pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, batvarargany("",0),arg("fptr", ptr), arg("expr",str),varargany("arg",0))),
+ pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, batargany("",1),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
  pattern("batpyapi3", "subeval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3", "eval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,3, varargany("",0),arg("fptr",ptr),arg("expr",str))),
  pattern("batpyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("pyapi3map", "eval", PYAPI3PyAPIevalStdMap, false, "Execute a simple Python script returning a single value", args(1,3, argany("",0),arg("fptr",ptr),arg("expr",str))),
- pattern("pyapi3map", "eval", PYAPI3PyAPIevalStdMap, false, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("pyapi3map", "subeval_aggr", PYAPI3PyAPIevalAggrMap, false, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("pyapi3map", "eval_aggr", PYAPI3PyAPIevalAggrMap, false, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("batpyapi3map", "eval", PYAPI3PyAPIevalStdMap, false, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("batpyapi3map", "subeval_aggr", PYAPI3PyAPIevalAggrMap, false, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("batpyapi3map", "eval_aggr", PYAPI3PyAPIevalAggrMap, false, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
+ pattern("pyapi3", "prelude", PyAPI3prelude, false, "", noargs),
+ command("pyapi3", "epilogue", PyAPI3epilogue, false, "", noargs),
  { .imp=NULL }
 };
 #include "mal_import.h"
@@ -1792,4 +927,4 @@ static mel_func pyapi3_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_pyapi3_mal)
-{ mal_module2("pyapi3", NULL, pyapi3_init_funcs, PYAPI3PyAPIprelude, NULL); }
+{ mal_module("pyapi3", NULL, pyapi3_init_funcs); }

@@ -99,8 +99,8 @@
 #endif
 
 /* also see gdk.h for these */
-#define THRDMASK	(1)
-#define TEMMASK		(1<<10)
+#define THRDMASK	(1U)
+#define TEMMASK		(1U<<10)
 
 /*
  * @- pthreads Includes and Definitions
@@ -139,9 +139,9 @@
 #include "matomic.h"
 
 /* debug and errno integers */
-gdk_export int GDKdebug;
-gdk_export void GDKsetdebug(int debug);
-gdk_export int GDKgetdebug(void);
+gdk_export ATOMIC_TYPE GDKdebug;
+gdk_export void GDKsetdebug(unsigned debug);
+gdk_export unsigned GDKgetdebug(void);
 
 gdk_export int GDKnr_threads;
 
@@ -171,10 +171,13 @@ typedef struct QryCtx {
 	ATOMIC_BASE_TYPE maxmem;
 } QryCtx;
 
+gdk_export bool THRhighwater(void);
 gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d,
 				const char *threadname);
+gdk_export bool MT_thread_register(void);
+gdk_export void MT_thread_deregister(void);
 gdk_export const char *MT_thread_getname(void);
 gdk_export void *MT_thread_getdata(void);
 gdk_export void MT_thread_setdata(void *data);
@@ -183,6 +186,8 @@ gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
 gdk_export QryCtx *MT_thread_get_qry_ctx(void);
 gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
+gdk_export void GDKsetbuf(char *);
+gdk_export char *GDKgetbuf(void);
 
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */
@@ -222,8 +227,8 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 #define _DBG_LOCK_COUNT_0(l)					\
 	do {							\
-		(void) ATOMIC_INC(&GDKlockcnt);			\
-		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name); 	\
+		ATOMIC_INC(&GDKlockcnt);			\
+		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name);	\
 	} while (0)
 
 #define _DBG_LOCK_LOCKER(l)				\
@@ -243,12 +248,12 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 #define _DBG_LOCK_CONTENTION(l)						\
 	do {								\
-		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name); 	\
-		(void) ATOMIC_INC(&GDKlockcontentioncnt);		\
-		(void) ATOMIC_INC(&(l)->contention);			\
+		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name);	\
+		ATOMIC_INC(&GDKlockcontentioncnt);			\
+		ATOMIC_INC(&(l)->contention);				\
 	} while (0)
 
-#define _DBG_LOCK_SLEEP(l)	((void) ATOMIC_INC(&(l)->sleep))
+#define _DBG_LOCK_SLEEP(l)	(ATOMIC_INC(&(l)->sleep))
 
 #define _DBG_LOCK_COUNT_2(l)						\
 	do {								\
@@ -468,17 +473,17 @@ typedef struct MT_Lock {
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && (_DBG_LOCK_LOCKER(l), true))
 
 #ifdef LOCK_STATS
-#define MT_lock_set(l)					\
-	do {						\
-		_DBG_LOCK_COUNT_0(l);			\
-		if (pthread_mutex_trylock(&(l)->lock) {	\
-			_DBG_LOCK_CONTENTION(l);	\
-			MT_thread_setlockwait(l);	\
-			pthread_mutex_lock(&(l)->lock);	\
-			MT_thread_setlockwait(NULL);	\
-		}					\
-		_DBG_LOCK_LOCKER(l);			\
-		_DBG_LOCK_COUNT_2(l);			\
+#define MT_lock_set(l)						\
+	do {							\
+		_DBG_LOCK_COUNT_0(l);				\
+		if (pthread_mutex_trylock(&(l)->lock)) {	\
+			_DBG_LOCK_CONTENTION(l);		\
+			MT_thread_setlockwait(l);		\
+			pthread_mutex_lock(&(l)->lock);		\
+			MT_thread_setlockwait(NULL);		\
+		}						\
+		_DBG_LOCK_LOCKER(l);				\
+		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
 #else
 #define MT_lock_set(l)				\
@@ -559,7 +564,7 @@ typedef struct MT_RWLock {
 #define MT_rwlock_rdlock(l)				\
 	do {						\
 		pthread_mutex_lock(&(l)->lock);		\
-		(void) ATOMIC_INC(&(l)->readers);	\
+		ATOMIC_INC(&(l)->readers);		\
 		pthread_mutex_unlock(&(l)->lock);	\
 	} while (0)
 
@@ -568,14 +573,14 @@ MT_rwlock_rdtry(MT_RWLock *l)
 {
 	if (pthread_mutex_trylock(&l->lock) != 0)
 		return false;
-	(void) ATOMIC_INC(&(l)->readers);
+	ATOMIC_INC(&(l)->readers);
 	pthread_mutex_unlock(&l->lock);
 	return true;
 }
 
-#define MT_rwlock_rdunlock(l)				\
-	do {						\
-		(void) ATOMIC_DEC(&(l)->readers);	\
+#define MT_rwlock_rdunlock(l)			\
+	do {					\
+		ATOMIC_DEC(&(l)->readers);	\
 	} while (0)
 
 #define MT_rwlock_wrlock(l)				\

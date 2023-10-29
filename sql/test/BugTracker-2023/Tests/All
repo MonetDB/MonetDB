@@ -1,0 +1,14 @@
+ambiguous-identifiers-7372
+temp-table-foreign-key-crash-7378
+update-mask-id-crash-7379
+blob-crash-7380
+add-drop-column-crash-7381
+temp-on-savepoint-truncate-rollback-crash-7382
+recursive-trigger-crash-7383
+empty-optimizer-crash-7384
+rollback-alter-drop-col-crash-7385
+view-on-alias-crash-7386
+alter-inc-seq-crash-7387
+misc-crashes-7390
+union-query-7401
+join-on-row_number-over-7403

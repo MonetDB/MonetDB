@@ -39,6 +39,22 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_co
 	MT_lock_unset(&tr->lock);
 }
 
+void
+trans_del(sql_trans *tr, sql_base *b)
+{
+	MT_lock_set(&tr->lock);
+	for(node *n= tr->changes->h; n; n = n->next) {
+		sql_change *c = n->data;
+		if (c->obj == b) {
+			if (c->log)
+				tr->logchanges--;
+			_DELETE(c);
+			n = list_remove_node(tr->changes, NULL, n);
+		}
+	}
+	MT_lock_unset(&tr->lock);
+}
+
 int
 tr_version_of_parent(sql_trans *tr, ulng ts)
 {

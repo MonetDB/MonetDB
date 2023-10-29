@@ -376,9 +376,7 @@ CREATE TABLE sys.function_languages (
 
 -- Values taken from sql/include/sql_catalog.h see: #define
 -- FUNC_LANG_INT 0, FUNC_LANG_MAL 1, FUNC_LANG_SQL 2, FUNC_LANG_R 3,
--- FUNC_LANG_C 4, FUNC_LANG_PY 6, FUNC_LANG_MAP_PY 7, FUNC_LANG_PY2 8,
--- FUNC_LANG_MAP_PY2 9, FUNC_LANG_PY3 10, FUNC_LANG_MAP_PY3 11,
--- FUNC_LANG_CPP 12.
+-- FUNC_LANG_C 4, FUNC_LANG_PY 6, FUNC_LANG_PY3 10, FUNC_LANG_CPP 12.
 INSERT INTO sys.function_languages (language_id, language_name, language_keyword) VALUES
   (0, 'Internal C', NULL),
   (1, 'MAL', NULL),
@@ -387,9 +385,7 @@ INSERT INTO sys.function_languages (language_id, language_name, language_keyword
   (4, 'C', 'C'),
 --  (5, 'J', 'J'), -- Javascript? not yet available for use
   (6, 'Python', 'PYTHON'),
-  (7, 'Python Mapped', 'PYTHON_MAP'),
   (10, 'Python3', 'PYTHON3'),
-  (11, 'Python3 Mapped', 'PYTHON3_MAP'),
   (12, 'C++', 'CPP');
 
 ALTER TABLE sys.function_languages SET READ ONLY;

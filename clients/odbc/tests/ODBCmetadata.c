@@ -114,7 +114,7 @@ nameofSQLtype(SQLSMALLINT dataType)
 	case SQL_REAL:		return "REAL";
 	case SQL_FLOAT:		return "FLOAT";
 	case SQL_DOUBLE:	return "DOUBLE";
-	case SQL_BIT:   	return "BOOLEAN";	/* MonetDB boolean type is mapped to SQL_BIT in ODBC (see msql_types[] in SQLExecute.c) */
+	case SQL_BIT:		return "BOOLEAN";	/* MonetDB boolean type is mapped to SQL_BIT in ODBC (see msql_types[] in SQLExecute.c) */
 	case SQL_TINYINT:	return "TINYINT";
 	case SQL_BIGINT:	return "BIGINT";
 	case SQL_BINARY:	return "BINARY";
@@ -125,7 +125,7 @@ nameofSQLtype(SQLSMALLINT dataType)
 	case SQL_TYPE_TIME:	return "TIME";
 	case SQL_TYPE_TIMESTAMP:	return "TIMESTAMP";
 	case SQL_INTERVAL_MONTH:	return "INTERVAL MONTH";
-	case SQL_INTERVAL_YEAR: 	return "INTERVAL YEAR";
+	case SQL_INTERVAL_YEAR:		return "INTERVAL YEAR";
 	case SQL_INTERVAL_YEAR_TO_MONTH: return "INTERVAL YEAR TO MONTH";
 	case SQL_INTERVAL_DAY:		return "INTERVAL DAY";
 	case SQL_INTERVAL_HOUR:		return "INTERVAL HOUR";
@@ -482,9 +482,10 @@ main(int argc, char **argv)
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS);
 	compareResult(stmt, ret, "SQLTables (SQL_ALL_SCHEMAS)",
 		"Resultset with 5 columns\n"
-		"Resultset with 6 rows\n"
+		"Resultset with 7 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)\n"
+		"NULL	information_schema	NULL	NULL	NULL\n"
 		"NULL	json	NULL	NULL	NULL\n"
 		"NULL	logging	NULL	NULL	NULL\n"
 		"NULL	odbctst	NULL	NULL	NULL\n"
@@ -528,6 +529,36 @@ main(int argc, char **argv)
 		"NULL	odbctst	nopk_twoucs	TABLE	odbctst.nopk_twoucs table comment\n"
 		"NULL	odbctst	pk2c	TABLE	NULL\n"
 		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
+
+	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
+			(SQLCHAR*)"BASE TABLE,GLOBAL TEMPORARY,LOCAL TEMPORARY", SQL_NTS);
+	compareResult(stmt, ret, "SQLTables (odbctst, %)",
+		"Resultset with 5 columns\n"
+		"Resultset with 7 rows\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n"
+		"NULL	odbctst	CUSTOMERS	TABLE	NULL\n"
+		"NULL	odbctst	LINES	TABLE	NULL\n"
+		"NULL	odbctst	ORDERS	TABLE	NULL\n"
+		"NULL	odbctst	fk2c	TABLE	NULL\n"
+		"NULL	odbctst	nopk_twoucs	TABLE	odbctst.nopk_twoucs table comment\n"
+		"NULL	odbctst	pk2c	TABLE	NULL\n"
+		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
+
+	// All user tables in schema tmp
+	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
+			(SQLCHAR*)"'BASE TABLE','GLOBAL TEMPORARY','LOCAL TEMPORARY'", SQL_NTS);
+	compareResult(stmt, ret, "SQLTables (tmp, %)",
+		"Resultset with 5 columns\n"
+		"Resultset with 4 rows\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n"
+		"NULL	tmp	glbl_nopk_twoucs	GLOBAL TEMPORARY TABLE	NULL\n"
+		"NULL	tmp	glbl_pk_uc	GLOBAL TEMPORARY TABLE	NULL\n"
+		"NULL	tmp	tmp_nopk_twoucs	LOCAL TEMPORARY TABLE	NULL\n"
+		"NULL	tmp	tmp_pk_uc	LOCAL TEMPORARY TABLE	NULL\n");
 
 	// All user tables and views in schema odbctst
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,

@@ -25,7 +25,6 @@ target_sources(malmodules
   manifold.c manifold.h
   iterator.c
   clients.c clients.h
-  factories.c
   groupby.c
   mdb.c
   pcre.c
@@ -33,9 +32,7 @@ target_sources(malmodules
   mal_mapi.c
   remote.c remote.h
   txtsim.c
-  tokenizer.c
   sample.c
-  json_util.c
   querylog.c querylog.h
   sysmon.c
   tracer.c

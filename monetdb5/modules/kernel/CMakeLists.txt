@@ -18,7 +18,7 @@ target_sources(kernel
   bat5.c
   algebra.c algebra.h
   group.c group.h
-  aggr.c
+  aggr.c aggr.h
   batmmath.c
   batstr.c
   batcolor.c
@@ -47,6 +47,7 @@ target_compile_definitions(kernel
 
 target_link_libraries(kernel
   PRIVATE
+  $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   monetdb_config_header
   mutils
   bat

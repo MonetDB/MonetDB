@@ -12,15 +12,15 @@
 #include "opt_inline.h"
 
 static bool
-isCorrectInline(MalBlkPtr mb){
+isCorrectInline(MalBlkPtr mb)
+{
 	/* make sure we have a simple inline function with a singe return */
 	InstrPtr p;
-	int i, retseen=0;
+	int i, retseen = 0;
 
-	for( i= 1; i < mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		if ( p->token == RETURNsymbol || p->token == YIELDsymbol ||
-			 p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
+	for (i = 1; i < mb->stop; i++) {
+		p = getInstrPtr(mb, i);
+		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol)
 			retseen++;
 	}
 	return retseen <= 1;
@@ -31,11 +31,11 @@ static bool
 OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p)
 {
 	Symbol s;
-	str mod,fcn;
+	str mod, fcn;
 
 	int plus_one = getArgType(mb, p, p->retc) == TYPE_lng ? 1 : 0;
-	mod = VALget(&getVar(mb, getArg(p, p->retc+0+plus_one))->value);
-	fcn = VALget(&getVar(mb, getArg(p, p->retc+1+plus_one))->value);
+	mod = VALget(&getVar(mb, getArg(p, p->retc + 0 + plus_one))->value);
+	fcn = VALget(&getVar(mb, getArg(p, p->retc + 1 + plus_one))->value);
 	if ((s = findSymbolInModule(getModule(putName(mod)), putName(fcn))) == 0)
 		return false;
 	return s->def->inlineProp;
@@ -50,25 +50,25 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int actions = 0;
 	str msg = MAL_SUCCEED;
 
-	(void)stk;
+	(void) stk;
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if( q->blk ){
-			sig = getInstrPtr(q->blk,0);
+		if (q->blk) {
+			sig = getInstrPtr(q->blk, 0);
 			/*
 			 * Time for inlining functions that are used in multiplex operations.
 			 * They are produced by SQL compiler.
 			 */
 			if (isMultiplex(q)) {
-				 OPTinlineMultiplex(mb,q);
+				OPTinlineMultiplex(mb, q);
 			} else
-			/*
-			 * Check if the function definition is tagged as being inlined.
-			 */
-			if (sig->token == FUNCTIONsymbol && q->blk->inlineProp &&
-				isCorrectInline(q->blk) ) {
-				(void) inlineMALblock(mb,i,q->blk);
+				/*
+				 * Check if the function definition is tagged as being inlined.
+				 */
+			if (sig->token == FUNCTIONsymbol && q->blk->inlineProp
+					&& isCorrectInline(q->blk)) {
+				(void) inlineMALblock(mb, i, q->blk);
 				i--;
 				actions++;
 			}
@@ -77,14 +77,14 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	//mnstr_printf(cntxt->fdout,"inline limit %d ssize %d vtop %d vsize %d\n", mb->stop, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 	/* Defense line against incorrect plans */
-	if( actions > 0){
+	if (actions > 0) {
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
-	/* keep actions taken as a fake argument*/
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }

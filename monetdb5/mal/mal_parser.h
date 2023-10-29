@@ -22,8 +22,8 @@
 #ifdef LIBMONETDB5
 #define MAXERRORS 250
 
-extern void initParser(void);   /* needed in src/mal/mal.c */
-extern void parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn address);
+extern void parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines,
+					 MALfcn address);
 #endif
 
 #endif /* _MAL_PARSER_H */

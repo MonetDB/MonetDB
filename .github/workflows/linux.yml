@@ -1,0 +1,63 @@
+name: MonetDB build and test
+
+on:
+  push:
+    branches: 
+      - 'branches/*'
+  pull_request:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  schedule:
+    - cron:  '15 1 * * *'
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false  # don't stop other jobs
+      matrix:
+        branch: [ master ]
+        os: [ ubuntu-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.branch }}
+
+      - name: make MonetDB on linux
+        run: |
+          mkdir build
+          cd build 
+          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DRINTEGRATION=OFF
+          make install -j3
+        if: runner.os == 'Linux'
+      -
+        name: brew packages
+        run: brew install bison
+        if: runner.os == 'macOS'
+      - name: make MonetDB on macos
+        run: |
+          mkdir build
+          cd build 
+          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DRINTEGRATION=OFF  \
+            -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison
+          make install -j3
+        if: runner.os == 'macOS'
+      - name: ctest 
+        run: |
+          cd build 
+          cmake --build . --target test
+      - name: install pymonetdb
+        run: pip3 install pymonetdb
+      - name: mtest 
+        run: |
+          #cd build 
+          #cmake --build . --target mtest
+          PATH=$HOME/${{ matrix.branch }}/bin:$PATH $HOME/${{ matrix.branch }}/bin/Mtest.py -r --debug=0
+          #-
+          #uses: actions/upload-artifact@v3
+          #name: Publish Linux binary wheels
+          #with:
+          #name: monetdbe-linux-wheel-${{ matrix.branch }}-${{ matrix.python-version }}
+          #path: dist/*.whl

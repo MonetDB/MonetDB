@@ -35,10 +35,18 @@ import MonetDBtesting.malmapi as malmapi
 import hashlib
 import re
 import sys
+import platform
 import importlib
 import MonetDBtesting.utils as utils
 from pathlib import Path
 from typing import Optional
+
+architecture = platform.machine()
+if architecture == 'AMD64':     # Windows :-(
+    architecture = 'x86_64'
+if architecture == 'arm64':     # MacOS :-(
+    architecture = 'aarch64'
+system = platform.system()
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
@@ -336,7 +344,7 @@ class SQLLogic:
                     else:
                         self.raise_error('incorrect column type indicator')
                 except TypeError:
-                    self.query_error(query, 'bad column type')
+                    self.query_error(query, f'bad column type {columns[i]} at {i}')
                     return None
             ndata.append(tuple(nrow))
         return ndata
@@ -657,6 +665,7 @@ class SQLLogic:
     def parse(self, f, approve=None, verbose=False, defines=None):
         self.approve = approve
         self.initfile(f, defines)
+        nthreads = None
         if self.language == 'sql':
             self.crs.execute(f'call sys.setsessiontimeout({self.timeout or 0})')
         else:
@@ -682,17 +691,31 @@ class SQLLogic:
                 conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
                 self.writeline(line.rstrip())
                 line = self.readline()
-            words = line.split()
+            words = line.split(maxsplit=2)
             if not words:
                 continue
             while words[0] == 'skipif' or words[0] == 'onlyif':
-                if words[0] == 'skipif' and words[1] == 'MonetDB':
-                    skipping = True
-                elif words[0] == 'onlyif' and words[1] != 'MonetDB':
-                    skipping = True
+                if words[0] == 'skipif':
+                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}'):
+                        skipping = True
+                    elif words[1].startswith('threads='):
+                        if nthreads is None:
+                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                            nthreads = self.crs.fetchall()[0][0]
+                        if words[1] == f'threads={nthreads}':
+                            skipping = True
+                elif words[0] == 'onlyif':
+                    if words[1] not in ('MonetDB', f'arch={architecture}', f'system={system}'):
+                        skipping = True
+                    elif words[1].startswith('threads='):
+                        if nthreads is None:
+                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                            nthreads = self.crs.fetchall()[0][0]
+                        if words[1] != f'threads={nthreads}':
+                            skipping = True
                 self.writeline(line.rstrip())
                 line = self.readline()
-                words = line.split()
+                words = line.split(maxsplit=2)
             hashlabel = None
             if words[0] == 'hash-threshold':
                 self.threshold = int(words[1])
@@ -705,10 +728,11 @@ class SQLLogic:
                 expectok = words[1] == 'ok'
                 if len(words) > 2:
                     if expectok:
-                        if words[2] == 'rowcount':
-                            expected_rowcount = int(words[3])
+                        rwords = words[2].split()
+                        if rwords[0] == 'rowcount':
+                            expected_rowcount = int(rwords[1])
                     else:
-                        err_str = " ".join(words[2:])
+                        err_str = words[2]
                         expected_err_code, expected_err_msg = utils.parse_mapi_err_msg(err_str)
                 statement = []
                 self.qline = self.line + 1
@@ -741,13 +765,14 @@ class SQLLogic:
                 columns = words[1]
                 pyscript = None
                 if len(words) > 2:
-                    sorting = words[2]  # nosort,rowsort,valuesort
+                    rwords = words[2].split()
+                    sorting = rwords[0]  # nosort,rowsort,valuesort
                     if sorting == 'python':
-                        pyscript = words[3]
-                        if len(words) > 4:
-                            hashlabel = words[4]
-                    elif len(words) > 3:
-                        hashlabel = words[3]
+                        pyscript = rwords[1]
+                        if len(rwords) > 2:
+                            hashlabel = rwords[2]
+                    elif len(rwords) > 1:
+                        hashlabel = rwords[1]
                 else:
                     sorting = 'nosort'
                 query = []

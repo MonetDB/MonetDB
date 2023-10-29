@@ -100,10 +100,11 @@ HASHclear(Hash *h)
 	memset(h->Bckt, 0xFF, h->nbucket * h->width);
 }
 
-#define HASH_VERSION		4
-/* this is only for the change of hash function of the UUID type; if
- * HASH_VERSION is increased again from 4, the code associated with
- * HASH_VERSION_NOUUID must be deleted */
+#define HASH_VERSION		5
+/* this is only for the change of hash function of the UUID type and MBR
+ * type; if HASH_VERSION is increased again from 5, the code associated
+ * with HASH_VERSION_NOUUID and HASH_VERSION_NOMBR must be deleted */
+#define HASH_VERSION_NOMBR	4
 #define HASH_VERSION_NOUUID	3
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
 
@@ -140,8 +141,14 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		h->heaplink.dirty = true;
 		h->Link = h->heaplink.base;
 	}
-	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width) != GDK_SUCCEED)
+	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width) != GDK_SUCCEED) {
+		if (!bcktonly) {
+			HEAPfree(&h->heaplink, true);
+			h->heaplink.free = 0;
+			h->Link = NULL;
+		}
 		return GDK_FAIL;
+	}
 	h->heapbckt.free = mask * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->heapbckt.dirty = true;
 	h->nbucket = mask;
@@ -316,7 +323,7 @@ HASHfix(Hash *h, bool save, bool dosync)
 			if (fd >= 0) {
 				if (write(fd, h->heapbckt.base, SIZEOF_SIZE_T) == SIZEOF_SIZE_T) {
 					if (dosync &&
-					    !(GDKdebug & NOSYNCMASK)) {
+					    !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 						_commit(fd);
 #elif defined(HAVE_FDATASYNC)
@@ -334,7 +341,7 @@ HASHfix(Hash *h, bool save, bool dosync)
 			return rc;
 		} else {
 			if (dosync &&
-			    !(GDKdebug & NOSYNCMASK) &&
+			    !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
 				((size_t *) h->heapbckt.base)[0] &= ~mask;
 				return GDK_FAIL;
@@ -500,7 +507,17 @@ BATcheckhash(BAT *b)
 							 ((size_t) 1 << 24) |
 #endif
 							 HASH_VERSION_NOUUID) &&
-						 strcmp(ATOMname(b->ttype), "uuid") != 0)
+						 strcmp(ATOMname(b->ttype), "uuid") != 0 &&
+						 strcmp(ATOMname(b->ttype), "mbr") != 0)
+#endif
+#ifdef HASH_VERSION_NOMBR
+					     /* if not uuid, also allow previous version */
+					     || (hdata[0] == (
+#ifdef PERSISTENTHASH
+							 ((size_t) 1 << 24) |
+#endif
+							 HASH_VERSION_NOMBR) &&
+						 strcmp(ATOMname(b->ttype), "mbr") != 0)
 #endif
 						    ) &&
 					    hdata[1] > 0 &&
@@ -801,7 +818,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
- 	} else if (!hascand && bi.unique_est != 0) {
+	} else if (!hascand && bi.unique_est != 0) {
 		mask = (BUN) (bi.unique_est * 1.15); /* about 8/7 */
 	} else {
 		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,

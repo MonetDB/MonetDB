@@ -129,7 +129,6 @@
 #cmakedefine HAVE_DISPATCH_SEMAPHORE_CREATE 1
 #cmakedefine HAVE_FALLOCATE 1
 #cmakedefine HAVE_FCNTL 1
-#cmakedefine HAVE_FORK 1
 #cmakedefine HAVE_FSYNC 1
 #cmakedefine HAVE_FTIME 1
 #cmakedefine HAVE_GETENTROPY 1
@@ -158,6 +157,7 @@
 #cmakedefine HAVE_SETSID 1
 #cmakedefine HAVE_SHUTDOWN 1
 #cmakedefine HAVE_SIGACTION 1
+#cmakedefine HAVE_SIGLONGJMP 1
 #cmakedefine HAVE_STPCPY 1
 #cmakedefine HAVE_STRCASESTR 1
 #cmakedefine HAVE_STRNCASECMP 1
@@ -166,16 +166,12 @@
 #cmakedefine HAVE_SYSCONF 1
 #cmakedefine HAVE_TASK_INFO 1
 #cmakedefine HAVE_TIMES 1
+#cmakedefine HAVE_TM_GMTOFF 1
 #cmakedefine HAVE_UNAME 1
 // #cmakedefine HAVE_SEMTIMEDOP
 #cmakedefine HAVE_PTHREAD_KILL 1
 #cmakedefine HAVE_PTHREAD_SIGMASK 1
 #cmakedefine HAVE_GETOPT 1
-
-#define ICONV_CONST
-#define FLEXIBLE_ARRAY_MEMBER
-#define ENABLE_MAPI 1
-#define HAVE_MAPI 1
 // End Section: monetdb configure defines
 
 // Section: monetdb macro variables
@@ -197,6 +193,7 @@
 #cmakedefine HAVE_LIBR 1
 #cmakedefine RHOME "@RHOME@"
 #cmakedefine HAVE_GEOM 1
+#cmakedefine HAVE_RTREE 1
 #cmakedefine HAVE_SHP 1
 #cmakedefine HAVE_LIBPY3 1
 
@@ -362,9 +359,10 @@ typedef __uint128_t uhge;
 
 #if !defined(__cplusplus) || __cplusplus < 201103L
 #ifndef static_assert
-/* static_assert is a C11/C++11 feature, defined in assert.h which also exists
- * in many other compilers we ignore it if the compiler doesn't support it
- * However in C11 static_assert is a macro, while on C++11 is a keyword */
+/* static_assert is a C11/C++11 feature, defined in assert.h which also
+ * exists in many other compilers.  We ignore it if the compiler doesn't
+ * support it However in C11 static_assert is a macro, while on C++11 it
+ * is a keyword */
 #define static_assert(expr, mesg)	((void) 0)
 #endif
 #endif

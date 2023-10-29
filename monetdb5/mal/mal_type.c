@@ -44,7 +44,7 @@ getTypeName(malType tpe)
 	if (isaBatType(tpe)) {
 		k = getTypeIndex(tpe);
 		if (k)
-			snprintf(buf, sizeof(buf), "bat[:any_%d]",  k);
+			snprintf(buf, sizeof(buf), "bat[:any_%d]", k);
 		else if (getBatType(tpe) == TYPE_any)
 			snprintf(buf, sizeof(buf), "bat[:any]");
 		else
@@ -57,27 +57,29 @@ getTypeName(malType tpe)
 	}
 	return GDKstrdup(ATOMname(tpe));
 }
+
 /*
  * It might be handy to encode the type information in an identifier
  * string for ease of comparison later.
  */
 str
-getTypeIdentifier(malType tpe){
-	str s,t,v;
-	s= getTypeName(tpe);
+getTypeIdentifier(malType tpe)
+{
+	str s, t, v;
+	s = getTypeName(tpe);
 	if (s == NULL)
 		return NULL;
-	for ( t=s; *t; t++)
-		if ( !isalnum((unsigned char) *t) )
-			*t='_';
+	for (t = s; *t; t++)
+		if (!isalnum((unsigned char) *t))
+			*t = '_';
 	t--;
 	if (*t == '_')
 		*t = 0;
-	for (v=s, t=s+1; *t; t++){
-		if (  !(*t == '_' && *v == '_' ) )
+	for (v = s, t = s + 1; *t; t++) {
+		if (!(*t == '_' && *v == '_'))
 			*++v = *t;
 	}
-	*++v =0;
+	*++v = 0;
 	return s;
 }
 
@@ -165,8 +167,7 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 			if (qt("sht"))
 				return TYPE_sht;
 			break;
-		}
-	else if (len == 4 && strncmp(nme, "void", len) == 0)
+	} else if (len == 4 && strncmp(nme, "void", len) == 0)
 		return TYPE_void;
 	else if (len == 4 && strncmp(nme, "date", len) == 0)
 		return TYPE_date;
@@ -189,7 +190,7 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 inline int
 findGDKtype(int type)
 {
-	if (type == TYPE_any || type== TYPE_void)
+	if (type == TYPE_any || type == TYPE_void)
 		return TYPE_void;
 	if (isaBatType(type))
 		return TYPE_bat;

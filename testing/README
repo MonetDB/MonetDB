@@ -8,7 +8,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 
 - The testing environment consists of the following tools:
   + Mtest.py	a python script to run tests
-  + Mz.py	another python script to run tests in a slightly different way
+  + Mz.py	equivalent to running Mtest.py --no-html (legacy interface)
 
   When called with command-line option "--help", each of these tools
   provides the respective usage information.

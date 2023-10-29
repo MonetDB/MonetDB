@@ -59,9 +59,7 @@
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
 
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
-gdk_export lng getBBPlogno(void); /* two lng of extra info in BBP.dir */
-gdk_export lng getBBPtransid(void);
-gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid);
+gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool allow_hge_upgrade);
 gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 #ifdef GDKLIBRARY_HASHASH
 			      int *hashash,

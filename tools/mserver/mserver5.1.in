@@ -9,7 +9,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MSERVER5 1 2022-09-23 MonetDB "MonetDB Applications"
+.TH MSERVER5 1 2023-06-22 MonetDB "MonetDB Applications"
 .SH NAME
 mserver5 \- the MonetDB server version 5
 .SH SYNOPSIS
@@ -380,6 +380,20 @@ The server will listen on the interface designated by
 .I hostname
 which is looked up using the normal hostname lookup facilities.
 .RE
+.TP
+.B allow_hge_upgrade
+Set this parameter to
+.B yes
+to allow the server to upgrade the database from one without 128 bit
+integer support to one with 128 bit integer (also known as HUGEINT) support.
+Note, the upgrade will only happen if the server does indeed support 128
+bit integers.
+Also note that there is no going back from a database with 128 bit
+integer support to one without.
+This option does nothing if no upgrade is required.
+128 bit integers requires support from the C compiler and is therefore
+not available on all platforms.  It can also be turned off at compile
+time.
 .SH SQL PARAMETERS
 The SQL component of MonetDB 5 runs on top of the MAL environment.
 It has its own SQL-level specific settings.

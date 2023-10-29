@@ -94,6 +94,7 @@ struct data {
 	char *host;
 	char *port;
 	char *database;
+	char *logfile;
 	HWND parent;
 	WORD request;
 };
@@ -101,7 +102,7 @@ struct data {
 static void
 MergeFromProfileString(const char *dsn, char **datap, const char *entry, const char *defval)
 {
-	char buf[256];
+	char buf[2048];
 
 	if (*datap != NULL)
 		return;
@@ -118,7 +119,7 @@ static INT_PTR CALLBACK
 DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	static struct data *datap;
-	char buf[128];
+	char buf[2048];
 	RECT rcDlg, rcOwner;
 
 	switch (uMsg) {
@@ -142,6 +143,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SetDlgItemText(hwndDlg, IDC_EDIT_HOST, datap->host ? datap->host : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_PORT, datap->port ? datap->port : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_DATABASE, datap->database ? datap->database : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_LOGFILE, datap->logfile ? datap->logfile : "");
 		if (datap->request == ODBC_ADD_DSN && datap->dsn && *datap->dsn)
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EDIT_DSN), FALSE);
 		return TRUE;
@@ -183,6 +185,10 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (datap->database)
 				free(datap->database);
 			datap->database = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_LOGFILE, buf, sizeof(buf));
+			if (datap->logfile)
+				free(datap->logfile);
+			datap->logfile = strdup(buf);
 			/* fall through */
 		case IDCANCEL:
 			EndDialog(hwndDlg, LOWORD(wParam));
@@ -226,6 +232,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	data.host = NULL;
 	data.port = NULL;
 	data.database = NULL;
+	data.logfile = NULL;
 	data.parent = parent;
 	data.request = request;
 
@@ -251,6 +258,8 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			data.port = strdup(value);
 		else if (strncasecmp("database=", attributes, value - attributes) == 0)
 			data.database = strdup(value);
+		else if (strncasecmp("logfile=", attributes, value - attributes) == 0)
+			data.logfile = strdup(value);
 		attributes = value + strlen(value) + 1;
 	}
 
@@ -270,14 +279,16 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	MergeFromProfileString(data.dsn, &data.host, "host", "localhost");
 	MergeFromProfileString(data.dsn, &data.port, "port", MAPI_PORT_STR);
 	MergeFromProfileString(data.dsn, &data.database, "database", "");
+	MergeFromProfileString(data.dsn, &data.logfile, "logfile", "");
 
-	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s\n",
+	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s logfile=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
 		data.host ? data.host : "(null)",
 		data.port ? data.port : "(null)",
-		data.database ? data.database : "(null)");
+		data.database ? data.database : "(null)",
+		data.logfile ? data.logfile : "(null)");
 
 	/* we're optimistic: default return value */
 	rc = TRUE;
@@ -363,13 +374,14 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			goto finish;
 		}
 	}
-	ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s\n",
+	ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s logfile=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
 		data.host ? data.host : "(null)",
 		data.port ? data.port : "(null)",
-		data.database ? data.database : "(null)");
+		data.database ? data.database : "(null)",
+		data.logfile ? data.logfile : "(null)");
 
 	if (!SQLWritePrivateProfileString(data.dsn, "uid", data.uid, "odbc.ini") ||
 	    !SQLWritePrivateProfileString(data.dsn, "pwd", data.pwd, "odbc.ini") ||
@@ -387,6 +399,15 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		goto finish;
 	}
 
+	if (!SQLWritePrivateProfileString(data.dsn, "logfile", data.logfile, "odbc.ini")) {
+		if (parent)
+			MessageBox(parent,
+				   "Error writing logfile configuration data to registry",
+				   NULL,
+				   MB_ICONERROR);
+		goto finish;
+	}
+
   finish:
 	if (data.dsn)
 		free(data.dsn);
@@ -400,6 +421,8 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		free(data.port);
 	if (data.database)
 		free(data.database);
+	if (data.logfile)
+		free(data.logfile);
 	ODBCLOG("ConfigDSN returning %s\n", rc ? "TRUE" : "FALSE");
 	return rc;
 }

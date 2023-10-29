@@ -36,7 +36,8 @@
  */
 
 static str
-CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
+CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
 	int tt;
 	role_t kind = TRANSIENT;
 	BUN cap = 0;
@@ -59,29 +60,29 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
 		if (lcap > (lng) BUN_MAX)
 			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
 		cap = (BUN) lcap;
-		if( p->argc == 4 && getVarConstant(m,getArg(p,3)).val.ival)
+		if (p->argc == 4 && getVarConstant(m, getArg(p, 3)).val.ival)
 			kind = PERSISTENT;
 	}
 
 	if (tt == TYPE_any || isaBatType(tt))
 		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res,  &tt, &cap, kind);
+	return (str) BKCnewBAT(res, &tt, &cap, kind);
 }
 
 static str
 CMDBATdup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b, *i;
-	bat *ret= getArgReference_bat(stk, pci, 0);
+	bat *ret = getArgReference_bat(stk, pci, 0);
 	int tt = getArgType(mb, pci, 1);
 	bat input = *getArgReference_bat(stk, pci, 2);
 
-	(void)cntxt;
+	(void) cntxt;
 	if ((i = BBPquickdesc(input)) == NULL)
 		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
 	b = COLnew(i->hseqbase, tt, BATcount(i), TRANSIENT);
 	if (b == 0)
-		throw(MAL,"bat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "bat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = b->batCacheid;
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -92,16 +93,16 @@ static str
 CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
-	int * ret= getArgReference_bat(stk,pci,0);
-	void *u =(void*) getArgReference(stk,pci,1);
+	int *ret = getArgReference_bat(stk, pci, 0);
+	void *u = (void *) getArgReference(stk, pci, 1);
 
-	(void)cntxt;
+	(void) cntxt;
 
-	b = COLnew(0,getArgType(mb,pci,1),0, TRANSIENT);
-	if( b == 0)
-		throw(MAL,"bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	b = COLnew(0, getArgType(mb, pci, 1), 0, TRANSIENT);
+	if (b == 0)
+		throw(MAL, "bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (ATOMextern(b->ttype))
-		u = (ptr) *(ptr *)u;
+		u = (ptr) *(ptr *) u;
 	if (BUNappend(b, u, false) != GDK_SUCCEED) {
 		BBPreclaim(b);
 		throw(MAL, "bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -115,11 +116,11 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b,*bn;
+	BAT *b, *bn;
 	bat *ret;
 	int i;
 	bat bid;
-	oid lval,hval=0, step;
+	oid lval, hval = 0, step;
 
 	(void) mb;
 	(void) cntxt;
@@ -130,20 +131,20 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	step = BATcount(b) / pci->retc + 1;
 
-	/* create the slices slightly overshoot to make sure it all is taken*/
-	for(i=0; i<pci->retc; i++){
-		lval = i*step;
+	/* create the slices slightly overshoot to make sure it all is taken */
+	for (i = 0; i < pci->retc; i++) {
+		lval = i * step;
 		hval = lval + step;
-		if (i == pci->retc-1)
+		if (i == pci->retc - 1)
 			hval = BATcount(b);
-		bn =  BATslice(b, lval,hval);
-		if (bn== NULL){
+		bn = BATslice(b, lval, hval);
+		if (bn == NULL) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "bat.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		BAThseqbase(bn, lval);
-		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
-		ret= getArgReference_bat(stk,pci,i);
+		stk->stk[getArg(pci, i)].val.bval = bn->batCacheid;
+		ret = getArgReference_bat(stk, pci, i);
 		*ret = bn->batCacheid;
 		BBPkeepref(bn);
 	}
@@ -154,17 +155,17 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b,*bn;
-	bat *ret,bid;
-	int pieces= *getArgReference_int(stk, pci, 2);
+	BAT *b, *bn;
+	bat *ret, bid;
+	int pieces = *getArgReference_int(stk, pci, 2);
 	int idx = *getArgReference_int(stk, pci, 3);
-	oid lval,hval=0, step;
+	oid lval, hval = 0, step;
 
 	(void) mb;
 	(void) cntxt;
-	if ( pieces <=0 )
+	if (pieces <= 0)
 		throw(MAL, "bat.partition", POSITIVE_EXPECTED);
-	if ( idx >= pieces || idx <0 )
+	if (idx >= pieces || idx < 0)
 		throw(MAL, "bat.partition", ILLEGAL_ARGUMENT " Illegal piece index");
 
 	bid = *getArgReference_bat(stk, pci, pci->retc);
@@ -175,17 +176,17 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	step = BATcount(b) / pieces;
 
 	lval = idx * step;
-	if ( idx == pieces-1)
+	if (idx == pieces - 1)
 		hval = BATcount(b);
 	else
-		hval = lval+step;
-	bn =  BATslice(b, lval,hval);
+		hval = lval + step;
+	bn = BATslice(b, lval, hval);
 	BAThseqbase(bn, lval + b->hseqbase);
 	BBPunfix(b->batCacheid);
-	if (bn== NULL){
-		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);
+	if (bn == NULL) {
+		throw(MAL, "bat.partition", INTERNAL_OBJ_CREATE);
 	}
-	ret= getArgReference_bat(stk,pci,0);
+	ret = getArgReference_bat(stk, pci, 0);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
@@ -224,10 +225,11 @@ CMDBATimprintsize(lng *ret, bat *bid)
 static str
 CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *r = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1);
+	bat *r = getArgReference_bat(stk, pci, 0),
+		*bid = getArgReference_bat(stk, pci, 1);
 	bit force = *getArgReference_bit(stk, pci, 2);
 	BAT *b;
-	BUN inputs = (BUN)(pci->argc - 3), number_existing = 0, total = 0;
+	BUN inputs = (BUN) (pci->argc - 3), number_existing = 0, total = 0;
 
 	(void) cntxt;
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -236,13 +238,14 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (inputs > 0) {
 		number_existing = BATcount(b);
 
-		if (isaBatType(getArgType(mb, pci, 3))) { /* use BATappend for the bulk case */
+		if (isaBatType(getArgType(mb, pci, 3))) {	/* use BATappend for the bulk case */
 			gdk_return rt;
 			for (int i = 3, args = pci->argc; i < args; i++) {
 				BAT *d = BATdescriptor(*getArgReference_bat(stk, pci, i));
 				if (!d) {
 					BBPunfix(b->batCacheid);
-					throw(MAL, "bat.append_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+					throw(MAL, "bat.append_bulk",
+						  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				}
 				if (mask_cand(d)) {
 					BAT *du = d;
@@ -257,7 +260,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(d->batCacheid);
 				if (rt != GDK_SUCCEED) {
 					BBPunfix(b->batCacheid);
-					throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
+					throw(MAL, "bat.append_bulk", GDK_EXCEPTION);
 				}
 			}
 		} else {
@@ -265,15 +268,15 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			total = number_existing + inputs;
 			if (BATextend(b, total) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
-				throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
+				throw(MAL, "bat.append_bulk", GDK_EXCEPTION);
 			}
 			for (int i = 3, args = pci->argc; i < args; i++) {
-				ptr u = getArgReference(stk,pci,i);
+				ptr u = getArgReference(stk, pci, i);
 				if (external)
 					u = (ptr) *(ptr *) u;
 				if (BUNappend(b, u, force) != GDK_SUCCEED) {
 					BBPunfix(b->batCacheid);
-					throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
+					throw(MAL, "bat.append_bulk", GDK_EXCEPTION);
 				}
 			}
 		}

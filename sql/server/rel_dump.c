@@ -66,9 +66,6 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
 
-	case mark_in: 		r = "any ="; break;
-	case mark_notin: 	r = "all <>"; break;
-
 	case cmp_all:
 	case cmp_project:
 	case cmp_joined:
@@ -308,6 +305,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, " !");
 			if (is_semantics(e))
 				mnstr_printf(fout, " *");
+			if (is_any(e))
+				mnstr_printf(fout, " +");
 			cmp_print(sql, fout, e->flag);
 
 			mnstr_printf(fout, "(");
@@ -329,7 +328,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (e->p && e->type != e_atom && !exp_is_atom(e)) { /* don't show properties on value lists */
 		for (prop *p = e->p; p; p = p->p) {
 			/* Don't show min/max/unique est on atoms, or when running tests with forcemito */
-			if ((GDKdebug & FORCEMITOMASK) == 0 || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
+			if ((ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0 || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
@@ -458,7 +457,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	case op_except:
 		r = "join";
 		if (rel->op == op_left)
-			r = "left outer join";
+			r = rel->attr?"left outer group join":"left outer join";
 		else if (rel->op == op_right)
 			r = "right outer join";
 		else if (rel->op == op_full)
@@ -473,8 +472,12 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			r = "intersect";
 		else if (rel->op == op_except)
 			r = "except";
-		else if (!rel->exps && rel->op == op_join)
-			r = "crossproduct";
+		else if (rel->op == op_join) {
+			if (list_empty(rel->exps))
+				r = rel->attr?"group crossproduct":"crossproduct";
+			else
+				r = rel->attr?"group join":"join";
+		}
 
 		if (is_dependent(rel))
 			mnstr_printf(fout, "dependent ");
@@ -501,7 +504,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
 		exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
-		if (is_join(rel->op) && rel->attr) /* mark joins */
+		if (is_join(rel->op) && rel->attr) /* group joins */
 			exps_print(sql, fout, rel->attr, depth, refs, 1, 0);
 		break;
 	case op_project:
@@ -587,7 +590,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	}
 	if (rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
-			if (p->kind != PROP_COUNT || (GDKdebug & FORCEMITOMASK) == 0) {
+			if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
@@ -1041,7 +1044,7 @@ function_error_string(mvc *sql, const char *schema, const char *fname, list *exp
 static unsigned int /* keep updating the label count */
 try_update_label_count(mvc *sql, const char *label)
 {
-	if (label && label[0] == '%' && isdigit(label[1])) {
+	if (label && label[0] == '%' && isdigit((unsigned char) label[1])) {
 		char *eptr = NULL;
 		unsigned int value = (unsigned int) strtol(label + 1, &eptr, 10);
 		if (eptr && eptr[0] == '\0') {
@@ -1107,7 +1110,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	/* atom */
 	case '(':
 		if (b == (r+*pos)) { /* comparison expression */
-			int anti = 0, sym = 0, semantics = 0;
+			int anti = 0, sym = 0, semantics = 0, any = 0;
 			comp_type ctype = cmp_all, ctype2 = cmp_all;
 			list *lexps = NULL, *rexps = NULL, *fexps = NULL;
 			char *sname = NULL, *fname = NULL;
@@ -1125,17 +1128,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				(*pos)++;
 				skipWS(r, pos);
 			}
+			if (r[*pos] == '+') {
+				any = 1;
+				(*pos)++;
+				skipWS(r, pos);
+			}
 
 			switch(r[*pos]) {
-			case 'a':
-				if (strncmp(r+*pos, "any =",  strlen("any =")) == 0) {
-					(*pos)+= (int) strlen("any =");
-					ctype = mark_in;
-				} else if (strncmp(r+*pos, "all <>",  strlen("all <>")) == 0) {
-					(*pos)+= (int) strlen("all <>");
-					ctype = mark_notin;
-				}
-				break;
 			case 'n':
 				if (strncmp(r+*pos, "notin",  strlen("notin")) == 0) {
 					(*pos)+= (int) strlen("notin");
@@ -1211,8 +1210,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				case cmp_lt:
 				case cmp_equal:
 				case cmp_notequal:
-				case mark_in:
-				case mark_notin:
 					if (r[*pos] == '!' || r[*pos] == '<' || r[*pos] == '>') { /* BETWEEN case */
 						if (r[*pos] == '!') { /* ignore next anti */
 							(*pos)++;
@@ -1252,6 +1249,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 						exp = exp_compare(sql->sa, lexps->h->data, rexps->h->data, ctype);
 						if (semantics)
 							set_semantics(exp);
+						if (any)
+							set_any(exp);
 					}
 					if (anti)
 						set_anti(exp);
@@ -1713,6 +1712,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 	list *exps, *gexps;
 	int distinct = 0, dependent = 0, single = 0;
 	operator_type j = op_basetable;
+	bool groupjoin = false;
 
 	skipWS(r,pos);
 	if (r[*pos] == 'R') {
@@ -2073,34 +2073,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (r[*pos] == '[' && !(rel->r = read_exps(sql, rel, nrel, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		break;
-	case 'g':
-		*pos += (int) strlen("group by");
-		skipWS(r, pos);
-
-		if (r[*pos] != '(')
-			return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing '('\n");
-		(*pos)++;
-		skipWS(r, pos);
-		if (!(nrel = rel_read(sql, r, pos, refs)))
-			return NULL;
-		skipWS(r, pos);
-		if (r[*pos] != ')')
-			return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing ')'\n");
-		(*pos)++;
-		skipWS(r, pos);
-
-		if (!(gexps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
-			return NULL;
-		skipWS(r, pos);
-		rel = rel_groupby(sql, nrel, gexps);
-		rel->exps = new_exp_list(sql->sa); /* empty projection list for now */
-		set_processed(rel); /* don't search beyond the group by */
-		/* first group projected expressions, then group by columns, then left relation projections */
-		if (!(exps = read_exps(sql, rel, nrel, NULL, r, pos, '[', 1, 1)))
-			return NULL;
-		rel->exps = exps;
-		rel->nrcols = list_length(exps);
-		break;
 	case 's':
 	case 'a':
 		if (r[*pos+1] == 'a') {
@@ -2178,8 +2150,49 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			set_processed(rel);
 		}
 		break;
+	case 'g':
+		*pos += (int) strlen("group");
+		skipWS(r, pos);
+
+		if (r[*pos] == 'b') {
+			*pos += (int) strlen("by");
+			skipWS(r, pos);
+
+			if (r[*pos] != '(')
+				return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing '('\n");
+			(*pos)++;
+			skipWS(r, pos);
+			if (!(nrel = rel_read(sql, r, pos, refs)))
+				return NULL;
+			skipWS(r, pos);
+			if (r[*pos] != ')')
+				return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing ')'\n");
+			(*pos)++;
+			skipWS(r, pos);
+
+			if (!(gexps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
+				return NULL;
+			skipWS(r, pos);
+			rel = rel_groupby(sql, nrel, gexps);
+			rel->exps = new_exp_list(sql->sa); /* empty projection list for now */
+			set_processed(rel); /* don't search beyond the group by */
+			/* first group projected expressions, then group by columns, then left relation projections */
+			if (!(exps = read_exps(sql, rel, nrel, NULL, r, pos, '[', 1, 1)))
+				return NULL;
+			rel->exps = exps;
+			rel->nrcols = list_length(exps);
+			break;
+		} else {
+			groupjoin = true;
+		}
+		/* fall through */
 	case 'l':
-		*pos += (int) strlen("left outer join");
+		if (strncmp(r+*pos, "left outer join", strlen("left outer join")) == 0) {
+			*pos += (int) strlen("left outer join");
+		} else {
+			groupjoin = true;
+			*pos += (int) strlen("left outer group join");
+		}
 		j = op_left;
 		/* fall through */
 	case 'r':
@@ -2232,6 +2245,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		rel = rel_crossproduct(sql->sa, lrel, rrel, j);
 		rel->exps = exps;
+		if (groupjoin) {
+			list *attr = NULL;
+			if (!(attr = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0, 1)))
+				return NULL;
+			rel->attr = attr;
+		}
 		set_processed(rel);
 		break;
 	case 'u':
