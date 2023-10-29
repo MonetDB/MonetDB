@@ -57,9 +57,8 @@ jobs:
           #cmake --build . --target mtest
           PATH=$HOME/${{ matrix.branch }}/bin:$PATH $HOME/${{ matrix.branch }}/bin/Mtest.py -r --debug=0
           ls $HOME/${{ matrix.branch }}/mTests/times.lst
-      - name: Results
+      - name: Publish mtest results
         uses: actions/upload-artifact@v3
-          name: Publish mtest results
-          with:
-            name: mtest-${{ matrix.branch }}
-            path: ${{ matrix.branch }}/mTests
+        with:
+          name: mtest-${{ matrix.branch }}
+          path: ${{ matrix.branch }}/mTests
