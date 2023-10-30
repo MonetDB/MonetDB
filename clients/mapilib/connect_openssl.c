@@ -54,8 +54,17 @@ croak_openssl(Mapi mid, const char *action, const char *fmt, ...)
 MapiMsg
 add_system_certificates(Mapi mid, SSL_CTX *ctx)
 {
-	(void)mid;
-	(void)ctx;
+	// On Linux, the Linux distribution has arranged for the system root certificates
+	// to be found in OpenSSL's default locations.
+	// On MacOS, MonetDB is generally installed using Homebrew and then Homebrew
+	// takes care of it.
+	// On Windows we use another implementation of add_system_certificates(),
+	// found in openssl_windows.c.
+
+	if (1 != SSL_CTX_set_default_verify_paths(ctx)) {
+		SSL_CTX_free(ctx);
+		return croak_openssl(mid, __func__, "SSL_CTX_set_default_verify_paths");
+	}
 	return MOK;
 }
 #endif
@@ -98,10 +107,6 @@ make_ssl_context(Mapi mid, SSL_CTX **ctx_out)
 			}
 			break;
 		case verify_system:
-			if (1 != SSL_CTX_set_default_verify_paths(ctx)) {
-				SSL_CTX_free(ctx);
-				return croak_openssl(mid, __func__, "SSL_CTX_set_default_verify_paths");
-			}
 			MapiMsg msg = add_system_certificates(mid, ctx);
 			if (msg != MOK) {
 				SSL_CTX_free(ctx);
