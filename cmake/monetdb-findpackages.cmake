@@ -127,6 +127,10 @@ if(WITH_MALLOC)
   endif()
 endif()
 
+if(WITH_OPENSSL)
+  find_package(OpenSSL 1.1.1)
+endif()
+
 find_package(Sphinx)
 find_package(Createrepo)
 find_package(Rpmbuild)
