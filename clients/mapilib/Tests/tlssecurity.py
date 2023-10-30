@@ -9,6 +9,7 @@
 from hashlib import sha256
 import logging
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -61,7 +62,7 @@ server = tlstester.TLSTester(
 server_thread = threading.Thread(target=server.serve_forever, daemon=True)
 server_thread.start()
 
-def attempt(experiment: str, portname: str, expected_error: str, tls=True, **params):
+def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True, **params):
     port = server.get_port(portname)
     scheme = 'monetdbs' if tls else 'monetdb'
     url = f"{scheme}://localhost:{port}/demo"
@@ -69,7 +70,7 @@ def attempt(experiment: str, portname: str, expected_error: str, tls=True, **par
         # should be percent-escaped
         url += '?' + '&'.join(f"{k}={v}" for k, v in params.items())
     logging.debug(f"**** START TEST {experiment}")
-    logging.debug(f"Connecting to {url}, expected_error={expected_error}")
+    logging.debug(f"Connecting to {url}, expected_error={expected_error_regex}")
     cmd = ['mclient', '-d', url]
     logging.debug(f"cmd={cmd}")
     proc = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -79,17 +80,18 @@ def attempt(experiment: str, portname: str, expected_error: str, tls=True, **par
     actual_error = None if 'Sorry, this is not' in output else output
 
     ok = False
-    if expected_error is None and actual_error is None:
+    if expected_error_regex is None and actual_error is None:
         ok = True
-    elif  expected_error is not None and actual_error is not None and expected_error in actual_error:
+    elif  expected_error_regex is not None and actual_error is not None and re.search(expected_error_regex, actual_error):
         ok = True
     if ok:
         logging.debug(f"**** END SUCCESFUL TEST {experiment} ")
         return
     logging.error(f"Unexpected result for test {experiment}")
     logging.error(f"When connecting to port '{portname}' using URL {url}")
-    message = f"expected_error={expected_error} but actual_error={actual_error}"
-    logging.error(message)
+    logging.error(f"Expected error message matching {expected_error_regex!r}")
+    logging.error(f"Found error message: {actual_error}")
+    message = f"expected_error_regex={expected_error_regex!r} but actual_error={actual_error!r}"
     raise Exception(message)
 
 
@@ -157,7 +159,7 @@ attempt('fail_tls_to_plain', 'plain', 'wrong version number', tls=True)
 #
 # Make a plain MAPI connection to port 'server1'. This should fail.
 
-attempt('fail_plain_to_tls', 'server1', 'terminated', tls=False)
+attempt('fail_plain_to_tls', 'server1', 'Connection terminated while starting handshake|Challenge string is not valid', tls=False)
 
 # connect_server_name
 #
