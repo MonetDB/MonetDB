@@ -2269,10 +2269,18 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * levels.
  */
 enum prop_t {
-	CURRENTLY_NO_PROPERTIES_DEFINED,
+	GDK_MIN_BOUND, /* MINimum allowed value for range partitions [min, max> */
+	GDK_MAX_BOUND, /* MAXimum of the range partitions [min, max>, ie. excluding this max value */
+	GDK_NOT_NULL,  /* bat bound to be not null */
+	/* CURRENTLY_NO_PROPERTIES_DEFINED, */
 };
 
 gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);
+gdk_export ValPtr BATgetprop_nolock(BAT *b, enum prop_t idx);
+gdk_export void BATrmprop(BAT *b, enum prop_t idx);
+gdk_export void BATrmprop_nolock(BAT *b, enum prop_t idx);
+gdk_export ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v);
+gdk_export ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v);
 
 /*
  * @- BAT relational operators
