@@ -265,12 +265,17 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak_openssl(mid, __func__, "SSL_set_tlsext_host_name");
 	}
 
+	// Temporarily disable the ALPN header.
+	// TODO re-enable it when test systemcertificates.py no longer relies
+	// on connecting to an HTTPS server. (Which is an ugly hack in the first place!)
+#if 0
 	unsigned char alpn_vector[] = { 6, 'm', 'a', 'p', 'i', '/', '9' };
 	// NOTE: these functions return 0 on success, not 1!
 	if (0 != SSL_set_alpn_protos(ssl, alpn_vector, sizeof(alpn_vector))) {
 		BIO_free_all(bio);
 		return croak_openssl(mid, __func__, "SSL_set_alpn_protos");
 	}
+#endif
 
 	assert(clientkey);
 	assert(clientcert);

@@ -172,7 +172,10 @@ attempt('connect_server_name', 'sni', None, cert=certpath('ca1.crt'))
 # indicates that the implementation succesfully negotiated ALPN protocol
 # "mapi/9".
 
-attempt('connect_alpn_mapi9', 'alpn_mapi9', None, cert=certpath('ca1.crt'))
+####### Temporarily disable the ALPN header.
+####### TODO re-enable it when test systemcertificates.py no longer relies
+####### on connecting to an HTTPS server. (Which is an ugly hack in the first place!)
+# attempt('connect_alpn_mapi9', 'alpn_mapi9', None, cert=certpath('ca1.crt'))
 
 # connect_right_hash
 #
