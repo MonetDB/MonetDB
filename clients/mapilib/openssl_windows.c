@@ -87,12 +87,6 @@ add_system_certificates(Mapi mid, SSL_CTX *ctx)
 	DWORD error = GetLastError();
 	assert(item == NULL);
 	CertCloseStore(sysstore, 0);
-
-	// Microsoft is very unclear about the error conditions,
-	// I get the impression we can just ignore them.
-	// (For example in their own example code).
-	error = 0;
-
 	switch (error) {
 		case 0:
 		case CRYPT_E_NOT_FOUND:
