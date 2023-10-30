@@ -51,6 +51,9 @@ jobs:
           cmake --build . --target test
       - name: install pymonetdb
         run: pip3 install pymonetdb
+      - name: which python
+        run: 
+          head -n 1 $HOME/${{ matrix.branch }}/bin/Mtest.py 
       - name: mtest 
         run: |
           #cd build 
