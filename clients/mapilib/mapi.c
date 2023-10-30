@@ -1207,18 +1207,18 @@ usec(void)
 }
 
 static void
-mapi_log_header(Mapi mid, const char *filename, long line, const char *mark)
+mapi_log_header(Mapi mid, const char *funcname, long line, const char *mark1, const char *mark2)
 {
 	int64_t now = usec();
 	static int64_t firstcall = 0;
 	if (firstcall == 0)
 		firstcall = now;
 	double seconds = (double)(now - firstcall) / 1e6;
-	mnstr_printf(mid->tracelog, "\342\226\266 [%u] t=%.3fs %s %s(), line %ld\n", mid->index, seconds, mark, filename, line); /* U+25B6: right-pointing triangle */
+	mnstr_printf(mid->tracelog, "\342\226\266 [%u] t=%.3fs %s%s %s(), line %ld\n", mid->index, seconds, mark1, mark2, funcname, line); /* U+25B6: right-pointing triangle */
 }
 
 void
-mapi_impl_log_record(Mapi mid, const char *filename, long line, const char *mark, const char *fmt, ...)
+mapi_impl_log_record(Mapi mid, const char *funcname, long line, const char *mark, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -1254,7 +1254,7 @@ mapi_impl_log_record(Mapi mid, const char *filename, long line, const char *mark
 		needed = n + 1;
 	}
 
-	mapi_log_header(mid, filename, line, mark);
+	mapi_log_header(mid, funcname, line, mark, "");
 	if (to_print > 0) {
 		mnstr_write(mid->tracelog, mid->tracebuffer, to_print, 1);
 		mnstr_writeChr(mid->tracelog, '\n');
@@ -1262,16 +1262,69 @@ mapi_impl_log_record(Mapi mid, const char *filename, long line, const char *mark
 	mnstr_flush(mid->tracelog, MNSTR_FLUSH_DATA);
 }
 
+#define MAPILOG_OPEN "\tb'"
+#define MAPILOG_CLOSE "'"
+
 void
 mapi_impl_log_data(Mapi mid, const char *filename, long line, const char *mark, const char *start, size_t len)
 {
+	const char hexdigits[] = "0123456789abcdef";
 	if (mid->tracelog == NULL)
 		return;
 
-	mapi_log_header(mid, filename, line, mark);
-	mnstr_write(mid->tracelog, start, 1, len);
-	if (len > 0 && start[len - 1] != '\n')
-		mnstr_writeStr(mid->tracelog, "\342\217\216\n"); /* U+23CE: return symbol */
+	mapi_log_header(mid, filename, line, mark, " (DATA)");
+
+	const size_t margin = strlen("\\xNN" MAPILOG_CLOSE "\n," MAPILOG_OPEN);
+	char buffer[128] = { 0 };
+	char *pos = buffer;
+	mnstr_writeStr(mid->tracelog, MAPILOG_OPEN);
+	bool inside = true;
+	for (unsigned char *p = (unsigned char*)start; (char*)p < start + len; p++) {
+		unsigned char c = *p;
+		if (!inside) {
+			for (char *text = "\n" MAPILOG_OPEN; *text; text++)
+				*pos++ = *text;
+			inside = true;
+		}
+		if (pos >= buffer + sizeof(buffer) - margin) {
+			mnstr_write(mid->tracelog, buffer, 1, pos - buffer);
+			pos = buffer;
+		}
+		switch (c) {
+			case '\\':
+			case '\'':
+				*pos++ = '\\';
+				*pos++ = c;
+				break;
+			case '\t':
+				*pos++ = '\\';
+				*pos++ = 't';
+				break;
+			case '\n':
+				for (char *text = "\\n" MAPILOG_CLOSE; *text; text++)
+					*pos++ = *text;
+				inside = false;
+				break;
+			default:
+				if (c >= 32 && c < 127) {
+					*pos++ = c;
+				} else {
+					*pos++ = '\\';
+					*pos++ = 'x';
+					*pos++ = hexdigits[c / 16];
+					*pos++ = hexdigits[c % 16];
+				}
+			break;
+		}
+	}
+	if (inside) {
+		for (char *text = MAPILOG_CLOSE; *text; text++)
+			*pos++ = *text;
+	}
+	*pos++ = ',';
+	*pos++ = '\n';
+	mnstr_write(mid->tracelog, buffer, 1, pos - buffer);
+
 	mnstr_flush(mid->tracelog, MNSTR_FLUSH_DATA);
 }
 
