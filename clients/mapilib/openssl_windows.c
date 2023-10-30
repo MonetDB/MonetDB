@@ -31,12 +31,8 @@ process_sysstore_item(Mapi mid, X509_STORE *x509_store, int nr, const CERT_CONTE
 
 	bool is_x509 = (typ & X509_ASN_ENCODING);
 	bool is_pkcs7 = (typ & PKCS_7_ASN_ENCODING);
-	mapi_log_record(
-		mid, "CONN", "Processing item #%d of type %lu [%s%s], size %zu",
-		nr,
-		typ, (is_x509 ? "X" : ""), (is_pkcs7 ? "P" : ""),
-		size
-	);
+
+	mapi_log_data(mid, "CERT", (char*)data, size);
 
 	if (!is_x509)
 		return mapi_printError(mid, __func__, MERROR, "sys store certificate #%d must be in X509 format", nr);

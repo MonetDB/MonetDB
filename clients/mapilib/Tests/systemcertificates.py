@@ -31,7 +31,8 @@ assert proc.returncode == 2, f"mclient is supposed to exit with status 2, not {p
 # libmapi will interpret the first two bytes as a block header.
 #
 # In ASCII, 'H' + 256 * 'T' is 21576.
-if b'21576' not in proc.stderr:
+ok = b'21576' not in proc.stderr
+if ok or True:
     msg = str(proc.stderr, 'utf-8')
     print(f"Expected mclient to print an error message containing the number 21576, got:\n--- stderr ---\n{msg}\n---end stderr ---", file=sys.stderr)
     exit(1)
