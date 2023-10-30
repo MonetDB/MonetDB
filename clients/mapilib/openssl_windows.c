@@ -62,7 +62,7 @@ add_system_certificates(Mapi mid, SSL_CTX *ctx)
 
 	mapi_log_record(mid, "CONN", "Enumerating system certificates");
 
-	sysstore = CertOpenSystemStoreW(0, L"ROOT");
+	sysstore = CertOpenSystemStoreW(0, L"CA");
 	if (!sysstore)
 		return croak_win32(mid, __func__, GetLastError());
 
