@@ -110,7 +110,6 @@ typedef struct hash_table {
         void *vals;			/* hash(ed) values */
         hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
 		gid *pgids;			/* id of the parent hash */
-	size_t *cnt;		/* count of each gid */
 
 		struct hash_table *p;	/* parent hash */
         int bits;
@@ -132,11 +131,11 @@ typedef struct hash_payload {
 	int rehash;
 
 	void *payload;		/* hash(ed) payload values */
-	hash_key_t *gids;   	/* chain of gids (k, ie mark used/-k mark used and value filled) */
+	//hash_key_t *gids;   	/* chain of gids (k, ie mark used/-k mark used and value filled) */
 	//gid *pgids;		/* id of the parent hash */
-	size_t *cnt;		/* count of each gid */
+	size_t *frequency;	/* how many times a slot ID appeared in the hashed column */
 
-	struct hash_table *parent;
+	struct hash_table *parent; /* for now, only used to inform the parent to rehash */
 	int bits;
 	ATOMIC_TYPE last;
 	size_t size;

@@ -51,6 +51,17 @@ log_base2(unsigned int n)
         return l ;
 }
 
+static unsigned int
+compute_mask(unsigned int n)
+{
+	unsigned int nn = (n < HT_MIN_SIZE)? HT_MIN_SIZE :
+ 			 ((n > HT_MAX_SIZE)? HT_MAX_SIZE : n);
+	int bits = log_base2(nn - 1);
+
+	bits = (bits >= GIDBITS)? GIDBITS - 1 : bits;
+	return (1 << bits) - 1;
+}
+
 /* ***** HASH TABLE ***** */
 static hash_table *
 _ht_init( hash_table *h )
@@ -163,12 +174,8 @@ hp_destroy(hash_payload *hp)
 {
 	if (hp->payload)
 		GDKfree(hp->payload);
-	if (hp->gids)
-		GDKfree((void*)hp->gids);
-	//if (hp->pgids)
-	//	GDKfree(hp->pgids);
-	if (hp->cnt)
-		GDKfree(hp->cnt);
+	if (hp->frequency)
+		GDKfree(hp->frequency);
 	if (hp->allocators) {
 		for(int i = 0; i < hp->nr_allocators; i++) {
 			if(hp->allocators[i])
@@ -177,25 +184,6 @@ hp_destroy(hash_payload *hp)
 		GDKfree(hp->allocators);
 	}
 	GDKfree(hp);
-}
-
-static hash_payload *
-_hp_init(hash_payload *hp)
-{
-	//if (hp->gids == NULL) {
-	hp->payload = (char *)GDKmalloc((size_t)hp->width * hp->size);
-	hp->gids = (hash_key_t *)GDKzalloc(sizeof(hash_key_t) * hp->size);
-	hp->cnt = (size_t *)GDKzalloc(sizeof(size_t) * hp->size);
-	//if (hp->parent) {
-	//	assert(hp->s.type == HASH_SINK);
-	//	hp->pgids = (gid*)GDKmalloc(sizeof(gid)* hp->size);
-	//}
-	//}
-	if (!hp->payload || !hp->gids || !hp->cnt) {
-		hp_destroy(hp);
-		return NULL;
-	}
-	return hp;
 }
 
 static hash_payload *
@@ -228,7 +216,20 @@ _hp_create(int type, int size, hash_table *parent)
 		hp->hsh = (fhsh)BATatoms[type].atomHash;
 		hp->len = (flen)BATatoms[type].atomLen;
 	}
-	return _hp_init(hp);
+
+	hp->payload = (char *)GDKmalloc((size_t)hp->width * hp->size);
+	if (!hp->payload) {
+		GDKfree(hp);
+		return NULL;
+	}
+	hp->frequency = (size_t *)GDKzalloc(sizeof(size_t) * hp->size);
+	if (!hp->frequency) {
+		GDKfree(hp->payload);
+		GDKfree(hp);
+		return NULL;
+	}
+
+	return hp;
 }
 
 /* Returns NULL if a memory allocation has failed.
@@ -251,6 +252,7 @@ hp_rehash(hash_payload *hp)
 		ht_rehash(hp->parent);
 }
 
+/* X_nn:bat[:int] := hash.new_payload(nil:int, 42:int, X_nn:bat[:int]); */
 static str
 UHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
@@ -267,7 +269,7 @@ UHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BBPunfix(prnt->batCacheid);
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
-	b->T.sink = (Sink *)ht_create(tt, size*1.2*2.1, parent);
+	b->T.sink = (Sink *)hp_create(tt, size*1.2*2.1, parent);
 	if (!b->T.sink) {
 		BBPunfix(b->batCacheid);
 		/* HY001 stands for "memory allocation error".
@@ -561,28 +563,29 @@ UHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	} while (0)
 
 static str
-UHASHtable_build(bat *r_gid, bat *r_sink, bat *bid, const ptr *H)
+UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	/* private or not */
-	bool private = (!*r_sink || is_bat_nil(*r_sink)), local_storage = false;
+	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
 	int err = 0;
 	BAT *u, *b = NULL;
 	lng timeoffset = 0;
 
-   	b = BATdescriptor(*bid);
+   	b = BATdescriptor(*key);
 	if (!b)
-		return createException(SQL, "hash.table_build", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if (private && *r_sink && is_bat_nil(*r_sink)) { /* TODO ... create but how big ??? */
+		// FIXME: check if this error code is OK
+		return createException(SQL, "hash.build_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (private && *ht_sink && is_bat_nil(*ht_sink)) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
 		u->T.private_bat = 1;
 	} else {
-		u = BATdescriptor(*r_sink);
+		u = BATdescriptor(*ht_sink);
 	}
 	if (!u) {
-		BBPunfix(*bid);
-		return createException(SQL, "hash.table_build", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(*key);
+		return createException(SQL, "hash.build_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	private = u->T.private_bat;
 
@@ -679,7 +682,7 @@ UHASHtable_build(bat *r_gid, bat *r_sink, bat *bid, const ptr *H)
 				}
 				break;
 			default:
-				throw(MAL, "hash.table_build", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				throw(MAL, "hash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 			}
 		}
 		if (!err) {
@@ -693,15 +696,17 @@ UHASHtable_build(bat *r_gid, bat *r_sink, bat *bid, const ptr *H)
 			/* pass max id */
 			g->T.maxval = last;
 			g->tkey = FALSE;
-			*r_sink = u->batCacheid;
-			*r_gid = g->batCacheid;
+			*ht_sink = u->batCacheid;
+			*slot_id = g->batCacheid;
 			BBPkeepref(u);
 			BBPkeepref(g);
 		}
 	}
-	TIMEOUT_CHECK(timeoffset, throw(MAL, "hash.table_build", GDK_EXCEPTION));
-	if (err || p->p->status)
-		throw(MAL, "hash.table_build", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	// TODO 0: do we have a timeout exception, instead of GDK_EXCEPTION?
+	// TODO 1: shouldn't we unfix 'u' and 'g' above?
+	TIMEOUT_CHECK(timeoffset, throw(MAL, "hash.build_table", GDK_EXCEPTION));
+	if (err || p->p->status) // TODO: check the error code, shouild be something about runtime_error
+		throw(MAL, "hash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
@@ -948,39 +953,41 @@ UHASHtable_build(bat *r_gid, bat *r_sink, bat *bid, const ptr *H)
 	} while (0)
 
 static str
-UHASHtable_build2(bat *r_gid, bat *r_sink, bat *pgid, bat *psink, bat *bid, const ptr *H)
+UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, bat *parent_ht, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
-	bool private = (!*r_sink || is_bat_nil(*r_sink)), local_storage = false;
+	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
 	int err = 0;
-	BAT *u, *b = BATdescriptor(*bid);
-	BAT *G = BATdescriptor(*pgid);
+	BAT *u, *b = BATdescriptor(*key);
+	BAT *G = BATdescriptor(*parent_slotid);
 	lng timeoffset = 0;
 
 	if (!b || !G) {
 		if (b)
-			BBPunfix(*bid);
-		return createException(SQL, "hash.table_build2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			BBPunfix(*key);
+		// TODO: check if this error code is ok
+		return createException(SQL, "hash.build_combined_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	if (private && *r_sink && is_bat_nil(*r_sink)) { /* TODO ... create but how big ??? */
-		BAT *H = BATdescriptor(*psink);
+	if (private && *ht_sink && is_bat_nil(*ht_sink)) { /* TODO ... create but how big ??? */
+		BAT *H = BATdescriptor(*parent_ht);
 		if (!H) {
-			BBPunfix(*bid);
-			BBPunfix(*pgid);
-			return createException(SQL, "hash.table_build2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			BBPunfix(*key);
+			BBPunfix(*parent_slotid);
+			// TODO: check if this error code is ok
+			return createException(SQL, "hash.build_combined_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		/* Lookup parent hash */
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->T.sink);
 		u->T.private_bat = 1;
-		BBPunfix(*psink);
+		BBPunfix(*parent_ht);
 	} else {
-		u = BATdescriptor(*r_sink);
+		u = BATdescriptor(*ht_sink);
 	}
 	if (!u) {
-		BBPunfix(*pgid);
-		BBPunfix(*bid);
-		return createException(SQL, "hash.table_build2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(*parent_slotid);
+		BBPunfix(*key);
+		return createException(SQL, "hash.build_combined_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	private = u->T.private_bat;
 
@@ -1079,10 +1086,10 @@ UHASHtable_build2(bat *r_gid, bat *r_sink, bat *pgid, bat *psink, bat *bid, cons
 				}
 				break;
 			default:
-				throw(MAL, "hash.table_build2", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				throw(MAL, "hash.build_combined_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 			}
 		}
-		if (!err) {
+		if (!err) { // TODO: shouldn't the BBPunfix be done also with an error?
 			BBPunfix(b->batCacheid);
 			BBPunfix(G->batCacheid);
 			BATsetcount(g, cnt);
@@ -1094,85 +1101,203 @@ UHASHtable_build2(bat *r_gid, bat *r_sink, bat *pgid, bat *psink, bat *bid, cons
 			/* pass max id */
 			g->T.maxval = last;
 			g->tkey = FALSE;
-			*r_sink = u->batCacheid;
-			*r_gid = g->batCacheid;
+			*ht_sink = u->batCacheid;
+			*slot_id = g->batCacheid;
 			BBPkeepref(u);
 			BBPkeepref(g);
 		}
 	}
-	TIMEOUT_CHECK(timeoffset, throw(MAL, "ghash.table_build2", GDK_EXCEPTION));
+	TIMEOUT_CHECK(timeoffset, throw(MAL, "hash.build_combined_table", GDK_EXCEPTION));
 	if (err || p->p->status)
-		throw(MAL, "ghash.table_build2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "hash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
 static str
-UHASHadd_payload(bat *r_gid, bat *r_sink, bat *pgid, bat *psink, bat *bid, const ptr *H)
+HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, const ptr *H)
 {
-	(void) r_gid;
-	(void) r_sink;
-	(void) pgid;
-	(void) psink;
-	(void) bid;
+	(void) hp_sink;
+	(void) payload;
+	(void) parent_slotid;
 	(void) H;
 
 	return MAL_SUCCEED;
 }
 
+#define vhash(Type) 						\
+	do { 							\
+		Type *ky = Tloc(k, 0); 				\
+		Type *hs = Tloc(h, 0); 				\
+								\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { 	\
+			hs[i] = _hash_##Type(ky[i]) & mask; 	\
+		} 						\
+	} while (0)
+
+#define hash(Type) 						\
+	do { 							\
+		Type *ky = Tloc(k, 0); 				\
+		Type *hs = Tloc(h, 0); 				\
+								\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { 	\
+			hs[i] = _hash_##Type(ky[i]) & mask; 	\
+		} 						\
+	} while (0)
+
+#define fhash(Type, BaseType) 							\
+	do { 									\
+		Type *ky = Tloc(k, 0); 						\
+		Type *hs = Tloc(h, 0); 						\
+										\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { 			\
+			hs[i] = _hash_##Type(*(((BaseType*)ky)+i)) & mask; 	\
+		} 								\
+	} while (0)
+
 static str
-UHASHhash(bat *hash, bat *key)
+UHASHhash(bat *hsh, bat *key)
 {
-	(void) hash;
+	BAT *h = NULL, *k = NULL;
+	BUN cnt;
+	unsigned int mask;
+	lng timeoffset = 0;
+
+	k = BATdescriptor(*key);
+	if (!k) // TODO: shouldn't this error be about RUNTIME_OBJECT_MISSING?
+		return createException(SQL, "hash.hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	cnt = BATcount(k);
+	h = COLnew(k->hseqbase, k->ttype?k->ttype:TYPE_oid, cnt, TRANSIENT);
+	if (!h) { // TODO: check all use of COLnew in pipeline code that it checks the result
+		BBPunfix(*key);
+		return createException(SQL, "hash.hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+
+	if (cnt) {
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+		mask = compute_mask(cnt);
+		switch(k->ttype) {
+			case TYPE_void:
+				//vhash();
+				throw(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				break;
+			case TYPE_bit:
+				hash(bit);
+				break;
+			case TYPE_bte:
+				hash(bte);
+				break;
+			case TYPE_sht:
+				hash(sht);
+				break;
+			case TYPE_int:
+				hash(int);
+				break;
+			case TYPE_date:
+				hash(date);
+				break;
+			case TYPE_lng:
+				hash(lng);
+				break;
+			case TYPE_oid:
+				hash(oid);
+				break;
+			case TYPE_daytime:
+				hash(daytime);
+				break;
+			case TYPE_timestamp:
+				hash(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				hash(hge);
+				break;
+#endif
+			case TYPE_flt:
+				fhash(flt, int);
+				break;
+			case TYPE_dbl:
+				fhash(dbl, lng);
+				break;
+			case TYPE_str:
+				//if (local_storage) {
+				//	ahash_(str, p);
+				//} else {
+				//	ahash(str);
+				//}
+				//break;
+				throw(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+			default:
+				throw(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+		}
+	}
+	BBPunfix(*key);
+	BATsetcount(h, cnt);
+	BATnegateprops(h);
+	*hsh = h->batCacheid;
+	BBPkeepref(h);
+
+	// TODO: do we have a timeout exception, instead of GDK_EXCEPTION?
+	TIMEOUT_CHECK(timeoffset, throw(MAL, "hash.hash", GDK_EXCEPTION));
+	return MAL_SUCCEED;
+}
+
+	static str
+UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid)
+{
+	(void) hsh;
 	(void) key;
+	(void) selected;
+	(void) parent_slotid;
 
 	return MAL_SUCCEED;
 }
 
 static str
-UHASHhash2(bat *hash, bat *phash, bat *key)
+UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht)
 {
-	(void) hash;
-	(void) phash;
+	(void) LHS_matched;
+	(void) RHS_slotid;
+	(void) LHS_key;
+	(void) LHS_hash;
+	(void) RHS_ht;
+
+	return MAL_SUCCEED;
+}
+
+static str
+UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht)
+{
+	(void) LHS_matched;
+	(void) RHS_slotid;
+	(void) LHS_key;
+	(void) LHS_hash;
+	(void) LHS_selected;
+	(void) RHS_ht;
+
+	return MAL_SUCCEED;
+}
+
+static str
+HASHexpand(bat *expanded, bat *key, bat *selected, bat *hp_sink)
+{
+	(void) expanded;
 	(void) key;
+	(void) selected;
+	(void) hp_sink;
 
 	return MAL_SUCCEED;
 }
 
 static str
-UHASHprobe(bat *r_lhs, bat *r_rhs, bat *r_sink, bat *lhs_b, bat *lhs_h, bat *rhs_b, bat *rhs_h)
+HASHfetch_payload(bat *payload, bat *slotid, bat *hp_sink)
 {
-	(void) r_lhs;
-	(void) r_rhs;
-	(void) r_sink;
-	(void) lhs_b;
-	(void) lhs_h;
-	(void) rhs_b;
-	(void) rhs_h;
-
-	return MAL_SUCCEED;
-}
-
-static str
-UHASHprobe2(bat *r_lhs, bat *r_rhs, bat *r_sink, bat *lhs_b, bat *lhs_h, bat *rhs_b, bat *rhs_h)
-{
-	(void) r_lhs;
-	(void) r_rhs;
-	(void) r_sink;
-	(void) lhs_b;
-	(void) lhs_h;
-	(void) rhs_b;
-	(void) rhs_h;
-
-	return MAL_SUCCEED;
-}
-
-static str
-UHASHfetch_payload(bat *r_oid, bat *in_oid, bat *sink, bat *bid)
-{
-	(void) r_oid;
-	(void) in_oid;
-	(void) sink;
-	(void) bid;
+	(void) payload;
+	(void) slotid;
+	(void) hp_sink;
 
 	return MAL_SUCCEED;
 }
@@ -1183,16 +1308,18 @@ static mel_func pp_hash_init_funcs[] = {
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("sink",1),argany("tt",1),arg("size",int), batargany("p",2))),
  pattern("hash", "new_payload", UHASHnew_payload, false, "", args(1,4, batargany("sink",1),argany("tt",1),arg("size",int), batargany("parent",2))),
 
- command("hash", "table_build", UHASHtable_build, false, "Build a hash table for the given column. Returns the GID for each key and the sink containing the HASH table", args(2,4, batarg("r_gid",oid),batargany("r_sink",1),batargany("bid",1),arg("pipeline",ptr))),
- command("hash", "table_build2", UHASHtable_build2, false, "Build a hash table for the given column and the hash table of a previous column. Returns the GID for each key and the sink containing the HASH table", args(2,6, batarg("r_gid",oid),batargany("r_sink",1),batarg("pgid",oid),batargany("psink",2),batargany("bid",1),arg("pipeline",ptr))),
- command("hash", "add_payload", UHASHadd_payload, false, "Add a payload column with the given hash table. Returns <FIXME>", args(2,6, batarg("r_gid",oid),batargany("r_sink",1),batarg("pgid",oid),batargany("psink",2),batargany("bid",1),arg("pipeline",ptr))),
+ command("hash", "build_table", UHASHbuild_table, false, "Build a hash table for the given column. Returns the slot ID for each key and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
+ command("hash", "build_combined_table", UHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
+ command("hash", "add_payload", HASHadd_payload, false, "Add a payload column with the given hash table. Returns a sink containing the hash payload", args(1,4, batargany("hp_sink",1),batargany("payload",1),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
- command("hash", "hash", UHASHhash, false, "Compute the hashs for the given column", args(1,2, batargany("r_hash",1),batargany("key",1))),
- command("hash", "hash2", UHASHhash2, false, "Compute the combined hashs for an existing column of hashes and a second column of keys", args(1,3, batargany("r_hash",1),batargany("phash",1),batargany("key",1))),
+ command("hash", "hash", UHASHhash, false, "Compute the hashs for the given column", args(1,2, batargany("hsh",1),batargany("key",1))),
+ command("hash", "combined_hash", UHASHcombined_hash, false, "Compute the hashs for the selected items in the given column in combination with the slot IDs of a parent column", args(1,4, batargany("hsh",1),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid))),
 
- command("hash", "probe", UHASHprobe, false, "Probe the hashes in the hash table. Returns the matching items of both sides and a sink with the matched hashes", args(3,7, batarg("r_lhs",oid),batarg("r_rhs",oid),batargany("r_sink",1),batargany("lhs_b",1),batargany("lhs_h",1),batargany("rhs_b",2),batargany("rhs_h",2))),
- command("hash", "probe2", UHASHprobe2, false, "Verify the matches found by previous hash.probe() with a previous column. Returns a possibly reduced list of the matches for both sides", args(3,7, batarg("r_lhs",oid),batarg("r_rhs",oid),batargany("r_sink",1),batargany("lhs_b",1),batargany("lhs_h",1),batargany("rhs_b",2),batargany("rhs_h",2))),
- command("hash", "fetch_payload", UHASHfetch_payload, false, "Find the payload items of the selected rows from the hash table.", args(1,4, batarg("r_oid",oid),batarg("in_oid",oid),batargany("sink",1),batargany("bid",1))),
+ command("hash", "probe", UHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,5, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batargany("LHS_hash",1),batargany("RHS_ht",2))),
+ command("hash", "combined_probe", UHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batargany("LHS_hash",1),batarg("LHS_selected",oid),batargany("RHS_ht",2))),
+
+ command("hash", "expand", HASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(1,5, batargany("expanded",1),batargany("key",1),batarg("selected",oid),batargany("hp_sink",2))),
+ command("hash", "fetch_payload", HASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash payload.", args(1,3, batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1))),
  { .imp=NULL }
 };
 #include "mal_import.h"
