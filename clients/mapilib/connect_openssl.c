@@ -77,6 +77,7 @@ make_ssl_context(Mapi mid, SSL_CTX **ctx_out)
 	// (What's a reasonable amount of time for a process to pick up changes to
 	// the system trust store?)
 
+	MapiMsg msg;
 	*ctx_out = NULL;
 
 	const SSL_METHOD *method = TLS_method();
@@ -107,7 +108,7 @@ make_ssl_context(Mapi mid, SSL_CTX **ctx_out)
 			}
 			break;
 		case verify_system:
-			MapiMsg msg = add_system_certificates(mid, ctx);
+			msg = add_system_certificates(mid, ctx);
 			if (msg != MOK) {
 				SSL_CTX_free(ctx);
 				return msg;
