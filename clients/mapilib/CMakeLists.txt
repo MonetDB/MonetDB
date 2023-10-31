@@ -11,6 +11,7 @@
 add_library(mapi
   SHARED)
 
+
 # We need to add the public library twice to the target sources, once for
 # the build interface and once for the install interface. This is because
 # of the fact that cmake < 3.13 does not handle relative paths well. If we
@@ -19,9 +20,17 @@ add_library(mapi
 target_sources(mapi
   PRIVATE
   mapi.c
+  connect.c
+  msettings.c
+  parseurl.c
+  $<$<BOOL:${HAVE_SYS_UN_H}>:connect_unix.c>
+  $<$<BOOL:${OPENSSL_FOUND}>:connect_openssl.c>
+  $<$<BOOL:${OPENSSL_FOUND}>:$<$<BOOL:${WIN32}>:openssl_windows.c>>
+  mapi_intern.h
   PUBLIC
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/mapi.h>
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/mapi_querytype.h>
+  $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/msettings.h>
   $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/mapi.h>
   $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/mapi_querytype.h>)
 
@@ -36,6 +45,9 @@ target_link_libraries(mapi
   moptions
   mcrypt
   stream
+  mutils
+  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
+  $<$<BOOL:${OPENSSL_FOUND}>:$<$<BOOL:${WIN32}>:crypt32>>
   $<$<PLATFORM_ID:Windows>:ws2_32>)
 
 target_compile_definitions(mapi

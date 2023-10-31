@@ -2922,6 +2922,58 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 }
 
 static int
+col_set_range(sql_trans *tr, sql_column *col, sql_part *pt, bool add_range)
+{
+	assert(tr->active);
+	if (!isTable(col->t) || !col->t->s)
+		return LOG_OK;
+
+	if (col && ATOMIC_PTR_GET(&col->data)) {
+		BAT *b = bind_col(tr, col, QUICK);
+
+		if (b) { /* add props for ranges [min, max> */
+			MT_lock_set(&b->theaplock);
+			if (add_range) {
+				BATsetprop_nolock(b, GDK_MIN_BOUND, b->ttype, pt->part.range.minvalue);
+				if (ATOMcmp(b->ttype, pt->part.range.maxvalue, ATOMnilptr(b->ttype)) != 0)
+					BATsetprop_nolock(b, GDK_MAX_BOUND, b->ttype, pt->part.range.maxvalue);
+				else
+					BATrmprop_nolock(b, GDK_MAX_BOUND);
+				if (!pt->with_nills || !col->null)
+					BATsetprop_nolock(b, GDK_NOT_NULL, b->ttype, ATOMnilptr(b->ttype));
+			} else {
+				BATrmprop_nolock(b, GDK_MIN_BOUND);
+				BATrmprop_nolock(b, GDK_MAX_BOUND);
+				BATrmprop_nolock(b, GDK_NOT_NULL);
+			}
+			MT_lock_unset(&b->theaplock);
+		}
+	}
+	return LOG_OK;
+}
+
+static int
+col_not_null(sql_trans *tr, sql_column *col, bool not_null)
+{
+	assert(tr->active);
+	if (!isTable(col->t) || !col->t->s)
+		return LOG_OK;
+
+	if (col && ATOMIC_PTR_GET(&col->data)) {
+		BAT *b = bind_col(tr, col, QUICK);
+
+		if (b) { /* add props for ranges [min, max> */
+			if (not_null) {
+				BATsetprop(b, GDK_NOT_NULL, b->ttype, ATOMnilptr(b->ttype));
+			} else {
+				BATrmprop(b, GDK_NOT_NULL);
+			}
+		}
+	}
+	return LOG_OK;
+}
+
+static int
 load_cs(sql_trans *tr, column_storage *cs, int type, sqlid id)
 {
 	sqlstore *store = tr->store;
@@ -4921,6 +4973,8 @@ bat_storage_init( store_functions *sf)
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
 	sf->col_stats = &col_stats;
+	sf->col_set_range = &col_set_range;
+	sf->col_not_null = &col_not_null;
 
 	sf->col_dup = &col_dup;
 	sf->idx_dup = &idx_dup;

@@ -161,6 +161,8 @@ typedef int (*min_max_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*set_stats_col_fptr) (sql_trans *tr, sql_column *c, double *unique_est, char *min, char *max);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
+typedef int (*col_set_range_fptr) (sql_trans *tr, sql_column *c, sql_part *pt, bool add_range);
+typedef int (*col_not_null_fptr) (sql_trans *tr, sql_column *c, bool not_null);
 
 /*
 -- create the necessary storage resources for columns, indices and tables
@@ -248,6 +250,8 @@ typedef struct store_functions {
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 	proprec_col_fptr col_stats;
+    col_set_range_fptr col_set_range; /* set range properties to the column low level structures */
+	col_not_null_fptr col_not_null;	/* switch not null property */
 
 	col_dup_fptr col_dup;
 	idx_dup_fptr idx_dup;
@@ -384,6 +388,10 @@ extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern int sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
 extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, bit with_nills, int update, sql_part** err);
 extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills, int update, sql_part **err);
+/* during loading the partition data (expression, values and ranges) are stored as strings, we convert them after the
+ * expressions are initialized (once the parser can handle that).*/
+extern int sql_trans_convert_partitions(sql_trans *tr);
+extern void find_partition_type(sql_subtype *tpe, sql_table *mt);
 
 extern int sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name);
 extern int sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns);
