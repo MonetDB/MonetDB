@@ -1175,7 +1175,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				fnd = 1; \
 			} \
-			for(BUN i = 0; i<cnt; i++, bpi++) { \
+			for(BUN i = 0; i<cnt; i++) { \
 				gp[i] = g-1; \
 			} \
 		} else { \
