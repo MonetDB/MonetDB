@@ -27,6 +27,68 @@ static malType getPolyType(malType t, int *polytype);
 static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
 static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 
+int
+resolvedType(int dsttype, int srctype)
+{
+	if (dsttype == srctype || dsttype == TYPE_any || srctype == TYPE_any ||
+       (isaBatType(srctype) && dsttype == TYPE_bat) ||
+	   (isaBatType(dsttype) && srctype == TYPE_bat))
+		return 0;
+
+	if (isaBatType(dsttype) && isaBatType(srctype)) {
+		int t1 = getBatType(dsttype);
+		int t2 = getBatType(srctype);
+		if (t1 == t2 || t1 == TYPE_any || t2 == TYPE_any)
+			return 0;
+	}
+	return -1;
+}
+
+static int
+resolveType(int *rtype, int dsttype, int srctype)
+{
+	if (dsttype == srctype) {
+		*rtype = dsttype;
+		return 0;
+	}
+	if (dsttype == TYPE_any) {
+		*rtype = srctype;
+		return 0;
+	}
+	if (srctype == TYPE_any) {
+		*rtype = dsttype;
+		return 0;
+	}
+	/*
+	 * A bat reference can be coerced to bat type.
+	 */
+	if (isaBatType(srctype) && dsttype == TYPE_bat) {
+		*rtype = srctype;
+		return 0;
+	}
+	if (isaBatType(dsttype) && srctype == TYPE_bat) {
+		*rtype = dsttype;
+		return 0;
+	}
+	if (isaBatType(dsttype) && isaBatType(srctype)) {
+		int t1, t2, t3;
+		t1 = getBatType(dsttype);
+		t2 = getBatType(srctype);
+		if (t1 == t2)
+			t3 = t1;
+		else if (t1 == TYPE_any)
+			t3 = t2;
+		else if (t2 == TYPE_any)
+			t3 = t1;
+		else {
+			return -1;
+		}
+		*rtype = newBatType(t3);
+		return 0;
+	}
+	return -1;
+}
+
 
 /*
  * Since we now know the storage type of the receiving variable, we can
@@ -174,7 +236,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				 * If it fails, we know this isn't the function we are
 				 * looking for.
 				 */
-				if (resolveType(formal, actual) == -1) {
+				if (resolvedType(formal, actual) < 0) {
 					unmatched = i;
 					break;
 				}
@@ -203,7 +265,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 						formal = getPolyType(formal, polytype);
 						if (formal == actual || formal == TYPE_any)
 							continue;
-						if (resolveType(formal, actual) == -1) {
+						if (resolvedType(formal, actual) < 0) {
 							unmatched = i;
 							break;
 						}
@@ -224,7 +286,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			for (i = p->retc; i < p->argc; i++) {
 				int actual = getArgType(mb, p, i);
 				int formal = getArgType(s->def, sig, i);
-				if (resolveType(formal, actual) == -1) {
+				if (resolvedType(formal, actual) < 0) {
 					unmatched = i;
 					break;
 				}
@@ -265,8 +327,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 
 				s1 = getPolyType(formal, polytype);
 
-				returntype[i] = resolveType(s1, actual);
-				if (returntype[i] == -1) {
+				if (resolveType(returntype+i, s1, actual) < 0) {
 					s1 = -1;
 					break;
 				}
@@ -282,8 +343,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				if (actual == formal)
 					returntype[i] = actual;
 				else {
-					returntype[i] = resolveType(formal, actual);
-					if (returntype[i] == -1) {
+					if (resolveType(returntype+i, formal, actual) < 0) {
 						s1 = -1;
 						break;
 					}
@@ -423,40 +483,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	if (returntype != returns)
 		GDKfree(returntype);
 	return -3;
-}
-
-int
-resolveType(int dsttype, int srctype)
-{
-	if (dsttype == srctype)
-		return dsttype;
-	if (dsttype == TYPE_any)
-		return srctype;
-	if (srctype == TYPE_any)
-		return dsttype;
-	/*
-	 * A bat reference can be coerced to bat type.
-	 */
-	if (isaBatType(srctype) && dsttype == TYPE_bat)
-		return srctype;
-	if (isaBatType(dsttype) && srctype == TYPE_bat)
-		return dsttype;
-	if (isaBatType(dsttype) && isaBatType(srctype)) {
-		int t1, t2, t3;
-		t1 = getBatType(dsttype);
-		t2 = getBatType(srctype);
-		if (t1 == t2)
-			t3 = t1;
-		else if (t1 == TYPE_any)
-			t3 = t2;
-		else if (t2 == TYPE_any)
-			t3 = t1;
-		else {
-			return -1;
-		}
-		return newBatType(t3);
-	}
-	return -1;
 }
 
 /*
@@ -599,8 +625,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		int lhs = getArgType(mb, p, k);
 
 		if (rhs != TYPE_void) {
-			s1 = resolveType(lhs, rhs);
-			if (s1 == -1) {
+			if (resolveType(&s1, lhs, rhs) < 0) {
 				typeMismatch(mb, p, idx, lhs, rhs, silent);
 				return;
 			}

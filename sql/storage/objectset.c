@@ -49,7 +49,7 @@ typedef struct versionhead  {
 } versionhead ;
 
 typedef struct objectset {
-	int refcnt;
+	ATOMIC_TYPE refcnt;
 	sql_allocator *sa;
 	destroy_fptr destroy;
 	MT_RWLock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
@@ -655,7 +655,7 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, boo
 	objectset *os = SA_NEW(sa, objectset);
 	if (os) {
 		*os = (objectset) {
-			.refcnt = 1,
+			.refcnt = ATOMIC_VAR_INIT(1),
 			.sa = sa,
 			.destroy = destroy,
 			.temporary = temporary,
@@ -674,16 +674,17 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, boo
 objectset *
 os_dup(objectset *os)
 {
-	os->refcnt++;
+	ATOMIC_INC(&os->refcnt);
 	return os;
 }
 
 void
 os_destroy(objectset *os, sql_store store)
 {
-	if (--os->refcnt > 0)
+	if (ATOMIC_DEC(&os->refcnt) > 0)
 		return;
 	MT_rwlock_destroy(&os->rw_lock);
+	ATOMIC_DESTROY(&os->refcnt);
 	versionhead* n=os->id_based_h;
 	while(n) {
 		objectversion *ov = n->ov;

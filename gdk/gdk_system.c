@@ -195,8 +195,9 @@ static struct mtthread {
 	char algorithm[512];	/* the algorithm used in the last operation */
 	size_t algolen;		/* length of string in .algorithm */
 	ATOMIC_TYPE exited;
-	bool detached:1, waiting:1, limit_override:1;
+	bool detached:1, waiting:1;
 	unsigned int refs:20;
+	bool limit_override;	/* not in bit field because of data races */
 	char threadname[MT_NAME_LEN];
 	QryCtx *qry_ctx;
 #ifdef HAVE_PTHREAD_H
@@ -709,7 +710,7 @@ join_threads(void)
 	do {
 		waited = false;
 		for (struct mtthread *t = mtthreads; t; t = t->next) {
-			if (t->detached && !t->waiting && ATOMIC_GET(&t->exited)) {
+			if (ATOMIC_GET(&t->exited) && t->detached && !t->waiting) {
 				t->waiting = true;
 				thread_unlock();
 				TRC_DEBUG(THRD, "Join thread \"%s\"\n", t->threadname);

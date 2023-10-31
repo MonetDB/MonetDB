@@ -1001,15 +1001,17 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 	}
 	if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 		fclose(fp);
-		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 
 	if (log_write_new_types(lg, fp, append) != GDK_SUCCEED) {
 		fclose(fp);
-		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 	if (fflush(fp) < 0 || (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
@@ -1023,28 +1025,21 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 	    )) {
 		GDKsyserror("flushing log file %s failed", filename);
 		fclose(fp);
-		MT_remove(filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 	if (fclose(fp) < 0) {
 		GDKsyserror("closing log file %s failed", filename);
-		MT_remove(filename);
+		if (MT_remove(filename) < 0)
+			GDKsyserror("remove %s failed\n", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }
 
-static inline void
-rotation_lock(logger *lg)
-{
-	MT_lock_set(&lg->rotation_lock);
-}
-
-static inline void
-rotation_unlock(logger *lg)
-{
-	MT_lock_unset(&lg->rotation_lock);
-}
+#define rotation_lock(lg)	MT_lock_set(&(lg)->rotation_lock)
+#define rotation_unlock(lg)	MT_lock_unset(&(lg)->rotation_lock)
 
 static gdk_return
 log_open_output(logger *lg)
@@ -1089,7 +1084,7 @@ log_open_output(logger *lg)
 	ATOMIC_INIT(&new_range->refcount, 1);
 	ATOMIC_INIT(&new_range->last_ts, 0);
 	ATOMIC_INIT(&new_range->flushed_ts, 0);
-	new_range->drops = 0;
+	ATOMIC_INIT(&new_range->drops, 0);
 	new_range->id = lg->id;
 	new_range->next = NULL;
 	logged_range *current = lg->current;
@@ -1117,7 +1112,7 @@ log_close_output(logger *lg)
 		close_stream(lg->current->output_log);
 	}
 	lg->current->output_log = NULL;
-	ATOMIC_INC(&lg->nr_open_files);
+	ATOMIC_DEC(&lg->nr_open_files);
 }
 
 static gdk_return
@@ -1647,11 +1642,23 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	lg->catalog_id = noids;
 	lg->dcatalog = ndels;
 
+	/* failing to rename these two bats is not fatal */
+	if (BBPrename(lg->catalog_cnt, NULL) != GDK_SUCCEED)
+		GDKclrerr();
+	if (BBPrename(lg->catalog_lid, NULL) != GDK_SUCCEED)
+		GDKclrerr();
 	BBPunfix(lg->catalog_cnt->batCacheid);
 	BBPunfix(lg->catalog_lid->batCacheid);
 
 	lg->catalog_cnt = ncnts;
 	lg->catalog_lid = nlids;
+	char bak[FILENAME_MAX];
+	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_cnt", NULL);
+	if (BBPrename(lg->catalog_cnt, bak) < 0)
+		GDKclrerr();
+	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_lid", NULL);
+	if (BBPrename(lg->catalog_lid, bak) < 0)
+		GDKclrerr();
 	lg->cnt = BATcount(lg->catalog_bid);
 	lg->deleted -= cleanup;
 	return rcnt;
@@ -1986,7 +1993,8 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 		/* bm_subcommit releases the lock */
 		if (bm_subcommit(lg, NULL, 0) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
-			MT_remove(filename);
+			if (MT_remove(filename) < 0)
+				GDKsyserror("remove %s failed\n", filename);
 			BBPrelease(lg->catalog_bid->batCacheid);
 			BBPrelease(lg->catalog_id->batCacheid);
 			BBPrelease(lg->dcatalog->batCacheid);
@@ -2065,16 +2073,24 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 	}
+	/* failing to rename the catalog_cnt and catalog_lid bats is not
+	 * fatal */
 	lg->catalog_cnt = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_cnt == NULL) {
 		GDKerror("failed to create catalog_cnt bat");
 		goto error;
 	}
+	strconcat_len(bak, sizeof(bak), fn, "_catalog_cnt", NULL);
+	if (BBPrename(lg->catalog_cnt, bak) < 0)
+		GDKclrerr();
 	lg->catalog_lid = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_lid == NULL) {
 		GDKerror("failed to create catalog_lid bat");
 		goto error;
 	}
+	strconcat_len(bak, sizeof(bak), fn, "_catalog_lid", NULL);
+	if (BBPrename(lg->catalog_lid, bak) < 0)
+		GDKclrerr();
 	if (bm_get_counts(lg) != GDK_SUCCEED)
 		goto error;
 
@@ -2280,7 +2296,6 @@ do_flush_range_cleanup(logger *lg)
 	logged_range *flast = frange;
 
 	lg->flush_ranges = flast;
-	rotation_unlock(lg);
 
 	for (frange = first; frange && frange != flast; frange = frange->next) {
 		ATOMIC_DEC(&frange->refcount);
@@ -2288,9 +2303,10 @@ do_flush_range_cleanup(logger *lg)
 			TRC_INFO(WAL, "closing output log %s", mnstr_name(frange->output_log));
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
-			ATOMIC_INC(&lg->nr_open_files);
+			ATOMIC_DEC(&lg->nr_open_files);
 		}
 	}
+	rotation_unlock(lg);
 	return flast;
 }
 
@@ -2307,6 +2323,7 @@ log_destroy(logger *lg)
 		ATOMIC_DESTROY(&p->refcount);
 		ATOMIC_DESTROY(&p->last_ts);
 		ATOMIC_DESTROY(&p->flushed_ts);
+		ATOMIC_DESTROY(&p->drops);
 		GDKfree(p);
 		p = n;
 	}
@@ -2410,6 +2427,7 @@ log_next_logfile(logger *lg, ulng ts)
 static void
 log_cleanup_range(logger *lg, ulng id)
 {
+	rotation_lock(lg);
 	while (lg->pending && lg->pending->id <= id) {
 		logged_range *p;
 		p = lg->pending;
@@ -2417,15 +2435,21 @@ log_cleanup_range(logger *lg, ulng id)
 			lg->pending = p->next;
 		GDKfree(p);
 	}
+	rotation_unlock(lg);
 }
 
 static void
 do_rotate(logger *lg)
 {
-	logged_range *next = lg->current->next;
+	logged_range *cur = lg->current;
+	logged_range *next = cur->next;
 	if (next) {
 		assert(ATOMIC_GET(&next->refcount) == 1);
-		lg->current = lg->current->next;
+		lg->current = next;
+		if (!LOG_DISABLED(lg) && ATOMIC_GET(&cur->refcount) == 1) {
+			close_stream(cur->output_log);
+			cur->output_log = NULL;
+		}
 	}
 }
 
@@ -2437,7 +2461,7 @@ log_activate(logger *lg)
 	rotation_lock(lg);
 	if (!lg->flushnow &&
 	    !lg->current->next &&
-	    lg->current->drops > 100000 &&
+	    ATOMIC_GET(&lg->current->drops) > 100000 &&
 	    (ulng) ATOMIC_GET(&lg->current->last_ts) > 0 &&
 	    lg->saved_id + 1 == lg->id &&
 	    ATOMIC_GET(&lg->current->refcount) == 1 /* no pending work on this file */ ) {
@@ -2530,9 +2554,9 @@ log_flush(logger *lg, ulng ts)
 					log_unlock(lg);
 					return GDK_FAIL;
 				}
+				updated = p;
 				memset(updated + allocated / 4, 0, a - allocated);
 				allocated = a;
-				updated = p;
 			}
 			nupdated = n;
 		}
@@ -2863,7 +2887,7 @@ log_bat_transient(logger *lg, log_id id)
 	BAT *b = BBPquickdesc(bid);
 	assert(b);
 	BUN cnt = BATcount(b);
-	lg->current->drops += cnt;
+	ATOMIC_ADD(&lg->current->drops, cnt);
 	gdk_return r = log_del_bat(lg, bid);
 	log_unlock(lg);
 	if (r != GDK_SUCCEED)
@@ -3006,7 +3030,7 @@ check_rotation_conditions(logger *lg)
 	const lng p = (lng) getfilepos(getFile(lg->current->output_log));
 
 	const lng log_large = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? LOG_MINI : LOG_LARGE;
-	bool res = (lg->saved_id + 1 >= lg->id && lg->current->drops > 100000) || (p > log_large);
+	bool res = (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000) || (p > log_large);
 	if (res)
 		return (ATOMIC_GET(&lg->nr_open_files) < 8);
 	return res;
@@ -3030,17 +3054,8 @@ log_tend(logger *lg)
 	return result;
 }
 
-static inline void
-flush_lock(logger *lg)
-{
-	MT_lock_set(&lg->flush_lock);
-}
-
-static inline void
-flush_unlock(logger *lg)
-{
-	MT_lock_unset(&lg->flush_lock);
-}
+#define flush_lock(lg)		MT_lock_set(&(lg)->flush_lock)
+#define flush_unlock(lg)	MT_lock_unset(&(lg)->flush_lock)
 
 static inline gdk_return
 do_flush(logged_range *range)
@@ -3070,6 +3085,7 @@ gdk_return
 log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 {
 	if (lg->flushnow) {
+		rotation_lock(lg);
 		assert(lg->flush_ranges == lg->current);
 		assert(ATOMIC_GET(&lg->current->flushed_ts) == ATOMIC_GET(&lg->current->last_ts));
 		log_tdone(lg, lg->current, commit_ts);
@@ -3079,6 +3095,7 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 		if (log_open_output(lg) != GDK_SUCCEED)
 			GDKfatal("Could not create new log file\n");	/* TODO: does not have to be fatal (yet) */
 		do_rotate(lg);
+		rotation_unlock(lg);
 		(void) do_flush_range_cleanup(lg);
 		assert(lg->flush_ranges == lg->current);
 		return log_commit(lg, NULL, 0);
@@ -3107,7 +3124,14 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 	}
 	/* else somebody else has flushed our log file */
 
-	ATOMIC_DEC(&frange->refcount);
+	if (ATOMIC_DEC(&frange->refcount) == 1 && !LOG_DISABLED(lg)) {
+		rotation_lock(lg);
+		if (frange != lg->current) {
+			close_stream(frange->output_log);
+			frange->output_log = NULL;
+		}
+		rotation_unlock(lg);
+	}
 
 	if (ATOMIC_DEC(&lg->nr_flushers) == 0) {
 		/* I am the last flusher

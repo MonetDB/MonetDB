@@ -7,7 +7,7 @@ CREATE TABLE sublimits1 (a int, b varchar(32))
 statement ok rowcount 1
 INSERT INTO sublimits1 VALUES (1000, 'ups')
 
-statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
+statement error M0M29!ALTER TABLE: there are values in column a outside the partition range
 ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
 
 statement ok rowcount 1
@@ -46,7 +46,7 @@ UPDATE sublimits1 SET a = a + 1
 statement ok rowcount 1
 UPDATE sublimits1 SET b = b || 's' WHERE a = 100
 
-statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
+statement error M0M29!ALTER TABLE: there are values in column a outside the partition range
 ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
 
 statement ok rowcount 1
@@ -103,7 +103,7 @@ poks
 statement ok
 ALTER TABLE testupdates DROP TABLE sublimits1
 
-statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
+statement error M0M29!ALTER TABLE: there are values in column a outside the partition range
 ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
 
 statement ok

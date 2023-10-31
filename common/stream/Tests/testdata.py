@@ -216,6 +216,7 @@ class TestFile:
         else:
             raise Exception("Unknown compression scheme: " + self.compression)
         f.write(content)
+        f.close()
         return filename
 
 

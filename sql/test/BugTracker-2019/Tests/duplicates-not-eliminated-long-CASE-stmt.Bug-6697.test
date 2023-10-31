@@ -105,7 +105,7 @@ select count(*) from sys.tracelog() where stmt like '%batmtime.timestamp_to_str%
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%batcalc.timestamp%'
 ----
-1
+0
 
 query T rowsort
 SELECT sys.timestamp_to_str(case when task0."sys_created_on" >= '1999-10-31 09:00:00' and task0."sys_created_on" < '2000-04-02 10:00:00'

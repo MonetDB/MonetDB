@@ -829,7 +829,7 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 static int
 mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 {
-	int tpe = getArgType(mb, p, 0), j, k, nr = 1;
+	int tpe1 = getArgType(mb, p, 0), tpe2 = getArgType(mb, p, 1), j, k, nr = 1;
 	mat_t *mat = ml->v;
 	InstrPtr l;
 	InstrPtr r;
@@ -861,8 +861,8 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 					return -1;
 				}
 
-				getArg(q, 0) = newTmpVariable(mb, tpe);
-				getArg(q, 1) = newTmpVariable(mb, tpe);
+				getArg(q, 0) = newTmpVariable(mb, tpe1);
+				getArg(q, 1) = newTmpVariable(mb, tpe2);
 				getArg(q, 2) = getArg(mat[m].mi, k);
 				getArg(q, 3) = getArg(mat[n].mi, j);
 				if (lc >= 0)
@@ -913,8 +913,8 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 				return -1;
 			}
 
-			getArg(q, 0) = newTmpVariable(mb, tpe);
-			getArg(q, 1) = newTmpVariable(mb, tpe);
+			getArg(q, 0) = newTmpVariable(mb, tpe1);
+			getArg(q, 1) = newTmpVariable(mb, tpe2);
 			getArg(q, p->retc + av) = getArg(mat[mv].mi, k);
 			if (mc >= 0)
 				getArg(q, p->retc + 2 + av) = getArg(mat[mc].mi, k);
@@ -990,7 +990,7 @@ join_split(Client cntxt, InstrPtr p, int args)
 static int
 mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 {
-	int tpe = getArgType(mb, p, 0), j, k, nr = 1;
+	int tpe1 = getArgType(mb, p, 0), tpe2 = getArgType(mb, p, 1), j, k, nr = 1;
 	InstrPtr l;
 	InstrPtr r;
 	mat_t *mat = ml->v;
@@ -1053,8 +1053,8 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 					return -1;
 				}
 
-				getArg(q, 0) = newTmpVariable(mb, tpe);
-				getArg(q, 1) = newTmpVariable(mb, tpe);
+				getArg(q, 0) = newTmpVariable(mb, tpe1);
+				getArg(q, 1) = newTmpVariable(mb, tpe2);
 				for (i = 0; i < nr_mv1; i++)
 					getArg(q, q->retc + i) = getArg(mat[mats[i]].mi, k);
 				for (; i < nr_mats; i++)
@@ -1104,8 +1104,8 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 				return -1;
 			}
 
-			getArg(q, 0) = newTmpVariable(mb, tpe);
-			getArg(q, 1) = newTmpVariable(mb, tpe);
+			getArg(q, 0) = newTmpVariable(mb, tpe1);
+			getArg(q, 1) = newTmpVariable(mb, tpe2);
 			for (j = 0; j < nr_mats; j++) {
 				assert(mat[mats[first]].mi->argc == mat[mats[first + j]].mi->argc);
 				getArg(q, p->retc + first + j) = getArg(mat[mats[first + j]].mi, k);

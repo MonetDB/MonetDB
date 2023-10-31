@@ -524,7 +524,8 @@ isMatLeftJoinOp(InstrPtr p)
 {
 	return (getModuleId(p) == algebraRef
 			&& (getFunctionId(p) == leftjoinRef
-				|| getFunctionId(p) == outerjoinRef));
+				|| getFunctionId(p) == outerjoinRef
+				|| getFunctionId(p) == markjoinRef));
 }
 
 inline int

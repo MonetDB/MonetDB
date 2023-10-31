@@ -6,7 +6,7 @@ subselect-contradiction.Bug-6683
 insert-replica-table.Bug-6684
 subselect-count.Bug-6686
 subselect.Bug-6688
-duplicates-not-eliminated-long-CASE-stmt.Bug-6697
+HAVE_LIBPCRE?duplicates-not-eliminated-long-CASE-stmt.Bug-6697
 subselect.Bug-6700
 alter_table_set_schema.Bug-6701
 crash-in-rel_dependencies.Bug-6703

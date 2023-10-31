@@ -34,6 +34,9 @@ sequences
 columns
 columns
 1
+columns
+sequences
+9
 functions
 args
 3
@@ -51,7 +54,7 @@ objects
 4
 functions
 sequences
-3
+4
 idxs
 columns
 10
@@ -100,6 +103,9 @@ keys
 sequences
 objects
 4
+sequences
+sequences
+3
 
 statement error
 select name from tables where "type" = 10 and "system" = true

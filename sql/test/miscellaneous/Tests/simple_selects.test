@@ -1116,3 +1116,8 @@ create or replace function scale_down(x decimal(8,2), y int) returns decimal(8,2
 statement error 42000!DROP FUNCTION: no such function 'any' (boolean, boolean, boolean)
 drop function "any"(boolean, boolean, boolean)
 
+query I
+select patindex('%bc%', 'abcd')
+----
+3
+

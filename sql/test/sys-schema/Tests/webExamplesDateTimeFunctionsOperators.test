@@ -260,11 +260,6 @@ select least(time '15:15:15', time '16:16:16')
 ----
 15:15:15
 
-query T nosort
-select local_timezone()
-----
-2:00:00
-
 query I nosort
 select localtime() <> time '13:16:57.734639'
 ----

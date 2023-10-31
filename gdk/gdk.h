@@ -489,7 +489,7 @@ typedef union {
 
 typedef struct {
 	size_t nitems;
-	char data[FLEXIBLE_ARRAY_MEMBER] __attribute__((__nonstring__));
+	char data[] __attribute__((__nonstring__));
 } blob;
 gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
@@ -2285,10 +2285,18 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * levels.
  */
 enum prop_t {
-	CURRENTLY_NO_PROPERTIES_DEFINED,
+	GDK_MIN_BOUND, /* MINimum allowed value for range partitions [min, max> */
+	GDK_MAX_BOUND, /* MAXimum of the range partitions [min, max>, ie. excluding this max value */
+	GDK_NOT_NULL,  /* bat bound to be not null */
+	/* CURRENTLY_NO_PROPERTIES_DEFINED, */
 };
 
 gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);
+gdk_export ValPtr BATgetprop_nolock(BAT *b, enum prop_t idx);
+gdk_export void BATrmprop(BAT *b, enum prop_t idx);
+gdk_export void BATrmprop_nolock(BAT *b, enum prop_t idx);
+gdk_export ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v);
+gdk_export ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v);
 
 /*
  * @- BAT relational operators
@@ -2318,8 +2326,12 @@ gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BAToutercross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
+	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool match_one, BUN estimate)
 	__attribute__((__warn_unused_result__));
@@ -2471,7 +2483,7 @@ typedef struct gdk_callback {
 	lng last_called; // timestamp GDKusec
 	gdk_return (*func)(int argc, void *argv[]);
 	struct gdk_callback *next;
-	void *argv[FLEXIBLE_ARRAY_MEMBER];
+	void *argv[];
 } gdk_callback;
 
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);

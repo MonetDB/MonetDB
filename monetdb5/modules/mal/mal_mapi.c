@@ -31,7 +31,6 @@
  * the module remote.
  */
 #include "monetdb_config.h"
-#ifdef HAVE_MAPI
 #include "mal_client.h"
 #include "mal_session.h"
 #include "mal_exception.h"
@@ -2141,8 +2140,3 @@ mel_func mal_mapi_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_mal_mapi_mal)
 { mal_module2("mapi", NULL, mal_mapi_init_funcs, MAPIprelude, NULL); }
-
-#else
-// this avoids a compiler warning w.r.t. empty compilation units.
-int SERVERdummy = 42;
-#endif // HAVE_MAPI

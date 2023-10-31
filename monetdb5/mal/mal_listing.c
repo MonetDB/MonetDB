@@ -311,11 +311,10 @@ fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base,
 					snprintf(aux, 128, "%d optimizers %ld usecs", atoi(arg1), atol(arg2));
 				else
 					snprintf(aux, 128, "%-36s %d actions %ld usecs", f, atoi(arg1), atol(arg2));
+				(void) copystring(&t, aux, &len);
 			}
 			GDKfree(arg1);
 			GDKfree(arg2);
-			if (!copystring(&t, aux, &len))
-				return base;
 		}
 	} else if (pci->argc == 1) {
 		if (getFunctionId(pci)) {

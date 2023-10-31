@@ -38,6 +38,15 @@ enum heaptype {
 	dataheap
 };
 
+enum range_comp_t {
+	range_before,		/* search range fully before bat range */
+	range_after,		/* search range fully after bat range */
+	range_atstart,		/* search range before + inside */
+	range_atend,		/* search range inside + after */
+	range_contains,		/* search range contains bat range */
+	range_inside,		/* search range inside bat range */
+};
+
 bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
 int ATOMunknown_find(const char *nme)
@@ -58,15 +67,13 @@ gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__visibility__("hidden")));
 BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	__attribute__((__visibility__("hidden")));
+BAT *BATcreatesample(oid hseq, BUN cnt, BUN n, uint64_t seed)
+	__attribute__((__visibility__("hidden")));
 void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATfree(BAT *b)
-	__attribute__((__visibility__("hidden")));
-ValPtr BATgetprop_nolock(BAT *b, enum prop_t idx)
-	__attribute__((__visibility__("hidden")));
-ValPtr BATgetprop_try(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
@@ -84,17 +91,9 @@ BAT *BATload_intern(bat bid, bool lock)
 gdk_return BATmaterialize(BAT *b, BUN cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void BATrmprop(BAT *b, enum prop_t idx)
-	__attribute__((__visibility__("hidden")));
-void BATrmprop_nolock(BAT *b, enum prop_t idx)
-	__attribute__((__visibility__("hidden")));
 gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b, uint16_t width)
-	__attribute__((__visibility__("hidden")));
-ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
-	__attribute__((__visibility__("hidden")));
-ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
@@ -108,7 +107,7 @@ void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPinit(void)
+gdk_return BBPinit(bool allow_hge_upgrade)
 	__attribute__((__visibility__("hidden")));
 bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
@@ -300,28 +299,6 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-
-static inline const char *
-BATITERtailname(const BATiter *bi)
-{
-	if (bi->type == TYPE_str) {
-		switch (bi->width) {
-		case 1:
-			return "tail1";
-		case 2:
-			return "tail2";
-		case 4:
-#if SIZEOF_VAR_T == 8
-			return "tail4";
-		case 8:
-#endif
-			break;
-		default:
-			MT_UNREACHABLE();
-		}
-	}
-	return "tail";
-}
 
 static inline bool
 imprintable(int tpe)

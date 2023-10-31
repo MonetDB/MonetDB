@@ -999,10 +999,12 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	*r2 = r2t;
 
   exit:
-	for (n = 0; n < lci.ncand; n++)
-		GDKfree(ssl[n].cp_sequence);
-	for (n = 0; n < rci.ncand; n++)
-		GDKfree(ssr[n].cp_sequence);
+	if (ssl)
+		for (n = 0; n < lci.ncand; n++)
+			GDKfree(ssl[n].cp_sequence);
+	if (ssr)
+		for (n = 0; n < rci.ncand; n++)
+			GDKfree(ssr[n].cp_sequence);
 	GDKfree(x_flags);
 	GDKfree(y_flags);
 	GDKfree(ssl);

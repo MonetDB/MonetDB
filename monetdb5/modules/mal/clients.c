@@ -718,34 +718,24 @@ static str
 CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	str *ret = getArgReference_str(stk, pci, 0);
-	str *user = getArgReference_str(stk, pci, 1);
-	(void) ret;
-	(void) user;
-
 	(void) mb;
+	(void) stk;
+	(void) pci;
 
-	throw(MAL, "clients.getPassword needs reimplementation",
-		  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	throw(MAL, "clients.getPassword",
+		  SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 static str
 CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	//str *usr = getArgReference_str(stk, pci, 1);
-	str *pw = getArgReference_str(stk, pci, 2);
-	//str algo = "SHA1";
-	str pwd, msg;
-
 	(void) mb;
+	(void) stk;
+	(void) pci;
 
-	if (!(pwd = mcrypt_SHA1Sum(*pw, strlen(*pw))))
-		throw(MAL, "clients.checkPermission", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	throw(MAL, "clients.checkPermission needs reimplementation",
-		  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	free(pwd);
-	return msg;
+	throw(MAL, "clients.checkPermission",
+		  SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str

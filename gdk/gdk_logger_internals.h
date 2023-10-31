@@ -15,7 +15,7 @@
 
 typedef struct logged_range_t {
 	ulng id;				/* log file id */
-	ulng drops;
+	ATOMIC_TYPE drops;
 	ATOMIC_TYPE last_ts;	/* last stored timestamp */
 	ATOMIC_TYPE flushed_ts;
 	ATOMIC_TYPE refcount;

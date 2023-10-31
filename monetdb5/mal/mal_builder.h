@@ -50,7 +50,6 @@ mal_export InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushType(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 mal_export InstrPtr pushZero(MalBlkPtr mb, InstrPtr q, int tpe);
-mal_export InstrPtr pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, ValPtr cst);
 
 mal_export int getIntConstant(MalBlkPtr mb, int val);

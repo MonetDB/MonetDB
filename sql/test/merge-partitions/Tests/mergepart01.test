@@ -60,8 +60,8 @@ ALTER TABLE testme ADD TABLE subtable2 AS PARTITION IN ('0', '1', '2')
 statement error 42000!ALTER TABLE: conflicting partitions: 7 to 9 and 5 to 10 from table sys.subtable1
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 7 TO 9
 
-statement error 42000!ALTER TABLE: conflicting partitions: 5 to 5 and 5 to 10 from table sys.subtable1
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 5 TO 5
+statement error 42000!ALTER TABLE: conflicting partitions: 5 to 6 and 5 to 10 from table sys.subtable1
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 5 TO 6
 
 statement error 42S02!ALTER TABLE: table 'sys.subtable2' isn't part of RANGE PARTITION TABLE 'sys.testme'
 ALTER TABLE testme DROP TABLE subtable2
@@ -87,8 +87,11 @@ ALTER TABLE subtable1 SET SCHEMA other_schema
 statement error 42000!ALTER TABLE: all children tables of 'sys.testme' must be part of schema 'sys'
 ALTER TABLE testme ADD TABLE other_schema.subtable1 AS PARTITION FROM 4 TO 23
 
-statement ok
+statement error 42000!ALTER TABLE: minimum value is equal to the maximum value
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 5 TO 5
+
+statement ok
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 5 TO 6
 
 statement ok
 ALTER TABLE testme DROP TABLE subtable2

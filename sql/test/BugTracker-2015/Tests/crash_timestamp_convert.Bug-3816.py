@@ -11,7 +11,7 @@ try:
     cur1.execute("SELECT timestamp_to_str(current_timestamp, '%Q');")
     if running_OS == 'Windows':
         sys.stderr.write("Exception expected")
-    elif running_OS == 'Darwin':
+    elif running_OS == 'Darwin' or running_OS == 'FreeBSD':
         if cur1.fetchall() != [('Q',)]:
             sys.stderr.write("Expected [('Q',)]")
     else:

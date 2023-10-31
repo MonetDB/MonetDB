@@ -13,29 +13,29 @@ INSERT INTO jsonTbl VALUES (3, E'{"f1":[1,"Robert \\"M\\"",true],"f2":[2,"Kevin 
 query TT rowsort
 SELECT  json.filter(b,'f1') AS f1, json.filter(b,'f3') FROM jsonTbl WHERE a =1
 ----
-[1]
-["Hi I'm \"Daisy\""]
+1
+"Hi I'm \"Daisy\""
 
 query T rowsort
  SELECT json.filter(b,'f1.f12') AS f12 FROM jsonTbl WHERE a = 2
 ----
-[12]
+12
 
 query T rowsort
 SELECT json.filter(b,'f1[0]') as f1_0 FROM jsonTbl WHERE a = 3
 ----
-[[1,"Robert \"M\"",true]]
+[1,"Robert \"M\"",true]
 
 query TT rowsort
 SELECT  json.filter(b,'f3') AS f1, json.text(json.filter(b,'f3')) FROM jsonTbl WHERE a =1
 ----
-["Hi I'm \"Daisy\""]
+"Hi I'm \"Daisy\""
 Hi I'm "Daisy"
 
 query TT rowsort
 SELECT json.filter(b,'f1[0]') as f1_0 , json.text(json.filter(b,'f1[0]'))FROM jsonTbl WHERE a = 3
 ----
-[[1,"Robert \"M\"",true]]
+[1,"Robert \"M\"",true]
 1 Robert "M" true
 
 statement ok

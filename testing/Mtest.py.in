@@ -379,6 +379,7 @@ CONDITIONALS = {
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
+    'HAVE_OPENSSL'         : "@HAVE_OPENSSL_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
     'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'HAVE_GETENTROPY'      : "@HAVE_GETENTROPY_FALSE@",
@@ -3489,6 +3490,7 @@ def main(argv) :
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
     parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
+    parser.add_argument('--ci', action='store_true', dest='ci', help='special handling for continuous integration (no error return unless serious problem)')
     global produce_html
     if produce_html:
         parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
@@ -4309,7 +4311,7 @@ VALUES (%s, '%s', '%s', '%s',
 """)
             else:
                 print("No differences encountered during testing.")
-        sys.exit(1 if Failed or errseen else 0)
+        sys.exit(1 if not opts.ci and (Failed or errseen) else 0)
 
     finally:
         # cleanup the place where we put our UNIX sockets

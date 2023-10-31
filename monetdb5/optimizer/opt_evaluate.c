@@ -138,12 +138,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	assigned = (int *) GDKzalloc(sizeof(int) * mb->vtop);
 	if (assigned == NULL)
-		throw(MAL, "optimzier.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	alias = (int *) GDKzalloc(mb->vsize * sizeof(int) * 2);	/* we introduce more */
 	if (alias == NULL) {
 		GDKfree(assigned);
-		throw(MAL, "optimzier.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	// arguments are implicitly assigned by context
 	p = getInstrPtr(mb, 0);
@@ -183,6 +183,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (!env) {
 					msg = createException(MAL, "optimizer.evaluate",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					p->barrier = barrier;
 					goto wrapup;
 				}
 				env->keepAlive = TRUE;

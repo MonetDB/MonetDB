@@ -94,6 +94,9 @@ endif(HAVE_SHP)
 if (HAVE_GETENTROPY)
   set(HAVE_GETENTROPY_FALSE "#")
 endif(HAVE_GETENTROPY)
+if (HAVE_OPENSSL)
+  set(HAVE_OPENSSL_FALSE "#")
+endif(HAVE_OPENSSL)
 if (NOT WIN32)
   set(NOT_WIN32_FALSE "#")
 endif()
@@ -139,6 +142,7 @@ if(PYTHON3_LIBDIR)
     melcheck.py
     sqllogictest.py
     explain.py
+    plan.py
     mapicursor.py
     malmapi.py
     helpers.py

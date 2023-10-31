@@ -903,7 +903,6 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			GDKfree(err);
 			if (!task->besteffort)
 				return -1;
-			MT_lock_unset(&errorlock);
 		}
 		ret = -!task->besteffort;	/* yep, two unary operators ;-) */
 		/* replace it with a nil */

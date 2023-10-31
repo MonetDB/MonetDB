@@ -33,6 +33,6 @@ mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int p_idx,
  * i.e. of type 'any'. The type resolution algorithm creates the concrete
  * type for subsequent use.
  */
-mal_export int resolveType(int dsttype, int srctype);
+mal_export int resolvedType(int dsttype, int srctype);
 
 #endif /*  _MAL_RESOLVE_H */

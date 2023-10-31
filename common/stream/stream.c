@@ -107,7 +107,7 @@ get_tl_error_buf(void)
 		*p = (struct tl_error_buf) { .msg = {0} };
 		pthread_setspecific(tl_error_key, p);
 		struct tl_error_buf *second_attempt = pthread_getspecific(tl_error_key);
-		assert(p == second_attempt /* maybe mnstr_init has not been called? */);
+		assert(p == second_attempt && "maybe mnstr_init has not been called?");
 		(void) second_attempt; // suppress warning if asserts disabled
 	}
 	return p;

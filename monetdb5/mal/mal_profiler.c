@@ -127,48 +127,43 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 	char tmp_buff[LOGLEN];
 	int tmp_len;
 	va_list va;
-	va_list va2;
 
 	va_start(va, fmt);
-	va_copy(va2, va);			/* we will need it again */
 	tmp_len = vsnprintf(tmp_buff, sizeof(tmp_buff), fmt, va);
+	va_end(va);
 	if (tmp_len < 0) {
 		logdel(logbuf);
-		va_end(va);
-		va_end(va2);
 		return false;
 	}
-	if (tmp_len > 0) {
-		if (logbuf->loglen + (size_t) tmp_len >= logbuf->logcap) {
-			if ((size_t) tmp_len >= logbuf->logcap) {
-				/* includes first time when logbuffer == NULL and logcap == 0 */
-				char *alloc_buff;
-				if (logbuf->loglen > 0)
-					logjsonInternal(logbuf->logbuffer, false);
-				logbuf->logcap = (size_t) tmp_len + (size_t) tmp_len / 2;
-				if (logbuf->logcap < LOGLEN)
-					logbuf->logcap = LOGLEN;
-				alloc_buff = GDKrealloc(logbuf->logbuffer, logbuf->logcap);
-				if (alloc_buff == NULL) {
-					TRC_ERROR(MAL_SERVER,
-							  "Profiler JSON buffer reallocation failure\n");
-					logdel(logbuf);
-					va_end(va);
-					va_end(va2);
-					return false;
-				}
-				logbuf->logbuffer = alloc_buff;
-				lognew(logbuf);
-			} else {
+	if (logbuf->loglen + (size_t) tmp_len >= logbuf->logcap) {
+		if ((size_t) tmp_len >= logbuf->logcap) {
+			/* includes first time when logbuffer == NULL and logcap == 0 */
+			char *alloc_buff;
+			if (logbuf->loglen > 0)
 				logjsonInternal(logbuf->logbuffer, false);
-				lognew(logbuf);
+			logbuf->logcap = (size_t) tmp_len + (size_t) tmp_len / 2;
+			if (logbuf->logcap < LOGLEN)
+				logbuf->logcap = LOGLEN;
+			alloc_buff = GDKrealloc(logbuf->logbuffer, logbuf->logcap);
+			if (alloc_buff == NULL) {
+				TRC_ERROR(MAL_SERVER,
+						  "Profiler JSON buffer reallocation failure\n");
+				logdel(logbuf);
+				return false;
 			}
+			logbuf->logbuffer = alloc_buff;
+			lognew(logbuf);
+		} else {
+			logjsonInternal(logbuf->logbuffer, false);
+			lognew(logbuf);
 		}
-		logbuf->loglen += vsnprintf(logbuf->logbase + logbuf->loglen,
-									logbuf->logcap - logbuf->loglen, fmt, va2);
 	}
-	va_end(va);
-	va_end(va2);
+	if (tmp_len > 0) {
+		va_start(va, fmt);
+		logbuf->loglen += vsnprintf(logbuf->logbase + logbuf->loglen,
+									logbuf->logcap - logbuf->loglen, fmt, va);
+		va_end(va);
+	}
 	return true;
 }
 

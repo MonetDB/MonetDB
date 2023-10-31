@@ -5179,6 +5179,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	res_table *output;
 	BAT *b;
+	sql_subtype t1, t2;
 
 	(void) sql;
 	if (buf == NULL)
@@ -5546,7 +5547,6 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	/* Add new sysadmin procedure calls: stop, pause and resume with two
 	   arguments, first arg is query OID and second the user username that
 	   the query in bound to. */
-	sql_subtype t1, t2;
 	sql_find_subtype(&t1, "bigint", 64, 0);
 	sql_find_subtype(&t2, "varchar", 0, 0);
 	if (!sql_bind_func(sql, "sys", "pause", &t1, &t2, F_PROC, true)) {
@@ -5777,6 +5777,38 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	}
 
 	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_jun2023_sp3(Client c, mvc *sql, sql_schema *s)
+{
+	(void)s;
+	char *err = NULL;
+	sql_subtype t1, t2;
+
+	sql_find_subtype(&t1, "timestamp", 0, 0);
+	sql_find_subtype(&t2, "varchar", 0, 0);
+
+	if (!sql_bind_func(sql, "sys", "timestamp_to_str", &t1, &t2, F_FUNC, true)) {
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+
+		char *query = GDKmalloc(512);
+		if (query == NULL)
+			throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		snprintf(query, 512, "CREATE FUNCTION timestamp_to_str(d TIMESTAMP, format STRING) RETURNS STRING "
+				 "EXTERNAL NAME mtime.\"timestamp_to_str\";\n"
+				 "GRANT EXECUTE ON FUNCTION timestamp_to_str(TIMESTAMP, STRING) TO PUBLIC;\n"
+				 "UPDATE sys.functions SET system = true WHERE system <> true AND name = 'timestamp_to_str' "
+				 "AND schema_id = 2000 and type = %d;\n", F_FUNC);
+
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		GDKfree(query);
+	}
+
 	return err;		/* usually MAL_SUCCEED */
 }
 
@@ -6021,6 +6053,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		"CREATE SCHEMA INFORMATION_SCHEMA;\n"
 		"COMMENT ON SCHEMA INFORMATION_SCHEMA IS 'ISO/IEC 9075-11 SQL/Schemata';\n"
 		"update sys.schemas set system = true where name = 'information_schema';\n"
+
 		"CREATE VIEW INFORMATION_SCHEMA.CHARACTER_SETS AS SELECT\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,\n"
@@ -6031,6 +6064,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		"  cast(NULL AS varchar(1)) AS DEFAULT_COLLATE_SCHEMA,\n"
 		"  cast(NULL AS varchar(1)) AS DEFAULT_COLLATE_NAME;\n"
 		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHARACTER_SETS TO PUBLIC WITH GRANT OPTION;\n"
+
 		"CREATE VIEW INFORMATION_SCHEMA.SCHEMATA AS SELECT\n"
 		"  cast(NULL AS varchar(1)) AS CATALOG_NAME,\n"
 		"  s.\"name\" AS SCHEMA_NAME,\n"
@@ -6048,6 +6082,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		" LEFT OUTER JOIN sys.\"comments\" cm ON s.\"id\" = cm.\"id\"\n"
 		" ORDER BY s.\"name\";\n"
 		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.SCHEMATA TO PUBLIC WITH GRANT OPTION;\n"
+
 		"CREATE VIEW INFORMATION_SCHEMA.TABLES AS SELECT\n"
 		"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
 		"  s.\"name\" AS TABLE_SCHEMA,\n"
@@ -6077,6 +6112,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		" LEFT OUTER JOIN (SELECT DISTINCT \"schema\", \"table\", \"count\" FROM sys.\"statistics\"()) st ON (s.\"name\" = st.\"schema\" AND t.\"name\" = st.\"table\")\n"
 		" ORDER BY s.\"name\", t.\"name\";\n"
 		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLES TO PUBLIC WITH GRANT OPTION;\n"
+
 		"CREATE VIEW INFORMATION_SCHEMA.VIEWS AS SELECT\n"
 		"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
 		"  s.\"name\" AS TABLE_SCHEMA,\n"
@@ -6100,6 +6136,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		" WHERE t.\"type\" = 1\n"
 		" ORDER BY s.\"name\", t.\"name\";\n"
 		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.VIEWS TO PUBLIC WITH GRANT OPTION;\n"
+
 		"CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT\n"
 		"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
 		"  s.\"name\" AS TABLE_SCHEMA,\n"
@@ -6108,15 +6145,18 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		"  cast(c.\"number\" +1 AS int) AS ORDINAL_POSITION,\n"
 		"  c.\"default\" AS COLUMN_DEFAULT,\n"
 		"  cast(sys.ifthenelse(c.\"null\", 'YES', 'NO') AS varchar(3)) AS IS_NULLABLE,\n"
-		"  c.\"type\" AS DATA_TYPE,\n"
+		"  CASE c.\"type\" WHEN 'day_interval' THEN 'interval day' WHEN 'month_interval' THEN 'interval month' WHEN 'sec_interval' THEN 'interval second' ELSE c.\"type\" END AS DATA_TYPE,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('varchar','clob','char','json','url','xml'), c.\"type_digits\", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('varchar','clob','char','json','url','xml'), c.\"type_digits\" * 3, NULL) AS int) AS CHARACTER_OCTET_LENGTH,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c.\"type_digits\", NULL) AS int) AS NUMERIC_PRECISION,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(c.\"type\" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c.\"type_scale\", NULL) AS int) AS NUMERIC_SCALE,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('date','timestamp','timestamptz','time','timetz'), c.\"type_scale\" -1, NULL) AS int) AS DATETIME_PRECISION,\n"
-		"  cast(CASE c.\"type\" WHEN 'day_interval' THEN 'interval day' WHEN 'month_interval' THEN 'interval month' WHEN 'sec_interval' THEN 'interval second' ELSE NULL END AS varchar(40)) AS INTERVAL_TYPE,\n"
-		"  cast(sys.ifthenelse(c.\"type\" IN ('day_interval','month_interval','sec_interval'), c.\"type_scale\" -1, NULL) AS int) AS INTERVAL_PRECISION,\n"
+		"  cast(CASE c.\"type\" WHEN 'day_interval' THEN 'interval day' WHEN 'month_interval' THEN (CASE c.\"type_digits\" WHEN 1 THEN 'interval year' WHEN 2 THEN 'interval year to month' WHEN 3 THEN 'interval month' ELSE NULL END)"
+		" WHEN 'sec_interval' THEN (CASE c.\"type_digits\" WHEN 5 THEN 'interval day to hour' WHEN 6 THEN 'interval day to minute' WHEN 7 THEN 'interval day to second'"
+		" WHEN 8 THEN 'interval hour' WHEN 9 THEN 'interval hour to minute' WHEN 10 THEN 'interval hour to second' WHEN 11 THEN 'interval minute' WHEN 12 THEN 'interval minute to second'"
+		" WHEN 13 THEN 'interval second' ELSE NULL END) ELSE NULL END AS varchar(40)) AS INTERVAL_TYPE,\n"
+		"  cast(CASE c.\"type\" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(c.\"type_digits\" IN (7, 10, 12, 13), sys.ifthenelse(c.\"type_scale\" > 0, c.\"type_scale\", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('varchar','clob','char','json','url','xml'), 'UTF-8', NULL) AS varchar(16)) AS CHARACTER_SET_NAME,\n"
@@ -6163,13 +6203,125 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		" LEFT OUTER JOIN sys.\"comments\" cm ON c.\"id\" = cm.\"id\"\n"
 		" ORDER BY s.\"name\", t.\"name\", c.\"number\";\n"
 		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.COLUMNS TO PUBLIC WITH GRANT OPTION;\n"
+
+		"CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT\n"
+		"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
+		"  cast(NULL AS varchar(1024)) AS CONSTRAINT_SCHEMA,\n"
+		"  cast(NULL AS varchar(1024)) AS CONSTRAINT_NAME,\n"
+		"  cast(NULL AS varchar(1024)) AS CHECK_CLAUSE\n"
+		" WHERE 1=0;\n"
+		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHECK_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
+
+		"CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT\n"
+		"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
+		"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
+		"  k.\"name\" AS CONSTRAINT_NAME,\n"
+		"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
+		"  s.\"name\" AS TABLE_SCHEMA,\n"
+		"  t.\"name\" AS TABLE_NAME,\n"
+		"  cast(CASE k.\"type\" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' ELSE NULL END AS varchar(16)) AS CONSTRAINT_TYPE,\n"
+		"  cast('NO' AS varchar(3)) AS IS_DEFERRABLE,\n"
+		"  cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,\n"
+		"  cast('YES' AS varchar(3)) AS ENFORCED,\n"
+		"  -- MonetDB column extensions\n"
+		"  t.\"schema_id\" AS schema_id,\n"
+		"  t.\"id\" AS table_id,\n"
+		"  k.\"id\" AS key_id,\n"
+		"  k.\"type\" AS key_type,\n"
+		"  t.\"system\" AS is_system\n"
+		" FROM (SELECT sk.\"id\", sk.\"table_id\", sk.\"name\", sk.\"type\" FROM sys.\"keys\" sk UNION ALL SELECT tk.\"id\", tk.\"table_id\", tk.\"name\", tk.\"type\" FROM tmp.\"keys\" tk) k\n"
+		" INNER JOIN (SELECT st.\"id\", st.\"schema_id\", st.\"name\", st.\"system\" FROM sys.\"_tables\" st UNION ALL"
+			" SELECT tt.\"id\", tt.\"schema_id\", tt.\"name\", tt.\"system\" FROM tmp.\"_tables\" tt) t ON k.\"table_id\" = t.\"id\"\n"
+		" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+		" ORDER BY s.\"name\", t.\"name\", k.\"name\";\n"
+		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
+
+		"CREATE VIEW INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS SELECT\n"
+		"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
+		"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
+		"  fk.\"name\" AS CONSTRAINT_NAME,\n"
+		"  cast(NULL AS varchar(1)) AS UNIQUE_CONSTRAINT_CATALOG,\n"
+		"  uks.\"name\" AS UNIQUE_CONSTRAINT_SCHEMA,\n"
+		"  uk.\"name\" AS UNIQUE_CONSTRAINT_NAME,\n"
+		"  cast('FULL' AS varchar(7)) AS MATCH_OPTION,\n"
+		"  fk.\"update_action\" AS UPDATE_RULE,\n"
+		"  fk.\"delete_action\" AS DELETE_RULE,\n"
+		"  -- MonetDB column extensions\n"
+		"  t.\"schema_id\" AS fk_schema_id,\n"
+		"  t.\"id\" AS fk_table_id,\n"
+		"  t.\"name\" AS fk_table_name,\n"
+		"  fk.\"id\" AS fk_key_id,\n"
+		"  ukt.\"schema_id\" AS uc_schema_id,\n"
+		"  uk.\"table_id\" AS uc_table_id,\n"
+		"  ukt.\"name\" AS uc_table_name,\n"
+		"  uk.\"id\" AS uc_key_id\n"
+		" FROM sys.\"fkeys\" fk\n"
+		" INNER JOIN sys.\"tables\" t ON t.\"id\" = fk.\"table_id\"\n"
+		" INNER JOIN sys.\"schemas\" s ON s.\"id\" = t.\"schema_id\"\n"
+		" LEFT OUTER JOIN sys.\"keys\" uk ON uk.\"id\" = fk.\"rkey\"\n"
+		" LEFT OUTER JOIN sys.\"tables\" ukt ON ukt.\"id\" = uk.\"table_id\"\n"
+		" LEFT OUTER JOIN sys.\"schemas\" uks ON uks.\"id\" = ukt.\"schema_id\"\n"
+		" ORDER BY s.\"name\", t.\"name\", fk.\"name\";\n"
+		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
+
+		"CREATE VIEW INFORMATION_SCHEMA.SEQUENCES AS SELECT\n"
+		"  cast(NULL AS varchar(1)) AS SEQUENCE_CATALOG,\n"
+		"  s.\"name\" AS SEQUENCE_SCHEMA,\n"
+		"  sq.\"name\" AS SEQUENCE_NAME,\n"
+		"  cast('bigint' AS varchar(16)) AS DATA_TYPE,\n"
+		"  cast(64 AS SMALLINT) AS NUMERIC_PRECISION,\n"
+		"  cast(2 AS SMALLINT) AS NUMERIC_PRECISION_RADIX,\n"
+		"  cast(0 AS SMALLINT) AS NUMERIC_SCALE,\n"
+		"  sq.\"start\" AS START_VALUE,\n"
+		"  sq.\"minvalue\" AS MINIMUM_VALUE,\n"
+		"  sq.\"maxvalue\" AS MAXIMUM_VALUE,\n"
+		"  sq.\"increment\" AS INCREMENT,\n"
+		"  cast(sys.ifthenelse(sq.\"cycle\", 'YES', 'NO') AS varchar(3)) AS CYCLE_OPTION,\n"
+		"  cast(NULL AS varchar(16)) AS DECLARED_DATA_TYPE,\n"
+		"  cast(NULL AS SMALLINT) AS DECLARED_NUMERIC_PRECISION,\n"
+		"  cast(NULL AS SMALLINT) AS DECLARED_NUMERIC_SCALE,\n"
+		"  -- MonetDB column extensions\n"
+		"  sq.\"schema_id\" AS schema_id,\n"
+		"  sq.\"id\" AS sequence_id,\n"
+		"  get_value_for(s.\"name\", sq.\"name\") AS current_value,\n"
+		"  sq.\"cacheinc\" AS cacheinc,\n"
+		"  cm.\"remark\" AS comments\n"
+		" FROM sys.\"sequences\" sq\n"
+		" INNER JOIN sys.\"schemas\" s ON sq.\"schema_id\" = s.\"id\"\n"
+		" LEFT OUTER JOIN sys.\"comments\" cm ON sq.\"id\" = cm.\"id\"\n"
+		" ORDER BY s.\"name\", sq.\"name\";\n"
+		"GRANT SELECT ON TABLE INFORMATION_SCHEMA.SEQUENCES TO PUBLIC WITH GRANT OPTION;\n"
 		"\n"
 		"update sys._tables set system = true where system <> true\n"
 		" and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')\n"
-		" and name in ('character_sets','schemata','tables','views','columns');\n";
+		" and name in ('character_sets','check_constraints','columns','schemata','sequences','referential_constraints','table_constraints','tables','views');\n";
 		printf("Running database upgrade commands:\n%s\n", cmds);
 		fflush(stdout);
 		err = SQLstatementIntern(c, cmds, "update", true, false, NULL);
+	}
+
+	/* 77_storage.sql */
+	if (!sql_bind_func(sql, s->base.name, "persist_unlogged", NULL, NULL, F_UNION, true)) {
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		const char *query =
+			"CREATE FUNCTION sys.persist_unlogged()\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
+			"EXTERNAL NAME sql.persist_unlogged;\n"
+			"CREATE FUNCTION sys.persist_unlogged(sname STRING)\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
+			"EXTERNAL NAME sql.persist_unlogged;\n"
+			"CREATE FUNCTION sys.persist_unlogged(sname STRING, tname STRING)\n"
+			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
+			"EXTERNAL NAME sql.persist_unlogged;\n"
+			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged() TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string, string) TO PUBLIC;\n"
+			"UPDATE sys.functions SET system = true WHERE system <> true AND\n"
+			"name = 'persist_unlogged' AND schema_id = 2000;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
 	}
 
 	return err;
@@ -6356,6 +6508,12 @@ SQLupgrades(Client c, mvc *m)
 	if ((err = sql_update_default(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
+	}
+
+	if ((err = sql_update_jun2023_sp3(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
 	}
 
 	return 0;

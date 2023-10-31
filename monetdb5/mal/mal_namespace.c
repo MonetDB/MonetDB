@@ -117,6 +117,7 @@ findName(const char *nme, size_t len, bool allocate)
 	if (namespace == NULL || namespace->count == 4096) {
 		struct namespace *ns = GDKmalloc(sizeof(struct namespace));
 		if (ns == NULL) {
+			MT_lock_unset(&mal_namespaceLock);
 			return NULL;
 		}
 		ns->next = namespace;

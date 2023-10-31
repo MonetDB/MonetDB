@@ -98,26 +98,24 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bn, oid start, oid stop)
 }
 
 static BAT *
-do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
+do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 {
 	BAT *bn;
-	BUN cnt, slen;
+	BUN slen;
 	BUN rescnt;
 	struct oidtreenode *tree = NULL;
 
-	BATcheck(b, NULL);
 	ERRORcheck(n > BUN_MAX, "sample size larger than BUN_MAX\n", NULL);
-	cnt = BATcount(b);
 	/* empty sample size */
 	if (n == 0) {
 		bn = BATdense(0, 0, 0);
 	} else if (cnt <= n) {
 		/* sample size is larger than the input BAT, return
 		 * all oids */
-		bn = BATdense(0, b->hseqbase, cnt);
+		bn = BATdense(0, hseq, cnt);
 	} else {
-		oid minoid = b->hseqbase;
-		oid maxoid = b->hseqbase + cnt;
+		oid minoid = hseq;
+		oid maxoid = hseq + cnt;
 
 		/* if someone samples more than half of our tree, we
 		 * do the antiset */
@@ -184,9 +182,19 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 		bn->tkey = true;
 		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *(oid *) Tloc(bn, 0) : oid_nil;
 	}
-	TRC_DEBUG(ALGO, "BATsample(" ALGOBATFMT "," BUNFMT ")="
-		  ALGOOPTBATFMT "\n",
-		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
+	return bn;
+}
+
+BAT *
+BATcreatesample(oid hseq, BUN cnt, BUN n, uint64_t seed)
+{
+	random_state_engine rse;
+
+	init_random_state_engine(rse, seed);
+
+	BAT *bn = do_batsample(hseq, cnt, n, rse, NULL);
+	TRC_DEBUG(ALGO, OIDFMT "," BUNFMT "," BUNFMT " -> " ALGOOPTBATFMT "\n",
+		  hseq, cnt, n, ALGOOPTBATPAR(bn));
 	return bn;
 }
 
@@ -194,11 +202,7 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 BAT *
 BATsample_with_seed(BAT *b, BUN n, uint64_t seed)
 {
-	random_state_engine rse;
-
-	init_random_state_engine(rse, seed);
-
-	return do_batsample(b, n, rse, NULL);
+	return BATcreatesample(b->hseqbase, b->batCount, n, seed);
 }
 
 static MT_Lock rse_lock = MT_LOCK_INITIALIZER(rse_lock);
@@ -211,5 +215,8 @@ BATsample(BAT *b, BUN n)
 	if (rse[0] == 0 && rse[1] == 0 && rse[2] == 0 && rse[3] == 0)
 		init_random_state_engine(rse, (uint64_t) GDKusec());
 	MT_lock_unset(&rse_lock);
-	return do_batsample(b, n, rse, &rse_lock);
+	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse, &rse_lock);
+	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT "\n",
+		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
+	return bn;
 }

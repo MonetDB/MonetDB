@@ -8,8 +8,8 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 #]]
 
-add_subdirectory(mapiclient)
 add_subdirectory(mapilib)
+add_subdirectory(mapiclient)
 add_subdirectory(odbc)
 if(TESTING)
   add_subdirectory(examples)
