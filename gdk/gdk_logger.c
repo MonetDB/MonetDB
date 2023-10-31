@@ -1506,7 +1506,7 @@ bm_get_counts(logger *lg)
 			cnt = BATcount(b);
 		} else {
 			deleted++;
-			lid = 1;
+			lid = BBP_desc(bids[p]) ? 1 : -1;
 		}
 		if (BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
 			return GDK_FAIL;
@@ -1705,8 +1705,11 @@ bm_subcommit(logger *lg, uint32_t *updated, BUN maxupdated)
 		}
 		bat col = bids[p];
 
-		if (lids && lids[p] != lng_nil && lids[p] <= lg->saved_tid)
+		if (lids && lids[p] != lng_nil && lids[p] <= lg->saved_tid) {
 			cleanup++;
+			if (lids[p] == -1)
+				continue;
+		}
 		TRC_DEBUG(WAL, "new %s (%d)\n", BBP_logical(col), col);
 		assert(col);
 		sizes[i] = cnts ? (BUN) cnts[p] : 0;
