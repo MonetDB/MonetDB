@@ -1,3 +1,9 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Oct 31 2023 Sjoerd Mullender <sjoerd@acm.org>
+- A bug was fixed where the administration of which bats were in use was
+  interpreted incorrectly during startup, causing problems later.  One
+  symptom that has been observed was failure to startup with a message
+  that the catalog tables could not be loaded.
+
