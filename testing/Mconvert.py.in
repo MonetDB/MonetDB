@@ -400,6 +400,7 @@ CONDITIONALS = {
     'HAVE_MAL_DEBUGGER'    : "@HAVE_MAL_DEBUGGER_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
+    'HAVE_OPENSSL'         : "@HAVE_OPENSSL_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
     'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'HAVE_GETENTROPY'      : "@HAVE_GETENTROPY_FALSE@",

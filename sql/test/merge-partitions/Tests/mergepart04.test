@@ -46,7 +46,7 @@ ALTER TABLE anothertest DROP TABLE subtest2
 statement ok rowcount 1
 INSERT INTO subtest2 VALUES (-5, 'oh no')
 
-statement error M0M29!ALTER TABLE: there are values in the column a outside the partition list of values
+statement error M0M29!ALTER TABLE: there are values in column a outside the partition list of values
 ALTER TABLE anothertest ADD TABLE subtest2 AS PARTITION IN ('12', '-1', '100')
 
 query I rowsort

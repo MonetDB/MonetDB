@@ -578,7 +578,22 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	if (isTable(c->t))
 		store->storage_api.create_col(tr, c);
 	TRC_DEBUG(SQL_STORE, "Load column: %s\n", c->base.name);
+	if (!c->null)
+		store->storage_api.col_not_null(tr, c, !c->null);
 	return c;
+}
+
+static int
+col_set_range(sql_trans *tr, sql_part *pt, bool add_range)
+{
+		sql_table *t = find_sql_table_id(tr, pt->t->s /* schema of both member and merge tbale */, pt->member);
+		sql_column *c = t? find_sql_column(t, pt->t->part.pcol->base.name):NULL;
+
+		if (c) {
+			sqlstore *store = tr->store;
+			return store->storage_api.col_set_range(tr, c, pt, add_range);
+		}
+		return 0;
 }
 
 static int
@@ -4632,6 +4647,8 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 	if ((res = store->table_api.table_delete(tr, sysobj, obj_oid)))
 		return res;
 	if (isRangePartitionTable(mt)) {
+		if (isPartitionedByColumnTable(pt->t))
+			col_set_range(tr, pt, false);
 		sql_table *ranges = find_sql_table(tr, syss, "range_partitions");
 		assert(ranges);
 		oid rid = store->table_api.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->member, NULL);
@@ -5490,6 +5507,9 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		goto finish;
 	}
 
+	if (isPartitionedByColumnTable(p->t))
+		col_set_range(tr, p, true);
+
 	if (!update) {
 		rid = store->table_api.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
 		assert(!is_oid_nil(rid));
@@ -6270,6 +6290,8 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 			return res;
 		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql functions depending on the table */
 			return res;
+		if (isNew(col) || isnull)
+			store->storage_api.col_not_null(tr, col, !isnull);
 	}
 	return res;
 }
@@ -7259,4 +7281,116 @@ sql_trans_end(sql_session *s, int ok)
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);
 	return res;
+}
+
+void
+find_partition_type(sql_subtype *tpe, sql_table *mt)
+{
+	if (isPartitionedByColumnTable(mt)) {
+		*tpe = mt->part.pcol->type;
+	} else if (isPartitionedByExpressionTable(mt)) {
+		*tpe = mt->part.pexp->type;
+	} else {
+		assert(0);
+	}
+}
+
+static int
+convert_part_values(sql_trans *tr, sql_table *mt )
+{
+	sql_subtype found;
+	int localtype;
+	find_partition_type(&found, mt);
+	localtype = found.type->localtype;
+
+	if (localtype != TYPE_str && mt->members && list_length(mt->members)) {
+		for (node *n = mt->members->h; n; n = n->next) {
+			sql_part *p = n->data;
+
+			if (isListPartitionTable(mt)) {
+				for (node *m = p->part.values->h; m; m = m->next) {
+					sql_part_value *v = (sql_part_value*) m->data, ov = *v;
+					ValRecord vvalue;
+					ptr ok;
+
+					vvalue = (ValRecord) {.vtype = TYPE_void,};
+					ok = VALinit(&vvalue, TYPE_str, v->value);
+					if (ok)
+						ok = VALconvert(localtype, &vvalue);
+					if (ok) {
+						v->value = NEW_ARRAY(char, vvalue.len);
+						memcpy(v->value, VALget(&vvalue), vvalue.len);
+						v->length = vvalue.len;
+					}
+					VALclear(&vvalue);
+					if (!ok)
+						return -1;
+					_DELETE(ov.value);
+				}
+			} else if (isRangePartitionTable(mt)) {
+				ValRecord vmin, vmax;
+				ptr ok;
+
+				vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
+				ok = VALinit(&vmin, TYPE_str, p->part.range.minvalue);
+				if (ok)
+					ok = VALinit(&vmax, TYPE_str, p->part.range.maxvalue);
+				_DELETE(p->part.range.minvalue);
+				_DELETE(p->part.range.maxvalue);
+				if (ok) {
+					if (strNil((const char *)VALget(&vmin)) &&
+						strNil((const char *)VALget(&vmax))) {
+						const void *nil_ptr = ATOMnilptr(localtype);
+						size_t nil_len = ATOMlen(localtype, nil_ptr);
+
+						p->part.range.minvalue = NEW_ARRAY(char, nil_len);
+						p->part.range.maxvalue = NEW_ARRAY(char, nil_len);
+						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
+						memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
+						p->part.range.minlength = nil_len;
+						p->part.range.maxlength = nil_len;
+					} else {
+						ok = VALconvert(localtype, &vmin);
+						if (ok)
+							ok = VALconvert(localtype, &vmax);
+						if (ok) {
+							p->part.range.minvalue = NEW_ARRAY(char, vmin.len);
+							p->part.range.maxvalue = NEW_ARRAY(char, vmax.len);
+							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
+							memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
+							p->part.range.minlength = vmin.len;
+							p->part.range.maxlength = vmax.len;
+						}
+					}
+					if (isPartitionedByColumnTable(p->t))
+						col_set_range(tr, p, true);
+				}
+				VALclear(&vmin);
+				VALclear(&vmax);
+				if (!ok)
+					return -1;
+			}
+		}
+	}
+	return 0;
+}
+
+int
+sql_trans_convert_partitions(sql_trans *tr)
+{
+	struct os_iter si;
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+	for(sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
+		sql_schema *ss = (sql_schema*)b;
+		struct os_iter oi;
+		os_iterator(&oi, ss->tables, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *tt = (sql_table*)b;
+			if (isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
+				if (convert_part_values(tr, tt) < 0)
+					return -1;
+			}
+		}
+	}
+	return 0;
 }

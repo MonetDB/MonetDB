@@ -29,7 +29,8 @@ jobs:
         run: |
           mkdir build
           cd build 
-          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DRINTEGRATION=OFF
+          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DRINTEGRATION=OFF \
+            -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'Linux'
       -
@@ -41,7 +42,7 @@ jobs:
           mkdir build
           cd build 
           cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DRINTEGRATION=OFF  \
-            -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison
+            -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'macOS'
       - name: ctest 
@@ -50,14 +51,16 @@ jobs:
           cmake --build . --target test
       - name: install pymonetdb
         run: pip3 install pymonetdb
+      - name: which python
+        run: 
+          head -n 1 $HOME/${{ matrix.branch }}/bin/Mtest.py 
       - name: mtest 
         run: |
           #cd build 
           #cmake --build . --target mtest
-          $HOME/${{ matix.branch }}/Mtest.py -r --debug=0
-          #-
-          #uses: actions/upload-artifact@v3
-          #name: Publish Linux binary wheels
-          #with:
-          #name: monetdbe-linux-wheel-${{ matrix.branch }}-${{ matrix.python-version }}
-          #path: dist/*.whl
+          PATH=$HOME/${{ matrix.branch }}/bin:$PATH $HOME/${{ matrix.branch }}/bin/Mtest.py -r --debug=0 --ci --no-html
+      - name: Publish mtest results
+        uses: actions/upload-artifact@v3
+        with:
+          name: mtest-${{ matrix.branch }}
+          path: ${{ matrix.branch }}/mTests/*
