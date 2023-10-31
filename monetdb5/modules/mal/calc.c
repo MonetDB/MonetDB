@@ -1117,7 +1117,9 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",int))),
  pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",lng))),
  pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",hge))),
+#ifdef HAVE_HGE
  pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
+#endif
  pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
  pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",lng))),
  pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",lng))),

@@ -744,6 +744,43 @@ CMDbatDIVsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						 calcdivtype, "batcalc./");
 }
 
+static BAT *
+BATcalcdiv2( BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp)
+{
+	ValRecord v1, v2;
+
+	v1.vtype = TYPE_lng;
+	v1.val.lval = 1;
+	v2.vtype = TYPE_lng;
+	v2.val.lval = 2;
+
+	assert(b2->ttype == TYPE_lng);
+	BAT *c_sub_1 = BATcalcsubcst(b2, &v1, s2, TYPE_lng);
+
+	if (!c_sub_1)
+		return NULL;
+	BAT *c_sub_1_div_2 = BATcalcdivcst(c_sub_1, &v2, NULL, TYPE_lng);
+	BBPreclaim(c_sub_1);
+	if (!c_sub_1_div_2)
+		return NULL;
+	BAT *num = BATcalcadd(b1, c_sub_1_div_2, s1, NULL, b1->ttype);
+	BBPreclaim(c_sub_1_div_2);
+	if (!num)
+		return NULL;
+	BAT *res = BATcalcdiv(num, b2, NULL, s1, tp);
+	BBPreclaim(num);
+	return res;
+}
+
+static str
+CMDbatDIV2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+
+	return CMDbatBINARY2(mb, stk, pci, BATcalcdiv2, NULL, NULL,
+						 calcdivtype, "batcalc./");
+}
+
 static str
 CMDbatMODsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1973,6 +2010,13 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),batarg("b",bit),batargany("b1",1),argany("v2",1))),
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),batarg("b",bit),argany("v1",1),batargany("b2",1))),
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),batarg("b",bit),batargany("b1",1),batargany("b2",1))),
+#ifdef HAVE_HGE
+ pattern("batcalc", "num_div", CMDbatDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, batarg("",hge),batarg("v1",hge),batarg("v2",lng))),
+#endif
+ pattern("batcalc", "num_div", CMDbatDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, batarg("",lng),batarg("v1",lng),batarg("v2",lng))),
+ pattern("batcalc", "num_div", CMDbatDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, batarg("",int),batarg("v1",int),batarg("v2",lng))),
+ pattern("batcalc", "num_div", CMDbatDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, batarg("",sht),batarg("v1",sht),batarg("v2",lng))),
+ pattern("batcalc", "num_div", CMDbatDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, batarg("",bte),batarg("v1",bte),batarg("v2",lng))),
 
  { .imp=NULL }
 

@@ -29384,6 +29384,31 @@ pattern batcalc.not(X_0:bat[:sht], X_1:bat[:oid]):bat[:sht]
 CMDbatNOT;
 (empty)
 batcalc
+num_div
+pattern batcalc.num_div(X_0:bat[:bte], X_1:bat[:lng]):bat[:bte] 
+CMDbatDIV2;
+Return (V1+(V2-1)/2) / V2, nil on divide by zero
+batcalc
+num_div
+pattern batcalc.num_div(X_0:bat[:hge], X_1:bat[:lng]):bat[:hge] 
+CMDbatDIV2;
+Return (V1+(V2-1)/2) / V2, nil on divide by zero
+batcalc
+num_div
+pattern batcalc.num_div(X_0:bat[:int], X_1:bat[:lng]):bat[:int] 
+CMDbatDIV2;
+Return (V1+(V2-1)/2) / V2, nil on divide by zero
+batcalc
+num_div
+pattern batcalc.num_div(X_0:bat[:lng], X_1:bat[:lng]):bat[:lng] 
+CMDbatDIV2;
+Return (V1+(V2-1)/2) / V2, nil on divide by zero
+batcalc
+num_div
+pattern batcalc.num_div(X_0:bat[:sht], X_1:bat[:lng]):bat[:sht] 
+CMDbatDIV2;
+Return (V1+(V2-1)/2) / V2, nil on divide by zero
+batcalc
 oid
 pattern batcalc.oid(X_0:bat[:bit]):bat[:oid] 
 CMDconvertsignal_oid;
