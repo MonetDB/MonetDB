@@ -154,20 +154,29 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 	return res;
 }
 
+static bool
+eliminate_remote_or_replica_refs(visitor *v, sql_rel **rel)
+{
+	if (rel_is_ref(*rel) && !((*rel)->flag&MERGE_LEFT)) {
+ 		if (has_remote_or_replica(*rel)) {
+ 			sql_rel *nrel = rel_copy(v->sql, *rel, 1);
+ 			rel_destroy(*rel);
+ 			*rel = nrel;
+ 			return true;
+ 		} else {
+ 			// TODO why do we want to bail out if we have a non rmt/rpl ref?
+ 			return false;
+ 		}
+ 	}
+ 	return true;
+}
+
 static sql_rel *
 rel_rewrite_replica_(visitor *v, sql_rel *rel)
 {
-	/* for merge statement join, ignore the multiple references */
-	if (rel_is_ref(rel) && !(rel->flag&MERGE_LEFT)) {
-		if (has_remote_or_replica(rel)) {
-			sql_rel *nrel = rel_copy(v->sql, rel, 1);
+	if (!eliminate_remote_or_replica_refs(v, &rel))
+		return rel;
 
-			rel_destroy(rel);
-			rel = nrel;
-		} else {
-			return rel;
-		}
-	}
 	if (is_basetable(rel->op)) {
 		sql_table *t = rel->l;
 
@@ -203,17 +212,9 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 {
 	prop *p, *pl, *pr;
 
-	/* for merge statement join, ignore the multiple references */
-	if (rel_is_ref(rel) && !(rel->flag&MERGE_LEFT)) {
-		if (has_remote_or_replica(rel)) {
-			sql_rel *nrel = rel_copy(v->sql, rel, 1);
+	if (!eliminate_remote_or_replica_refs(v, &rel))
+		return rel;
 
-			rel_destroy(rel);
-			rel = nrel;
-		} else {
-			return rel;
-		}
-	}
 	sql_rel *l = rel->l, *r = rel->r; /* look on left and right relations after possibly doing rel_copy */
 
 	switch (rel->op) {
