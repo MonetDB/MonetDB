@@ -225,11 +225,11 @@ static pthread_key_t threadkey;
 #define thread_setself(self)	pthread_setspecific(threadkey, self)
 #else
 static CRITICAL_SECTION winthread_cs;
-static DWORD threadslot = TLS_OUT_OF_INDEXES;
+static DWORD threadkey = TLS_OUT_OF_INDEXES;
 #define thread_lock()		EnterCriticalSection(&winthread_cs)
 #define thread_unlock()		LeaveCriticalSection(&winthread_cs)
-#define thread_self()		TlsGetValue(threadslot)
-#define thread_setself(self)	TlsSetValue(threadslot, self)
+#define thread_self()		TlsGetValue(threadkey)
+#define thread_setself(self)	TlsSetValue(threadkey, self)
 #endif
 static bool thread_initialized = false;
 
@@ -361,16 +361,16 @@ MT_thread_init(void)
 		return false;
 	}
 #else
-	threadslot = TlsAlloc();
-	if (threadslot == TLS_OUT_OF_INDEXES) {
+	threadkey = TlsAlloc();
+	if (threadkey == TLS_OUT_OF_INDEXES) {
 		GDKwinerror("Creating thread-local slot for thread failed");
 		return false;
 	}
 	mainthread.wtid = GetCurrentThreadId();
 	if (thread_setself(&mainthread) == 0) {
 		GDKwinerror("Setting thread-local value failed");
-		TlsFree(threadslot);
-		threadslot = TLS_OUT_OF_INDEXES;
+		TlsFree(threadkey);
+		threadkey = TLS_OUT_OF_INDEXES;
 		return false;
 	}
 	InitializeCriticalSection(&winthread_cs);
@@ -455,6 +455,46 @@ find_mtthread(MT_Id tid)
 		;
 	thread_unlock();
 	return t;
+}
+
+gdk_return
+MT_alloc_tls(MT_TLS_t *newkey)
+{
+#ifdef HAVE_PTHREAD_H
+	int ret;
+	if ((ret = pthread_key_create(newkey, NULL)) != 0) {
+		GDKsyserr(ret, "Creating TLS key for thread failed");
+		return GDK_FAIL;
+	}
+#else
+	if ((*newkey = TlsAlloc()) == TLS_OUT_OF_INDEXES) {
+		GDKwinerror("Creating TLS key for thread failed");
+		return GDK_FAIL;
+	}
+#endif
+	return GDK_SUCCEED;
+}
+
+void
+MT_tls_set(MT_TLS_t key, void *val)
+{
+#ifdef HAVE_PTHREAD_H
+	pthread_setspecific(key, val);
+#else
+	assert(key != TLS_OUT_OF_INDEXES);
+	TlsSetValue(key, val);
+#endif
+}
+
+void *
+MT_tls_get(MT_TLS_t key)
+{
+#ifdef HAVE_PTHREAD_H
+	return pthread_getspecific(key);
+#else
+	assert(key != TLS_OUT_OF_INDEXES);
+	return TlsGetValue(key);
+#endif
 }
 
 const char *

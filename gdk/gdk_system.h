@@ -436,6 +436,8 @@ typedef struct MT_RWLock {
 
 #define MT_rwlock_wrunlock(l)	ReleaseSRWLockExclusive(&(l)->lock)
 
+typedef DWORD MT_TLS_t;
+
 #else
 
 typedef struct MT_Lock {
@@ -606,7 +608,13 @@ MT_rwlock_wrtry(MT_RWLock *l)
 
 #endif
 
+typedef pthread_key_t MT_TLS_t;
+
 #endif
+
+gdk_export gdk_return MT_alloc_tls(MT_TLS_t *newkey);
+gdk_export void MT_tls_set(MT_TLS_t key, void *val);
+gdk_export void *MT_tls_get(MT_TLS_t key);
 
 #ifdef LOCK_STATS
 gdk_export void GDKlockstatistics(int);
