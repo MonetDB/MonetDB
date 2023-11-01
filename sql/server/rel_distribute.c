@@ -220,6 +220,23 @@ bind_rewrite_replica(visitor *v, global_props *gp)
 	return gp->needs_mergetable_rewrite || gp->needs_remote_replica_rewrite ? rel_rewrite_replica : NULL;
 }
 
+static list*
+rel_merge_remote_prop(visitor *v, prop *pl, prop *pr)
+{
+	list* uris = sa_list(v->sql->sa);
+	// TODO this double loop must go (maybe use the hashmap of the list?)
+	for (node* n = ((list*)pl->value.pval)->h; n; n = n->next) {
+		for (node* m = ((list*)pr->value.pval)->h; m; m = m->next) {
+			tid_uri* ltu = n->data;
+			tid_uri* rtu = m->data;
+			if (strcmp(ltu->uri, rtu->uri) == 0) {
+				append(uris, n->data);
+			}
+		}
+	}
+	return uris;
+}
+
 static sql_rel *
 rel_rewrite_remote_2_(visitor *v, sql_rel *rel)
 {
@@ -307,18 +324,7 @@ rel_rewrite_remote_2_(visitor *v, sql_rel *rel)
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
 			r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
 
-			/* find the common uris */
-			list* uris = sa_list(v->sql->sa);
-			// TODO this double loop must go (maybe use the hashmap of the list)
-			for (node* n = ((list*)pl->value.pval)->h; n; n = n->next) {
-				for (node* m = ((list*)pr->value.pval)->h; m; m = m->next) {
-					tid_uri* ltu = n->data;
-					tid_uri* rtu = m->data;
-					if (strcmp(ltu->uri, rtu->uri) == 0) {
-						append(uris, n->data);
-					}
-				}
-			}
+			list *uris = rel_merge_remote_prop(v, pl, pr);
 
 			/* if there are common uris pull the REMOTE prop with the common uris up */
 			if (!list_empty(uris)) {
@@ -352,27 +358,36 @@ rel_rewrite_remote_2_(visitor *v, sql_rel *rel)
 		}
 		break;
 	case op_ddl:
-		// TODO properly handle the op_ddl
-		/*if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq [>|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view<]) {*/
-			/*if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {*/
-				/*l->p = prop_remove(l->p, p);*/
-				/*if (!find_prop(rel->p, PROP_REMOTE)) {*/
-					/*p->p = rel->p;*/
-					/*rel->p = p;*/
-				/*}*/
-			/*}*/
-		/*} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {*/
-			/*if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&*/
-				/*r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL &&*/
-				/*strcmp(pl->value.pval, pr->value.pval) == 0) {*/
-				/*l->p = prop_remove(l->p, pl);*/
-				/*r->p = prop_remove(r->p, pr);*/
-				/*if (!find_prop(rel->p, PROP_REMOTE)) {*/
-					/*pl->p = rel->p;*/
-					/*rel->p = pl;*/
-				/*}*/
-			/*}*/
-		/*}*/
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
+			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
+				l->p = prop_remove(l->p, p);
+				if (!find_prop(rel->p, PROP_REMOTE)) {
+					p->p = rel->p;
+					rel->p = p;
+				}
+			}
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
+				r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
+
+				list *uris = rel_merge_remote_prop(v, pl, pr);
+
+				/* if there are common uris pull the REMOTE prop with the common uris up */
+				if (!list_empty(uris)) {
+					l->p = prop_remove(l->p, pl);
+					r->p = prop_remove(r->p, pr);
+					if (!find_prop(rel->p, PROP_REMOTE)) {
+						/* set the new (matching) uris */
+						pl->value.pval = uris;
+						/* push the pl REMOTE property to the list of properties */
+						pl->p = rel->p;
+						rel->p = pl;
+					} else {
+						// TODO what if we are here? can that even happen?
+					}
+				}
+			}
+		}
 		break;
 	}
 	return rel;
