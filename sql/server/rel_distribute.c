@@ -109,24 +109,31 @@ static sql_rel *
 replica_rewrite(visitor *v, sql_table *t, list *exps)
 {
 	sql_rel *res = NULL;
-	const char *uri = (const char *) v->data;
+	list *uris = (list*)v->data;
 
 	if (mvc_highwater(v->sql))
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if (uri) {
-		/* replace by the replica which matches the uri */
+	/* if there was a REMOTE property in any higher node use its uris to rewrite */
+	if (uris) {
 		for (node *n = t->members->h; n; n = n->next) {
 			sql_part *p = n->data;
 			sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, p->member);
 
-			if (isRemote(pt) && strcmp(uri, pt->query) == 0) {
-				res = rewrite_replica(v->sql, exps, t, pt, 0);
-				break;
+			if (!isRemote(pt))
+				continue;
+
+			for (node *m = uris->h; m; m = m->next) {
+				if (strcmp(((tid_uri*)m->data)->uri, pt->query) == 0) {
+					res = rewrite_replica(v->sql, exps, t, pt, 0);
+					break;
+				}
 			}
 		}
 	}
-	if (!res) { /* no match, find one without remote or use first */
+
+	/* no match, find one without remote or use first */
+	if (!res) {
 		sql_table *pt = NULL;
 		int remote = 1;
 
@@ -177,7 +184,14 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 	if (!eliminate_remote_or_replica_refs(v, &rel))
 		return rel;
 
-	if (is_basetable(rel->op)) {
+	/* no-leaf nodes: store the REMOTE property uris in the state of the visitor
+	 * leaf nodes: check if they are basetable replicas and proceed with the rewrite */
+	if (!is_basetable(rel->op)) {
+		prop *p;
+		if ((p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
+			v->data = (void*)p->value.pval;
+		}
+	} else {
 		sql_table *t = rel->l;
 
 		if (t && isReplicaTable(t)) {
@@ -196,7 +210,7 @@ static sql_rel *
 rel_rewrite_replica(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_visitor_bottomup(v, rel, &rel_rewrite_replica_);
+	return rel_visitor_topdown(v, rel, &rel_rewrite_replica_);
 }
 
 run_optimizer
@@ -513,6 +527,7 @@ rel_rewrite_remote(visitor *v, global_props *gp, sql_rel *rel)
 	// TODO next call is no-op remove together with the rel_rewrite_remote_ impl
 	rel_visitor_bottomup(v, NULL, &rel_rewrite_remote_);
 	rel = rel_visitor_bottomup(v, rel, &rel_rewrite_remote_2_);
+	rel = rel_visitor_topdown(v, rel, &rel_rewrite_replica_);
 	return rel;
 }
 
