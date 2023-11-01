@@ -927,8 +927,12 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	Symbol symbackup = c->curprg;
 	exception_buffer ebsave = m->sa->eb;
 
-	if (prp->id == 0) {
-		sql_error(m, 003, SQLSTATE(42000) "Missing property on the input relation");
+	if (list_empty(prp->value.pval)) {
+		sql_error(m, 003, SQLSTATE(42000) "Missing REMOTE property on the input relation");
+		goto bailout;
+	}
+	if (list_length(prp->value.pval) != 1) {
+		sql_error(m, 003, SQLSTATE(42000) "REMOTE property on the input relation is NOT unique");
 		goto bailout;
 	}
 	if (strlen(mod) >= IDLENGTH) {
