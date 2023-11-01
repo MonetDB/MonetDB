@@ -238,7 +238,7 @@ rel_merge_remote_prop(visitor *v, prop *pl, prop *pr)
 }
 
 static sql_rel *
-rel_rewrite_remote_2_(visitor *v, sql_rel *rel)
+rel_rewrite_remote_(visitor *v, sql_rel *rel)
 {
 	prop *p, *pl, *pr;
 
@@ -394,154 +394,10 @@ rel_rewrite_remote_2_(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
-rel_rewrite_remote_(visitor *v, sql_rel *rel)
-{
-	prop *p, *pl, *pr;
-
-	if (!eliminate_remote_or_replica_refs(v, &rel))
-		return rel;
-
-	sql_rel *l = rel->l, *r = rel->r; /* look on left and right relations after possibly doing rel_copy */
-
-	switch (rel->op) {
-	case op_basetable: {
-		sql_table *t = rel->l;
-
-		/* when a basetable wraps a sql_table (->l) which is remote we want to store its remote
-		 * uri to the REMOTE property. As the property is pulled up the tree it can be used in
-		 * the case of binary rel operators (see later switch cases) in order to
-		 * 1. resolve properly (same uri) replica tables in the other subtree (that's why we
-		 *    call the rewrite_replica)
-		 * 2. pull REMOTE over the binary op if the other subtree has a matching uri remote table
-		 */
-		if (t && isRemote(t) && (p = find_prop(rel->p, PROP_REMOTE)) == NULL) {
-			p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
-			p->id = t->base.id;
-			p->value.pval = (void *)mapiuri_uri(t->query, v->sql->sa);
-		}
-	} break;
-	case op_table:
-		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
-			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
-				l->p = prop_remove(l->p, p);
-				if (!find_prop(rel->p, PROP_REMOTE)) {
-					p->p = rel->p;
-					rel->p = p;
-				}
-			}
-		} break;
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-
-	case op_semi:
-	case op_anti:
-
-	case op_union:
-	case op_inter:
-	case op_except:
-
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_merge:
-		if (is_join(rel->op) && list_empty(rel->exps) &&
-			find_prop(l->p, PROP_REMOTE) == NULL &&
-			find_prop(r->p, PROP_REMOTE) == NULL) {
-			/* cleanup replica's */
-			visitor rv = { .sql = v->sql };
-
-			l = rel->l = rel_visitor_bottomup(&rv, l, &rel_rewrite_replica_);
-			rv.data = NULL;
-			r = rel->r = rel_visitor_bottomup(&rv, r, &rel_rewrite_replica_);
-			if ((!l || !r) && v->sql->session->status) /* if the recursive calls failed */
-				return NULL;
-		}
-		if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) &&
-			(pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
-			find_prop(r->p, PROP_REMOTE) == NULL) {
-			visitor rv = { .sql = v->sql, .data = pl->value.pval };
-
-			if (!(r = rel_visitor_bottomup(&rv, r, &rel_rewrite_replica_)) && v->sql->session->status)
-				return NULL;
-			rv.data = NULL;
-			if (!(r = rel->r = rel_visitor_bottomup(&rv, r, &rel_rewrite_remote_)) && v->sql->session->status)
-				return NULL;
-		} else if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) &&
-			find_prop(l->p, PROP_REMOTE) == NULL &&
-			(pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
-			visitor rv = { .sql = v->sql, .data = pr->value.pval };
-
-			if (!(l = rel_visitor_bottomup(&rv, l, &rel_rewrite_replica_)) && v->sql->session->status)
-				return NULL;
-			rv.data = NULL;
-			if (!(l = rel->l = rel_visitor_bottomup(&rv, l, &rel_rewrite_remote_)) && v->sql->session->status)
-				return NULL;
-		}
-
-		if (rel->flag&MERGE_LEFT) /* search for any remote tables but don't propagate over to this relation */
-			return rel;
-
-		/* if both subtrees have the REMOTE property with the same uri then pull it up */
-		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
-			r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL &&
-			strcmp(pl->value.pval, pr->value.pval) == 0) {
-			l->p = prop_remove(l->p, pl);
-			r->p = prop_remove(r->p, pr);
-			if (!find_prop(rel->p, PROP_REMOTE)) {
-				pl->p = rel->p;
-				rel->p = pl;
-			}
-		}
-		break;
-	case op_project:
-	case op_select:
-	case op_groupby:
-	case op_topn:
-	case op_sample:
-	case op_truncate:
-		if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
-			l->p = prop_remove(l->p, p);
-			if (!find_prop(rel->p, PROP_REMOTE)) {
-				p->p = rel->p;
-				rel->p = p;
-			}
-		}
-		break;
-	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
-			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
-				l->p = prop_remove(l->p, p);
-				if (!find_prop(rel->p, PROP_REMOTE)) {
-					p->p = rel->p;
-					rel->p = p;
-				}
-			}
-		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
-			if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
-				r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL &&
-				strcmp(pl->value.pval, pr->value.pval) == 0) {
-				l->p = prop_remove(l->p, pl);
-				r->p = prop_remove(r->p, pr);
-				if (!find_prop(rel->p, PROP_REMOTE)) {
-					pl->p = rel->p;
-					rel->p = pl;
-				}
-			}
-		}
-		break;
-	}
-	return rel;
-}
-
-static sql_rel *
 rel_rewrite_remote(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	// TODO next call is no-op remove together with the rel_rewrite_remote_ impl
-	rel_visitor_bottomup(v, NULL, &rel_rewrite_remote_);
-	rel = rel_visitor_bottomup(v, rel, &rel_rewrite_remote_2_);
+	rel = rel_visitor_bottomup(v, rel, &rel_rewrite_remote_);
 	rel = rel_visitor_topdown(v, rel, &rel_rewrite_replica_);
 	return rel;
 }
