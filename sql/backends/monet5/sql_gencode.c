@@ -353,7 +353,8 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	Client c = MCgetClient(m->clientid);
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
-	sqlid table_id = prp->id;
+	tid_uri *tu = ((list*)prp->value.pval)->h->data;
+	sqlid table_id = tu->id;
 	node *n;
 	int i, q, v, res = -1, added_to_cache = 0, *lret, *rret;
 	size_t len = 1024, nr, pwlen = 0;
@@ -388,6 +389,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 
 	sql_table *rt = sql_trans_find_table(m->session->tr, table_id);
 	const char *uri = mapiuri_uri(rt->query, m->sa);
+	assert(strcmp(tu->uri, uri) == 0);
 	if (!rt) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
