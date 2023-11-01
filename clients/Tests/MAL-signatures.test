@@ -21495,11 +21495,6 @@ nil_2time_timestamp;
 cast to timestamp and check for overflow
 batcalc
 timestamp
-pattern batcalc.timestamp(X_0:bat[:oid], X_1:int, X_2:bat[:BAT]):bat[:timestamp] 
-nil_2time_timestamp;
-cast to timestamp and check for overflow
-batcalc
-timestamp
 pattern batcalc.timestamp(X_0:bat[:timestamp], X_1:bat[:oid], X_2:int):bat[:timestamp] 
 timestamp_2time_timestamp;
 cast timestamp to timestamp and check for overflow
