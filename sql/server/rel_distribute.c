@@ -113,9 +113,9 @@ static sql_rel *
 replica_rewrite(visitor *v, sql_table *t, list *exps)
 {
 	sql_rel *res = NULL;
-	prop *p = (prop*)v->data;
+	prop *p = v->data;
 	sqlid tid = p->id;
-	list *uris = (list*)p->value.pval;
+	list *uris = p->value.pval;
 
 	if (mvc_highwater(v->sql))
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -274,7 +274,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 
 				p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
 				p->id = 0;
-				p->value.pval = (void *)uris;
+				p->value.pval = uris;
 			}
 		}
 		if (t && isReplicaTable(t) && !list_empty(t->members)) {
