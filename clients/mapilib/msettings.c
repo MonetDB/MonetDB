@@ -672,6 +672,12 @@ msettings_validate(msettings *mp, char **errmsg)
 		return false;
 	}
 
+	// 9. If **clientcert** is set, **clientkey** must also be set.
+	if (nonempty(mp, MP_CLIENTCERT) && empty(mp, MP_CLIENTKEY)) {
+		*errmsg = allocprintf("clientcert can only be set together with clientkey");
+		return false;
+	}
+
 	// compute this here so the getter function can take const msettings*
 	const char *sockdir = msetting_string(mp, MP_SOCKDIR);
 	long effective_port = msettings_connect_port(mp);
@@ -764,6 +770,22 @@ msettings_connect_tls_verify(const msettings *mp)
 	if (*cert)
 		return verify_cert;
 	return verify_system;
+}
+
+const char*
+msettings_connect_clientkey(const msettings *mp)
+{
+	return msetting_string(mp, MP_CLIENTKEY);
+}
+
+const char*
+msettings_connect_clientcert(const msettings *mp)
+{
+	const char *cert = msetting_string(mp, MP_CLIENTCERT);
+	if (*cert)
+		return cert;
+	else
+		return msetting_string(mp, MP_CLIENTKEY);
 }
 
 const char*

@@ -146,6 +146,8 @@ mapi_export long msettings_connect_port(const msettings *mp);
 mapi_export const char *msettings_connect_certhash_digits(const msettings *mp);
 mapi_export long msettings_connect_binary(const msettings *mp);
 mapi_export enum msetting_tls_verify msettings_connect_tls_verify(const msettings *mp);
+mapi_export const char *msettings_connect_clientkey(const msettings *mp);
+mapi_export const char *msettings_connect_clientcert(const msettings *mp);
 
 /* automatically incremented each time the corresponding field is updated */
 long msettings_user_generation(const msettings *mp);

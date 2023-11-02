@@ -193,10 +193,8 @@ wrap_tls(Mapi mid, SOCKET sock)
 	size_t hostlen = strlen(host);
 	size_t hostportlen = hostlen + 1 + 20;
 
-	const char *clientkey = msetting_string(settings, MP_CLIENTKEY);
-	const char *clientcert = msetting_string(settings, MP_CLIENTCERT);
-	if (!clientcert[0])
-		clientcert = clientkey;  // this logic should be virtual parameters in the spec!
+	const char *clientkey = msettings_connect_clientkey(settings);
+	const char *clientcert = msettings_connect_clientcert(settings);
 	enum msetting_tls_verify verify_method = msettings_connect_tls_verify(settings);
 
 	// Clear any earlier errrors

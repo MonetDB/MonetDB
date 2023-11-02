@@ -331,15 +331,40 @@ REJECT monetdbs:///?certhash={sha99}X
 
 ```test
 EXPECT clientkey=
+EXPECT clientcert=
 ACCEPT monetdbs:///?clientkey=/tmp/clientkey.pem
 EXPECT clientkey=/tmp/clientkey.pem
 ACCEPT monetdbs:///?clientkey=C:\TEMP\clientkey.pem
 EXPECT clientkey=C:\TEMP\clientkey.pem
 ```
 
-### clientcert
+```test
+EXPECT connect_clientkey=
+EXPECT connect_clientcert=
+```
 
 ```test
+SET clientkey=/tmp/key.pem
+SET clientcert=/tmp/cert.pem
+EXPECT valid=true
+EXPECT connect_clientkey=/tmp/key.pem
+EXPECT connect_clientcert=/tmp/cert.pem
+```
+
+```test
+SET clientkey=/tmp/key.pem
+EXPECT valid=true
+EXPECT connect_clientkey=/tmp/key.pem
+EXPECT connect_clientcert=/tmp/key.pem
+```
+
+```test
+SET clientcert=/tmp/cert.pem
+EXPECT valid=false
+```
+
+```test
+SET clientkey=dummy
 EXPECT clientcert=
 ACCEPT monetdbs:///?clientcert=/tmp/clientcert.pem
 EXPECT clientcert=/tmp/clientcert.pem
