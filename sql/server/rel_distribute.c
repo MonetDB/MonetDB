@@ -66,7 +66,7 @@ has_remote_or_replica( sql_rel *rel )
 }
 
 static sql_rel *
-rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_prop)
+do_replica_rewrite(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_prop)
 {
 	node *n, *m;
 	sql_rel *r = rel_basetable(sql, p, t->base.name);
@@ -132,7 +132,7 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 
 			for (node *m = uris->h; m && !res; m = m->next) {
 				if (strcmp(((tid_uri*)m->data)->uri, pt->query) == 0) {
-					res = rewrite_replica(v->sql, exps, t, pt, 0);
+					res = do_replica_rewrite(v->sql, exps, t, pt, 0);
 				}
 			}
 		}
@@ -162,7 +162,7 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 		if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members))
 			return sql_error(v->sql, 02, SQLSTATE(42000) "%s '%s'.'%s' should have at least one table associated",
 							TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
-		res = isReplicaTable(pt) ? replica_rewrite(v, pt, exps) : rewrite_replica(v->sql, exps, t, pt, remote);
+		res = isReplicaTable(pt) ? replica_rewrite(v, pt, exps) : do_replica_rewrite(v->sql, exps, t, pt, remote);
 	}
 	return res;
 }
@@ -261,7 +261,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 		 * uri to the REMOTE property. As the property is pulled up the tree it can be used in
 		 * the case of binary rel operators (see later switch cases) in order to
 		 * 1. resolve properly (same uri) replica tables in the other subtree (that's why we
-		 *    call the rewrite_replica)
+		 *    call the do_replica_rewrite)
 		 * 2. pull REMOTE over the binary op if the other subtree has a matching uri remote table
 		 */
 		if (t && isRemote(t) && (p = find_prop(rel->p, PROP_REMOTE)) == NULL) {
