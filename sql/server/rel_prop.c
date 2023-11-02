@@ -144,7 +144,9 @@ propvalue2string(sql_allocator *sa, prop *p)
 			for (node *n = ((list*)p->value.pval)->h; n; n = n->next) {
 				tid_uri *tu = n->data;
 				if (tu->uri)
-					offset += snprintf(buf + offset, BUFSIZ, "%s ", sql_escape_ident(sa, tu->uri));
+					offset += snprintf(buf + offset, BUFSIZ, "%s%s",
+					                   sql_escape_ident(sa, offset?" ":""),
+					                   sql_escape_ident(sa, tu->uri));
 			}
 			return sa_strdup(sa, buf);
 		}
