@@ -296,7 +296,7 @@ Make sure not to choose a too small key.
 Note that on absence of a vault key file, some default key is used to
 encrypt the authorisation tables.
 Changing this setting (effectively changing the key) for an existing
-database makes that database unusable as noone is any longer able to
+database makes that database unusable as no one is any longer able to
 login.
 If you use
 .IR monetdbd (1),
