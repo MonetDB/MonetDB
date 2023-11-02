@@ -140,7 +140,6 @@ enum msetting_tls_verify {
 	verify_hash,
 };
 mapi_export bool msettings_connect_scan(const msettings *mp);
-mapi_export const char *msettings_connect_sockdir(const msettings *mp);
 mapi_export const char *msettings_connect_unix(const msettings *mp);
 mapi_export const char *msettings_connect_tcp(const msettings *mp);
 mapi_export long msettings_connect_port(const msettings *mp);

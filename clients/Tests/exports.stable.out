@@ -724,7 +724,6 @@ long msettings_connect_binary(const msettings *mp);
 const char *msettings_connect_certhash_digits(const msettings *mp);
 long msettings_connect_port(const msettings *mp);
 bool msettings_connect_scan(const msettings *mp);
-const char *msettings_connect_sockdir(const msettings *mp);
 const char *msettings_connect_tcp(const msettings *mp);
 enum msetting_tls_verify msettings_connect_tls_verify(const msettings *mp);
 const char *msettings_connect_unix(const msettings *mp);
