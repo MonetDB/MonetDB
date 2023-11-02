@@ -80,11 +80,6 @@ negate_compare( comp_type t )
 	case cmp_notin:
 		return cmp_in;
 
-	case mark_in:
-		return mark_notin;
-	case mark_notin:
-		return mark_in;
-
 	default:
 		return t;
 	}
@@ -377,7 +372,7 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 	e->l = l;
 	e->f = f;
 	e->semantics = f->func->semantics;
-	if (!is_semantics(e) && l && !have_nil(l))
+	if (!is_semantics(e) && !is_any(e) && l && !have_nil(l))
 		set_has_no_nil(e);
 	return e;
 }
@@ -388,7 +383,7 @@ exp_rank_op( sql_allocator *sa, list *l, list *gbe, list *obe, sql_subfunc *f )
 	sql_exp *e = exp_create(sa, e_func);
 	if (e == NULL)
 		return NULL;
-	e->card = exps_card(l);
+	e->card = list_empty(l)?CARD_MULTI:exps_card(l);
 	e->l = l;
 	e->r = append(append(sa_list(sa), gbe), obe);
 	e->f = f;
@@ -724,6 +719,8 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_anti(ne);
 	if (is_semantics(oe))
 		set_semantics(ne);
+	if (is_any(oe))
+		set_any(ne);
 	if (is_symmetric(oe))
 		set_symmetric(ne);
 	if (is_ascending(oe))
@@ -1029,6 +1026,7 @@ exp_swap( sql_exp *e )
 	e->l = e->r;
 	e->r = s;
 	e->flag = swap_compare((comp_type)e->flag);
+	assert(!e->f);
 }
 
 sql_subtype *
@@ -1357,12 +1355,13 @@ exps_equal( list *l, list *r)
 }
 
 int
-exp_match_exp( sql_exp *e1, sql_exp *e2)
+exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics)
 {
 	if (exp_match(e1, e2))
 		return 1;
 	if (is_ascending(e1) != is_ascending(e2) || nulls_last(e1) != nulls_last(e2) || zero_if_empty(e1) != zero_if_empty(e2) ||
-		need_no_nil(e1) != need_no_nil(e2) || is_anti(e1) != is_anti(e2) || is_semantics(e1) != is_semantics(e2) ||
+		need_no_nil(e1) != need_no_nil(e2) || is_anti(e1) != is_anti(e2) || (semantics && is_semantics(e1) != is_semantics(e2)) ||
+		(semantics && is_any(e1) != is_any(e2)) ||
 		is_symmetric(e1) != is_symmetric(e2) || is_unique(e1) != is_unique(e2) || need_distinct(e1) != need_distinct(e2))
 		return 0;
 	if (e1->type == e2->type) {
@@ -1425,6 +1424,12 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		}
 	}
 	return 0;
+}
+
+int
+exp_match_exp( sql_exp *e1, sql_exp *e2)
+{
+	return exp_match_exp_semantics( e1, e2, true);
 }
 
 sql_exp *
@@ -1839,7 +1844,8 @@ static inline bool
 exp_regular_cmp_exp_is_false(sql_exp* e) {
     assert(e->type == e_cmp);
 
-    if (is_semantics(e))return exp_is_cmp_exp_is_false(e);
+    if (is_semantics(e) && !is_any(e)) return exp_is_cmp_exp_is_false(e);
+	if (is_any(e)) return false;
     if (e -> f)         return exp_two_sided_bound_cmp_exp_is_false(e);
     else                return exp_single_bound_cmp_exp_is_false(e);
 }
@@ -2722,7 +2728,6 @@ const char *
 compare_func( comp_type t, int anti )
 {
 	switch(t) {
-	case mark_in:
 	case cmp_equal:
 		return anti?"<>":"=";
 	case cmp_lt:
@@ -2733,7 +2738,6 @@ compare_func( comp_type t, int anti )
 		return anti?"<=":">=";
 	case cmp_gt:
 		return anti?"<":">";
-	case mark_notin:
 	case cmp_notequal:
 		return anti?"=":"<>";
 	default:
@@ -3037,18 +3041,6 @@ check_distinct_exp_names(mvc *sql, list *exps)
 	if ((distinct_exps && list_length(distinct_exps) != list_length(exps)) || duplicates)
 		return NULL;
 	return exps;
-}
-
-void
-exps_reset_freevar(list *exps)
-{
-	if (exps)
-		for(node *n=exps->h; n; n=n->next) {
-			sql_exp *e = n->data;
-
-			/*later use case per type */
-			reset_freevar(e);
-		}
 }
 
 static int rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relname, const char *expname);

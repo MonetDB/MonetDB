@@ -56,7 +56,7 @@ ALTER TABLE listparts DROP TABLE subtable1
 statement ok rowcount 1
 INSERT INTO subtable1 VALUES ('wrong')
 
-statement error M0M29!ALTER TABLE: there are values in the column b outside the partition range
+statement error M0M29!ALTER TABLE: there are values in column b outside the partition range
 ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM '"hello' TO 'world"'
 
 query TT rowsort
@@ -99,7 +99,7 @@ DELETE FROM subtime
 statement ok rowcount 1
 INSERT INTO subtime VALUES (timestamp '2050-01-01 00:00')
 
-statement error M0M29!ALTER TABLE: there are values in the column b outside the partition range
+statement error M0M29!ALTER TABLE: there are values in column b outside the partition range
 ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION FROM timestamp '2048-01-01 00:00' TO timestamp '2049-01-01 00:00'
 
 statement ok
@@ -132,7 +132,7 @@ ALTER TABLE testrangelimits DROP TABLE sublimits
 statement ok rowcount 1
 INSERT INTO sublimits VALUES (0)
 
-statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
+statement error M0M29!ALTER TABLE: there are values in column a outside the partition range
 ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION FROM RANGE MINVALUE TO 0
 
 statement ok

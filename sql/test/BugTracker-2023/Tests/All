@@ -11,3 +11,4 @@ view-on-alias-crash-7386
 alter-inc-seq-crash-7387
 misc-crashes-7390
 union-query-7401
+join-on-row_number-over-7403

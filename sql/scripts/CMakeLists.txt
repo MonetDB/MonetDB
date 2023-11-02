@@ -36,6 +36,7 @@ install(FILES
   58_hot_snapshot.sql
   75_storagemodel.sql
   76_dump.sql
+  77_storage.sql
   80_statistics.sql
   81_tracer.sql
   91_information_schema.sql

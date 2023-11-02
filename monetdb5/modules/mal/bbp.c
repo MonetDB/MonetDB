@@ -245,11 +245,7 @@ CMDbbpDirty(bat *ret)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				BAT *bn = BBP_cache(i);
 
-				if (BUNappend
-					(b,
-					 bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" :
-					 "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean",
-					 false) != GDK_SUCCEED) {
+				if (BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED) {
 					BBPunlock();
 					BBPreclaim(b);
 					throw(MAL, "catalog.bbpDirty",

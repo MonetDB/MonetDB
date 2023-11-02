@@ -9,18 +9,20 @@
 -- ISO/IEC SQL/Schemata (as defined in ISO_9075_11_Schemata_2011_E.pdf)
 -- defines INFORMATION_SCHEMA schema and standardised views
 --
--- NOTE 1: The views have been extended with MonetDB specific information
---         columns such as schema_id, table_id, column_id, is_system, etc.
---         This eases joins with any sys.* tables/views.
--- NOTE 2: MonetDB does NOT support catalog qualifiers in object names, so
---         all the *CATALOG* columns in next views will allways contain NULL.
+-- NOTE 1: MonetDB does NOT support catalog qualifiers in object names, so
+--         all the *CATALOG* columns in next views will always return NULL.
+-- NOTE 2: Most views have been extended (after the standard columns) with
+--         MonetDB specific information columns such as schema_id, table_id,
+--         column_id, is_system, etc. This simplifies filtering and joins with
+--         system tables/views in sys or tmp schemas when needed.
 
 CREATE SCHEMA INFORMATION_SCHEMA;
 COMMENT ON SCHEMA INFORMATION_SCHEMA IS 'ISO/IEC 9075-11 SQL/Schemata';
 
 -- The view CHARACTER_SETS identifies the character sets available in the database.
--- Since MonetDB does not support multiple character sets within one database, this
--- view only shows one encoding (UTF-8), which is the hardcoded database encoding.
+-- MonetDB has a hardcoded character set encoding (UTF-8) for all character data.
+-- It does not support multiple or alternative character sets, hence this view
+-- only shows one encoding: UTF-8.
 CREATE VIEW INFORMATION_SCHEMA.CHARACTER_SETS AS SELECT
   cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
@@ -127,15 +129,15 @@ CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
   cast(c."number" +1 AS int) AS ORDINAL_POSITION,
   c."default" AS COLUMN_DEFAULT,
   cast(sys.ifthenelse(c."null", 'YES', 'NO') AS varchar(3)) AS IS_NULLABLE,
-  c."type" AS DATA_TYPE,
+  CASE c."type" WHEN 'day_interval' THEN 'interval day' WHEN 'month_interval' THEN 'interval month' WHEN 'sec_interval' THEN 'interval second' ELSE c."type" END AS DATA_TYPE,
   cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml'), c."type_digits", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,
   cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml'), c."type_digits" * 3, NULL) AS int) AS CHARACTER_OCTET_LENGTH,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_digits", NULL) AS int) AS NUMERIC_PRECISION,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(c."type" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_scale", NULL) AS int) AS NUMERIC_SCALE,
   cast(sys.ifthenelse(c."type" IN ('date','timestamp','timestamptz','time','timetz'), c."type_scale" -1, NULL) AS int) AS DATETIME_PRECISION,
-  cast(CASE c."type" WHEN 'day_interval' THEN 'interval day' WHEN 'month_interval' THEN 'interval month' WHEN 'sec_interval' THEN 'interval second' ELSE NULL END AS varchar(40)) AS INTERVAL_TYPE,
-  cast(sys.ifthenelse(c."type" IN ('day_interval','month_interval','sec_interval'), c."type_scale" -1, NULL) AS int) AS INTERVAL_PRECISION,
+  cast(CASE c."type" WHEN 'day_interval' THEN 'interval day' WHEN 'month_interval' THEN (CASE c."type_digits" WHEN 1 THEN 'interval year' WHEN 2 THEN 'interval year to month' WHEN 3 THEN 'interval month' ELSE NULL END) WHEN 'sec_interval' THEN (CASE c."type_digits" WHEN 5 THEN 'interval day to hour' WHEN 6 THEN 'interval day to minute' WHEN 7 THEN 'interval day to second' WHEN 8 THEN 'interval hour' WHEN 9 THEN 'interval hour to minute' WHEN 10 THEN 'interval hour to second' WHEN 11 THEN 'interval minute' WHEN 12 THEN 'interval minute to second' WHEN 13 THEN 'interval second' ELSE NULL END) ELSE NULL END AS varchar(40)) AS INTERVAL_TYPE,
+  cast(CASE c."type" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(c."type_digits" IN (7, 10, 12, 13), sys.ifthenelse(c."type_scale" > 0, c."type_scale", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
   cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml'), 'UTF-8', NULL) AS varchar(16)) AS CHARACTER_SET_NAME,
@@ -183,4 +185,106 @@ CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
  ORDER BY s."name", t."name", c."number";
 
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.COLUMNS TO PUBLIC WITH GRANT OPTION;
+
+-- The view CHECK_CONSTRAINTS contains all check constraints defined on a table,
+-- that are owned by a currently enabled role.
+-- This view is currently empty as MonetDB does not support CHECK constraints yet.
+CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT
+  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,
+  cast(NULL AS varchar(1024)) AS CONSTRAINT_SCHEMA,
+  cast(NULL AS varchar(1024)) AS CONSTRAINT_NAME,
+  cast(NULL AS varchar(1024)) AS CHECK_CLAUSE
+ WHERE 1=0;
+
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHECK_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;
+
+-- The view TABLE_CONSTRAINTS contains all constraints belonging to tables
+-- that the current user owns or has some privilege other than SELECT on.
+CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT
+  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,
+  s."name" AS CONSTRAINT_SCHEMA,
+  k."name" AS CONSTRAINT_NAME,
+  cast(NULL AS varchar(1)) AS TABLE_CATALOG,
+  s."name" AS TABLE_SCHEMA,
+  t."name" AS TABLE_NAME,
+  cast(CASE k."type" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' ELSE NULL END AS varchar(16)) AS CONSTRAINT_TYPE,
+  cast('NO' AS varchar(3)) AS IS_DEFERRABLE,
+  cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,
+  cast('YES' AS varchar(3)) AS ENFORCED,
+  -- MonetDB column extensions
+  t."schema_id" AS schema_id,
+  t."id" AS table_id,
+  k."id" AS key_id,
+  k."type" AS key_type,
+  t."system" AS is_system
+ FROM (SELECT sk."id", sk."table_id", sk."name", sk."type" FROM sys."keys" sk UNION ALL SELECT tk."id", tk."table_id", tk."name", tk."type" FROM tmp."keys" tk) k
+ INNER JOIN (SELECT st."id", st."schema_id", st."name", st."system" FROM sys."_tables" st UNION ALL SELECT tt."id", tt."schema_id", tt."name", tt."system" FROM tmp."_tables" tt) t ON k."table_id" = t."id"
+ INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
+ ORDER BY s."name", t."name", k."name";
+
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;
+
+-- The view REFERENTIAL_CONSTRAINTS contains all referential (foreign key) constraints in the current database.
+-- Only those constraints are shown for which the current user has write access to the referencing table
+-- (by way of being the owner or having some privilege other than SELECT).
+CREATE VIEW INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS SELECT
+  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,
+  s."name" AS CONSTRAINT_SCHEMA,
+  fk."name" AS CONSTRAINT_NAME,
+  cast(NULL AS varchar(1)) AS UNIQUE_CONSTRAINT_CATALOG,
+  uks."name" AS UNIQUE_CONSTRAINT_SCHEMA,
+  uk."name" AS UNIQUE_CONSTRAINT_NAME,
+  cast('FULL' AS varchar(7)) AS MATCH_OPTION,
+  fk."update_action" AS UPDATE_RULE,
+  fk."delete_action" AS DELETE_RULE,
+  -- MonetDB column extensions
+  t."schema_id" AS fk_schema_id,
+  t."id" AS fk_table_id,
+  t."name" AS fk_table_name,
+  fk."id" AS fk_key_id,
+  ukt."schema_id" AS uc_schema_id,
+  uk."table_id" AS uc_table_id,
+  ukt."name" AS uc_table_name,
+  uk."id" AS uc_key_id
+ FROM sys."fkeys" fk
+ INNER JOIN sys."tables" t ON t."id" = fk."table_id"
+ INNER JOIN sys."schemas" s ON s."id" = t."schema_id"
+ LEFT OUTER JOIN sys."keys" uk ON uk."id" = fk."rkey"
+ LEFT OUTER JOIN sys."tables" ukt ON ukt."id" = uk."table_id"
+ LEFT OUTER JOIN sys."schemas" uks ON uks."id" = ukt."schema_id"
+ ORDER BY s."name", t."name", fk."name";
+
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;
+
+-- The view SEQUENCES contains all sequences defined in the current database.
+-- Only those sequences are shown that the current user has access to
+-- (by way of being the owner or having some privilege).
+CREATE VIEW INFORMATION_SCHEMA.SEQUENCES AS SELECT
+  cast(NULL AS varchar(1)) AS SEQUENCE_CATALOG,
+  s."name" AS SEQUENCE_SCHEMA,
+  sq."name" AS SEQUENCE_NAME,
+  cast('bigint' AS varchar(16)) AS DATA_TYPE,
+  cast(64 AS SMALLINT) AS NUMERIC_PRECISION,
+  cast(2 AS SMALLINT) AS NUMERIC_PRECISION_RADIX,
+  cast(0 AS SMALLINT) AS NUMERIC_SCALE,
+  sq."start" AS START_VALUE,
+  sq."minvalue" AS MINIMUM_VALUE,
+  sq."maxvalue" AS MAXIMUM_VALUE,
+  sq."increment" AS INCREMENT,
+  cast(sys.ifthenelse(sq."cycle", 'YES', 'NO') AS varchar(3)) AS CYCLE_OPTION,
+  cast(NULL AS varchar(16)) AS DECLARED_DATA_TYPE,
+  cast(NULL AS SMALLINT) AS DECLARED_NUMERIC_PRECISION,
+  cast(NULL AS SMALLINT) AS DECLARED_NUMERIC_SCALE,
+  -- MonetDB column extensions
+  sq."schema_id" AS schema_id,
+  sq."id" AS sequence_id,
+  get_value_for(s."name", sq."name") AS current_value,
+  sq."cacheinc" AS cacheinc,
+  cm."remark" AS comments
+ FROM sys."sequences" sq
+ INNER JOIN sys."schemas" s ON sq."schema_id" = s."id"
+ LEFT OUTER JOIN sys."comments" cm ON sq."id" = cm."id"
+ ORDER BY s."name", sq."name";
+
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.SEQUENCES TO PUBLIC WITH GRANT OPTION;
 

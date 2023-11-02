@@ -21,6 +21,9 @@ import tarfile
 
 import pymonetdb
 
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
 

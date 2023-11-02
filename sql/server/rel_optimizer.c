@@ -34,22 +34,6 @@ rel_properties(visitor *v, sql_rel *rel)
 		/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
 		gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
 		gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
-	} else if (is_join(rel->op)) {
-		/* check for setjoin rewrite */
-		if (!list_empty(rel->attr)) {
-			gp->needs_setjoin_rewrite = 1;
-			return rel;
-		}
-		if (!list_empty(rel->exps)) {
-			for (node *n = rel->exps->h; n ; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
-					gp->needs_setjoin_rewrite = 1;
-					return rel;
-				}
-			}
-		}
 	}
 	return rel;
 }
@@ -590,156 +574,6 @@ bind_merge_table_rewrite(visitor *v, global_props *gp)
 	return gp->needs_mergetable_rewrite ? rel_merge_table_rewrite : NULL;
 }
 
-static sql_exp*
-exp_is_predicate(visitor *v, sql_rel *d, sql_exp *e, int depth)
-{
-	(void)d;
-	(void)depth;
-	if (v->changes == -1)
-		return e;
-	if (e->type == e_cmp && !e->f && exp_refers(v->data, e->l)) {
-		if (e->semantics)
-			v->changes = -1;
-		else
-			v->changes = 1;
-	}
-	return e;
-}
-
-static int
-attr_is_predicate(mvc *sql, list *exps, sql_exp *a)
-{
-	visitor v = { .sql = sql, .data=a };
-
-	(void)exps_exp_visitor_topdown(&v, NULL, exps, 0, &exp_is_predicate, false);
-	if (v.changes == 1)
-		return 1;
-	return 0;
-}
-
-static sql_rel *
-rel_setjoins_2_joingroupby_(visitor *v, sql_rel *rel)
-{
-	if (rel && is_join(rel->op) && (!list_empty(rel->exps) || !list_empty(rel->attr))) {
-		sql_exp *me = NULL;
-		bool needed = false;
-
-		if (!list_empty(rel->exps)) {
-			for (node *n = rel->exps->h; n && !needed; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
-					me = e;
-					needed = true;
-				}
-			}
-		}
-		if (needed && rel->op == op_join && list_empty(rel->attr)) {
-			rel->op = (me->flag == mark_in)?op_semi:op_anti;
-			return rel;
-		}
-		if (needed || !list_empty(rel->attr)) {
-			assert(needed || !list_empty(rel->attr));
-			sql_exp *nequal = NULL;
-			sql_exp *lid = NULL, *rid = NULL;
-			sql_rel *l = rel->l, *p = rel, *r = rel->r;
-			sql_rel *pp = NULL; /* maybe one project in between (TODO keep list) */
-
-			if (me && rel->op == op_left) {
-				/* find parent of join involving the right hand side of the mark expression */
-				sql_rel *c = p->r;
-				while (c) {
-					if (is_join(c->op) && !is_processed(c) && rel_find_exp(c->r, me->r)) {
-						p = c;
-						c = p->r;
-					}
-					if (!pp && is_project(c->op) && c->l && rel_find_exp(c->l, me->r)) {
-						pp = c;
-						c = c->l;
-					} else {
-						c = NULL;
-					}
-				}
-			}
-			if (p && p->r == pp)
-				pp = NULL;
-
-			if (!(rel->l = l = rel_add_identity(v->sql, l, &lid)))
-				return NULL;
-			if (rel->op == op_left) {
-				if (!(p->r = rel_add_identity(v->sql, p->r, &rid)))
-					return NULL;
-				if (pp)
-					list_append(pp->exps, exp_ref(v->sql, rid));
-			}
-
-			list *aexps = sa_list(v->sql->sa);
-			if (!list_empty(rel->exps)) {
-				int cnt = list_length(rel->exps);
-				for (node *n = rel->exps->h; n;) {
-					node *next = n->next;
-					sql_exp *e = n->data;
-
-					if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
-						sql_exp *le = e->l, *re = e->r, *ne = NULL;
-						sql_subfunc *ea = sql_bind_func3(v->sql, "sys", e->flag==mark_in?"anyequal":"allnotequal",
-														 exp_subtype(le), exp_subtype(re), rid ? exp_subtype(rid) : NULL, F_AGGR, true);
-
-						if (rid) {
-							sql_exp *rid_ref = exp_ref(v->sql, rid);
-							ne = exp_aggr3(v->sql->sa, le, re, rid_ref, ea, 0, 0, CARD_AGGR, has_nil(le));
-						} else {
-							ne = exp_aggr2(v->sql->sa, le, re, ea, 0, 0, CARD_AGGR, has_nil(le));
-						}
-						append(aexps, ne);
-						nequal = ne;
-						if (cnt == 1 && rel->op == op_left && e->flag == mark_in && v->parent && (!is_project(v->parent->op) && (list_length(rel->attr) == 1 && attr_is_predicate(v->sql, v->parent->exps, rel->attr->h->data))) && r->l)
-							e->flag = cmp_equal; /* just keep join condition as a prefilter */
-						else
-							list_remove_node(rel->exps, NULL, n);
-					}
-					n = next;
-				}
-			}
-
-			if (!list_empty(rel->attr)) {
-				sql_exp *a = rel->attr->h->data;
-
-				exp_setname(v->sql->sa, nequal, exp_find_rel_name(a), exp_name(a));
-				rel->attr = NULL;
-			} else {
-				exp_label(v->sql->sa, nequal, ++v->sql->label);
-			}
-			list *lexps = rel_projections(v->sql, l, NULL, 1, 1);
-			aexps = list_merge(aexps, lexps, (fdup)NULL);
-			if (rel_is_ref(rel)) {
-				sql_rel *l = rel_dup_copy(v->sql->sa, rel);
-				rel = rel_inplace_groupby(rel, l, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)), aexps);
-			} else {
-				rel = rel_groupby(v->sql, rel, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)));
-				rel->exps = aexps;
-				set_processed(rel);
-			}
-		}
-	}
-	return rel;
-}
-
-static sql_rel *
-rel_setjoins_2_joingroupby(visitor *v, global_props *gp, sql_rel *rel)
-{
-	(void) gp;
-	return rel_visitor_bottomup(v, rel, &rel_setjoins_2_joingroupby_);
-}
-
-run_optimizer
-bind_setjoins_2_joingroupby(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->needs_setjoin_rewrite ? rel_setjoins_2_joingroupby : NULL;
-}
-
-
 /* these optimizers/rewriters run in a cycle loop */
 const sql_optimizer pre_sql_optimizers[] = {
 	{ 0, "split_select", bind_split_select},
@@ -769,7 +603,6 @@ const sql_optimizer pre_sql_optimizers[] = {
 
 /* these optimizers/rewriters only run once after the cycle loop */
 const sql_optimizer post_sql_optimizers[] = {
-	{22, "setjoins_2_joingroupby", bind_setjoins_2_joingroupby},
 	/* Merge table rewrites may introduce remote or replica tables */
 	/* At the moment, make sure the remote table rewriters always run after the merge table one */
 	{23, "rewrite_remote", bind_rewrite_remote},

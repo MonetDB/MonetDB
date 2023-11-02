@@ -145,6 +145,7 @@ extern int exp_refers( sql_exp *p, sql_exp *c);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern sql_exp* exps_find_exp( list *l, sql_exp *e);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
+extern int exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics);
 extern sql_exp* exps_any_match(list *l, sql_exp *e);
 /* match just the column (cmp equality) expressions */
 extern int exp_match_col_exps( sql_exp *e, list *l);
@@ -206,7 +207,6 @@ extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
 
 extern int exp_aggr_is_count(sql_exp *e);
 extern list *check_distinct_exp_names(mvc *sql, list *exps);
-extern void exps_reset_freevar(list *exps);
 
 extern sql_exp *exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
 extern int rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast);

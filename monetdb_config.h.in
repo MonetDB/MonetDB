@@ -166,16 +166,13 @@
 #cmakedefine HAVE_SYSCONF 1
 #cmakedefine HAVE_TASK_INFO 1
 #cmakedefine HAVE_TIMES 1
+#cmakedefine HAVE_TM_GMTOFF 1
 #cmakedefine HAVE_UNAME 1
 // #cmakedefine HAVE_SEMTIMEDOP
 #cmakedefine HAVE_PTHREAD_KILL 1
+#cmakedefine HAVE_PTHREAD_SETNAME_NP 1
 #cmakedefine HAVE_PTHREAD_SIGMASK 1
 #cmakedefine HAVE_GETOPT 1
-
-#define ICONV_CONST
-#define FLEXIBLE_ARRAY_MEMBER
-#define ENABLE_MAPI 1
-#define HAVE_MAPI 1
 // End Section: monetdb configure defines
 
 // Section: monetdb macro variables
@@ -200,6 +197,7 @@
 #cmakedefine HAVE_RTREE 1
 #cmakedefine HAVE_SHP 1
 #cmakedefine HAVE_LIBPY3 1
+#cmakedefine HAVE_OPENSSL 1
 
 // #cmakedefine SOCKET_LIBRARIES
 #cmakedefine HAVE_GETADDRINFO 1

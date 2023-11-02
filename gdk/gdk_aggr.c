@@ -107,18 +107,27 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 					max = gids[BATcount(g) - 1];
 				}
 			} else {
-				/* we'll do a complete scan */
-				gids = (const oid *) Tloc(g, 0);
-				for (i = 0, ngrp = BATcount(g); i < ngrp; i++) {
-					if (!is_oid_nil(gids[i])) {
-						if (gids[i] < min)
-							min = gids[i];
-						if (gids[i] > max)
-							max = gids[i];
+				const ValRecord *prop;
+				prop = BATgetprop(g, GDK_MAX_BOUND);
+				if (prop != NULL) {
+					assert(prop->vtype == TYPE_oid);
+					min = 0; /* just assume it starts at 0 */
+					max = prop->val.oval - 1; /* bound is exclusive */
+				} else {
+					/* we'll do a complete scan */
+					gids = (const oid *) Tloc(g, 0);
+					for (i = 0, ngrp = BATcount(g); i < ngrp; i++) {
+						if (!is_oid_nil(gids[i])) {
+							if (gids[i] < min)
+								min = gids[i];
+							if (gids[i] > max)
+								max = gids[i];
+						}
 					}
+					/* note: max < min is possible
+					 * if all groups are nil (or
+					 * BATcount(g)==0) */
 				}
-				/* note: max < min is possible if all groups
-				 * are nil (or BATcount(g)==0) */
 			}
 		}
 		ngrp = max < min ? 0 : max - min + 1;
@@ -3674,7 +3683,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 			if (oidxh != NULL) {
 				const oid *ords = (const oid *) oidxh->base + ORDERIDXOFF;
 				BUN r;
-				if (!bi.nonil) {
+				if (skipnil && !bi.nonil) {
 					MT_thread_setalgorithm(usepoidx ? "binsearch on parent oidx" : "binsearch on oidx");
 					r = binsearch(ords, 0, bi.type, bi.base,
 						      bi.vh ? bi.vh->base : NULL,
@@ -3817,8 +3826,16 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 
 		if (BATordered(b)) {
 			pos = bi.count - 1 + b->hseqbase;
+			if (skipnil && !bi.nonil &&
+			    ATOMcmp(bi.type, BUNtail(bi, bi.count - 1),
+				    ATOMnilptr(bi.type)) == 0)
+				pos = oid_nil; /* no non-nil values */
 		} else if (BATordered_rev(b)) {
 			pos = b->hseqbase;
+			if (skipnil && !bi.nonil &&
+			    ATOMcmp(bi.type, BUNtail(bi, 0),
+				    ATOMnilptr(bi.type)) == 0)
+				pos = oid_nil; /* no non-nil values */
 		} else {
 			if (BATcheckorderidx(b)) {
 				MT_lock_set(&b->batIdxLock);

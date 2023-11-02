@@ -366,10 +366,10 @@ mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt)
 int
 mnstr_printf(stream *restrict s, const char *restrict format, ...)
 {
+	va_list ap;
 	char buf[512], *bf = buf;
 	int i = 0;
 	size_t bfsz = sizeof(buf);
-	va_list ap;
 
 	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return -1;
@@ -398,4 +398,3 @@ mnstr_printf(stream *restrict s, const char *restrict format, ...)
 		free(bf);
 	return s->errkind == MNSTR_NO__ERROR ? i : -1;
 }
-

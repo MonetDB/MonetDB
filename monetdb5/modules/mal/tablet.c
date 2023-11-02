@@ -903,7 +903,6 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			GDKfree(err);
 			if (!task->besteffort)
 				return -1;
-			MT_lock_unset(&errorlock);
 		}
 		ret = -!task->besteffort;	/* yep, two unary operators ;-) */
 		/* replace it with a nil */
@@ -1322,8 +1321,7 @@ SQLproducer(void *p)
 		s = task->input[cur];
 		base = end;
 		/* avoid too long records */
-		if (unlikely
-			(end - s + task->b->len - task->b->pos >= task->rowlimit[cur])) {
+		if (unlikely(end - s + task->b->len - task->b->pos >= task->rowlimit[cur])) {
 			/* the input buffer should be extended, but 'base' is not shared
 			   between the threads, which we can not now update.
 			   Mimick an ateof instead; */

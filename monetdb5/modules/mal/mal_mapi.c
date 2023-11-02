@@ -31,7 +31,6 @@
  * the module remote.
  */
 #include "monetdb_config.h"
-#ifdef HAVE_MAPI
 #include "mal_client.h"
 #include "mal_session.h"
 #include "mal_exception.h"
@@ -1861,9 +1860,8 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			case TYPE_flt:
 			case TYPE_dbl:
 			case TYPE_str:
-				if (SERVERfieldAnalysis
-					(fld, getVarType(mb, getArg(pci, j)),
-					 &stk->stk[pci->argv[j]]) < 0) {
+				if (SERVERfieldAnalysis(fld, getVarType(mb, getArg(pci, j)),
+										&stk->stk[pci->argv[j]]) < 0) {
 					mapi_close_handle(hdl);
 					throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
@@ -2141,8 +2139,3 @@ mel_func mal_mapi_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_mal_mapi_mal)
 { mal_module2("mapi", NULL, mal_mapi_init_funcs, MAPIprelude, NULL); }
-
-#else
-// this avoids a compiler warning w.r.t. empty compilation units.
-int SERVERdummy = 42;
-#endif // HAVE_MAPI

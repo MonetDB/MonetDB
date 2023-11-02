@@ -393,6 +393,25 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 		msg = userCheckCredentials( m, c, pwhash, challenge, algo);
 		if (msg)
 			goto bailout1;
+		if (!GDKinmemory(0) && !GDKembedded()) {
+			sabdb *stats = NULL;
+			bool locked = false;
+			char *err = msab_getMyStatus(&stats);
+			if (err || stats == NULL)
+				free(err);
+			else
+				locked = stats->locked;
+			msab_freeStatus(&stats);
+			if (locked) {
+				if (c->user == 0) {
+					mnstr_printf(c->fdout, "#server is running in "
+								 "maintenance mode\n");
+				} else {
+					msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "server is running in maintenance mode, please try again later\n");
+					goto bailout1;
+				}
+			}
+		}
 
 		switch (monet5_user_set_def_schema(m, c->user, c->username)) {
 			case -1:
@@ -1044,7 +1063,7 @@ SQLreader(Client c, backend *be)
 				more = false;
 				go = false;
 			} else if (go && (rd = bstream_next(in)) <= 0) {
-				if (rd == 0 && in->eof) {
+				if (rd == 0 && in->eof && !mnstr_eof(in->s)) {
 					/* we hadn't seen the EOF before, so just try again
 					   (this time with prompt) */
 					more = true;
@@ -1213,7 +1232,7 @@ SQLparser_body(Client c, backend *be)
 	m->emode = m_normal;
 	m->emod = mod_none;
 	c->query = NULL;
-	Tbegin = GDKusec();
+	c->qryctx.starttime = Tbegin = Tend = GDKusec();
 
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
@@ -1242,7 +1261,6 @@ SQLparser_body(Client c, backend *be)
 	 */
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
-	c->qryctx.starttime = Tend = GDKusec();
 	if (profilerStatus > 0) {
 		profilerEvent(NULL,
 					  &(struct NonMalEvent)
@@ -1360,7 +1378,7 @@ SQLparser_body(Client c, backend *be)
 					msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
 
 				if (msg == MAL_SUCCEED && opt) {
-					Tbegin = GDKusec();
+					Tbegin = Tend;
 					msg = SQLoptimizeQuery(c, c->curprg->def);
 					Tend = GDKusec();
 					if (profilerStatus > 0)
