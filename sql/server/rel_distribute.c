@@ -274,7 +274,6 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 			 * 1. find all the remotes
 			 * 2. store them in the PROP_REMOTE pval
 			 */
-			p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
 			list *uris = sa_list(v->sql->sa);
 			for (node *n = t->members->h; n; n = n->next) {
 				sql_part *part = n->data;
@@ -287,7 +286,10 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 					append(uris, tu);
 				}
 			}
-			p->value.pval = (void*)uris;
+			if (!list_empty(uris)) {
+				p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
+				p->value.pval = (void*)uris;
+			}
 		}
 	} break;
 	case op_table:
