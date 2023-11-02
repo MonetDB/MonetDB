@@ -69,7 +69,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define getArgReference_bat(s, pci, k)				\
 	({												\
 		ValRecord *v = &(s)->stk[(pci)->argv[k]];	\
-		assert(v->vtype == TYPE_bat);				\
+		assert(v->bat);								\
 		&v->val.bval;								\
 	})
 #define getArgReference_int(s, pci, k)				\

@@ -47,6 +47,8 @@
 ValPtr
 VALset(ValPtr v, int t, ptr p)
 {
+	assert(t < TYPE_any);
+	v->bat = false;
 	switch (ATOMstorage(v->vtype = t)) {
 	case TYPE_void:
 		v->val.oval = *(oid *) p;
@@ -99,6 +101,7 @@ VALset(ValPtr v, int t, ptr p)
 void *
 VALget(ValPtr v)
 {
+	assert(!v->bat);
 	switch (ATOMstorage(v->vtype)) {
 	case TYPE_void: return (void *) &v->val.oval;
 	case TYPE_msk: return (void *) &v->val.mval;
@@ -124,7 +127,7 @@ VALget(ValPtr v)
 void
 VALclear(ValPtr v)
 {
-	if (ATOMextern(v->vtype)) {
+	if (!v->bat && ATOMextern(v->vtype)) {
 		if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype))
 			GDKfree(v->val.pval);
 	}
@@ -136,6 +139,7 @@ VALclear(ValPtr v)
 void
 VALempty(ValPtr v)
 {
+	v->bat = false;
 	v->len = 0;
 	v->val.oval = oid_nil;
 	v->vtype = TYPE_void;
@@ -149,7 +153,10 @@ VALempty(ValPtr v)
 ValPtr
 VALcopy(ValPtr d, const ValRecord *s)
 {
-	if (!ATOMextern(s->vtype)) {
+	if (d == s)
+		return d;
+	d->bat = false;
+	if (s->bat || !ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == NULL) {
 		return VALinit(d, s->vtype, ATOMnilptr(s->vtype));
@@ -182,6 +189,7 @@ VALcopy(ValPtr d, const ValRecord *s)
 ValPtr
 VALinit(ValPtr d, int tpe, const void *s)
 {
+	d->bat = false;
 	switch (ATOMstorage(d->vtype = tpe)) {
 	case TYPE_void:
 		d->val.oval = *(const oid *) s;
@@ -244,7 +252,13 @@ VALinit(ValPtr d, int tpe, const void *s)
 char *
 VALformat(const ValRecord *res)
 {
-	return ATOMformat(res->vtype, VALptr(res));
+	if (res->bat) {
+		if (is_bat_nil(res->val.bval))
+			return GDKstrdup("nil");
+		else
+			return ATOMformat(TYPE_int, (const void *) &res->val.ival);
+	} else
+		return ATOMformat(res->vtype, VALptr(res));
 }
 
 /* Convert (cast) the value in T to the type TYP, do this in place.
@@ -255,9 +269,7 @@ ptr
 VALconvert(int typ, ValPtr t)
 {
 	int src_tpe = t->vtype;
-	ValRecord dst;
-
-	dst.vtype = typ;
+	ValRecord dst = { .vtype = typ };
 
 	/* first convert into a new location */
 	if (VARconvert(&dst, t, 0, 0, 0) != GDK_SUCCEED)
@@ -311,6 +323,8 @@ VALcmp(const ValRecord *p, const ValRecord *q)
 bool
 VALisnil(const ValRecord *v)
 {
+	if (v->bat)
+		return is_bat_nil(v->val.bval);
 	switch (v->vtype) {
 	case TYPE_void:
 		return true;
@@ -338,8 +352,6 @@ VALisnil(const ValRecord *v)
 		return is_oid_nil(v->val.oval);
 	case TYPE_ptr:
 		return v->val.pval == NULL;
-	case TYPE_bat:
-		return is_bat_nil(v->val.bval);
 	default:
 		break;
 	}

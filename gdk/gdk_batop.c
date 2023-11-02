@@ -1010,7 +1010,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 gdk_return
 BATdel(BAT *b, BAT *d)
 {
-	gdk_return (*unfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 	void (*atmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 	MT_lock_set(&b->theaplock);
 	BATiter bi = bat_iterator_nolock(b);
@@ -1045,12 +1044,10 @@ BATdel(BAT *b, BAT *d)
 			c = b->hseqbase + BATcount(b) - o;
 		if (c == 0)
 			return GDK_SUCCEED;
-		if (unfix || atmdel) {
+		if (atmdel) {
 			BUN p = o - b->hseqbase;
 			BUN q = p + c;
 			while (p < q) {
-				if (unfix && (*unfix)(BUNtail(bi, p)) != GDK_SUCCEED)
-					return GDK_FAIL;
 				if (atmdel)
 					(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, p));
 				p++;
@@ -1109,8 +1106,6 @@ BATdel(BAT *b, BAT *d)
 			p = Tloc(b, pos);
 		while (c > 0 && *o < b->hseqbase + BATcount(b)) {
 			size_t n;
-			if (unfix)
-				(*unfix)(BUNtail(bi, *o - b->hseqbase));
 			if (atmdel)
 				(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, *o - b->hseqbase));
 			o++;

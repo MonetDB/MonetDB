@@ -272,6 +272,7 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 				lhs->vtype = getVarGDKType(mb, i);	\
 				lhs->val.pval = 0;					\
 				lhs->len = 0;						\
+				lhs->bat = isaBatType(getVarType(mb, i));		\
 			}										\
 		}											\
 	} while (0)
@@ -446,7 +447,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 			lhs = &stk->stk[pci->argv[i]];
 			if (VALcopy(lhs, argv[i]) == NULL)
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			if (lhs->vtype == TYPE_bat)
+			if (lhs->bat)
 				BBPretain(lhs->val.bval);
 		}
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
@@ -628,7 +629,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			for (int i = 0; i < pci->argc; i++) {
 				int a = getArg(pci, i);
 
-				if (stk->stk[a].vtype == TYPE_bat && getEndScope(mb, a) == stkpc
+				if (stk->stk[a].bat && getEndScope(mb, a) == stkpc
 					&& isNotUsedIn(pci, i + 1, a))
 					garbage[i] = a;
 				else
@@ -658,12 +659,14 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			for (int k = 0, i = pci->retc; k < pci->retc && i < pci->argc;
 				 i++, k++) {
 				lhs = &stk->stk[pci->argv[k]];
+				assert(lhs->bat == isaBatType(getArgType(mb, pci, k)));
 				rhs = &stk->stk[pci->argv[i]];
+				assert(rhs->bat == isaBatType(getArgType(mb, pci, i)));
 				if (VALcopy(lhs, rhs) == NULL) {
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
-				} else if (lhs->vtype == TYPE_bat && !is_bat_nil(lhs->val.bval))
+				} else if (lhs->bat && !is_bat_nil(lhs->val.bval))
 					BBPretain(lhs->val.bval);
 			}
 			break;
@@ -690,7 +693,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							bat bid = stk->stk[a].val.bval;
 							BAT *_b = BATdescriptor(bid);
 							t = getBatType(t);
-							assert(stk->stk[a].vtype == TYPE_bat);
+							assert(stk->stk[a].bat);
 							assert(is_bat_nil(bid) ||
 								   t == TYPE_any ||
 								   ATOMtype(_b->ttype) == ATOMtype(t));
@@ -720,7 +723,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					if (isaBatType(t)) {
 						//bat bid = stk->stk[a].val.bval;
 						t = getBatType(t);
-						assert(stk->stk[a].vtype == TYPE_bat);
+						assert(stk->stk[a].bat);
 						//assert( !is_bat_nil(bid));
 						assert(t != TYPE_any);
 						//assert( ATOMtype(BBP_desc(bid)->ttype) == ATOMtype(t));
@@ -778,7 +781,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
-				} else if (lhs->vtype == TYPE_bat)
+				} else if (lhs->bat)
 					BBPretain(lhs->val.bval);
 			}
 			if (ret == MAL_SUCCEED && ii == pci->argc) {
@@ -788,7 +791,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				arg = q->retc;
 				for (ii = pci->retc; ii < pci->argc; ii++, arg++) {
 					lhs = &nstk->stk[q->argv[arg]];
-					if (lhs->vtype == TYPE_bat)
+					if (lhs->bat)
 						BBPrelease(lhs->val.bval);
 				}
 				GDKfree(nstk);
@@ -855,13 +858,9 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if (ret == MAL_SUCCEED) {
 			for (int i = 0; i < pci->retc; i++) {
 				lhs = &backup[i];
-				if (BATatoms[lhs->vtype].atomUnfix &&
-					(*BATatoms[lhs->vtype].atomUnfix) (VALget(lhs)) != GDK_SUCCEED) {
-					if (ret == MAL_SUCCEED)
-						ret = createException(MAL, "mal.propertyCheck",
-											  GDK_EXCEPTION);
-				}
-				if (ATOMextern(lhs->vtype) &&
+				if (lhs->bat) {
+					BBPrelease(lhs->val.bval);
+				} else if (ATOMextern(lhs->vtype) &&
 					lhs->val.pval &&
 					lhs->val.pval != ATOMnilptr(lhs->vtype) &&
 					lhs->val.pval != stk->stk[getArg(pci, i)].val.pval)
@@ -872,7 +871,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				for (int i = 0; i < pci->retc; i++) {
 					if (garbage[i] == -1
-						&& stk->stk[getArg(pci, i)].vtype == TYPE_bat
+						&& stk->stk[getArg(pci, i)].bat
 						&& !is_bat_nil(stk->stk[getArg(pci, i)].val.bval)) {
 						assert(stk->stk[getArg(pci, i)].val.bval > 0);
 						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
@@ -1188,7 +1187,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						ret = createException(MAL, "mal.interpreter",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						break;
-					} else if (lhs->vtype == TYPE_bat)
+					} else if (lhs->bat)
 						BBPretain(lhs->val.bval);
 				}
 				if (garbageControl(getInstrPtr(mb, 0)))
@@ -1372,11 +1371,11 @@ void
 garbageElement(Client cntxt, ValPtr v)
 {
 	(void) cntxt;
-	if (ATOMstorage(v->vtype) == TYPE_str) {
+	if (!v->bat && ATOMstorage(v->vtype) == TYPE_str) {
 		GDKfree(v->val.sval);
 		v->val.sval = NULL;
 		v->len = 0;
-	} else if (v->vtype == TYPE_bat) {
+	} else if (v->bat) {
 		/*
 		 * All operations are responsible to properly set the
 		 * reference count of the BATs being produced or destroyed.
@@ -1389,6 +1388,7 @@ garbageElement(Client cntxt, ValPtr v)
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid)); */
 		v->val.bval = bat_nil;
+		v->bat = false;
 		if (is_bat_nil(bid))
 			return;
 		BBPcold(bid);
@@ -1430,6 +1430,7 @@ garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 		garbageElement(cntxt, v = &stk->stk[k]);
 		v->vtype = TYPE_int;
 		v->val.ival = int_nil;
+		v->bat = false;
 		//  }
 	}
 }

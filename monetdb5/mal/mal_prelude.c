@@ -151,10 +151,6 @@ addAtom(mel_atom *atoms)
 			BATatoms[i].atomFromStr = atoms->fromstr;
 		if (atoms->tostr)
 			BATatoms[i].atomToStr = atoms->tostr;
-		if (atoms->fix)
-			BATatoms[i].atomFix = atoms->fix;
-		if (atoms->unfix)
-			BATatoms[i].atomUnfix = atoms->unfix;
 		if (atoms->heap) {
 			BATatoms[i].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(ATOMsize(i)), ATOMsize(i));

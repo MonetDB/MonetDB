@@ -116,16 +116,10 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 				return TYPE_any;
 			break;
 		case 'b':
-			if (qt("bat"))
-				return TYPE_bat;
 			if (qt("bit"))
 				return TYPE_bit;
 			if (qt("bte"))
 				return TYPE_bte;
-			break;
-		case 'B':
-			if (qt("BAT"))
-				return TYPE_bat;
 			break;
 		case 'd':
 			if (qt("dbl"))
@@ -192,8 +186,6 @@ findGDKtype(int type)
 {
 	if (type == TYPE_any || type == TYPE_void)
 		return TYPE_void;
-	if (isaBatType(type))
-		return TYPE_bat;
 	return ATOMtype(type);
 }
 

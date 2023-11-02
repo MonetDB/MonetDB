@@ -437,7 +437,6 @@ enum {
 	TYPE_bit,		/* TRUE, FALSE, or nil */
 	TYPE_bte,
 	TYPE_sht,
-	TYPE_bat,		/* BAT id: index in BBPcache */
 	TYPE_int,
 	TYPE_oid,
 	TYPE_ptr,		/* C pointer! */
@@ -651,7 +650,8 @@ typedef struct {
 		uuid uval;
 	} val;
 	size_t len;
-	int vtype;
+	short vtype;
+	bool bat;
 } *ValPtr, ValRecord;
 
 /* interface definitions */

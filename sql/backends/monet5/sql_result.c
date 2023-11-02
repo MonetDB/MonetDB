@@ -1829,14 +1829,14 @@ int
 mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, BAT *b)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b, false) ? 0 : -1;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, true, b->ttype, b, false) ? 0 : -1;
 }
 
 int
 mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, mtype, p, false) ? 0 : -1;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, false, mtype, p, false) ? 0 : -1;
 }
 
 /* Translate error code from export function to error string */

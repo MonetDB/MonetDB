@@ -368,7 +368,7 @@ str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWCo
 	}
 
 	for (i = 0; i < colsNum; i++) {
-		if (store->storage_api.append_col(m->session->tr, cols[i], offset, pos, colsBAT[i], BATcount(colsBAT[i]), TYPE_bat) != LOG_OK) {
+		if (store->storage_api.append_col(m->session->tr, cols[i], offset, pos, colsBAT[i], BATcount(colsBAT[i]), true, colsBAT[i]->ttype) != LOG_OK) {
 			bat_destroy(pos);
 			msg = createException(MAL, "shp.load", SQLSTATE(38000) "Geos append column failed");
 			goto unfree;

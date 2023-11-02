@@ -20,10 +20,10 @@
 
 #define newBatType(T)  (1<<16 |  (T & 0377) )
 #define getBatType(X)  ((X) & 0377 )
-#define isaBatType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
+#define isaBatType(X)   (((1<<16) & (X)) != 0) // && getBatType(X) != TYPE_any)
 
 #define isAnyExpression(X) ((X) >> 17)
-#define isPolymorphic(X) (isAnyExpression(X) || (X)== TYPE_any)
+#define isPolymorphic(X) (isAnyExpression(X)) // || (X)== TYPE_any)
 
 #define setTypeIndex(X,I) X |= ((I & 017)<<18);
 #define getTypeIndex(X)  (((X)>>18) & 017)

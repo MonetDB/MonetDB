@@ -131,7 +131,7 @@ bat_utils_init(void)
 	char name[32];
 
 	for (t=1; t<GDKatomcnt; t++) {
-		if (t != TYPE_bat && BATatoms[t].name[0]) {
+		if (BATatoms[t].name[0]) {
 			ebats[t] = bat_new(t, 0, SYSTRANS);
 			if(ebats[t] == NULL) {
 				for (t = t - 1; t >= 1; t--)

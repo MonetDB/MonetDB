@@ -2386,7 +2386,7 @@ remote_cleanup:
 				bn->tnil = false;
 			}
 
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, bn, cnt, TYPE_bat) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, bn, cnt, true, bn->ttype) != 0) {
 				bn->theap->base = prev_base;
 				bn->theap->free = prev_size;
 				BBPreclaim(bn);
@@ -2408,7 +2408,7 @@ remote_cleanup:
 					goto cleanup;
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				goto cleanup;
 			}
@@ -2430,7 +2430,7 @@ remote_cleanup:
 					d[j] = timestamp_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2455,7 +2455,7 @@ remote_cleanup:
 					d[j] = date_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2480,7 +2480,7 @@ remote_cleanup:
 					d[j] = time_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2514,7 +2514,7 @@ remote_cleanup:
 					d[j] = b;
 				}
 			}
-			if (!err && store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (!err && store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2579,7 +2579,7 @@ remote_cleanup:
 			}
 
 			int idx = newTmpVariable(mb, newBatType(c->type.type->localtype));
-			ValRecord v = { .vtype = TYPE_bat, .len = ATOMlen(TYPE_bat, &b->batCacheid), .val.bval = b->batCacheid};
+			ValRecord v = { .bat = true, .vtype = b->ttype, .len = sizeof(int), .val.bval = b->batCacheid};
 			getVarConstant(mb, idx) = v;
 			setVarConstant(mb, idx);
 			BBPunfix(b->batCacheid);

@@ -1600,9 +1600,9 @@ VARconvert(ValPtr ret, const ValRecord *v,
 	BUN nils = 0;
 	bool reduce;
 
+	assert(!v->bat);
 	if (ret->vtype == TYPE_msk) {
-		ValRecord tmp;
-		tmp.vtype = TYPE_bit;
+		ValRecord tmp = { .vtype = TYPE_bit };
 		if (VARconvert(&tmp, v, scale1, scale2, precision) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (is_bte_nil(tmp.val.btval)) {
@@ -1612,9 +1612,7 @@ VARconvert(ValPtr ret, const ValRecord *v,
 		ret->val.mval = tmp.val.btval;
 		ret->len = ATOMsize(TYPE_msk);
 	} else if (v->vtype == TYPE_msk) {
-		ValRecord tmp;
-		tmp.vtype = TYPE_bit;
-		tmp.val.btval = v->val.mval;
+		ValRecord tmp = { .vtype = TYPE_bit, .val.btval = v->val.mval };
 		if (VARconvert(ret, &tmp, scale1, scale2, precision) != GDK_SUCCEED)
 			return GDK_FAIL;
 	} else if (ret->vtype == TYPE_str) {

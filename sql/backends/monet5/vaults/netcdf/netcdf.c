@@ -917,7 +917,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		nc_close(ncid);
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	store->storage_api.append_col(m->session->tr, col, offset, pos, vbat, BATcount(vbat), TYPE_bat);
+	store->storage_api.append_col(m->session->tr, col, offset, pos, vbat, BATcount(vbat), true, vbat->ttype);
 	BBPunfix(vbatid);
 	BBPrelease(vbatid);
 	vbat = NULL;
@@ -945,7 +945,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nc_close(ncid);
 			throw(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		store->storage_api.append_col(m->session->tr, col, offset, pos, dimbat, BATcount(dimbat), TYPE_bat);
+		store->storage_api.append_col(m->session->tr, col, offset, pos, dimbat, BATcount(dimbat), true, dimbat->ttype);
 		BBPunfix(dim_bids[i]); /* phys. ref from BATdescriptor */
 		BBPrelease(dim_bids[i]); /* log. ref. from loadVar */
 		dimbat = NULL;

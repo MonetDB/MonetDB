@@ -139,13 +139,13 @@ typedef int (*bind_updates_idx_fptr) (sql_trans *tr, sql_idx *c, BAT **ui, BAT *
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
-typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *d, BUN cnt, int t);
-typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *d, BUN cnt, int t);
+typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *d, BUN cnt, bool isbat, int t);
+typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *d, BUN cnt, bool isbat, int t);
 
-typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
-typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);
+typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, bool isbat);
+typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, bool isbat);
 
-typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
+typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, bool isbat);
 typedef int (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets);
 typedef int (*tab_validate_fptr) (sql_trans *tr, sql_table *t, int uncommitted);
 
@@ -332,7 +332,7 @@ typedef struct logger_functions {
 /* we need to add an interface for result_tables later */
 
 extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t querytype, res_table *next);
-extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *v, bool cache);
+extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, bool isbat, char mtype, void *v, bool cache);
 
 extern void res_table_destroy(res_table *t);
 

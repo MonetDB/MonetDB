@@ -19,6 +19,7 @@ atom_init( atom *a )
 {
 	a->isnull = 1;
 	a->data.vtype = 0;
+	a->data.bat = false;
 	a->tpe.type = NULL;
 }
 
@@ -748,8 +749,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			(EC_VARCHAR(at->type->eclass) &&
 			 (tp->type->eclass == EC_DATE ||
 			  EC_TEMP_NOFRAC(tp->type->eclass)))) {
-			ValRecord v;
-			v.vtype = tp->type->localtype;
+			ValRecord v = { .vtype = tp->type->localtype };
 			if (VARconvert(&v, &a->data, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
 				GDKclrerr();
 				return NULL;
@@ -758,7 +758,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			na->tpe = *tp;
 			na->isnull = 0;
 			SA_VALcopy(sa, &na->data, &v);
-			if (ATOMextern(v.vtype))
+			if (!v.bat && ATOMextern(v.vtype))
 				GDKfree(v.val.pval);
 			return na;
 		}
@@ -777,11 +777,10 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 atom *
 atom_neg(sql_allocator *sa, atom *a)
 {
-	ValRecord dst;
 
 	if (a->isnull)
 		return a;
-	dst.vtype = a->data.vtype;
+	ValRecord dst = { .vtype = a->data.vtype };
 	if (VARcalcnegate(&dst, &a->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
@@ -797,11 +796,10 @@ atom_neg(sql_allocator *sa, atom *a)
 atom *
 atom_absolute(sql_allocator *sa, atom *a)
 {
-	ValRecord dst;
 
 	if (a->isnull)
 		return a;
-	dst.vtype = a->data.vtype;
+	ValRecord dst = { .vtype = a->data.vtype };
 	if (VARcalcabsolute(&dst, &a->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
@@ -921,8 +919,6 @@ atom_cmp(atom *a1, atom *a2)
 atom *
 atom_add(sql_allocator *sa, atom *a1, atom *a2)
 {
-	ValRecord dst;
-
 	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype)
 		return NULL;
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
@@ -934,7 +930,7 @@ atom_add(sql_allocator *sa, atom *a1, atom *a2)
 	}
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
-	dst.vtype = a1->tpe.type->localtype;
+	ValRecord dst = { .vtype = a1->tpe.type->localtype };
 	if (VARcalcadd(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
@@ -950,8 +946,6 @@ atom_add(sql_allocator *sa, atom *a1, atom *a2)
 atom *
 atom_sub(sql_allocator *sa, atom *a1, atom *a2)
 {
-	ValRecord dst;
-
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
@@ -968,7 +962,7 @@ atom_sub(sql_allocator *sa, atom *a1, atom *a2)
 	}
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
-	dst.vtype = a1->tpe.type->localtype;
+	ValRecord dst = { .vtype = a1->tpe.type->localtype };
 	if (VARcalcsub(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
@@ -984,8 +978,6 @@ atom_sub(sql_allocator *sa, atom *a1, atom *a2)
 atom *
 atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 {
-	ValRecord dst;
-
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (!EC_INTERVAL(a1->tpe.type->eclass) && (a1->tpe.type->localtype < a2->tpe.type->localtype ||
@@ -996,7 +988,7 @@ atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 	}
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
-	dst.vtype = a1->tpe.type->localtype;
+	ValRecord dst = { .vtype = a1->tpe.type->localtype };
 	if (VARcalcmul(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
@@ -1013,13 +1005,11 @@ atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 atom *
 atom_div(sql_allocator *sa, atom *a1, atom *a2)
 {
-	ValRecord dst;
-
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->isnull || a2->isnull)
 		return atom_general(sa, &a1->tpe, NULL);
-	dst.vtype = a1->tpe.type->localtype;
+	ValRecord dst = { .vtype = a1->tpe.type->localtype };
 	if (VARcalcdiv(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;
@@ -1035,11 +1025,9 @@ atom_div(sql_allocator *sa, atom *a1, atom *a2)
 atom *
 atom_inc(sql_allocator *sa, atom *a)
 {
-	ValRecord dst;
-
 	if (a->isnull)
 		return a;
-	dst.vtype = a->data.vtype;
+	ValRecord dst = { .vtype = a->data.vtype };
 	if (VARcalcincr(&dst, &a->data) != GDK_SUCCEED) {
 		GDKclrerr();
 		return NULL;

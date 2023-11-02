@@ -78,12 +78,12 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 			getBatType(getArgType(mb, p, 1)) != TYPE_oid
 			&& (getBatType(getArgType(mb, p, 2)) != TYPE_oid
 				&& !(isVarConstant(mb, getArg(p, 2))
-					 && getArgType(mb, p, 2) == TYPE_bat))) {
+					 && isaBatType(getArgType(mb, p, 2) )))) {
 			/* add candidate lists */
 			if (isaBatType(getArgType(mb, p, 1)))
-				p = pushNil(mb, p, TYPE_bat);
+				p = pushNilBat(mb, p);
 			if (isaBatType(getArgType(mb, p, 2)))
-				p = pushNil(mb, p, TYPE_bat);
+				p = pushNilBat(mb, p);
 		}
 	}
 
@@ -217,12 +217,14 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 				 VALptr(&getVar(mq, getArg(q, 1))->value),
 				 ATOMnilptr(getArgType(mq, q, 1))) == 0) {
 				ValRecord cst;
-				int tpe = newBatType(getArgType(mq, q, 1));
+				int tpe = getArgType(mq, q, 1);
 
-				setVarType(mq, getArg(q, 0), tpe);
-				cst.vtype = TYPE_bat;
+				cst.vtype = tpe;
+				cst.bat = true;
 				cst.val.bval = bat_nil;
 				cst.len = 0;
+				tpe = newBatType(tpe);
+				setVarType(mq, getArg(q, 0), tpe);
 				m = defConstant(mq, tpe, &cst);
 				if (m >= 0) {
 					getArg(q, 1) = m;
@@ -271,9 +273,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 							&& getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
 							/* add candidate lists */
 							if (isaBatType(getArgType(mq, q, 1)))
-								q = pushNil(mq, q, TYPE_bat);
+								q = pushNilBat(mq, q);
 							if (isaBatType(getArgType(mq, q, 2)))
-								q = pushNil(mq, q, TYPE_bat);
+								q = pushNilBat(mq, q);
 						} else if (q->argc == 4
 								   && getBatType(getArgType(mq, q, 3)) == TYPE_bit
 								   /* these two filter out unary
@@ -285,9 +287,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 							q->argc--;
 							/* add candidate lists */
 							if (isaBatType(getArgType(mq, q, 1)))
-								q = pushNil(mq, q, TYPE_bat);
+								q = pushNilBat(mq, q);
 							if (isaBatType(getArgType(mq, q, 2)))
-								q = pushNil(mq, q, TYPE_bat);
+								q = pushNilBat(mq, q);
 							q = pushArgument(mq, q, a);
 						}
 					}
@@ -536,8 +538,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(avg, 0) = getArg(p, 0);
 			avg = pushArgument(mb, avg, getDestVar(sum));
 			avg = pushArgument(mb, avg, getDestVar(cnt));
-			avg = pushNil(mb, avg, TYPE_bat);
-			avg = pushNil(mb, avg, TYPE_bat);
+			avg = pushNilBat(mb, avg);
+			avg = pushNilBat(mb, avg);
 			freeInstruction(p);
 			pushInstruction(mb, avg);
 		} else {

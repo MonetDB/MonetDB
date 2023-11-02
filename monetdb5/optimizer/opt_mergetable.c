@@ -86,10 +86,9 @@ nr_of_nilbats(MalBlkPtr mb, InstrPtr p)
 {
 	int j, cnt = 0;
 	for (j = p->retc; j < p->argc; j++)
-		if (getArgType(mb, p, j) == TYPE_bat
-			|| (isaBatType(getArgType(mb, p, j))
+		if (isaBatType(getArgType(mb, p, j))
 				&& isVarConstant(mb, getArg(p, j))
-				&& getVarConstant(mb, getArg(p, j)).val.bval == bat_nil))
+				&& getVarConstant(mb, getArg(p, j)).val.bval == bat_nil)
 			cnt++;
 	return cnt;
 }
@@ -1285,9 +1284,9 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		x = pushArgument(mb, x, getArg(v, 0));
 		x = pushArgument(mb, x, getArg(y, 0));
 		if (isaBatType(getArgType(mb, x, 0)))
-			x = pushNil(mb, x, TYPE_bat);
+			x = pushNilBat(mb, x);
 		if (isaBatType(getArgType(mb, y, 0)))
-			x = pushNil(mb, x, TYPE_bat);
+			x = pushNilBat(mb, x);
 		pushInstruction(mb, x);
 
 		/* dbl w = avg * x */
@@ -1299,9 +1298,9 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		w = pushArgument(mb, w, getArg(r, 0));
 		w = pushArgument(mb, w, getArg(x, 0));
 		if (isaBatType(getArgType(mb, r, 0)))
-			w = pushNil(mb, w, TYPE_bat);
+			w = pushNilBat(mb, w);
 		if (isaBatType(getArgType(mb, x, 0)))
-			w = pushNil(mb, w, TYPE_bat);
+			w = pushNilBat(mb, w);
 		pushInstruction(mb, w);
 
 		r = w;
@@ -1565,9 +1564,9 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		r = pushArgument(mb, r, getArg(v, 0));
 		r = pushArgument(mb, r, getArg(s, 0));
 		if (isaBatType(getArgType(mb, v, 0)))
-			r = pushNil(mb, r, TYPE_bat);
+			r = pushNilBat(mb, r);
 		if (isaBatType(getArgType(mb, s, 0)))
-			r = pushNil(mb, r, TYPE_bat);
+			r = pushNilBat(mb, r);
 		pushInstruction(mb, r);
 
 		/* dbl s = avg * r */
@@ -1578,9 +1577,9 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		s = pushArgument(mb, s, getArg(ai1, 0));
 		s = pushArgument(mb, s, getArg(r, 0));
 		if (isaBatType(getArgType(mb, ai1, 0)))
-			s = pushNil(mb, s, TYPE_bat);
+			s = pushNilBat(mb, s);
 		if (isaBatType(getArgType(mb, r, 0)))
-			s = pushNil(mb, s, TYPE_bat);
+			s = pushNilBat(mb, s);
 		pushInstruction(mb, s);
 
 		ai1 = s;

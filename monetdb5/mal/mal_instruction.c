@@ -960,11 +960,12 @@ convertConstant(int type, ValPtr vr)
 		throw(SYNTAX, "convertConstant", "type index out of bound");
 	if (vr->vtype == type)
 		return MAL_SUCCEED;
-	if (type == TYPE_bat || isaBatType(type)) {	/* BAT variables can only be set to nil */
+	if (isaBatType(type)) {	/* BAT variables can only be set to nil */
 		if (vr->vtype != TYPE_void)
 			throw(SYNTAX, "convertConstant", "BAT conversion error");
 		VALclear(vr);
-		vr->vtype = type;
+		vr->vtype = getBatType(type);
+		vr->bat = true;
 		vr->val.bval = bat_nil;
 		return MAL_SUCCEED;
 	}
@@ -1033,13 +1034,17 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 {
 	int k;
 	str msg;
+
+	assert(!isaBatType(type) || cst->bat);
+	cst->bat = false;
 	if (isaBatType(type)) {
 		if (cst->vtype == TYPE_void) {
-			cst->vtype = TYPE_bat;
+			cst->vtype = type;
+			cst->bat = true;
 			cst->val.bval = bat_nil;
 		} else {
 			mb->errors = createMalException(mb, 0, TYPE, "BAT coercion error");
-			VALclear(cst);		/* it could contain allocated space */
+			VALclear(cst);	// it could contain allocated space
 			return -1;
 		}
 	} else if (cst->vtype != type && !isPolyType(type)) {

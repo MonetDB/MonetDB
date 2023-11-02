@@ -263,7 +263,8 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth,
 	if (s != 0)
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
-			if ((buf = ATOMformat(v->vtype, VALptr(v))) == NULL ||
+			if ((v->bat && (buf = ATOMformat(TYPE_int, &v->val.ival)) == NULL) ||
+			    (!v->bat && (buf = ATOMformat(v->vtype, VALptr(v))) == NULL) ||
 				BUNappend(b, getVarName(mb, i), false) != GDK_SUCCEED ||
 				BUNappend(bn, buf, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
@@ -589,7 +590,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 	printStackHdr(f, mb, v, index);
 
-	if (v && v->vtype == TYPE_bat) {
+	if (v && v->bat) {
 		bat i = v->val.bval;
 		BAT *b = BBPquickdesc(i);
 
@@ -614,8 +615,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	mnstr_printf(f, "\n");
 	GDKfree(nmeOnStk);
 
-	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat)
-		&& !is_bat_nil(v->val.bval)) {
+	if (cnt && v && (isaBatType(n->type) || v->bat) && !is_bat_nil(v->val.bval)) {
 		printBATelm(f, v->val.bval, cnt, first);
 	}
 }

@@ -538,6 +538,7 @@ cstToken(Client cntxt, ValPtr cst)
 
 	cst->vtype = TYPE_int;
 	cst->val.lval = 0;
+	cst->bat = false;
 	switch (*s) {
 	case '{':
 	case '[':
@@ -808,7 +809,10 @@ simpleTypeId(Client cntxt)
 		cntxt->yycur--;			/* keep it */
 		return -1;
 	}
-	tpe = getAtomIndex(CURRENT(cntxt), l, -1);
+	if (l == 3 && CURRENT(cntxt)[0] == 'b' && CURRENT(cntxt)[1] == 'a' && CURRENT(cntxt)[2] == 't')
+		tpe = newBatType(TYPE_any);
+	else
+		tpe = getAtomIndex(CURRENT(cntxt), l, -1);
 	if (tpe < 0) {
 		parseError(cntxt, "Type identifier expected\n");
 		cntxt->yycur -= l;		/* keep it */
@@ -1033,6 +1037,7 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			tpe = typeElm(cntxt, cst.vtype);
 			if (tpe < 0)
 				return 3;
+			cst.bat = isaBatType(tpe);
 			cstidx = defConstant(curBlk, tpe, &cst);
 			if (cstidx < 0)
 				return 3;

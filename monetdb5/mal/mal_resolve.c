@@ -30,9 +30,7 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 int
 resolvedType(int dsttype, int srctype)
 {
-	if (dsttype == srctype || dsttype == TYPE_any || srctype == TYPE_any ||
-       (isaBatType(srctype) && dsttype == TYPE_bat) ||
-	   (isaBatType(dsttype) && srctype == TYPE_bat))
+	if (dsttype == srctype || dsttype == TYPE_any || srctype == TYPE_any)
 		return 0;
 
 	if (isaBatType(dsttype) && isaBatType(srctype)) {
@@ -62,14 +60,6 @@ resolveType(int *rtype, int dsttype, int srctype)
 	/*
 	 * A bat reference can be coerced to bat type.
 	 */
-	if (isaBatType(srctype) && dsttype == TYPE_bat) {
-		*rtype = srctype;
-		return 0;
-	}
-	if (isaBatType(dsttype) && srctype == TYPE_bat) {
-		*rtype = dsttype;
-		return 0;
-	}
 	if (isaBatType(dsttype) && isaBatType(srctype)) {
 		int t1, t2, t3;
 		t1 = getBatType(dsttype);
@@ -386,7 +376,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 */
 		for (i = p->retc; i < p->argc; i++)
 			if (ATOMtype(getArgType(mb, p, i)) == TYPE_str ||
-				getArgType(mb, p, i) == TYPE_bat ||
 				isaBatType(getArgType(mb, p, i)) ||
 				(!isPolyType(getArgType(mb, p, i)) &&
 				 getArgType(mb, p, i) < TYPE_any &&
@@ -635,15 +624,10 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			 * using the target type.
 			 */
 			if (lhs != TYPE_void && lhs != TYPE_any) {
-				ValRecord cst;
+				ValRecord cst = { .vtype = TYPE_void, .val.oval = void_nil, .bat = isaBatType(lhs) };
 				int k;
 
-				cst.vtype = TYPE_void;
-				cst.val.oval = void_nil;
-				cst.len = 0;
-
-				rhs = isaBatType(lhs) ? TYPE_bat : lhs;
-				k = defConstant(mb, rhs, &cst);
+				k = defConstant(mb, lhs, &cst);
 				if (k >= 0)
 					p->argv[i] = k;
 				rhs = lhs;
@@ -796,7 +780,7 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 {
 	int h, t, ret = 0;
 
-	if (formal == TYPE_bat && isaBatType(actual))
+	if (!isAnyExpression(formal) && isaBatType(formal) && isaBatType(actual))
 		return 0;
 
 	if ((h = getTypeIndex(formal))) {
@@ -808,7 +792,7 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 		}
 		t = getBatType(actual);
 		if (t != polytype[h]) {
-			if (polytype[h] == TYPE_bat && isaBatType(actual))
+			if (isaBatType(polytype[h]) && isaBatType(actual))
 				ret = 0;
 			else if (polytype[h] == TYPE_any)
 				polytype[h] = t;
@@ -819,7 +803,7 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 		}
 	}
 	if (isaBatType(formal)) {
-		if (!isaBatType(actual) && actual != TYPE_bat)
+		if (!isaBatType(actual))
 			return -1;
 	}
   updLabel:

@@ -67,7 +67,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	int nameused = 0;
 	size_t len = 0, maxlen = BUFSIZ;
 	ValRecord *val = 0;
-	char *cv = 0, *c;
+	char *cv = 0;//, *c;
 	str tpe;
 	int showtype = 0, closequote = 0;
 	int varid = getArg(p, idx);
@@ -116,7 +116,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			buf = nbuf;
 		}
 
-		if (strcmp(cv, "nil") == 0) {
+		if (!val->bat && strcmp(cv, "nil") == 0) {
 			strcat(buf + len, cv);
 			len += strlen(buf + len);
 			GDKfree(cv);
@@ -133,14 +133,16 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				strcat(buf + len, "\"");
 				len++;
 			}
-			if (isaBatType(getVarType(mb, varid))) {
+			/*
+			if (isaBatType(getVarType(mb, varid)) && !is_bat_nil(val->val.bval)) {
 				c = strchr(cv, '>');
 				strcat(buf + len, c + 1);
 				len += strlen(buf + len);
 			} else {
+			*/
 				strcat(buf + len, cv);
 				len += strlen(buf + len);
-			}
+			//}
 			GDKfree(cv);
 
 			if (closequote) {

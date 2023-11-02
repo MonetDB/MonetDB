@@ -12,9 +12,9 @@
 #include "opt_dict.h"
 
 static inline InstrPtr
-ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
+ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos)
 {
-	p = pushNil(mb, p, tpe);	/* push at end */
+	p = pushNilBat(mb, p);	/* push at end */
 	getArg(p, pos) = getArg(p, p->argc - 1);
 	p->argc--;
 	return p;
@@ -210,7 +210,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 						getArg(r, j) = vardictvalue[k];
 						if (has_cand)
-							r = ReplaceWithNil(mb, r, 2, TYPE_bat);	/* no candidate list */
+							r = ReplaceWithNil(mb, r, 2);	/* no candidate list */
 						pushInstruction(mb, r);
 
 						int tpe = getVarType(mb, varisdict[k]);
@@ -224,8 +224,8 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (has_cand)
 							t = pushArgument(mb, t, getArg(p, 2));
 						else
-							t = pushNil(mb, t, TYPE_bat);
-						t = pushNil(mb, t, TYPE_bat);
+							t = pushNilBat(mb, t);
+						t = pushNilBat(mb, t);
 						t = pushBit(mb, t, TRUE);	/* nil matches */
 						t = pushBit(mb, t, TRUE);	/* max_one */
 						t = pushNil(mb, t, TYPE_lng);	/* estimate */

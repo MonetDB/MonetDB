@@ -278,8 +278,6 @@ gdk_export const uuid uuid_nil;
 #define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
 #define ATOMlinear(t)		BATatoms[t].linear
 #define ATOMtype(t)		((t) == TYPE_void ? TYPE_oid : (t))
-#define ATOMfix(t,v)		(BATatoms[t].atomFix ? BATatoms[t].atomFix(v) : GDK_SUCCEED)
-#define ATOMunfix(t,v)		(BATatoms[t].atomUnfix ? BATatoms[t].atomUnfix(v) : GDK_SUCCEED)
 
 /* The base type is the storage type if the comparison function, the
  * hash function, and the nil value are the same as those of the
@@ -311,12 +309,7 @@ ATOMputVAR(BAT *b, var_t *dst, const void *src)
 static inline gdk_return __attribute__((__warn_unused_result__))
 ATOMputFIX(int type, void *dst, const void *src)
 {
-	gdk_return rc;
-
 	assert(BATatoms[type].atomPut == NULL);
-	rc = ATOMfix(type, src);
-	if (rc != GDK_SUCCEED)
-		return rc;
 	switch (ATOMsize(type)) {
 	case 0:		/* void */
 		break;
@@ -355,11 +348,9 @@ ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
 	assert(BATatoms[type].atomPut != NULL);
 	if ((*BATatoms[type].atomPut)(b, &loc, src) == (var_t) -1)
 		return GDK_FAIL;
-	if (ATOMunfix(type, dst) != GDK_SUCCEED)
-		return GDK_FAIL;
 	ATOMdel(type, b->tvheap, dst);
 	*dst = loc;
-	return ATOMfix(type, src);
+	return GDK_SUCCEED;
 }
 
 /* string heaps:

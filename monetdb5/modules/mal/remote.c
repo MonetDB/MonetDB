@@ -846,7 +846,8 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 
 		v->val.bval = b->batCacheid;
-		v->vtype = TYPE_bat;
+		v->bat = true;
+		v->vtype = b->ttype;
 		BBPkeepref(b);
 
 		mapi_close_handle(mhdl);
@@ -885,7 +886,8 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		v->val.bval = b->batCacheid;
-		v->vtype = TYPE_bat;
+		v->bat = true;
+		v->vtype = b->ttype;
 		BBPkeepref(b);
 
 		MT_lock_unset(&c->lock);
@@ -969,7 +971,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* depending on the input object generate actions to store the
 	 * object remotely*/
-	if (type == TYPE_any || type == TYPE_bat || isAnyExpression(type)) {
+	if (type == TYPE_any || isAnyExpression(type)) {
 		char *tpe, *msg;
 		MT_lock_unset(&c->lock);
 		tpe = getTypeName(type);
@@ -1481,7 +1483,8 @@ RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	v->val.bval = b->batCacheid;
-	v->vtype = TYPE_bat;
+	v->bat = true;
+	v->vtype = b->ttype;
 	BBPkeepref(b);
 
 	return msg;
@@ -1597,7 +1600,8 @@ RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	v = &stk->stk[pci->argv[0]];
 	v->val.bval = b->batCacheid;
-	v->vtype = TYPE_bat;
+	v->bat = true;
+	v->vtype = b->ttype;
 	BBPkeepref(b);
 
 	return (MAL_SUCCEED);

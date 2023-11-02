@@ -1951,8 +1951,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int ynil, ylen;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
-			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		assert(isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
@@ -2076,8 +2075,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int xnil;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
-			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		assert(isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
@@ -2327,8 +2325,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int ynil, ylen;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
-			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		assert(isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
@@ -2446,8 +2443,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int xnil;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
-			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		assert(isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 

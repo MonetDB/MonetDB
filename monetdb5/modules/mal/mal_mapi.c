@@ -1950,8 +1950,9 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = getArgReference_str(stk, pci, pci->retc + 1);
 	val = getArgReference(stk, pci, pci->retc + 2);
 	accessTest(*key, "put");
-	switch ((tpe = getArgType(mb, pci, pci->retc + 2))) {
-	case TYPE_bat:{
+
+	tpe = getArgType(mb, pci, pci->retc + 2);
+	if (isaBatType(tpe)) {
 		/* generate a tuple batch */
 		/* and reload it into the proper format */
 		str ht, tt;
@@ -1976,23 +1977,24 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		GDKfree(ht);
 		GDKfree(tt);
-		break;
-	}
-	case TYPE_str:
-		snprintf(buf, BUFSIZ, "%s:=%s;", *nme, *(char **) val);
-		if (SERVERsessions[i].hdl)
-			mapi_close_handle(SERVERsessions[i].hdl);
-		SERVERsessions[i].hdl = mapi_query(mid, buf);
-		break;
-	default:
-		if ((w = ATOMformat(tpe, val)) == NULL)
-			throw(MAL, "mapi.put", GDK_EXCEPTION);
-		snprintf(buf, BUFSIZ, "%s:=%s;", *nme, w);
-		GDKfree(w);
-		if (SERVERsessions[i].hdl)
-			mapi_close_handle(SERVERsessions[i].hdl);
-		SERVERsessions[i].hdl = mapi_query(mid, buf);
-		break;
+	} else {
+		switch (tpe) {
+		case TYPE_str:
+			snprintf(buf, BUFSIZ, "%s:=%s;", *nme, *(char **) val);
+			if (SERVERsessions[i].hdl)
+				mapi_close_handle(SERVERsessions[i].hdl);
+			SERVERsessions[i].hdl = mapi_query(mid, buf);
+			break;
+		default:
+			if ((w = ATOMformat(tpe, val)) == NULL)
+				throw(MAL, "mapi.put", GDK_EXCEPTION);
+			snprintf(buf, BUFSIZ, "%s:=%s;", *nme, w);
+			GDKfree(w);
+			if (SERVERsessions[i].hdl)
+				mapi_close_handle(SERVERsessions[i].hdl);
+			SERVERsessions[i].hdl = mapi_query(mid, buf);
+			break;
+		}
 	}
 	catchErrors("mapi.put");
 	return MAL_SUCCEED;
@@ -2010,8 +2012,10 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = getArgReference_str(stk, pci, 0);
 	nme = getArgReference_str(stk, pci, pci->retc);
 	val = getArgReference(stk, pci, pci->retc + 1);
-	switch ((tpe = getArgType(mb, pci, pci->retc + 1))) {
-	case TYPE_bat:
+	tpe = getArgType(mb, pci, pci->retc + 1);
+	if (isaBatType(tpe))
+		throw(MAL, "mapi.glue", "Unsupported type");
+	switch (tpe) {
 	case TYPE_ptr:
 		throw(MAL, "mapi.glue", "Unsupported type");
 	case TYPE_str:

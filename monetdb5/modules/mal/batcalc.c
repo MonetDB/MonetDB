@@ -264,8 +264,8 @@ calcmodtype(int tp1, int tp2)
 {
 	tp1 = ATOMbasetype(tp1);
 	tp2 = ATOMbasetype(tp2);
-	assert(tp1 > 0 && tp1 < TYPE_str && tp1 != TYPE_bat && tp1 != TYPE_ptr);
-	assert(tp2 > 0 && tp2 < TYPE_str && tp2 != TYPE_bat && tp2 != TYPE_ptr);
+	assert(tp1 > 0 && tp1 < TYPE_str && tp1 != TYPE_ptr);
+	assert(tp2 > 0 && tp2 < TYPE_str && tp2 != TYPE_ptr);
 	if (tp1 == TYPE_dbl || tp2 == TYPE_dbl)
 		return TYPE_dbl;
 	if (tp1 == TYPE_flt || tp2 == TYPE_flt)
@@ -294,20 +294,20 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2, tp3;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype;	/* first argument */
-	tp2 = stk->stk[getArg(pci, 2)].vtype;	/* second argument */
+	tp1 = getArgType(mb, pci, 1); /*stk->stk[getArg(pci, 1)].vtype;*/	/* first argument */
+	tp2 = getArgType(mb, pci, 2); /*stk->stk[getArg(pci, 2)].vtype;*/	/* second argument */
 	tp3 = getArgType(mb, pci, 0);	/* return argument */
 	assert(isaBatType(tp3));
 	tp3 = getBatType(tp3);
 
-	if (tp1 == TYPE_bat || isaBatType(tp1)) {
+	if (isaBatType(tp1)) {
 		bid = *getArgReference_bat(stk, pci, 1);
 		b1 = BATdescriptor(bid);
 		if (b1 == NULL)
 			goto bailout;
 	}
 
-	if (tp2 == TYPE_bat || isaBatType(tp2)) {
+	if (isaBatType(tp2)) {
 		bid = *getArgReference_bat(stk, pci, 2);
 		b2 = BATdescriptor(bid);
 		if (b2 == NULL)
@@ -390,19 +390,15 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 {
 	bat bid;
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
-	int tp1, tp2;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype;	/* first argument */
-	tp2 = stk->stk[getArg(pci, 2)].vtype;	/* second argument */
-
-	if (tp1 == TYPE_bat || isaBatType(tp1)) {
+	if (stk->stk[getArg(pci, 1)].bat) {
 		bid = *getArgReference_bat(stk, pci, 1);
 		b1 = BATdescriptor(bid);
 		if (b1 == NULL)
 			goto bailout;
 	}
 
-	if (tp2 == TYPE_bat || isaBatType(tp2)) {
+	if (stk->stk[getArg(pci, 2)].bat) {
 		bid = *getArgReference_bat(stk, pci, 2);
 		b2 = BATdescriptor(bid);
 		if (b2 == NULL)
@@ -479,19 +475,15 @@ CMDbatBINARY1a(MalStkPtr stk, InstrPtr pci,
 {
 	bat bid;
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
-	int tp1, tp2;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype;	/* first argument */
-	tp2 = stk->stk[getArg(pci, 2)].vtype;	/* second argument */
-
-	if (tp1 == TYPE_bat || isaBatType(tp1)) {
+	if (stk->stk[getArg(pci, 1)].bat) {
 		bid = *getArgReference_bat(stk, pci, 1);
 		b1 = BATdescriptor(bid);
 		if (b1 == NULL)
 			goto bailout;
 	}
 
-	if (tp2 == TYPE_bat || isaBatType(tp2)) {
+	if (stk->stk[getArg(pci, 2)].bat) {
 		bid = *getArgReference_bat(stk, pci, 2);
 		b2 = BATdescriptor(bid);
 		if (b2 == NULL)
@@ -503,7 +495,7 @@ CMDbatBINARY1a(MalStkPtr stk, InstrPtr pci,
 		nil_matches = *getArgReference_bit(stk, pci, 5);
 	}
 	if (pci->argc > 4) {
-		if (stk->stk[getArg(pci, 4)].vtype == TYPE_bat) {
+		if (stk->stk[getArg(pci, 4)].bat) {
 			bid = *getArgReference_bat(stk, pci, 4);
 			if (!is_bat_nil(bid)) {
 				s2 = BATdescriptor(bid);
@@ -516,7 +508,7 @@ CMDbatBINARY1a(MalStkPtr stk, InstrPtr pci,
 		}
 	}
 	if (pci->argc > 3) {
-		if (stk->stk[getArg(pci, 3)].vtype == TYPE_bat) {
+		if (stk->stk[getArg(pci, 3)].bat) {
 			bid = *getArgReference_bat(stk, pci, 3);
 			if (!is_bat_nil(bid)) {
 				s1 = BATdescriptor(bid);
@@ -572,19 +564,15 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 {
 	bat bid;
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
-	int tp1, tp2;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype;	/* first argument */
-	tp2 = stk->stk[getArg(pci, 2)].vtype;	/* second argument */
-
-	if (tp1 == TYPE_bat || isaBatType(tp1)) {
+	if (stk->stk[getArg(pci, 1)].bat) {
 		bid = *getArgReference_bat(stk, pci, 1);
 		b1 = BATdescriptor(bid);
 		if (b1 == NULL)
 			goto bailout;
 	}
 
-	if (tp2 == TYPE_bat || isaBatType(tp2)) {
+	if (stk->stk[getArg(pci, 2)].bat) {
 		bid = *getArgReference_bat(stk, pci, 2);
 		b2 = BATdescriptor(bid);
 		if (b2 == NULL)
@@ -886,29 +874,29 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype;
-	tp2 = stk->stk[getArg(pci, 2)].vtype;
-	tp3 = stk->stk[getArg(pci, 3)].vtype;
-	if (tp1 != TYPE_bat && !isaBatType(tp1))
+	tp1 = getArgType(mb, pci, 1);
+	tp2 = getArgType(mb, pci, 2);
+	tp3 = getArgType(mb, pci, 3);
+	if (!isaBatType(tp1))
 		goto bailout;
 	bid = *getArgReference_bat(stk, pci, 1);
 	b = BATdescriptor(bid);
 	if (b == NULL)
 		goto bailout;
-	if (tp2 == TYPE_bat || isaBatType(tp2)) {
+	if (isaBatType(tp2)) {
 		bid = *getArgReference_bat(stk, pci, 2);
 		lo = BATdescriptor(bid);
 		if (lo == NULL)
 			goto bailout;
 	}
-	if (tp3 == TYPE_bat || isaBatType(tp3)) {
+	if (isaBatType(tp3)) {
 		bid = *getArgReference_bat(stk, pci, 3);
 		hi = BATdescriptor(bid);
 		if (hi == NULL)
 			goto bailout;
 	}
 	tp = getArgType(mb, pci, 4);
-	if (tp == TYPE_bat || isaBatType(tp)) {
+	if (isaBatType(tp)) {
 		bid = *getArgReference_bat(stk, pci, 4);
 		has_cand = true;
 		if (!is_bat_nil(bid)) {
@@ -920,7 +908,7 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (has_cand && lo) {
 		tp = getArgType(mb, pci, 4 + bc);
-		if (tp == TYPE_bat || isaBatType(tp)) {
+		if (isaBatType(tp)) {
 			bid = *getArgReference_bat(stk, pci, 4 + bc);
 			if (!is_bat_nil(bid)) {
 				slo = BATdescriptor(bid);
@@ -939,7 +927,7 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (has_cand && hi) {
 		tp = getArgType(mb, pci, 4 + bc);
-		if (tp != TYPE_bat && !isaBatType(tp))
+		if (!isaBatType(tp))
 			goto bailout;
 		bid = *getArgReference_bat(stk, pci, 4 + bc);
 		if (!is_bat_nil(bid)) {
@@ -1010,7 +998,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((pci->argc == pci->retc + 2 &&
-		 stk->stk[pci->argv[pci->retc + 1]].vtype == TYPE_bat) ||
+		 stk->stk[pci->argv[pci->retc + 1]].bat) ||
 		pci->argc == pci->retc + 3) {
 		bid = *getArgReference_bat(stk, pci, pci->retc + 1);
 		if (!is_bat_nil(bid) && (s = BATdescriptor(bid)) == NULL) {
@@ -1171,23 +1159,22 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN cnt = BUN_NONE;
 
 	(void) cntxt;
-	(void) mb;
 
 	if (pci->argc != 4)
 		throw(MAL, "batcalc.ifthen", "Operation not supported.");
 
 	ret = getArgReference_bat(stk, pci, 0);
 	tp0 = stk->stk[getArg(pci, 1)].vtype;
-	tp1 = stk->stk[getArg(pci, 2)].vtype;
-	tp2 = stk->stk[getArg(pci, 3)].vtype;
-	if (tp0 == TYPE_bat || isaBatType(tp0)) {
+	tp1 = getArgType(mb, pci, 2);
+	tp2 = getArgType(mb, pci, 3);
+	if (stk->stk[getArg(pci, 1)].bat) {
 		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
 		if (b == NULL)
 			throw(MAL, "batcalc.ifthenelse",
 				  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		cnt = BATcount(b);
 	}
-	if (tp1 == TYPE_bat || isaBatType(tp1)) {
+	if (isaBatType(tp1)) {
 		b1 = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 		if (b1 == NULL) {
 			BBPreclaim(b);
@@ -1201,7 +1188,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "batcalc.ifthenelse", ILLEGAL_ARGUMENT);
 		}
 	}
-	if (tp2 == TYPE_bat || isaBatType(tp2)) {
+	if (isaBatType(tp2)) {
 		b2 = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 		if (b2 == NULL) {
 			BBPreclaim(b);

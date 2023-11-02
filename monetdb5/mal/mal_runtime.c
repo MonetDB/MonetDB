@@ -459,7 +459,7 @@ getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	i = rd ? pci->retc : 0;
 
 	for (; i < limit; i++) {
-		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
+		if (stk->stk[getArg(pci, i)].bat) {
 			oid cnt = 0;
 
 			b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval);

@@ -1973,13 +1973,13 @@ update_col_execute(sql_trans *tr, sql_delta **delta, sql_table *table, bool is_n
 }
 
 static int
-update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
+update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, bool isbat)
 {
 	int res = LOG_OK;
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
-	if (tpe == TYPE_bat) {
+	if (isbat) {
 		BAT *t = tids;
 		if (!BATcount(t))
 			return LOG_OK;
@@ -1997,7 +1997,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, NOT_TO_BE_LOGGED(c->t) ? NULL : &log_update_col);
 
 	odelta = delta;
-	if ((res = update_col_execute(tr, &delta, c->t, isNew(c), tids, upd, tpe == TYPE_bat)) != LOG_OK)
+	if ((res = update_col_execute(tr, &delta, c->t, isNew(c), tids, upd, isbat)) != LOG_OK)
 		return res;
 	assert(delta == odelta);
 	if (delta->cs.st == ST_DEFAULT && c->storage_type)
@@ -2042,13 +2042,13 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool *update_conflict)
 }
 
 static int
-update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
+update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, bool isbat)
 {
 	int res = LOG_OK;
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
-	if (tpe == TYPE_bat) {
+	if (isbat) {
 		BAT *t = tids;
 		if (!BATcount(t))
 			return LOG_OK;
@@ -2065,7 +2065,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, NOT_TO_BE_LOGGED(i->t) ? NULL : &log_update_idx);
 
 	odelta = delta;
-	res = update_col_execute(tr, &delta, i->t, isNew(i), tids, upd, tpe == TYPE_bat);
+	res = update_col_execute(tr, &delta, i->t, isNew(i), tids, upd, isbat);
 	assert(delta == odelta);
 	return res;
 }
@@ -2264,13 +2264,13 @@ dup_storage( sql_trans *tr, storage *obat, storage *bat)
 }
 
 static int
-append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *offsets, void *incoming_data, BUN cnt, int tt, char *storage_type)
+append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *offsets, void *incoming_data, BUN cnt, bool isbat, int tt, char *storage_type)
 {
 	int ok = LOG_OK;
 
 	if ((*delta)->cs.merged)
 		(*delta)->cs.merged = false; /* TODO needs to move */
-	if (tt == TYPE_bat) {
+	if (isbat) {
 		BAT *bat = incoming_data;
 
 		if (BATcount(bat))
@@ -2282,12 +2282,12 @@ append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *
 }
 
 static int
-append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, BUN cnt, int tpe)
+append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, BUN cnt, bool isbat, int tpe)
 {
 	int res = LOG_OK;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
-	if (tpe == TYPE_bat) {
+	if (isbat) {
 		BAT *t = data;
 		if (!BATcount(t))
 			return LOG_OK;
@@ -2299,7 +2299,7 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 	assert(delta->cs.st == ST_DEFAULT || delta->cs.st == ST_DICT || delta->cs.st == ST_FOR);
 
 	odelta = delta;
-	if ((res = append_col_execute(tr, &delta, c->base.id, offset, offsets, data, cnt, tpe, c->storage_type)) != LOG_OK)
+	if ((res = append_col_execute(tr, &delta, c->base.id, offset, offsets, data, cnt, isbat, tpe, c->storage_type)) != LOG_OK)
 		return res;
 	if (odelta != delta) {
 		delta->next = odelta;
@@ -2315,12 +2315,12 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 }
 
 static int
-append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN cnt, int tpe)
+append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN cnt, bool isbat, int tpe)
 {
 	int res = LOG_OK;
 	sql_delta *delta;
 
-	if (tpe == TYPE_bat) {
+	if (isbat) {
 		BAT *t = data;
 		if (!BATcount(t))
 			return LOG_OK;
@@ -2331,7 +2331,7 @@ append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN 
 
 	assert(delta->cs.st == ST_DEFAULT);
 
-	res = append_col_execute(tr, &delta, i->base.id, offset, offsets, data, cnt, tpe, NULL);
+	res = append_col_execute(tr, &delta, i->base.id, offset, offsets, data, cnt, isbat, tpe, NULL);
 	return res;
 }
 
@@ -2604,13 +2604,13 @@ bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 }
 
 static int
-delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
+delete_tab(sql_trans *tr, sql_table * t, void *ib, bool isbat)
 {
 	int ok = LOG_OK;
 	BAT *b = ib;
 	storage *bat;
 
-	if (tpe == TYPE_bat && !BATcount(b))
+	if (isbat && !BATcount(b))
 		return ok;
 
 	if (t == NULL)
@@ -2619,7 +2619,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	if ((bat = bind_del_data(tr, t, NULL)) == NULL)
 		return LOG_ERR;
 
-	if (tpe == TYPE_bat)
+	if (isbat)
 		ok = storage_delete_bat(tr, t, bat, ib);
 	else
 		ok = storage_delete_val(tr, t, bat, *(oid*)ib);

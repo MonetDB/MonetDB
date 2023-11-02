@@ -98,12 +98,11 @@ clearStack(MalStkPtr s)
 
 	i = s->stktop;
 	for (v = s->stk; i > 0; i--, v++)
-		if (ATOMextern(v->vtype) && v->val.pval) {
+		if (v->bat) {
+			BBPrelease(v->val.bval);
+			v->bat = false;
+		} else if (ATOMextern(v->vtype) && v->val.pval) {
 			GDKfree(v->val.pval);
-			v->vtype = 0;
-			v->val.pval = NULL;
-		} else if (BATatoms[v->vtype].atomUnfix) {
-			(void) BATatoms[v->vtype].atomUnfix(VALget(v));
 			v->vtype = 0;
 			v->val.pval = NULL;
 		}

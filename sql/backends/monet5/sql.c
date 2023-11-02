@@ -1745,7 +1745,7 @@ str
 mvc_append_column(sql_trans *t, sql_column *c, BUN offset, BAT *pos, BAT *ins)
 {
 	sqlstore *store = t->store;
-	int res = store->storage_api.append_col(t, c, offset, pos, ins, BATcount(ins), TYPE_bat);
+	int res = store->storage_api.append_col(t, c, offset, pos, ins, BATcount(ins), true, ins->ttype);
 	if (res != LOG_OK) /* the conflict case should never happen, but leave it here */
 		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed %s", res == LOG_CONFLICT ? "due to conflict with another transaction" : GDKerrbuf);
 	return MAL_SUCCEED;
@@ -1759,6 +1759,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat Tid = *getArgReference_bat(stk, pci, 1);
 	ptr Ins = getArgReference(stk, pci, 2);
 	int tpe = getArgType(mb, pci, 2);
+	bool isbat = false;
 	BAT *tid = 0, *ins = 0;
 	size_t cnt = 1;
 	oid v = 0;
@@ -1767,9 +1768,9 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = 0;
 	if ((tid = BATdescriptor(Tid)) == NULL)
 		throw(SQL, "sql.grow", SQLSTATE(HY005) "Cannot access descriptor");
-	if (tpe > GDKatomcnt)
-		tpe = TYPE_bat;
-	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) Ins)) == NULL) {
+	if (isaBatType(tpe))
+		isbat = true;
+	if (isbat && (ins = BATdescriptor(*(bat *) Ins)) == NULL) {
 		BBPunfix(Tid);
 		throw(SQL, "sql.grow", SQLSTATE(HY005) "Cannot access descriptor");
 	}
@@ -1805,6 +1806,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat Pos = *getArgReference_bat(stk, pci, 6);
 	ptr ins = getArgReference(stk, pci, 7);
 	int tpe = getArgType(mb, pci, 7), log_res = LOG_OK;
+	bool isbat = false;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
@@ -1817,17 +1819,19 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (tpe > GDKatomcnt)
-		tpe = TYPE_bat;
+	if (isaBatType(tpe)) {
+		isbat = true;
+		tpe = getBatType(tpe);
+	}
 	if (Pos != bat_nil && (pos = BATdescriptor(Pos)) == NULL)
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access append positions descriptor");
-	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) ins)) == NULL) {
+	if (isbat && (ins = BATdescriptor(*(bat *) ins)) == NULL) {
 		bat_destroy(pos);
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access append values descriptor");
 	}
-	if (ATOMextern(tpe) && !ATOMvarsized(tpe))
+	if (!isbat && ATOMextern(tpe) && !ATOMvarsized(tpe))
 		ins = *(ptr *) ins;
-	if ( tpe == TYPE_bat)
+	if (isbat)
 		b =  (BAT*) ins;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
@@ -1850,9 +1854,9 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = BATcount(b);
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, tpe);
+		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, isbat, tpe);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
-		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, tpe);
+		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, isbat, tpe);
 	} else {
 		bat_destroy(pos);
 		bat_destroy(b);
@@ -1879,6 +1883,7 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat Upd = *getArgReference_bat(stk, pci, 6);
 	BAT *tids, *upd;
 	int tpe = getArgType(mb, pci, 6), log_res = LOG_OK;
+	bool isbat = false;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
@@ -1889,11 +1894,11 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (tpe > TYPE_any)
-		tpe = TYPE_bat;
+	if (isaBatType(tpe))
+		isbat = true;
 	else
 		assert(0);
-	if (tpe != TYPE_bat)
+	if (!isbat)
 		throw(SQL, "sql.update", SQLSTATE(HY005) "Update values is not a BAT input");
 	if ((tids = BATdescriptor(Tids)) == NULL)
 		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access update positions descriptor");
@@ -1920,9 +1925,9 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
+		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, isbat);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
-		log_res = store->storage_api.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
+		log_res = store->storage_api.update_idx(m->session->tr, i, tids, upd, isbat);
 	} else {
 		BBPunfix(tids->batCacheid);
 		BBPunfix(upd->batCacheid);
@@ -2012,6 +2017,7 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	ptr ins = getArgReference(stk, pci, 4);
 	int tpe = getArgType(mb, pci, 4), log_res;
+	bool isbat = false;
 	BAT *b = NULL;
 	sql_schema *s;
 	sql_table *t;
@@ -2021,11 +2027,11 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (tpe > TYPE_any)
-		tpe = TYPE_bat;
-	if (tpe == TYPE_bat && (b = BATdescriptor(*(bat *) ins)) == NULL)
+	if (isaBatType(tpe))
+		isbat = true;
+	if (isbat && (b = BATdescriptor(*(bat *) ins)) == NULL)
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
-	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void && b->ttype != TYPE_msk)) {
+	if (!isbat || (b->ttype != TYPE_oid && b->ttype != TYPE_void && b->ttype != TYPE_msk)) {
 		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
@@ -2044,7 +2050,7 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.delete", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	}
 	sqlstore *store = m->session->tr->store;
-	log_res = store->storage_api.delete_tab(m->session->tr, t, b, tpe);
+	log_res = store->storage_api.delete_tab(m->session->tr, t, b, isbat);
 	BBPreclaim(b);
 	if (log_res != LOG_OK)
 		throw(SQL, "sql.delete", SQLSTATE(42000) "Delete failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -4825,7 +4831,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					ValPtr lhs = &nstk->stk[q->argv[ii]];
 					ptr rhs = (ptr)BUNtail(bi[i], cur);
 
-					assert(lhs->vtype != TYPE_bat);
 					if (VALset(lhs, input[i]->ttype, rhs) == NULL)
 						ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
