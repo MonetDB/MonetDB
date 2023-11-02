@@ -790,7 +790,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		break;
 	}
 	case op_munion:
-		assert(0);
+		// TODO: munion statistis
 		break;
 	case op_join:
 	case op_left:

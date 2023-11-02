@@ -315,7 +315,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 		}
 		break;
 	case op_munion:
-		assert(0);
+		/*assert(0);*/
 		break;
 	case op_project:
 	case op_select:

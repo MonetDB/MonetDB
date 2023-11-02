@@ -420,7 +420,7 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		exps = exps_freevar(sql, rel->exps);
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
 			lexps = rel_freevar(sql, n->data);
-			exps = merge_freevar(exps, lexps);
+			exps = merge_freevar(exps, lexps, false);
 		}
 		return exps;
 	case op_ddl:

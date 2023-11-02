@@ -6222,8 +6222,8 @@ rel_setquery(sql_query *query, symbol *q)
 			t1 = rel_distinct(t1);
 		if (t2 && distinct)
 			t2 = rel_distinct(t2);
-		res = rel_setquery_(query, t1, t2, corresponding, op_union );
-		/*res = rel_setquery_n_ary_(query, t1, t2, corresponding, op_munion);*/
+		/*res = rel_setquery_(query, t1, t2, corresponding, op_union );*/
+		res = rel_setquery_n_ary_(query, t1, t2, corresponding, op_munion);
 	} else if ( q->token == SQL_EXCEPT)
 		res = rel_setquery_(query, t1, t2, corresponding, op_except );
 	else if ( q->token == SQL_INTERSECT)
