@@ -109,13 +109,16 @@ static sql_rel *
 replica_rewrite(visitor *v, sql_table *t, list *exps)
 {
 	sql_rel *res = NULL;
-	list *uris = (list*)v->data;
+	prop *p = (prop*)v->data;
+	sqlid tid = p->id;
+	list *uris = (list*)p->value.pval;
 
 	if (mvc_highwater(v->sql))
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	/* if there was a REMOTE property in any higher node use its uris to rewrite */
-	if (uris) {
+	/* if there was a REMOTE property in any higher node and there is not
+	 * a local tid then use the available uris to rewrite */
+	if (uris && !tid) {
 		for (node *n = t->members->h; n && !res; n = n->next) {
 			sql_part *p = n->data;
 			sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, p->member);
@@ -188,7 +191,7 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 	if (!is_basetable(rel->op)) {
 		prop *p;
 		if ((p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
-			v->data = (void*)p->value.pval;
+			v->data = (void*)p;
 		}
 	} else {
 		sql_table *t = rel->l;
@@ -265,28 +268,35 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 				list *uris = sa_list(v->sql->sa);
 				append(uris, tu);
 				p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
+				p->id = 0;
 				p->value.pval = (void *)uris;
 			}
 		}
 		if (t && isReplicaTable(t) && !list_empty(t->members)) {
-			/* the replicas probably have at least one remote so
-			 * 1. find all the remotes
-			 * 2. store them in the PROP_REMOTE pval
+			/* the parts of a replica are either
+			 * - remote tables for which we have to store tid and uri
+			 * - local table for which we only care if they exist
+			 * the relevant info are passed in
 			 */
 			list *uris = sa_list(v->sql->sa);
+			sqlid localpart = 0;
 			for (node *n = t->members->h; n; n = n->next) {
 				sql_part *part = n->data;
 				sql_table *ptable = find_sql_table_id(v->sql->session->tr, t->s, part->member);
+
 				if (isRemote(ptable)) {
 					assert(ptable->query);
 					tid_uri *tu = SA_NEW(v->sql->sa, tid_uri);
 					tu->id = ptable->base.id;
 					tu->uri = mapiuri_uri(ptable->query, v->sql->sa);
 					append(uris, tu);
+				} else {
+					localpart = ptable->base.id;
 				}
 			}
 			if (!list_empty(uris)) {
 				p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
+				p->id = localpart;
 				p->value.pval = (void*)uris;
 			}
 		}
