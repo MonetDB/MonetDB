@@ -48,6 +48,8 @@
 #include <string.h>		/* for strerror */
 #include <unistd.h>		/* for sysconf symbols */
 
+#include "mutils.h"
+
 #ifdef LOCK_STATS
 
 ATOMIC_TYPE GDKlockcnt = ATOMIC_VAR_INIT(0);
@@ -692,6 +694,22 @@ thread_starter(void *arg)
 	struct mtthread *self = (struct mtthread *) arg;
 	void *data = self->data;
 
+#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	/* name can be at most 16 chars including \0 */
+	char *name = GDKstrndup(self->threadname, 15);
+	if (name != NULL) {
+		pthread_setname_np(pthread_self(), name);
+		GDKfree(name);
+	}
+#endif
+#else
+	wchar_t *wname = utf8towchar(self->threadname);
+	if (wname != NULL) {
+		SetThreadDescription(GetCurrentThread(), wname);
+		free(wname);
+	}
+#endif
 	self->data = NULL;
 	self->sp = THRsp();
 	thread_setself(self);

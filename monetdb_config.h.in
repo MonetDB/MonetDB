@@ -170,6 +170,7 @@
 #cmakedefine HAVE_UNAME 1
 // #cmakedefine HAVE_SEMTIMEDOP
 #cmakedefine HAVE_PTHREAD_KILL 1
+#cmakedefine HAVE_PTHREAD_SETNAME_NP 1
 #cmakedefine HAVE_PTHREAD_SIGMASK 1
 #cmakedefine HAVE_GETOPT 1
 // End Section: monetdb configure defines
