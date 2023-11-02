@@ -418,9 +418,8 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 								goto cleanup_and_exit;
 							}
 						} else {
-							if (!logadd
-								(&logbuf, ",\"mode\":\"%s\"",
-								 (di.transient ? "transient" : "persistent"))) {
+							if (!logadd(&logbuf, ",\"mode\":\"%s\"",
+										(di.transient ? "transient" : "persistent"))) {
 								BBPunfix(d->batCacheid);
 								goto cleanup_and_exit;
 							}
@@ -514,8 +513,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (!ok)
 						goto cleanup_and_exit;
 				}
-				if (!logadd
-					(&logbuf, ",\"eol\":%d", getVarEolife(mb, getArg(pci, j))))
+				if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb, getArg(pci, j))))
 					goto cleanup_and_exit;
 				// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return NULL;
 				if (!logadd(&logbuf, "}"))
