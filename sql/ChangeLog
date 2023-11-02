@@ -19,7 +19,7 @@
   when needed.
 
   Note: MonetDB does NOT support catalog qualifiers in object names, so all the
-  CATALOG columns in these information_schema views will allways contain NULL.
+  CATALOG columns in these information_schema views will always return NULL.
 
 * Mon Aug 21 2023 Niels Nes <niels.nes@monetdbsolutions.com>
 - Added support for generated column syntax:
