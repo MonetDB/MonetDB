@@ -192,8 +192,8 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 
 	/* no-leaf nodes: store the REMOTE property uris in the state of the visitor
 	 * leaf nodes: check if they are basetable replicas and proceed with the rewrite */
+	prop *p;
 	if (!is_basetable(rel->op)) {
-		prop *p;
 		if ((p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
 			v->data = (void*)p;
 		}
@@ -201,6 +201,12 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 		sql_table *t = rel->l;
 
 		if (t && isReplicaTable(t)) {
+			/* we might have reached a replica table through a branch that has
+			 * no REMOTE property. In this case we have to set the v->data */
+			if (!v->data && (p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
+				v->data = (void*)p;
+			}
+
 			if (list_empty(t->members)) /* in DDL statement cases skip if replica is empty */
 				return rel;
 
@@ -416,7 +422,9 @@ rel_rewrite_remote(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	rel = rel_visitor_bottomup(v, rel, &rel_rewrite_remote_);
+	v->data = NULL;
 	rel = rel_visitor_topdown(v, rel, &rel_rewrite_replica_);
+	v->data = NULL;
 	return rel;
 }
 
