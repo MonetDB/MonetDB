@@ -699,7 +699,11 @@ thread_starter(void *arg)
 	/* name can be at most 16 chars including \0 */
 	char *name = GDKstrndup(self->threadname, 15);
 	if (name != NULL) {
-		pthread_setname_np(pthread_self(), name);
+		pthread_setname_np(
+#ifdef __USE_GNU
+			pthread_self(),
+#endif
+			name);
 		GDKfree(name);
 	}
 #endif
