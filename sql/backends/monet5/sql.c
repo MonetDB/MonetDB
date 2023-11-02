@@ -5485,7 +5485,6 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  pattern("batcalc", "lng", batstr_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",str),batarg("s",oid),arg("digits",int),arg("scale",int))),
  pattern("calc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",void),arg("digits",int))),
  pattern("batcalc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",oid),arg("digits",int))),
- pattern("batcalc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",oid),arg("digits",int),batarg("r",bat))),
  pattern("calc", "timestamp", str_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",str),arg("digits",int))),
  pattern("calc", "timestamp", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("has_tz",int))),
  pattern("calc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",timestamp),arg("digits",int))),

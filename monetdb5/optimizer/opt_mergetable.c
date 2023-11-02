@@ -332,9 +332,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n,
 		for (k = 1; k < mat[e].mi->argc; k++) {
 			for (j = 1; j < mat[m].mi->argc; j++) {
 				InstrPtr q;
-				switch (overlap
-						(ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j,
-						 0)) {
+				switch (overlap(ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)) {
 				case 0:
 					continue;
 				case -1:
@@ -384,9 +382,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n,
 				freeInstruction(r);
 				return NULL;
 			}
-			if (setPartnr
-				(ml, is_subdelta ? getArg(mat[m].mi, k) : -1, getArg(q, 0),
-				 k)) {
+			if (setPartnr(ml, is_subdelta ? getArg(mat[m].mi, k) : -1, getArg(q, 0), k)) {
 				freeInstruction(r);
 				return NULL;
 			}

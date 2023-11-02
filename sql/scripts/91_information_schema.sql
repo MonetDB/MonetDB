@@ -10,7 +10,7 @@
 -- defines INFORMATION_SCHEMA schema and standardised views
 --
 -- NOTE 1: MonetDB does NOT support catalog qualifiers in object names, so
---         all the *CATALOG* columns in next views will allways contain NULL.
+--         all the *CATALOG* columns in next views will always return NULL.
 -- NOTE 2: Most views have been extended (after the standard columns) with
 --         MonetDB specific information columns such as schema_id, table_id,
 --         column_id, is_system, etc. This simplifies filtering and joins with
@@ -188,7 +188,7 @@ GRANT SELECT ON TABLE INFORMATION_SCHEMA.COLUMNS TO PUBLIC WITH GRANT OPTION;
 
 -- The view CHECK_CONSTRAINTS contains all check constraints defined on a table,
 -- that are owned by a currently enabled role.
--- This view is currently empty as MonetDB doesn't support CHECK constraints yet.
+-- This view is currently empty as MonetDB does not support CHECK constraints yet.
 CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT
   cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,
   cast(NULL AS varchar(1024)) AS CONSTRAINT_SCHEMA,

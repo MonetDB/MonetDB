@@ -462,8 +462,7 @@ RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query)
 									  mapi_get_user(conn),
 									  mapi_get_host(conn),
 									  mapi_get_dbname(conn),
-									  getExceptionMessage(mapi_result_error
-														  (mhdl)));
+									  getExceptionMessage(mapi_result_error(mhdl)));
 			mapi_close_handle(mhdl);
 			return (err);
 		}

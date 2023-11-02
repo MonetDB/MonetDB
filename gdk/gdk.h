@@ -1971,18 +1971,7 @@ VALptr(const ValRecord *v)
 	}
 }
 
-/*
- * The kernel maintains a central table of all active threads.  They
- * are indexed by their tid. The structure contains information on the
- * input/output file descriptors, which should be set before a
- * database operation is started. It ensures that output is delivered
- * to the proper client.
- *
- * The Thread structure should be ideally made directly accessible to
- * each thread. This speeds up access to tid and file descriptors.
- */
-#define THREADS	1024
-#define THREADDATA	3
+#define THREADS		1024	/* maximum value for gdk_nr_threads */
 
 typedef struct threadStruct *Thread;
 

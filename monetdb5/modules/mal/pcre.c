@@ -1380,9 +1380,8 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 	int v[3];
 
 	v[0] = v[1] = *res = 0;
-	if (pcre_exec
-		(pattern, NULL, *s, (int) strlen(*s), 0, PCRE_NO_UTF8_CHECK, v,
-		 3) >= 0) {
+	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0,
+				  PCRE_NO_UTF8_CHECK, v, 3) >= 0) {
 		*res = v[1];
 	}
 	return MAL_SUCCEED;
