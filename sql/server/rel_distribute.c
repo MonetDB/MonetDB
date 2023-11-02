@@ -116,17 +116,16 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 
 	/* if there was a REMOTE property in any higher node use its uris to rewrite */
 	if (uris) {
-		for (node *n = t->members->h; n; n = n->next) {
+		for (node *n = t->members->h; n && !res; n = n->next) {
 			sql_part *p = n->data;
 			sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, p->member);
 
 			if (!isRemote(pt))
 				continue;
 
-			for (node *m = uris->h; m; m = m->next) {
+			for (node *m = uris->h; m && !res; m = m->next) {
 				if (strcmp(((tid_uri*)m->data)->uri, pt->query) == 0) {
 					res = rewrite_replica(v->sql, exps, t, pt, 0);
-					break;
 				}
 			}
 		}
