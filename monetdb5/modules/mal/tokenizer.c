@@ -489,8 +489,7 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (p != BUN_NONE) {
 			prv = (oid) p;
 			for (i = 1; i < depth; i++) {
-				if (!prvlocate
-					(tokenBAT[i].val, tokenBAT[i].idx, (ptr) &prv, parts[i]))
+				if (!prvlocate(tokenBAT[i].val, tokenBAT[i].idx, (ptr) &prv, parts[i]))
 					break;
 			}
 			if (i < depth) {

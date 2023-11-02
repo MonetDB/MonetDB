@@ -2753,8 +2753,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 	if (b->ttype == TYPE_msk) {
 		BATiter bi = bat_iterator(b);
 		if (offset % 32 == 0) {
-			if (!mnstr_writeIntArray
-			    (lg->current->output_log, (int *) ((char *) bi.base + offset / 32),
+			if (!mnstr_writeIntArray(lg->current->output_log, (int *) ((char *) bi.base + offset / 32),
 			     (size_t) ((nr + 31) / 32)))
 				ok = GDK_FAIL;
 		} else {

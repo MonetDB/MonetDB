@@ -1866,9 +1866,8 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			case TYPE_flt:
 			case TYPE_dbl:
 			case TYPE_str:
-				if (SERVERfieldAnalysis
-					(fld, getVarType(mb, getArg(pci, j)),
-					 &stk->stk[pci->argv[j]]) < 0) {
+				if (SERVERfieldAnalysis(fld, getVarType(mb, getArg(pci, j)),
+										&stk->stk[pci->argv[j]]) < 0) {
 					mapi_close_handle(hdl);
 					throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
