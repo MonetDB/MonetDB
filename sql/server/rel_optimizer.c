@@ -423,12 +423,6 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 				nrel = rel_unionize_mt_tables_balanced(v, mt_rel, tables, info);
 			}
 		} else if (mvc_debug_on(v->sql, 32)) {
-			if (tables->cnt == 1) {
-				nrel = rel_wrap_select_around_table(v, tables->h->data, info);
-			} else {
-				nrel = rel_unionize_mt_tables_munion(v, mt_rel, tables, info);
-			}
-		} else {
 			for (node *n = tables->h; n ; n = n->next) {
 				sql_rel *next = n->data;
 				sql_table *subt = (sql_table *) next->l;
@@ -449,6 +443,12 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 				} else {
 					nrel = next;
 				}
+			}
+		} else {
+			if (tables->cnt == 1) {
+				nrel = rel_wrap_select_around_table(v, tables->h->data, info);
+			} else {
+				nrel = rel_unionize_mt_tables_munion(v, mt_rel, tables, info);
 			}
 		}
 	}
