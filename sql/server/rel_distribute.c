@@ -271,6 +271,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 				tu->uri = mapiuri_uri(t->query, v->sql->sa);
 				list *uris = sa_list(v->sql->sa);
 				append(uris, tu);
+
 				p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
 				p->id = 0;
 				p->value.pval = (void *)uris;
@@ -279,8 +280,8 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 		if (t && isReplicaTable(t) && !list_empty(t->members)) {
 			/* the parts of a replica are either
 			 * - remote tables for which we have to store tid and uri
-			 * - local table for which we only care if they exist
-			 * the relevant info are passed in
+			 * - local table for which we only care if they exist (localpart var)
+			 * the relevant info are passed in the REMOTE property value.pval and id members
 			 */
 			list *uris = sa_list(v->sql->sa);
 			sqlid localpart = 0;
@@ -302,6 +303,8 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 				p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
 				p->id = localpart;
 				p->value.pval = (void*)uris;
+			} else {
+				assert(localpart);
 			}
 		}
 	} break;
