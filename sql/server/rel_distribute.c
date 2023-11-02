@@ -96,11 +96,15 @@ rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_pro
 
 	/* set_remote() */
 	if (remote_prop && p && isRemote(p)) {
-		sqlid id = p->base.id;
-		char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, p->s->base.name, "."), p->base.name);
-		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p);
-		p->id = id;
-		p->value.pval = local_name;
+		list *uris = sa_list(sql->sa);
+		tid_uri *tu = SA_NEW(sql->sa, tid_uri);
+		tu->id = p->base.id;
+		tu->uri = sa_strconcat(sql->sa, sa_strconcat(sql->sa, p->s->base.name, "."), p->base.name);
+		append(uris, tu);
+
+		prop *rmt_prop = r->p = prop_create(sql->sa, PROP_REMOTE, r->p);
+		rmt_prop->id = p->base.id;
+		rmt_prop->value.pval = uris;
 	}
 	return r;
 }
