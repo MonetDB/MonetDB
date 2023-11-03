@@ -1271,7 +1271,7 @@ list *
 _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
 {
 	list *lexps, *rexps = NULL, *exps = NULL, *rels;
-	sql_rel *r;
+	sql_rel *r = NULL;
 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
