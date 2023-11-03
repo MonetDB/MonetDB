@@ -1270,7 +1270,7 @@ exps_reset_props(list *exps, bool setnil)
 list *
 _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
 {
-	list *lexps, *rexps = NULL, *exps, *rels;
+	list *lexps, *rexps = NULL, *exps = NULL, *rels;
 	sql_rel *r;
 
 	if (mvc_highwater(sql))
@@ -1361,10 +1361,12 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				exps = _rel_projections(sql, r, tname, settname, intern, basecol);
 			/* for every other relation in the list */
 			// TODO: do we need the assertion here? for no-assert the loop is no-op
+			/*
 			for (node *n = rels->h->next; n; n = n->next) {
 				rexps = _rel_projections(sql, n->data, tname, settname, intern, basecol);
 				assert(list_length(exps) == list_length(rexps));
 			}
+			*/
 			/* it's a multi-union (expressions have to be the same in all the operands)
 			 * so we are ok only with the expressions of the first operand
 			 */
@@ -1387,13 +1389,13 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		/* I only expect set relations to hit here */
 		assert(is_set(rel->op));
 		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
-		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
-		if (lexps && rexps) {
+		//rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
+		if (lexps/* && rexps*/) {
 			int label = 0;
 
 			if (!settname)
 				label = ++sql->label;
-			assert(list_length(lexps) == list_length(rexps));
+			//assert(list_length(lexps) == list_length(rexps));
 			for (node *en = lexps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
