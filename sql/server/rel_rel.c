@@ -782,6 +782,7 @@ rel_setop_n_ary(sql_allocator *sa, list *rels, operator_type setop)
 	if (!rels)
 		return NULL;
 
+	assert(list_length(rels) >= 2);
 	sql_rel *rel = rel_create(sa);
 	if(!rel)
 		return NULL;
@@ -1975,7 +1976,7 @@ rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 	if (ek.card < card_set && rel->card > CARD_ATOM) {
 		list *exps = rel->exps;
 
-		assert (is_simple_project(rel->op) || is_set(rel->op));
+		assert (is_simple_project(rel->op) || is_mset(rel->op));
 		rel = rel_groupby(sql, rel, NULL);
 		for(node *n = exps->h; n; n=n->next) {
 			sql_exp *e = n->data;
@@ -1999,7 +2000,7 @@ rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 	if (is_topn(rel->op) || is_sample(rel->op))
 		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
 	if (ek.card < card_set && rel->card > CARD_ATOM) {
-		assert (is_simple_project(rel->op) || is_set(rel->op));
+		assert (is_simple_project(rel->op) || is_mset(rel->op));
 
 		list *exps = rel->exps;
 		for(node *n = exps->h; n; n=n->next) {

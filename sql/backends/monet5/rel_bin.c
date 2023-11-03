@@ -3810,7 +3810,7 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 	list *l, *rstmts;
 	node *n, *m;
 	stmt *rel_stmt = NULL, *sub;
-	int i, len;
+	int i, len = 0;
 
 	/* convert to stmt and store the munion operands in rstmts list */
 	rstmts = sa_list(sql->sa);
@@ -3820,13 +3820,15 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 		if (!rel_stmt)
 			return NULL;
 		list_append(rstmts, rel_stmt);
+		if (!len || len > list_length(rel_stmt->op4.lval))
+			len = list_length(rel_stmt->op4.lval);
 	}
 
 	/* construct relation */
 	l = sa_list(sql->sa);
 
 	/* for every op4 lval node */
-	len = list_length(((stmt*)rstmts->h->data)->op4.lval);
+	//len = list_length(((stmt*)rstmts->h->data)->op4.lval);
 	for (i = 0; i < len; i++) {
 		/* extract t and c name from the first stmt */
 		stmt *s = list_fetch(((stmt*)rstmts->h->data)->op4.lval, i);
@@ -3845,7 +3847,6 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 			if (s == NULL)
 				return NULL;
 		}
-		// TODO: do we maybe need the alias after every append?
 		s = stmt_alias(be, s, rnme, nme);
 		if (s == NULL)
 			return NULL;

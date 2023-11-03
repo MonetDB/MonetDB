@@ -198,6 +198,7 @@ typedef enum operator_type {
 #define is_joinop(op) 		(is_join(op) || is_semi(op))
 #define is_select(op) 		(op == op_select)
 #define is_set(op) 			(op == op_union || op == op_inter || op == op_except)
+#define is_mset(op) 		(op == op_munion || op == op_inter || op == op_except)
 #define is_union(op) 		(op == op_union)
 #define is_inter(op) 		(op == op_inter)
 #define is_except(op) 		(op == op_except)
