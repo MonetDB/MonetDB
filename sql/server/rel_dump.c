@@ -523,6 +523,8 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			} else {
 				rel_print_rel(sql, fout, n->data, depth+1, refs, decorate);
 			}
+			if (n->next)
+				mnstr_printf(fout, ",");
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
