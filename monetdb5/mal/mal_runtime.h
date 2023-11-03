@@ -59,16 +59,6 @@ typedef struct USERSTAT {
 } *UserStats;
 extern size_t usrstatscnt;
 
-typedef struct WORKINGSET {
-	Client cntxt;
-	MalBlkPtr mb;
-	MalStkPtr stk;
-	InstrPtr pci;
-	lng clock;					/* start time */
-} Workingset;
-
-extern Workingset workingset[THREADS];
-
 extern void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 extern void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 extern void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk,

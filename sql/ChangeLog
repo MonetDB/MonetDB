@@ -11,6 +11,7 @@
    information_schema.check_constraints
    information_schema.table_constraints
    information_schema.referential_constraints
+   information_schema.routines
    information_schema.sequences
 
   Most views have been extended (after the standard columns) with MonetDB
@@ -19,7 +20,7 @@
   when needed.
 
   Note: MonetDB does NOT support catalog qualifiers in object names, so all the
-  CATALOG columns in these information_schema views will allways contain NULL.
+  CATALOG columns in these information_schema views will always return NULL.
 
 * Mon Aug 21 2023 Niels Nes <niels.nes@monetdbsolutions.com>
 - Added support for generated column syntax:
