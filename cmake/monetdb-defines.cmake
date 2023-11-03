@@ -124,6 +124,7 @@ function(monetdb_configure_defines)
     check_function_exists("pthread_setname_np" HAVE_PTHREAD_SETNAME_NP)
     check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
   cmake_pop_check_state()
+  check_function_exists("SetThreadDescription" HAVE_SETTHREADDESCRIPTION)
   check_symbol_exists("regcomp" "regex.h" HAVE_POSIX_REGEX)
 endfunction()
 
