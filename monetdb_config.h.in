@@ -154,6 +154,7 @@
 #cmakedefine HAVE_POSIX_FALLOCATE 1
 #cmakedefine HAVE_POSIX_MADVISE 1
 #cmakedefine HAVE_PUTENV 1
+#cmakedefine HAVE_SETTHREADDESCRIPTION 1
 #cmakedefine HAVE_SETSID 1
 #cmakedefine HAVE_SHUTDOWN 1
 #cmakedefine HAVE_SIGACTION 1

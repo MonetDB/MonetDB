@@ -708,11 +708,13 @@ thread_starter(void *arg)
 	}
 #endif
 #else
+#ifdef HAVE_SETTHREADDESCRIPTION
 	wchar_t *wname = utf8towchar(self->threadname);
 	if (wname != NULL) {
 		SetThreadDescription(GetCurrentThread(), wname);
 		free(wname);
 	}
+#endif
 #endif
 	self->data = NULL;
 	self->sp = THRsp();
