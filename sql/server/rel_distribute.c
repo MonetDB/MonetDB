@@ -18,6 +18,7 @@
 typedef struct rmt_prop_state {
 	int depth;
 	prop* rmt;
+	sql_rel* orig;
 } rps;
 
 static int
@@ -118,9 +119,9 @@ static sql_rel *
 replica_rewrite(visitor *v, sql_table *t, list *exps)
 {
 	sql_rel *res = NULL;
-	prop *p = ((rps*)v->data)->rmt;
-	sqlid tid = p->id;
-	list *uris = p->value.pval;
+	prop *rp = ((rps*)v->data)->rmt;
+	sqlid tid = rp->id;
+	list *uris = rp->value.pval;
 
 	if (mvc_highwater(v->sql))
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -156,6 +157,10 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 			if (!isRemote(next) && ((!isReplicaTable(next) && !isMergeTable(next)) || !list_empty(next->members))) {
 				pt = next;
 				remote = 0;
+				/* if we resolved the replica to a local table we have to
+				 * go and remove the remote property from the subtree */
+				sql_rel *r = ((rps*)v->data)->orig;
+				r->p = prop_remove(r->p, rp);
 				break;
 			}
 		}
@@ -208,6 +213,7 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 			rps *rp = SA_NEW(v->sql->sa, rps);
 			rp->depth = v->depth;
 			rp->rmt = p;
+			rp->orig = rel;
 			v->data = rp;
 		}
 	} else {
@@ -220,6 +226,7 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 				rps *rp = SA_NEW(v->sql->sa, rps);
 				rp->depth = v->depth;
 				rp->rmt = p;
+				rp->orig = rel;
 				v->data = rp;
 			}
 
