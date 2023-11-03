@@ -448,20 +448,20 @@ DROP TABLE v0
 -- DROP TABLE v0
 
 -- 36.sql
--- statement ok
--- CREATE TABLE v0(v2 INT, v1 FLOAT)
+statement ok
+CREATE TABLE v0(v2 INT, v1 FLOAT)
 
--- statement ok
--- INSERT INTO v0(v2) VALUES (10),(10),(9),(10)
+statement ok
+INSERT INTO v0(v2) VALUES (10),(10),(9),(10)
 
--- statement ok
--- INSERT INTO v0(v1) VALUES (10),(10),(NULL),(3)
+statement ok
+INSERT INTO v0(v1) VALUES (10),(10),(NULL),(3)
 
--- statement ok
--- SELECT DISTINCT group_concat(v0.v1, v1) FROM v0, v0 AS e, v0 AS c GROUP BY v0.v1
+statement ok
+SELECT DISTINCT group_concat(v0.v1, v1) FROM v0, v0 AS e, v0 AS c GROUP BY v0.v1
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 37.sql
 -- statement ok
