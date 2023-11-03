@@ -15,6 +15,11 @@
 #include "rel_remote.h"
 #include "sql_privileges.h"
 
+typedef struct rmt_prop_state {
+	int depth;
+	prop* rmt;
+} rps;
+
 static int
 has_remote_or_replica( sql_rel *rel )
 {
@@ -113,7 +118,7 @@ static sql_rel *
 replica_rewrite(visitor *v, sql_table *t, list *exps)
 {
 	sql_rel *res = NULL;
-	prop *p = v->data;
+	prop *p = ((rps*)v->data)->rmt;
 	sqlid tid = p->id;
 	list *uris = p->value.pval;
 
@@ -194,8 +199,16 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 	 * leaf nodes: check if they are basetable replicas and proceed with the rewrite */
 	prop *p;
 	if (!is_basetable(rel->op)) {
+		/* if we are higher in the tree clear the previous REMOTE prop in the visitor state */
+		if (v->data && v->depth <= ((rps*)v->data)->depth) {
+			v->data = NULL;
+		}
+		/* if there is a REMOTE prop set it to the visitor state */
 		if ((p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
-			v->data = (void*)p;
+			rps *rp = SA_NEW(v->sql->sa, rps);
+			rp->depth = v->depth;
+			rp->rmt = p;
+			v->data = rp;
 		}
 	} else {
 		sql_table *t = rel->l;
@@ -204,7 +217,10 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 			/* we might have reached a replica table through a branch that has
 			 * no REMOTE property. In this case we have to set the v->data */
 			if (!v->data && (p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
-				v->data = (void*)p;
+				rps *rp = SA_NEW(v->sql->sa, rps);
+				rp->depth = v->depth;
+				rp->rmt = p;
+				v->data = rp;
 			}
 
 			if (list_empty(t->members)) /* in DDL statement cases skip if replica is empty */
@@ -305,13 +321,11 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 					localpart = ptable->base.id;
 				}
 			}
-			if (!list_empty(uris)) {
-				p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
-				p->id = localpart;
-				p->value.pval = (void*)uris;
-			} else {
-				assert(localpart);
-			}
+			/* always introduce the remote prop even if there are no remote uri's
+			 * this is needed for the proper replica resolution */
+			p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
+			p->id = localpart;
+			p->value.pval = (void*)uris;
 		}
 	} break;
 	case op_table:
@@ -355,6 +369,8 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 				l->p = prop_remove(l->p, pl);
 				r->p = prop_remove(r->p, pr);
 				if (!find_prop(rel->p, PROP_REMOTE)) {
+					/* remove any local tids */
+					pl->id = 0;
 					/* set the new (matching) uris */
 					pl->value.pval = uris;
 					/* push the pl REMOTE property to the list of properties */
@@ -401,6 +417,8 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 					l->p = prop_remove(l->p, pl);
 					r->p = prop_remove(r->p, pr);
 					if (!find_prop(rel->p, PROP_REMOTE)) {
+						/* remove any local tids */
+						pl->id = 0;
 						/* set the new (matching) uris */
 						pl->value.pval = uris;
 						/* push the pl REMOTE property to the list of properties */
