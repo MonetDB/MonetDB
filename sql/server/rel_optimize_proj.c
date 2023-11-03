@@ -2984,7 +2984,7 @@ run_optimizer
 bind_optimize_projections(visitor *v, global_props *gp)
 {
 	int flag = v->sql->sql_optimizer;
-	return gp->opt_level == 1 && (gp->cnt[op_groupby] || gp->cnt[op_project] || gp->cnt[op_union]
+	return gp->opt_level == 1 && (gp->cnt[op_groupby] || gp->cnt[op_project] || gp->cnt[op_union] || gp->cnt[op_munion]
 		   || gp->cnt[op_inter] || gp->cnt[op_except]) && (flag & optimize_projections) ? rel_optimize_projections : NULL;
 }
 

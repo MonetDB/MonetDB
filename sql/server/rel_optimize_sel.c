@@ -2242,7 +2242,7 @@ order_joins(visitor *v, list *rels, list *exps)
 static int
 rel_neg_in_size(sql_rel *r)
 {
-	if (is_union(r->op) && r->nrcols == 0)
+	if ((is_union(r->op) /*|| is_munion(r->op)*/) && r->nrcols == 0)
 		return -1 + rel_neg_in_size(r->l);
 	if (is_project(r->op) && r->nrcols == 0)
 		return -1;
