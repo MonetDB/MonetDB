@@ -26,6 +26,8 @@ from threading import Thread
 import threading
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+# Our TLS implementation never uses anything less than TLSv1.3.
+assert ssl.HAS_TLSv1_3
 
 import warnings
 with warnings.catch_warnings():
