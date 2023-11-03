@@ -3468,6 +3468,29 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			set_distinct(rel);
 		v->changes++;
 	}
+	if (is_select(rel->op) && r && is_munion(r->op) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
+		sql_rel *u = r;
+		list *rels = u->l, *nrels = sa_list(v->sql->sa);
+		for(node *n = rels->h; n; n = n->next) {
+			sql_rel *ul = n->data;
+			ul = rel_dup(ul);
+			if (!is_project(ul->op))
+				ul = rel_project(v->sql->sa, ul,
+					rel_projections(v->sql, ul, NULL, 1, 1));
+			rel_rename_exps(v->sql, u->exps, ul->exps);
+
+			/* introduce selects under the set */
+			ul = rel_select(v->sql->sa, ul, NULL);
+			ul->exps = exps_copy(v->sql, exps);
+			set_processed(ul);
+			nrels = append(nrels, ul);
+		}
+
+		rel = rel_inplace_setop_n_ary(v->sql, rel, nrels, u->op, rel_projections(v->sql, rel, NULL, 1, 1));
+		if (need_distinct(u))
+			set_distinct(rel);
+		v->changes++;
+	}
 
 	return try_remove_empty_select(v, rel);
 }

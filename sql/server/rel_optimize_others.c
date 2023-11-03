@@ -491,6 +491,10 @@ rel_used(sql_rel *rel)
 	if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
 		rel_used(rel->l);
 		rel_used(rel->r);
+	} else if (rel->op == op_munion) {
+		list *l = rel->l;
+		for(node *n = l->h; n; n = n->next)
+			rel_used(n->data);
 	} else if (is_topn(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		rel_used(rel->l);
 		rel = rel->l;
@@ -629,26 +633,27 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 
 	case op_munion:
 		assert(rel->l);
-		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
-			// TODO: here we blindly follow the same logic as op_union. RE-evaluate
-			if (proj && (need_distinct(rel) || !rel->exps)) {
-				rel_used(rel);
-				if (!rel->exps) {
+		// TODO: here we blindly follow the same logic as op_union. RE-evaluate
+		if (proj && (need_distinct(rel) || !rel->exps)) {
+			rel_used(rel);
+			if (!rel->exps) {
+				for (node *n = ((list*)rel->l)->h; n; n = n->next) {
 					rel_used(n->data);
+					rel_mark_used(sql, n->data, 0);
 				}
-				rel_mark_used(sql, n->data, 0);
-			} else if (proj && !need_distinct(rel)) {
+			}
+		} else if (proj && !need_distinct(rel)) {
+			bool first = true;
+			for (node *n = ((list*)rel->l)->h; n; n = n->next) {
 				sql_rel *l = n->data;
 
 				positional_exps_mark_used(rel, l);
 				rel_exps_mark_used(sql->sa, rel, l);
 				rel_mark_used(sql, rel->l, 0);
 				/* based on child check set expression list */
-				if (is_project(l->op) && need_distinct(l))
+				if (first && is_project(l->op) && need_distinct(l))
 					positional_exps_mark_used(l, rel);
-				positional_exps_mark_used(rel, n->data);
-				rel_exps_mark_used(sql->sa, rel, n->data);
-				rel_mark_used(sql, n->data, 0);
+				first = false;
 			}
 		}
 		break;
@@ -1038,6 +1043,7 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 			if (!is_project(r->op) && !need_distinct(rel))
 				r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 			r = rel_add_projects(sql, r);
+			n->data = r;
 		}
 		return rel;
 	case op_topn:
