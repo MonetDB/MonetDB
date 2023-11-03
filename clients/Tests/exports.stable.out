@@ -722,6 +722,8 @@ msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *k
 const char *msetting_string(const msettings *mp, mparm parm);
 long msettings_connect_binary(const msettings *mp);
 const char *msettings_connect_certhash_digits(const msettings *mp);
+const char *msettings_connect_clientcert(const msettings *mp);
+const char *msettings_connect_clientkey(const msettings *mp);
 long msettings_connect_port(const msettings *mp);
 bool msettings_connect_scan(const msettings *mp);
 const char *msettings_connect_tcp(const msettings *mp);
