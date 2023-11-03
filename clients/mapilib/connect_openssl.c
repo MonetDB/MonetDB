@@ -24,6 +24,7 @@
 #include <stdarg.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/x509v3.h>
 
 MapiMsg
 croak_openssl(Mapi mid, const char *action, const char *fmt, ...)
@@ -121,17 +122,13 @@ make_ssl_context(Mapi mid, SSL_CTX **ctx_out)
 }
 
 static MapiMsg
-verify_server_certificate_hash(Mapi mid, SSL *ssl, const char *required_prefix)
+verify_server_certificate_hash(Mapi mid, X509 *x509, const char *required_prefix)
 {
 	mapi_log_record(mid, "CONN", "verifying certificate hash against prefix '%s'", required_prefix);
 
 	size_t prefix_len = strlen(required_prefix);
 	if (prefix_len > 2 * SHA256_DIGEST_LENGTH)
 		return mapi_setError(mid, "value of certhash= is longer than a sha256 digest", __func__, MERROR);
-
-	X509 *x509 = SSL_get_peer_certificate(ssl);
-	if (x509 == NULL)
-		return mapi_printError(mid, __func__, MERROR, "Server did not send a TLS certificate");
 
 	// Convert to DER
 	unsigned char *buf = NULL;
@@ -175,8 +172,6 @@ verify_server_certificate_hash(Mapi mid, SSL *ssl, const char *required_prefix)
 	mapi_log_record(mid, "CONN", "server certificate matches certhash");
 	return MOK;
 }
-
-
 MapiMsg
 wrap_tls(Mapi mid, SOCKET sock)
 {
@@ -264,6 +259,17 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak_openssl(mid, __func__, "SSL_set_tlsext_host_name");
 	}
 
+	X509_VERIFY_PARAM *param = SSL_get0_param(ssl);
+	if (param == NULL) {
+		BIO_free_all(bio);
+		return croak_openssl(mid, __func__, "SSL_get0_param");
+	}
+	X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+	if (1 != X509_VERIFY_PARAM_set1_host(param, host, strlen(host))) {
+		BIO_free_all(bio);
+		return croak_openssl(mid, __func__, "X509_VERIFY_PARAM_set1_host");
+	}
+
 	// Temporarily disable the ALPN header.
 	// TODO re-enable it when test systemcertificates.py no longer relies
 	// on connecting to an HTTPS server. (Which is an ugly hack in the first place!)
@@ -289,18 +295,31 @@ wrap_tls(Mapi mid, SOCKET sock)
 		}
 	}
 
-	// handshake
+	// Handshake.
 	if (1 != SSL_connect(ssl)) {
 		BIO_free_all(bio);
 		return croak_openssl(mid, __func__, "SSL_connect handshake");
 	}
 
+	// Verify the server certificate
+	X509 *server_cert = SSL_get_peer_certificate(ssl);
+	if (server_cert == NULL) {
+		BIO_free_all(bio);
+		return croak_openssl(mid, __func__, "Server did not send a certificate");
+	}
 	if (verify_method == verify_hash) {
 		const char *required_prefix = msettings_connect_certhash_digits(settings);
-		msg = verify_server_certificate_hash(mid, ssl, required_prefix);
+		msg = verify_server_certificate_hash(mid, server_cert, required_prefix);
 		if (msg != MOK) {
 			BIO_free_all(bio);
 			return msg;
+		}
+	} else {
+		long verify_result = SSL_get_verify_result(ssl);
+		if (verify_result != X509_V_OK) {
+			BIO_free_all(bio);
+			const char *error_message = X509_verify_cert_error_string(verify_result);
+			return croak_openssl(mid, __func__, "Invalid server certificate: %s", error_message);
 		}
 	}
 
@@ -340,6 +359,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return msg;
 	}
 	// 'rstream' and 'wstream' are part of 'mid' now.
+
 
 	mapi_log_record(mid, "CONN", "TLS handshake succeeded");
 	return MOK;
