@@ -25,7 +25,7 @@ jobs:
           - os: macos-latest
             c_compiler: clang
           - os: macos-latest
-            c_compiler: gcc
+            c_compiler: gcc-12
           - os: ubuntu-latest
             c_compiler: gcc
           - os: ubuntu-latest
@@ -37,6 +37,8 @@ jobs:
             c_compiler: clang
           - os: macos-latest
             c_compiler: cl
+          - os: macos-latest
+            c_compiler: gcc
           - os: ubuntu-latest
             c_compiler: cl
     runs-on: ${{ matrix.os }}
@@ -60,10 +62,11 @@ jobs:
             -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'Linux'
-      -
-        name: brew packages
+
+      - name: brew packages
         run: brew install bison
         if: runner.os == 'macOS'
+
       - name: make MonetDB on macos
         run: |
           mkdir build
@@ -79,6 +82,19 @@ jobs:
             -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'macOS'
+
+      - name: choco packages
+        run: choco install winflexbison
+        if: runner.os == 'Windows'
+
+      - name: make MonetDB on Windows
+        run: |
+          mkdir build
+          cd build 
+          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DRINTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
+          make install -j3
+        if: runner.os == 'Windows'
+
       - name: ctest 
         run: |
           cd build 
