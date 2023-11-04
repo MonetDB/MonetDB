@@ -97,4 +97,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: mtest-${{ matrix.branch }}
-          path: ${{ matrix.branch }}/mTests/*
+          path: $HOME/${{ matrix.branch }}/mTests/*
