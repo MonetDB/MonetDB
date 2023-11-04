@@ -765,7 +765,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 {
 	oid gid;
 	BUN i, p, nils = 0;
-	size_t *restrict lengths = NULL, *restrict lastseplength = NULL, separator_length = 0, next_length;
+	size_t *restrict lengths = NULL, separator_length = 0, next_length;
 	str *restrict astrings = NULL;
 	BATiter bi, bis = (BATiter) {0};
 	BAT *bn = NULL;
@@ -926,9 +926,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		 * each group, then the the total offset */
 		lengths = GDKzalloc(ngrp * sizeof(*lengths));
 		astrings = GDKmalloc(ngrp * sizeof(str));
-		if (sep)
-			lastseplength = GDKzalloc(ngrp * sizeof(*lastseplength));
-		if (lengths == NULL || astrings == NULL || (sep && lastseplength == NULL)) {
+		if (lengths == NULL || astrings == NULL) {
 			goto finish;
 		}
 		/* at first, set astrings[i] to str_nil, then for each
@@ -970,14 +968,11 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 						if (!strNil(sl)) {
 							next_length = strlen(sl);
 							lengths[gid] += next_length;
-							lastseplength[gid] = next_length;
-						} else
-							lastseplength[gid] = 0;
+						}
 						astrings[gid] = NULL;
 					} else if (!skip_nils) {
 						nils++;
 						lengths[gid] = (size_t) -1;
-						lastseplength[gid] = 0;
 						astrings[gid] = (char *) str_nil;
 					}
 				}
@@ -988,7 +983,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - separator_length)) == NULL) {
+					if ((astrings[i] = GDKmalloc(lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1000,7 +995,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep != NULL);
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - lastseplength[i])) == NULL) {
+					if ((astrings[i] = GDKmalloc(lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1076,7 +1071,6 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	if (has_nils)
 		*has_nils = nils;
 	GDKfree(lengths);
-	GDKfree(lastseplength);
 	if (astrings) {
 		for (i = 0; i < ngrp; i++) {
 			if (astrings[i] != str_nil)
