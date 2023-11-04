@@ -137,6 +137,7 @@ relational_func_create_result_part2(MalBlkPtr mb, InstrPtr q, sql_rel *r)
 }
 
 static int
+__attribute__((__noinline__))
 _create_relational_function_body(mvc *m, sql_rel *r, stmt *call, list *rel_ops, int inline_func)
 {
 	Client c = MCgetClient(m->clientid);
