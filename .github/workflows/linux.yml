@@ -53,7 +53,7 @@ jobs:
           mkdir build
           cd build 
           cmake ..  \
-            -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} \
+            -DCMAKE_INSTALL_PREFIX=$HOME/MDB \
             -DPY3INTEGRATION=OFF \
             -DRINTEGRATION=OFF \
             -DCMAKE_BUILD_TYPE=Release \
@@ -72,7 +72,7 @@ jobs:
           mkdir build
           cd build 
           cmake .. \
-            -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} \
+            -DCMAKE_INSTALL_PREFIX=$HOME/MDB \
             -DPY3INTEGRATION=OFF \
             -DRINTEGRATION=OFF  \
             -DCMAKE_BUILD_TYPE=Release \
@@ -90,10 +90,11 @@ jobs:
         if: runner.os == 'Windows'
 
       - name: make MonetDB on Windows
+        shell: pwsh
         run: |
           mkdir build
           cd build 
-          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DPY3INTEGRATION=OFF -DRINTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
+          cmake ..  -DCMAKE_INSTALL_PREFIX=C:\MDB -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DPY3INTEGRATION=OFF -DRINTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
           cmake --build . --target install
         if: runner.os == 'Windows'
 
@@ -105,14 +106,19 @@ jobs:
 
       - name: install pymonetdb
         run: pip3 install pymonetdb
-      - name: which python
-        run: 
-          head -n 1 $HOME/${{ matrix.branch }}/bin/Mtest.py 
+
       - name: mtest 
         run: |
-          #cd build 
-          #cmake --build . --target mtest
-          PATH=$HOME/${{ matrix.branch }}/bin:$PATH $HOME/${{ matrix.branch }}/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
+          PATH=$HOME/MDB/bin:$PATH $HOME/MDB/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
+        if: runner.os != 'Windows'
+
+      - name: mtest 
+        shell: pwsh
+        path: 'C:\Program Files\MonetDB'
+        run: |
+          set PATH=C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;%PATH%
+          Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
+        if: runner.os == 'Windows'
 
       - name: Tar files
         run: tar -cvf mtests.tar mTests
