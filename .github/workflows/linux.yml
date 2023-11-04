@@ -83,6 +83,10 @@ jobs:
           make install -j3
         if: runner.os == 'macOS'
 
+      - name: choco packages
+        run: choco install winflexbison
+        if: runner.os == 'Windows'
+
       - name: make MonetDB on Windows
         run: |
           mkdir build
