@@ -700,7 +700,7 @@ thread_starter(void *arg)
 	char *name = GDKstrndup(self->threadname, 15);
 	if (name != NULL) {
 		pthread_setname_np(
-#ifdef __USE_GNU
+#ifndef __APPLE__
 			pthread_self(),
 #endif
 			name);
