@@ -60,10 +60,11 @@ jobs:
             -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'Linux'
-      -
-        name: brew packages
+
+      - name: brew packages
         run: brew install bison
         if: runner.os == 'macOS'
+
       - name: make MonetDB on macos
         run: |
           mkdir build
@@ -79,7 +80,8 @@ jobs:
             -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'macOS'
-      - name: make MonetDB on macos
+
+      - name: make MonetDB on Windows
         run: |
           mkdir build
           cd build 
@@ -93,6 +95,7 @@ jobs:
             -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'Windows'
+
       - name: ctest 
         run: |
           cd build 
