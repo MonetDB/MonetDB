@@ -114,7 +114,6 @@ jobs:
 
       - name: mtest 
         shell: pwsh
-        path: 'C:\Program Files\MonetDB'
         run: |
           set PATH=C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;%PATH%
           Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
