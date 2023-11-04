@@ -268,13 +268,14 @@ cleanup:
 }
 
 static int
-_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *r, stmt *call, list *rel_ops, int inline_func)
+_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
 {
 	Client c = MCgetClient(m->clientid);
 	backend *be = (backend *) c->sqlcontext;
 	Symbol symbackup = c->curprg;
 	backend bebackup = *be;		/* backup current backend */
 	exception_buffer ebsave = m->sa->eb;
+	sql_rel *r = rel;
 
 	if (strlen(mod) >= IDLENGTH) {
 		(void) sql_error(m, 10, SQLSTATE(42000) "Module name '%s' too large for the backend", mod);
