@@ -108,9 +108,9 @@ jobs:
         run: |
           #cd build 
           #cmake --build . --target mtest
-          PATH=$HOME/${{ matrix.branch }}/bin:$PATH $HOME/${{ matrix.branch }}/bin/Mtest.py -r --debug=0 --ci --no-html
+          PATH=$HOME/${{ matrix.branch }}/bin:$PATH $HOME/${{ matrix.branch }}/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
       - name: Publish mtest results
         uses: actions/upload-artifact@v3
         with:
           name: mtest-${{ matrix.branch }}
-          path: $HOME/${{ matrix.branch }}/mTests/times.lst
+          path: mTests/*
