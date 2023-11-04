@@ -68,7 +68,7 @@ jobs:
         run: |
           mkdir build
           cd build 
-          cmake .. \
+          CC=${{ matrix.c_compiler }} cmake .. \
             -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} \
             -DPY3INTEGRATION=OFF \
             -DRINTEGRATION=OFF  \
@@ -79,6 +79,20 @@ jobs:
             -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'macOS'
+      - name: make MonetDB on macos
+        run: |
+          mkdir build
+          cd build 
+          cmake .. \
+            -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} \
+            -DPY3INTEGRATION=OFF \
+            -DRINTEGRATION=OFF  \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DASSERT=OFF \
+            -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+            -DCMAKE_SUMMARY=ON
+          make install -j3
+        if: runner.os == 'Windows'
       - name: ctest 
         run: |
           cd build 
