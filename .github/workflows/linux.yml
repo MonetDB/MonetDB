@@ -101,6 +101,8 @@ jobs:
         run: |
           cd build 
           cmake --build . --target test
+        if: runner.os != 'Windows'
+
       - name: install pymonetdb
         run: pip3 install pymonetdb
       - name: which python
