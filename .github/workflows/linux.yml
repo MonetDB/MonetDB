@@ -117,5 +117,5 @@ jobs:
       - name: Publish mtest results
         uses: actions/upload-artifact@v3
         with:
-          name: mtest-${{ matrix.branch }}-${{ os }}-${{ c_compiler }}
+          name: mtest-${{ matrix.branch }}-${{ matrix.os }}-${{ matrix.c_compiler }}
           path: mtests.tar
