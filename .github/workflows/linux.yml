@@ -111,8 +111,11 @@ jobs:
           #cd build 
           #cmake --build . --target mtest
           PATH=$HOME/${{ matrix.branch }}/bin:$PATH $HOME/${{ matrix.branch }}/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
+
+      - name: Tar files
+        run: tar -cvf mtests.tar mTests
       - name: Publish mtest results
         uses: actions/upload-artifact@v3
         with:
-          name: mtest-${{ matrix.branch }}
-          path: mTests/*
+          name: mtest-${{ matrix.branch }}-${{ os }}-${{ c_compiler }}
+          path: mtests.tar
