@@ -93,7 +93,7 @@ jobs:
         run: |
           mkdir build
           cd build 
-          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DPY3INTEGRATION=OFF -DRINTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
+          cmake ..  -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake -DPY3INTEGRATION=OFF -DRINTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'Windows'
 
