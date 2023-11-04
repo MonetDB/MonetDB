@@ -1178,6 +1178,7 @@ void pushInstruction(MalBlkPtr mb, InstrPtr p);
 InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
 InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, lng val);
 InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
+InstrPtr pushNilBat(MalBlkPtr mb, InstrPtr q);
 InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val);
 InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
