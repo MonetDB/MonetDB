@@ -84,7 +84,7 @@ jobs:
         if: runner.os == 'macOS'
 
       - name: choco packages
-        run: choco install winflexbison
+        run: choco install winflexbison3
         if: runner.os == 'Windows'
 
       - name: make MonetDB on Windows
