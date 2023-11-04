@@ -68,7 +68,7 @@ jobs:
         run: |
           mkdir build
           cd build 
-          cmake .. \
+          CC=${{ matrix.c_compiler }} cmake .. \
             -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} \
             -DPY3INTEGRATION=OFF \
             -DRINTEGRATION=OFF  \
