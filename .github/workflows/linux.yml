@@ -48,6 +48,9 @@ jobs:
         with:
           ref: ${{ matrix.branch }}
 
+      - name: install pymonetdb
+        run: pip3 install pymonetdb
+
       - name: make MonetDB on linux
         run: |
           mkdir build
@@ -108,9 +111,6 @@ jobs:
           cmake ..  -DCMAKE_INSTALL_PREFIX=C:\MDB -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DPY3INTEGRATION=OFF -DRINTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
           cmake --build . --target install
         if: runner.os == 'Windows'
-
-      - name: install pymonetdb
-        run: pip3 install pymonetdb
 
       - name: mtest 
         shell: pwsh
