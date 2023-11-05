@@ -48,8 +48,8 @@ jobs:
         with:
           ref: ${{ matrix.branch }}
 
-      - name: install pymonetdb
-        run: pip3 install pymonetdb
+      - name: install pymonetdb cryptography
+        run: pip3 install pymonetdb cryptography
 
       - name: make MonetDB on linux
         run: |
@@ -100,7 +100,7 @@ jobs:
       - name: choco packages
         run: |
           choco install winflexbison3
-          vcpkg install pcre getopt
+          vcpkg install libiconv bzip2 libxml2 pcre zlib getopt 
         if: runner.os == 'Windows'
 
       - name: make MonetDB on Windows
