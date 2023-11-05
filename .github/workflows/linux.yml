@@ -115,7 +115,7 @@ jobs:
       - name: mtest 
         shell: pwsh
         run: |
-          set PATH=C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;%PATH%
+          $Env:PATH = 'C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;' + $Env:PATH
           Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
         if: runner.os == 'Windows'
 
