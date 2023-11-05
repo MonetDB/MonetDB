@@ -5,11 +5,11 @@ function welcome0(lim:int):str;
     return (w,i);
 end welcome0
 
-statement ok
+statement error
 y:= user.welcome0(1)
 
 query T rowsort
 io.print(y)
 ----
-"hello"
+NULL
 

@@ -183,7 +183,6 @@ typedef struct MALBLK {
 	struct MALBLK *history;		/* of optimizer actions */
 	short keephistory;			/* do we need the history at all */
 	int maxarg;					/* keep track on the maximal arguments used */
-	ptr replica;				/* for the replicator tests */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
 	ATOMIC_TYPE workers;

@@ -215,12 +215,12 @@ CMDBATavg3comb;
 Average aggregation combiner.
 aggr
 avg
-pattern aggr.avg(X_0:bat[:any_2]):dbl 
+pattern aggr.avg(X_0:bat[:any_1]):dbl 
 CMDcalcavg;
 Gives the avg of all tail values
 aggr
 avg
-pattern aggr.avg(X_0:bat[:any_2], X_1:int):dbl 
+pattern aggr.avg(X_0:bat[:any_1], X_1:int):dbl 
 CMDcalcavg;
 Gives the avg of all tail values
 aggr
@@ -3545,17 +3545,17 @@ ALGouterselect;
 Per input lid return atleast one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.
 algebra
 project
-pattern algebra.project(X_0:bat[:any_1], X_1:any_3):bat[:any_3] 
+pattern algebra.project(X_0:bat[:any_1], X_1:any_2):bat[:any_2] 
 ALGprojecttail;
 Fill the tail with a constant
 algebra
 projection
-command algebra.projection(X_0:bat[:oid], X_1:bat[:any_3], X_2:bat[:any_3]):bat[:any_3] 
+command algebra.projection(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:any_1]):bat[:any_1] 
 ALGprojection2;
 Project left input onto right inputs which should be consecutive.
 algebra
 projection
-command algebra.projection(X_0:bat[:oid], X_1:bat[:any_3]):bat[:any_3] 
+command algebra.projection(X_0:bat[:oid], X_1:bat[:any_1]):bat[:any_1] 
 ALGprojection;
 Project left input onto right input.
 algebra
@@ -49440,7 +49440,7 @@ mvc_delete_wrap;
 Delete a row from a table. Returns sequence number for order dependence.
 sql
 delta
-command sql.delta(X_0:bat[:any_3], X_1:bat[:oid], X_2:bat[:any_3]):bat[:any_3] 
+command sql.delta(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:any_1]):bat[:any_1] 
 DELTAbat;
 Return column bat with delta's applied.
 sql
@@ -49860,7 +49860,7 @@ BATleftproject;
 Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)
 sql
 projectdelta
-command sql.projectdelta(X_0:bat[:oid], X_1:bat[:any_3], X_2:bat[:oid], X_3:bat[:any_3]):bat[:any_3] 
+command sql.projectdelta(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:any_1]):bat[:any_1] 
 DELTAproject;
 Return column bat with delta's applied.
 sql

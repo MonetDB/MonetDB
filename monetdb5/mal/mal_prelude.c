@@ -224,6 +224,7 @@ makeArgument(MalBlkPtr mb, const mel_arg *a, int *idx)
 	return MAL_SUCCEED;
 }
 
+//static int max_index = 0;
 static str
 addFunctions(mel_func *fcn)
 {
@@ -292,10 +293,14 @@ addFunctions(mel_func *fcn)
 				return msg;
 			}
 			sig = pushReturn(mb, sig, idx);
-			int tpe = TYPE_any;
+			int tpe = getVarType(mb, idx);
 			if (a->nr > 0) {
-				if (a->isbat)
-					tpe = newBatType(tpe);
+				/*
+				if (a->nr > max_index) {
+					max_index=a->nr;
+					printf("%s %d \n", fcn->fcn, a->nr);
+				}
+				*/
 				setPolymorphic(sig, tpe, TRUE);
 			}
 			if (a->vargs) {
@@ -313,10 +318,14 @@ addFunctions(mel_func *fcn)
 				return msg;
 			}
 			sig = pushArgument(mb, sig, idx);
-			int tpe = TYPE_any;
+			int tpe = getVarType(mb, idx);
 			if (a->nr > 0) {
-				if (a->isbat)
-					tpe = newBatType(tpe);
+				/*
+				if (a->nr > max_index) {
+					max_index=a->nr;
+					printf("%s %d \n", fcn->fcn, a->nr);
+				}
+				*/
 				setPolymorphic(sig, tpe, TRUE);
 			}
 			if (a->vargs) {
@@ -425,10 +434,14 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 			return MEL_ERR;
 		}
 		sig = pushReturn(mb, sig, idx);
-		int tpe = TYPE_any;
+		int tpe = getVarType(mb, idx);
 		if (a.nr > 0) {
-			if (a.isbat)
-				tpe = newBatType(tpe);
+			/*
+			if (a.nr > max_index) {
+				max_index=a.nr;
+				printf("%s %d \n", fcn, a.nr);
+			}
+			*/
 			setPolymorphic(sig, tpe, TRUE);
 		}
 		if (a.vargs) {
@@ -447,10 +460,14 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 			return MEL_ERR;
 		}
 		sig = pushArgument(mb, sig, idx);
-		int tpe = TYPE_any;
+		int tpe = getVarType(mb, idx);
 		if (a.nr > 0) {
-			if (a.isbat)
-				tpe = newBatType(tpe);
+			/*
+			if (a.nr > max_index) {
+				max_index=a.nr;
+				printf("%s %d \n", fcn, a.nr);
+			}
+			*/
 			setPolymorphic(sig, tpe, TRUE);
 		}
 		if (a.vargs) {

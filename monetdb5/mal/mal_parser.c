@@ -764,14 +764,12 @@ cstToken(Client cntxt, ValPtr cst)
  *
  * The type ANY matches any type specifier.
  * Appending it with an alias turns it into a type variable.
- * The type alias is \$DIGIT (1-9) and can be used to relate types
+ * The type alias is \$DIGIT (1-3) and can be used to relate types
  * by type equality.
  * The type variable are defined within the context of a function
  * scope.
  * Additional information, such as a repetition factor,
  * encoding tables, or type dependency should be modeled as properties.
- *
- * It would make more sense for tpe parameter to be an int, but simpleTypeId returns a size_t
  */
 static int
 typeAlias(Client cntxt, int tpe)
@@ -779,17 +777,18 @@ typeAlias(Client cntxt, int tpe)
 	int t;
 
 	if (tpe != TYPE_any)
-		return -1;
+		return 0;
 	if (currChar(cntxt) == TMPMARKER) {
 		nextChar(cntxt);
 		t = currChar(cntxt) - '0';
-		if (t <= 0 || t > 9)
-			parseError(cntxt, "[1-9] expected\n");
-		else
+		if (t <= 0 || t > 3) {
+			parseError(cntxt, "[1-3] expected\n");
+			return -1;
+		} else
 			nextChar(cntxt);
 		return t;
 	}
-	return -1;
+	return 0;
 }
 
 /*
@@ -835,6 +834,8 @@ parseTypeId(Client cntxt)
 		if (currChar(cntxt) == ':') {
 			tt = simpleTypeId(cntxt);
 			kt = typeAlias(cntxt, tt);
+			if (kt < 0)
+				return kt;
 		} else {
 			parseError(cntxt, "':bat[:any]' expected\n");
 			return -1;
@@ -853,6 +854,8 @@ parseTypeId(Client cntxt)
 	if (currChar(cntxt) == ':') {
 		tt = simpleTypeId(cntxt);
 		kt = typeAlias(cntxt, tt);
+		if (kt < 0)
+			return kt;
 		if (kt > 0)
 			setTypeIndex(tt, kt);
 		return tt;
@@ -952,6 +955,8 @@ binding(Client cntxt, MalBlkPtr curBlk, InstrPtr curInstr, int flag)
 			if (varid < 0)
 				return curInstr;
 			type = typeElm(cntxt, TYPE_any);
+			if (type < 0)
+				return curInstr;
 			if (isPolymorphic(type))
 				setPolymorphic(curInstr, type, TRUE);
 			setVarType(curBlk, varid, type);

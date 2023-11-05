@@ -342,7 +342,6 @@ copyMalBlk(MalBlkPtr old)
 	mb->runtime = old->runtime;
 	mb->calls = old->calls;
 	mb->optimize = old->optimize;
-	mb->replica = old->replica;
 	mb->maxarg = old->maxarg;
 	mb->inlineProp = old->inlineProp;
 	mb->unsafeProp = old->unsafeProp;
@@ -1234,18 +1233,15 @@ destinationType(MalBlkPtr mb, InstrPtr p)
 inline void
 setPolymorphic(InstrPtr p, int tpe, int force)
 {
-	int c1 = 0, c2 = 0;
 	if (force == FALSE && tpe == TYPE_any)
 		return;
-	if (isaBatType(tpe))
-		c1 = TYPE_oid;
+	int any = isAnyExpression(tpe) || TYPE_any, index = 0;
+	assert(any);
 	if (getTypeIndex(tpe) > 0)
-		c2 = getTypeIndex(tpe);
-	else if (getBatType(tpe) == TYPE_any)
-		c2 = 1;
-	c1 = c1 > c2 ? c1 : c2;
-	if (c1 > 0 && c1 >= p->polymorphic)
-		p->polymorphic = c1 + 1;
+		index = getTypeIndex(tpe);
+	if (any && (index + 1) >= p->polymorphic)
+		p->polymorphic = index + 1;
+	assert(p->polymorphic);
 }
 
 /* Instructions are simply appended to a MAL block. It should always succeed.

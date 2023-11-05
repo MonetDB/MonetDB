@@ -1950,8 +1950,8 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa)", args(1,9, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
  pattern("batcalc", "between", CMDbatBETWEEN, false, "B between V1 and V2 (or vice versa) with candidates list", args(1,10, batarg("",bit),batargany("b",1),argany("v1",1),argany("v2",1),batarg("s",oid),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
 
- pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,2, arg("",dbl),batargany("b",2))),
- pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,3, arg("",dbl),batargany("b",2),arg("scale",int))),
+ pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,2, arg("",dbl),batargany("b",1))),
+ pattern("aggr", "avg", CMDcalcavg, false, "Gives the avg of all tail values", args(1,3, arg("",dbl),batargany("b",1),arg("scale",int))),
 
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),arg("v",bit),batargany("b1",1),batargany("b2",1))),
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),arg("v",bit),argany("v1",1),batargany("b2",1))),
