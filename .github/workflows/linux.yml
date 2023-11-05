@@ -116,7 +116,7 @@ jobs:
         shell: pwsh
         run: |
           $env:PATH = 'C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;' + $env:PATH
-          C:\MDB\bin\Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
+          python C:\MDB\bin\Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
         if: runner.os == 'Windows'
 
       - name: Tar files
