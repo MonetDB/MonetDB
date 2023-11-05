@@ -83,6 +83,17 @@ jobs:
           make install -j3
         if: runner.os == 'macOS'
 
+      - name: ctest 
+        run: |
+          cd build 
+          cmake --build . --target test
+        if: runner.os != 'Windows'
+
+      - name: mtest 
+        run: |
+          PATH=$HOME/MDB/bin:$PATH $HOME/MDB/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
+        if: runner.os != 'Windows'
+
       - name: choco packages
         run: |
           choco install winflexbison3
@@ -98,25 +109,14 @@ jobs:
           cmake --build . --target install
         if: runner.os == 'Windows'
 
-      - name: ctest 
-        run: |
-          cd build 
-          cmake --build . --target test
-        if: runner.os != 'Windows'
-
       - name: install pymonetdb
         run: pip3 install pymonetdb
 
       - name: mtest 
-        run: |
-          PATH=$HOME/MDB/bin:$PATH $HOME/MDB/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
-        if: runner.os != 'Windows'
-
-      - name: mtest 
         shell: pwsh
         run: |
-          $Env:PATH = 'C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;' + $Env:PATH
-          Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
+          $env:PATH = 'C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;' + $env:PATH
+          C:\MDB\bin\Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
         if: runner.os == 'Windows'
 
       - name: Tar files
