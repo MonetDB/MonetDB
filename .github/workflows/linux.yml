@@ -43,8 +43,6 @@ jobs:
             c_compiler: cl
     runs-on: ${{ matrix.os }}
     steps:
-      env:
-        CTEST: ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -104,6 +102,8 @@ jobs:
         if: runner.os == 'Windows'
 
       - name: ctest 
+        env:
+          CTEST: ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
         run: |
           cd build 
           cmake --build . --target ${{ CTEST }}
