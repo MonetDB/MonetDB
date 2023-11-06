@@ -25,7 +25,10 @@ HOST = 'python.org'
 # Run mclient
 cmd = ['mclient', '-L-', '-d', f"monetdbs://{HOST}:443/demo"]
 proc = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-assert proc.returncode == 2, f"mclient is supposed to exit with status 2, not {proc.returncode}"
+if proc.returncode != 2:
+    msg = str(proc.stderr, 'utf-8')
+    print(f"mclient is supposed to exit with status 2, not {proc.returncode}.\n--- stderr ---\n{msg}\n---end stderr ---", file=sys.stderr)
+    exit(1)
 
 # After the TLS handshake succeeds we expect the server to send something like
 # 'HTTP/1.1 400 Bad Request' because we're sending \x00\x00 instead of an HTTP
