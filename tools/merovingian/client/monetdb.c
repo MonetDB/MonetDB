@@ -2381,7 +2381,7 @@ command_snapshot(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
-	char buf[1024];
+	char buf[1024+10];
 	int i;
 	int retval = 0;
 #ifdef TIOCGWINSZ

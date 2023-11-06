@@ -1063,7 +1063,7 @@ SQLreader(Client c, backend *be)
 				more = false;
 				go = false;
 			} else if (go && (rd = bstream_next(in)) <= 0) {
-				if (rd == 0 && in->eof) {
+				if (rd == 0 && in->eof && !mnstr_eof(in->s)) {
 					/* we hadn't seen the EOF before, so just try again
 					   (this time with prompt) */
 					more = true;

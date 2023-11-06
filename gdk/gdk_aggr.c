@@ -107,18 +107,27 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 					max = gids[BATcount(g) - 1];
 				}
 			} else {
-				/* we'll do a complete scan */
-				gids = (const oid *) Tloc(g, 0);
-				for (i = 0, ngrp = BATcount(g); i < ngrp; i++) {
-					if (!is_oid_nil(gids[i])) {
-						if (gids[i] < min)
-							min = gids[i];
-						if (gids[i] > max)
-							max = gids[i];
+				const ValRecord *prop;
+				prop = BATgetprop(g, GDK_MAX_BOUND);
+				if (prop != NULL) {
+					assert(prop->vtype == TYPE_oid);
+					min = 0; /* just assume it starts at 0 */
+					max = prop->val.oval - 1; /* bound is exclusive */
+				} else {
+					/* we'll do a complete scan */
+					gids = (const oid *) Tloc(g, 0);
+					for (i = 0, ngrp = BATcount(g); i < ngrp; i++) {
+						if (!is_oid_nil(gids[i])) {
+							if (gids[i] < min)
+								min = gids[i];
+							if (gids[i] > max)
+								max = gids[i];
+						}
 					}
+					/* note: max < min is possible
+					 * if all groups are nil (or
+					 * BATcount(g)==0) */
 				}
-				/* note: max < min is possible if all groups
-				 * are nil (or BATcount(g)==0) */
 			}
 		}
 		ngrp = max < min ? 0 : max - min + 1;

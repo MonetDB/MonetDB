@@ -101,6 +101,9 @@ DEP_VIEW
 args
 ids
 DEP_VIEW
+args
+routines
+DEP_VIEW
 auths
 dependency_owners_on_schemas
 DEP_VIEW
@@ -178,6 +181,9 @@ columns
 DEP_VIEW
 comments
 describe_comments
+DEP_VIEW
+comments
+routines
 DEP_VIEW
 comments
 schemata
@@ -323,6 +329,9 @@ DEP_VIEW
 function_languages
 describe_functions
 DEP_VIEW
+function_languages
+routines
+DEP_VIEW
 function_types
 describe_comments
 DEP_VIEW
@@ -337,6 +346,9 @@ fully_qualified_functions
 DEP_VIEW
 function_types
 ids
+DEP_VIEW
+function_types
+routines
 DEP_VIEW
 functions
 dependency_args_on_types
@@ -388,6 +400,9 @@ fully_qualified_functions
 DEP_VIEW
 functions
 ids
+DEP_VIEW
+functions
+routines
 DEP_VIEW
 ids
 dependencies_vw
@@ -574,6 +589,9 @@ ids
 DEP_VIEW
 schemas
 referential_constraints
+DEP_VIEW
+schemas
+routines
 DEP_VIEW
 schemas
 schemata
@@ -850,7 +868,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-1698 values hashing to 805e3895a1ec9ab7f2ecd4a1520099b4
+1755 values hashing to ce914cc8151df86cb7ff91fb677843fa
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name

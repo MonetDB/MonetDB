@@ -60,4 +60,7 @@ typedef struct storage {
 /* initialize bat storage call back functions interface */
 extern void bat_storage_init( store_functions *sf );
 
+storage *
+bind_del_data(sql_trans *tr, sql_table *t, bool *clear);
+
 #endif /*BATSTORAGE_H */

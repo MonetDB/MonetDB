@@ -1202,6 +1202,124 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	} while (0)
 #endif
 
+static enum range_comp_t
+BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
+{
+	enum range_comp_t range;
+	const ValRecord *minprop = NULL, *maxprop = NULL;
+	const void *minval = NULL, *maxval = NULL;
+	bool maxincl = true;
+	int c;
+	int (*atomcmp) (const void *, const void *) = ATOMcompare(bi->type);
+
+	if (tl && (*atomcmp)(tl, ATOMnilptr(bi->type)) == 0)
+		tl = NULL;
+	if (th && (*atomcmp)(th, ATOMnilptr(bi->type)) == 0)
+		th = NULL;
+	if (tl == NULL && th == NULL)
+		return range_contains; /* looking for everything */
+
+	/* keep locked while we look at the property values */
+	MT_lock_set(&bi->b->theaplock);
+	if (bi->minpos != BUN_NONE)
+		minval = BUNtail(*bi, bi->minpos);
+	else if ((minprop = BATgetprop_nolock(bi->b, GDK_MIN_BOUND)) != NULL)
+		minval = VALptr(minprop);
+	if (bi->maxpos != BUN_NONE) {
+		maxval = BUNtail(*bi, bi->maxpos);
+		maxincl = true;
+	} else if ((maxprop = BATgetprop_nolock(bi->b, GDK_MAX_BOUND)) != NULL) {
+		maxval = VALptr(maxprop);
+		maxincl = false;
+	}
+
+	if (minprop == NULL && maxprop == NULL) {
+		range = range_inside; /* strictly: unknown */
+	} else if (maxprop &&
+		   tl &&
+		   ((c = atomcmp(tl, maxval)) > 0 ||
+		    ((!maxincl || !li) && c == 0))) {
+		range = range_after;
+	} else if (minprop &&
+		   th &&
+		   ((c = atomcmp(th, minval)) < 0 ||
+		    (!hi && c == 0))) {
+		range = range_before;
+	} else if (tl == NULL) {
+		if (minprop == NULL) {
+			c = atomcmp(th, maxval);
+			if (c < 0 || ((maxincl || !hi) && c == 0))
+				range = range_atstart;
+			else
+				range = range_contains;
+		} else {
+			c = atomcmp(th, minval);
+			if (c < 0 || (!hi && c == 0))
+				range = range_before;
+			else if (maxprop == NULL)
+				range = range_atstart;
+			else {
+				c = atomcmp(th, maxval);
+				if (c < 0 || ((maxincl || !hi) && c == 0))
+					range = range_atstart;
+				else
+					range = range_contains;
+			}
+		}
+	} else if (th == NULL) {
+		if (maxprop == NULL) {
+			c = atomcmp(tl, minval);
+			if (c >= 0)
+				range = range_atend;
+			else
+				range = range_contains;
+		} else {
+			c = atomcmp(tl, maxval);
+			if (c > 0 || ((!maxincl || !li) && c == 0))
+				range = range_after;
+			else if (minprop == NULL)
+				range = range_atend;
+			else {
+				c = atomcmp(tl, minval);
+				if (c >= 0)
+					range = range_atend;
+				else
+					range = range_contains;
+			}
+		}
+	} else if (minprop == NULL) {
+		c = atomcmp(th, maxval);
+		if (c < 0 || ((maxincl || !hi) && c == 0))
+			range = range_inside;
+		else
+			range = range_atend;
+	} else if (maxprop == NULL) {
+		c = atomcmp(tl, minval);
+		if (c >= 0)
+			range = range_inside;
+		else
+			range = range_atstart;
+	} else {
+		c = atomcmp(tl, minval);
+		if (c >= 0) {
+			c = atomcmp(th, maxval);
+			if (c < 0 || ((maxincl || !hi) && c == 0))
+				range = range_inside;
+			else
+				range = range_atend;
+		} else {
+			c = atomcmp(th, maxval);
+			if (c < 0 || ((maxincl || !hi) && c == 0))
+				range = range_atstart;
+			else
+				range = range_contains;
+		}
+	}
+
+	MT_lock_unset(&bi->b->theaplock);
+	return range;
+}
+
 /* generic range select
  *
  * Return a BAT with the OID values of b for qualifying tuples.  The
@@ -1308,6 +1426,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		dbl v_dbl;
 		oid v_oid;
 	} vl, vh;
+	enum range_comp_t range;
+	const bool notnull = BATgetprop(b, GDK_NOT_NULL) != NULL;
 	lng t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -1467,7 +1587,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		bat_iterator_end(&bi);
 		return bn;
 	}
-	if (equi && lnil && bi.nonil) {
+	if (equi && lnil && (notnull || bi.nonil)) {
 		/* return all nils, but there aren't any */
 		MT_thread_setalgorithm("select: equi-nil, nonil");
 		bn = BATdense(0, 0, 0);
@@ -1481,7 +1601,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return bn;
 	}
 
-	if (!equi && !lval && !hval && lnil && bi.nonil) {
+	if (!equi && !lval && !hval && lnil && (notnull || bi.nonil)) {
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
 		MT_thread_setalgorithm("select: everything, nonil");
@@ -1498,78 +1618,81 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	/* figure out how the searched for range compares with the known
 	 * minimum and maximum values */
+	range = BATrange(&bi, lval ? tl : NULL, hval ? th : NULL, li, hi);
 	if (anti) {
-		int c;
-
-		if (bi.minpos != BUN_NONE) {
-			c = ATOMcmp(t, tl, BUNtail(bi, bi.minpos));
-			if (c < 0 || (li && c == 0)) {
-				if (bi.maxpos != BUN_NONE) {
-					c = ATOMcmp(t, th, BUNtail(bi, bi.maxpos));
-					if (c > 0 || (hi && c == 0)) {
-						/* tl..th range fully
-						 * inside MIN..MAX
-						 * range of values in
-						 * BAT, so nothing
-						 * left over for
-						 * anti */
-						MT_thread_setalgorithm("select: nothing, out of range");
-						bn = BATdense(0, 0, 0);
-						TRC_DEBUG(ALGO, "b=" ALGOBATFMT
-							  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-							  " (" LLFMT " usec): "
-							  "nothing, out of range\n",
-							  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
-						bat_iterator_end(&bi);
-						return bn;
-					}
-				}
+		switch (range) {
+		case range_contains:
+			/* MIN..MAX range of values in BAT fully inside
+			 * tl..th range, so nothing left over for
+			 * anti */
+			MT_thread_setalgorithm("select: nothing, out of range");
+			bn = BATdense(0, 0, 0);
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+				  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
+				  "nothing, out of range\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+			bat_iterator_end(&bi);
+			return bn;
+		case range_before:
+		case range_after:
+			if (notnull || b->tnonil) {
+				/* search range does not overlap with BAT range,
+				 * and there are no nils, so we can return
+				 * everything */
+				MT_thread_setalgorithm("select: everything, anti, nonil");
+				bn = canditer_slice(&ci, 0, ci.ncand);
+				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+					  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+					  " (" LLFMT " usec): "
+					  "everything, nonil\n",
+					  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+					  ALGOOPTBATPAR(bn), GDKusec() - t0);
+				bat_iterator_end(&bi);
+				return bn;
 			}
+			break;
+		default:
+			break;
 		}
 	} else if (!equi || !lnil) {
-		int c;
-
-		if (hval) {
-			if (bi.minpos != BUN_NONE) {
-				c = ATOMcmp(t, th, BUNtail(bi, bi.minpos));
-				if (c < 0 || (!hi && c == 0)) {
-					/* smallest value in BAT larger than
-					 * what we're looking for */
-					MT_thread_setalgorithm("select: nothing, out of range");
-					bn = BATdense(0, 0, 0);
-					TRC_DEBUG(ALGO, "b="
-						  ALGOBATFMT ",s="
-						  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-						  " (" LLFMT " usec): "
-						  "nothing, out of range\n",
-						  ALGOBATPAR(b),
-						  ALGOOPTBATPAR(s), anti,
-						  ALGOOPTBATPAR(bn), GDKusec() - t0);
-					bat_iterator_end(&bi);
-					return bn;
-				}
+		switch (range) {
+		case range_before:
+		case range_after:
+			/* range we're looking for either completely
+			 * before or complete after the range of values
+			 * in the BAT */
+			MT_thread_setalgorithm("select: nothing, out of range");
+			bn = BATdense(0, 0, 0);
+			TRC_DEBUG(ALGO, "b="
+				  ALGOBATFMT ",s="
+				  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
+				  "nothing, out of range\n",
+				  ALGOBATPAR(b),
+				  ALGOOPTBATPAR(s), anti,
+				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+			bat_iterator_end(&bi);
+			return bn;
+		case range_contains:
+			if (notnull || b->tnonil) {
+				/* search range contains BAT range, and
+				 * there are no nils, so we can return
+				 * everything */
+				MT_thread_setalgorithm("select: everything, nonil");
+				bn = canditer_slice(&ci, 0, ci.ncand);
+				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+					  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+					  " (" LLFMT " usec): "
+					  "everything, nonil\n",
+					  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+					  ALGOOPTBATPAR(bn), GDKusec() - t0);
+				bat_iterator_end(&bi);
+				return bn;
 			}
-		}
-		if (lval) {
-			if (bi.maxpos != BUN_NONE) {
-				c = ATOMcmp(t, tl, BUNtail(bi, bi.maxpos));
-				if (c > 0 || (!li && c == 0)) {
-					/* largest value in BAT smaller than
-					 * what we're looking for */
-					MT_thread_setalgorithm("select: nothing, out of range");
-					bn = BATdense(0, 0, 0);
-					TRC_DEBUG(ALGO, "b="
-						  ALGOBATFMT ",s="
-						  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-						  " (" LLFMT " usec): "
-						  "nothing, out of range\n",
-						  ALGOBATPAR(b),
-						  ALGOOPTBATPAR(s), anti,
-						  ALGOOPTBATPAR(bn), GDKusec() - t0);
-					bat_iterator_end(&bi);
-					return bn;
-				}
-			}
+			break;
+		default:
+			break;
 		}
 	}
 

@@ -148,4 +148,3 @@ if __name__ == "__main__":
     else:
         print("Usage: python3 read_tests.py [TESTDATANAME]", file=sys.stderr)
         sys.exit(1)
-

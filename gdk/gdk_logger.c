@@ -1506,7 +1506,7 @@ bm_get_counts(logger *lg)
 			cnt = BATcount(b);
 		} else {
 			deleted++;
-			lid = 1;
+			lid = BBP_desc(bids[p]) ? 1 : -1;
 		}
 		if (BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
 			return GDK_FAIL;
@@ -1642,11 +1642,23 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	lg->catalog_id = noids;
 	lg->dcatalog = ndels;
 
+	/* failing to rename these two bats is not fatal */
+	if (BBPrename(lg->catalog_cnt, NULL) != GDK_SUCCEED)
+		GDKclrerr();
+	if (BBPrename(lg->catalog_lid, NULL) != GDK_SUCCEED)
+		GDKclrerr();
 	BBPunfix(lg->catalog_cnt->batCacheid);
 	BBPunfix(lg->catalog_lid->batCacheid);
 
 	lg->catalog_cnt = ncnts;
 	lg->catalog_lid = nlids;
+	char bak[FILENAME_MAX];
+	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_cnt", NULL);
+	if (BBPrename(lg->catalog_cnt, bak) < 0)
+		GDKclrerr();
+	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_lid", NULL);
+	if (BBPrename(lg->catalog_lid, bak) < 0)
+		GDKclrerr();
 	lg->cnt = BATcount(lg->catalog_bid);
 	lg->deleted -= cleanup;
 	return rcnt;
@@ -1693,8 +1705,11 @@ bm_subcommit(logger *lg, uint32_t *updated, BUN maxupdated)
 		}
 		bat col = bids[p];
 
-		if (lids && lids[p] != lng_nil && lids[p] <= lg->saved_tid)
+		if (lids && lids[p] != lng_nil && lids[p] <= lg->saved_tid) {
 			cleanup++;
+			if (lids[p] == -1)
+				continue;
+		}
 		TRC_DEBUG(WAL, "new %s (%d)\n", BBP_logical(col), col);
 		assert(col);
 		sizes[i] = cnts ? (BUN) cnts[p] : 0;
@@ -2061,16 +2076,24 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 	}
+	/* failing to rename the catalog_cnt and catalog_lid bats is not
+	 * fatal */
 	lg->catalog_cnt = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_cnt == NULL) {
 		GDKerror("failed to create catalog_cnt bat");
 		goto error;
 	}
+	strconcat_len(bak, sizeof(bak), fn, "_catalog_cnt", NULL);
+	if (BBPrename(lg->catalog_cnt, bak) < 0)
+		GDKclrerr();
 	lg->catalog_lid = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_lid == NULL) {
 		GDKerror("failed to create catalog_lid bat");
 		goto error;
 	}
+	strconcat_len(bak, sizeof(bak), fn, "_catalog_lid", NULL);
+	if (BBPrename(lg->catalog_lid, bak) < 0)
+		GDKclrerr();
 	if (bm_get_counts(lg) != GDK_SUCCEED)
 		goto error;
 
@@ -2750,8 +2773,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 	if (b->ttype == TYPE_msk) {
 		BATiter bi = bat_iterator(b);
 		if (offset % 32 == 0) {
-			if (!mnstr_writeIntArray
-			    (lg->current->output_log, (int *) ((char *) bi.base + offset / 32),
+			if (!mnstr_writeIntArray(lg->current->output_log, (int *) ((char *) bi.base + offset / 32),
 			     (size_t) ((nr + 31) / 32)))
 				ok = GDK_FAIL;
 		} else {

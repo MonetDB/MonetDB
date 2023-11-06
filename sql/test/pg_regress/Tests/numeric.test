@@ -1646,6 +1646,7 @@ INSERT INTO num_result SELECT id, 0, POWER(cast('10.0' as numeric(3,0)), LOG(ABS
     FROM num_data
     WHERE val <> '0.0'
 
+skipif system=FreeBSD
 query IRR rowsort
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_power_10_ln t2

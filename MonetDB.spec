@@ -54,7 +54,7 @@
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
 # Packages for Enterprise Linux (EPEL).
-%if %{fedpkgs}
+%if %{fedpkgs} && (0%{?rhel} != 7) && (0%{?rhel} != 8)
 # By default create the MonetDB-geom-MonetDB5 package on Fedora and RHEL 7
 %bcond_without geos
 %endif
@@ -89,7 +89,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Jun2023-SP2/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jun2023-SP3/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -123,6 +123,10 @@ BuildRequires: geos-devel >= 3.10.0
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
 BuildRequires: pkgconfig(libxml-2.0)
+%if 0%{?rhel} != 7
+BuildRequires: pkgconfig(openssl) >= 1.1.1
+%global with_openssl 1
+%endif
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre) >= 4.5
 %endif
@@ -369,6 +373,7 @@ developer.
 %{_bindir}/ODBCtester
 %{_bindir}/arraytest
 %{_bindir}/bincopydata
+%{_bindir}/murltest
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
@@ -534,6 +539,7 @@ exit 0
 %if %{with cintegration}
 %{_libdir}/monetdb5/lib_capi.so
 %endif
+%{_libdir}/monetdb5/lib_csv.so
 %{_libdir}/monetdb5/lib_generator.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
@@ -804,6 +810,7 @@ fi
         -DWITH_CURL=ON \
         -DWITH_LZ4=ON \
         -DWITH_LZMA=ON \
+        -DWITH_OPENSSL=%{?with_openssl:ON}%{!?with_openssl:OFF} \
         -DWITH_PCRE=ON \
         -DWITH_PROJ=OFF \
         -DWITH_READLINE=ON \
@@ -860,6 +867,26 @@ fi
 %endif
 
 %changelog
+* Fri Nov 03 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.13-20231103
+- Rebuilt.
+- GH#7300: Implement missing standard SQL DATE and TIMESTAMP functions
+- GH#7324: string_distance('method',str1, str2) as a generic distance
+  function
+- GH#7409: Numpy table returning UDFs with variadic arguments
+
+* Thu Nov  2 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.13-20231103
+- sql: Added a missing interface function sys.timestamp_to_str with
+  a TIMESTAMP (as opposed to TIMESTAMP WITH TIME ZONE) argument.
+  The missing interface caused error messages being produced when the
+  function was called with a TIMESTAMP argument, although it did give
+  the correct result.
+
+* Tue Oct 31 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.13-20231103
+- gdk: A bug was fixed where the administration of which bats were in use was
+  interpreted incorrectly during startup, causing problems later.  One
+  symptom that has been observed was failure to startup with a message
+  that the catalog tables could not be loaded.
+
 * Fri Sep 29 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.11-20230929
 - Rebuilt.
 
