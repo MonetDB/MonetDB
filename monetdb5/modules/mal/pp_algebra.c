@@ -2182,6 +2182,9 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			}
 		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp algebra.projection", RUNTIME_QRY_TIMEOUT));
 	}
+	if (err)
+		goto error;
+
 	if (!private)
 		pipeline_lock2(r);
 	if (BATcount(r) < max)
