@@ -1073,16 +1073,16 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
-		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
 		BUN r = 0;
 
 		BAT *ng = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 		if (ng == NULL) {
-			err = createException(MAL, "pp algebra.unique", MAL_MALLOC_FAIL);
+			err = createException(MAL, "pp algebra.(group_)unique", MAL_MALLOC_FAIL);
 			goto error;
 		}
 		if (cnt && !err) {
+			ATOMIC_BASE_TYPE expected = 0;
 			/* probably need bat resize and create hash */
 			int tt = b->ttype;
 			oid *gp = Tloc(ng, 0);
@@ -1422,11 +1422,11 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 
    	b = BATdescriptor(*bid);
 	if (!b)
-		return createException(MAL, "group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		if (!u) {
-			err = createException(MAL, "group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
@@ -1434,7 +1434,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	} else {
 		u = BATdescriptor(*uid);
 		if (!u) {
-			err = createException(MAL, "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "pp group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -1455,7 +1455,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		if (!h->allocators) {
 			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
 			if (!h->allocators) {
-				err = createException(MAL, "group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			} else
 				h->nr_allocators = p->p->nr_workers;
@@ -1465,7 +1465,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = ma_create();
 			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -1482,7 +1482,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		BUN cnt = BATcount(b);
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 		if (g == NULL) {
-			err = createException(MAL, "pp algebra.unique", MAL_MALLOC_FAIL);
+			err = createException(MAL, "pp group.group", MAL_MALLOC_FAIL);
 			goto error;
 		}
 
@@ -1514,12 +1514,15 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			} else {
 				agroup(str)
 			}
-			TIMEOUT_CHECK(timeoffset, err = createException(SQL, "group.group", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp group.group", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
 			BBPunfix(g->batCacheid);
-			if (!err)
-				err = createException(MAL, "group.group", "pipeline execution error");
+			/* We don't want to overwrite existing error message.
+			 * p->p->status doesn't carry much info. yet.
+			 */
+			if (!err) 
+				err = createException(MAL, "pp group.group", "pipeline execution error");
 			goto error;
 		}
 		BATsetcount(g, cnt);
@@ -1791,38 +1794,36 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	Pipeline *p = (Pipeline*)*H;
 	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
 	str err = NULL;
-	BAT *u, *b = BATdescriptor(*bid);
-	BAT *G = BATdescriptor(*Gid);
 	lng timeoffset = 0;
+	BAT *u = NULL;
 
-	if (!b || !G) {
-		if (b)
-			BBPunfix(*bid);
-		return createException(MAL, "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BAT *b = BATdescriptor(*bid);
+	BAT *G = BATdescriptor(*Gid);
+	if (b == NULL || G == NULL) {
+		err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
 	}
 	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
 		BAT *H = BATdescriptor(*Ph);
 		if (!H) {
-			BBPunfix(*bid);
-			BBPunfix(*Gid);
-			return createException(MAL, "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
 		}
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		if (!u) {
-			BBPunfix(*Gid);
-			BBPunfix(*bid);
-			return createException(MAL, "group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			BBPunfix(H->batCacheid);
+			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
 		}
 		/* Lookup parent hash */
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->T.sink);
 		u->T.private_bat = 1;
-		BBPunfix(*Ph);
+		BBPunfix(H->batCacheid);
 	} else {
 		u = BATdescriptor(*uid);
 		if (!u) {
-			BBPunfix(*Gid);
-			BBPunfix(*bid);
-			return createException(MAL, "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
 		}
 	}
 	private = u->T.private_bat;
@@ -1841,7 +1842,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		if (!h->allocators) {
 			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
 			if (!h->allocators) {
-				err = createException(MAL, "group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			} else
 				h->nr_allocators = p->p->nr_workers;
@@ -1851,7 +1852,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = ma_create();
 			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -1864,15 +1865,20 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
-		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
-		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
-		int tt = b->ttype;
-		oid *gp = Tloc(g, 0);
-		gid *gi = Tloc(G, 0);
-		gid *pgids = h->pgids;
 
+		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
+		if (g == NULL) {
+			err = createException(MAL, "pp group.group(derive)", MAL_MALLOC_FAIL);
+			goto error;
+		}
 		if (cnt && !err) {
+			ATOMIC_BASE_TYPE expected = 0;
+			int tt = b->ttype;
+			oid *gp = Tloc(g, 0);
+			gid *gi = Tloc(G, 0);
+			gid *pgids = h->pgids;
+
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			if (qry_ctx != NULL) {
 				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
@@ -1897,31 +1903,38 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			} else {
 				aderive(str)
 			}
+			TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp group.group(derive)", RUNTIME_QRY_TIMEOUT));
 		}
-		if (!err) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(G->batCacheid);
-			BATsetcount(g, cnt);
-			pipeline_lock2(g);
-			BATnegateprops(g);
-			pipeline_unlock2(g);
-			/* props */
-			gid last = ATOMIC_GET(&h->last);
-			/* pass max id */
-			g->T.maxval = last;
-			g->tkey = FALSE;
-			*uid = u->batCacheid;
-			*rid = g->batCacheid;
-			BBPkeepref(u);
-			BBPkeepref(g);
+		if (err || p->p->status) {
+			BBPunfix(g->batCacheid);
+			/* We don't want to overwrite existing error message.
+			 * p->p->status doesn't carry much info. yet.
+			 */
+			if (!err)
+				err = createException(MAL, "pp group.group(derive)", "pipeline execution error");
+			goto error;
 		}
+		BATsetcount(g, cnt);
+		pipeline_lock2(g);
+		BATnegateprops(g);
+		pipeline_unlock2(g);
+		/* props */
+		gid last = ATOMIC_GET(&h->last);
+		/* pass max id */
+		g->T.maxval = last;
+		g->tkey = FALSE;
+		*uid = u->batCacheid;
+		*rid = g->batCacheid;
+		BBPkeepref(u);
+		BBPkeepref(g);
 	}
-	/* FIXME: the name 'group.derive' doesn't match the mel definition */
-	TIMEOUT_CHECK(timeoffset, throw(MAL, "group.derive", GDK_EXCEPTION));
-	if (err || p->p->status)
-		throw(MAL, "group.derive", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BBPunfix(b->batCacheid);
+	BBPunfix(G->batCacheid);
 	return MAL_SUCCEED;
   error:
+	if (u) BBPunfix(u->batCacheid);
+	if (b) BBPunfix(b->batCacheid);
+	if (G) BBPunfix(G->batCacheid);
 	return err;
 }
 
