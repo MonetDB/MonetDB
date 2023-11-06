@@ -102,11 +102,9 @@ jobs:
         if: runner.os == 'Windows'
 
       - name: ctest 
-        env:
-          CTEST: ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
         run: |
           cd build 
-          cmake --build . --target ${{ CTEST }}
+          cmake --build . --target ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
 
       - name: mtest 
         run: |
