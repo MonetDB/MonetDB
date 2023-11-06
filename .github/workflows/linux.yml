@@ -114,7 +114,7 @@ jobs:
       - name: ctest 
         shell: pwsh
         run: |
-          $env:PATH = 'C:\vcpkg\installed\x64-windows\bin;C:\vcpkg\installed\x64-windows\debug\bin;' + $env:PATH
+          $env:PATH = 'C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;C:\vcpkg\installed\x64-windows\bin;C:\vcpkg\installed\x64-windows\debug\bin;' + $env:PATH
           cd build 
           cmake --build . --target ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
         if: runner.os == 'Windows'
