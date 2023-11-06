@@ -1421,8 +1421,10 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	lng timeoffset = 0;
 
    	b = BATdescriptor(*bid);
-	if (!b)
-		return createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (!b) {
+		err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
 	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		if (!u) {
@@ -2002,8 +2004,10 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 					var_t *o = Tloc(r, 0); \
 					ins = (o[gi + i] == 0); \
 				} \
-				if (ins && tfastins_nocheckVAR( r, gi + i, BUNtvar(bi, i)) != GDK_SUCCEED) \
-					err = "ERROR"; \
+				if (ins && tfastins_nocheckVAR( r, gi + i, BUNtvar(bi, i)) != GDK_SUCCEED) { \
+					err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);\
+					goto error; \
+				} \
 				if (w < r->twidth) { \
 					BUN sz = BATcapacity(r); \
 					memset(Tloc(r, max), 0, r->twidth*(sz-max)); \
@@ -2027,8 +2031,10 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 					var_t *o = Tloc(r, 0); \
 					ins = (o[gp[i]] == 0); \
 				} \
-				if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) \
-					err = "ERROR"; \
+				if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) { \
+					err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);\
+					goto error; \
+				} \
 				if (w < r->twidth) { \
 					BUN sz = BATcapacity(r); \
 					memset(Tloc(r, max), 0, r->twidth*(sz-max)); \
@@ -2040,9 +2046,9 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		bat_iterator_end(&bi); \
 	}
 
-/* result := algebra.projections(groupid, input)  */
-/* this (possibly) overwrites the values, therefor for expensive (var) types we only write offsets (ie use the heap from
- * the parent) */
+/* result := algebra.projection(groupid, input, PTR)  */
+/* this (possibly) overwrites the values, therefor for expensive (var) types we
+ * only write offsets (ie use the heap from the parent) */
 static str
 LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 {
@@ -2051,13 +2057,28 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	str err = NULL;
 	lng timeoffset = 0;
 
+	/* Can't `goto error` before `pipeline_lock1(r)`. */
 	g = BATdescriptor(*gid);
+	if (g == NULL) {
+		throw(MAL, "pp algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 	b = BATdescriptor(*bid);
+	if (b == NULL) {
+		BBPunfix(g->batCacheid);
+		throw(MAL, "pp algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (*rid && !is_bat_nil(*rid)) {
+		r = BATdescriptor(*rid);
+		if (r == NULL) {
+			BBPunfix(g->batCacheid);
+			BBPunfix(b->batCacheid);
+			throw(MAL, "pp algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+	}
+
 	int tt = b->ttype;
 	oid max = BATcount(g)?g->T.maxval:0;
 	/* probably need bat resize and create hash */
-	if (*rid && !is_bat_nil(*rid))
-		r = BATdescriptor(*rid);
 	bool private = (!r || r->T.private_bat), local_storage = false;
 
 	if (!tt)
@@ -2070,7 +2091,8 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
-			err = "ERROR";
+			err = createException(MAL, "pp algebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
@@ -2091,48 +2113,50 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			uint16_t width = b->twidth;
 			MT_lock_unset(&b->theaplock);
 			r = COLnew2(0, tt, max, TRANSIENT, width);
+			if (r == NULL) {
+				err = createException(MAL, "pp algebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			}
 			BATswap_heaps(r, b, p);
 		} else {
 			MT_lock_unset(&b->theaplock);
 			local_storage = true;
 			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
+			if (r == NULL) {
+				err = createException(MAL, "pp algebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			}
 			if (r->tvheap && r->tvheap->base == NULL &&
-				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED)
-				err = "ERROR";
+				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED) {
+				err = createException(MAL, "pp algebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			}
 		}
 		assert(private);
 		r->T.private_bat = 1;
 	}
 
-	BUN cnt = 0;
-	if (!err) {
-		cnt = BATcount(r);
-		if (BATcapacity(r) < max) {
-			BUN sz = max*2;
-			if (BATextend(r, sz) != GDK_SUCCEED) {
-				err = createException(MAL, "pp algebra.project", MAL_MALLOC_FAIL);
-				goto error;
-			}
+	BUN cnt = BATcount(r);
+	if (BATcapacity(r) < max) {
+		BUN sz = max*2;
+		if (BATextend(r, sz) != GDK_SUCCEED) {
+			err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);
+			goto error;
 		}
 	}
 
 	/* get max id from gid */
-	if (!err) {
-		if (cnt < max)
-			memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
-
-		cnt = BATcount(b);
-
-		str err = NULL;
+	if (cnt < max)
+		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
+	cnt = BATcount(b);
+	if (cnt) {
 		oid *gp = Tloc(g, 0);
-
 		tt = b->ttype;
-		if (!err && cnt) {
-			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			if (qry_ctx != NULL) {
-				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-			}
-			vproject()
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+		vproject()
 			project(bte)
 			project(sht)
 			project(int)
@@ -2152,32 +2176,32 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 				aproject_(str)
 			} else {
 				aproject(str,1,uint8_t)
-				aproject(str,2,uint16_t)
-				aproject(str,4,uint32_t)
-				aproject(str,8,var_t)
+					aproject(str,2,uint16_t)
+					aproject(str,4,uint32_t)
+					aproject(str,8,var_t)
 			}
-		}
-		if (!err) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(g->batCacheid);
-			if (!private)
-				pipeline_lock2(r);
-			if (BATcount(r) < max)
-				BATsetcount(r, max);
-			BATnegateprops(r);
-			if (!private)
-				pipeline_unlock2(r);
-			*rid = r->batCacheid;
-			BBPkeepref(r);
-		}
+		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp algebra.projection", RUNTIME_QRY_TIMEOUT));
 	}
 	if (!private)
+		pipeline_lock2(r);
+	if (BATcount(r) < max)
+		BATsetcount(r, max);
+	BATnegateprops(r);
+	if (!private)
+		pipeline_unlock2(r);
+	*rid = r->batCacheid;
+	BBPkeepref(r);
+
+	if (!private)
 		pipeline_unlock1(r);
-	TIMEOUT_CHECK(timeoffset, throw(MAL, "algebra.project", GDK_EXCEPTION));
-	if (err)
-		throw(MAL, "algebra.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
 	return MAL_SUCCEED;
-  error:
+  error: /* NB: only use this error handling *after* `pipeline_lock1(r);`*/
+	if (!private) pipeline_unlock1(r);
+	if (g) BBPunfix(g->batCacheid);
+	if (b) BBPunfix(b->batCacheid);
+	if (r) BBPunfix(r->batCacheid);
 	return err;
 }
 
