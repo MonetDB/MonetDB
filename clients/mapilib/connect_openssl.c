@@ -134,11 +134,9 @@ verify_server_certificate_hash(Mapi mid, X509 *x509, const char *required_prefix
 	unsigned char *buf = NULL;
 	int buflen = i2d_X509(x509, &buf);
 	if (buflen <= 0) {
-		X509_free(x509);
 		return croak_openssl(mid, __func__, "could not convert server certificate to DER");
 	}
 	assert(buf);
-	X509_free(x509);
 
 	// Compute the has of the DER using the deprecated API so we stay
 	// compatible with OpenSSL 1.1.1.
@@ -307,14 +305,17 @@ wrap_tls(Mapi mid, SOCKET sock)
 		BIO_free_all(bio);
 		return croak_openssl(mid, __func__, "Server did not send a certificate");
 	}
+	// be careful when to free server_cert
 	if (verify_method == verify_hash) {
 		const char *required_prefix = msettings_connect_certhash_digits(settings);
 		msg = verify_server_certificate_hash(mid, server_cert, required_prefix);
+		X509_free(server_cert);
 		if (msg != MOK) {
 			BIO_free_all(bio);
 			return msg;
 		}
 	} else {
+		X509_free(server_cert);
 		long verify_result = SSL_get_verify_result(ssl);
 		if (verify_result != X509_V_OK) {
 			BIO_free_all(bio);
