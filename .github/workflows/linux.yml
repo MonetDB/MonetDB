@@ -42,6 +42,8 @@ jobs:
           - os: ubuntu-latest
             c_compiler: cl
     runs-on: ${{ matrix.os }}
+    env:
+      CTEST: ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -86,17 +88,6 @@ jobs:
           make install -j3
         if: runner.os == 'macOS'
 
-      - name: ctest 
-        run: |
-          cd build 
-          cmake --build . --target test
-        if: runner.os != 'Windows'
-
-      - name: mtest 
-        run: |
-          PATH=$HOME/MDB/bin:$PATH $HOME/MDB/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
-        if: runner.os != 'Windows'
-
       - name: choco packages
         run: |
           choco install winflexbison3
@@ -111,6 +102,16 @@ jobs:
           cmake ..  -DCMAKE_INSTALL_PREFIX=C:\MDB -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DPY3INTEGRATION=OFF -DRINTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
           cmake --build . --target install
         if: runner.os == 'Windows'
+
+      - name: ctest 
+        run: |
+          cd build 
+          cmake --build . --target ${{ CTEST }}
+
+      - name: mtest 
+        run: |
+          PATH=$HOME/MDB/bin:$PATH $HOME/MDB/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
+        if: runner.os != 'Windows'
 
       - name: mtest 
         shell: pwsh
