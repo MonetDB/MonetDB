@@ -131,5 +131,5 @@ jobs:
       - name: Publish mtest results
         uses: actions/upload-artifact@v3
         with:
-          name: mtest-${{ github.ref }}-${{ matrix.os }}-${{ matrix.c_compiler }}
+          name: mtest-${{ github.sha }}-${{ matrix.os }}-${{ matrix.c_compiler }}
           path: mtests.tar
