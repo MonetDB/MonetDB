@@ -42,9 +42,9 @@ jobs:
           - os: ubuntu-latest
             c_compiler: cl
     runs-on: ${{ matrix.os }}
-    env:
-      CTEST: ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
     steps:
+      env:
+        CTEST: ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
