@@ -2144,6 +2144,7 @@ column_constraint_type:
     NOT sqlNULL	{ $$ = _symbol_create( SQL_NOT_NULL, NULL); }
  |  sqlNULL	{ $$ = _symbol_create( SQL_NULL, NULL); }
  |  UNIQUE	{ $$ = _symbol_create( SQL_UNIQUE, NULL ); }
+ |  UNIQUE NULLS DISTINCT	{ $$ = _symbol_create( SQL_UNIQUE, NULL ); }
  |  UNIQUE NULLS NOT DISTINCT	{ $$ = _symbol_create( SQL_UNIQUE_NULLS_NOT_DISTINCT, NULL ); }
  |  PRIMARY KEY	{ $$ = _symbol_create( SQL_PRIMARY_KEY, NULL ); }
  |  REFERENCES qname opt_column_list opt_match opt_ref_action
@@ -2161,6 +2162,8 @@ column_constraint_type:
 table_constraint_type:
     UNIQUE column_commalist_parens
 			{ $$ = _symbol_create_list( SQL_UNIQUE, $2); }
+ |  UNIQUE NULLS DISTINCT column_commalist_parens
+			{ $$ = _symbol_create_list( SQL_UNIQUE, $4); }
  |  UNIQUE NULLS NOT DISTINCT column_commalist_parens
 			{ $$ = _symbol_create_list( SQL_UNIQUE_NULLS_NOT_DISTINCT, $5); }
  |  PRIMARY KEY column_commalist_parens
