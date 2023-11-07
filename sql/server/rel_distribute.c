@@ -203,14 +203,15 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 	if (!eliminate_remote_or_replica_refs(v, &rel))
 		return rel;
 
+	/* if we are higher in the tree clear the previous REMOTE prop in the visitor state */
+	if (v->data && v->depth <= ((rps*)v->data)->depth) {
+		v->data = NULL;
+	}
+
 	/* no-leaf nodes: store the REMOTE property uris in the state of the visitor
 	 * leaf nodes: check if they are basetable replicas and proceed with the rewrite */
 	prop *p;
 	if (!is_basetable(rel->op)) {
-		/* if we are higher in the tree clear the previous REMOTE prop in the visitor state */
-		if (v->data && v->depth <= ((rps*)v->data)->depth) {
-			v->data = NULL;
-		}
 		/* if there is a REMOTE prop set it to the visitor state */
 		if ((p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
 			rps *rp = SA_NEW(v->sql->sa, rps);
@@ -226,10 +227,7 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 		if (t && isReplicaTable(t)) {
 			/* we might have reached a replica table through a branch that has
 			 * no REMOTE property. In this case we have to set the v->data */
-			bool no_rmt_branch = false;
 			if (!v->data && (p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
-				no_rmt_branch = true;
-
 				rps *rp = SA_NEW(v->sql->sa, rps);
 				rp->depth = v->depth;
 				rp->rmt = p;
@@ -244,11 +242,6 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 			sql_rel *r = replica_rewrite(v, t, rel->exps);
 			rel_destroy(rel);
 			rel = r;
-
-			/* if the whole rel tree branch is local (no upper REMOTE prop)
-			 * clean the visitor state */
-			if (no_rmt_branch)
-				v->data = NULL;
 		}
 	}
 	return rel;
