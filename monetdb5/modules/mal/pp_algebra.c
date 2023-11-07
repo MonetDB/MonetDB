@@ -241,9 +241,11 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b->tnonil = true;						\
 			MT_lock_unset(&b->theaplock);					\
 		} else if (cnt > 0 && BATcount(b) == 0) {				\
-			if (BUNappend(b, &val, true) != GDK_SUCCEED)			\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED) {			\
 				err = createException(MAL, "lockedaggr.avg",		\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
+				goto error;						\
+			}								\
 		}									\
 	}
 
@@ -437,11 +439,9 @@ mulmod(lng a, lng b, lng c)
 					 (x1 > GDK_lng_max / N1 || x1 < -GDK_lng_max / N1)) || 	\
 					(N2 != 0 &&						\
 					 (x2 > GDK_lng_max / N2 || x2 < -GDK_lng_max / N2))) { 	\
-					BBPunfix(b->batCacheid);				\
-					BBPunfix(c->batCacheid);				\
-					BBPunfix(r->batCacheid);				\
-					throw(SQL, "aggr.avg",					\
+					err = createException(SQL, "aggr.avg",			\
 						  SQLSTATE(22003) "overflow in calculation");	\
+					goto error;						\
 				}								\
 				a = (T) ((a1 / n) * N1 + (x1 * N1) / n +			\
 						 (a2 / n) * N2 + (x2 * N2) / n +		\
@@ -488,6 +488,7 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, pci->retc);
 	int type = getArgType(mb, pci, pci->retc + 1);
 	str err = NULL;
+	BAT *b = NULL, *c = NULL, *r = NULL;
 
 	if (
 #ifdef HAVE_HGE
@@ -498,13 +499,23 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(SQL, "lockedaggr.avg", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
-	if (!is_bat_nil(*res)) {
-		BAT *b = BATdescriptor(*res);
-		BAT *c = BATdescriptor(*rcnt);
+	if (is_bat_nil(*res)) {
+		err = createException(SQL, "lockedaggr.avg", "Result is not initialized");
+		goto error;
+	}
+	b = BATdescriptor(*res);
+	c = BATdescriptor(*rcnt);
+	if (b == NULL || c == NULL) {
+		err = createException(MAL, "lockedaggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
 
-		if (pci->retc == 3) {
-			BAT *r = BATdescriptor(*rrem);
-			switch (b->ttype) {
+	if (pci->retc == 3) {
+		if ((r = BATdescriptor(*rrem)) == NULL) {
+			err = createException(MAL, "lockedaggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
+		switch (b->ttype) {
 			case TYPE_bte:
 				avg_aggr_acc(bte);
 				break;
@@ -522,51 +533,48 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				avg_aggr_acc(hge);
 				break;
 #endif
-			}
-			pipeline_lock2(b);
-			BATnegateprops(b);
-			pipeline_unlock2(b);
-			pipeline_lock2(r);
-			BATnegateprops(r);
-			pipeline_unlock2(r);
-			pipeline_lock2(c);
-			BATnegateprops(c);
-			pipeline_unlock2(c);
-			BBPkeepref(b);
-			BBPkeepref(r);
-			BBPkeepref(c);
-		} else {
-			assert(b->ttype == TYPE_dbl);
-#ifdef HAVE_HGE
-			avg_aggr(hge);
-#endif
-			avg_aggr(lng);
-			avg_aggr(int);
-			avg_aggr(sht);
-			avg_aggr(bte);
-			avg_aggr(flt);
-			avg_aggr(dbl);
-			if (!err) {
-				pipeline_lock2(b);
-				BATnegateprops(b);
-				pipeline_unlock2(b);
-				BBPkeepref(b);
-				pipeline_lock2(c);
-				BATnegateprops(c);
-				pipeline_unlock2(c);
-				BBPkeepref(c);
-			} else {
-				BBPunfix(b->batCacheid);
-				BBPunfix(c->batCacheid);
-			}
 		}
+		pipeline_lock2(b);
+		BATnegateprops(b);
+		pipeline_unlock2(b);
+		pipeline_lock2(r);
+		BATnegateprops(r);
+		pipeline_unlock2(r);
+		pipeline_lock2(c);
+		BATnegateprops(c);
+		pipeline_unlock2(c);
+		BBPkeepref(b);
+		BBPkeepref(r);
+		BBPkeepref(c);
 	} else {
-			err = createException(SQL, "lockedaggr.avg", "Result is not initialized");
+		assert(b->ttype == TYPE_dbl);
+#ifdef HAVE_HGE
+		avg_aggr(hge);
+#endif
+		avg_aggr(lng);
+		avg_aggr(int);
+		avg_aggr(sht);
+		avg_aggr(bte);
+		avg_aggr(flt);
+		avg_aggr(dbl);
+
+		pipeline_lock2(b);
+		BATnegateprops(b);
+		pipeline_unlock2(b);
+		BBPkeepref(b);
+		pipeline_lock2(c);
+		BATnegateprops(c);
+		pipeline_unlock2(c);
+		BBPkeepref(c);
 	}
 	pipeline_unlock(p);
-	if (err)
-		return err;
 	return MAL_SUCCEED;
+  error:
+	pipeline_unlock(p);
+	if(b) BBPunfix(b->batCacheid);
+	if(c) BBPunfix(c->batCacheid);
+	if(r) BBPunfix(r->batCacheid);
+	return err;
 }
 
 #define vmin(a,b) ((cmp(a,b) < 0)?a:b)
@@ -840,6 +848,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	BAT *b = BATdescriptor(*bid);
 	if (u == NULL || b == NULL) {
 		err = createException(MAL, "pp algebra.unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
 	}
 
 	hash_table *h = (hash_table*)u->T.sink;
