@@ -4,3 +4,4 @@ groupjoin
 join-merge-remote-replica
 replicas-base
 replicas-join
+local-replica
