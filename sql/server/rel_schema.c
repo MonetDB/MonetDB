@@ -366,8 +366,9 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 	}
 	switch (s->token) {
 	case SQL_UNIQUE:
+	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
 	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
+		key_type kt = (s->token == SQL_UNIQUE) ? ukey : (s->token == SQL_UNIQUE_NULLS_NOT_DISTINCT) ? unndkey : pkey;
 		sql_key *k;
 		const char *ns = name;
 
@@ -828,8 +829,9 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 
 	switch (s->token) {
 	case SQL_UNIQUE:
+	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
 	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
+		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : s->token == SQL_UNIQUE ? ukey : unndkey);
 		dnode *nms = s->data.lval->h;
 		sql_key *k;
 		const char *ns = name;
