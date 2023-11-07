@@ -21,6 +21,8 @@ typedef struct logged_range_t {
 	ATOMIC_TYPE refcount;
 	struct logged_range_t *next;
 	stream *output_log;
+	BUN cnt;
+	BUN deleted;
 } logged_range;
 
 struct logger {
