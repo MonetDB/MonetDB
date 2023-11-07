@@ -911,7 +911,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
   error:
 	if (u) BBPunfix(u->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
-	return err;	
+	return err;
 }
 
 /* TODO gunique: rehash iff too many probes need to be done, in the linear chain */
@@ -1422,7 +1422,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 
    	b = BATdescriptor(*bid);
 	if (!b) {
-		err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(MAL, "pp group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
@@ -2056,7 +2056,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
 	lng timeoffset = 0;
-	int need_unlock = 0;
+	bool private = true, local_storage = false;
 
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
@@ -2074,14 +2074,13 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	int tt = b->ttype;
 	oid max = BATcount(g)?g->T.maxval:0;
 	/* probably need bat resize and create hash */
-	bool private = (!r || r->T.private_bat), local_storage = false;
+	private = (!r || r->T.private_bat);
 
 	if (!tt)
 		tt = TYPE_oid;
-	if (!private) {
+	if (!private)
 		pipeline_lock1(r);
-		need_unlock = 1;
-	}
+
 	if (r && BATcount(b)) {
 		MT_lock_set(&r->theaplock);
 		MT_lock_set(&b->theaplock);
@@ -2198,8 +2197,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	BBPunfix(g->batCacheid);
 	return MAL_SUCCEED;
   error:
-	if (need_unlock)
-		if (!private) pipeline_unlock1(r);
+	if (!private) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	if (r) BBPunfix(r->batCacheid);
@@ -2214,7 +2212,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	BAT *r = NULL, *g = NULL;
 	str err = NULL;
 	lng timeoffset = 0;
-	int need_unlock = 0;
+	bool private = true;
 
 	if ((g = BATdescriptor(*gid)) == NULL) {
 		err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2226,12 +2224,10 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 			goto error;
 		}
 	}
-	bool private = (!r || r->T.private_bat);
+	private = (!r || r->T.private_bat);
 
-	if (!private) {
+	if (!private)
 		pipeline_lock1(r);
-		need_unlock = 1;
-	}
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
@@ -2290,8 +2286,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
   error:
-	if (need_unlock)
-		if (!private) pipeline_unlock1(r);
+	if (!private) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (r) BBPunfix(r->batCacheid);
 	return err;
@@ -2335,27 +2330,25 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
 	lng timeoffset = 0;
-	int need_unlock = 0;
+	bool private = true;
 
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err =  createException(MAL, "pp aggr.count", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err =  createException(MAL, "pp aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
 	if (*rid && !is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err =  createException(MAL, "pp aggr.count", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err =  createException(MAL, "pp aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
-	bool private = (!r || r->T.private_bat);
+	private = (!r || r->T.private_bat);
 
-	if (!private) {
+	if (!private)
 		pipeline_lock1(r);
-		need_unlock = 1;
-	}
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
@@ -2435,8 +2428,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
   error:
-	if (need_unlock)
-		if (!private) pipeline_unlock1(r);
+	if (!private) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	if (r) BBPunfix(r->batCacheid);
@@ -2470,7 +2462,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = NULL, *g = NULL, *r = NULL;
 	str err = NULL;
 	lng timeoffset = 0;
-	int need_unlock = 0;
+	bool private = true;
 
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
@@ -2484,12 +2476,10 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto error;
 		}
 	}
-	bool private = (!r || r->T.private_bat);
+	private = (!r || r->T.private_bat);
 
-	if (!private) {
+	if (!private)
 		pipeline_lock1(r);
-		need_unlock = 1;
-	}
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
@@ -2572,8 +2562,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
   error:
-	if (need_unlock)
-		if (!private) pipeline_unlock1(r);
+	if (!private) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	if (r) BBPunfix(r->batCacheid);
@@ -2606,7 +2595,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = NULL, *g = NULL, *r = NULL;
 	str err = NULL;
 	lng timeoffset = 0;
-	int need_unlock = 0;
+	bool private = true;
 
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
@@ -2620,12 +2609,10 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto error;
 		}
 	}
-	bool private = (!r || r->T.private_bat);
+	private = (!r || r->T.private_bat);
 
-	if (!private) {
+	if (!private)
 		pipeline_lock1(r);
-		need_unlock = 1;
-	}
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
@@ -2701,9 +2688,8 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!private)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
-  error: /* NB: only use this error handling after the call to `pipeline_lock1(r)`! */
-	if (need_unlock)
-		if (!private) pipeline_unlock1(r);
+  error:
+	if (!private) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	if (r) BBPunfix(r->batCacheid);
@@ -2731,30 +2717,44 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = (*rid && !is_bat_nil(*rid)) ? BATdescriptor(*rid) : NULL;
 	BAT *cn = bn ? BATdescriptor(*rcid) : NULL;
 	BAT *rn = bn && rrem ? BATdescriptor(*rrem) : NULL;
-	bool private = bn == NULL || bn->T.private_bat;
+	bool private = (bn == NULL || bn->T.private_bat);
 	lng timeoffset = 0;
+	str err = NULL;
 
 	if (!private)
 		pipeline_lock1(bn);
 
+	if (b == NULL ||
+	    g == NULL ||
+	    (cid && c == NULL) ||
+	    (rem && r == NULL) ||
+	    ((*rid && !is_bat_nil(*rid)) && bn == NULL) ||
+	    (bn && cn == NULL) ||
+	    ((bn && rrem) && rn == NULL)) {
+		err = createException(MAL, "pp aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
 	BAT *pg = BATdescriptor(*pgid);
+	if (pg == NULL) {
+		err = createException(MAL, "pp aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
 	oid max = BATcount(pg) ? pg->T.maxval : 0;
 	BBPunfix(pg->batCacheid);
 
 	if (pci->retc == 2 && (pci->argc == 6 || pci->argc == 7)) {
 		if (BATgroupavg2(&bn, &cn, b, g, NULL, NULL, TYPE_dbl, max, true, 0) != GDK_SUCCEED) {
-			if (!private)
-				pipeline_unlock1(bn);
-			throw(MAL, "aggr.avg", GDK_EXCEPTION);
+			err = createException(MAL, "pp aggr.avg", GDK_EXCEPTION);
+			goto error;
 		}
 		pipeline_lock2(bn);
 		BATnegateprops(bn);
 		pipeline_unlock2(bn);
 	} else if (pci->retc == 3 && pci->argc == 7) {
 		if (BATgroupavg3(&bn, &rn, &cn, b, g, NULL, NULL, true, bn != NULL) != GDK_SUCCEED) {
-			if (!private)
-				pipeline_unlock1(bn);
-			throw(MAL, "aggr.avg", GDK_EXCEPTION);
+			err = createException(MAL, "pp aggr.avg", GDK_EXCEPTION);
+			goto error;
 		}
 		pipeline_lock2(bn);
 		BATnegateprops(bn);
@@ -2764,9 +2764,8 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			(BATextend(bn, max) != GDK_SUCCEED ||
 			 BATextend(cn, max) != GDK_SUCCEED ||
 			 BATextend(rn, max) != GDK_SUCCEED)) {
-			if (!private)
-				pipeline_unlock1(bn);
-			throw(MAL, "aggr.avg", GDK_EXCEPTION);
+			err = createException(MAL, "pp aggr.avg", GDK_EXCEPTION);
+			goto error;
 		}
 		lng *cnts = Tloc(c, 0);
 		lng *rems = Tloc(r, 0);
@@ -2851,7 +2850,9 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 #endif
 		}
-		TIMEOUT_CHECK(timeoffset, do{BBPunfix(bn->batCacheid);BBPunfix(rn->batCacheid);BBPunfix(cn->batCacheid);throw(MAL, "aggr.prod", GDK_EXCEPTION);}while(0));
+		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp aggr.avg", RUNTIME_QRY_TIMEOUT));
+		if (err) goto error;
+
 		pipeline_lock2(bn);
 		BATnegateprops(bn);
 		pipeline_unlock2(bn);
@@ -2897,6 +2898,17 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	return MAL_SUCCEED;
+  error:
+	if (!private)
+		pipeline_unlock1(bn);
+	if (b) BBPunfix(b->batCacheid);
+	if (g) BBPunfix(g->batCacheid);
+	if (c) BBPunfix(c->batCacheid);
+	if (r) BBPunfix(r->batCacheid);
+	if (bn) BBPunfix(bn->batCacheid);
+	if (cn) BBPunfix(cn->batCacheid);
+	if (rn) BBPunfix(rn->batCacheid);
+	return err;
 }
 
 /* TODO handle nil based on argument 'skipnil' */
@@ -3050,7 +3062,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	int tt = b->ttype;
 	str err = NULL;
 	lng timeoffset = 0;
-	int need_unlock = 0;
+	bool private = true, local_storage = false;
 
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
@@ -3064,12 +3076,10 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			goto error;
 		}
 	}
-	bool private = (!r || r->T.private_bat), local_storage = false;
+	private = (!r || r->T.private_bat);
 
-	if (!private) {
+	if (!private)
 		pipeline_lock1(r);
-		need_unlock = 1;
-	}
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
@@ -3132,7 +3142,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.min", MAL_MALLOC_FAIL);
+			err = createException(MAL, "pp aggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -3196,8 +3206,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
   error:
-	if (need_unlock)
-		if (!private) pipeline_unlock1(r);
+	if (!private) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	if (r) BBPunfix(r->batCacheid);
@@ -3212,7 +3221,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	int tt = b->ttype;
 	str err = NULL;
 	lng timeoffset = 0;
-	int need_unlock = 0;
+	bool private = true, local_storage = false;
 
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
@@ -3226,12 +3235,10 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			goto error;
 		}
 	}
-	bool private = (!r || r->T.private_bat), local_storage = false;
+	private = (!r || r->T.private_bat);
 
-	if (!private) {
+	if (!private)
 		pipeline_lock1(r);
-		need_unlock = 1;
-	}
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
@@ -3356,8 +3363,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
   error:
-	if (need_unlock)
-		if (!private) pipeline_unlock1(r);
+	if (!private) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	if (r) BBPunfix(r->batCacheid);
