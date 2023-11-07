@@ -106,7 +106,7 @@ do_replica_rewrite(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_
 		list *uris = sa_list(sql->sa);
 		tid_uri *tu = SA_NEW(sql->sa, tid_uri);
 		tu->id = p->base.id;
-		tu->uri = sa_strconcat(sql->sa, sa_strconcat(sql->sa, p->s->base.name, "."), p->base.name);
+		tu->uri = p->query;
 		append(uris, tu);
 
 		prop *rmt_prop = r->p = prop_create(sql->sa, PROP_REMOTE, r->p);
