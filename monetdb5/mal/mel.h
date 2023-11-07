@@ -14,10 +14,17 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define MEL_STR
-
 #define MEL_OK 0
 #define MEL_ERR 1
+
+#define FK_CMD 0
+#define FK_PAT 1
+#define FK_MAL 2
+
+struct CLIENT;
+struct MALBLK;
+struct MALSTK;
+struct INSTR;
 
 typedef struct __attribute__((__designated_init__)) mel_atom {
 	char name[14];
@@ -40,11 +47,8 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 	int (*storage)(void);
 } mel_atom;
 
-/*strings */
-#ifdef MEL_STR
-
-#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
-#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .pimp=IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
+#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .kind=FK_CMD, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
+#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .kind=FK_PAT, .mod=MOD, .fcn=FCN, .pimp=IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
 
 /* ARGC = arg-count + ret-count */
 //#define args(RETC,ARGC,...) (mel_arg[ARGC?ARGC:1]){__VA_ARGS__}, .retc=RETC, .argc=ARGC
@@ -62,69 +66,30 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 
 typedef struct __attribute__((__designated_init__)) mel_arg {
 	//char *name;
-	char type[15];
-	uint8_t isbat:1, vargs:1, nr:4;
+	char type[14];
+	//uint8_t isbat:1, vargs:1, nr:2;
+	uint16_t typeid:8, nr:2, isbat:1, vargs:1;
 } mel_arg;
 
-#include "mal_client.h"
 typedef struct __attribute__((__designated_init__)) mel_func {
 	char mod[16];
 	char fcn[30];
 	const char *cname;
-	uint16_t command:1, unsafe:1, retc:6, argc:6;
+	uint16_t kind:2, unsafe:1, vargs:1, poly:2, retc:5, argc:5;
 // comment on MAL instructions should also be available when TRACEing the queries
 	char *comment;
 	union {
 		MALfcn imp;
-		char *(*pimp)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
+		char *(*pimp)(struct CLIENT *, struct MALBLK *, struct MALSTK *, struct INSTR *);
+		struct MALBLK *mimp;
 	};
-	const mel_arg *args;
+	/*const*/ mel_arg *args;
 } mel_func;
-
-#else
-
-//#ifdef NDEBUG
-#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
-#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .pimp=IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
-//#else
-//#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS, .comment=COMMENT }
-//#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .pimp=IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS, .comment=COMMENT }
-//#endif
-
-#define args(RETC,ARGC,...) {__VA_ARGS__}, .retc=RETC, .argc=ARGC
-
-#define arg(n,t)			{ /*.name=n,*/ .type=TYPE_##t }
-#define vararg(n,t)			{ /*.name=n,*/ .type=TYPE_##t, .vargs=true }
-#define batarg(n,t)			{ /*.name=n,*/ .type=TYPE_##t, .isbat=true }
-#define batvararg(n,t)		{ /*.name=n,*/ .type=TYPE_##t, .isbat=true, .vargs=true }
-#define argany(n,a)			{ /*.name=n,*/ .nr=a, .type=TYPE_any }
-#define varargany(n,a)		{ /*.name=n,*/ .nr=a, .vargs=true, .type=TYPE_any }
-#define batargany(n,a)		{ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any }
-#define batvarargany(n,a)	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
-
-typedef struct __attribute__((__designated_init__)) mel_arg {
-	uint16_t type:8, nr:4, isbat:1, vargs:1;
-} mel_arg;
-
-typedef struct __attribute__((__designated_init__)) mel_func {
-	char mod[14];
-	char fcn[30];
-	uint16_t command:1, unsafe:1, retc:6, argc:6;
-// comment on MAL instructions should also be available when TRACEing the queries
-	char *comment;
-	union {
-		MALfcn imp;
-		char *(*pimp)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
-	};
-	mel_arg args[20];
-} mel_func;
-
-#endif
 
 typedef str (*mel_init)(void);
 
 typedef struct __attribute__((__designated_init__)) mel_func_arg {
-	uint16_t type:8, nr:4, isbat:1, vargs:1;
+	uint16_t type:8, nr:2, isbat:1, vargs:1;
 } mel_func_arg;
 
 /* var arg of arguments of type mel_func_arg */
@@ -136,7 +101,8 @@ int melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 typedef struct __attribute__((__designated_init__)) mal_spec {
 	union {
 		MALfcn imp;
-		char *(*pimp)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
+		char *(*pimp)(struct CLIENT *, struct MALBLK *, struct MALSTK *, struct INSTR *);
+		struct MALBLK *mimp;
 	};
 	char *mal;
 } mal_spec;

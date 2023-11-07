@@ -324,6 +324,7 @@ insertSymbol(Module scope, Symbol prg)
 	assert(scope);
 	sig = getSignature(prg);
 	if (getModuleId(sig) && getModuleId(sig) != scope->name) {
+		assert(0);
 		/* move the definition to the proper place */
 		/* default scope is the last resort */
 		c = findModule(scope, getModuleId(sig));

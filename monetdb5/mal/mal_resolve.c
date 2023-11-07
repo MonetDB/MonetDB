@@ -409,6 +409,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			}
 			if (cnt == 0 && s->kind != COMMANDsymbol
 				&& s->kind != PATTERNsymbol) {
+				assert(s->kind == FUNCTIONsymbol);
 				s = cloneFunction(scope, s, mb, p);
 				if (mb->errors)
 					goto wrapup;
@@ -430,7 +431,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * shared by the separate binder
 		 */
 		if (p->token == ASSIGNsymbol) {
-			switch (getSignature(s)->token) {
+			switch (s->kind) {
 			case COMMANDsymbol:
 				p->token = CMDcall;
 				p->fcn = getSignature(s)->fcn;	/* C implementation mandatory */
@@ -536,6 +537,15 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	}
 	if (getFunctionId(p) && getModuleId(p)) {
 		m = findModule(scope, getModuleId(p));
+
+		if (!m || strcmp(m->name, getModuleId(p)) != 0) {
+			if (!silent)
+				mb->errors = createMalException(mb, idx, TYPE, "'%s%s%s' undefined",
+					(getModuleId(p) ?  getModuleId(p) : ""),
+					(getModuleId(p) ? "." : ""),
+					getFunctionId(p));
+			return;
+		}
 		s1 = findFunctionType(m, mb, p, idx, silent);
 
 		if (s1 >= 0)

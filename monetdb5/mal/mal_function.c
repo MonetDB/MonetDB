@@ -64,28 +64,6 @@ newFunction(const char *mod, const char *nme, int kind)
 	return newFunctionArgs(mod, nme, kind, MAXARG);
 }
 
-/*
- * Optimizers may be interested in the function definition
- * for obtaining properties. Rather than polution of the
- * instruction record with a scope reference, we use a lookup function until it
- * becomes a performance hindrance.
- */
-Symbol
-getFunctionSymbol(Module scope, InstrPtr p)
-{
-	Module m;
-	Symbol s;
-
-	for (m = findModule(scope, getModuleId(p)); m; m = m->link)
-		if (idcmp(m->name, getModuleId(p)) == 0) {
-			s = m->space[getSymbolIndex(getFunctionId(p))];
-			for (; s; s = s->peer)
-				if (getSignature(s)->fcn == p->fcn)
-					return s;
-		}
-	return 0;
-}
-
 int
 getPC(MalBlkPtr mb, InstrPtr p)
 {
@@ -287,30 +265,21 @@ getBarrierEnvelop(MalBlkPtr mb)
 static void
 replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t)
 {
-	int j, i, x, y;
-
-	for (j = 0; j < mb->stop; j++) {
+	for (int j = 0; j < mb->stop; j++) {
 		p = getInstrPtr(mb, j);
-		if (p->polymorphic)
-			for (i = 0; i < p->argc; i++)
-				if (isPolymorphic(x = getArgType(mb, p, i))) {
+		if (p->polymorphic) {
+			for (int i = 0; i < p->argc; i++) {
+				int x = getArgType(mb, p, i);
+				if (isPolymorphic(x) && getTypeIndex(x) == v) {
 					if (isaBatType(x)) {
-						int tail;
-						int tx;
-						tail = getBatType(x);
-						tx = getTypeIndex(x);
-						if (v && tx == v && tail == TYPE_any) {
-							tx = 0;
-							tail = t;
-						}
-						y = newBatType(tail);
-						setTypeIndex(y, tx);
-						setArgType(mb, p, i, y);
-					} else if (getTypeIndex(x) == v) {
-						setArgType(mb, p, i, t);
+						int tail = newBatType(t);
+						setArgType(mb, p, i, tail);
 					} else {
+						setArgType(mb, p, i, t);
 					}
 				}
+			}
+		}
 	}
 }
 
@@ -319,18 +288,11 @@ replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t)
 static void
 insertSymbolBefore(Module scope, Symbol prg, Symbol before)
 {
-	InstrPtr sig;
 	int t;
 	Symbol s;
 
 	assert(strcmp(prg->name, before->name) == 0);
-	sig = getSignature(prg);
-	if (getModuleId(sig) && getModuleId(sig) != scope->name) {
-		Module c = findModule(scope, getModuleId(sig));
-		if (c)
-			scope = c;
-	}
-	t = getSymbolIndex(getFunctionId(sig));
+	t = getSymbolIndex(prg->name);
 	assert(scope->space != NULL);
 	assert(scope->space[t] != NULL);
 	s = scope->space[t];
@@ -365,8 +327,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	InstrPtr pp;
 	str msg = MAL_SUCCEED;
 
-	new = newFunctionArgs(scope->name, proc->name, getSignature(proc)->token,
-						  -1);
+	new = newFunctionArgs(scope->name, proc->name, proc->kind, -1);
 	if (new == NULL) {
 		return NULL;
 	}
@@ -382,12 +343,13 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 		if (isPolymorphic(v = getArgType(new->def, pp, i))) {
 			int t = getArgType(mb, p, i);
 
-			if (v == TYPE_any)
+			if (v == TYPE_any) {
+				assert(0);
 				replaceTypeVar(new->def, pp, v, t);
+			}
 			if (isaBatType(v)) {
 				if (getTypeIndex(v))
-					replaceTypeVar(new->def, pp, getTypeIndex(v),
-								   getBatType(t));
+					replaceTypeVar(new->def, pp, getTypeIndex(v), getBatType(t));
 			} else
 				replaceTypeVar(new->def, pp, getTypeIndex(v), t);
 		}

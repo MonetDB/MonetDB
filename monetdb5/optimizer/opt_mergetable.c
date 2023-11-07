@@ -965,6 +965,7 @@ join_split(Client cntxt, InstrPtr p, int args)
 	assert(sym);
 	mb = sym->def;
 
+	assert(0);
 	q = mb->stmt[0];
 	for (i = q->retc; i < q->argc; i++) {
 		if (isaBatType(getArgType(mb, q, i)))

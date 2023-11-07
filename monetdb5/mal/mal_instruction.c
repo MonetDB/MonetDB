@@ -42,6 +42,7 @@ newSymbol(const char *nme, int kind)
 {
 	Symbol cur;
 
+	assert(kind == COMMANDsymbol || kind == PATTERNsymbol || kind == FUNCTIONsymbol);
 	if (nme == NULL)
 		return NULL;
 	cur = (Symbol) GDKzalloc(sizeof(SymRecord));
@@ -1231,17 +1232,15 @@ destinationType(MalBlkPtr mb, InstrPtr p)
  * BATs can only have a polymorphic type at the tail.
  */
 inline void
-setPolymorphic(InstrPtr p, int tpe, int force)
+setPolymorphic(InstrPtr p, int tpe, int force /* just any isn't polymorphic */)
 {
-	if (force == FALSE && tpe == TYPE_any)
+	int any = isAnyExpression(tpe) || tpe == TYPE_any, index = 0;
+	if ((force == FALSE && tpe == TYPE_any) || !any)
 		return;
-	int any = isAnyExpression(tpe) || TYPE_any, index = 0;
-	assert(any);
 	if (getTypeIndex(tpe) > 0)
 		index = getTypeIndex(tpe);
 	if (any && (index + 1) >= p->polymorphic)
 		p->polymorphic = index + 1;
-	assert(p->polymorphic);
 }
 
 /* Instructions are simply appended to a MAL block. It should always succeed.

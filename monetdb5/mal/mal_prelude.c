@@ -180,39 +180,21 @@ addAtom(mel_atom *atoms)
 }
 
 static str
-makeArgument(MalBlkPtr mb, const mel_arg *a, int *idx)
+makeArgument(MalBlkPtr mb, /*const*/ mel_arg *a, int *idx)
 {
-	int tpe = TYPE_any;			//, l;
+	int tpe = TYPE_any;
 
-	if (
-#ifdef MEL_STR
-		   !a->type[0]
-#else
-		   a->type == TYPE_any
-#endif
-			) {
+	if ( !a->type[0]) {
 		if (a->isbat)
 			tpe = newBatType(tpe);
 		if (a->nr > 0)
 			setTypeIndex(tpe, a->nr);
 	} else {
 		int mask = 0;
-#ifdef MEL_STR
-		tpe = getAtomIndex(a->type, strlen(a->type), -1);
-#else
-		tpe = a->type;
-#endif
+		a->typeid = tpe = getAtomIndex(a->type, strlen(a->type), -1);
 		if (a->isbat)
 			tpe = newBatType(tpe) | mask;
 	}
-	/*
-	  if (a->name) {
-	  *idx = findVariableLength(mb, a->name, l = strlen(a->name));
-	  if (*idx != -1)
-	  throw(LOADER, __func__, "Duplicate argument name %s", a->name);
-	  *idx = newVariable(mb, a->name, l, tpe);
-	  } else
-	*/
 	*idx = newTmpVariable(mb, tpe);
 	if (*idx < 0) {
 		char *msg = mb->errors;
@@ -245,12 +227,13 @@ addFunctions(mel_func *fcn)
 		if (c == NULL && (c = globalModule(mod)) == NULL)
 			throw(LOADER, __func__, "Module %s can not be created", fcn->mod);
 
-		s = newSymbol(fcn->fcn, fcn->command ? COMMANDsymbol : PATTERNsymbol);
+		s = newSymbol(fcn->fcn, (fcn->kind == FK_CMD) ? COMMANDsymbol : PATTERNsymbol);
 		if (s == NULL)
 			throw(LOADER, __func__,
 				  "Can not create symbol for %s.%s missing", fcn->mod,
 				  fcn->fcn);
 		mb = s->def;
+		s->func = fcn;
 		assert(mb);				/* if this is NULL, s should have been NULL */
 
 		if (fcn->cname && fcn->cname[0])
@@ -268,7 +251,7 @@ addFunctions(mel_func *fcn)
 		}
 		sig->retc = 0;
 		sig->argc = 0;
-		sig->token = fcn->command ? COMMANDsymbol : PATTERNsymbol;
+		sig->token = (fcn->kind == FK_CMD) ? COMMANDsymbol : PATTERNsymbol;
 		sig->fcn = fcn->imp;
 		if (fcn->unsafe)
 			mb->unsafeProp = 1;
@@ -285,7 +268,7 @@ addFunctions(mel_func *fcn)
 		}
 		int i;
 		for (i = 0; i < fcn->retc; i++) {
-			const mel_arg *a = fcn->args + i;
+			/*const*/ mel_arg *a = fcn->args + i;
 			msg = makeArgument(mb, a, &idx);
 			if (msg) {
 				freeInstruction(sig);
@@ -302,15 +285,18 @@ addFunctions(mel_func *fcn)
 				}
 				*/
 				setPolymorphic(sig, tpe, TRUE);
+				fcn->poly = sig->polymorphic;
 			}
 			if (a->vargs) {
 				sig->varargs |= VARRETS;
+				fcn->vargs = true;
 				setPolymorphic(sig, TYPE_any, TRUE);
+				fcn->poly = sig->polymorphic;
 			}
 		}
 		/* add the arguments */
 		for (i = fcn->retc; i < fcn->argc; i++) {
-			const mel_arg *a = fcn->args + i;
+			/*const*/ mel_arg *a = fcn->args + i;
 			msg = makeArgument(mb, a, &idx);
 			if (msg) {
 				freeInstruction(sig);
@@ -327,10 +313,13 @@ addFunctions(mel_func *fcn)
 				}
 				*/
 				setPolymorphic(sig, tpe, TRUE);
+				fcn->poly = sig->polymorphic;
 			}
 			if (a->vargs) {
 				sig->varargs |= VARARGS;
+				fcn->vargs = true;
 				setPolymorphic(sig, TYPE_any, TRUE);
+				fcn->poly = sig->polymorphic;
 			}
 		}
 		if (mb->errors) {

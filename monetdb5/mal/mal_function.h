@@ -24,7 +24,6 @@ mal_export Symbol newFunctionArgs(const char *mod, const char *nme, int kind,
 								  int args);
 mal_export int getPC(MalBlkPtr mb, InstrPtr p);
 
-mal_export Symbol getFunctionSymbol(Module scope, InstrPtr p);
 mal_export str chkFlow(MalBlkPtr mb);
 mal_export str chkDeclarations(MalBlkPtr mb);
 mal_export void clrDeclarations(MalBlkPtr mb);

@@ -975,7 +975,6 @@ str getExceptionPlace(const char *);
 enum malexception getExceptionType(const char *);
 int getFltConstant(MalBlkPtr mb, flt val);
 Scenario getFreeScenario(void);
-Symbol getFunctionSymbol(Module scope, InstrPtr p);
 int getHgeConstant(MalBlkPtr mb, hge val);
 int getIntConstant(MalBlkPtr mb, int val);
 int getLngConstant(MalBlkPtr mb, lng val);

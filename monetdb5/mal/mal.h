@@ -108,13 +108,17 @@ mal_export const char *mal_version(void);
 typedef int malType;
 typedef void (*MALfcn)(void);
 
+#include "mel.h"
+
 typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
 	struct SYMDEF *skip;		/* skip to next different symbol */
 	const char *name;
 	int kind;					/* what kind of symbol */
 	struct MALBLK *def;			/* the details of the MAL fcn */
+	mel_func *func;
 } *Symbol, SymRecord;
+
 
 typedef struct VARRECORD {
 	char name[IDLENGTH];		/* use the space for the full name */
@@ -141,7 +145,7 @@ typedef struct VARRECORD {
  * mal_profiler.c)
  */
 
-typedef struct {
+typedef struct INSTR {
 	bte token;					/* instruction type */
 	bit barrier;				/* flow of control modifier takes:
 								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */

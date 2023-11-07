@@ -65,6 +65,8 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (int j = 0; j < MAXSCOPE; j++) {
 			if (s->space[j]) {
 				for (Symbol t = s->space[j]; t != NULL; t = t->peer) {
+					assert(strcmp(t->def->stmt[0]->modname, s->name) == 0);
+					assert(strcmp(t->def->stmt[0]->fcnname, t->name) == 0);
 					if (t->def->stmt[0]->fcnname[0] == '#')
 						continue;
 					char buf[1024];
@@ -75,8 +77,8 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						*tt = 0;
 						tt += 8;
 					}
-					if (BUNappend(mod, t->def->stmt[0]->modname, false) != GDK_SUCCEED
-						|| BUNappend(fcn, t->def->stmt[0]->fcnname,
+					if (BUNappend(mod, s->name, false) != GDK_SUCCEED
+						|| BUNappend(fcn, t->name,
 									 false) != GDK_SUCCEED
 						|| BUNappend(com, t->def->help ? t->def->help : "",
 									 false) != GDK_SUCCEED

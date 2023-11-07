@@ -261,7 +261,7 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0
-			&& getSignature(t)->token == FUNCTIONsymbol) {
+			&& t->kind == FUNCTIONsymbol) {
 			if (i == last)		/* Duplicate macro expansion */
 				return cnt;
 
@@ -427,7 +427,7 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	j = getSymbolIndex(fcn);
 	for (t = s->space[j]; t != NULL; t = t->peer)
 		if (t->def->errors == 0) {
-			if (getSignature(t)->token == FUNCTIONsymbol) {
+			if (t->kind == FUNCTIONsymbol) {
 				actions += MACROprocessor(cntxt, target, t);
 			}
 		}
@@ -473,7 +473,7 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p,
 	j = getSymbolIndex(fcn);
 	for (t = s->space[j]; t != NULL; t = t->peer)
 		if (t->def->errors == 0) {
-			if (getSignature(t)->token == FUNCTIONsymbol) {
+			if (t->kind == FUNCTIONsymbol) {
 				freeException(msg);
 				msg = ORCAMprocessor(cntxt, target, t, actions);
 			}

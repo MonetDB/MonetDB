@@ -1376,7 +1376,6 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	}
 	freeMalBlk(prg->def);
 	prg->def = mb;
-	setFunctionId(getSignature(prg), be->q->name);
 
 	// finally add this beautiful new function to the local user module.
 	insertSymbol(mdbe->c->usermodule, prg);
@@ -1603,6 +1602,7 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 
 		if (q && stmt_internal) {
 			Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
+			assert(s->def);
 			InstrPtr p = s->def->stmt[0];
 			stmt_internal->mdbe = mdbe;
 			stmt_internal->q = q;
