@@ -140,8 +140,21 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 
 			for (node *m = uris->h; m && !res; m = m->next) {
 				if (strcmp(((tid_uri*)m->data)->uri, pt->query) == 0) {
+					/* we found a matching uri do the actual rewrite */
 					res = do_replica_rewrite(v->sql, exps, t, pt,
 							                 rpstate->no_rmt_branch_rpl_leaf ? true: false);
+					/* set to the REMOTE a list with a single uri (the matching one)
+					 * this is for the case that our REMOTE subtree has only replicas
+					 * with multiple remotes*/
+					if (list_length(rp->value.pval) > 1) {
+						list *uri = sa_list(v->sql->sa);
+						tid_uri *tu = SA_NEW(v->sql->sa, tid_uri);
+						tu->id = 0;
+						tu->uri = pt->query;
+						append(uri, tu);
+						rp->value.pval = uri;
+						break;
+					}
 				}
 			}
 		}
