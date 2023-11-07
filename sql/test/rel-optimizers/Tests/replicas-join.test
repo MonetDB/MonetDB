@@ -5,10 +5,10 @@ statement ok
 alter table foo_rpl add table foo_local
 
 statement ok
-alter table foo_rpl add table foo_r1
+alter table foo_rpl add table foo_r2
 
 statement ok
-alter table foo_rpl add table foo_r2
+alter table foo_rpl add table foo_r3
 
 statement ok
 create replica table bar_rpl (n int, m text)
@@ -17,10 +17,10 @@ statement ok
 alter table bar_rpl add table bar_local
 
 statement ok
-alter table bar_rpl add table bar_r1
+alter table bar_rpl add table bar_r2
 
 statement ok
-alter table bar_rpl add table bar_r2
+alter table bar_rpl add table bar_r3
 
 query T nosort
 plan select * from foo_rpl
@@ -50,8 +50,8 @@ table (
 | project (
 | | crossproduct (
 | | | crossproduct (
-| | | | REMOTE("sys"."foo_r1") [ "foo_r1"."n" as "foo_rpl"."n", "foo_r1"."m" as "foo_rpl"."m", "foo_r1"."%TID%" NOT NULL UNIQUE as "foo_rpl"."%TID%" ],
-| | | | REMOTE("sys"."bar_r1") [ "bar_r1"."n" as "bar_rpl"."n", "bar_r1"."m" as "bar_rpl"."m", "bar_r1"."%TID%" NOT NULL UNIQUE as "bar_rpl"."%TID%" ]
+| | | | REMOTE("sys"."foo_r2") [ "foo_r2"."n" as "foo_rpl"."n", "foo_r2"."m" as "foo_rpl"."m", "foo_r2"."%TID%" NOT NULL UNIQUE as "foo_rpl"."%TID%" ],
+| | | | REMOTE("sys"."bar_r2") [ "bar_r2"."n" as "bar_rpl"."n", "bar_r2"."m" as "bar_rpl"."m", "bar_r2"."%TID%" NOT NULL UNIQUE as "bar_rpl"."%TID%" ]
 | | | ) [  ],
 | | | REMOTE("sys"."buz_rmt") [ "buz_rmt"."l" ]
 | | ) [  ]
