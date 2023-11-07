@@ -113,7 +113,7 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(SQL, "lockedaggr.sum", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
-	if (*res) {
+	if (!is_bat_nil(*res)) {
 		BAT *b = BATdescriptor(*res);
 		if (b == NULL)
 			err = createException(MAL, "lockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -183,7 +183,7 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(SQL, "lockedaggr.prod", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
-	if (*res) {
+	if (!is_bat_nil(*res)) {
 		BAT *b = BATdescriptor(*res);
 		if (b == NULL)
 			err = createException(MAL, "lockedaggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -498,7 +498,7 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(SQL, "lockedaggr.avg", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
-	if (*res) {
+	if (!is_bat_nil(*res)) {
 		BAT *b = BATdescriptor(*res);
 		BAT *c = BATdescriptor(*rcnt);
 
@@ -590,7 +590,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(SQL, "lockedaggr.min", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
-	if (*res) {
+	if (!is_bat_nil(*res)) {
 		BAT *b = BATdescriptor(*res);
 		if (b == NULL)
 			err = createException(MAL, "lockedaggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -649,7 +649,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(SQL, "lockedaggr.max", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
-	if (*res) {
+	if (!is_bat_nil(*res)) {
 		BAT *b = BATdescriptor(*res);
 		if (b == NULL)
 			err = createException(MAL, "lockedaggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -830,7 +830,7 @@ static str
 LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 {
 	Pipeline *p = (Pipeline*)*H;
-	assert(*uid && !is_bat_nil(*uid));
+	assert(!is_bat_nil(*uid));
 	str err = NULL;
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
@@ -1046,7 +1046,7 @@ static str
 LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 {
 	Pipeline *p = (Pipeline*)*H;
-	assert(*uid && !is_bat_nil(*uid));
+	assert(!is_bat_nil(*uid));
 	str err = NULL;
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
@@ -2064,7 +2064,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		err = createException(MAL, "pp algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (*rid && !is_bat_nil(*rid)) {
+	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
 			err = createException(MAL, "pp algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
@@ -2218,7 +2218,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 		err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (*rid) {
+	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
 			err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
@@ -2339,7 +2339,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 		goto error;
 	}
 
-	if (*rid && !is_bat_nil(*rid)) {
+	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
 			err =  createException(MAL, "pp aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
@@ -2470,7 +2470,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		err =  createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (*rid && !is_bat_nil(*rid)) {
+	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
 			err =  createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
@@ -2603,7 +2603,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		err = createException(MAL, "pp aggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (*rid && !is_bat_nil(*rid)) {
+	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
 			err = createException(MAL, "pp aggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
@@ -3070,7 +3070,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		err = createException(MAL, "pp aggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (*rid && !is_bat_nil(*rid)) {
+	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
 			err = createException(MAL, "pp aggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
@@ -3229,7 +3229,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		err = createException(MAL, "pp aggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (*rid && !is_bat_nil(*rid)) {
+	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
 			err = createException(MAL, "pp aggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
