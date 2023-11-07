@@ -19,6 +19,7 @@ typedef struct rmt_prop_state {
 	int depth;
 	prop* rmt;
 	sql_rel* orig;
+	bool no_rmt_branch_rpl_leaf;
 } rps;
 
 static int
@@ -119,7 +120,8 @@ static sql_rel *
 replica_rewrite(visitor *v, sql_table *t, list *exps)
 {
 	sql_rel *res = NULL;
-	prop *rp = ((rps*)v->data)->rmt;
+	rps *rpstate = v->data;
+	prop *rp = rpstate->rmt;
 	sqlid tid = rp->id;
 	list *uris = rp->value.pval;
 
@@ -138,7 +140,8 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 
 			for (node *m = uris->h; m && !res; m = m->next) {
 				if (strcmp(((tid_uri*)m->data)->uri, pt->query) == 0) {
-					res = do_replica_rewrite(v->sql, exps, t, pt, 0);
+					res = do_replica_rewrite(v->sql, exps, t, pt,
+							                 rpstate->no_rmt_branch_rpl_leaf ? true: false);
 				}
 			}
 		}
@@ -214,6 +217,7 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 			rp->depth = v->depth;
 			rp->rmt = p;
 			rp->orig = rel;
+			rp->no_rmt_branch_rpl_leaf = false;
 			v->data = rp;
 		}
 	} else {
@@ -222,11 +226,15 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 		if (t && isReplicaTable(t)) {
 			/* we might have reached a replica table through a branch that has
 			 * no REMOTE property. In this case we have to set the v->data */
+			bool no_rmt_branch = false;
 			if (!v->data && (p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
+				no_rmt_branch = true;
+
 				rps *rp = SA_NEW(v->sql->sa, rps);
 				rp->depth = v->depth;
 				rp->rmt = p;
 				rp->orig = rel;
+				rp->no_rmt_branch_rpl_leaf = true;
 				v->data = rp;
 			}
 
@@ -236,6 +244,11 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 			sql_rel *r = replica_rewrite(v, t, rel->exps);
 			rel_destroy(rel);
 			rel = r;
+
+			/* if the whole rel tree branch is local (no upper REMOTE prop)
+			 * clean the visitor state */
+			if (no_rmt_branch)
+				v->data = NULL;
 		}
 	}
 	return rel;
