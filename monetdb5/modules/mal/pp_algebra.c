@@ -3059,7 +3059,6 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 {
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
-	int tt = b->ttype;
 	str err = NULL;
 	lng timeoffset = 0;
 	bool private = true, local_storage = false;
@@ -3076,8 +3075,9 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			goto error;
 		}
 	}
-	private = (!r || r->T.private_bat);
 
+	int tt = b->ttype;
+	private = (!r || r->T.private_bat);
 	if (!private)
 		pipeline_lock1(r);
 
@@ -3218,7 +3218,6 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 {
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
-	int tt = b->ttype;
 	str err = NULL;
 	lng timeoffset = 0;
 	bool private = true, local_storage = false;
@@ -3235,8 +3234,9 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			goto error;
 		}
 	}
-	private = (!r || r->T.private_bat);
 
+	int tt = b->ttype;
+	private = (!r || r->T.private_bat);
 	if (!private)
 		pipeline_lock1(r);
 
