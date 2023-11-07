@@ -1814,7 +1814,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		if (!u) {
 			BBPunfix(H->batCacheid);
-			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		/* Lookup parent hash */
@@ -2240,7 +2240,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	if (!r) {
 		r = COLnew(0, TYPE_lng, max, TRANSIENT);
 		if (r == NULL) {
-			err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		r->T.private_bat = 1;
@@ -2361,7 +2361,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	if (!r) {
 		r = COLnew(0, TYPE_lng, max, TRANSIENT);
 		if (r == NULL) {
-			err = createException(MAL, "pp aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "pp aggr.count", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		r->T.private_bat = 1;
@@ -2493,7 +2493,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int tt = getBatType(getArgType(mb, pci, 0));
 		r = COLnew(b->hseqbase, tt, max, TRANSIENT);
 		if (r == NULL) {
-			err = createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "pp aggr.sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		r->T.private_bat = 1;
@@ -2626,7 +2626,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int tt = getBatType(getArgType(mb, pci, 0));
 		r = COLnew(b->hseqbase, tt, max, TRANSIENT);
 		if (r == NULL) {
-			err = createException(MAL, "pp aggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "pp aggr.prod", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		r->T.private_bat = 1;
