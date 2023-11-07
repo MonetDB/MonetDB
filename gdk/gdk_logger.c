@@ -1494,7 +1494,7 @@ log_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 static gdk_return
 bm_get_counts(logger *lg)
 {
-	BUN p, q, deleted = 0;
+	BUN p, q;
 	const log_bid *bids = (const log_bid *) Tloc(lg->catalog_bid, 0);
 
 	BATloop(lg->catalog_bid, p, q) {
@@ -1507,7 +1507,6 @@ bm_get_counts(logger *lg)
 			assert(b);
 			cnt = BATcount(b);
 		} else {
-			deleted++;
 			lid = BBP_desc(bids[p]) ? 1 : -1;
 		}
 		if (BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
@@ -1515,8 +1514,6 @@ bm_get_counts(logger *lg)
 		if (BUNappend(lg->catalog_lid, &lid, false) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
-	lg->deleted = deleted;
-	lg->cnt = BATcount(lg->catalog_bid);
 	return GDK_SUCCEED;
 }
 
@@ -1634,7 +1631,7 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	r[rcnt++] = lg->catalog_id->batCacheid;
 	r[rcnt++] = lg->dcatalog->batCacheid;
 
-	assert(lg->deleted - cleanup == BATcount(ndels));
+	assert(BATcount(lg->dcatalog) - cleanup == BATcount(ndels));
 
 	logbat_destroy(lg->catalog_bid);
 	logbat_destroy(lg->catalog_id);
@@ -1661,8 +1658,6 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_lid", NULL);
 	if (BBPrename(lg->catalog_lid, bak) < 0)
 		GDKclrerr();
-	lg->cnt = BATcount(lg->catalog_bid);
-	lg->deleted -= cleanup;
 	for (logged_range *p = lg->pending; p; p = p->next) {
 		p->cnt -= cleanup;
 		p->deleted -= cleanup;
@@ -3279,7 +3274,6 @@ log_add_bat(logger *lg, BAT *b, log_id id, int tid)
 	    || BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_lid, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	lg->cnt++;
 	if (lg->current)
 		lg->current->cnt++;
 	BBPretain(bid);
@@ -3304,7 +3298,6 @@ log_del_bat(logger *lg, log_bid bid)
 	if (BUNreplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (BUNappend(lg->dcatalog, &pos, true) == GDK_SUCCEED) {
-		lg->deleted++;
 		if (lg->current)
 			lg->current->deleted++;
 		return GDK_SUCCEED;
