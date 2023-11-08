@@ -315,7 +315,8 @@ MapiMsg mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue);
 
 extern const struct MapiStruct MapiStructDefaults;
 
-Mapi mapi_new(void);
+// 'settings' will be newly allocated if NULL
+Mapi mapi_new(msettings *settings);
 
 MapiMsg wrap_tls(Mapi mid, SOCKET sock);
 MapiMsg mapi_wrap_streams(Mapi mid, stream *rstream, stream *wstream);

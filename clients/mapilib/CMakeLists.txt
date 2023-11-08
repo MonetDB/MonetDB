@@ -32,7 +32,8 @@ target_sources(mapi
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/mapi_querytype.h>
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/msettings.h>
   $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/mapi.h>
-  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/mapi_querytype.h>)
+  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/mapi_querytype.h>
+  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/msettings.h>)
 
 target_include_directories(mapi
   PUBLIC
@@ -58,7 +59,7 @@ set_target_properties(mapi
   PROPERTIES
   VERSION ${MAPI_VERSION}
   SOVERSION ${MAPI_VERSION_MAJOR}
-  PUBLIC_HEADER "mapi.h;mapi_querytype.h")
+  PUBLIC_HEADER "mapi.h;mapi_querytype.h;msettings.h")
 
 if (NOT WIN32)
   configure_file(monetdb-mapi.pc.in
