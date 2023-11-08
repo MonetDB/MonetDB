@@ -2328,14 +2328,13 @@ log_destroy(logger *lg)
 	(void) last;
 	assert(last == lg->current && last == lg->flush_ranges);
 	log_close_output(lg);
-	for (logged_range * p = lg->pending; p;) {
-		logged_range *n = p->next;
+	for (logged_range * p = lg->pending; p; p = lg->pending) {
+		lg->pending = p->next;
 		ATOMIC_DESTROY(&p->refcount);
 		ATOMIC_DESTROY(&p->last_ts);
 		ATOMIC_DESTROY(&p->flushed_ts);
 		ATOMIC_DESTROY(&p->drops);
 		GDKfree(p);
-		p = n;
 	}
 	if (LOG_DISABLED(lg)) {
 		lg->saved_id = lg->id;
