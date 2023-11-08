@@ -646,6 +646,7 @@ int64_t mapi_get_querytime(MapiHdl hdl) __attribute__((__nonnull__(1)));
 int mapi_get_querytype(MapiHdl hdl) __attribute__((__nonnull__(1)));
 int64_t mapi_get_row_count(MapiHdl hdl) __attribute__((__nonnull__(1)));
 int mapi_get_scale(MapiHdl hdl, int fnr) __attribute__((__nonnull__(1)));
+msettings *mapi_get_settings(Mapi mid) __attribute__((__nonnull__(1)));
 int64_t mapi_get_sqloptimizertime(MapiHdl hdl) __attribute__((__nonnull__(1)));
 char *mapi_get_table(MapiHdl hdl, int fnr) __attribute__((__nonnull__(1)));
 int mapi_get_tableid(MapiHdl hdl) __attribute__((__nonnull__(1)));
@@ -693,6 +694,7 @@ MapiMsg mapi_set_time_zone(Mapi mid, int seconds_east_of_utc) __attribute__((__n
 MapiMsg mapi_set_timeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data) __attribute__((__nonnull__(1)));
 void mapi_setfilecallback(Mapi mid, char *(*getfunc)(void *priv, const char *filename, bool binary, uint64_t offset, size_t *size), char *(*putfunc)(void *priv, const char *filename, const void *data, size_t size), void *priv) __attribute__((__nonnull__(1)));
 void mapi_setfilecallback2(Mapi mid, char *(*getfunc)(void *priv, const char *filename, bool binary, uint64_t offset, size_t *size), char *(*putfunc)(void *priv, const char *filename, bool binary, const void *data, size_t size), void *priv) __attribute__((__nonnull__(1)));
+Mapi mapi_settings(msettings *settings) __attribute__((__nonnull__(1)));
 int mapi_split_line(MapiHdl hdl) __attribute__((__nonnull__(1)));
 MapiMsg mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *outparam) __attribute__((__nonnull__(1)));
 MapiMsg mapi_timeout(Mapi mid, unsigned int time) __attribute__((__nonnull__(1)));

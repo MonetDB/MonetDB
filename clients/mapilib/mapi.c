@@ -1772,17 +1772,18 @@ const struct MapiStruct MapiStructDefaults = {
 
 /* Allocate a new connection handle. */
 Mapi
-mapi_new(void)
+mapi_new(msettings *settings)
 {
 	Mapi mid;
-	msettings *settings;
 	static ATOMIC_TYPE index = ATOMIC_VAR_INIT(0);
 
 	mid = malloc(sizeof(*mid));
-	settings = msettings_create();
-	if (mid == NULL || settings == NULL) {
+	if (mid == NULL)
+		return NULL;
+	if (settings == NULL)
+		settings = msettings_create();
+	if (settings == NULL) {
 		free(mid);
-		msettings_destroy(settings);
 		return NULL;
 	}
 
@@ -1889,7 +1890,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 			return NULL;
 	}
 
-	mid = mapi_new();
+	mid = mapi_new(NULL);
 	if (mid == NULL)
 		return NULL;
 
@@ -1948,7 +1949,7 @@ mapi_mapi(const char *host, int port, const char *username,
 			return NULL;
 	}
 
-	mid = mapi_new();
+	mid = mapi_new(NULL);
 	if (mid == NULL)
 		return NULL;
 	msettings *settings = mid->settings;
@@ -1986,6 +1987,19 @@ mapi_mapi(const char *host, int port, const char *username,
 
 	return mid;
 }
+
+Mapi
+mapi_settings(msettings *settings)
+{
+	assert(settings);
+	Mapi mid = mapi_new(settings);
+	if (mid == NULL)
+		return mid;
+
+	set_uri(mid);
+	return mid;
+}
+
 
 /* Close a connection and free all memory associated with the
    connection handle. */
@@ -4663,6 +4677,12 @@ MapiHdl
 mapi_get_active(Mapi mid)
 {
 	return mid->active;
+}
+
+msettings*
+mapi_get_settings(Mapi mid)
+{
+	return mid->settings;
 }
 
 
