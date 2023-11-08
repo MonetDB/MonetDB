@@ -16,7 +16,6 @@ jobs:
     strategy:
       fail-fast: false  # don't stop other jobs
       matrix:
-        branch: [ master ]
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         c_compiler: [ gcc, clang, cl ]
         include:
@@ -25,7 +24,7 @@ jobs:
           - os: macos-latest
             c_compiler: clang
           - os: macos-latest
-            c_compiler: gcc
+            c_compiler: gcc-12
           - os: ubuntu-latest
             c_compiler: gcc
           - os: ubuntu-latest
@@ -37,6 +36,8 @@ jobs:
             c_compiler: clang
           - os: macos-latest
             c_compiler: cl
+          - os: macos-latest
+            c_compiler: gcc
           - os: ubuntu-latest
             c_compiler: cl
     runs-on: ${{ matrix.os }}
@@ -44,14 +45,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ matrix.branch }}
+          ref: ${{ github.ref }}
+
+      - name: install pymonetdb cryptography
+        run: pip3 install pymonetdb cryptography
 
       - name: make MonetDB on linux
         run: |
           mkdir build
           cd build 
           cmake ..  \
-            -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} \
+            -DCMAKE_INSTALL_PREFIX=$HOME/MDB \
             -DPY3INTEGRATION=OFF \
             -DRINTEGRATION=OFF \
             -DCMAKE_BUILD_TYPE=Release \
@@ -60,16 +64,17 @@ jobs:
             -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'Linux'
-      -
-        name: brew packages
+
+      - name: brew packages
         run: brew install bison
         if: runner.os == 'macOS'
+
       - name: make MonetDB on macos
         run: |
           mkdir build
           cd build 
-          CC=${{ matrix.c_compiler }} cmake .. \
-            -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} \
+          cmake .. \
+            -DCMAKE_INSTALL_PREFIX=$HOME/MDB \
             -DPY3INTEGRATION=OFF \
             -DRINTEGRATION=OFF  \
             -DCMAKE_BUILD_TYPE=Release \
@@ -79,36 +84,52 @@ jobs:
             -DCMAKE_SUMMARY=ON
           make install -j3
         if: runner.os == 'macOS'
-      - name: make MonetDB on macos
+
+      - name: choco packages
+        run: |
+          choco install winflexbison3
+          vcpkg install libiconv bzip2 libxml2 pcre zlib getopt 
+        if: runner.os == 'Windows'
+
+      - name: make MonetDB on Windows
+        shell: pwsh
         run: |
           mkdir build
           cd build 
-          cmake .. \
-            -DCMAKE_INSTALL_PREFIX=$HOME/${{ matrix.branch }} \
-            -DPY3INTEGRATION=OFF \
-            -DRINTEGRATION=OFF  \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DASSERT=OFF \
-            -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
-            -DCMAKE_SUMMARY=ON
-          make install -j3
+          cmake ..  -DCMAKE_INSTALL_PREFIX=C:\MDB -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DPY3INTEGRATION=OFF -DRINTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
+          cmake --build . --target install
         if: runner.os == 'Windows'
+
       - name: ctest 
         run: |
           cd build 
-          cmake --build . --target test
-      - name: install pymonetdb
-        run: pip3 install pymonetdb
-      - name: which python
-        run: 
-          head -n 1 $HOME/${{ matrix.branch }}/bin/Mtest.py 
+          cmake --build . --target ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
+        if: runner.os != 'Windows'
+
       - name: mtest 
         run: |
-          #cd build 
-          #cmake --build . --target mtest
-          PATH=$HOME/${{ matrix.branch }}/bin:$PATH $HOME/${{ matrix.branch }}/bin/Mtest.py -r --debug=0 --ci --no-html
+          PATH=$HOME/MDB/bin:$PATH $HOME/MDB/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
+        if: runner.os != 'Windows'
+
+      - name: ctest 
+        shell: pwsh
+        run: |
+          $env:PATH = 'C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;C:\vcpkg\installed\x64-windows\bin;C:\vcpkg\installed\x64-windows\debug\bin;' + $env:PATH
+          cd build 
+          cmake --build . --target ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
+        if: runner.os == 'Windows'
+
+      - name: mtest 
+        shell: pwsh
+        run: |
+          $env:PATH = 'C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;C:\vcpkg\installed\x64-windows\bin;C:\vcpkg\installed\x64-windows\debug\bin;' + $env:PATH
+          python C:\MDB\bin\Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
+        if: runner.os == 'Windows'
+
+      - name: Tar files
+        run: tar -cvf mtests.tar mTests
       - name: Publish mtest results
         uses: actions/upload-artifact@v3
         with:
-          name: mtest-${{ matrix.branch }}
-          path: $HOME/${{ matrix.branch }}/mTests/*
+          name: mtest-${{ github.sha }}-${{ matrix.os }}-${{ matrix.c_compiler }}
+          path: mtests.tar

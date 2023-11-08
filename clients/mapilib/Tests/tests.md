@@ -258,6 +258,7 @@ EXPECT port=-1
 EXPECT database=
 EXPECT tableschema=
 EXPECT table=
+EXPECT binary=on
 ```
 
 ### sock
@@ -270,6 +271,15 @@ ACCEPT monetdb:///?sock=/tmp/sock
 EXPECT sock=/tmp/sock
 ACCEPT monetdb:///?sock=C:\TEMP\sock
 EXPECT sock=C:\TEMP\sock
+```
+
+### sockdir
+
+```test
+EXPECT sockdir=/tmp
+ACCEPT monetdb:///demo?sockdir=/tmp/nonstandard
+EXPECT sockdir=/tmp/nonstandard
+EXPECT connect_unix=/tmp/nonstandard/.s.monetdb.50000
 ```
 
 ### cert
@@ -321,15 +331,40 @@ REJECT monetdbs:///?certhash={sha99}X
 
 ```test
 EXPECT clientkey=
+EXPECT clientcert=
 ACCEPT monetdbs:///?clientkey=/tmp/clientkey.pem
 EXPECT clientkey=/tmp/clientkey.pem
 ACCEPT monetdbs:///?clientkey=C:\TEMP\clientkey.pem
 EXPECT clientkey=C:\TEMP\clientkey.pem
 ```
 
-### clientcert
+```test
+EXPECT connect_clientkey=
+EXPECT connect_clientcert=
+```
 
 ```test
+SET clientkey=/tmp/key.pem
+SET clientcert=/tmp/cert.pem
+EXPECT valid=true
+EXPECT connect_clientkey=/tmp/key.pem
+EXPECT connect_clientcert=/tmp/cert.pem
+```
+
+```test
+SET clientkey=/tmp/key.pem
+EXPECT valid=true
+EXPECT connect_clientkey=/tmp/key.pem
+EXPECT connect_clientcert=/tmp/key.pem
+```
+
+```test
+SET clientcert=/tmp/cert.pem
+EXPECT valid=false
+```
+
+```test
+SET clientkey=dummy
 EXPECT clientcert=
 ACCEPT monetdbs:///?clientcert=/tmp/clientcert.pem
 EXPECT clientcert=/tmp/clientcert.pem
@@ -471,14 +506,8 @@ ACCEPT monetdb:///?binary=0100
 EXPECT connect_binary=100
 ```
 
-We take empty to be 'on'
-
 ```test
-ACCEPT monetdb:///?binary=
-EXPECT connect_binary=65535
-```
-
-```test
+REJECT monetdb:///?binary=
 REJECT monetdb:///?binary=-1
 REJECT monetdb:///?binary=1.0
 REJECT monetdb:///?binary=banana
@@ -1129,6 +1158,21 @@ EXPECT connect_tcp=not.localhost
 REJECT monetdbs://not.localhost/?sock=/a/path
 ```
 
+### sock and sockdir
+
+Sockdir only applies to implicit Unix domain sockets,
+not to ones that are given explicitly
+
+```test
+EXPECT sockdir=/tmp
+EXPECT port=-1
+EXPECT host=
+EXPECT connect_unix=/tmp/.s.monetdb.50000
+SET sockdir=/somewhere/else
+EXPECT connect_unix=/somewhere/else/.s.monetdb.50000
+SET port=12345
+EXPECT connect_unix=/somewhere/else/.s.monetdb.12345
+```
 
 ## Legacy URL's
 

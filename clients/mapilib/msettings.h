@@ -140,13 +140,14 @@ enum msetting_tls_verify {
 	verify_hash,
 };
 mapi_export bool msettings_connect_scan(const msettings *mp);
-mapi_export const char *msettings_connect_sockdir(const msettings *mp);
 mapi_export const char *msettings_connect_unix(const msettings *mp);
 mapi_export const char *msettings_connect_tcp(const msettings *mp);
 mapi_export long msettings_connect_port(const msettings *mp);
 mapi_export const char *msettings_connect_certhash_digits(const msettings *mp);
 mapi_export long msettings_connect_binary(const msettings *mp);
 mapi_export enum msetting_tls_verify msettings_connect_tls_verify(const msettings *mp);
+mapi_export const char *msettings_connect_clientkey(const msettings *mp);
+mapi_export const char *msettings_connect_clientcert(const msettings *mp);
 
 /* automatically incremented each time the corresponding field is updated */
 long msettings_user_generation(const msettings *mp);

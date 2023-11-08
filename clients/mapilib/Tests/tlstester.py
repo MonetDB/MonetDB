@@ -26,6 +26,8 @@ from threading import Thread
 import threading
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+# Our TLS implementation never uses anything less than TLSv1.3.
+assert ssl.HAS_TLSv1_3
 
 import warnings
 with warnings.catch_warnings():
@@ -434,10 +436,14 @@ def make_context(allowtlsv12 = False):
 
     if hasattr(context, 'minimum_version'):
         context.maximum_version = ssl.TLSVersion.TLSv1_3
-        if allowtlsv12:
-            context.minimum_version = ssl.TLSVersion.TLSv1_2
-        else:
-            context.minimum_version = ssl.TLSVersion.TLSv1_3
+        try:
+            if allowtlsv12:
+                context.minimum_version = ssl.TLSVersion.TLSv1_2
+            else:
+                context.minimum_version = ssl.TLSVersion.TLSv1_3
+        except ValueError as e:
+            log.error(f"Setting context.minimum_version caused ValueError. Python version {sys.version!r}, linked to OpenSSL {ssl.OPENSSL_VERSION} ({ssl.OPENSSL_VERSION_NUMBER:#x})")
+            raise e
 
     return context
 

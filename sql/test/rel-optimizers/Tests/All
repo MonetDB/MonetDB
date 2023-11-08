@@ -2,3 +2,7 @@ split-select
 groupby-cse
 groupjoin
 join-merge-remote-replica
+replicas-base
+replicas-join
+local-replica
+remote-replica
