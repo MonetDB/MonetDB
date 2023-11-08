@@ -143,6 +143,7 @@ if(PYTHON3_LIBDIR)
     sqllogictest.py
     explain.py
     plan.py
+    floatutil.py
     mapicursor.py
     malmapi.py
     helpers.py
