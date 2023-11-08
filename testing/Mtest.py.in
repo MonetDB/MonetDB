@@ -1237,19 +1237,15 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         cond,tst = None,tc
                     alltests.append((tst,cond))
             allf.close()
-        if restart:
+        try:
+            f = openutf8(os.path.join(TSTSRCDIR, "SingleServer"))
+        except IOError:
             oneserver = False
-            options = []
+            options = []            # not used
         else:
-            try:
-                f = openutf8(os.path.join(TSTSRCDIR, "SingleServer"))
-            except IOError:
-                oneserver = False
-                options = []            # not used
-            else:
-                oneserver = True
-                options = splitcommand(f.read())
-                f.close()
+            oneserver = not restart
+            options = splitcommand(f.read())
+            f.close()
 
         if testlist:
             tl = []
@@ -1425,7 +1421,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     tt, FtOut, FtErr, bodyline, reason = -1,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
                 else:
                     os.environ['TST'] = TST
-                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress)
+                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, options)
                     alllinks.extend(links)
                 if tt >= 0:
                     t = "%7.3f" % tt
@@ -1884,7 +1880,7 @@ relcond = {
                              'last hugeint chained empty'),
 }
 
-def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) :
+def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, options) :
     global setpgrp
     Failed = F_SKIP
     FailedOut = F_SKIP
@@ -2220,7 +2216,7 @@ Debug =
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, pSrvr, total_tests, test_progress)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, pSrvr, total_tests, test_progress, options)
         t1 = time.time()
         TX = t1 - t0
         if verbosity > 0:
@@ -2779,7 +2775,7 @@ def progress(count, total, test):
         s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
     print('\r', s, end='', sep='', flush=True)
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, test_progress) :
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, test_progress, options) :
     ATJOB2 = ""
     print(file=sys.stderr, end='', flush=True)
     if verbosity == 0:
@@ -2853,6 +2849,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 if os.path.isfile(TST + '.options5'):
                     Srvr.extend(openutf8(TST + '.options5').read().split())
                 Srvr.extend(mserver5_opts)
+                Srvr.extend(options)
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), dbg=env.get('DBG'))
                 pSrvr.LaunchIt()
                 if pSrvr.port is None:
