@@ -60,20 +60,10 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		MCcloseClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
-	if ((msg = malIncludeModules(c, modules, 0, embedded,
-								 initpasswd)) != MAL_SUCCEED) {
+	if ((msg = malIncludeModules(c, modules, 0, embedded, initpasswd)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		return msg;
 	}
-	/*
-	   pushEndInstruction(c->curprg->def);
-	   msg = chkProgram(c->usermodule, c->curprg->def);
-	   if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
-	   MCcloseClient(c);
-	   return msg;
-	   }
-	   msg = MALengine(c);
-	 */
 	MCcloseClient(c);
 	return msg;
 }

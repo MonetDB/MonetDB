@@ -288,13 +288,11 @@ freeModule(Module m)
 	if (m == NULL)
 		return;
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
-		InstrPtr pci = getInstrPtr(s->def, 0);
-		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
+		if (s->kind == COMMANDsymbol && s->func->argc == 1) {
 			int status = 0;
 			str ret = MAL_SUCCEED;
 
-			assert(pci->fcn != NULL);
-			ret = (*(str (*)(int *)) pci->fcn) (&status);
+			ret = (*(str (*)(int *)) s->func->imp) (&status);
 			freeException(ret);
 			(void) status;
 		}
@@ -317,24 +315,11 @@ freeModule(Module m)
 void
 insertSymbol(Module scope, Symbol prg)
 {
-	InstrPtr sig;
 	int t;
-	Module c;
 
 	assert(scope);
-	sig = getSignature(prg);
-	if (getModuleId(sig) && getModuleId(sig) != scope->name) {
-		assert(0);
-		/* move the definition to the proper place */
-		/* default scope is the last resort */
-		c = findModule(scope, getModuleId(sig));
-		if (c)
-			scope = c;
-	}
-	t = getSymbolIndex(getFunctionId(sig));
-	if (scope->space[t] == prg) {
-		/* already known, last inserted */
-	} else {
+	t = getSymbolIndex(prg->name);
+	if (scope->space[t] != prg) {
 		prg->peer = scope->space[t];
 		scope->space[t] = prg;
 		if (prg->peer && idcmp(prg->name, prg->peer->name) == 0)

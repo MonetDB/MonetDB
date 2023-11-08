@@ -328,7 +328,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 		msg = OPTmultiplexSimple(cntxt, s->def);
 		if (msg)
 			freeException(msg);
-		s->def->inlineProp = 0;
+		if (s->kind == FUNCTIONsymbol)
+			s->def->inlineProp = 0;
 		return 0;
 	}
 	/*
@@ -444,7 +445,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
 			Symbol s = findSymbolInModule(getModule(putName(mod)), putName(fcn));
 
-			if (s && s->def->inlineProp) {
+			if (s && s->kind == FUNCTIONsymbol && s->def->inlineProp) {
 				pushInstruction(mb, p);
 				if (OPTmultiplexInline(cntxt, mb, p, mb->stop - 1)) {
 					actions++;

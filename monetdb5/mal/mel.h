@@ -17,10 +17,6 @@
 #define MEL_OK 0
 #define MEL_ERR 1
 
-#define FK_CMD 0
-#define FK_PAT 1
-#define FK_MAL 2
-
 struct CLIENT;
 struct MALBLK;
 struct MALSTK;
@@ -42,13 +38,11 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 	void (*del)(Heap *, var_t *);
 	size_t (*length)(const void *);
 	gdk_return (*heap)(Heap *, size_t);
-	//gdk_return (*fix)(const void *);
-	//gdk_return (*unfix)(const void *);
 	int (*storage)(void);
 } mel_atom;
 
-#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .kind=FK_CMD, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
-#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .kind=FK_PAT, .mod=MOD, .fcn=FCN, .pimp=IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
+#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=1, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
+#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=0, .mod=MOD, .fcn=FCN, .pimp=IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
 
 /* ARGC = arg-count + ret-count */
 //#define args(RETC,ARGC,...) (mel_arg[ARGC?ARGC:1]){__VA_ARGS__}, .retc=RETC, .argc=ARGC
@@ -75,15 +69,14 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 	char mod[16];
 	char fcn[30];
 	const char *cname;
-	uint16_t kind:2, unsafe:1, vargs:1, poly:2, retc:5, argc:5;
+	uint16_t command:1, unsafe:1, vargs:1, vrets:1, poly:2, retc:5, argc:5;
 // comment on MAL instructions should also be available when TRACEing the queries
 	char *comment;
 	union {
 		MALfcn imp;
 		char *(*pimp)(struct CLIENT *, struct MALBLK *, struct MALSTK *, struct INSTR *);
-		struct MALBLK *mimp;
 	};
-	/*const*/ mel_arg *args;
+	mel_arg *args;
 } mel_func;
 
 typedef str (*mel_init)(void);
@@ -102,7 +95,6 @@ typedef struct __attribute__((__designated_init__)) mal_spec {
 	union {
 		MALfcn imp;
 		char *(*pimp)(struct CLIENT *, struct MALBLK *, struct MALSTK *, struct INSTR *);
-		struct MALBLK *mimp;
 	};
 	char *mal;
 } mal_spec;

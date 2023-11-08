@@ -55,10 +55,12 @@ newSymbol(const char *nme, int kind)
 	}
 	cur->kind = kind;
 	cur->peer = NULL;
-	cur->def = newMalBlk(kind == FUNCTIONsymbol ? STMT_INCREMENT : 2);
-	if (cur->def == NULL) {
-		GDKfree(cur);
-		return NULL;
+	if (kind == FUNCTIONsymbol) {
+		cur->def = newMalBlk(STMT_INCREMENT);
+		if (cur->def == NULL) {
+			GDKfree(cur);
+			return NULL;
+		}
 	}
 	return cur;
 }
@@ -72,6 +74,7 @@ freeSymbol(Symbol s)
 		freeMalBlk(s->def);
 		s->def = NULL;
 	}
+	/* TODO free s->func */
 	GDKfree(s);
 }
 

@@ -99,11 +99,32 @@ resolveType(int *rtype, int dsttype, int srctype)
 	} while (0)
 
 static malType
+getFormalArgType( Symbol s, int arg)
+{
+	if (s->kind == FUNCTIONsymbol)
+		return getArgType(s->def, getSignature(s), arg);
+	mel_arg *a = s->func->args+arg;
+	malType tpe = TYPE_any;
+	if (a->nr || !a->type[0]) {
+		if (a->isbat)
+			tpe = newBatType(TYPE_any);
+		else
+			tpe = a->typeid;
+		setTypeIndex(tpe, a->nr);
+	} else {
+		if (a->isbat)
+			tpe = newBatType(a->typeid);
+		else
+			tpe = a->typeid;
+	}
+	return tpe;
+}
+
+static malType
 findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 {
 	Module m;
 	Symbol s;
-	InstrPtr sig;
 	int i, k, unmatched = 0, s1;
 	int polytype[MAXTYPEVAR];
 	int returns[256];
@@ -163,7 +184,25 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * type(Ai)=type(Yi). Furthermore, the variables Xi obtain
 		 * their type from Bi (or type(Bi)==type(Xi)).
 		 */
-		sig = getSignature(s);
+		int argc = 0, retc = 0, varargs = 0, varrets = 0/*, unsafe = 0*/, polymorphic = 0;
+		if (s->kind == FUNCTIONsymbol) {
+			InstrPtr sig = getSignature(s);
+			retc = sig->retc;
+			argc = sig->argc;
+			varargs = (sig->varargs & (VARARGS | VARRETS));
+			varrets = (sig->varargs & VARRETS);
+			//unsafe = s->def->unsafeProp;
+			polymorphic = sig->polymorphic;
+		} else {
+			retc = s->func->retc;
+			argc = s->func->argc;
+			varargs = retc == 0 || s->func->vargs || s->func->vrets;
+			varrets = retc == 0 || s->func->vrets;
+			//unsafe = s->func->unsafe;
+			polymorphic = s->func->poly;
+			if (!retc && !polymorphic)
+				polymorphic = 1;
+		}
 		unmatched = 0;
 
 		/*
@@ -178,15 +217,13 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * the limited type nesting permitted.  Note, each function
 		 * returns at least one value.
 		 */
-		if (sig->polymorphic) {
-			int limit = sig->polymorphic;
-			if (!(sig->argc == p->argc ||
-				  (sig->argc < p->argc && sig->varargs & (VARARGS | VARRETS)))
-					) {
+		if (polymorphic) {
+			int limit = polymorphic;
+			if (!(argc == p->argc || (argc < p->argc && varargs))) {
 				s = s->peer;
 				continue;
 			}
-			if (sig->retc != p->retc && !(sig->varargs & VARRETS)) {
+			if (retc != p->retc && !varrets) {
 				s = s->peer;
 				continue;
 			}
@@ -201,10 +238,10 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			 */
 			i = p->retc;
 			/* first handle the variable argument list */
-			for (k = sig->retc; i < p->argc; k++, i++) {
+			for (k = retc; i < p->argc; k++, i++) {
 				int actual = getArgType(mb, p, i);
-				int formal = getArgType(s->def, sig, k);
-				if (k == sig->argc - 1 && sig->varargs & VARARGS)
+				int formal = getFormalArgType(s, k);
+				if (k == argc - 1 && varargs)
 					k--;
 				/*
 				 * Take care of variable argument lists.
@@ -242,16 +279,16 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			 * first element in the list determines the required type
 			 * of all.
 			 */
-			if (sig->varargs) {
-				if (sig->token != PATTERNsymbol)
+			if (varargs) {
+				if (s->kind != PATTERNsymbol && retc)
 					unmatched = i;
 				else {
 					/* resolve the arguments */
 					for (; i < p->argc; i++) {
 						/* the type of the last one has already been set */
 						int actual = getArgType(mb, p, i);
-						int formal = getArgType(s->def, sig, k);
-						if (k == sig->argc - 1 && sig->varargs & VARARGS)
+						int formal = getFormalArgType(s, k);
+						if (k == argc - 1 && varargs)
 							k--;
 
 						formal = getPolyType(formal, polytype);
@@ -269,7 +306,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			 * We have to check the argument types to determine a
 			 * possible match for the non-polymorphic case.
 			 */
-			if (sig->argc != p->argc || sig->retc != p->retc) {
+			if (argc != p->argc || retc != p->retc) {
 				s = s->peer;
 				continue;
 			}
@@ -277,7 +314,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 
 			for (i = p->retc; i < p->argc; i++) {
 				int actual = getArgType(mb, p, i);
-				int formal = getArgType(s->def, sig, i);
+				int formal = getFormalArgType(s, i);
 				if (resolvedType(formal, actual) < 0) {
 					unmatched = i;
 					break;
@@ -309,12 +346,12 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * then the resulting type can not be determined.
 		 */
 		s1 = 0;
-		if (sig->polymorphic)
-			for (k = i = 0; i < p->retc; k++, i++) {
+		if (polymorphic) {
+			for (k = i = 0; i < p->retc && k < retc; k++, i++) {
 				int actual = getArgType(mb, p, i);
-				int formal = getArgType(s->def, sig, k);
+				int formal = getFormalArgType(s, k);
 
-				if (k == sig->retc - 1 && sig->varargs & VARRETS)
+				if (k == retc - 1 && varrets)
 					k--;
 
 				s1 = getPolyType(formal, polytype);
@@ -323,24 +360,26 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 					s1 = -1;
 					break;
 				}
-		} else
+			}
+		} else {
 			/* check for non-polymorphic return */
 			for (k = i = 0; i < p->retc; i++) {
 				int actual = getArgType(mb, p, i);
-				int formal = getArgType(s->def, sig, i);
+				int formal = getFormalArgType(s, i);
 
-				if (k == sig->retc - 1 && sig->varargs & VARRETS)
+				if (k == retc - 1 && varrets)
 					k--;
 
-				if (actual == formal)
+				if (actual == formal) {
 					returntype[i] = actual;
-				else {
+				} else {
 					if (resolveType(returntype+i, formal, actual) < 0) {
 						s1 = -1;
 						break;
 					}
 				}
 			}
+		}
 		if (s1 < 0) {
 			s = s->peer;
 			continue;
@@ -400,7 +439,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * cloned does not contain errors detected earlier in the
 		 * process, nor does it contain polymorphic actual arguments.
 		 */
-		if (sig->polymorphic) {
+		if (polymorphic) {
 			int cnt = 0;
 			for (k = i = p->retc; i < p->argc; i++) {
 				int actual = getArgType(mb, p, i);
@@ -434,7 +473,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			switch (s->kind) {
 			case COMMANDsymbol:
 				p->token = CMDcall;
-				p->fcn = getSignature(s)->fcn;	/* C implementation mandatory */
+				p->fcn = s->func->imp;				/* C implementation mandatory */
 				if (p->fcn == NULL) {
 					if (!silent)
 						mb->errors = createMalException(mb, idx, TYPE,
@@ -446,7 +485,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				break;
 			case PATTERNsymbol:
 				p->token = PATcall;
-				p->fcn = getSignature(s)->fcn;	/* C implementation optional */
+				p->fcn = s->func->imp;				/* C implementation optional */
 				break;
 			case FUNCTIONsymbol:
 				p->token = FCNcall;

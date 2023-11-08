@@ -65,13 +65,19 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (int j = 0; j < MAXSCOPE; j++) {
 			if (s->space[j]) {
 				for (Symbol t = s->space[j]; t != NULL; t = t->peer) {
-					assert(strcmp(t->def->stmt[0]->modname, s->name) == 0);
-					assert(strcmp(t->def->stmt[0]->fcnname, t->name) == 0);
-					if (t->def->stmt[0]->fcnname[0] == '#')
+					if (t->kind == FUNCTIONsymbol && t->def->stmt[0]->fcnname[0] == '#')
 						continue;
 					char buf[1024];
-					(void) fcnDefinition(t->def, getInstrPtr(t->def, 0),
+					char *comment = NULL;
+					if (t->kind == FUNCTIONsymbol) {
+						comment = t->def->help;
+						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0),
 										 buf, TRUE, buf, sizeof(buf));
+					} else {
+						assert(t->func);
+						comment = t->func->comment;
+						/* TODO create fcnDefinition for command and patterns */
+					}
 					char *tt = strstr(buf, "address ");
 					if (tt) {
 						*tt = 0;
@@ -80,7 +86,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (BUNappend(mod, s->name, false) != GDK_SUCCEED
 						|| BUNappend(fcn, t->name,
 									 false) != GDK_SUCCEED
-						|| BUNappend(com, t->def->help ? t->def->help : "",
+						|| BUNappend(com, comment ? comment : "",
 									 false) != GDK_SUCCEED
 						|| BUNappend(sig, buf, false) != GDK_SUCCEED
 						|| BUNappend(adr, tt ? tt : "",

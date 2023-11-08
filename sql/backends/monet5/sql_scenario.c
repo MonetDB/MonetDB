@@ -105,7 +105,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	(void) mb;
 	(void) stk;
 	(void) pci;
 	if (!s)
