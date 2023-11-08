@@ -62,10 +62,10 @@ server = tlstester.TLSTester(
 server_thread = threading.Thread(target=server.serve_forever, daemon=True)
 server_thread.start()
 
-def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True, **params):
+def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True, host='localhost', **params):
     port = server.get_port(portname)
     scheme = 'monetdbs' if tls else 'monetdb'
-    url = f"{scheme}://localhost:{port}/demo"
+    url = f"{scheme}://{host}:{port}/demo"
     if params:
         # should be percent-escaped
         url += '?' + '&'.join(f"{k}={v}" for k, v in params.items())
@@ -128,6 +128,14 @@ attempt('refuse_no_cert', 'server1', "") # we expect "verify failed" but Mac giv
 # The client should refuse to let the connection proceed.
 
 attempt('refuse_wrong_cert', 'server1', 'verify failed', cert=certpath('ca2.crt'))
+
+# refuse_wrong_host
+#
+# Connect to port 'server1' over TLS, but using an alternative host name.
+# For example, `localhost.localdomain` instead of `localhost`.
+# The client should refuse to let the connection proceed.
+
+attempt('refuse_wrong_host', 'server1', 'verify failed', host='localhost.localdomain', cert=certpath('ca1.crt'))
 
 # refuse_tlsv12
 #
