@@ -329,6 +329,7 @@ This package contains the files needed to develop with the
 %dir %{_includedir}/monetdb
 %{_libdir}/libmapi.so
 %{_includedir}/monetdb/mapi*.h
+%{_includedir}/monetdb/msettings.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
 
 %package client-odbc
