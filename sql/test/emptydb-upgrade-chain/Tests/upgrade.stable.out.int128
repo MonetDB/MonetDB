@@ -239,7 +239,6 @@ CREATE VIEW INFORMATION_SCHEMA.SCHEMATA AS SELECT
   cast(NULL AS varchar(1)) AS DEFAULT_CHARACTER_SET_SCHEMA,
   cast('UTF-8' AS varchar(16)) AS DEFAULT_CHARACTER_SET_NAME,
   cast(NULL AS varchar(1)) AS SQL_PATH,
-  -- MonetDB column extensions
   s."id" AS schema_id,
   s."system" AS is_system,
   cm."remark" AS comments
@@ -261,7 +260,6 @@ CREATE VIEW INFORMATION_SCHEMA.TABLES AS SELECT
   cast(sys.ifthenelse((t."type" IN (0, 3, 7, 20, 30) AND t."access" IN (0, 2)), 'YES', 'NO') AS varchar(3)) AS IS_INSERTABLE_INTO,
   cast('NO' AS varchar(3)) AS IS_TYPED,
   cast((CASE t."commit_action" WHEN 1 THEN 'DELETE' WHEN 2 THEN 'PRESERVE' WHEN 3 THEN 'DROP' ELSE NULL END) AS varchar(10)) AS COMMIT_ACTION,
-  -- MonetDB column extensions
   t."schema_id" AS schema_id,
   t."id" AS table_id,
   t."type" AS table_type_id,
@@ -288,7 +286,6 @@ CREATE VIEW INFORMATION_SCHEMA.VIEWS AS SELECT
   cast('NO' AS varchar(3)) AS IS_TRIGGER_UPDATABLE,
   cast('NO' AS varchar(3)) AS IS_TRIGGER_DELETABLE,
   cast('NO' AS varchar(3)) AS IS_TRIGGER_INSERTABLE_INTO,
-  -- MonetDB column extensions
   t."schema_id" AS schema_id,
   t."id" AS table_id,
   cast(sys.ifthenelse(t."system", t."type" + 10 , t."type") AS smallint) AS table_type_id,
@@ -314,7 +311,7 @@ CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_digits", NULL) AS int) AS NUMERIC_PRECISION,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(c."type" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_scale", NULL) AS int) AS NUMERIC_SCALE,
-  cast(sys.ifthenelse(c."type" IN ('date','timestamp','timestamptz','time','timetz'), c."type_scale" -1, NULL) AS int) AS DATETIME_PRECISION,
+  cast(sys.ifthenelse(c."type" IN ('date','timestamp','timestamptz','time','timetz'), sys.ifthenelse(c."type_scale" > 0, c."type_scale" -1, 0), NULL) AS int) AS DATETIME_PRECISION,
   cast(CASE c."type" WHEN 'day_interval' THEN 'interval day' WHEN 'month_interval' THEN (CASE c."type_digits" WHEN 1 THEN 'interval year' WHEN 2 THEN 'interval year to month' WHEN 3 THEN 'interval month' ELSE NULL END) WHEN 'sec_interval' THEN (CASE c."type_digits" WHEN 5 THEN 'interval day to hour' WHEN 6 THEN 'interval day to minute' WHEN 7 THEN 'interval day to second' WHEN 8 THEN 'interval hour' WHEN 9 THEN 'interval hour to minute' WHEN 10 THEN 'interval hour to second' WHEN 11 THEN 'interval minute' WHEN 12 THEN 'interval minute to second' WHEN 13 THEN 'interval second' ELSE NULL END) ELSE NULL END AS varchar(40)) AS INTERVAL_TYPE,
   cast(CASE c."type" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(c."type_digits" IN (7, 10, 12, 13), sys.ifthenelse(c."type_scale" > 0, c."type_scale", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
@@ -335,15 +332,15 @@ CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
   cast(NULL AS int) AS MAXIMUM_CARDINALITY,
   cast(NULL AS varchar(1)) AS DTD_IDENTIFIER,
   cast('NO' AS varchar(3)) AS IS_SELF_REFERENCING,
-  cast(CASE WHEN c."default" LIKE 'next value for %' THEN 'YES' ELSE 'NO' END AS varchar(3)) AS IS_IDENTITY,
-  cast(NULL AS varchar(10)) AS IDENTITY_GENERATION,
-  cast(NULL AS int) AS IDENTITY_START,
-  cast(NULL AS int) AS IDENTITY_INCREMENT,
-  cast(NULL AS int) AS IDENTITY_MAXIMUM,
-  cast(NULL AS int) AS IDENTITY_MINIMUM,
-  cast(NULL AS varchar(3)) AS IDENTITY_CYCLE,
-  cast('NO' AS varchar(3)) AS IS_GENERATED,
-  cast(NULL AS varchar(1)) AS GENERATION_EXPRESSION,
+  cast(sys.ifthenelse(seq."name" IS NULL OR c."null", 'NO', 'YES') AS varchar(3)) AS IS_IDENTITY,
+  seq."name" AS IDENTITY_GENERATION,
+  seq."start" AS IDENTITY_START,
+  seq."increment" AS IDENTITY_INCREMENT,
+  seq."maxvalue" AS IDENTITY_MAXIMUM,
+  seq."minvalue" AS IDENTITY_MINIMUM,
+  cast(sys.ifthenelse(seq."name" IS NULL, NULL, sys.ifthenelse(seq."cycle", 'YES', 'NO')) AS varchar(3)) AS IDENTITY_CYCLE,
+  cast(sys.ifthenelse(seq."name" IS NULL, 'NO', 'YES') AS varchar(3)) AS IS_GENERATED,
+  cast(sys.ifthenelse(seq."name" IS NULL, NULL, c."default") AS varchar(1024)) AS GENERATION_EXPRESSION,
   cast('NO' AS varchar(3)) AS IS_SYSTEM_TIME_PERIOD_START,
   cast('NO' AS varchar(3)) AS IS_SYSTEM_TIME_PERIOD_END,
   cast('NO' AS varchar(3)) AS SYSTEM_TIME_PERIOD_TIMESTAMP_GENERATION,
@@ -351,16 +348,17 @@ CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
   cast(NULL AS varchar(1)) AS DECLARED_DATA_TYPE,
   cast(NULL AS int) AS DECLARED_NUMERIC_PRECISION,
   cast(NULL AS int) AS DECLARED_NUMERIC_SCALE,
-  -- MonetDB column extensions
   t."schema_id" AS schema_id,
   c."table_id" AS table_id,
   c."id" AS column_id,
+  seq."id" AS sequence_id,
   t."system" AS is_system,
   cm."remark" AS comments
  FROM sys."columns" c
  INNER JOIN sys."tables" t ON c."table_id" = t."id"
  INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
  LEFT OUTER JOIN sys."comments" cm ON c."id" = cm."id"
+ LEFT OUTER JOIN sys."sequences" seq ON ((seq."name"||'"') = substring(c."default", 3 + sys."locate"('"."seq_',c."default",14)))
  ORDER BY s."name", t."name", c."number";
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.COLUMNS TO PUBLIC WITH GRANT OPTION;
 CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT
@@ -381,7 +379,6 @@ CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT
   cast('NO' AS varchar(3)) AS IS_DEFERRABLE,
   cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,
   cast('YES' AS varchar(3)) AS ENFORCED,
-  -- MonetDB column extensions
   t."schema_id" AS schema_id,
   t."id" AS table_id,
   k."id" AS key_id,
@@ -402,7 +399,6 @@ CREATE VIEW INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS SELECT
   cast('FULL' AS varchar(7)) AS MATCH_OPTION,
   fk."update_action" AS UPDATE_RULE,
   fk."delete_action" AS DELETE_RULE,
-  -- MonetDB column extensions
   t."schema_id" AS fk_schema_id,
   t."id" AS fk_table_id,
   t."name" AS fk_table_name,
@@ -508,7 +504,6 @@ CREATE VIEW INFORMATION_SCHEMA.ROUTINES AS SELECT
   cast(NULL AS varchar(1)) AS RESULT_CAST_FROM_DECLARED_DATA_TYPE,
   cast(NULL AS int) AS RESULT_CAST_DECLARED_NUMERIC_PRECISION,
   cast(NULL AS int) AS RESULT_CAST_DECLARED_NUMERIC_SCALE,
-  -- MonetDB column extensions
   f."schema_id" AS schema_id,
   f."id" AS function_id,
   f."type" AS function_type,
@@ -540,7 +535,6 @@ CREATE VIEW INFORMATION_SCHEMA.SEQUENCES AS SELECT
   cast(NULL AS varchar(16)) AS DECLARED_DATA_TYPE,
   cast(NULL AS SMALLINT) AS DECLARED_NUMERIC_PRECISION,
   cast(NULL AS SMALLINT) AS DECLARED_NUMERIC_SCALE,
-  -- MonetDB column extensions
   sq."schema_id" AS schema_id,
   sq."id" AS sequence_id,
   get_value_for(s."name", sq."name") AS current_value,
