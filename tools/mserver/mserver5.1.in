@@ -30,7 +30,7 @@ start, monitor and connect to the
 process through
 .IR monetdbd (1).
 .P
-This man-page describes the options that
+This manual describes the options that
 .I mserver5
 understands.
 It is intended for people who really need to work with
@@ -80,7 +80,7 @@ option.
 If the value of
 .I path
 is
-.BR in-memory ,
+.BR in\-memory ,
 transient data is not stored on disk at all but kept in memory at all
 times.
 .TP
@@ -132,7 +132,7 @@ in-memory.
 .B No
 data will be written to disk.
 The name of the database that a client can connect to is
-.BR in-memory .
+.BR in\-memory .
 .TP
 \fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
 .PD 0
