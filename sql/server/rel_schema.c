@@ -325,6 +325,9 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 		case SQL_UNIQUE:
 			suffix = "unique";
 			break;
+		case SQL_UNIQUE_NULLS_NOT_DISTINCT:
+			suffix = "nndunique";
+			break;
 		case SQL_PRIMARY_KEY:
 			suffix = "pkey";
 			break;
