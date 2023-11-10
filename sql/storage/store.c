@@ -7291,7 +7291,7 @@ find_partition_type(sql_subtype *tpe, sql_table *mt)
 static int
 convert_part_values(sql_trans *tr, sql_table *mt )
 {
-	sql_subtype found;
+	sql_subtype found = { 0 };
 	int localtype;
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;

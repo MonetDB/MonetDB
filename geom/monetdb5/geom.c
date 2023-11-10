@@ -114,97 +114,99 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		goto free;
 	}
 
-	//All unions for output BAT
-	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
-		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPreclaim(out);
-		goto free;
-	}
+	if (ngrp) {
+		//All unions for output BAT
+		if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
+			msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			BBPreclaim(out);
+			goto free;
+		}
 
-	//Intermediate array for all the geometries in a group
-	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
-		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPreclaim(out);
-		if (unions)
-			GDKfree(unions);
-		goto free;
-	}
+		//Intermediate array for all the geometries in a group
+		if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
+			msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			BBPreclaim(out);
+			if (unions)
+				GDKfree(unions);
+			goto free;
+		}
 
-	if (g && !BATtdense(g))
-		gids = (const oid *)Tloc(g, 0);
-	bi = bat_iterator(b);
+		if (g && !BATtdense(g))
+			gids = (const oid *)Tloc(g, 0);
+		bi = bat_iterator(b);
 
-	for (BUN i = 0; i < ci.ncand; i++) {
-		oid o = canditer_next(&ci);
-		BUN p = o - b->hseqbase;
-		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
-		wkb *inWKB = (wkb *)BUNtvar(bi, p);
-		GEOSGeom inGEOM = wkb2geos(inWKB);
+		for (BUN i = 0; i < ci.ncand; i++) {
+			oid o = canditer_next(&ci);
+			BUN p = o - b->hseqbase;
+			oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
+			wkb *inWKB = (wkb *)BUNtvar(bi, p);
+			GEOSGeom inGEOM = wkb2geos(inWKB);
 
 
-		if (grp != lastGrp) {
-			if (lastGrp != (oid)-1) {
-				//Finish the previous group, move on to the next one
-				collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
-				GEOSSetSRID(collection,srid);
-				//Save collection to unions array as wkb
-				unions[lastGrp] = geos2wkb(collection);
+			if (grp != lastGrp) {
+				if (lastGrp != (oid)-1) {
+					//Finish the previous group, move on to the next one
+					collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
+					GEOSSetSRID(collection,srid);
+					//Save collection to unions array as wkb
+					unions[lastGrp] = geos2wkb(collection);
 
-				GEOSGeom_destroy(collection);
-				GDKfree(unionGroup);
+					GEOSGeom_destroy(collection);
+					GDKfree(unionGroup);
 
-				if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
-					msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					//Frees
-					bat_iterator_end(&bi);
-					if (unions) {
-						for (BUN i = 0; i < ngrp; i++)
-							GDKfree(unions[i]);
-						GDKfree(unions);
+					if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
+						msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						//Frees
+						bat_iterator_end(&bi);
+						if (unions) {
+							for (BUN i = 0; i < ngrp; i++)
+								GDKfree(unions[i]);
+							GDKfree(unions);
+						}
+						if (unionGroup) {
+							for (BUN i = 0; i < geomCount; i++)
+								if (unionGroup[i])
+									GEOSGeom_destroy(unionGroup[i]);
+							GDKfree(unionGroup);
+						}
+						goto free;
 					}
-					if (unionGroup) {
-						for (BUN i = 0; i < geomCount; i++)
-							if (unionGroup[i])
-								GEOSGeom_destroy(unionGroup[i]);
-						GDKfree(unionGroup);
-					}
-					goto free;
 				}
+				geomCount = 0;
+				lastGrp = grp;
+				geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM));
+				srid = GEOSGetSRID(inGEOM);
 			}
-			geomCount = 0;
-			lastGrp = grp;
-			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM));
-			srid = GEOSGetSRID(inGEOM);
+			unionGroup[geomCount] = inGEOM;
+			geomCount += 1;
+			if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM)) != geomCollectionType)
+				geomCollectionType = GEOS_GEOMETRYCOLLECTION;
 		}
-		unionGroup[geomCount] = inGEOM;
-		geomCount += 1;
-		if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM)) != geomCollectionType)
-			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
-	}
-	//Last collection
-	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
-	GEOSSetSRID(collection,srid);
-	unions[lastGrp] = geos2wkb(collection);
+		//Last collection
+		collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
+		GEOSSetSRID(collection,srid);
+		unions[lastGrp] = geos2wkb(collection);
 
-	GEOSGeom_destroy(collection);
-	GDKfree(unionGroup);
+		GEOSGeom_destroy(collection);
+		GDKfree(unionGroup);
 
-	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED) {
-		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+		if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+			bat_iterator_end(&bi);
+			if (unions) {
+				for (BUN i = 0; i < ngrp; i++)
+					GDKfree(unions[i]);
+				GDKfree(unions);
+			}
+			goto free;
+		}
+
 		bat_iterator_end(&bi);
-		if (unions) {
-			for (BUN i = 0; i < ngrp; i++)
-				GDKfree(unions[i]);
-			GDKfree(unions);
-		}
-		goto free;
+		for (BUN i = 0; i < ngrp; i++)
+			GDKfree(unions[i]);
+		GDKfree(unions);
+
 	}
-
-	bat_iterator_end(&bi);
-	for (BUN i = 0; i < ngrp; i++)
-		GDKfree(unions[i]);
-	GDKfree(unions);
-
 	*outid = out->batCacheid;
 	BBPkeepref(out);
 	BBPunfix(b->batCacheid);

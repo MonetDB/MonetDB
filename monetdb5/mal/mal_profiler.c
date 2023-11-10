@@ -418,9 +418,8 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 								goto cleanup_and_exit;
 							}
 						} else {
-							if (!logadd
-								(&logbuf, ",\"mode\":\"%s\"",
-								 (di.transient ? "transient" : "persistent"))) {
+							if (!logadd(&logbuf, ",\"mode\":\"%s\"",
+										(di.transient ? "transient" : "persistent"))) {
 								BBPunfix(d->batCacheid);
 								goto cleanup_and_exit;
 							}
@@ -514,8 +513,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (!ok)
 						goto cleanup_and_exit;
 				}
-				if (!logadd
-					(&logbuf, ",\"eol\":%d", getVarEolife(mb, getArg(pci, j))))
+				if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb, getArg(pci, j))))
 					goto cleanup_and_exit;
 				// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return NULL;
 				if (!logadd(&logbuf, "}"))
@@ -721,8 +719,6 @@ profilerEvent(MalEvent *me, NonMalEvent *nme)
 str
 openProfilerStream(Client cntxt, int m)
 {
-	int j;
-
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	prevUsage = infoUsage;
@@ -759,29 +755,6 @@ openProfilerStream(Client cntxt, int m)
 	maleventstream = cntxt->fdout;
 	profilerUser = cntxt->user;
 
-	// Ignore the JSON rendering mode, use compiled time version
-
-	/* show all in progress instructions for stethoscope startup */
-	/* wait a short time for instructions to finish updating their thread admin
-	 * and then follow the locking scheme */
-
-	MT_sleep_ms(200);
-
-	for (j = 0; j < THREADS; j++) {
-		struct MalEvent me = {
-			.cntxt = workingset[j].cntxt,
-			.mb = workingset[j].mb,
-			.stk = workingset[j].stk,
-			.pci = workingset[j].pci,
-			.clk = workingset[j].clock,
-		};
-		if (me.cntxt && me.mb && me.stk && me.pci) {
-			/* show the event  assuming the quintuple is aligned */
-			MT_lock_unset(&mal_profileLock);
-			profilerEvent(&me, NULL);
-			MT_lock_set(&mal_profileLock);
-		}
-	}
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }

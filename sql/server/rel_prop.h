@@ -35,6 +35,12 @@ typedef struct prop {
 	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
 } prop;
 
+/* for REMOTE prop we need to keep a list with tids and uris for the remote tables */
+typedef struct tid_uri {
+	sqlid id;
+	const char* uri;
+} tid_uri;
+
 extern prop * prop_create( sql_allocator *sa, rel_prop kind, prop *pre );
 extern prop * prop_copy( sql_allocator *sa, prop *p);
 extern prop * prop_remove( prop *plist, prop *p);

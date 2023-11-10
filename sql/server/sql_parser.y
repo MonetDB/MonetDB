@@ -175,7 +175,7 @@ uescape_xform(char *restrict s, const char *restrict esc)
 %parse-param { mvc *m }
 %lex-param { void *m }
 
-/* only possible from bison 3.6 and up */
+/* only possible from bison 3.0 and up */
 %define parse.error verbose
 
 /* reentrant parser */
@@ -5187,7 +5187,7 @@ literal:
 		}
  |  INTNUM
 		{
-			char filtered[50] = {0};
+			char filtered[51] = {0};
 			int j = 0;
 			for (int i = 0; i < 50; i++) {
 				char d = $1[i];
@@ -5198,6 +5198,7 @@ literal:
 				filtered[j] = d;
 				++j;
 			}
+			filtered[j] = 0;
 			char *s = filtered;
 
 			int digits;

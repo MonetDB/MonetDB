@@ -207,9 +207,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (nvar >= 0)
 					getArg(p, 1) = nvar;
 				if (nvar >= env->stktop) {
-					if (VALcopy
-						(&env->stk[getArg(p, 1)],
-						 &getVarConstant(mb, getArg(p, 1))) == NULL) {
+					if (VALcopy(&env->stk[getArg(p, 1)],
+								&getVarConstant(mb, getArg(p, 1))) == NULL) {
 						msg = createException(MAL, "optimizer.evaluate",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto wrapup;

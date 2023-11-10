@@ -23,7 +23,7 @@ Note that while *mserver5* is the process that does the actual work, it
 is usually more common to start, monitor and connect to the *mserver5*
 process through *monetdbd*\ (1).
 
-This man-page describes the options that *mserver5* understands. It is
+This manual describes the options that *mserver5* understands. It is
 intended for people who really need to work with *mserver5* itself. In
 regular cases, the programs *monetdbd*\ (1) and *monetdb*\ (1) control
 the many options, and allow to adjust them to appropriate values where

@@ -235,6 +235,10 @@ handle_expect_command(const char *location, char *key, char *value)
 		return expect_string(location, MP_UNKNOWN, msettings_connect_certhash_digits, value);
 	if (strcmp("connect_binary", key) == 0)
 		return expect_long(location, MP_UNKNOWN, msettings_connect_binary, value);
+	if (strcmp("connect_clientkey", key) == 0)
+		return expect_string(location, MP_UNKNOWN, msettings_connect_clientkey, value);
+	if (strcmp("connect_clientcert", key) == 0)
+		return expect_string(location, MP_UNKNOWN, msettings_connect_clientcert, value);
 
 	const mparm parm = mparm_parse(key);
 	if (parm == MP_UNKNOWN) {

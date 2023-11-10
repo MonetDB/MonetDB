@@ -88,7 +88,7 @@ def print_result(header, values):
             print('{} values hashing to {}'.format(nvalues, h))
 
 def work(fpath):
-    hdr_rgx = re.compile('^%.*\#\s*type$')
+    hdr_rgx = re.compile(r'^%.*\#\s*type$')
     values_rgx = re.compile('^\[.*\]$')
     with open(fpath, 'r') as f:
         header = None

@@ -112,7 +112,6 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 						MT_rwlock_rdunlock(&cii.b->thashlock);
 						return GDK_FAIL;
 					}
-					lg->deleted++;
 					break;
 				}
 			}
@@ -123,7 +122,6 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 				(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(newcol)}, false)) == GDK_SUCCEED) {
 				BBPretain(newcol->batCacheid);
 			}
-			lg->cnt++;
 		}
 	}
 	return rc;

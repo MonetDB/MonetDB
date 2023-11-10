@@ -513,9 +513,7 @@ main(int argc, char **av)
 				grpdebug |= GRPtransactions;
 				break;
 			}
-			if (strcmp
-				(long_options[option_index].name,
-				 "read-password-initialize-and-exit") == 0) {
+			if (strcmp(long_options[option_index].name, "read-password-initialize-and-exit") == 0) {
 				readpwdxit = true;
 				break;
 			}
@@ -831,8 +829,7 @@ main(int argc, char **av)
 	}
 
 	modules[mods++] = 0;
-	if (mal_init
-		(modules, false, readpwdxit ? secret : NULL, mercurial_revision())) {
+	if (mal_init(modules, false, readpwdxit ? secret : NULL, mercurial_revision())) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();

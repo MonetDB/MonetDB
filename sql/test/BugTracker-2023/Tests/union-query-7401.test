@@ -7,7 +7,7 @@ insert into t7401 values (1,10)
 statement ok
 insert into t7401 values (2,20)
 
-query II nosort
+query II rowsort
 select b as a, a as b from t7401
 ----
 10
@@ -15,7 +15,7 @@ select b as a, a as b from t7401
 20
 2
 
-query II nosort
+query II rowsort
 select a as a, b as b from t7401
 UNION
 select b as a, a as b from t7401
@@ -29,7 +29,7 @@ select b as a, a as b from t7401
 20
 2
 
-query II nosort
+query II rowsort
 select a as a, b as b from t7401
 UNION ALL
 select b as a, a as b from t7401

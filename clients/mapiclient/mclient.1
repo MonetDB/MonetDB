@@ -212,7 +212,7 @@ The possible values are
 .BR expanded ,
 .BR x ,
 .BR csv ,
-.BR csv-noquote ,
+.BR csv\-noquote ,
 .BR tab ,
 .BR raw ,
 .BR xml ,
@@ -221,7 +221,7 @@ and
 .BR rowcount .
 .B csv
 is comma-separated values;
-.B csv-noquote
+.B csv\-noquote
 is comma-separated values without escaping any quotes;
 .B tab
 is tab-separated values;
@@ -248,7 +248,7 @@ is a variation on
 where only the number of affected rows is printed.
 Normal \fBcsv\fP and \fBtab\fP formatting will use double quotes
 around any fields that contain double quotes, white space or the
-separator.  The \fBcsv-noquote\fP format will prevent that and dump
+separator.  The \fBcsv\-noquote\fP format will prevent that and dump
 the contents of the field without any interpretation.
 In addition to plain \fBcsv\fP, two other forms are possible.
 \fBcsv=\fP\fIc\fP uses \fIc\fP as column separator; \fBcsv+\fP\fIc\fP
@@ -539,7 +539,7 @@ in the above query can also be a URL.  It then has to have the form
 .IR e . g .,
 .IR https://www.example.org/dumpdata.csv .
 .PP
-See https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/
+See https://www.monetdb.org/documentation/user\-guide/sql\-manual/data\-loading/copy\-from/
 for more information about the COPY INTO query.
 .SH SEE ALSO
 .IR msqldump (1),

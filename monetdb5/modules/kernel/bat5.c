@@ -664,10 +664,11 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
 
 	for (i = 0; i < COLLISION + 1; i++)
 		if (cnt[i]) {
-			if (BUNappend
-				(bk,
-				 pre(s, local_utoa(i ? (((size_t) 1) << (i - 1)) : 0, buf),
-					 prebuf), false) != GDK_SUCCEED
+			if (BUNappend(bk,
+						  pre(s, local_utoa(i ? (((size_t) 1) << (i - 1)) : 0,
+											buf),
+							  prebuf),
+						  false) != GDK_SUCCEED
 				|| BUNappend(bv, local_utoa((size_t) cnt[i], buf),
 							 false) != GDK_SUCCEED)
 				return GDK_FAIL;

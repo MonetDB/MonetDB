@@ -34,7 +34,7 @@ scan_unix_sockets(Mapi mid)
 	DIR *dir = NULL;
 	struct dirent *entry;
 
-	const char *sockdir = msettings_connect_sockdir(mid->settings);
+	const char *sockdir = msetting_string(mid->settings, MP_SOCKDIR);
 	size_t len = strlen(sockdir);
 	char *namebuf = malloc(len + 50);
 	if (namebuf == NULL)

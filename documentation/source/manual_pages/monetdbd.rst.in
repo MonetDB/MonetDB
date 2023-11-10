@@ -373,8 +373,8 @@ used with the funnel, as the results will be undefined due to the
 limited query buffer. Applications using the funnel should aim for short
 and single-statement queries that require no transactions.
 
-See the **create** command in the *monetdb*\ (1) man-page for details on
-how to setup a multiplex-funnel.
+See the **create** command in *monetdb*\ (1) for details on how to setup
+a multiplex-funnel.
 
 SIGNALS
 =======
