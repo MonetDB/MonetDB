@@ -4662,12 +4662,15 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 				return NULL;
 			}
 		}
-		if (exp_is_rel(e))
+
+		if (exp_has_rel(e))
 			return sql_error(sql, 02, SQLSTATE(42000) "PARTITION BY: subqueries not allowed in PARTITION BY clause");
+
 		if (e->type != e_column) { /* store group by expressions in the stack */
 			if (!frame_push_groupby_expression(sql, grp, e))
 				return NULL;
 		}
+
 		if (e->card > CARD_AGGR)
 			e->card = CARD_AGGR;
 		append(exps, e);

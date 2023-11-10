@@ -75,7 +75,10 @@ def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True,
     logging.debug(f"cmd={cmd}")
     proc = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     logging.debug(f"mclient exited with code {proc.returncode}, err={proc.stderr}")
-    assert proc.returncode == 2, f"mclient is supposed to exit with status 2, not {proc.returncode}"
+    if proc.returncode != 2:
+        msg = str(proc.stderr, 'utf-8')
+        print(f"mclient is supposed to exit with status 2, not {proc.returncode}.\n--- stderr ---\n{msg}\n---end stderr ---", file=sys.stderr)
+        assert proc.returncode == 2, f"mclient is supposed to exit with status 2, not {proc.returncode}"
     output = str(proc.stderr, 'utf-8').rstrip()
     actual_error = None if 'Sorry, this is not' in output else output
 
