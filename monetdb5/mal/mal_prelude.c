@@ -199,12 +199,13 @@ makeMalType(mel_arg *a)
 void
 setPoly(mel_func *f, malType tpe)
 {
-	int any = isAnyExpression(tpe) || tpe == TYPE_any, index = 0;
+	int any = isAnyExpression(tpe) || tpe == TYPE_any;
+    unsigned int index = 0;
 	if (!any)
 		return;
 	if (getTypeIndex(tpe) > 0)
 		index = getTypeIndex(tpe);
-	if (any && (index + 1) >= f->poly)
+	if (any && (index + 1) > f->poly)
 		f->poly = index + 1;
 }
 
@@ -232,7 +233,7 @@ addFunctions(mel_func *fcn)
 		s->func = fcn;
 
 		/* add the return variables */
-		int i;
+		unsigned int i;
 		for (i = 0; i < fcn->retc; i++) {
 			mel_arg *a = fcn->args + i;
 			malType tpe = makeMalType(a);
