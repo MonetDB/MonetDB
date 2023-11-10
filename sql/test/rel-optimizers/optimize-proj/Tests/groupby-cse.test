@@ -45,7 +45,7 @@ project (
 | ) [ "foo"."c1" ] [ "foo"."c1", "sys"."count" no nil ("foo"."c3") NOT NULL as "%1"."%1" ]
 ) [ "foo"."c1" UNIQUE, "foo"."c1" UNIQUE, "%1"."%1" NOT NULL ]
 
-query III nosort gb-over-bt
+query III rowsort
 SELECT
     c1,
     c1,
