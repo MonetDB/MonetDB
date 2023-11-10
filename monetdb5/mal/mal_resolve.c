@@ -184,24 +184,28 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * type(Ai)=type(Yi). Furthermore, the variables Xi obtain
 		 * their type from Bi (or type(Bi)==type(Xi)).
 		 */
-		int argc = 0, retc = 0, varargs = 0, varrets = 0/*, unsafe = 0*/, polymorphic = 0;
+		int argc = 0, argcc = 0, retc = 0, varargs = 0, varrets = 0, unsafe = 0, inlineprop = 0, polymorphic = 0;
 		if (s->kind == FUNCTIONsymbol) {
 			InstrPtr sig = getSignature(s);
 			retc = sig->retc;
 			argc = sig->argc;
 			varargs = (sig->varargs & (VARARGS | VARRETS));
 			varrets = (sig->varargs & VARRETS);
-			//unsafe = s->def->unsafeProp;
+			unsafe = s->def->unsafeProp;
+			inlineprop = s->def->inlineProp;
 			polymorphic = sig->polymorphic;
+			argcc = argc;
 		} else {
 			retc = s->func->retc;
 			argc = s->func->argc;
-			varargs = retc == 0 || s->func->vargs || s->func->vrets;
+			varargs = /*retc == 0 ||*/ s->func->vargs || s->func->vrets;
 			varrets = retc == 0 || s->func->vrets;
-			//unsafe = s->func->unsafe;
+			unsafe = s->func->unsafe;
+			inlineprop = 0;
 			polymorphic = s->func->poly;
 			if (!retc && !polymorphic)
 				polymorphic = 1;
+			argcc = argc + ((retc == 0)?1:0);
 		}
 		unmatched = 0;
 
@@ -219,7 +223,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 */
 		if (polymorphic) {
 			int limit = polymorphic;
-			if (!(argc == p->argc || (argc < p->argc && varargs))) {
+			if (!(argcc == p->argc || (argc < p->argc && varargs))) {
 				s = s->peer;
 				continue;
 			}
@@ -395,6 +399,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 */
 
 		p->typechk = TYPE_RESOLVED;
+		p->inlineProp = inlineprop;
+		p->unsafeProp = unsafe;
 		for (i = 0; i < p->retc; i++) {
 			int ts = returntype[i];
 			if (isVarConstant(mb, getArg(p, i))) {

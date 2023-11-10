@@ -4716,7 +4716,7 @@ bailout:
 	return msg;
 }
 
-/* input id,row-input-values
+/* input id, row-input-values
  * for each id call function(with row-input-values) return table
  * return for each id the table, ie id (*length of table) and table results
  */
@@ -4806,7 +4806,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 
-		if (npci->blk->stop > 1) {
+		if (npci->blk && npci->blk->stop > 1) {
 			omb = nmb;
 			if (!(nmb = copyMalBlk(npci->blk))) {
 				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);

@@ -33,7 +33,7 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	for (i = 0; i < p->retc; i++) {
 		if (isaBatType(getArgType(mb, p, i)))
 			return false;
-		if (mb->unsafeProp)
+		if (p->unsafeProp || mb->unsafeProp)
 			return false;
 	}
 	return true;

@@ -182,12 +182,14 @@ isUnsafeFunction(InstrPtr q)
 {
 	InstrPtr p;
 
+	if (q->unsafeProp)
+		return TRUE;
 	if (q->fcn == 0 || getFunctionId(q) == 0 || q->blk == NULL)
 		return FALSE;
 	p = getInstrPtr(q->blk, 0);
 	if (p->retc == 0)
 		return TRUE;
-	return q->blk->unsafeProp;
+	return FALSE;
 }
 
 /*

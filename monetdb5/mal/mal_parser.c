@@ -1217,7 +1217,7 @@ parseInclude(Client cntxt)
  * of return values so that we can allocate enough space in the
  * instruction; returns -1 on error (missing closing parenthesis) */
 static int
-cntArgsReturns(Client cntxt)
+cntArgsReturns(Client cntxt, int *retc)
 {
 	size_t yycur = cntxt->yycur;
 	int cnt = 0;
@@ -1244,9 +1244,12 @@ cntArgsReturns(Client cntxt)
 		advance(cntxt, 1);
 		ch = currChar(cntxt);
 		cnt++;
+		(*retc)++;
 		while (ch != ')' && ch && !NL(ch)) {
-			if (ch == ',')
+			if (ch == ',') {
 				cnt++;
+				(*retc)++;
+			}
 			nextChar(cntxt);
 			ch = currChar(cntxt);
 		}
@@ -1257,26 +1260,349 @@ cntArgsReturns(Client cntxt)
 		}
 	} else {
 		cnt++;
+		(*retc)++;
 	}
 	cntxt->yycur = yycur;
 	return cnt;
 }
 
+static void
+mf_destroy(mel_func *f)
+{
+	if (f) {
+		if (f->args)
+			GDKfree(f->args);
+		GDKfree(f);
+	}
+}
+
+static int
+argument(Client cntxt, mel_func *curFunc, mel_arg *curArg)
+{
+	malType type;
+
+	int l = idLength(cntxt);
+	if (l > 0) {
+		char *varname = CURRENT(cntxt);
+		(void)varname; /* not used */
+
+		advance(cntxt, l);
+		type = typeElm(cntxt, TYPE_any);
+		if (type < 0)
+			return -1;
+		int tt = getBatType(type);
+		if (tt != TYPE_any)
+            strcpy(curArg->type, BATatoms[tt].name);
+        else
+            curArg->type[0] = 0;
+		if (isaBatType(type))
+			curArg->isbat = true;
+		else
+			curArg->isbat = false;
+		curArg->vargs = 0;
+		curArg->nr = 0;
+		if (isPolymorphic(type)) {
+			curArg->nr = getTypeIndex(type);
+			setPoly(curFunc, type);
+			tt = TYPE_any;
+		}
+		curArg->typeid = tt;
+	} else if (currChar(cntxt) == ':') {
+		type = typeElm(cntxt, TYPE_any);
+		int tt = getBatType(type);
+		if (tt != TYPE_any)
+            strcpy(curArg->type, BATatoms[tt].name);
+        else
+            curArg->type[0] = 0;
+		if (isaBatType(type))
+			curArg->isbat = true;
+		else
+			curArg->isbat = false;
+		curArg->vargs = 0;
+		curArg->nr = 0;
+		if (isPolymorphic(type)) {
+			curArg->nr = getTypeIndex(type);
+			setPoly(curFunc, type);
+			tt = TYPE_any;
+		}
+		curArg->typeid = tt;
+	} else {
+		parseError(cntxt, "argument expected\n");
+		return -1;
+	}
+	return 0;
+}
+
+static mel_func *
+fcnCommandPatternHeader(Client cntxt, int kind)
+{
+	int l;
+	malType tpe;
+	const char *fnme;
+	const char *modnme = NULL;
+	char ch;
+
+	l = operatorLength(cntxt);
+	if (l == 0)
+		l = idLength(cntxt);
+	if (l == 0) {
+		parseError(cntxt, "<identifier> | <operator> expected\n");
+		return NULL;
+	}
+
+	fnme = putNameLen(((char *) CURRENT(cntxt)), l);
+	if (fnme == NULL) {
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
+	}
+	advance(cntxt, l);
+
+	if (currChar(cntxt) == '.') {
+		nextChar(cntxt);		/* skip '.' */
+		modnme = fnme;
+		if (strcmp(modnme, "user") && getModule(modnme) == NULL) {
+			if (globalModule(modnme) == NULL) {
+				parseError(cntxt, "<module> name not defined\n");
+				return NULL;
+			}
+		}
+		l = operatorLength(cntxt);
+		if (l == 0)
+			l = idLength(cntxt);
+		if (l == 0) {
+			parseError(cntxt, "<identifier> | <operator> expected\n");
+			return NULL;
+		}
+		fnme = putNameLen(((char *) CURRENT(cntxt)), l);
+		if (fnme == NULL) {
+			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return NULL;
+		}
+		advance(cntxt, l);
+	} else
+		modnme = cntxt->curmodule->name;
+
+	if (currChar(cntxt) != '(') {
+		parseError(cntxt, "function header '(' expected\n");
+		return NULL;
+	}
+	advance(cntxt, 1);
+
+	/* keep current prg also active ! */
+	int retc = 0, nargs = cntArgsReturns(cntxt, &retc);
+	if (nargs < 0)
+		return 0;
+
+	/* one extra for argument/return manipulation */
+	assert(kind == COMMANDsymbol || kind == PATTERNsymbol);
+
+	mel_func *curFunc = (mel_func*)GDKmalloc(sizeof(mel_func));
+	if (curFunc)
+		curFunc->args = NULL;
+	if (curFunc && nargs)
+		curFunc->args = (mel_arg*)GDKmalloc(sizeof(mel_arg)*nargs);
+
+	if (cntxt->curprg == NULL || cntxt->curprg->def->errors || curFunc == NULL || (nargs && curFunc->args == NULL)) {
+		mf_destroy(curFunc);
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
+	}
+
+	curFunc->fcn = fnme;
+	curFunc->mod = modnme;
+	curFunc->cname = NULL;
+	curFunc->command = false;
+	if (kind == COMMANDsymbol)
+		curFunc->command = true;
+	curFunc->unsafe = 0;
+	curFunc->vargs = 0;
+	curFunc->vrets = 0;
+	curFunc->poly = 0;
+	curFunc->retc = retc;
+	curFunc->argc = nargs;
+	curFunc->comment = NULL;
+
+	/* get calling parameters */
+	ch = currChar(cntxt);
+	int i = retc;
+	while (ch != ')' && ch && !NL(ch)) {
+		if (argument(cntxt, curFunc, curFunc->args+i) < 0) {
+			mf_destroy(curFunc);
+			return NULL;
+		}
+		/* the last argument may be variable length */
+		if (MALkeyword(cntxt, "...", 3)) {
+			curFunc->vargs = true;
+			setPoly(curFunc, TYPE_any);
+			break;
+		}
+		if ((ch = currChar(cntxt)) != ',') {
+			if (ch == ')')
+				break;
+			mf_destroy(curFunc);
+			parseError(cntxt, "',' expected\n");
+			return NULL;
+		} else {
+			nextChar(cntxt);	/* skip ',' */
+			i++;
+		}
+		skipSpace(cntxt);
+		ch = currChar(cntxt);
+	}
+	if (currChar(cntxt) != ')') {
+		mf_destroy(curFunc);
+		parseError(cntxt, "')' expected\n");
+		return NULL;
+	}
+	advance(cntxt, 1);			/* skip ')' */
 /*
- * Definition
- * The definition statements share a lot in common, which calls for factoring
- * out the code in a few text macros. Upon encountering a definition, we
- * initialize a MAL instruction container. We should also check for
- * non-terminated definitions.
- *
- * Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
- * the symbol table and stackframe contains the sequence
- * f,a1..an,b1..bn. This slightly complicates the implementation
- * of the return statement.
- *
- * Note, the function name could be mod.fcn, which calls for storing
- * the function definition in a particular module instead of the current one.
+   The return type is either a single type or multiple return type structure.
+   We simply keep track of the number of arguments added and
+   during the final phase reshuffle the return values to the beginning (?)
  */
+	if (currChar(cntxt) == ':') {
+		tpe = typeElm(cntxt, TYPE_void);
+		curFunc->args[0].vargs = 0;
+		curFunc->args[0].nr = 0;
+		if (isPolymorphic(tpe)) {
+			curFunc->args[0].nr = getTypeIndex(tpe);
+			setPoly(curFunc, tpe);
+		}
+		if (isaBatType(tpe))
+			curFunc->args[0].isbat = true;
+		else
+			curFunc->args[0].isbat = false;
+		int tt = getBatType(tpe);
+		curFunc->args[0].typeid = tt;
+		/* we may be confronted by a variable target type list */
+		if (MALkeyword(cntxt, "...", 3)) {
+			curFunc->args[0].vargs = true;
+			curFunc->vrets = true;
+			setPoly(curFunc, TYPE_any);
+		}
+	} else if (keyphrase1(cntxt, "(")) {	/* deal with compound return */
+		int i = 0;
+		/* parse multi-target result */
+		/* skipSpace(cntxt); */
+		ch = currChar(cntxt);
+		while (ch != ')' && ch && !NL(ch)) {
+			if (argument(cntxt, curFunc, curFunc->args+i) < 0) {
+				mf_destroy(curFunc);
+				return NULL;
+			}
+			/* we may be confronted by a variable target type list */
+			if (MALkeyword(cntxt, "...", 3)) {
+				curFunc->args[i].vargs = true;
+				curFunc->vrets = true;
+				setPoly(curFunc, TYPE_any);
+			}
+			if ((ch = currChar(cntxt)) != ',') {
+				if (ch == ')')
+					break;
+				parseError(cntxt, "',' expected\n");
+				return curFunc;
+			} else {
+				nextChar(cntxt);	/* skip ',' */
+				i++;
+			}
+			skipSpace(cntxt);
+			ch = currChar(cntxt);
+		}
+		if (currChar(cntxt) != ')') {
+			mf_destroy(curFunc);
+			parseError(cntxt, "')' expected\n");
+			return NULL;
+		}
+		nextChar(cntxt);		/* skip ')' */
+	}
+	return curFunc;
+}
+
+static Symbol
+parseCommandPattern(Client cntxt, int kind, MALfcn address)
+{
+	mel_func *curFunc = fcnCommandPatternHeader(cntxt, kind);
+	if (curFunc == NULL) {
+		cntxt->blkmode = 0;
+		return NULL;
+	}
+	const char *modnme = curFunc->mod;
+	if (modnme && (getModule(modnme) == FALSE && strcmp(modnme, "user"))) {
+		// introduce the module
+		if (globalModule(modnme) == NULL) {
+			parseError(cntxt, "<module> could not be defined\n");
+			return 0;
+		}
+	}
+	modnme = modnme ? modnme : cntxt->usermodule->name;
+
+	size_t l = strlen(modnme);
+	modnme = putNameLen(modnme, l);
+	if (modnme == NULL) {
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
+	}
+
+	Symbol curPrg = newFunctionArgs(modnme, curFunc->fcn, kind, -1);
+	if (!curPrg) {
+		mf_destroy(curFunc);
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
+	}
+	curPrg->func = curFunc;
+	curPrg->def = NULL;
+
+	skipSpace(cntxt);
+	if (MALkeyword(cntxt, "address", 7)) {
+		int i;
+		i = idLength(cntxt);
+		if (i == 0) {
+			parseError(cntxt, "address <identifier> expected\n");
+			return NULL;
+		}
+		cntxt->blkmode = 0;
+
+		size_t sz = (size_t) (i < IDLENGTH ? i : IDLENGTH - 1);
+		curFunc->cname = GDKmalloc(sz);
+		if (!curFunc->cname) {
+			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			freeSymbol(curPrg);
+			return NULL;
+		}
+		memcpy((char*)curFunc->cname, CURRENT(cntxt), sz);
+		((char*)curFunc->cname)[sz] = 0;
+		/* avoid a clash with old temporaries */
+		advance(cntxt, i);
+		curFunc->imp = getAddress(curFunc->mod, curFunc->cname);
+
+		if (cntxt->usermodule->isAtomModule) {
+			if (curFunc->imp == NULL) {
+				parseError(cntxt, "<address> not found\n");
+				freeSymbol(curPrg);
+				return NULL;
+			}
+			malAtomProperty(curFunc);
+		}
+		skipSpace(cntxt);
+	} else if (address) {
+		curFunc->mod = modnme;
+		curFunc->imp = address;
+	}
+	if (strcmp(modnme, "user") == 0 || getModule(modnme)) {
+		if (strcmp(modnme, "user") == 0)
+			insertSymbol(cntxt->usermodule, curPrg);
+		else
+			insertSymbol(getModule(modnme), curPrg);
+	} else {
+		freeSymbol(curPrg);
+		parseError(cntxt, "<module> not found\n");
+		return NULL;
+	}
+
+	helpInfo(cntxt, &curFunc->comment);
+	return curPrg;
+}
+
 static MalBlkPtr
 fcnHeader(Client cntxt, int kind)
 {
@@ -1342,7 +1668,8 @@ fcnHeader(Client cntxt, int kind)
 
 	assert(!cntxt->backup);
 	cntxt->backup = cntxt->curprg;
-	int nargs = cntArgsReturns(cntxt);
+	int retc = 0, nargs = cntArgsReturns(cntxt, &retc);
+	(void)retc;
 	if (nargs < 0)
 		return 0;
 	/* one extra for argument/return manipulation */
@@ -1467,111 +1794,6 @@ fcnHeader(Client cntxt, int kind)
 		freeInstruction(getInstrPtr(curBlk, 0));
 		putInstrPtr(curBlk, 0, curInstr);
 	}
-	return curBlk;
-}
-
-static MalBlkPtr
-parseCommandPattern(Client cntxt, int kind, MALfcn address)
-{
-	MalBlkPtr curBlk = 0;
-	Symbol curPrg = 0;
-	InstrPtr curInstr = 0;
-	const char *modnme = NULL;
-	size_t l = 0;
-	str msg = MAL_SUCCEED;
-
-	curBlk = fcnHeader(cntxt, kind);
-	if (curBlk == NULL) {
-		cntxt->blkmode = 0;
-		return curBlk;
-	}
-	getInstrPtr(curBlk, 0)->token = kind;
-	curPrg = cntxt->curprg;
-	curPrg->kind = kind;
-	curInstr = getInstrPtr(curBlk, 0);
-
-	modnme = getModuleId(getInstrPtr(curBlk, 0));
-	if (modnme && (getModule(modnme) == FALSE && strcmp(modnme, "user"))) {
-		// introduce the module
-		if (globalModule(modnme) == NULL) {
-			parseError(cntxt, "<module> could not be defined\n");
-			return 0;
-		}
-	}
-	modnme = modnme ? modnme : cntxt->usermodule->name;
-
-	l = strlen(modnme);
-	modnme = putNameLen(modnme, l);
-	if (modnme == NULL) {
-		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return NULL;
-	}
-	if (strcmp(modnme, "user") == 0 || getModule(modnme)) {
-		if (strcmp(modnme, "user") == 0)
-			insertSymbol(cntxt->usermodule, curPrg);
-		else
-			insertSymbol(getModule(modnme), curPrg);
-		if (!cntxt->curprg->def->errors)
-			msg = chkProgram(cntxt->usermodule, curBlk);
-		if (msg && !cntxt->curprg->def->errors)
-			cntxt->curprg->def->errors = msg;
-		if (cntxt->curprg->def->errors)
-			freeException(cntxt->curprg->def->errors);
-		cntxt->curprg->def->errors = cntxt->backup->def->errors;
-		cntxt->backup->def->errors = 0;
-		cntxt->curprg = cntxt->backup;
-		cntxt->backup = 0;
-	} else {
-		parseError(cntxt, "<module> not found\n");
-		return 0;
-	}
-/*
- * Short-cut function calls
- * Most functions are (dynamically) linked with the kernel as
- * commands or pattern definitions.  This enables for fast execution.
- *
- * In addition we allow functions to be bound to both
- * a linked C-function and a MAL specification block.
- * It the function address is not available, the interpreter
- * will use the MAL block instead.
- * This scheme is intended for just-in-time compilation.
- *
- * [note, command and patterns do not have a MAL block]
- */
-	if (MALkeyword(cntxt, "address", 7)) {
-		/* TO BE DEPRECATED */
-		int i;
-		i = idLength(cntxt);
-		if (i == 0) {
-			parseError(cntxt, "address <identifier> expected\n");
-			return 0;
-		}
-		cntxt->blkmode = 0;
-		if (getModuleId(curInstr))
-			setModuleId(curInstr, NULL);
-		setModuleScope(curInstr, findModule(cntxt->usermodule, modnme));
-
-		memcpy(curBlk->binding, CURRENT(cntxt),
-			   (size_t) (i < IDLENGTH ? i : IDLENGTH - 1));
-		curBlk->binding[(i < IDLENGTH ? i : IDLENGTH - 1)] = 0;
-		/* avoid a clash with old temporaries */
-		advance(cntxt, i);
-		curInstr->fcn = getAddress(getModuleId(curInstr), curBlk->binding);
-
-		if (cntxt->usermodule->isAtomModule) {
-			if (curInstr->fcn == NULL) {
-				parseError(cntxt, "<address> not found\n");
-				return 0;
-			}
-			malAtomProperty(curBlk, curInstr);
-		}
-		skipSpace(cntxt);
-	} else if (address) {
-		setModuleScope(curInstr, findModule(cntxt->usermodule, modnme));
-		setModuleId(curInstr, modnme);
-		curInstr->fcn = address;
-	}
-	helpInfo(cntxt, &curBlk->help);
 	return curBlk;
 }
 
@@ -2110,11 +2332,10 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines,
 		case 'C':
 		case 'c':
 			if (MALkeyword(cntxt, "command", 7)) {
-				MalBlkPtr p = parseCommandPattern(cntxt, COMMANDsymbol, address);
+				Symbol p = parseCommandPattern(cntxt, COMMANDsymbol, address);
 				if (p) {
-					p->unsafeProp = unsafeProp;
+					p->func->unsafe = unsafeProp;
 				}
-				cntxt->curprg->def->unsafeProp = unsafeProp;
 				if (inlineProp)
 					parseError(cntxt, "<identifier> expected\n");
 				inlineProp = 0;
@@ -2176,14 +2397,12 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines,
 		case 'P':
 		case 'p':
 			if (MALkeyword(cntxt, "pattern", 7)) {
-				MalBlkPtr p;
 				if (inlineProp)
 					parseError(cntxt, "parseError:INLINE ignored\n");
-				p = parseCommandPattern(cntxt, PATTERNsymbol, address);
+				Symbol p = parseCommandPattern(cntxt, PATTERNsymbol, address);
 				if (p) {
-					p->unsafeProp = unsafeProp;
+					p->func->unsafe = unsafeProp;
 				}
-				cntxt->curprg->def->unsafeProp = unsafeProp;
 				inlineProp = 0;
 				unsafeProp = 0;
 				continue;

@@ -151,8 +151,10 @@ typedef struct INSTR {
 								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */
 	bit typechk;				/* type check status */
 	bte gc;						/* garbage control flags */
-	bte polymorphic;			/* complex type analysis */
-	bit varargs;				/* variable number of arguments */
+	bte polymorphic:3,			/* complex type analysis */
+		varargs:2,				/* variable number of arguments */
+		inlineProp:1,			/* inline property */
+		unsafeProp:1;				/* unsafe property */
 	int jump;					/* controlflow program counter */
 	int pc;						/* location in MAL plan for profiler */
 	MALfcn fcn;					/* resolved function address */

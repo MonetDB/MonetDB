@@ -196,7 +196,7 @@ makeMalType(mel_arg *a)
 	return tpe;
 }
 
-static void
+void
 setPoly(mel_func *f, malType tpe)
 {
 	int any = isAnyExpression(tpe) || tpe == TYPE_any, index = 0;
@@ -208,18 +208,16 @@ setPoly(mel_func *f, malType tpe)
 		f->poly = index + 1;
 }
 
-//static int max_index = 0;
 static str
 addFunctions(mel_func *fcn)
 {
 	str msg = MAL_SUCCEED;
-	const char *mod;
 	Module c;
 	Symbol s;
 
-	for (; fcn && fcn->mod[0]; fcn++) {
-		assert(fcn->mod);
-		mod = putName(fcn->mod);
+	for (; fcn && fcn->mod; fcn++) {
+		const char *mod = fcn->mod = putName(fcn->mod);
+		fcn->fcn = putName(fcn->fcn);
 		if (mod == NULL)
 			throw(LOADER, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		c = getModule(mod);
@@ -273,8 +271,9 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 	mel_func *f = NULL;
 	va_list va;
 
-	assert(mod);
+	assert(mod && fcn);
 	mod = putName(mod);
+	fcn = putName(fcn);
 	c = getModule(mod);
 	if (c == NULL && (c = globalModule(mod)) == NULL)
 		return MEL_ERR;
@@ -291,8 +290,8 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 		freeSymbol(s);
 		return MEL_ERR;
 	}
-	strcpy(f->mod, mod); /* will give issue, with putName ! */
-	strcpy(f->fcn, fcn);
+	f->mod = mod;
+	f->fcn = fcn;
 	f->command = command;
 	f->unsafe = unsafe;
 	f->vargs = 0;
@@ -317,6 +316,8 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 		ap->vargs = a.vargs;
 		if (a.type != TYPE_any)
 			strcpy(ap->type, BATatoms[a.type].name);
+		else
+			ap->type[0] = 0;
 		malType tpe = makeMalType(ap);
 		if (a.nr > 0)
 			setPoly(f, tpe);
@@ -333,6 +334,10 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 		ap->nr = a.nr;
 		ap->isbat = a.isbat;
 		ap->vargs = a.vargs;
+		if (a.type != TYPE_any)
+			strcpy(ap->type, BATatoms[a.type].name);
+		else
+			ap->type[0] = 0;
 		malType tpe = makeMalType(ap);
 		if (a.nr > 0)
 			setPoly(f, tpe);

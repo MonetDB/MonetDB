@@ -24,8 +24,6 @@ Symbol
 newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 {
 	Symbol s;
-	InstrPtr p;
-	int varid;
 
 	if (mod == NULL || nme == NULL)
 		return NULL;
@@ -34,25 +32,27 @@ newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 	if (s == NULL)
 		return NULL;
 
-	varid = newVariable(s->def, nme, strlen(nme), TYPE_any);
-	if (varid < 0) {
-		freeSymbol(s);
-		return NULL;
-	}
-
-	if (args > 0) {
-		p = newInstructionArgs(NULL, mod, nme, args);
-		if (p == NULL) {
+	if (kind == FUNCTIONsymbol) {
+		int varid = newVariable(s->def, nme, strlen(nme), TYPE_any);
+		if (varid < 0) {
 			freeSymbol(s);
 			return NULL;
 		}
-		p->token = kind;
-		p->barrier = 0;
-		setDestVar(p, varid);
-		pushInstruction(s->def, p);
-		if (s->def->errors) {
-			freeSymbol(s);
-			return NULL;
+
+		if (args > 0) {
+			InstrPtr p = newInstructionArgs(NULL, mod, nme, args);
+			if (p == NULL) {
+				freeSymbol(s);
+				return NULL;
+			}
+			p->token = kind;
+			p->barrier = 0;
+			setDestVar(p, varid);
+			pushInstruction(s->def, p);
+			if (s->def->errors) {
+				freeSymbol(s);
+				return NULL;
+			}
 		}
 	}
 	return s;

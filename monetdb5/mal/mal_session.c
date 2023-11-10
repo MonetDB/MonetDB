@@ -575,7 +575,7 @@ MALinitClient(Client c)
 str
 MALexitClient(Client c)
 {
-	if (c->glb && c->curprg->def->errors == MAL_SUCCEED)
+	if (c->glb && c->curprg->def && c->curprg->def->errors == MAL_SUCCEED)
 		garbageCollector(c, c->curprg->def, c->glb, TRUE);
 	c->mode = FINISHCLIENT;
 	if (c->backup) {
