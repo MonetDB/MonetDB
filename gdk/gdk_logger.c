@@ -1507,7 +1507,7 @@ bm_get_counts(logger *lg)
 			assert(b);
 			cnt = BATcount(b);
 		} else {
-			lid = BBP_desc(bids[p]) ? 1 : -1;
+			lid = BBP_desc(bids[p]) && log_find(lg->catalog_bid, lg->dcatalog, bids[p]) == BUN_NONE ? 1 : -1;
 		}
 		if (BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
 			return GDK_FAIL;
