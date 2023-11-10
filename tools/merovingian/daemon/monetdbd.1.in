@@ -554,9 +554,9 @@ single-statement queries that require no transactions.
 .P
 See the
 .B create
-command in the
+command in
 .IR monetdb (1)
-man-page for details on how to setup a multiplex-funnel.
+for details on how to setup a multiplex-funnel.
 .SH SIGNALS
 .I Monetdbd
 acts upon a number of signals as is common for a daemon.

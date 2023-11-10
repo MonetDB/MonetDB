@@ -245,7 +245,7 @@ def main():
                 incomment = False
             else:
                 continue
-        line = re.sub('/\*.*?\*/', ' ', line)
+        line = re.sub(r'/\*.*?\*/', ' ', line)
         if '/*' in line:
             line = line[:line.find('/*')]
             incomment = True
