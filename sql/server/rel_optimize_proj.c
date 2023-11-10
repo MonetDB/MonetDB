@@ -1837,6 +1837,154 @@ exps_uses_exp(list *exps, sql_exp *e)
 {
 	return list_exps_uses_exp(exps, exp_relname(e), exp_name(e));
 }
+/*
+ * Rewrite aggregations over munion all.
+ *	groupby ([ union all (a, b, c) ], [gbe], [ count, sum ] )
+ *
+ * into
+ * 	groupby ([ union all( groupby( a, [gbe], [ count, sum] ),
+ * 	                      groupby( b, [gbe], [ count, sum] ),
+ * 	                      groupby( c, [gbe], [ count, sum] ) ],
+ * 			 [gbe], [sum, sum] )
+ */
+static inline sql_rel *
+rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
+{
+	sql_rel *g = rel;
+	sql_rel *u = rel->l, *ou = u;
+	sql_rel *r = NULL;
+	list *rgbe = NULL, *gbe = NULL, *exps = NULL;
+	node *n, *m;
+
+	// TODO why?
+	if (u->op == op_project && !need_distinct(u))
+		u = u->l;
+
+	/* make sure we don't create group by on group by's */
+	for (node *n = ((list*)u->l)->h; n; n = n->next) {
+		r = n->data;
+		if (r->op == op_groupby)
+			return rel;
+	}
+
+	/* distinct should be done over the full result */
+	for (n = g->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		sql_subfunc *af = e->f;
+
+		if (e->type == e_atom ||
+			e->type == e_func ||
+		   (e->type == e_aggr &&
+		   ((strcmp(af->func->base.name, "sum") &&
+			 strcmp(af->func->base.name, "count") &&
+			 strcmp(af->func->base.name, "min") &&
+			 strcmp(af->func->base.name, "max")) ||
+		   need_distinct(e))))
+			return rel;
+	}
+
+	for (node *n = ((list*)u->l)->h; n; n = n->next) {
+		r = rel_dup(n->data);
+		if (!is_project(r->op))
+			r = rel_project(v->sql->sa, r,
+				            rel_projections(v->sql, r, NULL, 1, 1));
+		rel_rename_exps(v->sql, u->exps, r->exps);
+		if (u != ou) {
+			r = rel_project(v->sql->sa, r, NULL);
+			r->exps = exps_copy(v->sql, ou->exps);
+			rel_rename_exps(v->sql, ou->exps, r->exps);
+			set_processed(r);
+		}
+		if (g->r && list_length(g->r) > 0) {
+			list *gbe = g->r;
+			rgbe = exps_copy(v->sql, gbe);
+		}
+		r = rel_groupby(v->sql, r, NULL);
+		r->r = rgbe;
+		r->nrcols = g->nrcols;
+		r->card = g->card;
+		r->exps = exps_copy(v->sql, g->exps);
+		r->nrcols = list_length(r->exps);
+		set_processed(r);
+
+		n->data = r;
+	}
+
+	/* group by on primary keys which define the partioning scheme
+	 * don't need a finalizing group by */
+	/* how to check if a partition is based on some primary key ?
+	 * */
+	if (!list_empty(rel->r)) {
+		for (node *n = ((list*)rel->r)->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			sql_column *c = NULL;
+
+			if ((c = exp_is_pkey(rel, e)) && partition_find_part(v->sql->session->tr, c->t, NULL)) {
+				/* check if key is partition key */
+				v->changes++;
+				return rel_inplace_setop_n_ary(v->sql, rel, u->l, op_munion,
+											   rel_projections(v->sql, rel, NULL, 1, 1));
+			}
+		}
+	}
+
+	if (!list_empty(rel->r)) {
+		list *ogbe = rel->r;
+
+		gbe = new_exp_list(v->sql->sa);
+		for (n = ogbe->h; n; n = n->next) {
+			sql_exp *e = n->data, *ne;
+
+			/* group by in aggregation list */
+			ne = exps_uses_exp( rel->exps, e);
+			if (ne) {
+				sql_rel *first_munion_rel = ((list*)u->l)->h->data;
+				ne = list_find_exp(first_munion_rel->exps, ne);
+			}
+			if (!ne) {
+				/* e only in the u1,u2,...un->r (group by list) */
+				for (node *n = ((list*)u->l)->h; n; n = n->next) {
+					ne = exp_ref(v->sql, e);
+					list_append(((sql_rel*)n->data)->exps, ne);
+				}
+			}
+			assert(ne);
+			ne = exp_ref(v->sql, ne);
+			append(gbe, ne);
+		}
+	}
+
+	u = rel_setop_n_ary(v->sql->sa, u->l, op_munion);
+	rel_setop_n_ary_set_exps(v->sql, u,
+			                 rel_projections(v->sql, ((list*)u->l)->h->data, NULL, 1, 1), false);
+	set_processed(u);
+
+	exps = new_exp_list(v->sql->sa);
+	for (n = u->exps->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
+		sql_exp *ne, *e = n->data, *oa = m->data;
+
+		if (oa->type == e_aggr) {
+			sql_subfunc *f = oa->f;
+			int cnt = exp_aggr_is_count(oa);
+			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR, true);
+
+			assert(a);
+			/* munion of aggr result may have nils
+			 * because sum/count of empty set */
+			set_has_nil(e);
+			e = exp_ref(v->sql, e);
+			ne = exp_aggr1(v->sql->sa, e, a, need_distinct(e), 1, e->card, 1);
+		} else {
+			ne = exp_copy(v->sql, oa);
+		}
+		exp_setname(v->sql->sa, ne, exp_find_rel_name(oa), exp_name(oa));
+		append(exps, ne);
+	}
+
+	v->changes++;
+
+	return rel_inplace_groupby(rel, u, gbe, exps);
+}
 
 /*
  * Rewrite aggregations over union all.
@@ -1859,8 +2007,11 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		if (u->op == op_project && !need_distinct(u))
 			u = u->l;
 
-		if (!u || !is_union(u->op) || need_distinct(u) || is_single(u) || !u->exps || rel_is_ref(u))
+		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || is_single(u) || !u->exps || rel_is_ref(u))
 			return rel;
+
+		if (is_munion(u->op))
+			return rel_push_aggr_down_n_arry(v, rel);
 
 		ul = u->l;
 		ur = u->r;
