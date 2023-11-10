@@ -71,17 +71,16 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					char *comment = NULL;
 					if (t->kind == FUNCTIONsymbol) {
 						comment = t->def->help;
-						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0),
-										 buf, TRUE, buf, sizeof(buf));
+						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, TRUE, buf, sizeof(buf));
 					} else {
 						assert(t->func);
 						comment = t->func->comment;
-						/* TODO create fcnDefinition for command and patterns */
+						(void) cfcnDefinition(t, buf, TRUE, buf, sizeof(buf));
 					}
-					char *tt = strstr(buf, "address ");
+					char *tt = strstr(buf, " address ");
 					if (tt) {
 						*tt = 0;
-						tt += 8;
+						tt += 9;
 					}
 					if (BUNappend(mod, s->name, false) != GDK_SUCCEED
 						|| BUNappend(fcn, t->name,

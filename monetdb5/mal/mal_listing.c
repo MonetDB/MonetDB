@@ -189,6 +189,111 @@ beginning of each line.
 */
 
 str
+cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
+{
+	int i;
+	str arg, tpe;
+	mel_func *f = s->func;
+
+	len -= t - base;
+	if (!flg && !copystring(&t, "#", &len))
+		return base;
+	if (f->unsafe && !copystring(&t, "unsafe ", &len))
+		return base;
+	if (!copystring(&t, operatorName(s->kind), &len) ||
+		!copystring(&t, " ", &len) ||
+		!copystring(&t, f->mod ? f->mod : "user", &len) ||
+		!copystring(&t, ".", &len) ||
+		!copystring(&t, f->fcn, &len) || !copystring(&t, "(", &len))
+		return base;
+
+	char var[16];
+	for (i = f->retc; i < f->argc; i++) {
+		if (snprintf(var, 16, "X_%d:", i-f->retc) >= 16 || !copystring(&t, var, &len))
+			return base;
+		if (f->args[i].isbat && !copystring(&t, "bat[:", &len))
+			return base;
+		arg = f->args[i].type;
+		if (arg[0] && !copystring(&t, arg, &len))
+			return base;
+		if (!arg[0]) {
+			if (f->args[i].nr) {
+				if (snprintf(var, 16, "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
+					return base;
+			} else if (!copystring(&t, "any", &len))
+				return base;
+		}
+		if (f->args[i].isbat && !copystring(&t, "]", &len))
+			return base;
+		if (i < f->argc - 1 && !copystring(&t, ", ", &len))
+			return base;
+	}
+
+	advance(t, base, len);
+	if (f->vargs && !copystring(&t, "...", &len))
+		return base;
+
+	if (f->retc == 0) {
+		if (!copystring(&t, "):void", &len))
+			return base;
+	} else if (f->retc == 1) {
+		if (!copystring(&t, "):", &len))
+			return base;
+		if (f->args[0].isbat && !copystring(&t, "bat[:", &len))
+			return base;
+		tpe = f->args[0].type;
+		if (tpe[0] && !copystring(&t, tpe, &len))
+			return base;
+		if (!tpe[0]) {
+			if (f->args[0].nr) {
+				if (snprintf(var, 16, "any_%d", f->args[0].nr ) >= 16 || !copystring(&t, var, &len))
+					return base;
+			} else if (!copystring(&t, "any", &len))
+				return base;
+		}
+		if (f->args[0].isbat && !copystring(&t, "]", &len))
+			return base;
+		if (f->vrets && !copystring(&t, "...", &len))
+			return base;
+	} else {
+		if (!copystring(&t, ") (", &len))
+			return base;
+		for (i = 0; i < f->retc; i++) {
+			if (snprintf(var, 16, "X_%d:", i+(f->argc-f->retc)) >= 16 || !copystring(&t, var, &len))
+				return base;
+			if (f->args[i].isbat && !copystring(&t, "bat[:", &len))
+				return base;
+			arg = f->args[i].type;
+			if (arg[0] && !copystring(&t, arg, &len))
+				return base;
+			if (!arg[0]) {
+				if (f->args[i].nr) {
+					if (snprintf(var, 16, "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
+						return base;
+				} else if (!copystring(&t, "any", &len))
+				return base;
+			}
+			if (f->args[i].isbat && !copystring(&t, "]", &len))
+				return base;
+			if (i < f->retc - 1 && !copystring(&t, ", ", &len))
+				return base;
+		}
+		if (f->vrets && !copystring(&t, "...", &len))
+			return base;
+		if (!copystring(&t, ")", &len))
+			return base;
+	}
+
+	if (f->cname) {
+		if (!copystring(&t, " address ", &len) ||
+			!copystring(&t, f->cname, &len))
+			return base;
+	}
+	(void) copystring(&t, ";", &len);
+	return base;
+}
+
+str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 {
 	int i, j;
