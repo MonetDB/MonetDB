@@ -191,7 +191,7 @@ beginning of each line.
 str
 cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 {
-	int i;
+	unsigned int i;
 	str arg, tpe;
 	mel_func *f = s->func;
 
@@ -225,7 +225,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 		}
 		if (f->args[i].isbat && !copystring(&t, "]", &len))
 			return base;
-		if (i < f->argc - 1 && !copystring(&t, ", ", &len))
+		if (i+1 < f->argc && !copystring(&t, ", ", &len))
 			return base;
 	}
 
@@ -275,7 +275,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 			}
 			if (f->args[i].isbat && !copystring(&t, "]", &len))
 				return base;
-			if (i < f->retc - 1 && !copystring(&t, ", ", &len))
+			if (i+1 < f->retc && !copystring(&t, ", ", &len))
 				return base;
 		}
 		if (f->vrets && !copystring(&t, "...", &len))
