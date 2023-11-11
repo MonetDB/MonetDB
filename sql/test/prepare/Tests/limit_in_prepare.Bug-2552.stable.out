@@ -45,7 +45,7 @@ stdout of test 'limit_in_prepare.Bug-2552` in directory 'sql/test/BugTracker-201
 [ "int",	32,	0,	"",	"rr",	"id"	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #exec  5 (1);
-% sys.rr # table_name
+% .rr # table_name
 % id # name
 % int # type
 % 1 # length
