@@ -53,10 +53,8 @@ project (
 | | | ) [ ("sys"."length"("t1"."m" NOT NULL UNIQUE) NOT NULL) > (int(32) "1") ]
 | | ) [ "t1"."m" NOT NULL UNIQUE, "sys"."rtrim"("t1"."m" NOT NULL UNIQUE) NOT NULL as "%5"."%5" ],
 | | project (
-| | | project (
-| | | | table("sys"."t1") [ "t1"."m" NOT NULL UNIQUE ]
-| | | ) [ "sys"."rtrim"("t1"."m" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
-| | ) [ "%1"."%1" NOT NULL as "%4"."%4" ]
+| | | table("sys"."t1") [ "t1"."m" NOT NULL UNIQUE ]
+| | ) [ "sys"."rtrim"("t1"."m" NOT NULL UNIQUE) NOT NULL as "%4"."%4" ]
 | ) [ ("%5"."%5" NOT NULL) = ("%4"."%4" NOT NULL) ]
 ) [ "sys"."length"("t1"."m" NOT NULL UNIQUE) NOT NULL as "data_length", "t1"."m" NOT NULL UNIQUE as "data_value" ]
 

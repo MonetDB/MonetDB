@@ -159,5 +159,6 @@ extern sql_rel *rel_visitor_bottomup(visitor *v, sql_rel *rel, rel_rewrite_fptr 
 extern bool rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e);
 
 extern int exp_freevar_offset(mvc *sql, sql_exp *e);
+extern int exp_has_selfref(mvc *sql, sql_exp *e);
 
 #endif /* _REL_REL_H_ */

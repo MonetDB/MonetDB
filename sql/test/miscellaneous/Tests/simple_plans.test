@@ -563,24 +563,20 @@ plan select x, y from (select a as b, a / 3 as c from t1 union distinct select a
 ----
 project (
 | distinct munion (
-| | project (
-| | | group by (
-| | | | project (
-| | | | | select (
-| | | | | | table("sys"."t1") [ "t1"."a" UNIQUE ]
-| | | | | ) [ ("t1"."a" UNIQUE) > (int(32) "2") ]
-| | | | ) [ "t1"."a" NOT NULL UNIQUE as "b", "sys"."sql_div"("t1"."a" NOT NULL UNIQUE, tinyint(2) "3") NOT NULL as "c" ]
-| | | ) [ "b" NOT NULL UNIQUE, "c" NOT NULL ] [ "b" NOT NULL UNIQUE, "c" NOT NULL ]
-| | ) [ "b" NOT NULL UNIQUE as "x"."x", "c" NOT NULL as "x"."y" ],
-| | project (
-| | | group by (
-| | | | project (
-| | | | | select (
-| | | | | | table("sys"."t2") [ "t2"."a" UNIQUE ]
-| | | | | ) [ ("t2"."a" UNIQUE) > (int(32) "2") ]
-| | | | ) [ "t2"."a" NOT NULL UNIQUE as "z", "sys"."sql_div"("t2"."a" NOT NULL UNIQUE, tinyint(3) "5") NOT NULL as "d" ]
-| | | ) [ "z" NOT NULL UNIQUE, "d" NOT NULL ] [ "z" NOT NULL UNIQUE, "d" NOT NULL ]
-| | ) [ "z" NOT NULL UNIQUE as "x"."x", "d" NOT NULL as "x"."y" ]
+| | group by (
+| | | project (
+| | | | select (
+| | | | | table("sys"."t1") [ "t1"."a" UNIQUE ]
+| | | | ) [ ("t1"."a" UNIQUE) > (int(32) "2") ]
+| | | ) [ "t1"."a" NOT NULL UNIQUE as "x"."x", "sys"."sql_div"("t1"."a" NOT NULL UNIQUE, tinyint(2) "3") NOT NULL as "x"."y" ]
+| | ) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ] [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ],
+| | group by (
+| | | project (
+| | | | select (
+| | | | | table("sys"."t2") [ "t2"."a" UNIQUE ]
+| | | | ) [ ("t2"."a" UNIQUE) > (int(32) "2") ]
+| | | ) [ "t2"."a" NOT NULL UNIQUE as "x"."x", "sys"."sql_div"("t2"."a" NOT NULL UNIQUE, tinyint(3) "5") NOT NULL as "x"."y" ]
+| | ) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ] [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ]
 | ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
 ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
 

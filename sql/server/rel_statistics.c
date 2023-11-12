@@ -648,6 +648,7 @@ set_setop_side(visitor *v, sql_rel *rel, sql_rel *side)
 
 	if (need_distinct(rel))
 		set_distinct(side);
+	side->p = prop_copy(v->sql->sa, rel->p);
 	rel_destroy(rel);
 	return side;
 }

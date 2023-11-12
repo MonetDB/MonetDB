@@ -3277,7 +3277,7 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 		}
 		if (!e)
 			return 0; /* not found */
-		if (is_set(rel->op)) { /* TODO for set relations this needs further improvement */
+		if (is_mset(rel->op)) { /* TODO for set relations this needs further improvement */
 			(void) sql_error(sql, 10, SQLSTATE(42000) "Cannot set parameter types under set relations at the moment");
 			return -1;
 		}

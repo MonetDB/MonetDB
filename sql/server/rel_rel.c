@@ -2788,3 +2788,25 @@ exp_freevar_offset(mvc *sql, sql_exp *e)
 	/* freevar offset is passed via changes */
 	return (v.changes);
 }
+
+static sql_exp *
+_exp_has_selfref(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)rel; (void)depth;
+	int vf = is_selfref(e);
+	if (v->changes < vf)
+		v->changes=vf;
+	return e;
+}
+
+int
+exp_has_selfref(mvc *sql, sql_exp *e)
+{
+	bool changed = false;
+	visitor v = { .sql = sql };
+
+	(void) changed;
+	exp_visitor(&v, NULL, e, 0, &_exp_has_selfref, true, true, &changed);
+	/* freevar offset is passed via changes */
+	return (v.changes);
+}

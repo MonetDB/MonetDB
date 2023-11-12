@@ -71,16 +71,16 @@ PLAN   select * from t2606a   union   select * from t2606b   order by a
 ----
 project (
 | distinct munion (
-| | project (
-| | | group by (
+| | group by (
+| | | project (
 | | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
-| | | ) [ "t2606a"."a" NOT NULL UNIQUE ] [ "t2606a"."a" NOT NULL UNIQUE ]
-| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
-| | project (
-| | | group by (
+| | | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ]
+| | ) [ "%1"."a" NOT NULL UNIQUE ] [ "%1"."a" NOT NULL UNIQUE ],
+| | group by (
+| | | project (
 | | | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
-| | | ) [ "t2606b"."a" NOT NULL UNIQUE ] [ "t2606b"."a" NOT NULL UNIQUE ]
-| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| | | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| | ) [ "%2"."a" NOT NULL UNIQUE ] [ "%2"."a" NOT NULL UNIQUE ]
 | ) [ "%1"."a" NOT NULL UNIQUE as "%4"."a" ]
 ) [ "%4"."a" NOT NULL UNIQUE ] [ "%4"."a" ASC NOT NULL UNIQUE ]
 
@@ -102,16 +102,16 @@ PLAN ( select * from t2606a   union   select * from t2606b ) order by a
 ----
 project (
 | distinct munion (
-| | project (
-| | | group by (
+| | group by (
+| | | project (
 | | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
-| | | ) [ "t2606a"."a" NOT NULL UNIQUE ] [ "t2606a"."a" NOT NULL UNIQUE ]
-| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
-| | project (
-| | | group by (
+| | | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ]
+| | ) [ "%1"."a" NOT NULL UNIQUE ] [ "%1"."a" NOT NULL UNIQUE ],
+| | group by (
+| | | project (
 | | | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
-| | | ) [ "t2606b"."a" NOT NULL UNIQUE ] [ "t2606b"."a" NOT NULL UNIQUE ]
-| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| | | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| | ) [ "%2"."a" NOT NULL UNIQUE ] [ "%2"."a" NOT NULL UNIQUE ]
 | ) [ "%1"."a" NOT NULL UNIQUE as "%4"."a" ]
 ) [ "%4"."a" NOT NULL UNIQUE ] [ "%4"."a" ASC NOT NULL UNIQUE ]
 
@@ -133,16 +133,16 @@ PLAN ( select * from t2606a ) union ( select * from t2606b ) order by a
 ----
 project (
 | distinct munion (
-| | project (
-| | | group by (
+| | group by (
+| | | project (
 | | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
-| | | ) [ "t2606a"."a" NOT NULL UNIQUE ] [ "t2606a"."a" NOT NULL UNIQUE ]
-| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
-| | project (
-| | | group by (
+| | | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ]
+| | ) [ "%1"."a" NOT NULL UNIQUE ] [ "%1"."a" NOT NULL UNIQUE ],
+| | group by (
+| | | project (
 | | | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
-| | | ) [ "t2606b"."a" NOT NULL UNIQUE ] [ "t2606b"."a" NOT NULL UNIQUE ]
-| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| | | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| | ) [ "%2"."a" NOT NULL UNIQUE ] [ "%2"."a" NOT NULL UNIQUE ]
 | ) [ "%1"."a" NOT NULL UNIQUE as "%4"."a" ]
 ) [ "%4"."a" NOT NULL UNIQUE ] [ "%4"."a" ASC NOT NULL UNIQUE ]
 
@@ -290,16 +290,16 @@ PLAN select * from (select * from t2606a union select * from t2606b) as t order 
 ----
 project (
 | distinct munion (
-| | project (
-| | | group by (
+| | group by (
+| | | project (
 | | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
-| | | ) [ "t2606a"."a" NOT NULL UNIQUE ] [ "t2606a"."a" NOT NULL UNIQUE ]
-| | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ],
-| | project (
-| | | group by (
+| | | ) [ "t2606a"."a" NOT NULL UNIQUE as "%1"."a" ]
+| | ) [ "%1"."a" NOT NULL UNIQUE ] [ "%1"."a" NOT NULL UNIQUE ],
+| | group by (
+| | | project (
 | | | | table("sys"."t2606b") [ "t2606b"."a" NOT NULL UNIQUE ]
-| | | ) [ "t2606b"."a" NOT NULL UNIQUE ] [ "t2606b"."a" NOT NULL UNIQUE ]
-| | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| | | ) [ "t2606b"."a" NOT NULL UNIQUE as "%2"."a" ]
+| | ) [ "%2"."a" NOT NULL UNIQUE ] [ "%2"."a" NOT NULL UNIQUE ]
 | ) [ "%1"."a" NOT NULL UNIQUE as "t"."a" ]
 ) [ "t"."a" NOT NULL UNIQUE ] [ "t"."a" ASC NOT NULL UNIQUE ]
 

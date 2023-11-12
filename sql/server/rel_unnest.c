@@ -2732,6 +2732,7 @@ diff_replace_arguments(mvc *sql, sql_exp *e, list *ordering, int *pos, int *i)
 			diff_replace_arguments(sql, first, ordering, pos, i);
 		} else {
 			sql_exp *ne = args->h->data = exp_ref(sql, list_fetch(ordering, pos[*i]));
+			set_selfref(ne);
 			set_descending(ne);
 			set_nulls_first(ne);
 			*i = *i + 1;
@@ -2740,6 +2741,7 @@ diff_replace_arguments(mvc *sql, sql_exp *e, list *ordering, int *pos, int *i)
 			diff_replace_arguments(sql, second, ordering, pos, i);
 		} else if (second) {
 			sql_exp *ne = args->h->next->data = exp_ref(sql, list_fetch(ordering, pos[*i]));
+			set_selfref(ne);
 			set_descending(ne);
 			set_nulls_first(ne);
 			*i = *i + 1;
@@ -2830,6 +2832,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				sql_exp *oe = n->data;
 				if (!exps_find_exp(rell->exps, oe)) {
 					sql_exp *ne = exp_ref(v->sql, oe);
+					set_selfref(ne);
 
 					if (is_ascending(oe))
 						set_ascending(ne);
@@ -2851,6 +2854,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			sql_exp *next = n->data;
 			sql_exp *found = exps_find_exp(rell->exps, next);
 			sql_exp *ref = exp_ref(v->sql, found ? found : next);
+			set_selfref(ref);
 
 			if (is_ascending(next))
 				set_ascending(ref);
