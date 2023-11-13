@@ -2579,38 +2579,36 @@ exps_bind_column2(list *exps, const char *rname, const char *cname, int *multipl
 	if (exps) {
 		node *en;
 
-		if (exps) {
-			if (!exps->ht && list_length(exps) > HASH_MIN_SIZE) {
-				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
-				if (exps->ht == NULL)
-					return res;
-
-				for (en = exps->h; en; en = en->next ) {
-					sql_exp *e = en->data;
-					if (e->alias.name) {
-						int key = exp_key(e);
-
-						if (hash_add(exps->ht, key, e) == NULL)
-							return res;
-					}
-				}
-			}
-			if (exps->ht) {
-				int key = hash_key(cname);
-				sql_hash_e *he = exps->ht->buckets[key&(exps->ht->size-1)];
-
-				for (; he; he = he->chain) {
-					sql_exp *e = he->value;
-
-					if (e && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) {
-						if (res && multiple)
-							*multiple = 1;
-						if (!res)
-							res = e;
-					}
-				}
+		if (!exps->ht && list_length(exps) > HASH_MIN_SIZE) {
+			exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
+			if (exps->ht == NULL)
 				return res;
+
+			for (en = exps->h; en; en = en->next ) {
+				sql_exp *e = en->data;
+				if (e->alias.name) {
+					int key = exp_key(e);
+
+					if (hash_add(exps->ht, key, e) == NULL)
+						return res;
+				}
 			}
+		}
+		if (exps->ht) {
+			int key = hash_key(cname);
+			sql_hash_e *he = exps->ht->buckets[key&(exps->ht->size-1)];
+
+			for (; he; he = he->chain) {
+				sql_exp *e = he->value;
+
+				if (e && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) {
+					if (res && multiple)
+						*multiple = 1;
+					if (!res)
+						res = e;
+				}
+			}
+			return res;
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *e = en->data;
