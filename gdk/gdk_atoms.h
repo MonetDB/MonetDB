@@ -75,7 +75,8 @@ gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export void *ATOMnil(int id)
 	__attribute__((__malloc__));
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export char *ATOMformat(int id, const void *val);
+gdk_export char *ATOMformat(int id, const void *val)
+	__attribute__((__warn_unused_result__));
 
 gdk_export void *ATOMdup(int id, const void *val);
 
