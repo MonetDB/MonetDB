@@ -1,3 +1,20 @@
+monetdb (11.47.15) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7410: SIGSEGV cause database corruption
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 09 Nov 2023 17:03:15 +0100
+
+monetdb (11.47.15) unstable; urgency=low
+
+  * gdk: When saving the SQL catalog during a low-level commit, we should
+    only save the part of the catalog that corresponds to the part of the
+    write-ahead log that has been processed.  What we did was save more,
+    which resulted in the catalog containing references to tables and
+    columns whose disk presence is otherwise only in the write-ahead log.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 7 Nov 2023 17:03:15 +0100
+
 monetdb (11.47.13) unstable; urgency=low
 
   * Rebuilt.

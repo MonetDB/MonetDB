@@ -1,3 +1,14 @@
+* Thu Nov 09 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.15-20231109
+- Rebuilt.
+- GH#7410: SIGSEGV cause database corruption
+
+* Tue Nov  7 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.15-20231109
+- gdk: When saving the SQL catalog during a low-level commit, we should
+  only save the part of the catalog that corresponds to the part of the
+  write-ahead log that has been processed.  What we did was save more,
+  which resulted in the catalog containing references to tables and
+  columns whose disk presence is otherwise only in the write-ahead log.
+
 * Fri Nov 03 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.13-20231103
 - Rebuilt.
 - GH#7300: Implement missing standard SQL DATE and TIMESTAMP functions

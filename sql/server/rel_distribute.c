@@ -19,6 +19,7 @@ typedef struct rmt_prop_state {
 	int depth;
 	prop* rmt;
 	sql_rel* orig;
+	bool no_rmt_branch_rpl_leaf;
 } rps;
 
 static int
@@ -105,7 +106,7 @@ do_replica_rewrite(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_
 		list *uris = sa_list(sql->sa);
 		tid_uri *tu = SA_NEW(sql->sa, tid_uri);
 		tu->id = p->base.id;
-		tu->uri = sa_strconcat(sql->sa, sa_strconcat(sql->sa, p->s->base.name, "."), p->base.name);
+		tu->uri = p->query;
 		append(uris, tu);
 
 		prop *rmt_prop = r->p = prop_create(sql->sa, PROP_REMOTE, r->p);
@@ -119,7 +120,8 @@ static sql_rel *
 replica_rewrite(visitor *v, sql_table *t, list *exps)
 {
 	sql_rel *res = NULL;
-	prop *rp = ((rps*)v->data)->rmt;
+	rps *rpstate = v->data;
+	prop *rp = rpstate->rmt;
 	sqlid tid = rp->id;
 	list *uris = rp->value.pval;
 
@@ -138,7 +140,21 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 
 			for (node *m = uris->h; m && !res; m = m->next) {
 				if (strcmp(((tid_uri*)m->data)->uri, pt->query) == 0) {
-					res = do_replica_rewrite(v->sql, exps, t, pt, 0);
+					/* we found a matching uri do the actual rewrite */
+					res = do_replica_rewrite(v->sql, exps, t, pt,
+							                 rpstate->no_rmt_branch_rpl_leaf ? true: false);
+					/* set to the REMOTE a list with a single uri (the matching one)
+					 * this is for the case that our REMOTE subtree has only replicas
+					 * with multiple remotes*/
+					if (list_length(rp->value.pval) > 1) {
+						list *uri = sa_list(v->sql->sa);
+						tid_uri *tu = SA_NEW(v->sql->sa, tid_uri);
+						tu->id = 0;
+						tu->uri = pt->query;
+						append(uri, tu);
+						rp->value.pval = uri;
+						break;
+					}
 				}
 			}
 		}
@@ -200,20 +216,22 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 	if (!eliminate_remote_or_replica_refs(v, &rel))
 		return rel;
 
+	/* if we are higher in the tree clear the previous REMOTE prop in the visitor state */
+	if (v->data && v->depth <= ((rps*)v->data)->depth) {
+		v->data = NULL;
+	}
+
 	/* no-leaf nodes: store the REMOTE property uris in the state of the visitor
 	 * leaf nodes: check if they are basetable replicas and proceed with the rewrite */
 	prop *p;
 	if (!is_basetable(rel->op)) {
-		/* if we are higher in the tree clear the previous REMOTE prop in the visitor state */
-		if (v->data && v->depth <= ((rps*)v->data)->depth) {
-			v->data = NULL;
-		}
 		/* if there is a REMOTE prop set it to the visitor state */
 		if ((p = find_prop(rel->p, PROP_REMOTE)) != NULL) {
 			rps *rp = SA_NEW(v->sql->sa, rps);
 			rp->depth = v->depth;
 			rp->rmt = p;
 			rp->orig = rel;
+			rp->no_rmt_branch_rpl_leaf = false;
 			v->data = rp;
 		}
 	} else {
@@ -227,6 +245,7 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 				rp->depth = v->depth;
 				rp->rmt = p;
 				rp->orig = rel;
+				rp->no_rmt_branch_rpl_leaf = true;
 				v->data = rp;
 			}
 

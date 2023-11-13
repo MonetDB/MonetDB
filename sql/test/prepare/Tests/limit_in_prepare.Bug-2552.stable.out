@@ -10,7 +10,7 @@ stdout of test 'limit_in_prepare.Bug-2552` in directory 'sql/test/BugTracker-201
 # 22:28:06 >  
 
 #CREATE TABLE "sys"."tbls" (
-#	"id"            INTEGER,
+#	"id"            INTEGER PRIMARY KEY,
 #	"name"          VARCHAR(1024),
 #	"schema_id"     INTEGER,
 #	"query"         VARCHAR(2048),
@@ -36,8 +36,8 @@ stdout of test 'limit_in_prepare.Bug-2552` in directory 'sql/test/BugTracker-201
 #create table rr (id int);
 #insert into rr values (1),(2),(3);
 [ 3	]
-#prepare select * from rr limit ?;
-#prepare select * from rr limit ?;
+#prepare select * from rr order by id limit ?;
+#prepare select * from rr order by id limit ?;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
@@ -45,14 +45,14 @@ stdout of test 'limit_in_prepare.Bug-2552` in directory 'sql/test/BugTracker-201
 [ "int",	32,	0,	"",	"rr",	"id"	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #exec  5 (1);
-% sys.rr # table_name
+% .rr # table_name
 % id # name
 % int # type
 % 1 # length
 [ 1	]
 #drop table rr;
-#prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tables limit 24;
-#prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tables limit 24;
+#prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tables order by id limit 24;
+#prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tables order by id limit 24;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type

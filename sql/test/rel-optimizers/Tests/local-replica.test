@@ -1,0 +1,42 @@
+
+statement ok
+create replica table foo_rpl_loc (n int, m text)
+
+statement ok
+alter table foo_rpl_loc add table foo_local
+
+statement ok
+create replica table bar_rpl_loc (n int, m text)
+
+statement ok
+alter table bar_rpl_loc add table bar_local
+
+query T nosort
+plan select * from foo_rpl_loc
+----
+project (
+| table("sys"."foo_local") [ "foo_local"."n" as "foo_rpl_loc"."n", "foo_local"."m" as "foo_rpl_loc"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl_loc"."%TID%" ]
+) [ "foo_rpl_loc"."n", "foo_rpl_loc"."m" ]
+
+query T nosort
+plan select * from foo_rpl_loc, bar_rpl_loc
+----
+project (
+| crossproduct (
+| | table("sys"."foo_local") [ "foo_local"."n" UNIQUE as "foo_rpl_loc"."n", "foo_local"."m" as "foo_rpl_loc"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl_loc"."%TID%" ],
+| | table("sys"."bar_local") [ "bar_local"."n" as "bar_rpl_loc"."n", "bar_local"."m" as "bar_rpl_loc"."m", "bar_local"."%TID%" NOT NULL UNIQUE as "bar_rpl_loc"."%TID%" ]
+| ) [  ]
+) [ "foo_rpl_loc"."n", "foo_rpl_loc"."m", "bar_rpl_loc"."n", "bar_rpl_loc"."m" ]
+
+query T nosort
+plan select * from foo_rpl_loc, buz_rmt
+----
+project (
+| crossproduct (
+| | table("sys"."foo_local") [ "foo_local"."n" UNIQUE as "foo_rpl_loc"."n", "foo_local"."m" as "foo_rpl_loc"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl_loc"."%TID%" ],
+| | table (
+| | | REMOTE("sys"."buz_rmt") [ "buz_rmt"."l" ] REMOTE mapi:monetdb://localhost:50002/node2
+| | ) [ "buz_rmt"."l" ]
+| ) [  ]
+) [ "foo_rpl_loc"."n", "foo_rpl_loc"."m", "buz_rmt"."l" ]
+
