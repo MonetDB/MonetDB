@@ -175,7 +175,9 @@ class Certs:
         noncritical_extensions: List[x509.ExtensionType] = [],
         keycrt=False,
     ):
-        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=UserWarning)
+            key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
         if parent_name:
             issuer_name = parent_name

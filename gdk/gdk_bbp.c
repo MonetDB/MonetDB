@@ -4605,47 +4605,47 @@ BBPtmunlock(void)
 void
 BBPprintinfo(void)
 {
-	if (MT_lock_try(&GDKtmLock)) {
-		BBPtmlockFinish();
-		size_t tmem = 0, tvm = 0;
-		size_t pmem = 0, pvm = 0;
-		int tn = 0;
-		int pn = 0;
-		int nh = 0;
+	size_t tmem = 0, tvm = 0;
+	size_t pmem = 0, pvm = 0;
+	int tn = 0;
+	int pn = 0;
+	int nh = 0;
 
-		for (bat i = 1, sz = (bat) ATOMIC_GET(&BBPsize); i < sz; i++) {
-			if (BBP_refs(i) == 0 && BBP_lrefs(i) == 0)
-				continue;
+	BBPtmlock();
+	for (bat i = 1, sz = (bat) ATOMIC_GET(&BBPsize); i < sz; i++) {
+		MT_lock_set(&GDKswapLock(i));
+		if (BBP_refs(i) > 0 || BBP_lrefs(i) > 0) {
 			BAT *b = BBP_desc(i);
-			if (b == NULL)
-				continue;
-			ATOMIC_BASE_TYPE status = BBP_status(i);
-			nh += (status & BBPHOT) != 0;
-			if (status & BBPPERSISTENT) {
-				pn++;
-				pmem += HEAPmemsize(b->theap);
-				pvm += HEAPvmsize(b->theap);
-				pmem += HEAPmemsize(b->tvheap);
-				pvm += HEAPvmsize(b->tvheap);
-			} else {
-				tn++;
-				if (b->theap &&
-				    b->theap->parentid == b->batCacheid) {
-					tmem += HEAPmemsize(b->theap);
-					tvm += HEAPvmsize(b->theap);
+			if (b != NULL) {
+				ATOMIC_BASE_TYPE status = BBP_status(i);
+				nh += (status & BBPHOT) != 0;
+				MT_lock_set(&b->theaplock);
+				if (status & BBPPERSISTENT) {
+					pn++;
+					pmem += HEAPmemsize(b->theap);
+					pvm += HEAPvmsize(b->theap);
+					pmem += HEAPmemsize(b->tvheap);
+					pvm += HEAPvmsize(b->tvheap);
+				} else {
+					tn++;
+					if (b->theap &&
+					    b->theap->parentid == b->batCacheid) {
+						tmem += HEAPmemsize(b->theap);
+						tvm += HEAPvmsize(b->theap);
+					}
+					if (b->tvheap &&
+					    b->tvheap->parentid == b->batCacheid) {
+						tmem += HEAPmemsize(b->tvheap);
+						tvm += HEAPvmsize(b->tvheap);
+					}
 				}
-				if (b->tvheap &&
-				    b->tvheap->parentid == b->batCacheid) {
-					tmem += HEAPmemsize(b->tvheap);
-					tvm += HEAPvmsize(b->tvheap);
-				}
+				MT_lock_unset(&b->theaplock);
 			}
 		}
-		BBPtmunlock();
-		printf("%d persistent bats using %zu virtual memory (%zu malloced)\n", pn, pvm, pmem);
-		printf("%d transient bats using %zu virtual memory (%zu malloced)\n", tn, tvm, tmem);
-		printf("%d bats are \"hot\" (i.e. currently or recently used)\n", nh);
-	} else {
-		printf("BBP currently locked, so no information available\n");
+		MT_lock_unset(&GDKswapLock(i));
 	}
+	BBPtmunlock();
+	printf("%d persistent bats using %zu virtual memory (%zu malloced)\n", pn, pvm, pmem);
+	printf("%d transient bats using %zu virtual memory (%zu malloced)\n", tn, tvm, tmem);
+	printf("%d bats are \"hot\" (i.e. currently or recently used)\n", nh);
 }

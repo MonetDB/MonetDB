@@ -7387,3 +7387,11 @@ sql_trans_convert_partitions(sql_trans *tr)
 	}
 	return 0;
 }
+
+void
+store_printinfo(sqlstore *store)
+{
+	MT_lock_set(&store->commit);
+	log_printinfo(store->logger);
+	MT_lock_unset(&store->commit);
+}
