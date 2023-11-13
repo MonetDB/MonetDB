@@ -35,8 +35,8 @@ CREATE VIEW INFORMATION_SCHEMA.CHARACTER_SETS AS SELECT
 
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHARACTER_SETS TO PUBLIC WITH GRANT OPTION;
 
--- The view SCHEMATA contains all schemas in the database that the
--- current user has access to (by way of being the owner or having some privilege).
+-- The view SCHEMATA contains all schemas in the database
+-- TODO: that the current user has access to (by way of being the owner or having some privilege).
 CREATE VIEW INFORMATION_SCHEMA.SCHEMATA AS SELECT
   cast(NULL AS varchar(1)) AS CATALOG_NAME,
   s."name" AS SCHEMA_NAME,
@@ -57,7 +57,7 @@ CREATE VIEW INFORMATION_SCHEMA.SCHEMATA AS SELECT
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.SCHEMATA TO PUBLIC WITH GRANT OPTION;
 
 -- The view TABLES contains all tables and views defined in the database.
--- Only those tables and views are shown that the current user has access to
+-- TODO: Only those tables and views are shown that the current user has access to
 -- (by way of being the owner or having some privilege).
 CREATE VIEW INFORMATION_SCHEMA.TABLES AS SELECT
   cast(NULL AS varchar(1)) AS TABLE_CATALOG,
@@ -91,7 +91,7 @@ CREATE VIEW INFORMATION_SCHEMA.TABLES AS SELECT
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLES TO PUBLIC WITH GRANT OPTION;
 
 -- The view VIEWS contains all views defined in the database.
--- Only those views are shown that the current user has access to
+-- TODO: Only those views are shown that the current user has access to
 -- (by way of being the owner or having some privilege).
 CREATE VIEW INFORMATION_SCHEMA.VIEWS AS SELECT
   cast(NULL AS varchar(1)) AS TABLE_CATALOG,
@@ -119,7 +119,7 @@ CREATE VIEW INFORMATION_SCHEMA.VIEWS AS SELECT
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.VIEWS TO PUBLIC WITH GRANT OPTION;
 
 -- The view COLUMNS contains information about all table columns (or view columns) in the database.
--- Only those columns are shown that the current user has access to
+-- TODO: Only those columns are shown that the current user has access to
 -- (by way of being the owner or having some privilege).
 CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
   cast(NULL AS varchar(1)) AS TABLE_CATALOG,
@@ -135,8 +135,8 @@ CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_digits", NULL) AS int) AS NUMERIC_PRECISION,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(c."type" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_scale", NULL) AS int) AS NUMERIC_SCALE,
-  cast(sys.ifthenelse(c."type" IN ('date','timestamp','timestamptz','time','timetz'), c."type_scale" -1, NULL) AS int) AS DATETIME_PRECISION,
-  cast(CASE c."type" WHEN 'day_interval' THEN 'interval day' WHEN 'month_interval' THEN (CASE c."type_digits" WHEN 1 THEN 'interval year' WHEN 2 THEN 'interval year to month' WHEN 3 THEN 'interval month' ELSE NULL END) WHEN 'sec_interval' THEN (CASE c."type_digits" WHEN 5 THEN 'interval day to hour' WHEN 6 THEN 'interval day to minute' WHEN 7 THEN 'interval day to second' WHEN 8 THEN 'interval hour' WHEN 9 THEN 'interval hour to minute' WHEN 10 THEN 'interval hour to second' WHEN 11 THEN 'interval minute' WHEN 12 THEN 'interval minute to second' WHEN 13 THEN 'interval second' ELSE NULL END) ELSE NULL END AS varchar(40)) AS INTERVAL_TYPE,
+  cast(sys.ifthenelse(c."type" IN ('date','timestamp','timestamptz','time','timetz'), sys.ifthenelse(c."type_scale" > 0, c."type_scale" -1, 0), NULL) AS int) AS DATETIME_PRECISION,
+  cast(sys.ifthenelse(c."type" IN ('day_interval','month_interval','sec_interval'), sys."describe_type"(c."type", c."type_digits", c."type_scale"), NULL) AS varchar(40)) AS INTERVAL_TYPE,
   cast(CASE c."type" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(c."type_digits" IN (7, 10, 12, 13), sys.ifthenelse(c."type_scale" > 0, c."type_scale", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
@@ -156,15 +156,15 @@ CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
   cast(NULL AS int) AS MAXIMUM_CARDINALITY,
   cast(NULL AS varchar(1)) AS DTD_IDENTIFIER,
   cast('NO' AS varchar(3)) AS IS_SELF_REFERENCING,
-  cast(CASE WHEN c."default" LIKE 'next value for %' THEN 'YES' ELSE 'NO' END AS varchar(3)) AS IS_IDENTITY,
-  cast(NULL AS varchar(10)) AS IDENTITY_GENERATION,
-  cast(NULL AS int) AS IDENTITY_START,
-  cast(NULL AS int) AS IDENTITY_INCREMENT,
-  cast(NULL AS int) AS IDENTITY_MAXIMUM,
-  cast(NULL AS int) AS IDENTITY_MINIMUM,
-  cast(NULL AS varchar(3)) AS IDENTITY_CYCLE,
-  cast('NO' AS varchar(3)) AS IS_GENERATED,
-  cast(NULL AS varchar(1)) AS GENERATION_EXPRESSION,
+  cast(sys.ifthenelse(seq."name" IS NULL OR c."null", 'NO', 'YES') AS varchar(3)) AS IS_IDENTITY,
+  seq."name" AS IDENTITY_GENERATION,
+  seq."start" AS IDENTITY_START,
+  seq."increment" AS IDENTITY_INCREMENT,
+  seq."maxvalue" AS IDENTITY_MAXIMUM,
+  seq."minvalue" AS IDENTITY_MINIMUM,
+  cast(sys.ifthenelse(seq."name" IS NULL, NULL, sys.ifthenelse(seq."cycle", 'YES', 'NO')) AS varchar(3)) AS IDENTITY_CYCLE,
+  cast(sys.ifthenelse(seq."name" IS NULL, 'NO', 'YES') AS varchar(3)) AS IS_GENERATED,
+  cast(sys.ifthenelse(seq."name" IS NULL, NULL, c."default") AS varchar(1024)) AS GENERATION_EXPRESSION,
   cast('NO' AS varchar(3)) AS IS_SYSTEM_TIME_PERIOD_START,
   cast('NO' AS varchar(3)) AS IS_SYSTEM_TIME_PERIOD_END,
   cast('NO' AS varchar(3)) AS SYSTEM_TIME_PERIOD_TIMESTAMP_GENERATION,
@@ -176,12 +176,14 @@ CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
   t."schema_id" AS schema_id,
   c."table_id" AS table_id,
   c."id" AS column_id,
+  seq."id" AS sequence_id,
   t."system" AS is_system,
   cm."remark" AS comments
  FROM sys."columns" c
  INNER JOIN sys."tables" t ON c."table_id" = t."id"
  INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
  LEFT OUTER JOIN sys."comments" cm ON c."id" = cm."id"
+ LEFT OUTER JOIN sys."sequences" seq ON ((seq."name"||'"') = substring(c."default", 3 + sys."locate"('"."seq_',c."default",14)))	-- match only sequences of generated identity columns
  ORDER BY s."name", t."name", c."number";
 
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.COLUMNS TO PUBLIC WITH GRANT OPTION;
@@ -199,7 +201,7 @@ CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHECK_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;
 
 -- The view TABLE_CONSTRAINTS contains all constraints belonging to tables
--- that the current user owns or has some privilege other than SELECT on.
+-- TODO: that the current user owns or has some privilege other than SELECT on.
 CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT
   cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,
   s."name" AS CONSTRAINT_SCHEMA,
@@ -225,7 +227,7 @@ CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;
 
 -- The view REFERENTIAL_CONSTRAINTS contains all referential (foreign key) constraints in the current database.
--- Only those constraints are shown for which the current user has write access to the referencing table
+-- TODO: Only those constraints are shown for which the current user has write access to the referencing table
 -- (by way of being the owner or having some privilege other than SELECT).
 CREATE VIEW INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS SELECT
   cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,
@@ -257,12 +259,12 @@ CREATE VIEW INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS SELECT
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;
 
 -- The view ROUTINES contains all functions and procedures in the current database.
--- Only those functions and procedures are shown that the current user has access to
+-- TODO: Only those functions and procedures are shown that the current user has access to
 -- (by way of being the owner or having some privilege).
 CREATE VIEW INFORMATION_SCHEMA.ROUTINES AS SELECT
   cast(NULL AS varchar(1)) AS SPECIFIC_CATALOG,
   s."name" AS SPECIFIC_SCHEMA,
-  cast(f."id" as varchar(10)) AS SPECIFIC_NAME, -- TODO: replace with full routine signature string. Note sys.fully_qualified_functions.nme does not produce the correct signature.
+  cast(f."name"||'('||f."id"||')' AS varchar(270)) AS SPECIFIC_NAME, -- TODO: replace with full routine signature string. Note sys.fully_qualified_functions.nme does not produce the correct signature.
   cast(NULL AS varchar(1)) AS ROUTINE_CATALOG,
   s."name" AS ROUTINE_SCHEMA,
   f."name" AS ROUTINE_NAME,
@@ -361,13 +363,73 @@ CREATE VIEW INFORMATION_SCHEMA.ROUTINES AS SELECT
  INNER JOIN sys."function_languages" fl ON fl."language_id" = f."language"
  LEFT OUTER JOIN sys."args" a ON a."func_id" = f."id" and a."inout" = 0 and a."number" = 0
  LEFT OUTER JOIN sys."comments" cm ON cm."id" = f."id"
- WHERE f."type" in (1, 2, 5, 7) -- 1=Scalar function, 2=Procedure, 3=Function returning a table, 7=Loader function
+ WHERE f."type" in (1, 2, 5, 7) -- 1=Scalar function, 2=Procedure, 5=Function returning a table, 7=Loader function
  ORDER BY s."name", f."name";
 
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.ROUTINES TO PUBLIC WITH GRANT OPTION;
 
+-- The view PARAMETERS contains information about the parameters (arguments) of
+-- all ROUTINES (functions and procedures) in the current database.
+-- TODO: Only those routine parameters are shown that the current user has
+-- access to (by way of being the owner or having some privilege).
+CREATE VIEW INFORMATION_SCHEMA.PARAMETERS AS SELECT
+  cast(NULL AS varchar(1)) AS SPECIFIC_CATALOG,
+  s."name" AS SPECIFIC_SCHEMA,
+  cast(f."name"||'('||f."id"||')' AS varchar(270)) AS SPECIFIC_NAME, -- TODO: replace with full routine signature string. Note sys.fully_qualified_functions.nme does not produce the correct signature.
+  cast(sys.ifthenelse((a."inout" = 0 OR f."type" = 2), 1 + a."number", sys.ifthenelse(f."type" = 1, a."number", (1 + a."number" - f.count_out_cols))) AS int) AS ORDINAL_POSITION,
+  cast(sys.ifthenelse(a."inout" = 0, 'OUT', sys.ifthenelse(a."inout" = 1, 'IN', 'INOUT')) as varchar(5)) AS PARAMETER_MODE,  -- we do not yet support INOUT
+  cast(sys.ifthenelse(a."inout" = 0, 'YES', 'NO') as varchar(3)) AS IS_RESULT,
+  cast(NULL AS varchar(1)) AS AS_LOCATOR,
+  a."name" AS PARAMETER_NAME,
+  cast(NULL AS varchar(1)) AS FROM_SQL_SPECIFIC_CATALOG,
+  cast(NULL AS varchar(1)) AS FROM_SQL_SPECIFIC_SCHEMA,
+  cast(NULL AS varchar(1)) AS FROM_SQL_SPECIFIC_NAME,
+  cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_CATALOG,
+  cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_SCHEMA,
+  cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_NAME,
+  cast(sys."describe_type"(a."type", a."type_digits", a."type_scale") AS varchar(1024)) AS DATA_TYPE,
+  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, a."type_digits", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,
+  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, a."type_digits" * 4, NULL) AS int) AS CHARACTER_OCTET_LENGTH,
+  cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
+  cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
+  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml'), 'UTF-8', NULL) AS varchar(16)) AS CHARACTER_SET_NAME,
+  cast(NULL AS varchar(1)) AS COLLATION_CATALOG,
+  cast(NULL AS varchar(1)) AS COLLATION_SCHEMA,
+  cast(NULL AS varchar(1)) AS COLLATION_NAME,
+  cast(sys.ifthenelse(a."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), a."type_digits", NULL) AS int) AS NUMERIC_PRECISION,
+  cast(sys.ifthenelse(a."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(a."type" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,
+  cast(sys.ifthenelse(a."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), a."type_scale", NULL) AS int) AS NUMERIC_SCALE,
+  cast(sys.ifthenelse(a."type" IN ('date','timestamp','timestamptz','time','timetz'), sys.ifthenelse(a."type_scale" > 0, a."type_scale" -1, 0), NULL) AS int) AS DATETIME_PRECISION,
+  cast(sys.ifthenelse(a."type" IN ('day_interval','month_interval','sec_interval'), sys."describe_type"(a."type", a."type_digits", a."type_scale"), NULL) AS varchar(40)) AS INTERVAL_TYPE,
+  cast(CASE a."type" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(a."type_digits" IN (7, 10, 12, 13), sys.ifthenelse(a."type_scale" > 0, a."type_scale", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,
+  cast(NULL AS varchar(1)) AS UDT_CATALOG,
+  cast(NULL AS varchar(1)) AS UDT_SCHEMA,
+  cast(NULL AS varchar(1)) AS UDT_NAME,
+  cast(NULL AS varchar(1)) AS SCOPE_CATALOG,
+  cast(NULL AS varchar(1)) AS SCOPE_SCHEMA,
+  cast(NULL AS varchar(1)) AS SCOPE_NAME,
+  cast(NULL AS int) AS MAXIMUM_CARDINALITY,
+  cast(NULL AS varchar(1)) AS DTD_IDENTIFIER,
+  cast(NULL AS varchar(1)) AS DECLARED_DATA_TYPE,
+  cast(NULL AS int) AS DECLARED_NUMERIC_PRECISION,
+  cast(NULL AS int) AS DECLARED_NUMERIC_SCALE,
+  cast(NULL AS varchar(1)) AS PARAMETER_DEFAULT,
+  -- MonetDB column extensions
+  f."schema_id" AS schema_id,
+  f."id" AS function_id,
+  a."id" AS arg_id,
+  f."name" AS function_name,
+  f."type" AS function_type,
+  f."system" AS is_system
+ FROM sys."args" a
+ INNER JOIN (SELECT fun.*, (select count(*) from sys.args a0 where a0.inout = 0 and a0.func_id = fun.id) as count_out_cols FROM sys."functions" fun WHERE fun."type" in (1, 2, 5, 7)) f ON f."id" = a."func_id"
+ INNER JOIN sys."schemas" s ON s."id" = f."schema_id"
+ ORDER BY s."name", f."name", f."id", a."inout" DESC, a."number";
+
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.PARAMETERS TO PUBLIC WITH GRANT OPTION;
+
 -- The view SEQUENCES contains all sequences defined in the current database.
--- Only those sequences are shown that the current user has access to
+-- TODO: Only those sequences are shown that the current user has access to
 -- (by way of being the owner or having some privilege).
 CREATE VIEW INFORMATION_SCHEMA.SEQUENCES AS SELECT
   cast(NULL AS varchar(1)) AS SEQUENCE_CATALOG,
@@ -397,3 +459,4 @@ CREATE VIEW INFORMATION_SCHEMA.SEQUENCES AS SELECT
  ORDER BY s."name", sq."name";
 
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.SEQUENCES TO PUBLIC WITH GRANT OPTION;
+

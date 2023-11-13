@@ -343,29 +343,6 @@ query I rowsort
 4
 
 query I rowsort
-        select * from oblo OFFSET 2
-----
-1
-2
-
-query I rowsort
-        select * from oblo LIMIT 2
-----
-3
-4
-
-query I rowsort
-        select * from oblo LIMIT 1 OFFSET 2
-----
-2
-
-query I rowsort
-        select * from oblo LIMIT 2 OFFSET 1
-----
-2
-3
-
-query I rowsort
         select * from oblo ORDER BY a
 ----
 1

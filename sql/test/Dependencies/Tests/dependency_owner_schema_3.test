@@ -102,6 +102,9 @@ args
 ids
 DEP_VIEW
 args
+parameters
+DEP_VIEW
+args
 routines
 DEP_VIEW
 auths
@@ -402,6 +405,9 @@ functions
 ids
 DEP_VIEW
 functions
+parameters
+DEP_VIEW
+functions
 routines
 DEP_VIEW
 ids
@@ -588,6 +594,9 @@ schemas
 ids
 DEP_VIEW
 schemas
+parameters
+DEP_VIEW
+schemas
 referential_constraints
 DEP_VIEW
 schemas
@@ -613,6 +622,9 @@ tables
 DEP_VIEW
 schemas
 views
+DEP_VIEW
+sequences
+columns
 DEP_VIEW
 sequences
 describe_comments
@@ -868,7 +880,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-1755 values hashing to ce914cc8151df86cb7ff91fb677843fa
+1821 values hashing to 4841f015a85929eed99bb2099a4e17b8
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name

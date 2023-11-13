@@ -1090,7 +1090,6 @@ log_open_output(logger *lg)
 	logged_range *current = lg->current;
 	assert(current && current->next == NULL);
 	new_range->cnt = current->cnt;
-	new_range->deleted = current->deleted;
 	current->next = new_range;
 	ATOMIC_INC(&lg->nr_open_files);
 	return GDK_SUCCEED;
@@ -1507,7 +1506,7 @@ bm_get_counts(logger *lg)
 			assert(b);
 			cnt = BATcount(b);
 		} else {
-			lid = BBP_desc(bids[p]) ? 1 : -1;
+			lid = BBP_desc(bids[p]) && log_find(lg->catalog_bid, lg->dcatalog, bids[p]) == BUN_NONE ? 1 : -1;
 		}
 		if (BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
 			return GDK_FAIL;
@@ -1660,7 +1659,6 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 		GDKclrerr();
 	for (logged_range *p = lg->pending; p; p = p->next) {
 		p->cnt -= cleanup;
-		p->deleted -= cleanup;
 	}
 	return rcnt;
 }
@@ -1671,7 +1669,7 @@ static gdk_return
 bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdated)
 {
 	BUN cnt = pending ? pending->cnt : BATcount(lg->catalog_bid);
-	BUN dcnt = pending ? pending->deleted : BATcount(lg->dcatalog);
+	BUN dcnt = BATcount(lg->dcatalog);
 	BUN p, q;
 	BAT *catalog_bid = lg->catalog_bid;
 	BAT *catalog_id = lg->catalog_id;
@@ -1712,6 +1710,19 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 			cleanup++;
 			if (lids[p] == -1)
 				continue;
+			if (BUNappend(dcatalog, &(oid){p}, true) != GDK_SUCCEED) {
+				while (BATcount(dcatalog) > dcnt) {
+					if (BUNdelete(dcatalog, BATcount(dcatalog) - 1) != GDK_SUCCEED) {
+						TRC_CRITICAL(WAL, "delete after failed append failed\n");
+						break;
+					}
+				}
+				GDKfree(n);
+				GDKfree(r);
+				GDKfree(sizes);
+				log_unlock(lg);
+				return GDK_FAIL;
+			}
 		}
 		TRC_DEBUG(WAL, "new %s (%d)\n", BBP_logical(col), col);
 		assert(col);
@@ -1723,7 +1734,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	n[i++] = catalog_bid->batCacheid;
 	sizes[i] = cnt;
 	n[i++] = catalog_id->batCacheid;
-	sizes[i] = dcnt;
+	sizes[i] = BATcount(dcatalog);
 	n[i++] = dcatalog->batCacheid;
 
 	if (cleanup) {
@@ -1738,12 +1749,11 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 			return GDK_FAIL;
 		}
 		cnt -= cleanup;
-		dcnt -= cleanup;
 	}
 	if (dcatalog != lg->dcatalog) {
 		i = subcommit_list_add(i, n, sizes, lg->catalog_bid->batCacheid, cnt);
 		i = subcommit_list_add(i, n, sizes, lg->catalog_id->batCacheid, cnt);
-		i = subcommit_list_add(i, n, sizes, lg->dcatalog->batCacheid, dcnt);
+		i = subcommit_list_add(i, n, sizes, lg->dcatalog->batCacheid, BATcount(lg->dcatalog));
 	}
 	if (lg->seqs_id) {
 		sizes[i] = BATcount(lg->seqs_id);
@@ -2402,7 +2412,6 @@ log_create(int debug, const char *fn, const char *logdir, int version,
 	assert(lg->current == NULL);
 	logged_range dummy = {
 		.cnt = BATcount(lg->catalog_bid),
-		.deleted = BATcount(lg->dcatalog),
 	};
 	lg->current = &dummy;
 	if (log_open_output(lg) != GDK_SUCCEED) {
@@ -3283,7 +3292,6 @@ static gdk_return
 log_del_bat(logger *lg, log_bid bid)
 {
 	BUN p = log_find(lg->catalog_bid, lg->dcatalog, bid);
-	oid pos;
 	lng lid = lg->tid;
 
 	assert(p != BUN_NONE);
@@ -3292,16 +3300,8 @@ log_del_bat(logger *lg, log_bid bid)
 		return GDK_FAIL;
 	}
 
-	pos = (oid) p;
 	assert(lg->catalog_lid->hseqbase == 0);
-	if (BUNreplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
-		return GDK_FAIL;
-	if (BUNappend(lg->dcatalog, &pos, true) == GDK_SUCCEED) {
-		if (lg->current)
-			lg->current->deleted++;
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
+	return BUNreplace(lg->catalog_lid, p, &lid, false);
 }
 
 /* returns -1 on failure, 0 when not found, > 0 when found */

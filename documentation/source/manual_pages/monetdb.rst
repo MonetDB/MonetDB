@@ -71,7 +71,7 @@ allows to do wildcard matches. For details on the syntax, see
    maintenance mode. This allows the database administrator to perform
    initialization steps before releasing it to users, unless the **-p**
    argument is supplied. See also **monetdb lock**. The name of the
-   database must match the expression [A-Za-z0-9-_]+.
+   database must match the expression [A-Za-z0-9_-]+.
 
    **-m**\ *pattern*
       With the **-m** flag, instead of creating a database, a
@@ -258,6 +258,17 @@ successful.
       available CPU cores in the system. Reducing this number forces the
       server to use less parallelism when executing queries, or none at
       all if set to **1**.
+
+   **ncopyintothreads=**\ *number*  
+      Defines the maximum number of worker threads the server should use
+      to perform COPY INTO from a CSV file. The actual number of threads
+      used is never higher than the number of columns, and is **1** if the
+      number of rows is small. Normally, this number is equal to the
+      value of the **nthreads** property. Using this number forces the
+      server to use more or less parallelism when executing COPY INTO.
+      Note, COPY INTO threads are created in addition to normal worker
+      threads for each COPY INTO query that is being executed and
+      therefore contend for the CPU with other queries.
 
    **optpipe=**\ *string*
       Each server operates with a given optimizer pipeline. While the
