@@ -874,8 +874,8 @@ char *concatErrors(char *err1, const char *err2) __attribute__((__nonnull__(1)))
 const char *connectRef;
 const char *containsRef;
 str convertConstant(malType type, ValPtr vr);
-InstrPtr copyInstruction(InstrPtr p);
-InstrPtr copyInstructionArgs(InstrPtr p, int args);
+InstrPtr copyInstruction(const InstrRecord *p);
+InstrPtr copyInstructionArgs(const InstrRecord *p, int args);
 MalBlkPtr copyMalBlk(MalBlkPtr mb);
 const char *copy_fromRef;
 const char *corrRef;
