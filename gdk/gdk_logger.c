@@ -2256,6 +2256,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		.saved_id = getBBPlogno(),	/* get saved log numer from bbp */
 		.saved_tid = (int) getBBPtransid(),	/* get saved transaction id from bbp */
 	};
+	lg->tid = lg->saved_tid;
 
 	/* probably open file and check version first, then call call old logger code */
 	if (snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP) >= FILENAME_MAX) {
@@ -3370,4 +3371,24 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 	}
 
 	return GDK_SUCCEED;
+}
+
+void
+log_printinfo(logger *lg)
+{
+	printf("logger %s:\n", lg->fn);
+	printf("current log file "ULLFMT", last handled log file "ULLFMT"\n",
+	       lg->id, lg->saved_id);
+	printf("current transaction id %d, saved transaction id %d\n",
+	       lg->tid, lg->saved_tid);
+	printf("number of flushers: %d, number of open files %d\n",
+	       (int) ATOMIC_GET(&lg->nr_flushers),
+	       (int) ATOMIC_GET(&lg->nr_open_files));
+	printf("number of catalog entries "BUNFMT", of which "BUNFMT" deleted\n",
+	       lg->catalog_bid->batCount, lg->dcatalog->batCount);
+	int npend = 0;
+	for (logged_range *p = lg->pending; p; p = p->next)
+		npend++;
+	if (npend > 1)
+		printf("number of pending ranges %d\n", npend);
 }

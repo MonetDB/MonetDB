@@ -559,6 +559,7 @@ gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, log_id id);
 void log_destroy(logger *lg);
 log_bid log_find_bat(logger *lg, log_id id);
 gdk_return log_flush(logger *lg, ulng saved_id);
+void log_printinfo(logger *lg);
 int log_sequence(logger *lg, int seq, lng *id);
 gdk_return log_tend(logger *lg);
 gdk_return log_tflush(logger *lg, ulng log_file_id, ulng commit_ts);
