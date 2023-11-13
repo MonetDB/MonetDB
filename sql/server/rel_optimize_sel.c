@@ -3595,7 +3595,6 @@ rel_use_index(visitor *v, sql_rel *rel)
 
 				/* swapped ? */
 				if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, e->l)) || (!left && !rel_find_exp(rel->r, e->l)))) {
-					printf("# join swap exp for fk\n");
 					exp_swap(e);
 				}
 				p = find_prop(e->p, PROP_HASHCOL);
