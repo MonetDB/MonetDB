@@ -89,7 +89,7 @@ static void
 SQLprintinfo(void)
 {
 	/* we need to start printing SQL info here... */
-	log_printinfo(((sqlstore *) SQLstore)->logger);
+	store_printinfo(SQLstore);
 }
 
 str

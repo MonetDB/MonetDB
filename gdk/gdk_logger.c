@@ -3377,8 +3377,10 @@ void
 log_printinfo(logger *lg)
 {
 	printf("logger %s:\n", lg->fn);
+	rotation_lock(lg);
 	printf("current log file "ULLFMT", last handled log file "ULLFMT"\n",
 	       lg->id, lg->saved_id);
+	rotation_unlock(lg);
 	printf("current transaction id %d, saved transaction id %d\n",
 	       lg->tid, lg->saved_tid);
 	printf("number of flushers: %d, number of open files %d\n",
