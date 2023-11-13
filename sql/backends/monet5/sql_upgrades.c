@@ -5813,7 +5813,7 @@ sql_update_jun2023_sp3(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
-sql_update_default_geom(Client c, mvc *sql, sql_schema *s)
+sql_update_dec2023_geom(Client c, mvc *sql, sql_schema *s)
 {
 	sql_subtype tp;
 	char *err = NULL;
@@ -5902,7 +5902,7 @@ sql_update_default_geom(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, sql_schema *s)
+sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 {
 	sql_subtype tp;
 	sql_schema *info;
@@ -6651,12 +6651,12 @@ SQLupgrades(Client c, mvc *m)
 		goto handle_error;
 	}
 
-	if ((err = sql_update_default_geom(c, m, s)) != NULL) {
+	if ((err = sql_update_dec2023_geom(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
-	if ((err = sql_update_default(c, m, s)) != NULL) {
+	if ((err = sql_update_dec2023(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
