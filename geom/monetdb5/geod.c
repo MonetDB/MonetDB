@@ -1027,7 +1027,9 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 	BUN est;
 
 	//get the input BATs
-	if ((l = BATdescriptor(*l_id)) == NULL || (r = BATdescriptor(*r_id)) == NULL) {
+	l = BATdescriptor(*l_id);
+	r = BATdescriptor(*r_id);
+	if (l == NULL || r == NULL) {
 		if (l)
 			BBPunfix(l->batCacheid);
 		if (r)
@@ -1170,8 +1172,6 @@ wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat 
 	BAT *d = NULL;
 	//Get the distance BAT and get the double value
 	if ((d = BATdescriptor(*d_id)) == NULL) {
-		if (d)
-			BBPunfix(d->batCacheid);
 		throw(MAL, "geom.wkbDWithinGeographicJoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (BATcount(d) == 1) {
