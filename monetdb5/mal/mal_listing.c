@@ -301,7 +301,7 @@ fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base,
 	if (!copystring(&t, "# ", &len))
 		return base;
 
-	if (pci && pci->argc == 3) {
+	if (pci->argc == 3) {
 		if (getFunctionId(pci)) {
 			char *arg1 = renderTerm(mb, stk, pci, 1, flg);
 			char *arg2 = renderTerm(mb, stk, pci, 2, flg);
