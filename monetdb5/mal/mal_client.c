@@ -590,13 +590,17 @@ void
 MCprintinfo(void)
 {
 	int nrun = 0, nfinish = 0, nblock = 0;
+
 	MT_lock_set(&mal_contextLock);
 	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		switch (c->mode) {
 		case RUNCLIENT:
 			/* running */
 			nrun++;
-			printf("client %d, user %s, using %"PRIu64" bytes of transient space\n", c->idx, c->username, (uint64_t) ATOMIC_GET(&c->qryctx.datasize));
+			if (c->idle)
+				printf("client %d, user %s, using %"PRIu64" bytes of transient space, idle since %s", c->idx, c->username, (uint64_t) ATOMIC_GET(&c->qryctx.datasize), ctime(&c->idle));
+			else
+				printf("client %d, user %s, using %"PRIu64" bytes of transient space\n", c->idx, c->username, (uint64_t) ATOMIC_GET(&c->qryctx.datasize));
 			break;
 		case FINISHCLIENT:
 			/* finishing */
