@@ -54,7 +54,7 @@ mal_version(void)
 static void
 MALprintinfo(void)
 {
-	/* we need to start printing MAL info here... */
+	MCprintinfo();
 }
 
 /*

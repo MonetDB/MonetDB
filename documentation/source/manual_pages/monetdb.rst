@@ -71,7 +71,7 @@ allows to do wildcard matches. For details on the syntax, see
    maintenance mode. This allows the database administrator to perform
    initialization steps before releasing it to users, unless the **-p**
    argument is supplied. See also **monetdb lock**. The name of the
-   database must match the expression [A-Za-z0-9_-]+.
+   database must match the expression [A-Za-z0-9\_-]+.
 
    **-m**\ *pattern*
       With the **-m** flag, instead of creating a database, a

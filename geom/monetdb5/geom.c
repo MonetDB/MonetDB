@@ -163,12 +163,6 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 								GDKfree(unions[i]);
 							GDKfree(unions);
 						}
-						if (unionGroup) {
-							for (BUN i = 0; i < geomCount; i++)
-								if (unionGroup[i])
-									GEOSGeom_destroy(unionGroup[i]);
-							GDKfree(unionGroup);
-						}
 						goto free;
 					}
 				}
@@ -241,8 +235,6 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
-		if (b)
-			BBPunfix(b->batCacheid);
 		return msg;
 	}
 
@@ -3572,6 +3564,10 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 			if (lastGrp != (oid)-1) {
 				msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
 				position = 0;
+				if (msg != MAL_SUCCEED) {
+					GDKfree(lineGroup);
+					goto free;
+				}
 			}
 			lastGrp = grp;
 		}
@@ -3579,6 +3575,8 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	}
 	msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
 	GDKfree(lineGroup);
+	if (msg != MAL_SUCCEED)
+		goto free;
 
 	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");

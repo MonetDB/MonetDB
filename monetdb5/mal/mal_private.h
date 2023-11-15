@@ -78,3 +78,6 @@ void mal_runtime_reset(void)
 
 char *dupError(const char *err)
 	__attribute__((__visibility__("hidden"), __returns_nonnull__));
+
+void MCprintinfo(void)
+	__attribute__((__visibility__("hidden")));
