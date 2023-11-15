@@ -3052,10 +3052,8 @@ check_rotation_conditions(logger *lg)
 	const lng p = (lng) getfilepos(getFile(lg->current->output_log));
 
 	const lng log_large = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? LOG_MINI : LOG_LARGE;
-	bool res = (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000) || (p > log_large);
-	if (res)
-		return (ATOMIC_GET(&lg->nr_open_files) < 8);
-	return res;
+	bool res = (p > log_large) || (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000);
+	return res && (ATOMIC_GET(&lg->nr_open_files) < 8);
 }
 
 gdk_return
@@ -3389,8 +3387,12 @@ log_printinfo(logger *lg)
 	printf("number of catalog entries "BUNFMT", of which "BUNFMT" deleted\n",
 	       lg->catalog_bid->batCount, lg->dcatalog->batCount);
 	int npend = 0;
-	for (logged_range *p = lg->pending; p; p = p->next)
+	for (logged_range *p = lg->pending; p; p = p->next) {
+		char buf[32];
+		if (p->output_log == NULL ||
+		    snprintf(buf, sizeof(buf), ", file size %"PRIu64, (uint64_t) getfilepos(getFile(lg->current->output_log))) >= (int) sizeof(buf))
+			buf[0] = 0;
+		printf("pending range "ULLFMT": drops %"PRIu64", last_ts %"PRIu64", flushed_ts %"PRIu64", refcount %"PRIu64"%s%s\n", p->id, (uint64_t) ATOMIC_GET(&p->drops), (uint64_t) ATOMIC_GET(&p->last_ts), (uint64_t) ATOMIC_GET(&p->flushed_ts), (uint64_t) ATOMIC_GET(&p->refcount), buf, p == lg->current ? " (current)" : "");
 		npend++;
-	if (npend > 1)
-		printf("number of pending ranges %d\n", npend);
+	}
 }

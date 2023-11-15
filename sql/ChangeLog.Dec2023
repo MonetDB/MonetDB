@@ -12,6 +12,7 @@
    information_schema.table_constraints
    information_schema.referential_constraints
    information_schema.routines
+   information_schema.parameters
    information_schema.sequences
 
   Most views have been extended (after the standard columns) with MonetDB
