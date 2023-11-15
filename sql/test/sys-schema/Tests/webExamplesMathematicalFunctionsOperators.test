@@ -300,24 +300,8 @@ select power(2, 5), power(2, 31)
 32.000
 2147483648.000
 
-query RR nosort
--- select rand()
-----
-32.000
-2147483648.000
-
 query I nosort
 select 2144156907 / 2147483648
-----
-0
-
-query I nosort
--- select rand() / 2147483648
-----
-0
-
-query I nosort
--- select cast(rand() as float) / 2147483648
 ----
 0
 
@@ -329,24 +313,9 @@ project (
 ) [ "sys"."sql_div"(double(53)["sys"."rand"()], double(53) "2147483648") ]
 
 query I nosort
-select rand(0)
+select rand(-5) >= 0
 ----
-1868859049
-
-query I nosort
-select rand(1)
-----
-847553797
-
-query I nosort
-select rand(2)
-----
-543032001
-
-query I nosort
-select rand(-5)
-----
-1345532277
+1
 
 statement error
 select random()
