@@ -656,7 +656,8 @@ typedef struct {
 
 /* interface definitions */
 gdk_export void *VALconvert(int typ, ValPtr t);
-gdk_export char *VALformat(const ValRecord *res);
+gdk_export char *VALformat(const ValRecord *res)
+	__attribute__((__warn_unused_result__));
 gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);

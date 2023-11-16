@@ -40,8 +40,6 @@ struct logger {
 	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
 
 	// CHECK writer only
-	lng end;
-	ulng* writer_end;
 	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
 	void *rbuf;
 	size_t rbufsize;

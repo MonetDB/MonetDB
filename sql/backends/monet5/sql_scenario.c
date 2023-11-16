@@ -85,6 +85,13 @@ static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 static str SQLinit(Client c, const char *initpasswd);
 static str master_password = NULL;
 
+static void
+SQLprintinfo(void)
+{
+	/* we need to start printing SQL info here... */
+	store_printinfo(SQLstore);
+}
+
 str
 //SQLprelude(void *ret)
 SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -153,6 +160,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fprintf(stdout, "# MonetDB/SQL module loaded\n");
 		fflush(stdout);		/* make merovingian see this *now* */
 	}
+	GDKprintinforegister(SQLprintinfo);
 	if (GDKinmemory(0) || GDKembedded()) {
 		s->name = "sql";
 		ms->name = "msql";

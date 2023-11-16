@@ -413,12 +413,11 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 	assert(g->tsorted);
 	oid *ri1 = Tloc(res1, 0);
 	bit *ri2 = Tloc(res2, 0);
-	oid *gi = Tloc(g, 0);
 	bit *mi = Tloc(m, 0);
 	bit *pi = Tloc(p, 0);
 	oid cur = oid_nil;
 
-	if (!gi) { /* void case ? */
+	if (g->ttype == TYPE_void) { /* void case ? */
 		oid c = g->hseqbase;
 		for (BUN n = 0; n < nr; n++, c++) {
 			ri1[q] = c;
@@ -430,6 +429,7 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 			q++;
 		}
 	} else {
+		oid *gi = Tloc(g, 0);
 		oid c = g->hseqbase;
 		if (nr)
 			cur = gi[0];
@@ -507,12 +507,11 @@ ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid,
 	assert(g->tsorted);
 	oid *ri1 = Tloc(res1, 0);
 	bit *ri2 = Tloc(res2, 0);
-	oid *gi = Tloc(g, 0);
 	bit *mi = Tloc(m, 0);
 	bit *pi = Tloc(p, 0);
 	oid cur = oid_nil;
 
-	if (!gi) { /* void case ? */
+	if (g->ttype == TYPE_void) { /* void case ? */
 		oid c = g->hseqbase;
 		for (BUN n = 0; n < nr; n++, c++) {
 			ri1[q] = c;
@@ -520,6 +519,7 @@ ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid,
 			q++;
 		}
 	} else {
+		oid *gi = Tloc(g, 0);
 		oid c = g->hseqbase;
 		if (nr)
 			cur = gi[0];

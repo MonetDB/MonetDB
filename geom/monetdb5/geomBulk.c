@@ -787,15 +787,6 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 		oid p = (canditer_next(&ci) - inBAT->hseqbase);
 		geomWKB = (wkb *) BUNtvar(inBAT_iter, p);
 
-		if (geomWKB == NULL) {
-			bat_iterator_end(&inBAT_iter);
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			if (s)
-				BBPunfix(s->batCacheid);
-			throw(MAL, "batgeom.Transform", SQLSTATE(38000) "One of the wkb geometries is null");
-		}
-
 		/* get the geosGeometry from the wkb */
 		geosGeometry = wkb2geos(geomWKB);
 		/* get the type of the geometry */
@@ -930,16 +921,12 @@ wkbDistanceGeographic_bat_cand(bat *out_id, const bat *a_id, const bat *b_id, co
 bailout:
 	bat_iterator_end(&a_iter);
 	bat_iterator_end(&b_iter);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 clean:
-	if (a)
-		BBPunfix(a->batCacheid);
-	if (b)
-		BBPunfix(b->batCacheid);
-	BBPunfix(out->batCacheid);
+	BBPreclaim(a);
+	BBPreclaim(b);
+	BBPreclaim(out);
 	return msg;
 }
 

@@ -3559,11 +3559,9 @@ guess_uniques(BAT *b, struct canditer *ci)
 				  ALGOBATPAR(b));
 			return unique_est;
 		}
-		s1 = BATcreatesample(b->hseqbase, batcount, 1000,
-				     (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
+		s1 = BATsample(b, 1000);
 	} else {
-		BAT *s2 = BATcreatesample(ci->s->hseqbase, ci->ncand, 1000,
-					  (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
+		BAT *s2 = BATsample(ci->s, 1000);
 		if (s2 == NULL)
 			return -1;
 		s1 = BATproject(s2, ci->s);

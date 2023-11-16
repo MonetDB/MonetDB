@@ -7,7 +7,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 %global name MonetDB
-%global version 11.48.0
+%global version 11.50.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -867,6 +867,14 @@ fi
 %endif
 
 %changelog
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.17-20231116
+- Rebuilt.
+
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.17-20231116
+- gdk: Fixed a regression where after a while the write-ahead log files
+  weren't being rotated, meaning from some point onwards, the newest
+  file just kept on growing.
+
 * Thu Nov 09 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.15-20231109
 - Rebuilt.
 - GH#7410: SIGSEGV cause database corruption

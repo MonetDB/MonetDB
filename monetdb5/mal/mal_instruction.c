@@ -474,7 +474,7 @@ newInstruction(MalBlkPtr mb, const char *modnme, const char *fcnnme)
 }
 
 InstrPtr
-copyInstructionArgs(InstrPtr p, int args)
+copyInstructionArgs(const InstrRecord *p, int args)
 {
 	if (args < p->maxarg)
 		args = p->maxarg;
@@ -493,7 +493,7 @@ copyInstructionArgs(InstrPtr p, int args)
 }
 
 InstrPtr
-copyInstruction(InstrPtr p)
+copyInstruction(const InstrRecord *p)
 {
 	return copyInstructionArgs(p, p->maxarg);
 }

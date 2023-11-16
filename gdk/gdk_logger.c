@@ -2256,6 +2256,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		.saved_id = getBBPlogno(),	/* get saved log numer from bbp */
 		.saved_tid = (int) getBBPtransid(),	/* get saved transaction id from bbp */
 	};
+	lg->tid = lg->saved_tid;
 
 	/* probably open file and check version first, then call call old logger code */
 	if (snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP) >= FILENAME_MAX) {
@@ -2470,6 +2471,7 @@ do_rotate(logger *lg)
 		if (!LOG_DISABLED(lg) && ATOMIC_GET(&cur->refcount) == 1) {
 			close_stream(cur->output_log);
 			cur->output_log = NULL;
+			ATOMIC_DEC(&lg->nr_open_files);
 		}
 	}
 }
@@ -3051,10 +3053,8 @@ check_rotation_conditions(logger *lg)
 	const lng p = (lng) getfilepos(getFile(lg->current->output_log));
 
 	const lng log_large = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? LOG_MINI : LOG_LARGE;
-	bool res = (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000) || (p > log_large);
-	if (res)
-		return (ATOMIC_GET(&lg->nr_open_files) < 8);
-	return res;
+	bool res = (p > log_large) || (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000);
+	return res && (ATOMIC_GET(&lg->nr_open_files) < 8);
 }
 
 gdk_return
@@ -3151,6 +3151,7 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 		if (frange != lg->current) {
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
+			ATOMIC_DEC(&lg->nr_open_files);
 		}
 		rotation_unlock(lg);
 	}
@@ -3370,4 +3371,30 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 	}
 
 	return GDK_SUCCEED;
+}
+
+void
+log_printinfo(logger *lg)
+{
+	printf("logger %s:\n", lg->fn);
+	rotation_lock(lg);
+	printf("current log file "ULLFMT", last handled log file "ULLFMT"\n",
+	       lg->id, lg->saved_id);
+	rotation_unlock(lg);
+	printf("current transaction id %d, saved transaction id %d\n",
+	       lg->tid, lg->saved_tid);
+	printf("number of flushers: %d, number of open files %d\n",
+	       (int) ATOMIC_GET(&lg->nr_flushers),
+	       (int) ATOMIC_GET(&lg->nr_open_files));
+	printf("number of catalog entries "BUNFMT", of which "BUNFMT" deleted\n",
+	       lg->catalog_bid->batCount, lg->dcatalog->batCount);
+	int npend = 0;
+	for (logged_range *p = lg->pending; p; p = p->next) {
+		char buf[32];
+		if (p->output_log == NULL ||
+		    snprintf(buf, sizeof(buf), ", file size %"PRIu64, (uint64_t) getfilepos(getFile(lg->current->output_log))) >= (int) sizeof(buf))
+			buf[0] = 0;
+		printf("pending range "ULLFMT": drops %"PRIu64", last_ts %"PRIu64", flushed_ts %"PRIu64", refcount %"PRIu64"%s%s\n", p->id, (uint64_t) ATOMIC_GET(&p->drops), (uint64_t) ATOMIC_GET(&p->last_ts), (uint64_t) ATOMIC_GET(&p->flushed_ts), (uint64_t) ATOMIC_GET(&p->refcount), buf, p == lg->current ? " (current)" : "");
+		npend++;
+	}
 }

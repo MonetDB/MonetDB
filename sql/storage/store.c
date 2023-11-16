@@ -7387,3 +7387,12 @@ sql_trans_convert_partitions(sql_trans *tr)
 	}
 	return 0;
 }
+
+void
+store_printinfo(sqlstore *store)
+{
+	MT_lock_set(&store->commit);
+	printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
+	log_printinfo(store->logger);
+	MT_lock_unset(&store->commit);
+}
