@@ -1,3 +1,8 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a regression where after a while the write-ahead log files
+  weren't being rotated, meaning from some point onwards, the newest
+  file just kept on growing.
+

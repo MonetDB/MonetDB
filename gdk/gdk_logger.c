@@ -2471,6 +2471,7 @@ do_rotate(logger *lg)
 		if (!LOG_DISABLED(lg) && ATOMIC_GET(&cur->refcount) == 1) {
 			close_stream(cur->output_log);
 			cur->output_log = NULL;
+			ATOMIC_DEC(&lg->nr_open_files);
 		}
 	}
 }
@@ -3150,6 +3151,7 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 		if (frange != lg->current) {
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
+			ATOMIC_DEC(&lg->nr_open_files);
 		}
 		rotation_unlock(lg);
 	}
