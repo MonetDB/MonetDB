@@ -36,7 +36,7 @@ moptions_export void mo_print_options(opt *set, int setlen);
 
 /* mo_find_option, finds the option with the given name in the option set
    (set,setlen). */
-moptions_export char *mo_find_option(opt *set, int setlen, const char *name);
+moptions_export const char *mo_find_option(opt *set, int setlen, const char *name);
 
 /* mo_system_config will add the options from the system config file
    (returns the new setlen) */
