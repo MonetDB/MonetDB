@@ -1,6 +1,7 @@
 split-select
 groupby-cse
 groupjoin
+join-merge-remote-replica-plan
 join-merge-remote-replica
 replicas-base
 replicas-join-plan
