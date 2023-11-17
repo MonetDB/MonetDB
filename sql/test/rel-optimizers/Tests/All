@@ -5,4 +5,5 @@ join-merge-remote-replica
 replicas-base
 replicas-join
 local-replica
+local-replica-with-actual-remote
 remote-replica
