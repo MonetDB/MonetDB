@@ -1,0 +1,9 @@
+statement ok
+CREATE TABLE v0 (v1 oid)
+
+statement ok
+INSERT INTO v0 (v1) VALUES (NULL) , (3) , (46) , (10) , (1)
+
+statement ok
+DELETE FROM v0 WHERE v1 <= (SELECT 2 AS zero WHERE (v1 BETWEEN 1 AND (SELECT MAX (v1) FROM v0 name)) >= v1)
+
