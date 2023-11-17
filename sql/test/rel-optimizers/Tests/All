@@ -4,7 +4,7 @@ groupjoin
 join-merge-remote-replica-plan
 join-merge-remote-replica
 replicas-base
-replicas-join
+replicas-join-plan
 local-replica
 local-replica-with-actual-remote
 remote-replica
