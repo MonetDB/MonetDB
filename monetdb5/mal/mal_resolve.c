@@ -35,6 +35,19 @@ resolvedType(int dsttype, int srctype)
 	if (dsttype == srctype || dsttype == TYPE_any || srctype == TYPE_any)
 		return 0;
 
+	if (getOptBat(dsttype) && isaBatType(srctype)) {
+		int t1 = getBatType(dsttype);
+		int t2 = getBatType(srctype);
+		if (t1 == t2 || t1 == TYPE_any || t2 == TYPE_any)
+			return 0;
+	}
+	if (getOptBat(dsttype) && !isaBatType(srctype)) {
+		int t1 = getBatType(dsttype);
+		int t2 = srctype;
+		if (t1 == t2 || t1 == TYPE_any || t2 == TYPE_any)
+			return 0;
+	}
+
 	if (isaBatType(dsttype) && isaBatType(srctype)) {
 		int t1 = getBatType(dsttype);
 		int t2 = getBatType(srctype);
@@ -117,6 +130,8 @@ getFormalArgType( Symbol s, int arg)
 		else
 			tpe = a->typeid;
 	}
+	if (a->opt == 1)
+		setOptBat(tpe);
 	return tpe;
 }
 
@@ -257,6 +272,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				 * In all other cases the type should apply to all
 				 * remaining arguments.
 				 */
+				if (getOptBat(formal) && !isAnyExpression(formal) && getBatType(actual) == getBatType(formal))
+					formal = actual;
 				if (formal == actual)
 					continue;
 				if (updateTypeMap(formal, actual, polytype)) {
@@ -296,6 +313,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 							k--;
 
 						formal = getPolyType(formal, polytype);
+						if (getOptBat(formal) && !isAnyExpression(formal) && getBatType(actual) == getBatType(formal))
+							formal = actual;
 						if (formal == actual || formal == TYPE_any)
 							continue;
 						if (resolvedType(formal, actual) < 0) {
@@ -360,6 +379,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 
 				s1 = getPolyType(formal, polytype);
 
+				if (getOptBat(formal) && !isAnyExpression(formal) && getBatType(actual) == getBatType(formal))
+					s1 = actual;
 				if (resolveType(returntype+i, s1, actual) < 0) {
 					s1 = -1;
 					break;
@@ -810,23 +831,29 @@ static malType
 getPolyType(malType t, int *polytype)
 {
 	int ti;
-	int tail;
+	malType tail;
 
 	ti = getTypeIndex(t);
-	if (!isaBatType(t) && ti > 0)
-		return polytype[ti];
+	if (!isaBatType(t) && ti > 0) {
+		tail = polytype[ti];
+		if (getOptBat(t))
+			setOptBat(tail);
+		return tail;
+	}
 
 	tail = ti == 0 ? getBatType(t) : polytype[ti];
 	if (isaBatType(t)) {
 		tail = newBatType(tail);
 	}
+	if (getOptBat(t))
+		setOptBat(tail);
 	return tail;
 }
 
 /*
  * Each argument is checked for binding of polymorphic arguments.
  * This routine assumes that the type index is indeed smaller than maxarg.
- * (The parser currently enforces a single digit from 1-9 )
+ * (The parser currently enforces a single digit from 1-2 )
  * The polymorphic type 'any', i.e. any_0, does never constraint an operation
  * it can match with all polymorphic types.
  * The routine returns the instanciated formal type for subsequent
@@ -841,11 +868,10 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 		return 0;
 
 	if ((h = getTypeIndex(formal))) {
-		if (isaBatType(actual) && !isaBatType(formal) &&
+		if (isaBatType(actual) && !isaBatType(formal) && !getOptBat(formal) &&
 			(polytype[h] == TYPE_any || polytype[h] == actual)) {
 			polytype[h] = actual;
-			ret = 0;
-			goto updLabel;
+			return 0;
 		}
 		t = getBatType(actual);
 		if (t != polytype[h]) {
@@ -854,8 +880,7 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 			else if (polytype[h] == TYPE_any)
 				polytype[h] = t;
 			else {
-				ret = -1;
-				goto updLabel;
+				return -1;
 			}
 		}
 	}
@@ -863,6 +888,5 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 		if (!isaBatType(actual))
 			return -1;
 	}
-  updLabel:
 	return ret;
 }

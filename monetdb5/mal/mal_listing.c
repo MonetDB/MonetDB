@@ -211,7 +211,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 	for (i = f->retc; i < f->argc; i++) {
 		if (snprintf(var, 16, "X_%d:", i-f->retc) >= 16 || !copystring(&t, var, &len))
 			return base;
-		if (f->args[i].isbat && !copystring(&t, "bat[:", &len))
+		if ((f->args[i].isbat || (f->args[i].opt == 1)) && !copystring(&t, (f->args[i].opt == 1)?"bat?[:":"bat[:", &len))
 			return base;
 		arg = f->args[i].type;
 		if (arg[0] && !copystring(&t, arg, &len))
@@ -223,7 +223,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 			} else if (!copystring(&t, "any", &len))
 				return base;
 		}
-		if (f->args[i].isbat && !copystring(&t, "]", &len))
+		if ((f->args[i].isbat || f->args[i].opt == 1) && !copystring(&t, "]", &len))
 			return base;
 		if (i+1 < f->argc && !copystring(&t, ", ", &len))
 			return base;
@@ -239,7 +239,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 	} else if (f->retc == 1) {
 		if (!copystring(&t, "):", &len))
 			return base;
-		if (f->args[0].isbat && !copystring(&t, "bat[:", &len))
+		if ((f->args[0].isbat || f->args[0].opt == 1) && !copystring(&t, (f->args[0].opt == 1)?"bat?[:":"bat[:", &len))
 			return base;
 		tpe = f->args[0].type;
 		if (tpe[0] && !copystring(&t, tpe, &len))
@@ -251,7 +251,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 			} else if (!copystring(&t, "any", &len))
 				return base;
 		}
-		if (f->args[0].isbat && !copystring(&t, "]", &len))
+		if ((f->args[0].isbat || f->args[0].opt == 1) && !copystring(&t, "]", &len))
 			return base;
 		if (f->vrets && !copystring(&t, "...", &len))
 			return base;
@@ -261,7 +261,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 		for (i = 0; i < f->retc; i++) {
 			if (snprintf(var, 16, "X_%d:", i+(f->argc-f->retc)) >= 16 || !copystring(&t, var, &len))
 				return base;
-			if (f->args[i].isbat && !copystring(&t, "bat[:", &len))
+			if ((f->args[i].isbat || (f->args[i].opt == 1)) && !copystring(&t, (f->args[i].opt == 1)?"bat?[:":"bat[:", &len))
 				return base;
 			arg = f->args[i].type;
 			if (arg[0] && !copystring(&t, arg, &len))
@@ -273,7 +273,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 				} else if (!copystring(&t, "any", &len))
 				return base;
 			}
-			if (f->args[i].isbat && !copystring(&t, "]", &len))
+			if ((f->args[i].isbat || f->args[i].opt == 1) && !copystring(&t, "]", &len))
 				return base;
 			if (i+1 < f->retc && !copystring(&t, ", ", &len))
 				return base;

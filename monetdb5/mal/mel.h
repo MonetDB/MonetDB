@@ -50,20 +50,23 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define noargs		    NULL, .retc=0, .argc=0
 
 #define arg(n,t)			{ /*.name=n,*/ .type=# t }
+#define optbatarg(n,t)		{ /*.name=n,*/ .type=# t, .opt=1 }
 #define vararg(n,t)			{ /*.name=n,*/ .type=# t, .vargs=true }
 #define batarg(n,t)			{ /*.name=n,*/ .type=# t, .isbat=true }
 #define batvararg(n,t)		{ /*.name=n,*/ .type=# t, .isbat=true, .vargs=true }
 #define argany(n,a)			{ /*.name=n,*/ .nr=a, }
 #define varargany(n,a)		{ /*.name=n,*/ .nr=a, .vargs=true, }
 #define batargany(n,a)		{ /*.name=n,*/ .isbat=true, .nr=a, }
+#define optbatargany(n,a)	{ /*.name=n,*/ .nr=a, .opt=1, }
 #define batvarargany(n,a)	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
 
 typedef struct __attribute__((__designated_init__)) mel_arg {
 	//char *name;
 	char type[14];
-	//uint8_t isbat:1, vargs:1, nr:2;
-	uint16_t typeid:8, nr:2, isbat:1, vargs:1;
+	uint16_t typeid:8, nr:2, isbat:1, vargs:1, opt:1;
 } mel_arg;
+
+/* nr for any tyes 0, 1,2 */
 
 typedef struct __attribute__((__designated_init__)) mel_func {
 	const char *mod;
@@ -82,7 +85,7 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 typedef str (*mel_init)(void);
 
 typedef struct __attribute__((__designated_init__)) mel_func_arg {
-	uint16_t type:8, nr:2, isbat:1, vargs:1;
+	uint16_t type:8, nr:2, isbat:1, vargs:1, opt:1;
 } mel_func_arg;
 
 /* var arg of arguments of type mel_func_arg */

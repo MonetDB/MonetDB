@@ -260,12 +260,12 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 #include "mel.h"
 mel_func mat_init_funcs[] = {
- pattern("mat", "new", MATpack, false, "Define a Merge Association Table (MAT). Fall back to the pack operation\nwhen this is called ", args(1,2, batargany("",2),batvarargany("b",2))),
- pattern("bat", "pack", MATpackValues, false, "Materialize the values into a BAT. Avoiding a clash with mat.pack() in mergetable", args(1,2, batargany("",2),varargany("",2))),
- pattern("mat", "pack", MATpackValues, false, "Materialize the MAT (of values) into a BAT", args(1,2, batargany("",2),varargany("",2))),
- pattern("mat", "pack", MATpack, false, "Materialize the MAT into a BAT", args(1,2, batargany("",2),batvarargany("b",2))),
- pattern("mat", "packIncrement", MATpackIncrement, false, "Prepare incremental mat pack", args(1,3, batargany("",2),batargany("b",2),arg("pieces",int))),
- pattern("mat", "packIncrement", MATpackIncrement, false, "Prepare incremental mat pack", args(1,3, batargany("",2),batargany("b",2),batargany("c",2))),
+ pattern("mat", "new", MATpack, false, "Define a Merge Association Table (MAT). Fall back to the pack operation\nwhen this is called ", args(1,2, batargany("",1),batvarargany("b",1))),
+ pattern("bat", "pack", MATpackValues, false, "Materialize the values into a BAT. Avoiding a clash with mat.pack() in mergetable", args(1,2, batargany("",1),varargany("",1))),
+ pattern("mat", "pack", MATpackValues, false, "Materialize the MAT (of values) into a BAT", args(1,2, batargany("",1),varargany("",1))),
+ pattern("mat", "pack", MATpack, false, "Materialize the MAT into a BAT", args(1,2, batargany("",1),batvarargany("b",1))),
+ pattern("mat", "packIncrement", MATpackIncrement, false, "Prepare incremental mat pack", args(1,3, batargany("",1),batargany("b",1),arg("pieces",int))),
+ pattern("mat", "packIncrement", MATpackIncrement, false, "Prepare incremental mat pack", args(1,3, batargany("",1),batargany("b",1),batargany("c",1))),
  { .imp=NULL }
 };
 #include "mal_import.h"

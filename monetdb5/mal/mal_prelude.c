@@ -193,13 +193,15 @@ makeMalType(mel_arg *a)
 		if (a->isbat)
 			tpe = newBatType(tpe);
 	}
+	if (a->opt == 1)
+		setOptBat(tpe);
 	return tpe;
 }
 
 void
 setPoly(mel_func *f, malType tpe)
 {
-	int any = isAnyExpression(tpe) || tpe == TYPE_any;
+	int any = isAnyExpression(tpe) || tpe == TYPE_any || getOptBat(tpe);
     unsigned int index = 0;
 	if (!any)
 		return;
@@ -237,28 +239,54 @@ addFunctions(mel_func *fcn)
 		for (i = 0; i < fcn->retc; i++) {
 			mel_arg *a = fcn->args + i;
 			malType tpe = makeMalType(a);
-			if (a->nr > 0)
+			if (a->nr > 0 || a->opt)
 				setPoly(fcn, tpe);
 			if (a->vargs) {
 				fcn->vrets = true;
 				setPoly(fcn, TYPE_any);
 			}
+			if (a->opt && fcn->command)
+				throw(LOADER, __func__, "Can not have command symbol with dynamic types, ie bat vs scalar in %s.%s", fcn->mod, fcn->fcn);
+		/*
+			if (a->nr >= 2)
+				printf("%s.%s\n", fcn->mod, fcn->fcn);
+				*/
 		}
 		/* add the arguments */
 		for (i = fcn->retc; i < fcn->argc; i++) {
 			mel_arg *a = fcn->args + i;
 			malType tpe = makeMalType(a);
 
-			if (a->nr > 0)
+			if (a->nr > 0  || a->opt)
 				setPoly(fcn, tpe);
 			if (a->vargs) {
 				fcn->vargs = true;
 				setPoly(fcn, TYPE_any);
 			}
+			if (a->opt && fcn->command)
+				throw(LOADER, __func__, "Can not have command symbol with dynamic types, ie bat vs scalar in %s.%s", fcn->mod, fcn->fcn);
+		/*
+			if (a->nr >= 2)
+				printf("%s.%s\n", fcn->mod, fcn->fcn);
+				*/
 		}
 		insertSymbol(c, s);
 	}
 	return msg;
+}
+
+static void
+argCopy( mel_arg *ap, mel_func_arg *a)
+{
+	ap->typeid = a->type;
+	ap->nr = a->nr;
+	ap->isbat = a->isbat;
+	ap->vargs = a->vargs;
+	ap->opt = a->opt;
+	if (a->type != TYPE_any)
+		strcpy(ap->type, BATatoms[a->type].name);
+	else
+		ap->type[0] = 0;
 }
 
 int
@@ -311,41 +339,39 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 	for (i = 0; i < retc; i++) {
 		mel_func_arg a = va_arg(va, mel_func_arg);
 		mel_arg *ap = f->args+i;
-		ap->typeid = a.type;
-		ap->nr = a.nr;
-		ap->isbat = a.isbat;
-		ap->vargs = a.vargs;
-		if (a.type != TYPE_any)
-			strcpy(ap->type, BATatoms[a.type].name);
-		else
-			ap->type[0] = 0;
+		argCopy(ap, &a);
 		malType tpe = makeMalType(ap);
-		if (a.nr > 0)
+		if (a.nr > 0 || a.opt)
 			setPoly(f, tpe);
 		if (a.vargs) {
 			f->vrets = true;
 			setPoly(f, TYPE_any);
 		}
+		if (a.opt && f->command)
+			return MEL_ERR;
+		/*
+		if (a.nr >= 2)
+			printf("%s.%s\n", f->mod, f->fcn);
+			*/
 	}
 	/* add the arguments */
 	for (i = retc; i < argc; i++) {
 		mel_func_arg a = va_arg(va, mel_func_arg);
 		mel_arg *ap = f->args+i;
-		ap->typeid = a.type;
-		ap->nr = a.nr;
-		ap->isbat = a.isbat;
-		ap->vargs = a.vargs;
-		if (a.type != TYPE_any)
-			strcpy(ap->type, BATatoms[a.type].name);
-		else
-			ap->type[0] = 0;
+		argCopy(ap, &a);
 		malType tpe = makeMalType(ap);
-		if (a.nr > 0)
+		if (a.nr > 0 || a.opt)
 			setPoly(f, tpe);
 		if (a.vargs) {
 			f->vargs = true;
 			setPoly(f, TYPE_any);
 		}
+		if (a.opt && f->command)
+			return MEL_ERR;
+		/*
+		if (a.nr >= 2)
+			printf("%s.%s\n", f->mod, f->fcn);
+			*/
 	}
 	insertSymbol(c, s);
 	va_end(va);

@@ -28,6 +28,9 @@
 #define setTypeIndex(X,I) X |= ((I & 7)<<18);
 #define getTypeIndex(X)  (((X)>>18) & 7)
 
+#define setOptBat(X)   X |= (1<<9)
+#define getOptBat(X)   (((X)>>9) & 1)
+
 #define isPolyType(X) (isAnyExpression(X) && getTypeIndex(X)>0)
 /*
  * The symbol/instruction kinds are introduced here instead of reusing the defines

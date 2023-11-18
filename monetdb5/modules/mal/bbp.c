@@ -545,8 +545,8 @@ CMDsetName(str *rname, const bat *bid, str *name)
 
 #include "mel.h"
 mel_func bbp_init_funcs[] = {
- pattern("bbp", "bind", CMDbbpbind, false, "Locate the BAT using its logical name", args(1,2, batargany("",2),arg("name",str))),
- command("bbp", "getIndex", CMDbbpgetIndex, false, "Retrieve the index in the BBP", args(1,2, arg("",int),batargany("b",2))),
+ pattern("bbp", "bind", CMDbbpbind, false, "Locate the BAT using its logical name", args(1,2, batargany("",1),arg("name",str))),
+ command("bbp", "getIndex", CMDbbpgetIndex, false, "Retrieve the index in the BBP", args(1,2, arg("",int),batargany("b",1))),
  command("bbp", "getNames", CMDbbpNames, false, "Map BAT into its bbp name", args(1,1, batarg("",str))),
  command("bbp", "get", CMDbbp, false, "bpp", args(11,11, batarg("id",int),batarg("ns",str),batarg("tt",str),batarg("cnt",lng),batarg("refcnt",int),batarg("lrefcnt",int),batarg("location",str),batarg("heat",int),batarg("dirty",str),batarg("status",str),batarg("kind",str))),
  command("bbp", "getName", CMDbbpName, false, "Map a BAT into its internal name", args(1,2, arg("",str),batargany("b",1))),

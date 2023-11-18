@@ -3600,7 +3600,7 @@ ALGselect2nil;
 With unknown set, each nil != nil
 algebra
 selectNotNil
-command algebra.selectNotNil(X_0:bat[:any_2]):bat[:any_2]
+command algebra.selectNotNil(X_0:bat[:any_1]):bat[:any_1]
 ALGselectNotNil;
 Select all not-nil values
 algebra
@@ -3930,7 +3930,7 @@ BKCmergecand;
 Merge two candidate lists into one
 bat
 mirror
-command bat.mirror(X_0:bat[:any_2]):bat[:oid]
+command bat.mirror(X_0:bat[:any_1]):bat[:oid]
 BKCmirror;
 Returns the head-mirror image of a BAT (two head columns).
 bat
@@ -3980,7 +3980,7 @@ OIDXmerge;
 Consolidates the OID index arrangement
 bat
 pack
-pattern bat.pack(X_0:any_2...):bat[:any_2]
+pattern bat.pack(X_0:any_1...):bat[:any_1]
 MATpackValues;
 Materialize the values into a BAT. Avoiding a clash with mat.pack() in mergetable
 bat
@@ -33605,392 +33605,182 @@ SQLany_cmp;
 if cmp then true, (nl or nr) nil then nil, else false
 batsql
 avg
-pattern batsql.avg(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.avg(X_0:bat[:bte], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLavg;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:dbl], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.avg(X_0:bat[:dbl], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLavg;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:flt], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.avg(X_0:bat[:flt], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLavg;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:hge], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.avg(X_0:bat[:hge], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLavg;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.avg(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLavg;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:lng], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.avg(X_0:bat[:lng], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLavg;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:sht], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.avg(X_0:bat[:sht], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLavg;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:bte]
+pattern batsql.avg(X_0:bat[:bte], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:bte]
 SQLavginteger;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:hge], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.avg(X_0:bat[:hge], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLavginteger;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:int]
+pattern batsql.avg(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:int]
 SQLavginteger;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:lng], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng]
+pattern batsql.avg(X_0:bat[:lng], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:lng]
 SQLavginteger;
 return the average of groups
 batsql
 avg
-pattern batsql.avg(X_0:bat[:sht], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:sht]
+pattern batsql.avg(X_0:bat[:sht], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:sht]
 SQLavginteger;
 return the average of groups
 batsql
 corr
-pattern batsql.corr(X_0:bat[:bte], X_1:bat[:bte], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.corr(X_0:bat?[:bte], X_1:bat?[:bte], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcorr;
 return the correlation value of groups
 batsql
 corr
-pattern batsql.corr(X_0:bat[:bte], X_1:bte, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.corr(X_0:bat?[:dbl], X_1:bat?[:dbl], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcorr;
 return the correlation value of groups
 batsql
 corr
-pattern batsql.corr(X_0:bat[:dbl], X_1:bat[:dbl], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.corr(X_0:bat?[:flt], X_1:bat?[:flt], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcorr;
 return the correlation value of groups
 batsql
 corr
-pattern batsql.corr(X_0:bat[:dbl], X_1:dbl, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.corr(X_0:bat?[:hge], X_1:bat?[:hge], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcorr;
 return the correlation value of groups
 batsql
 corr
-pattern batsql.corr(X_0:bat[:flt], X_1:bat[:flt], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.corr(X_0:bat?[:int], X_1:bat?[:int], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcorr;
 return the correlation value of groups
 batsql
 corr
-pattern batsql.corr(X_0:bat[:flt], X_1:flt, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.corr(X_0:bat?[:lng], X_1:bat?[:lng], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcorr;
 return the correlation value of groups
 batsql
 corr
-pattern batsql.corr(X_0:bat[:hge], X_1:bat[:hge], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:bat[:hge], X_1:hge, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:bat[:int], X_1:bat[:int], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:bat[:int], X_1:int, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:bat[:lng], X_1:bat[:lng], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:bat[:lng], X_1:lng, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:bat[:sht], X_1:bat[:sht], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:bat[:sht], X_1:sht, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:bte, X_1:bat[:bte], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:dbl, X_1:bat[:dbl], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:flt, X_1:bat[:flt], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:hge, X_1:bat[:hge], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:int, X_1:bat[:int], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:lng, X_1:bat[:lng], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcorr;
-return the correlation value of groups
-batsql
-corr
-pattern batsql.corr(X_0:sht, X_1:bat[:sht], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.corr(X_0:bat?[:sht], X_1:bat?[:sht], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcorr;
 return the correlation value of groups
 batsql
 count
-pattern batsql.count(X_0:bat[:any_1], X_1:bit, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:lng]
+pattern batsql.count(X_0:bat[:any_1], X_1:bit, X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:lng]
 SQLcount;
 return count of groups
 batsql
 covariance
-pattern batsql.covariance(X_0:bat[:bte], X_1:bat[:bte], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariance(X_0:bat?[:bte], X_1:bat?[:bte], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_samp;
 return the covariance sample value of groups
 batsql
 covariance
-pattern batsql.covariance(X_0:bat[:bte], X_1:bte, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariance(X_0:bat?[:dbl], X_1:bat?[:dbl], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_samp;
 return the covariance sample value of groups
 batsql
 covariance
-pattern batsql.covariance(X_0:bat[:dbl], X_1:bat[:dbl], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariance(X_0:bat?[:flt], X_1:bat?[:flt], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_samp;
 return the covariance sample value of groups
 batsql
 covariance
-pattern batsql.covariance(X_0:bat[:dbl], X_1:dbl, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariance(X_0:bat?[:hge], X_1:bat?[:hge], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_samp;
 return the covariance sample value of groups
 batsql
 covariance
-pattern batsql.covariance(X_0:bat[:flt], X_1:bat[:flt], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariance(X_0:bat?[:int], X_1:bat?[:int], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_samp;
 return the covariance sample value of groups
 batsql
 covariance
-pattern batsql.covariance(X_0:bat[:flt], X_1:flt, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariance(X_0:bat?[:lng], X_1:bat?[:lng], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_samp;
 return the covariance sample value of groups
 batsql
 covariance
-pattern batsql.covariance(X_0:bat[:hge], X_1:bat[:hge], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:bat[:hge], X_1:hge, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:bat[:int], X_1:bat[:int], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:bat[:int], X_1:int, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:bat[:lng], X_1:bat[:lng], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:bat[:lng], X_1:lng, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:bat[:sht], X_1:bat[:sht], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:bat[:sht], X_1:sht, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:bte, X_1:bat[:bte], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:dbl, X_1:bat[:dbl], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:flt, X_1:bat[:flt], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:hge, X_1:bat[:hge], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:int, X_1:bat[:int], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:lng, X_1:bat[:lng], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_samp;
-return the covariance sample value of groups
-batsql
-covariance
-pattern batsql.covariance(X_0:sht, X_1:bat[:sht], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariance(X_0:bat?[:sht], X_1:bat?[:sht], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_samp;
 return the covariance sample value of groups
 batsql
 covariancep
-pattern batsql.covariancep(X_0:bat[:bte], X_1:bat[:bte], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariancep(X_0:bat?[:bte], X_1:bat?[:bte], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_pop;
 return the covariance population value of groups
 batsql
 covariancep
-pattern batsql.covariancep(X_0:bat[:bte], X_1:bte, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariancep(X_0:bat?[:dbl], X_1:bat?[:dbl], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_pop;
 return the covariance population value of groups
 batsql
 covariancep
-pattern batsql.covariancep(X_0:bat[:dbl], X_1:bat[:dbl], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariancep(X_0:bat?[:flt], X_1:bat?[:flt], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_pop;
 return the covariance population value of groups
 batsql
 covariancep
-pattern batsql.covariancep(X_0:bat[:dbl], X_1:dbl, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariancep(X_0:bat?[:hge], X_1:bat?[:hge], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_pop;
 return the covariance population value of groups
 batsql
 covariancep
-pattern batsql.covariancep(X_0:bat[:flt], X_1:bat[:flt], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariancep(X_0:bat?[:int], X_1:bat?[:int], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_pop;
 return the covariance population value of groups
 batsql
 covariancep
-pattern batsql.covariancep(X_0:bat[:flt], X_1:flt, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariancep(X_0:bat?[:lng], X_1:bat?[:lng], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_pop;
 return the covariance population value of groups
 batsql
 covariancep
-pattern batsql.covariancep(X_0:bat[:hge], X_1:bat[:hge], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:bat[:hge], X_1:hge, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:bat[:int], X_1:bat[:int], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:bat[:int], X_1:int, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:bat[:lng], X_1:bat[:lng], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:bat[:lng], X_1:lng, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:bat[:sht], X_1:bat[:sht], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:bat[:sht], X_1:sht, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:bte, X_1:bat[:bte], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:dbl, X_1:bat[:dbl], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:flt, X_1:bat[:flt], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:hge, X_1:bat[:hge], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:int, X_1:bat[:int], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:lng, X_1:bat[:lng], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
-SQLcovar_pop;
-return the covariance population value of groups
-batsql
-covariancep
-pattern batsql.covariancep(X_0:sht, X_1:bat[:sht], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:dbl]
+pattern batsql.covariancep(X_0:bat?[:sht], X_1:bat?[:sht], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:dbl]
 SQLcovar_pop;
 return the covariance population value of groups
 batsql
 cume_dist
-pattern batsql.cume_dist(X_0:bat[:any_1], X_1:any_2, X_2:any_3):bat[:dbl]
+pattern batsql.cume_dist(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit]):bat[:dbl]
 SQLcume_dist;
 return the accumulated distribution of the number of rows per group to the total number of partition rows
 batsql
 dense_rank
-pattern batsql.dense_rank(X_0:bat[:any_1], X_1:any_2, X_2:any_3):bat[:int]
+pattern batsql.dense_rank(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit]):bat[:int]
 SQLdense_rank;
 return the densely ranked groups
 batsql
@@ -34015,7 +33805,7 @@ SQLdiff;
 return true if cur != prev row
 batsql
 first_value
-pattern batsql.first_value(X_0:bat[:any_1], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:any_1]
+pattern batsql.first_value(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:any_1]
 SQLfirst_value;
 return the first value of groups
 batsql
@@ -34030,127 +33820,47 @@ mvc_get_value_bulk;
 return the current value of the sequence (ie the next to be used value)
 batsql
 lag
-pattern batsql.lag(X_0:any_1, X_1:any, X_2:bat[:any_1], X_3:any_2, X_4:any_3):bat[:any_1]
+pattern batsql.lag(X_0:bat?[:any_1], X_1:bat?[:any], X_2:bat?[:any_1], X_3:bat?[:bit], X_4:bat?[:bit]):bat[:any_1]
 SQLlag;
 return the value in the previous 'l' row in the partition or 'd' if non existent
 batsql
 lag
-pattern batsql.lag(X_0:any_1, X_1:bat[:any], X_2:any_1, X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlag;
-return the value in the previous 'l' row in the partition or 'd' if non existent
-batsql
-lag
-pattern batsql.lag(X_0:any_1, X_1:bat[:any], X_2:any_2, X_3:any_3):bat[:any_1]
+pattern batsql.lag(X_0:bat?[:any_1], X_1:bat?[:any], X_2:bat?[:bit], X_3:bat?[:bit]):bat[:any_1]
 SQLlag;
 return the value in the previous 'l' row in the partition or NULL if non existent
 batsql
 lag
-pattern batsql.lag(X_0:any_1, X_1:bat[:any], X_2:bat[:any_1], X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlag;
-return the value in the previous 'l' row in the partition or 'd' if non existent
-batsql
-lag
-pattern batsql.lag(X_0:bat[:any_1], X_1:any, X_2:any_1, X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlag;
-return the value in the previous 'l' row in the partition or 'd' if non existent
-batsql
-lag
-pattern batsql.lag(X_0:bat[:any_1], X_1:any, X_2:any_2, X_3:any_3):bat[:any_1]
-SQLlag;
-return the value in the previous 'l' row in the partition or NULL if non existent
-batsql
-lag
-pattern batsql.lag(X_0:bat[:any_1], X_1:any, X_2:bat[:any_1], X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlag;
-return the value in the previous 'l' row in the partition or 'd' if non existent
-batsql
-lag
-pattern batsql.lag(X_0:bat[:any_1], X_1:any_2, X_2:any_3):bat[:any_1]
+pattern batsql.lag(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit]):bat[:any_1]
 SQLlag;
 return the value in the previous row in the partition or NULL if non existent
 batsql
-lag
-pattern batsql.lag(X_0:bat[:any_1], X_1:bat[:any], X_2:any_1, X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlag;
-return the value in the previous 'l' row in the partition or 'd' if non existent
-batsql
-lag
-pattern batsql.lag(X_0:bat[:any_1], X_1:bat[:any], X_2:any_2, X_3:any_3):bat[:any_1]
-SQLlag;
-return the value in the previous 'l' row in the partition or NULL if non existent
-batsql
-lag
-pattern batsql.lag(X_0:bat[:any_1], X_1:bat[:any], X_2:bat[:any_1], X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlag;
-return the value in the previous 'l' row in the partition or 'd' if non existent
-batsql
 last_value
-pattern batsql.last_value(X_0:bat[:any_1], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:any_1]
+pattern batsql.last_value(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:any_1]
 SQLlast_value;
 return the last value of groups
 batsql
 lead
-pattern batsql.lead(X_0:any_1, X_1:any, X_2:bat[:any_1], X_3:any_2, X_4:any_3):bat[:any_1]
+pattern batsql.lead(X_0:bat?[:any_1], X_1:bat?[:any], X_2:bat?[:any_1], X_3:bat?[:bit], X_4:bat?[:bit]):bat[:any_1]
 SQLlead;
 return the value in the next 'l' row in the partition or 'd' if non existent
 batsql
 lead
-pattern batsql.lead(X_0:any_1, X_1:bat[:any], X_2:any_1, X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlead;
-return the value in the next 'l' row in the partition or 'd' if non existent
-batsql
-lead
-pattern batsql.lead(X_0:any_1, X_1:bat[:any], X_2:any_2, X_3:any_3):bat[:any_1]
+pattern batsql.lead(X_0:bat?[:any_1], X_1:bat?[:any], X_2:bat?[:bit], X_3:bat?[:bit]):bat[:any_1]
 SQLlead;
 return the value in the next 'l' row in the partition or NULL if non existent
 batsql
 lead
-pattern batsql.lead(X_0:any_1, X_1:bat[:any], X_2:bat[:any_1], X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlead;
-return the value in the next 'l' row in the partition or 'd' if non existent
-batsql
-lead
-pattern batsql.lead(X_0:bat[:any_1], X_1:any, X_2:any_1, X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlead;
-return the value in the next 'l' row in the partition or 'd' if non existent
-batsql
-lead
-pattern batsql.lead(X_0:bat[:any_1], X_1:any, X_2:any_2, X_3:any_3):bat[:any_1]
-SQLlead;
-return the value in the next 'l' row in the partition or NULL if non existent
-batsql
-lead
-pattern batsql.lead(X_0:bat[:any_1], X_1:any, X_2:bat[:any_1], X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlead;
-return the value in the next 'l' row in the partition or 'd' if non existent
-batsql
-lead
-pattern batsql.lead(X_0:bat[:any_1], X_1:any_2, X_2:any_3):bat[:any_1]
+pattern batsql.lead(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit]):bat[:any_1]
 SQLlead;
 return the value in the next row in the partition or NULL if non existent
 batsql
-lead
-pattern batsql.lead(X_0:bat[:any_1], X_1:bat[:any], X_2:any_1, X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlead;
-return the value in the next 'l' row in the partition or 'd' if non existent
-batsql
-lead
-pattern batsql.lead(X_0:bat[:any_1], X_1:bat[:any], X_2:any_2, X_3:any_3):bat[:any_1]
-SQLlead;
-return the value in the next 'l' row in the partition or NULL if non existent
-batsql
-lead
-pattern batsql.lead(X_0:bat[:any_1], X_1:bat[:any], X_2:bat[:any_1], X_3:any_2, X_4:any_3):bat[:any_1]
-SQLlead;
-return the value in the next 'l' row in the partition or 'd' if non existent
-batsql
 max
-pattern batsql.max(X_0:bat[:any_1], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:any_1]
+pattern batsql.max(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:any_1]
 SQLmax;
 return the maximum of groups
 batsql
 min
-pattern batsql.min(X_0:bat[:any_1], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:any_1]
+pattern batsql.min(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:any_1]
 SQLmin;
 return the minimum of groups
 batsql
@@ -34160,332 +33870,302 @@ mvc_next_value_bulk;
 return the next value of the sequence
 batsql
 nth_value
-pattern batsql.nth_value(X_0:any_1, X_1:bat[:lng], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:any_1]
-SQLnth_value;
-return the nth value of each group
-batsql
-nth_value
-pattern batsql.nth_value(X_0:bat[:any_1], X_1:bat[:lng], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:any_1]
-SQLnth_value;
-return the nth value of each group
-batsql
-nth_value
-pattern batsql.nth_value(X_0:bat[:any_1], X_1:lng, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:any_1]
+pattern batsql.nth_value(X_0:bat?[:any_1], X_1:bat?[:lng], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:any_1]
 SQLnth_value;
 return the nth value of each group
 batsql
 ntile
-pattern batsql.ntile(X_0:any, X_1:bat[:any_1], X_2:any_2, X_3:any_3):bat[:any_1]
-SQLntile;
-return the groups divided as equally as possible
-batsql
-ntile
-pattern batsql.ntile(X_0:bat[:any], X_1:any_1, X_2:any_2, X_3:any_3):bat[:any_1]
-SQLntile;
-return the groups divided as equally as possible
-batsql
-ntile
-pattern batsql.ntile(X_0:bat[:any], X_1:bat[:any_1], X_2:any_2, X_3:any_3):bat[:any_1]
+pattern batsql.ntile(X_0:bat?[:any], X_1:bat?[:any_1], X_2:bat?[:bit], X_3:bat?[:bit]):bat[:any_1]
 SQLntile;
 return the groups divided as equally as possible
 batsql
 percent_rank
-pattern batsql.percent_rank(X_0:bat[:any_1], X_1:any_2, X_2:any_3):bat[:dbl]
+pattern batsql.percent_rank(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit]):bat[:dbl]
 SQLpercent_rank;
 return the percentage into the total number of groups for each row
 batsql
 prod
-pattern batsql.prod(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.prod(X_0:bat[:bte], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng]
+pattern batsql.prod(X_0:bat[:bte], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:lng]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:dbl], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.prod(X_0:bat[:dbl], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:flt], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.prod(X_0:bat[:flt], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:flt], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:flt]
+pattern batsql.prod(X_0:bat[:flt], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:flt]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:hge], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.prod(X_0:bat[:hge], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.prod(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng]
+pattern batsql.prod(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:lng]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:lng], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.prod(X_0:bat[:lng], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:lng], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng]
+pattern batsql.prod(X_0:bat[:lng], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:lng]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:sht], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.prod(X_0:bat[:sht], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLprod;
 return the product of groups
 batsql
 prod
-pattern batsql.prod(X_0:bat[:sht], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng]
+pattern batsql.prod(X_0:bat[:sht], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:lng]
 SQLprod;
 return the product of groups
 batsql
 rank
-pattern batsql.rank(X_0:bat[:any_1], X_1:any_2, X_2:any_3):bat[:int]
+pattern batsql.rank(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit]):bat[:int]
 SQLrank;
 return the ranked groups
 batsql
 row_number
-pattern batsql.row_number(X_0:bat[:any_1], X_1:any_2, X_2:any_3):bat[:int]
+pattern batsql.row_number(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit]):bat[:int]
 SQLrow_number;
 return the row_numer-ed groups
 batsql
 stdev
-pattern batsql.stdev(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdev(X_0:bat[:bte], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_samp;
 return the standard deviation sample of groups
 batsql
 stdev
-pattern batsql.stdev(X_0:bat[:dbl], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdev(X_0:bat[:dbl], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_samp;
 return the standard deviation sample of groups
 batsql
 stdev
-pattern batsql.stdev(X_0:bat[:flt], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdev(X_0:bat[:flt], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_samp;
 return the standard deviation sample of groups
 batsql
 stdev
-pattern batsql.stdev(X_0:bat[:hge], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdev(X_0:bat[:hge], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_samp;
 return the standard deviation sample of groups
 batsql
 stdev
-pattern batsql.stdev(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdev(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_samp;
 return the standard deviation sample of groups
 batsql
 stdev
-pattern batsql.stdev(X_0:bat[:lng], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdev(X_0:bat[:lng], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_samp;
 return the standard deviation sample of groups
 batsql
 stdev
-pattern batsql.stdev(X_0:bat[:sht], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdev(X_0:bat[:sht], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_samp;
 return the standard deviation sample of groups
 batsql
 stdevp
-pattern batsql.stdevp(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdevp(X_0:bat[:bte], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_pop;
 return the standard deviation population of groups
 batsql
 stdevp
-pattern batsql.stdevp(X_0:bat[:dbl], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdevp(X_0:bat[:dbl], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_pop;
 return the standard deviation population of groups
 batsql
 stdevp
-pattern batsql.stdevp(X_0:bat[:flt], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdevp(X_0:bat[:flt], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_pop;
 return the standard deviation population of groups
 batsql
 stdevp
-pattern batsql.stdevp(X_0:bat[:hge], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdevp(X_0:bat[:hge], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_pop;
 return the standard deviation population of groups
 batsql
 stdevp
-pattern batsql.stdevp(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdevp(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_pop;
 return the standard deviation population of groups
 batsql
 stdevp
-pattern batsql.stdevp(X_0:bat[:lng], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdevp(X_0:bat[:lng], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_pop;
 return the standard deviation population of groups
 batsql
 stdevp
-pattern batsql.stdevp(X_0:bat[:sht], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.stdevp(X_0:bat[:sht], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLstddev_pop;
 return the standard deviation population of groups
 batsql
 str_group_concat
-pattern batsql.str_group_concat(X_0:bat[:str], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:str]
+pattern batsql.str_group_concat(X_0:bat?[:str], X_1:bat?[:str], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:str]
+SQLstrgroup_concat;
+return the string concatenation of groups with a custom separator
+batsql
+str_group_concat
+pattern batsql.str_group_concat(X_0:bat[:str], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:str]
 SQLstrgroup_concat;
 return the string concatenation of groups
 batsql
-str_group_concat
-pattern batsql.str_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:str]
-SQLstrgroup_concat;
-return the string concatenation of groups with a custom separator
-batsql
-str_group_concat
-pattern batsql.str_group_concat(X_0:bat[:str], X_1:str, X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:str]
-SQLstrgroup_concat;
-return the string concatenation of groups with a custom separator
-batsql
-str_group_concat
-pattern batsql.str_group_concat(X_0:str, X_1:bat[:str], X_2:any, X_3:any, X_4:int, X_5:any, X_6:any):bat[:str]
-SQLstrgroup_concat;
-return the string concatenation of groups with a custom separator
-batsql
 sum
-pattern batsql.sum(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.sum(X_0:bat[:bte], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng]
+pattern batsql.sum(X_0:bat[:bte], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:lng]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:dbl], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.sum(X_0:bat[:dbl], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:flt], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.sum(X_0:bat[:flt], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:flt], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:flt]
+pattern batsql.sum(X_0:bat[:flt], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:flt]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:hge], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.sum(X_0:bat[:hge], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.sum(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:int]
+pattern batsql.sum(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:int]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng]
+pattern batsql.sum(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:lng]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:lng], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.sum(X_0:bat[:lng], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:lng], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng]
+pattern batsql.sum(X_0:bat[:lng], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:lng]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:sht], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:hge]
+pattern batsql.sum(X_0:bat[:sht], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:hge]
 SQLsum;
 return the sum of groups
 batsql
 sum
-pattern batsql.sum(X_0:bat[:sht], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:lng]
+pattern batsql.sum(X_0:bat[:sht], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:lng]
 SQLsum;
 return the sum of groups
 batsql
 variance
-pattern batsql.variance(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variance(X_0:bat[:bte], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_samp;
 return the variance sample of groups
 batsql
 variance
-pattern batsql.variance(X_0:bat[:dbl], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variance(X_0:bat[:dbl], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_samp;
 return the variance sample of groups
 batsql
 variance
-pattern batsql.variance(X_0:bat[:flt], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variance(X_0:bat[:flt], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_samp;
 return the variance sample of groups
 batsql
 variance
-pattern batsql.variance(X_0:bat[:hge], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variance(X_0:bat[:hge], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_samp;
 return the variance sample of groups
 batsql
 variance
-pattern batsql.variance(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variance(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_samp;
 return the variance sample of groups
 batsql
 variance
-pattern batsql.variance(X_0:bat[:lng], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variance(X_0:bat[:lng], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_samp;
 return the variance sample of groups
 batsql
 variance
-pattern batsql.variance(X_0:bat[:sht], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variance(X_0:bat[:sht], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_samp;
 return the variance sample of groups
 batsql
 variancep
-pattern batsql.variancep(X_0:bat[:bte], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variancep(X_0:bat[:bte], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_pop;
 return the variance population of groups
 batsql
 variancep
-pattern batsql.variancep(X_0:bat[:dbl], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variancep(X_0:bat[:dbl], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_pop;
 return the variance population of groups
 batsql
 variancep
-pattern batsql.variancep(X_0:bat[:flt], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variancep(X_0:bat[:flt], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_pop;
 return the variance population of groups
 batsql
 variancep
-pattern batsql.variancep(X_0:bat[:hge], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variancep(X_0:bat[:hge], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_pop;
 return the variance population of groups
 batsql
 variancep
-pattern batsql.variancep(X_0:bat[:int], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variancep(X_0:bat[:int], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_pop;
 return the variance population of groups
 batsql
 variancep
-pattern batsql.variancep(X_0:bat[:lng], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variancep(X_0:bat[:lng], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_pop;
 return the variance population of groups
 batsql
 variancep
-pattern batsql.variancep(X_0:bat[:sht], X_1:any, X_2:any, X_3:int, X_4:any, X_5:any):bat[:dbl]
+pattern batsql.variancep(X_0:bat[:sht], X_1:bat?[:bit], X_2:bat?[:bit], X_3:int, X_4:bat?[:oid], X_5:bat?[:oid]):bat[:dbl]
 SQLvar_pop;
 return the variance population of groups
 batsql
@@ -35690,7 +35370,7 @@ BATXMLxquery;
 Execute the XQuery against the elements.
 bbp
 bind
-pattern bbp.bind(X_0:str):bat[:any_2]
+pattern bbp.bind(X_0:str):bat[:any_1]
 CMDbbpbind;
 Locate the BAT using its logical name
 bbp
@@ -35715,7 +35395,7 @@ CMDbbpDiskSpace;
 Estimate the amount of disk space occupied by dbpath
 bbp
 getIndex
-command bbp.getIndex(X_0:bat[:any_2]):int
+command bbp.getIndex(X_0:bat[:any_1]):int
 CMDbbpgetIndex;
 Retrieve the index in the BBP
 bbp
@@ -46815,12 +46495,12 @@ OPTstatistics;
 Get optimizer use statistics, i.e. calls and total time
 io
 export
-command io.export(X_0:bat[:any_2], X_1:str):void
+command io.export(X_0:bat[:any_1], X_1:str):void
 IOexport;
 Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it@is put into the $DBPATH directory. Success of failure is indicated.
 io
 import
-command io.import(X_0:bat[:any_2], X_1:str):void
+command io.import(X_0:bat[:any_1], X_1:str):void
 IOimport;
 Import a BAT from an ASCII dump. The tuples are appended to the@first argument. Its signature must match the dump,@else parsing errors will occur as an exception.
 io
@@ -46880,22 +46560,22 @@ io_stdout;
 return the output stream for the database client
 iterator
 new
-pattern iterator.new(X_0:bat[:any_2]) (X_1:oid, X_2:any_2)
+pattern iterator.new(X_0:bat[:any_1]) (X_1:oid, X_2:any_1)
 ITRbunIterator;
 Process the buns one by one extracted from a void table.
 iterator
 new
-command iterator.new(X_0:bat[:any_2], X_1:lng) (X_2:lng, X_3:bat[:any_2])
+command iterator.new(X_0:bat[:any_1], X_1:lng) (X_2:lng, X_3:bat[:any_1])
 ITRnewChunk;
 Create an iterator with fixed granule size.@The result is a view.
 iterator
 next
-pattern iterator.next(X_0:bat[:any_2]) (X_1:oid, X_2:any_2)
+pattern iterator.next(X_0:bat[:any_1]) (X_1:oid, X_2:any_1)
 ITRbunNext;
 Produce the next bun for processing.
 iterator
 next
-command iterator.next(X_0:bat[:any_2], X_1:lng) (X_2:lng, X_3:bat[:any_2])
+command iterator.next(X_0:bat[:any_1], X_1:lng) (X_2:lng, X_3:bat[:any_1])
 ITRnextChunk;
 Produce the next chunk for processing.
 iterator
@@ -47190,17 +46870,17 @@ MANUALcreateOverview;
 Produces a table with all MAL functions known
 mapi
 bind
-pattern mapi.bind(X_0:int, X_1:str):bat[:any_2]
+pattern mapi.bind(X_0:int, X_1:str):bat[:any_1]
 SERVERbindBAT;
 Bind a remote variable to a local one.
 mapi
 bind
-pattern mapi.bind(X_0:int, X_1:str, X_2:str, X_3:int):bat[:any_2]
+pattern mapi.bind(X_0:int, X_1:str, X_2:str, X_3:int):bat[:any_1]
 SERVERbindBAT;
 Bind a remote variable to a local one.
 mapi
 bind
-pattern mapi.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int):bat[:any_2]
+pattern mapi.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int):bat[:any_1]
 SERVERbindBAT;
 Bind a remote variable to a local one.
 mapi
@@ -47415,12 +47095,12 @@ SERVERrows_affected;
 Return number of affected rows.
 mapi
 rpc
-pattern mapi.rpc(X_0:int, X_1:str):bat[:any_2]
+pattern mapi.rpc(X_0:int, X_1:str):bat[:any_1]
 SERVERmapi_rpc_bat;
 (empty)
 mapi
 rpc
-pattern mapi.rpc(X_0:int, X_1:str...):any
+pattern mapi.rpc(X_0:int, X_1:str...):any_1
 SERVERmapi_rpc_single_row;
 Send a simple query for execution and fetch result.
 mapi
@@ -47460,27 +47140,27 @@ MSKumask;
 (empty)
 mat
 new
-pattern mat.new(X_0:bat[:any_2]...):bat[:any_2]
+pattern mat.new(X_0:bat[:any_1]...):bat[:any_1]
 MATpack;
 Define a Merge Association Table (MAT). Fall back to the pack operation@when this is called 
 mat
 pack
-pattern mat.pack(X_0:bat[:any_2]...):bat[:any_2]
+pattern mat.pack(X_0:bat[:any_1]...):bat[:any_1]
 MATpack;
 Materialize the MAT into a BAT
 mat
 pack
-pattern mat.pack(X_0:any_2...):bat[:any_2]
+pattern mat.pack(X_0:any_1...):bat[:any_1]
 MATpackValues;
 Materialize the MAT (of values) into a BAT
 mat
 packIncrement
-pattern mat.packIncrement(X_0:bat[:any_2], X_1:bat[:any_2]):bat[:any_2]
+pattern mat.packIncrement(X_0:bat[:any_1], X_1:bat[:any_1]):bat[:any_1]
 MATpackIncrement;
 Prepare incremental mat pack
 mat
 packIncrement
-pattern mat.packIncrement(X_0:bat[:any_2], X_1:int):bat[:any_2]
+pattern mat.packIncrement(X_0:bat[:any_1], X_1:int):bat[:any_1]
 MATpackIncrement;
 Prepare incremental mat pack
 mdb

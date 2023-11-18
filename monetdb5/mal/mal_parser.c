@@ -828,9 +828,27 @@ parseTypeId(Client cntxt)
 	char *s = CURRENT(cntxt);
 	int tt;
 
-	if (strncmp(s, ":bat[", 5) == 0 || strncmp(s, ":BAT[", 5) == 0) {
+	if (strncmp(s, ":bat", 4) == 0 || strncmp(s, ":BAT", 4) == 0) {
+		int opt = 0;
 		/* parse :bat[:type] */
-		advance(cntxt, 5);
+		advance(cntxt, 4);
+		if (currChar(cntxt) == '?') {
+			opt = 1;
+			advance(cntxt, 1);
+		}
+		if (currChar(cntxt) != '[') {
+			if (opt)
+				setOptBat(i);
+			else
+				i = newBatType(TYPE_any);
+			return i;
+			if (!opt)
+				return newBatType(TYPE_any);
+
+			parseError(cntxt, "':bat[:type]' expected\n");
+			return -1;
+		}
+		advance(cntxt, 1);
 		if (currChar(cntxt) == ':') {
 			tt = simpleTypeId(cntxt);
 			kt = typeAlias(cntxt, tt);
@@ -841,9 +859,12 @@ parseTypeId(Client cntxt)
 			return -1;
 		}
 
-		i = newBatType(tt);
+		if (!opt)
+			i = newBatType(tt);
 		if (kt > 0)
 			setTypeIndex(i, kt);
+		if (opt)
+			setOptBat(i);
 
 		if (currChar(cntxt) != ']')
 			parseError(cntxt, "']' expected\n");
@@ -1282,6 +1303,7 @@ argument(Client cntxt, mel_func *curFunc, mel_arg *curArg)
 	malType type;
 
 	int l = idLength(cntxt);
+	*curArg = (mel_arg){ .isbat = 0 };
 	if (l > 0) {
 		char *varname = CURRENT(cntxt);
 		(void)varname; /* not used */
@@ -1293,14 +1315,8 @@ argument(Client cntxt, mel_func *curFunc, mel_arg *curArg)
 		int tt = getBatType(type);
 		if (tt != TYPE_any)
             strcpy(curArg->type, BATatoms[tt].name);
-        else
-            curArg->type[0] = 0;
 		if (isaBatType(type))
 			curArg->isbat = true;
-		else
-			curArg->isbat = false;
-		curArg->vargs = 0;
-		curArg->nr = 0;
 		if (isPolymorphic(type)) {
 			curArg->nr = getTypeIndex(type);
 			setPoly(curFunc, type);
@@ -1312,14 +1328,8 @@ argument(Client cntxt, mel_func *curFunc, mel_arg *curArg)
 		int tt = getBatType(type);
 		if (tt != TYPE_any)
             strcpy(curArg->type, BATatoms[tt].name);
-        else
-            curArg->type[0] = 0;
 		if (isaBatType(type))
 			curArg->isbat = true;
-		else
-			curArg->isbat = false;
-		curArg->vargs = 0;
-		curArg->nr = 0;
 		if (isPolymorphic(type)) {
 			curArg->nr = getTypeIndex(type);
 			setPoly(curFunc, type);
@@ -1474,6 +1484,7 @@ fcnCommandPatternHeader(Client cntxt, int kind)
 			curFunc->args[0].isbat = false;
 		int tt = getBatType(tpe);
 		curFunc->args[0].typeid = tt;
+		curFunc->args[0].opt = 0;
 		/* we may be confronted by a variable target type list */
 		if (MALkeyword(cntxt, "...", 3)) {
 			curFunc->args[0].vargs = true;
