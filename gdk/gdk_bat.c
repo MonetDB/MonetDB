@@ -1286,12 +1286,12 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				    (count > 1 ||
 				     b->tseqbase + b->batCount != ((oid *) values)[0]))
 					b->tseqbase = oid_nil;
-				if (b->tsorted && ((oid *) b->theap->base)[b->batCount - 1] > ((oid *) values)[0]) {
+				if (b->tsorted && !is_oid_nil(((oid *) b->theap->base)[b->batCount - 1]) && ((oid *) b->theap->base)[b->batCount - 1] > ((oid *) values)[0]) {
 					b->tsorted = false;
 					if (b->tnosorted == 0)
 						b->tnosorted = b->batCount;
 				}
-				if (b->trevsorted && ((oid *) b->theap->base)[b->batCount - 1] < ((oid *) values)[0]) {
+				if (b->trevsorted && !is_oid_nil(((oid *) values)[0]) && ((oid *) b->theap->base)[b->batCount - 1] < ((oid *) values)[0]) {
 					b->trevsorted = false;
 					if (b->tnorevsorted == 0)
 						b->tnorevsorted = b->batCount;

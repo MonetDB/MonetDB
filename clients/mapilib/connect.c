@@ -111,7 +111,9 @@ scan_sockets(Mapi mid)
 		errmsg = allocated_errmsg;
 	}
 	if (errmsg) {
-		return mapi_setError(mid, errmsg, __func__, MERROR);
+		MapiMsg err = mapi_setError(mid, errmsg, __func__, MERROR);
+		free(allocated_errmsg);
+		return err;
 	}
 	return establish_connection(mid);
 }
@@ -697,11 +699,13 @@ mapi_handshake(Mapi mid)
 			) {
 				mapi_close_handle(hdl);
 				close_connection(mid);
-				return mapi_printError(
+				MapiMsg err = mapi_printError(
 					mid, __func__, MERROR,
 					"%s: %s",
 					error_message ? error_message : "invalid redirect",
 					red);
+				free(error_message);
+				return err;
 			}
 
 			if (strncmp("mapi:merovingian", red, 16) == 0) {
