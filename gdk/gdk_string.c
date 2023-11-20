@@ -214,6 +214,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	bucket = ((stridx_t *) h->base) + off;
 
 	if (*bucket) {
+		assert(*bucket < h->free);
 		/* the hash list is not empty */
 		if (*bucket < GDK_ELIMLIMIT) {
 			/* small string heap (<64KiB) -- fully double
@@ -222,6 +223,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 			do {
 				pos = *ref + sizeof(stridx_t);
+				assert(pos < h->free);
 				if (strcmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;

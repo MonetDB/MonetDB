@@ -1,6 +1,9 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Mon Nov 20 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function BATroles to set column names on BATs.
+
 * Thu Nov  2 2023 Sjoerd Mullender <sjoerd@acm.org>
 - Removed the compiled-in limit on the number of threads that can be used.
   The number of threads are still limited, but the limit is dictated

@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Nov 20 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Removed MAL functions bat.getRole and bat.setColumn since the
+  underlying function BATroles was removed.
+
 * Fri Oct 20 2023 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
 - Change how json is stored in the database: We now normalize json
   strings after parsing, removing whitespace and eliminating duplicate

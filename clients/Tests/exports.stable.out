@@ -187,7 +187,6 @@ gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force) __attribute__((__warn_
 gdk_return BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force) __attribute__((__warn_unused_result__));
 void BATrmprop(BAT *b, enum prop_t idx);
 void BATrmprop_nolock(BAT *b, enum prop_t idx);
-gdk_return BATroles(BAT *b, const char *tnme);
 gdk_return BATrtree(BAT *wkb, BAT *mbr);
 BAT *BATsample(BAT *b, BUN n);
 BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);

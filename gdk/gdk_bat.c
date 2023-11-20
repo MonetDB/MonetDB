@@ -53,16 +53,6 @@
 
 #define ATOMneedheap(tpe) (BATatoms[tpe].atomHeap != NULL)
 
-static char *BATstring_t = "t";
-
-#define default_ident(s)	((s) == BATstring_t)
-
-void
-BATinit_idents(BAT *bn)
-{
-	bn->tident = BATstring_t;
-}
-
 BAT *
 BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 {
@@ -90,7 +80,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.tnil = false,
 		.tsorted = ATOMlinear(tt),
 		.trevsorted = ATOMlinear(tt),
-		.tident = BATstring_t,
 		.tseqbase = oid_nil,
 		.tminpos = BUN_NONE,
 		.tmaxpos = BUN_NONE,
@@ -683,9 +672,6 @@ BATfree(BAT *b)
 	STRMPfree(b);
 	RTREEfree(b);
 	MT_lock_set(&b->theaplock);
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	b->tident = BATstring_t;
 	if (nunique != BUN_NONE) {
 		b->tunique_est = (double) nunique;
 	}
@@ -722,9 +708,6 @@ BATfree(BAT *b)
 void
 BATdestroy(BAT *b)
 {
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	b->tident = BATstring_t;
 	if (b->tvheap) {
 		ATOMIC_DESTROY(&b->tvheap->refs);
 		GDKfree(b->tvheap);
@@ -2206,22 +2189,6 @@ BATtseqbase(BAT *b, oid o)
 		assert(o == oid_nil);
 		b->tseqbase = oid_nil;
 	}
-}
-
-gdk_return
-BATroles(BAT *b, const char *tnme)
-{
-	if (b == NULL)
-		return GDK_SUCCEED;
-	MT_lock_set(&b->theaplock);
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	if (tnme)
-		b->tident = GDKstrdup(tnme);
-	else
-		b->tident = BATstring_t;
-	MT_lock_unset(&b->theaplock);
-	return b->tident ? GDK_SUCCEED : GDK_FAIL;
 }
 
 /*

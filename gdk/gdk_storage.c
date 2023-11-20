@@ -947,14 +947,6 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
-		const char *nm = argv[i]->tident;
-		mnstr_write(s, nm, 1, strlen(nm));
-	}
-	mnstr_write(s, "  # name\n", 1, 9);
-	mnstr_write(s, "# ", 1, 2);
-	for (i = 0; i < argc; i++) {
-		if (i > 0)
-			mnstr_write(s, "\t", 1, 1);
 		const char *nm = ATOMname(argv[i]->ttype);
 		mnstr_write(s, nm, 1, strlen(nm));
 	}
@@ -997,10 +989,8 @@ BATprint(stream *fdout, BAT *b)
 
 		mnstr_printf(fdout,
 			     "#--------------------------#\n"
-			     "# h\t%s  # name\n"
 			     "# void\toid  # type\n"
-			     "#--------------------------#\n",
-			     b->tident);
+			     "#--------------------------#\n");
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid o = canditer_next(&ci);
 			mnstr_printf(fdout,
@@ -1016,9 +1006,7 @@ BATprint(stream *fdout, BAT *b)
 	argv[0] = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
 	if (argv[0]) {
 		argv[1] = b;
-		ret = BATroles(argv[0], "h");
-		if (ret == GDK_SUCCEED)
-			ret = BATprintcolumns(fdout, 2, argv);
+		ret = BATprintcolumns(fdout, 2, argv);
 		BBPunfix(argv[0]->batCacheid);
 	}
 	return ret;
