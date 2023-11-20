@@ -73,7 +73,6 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "optimizer.optimize",
 			  SQLSTATE(HY002) SEMANTIC_OPERATION_MISSING);
 	removeInstruction(mb, pci);
-	addtoMalBlkHistory(s->def);
 	return optimizeMALBlock(cntxt, s->def);
 }
 
