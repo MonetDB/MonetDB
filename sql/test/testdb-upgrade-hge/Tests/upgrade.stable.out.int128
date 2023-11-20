@@ -1,5 +1,0 @@
-Running database upgrade commands:
-CREATE FUNCTION timestamp_to_str(d TIMESTAMP, format STRING) RETURNS STRING EXTERNAL NAME mtime."timestamp_to_str";
-GRANT EXECUTE ON FUNCTION timestamp_to_str(TIMESTAMP, STRING) TO PUBLIC;
-UPDATE sys.functions SET system = true WHERE system <> true AND name = 'timestamp_to_str' AND schema_id = 2000 and type = 1;
-

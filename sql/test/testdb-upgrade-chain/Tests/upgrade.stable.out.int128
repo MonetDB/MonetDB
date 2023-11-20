@@ -69,8 +69,3 @@ update sys.functions set system = true where system <> true and name in ('stddev
 update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 6;
 update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = 1;
 
-Running database upgrade commands:
-CREATE FUNCTION timestamp_to_str(d TIMESTAMP, format STRING) RETURNS STRING EXTERNAL NAME mtime."timestamp_to_str";
-GRANT EXECUTE ON FUNCTION timestamp_to_str(TIMESTAMP, STRING) TO PUBLIC;
-UPDATE sys.functions SET system = true WHERE system <> true AND name = 'timestamp_to_str' AND schema_id = 2000 and type = 1;
-
