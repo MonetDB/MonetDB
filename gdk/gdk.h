@@ -1730,7 +1730,10 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	gdk_return rc;
 	assert(b->tbaseoff == 0);
 	assert(b->theap->parentid == b->batCacheid);
-	if ((rc = ATOMputVAR(b, &d, v)) != GDK_SUCCEED)
+	MT_lock_set(&b->theaplock);
+	rc = ATOMputVAR(b, &d, v);
+	MT_lock_unset(&b->theaplock);
+	if (rc != GDK_SUCCEED)
 		return rc;
 	if (b->twidth < SIZEOF_VAR_T &&
 	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {

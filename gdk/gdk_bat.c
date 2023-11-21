@@ -827,7 +827,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		return NULL;
 	}
 
-	bi = bat_iterator(b);
+	MT_lock_set(&b->theaplock);
+	bi = bat_iterator_nolock(b);
 
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
@@ -837,9 +838,9 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	    ATOMstorage(b->ttype) != TYPE_msk && /* no view on TYPE_msk */
 	    (!VIEWtparent(b) ||
 	     BBP_desc(VIEWtparent(b))->batRestricted == BAT_READ)) {
+		MT_lock_unset(&b->theaplock);
 		bn = VIEWcreate(b->hseqbase, b);
 		if (bn == NULL) {
-			bat_iterator_end(&bi);
 			return NULL;
 		}
 		if (tt != bn->ttype) {
@@ -852,6 +853,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			}
 			bn->tseqbase = ATOMtype(tt) == TYPE_oid ? bi.tseq : oid_nil;
 		}
+		return bn;
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
 		 * setting slowcopy to false) */
@@ -878,7 +880,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 
 		bn = COLnew2(b->hseqbase, tt, bi.count, role, bi.width);
 		if (bn == NULL) {
-			bat_iterator_end(&bi);
+			MT_lock_unset(&b->theaplock);
 			return NULL;
 		}
 		if (bn->tvheap != NULL && bn->tvheap->base == NULL) {
@@ -1021,10 +1023,10 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->batRestricted = BAT_READ;
 	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT "\n",
 		  ALGOBATPAR(b), ALGOBATPAR(bn));
-	bat_iterator_end(&bi);
+	MT_lock_unset(&b->theaplock);
 	return bn;
       bunins_failed:
-	bat_iterator_end(&bi);
+	MT_lock_unset(&b->theaplock);
 	BBPreclaim(bn);
 	return NULL;
 }
