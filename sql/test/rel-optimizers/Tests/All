@@ -5,6 +5,8 @@ join-merge-remote-replica-plan
 join-merge-remote-replica
 replicas-base
 replicas-join-plan
+replicas-join
 local-replica
 local-replica-with-actual-remote
+remote-replica-plan
 remote-replica
