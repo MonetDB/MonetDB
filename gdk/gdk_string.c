@@ -190,17 +190,14 @@ strPut(BAT *b, var_t *dst, const void *V)
 	BUN off;
 
 	if (h->free == 0) {
-		MT_lock_set(&b->theaplock);
 		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
 			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
-				MT_lock_unset(&b->theaplock);
 				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
 		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		h->dirty = true;
-		MT_lock_unset(&b->theaplock);
 #ifdef NDEBUG
 		memset(h->base, 0, h->free);
 #else
@@ -286,13 +283,10 @@ strPut(BAT *b, var_t *dst, const void *V)
 			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		MT_lock_set(&b->theaplock);
 		if (HEAPgrow(&b->tvheap, newsize, true) != GDK_SUCCEED) {
-			MT_lock_unset(&b->theaplock);
 			return (var_t) -1;
 		}
 		h = b->tvheap;
-		MT_lock_unset(&b->theaplock);
 
 		/* make bucket point into the new heap */
 		bucket = ((stridx_t *) h->base) + off;
@@ -304,10 +298,8 @@ strPut(BAT *b, var_t *dst, const void *V)
 	if (pad > 0)
 		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
-	MT_lock_set(&b->theaplock);
 	h->free += pad + len;
 	h->dirty = true;
-	MT_lock_unset(&b->theaplock);
 
 	/* maintain hash table */
 	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
