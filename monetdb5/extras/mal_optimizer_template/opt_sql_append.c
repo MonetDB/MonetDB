@@ -292,11 +292,8 @@ OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		mb = s->def;
 		stk= 0;
 	}
-	if( mb->errors ){
-		/* when we have errors, we still want to see them */
-		addtoMalBlkHistory(mb);
+	if (mb->errors)
 		return MAL_SUCCEED;
-	}
 	actions = OPTsql_appendImplementation(cntxt, mb,stk,p);
 
 	/* Defense line against incorrect plans */

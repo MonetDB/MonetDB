@@ -80,8 +80,6 @@ Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *re
 	__attribute__((__visibility__("hidden")));
 void BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
-void BATinit_idents(BAT *bn)
-	__attribute__((__visibility__("hidden")));
 bool BATiscand(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, bool lock)

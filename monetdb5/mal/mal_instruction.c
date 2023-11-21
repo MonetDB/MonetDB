@@ -265,10 +265,6 @@ freeMalBlk(MalBlkPtr mb)
 	GDKfree(mb->var);
 	mb->var = 0;
 
-	if (mb->history) {
-		freeMalBlk(mb->history);
-		mb->history = NULL;
-	}
 	mb->binding[0] = 0;
 	mb->tag = 0;
 	mb->memory = 0;
@@ -295,8 +291,6 @@ copyMalBlk(MalBlkPtr old)
 	if (mb == NULL)
 		return NULL;
 	mb->alternative = old->alternative;
-	mb->history = NULL;
-	mb->keephistory = old->keephistory;
 
 	mb->var = (VarRecord *) GDKzalloc(sizeof(VarRecord) * old->vsize);
 	if (mb->var == NULL) {
@@ -342,7 +336,6 @@ copyMalBlk(MalBlkPtr old)
 	mb->runtime = old->runtime;
 	mb->calls = old->calls;
 	mb->optimize = old->optimize;
-	mb->replica = old->replica;
 	mb->maxarg = old->maxarg;
 	mb->inlineProp = old->inlineProp;
 	mb->unsafeProp = old->unsafeProp;
@@ -357,74 +350,6 @@ copyMalBlk(MalBlkPtr old)
 	GDKfree(mb->stmt);
 	GDKfree(mb);
 	return NULL;
-}
-
-void
-addtoMalBlkHistory(MalBlkPtr mb)
-{
-	if (mb->keephistory) {
-		MalBlkPtr cpy = copyMalBlk(mb);
-		if (cpy == NULL)
-			return;				/* ignore history */
-		cpy->history = NULL;
-		/* append to the linked list */
-		MalBlkPtr *h = &mb->history;
-		while (*h)
-			h = &(*h)->history;
-		*h = cpy;
-	}
-}
-
-void
-removeMalBlkHistory(MalBlkPtr mb)
-{
-	if (mb->history) {
-		removeMalBlkHistory(mb->history);
-		freeMalBlk(mb->history);
-		mb->history = NULL;
-	}
-}
-
-MalBlkPtr
-getMalBlkHistory(MalBlkPtr mb, int idx)
-{
-	MalBlkPtr h = mb;
-
-	while (h && idx-- >= 0)
-		h = h->history;
-	return h ? h : mb;
-}
-
-/* Localize the plan using the optimizer name */
-MalBlkPtr
-getMalBlkOptimized(MalBlkPtr mb, const char *name)
-{
-	MalBlkPtr h = mb->history;
-	InstrPtr p;
-	int i = 0;
-	char buf[IDLENGTH] = { 0 }, *n;
-	size_t nlen;
-	if (name == 0)
-		return mb;
-	nlen = strlen(name);
-	if (nlen >= sizeof(buf)) {
-		mb->errors = createMalException(mb, 0, TYPE, "Optimizer name is too large");
-		return NULL;
-	}
-	memcpy(buf, name, nlen + 1);
-	n = strchr(buf, ']');
-	if (n)
-		*n = 0;
-	while (h) {
-		for (i = 1; i < h->stop; i++) {
-			p = getInstrPtr(h, i);
-			if (p->token == REMsymbol
-				&& strstr(getVarConstant(h, getArg(p, 0)).val.sval, buf))
-				return h;
-		}
-		h = h->history;
-	}
-	return 0;
 }
 
 /* The MAL records should be managed from a pool to
@@ -606,18 +531,6 @@ findVariableLength(MalBlkPtr mb, const char *name, int len)
 			return i;
 	}
 	return -1;
-}
-
-/* Note that getType also checks for type names directly. They have
- * preference over variable names. */
-malType
-getType(MalBlkPtr mb, const char *nme)
-{
-	int i;
-	i = findVariable(mb, nme);
-	if (i < 0)
-		return getAtomIndex(nme, strlen(nme), TYPE_any);
-	return getVarType(mb, i);
 }
 
 str
@@ -901,8 +814,8 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 			}
 		}
 		mb->vtop = cnt;
-	}							/* rename the temporary variable */
-	mb->vid = 0;				/* Obsolete, name generation is postponed until needed for( i =0; i< cnt; i++) if( isTmpVar(mb,i)) (void) snprintf(getVarName(mb,i), IDLENGTH,"%c_%d", getVarKind(mb,i), mb->vid++); */
+	}
+	mb->vid = 0;
 	GDKfree(alias);
 }
 
