@@ -490,8 +490,6 @@ Provides: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
-# versions up to 1.0.5 don't accept the queryid field in the result set
-Conflicts: python-pymonetdb < 1.0.6
 Requires(pre): systemd
 
 %description -n MonetDB5-server
@@ -700,7 +698,7 @@ package.  You probably don't need this, unless you are a developer.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
-Requires: python3dist(pymonetdb) >= 1.0.6
+Requires: python3dist(pymonetdb)
 BuildArch: noarch
 
 %description testing-python
