@@ -186,8 +186,6 @@ typedef struct MALBLK {
 	 unsafeProp:1;				/* unsafe property */
 
 	str errors;					/* left over errors */
-	struct MALBLK *history;		/* of optimizer actions */
-	short keephistory;			/* do we need the history at all */
 	int maxarg;					/* keep track on the maximal arguments used */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */

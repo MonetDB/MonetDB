@@ -648,7 +648,6 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 #endif
 
 	bn->batCacheid = (bat) batid;
-	BATinit_idents(bn);
 	bn->batTransient = false;
 	bn->batCopiedtodisk = true;
 	switch ((properties & 0x06) >> 1) {

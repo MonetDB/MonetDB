@@ -352,7 +352,7 @@ Changing this property takes effect immediately at runtime.
 .TP
 .B forward
 .I monetdbd
-has two ways in which it can "attach" a connecting client to the
+has two ways in which it can ``attach'' a connecting client to the
 target database.
 The first method,
 .BR redirect ,
@@ -421,10 +421,10 @@ Tags are arbitrary ASCII-strings matching the pattern [A\-Za\-z0\-9./]+.
 There are no assumed semantics in the tag, which allows for multiple
 approaches when using the tag.
 The tag is always used in combination with the database name.
-For this, the `/' character is used as separator, which hence suggests
+For this, the ``/'' character is used as separator, which hence suggests
 the user to use that character as separator for multilevel tags.
 .I Monetdbd
-allows common path globbing using `*' on tags, which allows for many
+allows common path globbing using ``*'' on tags, which allows for many
 use-cases.
 Consider for instance the following three databases with their tag:
 .PP
@@ -438,7 +438,7 @@ dbY/slave/tableQ
 dbZ/slave/tableQ
 .RE
 .PP
-A default match has implicit `/*' added to the search, making more
+A default match has implicit ``/*'' added to the search, making more
 generic search strings match more specific ones.
 Hence, a connect with database
 .I dbX
@@ -449,7 +449,7 @@ and hence matches
 Similar, a database connect for
 .I */master
 matches the same database as before.
-Note that the implicit `/*' is not added if that would cause no
+Note that the implicit ``/*'' is not added if that would cause no
 matches, such as for
 .I */master/tableQ
 which would return all masters for 

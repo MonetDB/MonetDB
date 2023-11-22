@@ -3219,11 +3219,6 @@ command bat.getName(X_0:bat[:any_1]):str
 BKCgetBBPname;
 Gives back the logical name of a BAT.
 bat
-getRole
-command bat.getRole(X_0:bat[:any_1]):str 
-BKCgetRole;
-Returns the rolename of the head column of a BAT.
-bat
 getSequenceBase
 command bat.getSequenceBase(X_0:bat[:any_1]):oid 
 BKCgetSequenceBase;
@@ -3463,11 +3458,6 @@ setAccess
 command bat.setAccess(X_0:bat[:any_1], X_1:str):bat[:any_1] 
 BKCsetAccess;
 Try to change the update access privileges @to this BAT. Mode:@r[ead-only]      - allow only read access.@a[append-only]   - allow reads and update.@w[riteable]      - allow all operations.@BATs are updatable by default. On making a BAT read-only, @all subsequent updates fail with an error message.@Returns the BAT itself.
-bat
-setColumn
-command bat.setColumn(X_0:bat[:any_1], X_1:str):void 
-BKCsetColumn;
-Give a logical name to the tail column of a BAT.
 bat
 setHash
 command bat.setHash(X_0:bat[:any_1]):bit 

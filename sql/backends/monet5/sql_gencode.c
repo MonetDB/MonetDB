@@ -356,6 +356,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	InstrPtr curInstr = 0, p, o;
 	tid_uri *tu = ((list*)prp->value.pval)->h->data;
 	sqlid table_id = tu->id;
+	assert(table_id);
 	node *n;
 	int i, q, v, res = -1, added_to_cache = 0, *lret, *rret;
 	size_t len = 1024, nr, pwlen = 0;

@@ -24,6 +24,5 @@ mal_export void traceInstruction(component_t comp, MalBlkPtr mb, MalStkPtr stk,
 mal_export str instruction2str(MalBlkPtr mb, MalStkPtr stl, InstrPtr p,
 							   int hidden);
 mal_export str mal2str(MalBlkPtr mb, int first, int last);
-mal_export void showMalBlkHistory(stream *out, MalBlkPtr mb);
 
 #endif /*  _MAL_LIST_H */

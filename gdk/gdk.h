@@ -686,7 +686,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *           BUN    batCount;         // Tuple count
  *           // Tail properties
  *           int    ttype;            // Tail type number
- *           str    tident;           // name for tail column
  *           bool   tkey;             // tail values are unique
  *           bool   tnonil;           // tail has no nils
  *           bool   tsorted;          // are tail values currently ordered?
@@ -718,8 +717,6 @@ typedef struct PROPrec PROPrec;
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
-	str id;			/* label for column */
-
 	uint16_t width;		/* byte-width of the atom array */
 	int8_t type;		/* type id. */
 	uint8_t shift;		/* log2 of bun width */
@@ -819,7 +816,6 @@ typedef struct BAT {
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
-#define tident		T.id
 #define torderidx	T.orderidx
 #define twidth		T.width
 #define tshift		T.shift
@@ -1422,7 +1418,6 @@ gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, bool onoff);
 gdk_export gdk_return BATmode(BAT *b, bool transient);
-gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 
@@ -1747,7 +1742,10 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	gdk_return rc;
 	assert(b->tbaseoff == 0);
 	assert(b->theap->parentid == b->batCacheid);
-	if ((rc = ATOMputVAR(b, &d, v)) != GDK_SUCCEED)
+	MT_lock_set(&b->theaplock);
+	rc = ATOMputVAR(b, &d, v);
+	MT_lock_unset(&b->theaplock);
+	if (rc != GDK_SUCCEED)
 		return rc;
 	if (b->twidth < SIZEOF_VAR_T &&
 	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
