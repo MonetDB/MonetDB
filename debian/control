@@ -185,8 +185,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, adduser,
  libmonetdb27 (= ${source:Version}),
 Recommends: monetdb5-sql (= ${source:Version})
 Suggests: monetdb-client (= ${source:Version})
-Conflicts: monetdb5-server-hugeint (<< 11.38.0),
- python-pymonetdb (<< 1.0.6)
+Conflicts: monetdb5-server-hugeint (<< 11.38.0)
 Replaces: monetdb5-server-hugeint (<< 11.38.0)
 Description: MonetDB database server version 5
  MonetDB is a database management system that is developed from a
@@ -326,7 +325,7 @@ Description: MonetDB embedded testing tools
 Package: monetdb-testing-python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python3,
- python3-pymonetdb (>= 1.0.6),
+ python3-pymonetdb,
  monetdb-client-testing (= ${source:Version})
 Description: MonetDB testing Python programs
  MonetDB is a database management system that is developed from a
