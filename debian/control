@@ -13,7 +13,6 @@ Build-Depends: debhelper (>= 12), cmake (>= 3.12), bison,
  unixodbc-dev, zlib1g-dev, r-base-dev,
  libcfitsio-dev, libssl-dev (>= 1.1.1)
 Standards-Version: 3.8.0
-X-Python-Version: >= 2.6
 
 Package: libmonetdb27
 Architecture: any
