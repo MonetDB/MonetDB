@@ -1,10 +1,10 @@
 Source: monetdb
-Section: misc
+Section: database
 Priority: optional
 Maintainer: MonetDB BV <info@monetdb.org>
 Homepage: https://www.monetdb.org/
 Vcs-Browser: https://dev.monetdb.org/hg/MonetDB/
-Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/
+Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/ -b Dec2023
 Build-Depends: debhelper (>= 12), cmake (>= 3.12), bison,
  libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.10.0),
  libpcre3-dev, libreadline-dev, liblzma-dev, liblz4-dev (>= 1.8.0),
