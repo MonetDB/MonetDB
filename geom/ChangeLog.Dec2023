@@ -1,3 +1,14 @@
 # ChangeLog file for geom
 # This file is updated with Maddlog
 
+* Thu Nov 23 2023 stefanos mavros <stemavros@gmail.com>
+- Implements Rtree index in GDK layer based on librtree. The index is
+  used in the implementation of the filter functions ST_Intersects and
+  ST_Dwithin for geometric points.
+- Improves shapefile support by replacing functions SHPattach,
+  SHPpartialimport, ahd SHPimport with SHPload.
+- Introduces functions ST_DistanceGeographic, ST_DwithinGeographic,
+  ST_IntersectsGeographic, ST_CoversGeographic, ST_Collects with geodesic
+  semantics. ST_Transform can be used to convert geodetic into geographic
+  data using libPROJ.
+
