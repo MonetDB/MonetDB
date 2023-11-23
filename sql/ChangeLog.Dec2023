@@ -14,6 +14,8 @@
    information_schema.routines
    information_schema.parameters
    information_schema.sequences
+  For details see
+  https://www.monetdb.org/documentation/user-guide/sql-catalog/information_schema/
 
   Most views have been extended (after the standard columns) with MonetDB
   specific information columns such as schema_id, table_id, column_id, etc.
