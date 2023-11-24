@@ -96,7 +96,11 @@ Source: https://www.monetdb.org/downloads/sources/Jun2023-SP3/%{name}-%{version}
 # that doesn't exist and we need systemd, so instead we just require
 # the macro file that contains the definitions.
 # We need checkpolicy and selinux-policy-devel for the SELinux policy.
-BuildRequires: /usr/lib/rpm/macros.d/macros.systemd
+%if 0%{?rhel} != 7
+BuildRequires: systemd-rpm-macros
+%else
+BuildRequires: systemd
+%endif
 BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
@@ -771,8 +775,10 @@ Requires(post):   MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires(postun): MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires(post):   %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires(postun): %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
-Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
+# we need /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles which are in
+# policycoreutils
+Requires(post):   policycoreutils
+Requires(postun): policycoreutils
 BuildArch: noarch
 
 %global selinux_types %(%{__awk} '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
