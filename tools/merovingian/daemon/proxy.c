@@ -47,6 +47,14 @@ proxyThread(void *d)
 	int len;
 	char data[8 * 1024];
 
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
+
 	/* pass everything from in to out, until either reading from in,
 	 * or writing to out fails, then close the other proxyThread's in
 	 * and out streams so that it stops as well (it will, or already
