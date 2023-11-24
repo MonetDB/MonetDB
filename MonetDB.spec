@@ -302,8 +302,8 @@ MonetDB, you will very likely need this package.
 %defattr(-,root,root)
 %{_bindir}/mclient
 %{_bindir}/msqldump
-%doc %{_mandir}/man1/mclient.1.gz
-%doc %{_mandir}/man1/msqldump.1.gz
+%{_mandir}/man1/mclient.1*
+%{_mandir}/man1/msqldump.1*
 
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
@@ -583,7 +583,7 @@ exit 0
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
 %{_bindir}/mserver5
-%doc %{_mandir}/man1/mserver5.1.gz
+%{_mandir}/man1/mserver5.1*
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
 %{_datadir}/doc/MonetDB/*
@@ -653,8 +653,8 @@ configuration.
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
-%doc %{_mandir}/man1/monetdb.1.gz
-%doc %{_mandir}/man1/monetdbd.1.gz
+%{_mandir}/man1/monetdb.1*
+%{_mandir}/man1/monetdbd.1*
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
@@ -781,7 +781,7 @@ Requires(post):   policycoreutils
 Requires(postun): policycoreutils
 BuildArch: noarch
 
-%global selinux_types %(%{__awk} '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
+%global selinux_types %(awk '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
 %global selinux_variants %([ -z "%{selinux_types}" ] && echo mls targeted || echo %{selinux_types})
 
 %description selinux
