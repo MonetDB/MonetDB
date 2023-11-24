@@ -224,6 +224,8 @@ accelerators.  It also has an SQL front end.
 This package contains a shared library (libstream) which is needed by
 various other components.
 
+%ldconfig_scriptlets stream
+
 %files stream
 %license COPYING
 %defattr(-,root,root)
@@ -271,6 +273,8 @@ accelerators.  It also has an SQL front end.
 This package contains libmapi.so, the main client library used by both
 mclient, msqldump and by the ODBC driver.  If you want to use MonetDB,
 you will very likely need this package.
+
+%ldconfig_scriptlets client-lib
 
 %files client-lib
 %license COPYING
@@ -517,6 +521,8 @@ accelerators.  It also has an SQL front end.
 This package contains the MonetDB server component in the form of a set of libraries.  You need this
 package if you want to use the MonetDB database system, either as independent program (MonetDB5-server) or as embedded library (%{name}-embedded).
 
+%ldconfig_scriptlets -n MonetDB5-libraries
+
 %files -n MonetDB5-libraries
 %defattr(-,root,root)
 %{_libdir}/libmonetdb5.so.*
@@ -695,6 +701,8 @@ accelerators.  It also has an SQL front end.
 This package contains the library to turn MonetDB into an embeddable
 library, also known as MonetDBe.  Also see %{name}-embedded-devel to
 use this in a program.
+
+%ldconfig_scriptlets embedded
 
 %files embedded
 %{_libdir}/libmonetdbe.so.*
