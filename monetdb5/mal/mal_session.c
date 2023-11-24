@@ -429,6 +429,8 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 	if (mb->errors == MAL_SUCCEED) {
 		for (i = sig->argc; i < mb->vtop; i++) {
 			if (glb && i < glb->stktop && isTmpVar(mb, i) && !glb->keepTmps) {
+				if (mb->var[i].name)
+					GDKfree(mb->var[i].name);
 				/* clean stack entry */
 				garbageElement(cntxt, &glb->stk[i]);
 				glb->stk[i].vtype = TYPE_int;

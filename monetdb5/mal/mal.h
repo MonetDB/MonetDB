@@ -109,15 +109,16 @@ typedef struct SYMDEF {
 	struct SYMDEF *skip;		/* skip to next different symbol */
 	const char *name;
 	int kind;					/* what kind of symbol */
+	bool allocated;				/* allocated using mallocs or compiled inside the binary */
 	struct MALBLK *def;			/* the details of the MAL fcn */
 	mel_func *func;
 } *Symbol, SymRecord;
 
 
 typedef struct VARRECORD {
-	char name[IDLENGTH];		/* use the space for the full name */
-	char kind;					/* Could be either _, X or C to stamp the variable type */
+	char *name;//[IDLENGTH];		/* use the space for the full name */
 	malType type;				/* internal type signature */
+	char kind;					/* Could be either _, X or C to stamp the variable type */
 	bool constant:1,
 		typevar:1,
 		fixedtype:1,
@@ -169,7 +170,6 @@ typedef struct MALBLK {
 	struct MALBLK *alternative;
 	int vtop;					/* next free slot */
 	int vsize;					/* size of variable arena */
-	int vid;					/* generate local variable counter */
 	VarRecord *var;				/* Variable table */
 	int stop;					/* next free slot */
 	int ssize;					/* byte size of arena */

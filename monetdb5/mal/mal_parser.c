@@ -1541,8 +1541,9 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 	if (modnme && (getModule(modnme) == FALSE && strcmp(modnme, "user"))) {
 		// introduce the module
 		if (globalModule(modnme) == NULL) {
+			mf_destroy(curFunc);
 			parseError(cntxt, "<module> could not be defined\n");
-			return 0;
+			return NULL;
 		}
 	}
 	modnme = modnme ? modnme : cntxt->usermodule->name;
@@ -1562,6 +1563,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 	}
 	curPrg->func = curFunc;
 	curPrg->def = NULL;
+	curPrg->allocated = true;
 
 	skipSpace(cntxt);
 	if (MALkeyword(cntxt, "address", 7)) {
@@ -1574,7 +1576,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		cntxt->blkmode = 0;
 
 		size_t sz = (size_t) (i < IDLENGTH ? i : IDLENGTH - 1);
-		curFunc->cname = GDKmalloc(sz);
+		curFunc->cname = GDKmalloc(sz+1);
 		if (!curFunc->cname) {
 			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			freeSymbol(curPrg);
@@ -1962,9 +1964,9 @@ parseEnd(Client cntxt)
 
 #define GETvariable(FREE)												\
 	if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1) { \
-		varid = newVariable(curBlk, CURRENT(cntxt),l, TYPE_any);		\
+		varid = newVariable(curBlk, CURRENT(cntxt), l, TYPE_any);		\
 		advance(cntxt, l);												\
-		if(varid <  0) { FREE; return; }								\
+		if (varid <  0) { FREE; return; }								\
 	} else																\
 		advance(cntxt, l);
 

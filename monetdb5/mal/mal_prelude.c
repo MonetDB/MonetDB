@@ -233,6 +233,7 @@ addFunctions(mel_func *fcn)
 				  fcn->fcn);
 		s->def = NULL;
 		s->func = fcn;
+		s->allocated = false;
 
 		/* add the return variables */
 		unsigned int i;
@@ -311,6 +312,7 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 	if (s == NULL)
 		return MEL_ERR;
 	fcn = s->name;
+	s->allocated = true;
 
 	f = (mel_func*)GDKmalloc(sizeof(mel_func));
 	mel_arg *args = (mel_arg*)GDKmalloc(sizeof(mel_arg)*argc);

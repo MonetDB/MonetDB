@@ -4200,7 +4200,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 void
-freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
+freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop)
 {
 	for (int i = oldvtop; i < mb->vtop;) {
 		if (glb) {
@@ -4216,7 +4216,6 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
 	}
 	assert(oldvtop <= mb->vsize);
 	mb->vtop = oldvtop;
-	mb->vid = oldvid;
 }
 
 str

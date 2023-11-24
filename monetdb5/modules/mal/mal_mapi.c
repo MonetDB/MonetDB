@@ -2054,6 +2054,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Mapi mid;
 	MapiHdl hdl = 0;
 	char buf[BUFSIZ];
+	char name[IDLENGTH] = { 0 };
 
 	(void) cntxt;
 	key = getArgReference_int(stk, pci, pci->retc);
@@ -2066,20 +2067,20 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		i = *getArgReference_int(stk, pci, pci->retc + 4);
 		tn = getTypeName(getBatType(getVarType(mb, getDestVar(pci))));
 		snprintf(buf, BUFSIZ, "%s:bat[:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
-				 getVarName(mb, getDestVar(pci)), tn, *nme, *tab, *col, i);
+				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme, *tab, *col, i);
 		GDKfree(tn);
 	} else if (pci->argc == 5) {
 		tab = getArgReference_str(stk, pci, pci->retc + 2);
 		i = *getArgReference_int(stk, pci, pci->retc + 3);
 		snprintf(buf, BUFSIZ, "%s:bat[:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
-				 getVarName(mb, getDestVar(pci)), *nme, *tab, i);
+				 getVarNameIntoBuffer(mb, getDestVar(pci), name), *nme, *tab, i);
 	} else {
 		str hn, tn;
 		int target = getArgType(mb, pci, 0);
 		hn = getTypeName(TYPE_oid);
 		tn = getTypeName(getBatType(target));
 		snprintf(buf, BUFSIZ, "%s:bat[:%s]:=bbp.bind(\"%s\");",
-				 getVarName(mb, getDestVar(pci)), tn, *nme);
+				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme);
 		GDKfree(hn);
 		GDKfree(tn);
 	}

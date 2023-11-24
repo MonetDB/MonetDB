@@ -73,8 +73,12 @@ freeSymbol(Symbol s)
 	if (s->def) {
 		freeMalBlk(s->def);
 		s->def = NULL;
+	} else if (s->allocated && s->func) {
+		GDKfree(s->func->comment);
+		GDKfree((char*)s->func->cname);
+		GDKfree(s->func->args);
+		GDKfree(s->func);
 	}
-	/* TODO free s->func */
 	GDKfree(s);
 }
 
@@ -225,6 +229,9 @@ resetMalBlk(MalBlkPtr mb)
 	mb->stop = 0;
 
 	for (i = 0; i < mb->vtop; i++) {
+		if (mb->var[i].name)
+			GDKfree(mb->var[i].name);
+		mb->var[i].name = NULL;
 		if (isVarConstant(mb, i))
 			VALclear(&getVarConstant(mb, i));
 	}
@@ -242,7 +249,6 @@ resetMalBlk(MalBlkPtr mb)
 		mb->vsize = MALCHUNK;
 	}
 	mb->vtop = 0;
-	mb->vid = 0;
 }
 
 
@@ -259,11 +265,14 @@ freeMalBlk(MalBlkPtr mb)
 			mb->stmt[i] = NULL;
 		}
 	mb->stop = 0;
-	for (i = 0; i < mb->vtop; i++)
+	for (i = 0; i < mb->vtop; i++) {
+		if (mb->var[i].name)
+			GDKfree(mb->var[i].name);
+		mb->var[i].name = NULL;
 		if (isVarConstant(mb, i))
 			VALclear(&getVarConstant(mb, i));
+	}
 	mb->vtop = 0;
-	mb->vid = 0;
 	GDKfree(mb->stmt);
 	mb->stmt = 0;
 	GDKfree(mb->var);
@@ -302,11 +311,15 @@ copyMalBlk(MalBlkPtr old)
 	}
 
 	mb->vsize = old->vsize;
-	mb->vid = old->vid;
 
 	/* copy all variable records */
 	for (i = 0; i < old->vtop; i++) {
 		mb->var[i] = old->var[i];
+		if (mb->var[i].name) {
+			mb->var[i].name = GDKstrdup(mb->var[i].name);
+			if (!mb->var[i].name)
+				goto bailout;
+		}
 		if (VALcopy(&(mb->var[i].value), &(old->var[i].value)) == NULL) {
 			mb->vtop = i;
 			goto bailout;
@@ -347,8 +360,11 @@ copyMalBlk(MalBlkPtr old)
   bailout:
 	for (i = 0; i < old->stop; i++)
 		freeInstruction(mb->stmt[i]);
-	for (i = 0; i < old->vtop; i++)
+	for (i = 0; i < old->vtop; i++) {
+		if (mb->var[i].name)
+			GDKfree(mb->var[i].name);
 		VALclear(&mb->var[i].value);
+	}
 	GDKfree(mb->var);
 	GDKfree(mb->stmt);
 	GDKfree(mb);
@@ -515,7 +531,7 @@ findVariable(MalBlkPtr mb, const char *name)
 	if (name == NULL)
 		return -1;
 	for (i = mb->vtop - 1; i >= 0; i--)
-		if (idcmp(name, mb->var[i].name) == 0)
+		if (mb->var[i].name && idcmp(name, mb->var[i].name) == 0)
 			return i;
 	return -1;
 }
@@ -544,85 +560,6 @@ getArgDefault(MalBlkPtr mb, InstrPtr p, int idx)
 		return v->val.sval;
 	return NULL;
 }
-
-/* All variables are implicitly declared upon their first assignment.
- *
- * Lexical constants require some care. They typically appear as
- * arguments in operator/function calls. To simplify program analysis
- * later on, we stick to the situation that function/operator
- * arguments are always references to by variables.
- *
- * Reserved words
- * Although MAL has been designed as a minimal language, several
- * identifiers are not eligible as variables. The encoding below is
- * geared at simple and speed. */
-#if 0
-int
-isReserved(str nme)
-{
-	switch (*nme) {
-	case 'A':
-	case 'a':
-		if (idcmp("atom", nme) == 0)
-			return 1;
-		break;
-	case 'B':
-	case 'b':
-		if (idcmp("barrier", nme) == 0)
-			return 1;
-		break;
-	case 'C':
-	case 'c':
-		if (idcmp("command", nme) == 0)
-			return 1;
-		break;
-	case 'E':
-	case 'e':
-		if (idcmp("exit", nme) == 0)
-			return 1;
-		if (idcmp("end", nme) == 0)
-			return 1;
-		break;
-	case 'F':
-	case 'f':
-		if (idcmp("false", nme) == 0)
-			return 1;
-		if (idcmp("function", nme) == 0)
-			return 1;
-		break;
-	case 'I':
-	case 'i':
-		if (idcmp("include", nme) == 0)
-			return 1;
-		break;
-	case 'M':
-	case 'm':
-		if (idcmp("module", nme) == 0)
-			return 1;
-		if (idcmp("macro", nme) == 0)
-			return 1;
-		break;
-	case 'O':
-	case 'o':
-		if (idcmp("orcam", nme) == 0)
-			return 1;
-		break;
-	case 'P':
-	case 'p':
-		if (idcmp("pattern", nme) == 0)
-			return 1;
-		break;
-	case 'T':
-	case 't':
-		if (idcmp("thread", nme) == 0)
-			return 1;
-		if (idcmp("true", nme) == 0)
-			return 1;
-		break;
-	}
-	return 0;
-}
-#endif
 
 /* Beware, the symbol table structure assumes that it is relatively
  * cheap to perform a linear search to a variable or constant. */
@@ -662,14 +599,17 @@ setVariableType(MalBlkPtr mb, const int n, malType type)
 }
 
 char *
-getVarName(MalBlkPtr mb, int idx)
+getVarNameIntoBuffer(MalBlkPtr mb, int idx, const char *buf)
 {
 	char *s = mb->var[idx].name;
 	if (getVarKind(mb, idx) == 0)
 		setVarKind(mb, idx, REFMARKER);
-	if (*s == 0)
-		(void) snprintf(s, IDLENGTH, "%c_%d", getVarKind(mb, idx), mb->vid++);
-	return s;
+	if (s == NULL) {
+		(void) snprintf((char*)buf, IDLENGTH, "%c_%d", getVarKind(mb, idx), idx);
+	} else {
+		(void) snprintf((char*)buf, IDLENGTH, "%s", s);
+	}
+	return (char*)buf;
 }
 
 int
@@ -687,15 +627,20 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		return -1;
 	}
 	n = mb->vtop;
-	if (name == 0 || len == 0) {
-		mb->var[n].name[0] = 0;
-	} else {					/* avoid calling strcpy_len since we're not interested in the * source length, and that may be very large */
-		char *nme = mb->var[n].name;
+	mb->var[n].name = NULL;
+	if (name && len > 0) {
+		char *nme = GDKmalloc(len+1);
+		if (!nme) {
+			mb->errors = createMalException(mb, 0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return -1;
+		}
+		mb->var[n].name = nme;
 		for (size_t i = 0; i < len; i++)
 			nme[i] = name[i];
 		nme[len] = 0;
 		kind = nme[0];
-	} mb->vtop++;
+	}
+	mb->vtop++;
 	setVarKind(mb, n, kind);
 	setVariableType(mb, n, type);
 	return n;
@@ -710,8 +655,8 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 		res = cpyConstant(tm, getVar(mb, x));
 	else {
 		res = newTmpVariable(tm, getVarType(mb, x));
-		if (*mb->var[x].name)
-			strcpy(tm->var[x].name, mb->var[x].name);
+		if (mb->var[x].name)
+			tm->var[x].name = GDKstrdup(mb->var[x].name);
 	}
 	if (res < 0)
 		return res;
@@ -758,6 +703,9 @@ clearVariable(MalBlkPtr mb, int varid)
 	v = getVar(mb, varid);
 	if (isVarConstant(mb, varid) || isVarDisabled(mb, varid))
 		VALclear(&v->value);
+	if (v->name)
+		GDKfree(v->name);
+	v->name = NULL;
 	v->type = 0;
 	v->constant = 0;
 	v->typevar = 0;
@@ -818,7 +766,6 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		}
 		mb->vtop = cnt;
 	}
-	mb->vid = 0;
 	GDKfree(alias);
 }
 
@@ -955,7 +902,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	cst->bat = false;
 	if (isaBatType(type)) {
 		if (cst->vtype == TYPE_void) {
-			cst->vtype = type;
+			cst->vtype = getBatType(type);
 			cst->bat = true;
 			cst->val.bval = bat_nil;
 		} else {
@@ -987,10 +934,12 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			assert(cst->vtype == type);
 		}
 	}
-	k = fndConstant(mb, cst, MAL_VAR_WINDOW);
-	if (k >= 0) {				/* protect against leaks coming from constant reuse */
-		VALclear(cst);
-		return k;
+	if (cst->vtype != TYPE_any) {
+		k = fndConstant(mb, cst, MAL_VAR_WINDOW);
+		if (k >= 0) {				/* protect against leaks coming from constant reuse */
+			VALclear(cst);
+			return k;
+		}
 	}
 	k = newTmpVariable(mb, type);
 	if (k < 0) {

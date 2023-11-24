@@ -63,7 +63,6 @@ static str
 renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 {
 	char *buf = 0;
-	char *nme = 0;
 	int nameused = 0;
 	size_t len = 0, maxlen = BUFSIZ;
 	ValRecord *val = 0;
@@ -80,8 +79,8 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb, varid)
 		&& !isVarTypedef(mb, varid)) {
-		nme = getVarName(mb, varid);
-		len += snprintf(buf, maxlen, "%s", nme);
+		char *nme = getVarNameIntoBuffer(mb, varid, buf);
+		len += strlen(nme);
 		nameused = 1;
 	}
 	// show the value when required or being a constant

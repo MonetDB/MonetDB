@@ -613,38 +613,6 @@ INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/*
- * Display routines
- */
-
-#if 0
-static str
-INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) p;
-	printFunction(cntxt->fdout, mb, stk, LIST_INPUT);
-	return MAL_SUCCEED;
-}
-
-static str
-INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	str modnme = getArgName(mb, p, 1);
-	str fcnnme = getArgName(mb, p, 2);
-	Symbol s = NULL;
-
-	s = findSymbol(cntxt->usermodule, getName(modnme), putName(fcnnme));
-
-	if (s == NULL) {
-		char buf[BUFSIZ];
-		snprintf(buf, BUFSIZ, "%s.%s", modnme, fcnnme);
-		throw(MAL, "inspect.showSource", RUNTIME_SIGNATURE_MISSING "%s", buf);
-	} else
-		printFunction(cntxt->fdout, s->def, stk, LIST_INPUT);
-	return MAL_SUCCEED;
-}
-#endif
-
 static str
 INSPECTequalType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

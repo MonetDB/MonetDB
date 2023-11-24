@@ -50,7 +50,6 @@ typedef struct backend {
 	int 	mvc_var;	/* current variable holding the latest query context (used to create dependencies in mal statements) */
 	int 	rowcount;	/* when multiple insert/update/delete/truncate statements are present, use an accumulator to hold the total number of rows affected */
 	int		vtop;			/* top of the variable stack before the current function */
-	int		vid;			/* old variable id top before the current function */
 	int 	join_idx;	/* number of index joins (used in rel_bin) */
 	lng 	reloptimizer;	/* timer for optimizer phase */
 

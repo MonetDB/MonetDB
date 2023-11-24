@@ -977,7 +977,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (j = 0; j < l->retc; j++)
 						if (getArg(l, j) == exceptionVar)
 							break;
-						else if (strcmp(getArgName(mb, l, j), "ANYexception") == 0)
+						else if (getArgName(mb, l, j) && strcmp(getArgName(mb, l, j), "ANYexception") == 0)
 							break;
 					if (j < l->retc)
 						break;
@@ -1048,11 +1048,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (strNil(v->val.sval))
 					stkpc = pci->jump;
 				break;
-			default:
+			default: {
+				char name[IDLENGTH] = { 0 };
 				ret = createException(MAL, "mal.interpreter",
-									  "%s: Unknown barrier type", getVarName(mb,
+									  "%s: Unknown barrier type", getVarNameIntoBuffer(mb,
 																			 getDestVar
-																			 (pci)));
+																			 (pci), name));
+					 }
 			}
 			stkpc++;
 			break;
@@ -1162,7 +1164,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (j = 0; j < l->retc; j++)
 						if (getArg(l, j) == exceptionVar)
 							break;
-						else if (strcmp(getArgName(mb, l, j), "ANYexception") == 0)
+						else if (getArgName(mb, l, j) && strcmp(getArgName(mb, l, j), "ANYexception") == 0)
 							break;
 					if (j < l->retc)
 						break;

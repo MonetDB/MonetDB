@@ -2066,32 +2066,6 @@ append_create_remote_append_mal_program(
 	_prg	= newFunctionArgs(userRef, putName(remote_program_name), FUNCTIONsymbol, (int) ccount + 1); // remote program
 	mb		= _prg->def;
 
-	{ // START OF HACK
-		/*
-		 * This is a hack to make sure that the serialized remote program is correctly parsed on the remote side.
-		 * Since the mal serializer (mal_listing) on the local side will use generated variable names,
-		 * The parsing process on the remote side can and will clash with generated variable names on the remote side.
-		 * Because serialiser and the parser will both use the same namespace of generated variable names.
-		 * Adding an offset to the counter that generates the variable names on the local side
-		 * circumvents this shortcoming in the MAL parser.
-		 */
-
-		assert(mb->vid == 0);
-
-		/*
-			* Comments generate variable names during parsing:
-			* sql.mvc has one comment and for each column there is one sql.append statement plus comment.
-			*/
-		const int nr_of_comments = (int) (1 + ccount);
-		/*
-			* constant terms generate variable names during parsing:
-			* Each sql.append has three constant terms: schema + table + column_name.
-			* There is one sql.append stmt for each column.
-			*/
-		const int nr_of_constant_terms =  (int)  (3 * ccount);
-		mb->vid = nr_of_comments + nr_of_constant_terms;
-	} // END OF HACK
-
 	f = getInstrPtr(mb, 0);
 	f->retc = f->argc = 0;
 	f = pushReturn(mb, f, newTmpVariable(mb, TYPE_int));

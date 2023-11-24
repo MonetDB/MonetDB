@@ -417,13 +417,14 @@ RMTgetId(char *buf, size_t buflen, MalBlkPtr mb, InstrPtr p, int arg)
 	const char *mod;
 	char *var;
 	str rt;
+	char name[IDLENGTH] = { 0 };
 	static ATOMIC_TYPE idtag = ATOMIC_VAR_INIT(0);
 
 	if (p->retc == 0)
 		throw(MAL, "remote.getId",
 			  ILLEGAL_ARGUMENT "MAL instruction misses retc");
 
-	var = getArgName(mb, p, arg);
+	var = getArgNameIntoBuffer(mb, p, arg, name);
 	f = getInstrPtr(mb, 0);		/* top level function */
 	mod = getModuleId(f);
 	if (mod == NULL)
