@@ -992,7 +992,6 @@ const char *getRef;
 int getShtConstant(MalBlkPtr mb, sht val);
 int getStrConstant(MalBlkPtr mb, str val);
 const char *getTraceRef;
-malType getType(MalBlkPtr mb, const char *nme);
 str getTypeIdentifier(malType tpe);
 str getTypeName(malType tpe);
 char *getVarName(MalBlkPtr mb, int idx);

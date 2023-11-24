@@ -390,7 +390,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
-			if (p->typechk == TYPE_UNKNOWN) {
+			if (!p->typeresolved) {
 				if (!copystring(&t, " type check needed", &len))
 					return base;
 			}
@@ -468,12 +468,13 @@ operatorName(int i)
 
 		/* internal symbols */
 	case FCNcall:
+		assert(0);
 		return "FCNcall";
 	case CMDcall:
+		assert(0);
 		return "CMDcall";
-	case THRDcall:
-		return "THRcall";
 	case PATcall:
+		assert(0);
 		return "PATcall";
 	}
 	return "";
@@ -493,7 +494,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	if (!flg) {
 		*t++ = '#';
 		len--;
-		if (p->typechk == TYPE_UNKNOWN) {
+		if (!p->typeresolved) {
 			*t++ = '!';			/* error */
 			len--;
 		}
@@ -645,7 +646,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
-			if (p->typechk == TYPE_UNKNOWN) {
+			if (!p->typeresolved) {
 				if (!copystring(&t, " type check needed", &len))
 					return base;
 			}

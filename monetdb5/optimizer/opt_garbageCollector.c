@@ -60,8 +60,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	p = NULL;
 	for (i = 0; i < limit; i++) {
 		p = getInstrPtr(mb, i);
-		p->gc &= ~GARBAGECONTROL;
-		p->typechk = TYPE_UNKNOWN;
+		p->gc = false;
+		p->typeresolved = false;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
 		if (p->token == ENDsymbol)
@@ -75,7 +75,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			  SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	/* move sanity check to other optimizer */
-	getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;
+	getInstrPtr(mb, 0)->gc = true;
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);

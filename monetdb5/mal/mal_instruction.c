@@ -191,7 +191,7 @@ resetMalTypes(MalBlkPtr mb, int stop)
 	int i;
 
 	for (i = 0; i < stop; i++)
-		mb->stmt[i]->typechk = TYPE_UNKNOWN;
+		mb->stmt[i]->typeresolved = false;
 	mb->stop = stop;
 	mb->errors = NULL;
 }
@@ -272,10 +272,9 @@ freeMalBlk(MalBlkPtr mb)
 	mb->binding[0] = 0;
 	mb->tag = 0;
 	mb->memory = 0;
-	if (mb->help && mb->statichelp != mb->help)
+	if (mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
-	mb->statichelp = 0;
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
 	freeException(mb->errors);
@@ -382,7 +381,7 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme,
 	}
 	*p = (InstrRecord) {
 		.maxarg = args,
-		.typechk = TYPE_UNKNOWN,
+		.typeresolved = false,
 		.modname = modnme,
 		.fcnname = fcnnme,
 		.argc = 1,
@@ -416,7 +415,7 @@ copyInstructionArgs(const InstrRecord *p, int args)
 	if (args > p->maxarg)
 		memset(new->argv + p->maxarg, 0,
 			   (args - p->maxarg) * sizeof(new->argv[0]));
-	new->typechk = TYPE_UNKNOWN;
+	new->typeresolved = false;
 	new->maxarg = args;
 	return new;
 }
@@ -433,7 +432,7 @@ clrFunction(InstrPtr p)
 	p->token = ASSIGNsymbol;
 	p->fcn = 0;
 	p->blk = 0;
-	p->typechk = TYPE_UNKNOWN;
+	p->typeresolved = false;
 	setModuleId(p, NULL);
 	setFunctionId(p, NULL);
 }
@@ -516,7 +515,7 @@ findVariable(MalBlkPtr mb, const char *name)
 	if (name == NULL)
 		return -1;
 	for (i = mb->vtop - 1; i >= 0; i--)
-		if (idcmp(name, getVarName(mb, i)) == 0)
+		if (idcmp(name, mb->var[i].name) == 0)
 			return i;
 	return -1;
 }
@@ -712,7 +711,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 	else {
 		res = newTmpVariable(tm, getVarType(mb, x));
 		if (*mb->var[x].name)
-			strcpy(tm->var[x].name, mb->var[x].name);	/* res = newVariable(tm, getVarName(mb, x), strlen(getVarName(mb,x)), getVarType(mb, x)); */
+			strcpy(tm->var[x].name, mb->var[x].name);
 	}
 	if (res < 0)
 		return res;

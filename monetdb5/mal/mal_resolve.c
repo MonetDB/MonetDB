@@ -27,7 +27,7 @@
 
 static malType getPolyType(malType t, int *polytype);
 static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
-static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
+static bool typeResolved(MalBlkPtr mb, InstrPtr p, int i);
 
 int
 resolvedType(int dsttype, int srctype)
@@ -105,9 +105,9 @@ resolveType(int *rtype, int dsttype, int srctype)
 			ATOMtype(tp) == TYPE_str ||					\
 			(!isPolyType(tp) && tp < TYPE_any &&		\
 			 tp >= 0 && ATOMextern(tp))) {				\
-			getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;	\
+			getInstrPtr(mb, 0)->gc = true;				\
 			setVarCleanup(mb, getArg(p, b));			\
-			p->gc |= GARBAGECONTROL;					\
+			p->gc = true;								\
 		}												\
 	} while (0)
 
@@ -419,7 +419,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * Beware, this is not yet effectuated in the interpreter.
 		 */
 
-		p->typechk = TYPE_RESOLVED;
+		p->typeresolved = true;
 		p->inlineProp = inlineprop;
 		p->unsafeProp = unsafe;
 		for (i = 0; i < p->retc; i++) {
@@ -429,7 +429,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 					mb->errors = createMalException(mb, idx, TYPE,
 													"Assignment to constant");
 				}
-				p->typechk = TYPE_UNKNOWN;
+				p->typeresolved = false;
 				goto wrapup;
 			}
 			if (!isVarFixed(mb, getArg(p, i)) && ts >= 0) {
@@ -449,8 +449,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				 getArgType(mb, p, i) < TYPE_any &&
 				 getArgType(mb, p, i) >= 0 &&
 				 ATOMstorage(getArgType(mb, p, i)) == TYPE_str)) {
-				getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;
-				p->gc |= GARBAGECONTROL;
+				getInstrPtr(mb, 0)->gc = true;
+				p->gc = true;
 			}
 		/*
 		 * It may happen that an argument was still untyped and as a
@@ -484,7 +484,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		/* Any previousely found error in the block
 		 * turns the complete block into erroneous.
 		 if (mb->errors) {
-		 p->typechk = TYPE_UNKNOWN;
+		 p->typeresolved = false;
 		 goto wrapup;
 		 }
 		 */
@@ -506,7 +506,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 						mb->errors = createMalException(mb, idx, TYPE,
 														"object code for command %s.%s missing",
 														p->modname, p->fcnname);
-					p->typechk = TYPE_UNKNOWN;
+					p->typeresolved = false;
 					goto wrapup;
 				}
 				break;
@@ -562,7 +562,7 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int idx, int lhs, int rhs, int silent)
 		GDKfree(n1);
 		GDKfree(n2);
 	}
-	p->typechk = TYPE_UNKNOWN;
+	p->typeresolved = false;
 }
 
 /*
@@ -583,7 +583,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	int s1 = -1, i, k;
 	Module m = 0;
 
-	p->typechk = TYPE_UNKNOWN;
+	p->typeresolved = false;
 	if ((p->fcn || p->blk) && p->token >= FCNcall && p->token <= PATcall) {
 		p->token = ASSIGNsymbol;
 		p->fcn = NULL;
@@ -596,9 +596,9 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		for (k = p->retc; k < p->argc; k++) {
 			prepostProcess(getArgType(mb, p, k), p, k, mb);
 		}
-		p->typechk = TYPE_RESOLVED;
+		p->typeresolved = true;
 		for (k = 0; k < p->retc; k++)
-			p->typechk = MIN(p->typechk, typeKind(mb, p, 0));
+			p->typeresolved &= typeResolved(mb, p, 0);
 		return;
 	}
 	if (getFunctionId(p) && getModuleId(p)) {
@@ -665,9 +665,9 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 						GDKfree(errsig);
 				}
 			}
-			p->typechk = TYPE_UNKNOWN;
+			p->typeresolved = false;
 		} else
-			p->typechk = TYPE_RESOLVED;
+			p->typeresolved = true;
 		return;
 	}
 	/*
@@ -684,9 +684,9 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			mb->errors = createMalException(mb, idx, TYPE,
 											"Multiple assignment mismatch");
 		}
-		p->typechk = TYPE_RESOLVED;
+		p->typeresolved = true;
 	} else
-		p->typechk = TYPE_RESOLVED;
+		p->typeresolved = true;
 	for (k = 0, i = p->retc; k < p->retc && i < p->argc; i++, k++) {
 		int rhs = getArgType(mb, p, i);
 		int lhs = getArgType(mb, p, k);
@@ -756,7 +756,7 @@ chkTypes(Module s, MalBlkPtr mb, int silent)
 	for (i = 0; mb->errors == NULL && i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		assert(p != NULL);
-		if (p->typechk != TYPE_RESOLVED)
+		if (!p->typeresolved)
 			typeChecker(s, mb, p, i, silent);
 	}
 	if (mb->errors) {
@@ -774,7 +774,7 @@ int
 chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 {
 	if (mb->errors == MAL_SUCCEED) {
-		p->typechk = TYPE_UNKNOWN;
+		p->typeresolved = false;
 		typeChecker(s, mb, p, getPC(mb, p), TRUE);
 	}
 	return mb->errors != MAL_SUCCEED;
@@ -812,14 +812,14 @@ chkProgram(Module s, MalBlkPtr mb)
  * header leads to a dynamic typed statement. In principle we have
  * to type check the function upon each call.
  */
-static int
-typeKind(MalBlkPtr mb, InstrPtr p, int i)
+static bool
+typeResolved(MalBlkPtr mb, InstrPtr p, int i)
 {
 	malType t = getArgType(mb, p, i);
 	if (t == TYPE_any || isAnyExpression(t)) {
-		return TYPE_UNKNOWN;
+		return false;
 	}
-	return TYPE_RESOLVED;
+	return true;
 }
 
 /*

@@ -143,7 +143,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					   newBatType(getBatType(getArgType(mb, q, q->argc - 1))));
 			if (getFunctionId(q) == projectionRef)
 				setFunctionId(q, projectionpathRef);
-			q->typechk = TYPE_UNKNOWN;
+			q->typeresolved = false;
 
 			freeInstruction(p);
 			p = q;

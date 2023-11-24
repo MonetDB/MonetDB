@@ -21,7 +21,7 @@
 	do {															\
 		setModuleId(P, generatorRef);								\
 		typeChecker(cntxt->usermodule, mb, P, IDX, TRUE);			\
-		if(P->typechk == TYPE_UNKNOWN){								\
+		if (!P->typeresolved) {										\
 			setModuleId(P, MOD);									\
 			typeChecker(cntxt->usermodule, mb, P, IDX, TRUE);		\
 			setModuleId(series[I], generatorRef);					\
@@ -188,7 +188,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					const char *m = getModuleId(p);
 					setModuleId(p, generatorRef);
 					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
-					if (p->typechk == TYPE_UNKNOWN) {
+					if (!p->typeresolved) {
 						setModuleId(p, m);
 						typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 						InstrPtr r = series[getArg(p, k)];

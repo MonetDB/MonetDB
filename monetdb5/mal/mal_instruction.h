@@ -54,7 +54,7 @@ setFunctionId(InstrPtr p, const char *s)
 	p->fcnname = s;
 }
 #endif
-#define garbageControl(P)	((P)->gc & GARBAGECONTROL)
+#define garbageControl(P)	((P)->gc)
 
 #define getInstrPtr(M,I)	(M)->stmt[I]
 #define putInstrPtr(M,I,P)	(M)->stmt[I] = P
@@ -171,7 +171,6 @@ mal_export str operatorName(int i);
 
 mal_export int findVariable(MalBlkPtr mb, const char *name);
 mal_export int findVariableLength(MalBlkPtr mb, const char *name, int len);
-mal_export malType getType(MalBlkPtr mb, const char *nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len,
 						   malType type);

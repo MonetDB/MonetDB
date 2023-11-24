@@ -507,7 +507,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 			q->argc = 4;
 			/* make sure to resolve again */
 			q->token = ASSIGNsymbol;
-			q->typechk = TYPE_UNKNOWN;
+			q->typeresolved = false;
 			q->fcn = NULL;
 			q->blk = NULL;
 		}
@@ -678,7 +678,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 				getFunctionId(s) = NULL;
 				getModuleId(s) = NULL;
 				s->token = ASSIGNsymbol;
-				s->typechk = TYPE_UNKNOWN;
+				s->typeresolved = false;
 				s->fcn = NULL;
 				s->blk = NULL;
 			}

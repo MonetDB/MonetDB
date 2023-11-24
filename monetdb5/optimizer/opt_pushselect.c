@@ -603,7 +603,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(r, 0));
 				getArg(r, 1) = getArg(q, 1);	/* column */
-				r->typechk = TYPE_UNKNOWN;
+				r->typeresolved = false;
 				pushInstruction(mb, r);
 				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(t, 0));
@@ -619,7 +619,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(u, 0) = getArg(p, 0);
 				getArg(u, 1) = getArg(r, 0);
 				getArg(u, 2) = getArg(t, 0);
-				u->typechk = TYPE_UNKNOWN;
+				u->typeresolved = false;
 				pushInstruction(mb, u);
 				oclean[i] = true;
 				continue;
@@ -640,7 +640,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(r, 0));
 				getArg(r, 1) = getArg(q, 1);	/* column */
-				r->typechk = TYPE_UNKNOWN;
+				r->typeresolved = false;
 				pushInstruction(mb, r);
 				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(s, 0));
@@ -649,7 +649,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				setArgType(mb, s, 2, newBatType(TYPE_oid));
 				/* make sure to resolve again */
 				s->token = ASSIGNsymbol;
-				s->typechk = TYPE_UNKNOWN;
+				s->typeresolved = false;
 				s->fcn = NULL;
 				s->blk = NULL;
 				pushInstruction(mb, s);
@@ -661,7 +661,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(u, 3) = getArg(q, 2);	/* update ids */
 				u = pushArgument(mb, u, getArg(s, 0));	/* selected updated values ids */
 				u->token = ASSIGNsymbol;
-				u->typechk = TYPE_UNKNOWN;
+				u->typeresolved = false;
 				u->fcn = NULL;
 				u->blk = NULL;
 				pushInstruction(mb, u);
@@ -693,7 +693,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				setVarCList(mb, getArg(r, 0));
 				getArg(r, 1) = getArg(s, 1);
 				getArg(r, 2) = getArg(q, 1);	/* column */
-				r->typechk = TYPE_UNKNOWN;
+				r->typeresolved = false;
 				pushInstruction(mb, r);
 				getArg(t, 0) = newTmpVariable(mb, getArgType(mb, p, 0));
 				setVarCList(mb, getArg(t, 0));
@@ -710,7 +710,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(u, 0) = getArg(p, 0);
 				getArg(u, 1) = getArg(r, 0);
 				getArg(u, 2) = getArg(t, 0);
-				u->typechk = TYPE_UNKNOWN;
+				u->typeresolved = false;
 				pushInstruction(mb, u);
 				oclean[i] = true;
 				continue;
@@ -760,7 +760,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(r, 0));
 				getArg(r, 1) = getArg(q, 1);	/* column */
-				r->typechk = TYPE_UNKNOWN;
+				r->typeresolved = false;
 				pushInstruction(mb, r);
 				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(s, 0));
@@ -769,7 +769,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				setArgType(mb, s, 3, newBatType(TYPE_oid));
 				/* make sure to resolve again */
 				s->token = ASSIGNsymbol;
-				s->typechk = TYPE_UNKNOWN;
+				s->typeresolved = false;
 				s->fcn = NULL;
 				s->blk = NULL;
 				pushInstruction(mb, s);
@@ -783,7 +783,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				p = pushArgument(mb, u, getArg(s, 0));	/* push at end */
 				/* make sure to resolve again */
 				u->token = ASSIGNsymbol;
-				u->typechk = TYPE_UNKNOWN;
+				u->typeresolved = false;
 				u->fcn = NULL;
 				u->blk = NULL;
 				pushInstruction(mb, u);

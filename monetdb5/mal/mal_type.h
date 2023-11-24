@@ -54,8 +54,7 @@
 
 #define FCNcall     50			/* internal symbols */
 #define CMDcall     51
-#define THRDcall    52
-#define PATcall     53			/* pattern call */
+#define PATcall     52			/* pattern call */
 
 #define REMsymbol     99		/* commentary to be retained */
 

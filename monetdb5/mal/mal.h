@@ -96,12 +96,6 @@ mal_export const char *mal_version(void);
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_FLOW)
 #define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_MAPI)
 
-/* type check status is kept around to improve type checking efficiency */
-#define TYPE_ERROR      -1
-#define TYPE_UNKNOWN     0
-#define TYPE_RESOLVED    2
-#define GARBAGECONTROL   3
-
 #define VARARGS 1				/* deal with variable arguments */
 #define VARRETS 2
 
@@ -147,14 +141,14 @@ typedef struct VARRECORD {
 
 typedef struct INSTR {
 	bte token;					/* instruction type */
-	bit barrier;				/* flow of control modifier takes:
+	bte barrier;				/* flow of control modifier takes:
 								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */
-	bit typechk;				/* type check status */
-	bte gc;						/* garbage control flags */
-	bte polymorphic:3,			/* complex type analysis */
+	uint16_t polymorphic:3,		/* complex type analysis */
 		varargs:2,				/* variable number of arguments */
 		inlineProp:1,			/* inline property */
-		unsafeProp:1;				/* unsafe property */
+		unsafeProp:1,			/* unsafe property */
+		gc:1,					/* garbage control flags */
+		typeresolved:1;			/* true if type is resolved */
 	int jump;					/* controlflow program counter */
 	int pc;						/* location in MAL plan for profiler */
 	MALfcn fcn;					/* resolved function address */
@@ -171,7 +165,6 @@ typedef struct INSTR {
 typedef struct MALBLK {
 	char binding[IDLENGTH];		/* related C-function */
 	str help;					/* supportive commentary */
-	str statichelp;				/* static help string should not be freed */
 	oid tag;					/* unique block tag */
 	struct MALBLK *alternative;
 	int vtop;					/* next free slot */

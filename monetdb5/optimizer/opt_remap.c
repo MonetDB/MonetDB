@@ -89,7 +89,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 
 	/* now see if we can resolve the instruction */
 	typeChecker(scope, mb, p, idx, TRUE);
-	if (p->typechk == TYPE_UNKNOWN) {
+	if (!p->typeresolved) {
 		freeInstruction(p);
 		return 0;
 	}
@@ -256,7 +256,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 				if (getModuleId(q)) {
 					snprintf(buf, 1024, "bat%s", getModuleId(q));
 					setModuleId(q, putName(buf));
-					q->typechk = TYPE_UNKNOWN;
+					q->typeresolved = false;
 					if (q->retc == 1 &&
 						((getModuleId(q) == batcalcRef
 						  && (getFunctionId(q) == mulRef
@@ -295,7 +295,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 
 					/* now see if we can resolve the instruction */
 					typeChecker(cntxt->usermodule, mq, q, i, TRUE);
-					if (q->typechk == TYPE_UNKNOWN)
+					if (!q->typeresolved)
 						goto terminateMX;
 					break;
 				}
@@ -308,9 +308,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 					mq->stmt[i] = q;
 					getArg(q, 1) = refbat;
 
-					q->typechk = TYPE_UNKNOWN;
+					q->typeresolved = false;
 					typeChecker(cntxt->usermodule, mq, q, i, TRUE);
-					if (q->typechk == TYPE_UNKNOWN)
+					if (!q->typeresolved)
 						goto terminateMX;
 					break;
 				}

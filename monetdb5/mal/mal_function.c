@@ -174,7 +174,7 @@ chkFlow(MalBlkPtr mb)
 			if (ps->retc != p->retc) {
 				throw(MAL, "chkFlow", "%s.%s invalid return target!",
 					  getModuleId(sig), getFunctionId(sig));
-			} else if (ps->typechk == TYPE_RESOLVED)
+			} else if (ps->typeresolved)
 				for (e = 0; e < p->retc; e++) {
 					if (resolvedType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
 						str tpname = getTypeName(getArgType(mb, p, e));
@@ -358,7 +358,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	/* clear polymorphic and type to force analysis */
 	for (i = 0; i < new->def->stop; i++) {
 		pp = getInstrPtr(new->def, i);
-		pp->typechk = TYPE_UNKNOWN;
+		pp->typeresolved = false;
 		pp->polymorphic = 0;
 	}
 	/* clear type fixations */
