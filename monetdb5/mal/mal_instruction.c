@@ -302,7 +302,6 @@ copyMalBlk(MalBlkPtr old)
 	mb = (MalBlkPtr) GDKzalloc(sizeof(MalBlkRecord));
 	if (mb == NULL)
 		return NULL;
-	mb->alternative = old->alternative;
 
 	mb->var = (VarRecord *) GDKzalloc(sizeof(VarRecord) * old->vsize);
 	if (mb->var == NULL) {

@@ -116,7 +116,7 @@ typedef struct SYMDEF {
 
 
 typedef struct VARRECORD {
-	char *name;//[IDLENGTH];		/* use the space for the full name */
+	char *name;					/* use the space for the full name */
 	malType type;				/* internal type signature */
 	char kind;					/* Could be either _, X or C to stamp the variable type */
 	bool constant:1,
@@ -167,7 +167,6 @@ typedef struct MALBLK {
 	char binding[IDLENGTH];		/* related C-function */
 	str help;					/* supportive commentary */
 	oid tag;					/* unique block tag */
-	struct MALBLK *alternative;
 	int vtop;					/* next free slot */
 	int vsize;					/* size of variable arena */
 	VarRecord *var;				/* Variable table */
