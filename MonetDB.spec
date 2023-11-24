@@ -508,22 +508,24 @@ format.
 %{_libdir}/monetdb5/lib_fits.so
 %endif
 
-%package -n MonetDB5-libraries
+%package -n MonetDB5-libs
 Summary: MonetDB - Monet Database Main Libraries
 Group: Applications/Databases
 
-%description -n MonetDB5-libraries
+%description -n MonetDB5-libs
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
-This package contains the MonetDB server component in the form of a set of libraries.  You need this
-package if you want to use the MonetDB database system, either as independent program (MonetDB5-server) or as embedded library (%{name}-embedded).
+This package contains the MonetDB server component in the form of a set
+of libraries.  You need this package if you want to use the MonetDB
+database system, either as independent program (MonetDB5-server) or as
+embedded library (%{name}-embedded).
 
-%ldconfig_scriptlets -n MonetDB5-libraries
+%ldconfig_scriptlets -n MonetDB5-libs
 
-%files -n MonetDB5-libraries
+%files -n MonetDB5-libs
 %defattr(-,root,root)
 %{_libdir}/libmonetdb5.so.*
 %{_libdir}/libmonetdbsql.so*
@@ -539,7 +541,7 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
-Requires: MonetDB5-libraries%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-libs%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB5-server-hugeint < 11.38.0
 %if %{with hugeint}
 Provides: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
@@ -597,7 +599,7 @@ exit 0
 %package -n MonetDB5-server-devel
 Summary: MonetDB development files
 Group: Applications/Databases
-Requires: MonetDB5-libraries%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-libs%{?_isa} = %{version}-%{release}
 Requires: %{name}-devel%{?_isa} = %{version}-%{release}
 
 %description -n MonetDB5-server-devel
@@ -690,7 +692,7 @@ This package contains files needed to develop SQL extensions.
 %package embedded
 Summary: MonetDB as an embedded library
 Group: Applications/Databases
-Requires: MonetDB5-libraries%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-libs%{?_isa} = %{version}-%{release}
 
 %description embedded
 MonetDB is a database management system that is developed from a
