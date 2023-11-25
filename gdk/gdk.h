@@ -2478,7 +2478,7 @@ typedef struct exception_buffer {
 	int enabled;
 } exception_buffer;
 
-extern exception_buffer *eb_init(exception_buffer *eb);
+gdk_export exception_buffer *eb_init(exception_buffer *eb);
 
 /* != 0 on when we return to the savepoint */
 #ifdef HAVE_SIGLONGJMP
@@ -2486,7 +2486,7 @@ extern exception_buffer *eb_init(exception_buffer *eb);
 #else
 #define eb_savepoint(eb) ((eb)->enabled = 1, setjmp((eb)->state))
 #endif
-extern _Noreturn void eb_error(exception_buffer *eb, char *msg, int val);
+gdk_export _Noreturn void eb_error(exception_buffer *eb, char *msg, int val);
 
 typedef struct allocator {
 	struct allocator *pa;
@@ -2503,12 +2503,12 @@ gdk_export allocator *sa_create( allocator *pa );
 gdk_export allocator *sa_reset( allocator *sa );
 gdk_export void *sa_alloc( allocator *sa,  size_t sz );
 gdk_export void *sa_zalloc( allocator *sa,  size_t sz );
-extern void *sa_realloc( allocator *sa,  void *ptr, size_t sz, size_t osz );
-extern void sa_destroy( allocator *sa );
-extern char *sa_strndup( allocator *sa, const char *s, size_t l);
+gdk_export void *sa_realloc( allocator *sa,  void *ptr, size_t sz, size_t osz );
+gdk_export void sa_destroy( allocator *sa );
+gdk_export char *sa_strndup( allocator *sa, const char *s, size_t l);
 gdk_export char *sa_strdup( allocator *sa, const char *s);
-extern char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
-extern size_t sa_size( allocator *sa );
+gdk_export char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
+gdk_export size_t sa_size( allocator *sa );
 
 #if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
 #define sa_alloc(sa, sz)					\
