@@ -13,27 +13,6 @@
 
 #define SA_BLOCK (64*1024)
 
-sql_ref *
-sql_ref_init(sql_ref *r)
-{
-	r->refcnt = 1;
-	return r;
-}
-
-int
-sql_ref_inc(sql_ref *r)
-{
-	assert(r->refcnt > 0);
-	return (++r->refcnt);
-}
-
-int
-sql_ref_dec(sql_ref *r)
-{
-	assert(r->refcnt > 0);
-	return (--r->refcnt);
-}
-
 typedef struct freed_t {
 	struct freed_t *n;
 	size_t sz;
@@ -255,12 +234,4 @@ char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2 )
 size_t sa_size( sql_allocator *sa )
 {
 	return sa->usedmem;
-}
-
-void
-c_delete( const void *p )
-{
-	void *xp = (void*)p;
-
-	GDKfree(xp);
 }

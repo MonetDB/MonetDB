@@ -37,16 +37,6 @@
 #define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)
 #define _STRDUP( ptr )	GDKstrdup((char*)ptr)
 
-extern void c_delete( const void *p );
-
-typedef struct sql_ref {
-	int refcnt;
-} sql_ref;
-
-extern sql_ref *sql_ref_init(sql_ref *r);
-extern int sql_ref_inc(sql_ref *r);
-extern int sql_ref_dec(sql_ref *r);
-
 typedef struct sql_allocator {
 	struct sql_allocator *pa;
 	size_t size;

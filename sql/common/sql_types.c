@@ -30,6 +30,27 @@ list *funcs = NULL;
 static sql_type *BIT = NULL;
 static list *localtypes = NULL;
 
+sql_ref *
+sql_ref_init(sql_ref *r)
+{
+	r->refcnt = 1;
+	return r;
+}
+
+int
+sql_ref_inc(sql_ref *r)
+{
+	assert(r->refcnt > 0);
+	return (++r->refcnt);
+}
+
+int
+sql_ref_dec(sql_ref *r)
+{
+	assert(r->refcnt > 0);
+	return (--r->refcnt);
+}
+
 unsigned int digits2bits(unsigned int digits)
 {
 	if (digits < 3)

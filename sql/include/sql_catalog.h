@@ -188,6 +188,15 @@ typedef enum commit_action_t {
 } ca_t;
 
 typedef int sqlid;
+
+typedef struct sql_ref {
+	int refcnt;
+} sql_ref;
+
+extern sql_ref *sql_ref_init(sql_ref *r);
+extern int sql_ref_inc(sql_ref *r);
+extern int sql_ref_dec(sql_ref *r);
+
 typedef void *sql_store;
 
 typedef struct sql_base {
