@@ -10,20 +10,18 @@ with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'node2'))
     os.mkdir(os.path.join(farm_dir, 'node3'))
 
-    with (
-            process.server(mapiport='0', dbname='master',
-                           dbfarm=os.path.join(farm_dir, 'master'),
-                           stdin=process.PIPE, stdout=process.PIPE,
-                           stderr=process.PIPE) as prc_1,
-            process.server(mapiport='0', dbname='node2',
-                           dbfarm=os.path.join(farm_dir, 'node2'),
-                           stdin=process.PIPE, stdout=process.PIPE,
-                           stderr=process.PIPE) as prc_2,
-            process.server(mapiport='0', dbname='node3',
-                           dbfarm=os.path.join(farm_dir, 'node3'),
-                           stdin=process.PIPE, stdout=process.PIPE,
-                           stderr=process.PIPE) as prc_3
-    ):
+    with process.server(mapiport='0', dbname='master',
+                        dbfarm=os.path.join(farm_dir, 'master'),
+                        stdin=process.PIPE, stdout=process.PIPE,
+                        stderr=process.PIPE) as prc_1, \
+         process.server(mapiport='0', dbname='node2',
+                        dbfarm=os.path.join(farm_dir, 'node2'),
+                        stdin=process.PIPE, stdout=process.PIPE,
+                        stderr=process.PIPE) as prc_2, \
+         process.server(mapiport='0', dbname='node3',
+                        dbfarm=os.path.join(farm_dir, 'node3'),
+                        stdin=process.PIPE, stdout=process.PIPE,
+                        stderr=process.PIPE) as prc_3:
         # create foo_r2 and bar_r2 in node2
         conn2 = pymonetdb.connect(database='node2', port=prc_2.dbport, autocommit=True)
         cur2 = conn2.cursor()
