@@ -71,7 +71,7 @@ sql_partition_validate_key(mvc *sql, sql_table *nt, sql_key *k, const char* op)
 			}
 		} else if (isPartitionedByExpressionTable(nt)) {
 			list *kcols, *pcols;
-			sql_allocator *p1, *p2;
+			allocator *p1, *p2;
 
 			assert(nt->part.pexp->cols);
 			if (list_length(k->columns) != list_length(nt->part.pexp->cols))

@@ -15,7 +15,7 @@
 #include "sql_atom.h"
 
 prop *
-prop_create( sql_allocator *sa, rel_prop kind, prop *pre )
+prop_create( allocator *sa, rel_prop kind, prop *pre )
 {
 	prop *p = SA_NEW(sa, prop);
 
@@ -29,7 +29,7 @@ prop_create( sql_allocator *sa, rel_prop kind, prop *pre )
 }
 
 prop *
-prop_copy( sql_allocator *sa, prop *p )
+prop_copy( allocator *sa, prop *p )
 {
 	prop *np = NULL;
 
@@ -115,7 +115,7 @@ propkind2string( prop *p)
 }
 
 char *
-propvalue2string(sql_allocator *sa, prop *p)
+propvalue2string(allocator *sa, prop *p)
 {
 	char buf [BUFSIZ];
 

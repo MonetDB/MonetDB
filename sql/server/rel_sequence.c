@@ -27,7 +27,7 @@ sql_next_seq_name(mvc *m)
 }
 
 static sql_rel *
-rel_drop_seq(sql_allocator *sa, char *sname, char *seqname)
+rel_drop_seq(allocator *sa, char *sname, char *seqname)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -48,7 +48,7 @@ rel_drop_seq(sql_allocator *sa, char *sname, char *seqname)
 }
 
 static sql_rel *
-rel_seq(sql_allocator *sa, int cat_type, char *sname, sql_sequence *s, sql_rel *r, sql_exp *val)
+rel_seq(allocator *sa, int cat_type, char *sname, sql_sequence *s, sql_rel *r, sql_exp *val)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);

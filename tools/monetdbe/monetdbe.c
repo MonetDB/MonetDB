@@ -1210,7 +1210,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	InstrPtr o = NULL, e = NULL, r = NULL;
 	sql_rel* rel = NULL;
 	list *args = NULL, *rets = NULL;
-	sql_allocator* sa = NULL;
+	allocator* sa = NULL;
 	ValRecord v = { .len=0 };
 	ptr vp = NULL;
 	struct callback_context* ccontext= NULL;

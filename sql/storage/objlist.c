@@ -22,7 +22,7 @@ node_key( node *n )
 }
 
 objlist *
-ol_new(sql_allocator *sa, destroy_fptr destroy, sql_store store)
+ol_new(allocator *sa, destroy_fptr destroy, sql_store store)
 {
 	objlist *ol = SA_NEW(sa, objlist);
 	*ol = (objlist) {

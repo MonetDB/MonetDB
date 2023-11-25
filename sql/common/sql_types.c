@@ -178,7 +178,7 @@ bool is_commutative(const char *sname, const char *fnm)
 }
 
 void
-base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name)
+base_init(allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name)
 {
 	*b = (sql_base) {
 		.id = id,
@@ -199,7 +199,7 @@ sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned in
 }
 
 sql_subtype *
-sql_create_subtype(sql_allocator *sa, sql_type *t, unsigned int digits, unsigned int scale)
+sql_create_subtype(allocator *sa, sql_type *t, unsigned int digits, unsigned int scale)
 {
 	sql_subtype *res = SA_ZNEW(sa, sql_subtype);
 
@@ -315,7 +315,7 @@ sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsign
 }
 
 sql_subtype *
-sql_bind_subtype(sql_allocator *sa, const char *name, unsigned int digits, unsigned int scale)
+sql_bind_subtype(allocator *sa, const char *name, unsigned int digits, unsigned int scale)
 {
 	sql_subtype *res = (sa)?SA_ZNEW(sa, sql_subtype):ZNEW(sql_subtype);
 
@@ -412,7 +412,7 @@ is_subtype(sql_subtype *sub, sql_subtype *super)
 }
 
 char *
-sql_subtype_string(sql_allocator *sa, sql_subtype *t)
+sql_subtype_string(allocator *sa, sql_subtype *t)
 {
 	char buf[BUFSIZ];
 
@@ -426,7 +426,7 @@ sql_subtype_string(sql_allocator *sa, sql_subtype *t)
 }
 
 char *
-subtype2string2(sql_allocator *sa, sql_subtype *tpe) /* distinguish char(n), decimal(n,m) from other SQL types */
+subtype2string2(allocator *sa, sql_subtype *tpe) /* distinguish char(n), decimal(n,m) from other SQL types */
 {
 	char buf[BUFSIZ];
 
@@ -480,7 +480,7 @@ sql_func_mod(sql_func *f)
 }
 
 sql_subfunc*
-sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
+sql_dup_subfunc(allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 {
 	node *tn;
 	unsigned int scale = 0, digits = 0;
@@ -576,7 +576,7 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 
 
 static void
-sql_create_alias(sql_allocator *sa, const char *name, const char *alias)
+sql_create_alias(allocator *sa, const char *name, const char *alias)
 {
 	sql_alias *a = SA_ZNEW(sa, sql_alias);
 
@@ -607,7 +607,7 @@ sql_bind_alias(const char *alias)
 static sqlid local_id = 1;
 
 static sql_type *
-sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, sql_class eclass, const char *impl)
+sql_create_type(allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, sql_class eclass, const char *impl)
 {
 	sql_type *t = SA_ZNEW(sa, sql_type);
 
@@ -629,7 +629,7 @@ sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, uns
 }
 
 static sql_arg *
-create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout)
+create_arg(allocator *sa, const char *name, sql_subtype *t, char inout)
 {
 	sql_arg *a = (sa)?SA_ZNEW(sa, sql_arg):ZNEW(sql_arg);
 
@@ -642,13 +642,13 @@ create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout)
 }
 
 sql_arg *
-sql_create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout)
+sql_create_arg(allocator *sa, const char *name, sql_subtype *t, char inout)
 {
 	return create_arg(sa, name, t, inout);
 }
 
 static sql_func *
-sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_ftype type, bit semantics, bit private,
+sql_create_func_(allocator *sa, const char *name, const char *mod, const char *imp, sql_ftype type, bit semantics, bit private,
 				 int fix_scale, unsigned int res_scale, sql_type *res, int nargs, va_list valist)
 {
 	list *ops = SA_LIST(sa, (fdestroy) &arg_destroy);
@@ -694,7 +694,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 }
 
 static sql_func *
-sql_create_procedure(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit private, int nargs, ...)
+sql_create_procedure(allocator *sa, const char *name, const char *mod, const char *imp, bit private, int nargs, ...)
 {
 	sql_func *res;
 	va_list valist;
@@ -706,7 +706,7 @@ sql_create_procedure(sql_allocator *sa, const char *name, const char *mod, const
 }
 
 static sql_func *
-sql_create_func(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit private, int fix_scale,
+sql_create_func(allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit private, int fix_scale,
 				unsigned int res_scale, sql_type *fres, int nargs, ...)
 {
 	sql_func *res;
@@ -719,7 +719,7 @@ sql_create_func(sql_allocator *sa, const char *name, const char *mod, const char
 }
 
 static sql_func *
-sql_create_aggr(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit private, sql_type *fres, int nargs, ...)
+sql_create_aggr(allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit private, sql_type *fres, int nargs, ...)
 {
 	sql_func *res;
 	va_list valist;
@@ -731,7 +731,7 @@ sql_create_aggr(sql_allocator *sa, const char *name, const char *mod, const char
 }
 
 static sql_func *
-sql_create_filter(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit private, int fix_scale,
+sql_create_filter(allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit private, int fix_scale,
 				unsigned int res_scale, int nargs, ...)
 {
 	sql_func *res;
@@ -744,7 +744,7 @@ sql_create_filter(sql_allocator *sa, const char *name, const char *mod, const ch
 }
 
 static sql_func *
-sql_create_union(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit private, int fix_scale,
+sql_create_union(allocator *sa, const char *name, const char *mod, const char *imp, bit private, int fix_scale,
 				unsigned int res_scale, sql_type *fres, int nargs, ...)
 {
 	sql_func *res;
@@ -757,7 +757,7 @@ sql_create_union(sql_allocator *sa, const char *name, const char *mod, const cha
 }
 
 static sql_func *
-sql_create_analytic(sql_allocator *sa, const char *name, const char *mod, const char *imp, bit private, int fix_scale, sql_type *fres, int nargs, ...)
+sql_create_analytic(allocator *sa, const char *name, const char *mod, const char *imp, bit private, int fix_scale, sql_type *fres, int nargs, ...)
 {
 	sql_func *res;
 	va_list valist;
@@ -779,7 +779,7 @@ include many functions for which there is no standard.
 */
 
 static void
-sqltypeinit( sql_allocator *sa)
+sqltypeinit( allocator *sa)
 {
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
@@ -1572,7 +1572,7 @@ sqltypeinit( sql_allocator *sa)
 }
 
 void
-types_init(sql_allocator *sa)
+types_init(allocator *sa)
 {
 	local_id = 1;
 	aliases = sa_list(sa);

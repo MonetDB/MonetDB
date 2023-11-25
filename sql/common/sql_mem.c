@@ -29,7 +29,7 @@ sa_destroy_freelist( freed_t *f )
 }
 
 static void
-sa_free(sql_allocator *pa, void *blk)
+sa_free(allocator *pa, void *blk)
 {
 	assert(!pa->pa);
 	size_t i;
@@ -55,7 +55,7 @@ sa_free(sql_allocator *pa, void *blk)
 }
 
 static void *
-sa_use_freed(sql_allocator *pa, size_t sz)
+sa_use_freed(allocator *pa, size_t sz)
 {
 	(void)sz;
 
@@ -64,10 +64,10 @@ sa_use_freed(sql_allocator *pa, size_t sz)
 	return f;
 }
 
-sql_allocator *
-sa_create(sql_allocator *pa)
+allocator *
+sa_create(allocator *pa)
 {
-	sql_allocator *sa = (pa)?SA_NEW(pa, sql_allocator):MNEW(sql_allocator);
+	allocator *sa = (pa)?SA_NEW(pa, allocator):MNEW(allocator);
 	if (sa == NULL)
 		return NULL;
 	eb_init(&sa->eb);
@@ -94,7 +94,7 @@ sa_create(sql_allocator *pa)
 	return sa;
 }
 
-sql_allocator *sa_reset( sql_allocator *sa )
+allocator *sa_reset( allocator *sa )
 {
 	size_t i ;
 
@@ -113,7 +113,7 @@ sql_allocator *sa_reset( sql_allocator *sa )
 #undef sa_realloc
 #undef sa_alloc
 void *
-sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
+sa_realloc( allocator *sa, void *p, size_t sz, size_t oldsz )
 {
 	void *r = sa_alloc(sa, sz);
 
@@ -124,7 +124,7 @@ sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
 
 #define round16(sz) ((sz+15)&~15)
 void *
-sa_alloc( sql_allocator *sa, size_t sz )
+sa_alloc( allocator *sa, size_t sz )
 {
 	char *r;
 	sz = round16(sz);
@@ -177,7 +177,7 @@ sa_alloc( sql_allocator *sa, size_t sz )
 }
 
 #undef sa_zalloc
-void *sa_zalloc( sql_allocator *sa, size_t sz )
+void *sa_zalloc( allocator *sa, size_t sz )
 {
 	void *r = sa_alloc(sa, sz);
 
@@ -186,7 +186,7 @@ void *sa_zalloc( sql_allocator *sa, size_t sz )
 	return r;
 }
 
-void sa_destroy( sql_allocator *sa )
+void sa_destroy( allocator *sa )
 {
 	if (sa->pa)
 		return;
@@ -200,7 +200,7 @@ void sa_destroy( sql_allocator *sa )
 }
 
 #undef sa_strndup
-char *sa_strndup( sql_allocator *sa, const char *s, size_t l)
+char *sa_strndup( allocator *sa, const char *s, size_t l)
 {
 	char *r = sa_alloc(sa, l+1);
 
@@ -212,12 +212,12 @@ char *sa_strndup( sql_allocator *sa, const char *s, size_t l)
 }
 
 #undef sa_strdup
-char *sa_strdup( sql_allocator *sa, const char *s )
+char *sa_strdup( allocator *sa, const char *s )
 {
 	return sa_strndup( sa, s, strlen(s));
 }
 
-char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2 )
+char *sa_strconcat( allocator *sa, const char *s1, const char *s2 )
 {
 	size_t l1 = strlen(s1);
 	size_t l2 = strlen(s2);
@@ -231,7 +231,7 @@ char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2 )
 	return r;
 }
 
-size_t sa_size( sql_allocator *sa )
+size_t sa_size( allocator *sa )
 {
 	return sa->usedmem;
 }

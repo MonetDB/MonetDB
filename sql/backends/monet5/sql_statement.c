@@ -185,7 +185,7 @@ stmt_bool(backend *be, int b)
 }
 
 static stmt *
-stmt_create(sql_allocator *sa, st_type type)
+stmt_create(allocator *sa, st_type type)
 {
 	stmt *s = SA_NEW(sa, stmt);
 
@@ -307,7 +307,7 @@ create_bat(MalBlkPtr mb, int tt)
 }
 
 static int *
-dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
+dump_table(allocator *sa, MalBlkPtr mb, sql_table *t)
 {
 	int i = 0;
 	node *n;
@@ -4114,7 +4114,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		}
 	}
 
-	sql_allocator *sa = be->mvc->sa;
+	allocator *sa = be->mvc->sa;
 	bool enabled = be->mvc->sa->eb.enabled;
 	be->mvc->sa->eb.enabled = false;
 	stmt *o = NULL, *s = stmt_create(sa, st_func);
@@ -4444,7 +4444,7 @@ stmt_has_null(stmt *s)
 }
 
 static const char *
-func_name(sql_allocator *sa, const char *n1, const char *n2)
+func_name(allocator *sa, const char *n1, const char *n2)
 {
 	size_t l1 = _strlen(n1), l2;
 
@@ -4469,10 +4469,10 @@ func_name(sql_allocator *sa, const char *n1, const char *n2)
 	}
 }
 
-static const char *_column_name(sql_allocator *sa, stmt *st);
+static const char *_column_name(allocator *sa, stmt *st);
 
 const char *
-column_name(sql_allocator *sa, stmt *st)
+column_name(allocator *sa, stmt *st)
 {
 	if (!st->cname)
 		st->cname = _column_name(sa, st);
@@ -4480,7 +4480,7 @@ column_name(sql_allocator *sa, stmt *st)
 }
 
 static const char *
-_column_name(sql_allocator *sa, stmt *st)
+_column_name(allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_order:
@@ -4546,14 +4546,14 @@ _column_name(sql_allocator *sa, stmt *st)
 }
 
 const char *
-table_name(sql_allocator *sa, stmt *st)
+table_name(allocator *sa, stmt *st)
 {
 	(void)sa;
 	return st->tname;
 }
 
 const char *
-schema_name(sql_allocator *sa, stmt *st)
+schema_name(allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_const:

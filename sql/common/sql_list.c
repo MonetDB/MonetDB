@@ -13,7 +13,7 @@
 #include "sql_list.h"
 
 static node *
-node_create(sql_allocator *sa, void *data)
+node_create(allocator *sa, void *data)
 {
 	node *n = (sa)?SA_NEW(sa, node):MNEW(node);
 
@@ -26,7 +26,7 @@ node_create(sql_allocator *sa, void *data)
 }
 
 static list *
-list_init(list *l, sql_allocator *sa, fdestroy destroy)
+list_init(list *l, allocator *sa, fdestroy destroy)
 {
 	if (l) {
 		*l = (list) {
@@ -44,7 +44,7 @@ list_create(fdestroy destroy)
 }
 
 list *
-sa_list(sql_allocator *sa)
+sa_list(allocator *sa)
 {
 	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
 	return list_init(l, sa, NULL);
@@ -60,7 +60,7 @@ _free(void *dummy, void *data)
 */
 
 list *
-sa_list_append(sql_allocator *sa, list *l, void *data)
+sa_list_append(allocator *sa, list *l, void *data)
 {
 	if (!l)
 		l = SA_LIST(sa, NULL);
@@ -76,7 +76,7 @@ list_add(list *l, void *data)
 }
 
 list *
-list_new(sql_allocator *sa, fdestroy destroy)
+list_new(allocator *sa, fdestroy destroy)
 {
 	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
 	return list_init(l, sa, destroy);
@@ -706,7 +706,7 @@ list_reduce(list *l, freduce red, fdup dup)
 }
 
 void *
-list_reduce2(list *l, freduce2 red, sql_allocator *sa)
+list_reduce2(list *l, freduce2 red, allocator *sa)
 {
 	void *res = NULL;
 	node *n = l->h;

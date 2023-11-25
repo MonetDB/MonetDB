@@ -303,7 +303,7 @@ SQLset_protocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp, int replace)
 {
-	sql_allocator *osa;
+	allocator *osa;
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL, *ot;
 	node *n;
@@ -4988,7 +4988,7 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 	char *sname = (char *) argv[1];
 	char *tname = (char *) argv[2];
 	char *cname = (char *) argv[3];
-	sql_allocator *sa = NULL;
+	allocator *sa = NULL;
 	sql_session *session = NULL;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -4999,7 +4999,7 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 	(void) argc;
 
 	if ((sa = sa_create(NULL)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create sql_allocator!");
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create allocator!");
 		return GDK_FAIL;
 	}
 

@@ -83,7 +83,7 @@ rel_create_view_ddl(mvc *sql, int cat_type, const char *sname, sql_table *t, int
 }
 
 static sql_rel *
-rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *sname2, char *tname2, int action)
+rel_alter_table(allocator *sa, int cattype, char *sname, char *tname, char *sname2, char *tname2, int action)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1546,7 +1546,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 }
 
 static sql_rel *
-rel_schema2(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
+rel_schema2(allocator *sa, int cat_type, char *sname, char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1567,7 +1567,7 @@ rel_schema2(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
-rel_schema3(sql_allocator *sa, int cat_type, char *sname, char *tname, char *name)
+rel_schema3(allocator *sa, int cat_type, char *sname, char *tname, char *name)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1632,7 +1632,7 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
+rel_drop(allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1655,7 +1655,7 @@ rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *se
 }
 
 static sql_rel *
-rel_create_schema_dll(sql_allocator *sa, char *sname, char *auth, int nr)
+rel_create_schema_dll(allocator *sa, char *sname, char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1947,7 +1947,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 }
 
 static sql_rel *
-rel_role(sql_allocator *sa, char *grantee, char *auth, int grantor, int admin, int type)
+rel_role(allocator *sa, char *grantee, char *auth, int grantor, int admin, int type)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1991,7 +1991,7 @@ rel_grant_or_revoke_roles(mvc *sql, dlist *roles, dlist *grantees, int grant, in
 }
 
 static sql_rel *
-rel_priv(sql_allocator *sa, char *sname, char *name, char *grantee, int privs, char *cname, int grant, int grantor, int type)
+rel_priv(allocator *sa, char *sname, char *name, char *grantee, int privs, char *cname, int grant, int grantor, int type)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2017,7 +2017,7 @@ rel_priv(sql_allocator *sa, char *sname, char *name, char *grantee, int privs, c
 }
 
 static sql_rel *
-rel_func_priv(sql_allocator *sa, char *sname, int func, char *grantee, int privs, int grant, int grantor, int type)
+rel_func_priv(allocator *sa, char *sname, int func, char *grantee, int privs, int grant, int grantor, int type)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2272,7 +2272,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 }
 
 static sql_rel *
-rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role)
+rel_create_user(allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2300,7 +2300,7 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 }
 
 static sql_rel *
-rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
+rel_alter_user(allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2527,7 +2527,7 @@ rel_find_designated_object(mvc *sql, symbol *sym, sql_schema **schema_out)
 }
 
 static sql_rel *
-rel_comment_on(sql_allocator *sa, sqlid obj_id, const char *remark)
+rel_comment_on(allocator *sa, sqlid obj_id, const char *remark)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);

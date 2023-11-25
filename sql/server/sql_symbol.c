@@ -22,7 +22,7 @@ symbol_init(symbol *s, tokens token, symtype type )
 }
 
 symbol *
-symbol_create(sql_allocator *sa, tokens token, char *data)
+symbol_create(allocator *sa, tokens token, char *data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
@@ -34,7 +34,7 @@ symbol_create(sql_allocator *sa, tokens token, char *data)
 }
 
 symbol *
-symbol_create_list(sql_allocator *sa, tokens token, dlist *data)
+symbol_create_list(allocator *sa, tokens token, dlist *data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
@@ -46,7 +46,7 @@ symbol_create_list(sql_allocator *sa, tokens token, dlist *data)
 }
 
 symbol *
-symbol_create_int(sql_allocator *sa, tokens token, int data)
+symbol_create_int(allocator *sa, tokens token, int data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
@@ -58,7 +58,7 @@ symbol_create_int(sql_allocator *sa, tokens token, int data)
 }
 
 symbol *
-symbol_create_lng(sql_allocator *sa, tokens token, lng data)
+symbol_create_lng(allocator *sa, tokens token, lng data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
@@ -70,7 +70,7 @@ symbol_create_lng(sql_allocator *sa, tokens token, lng data)
 }
 
 symbol *
-symbol_create_symbol(sql_allocator *sa, tokens token, symbol *data)
+symbol_create_symbol(allocator *sa, tokens token, symbol *data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
@@ -82,7 +82,7 @@ symbol_create_symbol(sql_allocator *sa, tokens token, symbol *data)
 }
 
 static dnode *
-dnode_create(sql_allocator *sa )
+dnode_create(allocator *sa )
 {
 	dnode *n = SA_NEW(sa, dnode);
 
@@ -92,7 +92,7 @@ dnode_create(sql_allocator *sa )
 }
 
 static dnode *
-dnode_create_string(sql_allocator *sa, const char *data)
+dnode_create_string(allocator *sa, const char *data)
 {
 	dnode *n = dnode_create(sa);
 
@@ -103,7 +103,7 @@ dnode_create_string(sql_allocator *sa, const char *data)
 	return n;
 }
 static dnode *
-dnode_create_list(sql_allocator *sa, dlist *data)
+dnode_create_list(allocator *sa, dlist *data)
 {
 	dnode *n = dnode_create(sa);
 
@@ -114,7 +114,7 @@ dnode_create_list(sql_allocator *sa, dlist *data)
 	return n;
 }
 static dnode *
-dnode_create_int(sql_allocator *sa, int data)
+dnode_create_int(allocator *sa, int data)
 {
 	dnode *n = dnode_create(sa);
 
@@ -125,7 +125,7 @@ dnode_create_int(sql_allocator *sa, int data)
 	return n;
 }
 static dnode *
-dnode_create_lng(sql_allocator *sa, lng data)
+dnode_create_lng(allocator *sa, lng data)
 {
 	dnode *n = dnode_create(sa);
 
@@ -136,7 +136,7 @@ dnode_create_lng(sql_allocator *sa, lng data)
 	return n;
 }
 static dnode *
-dnode_create_symbol(sql_allocator *sa, symbol *data)
+dnode_create_symbol(allocator *sa, symbol *data)
 {
 	dnode *n = dnode_create(sa);
 
@@ -148,7 +148,7 @@ dnode_create_symbol(sql_allocator *sa, symbol *data)
 }
 
 static dnode *
-dnode_create_type(sql_allocator *sa, sql_subtype *data)
+dnode_create_type(allocator *sa, sql_subtype *data)
 {
 	dnode *n = dnode_create(sa);
 
@@ -163,7 +163,7 @@ dnode_create_type(sql_allocator *sa, sql_subtype *data)
 }
 
 dlist *
-dlist_create(sql_allocator *sa)
+dlist_create(allocator *sa)
 {
 	dlist *l = SA_NEW(sa, dlist);
 
@@ -194,7 +194,7 @@ dlist_append_default(dlist *l, dnode *n)
 }
 
 dlist *
-dlist_append_string(sql_allocator *sa, dlist *l, const char *data)
+dlist_append_string(allocator *sa, dlist *l, const char *data)
 {
 	dnode *n = dnode_create_string(sa, data);
 
@@ -204,7 +204,7 @@ dlist_append_string(sql_allocator *sa, dlist *l, const char *data)
 }
 
 dlist *
-dlist_append_list(sql_allocator *sa, dlist *l, dlist *data)
+dlist_append_list(allocator *sa, dlist *l, dlist *data)
 {
 	dnode *n = dnode_create_list(sa, data);
 
@@ -214,7 +214,7 @@ dlist_append_list(sql_allocator *sa, dlist *l, dlist *data)
 }
 
 dlist *
-dlist_append_int(sql_allocator *sa, dlist *l, int data)
+dlist_append_int(allocator *sa, dlist *l, int data)
 {
 	dnode *n = dnode_create_int(sa, data);
 
@@ -224,7 +224,7 @@ dlist_append_int(sql_allocator *sa, dlist *l, int data)
 }
 
 dlist *
-dlist_append_lng(sql_allocator *sa, dlist *l, lng data)
+dlist_append_lng(allocator *sa, dlist *l, lng data)
 {
 	dnode *n = dnode_create_lng(sa, data);
 
@@ -234,7 +234,7 @@ dlist_append_lng(sql_allocator *sa, dlist *l, lng data)
 }
 
 dlist *
-dlist_append_symbol(sql_allocator *sa, dlist *l, symbol *data)
+dlist_append_symbol(allocator *sa, dlist *l, symbol *data)
 {
 	dnode *n = dnode_create_symbol(sa, data);
 
@@ -244,7 +244,7 @@ dlist_append_symbol(sql_allocator *sa, dlist *l, symbol *data)
 }
 
 dlist *
-dlist_append_type(sql_allocator *sa, dlist *l, sql_subtype *data)
+dlist_append_type(allocator *sa, dlist *l, sql_subtype *data)
 {
 	dnode *n = dnode_create_type(sa, data);
 
@@ -254,7 +254,7 @@ dlist_append_type(sql_allocator *sa, dlist *l, sql_subtype *data)
 }
 
 symbol *
-newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window)
+newSelectNode(allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window)
 {
 	SelectNode *sn = SA_NEW(sa, SelectNode);
 	symbol *s = (symbol *) sn;
@@ -281,7 +281,7 @@ newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct d
 }
 
 symbol *
-newAtomNode(sql_allocator *sa, atom *data)
+newAtomNode(allocator *sa, atom *data)
 {
 	AtomNode *an = SA_NEW(sa, AtomNode);
 	symbol *s = (symbol *) an;

@@ -37,8 +37,8 @@
 #define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)
 #define _STRDUP( ptr )	GDKstrdup((char*)ptr)
 
-typedef struct sql_allocator {
-	struct sql_allocator *pa;
+typedef struct allocator {
+	struct allocator *pa;
 	size_t size;
 	size_t nr;
 	char **blks;
@@ -46,18 +46,18 @@ typedef struct sql_allocator {
 	size_t usedmem;	/* used memory */
 	void *freelist;	/* list of freed blocks */
 	exception_buffer eb;
-} sql_allocator;
+} allocator;
 
-sql_export sql_allocator *sa_create( sql_allocator *pa );
-sql_export sql_allocator *sa_reset( sql_allocator *sa );
-sql_export void *sa_alloc( sql_allocator *sa,  size_t sz );
-sql_export void *sa_zalloc( sql_allocator *sa,  size_t sz );
-extern void *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
-extern void sa_destroy( sql_allocator *sa );
-extern char *sa_strndup( sql_allocator *sa, const char *s, size_t l);
-sql_export char *sa_strdup( sql_allocator *sa, const char *s);
-extern char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2);
-extern size_t sa_size( sql_allocator *sa );
+sql_export allocator *sa_create( allocator *pa );
+sql_export allocator *sa_reset( allocator *sa );
+sql_export void *sa_alloc( allocator *sa,  size_t sz );
+sql_export void *sa_zalloc( allocator *sa,  size_t sz );
+extern void *sa_realloc( allocator *sa,  void *ptr, size_t sz, size_t osz );
+extern void sa_destroy( allocator *sa );
+extern char *sa_strndup( allocator *sa, const char *s, size_t l);
+sql_export char *sa_strdup( allocator *sa, const char *s);
+extern char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
+extern size_t sa_size( allocator *sa );
 
 #define SA_NEW( sa, type ) (sa?((type*)sa_alloc( sa, sizeof(type))):MNEW(type))
 #define SA_ZNEW( sa, type ) (sa?((type*)sa_zalloc( sa, sizeof(type))):ZNEW(type))
@@ -71,7 +71,7 @@ extern size_t sa_size( sql_allocator *sa );
 #if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
 #define sa_alloc(sa, sz)					\
 	({							\
-		sql_allocator *_sa = (sa);			\
+		allocator *_sa = (sa);			\
 		size_t _sz = (sz);				\
 		void *_res = sa_alloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
@@ -81,7 +81,7 @@ extern size_t sa_size( sql_allocator *sa );
 	})
 #define sa_zalloc(sa, sz)					\
 	({							\
-		sql_allocator *_sa = (sa);			\
+		allocator *_sa = (sa);			\
 		size_t _sz = (sz);				\
 		void *_res = sa_zalloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
@@ -91,7 +91,7 @@ extern size_t sa_size( sql_allocator *sa );
 	})
 #define sa_realloc(sa, ptr, sz, osz)					\
 	({								\
-		sql_allocator *_sa = (sa);				\
+		allocator *_sa = (sa);				\
 		void *_ptr = (ptr);					\
 		size_t _sz = (sz);					\
 		size_t _osz = (osz);					\
@@ -103,7 +103,7 @@ extern size_t sa_size( sql_allocator *sa );
 	})
 #define sa_strdup(sa, s)					\
 	({							\
-		sql_allocator *_sa = (sa);			\
+		allocator *_sa = (sa);			\
 		const char *_s = (s);				\
 		char *_res = sa_strdup(_sa, _s);		\
 		TRC_DEBUG(ALLOC,				\
@@ -113,7 +113,7 @@ extern size_t sa_size( sql_allocator *sa );
 	})
 #define sa_strndup(sa, s, l)					\
 	({							\
-		sql_allocator *_sa = (sa);			\
+		allocator *_sa = (sa);			\
 		const char *_s = (s);				\
 		size_t _l = (l);				\
 		char *_res = sa_strndup(_sa, _s, _l);		\

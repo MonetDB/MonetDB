@@ -251,7 +251,7 @@ SQLexecPostLoginTriggers(Client c)
 					int oldvtop = c->curprg->def->vtop;
 					int oldstop = c->curprg->def->stop;
 					Symbol curprg = c->curprg;
-					sql_allocator *sa = m->sa;
+					allocator *sa = m->sa;
 
 					if (!(m->sa = sa_create(m->pa))) {
 						m->sa = sa;
@@ -366,7 +366,7 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 	str msg = MAL_SUCCEED;
 
 	if (c->sqlcontext == 0) {
-		sql_allocator *sa = sa_create(NULL);
+		allocator *sa = sa_create(NULL);
 		if (sa == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout2;
@@ -507,7 +507,7 @@ SQLresetClient(Client c)
 	if (c->sqlcontext == NULL)
 		throw(SQL, "SQLexitClient", SQLSTATE(42000) "MVC catalogue not available");
 	if (c->sqlcontext) {
-		sql_allocator *pa = NULL;
+		allocator *pa = NULL;
 		backend *be = c->sqlcontext;
 		mvc *m = be->mvc;
 

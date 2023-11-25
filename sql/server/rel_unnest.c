@@ -1047,7 +1047,7 @@ push_up_topn_and_sample(mvc *sql, sql_rel *rel)
 
 		if (r && (is_topn(r->op) || is_sample(r->op))) {
 			/* remove old topn/sample */
-			sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
+			sql_rel *(*func) (allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
 			rel->r = rel_dup(r->l);
 			rel = func(sql->sa, rel, r->exps);
 			set_processed(rel);
@@ -2306,7 +2306,7 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 }
 
 static sql_exp *
-exp_set_type(sql_allocator *sa, sql_exp *te, sql_exp *e)
+exp_set_type(allocator *sa, sql_exp *te, sql_exp *e)
 {
 	if (te->type == e_convert) {
 		if (e->type == e_column)  {

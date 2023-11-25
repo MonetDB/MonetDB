@@ -257,7 +257,7 @@ find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **
 }
 
 static sql_subfunc *
-_dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
+_dup_subaggr(allocator *sa, sql_func *a, sql_subtype *member)
 {
 	node *tn;
 	unsigned int scale = 0, digits = 0;
@@ -294,7 +294,7 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 }
 
 static sql_subfunc *
-func_cmp(sql_allocator *sa, sql_func *f, const char *name, int nrargs)
+func_cmp(allocator *sa, sql_func *f, const char *name, int nrargs)
 {
 	if (strcmp(f->base.name, name) == 0) {
 		if (f->vararg)
@@ -1253,7 +1253,7 @@ dlist2string(mvc *sql, dlist *l, int expression, char **err)
 }
 
 static const char *
-symbol_escape_ident(sql_allocator *sa, const char *s)
+symbol_escape_ident(allocator *sa, const char *s)
 {
 	char *res = NULL;
 	if (s) {

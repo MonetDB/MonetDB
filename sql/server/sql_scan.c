@@ -30,7 +30,7 @@
  * Removes all comments before the query. In query comments are kept.
  */
 char *
-query_cleaned(sql_allocator *sa, const char *query)
+query_cleaned(allocator *sa, const char *query)
 {
 	char *q, *r, *c = NULL;
 	int lines = 0;

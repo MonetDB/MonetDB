@@ -24,7 +24,7 @@ atom_init( atom *a )
 }
 
 static atom *
-atom_create( sql_allocator *sa )
+atom_create( allocator *sa )
 {
 	atom *a = SA_NEW(sa, atom);
 
@@ -37,7 +37,7 @@ atom_create( sql_allocator *sa )
 }
 
 atom *
-atom_bool( sql_allocator *sa, sql_subtype *tpe, bit val)
+atom_bool( allocator *sa, sql_subtype *tpe, bit val)
 {
 	atom *a = atom_create(sa);
 	if(!a)
@@ -52,7 +52,7 @@ atom_bool( sql_allocator *sa, sql_subtype *tpe, bit val)
 }
 
 atom *
-atom_int( sql_allocator *sa, sql_subtype *tpe,
+atom_int( allocator *sa, sql_subtype *tpe,
 #ifdef HAVE_HGE
 	hge val
 #else
@@ -140,7 +140,7 @@ atom_get_int(atom *a)
 }
 
 atom *
-atom_dec(sql_allocator *sa, sql_subtype *tpe,
+atom_dec(allocator *sa, sql_subtype *tpe,
 #ifdef HAVE_HGE
 	hge val)
 #else
@@ -151,7 +151,7 @@ atom_dec(sql_allocator *sa, sql_subtype *tpe,
 }
 
 atom *
-atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
+atom_string(allocator *sa, sql_subtype *tpe, const char *val)
 {
 	atom *a = atom_create(sa);
 	if(!a)
@@ -171,7 +171,7 @@ atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 }
 
 atom *
-atom_float(sql_allocator *sa, sql_subtype *tpe, dbl val)
+atom_float(allocator *sa, sql_subtype *tpe, dbl val)
 {
 	atom *a = atom_create(sa);
 	if(!a)
@@ -257,7 +257,7 @@ const lng scales[19] = {
 #endif
 
 atom *
-atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
+atom_general(allocator *sa, sql_subtype *tpe, const char *val)
 {
 	atom *a = atom_create(sa);
 
@@ -309,7 +309,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 }
 
 atom *
-atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
+atom_ptr( allocator *sa, sql_subtype *tpe, void *v)
 {
 	atom *a = atom_create(sa);
 	if(!a)
@@ -323,7 +323,7 @@ atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 }
 
 atom *
-atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
+atom_general_ptr( allocator *sa, sql_subtype *tpe, void *v)
 {
 	atom *a = atom_create(sa);
 	if(!a)
@@ -347,7 +347,7 @@ atom_general_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 }
 
 char *
-atom2string(sql_allocator *sa, atom *a)
+atom2string(allocator *sa, atom *a)
 {
 	char buf[BUFSIZ], *p = NULL;
 
@@ -403,7 +403,7 @@ atom2string(sql_allocator *sa, atom *a)
 }
 
 static inline char *
-sql_escape_str(sql_allocator *sa, const char *s)
+sql_escape_str(allocator *sa, const char *s)
 {
 	size_t l = strlen(s);
 	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 4);
@@ -426,7 +426,7 @@ sql_escape_str(sql_allocator *sa, const char *s)
 }
 
 char *
-atom2sql(sql_allocator *sa, atom *a, int timezone)
+atom2sql(allocator *sa, atom *a, int timezone)
 {
 	sql_class ec = a->tpe.type->eclass;
 	char buf[BUFSIZ];
@@ -664,7 +664,7 @@ atom_type(atom *a)
 }
 
 atom *
-atom_set_type(sql_allocator *sa, atom *a, sql_subtype *t)
+atom_set_type(allocator *sa, atom *a, sql_subtype *t)
 {
 	atom *na = atom_copy(sa, a);
 	na->tpe = *t;
@@ -710,7 +710,7 @@ atom_num_digits( atom *a )
 
 /* cast atom a to type tp (success returns not NULL, fail returns NULL) */
 atom *
-atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
+atom_cast(allocator *sa, atom *a, sql_subtype *tp)
 {
 	atom *na = NULL;
 	sql_subtype *at = &a->tpe;
@@ -775,7 +775,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 }
 
 atom *
-atom_neg(sql_allocator *sa, atom *a)
+atom_neg(allocator *sa, atom *a)
 {
 
 	if (a->isnull)
@@ -794,7 +794,7 @@ atom_neg(sql_allocator *sa, atom *a)
 }
 
 atom *
-atom_absolute(sql_allocator *sa, atom *a)
+atom_absolute(allocator *sa, atom *a)
 {
 
 	if (a->isnull)
@@ -917,7 +917,7 @@ atom_cmp(atom *a1, atom *a2)
 }
 
 atom *
-atom_add(sql_allocator *sa, atom *a1, atom *a2)
+atom_add(allocator *sa, atom *a1, atom *a2)
 {
 	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype)
 		return NULL;
@@ -944,7 +944,7 @@ atom_add(sql_allocator *sa, atom *a1, atom *a2)
 }
 
 atom *
-atom_sub(sql_allocator *sa, atom *a1, atom *a2)
+atom_sub(allocator *sa, atom *a1, atom *a2)
 {
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
@@ -976,7 +976,7 @@ atom_sub(sql_allocator *sa, atom *a1, atom *a2)
 }
 
 atom *
-atom_mul(sql_allocator *sa, atom *a1, atom *a2)
+atom_mul(allocator *sa, atom *a1, atom *a2)
 {
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
@@ -1003,7 +1003,7 @@ atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 }
 
 atom *
-atom_div(sql_allocator *sa, atom *a1, atom *a2)
+atom_div(allocator *sa, atom *a1, atom *a2)
 {
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
@@ -1023,7 +1023,7 @@ atom_div(sql_allocator *sa, atom *a1, atom *a2)
 }
 
 atom *
-atom_inc(sql_allocator *sa, atom *a)
+atom_inc(allocator *sa, atom *a)
 {
 	if (a->isnull)
 		return a;
@@ -1122,7 +1122,7 @@ atom_is_false(atom *a)
 }
 
 atom *
-atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
+atom_zero_value(allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
 	atom *res = NULL;
@@ -1180,7 +1180,7 @@ atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 }
 
 atom *
-atom_max_value(sql_allocator *sa, sql_subtype *tpe)
+atom_max_value(allocator *sa, sql_subtype *tpe)
 {
 	void *ret = NULL;
 	atom *res = NULL;

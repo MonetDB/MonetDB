@@ -22,7 +22,7 @@ query_processed(sql_query *query )
 }
 
 static stacked_query *
-sq_create( sql_allocator *sa, sql_rel *rel, sql_exp *exp, sql_exp *prev, int sql_state, int card)
+sq_create( allocator *sa, sql_rel *rel, sql_exp *exp, sql_exp *prev, int sql_state, int card)
 {
 	stacked_query *q = SA_NEW(sa, stacked_query);
 

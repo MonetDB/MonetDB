@@ -761,7 +761,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0, ppos;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
-	sql_allocator *old_sa = sql->sa;
+	allocator *old_sa = sql->sa;
 	bool first = true;
 	sql_trans *tr = sql->session->tr;
 	struct os_iter si;
@@ -3274,7 +3274,7 @@ sql_update_jan2022(Client c, mvc *sql)
 	sql_table *t;
 
 	/* this bit of code is to upgrade from a Jan2022 RC to the Jan2022 release */
-	sql_allocator *old_sa = sql->sa;
+	allocator *old_sa = sql->sa;
 	if ((sql->sa = sa_create(sql->pa)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
@@ -5224,7 +5224,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	}
 
 	/* new function sys.regexp_replace */
-	sql_allocator *old_sa = sql->sa;
+	allocator *old_sa = sql->sa;
 	if ((sql->sa = sa_create(sql->pa)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
@@ -6045,7 +6045,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 	}
 
 	/* 52_describe.sql New function sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean) */
-	sql_allocator *old_sa = sql->sa;
+	allocator *old_sa = sql->sa;
 	if ((sql->sa = sa_create(sql->pa)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {

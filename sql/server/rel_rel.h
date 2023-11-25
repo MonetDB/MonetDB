@@ -66,9 +66,9 @@ extern sql_rel *rel_distinct(sql_rel *l);
 
 extern sql_rel *rel_dup(sql_rel *r);
 extern void rel_destroy(sql_rel *rel);
-extern sql_rel *rel_create(sql_allocator *sa);
+extern sql_rel *rel_create(allocator *sa);
 extern sql_rel *rel_copy(mvc *sql, sql_rel *r, int deep);
-extern sql_rel *rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps);
+extern sql_rel *rel_select_copy(allocator *sa, sql_rel *l, list *exps);
 
 extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname);
 extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, int f );
@@ -77,38 +77,38 @@ extern sql_exp *rel_first_column(mvc *sql, sql_rel *rel);
 
 extern sql_rel *rel_inplace_basetable(sql_rel *rel, sql_rel *bt);
 extern sql_rel *rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps);
-extern sql_rel *rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e);
+extern sql_rel *rel_inplace_project(allocator *sa, sql_rel *rel, sql_rel *l, list *e);
 extern sql_rel *rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps);
 extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps );
-extern sql_rel *rel_dup_copy(sql_allocator *sa, sql_rel *rel);
+extern sql_rel *rel_dup_copy(allocator *sa, sql_rel *rel);
 
 extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, check_type tpe);
-extern sql_rel *rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
+extern sql_rel *rel_setop(allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
 extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
-extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
+extern sql_rel *rel_crossproduct(allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
 
 /* in case e is an constant and rel is a simple project of only e, free rel */
 extern sql_exp *rel_is_constant(sql_rel **rel, sql_exp *e);
 
-extern sql_rel *rel_topn(sql_allocator *sa, sql_rel *l, list *exps );
-extern sql_rel *rel_sample(sql_allocator *sa, sql_rel *l, list *exps );
+extern sql_rel *rel_topn(allocator *sa, sql_rel *l, list *exps );
+extern sql_rel *rel_sample(allocator *sa, sql_rel *l, list *exps );
 
 extern sql_rel *rel_label( mvc *sql, sql_rel *r, int all);
 extern sql_exp *rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e);
-extern sql_rel *rel_select_add_exp(sql_allocator *sa, sql_rel *l, sql_exp *e);
-extern void rel_join_add_exp(sql_allocator *sa, sql_rel *rel, sql_exp *e);
+extern sql_rel *rel_select_add_exp(allocator *sa, sql_rel *l, sql_exp *e);
+extern void rel_join_add_exp(allocator *sa, sql_rel *rel, sql_exp *e);
 extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 
-extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
+extern sql_rel *rel_select(allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
-sql_export sql_rel *rel_project(sql_allocator *sa, sql_rel *l, list *e);
+sql_export sql_rel *rel_project(allocator *sa, sql_rel *l, list *e);
 extern sql_rel *rel_project_exp(mvc *sql, sql_exp *e);
-extern sql_rel *rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r);
-extern sql_rel *rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps);
+extern sql_rel *rel_list(allocator *sa, sql_rel *l, sql_rel *r);
+extern sql_rel *rel_exception(allocator *sa, sql_rel *l, sql_rel *r, list *exps);
 
-extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
-extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
+extern sql_rel *rel_relational_func(allocator *sa, sql_rel *l, list *exps);
+extern sql_rel *rel_table_func(allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 
 extern list *_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern, int basecol);
 extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
@@ -119,7 +119,7 @@ extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oex
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
-extern sql_exp *rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
+extern sql_exp *rel_find_column( allocator *sa, sql_rel *rel, const char *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
 extern sql_rel *rel_parent(sql_rel *rel);

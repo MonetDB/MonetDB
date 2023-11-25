@@ -141,7 +141,7 @@ refs_update_stmt(list *refs, sql_rel *rel, stmt *s)
 
 
 static void
-print_stmtlist(sql_allocator *sa, stmt *l)
+print_stmtlist(allocator *sa, stmt *l)
 {
 	node *n;
 	if (l) {
