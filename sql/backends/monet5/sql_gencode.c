@@ -297,7 +297,6 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	} else if (eb_savepoint(&m->sa->eb)) {
-		r = NULL;
 		sql_error(m, 10, "%s", m->sa->eb.msg);
 		freeSymbol(c->curprg);
 		goto bailout;
