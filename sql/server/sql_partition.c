@@ -320,6 +320,7 @@ find_partition_type(sql_subtype *tpe, sql_table *mt)
 		*tpe = mt->part.pexp->type;
 	} else {
 		assert(0);
+		*tpe = (sql_subtype){0};
 	}
 }
 

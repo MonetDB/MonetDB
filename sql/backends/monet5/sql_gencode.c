@@ -288,7 +288,8 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	backend_reset(be);
 
 	int nargs;
-	relational_func_create_result_part1(m, &r, &nargs);
+	sql_rel *nr = r;
+	relational_func_create_result_part1(m, &nr, &nargs);
 	nargs += (call && call->type == st_list) ? list_length(call->op4.lval) : rel_ops ? list_length(rel_ops) : 0;
 
 	c->curprg = newFunctionArgs(putName(mod), putName(name), FUNCTIONsymbol, nargs);
@@ -299,7 +300,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		sql_error(m, 10, "%s", m->sa->eb.msg);
 		freeSymbol(c->curprg);
 		goto bailout;
-	} else if (_create_relational_function_body(m, r, call, rel_ops, inline_func) < 0) {
+	} else if (_create_relational_function_body(m, nr, call, rel_ops, inline_func) < 0) {
 		goto bailout;
 	}
 	*be = bebackup;
