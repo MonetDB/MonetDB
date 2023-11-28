@@ -1529,11 +1529,13 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage) {
 			if (!strNil(cs)) {
 				if(fixJSONStorage(&out, &cs) != GDK_SUCCEED) {
 					TRC_CRITICAL(GDK, "could not convert json string for %s", cs);
+					GDKfree(cmlst);
 					return GDK_FAIL;
 				}
 				if (BUNappend(newb, out, false) != GDK_SUCCEED) {
 					TRC_CRITICAL(GDK, "json storage upgrade: appending value to bat failed");
 					GDKfree(out);
+					GDKfree(cmlst);
 					return GDK_FAIL;
 				}
 				GDKfree(out);
@@ -1542,6 +1544,7 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage) {
 		}
 		bat_iterator_end(&bi);
 		if (BBPsave(newb) != GDK_SUCCEED) {
+			GDKfree(cmlst);
 			return GDK_FAIL;
 		}
 		cmlst[cnt++] = newb->batCacheid;
