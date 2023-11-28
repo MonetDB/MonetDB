@@ -573,10 +573,40 @@ JSONisarray(bit *ret, json *js)
 	return MAL_SUCCEED;
 }
 
+#ifdef GDKLIBRARY_JSON
+static
+gdk_return upgradeJSONStorage(char **out, const char **in) {
+	if (JSONstr2json(out, in) != MAL_SUCCEED) {
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+#endif
+
 static str
 JSONprelude(void)
 {
 	TYPE_json = ATOMindex("json");
+#ifdef GDKLIBRARY_JSON
+/* Run the gdk upgrade libary function with a callback that
+ * performs the actual upgrade.
+ */
+	char *jsonupgrade;
+	struct stat st;
+	if ((jsonupgrade = GDKfilepath(0, BATDIR, "jsonupgradeneeded", NULL)) == NULL) {
+		throw(MAL, "json.prelude", SQLSTATE(HY013) MAL_MALLOC_FAIL); // Fix exception reason
+	}
+	int r = stat(jsonupgrade, &st);
+	if (r == 0) {
+		/* The file exists so we need to run the upgrade code */
+		if (BBPjson_upgrade(upgradeJSONStorage) != GDK_SUCCEED) {
+			GDKfree(jsonupgrade);
+			throw(MAL, "json.prelude", SQLSTATE(HY013) MAL_MALLOC_FAIL); // Fix exception reason
+		}
+	}
+	GDKfree(jsonupgrade);
+#endif
 	return MAL_SUCCEED;
 }
 

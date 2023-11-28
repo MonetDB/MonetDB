@@ -1002,6 +1002,7 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool al
 		return 0;
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_JSON &&
 	    bbpversion != GDKLIBRARY_HSIZE &&
 	    bbpversion != GDKLIBRARY_HASHASH &&
 	    bbpversion != GDKLIBRARY_TAILN &&
@@ -1474,6 +1475,91 @@ movestrbats(void)
 }
 #endif
 
+#ifdef GDKLIBRARY_JSON
+gdk_return
+BBPjson_upgrade(json_storage_conversion fixJSONStorage) {
+	(void) fixJSONStorage;
+#if 0
+	bat bid;
+	BAT *b;
+	bat *cmlst;
+	int cnt = 1;
+	int JSON_type = ATOMindex("json");
+
+	if ((cmlst = GDKmalloc(ATOMIC_GET(&BBPsize) * sizeof(bat))) == NULL) {
+		TRC_CRITICAL(GDK, "json storage upgrade: failed to allocate space");
+		return GDK_FAIL;
+	}
+	cmlst[0] = 0;
+	for (bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+		if ((b = BBP_desc(bid)) == NULL) {
+			/* not a valid BAT */
+			continue;
+		}
+
+		if (b->ttype < 0) {
+			const char *nme;
+
+			nme = ATOMunknown_name(b->ttype);
+			if (strcmp(nme, "json") != 0)
+				continue;
+		} else if (b->ttype != JSON_type) {
+			continue;
+		}
+		fprintf(stderr, "Upgrading json bat %d\n", bid);
+
+		BAT *b = BATdescriptor(bid);
+		BAT *newb;
+		BATiter bi;
+		struct canditer ci;
+		oid x;
+		str out = NULL;
+
+		newb = COLnew(0, b->ttype, b->batCapacity, PERSISTENT);
+		if (newb == NULL) {
+			TRC_CRITICAL(GDK, "json storage upgrade: new bat creation failed");
+			return GDK_FAIL;
+		}
+
+		canditer_init(&ci, b, NULL);
+		bi = bat_iterator(b);
+		for (BUN i = 0; i < ci.ncand; i++) {
+			x = canditer_next(&ci);
+			const char *cs = BUNtvar(bi, x);
+			if (!strNil(cs)) {
+				if(fixJSONStorage(&out, &cs) != GDK_SUCCEED) {
+					TRC_CRITICAL(GDK, "could not convert json string for %s", cs);
+					return GDK_FAIL;
+				}
+				if (BUNappend(newb, out, false) != GDK_SUCCEED) {
+					TRC_CRITICAL(GDK, "json storage upgrade: appending value to bat failed");
+					GDKfree(out);
+					return GDK_FAIL;
+				}
+				GDKfree(out);
+				out = NULL;
+			}
+		}
+		bat_iterator_end(&bi);
+		if (BBPsave(newb) != GDK_SUCCEED) {
+			return GDK_FAIL;
+		}
+		cmlst[cnt++] = newb->batCacheid;
+		BBPunfix(newb->batCacheid);
+		BBPunfix(bid);
+	}
+	if (TMsubcommit_list(cmlst, NULL, cnt, -1, -1) != GDK_SUCCEED) {
+		GDKfree(cmlst);
+		return GDK_FAIL;
+	}
+	GDKfree(cmlst);
+#endif // 0
+	/* We did the upgrade, remove the signal file */
+	GDKunlink(0, BATDIR, "jsonupgradeneeded", NULL);
+	return GDK_SUCCEED;
+}
+#endif
+
 static bool
 BBPtrim(bool aggressive)
 {
@@ -1813,6 +1899,38 @@ BBPinit(bool allow_hge_upgrade)
 	GDKfree(hashbats);
 	if (res != GDK_SUCCEED)
 		return res;
+#endif
+
+#ifdef GDKLIBRARY_JSON
+	if (bbpversion < GDKLIBRARY) {
+		char *jsonupgradestr;
+		if (GDKinmemory(0)) {
+			jsonupgradestr = NULL;
+		} else {
+			if ((jsonupgradestr = GDKfilepath(0, BATDIR, "jsonupgradeneeded", NULL)) == NULL) {
+				TRC_CRITICAL(GDK, "GDKfilepath failed\n");
+				ATOMIC_SET(&GDKdebug, dbg);
+				return GDK_FAIL;
+			}
+
+			/* create signal file that we need to upgrade
+			 * stored json strings. This will be performed
+			 * by an upgrade function in the GDK that will
+			 * be called at the end of the json module
+			 * initialzation with a callback that actually
+			 * knows how to perform the upgrade. */
+			int fd = MT_open(jsonupgradestr, O_WRONLY | O_CREAT);
+			if (fd < 0) {
+				TRC_CRITICAL(GDK, "cannot create signal file jsonupgradeneeded");
+				GDKfree(jsonupgradestr);
+				ATOMIC_SET(&GDKdebug, dbg);
+				return GDK_FAIL;
+			}
+
+			close(fd);
+			GDKfree(jsonupgradestr);
+		}
+	}
 #endif
 
 	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {
@@ -4297,6 +4415,12 @@ BBPdiskscan(const char *parent, size_t baseoff)
 
 		if (dent->d_name[0] == '.')
 			continue;	/* ignore .dot files and directories (. ..) */
+
+#ifdef GDKLIBRARY_JSON
+		if (strncmp(dent->d_name, "jsonupgradeneed", 15) == 0) {
+			continue; /* ignore json upgrade signal file  */
+		}
+#endif
 
 		if (strncmp(dent->d_name, "BBP.", 4) == 0 &&
 		    (strcmp(parent + baseoff, BATDIR) == 0 ||
