@@ -686,7 +686,7 @@ typedef struct {
 /* simulate semaphores using mutex and condition variable */
 
 typedef struct {
-	int cnt;
+	int cnt, wakeups;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
 	char name[MT_NAME_LEN];
@@ -696,6 +696,7 @@ typedef struct {
 	do {							\
 		strcpy_len((s)->name, (n), sizeof((s)->name));	\
 		(s)->cnt = (nr);				\
+		(s)->wakeups = 0;				\
 		pthread_mutex_init(&(s)->mutex, 0);		\
 		pthread_cond_init(&(s)->cond, 0);		\
 	} while (0)
@@ -709,7 +710,8 @@ typedef struct {
 #define MT_sema_up(s)						\
 	do {							\
 		pthread_mutex_lock(&(s)->mutex);		\
-		if ((s)->cnt++ < 0) {				\
+		if (++(s)->cnt <= 0) {				\
+			(s)->wakeups++;				\
 			pthread_cond_signal(&(s)->cond);	\
 		}						\
 		pthread_mutex_unlock(&(s)->mutex);		\
@@ -724,8 +726,9 @@ typedef struct {
 			do {						\
 				pthread_cond_wait(&(s)->cond,		\
 						  &(s)->mutex);		\
-			} while ((s)->cnt < 0);				\
+			} while ((s)->wakeups < 1);			\
 			MT_thread_setsemawait(NULL);			\
+			(s)->wakeups--;					\
 			pthread_mutex_unlock(&(s)->mutex);		\
 		}							\
 		TRC_DEBUG(TEM, "Sema %s down complete\n", (s)->name);	\
