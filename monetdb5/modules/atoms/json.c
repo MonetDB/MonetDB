@@ -602,7 +602,7 @@ JSONprelude(void)
 		/* The file exists so we need to run the upgrade code */
 		if (BBPjson_upgrade(upgradeJSONStorage) != GDK_SUCCEED) {
 			GDKfree(jsonupgrade);
-			throw(MAL, "json.prelude", SQLSTATE(HY013) MAL_MALLOC_FAIL); // Fix exception reason
+			throw(MAL, "json.prelude", "JSON storage upgrade failed"); // Fix exception reason
 		}
 	}
 	GDKfree(jsonupgrade);
