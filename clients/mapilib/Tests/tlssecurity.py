@@ -196,7 +196,7 @@ attempt('connect_server_name', 'sni', None, cert=certpath('ca1.crt'))
 # of the server certificate in DER form. Have a succesful MAPI exchange.
 
 server1hash = sha256(certs.get_file('server1.der')).hexdigest()
-attempt('connect_right_hash', 'server1', None, certhash='{sha256}' + server1hash[:6])
+attempt('connect_right_hash', 'server1', None, certhash='sha256:' + server1hash[:6])
 
 # connect_wrong_hash
 #
@@ -208,7 +208,7 @@ first_digit = server1hash[0]
 other_digit = f"{8 ^ int(first_digit, 16):x}"
 wronghash = other_digit + server1hash[1:]
 
-attempt('connect_wrong_hash', 'server1', "does not match certhash", certhash='{sha256}' + wronghash[:6])
+attempt('connect_wrong_hash', 'server1', "does not match certhash", certhash='sha256:' + wronghash[:6])
 
 
 # connect_ca_hash
@@ -217,7 +217,7 @@ attempt('connect_wrong_hash', 'server1', "does not match certhash", certhash='{s
 # of the CA1 certificate in DER form. This should fail.
 
 ca1hash = sha256(certs.get_file('ca1.der')).hexdigest()
-attempt('connect_ca_hash', 'server1', "does not match certhash", certhash='{sha256}' + ca1hash[:6])
+attempt('connect_ca_hash', 'server1', "does not match certhash", certhash='sha256:' + ca1hash[:6])
 
 
 
