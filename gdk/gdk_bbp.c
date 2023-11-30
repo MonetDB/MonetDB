@@ -1476,8 +1476,9 @@ movestrbats(void)
 #endif
 
 #ifdef GDKLIBRARY_JSON
-static gdk_return jsonupgradebat(BAT *b,
-				 json_storage_conversion fixJSONStorage) {
+static gdk_return
+jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
+{
 	const char *nme = BBP_physical(b->batCacheid);
 	char *srcdir = GDKfilepath(NOFARM, BATDIR, nme, NULL);
 
@@ -1507,21 +1508,19 @@ static gdk_return jsonupgradebat(BAT *b,
 	STRMPdestroy(b);
 	RTREEdestroy(b);
 
-	/* bakup the current heaps */
+	/* backup the current heaps */
 	if (GDKmove(b->theap->farmid, srcdir, bnme, "tail",
 		    BAKDIR, bnme, "tail", false) != GDK_SUCCEED) {
 		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "cannot make backup of %s.tail\n", nme);
 		return GDK_FAIL;
 	}
-	GDKclrerr();
 	if (GDKmove(b->theap->farmid, srcdir, bnme, "theap",
 		    BAKDIR, bnme, "theap", true) != GDK_SUCCEED) {
 		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "cannot make backup of %s.theap\n", nme);
 		return GDK_FAIL;
 	}
-
 
 	/* load the old heaps */
 	Heap h1 = *b->theap;
@@ -1662,10 +1661,19 @@ static gdk_return jsonupgradebat(BAT *b,
 }
 
 gdk_return
-BBPjson_upgrade(json_storage_conversion fixJSONStorage) {
+BBPjson_upgrade(json_storage_conversion fixJSONStorage)
+{
 	bat bid;
 	BAT *b;
 	int JSON_type = ATOMindex("json");
+	bat *upd = GDKmalloc(sizeof(bat) * ATOMIC_GET(&BBPsize));
+	BUN nupd = 0;
+
+	if (upd == NULL) {
+		TRC_CRITICAL(GDK, "could not create bat\n");
+		return GDK_FAIL;
+	}
+	upd[nupd++] = 0;	/* first entry unused */
 
 	BBPlock();
 
@@ -1687,16 +1695,19 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage) {
 		fprintf(stderr, "Upgrading json bat %d\n", bid);
 		if (jsonupgradebat(b, fixJSONStorage) != GDK_SUCCEED) {
 			BBPunlock();
-			GDKunlink(0, BATDIR, "jsonupgradeneeded", NULL);
+			GDKfree(upd);
 			return GDK_FAIL;
 		}
-
+		upd[nupd++] = bid;
 	}
 	BBPunlock();
-	if (TMcommit() != GDK_SUCCEED) {
+	if (nupd > 1 &&
+	    TMsubcommit_list(upd, NULL, nupd, -1, -1) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "failed to commit changes\n");
+		GDKfree(upd);
 		return GDK_FAIL;
 	}
+	GDKfree(upd);
 	GDKunlink(0, BATDIR, "jsonupgradeneeded", NULL);
 	return GDK_SUCCEED;
 }
@@ -2044,7 +2055,7 @@ BBPinit(bool allow_hge_upgrade)
 #endif
 
 #ifdef GDKLIBRARY_JSON
-	if (bbpversion < GDKLIBRARY) {
+	if (bbpversion <= GDKLIBRARY_JSON) {
 		char *jsonupgradestr;
 		if (GDKinmemory(0)) {
 			jsonupgradestr = NULL;
