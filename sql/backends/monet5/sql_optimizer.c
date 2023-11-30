@@ -153,7 +153,6 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 				q->token = REMsymbol;	/* they are ignored */
 		}
 	}
-	addtoMalBlkHistory(mb);
 	return msg;
 }
 

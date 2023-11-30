@@ -139,7 +139,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				}
 
 				MT_lock_set(&b->theaplock);
-				if (HEAPgrow(&b->tvheap, toff + ni->vh->size, force) != GDK_SUCCEED) {
+				if (HEAPgrow(&b->tvheap, toff + ni->vhfree, force) != GDK_SUCCEED) {
 					MT_lock_unset(&b->theaplock);
 					return GDK_FAIL;
 				}
@@ -1392,7 +1392,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			default:
 				MT_UNREACHABLE();
 			}
-			if (ATOMreplaceVAR(b, &d, new) != GDK_SUCCEED) {
+			MT_lock_set(&b->theaplock);
+			gdk_return rc = ATOMreplaceVAR(b, &d, new);
+			MT_lock_unset(&b->theaplock);
+			if (rc != GDK_SUCCEED) {
 				goto bailout;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&

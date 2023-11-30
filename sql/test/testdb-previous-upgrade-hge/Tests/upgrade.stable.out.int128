@@ -509,6 +509,67 @@ update sys._tables set system = true where schema_id = 2000 and name in ('descri
 update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'dump_database' and type = 5;
 
 Running database upgrade commands:
+CREATE FUNCTION sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean)
+  RETURNS varchar(1024)
+BEGIN
+  RETURN
+    CASE mtype
+    WHEN 'char' THEN sys.ifthenelse(nameonly OR digits <= 1, sys.ifthenelse(shortname, 'CHAR', 'CHARACTER'), sys.ifthenelse(shortname, 'CHAR(', 'CHARACTER(') || digits || ')')
+    WHEN 'varchar' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'VARCHAR', 'CHARACTER VARYING'), sys.ifthenelse(shortname, 'VARCHAR(', 'CHARACTER VARYING(') || digits || ')')
+    WHEN 'clob' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'CLOB', 'CHARACTER LARGE OBJECT'), sys.ifthenelse(shortname, 'CLOB(', 'CHARACTER LARGE OBJECT(') || digits || ')')
+    WHEN 'blob' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'BLOB', 'BINARY LARGE OBJECT'), sys.ifthenelse(shortname, 'BLOB(', 'BINARY LARGE OBJECT(') || digits || ')')
+    WHEN 'int' THEN 'INTEGER'
+    WHEN 'bigint' THEN 'BIGINT'
+    WHEN 'smallint' THEN 'SMALLINT'
+    WHEN 'tinyint' THEN 'TINYINT'
+    WHEN 'hugeint' THEN 'HUGEINT'
+    WHEN 'boolean' THEN 'BOOLEAN'
+    WHEN 'date' THEN 'DATE'
+    WHEN 'time' THEN sys.ifthenelse(nameonly OR digits = 1, 'TIME', 'TIME(' || (digits -1) || ')')
+    WHEN 'timestamp' THEN sys.ifthenelse(nameonly OR digits = 7, 'TIMESTAMP', 'TIMESTAMP(' || (digits -1) || ')')
+    WHEN 'timestamptz' THEN sys.ifthenelse(nameonly OR digits = 7, 'TIMESTAMP WITH TIME ZONE', 'TIMESTAMP(' || (digits -1) || ') WITH TIME ZONE')
+    WHEN 'timetz' THEN sys.ifthenelse(nameonly OR digits = 1, 'TIME WITH TIME ZONE', 'TIME(' || (digits -1) || ') WITH TIME ZONE')
+    WHEN 'decimal' THEN sys.ifthenelse(nameonly OR digits = 0, 'DECIMAL', 'DECIMAL(' || digits || sys.ifthenelse(tscale = 0, '', ',' || tscale) || ')')
+    WHEN 'double' THEN sys.ifthenelse(nameonly OR (digits = 53 AND tscale = 0), sys.ifthenelse(shortname, 'DOUBLE', 'DOUBLE PRECISION'), 'FLOAT(' || digits || ')')
+    WHEN 'real' THEN sys.ifthenelse(nameonly OR (digits = 24 AND tscale = 0), 'REAL', 'FLOAT(' || digits || ')')
+    WHEN 'day_interval' THEN 'INTERVAL DAY'
+    WHEN 'month_interval' THEN CASE digits WHEN 1 THEN 'INTERVAL YEAR' WHEN 2 THEN 'INTERVAL YEAR TO MONTH' WHEN 3 THEN 'INTERVAL MONTH' END
+    WHEN 'sec_interval' THEN
+	CASE digits
+	WHEN 4 THEN 'INTERVAL DAY'
+	WHEN 5 THEN 'INTERVAL DAY TO HOUR'
+	WHEN 6 THEN 'INTERVAL DAY TO MINUTE'
+	WHEN 7 THEN 'INTERVAL DAY TO SECOND'
+	WHEN 8 THEN 'INTERVAL HOUR'
+	WHEN 9 THEN 'INTERVAL HOUR TO MINUTE'
+	WHEN 10 THEN 'INTERVAL HOUR TO SECOND'
+	WHEN 11 THEN 'INTERVAL MINUTE'
+	WHEN 12 THEN 'INTERVAL MINUTE TO SECOND'
+	WHEN 13 THEN 'INTERVAL SECOND'
+	END
+    WHEN 'oid' THEN 'OID'
+    WHEN 'json' THEN sys.ifthenelse(nameonly OR digits = 0, 'JSON', 'JSON(' || digits || ')')
+    WHEN 'url' THEN sys.ifthenelse(nameonly OR digits = 0, 'URL', 'URL(' || digits || ')')
+    WHEN 'xml' THEN sys.ifthenelse(nameonly OR digits = 0, 'XML', 'XML(' || digits || ')')
+    WHEN 'geometry' THEN
+	sys.ifthenelse(nameonly, 'GEOMETRY',
+	CASE digits
+	WHEN 4 THEN 'GEOMETRY(POINT' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 8 THEN 'GEOMETRY(LINESTRING' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 16 THEN 'GEOMETRY(POLYGON' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 20 THEN 'GEOMETRY(MULTIPOINT' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 24 THEN 'GEOMETRY(MULTILINESTRING' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 28 THEN 'GEOMETRY(MULTIPOLYGON' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 32 THEN 'GEOMETRY(GEOMETRYCOLLECTION' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	ELSE 'GEOMETRY'
+        END)
+    ELSE sys.ifthenelse(mtype = lower(mtype), upper(mtype), '"' || mtype || '"') || sys.ifthenelse(nameonly OR digits = 0, '', '(' || digits || sys.ifthenelse(tscale = 0, '', ',' || tscale) || ')')
+    END;
+END;
+GRANT EXECUTE ON FUNCTION sys.sql_datatype(varchar(999), integer, integer, boolean, boolean) TO PUBLIC;
+update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'sql_datatype' and type = 1 and language = 2;
+
+Running database upgrade commands:
 CREATE SCHEMA INFORMATION_SCHEMA;
 COMMENT ON SCHEMA INFORMATION_SCHEMA IS 'ISO/IEC 9075-11 SQL/Schemata';
 update sys.schemas set system = true where name = 'information_schema';
@@ -596,14 +657,14 @@ CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
   cast(1 + c."number" AS int) AS ORDINAL_POSITION,
   c."default" AS COLUMN_DEFAULT,
   cast(sys.ifthenelse(c."null", 'YES', 'NO') AS varchar(3)) AS IS_NULLABLE,
-  cast(sys."describe_type"(c."type", c."type_digits", c."type_scale") AS varchar(1024)) AS DATA_TYPE,
+  cast(sys."sql_datatype"(c."type", c."type_digits", c."type_scale", true, true) AS varchar(1024)) AS DATA_TYPE,
   cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml') AND c."type_digits" > 0, c."type_digits", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,
-  cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml') AND c."type_digits" > 0, c."type_digits" * 4, NULL) AS int) AS CHARACTER_OCTET_LENGTH,
+  cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml') AND c."type_digits" > 0, 4 * c."type_digits", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_digits", NULL) AS int) AS NUMERIC_PRECISION,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(c."type" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_scale", NULL) AS int) AS NUMERIC_SCALE,
   cast(sys.ifthenelse(c."type" IN ('date','timestamp','timestamptz','time','timetz'), sys.ifthenelse(c."type_scale" > 0, c."type_scale" -1, 0), NULL) AS int) AS DATETIME_PRECISION,
-  cast(sys.ifthenelse(c."type" IN ('day_interval','month_interval','sec_interval'), sys."describe_type"(c."type", c."type_digits", c."type_scale"), NULL) AS varchar(40)) AS INTERVAL_TYPE,
+  cast(sys.ifthenelse(c."type" IN ('day_interval','month_interval','sec_interval'), sys."sql_datatype"(c."type", c."type_digits", c."type_scale", true, true), NULL) AS varchar(40)) AS INTERVAL_TYPE,
   cast(CASE c."type" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(c."type_digits" IN (7, 10, 12, 13), sys.ifthenelse(c."type_scale" > 0, c."type_scale", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
@@ -720,9 +781,9 @@ CREATE VIEW INFORMATION_SCHEMA.ROUTINES AS SELECT
   cast(NULL AS varchar(1)) AS UDT_CATALOG,
   cast(NULL AS varchar(1)) AS UDT_SCHEMA,
   cast(NULL AS varchar(1)) AS UDT_NAME,
-  cast(CASE f."type" WHEN 1 THEN sys."describe_type"(a."type", a."type_digits", a."type_scale") WHEN 2 THEN NULL WHEN 5 THEN 'TABLE' WHEN 7 THEN 'TABLE' ELSE NULL END AS varchar(1024)) AS DATA_TYPE,
+  cast(CASE f."type" WHEN 1 THEN sys."sql_datatype"(a."type", a."type_digits", a."type_scale", true, true) WHEN 2 THEN NULL WHEN 5 THEN 'TABLE' WHEN 7 THEN 'TABLE' ELSE NULL END AS varchar(1024)) AS DATA_TYPE,
   cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, a."type_digits", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,
-  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, a."type_digits" * 4, NULL) AS int) AS CHARACTER_OCTET_LENGTH,
+  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, 4 * a."type_digits", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
   'UTF-8' AS CHARACTER_SET_NAME,
@@ -733,7 +794,7 @@ CREATE VIEW INFORMATION_SCHEMA.ROUTINES AS SELECT
   cast(sys.ifthenelse(a."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(a."type" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,
   cast(sys.ifthenelse(a."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), a."type_scale", NULL) AS int) AS NUMERIC_SCALE,
   cast(sys.ifthenelse(a."type" IN ('date','timestamp','timestamptz','time','timetz'), a."type_scale" -1, NULL) AS int) AS DATETIME_PRECISION,
-  cast(sys.ifthenelse(a."type" IN ('day_interval','month_interval','sec_interval'), sys."describe_type"(a."type", a."type_digits", a."type_scale"), NULL) AS varchar(40)) AS INTERVAL_TYPE,
+  cast(sys.ifthenelse(a."type" IN ('day_interval','month_interval','sec_interval'), sys."sql_datatype"(a."type", a."type_digits", a."type_scale", true, true), NULL) AS varchar(40)) AS INTERVAL_TYPE,
   cast(CASE a."type" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(a."type_digits" IN (7, 10, 12, 13), sys.ifthenelse(a."type_scale" > 0, a."type_scale", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,
   cast(NULL AS varchar(1)) AS TYPE_UDT_CATALOG,
   cast(NULL AS varchar(1)) AS TYPE_UDT_SCHEMA,
@@ -825,9 +886,9 @@ CREATE VIEW INFORMATION_SCHEMA.PARAMETERS AS SELECT
   cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_CATALOG,
   cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_SCHEMA,
   cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_NAME,
-  cast(sys."describe_type"(a."type", a."type_digits", a."type_scale") AS varchar(1024)) AS DATA_TYPE,
+  cast(sys."sql_datatype"(a."type", a."type_digits", a."type_scale", true, true) AS varchar(1024)) AS DATA_TYPE,
   cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, a."type_digits", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,
-  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, a."type_digits" * 4, NULL) AS int) AS CHARACTER_OCTET_LENGTH,
+  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, 4 * a."type_digits", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
   cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml'), 'UTF-8', NULL) AS varchar(16)) AS CHARACTER_SET_NAME,
@@ -838,7 +899,7 @@ CREATE VIEW INFORMATION_SCHEMA.PARAMETERS AS SELECT
   cast(sys.ifthenelse(a."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(a."type" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,
   cast(sys.ifthenelse(a."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), a."type_scale", NULL) AS int) AS NUMERIC_SCALE,
   cast(sys.ifthenelse(a."type" IN ('date','timestamp','timestamptz','time','timetz'), sys.ifthenelse(a."type_scale" > 0, a."type_scale" -1, 0), NULL) AS int) AS DATETIME_PRECISION,
-  cast(sys.ifthenelse(a."type" IN ('day_interval','month_interval','sec_interval'), sys."describe_type"(a."type", a."type_digits", a."type_scale"), NULL) AS varchar(40)) AS INTERVAL_TYPE,
+  cast(sys.ifthenelse(a."type" IN ('day_interval','month_interval','sec_interval'), sys."sql_datatype"(a."type", a."type_digits", a."type_scale", true, true), NULL) AS varchar(40)) AS INTERVAL_TYPE,
   cast(CASE a."type" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(a."type_digits" IN (7, 10, 12, 13), sys.ifthenelse(a."type_scale" > 0, a."type_scale", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,
   cast(NULL AS varchar(1)) AS UDT_CATALOG,
   cast(NULL AS varchar(1)) AS UDT_SCHEMA,
@@ -908,7 +969,7 @@ GRANT EXECUTE ON FUNCTION sys.persist_unlogged() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string, string) TO PUBLIC;
 UPDATE sys.functions SET system = true WHERE system <> true AND
-name = 'persist_unlogged' AND schema_id = 2000;
+name = 'persist_unlogged' AND schema_id = 2000 AND type = 5 AND language = 1;
 
 Running database upgrade commands:
 CREATE FUNCTION timestamp_to_str(d TIMESTAMP, format STRING) RETURNS STRING EXTERNAL NAME mtime."timestamp_to_str";

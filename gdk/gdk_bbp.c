@@ -648,7 +648,6 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 #endif
 
 	bn->batCacheid = (bat) batid;
-	BATinit_idents(bn);
 	bn->batTransient = false;
 	bn->batCopiedtodisk = true;
 	switch ((properties & 0x06) >> 1) {
@@ -1003,6 +1002,7 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool al
 		return 0;
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_JSON &&
 	    bbpversion != GDKLIBRARY_HSIZE &&
 	    bbpversion != GDKLIBRARY_HASHASH &&
 	    bbpversion != GDKLIBRARY_TAILN &&
@@ -1475,6 +1475,245 @@ movestrbats(void)
 }
 #endif
 
+#ifdef GDKLIBRARY_JSON
+static gdk_return
+jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
+{
+	const char *nme = BBP_physical(b->batCacheid);
+	char *srcdir = GDKfilepath(NOFARM, BATDIR, nme, NULL);
+
+	if (srcdir == NULL) {
+		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
+		return GDK_FAIL;
+	}
+
+	char *s;
+	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
+		*s = 0;
+	const char *bnme;
+	if ((bnme = strrchr(nme, DIR_SEP)) != NULL) {
+		bnme++;
+	} else {
+		bnme = nme;
+	}
+
+	long_str filename;
+	snprintf(filename, sizeof(filename), "BACKUP%c%s", DIR_SEP, bnme);
+
+	/* A json column should not normally have any index structures */
+	HASHdestroy(b);
+	IMPSdestroy(b);
+	OIDXdestroy(b);
+	PROPdestroy(b);
+	STRMPdestroy(b);
+	RTREEdestroy(b);
+
+	/* backup the current heaps */
+	if (GDKmove(b->theap->farmid, srcdir, bnme, "tail",
+		    BAKDIR, bnme, "tail", false) != GDK_SUCCEED) {
+		GDKfree(srcdir);
+		TRC_CRITICAL(GDK, "cannot make backup of %s.tail\n", nme);
+		return GDK_FAIL;
+	}
+	if (GDKmove(b->theap->farmid, srcdir, bnme, "theap",
+		    BAKDIR, bnme, "theap", true) != GDK_SUCCEED) {
+		GDKfree(srcdir);
+		TRC_CRITICAL(GDK, "cannot make backup of %s.theap\n", nme);
+		return GDK_FAIL;
+	}
+
+	/* load the old heaps */
+	Heap h1 = *b->theap;
+	h1.base = NULL;
+	h1.dirty = false;
+	strconcat_len(h1.filename, sizeof(h1.filename), filename, ".tail", NULL);
+	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED) {
+		GDKfree(srcdir);
+		TRC_CRITICAL(GDK, "loading old tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+
+	Heap vh1 = *b->tvheap;
+	vh1.base = NULL;
+	vh1.dirty = false;
+	strconcat_len(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
+	if (HEAPload(&vh1, filename, "theap", false) != GDK_SUCCEED) {
+		GDKfree(srcdir);
+		HEAPfree(&h1, false);
+		TRC_CRITICAL(GDK, "loading old string heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+
+	/* create the new heaps */
+	Heap *h2 = GDKmalloc(sizeof(Heap));
+	Heap *vh2 = GDKmalloc(sizeof(Heap));
+	if (h2 == NULL || vh2 == NULL) {
+		GDKfree(h2);
+		GDKfree(vh2);
+		GDKfree(srcdir);
+		HEAPfree(&h1, false);
+		HEAPfree(&vh1, false);
+		TRC_CRITICAL(GDK, "allocating new heaps "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	*h2 = *b->theap;
+	h2->base = NULL;
+	if (HEAPalloc(h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
+		GDKfree(h2);
+		GDKfree(vh2);
+		GDKfree(srcdir);
+		HEAPfree(&h1, false);
+		HEAPfree(&vh1, false);
+		TRC_CRITICAL(GDK, "allocating new tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+
+	}
+	h2->dirty = true;
+	h2->free = h1.free;
+
+	*vh2 = *b->tvheap;
+	strconcat_len(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
+	strHeap(vh2, b->batCapacity);
+	if (vh2->base == NULL) {
+		GDKfree(srcdir);
+		HEAPfree(&h1, false);
+		HEAPfree(&vh1, false);
+		HEAPfree(h2, false);
+		GDKfree(h2);
+		GDKfree(vh2);
+		TRC_CRITICAL(GDK, "allocating new string heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	vh2->dirty = true;
+	ATOMIC_INIT(&h2->refs, 1);
+	ATOMIC_INIT(&vh2->refs, 1);
+	Heap *ovh = b->tvheap;
+	b->tvheap = vh2;
+	vh2 = NULL;
+
+	for (BUN i = 0; i < b->batCount; i++) {
+		var_t o = ((var_t *) h1.base)[i];
+		const char *s = vh1.base + o;
+		char *ns;
+		if (fixJSONStorage(&ns, &s) != GDK_SUCCEED) {
+			GDKfree(srcdir);
+			HEAPfree(&h1, false);
+			HEAPfree(&vh1, false);
+			HEAPdecref(h2, false);
+			HEAPdecref(b->tvheap, false);
+			b->tvheap = ovh;
+			TRC_CRITICAL(GDK, "converting value "
+				     "in BAT %d failed\n", b->batCacheid);
+			return GDK_FAIL;
+		}
+		var_t no = strPut(b, &o, ns);
+		GDKfree(ns);
+		if (no == 0) {
+			GDKfree(srcdir);
+			HEAPfree(&h1, false);
+			HEAPfree(&vh1, false);
+			HEAPdecref(h2, false);
+			HEAPdecref(b->tvheap, false);
+			b->tvheap = ovh;
+			TRC_CRITICAL(GDK, "storing new value "
+				     "in BAT %d failed\n", b->batCacheid);
+			return GDK_FAIL;
+
+		}
+		((var_t *)h2->base)[i] = no;
+	}
+
+	/* cleanup */
+	HEAPfree(&h1, false);
+	HEAPfree(&vh1, false);
+	if (HEAPsave(h2, nme, BATtailname(b), true, h2->free, NULL) !=
+	    GDK_SUCCEED) {
+		HEAPdecref(h2, false);
+		HEAPdecref(b->tvheap, false);
+		b->tvheap = ovh;
+		GDKfree(srcdir);
+		TRC_CRITICAL(GDK, "saving heap failed\n");
+		return GDK_FAIL;
+	}
+
+	if (HEAPsave(b->tvheap, nme, "theap", true, b->tvheap->free,
+		     &b->theaplock) != GDK_SUCCEED) {
+		HEAPfree(b->tvheap, false);
+		b->tvheap = ovh;
+		GDKfree(srcdir);
+		TRC_CRITICAL(GDK, "saving string failed\n");
+		return GDK_FAIL;
+	}
+
+	HEAPdecref(b->theap, false);
+	b->theap = h2;
+	HEAPfree(h2, false);
+	HEAPdecref(ovh, false);
+	HEAPfree(b->tvheap, false);
+	GDKfree(srcdir);
+
+	return GDK_SUCCEED;
+}
+
+gdk_return
+BBPjson_upgrade(json_storage_conversion fixJSONStorage)
+{
+	bat bid;
+	BAT *b;
+	int JSON_type = ATOMindex("json");
+	bat nbat = (bat) ATOMIC_GET(&BBPsize);
+	bat *upd = GDKmalloc(sizeof(bat) * (size_t) nbat);
+	int nupd = 0;
+
+	if (upd == NULL) {
+		TRC_CRITICAL(GDK, "could not create bat\n");
+		return GDK_FAIL;
+	}
+	upd[nupd++] = 0;	/* first entry unused */
+
+	BBPlock();
+
+	for (bid = 1; bid < nbat; bid++) {
+		if ((b = BBP_desc(bid)) == NULL) {
+			/* not a valid BAT */
+			continue;
+		}
+
+		if (b->ttype < 0) {
+			const char *nme;
+
+			nme = ATOMunknown_name(b->ttype);
+			if (strcmp(nme, "json") != 0)
+				continue;
+		} else if (b->ttype != JSON_type) {
+			continue;
+		}
+		fprintf(stderr, "Upgrading json bat %d\n", bid);
+		if (jsonupgradebat(b, fixJSONStorage) != GDK_SUCCEED) {
+			BBPunlock();
+			GDKfree(upd);
+			return GDK_FAIL;
+		}
+		upd[nupd++] = bid;
+	}
+	BBPunlock();
+	if (nupd > 1 &&
+	    TMsubcommit_list(upd, NULL, nupd, -1, -1) != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "failed to commit changes\n");
+		GDKfree(upd);
+		return GDK_FAIL;
+	}
+	GDKfree(upd);
+	GDKunlink(0, BATDIR, "jsonupgradeneeded", NULL);
+	return GDK_SUCCEED;
+}
+#endif
+
 static bool
 BBPtrim(bool aggressive)
 {
@@ -1814,6 +2053,38 @@ BBPinit(bool allow_hge_upgrade)
 	GDKfree(hashbats);
 	if (res != GDK_SUCCEED)
 		return res;
+#endif
+
+#ifdef GDKLIBRARY_JSON
+	if (bbpversion <= GDKLIBRARY_JSON) {
+		char *jsonupgradestr;
+		if (GDKinmemory(0)) {
+			jsonupgradestr = NULL;
+		} else {
+			if ((jsonupgradestr = GDKfilepath(0, BATDIR, "jsonupgradeneeded", NULL)) == NULL) {
+				TRC_CRITICAL(GDK, "GDKfilepath failed\n");
+				ATOMIC_SET(&GDKdebug, dbg);
+				return GDK_FAIL;
+			}
+
+			/* create signal file that we need to upgrade
+			 * stored json strings. This will be performed
+			 * by an upgrade function in the GDK that will
+			 * be called at the end of the json module
+			 * initialzation with a callback that actually
+			 * knows how to perform the upgrade. */
+			int fd = MT_open(jsonupgradestr, O_WRONLY | O_CREAT);
+			if (fd < 0) {
+				TRC_CRITICAL(GDK, "cannot create signal file jsonupgradeneeded");
+				GDKfree(jsonupgradestr);
+				ATOMIC_SET(&GDKdebug, dbg);
+				return GDK_FAIL;
+			}
+
+			close(fd);
+			GDKfree(jsonupgradestr);
+		}
+	}
 #endif
 
 	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {
@@ -4298,6 +4569,12 @@ BBPdiskscan(const char *parent, size_t baseoff)
 
 		if (dent->d_name[0] == '.')
 			continue;	/* ignore .dot files and directories (. ..) */
+
+#ifdef GDKLIBRARY_JSON
+		if (strncmp(dent->d_name, "jsonupgradeneed", 15) == 0) {
+			continue; /* ignore json upgrade signal file  */
+		}
+#endif
 
 		if (strncmp(dent->d_name, "BBP.", 4) == 0 &&
 		    (strcmp(parent + baseoff, BATDIR) == 0 ||

@@ -313,7 +313,7 @@ successful.
    section *EXPRESSIONS*. Next to database URIs the hostnames and ports
    for monetdbds that allow to be controlled remotely can be found in
    the discover list masked with an asterisk. These entries can easily
-   be filtered out using an expression (e.g. "mapi:monetdb:*") if
+   be filtered out using an expression (e.g. \``mapi:monetdb:\*'') if
    desired. The control entries come in handy when one wants to get an
    overview of available monetdbds in e.g. a local cluster. Note that
    for *monetdbd* to announce its control port, the *mero_controlport*
@@ -339,9 +339,9 @@ For various options, typically database names, expressions can be used.
 These expressions are limited shell-globbing like, where the \* in any
 position is expanded to an arbitrary string. The \* can occur multiple
 times in the expression, allowing for more advanced matches. Note that
-the empty string also matches the \*, hence "de*mo" can return "demo" as
-match. To match the literal '*' character, one has to escape it using a
-backslash, e.g. "\*".
+the empty string also matches the \*, hence \``de*mo'' can return
+\``demo'' as match. To match the literal \``\*'' character, one has to
+escape it using a backslash, e.g. \``\\\*''.
 
 RETURN VALUE
 ============

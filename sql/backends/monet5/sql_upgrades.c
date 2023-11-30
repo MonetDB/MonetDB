@@ -6044,6 +6044,93 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		output = NULL;
 	}
 
+	/* 52_describe.sql New function sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean) */
+	sql_allocator *old_sa = sql->sa;
+	if ((sql->sa = sa_create(sql->pa)) != NULL) {
+		list *l;
+		if ((l = sa_list(sql->sa)) != NULL) {
+			sql_subtype t1, t2;
+			sql_find_subtype(&t1, "int", 0, 0);
+			sql_find_subtype(&t2, "boolean", 0, 0);
+			list_append(l, &tp);
+			list_append(l, &t1);
+			list_append(l, &t1);
+			list_append(l, &t2);
+			list_append(l, &t2);
+			if (!sql_bind_func_(sql, s->base.name, "sql_datatype", l, F_FUNC, true)) {
+				const char *cmds =
+				"CREATE FUNCTION sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean)\n"
+				"  RETURNS varchar(1024)\n"
+				"BEGIN\n"
+				"  RETURN\n"
+				"    CASE mtype\n"
+				"    WHEN 'char' THEN sys.ifthenelse(nameonly OR digits <= 1, sys.ifthenelse(shortname, 'CHAR', 'CHARACTER'), sys.ifthenelse(shortname, 'CHAR(', 'CHARACTER(') || digits || ')')\n"
+				"    WHEN 'varchar' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'VARCHAR', 'CHARACTER VARYING'), sys.ifthenelse(shortname, 'VARCHAR(', 'CHARACTER VARYING(') || digits || ')')\n"
+				"    WHEN 'clob' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'CLOB', 'CHARACTER LARGE OBJECT'), sys.ifthenelse(shortname, 'CLOB(', 'CHARACTER LARGE OBJECT(') || digits || ')')\n"
+				"    WHEN 'blob' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'BLOB', 'BINARY LARGE OBJECT'), sys.ifthenelse(shortname, 'BLOB(', 'BINARY LARGE OBJECT(') || digits || ')')\n"
+				"    WHEN 'int' THEN 'INTEGER'\n"
+				"    WHEN 'bigint' THEN 'BIGINT'\n"
+				"    WHEN 'smallint' THEN 'SMALLINT'\n"
+				"    WHEN 'tinyint' THEN 'TINYINT'\n"
+				"    WHEN 'hugeint' THEN 'HUGEINT'\n"
+				"    WHEN 'boolean' THEN 'BOOLEAN'\n"
+				"    WHEN 'date' THEN 'DATE'\n"
+				"    WHEN 'time' THEN sys.ifthenelse(nameonly OR digits = 1, 'TIME', 'TIME(' || (digits -1) || ')')\n"
+				"    WHEN 'timestamp' THEN sys.ifthenelse(nameonly OR digits = 7, 'TIMESTAMP', 'TIMESTAMP(' || (digits -1) || ')')\n"
+				"    WHEN 'timestamptz' THEN sys.ifthenelse(nameonly OR digits = 7, 'TIMESTAMP WITH TIME ZONE', 'TIMESTAMP(' || (digits -1) || ') WITH TIME ZONE')\n"
+				"    WHEN 'timetz' THEN sys.ifthenelse(nameonly OR digits = 1, 'TIME WITH TIME ZONE', 'TIME(' || (digits -1) || ') WITH TIME ZONE')\n"
+				"    WHEN 'decimal' THEN sys.ifthenelse(nameonly OR digits = 0, 'DECIMAL', 'DECIMAL(' || digits || sys.ifthenelse(tscale = 0, '', ',' || tscale) || ')')\n"
+				"    WHEN 'double' THEN sys.ifthenelse(nameonly OR (digits = 53 AND tscale = 0), sys.ifthenelse(shortname, 'DOUBLE', 'DOUBLE PRECISION'), 'FLOAT(' || digits || ')')\n"
+				"    WHEN 'real' THEN sys.ifthenelse(nameonly OR (digits = 24 AND tscale = 0), 'REAL', 'FLOAT(' || digits || ')')\n"
+				"    WHEN 'day_interval' THEN 'INTERVAL DAY'\n"
+				"    WHEN 'month_interval' THEN CASE digits WHEN 1 THEN 'INTERVAL YEAR' WHEN 2 THEN 'INTERVAL YEAR TO MONTH' WHEN 3 THEN 'INTERVAL MONTH' END\n"
+				"    WHEN 'sec_interval' THEN\n"
+				"	CASE digits\n"
+				"	WHEN 4 THEN 'INTERVAL DAY'\n"
+				"	WHEN 5 THEN 'INTERVAL DAY TO HOUR'\n"
+				"	WHEN 6 THEN 'INTERVAL DAY TO MINUTE'\n"
+				"	WHEN 7 THEN 'INTERVAL DAY TO SECOND'\n"
+				"	WHEN 8 THEN 'INTERVAL HOUR'\n"
+				"	WHEN 9 THEN 'INTERVAL HOUR TO MINUTE'\n"
+				"	WHEN 10 THEN 'INTERVAL HOUR TO SECOND'\n"
+				"	WHEN 11 THEN 'INTERVAL MINUTE'\n"
+				"	WHEN 12 THEN 'INTERVAL MINUTE TO SECOND'\n"
+				"	WHEN 13 THEN 'INTERVAL SECOND'\n"
+				"	END\n"
+				"    WHEN 'oid' THEN 'OID'\n"
+				"    WHEN 'json' THEN sys.ifthenelse(nameonly OR digits = 0, 'JSON', 'JSON(' || digits || ')')\n"
+				"    WHEN 'url' THEN sys.ifthenelse(nameonly OR digits = 0, 'URL', 'URL(' || digits || ')')\n"
+				"    WHEN 'xml' THEN sys.ifthenelse(nameonly OR digits = 0, 'XML', 'XML(' || digits || ')')\n"
+				"    WHEN 'geometry' THEN\n"
+				"	sys.ifthenelse(nameonly, 'GEOMETRY',\n"
+				"	CASE digits\n"
+				"	WHEN 4 THEN 'GEOMETRY(POINT' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')\n"
+				"	WHEN 8 THEN 'GEOMETRY(LINESTRING' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')\n"
+				"	WHEN 16 THEN 'GEOMETRY(POLYGON' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')\n"
+				"	WHEN 20 THEN 'GEOMETRY(MULTIPOINT' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')\n"
+				"	WHEN 24 THEN 'GEOMETRY(MULTILINESTRING' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')\n"
+				"	WHEN 28 THEN 'GEOMETRY(MULTIPOLYGON' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')\n"
+				"	WHEN 32 THEN 'GEOMETRY(GEOMETRYCOLLECTION' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')\n"
+				"	ELSE 'GEOMETRY'\n"
+				"        END)\n"
+				"    ELSE sys.ifthenelse(mtype = lower(mtype), upper(mtype), '\"' || mtype || '\"') || sys.ifthenelse(nameonly OR digits = 0, '', '(' || digits || sys.ifthenelse(tscale = 0, '', ',' || tscale) || ')')\n"
+				"    END;\n"
+				"END;\n"
+				"GRANT EXECUTE ON FUNCTION sys.sql_datatype(varchar(999), integer, integer, boolean, boolean) TO PUBLIC;\n"
+				"update sys.functions set system = true where system <> true and schema_id = 2000 and name = 'sql_datatype' and type = 1 and language = 2;\n";
+
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				printf("Running database upgrade commands:\n%s\n", cmds);
+				fflush(stdout);
+				err = SQLstatementIntern(c, cmds, "update", true, false, NULL);
+			}
+		}
+		sa_destroy(sql->sa);
+	}
+	sql->sa = old_sa;
+
+
 	/* 91_information_schema.sql */
 	info = mvc_bind_schema(sql, "information_schema");
 	if (info == NULL) {
@@ -6142,14 +6229,14 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		"  cast(1 + c.\"number\" AS int) AS ORDINAL_POSITION,\n"
 		"  c.\"default\" AS COLUMN_DEFAULT,\n"
 		"  cast(sys.ifthenelse(c.\"null\", 'YES', 'NO') AS varchar(3)) AS IS_NULLABLE,\n"
-		"  cast(sys.\"describe_type\"(c.\"type\", c.\"type_digits\", c.\"type_scale\") AS varchar(1024)) AS DATA_TYPE,\n"
+		"  cast(sys.\"sql_datatype\"(c.\"type\", c.\"type_digits\", c.\"type_scale\", true, true) AS varchar(1024)) AS DATA_TYPE,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('varchar','clob','char','json','url','xml') AND c.\"type_digits\" > 0, c.\"type_digits\", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,\n"
-		"  cast(sys.ifthenelse(c.\"type\" IN ('varchar','clob','char','json','url','xml') AND c.\"type_digits\" > 0, c.\"type_digits\" * 4, NULL) AS int) AS CHARACTER_OCTET_LENGTH,\n"
+		"  cast(sys.ifthenelse(c.\"type\" IN ('varchar','clob','char','json','url','xml') AND c.\"type_digits\" > 0, 4 * c.\"type_digits\", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c.\"type_digits\", NULL) AS int) AS NUMERIC_PRECISION,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(c.\"type\" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c.\"type_scale\", NULL) AS int) AS NUMERIC_SCALE,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('date','timestamp','timestamptz','time','timetz'), sys.ifthenelse(c.\"type_scale\" > 0, c.\"type_scale\" -1, 0), NULL) AS int) AS DATETIME_PRECISION,\n"
-		"  cast(sys.ifthenelse(c.\"type\" IN ('day_interval','month_interval','sec_interval'), sys.\"describe_type\"(c.\"type\", c.\"type_digits\", c.\"type_scale\"), NULL) AS varchar(40)) AS INTERVAL_TYPE,\n"
+		"  cast(sys.ifthenelse(c.\"type\" IN ('day_interval','month_interval','sec_interval'), sys.\"sql_datatype\"(c.\"type\", c.\"type_digits\", c.\"type_scale\", true, true), NULL) AS varchar(40)) AS INTERVAL_TYPE,\n"
 		"  cast(CASE c.\"type\" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(c.\"type_digits\" IN (7, 10, 12, 13), sys.ifthenelse(c.\"type_scale\" > 0, c.\"type_scale\", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,\n"
@@ -6271,9 +6358,9 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		"  cast(NULL AS varchar(1)) AS UDT_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS UDT_SCHEMA,\n"
 		"  cast(NULL AS varchar(1)) AS UDT_NAME,\n"
-		"  cast(CASE f.\"type\" WHEN 1 THEN sys.\"describe_type\"(a.\"type\", a.\"type_digits\", a.\"type_scale\") WHEN 2 THEN NULL WHEN 5 THEN 'TABLE' WHEN 7 THEN 'TABLE' ELSE NULL END AS varchar(1024)) AS DATA_TYPE,\n"
+		"  cast(CASE f.\"type\" WHEN 1 THEN sys.\"sql_datatype\"(a.\"type\", a.\"type_digits\", a.\"type_scale\", true, true) WHEN 2 THEN NULL WHEN 5 THEN 'TABLE' WHEN 7 THEN 'TABLE' ELSE NULL END AS varchar(1024)) AS DATA_TYPE,\n"
 		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, a.\"type_digits\", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,\n"
-		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, a.\"type_digits\" * 4, NULL) AS int) AS CHARACTER_OCTET_LENGTH,\n"
+		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, 4 * a.\"type_digits\", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,\n"
 		"  'UTF-8' AS CHARACTER_SET_NAME,\n"
@@ -6284,7 +6371,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		"  cast(sys.ifthenelse(a.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(a.\"type\" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,\n"
 		"  cast(sys.ifthenelse(a.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), a.\"type_scale\", NULL) AS int) AS NUMERIC_SCALE,\n"
 		"  cast(sys.ifthenelse(a.\"type\" IN ('date','timestamp','timestamptz','time','timetz'), a.\"type_scale\" -1, NULL) AS int) AS DATETIME_PRECISION,\n"
-		"  cast(sys.ifthenelse(a.\"type\" IN ('day_interval','month_interval','sec_interval'), sys.\"describe_type\"(a.\"type\", a.\"type_digits\", a.\"type_scale\"), NULL) AS varchar(40)) AS INTERVAL_TYPE,\n"
+		"  cast(sys.ifthenelse(a.\"type\" IN ('day_interval','month_interval','sec_interval'), sys.\"sql_datatype\"(a.\"type\", a.\"type_digits\", a.\"type_scale\", true, true), NULL) AS varchar(40)) AS INTERVAL_TYPE,\n"
 		"  cast(CASE a.\"type\" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(a.\"type_digits\" IN (7, 10, 12, 13), sys.ifthenelse(a.\"type_scale\" > 0, a.\"type_scale\", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,\n"
 		"  cast(NULL AS varchar(1)) AS TYPE_UDT_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS TYPE_UDT_SCHEMA,\n"
@@ -6377,9 +6464,9 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		"  cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_SCHEMA,\n"
 		"  cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_NAME,\n"
-		"  cast(sys.\"describe_type\"(a.\"type\", a.\"type_digits\", a.\"type_scale\") AS varchar(1024)) AS DATA_TYPE,\n"
+		"  cast(sys.\"sql_datatype\"(a.\"type\", a.\"type_digits\", a.\"type_scale\", true, true) AS varchar(1024)) AS DATA_TYPE,\n"
 		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, a.\"type_digits\", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,\n"
-		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, a.\"type_digits\" * 4, NULL) AS int) AS CHARACTER_OCTET_LENGTH,\n"
+		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, 4 * a.\"type_digits\", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,\n"
 		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml'), 'UTF-8', NULL) AS varchar(16)) AS CHARACTER_SET_NAME,\n"
@@ -6390,7 +6477,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		"  cast(sys.ifthenelse(a.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(a.\"type\" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,\n"
 		"  cast(sys.ifthenelse(a.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), a.\"type_scale\", NULL) AS int) AS NUMERIC_SCALE,\n"
 		"  cast(sys.ifthenelse(a.\"type\" IN ('date','timestamp','timestamptz','time','timetz'), sys.ifthenelse(a.\"type_scale\" > 0, a.\"type_scale\" -1, 0), NULL) AS int) AS DATETIME_PRECISION,\n"
-		"  cast(sys.ifthenelse(a.\"type\" IN ('day_interval','month_interval','sec_interval'), sys.\"describe_type\"(a.\"type\", a.\"type_digits\", a.\"type_scale\"), NULL) AS varchar(40)) AS INTERVAL_TYPE,\n"
+		"  cast(sys.ifthenelse(a.\"type\" IN ('day_interval','month_interval','sec_interval'), sys.\"sql_datatype\"(a.\"type\", a.\"type_digits\", a.\"type_scale\", true, true), NULL) AS varchar(40)) AS INTERVAL_TYPE,\n"
 		"  cast(CASE a.\"type\" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(a.\"type_digits\" IN (7, 10, 12, 13), sys.ifthenelse(a.\"type_scale\" > 0, a.\"type_scale\", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,\n"
 		"  cast(NULL AS varchar(1)) AS UDT_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS UDT_SCHEMA,\n"
@@ -6469,7 +6556,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string) TO PUBLIC;\n"
 			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string, string) TO PUBLIC;\n"
 			"UPDATE sys.functions SET system = true WHERE system <> true AND\n"
-			"name = 'persist_unlogged' AND schema_id = 2000;\n";
+			"name = 'persist_unlogged' AND schema_id = 2000 AND type = 5 AND language = 1;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
