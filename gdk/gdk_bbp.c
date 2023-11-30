@@ -1666,7 +1666,7 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 	bat bid;
 	BAT *b;
 	int JSON_type = ATOMindex("json");
-	bat *upd = GDKmalloc(sizeof(bat) * ATOMIC_GET(&BBPsize));
+	bat *upd = GDKmalloc(sizeof(bat) * (size_t) ATOMIC_GET(&BBPsize));
 	int nupd = 0;
 
 	if (upd == NULL) {
