@@ -508,19 +508,27 @@ JSONstr2json(json *ret, const char **j)
 	size_t ln = strlen(*j)+1;
 	size_t out_size = 0;
 
-	JSON *jt = JSONparse(*j);
-	CHECK_JSON(jt);
+	JSON *jt = NULL;
 
-	buf = (json)GDKmalloc(ln);
+	if (strNil(*j)) {
+		buf = GDKstrdup(*j);
+	} else {
+		jt = JSONparse(*j);
+		CHECK_JSON(jt);
+
+		buf = (json)GDKmalloc(ln);
+	}
 	if (buf == NULL) {
 		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	msg = JSONtoStorageString(jt, 0, &buf, &out_size);
-	if (msg != MAL_SUCCEED) {
-		GDKfree(buf);
-		goto bailout;
+	if (jt != NULL) {
+		msg = JSONtoStorageString(jt, 0, &buf, &out_size);
+		if (msg != MAL_SUCCEED) {
+			GDKfree(buf);
+			goto bailout;
+		}
 	}
 
 	*ret = buf;
