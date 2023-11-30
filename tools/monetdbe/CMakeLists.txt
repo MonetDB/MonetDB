@@ -13,20 +13,27 @@ set(monetdbe_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/monetdbe.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/monetdbe.h>)
 
-add_library(monetdbe SHARED)
+if(MONETDB_STATIC)
+  add_library(monetdbe STATIC)
+else()
+  add_library(monetdbe SHARED)
+endif()
 
 add_compile_definitions(COMPILING_MONETDBE)
 
+set(MONETDBE_SOURCES
+  monetdbe.c
+  monetdbe_mapi.c
+  monetdbe_mapi.h
+  ${CMAKE_SOURCE_DIR}/clients/mapiclient/dump.c)
+
 target_sources(monetdbe
   PRIVATE
-  monetdbe.c
-  monetdbe_mapi.c monetdbe_mapi.h
-  ${CMAKE_SOURCE_DIR}/clients/mapiclient/dump.c
+  ${MONETDBE_SOURCES}
   PUBLIC
   ${monetdbe_public_headers})
 
-target_include_directories(monetdbe
-  PRIVATE
+set(MONETDBE_INCLUDE_DIRS
   $<TARGET_PROPERTY:mapi,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
@@ -37,7 +44,11 @@ target_include_directories(monetdbe
   $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
-  ${CMAKE_SOURCE_DIR}/clients/mapiclient
+  ${CMAKE_SOURCE_DIR}/clients/mapiclient)
+
+target_include_directories(monetdbe
+  PRIVATE
+  ${MONETDBE_INCLUDE_DIRS}
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
@@ -53,8 +64,7 @@ set_target_properties(monetdbe
   SOVERSION ${MONETDBE_VERSION_MAJOR}
   PUBLIC_HEADER "${monetdbe_public_headers}")
 
-target_link_libraries(monetdbe
-  PRIVATE
+set(MONETDBE_LINK_LIBS
   monetdb_config_header
   matomic
   moptions
@@ -67,6 +77,10 @@ target_link_libraries(monetdbe
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   Threads::Threads)
+
+target_link_libraries(monetdbe
+  PRIVATE
+  ${MONETDBE_LINK_LIBS})
 
 if (NOT WIN32)
   configure_file(monetdbe.pc.in
@@ -94,11 +108,13 @@ install(TARGETS
   COMPONENT embedded
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+if(NOT DEFINED MONETDB_STATIC)
 install(EXPORT monetdbeTargets
   FILE monetdbeTargets.cmake
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT embeddeddev)
+endif()
 
 if(WIN32)
   install(FILES

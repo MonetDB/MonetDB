@@ -8,12 +8,18 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 #]]
 
-add_library(monetdb5 SHARED
+set(MONETDB5_OBJECTS
   $<TARGET_OBJECTS:mal>
   $<TARGET_OBJECTS:atoms>
   $<TARGET_OBJECTS:malmodules>
   $<TARGET_OBJECTS:kernel>
   $<TARGET_OBJECTS:optimizer>)
+
+if(MONETDB_STATIC)
+  add_library(monetdb5 STATIC ${MONETDB5_OBJECTS})
+else()
+  add_library(monetdb5 SHARED ${MONETDB5_OBJECTS})
+endif()
 
 target_link_libraries(monetdb5
     PRIVATE
@@ -66,11 +72,13 @@ install(TARGETS
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+if(NOT DEFINED MONETDB_STATIC)
 install(EXPORT monetdb5Targets
   FILE monetdb5Targets.cmake
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT serverdev)
+endif()
 
 if(WIN32)
   install(FILES

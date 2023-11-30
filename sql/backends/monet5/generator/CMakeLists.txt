@@ -8,7 +8,11 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 #]]
 
-add_library(generator MODULE)
+if(MONETDB_STATIC)
+  add_library(generator STATIC)
+else()
+  add_library(generator MODULE)
+endif()
 
 set(include_sql_files
   90_generator)

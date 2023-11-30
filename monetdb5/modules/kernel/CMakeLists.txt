@@ -9,7 +9,11 @@
 #]]
 
 add_library(kernel OBJECT)
-add_library(microbenchmark MODULE)
+if(MONETDB_STATIC)
+  add_library(microbenchmark STATIC)
+else()
+  add_library(microbenchmark MODULE)
+endif()
 
 target_sources(kernel
   PRIVATE

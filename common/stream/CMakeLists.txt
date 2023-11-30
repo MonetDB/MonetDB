@@ -14,8 +14,11 @@ set(stream_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/stream.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/stream_socket.h>)
 
-add_library(stream
-  SHARED)
+if(MONETDB_STATIC)
+  add_library(stream STATIC)
+else()
+  add_library(stream SHARED)
+endif()
 
 target_sources(stream
   PRIVATE
@@ -137,11 +140,13 @@ install(TARGETS
   COMPONENT streamdev
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+if(NOT DEFINED MONETDB_STATIC)
 install(EXPORT streamTargets
   FILE streamTargets.cmake
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT streamdev)
+endif()
 
 if(WIN32)
   install(FILES

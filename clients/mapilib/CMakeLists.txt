@@ -8,9 +8,11 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 #]]
 
-add_library(mapi
-  SHARED)
-
+if(MONETDB_STATIC)
+  add_library(mapi STATIC)
+else()
+  add_library(mapi SHARED)
+endif()
 
 # We need to add the public library twice to the target sources, once for
 # the build interface and once for the install interface. This is because
@@ -88,11 +90,13 @@ install(TARGETS
   COMPONENT clientdev
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+if(NOT DEFINED MONETDB_STATIC)
 install(EXPORT mapiTargets
   FILE mapiTargets.cmake
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT clientdev)
+endif()
 
 if(WIN32)
   install(FILES

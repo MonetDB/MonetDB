@@ -38,10 +38,24 @@ target_link_libraries(sqlstorage
   sqlcommon
   sqlinclude)
 
+if(NOT DEFINED MONETDB_STATIC)
 set_target_properties(sqlstorage
   PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sql_storage.h)
+endif()
+
+if(MONETDB_STATIC)
+install(TARGETS
+  sqlstorage
+  LIBRARY
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
 
 target_compile_definitions(sqlstorage
   PRIVATE

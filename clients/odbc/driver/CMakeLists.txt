@@ -12,8 +12,11 @@ if (${HAVE_ODBCINST})
   add_compile_definitions(HAVE_SQLGETPRIVATEPROFILESTRING)
 endif()
 
-add_library(MonetODBC
-  MODULE)
+if(MONETDB_STATIC)
+  add_library(MonetODBC STATIC)
+else()
+add_library(MonetODBC MODULE)
+endif()
 
 target_sources(MonetODBC
   PRIVATE

@@ -154,3 +154,27 @@ option(CMAKE_SUMMARY
 option(CMAKE_UNITTESTS
   "Build and run the unittest for the build system"
   OFF)
+
+option(MONETDB_STATIC
+  "Enable static compilation mode"
+  OFF)
+
+option(WITH_UDF
+  "Include UDF support"
+  ON)
+
+option(WITH_VAULTS
+  "Include UDF support"
+  ON)
+
+option(WITH_MEROVINGIAN
+  "Build merovingian and friends"
+  ON)
+
+option(WITH_MSERVER5
+  "Build mserver5"
+  ON)
+
+option(WITH_MAPI_CLIENT
+  "Build mapi clients(mclient, msqldump)"
+  ON)

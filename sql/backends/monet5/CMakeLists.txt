@@ -84,7 +84,11 @@ set(sql_public_headers
 )
 
 #add_library(sql MODULE)
-add_library(sql SHARED)
+if(MONETDB_STATIC)
+  add_library(sql STATIC)
+else()
+  add_library(sql SHARED)
+endif()
 
 set(include_sql_files
   10_sys_schema_extension
@@ -221,8 +225,12 @@ install(TARGETS
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 add_subdirectory(generator)
+if(WITH_UDF)
 add_subdirectory(UDF)
+endif()
+if(WITH_VAULTS)
 add_subdirectory(vaults)
+endif()
 
 add_library(sqlembedded INTERFACE)
 
@@ -231,11 +239,13 @@ target_include_directories(sqlembedded
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
+if(NOT DEFINED MONETDB_STATIC)
 install(EXPORT sqlTargets
   FILE sqlTargets.cmake
   NAMESPACE MonetDB::
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
+endif()
 
 if(WIN32)
   install(FILES

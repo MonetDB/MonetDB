@@ -1,5 +1,8 @@
-
-add_library(csv MODULE)
+if(MONETDB_STATIC)
+  add_library(csv STATIC)
+else()
+  add_library(csv MODULE)
+endif()
 
 target_sources(csv
     PRIVATE

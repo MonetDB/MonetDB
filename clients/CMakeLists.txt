@@ -9,7 +9,9 @@
 #]]
 
 add_subdirectory(mapilib)
-add_subdirectory(mapiclient)
+if(WITH_MAPI_CLIENT)
+  add_subdirectory(mapiclient)
+endif()
 add_subdirectory(odbc)
 if(TESTING)
   add_subdirectory(examples)

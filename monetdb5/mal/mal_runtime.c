@@ -326,9 +326,9 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 				if (strcmp(QRYqueue[i].status, "finished") != 0) {
 					TRC_INFO_ENDIF(MAL_SERVER,
 								   "QRYqueue[%zu]: stk(%p), tag(" OIDFMT
-								   "), username(%s), start(%ld), status(%s), query(%s)",
+								   "), username(%s), start(%lld), status(%s), query(%s)",
 								   i, QRYqueue[i].stk, QRYqueue[i].tag,
-								   QRYqueue[i].username, QRYqueue[i].start,
+								   QRYqueue[i].username,(long long) QRYqueue[i].start,
 								   QRYqueue[i].status, QRYqueue[i].query);
 				}
 			}

@@ -47,7 +47,16 @@ target_compile_definitions(sqlcommon
   PRIVATE
   LIBSQL)
 
+if(NOT DEFINED MONETDB_STATIC)
 set_target_properties(sqlcommon
   PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sql_types.h)
+endif()
+
+if(MONETDB_STATIC)
+install(TARGETS
+  sqlcommon
+  ARCHIVE
+  DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
