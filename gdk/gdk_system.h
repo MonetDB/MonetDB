@@ -121,6 +121,10 @@
 #endif
 
 #if defined(__APPLE__) && defined(__GNUC__)
+/* GCC-12 installed with Homebrew on MacOS has a bug which makes
+ * including <dispatch/dispatch.h> impossible.  However we need that for
+ * properly working semaphores, so we have this bit of code to work
+ * around the bug. */
 #define HAVE_DISPATCH_DISPATCH_H 1
 #define HAVE_DISPATCH_SEMAPHORE_CREATE 1
 #if __has_attribute(__swift_attr__)
