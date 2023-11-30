@@ -1,28 +1,14 @@
 #!@PYTHON@
 
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
-#TODO:
-#=====
-# - check all TODO's below
-# - tidy -up HTML-generation by "keeping in mind" during testing,
-#   which OUT/ERR differ or not and which tests were skipped.
-#   dump HTML-stuff only at end
-#   print an ascii summary at end, too
-# - use sorting in .explain.functions_histogram
-# - if no diffs, but warnings, say so at end
-# - produce, keep & reference LOG
-# - add a "grep-like" function and replace "inlined" grep
-#   contains(<file>,<string>)
-# - do multi-level prompting?
-# - normalize all path's used
-# - Python 3? (or do a full rewrite?)
-
-import os
+import Mtest
 import sys
 if __name__ == '__main__':
     Mtest.main(sys.argv)
