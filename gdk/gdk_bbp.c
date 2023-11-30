@@ -1667,7 +1667,7 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 	BAT *b;
 	int JSON_type = ATOMindex("json");
 	bat *upd = GDKmalloc(sizeof(bat) * ATOMIC_GET(&BBPsize));
-	BUN nupd = 0;
+	int nupd = 0;
 
 	if (upd == NULL) {
 		TRC_CRITICAL(GDK, "could not create bat\n");
@@ -1701,7 +1701,7 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 		upd[nupd++] = bid;
 	}
 	BBPunlock();
-	if (nupd > (BUN)1 &&
+	if (nupd > 1 &&
 	    TMsubcommit_list(upd, NULL, nupd, -1, -1) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "failed to commit changes\n");
 		GDKfree(upd);
