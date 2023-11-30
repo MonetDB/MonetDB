@@ -79,6 +79,7 @@
 		     "when 'double' then 'DOUBLE' "						\
 		     "when 'hugeint' then 'HUGEINT' "					\
 		     "when 'int' then 'INTEGER' "						\
+		     "when 'json' then 'JSON' "						\
 		     "when 'month_interval' then "						\
 			  "case " #t ".type_digits "						\
 			       "when 1 then 'INTERVAL YEAR' "				\
@@ -105,7 +106,10 @@
 		     "when 'timestamptz' then 'TIMESTAMP' "				\
 		     "when 'timetz' then 'TIME' "						\
 		     "when 'tinyint' then 'TINYINT' "					\
+		     "when 'url' then 'URL' "						\
+		     "when 'uuid' then 'UUID' "						\
 		     "when 'varchar' then 'VARCHAR' "					\
+		     "when 'xml' then 'XML' "						\
 		"end as \"TYPE_NAME\""
 
 #define COLUMN_SIZE(t)							\
@@ -135,6 +139,7 @@
 		     "when 'timestamp' then 23 "		\
 		     "when 'timestamptz' then 23 "		\
 		     "when 'timetz' then 12 "			\
+		     "when 'uuid' then 36 "			\
 		     "else " #t ".type_digits "			\
 		"end as \"COLUMN_SIZE\""
 
@@ -147,6 +152,7 @@
 		     "when 'double' then 24 "						\
 		     "when 'hugeint' then 40 "						\
 		     "when 'int' then 11 "							\
+		     "when 'json' then 2 * " #t ".type_digits "		\
 		     "when 'month_interval' then "					\
 			  "case " #t ".type_digits "					\
 			       "when 1 then 26 "						\
@@ -173,7 +179,10 @@
 		     "when 'timestamptz' then 23 "					\
 		     "when 'timetz' then 12 "						\
 		     "when 'tinyint' then 4 "						\
+		     "when 'url' then 2 * " #t ".type_digits "		\
+		     "when 'uuid' then 36 "						\
 		     "when 'varchar' then 2 * " #t ".type_digits "	\
+		     "when 'xml' then 2 * " #t ".type_digits "		\
 		     "else " #t ".type_digits "						\
 		"end as integer) as \"BUFFER_LENGTH\""
 
@@ -242,6 +251,7 @@
 		     "when 'timestamptz' then %d "		\
 		     "when 'timetz' then %d "			\
 		     "when 'tinyint' then %d "			\
+		     "when 'uuid' then %d "			\
 		     "when 'varchar' then %d "			\
 		"end as \"SQL_DATA_TYPE\""
 #define SQL_DATA_TYPE_ARGS												\
@@ -249,7 +259,7 @@
 		SQL_WLONGVARCHAR, SQL_DATETIME, SQL_INTERVAL, SQL_DECIMAL, SQL_DOUBLE, \
 		SQL_HUGEINT, SQL_INTEGER, SQL_INTERVAL, SQL_REAL,				\
 		SQL_INTERVAL, SQL_SMALLINT, SQL_DATETIME, SQL_DATETIME,			\
-		SQL_DATETIME, SQL_DATETIME, SQL_TINYINT, SQL_WVARCHAR
+		SQL_DATETIME, SQL_DATETIME, SQL_TINYINT, SQL_GUID, SQL_WVARCHAR
 
 #define SQL_DATETIME_SUB(t)						\
 		"case " #t ".type "						\
