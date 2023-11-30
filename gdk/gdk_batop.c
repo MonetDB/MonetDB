@@ -139,7 +139,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				}
 
 				MT_lock_set(&b->theaplock);
-				if (HEAPgrow(&b->tvheap, toff + ni->vh->size, force) != GDK_SUCCEED) {
+				if (HEAPgrow(&b->tvheap, toff + ni->vhfree, force) != GDK_SUCCEED) {
 					MT_lock_unset(&b->theaplock);
 					return GDK_FAIL;
 				}

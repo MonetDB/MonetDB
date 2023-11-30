@@ -508,19 +508,27 @@ JSONstr2json(json *ret, const char **j)
 	size_t ln = strlen(*j)+1;
 	size_t out_size = 0;
 
-	JSON *jt = JSONparse(*j);
-	CHECK_JSON(jt);
+	JSON *jt = NULL;
 
-	buf = (json)GDKmalloc(ln);
+	if (strNil(*j)) {
+		buf = GDKstrdup(*j);
+	} else {
+		jt = JSONparse(*j);
+		CHECK_JSON(jt);
+
+		buf = (json)GDKmalloc(ln);
+	}
 	if (buf == NULL) {
 		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	msg = JSONtoStorageString(jt, 0, &buf, &out_size);
-	if (msg != MAL_SUCCEED) {
-		GDKfree(buf);
-		goto bailout;
+	if (jt != NULL) {
+		msg = JSONtoStorageString(jt, 0, &buf, &out_size);
+		if (msg != MAL_SUCCEED) {
+			GDKfree(buf);
+			goto bailout;
+		}
 	}
 
 	*ret = buf;
@@ -573,10 +581,40 @@ JSONisarray(bit *ret, json *js)
 	return MAL_SUCCEED;
 }
 
+#ifdef GDKLIBRARY_JSON
+static
+gdk_return upgradeJSONStorage(char **out, const char **in) {
+	if (JSONstr2json(out, in) != MAL_SUCCEED) {
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+#endif
+
 static str
 JSONprelude(void)
 {
 	TYPE_json = ATOMindex("json");
+#ifdef GDKLIBRARY_JSON
+/* Run the gdk upgrade libary function with a callback that
+ * performs the actual upgrade.
+ */
+	char *jsonupgrade;
+	struct stat st;
+	if ((jsonupgrade = GDKfilepath(0, BATDIR, "jsonupgradeneeded", NULL)) == NULL) {
+		throw(MAL, "json.prelude", SQLSTATE(HY013) MAL_MALLOC_FAIL); // Fix exception reason
+	}
+	int r = stat(jsonupgrade, &st);
+	if (r == 0) {
+		/* The file exists so we need to run the upgrade code */
+		if (BBPjson_upgrade(upgradeJSONStorage) != GDK_SUCCEED) {
+			GDKfree(jsonupgrade);
+			throw(MAL, "json.prelude", "JSON storage upgrade failed"); // Fix exception reason
+		}
+	}
+	GDKfree(jsonupgrade);
+#endif
 	return MAL_SUCCEED;
 }
 
