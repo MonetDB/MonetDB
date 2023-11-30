@@ -1666,7 +1666,8 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 	bat bid;
 	BAT *b;
 	int JSON_type = ATOMindex("json");
-	bat *upd = GDKmalloc(sizeof(bat) * (size_t) ATOMIC_GET(&BBPsize));
+	bat nbat = (bat) ATOMIC_GET(&BBPsize);
+	bat *upd = GDKmalloc(sizeof(bat) * (size_t) nbat);
 	int nupd = 0;
 
 	if (upd == NULL) {
@@ -1677,7 +1678,7 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 
 	BBPlock();
 
-	for (bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
+	for (bid = 1; bid < nbat; bid++) {
 		if ((b = BBP_desc(bid)) == NULL) {
 			/* not a valid BAT */
 			continue;
