@@ -6539,21 +6539,15 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 	}
 
 	/* 77_storage.sql */
-	if (!sql_bind_func(sql, s->base.name, "persist_unlogged", NULL, NULL, F_UNION, true)) {
+	sql_find_subtype(&tp, "varchar", 0, 0);
+
+	if (!sql_bind_func(sql, s->base.name, "persist_unlogged", &tp, &tp, F_UNION, true)) {
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		const char *query =
-			"CREATE FUNCTION sys.persist_unlogged()\n"
-			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
-			"EXTERNAL NAME sql.persist_unlogged;\n"
-			"CREATE FUNCTION sys.persist_unlogged(sname STRING)\n"
-			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
-			"EXTERNAL NAME sql.persist_unlogged;\n"
 			"CREATE FUNCTION sys.persist_unlogged(sname STRING, tname STRING)\n"
 			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
 			"EXTERNAL NAME sql.persist_unlogged;\n"
-			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged() TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string) TO PUBLIC;\n"
 			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string, string) TO PUBLIC;\n"
 			"UPDATE sys.functions SET system = true WHERE system <> true AND\n"
 			"name = 'persist_unlogged' AND schema_id = 2000 AND type = 5 AND language = 1;\n";
