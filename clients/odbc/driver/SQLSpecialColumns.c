@@ -207,7 +207,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		}
 
 		/* construct the query */
-		querylen = 6000 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
+		querylen = 6100 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
 		query = malloc(querylen);
 		if (query == NULL)
 			goto nomem;
