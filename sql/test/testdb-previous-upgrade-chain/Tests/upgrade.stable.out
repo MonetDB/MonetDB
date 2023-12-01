@@ -956,17 +956,9 @@ update sys._tables set system = true where system <> true
  and name in ('character_sets','check_constraints','columns','parameters','routines','schemata','sequences','referential_constraints','table_constraints','tables','views');
 
 Running database upgrade commands:
-CREATE FUNCTION sys.persist_unlogged()
-RETURNS TABLE("table" STRING, "table_id" INT, "rowcount" BIGINT)
-EXTERNAL NAME sql.persist_unlogged;
-CREATE FUNCTION sys.persist_unlogged(sname STRING)
-RETURNS TABLE("table" STRING, "table_id" INT, "rowcount" BIGINT)
-EXTERNAL NAME sql.persist_unlogged;
 CREATE FUNCTION sys.persist_unlogged(sname STRING, tname STRING)
 RETURNS TABLE("table" STRING, "table_id" INT, "rowcount" BIGINT)
 EXTERNAL NAME sql.persist_unlogged;
-GRANT EXECUTE ON FUNCTION sys.persist_unlogged() TO PUBLIC;
-GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string, string) TO PUBLIC;
 UPDATE sys.functions SET system = true WHERE system <> true AND
 name = 'persist_unlogged' AND schema_id = 2000 AND type = 5 AND language = 1;

@@ -49750,16 +49750,6 @@ SQLpercent_rank;
 return the percentage into the total number of groups for each row
 sql
 persist_unlogged
-unsafe pattern sql.persist_unlogged() (X_0:bat[:str], X_1:bat[:int], X_2:bat[:lng]) 
-SQLpersist_unlogged;
-Persist deltas on append only tables in current schema
-sql
-persist_unlogged
-unsafe pattern sql.persist_unlogged(X_0:str) (X_1:bat[:str], X_2:bat[:int], X_3:bat[:lng]) 
-SQLpersist_unlogged;
-Persist deltas on append only tables in schema s
-sql
-persist_unlogged
 unsafe pattern sql.persist_unlogged(X_0:str, X_1:str) (X_2:bat[:str], X_3:bat[:int], X_4:bat[:lng]) 
 SQLpersist_unlogged;
 Persist deltas on append only table in schema s table t
