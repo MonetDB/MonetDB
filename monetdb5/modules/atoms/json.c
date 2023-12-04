@@ -582,15 +582,37 @@ JSONisarray(bit *ret, json *js)
 }
 
 #ifdef GDKLIBRARY_JSON
-static
-gdk_return upgradeJSONStorage(char **out, const char **in) {
+static gdk_return
+upgradeJSONStorage(char **out, const char **in)
+{
 	if (JSONstr2json(out, in) != MAL_SUCCEED) {
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }
 
+static str
+jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
+{
+	str out = NULL;
+
+	if (BATatoms[TYPE_str].atomRead(a, dstlen, s, cnt) == NULL)
+		return NULL;
+
+	if (upgradeJSONStorage(&out, (const char **) &a) != GDK_SUCCEED) {
+		GDKfree(a);
+		return NULL;
+	}
+	*dstlen = strlen(out) + 1;
+	GDKfree(a);
+
+	a = out;
+
+	return a;
+}
+
 #endif
+
 
 static str
 JSONprelude(void)
@@ -603,15 +625,19 @@ JSONprelude(void)
 	char *jsonupgrade;
 	struct stat st;
 	if ((jsonupgrade = GDKfilepath(0, BATDIR, "jsonupgradeneeded", NULL)) == NULL) {
-		throw(MAL, "json.prelude", SQLSTATE(HY013) MAL_MALLOC_FAIL); // Fix exception reason
+		throw(MAL, "json.prelude", "cannot allocate filename for json upgrade signal file");
 	}
 	int r = stat(jsonupgrade, &st);
 	if (r == 0) {
 		/* The file exists so we need to run the upgrade code */
 		if (BBPjson_upgrade(upgradeJSONStorage) != GDK_SUCCEED) {
 			GDKfree(jsonupgrade);
-			throw(MAL, "json.prelude", "JSON storage upgrade failed"); // Fix exception reason
+			throw(MAL, "json.prelude", "JSON storage upgrade failed");
 		}
+		/* Change the read function of the json atom so that any values in the WAL
+		 * will also be upgraded.
+		 */
+		BATatoms[TYPE_json].atomRead = (void *(*)(void *, size_t *, stream *, size_t)) jsonRead;
 	}
 	GDKfree(jsonupgrade);
 #endif
@@ -3164,9 +3190,10 @@ JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 	return JSONsubjsoncand(retval, bid, gid, eid, NULL, skip_nils);
 }
 
+
 #include "mel.h"
 static mel_atom json_init_atoms[] = {
- { .name="json", .basetype="str", .fromstr=JSONfromString, .tostr=JSONtoString, },  { .cmp=NULL }
+	{ .name="json", .basetype="str", .fromstr=JSONfromString, .tostr=JSONtoString },  { .cmp=NULL },
 };
 static mel_func json_init_funcs[] = {
  command("json", "new", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),

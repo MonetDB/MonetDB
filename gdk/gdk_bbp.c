@@ -1709,7 +1709,6 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 		return GDK_FAIL;
 	}
 	GDKfree(upd);
-	GDKunlink(0, BATDIR, "jsonupgradeneeded", NULL);
 	return GDK_SUCCEED;
 }
 #endif
