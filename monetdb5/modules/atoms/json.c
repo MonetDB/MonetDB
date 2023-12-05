@@ -585,7 +585,9 @@ JSONisarray(bit *ret, json *js)
 static gdk_return
 upgradeJSONStorage(char **out, const char **in)
 {
-	if (JSONstr2json(out, in) != MAL_SUCCEED) {
+	str msg;
+	if ((msg = JSONstr2json(out, in)) != MAL_SUCCEED) {
+		freeException(msg);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -595,11 +597,13 @@ static str
 jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
 {
 	str out = NULL;
+	str msg;
 
 	if (BATatoms[TYPE_str].atomRead(a, dstlen, s, cnt) == NULL)
 		return NULL;
 
-	if (upgradeJSONStorage(&out, (const char **) &a) != GDK_SUCCEED) {
+	if ((msg = JSONstr2json(&out, (const char **) &a)) != MAL_SUCCEED) {
+		freeException(msg);
 		GDKfree(a);
 		return NULL;
 	}
@@ -628,10 +632,10 @@ JSONprelude(void)
 		throw(MAL, "json.prelude", "cannot allocate filename for json upgrade signal file");
 	}
 	int r = stat(jsonupgrade, &st);
+	GDKfree(jsonupgrade);
 	if (r == 0) {
 		/* The file exists so we need to run the upgrade code */
 		if (BBPjson_upgrade(upgradeJSONStorage) != GDK_SUCCEED) {
-			GDKfree(jsonupgrade);
 			throw(MAL, "json.prelude", "JSON storage upgrade failed");
 		}
 		/* Change the read function of the json atom so that any values in the WAL
@@ -639,7 +643,6 @@ JSONprelude(void)
 		 */
 		BATatoms[TYPE_json].atomRead = (void *(*)(void *, size_t *, stream *, size_t)) jsonRead;
 	}
-	GDKfree(jsonupgrade);
 #endif
 	return MAL_SUCCEED;
 }
