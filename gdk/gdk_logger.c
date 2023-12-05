@@ -1899,7 +1899,8 @@ static gdk_return
 log_json_upgrade_finalize(void)
 {
 	int json_tpe = ATOMindex("json");
-	if (GDKunlink(0, BATDIR, "jsonupgradeneeded", NULL) == GDK_FAIL) {
+	if (!GDKinmemory(0) &&
+	    GDKunlink(0, BATDIR, "jsonupgradeneeded", NULL) == GDK_FAIL) {
 		TRC_CRITICAL(GDK, "Failed to remove json upgrade signal file");
 		return GDK_FAIL;
 	}
