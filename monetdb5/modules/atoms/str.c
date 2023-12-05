@@ -3344,6 +3344,27 @@ str_case_hash_unlock(bool upper)
 	MT_rwlock_rdunlock(&b->thashlock);
 }
 
+static const char upper2lower[128] = {
+      0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,
+     18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+     36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
+     54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 97, 98, 99,100,101,102,103,
+    104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,
+    122, 91, 92, 93, 94, 95, 96, 97, 98, 99,100,101,102,103,104,105,106,107,
+    108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,
+    126,127
+};
+static const char lower2upper[128] = {
+      0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,
+     18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+     36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
+     54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
+     72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
+     90, 91, 92, 93, 94, 95, 96, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75,
+     76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90,123,124,125,
+    126,127
+};
+
 static inline str
 convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src,
 			const char *malfunc)
@@ -3359,51 +3380,44 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src,
 	/* the from and to bats are not views */
 	assert(from->tbaseoff == 0);
 	assert(to->tbaseoff == 0);
-	CHECK_STR_BUFFER_LENGTH(buf, buflen, len + 1, malfunc);
-	dst = *buf;
-	while (src < end) {
-		int c;
 
-		UTF8_GETCHAR(c, src);
-		if (c < 192) {			/* the first 191 characters in unicode are trivial to convert */
-			/* for ASCII characters we don't need to do a hash lookup */
-			if (lower_to_upper) {
-				if ('a' <= c && c <= 'z')
-					c += 'A' - 'a';
-			} else {
-				if ('A' <= c && c <= 'Z')
-					c += 'a' - 'A';
-			}
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, 2 * len + 1, malfunc);
+	/* use len*2 because only case changing code points exists which change from length 2 to 3 */
+	dst = *buf;
+
+	while (src < end) {
+		if (lower_to_upper) {
+			for (; src < end && (src[0] & 0x80) == 0; )
+				*dst++ = lower2upper[*src++];
 		} else {
-			/* use hash, even though BAT is sorted */
-			for (BUN hb = HASHget(h, hash_int(h, &c));
-				 hb != BUN_NONE; hb = HASHgetlink(h, hb)) {
-				if (c == fromb[hb]) {
-					c = tob[hb];
-					break;
+			for (; src < end && (src[0] & 0x80) == 0; )
+				*dst++ = upper2lower[*src++];
+		}
+		if (src < end) { /* fall back code for complex codepoints */
+			int c;
+
+			UTF8_GETCHAR(c, src);
+			if (c < 192) {			/* the first 191 characters in unicode are trivial to convert */
+				/* for ASCII characters we don't need to do a hash lookup */
+				if (lower_to_upper) {
+					if ('a' <= c && c <= 'z')
+						c += 'A' - 'a';
+				} else {
+					if (c <= 'Z' && 'A' <= c)
+						c += 'a' - 'A';
+				}
+			} else {
+				/* use hash, even though BAT is sorted */
+				for (BUN hb = HASHget(h, hash_int(h, &c));
+						hb != BUN_NONE; hb = HASHgetlink(h, hb)) {
+					if (c == fromb[hb]) {
+						c = tob[hb];
+						break;
+					}
 				}
 			}
+			UTF8_PUTCHAR(c, dst);
 		}
-		if (dst + UTF8_CHARLEN(c) > *buf + len) {
-			/* doesn't fit, so allocate more space;
-			 * also allocate enough for the rest of the
-			 * source */
-			size_t off = dst - *buf;
-			size_t nextlen = (len += 4 + (end - src)) + 1;
-
-			/* Don't use CHECK_STR_BUFFER_LENGTH here, because it
-			 * does GDKmalloc instead of GDKrealloc and data could be lost */
-			if (nextlen > *buflen) {
-				size_t newlen = ((nextlen + 1023) & ~1023);	/* align to a multiple of 1024 bytes */
-				str newbuf = GDKrealloc(*buf, newlen);
-				if (!newbuf)
-					throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				*buf = newbuf;
-				*buflen = newlen;
-			}
-			dst = *buf + off;
-		}
-		UTF8_PUTCHAR(c, dst);
 	}
 	*dst = 0;
 	return MAL_SUCCEED;
