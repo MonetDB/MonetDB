@@ -1,6 +1,13 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Dec  5 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Introduction of table returning function `persist_unlogged(schema
+  string, table string)` that attempts to persist data in disk if
+  "schema"."table" is unlogged table in insert only mode.  If persist
+  attempt is successful, the count of the persisted rows is returned,
+  otherwise the count is 0.
+
 * Thu Aug 24 2023 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Added ISO/IEC 9075-11 SQL/Schemata (SQL:2011) with SQL system views:
    information_schema.schemata
