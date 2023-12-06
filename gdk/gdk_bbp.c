@@ -1709,7 +1709,6 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 		return GDK_FAIL;
 	}
 	GDKfree(upd);
-	GDKunlink(0, BATDIR, "jsonupgradeneeded", NULL);
 	return GDK_SUCCEED;
 }
 #endif
@@ -2074,15 +2073,14 @@ BBPinit(bool allow_hge_upgrade)
 			 * initialzation with a callback that actually
 			 * knows how to perform the upgrade. */
 			int fd = MT_open(jsonupgradestr, O_WRONLY | O_CREAT);
+			GDKfree(jsonupgradestr);
 			if (fd < 0) {
 				TRC_CRITICAL(GDK, "cannot create signal file jsonupgradeneeded");
-				GDKfree(jsonupgradestr);
 				ATOMIC_SET(&GDKdebug, dbg);
 				return GDK_FAIL;
 			}
 
 			close(fd);
-			GDKfree(jsonupgradestr);
 		}
 	}
 #endif
@@ -4571,7 +4569,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			continue;	/* ignore .dot files and directories (. ..) */
 
 #ifdef GDKLIBRARY_JSON
-		if (strncmp(dent->d_name, "jsonupgradeneed", 15) == 0) {
+		if (strcmp(dent->d_name, "jsonupgradeneed") == 0) {
 			continue; /* ignore json upgrade signal file  */
 		}
 #endif

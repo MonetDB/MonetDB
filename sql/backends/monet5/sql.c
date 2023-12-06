@@ -19,35 +19,23 @@
 #include "sql.h"
 #include "mapi_prompt.h"
 #include "sql_result.h"
-#include "sql_gencode.h"
 #include "sql_storage.h"
 #include "sql_scenario.h"
 #include "store_sequence.h"
-#include "sql_optimizer.h"
-#include "sql_datetime.h"
 #include "sql_partition.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
-#include "rel_statistics.h"
 #include "rel_partition.h"
-#include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
-#include "rel_dump.h"
-#include "rel_bin.h"
 #include "rel_physical.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
-#include "mal_module.h"
-#include "mal_session.h"
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_profiler.h"
 #include "bat5.h"
 #include "opt_pipes.h"
-#include "orderidx.h"
 #include "clients.h"
 #include "mal_instruction.h"
 #include "mal_resource.h"
@@ -3482,12 +3470,10 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (TRACEtable(cntxt, t) != 3)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
-	for(i=0; i < 3; i++)
-	if( t[i]){
+	for (i = 0; i < 3; i++) {
 		*getArgReference_bat(stk, pci, i) = t[i]->batCacheid;
 		BBPkeepref(t[i]);
-	} else
-		throw(SQL,"dump_trace", SQLSTATE(45000) "Missing trace BAT ");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -4321,6 +4307,8 @@ end:
 	return msg;
 }
 
+MT_Lock lock_persist_unlogged = MT_LOCK_INITIALIZER(lock_persist_unlogged);
+
 str
 SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -4329,16 +4317,12 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	assert(pci->argc == 5);
 
-	bool bat_exists = false;
-
 	bat *o0 = getArgReference_bat(stk, pci, 0),
 		*o1 = getArgReference_bat(stk, pci, 1),
 		*o2 = getArgReference_bat(stk, pci, 2);
-
-	str sname = *getArgReference_str(stk, pci, 3);
-	str tname = *getArgReference_str(stk, pci, 4);
-
-	str msg = MAL_SUCCEED;
+	str sname = *getArgReference_str(stk, pci, 3),
+		tname = *getArgReference_str(stk, pci, 4),
+		msg = MAL_SUCCEED;
 
 	mvc *m = NULL;
 	msg = getSQLContext(cntxt, mb, &m, NULL);
@@ -4358,58 +4342,56 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sql_table *t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.claim", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
 
-	int n = 100;
-	bat *commit_list = GDKzalloc(sizeof(bat) * (n + 1));
-	BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 1));
-	BAT *b = NULL, *d = NULL, *table = NULL, *tableid = NULL, *rowcount = NULL;
+	if (!isUnloggedTable(t) || t->access != TABLE_APPENDONLY)
+		throw(SQL, "sql.persist_unlogged", "Unlogged and Insert Only mode combination required for table %s.%s", sname, tname);
 
-	table = COLnew(0, TYPE_str, 0, TRANSIENT);
-	tableid = COLnew(0, TYPE_int, 0, TRANSIENT);
-	rowcount = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	lng count = 0;
 
-	if (commit_list == NULL || sizes == NULL || table == NULL || tableid == NULL || rowcount == NULL) {
-		GDKfree(commit_list);
-		GDKfree(sizes);
-		BBPnreclaim(3, table, tableid, rowcount);
-		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
-	}
+	sql_trans *tr = m->session->tr;
+	storage *t_del = bind_del_data(tr, t, NULL);
 
-	commit_list[0] = 0;
-	sizes[0] = 0;
-	int i = 1;
+	BAT *d = BATdescriptor(t_del->cs.bid);
 
-	MT_lock_set(&store->commit);
+	if (t_del == NULL || d == NULL)
+		throw(SQL, "sql.persist_unlogged", "Cannot access %s column storage.", tname);
 
-	if (isTable(t) && isUnloggedTable(t) && t->access == TABLE_APPENDONLY) {
-		sql_trans *tr = m->session->tr;
-		storage *t_del = bind_del_data(tr, t, NULL);
+	MT_lock_set(&lock_persist_unlogged);
+	BATiter d_bi = bat_iterator(d);
 
-		if (t_del == NULL || (d = BATdescriptor(t_del->cs.bid)) == NULL) {
-			MT_lock_unset(&store->commit);
-			GDKfree(commit_list);
-			GDKfree(sizes);
-			BBPnreclaim(3, table, tableid, rowcount);
-			throw(SQL, "sql.persist_unlogged", "Cannot access %s column storage.", tname);
-		}
+	if (BBP_status(d->batCacheid) & BBPEXISTING) {
 
-		if (ol_first_node(t->columns)) {
+		assert(d->batInserted <= d_bi.count);
 
-			for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
+		if (d->batInserted < d_bi.count) {
+
+			int n = 100;
+			bat *commit_list = GDKzalloc(sizeof(bat) * (n + 1));
+			BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 1));
+
+			if (commit_list == NULL || sizes == NULL) {
+				MT_lock_unset(&lock_persist_unlogged);
+				GDKfree(commit_list);
+				GDKfree(sizes);
+				throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+			}
+
+			commit_list[0] = 0;
+			sizes[0] = 0;
+			int i = 1;
+
+			for (node *ncol = ol_first_node(t->columns); ncol; ncol = ncol->next) {
+
 				sql_column *c = (sql_column *) ncol->data;
-				b = store->storage_api.bind_col(tr, c, RDONLY);
+				BAT *b = store->storage_api.bind_col(tr, c, QUICK);
 
 				if (b == NULL) {
-					MT_lock_unset(&store->commit);
+					MT_lock_unset(&lock_persist_unlogged);
 					GDKfree(commit_list);
 					GDKfree(sizes);
-					BBPnreclaim(3, table, tableid, rowcount);
 					throw(SQL, "sql.persist_unlogged", "Cannot access column descriptor.");
 				}
-
-				if (isVIEW(b))
-					b = BATdescriptor(VIEWtparent(b));
 
 				if (i == n && ncol->next) {
 					n = n * 2;
@@ -4418,57 +4400,62 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 
 				if (commit_list == NULL || sizes == NULL) {
-					MT_lock_unset(&store->commit);
+					MT_lock_unset(&lock_persist_unlogged);
 					GDKfree(commit_list);
 					GDKfree(sizes);
-					BBPnreclaim(3, table, tableid, rowcount);
 					throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 				}
 
-				if (BBP_status(b->batCacheid) & BBPEXISTING) {
-					commit_list[i] = b->batCacheid;
-					sizes[i] = BATcount(b);
-					i++;
-					bat_exists = true;
-				}
+				commit_list[i] = b->batCacheid;
+				sizes[i] = d_bi.count;
+				i++;
 			}
+
+			commit_list[i] = d->batCacheid;
+			sizes[i] = d_bi.count;
+			i++;
+
+			if (TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED) {
+				MT_lock_unset(&lock_persist_unlogged);
+				GDKfree(commit_list);
+				GDKfree(sizes);
+				throw(SQL, "sql.persist_unlogged", "Lower level commit operation failed");
+			}
+
+			GDKfree(commit_list);
+			GDKfree(sizes);
 		}
 
-		if (bat_exists) {
-			commit_list[i] = d->batCacheid;
-			sizes[i] = BATcount(d);
-			i++;
-		}
+		count = d_bi.count;
 	}
 
-	MT_lock_unset(&store->commit);
+	bat_iterator_end(&d_bi);
+	MT_lock_unset(&lock_persist_unlogged);
+	BBPreclaim(d);
 
-	if (commit_list[1] > 0 && TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED)
-		msg = createException(SQL, "sql.persist_unlogged", GDK_EXCEPTION);
+	BAT *table = COLnew(0, TYPE_str, 0, TRANSIENT),
+		*tableid = COLnew(0, TYPE_int, 0, TRANSIENT),
+		*rowcount = COLnew(0, TYPE_lng, 0, TRANSIENT);
 
-	if (BUNappend(table, tname, false) != GDK_SUCCEED ||
-		BUNappend(tableid, &(t->base.id), false) != GDK_SUCCEED ||
-		BUNappend(rowcount, bat_exists ? sizes + (i - 1) : sizes + 0, false) != GDK_SUCCEED) {
-		MT_lock_unset(&store->commit);
-		GDKfree(commit_list);
-		GDKfree(sizes);
+	if (table == NULL || tableid == NULL || rowcount == NULL) {
 		BBPnreclaim(3, table, tableid, rowcount);
 		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 	}
 
-	GDKfree(commit_list);
-	GDKfree(sizes);
-
-	if (msg)
+	if (BUNappend(table, tname, false) != GDK_SUCCEED ||
+		BUNappend(tableid, &(t->base.id), false) != GDK_SUCCEED ||
+		BUNappend(rowcount, &count, false) != GDK_SUCCEED) {
 		BBPnreclaim(3, table, tableid, rowcount);
-	else {
-		*o0 = table->batCacheid;
-		*o1 = tableid->batCacheid;
-		*o2 = rowcount->batCacheid;
-		BBPkeepref(table);
-		BBPkeepref(tableid);
-		BBPkeepref(rowcount);
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 	}
+
+	*o0 = table->batCacheid;
+	*o1 = tableid->batCacheid;
+	*o2 = rowcount->batCacheid;
+	BBPkeepref(table);
+	BBPkeepref(tableid);
+	BBPkeepref(rowcount);
+
 	return msg;
 }
 

@@ -1894,6 +1894,22 @@ log_cleanup(logger *lg, lng id)
 	return GDK_SUCCEED;
 }
 
+#ifdef GDKLIBRARY_JSON
+static gdk_return
+log_json_upgrade_finalize(void)
+{
+	int json_tpe = ATOMindex("json");
+	if (!GDKinmemory(0) &&
+	    GDKunlink(0, BATDIR, "jsonupgradeneeded", NULL) == GDK_FAIL) {
+		TRC_CRITICAL(GDK, "Failed to remove json upgrade signal file");
+		return GDK_FAIL;
+	}
+	BATatoms[json_tpe].atomRead = (void *(*)(void *, size_t *, stream *, size_t))strRead;
+
+	return GDK_SUCCEED;
+}
+#endif
+
 /* Load data from the logger logdir
  * Initialize new directories and catalog files if none are present,
  * unless running in read-only mode
@@ -2200,6 +2216,10 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 	} else {
 		lg->id = lg->saved_id + 1;
 	}
+#ifdef GDKLIBRARY_JSON
+	if (log_json_upgrade_finalize() == GDK_FAIL)
+		goto error;
+#endif
 	return GDK_SUCCEED;
   error:
 	if (fp)
@@ -2221,6 +2241,10 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 	GDKfree(lg->wbuf);
 	GDKfree(lg);
 	ATOMIC_SET(&GDKdebug, dbg);
+	/* We do not call log_json_upgrade_finalize here because we want
+	 * the upgrade to run again next time we try, so we do not want
+	 * to remove the signal file just yet.
+	 */
 	return GDK_FAIL;
 }
 

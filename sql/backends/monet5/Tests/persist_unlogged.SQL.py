@@ -9,10 +9,7 @@ except ImportError:
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
 
-    with process.server(mapiport='0', dbname='db1',
-                        dbfarm=os.path.join(farm_dir, 'db1'),
-                        stdin=process.PIPE,
-                        stdout=process.PIPE, stderr=process.PIPE) as s:
+    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
         with SQLTestCase() as tc:
             tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
             tc.execute("CREATE SCHEMA put").assertSucceeded()
@@ -30,10 +27,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute("SELECT table, rowcount FROM persist_unlogged(\'put\', \'foo\')").assertSucceeded().assertDataResultMatch([('foo', 500)])
         s.communicate()
 
-    with process.server(mapiport='0', dbname='db1',
-                        dbfarm=os.path.join(farm_dir, 'db1'),
-                        stdin=process.PIPE,
-                        stdout=process.PIPE, stderr=process.PIPE) as s:
+    with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
         with SQLTestCase() as tc:
             tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
             tc.execute("SET SCHEMA put").assertSucceeded()

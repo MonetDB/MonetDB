@@ -93,6 +93,8 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 {
 	gdk_return rc;
 	newcol = BATsetaccess(newcol, BAT_READ);
+	if (newcol == NULL)
+		return GDK_FAIL;
 	if (old_lg != NULL) {
 		if ((rc = BUNappend(old_lg->del, &oldcolid, false)) == GDK_SUCCEED &&
 			(rc = BUNappend(old_lg->add, &newcol->batCacheid, false)) == GDK_SUCCEED &&
@@ -2519,6 +2521,10 @@ bl_postversion(void *Store, void *Lg)
 			/* and type = 'char' */
 			b3 = BATselect(b1, b2, "char", NULL, true, false, false);
 			bat_destroy(b2);
+			if (b3 == NULL) {
+				bat_destroy(b1);
+				return GDK_FAIL;
+			}
 			if (BATcount(b3) > 0) {
 				if (BUNfnd(old_lg->add, &b1->batCacheid) == BUN_NONE) {
 					/* replace sys.args.type with a copy that we can modify */

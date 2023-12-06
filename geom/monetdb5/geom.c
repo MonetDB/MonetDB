@@ -53,7 +53,7 @@ str
 wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
-	BAT *sortedgroups, *sortedorder, *sortedinput;
+	BAT *sortedgroups, *sortedorder;
 	BATiter bi;
 	const oid *gids = NULL;
 	str msg = MAL_SUCCEED;
@@ -90,12 +90,17 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 
 	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
 	if (!BATtdense(sortedorder)) {
-		sortedinput = BATproject(sortedorder,b);
+		BAT *sortedinput = BATproject(sortedorder, b);
+		BBPreclaim(sortedorder);
+		if (sortedinput == NULL) {
+			BBPreclaim(sortedgroups);
+			msg = createException(MAL, "geom.Collect", GDK_EXCEPTION);
+			goto free;
+		}
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		b = sortedinput;
 		g = sortedgroups;
-		BBPunfix(sortedorder->batCacheid);
 	}
 	else {
 		BBPunfix(sortedgroups->batCacheid);
@@ -3480,7 +3485,7 @@ str
 wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
-	BAT *sortedgroups, *sortedorder, *sortedinput;
+	BAT *sortedgroups, *sortedorder;
 	BATiter bi;
 	const oid *gids = NULL;
 	str msg = MAL_SUCCEED;
@@ -3512,12 +3517,17 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 
 	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
 	if (!BATtdense(sortedorder)) {
-		sortedinput = BATproject(sortedorder,b);
+		BAT *sortedinput = BATproject(sortedorder, b);
+		BBPreclaim(sortedorder);
+		if (sortedinput == NULL) {
+			BBPreclaim(sortedgroups);
+			msg = createException(MAL, "aggr.MakeLine", GDK_EXCEPTION);
+			goto free;
+		}
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		b = sortedinput;
 		g = sortedgroups;
-		BBPunfix(sortedorder->batCacheid);
 	}
 	else {
 		BBPunfix(sortedgroups->batCacheid);
@@ -4455,7 +4465,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 	wkb *aWKB, *bWKB;
 
 	//get the BATs
-	if (!(inBAT = BATdescriptor(*inBAT_id))) {
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
 		throw(MAL, "geom.Union", SQLSTATE(38000) "Geos problem retrieving columns");
 	}
 
