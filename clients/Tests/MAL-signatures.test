@@ -2939,11 +2939,6 @@ command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:ba
 ALGmark3join;
 Mark join with candidate lists
 algebra
-markjoin
-command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng) (X_6:bat[:oid], X_7:bat[:bit]) 
-ALGmarkjoin;
-Left mark join with candidate lists, produces left output and mark flag; 
-algebra
 markselect
 command algebra.markselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit]) 
 ALGmarkselect;
