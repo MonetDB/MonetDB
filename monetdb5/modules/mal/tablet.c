@@ -185,53 +185,6 @@ TABLETcollect(BAT **bats, Tablet *as)
 	return MAL_SUCCEED;
 }
 
-str
-TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
-{
-	Column *fmt = as->format;
-	BUN i, j;
-	BUN cnt = 0;
-
-	for (i = 0; i < as->nr_attrs && !cnt; i++)
-		if (!fmt[i].skip)
-			cnt = BATcount(fmt[i].c);
-	for (i = 0, j = 0; i < as->nr_attrs; i++) {
-		BAT *b, *bv = NULL;
-		if (fmt[i].skip)
-			continue;
-		b = fmt[i].c;
-		b->tsorted = b->trevsorted = false;
-		b->tkey = false;
-		BATsettrivprop(b);
-		if ((b = BATsetaccess(b, BAT_READ)) == NULL) {
-			fmt[i].c = NULL;
-			throw(SQL, "copy",
-				  "Failed to set access at tablet part " BUNFMT "\n", cnt);
-		}
-		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
-		bats[j] = bv;
-
-		b->tkey = (offset > 0) ? FALSE : bv->tkey;
-		b->tnonil &= bv->tnonil;
-		if (b->tsorted != bv->tsorted)
-			b->tsorted = false;
-		if (b->trevsorted != bv->trevsorted)
-			b->trevsorted = false;
-		if (BATtdense(b))
-			b->tkey = true;
-
-		if (offset > 0) {
-			BBPunfix(bv->batCacheid);
-			bats[j] = BATslice(b, offset, BATcount(b));
-		}
-		if (cnt != BATcount(b))
-			throw(SQL, "copy", "Count " BUNFMT " differs from " BUNFMT "\n",
-				  BATcount(b), cnt);
-		j++;
-	}
-	return MAL_SUCCEED;
-}
-
 // the starting quote character has already been skipped
 
 static char *

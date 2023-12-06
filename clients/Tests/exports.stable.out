@@ -799,7 +799,6 @@ int QLOGisset(void);
 str RMTdisconnect(void *ret, str *conn);
 BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam, bool escape);
 str TABLETcollect(BAT **bats, Tablet *as);
-str TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset);
 str TABLETcreate_bats(Tablet *as, BUN est);
 void TABLETdestroy_format(Tablet *as);
 int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
