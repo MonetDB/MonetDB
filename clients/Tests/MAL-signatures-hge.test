@@ -46799,16 +46799,6 @@ pattern inspect.optimizer_stats() (X_0:bat[:str], X_1:bat[:int], X_2:bat[:lng])
 OPTstatistics;
 Get optimizer use statistics, i.e. calls and total time
 io
-export
-command io.export(X_0:bat[:any_2], X_1:str):void 
-IOexport;
-Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it@is put into the $DBPATH directory. Success of failure is indicated.
-io
-import
-command io.import(X_0:bat[:any_2], X_1:str):void 
-IOimport;
-Import a BAT from an ASCII dump. The tuples are appended to the@first argument. Its signature must match the dump,@else parsing errors will occur as an exception.
-io
 print
 pattern io.print(X_0:any_1):void 
 IOprint_val;
