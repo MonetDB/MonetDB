@@ -1113,7 +1113,7 @@ ALGunary(bat *result, const bat *bid, BAT *(*func)(BAT *), const char *name)
 	return MAL_SUCCEED;
 }
 
-static BAT *
+static inline BAT *
 BATwcopy(BAT *b)
 {
 	return COLcopy(b, b->ttype, true, TRANSIENT);

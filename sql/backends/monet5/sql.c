@@ -3470,12 +3470,10 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (TRACEtable(cntxt, t) != 3)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
-	for(i=0; i < 3; i++)
-	if( t[i]){
+	for (i = 0; i < 3; i++) {
 		*getArgReference_bat(stk, pci, i) = t[i]->batCacheid;
 		BBPkeepref(t[i]);
-	} else
-		throw(SQL,"dump_trace", SQLSTATE(45000) "Missing trace BAT ");
+	}
 	return MAL_SUCCEED;
 }
 
