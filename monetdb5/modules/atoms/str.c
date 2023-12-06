@@ -5255,14 +5255,22 @@ string_select(bat *ret, const bat *bid, const bat *sid, const str *key,
 			BAT *rev;
 			if (old_s) {
 				rev = BATdiffcand(old_s, bn);
-				assert(BATintersectcand(old_s, bn)->batCount == bn->batCount);
+#ifndef NDEBUG
+				BAT *is = BATintersectcand(old_s, bn);
+				if (is) {
+					assert(is->batCount == bn->batCount);
+					BBPreclaim(is);
+				}
 				assert(rev->batCount == old_s->batCount - bn->batCount);
+#endif
 			}
 
 			else
 				rev = BATnegcands(b->batCount, bn);
 			BBPunfix(bn->batCacheid);
 			bn = rev;
+			if (bn == NULL)
+				msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -5345,6 +5353,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define str_join_loop(STRCMP, STR_LEN)									\
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
+			BAT *filtered_sl = NULL;									\
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
@@ -5398,8 +5407,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				lastl = lo;												\
 				nl++;													\
 			}															\
-			if (with_strimps && filtered_sl)							\
-				BBPreclaim(filtered_sl);								\
+			BBPreclaim(filtered_sl);									\
 			if (r2) {													\
 				if (nl > 1) {											\
 					r2->tkey = false;									\
@@ -5493,7 +5501,6 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 	int rskipped = 0, rlen = 0;
 	oid lbase, rbase, lo, ro, lastl = 0;
 	BUN nl, newcap;
-	BAT *filtered_sl = NULL;
 	bool with_strimps = false;
 	char *msg = MAL_SUCCEED;
 

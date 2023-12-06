@@ -672,9 +672,10 @@ IOimport(void *ret, bat *bid, str *fnme)
 	char msg[BUFSIZ];
 
 	(void) ret;
+	if (fp == NULL)
+		throw(MAL, "io.import", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		if (fp)
-			fclose(fp);
+		fclose(fp);
 		throw(MAL, "io.import", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -682,55 +683,50 @@ IOimport(void *ret, bat *bid, str *fnme)
 	/*
 	 * Open the file. Memory map it to minimize buffering problems.
 	 */
-	if (fp == NULL) {
+	int fn;
+	struct stat st;
+
+	buf = (char *) GDKmalloc(bufsize);
+	if (buf == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "io.import", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
-	} else {
-		int fn;
-		struct stat st;
-
-		buf = (char *) GDKmalloc(bufsize);
-		if (buf == NULL) {
-			BBPunfix(b->batCacheid);
-			fclose(fp);
-			throw(MAL, "io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-
-		if ((fn = fileno(fp)) <= 0) {
-			BBPunfix(b->batCacheid);
-			fclose(fp);
-			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED ": fileno()");
-		}
-		if (fstat(fn, &st) != 0) {
-			BBPunfix(b->batCacheid);
-			fclose(fp);
-			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED ": fstat()");
-		}
-
-		(void) fclose(fp);
-		if (st.st_size <= 0) {
-			BBPunfix(b->batCacheid);
-			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED ": empty file");
-		}
-#if SIZEOF_SIZE_T == SIZEOF_INT
-		if (st.st_size > 0x7FFFFFFF) {
-			BBPunfix(b->batCacheid);
-			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED ": file too large");
-		}
-#endif
-		base = cur = GDKmmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);
-		if (cur == NULL) {
-			BBPunfix(b->batCacheid);
-			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED "GDKmmap()");
-		}
-		end = cur + st.st_size;
-
+		fclose(fp);
+		throw(MAL, "io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+
+	if ((fn = fileno(fp)) <= 0) {
+		BBPunfix(b->batCacheid);
+		fclose(fp);
+		GDKfree(buf);
+		throw(MAL, "io.import", OPERATION_FAILED ": fileno()");
+	}
+	if (fstat(fn, &st) != 0) {
+		BBPunfix(b->batCacheid);
+		fclose(fp);
+		GDKfree(buf);
+		throw(MAL, "io.import", OPERATION_FAILED ": fstat()");
+	}
+
+	(void) fclose(fp);
+	if (st.st_size <= 0) {
+		BBPunfix(b->batCacheid);
+		GDKfree(buf);
+		throw(MAL, "io.import", OPERATION_FAILED ": empty file");
+	}
+#if SIZEOF_SIZE_T == SIZEOF_INT
+	if (st.st_size > 0x7FFFFFFF) {
+		BBPunfix(b->batCacheid);
+		GDKfree(buf);
+		throw(MAL, "io.import", OPERATION_FAILED ": file too large");
+	}
+#endif
+	base = cur = GDKmmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);
+	if (cur == NULL) {
+		BBPunfix(b->batCacheid);
+		GDKfree(buf);
+		throw(MAL, "io.import", OPERATION_FAILED "GDKmmap()");
+	}
+	end = cur + st.st_size;
+
 	/* Parse a line. Copy it into a buffer. Concat broken lines with a slash.  */
 	while (cur < end) {
 		str dst = buf, src = cur, p;

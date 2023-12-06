@@ -1293,7 +1293,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW); \
 			break;						\
 		default:						\
-			if (!(st = GDKinitialize_segment_tree())) {	\
+			if ((st = GDKinitialize_segment_tree()) == NULL) { \
 				res = GDK_FAIL;				\
 				goto cleanup;				\
 			}						\
@@ -1653,7 +1653,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 			ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW);
 			break;
 		default:
-			if (!count_all && !(st = GDKinitialize_segment_tree())) {
+			if (!count_all && (st = GDKinitialize_segment_tree()) == NULL) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
@@ -1981,7 +1981,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 			ANALYTICAL_SUM_BRANCHES(CURRENT_ROW);
 			break;
 		default:
-			if (!(st = GDKinitialize_segment_tree())) {
+			if ((st = GDKinitialize_segment_tree()) == NULL) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
@@ -2500,7 +2500,7 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 			ANALYTICAL_PROD_BRANCHES(CURRENT_ROW);
 			break;
 		default:
-			if (!(st = GDKinitialize_segment_tree())) {
+			if ((st = GDKinitialize_segment_tree()) == NULL) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}

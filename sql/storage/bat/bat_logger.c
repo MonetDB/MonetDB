@@ -93,6 +93,8 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 {
 	gdk_return rc;
 	newcol = BATsetaccess(newcol, BAT_READ);
+	if (newcol == NULL)
+		return GDK_FAIL;
 	if (old_lg != NULL) {
 		if ((rc = BUNappend(old_lg->del, &oldcolid, false)) == GDK_SUCCEED &&
 			(rc = BUNappend(old_lg->add, &newcol->batCacheid, false)) == GDK_SUCCEED &&

@@ -29,7 +29,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 	//Get BAT, BATiter and candidate list
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (sid && !is_bat_nil(*sid) && !(s = BATdescriptor(*sid))) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
@@ -125,7 +125,7 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 	//Get BAT, BATiter and candidate list
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (sid && !is_bat_nil(*sid) && !(s = BATdescriptor(*sid))) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
@@ -279,7 +279,7 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//get the candidate lists
-	if (ls_id && !is_bat_nil(*ls_id) && !(ls = BATdescriptor(*ls_id)) && rs_id && !is_bat_nil(*rs_id) && !(rs = BATdescriptor(*rs_id))) {
+	if (ls_id && !is_bat_nil(*ls_id) && (ls = BATdescriptor(*ls_id)) == NULL && rs_id && !is_bat_nil(*rs_id) && (rs = BATdescriptor(*rs_id)) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
@@ -440,7 +440,7 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//get the candidate lists
-	if (ls_id && !is_bat_nil(*ls_id) && !(ls = BATdescriptor(*ls_id)) && rs_id && !is_bat_nil(*rs_id) && !(rs = BATdescriptor(*rs_id))) {
+	if (ls_id && !is_bat_nil(*ls_id) && (ls = BATdescriptor(*ls_id)) == NULL && rs_id && !is_bat_nil(*rs_id) && (rs = BATdescriptor(*rs_id)) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
@@ -773,7 +773,7 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 	}
 
 	//check for candidate lists
-	if (s_id && !is_bat_nil(*s_id) && !(s = BATdescriptor(*s_id))) {
+	if (s_id && !is_bat_nil(*s_id) && (s = BATdescriptor(*s_id)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		BBPunfix(outBAT->batCacheid);
 		proj_destroy(P);
@@ -873,11 +873,11 @@ wkbDistanceGeographic_bat_cand(bat *out_id, const bat *a_id, const bat *b_id, co
 		goto clean;
 	}
 	//check for candidate lists
-	if (s1_id && !is_bat_nil(*s1_id) && !(s1 = BATdescriptor(*s1_id))) {
+	if (s1_id && !is_bat_nil(*s1_id) && (s1 = BATdescriptor(*s1_id)) == NULL) {
 		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto clean;
 	}
-	if (s2_id && !is_bat_nil(*s2_id) && !(s2 = BATdescriptor(*s2_id))) {
+	if (s2_id && !is_bat_nil(*s2_id) && (s2 = BATdescriptor(*s2_id)) == NULL) {
 		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		if (s1)
 			BBPunfix(s1->batCacheid);
@@ -960,7 +960,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 	off = b->hseqbase;
 	canditer_init(&ci, b, s);
 	//create a new BAT, aligned with input BAT
-	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), ci.ncand, TRANSIENT))) {
+	if ((dst = COLnew(ci.hseq, ATOMindex("wkb"), ci.ncand, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1049,7 +1049,7 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 	off = b->hseqbase;
 	canditer_init(&ci, b, s);
 	//create a new BAT, aligned with input BAT
-	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), ci.ncand, TRANSIENT))) {
+	if ((dst = COLnew(ci.hseq, ATOMindex("wkb"), ci.ncand, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}

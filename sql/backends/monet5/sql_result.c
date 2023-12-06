@@ -726,7 +726,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 	sql_subtype *t;
 	sql_rel *r = q->rel;
 
-	if (!btype || !bdigits || !bscale || !bschema || !btable || !bcolumn) {
+	if (!btype || !bimpl || !bdigits || !bscale || !bschema || !btable || !bcolumn) {
 		error = -1;
 		goto wrapup;
 	}
