@@ -4565,7 +4565,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			continue;	/* ignore .dot files and directories (. ..) */
 
 #ifdef GDKLIBRARY_JSON
-		if (strcmp(dent->d_name, "jsonupgradeneed") == 0) {
+		if (strcmp(dent->d_name, "jsonupgradeneeded") == 0) {
 			continue; /* ignore json upgrade signal file  */
 		}
 #endif
