@@ -599,7 +599,7 @@ jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
 	str out = NULL;
 	str msg;
 
-	if (BATatoms[TYPE_str].atomRead(a, dstlen, s, cnt) == NULL)
+	if ((a = BATatoms[TYPE_str].atomRead(a, dstlen, s, cnt)) == NULL)
 		return NULL;
 
 	if ((msg = JSONstr2json(&out, (const char **) &a)) != MAL_SUCCEED) {

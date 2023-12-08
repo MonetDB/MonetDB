@@ -4541,8 +4541,8 @@ BBPdiskscan(const char *parent, size_t baseoff)
 	DIR *dirp = opendir(parent);
 	struct dirent *dent;
 	char fullname[FILENAME_MAX];
-	str dst = fullname;
-	size_t dstlen = sizeof(fullname);
+	str dst;
+	size_t dstlen;
 	const char *src = parent;
 
 	if (dirp == NULL) {
@@ -4551,14 +4551,10 @@ BBPdiskscan(const char *parent, size_t baseoff)
 		return true;	/* nothing to do */
 	}
 
-	while (*src) {
-		*dst++ = *src++;
-		dstlen--;
-	}
-	if (dst > fullname && dst[-1] != DIR_SEP) {
+	dst = stpcpy(fullname, src);
+	if (dst > fullname && dst[-1] != DIR_SEP)
 		*dst++ = DIR_SEP;
-		dstlen--;
-	}
+	dstlen = sizeof(fullname) - (dst - fullname);
 
 	while ((dent = readdir(dirp)) != NULL) {
 		const char *p;
@@ -4569,7 +4565,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			continue;	/* ignore .dot files and directories (. ..) */
 
 #ifdef GDKLIBRARY_JSON
-		if (strcmp(dent->d_name, "jsonupgradeneed") == 0) {
+		if (strcmp(dent->d_name, "jsonupgradeneeded") == 0) {
 			continue; /* ignore json upgrade signal file  */
 		}
 #endif
