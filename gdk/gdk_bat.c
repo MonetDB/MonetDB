@@ -2549,8 +2549,6 @@ BATmode(BAT *b, bool transient)
 	bat bid = b->batCacheid;
 
 	if (transient != bi.transient) {
-		bat bid = b->batCacheid;
-
 		if (!transient) {
 			if (ATOMisdescendant(b->ttype, TYPE_ptr) ||
 			    BATatoms[b->ttype].atomUnfix ||
