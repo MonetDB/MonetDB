@@ -36914,16 +36914,6 @@ pattern optimizer.inline(X_0:str, X_1:str):str
 OPTwrapper;
 Expand inline functions
 optimizer
-macro
-pattern optimizer.macro(X_0:str, X_1:str):void 
-OPTmacro;
-Inline the code of the target function.
-optimizer
-macro
-pattern optimizer.macro(X_0:str, X_1:str, X_2:str, X_3:str):void 
-OPTmacro;
-Inline a target function used in a specific function.
-optimizer
 matpack
 pattern optimizer.matpack():str 
 OPTwrapper;
@@ -36978,16 +36968,6 @@ optimize
 pattern optimizer.optimize(X_0:str, X_1:str):void 
 QOToptimize;
 Optimize a specific operation
-optimizer
-orcam
-pattern optimizer.orcam(X_0:str, X_1:str):void 
-OPTorcam;
-Inverse macro processor for current function
-optimizer
-orcam
-pattern optimizer.orcam(X_0:str, X_1:str, X_2:str, X_3:str):void 
-OPTorcam;
-Inverse macro, find pattern and replace with a function call.
 optimizer
 postfix
 pattern optimizer.postfix():str 
