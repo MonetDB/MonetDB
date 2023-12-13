@@ -2532,10 +2532,10 @@ BATmode(BAT *b, bool transient)
 	}
 
 	BATiter bi = bat_iterator(b);
+	bool mustrelease = false;
+	bat bid = b->batCacheid;
 
 	if (transient != bi.transient) {
-		bat bid = b->batCacheid;
-
 		if (!transient) {
 			if (ATOMisdescendant(b->ttype, TYPE_ptr) ||
 			    BATatoms[b->ttype].atomUnfix ||
@@ -2553,7 +2553,13 @@ BATmode(BAT *b, bool transient)
 		if (!transient) {
 			BBPretain(bid);
 		} else if (!bi.transient) {
-			BBPrelease(bid);
+			/* we need to delay the release because if there
+			 * is no fix and the bat is loaded, BBPrelease
+			 * can call BBPfree which calls BATfree which
+			 * may hang while waiting for the heap reference
+			 * that we have because of the BAT iterator to
+			 * come down, in other words, deadlock */
+			mustrelease = true;
 		}
 		MT_lock_set(&GDKswapLock(bid));
 		if (!transient) {
@@ -2584,6 +2590,9 @@ BATmode(BAT *b, bool transient)
 		MT_lock_unset(&GDKswapLock(bid));
 	}
 	bat_iterator_end(&bi);
+	/* release after bat_iterator_end because of refs to heaps */
+	if (mustrelease)
+		BBPrelease(bid);
 	return GDK_SUCCEED;
 }
 

@@ -970,6 +970,14 @@ PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i, oid
 		data = (char *)ret->array_data;
 		data += (index_offset * ret->count) * ret->memory_size;
 		b = COLnew(seqbase, TYPE_blob, (BUN)ret->count, TRANSIENT);
+		if (b == NULL) {
+			if (ret->result_type == NPY_OBJECT) {
+				Py_XDECREF(pickle_module);
+				Python_ReleaseGIL(gstate);
+			}
+			msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
+			goto wrapup;
+		}
 		b->tnil = false;
 		b->tnonil = true;
 		b->tkey = false;
@@ -1105,14 +1113,18 @@ PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i, oid
 				}
 
 				b = COLnew(seqbase, TYPE_str, (BUN)ret->count, TRANSIENT);
+				if (b == NULL) {
+					GDKfree(utf8_string);
+					msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
+					goto wrapup;
+				}
 				b->tnil = false;
 				b->tnonil = true;
 				b->tkey = false;
 				b->tsorted = false;
 				b->trevsorted = false;
 				NP_INSERT_STRING_BAT(b);
-				if (utf8_string)
-					GDKfree(utf8_string);
+				GDKfree(utf8_string);
 				BATsetcount(b, (BUN)ret->count);
 				break;
 			}

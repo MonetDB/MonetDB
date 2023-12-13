@@ -1,6 +1,10 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Fri Dec  1 2023 Sjoerd Mullender <sjoerd@acm.org>
+- All binary packages are now signed with a new key with key fingerprint
+  DBCE 5625 94D7 1959 7B54  CE85 3F1A D47F 5521 A603.
+
 * Mon Oct 30 2023 Sjoerd Mullender <sjoerd@acm.org>
 - The ranges of merge partitions are now pushed down into the low
   level GDK operations, giving them a handle to sometimes execute more

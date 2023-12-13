@@ -4103,28 +4103,30 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if ((parent = VIEWtparent(l)) != 0) {
 		lp = BATdescriptor(parent);
-		if (lp != NULL) {
-			if (l->hseqbase == lp->hseqbase &&
-			    BATcount(l) == BATcount(lp) &&
-			    ATOMtype(l->ttype) == ATOMtype(lp->ttype)) {
-				l = lp;
-			} else {
-				BBPunfix(lp->batCacheid);
-				lp = NULL;
-			}
+		if (lp == NULL)
+			return GDK_FAIL;
+		if (l->hseqbase == lp->hseqbase &&
+		    BATcount(l) == BATcount(lp) &&
+		    ATOMtype(l->ttype) == ATOMtype(lp->ttype)) {
+			l = lp;
+		} else {
+			BBPunfix(lp->batCacheid);
+			lp = NULL;
 		}
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
 		rp = BATdescriptor(parent);
-		if (rp != NULL) {
-			if (r->hseqbase == rp->hseqbase &&
-			    BATcount(r) == BATcount(rp) &&
-			    ATOMtype(r->ttype) == ATOMtype(rp->ttype)) {
-				r = rp;
-			} else {
-				BBPunfix(rp->batCacheid);
-				rp = NULL;
-			}
+		if (rp == NULL) {
+			BBPreclaim(lp);
+			return GDK_FAIL;
+		}
+		if (r->hseqbase == rp->hseqbase &&
+		    BATcount(r) == BATcount(rp) &&
+		    ATOMtype(r->ttype) == ATOMtype(rp->ttype)) {
+			r = rp;
+		} else {
+			BBPunfix(rp->batCacheid);
+			rp = NULL;
 		}
 	}
 
@@ -4492,28 +4494,30 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	if ((parent = VIEWtparent(l)) != 0) {
 		lp = BATdescriptor(parent);
-		if (lp != NULL) {
-			if (l->hseqbase == lp->hseqbase &&
-			    BATcount(l) == BATcount(lp) &&
-			    ATOMtype(l->ttype) == ATOMtype(lp->ttype)) {
-				l = lp;
-			} else {
-				BBPunfix(lp->batCacheid);
-				lp = NULL;
-			}
+		if (lp == NULL)
+			return GDK_FAIL;
+		if (l->hseqbase == lp->hseqbase &&
+		    BATcount(l) == BATcount(lp) &&
+		    ATOMtype(l->ttype) == ATOMtype(lp->ttype)) {
+			l = lp;
+		} else {
+			BBPunfix(lp->batCacheid);
+			lp = NULL;
 		}
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
 		rp = BATdescriptor(parent);
-		if (rp != NULL) {
-			if (r->hseqbase == rp->hseqbase &&
-			    BATcount(r) == BATcount(rp) &&
-			    ATOMtype(r->ttype) == ATOMtype(rp->ttype)) {
-				r = rp;
-			} else {
-				BBPunfix(rp->batCacheid);
-				rp = NULL;
-			}
+		if (rp == NULL) {
+			BBPreclaim(lp);
+			return GDK_FAIL;
+		}
+		if (r->hseqbase == rp->hseqbase &&
+		    BATcount(r) == BATcount(rp) &&
+		    ATOMtype(r->ttype) == ATOMtype(rp->ttype)) {
+			r = rp;
+		} else {
+			BBPunfix(rp->batCacheid);
+			rp = NULL;
 		}
 	}
 

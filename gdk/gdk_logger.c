@@ -1533,35 +1533,12 @@ subcommit_list_add(int next, bat *n, BUN *sizes, bat bid, BUN sz)
 
 static int
 cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
-		 BAT *catalog_bid, BAT *catalog_id, BAT *dcatalog, BUN cleanup,
-		 uint32_t *updated, BUN maxupdated)
+		 BAT *catalog_bid, BAT *catalog_id, BAT *dcatalog, BUN cleanup)
 {
 	BAT *nbids, *noids, *ncnts, *nlids, *ndels;
 	BUN p, q;
 	int err = 0, rcnt = 0;
 
-	oid *poss = Tloc(dcatalog, 0);
-	BATloop(dcatalog, p, q) {
-		oid pos = poss[p];
-
-		if (updated && pos < maxupdated && (updated[pos / 32] & (1U << (pos % 32))) == 0) {
-			continue;
-		}
-		if (lids[pos] == lng_nil || lids[pos] > lg->saved_tid)
-			continue;
-
-		if (lids[pos] >= 0) {
-			lids[pos] = -1;	/* mark as transient */
-			r[rcnt++] = bids[pos];
-
-			BAT *lb;
-
-			if ((lb = BATdescriptor(bids[pos])) == NULL || BATmode(lb, true /*transient */ ) != GDK_SUCCEED) {
-				GDKwarning("Failed to set bat(%d) transient\n", bids[pos]);
-			}
-			logbat_destroy(lb);
-		}
-	}
 	BUN ocnt = BATcount(catalog_bid);
 	nbids = logbat_new(TYPE_int, ocnt - cleanup, PERSISTENT);
 	noids = logbat_new(TYPE_int, ocnt - cleanup, PERSISTENT);
@@ -1578,6 +1555,26 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 		return 0;
 	}
 
+	oid *poss = Tloc(dcatalog, 0);
+	BATloop(dcatalog, p, q) {
+		oid pos = poss[p];
+
+		if (lids[pos] == lng_nil || lids[pos] > lg->saved_tid)
+			continue;
+
+		if (lids[pos] >= 0) {
+			BAT *lb;
+			bat bid = bids[pos];
+
+			if ((lb = BBP_desc(bid)) == NULL || BATmode(lb, true /*transient */ ) != GDK_SUCCEED) {
+				GDKwarning("Failed to set bat(%d) transient\n", bid);
+			} else {
+				lids[pos] = -1;	/* mark as transient */
+				r[rcnt++] = bid;
+			}
+		}
+	}
+
 	int *oids = (int *) Tloc(catalog_id, 0);
 	q = BATcount(catalog_bid);
 	for (p = 0; p < q && !err; p++) {
@@ -1589,7 +1586,7 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 
 		/* only project out the deleted with lid == -1
 		 * update dcatalog */
-		if ((updated == NULL || p >= maxupdated || (updated[p / 32] & (1U << (p % 32))) != 0) && lid == -1)
+		if (lid == -1)
 			continue;	/* remove */
 
 		if (BUNappend(nbids, &col, false) != GDK_SUCCEED ||
@@ -1701,11 +1698,6 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	if (lg->catalog_lid)
 		lids = (lng *) Tloc(lg->catalog_lid, 0);
 	BATloop(catalog_bid, p, q) {
-		if (updated && p < maxupdated && (updated[p / 32] & (1U << (p % 32))) == 0) {
-			continue;
-		}
-		bat col = bids[p];
-
 		if (lids && lids[p] != lng_nil && lids[p] <= lg->saved_tid) {
 			cleanup++;
 			if (lids[p] == -1)
@@ -1724,6 +1716,11 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 				return GDK_FAIL;
 			}
 		}
+		if (updated && p < maxupdated && (updated[p / 32] & (1U << (p % 32))) == 0) {
+			continue;
+		}
+		bat col = bids[p];
+
 		TRC_DEBUG(WAL, "new %s (%d)\n", BBP_logical(col), col);
 		assert(col);
 		sizes[i] = cnts ? (BUN) cnts[p] : 0;
@@ -1740,8 +1737,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	if (cleanup) {
 		if ((rcnt = cleanup_and_swap(lg, r, bids, lids, cnts,
 					     catalog_bid, catalog_id, dcatalog,
-					     cleanup, updated,
-					     maxupdated)) < 0) {
+					     cleanup)) < 0) {
 			GDKfree(n);
 			GDKfree(r);
 			GDKfree(sizes);
@@ -1893,6 +1889,22 @@ log_cleanup(logger *lg, lng id)
 	}
 	return GDK_SUCCEED;
 }
+
+#ifdef GDKLIBRARY_JSON
+static gdk_return
+log_json_upgrade_finalize(void)
+{
+	int json_tpe = ATOMindex("json");
+	if (!GDKinmemory(0) &&
+	    GDKunlink(0, BATDIR, "jsonupgradeneeded", NULL) == GDK_FAIL) {
+		TRC_CRITICAL(GDK, "Failed to remove json upgrade signal file");
+		return GDK_FAIL;
+	}
+	BATatoms[json_tpe].atomRead = (void *(*)(void *, size_t *, stream *, size_t))strRead;
+
+	return GDK_SUCCEED;
+}
+#endif
 
 /* Load data from the logger logdir
  * Initialize new directories and catalog files if none are present,
@@ -2200,6 +2212,10 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 	} else {
 		lg->id = lg->saved_id + 1;
 	}
+#ifdef GDKLIBRARY_JSON
+	if (log_json_upgrade_finalize() == GDK_FAIL)
+		goto error;
+#endif
 	return GDK_SUCCEED;
   error:
 	if (fp)
@@ -2221,6 +2237,10 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 	GDKfree(lg->wbuf);
 	GDKfree(lg);
 	ATOMIC_SET(&GDKdebug, dbg);
+	/* We do not call log_json_upgrade_finalize here because we want
+	 * the upgrade to run again next time we try, so we do not want
+	 * to remove the signal file just yet.
+	 */
 	return GDK_FAIL;
 }
 
@@ -3241,15 +3261,13 @@ bm_commit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdated)
 		BAT *lb;
 
 		assert(bid);
-		if ((lb = BATdescriptor(bid)) == NULL || BATmode(lb, false) != GDK_SUCCEED) {
+		if ((lb = BBP_desc(bid)) == NULL || BATmode(lb, false) != GDK_SUCCEED) {
 			GDKwarning("Failed to set bat (%d%s) persistent\n", bid, !lb ? " gone" : "");
-			logbat_destroy(lb);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
 
 		assert(lb->batRestricted != BAT_WRITE);
-		logbat_destroy(lb);
 
 		TRC_DEBUG(WAL, "create %d (%d)\n", bid, BBP_lrefs(bid));
 	}

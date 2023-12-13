@@ -885,6 +885,12 @@ TRACEtable(Client cntxt, BAT **r)
 	r[2] = COLcopy(cntxt->profevents, cntxt->profevents->ttype, false,
 				   TRANSIENT);
 	MT_lock_unset(&mal_profileLock);
+	if (r[0] == NULL || r[1] == NULL || r[2] == NULL) {
+		BBPreclaim(r[0]);
+		BBPreclaim(r[1]);
+		BBPreclaim(r[2]);
+		return -1;
+	}
 	return 3;
 }
 

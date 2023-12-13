@@ -94,7 +94,7 @@
 				curval = n > 0 ? (dbl) sum / n : dbl_nil; \
 				if (0) { /* overflow handling from STEP1 */ \
 					ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP); \
-					while (!(op[j] || j == k)) {	\
+					while (!op[j] && j != k) {	\
 						TPE v = bp[j--];	\
 						if (is_##TPE##_nil(v))	\
 							continue;	\
@@ -396,7 +396,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 			ANALYTICAL_AVG_BRANCHES(CURRENT_ROW);
 			break;
 		default:
-			if (!(st = GDKinitialize_segment_tree())) {
+			if ((st = GDKinitialize_segment_tree()) == NULL) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
@@ -656,7 +656,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 			ANALYTICAL_AVG_INT_BRANCHES(CURRENT_ROW);
 			break;
 		default:
-			if (!(st = GDKinitialize_segment_tree())) {
+			if ((st = GDKinitialize_segment_tree()) == NULL) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
@@ -924,7 +924,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW, SAMPLE, OP);	\
 			break;						\
 		default:						\
-			if (!(st = GDKinitialize_segment_tree())) {	\
+			if ((st = GDKinitialize_segment_tree()) == NULL) {	\
 				res = GDK_FAIL;				\
 				goto cleanup;				\
 			}						\
@@ -1147,7 +1147,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW, SAMPLE, OP); \
 			break;						\
 		default:						\
-			if (!(st = GDKinitialize_segment_tree())) {	\
+			if ((st = GDKinitialize_segment_tree()) == NULL) {	\
 				res = GDK_FAIL;				\
 				goto cleanup;				\
 			}						\
@@ -1404,7 +1404,7 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_CURRENT_ROW, ;, ;);
 			break;
 		default:
-			if (!(st = GDKinitialize_segment_tree())) {
+			if ((st = GDKinitialize_segment_tree()) == NULL) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}

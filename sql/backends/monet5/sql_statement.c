@@ -4091,8 +4091,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		goto bailout;
 
 	int nargs;
-	sql_rel *r = rel;
-	relational_func_create_result_part1(be->mvc, &r, &nargs);
+	sql_rel *r = relational_func_create_result_part1(be->mvc, rel, &nargs);
 	if (ops)
 		nargs += list_length(ops->op4.lval);
 	if (f_union)

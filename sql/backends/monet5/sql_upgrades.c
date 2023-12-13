@@ -6231,7 +6231,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		"  cast(sys.ifthenelse(c.\"null\", 'YES', 'NO') AS varchar(3)) AS IS_NULLABLE,\n"
 		"  cast(sys.\"sql_datatype\"(c.\"type\", c.\"type_digits\", c.\"type_scale\", true, true) AS varchar(1024)) AS DATA_TYPE,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('varchar','clob','char','json','url','xml') AND c.\"type_digits\" > 0, c.\"type_digits\", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,\n"
-		"  cast(sys.ifthenelse(c.\"type\" IN ('varchar','clob','char','json','url','xml') AND c.\"type_digits\" > 0, c.\"type_digits\" * 4, NULL) AS int) AS CHARACTER_OCTET_LENGTH,\n"
+		"  cast(sys.ifthenelse(c.\"type\" IN ('varchar','clob','char','json','url','xml') AND c.\"type_digits\" > 0, 4 * c.\"type_digits\", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c.\"type_digits\", NULL) AS int) AS NUMERIC_PRECISION,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(c.\"type\" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,\n"
 		"  cast(sys.ifthenelse(c.\"type\" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c.\"type_scale\", NULL) AS int) AS NUMERIC_SCALE,\n"
@@ -6360,7 +6360,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		"  cast(NULL AS varchar(1)) AS UDT_NAME,\n"
 		"  cast(CASE f.\"type\" WHEN 1 THEN sys.\"sql_datatype\"(a.\"type\", a.\"type_digits\", a.\"type_scale\", true, true) WHEN 2 THEN NULL WHEN 5 THEN 'TABLE' WHEN 7 THEN 'TABLE' ELSE NULL END AS varchar(1024)) AS DATA_TYPE,\n"
 		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, a.\"type_digits\", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,\n"
-		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, a.\"type_digits\" * 4, NULL) AS int) AS CHARACTER_OCTET_LENGTH,\n"
+		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, 4 * a.\"type_digits\", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,\n"
 		"  'UTF-8' AS CHARACTER_SET_NAME,\n"
@@ -6466,7 +6466,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		"  cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_NAME,\n"
 		"  cast(sys.\"sql_datatype\"(a.\"type\", a.\"type_digits\", a.\"type_scale\", true, true) AS varchar(1024)) AS DATA_TYPE,\n"
 		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, a.\"type_digits\", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,\n"
-		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, a.\"type_digits\" * 4, NULL) AS int) AS CHARACTER_OCTET_LENGTH,\n"
+		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml') AND a.\"type_digits\" > 0, 4 * a.\"type_digits\", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,\n"
 		"  cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,\n"
 		"  cast(sys.ifthenelse(a.\"type\" IN ('varchar','clob','char','json','url','xml'), 'UTF-8', NULL) AS varchar(16)) AS CHARACTER_SET_NAME,\n"
@@ -6539,21 +6539,15 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 	}
 
 	/* 77_storage.sql */
-	if (!sql_bind_func(sql, s->base.name, "persist_unlogged", NULL, NULL, F_UNION, true)) {
+	sql_find_subtype(&tp, "varchar", 0, 0);
+
+	if (!sql_bind_func(sql, s->base.name, "persist_unlogged", &tp, &tp, F_UNION, true)) {
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		const char *query =
-			"CREATE FUNCTION sys.persist_unlogged()\n"
-			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
-			"EXTERNAL NAME sql.persist_unlogged;\n"
-			"CREATE FUNCTION sys.persist_unlogged(sname STRING)\n"
-			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
-			"EXTERNAL NAME sql.persist_unlogged;\n"
 			"CREATE FUNCTION sys.persist_unlogged(sname STRING, tname STRING)\n"
 			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
 			"EXTERNAL NAME sql.persist_unlogged;\n"
-			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged() TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string) TO PUBLIC;\n"
 			"GRANT EXECUTE ON FUNCTION sys.persist_unlogged(string, string) TO PUBLIC;\n"
 			"UPDATE sys.functions SET system = true WHERE system <> true AND\n"
 			"name = 'persist_unlogged' AND schema_id = 2000 AND type = 5 AND language = 1;\n";

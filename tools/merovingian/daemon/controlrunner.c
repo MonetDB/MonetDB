@@ -1154,6 +1154,13 @@ handle_client(void *p)
 {
 	int msgsock = * (int *) p;
 
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 	free(p);
 	ctl_handle_client("(local)", msgsock, NULL, NULL);
 	shutdown(msgsock, SHUT_RDWR);
@@ -1175,6 +1182,14 @@ controlRunner(void *d)
 	int msgsock;
 	pthread_t tid;
 	int *p;
+
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 
 	do {
 		if ((p = malloc(sizeof(int))) == NULL) {

@@ -79,6 +79,14 @@ handleClient(void *data)
 	bool isusock;
 	struct threads *self;
 
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
+
 	sock = ((struct clientdata *) data)->sock;
 	isusock = ((struct clientdata *) data)->isusock;
 	self = ((struct clientdata *) data)->self;

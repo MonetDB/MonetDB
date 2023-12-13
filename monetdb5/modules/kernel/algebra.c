@@ -799,91 +799,6 @@ ALGleftjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
 				   "algebra.leftjoin");
 }
 
-#include <gdk_subquery.h>
-static str ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *max_one);
-static str
-ALGmarkjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
-		   const bit *any, const lng *estimate)
-{
-	str res = NULL;
-	bit max_one = false;
-	*r1 = *r2 = 0;
-	(void)any;
-	(void)estimate;
-	/* for now: (left) cross aggr (any-equal) */
-	BAT *rr = BATdescriptor(is_bat_nil(*srid)?*rid:*srid);
-	if (!BATcount(rr)) {
-		BAT *l = NULL;
-		if (is_bat_nil(*slid)) {
-			BAT *lp = BATdescriptor(*lid);
-
-			if (lp) {
-				l = BATdense(lp->hseqbase, lp->hseqbase, BATcount(lp));
-				BBPunfix(lp->batCacheid);
-			}
-		} else {
-			l = BATdescriptor(*slid);
-		}
-		bit v = false;//*any?false:true;
-		BAT *m =  BATconstant( l->hseqbase, TYPE_bit, &v, BATcount(l), TRANSIENT);
-		BBPkeepref(l);
-		BBPkeepref(m);
-		*r1 = l->batCacheid;
-		*r2 = m->batCacheid;
-		BBPunfix(rr->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(rr->batCacheid);
-	if ((res = ALGcrossproduct2(r1, r2, is_bat_nil(*slid)?lid:slid, (*srid)?rid:srid, &max_one)) == MAL_SUCCEED) {
-		BAT *li = BATdescriptor(*r1), *g = NULL, *e = NULL;
-		if (!li) {
-			BBPrelease(*r1);
-			BBPrelease(*r2);
-			throw(MAL, "algebra.markjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		if (BATgroup(&g, &e, NULL, li, NULL, NULL, NULL, NULL) == GDK_SUCCEED) {
-			BAT *lp = BATdescriptor(*lid);
-			BAT *l = BATproject( li, lp);
-			BBPreclaim(lp);
-
-			BAT *ri = BATdescriptor(*r2);
-			BAT *rp = BATdescriptor(*rid);
-			BAT *r = BATproject( ri, rp);
-			BBPreclaim(ri);
-			BBPreclaim(rp);
-			BAT *m;
-
-			//if (*any)
-				m = BATanyequal_grp(l, r, g, e, NULL);
-				/*
-			else
-				m = BATallnotequal_grp(l, r, g, e, NULL);
-				*/
-
-			BBPreclaim(l);
-			BBPreclaim(r);
-			BBPreclaim(g);
-			l = BATproject(e,li);
-			BBPreclaim(e);
-			BBPreclaim(li);
-
-			BBPkeepref(l);
-			BBPkeepref(m);
-			BBPrelease(*r1);
-			BBPrelease(*r2);
-			*r1 = l->batCacheid;
-			*r2 = m->batCacheid;
-			return MAL_SUCCEED;
-		} else {
-			BBPreclaim(li);
-			BBPrelease(*r1);
-			BBPrelease(*r2);
-			res = GDKstrdup("error\n");
-		}
-	}
-	return res;
-}
-
 static str
 ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 			 const bat *srid, const bit *nil_matches, const bit *match_one,
@@ -1113,7 +1028,7 @@ ALGunary(bat *result, const bat *bid, BAT *(*func)(BAT *), const char *name)
 	return MAL_SUCCEED;
 }
 
-static BAT *
+static inline BAT *
 BATwcopy(BAT *b)
 {
 	return COLcopy(b, b->ttype, true, TRANSIENT);
@@ -1893,7 +1808,6 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "join", ALGjoin1, false, "Join; only produce left output", args(1,7, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "leftjoin", ALGleftjoin, false, "Left join with candidate lists", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "leftjoin", ALGleftjoin1, false, "Left join with candidate lists; only produce left output", args(1,7, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
- command("algebra", "markjoin", ALGmarkjoin, false, "Left mark join with candidate lists, produces left output and mark flag; ", args(2,8, batarg("",oid), batarg("", bit), batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
  command("algebra", "outerjoin", ALGouterjoin1, false, "Left outer join with candidate lists; only produce left output", args(1,8,batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
  command("algebra", "semijoin", ALGsemijoin, false, "Semi join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),

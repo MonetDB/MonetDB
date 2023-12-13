@@ -40,6 +40,7 @@ import importlib
 import MonetDBtesting.utils as utils
 from pathlib import Path
 from typing import Optional
+import difflib
 
 architecture = platform.machine()
 if architecture == 'AMD64':     # Windows :-(
@@ -365,21 +366,6 @@ class SQLLogic:
               file=self.out)
         print("query text:", file=self.out)
         print(query, file=self.out)
-        print('', file=self.out)
-        if data is not None:
-            if len(data) < 100:
-                print('query result:', file=self.out)
-            else:
-                print('truncated query result:', file=self.out)
-            for row in data[:100]:
-                sep=''
-                for col in row:
-                    if col is None:
-                        print(sep, 'NULL', sep='', end='', file=self.out)
-                    else:
-                        print(sep, col, sep='', end='', file=self.out)
-                    sep = '|'
-                print('', file=self.out)
 
     def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
         err = False
@@ -457,12 +443,15 @@ class SQLLogic:
             for col in ndata:
                 if expected is not None:
                     if i < len(expected) and col != expected[i]:
-                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
+                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
                         err = True
                     i += 1
                 m.update(bytes(col, encoding='ascii'))
                 m.update(b'\n')
                 result.append(col)
+            if err:
+                print('Differences:', file=self.out)
+                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
             if resdata is not None:
                 result = []
                 ndata = []
@@ -500,9 +489,10 @@ class SQLLogic:
                 except NameError:
                     self.query_error(query, 'cannot find filter function')
                     err = True
+            ndata = data
             if not err:
                 try:
-                    data = pyfnc(data)
+                    ndata = pyfnc(data)
                 except:
                     self.query_error(query, 'filter function failed')
                     err = True
@@ -512,21 +502,24 @@ class SQLLogic:
                     except:
                         resdata = None
             ncols = 1
-            if (len(data)):
-                ncols = len(data[0])
-            if len(data)*ncols != nresult:
-                self.query_error(query, 'received {} rows, expected {} rows'.format(len(data)*ncols, nresult), data=data)
+            if (len(ndata)):
+                ncols = len(ndata[0])
+            if len(ndata)*ncols != nresult:
+                self.query_error(query, 'received {} rows, expected {} rows'.format(len(ndata)*ncols, nresult), data=data)
                 err = True
-            for row in data:
+            for row in ndata:
                 for col in row:
                     if expected is not None:
                         if i < len(expected) and col != expected[i]:
-                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
+                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
                             err = True
                         i += 1
                     m.update(bytes(col, encoding='ascii'))
                     m.update(b'\n')
                     result.append(col)
+            if err:
+                print('Differences:', file=self.out)
+                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
             if resdata is not None:
                 result = []
                 for row in resdata:
@@ -535,10 +528,11 @@ class SQLLogic:
                         resm.update(b'\n')
                         result.append(col)
         else:
+            ndata = data
             if sorting == 'rowsort':
-                data.sort()
+                ndata = sorted(data)
             err_msg_buff = []
-            for row in data:
+            for row in ndata:
                 for col in row:
                     if expected is not None:
                         if i < len(expected) and col != expected[i]:
@@ -550,7 +544,13 @@ class SQLLogic:
                     m.update(b'\n')
                     result.append(col)
             if err:
-                self.query_error(query, '\n'.join(err_msg_buff), data=data)
+                self.query_error(query, '\n'.join(err_msg_buff))
+                recv = []
+                for row in ndata:
+                    for col in row:
+                        recv.append(col + '\n')
+                print('Differences:', file=self.out)
+                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], recv)))
             if resdata is not None:
                 if sorting == 'rowsort':
                     resdata.sort()
@@ -560,6 +560,22 @@ class SQLLogic:
                         resm.update(bytes(col, encoding='ascii'))
                         resm.update(b'\n')
                         result.append(col)
+        if err:
+            if data is not None:
+                if len(data) < 100:
+                    print('Query result:', file=self.out)
+                else:
+                    print('Truncated query result:', file=self.out)
+                for row in data[:100]:
+                    sep=''
+                    for col in row:
+                        if col is None:
+                            print(sep, 'NULL', sep='', end='', file=self.out)
+                        else:
+                            print(sep, col, sep='', end='', file=self.out)
+                        sep = '|'
+                    print(file=self.out)
+            print(file=self.out)
         h = m.hexdigest()
         if resdata is not None:
             resh = resm.hexdigest()

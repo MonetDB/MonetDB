@@ -755,7 +755,8 @@ typedef struct {
 #define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
 #define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
-#define GDKLIBRARY		061046U /* first in Sep2022 */
+#define GDKLIBRARY_JSON 	061046U /* first in Sep2022: json storage changes*/
+#define GDKLIBRARY		061047U /* first in Dec2023 */
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -2327,10 +2328,6 @@ gdk_export BAT *BATprojectchain(BAT **bats);
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 
 gdk_export BAT *BATunique(BAT *b, BAT *s);
-
-gdk_export BAT *BATmergecand(BAT *a, BAT *b);
-gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
-gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
 
 gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__warn_unused_result__));
