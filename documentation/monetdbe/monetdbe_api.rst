@@ -21,25 +21,26 @@ Data Types
 
 The API wraps the internal data types to those more convenient for programming directly in C.
 
-=======================   =====================
-MonetDBe type             MonetDB internal type
-=======================   =====================
-int8_t                    bool
-int8_t                    int8_t
-int16_t                   int16_t
-int32_t                   int32_t
-int64_t                   int64_t
-__int128                  int128_t
-float                     float
-double                    double
-char *                    str
-monetdbe_data_blob        blob
-monetdbe_data_date        date
-monetdbe_data_time        time
-monetdbe_data_timestamp   timestamp
-=======================   =====================
+=======================   =====================   ================
+MonetDBe type             MonetDB internal type   MonetDB SQL type
+=======================   =====================   ================
+int8_t                    bit                     boolean
+int8_t                    bte                     tinyint
+int16_t                   sht                     smallint
+int32_t                   int                     int
+int64_t                   lng                     bigint
+__int128                  hge                     hugeint
+float                     flt                     real
+double                    dbl                     double
+char *                    str                     clob or varchar
+monetdbe_data_blob        blob                    blob
+monetdbe_data_date        date                    date
+monetdbe_data_time        daytime                 time
+monetdbe_data_timestamp   timestamp               timestamp
+=======================   =====================   ================
 
-Other data types such as timestamptz, timetz, json, inet, url, uuid, geom are currently not supported.
+Other SQL types such as timestamptz, timetz, day_interval, month_interval,
+sec_interval, decimal, inet, json, url, uuid and geometry are currently not supported.
 
 Connection and server options
 -----------------------------
