@@ -1714,16 +1714,14 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 #endif
 
 static bool
-BBPtrim(bool aggressive)
+BBPtrim(bool aggressive, bat nbat)
 {
 	int n = 0;
 	bool changed = false;
 	unsigned flag = BBPUNLOADING | BBPSYNCING | BBPSAVING;
 	if (!aggressive)
 		flag |= BBPHOT;
-	for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
-		if (GDKexiting())
-			return changed;
+	for (bat bid = 1; bid < nbat && !GDKexiting(); bid++) {
 		/* don't do this during a (sub)commit */
 		BBPtmlock();
 		MT_lock_set(&GDKswapLock(bid));
@@ -1766,8 +1764,9 @@ BBPmanager(void *dummy)
 
 	for (;;) {
 		int n = 0;
+		bat nbat = (bat) ATOMIC_GET(&BBPsize);
 		MT_thread_setworking("clearing HOT bits");
-		for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
+		for (bat bid = 1; bid < nbat; bid++) {
 			MT_lock_set(&GDKswapLock(bid));
 			if (BBP_refs(bid) == 0 && BBP_lrefs(bid) != 0) {
 				n += (BBP_status(bid) & BBPHOT) != 0;
@@ -1784,7 +1783,7 @@ BBPmanager(void *dummy)
 				return;
 		}
 		MT_thread_setworking("BBPtrim");
-		changed = BBPtrim(false);
+		changed = BBPtrim(false, nbat);
 		MT_thread_setworking("BBPcallbacks");
 		BBPcallbacks();
 		if (GDKexiting())
