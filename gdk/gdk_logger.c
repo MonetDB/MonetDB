@@ -1111,9 +1111,9 @@ log_close_output(logger *lg)
 	if (!LOG_DISABLED(lg) && lg->current->output_log) {
 		TRC_INFO(WAL, "closing output log %s", mnstr_name(lg->current->output_log));
 		close_stream(lg->current->output_log);
+		ATOMIC_DEC(&lg->nr_open_files);
 	}
 	lg->current->output_log = NULL;
-	ATOMIC_DEC(&lg->nr_open_files);
 }
 
 static gdk_return
@@ -2488,7 +2488,7 @@ do_rotate(logger *lg)
 	if (next) {
 		assert(ATOMIC_GET(&next->refcount) == 1);
 		lg->current = next;
-		if (!LOG_DISABLED(lg) && ATOMIC_GET(&cur->refcount) == 1) {
+		if (!LOG_DISABLED(lg) && ATOMIC_GET(&cur->refcount) == 1 && cur->output_log) {
 			close_stream(cur->output_log);
 			cur->output_log = NULL;
 			ATOMIC_DEC(&lg->nr_open_files);
@@ -3168,7 +3168,7 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 
 	if (ATOMIC_DEC(&frange->refcount) == 1 && !LOG_DISABLED(lg)) {
 		rotation_lock(lg);
-		if (frange != lg->current) {
+		if (frange != lg->current && frange->output_log) {
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
 			ATOMIC_DEC(&lg->nr_open_files);
