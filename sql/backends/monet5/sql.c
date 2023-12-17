@@ -8,6 +8,7 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
+
 /*
  * authors M Kersten, N Nes
  * SQL support implementation
