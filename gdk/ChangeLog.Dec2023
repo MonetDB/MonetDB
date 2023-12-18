@@ -1,6 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Dec 12 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Introduced options wal_max_dropped, wal_max_file_age and
+  wal_max_file_size that control the write-ahead log file rotation.
+
 * Mon Nov 20 2023 Sjoerd Mullender <sjoerd@acm.org>
 - Removed function BATroles to set column names on BATs.
 

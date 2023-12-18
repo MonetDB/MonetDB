@@ -40,17 +40,25 @@ struct logger {
 	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
 
 	// CHECK writer only
-	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
+	lng total_cnt;          /* When logging the content of a bats in
+				 * multiple runs, total_cnt is used the
+				 * very first to signal this and keep
+				 * track in the logging*/
 	void *rbuf;
 	size_t rbufsize;
 	void *wbuf;
 	size_t wbufsize;
+	lng max_dropped;        /* default 100000 */
+	lng file_age;           /* log file age */
+	lng max_file_age;       /* default 10 mins */
+	lng max_file_size;      /* default 2 GiB */
 
 	// synchronized by combination of store->flush and rotation_lock
 	ulng id;		/* current log output file id */
 	ulng saved_id;		/* id of last fully handled log file */
 	int tid;		/* current transaction id */
-	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
+	int saved_tid;		/* id of transaction which was flushed
+				 * out (into BBP storage) */
 
 	// synchronized by rotation_lock
 	logged_range *current;

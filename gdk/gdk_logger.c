@@ -1091,6 +1091,7 @@ log_open_output(logger *lg)
 	assert(current && current->next == NULL);
 	new_range->cnt = current->cnt;
 	current->next = new_range;
+	lg->file_age = GDKusec();
 	return GDK_SUCCEED;
 }
 
@@ -2250,6 +2251,17 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	logger *lg;
 	char filename[FILENAME_MAX];
 
+	lng max_dropped = GDKgetenv_int("wal_max_dropped", 100000);
+	lng max_file_age = GDKgetenv_int("wal_max_file_age", 600);
+	lng max_file_size = 0;
+
+	if (GDKdebug & FORCEMITOMASK) {
+		max_file_size = 2048; /* 2 KiB */
+	} else {
+		const char *max_file_size_str = GDKgetenv("wal_max_file_size");
+		max_file_size = max_file_size_str ? strtoul(max_file_size_str, NULL, 10) : 2147483648;
+	}
+
 	if (!GDKinmemory(0) && MT_path_absolute(logdir)) {
 		TRC_CRITICAL(GDK, "logdir must be relative path\n");
 		return NULL;
@@ -2268,6 +2280,11 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		.prefuncp = prefuncp,
 		.postfuncp = postfuncp,
 		.funcdata = funcdata,
+
+		.max_dropped = max_dropped >= 0 ? max_dropped : 100000,
+		.file_age = 0,
+		.max_file_age = max_file_age >= 0 ? max_file_age * 1000000 : 600000000,
+		.max_file_size = max_file_size >= 0 ? max_file_size : 2147483648,
 
 		.id = 0,
 		.saved_id = getBBPlogno(),	/* get saved log numer from bbp */
@@ -2494,10 +2511,19 @@ log_activate(logger *lg)
 {
 	bool flush_cleanup = false;
 	gdk_return res = GDK_SUCCEED;
+
+	const lng current_file_size = LOG_DISABLED(lg) ? 0 : (lng) getfilepos(getFile(lg->current->output_log));
+
+	if (current_file_size == -1)
+		return GDK_FAIL;
+
 	rotation_lock(lg);
 	if (!lg->flushnow &&
 	    !lg->current->next &&
-	    ATOMIC_GET(&lg->current->drops) > 100000 &&
+	    current_file_size > 2 &&
+	    (ATOMIC_GET(&lg->current->drops) > (ulng)lg->max_dropped ||
+		    current_file_size > lg->max_file_size ||
+		    (GDKusec() - lg->file_age) > lg->max_file_age) &&
 	    (ulng) ATOMIC_GET(&lg->current->last_ts) > 0 &&
 	    lg->saved_id + 1 == lg->id &&
 	    ATOMIC_GET(&lg->current->refcount) == 1 /* no pending work on this file */ ) {
@@ -3047,12 +3073,6 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	return ok;
 }
 
-#define DBLKSZ		8192
-#define SEGSZ		(64*DBLKSZ)
-
-#define LOG_MINI	(LL_CONSTANT(2)*1024)
-#define LOG_LARGE	(LL_CONSTANT(2)*1024*1024*1024)
-
 static inline bool
 check_rotation_conditions(logger *lg)
 {
@@ -3063,10 +3083,20 @@ check_rotation_conditions(logger *lg)
 		return false;	/* do not rotate if there is already a prepared next current */
 	if (mnstr_errnr(lg->current->output_log) != MNSTR_NO__ERROR)
 		return true;
-	const lng p = (lng) getfilepos(getFile(lg->current->output_log));
+	const lng current_file_size = (lng) getfilepos(getFile(lg->current->output_log));
 
-	const lng log_large = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? LOG_MINI : LOG_LARGE;
-	bool res = (p > log_large) || (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000);
+	if (current_file_size == -1)
+		return false;
+
+	assert(current_file_size >= 0);
+
+	if (current_file_size == 2)
+		return false;
+
+	bool res = (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > (ulng)lg->max_dropped) ||
+		current_file_size > lg->max_file_size ||
+		(GDKusec() - lg->file_age) > lg->max_file_age;
+
 	return res;
 }
 
