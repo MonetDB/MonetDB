@@ -188,6 +188,8 @@ def main():
               sorted([r'include\monetdb\{}'.format(x) for x in filter(lambda x: (x.startswith('gdk') or x.startswith('monet') or x.startswith('mal') or x.startswith('sql') or x.startswith('rel') or x.startswith('store') or x.startswith('exception') or x.startswith('opt_backend')) and x.endswith('.h'), os.listdir(os.path.join(sys.argv[3], 'include', 'monetdb')))] +
                      [r'include\monetdb\copybinary.h',
                       r'include\monetdb\mapi.h',
+                      r'include\monetdb\mapi_querytype.h',
+                      r'include\monetdb\msettings.h',
                       r'include\monetdb\matomic.h',
                       r'include\monetdb\mel.h',
                       r'include\monetdb\mstring.h',
