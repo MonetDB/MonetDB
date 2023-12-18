@@ -28,6 +28,46 @@ project (
 | ) [  ]
 ) [ "foo_rpl_loc"."n", "foo_rpl_loc"."m", "bar_rpl_loc"."n", "bar_rpl_loc"."m" ]
 
+query ITIT rowsort
+select * from foo_rpl_loc, bar_rpl_loc
+----
+1
+hello
+10
+alice
+1
+hello
+20
+bob
+1
+hello
+30
+tom
+2
+world
+10
+alice
+2
+world
+20
+bob
+2
+world
+30
+tom
+3
+!!
+10
+alice
+3
+!!
+20
+bob
+3
+!!
+30
+tom
+
 query T nosort
 plan select * from foo_rpl_loc, buz_rmt
 ----

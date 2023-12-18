@@ -13,6 +13,7 @@
 
 #include <setjmp.h>
 
+gdk_export void GDKprintinforegister(void (*func)(void));
 gdk_export void GDKprintinfo(void);
 
 gdk_export const char *GDKgetenv(const char *name);

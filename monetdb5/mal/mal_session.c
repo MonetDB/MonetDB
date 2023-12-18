@@ -115,11 +115,6 @@ MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
 			throw(MAL, "resetClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	setVarType(mb, findVariable(mb, fcn), TYPE_void);
-	/* remove any MAL history */
-	if (mb->history) {
-		freeMalBlk(mb->history);
-		mb->history = 0;
-	}
 	return MAL_SUCCEED;
 }
 

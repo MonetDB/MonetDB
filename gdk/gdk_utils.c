@@ -2031,6 +2031,27 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 }
 
 /* print some potentially interesting information */
+struct prinfocb {
+	struct prinfocb *next;
+	void (*func)(void);
+} *prinfocb;
+
+void
+GDKprintinforegister(void (*func)(void))
+{
+	struct prinfocb *p = GDKmalloc(sizeof(struct prinfocb));
+	if (p == NULL) {
+		GDKerror("cannot register USR1 printing function.\n");
+		return;
+	}
+	p->func = func;
+	p->next = NULL;
+	struct prinfocb **pp = &prinfocb;
+	while (*pp != NULL)
+		pp = &(*pp)->next;
+	*pp = p;
+}
+
 void
 GDKprintinfo(void)
 {
@@ -2064,4 +2085,6 @@ GDKprintinfo(void)
 	GDKlockstatistics(3);
 #endif
 	dump_threads();
+	for (struct prinfocb *p = prinfocb; p; p = p->next)
+		(*p->func)();
 }

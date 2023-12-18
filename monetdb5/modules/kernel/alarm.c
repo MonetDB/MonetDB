@@ -40,9 +40,9 @@ ALARMusec(lng *ret)
 	do {																\
 		TPE *res = (TPE*) getArgReference(stk, pci, 0), *msecs = (TPE*) getArgReference(stk,pci,1); \
 		if (is_##TPE##_nil(*msecs))										\
-			throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
+			throw(MAL, "alarm.sleep", "NULL values not allowed for sleeping time"); \
 		if (*msecs < 0)													\
-			throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
+			throw(MAL, "alarm.sleep", "Cannot sleep for a negative time"); \
 		MT_sleep_ms((unsigned int) *msecs);								\
 		*res = *msecs;													\
 	} while (0)
@@ -54,13 +54,13 @@ ALARMusec(lng *ret)
 				bat_iterator_end(&bi);									\
 				BBPreclaim(r);											\
 				BBPunfix(b->batCacheid);								\
-				throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
+				throw(MAL, "alarm.sleep", "NULL values not allowed for sleeping time"); \
 			}															\
 			if (bb[i] < 0) {											\
 				bat_iterator_end(&bi);									\
 				BBPreclaim(r);											\
 				BBPunfix(b->batCacheid);								\
-				throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
+				throw(MAL, "alarm.sleep", "Cannot sleep for a negative time"); \
 			}															\
 		}																\
 		for (i = 0; i < j ; i++) {										\
@@ -84,7 +84,7 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpe = getArgType(mb, pci, 1);
 
 		if (!(b = BATdescriptor(*bid)))
-			throw(MAL, "alarm.sleepr",
+			throw(MAL, "alarm.sleep",
 				  SQLSTATE(HY005) "Cannot access column descriptor");
 
 		BATiter bi = bat_iterator(b);
@@ -94,7 +94,7 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(r = COLnew(0, tpe, j, TRANSIENT))) {
 			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
-			throw(MAL, "alarm.sleepr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "alarm.sleep", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		rb = Tloc(r, 0);
 
@@ -112,7 +112,7 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bat_iterator_end(&bi);
 			BBPreclaim(r);
 			BBPunfix(b->batCacheid);
-			throw(MAL, "alarm.sleepr",
+			throw(MAL, "alarm.sleep",
 				  SQLSTATE(42000) "Sleep function not available for type %s",
 				  ATOMname(tpe));
 		}
@@ -134,7 +134,7 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			SLEEP_SINGLE(int);
 			break;
 		default:
-			throw(MAL, "alarm.sleepr",
+			throw(MAL, "alarm.sleep",
 				  SQLSTATE(42000) "Sleep function not available for type %s",
 				  ATOMname(getArgType(mb, pci, 1)));
 		}

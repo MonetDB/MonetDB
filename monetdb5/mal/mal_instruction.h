@@ -145,8 +145,8 @@ mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme,
 								   const char *fcnnme);
 mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme,
 									   const char *fcnnme, int args);
-mal_export InstrPtr copyInstruction(InstrPtr p);
-mal_export InstrPtr copyInstructionArgs(InstrPtr p, int args);
+mal_export InstrPtr copyInstruction(const InstrRecord *p);
+mal_export InstrPtr copyInstructionArgs(const InstrRecord *p, int args);
 mal_export void clrInstruction(InstrPtr p);
 mal_export void freeInstruction(InstrPtr p);
 mal_export void clrFunction(InstrPtr p);
@@ -162,10 +162,6 @@ mal_export int newMalBlkStmt(MalBlkPtr mb, int elements);
 mal_export int resizeMalBlk(MalBlkPtr mb, int elements);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
-mal_export void addtoMalBlkHistory(MalBlkPtr mb);
-mal_export void removeMalBlkHistory(MalBlkPtr mb);
-mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
-mal_export MalBlkPtr getMalBlkOptimized(MalBlkPtr mb, const char *name);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 mal_export void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);

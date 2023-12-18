@@ -74,6 +74,14 @@ MFconnectionManager(void *d)
 
 	(void)d;
 
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
+
 	while (_mero_keep_listening == 1) {
 #ifdef HAVE_POLL
 		pfd = (struct pollfd) {.fd = mfpipe[0], .events = POLLIN};
@@ -713,6 +721,14 @@ multiplexThread(void *d)
 	ssize_t len;
 	int r, i;
 	dpair p, q;
+
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 
 	/* select on upstream clients, on new data, read query, forward,
 	 * union all results, send back, and restart cycle. */

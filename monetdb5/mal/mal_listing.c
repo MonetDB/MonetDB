@@ -301,7 +301,7 @@ fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base,
 	if (!copystring(&t, "# ", &len))
 		return base;
 
-	if (pci && pci->argc == 3) {
+	if (pci->argc == 3) {
 		if (getFunctionId(pci)) {
 			char *arg1 = renderTerm(mb, stk, pci, 1, flg);
 			char *arg2 = renderTerm(mb, stk, pci, 2, flg);
@@ -681,33 +681,4 @@ printSignature(stream *fd, Symbol s, int flg)
 		GDKfree(txt);
 	} else
 		mnstr_printf(fd, "printSignature: " MAL_MALLOC_FAIL);
-}
-
-void
-showMalBlkHistory(stream *out, MalBlkPtr mb)
-{
-	MalBlkPtr m = mb;
-	InstrPtr p = NULL, sig;
-	int i, j = 0;
-	str msg;
-
-	sig = getInstrPtr(mb, 0);
-	m = m->history;
-	while (m) {
-		// find the last optimizer step
-		for (i = m->stop - 1; i > 0; i--) {
-			p = getInstrPtr(m, i);
-			if (p->argc > 1)
-				break;
-		}
-		msg = instruction2str(m, 0, p, FALSE);
-		if (msg) {
-			mnstr_printf(out, "%s.%s[%2d] %s\n",
-						 getModuleId(sig), getFunctionId(sig), j++, msg + 3);
-			GDKfree(msg);
-		} else {
-			mnstr_printf(out, "#failed instruction2str()\n");
-		}
-		m = m->history;
-	}
 }

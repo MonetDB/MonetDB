@@ -70,6 +70,7 @@ scan_unix_sockets(Mapi mid)
 			candidates[ncandidates].port = port;
 			candidates[ncandidates++].priority = st.st_uid == me ? 0 : 1;
 		}
+		closedir(dir);
 	}
 
 	mapi_log_record(mid, "CONN", "Found %d Unix domain sockets", ncandidates);
@@ -180,5 +181,3 @@ connect_socket_unix(Mapi mid)
 
 	return wrap_socket(mid, s);
 }
-
-

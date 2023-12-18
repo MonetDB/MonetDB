@@ -29,20 +29,6 @@
 #include "opt_pipes.h"
 #include "gdk_time.h"
 
-static int
-pseudo(bat *ret, BAT *b, str X1, str X2)
-{
-	char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "%s_%s", X1, X2);
-	if (BBPindex(buf) <= 0 && BBPrename(b, buf) != 0)
-		return -1;
-	if (BATroles(b, X2) != GDK_SUCCEED)
-		return -1;
-	*ret = b->batCacheid;
-	BBPkeepref(b);
-	return 0;
-}
-
 static str
 CLTsetListing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -140,8 +126,8 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (BUNappend(b, "login", false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED)
 		goto bailout;
-	if (pseudo(ret, b, "client", "info"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	*ret2 = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
@@ -172,8 +158,10 @@ CLTLogin(bat *nme, bat *ret)
 				goto bailout;
 		}
 	}
-	if (pseudo(ret, b, "client", "login") || pseudo(nme, u, "client", "name"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
+	*nme = u->batCacheid;
+	BBPkeepref(u);
 	return MAL_SUCCEED;
 
   bailout:

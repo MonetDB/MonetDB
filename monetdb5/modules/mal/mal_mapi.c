@@ -704,7 +704,13 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		}
 		char sport[10];
 		snprintf(sport, sizeof(sport), "%d", port);
-		GDKsetenv("mapi_port", sport);
+		if (GDKsetenv("mapi_port", sport) != GDK_SUCCEED) {
+			for (int i = 0; i < 3; i++) {
+				if (socks[i] != INVALID_SOCKET)
+					closesocket(socks[i]);
+			}
+			throw(MAL, "mal_mapi.listen", GDK_EXCEPTION);
+		}
 	}
 
 #ifdef HAVE_SYS_UN_H
@@ -814,7 +820,13 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				GDKfree(usockfilenew);
 			return buf;
 		}
-		GDKsetenv("mapi_usock", usockfile);
+		if (GDKsetenv("mapi_usock", usockfile) != GDK_SUCCEED) {
+			for (int i = 0; i < 3; i++) {
+				if (socks[i] != INVALID_SOCKET)
+					closesocket(socks[i]);
+			}
+			throw(MAL, "mal_mapi.listen", GDK_EXCEPTION);
+		}
 	}
 #endif
 

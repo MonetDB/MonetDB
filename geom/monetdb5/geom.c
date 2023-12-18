@@ -53,7 +53,7 @@ str
 wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
-	BAT *sortedgroups, *sortedorder, *sortedinput;
+	BAT *sortedgroups, *sortedorder;
 	BATiter bi;
 	const oid *gids = NULL;
 	str msg = MAL_SUCCEED;
@@ -90,12 +90,17 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 
 	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
 	if (!BATtdense(sortedorder)) {
-		sortedinput = BATproject(sortedorder,b);
+		BAT *sortedinput = BATproject(sortedorder, b);
+		BBPreclaim(sortedorder);
+		if (sortedinput == NULL) {
+			BBPreclaim(sortedgroups);
+			msg = createException(MAL, "geom.Collect", GDK_EXCEPTION);
+			goto free;
+		}
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		b = sortedinput;
 		g = sortedgroups;
-		BBPunfix(sortedorder->batCacheid);
 	}
 	else {
 		BBPunfix(sortedgroups->batCacheid);
@@ -162,12 +167,6 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 							for (BUN i = 0; i < ngrp; i++)
 								GDKfree(unions[i]);
 							GDKfree(unions);
-						}
-						if (unionGroup) {
-							for (BUN i = 0; i < geomCount; i++)
-								if (unionGroup[i])
-									GEOSGeom_destroy(unionGroup[i]);
-							GDKfree(unionGroup);
 						}
 						goto free;
 					}
@@ -241,8 +240,6 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
-		if (b)
-			BBPunfix(b->batCacheid);
 		return msg;
 	}
 
@@ -3488,7 +3485,7 @@ str
 wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
 	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
-	BAT *sortedgroups, *sortedorder, *sortedinput;
+	BAT *sortedgroups, *sortedorder;
 	BATiter bi;
 	const oid *gids = NULL;
 	str msg = MAL_SUCCEED;
@@ -3520,12 +3517,17 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 
 	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
 	if (!BATtdense(sortedorder)) {
-		sortedinput = BATproject(sortedorder,b);
+		BAT *sortedinput = BATproject(sortedorder, b);
+		BBPreclaim(sortedorder);
+		if (sortedinput == NULL) {
+			BBPreclaim(sortedgroups);
+			msg = createException(MAL, "aggr.MakeLine", GDK_EXCEPTION);
+			goto free;
+		}
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		b = sortedinput;
 		g = sortedgroups;
-		BBPunfix(sortedorder->batCacheid);
 	}
 	else {
 		BBPunfix(sortedgroups->batCacheid);
@@ -3572,6 +3574,10 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 			if (lastGrp != (oid)-1) {
 				msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
 				position = 0;
+				if (msg != MAL_SUCCEED) {
+					GDKfree(lineGroup);
+					goto free;
+				}
 			}
 			lastGrp = grp;
 		}
@@ -3579,6 +3585,8 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	}
 	msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
 	GDKfree(lineGroup);
+	if (msg != MAL_SUCCEED)
+		goto free;
 
 	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
@@ -4457,7 +4465,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 	wkb *aWKB, *bWKB;
 
 	//get the BATs
-	if (!(inBAT = BATdescriptor(*inBAT_id))) {
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
 		throw(MAL, "geom.Union", SQLSTATE(38000) "Geos problem retrieving columns");
 	}
 

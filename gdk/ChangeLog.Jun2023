@@ -1,3 +1,9 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Nov 21 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a (rare) race condition between copying a bat (COLcopy) and
+  updates happening in parallel to that same bat.  This may only be
+  an actual problem with string bats, and then only in very particular
+  circumstances.
+

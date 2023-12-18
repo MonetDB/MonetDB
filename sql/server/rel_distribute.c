@@ -54,7 +54,7 @@ has_remote_or_replica( sql_rel *rel )
 	case op_insert:
 	case op_update:
 	case op_delete:
-		return has_remote_or_replica( rel->l ) || has_remote_or_replica( rel->r );
+		return has_remote_or_replica( rel->l) || has_remote_or_replica( rel->r );
 	case op_project:
 	case op_select:
 	case op_groupby:
@@ -149,7 +149,8 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 					if (list_length(rp->value.pval) > 1) {
 						list *uri = sa_list(v->sql->sa);
 						tid_uri *tu = SA_NEW(v->sql->sa, tid_uri);
-						tu->id = 0;
+						/* sql_gencode requires the proper tableid */
+						tu->id = p->member;
 						tu->uri = pt->query;
 						append(uri, tu);
 						rp->value.pval = uri;

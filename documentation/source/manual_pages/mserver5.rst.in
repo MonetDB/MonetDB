@@ -147,7 +147,7 @@ MSERVER5 OPTIONS
       about your data).
 
    **33554432**
-      (DEADBEEFMASK) disable "cleaning" of freed memory in GDKfree()
+      (DEADBEEFMASK) disable \``cleaning'' of freed memory in GDKfree()
       which only happens in a debug build (i.e. with assertions enabled)
       e.g., for performance measurements
 
@@ -220,16 +220,16 @@ distributed) plans. These parameters control behaviour on the MAL level.
    key, such that reading the BATs does not directly disclose any
    credentials. The **monet_vault_key** setting points to a file that
    stores a secret key to unlock the password vault. It can contain
-   anything. The file is read up to the first null-byte (``'\0'``), hence it
-   can be padded to any length with trailing null-bytes to obfuscate the
-   key length. Generating a key can be done for example by using a tool
-   such as *pwgen* and adding a few of the passwords generated. Make
-   sure not to choose a too small key. Note that on absence of a vault
-   key file, some default key is used to encrypt the authorisation
-   tables. Changing this setting (effectively changing the key) for an
-   existing database makes that database unusable as noone is any longer
-   able to login. If you use *monetdbd*\ (1), a per-database vault key
-   is set.
+   anything. The file is read up to the first null-byte (\``\\0''),
+   hence it can be padded to any length with trailing null-bytes to
+   obfuscate the key length. Generating a key can be done for example by
+   using a tool such as *pwgen* and adding a few of the passwords
+   generated. Make sure not to choose a too small key. Note that on
+   absence of a vault key file, some default key is used to encrypt the
+   authorisation tables. Changing this setting (effectively changing the
+   key) for an existing database makes that database unusable as no one
+   is any longer able to login. If you use *monetdbd*\ (1), a
+   per-database vault key is set.
 
 **max_clients**
    Controls how many client slots are allocated for clients to connect.
@@ -288,6 +288,17 @@ distributed) plans. These parameters control behaviour on the MAL level.
       The server will listen on the interface designated by *hostname*
       which is looked up using the normal hostname lookup facilities.
 
+**allow_hge_upgrade**
+   Set this parameter to **yes** to allow the server to upgrade the
+   database from one without 128 bit integer support to one with 128 bit
+   integer (also known as HUGEINT) support. Note, the upgrade will only
+   happen if the server does indeed support 128 bit integers. Also note
+   that there is no going back from a database with 128 bit integer
+   support to one without. This option does nothing if no upgrade is
+   required. 128 bit integers requires support from the C compiler and
+   is therefore not available on all platforms. It can also be turned
+   off at compile time.
+
 SQL PARAMETERS
 ==============
 
@@ -311,26 +322,27 @@ has its own SQL-level specific settings.
 
    **minimal_pipe**
       The minimal pipeline necessary by the server to operate correctly.
-      minimal_pipe=inline,remap,deadcode,multiplex,generator,profiler,candidates,garbageCollector
+      minimal_pipe=inline,remap,emptybind,deadcode,for,dict,multiplex,generator,profiler,garbageCollector
 
    **default_pipe**
       The default pipeline contains the mitosis-mergetable-reorder
       optimizers, aimed at large tables and improved access locality.
-      default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mitosis,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,garbageCollector
+      default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mitosis,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,dataflow,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 
    **no_mitosis_pipe**
       The no_mitosis pipeline is identical to the default pipeline,
       except that optimizer mitosis is omitted. It is used mainly to
       make some tests work deterministically, and to check/debug whether
-      "unexpected" problems are related to mitosis (and/or mergetable).
-      no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,garbageCollector
+      \``unexpected'' problems are related to mitosis (and/or
+      mergetable).
+      no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,dataflow,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 
    **sequential_pipe**
       The sequential pipeline is identical to the default pipeline,
       except that optimizers mitosis & dataflow are omitted. It is use
       mainly to make some tests work deterministically, i.e., avoid
       ambigious output, by avoiding parallelism.
-      sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,garbageCollector
+      sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 
 **embedded_py**
    Enable embedded Python. This means Python code can be called from
@@ -368,7 +380,7 @@ CONFIG FILE FORMAT
 ==================
 
 The configuration file readable by *mserver5* consists of parameters of
-the form "*name*\ =\ *value*". The file is line-based, each
+the form \`\`\ *name*\ =\ *value*''. The file is line-based, each
 newline-terminated line represents either a comment or a parameter. Only
 the first equals sign in a parameter is significant. Whitespace before
 or after the first equals sign is not stripped. Trailing whitespace in a

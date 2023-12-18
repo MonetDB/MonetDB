@@ -4,9 +4,6 @@ statement ok
 statement ok
 	bat.setName(b,"mybat")
 
-statement ok
-	bat.setColumn(b,"second")
-
 query II rowsort
 	io.print(b)
 ----

@@ -5255,7 +5255,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		if (frame_type == FRAME_RANGE)
 			ie = obe ? (sql_exp*) obe->t->data : in;
 		else
-			ie = oe;
+			ie = obe ? oe : in;
 	}
 	assert(oe && pe);
 

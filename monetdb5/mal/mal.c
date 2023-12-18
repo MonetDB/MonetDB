@@ -51,6 +51,12 @@ mal_version(void)
 	return MONETDB5_VERSION;
 }
 
+static void
+MALprintinfo(void)
+{
+	MCprintinfo();
+}
+
 /*
  * Initialization of the MAL context
  */
@@ -90,6 +96,8 @@ mal_init(char *modules[], bool embedded, const char *initpasswd,
 	if (!MCinit())
 		return -1;
 	initNamespace();
+
+	GDKprintinforegister(MALprintinfo);
 
 	err = malBootstrap(modules, embedded, initpasswd);
 	if (err !=MAL_SUCCEED) {

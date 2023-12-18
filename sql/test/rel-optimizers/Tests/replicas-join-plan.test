@@ -39,6 +39,48 @@ project (
 | ) [  ]
 ) [ "foo_rpl"."n", "foo_rpl"."m", "bar_rpl"."n", "bar_rpl"."m" ]
 
+# we can execute this test because we are not expecting any data send to
+# any remote. the crossproduct is going to be executed locally
+query ITIT rowsort
+select * from foo_rpl, bar_rpl
+----
+1
+hello
+10
+alice
+1
+hello
+20
+bob
+1
+hello
+30
+tom
+2
+world
+10
+alice
+2
+world
+20
+bob
+2
+world
+30
+tom
+3
+!!
+10
+alice
+3
+!!
+20
+bob
+3
+!!
+30
+tom
+
 # In the next test and given the implentation of the remote optimizer we 
 # expect the replicas to be resolved to the remote tables. The optimizer 
 # could be in principle be adapted to resolve the replica crossproduct

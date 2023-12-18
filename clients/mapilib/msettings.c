@@ -572,7 +572,7 @@ validate_certhash(msettings *mp)
 		if (i < sizeof(mp->certhash_digits_buffer) - 1)
 			mp->certhash_digits_buffer[i++] = tolower(*r);
 	}
-	mp->certhash_digits_buffer[i++] = '\0';
+	mp->certhash_digits_buffer[i] = '\0';
 	if (i == 0)
 		return "certhash: need at least one digit";
 
@@ -844,4 +844,3 @@ msettings_lang_is_sql(const msettings *mp)
 {
 	return mp->lang_is_sql;
 }
-

@@ -2244,8 +2244,14 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 			BAT *rev;
 			if (old_s) {
 				rev = BATdiffcand(old_s, bn);
-				assert(BATintersectcand(old_s, bn)->batCount == bn->batCount);
+#ifndef NDEBUG
+				BAT *is = BATintersectcand(old_s, bn);
+				if (is) {
+					assert(is->batCount == bn->batCount);
+					BBPreclaim(is);
+				}
 				assert(rev->batCount == old_s->batCount - bn->batCount);
+#endif
 			}
 
 			else

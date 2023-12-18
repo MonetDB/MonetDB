@@ -67,8 +67,6 @@ gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__visibility__("hidden")));
 BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	__attribute__((__visibility__("hidden")));
-BAT *BATcreatesample(oid hseq, BUN cnt, BUN n, uint64_t seed)
-	__attribute__((__visibility__("hidden")));
 void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATdestroy(BAT *b)
@@ -81,8 +79,6 @@ gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, B
 Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
 	__attribute__((__visibility__("hidden")));
 void BAThashsave(BAT *b, bool dosync)
-	__attribute__((__visibility__("hidden")));
-void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 bool BATiscand(BAT *b)
 	__attribute__((__visibility__("hidden")));

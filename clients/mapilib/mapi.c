@@ -1847,7 +1847,7 @@ set_uri(Mapi mid)
 	const char *host = msetting_string(mid->settings, MP_HOST);
 	const char *database = msetting_string(mid->settings, MP_DATABASE);
 	int port = msetting_long(mid->settings, MP_PORT);
-	size_t urilen = strlen(host) + strlen(database) + 32;
+	size_t urilen = strlen(host) + (database ? strlen(database) : 0) + 32;
 	char *uri = malloc(urilen);
 
 	/* uri looks as follows:

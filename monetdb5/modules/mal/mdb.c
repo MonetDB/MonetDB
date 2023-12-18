@@ -61,20 +61,6 @@
 	else if(stk->cmd==0 && X) \
 		mnstr_printf(cntxt->fdout,"#Monet Debugger on\n");
 
-static int
-pseudo(bat *ret, BAT *b, const char *X1, const char *X2, const char *X3)
-{
-	char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "%s_%s_%s", X1, X2, X3);
-	if (BBPindex(buf) <= 0 && BBPrename(b, buf) != 0)
-		return -1;
-	if (BATroles(b, X2) != GDK_SUCCEED)
-		return -1;
-	*ret = b->batCacheid;
-	BBPkeepref(b);
-	return 0;
-}
-
 static str
 MDBgetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -297,16 +283,10 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(bn);
 		return err;
 	}
-	if (pseudo(ret, b, "view", "stk", "frame")) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.getStackFrame", GDK_EXCEPTION);
-	}
-	if (pseudo(ret2, bn, "view", "stk", "frame")) {
-		BBPrelease(*ret);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.getStackFrame", GDK_EXCEPTION);
-	}
+	*ret = b->batCacheid;
+	BBPkeepref(b);
+	*ret2 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -338,16 +318,10 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(bn);
 		return err;
 	}
-	if (pseudo(ret, b, "view", "stk", "frame")) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.getStackFrameN", GDK_EXCEPTION);
-	}
-	if (pseudo(ret2, bn, "view", "stk", "frameB")) {
-		BBPrelease(*ret);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.getStackFrameN", GDK_EXCEPTION);
-	}
+	*ret = b->batCacheid;
+	BBPkeepref(b);
+	*ret2 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -432,16 +406,10 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		GDKfree(msg);
 	}
 	GDKfree(buf);
-	if (pseudo(ret, b, "view", "stk", "trace")) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.setTrace", GDK_EXCEPTION);
-	}
-	if (pseudo(ret2, bn, "view", "stk", "traceB")) {
-		BBPrelease(*ret);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.setTrace", GDK_EXCEPTION);
-	}
+	*ret = b->batCacheid;
+	BBPkeepref(b);
+	*ret2 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -692,10 +660,8 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		}
 		GDKfree(ps);
 	}
-	if (pseudo(ret, b, "view", "fcn", "stmt")) {
-		BBPreclaim(b);
-		throw(MAL, "mdb.getDefinition", GDK_EXCEPTION);
-	}
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 
 	return MAL_SUCCEED;
 }

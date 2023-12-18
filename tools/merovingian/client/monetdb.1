@@ -480,7 +480,7 @@ section
 Next to database URIs the hostnames and ports for monetdbds that
 allow to be controlled remotely can be found in the discover list masked
 with an asterisk.  These entries can easily be filtered out using an
-expression (e.g. "mapi:monetdb:*") if desired.  The control entries come
+expression (e.g. ``mapi:monetdb:*'') if desired.  The control entries come
 in handy when one wants to get an overview of available monetdbds in
 e.g. a local cluster.  Note that for
 .I monetdbd
@@ -512,9 +512,9 @@ These expressions are
 limited shell-globbing like, where the * in any position is expanded to
 an arbitrary string.  The * can occur multiple times in the expression,
 allowing for more advanced matches.  Note that the empty string also
-matches the *, hence "de*mo" can return "demo" as match.  To match the
-literal '*' character, one has to escape it using a backslash, e.g.
-"\e*".
+matches the *, hence ``de*mo'' can return ``demo'' as match.  To match the
+literal ``*'' character, one has to escape it using a backslash, e.g.
+``\[rs]*''.
 .SH RETURN VALUE
 The
 .I monetdb

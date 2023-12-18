@@ -508,19 +508,27 @@ JSONstr2json(json *ret, const char **j)
 	size_t ln = strlen(*j)+1;
 	size_t out_size = 0;
 
-	JSON *jt = JSONparse(*j);
-	CHECK_JSON(jt);
+	JSON *jt = NULL;
 
-	buf = (json)GDKmalloc(ln);
+	if (strNil(*j)) {
+		buf = GDKstrdup(*j);
+	} else {
+		jt = JSONparse(*j);
+		CHECK_JSON(jt);
+
+		buf = (json)GDKmalloc(ln);
+	}
 	if (buf == NULL) {
 		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	msg = JSONtoStorageString(jt, 0, &buf, &out_size);
-	if (msg != MAL_SUCCEED) {
-		GDKfree(buf);
-		goto bailout;
+	if (jt != NULL) {
+		msg = JSONtoStorageString(jt, 0, &buf, &out_size);
+		if (msg != MAL_SUCCEED) {
+			GDKfree(buf);
+			goto bailout;
+		}
 	}
 
 	*ret = buf;
@@ -573,10 +581,69 @@ JSONisarray(bit *ret, json *js)
 	return MAL_SUCCEED;
 }
 
+#ifdef GDKLIBRARY_JSON
+static gdk_return
+upgradeJSONStorage(char **out, const char **in)
+{
+	str msg;
+	if ((msg = JSONstr2json(out, in)) != MAL_SUCCEED) {
+		freeException(msg);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+static str
+jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
+{
+	str out = NULL;
+	str msg;
+
+	if ((a = BATatoms[TYPE_str].atomRead(a, dstlen, s, cnt)) == NULL)
+		return NULL;
+
+	if ((msg = JSONstr2json(&out, (const char **) &a)) != MAL_SUCCEED) {
+		freeException(msg);
+		GDKfree(a);
+		return NULL;
+	}
+	*dstlen = strlen(out) + 1;
+	GDKfree(a);
+
+	a = out;
+
+	return a;
+}
+
+#endif
+
+
 static str
 JSONprelude(void)
 {
 	TYPE_json = ATOMindex("json");
+#ifdef GDKLIBRARY_JSON
+/* Run the gdk upgrade libary function with a callback that
+ * performs the actual upgrade.
+ */
+	char *jsonupgrade;
+	struct stat st;
+	if ((jsonupgrade = GDKfilepath(0, BATDIR, "jsonupgradeneeded", NULL)) == NULL) {
+		throw(MAL, "json.prelude", "cannot allocate filename for json upgrade signal file");
+	}
+	int r = stat(jsonupgrade, &st);
+	GDKfree(jsonupgrade);
+	if (r == 0) {
+		/* The file exists so we need to run the upgrade code */
+		if (BBPjson_upgrade(upgradeJSONStorage) != GDK_SUCCEED) {
+			throw(MAL, "json.prelude", "JSON storage upgrade failed");
+		}
+		/* Change the read function of the json atom so that any values in the WAL
+		 * will also be upgraded.
+		 */
+		BATatoms[TYPE_json].atomRead = (void *(*)(void *, size_t *, stream *, size_t)) jsonRead;
+	}
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -3126,9 +3193,10 @@ JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 	return JSONsubjsoncand(retval, bid, gid, eid, NULL, skip_nils);
 }
 
+
 #include "mel.h"
 static mel_atom json_init_atoms[] = {
- { .name="json", .basetype="str", .fromstr=JSONfromString, .tostr=JSONtoString, },  { .cmp=NULL }
+	{ .name="json", .basetype="str", .fromstr=JSONfromString, .tostr=JSONtoString },  { .cmp=NULL },
 };
 static mel_func json_init_funcs[] = {
  command("json", "new", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),

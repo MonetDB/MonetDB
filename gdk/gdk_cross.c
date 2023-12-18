@@ -81,10 +81,9 @@ BATcrossci(BAT **r1p, BAT **r2p, struct canditer *ci1, struct canditer *ci2)
 	bn1 = COLnew(0, TYPE_oid, ci1->ncand * ci2->ncand, TRANSIENT);
 	if (r2p)
 		bn2 = COLnew(0, TYPE_oid, ci1->ncand * ci2->ncand, TRANSIENT);
-	if (!bn1 || (r2p && !bn2)) {
+	if (bn1 == NULL || (r2p && bn2 == NULL)) {
 		BBPreclaim(bn1);
-		if (bn2)
-			BBPreclaim(bn2);
+		BBPreclaim(bn2);
 		return GDK_FAIL;
 	}
 	if (ci1->ncand > 0 && ci2->ncand > 0) {

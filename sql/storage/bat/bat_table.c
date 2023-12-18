@@ -317,6 +317,13 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 
 		l = BATproject(cr, lcb); /* project because cr is join result */
 		bat_destroy(lcb);
+		if (l == NULL) {
+			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(cr2);
+			bat_destroy(rcb);
+			return NULL;
+		}
 		lcb = l;
 		ret = BATjoin(&l, &r, lcb, rcb, NULL, cr2, false, BATcount(lcb));
 		bat_destroy(cr2);
@@ -385,6 +392,8 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 	bat_destroy(cl);
 	bat_destroy(cr);
 	bat_destroy(cr2);
+	if (r == NULL)
+		return NULL;
 	cl = r;
 	/* project all in the new order */
 	res_table *rt = res_table_create(tr, 1/*result_id*/, 1/*query_id*/, ol_length(t->columns), Q_TABLE, NULL);
@@ -398,15 +407,13 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 
 		o = n->data;
 		b = full_column(tr, o);
-		if (b)
-			rc = BATproject(cl, b);
-		bat_destroy(b);
-		if (!b || !rc) {
+		if (b == NULL || (rc = BATproject(cl, b)) == NULL) {
 			bat_destroy(cl);
 			bat_destroy(b);
 			res_table_destroy(rt);
 			return NULL;
 		}
+		bat_destroy(b);
 		if (!res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, TYPE_bat, rc, true)) {
 			bat_destroy(cl);
 			res_table_destroy(rt);

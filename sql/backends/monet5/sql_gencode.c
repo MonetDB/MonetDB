@@ -104,17 +104,15 @@ table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes)
 	return q;
 }
 
-void
-relational_func_create_result_part1(mvc *sql, sql_rel **f, int *nargs)
+sql_rel *
+relational_func_create_result_part1(mvc *sql, sql_rel *r, int *nargs)
 {
-	sql_rel *r = *f;
-
 	if (is_topn(r->op) || is_sample(r->op))
 		r = r->l;
 	if (!is_project(r->op))
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	*nargs = list_length(r->exps);
-	*f = r;
+	return r;
 }
 
 InstrPtr
@@ -288,7 +286,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	backend_reset(be);
 
 	int nargs;
-	relational_func_create_result_part1(m, &r, &nargs);
+	sql_rel *nr = relational_func_create_result_part1(m, r, &nargs);
 	nargs += (call && call->type == st_list) ? list_length(call->op4.lval) : rel_ops ? list_length(rel_ops) : 0;
 
 	c->curprg = newFunctionArgs(putName(mod), putName(name), FUNCTIONsymbol, nargs);
@@ -296,11 +294,10 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	} else if (eb_savepoint(&m->sa->eb)) {
-		r = NULL;
 		sql_error(m, 10, "%s", m->sa->eb.msg);
 		freeSymbol(c->curprg);
 		goto bailout;
-	} else if (_create_relational_function_body(m, r, call, rel_ops, inline_func) < 0) {
+	} else if (_create_relational_function_body(m, nr, call, rel_ops, inline_func) < 0) {
 		goto bailout;
 	}
 	*be = bebackup;
@@ -356,6 +353,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	InstrPtr curInstr = 0, p, o;
 	tid_uri *tu = ((list*)prp->value.pval)->h->data;
 	sqlid table_id = tu->id;
+	assert(table_id);
 	node *n;
 	int i, q, v, res = -1, added_to_cache = 0, *lret, *rret;
 	size_t len = 1024, nr, pwlen = 0;
@@ -949,8 +947,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* create stub */
 	int nargs;
-	sql_rel *rel2 = rel;
-	relational_func_create_result_part1(m, &rel2, &nargs);
+	sql_rel *rel2 = relational_func_create_result_part1(m, rel, &nargs);
 	if (call && call->type == st_list)
 		nargs += list_length(call->op4.lval);
 	c->curprg = newFunctionArgs(putName(mod), putName(name), FUNCTIONsymbol, nargs);

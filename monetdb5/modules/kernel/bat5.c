@@ -383,21 +383,6 @@ BKCgetColumnType(str *res, const bat *bid)
 }
 
 static str
-BKCgetRole(str *res, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getRole", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	*res = GDKstrdup(b->tident);
-	BBPunfix(b->batCacheid);
-	if (*res == NULL)
-		throw(MAL, "bat.getRole", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
-}
-
-static str
 BKCisSorted(bit *res, const bat *bid)
 {
 	BAT *b;
@@ -752,8 +737,6 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		|| BUNappend(bk, "hseqbase", false) != GDK_SUCCEED
 		|| BUNappend(bv, oidtostr(b->hseqbase, bf, sizeof(bf)),
 					 FALSE) != GDK_SUCCEED
-		|| BUNappend(bk, "tident", false) != GDK_SUCCEED
-		|| BUNappend(bv, b->tident, false) != GDK_SUCCEED
 		|| BUNappend(bk, "tdense", false) != GDK_SUCCEED
 		|| BUNappend(bv, local_itoa((ssize_t) BATtdensebi(&bi), buf),
 					 false) != GDK_SUCCEED
@@ -904,27 +887,6 @@ BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
 /*
  * Role Management
  */
-static str
-BKCsetColumn(void *r, const bat *bid, const char *const *tname)
-{
-	BAT *b;
-
-	(void) r;
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setColumn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	if (tname == 0 || *tname == 0 || **tname == 0) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.setColumn", ILLEGAL_ARGUMENT " Column name missing");
-	}
-	if (BATroles(b, *tname) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.setColumn", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
 str
 BKCsetName(void *r, const bat *bid, const char *const *s)
 {
@@ -1529,7 +1491,6 @@ mel_func bat5_init_funcs[] = {
  command("bat", "getVHeapSize", BKCgetVHeapSize, false, "Calculate the vheap size for varsized bats", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getCapacity", BKCgetCapacity, false, "Returns the current allocation size (in max number of elements) of a BAT.", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getColumnType", BKCgetColumnType, false, "Returns the type of the tail column of a BAT, as an integer type number.", args(1,2, arg("",str),batargany("b",1))),
- command("bat", "getRole", BKCgetRole, false, "Returns the rolename of the head column of a BAT.", args(1,2, arg("",str),batargany("bid",1))),
  command("bat", "isaKey", BKCgetKey, false, "Return whether the column tail values are unique (key).", args(1,2, arg("",bit),batargany("b",1))),
  command("bat", "setAccess", BKCsetAccess, false, "Try to change the update access privileges \nto this BAT. Mode:\nr[ead-only]      - allow only read access.\na[append-only]   - allow reads and update.\nw[riteable]      - allow all operations.\nBATs are updatable by default. On making a BAT read-only, \nall subsequent updates fail with an error message.\nReturns the BAT itself.", args(1,3, batargany("",1),batargany("b",1),arg("mode",str))),
  command("bat", "getAccess", BKCgetAccess, false, "Return the access mode attached to this BAT as a character.", args(1,2, arg("",str),batargany("b",1))),
@@ -1539,7 +1500,6 @@ mel_func bat5_init_funcs[] = {
  command("bat", "append", BKCappend_val_wrap, false, "append the value u to i", args(1,3, batargany("",1),batargany("i",1),argany("u",1))),
  command("bat", "setName", BKCsetName, false, "Give a logical name to a BAT. ", args(1,3, arg("",void),batargany("b",1),arg("s",str))),
  command("bat", "getName", BKCgetBBPname, false, "Gives back the logical name of a BAT.", args(1,2, arg("",str),batargany("b",1))),
- command("bat", "setColumn", BKCsetColumn, false, "Give a logical name to the tail column of a BAT.", args(1,3, arg("",void),batargany("b",1),arg("t",str))),
  command("bat", "isTransient", BKCisTransient, false, "", args(1,2, arg("",bit),batargany("b",1))),
  command("bat", "setTransient", BKCsetTransient, false, "Make the BAT transient.  Returns \nboolean which indicates if the\nBAT administration has indeed changed.", args(1,2, arg("",void),batargany("b",1))),
  command("bat", "isPersistent", BKCisPersistent, false, "", args(1,2, arg("",bit),batargany("b",1))),
