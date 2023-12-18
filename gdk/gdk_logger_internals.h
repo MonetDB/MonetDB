@@ -58,7 +58,6 @@ struct logger {
 
 	// atomic
 	ATOMIC_TYPE nr_flushers;
-	ATOMIC_TYPE nr_open_files;
 
 	// synchronized by store->flush
 	bool flushnow;

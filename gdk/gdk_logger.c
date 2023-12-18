@@ -1091,7 +1091,6 @@ log_open_output(logger *lg)
 	assert(current && current->next == NULL);
 	new_range->cnt = current->cnt;
 	current->next = new_range;
-	ATOMIC_INC(&lg->nr_open_files);
 	return GDK_SUCCEED;
 }
 
@@ -1111,7 +1110,6 @@ log_close_output(logger *lg)
 	if (!LOG_DISABLED(lg) && lg->current->output_log) {
 		TRC_INFO(WAL, "closing output log %s", mnstr_name(lg->current->output_log));
 		close_stream(lg->current->output_log);
-		ATOMIC_DEC(&lg->nr_open_files);
 	}
 	lg->current->output_log = NULL;
 }
@@ -2228,7 +2226,6 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 	logbat_destroy(lg->dseqs);
 	ATOMIC_DESTROY(&lg->current->refcount);
 	ATOMIC_DESTROY(&lg->nr_flushers);
-	ATOMIC_DESTROY(&lg->nr_open_files);
 	MT_lock_destroy(&lg->lock);
 	MT_lock_destroy(&lg->rotation_lock);
 	GDKfree(lg->fn);
@@ -2309,7 +2306,6 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	MT_lock_init(&lg->flush_lock, "flush_lock");
 	MT_cond_init(&lg->excl_flush_cv);
 	ATOMIC_INIT(&lg->nr_flushers, 0);
-	ATOMIC_INIT(&lg->nr_open_files, 0);
 
 	if (log_load(fn, logdir, lg, filename) == GDK_SUCCEED) {
 		return lg;
@@ -2344,7 +2340,6 @@ do_flush_range_cleanup(logger *lg)
 			TRC_INFO(WAL, "closing output log %s", mnstr_name(frange->output_log));
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
-			ATOMIC_DEC(&lg->nr_open_files);
 		}
 	}
 	rotation_unlock(lg);
@@ -2400,7 +2395,6 @@ log_destroy(logger *lg)
 	MT_lock_destroy(&lg->rotation_lock);
 	MT_lock_destroy(&lg->flush_lock);
 	ATOMIC_DESTROY(&lg->nr_flushers);
-	ATOMIC_DESTROY(&lg->nr_open_files);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->rbuf);
@@ -2491,7 +2485,6 @@ do_rotate(logger *lg)
 		if (!LOG_DISABLED(lg) && ATOMIC_GET(&cur->refcount) == 1 && cur->output_log) {
 			close_stream(cur->output_log);
 			cur->output_log = NULL;
-			ATOMIC_DEC(&lg->nr_open_files);
 		}
 	}
 }
@@ -3074,7 +3067,7 @@ check_rotation_conditions(logger *lg)
 
 	const lng log_large = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? LOG_MINI : LOG_LARGE;
 	bool res = (p > log_large) || (lg->saved_id + 1 >= lg->id && ATOMIC_GET(&lg->current->drops) > 100000);
-	return res && (ATOMIC_GET(&lg->nr_open_files) < 8);
+	return res;
 }
 
 gdk_return
@@ -3171,7 +3164,6 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 		if (frange != lg->current && frange->output_log) {
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
-			ATOMIC_DEC(&lg->nr_open_files);
 		}
 		rotation_unlock(lg);
 	}
@@ -3401,9 +3393,7 @@ log_printinfo(logger *lg)
 	rotation_unlock(lg);
 	printf("current transaction id %d, saved transaction id %d\n",
 	       lg->tid, lg->saved_tid);
-	printf("number of flushers: %d, number of open files %d\n",
-	       (int) ATOMIC_GET(&lg->nr_flushers),
-	       (int) ATOMIC_GET(&lg->nr_open_files));
+	printf("number of flushers: %d\n", (int) ATOMIC_GET(&lg->nr_flushers));
 	printf("number of catalog entries "BUNFMT", of which "BUNFMT" deleted\n",
 	       lg->catalog_bid->batCount, lg->dcatalog->batCount);
 	int npend = 0;
