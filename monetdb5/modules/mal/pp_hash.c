@@ -142,11 +142,15 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (p->argc == 4) {
 		bat pid = *getArgReference_bat(s, p, 3);
 		BAT *p = BATdescriptor(pid);
+		if (p == NULL)
+			return createException(MAL, "hash.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		parent = (hash_table*)p->T.sink;
 		BBPunfix(p->batCacheid);
 	}
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
+	if (b == NULL)
+		return createException(MAL, "hash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->T.sink = (Sink*)ht_create(tt, size*1.2*2.1, parent);
 	*res = b->batCacheid;
 	BBPkeepref(b);
