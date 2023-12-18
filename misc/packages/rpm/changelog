@@ -1,3 +1,91 @@
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.17-20231116
+- Rebuilt.
+
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.17-20231116
+- gdk: Fixed a regression where after a while the write-ahead log files
+  weren't being rotated, meaning from some point onwards, the newest
+  file just kept on growing.
+
+* Thu Nov 09 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.15-20231109
+- Rebuilt.
+- GH#7410: SIGSEGV cause database corruption
+
+* Tue Nov  7 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.15-20231109
+- gdk: When saving the SQL catalog during a low-level commit, we should
+  only save the part of the catalog that corresponds to the part of the
+  write-ahead log that has been processed.  What we did was save more,
+  which resulted in the catalog containing references to tables and
+  columns whose disk presence is otherwise only in the write-ahead log.
+
+* Fri Nov 03 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.13-20231103
+- Rebuilt.
+- GH#7300: Implement missing standard SQL DATE and TIMESTAMP functions
+- GH#7324: string_distance('method',str1, str2) as a generic distance
+  function
+- GH#7409: Numpy table returning UDFs with variadic arguments
+
+* Thu Nov  2 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.13-20231103
+- sql: Added a missing interface function sys.timestamp_to_str with
+  a TIMESTAMP (as opposed to TIMESTAMP WITH TIME ZONE) argument.
+  The missing interface caused error messages being produced when the
+  function was called with a TIMESTAMP argument, although it did give
+  the correct result.
+
+* Tue Oct 31 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.13-20231103
+- gdk: A bug was fixed where the administration of which bats were in use was
+  interpreted incorrectly during startup, causing problems later.  One
+  symptom that has been observed was failure to startup with a message
+  that the catalog tables could not be loaded.
+
+* Fri Sep 29 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.11-20230929
+- Rebuilt.
+
+* Fri Sep 29 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.11-20230929
+- MonetDB: Fixed an installation issue on Debian and Ubuntu introduced in the
+  last build.
+
+* Wed Sep 27 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.9-20230927
+- Rebuilt.
+- GH#7402: Privileges on merge table not propagated to partition tables
+
+* Mon Sep 25 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
+- Rebuilt.
+- GH#7094: Drop remote tables in transactions and rollback
+- GH#7303: Improve the performance of multi-column filters
+- GH#7400: VM max memory is not check correctly for cgroups v2
+- GH#7401: Column aliases used incorrectly in UNION subqueries
+
+* Fri Sep 22 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
+- gdk: Fixed a number of data races (race conditions).
+
+* Mon Sep 18 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
+- gdk: Fixed a reference counting problem when a BAT could nog be loaded,
+  e.g. because of resource limitations.
+
+* Wed Aug 30 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
+- gdk: Only check for virtual memory limits when creating or growing bats,
+  not for general memory allocations.  There is (still) too much code
+  that doesn't properly handle failing allocations, so we need to avoid
+  those as much as possible.  This has mostly an effect if there are
+  virtual memory size restrictions imposed by cgroups (memory.swap.max
+  in cgroups v2, memory.memsw.limit_in_bytes in cgroups v1).
+- gdk: The low-level commit turned out to always commit every persistent bat
+  in the system.  There is no need for that, it should only commit bats
+  that were changed.  This has now been fixed.
+- gdk: Implemented timeout/exit checks in a bunch more operators.  Long(er)
+  running operators occasionally check whether they're taking too long
+  (past a user-specified timeout) or whether the server is exiting.
+  This is now done in more places.
+
+* Wed Aug 30 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
+- MonetDB: Do a lot more error checking, mostly for allocation failures.  More is
+  still needed, though.
+
+* Thu Aug 10 2023 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.47.7-20230925
+- MonetDB: Improve performance of the ILIKE operator when the pattern contains only
+  ASCII characters. In this case we do not need to treat any characters as
+  UTF-8 and we can use much faster routines that perform byte comparisons.
+
 * Tue Jul 18 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.5-20230718
 - Rebuilt.
 - GH#7388: Query results in large cross product

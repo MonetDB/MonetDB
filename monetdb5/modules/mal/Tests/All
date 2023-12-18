@@ -20,8 +20,6 @@ imprints
 
 # flags  is influecend by the Mtest command line 
 
-ascii_io2
-
 mat
 
 remoteInit

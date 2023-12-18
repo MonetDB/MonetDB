@@ -10,7 +10,7 @@ CREATE TABLE sublimits2 (a int, b varchar(32))
 statement ok rowcount 1
 INSERT INTO sublimits1 VALUES (0, 'dummy')
 
-statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
+statement error M0M29!ALTER TABLE: there are values in column a outside the partition range
 ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FOR NULL VALUES
 
 statement ok rowcount 1

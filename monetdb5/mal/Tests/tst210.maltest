@@ -13,9 +13,6 @@ io.print(b)
 statement ok
 bat.setName(b,"myhome")
 
-statement ok
-bat.setColumn(b,"last")
-
 query II rowsort
 io.print(b)
 ----

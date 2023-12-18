@@ -194,7 +194,7 @@ monet_hello(void)
 }
 
 static str
-absolute_path(str s)
+absolute_path(const char *s)
 {
 	if (!MT_path_absolute(s)) {
 		str ret = (str) GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
@@ -513,9 +513,7 @@ main(int argc, char **av)
 				grpdebug |= GRPtransactions;
 				break;
 			}
-			if (strcmp
-				(long_options[option_index].name,
-				 "read-password-initialize-and-exit") == 0) {
+			if (strcmp(long_options[option_index].name, "read-password-initialize-and-exit") == 0) {
 				readpwdxit = true;
 				break;
 			}
@@ -831,8 +829,7 @@ main(int argc, char **av)
 	}
 
 	modules[mods++] = 0;
-	if (mal_init
-		(modules, false, readpwdxit ? secret : NULL, mercurial_revision())) {
+	if (mal_init(modules, false, readpwdxit ? secret : NULL, mercurial_revision())) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();

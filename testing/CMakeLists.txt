@@ -21,7 +21,7 @@ set(QXinfodir "${CMAKE_INSTALL_INFODIR}")
 set(QXlibdir "${CMAKE_INSTALL_FULL_LIBDIR}")
 set(QXlibexecdir "${CMAKE_INSTALL_LIBEXECDIR}")
 if (WIN32)
-  string(REPLACE "/" "\\\\" QXlocalstatedir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
+  string(REGEX REPLACE "[/\\]" "\\\\\\\\" QXlocalstatedir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
 else()
   set(QXlocalstatedir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
 endif()
@@ -29,7 +29,7 @@ set(QXmandir "${CMAKE_INSTALL_MANDIR}")
 set(QXprefix "${CMAKE_INSTALL_PREFIX}")
 set(QXPYTHON "${Python3_EXECUTABLE}")
 if (WIN32)
-  string(REPLACE "/" "\\\\" QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
+  string(REGEX REPLACE "[/\\]" "\\\\\\\\" QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
 else()
   set(QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
 endif()
@@ -94,6 +94,9 @@ endif(HAVE_SHP)
 if (HAVE_GETENTROPY)
   set(HAVE_GETENTROPY_FALSE "#")
 endif(HAVE_GETENTROPY)
+if (HAVE_OPENSSL)
+  set(HAVE_OPENSSL_FALSE "#")
+endif(HAVE_OPENSSL)
 if (NOT WIN32)
   set(NOT_WIN32_FALSE "#")
 endif()
@@ -139,6 +142,8 @@ if(PYTHON3_LIBDIR)
     melcheck.py
     sqllogictest.py
     explain.py
+    plan.py
+    floatutil.py
     mapicursor.py
     malmapi.py
     helpers.py

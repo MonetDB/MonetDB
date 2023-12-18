@@ -80,6 +80,19 @@ target_link_libraries(bincopyloops
   copybinary
   )
 
+add_executable(murltest
+  murltest.c
+  testsfile.c
+  murltest.h
+)
+
+target_link_libraries(murltest
+  PRIVATE
+  monetdb_config_header
+  mapi
+  stream
+)
+
 install(TARGETS
   sample0
   sample1
@@ -89,6 +102,7 @@ install(TARGETS
   streamcat
   testcondvar
   bincopydata
+  murltest
   RUNTIME
   DESTINATION
   ${CMAKE_INSTALL_BINDIR}
@@ -105,6 +119,7 @@ if(WIN32)
     $<TARGET_PDB_FILE:testcondvar>
     $<TARGET_PDB_FILE:bincopydata>
     $<TARGET_PDB_FILE:bincopyloops>
+    $<TARGET_PDB_FILE:murltest>
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     OPTIONAL)
 endif()

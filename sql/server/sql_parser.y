@@ -63,9 +63,11 @@ makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, uns
 #ifdef HAVE_HGE
 #define MAX_DEC_DIGITS 38
 #define MAX_HEX_DIGITS 32
+#define MAX_OCT_DIGITS 64 /* TODO */
 #else
 #define MAX_DEC_DIGITS 18
 #define MAX_HEX_DIGITS 16
+#define MAX_OCT_DIGITS 32 /* TODO */
 #endif
 
 static inline int
@@ -173,7 +175,7 @@ uescape_xform(char *restrict s, const char *restrict esc)
 %parse-param { mvc *m }
 %lex-param { void *m }
 
-/* only possible from bison 3.6 and up */
+/* only possible from bison 3.0 and up */
 %define parse.error verbose
 
 /* reentrant parser */
@@ -421,6 +423,8 @@ int yydebug=1;
 	opt_null_string
 	opt_to_savepoint
 	opt_uescape
+	opt_trim_type
+	opt_trim_characters
 	opt_using
 	opt_XML_attribute_name
 	restricted_ident
@@ -636,7 +640,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT UIDENT aTYPE ALIAS RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM
+	IDENT UIDENT aTYPE ALIAS RANK sqlINT OIDNUM HEXADECIMALNUM OCTALNUM BINARYNUM INTNUM APPROXNUM
 	USING
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -694,7 +698,7 @@ int yydebug=1;
 %left <operation> ALL ANY NOT_BETWEEN BETWEEN NOT_IN sqlIN NOT_EXISTS EXISTS NOT_LIKE LIKE NOT_ILIKE ILIKE OR SOME
 %left <operation> AND
 %left <sval> COMPARISON /* <> < > <= >= */
-%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
+%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING TRIM POSITION SPLIT_PART
 %left <operation> '*' '/' '%'
 %left UMINUS
 %left <operation> '~'
@@ -721,6 +725,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token PATH PRIMARY PRIVILEGES
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
 %token RETURN
+%token LEADING TRAILING BOTH
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHOUT
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
@@ -4501,6 +4506,18 @@ opt_brackets:
  | '(' ')'	{ $$ = 1; }
  ;
 
+opt_trim_type:
+   /* empty */	{ $$ = NULL; }
+  | LEADING {$$ = "ltrim"; }
+  | TRAILING {$$ = "rtrim"; }
+  | BOTH {$$ = "btrim"; }
+  ;
+
+opt_trim_characters:
+   /* empty */	{ $$ = NULL; }
+  | string {$$ = $1; }
+  ;
+
 string_funcs:
     SUBSTRING '(' scalar_exp FROM scalar_exp FOR scalar_exp ')'
 			{ dlist *l = L();
@@ -4567,6 +4584,38 @@ string_funcs:
 			  append_symbol(ops, $7);
 			  append_list(l, ops);
 			  $$ = _symbol_create_list( SQL_NOP, l ); }
+| TRIM '(' opt_trim_type opt_trim_characters FROM scalar_exp  ')'
+			{ dlist *l = L();
+			  if ( $3 == NULL && $4 == NULL ) {
+				sqlformaterror(m, SQLSTATE(2000) "%s", "trim specification or trim characters need to be specified preceding FROM in TRIM");
+				YYABORT;
+			  }
+			  append_list(l,
+				append_string(L(), sa_strdup(SA, $3?$3:"btrim")));
+				append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $6);
+
+			  char* s = $4?$4:" ";
+			  int len = UTF8_strlen(s);
+			  sql_subtype t;
+			  sql_find_subtype(&t, "char", len, 0 );
+			  append_symbol(l, _newAtomNode( _atom_string(&t, s)));
+			  $$ = _symbol_create_list( SQL_BINOP, l ); }
+| TRIM '(' scalar_exp ',' scalar_exp  ')'
+			{ dlist *l = L();
+			  append_list(l,
+				append_string(L(), sa_strdup(SA, "btrim")));
+				append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $3);
+			  append_symbol(l, $5);
+			  $$ = _symbol_create_list( SQL_BINOP, l ); }
+| TRIM '(' scalar_exp ')'
+			{ dlist *l = L();
+			  append_list(l,
+				append_string(L(), sa_strdup(SA, "btrim")));
+				append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $3);
+			  $$ = _symbol_create_list( SQL_UNOP, l ); }
  ;
 
 column_exp_commalist:
@@ -4857,7 +4906,123 @@ literal:
 		  sql_find_subtype(&t, "char", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
 
- |  HEXADECIMAL { int len = _strlen($1), i = 2, err = 0;
+ |  BINARYNUM { int len = _strlen($1), i = 2, err = 0;
+		  char * binary = $1;
+		  sql_subtype t;
+#ifdef HAVE_HGE
+		  hge res = 0;
+#else
+		  lng res = 0;
+#endif
+		  /* skip leading '0' */
+		  while (i < len && binary[i] == '0')
+			i++;
+
+		  if (len - i < MAX_OCT_DIGITS || (len - i == MAX_OCT_DIGITS && binary[i] < '2'))
+			while (err == 0 && i < len)
+			{
+				if (binary[i] == '_') {
+					i++;
+					continue;
+				}
+				res <<= 1;
+				if (binary[i] == '0' || binary[i] == '1') // TODO: an be asserted
+					res = res + (binary[i] - '0');
+				else
+					err = 1;
+				i++;
+			}
+		  else
+			err = 1;
+
+		  if (err == 0) {
+			assert(res >= 0);
+
+			/* use smallest type that can accommodate the given value */
+			if (res <= GDK_bte_max)
+				sql_find_subtype(&t, "tinyint", 8, 0 );
+			else if (res <= GDK_sht_max)
+				sql_find_subtype(&t, "smallint", 16, 0 );
+			else if (res <= GDK_int_max)
+				sql_find_subtype(&t, "int", 32, 0 );
+			else if (res <= GDK_lng_max)
+				sql_find_subtype(&t, "bigint", 64, 0 );
+#ifdef HAVE_HGE
+			else if (res <= GDK_hge_max)
+				sql_find_subtype(&t, "hugeint", 128, 0 );
+#endif
+			else
+				err = 1;
+		  }
+
+		  if (err != 0) {
+			sqlformaterror(m, SQLSTATE(22003) "Invalid binary number or binary too large (%s)", $1);
+			$$ = NULL;
+			YYABORT;
+		  } else {
+			$$ = _newAtomNode( atom_int(SA, &t, res));
+		  }
+
+ }
+ |  OCTALNUM { int len = _strlen($1), i = 2, err = 0;
+		  char * octal = $1;
+		  sql_subtype t;
+#ifdef HAVE_HGE
+		  hge res = 0;
+#else
+		  lng res = 0;
+#endif
+		  /* skip leading '0' */
+		  while (i < len && octal[i] == '0')
+			i++;
+
+		  if (len - i < MAX_OCT_DIGITS || (len - i == MAX_OCT_DIGITS && octal[i] < '8'))
+			while (err == 0 && i < len)
+			{
+				if (octal[i] == '_') {
+					i++;
+					continue;
+				}
+				res <<= 3;
+				if ('0' <= octal[i] && octal[i] < '8')
+					res = res + (octal[i] - '0');
+				else
+					err = 1;
+				i++;
+			}
+		  else
+			err = 1;
+
+		  if (err == 0) {
+			assert(res >= 0);
+
+			/* use smallest type that can accommodate the given value */
+			if (res <= GDK_bte_max)
+				sql_find_subtype(&t, "tinyint", 8, 0 );
+			else if (res <= GDK_sht_max)
+				sql_find_subtype(&t, "smallint", 16, 0 );
+			else if (res <= GDK_int_max)
+				sql_find_subtype(&t, "int", 32, 0 );
+			else if (res <= GDK_lng_max)
+				sql_find_subtype(&t, "bigint", 64, 0 );
+#ifdef HAVE_HGE
+			else if (res <= GDK_hge_max)
+				sql_find_subtype(&t, "hugeint", 128, 0 );
+#endif
+			else
+				err = 1;
+		  }
+
+		  if (err != 0) {
+			sqlformaterror(m, SQLSTATE(22003) "Invalid octal number or octal too large (%s)", $1);
+			$$ = NULL;
+			YYABORT;
+		  } else {
+			$$ = _newAtomNode( atom_int(SA, &t, res));
+		  }
+
+ }
+ |  HEXADECIMALNUM { int len = _strlen($1), i = 2, err = 0; 
 		  char * hexa = $1;
 		  sql_subtype t;
 #ifdef HAVE_HGE
@@ -4876,6 +5041,10 @@ literal:
 		  if (len - i < MAX_HEX_DIGITS || (len - i == MAX_HEX_DIGITS && hexa[i] < '8'))
 			while (err == 0 && i < len)
 			{
+				if (hexa[i] == '_') {
+					i++;
+					continue;
+				}
 				res <<= 4;
 				if (isdigit((unsigned char) hexa[i]))
 					res = res + (hexa[i] - '0');
@@ -4947,7 +5116,19 @@ literal:
 		  }
 		}
  |  sqlINT
-		{ int digits = _strlen($1), err = 0;
+		{ 
+			char filtered[50] = {0};
+			int j = 0;
+			for (int i = 0; i < 50; i++) {
+				char d = $1[i];
+				if (!d)
+					break;
+				else if (d == '_')
+					continue;
+				filtered[j] = d;
+				++j;
+			}
+			int digits = j, err = 0;
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  size_t len = sizeof(hge);
@@ -4960,10 +5141,10 @@ literal:
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  if (hgeFromStr($1, &len, &p, false) < 0 || is_hge_nil(value))
+		  if (hgeFromStr(filtered, &len, &p, false) < 0 || is_hge_nil(value))
 			err = 2;
 #else
-		  if (lngFromStr($1, &len, &p, false) < 0 || is_lng_nil(value))
+		  if (lngFromStr(filtered, &len, &p, false) < 0 || is_lng_nil(value))
 			err = 2;
 #endif
 
@@ -5005,7 +5186,21 @@ literal:
 		  }
 		}
  |  INTNUM
-		{ char *s = sa_strdup(SA, $1);
+		{
+			char filtered[51] = {0};
+			int j = 0;
+			for (int i = 0; i < 50; i++) {
+				char d = $1[i];
+				if (!d)
+					break;
+				else if (d == '_')
+					continue;
+				filtered[j] = d;
+				++j;
+			}
+			filtered[j] = 0;
+			char *s = filtered;
+
 			int digits;
 			int scale;
 			int has_errors;
@@ -5023,12 +5218,12 @@ literal:
 				* The float-like value either doesn't fit in integer decimal storage
 				* or it is not a valid float representation.
 				*/
-				char *p = $1;
+				char *p = s;
 				double val;
 
 				errno = 0;
-				val = strtod($1,&p);
-				if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
+				val = strtod(s,&p);
+				if (p == s || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 					sqlformaterror(m, SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 					$$ = NULL;
 					YYABORT;
@@ -5039,13 +5234,25 @@ literal:
 		   }
 		}
  |  APPROXNUM
-		{ sql_subtype t;
-		  char *p = $1;
+		{
+		  char filtered[50] = {0};
+		  int j = 0;
+		  for (int i = 0; i < 50; i++) {
+				char d = $1[i];
+				if (!d)
+					break;
+				else if (d == '_')
+			continue;
+			filtered[j] = d;
+			++j;
+		  }
+		  sql_subtype t;
+		  char *p = filtered;
 		  double val;
 
 		  errno = 0;
-		  val = strtod($1,&p);
-		  if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
+		  val = strtod(filtered,&p);
+		  if (p == filtered || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 			sqlformaterror(m, SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 			$$ = NULL;
 			YYABORT;
@@ -5395,11 +5602,7 @@ posint:
 data_type:
     CHARACTER
 			{ sql_find_subtype(&$$, "char", 1, 0); }
- |  varchar
-			{ $$.type = NULL;
-			  yyerror(m, "CHARACTER VARYING needs a mandatory length specification");
-			  YYABORT;
-			}
+ |  varchar		{ sql_find_subtype(&$$, "varchar", 0, 0); }
  |  clob		{ sql_find_subtype(&$$, "clob", 0, 0); }
  |  CHARACTER '(' nonzero ')'
 			{ sql_find_subtype(&$$, "char", $3, 0); }

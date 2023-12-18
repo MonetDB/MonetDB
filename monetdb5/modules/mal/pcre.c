@@ -1380,9 +1380,8 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 	int v[3];
 
 	v[0] = v[1] = *res = 0;
-	if (pcre_exec
-		(pattern, NULL, *s, (int) strlen(*s), 0, PCRE_NO_UTF8_CHECK, v,
-		 3) >= 0) {
+	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0,
+				  PCRE_NO_UTF8_CHECK, v, 3) >= 0) {
 		*res = v[1];
 	}
 	return MAL_SUCCEED;
@@ -2245,8 +2244,14 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 			BAT *rev;
 			if (old_s) {
 				rev = BATdiffcand(old_s, bn);
-				assert(BATintersectcand(old_s, bn)->batCount == bn->batCount);
+#ifndef NDEBUG
+				BAT *is = BATintersectcand(old_s, bn);
+				if (is) {
+					assert(is->batCount == bn->batCount);
+					BBPreclaim(is);
+				}
 				assert(rev->batCount == old_s->batCount - bn->batCount);
+#endif
 			}
 
 			else

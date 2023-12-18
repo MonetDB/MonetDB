@@ -21,3 +21,4 @@ typedef struct DotMonetdb {
 } DotMonetdb;
 
 extern void parse_dotmonetdb(DotMonetdb *dotfile);
+extern void destroy_dotmonetdb(DotMonetdb *dotfile);

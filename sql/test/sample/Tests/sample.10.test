@@ -1,14 +1,14 @@
 query I rowsort
 select * from GENERATE_SERIES(1,41) sample 0.25 seed 1234
 ----
-14
-15
-19
-2
+1
+16
+17
 20
+22
 26
-27
-38
-39
-8
+28
+29
+31
+7
 

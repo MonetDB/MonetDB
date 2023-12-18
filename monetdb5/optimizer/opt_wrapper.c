@@ -173,7 +173,6 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				freeException(msg);
 				return newmsg;
 			}
-			addtoMalBlkHistory(mb);
 			break;
 		}
 	}

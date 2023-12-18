@@ -42,7 +42,7 @@ struct oidtreenode {
 	};
 };
 
-static int
+static bool
 OIDTreeMaybeInsert(struct oidtreenode *tree, oid o, BUN allocated)
 {
 	struct oidtreenode **nodep;
@@ -50,12 +50,12 @@ OIDTreeMaybeInsert(struct oidtreenode *tree, oid o, BUN allocated)
 	if (allocated == 0) {
 		tree->left = tree->right = NULL;
 		tree->o = o;
-		return 1;
+		return true;
 	}
 	nodep = &tree;
 	while (*nodep) {
 		if (o == (*nodep)->o)
-			return 0;
+			return false;
 		if (o < (*nodep)->o)
 			nodep = &(*nodep)->left;
 		else
@@ -64,7 +64,7 @@ OIDTreeMaybeInsert(struct oidtreenode *tree, oid o, BUN allocated)
 	*nodep = &tree[allocated];
 	tree[allocated].left = tree[allocated].right = NULL;
 	tree[allocated].o = o;
-	return 1;
+	return true;
 }
 
 /* inorder traversal, gives us a sorted BAT */
@@ -98,26 +98,24 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bn, oid start, oid stop)
 }
 
 static BAT *
-do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
+do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 {
 	BAT *bn;
-	BUN cnt, slen;
+	BUN slen;
 	BUN rescnt;
 	struct oidtreenode *tree = NULL;
 
-	BATcheck(b, NULL);
 	ERRORcheck(n > BUN_MAX, "sample size larger than BUN_MAX\n", NULL);
-	cnt = BATcount(b);
 	/* empty sample size */
 	if (n == 0) {
 		bn = BATdense(0, 0, 0);
 	} else if (cnt <= n) {
 		/* sample size is larger than the input BAT, return
 		 * all oids */
-		bn = BATdense(0, b->hseqbase, cnt);
+		bn = BATdense(0, hseq, cnt);
 	} else {
-		oid minoid = b->hseqbase;
-		oid maxoid = b->hseqbase + cnt;
+		oid minoid = hseq;
+		oid maxoid = hseq + cnt;
 
 		/* if someone samples more than half of our tree, we
 		 * do the antiset */
@@ -136,19 +134,14 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 			return NULL;
 		}
 
+		if (lock)
+			MT_lock_set(lock);
 		/* generate a list of random numbers; note we use the
 		 * "tree" array, but we use the value from each location
 		 * before it is overwritten by the use as part of the
 		 * binary tree */
-		if (lock) {
-			MT_lock_set(lock);
-			for (rescnt = 0; rescnt < n; rescnt++)
-				tree[rescnt].r = next(rse);
-			MT_lock_unset(lock);
-		} else {
-			for (rescnt = 0; rescnt < n; rescnt++)
-				tree[rescnt].r = next(rse);
-		}
+		for (rescnt = 0; rescnt < n; rescnt++)
+			tree[rescnt].r = next(rse);
 
 		/* while we do not have enough sample OIDs yet */
 		BUN rnd = 0;
@@ -158,12 +151,8 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 				if (rnd == n) {
 					/* we ran out of random numbers,
 					 * so generate more */
-					if (lock)
-						MT_lock_set(lock);
 					for (rnd = rescnt; rnd < n; rnd++)
 						tree[rnd].r = next(rse);
-					if (lock)
-						MT_lock_unset(lock);
 					rnd = rescnt;
 				}
 				candoid = minoid + tree[rnd++].r % cnt;
@@ -171,6 +160,8 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 				 * generated, try again */
 			} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
 		}
+		if (lock)
+			MT_lock_unset(lock);
 		if (!antiset) {
 			OIDTreeToBAT(tree, bn);
 		} else {
@@ -184,9 +175,6 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 		bn->tkey = true;
 		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *(oid *) Tloc(bn, 0) : oid_nil;
 	}
-	TRC_DEBUG(ALGO, "BATsample(" ALGOBATFMT "," BUNFMT ")="
-		  ALGOOPTBATFMT "\n",
-		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
 	return bn;
 }
 
@@ -198,7 +186,10 @@ BATsample_with_seed(BAT *b, BUN n, uint64_t seed)
 
 	init_random_state_engine(rse, seed);
 
-	return do_batsample(b, n, rse, NULL);
+	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse, NULL);
+	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT "\n",
+		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
+	return bn;
 }
 
 static MT_Lock rse_lock = MT_LOCK_INITIALIZER(rse_lock);
@@ -211,5 +202,8 @@ BATsample(BAT *b, BUN n)
 	if (rse[0] == 0 && rse[1] == 0 && rse[2] == 0 && rse[3] == 0)
 		init_random_state_engine(rse, (uint64_t) GDKusec());
 	MT_lock_unset(&rse_lock);
-	return do_batsample(b, n, rse, &rse_lock);
+	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse, &rse_lock);
+	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT "\n",
+		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
+	return bn;
 }

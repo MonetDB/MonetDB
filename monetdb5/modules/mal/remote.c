@@ -69,9 +69,6 @@
  * Instead, we maintain a simple lock with each connection, which can be
  * used to issue a safe, but blocking get/put/exec/register request.
  */
-#ifdef HAVE_MAPI
-
-
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"		/* for printFunction */
@@ -465,8 +462,7 @@ RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query)
 									  mapi_get_user(conn),
 									  mapi_get_host(conn),
 									  mapi_get_dbname(conn),
-									  getExceptionMessage(mapi_result_error
-														  (mhdl)));
+									  getExceptionMessage(mapi_result_error(mhdl)));
 			mapi_close_handle(mhdl);
 			return (err);
 		}
@@ -1703,5 +1699,3 @@ mel_func remote_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_remote_mal)
 { mal_module2("remote", NULL, remote_init_funcs, RMTprelude, NULL); }
-
-#endif

@@ -65,7 +65,7 @@ def main() :
     line = fi.readline()
     if encoding != 'utf-8':
         prompt = str(prompt, 'utf-8').encode(encoding, 'replace')
-    while line and line != "\q\n":
+    while line and line != "\\q\n":
         if encoding != 'utf-8':
             line = str(line, encoding).encode('utf-8')
         res = s.cmd('s' + line)

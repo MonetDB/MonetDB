@@ -160,7 +160,7 @@ typedef struct {
 	const char *fcnname;		/* function name, reference into namespace */
 	int argc, retc, maxarg;		/* total and result argument count */
 	int inout;			/* starting index of the inout result arguments in argv, -1 if none*/
-	int argv[FLEXIBLE_ARRAY_MEMBER];	/* at least a few entries */
+	int argv[];					/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK {
@@ -181,10 +181,7 @@ typedef struct MALBLK {
 	 unsafeProp:1;				/* unsafe property */
 
 	str errors;					/* left over errors */
-	struct MALBLK *history;		/* of optimizer actions */
-	short keephistory;			/* do we need the history at all */
 	int maxarg;					/* keep track on the maximal arguments used */
-	ptr replica;				/* for the replicator tests */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
 	ATOMIC_TYPE workers;
@@ -227,7 +224,7 @@ typedef struct MALSTK {
 
 	struct MALSTK *up;			/* stack trace list */
 	struct MALBLK *blk;			/* associated definition */
-	ValRecord stk[FLEXIBLE_ARRAY_MEMBER];
+	ValRecord stk[];
 } MalStack, *MalStkPtr;
 
 #endif /*  _MAL_H */

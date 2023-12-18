@@ -382,7 +382,6 @@ MCcloseClient(Client c)
 	c->promptlength = -1;
 	if (c->errbuf) {
 		/* no client threads in embedded mode */
-		//if (!GDKembedded())
 		GDKsetbuf(NULL);
 		if (c->father == NULL)
 			GDKfree(c->errbuf);
@@ -392,7 +391,6 @@ MCcloseClient(Client c)
 		freeModule(c->usermodule);
 	c->usermodule = c->curmodule = 0;
 	c->father = 0;
-	c->idle = c->login = c->lastcmd = 0;
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
@@ -436,6 +434,7 @@ MCcloseClient(Client c)
 	//assert(c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
+	c->idle = c->login = c->lastcmd = 0;
 	if (shutdowninprogress) {
 		c->mode = BLOCKCLIENT;
 	} else {
@@ -596,4 +595,37 @@ MCvalid(Client tc)
 	}
 	MT_lock_unset(&mal_contextLock);
 	return 0;
+}
+
+void
+MCprintinfo(void)
+{
+	int nrun = 0, nfinish = 0, nblock = 0;
+
+	MT_lock_set(&mal_contextLock);
+	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
+		switch (c->mode) {
+		case RUNCLIENT:
+			/* running */
+			nrun++;
+			if (c->idle)
+				printf("client %d, user %s, using %"PRIu64" bytes of transient space, idle since %s", c->idx, c->username, (uint64_t) ATOMIC_GET(&c->qryctx.datasize), ctime(&c->idle));
+			else
+				printf("client %d, user %s, using %"PRIu64" bytes of transient space\n", c->idx, c->username, (uint64_t) ATOMIC_GET(&c->qryctx.datasize));
+			break;
+		case FINISHCLIENT:
+			/* finishing */
+			nfinish++;
+			break;
+		case BLOCKCLIENT:
+			/* blocked */
+			nblock++;
+			break;
+		case FREECLIENT:
+			break;
+		}
+	}
+	MT_lock_unset(&mal_contextLock);
+	printf("%d active clients, %d finishing clients, %d blocked clients\n",
+		   nrun, nfinish, nblock);
 }

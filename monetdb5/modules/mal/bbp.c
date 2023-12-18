@@ -27,21 +27,6 @@
 #include "bat5.h"
 #include "mutils.h"
 
-static int
-pseudo(bat *ret, BAT *b, str X1, str X2)
-{
-	char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "%s_%s", X1, X2);
-	if ((BBPindex(buf) <= 0 && BBPrename(b, buf) != 0)
-		|| BATroles(b, X2) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		return -1;
-	}
-	*ret = b->batCacheid;
-	BBPkeepref(b);
-	return -0;
-}
-
 static str
 CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -122,8 +107,8 @@ CMDbbpNames(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "name"))
-		throw(MAL, "catalog.bbpNames", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -176,8 +161,8 @@ CMDbbpCount(bat *ret)
 				}
 			}
 		}
-	if (pseudo(ret, b, "bbp", "count"))
-		throw(MAL, "catalog.bbpCount", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -221,8 +206,8 @@ CMDbbpLocation(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "location"))
-		throw(MAL, "catalog.bbpLocation", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -245,11 +230,7 @@ CMDbbpDirty(bat *ret)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				BAT *bn = BBP_cache(i);
 
-				if (BUNappend
-					(b,
-					 bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" :
-					 "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean",
-					 false) != GDK_SUCCEED) {
+				if (BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED) {
 					BBPunlock();
 					BBPreclaim(b);
 					throw(MAL, "catalog.bbpDirty",
@@ -257,8 +238,8 @@ CMDbbpDirty(bat *ret)
 				}
 			}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "status"))
-		throw(MAL, "catalog.bbpDirty", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -289,8 +270,8 @@ CMDbbpStatus(bat *ret)
 				}
 			}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "status"))
-		throw(MAL, "catalog.bbpStatus", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -322,8 +303,8 @@ CMDbbpKind(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "kind"))
-		throw(MAL, "catalog.bbpKind", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -351,8 +332,8 @@ CMDbbpRefCount(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "refcnt"))
-		throw(MAL, "catalog.bbpRefCount", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -380,8 +361,8 @@ CMDbbpLRefCount(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "lrefcnt"))
-		throw(MAL, "catalog.bbpLRefCount", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 

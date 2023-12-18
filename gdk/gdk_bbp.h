@@ -59,7 +59,7 @@
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
 
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
-gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid);
+gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool allow_hge_upgrade);
 gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 #ifdef GDKLIBRARY_HASHASH
 			      int *hashash,
@@ -91,7 +91,10 @@ gdk_export int BBPrelease(bat b);
 gdk_export void BBPkeepref(BAT *b)
 	__attribute__((__nonnull__(1)));
 gdk_export void BBPcold(bat i);
-
+#ifdef GDKLIBRARY_JSON
+typedef gdk_return ((*json_storage_conversion)(char **, const char **));
+gdk_export gdk_return BBPjson_upgrade(json_storage_conversion);
+#endif
 #define BBP_status_set(bid, mode)			\
 	ATOMIC_SET(&BBP_record(bid).status, mode)
 

@@ -52,7 +52,7 @@ query IT rowsort
 SELECT a, b FROM subt2
 ----
 
-statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
+statement error M0M29!ALTER TABLE: there are values in column a outside the partition range
 ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-100' TO '0'
 
 statement ok rowcount 2

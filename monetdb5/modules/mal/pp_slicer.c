@@ -44,24 +44,27 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 {
 	str msg = MAL_SUCCEED;
 	Pipeline *p = (Pipeline*)*H;
-	BAT *g = NULL, *r = NULL, *t = NULL, *b = BATdescriptor(*bid);
-	BUN s = *start, e = *end;
+	BAT *g = NULL, *r = NULL, *t = NULL, *b = NULL;
+ 	BUN s = *start, e = *end;
 	int fb = 1;
 	bool private = (!tid || is_bat_nil(*tid));
 
-	if (!b)
-		return createException(SQL, "algebra.subslice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if ((b = BATdescriptor(*bid)) == NULL)
+		return createException(SQL, "algebra.subslice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (private && *tid && is_bat_nil(*tid)) {
 		t = COLnew(b->hseqbase, /*b->ttype?b->ttype:*/TYPE_oid, 0, TRANSIENT);
+		if (!t) {
+			BBPunfix(*bid);
+			return createException(SQL, "algebra.subslice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		t->T.sink = (Sink*)topn_create();
 		t->T.private_bat = 1;
 	} else {
-		t = BATdescriptor(*tid);
-	}
-	if (!t) {
-		BBPunfix(*bid);
-		return createException(SQL, "algebra.subslice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if ((t = BATdescriptor(*tid)) == NULL) {
+			BBPunfix(*bid);
+			return createException(SQL, "algebra.subslice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
 	}
 
 	if (!private)
@@ -97,9 +100,10 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 			if (rest > lnr)
 				rest = lnr;
 			g = BATdense(0, re, rest);
+			if (g)
+				g->T.maxval = re;
 			r = BATdense(0, ls+off, rest);
 			re += rest;
-			g->T.maxval = re;
 			fb = 0;
 		}
 		n->start = rs;
@@ -108,15 +112,16 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 	if (fb) {
 		assert(!g && !r);
 		g = COLnew(b->hseqbase, TYPE_oid, 0, TRANSIENT);
-		g->T.maxval = re;
+		if (g)
+			g->T.maxval = re;
 		r = COLnew(b->hseqbase, TYPE_oid, 0, TRANSIENT);
 	}
 	BBPunfix(b->batCacheid);
 	if (!private)
 		pipeline_unlock1(t);
 	if (!g || !r) {
-		if (r)
-			BBPreclaim(r);
+		BBPreclaim(g);
+		BBPreclaim(r);
 		return createException(SQL, "algebra.subslice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*gid = g->batCacheid;
@@ -150,8 +155,10 @@ SLICERnth_slice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		r = BATslice(b, s, s+SLICE_SIZE);
 	}
-	if (!r)
+	if (!r) {
+		BBPunfix(b->batCacheid);
 		return createException(SQL, "slicer.nth_slice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	*bid = b->batCacheid;
 	*res = r->batCacheid;

@@ -69,7 +69,6 @@ GROUPcollect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	AGGRtask *a;
 	int i;
 	BAT *b, *bs, *bh = NULL;
-	BUN sample;
 
 	(void) mb;
 	(void) cntxt;
@@ -101,8 +100,7 @@ GROUPcollect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(a);
 			return NULL;
 		}
-		sample = BATcount(b) < 1000 ? BATcount(b) : 1000;
-		bs = BATsample(b, sample);
+		bs = BATsample(b, 1000);
 		if (bs) {
 			bh = BATunique(b, bs);
 			if (bh) {

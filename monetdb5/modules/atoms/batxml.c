@@ -1287,6 +1287,8 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		/* singleton groups: return group ID's (g's tail) and original
 		 * values from b */
 		bn = VIEWcreate(g->tseqbase, b);
+		if (bn == NULL)
+			err = GDK_EXCEPTION;
 		goto out;
 	}
 

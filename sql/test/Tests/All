@@ -55,7 +55,7 @@ joins
 default
 HAVE_GEOM?keys
 
-like_tests
+HAVE_LIBPCRE?like_tests
 more_like_tests
 
 news

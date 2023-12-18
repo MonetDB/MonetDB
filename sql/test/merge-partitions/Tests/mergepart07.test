@@ -37,7 +37,7 @@ ALTER TABLE listparts DROP TABLE subtable1
 statement error 42S02!ALTER TABLE: table 'sys.subtable1' isn't part of RANGE PARTITION TABLE 'sys.listparts'
 ALTER TABLE listparts DROP TABLE subtable1
 
-statement error M0M29!ALTER TABLE: there are values in the column a outside the partition range
+statement error M0M29!ALTER TABLE: there are values in column a outside the partition range
 ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 10 TO 100
 
 statement ok
@@ -85,7 +85,7 @@ ALTER TABLE anothertest ADD TABLE othersub2 AS PARTITION FROM 't' TO 'u'
 statement ok
 ALTER TABLE anothertest DROP TABLE othersub1
 
-statement error M0M29!ALTER TABLE: there are values in the column b outside the partition range
+statement error M0M29!ALTER TABLE: there are values in column b outside the partition range
 ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM 'a' TO 'string'
 
 statement ok

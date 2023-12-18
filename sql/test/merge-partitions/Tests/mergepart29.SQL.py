@@ -34,7 +34,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                 node1_cur.execute('ALTER TABLE "tb1" ADD TABLE "tb2" AS PARTITION FROM 0 TO 1;')  # error
                 sys.stderr.write('Exception expected')
             except Exception as ex:
-                if 'there are values in the column col1 outside the partition range' not in str(ex):
+                if 'there are values in column col1 outside the partition range' not in str(ex):
                     sys.stderr.write('Exception: there are values in the column col1 outside the partition range expected')
             node1_cur.execute('ALTER TABLE "tb1" ADD TABLE "tb2" AS PARTITION FROM 0 TO 100;')
             try:

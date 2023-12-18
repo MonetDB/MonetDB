@@ -76,7 +76,7 @@ concatErrors(char *err1, const char *err2)
  * is good.
  */
 static str __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
-		createExceptionInternal(enum malexception type, const char *fcn,
+createExceptionInternal(enum malexception type, const char *fcn,
 						const char *format, va_list ap)
 {
 	size_t msglen;
@@ -196,7 +196,7 @@ freeException(str msg)
  * is good.
  */
 static str __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
-		createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
+createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 						   char *prev, const char *format, va_list ap)
 {
 	bool addnl = false;

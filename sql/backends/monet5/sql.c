@@ -19,40 +19,40 @@
 #include "sql.h"
 #include "mapi_prompt.h"
 #include "sql_result.h"
-#include "sql_gencode.h"
 #include "sql_storage.h"
 #include "sql_scenario.h"
 #include "store_sequence.h"
-#include "sql_optimizer.h"
-#include "sql_datetime.h"
 #include "sql_partition.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
-#include "rel_statistics.h"
 #include "rel_partition.h"
-#include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
-#include "rel_dump.h"
-#include "rel_bin.h"
 #include "rel_physical.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
-#include "mal_module.h"
-#include "mal_session.h"
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_profiler.h"
 #include "bat5.h"
 #include "opt_pipes.h"
-#include "orderidx.h"
 #include "clients.h"
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
 #include "gdk_cand.h"
+
+static inline void
+BBPnreclaim(int nargs, ...)
+{
+	va_list valist;
+	va_start(valist, nargs);
+	for (int i = 0; i < nargs; i++) {
+		BAT *b = va_arg(valist, BAT *);
+		BBPreclaim(b);
+	}
+	va_end(valist);
+}
 
 static int
 rel_is_table(sql_rel *rel)
@@ -3473,12 +3473,10 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (TRACEtable(cntxt, t) != 3)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
-	for(i=0; i < 3; i++)
-	if( t[i]){
+	for (i = 0; i < 3; i++) {
 		*getArgReference_bat(stk, pci, i) = t[i]->batCacheid;
 		BBPkeepref(t[i]);
-	} else
-		throw(SQL,"dump_trace", SQLSTATE(45000) "Missing trace BAT ");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -4312,6 +4310,158 @@ end:
 	return msg;
 }
 
+MT_Lock lock_persist_unlogged = MT_LOCK_INITIALIZER(lock_persist_unlogged);
+
+str
+SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)stk;
+	(void)pci;
+
+	assert(pci->argc == 5);
+
+	bat *o0 = getArgReference_bat(stk, pci, 0),
+		*o1 = getArgReference_bat(stk, pci, 1),
+		*o2 = getArgReference_bat(stk, pci, 2);
+	str sname = *getArgReference_str(stk, pci, 3),
+		tname = *getArgReference_str(stk, pci, 4),
+		msg = MAL_SUCCEED;
+
+	mvc *m = NULL;
+	msg = getSQLContext(cntxt, mb, &m, NULL);
+
+	if (msg)
+		return msg;
+
+	sqlstore *store = store = m->session->tr->store;
+
+	sql_schema *s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(3F000) "Schema missing %s.", sname);
+
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(42000) "Access denied for %s to schema '%s'.",
+			  get_string_global_var(m, "current_user"), s->base.name);
+
+	sql_table *t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+
+	if (!isUnloggedTable(t) || t->access != TABLE_APPENDONLY)
+		throw(SQL, "sql.persist_unlogged", "Unlogged and Insert Only mode combination required for table %s.%s", sname, tname);
+
+	lng count = 0;
+
+	sql_trans *tr = m->session->tr;
+	storage *t_del = bind_del_data(tr, t, NULL);
+
+	BAT *d = BATdescriptor(t_del->cs.bid);
+
+	if (t_del == NULL || d == NULL)
+		throw(SQL, "sql.persist_unlogged", "Cannot access %s column storage.", tname);
+
+	MT_lock_set(&lock_persist_unlogged);
+	BATiter d_bi = bat_iterator(d);
+
+	if (BBP_status(d->batCacheid) & BBPEXISTING) {
+
+		assert(d->batInserted <= d_bi.count);
+
+		if (d->batInserted < d_bi.count) {
+
+			int n = 100;
+			bat *commit_list = GDKzalloc(sizeof(bat) * (n + 1));
+			BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 1));
+
+			if (commit_list == NULL || sizes == NULL) {
+				MT_lock_unset(&lock_persist_unlogged);
+				GDKfree(commit_list);
+				GDKfree(sizes);
+				throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+			}
+
+			commit_list[0] = 0;
+			sizes[0] = 0;
+			int i = 1;
+
+			for (node *ncol = ol_first_node(t->columns); ncol; ncol = ncol->next) {
+
+				sql_column *c = (sql_column *) ncol->data;
+				BAT *b = store->storage_api.bind_col(tr, c, QUICK);
+
+				if (b == NULL) {
+					MT_lock_unset(&lock_persist_unlogged);
+					GDKfree(commit_list);
+					GDKfree(sizes);
+					throw(SQL, "sql.persist_unlogged", "Cannot access column descriptor.");
+				}
+
+				if (i == n && ncol->next) {
+					n = n * 2;
+					commit_list = GDKrealloc(commit_list, sizeof(bat) * n);
+					sizes = GDKrealloc(sizes, sizeof(BUN) * n);
+				}
+
+				if (commit_list == NULL || sizes == NULL) {
+					MT_lock_unset(&lock_persist_unlogged);
+					GDKfree(commit_list);
+					GDKfree(sizes);
+					throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+				}
+
+				commit_list[i] = b->batCacheid;
+				sizes[i] = d_bi.count;
+				i++;
+			}
+
+			commit_list[i] = d->batCacheid;
+			sizes[i] = d_bi.count;
+			i++;
+
+			if (TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED) {
+				MT_lock_unset(&lock_persist_unlogged);
+				GDKfree(commit_list);
+				GDKfree(sizes);
+				throw(SQL, "sql.persist_unlogged", "Lower level commit operation failed");
+			}
+
+			GDKfree(commit_list);
+			GDKfree(sizes);
+		}
+
+		count = d_bi.count;
+	}
+
+	bat_iterator_end(&d_bi);
+	MT_lock_unset(&lock_persist_unlogged);
+	BBPreclaim(d);
+
+	BAT *table = COLnew(0, TYPE_str, 0, TRANSIENT),
+		*tableid = COLnew(0, TYPE_int, 0, TRANSIENT),
+		*rowcount = COLnew(0, TYPE_lng, 0, TRANSIENT);
+
+	if (table == NULL || tableid == NULL || rowcount == NULL) {
+		BBPnreclaim(3, table, tableid, rowcount);
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+	}
+
+	if (BUNappend(table, tname, false) != GDK_SUCCEED ||
+		BUNappend(tableid, &(t->base.id), false) != GDK_SUCCEED ||
+		BUNappend(rowcount, &count, false) != GDK_SUCCEED) {
+		BBPnreclaim(3, table, tableid, rowcount);
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+	}
+
+	*o0 = table->batCacheid;
+	*o1 = tableid->batCacheid;
+	*o2 = rowcount->batCacheid;
+	BBPkeepref(table);
+	BBPkeepref(tableid);
+	BBPkeepref(rowcount);
+
+	return msg;
+}
+
 str
 SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -5064,6 +5214,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
+ pattern("sql", "persist_unlogged", SQLpersist_unlogged, true, "Persist deltas on append only table in schema s table t", args(3, 5, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng), arg("s", str), arg("t", str))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
  pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),
@@ -5296,7 +5447,6 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  pattern("batcalc", "lng", batstr_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",str),batarg("s",oid),arg("digits",int),arg("scale",int))),
  pattern("calc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",void),arg("digits",int))),
  pattern("batcalc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",oid),arg("digits",int))),
- pattern("batcalc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",oid),arg("digits",int),batarg("r",bat))),
  pattern("calc", "timestamp", str_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",str),arg("digits",int))),
  pattern("calc", "timestamp", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("has_tz",int))),
  pattern("calc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",timestamp),arg("digits",int))),

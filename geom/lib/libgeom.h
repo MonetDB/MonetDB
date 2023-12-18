@@ -112,12 +112,12 @@ libgeom_export const char *geom_type2str(int t, int flag);
 typedef struct wkb {
 	int len;
 	int srid;
-	char data[FLEXIBLE_ARRAY_MEMBER];
+	char data[];
 } wkb;
 
 typedef struct wkba {
 	int itemsNum; //the number of wkbs
-	wkb* data[FLEXIBLE_ARRAY_MEMBER]; //the wkbs
+	wkb* data[]; //the wkbs
 } wkba;
 
 typedef struct {

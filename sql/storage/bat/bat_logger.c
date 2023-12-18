@@ -93,6 +93,8 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 {
 	gdk_return rc;
 	newcol = BATsetaccess(newcol, BAT_READ);
+	if (newcol == NULL)
+		return GDK_FAIL;
 	if (old_lg != NULL) {
 		if ((rc = BUNappend(old_lg->del, &oldcolid, false)) == GDK_SUCCEED &&
 			(rc = BUNappend(old_lg->add, &newcol->batCacheid, false)) == GDK_SUCCEED &&
@@ -112,7 +114,6 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 						MT_rwlock_rdunlock(&cii.b->thashlock);
 						return GDK_FAIL;
 					}
-					lg->deleted++;
 					break;
 				}
 			}
@@ -123,7 +124,6 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 				(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(newcol)}, false)) == GDK_SUCCEED) {
 				BBPretain(newcol->batCacheid);
 			}
-			lg->cnt++;
 		}
 	}
 	return rc;
@@ -2521,6 +2521,10 @@ bl_postversion(void *Store, void *Lg)
 			/* and type = 'char' */
 			b3 = BATselect(b1, b2, "char", NULL, true, false, false);
 			bat_destroy(b2);
+			if (b3 == NULL) {
+				bat_destroy(b1);
+				return GDK_FAIL;
+			}
 			if (BATcount(b3) > 0) {
 				if (BUNfnd(old_lg->add, &b1->batCacheid) == BUN_NONE) {
 					/* replace sys.args.type with a copy that we can modify */
@@ -3501,7 +3505,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Could not open %s for reading: %s", bbpdir, mnstr_peek_error(NULL));
 		return GDK_FAIL;
 	}
-	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid);
+	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid, false);
 	if (bbpversion == 0)
 		goto end;
 	assert(bbpversion == GDKLIBRARY);

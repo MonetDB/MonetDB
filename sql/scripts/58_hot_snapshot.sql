@@ -27,4 +27,3 @@ create user ".snapshot"
 
 grant execute on procedure sys.hot_snapshot(string) to ".snapshot";
 grant execute on procedure sys.hot_snapshot(string, bool) to ".snapshot";
-

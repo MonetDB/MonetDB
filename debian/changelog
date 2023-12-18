@@ -1,3 +1,139 @@
+monetdb (11.47.17) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Nov 2023 10:48:27 +0100
+
+monetdb (11.47.17) unstable; urgency=low
+
+  * gdk: Fixed a regression where after a while the write-ahead log files
+    weren't being rotated, meaning from some point onwards, the newest
+    file just kept on growing.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Nov 2023 10:48:27 +0100
+
+monetdb (11.47.15) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7410: SIGSEGV cause database corruption
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 09 Nov 2023 17:03:15 +0100
+
+monetdb (11.47.15) unstable; urgency=low
+
+  * gdk: When saving the SQL catalog during a low-level commit, we should
+    only save the part of the catalog that corresponds to the part of the
+    write-ahead log that has been processed.  What we did was save more,
+    which resulted in the catalog containing references to tables and
+    columns whose disk presence is otherwise only in the write-ahead log.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 7 Nov 2023 17:03:15 +0100
+
+monetdb (11.47.13) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7300: Implement missing standard SQL DATE and TIMESTAMP functions
+  * GH#7324: string_distance('method',str1, str2) as a generic distance
+    function
+  * GH#7409: Numpy table returning UDFs with variadic arguments
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 03 Nov 2023 10:48:08 +0100
+
+monetdb (11.47.13) unstable; urgency=low
+
+  * sql: Added a missing interface function sys.timestamp_to_str with
+    a TIMESTAMP (as opposed to TIMESTAMP WITH TIME ZONE) argument.
+    The missing interface caused error messages being produced when the
+    function was called with a TIMESTAMP argument, although it did give
+    the correct result.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 2 Nov 2023 10:48:08 +0100
+
+monetdb (11.47.13) unstable; urgency=low
+
+  * gdk: A bug was fixed where the administration of which bats were in use was
+    interpreted incorrectly during startup, causing problems later.  One
+    symptom that has been observed was failure to startup with a message
+    that the catalog tables could not be loaded.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 31 Oct 2023 10:48:08 +0100
+
+monetdb (11.47.11) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Sep 2023 12:00:43 +0200
+
+monetdb (11.47.11) unstable; urgency=low
+
+  * MonetDB: Fixed an installation issue on Debian and Ubuntu introduced in the
+    last build.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Sep 2023 12:00:43 +0200
+
+monetdb (11.47.9) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7402: Privileges on merge table not propagated to partition tables
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 27 Sep 2023 09:04:30 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7094: Drop remote tables in transactions and rollback
+  * GH#7303: Improve the performance of multi-column filters
+  * GH#7400: VM max memory is not check correctly for cgroups v2
+  * GH#7401: Column aliases used incorrectly in UNION subqueries
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 25 Sep 2023 12:24:55 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * gdk: Fixed a number of data races (race conditions).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 22 Sep 2023 12:24:55 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * gdk: Fixed a reference counting problem when a BAT could nog be loaded,
+    e.g. because of resource limitations.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 18 Sep 2023 12:24:55 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * gdk: Only check for virtual memory limits when creating or growing bats,
+    not for general memory allocations.  There is (still) too much code
+    that doesn't properly handle failing allocations, so we need to avoid
+    those as much as possible.  This has mostly an effect if there are
+    virtual memory size restrictions imposed by cgroups (memory.swap.max
+    in cgroups v2, memory.memsw.limit_in_bytes in cgroups v1).
+  * gdk: The low-level commit turned out to always commit every persistent bat
+    in the system.  There is no need for that, it should only commit bats
+    that were changed.  This has now been fixed.
+  * gdk: Implemented timeout/exit checks in a bunch more operators.  Long(er)
+    running operators occasionally check whether they're taking too long
+    (past a user-specified timeout) or whether the server is exiting.
+    This is now done in more places.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 30 Aug 2023 12:24:55 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * MonetDB: Do a lot more error checking, mostly for allocation failures.  More is
+    still needed, though.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 30 Aug 2023 12:24:55 +0200
+
+monetdb (11.47.7) unstable; urgency=low
+
+  * MonetDB: Improve performance of the ILIKE operator when the pattern contains only
+    ASCII characters. In this case we do not need to treat any characters as
+    UTF-8 and we can use much faster routines that perform byte comparisons.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Thu, 10 Aug 2023 12:24:55 +0200
+
 monetdb (11.47.5) unstable; urgency=low
 
   * Rebuilt.

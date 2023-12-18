@@ -1068,7 +1068,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	else
 #endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
-	if (BBPinit() != GDK_SUCCEED)
+	const char *allow = mo_find_option(set, setlen, "allow_hge_upgrade");
+	if (BBPinit(allow && strcmp(allow, "yes") == 0) != GDK_SUCCEED)
 		return GDK_FAIL;
 	first = false;
 
@@ -2030,6 +2031,27 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 }
 
 /* print some potentially interesting information */
+struct prinfocb {
+	struct prinfocb *next;
+	void (*func)(void);
+} *prinfocb;
+
+void
+GDKprintinforegister(void (*func)(void))
+{
+	struct prinfocb *p = GDKmalloc(sizeof(struct prinfocb));
+	if (p == NULL) {
+		GDKerror("cannot register USR1 printing function.\n");
+		return;
+	}
+	p->func = func;
+	p->next = NULL;
+	struct prinfocb **pp = &prinfocb;
+	while (*pp != NULL)
+		pp = &(*pp)->next;
+	*pp = p;
+}
+
 void
 GDKprintinfo(void)
 {
@@ -2063,4 +2085,6 @@ GDKprintinfo(void)
 	GDKlockstatistics(3);
 #endif
 	dump_threads();
+	for (struct prinfocb *p = prinfocb; p; p = p->next)
+		(*p->func)();
 }

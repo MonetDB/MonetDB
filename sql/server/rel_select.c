@@ -4116,7 +4116,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		if (!group && !all_freevar)
 			return e;
 		if (all_freevar) {
-			exps_reset_freevar(exps);
+			rel_bind_vars(sql, groupby->l, exps);
 			assert(!is_simple_project(res->op));
 			e->card = CARD_ATOM;
 			set_freevar(e, all_freevar-1);
@@ -4662,12 +4662,15 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 				return NULL;
 			}
 		}
-		if (exp_is_rel(e))
+
+		if (exp_has_rel(e))
 			return sql_error(sql, 02, SQLSTATE(42000) "PARTITION BY: subqueries not allowed in PARTITION BY clause");
+
 		if (e->type != e_column) { /* store group by expressions in the stack */
 			if (!frame_push_groupby_expression(sql, grp, e))
 				return NULL;
 		}
+
 		if (e->card > CARD_AGGR)
 			e->card = CARD_AGGR;
 		append(exps, e);
@@ -5252,7 +5255,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		if (frame_type == FRAME_RANGE)
 			ie = obe ? (sql_exp*) obe->t->data : in;
 		else
-			ie = oe;
+			ie = obe ? oe : in;
 	}
 	assert(oe && pe);
 
@@ -5438,7 +5441,9 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			r = rel_values(query, se, NULL);
 		} else {
 			assert(se->token == SQL_SELECT);
-			r = rel_subquery(query, se, ek);
+			exp_kind nek = ek;
+			nek.aggr = is_sql_aggr(f);
+			r = rel_subquery(query, se, nek);
 		}
 		if (rel && *rel) {
 			*rel = query_pop_outer(query);
@@ -5977,7 +5982,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 * and rel_table_exp.
 		 */
 		list *te = NULL;
-		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
+		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals | (ek.aggr?sql_aggr:0));
 
 		if (ce) {
 			pexps = append(pexps, ce);

@@ -191,7 +191,7 @@ msab_init(const char *dbfarm, const char *dbname)
 		if ((d = opendir(tmp)) != NULL) {
 			struct dbe {
 				struct dbe *next;
-				char path[FLEXIBLE_ARRAY_MEMBER];
+				char path[];
 			} *dbe = NULL, *db;
 			struct dirent *e;
 			len = offsetof(struct dbe, path) + strlen(tmp) + 2;

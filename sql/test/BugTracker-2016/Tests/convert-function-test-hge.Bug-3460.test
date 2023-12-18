@@ -424,8 +424,29 @@ SELECT v, convert(v, char) from T_hugeint where v between 0 and 1
 1
 1
 
-statement error
+query IT rowsort
 SELECT v, convert(v, varchar) from T_hugeint
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, varchar(16)) from T_hugeint
@@ -935,8 +956,29 @@ SELECT v, cast(v as char) from T_hugeint where v between 0 and 1
 1
 1
 
-statement error
+query IT rowsort
 SELECT v, cast(v as varchar) from T_hugeint
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as varchar(16)) from T_hugeint

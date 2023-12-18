@@ -78,6 +78,9 @@ _tables
 ids
 DEP_VIEW
 _tables
+table_constraints
+DEP_VIEW
+_tables
 tables
 DEP_VIEW
 _tables
@@ -97,6 +100,12 @@ fully_qualified_functions
 DEP_VIEW
 args
 ids
+DEP_VIEW
+args
+parameters
+DEP_VIEW
+args
+routines
 DEP_VIEW
 auths
 dependency_owners_on_schemas
@@ -177,7 +186,13 @@ comments
 describe_comments
 DEP_VIEW
 comments
+routines
+DEP_VIEW
+comments
 schemata
+DEP_VIEW
+comments
+sequences
 DEP_VIEW
 comments
 tables
@@ -305,6 +320,9 @@ DEP_VIEW
 fkey_actions
 fkeys
 DEP_VIEW
+fkeys
+referential_constraints
+DEP_VIEW
 fully_qualified_functions
 describe_comments
 DEP_VIEW
@@ -313,6 +331,9 @@ describe_privileges
 DEP_VIEW
 function_languages
 describe_functions
+DEP_VIEW
+function_languages
+routines
 DEP_VIEW
 function_types
 describe_comments
@@ -328,6 +349,9 @@ fully_qualified_functions
 DEP_VIEW
 function_types
 ids
+DEP_VIEW
+function_types
+routines
 DEP_VIEW
 functions
 dependency_args_on_types
@@ -380,6 +404,12 @@ DEP_VIEW
 functions
 ids
 DEP_VIEW
+functions
+parameters
+DEP_VIEW
+functions
+routines
+DEP_VIEW
 ids
 dependencies_vw
 DEP_VIEW
@@ -427,6 +457,12 @@ fkeys
 DEP_VIEW
 keys
 ids
+DEP_VIEW
+keys
+referential_constraints
+DEP_VIEW
+keys
+table_constraints
 DEP_VIEW
 objects
 dependency_columns_on_indexes
@@ -558,7 +594,19 @@ schemas
 ids
 DEP_VIEW
 schemas
+parameters
+DEP_VIEW
+schemas
+referential_constraints
+DEP_VIEW
+schemas
+routines
+DEP_VIEW
+schemas
 schemata
+DEP_VIEW
+schemas
+sequences
 DEP_VIEW
 schemas
 statistics
@@ -567,10 +615,16 @@ schemas
 storage
 DEP_VIEW
 schemas
+table_constraints
+DEP_VIEW
+schemas
 tables
 DEP_VIEW
 schemas
 views
+DEP_VIEW
+sequences
+columns
 DEP_VIEW
 sequences
 describe_comments
@@ -580,6 +634,9 @@ describe_sequences
 DEP_VIEW
 sequences
 ids
+DEP_VIEW
+sequences
+sequences
 DEP_VIEW
 storage
 schemastorage
@@ -685,6 +742,9 @@ geometry_columns
 DEP_VIEW
 tables
 ids
+DEP_VIEW
+tables
+referential_constraints
 DEP_VIEW
 tables
 statistics
@@ -820,7 +880,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-1623 values hashing to 6b21bdd80c4e73ef598244a23a31446a
+1821 values hashing to 4841f015a85929eed99bb2099a4e17b8
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name

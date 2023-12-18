@@ -138,10 +138,18 @@ propvalue2string(sql_allocator *sa, prop *p)
 		}
 	} break;
 	case PROP_REMOTE: {
-		char *uri = p->value.pval;
-
-		if (uri)
-			return sa_strdup(sa, uri);
+		list *tids_uris = p->value.pval;
+		if (!list_empty(tids_uris)) {
+			size_t offset = 0;
+			for (node *n = ((list*)p->value.pval)->h; n; n = n->next) {
+				tid_uri *tu = n->data;
+				if (tu->uri)
+					offset += snprintf(buf + offset, BUFSIZ, "%s%s",
+					                   sql_escape_ident(sa, offset?" ":""),
+					                   sql_escape_ident(sa, tu->uri));
+			}
+			return sa_strdup(sa, buf);
+		}
 	} break;
 	case PROP_MIN:
 	case PROP_MAX: {

@@ -108,21 +108,6 @@ rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *
 	return rel;
 }
 
-sql_rel *
-rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r)
-{
-	sql_rel *rel = rel_create(sa);
-	if (!rel)
-		return NULL;
-	if (!l)
-		return r;
-	rel->l = l;
-	rel->r = r;
-	rel->op = op_ddl;
-	rel->flag = ddl_list;
-	return rel;
-}
-
 static sql_rel *
 view_rename_columns(mvc *sql, const char *name, sql_rel *sq, dlist *column_spec)
 {

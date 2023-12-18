@@ -158,3 +158,14 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 		fclose(config);
 	}
 }
+
+void
+destroy_dotmonetdb(DotMonetdb *dotfile)
+{
+	free(dotfile->user);
+	free(dotfile->passwd);
+	free(dotfile->dbname);
+	free(dotfile->host);
+	free(dotfile->output);
+	free(dotfile->language);
+}

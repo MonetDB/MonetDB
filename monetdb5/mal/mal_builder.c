@@ -698,20 +698,6 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 }
 
 InstrPtr
-pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe)
-{
-	if (q == NULL || mb->errors)
-		return q;
-	setModuleId(q, getName("bat"));
-	setFunctionId(q, getName("new"));
-
-	q = pushArgument(mb, q, newTypeVariable(mb, TYPE_void));
-	q = pushArgument(mb, q, newTypeVariable(mb, getBatType(tpe)));
-	q = pushZero(mb, q, TYPE_lng);
-	return q;
-}
-
-InstrPtr
 pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 {
 	int _t;

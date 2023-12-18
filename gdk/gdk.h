@@ -489,7 +489,7 @@ typedef union {
 
 typedef struct {
 	size_t nitems;
-	char data[FLEXIBLE_ARRAY_MEMBER] __attribute__((__nonstring__));
+	char data[] __attribute__((__nonstring__));
 } blob;
 gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
@@ -656,7 +656,8 @@ typedef struct {
 
 /* interface definitions */
 gdk_export void *VALconvert(int typ, ValPtr t);
-gdk_export char *VALformat(const ValRecord *res);
+gdk_export char *VALformat(const ValRecord *res)
+	__attribute__((__warn_unused_result__));
 gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
@@ -685,7 +686,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *           BUN    batCount;         // Tuple count
  *           // Tail properties
  *           int    ttype;            // Tail type number
- *           str    tident;           // name for tail column
  *           bool   tkey;             // tail values are unique
  *           bool   tnonil;           // tail has no nils
  *           bool   tsorted;          // are tail values currently ordered?
@@ -723,8 +723,6 @@ typedef struct Sink {
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
-	str id;			/* label for column */
-
 	uint16_t width;		/* byte-width of the atom array */
 	int8_t type;		/* type id. */
 	uint8_t shift;		/* log2 of bun width */
@@ -766,7 +764,8 @@ typedef struct {
 #define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
 #define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
-#define GDKLIBRARY		061046U /* first in Sep2022 */
+#define GDKLIBRARY_JSON 	061046U /* first in Sep2022: json storage changes*/
+#define GDKLIBRARY		061047U /* first in Dec2023 */
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -827,7 +826,6 @@ typedef struct BAT {
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
-#define tident		T.id
 #define torderidx	T.orderidx
 #define twidth		T.width
 #define tshift		T.shift
@@ -1434,7 +1432,6 @@ gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, bool onoff);
 gdk_export gdk_return BATmode(BAT *b, bool transient);
-gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 
@@ -1759,7 +1756,10 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	gdk_return rc;
 	assert(b->tbaseoff == 0);
 	assert(b->theap->parentid == b->batCacheid);
-	if ((rc = ATOMputVAR(b, &d, v)) != GDK_SUCCEED)
+	MT_lock_set(&b->theaplock);
+	rc = ATOMputVAR(b, &d, v);
+	MT_lock_unset(&b->theaplock);
+	if (rc != GDK_SUCCEED)
 		return rc;
 	if (b->twidth < SIZEOF_VAR_T &&
 	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
@@ -1984,18 +1984,7 @@ VALptr(const ValRecord *v)
 	}
 }
 
-/*
- * The kernel maintains a central table of all active threads.  They
- * are indexed by their tid. The structure contains information on the
- * input/output file descriptors, which should be set before a
- * database operation is started. It ensures that output is delivered
- * to the proper client.
- *
- * The Thread structure should be ideally made directly accessible to
- * each thread. This speeds up access to tid and file descriptors.
- */
-#define THREADS	1024
-#define THREADDATA	3
+#define THREADS		1024	/* maximum value for gdk_nr_threads */
 
 typedef struct threadStruct *Thread;
 
@@ -2285,10 +2274,18 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * levels.
  */
 enum prop_t {
-	CURRENTLY_NO_PROPERTIES_DEFINED,
+	GDK_MIN_BOUND, /* MINimum allowed value for range partitions [min, max> */
+	GDK_MAX_BOUND, /* MAXimum of the range partitions [min, max>, ie. excluding this max value */
+	GDK_NOT_NULL,  /* bat bound to be not null */
+	/* CURRENTLY_NO_PROPERTIES_DEFINED, */
 };
 
 gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);
+gdk_export ValPtr BATgetprop_nolock(BAT *b, enum prop_t idx);
+gdk_export void BATrmprop(BAT *b, enum prop_t idx);
+gdk_export void BATrmprop_nolock(BAT *b, enum prop_t idx);
+gdk_export ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v);
+gdk_export ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v);
 
 /*
  * @- BAT relational operators
@@ -2318,8 +2315,12 @@ gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BAToutercross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
+	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool match_one, BUN estimate)
 	__attribute__((__warn_unused_result__));
@@ -2343,10 +2344,6 @@ gdk_export BAT *BATprojectchain(BAT **bats);
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 
 gdk_export BAT *BATunique(BAT *b, BAT *s);
-
-gdk_export BAT *BATmergecand(BAT *a, BAT *b);
-gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
-gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
 
 gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__warn_unused_result__));
@@ -2471,7 +2468,7 @@ typedef struct gdk_callback {
 	lng last_called; // timestamp GDKusec
 	gdk_return (*func)(int argc, void *argv[]);
 	struct gdk_callback *next;
-	void *argv[FLEXIBLE_ARRAY_MEMBER];
+	void *argv[];
 } gdk_callback;
 
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);

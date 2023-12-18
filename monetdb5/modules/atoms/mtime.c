@@ -779,7 +779,7 @@ local_timezone(int *isdstp)
 		tzone = 0;
 		break;
 	}
-#elif defined(HAVE_STRUCT_TM_TM_ZONE)
+#elif defined(HAVE_TM_GMTOFF)
 	time_t t;
 	struct tm tm = (struct tm) { 0 };
 

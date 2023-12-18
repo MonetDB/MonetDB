@@ -98,6 +98,7 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	if (i < mat->nr) {
 		mat_destroy(mat);
+		BBPunfix(matb->batCacheid);
 		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	matb->T.sink = (Sink*)mat;
@@ -128,6 +129,7 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *partb = COLnew(0, TYPE_oid, 100000 /* need estimate? */, TRANSIENT);
 	if (!partb || !part) {
 		GDKfree(part);
+		BBPreclaim(partb);
 		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -178,7 +180,8 @@ PARTpartition( bat *pos, const bat *part, const bat *glen )
 	BAT *p = BATdescriptor(*part);
 	BAT *g = BATdescriptor(*glen);
 	if (!p || !g) {
-		if (p) BBPunfix(p->batCacheid);
+		BBPreclaim(p);
+		BBPreclaim(g);
 		throw(MAL, "part.partition", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	part_t *pt = (part_t*)p->T.sink;

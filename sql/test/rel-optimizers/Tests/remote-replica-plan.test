@@ -1,0 +1,91 @@
+statement ok
+create replica table foo_rpl_rmt (n int, m text)
+
+statement ok
+alter table foo_rpl_rmt add table foo_r2
+
+statement ok
+alter table foo_rpl_rmt add table foo_r3
+
+statement ok
+create replica table foo_rpl_rmt_node2 (n int, m text)
+
+statement ok
+alter table foo_rpl_rmt_node2 add table foo_r2
+
+statement ok
+create replica table bar_rpl_rmt (n int, m text)
+
+statement ok
+alter table bar_rpl_rmt add table bar_r2
+
+statement ok
+alter table bar_rpl_rmt add table bar_r3
+
+statement ok
+create replica table bar_rpl_rmt_node3 (n int, m text)
+
+statement ok
+alter table bar_rpl_rmt_node3 add table bar_r3
+
+query T nosort
+plan select * from foo_rpl_rmt
+----
+table (
+| project (
+| | REMOTE("sys"."foo_r2") [ "foo_r2"."n" as "foo_rpl_rmt"."n", "foo_r2"."m" as "foo_rpl_rmt"."m", "foo_r2"."%TID%" NOT NULL UNIQUE as "foo_rpl_rmt"."%TID%" ]
+| ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m" ] REMOTE mapi:monetdb://localhost:50002/node2
+) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m" ]
+
+query T nosort
+plan select * from foo_rpl_rmt, bar_rpl_rmt
+----
+table (
+| project (
+| | crossproduct (
+| | | REMOTE("sys"."foo_r2") [ "foo_r2"."n" as "foo_rpl_rmt"."n", "foo_r2"."m" as "foo_rpl_rmt"."m", "foo_r2"."%TID%" NOT NULL UNIQUE as "foo_rpl_rmt"."%TID%" ],
+| | | REMOTE("sys"."bar_r2") [ "bar_r2"."n" as "bar_rpl_rmt"."n", "bar_r2"."m" as "bar_rpl_rmt"."m", "bar_r2"."%TID%" NOT NULL UNIQUE as "bar_rpl_rmt"."%TID%" ]
+| | ) [  ]
+| ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m", "bar_rpl_rmt"."n", "bar_rpl_rmt"."m" ] REMOTE mapi:monetdb://localhost:50002/node2
+) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m", "bar_rpl_rmt"."n", "bar_rpl_rmt"."m" ]
+
+query T nosort
+plan select * from foo_rpl_rmt_node2, bar_rpl_rmt_node3
+----
+project (
+| crossproduct (
+| | table (
+| | | REMOTE("sys"."foo_r2") [ "foo_r2"."n" as "foo_rpl_rmt_node2"."n", "foo_r2"."m" as "foo_rpl_rmt_node2"."m", "foo_r2"."%TID%" NOT NULL UNIQUE as "foo_rpl_rmt_node2"."%TID%" ] REMOTE mapi:monetdb://localhost:50002/node2
+| | ) [ "foo_rpl_rmt_node2"."n", "foo_rpl_rmt_node2"."m", "foo_rpl_rmt_node2"."%TID%" NOT NULL UNIQUE ],
+| | table (
+| | | REMOTE("sys"."bar_r3") [ "bar_r3"."n" as "bar_rpl_rmt_node3"."n", "bar_r3"."m" as "bar_rpl_rmt_node3"."m", "bar_r3"."%TID%" NOT NULL UNIQUE as "bar_rpl_rmt_node3"."%TID%" ] REMOTE mapi:monetdb://localhost:50003/node3
+| | ) [ "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m", "bar_rpl_rmt_node3"."%TID%" NOT NULL UNIQUE ]
+| ) [  ]
+) [ "foo_rpl_rmt_node2"."n", "foo_rpl_rmt_node2"."m", "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m" ]
+
+query T nosort
+plan select * from foo_rpl_rmt, buz_rmt
+----
+table (
+| project (
+| | crossproduct (
+| | | REMOTE("sys"."foo_r2") [ "foo_r2"."n" as "foo_rpl_rmt"."n", "foo_r2"."m" as "foo_rpl_rmt"."m", "foo_r2"."%TID%" NOT NULL UNIQUE as "foo_rpl_rmt"."%TID%" ],
+| | | REMOTE("sys"."buz_rmt") [ "buz_rmt"."l" ]
+| | ) [  ]
+| ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m", "buz_rmt"."l" ] REMOTE mapi:monetdb://localhost:50002/node2
+) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m", "buz_rmt"."l" ]
+
+query T nosort
+plan select * from bar_rpl_rmt_node3, buz_rmt
+----
+project (
+| crossproduct (
+| | table (
+| | | REMOTE("sys"."bar_r3") [ "bar_r3"."n" as "bar_rpl_rmt_node3"."n", "bar_r3"."m" as "bar_rpl_rmt_node3"."m", "bar_r3"."%TID%" NOT NULL UNIQUE as "bar_rpl_rmt_node3"."%TID%" ] REMOTE mapi:monetdb://localhost:50003/node3
+| | ) [ "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m", "bar_rpl_rmt_node3"."%TID%" NOT NULL UNIQUE ],
+| | table (
+| | | REMOTE("sys"."buz_rmt") [ "buz_rmt"."l" ] REMOTE mapi:monetdb://localhost:50002/node2
+| | ) [ "buz_rmt"."l" ]
+| ) [  ]
+) [ "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m", "buz_rmt"."l" ]
+

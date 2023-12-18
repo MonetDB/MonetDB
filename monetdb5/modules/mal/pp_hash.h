@@ -20,7 +20,13 @@
 #define HP_MAX_SIZE HT_MAX_SIZE
 
 
-#define hash_rehash(ht, p, err) { p->p->status = 1; ht_rehash(ht); err = -11; break; }
+#define hash_rehash(ht, p, err) 							\
+	{ 										\
+		p->p->status = 1; 							\
+		ht_rehash(ht); 								\
+		err = createException(MAL, "hash.rehash", "hash table needs rehash"); 	\
+		break; 									\
+	}
 
 #define _hash_bit(X)  ((unsigned int)X)
 #define _hash_bte(X)  ((unsigned int)X)

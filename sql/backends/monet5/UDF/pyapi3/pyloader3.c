@@ -184,8 +184,15 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			assert(n);
 			cols[i].def = n->data;
 			n = n->next;
-			cols[i].b =
-				COLnew(0, tpe->type->localtype, 0, TRANSIENT);
+			cols[i].b = COLnew(0, tpe->type->localtype, 0, TRANSIENT);
+			if (cols[i].b == NULL || cols[i].name == NULL) {
+				do {
+					BBPreclaim(cols[i].b);
+					GDKfree(cols[i].name);
+				} while (i-- > 0);
+				msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
+				goto wrapup;
+			}
 			n2 = n2->next;
 			cols[i].b->tnil = false;
 			cols[i].b->tnonil = false;

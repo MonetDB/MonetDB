@@ -3544,6 +3544,21 @@ command algebra.likeselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:str, X_4:b
 PCRElikeselect;
 Select all head values of the first input BAT for which the@tail value is "like" the given (SQL-style) pattern and for@which the head value occurs in the tail of the second input@BAT.@Input is a dense-headed BAT, output is a dense-headed BAT with in@the tail the head value of the input BAT for which the@relationship holds.  The output BAT is sorted on the tail value.
 algebra
+markjoin
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:lng) (X_5:bat[:oid], X_6:bat[:bit]) 
+ALGmark2join;
+Mark join with candidate lists
+algebra
+markjoin
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:lng) (X_5:bat[:oid], X_6:bat[:oid], X_7:bat[:bit]) 
+ALGmark3join;
+Mark join with candidate lists
+algebra
+markselect
+command algebra.markselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit]) 
+ALGmarkselect;
+Group on group-ids, return aggregated anyequal or allnotequal
+algebra
 not_like
 command algebra.not_like(X_0:str, X_1:str, X_2:str, X_3:bit):bit 
 PCREnotlike;
@@ -3554,6 +3569,11 @@ command algebra.orderidx(X_0:bat[:any_1], X_1:bit):bat[:any_1]
 OIDXorderidx;
 Create an order index
 algebra
+outercrossproduct
+command algebra.outercrossproduct(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bat[:oid], X_3:bat[:oid], X_4:bit) (X_5:bat[:oid], X_6:bat[:oid]) 
+ALGoutercrossproduct3;
+Compute the outer cross product of both input bats
+algebra
 outerjoin
 command algebra.outerjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:bit, X_6:lng):bat[:oid] 
 ALGouterjoin1;
@@ -3563,6 +3583,11 @@ outerjoin
 command algebra.outerjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:bit, X_6:lng) (X_7:bat[:oid], X_8:bat[:oid]) 
 ALGouterjoin;
 Left outer join with candidate lists
+algebra
+outerselect
+command algebra.outerselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit]) 
+ALGouterselect;
+Per input lid return atleast one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.
 algebra
 project
 pattern algebra.project(X_0:bat[:any_1], X_1:any_3):bat[:any_3] 
@@ -3824,11 +3849,6 @@ command bat.getName(X_0:bat[:any_1]):str
 BKCgetBBPname;
 Gives back the logical name of a BAT.
 bat
-getRole
-command bat.getRole(X_0:bat[:any_1]):str 
-BKCgetRole;
-Returns the rolename of the head column of a BAT.
-bat
 getSequenceBase
 command bat.getSequenceBase(X_0:bat[:any_1]):oid 
 BKCgetSequenceBase;
@@ -4078,11 +4098,6 @@ setAccess
 command bat.setAccess(X_0:bat[:any_1], X_1:str):bat[:any_1] 
 BKCsetAccess;
 Try to change the update access privileges @to this BAT. Mode:@r[ead-only]      - allow only read access.@a[append-only]   - allow reads and update.@w[riteable]      - allow all operations.@BATs are updatable by default. On making a BAT read-only, @all subsequent updates fail with an error message.@Returns the BAT itself.
-bat
-setColumn
-command bat.setColumn(X_0:bat[:any_1], X_1:str):void 
-BKCsetColumn;
-Give a logical name to the tail column of a BAT.
 bat
 setHash
 command bat.setHash(X_0:bat[:any_1]):bit 
@@ -30370,11 +30385,6 @@ nil_2time_timestamp;
 cast to timestamp and check for overflow
 batcalc
 timestamp
-pattern batcalc.timestamp(X_0:bat[:oid], X_1:int, X_2:bat[:BAT]):bat[:timestamp] 
-nil_2time_timestamp;
-cast to timestamp and check for overflow
-batcalc
-timestamp
 pattern batcalc.timestamp(X_0:bat[:timestamp], X_1:bat[:oid], X_2:int):bat[:timestamp] 
 timestamp_2time_timestamp;
 cast timestamp to timestamp and check for overflow
@@ -47124,16 +47134,6 @@ pattern inspect.optimizer_stats() (X_0:bat[:str], X_1:bat[:int], X_2:bat[:lng])
 OPTstatistics;
 Get optimizer use statistics, i.e. calls and total time
 io
-export
-command io.export(X_0:bat[:any_2], X_1:str):void 
-IOexport;
-Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it@is put into the $DBPATH directory. Success of failure is indicated.
-io
-import
-command io.import(X_0:bat[:any_2], X_1:str):void 
-IOimport;
-Import a BAT from an ASCII dump. The tuples are appended to the@first argument. Its signature must match the dump,@else parsing errors will occur as an exception.
-io
 print
 pattern io.print(X_0:any_1):void 
 IOprint_val;
@@ -50198,6 +50198,11 @@ percent_rank
 pattern sql.percent_rank(X_0:any_1, X_1:bit, X_2:bit):dbl 
 SQLpercent_rank;
 return the percentage into the total number of groups for each row
+sql
+persist_unlogged
+unsafe pattern sql.persist_unlogged(X_0:str, X_1:str) (X_2:bat[:str], X_3:bat[:int], X_4:bat[:lng]) 
+SQLpersist_unlogged;
+Persist deltas on append only table in schema s table t
 sql
 predicate
 unsafe pattern sql.predicate(X_0:str, X_1:str, X_2:str):void 

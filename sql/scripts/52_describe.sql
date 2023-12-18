@@ -6,6 +6,67 @@
 --
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
+CREATE FUNCTION sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean)
+  RETURNS varchar(1024)
+BEGIN
+  RETURN
+    CASE mtype
+    WHEN 'char' THEN sys.ifthenelse(nameonly OR digits <= 1, sys.ifthenelse(shortname, 'CHAR', 'CHARACTER'), sys.ifthenelse(shortname, 'CHAR(', 'CHARACTER(') || digits || ')')
+    WHEN 'varchar' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'VARCHAR', 'CHARACTER VARYING'), sys.ifthenelse(shortname, 'VARCHAR(', 'CHARACTER VARYING(') || digits || ')')
+    WHEN 'clob' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'CLOB', 'CHARACTER LARGE OBJECT'), sys.ifthenelse(shortname, 'CLOB(', 'CHARACTER LARGE OBJECT(') || digits || ')')
+    WHEN 'blob' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'BLOB', 'BINARY LARGE OBJECT'), sys.ifthenelse(shortname, 'BLOB(', 'BINARY LARGE OBJECT(') || digits || ')')
+    WHEN 'int' THEN 'INTEGER'
+    WHEN 'bigint' THEN 'BIGINT'
+    WHEN 'smallint' THEN 'SMALLINT'
+    WHEN 'tinyint' THEN 'TINYINT'
+    WHEN 'hugeint' THEN 'HUGEINT'
+    WHEN 'boolean' THEN 'BOOLEAN'
+    WHEN 'date' THEN 'DATE'
+    WHEN 'time' THEN sys.ifthenelse(nameonly OR digits = 1, 'TIME', 'TIME(' || (digits -1) || ')')
+    WHEN 'timestamp' THEN sys.ifthenelse(nameonly OR digits = 7, 'TIMESTAMP', 'TIMESTAMP(' || (digits -1) || ')')
+    WHEN 'timestamptz' THEN sys.ifthenelse(nameonly OR digits = 7, 'TIMESTAMP WITH TIME ZONE', 'TIMESTAMP(' || (digits -1) || ') WITH TIME ZONE')
+    WHEN 'timetz' THEN sys.ifthenelse(nameonly OR digits = 1, 'TIME WITH TIME ZONE', 'TIME(' || (digits -1) || ') WITH TIME ZONE')
+    WHEN 'decimal' THEN sys.ifthenelse(nameonly OR digits = 0, 'DECIMAL', 'DECIMAL(' || digits || sys.ifthenelse(tscale = 0, '', ',' || tscale) || ')')
+    WHEN 'double' THEN sys.ifthenelse(nameonly OR (digits = 53 AND tscale = 0), sys.ifthenelse(shortname, 'DOUBLE', 'DOUBLE PRECISION'), 'FLOAT(' || digits || ')')
+    WHEN 'real' THEN sys.ifthenelse(nameonly OR (digits = 24 AND tscale = 0), 'REAL', 'FLOAT(' || digits || ')')
+    WHEN 'day_interval' THEN 'INTERVAL DAY'
+    WHEN 'month_interval' THEN CASE digits WHEN 1 THEN 'INTERVAL YEAR' WHEN 2 THEN 'INTERVAL YEAR TO MONTH' WHEN 3 THEN 'INTERVAL MONTH' END
+    WHEN 'sec_interval' THEN
+	CASE digits
+	WHEN 4 THEN 'INTERVAL DAY'
+	WHEN 5 THEN 'INTERVAL DAY TO HOUR'
+	WHEN 6 THEN 'INTERVAL DAY TO MINUTE'
+	WHEN 7 THEN 'INTERVAL DAY TO SECOND'
+	WHEN 8 THEN 'INTERVAL HOUR'
+	WHEN 9 THEN 'INTERVAL HOUR TO MINUTE'
+	WHEN 10 THEN 'INTERVAL HOUR TO SECOND'
+	WHEN 11 THEN 'INTERVAL MINUTE'
+	WHEN 12 THEN 'INTERVAL MINUTE TO SECOND'
+	WHEN 13 THEN 'INTERVAL SECOND'
+	END
+    WHEN 'oid' THEN 'OID'
+    WHEN 'json' THEN sys.ifthenelse(nameonly OR digits = 0, 'JSON', 'JSON(' || digits || ')')
+    WHEN 'url' THEN sys.ifthenelse(nameonly OR digits = 0, 'URL', 'URL(' || digits || ')')
+    WHEN 'xml' THEN sys.ifthenelse(nameonly OR digits = 0, 'XML', 'XML(' || digits || ')')
+    WHEN 'geometry' THEN
+	sys.ifthenelse(nameonly, 'GEOMETRY',
+	CASE digits
+	WHEN 4 THEN 'GEOMETRY(POINT' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 8 THEN 'GEOMETRY(LINESTRING' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 16 THEN 'GEOMETRY(POLYGON' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 20 THEN 'GEOMETRY(MULTIPOINT' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 24 THEN 'GEOMETRY(MULTILINESTRING' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 28 THEN 'GEOMETRY(MULTIPOLYGON' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 32 THEN 'GEOMETRY(GEOMETRYCOLLECTION' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	ELSE 'GEOMETRY'
+        END)
+    ELSE sys.ifthenelse(mtype = lower(mtype), upper(mtype), '"' || mtype || '"') || sys.ifthenelse(nameonly OR digits = 0, '', '(' || digits || sys.ifthenelse(tscale = 0, '', ',' || tscale) || ')')
+    END;
+END;
+
+GRANT EXECUTE ON FUNCTION sys.sql_datatype(varchar(999), integer, integer, boolean, boolean) TO PUBLIC;
+
+-- ToDo improve sys.describe_type() by calling sql_datatype(ctype, digits, tscale, false, false)
 CREATE FUNCTION sys.describe_type(ctype string, digits integer, tscale integer)
   RETURNS string
 BEGIN

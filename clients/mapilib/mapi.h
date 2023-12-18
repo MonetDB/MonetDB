@@ -28,6 +28,7 @@ typedef int MapiMsg;
 #define MTIMEOUT	(-2)
 #define MMORE		(-3)
 #define MSERVER		(-4)
+#define MREDIRECT	(-5)
 
 enum mapi_handshake_options_levels {
 	MAPI_HANDSHAKE_AUTOCOMMIT = 1,

@@ -39,6 +39,7 @@ target_sources(stream
   fwf.c
   iconv_stream.c
   text_stream.c
+  $<$<BOOL:${OPENSSL_FOUND}>:openssl_stream.c>
   pump.c
   stream.h
   stream_internal.h
@@ -53,7 +54,8 @@ target_include_directories(stream
   $<$<BOOL:${Iconv_IS_BUILT_IN}>:${CMAKE_REQUIRED_INCLUDES}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>
+  $<$<BOOL:${OPENSSL_FOUND}>:${OPENSSL_INCLUDE_DIR}>)
 
 target_compile_definitions(stream
   PRIVATE
@@ -67,6 +69,7 @@ target_link_libraries(stream
   $<$<BOOL:${LIBLZMA_FOUND}>:LibLZMA::LibLZMA>
   $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
+  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
   matomic
   monetdb_config_header
   $<$<PLATFORM_ID:Windows>:ws2_32>

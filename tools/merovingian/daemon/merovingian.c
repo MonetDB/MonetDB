@@ -239,6 +239,14 @@ logListener(void *x)
 
 	(void)x;
 
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
+
 	/* the first entry in the list of d is where our output should go to
 	 * but we only use the streams, so we don't care about it in the
 	 * normal loop */
@@ -379,6 +387,13 @@ static void *
 doTerminateProcess(void *p)
 {
 	dpair dp = p;
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 	pthread_mutex_lock(&dp->fork_lock);
 	(void) terminateProcess(dp->dbname, dp->pid, dp->type);
 	pthread_mutex_unlock(&dp->fork_lock);

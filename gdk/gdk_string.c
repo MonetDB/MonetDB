@@ -190,17 +190,14 @@ strPut(BAT *b, var_t *dst, const void *V)
 	BUN off;
 
 	if (h->free == 0) {
-		MT_lock_set(&b->theaplock);
 		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
 			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
-				MT_lock_unset(&b->theaplock);
 				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
 		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		h->dirty = true;
-		MT_lock_unset(&b->theaplock);
 #ifdef NDEBUG
 		memset(h->base, 0, h->free);
 #else
@@ -214,6 +211,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	bucket = ((stridx_t *) h->base) + off;
 
 	if (*bucket) {
+		assert(*bucket < h->free);
 		/* the hash list is not empty */
 		if (*bucket < GDK_ELIMLIMIT) {
 			/* small string heap (<64KiB) -- fully double
@@ -222,6 +220,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 			do {
 				pos = *ref + sizeof(stridx_t);
+				assert(pos < h->free);
 				if (strcmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
@@ -284,13 +283,10 @@ strPut(BAT *b, var_t *dst, const void *V)
 			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		MT_lock_set(&b->theaplock);
 		if (HEAPgrow(&b->tvheap, newsize, true) != GDK_SUCCEED) {
-			MT_lock_unset(&b->theaplock);
 			return (var_t) -1;
 		}
 		h = b->tvheap;
-		MT_lock_unset(&b->theaplock);
 
 		/* make bucket point into the new heap */
 		bucket = ((stridx_t *) h->base) + off;
@@ -302,10 +298,8 @@ strPut(BAT *b, var_t *dst, const void *V)
 	if (pad > 0)
 		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
-	MT_lock_set(&b->theaplock);
 	h->free += pad + len;
 	h->dirty = true;
-	MT_lock_unset(&b->theaplock);
 
 	/* maintain hash table */
 	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
@@ -765,7 +759,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 {
 	oid gid;
 	BUN i, p, nils = 0;
-	size_t *restrict lengths = NULL, *restrict lastseplength = NULL, separator_length = 0, next_length;
+	size_t *restrict lengths = NULL, separator_length = 0, next_length;
 	str *restrict astrings = NULL;
 	BATiter bi, bis = (BATiter) {0};
 	BAT *bn = NULL;
@@ -926,9 +920,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		 * each group, then the the total offset */
 		lengths = GDKzalloc(ngrp * sizeof(*lengths));
 		astrings = GDKmalloc(ngrp * sizeof(str));
-		if (sep)
-			lastseplength = GDKzalloc(ngrp * sizeof(*lastseplength));
-		if (lengths == NULL || astrings == NULL || (sep && lastseplength == NULL)) {
+		if (lengths == NULL || astrings == NULL) {
 			goto finish;
 		}
 		/* at first, set astrings[i] to str_nil, then for each
@@ -970,14 +962,11 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 						if (!strNil(sl)) {
 							next_length = strlen(sl);
 							lengths[gid] += next_length;
-							lastseplength[gid] = next_length;
-						} else
-							lastseplength[gid] = 0;
+						}
 						astrings[gid] = NULL;
 					} else if (!skip_nils) {
 						nils++;
 						lengths[gid] = (size_t) -1;
-						lastseplength[gid] = 0;
 						astrings[gid] = (char *) str_nil;
 					}
 				}
@@ -988,7 +977,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - separator_length)) == NULL) {
+					if ((astrings[i] = GDKmalloc(lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1000,7 +989,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep != NULL);
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - lastseplength[i])) == NULL) {
+					if ((astrings[i] = GDKmalloc(lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1076,7 +1065,6 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	if (has_nils)
 		*has_nils = nils;
 	GDKfree(lengths);
-	GDKfree(lastseplength);
 	if (astrings) {
 		for (i = 0; i < ngrp; i++) {
 			if (astrings[i] != str_nil)

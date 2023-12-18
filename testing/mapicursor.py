@@ -437,8 +437,8 @@ class MapiCursor(object):
                     continue
 
                 description = []
-                for i in range(len(column_name)):
-                    description.append(Description(column_name[i], type_[i], 10, 10, 10, 3, 0))
+                for i in range(len(type_)):
+                    description.append(Description(f'col{i}', type_[i], 10, 10, 10, 3, 0))
                 self.description = description
                 self._offset = 0
                 self._query_id = 0

@@ -48,8 +48,7 @@ date_sub_msec_interval(date *ret, date d, lng ms)
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_date_nil
-		((*ret = date_add_day(d, (int) (-ms / (24 * 60 * 60 * 1000))))))
+	if (is_date_nil((*ret = date_add_day(d, (int) (-ms / (24 * 60 * 60 * 1000))))))
 		throw(MAL, "mtime.date_sub_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -62,8 +61,7 @@ date_add_msec_interval(date *ret, date d, lng ms)
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_date_nil
-		((*ret = date_add_day(d, (int) (ms / (24 * 60 * 60 * 1000))))))
+	if (is_date_nil((*ret = date_add_day(d, (int) (ms / (24 * 60 * 60 * 1000))))))
 		throw(MAL, "mtime.date_add_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;

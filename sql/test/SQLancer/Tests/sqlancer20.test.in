@@ -252,3 +252,63 @@ TRUNCATE TABLE tmp.tt2
 statement ok
 DROP TABLE tmp.tt2
 
+statement ok
+START TRANSACTION;
+
+statement ok
+CREATE MERGE TABLE "mt0" ("c1" DECIMAL(18,3));
+
+statement ok
+CREATE TABLE "rmct00" ("c1" DECIMAL(18,3));
+
+statement ok
+CREATE REMOTE TABLE "rrmct00" ("c1" DECIMAL(18,3)) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/rmct00';
+
+statement ok
+CREATE TABLE "rmct01" ("c1" DECIMAL(18,3));
+
+statement ok
+INSERT INTO "rmct01" VALUES (NULL);
+
+statement ok
+CREATE REMOTE TABLE "rrmct01" ("c1" DECIMAL(18,3)) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/rmct01';
+
+statement ok
+ALTER TABLE "mt0" ADD TABLE "rrmct00";
+
+statement ok
+ALTER TABLE "mt0" ADD TABLE "rrmct01";
+
+statement ok
+COMMIT;
+
+query I nosort
+SELECT 1 FROM rmct00, (SELECT mt0.c1 + 0.4870337739393783 FROM mt0) x(x);
+----
+
+statement ok
+START TRANSACTION;
+
+statement ok
+ALTER TABLE mt0 DROP TABLE rrmct00;
+
+statement ok
+ALTER TABLE mt0 DROP TABLE rrmct01;
+
+statement ok
+DROP TABLE mt0;
+
+statement ok
+DROP TABLE rrmct00;
+
+statement ok
+DROP TABLE rrmct01;
+
+statement ok
+DROP TABLE rmct00;
+
+statement ok
+DROP TABLE rmct01;
+
+statement ok
+COMMIT;

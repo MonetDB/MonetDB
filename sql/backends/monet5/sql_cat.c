@@ -261,6 +261,10 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
 		goto finish;
 	}
+	if (!min_null && !max_null && ATOMcmp(tp1, min, max) == 0) {
+		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is equal to the maximum value");
+		goto finish;
+	}
 
 	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tpe, min, max, with_nills, update, &err);
 	switch (errcode) {

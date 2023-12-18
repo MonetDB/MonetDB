@@ -143,6 +143,10 @@ option(WITH_ZLIB
   "Include zlib support"
   ON)
 
+option(WITH_OPENSSL
+  "Include TLS support"
+  ON)
+
 option(CMAKE_SUMMARY
   "Show a summary of the cmake configuration (for debug purposes)"
   OFF)

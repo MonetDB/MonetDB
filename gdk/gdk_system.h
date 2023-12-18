@@ -120,6 +120,26 @@
 # include <semaphore.h>
 #endif
 
+#if defined(__APPLE__) && defined(__GNUC__)
+/* GCC-12 installed with Homebrew on MacOS has a bug which makes
+ * including <dispatch/dispatch.h> impossible.  However we need that for
+ * properly working semaphores, so we have this bit of code to work
+ * around the bug. */
+#define HAVE_DISPATCH_DISPATCH_H 1
+#define HAVE_DISPATCH_SEMAPHORE_CREATE 1
+#if __has_attribute(__swift_attr__)
+#define OS_SWIFT_UNAVAILABLE_FROM_ASYNC(msg) \
+       __attribute__((__swift_attr__("@_unavailableFromAsync(message: \"" msg "\")")))
+#else
+#define OS_SWIFT_UNAVAILABLE_FROM_ASYNC(msg)
+#endif
+#define OS_ASSUME_PTR_ABI_SINGLE_BEGIN __ASSUME_PTR_ABI_SINGLE_BEGIN
+#define OS_ASSUME_PTR_ABI_SINGLE_END __ASSUME_PTR_ABI_SINGLE_END
+#define OS_UNSAFE_INDEXABLE __unsafe_indexable
+#define OS_HEADER_INDEXABLE __header_indexable
+#define OS_COUNTED_BY(N) __counted_by(N)
+#define OS_SIZED_BY(N) __sized_by(N)
+#endif
 #ifdef HAVE_DISPATCH_DISPATCH_H
 #include <dispatch/dispatch.h>
 #endif
@@ -436,6 +456,8 @@ typedef struct MT_RWLock {
 
 #define MT_rwlock_wrunlock(l)	ReleaseSRWLockExclusive(&(l)->lock)
 
+typedef DWORD MT_TLS_t;
+
 #else
 
 typedef struct MT_Lock {
@@ -606,7 +628,13 @@ MT_rwlock_wrtry(MT_RWLock *l)
 
 #endif
 
+typedef pthread_key_t MT_TLS_t;
+
 #endif
+
+gdk_export gdk_return MT_alloc_tls(MT_TLS_t *newkey);
+gdk_export void MT_tls_set(MT_TLS_t key, void *val);
+gdk_export void *MT_tls_get(MT_TLS_t key);
 
 #ifdef LOCK_STATS
 gdk_export void GDKlockstatistics(int);
@@ -678,7 +706,7 @@ typedef struct {
 /* simulate semaphores using mutex and condition variable */
 
 typedef struct {
-	int cnt;
+	int cnt, wakeups;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
 	char name[MT_NAME_LEN];
@@ -688,6 +716,7 @@ typedef struct {
 	do {							\
 		strcpy_len((s)->name, (n), sizeof((s)->name));	\
 		(s)->cnt = (nr);				\
+		(s)->wakeups = 0;				\
 		pthread_mutex_init(&(s)->mutex, 0);		\
 		pthread_cond_init(&(s)->cond, 0);		\
 	} while (0)
@@ -701,7 +730,8 @@ typedef struct {
 #define MT_sema_up(s)						\
 	do {							\
 		pthread_mutex_lock(&(s)->mutex);		\
-		if ((s)->cnt++ < 0) {				\
+		if (++(s)->cnt <= 0) {				\
+			(s)->wakeups++;				\
 			pthread_cond_signal(&(s)->cond);	\
 		}						\
 		pthread_mutex_unlock(&(s)->mutex);		\
@@ -716,8 +746,9 @@ typedef struct {
 			do {						\
 				pthread_cond_wait(&(s)->cond,		\
 						  &(s)->mutex);		\
-			} while ((s)->cnt < 0);				\
+			} while ((s)->wakeups < 1);			\
 			MT_thread_setsemawait(NULL);			\
+			(s)->wakeups--;					\
 			pthread_mutex_unlock(&(s)->mutex);		\
 		}							\
 		TRC_DEBUG(TEM, "Sema %s down complete\n", (s)->name);	\

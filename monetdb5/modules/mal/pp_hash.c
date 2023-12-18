@@ -157,11 +157,15 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (p->argc == 4) {
 		bat pid = *getArgReference_bat(s, p, 3);
 		BAT *p = BATdescriptor(pid);
+		if (p == NULL)
+			return createException(MAL, "hash.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		parent = (hash_table*)p->T.sink;
 		BBPunfix(p->batCacheid);
 	}
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
+	if (b == NULL)
+		return createException(MAL, "hash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->T.sink = (Sink*)ht_create(tt, size*1.2*2.1, parent);
 	*res = b->batCacheid;
 	BBPkeepref(b);
@@ -568,7 +572,7 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 	Pipeline *p = (Pipeline*)*H;
 	/* private or not */
 	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
-	int err = 0;
+	str err = NULL;
 	BAT *u, *b = NULL;
 	lng timeoffset = 0;
 
@@ -601,7 +605,7 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 		if (!h->allocators) {
 			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
 			if (!h->allocators)
-				err = 1;
+				err = createException(MAL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			else
 				h->nr_allocators = p->p->nr_workers;
 		}
@@ -610,7 +614,7 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = ma_create();
 			if (!h->allocators[p->wid])
-				err = 1;
+				err = createException(MAL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		MT_lock_unset(&b->theaplock);
@@ -957,7 +961,7 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
-	int err = 0;
+	str err = NULL;
 	BAT *u, *b = BATdescriptor(*key);
 	BAT *G = BATdescriptor(*parent_slotid);
 	lng timeoffset = 0;
@@ -1003,7 +1007,7 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 		if (!h->allocators) {
 			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
 			if (!h->allocators)
-				err = 1;
+				err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			else
 				h->nr_allocators = p->p->nr_workers;
 		}
@@ -1012,7 +1016,7 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = ma_create();
 			if (!h->allocators[p->wid])
-				err = 1;
+				err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		MT_lock_unset(&b->theaplock);

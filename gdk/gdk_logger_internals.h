@@ -15,12 +15,13 @@
 
 typedef struct logged_range_t {
 	ulng id;				/* log file id */
-	ulng drops;
+	ATOMIC_TYPE drops;
 	ATOMIC_TYPE last_ts;	/* last stored timestamp */
 	ATOMIC_TYPE flushed_ts;
 	ATOMIC_TYPE refcount;
 	struct logged_range_t *next;
 	stream *output_log;
+	BUN cnt;
 } logged_range;
 
 struct logger {
@@ -39,8 +40,6 @@ struct logger {
 	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
 
 	// CHECK writer only
-	lng end;
-	ulng* writer_end;
 	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
 	void *rbuf;
 	size_t rbufsize;
@@ -74,8 +73,6 @@ struct logger {
 	BAT *catalog_cnt;	/* count of ondisk buns (transient) */
 	BAT *catalog_lid;	/* last tid, after which it gets released/destroyed */
 	BAT *dcatalog;		/* deleted from catalog table */
-	BUN cnt;		/* number of persistent bats, incremented on log flushing */
-	BUN deleted;		/* number of destroyed persistent bats, needed for catalog vacuum */
 	BAT *seqs_id;		/* int id column */
 	BAT *seqs_val;		/* lng value column */
 	BAT *dseqs;		/* deleted from seqs table */

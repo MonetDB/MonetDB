@@ -7,7 +7,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 %global name MonetDB
-%global version 11.48.0
+%global version 11.50.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -54,7 +54,7 @@
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
 # Packages for Enterprise Linux (EPEL).
-%if %{fedpkgs}
+%if %{fedpkgs} && (0%{?rhel} != 7) && (0%{?rhel} != 8)
 # By default create the MonetDB-geom-MonetDB5 package on Fedora and RHEL 7
 %bcond_without geos
 %endif
@@ -89,14 +89,18 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Jun2023-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jun2023-SP3/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
 # that doesn't exist and we need systemd, so instead we just require
 # the macro file that contains the definitions.
 # We need checkpolicy and selinux-policy-devel for the SELinux policy.
-BuildRequires: /usr/lib/rpm/macros.d/macros.systemd
+%if 0%{?rhel} != 7
+BuildRequires: systemd-rpm-macros
+%else
+BuildRequires: systemd
+%endif
 BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
@@ -123,6 +127,10 @@ BuildRequires: geos-devel >= 3.10.0
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
 BuildRequires: pkgconfig(libxml-2.0)
+%if 0%{?rhel} != 7
+BuildRequires: pkgconfig(openssl) >= 1.1.1
+%global with_openssl 1
+%endif
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre) >= 4.5
 %endif
@@ -216,6 +224,8 @@ accelerators.  It also has an SQL front end.
 This package contains a shared library (libstream) which is needed by
 various other components.
 
+%ldconfig_scriptlets stream
+
 %files stream
 %license COPYING
 %defattr(-,root,root)
@@ -246,9 +256,35 @@ library.
 %{_includedir}/monetdb/stream_socket.h
 %{_libdir}/pkgconfig/monetdb-stream.pc
 
+%package client-lib
+Summary: MonetDB - Monet Database Management System Client Programs
+Group: Applications/Databases
+%if (0%{?fedora} >= 22)
+Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
+%endif
+
+%description client-lib
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains libmapi.so, the main client library used by both
+mclient, msqldump and by the ODBC driver.  If you want to use MonetDB,
+you will very likely need this package.
+
+%ldconfig_scriptlets client-lib
+
+%files client-lib
+%license COPYING
+%defattr(-,root,root)
+%{_libdir}/libmapi.so.*
+
 %package client
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
+Requires: %{name}-client-lib%{?_isa} = %{version}-%{release}
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
@@ -270,14 +306,13 @@ MonetDB, you will very likely need this package.
 %defattr(-,root,root)
 %{_bindir}/mclient
 %{_bindir}/msqldump
-%{_libdir}/libmapi.so.*
-%doc %{_mandir}/man1/mclient.1.gz
-%doc %{_mandir}/man1/msqldump.1.gz
+%{_mandir}/man1/mclient.1*
+%{_mandir}/man1/msqldump.1*
 
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
-Requires: %{name}-client%{?_isa} = %{version}-%{release}
+Requires: %{name}-client-lib%{?_isa} = %{version}-%{release}
 Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
 
 %description client-devel
@@ -299,7 +334,7 @@ This package contains the files needed to develop with the
 %package client-odbc
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
-Requires: %{name}-client%{?_isa} = %{version}-%{release}
+Requires: %{name}-client-lib%{?_isa} = %{version}-%{release}
 Requires(post): %{_bindir}/odbcinst
 Requires(postun): %{_bindir}/odbcinst
 
@@ -369,6 +404,7 @@ developer.
 %{_bindir}/ODBCtester
 %{_bindir}/arraytest
 %{_bindir}/bincopydata
+%{_bindir}/murltest
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
@@ -472,11 +508,40 @@ format.
 %{_libdir}/monetdb5/lib_fits.so
 %endif
 
+%package -n MonetDB5-libs
+Summary: MonetDB - Monet Database Main Libraries
+Group: Applications/Databases
+
+%description -n MonetDB5-libs
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains the MonetDB server component in the form of a set
+of libraries.  You need this package if you want to use the MonetDB
+database system, either as independent program (MonetDB5-server) or as
+embedded library (%{name}-embedded).
+
+%ldconfig_scriptlets -n MonetDB5-libs
+
+%files -n MonetDB5-libs
+%defattr(-,root,root)
+%{_libdir}/libmonetdb5.so.*
+%{_libdir}/libmonetdbsql.so*
+%dir %{_libdir}/monetdb5
+%if %{with cintegration}
+%{_libdir}/monetdb5/lib_capi.so
+%endif
+%{_libdir}/monetdb5/lib_csv.so
+%{_libdir}/monetdb5/lib_generator.so
+
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-libs%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB5-server-hugeint < 11.38.0
 %if %{with hugeint}
 Provides: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
@@ -485,8 +550,6 @@ Provides: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
-# versions up to 1.0.5 don't accept the queryid field in the result set
-Conflicts: python-pymonetdb < 1.0.6
 Requires(pre): systemd
 
 %description -n MonetDB5-server
@@ -528,14 +591,7 @@ exit 0
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
 %{_bindir}/mserver5
-%{_libdir}/libmonetdb5.so.*
-%{_libdir}/libmonetdbsql.so*
-%dir %{_libdir}/monetdb5
-%if %{with cintegration}
-%{_libdir}/monetdb5/lib_capi.so
-%endif
-%{_libdir}/monetdb5/lib_generator.so
-%doc %{_mandir}/man1/mserver5.1.gz
+%{_mandir}/man1/mserver5.1*
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
 %{_datadir}/doc/MonetDB/*
@@ -543,7 +599,7 @@ exit 0
 %package -n MonetDB5-server-devel
 Summary: MonetDB development files
 Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-libs%{?_isa} = %{version}-%{release}
 Requires: %{name}-devel%{?_isa} = %{version}-%{release}
 
 %description -n MonetDB5-server-devel
@@ -605,8 +661,8 @@ configuration.
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
-%doc %{_mandir}/man1/monetdb.1.gz
-%doc %{_mandir}/man1/monetdbd.1.gz
+%{_mandir}/man1/monetdb.1*
+%{_mandir}/man1/monetdbd.1*
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
@@ -636,7 +692,7 @@ This package contains files needed to develop SQL extensions.
 %package embedded
 Summary: MonetDB as an embedded library
 Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-libs%{?_isa} = %{version}-%{release}
 
 %description embedded
 MonetDB is a database management system that is developed from a
@@ -647,6 +703,8 @@ accelerators.  It also has an SQL front end.
 This package contains the library to turn MonetDB into an embeddable
 library, also known as MonetDBe.  Also see %{name}-embedded-devel to
 use this in a program.
+
+%ldconfig_scriptlets embedded
 
 %files embedded
 %{_libdir}/libmonetdbe.so.*
@@ -694,7 +752,7 @@ package.  You probably don't need this, unless you are a developer.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
-Requires: python3dist(pymonetdb) >= 1.0.6
+Requires: python3dist(pymonetdb)
 BuildArch: noarch
 
 %description testing-python
@@ -727,11 +785,13 @@ Requires(post):   MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires(postun): MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires(post):   %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires(postun): %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
-Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
+# we need /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles which are in
+# policycoreutils
+Requires(post):   policycoreutils
+Requires(postun): policycoreutils
 BuildArch: noarch
 
-%global selinux_types %(%{__awk} '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
+%global selinux_types %(awk '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
 %global selinux_variants %([ -z "%{selinux_types}" ] && echo mls targeted || echo %{selinux_types})
 
 %description selinux
@@ -804,6 +864,7 @@ fi
         -DWITH_CURL=ON \
         -DWITH_LZ4=ON \
         -DWITH_LZMA=ON \
+        -DWITH_OPENSSL=%{?with_openssl:ON}%{!?with_openssl:OFF} \
         -DWITH_PCRE=ON \
         -DWITH_PROJ=OFF \
         -DWITH_READLINE=ON \
@@ -860,6 +921,94 @@ fi
 %endif
 
 %changelog
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.17-20231116
+- Rebuilt.
+
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.17-20231116
+- gdk: Fixed a regression where after a while the write-ahead log files
+  weren't being rotated, meaning from some point onwards, the newest
+  file just kept on growing.
+
+* Thu Nov 09 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.15-20231109
+- Rebuilt.
+- GH#7410: SIGSEGV cause database corruption
+
+* Tue Nov  7 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.15-20231109
+- gdk: When saving the SQL catalog during a low-level commit, we should
+  only save the part of the catalog that corresponds to the part of the
+  write-ahead log that has been processed.  What we did was save more,
+  which resulted in the catalog containing references to tables and
+  columns whose disk presence is otherwise only in the write-ahead log.
+
+* Fri Nov 03 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.13-20231103
+- Rebuilt.
+- GH#7300: Implement missing standard SQL DATE and TIMESTAMP functions
+- GH#7324: string_distance('method',str1, str2) as a generic distance
+  function
+- GH#7409: Numpy table returning UDFs with variadic arguments
+
+* Thu Nov  2 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.13-20231103
+- sql: Added a missing interface function sys.timestamp_to_str with
+  a TIMESTAMP (as opposed to TIMESTAMP WITH TIME ZONE) argument.
+  The missing interface caused error messages being produced when the
+  function was called with a TIMESTAMP argument, although it did give
+  the correct result.
+
+* Tue Oct 31 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.13-20231103
+- gdk: A bug was fixed where the administration of which bats were in use was
+  interpreted incorrectly during startup, causing problems later.  One
+  symptom that has been observed was failure to startup with a message
+  that the catalog tables could not be loaded.
+
+* Fri Sep 29 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.11-20230929
+- Rebuilt.
+
+* Fri Sep 29 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.11-20230929
+- MonetDB: Fixed an installation issue on Debian and Ubuntu introduced in the
+  last build.
+
+* Wed Sep 27 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.9-20230927
+- Rebuilt.
+- GH#7402: Privileges on merge table not propagated to partition tables
+
+* Mon Sep 25 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
+- Rebuilt.
+- GH#7094: Drop remote tables in transactions and rollback
+- GH#7303: Improve the performance of multi-column filters
+- GH#7400: VM max memory is not check correctly for cgroups v2
+- GH#7401: Column aliases used incorrectly in UNION subqueries
+
+* Fri Sep 22 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
+- gdk: Fixed a number of data races (race conditions).
+
+* Mon Sep 18 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
+- gdk: Fixed a reference counting problem when a BAT could nog be loaded,
+  e.g. because of resource limitations.
+
+* Wed Aug 30 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
+- gdk: Only check for virtual memory limits when creating or growing bats,
+  not for general memory allocations.  There is (still) too much code
+  that doesn't properly handle failing allocations, so we need to avoid
+  those as much as possible.  This has mostly an effect if there are
+  virtual memory size restrictions imposed by cgroups (memory.swap.max
+  in cgroups v2, memory.memsw.limit_in_bytes in cgroups v1).
+- gdk: The low-level commit turned out to always commit every persistent bat
+  in the system.  There is no need for that, it should only commit bats
+  that were changed.  This has now been fixed.
+- gdk: Implemented timeout/exit checks in a bunch more operators.  Long(er)
+  running operators occasionally check whether they're taking too long
+  (past a user-specified timeout) or whether the server is exiting.
+  This is now done in more places.
+
+* Wed Aug 30 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.7-20230925
+- MonetDB: Do a lot more error checking, mostly for allocation failures.  More is
+  still needed, though.
+
+* Thu Aug 10 2023 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.47.7-20230925
+- MonetDB: Improve performance of the ILIKE operator when the pattern contains only
+  ASCII characters. In this case we do not need to treat any characters as
+  UTF-8 and we can use much faster routines that perform byte comparisons.
+
 * Tue Jul 18 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.5-20230718
 - Rebuilt.
 - GH#7388: Query results in large cross product

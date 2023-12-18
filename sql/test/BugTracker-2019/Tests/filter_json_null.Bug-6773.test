@@ -1,10 +1,10 @@
 query T rowsort
 select json.filter('{"foo": null}', '$.foo')
 ----
-[null]
+null
 
 query T rowsort
 select json.filter('[null]', '$[0]')
 ----
-[null]
+null
 

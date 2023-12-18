@@ -9,7 +9,7 @@
 #]]
 
 # Detect required packages
-find_package(BISON REQUIRED 3.2)
+find_package(BISON 3.0 REQUIRED)
 find_package(Iconv)
 find_package(Threads)
 
@@ -125,6 +125,10 @@ if(WITH_MALLOC)
         IMPORTED_LINK_INTERFACE_LANGUAGES "C" IMPORTED_LOCATION "${MALLOC_LIBRARY}")
     endif()
   endif()
+endif()
+
+if(WITH_OPENSSL)
+  find_package(OpenSSL 1.1.1)
 endif()
 
 find_package(Sphinx)

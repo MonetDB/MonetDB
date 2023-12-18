@@ -318,6 +318,14 @@ discoveryRunner(void *d)
 	socks[0] = ((int *) d)[0];
 	socks[1] = ((int *) d)[1];
 
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
+
 	/* start shouting around that we're here ;) request others to tell
 	 * what databases they have */
 	snprintf(buf, 512, "HELO %s", _mero_hostname);
