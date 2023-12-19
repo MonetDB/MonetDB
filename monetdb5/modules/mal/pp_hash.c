@@ -40,30 +40,30 @@ str_hsh(str v)
 static unsigned int
 log_base2(unsigned int n)
 {
-        unsigned int l ;
+	unsigned int l ;
 
-        for (l = 0; n; l++) {
-                n >>= 1 ;
-        }
-        return l ;
+	for (l = 0; n; l++) {
+		n >>= 1 ;
+	}
+	return l ;
 }
 
 static hash_table *
 _ht_init( hash_table *h )
 {
-        if (h->gids == NULL) {
-                h->vals = (char*)GDKmalloc(h->size * (size_t)h->width);
-                h->gids = (hash_key_t*)GDKzalloc(sizeof(hash_key_t)* h->size);
-				if (h->vals == NULL || h->gids == NULL)
-					goto error;
-				if (h->p) {
-					assert(h->s.type == HASH_SINK);
-					h->pgids = (gid*)GDKmalloc(sizeof(gid)* h->size);
-					if (h->pgids == NULL)
-						goto error;
-				}
-        }
-        return h;
+	if (h->gids == NULL) {
+		h->vals = (char*)GDKmalloc(h->size * (size_t)h->width);
+		h->gids = (hash_key_t*)GDKzalloc(sizeof(hash_key_t)* h->size);
+		if (h->vals == NULL || h->gids == NULL)
+			goto error;
+		if (h->p) {
+			assert(h->s.type == HASH_SINK);
+			h->pgids = (gid*)GDKmalloc(sizeof(gid)* h->size);
+			if (h->pgids == NULL)
+				goto error;
+		}
+	}
+	return h;
 error:
 	if(h->vals) GDKfree(h->vals);
 	if(h->gids) GDKfree((void *)h->gids);
@@ -132,11 +132,11 @@ _ht_create( int type, int size, hash_table *p)
 hash_table *
 ht_create(int type, int size, hash_table *p)
 {
-        if (size < HT_MIN_SIZE)
-                size = HT_MIN_SIZE;
-        if (size > HT_MAX_SIZE)
-                size = HT_MAX_SIZE;
-        return _ht_create(type, size, p);
+	if (size < HT_MIN_SIZE)
+		size = HT_MIN_SIZE;
+	if (size > HT_MAX_SIZE)
+		size = HT_MAX_SIZE;
+	return _ht_create(type, size, p);
 }
 
 void

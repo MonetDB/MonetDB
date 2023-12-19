@@ -102,25 +102,25 @@ typedef lng (*fhsh)(void *v);
 typedef size_t (*flen)(void *v);
 
 typedef struct hash_table {
-		Sink s;
-        int type;
-        int width;
-		fcmp cmp;
-		fhsh hsh;
-		flen len;
-		int rehash;
+	Sink s;
+	int type;
+	int width;
+	fcmp cmp;
+	fhsh hsh;
+	flen len;
+	int rehash;
 
-        void *vals;			/* hash(ed) values */
-        hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
-		gid *pgids;			/* id of the parent hash */
+	void *vals;			/* hash(ed) values */
+	hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
+	gid *pgids;			/* id of the parent hash */
 
-		struct hash_table *p;	/* parent hash */
-        int bits;
-        ATOMIC_TYPE last;
-        size_t size;
-        gid mask;
-		mallocator **allocators;
-		int nr_allocators;
+	struct hash_table *p;	/* parent hash */
+	int bits;
+	ATOMIC_TYPE last;
+	size_t size;
+	gid mask;
+	mallocator **allocators;
+	int nr_allocators;
 } hash_table;
 
 extern lng str_hsh(str v);
