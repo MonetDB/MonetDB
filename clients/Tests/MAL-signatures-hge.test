@@ -4004,16 +4004,6 @@ command bat.replace(X_0:bat[:any_1], X_1:oid, X_2:any_1, X_3:bit):bat[:any_1]
 BKCbun_inplace_force;
 Replace the tail value of one BUN that has some head value.
 bat
-reuse
-command bat.reuse(X_0:bat[:any_1], X_1:bat[:oid]):bat[:any_1] 
-BKCreuseBAT;
-Shuffle the values around to restore a dense representation of buns.
-bat
-reuseMap
-command bat.reuseMap(X_0:bat[:any_1], X_1:bat[:oid]):bat[:oid] 
-BKCreuseBATmap;
-Derive the oid mapping for reuse BAT based on list of to-be-deleted
-bat
 save
 command bat.save(X_0:bat[:any_1]):void 
 BKCsave2;
