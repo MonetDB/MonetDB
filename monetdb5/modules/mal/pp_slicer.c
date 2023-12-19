@@ -31,6 +31,8 @@ static topn_t *
 topn_create(void)
 {
 	topn_t *t = (topn_t*)GDKzalloc(sizeof(topn_t));
+	if (!t)
+		return NULL;
 
 	t->s.destroy = (sink_destroy)&topn_destroy;
 	t->s.type = TOPN_SINK;
@@ -46,32 +48,39 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 	Pipeline *p = (Pipeline*)*H;
 	BAT *g = NULL, *r = NULL, *t = NULL, *b = NULL;
  	BUN s = *start, e = *end;
-	int fb = 1;
+	int fb = 1, locked = 0;
 	bool private = (!tid || is_bat_nil(*tid));
+	topn_t *n = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		return createException(SQL, "algebra.subslice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (private && *tid && is_bat_nil(*tid)) {
 		t = COLnew(b->hseqbase, /*b->ttype?b->ttype:*/TYPE_oid, 0, TRANSIENT);
-		if (!t) {
-			BBPunfix(*bid);
-			return createException(SQL, "algebra.subslice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		n = topn_create();
+		if (!t || !n) {
+			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
 		}
-		t->T.sink = (Sink*)topn_create();
+		t->T.sink = (Sink*)n;
 		t->T.private_bat = 1;
 	} else {
 		if ((t = BATdescriptor(*tid)) == NULL) {
-			BBPunfix(*bid);
-			return createException(SQL, "algebra.subslice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
 		}
 	}
 
-	if (!private)
+	if (!private) {
 		pipeline_lock1(t);
-	topn_t *n = (topn_t*)t->T.sink;
+		locked = 1;
+	}
+	n = (topn_t*)t->T.sink;
 	if (!n) {
-		n = topn_create();
+		if ((n = topn_create()) == NULL) {
+			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
 		t->T.sink = (Sink*)n;
 	}
 	assert(n && n->s.type == TOPN_SINK);
@@ -100,9 +109,12 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 			if (rest > lnr)
 				rest = lnr;
 			g = BATdense(0, re, rest);
-			if (g)
-				g->T.maxval = re;
 			r = BATdense(0, ls+off, rest);
+			if (!g || !r) {
+				msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			}
+			g->T.maxval = re;
 			re += rest;
 			fb = 0;
 		}
@@ -112,17 +124,17 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 	if (fb) {
 		assert(!g && !r);
 		g = COLnew(b->hseqbase, TYPE_oid, 0, TRANSIENT);
-		if (g)
-			g->T.maxval = re;
 		r = COLnew(b->hseqbase, TYPE_oid, 0, TRANSIENT);
+		if (!g || !r) {
+			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
+		g->T.maxval = re;
 	}
 	BBPunfix(b->batCacheid);
-	if (!private)
+	if (!private) {
 		pipeline_unlock1(t);
-	if (!g || !r) {
-		BBPreclaim(g);
-		BBPreclaim(r);
-		return createException(SQL, "algebra.subslice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		locked = 0;
 	}
 	*gid = g->batCacheid;
 	*rid = r->batCacheid;
@@ -130,6 +142,16 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 	BBPkeepref(g);
 	BBPkeepref(r);
 	BBPkeepref(t);
+	return msg;
+error:
+	if (locked)
+		pipeline_unlock1(t);
+	if (t && t->T.sink)
+		t->T.sink->destroy(t->T.sink);
+	BBPreclaim(t);
+	BBPreclaim(g);
+	BBPreclaim(r);
+	BBPreclaim(b);
 	return msg;
 }
 

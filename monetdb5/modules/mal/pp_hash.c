@@ -54,12 +54,21 @@ _ht_init( hash_table *h )
         if (h->gids == NULL) {
                 h->vals = (char*)GDKmalloc(h->size * (size_t)h->width);
                 h->gids = (hash_key_t*)GDKzalloc(sizeof(hash_key_t)* h->size);
+				if (h->vals == NULL || h->gids == NULL)
+					goto error;
 				if (h->p) {
 					assert(h->s.type == HASH_SINK);
 					h->pgids = (gid*)GDKmalloc(sizeof(gid)* h->size);
+					if (h->pgids == NULL)
+						goto error;
 				}
         }
         return h;
+error:
+	if(h->vals) GDKfree(h->vals);
+	if(h->gids) GDKfree((void *)h->gids);
+	if(h->pgids) GDKfree(h->pgids);
+	return NULL;
 }
 
 static void
@@ -85,6 +94,8 @@ static hash_table *
 _ht_create( int type, int size, hash_table *p)
 {
 	hash_table *h = (hash_table*)GDKzalloc(sizeof(hash_table));
+	if (!h)
+		return NULL;
 	int bits = log_base2(size-1);
 
 	if (!type)
@@ -109,7 +120,13 @@ _ht_create( int type, int size, hash_table *p)
 		h->hsh = (fhsh)BATatoms[type].atomHash;
 		h->len = (flen)BATatoms[type].atomLen;
 	}
-	return _ht_init(h);
+
+	hash_table *h2 = _ht_init(h);
+	if (h2 == NULL) {
+		GDKfree(h);
+		return NULL;
+	}
+	return h2;
 }
 
 hash_table *
@@ -152,6 +169,10 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (b == NULL)
 		return createException(MAL, "hash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->T.sink = (Sink*)ht_create(tt, size*1.2*2.1, parent);
+	if (b->T.sink == NULL) {
+		BBPunfix(b->batCacheid);
+		return createException(MAL, "hash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	*res = b->batCacheid;
 	BBPkeepref(b);
 	return MAL_SUCCEED;

@@ -49,8 +49,7 @@ static void
 mat_destroy( mat_t *m )
 {
 	for(int i = 0; i<m->nr; i++) {
-		if (m->bat[i])
-			BBPunfix(m->bat[i]->batCacheid);
+		BBPreclaim(m->bat[i]);
 	}
 	GDKfree(m->bat);
 	GDKfree(m);
@@ -72,17 +71,20 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int nr = *getArgReference_int(stk, p, 2);
 
 	mat_t *mat = (mat_t*)GDKmalloc(sizeof(mat_t));
-
-	if (mat) {
-		mat->nr = nr;
-		mat->bat = (BAT**)GDKzalloc(nr * sizeof(BAT*));
-		if (!mat->bat)
-			mat = NULL;
-		mat->s.destroy = (sink_destroy)&mat_destroy;
-		mat->s.type = MAT_SINK;
+	if (!mat)
+		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	mat->nr = nr;
+	mat->bat = (BAT**)GDKzalloc(nr * sizeof(BAT*));
+	if (!mat->bat) {
+		GDKfree(mat);
+		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	mat->s.destroy = (sink_destroy)&mat_destroy;
+	mat->s.type = MAT_SINK;
+
 	BAT *matb = COLnew(0, tt, 100000 /* need estimate? */, TRANSIENT);
-	if (!matb || !mat) {
+	if (!matb) {
+		GDKfree(mat->bat);
 		GDKfree(mat);
 		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -116,20 +118,22 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int nr = *getArgReference_int(stk, p, 1);
 
 	part_t *part = (part_t*)GDKmalloc(sizeof(part_t));
-
-	if (part) {
-		part->nr = nr;
-		part->curpos = (lng*)GDKzalloc(nr * sizeof(lng));
-		MT_lock_init(&part->l, "partition");
-		if (!part->curpos)
-			part = NULL;
-		part->s.destroy = (sink_destroy)&part_destroy;
-		part->s.type = PART_SINK;
-	}
-	BAT *partb = COLnew(0, TYPE_oid, 100000 /* need estimate? */, TRANSIENT);
-	if (!partb || !part) {
+	if (!part)
+		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	part->nr = nr;
+	part->curpos = (lng*)GDKzalloc(nr * sizeof(lng));
+	if (!part->curpos) {
 		GDKfree(part);
-		BBPreclaim(partb);
+		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	MT_lock_init(&part->l, "partition");
+	part->s.destroy = (sink_destroy)&part_destroy;
+	part->s.type = PART_SINK;
+
+	BAT *partb = COLnew(0, TYPE_oid, 100000 /* need estimate? */, TRANSIENT);
+	if (!partb) {
+		GDKfree(part->curpos);
+		GDKfree(part);
 		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -209,45 +213,48 @@ PARTpartition( bat *pos, const bat *part, const bat *glen )
 	return MAL_SUCCEED;
 }
 
-#define mat_project(T)										\
-		{													\
-			int rc = GDK_SUCCEED;							\
-			T **cp = (T**)GDKzalloc(mt->nr * sizeof(T*));	\
-			for(int i = 0; i<mt->nr; i++) {					\
-				if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))	\
-					rc = BATextend(mt->bat[i], curpos[i]+lp[i]);		\
-				if (rc != GDK_SUCCEED)						\
-					break;									\
-				if (BATcount(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))		\
-					BATsetcount(mt->bat[i], curpos[i]+lp[i]);			\
-				cp[i] = (T*)Tloc(mt->bat[i], 0);			\
-			}												\
-			if (cp && rc == GDK_SUCCEED) {					\
-				T *dp = (T*)Tloc(d, 0);						\
-				for(BUN i = 0; i<BATcount(d); i++) { 		\
-					int g = grp[i];							\
-					cp[g][curpos[g]] = dp[i];				\
-					curpos[g]++;							\
-			    }											\
-			}												\
-			GDKfree(cp);									\
-		}													\
+#define mat_project(T)																					\
+		{																								\
+			T **cp = (T**)GDKzalloc(mt->nr * sizeof(T*));												\
+			if (cp) {																					\
+				for(int i = 0; i<mt->nr; i++) {															\
+					if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i])) {								\
+						if (BATextend(mt->bat[i], curpos[i]+lp[i]) != GDK_SUCCEED) {					\
+							err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+							break;																		\
+						}																				\
+					}																					\
+					if (BATcount(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))									\
+						BATsetcount(mt->bat[i], curpos[i]+lp[i]);										\
+					cp[i] = (T*)Tloc(mt->bat[i], 0);													\
+				}																						\
+				if (err == NULL) {																		\
+					T *dp = (T*)Tloc(d, 0);																\
+					for(BUN i = 0; i<BATcount(d); i++) {												\
+						int g = grp[i];																	\
+						cp[g][curpos[g]] = dp[i];														\
+						curpos[g]++;																	\
+					}																					\
+				}																						\
+				GDKfree(cp);																			\
+			} else {																					\
+				err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);				\
+			}																							\
+		}																								\
 		break
 
 static str
 MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat *data )
 {
+	str err = NULL;
 	BAT *m = BATdescriptor(*mat);
 	BAT *p = BATdescriptor(*pos);
 	BAT *l = BATdescriptor(*lid);
 	BAT *g = BATdescriptor(*gid);
 	BAT *d = BATdescriptor(*data);
 	if (!m || !p || !l || !g || !d) {
-		if (m) BBPunfix(m->batCacheid);
-		if (p) BBPunfix(p->batCacheid);
-		if (l) BBPunfix(l->batCacheid);
-		if (g) BBPunfix(g->batCacheid);
-		throw(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
 	}
 	lng *curpos = (lng*)Tloc(p, 0);
 	lng *lp = (lng*)Tloc(l, 0);
@@ -273,15 +280,23 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 		mat_project(hge);
 #endif
 	default:
-		printf("error\n");
+		err = createException(MAL, "mat.project", SQLSTATE(HY002) "invalid BAT width");
 	}
 	MT_lock_unset(&m->theaplock);
+	if (err)
+		goto error;
 	BBPkeepref(m);
 	BBPunfix(p->batCacheid);
 	BBPunfix(l->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(d->batCacheid);
 	return MAL_SUCCEED;
+error:
+	BBPreclaim(m);
+	BBPreclaim(p);
+	BBPreclaim(l);
+	BBPreclaim(g);
+	return err;
 }
 
 static str
@@ -289,7 +304,7 @@ MATfetch( bat *res, const bat *mat, const int *i )
 {
 	BAT *m = BATdescriptor(*mat);
 	if (!m)
-		throw(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mat.fetch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	mat_t *mt = (mat_t*)m->T.sink;
 	assert(mt->s.type == MAT_SINK);
 	assert(*i < mt->nr);
@@ -306,7 +321,7 @@ MATadd( bat *mat, const bat *bid, const int *i )
 	BAT *m = BATdescriptor(*mat);
 	if (!b || !m) {
 		if (b) BBPunfix(b->batCacheid);
-		throw(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mat.add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	mat_t *mt = (mat_t*)m->T.sink;
 	assert(mt->s.type == MAT_SINK);
