@@ -143,13 +143,6 @@ BuildRequires: python3-numpy
 %endif
 %if %{with rintegration}
 BuildRequires: pkgconfig(libR)
-%if (0%{?fedora} == 32)
-# work around a packaging bug on Fedora 32 (18 Nov 2020)
-# problem is things like:
-# file /etc/texlive/web2c/updmap.cfg conflicts between attempted installs of texlive-tetex-7:20190410-12.fc32.noarch and texlive-texlive-scripts-7:20200327-16.fc32.noarch
-# texlive-tetex is obsoleted by texlive-obsolete
-BuildRequires: texlive-obsolete
-%endif
 %endif
 # optional packages:
 # BuildRequires: pkgconfig(cmocka)      # -DWITH_CMOCKA=ON
@@ -329,6 +322,7 @@ This package contains the files needed to develop with the
 %dir %{_includedir}/monetdb
 %{_libdir}/libmapi.so
 %{_includedir}/monetdb/mapi*.h
+%{_includedir}/monetdb/msettings.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
 
 %package client-odbc

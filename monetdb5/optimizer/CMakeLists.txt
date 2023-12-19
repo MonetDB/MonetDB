@@ -30,7 +30,6 @@ target_sources(optimizer
   opt_querylog.c opt_querylog.h
   opt_inline.c opt_inline.h
   opt_projectionpath.c opt_projectionpath.h
-  opt_macro.c opt_macro.h
   opt_matpack.c opt_matpack.h
   opt_mergetable.c opt_mergetable.h
   opt_mitosis.c opt_mitosis.h

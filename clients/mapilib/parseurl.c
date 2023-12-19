@@ -405,6 +405,8 @@ parse_classic_tcp(msettings *mp, scanner *sc)
 
 	// parse the host
 	char *host = find(sc, ":?/");
+	if (strchr(host, '@') != NULL)
+		return complain(sc, "host@user syntax is not allowed");
 	if (!store(mp, sc, MP_HOST, host))
 		return false;
 

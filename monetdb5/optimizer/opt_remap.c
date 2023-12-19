@@ -16,7 +16,7 @@
  */
 #include "monetdb_config.h"
 #include "opt_remap.h"
-#include "opt_macro.h"
+#include "opt_inline.h"
 #include "opt_multiplex.h"
 
 static int

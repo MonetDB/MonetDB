@@ -1715,16 +1715,16 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 #endif
 
 static bool
-BBPtrim(bool aggressive)
+BBPtrim(bool aggressive, bat nbat)
 {
 	int n = 0;
+	int waitctr = 0;
 	bool changed = false;
 	unsigned flag = BBPUNLOADING | BBPSYNCING | BBPSAVING;
 	if (!aggressive)
 		flag |= BBPHOT;
-	for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
-		if (GDKexiting())
-			return changed;
+	lng t0 = GDKusec();
+	for (bat bid = 1; bid < nbat && !GDKexiting(); bid++) {
 		/* don't do this during a (sub)commit */
 		BBPtmlock();
 		MT_lock_set(&GDKswapLock(bid));
@@ -1737,11 +1737,11 @@ BBPtrim(bool aggressive)
 			MT_lock_set(&b->theaplock);
 			if (!BATshared(b) &&
 			    !isVIEW(b) &&
-			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) /*&&
-			    (BBP_status(bid) & BBPPERSISTENT ||
-			     (b->batRole == PERSISTENT && BBP_lrefs(bid) == 1)) */) {
+			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
+			    (b->batRole == PERSISTENT && BBP_lrefs(bid) <= 2)) {
 				BBP_status_on(bid, BBPUNLOADING);
 				swap = true;
+				waitctr += BATdirty(b) ? 9 : 1;
 			}
 			MT_lock_unset(&b->theaplock);
 		}
@@ -1754,8 +1754,14 @@ BBPtrim(bool aggressive)
 			changed = true;
 		}
 		BBPtmunlock();
+		/* every once in a while, give others a chance */
+		if (++waitctr >= 1000) {
+			waitctr = 0;
+			MT_sleep_ms(2);
+		}
 	}
-	TRC_DEBUG(BAT_, "unloaded %d bats%s\n", n, aggressive ? " (also hot)" : "");
+	if (n > 0)
+		TRC_INFO(BAT_, "unloaded %d bats in "LLFMT" usec%s\n", n, GDKusec() - t0, aggressive ? " (also hot)" : "");
 	return changed;
 }
 
@@ -1767,8 +1773,9 @@ BBPmanager(void *dummy)
 
 	for (;;) {
 		int n = 0;
+		bat nbat = (bat) ATOMIC_GET(&BBPsize);
 		MT_thread_setworking("clearing HOT bits");
-		for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
+		for (bat bid = 1; bid < nbat; bid++) {
 			MT_lock_set(&GDKswapLock(bid));
 			if (BBP_refs(bid) == 0 && BBP_lrefs(bid) != 0) {
 				n += (BBP_status(bid) & BBPHOT) != 0;
@@ -1785,7 +1792,7 @@ BBPmanager(void *dummy)
 				return;
 		}
 		MT_thread_setworking("BBPtrim");
-		changed = BBPtrim(false);
+		changed = BBPtrim(false, nbat);
 		MT_thread_setworking("BBPcallbacks");
 		BBPcallbacks();
 		if (GDKexiting())

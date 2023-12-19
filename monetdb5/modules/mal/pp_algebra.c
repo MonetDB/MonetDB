@@ -26,74 +26,74 @@
 #define getArgReference_daytime(stk, pci, nr)   (daytime*)getArgReference(stk, pci, nr)
 #define getArgReference_timestamp(stk, pci, nr) (timestamp*)getArgReference(stk, pci, nr)
 
-#define aggr(T,f)										\
-	if (type == TYPE_##T) {									\
-		T val = *getArgReference_##T(stk, pci, 2);					\
-		if (!is_##T##_nil(val) && BATcount(b)) {					\
-			T *t = Tloc(b, 0);							\
-			if (is_##T##_nil(t[0])) {						\
-				t[0] = val;							\
-			} else									\
-				t[0] = f(t[0], val);						\
-			MT_lock_set(&b->theaplock);						\
-			b->tnil = false;							\
-			b->tnonil = true;							\
+#define aggr(T,f)												\
+	if (type == TYPE_##T) {										\
+		T val = *getArgReference_##T(stk, pci, 2);				\
+		if (!is_##T##_nil(val) && BATcount(b)) {				\
+			T *t = Tloc(b, 0);									\
+			if (is_##T##_nil(t[0])) {							\
+				t[0] = val;										\
+			} else												\
+				t[0] = f(t[0], val);							\
+			MT_lock_set(&b->theaplock);							\
+			b->tnil = false;									\
+			b->tnonil = true;									\
 			MT_lock_unset(&b->theaplock);						\
 		} else if (BATcount(b) == 0) {							\
-			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
-				err = createException(MAL, "lockedaggr." #f,			\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)		\
+				err = createException(MAL, "lockedaggr." #f,	\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
-		}										\
+		}														\
 	}
 
-#define faggr(T,f)										\
-	if (type == TYPE_##T) {									\
+#define faggr(T,f)														\
+	if (type == TYPE_##T) {												\
 		T val = *getArgReference_TYPE(stk, pci, 2, T);					\
-		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);			\
-		if (!is_##T##_nil(val) && BATcount(b)) {					\
-			T *t = Tloc(b, 0);							\
-			if (is_##T##_nil(t[0])) {						\
-				t[0] = val;							\
-			} else									\
-				t[0] = f(t[0], val);						\
-			MT_lock_set(&b->theaplock);						\
-			b->tnil = false;							\
-			b->tnonil = true;							\
-			MT_lock_unset(&b->theaplock);						\
-		} else if (BATcount(b) == 0) {							\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);	\
+		if (!is_##T##_nil(val) && BATcount(b)) {						\
+			T *t = Tloc(b, 0);											\
+			if (is_##T##_nil(t[0])) {									\
+				t[0] = val;												\
+			} else														\
+				t[0] = f(t[0], val);									\
+			MT_lock_set(&b->theaplock);									\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
+		} else if (BATcount(b) == 0) {									\
 			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
 				err = createException(MAL, "lockedaggr." #f,			\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
-		}										\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+		}																\
 	}
 
-#define vaggr(T,f)										\
-	if (type == TYPE_##T) {									\
-		BATiter bi = bat_iterator(b);							\
-		T val = *getArgReference_##T(stk, pci, 2);					\
-		const void *nil = ATOMnilptr(type);						\
-		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);			\
-		if (cmp(val,nil) != 0 && BATcount(b)) {						\
-			T t = BUNtvar(bi, 0);							\
-			if (cmp(t,nil) == 0) {							\
+#define vaggr(T,f)														\
+	if (type == TYPE_##T) {												\
+		BATiter bi = bat_iterator(b);									\
+		T val = *getArgReference_##T(stk, pci, 2);						\
+		const void *nil = ATOMnilptr(type);								\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);	\
+		if (cmp(val,nil) != 0 && BATcount(b)) {							\
+			T t = BUNtvar(bi, 0);										\
+			if (cmp(t,nil) == 0) {										\
 				if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)			\
 					err = createException(MAL, "2 lockedaggr." #f,		\
-						SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
-			} else									\
-				if (f(t, val) == val)						\
+						SQLSTATE(HY013) MAL_MALLOC_FAIL);				\
+			} else														\
+				if (f(t, val) == val)									\
 					if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)		\
 						err = createException(MAL, "1 lockedaggr." #f,	\
-							SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-			MT_lock_set(&b->theaplock);						\
-			b->tnil = false;							\
-			b->tnonil = true;							\
-			MT_lock_unset(&b->theaplock);						\
-		} else if (BATcount(b) == 0) {							\
-			if (BUNappend(b, val, true) != GDK_SUCCEED)				\
+							SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
+			MT_lock_set(&b->theaplock);									\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
+		} else if (BATcount(b) == 0) {									\
+			if (BUNappend(b, val, true) != GDK_SUCCEED)					\
 				err = createException(MAL, "3 lockedaggr." #f,			\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
-		}										\
-		bat_iterator_end(&bi);								\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+		}																\
+		bat_iterator_end(&bi);											\
 	}
 
 static str
@@ -145,25 +145,25 @@ LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define paggr(T,OT,f)								\
+#define paggr(T,OT,f)											\
 	if (type == TYPE_##T && b->ttype == TYPE_##OT) {			\
-		T val = *getArgReference_##T(stk, pci, 2);			\
-		if (!is_##T##_nil(val) && BATcount(b)) {			\
-			OT *t = Tloc(b, 0);					\
-			if (is_##OT##_nil(t[0])) {				\
-				t[0] = val;					\
-			} else							\
-				t[0] = f(t[0], val);				\
-			MT_lock_set(&b->theaplock);				\
-			b->tnil = false;					\
-			b->tnonil = true;					\
-			MT_lock_unset(&b->theaplock);				\
-		} else if (BATcount(b) == 0) {					\
-			OT ov = val;						\
-			if (BUNappend(b, &ov, true) != GDK_SUCCEED)		\
+		T val = *getArgReference_##T(stk, pci, 2);				\
+		if (!is_##T##_nil(val) && BATcount(b)) {				\
+			OT *t = Tloc(b, 0);									\
+			if (is_##OT##_nil(t[0])) {							\
+				t[0] = val;										\
+			} else												\
+				t[0] = f(t[0], val);							\
+			MT_lock_set(&b->theaplock);							\
+			b->tnil = false;									\
+			b->tnonil = true;									\
+			MT_lock_unset(&b->theaplock);						\
+		} else if (BATcount(b) == 0) {							\
+			OT ov = val;										\
+			if (BUNappend(b, &ov, true) != GDK_SUCCEED)			\
 				err = createException(MAL, "lockedaggr." #f,	\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		}								\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
+		}														\
 	}
 
 static str
@@ -221,32 +221,32 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define avg_aggr(T)									\
-	if (type == TYPE_##T) {								\
+#define avg_aggr(T)														\
+	if (type == TYPE_##T) {												\
 		T val = *getArgReference_##T(stk, pci, pci->retc + 1);			\
 		lng cnt = *getArgReference_lng(stk, pci, pci->retc + 2);		\
-		if (cnt > 0 && !is_##T##_nil(val) && BATcount(b)) {			\
-			T *t = Tloc(b, 0);						\
-			lng *tcnt = Tloc(c, 0);						\
-			if (is_##T##_nil(t[0])) {					\
-				t[0] = val;						\
-				tcnt[0] = cnt;						\
-			} else {							\
-			    dbl tt = (tcnt[0] + cnt);					\
+		if (cnt > 0 && !is_##T##_nil(val) && BATcount(b)) {				\
+			T *t = Tloc(b, 0);											\
+			lng *tcnt = Tloc(c, 0);										\
+			if (is_##T##_nil(t[0])) {									\
+				t[0] = val;												\
+				tcnt[0] = cnt;											\
+			} else {													\
+			    dbl tt = (tcnt[0] + cnt);								\
 				t[0] = (t[0]*((dbl)tcnt[0]/tt)) + (val*((dbl)cnt/tt));	\
-				tcnt[0] += cnt;						\
-			}								\
-			MT_lock_set(&b->theaplock);					\
-			b->tnil = false;						\
-			b->tnonil = true;						\
-			MT_lock_unset(&b->theaplock);					\
-		} else if (cnt > 0 && BATcount(b) == 0) {				\
-			if (BUNappend(b, &val, true) != GDK_SUCCEED) {			\
-				err = createException(MAL, "lockedaggr.avg",		\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
-				goto error;						\
-			}								\
-		}									\
+				tcnt[0] += cnt;											\
+			}															\
+			MT_lock_set(&b->theaplock);									\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
+		} else if (cnt > 0 && BATcount(b) == 0) {						\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED) {				\
+				err = createException(MAL, "lockedaggr.avg",			\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+				goto error;												\
+			}															\
+		}																\
 	}
 
 /* return (a * b) % c without intermediate overflow */
@@ -281,20 +281,20 @@ mulmod(lng a, lng b, lng c)
 #endif
 
 #ifdef TRUNCATE_NUMBERS
-#define fix_avg(T, a, r, n)						\
-	do {								\
+#define fix_avg(T, a, r, n)								\
+	do {												\
 		if (!is_##T##_nil(a) && r > 0 && a < 0) {		\
-			a++;						\
-			r -= n;						\
-		}							\
+			a++;										\
+			r -= n;										\
+		}												\
 	} while (0)
 #else
-#define fix_avg(T, a, r, n)						\
-	do {								\
+#define fix_avg(T, a, r, n)										\
+	do {														\
 		if (!is_##T##_nil(a) && r > 0 && 2*r + (a < 0) >= n) {	\
-			a++;						\
-			r -= n;						\
-		}							\
+			a++;												\
+			r -= n;												\
+		}														\
 	} while (0)
 #endif
 /* Inside the avg_aggr_comb macro we want to calculate
@@ -330,152 +330,152 @@ mulmod(lng a, lng b, lng c)
  * -1 and 1), so (a*b)%c is the remainder.
  */
 #ifdef HAVE___INT128
-#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)							\
-	do {												\
-		if (is_##T##_nil(a2)) {									\
-			if (!is_lng_nil(r2)) {								\
-				a2 = a1;								\
-				r2 = r1;								\
-				n2 = n1;								\
-			}										\
-		} else if (!is_##T##_nil(a1)) {								\
-			lng N1 = is_lng_nil(n1) ? 0 : n1;						\
-			lng N2 = is_lng_nil(n2) ? 0 : n2;						\
-			lng n = N1 + N2;								\
-			T a;										\
-			lng r;										\
-			if (n == 0) {									\
-				a = 0;									\
-				r = 0;									\
-			} else {									\
+#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)								\
+	do {																		\
+		if (is_##T##_nil(a2)) {													\
+			if (!is_lng_nil(r2)) {												\
+				a2 = a1;														\
+				r2 = r1;														\
+				n2 = n1;														\
+			}																	\
+		} else if (!is_##T##_nil(a1)) {											\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;									\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;									\
+			lng n = N1 + N2;													\
+			T a;																\
+			lng r;																\
+			if (n == 0) {														\
+				a = 0;															\
+				r = 0;															\
+			} else {															\
 				a = (T) ((a1 / n) * N1 + ((a1 % n) * (__int128) N1) / n + 		\
-						 (a2 / n) * N2 + ((a2 % n) * (__int128) N2) / n + 	\
-						 (r1 + r2) / n);					\
+						 (a2 / n) * N2 + ((a2 % n) * (__int128) N2) / n +		\
+						 (r1 + r2) / n);										\
 				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; 		\
-				while (r >= n) {							\
-					r -= n;								\
-					a++;								\
-				}									\
-				while (r < 0) {								\
-					r += n;								\
-					a--;								\
-				}									\
-				fix_avg(T, a, r, n);							\
-			}										\
-			a2 = a;										\
-			r2 = r;										\
-			n2 = n;										\
-		}											\
+				while (r >= n) {												\
+					r -= n;														\
+					a++;														\
+				}																\
+				while (r < 0) {													\
+					r += n;														\
+					a--;														\
+				}																\
+				fix_avg(T, a, r, n);											\
+			}																	\
+			a2 = a;																\
+			r2 = r;																\
+			n2 = n;																\
+		}																		\
 	} while (0)
 #elif defined(_MSC_VER) && _MSC_VER >= 1920 && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #include <immintrin.h>
 #pragma intrinsic(_mul128)
 #pragma intrinsic(_div128)
-#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)						\
-	do {											\
-		if (is_##T##_nil(a2)) {								\
-			a2 = a1;								\
-			r2 = r1;								\
-			n2 = n1;								\
-		} else if (!is_##T##_nil(a1)) {							\
-			lng N1 = is_lng_nil(n1) ? 0 : n1;					\
-			lng N2 = is_lng_nil(n2) ? 0 : n2;					\
-			lng n = N1 + N2;							\
-			T a;									\
-			lng r;									\
-			if (n == 0) {								\
-				a = 0;								\
-				r = 0;								\
-			} else {								\
+#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)							\
+	do {																	\
+		if (is_##T##_nil(a2)) {												\
+			a2 = a1;														\
+			r2 = r1;														\
+			n2 = n1;														\
+		} else if (!is_##T##_nil(a1)) {										\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;								\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;								\
+			lng n = N1 + N2;												\
+			T a;															\
+			lng r;															\
+			if (n == 0) {													\
+				a = 0;														\
+				r = 0;														\
+			} else {														\
 				a = (T) ((a1 / n) * N1 +  (a2 / n) * N2 + (r1 + r2) / n); 	\
-				__int64 xlo, xhi;						\
-				xlo = _mul128((__int64) (a1 % n), N1, &xhi);			\
-				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
-				xlo = _mul128((__int64) (a2 % n), N2, &xhi);			\
-				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
-				r = (r1 + r2) % n;						\
-				xlo = _mul128(a1, N1, &xhi);					\
+				__int64 xlo, xhi;											\
+				xlo = _mul128((__int64) (a1 % n), N1, &xhi);				\
+				a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
+				xlo = _mul128((__int64) (a2 % n), N2, &xhi);				\
+				a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
+				r = (r1 + r2) % n;											\
+				xlo = _mul128(a1, N1, &xhi);								\
 				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ 	\
-				r += xlo;							\
-				xlo = _mul128(a2, N2, &xhi);					\
+				r += xlo;													\
+				xlo = _mul128(a2, N2, &xhi);								\
 				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ 	\
-				r += xlo;							\
-				while (r >= n) {						\
-					r -= n;							\
-					a++;							\
-				}								\
-				while (r < 0) {							\
-					r += n;							\
-					a--;							\
-				}								\
-				fix_avg(T, a, r, n);						\
-			}									\
-			a2 = a;									\
-			r2 = r;									\
-			n2 = n;									\
-		}										\
+				r += xlo;													\
+				while (r >= n) {											\
+					r -= n;													\
+					a++;													\
+				}															\
+				while (r < 0) {												\
+					r += n;													\
+					a--;													\
+				}															\
+				fix_avg(T, a, r, n);										\
+			}																\
+			a2 = a;															\
+			r2 = r;															\
+			n2 = n;															\
+		}																	\
 	} while (0)
 #else
-#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)						\
-	do {											\
-		if (is_##T##_nil(a2)) {								\
-			a2 = a1;								\
-			r2 = r1;								\
-			n2 = n1;								\
-		} else if (!is_##T##_nil(a1)) {							\
-			lng N1 = is_lng_nil(n1) ? 0 : n1;					\
-			lng N2 = is_lng_nil(n2) ? 0 : n2;					\
-			lng n = N1 + N2;							\
-			T a;									\
-			lng r;									\
-			if (n == 0) {								\
-				a = 0;								\
-				r = 0;								\
-			} else {								\
-				lng x1 = a1 % n;						\
-				lng x2 = a2 % n;						\
-				if ((N1 != 0 &&							\
+#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)							\
+	do {																	\
+		if (is_##T##_nil(a2)) {												\
+			a2 = a1;														\
+			r2 = r1;														\
+			n2 = n1;														\
+		} else if (!is_##T##_nil(a1)) {										\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;								\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;								\
+			lng n = N1 + N2;												\
+			T a;															\
+			lng r;															\
+			if (n == 0) {													\
+				a = 0;														\
+				r = 0;														\
+			} else {														\
+				lng x1 = a1 % n;											\
+				lng x2 = a2 % n;											\
+				if ((N1 != 0 &&												\
 					 (x1 > GDK_lng_max / N1 || x1 < -GDK_lng_max / N1)) || 	\
-					(N2 != 0 &&						\
+					(N2 != 0 &&												\
 					 (x2 > GDK_lng_max / N2 || x2 < -GDK_lng_max / N2))) { 	\
-					err = createException(SQL, "aggr.avg",			\
-						  SQLSTATE(22003) "overflow in calculation");	\
-					goto error;						\
-				}								\
-				a = (T) ((a1 / n) * N1 + (x1 * N1) / n +			\
-						 (a2 / n) * N2 + (x2 * N2) / n +		\
-						 (r1 + r2) / n);				\
+					err = createException(SQL, "aggr.avg",					\
+						  SQLSTATE(22003) "overflow in calculation");		\
+					goto error;												\
+				}															\
+				a = (T) ((a1 / n) * N1 + (x1 * N1) / n +					\
+						 (a2 / n) * N2 + (x2 * N2) / n +					\
+						 (r1 + r2) / n);									\
 				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; 	\
-				while (r >= n) {						\
-					r -= n;							\
-					a++;							\
-				}								\
-				while (r < 0) {							\
-					r += n;							\
-					a--;							\
-				}								\
-				fix_avg(T, a, r, n);						\
-			}									\
-			a2 = a;									\
-			r2 = r;									\
-			n2 = n;									\
-		}										\
+				while (r >= n) {											\
+					r -= n;													\
+					a++;													\
+				}															\
+				while (r < 0) {												\
+					r += n;													\
+					a--;													\
+				}															\
+				fix_avg(T, a, r, n);										\
+			}																\
+			a2 = a;															\
+			r2 = r;															\
+			n2 = n;															\
+		}																	\
 	} while (0)
 #endif
 
-#define avg_aggr_acc(T)										\
-	do {											\
+#define avg_aggr_acc(T)														\
+	do {																	\
 		T a1 = *getArgReference_##T(stk, pci, pci->retc + 1);				\
 		lng r1 = *getArgReference_lng(stk, pci, pci->retc + 2);				\
 		lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);				\
-		T a2 = *(T*)Tloc(b, 0);								\
-		lng r2 = *(lng*)Tloc(r, 0);							\
-		lng n2 = *(lng*)Tloc(c, 0);							\
-		avg_aggr_comb(T, a1, r1, n1, a2, r2, n2);					\
-		*(T*)Tloc(b, 0) = a2;								\
-		*(lng*)Tloc(r, 0) = r2;								\
-		*(lng*)Tloc(c, 0) = n2;								\
+		T a2 = *(T*)Tloc(b, 0);												\
+		lng r2 = *(lng*)Tloc(r, 0);											\
+		lng n2 = *(lng*)Tloc(c, 0);											\
+		avg_aggr_comb(T, a1, r1, n1, a2, r2, n2);							\
+		*(T*)Tloc(b, 0) = a2;												\
+		*(lng*)Tloc(r, 0) = r2;												\
+		*(lng*)Tloc(c, 0) = n2;												\
 	} while (0)
 
 static str
@@ -1429,7 +1429,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	BAT *u = NULL, *b = NULL;
 	lng timeoffset = 0;
 
-   	b = BATdescriptor(*bid);
+	b = BATdescriptor(*bid);
 	if (!b) {
 		err = createException(MAL, "pp group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
@@ -1568,7 +1568,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			/* We don't want to overwrite existing error message.
 			 * p->p->status doesn't carry much info. yet.
 			 */
-			if (!err) 
+			if (!err)
 				err = createException(MAL, "pp group.group", "pipeline execution error");
 			goto error;
 		}
@@ -3083,9 +3083,9 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* private (changing) heap */
 #define vamin_(cmp, opos, in, i, bp, nil) \
 	if (!getoffset(r->theap->base, opos, r->twidth) || \
-            (cmp(bp+in[i], nil) != 0 && \
-             cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
-             cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) > 0)) \
+			(cmp(bp+in[i], nil) != 0 && \
+			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
+			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) > 0)) \
 		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) { \
 			err = createException(MAL, "pp aggr.min", MAL_MALLOC_FAIL);\
 			goto error; \
@@ -3093,9 +3093,9 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define vamax_(cmp, opos, in, i, bp, nil) \
 	if (!getoffset(r->theap->base, opos, r->twidth) || \
-            (cmp(bp+in[i], nil) != 0 && \
-             cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
-             cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) < 0)) \
+			(cmp(bp+in[i], nil) != 0 && \
+			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
+			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) < 0)) \
 		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) { \
 			err = createException(MAL, "pp aggr.max", MAL_MALLOC_FAIL);\
 			goto error; \
@@ -3104,18 +3104,18 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static inline size_t
 getoffset(const void *b, BUN p, int w)
 {
-        switch (w) {
-        case 1:
-                return (size_t) ((const uint8_t *) b)[p];
-        case 2:
-                return (size_t) ((const uint16_t *) b)[p];
+	switch (w) {
+		case 1:
+			return (size_t) ((const uint8_t *) b)[p];
+		case 2:
+			return (size_t) ((const uint16_t *) b)[p];
 #if SIZEOF_VAR_T == 8
-        case 4:
-                return (size_t) ((const uint32_t *) b)[p];
+		case 4:
+			return (size_t) ((const uint32_t *) b)[p];
 #endif
-        default:
-                return (size_t) ((const var_t *) b)[p];
-        }
+		default:
+			return (size_t) ((const var_t *) b)[p];
+	}
 }
 
 #define gafunc_(f) \

@@ -12,11 +12,11 @@
 #define SA_BLOCK 16*1024
 
 typedef struct mallocator {
-    size_t size;
-    size_t nr;
-    char **blks;
-    size_t used;    /* memory used in last block */
-    size_t usedmem; /* used memory */
+	size_t size;
+	size_t nr;
+	char **blks;
+	size_t used;    /* memory used in last block */
+	size_t usedmem; /* used memory */
 } mallocator;
 
 extern void ma_destroy(mallocator* ma);
