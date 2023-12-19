@@ -2799,11 +2799,6 @@ unsafe pattern alarm.sleep(X_0:any_1):void
 ALARMsleep;
 Sleep a few milliseconds
 alarm
-sleep
-unsafe pattern alarm.sleep(X_0:bat[:any_1]):bat[:any_1] 
-ALARMsleep;
-Sleep a few milliseconds and return the slept value
-alarm
 time
 unsafe command alarm.time():int 
 ALARMtime;
