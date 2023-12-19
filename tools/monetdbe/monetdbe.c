@@ -1064,7 +1064,7 @@ monetdbe_set_autocommit(monetdbe_database dbhdl, int value)
 
 	if (!validate_database_handle_noerror(mdbe)) {
 
-		return 0;
+		return NULL;
 	}
 
 	mvc *m = ((backend *) mdbe->c->sqlcontext)->mvc;
@@ -1783,7 +1783,7 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 	assert(mdbe->c);
 	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (!result) {
-		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_cleanup_result_internal", "Parameter result is NULL"));
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_cleanup_result", "Parameter result is NULL"));
 	} else {
 		mdbe->msg = monetdbe_cleanup_result_internal(mdbe, res);
 	}
@@ -1794,14 +1794,14 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 static inline void
 cleanup_get_columns_result(size_t column_count, monetdbe_column* columns)
 {
-		if (columns) for (size_t c = 0; c < column_count; c++) {
-			 GDKfree(columns[c].name);
-			 GDKfree(columns[c].sql_type.name);
+	if (columns) {
+		for (size_t c = 0; c < column_count; c++) {
+			GDKfree(columns[c].name);
+			GDKfree(columns[c].sql_type.name);
 		}
-
 		GDKfree(columns);
-
 		columns = NULL;
+	}
 }
 
 static char *

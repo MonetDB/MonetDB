@@ -1,4 +1,3 @@
-
 statement ok
 create replica table foo_rpl_loc (n int, m text)
 
@@ -23,7 +22,7 @@ plan select * from foo_rpl_loc, bar_rpl_loc
 ----
 project (
 | crossproduct (
-| | table("sys"."foo_local") [ "foo_local"."n" UNIQUE as "foo_rpl_loc"."n", "foo_local"."m" as "foo_rpl_loc"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl_loc"."%TID%" ],
+| | table("sys"."foo_local") [ "foo_local"."n" as "foo_rpl_loc"."n", "foo_local"."m" as "foo_rpl_loc"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl_loc"."%TID%" ],
 | | table("sys"."bar_local") [ "bar_local"."n" as "bar_rpl_loc"."n", "bar_local"."m" as "bar_rpl_loc"."m", "bar_local"."%TID%" NOT NULL UNIQUE as "bar_rpl_loc"."%TID%" ]
 | ) [  ]
 ) [ "foo_rpl_loc"."n", "foo_rpl_loc"."m", "bar_rpl_loc"."n", "bar_rpl_loc"."m" ]
@@ -32,6 +31,22 @@ query ITIT rowsort
 select * from foo_rpl_loc, bar_rpl_loc
 ----
 1
+again
+10
+alice
+1
+again
+20
+bob
+1
+again
+20
+mary
+1
+again
+30
+tom
+1
 hello
 10
 alice
@@ -39,6 +54,10 @@ alice
 hello
 20
 bob
+1
+hello
+20
+mary
 1
 hello
 30
@@ -53,6 +72,10 @@ world
 bob
 2
 world
+20
+mary
+2
+world
 30
 tom
 3
@@ -63,6 +86,10 @@ alice
 !!
 20
 bob
+3
+!!
+20
+mary
 3
 !!
 30
@@ -73,7 +100,7 @@ plan select * from foo_rpl_loc, buz_rmt
 ----
 project (
 | crossproduct (
-| | table("sys"."foo_local") [ "foo_local"."n" UNIQUE as "foo_rpl_loc"."n", "foo_local"."m" as "foo_rpl_loc"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl_loc"."%TID%" ],
+| | table("sys"."foo_local") [ "foo_local"."n" as "foo_rpl_loc"."n", "foo_local"."m" as "foo_rpl_loc"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl_loc"."%TID%" ],
 | | table (
 | | | REMOTE("sys"."buz_rmt") [ "buz_rmt"."l" ] REMOTE mapi:monetdb://localhost:50002/node2
 | | ) [ "buz_rmt"."l" ]

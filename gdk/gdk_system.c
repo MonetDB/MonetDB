@@ -697,15 +697,13 @@ thread_starter(void *arg)
 #ifdef HAVE_PTHREAD_H
 #ifdef HAVE_PTHREAD_SETNAME_NP
 	/* name can be at most 16 chars including \0 */
-	char *name = GDKstrndup(self->threadname, 15);
-	if (name != NULL) {
-		pthread_setname_np(
+	char name[16];
+	(void) strcpy_len(name, self->threadname, sizeof(name));
+	pthread_setname_np(
 #ifndef __APPLE__
-			pthread_self(),
+		pthread_self(),
 #endif
-			name);
-		GDKfree(name);
-	}
+		name);
 #endif
 #else
 #ifdef HAVE_SETTHREADDESCRIPTION

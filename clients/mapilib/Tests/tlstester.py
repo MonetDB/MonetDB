@@ -555,7 +555,7 @@ class MapiHandler(socketserver.BaseRequestHandler):
                     cert = self.tlstester.certs.get_file(f"{self.redirect}.der")
                     algo = 'sha256'
                     digest = hashlib.new(algo, cert).hexdigest()
-                    fingerprint = "{" + algo + "}" + digest
+                    fingerprint = algo + ":" + digest
                     msg = f"^monetdbs://{host}:{port}?certhash={fingerprint}\n"
                     self.send_message(bytes(msg, 'ascii'))
                     log.debug(

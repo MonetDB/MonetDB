@@ -25,18 +25,6 @@ select * from tt
 1
 2
 
-query I rowsort
--- update tt set t = 3 where t = 1
-----
-1
-2
-
-query I rowsort
--- update tt set t = 4
-----
-1
-2
-
 statement ok
 delete from tt where t = 1
 

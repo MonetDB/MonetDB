@@ -76,8 +76,6 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return optimizeMALBlock(cntxt, s->def);
 }
 
-#include "opt_macro.h"
-
 #define optwrapper_pattern(NAME, DESC) \
 	pattern("optimizer", NAME, OPTwrapper, false, "", args(1,1, arg("",str))), \
 	pattern("optimizer", NAME, OPTwrapper, false, DESC, args(1,3, arg("",str),arg("mod",str),arg("fcn",str)))
@@ -111,22 +109,6 @@ static mel_func optimizer_init_funcs[] = {
 			args(0, 2, arg("mod", str), arg("fcn", str))),
 	optwrapper_pattern("inline", "Expand inline functions"),
 	optwrapper_pattern("projectionpath", "Join path constructor"),
-	pattern("optimizer", "macro", OPTmacro, false,
-			"Inline the code of the target function.",
-			args(1, 3, arg("", void), arg("targetmod", str),
-				 arg("targetfcn", str))),
-	pattern("optimizer", "macro", OPTmacro, false,
-			"Inline a target function used in a specific function.",
-			args(1, 5, arg("", void), arg("mod", str), arg("fcn", str),
-				 arg("targetmod", str), arg("targetfcn", str))),
-	pattern("optimizer", "orcam", OPTorcam, false,
-			"Inverse macro processor for current function",
-			args(1, 3, arg("", void), arg("targetmod", str),
-				 arg("targetfcn", str))),
-	pattern("optimizer", "orcam", OPTorcam, false,
-			"Inverse macro, find pattern and replace with a function call.",
-			args(1, 5, arg("", void), arg("mod", str), arg("fcn", str),
-				 arg("targetmod", str), arg("targetfcn", str))),
 	optwrapper_pattern("mergetable", "Resolve the multi-table definitions"),
 	optwrapper_pattern("mitosis",
 					   "Modify the plan to exploit parallel processing on multiple cores"),

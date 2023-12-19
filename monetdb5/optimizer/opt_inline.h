@@ -13,8 +13,8 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
-#include "opt_macro.h"
 
+extern int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
 extern str OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 								   InstrPtr p);
 
