@@ -341,9 +341,8 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	(void) cntxt;														\
 	(void) mb;															\
 	if ((b2 = BATdescriptor(*bid2)) == NULL) {							\
-		msg = createException(MAL, "batmtime." MALFUNC,					\
+		throw(MAL, "batmtime." MALFUNC,									\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-		goto bailout;													\
 	}																	\
 	b2i = bat_iterator(b2);												\
 	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) { \
