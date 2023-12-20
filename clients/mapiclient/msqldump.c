@@ -203,7 +203,11 @@ main(int argc, char **argv)
 		passwd = passwd_allocated;
 	}
 
-	mid = mapi_mapi(host, port, user, passwd, "sql", dbname);
+	if (dbname != NULL && strchr(dbname, ':') != NULL) {
+		mid = mapi_mapiuri(dbname, user, passwd, "sql");
+	} else {
+		mid = mapi_mapi(host, port, user, passwd, "sql", dbname);
+	}
 	free(user_allocated);
 	user_allocated = NULL;
 	free(passwd_allocated);
@@ -213,6 +217,10 @@ main(int argc, char **argv)
 	dbname = NULL;
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
+		exit(2);
+	}
+	if (mapi_error(mid)) {
+		mapi_explain(mid, stderr);
 		exit(2);
 	}
 	mapi_set_time_zone(mid, 0);

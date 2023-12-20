@@ -1717,7 +1717,7 @@ gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
 		      GDK, NULL, format, ##__VA_ARGS__)
 #define GDKsyserr(errno, format, ...)					\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,		\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,		\
 		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
 		      format, ##__VA_ARGS__)
 #define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)

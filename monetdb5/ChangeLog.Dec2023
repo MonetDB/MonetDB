@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Dec 19 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Removed MAL functions bat.reuse and bat.reuseMap.
+
 * Wed Dec  6 2023 Sjoerd Mullender <sjoerd@acm.org>
 - The MAL functions io.import and io.export have been removed.
 
