@@ -65,7 +65,6 @@ BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 	if (bn == NULL)
 		throw(MAL, "bat.new", GDK_EXCEPTION);
 	*res = bn->batCacheid;
-	bn->tkey = true;			/* COLnew leaves it as false */
 	BBPretain(bn->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;

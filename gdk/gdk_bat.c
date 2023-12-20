@@ -75,7 +75,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.hseqbase = hseq,
 
 		.ttype = tt,
-		.tkey = false,
+		.tkey = true,
 		.tnonil = true,
 		.tnil = false,
 		.tsorted = ATOMlinear(tt),
