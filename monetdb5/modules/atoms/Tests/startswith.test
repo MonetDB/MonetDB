@@ -86,3 +86,8 @@ drop table foo
 
 statement ok
 drop table bar
+
+query T
+select ['Camón Romasan'] startsWith ['camu', true];
+----
+false
