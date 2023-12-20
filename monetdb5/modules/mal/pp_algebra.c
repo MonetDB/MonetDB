@@ -1513,43 +1513,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			group(bit)
 			group(bte)
 			group(sht)
-			//group(int)
-                        if (tt == TYPE_int) {
-                                int slots = 0;
-                                gid slot = 0;
-                                int *bp = Tloc(b, 0);
-                                int *vals = h->vals;
-
-                                TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) {
-                                        bool fnd = 0;
-                                        gid k = (gid)_hash_int(bp[i])&h->mask;
-                                        gid g = 0;
-
-                                        for(; !fnd; ) {
-                                                g = ATOMIC_GET(h->gids+k);
-                                                for(;g && vals[g] != bp[i];) {
-                                                        k++;
-                                                        k &= h->mask;
-                                                        g = ATOMIC_GET(h->gids+k);
-                                                }
-                                                if (!g) {
-                                                        if (slots == 0) {
-                                                                slots = private?1:PRE_CLAIM;
-                                                                slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM);
-                                                                if (((slot*100)/70) >= (gid)h->size)
-                                                                        hash_rehash(h, p, err);
-                                                        }
-                                                        slots--;
-                                                        g = ++slot;
-                                                        vals[g] = bp[i];
-                                                        if (!ATOMIC_CAS(h->gids+k, &expected, g))
-                                                                continue;
-                                                }
-                                                fnd = 1;
-                                        }
-                                        gp[i] = g-1;
-                                }
-                        }
+			group(int)
 			group(date)
 			group(lng)
 			group(oid)
