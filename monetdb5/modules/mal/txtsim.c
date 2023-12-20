@@ -614,14 +614,14 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 #define VALUE(s, x) (s##vars + VarHeapVal(s##vals, (x), s##width))
 #define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
 
-#define PREP_BAT_STRITEM(B, CI, SI)									\
+#define PREP_BAT_STRITEM(B, CI, SI)										\
 		do {															\
 			for (n = 0; n < CI.ncand; n++) {							\
 				SI[n].matches = 0;										\
 				SI[n].o = canditer_next(&CI);							\
 				SI[n].val = (str) VALUE(B, SI[n].o - B->hseqbase);		\
 				SI[n].cp_sequence = NULL;								\
-				SI[n].len = UTF8_strlen(SI[n].val);					\
+				SI[n].len = UTF8_strlen(SI[n].val);						\
 				SI[n].cp_seq_len = str_strlen(SI[n].val);				\
 				if ((msg = str_2_codepointseq(&SI[n])) != MAL_SUCCEED)	\
 					goto exit;											\
@@ -630,30 +630,30 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 		} while (false)
 
 #define FINALIZE_BATS(L, R, LCI, RCI, LSI, RSI)	\
-		do {										\
+		do {									\
 			assert(BATcount(L) == BATcount(R));	\
-			BATsetcount(L, BATcount(L));			\
-			BATsetcount(R, BATcount(R));			\
-			for (n = 0; n < LCI.ncand; n++) {		\
-				if (LSI[n].matches > 1) {			\
-					L->tkey = false;				\
-					break;							\
-				}									\
-			}										\
-			if (n == LCI.ncand) {					\
+			BATsetcount(L, BATcount(L));		\
+			BATsetcount(R, BATcount(R));		\
+			for (n = 0; n < LCI.ncand; n++) {	\
+				if (LSI[n].matches > 1) {		\
+					L->tkey = false;			\
+					break;						\
+				}								\
+			}									\
+			if (n == LCI.ncand) {				\
 				L->tkey = true;					\
-			}										\
-			for (n = 0; n < RCI.ncand; n++) {		\
-				if (RSI[n].matches > 1) {			\
-					R->tkey = false;				\
-					break;							\
-				}									\
-			}										\
-			if (n == RCI.ncand) {					\
+			}									\
+			for (n = 0; n < RCI.ncand; n++) {	\
+				if (RSI[n].matches > 1) {		\
+					R->tkey = false;			\
+					break;						\
+				}								\
+			}									\
+			if (n == RCI.ncand) {				\
 				R->tkey = true;					\
-			}										\
-			BATordered(L);							\
-			BATordered(R);							\
+			}									\
+			BATordered(L);						\
+			BATordered(R);						\
 			L->theap->dirty |= BATcount(L) > 0;	\
 			R->theap->dirty |= BATcount(R) > 0;	\
 		} while (false)

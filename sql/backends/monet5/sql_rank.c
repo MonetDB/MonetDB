@@ -217,7 +217,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.row_number", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		r->tsorted = r->trevsorted = BATcount(b) <= 1;
+		r->tsorted = r->trevsorted = r->tkey = BATcount(b) <= 1;
 
 		cnt = BATcount(b);
 		rp = (int*)Tloc(r, 0);
@@ -290,7 +290,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.rank", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		r->tsorted = r->trevsorted = BATcount(b) <= 1;
+		r->tsorted = r->trevsorted = r->tkey = BATcount(b) <= 1;
 
 		cnt = BATcount(b);
 		rp = (int*)Tloc(r, 0);
@@ -396,7 +396,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		r->tsorted = r->trevsorted = BATcount(b) <= 1;
+		r->tsorted = r->trevsorted = r->tkey = BATcount(b) <= 1;
 
 		cnt = BATcount(b);
 		rp = (int*)Tloc(r, 0);
@@ -503,7 +503,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		r->tsorted = r->trevsorted = BATcount(b) <= 1;
+		r->tsorted = r->trevsorted = r->tkey = BATcount(b) <= 1;
 
 		cnt = BATcount(b);
 		rp = (dbl*)Tloc(r, 0);
@@ -637,7 +637,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		r->tsorted = r->trevsorted = BATcount(b) <= 1;
+		r->tsorted = r->trevsorted = r->tkey = BATcount(b) <= 1;
 
 		rb = rp = (dbl*)Tloc(r, 0);
 		if (isaBatType(getArgType(mb, pci, 2))) {

@@ -1141,6 +1141,7 @@ BATprojectchain(BAT **bats)
 	bn->trevsorted = ba[0].cnt <= 1;
 	bn->tnonil = nonil & b->tnonil;
 	bn->tseqbase = oid_nil;
+	bn->tkey = (ba[0].cnt <= 1);
 	/* note, b may point to one of the bats in tobedeleted, so
 	 * reclaim after the last use of b */
 	while (ndelete-- > 0)

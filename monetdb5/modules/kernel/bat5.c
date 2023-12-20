@@ -1209,7 +1209,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	bn->tsorted = false;
 	bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
-
+	bn->tkey = false;
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);

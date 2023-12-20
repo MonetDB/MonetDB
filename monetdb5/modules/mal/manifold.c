@@ -394,6 +394,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mat[0].b->tnonil = false;
 	mat[0].b->tsorted = false;
 	mat[0].b->trevsorted = false;
+	mat[0].b->tkey = false;
 	mat[0].bi = (BATiter) {.b = NULL, };
 	mat[0].first = (void *) Tloc(mat[0].b, 0);
 	mat[0].last = (void *) Tloc(mat[0].b, BATcount(mat[0].b));

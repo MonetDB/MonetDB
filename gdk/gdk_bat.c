@@ -970,8 +970,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		BUN h = BATcount(b);
 		bn->tsorted = bi.sorted;
 		bn->trevsorted = bi.revsorted;
-		if (bi.key)
-			BATkey(bn, true);
+		BATkey(bn, bi.key);
 		bn->tnonil = bi.nonil;
 		bn->tnil = bi.nil;
 		if (bi.nosorted > 0 && bi.nosorted < h)
@@ -996,6 +995,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	} else {
 		bn->tsorted = bn->trevsorted = false; /* set based on count later */
 		bn->tnonil = bn->tnil = false;
+		bn->tkey = false;
 		bn->tnosorted = bn->tnorevsorted = 0;
 		bn->tnokey[0] = bn->tnokey[1] = 0;
 	}

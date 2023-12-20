@@ -183,8 +183,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	BATsetcount(bn, ci.ncand);											\
 	bn->tnonil = !nils;													\
 	bn->tnil = nils;													\
+	bn->tkey = ci.ncand < 2;											\
 	SETFLAGS(ci.ncand);													\
-	bn->tkey = false;													\
 bailout:																\
 	if (b1) {															\
 		bat_iterator_end(&b1i);											\
@@ -302,7 +302,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bn->tnil = nils;													\
 	bn->tsorted = ci1.ncand < 2;										\
 	bn->trevsorted = ci1.ncand < 2;										\
-	bn->tkey = false;													\
+	bn->tkey = ci1.ncand < 2;											\
 bailout:																\
 	CLEAR_EXTRA_MULTI(res);												\
 	bat_iterator_end(&b1i);												\
@@ -380,7 +380,7 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bn->tnil = nils;													\
 	bn->tsorted = ci2.ncand < 2;										\
 	bn->trevsorted = ci2.ncand < 2;										\
-	bn->tkey = false;													\
+	bn->tkey = ci2.ncand < 2;											\
 bailout:																\
 	CLEAR_EXTRA_MULTI(res);												\
 	if (b2) {															\
@@ -457,7 +457,7 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bn->tnil = nils;													\
 	bn->tsorted = ci1.ncand < 2;										\
 	bn->trevsorted = ci1.ncand < 2;										\
-	bn->tkey = false;													\
+	bn->tkey = ci1.ncand < 2;											\
 bailout:																\
 	CLEAR_EXTRA_MULTI(res);												\
 	if (b1) {															\

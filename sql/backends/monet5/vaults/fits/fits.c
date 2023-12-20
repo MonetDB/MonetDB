@@ -1116,6 +1116,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BATsetcount(tmp, rows);
 			tmp->tsorted = false;
 			tmp->trevsorted = false;
+			tmp->tkey = false;
 		}
 
 		if (status) {

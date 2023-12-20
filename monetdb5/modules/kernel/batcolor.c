@@ -49,6 +49,7 @@ static str CLRbat##NAME(bat *ret, const bat *l)							\
 	bn->trevsorted=false;												\
 	bn->tnil = false;													\
 	bn->tnonil = true;													\
+	bn->tkey = false;													\
 																		\
 	bi = bat_iterator(b);												\
 																		\
@@ -136,6 +137,7 @@ static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3
 	bn->trevsorted=false;												\
 	bn->tnil = false;													\
 	bn->tnonil = true;													\
+	bn->tkey = false;													\
 																		\
 	bi = bat_iterator(b);												\
 	b2i = bat_iterator(b2);												\
