@@ -290,18 +290,18 @@ UHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	hash_table *parent = NULL;
 	bat pid = *getArgReference_bat(s, p, 3);
 	BAT *prnt = BATdescriptor(pid);
+	if (prnt == NULL)
+		return createException(MAL, "hash.new_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	parent = (hash_table*)prnt->T.sink;
 	BBPunfix(prnt->batCacheid);
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
+	if (b == NULL)
+		return createException(MAL, "hash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->T.sink = (Sink *)hp_create(tt, size*1.2*2.1, parent);
 	if (!b->T.sink) {
 		BBPunfix(b->batCacheid);
-		/* HY001 stands for "memory allocation error".
-		 * It's a better SQLSTATE code than HY013, 
-		 *  which stands for "memory management error".
-		 */
-		throw(MAL, "hash.new_payload", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "hash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*res = b->batCacheid;
 	BBPkeepref(b);
@@ -599,18 +599,25 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 
    	b = BATdescriptor(*key);
 	if (!b)
-		// FIXME: check if this error code is OK
-		return createException(SQL, "hash.build_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(SQL, "hash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (private && *ht_sink && is_bat_nil(*ht_sink)) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
+		if (!u) {
+			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
+		if (!u) {
+			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
 		u->T.private_bat = 1;
 	} else {
 		u = BATdescriptor(*ht_sink);
 	}
 	if (!u) {
 		BBPunfix(*key);
-		return createException(SQL, "hash.build_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(SQL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	private = u->T.private_bat;
 
@@ -625,17 +632,21 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 		pipeline_lock(p);
 		if (!h->allocators) {
 			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
-			if (!h->allocators)
+			if (!h->allocators) {
+				pipeline_unlock(p);
 				err = createException(MAL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			else
+				goto error;
+			} else
 				h->nr_allocators = p->p->nr_workers;
 		}
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = ma_create();
-			if (!h->allocators[p->wid])
+			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			}
 		}
 	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		MT_lock_unset(&b->theaplock);
@@ -649,10 +660,15 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
-		int tt = b->ttype;
-		oid *gp = Tloc(g, 0);
+		if (g == NULL) {
+			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
 
 		if (cnt && !err) {
+			int tt = b->ttype;
+			oid *gp = Tloc(g, 0);
+
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			if (qry_ctx != NULL) {
 				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
@@ -707,32 +723,43 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 				}
 				break;
 			default:
-				throw(MAL, "hash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "hash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 			}
+			if (!err)
+				TIMEOUT_CHECK(timeoffset, throw(MAL, "hash.build_table", RUNTIME_QRY_TIMEOUT));
 		}
-		if (!err) {
-			BBPunfix(b->batCacheid);
-			BATsetcount(g, cnt);
-			pipeline_lock2(g);
-			BATnegateprops(g);
-			pipeline_unlock2(g);
-			/* props */
-			gid last = ATOMIC_GET(&h->last);
-			/* pass max id */
-			g->T.maxval = last;
-			g->tkey = FALSE;
-			*ht_sink = u->batCacheid;
-			*slot_id = g->batCacheid;
-			BBPkeepref(u);
-			BBPkeepref(g);
+		if (err || p->p->status) {
+			BBPunfix(g->batCacheid);
+			/* We don't want to overwrite existing error message.
+			 * p->p->status doesn't carry much info. yet.
+			 */
+			if (!err)
+				err = createException(MAL, "hash.build_table", "pipeline execution error");
+			goto error;
 		}
+		BATsetcount(g, cnt);
+		pipeline_lock2(g);
+		BATnegateprops(g);
+		pipeline_unlock2(g);
+		/* props */
+		gid last = ATOMIC_GET(&h->last);
+		/* pass max id */
+		g->T.maxval = last;
+		g->tkey = FALSE;
+		*ht_sink = u->batCacheid;
+		*slot_id = g->batCacheid;
+		BBPkeepref(u);
+		BBPkeepref(g);
 	}
-	// TODO 0: do we have a timeout exception, instead of GDK_EXCEPTION?
-	// TODO 1: shouldn't we unfix 'u' and 'g' above?
-	TIMEOUT_CHECK(timeoffset, throw(MAL, "hash.build_table", GDK_EXCEPTION));
-	if (err || p->p->status) // TODO: check the error code, shouild be something about runtime_error
-		throw(MAL, "hash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
+error:
+	// FIXME: is it correct to destroy the sink here?
+	if (u && u->T.sink)
+		u->T.sink->destroy(u->T.sink);
+	BBPreclaim(b);
+	BBPreclaim(u);
+	return err;
 }
 
 #define derive(Type) \
@@ -983,36 +1010,41 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 	Pipeline *p = (Pipeline*)*H;
 	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
 	str err = NULL;
-	BAT *u, *b = BATdescriptor(*key);
-	BAT *G = BATdescriptor(*parent_slotid);
+	BAT *u =  NULL;
 	lng timeoffset = 0;
 
+	BAT *b = BATdescriptor(*key);
+	BAT *G = BATdescriptor(*parent_slotid);
 	if (!b || !G) {
-		if (b)
-			BBPunfix(*key);
-		// TODO: check if this error code is ok
-		return createException(SQL, "hash.build_combined_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
 	}
 	if (private && *ht_sink && is_bat_nil(*ht_sink)) { /* TODO ... create but how big ??? */
 		BAT *H = BATdescriptor(*parent_ht);
 		if (!H) {
-			BBPunfix(*key);
-			BBPunfix(*parent_slotid);
-			// TODO: check if this error code is ok
-			return createException(SQL, "hash.build_combined_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
 		}
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
+		if (!u) {
+			BBPunfix(H->batCacheid);
+			err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
 		/* Lookup parent hash */
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->T.sink);
+		if (u->T.sink == NULL) {
+			err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
 		u->T.private_bat = 1;
 		BBPunfix(*parent_ht);
 	} else {
 		u = BATdescriptor(*ht_sink);
-	}
-	if (!u) {
-		BBPunfix(*parent_slotid);
-		BBPunfix(*key);
-		return createException(SQL, "hash.build_combined_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		if (!u) {
+			err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
 	}
 	private = u->T.private_bat;
 
@@ -1027,17 +1059,21 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 		pipeline_lock(p);
 		if (!h->allocators) {
 			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
-			if (!h->allocators)
+			if (!h->allocators) {
+				pipeline_unlock(p);
 				err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			else
+				goto error;
+			} else
 				h->nr_allocators = p->p->nr_workers;
 		}
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = ma_create();
-			if (!h->allocators[p->wid])
+			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			}
 		}
 	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		MT_lock_unset(&b->theaplock);
@@ -1048,15 +1084,20 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
-		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
-		int tt = b->ttype;
-		oid *gp = Tloc(g, 0);
-		gid *gi = Tloc(G, 0);
-		gid *pgids = h->pgids;
+		if (g == NULL) {
+			err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
 
 		if (cnt && !err) {
+			ATOMIC_BASE_TYPE expected = 0;
+			int tt = b->ttype;
+			oid *gp = Tloc(g, 0);
+			gid *gi = Tloc(G, 0);
+			gid *pgids = h->pgids;
+
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			if (qry_ctx != NULL) {
 				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
@@ -1111,31 +1152,41 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 				}
 				break;
 			default:
-				throw(MAL, "hash.build_combined_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 			}
+			if (!err)
+				TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.build_combined_table", RUNTIME_QRY_TIMEOUT));
 		}
-		if (!err) { // TODO: shouldn't the BBPunfix be done also with an error?
-			BBPunfix(b->batCacheid);
-			BBPunfix(G->batCacheid);
-			BATsetcount(g, cnt);
-			pipeline_lock2(g);
-			BATnegateprops(g);
-			pipeline_unlock2(g);
-			/* props */
-			gid last = ATOMIC_GET(&h->last);
-			/* pass max id */
-			g->T.maxval = last;
-			g->tkey = FALSE;
-			*ht_sink = u->batCacheid;
-			*slot_id = g->batCacheid;
-			BBPkeepref(u);
-			BBPkeepref(g);
+		if (err || p->p->status) {
+			BBPunfix(g->batCacheid);
+			if (!err)
+				err = createException(MAL, "hash.build_combined_table", "pipeline execution error");
+			goto error;
 		}
+		BATsetcount(g, cnt);
+		pipeline_lock2(g);
+		BATnegateprops(g);
+		pipeline_unlock2(g);
+		/* props */
+		gid last = ATOMIC_GET(&h->last);
+		/* pass max id */
+		g->T.maxval = last;
+		g->tkey = FALSE;
+		*ht_sink = u->batCacheid;
+		*slot_id = g->batCacheid;
+		BBPkeepref(u);
+		BBPkeepref(g);
 	}
-	TIMEOUT_CHECK(timeoffset, throw(MAL, "hash.build_combined_table", GDK_EXCEPTION));
-	if (err || p->p->status)
-		throw(MAL, "hash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BBPunfix(b->batCacheid);
+	BBPunfix(G->batCacheid);
 	return MAL_SUCCEED;
+error:
+	if (u && u->T.sink)
+		u->T.sink->destroy(u->T.sink);
+	BBPreclaim(u);
+	BBPreclaim(b);
+	BBPreclaim(G);
+	return err;
 }
 
 static str
@@ -1149,34 +1200,34 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, const ptr *H)
 	return MAL_SUCCEED;
 }
 
-#define vhash(Type) 						\
-	do { 							\
-		Type *ky = Tloc(k, 0); 				\
-		Type *hs = Tloc(h, 0); 				\
-								\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { 	\
-			hs[i] = _hash_##Type(ky[i]) & mask; 	\
-		} 						\
+#define vhash(Type) \
+	do { \
+		Type *ky = Tloc(k, 0); \
+		Type *hs = Tloc(h, 0); \
+	\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			hs[i] = _hash_##Type(ky[i]) & mask; \
+		} \
 	} while (0)
 
-#define hash(Type) 						\
-	do { 							\
-		Type *ky = Tloc(k, 0); 				\
-		Type *hs = Tloc(h, 0); 				\
-								\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { 	\
-			hs[i] = _hash_##Type(ky[i]) & mask; 	\
-		} 						\
+#define hash(Type) \
+	do { \
+		Type *ky = Tloc(k, 0); \
+		Type *hs = Tloc(h, 0); \
+	\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			hs[i] = _hash_##Type(ky[i]) & mask; \
+		} \
 	} while (0)
 
-#define fhash(Type, BaseType) 							\
-	do { 									\
-		Type *ky = Tloc(k, 0); 						\
-		Type *hs = Tloc(h, 0); 						\
-										\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { 			\
-			hs[i] = _hash_##Type(*(((BaseType*)ky)+i)) & mask; 	\
-		} 								\
+#define fhash(Type, BaseType) \
+	do { \
+		Type *ky = Tloc(k, 0); \
+		Type *hs = Tloc(h, 0); \
+	\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			hs[i] = _hash_##Type(*(((BaseType*)ky)+i)) & mask; \
+		} \
 	} while (0)
 
 static str
@@ -1186,16 +1237,17 @@ UHASHhash(bat *hsh, bat *key)
 	BUN cnt;
 	unsigned int mask;
 	lng timeoffset = 0;
+	str err = NULL;
 
 	k = BATdescriptor(*key);
-	if (!k) // TODO: shouldn't this error be about RUNTIME_OBJECT_MISSING?
-		return createException(SQL, "hash.hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (!k)
+		return createException(SQL, "hash.hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	cnt = BATcount(k);
 	h = COLnew(k->hseqbase, k->ttype?k->ttype:TYPE_oid, cnt, TRANSIENT);
-	if (!h) { // TODO: check all use of COLnew in pipeline code that it checks the result
-		BBPunfix(*key);
-		return createException(SQL, "hash.hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (!h) {
+		err = createException(SQL, "hash.hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
 	}
 
 	if (cnt) {
@@ -1207,7 +1259,8 @@ UHASHhash(bat *hsh, bat *key)
 		switch(k->ttype) {
 			case TYPE_void:
 				//vhash();
-				throw(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				goto error;
 				break;
 			case TYPE_bit:
 				hash(bit);
@@ -1254,23 +1307,28 @@ UHASHhash(bat *hsh, bat *key)
 				//	ahash(str);
 				//}
 				//break;
-				throw(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err =  createException(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				goto error;
 			default:
-				throw(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				goto error;
 		}
+		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.hash", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
 	}
 	BBPunfix(*key);
 	BATsetcount(h, cnt);
 	BATnegateprops(h);
 	*hsh = h->batCacheid;
 	BBPkeepref(h);
-
-	// TODO: do we have a timeout exception, instead of GDK_EXCEPTION?
-	TIMEOUT_CHECK(timeoffset, throw(MAL, "hash.hash", GDK_EXCEPTION));
 	return MAL_SUCCEED;
+error:
+	BBPunfix(*key);
+	return err;
 }
 
-	static str
+static str
 UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid)
 {
 	(void) hsh;
