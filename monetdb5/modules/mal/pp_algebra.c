@@ -1430,10 +1430,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	lng timeoffset = 0;
 
 	b = BATdescriptor(*bid);
-	if (!b) {
-		err = createException(MAL, "pp group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto error;
-	}
+	if (!b)
+		return createException(MAL, "pp group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
 	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		if (!u) {
@@ -1441,6 +1440,10 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			goto error;
 		}
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
+		if (u->T.sink == NULL) {
+			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
 		u->T.private_bat = 1;
 	} else {
 		u = BATdescriptor(*uid);
@@ -1553,8 +1556,10 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
   error:
-	if (b) BBPunfix(b->batCacheid);
-	if (u) BBPunfix(u->batCacheid);
+	if (u && u->T.sink)
+		u->T.sink->destroy(u->T.sink);
+	BBPreclaim(b);
+	BBPreclaim(u);
 	return err;
 }
 
@@ -1828,6 +1833,10 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		}
 		/* Lookup parent hash */
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->T.sink);
+		if (u->T.sink == NULL) {
+			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
 		u->T.private_bat = 1;
 		BBPunfix(H->batCacheid);
 	} else {
@@ -1943,9 +1952,11 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	BBPunfix(G->batCacheid);
 	return MAL_SUCCEED;
   error:
-	if (u) BBPunfix(u->batCacheid);
-	if (b) BBPunfix(b->batCacheid);
-	if (G) BBPunfix(G->batCacheid);
+	if (u && u->T.sink)
+		u->T.sink->destroy(u->T.sink);
+	BBPreclaim(u);
+	BBPreclaim(b);
+	BBPreclaim(G);
 	return err;
 }
 
