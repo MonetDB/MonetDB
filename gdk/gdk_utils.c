@@ -2060,9 +2060,9 @@ GDKprintinfo(void)
 
 	printf("Virtual memory allocated: %zu, of which %zu with malloc\n",
 	       vmallocated + allocated, allocated);
-	printf("vm limit: %zu, mem limit: %zu\n",
+	printf("gdk_vm_maxsize: %zu, gdk_mem_maxsize: %zu\n",
 	       GDK_vm_maxsize, GDK_mem_maxsize);
-	printf("mmap persistent heaps over %zu, transient heaps over %zu\n",
+	printf("gdk_mmap_minsize_persistent %zu, gdk_mmap_minsize_transient %zu\n",
 	       GDK_mmap_minsize_persistent, GDK_mmap_minsize_transient);
 #ifdef __linux__
 	int fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
