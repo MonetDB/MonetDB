@@ -1,11 +1,11 @@
 statement ok
-create unlogged table t6933 (i int, c varchar(8));
+create unlogged table t6933 (i int, c varchar(8))
 
 statement ok
-insert into t6933 values (1, 'aa1'), (2, null), (null, 'bb2'), (null, null);
+insert into t6933 values (1, 'aa1'), (2, null), (null, 'bb2'), (null, null)
 
 query ITTTIT
-select i, c, IFNULL(i, c) as "IFNULL(i,c)", IFNULL(c, i) as "IFNULL(c,i)", ifnull(i, 999) as "ifnull(i,999)", ifnull(c, 'has null') as "ifnull(c,'x')" from t6933;
+select i, c, IFNULL(i, c) as "IFNULL(i,c)", IFNULL(c, i) as "IFNULL(c,i)", ifnull(i, 999) as "ifnull(i,999)", ifnull(c, 'has null') as "ifnull(c,'x')" from t6933
 ----
 1
 aa1
@@ -33,8 +33,8 @@ NULL
 has null
 
 statement error syntax error, unexpected ',', expecting ')' or OR in: "select i, c, ifnull(i, c,"
-select i, c, IFNULL(i, c, 999) as "IFNULL(i,c,999)" from t6933;
+select i, c, IFNULL(i, c, 999) as "IFNULL(i,c,999)" from t6933
 
 statement ok
-drop table t6933;
+drop table t6933
 

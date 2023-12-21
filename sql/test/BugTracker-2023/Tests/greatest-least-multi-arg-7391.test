@@ -1,56 +1,56 @@
 query I
-SELECT greatest(3, 4, 2, 1);
+SELECT greatest(3, 4, 2, 1)
 ----
 4
 
 query I
-SELECT least(3, 4, 2, 1);
+SELECT least(3, 4, 2, 1)
 ----
 1
 
 query I
-SELECT greatest(3, 4, '0', '5');
+SELECT greatest(3, 4, '0', '5')
 ----
 5
 
 query I
-SELECT least(3, 4, 1, 2, '0', '5');
+SELECT least(3, 4, 1, 2, '0', '5')
 ----
 0
 
 query R
-SELECT greatest(3.321, 4.4321, '0.210', '5.54321', -6.54321);
+SELECT greatest(3.321, 4.4321, '0.210', '5.54321', -6.54321)
 ----
 5.543
 
 query R
-SELECT least(3.321, 4.4321, '0.210', '5.54321', -6.54321);
+SELECT least(3.321, 4.4321, '0.210', '5.54321', -6.54321)
 ----
 -6.543
 
 statement error conversion of string 'A' to type bte failed.
-SELECT greatest(3, 4, '0', '5', 'A', 'z');
+SELECT greatest(3, 4, '0', '5', 'A', 'z')
 
 statement error conversion of string 'A' to type bte failed.
-SELECT least(3, 4, 1, 2, '0', '5', 'A', 'z');
+SELECT least(3, 4, 1, 2, '0', '5', 'A', 'z')
 
 query T
-SELECT greatest('!', 3, 4, '0', '5', 'A', 'z');
+SELECT greatest('!', 3, 4, '0', '5', 'A', 'z')
 ----
 z
 
 query T
-SELECT least('!', 3, 4, 1, 2, '0', '5', 'A', 'z');
+SELECT least('!', 3, 4, 1, 2, '0', '5', 'A', 'z')
 ----
 !
 
 query T
-SELECT greatest('!', 'z3', 'z4', 'z0', 'z5', 'A', 'z');
+SELECT greatest('!', 'z3', 'z4', 'z0', 'z5', 'A', 'z')
 ----
 z5
 
 query T
-SELECT least('!z3', '!z4', '!0', '!5', 'A', 'z');
+SELECT least('!z3', '!z4', '!0', '!5', 'A', 'z')
 ----
 !0
 
