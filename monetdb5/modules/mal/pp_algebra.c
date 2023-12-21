@@ -933,7 +933,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
-				gid k = (gid)combine(p[i], _hash_##Type(bp[i]))&h->mask; \
+				gid k = (gid)combine(p[i], _hash_##Type(bp[i]), prime)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
 				for(;g&1 && (pgids[k] != p[i] || vals[k] != bp[i]);) { \
 					k++; \
@@ -964,7 +964,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
-				gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)))&h->mask; \
+				gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
 				for(;g&1 && (pgids[k] != p[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && vals[k] != bp[i]));) { \
 					k++; \
@@ -995,7 +995,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
-				gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)))&h->mask; \
+				gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
 				for(;g&1 && (pgids[k] != p[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && h->cmp(vals+k, bp+i) != 0));) { \
 					k++; \
@@ -1028,7 +1028,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			\
 			for(; !fnd; ) { \
 				Type bpi = BUNtvar(bi, i); \
-				gid k = (gid)combine(p[i], h->hsh(bpi))&h->mask; \
+				gid k = (gid)combine(p[i], h->hsh(bpi), prime)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
 				for(;g&1 && (pgids[k] != p[i] || h->cmp(vals[k], bpi) != 0);) { \
 					k++; \
@@ -1097,6 +1097,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			oid *gp = Tloc(ng, 0);
 			gid *p = Tloc(G, 0);
 			gid *pgids = h->pgids;
+			int prime = hash_prime_nr[h->bits-5];
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			if (qry_ctx != NULL) {
@@ -1571,7 +1572,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(gi[i], _hash_##Type(bp[i]))&h->mask; \
+			gid k = (gid)combine(gi[i], _hash_##Type(bp[i]), prime)&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
@@ -1610,7 +1611,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(gi[i], _hash_oid(bpi))&h->mask; \
+			gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
@@ -1649,7 +1650,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)))&h->mask; \
+			gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
@@ -1689,7 +1690,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)combine(gi[i], h->hsh(bpi))&h->mask; \
+			gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
@@ -1731,7 +1732,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)combine(gi[i], str_hsh(bpi))&h->mask; \
+			gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
@@ -1771,7 +1772,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)combine(gi[i], h->hsh(bpi))&h->mask; \
+			gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
@@ -1898,6 +1899,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			oid *gp = Tloc(g, 0);
 			gid *gi = Tloc(G, 0);
 			gid *pgids = h->pgids;
+			int prime = hash_prime_nr[h->bits-5];
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			if (qry_ctx != NULL) {
