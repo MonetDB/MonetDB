@@ -10,6 +10,7 @@ rollback-alter-drop-col-crash-7385
 view-on-alias-crash-7386
 alter-inc-seq-crash-7387
 misc-crashes-7390
+greatest-least-multi-arg-7391
 union-query-7401
 join-on-row_number-over-7403
 between-crash-7413
