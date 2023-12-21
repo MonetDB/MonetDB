@@ -1,4 +1,5 @@
 ifnull-6933
+HAVE_GEOM?empty-result-aggr-crash-7274
 ambiguous-identifiers-7372
 temp-table-foreign-key-crash-7378
 update-mask-id-crash-7379
