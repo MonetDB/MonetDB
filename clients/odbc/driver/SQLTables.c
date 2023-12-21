@@ -222,8 +222,8 @@ MNDBTables(ODBCStmt *stmt,
 					}
 					buf[j] = 0;
 					/* Some ODBC applications use different table type names.
-					 * Replace those names to valid MonetDB table type names
-					 * as defined in sys.tables_types */
+					 * Replace some SQL synonyms to valid MonetDB
+					 * table type names as defined in sys.table_types */
 					if (strcmp("BASE TABLE", buf) == 0) {
 						strcpy(buf, "TABLE");
 					} else

@@ -90,4 +90,4 @@ drop table bar
 query T
 select ['Camón Romasan'] startsWith ['camu', true];
 ----
-false
+False
