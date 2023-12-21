@@ -1557,8 +1557,6 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
   error:
-	if (u && u->T.sink)
-		u->T.sink->destroy(u->T.sink);
 	BBPreclaim(b);
 	BBPreclaim(u);
 	return err;
@@ -1954,8 +1952,6 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	BBPunfix(G->batCacheid);
 	return MAL_SUCCEED;
   error:
-	if (u && u->T.sink)
-		u->T.sink->destroy(u->T.sink);
 	BBPreclaim(u);
 	BBPreclaim(b);
 	BBPreclaim(G);

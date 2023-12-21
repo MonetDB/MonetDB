@@ -146,8 +146,6 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 error:
 	if (locked)
 		pipeline_unlock1(t);
-	if (t && t->T.sink)
-		t->T.sink->destroy(t->T.sink);
 	BBPreclaim(t);
 	BBPreclaim(g);
 	BBPreclaim(r);
