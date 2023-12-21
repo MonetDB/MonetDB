@@ -771,7 +771,7 @@ error:
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(gi[i], _hash_##Type(bp[i]))&h->mask; \
+			gid k = (gid)combine(gi[i], _hash_##Type(bp[i]), hash_prime_nr[0])&h->mask; \
 			gid g = 0; \
 			\
 			while (!fnd) { \
@@ -810,7 +810,7 @@ error:
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(gi[i], _hash_oid(bpi))&h->mask; \
+			gid k = (gid)combine(gi[i], _hash_oid(bpi), hash_prime_nr[0])&h->mask; \
 			gid g = 0; \
 			\
 			while (!fnd) { \
@@ -849,7 +849,7 @@ error:
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)))&h->mask; \
+			gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)), hash_prime_nr[0])&h->mask; \
 			gid g = 0; \
 			\
 			while (!fnd) { \
@@ -889,7 +889,7 @@ error:
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)combine(gi[i], h->hsh(bpi))&h->mask; \
+			gid k = (gid)combine(gi[i], h->hsh(bpi), hash_prime_nr[0])&h->mask; \
 			gid g = 0; \
 			\
 			while (!fnd) { \
@@ -932,7 +932,7 @@ error:
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 				bool fnd = 0; \
 				Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-				gid k = (gid)combine(gi[i], str_hsh(bpi))&h->mask; \
+				gid k = (gid)combine(gi[i], str_hsh(bpi), hash_prime_nr[0])&h->mask; \
 				gid g = 0; \
 				\
 				while (!fnd) { \
@@ -972,7 +972,7 @@ error:
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 				bool fnd = 0; \
 				Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-				gid k = (gid)combine(gi[i], h->hsh(bpi))&h->mask; \
+				gid k = (gid)combine(gi[i], h->hsh(bpi), hash_prime_nr[0])&h->mask; \
 				gid g = 0; \
 				\
 				while (!fnd) { \

@@ -1,7 +1,3 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
-* Thu Nov 30 2023 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Corrected the output value of column CHAR_OCTET_LENGTH of ODBC functions
-  SQLColumns() and SQLProcedureColumns().
-

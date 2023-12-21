@@ -66,7 +66,8 @@
 #define _hash_gid(X)  (_hash_lng(X))
 #define ROT64(x, y)  ((x << y) | (x >> (64 - y)))
 //#define combine(X,Y)  (_hash_lng((X*5671432987))^(ulng)Y)
-#define combine(X,Y)  (_hash_lng((X*(hash_prime_nr[h->bits-5])))^(ulng)Y)
+//#define combine(X,Y)  (_hash_lng((X*(hash_prime_nr[h->bits-5])))^(ulng)Y)
+#define combine(X,Y,pr)  (_hash_lng((X*(pr)))^(ulng)Y)
 static const int
 hash_prime_nr[32] = {
 	53,

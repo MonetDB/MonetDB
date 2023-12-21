@@ -5358,7 +5358,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do {										\
 		B->tnil = false;						\
 		B->tnonil = true;						\
-		B->tkey = true;						\
+		B->tkey = true;							\
 		B->tsorted = true;						\
 		B->trevsorted = true;					\
 		B->tseqbase = 0;						\

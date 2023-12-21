@@ -514,7 +514,7 @@ parse_by_scheme(msettings *mp, scanner *sc)
 		msetting_set_bool(mp, MP_TLS, false);
 		return parse_classic(mp, sc);
 	} else {
-		return complain(sc, "unknown scheme '%s'", scheme);
+		return complain(sc, "unknown URL scheme '%s'", scheme);
 	}
 }
 

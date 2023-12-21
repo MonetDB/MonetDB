@@ -328,6 +328,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				/* we're not maintaining properties */
 				self->cols[i].b->tsorted = false;
 				self->cols[i].b->trevsorted = false;
+				self->cols[i].b->tkey = false;
 
 				switch (self->cols[i].b->ttype) {
 					case TYPE_bit:
