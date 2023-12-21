@@ -2030,9 +2030,6 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		JSONfree(jt);
 		throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	bk->tsorted = true;
-	bk->trevsorted = false;
-	bk->tnonil = true;
 
 	if (od) {
 		bo = COLnew(0, TYPE_oid, 64, TRANSIENT);
@@ -2041,9 +2038,6 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 			JSONfree(jt);
 			throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		bo->tsorted = true;
-		bo->trevsorted = false;
-		bo->tnonil = true;
 	}
 
 	bv = COLnew(0, TYPE_json, 64, TRANSIENT);
@@ -2053,9 +2047,6 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		BBPreclaim(bk);
 		throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	bv->tsorted = true;
-	bv->trevsorted = false;
-	bv->tnonil = true;
 
 	if (jt->elm[0].kind == JSON_ARRAY || jt->elm[0].kind == JSON_OBJECT)
 		msg = JSONunfoldContainer(jt, 0, (od ? bo : 0), bk, bv, &o);
@@ -2097,9 +2088,6 @@ JSONkeyTable(bat *ret, json *js)
 		JSONfree(jt);
 		throw(MAL, "json.keys", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	bn->tsorted = true;
-	bn->trevsorted = false;
-	bn->tnonil = true;
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		r = JSONgetValue(jt, i);
@@ -2197,9 +2185,6 @@ JSONvalueTable(bat *ret, json *js)
 		JSONfree(jt);
 		throw(MAL, "json.values", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	bn->tsorted = true;
-	bn->trevsorted = false;
-	bn->tnonil = true;
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		if (jt->elm[i].kind == JSON_ELEMENT)

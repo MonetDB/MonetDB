@@ -16,7 +16,7 @@ These packages are required.
 
 | cmake			# version >= 3.12
 | bison
-| gettext-devel
+| gcc
 | libxml2-devel
 | mercurial
 

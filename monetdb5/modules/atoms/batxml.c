@@ -50,6 +50,7 @@
 		(X)->tsorted =  false;										\
 		(X)->trevsorted =  false;									\
 		(X)->tnonil = true;											\
+		(X)->tkey = false;											\
 	} while (0)
 
 #define finalizeResult(X,Y,Z)					\

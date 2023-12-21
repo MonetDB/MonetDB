@@ -14,7 +14,7 @@ Build-Depends: debhelper (>= 12), cmake (>= 3.12), bison,
  libcfitsio-dev, libssl-dev (>= 1.1.1)
 Standards-Version: 3.8.0
 
-Package: libmonetdb27
+Package: libmonetdb28
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb-stream26 (= ${source:Version})
@@ -34,7 +34,7 @@ Description: MonetDB core library
 Package: libmonetdb-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb27 (= ${source:Version}),
+ libmonetdb28 (= ${source:Version}),
  libmonetdb-stream-dev (= ${source:Version})
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a
@@ -131,7 +131,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, libmonetdb-client-odbc (= ${source:Version}),
  libmonetdb-client26 (= ${source:Version}),
  libmonetdb-stream26 (= ${source:Version}),
- libmonetdb27 (= ${source:Version}),
+ libmonetdb28 (= ${source:Version}),
  monetdb5-server (= ${source:Version}),
  libdbd-monetdb-perl (>= 1.0),
  php-monetdb (>= 1.0),
@@ -151,7 +151,7 @@ Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb-stream26 (= ${source:Version}),
- libmonetdb27 (= ${source:Version}),
+ libmonetdb28 (= ${source:Version}),
  monetdb5-server (= ${source:Version})
 Description: MonetDB5 SQL GIS support module
  MonetDB is a database management system that is developed from a
@@ -166,7 +166,7 @@ Package: libmonetdb5-server-cfitsio
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb27 (= ${source:Version}),
+ libmonetdb28 (= ${source:Version}),
  monetdb5-server (= ${source:Version})
 Description: MonetDB5 add on module for FITS files
  MonetDB is a database management system that is developed from a
@@ -182,7 +182,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser,
  libmonetdb-client26 (= ${source:Version}),
  libmonetdb-stream26 (= ${source:Version}),
- libmonetdb27 (= ${source:Version}),
+ libmonetdb28 (= ${source:Version}),
 Recommends: monetdb5-sql (= ${source:Version})
 Suggests: monetdb-client (= ${source:Version})
 Conflicts: monetdb5-server-hugeint (<< 11.38.0)
@@ -245,7 +245,7 @@ Description: MonetDB SQL support for monetdb5
 Package: monetdb-python3
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb27 (= ${source:Version}),
+ libmonetdb28 (= ${source:Version}),
  monetdb5-server (= ${source:Version}), python3-numpy
 Description: Integration of MonetDB and Python, allowing use of Python from within SQL
  MonetDB is a database management system that is developed from a
@@ -263,7 +263,7 @@ Description: Integration of MonetDB and Python, allowing use of Python from with
 Package: monetdb-r
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb27 (= ${source:Version}),
+ libmonetdb28 (= ${source:Version}),
  monetdb5-server (= ${source:Version}), r-base-core
 Description: Integration of MonetDB and R, allowing use of R from within SQL
  MonetDB is a database management system that is developed from a
@@ -282,7 +282,7 @@ Package: libmonetdbe26
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb-stream26 (= ${source:Version}),
- libmonetdb27 (= ${source:Version}),
+ libmonetdb28 (= ${source:Version}),
  monetdb5-server (= ${source:Version})
 Description: MonetDB as an embedded library
  MonetDB is a database management system that is developed from a

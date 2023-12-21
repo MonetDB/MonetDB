@@ -92,7 +92,7 @@ int
 8000
 0
 1
-NULL
+1
 1
 
 statement ok
@@ -198,7 +198,7 @@ int
 8000
 0
 1
-NULL
+1
 1
 
 statement ok

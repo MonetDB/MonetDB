@@ -210,6 +210,7 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 	BATsetcount(bn, cnt);
 	bn->tsorted = (cnt <= 1 || (series == 1 && step > 0));
 	bn->trevsorted = (cnt <= 1 || (series == 1 && step < 0));
+	bn->tkey = (cnt <= 1);
 	bn->tnonil = true;
 	*bid = bn->batCacheid;
 	BBPkeepref(bn);

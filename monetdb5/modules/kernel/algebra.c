@@ -468,6 +468,7 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 	res1->tnil = false;
 	res1->tnonil = true;
 	res2->tnonil = false;
+	res2->tkey = false;
 
 	BBPreclaim(g);
 	BBPreclaim(m);
@@ -567,6 +568,7 @@ ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid,
 	res1->tnil = false;
 	res1->tnonil = true;
 	res2->tnonil = false;
+	res2->tkey = false;
 
 	BBPreclaim(g);
 	BBPreclaim(m);

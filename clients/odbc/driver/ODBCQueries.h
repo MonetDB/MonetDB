@@ -302,7 +302,7 @@
 
 #define CHAR_OCTET_LENGTH(t)								\
 		"cast(case when " #t ".type in ('varchar','clob','char','json','url','xml') "	\
-		     "then 4 * " #t ".type_digits "				\
+		     "then 4 * cast(" #t ".type_digits as bigint) "			\
 		     "when " #t ".type = 'blob' then " #t ".type_digits "	\
-		     "else cast(null as integer) "					\
+		     "else null "						\
 		"end as integer) as \"CHAR_OCTET_LENGTH\""
