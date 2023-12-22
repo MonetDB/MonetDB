@@ -370,6 +370,42 @@ recover_dir(int farmid, bool direxists)
 	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir", true);
 }
 
+static inline str
+BBPsubdir_recursive(char *s, bat i)
+{
+	i >>= 6;
+	if (i >= 0100) {
+		s = BBPsubdir_recursive(s, i);
+		*s++ = DIR_SEP;
+	}
+	i &= 077;
+	*s++ = '0' + (i >> 3);
+	*s++ = '0' + (i & 7);
+	return s;
+}
+
+static inline void
+BBPgetsubdir(char *s, bat i)
+{
+	if (i >= 0100) {
+		s = BBPsubdir_recursive(s, i);
+	}
+	*s = 0;
+}
+
+static inline void
+BBPgetfilename(char *s, size_t len, bat i)
+{
+	if (i >= 0100) {
+		char *p = BBPsubdir_recursive(s, i);
+		*p++ = DIR_SEP;
+		len -= (p - s);
+		s = p;
+	}
+	if (snprintf(s, len, "%o", i) >= (int) len)
+		TRC_CRITICAL(BAT_, "impossible error\n");
+}
+
 static gdk_return BBPrecover(int farmid);
 static gdk_return BBPrecover_subdir(void);
 static bool BBPdiskscan(const char *, size_t);
@@ -585,11 +621,10 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 {
 	char buf[4096];
 	uint64_t batid;
-	unsigned int status;
 	unsigned int properties;
 	int nread, n;
 	char *s;
-	uint64_t count, capacity = 0, base = 0;
+	uint64_t count, base = 0;
 
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		if (ferror(fp)) {
@@ -613,19 +648,24 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 
 	if (bbpversion <= GDKLIBRARY_HSIZE ?
 	    sscanf(buf,
-		   "%" SCNu64 " %u %128s %23s %u %" SCNu64
-		   " %" SCNu64 " %" SCNu64
+		   "%" SCNu64 " %*u %128s %*s %u %" SCNu64 " %*u %" SCNu64
 		   "%n",
-		   &batid, &status, batname, filename,
-		   &properties, &count, &capacity, &base,
-		   &nread) < 8 :
-	    sscanf(buf,
-		   "%" SCNu64 " %u %128s %23s %u %" SCNu64
-		   " %" SCNu64
-		   "%n",
-		   &batid, &status, batname, filename,
+		   &batid, batname,
 		   &properties, &count, &base,
-		   &nread) < 7) {
+		   &nread) < 5 :
+	    bbpversion <= GDKLIBRARY_STATUS ?
+	    sscanf(buf,
+		   "%" SCNu64 " %*u %128s %*s %u %" SCNu64 " %" SCNu64
+		   "%n",
+		   &batid, batname,
+		   &properties, &count, &base,
+		   &nread) < 5 :
+	    sscanf(buf,
+		   "%" SCNu64 " %128s %u %" SCNu64 " %" SCNu64
+		   "%n",
+		   &batid, batname,
+		   &properties, &count, &base,
+		   &nread) < 5) {
 		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", *lineno);
 		return -1;
 	}
@@ -635,17 +675,7 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 		return -1;
 	}
 
-	/* convert both / and \ path separators to our own DIR_SEP */
-#if DIR_SEP != '/'
-	s = filename;
-	while ((s = strchr(s, '/')) != NULL)
-		*s++ = DIR_SEP;
-#endif
-#if DIR_SEP != '\\'
-	s = filename;
-	while ((s = strchr(s, '\\')) != NULL)
-		*s++ = DIR_SEP;
-#endif
+	BBPgetfilename(filename, sizeof(BBP_physical(0)), (bat) batid);
 
 	bn->batCacheid = (bat) batid;
 	bn->batTransient = false;
@@ -864,7 +894,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		BBP_lrefs(b.batCacheid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(b.batCacheid) = bn;
 		BBP_pid(b.batCacheid) = 0;
-		BBP_status_set(b.batCacheid, BBPEXISTING);	/* do we need other status bits? */
+		BBP_status_set(b.batCacheid, BBPEXISTING);
 		if (BBPnamecheck(BBP_logical(b.batCacheid)) == 0)
 			BBP_insert(b.batCacheid);
 	}
@@ -1002,6 +1032,7 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool al
 		return 0;
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_STATUS &&
 	    bbpversion != GDKLIBRARY_JSON &&
 	    bbpversion != GDKLIBRARY_HSIZE &&
 	    bbpversion != GDKLIBRARY_HASHASH &&
@@ -2300,12 +2331,10 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 	}
 	if (size > bi->count)
 		size = bi->count;
-	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " OIDFMT,
+	if (fprintf(fp, "%d %s %d " BUNFMT " " OIDFMT,
 		    /* BAT info */
 		    (int) i,
-		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
-		    BBP_physical(i),
 		    (unsigned) bi->restricted << 1,
 		    size,
 		    bi->b->hseqbase) < 0 ||
@@ -2644,28 +2673,6 @@ BBPindex(const char *nme)
  *
  * An existing BAT is inserted into the BBP
  */
-static inline str
-BBPsubdir_recursive(str s, bat i)
-{
-	i >>= 6;
-	if (i >= 0100) {
-		s = BBPsubdir_recursive(s, i);
-		*s++ = DIR_SEP;
-	}
-	i &= 077;
-	*s++ = '0' + (i >> 3);
-	*s++ = '0' + (i & 7);
-	return s;
-}
-
-static inline void
-BBPgetsubdir(str s, bat i)
-{
-	if (i >= 0100) {
-		s = BBPsubdir_recursive(s, i);
-	}
-	*s = 0;
-}
 
 /* The free list is empty.  We create a new entry by either just
  * increasing BBPsize (up to BBPlimit) or extending the BBP (which
@@ -2701,7 +2708,6 @@ BBPinsert(BAT *bn)
 {
 	MT_Id pid = MT_getpid();
 	bool lock = locked_by == 0 || locked_by != pid;
-	char dirname[24];
 	bat i;
 	int len = 0;
 	struct freebats *t = MT_thread_getfreebats();
@@ -2779,17 +2785,7 @@ BBPinsert(BAT *bn)
 
 	/* Keep the physical location around forever */
 	if (!GDKinmemory(0) && *BBP_physical(i) == 0) {
-		BBPgetsubdir(dirname, i);
-
-		if (*dirname)	/* i.e., i >= 0100 */
-			len = snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
-				       "%s%c%o", dirname, DIR_SEP, (unsigned) i);
-		else
-			len = snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
-				       "%o", (unsigned) i);
-		if (len == -1 || len >= FILENAME_MAX)
-			return 0;
-
+		BBPgetfilename(BBP_physical(i), sizeof(BBP_physical(i)), i);
 		TRC_DEBUG(BAT_, "%d = new %s(%s)\n", (int) i, BBP_logical(i), ATOMname(bn->ttype));
 	}
 
@@ -2996,7 +2992,6 @@ BBPrename(BAT *b, const char *nme)
 	if (b == NULL)
 		return 0;
 
-	char dirname[24];
 	bat bid = b->batCacheid;
 	bat tmpid = 0, i;
 
@@ -3014,13 +3009,11 @@ BBPrename(BAT *b, const char *nme)
 	if (BBP_logical(bid) && strcmp(BBP_logical(bid), nme) == 0)
 		return 0;
 
-	BBPgetsubdir(dirname, bid);
-
 	if ((tmpid = BBPnamecheck(nme)) && tmpid != bid) {
 		GDKerror("illegal temporary name: '%s'\n", nme);
 		return BBPRENAME_ILLEGAL;
 	}
-	if (strlen(dirname) + strLen(nme) + 1 >= IDLENGTH) {
+	if (strLen(nme) >= IDLENGTH) {
 		GDKerror("illegal temporary name: '%s'\n", nme);
 		return BBPRENAME_LONG;
 	}
