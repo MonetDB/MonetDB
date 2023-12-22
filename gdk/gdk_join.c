@@ -3669,7 +3669,7 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 			/* only count the cost of creating the hash for
 			 * non-persistent bats */
 			MT_lock_set(&r->theaplock);
-			if (!(BBP_status(r->batCacheid) & BBPEXISTING) /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
+			if (r->batRole != PERSISTENT /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
 				rcost += cnt * 2.0;
 			MT_lock_unset(&r->theaplock);
 #else

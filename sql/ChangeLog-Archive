@@ -3,9 +3,9 @@
 
 * Tue Dec  5 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.49.1-20231221
 - Introduction of table returning function `persist_unlogged(schema
-  string, table string)` that attempts to persist data in disk if
-  "schema"."table" is unlogged table in insert only mode.  If persist
-  attempt is successful, the count of the persisted rows is returned,
+  string, table string)` that attempts to persist data to disk if the
+  "schema"."table" is an unlogged table and set to insert only mode.  If
+  persist attempt is successful, the count of persisted rows is returned,
   otherwise the count is 0.
 
 * Thu Aug 24 2023 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.49.1-20231221

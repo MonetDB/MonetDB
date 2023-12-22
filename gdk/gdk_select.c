@@ -1758,7 +1758,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					}
 				}
 			}
-			if (wanthash && !havehash) {
+			if (wanthash && !havehash && b->batRole != PERSISTENT) {
 				MT_lock_set(&b->theaplock);
 				if (++b->selcnt > 1000)
 					b->selcnt = 1000; /* limit value */
