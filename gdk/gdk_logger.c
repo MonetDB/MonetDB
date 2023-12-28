@@ -207,7 +207,7 @@ logbat_new(int tt, BUN size, role_t role)
 		if (role == PERSISTENT)
 			BATmode(nb, false);
 	} else {
-		TRC_CRITICAL(GDK, "creating new BAT[void:%s]#" BUNFMT " failed\n", ATOMname(tt), size);
+		TRC_CRITICAL(GDK, "creating new BAT[%s]#" BUNFMT " failed\n", ATOMname(tt), size);
 	}
 	return nb;
 }
@@ -2308,7 +2308,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	    lg->dir == NULL ||
 	    lg->rbuf == NULL ||
 	    lg->wbuf == NULL) {
-		TRC_CRITICAL(GDK, "strdup failed\n");
+		TRC_CRITICAL(GDK, "allocating for logger structure failed\n");
 		GDKfree(lg->fn);
 		GDKfree(lg->dir);
 		GDKfree(lg->rbuf);
@@ -2582,7 +2582,7 @@ log_flush(logger *lg, ulng ts)
 			}
 			if (strlen(filename) >= FILENAME_MAX) {
 				GDKfree(updated);
-				GDKerror("Logger filename path is too large\n");
+				TRC_CRITICAL(GDK, "Logger filename path is too large\n");
 				GDKfree(filename);
 				return GDK_FAIL;
 			}

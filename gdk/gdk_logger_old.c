@@ -211,7 +211,7 @@ logbat_new(int tt, BUN size, role_t role)
 		if (role == PERSISTENT)
 			BATmode(nb, false);
 	} else {
-		TRC_CRITICAL(GDK, "creating new BAT[void:%s]#" BUNFMT " failed\n", ATOMname(tt), size);
+		TRC_CRITICAL(GDK, "creating new BAT[%s]#" BUNFMT " failed\n", ATOMname(tt), size);
 	}
 	return nb;
 }
