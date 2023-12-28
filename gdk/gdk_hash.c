@@ -66,28 +66,6 @@ hashmask(BUN m)
 	return m;
 }
 
-BUN
-HASHmask(BUN cnt)
-{
-	BUN m = cnt;
-
-#if 0
-	/* find largest power of 2 smaller than or equal to cnt */
-	m = hashmask(m);
-	m -= m >> 1;
-
-	/* if cnt is more than 1/3 into the gap between m and 2*m,
-	   double m */
-	if (m + m - cnt < 2 * (cnt - m))
-		m += m;
-#else
-	m = m * 8 / 7;
-#endif
-	if (m < BATTINY)
-		m = BATTINY;
-	return m;
-}
-
 static inline void
 HASHclear(Hash *h)
 {

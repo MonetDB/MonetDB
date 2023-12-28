@@ -199,9 +199,14 @@ BUN HASHinsert(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-BUN HASHmask(BUN cnt)
-	__attribute__((__const__))
-	__attribute__((__visibility__("hidden")));
+static inline BUN __attribute__((__const__))
+HASHmask(BUN cnt)
+{
+	cnt = cnt * 8 / 7;
+	if (cnt < BATTINY)
+		cnt = BATTINY;
+	return cnt;
+}
 gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
