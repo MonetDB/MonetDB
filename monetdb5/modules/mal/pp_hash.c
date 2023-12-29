@@ -1365,9 +1365,9 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, const ptr *H)
 				goto error;
 			default:
 				err = createException(MAL, "hash.add_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				goto error;
 			}
-			if (!err)
-				TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.add_payload", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.add_payload", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
 			if (!err)
@@ -1680,17 +1680,161 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 	return MAL_SUCCEED;
 }
 
+#define vexpand() \
+	do { \
+		oid val = k->tseqbase; \
+		oid *res = Tloc(e, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, rescnt, timeoffset) { \
+			res[i] = val; \
+		} \
+	} while (0)
+
+#define expand(Type) \
+	do { \
+		Type *val = Tloc(k, 0); \
+		Type *res = Tloc(e, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			Type v = val[sel[i]]; \
+			gid freq = (gid)hp->frequency[sid[i]]; \
+			TIMEOUT_LOOP_IDX_DECL(j, freq, timeoffset) { \
+				res[idx++] = v; \
+			} \
+		} \
+	} while (0)
+
 /* X_nn:bat[:any1] := hash.expand(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:oid], X_nn:bat[:any2]); */
 static str
 HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink)
 {
 	(void) expanded;
-	(void) key;
-	(void) selected;
-	(void) slotid;
-	(void) hp_sink;
+	BAT *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
+	BUN cnt, rescnt = 0;
+	lng timeoffset = 0;
+	str err = NULL;
+	QryCtx *qry_ctx = NULL;
 
+	k = BATdescriptor(*key);
+	s = BATdescriptor(*selected);
+	l = BATdescriptor(*slotid);
+	h = BATdescriptor(*hp_sink);
+	if (!k || !s || !l || !h) {
+		err = createException(SQL, "hash.expand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	assert(BATcount(s) == BATcount(l));
+	assert(BATcount(s) <= BATcount(k));
+
+	gid *sid = Tloc(l, 0);
+	hash_payload *hp = (hash_payload*)h->T.sink;
+	cnt = BATcount(l);
+	if (cnt) {
+		qry_ctx = MT_thread_get_qry_ctx();
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) {
+			rescnt += hp->frequency[sid[i]];
+		}
+		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.expand", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+	} 
+
+	int tt = k->ttype;
+	e = COLnew(k->hseqbase, tt, rescnt, TRANSIENT);
+	if (!e) {
+		err = createException(SQL, "hash.hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (cnt) {
+		BUN idx = 0;
+		oid *sel = Tloc(s, 0);
+
+		timeoffset =  0;
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+
+		switch(tt) {
+			case TYPE_void:
+				vexpand();
+				break;
+			case TYPE_bit:
+				expand(bit);
+				break;
+			case TYPE_bte:
+				expand(bte);
+				break;
+			case TYPE_sht:
+				expand(sht);
+				break;
+			case TYPE_int:
+				expand(int);
+				break;
+			case TYPE_date:
+				expand(date);
+				break;
+			case TYPE_lng:
+				expand(lng);
+				break;
+			case TYPE_oid:
+				expand(oid);
+				break;
+			case TYPE_daytime:
+				expand(daytime);
+				break;
+			case TYPE_timestamp:
+				expand(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				expand(hge);
+				break;
+#endif
+			case TYPE_flt:
+				expand(flt);
+				break;
+			case TYPE_dbl:
+				expand(dbl);
+				break;
+			case TYPE_str:
+				//if (local_storage) {
+				//	aexpand_(str,p);
+				//} else {
+				//	aexpand(str);
+				//}
+				//break;
+				err =  createException(MAL, "hash.expand", "TODO: TYPE_str");
+				goto error;
+			default:
+				err = createException(MAL, "hash.expand", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				goto error;
+		}
+		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.expand", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+
+		assert(idx == rescnt);
+	}
+
+	BBPunfix(k->batCacheid);
+	BBPunfix(s->batCacheid);
+	BBPunfix(l->batCacheid);
+	BBPunfix(h->batCacheid);
+	BATsetcount(e, rescnt);
+	BATnegateprops(e);
+	*expanded = e->batCacheid;
+	BBPkeepref(e);
 	return MAL_SUCCEED;
+error:
+	BBPreclaim(e);
+	BBPreclaim(k);
+	BBPreclaim(s);
+	BBPreclaim(l);
+	BBPreclaim(h);
+	return err;
 }
 
 /* X_nn:bat[:any1] := hash.fetch_payload(X_nn:bat[:oid], X_nn:bat[:any1]); */
