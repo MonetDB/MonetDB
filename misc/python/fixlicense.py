@@ -95,6 +95,7 @@ suffixrules = {
     '.java':  ('/*',    ' */', ' * ',  '',  True),  # Java source
     '.l':     ('/*',    ' */', ' * ',  '',  True),  # (f)lex source
     '.mal':   ('',      '',    '# ',   '',  True),  # MonetDB Assembly Language
+    '.pc':    ('',      '',    '# ',   '',  True),  # Package config source
     '.php':   ('<?php', '?>',  '# ',   '',  True),  # PHP source
     '.pl':    ('',      '',    '# ',   '',  True),  # Perl source
     '.pm':    ('',      '',    '# ',   '',  True),  # Perl module source
@@ -137,7 +138,14 @@ def getcomments(file, pre=None, post=None, start=None, end=None, nl=True):
                 line = f.readline()
                 f.close()
                 if line[:2] == '#!':
-                    ext = '.sh'
+                    if 'bash' in line or '/sh' in line:
+                        ext = '.sh'
+                    elif 'python' in line or 'PYTHON' in line:
+                        ext = '.py'
+                    elif 'perl' in line:
+                        ext = '.pl'
+                    elif 'make' in line:
+                        ext = 'Makefile'
                 else:
                     return '', '', '', '', '', True
         pre, post, start, end, nl = suffixrules[ext]
