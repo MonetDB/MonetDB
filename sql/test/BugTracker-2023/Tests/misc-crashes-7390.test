@@ -33,7 +33,7 @@ SELECT * FROM v0
 NULL
 
 query I
-SELECT row_number ( ) OVER ( ORDER BY 10 * 10 , ( CASE WHEN ( 10 IS NULL ) THEN 4 ELSE 10 END ) DESC NULLS FIRST ) FROM v0;
+SELECT row_number ( ) OVER ( ORDER BY 10 * 10 , ( CASE WHEN ( 10 IS NULL ) THEN 4 ELSE 10 END ) DESC NULLS FIRST ) FROM v0
 ----
 1
 
@@ -75,7 +75,7 @@ SELECT distinct FIRST_VALUE(v1) OVER (PARTITION BY v1=5 ORDER BY 3003*v1 DESC NU
 5
 
 statement ok
-DROP TABLE v0;
+DROP TABLE v0
 
 -- 05.sql
 statement ok
@@ -173,10 +173,10 @@ DROP TABLE v0
 
 -- 11.sql
 statement ok
-CREATE TABLE v0(v1 BIGINT UNIQUE PRIMARY KEY);
+CREATE TABLE v0(v1 BIGINT UNIQUE PRIMARY KEY)
 
 statement error 42000!PARTITION BY: subqueries not allowed in PARTITION BY clause
-UPDATE v0 SET v1 = v1 * 73 WHERE v1 = (SELECT SUM(v1) OVER (PARTITION BY 52, (NOT EXISTS (SELECT 0 + (SELECT v1 WHERE v1 * v1 * v1 GROUP BY v1) AS v3 WHERE v1 = 'x' OR 'x' OR v1)), v1, 37 ORDER BY v1 NULLS LAST) IS NOT NULL AS v2 GROUP BY v1 HAVING v1 > 'x') AND NOT ((v1 = 66 AND v1 < 'x') AND v1 = 50) AND 35 >= 65;
+UPDATE v0 SET v1 = v1 * 73 WHERE v1 = (SELECT SUM(v1) OVER (PARTITION BY 52, (NOT EXISTS (SELECT 0 + (SELECT v1 WHERE v1 * v1 * v1 GROUP BY v1) AS v3 WHERE v1 = 'x' OR 'x' OR v1)), v1, 37 ORDER BY v1 NULLS LAST) IS NOT NULL AS v2 GROUP BY v1 HAVING v1 > 'x') AND NOT ((v1 = 66 AND v1 < 'x') AND v1 = 50) AND 35 >= 65
 
 statement ok
 DROP TABLE v0
@@ -189,7 +189,7 @@ statement ok
 INSERT INTO v0 (v1) VALUES (2),(10),(99),(1.100000),(3)
 
 statement error 22018!conversion of string to type bte failed.
-UPDATE v0 SET v1 = (SELECT MIN(v1) OVER (ROWS 10 PRECEDING) WHERE (10 = v1 OR v1 = ((3 - 10.100000))) AND 3 NOT LIKE v1);
+UPDATE v0 SET v1 = (SELECT MIN(v1) OVER (ROWS 10 PRECEDING) WHERE (10 = v1 OR v1 = ((3 - 10.100000))) AND 3 NOT LIKE v1)
 
 statement ok
 DROP TABLE v0
@@ -212,7 +212,7 @@ DROP TABLE v0
 -- INSERT INTO v0 VALUES (-1),(NULL),(57),(NULL),(NULL)
 
 -- statement ok
--- UPDATE v0 SET v1 = v1 % (WITH v0 (v1) AS (SELECT -2147483648 WHERE (v1 < -1 OR v1 = 37 % 127) AND v1 - 85 = 45 AND v1 IS NOT NULL) SELECT DISTINCT -1 FROM v0) + v1;
+-- UPDATE v0 SET v1 = v1 % (WITH v0 (v1) AS (SELECT -2147483648 WHERE (v1 < -1 OR v1 = 37 % 127) AND v1 - 85 = 45 AND v1 IS NOT NULL) SELECT DISTINCT -1 FROM v0) + v1
 
 -- statement ok
 -- DROP TABLE v0
@@ -483,7 +483,7 @@ DROP TABLE v0
 -- statement ok
 -- DROP TABLE v0
 
--- 39.sq
+-- 39.sql
 statement ok
 CREATE TABLE v0 (v1 VARCHAR(30))
 

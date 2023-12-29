@@ -15,7 +15,7 @@
   used in the implementation of the filter functions ST_Intersects and
   ST_Dwithin for geometric points.
 - Improves shapefile support by replacing functions SHPattach,
-  SHPpartialimport, ahd SHPimport with SHPload.
+  SHPpartialimport, and SHPimport with SHPload.
 - Introduces functions ST_DistanceGeographic, ST_DwithinGeographic,
   ST_IntersectsGeographic, ST_CoversGeographic, ST_Collects with geodesic
   semantics. ST_Transform can be used to convert geodetic into geographic
