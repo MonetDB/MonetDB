@@ -240,8 +240,6 @@ _hp_create(int type, int size)
 
 	int bits = log_base2(size-1);
 
-	if (!type)
-		type = TYPE_oid;
 	hp->s.destroy = (sink_destroy)&hp_destroy;
 	hp->s.type = HASH_SINK;
 	if (bits >= GIDBITS)
@@ -250,6 +248,9 @@ _hp_create(int type, int size)
 	hp->size = (gid)1<<bits;
 	hp->mask = hp->size-1;
 	hp->type = type;
+
+	if (!type)
+		type = TYPE_oid;
 	hp->width = ATOMsize(type);
 	hp->rehash = 0;
 	if (type == TYPE_str) {
@@ -261,9 +262,12 @@ _hp_create(int type, int size)
 		hp->len = (flen)BATatoms[type].atomLen;
 	}
 
-	// TODO: need better size estimations and
-	//       different sizes for payload and frequency
-	hp->payload = (char *)GDKmalloc((size_t)hp->width * hp->size);
+	// TODO: need better size estimations and different
+	//       sizes for payload (except TYPE_void) and frequency
+	if (hp->type == TYPE_void)
+		hp->payload = (char *)GDKmalloc((size_t)hp->width * 1);
+	else
+		hp->payload = (char *)GDKmalloc((size_t)hp->width * hp->size);
 	if (!hp->payload) {
 		GDKfree(hp);
 		return NULL;
@@ -1202,19 +1206,17 @@ error:
 /* TODO: store pval only once? */
 #define vaddpld() \
 	do { \
-		oid pval = pld->tseqbase; \
-		oid *hpvals = hp->payload; \
+		((oid*)hp->payload)[0] = pld->tseqbase; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
-			size_t old_freq = ATOMIC_ADD(&freqs[sltid[i]], 1); \
-			gid hsh = (gid)combine(old_freq, _hash_lng(sltid[i]), prime)&hp->mask; \
-			hpvals[hsh] = pval; \
+			ATOMIC_INC(&freqs[sltid[i]]); \
 		} \
 	} while (0)
 
 /* TODO: how can we make sure the result hash is unique? */
 #define addpld(Type) \
 	do { \
+		int prime = hash_prime_nr[hp->bits-5]; \
 		Type *pvals = Tloc(pld, 0); \
 		Type *hpvals = hp->payload; \
 		\
@@ -1249,7 +1251,7 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, const ptr *H)
 			err = createException(MAL, "hash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		res->T.sink = (Sink*)hp_create(pld->ttype?pld->ttype:TYPE_oid, 1);
+		res->T.sink = (Sink*)hp_create(pld->ttype, 1);
 		if (res->T.sink == NULL) {
 			err = createException(MAL, "hash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
@@ -1305,7 +1307,6 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, const ptr *H)
 			int tt = pld->ttype;
 			gid *sltid = Tloc(slt, 0);
 			ATOMIC_TYPE *freqs = hp->frequency;
-			int prime = hash_prime_nr[hp->bits-5];
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			if (qry_ctx != NULL) {
@@ -1706,7 +1707,6 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 static str
 HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink)
 {
-	(void) expanded;
 	BAT *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt = 0;
 	lng timeoffset = 0;
@@ -1739,12 +1739,12 @@ HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink)
 		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
-	} 
+	}
 
 	int tt = k->ttype;
-	e = COLnew(k->hseqbase, tt, rescnt, TRANSIENT);
+	e = COLnew(k->hseqbase, tt?tt:TYPE_oid, rescnt, TRANSIENT);
 	if (!e) {
-		err = createException(SQL, "hash.hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "hash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 
@@ -1837,15 +1837,151 @@ error:
 	return err;
 }
 
+#define vfetch() \
+	do { \
+		oid val = ((oid*)hp->payload)[0]; \
+		oid *res = Tloc(p, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, rescnt, timeoffset) { \
+			res[i] = val; \
+		} \
+	} while (0)
+
+#define fetch(Type) \
+	do { \
+		int prime = hash_prime_nr[hp->bits-5]; \
+		Type *val = hp->payload; \
+		Type *res = Tloc(p, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			gid freq = (gid)hp->frequency[sid[i]]; \
+			TIMEOUT_LOOP_IDX_DECL(j, freq, timeoffset) { \
+				gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&hp->mask; \
+				res[idx++] = val[hsh]; \
+			} \
+		} \
+	} while (0)
+
 /* X_nn:bat[:any1] := hash.fetch_payload(X_nn:bat[:oid], X_nn:bat[:any1]); */
 static str
 HASHfetch_payload(bat *payload, bat *slotid, bat *hp_sink)
 {
-	(void) payload;
-	(void) slotid;
-	(void) hp_sink;
+	BAT *p = NULL, *l = NULL, *h = NULL;
+	BUN cnt, rescnt =  0;
+	lng timeoffset = 0;
+	str err = NULL;
+	QryCtx *qry_ctx = NULL;
 
+	l = BATdescriptor(*slotid);
+	h = BATdescriptor(*hp_sink);
+	if (!l || !h) {
+		err = createException(SQL, "hash.fetch_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	gid *sid = Tloc(l, 0);
+	hash_payload *hp = (hash_payload*)h->T.sink;
+	cnt = BATcount(l);
+	if (cnt) {
+		qry_ctx = MT_thread_get_qry_ctx();
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) {
+			rescnt += hp->frequency[sid[i]];
+		}
+		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.fetch_payload", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+	}
+
+	int tt = hp->type;
+	p = COLnew(h->hseqbase, tt?tt:TYPE_oid, rescnt, TRANSIENT);
+	if (!p) {
+		err = createException(SQL, "hash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (cnt) {
+		BUN idx = 0;
+
+		timeoffset =  0;
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+
+		switch(tt) {
+			case TYPE_void:
+				vfetch();
+				break;
+			case TYPE_bit:
+				fetch(bit);
+				break;
+			case TYPE_bte:
+				fetch(bte);
+				break;
+			case TYPE_sht:
+				fetch(sht);
+				break;
+			case TYPE_int:
+				fetch(int);
+				break;
+			case TYPE_date:
+				fetch(date);
+				break;
+			case TYPE_lng:
+				fetch(lng);
+				break;
+			case TYPE_oid:
+				fetch(oid);
+				break;
+			case TYPE_daytime:
+				fetch(daytime);
+				break;
+			case TYPE_timestamp:
+				fetch(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				fetch(hge);
+				break;
+#endif
+			case TYPE_flt:
+				fetch(flt);
+				break;
+			case TYPE_dbl:
+				fetch(dbl);
+				break;
+			case TYPE_str:
+				//if (local_storage) {
+				//	afetch_(str,p);
+				//} else {
+				//	afetch(str);
+				//}
+				//break;
+				err =  createException(MAL, "hash.fetch_payload", "TODO: TYPE_str");
+				goto error;
+			default:
+				err = createException(MAL, "hash.fetch_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				goto error;
+		}
+		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.fetch_payload", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+
+		assert(idx == rescnt);
+	}
+
+	BBPunfix(l->batCacheid);
+	BBPunfix(h->batCacheid);
+	BATsetcount(p, rescnt);
+	BATnegateprops(p);
+	*payload = p->batCacheid;
+	BBPkeepref(p);
 	return MAL_SUCCEED;
+error:
+	BBPreclaim(p);
+	BBPreclaim(l);
+	BBPreclaim(h);
+	return err;
 }
 
 #include "mel.h"
