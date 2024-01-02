@@ -310,6 +310,8 @@ void
 hp_rehash(hash_payload *hp)
 {
 	hp->rehash = 1;
+	if (hp->parent)
+		ht_rehash(hp->parent);
 }
 
 /* X_nn:bat[:any1] := hash.new_payload(X_nn:bat[:any1], 42:oid, 42:oid, X_nn:bat[:any2]); */
@@ -1248,8 +1250,19 @@ error:
 		Type *hpvals = hp->payload; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			gid slt = sltid[i]; \
+			if (slt >= (gid)hp->nr_slots) { \
+				hp->rehash = 1; \
+				err =  createException(MAL, "hash.add_payload", "hash payload needs rehash"); \
+				goto error; \
+			} \
 			size_t old_freq = ATOMIC_ADD(&freqs[sltid[i]], 1); \
 			gid hsh = (gid)combine(old_freq, _hash_lng(sltid[i]), prime)&hp->mask; \
+			if (hsh >= (gid)hp->nr_payloads) { \
+				hp->rehash = 1; \
+				err =  createException(MAL, "hash.add_payload", "hash payload needs rehash"); \
+				goto error; \
+			} \
 			hpvals[hsh] = pvals[i]; \
 		} \
 	} while (0)
@@ -1272,18 +1285,19 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, bat *parent_ht, 
 	}
 	assert(BATcount(pld) == BATcount(slt));
 
+	BAT *prt = BATdescriptor(*parent_ht);
+	if (!prt) {
+		err = createException(MAL, "hash.add_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	hash_table *pht = (hash_table*)prt->T.sink;
+
 	if (private && *hp_sink && is_bat_nil(*hp_sink)) { /* TODO ... create but how big ??? */
 		res = COLnew(pld->hseqbase, pld->ttype?pld->ttype:TYPE_oid, 0, TRANSIENT);
 		if (!res) {
 			err = createException(MAL, "hash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		BAT *prt = BATdescriptor(*parent_ht);
-		if (!prt) {
-			err = createException(MAL, "hash.add_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto error;
-		}
-		hash_table *pht = (hash_table*)prt->T.sink;
 		res->T.sink = (Sink*)hp_create(pld->ttype, 1, 1, pht);
 		BBPunfix(prt->batCacheid);
 		if (res->T.sink == NULL) {
@@ -1301,6 +1315,14 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, bat *parent_ht, 
 	private = res->T.private_bat;
 
 	hash_payload *hp = (hash_payload*)res->T.sink;
+	if (hp->nr_payloads < pht->size && pht->rehash) {
+		hp->rehash = 1;
+		BBPunfix(prt->batCacheid);
+		err = createException(MAL, "hash.add_payload", "hash payload needs rehash");
+		goto error;
+	}
+	BBPunfix(prt->batCacheid);
+
 	assert(hp && hp->s.type == HASH_SINK);
 	MT_lock_set(&res->theaplock);
 	MT_lock_set(&pld->theaplock);
