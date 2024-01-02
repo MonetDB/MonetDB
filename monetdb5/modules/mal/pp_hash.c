@@ -233,46 +233,46 @@ hp_destroy(hash_payload *hp)
 }
 
 static hash_payload *
-_hp_create(int type, int size)
+_hp_create(int type, size_t nslots, size_t nplds, hash_table *parent)
 {
 	hash_payload *hp = (hash_payload *)GDKzalloc(sizeof(hash_payload));
 	if (!hp) return NULL;
 
-	int bits = log_base2(size-1);
+	int bits = log_base2(nplds-1);
+	int atype = type?type:TYPE_oid;
 
 	hp->s.destroy = (sink_destroy)&hp_destroy;
 	hp->s.type = HASH_SINK;
 	if (bits >= GIDBITS)
 		bits = GIDBITS-1;
 	hp->bits = bits;
-	hp->size = (gid)1<<bits;
-	hp->mask = hp->size-1;
+	hp->nr_slots = nslots;
+	hp->nr_payloads = (gid)1<<bits;
+	hp->mask = hp->nr_payloads-1;
 	hp->type = type;
 
-	if (!type)
-		type = TYPE_oid;
-	hp->width = ATOMsize(type);
+	hp->width = ATOMsize(atype);
 	hp->rehash = 0;
-	if (type == TYPE_str) {
+	if (atype == TYPE_str) {
 		hp->cmp = (fcmp)str_cmp;
 		hp->hsh = (fhsh)str_hsh;
 	} else {
-		hp->cmp = (fcmp)ATOMcompare(type);
-		hp->hsh = (fhsh)BATatoms[type].atomHash;
-		hp->len = (flen)BATatoms[type].atomLen;
+		hp->cmp = (fcmp)ATOMcompare(atype);
+		hp->hsh = (fhsh)BATatoms[atype].atomHash;
+		hp->len = (flen)BATatoms[atype].atomLen;
 	}
+	hp->parent = parent;
 
-	// TODO: need better size estimations and different
-	//       sizes for payload (except TYPE_void) and frequency
-	if (hp->type == TYPE_void)
+	// TODO: need better size estimations
+	if (type == TYPE_void)
 		hp->payload = (char *)GDKmalloc((size_t)hp->width * 1);
 	else
-		hp->payload = (char *)GDKmalloc((size_t)hp->width * hp->size);
+		hp->payload = (char *)GDKmalloc((size_t)hp->width * hp->nr_payloads);
 	if (!hp->payload) {
 		GDKfree(hp);
 		return NULL;
 	}
-	hp->frequency = (ATOMIC_TYPE *)GDKzalloc(sizeof(size_t) * hp->size);
+	hp->frequency = (ATOMIC_TYPE *)GDKzalloc(sizeof(ATOMIC_TYPE) * hp->nr_slots);
 	if (!hp->frequency) {
 		GDKfree(hp->payload);
 		GDKfree(hp);
@@ -285,13 +285,22 @@ _hp_create(int type, int size)
 /* Returns NULL if a memory allocation has failed.
  */
 hash_payload *
-hp_create(int type, int size)
+hp_create(int type, size_t nslots, size_t nplds, hash_table *parent)
 {
-	if (size < HP_MIN_SIZE)
-		size = HP_MIN_SIZE;
-	if (size > HP_MAX_SIZE)
-		size = HP_MAX_SIZE;
-	return _hp_create(type, size);
+	if (nslots < parent->last)
+		nslots = parent->last;
+	if (nslots < HP_MIN_SIZE)
+		nslots = HP_MIN_SIZE;
+	if (nslots > HP_MAX_SIZE)
+		nslots = HP_MAX_SIZE;
+
+	if (nplds < parent->size)
+		nplds = parent->size;
+	if (nplds < HP_MIN_SIZE)
+		nplds = HP_MIN_SIZE;
+	if (nplds > HP_MAX_SIZE)
+		nplds = HP_MAX_SIZE;
+	return _hp_create(type, nslots, nplds, parent);
 }
 
 void
@@ -300,7 +309,7 @@ hp_rehash(hash_payload *hp)
 	hp->rehash = 1;
 }
 
-/* X_nn:bat[:int] := hash.new_payload(nil:int, 42:int, X_nn:bat[:int]); */
+/* X_nn:bat[:any1] := hash.new_payload(X_nn:bat[:any1], 42:oid, 42:oid, X_nn:bat[:any2]); */
 static str
 UHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
@@ -308,19 +317,35 @@ UHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	bat *res = getArgReference_bat(s, p, 0);
 	int tt = getArgType(m, p, 1);
-	int size = *getArgReference_int(s, p, 2);
+	size_t nslots = *getArgReference_int(s, p, 2);
+	size_t nplds = *getArgReference_int(s, p, 3);
+	bat pid = *getArgReference_bat(s, p, 4);
+	str err = NULL;
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
 	if (b == NULL)
 		return createException(MAL, "hash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	b->T.sink = (Sink *)hp_create(tt, size*1.2*2.1);
-	if (!b->T.sink) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "hash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	BAT *prnt = BATdescriptor(pid);
+	if (prnt == NULL) {
+		err = createException(MAL, "hash.new_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
 	}
+	hash_table *parent = (hash_table*)prnt->T.sink;
+
+	b->T.sink = (Sink *)hp_create(tt, nslots*1.2*2.1, nplds*1.2*2.1, parent);
+	if (!b->T.sink) {
+		err = createException(MAL, "hash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+	BBPunfix(prnt->batCacheid);
 	*res = b->batCacheid;
 	BBPkeepref(b);
 	return MAL_SUCCEED;
+error:
+	BBPreclaim(b);
+	BBPreclaim(prnt);
+	return err;
 }
 
 /* ***** HASH OPERATORS ***** */
@@ -1203,7 +1228,6 @@ error:
 	return err;
 }
 
-/* TODO: store pval only once? */
 #define vaddpld() \
 	do { \
 		((oid*)hp->payload)[0] = pld->tseqbase; \
@@ -1227,9 +1251,9 @@ error:
 		} \
 	} while (0)
 
-/* !X_nn:bat[:any1] := hash.add_payload(X_nn:bat[:any1], X_nn:bat[:oid], ptr); */
+/* !X_nn:bat[:any1] := hash.add_payload(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:any2], ptr); */
 static str
-HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, const ptr *H)
+HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, bat *parent_ht, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool private = (!*hp_sink || is_bat_nil(*hp_sink)), local_storage = false;
@@ -1251,7 +1275,14 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, const ptr *H)
 			err = createException(MAL, "hash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		res->T.sink = (Sink*)hp_create(pld->ttype, 1);
+		BAT *prt = BATdescriptor(*parent_ht);
+		if (!prt) {
+			err = createException(MAL, "hash.add_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
+		hash_table *pht = (hash_table*)prt->T.sink;
+		res->T.sink = (Sink*)hp_create(pld->ttype, 1, 1, pht);
+		BBPunfix(prt->batCacheid);
 		if (res->T.sink == NULL) {
 			err = createException(MAL, "hash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
@@ -1988,7 +2019,7 @@ error:
 static mel_func pp_hash_init_funcs[] = {
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("sink",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("sink",1),argany("tt",1),arg("size",int), batargany("p",2))),
- pattern("hash", "new_payload", UHASHnew_payload, false, "", args(1,3, batargany("sink",1),argany("tt",1),arg("size",int))),
+ pattern("hash", "new_payload", UHASHnew_payload, false, "", args(1,5, batargany("sink",1),argany("tt",1),arg("nr_slots",oid),arg("nr_payloads",oid),batargany("parent",2))),
 
  command("hash", "build_table", UHASHbuild_table, false, "Build a hash table for the given column. Returns the slot ID for each key and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
  command("hash", "build_combined_table", UHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),

@@ -139,8 +139,10 @@ typedef struct hash_payload {
 	void *payload;		/* hash(ed) payload values */
 	ATOMIC_TYPE *frequency;	/* how many times a slot ID appeared in the hashed column */
 
+	hash_table *parent;
 	int bits;
-	size_t size;
+	size_t nr_slots;
+	size_t nr_payloads;
 	gid mask;
 	mallocator **allocators;
 	int nr_allocators;
@@ -150,7 +152,7 @@ extern lng str_hsh(str v);
 extern hash_table *ht_create(int type, int size, hash_table *p);
 extern void ht_rehash(hash_table *ht);
 
-extern hash_payload *hp_create(int type, int size);
+extern hash_payload *hp_create(int type, size_t nr_slots, size_t nr_payloads, hash_table *p);
 extern void hp_rehash(hash_payload *hp);
 
 #endif /*_PP_HASH_H_*/
