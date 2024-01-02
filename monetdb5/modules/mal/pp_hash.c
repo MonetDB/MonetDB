@@ -156,19 +156,22 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int tt = getArgType(m, p, 1);
 	int size = *getArgReference_int(s, p, 2);
 	hash_table *parent = NULL;
+	BAT *pht = NULL;
+
 	if (p->argc == 4) {
 		bat pid = *getArgReference_bat(s, p, 3);
-		BAT *p = BATdescriptor(pid);
-		if (p == NULL)
+		if ((pht = BATdescriptor(pid)) == NULL)
 			return createException(MAL, "hash.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		parent = (hash_table*)p->T.sink;
-		BBPunfix(p->batCacheid);
+		parent = (hash_table*)pht->T.sink;
 	}
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
-	if (b == NULL)
+	if (b == NULL) {
+		BBPreclaim(pht);
 		return createException(MAL, "hash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	b->T.sink = (Sink*)ht_create(tt, size*1.2*2.1, parent);
+	BBPreclaim(pht);
 	if (b->T.sink == NULL) {
 		BBPunfix(b->batCacheid);
 		return createException(MAL, "hash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
