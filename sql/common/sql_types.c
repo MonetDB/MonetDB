@@ -79,8 +79,24 @@ unsigned int bits2digits(unsigned int bits)
 		return 8;
 	else if (bits <= 30)
 		return 9;
-	else if (bits <= 32)
+	else if (bits <= 34)
 		return 10;
+	else if (bits <= 37)
+		return 11;
+	else if (bits <= 40)
+		return 12;
+	else if (bits <= 44)
+		return 13;
+	else if (bits <= 46)
+		return 14;
+	else if (bits <= 50)
+		return 15;
+	else if (bits <= 54)
+		return 16;
+	else if (bits <= 57)
+		return 17;
+	else if (bits <= 60)
+		return 18;
 #ifdef HAVE_HGE
 	else if (bits <= 64)
 		return 19;
@@ -96,28 +112,31 @@ unsigned int type_digits_to_char_digits(sql_subtype *t)
 		return 0;
 	switch (t->type->eclass) {
 		case EC_BIT:
-			return 1;
+			return 5;
+		case EC_CHAR:
+		case EC_STRING:
+			return t->digits;
+		case EC_BLOB:
+			return 0;
 		case EC_POS:
 		case EC_NUM:
-		case EC_MONTH:
 			return bits2digits(t->digits) + 1; /* add '-' */
+		case EC_MONTH:
 		case EC_FLT:
-			return bits2digits(t->digits) + 2; /* TODO for floating-points maybe more is needed */
+			return t->digits; /* TODO this needs more tunning ? */
 		case EC_DEC:
 		case EC_SEC:
 			return t->digits + 2; /* add '-' and '.' */
-		case EC_TIMESTAMP:
-		case EC_TIMESTAMP_TZ:
-			return 40; /* TODO this needs more tunning */
 		case EC_TIME:
 		case EC_TIME_TZ:
 			return 20; /* TODO this needs more tunning */
 		case EC_DATE:
 			return 20; /* TODO this needs more tunning */
-		case EC_BLOB:
-			return t->digits * 2; /* TODO BLOBs don't have digits, so this is wrong */
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ:
+			return 40; /* TODO this needs more tunning */
 		default:
-			return t->digits; /* What to do with EC_GEOM? */
+			return 0; /* EC_GEOM and EC_EXTERNAL */
 	}
 }
 
@@ -126,7 +145,7 @@ unsigned int type_digits_to_char_digits(sql_subtype *t)
 /* 2 automatic coersion (could still require dynamic checks for overflow) */
 /* 3 casts are allowed (requires dynamic checks) (so far not used) */
 static int convert_matrix[EC_MAX][EC_MAX] = {
-
+/* FROM,			  A, T, B, C, V, B, P, N, M, S, D, F, T,TZ, D,TS,TSZ,G, E */
 /* EC_ANY */		{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, /* NULL */
 /* EC_TABLE */		{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_BIT */		{ 0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -137,8 +156,8 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_NUM */		{ 0, 0, 2, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_MONTH*/		{ 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_SEC*/			{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0 },
-/* EC_DEC */		{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_FLT */		{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_DEC */		{ 0, 0, 0, 1, 1, 0, 2, 2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_FLT */		{ 0, 0, 2, 1, 1, 0, 2, 2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_TIME */		{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0 },
 /* EC_TIME_TZ */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0 },
 /* EC_DATE */		{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 0, 0 },
@@ -151,6 +170,34 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 int sql_type_convert (int from, int to)
 {
 	return convert_matrix[from][to];
+}
+
+static int convert_preference_matrix[EC_MAX][EC_MAX] = {
+/* FROM,			 A,  T,  B,  C,  V,BLB,  P,  N,  M,  S,  D,  F,  T, TZ,  D, TS,TSZ,  G,  E */
+/* EC_ANY */	  { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 },/*NULL*/
+/* EC_TABLE */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+/* EC_BIT */	  { 10,  0, 99, -1, -1,  0,  0,  5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+/* EC_CHAR */	  { 10,  0,-10, 99, 20,-10,  0, -1,  0,  0,  0,-99,-10,-10,-10,-10,-10,-10,-10 },
+/* EC_STRING */	  { 10,  0,-10, 10, 99,-10,  0, -1,  0,  0,  0,-99,-10,-10,-10,-10,-10,-10,-10 },
+/* EC_BLOB */	  { 10,  0,  0, -1, -1, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+/* EC_POS */	  { 10,  0,  0, -1, -1,  0, 99, 10,  0,  0, 10, 10,  0,  0,  0,  0,  0,  0,  0 },
+/* EC_NUM */	  { 10,  0,  5, -1, -1,  0,  1, 99,  0,  0, 10, 10,  0,  0,  0,  0,  0,  0,  0 },
+/* EC_MONTH*/	  { 10,  0,  0, -1, -1,  0,  0,  0, 99,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
+/* EC_SEC*/		  { 10,  0,  0, -1, -1,  0,  0,  0,  0, 99,  0,  0, 10, 10,  0,  0,  0,  0,  0 },
+/* EC_DEC */	  { 10,  0,  0, -1, -1,  0,-10,-10,  0,  0, 99, 10,  0,  0,  0,  0,  0,  0,  0 },
+/* EC_FLT */	  { 10,  0, -5, -1, -1,  0,-10,-10,  0,  0, 10, 199, 0,  0,  0,  0,  0,  0,  0 },
+/* EC_TIME */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0, 99,-10,  0,  0,  0,  0,  0 },
+/* EC_TIME_TZ */  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0, 10, 99,  0,  0,  0,  0,  0 },
+/* EC_DATE */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 10,-10,  0,  0 },
+/* EC_TSTAMP */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0, 10, 10, 10, 99,-10,  0,  0 },
+/* EC_TSTAMP_TZ */{ 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0, 10, 10, 10, 10, 99,  0,  0 },
+/* EC_GEOM */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99,  0 },
+/* EC_EXTERNAL*/  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 }
+};
+
+int sql_type_convert_preference (int from, int to)
+{
+	return convert_preference_matrix[from][to];
 }
 
 bool is_commutative(const char *sname, const char *fnm)
@@ -227,7 +274,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 		sql_type *t = n->data;
 
 		if (localtypes_cmp(t->localtype, localtype)) {
-			if (digits == 0 ? t->digits == 0 : t->digits > digits) {
+			if (digits == 0 ? t->digits == 0 : t->digits >= digits) {
 				sql_init_subtype(r, t, digits, 0);
 				return r;
 			}
@@ -237,7 +284,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 					break;
 				}
 				n = m;
-				if (digits == 0 ? t->digits == 0 : t->digits > digits) {
+				if (digits == 0 ? t->digits == 0 : t->digits >= digits) {
 					sql_init_subtype(r, t, digits, 0);
 					return r;
 				}
@@ -460,6 +507,131 @@ sql_func_mod(sql_func *f)
 	return f->mod;
 }
 
+static sql_subtype *
+largest_type(list *ops)
+{
+	if (!ops)
+		return NULL;
+	sql_subtype *cur = NULL;
+	for (node *n = ops->h; n; n = n->next) {
+		sql_subtype *a = n->data;
+		if (!a)
+			continue;
+		if (!cur || cur->type->localtype < a->type->localtype)
+			cur = a;
+	}
+	return cur;
+}
+#define is_addition(fname) (strcmp(fname, "sql_add") == 0)
+static int
+max_bits(list *ops)
+{
+	if (!ops)
+		return 0;
+	unsigned int digits = 0;
+	for (node *n = ops->h; n; n = n->next) {
+		sql_subtype *a = n->data;
+		if (!a)
+			continue;
+		if (digits < a->digits)
+			digits = a->digits;
+	}
+	/* + and - (because of negative numbers) could need one extra bit (or digit) */
+	digits += 1;
+	return digits;
+}
+
+/* compute the super type of r and i, iff super_string allow for string super types.
+ * predicates etc do not allow for string super types.
+ */
+static sql_subtype *
+supertype_opt_string(sql_subtype *super, sql_subtype *r, sql_subtype *i, bool super_string)
+{
+	/* first find super type */
+	char *tpe = r->type->base.name;
+	unsigned int radix = (unsigned int) r->type->radix;
+	unsigned int digits = 0;
+	unsigned int idigits = i->digits;
+	unsigned int rdigits = r->digits;
+	unsigned int scale = sql_max(i->scale, r->scale);
+	sql_class eclass = r->type->eclass;
+	sql_subtype lsuper;
+
+	lsuper = *r;
+	/* EC_STRING class is superior to EC_CHAR */
+	if (EC_VARCHAR(i->type->eclass) && EC_VARCHAR(r->type->eclass)) {
+		if (!strcmp(i->type->base.name, "clob") || !strcmp(r->type->base.name, "clob")) {
+			lsuper = !strcmp(i->type->base.name, "clob") ? *i : *r;
+			radix = lsuper.type->radix;
+			tpe = lsuper.type->base.name;
+			eclass = lsuper.type->eclass;
+		} else {
+			lsuper = i->type->base.id > r->type->base.id ? *i : *r;
+			radix = lsuper.type->radix;
+			tpe = lsuper.type->base.name;
+			eclass = lsuper.type->eclass;
+		}
+	} else if (((!super_string || !EC_VARCHAR(r->type->eclass)) && i->type->base.id > r->type->base.id) || (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
+		lsuper = *i;
+		radix = i->type->radix;
+		tpe = i->type->base.name;
+		eclass = i->type->eclass;
+	}
+	if (!EC_SCALE(lsuper.type->eclass))
+		scale = 0; /* reset scale for types without it */
+	if (!lsuper.type->localtype) {
+		tpe = "smallint";
+		eclass = EC_NUM;
+	}
+	/*
+	 * In case of different radix we should change one.
+	 */
+	if (i->type->radix != r->type->radix) {
+		if (radix == 10 || radix == 0 /* strings */) {
+			/* change to radix 10 */
+			if (i->type->radix == 2)
+				idigits = bits2digits(idigits);
+			if (r->type->radix == 2)
+				rdigits = bits2digits(rdigits);
+			/* We just use float/double digits for string length*/
+		} else if (radix == 2) { /* change to radix 2 */
+			if (i->type->radix == 10)
+				idigits = digits2bits(idigits);
+			if (r->type->radix == 10)
+				rdigits = digits2bits(rdigits);
+		}
+	}
+	/* handle OID horror */
+	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->base.name, "oid") == 0) {
+		tpe = i->type->base.name;
+		eclass = EC_POS;
+	}
+	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
+		sql_find_subtype(&lsuper, tpe, 0, 0);
+	} else {
+		/* for strings use the max of both */
+		if (EC_VARCHAR(eclass))
+			digits = sql_max(type_digits_to_char_digits(i), type_digits_to_char_digits(r));
+		else
+			digits = sql_max(idigits - i->scale, rdigits - r->scale);
+		sql_find_subtype(&lsuper, tpe, digits+scale, scale);
+	}
+	*super = lsuper;
+	return super;
+}
+
+sql_subtype *
+supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
+{
+	return supertype_opt_string(super, r, i, true);
+}
+
+sql_subtype *
+cmp_supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
+{
+	return supertype_opt_string(super, r, i, false);
+}
+
 sql_subfunc*
 sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 {
@@ -482,26 +654,25 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 				if (a && a->scale > mscale)
 					mscale = a->scale;
 				if (a && f->fix_scale == INOUT && tn == ops->h)
-					mdigits = a->digits;
+					mdigits = (a->type->eclass==EC_NUM)?bits2digits(a->digits):a->digits;
 			}
 		}
 
+		sql_subtype super;
 		if (!member) {
 			node *m;
-			sql_arg *ma = NULL;
 
-			if (ops) for (tn = ops->h, m = f->ops->h; tn; tn = tn->next, m = m->next) {
+			if (ops) for (tn = ops->h, m = f->ops->h; tn && m; tn = tn->next, m = m->next) {
 				sql_arg *s = m->data;
+				sql_subtype *t = tn->data;
 
 				if (!member && s->type.type->eclass == EC_ANY) {
-					member = tn->data;
-					ma = s;
+					member = t;
 				}
 				/* largest type */
-				if (member && s->type.type->eclass == EC_ANY &&
-				    s->type.type->localtype > ma->type.type->localtype ) {
-					member = tn->data;
-					ma = s;
+				if (member && s->type.type->eclass == EC_ANY && t && t->type->eclass != EC_ANY) {
+					supertype(&super, member, t);
+					member = &super;
 				}
 			}
 		}
@@ -512,14 +683,12 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 				sql_arg *rarg = tn->data;
 				sql_subtype *res, *r = &rarg->type;
 
-				/* same scale as the input */
-				if (member && member->scale > scale)
 				/* same scale as the input if result has a scale */
 				if (member && (r->type->eclass == EC_ANY || r->type->scale != SCALE_NONE) && member->scale > scale)
 					scale = member->scale;
 				digits = r->digits;
 				if (!member) {
-					if (f->fix_scale > SCALE_NONE && f->fix_scale < SCALE_EQ) {
+					if (f->fix_scale > SCALE_NONE && f->fix_scale < SCALE_EQ && r->type->eclass == EC_DEC) {
 						scale = mscale;
 						digits = mdigits;
 					} else if (r->scale)
@@ -531,24 +700,18 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 					scale = mscale;
 				if (member && r->type->eclass == EC_ANY)
 					r = member;
-				res = sql_create_subtype(sa, r->type, digits, scale);
+				if (f->fix_scale == SCALE_MUL && !EC_INTERVAL(r->type->eclass) && r->type->eclass != EC_FLT)
+					r = largest_type(ops);
+				if (f->fix_scale == MAX_BITS) {
+					digits = max_bits(ops);
+					if (digits > r->type->digits) {
+						res = SA_NEW(sa, sql_subtype);
+						res = sql_find_numeric(res, r->type->localtype, digits);
+					} else
+						res = r;
+				} else
+					res = sql_create_subtype(sa, r->type, digits, scale);
 				list_append(fres->res, res);
-			}
-		}
-		if (member) { /* check that the types of all EC_ANY's are equal */
-			sql_subtype *st = NULL;
-			node *m;
-
-			if (ops) for (tn = ops->h, m = f->ops->h; tn; tn = tn->next, m = m->next) {
-				sql_arg *s = m->data;
-				sql_subtype *opt = tn->data;
-
-				if (s->type.type->eclass == EC_ANY) {
-					if (!st || st->type->eclass == EC_ANY) /* if input parameter is ANY, skip validation */
-						st = tn->data;
-					else if (opt && subtype_cmp(st, opt))
-						return NULL;
-				}
 			}
 		}
 	}
@@ -801,14 +964,14 @@ sqltypeinit( sql_allocator *sa)
 	OID = *t++ = sql_create_type(sa, "OID", 63, 0, 2, EC_POS, "oid");
 #endif
 
-	BTE = *t++ = sql_create_type(sa, "TINYINT",   8, SCALE_FIX, 2, EC_NUM, "bte");
-	SHT = *t++ = sql_create_type(sa, "SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
-	INT = *t++ = sql_create_type(sa, "INT",      32, SCALE_FIX, 2, EC_NUM, "int");
+	BTE = *t++ = sql_create_type(sa, "TINYINT",   7, SCALE_FIX, 2, EC_NUM, "bte");
+	SHT = *t++ = sql_create_type(sa, "SMALLINT", 15, SCALE_FIX, 2, EC_NUM, "sht");
+	INT = *t++ = sql_create_type(sa, "INT",      31, SCALE_FIX, 2, EC_NUM, "int");
 	LargestINT =
-	LNG = *t++ = sql_create_type(sa, "BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
+	LNG = *t++ = sql_create_type(sa, "BIGINT",   63, SCALE_FIX, 2, EC_NUM, "lng");
 #ifdef HAVE_HGE
 	LargestINT =
-		HGE = *t++ = sql_create_type(sa, "HUGEINT",  128, SCALE_FIX, 2, EC_NUM, "hge");
+		HGE = *t++ = sql_create_type(sa, "HUGEINT",  127, SCALE_FIX, 2, EC_NUM, "hge");
 #endif
 
 	decimals = t;
@@ -1224,17 +1387,17 @@ sqltypeinit( sql_allocator *sa)
 
 		lt = sql_bind_localtype((*t)->impl);
 
-		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
-		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
+		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, (t<decimals)?MAX_BITS:SCALE_FIX, 0, *t, 2, *t, *t);
+		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, (t<decimals)?MAX_BITS:SCALE_FIX, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, *t, 2, *t, *t);
 		if (t < decimals) {
-			sql_create_func(sa, "bit_and", "calc", "and", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
-			sql_create_func(sa, "bit_or", "calc", "or", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
-			sql_create_func(sa, "bit_xor", "calc", "xor", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
-			sql_create_func(sa, "bit_not", "calc", "not", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
-			sql_create_func(sa, "left_shift", "calc", "<<", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, INT);
-			sql_create_func(sa, "right_shift", "calc", ">>", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, INT);
+			sql_create_func(sa, "bit_and", "calc", "and", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
+			sql_create_func(sa, "bit_or", "calc", "or", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
+			sql_create_func(sa, "bit_xor", "calc", "xor", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
+			sql_create_func(sa, "bit_not", "calc", "not", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
+			sql_create_func(sa, "left_shift", "calc", "<<", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
+			sql_create_func(sa, "right_shift", "calc", ">>", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
 		}
 		sql_create_func(sa, "sql_neg", "calc", "-", FALSE, FALSE, INOUT, 0, *t, 1, *t);
 		sql_create_func(sa, "abs", "calc", "abs", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
@@ -1560,6 +1723,6 @@ types_init(sql_allocator *sa)
 	types = sa_list(sa);
 	localtypes = sa_list(sa);
 	funcs = sa_list(sa);
-	funcs->ht = hash_new(sa, 1024, (fkeyvalue)&base_key);
+	funcs->ht = hash_new(sa, 64*1024, (fkeyvalue)&base_key);
 	sqltypeinit( sa );
 }

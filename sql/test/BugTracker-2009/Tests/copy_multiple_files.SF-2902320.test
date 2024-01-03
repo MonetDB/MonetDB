@@ -15,7 +15,7 @@ insert(
 | | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "/file2", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar NULL, int(9) "0", int(9) "1"), 
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ]
-| ) [ int(32) NULL ]
+| ) [ int(31) NULL ]
 )
 
 statement error

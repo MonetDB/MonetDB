@@ -179,7 +179,7 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 		} else {
 			tpp = NULL;
 		}
-		sql_subfunc *f = sql_bind_func(m, s->base.name, tests[i].name, tpp, NULL, tests[i].ftype, true);
+		sql_subfunc *f = sql_bind_func(m, s->base.name, tests[i].name, tpp, NULL, tests[i].ftype, true, true);
 		if (f == NULL)
 			throw(SQL, __func__, "cannot find procedure sys.%s(%s)", tests[i].name, tests[i].type ? tests[i].type : "");
 		sqlid id = f->func->base.id;
@@ -2121,7 +2121,7 @@ sql_update_oct2020_sp1(Client c, mvc *sql)
 	size_t bufsize = 1024, pos = 0;
 	char *buf = NULL, *err = NULL;
 
-	if (!sql_bind_func(sql, "sys", "uuid", sql_bind_localtype("int"), NULL, F_FUNC, true)) {
+	if (!sql_bind_func(sql, "sys", "uuid", sql_bind_localtype("int"), NULL, F_FUNC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 
@@ -3284,7 +3284,7 @@ sql_update_jan2022(Client c, mvc *sql)
 			list_append(l, &tp);
 			list_append(l, &tp);
 			list_append(l, &tp);
-			if (sql_bind_func_(sql, s->base.name, "strimp_create", l, F_PROC, true)) {
+			if (sql_bind_func_(sql, s->base.name, "strimp_create", l, F_PROC, true, true)) {
 				/* do the upgrade by removing the two functions */
 				const char *query =
 					"drop filter function sys.strimp_filter(string, string) cascade;\n"
@@ -3303,7 +3303,7 @@ sql_update_jan2022(Client c, mvc *sql)
 	sql->sa = old_sa;
 
 	sql_find_subtype(&tp, "bigint", 0, 0);
-	if (!sql_bind_func(sql, s->base.name, "epoch", &tp, NULL, F_FUNC, true)) {
+	if (!sql_bind_func(sql, s->base.name, "epoch", &tp, NULL, F_FUNC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 		/* nothing to do */
@@ -5236,7 +5236,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 			list_append(l, &tp);
 			list_append(l, &tp);
 			list_append(l, &tp);
-			if (!sql_bind_func_(sql, s->base.name, "regexp_replace", l, F_FUNC, true)) {
+			if (!sql_bind_func_(sql, s->base.name, "regexp_replace", l, F_FUNC, true, true)) {
 				pos = snprintf(buf, bufsize,
 							   "create function sys.regexp_replace(ori string, pat string, rep string, flg string)\n"
 							   "returns string external name pcre.replace;\n"
@@ -5531,7 +5531,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 		}
 	}
 
-	if (!sql_bind_func(sql, "sys", "database", NULL, NULL, F_FUNC, true)) {
+	if (!sql_bind_func(sql, "sys", "database", NULL, NULL, F_FUNC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 		pos = snprintf(buf, bufsize,
@@ -5551,7 +5551,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	   the query in bound to. */
 	sql_find_subtype(&t1, "bigint", 64, 0);
 	sql_find_subtype(&t2, "varchar", 0, 0);
-	if (!sql_bind_func(sql, "sys", "pause", &t1, &t2, F_PROC, true)) {
+	if (!sql_bind_func(sql, "sys", "pause", &t1, &t2, F_PROC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 		const char *query =
@@ -5566,7 +5566,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	}
 
 	/* sys.settimeout and sys.setsession where removed */
-	if (sql_bind_func(sql, "sys", "settimeout", &t1, NULL, F_PROC, true)) {
+	if (sql_bind_func(sql, "sys", "settimeout", &t1, NULL, F_PROC, true, true)) {
 		const char *query =
 			"drop procedure sys.settimeout(bigint) cascade;\n"
 			"drop procedure sys.settimeout(bigint, bigint) cascade;\n"
@@ -5578,7 +5578,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	sql->session->status = 0; /* if the function was not found clean the error */
 	sql->errstr[0] = '\0';
 
-	if (!sql_bind_func(sql, "sys", "jarowinkler", &t2, &t2, F_FUNC, true)) {
+	if (!sql_bind_func(sql, "sys", "jarowinkler", &t2, &t2, F_FUNC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 		pos = snprintf(buf, bufsize,
@@ -5792,7 +5792,7 @@ sql_update_jun2023_sp3(Client c, mvc *sql, sql_schema *s)
 	sql_find_subtype(&t1, "timestamp", 0, 0);
 	sql_find_subtype(&t2, "varchar", 0, 0);
 
-	if (!sql_bind_func(sql, "sys", "timestamp_to_str", &t1, &t2, F_FUNC, true)) {
+	if (!sql_bind_func(sql, "sys", "timestamp_to_str", &t1, &t2, F_FUNC, true, true)) {
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 
@@ -5824,7 +5824,7 @@ sql_update_dec2023_geom(Client c, mvc *sql, sql_schema *s)
 	 * add the new stuff if the appropriate module is available */
 	sql_find_subtype(&tp, "varchar", 0, 0);
 	/* Drop old SHP procedures */
-	if (sql_bind_func(sql, s->base.name, "shpattach", &tp, NULL, F_PROC, true)) {
+	if (sql_bind_func(sql, s->base.name, "shpattach", &tp, NULL, F_PROC, true, true)) {
 		if ((err = sql_drop_shp(c)) != NULL)
 			return err;
 	}
@@ -5836,7 +5836,7 @@ sql_update_dec2023_geom(Client c, mvc *sql, sql_schema *s)
 		if (backend_has_module(&(int){0}, "shp")) {
 			/* if shpload with two varchar args does not exist, add the
 			 * procedures */
-			if (!sql_bind_func(sql, s->base.name, "shpload", &tp, &tp, F_PROC, true)) {
+			if (!sql_bind_func(sql, s->base.name, "shpload", &tp, &tp, F_PROC, true, true)) {
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
 				if ((err = sql_create_shp(c)) != NULL)
@@ -5845,7 +5845,7 @@ sql_update_dec2023_geom(Client c, mvc *sql, sql_schema *s)
 		}
 #endif
 		sql_find_subtype(&tp, "geometry", 0, 0);
-		if (!sql_bind_func(sql, s->base.name, "st_intersects_noindex", &tp, &tp, F_FILT, true)) {
+		if (!sql_bind_func(sql, s->base.name, "st_intersects_noindex", &tp, &tp, F_FILT, true, true)) {
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 			sql_table *t;
@@ -5912,7 +5912,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 	res_table *output = NULL;
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
-	if (sql_bind_func(sql, s->base.name, "similarity", &tp, &tp, F_FUNC, true)) {
+	if (sql_bind_func(sql, s->base.name, "similarity", &tp, &tp, F_FUNC, true, true)) {
 		const char *query = "drop function sys.similarity(string, string) cascade;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
@@ -6059,7 +6059,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 			list_append(l, &t1);
 			list_append(l, &t2);
 			list_append(l, &t2);
-			if (!sql_bind_func_(sql, s->base.name, "sql_datatype", l, F_FUNC, true)) {
+			if (!sql_bind_func_(sql, s->base.name, "sql_datatype", l, F_FUNC, true, true)) {
 				const char *cmds =
 				"CREATE FUNCTION sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean)\n"
 				"  RETURNS varchar(1024)\n"
@@ -6543,7 +6543,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 	/* 77_storage.sql */
 	sql_find_subtype(&tp, "varchar", 0, 0);
 
-	if (!sql_bind_func(sql, s->base.name, "persist_unlogged", &tp, &tp, F_UNION, true)) {
+	if (!sql_bind_func(sql, s->base.name, "persist_unlogged", &tp, &tp, F_UNION, true, true)) {
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		const char *query =
@@ -6576,7 +6576,7 @@ SQLupgrades(Client c, mvc *m)
 
 #ifdef HAVE_HGE
 	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_func(m, s->base.name, "var_pop", &tp, NULL, F_AGGR, true)) {
+	if (!sql_bind_func(m, s->base.name, "var_pop", &tp, NULL, F_AGGR, true, true)) {
 		m->session->status = 0; /* if the function was not found clean the error */
 		m->errstr[0] = '\0';
 		if ((err = sql_update_hugeint(c, m)) != NULL) {
@@ -6591,7 +6591,7 @@ SQLupgrades(Client c, mvc *m)
 		goto handle_error;
 	}
 
-	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION, true);
+	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION, true, true);
 	m->session->status = 0; /* if the function was not found clean the error */
 	m->errstr[0] = '\0';
 	sqlstore *store = m->session->tr->store;
@@ -6605,23 +6605,23 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if (sql_bind_func(m, s->base.name, "dependencies_schemas_on_users", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_owners_on_schemas", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_views", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_indexes", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_triggers", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_foreignkeys", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_functions", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_views", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_keys", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_indexes", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_functions", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_triggers", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_views_on_functions", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_views_on_triggers", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_functions_on_functions", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_functions_on_triggers", NULL, NULL, F_UNION, true)
-	 && sql_bind_func(m, s->base.name, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION, true)) {
+	if (sql_bind_func(m, s->base.name, "dependencies_schemas_on_users", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_owners_on_schemas", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_views", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_indexes", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_triggers", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_foreignkeys", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_functions", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_views", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_keys", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_indexes", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_functions", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_triggers", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_views_on_functions", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_views_on_triggers", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_functions_on_functions", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_functions_on_triggers", NULL, NULL, F_UNION, true, true)
+	 && sql_bind_func(m, s->base.name, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION, true, true)) {
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			goto handle_error;
@@ -6647,7 +6647,7 @@ SQLupgrades(Client c, mvc *m)
 
 #ifdef HAVE_HGE
 	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_func(m, s->base.name, "median_avg", &tp, NULL, F_AGGR, true)) {
+	if (!sql_bind_func(m, s->base.name, "median_avg", &tp, NULL, F_AGGR, true, true)) {
 		m->session->status = 0; /* if the function was not found clean the error */
 		m->errstr[0] = '\0';
 		if ((err = sql_update_nov2019_sp1_hugeint(c, m)) != NULL) {
@@ -6657,7 +6657,7 @@ SQLupgrades(Client c, mvc *m)
 	}
 #endif
 
-	if (!sql_bind_func(m, s->base.name, "suspend_log_flushing", NULL, NULL, F_PROC, true)) {
+	if (!sql_bind_func(m, s->base.name, "suspend_log_flushing", NULL, NULL, F_PROC, true, true)) {
 		m->session->status = 0; /* if the function was not found clean the error */
 		m->errstr[0] = '\0';
 		if ((err = sql_update_jun2020(c, m)) != NULL) {
@@ -6673,7 +6673,7 @@ SQLupgrades(Client c, mvc *m)
 
 #ifdef HAVE_HGE
 	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_func(m, s->base.name, "covar_pop", &tp, &tp, F_AGGR, true)) {
+	if (!sql_bind_func(m, s->base.name, "covar_pop", &tp, &tp, F_AGGR, true, true)) {
 		m->session->status = 0; /* if the function was not found clean the error */
 		m->errstr[0] = '\0';
 		if ((err = sql_update_jun2020_sp1_hugeint(c)) != NULL) {
@@ -6684,7 +6684,7 @@ SQLupgrades(Client c, mvc *m)
 #endif
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
-	if (sql_bind_func(m, s->base.name, "lidarattach", &tp, NULL, F_PROC, true)) {
+	if (sql_bind_func(m, s->base.name, "lidarattach", &tp, NULL, F_PROC, true, true)) {
 		if ((err = sql_update_oscar_lidar(c)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			goto handle_error;

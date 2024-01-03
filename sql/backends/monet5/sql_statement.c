@@ -3946,7 +3946,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		push_cands = can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
-			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
+			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
 			default_nargs++;
 		}
 
@@ -4614,9 +4614,9 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		goto bailout;
 	if (anti) {
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
-		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true);
-		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true);
+		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
+		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true, true);
+		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true, true);
 		cond = stmt_binop(be,
 			stmt_unop(be, cond, NULL, not),
 			stmt_unop(be, cond, NULL, isnull), NULL, or);

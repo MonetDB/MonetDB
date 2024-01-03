@@ -180,7 +180,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
 
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
@@ -840,7 +840,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
 		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *lnl, *rnl, *je;
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
 			/* TODO add access error */

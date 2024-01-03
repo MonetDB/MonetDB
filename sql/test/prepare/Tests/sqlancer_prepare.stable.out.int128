@@ -29,10 +29,10 @@
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	3,	3 # length
 [ "decimal",	2,	1,	"",	"%22",	"%13"	]
-[ "int",	32,	0,	"",	"%22",	"c2"	]
+[ "int",	31,	0,	"",	"%22",	"c2"	]
 [ "decimal",	2,	1,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 #ROLLBACK;
 #PREPARE SELECT 1 WHERE greatest(true, ?);
@@ -46,14 +46,14 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	3,	1,	0,	2,	2 # length
-[ "hugeint",	128,	0,	"",	"%3",	"%3"	]
+% 7,	2,	1,	0,	2,	2 # length
+[ "hugeint",	65,	0,	"",	"%3",	"%3"	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	3,	1,	0,	2,	2 # length
-[ "hugeint",	128,	0,	"",	"%3",	"%3"	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+% 7,	2,	1,	0,	2,	2 # length
+[ "hugeint",	65,	0,	"",	"%3",	"%3"	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #PREPARE SELECT round(-'b', ?);
 #PREPARE SELECT round(-'b', ?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
@@ -61,7 +61,7 @@
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	2,	2 # length
 [ "double",	53,	0,	"",	"%2",	"%2"	]
-[ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	7,	0,	NULL,	NULL,	NULL	]
 #PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
 #PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
@@ -70,14 +70,14 @@
 % 7,	2,	1,	0,	2,	2 # length
 [ "double",	53,	0,	"",	"%2",	"%2"	]
 [ "char",	9,	0,	NULL,	NULL,	NULL	]
-[ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	7,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 6,	2,	1,	0,	3,	2 # length
-[ "bigint",	64,	0,	"",	"%12",	"%4"	]
+[ "bigint",	63,	0,	"",	"%12",	"%4"	]
 [ "char",	0,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
 #PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
@@ -105,8 +105,8 @@
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "decimal",	3,	2,	"",	"%1",	"%1"	]
-[ "tinyint",	2,	0,	"",	"%2",	"%2"	]
-[ "tinyint",	2,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #START TRANSACTION;
 #CREATE FUNCTION myintudf(a INT) RETURNS INT RETURN a + 1;
 #PREPARE SELECT myintudf(?);
@@ -115,8 +115,8 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 3,	2,	1,	0,	2,	2 # length
-[ "int",	32,	0,	"",	"%2",	"%2"	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	"",	"%2",	"%2"	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 #EXEC  0(1);
 % .%2 # table_name
 % %2 # name
@@ -142,8 +142,8 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 3,	2,	1,	0,	1,	1 # length
-[ "int",	32,	0,	"",	"x",	"a"	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	"",	"x",	"a"	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 % .x # table_name
 % a # name
 % int # type
@@ -152,15 +152,15 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	1,	1,	0,	3,	3 # length
+% 7,	3,	1,	0,	3,	3 # length
 [ "json",	0,	0,	"",	"%15",	"%15"	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "hugeint",	127,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	1,	1,	0,	3,	3 # length
+% 7,	3,	1,	0,	3,	3 # length
 [ "json",	0,	0,	"",	"%15",	"%15"	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "hugeint",	127,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
@@ -178,7 +178,7 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 6,	2,	1,	0,	2,	2 # length
-[ "bigint",	64,	0,	"",	"%2",	"%2"	]
+[ "bigint",	63,	0,	"",	"%2",	"%2"	]
 % .%2 # table_name
 % %2 # name
 % bigint # type

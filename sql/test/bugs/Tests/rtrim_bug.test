@@ -50,7 +50,7 @@ project (
 | | project (
 | | | select (
 | | | | table("sys"."t1") [ "t1"."m" NOT NULL UNIQUE ]
-| | | ) [ ("sys"."length"("t1"."m" NOT NULL UNIQUE) NOT NULL) > (int(32) "1") ]
+| | | ) [ ("sys"."length"("t1"."m" NOT NULL UNIQUE) NOT NULL) > (int(31) "1") ]
 | | ) [ "t1"."m" NOT NULL UNIQUE, "sys"."rtrim"("t1"."m" NOT NULL UNIQUE) NOT NULL as "%5"."%5" ],
 | | project (
 | | | project (

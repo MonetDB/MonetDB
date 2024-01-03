@@ -849,14 +849,14 @@ plan select nullif(null, null)
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."nullif"(smallint(16) NULL, smallint(16) NULL) ]
+) [ "sys"."nullif"(smallint(15) NULL, smallint(15) NULL) ]
 
 query T nosort
 plan select CASE WHEN null = null THEN NULL ELSE null END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"(boolean(1) NULL, smallint(16) NULL, smallint(16) NULL) ]
+) [ "sys"."case"(boolean(1) NULL, smallint(15) NULL, smallint(15) NULL) ]
 
 query T nosort
 plan select nullif('ac', 'ac')
@@ -884,7 +884,7 @@ plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"("sys"."="(tinyint(4) "9", tinyint(4) "9") NOT NULL, tinyint(8) NULL, tinyint(8) "9") ]
+) [ "sys"."case"("sys"."="(tinyint(4) "9", tinyint(4) "9") NOT NULL, tinyint(7) NULL, tinyint(7) "9") ]
 
 query I rowsort
 select 'db' between 'abc' and 'db' as tru

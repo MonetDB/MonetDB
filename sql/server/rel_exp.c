@@ -260,7 +260,7 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 		list *l = exp_get_values(e);
 		e = l->h->data;
 	}
-	if (!(a_func = sql_bind_func(sql, "sys", anyequal ? "sql_anyequal" : "sql_not_anyequal", exp_subtype(e), exp_subtype(e), F_FUNC, true)))
+	if (!(a_func = sql_bind_func(sql, "sys", anyequal ? "sql_anyequal" : "sql_not_anyequal", exp_subtype(e), exp_subtype(e), F_FUNC, true, true)))
 		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(e) ? exp_subtype(e)->type->base.name : "unknown");
 	e = exp_binop(sql->sa, le, vals, a_func);
 	if (e) {
@@ -294,7 +294,7 @@ exp_in_aggr(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 		list *l = exp_get_values(e);
 		e = l->h->data;
 	}
-	if (!(a_func = sql_bind_func(sql, "sys", anyequal ? "anyequal" : "allnotequal", exp_subtype(e), exp_subtype(e), F_AGGR, true)))
+	if (!(a_func = sql_bind_func(sql, "sys", anyequal ? "anyequal" : "allnotequal", exp_subtype(e), exp_subtype(e), F_AGGR, true, true)))
 		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(e) ? exp_subtype(e)->type->base.name : "unknown");
 	e = exp_aggr2(sql->sa, le, vals, a_func, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 	if (e) {
@@ -321,7 +321,7 @@ exp_in_aggr(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 sql_exp *
 exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier)
 {
-	sql_subfunc *cmp_func = sql_bind_func(sql, "sys", compareop, exp_subtype(le), exp_subtype(le), F_FUNC, true);
+	sql_subfunc *cmp_func = sql_bind_func(sql, "sys", compareop, exp_subtype(le), exp_subtype(le), F_FUNC, true, true);
 	sql_exp *e;
 
 	assert(cmp_func);
@@ -2904,19 +2904,21 @@ exp_copy(mvc *sql, sql_exp * e)
 	return ne;
 }
 
-sql_exp *
+/* scaling for the division operator */
+static sql_exp *
 exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r)
 {
 	sql_subtype *lt = exp_subtype(l);
 	sql_subtype *rt = exp_subtype(r);
 
-	if (lt->type->scale == SCALE_FIX && rt->scale &&
+	if (lt->type->scale == SCALE_FIX && (lt->scale || rt->scale) &&
 		strcmp(sql_func_imp(f->func), "/") == 0) {
 		sql_subtype *res = f->res->h->data;
 		unsigned int scale, digits, digL, scaleL;
 		sql_subtype nlt;
 
 		/* scale fixing may require a larger type ! */
+		/* TODO make '3' setable by user (division_minimal_scale or so) */
 		scaleL = (lt->scale < 3) ? 3 : lt->scale;
 		scale = scaleL;
 		scaleL += rt->scale;
@@ -2946,19 +2948,57 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 	return l;
 }
 
-void
-exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
+sql_exp *
+exps_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, list *exps)
 {
+	if (list_length(exps) != 2)
+		return NULL;
+	sql_exp *e = exp_scale_algebra(sql, f, rel, exps->h->data, exps->h->next->data);
+	if (e)
+		exps->h->data = e;
+	return e;
+}
+
+void
+exps_digits_add(sql_subfunc *f, list *exps)
+{
+	/* concat and friends need larger results */
+	if (!f->func->res)
+		return;
+	int digits = 0;
+	for(node *n = exps->h; n; n = n->next) {
+		sql_subtype *t = exp_subtype(n->data);
+
+		if (!t->digits) {
+			digits = 0;
+			break;
+		}
+		digits += t->digits;
+	}
+	sql_subtype *res = f->res->h->data;
+	res->digits = digits;
+}
+
+void
+exps_sum_scales(sql_subfunc *f, list *exps)
+{
+	/* sum scales and digits for multiply operation */
 	sql_arg *ares = f->func->res->h->data;
 
 	if (ares->type.type->scale == SCALE_FIX && strcmp(sql_func_imp(f->func), "*") == 0) {
-		sql_subtype t;
-		sql_subtype *lt = exp_subtype(l);
-		sql_subtype *rt = exp_subtype(r);
+		int digits = 0, scale = 0;
+
+		for(node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			sql_subtype *t = exp_subtype(e);
+
+			scale += t->scale;
+			digits += t->digits;
+		}
 		sql_subtype *res = f->res->h->data;
 
-		res->scale = lt->scale + rt->scale;
-		res->digits = lt->digits + rt->digits;
+		res->scale = scale;
+		res->digits = digits;
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
@@ -2981,6 +3021,7 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 		}
 #endif
 
+		sql_subtype t;
 		/* numeric types are fixed length */
 		if (ares->type.type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
@@ -2990,6 +3031,8 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 #endif
 			if (ares->type.type->localtype == TYPE_lng && res->digits == 64)
 				t = *sql_bind_localtype("lng");
+			else if (res->type->digits >= res->digits)
+				t = *res; /* we cannot reduce types! */
 			else
 				sql_find_numeric(&t, ares->type.type->localtype, res->digits);
 		} else {
@@ -2997,6 +3040,82 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 		}
 		*res = t;
 	}
+}
+
+void
+exps_max_bits(sql_subfunc *f, list *exps)
+{
+	/* + and - have max_bits + 1 */
+	if (!f->func->res)
+		return;
+	unsigned int digits = 0;
+	for(node *n = exps->h; n; n = n->next) {
+		sql_subtype *t = exp_subtype(n->data);
+
+		if (!t)
+			continue;
+		if (digits < t->digits)
+			digits = t->digits;
+	}
+	/* + and - (because of negative numbers) could need one extra bit (or digit) */
+	digits += 1;
+	sql_subtype *res = f->res->h->data;
+	if (digits > res->type->digits)
+        res = sql_find_numeric(res, res->type->localtype, digits);
+	else
+		res->digits = digits;
+}
+
+void
+exps_inout(sql_subfunc *f, list *exps)
+{
+	/* output == first input */
+	if (!f->func->res)
+		return;
+	sql_subtype *res = f->res->h->data;
+	bool is_decimal = (res->type->eclass == EC_DEC);
+	unsigned int digits = 0, scale = 0;
+	for(node *n = exps->h; n; n = n->next) {
+		sql_subtype *t = exp_subtype(n->data);
+
+		if (!t)
+			continue;
+
+		if (is_decimal && t->type->eclass == EC_NUM) {
+			unsigned int d = bits2digits(t->digits);
+			digits = d>digits?d:digits;
+		} else if (digits < t->digits)
+			digits = t->digits;
+		if (scale < t->scale)
+			scale = t->scale;
+		break;
+	}
+	if (digits > res->digits || scale > res->scale)
+		sql_find_subtype(res, res->type->base.name, digits, scale);
+	else
+		res->digits = digits;
+}
+
+void
+exps_scale_fix(sql_subfunc *f, list *exps, sql_subtype *atp)
+{
+	if (!f->func->res)
+		return;
+	unsigned int digits = 0, scale = 0;
+	for(node *n = exps->h; n; n = n->next) {
+		sql_subtype *t = exp_subtype(n->data);
+
+		if (!t)
+			continue;
+		if (digits < t->digits)
+			digits = t->digits;
+		if (scale < t->scale)
+			scale = t->scale;
+	}
+	sql_subtype *res = f->res->h->data;
+	res->scale = scale;
+	if (digits > res->type->digits)
+		sql_find_subtype(res, res->type->localtype?res->type->base.name:atp->type->base.name, digits, scale);
 }
 
 int

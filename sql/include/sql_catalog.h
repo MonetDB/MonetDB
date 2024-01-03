@@ -83,11 +83,12 @@ typedef enum sql_dependency {
 #define SCALE_FIX	1	/* many numerical functions require equal
 						   scales/precision for all their inputs */
 #define SCALE_NOFIX	2
-#define SCALE_MUL	3	/* multiplication gives the sum of scales */
-#define SCALE_DIV	4	/* div on the other hand reduces the scales */
-#define DIGITS_ADD	5	/* some types grow under functions (concat) */
-#define INOUT		6	/* output type equals input type */
-#define SCALE_EQ	7	/* user defined functions need equal scales */
+#define MAX_BITS	3
+#define SCALE_MUL	4	/* multiplication gives the sum of scales */
+#define SCALE_DIV	5	/* div on the other hand reduces the scales */
+#define DIGITS_ADD	6	/* some types grow under functions (concat) */
+#define INOUT		7	/* output type equals input type (of first input) */
+#define SCALE_EQ	8	/* user defined functions need equal scales */
 
 #define RDONLY 0
 #define RD_INS 1

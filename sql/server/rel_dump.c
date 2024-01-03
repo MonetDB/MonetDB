@@ -1286,7 +1286,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 					if (sname && !mvc_bind_schema(sql, sname))
 						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", sname);
-					if (!(f = sql_bind_func_(sql, sname, fname, tl, F_FILT, true)))
+					if (!(f = sql_bind_func_(sql, sname, fname, tl, F_FILT, true, false)))
 						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Filter: missing function '%s'.'%s'\n", sname, fname);
 					if (!execute_priv(sql, f->func))
 						return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'.'%s'\n", sname, fname);
@@ -1402,9 +1402,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				list *ops = sa_list(sql->sa);
 				for( node *n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
-				f = sql_bind_func_(sql, tname, cname, ops, F_AGGR, true);
+				f = sql_bind_func_(sql, tname, cname, ops, F_AGGR, true, false);
 			} else {
-				f = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR, true); /* count(*) */
+				f = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR, true, true); /* count(*) */
 			}
 			if (!f)
 				return function_error_string(sql, tname, cname, exps, false, F_AGGR);
@@ -1429,26 +1429,28 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				for( node *n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
 
-				f = sql_bind_func_(sql, tname, cname, ops, F_FUNC, true);
+				f = sql_bind_func_(sql, tname, cname, ops, F_FUNC, true, false);
 				if (!f) {
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true, false);
 				}
 				if (!f && nops > 1) { /* window functions without frames get 2 extra arguments */
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
 					list_remove_node(ops, NULL, ops->t);
 					list_remove_node(ops, NULL, ops->t);
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true, false);
 				}
 				if (!f && nops > 4) { /* window functions with frames get 5 extra arguments */
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
 					for (int i = 0 ; i < 3 ; i++)
 						list_remove_node(ops, NULL, ops->t);
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true, false);
 				}
+				if (f)
+					exps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 0, true);
 
 				if (f && !execute_priv(sql, f->func))
 					return function_error_string(sql, tname, cname, exps, true, F_FUNC);
@@ -1464,6 +1466,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 							sql_subtype *rt = exp_subtype(r);
 
 							if (lt->type->scale == SCALE_FIX && rt->scale && strcmp(sql_func_imp(f->func), "/") == 0) {
+								/* TODO move into exps_scale_algebra (with internal flag) */
 								sql_subtype *res = f->res->h->data;
 								unsigned int scale = lt->scale - rt->scale;
 								unsigned int digits = (lt->digits > rt->digits) ? lt->digits : rt->digits;
@@ -1482,24 +1485,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 								sql_find_subtype(res, lt->type->base.name, digits, scale);
 							}
-						} else if (f->func->fix_scale == SCALE_MUL) {
-							exp_sum_scales(f, l, r);
-						} else if (f->func->fix_scale == DIGITS_ADD) {
-							sql_subtype *t1 = exp_subtype(l);
-							sql_subtype *t2 = exp_subtype(r);
-							sql_subtype *res = f->res->h->data;
-
-							if (t1->digits && t2->digits) {
-								res->digits = t1->digits + t2->digits;
-								if (res->digits < t1->digits || res->digits < t2->digits || res->digits >= (unsigned int) INT32_MAX)
-									return sql_error(sql, -1, SQLSTATE(42000) "Output number of digits for %s%s%s is too large\n", tname ? tname : "", tname ? "." : "", cname);
-							} else {
-								res->digits = 0;
-							}
 						}
-					} else if (list_length(exps) > 2) {
-						if (!f->func->vararg && !(exps = check_arguments_and_find_largest_any_type(sql, lrel, exps, f, 0)))
-							return NULL;
 					}
 				}
 			}

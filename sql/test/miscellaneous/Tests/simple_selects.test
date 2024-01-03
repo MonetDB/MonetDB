@@ -233,7 +233,7 @@ NULL
 NULL
 NULL
 
-query RTIIIII rowsort
+query RRIIIII rowsort
 select avg(10), avg(NULL),
        patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL)
 ----
@@ -507,12 +507,12 @@ set "current_timezone" = 11111111111111
 statement error
 set "current_schema" = null
 
-query T rowsort
+query I rowsort
 select greatest(null, null)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 select sql_min(null, null)
 ----
 NULL
@@ -628,8 +628,10 @@ select cast(interval '3' second as clob)
 ----
 3.000
 
-statement error
+query T rowsort
 select cast(13121 as varchar(2147483647)) || cast(231231 as varchar(2147483647))
+----
+13121231231
 
 query T rowsort
 select date_to_str(date '2010-01-10','%y/%m/%d')
@@ -672,11 +674,11 @@ select x as z, y as z from (select 1, 2) as x(x,y) group by z
 statement error
 select x as z, y as z from (select 1, 2) as x(x,y) order by z
 
-query IT rowsort
+query II rowsort
 select 1, null except select 1, null
 ----
 
-query IT rowsort
+query II rowsort
 select 1, null intersect select 1, null
 ----
 1
@@ -929,7 +931,7 @@ project (
 | group by (
 | | project (
 | | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
-| | ) [ "x"."x" NOT NULL, "sys"."sql_add"("x"."x" NOT NULL, tinyint(2) "1") NOT NULL as "x1" ]
+| | ) [ "x"."x" NOT NULL, "sys"."sql_add"("x"."x" NOT NULL, tinyint(1) "1") NOT NULL as "x1" ]
 | ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x1" NOT NULL ]
 ) [ "x"."x" NOT NULL UNIQUE as "x", "x1" NOT NULL ]
 
@@ -955,7 +957,7 @@ project (
 | group by (
 | | project (
 | | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
-| | ) [ "x"."x" NOT NULL, "sys"."sql_add"("x"."x" NOT NULL, tinyint(5) "10") NOT NULL as "%7"."%7", "sys"."sql_mul"("%7"."%7" NOT NULL, tinyint(2) "2") NOT NULL as "%10"."%10", "sys"."sql_sub"("%10"."%10" NOT NULL, smallint(10) "29") NOT NULL as "x1" ]
+| | ) [ "x"."x" NOT NULL, "sys"."sql_add"("x"."x" NOT NULL, tinyint(4) "10") NOT NULL as "%7"."%7", "sys"."sql_mul"("%7"."%7" NOT NULL, tinyint(2) "2") NOT NULL as "%10"."%10", "sys"."sql_sub"("%10"."%10" NOT NULL, tinyint(5) "29") NOT NULL as "x1" ]
 | ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x1" NOT NULL ]
 ) [ "x"."x" NOT NULL UNIQUE as "x", "x1" NOT NULL ]
 
@@ -1116,7 +1118,7 @@ create or replace function scale_down(x decimal(8,2), y int) returns decimal(8,2
 statement error 42000!DROP FUNCTION: no such function 'any' (boolean, boolean, boolean)
 drop function "any"(boolean, boolean, boolean)
 
-query I
+query I nosort
 select patindex('%bc%', 'abcd')
 ----
 3

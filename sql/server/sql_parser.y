@@ -5130,15 +5130,13 @@ literal:
 				filtered[j] = d;
 				++j;
 			}
-			int digits = j, err = 0;
+			int err = 0;
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  size_t len = sizeof(hge);
-		  const hge one = 1;
 #else
 		  lng value, *p = &value;
 		  size_t len = sizeof(lng);
-		  const lng one = 1;
 #endif
 		  sql_subtype t;
 
@@ -5152,16 +5150,18 @@ literal:
 
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
-		    int bits = (int) digits2bits(digits), obits = bits;
-
-		    while (bits > 0 &&
-			   (bits == sizeof(value) * 8 ||
-			    (one << (bits - 1)) > value))
-			  bits--;
-
-		    if (bits != obits &&
-		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
-				bits++;
+		    int bits = 0;
+#ifdef HAVE_HGE
+		    hge m = ((hge)1)<<bits;
+		    for( ;(value & ~m) > m; bits++)
+		    	m = ((hge)1)<<bits;
+#else
+		    lng m = ((lng)1)<<bits;
+		    for( ;(value & ~m) > m; bits++)
+		    	m = ((lng)1)<<bits;
+#endif
+		    if (!bits)
+			bits = 1;
 
 		    if (value >= GDK_bte_min && value <= GDK_bte_max)
 			  sql_find_subtype(&t, "tinyint", bits, 0 );
@@ -7329,6 +7329,7 @@ static void *ma_alloc(sql_allocator *sa, size_t sz)
 {
 	return sa_alloc(sa, sz);
 }
+
 static void ma_free(void *p)
 {
 	(void)p;
