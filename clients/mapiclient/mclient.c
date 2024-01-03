@@ -1692,9 +1692,8 @@ SQLrenderer(MapiHdl hdl)
 	}
 	mnstr_printf(toConsole, "\n");
 
-	if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
-		perror("SQLrenderer: Could not restore previous handler.");
-	}
+	if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR)
+		perror("SQLrenderer: Could not restore previous handler");
 	free(len);
 	free(hdr);
 	free(rest);

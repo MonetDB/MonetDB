@@ -3406,14 +3406,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	for (;;) {
 		line = read_line(mid);
 		if (line == NULL) {
+			if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR)
+				perror("mapi_execute_internal: Could not restore previous handler");
 			if (mid->from && mnstr_eof(mid->from)) {
-				if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
-					perror("mapi_execute_internal: Could not restore previous handler.");
-				}
 				return mapi_setError(mid, "unexpected end of file", __func__, MERROR);
-			}
-			if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
-				perror("mapi_execute_internal: Could not restore previous handler.");
 			}
 
 			return mid->error;
@@ -3471,10 +3467,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				}
 				continue;
 			}
-			if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
-				perror("mapi_execute_internal: Could not restore previous handler.");
-			}
-
+			if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR)
+				perror("mapi_execute_internal: Could not restore previous handler");
 			return mid->error;
 		case '!':
 			/* start a new result set if we don't have one
@@ -3511,10 +3505,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			    (result->querytype == -1 /* unknown (not SQL) */ ||
 			     result->querytype == Q_TABLE ||
 			     result->querytype == Q_UPDATE)) {
-				if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
-					perror("mapi_execute_internal: Could not restore previous handler.");
-				}
-
+				if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR)
+					perror("mapi_execute_internal: Could not restore previous handler");
 				return mid->error;
 			}
 			break;
