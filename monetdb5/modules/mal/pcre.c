@@ -1969,7 +1969,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				  anti, #TEST);											\
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
 								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
@@ -1977,7 +1977,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}															\
 		} else {														\
 			for (; p < ncands; p++) {									\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
 								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
@@ -2011,13 +2011,8 @@ pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 	str msg = MAL_SUCCEED;
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if ((msg = pcre_like_build(&re, &ex, pat, caseignore, ci->ncand)) != MAL_SUCCEED)
 		goto bailout;
@@ -2048,13 +2043,8 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 	str msg = MAL_SUCCEED;
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if ((msg = re_like_build(&re, &wpat, pat, caseignore, use_strcmp, ascii_pattern,
 							 esc)) != MAL_SUCCEED)
@@ -2299,7 +2289,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 #define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND)						\
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
-			GDK_CHECK_TIMEOUT(timeoffset, counter,						\
+			GDK_CHECK_TIMEOUT(qry_ctx, counter,							\
 							  GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
@@ -2415,13 +2405,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 #endif
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG(ALGO,
 			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"

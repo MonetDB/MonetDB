@@ -2249,7 +2249,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * The first parameter is a BAT, the p and q are BUN pointers, where p
  * is the iteration variable.
  */
-#define BATloop(r, p, q)			\
+#define BATloop(r, p, q)				\
 	for (q = BATcount(r), p = 0; p < q; p++)
 
 /*
@@ -2369,66 +2369,67 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 		return rtpe;						\
 	} while(0)
 
+#define TIMEOUT_TEST(QC)	((QC) && (QC)->endtime && GDKusec() > (QC)->endtime)
+
 #define GOTO_LABEL_TIMEOUT_HANDLER(label)				\
 	do {								\
 		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
 		goto label;						\
 	} while(0)
 
-#define GDK_CHECK_TIMEOUT_BODY(timeoffset, callback)		\
-	do {							\
-		if (GDKexiting() ||				\
-		    (timeoffset && GDKusec() > timeoffset)) {	\
-			callback;				\
-		}						\
+#define GDK_CHECK_TIMEOUT_BODY(qc, callback)		\
+	do {						\
+		if (GDKexiting() || TIMEOUT_TEST(qc)) {	\
+			callback;			\
+		}					\
 	} while (0)
 
-#define GDK_CHECK_TIMEOUT(timeoffset, counter, callback)		\
-	do {								\
-		if (counter > CHECK_QRY_TIMEOUT_STEP) {			\
-			GDK_CHECK_TIMEOUT_BODY(timeoffset, callback);	\
-			counter = 0;					\
-		} else {						\
-			counter++;					\
-		}							\
+#define GDK_CHECK_TIMEOUT(qc, counter, callback)		\
+	do {							\
+		if (counter > CHECK_QRY_TIMEOUT_STEP) {		\
+			GDK_CHECK_TIMEOUT_BODY(qc, callback);	\
+			counter = 0;				\
+		} else {					\
+			counter++;				\
+		}						\
 	} while (0)
 
 /* here are some useful constructs to iterate a number of times (the
  * REPEATS argument--only evaluated once) and checking for a timeout
- * every once in a while; the TIMEOFFSET value is a variable of type lng
+ * every once in a while; the QC->endtime value is a variable of type lng
  * which is either 0 or the GDKusec() compatible time after which the
  * loop should terminate; check for this condition after the loop using
  * the TIMEOUT_CHECK macro; in order to break out of any of these loops,
  * use TIMEOUT_LOOP_BREAK since plain break won't do it; it is perfectly
  * ok to use continue inside the body */
 
-/* use IDX as a loop variable, initializing it to 0 and incrementing it
- * on each iteration */
-#define TIMEOUT_LOOP_IDX(IDX, REPEATS, TIMEOFFSET)			\
+/* use IDX as a loop variable (already declared), initializing it to 0
+ * and incrementing it on each iteration */
+#define TIMEOUT_LOOP_IDX(IDX, REPEATS, QC)				\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
-			if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
-				TIMEOFFSET = -1;			\
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
+			if (TIMEOUT_TEST(QC)) {				\
+				(QC)->endtime = -1;			\
 				break;					\
 			} else						\
 				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
  * incrementing it on each iteration */
-#define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, TIMEOFFSET)			\
+#define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, QC)				\
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
-			if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
-				TIMEOFFSET = -1;			\
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
+			if (TIMEOUT_TEST(QC)) {				\
+				(QC)->endtime = -1;			\
 				break;					\
 			} else						\
 				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* there is no user-visible loop variable */
-#define TIMEOUT_LOOP(REPEATS, TIMEOFFSET)				\
-	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
-		if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
-			TIMEOFFSET = -1;				\
+#define TIMEOUT_LOOP(REPEATS, QC)					\
+	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
+		if (TIMEOUT_TEST(QC)) {					\
+			(QC)->endtime = -1;				\
 			break;						\
 		} else							\
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
@@ -2442,10 +2443,10 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 
 /* check whether a timeout occurred, and execute the CALLBACK argument
  * if it did */
-#define TIMEOUT_CHECK(TIMEOFFSET, CALLBACK)	\
-	do {					\
-		if (TIMEOFFSET == -1)		\
-			CALLBACK;		\
+#define TIMEOUT_CHECK(QC, CALLBACK)					\
+	do {								\
+		if (GDKexiting() || ((QC) && (QC)->endtime == -1))	\
+			CALLBACK;					\
 	} while (0)
 
 typedef struct gdk_callback {

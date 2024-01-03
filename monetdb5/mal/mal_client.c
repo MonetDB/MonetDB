@@ -260,10 +260,11 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->qryctx.querytimeout = 0;
+	c->querytimeout = 0;
 	c->sessiontimeout = 0;
 	c->logical_sessiontimeout = 0;
 	c->qryctx.starttime = 0;
+	c->qryctx.endtime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
 	c->maxmem = 0;
@@ -392,7 +393,8 @@ MCcloseClient(Client c)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->qryctx.querytimeout = 0;
+	c->querytimeout = 0;
+	c->qryctx.endtime = 0;
 	c->sessiontimeout = 0;
 	c->logical_sessiontimeout = 0;
 	c->user = oid_nil;

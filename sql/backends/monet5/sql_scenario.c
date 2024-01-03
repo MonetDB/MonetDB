@@ -1243,6 +1243,7 @@ SQLparser_body(Client c, backend *be)
 	m->emod = mod_none;
 	c->query = NULL;
 	c->qryctx.starttime = Tbegin = Tend = GDKusec();
+	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */

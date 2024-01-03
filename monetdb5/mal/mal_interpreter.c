@@ -370,9 +370,9 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		garbageCollector(cntxt, mb, stk, env != stk);
 	if (stk && stk != env)
 		freeStack(stk);
-	if (ret == MAL_SUCCEED && cntxt->qryctx.querytimeout
-		&& cntxt->qryctx.starttime
-		&& GDKusec() - cntxt->qryctx.starttime > cntxt->qryctx.querytimeout)
+	if (ret == MAL_SUCCEED
+		&& cntxt->qryctx.endtime
+		&& GDKusec() > cntxt->qryctx.endtime)
 		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -460,9 +460,9 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 	}
 	if (stk)
 		garbageCollector(cntxt, mb, stk, TRUE);
-	if (ret == MAL_SUCCEED && cntxt->qryctx.querytimeout
-		&& cntxt->qryctx.starttime
-		&& GDKusec() - cntxt->qryctx.starttime > cntxt->qryctx.querytimeout)
+	if (ret == MAL_SUCCEED
+		&& cntxt->qryctx.endtime
+		&& GDKusec() > cntxt->qryctx.endtime)
 		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -804,9 +804,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							   &runtimeProfileFunction);
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
-			if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-				&& GDKusec() - cntxt->qryctx.starttime >
-				cntxt->qryctx.querytimeout) {
+			if (cntxt->qryctx.endtime && GDKusec() > cntxt->qryctx.endtime) {
 				freeException(ret);	/* overrule exception */
 				ret = createException(MAL, "mal.interpreter",
 									  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
@@ -830,9 +828,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 									  "failed instruction2str");
 			}
 			// runtimeProfileBegin already sets the time in the instruction
-			if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-				&& GDKusec() - cntxt->qryctx.starttime >
-				cntxt->qryctx.querytimeout) {
+			if (cntxt->qryctx.endtime && GDKusec() > cntxt->qryctx.endtime) {
 				freeException(ret);	/* in case it's set */
 				ret = createException(MAL, "mal.interpreter",
 									  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
@@ -944,9 +940,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
-				if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-					&& GDKusec() - cntxt->qryctx.starttime >
-					cntxt->qryctx.querytimeout) {
+				if (cntxt->qryctx.endtime && GDKusec() > cntxt->qryctx.endtime) {
 					freeException(ret);
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
@@ -986,9 +980,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 			if (stkpc == mb->stop) {
-				if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-					&& GDKusec() - cntxt->qryctx.starttime >
-					cntxt->qryctx.querytimeout) {
+				if (cntxt->qryctx.endtime && GDKusec() > cntxt->qryctx.endtime) {
 					freeException(ret);
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
@@ -1204,9 +1196,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		default:
 			stkpc++;
 		}
-		if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-			&& GDKusec() - cntxt->qryctx.starttime >
-			cntxt->qryctx.querytimeout) {
+		if (cntxt->qryctx.endtime && GDKusec() > cntxt->qryctx.endtime) {
 			if (ret == MAL_SUCCEED)
 				ret = createException(MAL, "mal.interpreter",
 									  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);

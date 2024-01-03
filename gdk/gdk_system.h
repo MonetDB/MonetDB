@@ -188,7 +188,7 @@ typedef int64_t lng;
 
 typedef struct QryCtx {
 	lng starttime;
-	lng querytimeout;
+	lng endtime;
 	ATOMIC_TYPE datasize;
 	ATOMIC_BASE_TYPE maxmem;
 } QryCtx;

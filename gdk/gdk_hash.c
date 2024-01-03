@@ -658,7 +658,7 @@ BAThashsave(BAT *b, bool dosync)
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		TIMEOUT_LOOP(p, timeoffset) {				\
+		TIMEOUT_LOOP(p, qry_ctx) {				\
 			hget = HASHget(h, c);				\
 			if (hget == BUN_NONE) {				\
 				if (h->nheads == maxslots)		\
@@ -678,13 +678,13 @@ BAThashsave(BAT *b, bool dosync)
 			HASHput(h, c, p);				\
 			o = canditer_next(ci);				\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
+		TIMEOUT_CHECK(qry_ctx,					\
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		TIMEOUT_LOOP(ci->ncand - p, timeoffset) {		\
+		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {			\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			h->nheads += hget == BUN_NONE;			\
@@ -704,7 +704,7 @@ BAThashsave(BAT *b, bool dosync)
 			HASHput(h, c, p);				\
 			p++;						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
+		TIMEOUT_CHECK(qry_ctx,					\
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
@@ -728,11 +728,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	unsigned int tpe = ATOMbasetype(bi.type);
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 	assert(bi.type != TYPE_msk);
@@ -862,7 +859,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			starthash(uuid);
 			break;
 		default:
-			TIMEOUT_LOOP(p, timeoffset) {
+			TIMEOUT_LOOP(p, qry_ctx) {
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = hash_any(h, v);
 				hget = HASHget(h, c);
@@ -886,7 +883,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 				HASHput(h, c, p);
 				o = canditer_next(ci);
 			}
-			TIMEOUT_CHECK(timeoffset,
+			TIMEOUT_CHECK(qry_ctx,
 				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			break;
 		}
@@ -938,7 +935,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		finishhash(uuid);
 		break;
 	default:
-		TIMEOUT_LOOP(ci->ncand - p, timeoffset) {
+		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
@@ -957,7 +954,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			o = canditer_next(ci);
 			p++;
 		}
-		TIMEOUT_CHECK(timeoffset,
+		TIMEOUT_CHECK(qry_ctx,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		break;
 	}
