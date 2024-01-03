@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* this file contains parts of queries that are used in multiple
@@ -77,6 +81,7 @@
 		     "when 'double' then 'DOUBLE' "						\
 		     "when 'hugeint' then 'HUGEINT' "					\
 		     "when 'int' then 'INTEGER' "						\
+		     "when 'json' then 'JSON' "						\
 		     "when 'month_interval' then "						\
 			  "case " #t ".type_digits "						\
 			       "when 1 then 'INTERVAL YEAR' "				\
@@ -103,7 +108,10 @@
 		     "when 'timestamptz' then 'TIMESTAMP' "				\
 		     "when 'timetz' then 'TIME' "						\
 		     "when 'tinyint' then 'TINYINT' "					\
+		     "when 'url' then 'URL' "						\
+		     "when 'uuid' then 'UUID' "						\
 		     "when 'varchar' then 'VARCHAR' "					\
+		     "when 'xml' then 'XML' "						\
 		"end as \"TYPE_NAME\""
 
 #define COLUMN_SIZE(t)							\
@@ -133,6 +141,7 @@
 		     "when 'timestamp' then 23 "		\
 		     "when 'timestamptz' then 23 "		\
 		     "when 'timetz' then 12 "			\
+		     "when 'uuid' then 36 "			\
 		     "else " #t ".type_digits "			\
 		"end as \"COLUMN_SIZE\""
 
@@ -145,6 +154,7 @@
 		     "when 'double' then 24 "						\
 		     "when 'hugeint' then 40 "						\
 		     "when 'int' then 11 "							\
+		     "when 'json' then 2 * " #t ".type_digits "		\
 		     "when 'month_interval' then "					\
 			  "case " #t ".type_digits "					\
 			       "when 1 then 26 "						\
@@ -171,7 +181,10 @@
 		     "when 'timestamptz' then 23 "					\
 		     "when 'timetz' then 12 "						\
 		     "when 'tinyint' then 4 "						\
+		     "when 'url' then 2 * " #t ".type_digits "		\
+		     "when 'uuid' then 36 "						\
 		     "when 'varchar' then 2 * " #t ".type_digits "	\
+		     "when 'xml' then 2 * " #t ".type_digits "		\
 		     "else " #t ".type_digits "						\
 		"end as integer) as \"BUFFER_LENGTH\""
 
@@ -240,6 +253,7 @@
 		     "when 'timestamptz' then %d "		\
 		     "when 'timetz' then %d "			\
 		     "when 'tinyint' then %d "			\
+		     "when 'uuid' then %d "			\
 		     "when 'varchar' then %d "			\
 		"end as \"SQL_DATA_TYPE\""
 #define SQL_DATA_TYPE_ARGS												\
@@ -247,7 +261,7 @@
 		SQL_WLONGVARCHAR, SQL_DATETIME, SQL_INTERVAL, SQL_DECIMAL, SQL_DOUBLE, \
 		SQL_HUGEINT, SQL_INTEGER, SQL_INTERVAL, SQL_REAL,				\
 		SQL_INTERVAL, SQL_SMALLINT, SQL_DATETIME, SQL_DATETIME,			\
-		SQL_DATETIME, SQL_DATETIME, SQL_TINYINT, SQL_WVARCHAR
+		SQL_DATETIME, SQL_DATETIME, SQL_TINYINT, SQL_GUID, SQL_WVARCHAR
 
 #define SQL_DATETIME_SUB(t)						\
 		"case " #t ".type "						\
@@ -289,10 +303,8 @@
 		SQL_CODE_TIME
 
 #define CHAR_OCTET_LENGTH(t)								\
-		"cast(case " #t ".type "									\
-		     "when 'char' then 2 * " #t ".type_digits "		\
-		     "when 'varchar' then 2 * " #t ".type_digits "	\
-		     "when 'clob' then 2 * " #t ".type_digits "		\
-		     "when 'blob' then " #t ".type_digits "			\
-		     "else cast(null as integer) "					\
+		"cast(case when " #t ".type in ('varchar','clob','char','json','url','xml') "	\
+		     "then 4 * cast(" #t ".type_digits as bigint) "			\
+		     "when " #t ".type = 'blob' then " #t ".type_digits "	\
+		     "else null "						\
 		"end as integer) as \"CHAR_OCTET_LENGTH\""

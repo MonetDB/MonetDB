@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -118,10 +122,8 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -243,10 +245,8 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -398,10 +398,8 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -546,10 +544,8 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -624,10 +620,8 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -752,10 +746,8 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -907,10 +899,8 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -1040,10 +1030,8 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -1140,10 +1128,8 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -1316,10 +1302,8 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -1454,10 +1438,8 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -1566,10 +1548,8 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;

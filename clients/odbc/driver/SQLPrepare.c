@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -96,6 +100,11 @@ MNDBPrepare(ODBCStmt *stmt,
 	free(query);
 
 	ODBCResetStmt(stmt);
+
+	if (stmt->Dbc->cachelimit != -1) {
+		mapi_cache_limit(stmt->Dbc->mid, -1);
+		stmt->Dbc->cachelimit = -1;
+	}
 
 	ret = mapi_query_handle(hdl, s);
 	free(s);
@@ -270,9 +279,18 @@ MNDBPrepare(ODBCStmt *stmt,
 		    rec->sql_desc_concise_type == SQL_LONGVARCHAR ||
 		    rec->sql_desc_concise_type == SQL_WCHAR ||
 		    rec->sql_desc_concise_type == SQL_WVARCHAR ||
-		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR)
+		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR) {
 			rec->sql_desc_case_sensitive = SQL_TRUE;
-		else
+
+			/* For large varchar column definitions conditionally
+			 * change type to SQL_WLONGVARCHAR when mapToLongVarchar is set (e.g. to 4000)
+			 * This is a workaround for MS SQL Server linked server
+			 * which can not handle large varchars (ref: SUPPORT-747) */
+			if (rec->sql_desc_concise_type == SQL_WVARCHAR
+			 && stmt->Dbc->mapToLongVarchar > 0
+			 && rec->sql_desc_length > (SQLULEN) stmt->Dbc->mapToLongVarchar)
+				rec->sql_desc_concise_type = SQL_WLONGVARCHAR;
+		} else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
 
 		rec->sql_desc_local_type_name = NULL;

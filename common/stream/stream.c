@@ -1,11 +1,14 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
-
 
 /* stream
  * ======
@@ -105,7 +108,7 @@ get_tl_error_buf(void)
 		*p = (struct tl_error_buf) { .msg = {0} };
 		pthread_setspecific(tl_error_key, p);
 		struct tl_error_buf *second_attempt = pthread_getspecific(tl_error_key);
-		assert(p == second_attempt /* maybe mnstr_init has not been called? */);
+		assert(p == second_attempt && "maybe mnstr_init has not been called?");
 		(void) second_attempt; // suppress warning if asserts disabled
 	}
 	return p;
@@ -597,7 +600,7 @@ mnstr_eof(const stream *s)
 	return s->eof;
 }
 
-char *
+const char *
 mnstr_name(const stream *s)
 {
 	if (s == NULL)
@@ -900,7 +903,7 @@ open_wstream(const char *filename)
 	stream *c = compressed_stream(s, 0);
 	if (c == NULL) {
 		close_stream(s);
-		file_remove(filename);
+		(void) file_remove(filename);
 	}
 
 	return c;
@@ -940,7 +943,7 @@ open_wastream(const char *filename)
 	stream *t = create_text_stream(s);
 	if (t == NULL) {
 		close_stream(s);
-		file_remove(filename);
+		(void) file_remove(filename);
 	}
 
 	return t;

@@ -19,3 +19,4 @@ select count(*) from tmp where s <> 'hello'
 
 statement ok
 drop table tmp
+

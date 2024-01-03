@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 add_library(malmodules OBJECT)
@@ -23,7 +27,6 @@ target_sources(malmodules
   manifold.c manifold.h
   iterator.c
   clients.c clients.h
-  factories.c
   groupby.c
   mdb.c
   pcre.c
@@ -31,9 +34,7 @@ target_sources(malmodules
   mal_mapi.c
   remote.c remote.h
   txtsim.c
-  tokenizer.c
   sample.c
-  json_util.c
   querylog.c querylog.h
   sysmon.c
   tracer.c

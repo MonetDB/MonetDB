@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -56,6 +60,8 @@ typedef struct tODBCDRIVERDBC {
 	bool Connected;		/* whether we are connecte to a server */
 	bool has_comment;	/* whether the server has sys.comments */
 	bool allow_hugeint;	/* whether the application deals with HUGEINT */
+	bool raw_strings;	/* server uses raw strings */
+	int mapToLongVarchar;	/* when > 0 we map WVARCHAR to WLONGVARCHAR, default 0 */
 	SQLUINTEGER sql_attr_autocommit;
 	SQLUINTEGER sql_attr_metadata_id;
 	SQLUINTEGER sql_attr_connection_timeout;
@@ -145,9 +151,13 @@ SQLRETURN ODBCConnectionString(SQLRETURN rc, ODBCDbc *dbc,
 			       SQLSMALLINT *StringLength2Ptr,
 			       const char *dsn, const char *uid,
 			       const char *pwd, const char *host,
-			       int port, const char *database);
+			       int port, const char *database,
+			       int mapToLongVarchar);
 SQLRETURN MNDBAllocStmt(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
-SQLRETURN MNDBConnect(ODBCDbc *dbc, const SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, const SQLCHAR *szUID, SQLSMALLINT nUIDLength, const SQLCHAR *szPWD, SQLSMALLINT nPWDLength, const char *host, int port, const char *schema);
+SQLRETURN MNDBConnect(ODBCDbc *dbc, const SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
+			const SQLCHAR *szUID, SQLSMALLINT nUIDLength,
+			const SQLCHAR *szPWD, SQLSMALLINT nPWDLength,
+			const char *host, int port, const char *dbname, int mapToLongVarchar);
 SQLRETURN MNDBGetConnectAttr(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 SQLRETURN MNDBSetConnectAttr(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
 

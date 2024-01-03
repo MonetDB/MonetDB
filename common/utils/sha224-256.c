@@ -64,7 +64,6 @@
  * Add "length" to the length.
  * Set Corrupted when overflow has occurred.
  */
-static uint32_t addTemp;
 #define SHA224_256AddLength(context, length)               \
   (addTemp = (context)->Length_Low, (context)->Corrupted = \
     (((context)->Length_Low += (length)) < addTemp) &&     \
@@ -239,6 +238,7 @@ int SHA256Input(SHA256Context *context, const uint8_t *message_array,
     context->Message_Block[context->Message_Block_Index++] =
             *message_array;
 
+    uint32_t addTemp;
     if ((SHA224_256AddLength(context, 8) == shaSuccess) &&
       (context->Message_Block_Index == SHA256_Message_Block_Size))
       SHA224_256ProcessMessageBlock(context);
@@ -291,6 +291,7 @@ int SHA256FinalBits(SHA256Context *context,
   if (context->Computed) return context->Corrupted = shaStateError;
   if (length >= 8) return context->Corrupted = shaBadParam;
 
+  uint32_t addTemp;
   SHA224_256AddLength(context, length);
   SHA224_256Finalize(context, (uint8_t)
     ((message_bits & masks[length]) | markbit[length]));

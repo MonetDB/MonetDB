@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -40,7 +44,7 @@ atom_bool( sql_allocator *sa, sql_subtype *tpe, bit val)
 	if(!a)
 		return NULL;
 
-	a->isnull = 0;
+	a->isnull = val == bit_nil?true:false;
 	a->tpe = *tpe;
 	a->data.vtype = tpe->type->localtype;
 	a->data.val.btval = val;
@@ -399,6 +403,29 @@ atom2string(sql_allocator *sa, atom *a)
 	return sa_strdup(sa, buf);
 }
 
+static inline char *
+sql_escape_str(sql_allocator *sa, const char *s)
+{
+	size_t l = strlen(s);
+	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 4);
+
+	res = r;
+	if (res) {
+		if (strchr(s, '\\') != NULL)
+			*r++ = 'R';
+		*r++ = '\'';
+		while (*s) {
+			if (*s == '\'') {
+				*r++ = *s;
+			}
+			*r++ = *s++;
+		}
+		*r++ = '\'';
+		*r = '\0';
+	}
+	return res;
+}
+
 char *
 atom2sql(sql_allocator *sa, atom *a, int timezone)
 {
@@ -416,16 +443,9 @@ atom2sql(sql_allocator *sa, atom *a, int timezone)
 			return "true";
 		return "false";
 	case EC_CHAR:
-	case EC_STRING: {
-		char *val, *res;
+	case EC_STRING:
 		assert(a->data.vtype == TYPE_str && a->data.val.sval);
-
-		if (!(val = sql_escape_str(sa, a->data.val.sval)))
-			return NULL;
-		if ((res = SA_NEW_ARRAY(sa, char, strlen(val) + 3)))
-			stpcpy(stpcpy(stpcpy(res, "'"), val), "'");
-		return res;
-	} break;
+		return sql_escape_str(sa, a->data.val.sval);
 	case EC_BLOB: {
 		char *res;
 		blob *b = (blob*)a->data.val.pval;

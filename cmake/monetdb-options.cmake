@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 option(RELEASE_VERSION
@@ -26,6 +30,10 @@ cmake_dependent_option(CINTEGRATION
   ON
   "NOT WIN32"
   OFF)
+
+option(WITH_RTREE
+  "Enable support for rtrees (librtree; default=ON)"
+  ON)
 
 option(PY3INTEGRATION
   "Enable support for Python 3 integration into MonetDB (default=ON)"
@@ -71,6 +79,14 @@ option(SANITIZER
 
 option(UNDEFINED
   "Enable support for the GCC undefined sanitizer (default=OFF)"
+  OFF)
+
+option(PGOTRAIN
+  "Enable support for the profile generated optimization training (default=OFF)"
+  OFF)
+
+option(PGOBUILD
+  "Enable support for the profile generated optimization build (using optained data) (default=OFF)"
   OFF)
 
 option(STRICT
@@ -127,6 +143,10 @@ option(WITH_VALGRIND
 
 option(WITH_ZLIB
   "Include zlib support"
+  ON)
+
+option(WITH_OPENSSL
+  "Include TLS support"
   ON)
 
 option(CMAKE_SUMMARY

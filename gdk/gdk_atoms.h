@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _GDK_ATOMS_H_
@@ -73,7 +77,8 @@ gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export void *ATOMnil(int id)
 	__attribute__((__malloc__));
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export char *ATOMformat(int id, const void *val);
+gdk_export char *ATOMformat(int id, const void *val)
+	__attribute__((__warn_unused_result__));
 
 gdk_export void *ATOMdup(int id, const void *val);
 
@@ -132,7 +137,7 @@ gdk_export ssize_t fltFromStr(const char *src, size_t *len, flt **dst, bool exte
 gdk_export ssize_t fltToStr(str *dst, size_t *len, const flt *src, bool external);
 gdk_export ssize_t dblFromStr(const char *src, size_t *len, dbl **dst, bool external);
 gdk_export ssize_t dblToStr(str *dst, size_t *len, const dbl *src, bool external);
-gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len);
+gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len, char quote);
 gdk_export ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst, bool external);
 gdk_export size_t escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote);
 gdk_export size_t escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote);

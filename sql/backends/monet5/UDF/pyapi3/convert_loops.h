@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -68,79 +72,16 @@
 #define nancheck_date(bat) ((void)0)
 #define nancheck_daytime(bat) ((void)0)
 #define nancheck_timestamp(bat) ((void)0)
-#if defined(HAVE_FORK)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore)                               \
 	{                                                                          \
-		bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                      \
-		if (bat == NULL) {                                                     \
-			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Cannot create column"); \
-			goto wrapup;                                                       \
-		}                                                                      \
-		bat->tnil = false;                                                     \
-		bat->tnonil = true;                                                    \
-		bat->tkey = false;                                                     \
-		bat->tsorted = false;                                                  \
-		bat->trevsorted = false;                                               \
-		/*Change nil values to the proper values, if they exist*/              \
-		if (mask != NULL) {                                                    \
-			for (iu = 0; iu < ret->count; iu++) {                              \
-				if (mask[index_offset * ret->count + iu] == TRUE) {            \
-					(*(mtpe *)(&data[(index_offset * ret->count + iu) *        \
-									 ret->memory_size])) = mtpe##_nil;         \
-					bat->tnil = true;                                          \
-				}                                                              \
-			}                                                                  \
-			bat->tnonil = !bat->tnil;                                          \
-		} else {                                                               \
-			bat->tnil = false;                                                 \
-			bat->tnonil = false;                                               \
-			nancheck_##mtpe(bat);                                              \
-		}                                                                      \
-                                                                               \
-		/*When we create a BAT a small part of memory is allocated, free it*/  \
-		GDKfree(bat->theap->base);                                             \
-		bat->theap->base =                                                     \
-			&data[(index_offset * ret->count) * ret->memory_size];             \
-		bat->theap->size = ret->count * ret->memory_size;                      \
-		bat->theap->free =                                                     \
-			bat->theap->size; /*There are no free places in the array*/        \
-		bat->theap->dirty = true;                                              \
-		/*If index_offset > 0, we are mapping part of a multidimensional */    \
-		/* array.*/                                                            \
-		/*The entire array will be cleared when the part with index_offset=0 */\
-		/* is freed*/                                                          \
-		/*So we set this part of the mapping to 'NOWN'*/                       \
-		if (index_offset > 0)                                                  \
-			bat->theap->storage = STORE_NOWN;                                  \
-		else {                                                                 \
-			bat->theap->storage = batstore;                                    \
-			if (batstore == STORE_MMAPABS) {                                   \
-				/* If we are taking data from a MMAP file, set the filename to \
-				 * the absolute path */                                        \
-				char address[100];                                             \
-				GDKmmapfile(address, sizeof(address), ret->mmap_id);           \
-				snprintf(bat->theap->filename, sizeof(bat->theap->filename),   \
-					"%s%c%s.tmp", BATDIR, DIR_SEP, address);                   \
-				ret->mmap_id = -1;                                             \
-			}                                                                  \
-		}                                                                      \
-		bat->theap->newstorage = STORE_MEM;                                    \
-		bat->batCount = ret->count;                                            \
-		bat->batCapacity = ret->count;                                         \
-		bat->batCopiedtodisk = false;                                          \
-		/*Take over the data from the numpy array*/                            \
-		if (ret->numpy_array != NULL)                                          \
-			PyArray_CLEARFLAGS((PyArrayObject *)ret->numpy_array,              \
-							   NPY_ARRAY_OWNDATA);                             \
-	}
-#else
-#define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore)                               \
-	{                                                                          \
-		bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                      \
+		bat = COLnew(seqbase, TYPE_void, 0, TRANSIENT);                        \
 		if (bat == NULL) {                                                     \
 			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Cannot create column");     \
 			goto wrapup;                                                       \
 		}                                                                      \
+		bat->ttype = TYPE_##mtpe;                                              \
+		bat->twidth = ATOMsize(TYPE_##mtpe);                                   \
+		bat->tshift = ATOMelmshift(b->twidth);                                 \
 		bat->tnil = false;                                                     \
 		bat->tnonil = true;                                                    \
 		bat->tkey = false;                                                     \
@@ -161,22 +102,21 @@
 			bat->tnonil = false;                                               \
 			nancheck_##mtpe(bat);                                              \
 		}                                                                      \
-		/*When we create a BAT a small part of memory is allocated, free it*/  \
-		GDKfree(bat->theap->base);                                             \
+		assert(bat->theap->base == NULL);                                      \
 		bat->theap->base =                                                     \
 			&data[(index_offset * ret->count) * ret->memory_size];             \
-		bat->theap->size = ret->count * ret->memory_size;                      \
-		bat->theap->free =                                                     \
-			bat->theap->size; /*There are no free places in the array*/        \
+		bat->theap->free = ret->count * ret->memory_size;                      \
 		bat->theap->dirty = true;                                              \
 		/*If index_offset > 0, we are mapping part of a multidimensional */    \
 		/* array.*/                                                            \
 		/*The entire array will be cleared when the part with index_offset=0 */\
 		/* is freed*/                                                          \
 		/*So we set this part of the mapping to 'NOWN'*/                       \
-		if (index_offset > 0)                                                  \
+		if (index_offset > 0) {                                                \
+			bat->theap->size = bat->theap->free;                               \
 			bat->theap->storage = STORE_NOWN;                                  \
-		else {                                                                 \
+		} else {                                                               \
+			bat->theap->size = ret->array_size ? ret->array_size : bat->theap->free; \
 			bat->theap->storage = batstore;                                    \
 		}                                                                      \
 		bat->theap->newstorage = STORE_MEM;                                    \
@@ -188,7 +128,6 @@
 			PyArray_CLEARFLAGS((PyArrayObject *)ret->numpy_array,              \
 							   NPY_ARRAY_OWNDATA);                             \
 	}
-#endif
 
 // This #define converts a Numpy Array to a BAT by copying the internal data to
 // the BAT. It assumes the BAT 'bat' is already created with the proper size.
@@ -605,9 +544,8 @@ convert_and_append(BAT* b, const char* text, bool force) {
 			mask = (bool *)ret->mask_data;                                     \
 		}                                                                      \
 		if (ret->array_data == NULL) {                                         \
-			msg =                                                              \
-				createException(MAL, "pyapi3.eval",                            \
-								SQLSTATE(PY000) "No return value stored in the structure.\n"); \
+			msg = createException(MAL, "pyapi3.eval",                          \
+				SQLSTATE(PY000) "No return value stored in the structure.\n"); \
 			goto wrapup;                                                       \
 		}                                                                      \
 		data = (char *)ret->array_data;                                        \

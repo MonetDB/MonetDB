@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef SQL_TOKENS_H
@@ -21,6 +25,7 @@ typedef enum tokens {
 	SQL_ATOM,
 	SQL_BETWEEN,
 	SQL_BINCOPYFROM,
+	SQL_BINCOPYINTO,
 	SQL_BINOP,
 	SQL_CACHE,
 	SQL_CALL,
@@ -37,7 +42,7 @@ typedef enum tokens {
 	SQL_CONSTRAINT,
 	SQL_COPYFROM,
 	SQL_COPYLOADER,
-	SQL_COPYTO,
+	SQL_COPYINTO,
 	SQL_CREATE_FUNC,
 	SQL_CREATE_INDEX,
 	SQL_CREATE_ROLE,
@@ -95,6 +100,7 @@ typedef enum tokens {
 	SQL_IS_NULL,
 	SQL_JOIN,
 	SQL_LIKE,
+	SQL_LOGIN,
 	SQL_MAXVALUE,
 	SQL_MERGE,
 	SQL_MERGE_MATCH,
@@ -189,5 +195,20 @@ typedef enum {
 	endian_little = 1,
 	endian_native = 3,
 } endianness;
+
+typedef enum trigger_event {
+	INSERT_EVENT,
+	DELETE_EVENT,
+	UPDATE_EVENT,
+	TRUNCATE_EVENT,
+	LOGIN_EVENT
+} trigger_event;
+
+#ifdef WORDS_BIGENDIAN
+#define OUR_ENDIANNESS endian_big
+#else
+#define OUR_ENDIANNESS endian_little
+#endif
+
 
 #endif

@@ -1,3 +1,14 @@
+/*
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
+ */
 
 #include "monetdb_config.h"
 #include "sql.h"
@@ -13,20 +24,6 @@ get_newcolumn(sql_trans *tr, sql_column *c)
 	if (t)
 		return find_sql_column(t, c->base.name);
 	return NULL;
-}
-
-static void
-BATnegateprops(BAT *b)
-{
-	/* disable all properties here */
-	b->tsorted = false;
-	b->trevsorted = false;
-	b->tnosorted = 0;
-	b->tnorevsorted = 0;
-	b->tseqbase = oid_nil;
-	b->tkey = false;
-	b->tnokey[0] = 0;
-	b->tnokey[1] = 0;
 }
 
 BAT *
@@ -99,7 +96,6 @@ FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BAT *o = BATdescriptor(O), *b = NULL;
 	if (!o) {
-		bat_destroy(o);
 		throw(SQL, "for.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (o->ttype != TYPE_bte && o->ttype != TYPE_sht) {

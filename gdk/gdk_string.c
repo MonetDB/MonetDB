@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -71,7 +75,7 @@ strHeap(Heap *d, size_t cap)
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	return HEAPalloc(d, size, 1, 1);
+	return HEAPalloc(d, size, 1);
 }
 
 
@@ -123,7 +127,7 @@ strCleanHash(Heap *h, bool rebuild)
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
 		memcpy(h->base, newhash, sizeof(newhash));
 		if (h->storage == STORE_MMAP) {
-			if (!(GDKdebug & NOSYNCMASK))
+			if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 				(void) MT_msync(h->base, GDK_STRHASHSIZE);
 		} else
 			h->dirty = true;
@@ -188,17 +192,14 @@ strPut(BAT *b, var_t *dst, const void *V)
 	BUN off;
 
 	if (h->free == 0) {
-		MT_lock_set(&b->theaplock);
 		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
 			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
-				MT_lock_unset(&b->theaplock);
 				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
 		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		h->dirty = true;
-		MT_lock_unset(&b->theaplock);
 #ifdef NDEBUG
 		memset(h->base, 0, h->free);
 #else
@@ -212,6 +213,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	bucket = ((stridx_t *) h->base) + off;
 
 	if (*bucket) {
+		assert(*bucket < h->free);
 		/* the hash list is not empty */
 		if (*bucket < GDK_ELIMLIMIT) {
 			/* small string heap (<64KiB) -- fully double
@@ -220,6 +222,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 			do {
 				pos = *ref + sizeof(stridx_t);
+				assert(pos < h->free);
 				if (strcmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
@@ -282,13 +285,10 @@ strPut(BAT *b, var_t *dst, const void *V)
 			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		MT_lock_set(&b->theaplock);
 		if (HEAPgrow(&b->tvheap, newsize, true) != GDK_SUCCEED) {
-			MT_lock_unset(&b->theaplock);
 			return (var_t) -1;
 		}
 		h = b->tvheap;
-		MT_lock_unset(&b->theaplock);
 
 		/* make bucket point into the new heap */
 		bucket = ((stridx_t *) h->base) + off;
@@ -300,10 +300,8 @@ strPut(BAT *b, var_t *dst, const void *V)
 	if (pad > 0)
 		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
-	MT_lock_set(&b->theaplock);
 	h->free += pad + len;
 	h->dirty = true;
-	MT_lock_unset(&b->theaplock);
 
 	/* maintain hash table */
 	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
@@ -333,7 +331,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 #endif
 
 ssize_t
-GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len)
+GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len, char quote)
 {
 	unsigned char *p = dst;
 	const unsigned char *cur = src, *end = src + len;
@@ -470,7 +468,6 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 		} else if ((c = *cur) == '\\') {
 			escaped = true;
 			continue;
-#if 0
 		} else if (c == quote && cur[1] == quote) {
 			assert(c != 0);
 			if (unlikely(n > 0))
@@ -478,7 +475,6 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 			*p++ = quote;
 			cur++;
 			continue;
-#endif
 		}
 
 		if (n > 0) {
@@ -598,7 +594,8 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 
 	return GDKstrFromStr((unsigned char *) *dst,
 			     (const unsigned char *) start,
-			     (ssize_t) (cur - start));
+			     (ssize_t) (cur - start),
+			     '\0');
 }
 
 /*
@@ -764,37 +761,41 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 {
 	oid gid;
 	BUN i, p, nils = 0;
-	size_t *restrict lengths = NULL, *restrict lastseplength = NULL, separator_length = 0, next_length;
+	size_t *restrict lengths = NULL, separator_length = 0, next_length;
 	str *restrict astrings = NULL;
 	BATiter bi, bis = (BATiter) {0};
 	BAT *bn = NULL;
-	gdk_return rres = GDK_SUCCEED;
+	gdk_return rres = GDK_FAIL;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	/* exactly one of bnp and pt must be NULL, the other non-NULL */
 	assert((bnp == NULL) != (pt == NULL));
 	/* if pt not NULL, only a single group allowed */
 	assert(pt == NULL || ngrp == 1);
 
-	bi = bat_iterator(b);
-	if (sep)
-		bis = bat_iterator(sep);
-	else
-		separator_length = strlen(separator);
-
 	if (bnp) {
-		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
-			rres = GDK_FAIL;
-			goto finish;
-		}
+		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL)
+			return GDK_FAIL;
 		*bnp = bn;
 	}
+
+	bi = bat_iterator(b);
+	bis = bat_iterator(sep);
+	if (separator)
+		separator_length = strlen(separator);
 
 	if (ngrp == 1) {
 		size_t offset = 0, single_length = 0;
 		bool empty = true;
 
 		if (separator) {
-			CAND_LOOP_IDX(ci, i) {
+			assert(sep == NULL);
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 				p = canditer_next(ci) - seqb;
 				const char *s = BUNtvar(bi, p);
 				if (strNil(s)) {
@@ -811,7 +812,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			CAND_LOOP_IDX(ci, i) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 				p = canditer_next(ci) - seqb;
 				const char *s = BUNtvar(bi, p);
 				const char *sl = BUNtvar(bis, p);
@@ -836,19 +837,20 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		}
 		canditer_reset(ci);
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
 
 			if ((single_str = GDKmalloc(single_length + 1)) == NULL) {
 				bat_iterator_end(&bi);
-				if (sep)
-					bat_iterator_end(&bis);
+				bat_iterator_end(&bis);
+				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
 			empty = true;
 			if (separator) {
-				CAND_LOOP_IDX(ci, i) {
+				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 					p = canditer_next(ci) - seqb;
 					const char *s = BUNtvar(bi, p);
 					if (strNil(s))
@@ -864,7 +866,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			} else { /* sep case */
 				assert(sep != NULL);
-				CAND_LOOP_IDX(ci, i) {
+				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 					p = canditer_next(ci) - seqb;
 					const char *s = BUNtvar(bi, p);
 					const char *sl = BUNtvar(bis, p);
@@ -883,12 +885,13 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 
 			single_str[offset] = '\0';
+			TIMEOUT_CHECK(timeoffset, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout); } while (0));
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
 					GDKfree(single_str);
 					bat_iterator_end(&bi);
-					if (sep)
-						bat_iterator_end(&bis);
+					bat_iterator_end(&bis);
+					BBPreclaim(bn);
 					return GDK_FAIL;
 				}
 			} else {
@@ -900,31 +903,26 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		} else if (bn) {
 			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
 				bat_iterator_end(&bi);
-				if (sep)
-					bat_iterator_end(&bis);
+				bat_iterator_end(&bis);
+				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
 		} else {
 			if (VALinit(pt, TYPE_str, str_nil) == NULL) {
 				bat_iterator_end(&bi);
-				if (sep)
-					bat_iterator_end(&bis);
+				bat_iterator_end(&bis);
 				return GDK_FAIL;
 			}
 		}
 		bat_iterator_end(&bi);
-		if (sep)
-			bat_iterator_end(&bis);
+		bat_iterator_end(&bis);
 		return GDK_SUCCEED;
 	} else {
 		/* first used to calculated the total length of
 		 * each group, then the the total offset */
 		lengths = GDKzalloc(ngrp * sizeof(*lengths));
 		astrings = GDKmalloc(ngrp * sizeof(str));
-		if (sep)
-			lastseplength = GDKzalloc(ngrp * sizeof(*lastseplength));
-		if (lengths == NULL || astrings == NULL || (sep && lastseplength == NULL)) {
-			rres = GDK_FAIL;
+		if (lengths == NULL || astrings == NULL) {
 			goto finish;
 		}
 		/* at first, set astrings[i] to str_nil, then for each
@@ -934,7 +932,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			astrings[i] = (char *) str_nil;
 
 		if (separator) {
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -953,7 +951,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -966,25 +964,22 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 						if (!strNil(sl)) {
 							next_length = strlen(sl);
 							lengths[gid] += next_length;
-							lastseplength[gid] = next_length;
-						} else
-							lastseplength[gid] = 0;
+						}
 						astrings[gid] = NULL;
 					} else if (!skip_nils) {
 						nils++;
 						lengths[gid] = (size_t) -1;
-						lastseplength[gid] = 0;
 						astrings[gid] = (char *) str_nil;
 					}
 				}
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(finish));
 
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - separator_length)) == NULL) {
-						rres = GDK_FAIL;
+					if ((astrings[i] = GDKmalloc(lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -996,8 +991,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep != NULL);
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - lastseplength[i])) == NULL) {
-						rres = GDK_FAIL;
+					if ((astrings[i] = GDKmalloc(lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1009,7 +1003,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		canditer_reset(ci);
 
 		if (separator) {
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -1030,7 +1024,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -1052,29 +1046,27 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(finish));
 
 		for (i = 0; i < ngrp; i++) {
 			if (astrings[i]) {
 				astrings[i][lengths[i]] = '\0';
 				if (BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
-					rres = GDK_FAIL;
 					goto finish;
 				}
 			} else if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-				rres = GDK_FAIL;
 				goto finish;
 			}
 		}
+		rres = GDK_SUCCEED;
 	}
 
   finish:
 	bat_iterator_end(&bi);
-	if (sep)
-		bat_iterator_end(&bis);
+	bat_iterator_end(&bis);
 	if (has_nils)
 		*has_nils = nils;
 	GDKfree(lengths);
-	GDKfree(lastseplength);
 	if (astrings) {
 		for (i = 0; i < ngrp; i++) {
 			if (astrings[i] != str_nil)
@@ -1086,6 +1078,12 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		BBPreclaim(bn);
 
 	return rres;
+
+  bailout:
+	bat_iterator_end(&bi);
+	bat_iterator_end(&bis);
+	BBPreclaim(bn);
+	return GDK_FAIL;
 }
 
 gdk_return
@@ -1401,20 +1399,20 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
+			break;
 		case 4: /* current row until unbounded */
 			goto notimplemented;
-		case 5: /* all rows */	{
+		case 5: /* all rows */
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW);
-		} break;
-		default: {
+			break;
+		default:
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_OTHERS);
-		}
+			break;
 		}
 	}
 

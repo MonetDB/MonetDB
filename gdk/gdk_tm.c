@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -59,6 +63,10 @@ epilogue(int cnt, bat *subcommit, bool locked)
 		BAT *b;
 
 		if (BBP_status(bid) & BBPPERSISTENT) {
+			/* first turn off BBPNEW, then turn on
+			 * BBPEXISTING so that concurrent BATassertProps
+			 * doesn't fail */
+			BBP_status_off(bid, BBPNEW);
 			BBP_status_on(bid, BBPEXISTING);
 		} else if (BBP_status(bid) & BBPDELETED) {
 			/* check mmap modes of bats that are now
@@ -76,23 +84,39 @@ epilogue(int cnt, bat *subcommit, bool locked)
 				/* check mmap modes */
 				MT_lock_set(&b->theaplock);
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					TRC_WARNING(GDK, "BATcheckmodes failed\n");
+					GDKwarning("BATcheckmodes failed\n");
 				MT_lock_unset(&b->theaplock);
 			}
 		}
 		b = BBP_desc(bid);
-		if (b) {
+		if (b && b->ttype >= 0 && ATOMvarsized(b->ttype)) {
 			MT_lock_set(&b->theaplock);
-			if (b->oldtail) {
-				ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
-				HEAPdecref(b->oldtail, true);
-				b->oldtail = NULL;
+			ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
+			if (p != NULL) {
+				Heap *tail = p->val.pval;
+				assert(b->oldtail != NULL);
+				BATrmprop_nolock(b, (enum prop_t) 20);
+				if (b->oldtail != (Heap *) 1)
+					HEAPdecref(b->oldtail, true);
+				if (tail == b->theap ||
+				    strcmp(tail->filename,
+					   b->theap->filename) == 0) {
+					/* no upgrades done since saving
+					 * started */
+					b->oldtail = NULL;
+					HEAPdecref(tail, false);
+				} else {
+					b->oldtail = tail;
+					ATOMIC_OR(&tail->refs, DELAYEDREMOVE);
+				}
 			}
 			MT_lock_unset(&b->theaplock);
 		}
 		if (!locked)
 			MT_lock_set(&GDKswapLock(bid));
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
+			if (!locked)
+				MT_lock_unset(&GDKswapLock(bid));
 			b = BBPquickdesc(bid);
 
 			/* the unloaded ones are deleted without
@@ -100,11 +124,12 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			if (b) {
 				BATdelete(b);
 			}
-			BBPclear(bid, false);
+			BBPclear(bid); /* also clears BBP_status */
+		} else {
+			BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW);
+			if (!locked)
+				MT_lock_unset(&GDKswapLock(bid));
 		}
-		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW);
-		if (!locked)
-			MT_lock_unset(&GDKswapLock(bid));
 	}
 	GDKclrerr();
 }
@@ -187,12 +212,16 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 		}
 	}
 	/* lock just prevents other global (sub-)commits */
-	MT_lock_set(&GDKtmLock);
+	BBPtmlock();
+	if (logno < 0)
+		logno = getBBPlogno();
+	if (transid < 0)
+		transid = getBBPtransid();
 	if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
 		epilogue(cnt, subcommit, false);
 		ret = GDK_SUCCEED;
 	}
-	MT_lock_unset(&GDKtmLock);
+	BBPtmunlock();
 	return ret;
 }
 
@@ -220,7 +249,7 @@ TMsubcommit(BAT *b)
 	}
 	bat_iterator_end(&bi);
 
-	ret = TMsubcommit_list(subcommit, NULL, cnt, getBBPlogno(), getBBPtransid());
+	ret = TMsubcommit_list(subcommit, NULL, cnt, -1, -1);
 	GDKfree(subcommit);
 	return ret;
 }

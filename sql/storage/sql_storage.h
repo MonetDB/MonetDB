@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef SQL_STORAGE_H
@@ -100,6 +104,7 @@ typedef struct table_functions {
 	column_find_value_fptr column_find_value;
 	column_find_sqlid_fptr column_find_sqlid;
 	column_find_bte_fptr column_find_bte;
+	column_find_sht_fptr column_find_sht;
 	column_find_int_fptr column_find_int;
 	column_find_lng_fptr column_find_lng;
 	column_find_string_start_fptr column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
@@ -155,8 +160,11 @@ typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*min_max_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*set_stats_col_fptr) (sql_trans *tr, sql_column *c, double *unique_est, char *min, char *max);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
+typedef int (*col_set_range_fptr) (sql_trans *tr, sql_column *c, sql_part *pt, bool add_range);
+typedef int (*col_not_null_fptr) (sql_trans *tr, sql_column *c, bool not_null);
 
 /*
 -- create the necessary storage resources for columns, indices and tables
@@ -239,10 +247,13 @@ typedef struct store_functions {
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
 	min_max_col_fptr min_max_col;
+	set_stats_col_fptr set_stats_col;
 	prop_col_fptr sorted_col;
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 	proprec_col_fptr col_stats;
+    col_set_range_fptr col_set_range; /* set range properties to the column low level structures */
+	col_not_null_fptr col_not_null;	/* switch not null property */
 
 	col_dup_fptr col_dup;
 	idx_dup_fptr idx_dup;
@@ -322,7 +333,7 @@ typedef struct logger_functions {
 
 /* we need to add an interface for result_tables later */
 
-extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t querytype, res_table *next, void *order);
+extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t querytype, res_table *next);
 extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *v, bool cache);
 
 extern void res_table_destroy(res_table *t);
@@ -341,7 +352,7 @@ extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
 
 extern ulng store_function_counter(struct sqlstore *store);
 
-extern ulng store_oldest(struct sqlstore *store);
+extern ulng store_oldest(struct sqlstore *store, sql_trans *tr);
 extern ulng store_get_timestamp(struct sqlstore *store);
 extern void store_manager(struct sqlstore *store);
 
@@ -366,7 +377,7 @@ extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
 
 extern void sql_trans_update_tables(sql_trans *tr, sql_schema *s);
-extern void sql_trans_update_schemas(sql_trans *tr);
+extern int sql_trans_update_schemas(sql_trans *tr);
 
 extern int sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner, sqlid *schema_id_ptr);
 extern int sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);
@@ -379,6 +390,10 @@ extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern int sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
 extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, bit with_nills, int update, sql_part** err);
 extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills, int update, sql_part **err);
+/* during loading the partition data (expression, values and ranges) are stored as strings, we convert them after the
+ * expressions are initialized (once the parser can handle that).*/
+extern int sql_trans_convert_partitions(sql_trans *tr);
+extern void find_partition_type(sql_subtype *tpe, sql_table *mt);
 
 extern int sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name);
 extern int sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns);
@@ -469,17 +484,12 @@ extern sql_table *globaltmp_instantiate(sql_trans *tr, sql_table *t);
 
 #define NR_TABLE_LOCKS 64
 #define NR_COLUMN_LOCKS 512
-#define TRANSACTION_ID_BASE	(1ULL<<63)
+#define TRANSACTION_ID_BASE	(1ULL<<(sizeof(ATOMIC_BASE_TYPE) * 8 - 1))
 
 typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */
 	sql_catalog *cat;		/* the catalog of persistent tables (what to do with tmp tables ?) */
 	sql_schema *tmp;		/* keep pointer to default (empty) tmp schema */
-	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
-	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
-	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
-	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes to tables (storage) */
-	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes to columns (storage) */
 	list *active;			/* list of running transactions */
 
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
@@ -487,12 +497,12 @@ typedef struct sqlstore {
 	ATOMIC_TYPE timestamp;	/* timestamp counter */
 	ATOMIC_TYPE transaction;/* transaction id counter */
 	ATOMIC_TYPE function_counter;/* function counter used during function instantiation */
-	ulng oldest;
+	ATOMIC_TYPE oldest;
 	ulng oldest_pending;
-	int readonly;			/* store is readonly */
-	int singleuser;			/* store is for a single user only (==1 enable, ==2 single user session running) */
-	int first;				/* just created the db */
-	int initialized;		/* used during bootstrap only */
+	bool readonly;			/* store is readonly */
+	int8_t singleuser;		/* store is for a single user only (==1 enable, ==2 single user session running) */
+	bool first;				/* just created the db */
+	bool initialized;		/* used during bootstrap only */
 	int debug;				/* debug mask */
 	store_type active_type;
 	list *changes;			/* pending changes to cleanup */
@@ -508,6 +518,12 @@ typedef struct sqlstore {
 	table_functions table_api;
 	logger_functions logger_api;
 	void *logger;			/* space to keep logging structure of storage backend */
+
+	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
+	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
+	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
+	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes to tables (storage) */
+	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes to columns (storage) */
 } sqlstore;
 
 typedef enum sql_dependency_change_type {
@@ -533,6 +549,7 @@ typedef struct sql_change {
 } sql_change;
 
 extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
+extern void trans_del(sql_trans *tr, sql_base *b);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 
 extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics);
@@ -548,5 +565,7 @@ extern int DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *di
 extern BAT *FORdecompress_(BAT *o, lng minval, int tt, role_t role);
 extern int FORprepare4append(BAT **noffsets, BAT *vals, lng minval, int tt);
 extern int FORprepare4append_vals(void **noffsets, void *vals, BUN cnt, lng minval, int vtype, int ft);
+
+extern void store_printinfo(sqlstore *store);
 
 #endif /*SQL_STORAGE_H */

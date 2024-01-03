@@ -1,8 +1,12 @@
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 # python mksqlwxs.py VERSION BITS PREFIX > PREFIX/MonetDB5-SQL-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB5-SQL-Installer.wxs
@@ -41,10 +45,12 @@ def main():
     if sys.argv[2] == '64':
         folder = r'ProgramFiles64Folder'
         arch = 'x64'
+        libcrypto = '-x64'
         vcpkg = r'C:\vcpkg\installed\x64-windows\{}'
     else:
         folder = r'ProgramFilesFolder'
         arch = 'x86'
+        libcrypto = ''
         vcpkg = r'C:\vcpkg\installed\x86-windows\{}'
     vcdir = os.getenv('VCINSTALLDIR')
     if vcdir is None:
@@ -156,6 +162,8 @@ def main():
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
                vcpkg.format(r'bin\getopt.dll'),
+               vcpkg.format(r'bin\libcrypto-3{}.dll'.format(libcrypto)),
+               vcpkg.format(r'bin\libssl-3{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\libxml2.dll'),
                vcpkg.format(r'bin\lz4.dll'),
                vcpkg.format(r'bin\liblzma.dll'),
@@ -182,6 +190,8 @@ def main():
               sorted([r'include\monetdb\{}'.format(x) for x in filter(lambda x: (x.startswith('gdk') or x.startswith('monet') or x.startswith('mal') or x.startswith('sql') or x.startswith('rel') or x.startswith('store') or x.startswith('exception') or x.startswith('opt_backend')) and x.endswith('.h'), os.listdir(os.path.join(sys.argv[3], 'include', 'monetdb')))] +
                      [r'include\monetdb\copybinary.h',
                       r'include\monetdb\mapi.h',
+                      r'include\monetdb\mapi_querytype.h',
+                      r'include\monetdb\msettings.h',
                       r'include\monetdb\matomic.h',
                       r'include\monetdb\mel.h',
                       r'include\monetdb\mstring.h',

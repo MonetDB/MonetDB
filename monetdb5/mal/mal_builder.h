@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MAL_BUILDER_
@@ -13,7 +17,8 @@
 #include "mal_instruction.h"
 
 mal_export InstrPtr newStmt(MalBlkPtr mb, const char *module, const char *name);
-mal_export InstrPtr newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args);
+mal_export InstrPtr newStmtArgs(MalBlkPtr mb, const char *module,
+								const char *name, int args);
 mal_export InstrPtr newAssignment(MalBlkPtr mb);
 mal_export InstrPtr newAssignmentArgs(MalBlkPtr mb, int args);
 mal_export InstrPtr newComment(MalBlkPtr mb, const char *val);
@@ -22,9 +27,15 @@ mal_export InstrPtr newRaiseStmt(MalBlkPtr mb, const char *nme);
 mal_export InstrPtr newExitStmt(MalBlkPtr mb, const char *nme);
 mal_export InstrPtr newReturnStmt(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr mb, const char *mod, const char *fcn);
-mal_export InstrPtr newFcnCallArgs(MalBlkPtr mb, const char *mod, const char *fcn, int args);
-mal_export InstrPtr pushSht(MalBlkPtr mb, InstrPtr q, sht val);
+mal_export InstrPtr newFcnCallArgs(MalBlkPtr mb, const char *mod,
+								   const char *fcn, int args);
 mal_export InstrPtr pushEndInstruction(MalBlkPtr mb);
+
+/* all the below push* functions (and also pushArgument) return NULL
+ * _only_ if q is NULL, else they return q or a valid new instruction
+ * (and the old q was then freed); in case of error, mb->errors is set
+ * to a non-NULL value */
+mal_export InstrPtr pushSht(MalBlkPtr mb, InstrPtr q, sht val);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
 mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, lng val);
 #ifdef HAVE_HGE
@@ -41,7 +52,6 @@ mal_export InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushType(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 mal_export InstrPtr pushZero(MalBlkPtr mb, InstrPtr q, int tpe);
-mal_export InstrPtr pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, ValPtr cst);
 
 mal_export int getIntConstant(MalBlkPtr mb, int val);

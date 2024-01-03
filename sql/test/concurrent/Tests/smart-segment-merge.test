@@ -1,25 +1,20 @@
 # INIT
 
-@connection(id=1, username=monetdb, password=monetdb)
 statement ok
-CREATE TABLE Test (k int);
+CREATE TABLE Test (k int)
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 1
 
-@connection(id=1)
 statement ok
-INSERT INTO Test SELECT value FROM generate_series(1, 11);
+INSERT INTO Test SELECT value FROM generate_series(1, 11)
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 1
-
 
 # TEST INSERTS
 # the four uncommitted transactions create four new segments, appended to the tail of the segment list;
@@ -29,7 +24,6 @@ SELECT segments FROM sys.deltas('sys', 'test');
 #  as they are next to each other and the active transaction is not able to read them;
 # the fourth commit is able to merge everything, as there are no active transactions and all segments are contiguous.
 
-@connection(id=1)
 statement ok
 begin transaction
 
@@ -45,53 +39,46 @@ begin transaction
 statement ok
 begin transaction
 
-@connection(id=1)
 statement ok
-INSERT INTO Test VALUES (11);
+INSERT INTO Test VALUES (11)
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 2
 
 @connection(id=2)
 statement ok
-INSERT INTO Test VALUES (12);
+INSERT INTO Test VALUES (12)
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 3
 
 @connection(id=3)
 statement ok
-INSERT INTO Test VALUES (13), (14);
+INSERT INTO Test VALUES (13), (14)
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 4
 
 @connection(id=4)
 statement ok
-INSERT INTO Test VALUES (15);
+INSERT INTO Test VALUES (15)
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 5
 
-@connection(id=1)
 statement ok
 commit
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 5
 
@@ -99,9 +86,8 @@ SELECT segments FROM sys.deltas('sys', 'test');
 statement ok
 commit
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 5
 
@@ -109,21 +95,19 @@ SELECT segments FROM sys.deltas('sys', 'test');
 statement ok
 commit
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 4
 
-@connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,5,6,7,8,9,10,11,13,14,15
 
 @connection(id=2)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,5,6,7,8,9,10,12
 
@@ -131,18 +115,15 @@ SELECT listagg(k) FROM test;
 statement ok
 commit
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 1
 
-@connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
-
 
 # TEST DELETES
 # the first transaction is read only;
@@ -150,7 +131,6 @@ SELECT listagg(k) FROM test;
 # the third transaction deletes another row, creating another split, but cannot merge as it is not contiguous with the second tx;
 # the fourth transaction deletes another row between the second and third txs, merging the segments.
 
-@connection(id=1)
 statement ok
 begin transaction
 
@@ -158,9 +138,8 @@ begin transaction
 statement ok
 DELETE FROM Test WHERE k = 5
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 3
 
@@ -168,21 +147,19 @@ SELECT segments FROM sys.deltas('sys', 'test');
 statement ok
 DELETE FROM Test WHERE k = 7
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 5
 
-@connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 
 @connection(id=2)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,6,8,9,10,11,12,13,14,15
 
@@ -190,34 +167,29 @@ SELECT listagg(k) FROM test;
 statement ok
 DELETE FROM Test WHERE k = 6
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 3
 
-@connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 
 @connection(id=2)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,8,9,10,11,12,13,14,15
 
-@connection(id=1)
 statement ok
 commit
 
-@connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,8,9,10,11,12,13,14,15
-
 
 # TEST FILLING HOLES
 # there are currently 3 segments, with the middle one referring to three deleted rows;
@@ -230,77 +202,67 @@ SELECT listagg(k) FROM test;
 # the first transaction commits but the segments remain the same since it is read-only;
 # the last transaction inserts another row and commits, merging everything back into one segment.
 
-@connection(id=1)
 statement ok
 begin transaction
 
 @connection(id=2)
 statement ok
-INSERT INTO TEST VALUES (16);
+INSERT INTO TEST VALUES (16)
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 4
 
 @connection(id=2)
 statement ok
-INSERT INTO TEST VALUES (17);
+INSERT INTO TEST VALUES (17)
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 4
 
-@connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,8,9,10,11,12,13,14,15
 
 @connection(id=2)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,16,17,8,9,10,11,12,13,14,15
 
-@connection(id=1)
 statement ok
 commit
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 4
 
-@connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,16,17,8,9,10,11,12,13,14,15
 
 @connection(id=2)
 statement ok
-INSERT INTO TEST VALUES (18);
+INSERT INTO TEST VALUES (18)
 
-@connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 1
 
-@connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,16,17,18,8,9,10,11,12,13,14,15
 
-
 # CLEANUP
 
-@connection(id=1)
 statement ok
-DROP TABLE Test;
+DROP TABLE Test
+

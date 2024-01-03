@@ -1891,7 +1891,7 @@ project (
 | | | | table("sys"."myorders") [ "myorders"."o_totalprice" NOT NULL UNIQUE, "myorders"."o_orderdate" NOT NULL UNIQUE ]
 | | | ) [ "myorders"."o_totalprice" NOT NULL UNIQUE, "sys"."day"("myorders"."o_orderdate" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
 | | ) [ "myorders"."o_totalprice" NOT NULL UNIQUE, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."max"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(9) "1", "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "0", int(9) "0", int(32) "2"), "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "5", int(9) "0", int(32) "0")) as "%3"."%3" ]
+| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."max"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(9) "1", "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "0", int(9) "0", tinyint(8) "2"), "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "5", int(9) "0", tinyint(8) "0")) as "%3"."%3" ]
 ) [ "%3"."%3" ]
 
 query R rowsort
@@ -1927,3 +1927,4 @@ SELECT avg(42) over (order by row_number() over ())
 
 statement error 42000!ROW_NUMBER: window functions cannot be nested
 SELECT avg(42) over (partition by row_number() over ())
+

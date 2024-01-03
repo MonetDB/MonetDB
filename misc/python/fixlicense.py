@@ -1,128 +1,129 @@
 #!/usr/bin/env python3
 
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
-import os, sys, getopt, stat
-
-usage = '''\
-%(prog)s [-ar] [-l licensefile] [file...]
-
-Options:
--a\tadd license text (default)
--r\tremove license text
--l licensefile
-\tprovide alternative license text
-\t(handy for removing incorrect license text)
--v\treport changed files on standard output
-
-If no file arguments, %(prog)s will read file names from standard input.
-
-%(prog)s makes backups of all modified files.
-The backup is the file with a tilde (~) appended.\
-'''
+import os, sys, argparse, stat
 
 license = [
+    'SPDX-License-Identifier: MPL-2.0',
+    '',
     'This Source Code Form is subject to the terms of the Mozilla Public',
     'License, v. 2.0.  If a copy of the MPL was not distributed with this',
     'file, You can obtain one at http://mozilla.org/MPL/2.0/.',
     '',
-    'Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.',
+    'Copyright 2024 MonetDB Foundation;',
+    'Copyright August 2008 - 2023 MonetDB B.V.;',
+    'Copyright 1997 - July 2008 CWI.',
     ]
 
 def main():
     func = addlicense
     pre = post = start = end = None
     verbose = False
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'arl:sv',
-                                   ['pre=', 'post=', 'start=', 'end='])
-    except getopt.GetoptError:
-        print(usage % {'prog': sys.argv[0]}, file=sys.stderr)
+    parser = argparse.ArgumentParser(description='Update license texts')
+    parser.add_argument('--pre', action='store', default=None,
+                        help='line before license text')
+    parser.add_argument('--post', action='store', default=None,
+                        help='line after license text')
+    parser.add_argument('--start', action='store', default=None,
+                        help='text at start of license text line')
+    parser.add_argument('--end', action='store', default=None,
+                        help='text at end of license text line')
+    parser.add_argument('--nl', action='store_false',
+                        help='whether a blank line is added after license text')
+    parser.add_argument('--add', '-a', action='store_true',
+                        help='add license file (default)')
+    parser.add_argument('--remove', '-r', action='store_true',
+                        help='remove license file')
+    parser.add_argument('--list', '-s', action='store_true',
+                        help='list files that already contain the license')
+    parser.add_argument('--license', '-l', action='store',
+                        type=argparse.FileType('r'),
+                        help='file with license text')
+    parser.add_argument('--verbose', '-v', action='store_true',
+                        help='be a bit more verbose')
+    parser.add_argument('files', nargs='*',
+                        help='files to work on (default read from stdin)')
+    opts = parser.parse_args()
+    if opts.add + opts.remove + opts.list > 1:
+        print('--add, --remove, and --list are mutually exclusive',
+              file=sys.stderr)
         sys.exit(1)
-    for o, a in opts:
-        if o == '-a':
-            func = addlicense
-        elif o == '-r':
-            func = dellicense
-        elif o == '-s':
-            func = listfile
-        elif o == '-l':
-            try:
-                f = open(a)
-            except IOError:
-                print('Cannot open file %s' % a, file=sys.stderr)
-                sys.exit(1)
-            del license[:]
-            while True:
-                line = f.readline()
-                if not line:
-                    break
-                license.append(line[:-1])
-            f.close()
-        elif o == '--pre':
-            pre = a
-        elif o == '--post':
-            post = a
-        elif o == '--start':
-            start = a
-        elif o == '--end':
-            end = a
-        elif o == '-v':
-            verbose = True
+    if opts.remove:
+        func = dellicense
+    elif opts.list:
+        func = listfile
+    else:
+        func = addlicense
+    if opts.license is not None:
+        del license[:]
+        license.extend([l.rstrip('\n') for l in opts.license.readlines()])
 
-    if args:
-        for a in args:
-            func(a, pre=pre, post=post, start=start, end=end, verbose=verbose)
+    if opts.files:
+        for a in opts.files:
+            func(a, pre=opts.pre, post=opts.post, start=opts.start, end=opts.end, verbose=opts.verbose)
     else:
         while True:
             filename = sys.stdin.readline()
             if not filename:
                 break
-            func(filename[:-1], pre=pre, post=post, start=start, end=end, verbose=verbose)
+            func(filename[:-1], pre=opts.pre, post=opts.post, start=opts.start, end=opts.end, verbose=opts.verbose)
 
 suffixrules = {
-    # suffix: (pre,     post,  start,  end)
-    '.bash':  ('',      '',    '# ',   ''), # shell script
-    '.bat':   ('',      '',    '@REM ',''), # Windows cmd batch script
-    '.c':     ('/*',    ' */', ' * ',  ''), # C source
-    '.cc':    ('',      '',    '// ',  ''), # C++ source
-    '.cmake': ('#[[',   '#]]', '# ',   ''), # CMake source
-    '.cpp':   ('',      '',    '// ',  ''), # C++ source
-    '.el':    ('',      '',    '; ',   ''), # Emacs Lisp
-    '.fc':    ('',      '',    '# ',   ''), # SELinux file context
-    '.h':     ('/*',    ' */', ' * ',  ''), # C header file
-    '.hs':    ('',      '',    '-- ',  ''), # Haskell source
-    '.html':  ('<!--',  '-->', '',     ''), # HTML source
-    '.java':  ('/*',    ' */', ' * ',  ''), # Java source
-    '.l':     ('/*',    ' */', ' * ',  ''), # (f)lex source
-    '.mal':   ('',      '',    '# ',   ''), # MonetDB Assembly Language
-    '.php':   ('<?php', '?>',  '# ',   ''), # PHP source
-    '.pl':    ('',      '',    '# ',   ''), # Perl source
-    '.pm':    ('',      '',    '# ',   ''), # Perl module source
-    '.py':    ('',      '',    '# ',   ''), # Python source
-    '.R':     ('',      '',    '# ',   ''), # R source
-    '.rb':    ('',      '',    '# ',   ''), # Ruby source
-    '.rc':    ('',      '',    '// ',  ''), # Windows resource file
-    '.rst':   ('',      '',    '.. ',  ''), # reStructured Text
-    '.sh':    ('',      '',    '# ',   ''), # shell script
-    '.sql':   ('',      '',    '-- ',  ''), # SQL source
-    '.t':     ('',      '',    '# ',   ''), # Perl test
-    '.te':    ('',      '',    '# ',   ''), # SELinux
-    '.xml':   ('<!--',  '-->', '',     ''), # XML source
-    '.y':     ('/*',    ' */', ' * ',  ''), # yacc (bison) source
+    # suffix: (pre,     post,  start,  end, nl)
+    # pre: line before license text
+    # post: line after license text
+    # start: at start of each line of license text
+    # end: at end of each line of license text
+    # nl: whether a blank line should be added after license text
+    '.1':     ('',      '.\\"','.\\" ','', False), # manual page source
+    '.bash':  ('',      '',    '# ',   '',  True),  # shell script
+    '.bat':   ('',      '',    '@REM ','',  True),  # Windows cmd batch script
+    '.c':     ('/*',    ' */', ' * ',  '',  True),  # C source
+    '.cc':    ('',      '',    '// ',  '',  True),  # C++ source
+    '.cmake': ('#[[',   '#]]', '# ',   '',  True),  # CMake source
+    '.cpp':   ('',      '',    '// ',  '',  True),  # C++ source
+    '.el':    ('',      '',    '; ',   '',  True),  # Emacs Lisp
+    '.fc':    ('',      '',    '# ',   '',  True),  # SELinux file context
+    '.h':     ('/*',    ' */', ' * ',  '',  True),  # C header file
+    '.hs':    ('',      '',    '-- ',  '',  True),  # Haskell source
+    '.html':  ('<!--',  '-->', '',     '',  True),  # HTML source
+    '.java':  ('/*',    ' */', ' * ',  '',  True),  # Java source
+    '.l':     ('/*',    ' */', ' * ',  '',  True),  # (f)lex source
+    '.mal':   ('',      '',    '# ',   '',  True),  # MonetDB Assembly Language
+    '.pc':    ('',      '',    '# ',   '',  True),  # Package config source
+    '.php':   ('<?php', '?>',  '# ',   '',  True),  # PHP source
+    '.pl':    ('',      '',    '# ',   '',  True),  # Perl source
+    '.pm':    ('',      '',    '# ',   '',  True),  # Perl module source
+    '.py':    ('',      '',    '# ',   '',  True),  # Python source
+    '.R':     ('',      '',    '# ',   '',  True),  # R source
+    '.rb':    ('',      '',    '# ',   '',  True),  # Ruby source
+    '.rc':    ('',      '',    '// ',  '',  True),  # Windows resource file
+    '.rst':   ('',      '',    '.. ',  '',  True),  # reStructured Text
+    '.sh':    ('',      '',    '# ',   '',  True),  # shell script
+    '.spec':  ('',      '',    '# ',   '',  True),  # RPM specification file
+    '.sql':   ('',      '',    '-- ',  '',  True),  # SQL source
+    '.t':     ('',      '',    '# ',   '',  True),  # Perl test
+    '.te':    ('',      '',    '# ',   '',  True),  # SELinux
+    '.xml':   ('<!--',  '-->', '',     '',  True),  # XML source
+    '.y':     ('/*',    ' */', ' * ',  '',  True),  # yacc (bison) source
     # we also match some complete filenames
-    'CMakeLists.txt': ('#[[', '#]]', '# ', ''),
-    'Makefile': ('', '', '# ', ''),
-    '.merovingian_properties': ('', '', '# ', ''),
-    'copyright': ('', '', '', ''),
-    'license.txt': ('', '', '', ''),
+    'CMakeLists.txt': ('#[[', '#]]', '# ', '', True),
+    'Makefile': ('', '', '# ', '', True),
+    '.merovingian_properties': ('', '', '# ', '', True),
+    'copyright': ('', '', '', '', True),
+    'license.txt': ('', '', '', '', True),
     }
 
-def getcomments(file, pre = None, post = None, start = None, end = None):
+def getcomments(file, pre=None, post=None, start=None, end=None, nl=True):
     ext = ''
     if pre is None and post is None and start is None and end is None:
         if file.endswith('.in') and os.path.basename(file[:-3]) in suffixrules:
@@ -141,38 +142,45 @@ def getcomments(file, pre = None, post = None, start = None, end = None):
                 line = f.readline()
                 f.close()
                 if line[:2] == '#!':
-                    ext = '.sh'
+                    if 'bash' in line or '/sh' in line:
+                        ext = '.sh'
+                    elif 'python' in line or 'PYTHON' in line:
+                        ext = '.py'
+                    elif 'perl' in line:
+                        ext = '.pl'
+                    elif 'make' in line:
+                        ext = 'Makefile'
                 else:
-                    return '', '', '', '', ''
-        pre, post, start, end = suffixrules[ext]
-    if not pre:
+                    return '', '', '', '', '', True
+        pre, post, start, end, nl = suffixrules[ext]
+    if pre is None:
         pre = ''
-    if not post:
+    if post is None:
         post = ''
-    if not start:
+    if start is None:
         start = ''
-    if not end:
+    if end is None:
         end = ''
-    return ext, pre, post, start, end
+    return ext, pre, post, start, end, nl
 
 PERL_COPYRIGHT = 'COPYRIGHT AND LICENCE\n\n'
 COPYRIGHT_NOTICE = 'Copyright Notice\n================\n\n'
 
-def addlicense(file, pre = None, post = None, start = None, end = None, verbose = False):
+def addlicense(file, pre=None, post=None, start=None, end=None, verbose=False):
     try:
         f = open(file)
     except IOError:
-        print('Cannot open file %s' % file, file=sys.stderr)
+        print(f'Cannot open file {file}', file=sys.stderr)
         return
     try:
         g = open(file + '.new', 'w')
     except IOError:
-        print('Cannot create temp file %s.new' % file, file=sys.stderr)
+        print(f'Cannot create temp file {file}.new', file=sys.stderr)
         return
     try:
         data = f.read()
     except UnicodeError:
-        print('UnicodeError in file %s' % file, file=sys.stderr)
+        print(f'UnicodeError in file {file}', file=sys.stderr)
         return
     if PERL_COPYRIGHT in data:
         notice = PERL_COPYRIGHT
@@ -189,7 +197,7 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
         g.write(data[pos:])
     else:
         try:
-            ext, pre, post, start, end = getcomments(file, pre, post, start, end)
+            ext, pre, post, start, end, nl = getcomments(file, pre, post, start, end)
             if not ext:
                 return
         except IOError:
@@ -197,27 +205,27 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
         f = open(file)
         line = f.readline()
         addblank = False
-        if line[:2] == '#!':
+        if line.startswith('#!'):
             # if file starts with #! command interpreter, keep the line there
             g.write(line)
             # add a blank line
             addblank = True
             line = f.readline()
-        if line.find('-*-') >= 0:
+        if '-*-' in line:
             # if file starts with an Emacs mode specification, keep
             # the line there
             g.write(line)
             # add a blank line
             addblank = True
             line = f.readline()
-        if line.find('vim:') >= 0:
+        if 'vim:' in line:
             # if file starts with a vim mode specification, keep
             # the line there
             g.write(line)
             # add a blank line
             addblank = True
             line = f.readline()
-        if line[:5] == '<?xml':
+        if line.startswith('<?xml'):
             # if line starts with an XML declaration, keep the line there
             g.write(line)
             # add a blank line
@@ -236,7 +244,7 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
         if post:
             g.write(post + '\n')
         # add empty line after license
-        if line:
+        if line and nl:
             g.write('\n')
         # but only one, so skip empty line from file, if any
         if line and line != '\n':
@@ -253,35 +261,35 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
     try:
         os.rename(file, file + '~')     # make backup
     except OSError:
-        print('Cannot make backup for %s' % file, file=sys.stderr)
+        print(f'Cannot make backup for {file}', file=sys.stderr)
         return
     try:
         os.rename(file + '.new', file)
         if verbose:
             print(file)
     except OSError:
-        print('Cannot move file %s into position' % file, file=sys.stderr)
+        print(f'Cannot move file {file} into position', file=sys.stderr)
 
 def normalize(s):
     # normalize white space: remove leading and trailing white space,
     # and replace multiple white space characters by a single space
     return ' '.join(s.split())
 
-def dellicense(file, pre = None, post = None, start = None, end = None, verbose = False):
+def dellicense(file, pre=None, post=None, start=None, end=None, verbose=False):
     try:
         f = open(file)
     except IOError:
-        print('Cannot open file %s' % file, file=sys.stderr)
+        print(f'Cannot open file {file}', file=sys.stderr)
         return
     try:
         g = open(file + '.new', 'w')
     except IOError:
-        print('Cannot create temp file %s.new' % file, file=sys.stderr)
+        print(f'Cannot create temp file {file}.new', file=sys.stderr)
         return
     try:
         data = f.read()
     except UnicodeError:
-        print('UnicodeError in file %s' % file, file=sys.stderr)
+        print(f'UnicodeError in file {file}', file=sys.stderr)
         return
     if PERL_COPYRIGHT in data:
         notice = PERL_COPYRIGHT
@@ -296,9 +304,9 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
             while data[pos] == ' ':
                 pos += 1
             if data[pos:pos+len(l)+1] != l + '\n':
-                print('line doesn\'t match in file %s' % file, file=sys.stderr)
-                print('file:    "%s"' % data[pos:pos+len(l)], file=sys.stderr)
-                print('license: "%s"' % l, file=sys.stderr)
+                print(f'line doesn\'t match in file {file}', file=sys.stderr)
+                print(f'file:    "{data[pos:pos+len(l)]}"', file=sys.stderr)
+                print(f'license: "{l}"', file=sys.stderr)
                 f.close()
                 g.close()
                 try:
@@ -310,7 +318,7 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
         g.write(data[pos:])
     else:
         try:
-            ext, pre, post, start, end = getcomments(file, pre, post, start, end)
+            ext, pre, post, start, end, nl = getcomments(file, pre, post, start, end)
             if not ext:
                 return
         except IOError:
@@ -321,22 +329,22 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
         end = normalize(end)
         f = open(file)
         line = f.readline()
-        if line[:2] == '#!':
+        if line.startswith('#!'):
             g.write(line)
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()
-        if line.find('-*-') >= 0:
+        if '-*-' in line:
             g.write(line)
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()
-        if line.find('vim:') >= 0:
+        if 'vim:' in line:
             g.write(line)
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()
-        if line[:5] == '<?xml':
+        if line.startswith('<?xml'):
             g.write(line)
             line = f.readline()
             if line and line == '\n':
@@ -348,7 +356,7 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
                 nline = normalize(line)
             else:
                 # doesn't match
-                print('PRE doesn\'t match in file %s' % file, file=sys.stderr)
+                print(f'PRE doesn\'t match in file {file}', file=sys.stderr)
                 f.close()
                 g.close()
                 try:
@@ -357,14 +365,14 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
                     pass
                 return
         for l in license:
-            if nline.find(normalize(l)) >= 0:
+            if normalize(l) in nline:
                 line = f.readline()
                 nline = normalize(line)
             else:
                 # doesn't match
-                print('line doesn\'t match in file %s' % file, file=sys.stderr)
-                print('file:    "%s"' % line, file=sys.stderr)
-                print('license: "%s"' % l, file=sys.stderr)
+                print(f'line doesn\'t match in file {file}', file=sys.stderr)
+                print(f'file:    "{line}"', file=sys.stderr)
+                print(f'license: "{l}"', file=sys.stderr)
                 f.close()
                 g.close()
                 try:
@@ -378,7 +386,7 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
                 nline = normalize(line)
             else:
                 # doesn't match
-                print('POST doesn\'t match in file %s' % file, file=sys.stderr)
+                print(f'POST doesn\'t match in file {file}', file=sys.stderr)
                 f.close()
                 g.close()
                 try:
@@ -399,25 +407,25 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
     try:
         os.rename(file, file + '~')     # make backup
     except OSError:
-        print('Cannot make backup for %s' % file, file=sys.stderr)
+        print(f'Cannot make backup for {file}', file=sys.stderr)
         return
     try:
         os.rename(file + '.new', file)
         if verbose:
             print(file)
     except OSError:
-        print('Cannot move file %s into position' % file, file=sys.stderr)
+        print(f'Cannot move file {file} into position', file=sys.stderr)
 
-def listfile(file, pre = None, post = None, start = None, end = None, verbose = False):
+def listfile(file, pre=None, post=None, start=None, end=None, verbose=False):
     try:
         f = open(file)
     except IOError:
-        print('Cannot open file %s' % file, file=sys.stderr)
+        print(f'Cannot open file {file}', file=sys.stderr)
         return
     try:
         data = f.read()
     except UnicodeDecodeError:
-        print('File %s not Unicode' % file, file=sys.stderr)
+        print(f'File {file} not Unicode', file=sys.stderr)
         return
     if PERL_COPYRIGHT in data:
         notice = PERL_COPYRIGHT
@@ -431,15 +439,15 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
             while data[pos] == ' ':
                 pos += 1
             if data[pos:pos+len(l)+1] != l + '\n':
-                print('line doesn\'t match in file %s' % file, file=sys.stderr)
-                print('file:    "%s"' % data[pos:pos+len(l)], file=sys.stderr)
-                print('license: "%s"' % l, file=sys.stderr)
+                print(f'line doesn\'t match in file {file}', file=sys.stderr)
+                print(f'file:    "{data[pos:pos+len(l)]}"', file=sys.stderr)
+                print(f'license: "{l}"', file=sys.stderr)
                 f.close()
                 return
             pos += len(l) + 1
     else:
         try:
-            ext, pre, post, start, end = getcomments(file, pre, post, start, end)
+            ext, pre, post, start, end, nl = getcomments(file, pre, post, start, end)
             if not ext:
                 return
         except IOError:
@@ -450,19 +458,19 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
         end = normalize(end)
         f = open(file)
         line = f.readline()
-        if line[:2] == '#!':
+        if line.startswith('#!'):
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()
-        if line.find('-*-') >= 0:
+        if '-*-' in line:
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()
-        if line.find('vim:') >= 0:
+        if 'vim:' in line:
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()
-        if line[:5] == '<?xml':
+        if line.startswith('<?xml'):
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()
@@ -473,18 +481,18 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
                 nline = normalize(line)
             else:
                 # doesn't match
-                print('PRE doesn\'t match in file %s' % file, file=sys.stderr)
+                print(f'PRE doesn\'t match in file {file}', file=sys.stderr)
                 f.close()
                 return
         for l in license:
-            if nline.find(normalize(l)) >= 0:
+            if normalize(l) in nline:
                 line = f.readline()
                 nline = normalize(line)
             else:
                 # doesn't match
-                print('line doesn\'t match in file %s' % file, file=sys.stderr)
-                print('file:    "%s"' % line, file=sys.stderr)
-                print('license: "%s"' % l, file=sys.stderr)
+                print(f'line doesn\'t match in file {file}', file=sys.stderr)
+                print(f'file:    "{line}"', file=sys.stderr)
+                print(f'license: "{l}"', file=sys.stderr)
                 f.close()
                 return
         if post:
@@ -493,7 +501,7 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
                 nline = normalize(line)
             else:
                 # doesn't match
-                print('POST doesn\'t match in file %s' % file, file=sys.stderr)
+                print(f'POST doesn\'t match in file {file}', file=sys.stderr)
                 f.close()
                 return
     f.close()

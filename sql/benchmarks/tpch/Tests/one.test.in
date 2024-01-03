@@ -200,100 +200,100 @@ select count(*) from lineitem
 60175
 
 statement ok
-create procedure sys.dict_compress( sname string, tname string, cname string, ordered_values bool) external name dict.compress;
+create procedure sys.dict_compress( sname string, tname string, cname string, ordered_values bool) external name dict.compress
 
 statement ok
-create procedure sys.for_compress( sname string, tname string, cname string) external name "for".compress;
+create procedure sys.for_compress( sname string, tname string, cname string) external name "for".compress
 
 statement ok
-call dict_compress('sys', 'region', 'r_regionkey', true);
+call dict_compress('sys', 'region', 'r_regionkey', true)
 
 statement ok
-call dict_compress('sys', 'nation', 'n_nationkey', true);
+call dict_compress('sys', 'nation', 'n_nationkey', true)
 
 statement ok
-call dict_compress('sys', 'nation', 'n_regionkey', true);
+call dict_compress('sys', 'nation', 'n_regionkey', true)
 
 statement ok
-call dict_compress('sys', 'supplier', 's_nationkey', true);
+call dict_compress('sys', 'supplier', 's_nationkey', true)
 
 statement ok
-call dict_compress('sys', 'customer', 'c_nationkey', true);
+call dict_compress('sys', 'customer', 'c_nationkey', true)
 
 statement ok
-call dict_compress('sys', 'customer', 'c_mktsegment', true);
+call dict_compress('sys', 'customer', 'c_mktsegment', true)
 
 statement ok
-call dict_compress('sys', 'part', 'p_mfgr', true);
+call dict_compress('sys', 'part', 'p_mfgr', true)
 
 statement ok
-call dict_compress('sys', 'part', 'p_brand', true);
+call dict_compress('sys', 'part', 'p_brand', true)
 
 statement ok
-call dict_compress('sys', 'part', 'p_type', true);
+call dict_compress('sys', 'part', 'p_type', true)
 
 statement ok
-call dict_compress('sys', 'part', 'p_size', true);
+call dict_compress('sys', 'part', 'p_size', true)
 
 statement ok
-call dict_compress('sys', 'part', 'p_container', true);
+call dict_compress('sys', 'part', 'p_container', true)
 
 statement ok
-call dict_compress('sys', 'part', 'p_retailprice', true);
+call dict_compress('sys', 'part', 'p_retailprice', true)
 
 statement ok
-call dict_compress('sys', 'partsupp', 'ps_availqty', true);
+call dict_compress('sys', 'partsupp', 'ps_availqty', true)
 
 statement ok
-call dict_compress('sys', 'orders', 'o_orderstatus', true);
+call dict_compress('sys', 'orders', 'o_orderstatus', true)
 
 statement ok
-call dict_compress('sys', 'orders', 'o_orderdate', true);
+call dict_compress('sys', 'orders', 'o_orderdate', true)
 
 statement ok
-call dict_compress('sys', 'orders', 'o_orderpriority', true);
+call dict_compress('sys', 'orders', 'o_orderpriority', true)
 
 statement ok
-call dict_compress('sys', 'orders', 'o_clerk', true);
+call dict_compress('sys', 'orders', 'o_clerk', true)
 
 statement ok
-call dict_compress('sys', 'orders', 'o_shippriority', true);
+call dict_compress('sys', 'orders', 'o_shippriority', true)
 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_linenumber', true);
+call dict_compress('sys', 'lineitem', 'l_linenumber', true)
 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_quantity', true);
+call dict_compress('sys', 'lineitem', 'l_quantity', true)
 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_discount', true);
+call dict_compress('sys', 'lineitem', 'l_discount', true)
 
 # testing l_tax now with for compression.
 # not dict call dict_compress('sys', 'lineitem', 'l_tax', true);
 # 
 statement ok
-call for_compress('sys', 'lineitem', 'l_tax');
+call for_compress('sys', 'lineitem', 'l_tax')
 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_returnflag', true);
+call dict_compress('sys', 'lineitem', 'l_returnflag', true)
 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_linestatus', true);
+call dict_compress('sys', 'lineitem', 'l_linestatus', true)
 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_shipdate', true);
+call dict_compress('sys', 'lineitem', 'l_shipdate', true)
 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_commitdate', true);
+call dict_compress('sys', 'lineitem', 'l_commitdate', true)
 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_shipinstruct', true);
+call dict_compress('sys', 'lineitem', 'l_shipinstruct', true)
 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_receiptdate', true);
+call dict_compress('sys', 'lineitem', 'l_receiptdate', true)
 
 statement ok
-call dict_compress('sys', 'lineitem', 'l_shipmode', true);
+call dict_compress('sys', 'lineitem', 'l_shipmode', true)
 
 query ITT rowsort
 select * from region   order by r_regionkey limit 9

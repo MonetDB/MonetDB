@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -151,7 +155,7 @@ sa_alloc( sql_allocator *sa, size_t sz )
 		if (sa->pa)
 			r = SA_NEW_ARRAY(sa->pa,char,(sz > SA_BLOCK ? sz : SA_BLOCK));
 	    else if (sz <= SA_BLOCK && sa->freelist) {
-			r = sa_use_freed(sa, sz > SA_BLOCK ? sz : SA_BLOCK);
+			r = sa_use_freed(sa, SA_BLOCK);
 		} else
 			r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
 		if (r == NULL) {

@@ -4,6 +4,16 @@ query TTTTT nosort
 select * from sys.malfunctions() order by module, "function", address, signature, comment
 ----
 aggr
+Collect
+command aggr.Collect(X_0:bat[:wkb]):wkb 
+wkbCollectAggr;
+TODO
+aggr
+MakeLine
+command aggr.MakeLine(X_0:bat[:wkb]):wkb 
+wkbMakeLineAggr;
+Gets a BAT with point or linestring geometries and returns a single linestring geometry
+aggr
 all
 command aggr.all(X_0:bat[:any_1]):any_1 
 SQLall;
@@ -1019,9 +1029,19 @@ command aggr.quantile(X_0:bat[:any_1], X_1:bat[:dbl]):any_1
 AGGRquantile;
 Quantile aggregate
 aggr
+quantile
+command aggr.quantile(X_0:bat[:any_1], X_1:dbl):any_1 
+AGGRquantile_cst;
+Quantile aggregate
+aggr
 quantile_avg
 command aggr.quantile_avg(X_0:bat[:any_1], X_1:bat[:dbl]):dbl 
 AGGRquantile_avg;
+Quantile aggregate
+aggr
+quantile_avg
+command aggr.quantile_avg(X_0:bat[:any_1], X_1:dbl):dbl 
+AGGRquantile_avg_cst;
 Quantile aggregate
 aggr
 stdev
@@ -1153,6 +1173,26 @@ str_group_concat
 pattern aggr.str_group_concat(X_0:bat[:str], X_1:bit):str 
 CMDBATstr_group_concat;
 Calculate aggregate string concatenate of B.
+aggr
+subCollect
+command aggr.subCollect(X_0:bat[:wkb], X_1:bat[:oid], X_2:bat[:oid], X_3:bit):bat[:wkb] 
+wkbCollectAggrSubGrouped;
+TODO
+aggr
+subCollect
+command aggr.subCollect(X_0:bat[:wkb], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:wkb] 
+wkbCollectAggrSubGroupedCand;
+TODO
+aggr
+subMakeLine
+command aggr.subMakeLine(X_0:bat[:wkb], X_1:bat[:oid], X_2:bat[:oid], X_3:bit):bat[:wkb] 
+wkbMakeLineAggrSubGrouped;
+TODO
+aggr
+subMakeLine
+command aggr.subMakeLine(X_0:bat[:wkb], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:wkb] 
+wkbMakeLineAggrSubGroupedCand;
+TODO
 aggr
 suball
 pattern aggr.suball(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:any_1] 
@@ -3324,11 +3364,6 @@ unsafe pattern alarm.sleep(X_0:any_1):void
 ALARMsleep;
 Sleep a few milliseconds
 alarm
-sleep
-unsafe pattern alarm.sleep(X_0:bat[:any_1]):bat[:any_1] 
-ALARMsleep;
-Sleep a few milliseconds and return the slept value
-alarm
 time
 unsafe command alarm.time():int 
 ALARMtime;
@@ -3454,6 +3489,21 @@ command algebra.likeselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:str, X_4:b
 PCRElikeselect;
 Select all head values of the first input BAT for which the@tail value is "like" the given (SQL-style) pattern and for@which the head value occurs in the tail of the second input@BAT.@Input is a dense-headed BAT, output is a dense-headed BAT with in@the tail the head value of the input BAT for which the@relationship holds.  The output BAT is sorted on the tail value.
 algebra
+markjoin
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:lng) (X_5:bat[:oid], X_6:bat[:bit]) 
+ALGmark2join;
+Mark join with candidate lists
+algebra
+markjoin
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:lng) (X_5:bat[:oid], X_6:bat[:oid], X_7:bat[:bit]) 
+ALGmark3join;
+Mark join with candidate lists
+algebra
+markselect
+command algebra.markselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit]) 
+ALGmarkselect;
+Group on group-ids, return aggregated anyequal or allnotequal
+algebra
 not_like
 command algebra.not_like(X_0:str, X_1:str, X_2:str, X_3:bit):bit 
 PCREnotlike;
@@ -3464,6 +3514,11 @@ command algebra.orderidx(X_0:bat[:any_1], X_1:bit):bat[:any_1]
 OIDXorderidx;
 Create an order index
 algebra
+outercrossproduct
+command algebra.outercrossproduct(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bat[:oid], X_3:bat[:oid], X_4:bit) (X_5:bat[:oid], X_6:bat[:oid]) 
+ALGoutercrossproduct3;
+Compute the outer cross product of both input bats
+algebra
 outerjoin
 command algebra.outerjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:bit, X_6:lng):bat[:oid] 
 ALGouterjoin1;
@@ -3473,6 +3528,11 @@ outerjoin
 command algebra.outerjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:bit, X_6:lng) (X_7:bat[:oid], X_8:bat[:oid]) 
 ALGouterjoin;
 Left outer join with candidate lists
+algebra
+outerselect
+command algebra.outerselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit]) 
+ALGouterselect;
+Per input lid return atleast one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.
 algebra
 project
 pattern algebra.project(X_0:bat[:any_1], X_1:any_3):bat[:any_3] 
@@ -3714,11 +3774,6 @@ command bat.getName(X_0:bat[:any_1]):str
 BKCgetBBPname;
 Gives back the logical name of a BAT.
 bat
-getRole
-command bat.getRole(X_0:bat[:any_1]):str 
-BKCgetRole;
-Returns the rolename of the head column of a BAT.
-bat
 getSequenceBase
 command bat.getSequenceBase(X_0:bat[:any_1]):oid 
 BKCgetSequenceBase;
@@ -3944,16 +3999,6 @@ command bat.replace(X_0:bat[:any_1], X_1:oid, X_2:any_1, X_3:bit):bat[:any_1]
 BKCbun_inplace_force;
 Replace the tail value of one BUN that has some head value.
 bat
-reuse
-command bat.reuse(X_0:bat[:any_1], X_1:bat[:oid]):bat[:any_1] 
-BKCreuseBAT;
-Shuffle the values around to restore a dense representation of buns.
-bat
-reuseMap
-command bat.reuseMap(X_0:bat[:any_1], X_1:bat[:oid]):bat[:oid] 
-BKCreuseBATmap;
-Derive the oid mapping for reuse BAT based on list of to-be-deleted
-bat
 save
 command bat.save(X_0:bat[:any_1]):void 
 BKCsave2;
@@ -3968,11 +4013,6 @@ setAccess
 command bat.setAccess(X_0:bat[:any_1], X_1:str):bat[:any_1] 
 BKCsetAccess;
 Try to change the update access privileges @to this BAT. Mode:@r[ead-only]      - allow only read access.@a[append-only]   - allow reads and update.@w[riteable]      - allow all operations.@BATs are updatable by default. On making a BAT read-only, @all subsequent updates fail with an error message.@Returns the BAT itself.
-bat
-setColumn
-command bat.setColumn(X_0:bat[:any_1], X_1:str):void 
-BKCsetColumn;
-Give a logical name to the tail column of a BAT.
 bat
 setHash
 command bat.setHash(X_0:bat[:any_1]):bit 
@@ -30205,6 +30245,11 @@ SQLbatstr_cast;
 cast to string and check for overflow
 batcalc
 str
+pattern batcalc.str(X_0:int, X_1:int, X_2:int, X_3:int, X_4:bat[:any_1], X_5:int):bat[:str] 
+SQLbatstr_cast;
+cast to string and check for overflow, no candidate list
+batcalc
+str
 command batcalc.str(X_0:bat[:uuid], X_1:bat[:oid]):bat[:str] 
 UUIDuuid2str_bulk;
 Coerce a uuid to a string type
@@ -30251,11 +30296,6 @@ cast date to a timestamp and check for overflow
 batcalc
 timestamp
 pattern batcalc.timestamp(X_0:bat[:oid], X_1:int):bat[:timestamp] 
-nil_2time_timestamp;
-cast to timestamp and check for overflow
-batcalc
-timestamp
-pattern batcalc.timestamp(X_0:bat[:oid], X_1:int, X_2:bat[:BAT]):bat[:timestamp] 
 nil_2time_timestamp;
 cast to timestamp and check for overflow
 batcalc
@@ -30620,13 +30660,13 @@ CLRbatycc;
 Converts an YCC triplets to a color atom
 batgeom
 AsEWKT
-function batgeom.AsEWKT(w:bat[:wkb]):bat[:str];
-(empty)
+command batgeom.AsEWKT(X_0:bat[:wkb]):bat[:str] 
+batgeom_AsEWKT_wkb;
 (empty)
 batgeom
 AsText
-function batgeom.AsText(w:bat[:wkb]):bat[:str];
-(empty)
+command batgeom.AsText(X_0:bat[:wkb]):bat[:str] 
+batgeom_AsText_wkb;
 (empty)
 batgeom
 Boundary
@@ -30669,6 +30709,16 @@ command batgeom.Distance(X_0:wkb, X_1:bat[:wkb]):bat[:dbl]
 wkbDistance_geom_bat;
 (empty)
 batgeom
+DistanceGeographic
+command batgeom.DistanceGeographic(X_0:bat[:wkb], X_1:bat[:wkb]):bat[:dbl] 
+wkbDistanceGeographic_bat;
+TODO
+batgeom
+DistanceGeographic
+command batgeom.DistanceGeographic(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid]):bat[:dbl] 
+wkbDistanceGeographic_bat_cand;
+TODO
+batgeom
 Filter
 command batgeom.Filter(X_0:bat[:wkb], X_1:wkb):bat[:wkb] 
 wkbFilter_bat_geom;
@@ -30685,23 +30735,23 @@ wkbFromText_bat;
 (empty)
 batgeom
 GeomCollFromText
-function batgeom.GeomCollFromText(wkt:bat[:str]):bat[:wkb];
-(empty)
+command batgeom.GeomCollFromText(X_0:bat[:str]):bat[:wkb] 
+batgeom_GeomCollFromText_str;
 (empty)
 batgeom
 GeomCollFromText
-function batgeom.GeomCollFromText(wkt:bat[:str], srid:int):bat[:wkb];
-(empty)
-(empty)
-batgeom
-GeomFromText
-function batgeom.GeomFromText(wkt:bat[:str]):bat[:wkb];
-(empty)
+command batgeom.GeomCollFromText(X_0:bat[:str], X_1:int):bat[:wkb] 
+batgeom_GeomCollFromText_str_int;
 (empty)
 batgeom
 GeomFromText
-function batgeom.GeomFromText(wkt:bat[:str], srid:int):bat[:wkb];
+command batgeom.GeomFromText(X_0:bat[:str]):bat[:wkb] 
+batgeom_GeomFromText_str;
 (empty)
+batgeom
+GeomFromText
+command batgeom.GeomFromText(X_0:bat[:str], X_1:int):bat[:wkb] 
+batgeom_GeomFromText_str_int;
 (empty)
 batgeom
 GeometryN
@@ -30715,13 +30765,13 @@ wkbGeometryType_bat;
 (empty)
 batgeom
 GeometryType1
-function batgeom.GeometryType1(w:bat[:wkb]):bat[:str];
-(empty)
+command batgeom.GeometryType1(X_0:bat[:wkb]):bat[:str] 
+batgeom_GeometryType1_wkb;
 (empty)
 batgeom
 GeometryType2
-function batgeom.GeometryType2(w:bat[:wkb]):bat[:str];
-(empty)
+command batgeom.GeometryType2(X_0:bat[:wkb]):bat[:str] 
+batgeom_GeometryType2_wkb;
 (empty)
 batgeom
 GetCoordinate
@@ -30755,43 +30805,43 @@ wkbIsValid_bat;
 (empty)
 batgeom
 LineFromText
-function batgeom.LineFromText(wkt:bat[:str]):bat[:wkb];
-(empty)
+command batgeom.LineFromText(X_0:bat[:str]):bat[:wkb] 
+batgeom_LineFromText_str;
 (empty)
 batgeom
 LineFromText
-function batgeom.LineFromText(wkt:bat[:str], srid:int):bat[:wkb];
-(empty)
-(empty)
-batgeom
-MLineFromText
-function batgeom.MLineFromText(wkt:bat[:str]):bat[:wkb];
-(empty)
+command batgeom.LineFromText(X_0:bat[:str], X_1:int):bat[:wkb] 
+batgeom_LineFromText_str_int;
 (empty)
 batgeom
 MLineFromText
-function batgeom.MLineFromText(wkt:bat[:str], srid:int):bat[:wkb];
+command batgeom.MLineFromText(X_0:bat[:str]):bat[:wkb] 
+batgeom_MLineFromText_str;
 (empty)
+batgeom
+MLineFromText
+command batgeom.MLineFromText(X_0:bat[:str], X_1:int):bat[:wkb] 
+batgeom_MLineFromText_str_int;
 (empty)
 batgeom
 MPointFromText
-function batgeom.MPointFromText(wkt:bat[:str]):bat[:wkb];
-(empty)
+command batgeom.MPointFromText(X_0:bat[:str]):bat[:wkb] 
+batgeom_MPointFromText_str;
 (empty)
 batgeom
 MPointFromText
-function batgeom.MPointFromText(wkt:bat[:str], srid:int):bat[:wkb];
-(empty)
-(empty)
-batgeom
-MPolyFromText
-function batgeom.MPolyFromText(wkt:bat[:str]):bat[:wkb];
-(empty)
+command batgeom.MPointFromText(X_0:bat[:str], X_1:int):bat[:wkb] 
+batgeom_MPointFromText_str_int;
 (empty)
 batgeom
 MPolyFromText
-function batgeom.MPolyFromText(wkt:bat[:str], srid:int):bat[:wkb];
+command batgeom.MPolyFromText(X_0:bat[:str]):bat[:wkb] 
+batgeom_MPolyFromText_str;
 (empty)
+batgeom
+MPolyFromText
+command batgeom.MPolyFromText(X_0:bat[:str], X_1:int):bat[:wkb] 
+batgeom_MPolyFromText_str_int;
 (empty)
 batgeom
 MakeBox2D
@@ -30805,23 +30855,23 @@ wkbMakeLine_bat;
 Gets two BATS of point or linestring geometries and returns a bat with linestring geometries
 batgeom
 MakePoint
-function batgeom.MakePoint(x:bat[:dbl], y:bat[:dbl]):bat[:wkb];
-(empty)
-(empty)
-batgeom
-MakePoint
-function batgeom.MakePoint(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl]):bat[:wkb];
-(empty)
+command batgeom.MakePoint(X_0:bat[:dbl], X_1:bat[:dbl]):bat[:wkb] 
+batgeom_MakePoint_dbl_dbl;
 (empty)
 batgeom
 MakePoint
-function batgeom.MakePoint(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], m:bat[:dbl]):bat[:wkb];
+command batgeom.MakePoint(X_0:bat[:dbl], X_1:bat[:dbl], X_2:bat[:dbl]):bat[:wkb] 
+batgeom_MakePoint_dbl_dbl_dbl;
 (empty)
+batgeom
+MakePoint
+command batgeom.MakePoint(X_0:bat[:dbl], X_1:bat[:dbl], X_2:bat[:dbl], X_3:bat[:dbl]):bat[:wkb] 
+batgeom_MakePoint_dbl_dbl_dbl_dbl;
 (empty)
 batgeom
 MakePointM
-function batgeom.MakePointM(x:bat[:dbl], y:bat[:dbl], m:bat[:dbl]):bat[:wkb];
-(empty)
+command batgeom.MakePointM(X_0:bat[:dbl], X_1:bat[:dbl], X_2:bat[:dbl]):bat[:wkb] 
+batgeom_MakePointM_dbl_dbl_dbl;
 (empty)
 batgeom
 MakePointXYZM
@@ -30830,13 +30880,13 @@ wkbMakePoint_bat;
 creates a point using the coordinates
 batgeom
 NPoints
-function batgeom.NPoints(w:bat[:wkb]):bat[:int];
-(empty)
+command batgeom.NPoints(X_0:bat[:wkb]):bat[:int] 
+batgeom_NPoints_wkb;
 (empty)
 batgeom
 NRings
-function batgeom.NRings(w:bat[:wkb]):bat[:int];
-(empty)
+command batgeom.NRings(X_0:bat[:wkb]):bat[:int] 
+batgeom_NRings_wkb;
 (empty)
 batgeom
 NumGeometries
@@ -30845,13 +30895,13 @@ wkbNumGeometries_bat;
 Returns the number of geometries
 batgeom
 NumInteriorRings
-function batgeom.NumInteriorRings(w:bat[:wkb]):bat[:int];
-(empty)
+command batgeom.NumInteriorRings(X_0:bat[:wkb]):bat[:int] 
+batgeom_NumInteriorRings_wkb;
 (empty)
 batgeom
 NumPoints
-function batgeom.NumPoints(w:bat[:wkb]):bat[:int];
-(empty)
+command batgeom.NumPoints(X_0:bat[:wkb]):bat[:int] 
+batgeom_NumPoints_wkb;
 (empty)
 batgeom
 NumRings
@@ -30860,13 +30910,13 @@ wkbNumRings_bat;
 Returns the number of interior rings+exterior on the first polygon of the geometry
 batgeom
 PointFromText
-function batgeom.PointFromText(wkt:bat[:str]):bat[:wkb];
-(empty)
+command batgeom.PointFromText(X_0:bat[:str]):bat[:wkb] 
+batgeom_PointFromText_str;
 (empty)
 batgeom
 PointFromText
-function batgeom.PointFromText(wkt:bat[:str], srid:int):bat[:wkb];
-(empty)
+command batgeom.PointFromText(X_0:bat[:str], X_1:int):bat[:wkb] 
+batgeom_PointFromText_str_int;
 (empty)
 batgeom
 PointsNum
@@ -30875,13 +30925,13 @@ wkbNumPoints_bat;
 The number of points in the Geometry. If check=1, the geometry should be a linestring
 batgeom
 PolygonFromText
-function batgeom.PolygonFromText(wkt:bat[:str]):bat[:wkb];
-(empty)
+command batgeom.PolygonFromText(X_0:bat[:str]):bat[:wkb] 
+batgeom_PolygonFromText_str;
 (empty)
 batgeom
 PolygonFromText
-function batgeom.PolygonFromText(wkt:bat[:str], srid:int):bat[:wkb];
-(empty)
+command batgeom.PolygonFromText(X_0:bat[:str], X_1:int):bat[:wkb] 
+batgeom_PolygonFromText_str_int;
 (empty)
 batgeom
 ToText
@@ -30889,64 +30939,69 @@ command batgeom.ToText(X_0:bat[:wkb], X_1:int):bat[:str]
 wkbAsText_bat;
 (empty)
 batgeom
+Transform
+command batgeom.Transform(X_0:bat[:wkb], X_1:int, X_2:int, X_3:str, X_4:str):bat[:wkb] 
+wkbTransform_bat;
+Transforms a bat of geometries from one srid to another
+batgeom
 Union
 command batgeom.Union(X_0:bat[:wkb], X_1:bat[:wkb]):bat[:wkb] 
 wkbUnion_bat;
 Gets two BATS of geometries and returns the pairwise unions
 batgeom
 X
-function batgeom.X(w:bat[:wkb]):bat[:dbl];
-(empty)
+command batgeom.X(X_0:bat[:wkb]):bat[:dbl] 
+batgeom_X_wkb;
 (empty)
 batgeom
 XMaxFromMBR
-function batgeom.XMaxFromMBR(b:bat[:mbr]):bat[:dbl];
-(empty)
+command batgeom.XMaxFromMBR(X_0:bat[:mbr]):bat[:dbl] 
+batgeom_XMaxFromMBR_mbr;
 (empty)
 batgeom
 XMaxFromWKB
-function batgeom.XMaxFromWKB(g:bat[:wkb]):bat[:dbl];
-(empty)
+command batgeom.XMaxFromWKB(X_0:bat[:wkb]):bat[:dbl] 
+batgeom_XMaxFromWKB_wkb;
 (empty)
 batgeom
 XMinFromMBR
-function batgeom.XMinFromMBR(b:bat[:mbr]):bat[:dbl];
-(empty)
+command batgeom.XMinFromMBR(X_0:bat[:mbr]):bat[:dbl] 
+batgeom_XMinFromMBR_mbr;
 (empty)
 batgeom
 XMinFromWKB
-function batgeom.XMinFromWKB(g:bat[:wkb]):bat[:dbl];
-(empty)
+command batgeom.XMinFromWKB(X_0:bat[:wkb]):bat[:dbl] 
+batgeom_XMinFromWKB_wkb;
 (empty)
 batgeom
 Y
-function batgeom.Y(w:bat[:wkb]):bat[:dbl];
-(empty)
+command batgeom.Y(X_0:bat[:wkb]):bat[:dbl] 
+batgeom_Y_wkb;
 (empty)
 batgeom
 YMaxFromMBR
-function batgeom.YMaxFromMBR(b:bat[:mbr]):bat[:dbl];
-(empty)
+command batgeom.YMaxFromMBR(X_0:bat[:mbr]):bat[:dbl] 
+batgeom_YMaxFromMBR_mbr;
 (empty)
 batgeom
 YMaxFromWKB
-function batgeom.YMaxFromWKB(g:bat[:wkb]):bat[:dbl];
-(empty)
+command batgeom.YMaxFromWKB(X_0:bat[:wkb]):bat[:dbl] 
+batgeom_YMaxFromWKB_wkb;
 (empty)
 batgeom
 YMinFromMBR
-function batgeom.YMinFromMBR(b:bat[:mbr]):bat[:dbl];
-(empty)
+command batgeom.YMinFromMBR(X_0:bat[:mbr]):bat[:dbl] 
+batgeom_YMinFromMBR_mbr;
 (empty)
 batgeom
 YMinFromWKB
-function batgeom.YMinFromWKB(g:bat[:wkb]):bat[:dbl];
-(empty)
+command batgeom.YMinFromWKB(X_0:bat[:wkb]):bat[:dbl] 
+batgeom_YMinFromWKB_wkb;
 (empty)
 batgeom
 Z
-function batgeom.Z(w:bat[:wkb]):bat[:dbl];
-(empty)
+command batgeom.Z(X_0:bat[:wkb]):bat[:dbl] 
+batgeom_Z_wkb;
 (empty)
 batgeom
 coordinateFromMBR
@@ -31820,12 +31875,12 @@ MTIMEdate_to_str_bulk_p2;
 (empty)
 batmtime
 day
-pattern batmtime.day(X_0:bat[:date]):bat[:int] 
+pattern batmtime.day(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_day_bulk;
 (empty)
 batmtime
 day
-pattern batmtime.day(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.day(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_day_bulk;
 (empty)
 batmtime
@@ -31840,32 +31895,32 @@ MTIMEsql_day_bulk;
 (empty)
 batmtime
 day
-pattern batmtime.day(X_0:bat[:timestamp]):bat[:int] 
+pattern batmtime.day(X_0:bat[:timestamp]):bat[:bte] 
 MTIMEtimestamp_day_bulk;
 (empty)
 batmtime
 day
-pattern batmtime.day(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.day(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte] 
 MTIMEtimestamp_day_bulk;
 (empty)
 batmtime
 dayofweek
-pattern batmtime.dayofweek(X_0:bat[:date]):bat[:int] 
+pattern batmtime.dayofweek(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_dayofweek_bulk;
 (empty)
 batmtime
 dayofweek
-pattern batmtime.dayofweek(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.dayofweek(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_dayofweek_bulk;
 (empty)
 batmtime
 dayofyear
-pattern batmtime.dayofyear(X_0:bat[:date]):bat[:int] 
+pattern batmtime.dayofyear(X_0:bat[:date]):bat[:sht] 
 MTIMEdate_extract_dayofyear_bulk;
 (empty)
 batmtime
 dayofyear
-pattern batmtime.dayofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.dayofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:sht] 
 MTIMEdate_extract_dayofyear_bulk;
 (empty)
 batmtime
@@ -32050,12 +32105,12 @@ MTIMEtimestamp_extract_epoch_ms_bulk;
 (empty)
 batmtime
 hours
-pattern batmtime.hours(X_0:bat[:daytime]):bat[:int] 
+pattern batmtime.hours(X_0:bat[:daytime]):bat[:bte] 
 MTIMEdaytime_extract_hours_bulk;
 (empty)
 batmtime
 hours
-pattern batmtime.hours(X_0:bat[:daytime], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.hours(X_0:bat[:daytime], X_1:bat[:oid]):bat[:bte] 
 MTIMEdaytime_extract_hours_bulk;
 (empty)
 batmtime
@@ -32070,22 +32125,22 @@ MTIMEsql_hours_bulk;
 (empty)
 batmtime
 hours
-pattern batmtime.hours(X_0:bat[:timestamp]):bat[:int] 
+pattern batmtime.hours(X_0:bat[:timestamp]):bat[:bte] 
 MTIMEtimestamp_hours_bulk;
 (empty)
 batmtime
 hours
-pattern batmtime.hours(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.hours(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte] 
 MTIMEtimestamp_hours_bulk;
 (empty)
 batmtime
 minutes
-pattern batmtime.minutes(X_0:bat[:daytime]):bat[:int] 
+pattern batmtime.minutes(X_0:bat[:daytime]):bat[:bte] 
 MTIMEdaytime_extract_minutes_bulk;
 (empty)
 batmtime
 minutes
-pattern batmtime.minutes(X_0:bat[:daytime], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.minutes(X_0:bat[:daytime], X_1:bat[:oid]):bat[:bte] 
 MTIMEdaytime_extract_minutes_bulk;
 (empty)
 batmtime
@@ -32100,22 +32155,22 @@ MTIMEsql_minutes_bulk;
 (empty)
 batmtime
 minutes
-pattern batmtime.minutes(X_0:bat[:timestamp]):bat[:int] 
+pattern batmtime.minutes(X_0:bat[:timestamp]):bat[:bte] 
 MTIMEtimestamp_minutes_bulk;
 (empty)
 batmtime
 minutes
-pattern batmtime.minutes(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.minutes(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte] 
 MTIMEtimestamp_minutes_bulk;
 (empty)
 batmtime
 month
-pattern batmtime.month(X_0:bat[:date]):bat[:int] 
+pattern batmtime.month(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_month_bulk;
 (empty)
 batmtime
 month
-pattern batmtime.month(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.month(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_month_bulk;
 (empty)
 batmtime
@@ -32130,32 +32185,122 @@ MTIMEsql_month_bulk;
 (empty)
 batmtime
 month
-pattern batmtime.month(X_0:bat[:timestamp]):bat[:int] 
+pattern batmtime.month(X_0:bat[:timestamp]):bat[:bte] 
 MTIMEtimestamp_month_bulk;
 (empty)
 batmtime
 month
-pattern batmtime.month(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.month(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte] 
 MTIMEtimestamp_month_bulk;
 (empty)
 batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:bat[:daytime], X_1:bat[:int]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:bat[:daytime], X_1:bat[:int], X_2:bat[:oid], X_3:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:daytime, X_1:bat[:int]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:daytime, X_1:bat[:int], X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:bat[:daytime], X_1:int):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk_p2;
+(empty)
+batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:bat[:daytime], X_1:int, X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk_p2;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:bat[:date], X_1:bat[:lng]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:bat[:date], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:date, X_1:bat[:lng]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:date, X_1:bat[:lng], X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:bat[:date], X_1:lng):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk_p2;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:bat[:date], X_1:lng, X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk_p2;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:bat[:daytime], X_1:bat[:lng]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:bat[:daytime], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:daytime, X_1:bat[:lng]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:daytime, X_1:bat[:lng], X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:bat[:daytime], X_1:lng):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk_p2;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:bat[:daytime], X_1:lng, X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk_p2;
+(empty)
+batmtime
 quarter
-pattern batmtime.quarter(X_0:bat[:date]):bat[:int] 
+pattern batmtime.quarter(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_quarter_bulk;
 (empty)
 batmtime
 quarter
-pattern batmtime.quarter(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.quarter(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_quarter_bulk;
 (empty)
 batmtime
 quarter
-pattern batmtime.quarter(X_0:bat[:timestamp]):bat[:int] 
+pattern batmtime.quarter(X_0:bat[:timestamp]):bat[:bte] 
 MTIMEtimestamp_quarter_bulk;
 (empty)
 batmtime
 quarter
-pattern batmtime.quarter(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.quarter(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte] 
 MTIMEtimestamp_quarter_bulk;
 (empty)
 batmtime
@@ -32519,23 +32664,743 @@ pattern batmtime.timestamp_to_str(X_0:bat[:timestamp], X_1:str, X_2:bat[:oid]):b
 MTIMEtimestamp_to_str_bulk_p2;
 (empty)
 batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_day_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:timestamp, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_day_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_day_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:daytime], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:daytime], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:daytime, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:daytime, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:daytime], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:daytime], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:bat[:daytime], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:timestamp, X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:timestamp, X_1:bat[:daytime], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:daytime):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:timestamp, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:date], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:date], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:date, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:date, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:date], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:date], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:bat[:date], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:timestamp, X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:timestamp, X_1:bat[:date], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:date):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:date, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_min_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:timestamp, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_min_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_min_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:date], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:date], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:date, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:date, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:date], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:date], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:bat[:date], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:timestamp, X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:timestamp, X_1:bat[:date], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:date):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:date, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_month_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:timestamp, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_month_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_month_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:daytime], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:daytime], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:daytime, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:daytime, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:daytime], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:daytime], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:bat[:daytime], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:timestamp, X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:timestamp, X_1:bat[:daytime], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:daytime):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:timestamp, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:daytime], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:daytime], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:daytime, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:daytime, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:daytime], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:daytime], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:bat[:daytime], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:timestamp, X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:timestamp, X_1:bat[:daytime], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:daytime):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:timestamp, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:date], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:date], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:date, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:date, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:date], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:date], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:bat[:date], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:timestamp, X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:timestamp, X_1:bat[:date], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:date):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:date, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_week_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:timestamp, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_week_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_week_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:daytime], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:daytime], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:daytime, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:daytime, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:daytime], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:daytime], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:bat[:daytime], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:timestamp, X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:timestamp, X_1:bat[:daytime], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:daytime):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_year_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:timestamp, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_year_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_year_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:daytime], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:daytime], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:daytime, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:daytime, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:daytime], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:daytime], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:bat[:daytime], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:timestamp, X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:timestamp, X_1:bat[:daytime], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:daytime):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk_p2;
+(empty)
+batmtime
 usweekofyear
-pattern batmtime.usweekofyear(X_0:bat[:date]):bat[:int] 
+pattern batmtime.usweekofyear(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_usweekofyear_bulk;
 (empty)
 batmtime
 usweekofyear
-pattern batmtime.usweekofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.usweekofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_usweekofyear_bulk;
 (empty)
 batmtime
 weekofyear
-pattern batmtime.weekofyear(X_0:bat[:date]):bat[:int] 
+pattern batmtime.weekofyear(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_weekofyear_bulk;
 (empty)
 batmtime
 weekofyear
-pattern batmtime.weekofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.weekofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_weekofyear_bulk;
 (empty)
 batmtime
@@ -32580,12 +33445,12 @@ PCREreplacefirst_bat_wrap;
 (empty)
 batpyapi3
 eval
-unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):any... 
+unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):bat[:any_1] 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script value
 batpyapi3
 eval
-unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):any... 
+unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):bat[:any]... 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script value
 batpyapi3
@@ -32607,21 +33472,6 @@ batpyapi3
 subeval_aggr
 unsafe pattern batpyapi3.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
 PYAPI3PyAPIevalAggr;
-grouped aggregates through Python
-batpyapi3map
-eval
-pattern batpyapi3map.eval(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalStdMap;
-Execute a simple Python script value
-batpyapi3map
-eval_aggr
-pattern batpyapi3map.eval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalAggrMap;
-grouped aggregates through Python
-batpyapi3map
-subeval_aggr
-pattern batpyapi3map.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalAggrMap;
 grouped aggregates through Python
 batrapi
 eval
@@ -33759,35 +34609,135 @@ pattern batstr.ascii(X_0:bat[:str], X_1:bat[:oid]):bat[:int]
 STRbatAscii;
 Return unicode of head of string
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
-STRbatSuffix;
-Suffix check.
+asciify
+pattern batstr.asciify(X_0:bat[:str]):bat[:str] 
+BATSTRasciify;
+Transform BAT of strings from UTF8 to ASCII
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
-STRbatSuffix;
-Suffix check.
+asciify
+pattern batstr.asciify(X_0:bat[:str], X_1:bat[:oid]):bat[:str] 
+BATSTRasciify;
+Transform BAT of strings from UTF8 to ASCII
 batstr
-endsWith
-pattern batstr.endsWith(X_0:str, X_1:bat[:str]):bat[:bit] 
-STRbatSuffix_strcst;
-Suffix check.
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
+BATSTRcontains;
+Check if bat string haystack contains bat string needle.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
-STRbatSuffix_strcst;
-Suffix check.
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
+BATSTRcontains;
+Check if bat string haystack contains bat string needle (with CLs).
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:str):bat[:bit] 
-STRbatSuffixcst;
-Suffix check.
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRcontains;
+Check if bat string haystack contains bat string needle, icase flag.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
-STRbatSuffixcst;
-Suffix check.
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:bit] 
+BATSTRcontains;
+Check if bat string haystack contains bat string needle (with CLs) + icase flag.
+batstr
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:str):bat[:bit] 
+BATSTRcontains_cst;
+Check if bat string haystack contains string needle.
+batstr
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
+BATSTRcontains_cst;
+Check if bat string haystack contains string needle (with CL) ends with substring.
+batstr
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
+BATSTRcontains_cst;
+Check if bat string haystack contains string needle, icase flag.
+batstr
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRcontains_cst;
+Check if bat string haystack contains string needle (with CL) ends with substring + icase flag.
+batstr
+contains
+pattern batstr.contains(X_0:str, X_1:bat[:str]):bat[:bit] 
+BATSTRcontains_strcst;
+Check if string haystack contains bat string needle.
+batstr
+contains
+pattern batstr.contains(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
+BATSTRcontains_strcst;
+Check if string haystack contains bat string needle (with CL).
+batstr
+contains
+pattern batstr.contains(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRcontains_strcst;
+Check if string haystack contains bat string needle + icase flag.
+batstr
+contains
+pattern batstr.contains(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRcontains_strcst;
+Check if string haystack contains bat string needle (with CL) + icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
+BATSTRends_with;
+Check if bat string ends with bat substring.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
+BATSTRends_with;
+Check if bat string ends with bat substring (with CLs).
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRends_with;
+Check if bat string ends with bat substring, icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:bit] 
+BATSTRends_with;
+Check if bat string ends with bat substring (with CLs) + icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str):bat[:bit] 
+BATSTRends_with_cst;
+Check if bat string ends with substring.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
+BATSTRends_with_cst;
+Check if bat string(with CL) ends with substring.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
+BATSTRends_with_cst;
+Check if bat string ends with substring, icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRends_with_cst;
+Check if bat string(with CL) ends with substring + icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str]):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring.
+batstr
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring(with CL).
+batstr
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring + icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring(with CL) + icase flag.
 batstr
 insert
 pattern batstr.insert(X_0:bat[:str], X_1:bat[:int], X_2:bat[:int], X_3:bat[:str]):bat[:str] 
@@ -33951,33 +34901,63 @@ Return the string length in bytes.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str]):bat[:int] 
-STRbatRstrSearch;
+BATSTRrevstr_search;
 Reverse search for a substring. Returns position, -1 if not found.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
-STRbatRstrSearch;
-Reverse search for a substring. Returns position, -1 if not found.
+BATSTRrevstr_search;
+Reverse search for a substring (with CLs). Returns position, -1 if not found.
 batstr
 r_search
-pattern batstr.r_search(X_0:str, X_1:bat[:str]):bat[:int] 
-STRbatRstrSearch_strcst;
-Reverse search for a substring. Returns position, -1 if not found.
+pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRrevstr_search;
+Reverse search for a substring + icase flag. Returns position, -1 if not found.
 batstr
 r_search
-pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
-STRbatRstrSearch_strcst;
-Reverse search for a substring. Returns position, -1 if not found.
+pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:int] 
+BATSTRrevstr_search;
+Reverse search for a substring (with CLs) + icase flag. Returns position, -1 if not found.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:str):bat[:int] 
-STRbatRstrSearchcst;
+BATSTRrevstr_search_cst;
 Reverse search for a substring. Returns position, -1 if not found.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:int] 
-STRbatRstrSearchcst;
+BATSTRrevstr_search_cst;
+Reverse search for a substring (with CL). Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:bat[:str], X_1:str, X_2:bit):bat[:int] 
+BATSTRrevstr_search_cst;
+Reverse search for a substring + icase flag. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:int] 
+BATSTRrevstr_search_cst;
+Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str]):bat[:int] 
+BATSTRrevstr_search_strcst;
 Reverse search for a substring. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
+BATSTRrevstr_search_strcst;
+Reverse search for a substring (with CL). Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRrevstr_search_strcst;
+Reverse search for a substring + icase flag. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:int] 
+BATSTRrevstr_search_strcst;
+Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.
 batstr
 repeat
 pattern batstr.repeat(X_0:bat[:str], X_1:bat[:int]):bat[:str] 
@@ -34111,33 +35091,63 @@ Strip characters in the second string from end of the first strings.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:bat[:str]):bat[:int] 
-STRbatstrSearch;
+BATSTRstr_search;
 Search for a substring. Returns position, -1 if not found.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
-STRbatstrSearch;
+BATSTRstr_search;
 Search for a substring. Returns position, -1 if not found.
 batstr
 search
-pattern batstr.search(X_0:str, X_1:bat[:str]):bat[:int] 
-STRbatstrSearch_strcst;
-Search for a substring. Returns position, -1 if not found.
+pattern batstr.search(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRstr_search;
+Search for a substring. Returns position, -1 if not found, icase flag.
 batstr
 search
-pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
-STRbatstrSearch_strcst;
-Search for a substring. Returns position, -1 if not found.
+pattern batstr.search(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:int] 
+BATSTRstr_search;
+Search for a substring. Returns position, -1 if not found, icase flag.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:str):bat[:int] 
-STRbatstrSearchcst;
+BATSTRstr_search_cst;
 Search for a substring. Returns position, -1 if not found.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:int] 
-STRbatstrSearchcst;
+BATSTRstr_search_cst;
 Search for a substring. Returns position, -1 if not found.
+batstr
+search
+pattern batstr.search(X_0:bat[:str], X_1:str, X_2:bit):bat[:int] 
+BATSTRstr_search_cst;
+Search for a substring. Returns position, -1 if not found, icase flag.
+batstr
+search
+pattern batstr.search(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:int] 
+BATSTRstr_search_cst;
+Search for a substring. Returns position, -1 if not found, icase flag.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str]):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found, icase flag.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found, icase flag.
 batstr
 space
 pattern batstr.space(X_0:bat[:int]):bat[:str] 
@@ -34169,35 +35179,65 @@ pattern batstr.splitpart(X_0:bat[:str], X_1:str, X_2:int):bat[:str]
 STRbatsplitpartcst;
 Split string on delimiter. Returns@given field (counting from one.)
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
-STRbatPrefix;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
+BATSTRstarts_with;
+Check if bat string starts with bat substring.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
-STRbatPrefix;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
+BATSTRstarts_with;
+Check if bat string starts with bat substring (with CLs).
 batstr
-startsWith
-pattern batstr.startsWith(X_0:str, X_1:bat[:str]):bat[:bit] 
-STRbatPrefix_strcst;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRstarts_with;
+Check if bat string starts with bat substring, icase flag.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
-STRbatPrefix_strcst;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:bit] 
+BATSTRstarts_with;
+Check if bat string starts with bat substring (with CLs) + icase flag.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:str):bat[:bit] 
-STRbatPrefixcst;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str):bat[:bit] 
+BATSTRstarts_with_cst;
+Check if bat string starts with substring.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
-STRbatPrefixcst;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
+BATSTRstarts_with_cst;
+Check if bat string(with CL) starts with substring.
+batstr
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
+BATSTRstarts_with_cst;
+Check if bat string starts with substring, icase flag.
+batstr
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRstarts_with_cst;
+Check if bat string(with CL) starts with substring + icase flag.
+batstr
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str]):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring.
+batstr
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring(with CL).
+batstr
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring + icase flag.
+batstr
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring(with CL) + icase flag.
 batstr
 string
 pattern batstr.string(X_0:bat[:str], X_1:bat[:int]):bat[:str] 
@@ -34499,10 +35539,15 @@ pattern batstr.unicodeAt(X_0:bat[:str], X_1:int, X_2:bat[:oid]):bat[:int]
 STRbatWChrAtcst;
 get a unicode character (as an int) from a string position.
 battxtsim
-similarity
-command battxtsim.similarity(X_0:bat[:str], X_1:bat[:str]):bat[:dbl] 
-fstrcmp0_impl_bulk;
-Normalized edit distance between two strings
+maxlevenshtein
+pattern battxtsim.maxlevenshtein(X_0:bat[:str], X_1:bat[:str], X_2:int):bat[:bit] 
+BATTXTSIMmaxlevenshtein;
+Same as maxlevenshtein but for BATS
+battxtsim
+maxlevenshtein
+pattern battxtsim.maxlevenshtein(X_0:bat[:str], X_1:bat[:str], X_2:int, X_3:int, X_4:int):bat[:bit] 
+BATTXTSIMmaxlevenshtein;
+Same as maxlevenshtein but for BATS
 baturl
 extractURLHost
 command baturl.extractURLHost(X_0:bat[:str], X_1:bit):bat[:str] 
@@ -43710,8 +44755,8 @@ CMDvarCONVERT;
 Cast VALUE to void
 calc
 wkb
-function calc.wkb(wkt:str, srid:int, type:int):wkb;
-(empty)
+command calc.wkb(X_0:str, X_1:int, X_2:int):wkb 
+calc_wkb_str_int_int;
 (empty)
 calc
 wkb
@@ -43895,11 +44940,6 @@ CLTsetPrintTimeout;
 Print running query every so many seconds.
 clients
 setquerytimeout
-unsafe pattern clients.setquerytimeout(X_0:bte, X_1:int):void 
-CLTqueryTimeout;
-(empty)
-clients
-setquerytimeout
 unsafe pattern clients.setquerytimeout(X_0:int):void 
 CLTqueryTimeout;
 (empty)
@@ -43908,21 +44948,6 @@ setquerytimeout
 unsafe pattern clients.setquerytimeout(X_0:int, X_1:int):void 
 CLTqueryTimeout;
 A query is aborted after q seconds (q=0 means run undisturbed).
-clients
-setquerytimeout
-unsafe pattern clients.setquerytimeout(X_0:sht, X_1:int):void 
-CLTqueryTimeout;
-(empty)
-clients
-setsession
-unsafe pattern clients.setsession(X_0:lng):void 
-CLTsetSessionTimeout;
-Abort a session after  n seconds.
-clients
-setsessiontimeout
-unsafe pattern clients.setsessiontimeout(X_0:bte, X_1:int):void 
-CLTsessionTimeout;
-(empty)
 clients
 setsessiontimeout
 unsafe pattern clients.setsessiontimeout(X_0:int):void 
@@ -43933,21 +44958,6 @@ setsessiontimeout
 unsafe pattern clients.setsessiontimeout(X_0:int, X_1:int):void 
 CLTsessionTimeout;
 Set the session timeout for a particulat session id
-clients
-setsessiontimeout
-unsafe pattern clients.setsessiontimeout(X_0:sht, X_1:int):void 
-CLTsessionTimeout;
-(empty)
-clients
-settimeout
-unsafe pattern clients.settimeout(X_0:lng):void 
-CLTsetTimeout;
-Abort a query after  n seconds.
-clients
-settimeout
-unsafe pattern clients.settimeout(X_0:lng, X_1:lng):void 
-CLTsetTimeout;
-Abort a query after q seconds (q=0 means run undisturbed).@The session timeout aborts the connection after spending too@many seconds on query processing.
 clients
 setworkerlimit
 unsafe pattern clients.setworkerlimit(X_0:int):void 
@@ -43970,12 +44980,12 @@ CLTsha2sum;
 Return hex string representation of the SHA-2 hash with bits of the given string
 clients
 shutdown
-unsafe pattern clients.shutdown(X_0:int):str 
+unsafe pattern clients.shutdown(X_0:bte):str 
 CLTshutdown;
 (empty)
 clients
 shutdown
-unsafe pattern clients.shutdown(X_0:int, X_1:bit):str 
+unsafe pattern clients.shutdown(X_0:bte, X_1:bit):str 
 CLTshutdown;
 Close all other client connections. Return if it succeeds.@If forced is set then always stop the system the hard way
 clients
@@ -43985,19 +44995,9 @@ CLTstop;
 Stop the query execution at the next eligble statement.
 clients
 stopsession
-unsafe pattern clients.stopsession(X_0:bte):void 
-CLTstopSession;
-(empty)
-clients
-stopsession
 unsafe pattern clients.stopsession(X_0:int):void 
 CLTstopSession;
 Stop a particular session
-clients
-stopsession
-unsafe pattern clients.stopsession(X_0:sht):void 
-CLTstopSession;
-(empty)
 clients
 suspend
 unsafe pattern clients.suspend(X_0:int):void 
@@ -44093,6 +45093,16 @@ ycc
 command color.ycc(X_0:int, X_1:int, X_2:int):color 
 CLRycc;
 Converts an YCC triplets to a color atom
+csv
+epilogue
+command csv.epilogue():void 
+CSVepilogue;
+(empty)
+csv
+prelude
+pattern csv.prelude():void 
+CSVprelude;
+(empty)
 dict
 compress
 pattern dict.compress(X_0:bat[:any_1]) (X_1:bat[:any], X_2:bat[:any_1]) 
@@ -44138,36 +45148,6 @@ thetaselect
 pattern dict.thetaselect(X_0:bat[:any], X_1:bat[:oid], X_2:bat[:any_1], X_3:any_1, X_4:str):bat[:oid] 
 DICTthetaselect;
 thetaselect on a dictionary
-factories
-getArrival
-command factories.getArrival():bat[:timestamp] 
-FCTgetArrival;
-Retrieve the time stamp the last call was made.
-factories
-getCaller
-command factories.getCaller():int 
-FCTgetCaller;
-Retrieve the unique identity of the factory caller.
-factories
-getDeparture
-command factories.getDeparture():bat[:timestamp] 
-FCTgetDeparture;
-Retrieve the time stamp the last answer was returned.
-factories
-getOwners
-command factories.getOwners():bat[:str] 
-FCTgetOwners;
-Retrieve the factory owners table.
-factories
-getPlants
-command factories.getPlants() (X_0:bat[:str], X_1:bat[:str]) 
-FCTgetPlants;
-Retrieve the names for all active factories.
-factories
-shutdown
-pattern factories.shutdown(X_0:str, X_1:str):void 
-FCTshutdown;
-Close a factory.
 fits
 attach
 unsafe pattern fits.attach(X_0:str):void 
@@ -44595,23 +45575,23 @@ wkbAsBinary;
 Returns the wkb representation into HEX format
 geom
 AsEWKT
-function geom.AsEWKT(w:wkb):str;
-(empty)
+command geom.AsEWKT(X_0:wkb):str 
+geom_AsEWKT_wkb;
 (empty)
 geom
 AsText
-function geom.AsText(w:wkb):str;
-(empty)
+command geom.AsText(X_0:wkb):str 
+geom_AsText_wkb;
 (empty)
 geom
 BdMPolyFromText
-function geom.BdMPolyFromText(wkt:str, srid:int):wkb;
-(empty)
+command geom.BdMPolyFromText(X_0:str, X_1:int):wkb 
+geom_BdMPolyFromText_str_int;
 (empty)
 geom
 BdPolyFromText
-function geom.BdPolyFromText(wkt:str, srid:int):wkb;
-(empty)
+command geom.BdPolyFromText(X_0:str, X_1:int):wkb 
+geom_BdPolyFromText_str_int;
 (empty)
 geom
 Boundary
@@ -44628,6 +45608,11 @@ Centroid
 command geom.Centroid(X_0:wkb):wkb 
 wkbCentroid;
 Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.
+geom
+Collect
+command geom.Collect(X_0:wkb, X_1:wkb):wkb 
+wkbCollect;
+TODO
 geom
 Contains
 command geom.Contains(X_0:wkb, X_1:wkb):bit 
@@ -44664,15 +45649,50 @@ command geom.Covers(X_0:wkb, X_1:wkb):bit
 wkbCovers;
 Returns TRUE if no point of geometry B is outside geometry A
 geom
+CoversGeographic
+command geom.CoversGeographic(X_0:wkb, X_1:wkb):bit 
+wkbCoversGeographic;
+TODO
+geom
 Crosses
 command geom.Crosses(X_0:wkb, X_1:wkb):bit 
 wkbCrosses;
 Returns TRUE if the supplied geometries have some, but not all, interior points in common.
 geom
-DWithin
-command geom.DWithin(X_0:wkb, X_1:wkb, X_2:dbl):bit 
+DWithin2
+command geom.DWithin2(X_0:wkb, X_1:wkb, X_2:mbr, X_3:mbr, X_4:dbl):bit 
+wkbDWithinMbr;
+(empty)
+geom
+DWithinGeographic
+command geom.DWithinGeographic(X_0:wkb, X_1:wkb, X_2:dbl):bit 
+wkbDWithinGeographic;
+TODO
+geom
+DWithinGeographicjoin
+command geom.DWithinGeographicjoin(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:dbl], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+wkbDWithinGeographicJoin;
+TODO
+geom
+DWithinGeographicselect
+command geom.DWithinGeographicselect(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:dbl, X_4:bit):bat[:oid] 
+wkbDWithinGeographicSelect;
+TODO
+geom
+DWithin_noindex
+command geom.DWithin_noindex(X_0:wkb, X_1:wkb, X_2:dbl):bit 
 wkbDWithin;
 Returns true if the two geometries are within the specifies distance from each other
+geom
+DWithinjoin_noindex
+command geom.DWithinjoin_noindex(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid], X_4:dbl, X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+wkbDWithinJoinRTree;
+TODO
+geom
+DWithinselect_noindex
+command geom.DWithinselect_noindex(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:dbl, X_4:bit):bat[:oid] 
+wkbDWithinSelectRTree;
+TODO
 geom
 DelaunayTriangles
 command geom.DelaunayTriangles(X_0:wkb, X_1:dbl, X_2:int):wkb 
@@ -44698,6 +45718,11 @@ Distance
 command geom.Distance(X_0:wkb, X_1:wkb):dbl 
 wkbDistance;
 Returns the 2-dimensional minimum cartesian distance between the two geometries in projected units (spatial ref units.
+geom
+DistanceGeographic
+command geom.DistanceGeographic(X_0:wkb, X_1:wkb):dbl 
+wkbDistanceGeographic;
+TODO
 geom
 Dump
 command geom.Dump(X_0:wkb) (X_1:bat[:str], X_2:bat[:wkb]) 
@@ -44735,13 +45760,13 @@ wkbExteriorRing;
 Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.
 geom
 Force2D
-function geom.Force2D(g:wkb):wkb;
-(empty)
+command geom.Force2D(X_0:wkb):wkb 
+geom_Force2D_wkb;
 (empty)
 geom
 Force3D
-function geom.Force3D(g:wkb):wkb;
-(empty)
+command geom.Force3D(X_0:wkb):wkb 
+geom_Force3D_wkb;
 (empty)
 geom
 ForceDimensions
@@ -44760,23 +45785,23 @@ wkbFromText;
 (empty)
 geom
 GeomCollFromText
-function geom.GeomCollFromText(wkt:str):wkb;
-(empty)
+command geom.GeomCollFromText(X_0:str):wkb 
+geom_GeomCollFromText_str;
 (empty)
 geom
 GeomCollFromText
-function geom.GeomCollFromText(wkt:str, srid:int):wkb;
-(empty)
-(empty)
-geom
-GeomFromText
-function geom.GeomFromText(wkt:str):wkb;
-(empty)
+command geom.GeomCollFromText(X_0:str, X_1:int):wkb 
+geom_GeomCollFromText_str_int;
 (empty)
 geom
 GeomFromText
-function geom.GeomFromText(wkt:str, srid:int):wkb;
+command geom.GeomFromText(X_0:str):wkb 
+geom_GeomFromText_str;
 (empty)
+geom
+GeomFromText
+command geom.GeomFromText(X_0:str, X_1:int):wkb 
+geom_GeomFromText_str_int;
 (empty)
 geom
 GeometryN
@@ -44790,13 +45815,13 @@ wkbGeometryType;
 (empty)
 geom
 GeometryType1
-function geom.GeometryType1(w:wkb):str;
-(empty)
+command geom.GeometryType1(X_0:wkb):str 
+geom_GeometryType1_wkb;
 (empty)
 geom
 GeometryType2
-function geom.GeometryType2(w:wkb):str;
-(empty)
+command geom.GeometryType2(X_0:wkb):str 
+geom_GeometryType2_wkb;
 (empty)
 geom
 GetCoordinate
@@ -44819,10 +45844,40 @@ command geom.Intersection(X_0:wkb, X_1:wkb):wkb
 wkbIntersection;
 Returns a geometry that represents the point set intersection of the Geometries a, b
 geom
-Intersects
-command geom.Intersects(X_0:wkb, X_1:wkb):bit 
+IntersectsGeographic
+command geom.IntersectsGeographic(X_0:wkb, X_1:wkb):bit 
+wkbIntersectsGeographic;
+Returns true if the geographic Geometries intersect in any point
+geom
+IntersectsGeographicjoin
+command geom.IntersectsGeographicjoin(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+wkbIntersectsGeographicJoin;
+TODO
+geom
+IntersectsGeographicselect
+command geom.IntersectsGeographicselect(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:bit):bat[:oid] 
+wkbIntersectsGeographicSelect;
+TODO
+geom
+IntersectsMBR
+command geom.IntersectsMBR(X_0:mbr, X_1:mbr):bit 
+mbrIntersects;
+TODO
+geom
+Intersects_noindex
+command geom.Intersects_noindex(X_0:wkb, X_1:wkb):bit 
 wkbIntersects;
 Returns true if these Geometries 'spatially intersect in 2D'
+geom
+Intersects_noindexjoin
+command geom.Intersects_noindexjoin(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+wkbIntersectsJoinNoIndex;
+TODO
+geom
+Intersects_noindexselect
+command geom.Intersects_noindexselect(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:bit):bat[:oid] 
+wkbIntersectsSelectNoIndex;
+TODO
 geom
 IsClosed
 command geom.IsClosed(X_0:wkb):bit 
@@ -44862,26 +45917,26 @@ geom
 Length
 command geom.Length(X_0:wkb):dbl 
 wkbLength;
-Returns the cartesian 2D length of the geometry if it is a linestrin or multilinestring
+Returns the cartesian 2D length of the geometry if it is a linestring or multilinestring
 geom
 LineFromText
-function geom.LineFromText(wkt:str):wkb;
-(empty)
+command geom.LineFromText(X_0:str):wkb 
+geom_LineFromText_str;
 (empty)
 geom
 LineFromText
-function geom.LineFromText(wkt:str, srid:int):wkb;
-(empty)
+command geom.LineFromText(X_0:str, X_1:int):wkb 
+geom_LineFromText_str_int;
 (empty)
 geom
 MLineFromText
-function geom.MLineFromText(wkt:str):wkb;
-(empty)
+command geom.MLineFromText(X_0:str):wkb 
+geom_MLineFromText_str;
 (empty)
 geom
 MLineFromText
-function geom.MLineFromText(wkt:str, srid:int):wkb;
-(empty)
+command geom.MLineFromText(X_0:str, X_1:int):wkb 
+geom_MLineFromText_str_int;
 (empty)
 geom
 MLineStringToPolygon
@@ -44890,23 +45945,23 @@ wkbMLineStringToPolygon;
 Creates polygons using the MultiLineString provided as WKT. Depending on the flag creates one (flag=0) or multiple (flag=1) polygons
 geom
 MPointFromText
-function geom.MPointFromText(wkt:str):wkb;
-(empty)
+command geom.MPointFromText(X_0:str):wkb 
+geom_MPointFromText_str;
 (empty)
 geom
 MPointFromText
-function geom.MPointFromText(wkt:str, srid:int):wkb;
-(empty)
-(empty)
-geom
-MPolyFromText
-function geom.MPolyFromText(wkt:str):wkb;
-(empty)
+command geom.MPointFromText(X_0:str, X_1:int):wkb 
+geom_MPointFromText_str_int;
 (empty)
 geom
 MPolyFromText
-function geom.MPolyFromText(wkt:str, srid:int):wkb;
+command geom.MPolyFromText(X_0:str):wkb 
+geom_MPolyFromText_str;
 (empty)
+geom
+MPolyFromText
+command geom.MPolyFromText(X_0:str, X_1:int):wkb 
+geom_MPolyFromText_str_int;
 (empty)
 geom
 MakeBox2D
@@ -44915,13 +45970,13 @@ wkbBox2D;
 Creates an mbr from the two 2D points
 geom
 MakeEnvelope
-function geom.MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl):wkb;
-(empty)
+command geom.MakeEnvelope(X_0:dbl, X_1:dbl, X_2:dbl, X_3:dbl):wkb 
+geom_MakeEnvelope_dbl_dbl_dbl_dbl;
 (empty)
 geom
 MakeEnvelope
-function geom.MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl, srid:int):wkb;
-(empty)
+command geom.MakeEnvelope(X_0:dbl, X_1:dbl, X_2:dbl, X_3:dbl, X_4:int):wkb 
+geom_MakeEnvelope_dbl_dbl_dbl_dbl_int;
 (empty)
 geom
 MakeLine
@@ -44929,29 +45984,24 @@ command geom.MakeLine(X_0:wkb, X_1:wkb):wkb
 wkbMakeLine;
 Gets two point or linestring geometries and returns a linestring geometry
 geom
-MakeLine
-command geom.MakeLine(X_0:bat[:wkb]):wkb 
-wkbMakeLineAggr;
-Gets a BAT with point or linestring geometries and returns a single linestring geometry
-geom
 MakePoint
-function geom.MakePoint(x:dbl, y:dbl):wkb;
-(empty)
+command geom.MakePoint(X_0:dbl, X_1:dbl):wkb 
+geom_MakePoint_dbl_dbl;
 (empty)
 geom
 MakePoint
-function geom.MakePoint(x:dbl, y:dbl, z:dbl):wkb;
-(empty)
+command geom.MakePoint(X_0:dbl, X_1:dbl, X_2:dbl):wkb 
+geom_MakePoint_dbl_dbl_dbl;
 (empty)
 geom
 MakePoint
-function geom.MakePoint(x:dbl, y:dbl, z:dbl, m:dbl):wkb;
-(empty)
+command geom.MakePoint(X_0:dbl, X_1:dbl, X_2:dbl, X_3:dbl):wkb 
+geom_MakePoint_dbl_dbl_dbl_dbl;
 (empty)
 geom
 MakePointM
-function geom.MakePointM(x:dbl, y:dbl, m:dbl):wkb;
-(empty)
+command geom.MakePointM(X_0:dbl, X_1:dbl, X_2:dbl):wkb 
+geom_MakePointM_dbl_dbl_dbl;
 (empty)
 geom
 MakePointXYZM
@@ -44960,23 +46010,23 @@ wkbMakePoint;
 creates a point using the coordinates
 geom
 MakePolygon
-function geom.MakePolygon(external:wkb):wkb;
-(empty)
+command geom.MakePolygon(X_0:wkb):wkb 
+geom_MakePolygon_wkb;
 (empty)
 geom
 MakePolygon
-function geom.MakePolygon(external:wkb, srid:int):wkb;
-(empty)
+command geom.MakePolygon(X_0:wkb, X_1:int):wkb 
+geom_MakePolygon_wkb_int;
 (empty)
 geom
 NPoints
-function geom.NPoints(w:wkb):int;
-(empty)
+command geom.NPoints(X_0:wkb):int 
+geom_NPoints_wkb;
 (empty)
 geom
 NRings
-function geom.NRings(w:wkb):int;
-(empty)
+command geom.NRings(X_0:wkb):int 
+geom_NRings_wkb;
 (empty)
 geom
 NumGeometries
@@ -44985,13 +46035,13 @@ wkbNumGeometries;
 Returns the number of geometries
 geom
 NumInteriorRings
-function geom.NumInteriorRings(w:wkb):int;
-(empty)
+command geom.NumInteriorRings(X_0:wkb):int 
+geom_NumInteriorRings_wkb;
 (empty)
 geom
 NumPoints
-function geom.NumPoints(w:wkb):int;
-(empty)
+command geom.NumPoints(X_0:wkb):int 
+geom_NumPoints_wkb;
 (empty)
 geom
 NumRings
@@ -45005,13 +46055,13 @@ wkbOverlaps;
 Returns TRUE if the Geometries intersect but are not completely contained by each other.
 geom
 PointFromText
-function geom.PointFromText(wkt:str):wkb;
-(empty)
+command geom.PointFromText(X_0:str):wkb 
+geom_PointFromText_str;
 (empty)
 geom
 PointFromText
-function geom.PointFromText(wkt:str, srid:int):wkb;
-(empty)
+command geom.PointFromText(X_0:str, X_1:int):wkb 
+geom_PointFromText_str_int;
 (empty)
 geom
 PointN
@@ -45035,13 +46085,13 @@ wkbMakePolygon;
 Returns a Polygon created from the provided LineStrings
 geom
 PolygonFromText
-function geom.PolygonFromText(wkt:str):wkb;
-(empty)
+command geom.PolygonFromText(X_0:str):wkb 
+geom_PolygonFromText_str;
 (empty)
 geom
 PolygonFromText
-function geom.PolygonFromText(wkt:str, srid:int):wkb;
-(empty)
+command geom.PolygonFromText(X_0:str, X_1:int):wkb 
+geom_PolygonFromText_str_int;
 (empty)
 geom
 Relate
@@ -45080,13 +46130,13 @@ wkbTransform;
 Transforms a geometry from one srid to another
 geom
 Translate
-function geom.Translate(g:wkb, dx:dbl, dy:dbl):wkb;
-(empty)
+command geom.Translate(X_0:wkb, X_1:dbl, X_2:dbl):wkb 
+geom_Translate_wkb_dbl_dbl;
 (empty)
 geom
 Translate
-function geom.Translate(g:wkb, dx:dbl, dy:dbl, dz:dbl):wkb;
-(empty)
+command geom.Translate(X_0:wkb, X_1:dbl, X_2:dbl, X_3:dbl):wkb 
+geom_Translate_wkb_dbl_dbl_dbl;
 (empty)
 geom
 Translate3D
@@ -45110,58 +46160,58 @@ wkbWithin;
 Returns TRUE if the geometry A is completely inside geometry B
 geom
 X
-function geom.X(w:wkb):dbl;
-(empty)
+command geom.X(X_0:wkb):dbl 
+geom_X_wkb;
 (empty)
 geom
 XMaxFromMBR
-function geom.XMaxFromMBR(b:mbr):dbl;
-(empty)
+command geom.XMaxFromMBR(X_0:mbr):dbl 
+geom_XMaxFromMBR_mbr;
 (empty)
 geom
 XMaxFromWKB
-function geom.XMaxFromWKB(g:wkb):dbl;
-(empty)
+command geom.XMaxFromWKB(X_0:wkb):dbl 
+geom_XMaxFromWKB_wkb;
 (empty)
 geom
 XMinFromMBR
-function geom.XMinFromMBR(b:mbr):dbl;
-(empty)
+command geom.XMinFromMBR(X_0:mbr):dbl 
+geom_XMinFromMBR_mbr;
 (empty)
 geom
 XMinFromWKB
-function geom.XMinFromWKB(g:wkb):dbl;
-(empty)
+command geom.XMinFromWKB(X_0:wkb):dbl 
+geom_XMinFromWKB_wkb;
 (empty)
 geom
 Y
-function geom.Y(w:wkb):dbl;
-(empty)
+command geom.Y(X_0:wkb):dbl 
+geom_Y_wkb;
 (empty)
 geom
 YMaxFromMBR
-function geom.YMaxFromMBR(b:mbr):dbl;
-(empty)
+command geom.YMaxFromMBR(X_0:mbr):dbl 
+geom_YMaxFromMBR_mbr;
 (empty)
 geom
 YMaxFromWKB
-function geom.YMaxFromWKB(g:wkb):dbl;
-(empty)
+command geom.YMaxFromWKB(X_0:wkb):dbl 
+geom_YMaxFromWKB_wkb;
 (empty)
 geom
 YMinFromMBR
-function geom.YMinFromMBR(b:mbr):dbl;
-(empty)
+command geom.YMinFromMBR(X_0:mbr):dbl 
+geom_YMinFromMBR_mbr;
 (empty)
 geom
 YMinFromWKB
-function geom.YMinFromWKB(g:wkb):dbl;
-(empty)
+command geom.YMinFromWKB(X_0:wkb):dbl 
+geom_YMinFromWKB_wkb;
 (empty)
 geom
 Z
-function geom.Z(w:wkb):dbl;
-(empty)
+command geom.Z(X_0:wkb):dbl 
+geom_Z_wkb;
 (empty)
 geom
 coordinateFromMBR
@@ -45659,6 +46709,11 @@ pattern inspect.getComment(X_0:str, X_1:str):bat[:str]
 INSPECTgetComment;
 Returns the function help information.
 inspect
+getDatabaseName
+command inspect.getDatabaseName():str 
+INSPECTgetDatabaseName;
+Return database name
+inspect
 getDefinition
 pattern inspect.getDefinition(X_0:str, X_1:str):bat[:str] 
 INSPECTgetDefinition;
@@ -45728,16 +46783,6 @@ optimizer_stats
 pattern inspect.optimizer_stats() (X_0:bat[:str], X_1:bat[:int], X_2:bat[:lng]) 
 OPTstatistics;
 Get optimizer use statistics, i.e. calls and total time
-io
-export
-command io.export(X_0:bat[:any_2], X_1:str):void 
-IOexport;
-Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it@is put into the $DBPATH directory. Success of failure is indicated.
-io
-import
-command io.import(X_0:bat[:any_2], X_1:str):void 
-IOimport;
-Import a BAT from an ASCII dump. The tuples are appended to the@first argument. Its signature must match the dump,@else parsing errors will occur as an exception.
 io
 print
 pattern io.print(X_0:any_1):void 
@@ -45979,11 +47024,6 @@ pattern json.renderobject(X_0:any...):json
 JSONrenderobject;
 (empty)
 json
-resultSet
-command json.resultSet(X_0:bat[:uuid], X_1:bat[:lng], X_2:bat[:json]):json 
-JSONresultSet;
-Converts the json store into a single json string:
-json
 str
 command json.str(X_0:json):str 
 JSONjson2str;
@@ -46019,65 +47059,10 @@ command json.values(X_0:json):bat[:json]
 JSONvalueTable;
 Expands the outermost JSON values.
 language
-assert
-unsafe command language.assert(X_0:bit, X_1:str):void 
-MALassertBit;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:hge, X_1:str):void 
-MALassertHge;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:int, X_1:str):void 
-MALassertInt;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:lng, X_1:str):void 
-MALassertLng;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:oid, X_1:str):void 
-MALassertOid;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:sht, X_1:str):void 
-MALassertSht;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:str, X_1:str):void 
-MALassertStr;
-(empty)
-language
-assert
-unsafe pattern language.assert(X_0:any_1, X_1:str, X_2:str, X_3:any_2):void 
-MALassertTriple;
-Assertion test.
-language
 block
 pattern language.block(X_0:int, X_1:any...):int 
 deblockdataflow;
 Block on availability of all variables w, and then pass on v
-language
-call
-pattern language.call(X_0:bat[:str]):void 
-CMDcallBAT;
-Evaluate a program stored in a BAT.
-language
-call
-pattern language.call(X_0:str, X_1:str):void 
-CMDcallFunction;
-(empty)
-language
-call
-pattern language.call(X_0:str):void 
-CMDcallString;
-Evaluate a MAL string program.
 language
 dataflow
 pattern language.dataflow():bit 
@@ -46088,26 +47073,6 @@ pass
 pattern language.pass(X_0:any_1):void 
 MALpass;
 Cheap instruction to disgard storage while retaining the dataflow dependency
-language
-raise
-unsafe command language.raise(X_0:str):str 
-CMDraise;
-Raise an exception labeled @with a specific message.
-language
-register
-pattern language.register(X_0:str, X_1:str, X_2:str, X_3:str):void 
-CMDregisterFunction;
-Compile the code string to MAL and register it as a function.
-language
-sink
-pattern language.sink(X_0:any...):void 
-MALgarbagesink;
-Variables to be considered together when triggering garbage collection.@Used in the dataflow blocks to avoid early release of values.
-language
-source
-pattern language.source(X_0:str):void 
-CMDevalFile;
-Merge the instructions stored in the file with the current program.
 logging
 compinfo
 pattern logging.compinfo() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:str]) 
@@ -46489,11 +47454,6 @@ pattern mdb.List():void
 MDBlistDetail;
 Dump the current routine on standard out.
 mdb
-dump
-pattern mdb.dump():void 
-MDBdump;
-Dump instruction, stacktrace, and stack
-mdb
 getContext
 command mdb.getContext(X_0:str):str 
 MDBgetExceptionContext;
@@ -46549,11 +47509,6 @@ pattern mdb.getVMsize():lng
 MDBgetVMsize;
 Retrieve the max VM size
 mdb
-inspect
-pattern mdb.inspect(X_0:str, X_1:str):void 
-MDBinspect;
-Run the debugger on a specific function
-mdb
 list
 pattern mdb.list(X_0:str, X_1:str):void 
 MDBlist3;
@@ -46574,11 +47529,6 @@ command mdb.modules():bat[:str]
 CMDmodules;
 List available modules
 mdb
-setCatch
-pattern mdb.setCatch(X_0:bit):void 
-MDBsetCatch;
-Turn on/off catching exceptions
-mdb
 setDebug
 pattern mdb.setDebug(X_0:int):int 
 MDBsetDebug;
@@ -46589,40 +47539,10 @@ pattern mdb.setDebug(X_0:str):int
 MDBsetDebugStr;
 Set the kernel debugging bit-set and return its previous value.@The recognized options are: threads, memory, properties,@io, transactions, modules, algorithms, estimates.
 mdb
-setTrace
-pattern mdb.setTrace(X_0:bit):void 
-MDBsetTrace;
-Turn on/off tracing of current routine
-mdb
-setTrace
-pattern mdb.setTrace(X_0:str):void 
-MDBsetVarTrace;
-Turn on/off tracing of a variable 
-mdb
 setVMsize
 pattern mdb.setVMsize(X_0:lng):lng 
 MDBsetVMsize;
 Manipulate the VM max size in MBs
-mdb
-start
-pattern mdb.start():void 
-MDBstart;
-Start interactive debugger
-mdb
-start
-pattern mdb.start(X_0:int):void 
-MDBstart;
-Start interactive debugger on a client
-mdb
-start
-pattern mdb.start(X_0:str, X_1:str):void 
-MDBstartFactory;
-Start interactive debugger on a running factory
-mdb
-stop
-pattern mdb.stop():void 
-MDBstop;
-Stop the interactive debugger
 mdb
 var
 pattern mdb.var(X_0:str, X_1:str):void 
@@ -46990,7 +47910,7 @@ MTIMEdate_to_str;
 create a string from the date, using the specified format (see man strftime)
 mtime
 day
-command mtime.day(X_0:date):int 
+command mtime.day(X_0:date):bte 
 MTIMEdate_extract_day;
 extracts day from date 
 mtime
@@ -47000,17 +47920,17 @@ MTIMEsql_day;
 (empty)
 mtime
 day
-command mtime.day(X_0:timestamp):int 
+command mtime.day(X_0:timestamp):bte 
 MTIMEtimestamp_day;
 (empty)
 mtime
 dayofweek
-command mtime.dayofweek(X_0:date):int 
+command mtime.dayofweek(X_0:date):bte 
 MTIMEdate_extract_dayofweek;
 Returns the current day of the week@where 1=monday, .., 7=sunday
 mtime
 dayofyear
-command mtime.dayofyear(X_0:date):int 
+command mtime.dayofyear(X_0:date):sht 
 MTIMEdate_extract_dayofyear;
 Returns N where d is the Nth day@of the year (january 1 returns 1)
 mtime
@@ -47075,7 +47995,7 @@ MTIMEtimestamp_extract_epoch_ms;
 (empty)
 mtime
 hours
-command mtime.hours(X_0:daytime):int 
+command mtime.hours(X_0:daytime):bte 
 MTIMEdaytime_extract_hours;
 extracts hour from daytime
 mtime
@@ -47085,7 +48005,7 @@ MTIMEsql_hours;
 (empty)
 mtime
 hours
-command mtime.hours(X_0:timestamp):int 
+command mtime.hours(X_0:timestamp):bte 
 MTIMEtimestamp_hours;
 (empty)
 mtime
@@ -47095,7 +48015,7 @@ MTIMElocal_timezone_msec;
 get the local timezone in seconds
 mtime
 minutes
-command mtime.minutes(X_0:daytime):int 
+command mtime.minutes(X_0:daytime):bte 
 MTIMEdaytime_extract_minutes;
 extracts minutes from daytime
 mtime
@@ -47105,12 +48025,12 @@ MTIMEsql_minutes;
 (empty)
 mtime
 minutes
-command mtime.minutes(X_0:timestamp):int 
+command mtime.minutes(X_0:timestamp):bte 
 MTIMEtimestamp_minutes;
 (empty)
 mtime
 month
-command mtime.month(X_0:date):int 
+command mtime.month(X_0:date):bte 
 MTIMEdate_extract_month;
 extracts month from date
 mtime
@@ -47120,17 +48040,32 @@ MTIMEsql_month;
 (empty)
 mtime
 month
-command mtime.month(X_0:timestamp):int 
+command mtime.month(X_0:timestamp):bte 
 MTIMEtimestamp_month;
 (empty)
 mtime
+odbc_timestamp_add_month_time
+command mtime.odbc_timestamp_add_month_time(X_0:daytime, X_1:int):timestamp 
+MTIMEodbc_timestamp_add_month_interval_time;
+Add months to a time
+mtime
+odbc_timestamp_add_msec_date
+command mtime.odbc_timestamp_add_msec_date(X_0:date, X_1:lng):timestamp 
+MTIMEodbc_timestamp_add_msec_interval_date;
+(empty)
+mtime
+odbc_timestamp_add_msec_time
+command mtime.odbc_timestamp_add_msec_time(X_0:daytime, X_1:lng):timestamp 
+MTIMEodbc_timestamp_add_msec_interval_time;
+(empty)
+mtime
 quarter
-command mtime.quarter(X_0:date):int 
+command mtime.quarter(X_0:date):bte 
 MTIMEdate_extract_quarter;
 extracts quarter from date
 mtime
 quarter
-command mtime.quarter(X_0:timestamp):int 
+command mtime.quarter(X_0:timestamp):bte 
 MTIMEtimestamp_quarter;
 (empty)
 mtime
@@ -47204,13 +48139,133 @@ command mtime.timestamp_to_str(X_0:timestamp, X_1:str):str
 MTIMEtimestamp_to_str;
 create a string from the time, using the specified format (see man strftime)
 mtime
+timestampdiff_day
+command mtime.timestampdiff_day(X_0:timestamp, X_1:timestamp):int 
+MTIMEtimestampdiff_day;
+diff in days between 'val1' and 'val2'.
+mtime
+timestampdiff_day
+command mtime.timestampdiff_day(X_0:daytime, X_1:timestamp):int 
+MTIMEtimestampdiff_day_t_ts;
+diff in days between 'val1' and 'val2'.
+mtime
+timestampdiff_day
+command mtime.timestampdiff_day(X_0:timestamp, X_1:daytime):int 
+MTIMEtimestampdiff_day_ts_t;
+diff in days between 'val1' and 'val2'.
+mtime
+timestampdiff_hour
+command mtime.timestampdiff_hour(X_0:timestamp, X_1:timestamp):lng 
+MTIMEtimestampdiff_hour;
+diff in hours between 'val1' and 'val2'.
+mtime
+timestampdiff_hour
+command mtime.timestampdiff_hour(X_0:date, X_1:timestamp):lng 
+MTIMEtimestampdiff_hour_d_ts;
+diff in hours between 'val1' and 'val2'.
+mtime
+timestampdiff_hour
+command mtime.timestampdiff_hour(X_0:timestamp, X_1:date):lng 
+MTIMEtimestampdiff_hour_ts_d;
+diff in hours between 'val1' and 'val2'.
+mtime
+timestampdiff_min
+command mtime.timestampdiff_min(X_0:timestamp, X_1:timestamp):lng 
+MTIMEtimestampdiff_min;
+diff in min between 'val1' and 'val2'.
+mtime
+timestampdiff_min
+command mtime.timestampdiff_min(X_0:date, X_1:timestamp):lng 
+MTIMEtimestampdiff_min_d_ts;
+diff in min between 'val1' and 'val2'.
+mtime
+timestampdiff_min
+command mtime.timestampdiff_min(X_0:timestamp, X_1:date):lng 
+MTIMEtimestampdiff_min_ts_d;
+diff in min between 'val1' and 'val2'.
+mtime
+timestampdiff_month
+command mtime.timestampdiff_month(X_0:timestamp, X_1:timestamp):int 
+MTIMEtimestampdiff_month;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_month
+command mtime.timestampdiff_month(X_0:daytime, X_1:timestamp):int 
+MTIMEtimestampdiff_month_t_ts;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_month
+command mtime.timestampdiff_month(X_0:timestamp, X_1:daytime):int 
+MTIMEtimestampdiff_month_ts_t;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_quarter
+command mtime.timestampdiff_quarter(X_0:timestamp, X_1:timestamp):int 
+MTIMEtimestampdiff_quarter;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_quarter
+command mtime.timestampdiff_quarter(X_0:daytime, X_1:timestamp):int 
+MTIMEtimestampdiff_quarter_t_ts;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_quarter
+command mtime.timestampdiff_quarter(X_0:timestamp, X_1:daytime):int 
+MTIMEtimestampdiff_quarter_ts_t;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_sec
+command mtime.timestampdiff_sec(X_0:timestamp, X_1:timestamp):lng 
+MTIMEtimestampdiff_sec;
+diff in seconds between 'val1' and 'val2'.
+mtime
+timestampdiff_sec
+command mtime.timestampdiff_sec(X_0:date, X_1:timestamp):lng 
+MTIMEtimestampdiff_sec_d_ts;
+diff in seconds between 'val1' and 'val2'.
+mtime
+timestampdiff_sec
+command mtime.timestampdiff_sec(X_0:timestamp, X_1:date):lng 
+MTIMEtimestampdiff_sec_ts_d;
+diff in seconds between 'val1' and 'val2'.
+mtime
+timestampdiff_week
+command mtime.timestampdiff_week(X_0:timestamp, X_1:timestamp):int 
+MTIMEtimestampdiff_week;
+diff in weeks between 'val1' and 'val2'.
+mtime
+timestampdiff_week
+command mtime.timestampdiff_week(X_0:daytime, X_1:timestamp):int 
+MTIMEtimestampdiff_week_t_ts;
+diff in weeks between 'val1' and 'val2'.
+mtime
+timestampdiff_week
+command mtime.timestampdiff_week(X_0:timestamp, X_1:daytime):int 
+MTIMEtimestampdiff_week_ts_t;
+diff in weeks between 'val1' and 'val2'.
+mtime
+timestampdiff_year
+command mtime.timestampdiff_year(X_0:timestamp, X_1:timestamp):int 
+MTIMEtimestampdiff_year;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_year
+command mtime.timestampdiff_year(X_0:daytime, X_1:timestamp):int 
+MTIMEtimestampdiff_year_t_ts;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_year
+command mtime.timestampdiff_year(X_0:timestamp, X_1:daytime):int 
+MTIMEtimestampdiff_year_ts_t;
+diff in months between 'val1' and 'val2'.
+mtime
 usweekofyear
-command mtime.usweekofyear(X_0:date):int 
+command mtime.usweekofyear(X_0:date):bte 
 MTIMEdate_extract_usweekofyear;
 Returns the week number in the year, US style.
 mtime
 weekofyear
-command mtime.weekofyear(X_0:date):int 
+command mtime.weekofyear(X_0:date):bte 
 MTIMEdate_extract_weekofyear;
 Returns the week number in the year.
 mtime
@@ -47258,16 +48313,6 @@ aliases
 pattern optimizer.aliases(X_0:str, X_1:str):str 
 OPTwrapper;
 Alias removal optimizer
-optimizer
-bincopyfrom
-pattern optimizer.bincopyfrom():str 
-OPTwrapper;
-(empty)
-optimizer
-bincopyfrom
-pattern optimizer.bincopyfrom(X_0:str, X_1:str):str 
-OPTwrapper;
-Parallellize column loading
 optimizer
 candidates
 pattern optimizer.candidates():str 
@@ -47338,16 +48383,6 @@ deadcode
 pattern optimizer.deadcode(X_0:str, X_1:str):str 
 OPTwrapper;
 Dead code optimizer
-optimizer
-default_fast
-function optimizer.default_fast():void;
-(empty)
-(empty)
-optimizer
-default_pipe
-function optimizer.default_pipe():void;
-(empty)
-(empty)
 optimizer
 defaultfast
 pattern optimizer.defaultfast():str 
@@ -47434,46 +48469,6 @@ pattern optimizer.inline(X_0:str, X_1:str):str
 OPTwrapper;
 Expand inline functions
 optimizer
-jit
-pattern optimizer.jit():str 
-OPTwrapper;
-(empty)
-optimizer
-jit
-pattern optimizer.jit(X_0:str, X_1:str):str 
-OPTwrapper;
-Propagate candidate lists in just-in-time optimization
-optimizer
-json
-pattern optimizer.json():str 
-OPTwrapper;
-(empty)
-optimizer
-json
-pattern optimizer.json(X_0:str, X_1:str):str 
-OPTwrapper;
-Unroll the mat.pack operation
-optimizer
-macro
-pattern optimizer.macro(X_0:str, X_1:str):void 
-OPTmacro;
-Inline the code of the target function.
-optimizer
-macro
-pattern optimizer.macro(X_0:str, X_1:str, X_2:str, X_3:str):void 
-OPTmacro;
-Inline a target function used in a specific function.
-optimizer
-mask
-pattern optimizer.mask():str 
-OPTwrapper;
-(empty)
-optimizer
-mask
-pattern optimizer.mask(X_0:str, X_1:str):str 
-OPTwrapper;
-Manipulate the MSK objects
-optimizer
 matpack
 pattern optimizer.matpack():str 
 OPTwrapper;
@@ -47493,16 +48488,6 @@ mergetable
 pattern optimizer.mergetable(X_0:str, X_1:str):str 
 OPTwrapper;
 Resolve the multi-table definitions
-optimizer
-minimal_fast
-function optimizer.minimal_fast():void;
-(empty)
-(empty)
-optimizer
-minimal_pipe
-function optimizer.minimal_pipe():void;
-(empty)
-(empty)
 optimizer
 minimalfast
 pattern optimizer.minimalfast():str 
@@ -47534,25 +48519,10 @@ pattern optimizer.multiplex(X_0:str, X_1:str):str
 OPTwrapper;
 Compiler for multiplexed instructions
 optimizer
-no_mitosis_pipe
-function optimizer.no_mitosis_pipe():void;
-(empty)
-(empty)
-optimizer
 optimize
 pattern optimizer.optimize(X_0:str, X_1:str):void 
 QOToptimize;
 Optimize a specific operation
-optimizer
-orcam
-pattern optimizer.orcam(X_0:str, X_1:str):void 
-OPTorcam;
-Inverse macro processor for current function
-optimizer
-orcam
-pattern optimizer.orcam(X_0:str, X_1:str, X_2:str, X_3:str):void 
-OPTorcam;
-Inverse macro, find pattern and replace with a function call.
 optimizer
 postfix
 pattern optimizer.postfix():str 
@@ -47643,11 +48613,6 @@ reorder
 pattern optimizer.reorder(X_0:str, X_1:str):str 
 OPTwrapper;
 Reorder by dataflow dependencies
-optimizer
-sequential_pipe
-function optimizer.sequential_pipe():void;
-(empty)
-(empty)
 optimizer
 strimps
 pattern optimizer.strimps():str 
@@ -47770,7 +48735,7 @@ CMDopenProfilerStream;
 Start profiling the events, send to output stream
 profiler
 openstream
-pattern profiler.openstream(X_0:str):void 
+pattern profiler.openstream(X_0:int):void 
 CMDopenProfilerStream;
 Start profiling the events, send to output stream
 profiler
@@ -47804,8 +48769,13 @@ unsafe pattern profiler.stoptrace():void
 CMDstopTrace;
 Stop collecting trace information
 pyapi3
+epilogue
+command pyapi3.epilogue():void 
+PyAPI3epilogue;
+(empty)
+pyapi3
 eval
-unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any 
+unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any_1 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script returning a single value
 pyapi3
@@ -47829,29 +48799,14 @@ unsafe pattern pyapi3.eval_loader(X_0:ptr, X_1:str, X_2:any...):any...
 PYAPI3PyAPIevalLoader;
 loader functions through Python
 pyapi3
+prelude
+pattern pyapi3.prelude():void 
+PyAPI3prelude;
+(empty)
+pyapi3
 subeval_aggr
 unsafe pattern pyapi3.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
 PYAPI3PyAPIevalAggr;
-grouped aggregates through Python
-pyapi3map
-eval
-pattern pyapi3map.eval(X_0:ptr, X_1:str):any 
-PYAPI3PyAPIevalStdMap;
-Execute a simple Python script returning a single value
-pyapi3map
-eval
-pattern pyapi3map.eval(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalStdMap;
-Execute a simple Python script value
-pyapi3map
-eval_aggr
-pattern pyapi3map.eval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalAggrMap;
-grouped aggregates through Python
-pyapi3map
-subeval_aggr
-pattern pyapi3map.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalAggrMap;
 grouped aggregates through Python
 querylog
 append
@@ -47949,11 +48904,6 @@ command remote.connect(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit):str
 RMTconnectScen;
 returns a newly created connection for uri, using user name, password and scenario
 remote
-connect
-pattern remote.connect(X_0:str, X_1:str):str 
-RMTconnectTable;
-return a newly created connection for a table. username and password should be in the vault
-remote
 disconnect
 command remote.disconnect(X_0:str):void 
 RMTdisconnect;
@@ -48013,6 +48963,36 @@ resolve
 command remote.resolve(X_0:str):bat[:str] 
 RMTresolve;
 resolve a pattern against Merovingian and return the URIs
+rtree
+DWithin
+command rtree.DWithin(X_0:wkb, X_1:wkb, X_2:dbl):bit 
+wkbDWithin;
+Returns true if these Geometries 'spatially intersect in 2D'
+rtree
+DWithinjoin
+command rtree.DWithinjoin(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid], X_4:dbl, X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+wkbDWithinJoinRTree;
+TODO
+rtree
+DWithinselect
+command rtree.DWithinselect(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:dbl, X_4:bit):bat[:oid] 
+wkbDWithinSelectRTree;
+TODO
+rtree
+Intersects
+command rtree.Intersects(X_0:wkb, X_1:wkb):bit 
+wkbIntersects;
+Returns true if these Geometries 'spatially intersect in 2D'
+rtree
+Intersectsjoin
+command rtree.Intersectsjoin(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+wkbIntersectsJoinRTree;
+TODO
+rtree
+Intersectsselect
+command rtree.Intersectsselect(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:bit):bat[:oid] 
+wkbIntersectsSelectRTree;
+TODO
 sample
 subuniform
 pattern sample.subuniform(X_0:bat[:any], X_1:dbl):bat[:oid] 
@@ -48034,20 +49014,15 @@ pattern sample.subuniform(X_0:bat[:any], X_1:lng, X_2:int):bat[:oid]
 SAMPLEuniform;
 Returns the oids of a uniform sample of size s and where the prg is seeded with sample_seed
 shp
-attach
-unsafe pattern shp.attach(X_0:str):void 
-SHPattach;
-Register an ESRI Shapefile in the vault catalog
+load
+pattern shp.load(X_0:str, X_1:str):void 
+SHPload;
+Import an ESRI Shapefile into a new table, on the sys schema
 shp
-import
-unsafe pattern shp.import(X_0:int):void 
-SHPimport;
-Import an ESRI Shapefile with given id into the vault
-shp
-import
-unsafe pattern shp.import(X_0:int, X_1:wkb):void 
-SHPpartialimport;
-Partially import an ESRI Shapefile with given id into the vault
+load
+pattern shp.load(X_0:str, X_1:str, X_2:str):void 
+SHPloadSchema;
+Import an ESRI Shapefile into a new table, on a certain schema
 sql
 affectedRows
 unsafe pattern sql.affectedRows(X_0:int, X_1:lng):int 
@@ -48394,6 +49369,11 @@ command sql.date_trunc(X_0:str, X_1:timestamp):timestamp
 date_trunc;
 Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)
 sql
+decypher
+pattern sql.decypher(X_0:str):str 
+SQLdecypher;
+Return decyphered password
+sql
 delete
 unsafe pattern sql.delete(X_0:int, X_1:str, X_2:str, X_3:any):int 
 mvc_delete_wrap;
@@ -48554,6 +49534,16 @@ unsafe pattern sql.exportResult(X_0:streams, X_1:int):void
 mvc_export_result_wrap;
 Export a result (in order) to stream s
 sql
+export_bin_column
+unsafe pattern sql.export_bin_column(X_0:any_1, X_1:bit, X_2:str, X_3:int):lng 
+mvc_bin_export_column_wrap;
+export column as binary
+sql
+export_bin_column
+unsafe pattern sql.export_bin_column(X_0:bat[:any_1], X_1:bit, X_2:str, X_3:int):lng 
+mvc_bin_export_column_wrap;
+export column as binary
+sql
 export_table
 unsafe pattern sql.export_table(X_0:str, X_1:str, X_2:str, X_3:str, X_4:str, X_5:str, X_6:int, X_7:bat[:str], X_8:bat[:str], X_9:bat[:str], X_10:bat[:int], X_11:bat[:int], X_12:any...):int 
 mvc_export_row_wrap;
@@ -48596,18 +49586,13 @@ Write db snapshot to the given tar(.gz) file
 sql
 hot_snapshot
 unsafe pattern sql.hot_snapshot(X_0:str, X_1:bit):void 
-SQLhot_snapshot_wrap;
+SQLhot_snapshot;
 Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client
 sql
 importColumn
-pattern sql.importColumn(X_0:str, X_1:bit, X_2:str, X_3:int, X_4:oid) (X_5:bat[:any], X_6:oid) 
+pattern sql.importColumn(X_0:str, X_1:int, X_2:bit, X_3:str, X_4:int, X_5:oid) (X_6:bat[:any], X_7:oid) 
 mvc_bin_import_column_wrap;
 Import a column from the given file
-sql
-importTable
-unsafe pattern sql.importTable(X_0:str, X_1:str, X_2:int, X_3:bit, X_4:str...):bat[:any]... 
-mvc_bin_import_table_wrap;
-Import a table from the files (fname)
 sql
 include
 unsafe pattern sql.include(X_0:str):void 
@@ -48713,6 +49698,11 @@ percent_rank
 pattern sql.percent_rank(X_0:any_1, X_1:bit, X_2:bit):dbl 
 SQLpercent_rank;
 return the percentage into the total number of groups for each row
+sql
+persist_unlogged
+unsafe pattern sql.persist_unlogged(X_0:str, X_1:str) (X_2:bat[:str], X_3:bat[:int], X_4:bat[:lng]) 
+SQLpersist_unlogged;
+Persist deltas on append only table in schema s table t
 sql
 predicate
 unsafe pattern sql.predicate(X_0:str, X_1:str, X_2:str):void 
@@ -48879,11 +49869,6 @@ pattern sql.row_number(X_0:any_1, X_1:bit, X_2:bit):int
 SQLrow_number;
 return the row_numer-ed groups
 sql
-rt_credentials
-pattern sql.rt_credentials(X_0:str) (X_1:bat[:str], X_2:bat[:str], X_3:bat[:str]) 
-sql_rt_credentials_wrap;
-Return the remote table credentials for the given table
-sql
 sessions
 pattern sql.sessions() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:timestamp], X_3:bat[:timestamp], X_4:bat[:str], X_5:bat[:int], X_6:bat[:int], X_7:bat[:int], X_8:bat[:int]) 
 sql_sessions_wrap;
@@ -48893,6 +49878,21 @@ setVariable
 unsafe pattern sql.setVariable(X_0:int, X_1:str, X_2:str, X_3:any_1):int 
 setVariable;
 Set the value of a session variable
+sql
+set_count_distinct
+unsafe pattern sql.set_count_distinct(X_0:str, X_1:str, X_2:str, X_3:lng):void 
+sql_set_count_distinct;
+Set count distinct for column
+sql
+set_max
+unsafe pattern sql.set_max(X_0:str, X_1:str, X_2:str, X_3:any_1):void 
+sql_set_max;
+Set max for column
+sql
+set_min
+unsafe pattern sql.set_min(X_0:str, X_1:str, X_2:str, X_3:any_1):void 
+sql_set_min;
+Set min for column
 sql
 set_protocol
 unsafe pattern sql.set_protocol(X_0:int):int 
@@ -49380,7 +50380,7 @@ SQLalter_table;
 Catalog operation alter_table
 sqlcatalog
 alter_user
-pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str):void 
+pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str, X_7:lng, X_8:int):void 
 SQLalter_user;
 Catalog operation alter_user
 sqlcatalog
@@ -49411,6 +50411,11 @@ Catalog operation create_seq
 sqlcatalog
 create_table
 pattern sqlcatalog.create_table(X_0:str, X_1:str, X_2:ptr, X_3:int):void 
+SQLcreate_table;
+Catalog operation create_table
+sqlcatalog
+create_table
+pattern sqlcatalog.create_table(X_0:str, X_1:str, X_2:ptr, X_3:int, X_4:str, X_5:str):void 
 SQLcreate_table;
 Catalog operation create_table
 sqlcatalog
@@ -49554,10 +50559,90 @@ command str.ascii(X_0:str):int
 STRascii;
 Return unicode of head of string
 str
-endsWith
-command str.endsWith(X_0:str, X_1:str):bit 
-STRSuffix;
-Suffix check.
+asciify
+command str.asciify(X_0:str):str 
+STRasciify;
+Transform string from UTF8 to ASCII
+str
+contains
+pattern str.contains(X_0:str, X_1:str):bit 
+STRcontains;
+Check if string haystack contains string needle.
+str
+contains
+pattern str.contains(X_0:str, X_1:str, X_2:bit):bit 
+STRcontains;
+Check if string chaystack contains string needle, icase flag.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+STRcontainsjoin1;
+The same as STRcontainsjoin, but only produce one output + icase.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRcontainsjoin1;
+The same as STRcontainsjoin, but only produce one output.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+STRcontainsjoin;
+Join the string bat L with the bat R if L contains the string of R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+STRcontainsjoin;
+Join the string bat L with the bat R if L contains the string of R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+str
+containsselect
+pattern str.containsselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
+STRcontainsselect;
+Select all head values of the first input BAT for which the@tail value contains the given needle.
+str
+containsselect
+pattern str.containsselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+STRcontainsselect;
+Select all head values of the first input BAT for which the@tail value contains the given needle + icase.
+str
+endswith
+pattern str.endswith(X_0:str, X_1:str):bit 
+STRendswith;
+Check if string ends with substring.
+str
+endswith
+pattern str.endswith(X_0:str, X_1:str, X_2:bit):bit 
+STRendswith;
+Check if string ends with substring, icase flag.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+STRendswithjoin1;
+The same as STRendswithjoin, but only produce one output + icase.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRendswithjoin1;
+The same as STRendswithjoin, but only produce one output.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+STRendswithjoin;
+Join the string bat L with the suffix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+STRendswithjoin;
+Join the string bat L with the suffix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+str
+endswithselect
+pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
+STRendswithselect;
+Select all head values of the first input BAT for which the@tail value end with the given suffix.
+str
+endswithselect
+pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+STRendswithselect;
+Select all head values of the first input BAT for which the@tail value end with the given suffix + icase.
 str
 epilogue
 command str.epilogue():void 
@@ -49625,9 +50710,14 @@ STRprefix;
 Extract the prefix of a given length
 str
 r_search
-command str.r_search(X_0:str, X_1:str):int 
-STRReverseStrSearch;
+pattern str.r_search(X_0:str, X_1:str):int 
+STRrevstr_search;
 Reverse search for a substring. Returns@position, -1 if not found.
+str
+r_search
+pattern str.r_search(X_0:str, X_1:str, X_2:bit):int 
+STRrevstr_search;
+Reverse search for a substring, icase flag. Returns@position, -1 if not found.
 str
 repeat
 command str.repeat(X_0:str, X_1:int):str 
@@ -49665,9 +50755,14 @@ STRRtrim2;
 Remove the longest string containing only characters from the second string from the end of the first string.
 str
 search
-command str.search(X_0:str, X_1:str):int 
-STRstrSearch;
+pattern str.search(X_0:str, X_1:str):int 
+STRstr_search;
 Search for a substring. Returns@position, -1 if not found.
+str
+search
+pattern str.search(X_0:str, X_1:str, X_2:bit):int 
+STRstr_search;
+Search for a substring, icase flag. Returns@position, -1 if not found.
 str
 space
 command str.space(X_0:int):str 
@@ -49679,10 +50774,45 @@ command str.splitpart(X_0:str, X_1:str, X_2:int):str
 STRsplitpart;
 Split string on delimiter. Returns@given field (counting from one.)
 str
-startsWith
-command str.startsWith(X_0:str, X_1:str):bit 
-STRPrefix;
-Prefix check.
+startswith
+pattern str.startswith(X_0:str, X_1:str):bit 
+STRstartswith;
+Check if string starts with substring.
+str
+startswith
+pattern str.startswith(X_0:str, X_1:str, X_2:bit):bit 
+STRstartswith;
+Check if string starts with substring, icase flag.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+STRstartswithjoin1;
+The same as STRstartswithjoin, but only produce one output + icase.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRstartswithjoin1;
+The same as STRstartswithjoin, but only produce one output.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+STRstartswithjoin;
+Join the string bat L with the prefix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+STRstartswithjoin;
+Join the string bat L with the prefix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+str
+startswithselect
+pattern str.startswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
+STRstartswithselect;
+Select all head values of the first input BAT for which the@tail value starts with the given prefix.
+str
+startswithselect
+pattern str.startswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+STRstartswithselect;
+Select all head values of the first input BAT for which the@tail value starts with the given prefix + icase.
 str
 str
 command str.str(X_0:str):str 
@@ -49731,12 +50861,12 @@ Extract the suffix of a given length
 str
 toLower
 command str.toLower(X_0:str):str 
-STRLower;
+STRlower;
 Convert a string to lower case.
 str
 toUpper
 command str.toUpper(X_0:str):str 
-STRUpper;
+STRupper;
 Convert a string to upper case.
 str
 trim
@@ -49830,164 +50960,139 @@ mnstr_write_stringwrap;
 write data on the stream
 sysmon
 pause
-unsafe pattern sysmon.pause(X_0:int):void 
-SYSMONpause;
-Suspend a running query
-sysmon
-pause
 unsafe pattern sysmon.pause(X_0:lng):void 
 SYSMONpause;
-Suspend a running query
+Suspend query execution with OID id
 sysmon
 pause
-unsafe pattern sysmon.pause(X_0:sht):void 
+unsafe pattern sysmon.pause(X_0:lng, X_1:str):void 
 SYSMONpause;
-Suspend a running query
+Sysadmin call, suspend query execution with OID id belonging to user
 sysmon
 queue
 pattern sysmon.queue() (X_0:bat[:lng], X_1:bat[:int], X_2:bat[:str], X_3:bat[:timestamp], X_4:bat[:str], X_5:bat[:str], X_6:bat[:timestamp], X_7:bat[:int], X_8:bat[:int]) 
 SYSMONqueue;
 A queue of queries that are currently being executed or recently finished
 sysmon
-resume
-unsafe pattern sysmon.resume(X_0:int):void 
-SYSMONresume;
-Resume processing of a query 
+queue
+pattern sysmon.queue(X_0:str) (X_1:bat[:lng], X_2:bat[:int], X_3:bat[:str], X_4:bat[:timestamp], X_5:bat[:str], X_6:bat[:str], X_7:bat[:timestamp], X_8:bat[:int], X_9:bat[:int]) 
+SYSMONqueue;
+Sysadmin call, to see either the global queue or user queue of queries that are currently being executed or recently finished
 sysmon
 resume
 unsafe pattern sysmon.resume(X_0:lng):void 
 SYSMONresume;
-Resume processing of a query 
+Resume query execution with OID id
 sysmon
 resume
-unsafe pattern sysmon.resume(X_0:sht):void 
+unsafe pattern sysmon.resume(X_0:lng, X_1:str):void 
 SYSMONresume;
-Resume processing of a query 
-sysmon
-stop
-unsafe pattern sysmon.stop(X_0:int):void 
-SYSMONstop;
-Stop a single query a.s.a.p.
+Sysadmin call, resume query execution with OID id belonging to user
 sysmon
 stop
 unsafe pattern sysmon.stop(X_0:lng):void 
 SYSMONstop;
-Stop a single query a.s.a.p.
+Stop query execution with OID id
 sysmon
 stop
-unsafe pattern sysmon.stop(X_0:sht):void 
+unsafe pattern sysmon.stop(X_0:lng, X_1:str):void 
 SYSMONstop;
-Stop a single query a.s.a.p.
+Sysadmin call, stop query execution with OID id belonging to user
 sysmon
 user_statistics
 pattern sysmon.user_statistics() (X_0:bat[:str], X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:timestamp], X_4:bat[:timestamp], X_5:bat[:lng], X_6:bat[:str]) 
 SYSMONstatistics;
 (empty)
-tokenizer
-append
-command tokenizer.append(X_0:str):oid 
-TKNZRappend;
-tokenize a new string and append it to the tokenizer (duplicate elimination is performed)
-tokenizer
-close
-command tokenizer.close():void 
-TKNZRclose;
-close the current tokenizer store
-tokenizer
-depositFile
-command tokenizer.depositFile(X_0:str):void 
-TKNZRdepositFile;
-batch insertion from a file of strings to tokenize, each string is separated by a new line
-tokenizer
-getCardinality
-command tokenizer.getCardinality():bat[:lng] 
-TKNZRgetCardinality;
-debugging function that returns the unique tokens at each level
-tokenizer
-getCount
-command tokenizer.getCount():bat[:lng] 
-TKNZRgetCount;
-debugging function that returns the size of the bats at each level
-tokenizer
-getIndex
-command tokenizer.getIndex():bat[:oid] 
-TKNZRgetIndex;
-administrative function that returns the INDEX bat
-tokenizer
-getLevel
-command tokenizer.getLevel(X_0:int):bat[:str] 
-TKNZRgetLevel;
-administrative function that returns the bat on level i
-tokenizer
-locate
-pattern tokenizer.locate(X_0:str):oid 
-TKNZRlocate;
-if the given string is in the store returns its oid, otherwise oid_nil
-tokenizer
-open
-command tokenizer.open(X_0:str):void 
-TKNZRopen;
-open the named tokenizer store, a new one is created if the specified name does not exist
-tokenizer
-take
-pattern tokenizer.take(X_0:oid):str 
-TKNZRtakeOid;
-reconstruct and returns the i-th string
+txtsim
+dameraulevenshtein
+pattern txtsim.dameraulevenshtein(X_0:str, X_1:str):int 
+TXTSIMdameraulevenshtein;
+Calculates Damerau-Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1, transposition = 2)
+txtsim
+dameraulevenshtein
+pattern txtsim.dameraulevenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
+TXTSIMdameraulevenshtein;
+Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)
 txtsim
 editdistance
 command txtsim.editdistance(X_0:str, X_1:str):int 
-levenshteinbasic_impl;
-Alias for Levenshtein(str,str)
+TXTSIMdameraulevenshtein1;
+Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2
 txtsim
 editdistance2
 command txtsim.editdistance2(X_0:str, X_1:str):int 
-levenshteinbasic2_impl;
-Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2
+TXTSIMdameraulevenshtein2;
+Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 1
+txtsim
+jarowinkler
+command txtsim.jarowinkler(X_0:str, X_1:str):dbl 
+TXTSIMjarowinkler;
+Calculate Jaro Winkler similarity
 txtsim
 levenshtein
-command txtsim.levenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
-levenshtein_impl;
-Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)
+pattern txtsim.levenshtein(X_0:str, X_1:str):int 
+TXTSIMlevenshtein;
+Calculates Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1)
 txtsim
 levenshtein
-command txtsim.levenshtein(X_0:str, X_1:str):int 
-levenshteinbasic_impl;
-Calculates Levenshtein distance (edit distance) between two strings
+pattern txtsim.levenshtein(X_0:str, X_1:str, X_2:int, X_3:int):int 
+TXTSIMlevenshtein;
+Calculates Levenshtein distance between two strings, variable operation costs (ins/del, replacement)
+txtsim
+levenshtein
+pattern txtsim.levenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
+TXTSIMlevenshtein;
+(Backwards compatibility purposes) Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)
+txtsim
+maxlevenshtein
+pattern txtsim.maxlevenshtein(X_0:str, X_1:str, X_2:int):int 
+TXTSIMmaxlevenshtein;
+Levenshtein distance with basic costs but up to a MAX
+txtsim
+maxlevenshtein
+pattern txtsim.maxlevenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
+TXTSIMmaxlevenshtein;
+Levenshtein distance with variable costs but up to a MAX
+txtsim
+maxlevenshteinjoin
+command txtsim.maxlevenshteinjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:int], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+TXTSIMmaxlevenshteinjoin;
+(empty)
+txtsim
+minjarowinkler
+command txtsim.minjarowinkler(X_0:str, X_1:str, X_2:dbl):bit 
+TXTSIMminjarowinkler;
+(empty)
+txtsim
+minjarowinklerjoin
+command txtsim.minjarowinklerjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:dbl], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+TXTSIMminjarowinklerjoin;
+(empty)
 txtsim
 qgramnormalize
 command txtsim.qgramnormalize(X_0:str):str 
-CMDqgramnormalize;
+qgram_normalize;
 'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space
 txtsim
 qgramselfjoin
 command txtsim.qgramselfjoin(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:int], X_3:bat[:int], X_4:flt, X_5:int) (X_6:bat[:int], X_7:bat[:int]) 
-CMDqgramselfjoin;
+qgram_selfjoin;
 QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions
-txtsim
-similarity
-command txtsim.similarity(X_0:str, X_1:str):dbl 
-fstrcmp0_impl;
-Normalized edit distance between two strings
-txtsim
-similarity
-command txtsim.similarity(X_0:str, X_1:str, X_2:dbl):dbl 
-fstrcmp_impl;
-Normalized edit distance between two strings
 txtsim
 soundex
 command txtsim.soundex(X_0:str):str 
-soundex_impl;
+soundex;
 Soundex function for phonetic matching
 txtsim
 str2qgrams
 command txtsim.str2qgrams(X_0:str):bat[:str] 
-CMDstr2qgrams;
+str_2_qgrams;
 Break the string into 4-grams
 txtsim
 stringdiff
 command txtsim.stringdiff(X_0:str, X_1:str):int 
-stringdiff_impl;
-calculate the soundexed editdistance
+stringdiff;
+Calculate the soundexed editdistance
 url
 extractURLHost
 command url.extractURLHost(X_0:str, X_1:bit):str 

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -18,6 +22,7 @@
 #include "bat/res_table.h"
 #include "bat/bat_storage.h"
 #include "rel_exp.h"
+#include "sql_bincopyconvert.h"
 
 #ifndef HAVE_LLABS
 #define llabs(x)	((x) < 0 ? -(x) : (x))
@@ -235,168 +240,6 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	return (ssize_t) (s - *buf);
 }
 
-static inline int
-STRwidth(const char *restrict s)
-{
-	int len = 0;
-	int c;
-	int n;
-
-	if (strNil(s))
-		return int_nil;
-	c = 0;
-	n = 0;
-	while (*s != 0) {
-		if ((*s & 0x80) == 0) {
-			assert(n == 0);
-			len++;
-			n = 0;
-		} else if ((*s & 0xC0) == 0x80) {
-			c = (c << 6) | (*s & 0x3F);
-			if (--n == 0) {
-				/* last byte of a multi-byte character */
-				len++;
-				/* this list was created by combining
-				 * the code points marked as
-				 * Emoji_Presentation in
-				 * /usr/share/unicode/emoji/emoji-data.txt
-				 * and code points marked either F or
-				 * W in EastAsianWidth.txt; this list
-				 * is up-to-date with Unicode 9.0 */
-				if ((0x1100 <= c && c <= 0x115F) ||
-				    (0x231A <= c && c <= 0x231B) ||
-				    (0x2329 <= c && c <= 0x232A) ||
-				    (0x23E9 <= c && c <= 0x23EC) ||
-				    c == 0x23F0 ||
-				    c == 0x23F3 ||
-				    (0x25FD <= c && c <= 0x25FE) ||
-				    (0x2614 <= c && c <= 0x2615) ||
-				    (0x2648 <= c && c <= 0x2653) ||
-				    c == 0x267F ||
-				    c == 0x2693 ||
-				    c == 0x26A1 ||
-				    (0x26AA <= c && c <= 0x26AB) ||
-				    (0x26BD <= c && c <= 0x26BE) ||
-				    (0x26C4 <= c && c <= 0x26C5) ||
-				    c == 0x26CE ||
-				    c == 0x26D4 ||
-				    c == 0x26EA ||
-				    (0x26F2 <= c && c <= 0x26F3) ||
-				    c == 0x26F5 ||
-				    c == 0x26FA ||
-				    c == 0x26FD ||
-				    c == 0x2705 ||
-				    (0x270A <= c && c <= 0x270B) ||
-				    c == 0x2728 ||
-				    c == 0x274C ||
-				    c == 0x274E ||
-				    (0x2753 <= c && c <= 0x2755) ||
-				    c == 0x2757 ||
-				    (0x2795 <= c && c <= 0x2797) ||
-				    c == 0x27B0 ||
-				    c == 0x27BF ||
-				    (0x2B1B <= c && c <= 0x2B1C) ||
-				    c == 0x2B50 ||
-				    c == 0x2B55 ||
-				    (0x2E80 <= c && c <= 0x2E99) ||
-				    (0x2E9B <= c && c <= 0x2EF3) ||
-				    (0x2F00 <= c && c <= 0x2FD5) ||
-				    (0x2FF0 <= c && c <= 0x2FFB) ||
-				    (0x3000 <= c && c <= 0x303E) ||
-				    (0x3041 <= c && c <= 0x3096) ||
-				    (0x3099 <= c && c <= 0x30FF) ||
-				    (0x3105 <= c && c <= 0x312D) ||
-				    (0x3131 <= c && c <= 0x318E) ||
-				    (0x3190 <= c && c <= 0x31BA) ||
-				    (0x31C0 <= c && c <= 0x31E3) ||
-				    (0x31F0 <= c && c <= 0x321E) ||
-				    (0x3220 <= c && c <= 0x3247) ||
-				    (0x3250 <= c && c <= 0x32FE) ||
-				    (0x3300 <= c && c <= 0x4DBF) ||
-				    (0x4E00 <= c && c <= 0xA48C) ||
-				    (0xA490 <= c && c <= 0xA4C6) ||
-				    (0xA960 <= c && c <= 0xA97C) ||
-				    (0xAC00 <= c && c <= 0xD7A3) ||
-				    (0xF900 <= c && c <= 0xFAFF) ||
-				    (0xFE10 <= c && c <= 0xFE19) ||
-				    (0xFE30 <= c && c <= 0xFE52) ||
-				    (0xFE54 <= c && c <= 0xFE66) ||
-				    (0xFE68 <= c && c <= 0xFE6B) ||
-				    (0xFF01 <= c && c <= 0xFF60) ||
-				    (0xFFE0 <= c && c <= 0xFFE6) ||
-				    c == 0x16FE0 ||
-				    (0x17000 <= c && c <= 0x187EC) ||
-				    (0x18800 <= c && c <= 0x18AF2) ||
-				    (0x1B000 <= c && c <= 0x1B001) ||
-				    c == 0x1F004 ||
-				    c == 0x1F0CF ||
-				    c == 0x1F18E ||
-				    (0x1F191 <= c && c <= 0x1F19A) ||
-				    /* removed 0x1F1E6..0x1F1FF */
-				    (0x1F200 <= c && c <= 0x1F202) ||
-				    (0x1F210 <= c && c <= 0x1F23B) ||
-				    (0x1F240 <= c && c <= 0x1F248) ||
-				    (0x1F250 <= c && c <= 0x1F251) ||
-				    (0x1F300 <= c && c <= 0x1F320) ||
-				    (0x1F32D <= c && c <= 0x1F335) ||
-				    (0x1F337 <= c && c <= 0x1F37C) ||
-				    (0x1F37E <= c && c <= 0x1F393) ||
-				    (0x1F3A0 <= c && c <= 0x1F3CA) ||
-				    (0x1F3CF <= c && c <= 0x1F3D3) ||
-				    (0x1F3E0 <= c && c <= 0x1F3F0) ||
-				    c == 0x1F3F4 ||
-				    (0x1F3F8 <= c && c <= 0x1F43E) ||
-				    c == 0x1F440 ||
-				    (0x1F442 <= c && c <= 0x1F4FC) ||
-				    (0x1F4FF <= c && c <= 0x1F53D) ||
-				    (0x1F54B <= c && c <= 0x1F54E) ||
-				    (0x1F550 <= c && c <= 0x1F567) ||
-				    c == 0x1F57A ||
-				    (0x1F595 <= c && c <= 0x1F596) ||
-				    c == 0x1F5A4 ||
-				    (0x1F5FB <= c && c <= 0x1F64F) ||
-				    (0x1F680 <= c && c <= 0x1F6C5) ||
-				    c == 0x1F6CC ||
-				    (0x1F6D0 <= c && c <= 0x1F6D2) ||
-				    (0x1F6EB <= c && c <= 0x1F6EC) ||
-				    (0x1F6F4 <= c && c <= 0x1F6F6) ||
-				    (0x1F910 <= c && c <= 0x1F91E) ||
-				    (0x1F920 <= c && c <= 0x1F927) ||
-				    c == 0x1F930 ||
-				    (0x1F933 <= c && c <= 0x1F93E) ||
-				    (0x1F940 <= c && c <= 0x1F94B) ||
-				    (0x1F950 <= c && c <= 0x1F95E) ||
-				    (0x1F980 <= c && c <= 0x1F991) ||
-				    c == 0x1F9C0 ||
-				    (0x20000 <= c && c <= 0x2FFFD) ||
-				    (0x30000 <= c && c <= 0x3FFFD))
-					len++;
-			}
-		} else if ((*s & 0xE0) == 0xC0) {
-			assert(n == 0);
-			n = 1;
-			c = *s & 0x1F;
-		} else if ((*s & 0xF0) == 0xE0) {
-			assert(n == 0);
-			n = 2;
-			c = *s & 0x0F;
-		} else if ((*s & 0xF8) == 0xF0) {
-			assert(n == 0);
-			n = 3;
-			c = *s & 0x07;
-		} else if ((*s & 0xFC) == 0xF8) {
-			assert(n == 0);
-			n = 4;
-			c = *s & 0x03;
-		} else {
-			assert(0);
-			n = 0;
-		}
-		s++;
-	}
-	return len;
-}
-
 static int
 bat_max_strlength(BAT *b)
 {
@@ -406,7 +249,7 @@ bat_max_strlength(BAT *b)
 	BATiter bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		l = STRwidth((const char *) BUNtvar(bi, p));
+		l = UTF8_strwidth((const char *) BUNtvar(bi, p));
 
 		if (is_int_nil(l))
 			l = 0;
@@ -621,7 +464,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		s = c->data;
 		slen = strNil(s) ? int_nil : UTF8_strlen(s);
 		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
-			len = STRwidth(c->data);
+			len = UTF8_strwidth(c->data);
 			if (len > (ssize_t) col->type.digits)
 				return NULL;
 		}
@@ -703,9 +546,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		throw(IO, "sql.copy_from", SQLSTATE(42000) "No stream (pointer) provided");
 	if (mnstr_errnr(bs->s) != MNSTR_NO__ERROR) {
 		mnstr_error_kind errnr = mnstr_errnr(bs->s);
-		char *stream_msg = mnstr_error(bs->s);
+		const char *stream_msg = mnstr_peek_error(bs->s);
 		msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Stream not open %s: %s", mnstr_error_kind_name(errnr), stream_msg ? stream_msg : "unknown error");
-		free(stream_msg);
 		return msg;
 	}
 	if (offset < 0 || offset > (lng) BUN_MAX)
@@ -752,6 +594,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					BBPunfix(fmt[j].c->batCacheid);
 				}
 				GDKfree(fmt[i].data);
+				GDKfree(fmt);
 				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			fmt[i].c = NULL;
@@ -875,7 +718,6 @@ create_prepare_result(backend *b, cq *q, int nrows)
 	BAT* bschema	= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* btable		= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* bcolumn	= COLnew(0, TYPE_str, nrows, TRANSIENT);
-	BAT* order		= NULL;
 	node *n;
 
 	const int nr_columns = (b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) ? 7 : 6;
@@ -886,7 +728,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 	sql_subtype *t;
 	sql_rel *r = q->rel;
 
-	if (!btype || !bdigits || !bscale || !bschema || !btable || !bcolumn) {
+	if (!btype || !bimpl || !bdigits || !bscale || !bschema || !btable || !bcolumn) {
 		error = -1;
 		goto wrapup;
 	}
@@ -986,18 +828,13 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		}
 	}
 
-	if (!(order = BATdense(0, 0, BATcount(btype)))) {
-		error = -1;
-		goto wrapup;
-	}
 	b->results = res_table_create(
 							b->mvc->session->tr,
 							b->result_id++,
 							b->mb? b->mb->tag: 0 /*TODO check if this is sensible*/,
 							nr_columns,
 							Q_PREPARE,
-							b->results,
-							order);
+							b->results);
 	if (!b->results) {
 		error = -1;
 		goto wrapup;
@@ -1017,25 +854,17 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		error = -1;
 
 	wrapup:
-		if (btype)
-			BBPunfix(btype->batCacheid);
-		if (bdigits)
-			BBPunfix(bdigits->batCacheid);
-		if (bimpl)
-			BBPunfix(bimpl->batCacheid);
-		if (bscale)
-			BBPunfix(bscale->batCacheid);
-		if (bschema)
-			BBPunfix(bschema->batCacheid);
-		if (btable)
-			BBPunfix(btable->batCacheid);
-		if (bcolumn)
-			BBPunfix(bcolumn->batCacheid);
+		BBPreclaim(btype);
+		BBPreclaim(bdigits);
+		BBPreclaim(bimpl);
+		BBPreclaim(bscale);
+		BBPreclaim(bschema);
+		BBPreclaim(btable);
+		BBPreclaim(bcolumn);
 		if (error < 0 && b->results) {
 			res_table_destroy(b->results);
 			b->results = NULL;
-		} else if (order)
-			BBPunfix(order->batCacheid);
+		}
 		return error;
 }
 
@@ -1332,7 +1161,7 @@ mvc_export_table_columnar(stream *s, res_table *t)
 }
 
 static int
-mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
+mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
 	Tablet as;
 	Column *fmt;
@@ -1371,8 +1200,10 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 
 		fmt[i].c = BATdescriptor(c->b);
 		if (fmt[i].c == NULL) {
-			while (--i >= 1)
+			while (--i >= 1) {
+				bat_iterator_end(&fmt[i].ci);
 				BBPunfix(fmt[i].c->batCacheid);
+			}
 			GDKfree(fmt);
 			GDKfree(tres);
 			return -2;
@@ -1453,7 +1284,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 		}
 	}
 	if (i == t->nr_cols + 1)
-		ok = TABLEToutput_file(&as, order, s);
+		ok = TABLEToutput_file(&as, NULL, s);
 	for (i = 0; i <= t->nr_cols; i++) {
 		fmt[i].sep = NULL;
 		fmt[i].rsep = NULL;
@@ -1472,9 +1303,9 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 }
 
 static int
-mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
+mvc_export_table(backend *b, stream *s, res_table *t, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
-	return mvc_export_table_(b->mvc, b->output_format, s, t, order, offset, nr, btag, sep, rsep, ssep, ns);
+	return mvc_export_table_(b->mvc, b->output_format, s, t, offset, nr, btag, sep, rsep, ssep, ns);
 }
 
 int
@@ -1484,12 +1315,10 @@ mvc_export(mvc *m, stream *s, res_table *t, BUN nr)
 	b.mvc = m;
 	b.results = t;
 	b.reloptimizer = 0;
-	t->order = t->cols[0].b;
 	t->nr_rows = nr;
-	BBPretain(t->order);
 	if (mvc_export_head(&b, s, t->id, TRUE, TRUE, 0/*starttime*/, 0/*maloptimizer*/) < 0)
 		return -1;
-	return mvc_export_table_(m, OFMT_CSV, s, t, BBPquickdesc(t->cols[0].b), 0, nr, "[ ", ",\t", "\t]\n", "\"", "NULL");
+	return mvc_export_table_(m, OFMT_CSV, s, t, 0, nr, "[ ", ",\t", "\t]\n", "\"", "NULL");
 }
 
 
@@ -1525,7 +1354,7 @@ get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat 
 					return -2;
 				}
 			} else if (p) {
-				l = STRwidth((const char *) p);
+				l = UTF8_strwidth((const char *) p);
 				if (is_int_nil(l))
 					l = 0;
 			}
@@ -1719,14 +1548,6 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	return mvc_affrows(b->mvc, s, val, w, query_id, b->last_id, starttime, maloptimizer, b->reloptimizer);
 }
 
-static int
-export_error(BAT *order)
-{
-	if (order)
-		BBPunfix(order->batCacheid);
-	return -4;
-}
-
 int
 mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths, lng starttime, lng maloptimizer)
 {
@@ -1750,7 +1571,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 	/* tuple count */
 	if (only_header) {
-		if (t->order) {
+		if (t->cols[0].b) {
 			count = t->nr_rows;
 		} else {
 			count = 1;
@@ -1873,18 +1694,13 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 {
 	int res = 0;
 	BUN count;
-	BAT *order = NULL;
 
-	if (!t->order) {
+	if (!t->cols[0].b) {
 		res = mvc_export_row(b, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
 	} else {
-		order = BATdescriptor(t->order);
-		if (!order)
-			return -2;
 		count = t->nr_rows;
 
-		res = mvc_export_table(b, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
-		BBPunfix(order->batCacheid);
+		res = mvc_export_table(b, s, t, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
 		b->results = res_tables_remove(b->results, t);
 	}
 	return res;
@@ -1897,7 +1713,6 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	int clean = 0, res = 0;
 	BUN count;
 	res_table *t = res_tables_find(b->results, res_id);
-	BAT *order = NULL;
 	int json = (b->output_format == OFMT_JSON);
 
 	if (!s || !t)
@@ -1918,16 +1733,13 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (!json && (res = mvc_export_head(b, s, res_id, TRUE, TRUE, starttime, maloptimizer)) < 0)
 		return res;
 
-	assert(t->order);
+	assert(t->cols[0].b);
 
 	if (b->client->protocol == PROTOCOL_COLUMNAR) {
 		if (mnstr_flush(s, MNSTR_FLUSH_DATA) < 0)
 			return -4;
 		return mvc_export_table_columnar(s, t);
 	}
-
-	if (!(order = BATdescriptor(t->order)))
-		return -2;
 
 	count = m->reply_size;
 	if (m->reply_size != -2 && (count <= 0 || count >= t->nr_rows)) {
@@ -1937,29 +1749,28 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (json) {
 		switch(count) {
 		case 0:
-			res = mvc_export_table(b, s, t, order, 0, count, "{\t", "", "}\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 0, count, "{\t", "", "}\n", "\"", "null");
 			break;
 		case 1:
-			res = mvc_export_table(b, s, t, order, 0, count, "{\n\t\"%s\" : ", ",\n\t\"%s\" : ", "\n}\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 0, count, "{\n\t\"%s\" : ", ",\n\t\"%s\" : ", "\n}\n", "\"", "null");
 			break;
 		case 2:
-			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
-			res = mvc_export_table(b, s, t, order, 1, count - 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 1, count - 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
 			break;
 		default:
-			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
-			res = mvc_export_table(b, s, t, order, 1, count - 2, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
-			res = mvc_export_table(b, s, t, order, count - 1, 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 1, count - 2, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, count - 1, 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
 		}
 	} else {
-		res = mvc_export_table(b, s, t, order, 0, count, "[ ", ",\t", "\t]\n", "\"", "NULL");
+		res = mvc_export_table(b, s, t, 0, count, "[ ", ",\t", "\t]\n", "\"", "NULL");
 	}
-	BBPunfix(order->batCacheid);
 	if (clean)
 		b->results = res_tables_remove(b->results, t);
 
 	if (res > -1)
-		res = mvc_export_warning(s, "");
+		res = 1;
 	return res;
 }
 
@@ -1968,15 +1779,11 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 {
 	int res = 0;
 	res_table *t = res_tables_find(b->results, res_id);
-	BAT *order = NULL;
 	BUN cnt;
 
 	if (!s || !t)
 		return 0;
 
-	order = BATdescriptor(t->order);
-	if (!order)
-		return -2;
 	cnt = nr;
 	if (cnt == 0)
 		cnt = t->nr_rows;
@@ -1987,36 +1794,35 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 
 	/* query type: Q_BLOCK */
 	if (mnstr_write(s, "&6 ", 3, 1) != 1)
-		return export_error(order);
+		return -4;
 
 	/* result id */
 	if (mvc_send_int(s, res_id) != 1 || mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+		return -4;
 
 	/* column count */
 	if (mvc_send_int(s, t->nr_cols) != 1 || mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+		return -4;
 
 	/* row count */
 	if (mvc_send_lng(s, (lng) cnt) != 1 || mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+		return -4;
 
 	/* block offset */
 	if (mvc_send_lng(s, (lng) offset) != 1)
-		return export_error(order);
+		return -4;
 
 	if (mnstr_write(s, "\n", 1, 1) != 1)
-		return export_error(order);
+		return -4;
 
-	res = mvc_export_table(b, s, t, order, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");
-	BBPunfix(order->batCacheid);
+	res = mvc_export_table(b, s, t, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");
 	return res;
 }
 
 int
-mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type, BAT *order)
+mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type)
 {
-	res_table *t = res_table_create(be->mvc->session->tr, be->result_id++, query_id, nr_cols, type, be->results, order);
+	res_table *t = res_table_create(be->mvc->session->tr, be->result_id++, query_id, nr_cols, type, be->results);
 	be->results = t;
 	return t ? t->id : -1;
 }
@@ -2052,4 +1858,119 @@ mvc_export_error(backend *be, stream *s, int err_code)
 		default: /* Unknown, must be a bug */
 			return "Unknown internal error";
 	}
+}
+
+static ssize_t
+align_dump(stream *s, uint64_t pos, unsigned int alignment)
+{
+	uint64_t a = (uint64_t)alignment;
+	// must be a power of two
+	assert(a > 0);
+	assert((a & (a-1)) == 0);
+
+	static char zeroes[32] = { 0 };
+#ifdef _MSC_VER
+#pragma warning(suppress:4146)
+#endif
+	uint64_t gap = (~pos + 1) % a;
+	return mnstr_write(s, zeroes, 1, (size_t)gap);
+}
+
+
+struct bindump_record {
+	BAT *bat;
+	type_record_t *type_rec;
+	int64_t start;
+	int64_t length;
+};
+
+int
+mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
+{
+	int ret = -42;
+	struct bindump_record *colinfo;
+	stream *countstream = NULL;
+	uint64_t byte_count = 0;
+	uint64_t toc_pos = 0;
+	BUN end_row = offset + nr;
+
+	res_table *res = res_tables_find(b->results, res_id);
+	if (res == NULL)
+		return 0;
+
+	colinfo = GDKzalloc(res->nr_cols * sizeof(*colinfo));
+	if (!colinfo) {
+		ret = -1;
+		goto end;
+	}
+	for (int i = 0; i < res->nr_cols; i++)
+		colinfo[i].bat = NULL;
+	for (int i = 0; i < res->nr_cols; i++) {
+		bat bat_id = res->cols[i].b;
+		BAT *b = BATdescriptor(bat_id);
+		if (!b) {
+			ret = -1;
+			goto end;
+		}
+		colinfo[i].bat = b;
+
+		if (BATcount(b) < end_row)
+			end_row = BATcount(b);
+
+		int tpe = BATttype(b);
+		const char *gdk_name = ATOMname(tpe);
+		type_record_t *rec = find_type_rec(gdk_name);
+		if (!rec || !can_dump_binary_column(rec)) {
+			GDKerror("column %d: don't know how to dump data type '%s'", i, gdk_name);
+			ret = -3;
+			goto end;
+		}
+		colinfo[i].type_rec = rec;
+	}
+
+	// The byte_counting_stream keeps track of the byte offsets
+	countstream = byte_counting_stream(s, &byte_count);
+
+	// Make sure the message starts with a & and not with a !
+	mnstr_printf(countstream, "&6 %d %d " BUNFMT " " BUNFMT "\n", res_id, res->nr_cols, end_row - offset, offset);
+
+	for (int i = 0; i < res->nr_cols; i++) {
+		align_dump(countstream, byte_count, 32); // 32 looks nice in tcpflow
+		struct bindump_record *info = &colinfo[i];
+		info->start = byte_count;
+		str msg = dump_binary_column(info->type_rec, info->bat, offset, end_row - offset, false, countstream);
+		if (msg != MAL_SUCCEED) {
+			GDKerror("%s", msg);
+			GDKfree(msg);
+			ret = -3;
+			goto end;
+		}
+		info->length = byte_count - info->start;
+	}
+
+	assert(byte_count > 0);
+
+	align_dump(countstream, byte_count, 32);
+	toc_pos = byte_count;
+	for (int i = 0; i < res->nr_cols; i++) {
+		struct bindump_record *info = &colinfo[i];
+		lng start = info->start;
+		lng length = info->length;
+		mnstr_writeLng(countstream, start);
+		mnstr_writeLng(countstream, length);
+	}
+
+	mnstr_writeLng(countstream, toc_pos);
+	ret = 0;
+
+end:
+	if (colinfo) {
+		for (int i = 0; i < res->nr_cols; i++) {
+			if (colinfo[i].bat)
+				BBPunfix(colinfo[i].bat->batCacheid);
+		}
+		GDKfree(colinfo);
+	}
+	mnstr_destroy(countstream);
+	return ret;
 }

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -90,27 +94,27 @@ date_year(date dt)
 	return date_extract_year(dt);
 }
 
-int
+bte
 date_quarter(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	return (date_extract_month(dt) - 1) / 3 + 1;
 }
 
-int
+bte
 date_month(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	return date_extract_month(dt);
 }
 
-int
+bte
 date_day(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	return date_extract_day(dt);
 }
 
@@ -206,11 +210,11 @@ date_diff(date d1, date d2)
  * day-of-week calculation below from this fact */
 #define DOW_OFF (7 - (((21 + (2019+CNT_OFF)*365 + (2019+CNT_OFF-1)/4 - (2019+CNT_OFF-1)/100 + (2019+CNT_OFF-1)/400 + 90) % 7) + 1))
 /* return day of week of given date; Monday = 1, Sunday = 7 */
-int
+bte
 date_dayofweek(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	/* calculate number of days since the start of the year -CNT_OFF */
 	int d = date_countdays(dt);
 	/* then simply take the remainder from 7 and convert to correct
@@ -222,11 +226,11 @@ date_dayofweek(date dt)
  * January 1 to 3 fall in the week before the 4th, they are in the
  * last week of the previous year; the last days of the year may fall
  * in week 1 of the following year */
-int
+bte
 date_weekofyear(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	int y = date_extract_year(dt);
 	int m = date_extract_month(dt);
 	int d = date_extract_day(dt);
@@ -247,11 +251,11 @@ date_weekofyear(date dt)
 
 /* In the US they have to do it differently, of course.
  * Week 1 is the week (Sunday to Saturday) in which January 1 falls */
-int
+bte
 date_usweekofyear(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	int y = date_extract_year(dt);
 	int m = date_extract_month(dt);
 	/* day of year (date_dayofyear without nil check) */
@@ -263,11 +267,11 @@ date_usweekofyear(date dt)
 	return (doy + jan1dow - 1) / 7 + 1;
 }
 
-int
+sht
 date_dayofyear(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return sht_nil;
 	int m = date_extract_month(dt);
 	return date_extract_day(dt) + cumdays[m-1]
 		+ (m > 2 && isleapyear(date_extract_year(dt)));
@@ -288,19 +292,19 @@ daytime_diff(daytime d1, daytime d2)
 	return (d1 - d2) / 1000;
 }
 
-int
+bte
 daytime_hour(daytime tm)
 {
 	if (is_daytime_nil(tm))
-		return int_nil;
+		return bte_nil;
 	return daytime_extract_hour(tm);
 }
 
-int
+bte
 daytime_min(daytime tm)
 {
 	if (is_daytime_nil(tm))
-		return int_nil;
+		return bte_nil;
 	return daytime_extract_minute(tm);
 }
 
@@ -650,7 +654,16 @@ date_fromstr(const char *buf, size_t *len, date **d, bool external)
 		if( *d == NULL)
 			return -1;
 	}
-	return parse_date(buf, *d, external);
+	ssize_t n = 0;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	ssize_t l = parse_date(buf + n, *d, external);
+	if (l < 0)
+		return l;
+	n += l;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	return n;
 }
 
 static ssize_t
@@ -773,7 +786,16 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		if (*ret == NULL)
 			return -1;
 	}
-	return parse_daytime(buf, *ret, external);
+	ssize_t n = 0;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	ssize_t l = parse_daytime(buf + n, *ret, external);
+	if (l < 0)
+		return l;
+	n += l;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	return n;
 }
 
 ssize_t
@@ -813,6 +835,8 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		val -= DAY_USEC;
 	/* and return */
 	**ret = val;
+	while (*s && GDKisspace(*s))
+		s++;
 	return (ssize_t) (s - buf);
 }
 
@@ -846,6 +870,11 @@ do_daytime_precision_tostr(char *buf, size_t len, const daytime dt,
 	else if (precision < 6) {
 		for (int i = 6; i > precision; i--)
 			usec /= 10;
+#if defined(__GNUC__) && __GNUC__ < 9 && __GNUC__ > 4
+/* the %0*d format gives an incorrect warning in gcc on at least gcc 8.3.1
+ * old gcc (at least 4.8.5) does not have the option */
+GCC_Pragma("GCC diagnostic ignored \"-Wformat-truncation\"")
+#endif
 		return snprintf(buf, len, "%02d:%02d:%02d.%0*d", hour, min, sec, precision, usec);
 	} else {
 		ssize_t l = snprintf(buf, len, "%02d:%02d:%02d.%06d", hour, min, sec, usec);
@@ -893,7 +922,9 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 		if (*ret == NULL)
 			return -1;
 	}
-	pos = parse_date(buf, &dt, external);
+	while (*s && GDKisspace(*s))
+		s++;
+	pos = parse_date(s, &dt, external);
 	if (pos < 0)
 		return pos;
 	if (is_date_nil(dt)) {
@@ -940,6 +971,8 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 		}
 		**ret = timestamp_add_usec(**ret, offset);
 	}
+	while (*s && GDKisspace(*s))
+		s++;
 	return (ssize_t) (s - buf);
 }
 
@@ -971,6 +1004,8 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool externa
 		s += pos;
 	}
 	**ret = timestamp_add_usec(**ret, offset);
+	while (*s && GDKisspace(*s))
+		s++;
 	return (ssize_t) (s - buf);
 }
 

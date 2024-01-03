@@ -1,12 +1,17 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
+#define PY_SSIZE_T_CLEAN
 #include "type_conversion.h"
 #include "unicode.h"
 
@@ -40,6 +45,7 @@ int hge_to_string(char *str, hge x)
 
 PyObject *PyLong_FromHge(hge h)
 {
+#if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 10
 	PyLongObject *z;
 	size_t size = 0;
 	hge shift = h >= 0 ? h : -h;
@@ -56,13 +62,22 @@ PyObject *PyLong_FromHge(hge h)
 		z->ob_digit[i] = result;
 	}
 	if (h < 0) {
-#if PY_MINOR_VERSION >= 9
+#ifdef Py_SET_SIZE
 		Py_SET_SIZE(z, -Py_SIZE(z));
 #else
 		Py_SIZE(z) = -(Py_SIZE(z));
 #endif
 	}
 	return (PyObject *)z;
+#else
+	return PyObject_CallMethod((PyObject *) &PyLong_Type, "from_bytes", "(y#s)", &h, (Py_ssize_t) sizeof(h),
+#ifdef WORDS_BIGENDIAN
+							   "big"
+#else
+							   "little"
+#endif
+		);
+#endif
 }
 #endif
 
@@ -253,23 +268,23 @@ wrapup:
 	return msg;
 }
 
-#define STRING_TO_NUMBER_FACTORY(tpe)                                          \
-	str str_to_##tpe(const char *ptr, size_t maxsize, tpe *value)              \
-	{                                                                          \
-		size_t len = sizeof(tpe);                                              \
-		char buf[256];                                                         \
-		if (maxsize > 0) {                                                     \
-			if (maxsize >= sizeof(buf))                                        \
-				maxsize = sizeof(buf) - 1;                                     \
-			strncpy(buf, ptr, maxsize);                                        \
-			buf[maxsize] = 0;                                                  \
-			if (strlen(buf) >= sizeof(buf) - 1)                                \
-				return GDKstrdup("string too long to convert.");               \
-			ptr = buf;                                                         \
-		}                                                                      \
+#define STRING_TO_NUMBER_FACTORY(tpe)									\
+	str str_to_##tpe(const char *ptr, size_t maxsize, tpe *value)		\
+	{																	\
+		size_t len = sizeof(tpe);										\
+		char buf[256];													\
+		if (maxsize > 0) {												\
+			if (maxsize >= sizeof(buf))									\
+				maxsize = sizeof(buf) - 1;								\
+			strncpy(buf, ptr, maxsize);									\
+			buf[maxsize] = 0;											\
+			if (strlen(buf) >= sizeof(buf) - 1)							\
+				return GDKstrdup("string too long to convert.");		\
+			ptr = buf;													\
+		}																\
 		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value, false) < 0) \
-			return GDKstrdup("Error converting string.");                      \
-		return MAL_SUCCEED;                                                    \
+			return GDKstrdup("Error converting string.");				\
+		return MAL_SUCCEED;												\
 	}
 
 str str_to_date(const char *ptr, size_t maxsize, date *value)
@@ -327,53 +342,118 @@ str unicode_to_timestamp(Py_UNICODE *ptr, size_t maxsize, timestamp *value)
 }
 
 
-#define PY_TO_(type, inttpe)						\
+#if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 10
+#define PY_TO_(type, inttpe)											\
 str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
-{									\
-	PyObject *ptr = *pyobj;						\
-	str retval = MAL_SUCCEED;						\
-	(void) maxsize;							\
-	if (PyLong_CheckExact(ptr)) {					\
-		PyLongObject *p = (PyLongObject*) ptr;				\
-		inttpe h = 0;							\
-		inttpe prev = 0;						\
-		Py_ssize_t i = Py_SIZE(p);						\
-		int sign = i < 0 ? -1 : 1;					\
-		i *= sign;							\
-		while (--i >= 0) {						\
-			prev = h; (void)prev;					\
-			h = (h << PyLong_SHIFT) + p->ob_digit[i];			\
-			if ((h >> PyLong_SHIFT) != prev) {				\
+{																		\
+	PyObject *ptr = *pyobj;												\
+	str retval = MAL_SUCCEED;											\
+	(void) maxsize;														\
+	if (PyLong_CheckExact(ptr)) {										\
+		PyLongObject *p = (PyLongObject*) ptr;							\
+		inttpe h = 0;													\
+		inttpe prev = 0;												\
+		Py_ssize_t i = Py_SIZE(p);										\
+		int sign = i < 0 ? -1 : 1;										\
+		i *= sign;														\
+		while (--i >= 0) {												\
+			prev = h; (void)prev;										\
+			h = (h << PyLong_SHIFT) + p->ob_digit[i];					\
+			if ((h >> PyLong_SHIFT) != prev) {							\
 				return GDKstrdup("Overflow when converting value.");	\
-			}								\
-		}								\
-		*value = (type)(h * sign);					\
-	} else if (PyBool_Check(ptr)) {					\
-		*value = ptr == Py_True ? (type) 1 : (type) 0;			\
-	} else if (PyFloat_CheckExact(ptr)) {				\
+			}															\
+		}																\
+		*value = (type)(h * sign);										\
+	} else if (PyBool_Check(ptr)) {										\
+		*value = ptr == Py_True ? (type) 1 : (type) 0;					\
+	} else if (PyFloat_CheckExact(ptr)) {								\
 		*value = isnan(((PyFloatObject*)ptr)->ob_fval) ? type##_nil : (type) ((PyFloatObject*)ptr)->ob_fval; \
-	} else if (PyUnicode_CheckExact(ptr)) {				\
-		return str_to_##type(PyUnicode_AsUTF8(ptr), 0, value);		\
-	}  else if (PyByteArray_CheckExact(ptr)) {				\
+	} else if (PyUnicode_CheckExact(ptr)) {								\
+		return str_to_##type(PyUnicode_AsUTF8(ptr), 0, value);			\
+	} else if (PyByteArray_CheckExact(ptr)) {							\
 		return str_to_##type(((PyByteArrayObject*)ptr)->ob_bytes, 0, value); \
-	}  else if (ptr == Py_None) {					\
-		*value = type##_nil;						\
-	}									\
-	return retval;							\
+	} else if (ptr == Py_None) {										\
+		*value = type##_nil;											\
+	}																	\
+	return retval;														\
 }
+#else
+#ifdef WORDS_BIGENDIAN
+#define ENDIAN "big"
+#else
+#define ENDIAN "little"
+#endif
+#define PY_TO_(type, inttpe)											\
+str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
+{																		\
+	PyObject *ptr = *pyobj;												\
+	str retval = MAL_SUCCEED;											\
+	(void) maxsize;														\
+	if (PyLong_CheckExact(ptr)) {										\
+		inttpe h;														\
+		PyObject *m = PyObject_GetAttrString(ptr, "to_bytes");			\
+		PyObject *d = PyDict_New();										\
+		PyObject *v, *z;												\
+		v = PyLong_FromLong((long) sizeof(inttpe));						\
+		if (m == NULL || d == NULL || v == NULL) {						\
+			Py_XDECREF(m);												\
+			Py_XDECREF(d);												\
+			Py_XDECREF(v);												\
+			throw(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}																\
+		PyDict_SetItemString(d, "length", v);							\
+		Py_DECREF(v);													\
+		v = PyUnicode_FromString(ENDIAN);								\
+		if (v == NULL) {												\
+			Py_DECREF(m);												\
+			Py_DECREF(d);												\
+			throw(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}																\
+		PyDict_SetItemString(d, "byteorder", v);						\
+		Py_DECREF(v);													\
+		PyDict_SetItemString(d, "signed", Py_True);						\
+		v = PyTuple_New(0);												\
+		if (v == NULL) {												\
+			Py_DECREF(m);												\
+			Py_DECREF(d);												\
+			throw(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}																\
+		z = PyObject_Call(m, v, d);										\
+		Py_DECREF(v);													\
+		Py_DECREF(d);													\
+		if (z == NULL) {												\
+			throw(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}																\
+		memcpy(&h, PyBytes_AS_STRING(z), sizeof(inttpe));				\
+		Py_DECREF(z);													\
+		*value = (type) h;												\
+	} else if (PyBool_Check(ptr)) {										\
+		*value = ptr == Py_True ? (type) 1 : (type) 0;					\
+	} else if (PyFloat_CheckExact(ptr)) {								\
+		*value = isnan(((PyFloatObject*)ptr)->ob_fval) ? type##_nil : (type) ((PyFloatObject*)ptr)->ob_fval; \
+	} else if (PyUnicode_CheckExact(ptr)) {								\
+		return str_to_##type(PyUnicode_AsUTF8(ptr), 0, value);			\
+	} else if (PyByteArray_CheckExact(ptr)) {							\
+		return str_to_##type(((PyByteArrayObject*)ptr)->ob_bytes, 0, value); \
+	} else if (ptr == Py_None) {										\
+		*value = type##_nil;											\
+	}																	\
+	return retval;														\
+}
+#endif
 
-#define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)            \
-	STRING_TO_NUMBER_FACTORY(tpe)                   \
+#define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)						\
+	STRING_TO_NUMBER_FACTORY(tpe)										\
 	str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value)   \
-	{                                   \
-		char utf8[1024];                        \
-	if (maxsize == 0)                       \
-			maxsize = utf32_strlen(ptr);                \
-	if (maxsize > 255)                      \
-			maxsize = 255;                      \
-		unicode_to_utf8(0, maxsize, utf8, ptr);             \
-		return str_to_##tpe(utf8, 0, value);                \
-	}                                   \
+	{																	\
+		char utf8[1024];												\
+	if (maxsize == 0)													\
+			maxsize = utf32_strlen(ptr);								\
+	if (maxsize > 255)													\
+			maxsize = 255;												\
+		unicode_to_utf8(0, maxsize, utf8, ptr);							\
+		return str_to_##tpe(utf8, 0, value);							\
+	}																	\
 	PY_TO_(tpe, inttpe);
 
 CONVERSION_FUNCTION_FACTORY(bte, bte)

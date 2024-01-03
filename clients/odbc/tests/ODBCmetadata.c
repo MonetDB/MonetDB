@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -112,7 +116,7 @@ nameofSQLtype(SQLSMALLINT dataType)
 	case SQL_REAL:		return "REAL";
 	case SQL_FLOAT:		return "FLOAT";
 	case SQL_DOUBLE:	return "DOUBLE";
-	case SQL_BIT:   	return "BOOLEAN";	/* MonetDB boolean type is mapped to SQL_BIT in ODBC (see msql_types[] in SQLExecute.c) */
+	case SQL_BIT:		return "BOOLEAN";	/* MonetDB boolean type is mapped to SQL_BIT in ODBC (see msql_types[] in SQLExecute.c) */
 	case SQL_TINYINT:	return "TINYINT";
 	case SQL_BIGINT:	return "BIGINT";
 	case SQL_BINARY:	return "BINARY";
@@ -123,7 +127,7 @@ nameofSQLtype(SQLSMALLINT dataType)
 	case SQL_TYPE_TIME:	return "TIME";
 	case SQL_TYPE_TIMESTAMP:	return "TIMESTAMP";
 	case SQL_INTERVAL_MONTH:	return "INTERVAL MONTH";
-	case SQL_INTERVAL_YEAR: 	return "INTERVAL YEAR";
+	case SQL_INTERVAL_YEAR:		return "INTERVAL YEAR";
 	case SQL_INTERVAL_YEAR_TO_MONTH: return "INTERVAL YEAR TO MONTH";
 	case SQL_INTERVAL_DAY:		return "INTERVAL DAY";
 	case SQL_INTERVAL_HOUR:		return "INTERVAL HOUR";
@@ -252,7 +256,7 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 			if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 				/* some rows of EXPLAIN output (which has only 1 result column) must be surpressed to get stable output */
 				if (columns == 1 &&
-				    (strncmp(buf, "# optimizer.", 12) == 0 ||
+				    (strncmp(buf, "# ", 2) == 0 ||
 				     strncmp(buf, "barrier X_", 10) == 0 ||
 				     strncmp(buf, "exit X_", 7) == 0) ) {
 					continue;
@@ -480,9 +484,10 @@ main(int argc, char **argv)
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS);
 	compareResult(stmt, ret, "SQLTables (SQL_ALL_SCHEMAS)",
 		"Resultset with 5 columns\n"
-		"Resultset with 6 rows\n"
+		"Resultset with 7 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)\n"
+		"NULL	information_schema	NULL	NULL	NULL\n"
 		"NULL	json	NULL	NULL	NULL\n"
 		"NULL	logging	NULL	NULL	NULL\n"
 		"NULL	odbctst	NULL	NULL	NULL\n"
@@ -526,6 +531,36 @@ main(int argc, char **argv)
 		"NULL	odbctst	nopk_twoucs	TABLE	odbctst.nopk_twoucs table comment\n"
 		"NULL	odbctst	pk2c	TABLE	NULL\n"
 		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
+
+	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
+			(SQLCHAR*)"BASE TABLE,GLOBAL TEMPORARY,LOCAL TEMPORARY", SQL_NTS);
+	compareResult(stmt, ret, "SQLTables (odbctst, %)",
+		"Resultset with 5 columns\n"
+		"Resultset with 7 rows\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n"
+		"NULL	odbctst	CUSTOMERS	TABLE	NULL\n"
+		"NULL	odbctst	LINES	TABLE	NULL\n"
+		"NULL	odbctst	ORDERS	TABLE	NULL\n"
+		"NULL	odbctst	fk2c	TABLE	NULL\n"
+		"NULL	odbctst	nopk_twoucs	TABLE	odbctst.nopk_twoucs table comment\n"
+		"NULL	odbctst	pk2c	TABLE	NULL\n"
+		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
+
+	// All user tables in schema tmp
+	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
+			(SQLCHAR*)"'BASE TABLE','GLOBAL TEMPORARY','LOCAL TEMPORARY'", SQL_NTS);
+	compareResult(stmt, ret, "SQLTables (tmp, %)",
+		"Resultset with 5 columns\n"
+		"Resultset with 4 rows\n"
+		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(25)	WVARCHAR(65000)\n"
+		"NULL	tmp	glbl_nopk_twoucs	GLOBAL TEMPORARY TABLE	NULL\n"
+		"NULL	tmp	glbl_pk_uc	GLOBAL TEMPORARY TABLE	NULL\n"
+		"NULL	tmp	tmp_nopk_twoucs	LOCAL TEMPORARY TABLE	NULL\n"
+		"NULL	tmp	tmp_pk_uc	LOCAL TEMPORARY TABLE	NULL\n");
 
 	// All user tables and views in schema odbctst
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -575,12 +610,12 @@ main(int argc, char **argv)
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
 		"NULL	odbctst	nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	odbctst.nopk_twoucs.id2 column comment	NULL	4	NULL	NULL	1	NO\n"
-		"NULL	odbctst	nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	odbctst.nopk_twoucs.name2 column comment	NULL	-9	NULL	198	2	YES\n"
+		"NULL	odbctst	nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	odbctst.nopk_twoucs.name2 column comment	NULL	-9	NULL	396	2	YES\n"
 		"NULL	odbctst	pk2c	pkc1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"NULL	odbctst	pk2c	pkc2	-9	VARCHAR	99	198	NULL	NULL	0	NULL	NULL	-9	NULL	198	2	NO\n"
-		"NULL	odbctst	pk2c	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	3	YES\n"
+		"NULL	odbctst	pk2c	pkc2	-9	VARCHAR	99	198	NULL	NULL	0	NULL	NULL	-9	NULL	396	2	NO\n"
+		"NULL	odbctst	pk2c	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	3	YES\n"
 		"NULL	odbctst	pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"NULL	odbctst	pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+		"NULL	odbctst	pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n");
 
 	// All columns of all tmp tables containg 'pk' in their name
 	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -592,13 +627,13 @@ main(int argc, char **argv)
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
 		"NULL	tmp	glbl_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"NULL	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"NULL	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
 		"NULL	tmp	glbl_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"NULL	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"NULL	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
 		"NULL	tmp	tmp_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"NULL	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
+		"NULL	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
 		"NULL	tmp	tmp_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
-		"NULL	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+		"NULL	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n");
 
 	// All columns of all tmp tables containg 'pk' in their name and the column matching name_ pattern
 	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -609,10 +644,10 @@ main(int argc, char **argv)
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
-		"NULL	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
-		"NULL	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
-		"NULL	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n"
-		"NULL	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	198	2	YES\n");
+		"NULL	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
+		"NULL	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
+		"NULL	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
+		"NULL	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_ROWVER, (SQLCHAR*)NULL, 0,
 			(SQLCHAR*)"%", SQL_NTS, (SQLCHAR*)"%", SQL_NTS,
@@ -1218,12 +1253,12 @@ main(int argc, char **argv)
 		"Resultset with 6 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
-		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"NULL	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"NULL	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"NULL	sys	analyze	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n");
+		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
+		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
+		"NULL	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
+		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
+		"NULL	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
+		"NULL	sys	analyze	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n");
 
 	// test function sys.sin(). There are 2 overloaded variants of this function in MonetDB: sys.sin(real) and sys.sin(double).
 	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -1267,8 +1302,8 @@ main(int argc, char **argv)
 		"Resultset with 2 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
-		"NULL	sys	env	name	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"NULL	sys	env	value	3	-9	VARCHAR	2048	4096	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n");
+		"NULL	sys	env	name	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
+		"NULL	sys	env	value	3	-9	VARCHAR	2048	4096	NULL	NULL	2	NULL	NULL	-9	NULL	8192	2		replacedId\n");
 
 	// test table returning function sys.statistics(). 4 overloaded variants with 0, 1, 2 or 3 input parameters. 13 result columns.
 	ret = SQLProcedures(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -1293,10 +1328,10 @@ main(int argc, char **argv)
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
 		// 0 input argument and 13 result columns of sys.statistics()
 		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
-		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
-		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
-		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
+		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n"
+		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	4		replacedId\n"
+		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	5		replacedId\n"
 		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
 		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
 		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
@@ -1307,12 +1342,12 @@ main(int argc, char **argv)
 		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
 
 		// 1 input argument and 13 result columns of sys.statistics(sname)
-		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
+		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
 		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
-		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
-		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
-		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
+		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n"
+		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	4		replacedId\n"
+		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	5		replacedId\n"
 		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
 		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
 		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
@@ -1323,13 +1358,13 @@ main(int argc, char **argv)
 		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
 
 		// 2 input arguments and 13 result columns of sys.statistics(sname, tname)
-		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"NULL	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
+		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
+		"NULL	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
 		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
-		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
-		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
-		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
+		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n"
+		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	4		replacedId\n"
+		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	5		replacedId\n"
 		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
 		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
 		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
@@ -1340,14 +1375,14 @@ main(int argc, char **argv)
 		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
 
 		// 3 input arguments and 13 result columns of sys.statistics(sname, tname, cname)
-		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	1		replacedId\n"
-		"NULL	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"NULL	sys	statistics	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
+		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
+		"NULL	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
+		"NULL	sys	statistics	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n"
 		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
-		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	2		replacedId\n"
-		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	3		replacedId\n"
-		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	4		replacedId\n"
-		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	2048	5		replacedId\n"
+		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
+		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n"
+		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	4		replacedId\n"
+		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	5		replacedId\n"
 		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
 		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
 		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
@@ -1497,7 +1532,7 @@ main(int argc, char **argv)
 	compareResult(stmt, ret, "EXPLAIN SELECT * from odbctst.\"LINES\"",
 	    nrServerThreads > 1 ?
 		"Resultset with 1 columns\n"
-		"Resultset with 47 rows\n"
+		"Resultset with 46 rows\n"
 		"mal\n"
 		"WLONGVARCHAR(174)\n"
 		"function user.main():void;\n"
@@ -1518,10 +1553,10 @@ main(int argc, char **argv)
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n"
+		"\n"
 	    :
 		"Resultset with 1 columns\n"
-		"Resultset with 45 rows\n"
+		"Resultset with 44 rows\n"
 		"mal\n"
 		"WLONGVARCHAR(174)\n"
 		"function user.main():void;\n"
@@ -1540,7 +1575,7 @@ main(int argc, char **argv)
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n");
+		"\n");
 
 	// test TRACE SELECT query.
 	// This will return two resultsets: first with the query results and next with the trace results

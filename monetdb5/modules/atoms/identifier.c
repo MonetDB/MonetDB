@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -25,7 +29,8 @@ typedef str identifier;
 
 static int TYPE_identifier;
 
-static str IDprelude(void)
+static str
+IDprelude(void)
 {
 	TYPE_identifier = ATOMindex("identifier");
 	return MAL_SUCCEED;
@@ -82,6 +87,7 @@ IDtoString(char **retval, size_t *len, const void *HANDLE, bool external)
 		memcpy(*retval, handle, hl);
 	return (ssize_t) hl - 1;
 }
+
 /**
  * Returns an identifier, parsed from a string.  The fromStr function is used
  * to parse the string.

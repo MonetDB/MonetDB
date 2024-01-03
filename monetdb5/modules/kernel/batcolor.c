@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -47,6 +51,7 @@ static str CLRbat##NAME(bat *ret, const bat *l)							\
 	bn->trevsorted=false;												\
 	bn->tnil = false;													\
 	bn->tnonil = true;													\
+	bn->tkey = false;													\
 																		\
 	bi = bat_iterator(b);												\
 																		\
@@ -76,25 +81,34 @@ bunins_failed:															\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 
-BATwalk(Color,CLRcolor,char *,strNil,color,getAtomIndex("color",5,TYPE_int),bunfastappTYPE(color, bn, &y))
-BATwalk(Str,CLRstr,color,is_color_nil,str,TYPE_str,bunfastapp_nocheckVAR(bn, &y))
-
-BATwalk(Red,CLRred,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(Green,CLRgreen,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(Blue,CLRblue,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-
-BATwalk(Hue,CLRhue,color,is_color_nil,flt,TYPE_flt,bunfastappTYPE(flt, bn, &y))
-BATwalk(Saturation,CLRsaturation,color,is_color_nil,flt,TYPE_flt,bunfastappTYPE(flt, bn, &y))
-BATwalk(Value,CLRvalue,color,is_color_nil,flt,TYPE_flt,bunfastappTYPE(flt, bn, &y))
-
-BATwalk(HueInt,CLRhueInt,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(SaturationInt,CLRsaturationInt,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(ValueInt,CLRvalueInt,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-
-BATwalk(Luminance,CLRluminance,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(Cr,CLRcr,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-BATwalk(Cb,CLRcb,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
-
+BATwalk(Color, CLRcolor, char *, strNil, color,
+		getAtomIndex("color", 5, TYPE_int), bunfastappTYPE(color, bn, &y))
+BATwalk(Str, CLRstr, color, is_color_nil, str, TYPE_str,
+		bunfastapp_nocheckVAR(bn, &y))
+BATwalk(Red, CLRred, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Green, CLRgreen, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Blue, CLRblue, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Hue, CLRhue, color, is_color_nil, flt, TYPE_flt,
+		bunfastappTYPE(flt, bn, &y))
+BATwalk(Saturation, CLRsaturation, color, is_color_nil, flt, TYPE_flt,
+		bunfastappTYPE(flt, bn, &y))
+BATwalk(Value, CLRvalue, color, is_color_nil, flt, TYPE_flt,
+		bunfastappTYPE(flt, bn, &y))
+BATwalk(HueInt, CLRhueInt, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(SaturationInt, CLRsaturationInt, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(ValueInt, CLRvalueInt, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Luminance, CLRluminance, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Cr, CLRcr, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
+BATwalk(Cb, CLRcb, color, is_color_nil, int, TYPE_int,
+		bunfastappTYPE(int, bn, &y))
 #define BATwalk3(NAME,FUNC,TYPE)										\
 static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 {																		\
@@ -109,12 +123,9 @@ static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3
 	b2= BATdescriptor(*bid2);											\
 	b3= BATdescriptor(*bid3);											\
 	if (b == NULL || b2 == NULL || b3 == NULL) {						\
-		if (b)															\
-			BBPunfix(b->batCacheid);									\
-		if (b2)															\
-			BBPunfix(b2->batCacheid);									\
-		if (b3)															\
-			BBPunfix(b3->batCacheid);									\
+		BBPreclaim(b);													\
+		BBPreclaim(b2);													\
+		BBPreclaim(b3);													\
 		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING); \
 	}																	\
 	bn= COLnew(b->hseqbase,getAtomIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
@@ -128,6 +139,7 @@ static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3
 	bn->trevsorted=false;												\
 	bn->tnil = false;													\
 	bn->tnonil = true;													\
+	bn->tkey = false;													\
 																		\
 	bi = bat_iterator(b);												\
 	b2i = bat_iterator(b2);												\
@@ -170,11 +182,9 @@ bunins_failed:															\
 		return msg;														\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
-
-BATwalk3(Hsv,CLRhsv,flt)
-BATwalk3(Rgb,CLRrgb,int)
-BATwalk3(ycc,CLRycc,int)
-
+BATwalk3(Hsv, CLRhsv, flt)
+BATwalk3(Rgb, CLRrgb, int)
+BATwalk3(ycc, CLRycc, int)
 #include "mel.h"
 mel_func batcolor_init_funcs[] = {
  command("batcolor", "str", CLRbatStr, false, "Identity mapping for string bats", args(1,2, batarg("",str),batarg("b",color))),

@@ -201,3 +201,4 @@ ALTER TABLE Zone  DROP  CONSTRAINT fk_Zone_objID_PhotoObjAll_objID
 
 statement ok
 COMMIT
+

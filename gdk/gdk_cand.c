@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -403,6 +407,14 @@ void
 canditer_init(struct canditer *ci, BAT *b, BAT *s)
 {
 	assert(ci != NULL);
+	BUN batcount = 0;
+	oid hseq = 0;
+	if (b) {
+		MT_lock_set(&b->theaplock);
+		batcount = BATcount(b);
+		hseq = b->hseqbase;
+		MT_lock_unset(&b->theaplock);
+	}
 
 	if (s == NULL) {
 		if (b == NULL) {
@@ -415,9 +427,9 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		/* every row is a candidate */
 		*ci = (struct canditer) {
 			.tpe = cand_dense,
-			.seq = b->hseqbase,
-			.hseq = b->hseqbase,
-			.ncand = BATcount(b),
+			.seq = hseq,
+			.hseq = hseq,
+			.ncand = batcount,
 		};
 		return;
 	}
@@ -430,7 +442,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 
 	BUN cnt = BATcount(s);
 
-	if (cnt == 0 || (b != NULL && BATcount(b) == 0)) {
+	if (cnt == 0 || (b != NULL && batcount == 0)) {
 		/* candidate list for empty BAT or empty candidate list */
 		*ci = (struct canditer) {
 			.tpe = cand_dense,
@@ -486,7 +498,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	switch (ci->tpe) {
 	case cand_materialized:
 		if (b != NULL) {
-			BUN p = binsearchcand(ci->oids, cnt - 1U, b->hseqbase);
+			BUN p = binsearchcand(ci->oids, cnt - 1U, hseq);
 			/* p == cnt means candidate list is completely
 			 * before b */
 			ci->offset = p;
@@ -494,7 +506,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			cnt -= p;
 			if (cnt > 0) {
 				cnt = binsearchcand(ci->oids, cnt  - 1U,
-						    b->hseqbase + BATcount(b));
+						    hseq + batcount);
 				/* cnt == 0 means candidate list is
 				 * completely after b */
 			}
@@ -530,8 +542,8 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		       ci->oids[ci->nvals - 1U] == ci->seq + cnt + ci->nvals - 1U)
 			ci->nvals--;
 		if (b != NULL) {
-			if (ci->seq + cnt + ci->nvals <= b->hseqbase ||
-			    ci->seq >= b->hseqbase + BATcount(b)) {
+			if (ci->seq + cnt + ci->nvals <= hseq ||
+			    ci->seq >= hseq + batcount) {
 				/* candidate list does not overlap with b */
 				*ci = (struct canditer) {
 					.tpe = cand_dense,
@@ -544,33 +556,33 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			if (b == NULL)
 				break;
 			BUN p;
-			p = binsearchcand(ci->oids, ci->nvals - 1U, b->hseqbase);
+			p = binsearchcand(ci->oids, ci->nvals - 1U, hseq);
 			if (p == ci->nvals) {
 				/* all exceptions before start of b */
-				ci->offset = b->hseqbase - ci->seq - ci->nvals;
-				cnt = ci->seq + cnt + ci->nvals - b->hseqbase;
-				ci->seq = b->hseqbase;
+				ci->offset = hseq - ci->seq - ci->nvals;
+				cnt = ci->seq + cnt + ci->nvals - hseq;
+				ci->seq = hseq;
 				ci->nvals = 0;
 				ci->tpe = cand_dense;
 				ci->oids = NULL;
 				break;
 			}
-			assert(b->hseqbase > ci->seq || p == 0);
-			if (b->hseqbase > ci->seq) {
+			assert(hseq > ci->seq || p == 0);
+			if (hseq > ci->seq) {
 				/* skip candidates, possibly including
 				 * exceptions */
 				ci->oids += p;
 				ci->nvals -= p;
-				p = b->hseqbase - ci->seq - p;
+				p = hseq - ci->seq - p;
 				cnt -= p;
 				ci->offset += p;
-				ci->seq = b->hseqbase;
+				ci->seq = hseq;
 			}
-			if (ci->seq + cnt + ci->nvals > b->hseqbase + BATcount(b)) {
+			if (ci->seq + cnt + ci->nvals > hseq + batcount) {
 				p = binsearchcand(ci->oids, ci->nvals - 1U,
-						  b->hseqbase + BATcount(b));
+						  hseq + batcount);
 				ci->nvals = p;
-				cnt = b->hseqbase + BATcount(b) - ci->seq - ci->nvals;
+				cnt = hseq + batcount - ci->seq - ci->nvals;
 			}
 			while (ci->nvals > 0 && ci->oids[0] == ci->seq) {
 				ci->nvals--;
@@ -588,8 +600,8 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		/* fall through */
 	case cand_dense:
 		if (b != NULL) {
-			if (ci->seq + cnt <= b->hseqbase ||
-			    ci->seq >= b->hseqbase + BATcount(b)) {
+			if (ci->seq + cnt <= hseq ||
+			    ci->seq >= hseq + batcount) {
 				/* no overlap */
 				*ci = (struct canditer) {
 					.tpe = cand_dense,
@@ -597,20 +609,20 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				};
 				return;
 			}
-			if (b->hseqbase > ci->seq) {
-				cnt -= b->hseqbase - ci->seq;
-				ci->offset += b->hseqbase - ci->seq;
-				ci->seq = b->hseqbase;
+			if (hseq > ci->seq) {
+				cnt -= hseq - ci->seq;
+				ci->offset += hseq - ci->seq;
+				ci->seq = hseq;
 			}
-			if (ci->seq + cnt > b->hseqbase + BATcount(b))
-				cnt = b->hseqbase + BATcount(b) - ci->seq;
+			if (ci->seq + cnt > hseq + batcount)
+				cnt = hseq + batcount - ci->seq;
 		}
 		break;
 	case cand_mask:
 		assert(s->tseqbase != oid_nil);
 		if (b != NULL) {
-			if (ci->seq + cnt <= b->hseqbase ||
-			    ci->seq >= b->hseqbase + BATcount(b)) {
+			if (ci->seq + cnt <= hseq ||
+			    ci->seq >= hseq + batcount) {
 				/* no overlap */
 				*ci = (struct canditer) {
 					.tpe = cand_dense,
@@ -618,15 +630,15 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				};
 				return;
 			}
-			if (b->hseqbase > ci->seq) {
-				cnt = b->hseqbase - ci->seq;
+			if (hseq > ci->seq) {
+				cnt = hseq - ci->seq;
 				ci->mask += cnt / 32U;
 				ci->firstbit = (uint8_t) (cnt % 32U);
 				cnt = BATcount(s) - cnt;
-				ci->seq = b->hseqbase;
+				ci->seq = hseq;
 			}
-			if (ci->seq + cnt > b->hseqbase + BATcount(b)) {
-				cnt = b->hseqbase + BATcount(b) - ci->seq;
+			if (ci->seq + cnt > hseq + batcount) {
+				cnt = hseq + batcount - ci->seq;
 			}
 			ci->nvals = (ci->firstbit + cnt + 31U) / 32U;
 		}
@@ -1300,28 +1312,30 @@ BATnegcands(BUN nr, BAT *odels)
 		return bn;
 
 	nme = BBP_physical(bn->batCacheid);
-	if ((dels = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
-	    (dels->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap)) < 0){
-		GDKfree(dels);
+	if ((dels = GDKmalloc(sizeof(Heap))) == NULL){
 		BBPreclaim(bn);
 		return NULL;
 	}
+	*dels = (Heap) {
+		.farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap),
+		.parentid = bn->batCacheid,
+		.dirty = true,
+	};
 	strconcat_len(dels->filename, sizeof(dels->filename),
 		      nme, ".theap", NULL);
 
-    	if (HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid), 0) != GDK_SUCCEED) {
+	if (dels->farmid < 0 ||
+	    HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(dels);
 		BBPreclaim(bn);
-        	return NULL;
+		return NULL;
 	}
 	ATOMIC_INIT(&dels->refs, 1);
 	c = (ccand_t *) dels->base;
 	*c = (ccand_t) {
 		.type = CAND_NEGOID,
 	};
-    	dels->parentid = bn->batCacheid;
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
-	dels->dirty = true;
 	BATiter bi = bat_iterator(odels);
 	if (bi.type == TYPE_void) {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
@@ -1343,7 +1357,7 @@ BATnegcands(BUN nr, BAT *odels)
 		  " -> " ALGOBATFMT "\n",
 		  nr, ALGOBATPAR(odels),
 		  ALGOBATPAR(bn));
-    	return bn;
+	return bn;
 }
 
 BAT *
@@ -1366,29 +1380,31 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		return bn;
 
 	nme = BBP_physical(bn->batCacheid);
-	if ((msks = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
-	    (msks->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap)) < 0){
-		GDKfree(msks);
+	if ((msks = GDKmalloc(sizeof(Heap))) == NULL){
 		BBPreclaim(bn);
 		return NULL;
 	}
+	*msks = (Heap) {
+		.farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap),
+		.parentid = bn->batCacheid,
+		.dirty = true,
+	};
 	strconcat_len(msks->filename, sizeof(msks->filename),
 		      nme, ".theap", NULL);
 
 	nmask = (nr + 31) / 32;
-    	if (HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t), 0) != GDK_SUCCEED) {
+	if (msks->farmid < 0 ||
+	    HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t)) != GDK_SUCCEED) {
 		GDKfree(msks);
 		BBPreclaim(bn);
-        	return NULL;
+		return NULL;
 	}
 	c = (ccand_t *) msks->base;
 	*c = (ccand_t) {
 		.type = CAND_MSK,
 //		.mask = true,
 	};
-    	msks->parentid = bn->batCacheid;
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
-	msks->dirty = true;
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
 	BATiter bi = bat_iterator(masked);
 	if (selected) {
@@ -1438,7 +1454,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		  selected ? "true" : "false",
 		  ALGOBATPAR(bn));
 	assert(bn->tseqbase != oid_nil);
-    	return bn;
+	return bn;
 }
 
 /* convert a masked candidate list to a positive or negative candidate list */
@@ -1479,22 +1495,27 @@ BATunmask(BAT *b)
 			return NULL;
 		}
 		Heap *dels;
-		if ((dels = GDKzalloc(sizeof(Heap))) == NULL ||
-		    strconcat_len(dels->filename, sizeof(dels->filename),
-				  BBP_physical(bn->batCacheid), ".theap",
-				  NULL) >= sizeof(dels->filename) ||
-		    (dels->farmid = BBPselectfarm(TRANSIENT, TYPE_void,
-						  varheap)) == -1 ||
-		    HEAPalloc(dels,
-			      cnt * 32 - bi.count
-			      + sizeof(ccand_t) / sizeof(oid),
-			      sizeof(oid), 0) != GDK_SUCCEED) {
+		if ((dels = GDKmalloc(sizeof(Heap))) == NULL) {
+			BBPreclaim(bn);
+			bat_iterator_end(&bi);
+			return NULL;
+		}
+		*dels = (Heap) {
+			.farmid = BBPselectfarm(TRANSIENT, TYPE_void, varheap),
+			.parentid = bn->batCacheid,
+			.dirty = true,
+		};
+		strconcat_len(dels->filename, sizeof(dels->filename),
+			      BBP_physical(bn->batCacheid), ".theap", NULL);
+
+		if (dels->farmid < 0 ||
+		    HEAPalloc(dels, cnt * 32 - bi.count
+			      + sizeof(ccand_t) / sizeof(oid), sizeof(oid)) != GDK_SUCCEED) {
 			GDKfree(dels);
 			BBPreclaim(bn);
 			bat_iterator_end(&bi);
 			return NULL;
 		}
-		dels->parentid = bn->batCacheid;
 		* (ccand_t *) dels->base = (ccand_t) {
 			.type = CAND_NEGOID,
 		};

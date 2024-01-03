@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /**
@@ -189,7 +193,7 @@ msab_init(const char *dbfarm, const char *dbname)
 		if ((d = opendir(tmp)) != NULL) {
 			struct dbe {
 				struct dbe *next;
-				char path[FLEXIBLE_ARRAY_MEMBER];
+				char path[];
 			} *dbe = NULL, *db;
 			struct dirent *e;
 			len = offsetof(struct dbe, path) + strlen(tmp) + 2;
@@ -639,14 +643,14 @@ msab_pickSecret(char **generated_secret)
 	}
 
 	if ((fd = MT_open(pathbuf, O_CREAT | O_WRONLY | O_CLOEXEC)) == -1) {
-		char err[512];
+		char err[FILENAME_MAX + 512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				 pathbuf, strerror(errno));
 		free(secret);
 		return strdup(err);
 	}
 	if ((f = fdopen(fd, "w")) == NULL) {
-		char err[512];
+		char err[FILENAME_MAX + 512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				 pathbuf, strerror(errno));
 		close(fd);

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -37,7 +41,7 @@ static void* monetdb_connect(void) {
 	}
 	conn->curmodule = conn->usermodule = userModule();
 	str msg;
-	if ((msg = SQLinitClient(conn)) != MAL_SUCCEED) {
+	if ((msg = SQLinitClient(conn, NULL, NULL, NULL)) != MAL_SUCCEED) {
 		freeException(msg);
 		return NULL;
 	}
@@ -116,11 +120,11 @@ static str monetdb_initialize(void) {
 		retval = GDKstrdup("BBPaddfarm failed");
 		goto cleanup;
 	}
-	if (GDKinit(set, setlen, true) != GDK_SUCCEED) {
+	if (GDKinit(set, setlen, true, NULL) != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
-	GDKdebug |= NOSYNCMASK;
+	ATOMIC_OR(&GDKdebug, NOSYNCMASK);
 
 	if (GDKsetenv("mapi_disable", "true") != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKsetenv failed");
@@ -201,7 +205,6 @@ static str monetdb_initialize(void) {
 		/* unlock the vault, first see if we can find the file which
 		 * holds the secret */
 		char secret[1024];
-		char *secretp = secret;
 		FILE *secretf;
 		size_t len;
 
@@ -235,7 +238,7 @@ static str monetdb_initialize(void) {
 			}
 			fclose(secretf);
 		}
-		if ((retval = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
+		if ((retval = AUTHunlockVault(secret)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			err = msab_registerStop();
 			if (err)
@@ -244,20 +247,11 @@ static str monetdb_initialize(void) {
 			exit(1);
 		}
 	}
-	/* make sure the authorisation BATs are loaded */
-	if ((retval = AUTHinitTables(NULL)) != MAL_SUCCEED) {
-		/* don't show this as a crash */
-		err = msab_registerStop();
-		if (err)
-			free(err);
-		fprintf(stderr, "%s\n", retval);
-		exit(1);
-	}
 
 	char *modules[2];
 	modules[0] = "sql";
 	modules[1] = 0;
-	if (mal_init(modules, true) != 0) { // mal_init() does not return meaningful codes on failure
+	if (mal_init(modules, true, NULL, NULL) != 0) { // mal_init() does not return meaningful codes on failure
 		retval = GDKstrdup("mal_init() failed");
 		goto cleanup;
 	}

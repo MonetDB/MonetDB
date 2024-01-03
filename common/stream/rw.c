@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -364,10 +368,10 @@ mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt)
 int
 mnstr_printf(stream *restrict s, const char *restrict format, ...)
 {
+	va_list ap;
 	char buf[512], *bf = buf;
 	int i = 0;
 	size_t bfsz = sizeof(buf);
-	va_list ap;
 
 	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return -1;
@@ -396,4 +400,3 @@ mnstr_printf(stream *restrict s, const char *restrict format, ...)
 		free(bf);
 	return s->errkind == MNSTR_NO__ERROR ? i : -1;
 }
-

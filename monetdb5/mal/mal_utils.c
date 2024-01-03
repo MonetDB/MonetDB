@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -42,8 +46,11 @@ mal_unquote(char *msg)
 				/* this could be the start of
 				   an octal sequence, check it
 				   out */
-				if (p[1] && p[2] && p[1] >= '0' && p[1] <= '7' && p[2] >= '0' && p[2] <= '7') {
-					*s = (char)(((p[0] - '0') << 6) | ((p[1] - '0') << 3) | (p[2] - '0'));
+				if (p[1] && p[2] && p[1] >= '0' && p[1] <= '7' && p[2] >= '0'
+					&& p[2] <= '7') {
+					*s = (char) (((p[0] - '0') << 6) | ((p[1] -
+														 '0') << 3) | (p[2] -
+																	   '0'));
 					p += 2;
 					break;
 				}
@@ -58,7 +65,7 @@ mal_unquote(char *msg)
 		}
 		s++;
 	}
-	*s = 0;			/* close string */
+	*s = 0;						/* close string */
 }
 
 char *
@@ -67,7 +74,7 @@ mal_quote(const char *msg, size_t size)
 	char *s = GDKmalloc(size * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
 	char *t = s;
 
-	if ( s == NULL)
+	if (s == NULL)
 		return NULL;
 	while (size > 0) {
 		size--;

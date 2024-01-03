@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 // All this used to be at the top of stream.c. Much of it is probably
@@ -53,9 +57,6 @@
 #endif
 #ifdef HAVE_LIBLZMA
 #include <lzma.h>
-#endif
-#ifdef HAVE_SNAPPY
-#include <snappy-c.h>
 #endif
 #ifdef HAVE_LIBLZ4
 #include <lz4.h>
@@ -269,8 +270,8 @@ typedef struct bs bs;
 struct bs {
 	unsigned nr;		/* how far we got in buf */
 	unsigned itotal;	/* amount available in current read block */
-	size_t blks;		/* read/writen blocks (possibly partial) */
-	size_t bytes;		/* read/writen bytes */
+	int64_t blks;		/* read/writen blocks (possibly partial) */
+	int64_t bytes;		/* read/writen bytes */
 	char buf[BLOCK];	/* the buffered data (minus the size of
 				 * size-short */
 };

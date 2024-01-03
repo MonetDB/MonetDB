@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef SQL_RELATION_H
@@ -47,6 +51,7 @@ typedef struct expression {
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:4,	/* free variable, ie binds to the upper dependent join */
 	 intern:1,
+	 selfref:1,		/* set when the expression references a expression in the same projection list */
 	 anti:1,
 	 ascending:1,	/* order direction */
 	 nulls_last:1,	/* return null after all other rows */
@@ -54,6 +59,7 @@ typedef struct expression {
 	 distinct:1,
 
 	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
+	 any:1,			/* = vs any semantics (keep nil results) */
 	 need_no_nil:1,
 	 has_no_nil:1,
 	 unique:1,	/* expression has unique values, but it may have multiple NULL values! */
@@ -139,8 +145,7 @@ typedef enum ddl_statement {
 	ddl_comment_on,
 	ddl_rename_schema,
 	ddl_rename_table,
-	ddl_rename_column,
-	ddl_maxops /* evaluated to the max value, should be always kept at the bottom */
+	ddl_rename_column
 } ddl_statement;
 
 typedef enum operator_type {
@@ -165,7 +170,7 @@ typedef enum operator_type {
 	op_update,	/* update(l=table, r update expressions) */
 	op_delete,	/* delete(l=table, r delete expression) */
 	op_truncate, /* truncate(l=table) */
-	op_merge
+	op_merge 	 /* IMPORTANT: keep op_merge last */
 } operator_type;
 
 #define is_atom(et) 		(et == e_atom)
@@ -237,10 +242,15 @@ typedef enum operator_type {
 #define set_anti(e)  		(e)->anti = 1
 #define is_semantics(e) 	((e)->semantics)
 #define set_semantics(e) 	(e)->semantics = 1
+#define is_any(e)			((e)->any)
+#define set_any(e)			(e)->any = 1
+#define reset_any(e)		(e)->any = 0
 #define is_symmetric(e) 	((e)->symmetric)
 #define set_symmetric(e) 	(e)->symmetric = 1
 #define is_intern(e) 		((e)->intern)
 #define set_intern(e) 		(e)->intern = 1
+#define is_selfref(e) 		((e)->selfref)
+#define set_selfref(e) 		(e)->selfref = 1
 #define is_basecol(e) 		((e)->base)
 #define set_basecol(e) 		(e)->base = 1
 

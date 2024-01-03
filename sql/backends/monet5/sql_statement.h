@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _SQL_STATEMENT_H_
@@ -172,6 +176,7 @@ extern stmt *stmt_replace(backend *be, stmt *c, stmt *id, stmt *val);
 extern stmt *stmt_table_clear(backend *be, sql_table *t, int restart_sequences);
 
 extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
+extern stmt *stmt_export_bin(backend *be, stmt *colstmt, bool byteswap, const char *filename, int on_client);
 extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);
 extern stmt *stmt_catalog(backend *be, int type, stmt *args);
 
@@ -193,6 +198,9 @@ extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, 
        */
 extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int symmetric, int reduce);
 extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
+extern stmt *stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
+extern stmt *stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
+extern stmt *stmt_markjoin(backend *be, stmt *l, stmt *r, bool final);
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
@@ -204,7 +212,7 @@ extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int a
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
 extern stmt *stmt_semijoin(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int is_semantics, bool single);
-extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);
+extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single, bool inner);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd);
@@ -246,6 +254,8 @@ extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, i
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
+extern stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
+
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 
 extern int stmt_output(backend *be, stmt *l);
@@ -266,5 +276,6 @@ extern const char *schema_name(sql_allocator *sa, stmt *st);
 
 extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);
+extern stmt *stmt_rename(backend *ba, sql_exp *e, stmt *s);
 
 #endif /* _SQL_STATEMENT_H_ */

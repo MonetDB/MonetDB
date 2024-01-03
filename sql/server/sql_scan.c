@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -130,6 +134,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("NTILE", RANK);
 	failed += keywords_insert("LAG", RANK);
 	failed += keywords_insert("LEAD", RANK);
+	failed += keywords_insert("FETCH", FETCH);
 	failed += keywords_insert("FIRST_VALUE", RANK);
 	failed += keywords_insert("LAST_VALUE", RANK);
 	failed += keywords_insert("NTH_VALUE", RANK);
@@ -278,6 +283,9 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SESSION_USER", SESSION_USER);
 	failed += keywords_insert("CURRENT_SCHEMA", CURRENT_SCHEMA);
 	failed += keywords_insert("SESSION", sqlSESSION);
+	failed += keywords_insert("MAX_MEMORY", MAX_MEMORY);
+	failed += keywords_insert("MAX_WORKERS", MAX_WORKERS);
+	failed += keywords_insert("OPTIMIZER", OPTIMIZER);
 
 	failed += keywords_insert("RIGHT", RIGHT);
 	failed += keywords_insert("SCHEMA", SCHEMA);
@@ -312,6 +320,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("VIEW", VIEW);
 	failed += keywords_insert("WHERE", WHERE);
 	failed += keywords_insert("WITH", WITH);
+	failed += keywords_insert("WITHOUT", WITHOUT);
 	failed += keywords_insert("DATA", DATA);
 
 	failed += keywords_insert("DATE", sqlDATE);
@@ -344,6 +353,10 @@ scanner_init_keywords(void)
 	failed += keywords_insert("POSITION", POSITION);
 	failed += keywords_insert("SUBSTRING", SUBSTRING);
 	failed += keywords_insert("SPLIT_PART", SPLIT_PART);
+	failed += keywords_insert("TRIM", TRIM);
+	failed += keywords_insert("LEADING", LEADING);
+	failed += keywords_insert("TRAILING", TRAILING);
+	failed += keywords_insert("BOTH", BOTH);
 
 	failed += keywords_insert("CASE", CASE);
 	failed += keywords_insert("WHEN", WHEN);
@@ -388,6 +401,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("LOADER", sqlLOADER);
 	failed += keywords_insert("REPLACE", REPLACE);
 
+	failed += keywords_insert("FIELD", FIELD);
 	failed += keywords_insert("FILTER", FILTER);
 	failed += keywords_insert("AGGREGATE", AGGREGATE);
 	failed += keywords_insert("RETURNS", RETURNS);
@@ -401,7 +415,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("MINMAX", MINMAX);
 	failed += keywords_insert("EXPLAIN", SQL_EXPLAIN);
 	failed += keywords_insert("PLAN", SQL_PLAN);
-	failed += keywords_insert("DEBUG", SQL_DEBUG);
 	failed += keywords_insert("TRACE", SQL_TRACE);
 	failed += keywords_insert("PREPARE", PREPARE);
 	failed += keywords_insert("PREP", PREP);
@@ -517,7 +530,68 @@ scanner_init_keywords(void)
 	failed += keywords_insert("MULTILINESTRINGZM", GEOMETRYSUBTYPE);
 	failed += keywords_insert("MULTIPOLYGONZM", GEOMETRYSUBTYPE);
 	failed += keywords_insert("GEOMETRYCOLLECTIONZM", GEOMETRYSUBTYPE);
+	failed += keywords_insert("LOGIN", LOGIN);
+	// odbc keywords
+	failed += keywords_insert("d", ODBC_DATE_ESCAPE_PREFIX);
+	failed += keywords_insert("t", ODBC_TIME_ESCAPE_PREFIX);
+	failed += keywords_insert("ts", ODBC_TIMESTAMP_ESCAPE_PREFIX);
+	failed += keywords_insert("guid", ODBC_GUID_ESCAPE_PREFIX);
+	failed += keywords_insert("fn", ODBC_FUNC_ESCAPE_PREFIX);
+	failed += keywords_insert("oj", ODBC_OJ_ESCAPE_PREFIX);
+	failed += keywords_insert("DAYNAME", DAYNAME);
+	failed += keywords_insert("IFNULL", IFNULL);
+	failed += keywords_insert("MONTHNAME", MONTHNAME);
+	failed += keywords_insert("TIMESTAMPADD", TIMESTAMPADD);
+	failed += keywords_insert("TIMESTAMPDIFF", TIMESTAMPDIFF);
+	failed += keywords_insert("SQL_BIGINT", SQL_BIGINT);
+	failed += keywords_insert("SQL_BINARY", SQL_BINARY);
+	failed += keywords_insert("SQL_BIT", SQL_BIT);
+	failed += keywords_insert("SQL_CHAR", SQL_CHAR);
+	failed += keywords_insert("SQL_DATE", SQL_DATE);
+	failed += keywords_insert("SQL_DECIMAL", SQL_DECIMAL);
+	failed += keywords_insert("SQL_DOUBLE", SQL_DOUBLE);
+	failed += keywords_insert("SQL_FLOAT", SQL_FLOAT);
+	failed += keywords_insert("SQL_GUID", SQL_GUID);
+	failed += keywords_insert("SQL_HUGEINT", SQL_HUGEINT);
+	failed += keywords_insert("SQL_INTEGER", SQL_INTEGER);
+	failed += keywords_insert("SQL_INTERVAL_DAY", SQL_INTERVAL_DAY);
+	failed += keywords_insert("SQL_INTERVAL_DAY_TO_HOUR", SQL_INTERVAL_DAY_TO_HOUR);
+	failed += keywords_insert("SQL_INTERVAL_DAY_TO_MINUTE", SQL_INTERVAL_DAY_TO_MINUTE);
+	failed += keywords_insert("SQL_INTERVAL_DAY_TO_SECOND", SQL_INTERVAL_DAY_TO_SECOND);
+	failed += keywords_insert("SQL_INTERVAL_HOUR", SQL_INTERVAL_HOUR);
+	failed += keywords_insert("SQL_INTERVAL_HOUR_TO_MINUTE", SQL_INTERVAL_HOUR_TO_MINUTE);
+	failed += keywords_insert("SQL_INTERVAL_HOUR_TO_SECOND", SQL_INTERVAL_HOUR_TO_SECOND);
+	failed += keywords_insert("SQL_INTERVAL_MINUTE", SQL_INTERVAL_MINUTE);
+	failed += keywords_insert("SQL_INTERVAL_MINUTE_TO_SECOND", SQL_INTERVAL_MINUTE_TO_SECOND);
+	failed += keywords_insert("SQL_INTERVAL_MONTH", SQL_INTERVAL_MONTH);
+	failed += keywords_insert("SQL_INTERVAL_SECOND", SQL_INTERVAL_SECOND);
+	failed += keywords_insert("SQL_INTERVAL_YEAR", SQL_INTERVAL_YEAR);
+	failed += keywords_insert("SQL_INTERVAL_YEAR_TO_MONTH", SQL_INTERVAL_YEAR_TO_MONTH);
+	failed += keywords_insert("SQL_LONGVARBINARY", SQL_LONGVARBINARY);
+	failed += keywords_insert("SQL_LONGVARCHAR", SQL_LONGVARCHAR);
+	failed += keywords_insert("SQL_NUMERIC", SQL_NUMERIC);
+	failed += keywords_insert("SQL_REAL", SQL_REAL);
+	failed += keywords_insert("SQL_SMALLINT", SQL_SMALLINT);
+	failed += keywords_insert("SQL_TIME", SQL_TIME);
+	failed += keywords_insert("SQL_TIMESTAMP", SQL_TIMESTAMP);
+	failed += keywords_insert("SQL_TINYINT", SQL_TINYINT);
+	failed += keywords_insert("SQL_VARBINARY", SQL_VARBINARY);
+	failed += keywords_insert("SQL_VARCHAR", SQL_VARCHAR);
+	failed += keywords_insert("SQL_WCHAR", SQL_WCHAR);
+	failed += keywords_insert("SQL_WLONGVARCHAR", SQL_WLONGVARCHAR);
+	failed += keywords_insert("SQL_WVARCHAR", SQL_WVARCHAR);
+	failed += keywords_insert("SQL_TSI_FRAC_SECOND", SQL_TSI_FRAC_SECOND);
+	failed += keywords_insert("SQL_TSI_SECOND", SQL_TSI_SECOND);
+	failed += keywords_insert("SQL_TSI_MINUTE", SQL_TSI_MINUTE);
+	failed += keywords_insert("SQL_TSI_HOUR", SQL_TSI_HOUR);
+	failed += keywords_insert("SQL_TSI_DAY", SQL_TSI_DAY);
+	failed += keywords_insert("SQL_TSI_WEEK", SQL_TSI_WEEK);
+	failed += keywords_insert("SQL_TSI_MONTH", SQL_TSI_MONTH);
+	failed += keywords_insert("SQL_TSI_QUARTER", SQL_TSI_QUARTER);
+	failed += keywords_insert("SQL_TSI_YEAR", SQL_TSI_YEAR);
 
+	failed += keywords_insert("LEAST", LEAST);
+	failed += keywords_insert("GREATEST", GREATEST);
 	return failed;
 }
 
@@ -742,8 +816,6 @@ scanner_string(mvc *c, int quote, bool escapes)
 		lc->yycur += pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		if (cur == quote && rs->buf[yycur + pos] == quote) {
-			if (escapes)
-				rs->buf[yycur + pos - 1] = '\\';
 			lc->yycur++;
 			continue;
 		}
@@ -895,11 +967,71 @@ skip_sql_comment(struct scanner * lc)
 
 static int tokenize(mvc * lc, int cur);
 
+static inline bool is_valid_decimal_digit(int cur) { return (iswdigit(cur)); }
+static inline bool is_valid_binary_digit(int cur) { return (iswdigit(cur) && cur < '2'); }
+static inline bool is_valid_octal_digit(int cur) { return (iswdigit(cur) && cur < '8'); }
+static inline bool is_valid_hexadecimal_digit(int cur) { return iswxdigit(cur); }
+
+static inline int check_validity_number(mvc* c, int pcur, bool initial_underscore_allowed, int *token, int type) {
+	struct scanner *lc = &c->scanner;
+	bool (*is_valid_n_ary_digit)(int);
+
+	if (pcur == '_' && !initial_underscore_allowed)  /* ERROR: initial underscore not allowed */  {
+		*token = 0;
+		return '_';
+	}
+
+	switch (type) {
+	case BINARYNUM:
+		is_valid_n_ary_digit = &is_valid_binary_digit;
+		break;
+	case OCTALNUM:
+		is_valid_n_ary_digit = &is_valid_octal_digit;
+		break;
+	case HEXADECIMALNUM:
+		is_valid_n_ary_digit = &is_valid_hexadecimal_digit;
+		break;
+	default:
+		is_valid_n_ary_digit = &is_valid_decimal_digit;
+		break;
+	}
+
+	if ( !(pcur == '_' || is_valid_n_ary_digit(pcur)) ) /* ERROR: first digit is not valid */ {
+		*token = 0;
+		return pcur;
+	}
+
+	int cur = scanner_getc(lc);
+	*token = type;
+	while (cur != EOF) {
+		if (cur == '_') {
+			if (pcur == '_') /* ERROR: multiple consecutive underscores */ {
+				*token = 0;
+				return '_';
+			}
+		}
+		else if (!is_valid_n_ary_digit(cur))
+			break;
+		pcur = cur;
+		cur = scanner_getc(lc);
+	}
+
+	if (pcur == '_')  {
+		*token = 0;
+		if (iswalnum(cur))	 /* ERROR: not a valid digit */
+			return cur;
+		else				/* ERROR: number ends with underscore */
+			return '_';
+	}
+
+	return cur;
+}
+
 static int
 number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
-	int token = cur == '0' ? sqlINT : 0;
+	int token = sqlINT;
 
 	/* a number has one of these forms (expressed in regular expressions):
 	 * 0x[0-9A-Fa-f]+                   -- (hexadecimal) INTEGER
@@ -911,32 +1043,27 @@ number(mvc * c, int cur)
 	 * [0-9]+                           -- (decimal) INTEGER
 	 */
 	lc->started = 1;
-	/* after this block, cur contains the first character after the
-	 * parsed number (which may be the first causing it not to be a number);
-	 * it token == 0 after this block, a parse error was detected */
-	if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
-		cur = scanner_getc(lc);
-		while (cur != EOF && iswxdigit(cur)) {
-			token = HEXADECIMAL;
+	if (cur == '0') {
+		switch ((cur = scanner_getc(lc))) {
+		case 'b':
 			cur = scanner_getc(lc);
-		}
-
-		if (cur == EOF)
-			return cur;
-
-		if (token != HEXADECIMAL) {
-			/* 0x not followed by a hex digit: show 'x' as erroneous */
+			if ((cur = check_validity_number(c, cur, true, &token, BINARYNUM)) == EOF) return cur;
+			break;
+		case 'o':
+			cur = scanner_getc(lc);
+			if ((cur = check_validity_number(c,  cur, true, &token, OCTALNUM)) == EOF) return cur;
+			break;
+		case 'x':
+			cur = scanner_getc(lc);
+			if ((cur = check_validity_number(c,  cur, true, &token, HEXADECIMALNUM)) == EOF) return cur;
+			break;
+		default:
 			utf8_putchar(lc, cur);
-			cur = 'x';
-			token = 0;
+			cur = '0';
 		}
-	} else {
-		while (cur != EOF && iswdigit(cur)) {
-			token = sqlINT;
-			cur = scanner_getc(lc);
-		}
-		if (cur == EOF)
-			return cur;
+	}
+	if (token == sqlINT) {
+		if ((cur = check_validity_number(c, cur, false, &token, sqlINT)) == EOF) return cur;
 		if (cur == '@') {
 			if (token == sqlINT) {
 				cur = scanner_getc(lc);
@@ -957,46 +1084,25 @@ number(mvc * c, int cur)
 		} else {
 			if (cur == '.') {
 				cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-				if (token == sqlINT || iswdigit(cur)) {
-					token = INTNUM;
-					while (cur != EOF && iswdigit(cur))
-						cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-				} else {
-					token = 0;
-				}
+				if (iswalnum(cur)) /* early exit for numerical forms with final . e.g. 10. */
+				if ((cur = check_validity_number(c, cur, false, &token, INTNUM)) == EOF) return cur;
 			}
+			if (token != 0)
 			if (cur == 'e' || cur == 'E') {
-				if (token != 0) {
+				cur = scanner_getc(lc);
+				if (cur == '+' || cur == '-')
 					cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-					if (cur == '+' || cur == '-')
-						cur = scanner_getc(lc);
-					while (cur != EOF && iswdigit(cur)) {
-						token = APPROXNUM;
-						cur = scanner_getc(lc);
-					}
-					if (cur == EOF)
-						return cur;
-					if (token != APPROXNUM)
-						token = 0;
-				}
+				if ((cur = check_validity_number(c, cur, false, &token, APPROXNUM)) == EOF) return cur;
 			}
 		}
 	}
 
-	if (cur == EOF && lc->rs->buf == NULL) /* malloc failure */
-		return EOF;
+	assert(cur != EOF);
 
-	if (cur != EOF) {
-		if (iswalnum(cur) || cur == '_' /* || cur == '"' || cur == '\'' */)
-			token = 0;
-		utf8_putchar(lc, cur);
-	}
+	if (iswalnum(cur)) /* ERROR: not a valid digit */
+		token = 0;
+
+	utf8_putchar(lc, cur);
 
 	if (token) {
 		return scanner_token(lc, token);
@@ -1051,7 +1157,15 @@ int scanner_symbol(mvc * c, int cur)
 	case '"':
 		return scanner_string(c, cur, false);
 	case '{':
-		return scanner_body(c);
+		// if previous tokens like LANGUAGE IDENT
+		// TODO checking on IDENT only may not be enough
+		if (lc->yylast == IDENT)
+			return scanner_body(c);
+		lc->started = 1;
+		return scanner_token(lc, cur);
+	case '}':
+		lc->started = 1;
+		return scanner_token(lc, cur);
 	case '-':
 		lc->started = 1;
 		next = scanner_getc(lc);
@@ -1078,6 +1192,7 @@ int scanner_symbol(mvc * c, int cur)
 	case '^': /* binary xor */
 	case '*':
 	case '?':
+	case ':':
 	case '%':
 	case '+':
 	case '(':
@@ -1381,8 +1496,8 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 		case 'E':
 			assert(yylval->sval[1] == '\'');
 			GDKstrFromStr((unsigned char *) str,
-				      (unsigned char *) yylval->sval + 2,
-				      lc->yycur-lc->yysval - 2);
+						  (unsigned char *) yylval->sval + 2,
+						  lc->yycur-lc->yysval - 2, '\'');
 			quote = '\'';
 			break;
 		case 'u':
@@ -1425,8 +1540,9 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 				*dst = 0;
 			} else {
 				GDKstrFromStr((unsigned char *)str,
-					      (unsigned char *)yylval->sval + 1,
-					      lc->yycur - lc->yysval - 1);
+							  (unsigned char *)yylval->sval + 1,
+							  lc->yycur - lc->yysval - 1,
+							  '\'');
 			}
 			break;
 		}
@@ -1441,11 +1557,10 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 	return(token);
 }
 
-/* also see sql_parser.y */
-extern int sqllex( YYSTYPE *yylval, void *m );
+static int scanner( YYSTYPE *yylval, void *m, bool log);
 
-int
-sqllex(YYSTYPE * yylval, void *parm)
+static int
+scanner(YYSTYPE * yylval, void *parm, bool log)
 {
 	int token;
 	mvc *c = (mvc *) parm;
@@ -1458,10 +1573,10 @@ sqllex(YYSTYPE * yylval, void *parm)
 	token = sql_get_next_token(yylval, parm);
 
 	if (token == NOT) {
-		int next = sqllex(yylval, parm);
+		int next = scanner(yylval, parm, false);
 
 		if (next == NOT) {
-			return sqllex(yylval, parm);
+			return scanner(yylval, parm, false);
 		} else if (next == EXISTS) {
 			token = NOT_EXISTS;
 		} else if (next == BETWEEN) {
@@ -1488,9 +1603,18 @@ sqllex(YYSTYPE * yylval, void *parm)
 		}
 	}
 
-	if (lc->log)
+	if (lc->log && log)
 		mnstr_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
 	lc->started += (token != EOF);
 	return token;
+}
+
+/* also see sql_parser.y */
+extern int sqllex(YYSTYPE * yylval, void *parm);
+
+int
+sqllex(YYSTYPE * yylval, void *parm)
+{
+	return scanner(yylval, parm, true);
 }

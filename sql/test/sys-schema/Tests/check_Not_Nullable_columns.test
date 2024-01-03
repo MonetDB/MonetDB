@@ -11,7 +11,7 @@ SELECT "dependency_type_id", * FROM "sys"."dependency_types" WHERE "dependency_t
 ----
 
 query TIT rowsort
-SELECT "dependency_type_name", * FROM "sys"."dependency_types" WHERE "dependency_type_name" IS NULL
+SELECT "dependency_type_name", * FROM "sys"."dependency_types" WHERE "dependency_type_name" IS NULL OR "dependency_type_name" = ''
 ----
 
 query IITT rowsort
@@ -19,7 +19,7 @@ SELECT "language_id", * FROM "sys"."function_languages" WHERE "language_id" IS N
 ----
 
 query TITT rowsort
-SELECT "language_name", * FROM "sys"."function_languages" WHERE "language_name" IS NULL
+SELECT "language_name", * FROM "sys"."function_languages" WHERE "language_name" IS NULL OR "language_name" = ''
 ----
 
 query IITT rowsort
@@ -27,11 +27,11 @@ SELECT "function_type_id", * FROM "sys"."function_types" WHERE "function_type_id
 ----
 
 query TITT rowsort
-SELECT "function_type_name", * FROM "sys"."function_types" WHERE "function_type_name" IS NULL
+SELECT "function_type_name", * FROM "sys"."function_types" WHERE "function_type_name" IS NULL OR "function_type_name" = ''
 ----
 
 query TITT rowsort
-SELECT "function_type_keyword", * FROM "sys"."function_types" WHERE "function_type_keyword" IS NULL
+SELECT "function_type_keyword", * FROM "sys"."function_types" WHERE "function_type_keyword" IS NULL OR "function_type_keyword" = ''
 ----
 
 query IIT rowsort
@@ -39,7 +39,7 @@ SELECT "index_type_id", * FROM "sys"."index_types" WHERE "index_type_id" IS NULL
 ----
 
 query TIT rowsort
-SELECT "index_type_name", * FROM "sys"."index_types" WHERE "index_type_name" IS NULL
+SELECT "index_type_name", * FROM "sys"."index_types" WHERE "index_type_name" IS NULL OR "index_type_name" = ''
 ----
 
 query IIT rowsort
@@ -47,11 +47,11 @@ SELECT "key_type_id", * FROM "sys"."key_types" WHERE "key_type_id" IS NULL
 ----
 
 query TIT rowsort
-SELECT "key_type_name", * FROM "sys"."key_types" WHERE "key_type_name" IS NULL
+SELECT "key_type_name", * FROM "sys"."key_types" WHERE "key_type_name" IS NULL OR "key_type_name" = ''
 ----
 
 query TT rowsort
-SELECT "keyword", * FROM "sys"."keywords" WHERE "keyword" IS NULL
+SELECT "keyword", * FROM "sys"."keywords" WHERE "keyword" IS NULL OR "keyword" = ''
 ----
 
 query IIT rowsort
@@ -59,7 +59,7 @@ SELECT "privilege_code_id", * FROM "sys"."privilege_codes" WHERE "privilege_code
 ----
 
 query TIT rowsort
-SELECT "privilege_code_name", * FROM "sys"."privilege_codes" WHERE "privilege_code_name" IS NULL
+SELECT "privilege_code_name", * FROM "sys"."privilege_codes" WHERE "privilege_code_name" IS NULL OR "privilege_code_name" = ''
 ----
 
 query ITTTTIIIIIIII rowsort
@@ -67,7 +67,7 @@ SELECT "atomwidth", * FROM "sys"."storagemodelinput" WHERE "atomwidth" IS NULL
 ----
 
 query TTTTTIIIIIIII rowsort
-SELECT "column", * FROM "sys"."storagemodelinput" WHERE "column" IS NULL
+SELECT "column", * FROM "sys"."storagemodelinput" WHERE "column" IS NULL OR "column" = ''
 ----
 
 query ITTTTIIIIIIII rowsort
@@ -87,15 +87,15 @@ SELECT "reference", * FROM "sys"."storagemodelinput" WHERE "reference" IS NULL
 ----
 
 query TTTTTIIIIIIII rowsort
-SELECT "schema", * FROM "sys"."storagemodelinput" WHERE "schema" IS NULL
+SELECT "schema", * FROM "sys"."storagemodelinput" WHERE "schema" IS NULL OR "schema" = ''
 ----
 
 query TTTTTIIIIIIII rowsort
-SELECT "table", * FROM "sys"."storagemodelinput" WHERE "table" IS NULL
+SELECT "table", * FROM "sys"."storagemodelinput" WHERE "table" IS NULL OR "table" = ''
 ----
 
 query TTTTTIIIIIIII rowsort
-SELECT "type", * FROM "sys"."storagemodelinput" WHERE "type" IS NULL
+SELECT "type", * FROM "sys"."storagemodelinput" WHERE "type" IS NULL OR "type" = ''
 ----
 
 query ITTTTIIIIIIII rowsort
@@ -107,7 +107,7 @@ SELECT "table_type_id", * FROM "sys"."table_types" WHERE "table_type_id" IS NULL
 ----
 
 query TIT rowsort
-SELECT "table_type_name", * FROM "sys"."table_types" WHERE "table_type_name" IS NULL
+SELECT "table_type_name", * FROM "sys"."table_types" WHERE "table_type_name" IS NULL OR "table_type_name" = ''
 ----
 
 query IITTIIITIIT rowsort
@@ -115,11 +115,11 @@ SELECT "id", * FROM "sys"."_columns" WHERE "id" IS NULL
 ----
 
 query TITTIIITIIT rowsort
-SELECT "name", * FROM "sys"."_columns" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."_columns" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query TITTIIITIIT rowsort
-SELECT "type", * FROM "sys"."_columns" WHERE "type" IS NULL
+SELECT "type", * FROM "sys"."_columns" WHERE "type" IS NULL OR "type" = ''
 ----
 
 query IITTIIITIIT rowsort
@@ -147,7 +147,7 @@ SELECT "id", * FROM "sys"."_tables" WHERE "id" IS NULL
 ----
 
 query TITITIIII rowsort
-SELECT "name", * FROM "sys"."_tables" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."_tables" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query IITITIIII rowsort
@@ -179,11 +179,11 @@ SELECT "func_id", * FROM "sys"."args" WHERE "func_id" IS NULL
 ----
 
 query TIITTIIII rowsort
-SELECT "name", * FROM "sys"."args" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."args" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query TIITTIIII rowsort
-SELECT "type", * FROM "sys"."args" WHERE "type" IS NULL
+SELECT "type", * FROM "sys"."args" WHERE "type" IS NULL OR "type" = ''
 ----
 
 query IIITTIIII rowsort
@@ -207,7 +207,7 @@ SELECT "id", * FROM "sys"."auths" WHERE "id" IS NULL
 ----
 
 query TITI rowsort
-SELECT "name", * FROM "sys"."auths" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."auths" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query IITI rowsort
@@ -215,11 +215,11 @@ SELECT "grantor", * FROM "sys"."auths" WHERE "grantor" IS NULL
 ----
 
 query TTTITIITIT rowsort
-SELECT "name", * FROM "sys"."db_user_info" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."db_user_info" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query TTTITIITIT rowsort
-SELECT "fullname", * FROM "sys"."db_user_info" WHERE "fullname" IS NULL
+SELECT "fullname", * FROM "sys"."db_user_info" WHERE "fullname" IS NULL OR "fullname" = ''
 ----
 
 query ITTITIITIT rowsort
@@ -243,15 +243,15 @@ SELECT "id", * FROM "sys"."functions" WHERE "id" IS NULL
 ----
 
 query TITTTIIIIIIII rowsort
-SELECT "name", * FROM "sys"."functions" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."functions" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query TITTTIIIIIIII rowsort
-SELECT "func", * FROM "sys"."functions" WHERE "func" IS NULL
+SELECT "func", * FROM "sys"."functions" WHERE "func" IS NULL OR "func" = ''
 ----
 
 query TITTTIIIIIIII rowsort
-SELECT "mod", * FROM "sys"."functions" WHERE "mod" IS NULL
+SELECT "mod", * FROM "sys"."functions" WHERE "mod" IS NULL OR "mod" = ''
 ----
 
 query IITTTIIIIIIII rowsort
@@ -295,7 +295,7 @@ SELECT "type", * FROM "sys"."idxs" WHERE "type" IS NULL
 ----
 
 query TIIIT rowsort
-SELECT "name", * FROM "sys"."idxs" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."idxs" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query IIIITII rowsort
@@ -311,7 +311,7 @@ SELECT "type", * FROM "sys"."keys" WHERE "type" IS NULL
 ----
 
 query TIIITII rowsort
-SELECT "name", * FROM "sys"."keys" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."keys" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query IIIITII rowsort
@@ -327,7 +327,7 @@ SELECT "id", * FROM "sys"."objects" WHERE "id" IS NULL
 ----
 
 query TITII rowsort
-SELECT "name", * FROM "sys"."objects" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."objects" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query IITII rowsort
@@ -371,7 +371,7 @@ SELECT "id", * FROM "sys"."schemas" WHERE "id" IS NULL
 ----
 
 query TITIII rowsort
-SELECT "name", * FROM "sys"."schemas" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."schemas" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query IITIII rowsort
@@ -411,7 +411,7 @@ SELECT "minvalue", * FROM "sys"."sequences" WHERE "minvalue" IS NULL
 ----
 
 query TIITIIIIII rowsort
-SELECT "name", * FROM "sys"."sequences" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."sequences" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query IIITIIIIII rowsort
@@ -427,19 +427,19 @@ SELECT "column_id", * FROM "sys"."statistics" WHERE "column_id" IS NULL
 ----
 
 query TITTTTIIIITTII rowsort
-SELECT "schema", * FROM "sys"."statistics" WHERE "schema" IS NULL
+SELECT "schema", * FROM "sys"."statistics" WHERE "schema" IS NULL OR "schema" = ''
 ----
 
 query TITTTTIIIITTII rowsort
-SELECT "table", * FROM "sys"."statistics" WHERE "table" IS NULL
+SELECT "table", * FROM "sys"."statistics" WHERE "table" IS NULL OR "table" = ''
 ----
 
 query TITTTTIIIITTII rowsort
-SELECT "column", * FROM "sys"."statistics" WHERE "column" IS NULL
+SELECT "column", * FROM "sys"."statistics" WHERE "column" IS NULL OR "column" = ''
 ----
 
 query TITTTTIIIITTII rowsort
-SELECT "type", * FROM "sys"."statistics" WHERE "type" IS NULL
+SELECT "type", * FROM "sys"."statistics" WHERE "type" IS NULL OR "type" = ''
 ----
 
 query IITTTTIIIITTII rowsort
@@ -499,7 +499,7 @@ SELECT "id", * FROM "sys"."triggers" WHERE "id" IS NULL
 ----
 
 query TITIIIITTTT rowsort
-SELECT "name", * FROM "sys"."triggers" WHERE "name" IS NULL
+SELECT "name", * FROM "sys"."triggers" WHERE "name" IS NULL OR "name" = ''
 ----
 
 query IITIIIITTTT rowsort
@@ -519,7 +519,7 @@ SELECT "event", * FROM "sys"."triggers" WHERE "event" IS NULL
 ----
 
 query TITIIIITTTT rowsort
-SELECT "statement", * FROM "sys"."triggers" WHERE "statement" IS NULL
+SELECT "statement", * FROM "sys"."triggers" WHERE "statement" IS NULL OR "statement" = ''
 ----
 
 query IITTIIIII rowsort
@@ -527,11 +527,11 @@ SELECT "id", * FROM "sys"."types" WHERE "id" IS NULL
 ----
 
 query TITTIIIII rowsort
-SELECT "systemname", * FROM "sys"."types" WHERE "systemname" IS NULL
+SELECT "systemname", * FROM "sys"."types" WHERE "systemname" IS NULL OR "systemname" = ''
 ----
 
 query TITTIIIII rowsort
-SELECT "sqlname", * FROM "sys"."types" WHERE "sqlname" IS NULL
+SELECT "sqlname", * FROM "sys"."types" WHERE "sqlname" IS NULL OR "sqlname" = ''
 ----
 
 query IITTIIIII rowsort

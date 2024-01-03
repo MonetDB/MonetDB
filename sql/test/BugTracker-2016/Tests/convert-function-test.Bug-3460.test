@@ -159,8 +159,19 @@ t
 NULL
 NULL
 
-statement error
+query IT rowsort
 SELECT v, convert(v, varchar) from T_BOOLEAN
+----
+0
+false
+0
+false
+1
+true
+1
+true
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, varchar(6)) from T_BOOLEAN
@@ -371,8 +382,19 @@ t
 NULL
 NULL
 
-statement error
+query IT rowsort
 SELECT v, cast(v as varchar) from T_BOOLEAN
+----
+0
+false
+0
+false
+1
+true
+1
+true
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as varchar(6)) from T_BOOLEAN
@@ -552,8 +574,21 @@ SELECT v, convert(v, decimal(15,3)) from T_blob where v between '00' and '11'
 statement error
 SELECT v, convert(v, char) from T_blob where v between '11' and '11'
 
-statement error
+query TT rowsort
 SELECT v, convert(v, varchar) from T_blob
+----
+(empty)
+(empty)
+00
+00
+0123456789
+0123456789
+11
+11
+A0B2C3D4F5
+A0B2C3D4F5
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, varchar(16)) from T_blob
@@ -706,8 +741,21 @@ SELECT v, cast(v as decimal(15,3)) from T_blob where v between '00' and '11'
 statement error
 SELECT v, cast(v as char) from T_blob where v between '11' and '11'
 
-statement error
+query TT rowsort
 SELECT v, cast(v as varchar) from T_blob
+----
+(empty)
+(empty)
+00
+00
+0123456789
+0123456789
+11
+11
+A0B2C3D4F5
+A0B2C3D4F5
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as varchar(16)) from T_blob
@@ -1108,8 +1156,21 @@ SELECT v, convert(v, char) from T_tinyint where v between 0 and 1
 1
 1
 
-statement error
+query IT rowsort
 SELECT v, convert(v, varchar) from T_tinyint
+----
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, varchar(6)) from T_tinyint
@@ -1475,8 +1536,21 @@ SELECT v, cast(v as char) from T_tinyint where v between 0 and 1
 1
 1
 
-statement error
+query IT rowsort
 SELECT v, cast(v as varchar) from T_tinyint
+----
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as varchar(6)) from T_tinyint
@@ -1928,8 +2002,25 @@ SELECT v, convert(v, char) from T_smallint where v between 0 and 1
 1
 1
 
-statement error
+query IT rowsort
 SELECT v, convert(v, varchar) from T_smallint
+----
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, varchar(6)) from T_smallint
@@ -2369,8 +2460,25 @@ SELECT v, cast(v as char) from T_smallint where v between 0 and 1
 1
 1
 
-statement error
+query IT rowsort
 SELECT v, cast(v as varchar) from T_smallint
+----
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as varchar(6)) from T_smallint
@@ -2894,8 +3002,29 @@ SELECT v, convert(v, char) from T_int where v between 0 and 1
 1
 1
 
-statement error
+query IT rowsort
 SELECT v, convert(v, varchar) from T_int
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, varchar(16)) from T_int
@@ -3405,8 +3534,29 @@ SELECT v, cast(v as char) from T_int where v between 0 and 1
 1
 1
 
-statement error
+query IT rowsort
 SELECT v, cast(v as varchar) from T_int
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as varchar(16)) from T_int
@@ -3942,8 +4092,29 @@ SELECT v, convert(v, char) from T_bigint where v between 0 and 1
 1
 1
 
-statement error
+query IT rowsort
 SELECT v, convert(v, varchar) from T_bigint
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, varchar(16)) from T_bigint
@@ -4453,8 +4624,29 @@ SELECT v, cast(v as char) from T_bigint where v between 0 and 1
 1
 1
 
-statement error
+query IT rowsort
 SELECT v, cast(v as varchar) from T_bigint
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as varchar(16)) from T_bigint
@@ -4969,8 +5161,29 @@ SELECT v, convert(v, char) from T_float where v between 0 and 1
 1.000
 1
 
-statement error
+query RT rowsort
 SELECT v, convert(v, varchar) from T_float
+----
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, varchar(16)) from T_float
@@ -5459,8 +5672,29 @@ SELECT v, cast(v as char) from T_float where v between 0 and 1
 1.000
 1
 
-statement error
+query RT rowsort
 SELECT v, cast(v as varchar) from T_float
+----
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as varchar(16)) from T_float
@@ -6011,8 +6245,33 @@ NULL
 statement error
 SELECT v, convert(v, char) from T_real where v between 0 and 1
 
-statement error
+query RT rowsort
 SELECT v, convert(v, varchar) from T_real
+----
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2.1474836e+09
+-3.142
+-3.1415627
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483600.000
+2.1474836e+09
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, varchar(16)) from T_real
@@ -6547,8 +6806,33 @@ NULL
 statement error
 SELECT v, cast(v as char) from T_real where v between 0 and 1
 
-statement error
+query RT rowsort
 SELECT v, cast(v as varchar) from T_real
+----
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2.1474836e+09
+-3.142
+-3.1415627
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483600.000
+2.1474836e+09
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as varchar(16)) from T_real
@@ -7136,8 +7420,33 @@ NULL
 statement error
 SELECT v, convert(v, char) from T_double where v between 0 and 1
 
-statement error
+query RT rowsort
 SELECT v, convert(v, varchar) from T_double
+----
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3.1415629
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, varchar(16)) from T_double
@@ -7697,8 +8006,33 @@ NULL
 statement error
 SELECT v, cast(v as char) from T_double where v between 0 and 1
 
-statement error
+query RT rowsort
 SELECT v, cast(v as varchar) from T_double
+----
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3.1415629
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as varchar(16)) from T_double
@@ -8293,8 +8627,33 @@ SELECT v, convert(v, char) from T_num where v between 0 and 1
 1.000
 1
 
-statement error
+query RT rowsort
 SELECT v, convert(v, varchar) from T_num
+----
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, varchar(16)) from T_num
@@ -8861,8 +9220,33 @@ SELECT v, cast(v as char) from T_num where v between 0 and 1
 1.000
 1
 
-statement error
+query RT rowsort
 SELECT v, cast(v as varchar) from T_num
+----
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as varchar(16)) from T_num
@@ -9450,8 +9834,33 @@ NULL
 statement error
 SELECT v, convert(v, char) from T_dec where v between 0 and 1
 
-statement error
+query RT rowsort
 SELECT v, convert(v, varchar) from T_dec
+----
+-1.000
+-1.0000000
+-127.000
+-127.0000000
+-2147483647.000
+-2147483647.0000000
+-3.142
+-3.1415629
+-32767.000
+-32767.0000000
+0.000
+0.0000000
+0.120
+0.1200000
+1.000
+1.0000000
+127.000
+127.0000000
+2147483647.000
+2147483647.0000000
+32767.000
+32767.0000000
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, varchar(20)) from T_dec
@@ -10011,8 +10420,33 @@ NULL
 statement error
 SELECT v, cast(v as char) from T_dec where v between 0 and 1
 
-statement error
+query RT rowsort
 SELECT v, cast(v as varchar) from T_dec
+----
+-1.000
+-1.0000000
+-127.000
+-127.0000000
+-2147483647.000
+-2147483647.0000000
+-3.142
+-3.1415629
+-32767.000
+-32767.0000000
+0.000
+0.0000000
+0.120
+0.1200000
+1.000
+1.0000000
+127.000
+127.0000000
+2147483647.000
+2147483647.0000000
+32767.000
+32767.0000000
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as varchar(20)) from T_dec
@@ -10301,8 +10735,23 @@ SELECT v, convert(v, char) from T_char where v in ('0', '1')
 1
 1
 
-statement error
+query TT rowsort
 SELECT v, convert(v, varchar) from T_char
+----
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_char
@@ -10541,8 +10990,23 @@ SELECT v, cast(v as char) from T_char where v in ('0', '1')
 1
 1
 
-statement error
+query TT rowsort
 SELECT v, cast(v as varchar) from T_char
+----
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_char
@@ -10804,8 +11268,23 @@ SELECT v, convert(v, char) from T_varchar where v in ('0', '1')
 1
 1
 
-statement error
+query TT rowsort
 SELECT v, convert(v, varchar) from T_varchar
+----
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_varchar
@@ -11044,8 +11523,23 @@ SELECT v, cast(v as char) from T_varchar where v in ('0', '1')
 1
 1
 
-statement error
+query TT rowsort
 SELECT v, cast(v as varchar) from T_varchar
+----
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_varchar
@@ -11307,8 +11801,23 @@ SELECT v, convert(v, char) from T_clob where v in ('0', '1')
 1
 1
 
-statement error
+query TT rowsort
 SELECT v, convert(v, varchar) from T_clob
+----
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_clob
@@ -11547,8 +12056,23 @@ SELECT v, cast(v as char) from T_clob where v in ('0', '1')
 1
 1
 
-statement error
+query TT rowsort
 SELECT v, cast(v as varchar) from T_clob
+----
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_clob
@@ -11718,8 +12242,19 @@ SELECT v, convert(v, decimal(15,3)) from T_date
 statement error
 SELECT v, convert(v, char) from T_date
 
-statement error
+query TT rowsort
 SELECT v, convert(v, varchar) from T_date
+----
+1999-12-31
+1999-12-31
+2016-01-01
+2016-01-01
+2016-02-29
+2016-02-29
+2016-12-31
+2016-12-31
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_date
@@ -11886,8 +12421,19 @@ SELECT v, cast(v as decimal(15,3)) from T_date
 statement error
 SELECT v, cast(v as char) from T_date
 
-statement error
+query TT rowsort
 SELECT v, cast(v as varchar) from T_date
+----
+1999-12-31
+1999-12-31
+2016-01-01
+2016-01-01
+2016-02-29
+2016-02-29
+2016-12-31
+2016-12-31
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_date
@@ -12073,8 +12619,15 @@ SELECT v, convert(v, decimal(15,3)) from T_time
 statement error
 SELECT v, convert(v, char) from T_time
 
-statement error
+query TT rowsort
 SELECT v, convert(v, varchar) from T_time
+----
+00:00:00
+00:00:00
+23:59:58
+23:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_time
@@ -12210,8 +12763,15 @@ SELECT v, cast(v as decimal(15,3)) from T_time
 statement error
 SELECT v, cast(v as char) from T_time
 
-statement error
+query TT rowsort
 SELECT v, cast(v as varchar) from T_time
+----
+00:00:00
+00:00:00
+23:59:58
+23:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_time
@@ -12368,8 +12928,19 @@ SELECT v, convert(v, decimal(15,3)) from T_timestamp
 statement error
 SELECT v, convert(v, char) from T_timestamp
 
-statement error
+query TT rowsort
 SELECT v, convert(v, varchar) from T_timestamp
+----
+1999-12-31 23:59:59
+1999-12-31 23:59:59.000000
+2016-01-01 00:00:00
+2016-01-01 00:00:00.000000
+2016-02-29 00:00:00
+2016-02-29 00:00:00.000000
+2016-12-31 23:59:58
+2016-12-31 23:59:58.000000
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_timestamp
@@ -12558,8 +13129,19 @@ SELECT v, cast(v as decimal(15,3)) from T_timestamp
 statement error
 SELECT v, cast(v as char) from T_timestamp
 
-statement error
+query TT rowsort
 SELECT v, cast(v as varchar) from T_timestamp
+----
+1999-12-31 23:59:59
+1999-12-31 23:59:59.000000
+2016-01-01 00:00:00
+2016-01-01 00:00:00.000000
+2016-02-29 00:00:00
+2016-02-29 00:00:00.000000
+2016-12-31 23:59:58
+2016-12-31 23:59:58.000000
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_timestamp
@@ -12767,8 +13349,15 @@ SELECT v, convert(v, decimal(15,3)) from T_timetz
 statement error
 SELECT v, convert(v, char) from T_timetz
 
-statement error
+query TT rowsort
 SELECT v, convert(v, varchar) from T_timetz
+----
+01:59:58+02:00
+01:59:58+02:00
+02:00:00+02:00
+02:00:00+02:00
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_timetz
@@ -12904,8 +13493,15 @@ SELECT v, cast(v as decimal(15,3)) from T_timetz
 statement error
 SELECT v, cast(v as char) from T_timetz
 
-statement error
+query TT rowsort
 SELECT v, cast(v as varchar) from T_timetz
+----
+01:59:58+02:00
+01:59:58+02:00
+02:00:00+02:00
+02:00:00+02:00
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_timetz
@@ -13062,8 +13658,19 @@ SELECT v, convert(v, decimal(15,3)) from T_timestamptz
 statement error
 SELECT v, convert(v, char) from T_timestamptz
 
-statement error
+query TT rowsort
 SELECT v, convert(v, varchar) from T_timestamptz
+----
+2000-01-01 01:59:59+02:00
+2000-01-01 01:59:59.000000+02:00
+2016-01-01 02:00:00+02:00
+2016-01-01 02:00:00.000000+02:00
+2016-02-29 02:00:00+02:00
+2016-02-29 02:00:00.000000+02:00
+2017-01-01 01:59:58+02:00
+2017-01-01 01:59:58.000000+02:00
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_timestamptz
@@ -13252,8 +13859,19 @@ SELECT v, cast(v as decimal(15,3)) from T_timestamptz
 statement error
 SELECT v, cast(v as char) from T_timestamptz
 
-statement error
+query TT rowsort
 SELECT v, cast(v as varchar) from T_timestamptz
+----
+2000-01-01 01:59:59+02:00
+2000-01-01 01:59:59.000000+02:00
+2016-01-01 02:00:00+02:00
+2016-01-01 02:00:00.000000+02:00
+2016-02-29 02:00:00+02:00
+2016-02-29 02:00:00.000000+02:00
+2017-01-01 01:59:58+02:00
+2017-01-01 01:59:58.000000+02:00
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_timestamptz

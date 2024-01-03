@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -53,10 +57,9 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 		}
 	}
 
-	bn = (*batfunc)(b, s);
+	bn = (*batfunc) (b, s);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL) {
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
@@ -85,10 +88,9 @@ CMDbatUNARY1(MalStkPtr stk, InstrPtr pci,
 		}
 	}
 
-	bn = (*batfunc)(b, s);
+	bn = (*batfunc) (b, s);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL) {
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
@@ -286,17 +288,17 @@ calcmodtype(int tp1, int tp2)
 static str
 CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, int),
-			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, int),
-			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, int),
-			  int (*typefunc)(int, int), const char *malfunc)
+			  BAT * (batfunc1)(BAT *, const ValRecord *, BAT *, int),
+			  BAT * (batfunc2)(const ValRecord *, BAT *, BAT *, int),
+			  int(*typefunc)(int, int), const char *malfunc)
 {
 	bat bid;
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2, tp3;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
-	tp2 = stk->stk[getArg(pci, 2)].vtype; /* second argument */
-	tp3 = getArgType(mb, pci, 0);		  /* return argument */
+	tp1 = stk->stk[getArg(pci, 1)].vtype;	/* first argument */
+	tp2 = stk->stk[getArg(pci, 2)].vtype;	/* second argument */
+	tp3 = getArgType(mb, pci, 0);	/* return argument */
 	assert(isaBatType(tp3));
 	tp3 = getBatType(tp3);
 
@@ -338,43 +340,35 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	if (b1 && b2) {
 		if (tp3 == TYPE_any)
-			tp3 = (*typefunc)(b1->ttype, b2->ttype);
-		bn = (*batfunc)(b1, b2, s1, s2, tp3);
+			tp3 = (*typefunc) (b1->ttype, b2->ttype);
+		bn = (*batfunc) (b1, b2, s1, s2, tp3);
 	} else if (b1) {
 		if (tp3 == TYPE_any)
-			tp3 = (*typefunc)(b1->ttype, tp2);
-		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, tp3);
+			tp3 = (*typefunc) (b1->ttype, tp2);
+		bn = (*batfunc1) (b1, &stk->stk[getArg(pci, 2)], s1, tp3);
 	} else if (b2) {
 		if (tp3 == TYPE_any)
-			tp3 = (*typefunc)(tp1, b2->ttype);
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, tp3);
+			tp3 = (*typefunc) (tp1, b2->ttype);
+		bn = (*batfunc2) (&stk->stk[getArg(pci, 1)], b2, s2, tp3);
 	} else
 		goto bailout;			/* cannot happen */
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
 
-bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+  bailout:
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 /* cannot happen
-	if (s1)
-		BBPunfix(s1->batCacheid);
+	BBPreclaim(s1);
 */
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -392,16 +386,16 @@ bailout:
 static str
 CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *),
-			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *),
-			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *),
+			  BAT * (*batfunc1)(BAT *, const ValRecord *, BAT *),
+			  BAT * (*batfunc2)(const ValRecord *, BAT *, BAT *),
 			  const char *malfunc)
 {
 	bat bid;
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
-	tp2 = stk->stk[getArg(pci, 2)].vtype; /* second argument */
+	tp1 = stk->stk[getArg(pci, 1)].vtype;	/* first argument */
+	tp2 = stk->stk[getArg(pci, 2)].vtype;	/* second argument */
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		bid = *getArgReference_bat(stk, pci, 1);
@@ -440,38 +434,30 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 	}
 
 	if (b1 && b2)
-		bn = (*batfunc)(b1, b2, s1, s2);
+		bn = (*batfunc) (b1, b2, s1, s2);
 	else if (b1)
-		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1);
+		bn = (*batfunc1) (b1, &stk->stk[getArg(pci, 2)], s1);
 	else if (b2)
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2);
+		bn = (*batfunc2) (&stk->stk[getArg(pci, 1)], b2, s2);
 	else
 		goto bailout;			/* cannot happen */
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
 
-bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+  bailout:
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 /* cannot happen
-	if (s1)
-		BBPunfix(s1->batCacheid);
+	BBPreclaim(s1);
 */
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -489,17 +475,16 @@ bailout:
 static str
 CMDbatBINARY1a(MalStkPtr stk, InstrPtr pci,
 			   BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, bool),
-			   BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, bool),
-			   BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, bool),
-			   bool nil_matches,
-			   const char *malfunc)
+			   BAT * (*batfunc1)(BAT *, const ValRecord *, BAT *, bool),
+			   BAT * (*batfunc2)(const ValRecord *, BAT *, BAT *, bool),
+			   bool nil_matches, const char *malfunc)
 {
 	bat bid;
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
-	tp2 = stk->stk[getArg(pci, 2)].vtype; /* second argument */
+	tp1 = stk->stk[getArg(pci, 1)].vtype;	/* first argument */
+	tp2 = stk->stk[getArg(pci, 2)].vtype;	/* second argument */
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		bid = *getArgReference_bat(stk, pci, 1);
@@ -551,38 +536,30 @@ CMDbatBINARY1a(MalStkPtr stk, InstrPtr pci,
 	}
 
 	if (b1 && b2)
-		bn = (*batfunc)(b1, b2, s1, s2, nil_matches);
+		bn = (*batfunc) (b1, b2, s1, s2, nil_matches);
 	else if (b1)
-		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, nil_matches);
+		bn = (*batfunc1) (b1, &stk->stk[getArg(pci, 2)], s1, nil_matches);
 	else if (b2)
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, nil_matches);
+		bn = (*batfunc2) (&stk->stk[getArg(pci, 1)], b2, s2, nil_matches);
 	else
 		goto bailout;			/* cannot happen */
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
 
-bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+  bailout:
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 /* cannot happen
-	if (s1)
-		BBPunfix(s1->batCacheid);
+	BBPreclaim(s1);
 */
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -591,16 +568,16 @@ bailout:
 static str
 CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *),
-			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *),
-			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *),
+			  BAT * (*batfunc1)(BAT *, const ValRecord *, BAT *),
+			  BAT * (*batfunc2)(const ValRecord *, BAT *, BAT *),
 			  const char *malfunc)
 {
 	bat bid;
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
-	tp2 = stk->stk[getArg(pci, 2)].vtype; /* second argument */
+	tp1 = stk->stk[getArg(pci, 1)].vtype;	/* first argument */
+	tp2 = stk->stk[getArg(pci, 2)].vtype;	/* second argument */
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		bid = *getArgReference_bat(stk, pci, 1);
@@ -639,38 +616,30 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 	}
 
 	if (b1 && b2)
-		bn = (*batfunc)(b1, b2, s1, s2);
+		bn = (*batfunc) (b1, b2, s1, s2);
 	else if (b1)
-		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1);
+		bn = (*batfunc1) (b1, &stk->stk[getArg(pci, 2)], s1);
 	else if (b2)
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2);
+		bn = (*batfunc2) (&stk->stk[getArg(pci, 1)], b2, s2);
 	else
 		goto bailout;			/* cannot happen */
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
 
-bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+  bailout:
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 /* cannot happen
-	if (s1)
-		BBPunfix(s1->batCacheid);
+	BBPreclaim(s1);
 */
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -680,7 +649,8 @@ CMDbatMIN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY0(stk, pci, BATcalcmin, BATcalcmincst, BATcalccstmin, "batcalc.min");
+	return CMDbatBINARY0(stk, pci, BATcalcmin, BATcalcmincst, BATcalccstmin,
+						 "batcalc.min");
 }
 
 static str
@@ -689,7 +659,8 @@ CMDbatMIN_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY0(stk, pci, BATcalcmin_no_nil, BATcalcmincst_no_nil, BATcalccstmin_no_nil, "batcalc.min_no_nil");
+	return CMDbatBINARY0(stk, pci, BATcalcmin_no_nil, BATcalcmincst_no_nil,
+						 BATcalccstmin_no_nil, "batcalc.min_no_nil");
 }
 
 static str
@@ -698,7 +669,8 @@ CMDbatMAX(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY0(stk, pci, BATcalcmax, BATcalcmaxcst, BATcalccstmax, "batcalc.max");
+	return CMDbatBINARY0(stk, pci, BATcalcmax, BATcalcmaxcst, BATcalccstmax,
+						 "batcalc.max");
 }
 
 static str
@@ -707,7 +679,8 @@ CMDbatMAX_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY0(stk, pci, BATcalcmax_no_nil, BATcalcmaxcst_no_nil, BATcalccstmax_no_nil, "batcalc.max_no_nil");
+	return CMDbatBINARY0(stk, pci, BATcalcmax_no_nil, BATcalcmaxcst_no_nil,
+						 BATcalccstmax_no_nil, "batcalc.max_no_nil");
 }
 
 static str
@@ -906,7 +879,8 @@ static str
 CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
-	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL;
+	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL,
+		*shi = NULL;
 	int tp1, tp2, tp3, tp;
 	int bc = 0;					/* number of extra BAT arguments */
 	bool symmetric, linc, hinc, nils_false, anti, has_cand = false;
@@ -998,16 +972,11 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								  &stk->stk[getArg(pci, 3)], s,
 								  symmetric, linc, hinc, nils_false, anti);
 	BBPunfix(b->batCacheid);
-	if (lo)
-		BBPunfix(lo->batCacheid);
-	if (hi)
-		BBPunfix(hi->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (slo)
-		BBPunfix(slo->batCacheid);
-	if (shi)
-		BBPunfix(shi->batCacheid);
+	BBPreclaim(lo);
+	BBPreclaim(hi);
+	BBPreclaim(s);
+	BBPreclaim(slo);
+	BBPreclaim(shi);
 	if (bn == NULL)
 		return mythrow(MAL, "batcalc.between", OPERATION_FAILED);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -1015,19 +984,13 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (lo)
-		BBPunfix(lo->batCacheid);
-	if (hi)
-		BBPunfix(hi->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (slo)
-		BBPunfix(slo->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(lo);
+	BBPreclaim(hi);
+	BBPreclaim(s);
+	BBPreclaim(slo);
 /* cannot happen
-	if (shi)
-		BBPunfix(shi->batCacheid);
+	BBPreclaim(shi);
 */
 	throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
@@ -1063,13 +1026,12 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	ret = BATcalcavg(b, s, &avg, &vals, scale);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (ret != GDK_SUCCEED)
 		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
-	* getArgReference_dbl(stk, pci, 0) = avg;
+	*getArgReference_dbl(stk, pci, 0) = avg;
 	if (pci->retc == 2)
-		* getArgReference_lng(stk, pci, 1) = vals;
+		*getArgReference_lng(stk, pci, 1) = vals;
 	return MAL_SUCCEED;
 }
 
@@ -1086,20 +1048,19 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp)
 		bid = *getArgReference_bat(stk, pci, 2);
 		if (!is_bat_nil(bid) && (s = BATdescriptor(bid)) == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			throw(MAL, "batcalc.convert",
+				  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (s && ATOMtype(s->ttype) != TYPE_oid) {
 			BBPunfix(b->batCacheid);
-			if (s)
-				BBPunfix(s->batCacheid);
+			BBPreclaim(s);
 			throw(MAL, "batcalc.convert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
 		}
 	}
 
 	bn = BATconvert(b, s, tp, 0, 0, 0);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL) {
 		char buf[20];
 		snprintf(buf, sizeof(buf), "batcalc.%s", ATOMname(tp));
@@ -1222,17 +1183,18 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tp1 = stk->stk[getArg(pci, 2)].vtype;
 	tp2 = stk->stk[getArg(pci, 3)].vtype;
 	if (tp0 == TYPE_bat || isaBatType(tp0)) {
-		b = BATdescriptor(* getArgReference_bat(stk, pci, 1));
+		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
 		if (b == NULL)
-			throw(MAL, "batcalc.ifthenelse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			throw(MAL, "batcalc.ifthenelse",
+				  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		cnt = BATcount(b);
 	}
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
-		b1 = BATdescriptor(* getArgReference_bat(stk, pci, 2));
+		b1 = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 		if (b1 == NULL) {
-			if (b)
-				BBPunfix(b->batCacheid);
-			throw(MAL, "batcalc.ifthenelse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			BBPreclaim(b);
+			throw(MAL, "batcalc.ifthenelse",
+				  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (cnt == BUN_NONE)
 			cnt = BATcount(b1);
@@ -1242,21 +1204,18 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if (tp2 == TYPE_bat || isaBatType(tp2)) {
-		b2 = BATdescriptor(* getArgReference_bat(stk, pci, 3));
+		b2 = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 		if (b2 == NULL) {
-			if (b)
-				BBPunfix(b->batCacheid);
-			if (b1)
-				BBPunfix(b1->batCacheid);
-			throw(MAL, "batcalc.ifthenelse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			BBPreclaim(b);
+			BBPreclaim(b1);
+			throw(MAL, "batcalc.ifthenelse",
+				  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (cnt == BUN_NONE)
 			cnt = BATcount(b2);
 		else if (BATcount(b2) != cnt) {
-			if (b)
-				BBPunfix(b->batCacheid);
-			if (b1)
-				BBPunfix(b1->batCacheid);
+			BBPreclaim(b);
+			BBPreclaim(b1);
 			throw(MAL, "batcalc.ifthenelse", ILLEGAL_ARGUMENT);
 		}
 	}
@@ -1275,7 +1234,8 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (b2 != NULL) {
 				bn = BATcalcifthencstelse(b, &stk->stk[getArg(pci, 2)], b2);
 			} else {
-				bn = BATcalcifthencstelsecst(b, &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)]);
+				bn = BATcalcifthencstelsecst(b, &stk->stk[getArg(pci, 2)],
+											 &stk->stk[getArg(pci, 3)]);
 			}
 		}
 	} else {
@@ -1286,27 +1246,30 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = *getArgReference_bit(stk, pci, 1);
 		if (is_bit_nil(v)) {
 			if (b1 != NULL)
-				bn = BATconstant(b1->hseqbase, b1->ttype, ATOMnilptr(b1->ttype), BATcount(b1), TRANSIENT);
+				bn = BATconstant(b1->hseqbase, b1->ttype, ATOMnilptr(b1->ttype),
+								 BATcount(b1), TRANSIENT);
 			else
-				bn = BATconstant(b2->hseqbase, b2->ttype, ATOMnilptr(b2->ttype), BATcount(b2), TRANSIENT);
+				bn = BATconstant(b2->hseqbase, b2->ttype, ATOMnilptr(b2->ttype),
+								 BATcount(b2), TRANSIENT);
 		} else if (v) {
 			if (b1 != NULL)
 				bn = COLcopy(b1, b1->ttype, false, TRANSIENT);
 			else
-				bn = BATconstant(b2->hseqbase, b2->ttype, VALptr(&stk->stk[getArg(pci, 2)]), BATcount(b2), TRANSIENT);
+				bn = BATconstant(b2->hseqbase, b2->ttype,
+								 VALptr(&stk->stk[getArg(pci, 2)]),
+								 BATcount(b2), TRANSIENT);
 		} else {
 			if (b2 != NULL)
 				bn = COLcopy(b2, b2->ttype, false, TRANSIENT);
 			else
-				bn = BATconstant(b1->hseqbase, b1->ttype, VALptr(&stk->stk[getArg(pci, 3)]), BATcount(b1), TRANSIENT);
+				bn = BATconstant(b1->hseqbase, b1->ttype,
+								 VALptr(&stk->stk[getArg(pci, 3)]),
+								 BATcount(b1), TRANSIENT);
 		}
 	}
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 	if (bn == NULL) {
 		return mythrow(MAL, "batcalc.ifthenelse", OPERATION_FAILED);
 	}

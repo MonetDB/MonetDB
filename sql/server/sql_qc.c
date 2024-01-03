@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -35,6 +39,14 @@ cq_delete(int clientid, cq *q)
 	/* q, params and name are allocated using sa, ie need to be delete last */
 	if (q->sa)
 		sa_destroy(q->sa);
+}
+
+static void
+cq_restart(int clientid, cq *q)
+{
+	if (q->f->imp)
+		backend_freecode(NULL, clientid, q->f->imp);
+	q->f->instantiated = false;
 }
 
 void
@@ -73,6 +85,16 @@ qc_clean(qc *cache)
 		cache->q = NULL;
 	}
 }
+
+void
+qc_restart(qc *cache)
+{
+	if (cache) {
+		for (cq *q = cache->q; q; q = q->next)
+			cq_restart(cache->clientid, q);
+	}
+}
+
 
 void
 qc_destroy(qc *cache)
@@ -154,7 +176,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	*f = (sql_func) {
 		.mod = sql_private_module_name,
 		.type = F_PROC,
-		.lang = FUNC_LANG_INT,
+		.lang = FUNC_LANG_SQL,
 		.query = cmd,
 		.ops = params,
 		.res = res,
@@ -163,7 +185,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	f->base.new = 1;
 	f->base.id = n->id;
 	f->base.name = f->imp = name;
-	f->instantiated = TRUE;
+	f->instantiated = true;
 	n->f = f;
 	return n;
 }

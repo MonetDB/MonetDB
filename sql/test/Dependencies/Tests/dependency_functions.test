@@ -43,6 +43,9 @@ END
 query TTT rowsort
 SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name
 ----
+decypher
+get_remote_table_expressions
+DEP_FUNC
 describe_type
 describe_columns
 DEP_FUNC
@@ -76,8 +79,8 @@ DEP_FUNC
 ms_trunc
 ms_round
 DEP_FUNC
-remote_table_credentials
-get_remote_table_expressions
+regexp_replace
+regexp_replace
 DEP_FUNC
 sq
 get_remote_table_expressions
@@ -104,6 +107,9 @@ DROP ALL FUNCTION f1
 query TTT rowsort
 SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name
 ----
+decypher
+get_remote_table_expressions
+DEP_FUNC
 describe_type
 describe_columns
 DEP_FUNC
@@ -128,8 +134,8 @@ DEP_FUNC
 ms_trunc
 ms_round
 DEP_FUNC
-remote_table_credentials
-get_remote_table_expressions
+regexp_replace
+regexp_replace
 DEP_FUNC
 sq
 get_remote_table_expressions

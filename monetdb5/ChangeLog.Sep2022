@@ -1,6 +1,0 @@
-# ChangeLog file for MonetDB5
-# This file is updated with Maddlog
-
-* Thu Apr 28 2022 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Disabled volcano pipeline due to known issues.
-

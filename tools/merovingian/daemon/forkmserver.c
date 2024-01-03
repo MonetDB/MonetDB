@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -207,6 +211,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	char usock[512];
 	bool mydoproxy;
 	char nthreads[32];
+	char tabthreads[32];
 	char nclients[32];
 	char pipeline[512];
 	char memmaxsize[64];
@@ -549,6 +554,14 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	if (kv->val != NULL) {
 		snprintf(nthreads, sizeof(nthreads), "--set=gdk_nr_threads=%s", kv->val);
 		argv[c++] = nthreads;
+	}
+
+	kv = findConfKey(ckv, "ncopyintothreads");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "ncopyintothreads");
+	if (kv->val != NULL) {
+		snprintf(tabthreads, sizeof(tabthreads), "--set=tablet_threads=%s", kv->val);
+		argv[c++] = tabthreads;
 	}
 
 	kv = findConfKey(ckv, "nclients");

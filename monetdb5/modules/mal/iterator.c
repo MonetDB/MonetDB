@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -65,7 +69,7 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 
 	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
 	 *granule, MIN(cnt,(BUN) *granule)); */
-	VIEWbounds(b, view, 0, MIN(cnt, (BUN) * granule));
+	VIEWbounds(b, view, 0, MIN(cnt, (BUN) *granule));
 	*vid = view->batCacheid;
 	BBPkeepref(view);
 	BBPunfix(b->batCacheid);
@@ -85,7 +89,7 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	BUN i;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-			throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
+		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
 	}
 	if ((view = BATdescriptor(*vid)) == NULL) {
 		BBPunfix(b->batCacheid);
@@ -148,7 +152,7 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*head = 0;
 
- 	bi = bat_iterator(b);
+	bi = bat_iterator(b);
 	if (VALinit(tail, ATOMtype(b->ttype), BUNtail(bi, *head)) == NULL) {
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
@@ -184,7 +188,7 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
- 	bi = bat_iterator(b);
+	bi = bat_iterator(b);
 	if (VALinit(tail, ATOMtype(b->ttype), BUNtail(bi, *head)) == NULL) {
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
@@ -195,61 +199,80 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str ITRnext_oid(oid *i, oid *step, oid *last){
+static str
+ITRnext_oid(oid *i, oid *step, oid *last)
+{
 	oid v = *i;
 	v = v + *step;
 	*i = v;
-	if ( *last <= v )
+	if (*last <= v)
 		*i = oid_nil;
 	return MAL_SUCCEED;
 }
-static str ITRnext_lng(lng *i, lng *step, lng *last){
+
+static str
+ITRnext_lng(lng *i, lng *step, lng *last)
+{
 	lng v = *i;
 	v = v + *step;
 	*i = v;
-	if ( *last <= v )
+	if (*last <= v)
 		*i = lng_nil;
 	return MAL_SUCCEED;
 }
+
 #ifdef HAVE_HGE
-static str ITRnext_hge(hge *i, hge *step, hge *last){
+static str
+ITRnext_hge(hge *i, hge *step, hge *last)
+{
 	hge v = *i;
 	v = v + *step;
 	*i = v;
-	if ( *last <= v )
+	if (*last <= v)
 		*i = hge_nil;
 	return MAL_SUCCEED;
 }
 #endif
-static str ITRnext_int(int *i, int *step, int *last){
+static str
+ITRnext_int(int *i, int *step, int *last)
+{
 	int v = *i;
 	v = v + *step;
 	*i = v;
-	if ( *last <= v )
+	if (*last <= v)
 		*i = int_nil;
 	return MAL_SUCCEED;
 }
-static str ITRnext_sht(sht *i, sht *step, sht *last){
+
+static str
+ITRnext_sht(sht *i, sht *step, sht *last)
+{
 	sht v = *i;
 	v = v + *step;
 	*i = v;
-	if ( *last <= v )
+	if (*last <= v)
 		*i = int_nil;
 	return MAL_SUCCEED;
 }
-static str ITRnext_flt(flt *i, flt *step, flt *last){
+
+static str
+ITRnext_flt(flt *i, flt *step, flt *last)
+{
 	flt v = *i;
 	v = v + *step;
 	*i = v;
-	if ( *last <= v )
+	if (*last <= v)
 		*i = flt_nil;
 	return MAL_SUCCEED;
 }
-static str ITRnext_dbl(dbl *i, dbl *step, dbl *last){
+
+static str
+ITRnext_dbl(dbl *i, dbl *step, dbl *last)
+{
 	dbl v = *i;
 	v = v + *step;
 	*i = v;
-	if ( *last <= v )
+	if (*last <= v)
 		*i = dbl_nil;
 	return MAL_SUCCEED;
 }

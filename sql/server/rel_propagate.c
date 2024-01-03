@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -114,7 +118,7 @@ generate_alter_table_error_message(char* buf, sql_table *mt)
 	char *s1 = isRangePartitionTable(mt) ? "range":"list of values";
 	if (isPartitionedByColumnTable(mt)) {
 		sql_column* col = mt->part.pcol;
-		snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in the column %s outside the partition %s", col->base.name, s1);
+		snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in column %s outside the partition %s", col->base.name, s1);
 	} else if (isPartitionedByExpressionTable(mt)) {
 		snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in the expression outside the partition %s", s1);
 	} else {
@@ -377,7 +381,8 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 			min_max_equal = ATOMcmp(tpe.type->localtype, &e1->data.val, &e2->data.val) == 0;
 		}
 		res = create_range_partition_anti_rel(query, mt, pt, with_nills, (min && max) ? pmin : NULL, (min && max) ? pmax : NULL, all_ranges, min_max_equal);
-		res->l = rel_psm;
+		/* create a list, such that we first check the content of the table/column before creating/altering a new partition */
+		res = rel_list(query->sql->sa, res, rel_psm);
 	} else {
 		res = rel_psm;
 	}
@@ -756,7 +761,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 			} else {
 				bool max_equal_min = ATOMcmp(tpe, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
 
-				full_range = range = max_equal_min ? 
+				full_range = range = max_equal_min ?
 					exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue)), cmp_equal) :
 					exp_compare2(sql->sa, le, exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue)),
 											  exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.maxvalue)), 1, 0);
@@ -1065,6 +1070,17 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	return rel;
 }
 
+static sql_rel*
+rel_find_propagate( sql_rel *rel)
+{
+	if (is_ddl(rel->op) && rel->flag == ddl_list)
+			return rel->r;
+	if (is_ddl(rel->op) && rel->flag == ddl_exception)
+			return rel->r;
+	assert(is_insert(rel->op));
+	return rel;
+}
+
 sql_rel *
 rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 {
@@ -1082,7 +1098,8 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 				if (!nrel)
 					return rel;
 				rel = nrel;
-				propagate = nrel->l;
+				propagate = rel_find_propagate(nrel);
+				isSubtable = (rel != propagate);
 			}
 		}
 		if (isMergeTable(t)) {
@@ -1092,7 +1109,7 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 			} else if (isRangePartitionTable(t) || isListPartitionTable(t)) {
 				if (is_insert(propagate->op)) { /* on inserts create a selection for each partition */
 					if (isSubtable) {
-						rel->l = rel_propagate_insert(query, propagate, t, changes);
+						rel->r = rel_propagate_insert(query, propagate, t, changes);
 					} else {
 						rel = rel_propagate_insert(query, rel, t, changes);
 					}

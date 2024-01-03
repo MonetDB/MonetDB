@@ -1,0 +1,93 @@
+# Geometric Intersects with RTree
+
+## Point - Polygon
+query T rowsort
+SELECT
+    geom
+FROM geometries_rtree
+WHERE
+    [ST_POINT(10,10)]
+    ST_INTERSECTS 
+    [geom]
+----
+POLYGON ((10 10, 20 10, 10 20, 10 10))
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+
+query T rowsort
+SELECT
+    geom
+FROM geometries_rtree
+WHERE
+    [ST_POINT(15,10)]
+    ST_INTERSECTS 
+    [geom]
+----
+POLYGON ((10 10, 20 10, 10 20, 10 10))
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+
+query T rowsort
+SELECT
+    geom
+FROM geometries_rtree
+WHERE
+    [ST_POINT(15,15)]
+    ST_INTERSECTS 
+    [geom]
+----
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
+POLYGON ((10 10, 20 10, 10 20, 10 10))
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+POLYGON ((10 20, 20 10, 20 20, 10 20))
+
+query T rowsort
+SELECT
+    geom
+FROM geometries_rtree
+WHERE
+    [ST_POINT(17.5,17.5)]
+    ST_INTERSECTS 
+    [geom]
+----
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+POLYGON ((10 20, 20 10, 20 20, 10 20))
+
+query T rowsort
+SELECT
+    geom
+FROM geometries_rtree
+WHERE
+    [ST_POINT(5,15)]
+    ST_INTERSECTS 
+    [geom]
+----
+
+
+## Line - Polygon
+query T rowsort
+SELECT
+    geom
+FROM geometries_rtree
+WHERE
+    [ST_GEOMFROMTEXT('LINESTRING (0 0, 15 15)')]
+    ST_INTERSECTS 
+    [geom]
+----
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
+POLYGON ((10 10, 20 10, 10 20, 10 10))
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+POLYGON ((10 20, 20 10, 20 20, 10 20))
+
+query T rowsort
+SELECT
+    geom
+FROM geometries_rtree
+WHERE
+    [ST_GEOMFROMTEXT('LINESTRING(5 5, 10 15)')]
+    ST_INTERSECTS
+    [geom]
+----
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
+POLYGON ((10 10, 20 10, 10 20, 10 10))
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+

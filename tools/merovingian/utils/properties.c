@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /**
@@ -28,6 +32,7 @@ static const confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"type",        NULL, 0, STR},
 	{"shared",      NULL, 0, STR},
 	{"nthreads",    NULL, 0, INT},
+	{"ncopyintothreads", NULL, 0, INT},
 	{"optpipe",     NULL, 0, STR},
 	{"readonly",    NULL, 0, BOOLEAN},
 	{"embedr",      NULL, 0, BOOLEAN},

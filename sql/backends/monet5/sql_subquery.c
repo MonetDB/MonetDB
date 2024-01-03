@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -16,19 +20,19 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	BAT *b;
 	BUN c;
 	size_t _s;
-	BATiter bi = {0};
+	BATiter bi;
 	const void *p = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "sql.zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
 	c = BATcount(b);
 	if (c == 0) {
+		bi = bat_iterator(NULL);
 		p = ATOMnilptr(b->ttype);
 	} else if (c == 1 || (c > 1 && *err == false)) {
 		bi = bat_iterator(b);
 		p = BUNtail(bi, 0);
 	} else {
-		p = NULL;
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.zero_or_one", SQLSTATE(21000) "Cardinality violation, scalar value expected");
 	}
@@ -39,8 +43,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 		_s = ATOMlen(ATOMtype(b->ttype), p);
 		*(ptr *) ret = GDKmalloc(_s);
 		if (*(ptr *) ret == NULL) {
-			if (bi.b)
-				bat_iterator_end(&bi);
+			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.zero_or_one", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -48,8 +51,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		if ((*(BAT **) ret = BATdescriptor(bid)) == NULL){
-			if (bi.b)
-				bat_iterator_end(&bi);
+			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
 		}
@@ -68,8 +70,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	} else {
 		memcpy(ret, p, _s);
 	}
-	if (bi.b)
-		bat_iterator_end(&bi);
+	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -106,8 +107,7 @@ SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit 
 	if (r != GDK_SUCCEED)
 		throw(MAL, "sql.subzero_or_one", GDK_EXCEPTION);
 
-	if (ng)
-		BBPunfix(ng->batCacheid);
+	BBPreclaim(ng);
 	BATmax(h, &max);
 	BBPunfix(h->batCacheid);
 
@@ -243,14 +243,10 @@ SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = BATdescriptor(*sp);
 
 	if (!l || !g || !e || (sp && !s)) {
-		if (l)
-			BBPunfix(l->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(l);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, "sql.all =", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -259,8 +255,7 @@ SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(l->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (res == NULL)
 		throw(MAL, "sql.all =", GDK_EXCEPTION);
 	*ret = res->batCacheid;
@@ -357,14 +352,10 @@ SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = BATdescriptor(*sp);
 
 	if (!l || !g || !e || (sp && !s)) {
-		if (l)
-			BBPunfix(l->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(l);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, "sql.nil", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -373,8 +364,7 @@ SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(l->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (res == NULL)
 		throw(MAL, "sql.nil", GDK_EXCEPTION);
 	*ret = res->batCacheid;
@@ -491,12 +481,9 @@ bailout:
 		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
-	if (cmp)
-		BBPunfix(cmp->batCacheid);
-	if (nl)
-		BBPunfix(nl->batCacheid);
-	if (nr)
-		BBPunfix(nr->batCacheid);
+	BBPreclaim(cmp);
+	BBPreclaim(nl);
+	BBPreclaim(nr);
 	return msg;
 }
 
@@ -603,12 +590,9 @@ bailout:
 		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
-	if (cmp)
-		BBPunfix(cmp->batCacheid);
-	if (nl)
-		BBPunfix(nl->batCacheid);
-	if (nr)
-		BBPunfix(nr->batCacheid);
+	BBPreclaim(cmp);
+	BBPreclaim(nl);
+	BBPreclaim(nr);
 	return msg;
 }
 
@@ -768,10 +752,8 @@ bailout:
 		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
-	if (l)
-		BBPunfix(l->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
+	BBPreclaim(l);
+	BBPreclaim(r);
 	return msg;
 }
 
@@ -797,16 +779,11 @@ SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = BATdescriptor(*sp);
 
 	if (!l || !r || !g || !e || (sp && !s)) {
-		if (l)
-			BBPunfix(l->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(l);
+		BBPreclaim(r);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, "sql.any =", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (l->ttype != r->ttype) {
@@ -814,8 +791,7 @@ SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(r->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(s);
 		throw(MAL, "sql.any =", SQLSTATE(42000) "sql.any = requires both arguments of the same type");
 	}
 
@@ -825,8 +801,7 @@ SQLanyequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(r->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (res == NULL)
 		throw(MAL, "sql.any =", GDK_EXCEPTION);
 	*ret = res->batCacheid;
@@ -858,18 +833,12 @@ SQLanyequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = BATdescriptor(*sp);
 
 	if (!l || !r || !rid || !g || !e || (sp && !s)) {
-		if (l)
-			BBPunfix(l->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (rid)
-			BBPunfix(rid->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(l);
+		BBPreclaim(r);
+		BBPreclaim(rid);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, "sql.any =", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (l->ttype != r->ttype) {
@@ -878,8 +847,7 @@ SQLanyequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(rid->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(s);
 		throw(MAL, "sql.any =", SQLSTATE(42000) "sql.any = requires both arguments of the same type");
 	}
 
@@ -890,8 +858,7 @@ SQLanyequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(rid->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (res == NULL)
 		throw(MAL, "sql.any =", GDK_EXCEPTION);
 	*ret = res->batCacheid;
@@ -930,7 +897,7 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (bret) {
 		if (!(res = COLnew(r->hseqbase, TYPE_bit, o, TRANSIENT))) {
 			msg = createException(SQL, "sql.all <>", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout1;
 		}
 		bit *restrict res_l = (bit*) Tloc(res, 0);
 
@@ -1022,6 +989,7 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
+  bailout1:
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
 
@@ -1031,10 +999,8 @@ bailout:
 		BBPkeepref(res);
 	} else if (res)
 		BBPreclaim(res);
-	if (l)
-		BBPunfix(l->batCacheid);
-	if (r)
-		BBPunfix(r->batCacheid);
+	BBPreclaim(l);
+	BBPreclaim(r);
 	return msg;
 }
 
@@ -1060,16 +1026,11 @@ SQLallnotequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = BATdescriptor(*sp);
 
 	if (!l || !r || !g || !e || (sp && !s)) {
-		if (l)
-			BBPunfix(l->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(l);
+		BBPreclaim(r);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, "sql.all <>", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (l->ttype != r->ttype) {
@@ -1077,8 +1038,7 @@ SQLallnotequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(r->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(s);
 		throw(MAL, "sql.all <>", SQLSTATE(42000) "sql.all <> requires both arguments of the same type");
 	}
 
@@ -1088,8 +1048,7 @@ SQLallnotequal_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(r->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (res == NULL)
 		throw(MAL, "sql.all <>", GDK_EXCEPTION);
 	*ret = res->batCacheid;
@@ -1122,18 +1081,12 @@ SQLallnotequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = BATdescriptor(*sp);
 
 	if (!l || !r || !rid || !g || !e || (sp && !s)) {
-		if (l)
-			BBPunfix(l->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (rid)
-			BBPunfix(rid->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(l);
+		BBPreclaim(r);
+		BBPreclaim(rid);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, "sql.all <>", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (l->ttype != r->ttype) {
@@ -1142,8 +1095,7 @@ SQLallnotequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(rid->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(s);
 		throw(MAL, "sql.all <>", SQLSTATE(42000) "sql.all <> requires both arguments of the same type");
 	}
 
@@ -1154,8 +1106,7 @@ SQLallnotequal_grp2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(rid->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (res == NULL)
 		throw(MAL, "sql.all <>", GDK_EXCEPTION);
 	*ret = res->batCacheid;
@@ -1210,14 +1161,10 @@ SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = BATdescriptor(*sp);
 
 	if (!b || !g || !e || (sp && !s)) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, "sql.subexist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -1226,8 +1173,7 @@ SQLsubexist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (res == NULL)
 		throw(MAL, "sql.subexist", GDK_EXCEPTION);
 	*ret = res->batCacheid;
@@ -1282,14 +1228,10 @@ SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = BATdescriptor(*sp);
 
 	if (!b || !g || !e || (sp && !s)) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, "sql.subnot_exist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -1298,8 +1240,7 @@ SQLsubnot_exist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (res == NULL)
 		throw(MAL, "sql.subnot_exist", GDK_EXCEPTION);
 	*ret = res->batCacheid;

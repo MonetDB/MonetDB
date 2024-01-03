@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "rel_rel.h"
@@ -13,13 +17,12 @@
 
 /* relations counts */
 typedef struct global_props {
-	int cnt[ddl_maxops];
+	int cnt[op_merge + 1];
 	uint8_t
 		instantiate:1,
 		needs_mergetable_rewrite:1,
 		needs_remote_replica_rewrite:1,
 		needs_distinct:1,
-		needs_setjoin_rewrite:1,
 		has_special_modify:1, /* Don't prune updates as pruning will possibly result in removing the joins which therefor cannot be used for constraint checking */
 		opt_level:1; /* 0 run necessary rewriters, 1 run all optimizers */
 	uint8_t opt_cycle; /* the optimization cycle number */
@@ -97,7 +100,6 @@ extern run_optimizer bind_push_func_and_select_down(visitor *v, global_props *gp
 extern run_optimizer bind_push_topn_and_sample_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_distinct_project2groupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_merge_table_rewrite(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
-extern run_optimizer bind_setjoins_2_joingroupby(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_get_statistics(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_join_order2(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_final_optimization_loop(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));

@@ -352,3 +352,4 @@ DROP ALL PROCEDURE "sys"."for_compress"
 
 statement ok
 COMMIT
+

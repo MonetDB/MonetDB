@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -91,8 +95,8 @@ extern str mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 extern str mvc_row_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_export_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str mvc_bin_export_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -280,7 +284,7 @@ extern str SQLflush_log(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 extern str SQLsuspend_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLresume_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 extern str SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -289,11 +293,11 @@ extern str SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 extern str SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str getBackendContext(Client cntxt, backend **be);
 
 #define USER_TABLE_NAME "db_user_info"
+#define TRIGGERS_TABLE_NAME "triggers"
 #define SCHEMA_TABLE_NAME "schemas"
 #define USER_PASSWORD_COLUMN "password"
 

@@ -1,0 +1,18 @@
+statement ok
+create table integers (i int)
+
+statement ok
+insert into integers values(1),(2),(3),(NULL)
+
+# split case into project under select
+query T python .plan.filter
+plan select i from integers where case i when i*i then i else i end > 1
+----
+project (
+| select (
+| | project (
+| | | table("sys"."integers") [ "integers"."i" ]
+| | ) [ "integers"."i", "sys"."casewhen"(bigint(63)["integers"."i"], "sys"."sql_mul"("integers"."i", "integers"."i"), "integers"."i", "integers"."i") as "%1"."%1" ]
+| ) [ ("%1"."%1") > (int(32) "1") ]
+) [ "integers"."i" ]
+

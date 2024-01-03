@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -150,7 +154,6 @@ static const char *mal_commands[] = {
 	"exit",
 	"end",
 	"function",
-	"factory",
 	"leave",
 	"pattern",
 	"module",
@@ -393,7 +396,7 @@ invoke_editor(int cnt, int key) {
 
 		/* Remove trailing whitespace */
 		idx = read_bytes - 1;
-		while(isspace(*(read_buff + idx))) {
+		while (isspace((unsigned char) read_buff[idx])) {
 			read_buff[idx] = 0;
 			idx--;
 		}
@@ -408,7 +411,7 @@ invoke_editor(int cnt, int key) {
 	}
 
 	fclose(fp);
-	MT_remove(template);
+	(void) MT_remove(template);
 
 	return 0;
 
@@ -416,7 +419,7 @@ bailout:
 	if (fp)
 		fclose(fp);
 	free(read_buff);
-	MT_remove(template);
+	(void) MT_remove(template);
 	return 1;
 }
 

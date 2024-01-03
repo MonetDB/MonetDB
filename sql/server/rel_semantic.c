@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -68,7 +72,7 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	m->errstr[0] = '\0';
 	m->session->status = 0;
 	/* via views we give access to protected objects */
-	assert(emode == m_instantiate || emode == m_deps);
+	assert(emode == m_instantiate || emode == m_deps || emode == m_prepare);
 	m->user_id = USER_MONETDB;
 
 	(void) sqlparse(m);     /* blindly ignore errors */
@@ -178,9 +182,10 @@ rel_semantic(sql_query *query, symbol *s)
 	case SQL_TRUNCATE:
 	case SQL_MERGE:
 	case SQL_COPYFROM:
+	case SQL_COPYINTO:
 	case SQL_BINCOPYFROM:
+	case SQL_BINCOPYINTO:
 	case SQL_COPYLOADER:
-	case SQL_COPYTO:
 		return rel_updates(query, s);
 
 	case SQL_WITH:

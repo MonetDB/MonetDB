@@ -1,14 +1,14 @@
-import os, re, sys, tempfile
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+import os, sys, tempfile
+import pymonetdb
+
+hdl = pymonetdb.connect(database=os.getenv('TSTDB'), port=os.getenv('MAPIPORT'), autocommit=True)
+cur = hdl.cursor()
 
 # Use a Python test because we're testing LF / CR LF handling and we don't
 # want editors or version control systems messing with our line endings
 
 def r_escape(s):
-    return "r'" + s.replace("'", "''") + "' "
+    return "r'" + s.replace("'", "''") + "'"
 
 def testdata(prefix,line_sep):
     prefix = "crlf_test_" + prefix + "_"
@@ -22,27 +22,26 @@ def testdata(prefix,line_sep):
 
 def run_test(name, data_delimiter, copy_delimiter):
     file_name, test_data = testdata(name, data_delimiter)
-    script = f"""
-    DROP TABLE IF EXISTS foo;
-    CREATE TABLE foo(i INT, t TEXT);
-        COPY INTO foo FROM {r_escape(file_name)}
-        USING DELIMITERS ',', '{copy_delimiter}';
-    SELECT i, LENGTH(t) FROM foo;
-    """
-    with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
-        out, err = c.communicate(script)
-        reduced = "\n".join(re.sub(r"\s+", "", line) for line in out.splitlines() if line.startswith("["))
-        expected = "[3]\n[1,3]\n[3,3]\n[5,5]"
-        if reduced != expected:
-            print("TEST: ", name, file=sys.stderr)
-            print("\nLINE DELIMITER: ", repr(data_delimiter), sep='', file=sys.stderr)
-            print("\nFILE CONTENTS: ", repr(test_data), sep='', file=sys.stderr)
-            print("\nSCRIPT:\n", script, sep='', file=sys.stderr)
-            print("\nEXPECTED:\n", expected, sep='', file=sys.stderr)
-            print("\nGOT:\n", reduced, sep='', file=sys.stderr)
-            print("\nFULL STDERR:\n", err, sep='', file=sys.stderr)
-            print("\nFULL OUTPUT:\n", out, sep='', file=sys.stderr)
-            raise SystemExit("Test failed")
+    cur.execute('DROP TABLE IF EXISTS foo')
+    cur.execute('CREATE TABLE foo(i INT, t TEXT)')
+    rows = cur.execute(f"COPY INTO foo FROM {r_escape(file_name)} USING DELIMITERS ',', E'{copy_delimiter}'")
+    if rows != 3:
+        print("TEST: ", name, file-sys.stderr)
+        print("\nLINE DELIMITER: ", repr(data_delimiter), sep='', file=sys.stderr)
+        print("\nFILE CONTENTS: ", repr(test_data), sep='', file=sys.stderr)
+        print("\nEXPTECTED: 3 affected rows", file=sys.stderr)
+        print(f"\nGOT: {rows}", file=sys.stderr)
+        raise SystemExit("Test failed")
+    cur.execute('SELECT i, LENGTH(t) FROM foo')
+    reduced = cur.fetchall()
+    expected = [(1, 3), (3, 3), (5, 5)]
+    if reduced != expected:
+        print("TEST: ", name, file=sys.stderr)
+        print("\nLINE DELIMITER: ", repr(data_delimiter), sep='', file=sys.stderr)
+        print("\nFILE CONTENTS: ", repr(test_data), sep='', file=sys.stderr)
+        print("\nEXPECTED:\n", expected, sep='', file=sys.stderr)
+        print("\nGOT:\n", reduced, sep='', file=sys.stderr)
+        raise SystemExit("Test failed")
     os.remove(file_name)
 
 # Load unix endings while asking for Unix endings.

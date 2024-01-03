@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef COPYBINARY_SUPPORT_H
@@ -85,6 +89,40 @@ uhge copy_binary_byteswap128(uhge value) {
 	return swapped_hi | (swapped_lo << 64);
 }
 #endif
+
+static inline copy_binary_date
+copy_binary_byteswap_date(copy_binary_date value)
+{
+	return (copy_binary_date) {
+		.day = value.day,
+		.month = value.month,
+		.year = copy_binary_byteswap16(value.year),
+	};
+}
+
+static inline copy_binary_time
+copy_binary_byteswap_time(copy_binary_time value)
+{
+	return (copy_binary_time) {
+		.ms = copy_binary_byteswap32(value.ms),
+		.seconds = value.seconds,
+		.minutes = value.minutes,
+		.hours = value.hours,
+		.padding = value.padding,
+	};
+}
+
+static inline copy_binary_timestamp
+copy_binary_byteswap_timestamp(copy_binary_timestamp value)
+{
+	return (copy_binary_timestamp) {
+		.time = copy_binary_byteswap_time(value.time),
+		.date = copy_binary_byteswap_date(value.date),
+	};
+}
+
+
+
 
 // These macros are used to convert a value in-place.
 // This makes it possible to also convert timestamp structs.

@@ -83,7 +83,7 @@ General Options
    be omitted if an equally named file does not exist in the current
    directory. As such, the first non-option argument will be interpreted
    as database to connect to if the argument does not exist as file.
-   Valid URIs are as returned by \`monetdb discover`, see
+   Valid URIs are as returned by \``monetdb discover'', see
    *monetdb*\ (1), and look like
    **mapi:monetdb://**\ *hostname*\ **:**\ *port*\ **/**\ *database*.
 
@@ -105,14 +105,14 @@ General Options
    | The *timer* command controls the format of the time reported for
      queries. The default mode is **none** which turns off timing
      reporting. The timer mode **clock** reports the client-side
-     wall-clock time ("**clk**") in a human-friendly format. The timer
-     mode **performance** reports client-side wall-clock time
-     ("**clk**") as well as detailed server-side timings, all in
+     wall-clock time (\`\`\ **clk**'') in a human-friendly format. The
+     timer mode **performance** reports client-side wall-clock time
+     (\`\`\ **clk**'') as well as detailed server-side timings, all in
      milliseconds (ms): the time to parse the SQL query, optimize the
      logical relational plan and create the initial physical (MAL) plan
-     ("**sql**"); the time to optimize the physical (MAL) plan
-     ("**opt**"); the time to execute the physical (MAL) plan
-     ("**run**"). All timings are reported on stderr.
+     (\`\`\ **sql**''); the time to optimize the physical (MAL) plan
+     (\`\`\ **opt**''); the time to execute the physical (MAL) plan
+     (\`\`\ **run**''). All timings are reported on stderr.
    | **Note** that the client-measured wall-clock time is reported per
      query **only** when options **--interactive** or **--echo** are
      used, because only then does *mclient* send individual lines
@@ -196,7 +196,8 @@ SQL Options
 
 **--rows=**\ *nr* (**-r** *nr*)
    If specified, query results will be paged by an internal pager at the
-   specified number of lines.
+   specified number of lines. If set to **0** (zero), use the height of
+   the terminal. The default is **-1** which means no pager is used.
 
 **--width=**\ *nr* (**-w** *nr*)
    Specify the width of the screen. The default is the (initial) width
@@ -260,7 +261,8 @@ General Commands
 
 **\\r** *rows*
    Use an internal pager using *rows* per page. If *rows* is **-1**,
-   stop using the internal pager.
+   stop using the internal pager, if *rows* is **0**, use the height of
+   the terminal.
 
 SQL Commands
 ------------

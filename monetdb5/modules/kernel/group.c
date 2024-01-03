@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -12,7 +16,8 @@
 #include "group.h"
 
 str
-GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid)
+GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid,
+			 const bat *gid, const bat *eid, const bat *hid)
 {
 	BAT *b, *s, *g, *e, *h, *gn, *en, *hn;
 	gdk_return r;
@@ -25,19 +30,14 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 	if (b == NULL ||
 		(sid != NULL && s == NULL) ||
 		(gid != NULL && g == NULL) ||
-		(eid != NULL && e == NULL) ||
-		(hid != NULL && h == NULL)) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (h)
-			BBPunfix(h->batCacheid);
-		throw(MAL, gid ? "group.subgroup" : "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		(eid != NULL && e == NULL) || (hid != NULL && h == NULL)) {
+		BBPreclaim(b);
+		BBPreclaim(s);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(h);
+		throw(MAL, gid ? "group.subgroup" : "group.group",
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((r = BATgroup(&gn, next ? &en : NULL, nhis ? &hn : NULL, b, s, g, e, h)) == GDK_SUCCEED) {
 		*ngid = gn->batCacheid;
@@ -46,37 +46,40 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 			*next = en->batCacheid;
 			BBPkeepref(en);
 		}
-		if (nhis){
+		if (nhis) {
 			*nhis = hn->batCacheid;
 			BBPkeepref(hn);
 		}
 	}
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (h)
-		BBPunfix(h->batCacheid);
-	return r == GDK_SUCCEED ? MAL_SUCCEED : createException(MAL, gid ? "group.subgroup" : "group.group", GDK_EXCEPTION);
+	BBPreclaim(s);
+	BBPreclaim(g);
+	BBPreclaim(e);
+	BBPreclaim(h);
+	return r == GDK_SUCCEED ? MAL_SUCCEED : createException(MAL,
+															gid ?
+															"group.subgroup" :
+															"group.group",
+															GDK_EXCEPTION);
 }
 
 static str
-GRPsubgroup9(bat *ngid, bat *next, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid)
+GRPsubgroup9(bat *ngid, bat *next, const bat *bid, const bat *sid,
+			 const bat *gid, const bat *eid, const bat *hid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, sid, gid, eid, hid);
 }
 
 static str
-GRPsubgroup8(bat *ngid, bat *next, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
+GRPsubgroup8(bat *ngid, bat *next, const bat *bid, const bat *gid,
+			 const bat *eid, const bat *hid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, NULL, gid, eid, hid);
 }
 
 static str
-GRPsubgroup7(bat *ngid, bat *next, const bat *bid, const bat *sid, const bat *gid)
+GRPsubgroup7(bat *ngid, bat *next, const bat *bid, const bat *sid,
+			 const bat *gid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, sid, gid, NULL, NULL);
 }
@@ -88,18 +91,20 @@ GRPsubgroup6(bat *ngid, bat *next, const bat *bid, const bat *gid)
 }
 
 static str
-GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
+GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid,
+			 const bat *eid, const bat *hid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, eid, hid);
 }
 
 static str
-GRPsubgroup3(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, const bat *gid)
+GRPsubgroup3(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid,
+			 const bat *gid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, sid, gid, NULL, NULL);
 }
 
-static str
+str
 GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, NULL, NULL);
@@ -111,7 +116,7 @@ GRPgroup4(bat *ngid, bat *next, const bat *bid, const bat *sid)
 	return GRPsubgroup5(ngid, next, NULL, bid, sid, NULL, NULL, NULL);
 }
 
-static str
+str
 GRPgroup3(bat *ngid, bat *next, const bat *bid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, NULL, NULL, NULL, NULL);
@@ -142,13 +147,15 @@ GRPgroup21(bat *ngid, const bat *bid, const bat *sid)
 }
 
 static str
-GRPsubgroup51(bat *ngid, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid)
+GRPsubgroup51(bat *ngid, const bat *bid, const bat *sid, const bat *gid,
+			  const bat *eid, const bat *hid)
 {
 	return GRPsubgroup5(ngid, NULL, NULL, bid, sid, gid, eid, hid);
 }
 
 static str
-GRPsubgroup41(bat *ngid, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
+GRPsubgroup41(bat *ngid, const bat *bid, const bat *gid, const bat *eid,
+			  const bat *hid)
 {
 	return GRPsubgroup5(ngid, NULL, NULL, bid, NULL, gid, eid, hid);
 }

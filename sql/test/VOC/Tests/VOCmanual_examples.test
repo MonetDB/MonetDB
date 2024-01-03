@@ -15,7 +15,7 @@ SELECT * FROM (
 ) AS onboard_people_table
 
 query TI rowsort
-SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
+SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type
 ----
 craftsmen
 2349
@@ -31,12 +31,12 @@ total
 2454
 
 query I rowsort
-select count(*) from impotenten;
+select count(*) from impotenten
 ----
 938
 
 query I rowsort
-SELECT COUNT(*) FROM voyages WHERE particulars LIKE '%_recked%';
+SELECT COUNT(*) FROM voyages WHERE particulars LIKE '%_recked%'
 ----
 358
 
@@ -45,7 +45,7 @@ SELECT chamber, CAST(AVG(invoice) AS integer) AS average
 FROM invoices
 WHERE invoice IS NOT NULL
 GROUP BY chamber
-ORDER BY average DESC;
+ORDER BY average DESC
 ----
 A
 282997

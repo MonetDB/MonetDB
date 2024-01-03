@@ -22,8 +22,8 @@ plan select distinct col1 + col2 from myy order by col1 + col2
 project (
 | group by (
 | | project (
-| | | table("sys"."myy") [ "myy"."col1", "myy"."col2" ]
-| | ) [ "sys"."sql_add"(bigint(33)["myy"."col1"], bigint(33)["myy"."col2"]) as "%1"."%1" ]
+| | | table("sys"."myy") [ "myy"."col1" UNIQUE, "myy"."col2" ]
+| | ) [ "sys"."sql_add"(bigint(33)["myy"."col1" UNIQUE], bigint(33)["myy"."col2"]) as "%1"."%1" ]
 | ) [ "%1"."%1" ] [ "%1"."%1" ]
 ) [ "%1"."%1" UNIQUE ] [ "%1"."%1" ASC UNIQUE ]
 
@@ -31,15 +31,15 @@ query T nosort
 plan select col2 from myy order by col1 ASC, col1 DESC
 ----
 project (
-| table("sys"."myy") [ "myy"."col1", "myy"."col2" ]
-) [ "myy"."col2" ] [ "myy"."col1" ASC, "myy"."col1" NULLS LAST ]
+| table("sys"."myy") [ "myy"."col1" UNIQUE, "myy"."col2" ]
+) [ "myy"."col2" ] [ "myy"."col1" ASC UNIQUE, "myy"."col1" NULLS LAST UNIQUE ]
 
 query T nosort
 plan select col2 from myy order by col1 DESC, col1 DESC
 ----
 project (
-| table("sys"."myy") [ "myy"."col1", "myy"."col2" ]
-) [ "myy"."col2" ] [ "myy"."col1" NULLS LAST, "myy"."col1" NULLS LAST ]
+| table("sys"."myy") [ "myy"."col1" UNIQUE, "myy"."col2" ]
+) [ "myy"."col2" ] [ "myy"."col1" NULLS LAST UNIQUE, "myy"."col1" NULLS LAST UNIQUE ]
 
 statement ok
 create table myx (x uuid, y uuid)
@@ -335,8 +335,8 @@ PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
 ----
 project (
 | select (
-| | table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ]
-| ) [ ((int(32) "1") <= ("another_t"."col1") <= (int(32) "2")) or (("another_t"."col2") * = (int(32) NULL)) ]
+| | table("sys"."another_t") [ "another_t"."col1" UNIQUE, "another_t"."col2" ]
+| ) [ ((int(32) "1") <= ("another_t"."col1" UNIQUE) <= (int(32) "2")) or (("another_t"."col2") * = (int(32) NULL)) ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -344,16 +344,16 @@ PLAN SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
 ----
 project (
 | select (
-| | table("sys"."another_t") [ "another_t"."col1" ]
-| ) [ (bigint(64) "1") < (bigint(64)["another_t"."col1"]) < (bigint(64) "2") ]
+| | table("sys"."another_t") [ "another_t"."col1" UNIQUE ]
+| ) [ (bigint(64) "1") < (bigint(64)["another_t"."col1" UNIQUE]) < (bigint(64) "2") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
 PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
 ----
 project (
-| table("sys"."another_t") [ "another_t"."col1", "another_t"."col2" ]
-) [ "sys"."or"((int(32) "1") <= ("another_t"."col1") <= (int(32) "2"), "sys"."isnull"("another_t"."col2") NOT NULL) ]
+| table("sys"."another_t") [ "another_t"."col1" UNIQUE, "another_t"."col2" UNIQUE ]
+) [ "sys"."or"((int(32) "1") <= ("another_t"."col1" UNIQUE) <= (int(32) "2"), "sys"."isnull"("another_t"."col2" UNIQUE) NOT NULL) ]
 
 statement ok
 CREATE TABLE tabel1 (id_nr INT, dt_sur STRING, edg INT, ede DATE, pc_nml_hur STRING, srt_ukr STRING)
@@ -474,8 +474,8 @@ query T nosort
 plan select (34*another_t.col1)*3 from another_t
 ----
 project (
-| table("sys"."another_t") [ "another_t"."col1" ]
-) [ "sys"."sql_mul"("another_t"."col1", "sys"."sql_mul"(tinyint(6) "34", tinyint(2) "3") NOT NULL) ]
+| table("sys"."another_t") [ "another_t"."col1" UNIQUE ]
+) [ "sys"."sql_mul"("another_t"."col1" UNIQUE, "sys"."sql_mul"(tinyint(6) "34", tinyint(2) "3") NOT NULL) ]
 
 statement ok
 create table t1 (a int, b string)
@@ -544,19 +544,19 @@ project (
 | | project (
 | | | project (
 | | | | select (
-| | | | | table("sys"."t1") [ "t1"."a" ]
-| | | | ) [ ("t1"."a") > (int(32) "2") ]
-| | | ) [ "t1"."a" NOT NULL as "b", "sys"."sql_div"("t1"."a" NOT NULL, tinyint(2) "3") NOT NULL as "c" ]
-| | ) [ "b" NOT NULL as "x"."x", "c" NOT NULL as "x"."y" ],
+| | | | | table("sys"."t1") [ "t1"."a" UNIQUE ]
+| | | | ) [ ("t1"."a" UNIQUE) > (int(32) "2") ]
+| | | ) [ "t1"."a" NOT NULL UNIQUE as "b", "sys"."sql_div"("t1"."a" NOT NULL UNIQUE, tinyint(2) "3") NOT NULL as "c" ]
+| | ) [ "b" NOT NULL UNIQUE as "x"."x", "c" NOT NULL as "x"."y" ],
 | | project (
 | | | project (
 | | | | select (
-| | | | | table("sys"."t2") [ "t2"."a" ]
-| | | | ) [ ("t2"."a") > (int(32) "2") ]
-| | | ) [ "t2"."a" NOT NULL as "z", "sys"."sql_div"("t2"."a" NOT NULL, tinyint(3) "5") NOT NULL as "d" ]
-| | ) [ "z" NOT NULL as "x"."x", "d" NOT NULL as "x"."y" ]
-| ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
-) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
+| | | | | table("sys"."t2") [ "t2"."a" UNIQUE ]
+| | | | ) [ ("t2"."a" UNIQUE) > (int(32) "2") ]
+| | | ) [ "t2"."a" NOT NULL UNIQUE as "z", "sys"."sql_div"("t2"."a" NOT NULL UNIQUE, tinyint(3) "5") NOT NULL as "d" ]
+| | ) [ "z" NOT NULL UNIQUE as "x"."x", "d" NOT NULL as "x"."y" ]
+| ) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ]
+) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ]
 
 query T nosort
 plan select x, y from (select a as b, a / 3 as c from t1 union distinct select a as z, a / 5 as d from t2) x(x,y) where x > 2
@@ -567,20 +567,20 @@ project (
 | | | group by (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."t1") [ "t1"."a" ]
-| | | | | ) [ ("t1"."a") > (int(32) "2") ]
-| | | | ) [ "t1"."a" NOT NULL as "b", "sys"."sql_div"("t1"."a" NOT NULL, tinyint(2) "3") NOT NULL as "c" ]
-| | | ) [ "b" NOT NULL, "c" NOT NULL ] [ "b" NOT NULL, "c" NOT NULL ]
-| | ) [ "b" NOT NULL as "x"."x", "c" NOT NULL as "x"."y" ],
+| | | | | | table("sys"."t1") [ "t1"."a" UNIQUE ]
+| | | | | ) [ ("t1"."a" UNIQUE) > (int(32) "2") ]
+| | | | ) [ "t1"."a" NOT NULL UNIQUE as "b", "sys"."sql_div"("t1"."a" NOT NULL UNIQUE, tinyint(2) "3") NOT NULL as "c" ]
+| | | ) [ "b" NOT NULL UNIQUE, "c" NOT NULL ] [ "b" NOT NULL UNIQUE, "c" NOT NULL ]
+| | ) [ "b" NOT NULL UNIQUE as "x"."x", "c" NOT NULL as "x"."y" ],
 | | project (
 | | | group by (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."t2") [ "t2"."a" ]
-| | | | | ) [ ("t2"."a") > (int(32) "2") ]
-| | | | ) [ "t2"."a" NOT NULL as "z", "sys"."sql_div"("t2"."a" NOT NULL, tinyint(3) "5") NOT NULL as "d" ]
-| | | ) [ "z" NOT NULL, "d" NOT NULL ] [ "z" NOT NULL, "d" NOT NULL ]
-| | ) [ "z" NOT NULL as "x"."x", "d" NOT NULL as "x"."y" ]
+| | | | | | table("sys"."t2") [ "t2"."a" UNIQUE ]
+| | | | | ) [ ("t2"."a" UNIQUE) > (int(32) "2") ]
+| | | | ) [ "t2"."a" NOT NULL UNIQUE as "z", "sys"."sql_div"("t2"."a" NOT NULL UNIQUE, tinyint(3) "5") NOT NULL as "d" ]
+| | | ) [ "z" NOT NULL UNIQUE, "d" NOT NULL ] [ "z" NOT NULL UNIQUE, "d" NOT NULL ]
+| | ) [ "z" NOT NULL UNIQUE as "x"."x", "d" NOT NULL as "x"."y" ]
 | ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
 ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
 
@@ -706,3 +706,4 @@ query I nosort
 SELECT sum(y.y) FROM (SELECT DISTINCT x + 1 FROM (SELECT 1) x(x)) y(y)
 ----
 2
+

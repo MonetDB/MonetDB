@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _OPT_SUPPORT_H
@@ -11,16 +15,13 @@
 
 #include "mal.h"
 #include "mal_function.h"
-#include "mal_scenario.h"
+#include "mal_client.h"
 #include "mal_builder.h"
 
 /*
  * The optimizers should all be equiped with debugging code
  * to easily trace their performance.
  */
-mal_export str MALoptimizer(Client c);
-mal_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
-
 extern int isSimpleSQL(MalBlkPtr mb);
 extern int optimizerIsApplied(MalBlkPtr mb, const char *opt);
 extern int isUnsafeInstruction(InstrPtr q);
@@ -31,7 +32,8 @@ extern int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 extern int hasCommonResults(InstrPtr p, InstrPtr q);
 extern int isUpdateInstruction(InstrPtr p);
 mal_export int hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict);
-extern int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict);
+extern int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p,
+							  int strict);
 extern int isSideEffectFree(MalBlkPtr mb);
 extern int isBlocking(InstrPtr p);
 extern int isFragmentGroup(InstrPtr q);
@@ -53,4 +55,3 @@ extern int isOptimizerEnabled(MalBlkPtr mb, const char *opt);
 extern int isOptimizerUsed(MalBlkPtr mb, InstrPtr p, const char *opt);
 
 #endif /* _OPT_SUPPORT_H */
-

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -329,10 +333,13 @@ int inttype2digits( int sk, int ek )
 		if(ek == iyear)
 			return 1;
 		return 2;
+	case iquarter:
 	case imonth:
 		return 3;
+	case iweek:
 	case iday:
 		switch(ek) {
+		case iweek:
 		case iday:
 			return 4;
 		case ihour:
@@ -393,4 +400,143 @@ int digits2ek( int digits)
 	if (digits == 7 || digits == 10 || digits == 12 || digits == 13)
 		ek = isec;
 	return ek;
+}
+
+
+static int
+parse_time(const char* val,
+	   	unsigned int* hr,
+	   	unsigned int* mn,
+	   	unsigned int* sc,
+	   	unsigned long* fr,
+	   	unsigned int* pr)
+{
+	int n;
+	const char* p = val;
+	if (sscanf(p, "%u:%u:%u%n", hr, mn, sc, &n) >= 3) {
+		p += n;
+		if (*p == '.') {
+			char* e;
+			p++;
+			*fr = strtoul(p, &e, 10);
+			if (e > p)
+				*pr = (unsigned int) (e - p);
+		}
+	}
+	return -1;
+}
+
+
+static int
+parse_timestamp(const char* val,
+	   	unsigned int* yr,
+	   	unsigned int* mt,
+	   	unsigned int* dy,
+	   	unsigned int* hr,
+	   	unsigned int* mn,
+	   	unsigned int* sc,
+	   	unsigned long* fr,
+	   	unsigned int* pr)
+{
+	int n;
+	const char* p = val;
+	if (sscanf(p, "%u-%u-%u %u:%u:%u%n",
+			   	yr, mt, dy, hr, mn, sc, &n) >= 6) {
+		p += n;
+		if (*p == '.') {
+			char* e;
+			p++;
+			*fr = strtoul(p, &e, 10);
+			if (e > p)
+				*pr = (unsigned int) (e - p);
+		}
+	}
+	return -1;
+}
+
+unsigned int
+get_time_precision(const char* val)
+{
+	unsigned int hr;
+	unsigned int mn;
+	unsigned int sc;
+	unsigned long fr;
+	unsigned int pr = 0;
+	parse_time(val, &hr, &mn, &sc, &fr, &pr);
+	return pr;
+}
+
+unsigned int
+get_timestamp_precision(const char* val)
+{
+	unsigned int yr;
+	unsigned int mt;
+	unsigned int dy;
+	unsigned int hr;
+	unsigned int mn;
+	unsigned int sc;
+	unsigned long fr;
+	unsigned int pr = 0;
+	parse_timestamp(val, &yr, &mt, &dy, &hr, &mn, &sc, &fr, &pr);
+	return pr;
+}
+
+
+int
+process_odbc_interval(mvc *sql, itype interval, int val, sql_subtype *t, lng *i)
+{
+	assert(sql);
+	lng mul = 1;
+	int d = inttype2digits(interval, interval);
+	switch (interval) {
+		case iyear:
+			mul *= 12;
+			break;
+		case iquarter:
+			mul *= 3;
+			break;
+		case imonth:
+			break;
+		case iweek:
+			mul *= 7;
+			/* fall through */
+		case iday:
+			mul *= 24;
+			/* fall through */
+		case ihour:
+			mul *= 60;
+			/* fall through */
+		case imin:
+			mul *= 60;
+			/* fall through */
+		case isec:
+			mul *= 1000;
+			break;
+		case insec:
+			d = 5;
+			break;
+		default:
+			snprintf(sql->errstr, ERRSIZE, _("Internal error: bad interval qualifier (%d)\n"), interval);
+			return -1;
+	}
+
+	// check for overflow
+	if (((lng) abs(val) * mul) > GDK_lng_max) {
+		snprintf(sql->errstr, ERRSIZE, _("Overflow\n"));
+		return -1;
+	}
+	// compute value month or sec interval
+	*i += val * mul;
+
+	int r = 0;
+	if (d < 4){
+		r = sql_find_subtype(t, "month_interval", d, 0);
+	} else if (d == 4) {
+		r = sql_find_subtype(t, "day_interval", d, 0);
+	} else {
+		r = sql_find_subtype(t, "sec_interval", d, 0);
+	}
+	if (!r)
+		return -1;
+	return 0;
 }

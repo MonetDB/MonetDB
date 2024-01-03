@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -13,29 +17,29 @@
 str
 OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr p=0;
+	InstrPtr p = 0;
 	int actions = 0;
 	str msg = MAL_SUCCEED;
 
-	(void)cntxt;
-	(void)stk;
+	(void) cntxt;
+	(void) stk;
 	(void) p;
 
 	actions = mb->vtop;
-	trimMalVariables(mb,0);
+	trimMalVariables(mb, 0);
 	actions = actions - mb->vtop;
 
 	/* Defense line against incorrect plans */
 	/* plan is not changed */
 	/* plan is not changed */
 	//if( actions > 0){
-		//msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		//if (!msg)
-	//	msg = chkFlow(mb);
-		//if (!msg)
-		// 	msg = chkDeclarations(mb);
+	//msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	//if (!msg)
+	//      msg = chkFlow(mb);
+	//if (!msg)
+	//      msg = chkDeclarations(mb);
 	//}
-	/* keep actions taken as a fake argument*/
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
 	return msg;

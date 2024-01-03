@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _REL_PROP_H_
@@ -24,6 +28,7 @@ typedef enum rel_prop {
 
 typedef struct prop {
 	rel_prop kind;  /* kind of property */
+	sqlid id;		/* optional id of object involved */
 	union {
 		BUN lval; /* property with simple counts */
 		dbl dval; /* property with estimate */
@@ -31,6 +36,12 @@ typedef struct prop {
 	} value;
 	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
 } prop;
+
+/* for REMOTE prop we need to keep a list with tids and uris for the remote tables */
+typedef struct tid_uri {
+	sqlid id;
+	const char* uri;
+} tid_uri;
 
 extern prop * prop_create( sql_allocator *sa, rel_prop kind, prop *pre );
 extern prop * prop_copy( sql_allocator *sa, prop *p);

@@ -1,17 +1,22 @@
+-- SPDX-License-Identifier: MPL-2.0
+--
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+-- Copyright 2024 MonetDB Foundation;
+-- Copyright August 2008 - 2023 MonetDB B.V.;
+-- Copyright 1997 - July 2008 CWI.
 
 create function sys.password_hash (username string)
 	returns string
     external name sql.password;
 	-- return select password from users where name = username;
 
-create function sys.remote_table_credentials (tablename string)
-returns table ("uri" string, "username" string, "hash" string)
-external name sql.rt_credentials;
+create function sys.decypher (cypher string)
+	returns string
+    external name sql.decypher;
+	-- return decyphered pwhash 
 
 create function sys.sessions()
 returns table(
@@ -36,21 +41,6 @@ create procedure sys.shutdown(delay tinyint)
 create procedure sys.shutdown(delay tinyint, force bool)
 	external name sql.shutdown;
 -- we won't grant sys.shutdown to the public
-
--- control the query and session time out. 
--- As of December 2019, the procedures settimeout and setsession are deprecated.
--- Use setquerytimeout and setsessiontimeout instead.
-create procedure sys.settimeout("query" bigint)
-	external name clients.settimeout;
-grant execute on procedure sys.settimeout(bigint) to public;
-
-create procedure sys.settimeout("query" bigint, "session" bigint)
-	external name clients.settimeout;
-grant execute on procedure sys.settimeout(bigint, bigint) to public;
-
-create procedure sys.setsession("timeout" bigint)
-	external name clients.setsession;
-grant execute on procedure sys.setsession(bigint) to public;
 
 -- control the session properties  session time out for the current user.
 create procedure sys.setoptimizer("optimizer" string)

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -272,6 +276,18 @@ BINSEARCHFUNC(hge)
 #endif
 BINSEARCHFUNC(flt)
 BINSEARCHFUNC(dbl)
+
+#if 0
+/* some programs that produce editor tags files don't recognize the
+ * binsearch function because before it are the BINSEARCHFUNC macro
+ * calls that don't look like function definitions or variable
+ * declarations, hence we have this hidden away function to realign the
+ * tags program */
+void
+realign_tags(void)
+{
+}
+#endif
 
 /* Do a binary search for the first/last occurrence of v between lo and hi
  * (lo inclusive, hi not inclusive) in vals/vars.

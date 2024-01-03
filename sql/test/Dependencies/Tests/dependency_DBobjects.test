@@ -83,6 +83,9 @@ query TTT rowsort
 SELECT a.name, s.name, 'DEP_SCHEMA' from sys.schemas as s, auths a where s.owner = a.id order by a.name, s.name
 ----
 monetdb
+information_schema
+DEP_SCHEMA
+monetdb
 json
 DEP_SCHEMA
 monetdb
@@ -121,9 +124,6 @@ DEP_INDEX
 query TTT rowsort
 (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from sys.tables as t, sys.triggers as tri where tri.table_id = t.id) UNION (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from sys.triggers tri, sys.tables t, sys.dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8) order by name, trigname
 ----
-_tables
-system_update_tables
-DEP_TRIGGER
 schemas
 system_update_schemas
 DEP_TRIGGER
@@ -159,6 +159,9 @@ DEP_FUNC
 _tables
 describe_table
 DEP_FUNC
+_tables
+get_remote_table_expressions
+DEP_FUNC
 comments
 describe_columns
 DEP_FUNC
@@ -183,6 +186,9 @@ DEP_FUNC
 functions
 describe_function
 DEP_FUNC
+remote_user_info
+get_remote_table_expressions
+DEP_FUNC
 schemas
 describe_columns
 DEP_FUNC
@@ -191,6 +197,9 @@ describe_function
 DEP_FUNC
 schemas
 describe_table
+DEP_FUNC
+schemas
+get_remote_table_expressions
 DEP_FUNC
 spatial_ref_sys
 getproj4
@@ -298,7 +307,7 @@ DEP_INDEX
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-282 values hashing to 8d0090d6eae4b3d86a5e259f1a9eea58
+309 values hashing to a418d297b4e68ad28b45e6534c82d1a3
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.triggers as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
@@ -397,6 +406,9 @@ SELECT v.name, tri.name, 'DEP_TRIGGER' from sys.tables as v, sys.triggers as tri
 query TTT rowsort
 SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name
 ----
+decypher
+get_remote_table_expressions
+DEP_FUNC
 describe_type
 describe_columns
 DEP_FUNC
@@ -424,8 +436,8 @@ DEP_FUNC
 ms_trunc
 ms_round
 DEP_FUNC
-remote_table_credentials
-get_remote_table_expressions
+regexp_replace
+regexp_replace
 DEP_FUNC
 sq
 get_remote_table_expressions

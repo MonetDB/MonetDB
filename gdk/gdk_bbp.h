@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _GDK_BBP_H_
@@ -57,9 +61,7 @@
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
 
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
-gdk_export lng getBBPlogno(void); /* two lng of extra info in BBP.dir */
-gdk_export lng getBBPtransid(void);
-gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid);
+gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool allow_hge_upgrade);
 gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 #ifdef GDKLIBRARY_HASHASH
 			      int *hashash,
@@ -70,7 +72,6 @@ gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *b
 gdk_export gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
 
 /* update interface */
-gdk_export int BBPreclaim(BAT *b);
 gdk_export gdk_return BBPsave(BAT *b);
 gdk_export int BBPrename(BAT *b, const char *nme);
 
@@ -81,13 +82,21 @@ gdk_export bat BBPindex(const char *nme);
 gdk_export gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid);
 gdk_export int BBPfix(bat b);
 gdk_export int BBPunfix(bat b);
+static inline void
+BBPreclaim(BAT *b)
+{
+	if (b != NULL)
+		BBPunfix(b->batCacheid);
+}
 gdk_export int BBPretain(bat b);
 gdk_export int BBPrelease(bat b);
 gdk_export void BBPkeepref(BAT *b)
 	__attribute__((__nonnull__(1)));
-gdk_export void BBPshare(bat b);
 gdk_export void BBPcold(bat i);
-
+#ifdef GDKLIBRARY_JSON
+typedef gdk_return ((*json_storage_conversion)(char **, const char **));
+gdk_export gdk_return BBPjson_upgrade(json_storage_conversion);
+#endif
 #define BBP_status_set(bid, mode)			\
 	ATOMIC_SET(&BBP_record(bid).status, mode)
 

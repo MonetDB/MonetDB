@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* multi version catalog */
@@ -117,16 +121,17 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 	for (int i = 0; i < n; i++) {
 		rs = store->table_api.rids_select(m->session->tr, depids,
 					     &v[i].oldid, &v[i].oldid, NULL);
-		while ((rid = store->table_api.rids_next(rs)), !is_oid_nil(rid)) {
-			store->table_api.column_update_value(m->session->tr, depids,
-							rid, &v[i].newid);
+		if (rs) {
+			while ((rid = store->table_api.rids_next(rs)), !is_oid_nil(rid)) {
+				store->table_api.column_update_value(m->session->tr, depids, rid, &v[i].newid);
+			}
+			store->table_api.rids_destroy(rs);
 		}
-		store->table_api.rids_destroy(rs);
 	}
 }
 
 sql_store
-mvc_init(int debug, store_type store_tpe, int ro, int su)
+mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd)
 {
 	sqlstore *store = NULL;
 	sql_schema *s;
@@ -357,7 +362,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		} else {
 			sql_create_env(m, s);
 			sql_create_comments(m, s);
-			sql_create_privileges(m, s);
+			sql_create_privileges(m, s, initpasswd);
 		}
 
 		if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
@@ -388,7 +393,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 			sql_table *tt = (sql_table*)b;
 			if (isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
 				char *err;
-				if ((err = initialize_sql_parts(m, tt)) != NULL) {
+				if ((err = parse_sql_parts(m, tt)) != NULL) {
 					TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned table: %s.%s: %s\n", ss->base.name, tt->base.name, err);
 					freeException(err);
 					mvc_destroy(m);
@@ -398,6 +403,12 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 			}
 		}
 	}
+	if (sql_trans_convert_partitions(m->session->tr) < 0) {
+		TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned tables\n");
+		mvc_destroy(m);
+		mvc_exit(store);
+		return NULL;
+	}
 
 	if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "Unable to commit system tables: %s\n", (msg + 6));
@@ -406,9 +417,6 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		mvc_exit(store);
 		return NULL;
 	}
-
-	// set SQL user callbacks in MAL authorization
-	sql_set_user_api_hooks(m);
 	mvc_destroy(m);
 	return store;
 }
@@ -478,18 +486,8 @@ mvc_trans(mvc *m)
 
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	res = sql_trans_begin(m->session);
-
-	if (m->qc && (res || err)) {
-		int seqnr = m->qc->id;
-		if (m->qc)
-			qc_destroy(m->qc);
-		/* TODO Change into recreate all */
-		if (!(m->qc = qc_create(m->pa, m->clientid, seqnr))) {
-			if (m->session->tr->active)
-				(void)sql_trans_end(m->session, SQL_ERR);
-			return -1;
-		}
-	}
+	if (m->qc && (res || err))
+		qc_restart(m->qc);
 	return res;
 }
 
@@ -547,7 +545,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 
 		if(profilerStatus > 0) {
 			lng Tend = GDKusec();
-			Client	c = getClientContext();
+			Client	c = mal_clients+m->clientid;
 			profilerEvent(NULL,
 						  &(struct NonMalEvent)
 						  { state == SQL_CONFLICT ? CONFLICT : COMMIT , c, Tend, &ts_start, &m->session->tr->ts, state == SQL_ERR, log_usec?Tend-Tbegin:0});
@@ -693,7 +691,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 
 		if(profilerStatus > 0) {
 			lng Tend = GDKusec();
-			Client	c = getClientContext();
+			Client	c = mal_clients+m->clientid;
 			profilerEvent(NULL,
 						  &(struct NonMalEvent)
 						  { ROLLBACK , c, Tend, &ts_start, &m->session->tr->ts, 0, log_usec?Tend-Tbegin:0});
@@ -794,7 +792,11 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	m->pa = pa;
 	m->sa = NULL;
 	m->ta = sa_create(m->pa);
+#if defined(__GNUC__) || defined(__clang__)
+	m->sp = (uintptr_t) __builtin_frame_address(0);
+#else
 	m->sp = (uintptr_t)(&m);
+#endif
 
 	m->params = NULL;
 	m->sizeframes = MAXPARAMS;
@@ -802,7 +804,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	m->topframes = 0;
 	m->frame = 0;
 
-	m->use_views = 0;
+	m->use_views = false;
 	if (!m->frames) {
 		qc_destroy(m->qc);
 		return NULL;
@@ -840,8 +842,8 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 		list_destroy(m->schema_path);
 		return NULL;
 	}
-	m->schema_path_has_sys = 1;
-	m->schema_path_has_tmp = 0;
+	m->schema_path_has_sys = true;
+	m->schema_path_has_tmp = false;
 	m->store = store;
 
 	m->session = sql_session_create(m->store, m->pa, 1 /*autocommit on*/);
@@ -931,6 +933,7 @@ mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 	(void) m;
 	if (!t)
 		return NULL;
+
 	TRC_DEBUG(SQL_TRANS, "Bind table: %s.%s\n", s->base.name, tname);
 	return t;
 }
@@ -1292,22 +1295,29 @@ mvc_create_remote(sql_table **t, mvc *m, sql_schema *s, const char *name, int pe
 	return res;
 }
 
+static str
+remote_drop(mvc *m, sqlid id)
+{
+	int log_res = 0;
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = tr->store;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_table *remote_user_info = find_sql_table(tr, sys, REMOTE_USER_INFO);
+	sql_column *remote_user_info_id = find_sql_column(remote_user_info, "table_id");
+	oid rid = store->table_api.column_find_row(tr, remote_user_info_id, &id, NULL);
+	if (is_oid_nil(rid) || (log_res = store->table_api.table_delete(tr, remote_user_info, rid)) != 0)
+		throw(SQL, "sql.drop_table", SQLSTATE(42000) "Drop table failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	return MAL_SUCCEED;
+}
+
 str
 mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 {
+	char *msg = NULL;
 	TRC_DEBUG(SQL_TRANS, "Drop table: %s %s\n", s->base.name, t->base.name);
 
-	if (isRemote(t)) {
-		str AUTHres;
-
-		char *qualified_name = sa_strconcat(m->ta, sa_strconcat(m->ta, t->s->base.name, "."), t->base.name);
-		if (!qualified_name)
-			throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		AUTHres = AUTHdeleteRemoteTableCredentials(qualified_name);
-		sa_reset(m->ta);
-		if(AUTHres != MAL_SUCCEED)
-			return AUTHres;
-	}
+	if (isRemote(t) && (msg = remote_drop(m, t->base.id)) != NULL)
+		return msg;
 
 	switch (sql_trans_drop_table(m->session->tr, s, t->base.name, drop_action ? DROP_CASCADE_START : DROP_RESTRICT)) {
 		case -1:

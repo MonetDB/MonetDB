@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 set(sql_public_headers
@@ -31,6 +35,7 @@ set(sql_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/sql_mvc.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/sql_parser.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/sql_privileges.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_file_loader.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_optimizer.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_rewriter.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_partition.h>
@@ -41,6 +46,8 @@ set(sql_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_semantic.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_dump.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/opt_backend.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mal_backend.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sql_statement.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_import.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_mem.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_list.h>
@@ -73,7 +80,10 @@ set(sql_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_basetable.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_semantic.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_dump.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/opt_backend.h>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/opt_backend.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/mal_backend.h>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_statement.h>
+)
 
 #add_library(sql MODULE)
 add_library(sql SHARED)
@@ -98,12 +108,17 @@ set(include_sql_files
   42_md5sum
   45_uuid
   46_profiler
+  47_regexp
+  48_txtsim
+  49_strings
   52_describe
   58_hot_snapshot
   75_storagemodel
   76_dump
+  77_storage
   80_statistics
-  81_tracer)
+  81_tracer
+  91_information_schema)
 
 if(HAVE_HGE)
   list(APPEND include_sql_files
@@ -120,17 +135,18 @@ create_include_object(
 target_sources(sql
   PRIVATE
   sql.c sql.h
-  mal_backend.c mal_backend.h
+  mal_backend.c
   sql_user.c sql_user.h
   sql_scenario.c sql_scenario.h
   sql_execute.c sql_execute.h
   sql_assert.c sql_assert.h
   sql_upgrades.c sql_upgrades.h
   rel_bin.c rel_bin.h
+  rel_physical.c rel_physical.h
   rel_predicates.c rel_predicates.h
   sql_cat.c sql_cat.h
   sql_transaction.c sql_transaction.h
-  sql_statement.c sql_statement.h
+  sql_statement.c
   sql_statistics.c sql_statistics.h
   sql_gencode.c sql_gencode.h
   sql_optimizer.c sql_optimizer.h
@@ -143,7 +159,7 @@ target_sources(sql
   sql_orderidx.c sql_orderidx.h
   sql_strimps.c sql_strimps.h
   sql_time.c
-  sql_bincopyfrom.c
+  sql_bincopy.c sql_bincopyconvert.c sql_bincopyconvert.h
   sql_datetrunc.c
   sql_rank.c sql_rank.h
   sql_subquery.c sql_subquery.h

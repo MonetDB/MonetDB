@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _REL_UNNEST_H_
@@ -19,6 +23,7 @@ extern int rel_has_freevar(mvc *sql, sql_rel *r);
 extern void exp_only_freevar(sql_query *query, sql_exp *e, bool *arguments_correlated, bool *found_one_freevar, list **ungrouped_cols);
 extern void exps_set_freevar(mvc *sql, list *exps, sql_rel *r);
 extern void rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e);
+extern void rel_bind_vars(mvc *sql, sql_rel *rel, list *exps);
 
 extern sql_rel *rel_unnest(mvc *sql, sql_rel *rel);
 

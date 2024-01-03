@@ -214,7 +214,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a
 ----
 algebra.projection
-2
+1
 algebra.sort
 1
 bat.pack
@@ -236,7 +236,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a OFFSET 2
 ----
 algebra.projection
-3
+2
 algebra.sort
 1
 algebra.subslice
@@ -262,7 +262,7 @@ EXPLAIN select * from oblo ORDER BY a LIMIT 2
 algebra.firstn
 1
 algebra.projection
-4
+3
 algebra.sort
 1
 algebra.subslice
@@ -288,7 +288,7 @@ EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 algebra.firstn
 1
 algebra.projection
-4
+3
 algebra.sort
 1
 algebra.subslice
@@ -314,7 +314,7 @@ EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 algebra.firstn
 1
 algebra.projection
-4
+3
 algebra.sort
 1
 algebra.subslice
@@ -341,29 +341,6 @@ query I rowsort
 2
 3
 4
-
-query I rowsort
-        select * from oblo OFFSET 2
-----
-1
-2
-
-query I rowsort
-        select * from oblo LIMIT 2
-----
-3
-4
-
-query I rowsort
-        select * from oblo LIMIT 1 OFFSET 2
-----
-2
-
-query I rowsort
-        select * from oblo LIMIT 2 OFFSET 1
-----
-2
-3
 
 query I rowsort
         select * from oblo ORDER BY a

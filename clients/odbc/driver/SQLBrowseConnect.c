@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -51,13 +55,13 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 {
 	char *key, *attr;
 	char *dsn, *uid, *pwd, *host, *dbname;
-	int port;
+	int port, mapToLongVarchar;
 	SQLSMALLINT len = 0;
-	char buf[256];
+	char buf[1024];
 	int n;
 	SQLRETURN rc;
 #ifdef ODBCDEBUG
-	int allocated = 0;
+	bool allocated = false;
 #endif
 
 	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
@@ -79,6 +83,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	host = dbc->host ? strdup(dbc->host) : NULL;
 	port = dbc->port;
 	dbname = dbc->dbname ? strdup(dbc->dbname) : NULL;
+	mapToLongVarchar = dbc->mapToLongVarchar;
 
 	while ((n = ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) > 0) {
 		if (strcasecmp(key, "dsn") == 0 && dsn == NULL) {
@@ -104,14 +109,38 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			if (dbname)
 				free(dbname);
 			dbname = attr;
+		} else if (strcasecmp(key, "mapToLongVarchar") == 0 && mapToLongVarchar == 0) {
+			mapToLongVarchar = atoi(attr);
+			free(attr);
 #ifdef ODBCDEBUG
 		} else if (strcasecmp(key, "logfile") == 0 &&
-			   getenv("ODBCDEBUG") == NULL) {
+#ifdef NATIVE_WIN32
+			   _wgetenv(L"ODBCDEBUG")
+#else
+			   getenv("ODBCDEBUG")
+#endif
+			   == NULL) {
 			/* environment trumps everything */
 			if (ODBCdebug)
 				free((void *) ODBCdebug); /* discard const */
+#ifdef NATIVE_WIN32
+			size_t attrlen = strlen(attr);
+			SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
+			if (ODBCutf82wchar(attr,
+					   (SQLINTEGER) attrlen,
+					   wattr,
+					   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
+					   NULL,
+					   NULL)) {
+				free(wattr);
+				wattr = NULL;
+			}
+			ODBCdebug = wattr;
+			free(attr);
+#else
 			ODBCdebug = attr;
-			allocated = 1;
+#endif
+			allocated = true;
 #endif
 		} else
 			free(attr);
@@ -160,27 +189,52 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			}
 		}
 #ifdef ODBCDEBUG
-		if (!allocated && getenv("ODBCDEBUG") == NULL) {
+		if (!allocated &&
+#ifdef NATIVE_WIN32
+		    _wgetenv(L"ODBCDEBUG")
+#else
+		    getenv("ODBCDEBUG")
+#endif
+		    == NULL) {
 			/* if not set from InConnectionString argument
 			 * or environment, look in profile */
 			n = SQLGetPrivateProfileString(dsn, "logfile", "", buf, sizeof(buf), "odbc.ini");
 			if (n > 0 && buf[0]) {
 				if (ODBCdebug)
 					free((void *) ODBCdebug); /* discard const */
+#ifdef NATIVE_WIN32
+				size_t attrlen = strlen(buf);
+				SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
+				if (ODBCutf82wchar(buf,
+						   (SQLINTEGER) attrlen,
+						   wattr,
+						   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
+						   NULL,
+						   NULL)) {
+					free(wattr);
+					wattr = NULL;
+				}
+				ODBCdebug = wattr;
+#else
 				ODBCdebug = strdup(buf);
+#endif
 			}
 		}
 #endif
 	}
 
 	if (uid != NULL && pwd != NULL) {
-		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, dbname);
+		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS,
+				 (SQLCHAR *) uid, SQL_NTS,
+				 (SQLCHAR *) pwd, SQL_NTS,
+				 host, port, dbname,
+				 mapToLongVarchar);
 		if (SQL_SUCCEEDED(rc)) {
 			rc = ODBCConnectionString(rc, dbc, OutConnectionString,
 						  BufferLength,
 						  StringLength2Ptr,
 						  dsn, uid, pwd, host, port,
-						  dbname);
+						  dbname, mapToLongVarchar);
 		}
 	} else {
 		len = (SQLSMALLINT) strconcat_len(
@@ -191,7 +245,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			port ? "" : "*PORT:Port=?;",
 			dbname ? "" : "*DATABASE:Database=?;",
 #ifdef ODBCDEBUG
-			ODBCdebug ? "" : "*LOGFILE:Debug log file=?;",
+			ODBCdebug ? "" : "*LOGFILE:Logfile=?;",
 #endif
 			NULL);
 
@@ -278,13 +332,13 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 
 	fixWcharIn(InConnectionString, StringLength1, SQLCHAR, in,
 		   addDbcError, dbc, return SQL_ERROR);
-	out = malloc(1024);
+	out = malloc(2048);
 	if (out == NULL) {
 		/* Memory allocation error */
 		addDbcError(dbc, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = MNDBBrowseConnect(dbc, in, SQL_NTS, out, 1024, &n);
+	rc = MNDBBrowseConnect(dbc, in, SQL_NTS, out, 2048, &n);
 	if (SQL_SUCCEEDED(rc) || rc == SQL_NEED_DATA) {
 		fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
 			    StringLength2Ptr, 1, addDbcError, dbc);

@@ -4159,3 +4159,4 @@ CREATE TABLE spt_datatype_info(
 
 statement ok
 COMMIT
+

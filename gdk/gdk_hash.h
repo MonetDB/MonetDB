@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _GDK_SEARCH_H_
@@ -209,7 +213,7 @@ HASHgetlink(const Hash *h, BUN i)
 #define hash_flt(H,V)	hash_int(H,V)
 #define hash_dbl(H,V)	hash_lng(H,V)
 
-static inline BUN __attribute__((__const__))
+static inline BUN __attribute__((__pure__))
 mix_uuid(const uuid *u)
 {
 	ulng u1, u2;

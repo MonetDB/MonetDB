@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -154,12 +158,11 @@ rel_psm_declare(mvc *sql, dnode *n)
 			const char *sname = qname_schema(qname);
 			const char *tname = qname_schema_object(qname);
 			sql_exp *r = NULL;
-			sql_arg *a;
 
 			if (sname)
 				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Declared variables don't have a schema");
 			/* find if there's a parameter with the same name */
-			if (sql->frame == 1 && (a = sql_bind_param(sql, tname)))
+			if (sql->frame == 1 && sql_bind_param(sql, tname) >= 0)
 				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
 			/* check if we overwrite a scope local variable declare x; declare x; */
 			if (frame_find_var(sql, tname))
@@ -652,6 +655,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 			res = rel_psm_case(query, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CALL:
+			assert(s->type == type_symbol);
 			res = rel_psm_call(query, s->data.sym);
 			break;
 		case SQL_RETURN:
@@ -929,11 +933,6 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			mod = "pyapi3";
 			slang = "Python";
 			break;
-		case FUNC_LANG_MAP_PY:
-		case FUNC_LANG_MAP_PY3:
-			mod = "pyapi3map";
-			slang = "Python";
-			break;
 		default:
 			return sql_error(sql, 01, SQLSTATE(42000) "Function language without a MAL backend");
 		}
@@ -953,7 +952,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		sql->params = NULL;
 		if (create) {
-			bit side_effect = (list_empty(restype) || list_empty(l)); /* TODO make this more precise? */
+			bit side_effect = (list_empty(restype) || (!vararg && list_empty(l))); /* TODO make this more precise? */
 			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE, side_effect)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1239,8 +1238,8 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	mvc *sql = query->sql;
 	const char *triggerschema = qname_schema(qname);
 	const char *triggername = qname_schema_object(qname);
-	const char *sname = qname_schema(tqname);
-	const char *tname = qname_schema_object(tqname);
+	char *sname = tqname? qname_schema(tqname) : NULL;
+	char *tname = tqname? qname_schema_object(tqname) : NULL;
 	int instantiate = (sql->emode == m_instantiate);
 	int create = (!instantiate && sql->emode != m_deps), event, orientation;
 	sql_schema *ss = cur_schema(sql), *old_schema = cur_schema(sql);
@@ -1252,7 +1251,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *old_name = NULL, *new_name = NULL;
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
-	int8_t old_useviews = sql->use_views;
+	bool old_useviews = sql->use_views;
 
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
@@ -1274,12 +1273,16 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	if (create) {
 		if (triggerschema)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: a trigger will be placed on the respective table's schema, specify the schema on the table reference, ie ON clause instead", base);
-		if (!(t = mvc_bind_table(sql, ss, tname)))
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table %s%s%s'%s'", base, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+		if (tname) {
+			if (!(t = mvc_bind_table(sql, ss, tname)))
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table %s%s%s'%s'", base, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+			if (isView(t))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
+			sname = t->s->base.name;
+			tname = t->base.name;
+		}
 		if (!mvc_schema_privs(sql, ss))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
-		if (isView(t))
-			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
 		if (!replace && mvc_bind_trigger(sql, ss, triggername) != NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
 		switch (trigger_event->token) {
@@ -1307,6 +1310,10 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: old and new names cannot be the same", base);
 				event = 2;
 			}	break;
+			case SQL_LOGIN:
+				// TODO any checks here?
+				event = LOGIN_EVENT;
+				break;
 			default:
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: invalid event: %s", base, token2string(trigger_event->token));
 		}
@@ -1314,21 +1321,24 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		assert(triggered_action->h->type == type_int);
 		orientation = triggered_action->h->data.i_val;
 		q = query_cleaned(sql->ta, QUERY(sql->scanner));
-		return rel_create_trigger(sql, t->s->base.name, t->base.name, triggername, time, orientation, event, old_name, new_name, condition, q, replace);
+		return rel_create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, q, replace);
 	}
 
 	if (!instantiate) {
-		t = mvc_bind_table(sql, ss, tname);
 		if (!stack_push_frame(sql, "%OLD-NEW"))
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		/* we need to add the old and new tables */
-		if (new_name && !_stack_push_table(sql, new_name, t)) {
-			stack_pop_frame(sql);
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		if (old_name && !_stack_push_table(sql, old_name, t)) {
-			stack_pop_frame(sql);
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (tname) {
+			if (!(t = mvc_bind_table(sql, ss, tname)))
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table %s%s%s'%s'", base, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+			/* we need to add the old and new tables */
+			if (new_name && !_stack_push_table(sql, new_name, t)) {
+				stack_pop_frame(sql);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			if (old_name && !_stack_push_table(sql, old_name, t)) {
+				stack_pop_frame(sql);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 	}
 	if (condition) {
@@ -1357,7 +1367,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
-	sql->use_views = 1; /* leave the 'use_views' hack to where it belongs */
+	sql->use_views = true; /* leave the 'use_views' hack to where it belongs */
 	sql->session->schema = ss;
 	sq = sequential_block(query, NULL, NULL, stmts, NULL, 1);
 	sql->session->schema = old_schema;
@@ -1508,6 +1518,28 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	return rel;
 }
 
+static list *
+rel_paramlist( sql_query *query, symbol *nop)
+{
+	dnode *ops = nop->data.lval->h->next->next->data.lval->h;
+	list *exps = sa_list(query->sql->sa);
+	exp_kind iek = {type_value, card_column, FALSE};
+
+	for (; ops; ops = ops->next) {
+		sql_exp *e = rel_value_exp(query, NULL, ops->data.sym, sql_farg, iek);
+		if (!e)
+			return NULL;
+		ops = ops->next;
+		sql_arg *a = sql_find_param(query->sql, ops->data.sval);
+		if (!a)
+			return sql_error(query->sql, 06, SQLSTATE(42000) "Named placeholder ('%s') not used in the query.", ops->data.sval);
+		a->type = *exp_subtype(e);
+		append(exps, e);
+	}
+	return exps;
+}
+
+
 sql_rel *
 rel_psm(sql_query *query, symbol *s)
 {
@@ -1553,7 +1585,17 @@ rel_psm(sql_query *query, symbol *s)
 		return sql_error(sql, 02, SQLSTATE(42000) "Variables cannot be declared on the global scope");
 	case SQL_CALL:
 		sql->type = Q_UPDATE;
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
+		if (s->type == type_list) {
+			list *params = rel_paramlist( query, s->data.lval->h->next->data.sym);
+			if (!params)
+				return NULL;
+			ret = rel_semantic(query, s->data.lval->h->data.sym);
+            query->last_rel = ret;
+			if (ret)
+				ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.lval->h->next->data.sym));
+			ret = rel_list(sql->sa, query->last_rel, ret);
+		} else
+			ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
 		break;
 	case SQL_CREATE_TABLE_LOADER:
 	{

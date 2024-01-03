@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -54,24 +58,28 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *restrict vals;
 	str msg = MAL_SUCCEED;
 	bool nils = false;
-	struct canditer ci1 = {0};
+	struct canditer ci1 = { 0 };
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+	bat *res = getArgReference_bat(stk, pci, 0),
+		*bid = getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
 
 	(void) cntxt;
 	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "blob.nitems_bulk",
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "blob.nitems_bulk",
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	canditer_init(&ci1, b, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "blob.nitems_bulk",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -116,10 +124,8 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = bn->batCacheid;
 	BBPkeepref(bn);
   bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (bs)
-		BBPunfix(bs->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(bs);
 	return msg;
 }
 
@@ -129,7 +135,7 @@ BLOBtoblob(blob **retval, str *s)
 	size_t len = strLen(*s);
 	blob *b = (blob *) GDKmalloc(blobsize(len));
 
-	if( b == NULL)
+	if (b == NULL)
 		throw(MAL, "blob.toblob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->nitems = len;
 	memcpy(b->data, *s, len);
@@ -145,7 +151,7 @@ BLOBblob_blob(blob **d, blob **s)
 
 	*d = b = GDKmalloc(len);
 	if (b == NULL)
-		throw(MAL,"blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->nitems = (*s)->nitems;
 	if (!is_blob_nil(b) && b->nitems != 0)
 		memcpy(b->data, (*s)->data, b->nitems);
@@ -164,21 +170,24 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 
 	if (sid && !is_bat_nil(*sid)) {
 		if ((s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			msg = createException(SQL, "batcalc.blob_blob_bulk",
+								  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 	} else {
-		BBPretain(*res = *bid); /* nothing to convert, return */
+		BBPretain(*res = *bid);	/* nothing to convert, return */
 		return MAL_SUCCEED;
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(SQL, "batcalc.blob_blob_bulk",
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	off = b->hseqbase;
 	canditer_init(&ci, b, s);
 	if (!(dst = COLnew(ci.hseq, TYPE_blob, ci.ncand, TRANSIENT))) {
-		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "batcalc.blob_blob_bulk",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -189,9 +198,9 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 			const blob *v = BUNtvar(bi, p);
 
 			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
-				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				bat_iterator_end(&bi);
-				goto bailout;
+				msg = createException(SQL, "batcalc.blob_blob_bulk",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout1;
 			}
 			nils |= is_blob_nil(v);
 		}
@@ -201,20 +210,19 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 			const blob *v = BUNtvar(bi, p);
 
 			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
-				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				bat_iterator_end(&bi);
-				goto bailout;
+				msg = createException(SQL, "batcalc.blob_blob_bulk",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout1;
 			}
 			nils |= is_blob_nil(v);
 		}
 	}
+  bailout1:
 	bat_iterator_end(&bi);
 
-bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+  bailout:
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (dst && !msg) {
 		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
@@ -252,8 +260,7 @@ BLOBblob_fromstr_bulk(bat *res, const bat *bid, const bat *sid)
 	}
 	bn = BATconvert(b, s, TYPE_blob, 0, 0, 0);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(MAL, "batcalc.blob", GDK_EXCEPTION);
 	*res = bn->batCacheid;

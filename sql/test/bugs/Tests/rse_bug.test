@@ -1,0 +1,12 @@
+statement ok
+CREATE TABLE size_test (size_field INTEGER)
+
+query I rowsort
+SELECT COUNT(*) from size_test
+WHERE ((size_field / 1024.0) > 887.443 AND (size_field / 1024.0) < 887.445)    
+OR    ((size_field / 1024.0) > 311.344 AND (size_field / 1024.0) < 311.346)
+----
+0
+
+statement ok
+drop TABLE size_test;

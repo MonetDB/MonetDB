@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef SQL_CATALOG_H
@@ -77,7 +81,7 @@ typedef enum sql_dependency {
 
 #define SCALE_NONE	0
 #define SCALE_FIX	1	/* many numerical functions require equal
-                           scales/precision for all their inputs */
+						   scales/precision for all their inputs */
 #define SCALE_NOFIX	2
 #define SCALE_MUL	3	/* multiplication gives the sum of scales */
 #define SCALE_DIV	4	/* div on the other hand reduces the scales */
@@ -164,9 +168,6 @@ typedef enum comp_type {
 	cmp_in = 8,			/* in value list */
 	cmp_notin = 9,			/* not in value list */
 
-	mark_in = 10,			/* mark joins */
-	mark_notin = 11,
-
 	/* The followin cmp_* are only used within stmt (not sql_exp) */
 	cmp_all = 12,			/* special case for crossproducts */
 	cmp_project = 13,		/* special case for projection joins */
@@ -179,8 +180,7 @@ typedef enum comp_type {
 
 #define is_complex_exp(et) ((et) == cmp_or || (et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter)
 
-#define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_notequal || (et) == cmp_in || \
-							 			   (et) == cmp_notin || (et) == mark_in || (et) == mark_notin)
+#define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_notequal || (et) == cmp_in || (et) == cmp_notin)
 
 typedef enum commit_action_t {
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
@@ -202,6 +202,7 @@ typedef struct sql_base {
 } sql_base;
 
 #define isNew(x)          ((x)->base.new)
+#define isDeleted(x)      ((x)->base.deleted)
 
 extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name);
 
@@ -240,7 +241,7 @@ typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng olde
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
 typedef int (*validate_fptr)(struct sql_trans *tr, sql_base *b, int delete);
 
-extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store);
+extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store);
 extern struct objectset *os_dup(struct objectset *os);
 extern void os_destroy(struct objectset *os, sql_store store);
 extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
@@ -318,14 +319,13 @@ typedef struct sql_trans {
 	list *dependencies;	/* list of dependencies created (list of sqlids from the objects) */
 	list *depchanges;	/* list of dependencies changed (it would be tested for conflicts at the end of the transaction) */
 
-	int logchanges;		/* count number of changes to be applied to the wal */
+	lng logchanges;		/* count number of changes to be applied to the wal */
 	int active;			/* is active transaction */
 	int status;			/* status of the last query */
 
 	sql_catalog *cat;
 	sql_schema *tmp;	/* each session has its own tmp schema */
-	changeset localtmps;
-	sql_allocator *sa;	/* transaction allocator */
+	struct objectset* localtmps;
 
 	struct sql_trans *parent;	/* multilevel transaction support */
 } sql_trans;
@@ -468,10 +468,9 @@ typedef enum sql_flang {
 	FUNC_LANG_J = 5,   /* create .. language JAVASCRIPT (not implemented) */
 	/* this should probably be done in a better way */
 	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
-	FUNC_LANG_MAP_PY = 7,   /* create .. language PYTHON_MAP */
 	/* values 8 and 9 were for Python 2 */
 	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
-	FUNC_LANG_MAP_PY3 = 11, /* create .. language PYTHON3_MAP */
+	/* values 7 and 11 where old map python code */
 	FUNC_LANG_CPP = 12      /* create .. language CPP */
 } sql_flang;
 
@@ -744,7 +743,6 @@ typedef struct res_table {
 	const char *ssep;
 	const char *ns;
 	res_col *cols;
-	bat order;
 	struct res_table *next;
 } res_table;
 
@@ -777,9 +775,11 @@ extern sql_key *schema_find_key(sql_trans *tr, sql_schema *s, const char *name);
 extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
 extern sql_idx *schema_find_idx(sql_trans *tr, sql_schema *s, const char *name);
+extern sql_idx *schema_find_idx_id(sql_trans *tr, sql_schema *s, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
+extern sql_table *find_sys_table(sql_trans *tr, const char *tname);
 extern sql_table *find_sql_table(sql_trans *tr, sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
 extern sql_table *sql_trans_find_table(sql_trans *tr, sqlid id);

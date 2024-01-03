@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -19,64 +23,73 @@
 #include "streams.h"
 #include "mal_exception.h"
 
-static str mnstr_open_rstreamwrap(Stream *S, str *filename)
+static str
+mnstr_open_rstreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
-	if ((s = open_rstream(*filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
+	if ((s = open_rstream(*filename)) == NULL
+		|| mnstr_errnr(s) != MNSTR_NO__ERROR) {
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
-				*filename, mnstr_peek_error(NULL));
+			  *filename, mnstr_peek_error(NULL));
 	} else {
-		*(stream**)S = s;
-	}
-
-	return MAL_SUCCEED;
-}
-static str mnstr_open_wstreamwrap(Stream *S, str *filename)
-{
-	stream *s;
-
-	if ((s = open_wstream(*filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
-		if (s)
-			close_stream(s);
-		throw(IO, "streams.open", "could not open file '%s': %s",
-				*filename, mnstr_peek_error(NULL));
-	} else {
-		*(stream**)S = s;
+		*(stream **) S = s;
 	}
 
 	return MAL_SUCCEED;
 }
 
-static str mnstr_open_rastreamwrap(Stream *S, str *filename)
+static str
+mnstr_open_wstreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
-	if ((s = open_rastream(*filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
+	if ((s = open_wstream(*filename)) == NULL
+		|| mnstr_errnr(s) != MNSTR_NO__ERROR) {
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
-				*filename, mnstr_peek_error(NULL));
+			  *filename, mnstr_peek_error(NULL));
 	} else {
-		*(stream**)S = s;
+		*(stream **) S = s;
 	}
 
 	return MAL_SUCCEED;
 }
 
-static str mnstr_open_wastreamwrap(Stream *S, str *filename)
+static str
+mnstr_open_rastreamwrap(Stream *S, str *filename)
 {
 	stream *s;
 
-	if ((s = open_wastream(*filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
+	if ((s = open_rastream(*filename)) == NULL
+		|| mnstr_errnr(s) != MNSTR_NO__ERROR) {
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
-				*filename, mnstr_peek_error(NULL));
+			  *filename, mnstr_peek_error(NULL));
 	} else {
-		*(stream**)S = s;
+		*(stream **) S = s;
+	}
+
+	return MAL_SUCCEED;
+}
+
+static str
+mnstr_open_wastreamwrap(Stream *S, str *filename)
+{
+	stream *s;
+
+	if ((s = open_wastream(*filename)) == NULL
+		|| mnstr_errnr(s) != MNSTR_NO__ERROR) {
+		if (s)
+			close_stream(s);
+		throw(IO, "streams.open", "could not open file '%s': %s",
+			  *filename, mnstr_peek_error(NULL));
+	} else {
+		*(stream **) S = s;
 	}
 
 	return MAL_SUCCEED;
@@ -85,8 +98,8 @@ static str mnstr_open_wastreamwrap(Stream *S, str *filename)
 static str
 mnstr_write_stringwrap(void *ret, Stream *S, str *data)
 {
-	stream *s = *(stream **)S;
-	(void)ret;
+	stream *s = *(stream **) S;
+	(void) ret;
 
 	if (mnstr_write(s, *data, 1, strlen(*data)) < 0)
 		throw(IO, "streams.writeStr", "failed to write string");
@@ -97,8 +110,8 @@ mnstr_write_stringwrap(void *ret, Stream *S, str *data)
 static str
 mnstr_writeIntwrap(void *ret, Stream *S, int *data)
 {
-	stream *s = *(stream **)S;
-	(void)ret;
+	stream *s = *(stream **) S;
+	(void) ret;
 
 	if (!mnstr_writeInt(s, *data))
 		throw(IO, "streams.writeInt", "failed to write int");
@@ -109,7 +122,7 @@ mnstr_writeIntwrap(void *ret, Stream *S, int *data)
 static str
 mnstr_readIntwrap(int *ret, Stream *S)
 {
-	stream *s = *(stream **)S;
+	stream *s = *(stream **) S;
 
 	if (mnstr_readInt(s, ret) != 1)
 		throw(IO, "streams.readInt", "failed to read int");
@@ -121,22 +134,23 @@ mnstr_readIntwrap(int *ret, Stream *S)
 static str
 mnstr_read_stringwrap(str *res, Stream *S)
 {
-	stream *s = *(stream **)S;
+	stream *s = *(stream **) S;
 	ssize_t len = 0;
-	size_t size = CHUNK + 1;
+	size_t size = CHUNK +1;
 	char *buf = GDKmalloc(size), *start = buf, *tmp;
 
-	if( buf == NULL)
-		throw(MAL,"mnstr_read_stringwrap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (buf == NULL)
+		throw(MAL, "mnstr_read_stringwrap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	while ((len = mnstr_read(s, start, 1, CHUNK)) > 0) {
 		size += len;
 		tmp = GDKrealloc(buf, size);
 		if (tmp == NULL) {
 			GDKfree(buf);
-			throw(MAL,"mnstr_read_stringwrap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "mnstr_read_stringwrap",
+				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		buf = tmp;
-		start = buf + size - CHUNK - 1;
+		start = buf + size - CHUNK -1;
 
 		*start = '\0';
 	}
@@ -152,8 +166,8 @@ mnstr_read_stringwrap(str *res, Stream *S)
 static str
 mnstr_flush_streamwrap(void *ret, Stream *S)
 {
-	stream *s = *(stream **)S;
-	(void)ret;
+	stream *s = *(stream **) S;
+	(void) ret;
 
 	if (mnstr_flush(s, MNSTR_FLUSH_DATA))
 		throw(IO, "streams.flush", "failed to flush stream");
@@ -164,9 +178,9 @@ mnstr_flush_streamwrap(void *ret, Stream *S)
 static str
 mnstr_close_streamwrap(void *ret, Stream *S)
 {
-	(void)ret;
+	(void) ret;
 
-	close_stream(*(stream **)S);
+	close_stream(*(stream **) S);
 
 	return MAL_SUCCEED;
 }
@@ -174,7 +188,7 @@ mnstr_close_streamwrap(void *ret, Stream *S)
 static str
 open_block_streamwrap(Stream *S, Stream *is)
 {
-	if ((*(stream **)S = block_stream(*(stream **)is)) == NULL)
+	if ((*(stream **) S = block_stream(*(stream **) is)) == NULL)
 		throw(IO, "bstreams.open", "failed to open block stream");
 
 	return MAL_SUCCEED;
@@ -183,7 +197,8 @@ open_block_streamwrap(Stream *S, Stream *is)
 static str
 bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
 {
-	if ((*(bstream **)Bs = bstream_create(*(stream **)S, (size_t)*bufsize)) == NULL)
+	if ((*(bstream **) Bs = bstream_create(*(stream **) S,
+										   (size_t) *bufsize)) == NULL)
 		throw(IO, "bstreams.create", "failed to create block stream");
 
 	return MAL_SUCCEED;
@@ -192,9 +207,9 @@ bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
 static str
 bstream_destroy_wrapwrap(void *ret, Bstream *BS)
 {
-	(void)ret;
+	(void) ret;
 
-	bstream_destroy(*(bstream **)BS);
+	bstream_destroy(*(bstream **) BS);
 
 	return MAL_SUCCEED;
 }
@@ -202,7 +217,7 @@ bstream_destroy_wrapwrap(void *ret, Bstream *BS)
 static str
 bstream_read_wrapwrap(int *res, Bstream *BS, int *size)
 {
-	*res = (int)bstream_read(*(bstream **)BS, (size_t)*size);
+	*res = (int) bstream_read(*(bstream **) BS, (size_t) *size);
 
 	return MAL_SUCCEED;
 }

@@ -12,11 +12,11 @@ HAVE_NETCDF?netcdf_tables_checks
 fkeys
 
 webExamplesLogicalFunctionsOperators
-webExamplesComparisonFunctionsOperators
+HAVE_LIBPCRE?webExamplesComparisonFunctionsOperators
 webExamplesCastFunctionsOperators
 webExamplesMathematicalFunctionsOperators
+webExamplesDateTimeFunctionsOperators
+webExamplesStringFunctions
 webExamplesUrlFunctions
 
 utilities
-
-HAVE_JDBCCLIENT_JAR?ValidateSystemCatalogTables

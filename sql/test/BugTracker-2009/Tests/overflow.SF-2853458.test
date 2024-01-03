@@ -1,5 +1,14 @@
+skipif arch=aarch64
+skipif arch=ppc64le
 statement error 22003!overflow in conversion of 9.2233720368547758e+18 to lng.
 select cast(power(2,63) as bigint) 
+
+onlyif arch=aarch64
+onlyif arch=ppc64le
+query I
+select cast(power(2,63) as bigint) 
+----
+9223372036854775807
 
 statement error 22003!overflow in conversion of 1.8446744073709552e+19 to lng.
 select cast(power(2,64) as bigint)

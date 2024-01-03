@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -62,7 +66,7 @@ handleClient(void *data)
 	char *user = NULL, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
 	char dbmod[64];
-	char host[512];
+	char host[512+16+1];
 	char port[16];
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
@@ -76,6 +80,14 @@ handleClient(void *data)
 	int sock;
 	bool isusock;
 	struct threads *self;
+
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 
 	sock = ((struct clientdata *) data)->sock;
 	isusock = ((struct clientdata *) data)->isusock;

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -164,6 +168,7 @@ column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
 
 column_find_tpe(sqlid)
 column_find_tpe(bte)
+column_find_tpe(sht)
 column_find_tpe(int)
 column_find_tpe(lng)
 
@@ -314,6 +319,13 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 
 		l = BATproject(cr, lcb); /* project because cr is join result */
 		bat_destroy(lcb);
+		if (l == NULL) {
+			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(cr2);
+			bat_destroy(rcb);
+			return NULL;
+		}
 		lcb = l;
 		ret = BATjoin(&l, &r, lcb, rcb, NULL, cr2, false, BATcount(lcb));
 		bat_destroy(cr2);
@@ -382,9 +394,11 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 	bat_destroy(cl);
 	bat_destroy(cr);
 	bat_destroy(cr2);
+	if (r == NULL)
+		return NULL;
 	cl = r;
 	/* project all in the new order */
-	res_table *rt = res_table_create(tr, 1/*result_id*/, 1/*query_id*/, ol_length(t->columns), Q_TABLE, NULL, NULL);
+	res_table *rt = res_table_create(tr, 1/*result_id*/, 1/*query_id*/, ol_length(t->columns), Q_TABLE, NULL);
 	if (!rt) {
 		bat_destroy(cl);
 		return NULL;
@@ -395,15 +409,13 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 
 		o = n->data;
 		b = full_column(tr, o);
-		if (b)
-			rc = BATproject(cl, b);
-		bat_destroy(b);
-		if (!b || !rc) {
+		if (b == NULL || (rc = BATproject(cl, b)) == NULL) {
 			bat_destroy(cl);
 			bat_destroy(b);
 			res_table_destroy(rt);
 			return NULL;
 		}
+		bat_destroy(b);
 		if (!res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, TYPE_bat, rc, true)) {
 			bat_destroy(cl);
 			res_table_destroy(rt);
@@ -465,7 +477,6 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 	if (!kvh && kvl != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
 	if (key_value_low) {
-		BAThash(b);
 		r = BATselect(b, s, kvl, kvh, true, hi, false);
 		bat_destroy(s);
 		s = r;
@@ -598,7 +609,7 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 	}
 	bat_destroy(lcb);
 	bat_destroy(rcb);
-	return l;
+	return l->data ? l : NULL;
 }
 
 static rids *
@@ -625,7 +636,7 @@ rids_semijoin(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 	}
 	bat_destroy(lcb);
 	bat_destroy(rcb);
-	return l;
+	return l->data ? l : NULL;
 }
 
 static subrids *
@@ -808,6 +819,7 @@ bat_table_init( table_functions *tf )
 	tf->column_find_value = column_find_value;
 	tf->column_find_sqlid = column_find_sqlid;
 	tf->column_find_bte = column_find_bte;
+	tf->column_find_sht = column_find_sht;
 	tf->column_find_int = column_find_int;
 	tf->column_find_lng = column_find_lng;
 	tf->column_find_string_start = column_find_string_start; /* this function returns a pointer to the heap, use it with care! */

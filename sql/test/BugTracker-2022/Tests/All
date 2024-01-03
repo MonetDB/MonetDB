@@ -14,3 +14,11 @@ create_func_with_case_and_in
 single_row_in_rel_order_by_column.Bug-7306
 push-aggr-down-removes-distinct-on-union-all.Bug-7318
 temp-table-create-index-drop-issue
+dependencies.Bug-7328
+multi-column-filters-k2-unique.Bug-7303
+multi-column-filters-k2-is-1.Bug-7303
+values.Bug-7336
+temp-table-index.Bug
+rerun-temp-table-index-crashes-server.Bug
+rerun-temp-table-index-fails-to-restart-server.Bug
+distinct-crash.Bug-7342

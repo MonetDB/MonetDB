@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -15,7 +19,6 @@
 #define _MAL_INTERPRET_H
 
 #include "mal_client.h"
-#include "mal_factory.h"
 #include "mal_profiler.h"
 
 /*
@@ -24,15 +27,18 @@
  */
 
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
-mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env);
-mal_export str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk);
-mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debug);
+mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller,
+					  MalStkPtr env);
+mal_export str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
+							  int stoppc, MalStkPtr stk, MalStkPtr env,
+							  InstrPtr pcicaller);
+mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
+						  MalStkPtr stk);
+mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb,
+					   ValPtr argv[]);
 mal_export void garbageElement(Client cntxt, ValPtr v);
-mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
-
-/* defined in mal.c */
-mal_export Client getClientContext(void);
+mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+								 int flag);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #if !defined(NDEBUG) && defined(__GNUC__)
@@ -143,4 +149,4 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define getArgReference_str(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.sval)
 #endif
 
-#endif /*  _MAL_INTERPRET_H*/
+#endif /*  _MAL_INTERPRET_H */

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -164,7 +168,7 @@ int cmd_read(char *argv[])
 
 	s = opener(filename);
 	if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
-		char *msg = mnstr_error(s);
+		const char *msg = mnstr_peek_error(s);
 		croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "<no error message>");
 	}
 
@@ -200,7 +204,7 @@ int cmd_read(char *argv[])
 		if (wrapper != NULL)
 			s = wrapper(s, parms);
 		if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
-			char *msg = mnstr_error(s);
+			const char *msg = mnstr_peek_error(s);
 			croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "<no error message>");
 		}
 	}
@@ -269,7 +273,7 @@ int cmd_write(char *argv[])
 
 	s = opener(filename);
 	if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
-		char *msg = mnstr_error(NULL);
+		const char *msg = mnstr_peek_error(NULL);
 		croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "");
 	}
 
@@ -313,7 +317,7 @@ int cmd_write(char *argv[])
 		if (wrapper != NULL)
 			s = wrapper(s, parms);
 		if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
-			char *msg = mnstr_error(s);
+			const char *msg = mnstr_peek_error(s);
 			croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "<no error message>");
 		}
 	}
@@ -350,7 +354,7 @@ static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize)
 		iterations += 1;
 		nread = mnstr_read(in, buffer, 1, bufsize);
 		if (nread < 0)
-			croak(2, "Error reading from stream after %" PRIu64 " bytes: %s", total, mnstr_error(in));
+			croak(2, "Error reading from stream after %" PRIu64 " bytes: %s", total, mnstr_peek_error(in));
 		if (nread == 0) {
 			// eof
 			break;
@@ -395,15 +399,15 @@ static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize, bool do_f
 		}
 		nwritten = mnstr_write(out, buffer, 1, nread);
 		if (nwritten < 0)
-			croak(2, "Write error after %" PRId64 " bytes: %s", total, mnstr_error(out));
+			croak(2, "Write error after %" PRId64 " bytes: %s", total, mnstr_peek_error(out));
 		if ((size_t)nwritten != nread)
 			croak(2, "Partial write (%lu/%lu bytes) after %" PRId64 " bytes: %s",
 				(unsigned long)nwritten,  (unsigned long)nread,
-				total + (int64_t)nwritten, mnstr_error(out));
+				total + (int64_t)nwritten, mnstr_peek_error(out));
 		total += (int64_t)nwritten;
 		if (do_flush)
 			if (mnstr_flush(out, flush_level) != 0)
-				croak(2, "Flush failed after %" PRId64 " bytes: %s", total, mnstr_error(out));
+				croak(2, "Flush failed after %" PRId64 " bytes: %s", total, mnstr_peek_error(out));
 	}
 
 	free(buffer);

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -72,7 +76,7 @@ color_fromstr(const char *colorStr, size_t *len, void **C, bool external)
 	if (*len < sizeof(color) || *c == NULL) {
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(color));
-		if( *c == NULL)
+		if (*c == NULL)
 			return -1;
 		*len = sizeof(color);
 	}
@@ -109,14 +113,14 @@ color_fromstr(const char *colorStr, size_t *len, void **C, bool external)
 static ssize_t
 color_tostr(char **colorStr, size_t *len, const void *c, bool external)
 {
-	color sc = *(color*)c;
+	color sc = *(color *) c;
 
 	/* allocate and fill a new string */
 
 	if (*len < 11 || *colorStr == NULL) {
 		GDKfree(*colorStr);
 		*colorStr = GDKmalloc(11);
-		if( *colorStr == NULL)
+		if (*colorStr == NULL)
 			return -1;
 		*len = 11;
 	}
@@ -205,7 +209,7 @@ color_rgb2hsv(float *h, float *s, float *v, int R, int G, int B)
 			H = (Gtmp - Btmp) / delta;
 		else if (Gtmp == max)
 			H = 2 + (Btmp - Rtmp) / delta;
-		else		/* Btmp == max */
+		else					/* Btmp == max */
 			H = 4 + (Rtmp - Gtmp) / delta;
 		H *= 60;
 		if (H < 0)
@@ -257,7 +261,7 @@ CLRhsv(color *c, const flt *h, const flt *s, const flt *v)
 			Gtmp = p;
 			Btmp = *v;
 			break;
-		default:	/* case 5: */
+		default:				/* case 5: */
 			Rtmp = *v;
 			Gtmp = p;
 			Btmp = q;
@@ -359,7 +363,8 @@ CLRluminance(int *y, const color *c)
 	int g = (int) ((*c >> 8) & 0xFF);
 	int b = (int) (*c & 0xFF);
 
-	*y = (int) (0.2989f * (float) (r) + 0.5866f * (float) (g) + 0.1145f * (float) (b));
+	*y = (int) (0.2989f * (float) (r) + 0.5866f * (float) (g) +
+				0.1145f * (float) (b));
 	*y = CLIP(*y);
 	return (MAL_SUCCEED);
 }
@@ -371,7 +376,8 @@ CLRcr(int *cr, const color *c)
 	int g = (int) ((*c >> 8) & 0xFF);
 	int b = (int) (*c & 0xFF);
 
-	*cr = (int) (0.5000f * (float) (r) - 0.4183f * (float) (g) - 0.0816f * (float) (b)) + 128;
+	*cr = (int) (0.5000f * (float) (r) - 0.4183f * (float) (g) -
+				 0.0816f * (float) (b)) + 128;
 	return (MAL_SUCCEED);
 }
 
@@ -382,7 +388,8 @@ CLRcb(int *cb, const color *c)
 	int g = (int) ((*c >> 8) & 0xFF);
 	int b = (int) (*c & 0xFF);
 
-	*cb = (int) (-0.1687f * (float) (r) - 0.3312f * (float) (g) + 0.5000f * (float) (b)) + 128;
+	*cb = (int) (-0.1687f * (float) (r) - 0.3312f * (float) (g) +
+				 0.5000f * (float) (b)) + 128;
 	return (MAL_SUCCEED);
 }
 
@@ -391,7 +398,7 @@ CLRcolor(color *c, const char **val)
 {
 	size_t len = sizeof(color);
 
-	if (color_fromstr(*val, &len, (void**)&c, false) < 0)
+	if (color_fromstr(*val, &len, (void **) &c, false) < 0)
 		throw(MAL, "color.color", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

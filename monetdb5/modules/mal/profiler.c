@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -50,12 +54,12 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) mb;
 	(void) stk;
 	(void) pc;
-	str s = NULL; // minimal flag
-
-	if (getArgType(mb, pc, 1) == TYPE_str)
-		s = *getArgReference_str(stk, pc, 1);
-
-	return openProfilerStream(cntxt, s);
+	int m = 0;
+	if (pc->argc == 2 && getArgType(mb, pc, 1) == TYPE_int)
+		m = *getArgReference_int(stk, pc, 1);
+	else if (pc->argc > 2)
+		m = -1;
+	return openProfilerStream(cntxt, m);
 }
 
 static str
@@ -71,7 +75,7 @@ CMDcloseProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 static str
 CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	(void)mb;
+	(void) mb;
 	(void) stk;
 	(void) pc;
 	(void) cntxt;
@@ -95,7 +99,7 @@ CMDstartTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	renameVariables(mb); // to keep in sink with explain
+	renameVariables(mb);		// to keep in sync with explain
 	return startTrace(cntxt);
 }
 
@@ -111,7 +115,7 @@ CMDstopTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 CMDnoopProfiler(void *res)
 {
-	(void) res;		/* fool compiler */
+	(void) res;					/* fool compiler */
 	return MAL_SUCCEED;
 }
 
@@ -128,11 +132,11 @@ CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str path = *getArgReference_str(stk,pci,1);
-	bat *res =  getArgReference_bat(stk,pci,0);
+	str path = *getArgReference_str(stk, pci, 1);
+	bat *res = getArgReference_bat(stk, pci, 0);
 	BAT *bn;
 
-	(void) cntxt;		/* fool compiler */
+	(void) cntxt;				/* fool compiler */
 	(void) mb;
 	bn = getTrace(cntxt, path);
 	if (bn) {
@@ -140,7 +144,7 @@ CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(bn);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING  "%s", path);
+	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING "%s", path);
 }
 
 static str
@@ -173,46 +177,51 @@ CMDsetHeartbeat(void *res, int *ev)
 static str
 CMDgetDiskReads(lng *ret)
 {
-	*ret= getDiskReads();
+	*ret = getDiskReads();
 	return MAL_SUCCEED;
 }
+
 static str
 CMDgetDiskWrites(lng *ret)
 {
-	*ret= getDiskWrites();
+	*ret = getDiskWrites();
 	return MAL_SUCCEED;
 }
+
 static str
 CMDgetUserTime(lng *ret)
 {
-	*ret= getUserTime();
+	*ret = getUserTime();
 	return MAL_SUCCEED;
 }
+
 static str
 CMDgetSystemTime(lng *ret)
 {
-	*ret= getUserTime();
+	*ret = getUserTime();
 	return MAL_SUCCEED;
 }
 
 static str
 CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
-	profilerGetCPUStat(user,nice,sys,idle,iowait);
+	profilerGetCPUStat(user, nice, sys, idle, iowait);
 	return MAL_SUCCEED;
 }
 
 static str
-CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
+CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys,
+					 lng *idle, lng *iowait)
 {
 	lng userN, niceN, sysN, idleN, iowaitN, N;
 	*cycles = 0;
 	*io = 0;
-	profilerGetCPUStat(&userN,&niceN,&sysN,&idleN,&iowaitN);
+	profilerGetCPUStat(&userN, &niceN, &sysN, &idleN, &iowaitN);
 	N = (userN - *user + niceN - *nice + sysN - *sys);
-	if ( N){
-		*cycles = (int) ( ((double) N) / (N + idleN - *idle + iowaitN - *iowait) *100);
-		*io = (int) ( ((double) iowaitN- *iowait) / (N + idleN - *idle + iowaitN - *iowait) *100);
+	if (N) {
+		*cycles = (int) (((double) N) / (N + idleN - *idle + iowaitN - *iowait) * 100);
+		*io = (int) (((double) iowaitN - *iowait) / (N + idleN - *idle +
+													 iowaitN - *iowait) * 100);
 	}
 	return MAL_SUCCEED;
 }
@@ -227,7 +236,7 @@ mel_func profiler_init_funcs[] = {
  command("profiler", "getlimit", CMDgetprofilerlimit, false, "Get profiler limit", args(1,1, arg("",int))),
  command("profiler", "setlimit", CMDsetprofilerlimit, true, "Set profiler limit", args(1,2, arg("",void),arg("l",int))),
  pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,1, arg("",void))),
-  pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,2, arg("",void), arg("s",str))),
+ pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,2, arg("",void), arg("m",int))),
  pattern("profiler", "closestream", CMDcloseProfilerStream, false, "Stop offline proviling", args(1,1, arg("",void))),
  command("profiler", "noop", CMDnoopProfiler, false, "Fetch any pending performance events", args(1,1, arg("",void))),
  pattern("profiler", "getTrace", CMDgetTrace, false, "Get the trace details of a specific event", args(1,2, batargany("",1),arg("e",str))),

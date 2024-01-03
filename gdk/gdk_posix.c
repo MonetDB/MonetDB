@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -299,22 +303,17 @@ MT_getrss(void)
 	/* get RSS on Linux */
 	int fd;
 
-	fd = open("/proc/self/stat", O_RDONLY | O_CLOEXEC);
+	fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
 	if (fd >= 0) {
-		char buf[1024], *r = buf;
-		ssize_t i, sz = read(fd, buf, 1024);
+		char buf[1024];
+		ssize_t sz = read(fd, buf, sizeof(buf) - 1);
 
 		close(fd);
 		if (sz > 0) {
-			for (i = 0; i < 23; i++) {
-				while (*r && (*r == ' ' || *r == '\t'))
-					r++;
-				while (*r && (*r != ' ' && *r != '\t'))
-					r++;
-			}
-			while (*r && (*r == ' ' || *r == '\t'))
-				r++;
-			return ((size_t) atol(r)) * MT_pagesize();
+			buf[sz] = 0;
+			long rss;
+			if (sscanf(buf, "%*d %ld", &rss) >= 1)
+				return (size_t) rss * MT_pagesize();
 		}
 	}
 #endif
@@ -330,7 +329,7 @@ MT_mmap(const char *path, int mode, size_t len)
 	fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY) | O_CLOEXEC, MONETDB_MODE);
 	if (fd < 0) {
 		GDKsyserror("open %s failed\n", path);
-		return MAP_FAILED;
+		return NULL;
 	}
 	ret = mmap(NULL,
 		   len,
@@ -341,9 +340,10 @@ MT_mmap(const char *path, int mode, size_t len)
 	if (ret == MAP_FAILED) {
 		GDKsyserror("mmap(%s,%zu) failed\n", path, len);
 		ret = NULL;
+	} else {
+		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 	}
 	close(fd);
-	VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 	return ret;
 }
 
@@ -370,6 +370,9 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	int flags = mode & MMAP_COPY ? MAP_PRIVATE : MAP_SHARED;
 	int prot = PROT_WRITE | PROT_READ;
 
+#ifdef MAP_FIXED_NOREPLACE
+	flags |= MAP_FIXED_NOREPLACE;
+#endif
 	/* round up to multiple of page size */
 	*new_size = (*new_size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 
@@ -390,7 +393,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			return old_address;
 		}
 		if (path && truncate(path, *new_size) < 0)
-			TRC_WARNING(GDK, "MT_mremap(%s): truncate failed: %s\n",
+			GDKwarning("truncate of %s failed: %s\n",
 				    path, GDKstrerror(errno, (char[64]){0}, 64));
 #endif	/* !__COVERITY__ */
 		return old_address;
@@ -430,9 +433,11 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		/* try to map extension at end of current map */
 		p = mmap((char *) old_address + old_size, *new_size - old_size,
 			 prot, flags, fd, old_size);
-		/* if it failed, there is no point trying a full mmap:
-		 * that too won't fit */
-		if (p != MAP_FAILED) {
+		/* if it failed and MAP_FIXED_NOREPLACE is not defined,
+		 * there is no point trying a full mmap: that too won't
+		 * fit either (if MAP_FIXED_NOREPLACE, only relevant
+		 * failure is with EEXIST) */
+		if (p != MAP_FAILED || errno == EEXIST) {
 			if (p == (char *) old_address + old_size) {
 				/* we got the requested address, make
 				 * sure we return the correct (old)
@@ -442,7 +447,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			} else {
 				/* we got some other address: discard
 				 * it and make full mmap */
-				if (munmap(p, *new_size - old_size) < 0)
+				if (p != MAP_FAILED &&
+				    munmap(p, *new_size - old_size) < 0)
 					GDKsyserror("munmap");
 #ifdef NO_MMAP_ALIASING
 				if (msync(old_address, old_size, MS_SYNC) < 0)
@@ -450,6 +456,9 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #endif
 				/* first create full mmap, then, if
 				 * successful, remove old mmap */
+#ifdef MAP_FIXED_NOREPLACE
+				flags &= ~MAP_FIXED_NOREPLACE;
+#endif
 				p = mmap(NULL, *new_size, prot, flags, fd, 0);
 				if (p != MAP_FAILED) {
 					VALGRIND_MALLOCLIKE_BLOCK(p, *new_size, 0, 1);
@@ -479,7 +488,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			 prot, flags, fd, 0);
 		/* no point trying a full map if this didn't work:
 		 * there isn't enough space */
-		if (p != MAP_FAILED) {
+		if (p != MAP_FAILED || errno == EEXIST) {
 			if (p == (char *) old_address + old_size) {
 				/* we got the requested address, make
 				 * sure we return the correct (old)
@@ -489,8 +498,12 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			} else {
 				/* we got some other address: discard
 				 * it and make full mmap */
-				if (munmap(p, *new_size - old_size) < 0)
+				if (p != MAP_FAILED &&
+				    munmap(p, *new_size - old_size) < 0)
 					GDKsyserror("munmap");
+#ifdef MAP_FIXED_NOREPLACE
+				flags &= ~MAP_FIXED_NOREPLACE;
+#endif
 #ifdef HAVE_MREMAP
 				/* first get an area large enough for
 				 * *new_size */
@@ -884,7 +897,12 @@ dlopen(const char *file, int mode)
 {
 	(void) mode;
 	if (file != NULL) {
-		return (void *) LoadLibrary(file);
+		wchar_t *wfile = utf8towchar(file);
+		if (wfile == NULL)
+			return NULL;
+		void *ret = LoadLibraryW(wfile);
+		free(wfile);
+		return ret;
 	}
 	return GetModuleHandle(NULL);
 }

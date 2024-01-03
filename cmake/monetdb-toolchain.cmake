@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 function(monetdb_default_compiler_options)
@@ -17,6 +21,15 @@ function(monetdb_default_compiler_options)
 
   if(SANITIZER)
     if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
+      add_compile_options("-fsanitize=address")
+      add_compile_options("-fno-omit-frame-pointer")
+      add_compile_definitions(SANITIZER)
+      if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
+        add_link_options("-fsanitize=address")
+      else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address" PARENT_SCOPE)
+      endif()
+    elseif ("${CMAKE_C_COMPILER_ID}" MATCHES "^(Clang|AppleClang)$")
       add_compile_options("-fsanitize=address")
       add_compile_options("-fno-omit-frame-pointer")
       add_compile_definitions(SANITIZER)
@@ -45,6 +58,36 @@ function(monetdb_default_compiler_options)
     endif()
   endif()
 
+  if(PGOTRAIN)
+    if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
+        SET(PGO_COMPILE_FLAGS "-fprofile-generate=${CMAKE_BINARY_DIR}/profile-data")
+    endif()
+    if ("${CMAKE_C_COMPILER_ID}" MATCHES "^(Clang|AppleClang)$")
+        SET(PGO_COMPILE_FLAGS "-fprofile-instr-generate")
+    endif()
+    SET( CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${PGO_COMPILE_FLAGS}" PARENT_SCOPE)
+  endif()
+
+  if(PGOBUILD)
+    if(NOT PGO_TRAINING_DIR)
+        SET(PGO_TRAINING_DIR ../training)
+    endif()
+    SET(PGO_TRAINING_DATA ${CMAKE_BINARY_DIR}/${PGO_TRAINING_DIR}/profile-data)
+
+    if(NOT EXISTS ${PGO_TRAINING_DATA})
+        message(FATAL_ERROR "No profiling Data Found so can't Build. Ensure that the training run was executed in the training build directory. Training data expected in Directory: " ${PGO_TRAINING_DATA})
+    endif()
+
+    if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
+        SET(PGO_COMPILE_FLAGS "-fprofile-use=${PGO_TRAINING_DATA} -fprofile-correction -Wno-missing-profile -Wno-coverage-mismatch")
+    endif()
+    if ("${CMAKE_C_COMPILER_ID}" MATCHES "^(Clang|AppleClang)$")
+        SET(PGO_COMPILE_FLAGS "-fprofile-instr-use")
+    endif()
+
+    SET( CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${PGO_COMPILE_FLAGS}" PARENT_SCOPE )
+  endif()
+
   if(STRICT)
     if(${CMAKE_C_COMPILER_ID} MATCHES "^(GNU|Clang|AppleClang)$")
       add_compile_options("-Werror")
@@ -57,7 +100,16 @@ function(monetdb_default_compiler_options)
       add_option_if_available("-Wundef")
       add_option_if_available("-Wformat=2")
       add_option_if_available("-Wformat-overflow=1")
-      add_option_if_available("-Wno-format-truncation")
+      if(${CMAKE_C_COMPILER_ID} MATCHES "^GNU$")
+	if(${CMAKE_C_COMPILER_VERSION} VERSION_LESS "9.5.0")
+	  # on Ubuntu 20.04 with gcc 9.4.0 when building a Release
+	  # version we get a warning (hence error) about possible
+	  # buffer overflow in a call to snprintf, this option avoids
+	  # that; I have no idea which version of gcc is safe, so the
+	  # test may have to be refined
+	  add_option_if_available("-Wno-format-truncation")
+	endif()
+      endif()
       add_option_if_available("-Wno-format-nonliteral")
       #add_option_if_available("-Wformat-signedness") 	-- numpy messes this up
       add_option_if_available("-Wno-cast-function-type")
@@ -78,7 +130,6 @@ function(monetdb_default_compiler_options)
       add_option_if_available("-fstack-protector-all")
       add_option_if_available("-Wpacked-bitfield-compat")
       add_option_if_available("-Wsync-nand")
-      add_option_if_available("-Wjump-misses-init")
       add_option_if_available("-Wmissing-include-dirs")
       add_option_if_available("-Wlogical-op")
       add_option_if_available("-Wduplicated-cond")

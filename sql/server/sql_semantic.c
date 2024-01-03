@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -48,23 +52,24 @@ sql_add_param(mvc *sql, const char *name, sql_subtype *st)
 	list_append(sql->params, a);
 }
 
-sql_arg *
+int
 sql_bind_param(mvc *sql, const char *name)
 {
 	node *n;
+	int nr = 0;
 
 	if (sql->params) {
-		for (n = sql->params->h; n; n = n->next) {
+		for (n = sql->params->h; n; n = n->next, nr++) {
 			sql_arg *a = n->data;
 
 			if (a->name && strcmp(a->name, name) == 0)
-				return a;
+				return nr;
 		}
 	}
-	return NULL;
+	return -1;
 }
 
-static sql_arg *
+sql_arg *
 sql_bind_paramnr(mvc *sql, int nr)
 {
 	int i=0;
@@ -76,6 +81,17 @@ sql_bind_paramnr(mvc *sql, int nr)
 
 		if (n)
 			return n->data;
+	}
+	return NULL;
+}
+
+sql_arg *
+sql_find_param(mvc *sql, char *name)
+{
+	for (node *n = sql->params->h; n; n = n->next) {
+		sql_arg *a = n->data;
+		if (strcmp(a->name, name) == 0)
+		   return a;
 	}
 	return NULL;
 }
@@ -212,7 +228,8 @@ find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char 
 			if ((*var = stack_find_var_frame(sql, name, level))) { /* check if variable is known from the stack */ \
 				*tpe = &((*var)->var.tpe); \
 				res = true; \
-			} else if ((*a = sql_bind_param(sql, name))) { /* then if it is a parameter */ \
+			} else if ((nr = sql_bind_param(sql, name)) >= 0) { /* then if it is a parameter */ \
+				*a = sql_bind_paramnr(sql, nr); \
 				*tpe = &((*a)->type); \
 				*level = 1; \
 				res = true; \
@@ -234,7 +251,9 @@ find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **
 {
 	const char *objstr = "variable";
 	bool res = false;
+	int nr = 0;
 
+	(void)nr;
 	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000));
 	return res;
 }
@@ -479,7 +498,7 @@ os_bind_member_internal(mvc *sql, struct objectset *ff, const char *fname, sql_s
 		}
 	}
 	if (cand)
-		return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, NULL) : sql_dup_subfunc(sql->sa, cand, NULL, tp);
+		return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, tp) : sql_dup_subfunc(sql->sa, cand, NULL, tp);
 	return NULL;
 }
 
@@ -1071,11 +1090,11 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 		if (l->type->radix == 10 && r->type->radix == 10) {
 			digits = scale + (sql_max(l->digits - l->scale, r->digits - r->scale));
 #ifdef HAVE_HGE
-			if (digits > 39) {
-				digits = 39;
+			if (digits > 38) {
+				digits = 38;
 #else
-			if (digits > 19) {
-				digits = 19;
+			if (digits > 18) {
+				digits = 18;
 #endif
 				scale = MIN(scale, digits - 1);
 			}

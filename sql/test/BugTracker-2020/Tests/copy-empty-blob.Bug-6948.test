@@ -5,7 +5,7 @@ statement ok
 create table blobtbl (i int, b blob)
 
 statement ok
-copy 4 records into blobtbl from stdin delimiters ',','\n','"'
+copy 4 records into blobtbl from stdin delimiters ',',E'\n','"'
 <COPY_INTO_DATA>
 0,NULL
 1,12ff

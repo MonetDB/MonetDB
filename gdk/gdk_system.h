@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _GDK_SYSTEM_H_
@@ -97,8 +101,8 @@
 #endif
 
 /* also see gdk.h for these */
-#define THRDMASK	(1)
-#define TEMMASK		(1<<10)
+#define THRDMASK	(1U)
+#define TEMMASK		(1U<<10)
 
 /*
  * @- pthreads Includes and Definitions
@@ -118,6 +122,26 @@
 # include <semaphore.h>
 #endif
 
+#if defined(__APPLE__) && defined(__GNUC__)
+/* GCC-12 installed with Homebrew on MacOS has a bug which makes
+ * including <dispatch/dispatch.h> impossible.  However we need that for
+ * properly working semaphores, so we have this bit of code to work
+ * around the bug. */
+#define HAVE_DISPATCH_DISPATCH_H 1
+#define HAVE_DISPATCH_SEMAPHORE_CREATE 1
+#if __has_attribute(__swift_attr__)
+#define OS_SWIFT_UNAVAILABLE_FROM_ASYNC(msg) \
+       __attribute__((__swift_attr__("@_unavailableFromAsync(message: \"" msg "\")")))
+#else
+#define OS_SWIFT_UNAVAILABLE_FROM_ASYNC(msg)
+#endif
+#define OS_ASSUME_PTR_ABI_SINGLE_BEGIN __ASSUME_PTR_ABI_SINGLE_BEGIN
+#define OS_ASSUME_PTR_ABI_SINGLE_END __ASSUME_PTR_ABI_SINGLE_END
+#define OS_UNSAFE_INDEXABLE __unsafe_indexable
+#define OS_HEADER_INDEXABLE __header_indexable
+#define OS_COUNTED_BY(N) __counted_by(N)
+#define OS_SIZED_BY(N) __sized_by(N)
+#endif
 #ifdef HAVE_DISPATCH_DISPATCH_H
 #include <dispatch/dispatch.h>
 #endif
@@ -134,10 +158,12 @@
 #define PTW32 1
 #endif
 
+#include "matomic.h"
+
 /* debug and errno integers */
-gdk_export int GDKdebug;
-gdk_export void GDKsetdebug(int debug);
-gdk_export int GDKgetdebug(void);
+gdk_export ATOMIC_TYPE GDKdebug;
+gdk_export void GDKsetdebug(unsigned debug);
+gdk_export unsigned GDKgetdebug(void);
 
 gdk_export int GDKnr_threads;
 
@@ -161,14 +187,19 @@ enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 typedef int64_t lng;
 
 typedef struct QryCtx {
-	const lng starttime;
+	lng starttime;
 	lng querytimeout;
+	ATOMIC_TYPE datasize;
+	ATOMIC_BASE_TYPE maxmem;
 } QryCtx;
 
+gdk_export bool THRhighwater(void);
 gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d,
 				const char *threadname);
+gdk_export bool MT_thread_register(void);
+gdk_export void MT_thread_deregister(void);
 gdk_export const char *MT_thread_getname(void);
 gdk_export void *MT_thread_getdata(void);
 gdk_export void MT_thread_setdata(void *data);
@@ -177,6 +208,8 @@ gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
 gdk_export QryCtx *MT_thread_get_qry_ctx(void);
 gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
+gdk_export void GDKsetbuf(char *);
+gdk_export char *GDKgetbuf(void);
 
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */
@@ -199,23 +232,37 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 /* define this to keep lock statistics (can be expensive) */
 /* #define LOCK_STATS 1 */
 
+/* define this to keep track of which locks a thread has acquired */
+#ifndef NDEBUG			/* normally only in debug builds */
+#ifndef __COVERITY__
+#define LOCK_OWNER 1
+#endif
+#endif
+
+#ifndef LOCK_OWNER
+#define MT_thread_add_mylock(l) ((void) 0)
+#define MT_thread_del_mylock(l) ((void) 0)
+#endif
+
 #ifdef LOCK_STATS
 #include "gdk_tracer.h"
 
 #define _DBG_LOCK_COUNT_0(l)					\
 	do {							\
-		(void) ATOMIC_INC(&GDKlockcnt);			\
-		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name); 	\
+		ATOMIC_INC(&GDKlockcnt);			\
+		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name);	\
 	} while (0)
 
 #define _DBG_LOCK_LOCKER(l)				\
-	do {						\
-		(l)->locker = __func__;			\
-		(l)->thread = MT_thread_getname();	\
-	} while (0)
+	(						\
+		(l)->locker = __func__,			\
+		(l)->thread = MT_thread_getname(),	\
+		MT_thread_add_mylock(l)			\
+	)
 
 #define _DBG_LOCK_UNLOCKER(l)					\
 	do {							\
+		MT_thread_del_mylock(l);			\
 		(l)->locker = __func__;				\
 		(l)->thread = NULL;				\
 		TRC_DEBUG(TEM, "Unlocking %s\n", (l)->name);	\
@@ -223,12 +270,12 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 #define _DBG_LOCK_CONTENTION(l)						\
 	do {								\
-		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name); 	\
-		(void) ATOMIC_INC(&GDKlockcontentioncnt);		\
-		(void) ATOMIC_INC(&(l)->contention);			\
+		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name);	\
+		ATOMIC_INC(&GDKlockcontentioncnt);			\
+		ATOMIC_INC(&(l)->contention);				\
 	} while (0)
 
-#define _DBG_LOCK_SLEEP(l)	((void) ATOMIC_INC(&(l)->sleep))
+#define _DBG_LOCK_SLEEP(l)	(ATOMIC_INC(&(l)->sleep))
 
 #define _DBG_LOCK_COUNT_2(l)						\
 	do {								\
@@ -280,14 +327,31 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 #else
 
+#ifdef LOCK_OWNER
+#define _DBG_LOCK_LOCKER(l)				\
+	(						\
+		(l)->locker = __func__,			\
+		(l)->thread = MT_thread_getname(),	\
+		MT_thread_add_mylock(l)			\
+	)
+
+#define _DBG_LOCK_UNLOCKER(l)					\
+	do {							\
+		MT_thread_del_mylock(l);			\
+		(l)->locker = __func__;				\
+		(l)->thread = NULL;				\
+	} while (0)
+#else
+#define _DBG_LOCK_LOCKER(l)		((void) 0)
+#define _DBG_LOCK_UNLOCKER(l)		((void) 0)
+#endif
+
 #define _DBG_LOCK_COUNT_0(l)		((void) 0)
 #define _DBG_LOCK_CONTENTION(l)		((void) 0)
 #define _DBG_LOCK_SLEEP(l)		((void) 0)
 #define _DBG_LOCK_COUNT_2(l)		((void) 0)
 #define _DBG_LOCK_INIT(l)		((void) 0)
 #define _DBG_LOCK_DESTROY(l)		((void) 0)
-#define _DBG_LOCK_LOCKER(l)		((void) 0)
-#define _DBG_LOCK_UNLOCKER(l)		((void) 0)
 
 #endif
 
@@ -301,8 +365,13 @@ typedef struct MT_Lock {
 	ATOMIC_TYPE sleep;
 	struct MT_Lock *volatile next;
 	struct MT_Lock *volatile prev;
+#endif
+#if defined(LOCK_STATS) || defined(LOCK_OWNER)
 	const char *locker;
 	const char *thread;
+#endif
+#ifdef LOCK_OWNER
+	struct MT_Lock *nxt;
 #endif
 } MT_Lock;
 
@@ -337,12 +406,12 @@ __pragma(comment(linker, "/include:" _LOCK_PREF_ "wininit_" #n "_"))
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
-#define MT_lock_try(l)	TryEnterCriticalSection(&(l)->lock)
+#define MT_lock_try(l)	(TryEnterCriticalSection(&(l)->lock) && (_DBG_LOCK_LOCKER(l), true))
 
 #define MT_lock_set(l)						\
 	do {							\
 		_DBG_LOCK_COUNT_0(l);				\
-		if (!MT_lock_try(l)) {				\
+		if (!TryEnterCriticalSection(&(l)->lock)) {	\
 			_DBG_LOCK_CONTENTION(l);		\
 			MT_thread_setlockwait(l);		\
 			EnterCriticalSection(&(l)->lock);	\
@@ -389,6 +458,8 @@ typedef struct MT_RWLock {
 
 #define MT_rwlock_wrunlock(l)	ReleaseSRWLockExclusive(&(l)->lock)
 
+typedef DWORD MT_TLS_t;
+
 #else
 
 typedef struct MT_Lock {
@@ -400,8 +471,13 @@ typedef struct MT_Lock {
 	ATOMIC_TYPE sleep;
 	struct MT_Lock *volatile next;
 	struct MT_Lock *volatile prev;
+#endif
+#if defined(LOCK_STATS) || defined(LOCK_OWNER)
 	const char *locker;
 	const char *thread;
+#endif
+#ifdef LOCK_OWNER
+	struct MT_Lock *nxt;
 #endif
 } MT_Lock;
 
@@ -418,23 +494,27 @@ typedef struct MT_Lock {
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
-#define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0)
+#define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && (_DBG_LOCK_LOCKER(l), true))
 
 #ifdef LOCK_STATS
-#define MT_lock_set(l)					\
-	do {						\
-		_DBG_LOCK_COUNT_0(l);			\
-		if (!MT_lock_try(l)) {			\
-			_DBG_LOCK_CONTENTION(l);	\
-			MT_thread_setlockwait(l);	\
-			pthread_mutex_lock(&(l)->lock);	\
-			MT_thread_setlockwait(NULL);	\
-		}					\
-		_DBG_LOCK_LOCKER(l);			\
-		_DBG_LOCK_COUNT_2(l);			\
+#define MT_lock_set(l)						\
+	do {							\
+		_DBG_LOCK_COUNT_0(l);				\
+		if (pthread_mutex_trylock(&(l)->lock)) {	\
+			_DBG_LOCK_CONTENTION(l);		\
+			MT_thread_setlockwait(l);		\
+			pthread_mutex_lock(&(l)->lock);		\
+			MT_thread_setlockwait(NULL);		\
+		}						\
+		_DBG_LOCK_LOCKER(l);				\
+		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
 #else
-#define MT_lock_set(l)		pthread_mutex_lock(&(l)->lock)
+#define MT_lock_set(l)				\
+	do {					\
+		pthread_mutex_lock(&(l)->lock);	\
+		_DBG_LOCK_LOCKER(l);		\
+	} while (0)
 #endif
 
 #define MT_lock_unset(l)				\
@@ -508,7 +588,7 @@ typedef struct MT_RWLock {
 #define MT_rwlock_rdlock(l)				\
 	do {						\
 		pthread_mutex_lock(&(l)->lock);		\
-		(void) ATOMIC_INC(&(l)->readers);	\
+		ATOMIC_INC(&(l)->readers);		\
 		pthread_mutex_unlock(&(l)->lock);	\
 	} while (0)
 
@@ -517,14 +597,14 @@ MT_rwlock_rdtry(MT_RWLock *l)
 {
 	if (pthread_mutex_trylock(&l->lock) != 0)
 		return false;
-	(void) ATOMIC_INC(&(l)->readers);
+	ATOMIC_INC(&(l)->readers);
 	pthread_mutex_unlock(&l->lock);
 	return true;
 }
 
-#define MT_rwlock_rdunlock(l)				\
-	do {						\
-		(void) ATOMIC_DEC(&(l)->readers);	\
+#define MT_rwlock_rdunlock(l)			\
+	do {					\
+		ATOMIC_DEC(&(l)->readers);	\
 	} while (0)
 
 #define MT_rwlock_wrlock(l)				\
@@ -550,7 +630,13 @@ MT_rwlock_wrtry(MT_RWLock *l)
 
 #endif
 
+typedef pthread_key_t MT_TLS_t;
+
 #endif
+
+gdk_export gdk_return MT_alloc_tls(MT_TLS_t *newkey);
+gdk_export void MT_tls_set(MT_TLS_t key, void *val);
+gdk_export void *MT_tls_get(MT_TLS_t key);
 
 #ifdef LOCK_STATS
 gdk_export void GDKlockstatistics(int);
@@ -622,7 +708,7 @@ typedef struct {
 /* simulate semaphores using mutex and condition variable */
 
 typedef struct {
-	int cnt;
+	int cnt, wakeups;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
 	char name[MT_NAME_LEN];
@@ -632,6 +718,7 @@ typedef struct {
 	do {							\
 		strcpy_len((s)->name, (n), sizeof((s)->name));	\
 		(s)->cnt = (nr);				\
+		(s)->wakeups = 0;				\
 		pthread_mutex_init(&(s)->mutex, 0);		\
 		pthread_cond_init(&(s)->cond, 0);		\
 	} while (0)
@@ -645,7 +732,8 @@ typedef struct {
 #define MT_sema_up(s)						\
 	do {							\
 		pthread_mutex_lock(&(s)->mutex);		\
-		if ((s)->cnt++ < 0) {				\
+		if (++(s)->cnt <= 0) {				\
+			(s)->wakeups++;				\
 			pthread_cond_signal(&(s)->cond);	\
 		}						\
 		pthread_mutex_unlock(&(s)->mutex);		\
@@ -660,8 +748,9 @@ typedef struct {
 			do {						\
 				pthread_cond_wait(&(s)->cond,		\
 						  &(s)->mutex);		\
-			} while ((s)->cnt < 0);				\
+			} while ((s)->wakeups < 1);			\
 			MT_thread_setsemawait(NULL);			\
+			(s)->wakeups--;					\
 			pthread_mutex_unlock(&(s)->mutex);		\
 		}							\
 		TRC_DEBUG(TEM, "Sema %s down complete\n", (s)->name);	\
@@ -707,6 +796,12 @@ gdk_export void MT_thread_setsemawait(MT_Sema *sema);
 gdk_export void MT_thread_setworking(const char *work);
 gdk_export void MT_thread_setalgorithm(const char *algo);
 gdk_export const char *MT_thread_getalgorithm(void);
+#ifdef LOCK_OWNER
+#define hide_exp(a,b) a ## b	/* hide export from exports test */
+hide_exp(gdk_ex,port) void MT_thread_add_mylock(MT_Lock *lock);
+hide_exp(gdk_ex,port) void MT_thread_del_mylock(MT_Lock *lock);
+#undef hide_exp
+#endif
 
 gdk_export int MT_check_nr_cores(void);
 

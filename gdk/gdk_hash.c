@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -64,28 +68,6 @@ hashmask(BUN m)
 	return m;
 }
 
-BUN
-HASHmask(BUN cnt)
-{
-	BUN m = cnt;
-
-#if 0
-	/* find largest power of 2 smaller than or equal to cnt */
-	m = hashmask(m);
-	m -= m >> 1;
-
-	/* if cnt is more than 1/3 into the gap between m and 2*m,
-	   double m */
-	if (m + m - cnt < 2 * (cnt - m))
-		m += m;
-#else
-	m = m * 8 / 7;
-#endif
-	if (m < BATTINY)
-		m = BATTINY;
-	return m;
-}
-
 static inline void
 HASHclear(Hash *h)
 {
@@ -98,10 +80,11 @@ HASHclear(Hash *h)
 	memset(h->Bckt, 0xFF, h->nbucket * h->width);
 }
 
-#define HASH_VERSION		4
-/* this is only for the change of hash function of the UUID type; if
- * HASH_VERSION is increased again from 4, the code associated with
- * HASH_VERSION_NOUUID must be deleted */
+#define HASH_VERSION		5
+/* this is only for the change of hash function of the UUID type and MBR
+ * type; if HASH_VERSION is increased again from 5, the code associated
+ * with HASH_VERSION_NOUUID and HASH_VERSION_NOMBR must be deleted */
+#define HASH_VERSION_NOMBR	4
 #define HASH_VERSION_NOUUID	3
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
 
@@ -118,18 +101,10 @@ doHASHdestroy(BAT *b, Hash *hs)
 			  BBP_physical(b->batCacheid),
 			  "thashb");
 	} else if (hs) {
-		bat p = VIEWtparent(b);
-		BAT *hp = NULL;
-
-		if (p)
-			hp = BBP_cache(p);
-
-		if (!hp || hs != hp->thash) {
-			TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": removing%s hash\n", ALGOBATPAR(b), *(size_t *) hs->heapbckt.base & (1 << 24) ? " persisted" : "");
-			HEAPfree(&hs->heapbckt, true);
-			HEAPfree(&hs->heaplink, true);
-			GDKfree(hs);
-		}
+		TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": removing%s hash\n", ALGOBATPAR(b), *(size_t *) hs->heapbckt.base & (1 << 24) ? " persisted" : "");
+		HEAPfree(&hs->heapbckt, true);
+		HEAPfree(&hs->heaplink, true);
+		GDKfree(hs);
 	}
 }
 
@@ -140,14 +115,20 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		h->width = HASHwidth(size);
 
 	if (!bcktonly) {
-		if (HEAPalloc(&h->heaplink, size, h->width, 0) != GDK_SUCCEED)
+		if (HEAPalloc(&h->heaplink, size, h->width) != GDK_SUCCEED)
 			return GDK_FAIL;
 		h->heaplink.free = size * h->width;
 		h->heaplink.dirty = true;
 		h->Link = h->heaplink.base;
 	}
-	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width, 0) != GDK_SUCCEED)
+	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width) != GDK_SUCCEED) {
+		if (!bcktonly) {
+			HEAPfree(&h->heaplink, true);
+			h->heaplink.free = 0;
+			h->Link = NULL;
+		}
 		return GDK_FAIL;
+	}
 	h->heapbckt.free = mask * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->heapbckt.dirty = true;
 	h->nbucket = mask;
@@ -322,7 +303,7 @@ HASHfix(Hash *h, bool save, bool dosync)
 			if (fd >= 0) {
 				if (write(fd, h->heapbckt.base, SIZEOF_SIZE_T) == SIZEOF_SIZE_T) {
 					if (dosync &&
-					    !(GDKdebug & NOSYNCMASK)) {
+					    !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 						_commit(fd);
 #elif defined(HAVE_FDATASYNC)
@@ -340,7 +321,7 @@ HASHfix(Hash *h, bool save, bool dosync)
 			return rc;
 		} else {
 			if (dosync &&
-			    !(GDKdebug & NOSYNCMASK) &&
+			    !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
 				((size_t *) h->heapbckt.base)[0] &= ~mask;
 				return GDK_FAIL;
@@ -506,7 +487,17 @@ BATcheckhash(BAT *b)
 							 ((size_t) 1 << 24) |
 #endif
 							 HASH_VERSION_NOUUID) &&
-						 strcmp(ATOMname(b->ttype), "uuid") != 0)
+						 strcmp(ATOMname(b->ttype), "uuid") != 0 &&
+						 strcmp(ATOMname(b->ttype), "mbr") != 0)
+#endif
+#ifdef HASH_VERSION_NOMBR
+					     /* if not uuid, also allow previous version */
+					     || (hdata[0] == (
+#ifdef PERSISTENTHASH
+							 ((size_t) 1 << 24) |
+#endif
+							 HASH_VERSION_NOMBR) &&
+						 strcmp(ATOMname(b->ttype), "mbr") != 0)
 #endif
 						    ) &&
 					    hdata[1] > 0 &&
@@ -617,6 +608,7 @@ BAThashsave_intern(BAT *b, bool dosync)
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
 		if (!b->theap->dirty &&
+		    ((size_t *) h->heapbckt.base)[1] == BATcount(b) &&
 		    ((size_t *) h->heapbckt.base)[4] == BATcount(b) &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync, h->heaplink.free, NULL) == GDK_SUCCEED &&
 		    HEAPsave(&h->heapbckt, h->heapbckt.filename, NULL, dosync, h->heapbckt.free, NULL) == GDK_SUCCEED) {
@@ -777,8 +769,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		      nme, ".", ext, "l", NULL);
 	strconcat_len(h->heapbckt.filename, sizeof(h->heapbckt.filename),
 		      nme, ".", ext, "b", NULL);
+	h->heapbckt.parentid = b->batCacheid;
+	h->heaplink.parentid = b->batCacheid;
 	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),
-		      h->width, 0) != GDK_SUCCEED) {
+		      h->width) != GDK_SUCCEED) {
 		GDKfree(h);
 		bat_iterator_end(&bi);
 		return NULL;
@@ -804,7 +798,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
- 	} else if (!hascand && bi.unique_est != 0) {
+	} else if (!hascand && bi.unique_est != 0) {
 		mask = (BUN) (bi.unique_est * 1.15); /* about 8/7 */
 	} else {
 		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,
@@ -968,14 +962,14 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		break;
 	}
 	bat_iterator_end(&bi);
-	h->heapbckt.parentid = b->batCacheid;
-	h->heaplink.parentid = b->batCacheid;
 	/* if the number of unique values is equal to the bat count,
 	 * all values are necessarily distinct */
 	MT_lock_set(&b->theaplock);
 	if (h->nunique == BATcount(b) && !b->tkey) {
 		b->tkey = true;
 	}
+	if (ci->ncand == BATcount(b))
+		b->tunique_est = (double) h->nunique;
 	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG_IF(ACCELERATOR) {
 		TRC_DEBUG_ENDIF(ACCELERATOR,
@@ -1131,12 +1125,15 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	h->heaplink.dirty = true;
 }
 
-void
+BUN
 HASHappend(BAT *b, BUN i, const void *v)
 {
+	BUN nunique;
 	MT_rwlock_wrlock(&b->thashlock);
 	HASHappend_locked(b, i, v);
+	nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
+	return nunique;
 }
 
 /* insert value v at position p into the hash table of b */
@@ -1215,12 +1212,15 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	}
 }
 
-void
+BUN
 HASHinsert(BATiter *bi, BUN p, const void *v)
 {
+	BUN nunique;
 	MT_rwlock_wrlock(&bi->b->thashlock);
 	HASHinsert_locked(bi, p, v);
+	nunique = bi->b->thash ? bi->b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&bi->b->thashlock);
+	return nunique;
 }
 
 /* delete value v at position p from the hash table of b */
@@ -1308,12 +1308,15 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 		h->nunique--;
 }
 
-void
+BUN
 HASHdelete(BATiter *bi, BUN p, const void *v)
 {
+	BUN nunique;
 	MT_rwlock_wrlock(&bi->b->thashlock);
 	HASHdelete_locked(bi, p, v);
+	nunique = bi->b->thash ? bi->b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&bi->b->thashlock);
+	return nunique;
 }
 
 BUN

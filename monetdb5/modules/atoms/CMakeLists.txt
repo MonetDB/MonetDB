@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 add_library(atoms OBJECT)
@@ -34,6 +38,7 @@ target_include_directories(atoms
 target_link_libraries(atoms
   PRIVATE
   $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
+  $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   stream
   monetdb_config_header
   mutils

@@ -21,9 +21,11 @@ simple_plans
 unique_keys
 vessels
 prepare
-rel_push_count_down
-NOT_ASSERT?sqlfuncnames
+HAVE_HGE?rel_push_count_down
+sqlfuncnames
 sequences
 analyze_test
 blobs
 temp_tables
+table_alias_on_cte
+special_character_names

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _REL_REL_H_
@@ -70,6 +74,7 @@ extern sql_rel *rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps);
 
 extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname);
 extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, int f );
+extern sql_exp *rel_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, const char *cname, int f );
 extern sql_exp *rel_first_column(mvc *sql, sql_rel *rel);
 
 extern sql_rel *rel_inplace_basetable(sql_rel *rel, sql_rel *bt);
@@ -101,6 +106,7 @@ extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
 sql_export sql_rel *rel_project(sql_allocator *sa, sql_rel *l, list *e);
 extern sql_rel *rel_project_exp(mvc *sql, sql_exp *e);
+extern sql_rel *rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r);
 extern sql_rel *rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps);
 
 extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);

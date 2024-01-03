@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -180,19 +184,32 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					/* it will be added to the block and even my
 					 * re-use MAL instructions */
 					q1 = newInstruction(mb,aggrRef,countRef);
-					getArg(q1,0) = newTmpVariable(mb, TYPE_lng);
-					q1 = pushArgument(mb, q1, getArg(p, 5));
-					pushInstruction(mb, q1);
+					if (q1) {
+						getArg(q1,0) = newTmpVariable(mb, TYPE_lng);
+						q1 = pushArgument(mb, q1, getArg(p, 5));
+					}
 				}
 
 				/* push new v2 := algebra.slice( v0, 0, v1 ); */
 				/* use mal_builder.h primitives
 				 * q1 = newStmt(mb, algebraRef,sliceRef); */
 				q2 = newInstruction(mb,algebraRef, sliceRef);
-				getArg(q2,0) = newTmpVariable(mb, TYPE_any);
+				if (q1 == NULL || q2 == NULL || (getArg(q2,0) = newTmpVariable(mb, TYPE_any)) < 0) {
+					freeInstruction(q1);
+					freeInstruction(q2);
+					i--;
+					break;
+				}
 				q2 = pushArgument(mb, q2, getArg(p, 5));
 				q2 = pushLng(mb, q2, 0);
 				q2 = pushArgument(mb, q2, getArg(q1, 0));
+				if (mb->errors) {
+					freeInstruction(q1);
+					freeInstruction(q2);
+					i--;
+					break;
+				}
+				pushInstruction(mb, q1);
 				pushInstruction(mb, q2);
 
 				/* push modified v3 := sql.append( ..., ..., ..., ..., v2 ); */
@@ -277,11 +294,8 @@ OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		mb = s->def;
 		stk= 0;
 	}
-	if( mb->errors ){
-		/* when we have errors, we still want to see them */
-		addtoMalBlkHistory(mb);
+	if (mb->errors)
 		return MAL_SUCCEED;
-	}
 	actions = OPTsql_appendImplementation(cntxt, mb,stk,p);
 
 	/* Defense line against incorrect plans */

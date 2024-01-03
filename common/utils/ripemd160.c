@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -25,19 +29,21 @@ RIPEMD160Input(RIPEMD160Context *ctxt, const uint8_t *bytes, unsigned bytecount)
 
 	ctxt->length += bytecount;
 	if (ctxt->noverflow > 0) {
+		assert(ctxt->noverflow < 64);
 		if (ctxt->noverflow + bytecount < 64) {
 			memcpy(ctxt->overflow + ctxt->noverflow, bytes, bytecount);
 			ctxt->noverflow += bytecount;
 			return;
 		}
-		memcpy(ctxt->overflow + ctxt->noverflow, bytes, bytecount - ctxt->noverflow);
+		unsigned l = 64 - ctxt->noverflow;
+		memcpy(ctxt->overflow + ctxt->noverflow, bytes, l);
 		const uint8_t *x = ctxt->overflow;
 		for (int i = 0; i < 16; i++) {
 			X[i] = BYTES_TO_DWORD(x);
 			x += 4;
 		}
-		bytecount -= ctxt->noverflow;
-		bytes += ctxt->noverflow;
+		bytecount -= l;
+		bytes += l;
 		ctxt->noverflow = 0;
 		MDcompress(ctxt->digest, X);
 	}

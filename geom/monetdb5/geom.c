@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -12,12 +16,311 @@
  */
 
 #include "geom.h"
+#include "geod.h"
+#include "geom_atoms.h"
 #include "gdk_logger.h"
 #include "mal_exception.h"
 
-int TYPE_mbr;
+mbr mbrNIL = {0}; // will be initialized properly by geom prelude
 
-static wkb *geos2wkb(const GEOSGeometry *geosGeometry);
+/**
+ * AGGREGATES
+ **/
+
+/**
+* Collect (Group By implementation)
+*
+**/
+//Gets the type of collection a single geometry should belong to
+static int
+GEOSGeom_getCollectionType (int GEOSGeom_type) {
+
+	//TODO Remove
+	(void) geodeticEdgeBoundingBox;
+
+	//Single geometries get collected into a Multi* geometry
+	if (GEOSGeom_type == GEOS_POINT)
+		return GEOS_MULTIPOINT;
+	else if (GEOSGeom_type == GEOS_LINESTRING || GEOSGeom_type == GEOS_LINEARRING)
+		return GEOS_MULTILINESTRING;
+	else if (GEOSGeom_type == GEOS_POLYGON)
+		return GEOS_MULTIPOLYGON;
+	//Multi* or GeometryCollections get collected into GeometryCollections
+	else
+		return GEOS_GEOMETRYCOLLECTION;
+}
+
+/* Group By operation. Joins geometries together in the same group into a MultiGeometry */
+str
+wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
+	BAT *sortedgroups, *sortedorder;
+	BATiter bi;
+	const oid *gids = NULL;
+	str msg = MAL_SUCCEED;
+	const char *err;
+	//SRID for collection
+	int srid = 0;
+
+	oid min, max;
+	BUN ngrp;
+	struct canditer ci;
+
+	oid lastGrp = -1;
+	int geomCollectionType = -1;
+	BUN geomCount = 0;
+	wkb **unions = NULL;
+	GEOSGeom *unionGroup = NULL, collection;
+
+	//Not using these variables
+	(void)skip_nils;
+	(void)eid;
+
+	//Get the BAT descriptors for the value, group and candidate bats
+	if ((b = BATdescriptor(*bid)) == NULL ||
+		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
+		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		goto free;
+	}
+
+	if ((BATsort(&sortedgroups, &sortedorder, NULL, g, NULL, NULL, false, false, true)) != GDK_SUCCEED) {
+		msg = createException(MAL, "geom.Collect", "BAT sort failed.");
+		goto free;
+	}
+
+	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
+	if (!BATtdense(sortedorder)) {
+		BAT *sortedinput = BATproject(sortedorder, b);
+		BBPreclaim(sortedorder);
+		if (sortedinput == NULL) {
+			BBPreclaim(sortedgroups);
+			msg = createException(MAL, "geom.Collect", GDK_EXCEPTION);
+			goto free;
+		}
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		b = sortedinput;
+		g = sortedgroups;
+	}
+	else {
+		BBPunfix(sortedgroups->batCacheid);
+		BBPunfix(sortedorder->batCacheid);
+	}
+
+	//Fill in the values of the group aggregate operation
+	if ((err = BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
+		msg = createException(MAL, "geom.Collect", "%s", err);
+		goto free;
+	}
+
+	//Create a new BAT column of wkb type, with lenght equal to the number of groups
+	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
+
+	if (ngrp) {
+		//All unions for output BAT
+		if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
+			msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			BBPreclaim(out);
+			goto free;
+		}
+
+		//Intermediate array for all the geometries in a group
+		if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
+			msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			BBPreclaim(out);
+			if (unions)
+				GDKfree(unions);
+			goto free;
+		}
+
+		if (g && !BATtdense(g))
+			gids = (const oid *)Tloc(g, 0);
+		bi = bat_iterator(b);
+
+		for (BUN i = 0; i < ci.ncand; i++) {
+			oid o = canditer_next(&ci);
+			BUN p = o - b->hseqbase;
+			oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
+			wkb *inWKB = (wkb *)BUNtvar(bi, p);
+			GEOSGeom inGEOM = wkb2geos(inWKB);
+
+
+			if (grp != lastGrp) {
+				if (lastGrp != (oid)-1) {
+					//Finish the previous group, move on to the next one
+					collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
+					GEOSSetSRID(collection,srid);
+					//Save collection to unions array as wkb
+					unions[lastGrp] = geos2wkb(collection);
+
+					GEOSGeom_destroy(collection);
+					GDKfree(unionGroup);
+
+					if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
+						msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						//Frees
+						bat_iterator_end(&bi);
+						if (unions) {
+							for (BUN i = 0; i < ngrp; i++)
+								GDKfree(unions[i]);
+							GDKfree(unions);
+						}
+						goto free;
+					}
+				}
+				geomCount = 0;
+				lastGrp = grp;
+				geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM));
+				srid = GEOSGetSRID(inGEOM);
+			}
+			unionGroup[geomCount] = inGEOM;
+			geomCount += 1;
+			if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM)) != geomCollectionType)
+				geomCollectionType = GEOS_GEOMETRYCOLLECTION;
+		}
+		//Last collection
+		collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
+		GEOSSetSRID(collection,srid);
+		unions[lastGrp] = geos2wkb(collection);
+
+		GEOSGeom_destroy(collection);
+		GDKfree(unionGroup);
+
+		if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+			bat_iterator_end(&bi);
+			if (unions) {
+				for (BUN i = 0; i < ngrp; i++)
+					GDKfree(unions[i]);
+				GDKfree(unions);
+			}
+			goto free;
+		}
+
+		bat_iterator_end(&bi);
+		for (BUN i = 0; i < ngrp; i++)
+			GDKfree(unions[i]);
+		GDKfree(unions);
+
+	}
+	*outid = out->batCacheid;
+	BBPkeepref(out);
+	BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	return MAL_SUCCEED;
+free:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	BBPreclaim(out);
+	return msg;
+}
+
+str
+wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
+{
+	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
+}
+
+str
+wkbCollectAggr (wkb **out, const bat *bid) {
+	str msg = MAL_SUCCEED;
+	BAT *b = NULL;
+	GEOSGeom *unionGroup = NULL, collection;
+	int geomCollectionType = -1;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		return msg;
+	}
+
+	BUN count = BATcount(b);
+
+	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * count)) == NULL) {
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPunfix(b->batCacheid);
+		return msg;
+	}
+	int srid = -1;
+
+	BATiter bi = bat_iterator(b);
+	for (BUN i = 0; i < count; i++) {
+		oid p = i + b->hseqbase;
+		wkb *inWKB = (wkb *)BUNtvar(bi, p);
+		unionGroup[i] = wkb2geos(inWKB);
+		if (srid == -1)
+			srid = GEOSGetSRID(unionGroup[i]);
+
+		//Set collection type on first geometry
+		if (geomCollectionType == -1)
+			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(unionGroup[i]));
+		//Then, check if we need to change it a Geometry collection (if the current geometry is different from the previous type)
+		if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId(unionGroup[i])) != geomCollectionType)
+			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
+	}
+	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) count);
+	GEOSSetSRID(collection,srid);
+	//Result
+	(*out) = geos2wkb(collection);
+	if (*out == NULL)
+		msg = createException(MAL, "geom.ConvexHull", SQLSTATE(38000) "Geos operation geos2wkb failed");
+
+    // Cleanup
+    // Data ownership has been transfered from unionGroup elements to
+    // collection. Check libgeos GEOSGeom_createCollection() for more.
+    bat_iterator_end(&bi);
+    GEOSGeom_destroy(collection);
+    if (unionGroup)
+        GDKfree(unionGroup);
+    BBPunfix(b->batCacheid);
+
+	return msg;
+}
+
+static str
+wkbCollect (wkb **out, wkb * const *a, wkb * const *b) {
+	str err = MAL_SUCCEED;
+	GEOSGeom collection;
+	/* geom_a and geom_b */
+	GEOSGeom geoms[2] = {NULL, NULL};
+	int type_a, type_b;
+
+	if ((err = wkbGetCompatibleGeometries(a, b, &geoms[0], &geoms[1])) != MAL_SUCCEED)
+		throw(MAL,"geom.Collect", "%s", err);
+
+	//int srid = GEOSGetSRID(ga);
+	type_a = GEOSGeomTypeId(geoms[0]);
+	type_b = GEOSGeomTypeId(geoms[1]);
+
+	/* NOTE: geoms will be moved to collection. no need for cleanup */
+	if (type_a == type_b)
+		collection = GEOSGeom_createCollection(GEOSGeom_getCollectionType(type_a), geoms, (unsigned int) 2);
+	else
+		collection = GEOSGeom_createCollection(GEOS_GEOMETRYCOLLECTION, geoms, (unsigned int) 2);
+
+	if ((*out = geos2wkb(collection)) == NULL)
+		err = createException(MAL, "geom.Collect", SQLSTATE(38000) "Geos operation geos2wkb failed");
+
+	GEOSGeom_destroy(collection);
+
+	return err;
+}
+/**
+ * Start of old geom module
+ **/
+
+int TYPE_mbr;
 
 static inline int
 geometryHasZ(int info)
@@ -30,17 +333,6 @@ geometryHasM(int info)
 {
 	return (info & 0x01);
 }
-static const wkb wkb_nil = { ~0, 0 };
-static const wkba wkba_nil = {.itemsNum = ~0};
-
-static wkb *
-wkbNULLcopy(void)
-{
-	wkb *n = GDKmalloc(sizeof(wkb_nil));
-	if (n)
-		*n = wkb_nil;
-	return n;
-}
 
 /* the first argument in the functions is the return variable */
 
@@ -51,67 +343,65 @@ wkbNULLcopy(void)
 #define M_PI	((double) 3.14159265358979323846)	/* pi */
 #endif
 
+//TODO Remove?
 /** convert degrees to radians */
-static inline void
+/*static inline void
 degrees2radians(double *x, double *y, double *z)
 {
 	double val = M_PI / 180.0;
 	*x *= val;
 	*y *= val;
 	*z *= val;
-}
+}*/
 
+//TODO Remove?
 /** convert radians to degrees */
-static inline void
+/*static inline void
 radians2degrees(double *x, double *y, double *z)
 {
 	double val = 180.0 / M_PI;
 	*x *= val;
 	*y *= val;
 	*z *= val;
-}
+}*/
 
 static str
-transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_dst, const GEOSCoordSequence *gcs_old, GEOSCoordSeq gcs_new)
+transformCoordSeq(int idx, int coordinatesNum, PJ *P, const GEOSCoordSequence *gcs_old, GEOSCoordSeq gcs_new)
 {
 	double x = 0, y = 0, z = 0;
-	int *errorNum = 0;
+	int errorNum = 0;
+	PJ_COORD c, c_out;
 
 	if (!GEOSCoordSeq_getX(gcs_old, idx, &x) ||
 	    !GEOSCoordSeq_getY(gcs_old, idx, &y) ||
 	    (coordinatesNum > 2 && !GEOSCoordSeq_getZ(gcs_old, idx, &z)))
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos cannot get coordinates");
 
-	/* check if the passed reference system is geographic (proj=latlong)
-	 * and change the degrees to radians because pj_transform works with radians*/
-	if (pj_is_latlong(proj4_src))
-		degrees2radians(&x, &y, &z);
+	c.lpzt.lam=x;
+	c.lpzt.phi=y;
+	c.lpzt.z=z;
+	c.lpzt.t = HUGE_VAL;
 
-	pj_transform(proj4_src, proj4_dst, 1, 0, &x, &y, &z);
+	c_out = proj_trans(P, PJ_FWD, c);
 
-	errorNum = pj_get_errno_ref();
-	if (*errorNum != 0) {
+	errorNum = proj_errno(P);
+	if (errorNum != 0) {
 		if (coordinatesNum > 2)
-			throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos cannot transform point (%f %f %f): %s\n", x, y, z, pj_strerrno(*errorNum));
+			throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos cannot transform point (%f %f %f): %s\n", x, y, z, proj_errno_string(errorNum));
 		else
-			throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos cannot transform point (%f %f): %s\n", x, y, pj_strerrno(*errorNum));
+			throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos cannot transform point (%f %f): %s\n", x, y, proj_errno_string(errorNum));
 	}
 
-	/* check if the destination reference system is geographic and change
-	 * the destination coordinates from radians to degrees */
-	if (pj_is_latlong(proj4_dst))
-		radians2degrees(&x, &y, &z);
-
-	if (!GEOSCoordSeq_setX(gcs_new, idx, x) ||
-	    !GEOSCoordSeq_setY(gcs_new, idx, y) ||
+	if (!GEOSCoordSeq_setX(gcs_new, idx,c_out.xy.x) ||
+	    !GEOSCoordSeq_setY(gcs_new, idx,c_out.xy.y) ||
 	    (coordinatesNum > 2 && !GEOSCoordSeq_setZ(gcs_new, idx, z)))
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos cannot set coordinates");
 
 	return MAL_SUCCEED;
 }
 
-static str
-transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
+str
+transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	int coordinatesNum = 0;
 	const GEOSCoordSequence *gcs_old;
@@ -134,7 +424,7 @@ transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeome
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_getCoordSeq failed");
 
 	/* create the transformed coordinates */
-	ret = transformCoordSeq(0, coordinatesNum, proj4_src, proj4_dst, gcs_old, gcs_new);
+	ret = transformCoordSeq(0, coordinatesNum, P, gcs_old, gcs_new);
 	if (ret != MAL_SUCCEED) {
 		GEOSCoordSeq_destroy(gcs_new);
 		return ret;
@@ -150,8 +440,8 @@ transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeome
 	return MAL_SUCCEED;
 }
 
-static str
-transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
+str
+transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	int coordinatesNum = 0;
 	const GEOSCoordSequence *gcs_old;
@@ -177,7 +467,7 @@ transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, projPJ pr
 
 	/* create the transformed coordinates */
 	for (i = 0; i < pointsNum; i++) {
-		ret = transformCoordSeq(i, coordinatesNum, proj4_src, proj4_dst, gcs_old, *gcs_new);
+		ret = transformCoordSeq(i, coordinatesNum, P, gcs_old, *gcs_new);
 		if (ret != MAL_SUCCEED) {
 			GEOSCoordSeq_destroy(*gcs_new);
 			*gcs_new = NULL;
@@ -188,13 +478,13 @@ transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, projPJ pr
 	return MAL_SUCCEED;
 }
 
-static str
-transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
+str
+transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	GEOSCoordSeq coordSeq;
 	str ret = MAL_SUCCEED;
 
-	ret = transformLine(&coordSeq, geosGeometry, proj4_src, proj4_dst);
+	ret = transformLine(&coordSeq, geosGeometry, P);
 	if (ret != MAL_SUCCEED) {
 		*transformedGeometry = NULL;
 		return ret;
@@ -210,13 +500,13 @@ transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geos
 	return ret;
 }
 
-static str
-transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst)
+str
+transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	GEOSCoordSeq coordSeq = NULL;
 	str ret = MAL_SUCCEED;
 
-	ret = transformLine(&coordSeq, geosGeometry, proj4_src, proj4_dst);
+	ret = transformLine(&coordSeq, geosGeometry, P);
 	if (ret != MAL_SUCCEED) {
 		*transformedGeometry = NULL;
 		return ret;
@@ -232,8 +522,8 @@ transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geos
 	return ret;
 }
 
-static str
-transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst, int srid)
+str
+transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid)
 {
 	const GEOSGeometry *exteriorRingGeometry;
 	GEOSGeometry *transformedExteriorRingGeometry = NULL;
@@ -248,7 +538,7 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGetExteriorRing failed");
 	}
 
-	ret = transformLinearRing(&transformedExteriorRingGeometry, exteriorRingGeometry, proj4_src, proj4_dst);
+	ret = transformLinearRing(&transformedExteriorRingGeometry, exteriorRingGeometry, P);
 	if (ret != MAL_SUCCEED) {
 		*transformedGeometry = NULL;
 		return ret;
@@ -262,40 +552,43 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGetInteriorRingN failed.");
 	}
 
-	/* iterate over the interiorRing and transform each one of them */
-	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
-	if (transformedInteriorRingGeometries == NULL) {
-		*transformedGeometry = NULL;
-		GEOSGeom_destroy(transformedExteriorRingGeometry);
-		throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	for (i = 0; i < numInteriorRings; i++) {
-		ret = transformLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), proj4_src, proj4_dst);
-		if (ret != MAL_SUCCEED) {
-			while (--i >= 0)
-				GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-			GDKfree(transformedInteriorRingGeometries);
-			GEOSGeom_destroy(transformedExteriorRingGeometry);
+	if(numInteriorRings > 0)
+	{
+		/* iterate over the interiorRing and transform each one of them */
+		transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
+		if (transformedInteriorRingGeometries == NULL) {
 			*transformedGeometry = NULL;
-			return ret;
+			GEOSGeom_destroy(transformedExteriorRingGeometry);
+			throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GEOSSetSRID(transformedInteriorRingGeometries[i], srid);
+		for (i = 0; i < numInteriorRings; i++) {
+			ret = transformLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), P);
+			if (ret != MAL_SUCCEED) {
+				while (--i >= 0)
+					GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+				GDKfree(transformedInteriorRingGeometries);
+				GEOSGeom_destroy(transformedExteriorRingGeometry);
+				*transformedGeometry = NULL;
+				return ret;
+			}
+			GEOSSetSRID(transformedInteriorRingGeometries[i], srid);
+		}
 	}
 
 	*transformedGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
+
 	if (*transformedGeometry == NULL) {
 		for (i = 0; i < numInteriorRings; i++)
 			GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
 		ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_createPolygon failed");
 	}
 	GDKfree(transformedInteriorRingGeometries);
-	GEOSGeom_destroy(transformedExteriorRingGeometry);
-
+	//GEOSGeom_destroy(transformedExteriorRingGeometry);
 	return ret;
 }
 
-static str
-transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, projPJ proj4_src, projPJ proj4_dst, int srid, int geometryType)
+str
+transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid, int geometryType)
 {
 	int geometriesNum, subGeometryType, i;
 	GEOSGeometry **transformedMultiGeometries = NULL;
@@ -317,16 +610,16 @@ transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *g
 		else {
 			switch (subGeometryType) {
 			case wkbPoint_mdb:
-				ret = transformPoint(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst);
+				ret = transformPoint(&transformedMultiGeometries[i], multiGeometry, P);
 				break;
 			case wkbLineString_mdb:
-				ret = transformLineString(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst);
+				ret = transformLineString(&transformedMultiGeometries[i], multiGeometry, P);
 				break;
 			case wkbLinearRing_mdb:
-				ret = transformLinearRing(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst);
+				ret = transformLinearRing(&transformedMultiGeometries[i], multiGeometry, P);
 				break;
 			case wkbPolygon_mdb:
-				ret = transformPolygon(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst, srid);
+				ret = transformPolygon(&transformedMultiGeometries[i], multiGeometry, P, srid);
 				break;
 			default:
 				ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos unknown geometry type");
@@ -355,48 +648,6 @@ transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *g
 
 	return ret;
 }
-
-/* the following function is used in postgis to get projPJ from str.
- * it is necessary to do it in a detailed way like that because pj_init_plus
- * does not set all parameters correctly and I cannot test whether the
- * coordinate reference systems are geographic or not */
-static projPJ
-projFromStr(const char *projStr)
-{
-	int t;
-	char *params[1024];	// one for each parameter
-	char *loc;
-	char *str;
-	projPJ result;
-
-	if (projStr == NULL)
-		return NULL;
-
-	str = GDKstrdup(projStr);
-	if (str == NULL)
-		return NULL;
-
-	// first we split the string into a bunch of smaller strings,
-	// based on the " " separator
-
-	params[0] = str;	// 1st param, we'll null terminate at the " " soon
-
-	t = 1;
-	for (loc = strchr(str, ' '); loc != NULL; loc = strchr(loc, ' ')) {
-		if (t == (int) (sizeof(params) / sizeof(params[0]))) {
-			/* too many parameters */
-			GDKfree(str);
-			return NULL;
-		}
-		*loc++ = 0;	// null terminate and advance
-		params[t++] = loc;
-	}
-
-	result = pj_init(t, params);
-	GDKfree(str);
-
-	return result;
-}
 #endif
 
 /* It gets a geometry and transforms its coordinates to the provided srid */
@@ -410,9 +661,9 @@ wkbTransform(wkb **transformedWKB, wkb **geomWKB, int *srid_src, int *srid_dst, 
 	(void) srid_dst;
 	(void) proj4_src_str;
 	(void) proj4_dst_str;
-	throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos function Not Implemented");
+	throw(MAL, "geom.Transform", SQLSTATE(38000) "PROJ library not found");
 #else
-	projPJ proj4_src, proj4_dst;
+	PJ *P;
 	GEOSGeom geosGeometry, transformedGeosGeometry;
 	int geometryType = -1;
 
@@ -435,39 +686,42 @@ wkbTransform(wkb **transformedWKB, wkb **geomWKB, int *srid_src, int *srid_dst, 
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Cannot find in spatial_ref_sys srid %d\n", *srid_src);
 	if (strcmp(*proj4_dst_str, "null") == 0)
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Cannot find in spatial_ref_sys srid %d\n", *srid_dst);
-
-	proj4_src = /*pj_init_plus */ projFromStr(*proj4_src_str);
-	proj4_dst = /*pj_init_plus */ projFromStr(*proj4_dst_str);
-	if (proj4_src == NULL || proj4_dst == NULL) {
-		if (proj4_src)
-			pj_free(proj4_src);
-		if (proj4_dst)
-			pj_free(proj4_dst);
-		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation pj_init failed");
+	if (strcmp(*proj4_src_str, *proj4_dst_str) == 0) {
+		if ((*transformedWKB = wkbCopy(*geomWKB)) == NULL)
+			throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
 	}
+	//Create PROJ transformation object with PROJ strings passed as argument
+	P = proj_create_crs_to_crs(PJ_DEFAULT_CTX,
+                               *proj4_src_str,
+                               *proj4_dst_str,
+                               NULL);
+	if (P==0)
+        throw(MAL, "geom.Transform", SQLSTATE(38000) "PROJ initialization failed");
 
 	/* get the geosGeometry from the wkb */
 	geosGeometry = wkb2geos(*geomWKB);
 	/* get the type of the geometry */
 	geometryType = GEOSGeomTypeId(geosGeometry) + 1;
 
+	//TODO: No collection?
 	switch (geometryType) {
 	case wkbPoint_mdb:
-		ret = transformPoint(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
+		ret = transformPoint(&transformedGeosGeometry, geosGeometry, P);
 		break;
 	case wkbLineString_mdb:
-		ret = transformLineString(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
+		ret = transformLineString(&transformedGeosGeometry, geosGeometry, P);
 		break;
 	case wkbLinearRing_mdb:
-		ret = transformLinearRing(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
+		ret = transformLinearRing(&transformedGeosGeometry, geosGeometry, P);
 		break;
 	case wkbPolygon_mdb:
-		ret = transformPolygon(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst, *srid_dst);
+		ret = transformPolygon(&transformedGeosGeometry, geosGeometry, P, *srid_dst);
 		break;
 	case wkbMultiPoint_mdb:
 	case wkbMultiLineString_mdb:
 	case wkbMultiPolygon_mdb:
-		ret = transformMultiGeometry(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst, *srid_dst, geometryType);
+		ret = transformMultiGeometry(&transformedGeosGeometry, geosGeometry, P, *srid_dst, geometryType);
 		break;
 	default:
 		transformedGeosGeometry = NULL;
@@ -483,9 +737,7 @@ wkbTransform(wkb **transformedWKB, wkb **geomWKB, int *srid_src, int *srid_dst, 
 		/* destroy the geos geometries */
 		GEOSGeom_destroy(transformedGeosGeometry);
 	}
-
-	pj_free(proj4_src);
-	pj_free(proj4_dst);
+	proj_destroy(P);
 	GEOSGeom_destroy(geosGeometry);
 
 	return ret;
@@ -2087,9 +2339,6 @@ geoGetType(char **res, int *info, int *flag)
 }
 
 /* initialize geos */
-/* NULL: generic nil mbr. */
-/* returns a pointer to a nil-mbr. */
-static mbr mbrNIL;		/* to be filled in */
 
 static str
 geom_prelude(void)
@@ -2113,169 +2362,11 @@ geom_epilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
-/* Check if fixed-sized atom mbr is null */
-static bool
-is_mbr_nil(const mbr *m)
-{
-	return (m == NULL || is_flt_nil(m->xmin) || is_flt_nil(m->ymin) || is_flt_nil(m->xmax) || is_flt_nil(m->ymax));
-}
-
-/* returns the size of variable-sized atom wkb */
-static var_t
-wkb_size(size_t len)
-{
-	if (len == ~(size_t) 0)
-		len = 0;
-	assert(offsetof(wkb, data) + len <= VAR_MAX);
-	return (var_t) (offsetof(wkb, data) + len);
-}
-
-/* returns the size of variable-sized atom wkba */
-static var_t
-wkba_size(int items)
-{
-	var_t size;
-
-	if (items == ~0)
-		items = 0;
-	size = (var_t) (offsetof(wkba, data) + items * sizeof(wkb *));
-	assert(size <= VAR_MAX);
-
-	return size;
-}
-
-/* Creates WKB representation (including srid) from WKT representation */
-/* return number of parsed characters. */
-static str
-wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread)
-{
-	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
-	GEOSWKTReader *WKT_reader;
-	const char *polyhedralSurface = "POLYHEDRALSURFACE";
-	const char *multiPolygon = "MULTIPOLYGON";
-	char *geomWKT_new = NULL;
-	size_t parsedCharacters = 0;
-
-	*nread = 0;
-
-	/* we always allocate new memory */
-	GDKfree(*geomWKB);
-	*len = 0;
-	*geomWKB = NULL;
-
-	if (strNil(geomWKT)) {
-		*geomWKB = wkbNULLcopy();
-		if (*geomWKB == NULL)
-			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*len = sizeof(wkb_nil);
-		return MAL_SUCCEED;
-	}
-	//check whether the representation is binary (hex)
-	if (geomWKT[0] == '0') {
-		str ret = wkbFromBinary(geomWKB, &geomWKT);
-
-		if (ret != MAL_SUCCEED)
-			return ret;
-		*nread = strlen(geomWKT);
-		*len = (size_t) wkb_size((*geomWKB)->len);
-		return MAL_SUCCEED;
-	}
-	//check whether the geometry type is polyhedral surface
-	//geos cannot handle this type of geometry but since it is
-	//a special type of multipolygon I just change the type before
-	//continuing. Of course this means that isValid for example does
-	//not work correctly.
-	if (strncasecmp(geomWKT, polyhedralSurface, strlen(polyhedralSurface)) == 0) {
-		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface) + strlen(multiPolygon) + 1;
-		geomWKT_new = GDKmalloc(sizeOfInfo);
-		if (geomWKT_new == NULL)
-			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		snprintf(geomWKT_new, sizeOfInfo, "%s%s", multiPolygon, geomWKT + strlen(polyhedralSurface));
-		geomWKT = geomWKT_new;
-	}
-	////////////////////////// UP TO HERE ///////////////////////////
-
-	WKT_reader = GEOSWKTReader_create();
-	if (WKT_reader == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
-		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_create failed");
-	}
-	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT);
-	GEOSWKTReader_destroy(WKT_reader);
-
-	if (geosGeometry == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
-		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_read failed");
-	}
-
-	if (GEOSGeomTypeId(geosGeometry) == -1) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSGeomTypeId failed");
-	}
-
-	GEOSSetSRID(geosGeometry, srid);
-	/* the srid was lost with the transformation of the GEOSGeom to wkb
-	 * so we decided to store it in the wkb */
-
-	/* we have a GEOSGeometry with number of coordinates and SRID and we
-	 * want to get the wkb out of it */
-	*geomWKB = geos2wkb(geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
-	if (*geomWKB == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
-		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation geos2wkb failed");
-	}
-
-	*len = (size_t) wkb_size((*geomWKB)->len);
-	parsedCharacters = strlen(geomWKT);
-	assert(parsedCharacters <= GDK_int_max);
-
-	GDKfree(geomWKT_new);
-
-	*nread = parsedCharacters;
-	return MAL_SUCCEED;
-}
-
-static ssize_t
-wkbaFROMSTR_withSRID(const char *fromStr, size_t *len, wkba **toArray, int srid)
-{
-	int items, i;
-	size_t skipBytes = 0;
-
-//IS THERE SPACE OR SOME OTHER CHARACTER?
-
-	//read the number of items from the beginning of the string
-	memcpy(&items, fromStr, sizeof(int));
-	skipBytes += sizeof(int);
-	*toArray = GDKmalloc(wkba_size(items));
-	if (*toArray == NULL)
-		return -1;
-
-	for (i = 0; i < items; i++) {
-		size_t parsedBytes;
-		str err = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &(*toArray)->data[i], srid, &parsedBytes);
-		if (err != MAL_SUCCEED) {
-			GDKerror("%s", getExceptionMessageAndState(err));
-			freeException(err);
-			return -1;
-		}
-		skipBytes += parsedBytes;
-	}
-
-	assert(skipBytes <= GDK_int_max);
-	return (ssize_t) skipBytes;
-}
-
 /* create the WKB out of the GEOSGeometry
  * It makes sure to make all checks before returning
  * the input geosGeometry should not be altered by this function
  * return NULL on error */
-static wkb *
+wkb *
 geos2wkb(const GEOSGeometry *geosGeometry)
 {
 	size_t wkbLen = 0;
@@ -2499,8 +2590,6 @@ mbrFromMBR(mbr **w, mbr **src)
 	**w = **src;
 	return MAL_SUCCEED;
 }
-
-static ssize_t wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external);
 
 str
 wkbFromWKB(wkb **w, wkb **src)
@@ -3266,13 +3355,12 @@ wkbMakeLine(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 		GEOSCoordSeq_destroy(outCoordSeq);
 	GEOSGeom_destroy(geom1Geometry);
 	GEOSGeom_destroy(geom2Geometry);
-
 	return err;
 }
 
 //Gets a BAT with geometries and returns a single LineString
 str
-wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
+wkbMakeLineAggr(wkb **outWKB, bat *bid)
 {
 	BAT *inBAT = NULL;
 	BATiter inBAT_iter;
@@ -3281,7 +3369,7 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	str err;
 
 	//get the BATs
-	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+	if ((inBAT = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "geom.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -3324,6 +3412,220 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	BBPunfix(inBAT->batCacheid);
 
 	return err;
+}
+
+static str
+wkbExtractPointToCoordSeq(GEOSCoordSeq *outCoordSeq, wkb *inWKB, int index) {
+	double x,y;
+	str msg = MAL_SUCCEED;
+	GEOSGeom inGeometry;
+	const GEOSCoordSequence *inCoordSeq = NULL;
+
+	inGeometry = wkb2geos(inWKB);
+	if (!inGeometry) {
+		throw(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation wkb2geos failed");
+	}
+	inCoordSeq = GEOSGeom_getCoordSeq(inGeometry);
+	GEOSCoordSeq_getX(inCoordSeq, 0, &x);
+	GEOSCoordSeq_getY(inCoordSeq, 0, &y);
+	if (!GEOSCoordSeq_setX(*outCoordSeq, index, x) ||
+	    !GEOSCoordSeq_setY(*outCoordSeq, index, y)) {
+		GEOSGeom_destroy(inGeometry);
+		throw(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSCoordSeq_set[XY] failed");
+	}
+	GEOSGeom_destroy(inGeometry);
+	return msg;
+}
+
+static str
+wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
+	str msg = MAL_SUCCEED;
+	int i;
+	wkb *aWKB, *bWKB;
+	GEOSGeom outGeometry;
+	GEOSCoordSeq outCoordSeq = NULL;
+
+	/* TODO: what should be returned if the input is less than
+	 * two rows? --sjoerd */
+	if (size == 0) {
+		if ((*outWKB = wkbNULLcopy()) == NULL)
+			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+	aWKB = inWKB_array[0];
+	if (size == 1) {
+		msg = wkbFromWKB(outWKB, &aWKB);
+		if (msg) {
+			freeException(msg);
+			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		return MAL_SUCCEED;
+	}
+	bWKB = inWKB_array[1];
+	//create the first line using the first two geometries
+	outCoordSeq = GEOSCoordSeq_create(size, 2);
+
+	msg = wkbExtractPointToCoordSeq(&outCoordSeq, aWKB, 0);
+	msg = wkbExtractPointToCoordSeq(&outCoordSeq, bWKB, 1);
+
+	// add one more segment for each following row
+	for (i = 2; msg == MAL_SUCCEED && i < size; i++) {
+		msg = wkbExtractPointToCoordSeq(&outCoordSeq, inWKB_array[i], i);
+	}
+	if ((outGeometry = GEOSGeom_createLineString(outCoordSeq)) == NULL) {
+		msg = createException(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSGeom_createLineString failed");
+	}
+	*outWKB = geos2wkb(outGeometry);
+	GEOSGeom_destroy(outGeometry);
+	/* no need to clean outCoordSeq. it is destroyed via outGeometry */
+	return msg;
+}
+
+//TODO Check SRID
+//TODO Check if the input geometries are points
+str
+wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	BAT *b = NULL, *g = NULL, *s = NULL, *out = NULL;
+	BAT *sortedgroups, *sortedorder;
+	BATiter bi;
+	const oid *gids = NULL;
+	str msg = MAL_SUCCEED;
+
+	oid min, max;
+	BUN ngrp;
+	struct canditer ci;
+
+	oid lastGrp = -1;
+	wkb **lines = NULL, **lineGroup = NULL;
+	int position = 0;
+
+	//Not using these variables
+	(void) skip_nils;
+	(void) eid;
+
+	//Get the BAT descriptors for the value, group and candidate bats
+	if ((b = BATdescriptor(*bid)) == NULL ||
+		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
+		msg = createException(MAL, "aggr.MakeLine", RUNTIME_OBJECT_MISSING);
+		goto free;
+	}
+
+	if ((BATsort(&sortedgroups, &sortedorder, NULL, g, NULL, NULL, false, false, true)) != GDK_SUCCEED) {
+		msg = createException(MAL, "aggr.MakeLine", "BAT sort failed.");
+		goto free;
+	}
+
+	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
+	if (!BATtdense(sortedorder)) {
+		BAT *sortedinput = BATproject(sortedorder, b);
+		BBPreclaim(sortedorder);
+		if (sortedinput == NULL) {
+			BBPreclaim(sortedgroups);
+			msg = createException(MAL, "aggr.MakeLine", GDK_EXCEPTION);
+			goto free;
+		}
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		b = sortedinput;
+		g = sortedgroups;
+	}
+	else {
+		BBPunfix(sortedgroups->batCacheid);
+		BBPunfix(sortedorder->batCacheid);
+	}
+
+	//Fill in the values of the group aggregate operation
+	if ((msg = (str) BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
+		msg = createException(MAL, "aggr.MakeLine", "%s", msg);
+		goto free;
+	}
+
+	//Create a new BAT column of wkb type, with lenght equal to the number of groups
+	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
+		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
+
+	//Create an array of WKB to hold the results of the MakeLine
+	if ((lines = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
+		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPreclaim(out);
+		goto free;
+	}
+
+	//Create an array of WKB to hold the points to be made into a line (for one group at a time)
+	if ((lineGroup = GDKzalloc(sizeof(wkb*) * ci.ncand)) == NULL) {
+		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		BBPreclaim(out);
+		goto free;
+	}
+
+	if (g && !BATtdense(g))
+		gids = (const oid *)Tloc(g, 0);
+	bi = bat_iterator(b);
+
+	for (BUN i = 0; i < ci.ncand; i++) {
+		oid o = canditer_next(&ci);
+		BUN p = o - b->hseqbase;
+		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
+		wkb *inWKB = (wkb *)BUNtvar(bi, p);
+
+		if (grp != lastGrp) {
+			if (lastGrp != (oid)-1) {
+				msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
+				position = 0;
+				if (msg != MAL_SUCCEED) {
+					GDKfree(lineGroup);
+					goto free;
+				}
+			}
+			lastGrp = grp;
+		}
+		lineGroup[position++] = inWKB;
+	}
+	msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
+	GDKfree(lineGroup);
+	if (msg != MAL_SUCCEED)
+		goto free;
+
+	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
+		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+		for (BUN i = 0; i < ngrp; i++)
+			GDKfree(lines[i]);
+		GDKfree(lines);
+		bat_iterator_end(&bi);
+		goto free;
+	}
+
+	for (BUN i = 0; i < ngrp; i++)
+		GDKfree(lines[i]);
+	GDKfree(lines);
+	bat_iterator_end(&bi);
+
+	*outid = out->batCacheid;
+	BBPkeepref(out);
+	BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	return MAL_SUCCEED;
+free:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	BBPreclaim(out);
+	return msg;
+}
+
+str
+wkbMakeLineAggrSubGrouped (bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils) {
+	return wkbMakeLineAggrSubGroupedCand(out,bid,gid,eid,NULL,skip_nils);
 }
 
 /* Returns the first or last point of a linestring */
@@ -3681,77 +3983,6 @@ wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, int *ringNum)
 	GEOSGeom_destroy(geosGeometry);
 
 	return err;
-}
-
-str
-wkbInteriorRings(wkba **geomArray, wkb **geomWKB)
-{
-	int interiorRingsNum = 0, i = 0;
-	GEOSGeom geosGeometry;
-	str ret = MAL_SUCCEED;
-
-	if (is_wkb_nil(*geomWKB)) {
-		if ((*geomArray = GDKmalloc(wkba_size(~0))) == NULL)
-			throw(MAL, "geom.InteriorRings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		**geomArray = wkba_nil;
-		return MAL_SUCCEED;
-	}
-
-	geosGeometry = wkb2geos(*geomWKB);
-	if (geosGeometry == NULL) {
-		throw(MAL, "geom.InteriorRings", SQLSTATE(38000) "Geos operation  wkb2geos failed");
-	}
-
-	if ((GEOSGeomTypeId(geosGeometry) + 1) != wkbPolygon_mdb) {
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.interiorRings", SQLSTATE(38000) "Geometry not a Polygon");
-
-	}
-
-	ret = wkbNumRings(&interiorRingsNum, geomWKB, &i);
-
-	if (ret != MAL_SUCCEED) {
-		GEOSGeom_destroy(geosGeometry);
-		return ret;
-	}
-
-	*geomArray = GDKmalloc(wkba_size(interiorRingsNum));
-	if (*geomArray == NULL) {
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.InteriorRings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	(*geomArray)->itemsNum = interiorRingsNum;
-
-	for (i = 0; i < interiorRingsNum; i++) {
-		const GEOSGeometry *interiorRingGeometry;
-		wkb *interiorRingWKB;
-
-		// get the interior ring of the geometry
-		interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, i);
-		if (interiorRingGeometry == NULL) {
-			while (--i >= 0)
-				GDKfree((*geomArray)->data[i]);
-			GDKfree(*geomArray);
-			GEOSGeom_destroy(geosGeometry);
-			*geomArray = NULL;
-			throw(MAL, "geom.InteriorRings", SQLSTATE(38000) "Geos operation GEOSGetInteriorRingN failed");
-		}
-		// get the wkb representation of it
-		interiorRingWKB = geos2wkb(interiorRingGeometry);
-		if (interiorRingWKB == NULL) {
-			while (--i >= 0)
-				GDKfree((*geomArray)->data[i]);
-			GDKfree(*geomArray);
-			GEOSGeom_destroy(geosGeometry);
-			*geomArray = NULL;
-			throw(MAL, "geom.InteriorRings", SQLSTATE(38000) "Geos operation wkb2geos failed");
-		}
-
-		(*geomArray)->data[i] = interiorRingWKB;
-	}
-	GEOSGeom_destroy(geosGeometry);
-
-	return MAL_SUCCEED;
 }
 
 /* Returns the number of interior rings in the first polygon of the provided geometry
@@ -4236,7 +4467,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 	wkb *aWKB, *bWKB;
 
 	//get the BATs
-	if (!(inBAT = BATdescriptor(*inBAT_id))) {
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
 		throw(MAL, "geom.Union", SQLSTATE(38000) "Geos problem retrieving columns");
 	}
 
@@ -4486,6 +4717,59 @@ wkbDWithin(bit *out, wkb **geomWKB_a, wkb **geomWKB_b, dbl *distance)
 	return MAL_SUCCEED;
 }
 
+str
+wkbDWithinMbr(bit *out, wkb **a, wkb **b, mbr **mbr_a, mbr **mbr_b, dbl *distance)
+{
+	double actualDistance, bboxDistance;
+	double halfd_a, halfd_b; // halfed diagonals of the a and b bounding boxes
+	double ambiguous_zone_min, ambiguous_zone_max; // see comments
+	str err;
+
+	if (is_wkb_nil(*a) || is_wkb_nil(*b) || is_dbl_nil(*distance)) {
+		*out = bit_nil;
+		return MAL_SUCCEED;
+	}
+
+	// if there are no mbr(s) fallback to wkbDWithin
+	if (is_mbr_nil(*mbr_a) || is_mbr_nil(*mbr_b))
+		return wkbDWithin(out, a, b, distance);
+
+	// first calculate the distance of the bounding boxes (mbrs)
+	if ((err = mbrDistance(&bboxDistance, mbr_a, mbr_b)) != MAL_SUCCEED)
+		return err;
+
+	if ((err = mbrDiagonal(&halfd_a, mbr_a)) != MAL_SUCCEED)
+		return err;
+	halfd_a *= .5;
+
+	if ((err = mbrDiagonal(&halfd_b, mbr_b)) != MAL_SUCCEED)
+		return err;
+	halfd_b *= .5;
+
+	// Every bounding box can be inscribed in a circle. When calculating the distance
+	// between two mbrs we do so by their centroids which are actually the origins of
+	// their circumscribed circles. Then, independently of the bounded geometry, we can
+	// find two rough distance limits which are giving us a zone outside of which the
+	// questions 'distance within' can be answered only by the bounding box geometry.
+	// If the 'distance within' check is done over distance value in this zone then we
+	// actually need to perform the underlying geometry distance calculation.
+	ambiguous_zone_max = bboxDistance;
+	ambiguous_zone_min = bboxDistance - halfd_a - halfd_b;
+
+	if (*distance < ambiguous_zone_min) {
+		*out = false;
+	} else if (*distance > ambiguous_zone_max) {
+		*out = true;
+	} else {
+		// if we are not sure still calculate the actual distance of the geometries
+		if ((err = wkbDistance(&actualDistance, a, b)) != MAL_SUCCEED)
+			return err;
+		*out = (actualDistance <= *distance);
+	}
+
+	return MAL_SUCCEED;
+}
+
 /*returns the n-th geometry in a multi-geometry */
 str
 wkbGeometryN(wkb **out, wkb **geom, const int *geometryNum)
@@ -4556,1184 +4840,8 @@ wkbNumGeometries(int *out, wkb **geom)
 	return MAL_SUCCEED;
 }
 
-/* MBR */
 
-/* Creates the mbr for the given geom_geometry. */
-str
-wkbMBR(mbr **geomMBR, wkb **geomWKB)
-{
-	GEOSGeom geosGeometry;
-	str ret = MAL_SUCCEED;
-	bit empty;
-
-	//check if the geometry is nil
-	if (is_wkb_nil(*geomWKB)) {
-		if ((*geomMBR = GDKmalloc(sizeof(mbr))) == NULL)
-			throw(MAL, "geom.MBR", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		**geomMBR = mbrNIL;
-		return MAL_SUCCEED;
-	}
-	//check if the geometry is empty
-	if ((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
-		return ret;
-	}
-	if (empty) {
-		if ((*geomMBR = GDKmalloc(sizeof(mbr))) == NULL)
-			throw(MAL, "geom.MBR", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		**geomMBR = mbrNIL;
-		return MAL_SUCCEED;
-	}
-
-	geosGeometry = wkb2geos(*geomWKB);
-	if (geosGeometry == NULL) {
-		*geomMBR = NULL;
-		throw(MAL, "geom.MBR", SQLSTATE(38000) "Geos problem converting GEOS to WKB");
-	}
-
-	*geomMBR = mbrFromGeos(geosGeometry);
-
-	GEOSGeom_destroy(geosGeometry);
-
-	if (*geomMBR == NULL || is_mbr_nil(*geomMBR)) {
-		GDKfree(*geomMBR);
-		*geomMBR = NULL;
-		throw(MAL, "wkb.mbr", SQLSTATE(38000) "Geos failed to create mbr");
-	}
-
-	return MAL_SUCCEED;
-}
-
-str
-wkbBox2D(mbr **box, wkb **point1, wkb **point2)
-{
-	GEOSGeom point1_geom, point2_geom;
-	double xmin = 0.0, ymin = 0.0, xmax = 0.0, ymax = 0.0;
-	str err = MAL_SUCCEED;
-
-	//check null input
-	if (is_wkb_nil(*point1) || is_wkb_nil(*point2)) {
-		if ((*box = GDKmalloc(sizeof(mbr))) == NULL)
-			throw(MAL, "geom.MakeBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		**box = mbrNIL;
-		return MAL_SUCCEED;
-	}
-	//check input not point geometries
-	point1_geom = wkb2geos(*point1);
-	point2_geom = wkb2geos(*point2);
-	if (point1_geom == NULL || point2_geom == NULL) {
-		if (point1_geom)
-			GEOSGeom_destroy(point1_geom);
-		if (point2_geom)
-			GEOSGeom_destroy(point2_geom);
-		throw(MAL, "geom.MakeBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	if (GEOSGeomTypeId(point1_geom) + 1 != wkbPoint_mdb ||
-	    GEOSGeomTypeId(point2_geom) + 1 != wkbPoint_mdb) {
-		err = createException(MAL, "geom.MakeBox2D", SQLSTATE(38000) "Geometries should be points");
-	} else if (GEOSGeomGetX(point1_geom, &xmin) == -1 ||
-		   GEOSGeomGetY(point1_geom, &ymin) == -1 ||
-		   GEOSGeomGetX(point2_geom, &xmax) == -1 ||
-		   GEOSGeomGetY(point2_geom, &ymax) == -1) {
-
-		err = createException(MAL, "geom.MakeBox2D", SQLSTATE(38000) "Geos error in reading the points' coordinates");
-	} else {
-		//Assign the coordinates. Ensure that they are in correct order
-		*box = GDKmalloc(sizeof(mbr));
-		if (*box == NULL) {
-			err = createException(MAL, "geom.MakeBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		} else {
-			(*box)->xmin = (float) (xmin < xmax ? xmin : xmax);
-			(*box)->ymin = (float) (ymin < ymax ? ymin : ymax);
-			(*box)->xmax = (float) (xmax > xmin ? xmax : xmin);
-			(*box)->ymax = (float) (ymax > ymin ? ymax : ymin);
-		}
-	}
-	GEOSGeom_destroy(point1_geom);
-	GEOSGeom_destroy(point2_geom);
-
-	return err;
-}
-
-static str
-mbrrelation_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func)(bit *, mbr **, mbr **))
-{
-	mbr *geom1MBR = NULL, *geom2MBR = NULL;
-	str ret = MAL_SUCCEED;
-
-	if (is_wkb_nil(*geom1WKB) || is_wkb_nil(*geom2WKB)) {
-		*out = bit_nil;
-		return MAL_SUCCEED;
-	}
-
-	ret = wkbMBR(&geom1MBR, geom1WKB);
-	if (ret != MAL_SUCCEED) {
-		return ret;
-	}
-
-	ret = wkbMBR(&geom2MBR, geom2WKB);
-	if (ret != MAL_SUCCEED) {
-		GDKfree(geom1MBR);
-		return ret;
-	}
-
-	ret = (*func) (out, &geom1MBR, &geom2MBR);
-
-	GDKfree(geom1MBR);
-	GDKfree(geom2MBR);
-
-	return ret;
-}
-
-/*returns true if the two mbrs overlap */
-str
-mbrOverlaps(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = bit_nil;
-	else			//they cannot overlap if b2 is left, right, above or below b1
-		*out = !((*b2)->ymax < (*b1)->ymin ||
-			 (*b2)->ymin > (*b1)->ymax ||
-			 (*b2)->xmax < (*b1)->xmin ||
-			 (*b2)->xmin > (*b1)->xmax);
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of the two geometries overlap */
-str
-mbrOverlaps_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlaps);
-}
-
-/* returns true if b1 is above b2 */
-str
-mbrAbove(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = bit_nil;
-	else
-		*out = ((*b1)->ymin > (*b2)->ymax);
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of geom1 is above the mbr of geom2 */
-str
-mbrAbove_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrAbove);
-}
-
-/* returns true if b1 is below b2 */
-str
-mbrBelow(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = bit_nil;
-	else
-		*out = ((*b1)->ymax < (*b2)->ymin);
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of geom1 is below the mbr of geom2 */
-str
-mbrBelow_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrBelow);
-}
-
-/* returns true if box1 is left of box2 */
-str
-mbrLeft(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = bit_nil;
-	else
-		*out = ((*b1)->xmax < (*b2)->xmin);
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of geom1 is on the left of the mbr of geom2 */
-str
-mbrLeft_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrLeft);
-}
-
-/* returns true if box1 is right of box2 */
-str
-mbrRight(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = bit_nil;
-	else
-		*out = ((*b1)->xmin > (*b2)->xmax);
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of geom1 is on the right of the mbr of geom2 */
-str
-mbrRight_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrRight);
-}
-
-/* returns true if box1 overlaps or is above box2 when only the Y coordinate is considered*/
-str
-mbrOverlapOrAbove(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = bit_nil;
-	else
-		*out = ((*b1)->ymin >= (*b2)->ymin);
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of geom1 overlaps or is above the mbr of geom2 */
-str
-mbrOverlapOrAbove_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrAbove);
-}
-
-/* returns true if box1 overlaps or is below box2 when only the Y coordinate is considered*/
-str
-mbrOverlapOrBelow(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = bit_nil;
-	else
-		*out = ((*b1)->ymax <= (*b2)->ymax);
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of geom1 overlaps or is below the mbr of geom2 */
-str
-mbrOverlapOrBelow_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrBelow);
-}
-
-/* returns true if box1 overlaps or is left of box2 when only the X coordinate is considered*/
-str
-mbrOverlapOrLeft(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = bit_nil;
-	else
-		*out = ((*b1)->xmax <= (*b2)->xmax);
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of geom1 overlaps or is on the left of the mbr of geom2 */
-str
-mbrOverlapOrLeft_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrLeft);
-}
-
-/* returns true if box1 overlaps or is right of box2 when only the X coordinate is considered*/
-str
-mbrOverlapOrRight(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = bit_nil;
-	else
-		*out = ((*b1)->xmin >= (*b2)->xmin);
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of geom1 overlaps or is on the right of the mbr of geom2 */
-str
-mbrOverlapOrRight_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrRight);
-}
-
-/* returns true if b1 is contained in b2 */
-str
-mbrContained(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = bit_nil;
-	else
-		*out = (((*b1)->xmin >= (*b2)->xmin) && ((*b1)->xmax <= (*b2)->xmax) && ((*b1)->ymin >= (*b2)->ymin) && ((*b1)->ymax <= (*b2)->ymax));
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of geom1 is contained in the mbr of geom2 */
-str
-mbrContained_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrContained);
-}
-
-/*returns true if b1 contains b2 */
-str
-mbrContains(bit *out, mbr **b1, mbr **b2)
-{
-	return mbrContained(out, b2, b1);
-}
-
-/*returns true if the mbrs of geom1 contains the mbr of geom2 */
-str
-mbrContains_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrContains);
-}
-
-/* returns true if the boxes are the same */
-str
-mbrEqual(bit *out, mbr **b1, mbr **b2)
-{
-	if (is_mbr_nil(*b1) && is_mbr_nil(*b2))
-		*out = 1;
-	else if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
-		*out = 0;
-	else
-		*out = (((*b1)->xmin == (*b2)->xmin) && ((*b1)->xmax == (*b2)->xmax) && ((*b1)->ymin == (*b2)->ymin) && ((*b1)->ymax == (*b2)->ymax));
-	return MAL_SUCCEED;
-}
-
-/*returns true if the mbrs of geom1 and the mbr of geom2 are the same */
-str
-mbrEqual_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrEqual);
-}
-
-/* returns the Euclidean distance of the centroids of the boxes */
-str
-mbrDistance(dbl *out, mbr **b1, mbr **b2)
-{
-	double b1_Cx = 0.0, b1_Cy = 0.0, b2_Cx = 0.0, b2_Cy = 0.0;
-
-	if (is_mbr_nil(*b1) || is_mbr_nil(*b2)) {
-		*out = dbl_nil;
-		return MAL_SUCCEED;
-	}
-	//compute the centroids of the two polygons
-	b1_Cx = ((*b1)->xmin + (*b1)->xmax) / 2.0;
-	b1_Cy = ((*b1)->ymin + (*b1)->ymax) / 2.0;
-	b2_Cx = ((*b2)->xmin + (*b2)->xmax) / 2.0;
-	b2_Cy = ((*b2)->ymin + (*b2)->ymax) / 2.0;
-
-	//compute the euclidean distance
-	*out = sqrt(pow(b2_Cx - b1_Cx, 2.0) + pow(b2_Cy - b1_Cy, 2.0));
-
-	return MAL_SUCCEED;
-}
-
-/*returns the Euclidean distance of the centroids of the mbrs of the two geometries */
-str
-mbrDistance_wkb(dbl *out, wkb **geom1WKB, wkb **geom2WKB)
-{
-	mbr *geom1MBR = NULL, *geom2MBR = NULL;
-	str ret = MAL_SUCCEED;
-
-	if (is_wkb_nil(*geom1WKB) || is_wkb_nil(*geom2WKB)) {
-		*out = dbl_nil;
-		return MAL_SUCCEED;
-	}
-
-	ret = wkbMBR(&geom1MBR, geom1WKB);
-	if (ret != MAL_SUCCEED) {
-		return ret;
-	}
-
-	ret = wkbMBR(&geom2MBR, geom2WKB);
-	if (ret != MAL_SUCCEED) {
-		GDKfree(geom1MBR);
-		return ret;
-	}
-
-	ret = mbrDistance(out, &geom1MBR, &geom2MBR);
-
-	GDKfree(geom1MBR);
-	GDKfree(geom2MBR);
-
-	return ret;
-}
-
-/* get Xmin, Ymin, Xmax, Ymax coordinates of mbr */
-str
-wkbCoordinateFromMBR(dbl *coordinateValue, mbr **geomMBR, int *coordinateIdx)
-{
-	//check if the MBR is null
-	if (is_mbr_nil(*geomMBR) || is_int_nil(*coordinateIdx)) {
-		*coordinateValue = dbl_nil;
-		return MAL_SUCCEED;
-	}
-
-	switch (*coordinateIdx) {
-	case 1:
-		*coordinateValue = (*geomMBR)->xmin;
-		break;
-	case 2:
-		*coordinateValue = (*geomMBR)->ymin;
-		break;
-	case 3:
-		*coordinateValue = (*geomMBR)->xmax;
-		break;
-	case 4:
-		*coordinateValue = (*geomMBR)->ymax;
-		break;
-	default:
-		throw(MAL, "geom.coordinateFromMBR", SQLSTATE(38000) "Geos unrecognized coordinateIdx: %d\n", *coordinateIdx);
-	}
-
-	return MAL_SUCCEED;
-}
-
-str
-wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
-{
-	mbr *geomMBR;
-	str ret = MAL_SUCCEED;
-	bit empty;
-
-	if (is_wkb_nil(*geomWKB) || is_int_nil(*coordinateIdx)) {
-		*coordinateValue = dbl_nil;
-		return MAL_SUCCEED;
-	}
-
-	//check if the geometry is empty
-	if ((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
-		return ret;
-	}
-
-	if (empty) {
-		*coordinateValue = dbl_nil;
-		return MAL_SUCCEED;
-	}
-
-	if ((ret = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED)
-		return ret;
-
-	ret = wkbCoordinateFromMBR(coordinateValue, &geomMBR, coordinateIdx);
-
-	GDKfree(geomMBR);
-
-	return ret;
-}
-
-static ssize_t mbrFROMSTR(const char *src, size_t *len, void **ATOM, bool external);
-
-str
-mbrFromString(mbr **w, const char **src)
-{
-	size_t len = *w ? sizeof(mbr) : 0;
-	char *errbuf;
-	str ex;
-
-	if (mbrFROMSTR(*src, &len, (void **) w, false) >= 0)
-		return MAL_SUCCEED;
-	GDKfree(*w);
-	*w = NULL;
-	errbuf = GDKerrbuf;
-	if (errbuf) {
-		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
-			errbuf += 8;
-	} else {
-		errbuf = "cannot parse string";
-	}
-
-	ex = createException(MAL, "mbr.FromString", SQLSTATE(38000) "Geos %s", errbuf);
-
-	GDKclrerr();
-
-	return ex;
-}
-
-str
-wkbIsnil(bit *r, wkb **v)
-{
-	*r = is_wkb_nil(*v);
-	return MAL_SUCCEED;
-}
-
-/* COMMAND mbr
- * Creates the mbr for the given geom_geometry.
- */
-
-str
-ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
-{
-	if ((*res = GDKmalloc(sizeof(mbr))) == NULL)
-		throw(MAL, "geom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if (is_flt_nil(*minX) || is_flt_nil(*minY) || is_flt_nil(*maxX) || is_flt_nil(*maxY))
-		**res = mbrNIL;
-	else {
-		(*res)->xmin = *minX;
-		(*res)->ymin = *minY;
-		(*res)->xmax = *maxX;
-		(*res)->ymax = *maxY;
-	}
-	return MAL_SUCCEED;
-}
-
-/***********************************************/
-/************* wkb type functions **************/
-/***********************************************/
-
-/* Creates the string representation (WKT) of a WKB */
-/* return length of resulting string. */
-static ssize_t
-wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
-{
-	const wkb *geomWKB = GEOMWKB;
-	char *wkt = NULL;
-	size_t dstStrLen = 5;	/* "nil" */
-
-	/* from WKB to GEOSGeometry */
-	GEOSGeom geosGeometry = wkb2geos(geomWKB);
-
-	if (geosGeometry) {
-		size_t l;
-		GEOSWKTWriter *WKT_wr = GEOSWKTWriter_create();
-		//set the number of dimensions in the writer so that it can
-		//read correctly the geometry coordinates
-		GEOSWKTWriter_setOutputDimension(WKT_wr, GEOSGeom_getCoordinateDimension(geosGeometry));
-		GEOSWKTWriter_setTrim(WKT_wr, 1);
-		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
-		if (wkt == NULL) {
-			GDKerror("GEOSWKTWriter_write failed\n");
-			return -1;
-		}
-		GEOSWKTWriter_destroy(WKT_wr);
-		GEOSGeom_destroy(geosGeometry);
-
-		l = strlen(wkt);
-		dstStrLen = l;
-		if (external)
-			dstStrLen += 2;	/* add quotes */
-		if (*len < dstStrLen + 1 || *geomWKT == NULL) {
-			*len = dstStrLen + 1;
-			GDKfree(*geomWKT);
-			if ((*geomWKT = GDKmalloc(*len)) == NULL) {
-				GEOSFree(wkt);
-				return -1;
-			}
-		}
-		if (external)
-			snprintf(*geomWKT, *len, "\"%s\"", wkt);
-		else
-			strcpy(*geomWKT, wkt);
-		GEOSFree(wkt);
-
-		return (ssize_t) dstStrLen;
-	}
-
-	/* geosGeometry == NULL */
-	if (*len < 4 || *geomWKT == NULL) {
-		GDKfree(*geomWKT);
-		if ((*geomWKT = GDKmalloc(*len = 4)) == NULL)
-			return -1;
-	}
-	if (external) {
-		strcpy(*geomWKT, "nil");
-		return 3;
-	}
-	strcpy(*geomWKT, str_nil);
-	return 1;
-}
-
-static ssize_t
-wkbFROMSTR(const char *geomWKT, size_t *len, void **GEOMWKB, bool external)
-{
-	wkb **geomWKB = (wkb **) GEOMWKB;
-	size_t parsedBytes;
-	str err;
-
-	if (external && strncmp(geomWKT, "nil", 3) == 0) {
-		*geomWKB = wkbNULLcopy();
-		if (*geomWKB == NULL)
-			return -1;
-		return 3;
-	}
-	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
-	if (err != MAL_SUCCEED) {
-		GDKerror("%s", getExceptionMessageAndState(err));
-		freeException(err);
-		return -1;
-	}
-	return (ssize_t) parsedBytes;
-}
-
-static BUN
-wkbHASH(const void *W)
-{
-	const wkb *w = W;
-	int i;
-	BUN h = 0;
-
-	for (i = 0; i < (w->len - 1); i += 2) {
-		int a = *(w->data + i), b = *(w->data + i + 1);
-		h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
-	}
-	return h;
-}
-
-/* returns a pointer to a null wkb */
-static const void *
-wkbNULL(void)
-{
-	return &wkb_nil;
-}
-
-static int
-wkbCOMP(const void *L, const void *R)
-{
-	const wkb *l = L, *r = R;
-	int len = l->len;
-
-	if (len != r->len)
-		return len - r->len;
-
-	if (len == ~(int) 0)
-		return (0);
-
-	return memcmp(l->data, r->data, len);
-}
-
-/* read wkb from log */
-static void *
-wkbREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
-{
-	wkb *a = A;
-	int len;
-	int srid;
-
-	(void) cnt;
-	assert(cnt == 1);
-	if (mnstr_readInt(s, &len) != 1)
-		return NULL;
-	if (mnstr_readInt(s, &srid) != 1)
-		return NULL;
-	size_t wkblen = (size_t) wkb_size(len);
-	if (a == NULL || *dstlen < wkblen) {
-		if ((a = GDKrealloc(a, wkblen)) == NULL)
-			return NULL;
-		*dstlen = wkblen;
-	}
-	a->len = len;
-	a->srid = srid;
-	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
-		GDKfree(a);
-		return NULL;
-	}
-	return a;
-}
-
-/* write wkb to log */
-static gdk_return
-wkbWRITE(const void *A, stream *s, size_t cnt)
-{
-	const wkb *a = A;
-	int len = a->len;
-	int srid = a->srid;
-
-	(void) cnt;
-	assert(cnt == 1);
-	if (!mnstr_writeInt(s, len))	/* 64bit: check for overflow */
-		return GDK_FAIL;
-	if (!mnstr_writeInt(s, srid))	/* 64bit: check for overflow */
-		return GDK_FAIL;
-	if (len > 0 &&		/* 64bit: check for overflow */
-	    mnstr_write(s, (char *) a->data, len, 1) < 0)
-		return GDK_FAIL;
-	return GDK_SUCCEED;
-}
-
-static var_t
-wkbPUT(BAT *b, var_t *bun, const void *VAL)
-{
-	const wkb *val = VAL;
-	char *base;
-
-	*bun = HEAP_malloc(b, wkb_size(val->len));
-	base = b->tvheap->base;
-	if (*bun != (var_t) -1) {
-		memcpy(&base[*bun], val, wkb_size(val->len));
-		b->tvheap->dirty = true;
-	}
-	return *bun;
-}
-
-static void
-wkbDEL(Heap *h, var_t *index)
-{
-	HEAP_free(h, *index);
-}
-
-static size_t
-wkbLENGTH(const void *P)
-{
-	const wkb *p = P;
-	var_t len = wkb_size(p->len);
-	assert(len <= GDK_int_max);
-	return (size_t) len;
-}
-
-static gdk_return
-wkbHEAP(Heap *heap, size_t capacity)
-{
-	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
-}
-
-/***********************************************/
-/************* mbr type functions **************/
-/***********************************************/
-
-#define MBR_WKTLEN 256
-
-/* TOSTR: print atom in a string. */
-/* return length of resulting string. */
-static ssize_t
-mbrTOSTR(char **dst, size_t *len, const void *ATOM, bool external)
-{
-	const mbr *atom = ATOM;
-	char tempWkt[MBR_WKTLEN];
-	size_t dstStrLen;
-
-	if (!is_mbr_nil(atom)) {
-		dstStrLen = (size_t) snprintf(tempWkt, MBR_WKTLEN,
-					      "BOX (%f %f, %f %f)",
-					      atom->xmin, atom->ymin,
-					      atom->xmax, atom->ymax);
-	} else {
-		tempWkt[0] = 0;	/* not used */
-		dstStrLen = 0;
-	}
-
-	if (*len < dstStrLen + 4 || *dst == NULL) {
-		GDKfree(*dst);
-		if ((*dst = GDKmalloc(*len = dstStrLen + 4)) == NULL)
-			return -1;
-	}
-
-	if (dstStrLen > 4) {
-		if (external) {
-			snprintf(*dst, *len, "\"%s\"", tempWkt);
-			dstStrLen += 2;
-		} else {
-			strcpy(*dst, tempWkt);
-		}
-	} else if (external) {
-		strcpy(*dst, "nil");
-		dstStrLen = 3;
-	} else {
-		strcpy(*dst, str_nil);
-		dstStrLen = 1;
-	}
-	return (ssize_t) dstStrLen;
-}
-
-/* FROMSTR: parse string to mbr. */
-/* return number of parsed characters. */
-static ssize_t
-mbrFROMSTR(const char *src, size_t *len, void **ATOM, bool external)
-{
-	mbr **atom = (mbr **) ATOM;
-	size_t nchars = 0;	/* The number of characters parsed; the return value. */
-	GEOSGeom geosMbr = NULL;	/* The geometry object that is parsed from the src string. */
-	double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
-	const char *c;
-
-	if (*len < sizeof(mbr) || *atom == NULL) {
-		GDKfree(*atom);
-		if ((*atom = GDKmalloc(*len = sizeof(mbr))) == NULL)
-			return -1;
-	}
-	if (external && strncmp(src, "nil", 3) == 0) {
-		**atom = mbrNIL;
-		return 3;
-	}
-	if (strNil(src)) {
-		**atom = mbrNIL;
-		return 1;
-	}
-
-	if ((strstr(src, "mbr") == src || strstr(src, "MBR") == src
-	     || strstr(src, "box") == src || strstr(src, "BOX") == src)
-	    && (c = strstr(src, "(")) != NULL) {
-		/* Parse the mbr */
-		if ((c - src) != 3 && (c - src) != 4) {
-			GDKerror("ParseException: Expected a string like 'MBR(0 0,1 1)' or 'MBR (0 0,1 1)'\n");
-			return -1;
-		}
-
-		if (sscanf(c, "(%lf %lf,%lf %lf)", &xmin, &ymin, &xmax, &ymax) != 4) {
-			GDKerror("ParseException: Not enough coordinates.\n");
-			return -1;
-		}
-	} else if ((geosMbr = GEOSGeomFromWKT(src)) == NULL) {
-		GDKerror("GEOSGeomFromWKT failed\n");
-		return -1;
-	}
-
-	if (geosMbr == NULL) {
-		assert(GDK_flt_min <= xmin && xmin <= GDK_flt_max);
-		assert(GDK_flt_min <= xmax && xmax <= GDK_flt_max);
-		assert(GDK_flt_min <= ymin && ymin <= GDK_flt_max);
-		assert(GDK_flt_min <= ymax && ymax <= GDK_flt_max);
-		(*atom)->xmin = (float) xmin;
-		(*atom)->ymin = (float) ymin;
-		(*atom)->xmax = (float) xmax;
-		(*atom)->ymax = (float) ymax;
-		nchars = strlen(src);
-	}
-	if (geosMbr)
-		GEOSGeom_destroy(geosMbr);
-	assert(nchars <= GDK_int_max);
-	return (ssize_t) nchars;
-}
-
-/* HASH: compute a hash value. */
-/* returns a positive integer hash value */
-static BUN
-mbrHASH(const void *ATOM)
-{
-	const mbr *atom = ATOM;
-	return (BUN) (((int) atom->xmin * (int)atom->ymin) *((int) atom->xmax * (int)atom->ymax));
-}
-
-static const void *
-mbrNULL(void)
-{
-	return &mbrNIL;
-}
-
-/* COMP: compare two mbrs. */
-/* returns int <0 if l<r, 0 if l==r, >0 else */
-static int
-mbrCOMP(const void *L, const void *R)
-{
-	/* simple lexicographical ordering on (x,y) */
-	const mbr *l = L, *r = R;
-	int res;
-	if (is_mbr_nil(l))
-		return -!is_mbr_nil(r);
-	if (is_mbr_nil(r))
-		return 1;
-	if (l->xmin == r->xmin)
-		res = (l->ymin < r->ymin) ? -1 : (l->ymin != r->ymin);
-	else
-		res = (l->xmin < r->xmin) ? -1 : 1;
-	if (res == 0) {
-		if (l->xmax == r->xmax)
-			res = (l->ymax < r->ymax) ? -1 : (l->ymax != r->ymax);
-		else
-			res = (l->xmax < r->xmax) ? -1 : 1;
-	}
-	return res;
-}
-
-/* read mbr from log */
-static void *
-mbrREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
-{
-	mbr *a = A;
-	mbr *c;
-	size_t i;
-	int v[4];
-	flt vals[4];
-
-	if (a == NULL || *dstlen < cnt * sizeof(mbr)) {
-		if ((a = GDKrealloc(a, cnt * sizeof(mbr))) == NULL)
-			return NULL;
-		*dstlen = cnt * sizeof(mbr);
-	}
-	for (i = 0, c = a; i < cnt; i++, c++) {
-		if (!mnstr_readIntArray(s, v, 4)) {
-			if (a != A)
-				GDKfree(a);
-			return NULL;
-		}
-		memcpy(vals, v, 4 * sizeof(int));
-		c->xmin = vals[0];
-		c->ymin = vals[1];
-		c->xmax = vals[2];
-		c->ymax = vals[3];
-	}
-	return a;
-}
-
-/* write mbr to log */
-static gdk_return
-mbrWRITE(const void *C, stream *s, size_t cnt)
-{
-	const mbr *c = C;
-	size_t i;
-	flt vals[4];
-	int v[4];
-
-	for (i = 0; i < cnt; i++, c++) {
-		vals[0] = c->xmin;
-		vals[1] = c->ymin;
-		vals[2] = c->xmax;
-		vals[3] = c->ymax;
-		memcpy(v, vals, 4 * sizeof(int));
-		if (!mnstr_writeIntArray(s, v, 4))
-			return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
-
-/************************************************/
-/************* wkba type functions **************/
-/************************************************/
-
-/* Creates the string representation of a wkb_array */
-/* return length of resulting string. */
-static ssize_t
-wkbaTOSTR(char **toStr, size_t *len, const void *FROMARRAY, bool external)
-{
-	const wkba *fromArray = FROMARRAY;
-	int items = fromArray->itemsNum, i;
-	int itemsNumDigits = (int) ceil(log10(items));
-	size_t dataSize;	//, skipBytes=0;
-	char **partialStrs;
-	char *toStrPtr = NULL, *itemsNumStr = GDKmalloc(itemsNumDigits + 1);
-
-	if (itemsNumStr == NULL)
-		return -1;
-
-	dataSize = (size_t) snprintf(itemsNumStr, itemsNumDigits + 1, "%d", items);
-
-	// reserve space for an array with pointers to the partial
-	// strings, i.e. for each wkbTOSTR
-	partialStrs = GDKzalloc(items * sizeof(char *));
-	if (partialStrs == NULL) {
-		GDKfree(itemsNumStr);
-		return -1;
-	}
-	//create the string version of each wkb
-	for (i = 0; i < items; i++) {
-		size_t llen = 0;
-		ssize_t ds;
-		ds = wkbTOSTR(&partialStrs[i], &llen, fromArray->data[i], false);
-		if (ds < 0) {
-			GDKfree(itemsNumStr);
-			while (i >= 0)
-				GDKfree(partialStrs[i--]);
-			GDKfree(partialStrs);
-			return -1;
-		}
-		dataSize += ds;
-
-		if (strNil(partialStrs[i])) {
-			GDKfree(itemsNumStr);
-			while (i >= 0)
-				GDKfree(partialStrs[i--]);
-			GDKfree(partialStrs);
-			if (*len < 4 || *toStr == NULL) {
-				GDKfree(*toStr);
-				if ((*toStr = GDKmalloc(*len = 4)) == NULL)
-					return -1;
-			}
-			if (external) {
-				strcpy(*toStr, "nil");
-				return 3;
-			}
-			strcpy(*toStr, str_nil);
-			return 1;
-		}
-	}
-
-	//add [] around itemsNum
-	dataSize += 2;
-	//add ", " before each item
-	dataSize += 2 * sizeof(char) * items;
-
-	//copy all partial strings to a single one
-	if (*len < dataSize + 3 || *toStr == NULL) {
-		GDKfree(*toStr);
-		*toStr = GDKmalloc(*len = dataSize + 3);	/* plus quotes + termination character */
-		if (*toStr == NULL) {
-			for (i = 0; i < items; i++)
-				GDKfree(partialStrs[i]);
-			GDKfree(partialStrs);
-			GDKfree(itemsNumStr);
-			return -1;
-		}
-	}
-	toStrPtr = *toStr;
-	if (external)
-		*toStrPtr++ = '\"';
-	*toStrPtr++ = '[';
-	strcpy(toStrPtr, itemsNumStr);
-	toStrPtr += strlen(itemsNumStr);
-	*toStrPtr++ = ']';
-	for (i = 0; i < items; i++) {
-		if (i == 0)
-			*toStrPtr++ = ':';
-		else
-			*toStrPtr++ = ',';
-		*toStrPtr++ = ' ';
-
-		//strcpy(toStrPtr, partialStrs[i]);
-		memcpy(toStrPtr, partialStrs[i], strlen(partialStrs[i]));
-		toStrPtr += strlen(partialStrs[i]);
-		GDKfree(partialStrs[i]);
-	}
-
-	if (external)
-		*toStrPtr++ = '\"';
-	*toStrPtr = '\0';
-
-	GDKfree(partialStrs);
-	GDKfree(itemsNumStr);
-
-	return (ssize_t) (toStrPtr - *toStr);
-}
-
-/* return number of parsed characters. */
-static ssize_t
-wkbaFROMSTR(const char *fromStr, size_t *len, void **TOARRAY, bool external)
-{
-	wkba **toArray = (wkba **) TOARRAY;
-	if (external && strncmp(fromStr, "nil", 3) == 0) {
-		size_t sz = wkba_size(~0);
-		if ((*len < sz || *toArray == NULL)
-		    && (*toArray = GDKmalloc(sz)) == NULL)
-			return -1;
-		**toArray = wkba_nil;
-		return 3;
-	}
-	return wkbaFROMSTR_withSRID(fromStr, len, toArray, 0);
-}
-
-/* returns a pointer to a null wkba */
-static const void *
-wkbaNULL(void)
-{
-	return &wkba_nil;
-}
-
-static BUN
-wkbaHASH(const void *WARRAY)
-{
-	const wkba *wArray = WARRAY;
-	int j, i;
-	BUN h = 0;
-
-	for (j = 0; j < wArray->itemsNum; j++) {
-		wkb *w = wArray->data[j];
-		for (i = 0; i < (w->len - 1); i += 2) {
-			int a = *(w->data + i), b = *(w->data + i + 1);
-			h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
-		}
-	}
-	return h;
-}
-
-static int
-wkbaCOMP(const void *L, const void *R)
-{
-	const wkba *l = L, *r = R;
-	int i, res = 0;
-
-	//compare the number of items
-	if (l->itemsNum != r->itemsNum)
-		return l->itemsNum - r->itemsNum;
-
-	if (l->itemsNum == ~(int) 0)
-		return (0);
-
-	//compare each wkb separately
-	for (i = 0; i < l->itemsNum; i++)
-		res += wkbCOMP(l->data[i], r->data[i]);
-
-	return res;
-}
-
-/* read wkb from log */
-static void *
-wkbaREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
-{
-	wkba *a = A;
-	int items, i;
-
-	(void) cnt;
-	assert(cnt == 1);
-
-	if (mnstr_readInt(s, &items) != 1)
-		return NULL;
-
-	size_t wkbalen = (size_t) wkba_size(items);
-	if (a == NULL || *dstlen < wkbalen) {
-		if ((a = GDKrealloc(a, wkbalen)) == NULL)
-			return NULL;
-		*dstlen = wkbalen;
-	}
-
-	a->itemsNum = items;
-
-	for (i = 0; i < items; i++) {
-		size_t wlen = 0;
-		a->data[i] = wkbREAD(NULL, &wlen, s, cnt);
-	}
-
-	return a;
-}
-
-/* write wkb to log */
-static gdk_return
-wkbaWRITE(const void *A, stream *s, size_t cnt)
-{
-	const wkba *a = A;
-	int i, items = a->itemsNum;
-	gdk_return ret = GDK_SUCCEED;
-
-	(void) cnt;
-	assert(cnt == 1);
-
-	if (!mnstr_writeInt(s, items))
-		return GDK_FAIL;
-	for (i = 0; i < items; i++) {
-		ret = wkbWRITE(a->data[i], s, cnt);
-
-		if (ret != GDK_SUCCEED)
-			return ret;
-	}
-	return GDK_SUCCEED;
-}
-
-static var_t
-wkbaPUT(BAT *b, var_t *bun, const void *VAL)
-{
-	const wkba *val = VAL;
-	char *base;
-
-	*bun = HEAP_malloc(b, wkba_size(val->itemsNum));
-	base = b->tvheap->base;
-	if (*bun != (var_t) -1) {
-		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
-		b->tvheap->dirty = true;
-	}
-	return *bun;
-}
-
-static void
-wkbaDEL(Heap *h, var_t *index)
-{
-	HEAP_free(h, *index);
-}
-
-static size_t
-wkbaLENGTH(const void *P)
-{
-	const wkba *p = P;
-	var_t len = wkba_size(p->itemsNum);
-	assert(len <= GDK_int_max);
-	return (size_t) len;
-}
-
-static gdk_return
-wkbaHEAP(Heap *heap, size_t capacity)
-{
-	return HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
-}
+/* TODO: Analyze these functions below (what's the dif from normal contain, is it unfinished?) */
 
 geom_export str wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y);
 geom_export str wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y);
@@ -6074,366 +5182,454 @@ wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y)
 	return MAL_SUCCEED;
 }
 
-static const unsigned char geom_functions[9054] = {
-"module geom;\n"
-"function AsText(w:wkb) :str;\n"
-"x := ToText(w,0);\n"
-"return x;\n"
-"end AsText;\n"
-"function AsEWKT(w:wkb) :str;\n"
-"x := ToText(w,1);\n"
-"return x;\n"
-"end AsEWKT;\n"
-"function GeomFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,0);\n"
-"return x;\n"
-"end GeomFromText;\n"
-"function PointFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,1);\n"
-"return x;\n"
-"end PointFromText;\n"
-"function LineFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,2);\n"
-"return x;\n"
-"end LineFromText;\n"
-"function PolygonFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,4);\n"
-"return x;\n"
-"end PolygonFromText;\n"
-"function MPointFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,5);\n"
-"return x;\n"
-"end MPointFromText;\n"
-"function MLineFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,6);\n"
-"return x;\n"
-"end MLineFromText;\n"
-"function MPolyFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,7);\n"
-"return x;\n"
-"end MPolyFromText;\n"
-"function GeomCollFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,8);\n"
-"return x;\n"
-"end GeomCollFromText;\n"
-"function GeomFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,0);\n"
-"return x;\n"
-"end GeomFromText;\n"
-"function PointFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,1);\n"
-"return x;\n"
-"end PointFromText;\n"
-"function LineFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,2);\n"
-"return x;\n"
-"end LineFromText;\n"
-"function PolygonFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,4);\n"
-"return x;\n"
-"end PolygonFromText;\n"
-"function MPointFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,5);\n"
-"return x;\n"
-"end MPointFromText;\n"
-"function MLineFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,6);\n"
-"return x;\n"
-"end MLineFromText;\n"
-"function MPolyFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,7);\n"
-"return x;\n"
-"end MPolyFromText;\n"
-"function GeomCollFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,8);\n"
-"return x;\n"
-"end GeomCollFromText;\n"
-"function NumInteriorRings(w:wkb) :int;\n"
-"x := geom.NumRings(w, 0);\n"
-"return x;\n"
-"end NumInteriorRings;\n"
-"function NRings(w:wkb) :int;\n"
-"x := geom.NumRings(w, 1);\n"
-"return x;\n"
-"end NRings;\n"
-"function BdPolyFromText(wkt:str, srid:int) :wkb;\n"
-"x := MLineStringToPolygon(wkt,srid,0);\n"
-"return x;\n"
-"end BdPolyFromText;\n"
-"function BdMPolyFromText(wkt:str, srid:int) :wkb;\n"
-"x := MLineStringToPolygon(wkt,srid,1);\n"
-"return x;\n"
-"end BdMPolyFromText;\n"
-"function MakePoint(x:dbl, y:dbl) :wkb;\n"
-"p := MakePointXYZM(x, y, 0:dbl, 0:dbl, 0);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function MakePoint(x:dbl, y:dbl, z:dbl) :wkb;\n"
-"p := MakePointXYZM(x, y, z, 0:dbl, 10);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function MakePointM(x:dbl, y:dbl, m:dbl) :wkb;\n"
-"p := MakePointXYZM(x, y, 0:dbl, m, 1);\n"
-"return p;\n"
-"end MakePointM;\n"
-"function MakePoint(x:dbl, y:dbl, z:dbl, m:dbl) :wkb;\n"
-"p := MakePointXYZM(x, y, z, m, 11);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function GeometryType1(w:wkb) :str;\n"
-"x := GeometryType(w, 0);\n"
-"return x;\n"
-"end GeometryType1;\n"
-"function GeometryType2(w:wkb) :str;\n"
-"x := GeometryType(w, 1);\n"
-"return x;\n"
-"end GeometryType2;\n"
-"function X(w:wkb) :dbl;\n"
-"c := GetCoordinate(w, 0);\n"
-"return c;\n"
-"end X;\n"
-"function Y(w:wkb) :dbl;\n"
-"c := GetCoordinate(w, 1);\n"
-"return c;\n"
-"end Y;\n"
-"function Z(w:wkb) :dbl;\n"
-"c := GetCoordinate(w, 2);\n"
-"return c;\n"
-"end Z;\n"
-"function Force2D(g:wkb) :wkb;\n"
-"x := ForceDimensions(g, 2);\n"
-"return x;\n"
-"end Force2D;\n"
-"function Force3D(g:wkb) :wkb;\n"
-"x := ForceDimensions(g, 3);\n"
-"return x;\n"
-"end Force3D;\n"
-"function Translate(g:wkb, dx:dbl, dy:dbl) :wkb;\n"
-"x := Translate3D(g,dx,dy,0:dbl);\n"
-"return x;\n"
-"end Translate;\n"
-"function Translate(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb;\n"
-"x := Translate3D(g,dx,dy,dz);\n"
-"return x;\n"
-"end Translate;\n"
-"function NumPoints(w:wkb) :int;\n"
-"x := PointsNum(w, 1);\n"
-"return x;\n"
-"end NumPoints;\n"
-"function NPoints(w:wkb) :int;\n"
-"x := PointsNum(w, 0);\n"
-"return x;\n"
-"end NPoints;\n"
-"function MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl, srid:int) :wkb;\n"
-"x := EnvelopeFromCoordinates(xmin, ymin, xmax, ymax, srid);\n"
-"return x;\n"
-"end MakeEnvelope;\n"
-"function MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :wkb;\n"
-"x := EnvelopeFromCoordinates(xmin, ymin, xmax, ymax, 0);\n"
-"return x;\n"
-"end MakeEnvelope;\n"
-"function MakePolygon(external:wkb) :wkb;\n"
-"x := Polygon(external, nil:bat[:wkb], 0);\n"
-"return x;\n"
-"end MakePolygon;\n"
-"function MakePolygon(external:wkb, srid:int) :wkb;\n"
-"x := Polygon(external, nil:bat[:wkb], srid);\n"
-"return x;\n"
-"end MakePolygon;\n"
-"function XMinFromWKB(g:wkb) :dbl;\n"
-"x := coordinateFromWKB(g, 1);\n"
-"return x;\n"
-"end XMinFromWKB;\n"
-"function YMinFromWKB(g:wkb) :dbl;\n"
-"x := coordinateFromWKB(g, 2);\n"
-"return x;\n"
-"end YMinFromWKB;\n"
-"function XMaxFromWKB(g:wkb) :dbl;\n"
-"x := coordinateFromWKB(g, 3);\n"
-"return x;\n"
-"end XMaxFromWKB;\n"
-"function YMaxFromWKB(g:wkb) :dbl;\n"
-"x := coordinateFromWKB(g, 4);\n"
-"return x;\n"
-"end YMaxFromWKB;\n"
-"function XMinFromMBR(b:mbr) :dbl;\n"
-"x := coordinateFromMBR(b, 1);\n"
-"return x;\n"
-"end XMinFromMBR;\n"
-"function YMinFromMBR(b:mbr) :dbl;\n"
-"x := coordinateFromMBR(b, 2);\n"
-"return x;\n"
-"end YMinFromMBR;\n"
-"function XMaxFromMBR(b:mbr) :dbl;\n"
-"x := coordinateFromMBR(b, 3);\n"
-"return x;\n"
-"end XMaxFromMBR;\n"
-"function YMaxFromMBR(b:mbr) :dbl;\n"
-"x := coordinateFromMBR(b, 4);\n"
-"return x;\n"
-"end YMaxFromMBR;\n"
-"module batgeom;\n"
-"function GeomFromText(wkt:bat[:str], srid:int) :bat[:wkb];\n"
-"x := FromText(wkt,srid,0);\n"
-"return x;\n"
-"end GeomFromText;\n"
-"function PointFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,1);\n"
-"return x;\n"
-"end PointFromText;\n"
-"function LineFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,2);\n"
-"return x;\n"
-"end LineFromText;\n"
-"function PolygonFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,4);\n"
-"return x;\n"
-"end PolygonFromText;\n"
-"function MPointFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,5);\n"
-"return x;\n"
-"end MPointFromText;\n"
-"function MLineFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,6);\n"
-"return x;\n"
-"end MLineFromText;\n"
-"function MPolyFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,7);\n"
-"return x;\n"
-"end MPolyFromText;\n"
-"function GeomCollFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,8);\n"
-"return x;\n"
-"end GeomCollFromText;\n"
-"function GeomFromText(wkt:bat[:str]) :bat[:wkb];\n"
-"x := FromText(wkt,0,0);\n"
-"return x;\n"
-"end GeomFromText;\n"
-"function PointFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,1);\n"
-"return x;\n"
-"end PointFromText;\n"
-"function LineFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,2);\n"
-"return x;\n"
-"end LineFromText;\n"
-"function PolygonFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,4);\n"
-"return x;\n"
-"end PolygonFromText;\n"
-"function MPointFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,5);\n"
-"return x;\n"
-"end MPointFromText;\n"
-"function MLineFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,6);\n"
-"return x;\n"
-"end MLineFromText;\n"
-"function MPolyFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,7);\n"
-"return x;\n"
-"end MPolyFromText;\n"
-"function GeomCollFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,8);\n"
-"return x;\n"
-"end GeomCollFromText;\n"
-"function AsText(w:bat[:wkb]) :bat[:str];\n"
-"x := ToText(w,0);\n"
-"return x;\n"
-"end AsText;\n"
-"function AsEWKT(w:bat[:wkb]) :bat[:str];\n"
-"x := ToText(w,1);\n"
-"return x;\n"
-"end AsEWKT;\n"
-"function GeometryType1(w:bat[:wkb]) :bat[:str];\n"
-"x := GeometryType(w, 0);\n"
-"return x;\n"
-"end GeometryType1;\n"
-"function GeometryType2(w:bat[:wkb]) :bat[:str];\n"
-"x := GeometryType(w, 1);\n"
-"return x;\n"
-"end GeometryType2;\n"
-"function MakePoint(x:bat[:dbl], y:bat[:dbl]) :bat[:wkb];\n"
-"p := MakePointXYZM(x, y, nil:bat[:dbl], nil:bat, 0);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function MakePoint(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl]) :bat[:wkb];\n"
-"p := MakePointXYZM(x, y, z, nil:bat[:dbl], 10);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function MakePointM(x:bat[:dbl], y:bat[:dbl], m:bat[:dbl]) :bat[:wkb];\n"
-"p := MakePointXYZM(x, y, nil:bat[:dbl], m, 1);\n"
-"return p;\n"
-"end MakePointM;\n"
-"function MakePoint(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], m:bat[:dbl]) :bat[:wkb];\n"
-"p := MakePointXYZM(x, y, z, m, 11);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function NumPoints(w:bat[:wkb]) :bat[:int];\n"
-"x := PointsNum(w, 1);\n"
-"return x;\n"
-"end NumPoints;\n"
-"function NPoints(w:bat[:wkb]) :bat[:int];\n"
-"x := PointsNum(w, 0);\n"
-"return x;\n"
-"end NPoints;\n"
-"function X(w:bat[:wkb]) :bat[:dbl];\n"
-"c := GetCoordinate(w, 0);\n"
-"return c;\n"
-"end X;\n"
-"function Y(w:bat[:wkb]) :bat[:dbl];\n"
-"c := GetCoordinate(w, 1);\n"
-"return c;\n"
-"end Y;\n"
-"function Z(w:bat[:wkb]) :bat[:dbl];\n"
-"c := GetCoordinate(w, 2);\n"
-"return c;\n"
-"end Z;\n"
-"function NumInteriorRings(w:bat[:wkb]) :bat[:int];\n"
-"x := batgeom.NumRings(w, 0);\n"
-"return x;\n"
-"end NumInteriorRings;\n"
-"function NRings(w:bat[:wkb]) :bat[:int];\n"
-"x := batgeom.NumRings(w, 1);\n"
-"return x;\n"
-"end NRings;\n"
-"function XMinFromWKB(g:bat[:wkb]) :bat[:dbl];\n"
-"x := coordinateFromWKB(g, 1);\n"
-"return x;\n"
-"end XMinFromWKB;\n"
-"function YMinFromWKB(g:bat[:wkb]) :bat[:dbl];\n"
-"x := coordinateFromWKB(g, 2);\n"
-"return x;\n"
-"end YMinFromWKB;\n"
-"function XMaxFromWKB(g:bat[:wkb]) :bat[:dbl];\n"
-"x := coordinateFromWKB(g, 3);\n"
-"return x;\n"
-"end XMaxFromWKB;\n"
-"function YMaxFromWKB(g:bat[:wkb]) :bat[:dbl];\n"
-"x := coordinateFromWKB(g, 4);\n"
-"return x;\n"
-"end YMaxFromWKB;\n"
-"function XMinFromMBR(b:bat[:mbr]) :bat[:dbl];\n"
-"x := coordinateFromMBR(b, 1);\n"
-"return x;\n"
-"end XMinFromMBR;\n"
-"function YMinFromMBR(b:bat[:mbr]) :bat[:dbl];\n"
-"x := coordinateFromMBR(b, 2);\n"
-"return x;\n"
-"end YMinFromMBR;\n"
-"function XMaxFromMBR(b:bat[:mbr]) :bat[:dbl];\n"
-"x := coordinateFromMBR(b, 3);\n"
-"return x;\n"
-"end XMaxFromMBR;\n"
-"function YMaxFromMBR(b:bat[:mbr]) :bat[:dbl];\n"
-"x := coordinateFromMBR(b, 4);\n"
-"return x;\n"
-"end YMaxFromMBR;\n"
-"function calc.wkb( wkt:str, srid:int, type:int ) :wkb;\n"
-"x := geom.FromText(wkt,0,0);\n"
-"return x;\n"
-"end wkb;\n"
-};
+static str
+geom_AsText_wkb(char **ret, wkb **w)
+{
+	return wkbAsText(ret, w, &(int){0});
+}
+static str
+geom_AsEWKT_wkb(char **ret, wkb **w)
+{
+	return wkbAsText(ret, w, &(int){1});
+}
+static str
+geom_GeomFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){0});
+}
+static str
+geom_PointFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){1});
+}
+static str
+geom_LineFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){2});
+}
+static str
+geom_PolygonFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){4});
+}
+static str
+geom_MPointFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){5});
+}
+static str
+geom_MLineFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){6});
+}
+static str
+geom_MPolyFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){7});
+}
+static str
+geom_GeomCollFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){8});
+}
+static str
+geom_GeomFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){0});
+}
+static str
+geom_PointFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){1});
+}
+static str
+geom_LineFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){2});
+}
+static str
+geom_PolygonFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){4});
+}
+static str
+geom_MPointFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){5});
+}
+static str
+geom_MLineFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){6});
+}
+static str
+geom_MPolyFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){7});
+}
+static str
+geom_GeomCollFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){8});
+}
+static str
+geom_NumInteriorRings_wkb(int *ret, wkb **w)
+{
+	return wkbNumRings(ret, w, &(int){0});
+}
+static str
+geom_NRings_wkb(int *ret, wkb **w)
+{
+	return wkbNumRings(ret, w, &(int){1});
+}
+static str
+geom_BdPolyFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbMLineStringToPolygon(ret, wkt, srid, &(int){0});
+}
+static str
+geom_BdMPolyFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbMLineStringToPolygon(ret, wkt, srid, &(int){1});
+}
+static str
+geom_MakePoint_dbl_dbl(wkb **ret, dbl *x, dbl *y)
+{
+	return wkbMakePoint(ret, x, y, &(dbl){0}, &(dbl){0}, &(int){0});
+}
+static str
+geom_MakePoint_dbl_dbl_dbl(wkb **ret, dbl *x, dbl *y, dbl *z)
+{
+	return wkbMakePoint(ret, x, y, z, &(dbl){0}, &(int){10});
+}
+static str
+geom_MakePointM_dbl_dbl_dbl(wkb **ret, dbl *x, dbl *y, dbl *m)
+{
+	return wkbMakePoint(ret, x, y, &(dbl){0}, m, &(int){1});
+}
+static str
+geom_MakePoint_dbl_dbl_dbl_dbl(wkb **ret, dbl *x, dbl *y, dbl *z, dbl *m)
+{
+	return wkbMakePoint(ret, x, y, z, m, &(int){11});
+}
+static str
+geom_GeometryType1_wkb(char **ret, wkb **w)
+{
+	return wkbGeometryType(ret, w, &(int){0});
+}
+static str
+geom_GeometryType2_wkb(char **ret, wkb **w)
+{
+	return wkbGeometryType(ret, w, &(int){1});
+}
+static str
+geom_X_wkb(dbl *ret, wkb **w)
+{
+	return wkbGetCoordinate(ret, w, &(int){0});
+}
+static str
+geom_Y_wkb(dbl *ret, wkb **w)
+{
+	return wkbGetCoordinate(ret, w, &(int){1});
+}
+static str
+geom_Z_wkb(dbl *ret, wkb **w)
+{
+	return wkbGetCoordinate(ret, w, &(int){2});
+}
+static str
+geom_Force2D_wkb(wkb **ret, wkb **g)
+{
+	return wkbForceDim(ret, g, &(int){2});
+}
+static str
+geom_Force3D_wkb(wkb **ret, wkb **g)
+{
+	return wkbForceDim(ret, g, &(int){3});
+}
+static str
+geom_Translate_wkb_dbl_dbl(wkb **ret, wkb **g, dbl *dx, dbl *dy)
+{
+	return wkbTranslate(ret, g, dx, dy, &(dbl){0});
+}
+static str
+geom_Translate_wkb_dbl_dbl_dbl(wkb **ret, wkb **g, dbl *dx, dbl *dy, dbl *dz)
+{
+	return wkbTranslate(ret, g, dx, dy, dz);
+}
+static str
+geom_NumPoints_wkb(int *ret, wkb **w)
+{
+	return wkbNumPoints(ret, w, &(int){1});
+}
+static str
+geom_NPoints_wkb(int *ret, wkb **w)
+{
+	return wkbNumPoints(ret, w, &(int){0});
+}
+static str
+geom_MakeEnvelope_dbl_dbl_dbl_dbl_int(wkb **ret, dbl *xmin, dbl *ymin, dbl *xmax, dbl *ymax, int *srid)
+{
+	return wkbEnvelopeFromCoordinates(ret, xmin, ymin, xmax, ymax, srid);
+}
+static str
+geom_MakeEnvelope_dbl_dbl_dbl_dbl(wkb **ret, dbl *xmin, dbl *ymin, dbl *xmax, dbl *ymax)
+{
+	return wkbEnvelopeFromCoordinates(ret, xmin, ymin, xmax, ymax, &(int){0});
+}
+static str
+geom_MakePolygon_wkb(wkb **ret, wkb **external)
+{
+	return wkbMakePolygon(ret, external, &(bat){bat_nil}, &(int){0});
+}
+static str
+geom_MakePolygon_wkb_int(wkb **ret, wkb **external, int *srid)
+{
+	return wkbMakePolygon(ret, external, &(bat){bat_nil}, srid);
+}
+static str
+geom_XMinFromWKB_wkb(dbl *ret, wkb **g)
+{
+	return wkbCoordinateFromWKB(ret, g, &(int){1});
+}
+static str
+geom_YMinFromWKB_wkb(dbl *ret, wkb **g)
+{
+	return wkbCoordinateFromWKB(ret, g, &(int){2});
+}
+static str
+geom_XMaxFromWKB_wkb(dbl *ret, wkb **g)
+{
+	return wkbCoordinateFromWKB(ret, g, &(int){3});
+}
+static str
+geom_YMaxFromWKB_wkb(dbl *ret, wkb **g)
+{
+	return wkbCoordinateFromWKB(ret, g, &(int){4});
+}
+static str
+geom_XMinFromMBR_mbr(dbl *ret, mbr **b)
+{
+	return wkbCoordinateFromMBR(ret, b, &(int){1});
+}
+static str
+geom_YMinFromMBR_mbr(dbl *ret, mbr **b)
+{
+	return wkbCoordinateFromMBR(ret, b, &(int){2});
+}
+static str
+geom_XMaxFromMBR_mbr(dbl *ret, mbr **b)
+{
+	return wkbCoordinateFromMBR(ret, b, &(int){3});
+}
+static str
+geom_YMaxFromMBR_mbr(dbl *ret, mbr **b)
+{
+	return wkbCoordinateFromMBR(ret, b, &(int){4});
+}
+static str
+calc_wkb_str_int_int(wkb **ret, str *wkt, int *srid, int *type)
+{
+	(void) srid;
+	(void) type;
+	return wkbFromText(ret, wkt, &(int){0}, &(int){0});
+}
+
+static str
+batgeom_GeomFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){0});
+}
+static str
+batgeom_PointFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){1});
+}
+static str
+batgeom_LineFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){2});
+}
+static str
+batgeom_PolygonFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){4});
+}
+static str
+batgeom_MPointFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){5});
+}
+static str
+batgeom_MLineFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){6});
+}
+static str
+batgeom_MPolyFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){7});
+}
+static str
+batgeom_GeomCollFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){8});
+}
+static str
+batgeom_GeomFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){0});
+}
+static str
+batgeom_PointFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){1});
+}
+static str
+batgeom_LineFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){2});
+}
+static str
+batgeom_PolygonFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){4});
+}
+static str
+batgeom_MPointFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){5});
+}
+static str
+batgeom_MLineFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){6});
+}
+static str
+batgeom_MPolyFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){7});
+}
+static str
+batgeom_GeomCollFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){8});
+}
+static str
+batgeom_AsText_wkb(bat *ret, bat *w)
+{
+	return wkbAsText_bat(ret, w, &(int){0});
+}
+static str
+batgeom_AsEWKT_wkb(bat *ret, bat *w)
+{
+	return wkbAsText_bat(ret, w, &(int){1});
+}
+static str
+batgeom_GeometryType1_wkb(bat *ret, bat *w)
+{
+	return wkbGeometryType_bat(ret, w, &(int){0});
+}
+static str
+batgeom_GeometryType2_wkb(bat *ret, bat *w)
+{
+	return wkbGeometryType_bat(ret, w, &(int){1});
+}
+static str
+batgeom_MakePoint_dbl_dbl(bat *ret, bat *x, bat *y)
+{
+	return wkbMakePoint_bat(ret, x, y, &(bat){bat_nil}, &(bat){bat_nil}, &(int){0});
+}
+static str
+batgeom_MakePoint_dbl_dbl_dbl(bat *ret, bat *x, bat *y, bat *z)
+{
+	return wkbMakePoint_bat(ret, x, y, z, &(bat){bat_nil}, &(int){10});
+}
+static str
+batgeom_MakePointM_dbl_dbl_dbl(bat *ret, bat *x, bat *y, bat *m)
+{
+	return wkbMakePoint_bat(ret, x, y, &(bat){bat_nil}, m, &(int){1});
+}
+static str
+batgeom_MakePoint_dbl_dbl_dbl_dbl(bat *ret, bat *x, bat *y, bat *z, bat *m)
+{
+	return wkbMakePoint_bat(ret, x, y, z, m, &(int){11});
+}
+static str
+batgeom_NumPoints_wkb(bat *ret, bat *w)
+{
+	return wkbNumPoints_bat(ret, w, &(int){1});
+}
+static str
+batgeom_NPoints_wkb(bat *ret, bat *w)
+{
+	return wkbNumPoints_bat(ret, w, &(int){0});
+}
+static str
+batgeom_X_wkb(bat *ret, bat *w)
+{
+	return wkbGetCoordinate_bat(ret, w, &(int){0});
+}
+static str
+batgeom_Y_wkb(bat *ret, bat *w)
+{
+	return wkbGetCoordinate_bat(ret, w, &(int){1});
+}
+static str
+batgeom_Z_wkb(bat *ret, bat *w)
+{
+	return wkbGetCoordinate_bat(ret, w, &(int){2});
+}
+static str
+batgeom_NumInteriorRings_wkb(bat *ret, bat *w)
+{
+	return wkbNumRings_bat(ret, w, &(int){0});
+}
+static str
+batgeom_NRings_wkb(bat *ret, bat *w)
+{
+	return wkbNumRings_bat(ret, w, &(int){1});
+}
+static str
+batgeom_XMinFromWKB_wkb(bat *ret, bat *g)
+{
+	return wkbCoordinateFromWKB_bat(ret, g, &(int){1});
+}
+static str
+batgeom_YMinFromWKB_wkb(bat *ret, bat *g)
+{
+	return wkbCoordinateFromWKB_bat(ret, g, &(int){2});
+}
+static str
+batgeom_XMaxFromWKB_wkb(bat *ret, bat *g)
+{
+	return wkbCoordinateFromWKB_bat(ret, g, &(int){3});
+}
+static str
+batgeom_YMaxFromWKB_wkb(bat *ret, bat *g)
+{
+	return wkbCoordinateFromWKB_bat(ret, g, &(int){4});
+}
+static str
+batgeom_XMinFromMBR_mbr(bat *ret, bat *b)
+{
+	return wkbCoordinateFromMBR_bat(ret, b, &(int){1});
+}
+static str
+batgeom_YMinFromMBR_mbr(bat *ret, bat *b)
+{
+	return wkbCoordinateFromMBR_bat(ret, b, &(int){2});
+}
+static str
+batgeom_XMaxFromMBR_mbr(bat *ret, bat *b)
+{
+	return wkbCoordinateFromMBR_bat(ret, b, &(int){3});
+}
+static str
+batgeom_YMaxFromMBR_mbr(bat *ret, bat *b)
+{
+	return wkbCoordinateFromMBR_bat(ret, b, &(int){4});
+}
 
 #include "mel.h"
 static mel_atom geom_init_atoms[] = {
@@ -6442,9 +5638,49 @@ static mel_atom geom_init_atoms[] = {
  { .name="wkba", .tostr=wkbaTOSTR, .fromstr=wkbaFROMSTR, .null=wkbaNULL, .hash=wkbaHASH, .cmp=wkbaCOMP, .read=wkbaREAD, .write=wkbaWRITE, .put=wkbaPUT, .del=wkbaDEL, .length=wkbaLENGTH, .heap=wkbaHEAP, },  { .cmp=NULL }
 };
 static mel_func geom_init_funcs[] = {
+ //TODO Fill in descriptions
+ command("geom", "CoversGeographic", wkbCoversGeographic, false, "TODO", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
+
+ command("geom", "DistanceGeographic", wkbDistanceGeographic, false, "TODO", args(1, 3, arg("", dbl), arg("a", wkb), arg("b", wkb))),
+ command("batgeom", "DistanceGeographic", wkbDistanceGeographic_bat, false, "TODO", args(1, 3, batarg("", dbl), batarg("a", wkb), batarg("b", wkb))),
+ command("batgeom", "DistanceGeographic", wkbDistanceGeographic_bat_cand, false, "TODO", args(1, 5, batarg("", dbl), batarg("a", wkb), batarg("b", wkb), batarg("s1", oid), batarg("s2", oid))),
+
+ //Filter functions
+ command("geom", "DWithinGeographic", wkbDWithinGeographic, false, "TODO", args(1, 4, arg("", bit), arg("a", wkb), arg("b", wkb), arg("d", dbl))),
+ command("geom", "DWithinGeographicselect", wkbDWithinGeographicSelect, false, "TODO", args(1, 6, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("d", dbl),arg("anti",bit))),
+ command("geom", "DWithinGeographicjoin", wkbDWithinGeographicJoin, false, "TODO", args(2, 10, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("d", dbl), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ command("geom", "IntersectsGeographic", wkbIntersectsGeographic, false, "Returns true if the geographic Geometries intersect in any point", args(1, 3, arg("", bit), arg("a", wkb), arg("b", wkb))),
+ command("geom", "IntersectsGeographicselect", wkbIntersectsGeographicSelect, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
+ command("geom", "IntersectsGeographicjoin", wkbIntersectsGeographicJoin, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+
+ command("rtree", "Intersects", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("rtree", "Intersectsselect", wkbIntersectsSelectRTree, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
+ command("rtree", "Intersectsjoin", wkbIntersectsJoinRTree, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+
+ command("rtree", "DWithin", wkbDWithin, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
+ command("rtree", "DWithinselect", wkbDWithinSelectRTree, false, "TODO", args(1, 6, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("dst",dbl), arg("anti",bit))),
+ command("rtree", "DWithinjoin", wkbDWithinJoinRTree, false, "TODO", args(2, 10, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid), arg("dst",dbl),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+
+ command("geom", "Intersects_noindex", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Intersects_noindexselect", wkbIntersectsSelectNoIndex, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
+ command("geom", "Intersects_noindexjoin", wkbIntersectsJoinNoIndex, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+
+ command("geom", "DWithin_noindex", wkbDWithin, false, "Returns true if the two geometries are within the specifies distance from each other", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
+ command("geom", "DWithinselect_noindex", wkbDWithinSelectRTree, false, "TODO", args(1, 6, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("dst",dbl), arg("anti",bit))),
+ command("geom", "DWithinjoin_noindex", wkbDWithinJoinRTree, false, "TODO", args(2, 10, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid), arg("dst",dbl),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+
+ command("geom", "IntersectsMBR", mbrIntersects, false, "TODO", args(1,3, arg("",bit),arg("a",mbr),arg("b",mbr))),
+
+ command("geom", "Collect", wkbCollect, false, "TODO", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
+
+ command("aggr", "Collect", wkbCollectAggr, false, "TODO", args(1, 2, arg("", wkb), batarg("val", wkb))),
+ command("aggr", "subCollect", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
+ command("aggr", "subCollect", wkbCollectAggrSubGroupedCand, false, "TODO", args(1, 6, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit))),
+
  command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "getType", geoGetType, false, "returns the str representation of the geometry type", args(1,3, arg("",str),arg("flags",int),arg("format",int))),
+
  command("geom", "MLineStringToPolygon", wkbMLineStringToPolygon, false, "Creates polygons using the MultiLineString provided as WKT. Depending on the flag creates one (flag=0) or multiple (flag=1) polygons", args(1,4, arg("",wkb),arg("wkt",str),arg("srid",int),arg("flag",int))),
  command("geom", "AsBinary", wkbAsBinary, false, "Returns the wkb representation into HEX format", args(1,2, arg("",str),arg("w",wkb))),
  command("geom", "FromBinary", wkbFromBinary, false, "Creates a wkb using the HEX representation", args(1,2, arg("",wkb),arg("w",str))),
@@ -6478,7 +5714,7 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Area", wkbArea, false, "Returns the area of the surface if it is a polygon or multi-polygon", args(1,2, arg("",dbl),arg("w",wkb))),
  command("geom", "Centroid", wkbCentroid, false, "Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.", args(1,2, arg("",wkb),arg("w",wkb))),
  command("geom", "Distance", wkbDistance, false, "Returns the 2-dimensional minimum cartesian distance between the two geometries in projected units (spatial ref units.", args(1,3, arg("",dbl),arg("a",wkb),arg("b",wkb))),
- command("geom", "Length", wkbLength, false, "Returns the cartesian 2D length of the geometry if it is a linestrin or multilinestring", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "Length", wkbLength, false, "Returns the cartesian 2D length of the geometry if it is a linestring or multilinestring", args(1,2, arg("",dbl),arg("w",wkb))),
  command("geom", "ConvexHull", wkbConvexHull, false, "Returns a geometry that represents the convex hull of this geometry. The convex hull of a geometry represents the minimum convex geometry that encloses all geometries within the set.", args(1,2, arg("",wkb),arg("w",wkb))),
  command("geom", "Intersection", wkbIntersection, false, "Returns a geometry that represents the point set intersection of the Geometries a, b", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
  command("geom", "Union", wkbUnion, false, "Returns a geometry that represents the point set union of the Geometries a, b", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
@@ -6490,14 +5726,13 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Crosses", wkbCrosses, false, "Returns TRUE if the supplied geometries have some, but not all, interior points in common.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Disjoint", wkbDisjoint, false, "Returns true if these Geometries are 'spatially disjoint'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Equals", wkbEquals, false, "Returns true if the given geometries represent the same geometry. Directionality is ignored.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
- command("geom", "Intersects", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Overlaps", wkbOverlaps, false, "Returns TRUE if the Geometries intersect but are not completely contained by each other.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Relate", wkbRelate, false, "Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("intersection_matrix_pattern",str))),
  command("geom", "Touches", wkbTouches, false, "Returns TRUE if the geometries have at least one point in common, but their interiors do not intersect.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Within", wkbWithin, false, "Returns TRUE if the geometry A is completely inside geometry B", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Covers", wkbCovers, false, "Returns TRUE if no point of geometry B is outside geometry A", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "CoveredBy", wkbCoveredBy, false, "Returns TRUE if no point of geometry A is outside geometry B", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
- command("geom", "DWithin", wkbDWithin, false, "Returns true if the two geometries are within the specifies distance from each other", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
+ command("geom", "DWithin2", wkbDWithinMbr, false, "" /* <<< desc TODO */, args(1,6, arg("",bit),arg("a",wkb),arg("b",wkb),arg("a_mbr",mbr),arg("b_mbr",mbr),arg("dst",dbl))),
  command("geom", "GeometryN", wkbGeometryN, false, "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL", args(1,3, arg("",wkb),arg("g",wkb),arg("n",int))),
  command("geom", "NumGeometries", wkbNumGeometries, false, "Returns the number of geometries", args(1,2, arg("",int),arg("g",wkb))),
  command("geom", "Transform", wkbTransform, false, "Transforms a geometry from one srid to another", args(1,6, arg("",wkb),arg("g",wkb),arg("srid_src",int),arg("srid_dst",int),arg("proj_src",str),arg("proj_dest",str))),
@@ -6511,7 +5746,9 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Contains", wkbContains_point_bat, false, "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b", args(1,4, batarg("",bit),arg("a",wkb),batarg("px",dbl),batarg("py",dbl))),
  command("geom", "PointsNum", wkbNumPoints, false, "The number of points in the Geometry. If check=1, the geometry should be a linestring", args(1,3, arg("",int),arg("w",wkb),arg("check",int))),
  command("geom", "MakeLine", wkbMakeLine, false, "Gets two point or linestring geometries and returns a linestring geometry", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
- command("geom", "MakeLine", wkbMakeLineAggr, false, "Gets a BAT with point or linestring geometries and returns a single linestring geometry", args(1,2, arg("",wkb),batarg("a",wkb))),
+ command("aggr", "MakeLine", wkbMakeLineAggr, false, "Gets a BAT with point or linestring geometries and returns a single linestring geometry", args(1,2, arg("",wkb),batarg("a",wkb))),
+ command("aggr", "subMakeLine", wkbMakeLineAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
+ command("aggr", "subMakeLine", wkbMakeLineAggrSubGroupedCand, false, "TODO", args(1, 6, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit))),
  command("geom", "PointOnSurface", wkbPointOnSurface, false, "Returns a point guaranteed to lie on the surface. Similar to postGIS it works for points and lines in addition to surfaces and for 3d geometries.", args(1,2, arg("",wkb),arg("w",wkb))),
  command("geom", "mbr", wkbMBR, false, "Creates the mbr for the given wkb.", args(1,2, arg("",mbr),arg("",wkb))),
  command("geom", "MakeBox2D", wkbBox2D, false, "Creates an mbr from the two 2D points", args(1,3, arg("",mbr),arg("",wkb),arg("",wkb))),
@@ -6575,12 +5812,102 @@ static mel_func geom_init_funcs[] = {
  command("batgeom", "mbr", wkbMBR_bat, false, "Creates the mbr for the given wkb.", args(1,2, batarg("",mbr),batarg("",wkb))),
  command("batgeom", "coordinateFromWKB", wkbCoordinateFromWKB_bat, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry", args(1,3, batarg("",dbl),batarg("",wkb),arg("",int))),
  command("batgeom", "coordinateFromMBR", wkbCoordinateFromMBR_bat, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr", args(1,3, batarg("",dbl),batarg("",mbr),arg("",int))),
+ command("batgeom", "Transform", wkbTransform_bat, false, "Transforms a bat of geometries from one srid to another", args(1,6, batarg("",wkb),batarg("g",wkb),arg("srid_src",int),arg("srid_dst",int),arg("proj_src",str),arg("proj_dest",str))),
  command("calc", "mbr", mbrFromString, false, "", args(1,2, arg("",mbr),arg("v",str))),
  command("calc", "mbr", mbrFromMBR, false, "", args(1,2, arg("",mbr),arg("v",mbr))),
  command("calc", "wkb", wkbFromWKB, false, "It is called when adding a new geometry column to an existing table", args(1,2, arg("",wkb),arg("v",wkb))),
  command("calc", "wkb", geom_2_geom, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1,4, arg("",wkb),arg("geo",wkb),arg("columnType",int),arg("columnSRID",int))),
  command("batcalc", "wkb", geom_2_geom_bat, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1,5, batarg("",wkb),batarg("geo",wkb),batarg("s",oid),arg("columnType",int),arg("columnSRID",int))),
  command("batcalc", "wkb", wkbFromText_bat_cand, false, "", args(1,5, batarg("",wkb),batarg("wkt",str),batarg("s",oid),arg("srid",int),arg("type",int))),
+ command("geom", "AsText", geom_AsText_wkb, false, "", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "AsEWKT", geom_AsEWKT_wkb, false, "", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "GeomFromText", geom_GeomFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "PointFromText", geom_PointFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "LineFromText", geom_LineFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "PolygonFromText", geom_PolygonFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "MPointFromText", geom_MPointFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "MLineFromText", geom_MLineFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "MPolyFromText", geom_MPolyFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "GeomCollFromText", geom_GeomCollFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "GeomFromText", geom_GeomFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "PointFromText", geom_PointFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "LineFromText", geom_LineFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "PolygonFromText", geom_PolygonFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "MPointFromText", geom_MPointFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "MLineFromText", geom_MLineFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "MPolyFromText", geom_MPolyFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "GeomCollFromText", geom_GeomCollFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "NumInteriorRings", geom_NumInteriorRings_wkb, false, "", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "NRings", geom_NRings_wkb, false, "", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "BdPolyFromText", geom_BdPolyFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "BdMPolyFromText", geom_BdMPolyFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "MakePoint", geom_MakePoint_dbl_dbl, false, "", args(1,3, arg("",wkb),arg("x",dbl),arg("y",dbl))),
+ command("geom", "MakePoint", geom_MakePoint_dbl_dbl_dbl, false, "", args(1,4, arg("",wkb),arg("x",dbl),arg("y",dbl),arg("z",dbl))),
+ command("geom", "MakePointM", geom_MakePointM_dbl_dbl_dbl, false, "", args(1,4, arg("",wkb),arg("x",dbl),arg("y",dbl),arg("m",dbl))),
+ command("geom", "MakePoint", geom_MakePoint_dbl_dbl_dbl_dbl, false, "", args(1,5, arg("",wkb),arg("x",dbl),arg("y",dbl),arg("z",dbl),arg("m",dbl))),
+ command("geom", "GeometryType1", geom_GeometryType1_wkb, false, "", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "GeometryType2", geom_GeometryType2_wkb, false, "", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "X", geom_X_wkb, false, "", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "Y", geom_Y_wkb, false, "", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "Z", geom_Z_wkb, false, "", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "Force2D", geom_Force2D_wkb, false, "", args(1,2, arg("",wkb),arg("g",wkb))),
+ command("geom", "Force3D", geom_Force3D_wkb, false, "", args(1,2, arg("",wkb),arg("g",wkb))),
+ command("geom", "Translate", geom_Translate_wkb_dbl_dbl, false, "", args(1,4, arg("",wkb),arg("g",wkb),arg("dx",dbl),arg("dy",dbl))),
+ command("geom", "Translate", geom_Translate_wkb_dbl_dbl_dbl, false, "", args(1,5, arg("",wkb),arg("g",wkb),arg("dx",dbl),arg("dy",dbl),arg("dz",dbl))),
+ command("geom", "NumPoints", geom_NumPoints_wkb, false, "", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "NPoints", geom_NPoints_wkb, false, "", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "MakeEnvelope", geom_MakeEnvelope_dbl_dbl_dbl_dbl_int, false, "", args(1,6, arg("",wkb),arg("xmin",dbl),arg("ymin",dbl),arg("xmax",dbl),arg("ymax",dbl),arg("srid",int))),
+ command("geom", "MakeEnvelope", geom_MakeEnvelope_dbl_dbl_dbl_dbl, false, "", args(1,5, arg("",wkb),arg("xmin",dbl),arg("ymin",dbl),arg("xmax",dbl),arg("ymax",dbl))),
+ command("geom", "MakePolygon", geom_MakePolygon_wkb, false, "", args(1,2, arg("",wkb),arg("external",wkb))),
+ command("geom", "MakePolygon", geom_MakePolygon_wkb_int, false, "", args(1,3, arg("",wkb),arg("external",wkb),arg("srid",int))),
+ command("geom", "XMinFromWKB", geom_XMinFromWKB_wkb, false, "", args(1,2, arg("",dbl),arg("g",wkb))),
+ command("geom", "YMinFromWKB", geom_YMinFromWKB_wkb, false, "", args(1,2, arg("",dbl),arg("g",wkb))),
+ command("geom", "XMaxFromWKB", geom_XMaxFromWKB_wkb, false, "", args(1,2, arg("",dbl),arg("g",wkb))),
+ command("geom", "YMaxFromWKB", geom_YMaxFromWKB_wkb, false, "", args(1,2, arg("",dbl),arg("g",wkb))),
+ command("geom", "XMinFromMBR", geom_XMinFromMBR_mbr, false, "", args(1,2, arg("",dbl),arg("b",mbr))),
+ command("geom", "YMinFromMBR", geom_YMinFromMBR_mbr, false, "", args(1,2, arg("",dbl),arg("b",mbr))),
+ command("geom", "XMaxFromMBR", geom_XMaxFromMBR_mbr, false, "", args(1,2, arg("",dbl),arg("b",mbr))),
+ command("geom", "YMaxFromMBR", geom_YMaxFromMBR_mbr, false, "", args(1,2, arg("",dbl),arg("b",mbr))),
+ command("calc", "wkb", calc_wkb_str_int_int, false, "", args(1,4, arg("",wkb),arg("wkt",str),arg("srid",int),arg("type",int))),
+ command("batgeom", "GeomFromText", batgeom_GeomFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "PointFromText", batgeom_PointFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "LineFromText", batgeom_LineFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "PolygonFromText", batgeom_PolygonFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "MPointFromText", batgeom_MPointFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "MLineFromText", batgeom_MLineFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "MPolyFromText", batgeom_MPolyFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "GeomCollFromText", batgeom_GeomCollFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "GeomFromText", batgeom_GeomFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "PointFromText", batgeom_PointFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "LineFromText", batgeom_LineFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "PolygonFromText", batgeom_PolygonFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "MPointFromText", batgeom_MPointFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "MLineFromText", batgeom_MLineFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "MPolyFromText", batgeom_MPolyFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "GeomCollFromText", batgeom_GeomCollFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "AsText", batgeom_AsText_wkb, false, "", args(1,2, batarg("",str),batarg("w",wkb))),
+ command("batgeom", "AsEWKT", batgeom_AsEWKT_wkb, false, "", args(1,2, batarg("",str),batarg("w",wkb))),
+ command("batgeom", "GeometryType1", batgeom_GeometryType1_wkb, false, "", args(1,2, batarg("",str),batarg("w",wkb))),
+ command("batgeom", "GeometryType2", batgeom_GeometryType2_wkb, false, "", args(1,2, batarg("",str),batarg("w",wkb))),
+ command("batgeom", "MakePoint", batgeom_MakePoint_dbl_dbl, false, "", args(1,3, batarg("",wkb),batarg("x",dbl),batarg("y",dbl))),
+ command("batgeom", "MakePoint", batgeom_MakePoint_dbl_dbl_dbl, false, "", args(1,4, batarg("",wkb),batarg("x",dbl),batarg("y",dbl),batarg("z",dbl))),
+ command("batgeom", "MakePointM", batgeom_MakePointM_dbl_dbl_dbl, false, "", args(1,4, batarg("",wkb),batarg("x",dbl),batarg("y",dbl),batarg("m",dbl))),
+ command("batgeom", "MakePoint", batgeom_MakePoint_dbl_dbl_dbl_dbl, false, "", args(1,5, batarg("",wkb),batarg("x",dbl),batarg("y",dbl),batarg("z",dbl),batarg("m",dbl))),
+ command("batgeom", "NumPoints", batgeom_NumPoints_wkb, false, "", args(1,2, batarg("",int),batarg("w",wkb))),
+ command("batgeom", "NPoints", batgeom_NPoints_wkb, false, "", args(1,2, batarg("",int),batarg("w",wkb))),
+ command("batgeom", "X", batgeom_X_wkb, false, "", args(1,2, batarg("",dbl),batarg("w",wkb))),
+ command("batgeom", "Y", batgeom_Y_wkb, false, "", args(1,2, batarg("",dbl),batarg("w",wkb))),
+ command("batgeom", "Z", batgeom_Z_wkb, false, "", args(1,2, batarg("",dbl),batarg("w",wkb))),
+ command("batgeom", "NumInteriorRings", batgeom_NumInteriorRings_wkb, false, "", args(1,2, batarg("",int),batarg("w",wkb))),
+ command("batgeom", "NRings", batgeom_NRings_wkb, false, "", args(1,2, batarg("",int),batarg("w",wkb))),
+ command("batgeom", "XMinFromWKB", batgeom_XMinFromWKB_wkb, false, "", args(1,2, batarg("",dbl),batarg("g",wkb))),
+ command("batgeom", "YMinFromWKB", batgeom_YMinFromWKB_wkb, false, "", args(1,2, batarg("",dbl),batarg("g",wkb))),
+ command("batgeom", "XMaxFromWKB", batgeom_XMaxFromWKB_wkb, false, "", args(1,2, batarg("",dbl),batarg("g",wkb))),
+ command("batgeom", "YMaxFromWKB", batgeom_YMaxFromWKB_wkb, false, "", args(1,2, batarg("",dbl),batarg("g",wkb))),
+ command("batgeom", "XMinFromMBR", batgeom_XMinFromMBR_mbr, false, "", args(1,2, batarg("",dbl),batarg("b",mbr))),
+ command("batgeom", "YMinFromMBR", batgeom_YMinFromMBR_mbr, false, "", args(1,2, batarg("",dbl),batarg("b",mbr))),
+ command("batgeom", "XMaxFromMBR", batgeom_XMaxFromMBR_mbr, false, "", args(1,2, batarg("",dbl),batarg("b",mbr))),
+ command("batgeom", "YMaxFromMBR", batgeom_YMaxFromMBR_mbr, false, "", args(1,2, batarg("",dbl),batarg("b",mbr))),
  { .imp=NULL }
 };
 #include "mal_import.h"
@@ -6589,4 +5916,4 @@ static mel_func geom_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_geom_mal)
-{ mal_module2("geom", geom_init_atoms, geom_init_funcs, geom_prelude, (const char*)geom_functions); }
+{ mal_module2("geom", geom_init_atoms, geom_init_funcs, geom_prelude, NULL); }

@@ -159,4 +159,3 @@ drop trigger test_4_3
 statement ok
 drop table t_4_1
 
-

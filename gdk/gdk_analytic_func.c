@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -66,7 +70,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree,
 				has_nils = true;			\
 				rb[k] = TPE##_nil;			\
 			} else {					\
-				UPCAST nval = (UPCAST) LNG_HGE;		\
+				UPCAST nval = (UPCAST) (LNG_HGE);	\
 				VALIDATION /* validation must come after null check */ \
 				if (nval >= ncnt) {			\
 					rb[k] = (TPE)(j + 1);		\
@@ -88,7 +92,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree,
 		TPE *rb = (TPE*)Tloc(r, 0);				\
 		if (p) {						\
 			while (i < cnt) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 ntile##IMP##TPE:							\
 					NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION); \
 				}					\
@@ -178,9 +182,9 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 #ifdef HAVE_HGE
 		case TYPE_hge:
 #if SIZEOF_OID == SIZEOF_INT
-			ANALYTICAL_NTILE_MULTI_IMP(hge, (val > (hge) GDK_int_max) ? GDK_int_max : (lng) val, lng);
+			ANALYTICAL_NTILE_MULTI_IMP(hge, val > (hge) GDK_int_max ? GDK_int_max : (lng) val, lng);
 #else
-			ANALYTICAL_NTILE_MULTI_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, BUN);
+			ANALYTICAL_NTILE_MULTI_IMP(hge, val > (hge) GDK_lng_max ? GDK_lng_max : (lng) val, BUN);
 #endif
 		break;
 #endif
@@ -1189,7 +1193,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		TPE *restrict bp = (TPE*)bi.base, *rb = (TPE*)Tloc(r, 0); \
 		if (p) {						\
 			while (i < cnt) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 minmaxfixed##TPE##IMP:							\
 					ANALYTICAL_MIN_MAX_CALC_FIXED_##IMP(TPE, MIN_MAX); \
 				}					\
@@ -1238,7 +1242,7 @@ minmaxfixed##TPE##IMP:							\
 		default: {						\
 			if (p) {					\
 				while (i < cnt) {			\
-					if (np[i]) 	{		\
+					if (np[i]) {			\
 minmaxvarsized##IMP:							\
 						ANALYTICAL_MIN_MAX_CALC_OTHERS_##IMP(GT_LT); \
 					}				\
@@ -1278,25 +1282,25 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 									\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
-		case 3: /* unbounded until current row */	{	\
+		case 3: /* unbounded until current row */		\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, UNBOUNDED_TILL_CURRENT_ROW); \
-		} break;						\
-		case 4: /* current row until unbounded */	{	\
+			break;						\
+		case 4: /* current row until unbounded */		\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW_TILL_UNBOUNDED); \
-		} break;						\
-		case 5: /* all rows */	{				\
+			break;						\
+		case 5: /* all rows */					\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, ALL_ROWS); \
-		} break;						\
-		case 6: /* current row */ {				\
+			break;						\
+		case 6: /* current row */				\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW); \
-		} break;						\
-		default: {						\
-			if (!(st = GDKinitialize_segment_tree())) {	\
+			break;						\
+		default:						\
+			if ((st = GDKinitialize_segment_tree()) == NULL) { \
 				res = GDK_FAIL;				\
 				goto cleanup;				\
 			}						\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, OTHERS); \
-		}							\
+			break;						\
 		}							\
 	}								\
 									\
@@ -1550,7 +1554,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		TPE *restrict bp = (TPE*) bheap;			\
 		if (p) {						\
 			while (i < cnt) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 count##TPE##IMP:							\
 					ANALYTICAL_COUNT_FIXED_##IMP(TPE); \
 				}					\
@@ -1599,7 +1603,7 @@ count##TPE##IMP:							\
 		default: {						\
 			if (p) {					\
 				while (i < cnt) {			\
-					if (np[i]) 	{		\
+					if (np[i]) {			\
 countothers##IMP:							\
 						ANALYTICAL_COUNT_OTHERS_##IMP; \
 					}				\
@@ -1638,25 +1642,25 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_COUNT_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
-		case 4: /* current row until unbounded */	{
+			break;
+		case 4: /* current row until unbounded */
 			ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-		} break;
-		case 5: /* all rows */	{
+			break;
+		case 5: /* all rows */
 			ANALYTICAL_COUNT_BRANCHES(ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW);
-		} break;
-		default: {
-			if (!count_all && !(st = GDKinitialize_segment_tree())) {
+			break;
+		default:
+			if (!count_all && (st = GDKinitialize_segment_tree()) == NULL) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
 			ANALYTICAL_COUNT_BRANCHES(OTHERS);
-		}
+			break;
 		}
 	}
 
@@ -1815,7 +1819,7 @@ cleanup:
 		TPE2 *rb = (TPE2*)Tloc(r, 0);			\
 		if (p) {					\
 			while (i < cnt) {			\
-				if (np[i]) 	{		\
+				if (np[i]) {			\
 sum##TPE1##TPE2##IMP:						\
 					IMP(TPE1, TPE2);	\
 				}				\
@@ -1966,25 +1970,25 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_SUM_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
-		case 4: /* current row until unbounded */	{
+			break;
+		case 4: /* current row until unbounded */
 			ANALYTICAL_SUM_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-		} break;
-		case 5: /* all rows */	{
+			break;
+		case 5: /* all rows */
 			ANALYTICAL_SUM_BRANCHES(ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_SUM_BRANCHES(CURRENT_ROW);
-		} break;
-		default: {
-			if (!(st = GDKinitialize_segment_tree())) {
+			break;
+		default:
+			if ((st = GDKinitialize_segment_tree()) == NULL) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
 			ANALYTICAL_SUM_BRANCHES(OTHERS);
-		}
+			break;
 		}
 	}
 
@@ -2315,7 +2319,7 @@ nosupport:
 		TPE2 *rb = (TPE2*)Tloc(r, 0);				\
 		if (p) {						\
 			while (i < cnt) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 prod##TPE1##TPE2##IMP:							\
 					IMP(TPE1, TPE2, TPE3_OR_REAL_IMP); \
 				}					\
@@ -2485,25 +2489,25 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_PROD_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
-		case 4: /* current row until unbounded */	{
+			break;
+		case 4: /* current row until unbounded */
 			ANALYTICAL_PROD_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-		} break;
-		case 5: /* all rows */	{
+			break;
+		case 5: /* all rows */
 			ANALYTICAL_PROD_BRANCHES(ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_PROD_BRANCHES(CURRENT_ROW);
-		} break;
-		default: {
-			if (!(st = GDKinitialize_segment_tree())) {
+			break;
+		default:
+			if ((st = GDKinitialize_segment_tree()) == NULL) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
 			ANALYTICAL_PROD_BRANCHES(OTHERS);
-		}
+			break;
 		}
 	}
 

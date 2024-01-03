@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* This file contains shared definitions for gdk_calc.c and gdk_aggr.c */
@@ -633,3 +637,21 @@ typedef long double ldouble;
 #define rounddbl(x)	roundl(x)
 #endif
 #endif
+
+
+
+#define absbte(x)	abs(x)
+#define abssht(x)	abs(x)
+#define absint(x)	abs(x)
+#define abslng(x)	llabs(x)
+#define abshge(x)	ABSOLUTE(x)
+
+BAT *
+BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp,
+		 BUN (*typeswitchloop)(const void *, int, bool,
+				       const void *, int, bool,
+				       void *restrict, int,
+				       struct canditer *restrict,
+				       struct canditer *restrict,
+				       oid, oid, const char *),
+		 const char *func);

@@ -100,12 +100,22 @@ NULL
 NULL
 NULL
 
+#output differs for 1 vs. multiple threads
+skipif threads=1
 query T nosort
 PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
 group by (
 | table("sys"."tab0") [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ]
-) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+) [ "tab0"."col2", "tab0"."col0", "tab0"."col1" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+
+onlyif threads=1
+query T nosort
+PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
+----
+group by (
+| table("sys"."tab0") [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ]
+) [ "tab0"."col2", "tab0"."col0", "tab0"."col1" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
 
 query IIII rowsort
 SELECT DISTINCT col0, col1, col2, col0 FROM tab0
@@ -192,8 +202,12 @@ SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2
 67
 58
 
-statement error
+query I rowsort
 SELECT col0 FROM tab0 ORDER BY sys.tab0.col0
+----
+15
+87
+97
 
 statement ok
 drop table tab1
@@ -405,8 +419,8 @@ project (
 | | | table("sys"."tab1") [ "tab1"."part" UNIQUE as "myalias0"."part", "tab1"."tet" UNIQUE as "myalias0"."tet" ],
 | | | table("sys"."tab2") [ "tab2"."myk" as "myalias1"."myk", "tab2"."ups" UNIQUE as "myalias1"."ups" ]
 | | ) [ ("myalias0"."part" UNIQUE) = ("myalias1"."myk") ]
-| ) [ "myalias1"."ups", "myalias0"."part", "myalias0"."tet" as "track" ] [ "myalias0"."part", "track", "myalias0"."tet", "sys"."count"() NOT NULL as "%1"."%1" ]
-) [ "myalias0"."part", "myalias0"."tet", "%1"."%1" NOT NULL as "mycount", "track" ]
+| ) [ "myalias1"."ups", "myalias0"."part", "myalias0"."tet" as "track" ] [ "myalias0"."part", "track", "track" as "myalias0"."tet", "sys"."count"() NOT NULL as "%1"."%1" ]
+) [ "myalias0"."part" as "part", "myalias0"."tet" as "tet", "%1"."%1" NOT NULL as "mycount", "track" ]
 
 query IIII rowsort
 select

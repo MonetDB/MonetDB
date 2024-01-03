@@ -210,11 +210,10 @@ CC
 statement ok
 drop table x
 
-query IIIIIIIIIIIIRRRRIIII rowsort
+query IIIIIIIIIIIIIIII rowsort
 select difference('foobar', 'oobar'), difference(NULL, 'oobar'), difference('foobar', NULL), difference(NULL, NULL),
        editdistance('foobar', 'oobar'), editdistance(NULL, 'oobar'), editdistance('foobar', NULL), editdistance(NULL, NULL),
        editdistance2('foobar', 'oobar'), editdistance2(NULL, 'oobar'), editdistance2('foobar', NULL), editdistance2(NULL, NULL),
-       similarity('foobar', 'oobar'), similarity(NULL, 'oobar'), similarity('foobar', NULL), similarity(NULL, NULL),
        levenshtein('foobar', 'oobar'), levenshtein(NULL, 'oobar'), levenshtein('foobar', NULL), levenshtein(NULL, NULL)
 ----
 1
@@ -226,10 +225,6 @@ NULL
 NULL
 NULL
 1
-NULL
-NULL
-NULL
-0.909
 NULL
 NULL
 NULL
@@ -912,9 +907,9 @@ plan SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (
-| |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x", "x"."x" NOT NULL as "x1" ]
-| ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x1" NOT NULL ]
-) [ "x"."x" NOT NULL UNIQUE, "x1" NOT NULL ]
+| |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
+| ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x"."x" NOT NULL as "x1" ]
+) [ "x"."x" NOT NULL UNIQUE as "x", "x1" NOT NULL ]
 
 query II rowsort
 SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
@@ -936,7 +931,7 @@ project (
 | | |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
 | | ) [ "x"."x" NOT NULL, "sys"."sql_add"("x"."x" NOT NULL, tinyint(2) "1") NOT NULL as "x1" ]
 | ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x1" NOT NULL ]
-) [ "x"."x" NOT NULL UNIQUE, "x1" NOT NULL ]
+) [ "x"."x" NOT NULL UNIQUE as "x", "x1" NOT NULL ]
 
 query II rowsort
 SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
@@ -962,7 +957,7 @@ project (
 | | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
 | | ) [ "x"."x" NOT NULL, "sys"."sql_add"("x"."x" NOT NULL, tinyint(5) "10") NOT NULL as "%7"."%7", "sys"."sql_mul"("%7"."%7" NOT NULL, tinyint(2) "2") NOT NULL as "%10"."%10", "sys"."sql_sub"("%10"."%10" NOT NULL, smallint(10) "29") NOT NULL as "x1" ]
 | ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x1" NOT NULL ]
-) [ "x"."x" NOT NULL UNIQUE, "x1" NOT NULL ]
+) [ "x"."x" NOT NULL UNIQUE as "x", "x1" NOT NULL ]
 
 query I nosort
 SELECT count(1) FROM (SELECT 0.642700575141694319114549216465093195438385009765 % 3) x(x) GROUP BY 2+(0+round(x.x, 1))
@@ -1120,3 +1115,9 @@ create or replace function scale_down(x decimal(8,2), y int) returns decimal(8,2
 
 statement error 42000!DROP FUNCTION: no such function 'any' (boolean, boolean, boolean)
 drop function "any"(boolean, boolean, boolean)
+
+query I
+select patindex('%bc%', 'abcd')
+----
+3
+

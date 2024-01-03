@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -41,7 +45,14 @@
  * BATsemijoin
  *	equi-join, but the left output is sorted, and if there are
  *	multiple matches, only one is returned (i.e., the left output
- *	is also key)
+ *	is also key, making it a candidate list)
+ * BATmarkjoin
+ *	equi-join, but the left output is sorted, if there is no
+ *	match for a value in the left input, there is still an output
+ *	with NIL in the right output, and there is a third output column
+ *	containing a flag that indicates the "certainty" of the match: 1
+ *	there is a match, 0, there is no match and there are no NIL
+ *	values, NIL, there is no match but there are NIL values
  * BATthetajoin
  *	theta-join: an extra operator must be provided encoded as an
  *	integer (macros JOIN_EQ, JOIN_NE, JOIN_LT, JOIN_LE, JOIN_GT,
@@ -97,15 +108,15 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 /* Create the result bats for a join, returns the absolute maximum
  * number of outputs that could possibly be generated. */
 static BUN
-joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
-		bool semi, bool nil_on_miss, bool only_misses, bool min_one,
-		BUN estimate)
+joininitresults(BAT **r1p, BAT **r2p, BAT **r3p, BUN lcnt, BUN rcnt,
+		bool lkey, bool rkey, bool semi, bool nil_on_miss,
+		bool only_misses, bool min_one, BUN estimate)
 {
-	BAT *r1, *r2;
+	BAT *r1 = NULL, *r2 = NULL, *r3 = NULL;
 	BUN maxsize, size;
 
 	/* if nil_on_miss is set, we really need a right output */
-	assert(!nil_on_miss || r2p != NULL);
+	assert(!nil_on_miss || r2p != NULL || r3p != NULL);
 
 	lkey |= lcnt <= 1;
 	rkey |= rcnt <= 1;
@@ -113,6 +124,8 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 	*r1p = NULL;
 	if (r2p)
 		*r2p = NULL;
+	if (r3p)
+		*r3p = NULL;
 	if (lcnt == 0) {
 		/* there is nothing to match */
 		maxsize = 0;
@@ -171,6 +184,17 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 			}
 			*r2p = r2;
 		}
+		if (r3p) {
+			r3 = COLnew(0, TYPE_bit, 0, TRANSIENT);
+			if (r3 == NULL) {
+				BBPreclaim(r1);
+				BBPreclaim(r2);
+				if (r2p)
+					*r2p = NULL;
+				return BUN_NONE;
+			}
+			*r3p = r3;
+		}
 		*r1p = r1;
 		return 0;
 	}
@@ -202,6 +226,22 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 		r2->theap->dirty = true;
 		*r2p = r2;
 	}
+	if (r3p) {
+		BAT *r3 = COLnew(0, TYPE_bit, size, TRANSIENT);
+		if (r3 == NULL) {
+			BBPreclaim(r1);
+			BBPreclaim(r2);
+			return BUN_NONE;
+		}
+		r3->tnil = false;
+		r3->tnonil = true;
+		r3->tkey = false;
+		r3->tsorted = false;
+		r3->trevsorted = false;
+		r3->tseqbase = oid_nil;
+		r3->theap->dirty = true;
+		*r3p = r3;
+	}
 	return maxsize;
 }
 
@@ -214,7 +254,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 #define APPEND(b, o)		(((oid *) b->theap->base)[b->batCount++] = (o))
 
 static inline gdk_return
-maybeextend(BAT *restrict r1, BAT *restrict r2,
+maybeextend(BAT *restrict r1, BAT *restrict r2, BAT *restrict r3,
 	    BUN cnt, BUN lcur, BUN lcnt, BUN maxsize)
 {
 	if (BATcount(r1) + cnt > BATcapacity(r1)) {
@@ -241,11 +281,17 @@ maybeextend(BAT *restrict r1, BAT *restrict r2,
 				return GDK_FAIL;
 			assert(BATcapacity(r1) == BATcapacity(r2));
 		}
+		if (r3) {
+			BATsetcount(r3, BATcount(r3));
+			if (BATextend(r3, newcap) != GDK_SUCCEED)
+				return GDK_FAIL;
+			assert(BATcapacity(r1) == BATcapacity(r3));
+		}
 	}
 	return GDK_SUCCEED;
 }
 
-/* Return BATs through r1p and r2p for the case that there is no
+/* Return BATs through r1p, r2p, and r3p for the case that there is no
  * match between l and r, taking all flags into consideration.
  *
  * This means, if nil_on_miss is set or only_misses is set, *r1p is a
@@ -253,10 +299,11 @@ maybeextend(BAT *restrict r1, BAT *restrict r2,
  * values of l, and *r2p (if r2p is not NULL) is all nil.  If neither
  * of those flags is set, the result is two empty BATs. */
 static gdk_return
-nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
+nomatch(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
+	struct canditer *restrict lci, bit defmark,
 	bool nil_on_miss, bool only_misses, const char *func, lng t0)
 {
-	BAT *r1, *r2 = NULL;
+	BAT *r1, *r2 = NULL, *r3 = NULL;
 
 	MT_thread_setalgorithm(__func__);
 	if (lci->ncand == 0 || !(nil_on_miss | only_misses)) {
@@ -270,6 +317,14 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 			}
 			*r2p = r2;
 		}
+		if (r3p) {
+			if ((r3 = COLnew(0, TYPE_bit, 0, TRANSIENT)) == NULL) {
+				BBPreclaim(r1);
+				BBPreclaim(r2);
+				return GDK_FAIL;
+			}
+			*r3p = r3;
+		}
 	} else {
 		r1 = canditer_slice(lci, 0, lci->ncand);
 		if (r2p) {
@@ -279,16 +334,24 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 			}
 			*r2p = r2;
 		}
+		if (r3p) {
+			if ((r3 = BATconstant(0, TYPE_bit, &defmark, lci->ncand, TRANSIENT)) == NULL) {
+				BBPreclaim(r1);
+				BBPreclaim(r2);
+				return GDK_FAIL;
+			}
+			*r3p = r3;
+		}
 	}
 	*r1p = r1;
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT
 		  ",nil_on_miss=%s,only_misses=%s"
-		  " - > " ALGOBATFMT "," ALGOOPTBATFMT
+		  " - > " ALGOBATFMT "," ALGOOPTBATFMT "," ALGOOPTBATFMT
 		  " (%s -- " LLFMT "usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOOPTBATPAR(lci->s),
 		  nil_on_miss ? "true" : "false",
 		  only_misses ? "true" : "false",
-		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2), ALGOOPTBATPAR(r3),
 		  func, GDKusec() - t0);
 	return GDK_SUCCEED;
 }
@@ -297,13 +360,17 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
  * repeated multiple times) on the left.  This means we can use a
  * point select to find matches in the right column. */
 static gdk_return
-selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
+selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	   struct canditer *lci, struct canditer *rci,
-	   bool nil_matches, lng t0, bool swapped, const char *reason)
+	   bool nil_matches, bool nil_on_miss, bool semi, bool max_one, bool min_one,
+	   lng t0, bool swapped, const char *reason)
 {
 	BATiter li = bat_iterator(l);
 	const void *v;
 	BAT *bn = NULL;
+	BAT *r1 = NULL;
+	BAT *r2 = NULL;
+	BUN bncount;
 
 	assert(lci->ncand > 0);
 	assert(lci->ncand == 1 || (li.sorted && li.revsorted));
@@ -323,8 +390,9 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	    (*ATOMcompare(li.type))(v, ATOMnilptr(li.type)) == 0) {
 		/* NIL doesn't match anything */
 		bat_iterator_end(&li);
-		return nomatch(r1p, r2p, l, r, lci, false, false,
-			       reason, t0);
+		gdk_return rc = nomatch(r1p, r2p, r3p, l, r, lci, bit_nil, nil_on_miss,
+					false, reason, t0);
+		return rc;
 	}
 
 	bn = BATselect(r, rci->s, v, NULL, true, true, false);
@@ -332,99 +400,160 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (bn == NULL) {
 		return GDK_FAIL;
 	}
-	if (BATcount(bn) == 0) {
-		BBPunfix(bn->batCacheid);
-		return nomatch(r1p, r2p, l, r, lci, false, false,
-			       reason, t0);
-	}
-	BAT *r1 = COLnew(0, TYPE_oid, lci->ncand * BATcount(bn), TRANSIENT);
-	if (r1 == NULL) {
-		BBPunfix(bn->batCacheid);
-		return GDK_FAIL;
-	}
-	r1->tsorted = true;
-	r1->trevsorted = lci->ncand == 1;
-	r1->tseqbase = BATcount(bn) == 1 && lci->tpe == cand_dense ? o : oid_nil;
-	r1->tkey = BATcount(bn) == 1;
-	r1->tnil = false;
-	r1->tnonil = true;
-	BAT *r2 = NULL;
-	if (r2p) {
-		r2 = COLnew(0, TYPE_oid, lci->ncand * BATcount(bn), TRANSIENT);
-		if (r2 == NULL) {
-			BBPunfix(bn->batCacheid);
-			BBPreclaim(r1);
+	bncount = BATcount(bn);
+	if (bncount == 0) {
+		BBPreclaim(bn);
+		if (min_one) {
+			GDKerror("not enough matches");
 			return GDK_FAIL;
 		}
-		r2->tsorted = lci->ncand == 1 || BATcount(bn) == 1;
-		r2->trevsorted = BATcount(bn) == 1;
-		r2->tseqbase = lci->ncand == 1 && BATtdense(bn) ? bn->tseqbase : oid_nil;
-		r2->tkey = lci->ncand == 1;
-		r2->tnil = false;
-		r2->tnonil = true;
+		if (!nil_on_miss) {
+			assert(r3p == NULL);
+			return nomatch(r1p, r2p, r3p, l, r, lci, 0, nil_on_miss,
+				       false, reason, t0);
+		}
+		/* special case: return nil on RHS */
+		bncount = 1;
+		bn = NULL;
 	}
-	if (BATtdense(bn)) {
+	if (bncount > 1) {
+		if (semi)
+			bncount = 1;
+		if (max_one) {
+			GDKerror("more than one match");
+			goto bailout;
+		}
+	}
+	r1 = COLnew(0, TYPE_oid, lci->ncand * bncount, TRANSIENT);
+	if (r1 == NULL)
+		goto bailout;
+	r1->tsorted = true;
+	r1->trevsorted = lci->ncand == 1;
+	r1->tseqbase = bncount == 1 && lci->tpe == cand_dense ? o : oid_nil;
+	r1->tkey = bncount == 1;
+	r1->tnil = false;
+	r1->tnonil = true;
+	if (bn == NULL) {
+		/* left outer join, no match, we're returning nil in r2 */
 		oid *o1p = (oid *) Tloc(r1, 0);
-		oid *o2p = r2 ? (oid *) Tloc(r2, 0) : NULL;
-		oid bno = bn->tseqbase;
-		BUN p, q = BATcount(bn);
+		BUN p, q = bncount;
 
+		if (r2p) {
+			r2 = BATconstant(0, TYPE_void, &oid_nil, lci->ncand * bncount, TRANSIENT);
+			if (r2 == NULL)
+				goto bailout;
+			*r2p = r2;
+		}
 		do {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
-			}
-			if (o2p) {
-				for (p = 0; p < q; p++) {
-					*o2p++ = bno + p;
-				}
 			}
 			o = canditer_next(lci);
 		} while (!is_oid_nil(o));
 	} else {
 		oid *o1p = (oid *) Tloc(r1, 0);
-		oid *o2p = r2 ? (oid *) Tloc(r2, 0) : NULL;
-		const oid *bnp = (const oid *) Tloc(bn, 0);
-		BUN p, q = BATcount(bn);
+		oid *o2p;
+		BUN p, q = bncount;
 
-		do {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			for (p = 0; p < q; p++) {
-				*o1p++ = o;
-			}
-			if (o2p) {
+		if (r2p) {
+			r2 = COLnew(0, TYPE_oid, lci->ncand * bncount, TRANSIENT);
+			if (r2 == NULL)
+				goto bailout;
+			r2->tsorted = lci->ncand == 1 || bncount == 1;
+			r2->trevsorted = bncount == 1;
+			r2->tseqbase = lci->ncand == 1 && BATtdense(bn) ? bn->tseqbase : oid_nil;
+			r2->tkey = lci->ncand == 1;
+			r2->tnil = false;
+			r2->tnonil = true;
+			*r2p = r2;
+			o2p = (oid *) Tloc(r2, 0);
+		} else {
+			o2p = NULL;
+		}
+
+		if (BATtdense(bn)) {
+			oid bno = bn->tseqbase;
+
+			do {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				for (p = 0; p < q; p++) {
-					*o2p++ = bnp[p];
+					*o1p++ = o;
 				}
-			}
-			o = canditer_next(lci);
-		} while (!is_oid_nil(o));
+				if (o2p) {
+					for (p = 0; p < q; p++) {
+						*o2p++ = bno + p;
+					}
+				}
+				o = canditer_next(lci);
+			} while (!is_oid_nil(o));
+		} else {
+			const oid *bnp = (const oid *) Tloc(bn, 0);
+
+			do {
+				GDK_CHECK_TIMEOUT(timeoffset, counter,
+						  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				for (p = 0; p < q; p++) {
+					*o1p++ = o;
+				}
+				if (o2p) {
+					for (p = 0; p < q; p++) {
+						*o2p++ = bnp[p];
+					}
+				}
+				o = canditer_next(lci);
+			} while (!is_oid_nil(o));
+		}
+		if (r2)
+			BATsetcount(r2, lci->ncand * bncount);
 	}
-	BATsetcount(r1, lci->ncand * BATcount(bn));
+	BATsetcount(r1, lci->ncand * bncount);
 	*r1p = r1;
-	if (r2p) {
-		BATsetcount(r2, lci->ncand * BATcount(bn));
-		*r2p = r2;
+	BAT *r3 = NULL;
+	if (r3p) {
+		bit mark;
+		if (bn) {
+			/* there is a match */
+			mark = 1;
+		} else if (r->tnonil) {
+			/* no match, no NIL in r */
+			mark = 0;
+		} else {
+			/* no match, search for NIL in r */
+			BAT *n = BATselect(r, rci->s, ATOMnilptr(r->ttype), NULL, true, true, false);
+			if (n == NULL)
+				goto bailout;
+			mark = BATcount(n) == 0 ? 0 : bit_nil;
+			BBPreclaim(n);
+		}
+		r3 = BATconstant(0, TYPE_bit, &mark, lci->ncand, TRANSIENT);
+		if (r3 == NULL)
+			goto bailout;
+		*r3p = r3;
 	}
-	BBPunfix(bn->batCacheid);
+	BBPreclaim(bn);
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
 		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 		  "sr=" ALGOOPTBATFMT ",nil_matches=%s;%s %s "
-		  "-> " ALGOBATFMT "," ALGOOPTBATFMT " (" LLFMT "usec)\n",
+		  "-> " ALGOBATFMT "," ALGOOPTBATFMT "," ALGOOPTBATFMT
+		  " (" LLFMT "usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r),
 		  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
 		  nil_matches ? "true" : "false",
 		  swapped ? " swapped" : "", reason,
-		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2), ALGOOPTBATPAR(r3),
 		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
 
   bailout:
+	BBPreclaim(bn);
 	BBPreclaim(r1);
 	BBPreclaim(r2);
+	if (r2p)
+		*r2p = NULL;
 	return GDK_FAIL;
 }
 
@@ -436,13 +565,14 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 #endif
 
 /* Implementation of join where the right-hand side is dense, and if
- * there is a right candidate list, it too is dense.  In case
- * nil_on_miss is not set, we use a range select (BATselect) to find
- * the matching values in the left column and then calculate the
- * corresponding matches from the right.  If nil_on_miss is set, we
- * need to do some more work. */
+ * there is a right candidate list, it too is dense.  This means there
+ * are no NIL values in r.  In case nil_on_miss is not set, we use a
+ * range select (BATselect) to find the matching values in the left
+ * column and then calculate the corresponding matches from the right.
+ * If nil_on_miss is set, we need to do some more work. The latter is
+ * also the only case in which r3p van be set. */
 static gdk_return
-mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
+mergejoin_void(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	       struct canditer *restrict lci, struct canditer *restrict rci,
 	       bool nil_on_miss, bool only_misses, lng t0, bool swapped,
 	       const char *reason)
@@ -450,7 +580,8 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	oid lo, hi;
 	BUN i;
 	oid o, *o1p = NULL, *o2p = NULL;
-	BAT *r1 = NULL, *r2 = NULL;
+	bit *m3p = NULL;
+	BAT *r1 = NULL, *r2 = NULL, *r3 = NULL;
 	bool ltsorted = false, ltrevsorted = false, ltkey = false;
 
 	/* r is dense, and if there is a candidate list, it too is
@@ -481,6 +612,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	/* at this point, the matchable values in r are [lo..hi) */
 	if (!nil_on_miss) {
+		assert(r3p == NULL);
 		r1 = BATselect(l, lci->s, &lo, &hi, true, false, only_misses);
 		if (r1 == NULL)
 			return GDK_FAIL;
@@ -563,8 +695,9 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		*r2p = r2;
 		goto doreturn2;
 	}
-	/* nil_on_miss is set, this means we must have a second output */
-	assert(r2p);
+	/* nil_on_miss is set, this means we must have a second or third
+	 * output */
+	assert(r2p || r3p);
 	if (BATtdense(l)) {
 		/* if l is dense, we can further restrict the [lo..hi)
 		 * range to values in l that match with values in r */
@@ -584,9 +717,9 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			 * nil_on_miss is not set, or if all values in
 			 * l match, r2 will too */
 			if (hi <= lo) {
-				return nomatch(r1p, r2p, l, r, lci,
+				return nomatch(r1p, r2p, r3p, l, r, lci, 0,
 					       nil_on_miss, only_misses,
-					       "mergejoin_void", t0);
+					       __func__, t0);
 			}
 
 			/* at this point, the matched values in l and
@@ -599,42 +732,67 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			*r1p = r1 = BATdense(0, lci->seq, lci->ncand);
 			if (r1 == NULL)
 				return GDK_FAIL;
-			if (hi - lo < lci->ncand) {
-				/* we need to fill in nils in r2 for
-				 * missing values */
-				*r2p = r2 = COLnew(0, TYPE_oid, lci->ncand, TRANSIENT);
-				if (r2 == NULL) {
-					BBPreclaim(*r1p);
-					return GDK_FAIL;
+			if (r2p) {
+				if (hi - lo < lci->ncand) {
+					/* we need to fill in nils in r2 for
+					 * missing values */
+					*r2p = r2 = COLnew(0, TYPE_oid, lci->ncand, TRANSIENT);
+					if (r2 == NULL) {
+						BBPreclaim(*r1p);
+						return GDK_FAIL;
+					}
+					o2p = (oid *) Tloc(r2, 0);
+					i = l->tseqbase + lci->seq - l->hseqbase;
+					lo -= i;
+					hi -= i;
+					i += r->hseqbase - r->tseqbase;
+					for (o = 0; o < lo; o++)
+						*o2p++ = oid_nil;
+					for (o = lo; o < hi; o++)
+						*o2p++ = o + i;
+					for (o = hi; o < lci->ncand; o++)
+						*o2p++ = oid_nil;
+					r2->tnonil = false;
+					r2->tnil = true;
+					/* sorted of no nils at end */
+					r2->tsorted = hi == lci->ncand;
+					/* reverse sorted if single non-nil at start */
+					r2->trevsorted = lo == 0 && hi == 1;
+					r2->tseqbase = oid_nil;
+					/* (hi - lo) different OIDs in r2,
+					 * plus one for nil */
+					r2->tkey = hi - lo + 1 == lci->ncand;
+					BATsetcount(r2, lci->ncand);
+				} else {
+					/* no missing values */
+					*r2p = r2 = BATdense(0, r->hseqbase + lo - r->tseqbase, lci->ncand);
+					if (r2 == NULL) {
+						BBPreclaim(*r1p);
+						return GDK_FAIL;
+					}
 				}
-				o2p = (oid *) Tloc(r2, 0);
-				i = l->tseqbase + lci->seq - l->hseqbase;
-				lo -= i;
-				hi -= i;
-				i += r->hseqbase - r->tseqbase;
-				for (o = 0; o < lo; o++)
-					*o2p++ = oid_nil;
-				for (o = lo; o < hi; o++)
-					*o2p++ = o + i;
-				for (o = hi; o < lci->ncand; o++)
-					*o2p++ = oid_nil;
-				r2->tnonil = false;
-				r2->tnil = true;
-				/* sorted of no nils at end */
-				r2->tsorted = hi == lci->ncand;
-				/* reverse sorted if single non-nil at start */
-				r2->trevsorted = lo == 0 && hi == 1;
-				r2->tseqbase = oid_nil;
-				/* (hi - lo) different OIDs in r2,
-				 * plus one for nil */
-				r2->tkey = hi - lo + 1 == lci->ncand;
-				BATsetcount(r2, lci->ncand);
-			} else {
-				/* no missing values */
-				*r2p = r2 = BATdense(0, r->hseqbase + lo - r->tseqbase, lci->ncand);
-				if (r2 == NULL) {
-					BBPreclaim(*r1p);
-					return GDK_FAIL;
+			}
+			if (r3p) {
+				if (hi - lo < lci->ncand) {
+					*r3p = r3 = COLnew(0, TYPE_bit, lci->ncand, TRANSIENT);
+					if (r3 == NULL) {
+						BBPreclaim(*r1p);
+						BBPreclaim(r2);
+						return GDK_FAIL;
+					}
+					m3p = (bit *) Tloc(r3, 0);
+					for (o = 0; o < lo; o++)
+						*m3p++ = 0;
+					for (o = lo; o < hi; o++)
+						*m3p++ = 1;
+					for (o = hi; o < lci->ncand; o++)
+						*m3p++ = 0;
+					r3->tnonil = true;
+					r3->tnil = false;
+					r3->tsorted = hi == lci->ncand;
+					r3->trevsorted = lo == 0;
+					r3->tkey = false;
+					BATsetcount(r3, lci->ncand);
 				}
 			}
 			goto doreturn;
@@ -649,42 +807,66 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		hi = hi - l->tseqbase + l->hseqbase;
 
 		*r1p = r1 = COLnew(0, TYPE_oid, lci->ncand, TRANSIENT);
-		*r2p = r2 = COLnew(0, TYPE_oid, lci->ncand, TRANSIENT);
-		if (r1 == NULL || r2 == NULL) {
+		if (r2p)
+			*r2p = r2 = COLnew(0, TYPE_oid, lci->ncand, TRANSIENT);
+		if (r3p)
+			*r3p = r3 = COLnew(0, TYPE_bit, lci->ncand, TRANSIENT);
+		if (r1 == NULL || (r2p != NULL && r2 == NULL) || (r3p != NULL && r3 == NULL)) {
 			BBPreclaim(r1);
 			BBPreclaim(r2);
+			BBPreclaim(r3);
 			return GDK_FAIL;
 		}
 		o1p = (oid *) Tloc(r1, 0);
-		o2p = (oid *) Tloc(r2, 0);
-		r2->tnil = false;
-		r2->tnonil = true;
-		r2->tkey = true;
-		r2->tsorted = true;
+		if (r2) {
+			o2p = (oid *) Tloc(r2, 0);
+			r2->tnil = false;
+			r2->tnonil = true;
+			r2->tkey = true;
+			r2->tsorted = true;
+		}
+		if (r3) {
+			m3p = (bit *) Tloc(r3, 0);
+			r3->tnil = false;
+			r3->tnonil = true;
+			r3->tkey = false;
+			r3->tsorted = false;
+		}
 		o = canditer_next(lci);
 		for (i = 0; i < lci->ncand && o < lo; i++) {
 			*o1p++ = o;
-			*o2p++ = oid_nil;
+			if (r2)
+				*o2p++ = oid_nil;
+			if (r3)
+				*m3p++ = 0;
 			o = canditer_next(lci);
 		}
-		if (i > 0) {
+		if (i > 0 && r2) {
 			r2->tnil = true;
 			r2->tnonil = false;
 			r2->tkey = i == 1;
 		}
 		for (; i < lci->ncand && o < hi; i++) {
 			*o1p++ = o;
-			*o2p++ = o - l->hseqbase + l->tseqbase - r->tseqbase + r->hseqbase;
+			if (r2)
+				*o2p++ = o - l->hseqbase + l->tseqbase - r->tseqbase + r->hseqbase;
+			if (r3)
+				*m3p++ = 1;
 			o = canditer_next(lci);
 		}
 		if (i < lci->ncand) {
-			r2->tkey = !r2->tnil && lci->ncand - i == 1;
-			r2->tnil = true;
-			r2->tnonil = false;
-			r2->tsorted = false;
+			if (r2) {
+				r2->tkey = !r2->tnil && lci->ncand - i == 1;
+				r2->tnil = true;
+				r2->tnonil = false;
+				r2->tsorted = false;
+			}
 			for (; i < lci->ncand; i++) {
 				*o1p++ = o;
-				*o2p++ = oid_nil;
+				if (r2)
+					*o2p++ = oid_nil;
+				if (r1)
+					*m3p++ = 0;
 				o = canditer_next(lci);
 			}
 		}
@@ -695,9 +877,14 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		r1->tnil = false;
 		r1->tnonil = true;
 		r1->tkey = true;
-		BATsetcount(r2, BATcount(r1));
-		r2->tseqbase = r2->tnil || BATcount(r2) > 1 ? oid_nil : BATcount(r2) == 1 ? *(oid*)Tloc(r2, 0) : 0;
-		r2->trevsorted = BATcount(r2) <= 1;
+		if (r2) {
+			BATsetcount(r2, BATcount(r1));
+			r2->tseqbase = r2->tnil || BATcount(r2) > 1 ? oid_nil : BATcount(r2) == 1 ? *(oid*)Tloc(r2, 0) : 0;
+			r2->trevsorted = BATcount(r2) <= 1;
+		}
+		if (r3) {
+			BATsetcount(r3, BATcount(r1));
+		}
 		goto doreturn;
 	}
 	/* l is not dense, so we need to look at the values and check
@@ -707,16 +894,27 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	 * value */
 
 	*r1p = r1 = COLnew(0, TYPE_oid, lci->ncand, TRANSIENT);
-	*r2p = r2 = COLnew(0, TYPE_oid, lci->ncand, TRANSIENT);
-	if (r1 == NULL || r2 == NULL) {
+	if (r2p)
+		*r2p = r2 = COLnew(0, TYPE_oid, lci->ncand, TRANSIENT);
+	if (r3p)
+		*r3p = r3 = COLnew(0, TYPE_bit, lci->ncand, TRANSIENT);
+	if (r1 == NULL || (r2p != NULL && r2 == NULL) || (r3p != NULL && r3 == NULL)) {
 		BBPreclaim(r1);
 		BBPreclaim(r2);
+		BBPreclaim(r3);
 		return GDK_FAIL;
 	}
 	o1p = (oid *) Tloc(r1, 0);
-	o2p = (oid *) Tloc(r2, 0);
-	r2->tnil = false;
-	r2->tnonil = true;
+	if (r2) {
+		o2p = (oid *) Tloc(r2, 0);
+		r2->tnil = false;
+		r2->tnonil = true;
+	}
+	if (r3) {
+		m3p = (bit *) Tloc(r3, 0);
+		r3->tnil = false;
+		r3->tnonil = true;
+	}
 	if (complex_cand(l)) {
 		ltsorted = l->tsorted;
 		ltrevsorted = l->trevsorted;
@@ -726,12 +924,23 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 			o = BUNtoid(l, c - l->hseqbase);
 			*o1p++ = c;
-			if (o >= lo && o < hi) {
-				*o2p++ = o - r->tseqbase + r->hseqbase;
-			} else {
-				*o2p++ = oid_nil;
-				r2->tnil = true;
-				r2->tnonil = false;
+			if (r2) {
+				if (o >= lo && o < hi) {
+					*o2p++ = o - r->tseqbase + r->hseqbase;
+				} else {
+					*o2p++ = oid_nil;
+					r2->tnil = true;
+					r2->tnonil = false;
+				}
+			}
+			if (r3) {
+				if (is_oid_nil(o)) {
+					*m3p++ = bit_nil;
+					r3->tnil = true;
+					r3->tnonil = false;
+				} else {
+					*m3p++ = (o >= lo && o < hi);
+				}
 			}
 		}
 		TIMEOUT_CHECK(timeoffset,
@@ -747,12 +956,23 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 			o = lvals[c - l->hseqbase];
 			*o1p++ = c;
-			if (o >= lo && o < hi) {
-				*o2p++ = o - r->tseqbase + r->hseqbase;
-			} else {
-				*o2p++ = oid_nil;
-				r2->tnil = true;
-				r2->tnonil = false;
+			if (r2) {
+				if (o >= lo && o < hi) {
+					*o2p++ = o - r->tseqbase + r->hseqbase;
+				} else {
+					*o2p++ = oid_nil;
+					r2->tnil = true;
+					r2->tnonil = false;
+				}
+			}
+			if (r3) {
+				if (is_oid_nil(o)) {
+					*m3p++ = bit_nil;
+					r3->tnil = true;
+					r3->tnonil = false;
+				} else {
+					*m3p++ = (o >= lo && o < hi);
+				}
 			}
 		}
 		bat_iterator_end(&li);
@@ -766,29 +986,35 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	r1->tnil = false;
 	r1->tnonil = true;
 	BATsetcount(r1, lci->ncand);
-	BATsetcount(r2, lci->ncand);
-	r2->tsorted = ltsorted || BATcount(r2) <= 1;
-	r2->trevsorted = ltrevsorted || BATcount(r2) <= 1;
-	r2->tkey = ltkey || BATcount(r2) <= 1;
-	r2->tseqbase = oid_nil;
+	if (r2) {
+		BATsetcount(r2, lci->ncand);
+		r2->tsorted = ltsorted || BATcount(r2) <= 1;
+		r2->trevsorted = ltrevsorted || BATcount(r2) <= 1;
+		r2->tkey = ltkey || BATcount(r2) <= 1;
+		r2->tseqbase = oid_nil;
+	}
+	if (r3) {
+		BATsetcount(r3, lci->ncand);
+	}
 
   doreturn:
 	if (r1->tkey)
 		virtualize(r1);
-	if (r2->tkey && r2->tsorted)
+	if (r2 && r2->tkey && r2->tsorted)
 		virtualize(r2);
   doreturn2:
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
 		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 		  "sr=" ALGOOPTBATFMT ","
 		  "nil_on_miss=%s,only_misses=%s;%s %s "
-		  "-> " ALGOBATFMT "," ALGOOPTBATFMT " (" LLFMT "usec)\n",
+		  "-> " ALGOBATFMT "," ALGOOPTBATFMT "," ALGOOPTBATFMT
+		  " (" LLFMT "usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r),
 		  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
 		  nil_on_miss ? "true" : "false",
 		  only_misses ? "true" : "false",
 		  swapped ? " swapped" : "", reason,
-		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2), ALGOOPTBATPAR(r3),
 		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
@@ -843,12 +1069,12 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		/* there are no matches */
 		bat_iterator_end(&li);
 		bat_iterator_end(&ri);
-		return nomatch(r1p, r2p, l, r,
+		return nomatch(r1p, r2p, NULL, l, r,
 			       &(struct canditer) {.tpe = cand_dense, .ncand = lcnt,},
-			       false, false, __func__, t0);
+			       0, false, false, __func__, t0);
 	}
 
-	if ((maxsize = joininitresults(r1p, r2p, BATcount(l), BATcount(r),
+	if ((maxsize = joininitresults(r1p, r2p, NULL, BATcount(l), BATcount(r),
 				       li.key, ri.key, false, false,
 				       false, false, estimate)) == BUN_NONE) {
 		bat_iterator_end(&li);
@@ -1000,7 +1226,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		if (maybeextend(r1, r2, nl * nr, lstart, lend, maxsize) != GDK_SUCCEED)
+		if (maybeextend(r1, r2, NULL, nl * nr, lstart, lend, maxsize) != GDK_SUCCEED)
 			goto bailout;
 
 		/* maintain properties */
@@ -1161,12 +1387,12 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		/* there are no matches */
 		bat_iterator_end(&li);
 		bat_iterator_end(&ri);
-		return nomatch(r1p, r2p, l, r,
+		return nomatch(r1p, r2p, NULL, l, r,
 			       &(struct canditer) {.tpe = cand_dense, .ncand = lcnt,},
-			       false, false, __func__, t0);
+			       0, false, false, __func__, t0);
 	}
 
-	if ((maxsize = joininitresults(r1p, r2p, BATcount(l), BATcount(r),
+	if ((maxsize = joininitresults(r1p, r2p, NULL, BATcount(l), BATcount(r),
 				       li.key, ri.key, false, false,
 				       false, false, estimate)) == BUN_NONE) {
 		bat_iterator_end(&li);
@@ -1317,7 +1543,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		if (maybeextend(r1, r2, nl * nr, lstart, lend, maxsize) != GDK_SUCCEED)
+		if (maybeextend(r1, r2, NULL, nl * nr, lstart, lend, maxsize) != GDK_SUCCEED)
 			goto bailout;
 
 		/* maintain properties */
@@ -1490,12 +1716,12 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		/* there are no matches */
 		bat_iterator_end(&li);
 		bat_iterator_end(&ri);
-		return nomatch(r1p, r2p, l, r,
+		return nomatch(r1p, r2p, NULL, l, r,
 			       &(struct canditer) {.tpe = cand_dense, .ncand = lcnt,},
-			       false, false, __func__, t0);
+			       0, false, false, __func__, t0);
 	}
 
-	if ((maxsize = joininitresults(r1p, r2p, BATcount(l), BATcount(r),
+	if ((maxsize = joininitresults(r1p, r2p, NULL, BATcount(l), BATcount(r),
 				       li.key, ri.key, false, false,
 				       false, false, estimate)) == BUN_NONE) {
 		bat_iterator_end(&li);
@@ -1617,7 +1843,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		if (maybeextend(r1, r2, nl * nr, lstart, lend, maxsize) != GDK_SUCCEED)
+		if (maybeextend(r1, r2, NULL, nl * nr, lstart, lend, maxsize) != GDK_SUCCEED)
 			goto bailout;
 
 		/* maintain properties */
@@ -1714,8 +1940,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 /* Perform a "merge" join on l and r (if both are sorted) with
  * optional candidate lists, or join using binary search on r if l is
- * not sorted.  The return BATs have already been created by the
- * caller.
+ * not sorted.
  *
  * If nil_matches is set, nil values are treated as ordinary values
  * that can match; otherwise nil values never match.
@@ -1733,7 +1958,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
  * t0 and swapped are only for debugging (ALGOMASK set in GDKdebug).
  */
 static gdk_return
-mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
+mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	  struct canditer *restrict lci, struct canditer *restrict rci,
 	  bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
 	  bool not_in, bool max_one, bool min_one, BUN estimate,
@@ -1822,23 +2047,26 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		lvars = li.vh->base;
 		rvars = ri.vh->base;
 	} else {
-		assert(ri.vh == NULL);
+		assert(ri.vh == NULL || ri.type == TYPE_void);
 		lvars = rvars = NULL;
 	}
+	/* if the var pointer is not NULL, then so is the val pointer */
+	assert(lvars == NULL || lvals != NULL);
+	assert(rvars == NULL || rvals != NULL);
 
-	if (not_in && rci->ncand > 0 && !ri.nonil &&
-	    ((BATtvoid(l) && l->tseqbase == oid_nil) ||
-	     (BATtvoid(r) && r->tseqbase == oid_nil) ||
-	     (rvals && cmp(nil, VALUE(r, (ri.sorted ? rci->seq : canditer_last(rci)) - r->hseqbase)) == 0))) {
+	const bool rhasnil = !ri.nonil &&
+		((BATtvoid(r) && r->tseqbase == oid_nil) ||
+		 (rvals && cmp(nil, VALUE(r, (ri.sorted ? rci->seq : canditer_last(rci)) - r->hseqbase)) == 0));
+	const bit defmark = rhasnil ? bit_nil : 0;
+
+	if (not_in && (rhasnil || (BATtvoid(l) && l->tseqbase == oid_nil))) {
 		bat_iterator_end(&li);
 		bat_iterator_end(&ri);
-		return nomatch(r1p, r2p, l, r, lci, false, false,
+		return nomatch(r1p, r2p, r3p, l, r, lci, defmark, false, false,
 			       __func__, t0);
 	}
 
-	if (lci->ncand == 0 ||
-	    rci->ncand == 0 ||
-	    (!nil_matches &&
+	if ((!nil_matches &&
 	     ((li.type == TYPE_void && is_oid_nil(l->tseqbase)) ||
 	      (ri.type == TYPE_void && is_oid_nil(r->tseqbase)))) ||
 	    (li.type == TYPE_void && is_oid_nil(l->tseqbase) &&
@@ -1850,11 +2078,11 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		/* there are no matches */
 		bat_iterator_end(&li);
 		bat_iterator_end(&ri);
-		return nomatch(r1p, r2p, l, r, lci, nil_on_miss, only_misses,
-			       __func__, t0);
+		return nomatch(r1p, r2p, r3p, l, r, lci, defmark,
+			       nil_on_miss, only_misses, __func__, t0);
 	}
 
-	BUN maxsize = joininitresults(r1p, r2p, lci->ncand, rci->ncand,
+	BUN maxsize = joininitresults(r1p, r2p, r3p, lci->ncand, rci->ncand,
 				      li.key, ri.key, semi | max_one,
 				      nil_on_miss, only_misses, min_one,
 				      estimate);
@@ -1865,6 +2093,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	BAT *r1 = *r1p;
 	BAT *r2 = r2p ? *r2p : NULL;
+	BAT *r3 = r3p ? *r3p : NULL;
 
 	if (lci->tpe == cand_mask) {
 		mlci = lci;
@@ -1952,6 +2181,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	while (lci->next < lci->ncand) {
 		GDK_CHECK_TIMEOUT(timeoffset, counter,
 				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		bit mark = defmark;
 		if (lscan == 0) {
 			/* always search r completely */
 			assert(equal_order);
@@ -2030,7 +2260,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			}
 			if (nlx > 0) {
 				if (only_misses) {
-					if (maybeextend(r1, r2, nlx, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
+					if (maybeextend(r1, r2, r3, nlx, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
 						goto bailout;
 					while (nlx > 0) {
 						lv = canditer_next(lci);
@@ -2041,7 +2271,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					if (r1->trevsorted && BATcount(r1) > 1)
 						r1->trevsorted = false;
 				} else if (nil_on_miss) {
-					if (r2->tnonil) {
+					if (r2 && r2->tnonil) {
 						r2->tnil = true;
 						r2->tnonil = false;
 						r2->tseqbase = oid_nil;
@@ -2049,13 +2279,24 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						r2->trevsorted = false;
 						r2->tkey = false;
 					}
-					if (maybeextend(r1, r2, nlx, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
+					if (maybeextend(r1, r2, r3, nlx, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
 						goto bailout;
+					if (r3)
+						r3->tnil = false;
 					while (nlx > 0) {
 						lv = canditer_next(lci);
 						if (mlci == NULL || canditer_contains(mlci, lv)) {
 							APPEND(r1, lv);
-							APPEND(r2, oid_nil);
+							if (r2)
+								APPEND(r2, oid_nil);
+							if (r3) {
+								if (rhasnil || cmp(VALUE(l, lv - l->hseqbase), nil) == 0) {
+									((bit *) r3->theap->base)[r3->batCount++] = bit_nil;
+									r3->tnil = true;
+								} else {
+									((bit *) r3->theap->base)[r3->batCount++] = 0;
+								}
+							}
 						}
 						nlx--;
 					}
@@ -2128,6 +2369,9 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			/* v is nil and nils don't match anything, set
 			 * to NULL to indicate nil */
 			v = NULL;
+			mark = bit_nil;
+			if (r3)
+				r3->tnil = true;
 		}
 
 		/* First we find the "first" value in r that is "at
@@ -2328,7 +2572,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		if (maybeextend(r1, r2, nl * nr, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
+		if (maybeextend(r1, r2, r3, nl * nr, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
 			goto bailout;
 
 		/* maintain properties */
@@ -2431,37 +2675,54 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		nl = nladded;
 		/* then the right output, various different ways of
 		 * doing it */
-		if (r2 == NULL) {
-			/* nothing to do */
-		} else if (insert_nil) {
-			do {
-				for (i = 0; i < nr; i++) {
-					APPEND(r2, oid_nil);
+		if (r2) {
+			if (insert_nil) {
+				for (i = 0; i < nl; i++) {
+					for (j = 0; j < nr; j++) {
+						APPEND(r2, oid_nil);
+					}
 				}
-			} while (--nl > 0);
-		} else if (equal_order) {
-			struct canditer ci = *rci; /* work on copy */
-			if (r2->batCount > 0 &&
-			    BATtdense(r2) &&
-			    ((oid *) r2->theap->base)[r2->batCount - 1] + 1 != canditer_idx(&ci, ci.next - nr))
-				r2->tseqbase = oid_nil;
-			do {
-				canditer_setidx(&ci, ci.next - nr);
-				for (i = 0; i < nr; i++) {
-					APPEND(r2, canditer_next(&ci));
-				}
-			} while (--nl > 0);
-		} else {
-			if (r2->batCount > 0 &&
-			    BATtdense(r2) &&
-			    ((oid *) r2->theap->base)[r2->batCount - 1] + 1 != canditer_peek(rci))
-				r2->tseqbase = oid_nil;
-			do {
+			} else if (equal_order) {
 				struct canditer ci = *rci; /* work on copy */
-				for (i = 0; i < nr; i++) {
-					APPEND(r2, canditer_next(&ci));
+				if (r2->batCount > 0 &&
+				    BATtdense(r2) &&
+				    ((oid *) r2->theap->base)[r2->batCount - 1] + 1 != canditer_idx(&ci, ci.next - nr))
+					r2->tseqbase = oid_nil;
+				for (i = 0; i < nl; i++) {
+					canditer_setidx(&ci, ci.next - nr);
+					for (j = 0; j < nr; j++) {
+						APPEND(r2, canditer_next(&ci));
+					}
 				}
-			} while (--nl > 0);
+			} else {
+				if (r2->batCount > 0 &&
+				    BATtdense(r2) &&
+				    ((oid *) r2->theap->base)[r2->batCount - 1] + 1 != canditer_peek(rci))
+					r2->tseqbase = oid_nil;
+				for (i = 0; i < nl; i++) {
+					struct canditer ci = *rci; /* work on copy */
+					for (j = 0; j < nr; j++) {
+						APPEND(r2, canditer_next(&ci));
+					}
+				}
+			}
+		}
+		/* finally the mark output */
+		if (r3) {
+			if (insert_nil) {
+				r3->tnil |= rhasnil;
+				for (i = 0; i < nl; i++) {
+					for (j = 0; j < nr; j++) {
+						((bit *) r3->theap->base)[r3->batCount++] = mark;
+					}
+				}
+			} else {
+				for (i = 0; i < nl; i++) {
+					for (j = 0; j < nr; j++) {
+						((bit *) r3->theap->base)[r3->batCount++] = 1;
+					}
+				}
+			}
 		}
 	}
 	/* also set other bits of heap to correct value to indicate size */
@@ -2476,6 +2737,17 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		if (BATcount(r2) <= 1) {
 			r2->tkey = true;
 			r2 = virtualize(r2);
+		}
+	}
+	if (r3) {
+		BATsetcount(r3, BATcount(r3));
+		assert(BATcount(r1) == BATcount(r3));
+		r3->tseqbase = oid_nil;
+		r3->tnonil = !r3->tnil;
+		if (BATcount(r3) <= 1) {
+			r3->tkey = true;
+			r3->tsorted = true;
+			r3->trevsorted = true;
 		}
 	}
 	bat_iterator_end(&li);
@@ -2502,6 +2774,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	bat_iterator_end(&ri);
 	BBPreclaim(r1);
 	BBPreclaim(r2);
+	BBPreclaim(r3);
 	return GDK_FAIL;
 }
 
@@ -2511,11 +2784,13 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			GDKerror("more than one match");		\
 			goto bailout;					\
 		}							\
-		if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED) \
+		if (maybeextend(r1, r2, r3, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED) \
 			goto bailout;					\
 		APPEND(r1, lo);						\
 		if (r2)							\
 			APPEND(r2, ro);					\
+		if (r3)							\
+			((bit *) r3->theap->base)[r3->batCount++] = 1;	\
 		nr++;							\
 	} while (false)
 
@@ -2537,12 +2812,14 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			lo = canditer_next(lci);			\
 			v = lvals[lo - l->hseqbase];			\
 			nr = 0;						\
+			bit mark = defmark;				\
 			if ((!nil_matches || not_in) && is_##TYPE##_nil(v)) { \
 				/* no match */				\
 				if (not_in) {				\
 					lskipped = BATcount(r1) > 0;	\
 					continue;			\
 				}					\
+				mark = bit_nil;				\
 			} else if (hash_cand) {				\
 				/* private hash: no locks */		\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
@@ -2595,20 +2872,26 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (nr == 0) {					\
 				if (only_misses) {			\
 					nr = 1;				\
-					if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED) \
+					if (maybeextend(r1, r2, r3, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED) \
 						goto bailout;		\
 					APPEND(r1, lo);			\
 					if (lskipped)			\
 						r1->tseqbase = oid_nil;	\
 				} else if (nil_on_miss) {		\
 					nr = 1;				\
-					r2->tnil = true;		\
-					r2->tnonil = false;		\
-					r2->tkey = false;		\
-					if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED) \
+					if (maybeextend(r1, r2, r3, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED) \
 						goto bailout;		\
 					APPEND(r1, lo);			\
-					APPEND(r2, oid_nil);		\
+					if (r2) {			\
+						r2->tnil = true;	\
+						r2->tnonil = false;	\
+						r2->tkey = false;	\
+						APPEND(r2, oid_nil);	\
+					}				\
+					if (r3) {			\
+						r3->tnil |= mark == bit_nil; \
+						((bit *) r3->theap->base)[r3->batCount++] = mark; \
+					}				\
 				} else if (min_one) {			\
 					GDKerror("not enough matches");	\
 					goto bailout;			\
@@ -2638,7 +2921,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 /* Implementation of join using a hash lookup of values in the right
  * column. */
 static gdk_return
-hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
+hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	 struct canditer *restrict lci, struct canditer *restrict rci,
 	 bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
 	 bool not_in, bool max_one, bool min_one,
@@ -2662,6 +2945,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	bool lskipped = false;	/* whether we skipped values in l */
 	Hash *restrict hsh = NULL;
 	bool locked = false;
+	BUN maxsize;
+	BAT *r1 = NULL;
+	BAT *r2 = NULL;
+	BAT *r3 = NULL;
+	BAT *b = NULL;
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
@@ -2690,26 +2978,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	/* offset to convert BUN to OID for value in right column */
 	rseq = r->hseqbase;
 
-	if (lci->ncand == 0 || rci->ncand== 0) {
-		bat_iterator_end(&li);
-		bat_iterator_end(&ri);
-		return nomatch(r1p, r2p, l, r, lci,
-			       nil_on_miss, only_misses, __func__, t0);
-	}
-
-	BUN maxsize = joininitresults(r1p, r2p, lci->ncand, rci->ncand,
-				      li.key, ri.key, semi | max_one,
-				      nil_on_miss, only_misses, min_one,
-				      estimate);
-	if (maxsize == BUN_NONE) {
-		bat_iterator_end(&li);
-		bat_iterator_end(&ri);
-		return GDK_FAIL;
-	}
-
-	BAT *r1 = *r1p;
-	BAT *r2 = r2p ? *r2p : NULL;
-
 	rl = rci->seq - r->hseqbase;
 	rh = canditer_last(rci) + 1 - r->hseqbase;
 	if (hash_cand) {
@@ -2724,7 +2992,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  r->thash ? " ignoring existing hash" : "",
 			  swapped ? " (swapped)" : "");
 		if (snprintf(ext, sizeof(ext), "thshjn%x",
-			     (unsigned) THRgettid()) >= (int) sizeof(ext))
+			     (unsigned) MT_getpid()) >= (int) sizeof(ext))
 			goto bailout;
 		if ((hsh = BAThash_impl(r, rci, ext)) == NULL) {
 			goto bailout;
@@ -2732,7 +3000,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	} else if (phash) {
 		/* there is a hash on the parent which we should use */
 		MT_thread_setalgorithm(swapped ? "hashjoin using parent hash (swapped)" : "hashjoin using parent hash");
-		BAT *b = BBP_cache(VIEWtparent(r));
+		b = BATdescriptor(VIEWtparent(r));
+		if (b == NULL)
+			goto bailout;
 		TRC_DEBUG(ALGO, "%s(%s): using "
 			  "parent(" ALGOBATFMT ") for hash%s\n",
 			  __func__,
@@ -2781,9 +3051,12 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		TRC_DEBUG(ALGO, "hash for " ALGOBATFMT ": nbucket " BUNFMT ", nunique " BUNFMT ", nheads " BUNFMT "\n", ALGOBATPAR(r), hsh->nbucket, hsh->nunique, hsh->nheads);
 	}
 
-	if (not_in && !ri.nonil) {
+	bit defmark = 0;
+	if ((not_in || r3p) && !ri.nonil) {
 		/* check whether there is a nil on the right, since if
-		 * so, we should return an empty result */
+		 * so, we should return an empty result if not_in is
+		 * set, or use a NIL mark for non-matches if r3p is
+		 * set */
 		if (hash_cand) {
 			for (rb = HASHget(hsh, HASHprobe(hsh, nil));
 			     rb != BUN_NONE;
@@ -2791,13 +3064,19 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				ro = canditer_idx(rci, rb);
 				if ((*cmp)(nil, BUNtail(ri, ro - r->hseqbase)) == 0) {
 					assert(!locked);
+					if (r3p) {
+						defmark = bit_nil;
+						break;
+					}
 					HEAPfree(&hsh->heaplink, true);
 					HEAPfree(&hsh->heapbckt, true);
 					GDKfree(hsh);
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
-					return nomatch(r1p, r2p, l, r, lci,
-						       false, false, __func__, t0);
+					BBPreclaim(b);
+					return nomatch(r1p, r2p, r3p, l, r, lci,
+						       bit_nil, false, false,
+						       __func__, t0);
 				}
 			}
 		} else if (!BATtdensebi(&ri)) {
@@ -2807,17 +3086,34 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				if (rb >= rl && rb < rh &&
 				    (cmp == NULL ||
 				     (*cmp)(nil, BUNtail(ri, rb)) == 0)) {
+					if (r3p) {
+						defmark = bit_nil;
+						break;
+					}
 					if (locked)
 						MT_rwlock_rdunlock(&r->thashlock);
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
-					return nomatch(r1p, r2p, l, r, lci,
-						       false, false,
+					BBPreclaim(b);
+					return nomatch(r1p, r2p, r3p, l, r, lci,
+						       bit_nil, false, false,
 						       __func__, t0);
 				}
 			}
 		}
 	}
+
+	maxsize = joininitresults(r1p, r2p, r3p, lci->ncand, rci->ncand,
+				  li.key, ri.key, semi | max_one,
+				  nil_on_miss, only_misses, min_one,
+				  estimate);
+	if (maxsize == BUN_NONE) {
+		goto bailout;
+	}
+
+	r1 = *r1p;
+	r2 = r2p ? *r2p : NULL;
+	r3 = r3p ? *r3p : NULL;
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -2855,12 +3151,14 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			else if (li.type != TYPE_void)
 				v = VALUE(l, lo - l->hseqbase);
 			nr = 0;
+			bit mark = defmark;
 			if ((!nil_matches || not_in) && cmp(v, nil) == 0) {
 				/* no match */
 				if (not_in) {
 					lskipped = BATcount(r1) > 0;
 					continue;
 				}
+				mark = bit_nil;
 			} else if (hash_cand) {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
 				     rb != BUN_NONE;
@@ -2929,20 +3227,26 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			if (nr == 0) {
 				if (only_misses) {
 					nr = 1;
-					if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
+					if (maybeextend(r1, r2, r3, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
 						goto bailout;
 					APPEND(r1, lo);
 					if (lskipped)
 						r1->tseqbase = oid_nil;
 				} else if (nil_on_miss) {
 					nr = 1;
-					r2->tnil = true;
-					r2->tnonil = false;
-					r2->tkey = false;
-					if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
+					if (maybeextend(r1, r2, r3, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
 						goto bailout;
 					APPEND(r1, lo);
-					APPEND(r2, oid_nil);
+					if (r2) {
+						r2->tnil = true;
+						r2->tnonil = false;
+						r2->tkey = false;
+						APPEND(r2, oid_nil);
+					}
+					if (r3) {
+						r3->tnil |= mark == bit_nil;
+						((bit *) r3->theap->base)[r3->batCount++] = mark;
+					}
 				} else if (min_one) {
 					GDKerror("not enough matches");
 					goto bailout;
@@ -2999,6 +3303,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			r2->tseqbase = 0;
 		}
 	}
+	if (r3) {
+		r3->tnonil = !r3->tnil;
+		BATsetcount(r3, BATcount(r3));
+		assert(BATcount(r1) == BATcount(r3));
+	}
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
 			r1->tseqbase = ((oid *) r1->theap->base)[0];
@@ -3028,6 +3337,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
 
+	BBPreclaim(b);
 	return GDK_SUCCEED;
 
   bailout:
@@ -3042,13 +3352,14 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	BBPreclaim(r1);
 	BBPreclaim(r2);
+	BBPreclaim(b);
 	return GDK_FAIL;
 }
 
 /* Count the number of unique values for the first half and the complete
  * set (the sample s of b) and return the two values in *cnt1 and
  * *cnt2. In case of error, both values are 0. */
-static void
+static gdk_return
 count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 {
 	struct canditer ci;
@@ -3070,12 +3381,15 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	canditer_init(&ci, b, s);
 	half = ci.ncand / 2;
 
+	MT_lock_set(&b->theaplock);
 	if (b->tkey || ci.ncand <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
+		MT_lock_unset(&b->theaplock);
 		*cnt1 = half;
 		*cnt2 = ci.ncand;
-		return;
+		return GDK_SUCCEED;
 	}
+	MT_lock_unset(&b->theaplock);
 
 	(void) BATordered(b);
 	(void) BATordered_rev(b);
@@ -3085,7 +3399,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		/* trivial: all values are the same */
 		*cnt1 = *cnt2 = 1;
 		bat_iterator_end(&bi);
-		return;
+		return GDK_SUCCEED;
 	}
 
 	assert(bi.type != TYPE_void);
@@ -3146,7 +3460,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		seen = GDKzalloc((65536 / 32) * sizeof(seen[0]));
 		if (seen == NULL) {
 			bat_iterator_end(&bi);
-			return;
+			return GDK_FAIL;
 		}
 		for (i = 0; i < ci.ncand; i++) {
 			if (i == half) {
@@ -3170,7 +3484,10 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	} else {
 		BUN prb;
 		BUN mask;
-		Hash hs = {0};
+		Hash hs = {
+			.heapbckt.parentid = b->batCacheid,
+			.heaplink.parentid = b->batCacheid,
+		};
 
 		GDKclrerr();	/* not interested in BAThash errors */
 		algomsg = "new partial hash";
@@ -3180,14 +3497,14 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			mask = (BUN) 1 << 16;
 		if ((hs.heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
 		    (hs.heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
-		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
-		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
+		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs.heaplink.filename) ||
+		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs.heapbckt.filename) ||
 		    HASHnew(&hs, bi.type, ci.ncand, mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
 			bat_iterator_end(&bi);
-			return;
+			return GDK_FAIL;
 		}
 		for (i = 0; i < ci.ncand; i++) {
 			if (i == half)
@@ -3220,7 +3537,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  *cnt1, *cnt2, algomsg, GDKusec() - t0);
 
-	return;
+	return GDK_SUCCEED;
 }
 
 static double
@@ -3229,41 +3546,50 @@ guess_uniques(BAT *b, struct canditer *ci)
 	BUN cnt1, cnt2;
 	BAT *s1;
 
-	if (b->tkey)
+	MT_lock_set(&b->theaplock);
+	bool key = b->tkey;
+	double unique_est = b->tunique_est;
+	BUN batcount = BATcount(b);
+	MT_lock_unset(&b->theaplock);
+	if (key)
 		return (double) ci->ncand;
 
 	if (ci->s == NULL ||
-	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		MT_lock_set(&b->theaplock);
-		double unique_est = b->tunique_est;
-		MT_lock_unset(&b->theaplock);
+	    (ci->tpe == cand_dense && ci->ncand == batcount)) {
 		if (unique_est != 0) {
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT " use cached value\n",
 				  ALGOBATPAR(b));
 			return unique_est;
 		}
-		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
+		s1 = BATsample(b, 1000);
 	} else {
-		BAT *s2 = BATsample_with_seed(ci->s, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
+		BAT *s2 = BATsample(ci->s, 1000);
+		if (s2 == NULL)
+			return -1;
 		s1 = BATproject(s2, ci->s);
 		BBPreclaim(s2);
 	}
+	if (s1 == NULL)
+		return -1;
 	BUN n2 = BATcount(s1);
 	BUN n1 = n2 / 2;
-	count_unique(b, s1, &cnt1, &cnt2);
+	if (count_unique(b, s1, &cnt1, &cnt2) != GDK_SUCCEED) {
+		BBPreclaim(s1);
+		return -1;
+	}
 	BBPreclaim(s1);
 
 	double A = (double) (cnt2 - cnt1) / (n2 - n1);
 	double B = cnt1 - n1 * A;
 
 	B += A * ci->ncand;
+	MT_lock_set(&b->theaplock);
 	if (ci->s == NULL ||
-	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
-		MT_lock_set(&b->theaplock);
+	    (ci->tpe == cand_dense && ci->ncand == BATcount(b) && ci->ncand == batcount)) {
 		if (b->tunique_est == 0)
 			b->tunique_est = B;
-		MT_lock_unset(&b->theaplock);
 	}
+	MT_lock_unset(&b->theaplock);
 	return B;
 }
 
@@ -3281,8 +3607,8 @@ BATguess_uniques(BAT *b, struct canditer *ci)
 /* estimate the cost of doing a hashjoin with a hash on r; return value
  * is the estimated cost, the last three arguments receive some extra
  * information */
-static double
-joincost(BAT *r, struct canditer *lci, struct canditer *rci,
+double
+joincost(BAT *r, BUN lcount, struct canditer *rci,
 	 bool *hash, bool *phash, bool *cand)
 {
 	bool rhash;
@@ -3308,7 +3634,7 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		 * candidate types is essentially free */
 		rcost += log2((double) rci->nvals);
 	}
-	rcost *= lci->ncand;
+	rcost *= lcount;
 	if (BATtdense(r)) {
 		/* no need for a hash, and lookup is free */
 		rhash = false;	/* don't use it, even if it's there */
@@ -3317,22 +3643,27 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			/* average chain length */
 			rcost *= (double) cnt / nheads;
 		} else if ((parent = VIEWtparent(r)) != 0 &&
-			   (b = BBP_cache(parent)) != NULL &&
-			   BATcheckhash(b)) {
-			MT_rwlock_rdlock(&b->thashlock);
-			rhash = prhash = b->thash != NULL;
-			if (rhash) {
-				/* average chain length */
-				rcost *= (double) BATcount(b) / b->thash->nheads;
+			   (b = BATdescriptor(parent)) != NULL) {
+			if (BATcheckhash(b)) {
+				MT_rwlock_rdlock(&b->thashlock);
+				rhash = prhash = b->thash != NULL;
+				if (rhash) {
+					/* average chain length */
+					rcost *= (double) BATcount(b) / b->thash->nheads;
+				}
+				MT_rwlock_rdunlock(&b->thashlock);
 			}
-			MT_rwlock_rdunlock(&b->thashlock);
+			BBPunfix(b->batCacheid);
 		}
 		if (!rhash) {
 			MT_lock_set(&r->theaplock);
 			double unique_est = r->tunique_est;
 			MT_lock_unset(&r->theaplock);
-			if (unique_est == 0)
+			if (unique_est == 0) {
 				unique_est = guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)});
+				if (unique_est < 0)
+					return -1;
+			}
 			/* we have an estimate of the number of unique
 			 * values, assume some collisions */
 			rcost *= 1.1 * ((double) cnt / unique_est);
@@ -3340,7 +3671,7 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			/* only count the cost of creating the hash for
 			 * non-persistent bats */
 			MT_lock_set(&r->theaplock);
-			if (!(BBP_status(r->batCacheid) & BBPEXISTING) /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
+			if (r->batRole != PERSISTENT /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
 				rcost += cnt * 2.0;
 			MT_lock_unset(&r->theaplock);
 #else
@@ -3348,35 +3679,41 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 #endif
 		}
 	}
-	if (rci->ncand != BATcount(r) && rci->tpe != cand_mask) {
-		/* instead of using the hash on r (cost in rcost), we
-		 * can build a new hash on r taking the candidate list
-		 * into account; don't do this for masked candidate
-		 * since the searching of the candidate list
-		 * (canditer_idx) will kill us */
-		double rccost;
-		if (rhash && !prhash) {
-			rccost = (double) cnt / nheads;
-		} else {
-			MT_lock_set(&r->theaplock);
-			double unique_est = r->tunique_est;
-			MT_lock_unset(&r->theaplock);
-			if (unique_est == 0)
-				unique_est = guess_uniques(r, rci);
-			/* we have an estimate of the number of unique
-			 * values, assume some chains */
-			rccost = 1.1 * ((double) cnt / unique_est);
+	if (cand) {
+		if (rci->ncand != BATcount(r) && rci->tpe != cand_mask) {
+			/* instead of using the hash on r (cost in
+			 * rcost), we can build a new hash on r taking
+			 * the candidate list into account; don't do
+			 * this for masked candidate since the searching
+			 * of the candidate list (canditer_idx) will
+			 * kill us */
+			double rccost;
+			if (rhash && !prhash) {
+				rccost = (double) cnt / nheads;
+			} else {
+				MT_lock_set(&r->theaplock);
+				double unique_est = r->tunique_est;
+				MT_lock_unset(&r->theaplock);
+				if (unique_est == 0) {
+					unique_est = guess_uniques(r, rci);
+					if (unique_est < 0)
+						return -1;
+				}
+				/* we have an estimate of the number of unique
+				 * values, assume some chains */
+				rccost = 1.1 * ((double) cnt / unique_est);
+			}
+			rccost *= lcount;
+			rccost += rci->ncand * 2.0; /* cost of building the hash */
+			if (rccost < rcost) {
+				rcost = rccost;
+				rcand = true;
+			}
 		}
-		rccost *= lci->ncand;
-		rccost += rci->ncand * 2.0; /* cost of building the hash */
-		if (rccost < rcost) {
-			rcost = rccost;
-			rcand = true;
-		}
+		*cand = rcand;
 	}
 	*hash = rhash;
 	*phash = prhash;
-	*cand = rcand;
 	return rcost;
 }
 
@@ -3435,8 +3772,8 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 			/* trivial: nils don't match anything */
 			bat_iterator_end(&li);
 			bat_iterator_end(&ri);
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
+			return nomatch(r1p, r2p, NULL, l, r, &lci,
+				       0, false, false, __func__, t0);
 		}
 		loff = (lng) l->tseqbase - (lng) l->hseqbase;
 	}
@@ -3445,13 +3782,13 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 			/* trivial: nils don't match anything */
 			bat_iterator_end(&li);
 			bat_iterator_end(&ri);
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
+			return nomatch(r1p, r2p, NULL, l, r, &lci,
+				       0, false, false, __func__, t0);
 		}
 		roff = (lng) r->tseqbase - (lng) r->hseqbase;
 	}
 
-	BUN maxsize = joininitresults(r1p, r2p, lci.ncand, rci.ncand, false, false,
+	BUN maxsize = joininitresults(r1p, r2p, NULL, lci.ncand, rci.ncand, false, false,
 				      false, false, false, false, estimate);
 	if (maxsize == BUN_NONE) {
 		bat_iterator_end(&li);
@@ -3495,7 +3832,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 				      (opcode & MASK_GT && c > 0) ||
 				      (opcode & MASK_EQ && c == 0)))
 					continue;
-				if (maybeextend(r1, r2, 1, lci.next, lci.ncand, maxsize) != GDK_SUCCEED)
+				if (maybeextend(r1, r2, NULL, 1, lci.next, lci.ncand, maxsize) != GDK_SUCCEED)
 					goto bailout;
 				if (BATcount(r1) > 0) {
 					if (r2 && lastr + 1 != ro)
@@ -3601,8 +3938,8 @@ fetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (e > rci->seq + rci->ncand - r->hseqbase)
 		e = rci->seq + rci->ncand - r->hseqbase;
 	if (e == b) {
-		return nomatch(r1p, r2p, l, r, lci,
-			       false, false, __func__, t0);
+		return nomatch(r1p, r2p, NULL, l, r, lci,
+			       0, false, false, __func__, t0);
 	}
 	r1 = COLnew(0, TYPE_oid, e - b, TRANSIENT);
 	if (r1 == NULL)
@@ -3726,14 +4063,16 @@ bitmaskjoin(BAT *l, BAT *r,
 }
 
 /* Make the implementation choices for various left joins.
+ * If r3p is set, this is a "mark join" and *r3p will be a third return value containing a bat with type msk with a bit set for each
  * nil_matches: nil is an ordinary value that can match;
  * nil_on_miss: outer join: fill in a nil value in case of no match;
  * semi: semi join: return one of potentially more than one matches;
  * only_misses: difference: list rows without match on the right;
  * not_in: for implementing NOT IN: if nil on right then there are no matches;
- * max_one: error if there is more than one match. */
+ * max_one: error if there is more than one match;
+ * min_one: error if there are no matches. */
 static gdk_return
-leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
+leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	 bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
 	 bool not_in, bool max_one, bool min_one, BUN estimate,
 	 const char *func, lng t0)
@@ -3743,51 +4082,73 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	bat parent;
 	double rcost = 0;
 	gdk_return rc;
+	BAT *lp = NULL;
+	BAT *rp = NULL;
 
 	MT_thread_setalgorithm(__func__);
 	/* only_misses implies left output only */
 	assert(!only_misses || r2p == NULL);
 	/* if nil_on_miss is set, we really need a right output */
-	assert(!nil_on_miss || r2p != NULL);
+	assert(!nil_on_miss || r2p != NULL || r3p != NULL);
 	/* if not_in is set, then so is only_misses */
 	assert(!not_in || only_misses);
+	/* if r3p is set, then so is nil_on_miss */
+	assert(r3p == NULL || nil_on_miss);
 	*r1p = NULL;
 	if (r2p)
 		*r2p = NULL;
+	if (r3p)
+		*r3p = NULL;
 
 	canditer_init(&lci, l, sl);
 	canditer_init(&rci, r, sr);
 
 	if ((parent = VIEWtparent(l)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (l->hseqbase == b->hseqbase &&
-		    BATcount(l) == BATcount(b) &&
-		    ATOMtype(l->ttype) == ATOMtype(b->ttype)) {
-			l = b;
+		lp = BATdescriptor(parent);
+		if (lp == NULL)
+			return GDK_FAIL;
+		if (l->hseqbase == lp->hseqbase &&
+		    BATcount(l) == BATcount(lp) &&
+		    ATOMtype(l->ttype) == ATOMtype(lp->ttype)) {
+			l = lp;
+		} else {
+			BBPunfix(lp->batCacheid);
+			lp = NULL;
 		}
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (r->hseqbase == b->hseqbase &&
-		    BATcount(r) == BATcount(b) &&
-		    ATOMtype(r->ttype) == ATOMtype(b->ttype)) {
-			r = b;
+		rp = BATdescriptor(parent);
+		if (rp == NULL) {
+			BBPreclaim(lp);
+			return GDK_FAIL;
+		}
+		if (r->hseqbase == rp->hseqbase &&
+		    BATcount(r) == BATcount(rp) &&
+		    ATOMtype(r->ttype) == ATOMtype(rp->ttype)) {
+			r = rp;
+		} else {
+			BBPunfix(rp->batCacheid);
+			rp = NULL;
 		}
 	}
 
 	if (l->ttype == TYPE_msk || mask_cand(l)) {
-		if ((l = BATunmask(l)) == NULL)
-			return GDK_FAIL;
-	} else {
-		BBPfix(l->batCacheid);
-	}
-	if (r->ttype == TYPE_msk || mask_cand(r)) {
-		if ((r = BATunmask(r)) == NULL) {
-			BBPunfix(l->batCacheid);
+		l = BATunmask(l);
+		BBPreclaim(lp);
+		if (l == NULL) {
+			BBPreclaim(rp);
 			return GDK_FAIL;
 		}
-	} else {
-		BBPfix(r->batCacheid);
+		lp = l;
+	}
+	if (r->ttype == TYPE_msk || mask_cand(r)) {
+		r = BATunmask(r);
+		BBPreclaim(rp);
+		if (r == NULL) {
+			BBPreclaim(lp);
+			return GDK_FAIL;
+		}
+		rp = r;
 	}
 
 	if (joinparamcheck(l, r, NULL, sl, sr, func) != GDK_SUCCEED) {
@@ -3806,21 +4167,22 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
 			  nil_matches, nil_on_miss, semi, only_misses,
 			  not_in, max_one, min_one);
-		rc = nomatch(r1p, r2p, l, r, &lci,
-			     nil_on_miss, only_misses, func, t0);
+		rc = nomatch(r1p, r2p, r3p, l, r, &lci,
+			     0, nil_on_miss, only_misses, func, t0);
 		goto doreturn;
 	}
 
-	if (!nil_on_miss && !semi && !max_one && !min_one && !only_misses && !not_in &&
+	if (!only_misses && !not_in &&
 	    (lci.ncand == 1 || (BATordered(l) && BATordered_rev(l)) ||
 	     (l->ttype == TYPE_void && is_oid_nil(l->tseqbase)))) {
 		/* single value to join, use select */
-		rc = selectjoin(r1p, r2p, l, r, &lci, &rci,
-				nil_matches, t0, false, func);
+		rc = selectjoin(r1p, r2p, r3p, l, r, &lci, &rci,
+				nil_matches, nil_on_miss, semi, max_one, min_one,
+				t0, false, func);
 		goto doreturn;
 	} else if (BATtdense(r) && rci.tpe == cand_dense) {
 		/* use special implementation for dense right-hand side */
-		rc = mergejoin_void(r1p, r2p, l, r, &lci, &rci,
+		rc = mergejoin_void(r1p, r2p, r3p, l, r, &lci, &rci,
 				    nil_on_miss, only_misses, t0, false,
 				    func);
 		goto doreturn;
@@ -3860,13 +4222,17 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			|| BATtdense(r)
 			|| lci.ncand < 1024
 			|| BATcount(r) * (r->twidth + hsz + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1))) {
-			rc = mergejoin(r1p, r2p, l, r, &lci, &rci,
+			rc = mergejoin(r1p, r2p, r3p, l, r, &lci, &rci,
 				       nil_matches, nil_on_miss, semi, only_misses,
 				       not_in, max_one, min_one, estimate, t0, false, func);
 			goto doreturn;
 		}
 	}
-	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
+	rcost = joincost(r, lci.ncand, &rci, &rhash, &prhash, &rcand);
+	if (rcost < 0) {
+		rc = GDK_FAIL;
+		goto doreturn;
+	}
 
 	if (!nil_on_miss && !only_misses && !not_in && !max_one && !min_one) {
 		/* maybe do a hash join on the swapped operands; if we
@@ -3875,7 +4241,11 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		bool lhash, plhash, lcand;
 		double lcost;
 
-		lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
+		lcost = joincost(l, rci.ncand, &lci, &lhash, &plhash, &lcand);
+		if (lcost < 0) {
+			rc = GDK_FAIL;
+			goto doreturn;
+		}
 		if (semi)
 			lcost += rci.ncand; /* cost of BATunique(r) */
 		/* add cost of sorting; obviously we don't know the
@@ -3893,7 +4263,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				}
 				canditer_init(&rci, r, sr);
 			}
-			rc = hashjoin(&r2, &r1, r, l, &rci, &lci, nil_matches,
+			rc = hashjoin(&r2, &r1, NULL, r, l, &rci, &lci, nil_matches,
 				      false, false, false, false, false, false, estimate,
 				      t0, true, lhash, plhash, lcand, func);
 			if (semi)
@@ -3937,8 +4307,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					     r1, NULL, NULL, false, false, false);
 				BBPunfix(r1->batCacheid);
 				if (rc != GDK_SUCCEED) {
-					if (r2)
-						BBPunfix(r2->batCacheid);
+					BBPreclaim(r2);
 					goto doreturn;
 				}
 				*r1p = r1 = tmp;
@@ -3958,13 +4327,15 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			goto doreturn;
 		}
 	}
-	rc = hashjoin(r1p, r2p, l, r, &lci, &rci,
+	rc = hashjoin(r1p, r2p, r3p, l, r, &lci, &rci,
 		      nil_matches, nil_on_miss, semi, only_misses,
 		      not_in, max_one, min_one, estimate, t0, false, rhash, prhash,
 		      rcand, func);
   doreturn:
-	BBPunfix(l->batCacheid);
-	BBPunfix(r->batCacheid);
+	BBPreclaim(lp);
+	BBPreclaim(rp);
+	if (rc == GDK_SUCCEED && (semi | only_misses))
+		*r1p = virtualize(*r1p);
 	return rc;
 }
 
@@ -3974,7 +4345,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 gdk_return
 BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
-	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
+	return leftjoin(r1p, r2p, NULL, l, r, sl, sr, nil_matches,
 			false, false, false, false, false, false,
 			estimate, __func__,
 			GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0);
@@ -3988,13 +4359,13 @@ BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_mat
 gdk_return
 BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool match_one, BUN estimate)
 {
-	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
+	return leftjoin(r1p, r2p, NULL, l, r, sl, sr, nil_matches,
 			true, false, false, false, match_one, match_one,
 			estimate, __func__,
 			GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0);
 }
 
-/* Perform a semi-join over l and r.  Returns one or two new, bats
+/* Perform a semi-join over l and r.  Returns one or two new bats
  * with the oids of matching tuples.  The result is in the same order
  * as l (i.e. r1 is sorted).  If a single bat is returned, it is a
  * candidate list. */
@@ -4002,9 +4373,28 @@ gdk_return
 BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	    bool nil_matches, bool max_one, BUN estimate)
 {
-	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
+	return leftjoin(r1p, r2p, NULL, l, r, sl, sr, nil_matches,
 			false, true, false, false, max_one, false,
 			estimate, __func__,
+			GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0);
+}
+
+/* Perform a mark-join over l and r.  Returns one or two new bats with
+ * the oids of matching tuples.  In addition, returns a bat with "marks"
+ * that indicate the type of match.  This is an outer join, so returns
+ * at least one value for each row on the left.  If the second output
+ * pointer (r2p) is NULL, this is also a semi-join, so returns exactly
+ * one row for each row on the left.  If there is a match, the mark
+ * column will be TRUE, of there is no match, the second output is NIL,
+ * and the mark output is FALSE if there are no NILs in the right input,
+ * and the left input is also not NIL, otherwise the mark output is
+ * NIL. */
+gdk_return
+BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
+	    BUN estimate)
+{
+	return leftjoin(r1p, r2p, r3p, l, r, sl, sr, false, true, r2p == NULL,
+			false, false, false, false, estimate, __func__,
 			GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0);
 }
 
@@ -4016,11 +4406,11 @@ BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool max_one,
 {
 	BAT *bn;
 
-	if (leftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
+	if (leftjoin(&bn, NULL, NULL, l, r, sl, sr, nil_matches,
 		     false, true, false, false, max_one, false,
 		     estimate, __func__,
 		     GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0) == GDK_SUCCEED)
-		return virtualize(bn);
+		return bn;
 	return NULL;
 }
 
@@ -4033,11 +4423,11 @@ BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool not_in,
 {
 	BAT *bn;
 
-	if (leftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
+	if (leftjoin(&bn, NULL, NULL, l, r, sl, sr, nil_matches,
 		     false, false, true, not_in, false, false,
 		     estimate, __func__,
 		     GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0) == GDK_SUCCEED)
-		return virtualize(bn);
+		return bn;
 	return NULL;
 }
 
@@ -4096,6 +4486,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	gdk_return rc;
 	lng t0 = 0;
 	BAT *r2 = NULL;
+	BAT *lp = NULL;
+	BAT *rp = NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4103,33 +4495,51 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	canditer_init(&rci, r, sr);
 
 	if ((parent = VIEWtparent(l)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (l->hseqbase == b->hseqbase &&
-		    BATcount(l) == BATcount(b) &&
-		    ATOMtype(l->ttype) == ATOMtype(b->ttype))
-			l = b;
+		lp = BATdescriptor(parent);
+		if (lp == NULL)
+			return GDK_FAIL;
+		if (l->hseqbase == lp->hseqbase &&
+		    BATcount(l) == BATcount(lp) &&
+		    ATOMtype(l->ttype) == ATOMtype(lp->ttype)) {
+			l = lp;
+		} else {
+			BBPunfix(lp->batCacheid);
+			lp = NULL;
+		}
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (r->hseqbase == b->hseqbase &&
-		    BATcount(r) == BATcount(b) &&
-		    ATOMtype(r->ttype) == ATOMtype(b->ttype))
-			r = b;
+		rp = BATdescriptor(parent);
+		if (rp == NULL) {
+			BBPreclaim(lp);
+			return GDK_FAIL;
+		}
+		if (r->hseqbase == rp->hseqbase &&
+		    BATcount(r) == BATcount(rp) &&
+		    ATOMtype(r->ttype) == ATOMtype(rp->ttype)) {
+			r = rp;
+		} else {
+			BBPunfix(rp->batCacheid);
+			rp = NULL;
+		}
 	}
 
 	if (l->ttype == TYPE_msk || mask_cand(l)) {
-		if ((l = BATunmask(l)) == NULL)
-			return GDK_FAIL;
-	} else {
-		BBPfix(l->batCacheid);
-	}
-	if (r->ttype == TYPE_msk || mask_cand(r)) {
-		if ((r = BATunmask(r)) == NULL) {
-			BBPunfix(l->batCacheid);
+		l = BATunmask(l);
+		BBPreclaim(lp);
+		if (l == NULL) {
+			BBPreclaim(rp);
 			return GDK_FAIL;
 		}
-	} else {
-		BBPfix(r->batCacheid);
+		lp = l;
+	}
+	if (r->ttype == TYPE_msk || mask_cand(r)) {
+		r = BATunmask(r);
+		BBPreclaim(rp);
+		if (r == NULL) {
+			BBPreclaim(lp);
+			return GDK_FAIL;
+		}
+		rp = r;
 	}
 
 	*r1p = NULL;
@@ -4148,8 +4558,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 			  ALGOBATPAR(l), ALGOBATPAR(r),
 			  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
 			  nil_matches);
-		rc = nomatch(r1p, r2p, l, r, &lci,
-			     false, false, __func__, t0);
+		rc = nomatch(r1p, r2p, NULL, l, r, &lci,
+			     0, false, false, __func__, t0);
 		goto doreturn;
 	}
 
@@ -4157,24 +4567,26 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	if (lci.ncand == 1 || (BATordered(l) && BATordered_rev(l)) || (l->ttype == TYPE_void && is_oid_nil(l->tseqbase))) {
 		/* single value to join, use select */
-		rc = selectjoin(r1p, r2p, l, r, &lci, &rci,
-				nil_matches, t0, false, __func__);
+		rc = selectjoin(r1p, r2p, NULL, l, r, &lci, &rci,
+				nil_matches, false, false, false, false,
+				t0, false, __func__);
 		goto doreturn;
 	} else if (rci.ncand == 1 || (BATordered(r) && BATordered_rev(r)) || (r->ttype == TYPE_void && is_oid_nil(r->tseqbase))) {
 		/* single value to join, use select */
-		rc = selectjoin(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
-				nil_matches, t0, true, __func__);
+		rc = selectjoin(r2p ? r2p : &r2, r1p, NULL, r, l, &rci, &lci,
+				nil_matches, false, false, false, false,
+				t0, true, __func__);
 		if (rc == GDK_SUCCEED && r2p == NULL)
 			BBPunfix(r2->batCacheid);
 		goto doreturn;
 	} else if (BATtdense(r) && rci.tpe == cand_dense) {
 		/* use special implementation for dense right-hand side */
-		rc = mergejoin_void(r1p, r2p, l, r, &lci, &rci,
+		rc = mergejoin_void(r1p, r2p, NULL, l, r, &lci, &rci,
 				    false, false, t0, false, __func__);
 		goto doreturn;
 	} else if (BATtdense(l) && lci.tpe == cand_dense) {
 		/* use special implementation for dense right-hand side */
-		rc = mergejoin_void(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
+		rc = mergejoin_void(r2p ? r2p : &r2, r1p, NULL, r, l, &rci, &lci,
 				    false, false, t0, true, __func__);
 		if (rc == GDK_SUCCEED && r2p == NULL)
 			BBPunfix(r2->batCacheid);
@@ -4182,14 +4594,18 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	} else if ((BATordered(l) || BATordered_rev(l)) &&
 		   (BATordered(r) || BATordered_rev(r))) {
 		/* both sorted */
-		rc = mergejoin(r1p, r2p, l, r, &lci, &rci,
+		rc = mergejoin(r1p, r2p, NULL, l, r, &lci, &rci,
 			       nil_matches, false, false, false, false, false, false,
 			       estimate, t0, false, __func__);
 		goto doreturn;
 	}
 
-	lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
-	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
+	lcost = joincost(l, rci.ncand, &lci, &lhash, &plhash, &lcand);
+	rcost = joincost(r, lci.ncand, &rci, &rhash, &prhash, &rcand);
+	if (lcost < 0 || rcost < 0) {
+		rc = GDK_FAIL;
+		goto doreturn;
+	}
 
 	/* if the cost of doing searches on l is lower than the cost
 	 * of doing searches on r, we swap */
@@ -4200,7 +4616,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	     (lci.ncand * (log2((double) rci.ncand) + 1) < (swap ? lcost : rcost)))) {
 		/* r is sorted and it is cheaper to do multiple binary
 		 * searches than it is to use a hash */
-		rc = mergejoin(r1p, r2p, l, r, &lci, &rci,
+		rc = mergejoin(r1p, r2p, NULL, l, r, &lci, &rci,
 			       nil_matches, false, false, false, false, false, false,
 			       estimate, t0, false, __func__);
 	} else if ((l->ttype == TYPE_void && l->tvheap != NULL) ||
@@ -4208,27 +4624,27 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	     (rci.ncand * (log2((double) lci.ncand) + 1) < (swap ? lcost : rcost)))) {
 		/* l is sorted and it is cheaper to do multiple binary
 		 * searches than it is to use a hash */
-		rc = mergejoin(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
+		rc = mergejoin(r2p ? r2p : &r2, r1p, NULL, r, l, &rci, &lci,
 			       nil_matches, false, false, false, false, false, false,
 			       estimate, t0, true, __func__);
 		if (rc == GDK_SUCCEED && r2p == NULL)
 			BBPunfix(r2->batCacheid);
 	} else if (swap) {
-		rc = hashjoin(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
+		rc = hashjoin(r2p ? r2p : &r2, r1p, NULL, r, l, &rci, &lci,
 			      nil_matches, false, false, false, false, false, false,
 			      estimate, t0, true, lhash, plhash, lcand,
 			      __func__);
 		if (rc == GDK_SUCCEED && r2p == NULL)
 			BBPunfix(r2->batCacheid);
 	} else {
-		rc = hashjoin(r1p, r2p, l, r, &lci, &rci,
+		rc = hashjoin(r1p, r2p, NULL, l, r, &lci, &rci,
 			      nil_matches, false, false, false, false, false, false,
 			      estimate, t0, false, rhash, prhash, rcand,
 			      __func__);
 	}
   doreturn:
-	BBPunfix(l->batCacheid);
-	BBPunfix(r->batCacheid);
+	BBPreclaim(lp);
+	BBPreclaim(rp);
 	return rc;
 }
 
@@ -4275,8 +4691,8 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	canditer_init(&rci, r, sr);
 
 	if (lci.ncand == 0 || rci.ncand == 0)
-		return nomatch(r1p, r2p, l, r, &lci,
-			       false, false, __func__, t0);
+		return nomatch(r1p, r2p, NULL, l, r, &lci,
+			       0, false, false, __func__, t0);
 
 	switch (t) {
 	case TYPE_bte:
@@ -4284,32 +4700,32 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    is_bte_nil(*(const bte *)c2) ||
 		    -*(const bte *)c1 > *(const bte *)c2 ||
 		    ((!hinc || !linc) && -*(const bte *)c1 == *(const bte *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
+			return nomatch(r1p, r2p, NULL, l, r, &lci,
+				       0, false, false, __func__, t0);
 		break;
 	case TYPE_sht:
 		if (is_sht_nil(*(const sht *)c1) ||
 		    is_sht_nil(*(const sht *)c2) ||
 		    -*(const sht *)c1 > *(const sht *)c2 ||
 		    ((!hinc || !linc) && -*(const sht *)c1 == *(const sht *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
+			return nomatch(r1p, r2p, NULL, l, r, &lci,
+				       0, false, false, __func__, t0);
 		break;
 	case TYPE_int:
 		if (is_int_nil(*(const int *)c1) ||
 		    is_int_nil(*(const int *)c2) ||
 		    -*(const int *)c1 > *(const int *)c2 ||
 		    ((!hinc || !linc) && -*(const int *)c1 == *(const int *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
+			return nomatch(r1p, r2p, NULL, l, r, &lci,
+				       0, false, false, __func__, t0);
 		break;
 	case TYPE_lng:
 		if (is_lng_nil(*(const lng *)c1) ||
 		    is_lng_nil(*(const lng *)c2) ||
 		    -*(const lng *)c1 > *(const lng *)c2 ||
 		    ((!hinc || !linc) && -*(const lng *)c1 == *(const lng *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
+			return nomatch(r1p, r2p, NULL, l, r, &lci,
+				       0, false, false, __func__, t0);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -4317,8 +4733,8 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    is_hge_nil(*(const hge *)c2) ||
 		    -*(const hge *)c1 > *(const hge *)c2 ||
 		    ((!hinc || !linc) && -*(const hge *)c1 == *(const hge *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
+			return nomatch(r1p, r2p, NULL, l, r, &lci,
+				       0, false, false, __func__, t0);
 		break;
 #endif
 	case TYPE_flt:
@@ -4326,23 +4742,23 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    is_flt_nil(*(const flt *)c2) ||
 		    -*(const flt *)c1 > *(const flt *)c2 ||
 		    ((!hinc || !linc) && -*(const flt *)c1 == *(const flt *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
+			return nomatch(r1p, r2p, NULL, l, r, &lci,
+				       0, false, false, __func__, t0);
 		break;
 	case TYPE_dbl:
 		if (is_dbl_nil(*(const dbl *)c1) ||
 		    is_dbl_nil(*(const dbl *)c2) ||
 		    -*(const dbl *)c1 > *(const dbl *)c2 ||
 		    ((!hinc || !linc) && -*(const dbl *)c1 == *(const dbl *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
+			return nomatch(r1p, r2p, NULL, l, r, &lci,
+				       0, false, false, __func__, t0);
 		break;
 	default:
 		GDKerror("unsupported type\n");
 		return GDK_FAIL;
 	}
 
-	BUN maxsize = joininitresults(r1p, r2p, lci.ncand, rci.ncand, false, false,
+	BUN maxsize = joininitresults(r1p, r2p, NULL, lci.ncand, rci.ncand, false, false,
 				      false, false, false, false, estimate);
 	if (maxsize == BUN_NONE)
 		return GDK_FAIL;
@@ -4576,7 +4992,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				continue;
 			}
 			}
-			if (maybeextend(r1, r2, 1, lci.next, lci.ncand, maxsize) != GDK_SUCCEED)
+			if (maybeextend(r1, r2, NULL, 1, lci.next, lci.ncand, maxsize) != GDK_SUCCEED)
 				goto bailout;
 			if (BATcount(r1) > 0) {
 				if (r2 && lastr + 1 != ro)
@@ -4676,25 +5092,25 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	    ((rl->ttype == TYPE_void && is_oid_nil(rl->tseqbase)) &&
 	     (rh->ttype == TYPE_void && is_oid_nil(rh->tseqbase)))) {
 		/* trivial: empty input */
-		return nomatch(r1p, r2p, l, rl, &lci, false, false,
+		return nomatch(r1p, r2p, NULL, l, rl, &lci, 0, false, false,
 			       __func__, t0);
 	}
 	if (rl->ttype == TYPE_void && is_oid_nil(rl->tseqbase)) {
 		if (!anti)
-			return nomatch(r1p, r2p, l, rl, &lci, false, false,
+			return nomatch(r1p, r2p, NULL, l, rl, &lci, 0, false, false,
 				       __func__, t0);
 		return thetajoin(r1p, r2p, l, rh, sl, sr, MASK_GT, estimate,
 				 __func__, t0);
 	}
 	if (rh->ttype == TYPE_void && is_oid_nil(rh->tseqbase)) {
 		if (!anti)
-			return nomatch(r1p, r2p, l, rl, &lci, false, false,
+			return nomatch(r1p, r2p, NULL, l, rl, &lci, 0, false, false,
 				       __func__, t0);
 		return thetajoin(r1p, r2p, l, rl, sl, sr, MASK_LT, estimate,
 				 __func__, t0);
 	}
 
-	if ((maxsize = joininitresults(&r1, r2p ? &r2 : NULL, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(rl), false, false, false, false, false, false, estimate)) == BUN_NONE)
+	if ((maxsize = joininitresults(&r1, r2p ? &r2 : NULL, NULL, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(rl), false, false, false, false, false, false, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	if (r2p) {

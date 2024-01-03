@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /**
@@ -186,7 +190,15 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 				/* empty line, don't bother */
 				continue;
 			}
-			if (dp->input[fd].cnt < 30000 && strncmp(dp->input[fd].buf, q, (size_t) (p + 1 - q)) == 0) {
+			*p = 0;				/* was '\n' which we do not store */
+			char *s;
+			if ((s = strstr(q, "monetdbd's logfile")) != NULL) {
+				while (--s > q && *s != ',')
+					;
+				/* shorten message with reference to logfile */
+				*s = '\0';
+			}
+			if (dp->input[fd].cnt < 30000 && strcmp(dp->input[fd].buf, q) == 0) {
 				/* repeat of last message */
 				dp->input[fd].cnt++;
 				dp->input[fd].ts = now;
@@ -197,16 +209,15 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 					strftime(tmptime, sizeof(tmptime), "%Y-%m-%d %H:%M:%S",
 							 localtime(&dp->input[fd].ts));
 					if (dp->input[fd].cnt == 1)
-						fprintf(stream, "%s %s %s[%lld]: %s",
+						fprintf(stream, "%s %s %s[%lld]: %s\n",
 								tmptime, type, dbname, pid, dp->input[fd].buf);
 					else
-						fprintf(stream, "%s %s %s[%lld]: message repeated %d times: %s",
+						fprintf(stream, "%s %s %s[%lld]: message repeated %d times: %s\n",
 								tmptime, type, dbname, pid, dp->input[fd].cnt, dp->input[fd].buf);
 				}
 				dp->input[fd].ts = now;
 				dp->input[fd].cnt = 0;
-				strncpy(dp->input[fd].buf, q, p + 1 - q);
-				dp->input[fd].buf[p + 1 - q] = '\0';
+				strcpy(dp->input[fd].buf, q);
 				fprintf(stream, "%s %s %s[%lld]: %.*s\n",
 						mytime, type, dbname, pid, (int) (p - q), q);
 			}
@@ -230,6 +241,14 @@ logListener(void *x)
 
 	(void)x;
 
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
+
 	/* the first entry in the list of d is where our output should go to
 	 * but we only use the streams, so we don't care about it in the
 	 * normal loop */
@@ -248,7 +267,8 @@ logListener(void *x)
 			if (w->pid > 0)
 				nfds += 2;
 		}
-		pfd = malloc(nfds * sizeof(struct pollfd));
+		/* +1 for freebsd compiler issue with stringop-overflow error */
+		pfd = malloc((nfds+1) * sizeof(struct pollfd));
 		nfds = 0;
 		for (w = d; w != NULL; w = w->next) {
 			if (w->pid <= 0)
@@ -369,6 +389,13 @@ static void *
 doTerminateProcess(void *p)
 {
 	dpair dp = p;
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 	pthread_mutex_lock(&dp->fork_lock);
 	(void) terminateProcess(dp->dbname, dp->pid, dp->type);
 	pthread_mutex_unlock(&dp->fork_lock);
@@ -480,7 +507,7 @@ main(int argc, char *argv[])
 	kv->val = strdup("default_pipe");
 	{ /* nrthreads */
 		int ncpus = -1;
-		char cnt[8];
+		char cnt[11];
 
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
 		/* this works on Linux, Solaris and AIX */
@@ -504,6 +531,8 @@ main(int argc, char *argv[])
 		if (ncpus > 0) {
 			snprintf(cnt, sizeof(cnt), "%d", ncpus);
 			kv = findConfKey(_mero_db_props, "nthreads");
+			kv->val = strdup(cnt);
+			kv = findConfKey(_mero_db_props, "ncopyintothreads");
 			kv->val = strdup(cnt);
 		}
 	}

@@ -1,8 +1,0 @@
-# ChangeLog file for sql/src/backends/monet5/merovingian
-# This file is updated with mchangelog
-
-* Wed Aug 24 2022 Sjoerd Mullender <sjoerd@acm.org>
-- In certain cases (when an mserver5 process exits right after producing
-  a message) the log message was logged over and over again, causing
-  monetdbd to use 100% CPU.  This has been fixed.
-

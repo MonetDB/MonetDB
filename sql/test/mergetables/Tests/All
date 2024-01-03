@@ -21,9 +21,9 @@ addtable
 replicas
 transaction-conflict
 
-HAVE_NETCDF&HAVE_NETCDF?mergedb_create
+mergedb_create
 HAVE_GEOM?sqlsmith.Bug-6459
-HAVE_NETCDF?sqlsmith.Bug-6472
+sqlsmith.Bug-6472
 
 sqlsmith-exists
 sqlsmith-exists2
@@ -34,3 +34,10 @@ concurrent_merge_tables
 
 mergetabledependencies
 replicatabledependencies
+merge-tables-limitations
+
+mergetable00
+mergetable01
+
+mergetable-perms-base
+mergetable-select-perms

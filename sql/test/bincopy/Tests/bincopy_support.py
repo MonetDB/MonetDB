@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 from MonetDBtesting.sqltest import SQLTestCase
 NRECS = 1_000_000
@@ -15,17 +16,38 @@ class DataMaker:
     def __init__(self):
         self.fixed_substitutions = dict()
         self.work_list = set()
+        self.outfile_to_expected = dict()
 
     def additionally(self, key, value):
         self.fixed_substitutions[key] = value
 
     def substitute_match(self, match):
-        flags = []
-        ext = ''
         var = match.group(1)
+
         if var in self.fixed_substitutions:
             return self.fixed_substitutions[var]
-        elif var.startswith('le_'):
+
+        if var.startswith('>'):
+            var = var[1:]
+            outfile = tempfile.mktemp(dir=BINCOPY_FILES, prefix='out_' + var + '_', suffix='.bin')
+        else:
+            outfile = None
+
+        datafile = self.create_datafile(var)
+
+        if outfile:
+            self.outfile_to_expected[outfile] = datafile
+            substitution = outfile
+        else:
+            substitution = datafile
+
+        quoted = substitution.replace("'", "''")
+        return f"R'{quoted}'"
+
+    def create_datafile(self, var):
+        flags = []
+        ext = ''
+        if var.startswith('le_'):
             var = var[3:]
             ext = '.le'
             flags.append('--little-endian')
@@ -43,7 +65,7 @@ class DataMaker:
         if not os.path.isfile(dst_filename):
             cmd = ("bincopydata", *flags, var, str(NRECS), tmp_filename)
             self.work_list.add( (cmd, tmp_filename, dst_filename))
-        return f"R'{dst_filename}'"
+        return dst_filename
 
     def generate_files(self):
         processes = []
@@ -59,18 +81,23 @@ class DataMaker:
 
             os.rename(tmp, dst)
 
+    def outfiles(self):
+        return self.outfile_to_expected.items()
+
 
 
 def run_test(side, testcase):
     code, expected_result = testcase
+    assert len(re.findall('@ON@', code)) == len(re.findall('COPY', code))
+    assert '@ON@' in code
     # generate the query
     data_maker = DataMaker()
     data_maker.additionally('ON', 'ON ' + side.upper())
     data_maker.additionally('NRECS', NRECS)
     data_maker.additionally('NRECS_DIV_4', NRECS / 4)
-    massage = lambda s: re.sub(r'@(\w+)@', data_maker.substitute_match, s)
+    massage = lambda s: re.sub(r'@(>?(\w|!)+)@', data_maker.substitute_match, s)
     code = massage(code)
-    code = f"START TRANSACTION;\n{code}\nROLLBACK;"
+    code = f"START TRANSACTION;\n{code}\nROLLBACK;\n"
     open(os.path.join(BINCOPY_FILES, 'test.sql'), "w").write(code)
 
     # generate the required data files
@@ -88,29 +115,43 @@ def run_test(side, testcase):
             if err_msg:
                 err_msg = massage(err_msg)
             tr.assertFailed(err_code, err_msg)
+        for outfile, expected in data_maker.outfiles():
+            if not os.path.exists(outfile):
+                tr.fail(f'Output file {outfile} was not created')
+            expected_content = open(expected, 'rb').read()
+            content = open(outfile, 'rb').read()
+            if len(content) != len(expected_content):
+                tr.fail(f'Outfile {outfile} has wrong length: {len(content)}, expected {len(expected_content)}')
+            elif content != expected_content:
+                tr.fail(f'Content of outfile {outfile} differs from {expected}')
+
 
 
 INTS = ("""
 CREATE TABLE foo(id INT NOT NULL);
 COPY BINARY INTO foo(id) FROM @ints@ @ON@;
+COPY SELECT id FROM foo INTO BINARY @>ints@ @ON@;
 SELECT COUNT(DISTINCT id) FROM foo;
 """, [f"{NRECS}"])
 
 MORE_INTS = ("""
 CREATE TABLE foo(id INT NOT NULL, i INT);
 COPY BINARY INTO foo(id, i) FROM @ints@, @more_ints@ @ON@;
+COPY SELECT i, id FROM foo INTO BINARY @>more_ints@, @>ints@ @ON@;
 SELECT COUNT(id) FROM foo WHERE i = id + 1;
 """, [f"{NRECS}"])
 
 STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s VARCHAR(20));
 COPY BINARY INTO foo(id, s) FROM @ints@, @strings@ @ON@;
+COPY SELECT id, s FROM foo INTO BINARY @>ints@, @>strings@ @ON@;
 SELECT COUNT(id) FROM foo WHERE s = ('int' || id);
 """, [f"{NRECS}"])
 
 NULL_INTS = ("""
 CREATE TABLE foo(id INT NOT NULL, i INT);
 COPY BINARY INTO foo(id, i) FROM @ints@, @null_ints@ @ON@;
+COPY SELECT i, id FROM foo INTO BINARY @>null_ints@, @>ints@ @ON@;
 SELECT COUNT(id) FROM foo
 WHERE (id % 2 = 0 AND i IS NULL)
 OR    (id % 2 = 1 AND i = id);
@@ -119,6 +160,7 @@ OR    (id % 2 = 1 AND i = id);
 LARGE_STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @large_strings@ @ON@;
+COPY SELECT id, s FROM foo INTO BINARY @>ints@, @>large_strings@ @ON@;
 SELECT COUNT(id) FROM foo
 WHERE (id % 10000 <> 0 AND LENGTH(s) = 9)
 OR    (id % 10000 = 0 AND LENGTH(s) = 280000 + 9);
@@ -134,16 +176,56 @@ COPY BINARY INTO foo(id, s) FROM @ints@, @broken_strings@ @ON@;
 NEWLINE_STRINGS = (r"""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @newline_strings@ @ON@;
-SELECT COUNT(id) FROM foo WHERE s = (E'RN\nR\r' || id);
+SELECT COUNT(id) FROM foo WHERE s = (E'RN\r\nR\r' || id);
 """, [f"{NRECS}"])
 
 NULL_STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @null_strings@ @ON@;
+COPY SELECT id, s FROM foo INTO BINARY @>ints@, @>null_strings@ @ON@;
 SELECT COUNT(id) FROM foo
 WHERE (id % 2 = 0 AND s IS NULL)
 OR    (id % 2 = 1 AND s = 'banana');
 """, [f"{NRECS}"])
+
+NULL_BLOBS = ("""
+CREATE TABLE foo(id INT NOT NULL, b BLOB);
+COPY BINARY INTO foo(id, b) FROM @ints@, @null_blobs@ @ON@;
+COPY SELECT id, b FROM foo INTO BINARY @>ints@, @>null_blobs@ @ON@;
+
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+UNION
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+UNION
+SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
+""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
+
+NULL_BLOBS_LE = ("""
+CREATE TABLE foo(id INT NOT NULL, b BLOB);
+COPY LITTLE ENDIAN BINARY INTO foo(id, b) FROM @le_ints@, @le_null_blobs@ @ON@;
+COPY SELECT id, b FROM foo INTO LITTLE ENDIAN BINARY @>le_ints@, @>le_null_blobs@ @ON@;
+
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+UNION
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+UNION
+SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
+""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
+
+
+NULL_BLOBS_BE = ("""
+CREATE TABLE foo(id INT NOT NULL, b BLOB);
+COPY BIG ENDIAN BINARY INTO foo(id, b) FROM @be_ints@, @be_null_blobs@ @ON@;
+COPY SELECT id, b FROM foo INTO BIG ENDIAN BINARY @>be_ints@, @>be_null_blobs@ @ON@;
+
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+UNION
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+UNION
+SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
+""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
+
+
 
 TIMESTAMPS = ("""
 CREATE TABLE foo(
@@ -173,43 +255,59 @@ FROM @ints@,
      @timestamp_ms@
      @ON@;
 
+COPY SELECT id, ts, dt, tm, "year", "month", "day", "hour", "minute", "second", ms FROM foo
+INTO BINARY
+    @>ints@,
+    @>timestamps@,
+    @>timestamp_dates@,
+    @>timestamp_times@,
+    @>timestamp_years@,
+    @>timestamp_months@,
+    @>timestamp_days@,
+    @>timestamp_hours@,
+    @>timestamp_minutes@,
+    @>timestamp_seconds@,
+    @>timestamp_ms@
+    @ON@;
+
+
 SELECT * FROM foo
-    WHERE EXTRACT(YEAR FROM ts) <> "year"
+    WHERE COALESCE(EXTRACT(YEAR FROM ts), -1) <> COALESCE("year", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(MONTH FROM ts) <> "month"
+    WHERE COALESCE(EXTRACT(MONTH FROM ts), -1) <> COALESCE("month", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(DAY FROM ts) <> "day"
+    WHERE COALESCE(EXTRACT(DAY FROM ts), -1) <> COALESCE("day", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(HOUR FROM ts) <> "hour"
+    WHERE COALESCE(EXTRACT(HOUR FROM ts), -1) <> COALESCE("hour", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(MINUTE FROM ts) <> "minute"
+    WHERE COALESCE(EXTRACT(MINUTE FROM ts), -1) <> COALESCE("minute", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE 1000000 * CAST(EXTRACT(SECOND FROM ts) AS DECIMAL(13,6)) <> 1000000 * "second" + ms
+    WHERE COALESCE(1000000 * CAST(EXTRACT(SECOND FROM ts) AS DECIMAL(13,6)), -1) <> COALESCE(1000000 * "second" + ms, -1)
     LIMIT 4;
 
 SELECT * FROM foo
-    WHERE EXTRACT(YEAR FROM dt) <> "year"
+    WHERE COALESCE(EXTRACT(YEAR FROM dt), -1) <> COALESCE("year", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(MONTH FROM dt) <> "month"
+    WHERE COALESCE(EXTRACT(MONTH FROM dt), -1) <> COALESCE("month", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(DAY FROM dt) <> "day"
+    WHERE COALESCE(EXTRACT(DAY FROM dt), -1) <> COALESCE("day", -1)
     LIMIT 4;
 
 SELECT * FROM foo
-    WHERE EXTRACT(HOUR FROM tm) <> "hour"
+    WHERE COALESCE(EXTRACT(HOUR FROM tm), -1) <> COALESCE("hour", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(MINUTE FROM tm) <> "minute"
+    WHERE COALESCE(EXTRACT(MINUTE FROM tm), -1) <> COALESCE("minute", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE 1000000 * CAST(EXTRACT(SECOND FROM tm) AS DECIMAL(13,6)) <> 1000000 * "second" + ms
+    WHERE COALESCE(1000000 * CAST(EXTRACT(SECOND FROM tm) AS DECIMAL(13,6)), -1) <> COALESCE(1000000 * "second" + ms, -1)
     LIMIT 4;
 
 """, [])
@@ -223,6 +321,7 @@ SELECT COUNT(id) FROM foo WHERE i = id + 1 AND j IS NULL;
 BOOLS = ("""
 CREATE TABLE foo(id INT NOT NULL, b BOOL);
 COPY BINARY INTO foo(id, b) FROM @ints@, @bools@ @ON@;
+COPY SELECT id, b FROM foo INTO BINARY @>ints@, @>bools@ @ON@;
 SELECT COUNT(id) FROM foo WHERE b = (id % 2 <> 0);
 """, [f"{NRECS}"])
 
@@ -236,18 +335,23 @@ SELECT COUNT(id) FROM foo WHERE i = id + 1;
 FLOATS = ("""
 CREATE TABLE foo(id INT NOT NULL, r REAL);
 COPY BINARY INTO foo(id, r) FROM @ints@, @floats@ @ON@;
+COPY SELECT id, r FROM foo INTO BINARY @>ints@, @>floats@ @ON@;
 SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = r;
 """, [f"{NRECS}"])
 
 DOUBLES = ("""
 CREATE TABLE foo(id INT NOT NULL, d DOUBLE);
 COPY BINARY INTO foo(id, d) FROM @ints@, @doubles@ @ON@;
+COPY SELECT id, d FROM foo INTO BINARY @>ints@, @>doubles@ @ON@;
 SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = d;
 """, [f"{NRECS}"])
 
 INTEGER_TYPES = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT);
-COPY BINARY INTO foo FROM @tinyints@, @smallints@, @ints@, @bigints@;
+COPY BINARY INTO foo FROM @tinyints@, @smallints@, @ints@, @bigints@ @ON@;
+
+COPY SELECT t, s, i, b FROM foo
+INTO BINARY @>tinyints@, @>smallints@, @>ints@, @>bigints@ @ON@;
 
 WITH
 enlarged AS ( -- first go to the largest type
@@ -285,7 +389,9 @@ ORDER BY t_s, s_i, i_b
 
 HUGE_INTS = ("""
 CREATE TABLE foo(b BIGINT, h HUGEINT);
-COPY BINARY INTO foo FROM @bigints@, @hugeints@;
+COPY BINARY INTO foo FROM @bigints@, @hugeints@ @ON@;
+
+COPY SELECT b, h FROM foo INTO BINARY @>bigints@, @>hugeints@ @ON@;
 
 WITH
 enlarged AS (
@@ -335,16 +441,48 @@ CREATE TABLE foo(
     d10_2 DECIMAL(10, 2),
     d18_2 DECIMAL(18, 2)
 );
+
 COPY BINARY INTO foo FROM
     -- bte: i1, d1_1, d2_1
-    @tinyints@, @tinyints@, @tinyints@,
+    @dec_tinyints!1@,
+    @dec_tinyints!1@,
+    @dec_tinyints!1@,
     -- sht: i2, d3_2, d4_2
-    @smallints@, @smallints@, @smallints@,
+    @dec_smallints!3@,
+    @dec_smallints!3@,
+    @dec_smallints!3@,
     -- int: i4, d5_2, d9_2
-    @ints@, @ints@, @ints@,
+    @dec_ints!5@,
+    @dec_ints!5@,
+    @dec_ints!5@,
     -- lng: i8, d10_2, d18_2
-    @bigints@, @bigints@, @bigints@
+    @dec_bigints!10@,
+    @dec_bigints!10@,
+    @dec_bigints!10@
     @ON@;
+
+COPY
+SELECT i1, d1_1, d2_1, i2, d3_2, d4_2, i4, d5_2, d9_2, i8, d10_2, d18_2
+FROM foo
+INTO BINARY
+    -- bte: i1, d1_1, d2_1
+    @>dec_tinyints!1@,
+    @>dec_tinyints!1@,
+    @>dec_tinyints!1@,
+    -- sht: i2, d3_2, d4_2
+    @>dec_smallints!3@,
+    @>dec_smallints!3@,
+    @>dec_smallints!3@,
+    -- int: i4, d5_2, d9_2
+    @>dec_ints!5@,
+    @>dec_ints!5@,
+    @>dec_ints!5@,
+    -- lng: i8, d10_2, d18_2
+    @>dec_bigints!10@,
+    @>dec_bigints!10@,
+    @>dec_bigints!10@
+    @ON@;
+
 WITH verified AS (
     SELECT
         (d1_1 IS NULL OR 10 * d1_1 = i1) AS d1_1_ok,
@@ -375,9 +513,16 @@ CREATE TABLE foo(
     d19_2 DECIMAL(19, 2),
     d38_2 DECIMAL(38, 2)
 );
+
 COPY BINARY INTO foo FROM
     @hugeints@, @hugeints@, @hugeints@
     @ON@;
+
+COPY SELECT i, d19_2, d38_2 FROM foo
+INTO BINARY
+    @>hugeints@, @>hugeints@, @>hugeints@
+    @ON@;
+
 SELECT
     (100 * d19_2 = i) AS d19_ok,
     (100 * d38_2 = i) AS d38_ok,
@@ -398,6 +543,7 @@ SELECT COUNT(*) FROM foo;
 JSON_OBJECTS = ("""
 CREATE TABLE foo(i INT, j JSON);
 COPY BINARY INTO foo FROM @ints@, @json_objects@ @ON@;
+COPY SELECT i, j FROM foo INTO BINARY @>ints@, @>json_objects@ @ON@;
 SELECT COUNT(*) FROM foo
 WHERE (i % 100 = 99 AND j IS NULL)
 OR (i % 100 <> 99 AND j IS NOT NULL)
@@ -407,6 +553,7 @@ OR (i % 100 <> 99 AND j IS NOT NULL)
 UUIDS = ("""
 CREATE TABLE foo(t CHAR(16), u UUID);
 COPY BINARY INTO foo FROM @text_uuids@, @binary_uuids@ @ON@;
+COPY SELECT t, u FROM foo INTO BINARY @>text_uuids@, @>binary_uuids@ @ON@;
 SELECT COUNT(*) FROM foo
 WHERE t = CAST(u AS TEXT)
 OR    u IS NULL
@@ -415,7 +562,11 @@ OR    u IS NULL
 
 LITTLE_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
-COPY LITTLE ENDIAN BINARY INTO foo FROM @le_tinyints@, @le_smallints@, @le_ints@, @le_bigints@, @le_floats@, @le_doubles@;
+
+COPY LITTLE ENDIAN BINARY INTO foo FROM @le_tinyints@, @le_smallints@, @le_ints@, @le_bigints@, @le_floats@, @le_doubles@ @ON@;
+
+COPY SELECT t, s, i, b, f, d FROM foo
+INTO LITTLE ENDIAN BINARY @>le_tinyints@, @>le_smallints@, @>le_ints@, @>le_bigints@, @>le_floats@, @>le_doubles@ @ON@;
 
 WITH
 enlarged AS ( -- first go to the largest type
@@ -458,7 +609,11 @@ ORDER BY t_s, s_i, i_b, f_d
 
 BIG_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
-COPY BIG ENDIAN BINARY INTO foo FROM @be_tinyints@, @be_smallints@, @be_ints@, @be_bigints@, @be_floats@, @be_doubles@;
+
+COPY BIG ENDIAN BINARY INTO foo FROM @be_tinyints@, @be_smallints@, @be_ints@, @be_bigints@, @be_floats@, @be_doubles@ @ON@;
+
+COPY SELECT t, s, i, b, f, d FROM foo
+INTO BIG ENDIAN BINARY @>be_tinyints@, @>be_smallints@, @>be_ints@, @>be_bigints@, @>be_floats@, @>be_doubles@ @ON@;
 
 WITH
 enlarged AS ( -- first go to the largest type
@@ -501,7 +656,11 @@ ORDER BY t_s, s_i, i_b, f_d
 
 NATIVE_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
-COPY NATIVE ENDIAN BINARY INTO foo FROM @ne_tinyints@, @ne_smallints@, @ne_ints@, @ne_bigints@, @ne_floats@, @ne_doubles@;
+
+COPY NATIVE ENDIAN BINARY INTO foo FROM @ne_tinyints@, @ne_smallints@, @ne_ints@, @ne_bigints@, @ne_floats@, @ne_doubles@ @ON@;
+
+COPY SELECT t, s, i, b, f, d FROM foo
+INTO NATIVE ENDIAN BINARY @>ne_tinyints@, @>ne_smallints@, @>ne_ints@, @>ne_bigints@, @>ne_floats@, @>ne_doubles@ @ON@;
 
 WITH
 enlarged AS ( -- first go to the largest type
@@ -542,3 +701,23 @@ ORDER BY t_s, s_i, i_b, f_d
 LIMIT 4;
 ;
 """, [f"true,true,true,true,{NRECS}"])
+
+
+DEFAULT_VALUES = ("""
+CREATE SEQUENCE seq START WITH 10;
+CREATE TABLE foo(
+    s SERIAL,
+    d INT DEFAULT 42,
+    n INT DEFAULT NEXT VALUE FOR seq,
+    i INT
+);
+
+COPY BINARY INTO foo(i)
+FROM @ints@ @ON@;
+
+SELECT
+    COUNT(DISTINCT s) AS distinct_s,
+    SUM(d) AS sum_d,
+    SUM(n) AS sum_n
+FROM foo;
+""", [f"{NRECS},{42*NRECS},{8 * NRECS + NRECS * (NRECS + 1) // 2 }"])

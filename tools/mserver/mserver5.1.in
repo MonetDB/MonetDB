@@ -1,7 +1,17 @@
+.\" SPDX-License-Identifier: MPL-2.0
+.\"
+.\" This Source Code Form is subject to the terms of the Mozilla Public
+.\" License, v. 2.0.  If a copy of the MPL was not distributed with this
+.\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
+.\"
+.\" Copyright 2024 MonetDB Foundation;
+.\" Copyright August 2008 - 2023 MonetDB B.V.;
+.\" Copyright 1997 - July 2008 CWI.
+.\"
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MSERVER5 1 "APRIL 2011" MonetDB "MonetDB Applications"
+.TH MSERVER5 1 2023-12-21 MonetDB "MonetDB Applications"
 .SH NAME
 mserver5 \- the MonetDB server version 5
 .SH SYNOPSIS
@@ -22,7 +32,7 @@ start, monitor and connect to the
 process through
 .IR monetdbd (1).
 .P
-This man-page describes the options that
+This manual describes the options that
 .I mserver5
 understands.
 It is intended for people who really need to work with
@@ -72,7 +82,7 @@ option.
 If the value of
 .I path
 is
-.BR in-memory ,
+.BR in\-memory ,
 transient data is not stored on disk at all but kept in memory at all
 times.
 .TP
@@ -124,7 +134,7 @@ in-memory.
 .B No
 data will be written to disk.
 The name of the database that a client can connect to is
-.BR in-memory .
+.BR in\-memory .
 .TP
 \fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
 .PD 0
@@ -188,7 +198,7 @@ consistent after a crash.  DO NOT USE
 data).
 .TP
 .B 33554432
-(DEADBEEFMASK) disable "cleaning" of freed memory
+(DEADBEEFMASK) disable ``cleaning'' of freed memory
 in GDKfree() which only happens in a
 debug build (i.e. with assertions
 enabled) e.g., for performance
@@ -278,7 +288,7 @@ The
 setting points to a file that stores a secret key to unlock the
 password vault.
 It can contain anything.
-The file is read up to the first null-byte ('\e0'), hence it can be
+The file is read up to the first null-byte (``\[rs]0''), hence it can be
 padded to any length with trailing null-bytes to obfuscate the key
 length.
 Generating a key can be done for example by using a tool such as
@@ -288,7 +298,7 @@ Make sure not to choose a too small key.
 Note that on absence of a vault key file, some default key is used to
 encrypt the authorisation tables.
 Changing this setting (effectively changing the key) for an existing
-database makes that database unusable as noone is any longer able to
+database makes that database unusable as no one is any longer able to
 login.
 If you use
 .IR monetdbd (1),
@@ -372,6 +382,20 @@ The server will listen on the interface designated by
 .I hostname
 which is looked up using the normal hostname lookup facilities.
 .RE
+.TP
+.B allow_hge_upgrade
+Set this parameter to
+.B yes
+to allow the server to upgrade the database from one without 128 bit
+integer support to one with 128 bit integer (also known as HUGEINT) support.
+Note, the upgrade will only happen if the server does indeed support 128
+bit integers.
+Also note that there is no going back from a database with 128 bit
+integer support to one without.
+This option does nothing if no upgrade is required.
+128 bit integers requires support from the C compiler and is therefore
+not available on all platforms.  It can also be turned off at compile
+time.
 .SH SQL PARAMETERS
 The SQL component of MonetDB 5 runs on top of the MAL environment.
 It has its own SQL-level specific settings.
@@ -402,22 +426,22 @@ The following are possible pipes to use:
 .B minimal_pipe
 The minimal pipeline necessary by the server to operate correctly.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-minimal_pipe=inline,remap,deadcode,multiplex,generator,profiler,candidates,garbageCollector
+minimal_pipe=inline,remap,emptybind,deadcode,for,dict,multiplex,generator,profiler,garbageCollector
 .TP
 .B default_pipe
 The default pipeline contains the mitosis-mergetable-reorder
 optimizers, aimed at large tables and improved access locality.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mitosis,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,garbageCollector
+default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mitosis,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,dataflow,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 .TP
 .B no_mitosis_pipe
 The no_mitosis pipeline is identical to the default pipeline, except
 that optimizer mitosis is omitted.
 It is used mainly to make some tests work deterministically, and to
-check/debug whether "unexpected" problems are related to mitosis
+check/debug whether ``unexpected'' problems are related to mitosis
 (and/or mergetable).
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,garbageCollector
+no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,dataflow,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 .TP
 .B sequential_pipe
 The sequential pipeline is identical to the default pipeline, except
@@ -425,7 +449,7 @@ that optimizers mitosis & dataflow are omitted.
 It is use mainly to make some tests work deterministically, i.e.,
 avoid ambigious output, by avoiding parallelism.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,garbageCollector
+sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 .RE
 .TP
 .B embedded_py
@@ -470,7 +494,7 @@ doubled inside strings. The default value is
 .SH CONFIG FILE FORMAT
 The configuration file readable by
 .I mserver5
-consists of parameters of the form \(dq\&\fIname\fP=\fIvalue\fP\(dq\&.
+consists of parameters of the form ``\fIname\fP=\fIvalue\fP''.
 The file is line-based, each newline-terminated line represents either
 a comment or a parameter.
 Only the first equals sign in a parameter is significant.

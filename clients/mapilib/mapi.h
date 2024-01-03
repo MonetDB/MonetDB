@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MAPI_H_INCLUDED
@@ -26,6 +30,7 @@ typedef int MapiMsg;
 #define MTIMEOUT	(-2)
 #define MMORE		(-3)
 #define MSERVER		(-4)
+#define MREDIRECT	(-5)
 
 enum mapi_handshake_options_levels {
 	MAPI_HANDSHAKE_AUTOCOMMIT = 1,
@@ -83,6 +88,14 @@ mapi_export MapiMsg mapi_disconnect(Mapi mid)
 mapi_export MapiMsg mapi_reconnect(Mapi mid)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_ping(Mapi mid)
+	__attribute__((__nonnull__(1)));
+mapi_export void mapi_setfilecallback2(
+	Mapi mid,
+	char *(*getfunc)(void *priv, const char *filename,
+			 bool binary, uint64_t offset, size_t *size),
+	char *(*putfunc)(void *priv, const char *filename, bool binary,
+			 const void *data, size_t size),
+	void *priv)
 	__attribute__((__nonnull__(1)));
 mapi_export void mapi_setfilecallback(
 	Mapi mid,

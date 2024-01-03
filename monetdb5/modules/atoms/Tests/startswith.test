@@ -1,0 +1,93 @@
+query T
+select startswith(NULL, '')
+----
+NULL
+
+query T
+select startswith('', NULL)
+----
+NULL
+
+query T
+select startswith('', '')
+----
+True
+
+query T
+select startswith('johndoe', '')
+----
+True
+
+query T
+select startswith('', 'johndoe')
+----
+False
+
+query T
+select startswith('johndoe', 'john')
+----
+True
+
+query T
+select startswith('one two three', 'three', true)
+----
+False
+
+query T
+select startswith('Müller Thomas', 'müller', true)
+----
+True
+
+query T
+select startswith('Müller Thomas', 'müller', false)
+----
+False
+
+statement ok
+create table foo(x string)
+
+statement ok
+create table bar(x string)
+
+statement ok
+insert into foo values ('leftjohn'),('rightjane'),('rightrobert'),('uptim'),('leftlex'),('leftjoe')
+
+statement ok
+insert into bar values ('left'),('right'),('up'),('down')
+
+query T
+select startswith(x, 'left') from foo
+----
+True
+False
+False
+False
+True
+True
+
+query TT rowsort
+select * from foo,bar where [foo.x] startswith [bar.x, false]
+----
+leftjoe
+left
+leftjohn
+left
+leftlex
+left
+rightjane
+right
+rightrobert
+right
+uptim
+up
+
+statement ok
+drop table foo
+
+statement ok
+drop table bar
+
+query T
+select ['Camón Romasan'] startsWith ['camu', true];
+----
+False

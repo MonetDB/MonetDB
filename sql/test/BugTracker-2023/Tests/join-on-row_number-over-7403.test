@@ -1,0 +1,61 @@
+statement ok
+start transaction
+
+statement ok
+create table a7403(i int)
+
+statement ok
+create table b7403(i int)
+
+statement ok
+insert into a7403 values (10), (10)
+
+statement ok
+insert into b7403 values (20), (20)
+
+query T nosort
+plan
+with
+  a1 as (select row_number() over() as r, i from a7403),
+  b1 as (select row_number() over() as r, i from b7403)
+select a1.i, b1.i
+from a1, b1
+where a1.r = b1.r
+----
+project (
+| join (
+| | project (
+| | | table("sys"."a7403") [ "a7403"."i" ]
+| | ) [ "sys"."row_number"("sys"."star"(), boolean(1) "false", boolean(1) "false") as "a1"."r", "a7403"."i" as "a1"."i" ],
+| | project (
+| | | table("sys"."b7403") [ "b7403"."i" ]
+| | ) [ "sys"."row_number"("sys"."star"(), boolean(1) "false", boolean(1) "false") as "b1"."r", "b7403"."i" as "b1"."i" ]
+| ) [ ("a1"."r") = ("b1"."r") ]
+) [ "a1"."i", "b1"."i" ]
+
+query IIII rowsort
+with
+  a1 as (select row_number() over() as r, i from a7403),
+  b1 as (select row_number() over() as r, i from b7403)
+select a1.i as ai, a1.r as ar, b1.r as br, b1.i as bi
+from a1, b1
+where a1.r = b1.r
+----
+10
+1
+1
+20
+10
+2
+2
+20
+
+statement ok
+drop table a7403
+
+statement ok
+drop table b7403
+
+statement ok
+rollback
+

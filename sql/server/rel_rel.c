@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -438,6 +442,45 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		   is_sample(rel->op)) {
 		if (rel->l)
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
+	}
+	return NULL;
+}
+
+sql_exp *
+rel_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, const char *cname, int f)
+{
+	if (!sname)
+		return rel_bind_column2(sql, rel, tname, cname, f);
+	if (is_basetable(rel->op) && !rel->exps) {
+		return rel_base_bind_column3(sql, rel, sname, tname, cname);
+	} else if (is_set(rel->op)) {
+		return NULL;
+	} else if (is_project(rel->op) && rel->l) {
+		if (!is_processed(rel))
+			return rel_bind_column3(sql, rel->l, sname, tname, cname, f);
+		else
+			return rel_bind_column2(sql, rel->l, tname, cname, f);
+	} else if (is_join(rel->op)) {
+		sql_exp *e = rel_bind_column3(sql, rel->l, sname, tname, cname, f);
+
+		if (e && (is_right(rel->op) || is_full(rel->op)))
+			set_has_nil(e);
+		if (!e) {
+			e = rel_bind_column3(sql, rel->r, sname, tname, cname, f);
+			if (e && (is_left(rel->op) || is_full(rel->op)))
+				set_has_nil(e);
+		}
+		if (!e)
+			return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s.%s' ambiguous", sname, tname, cname);
+		if (e)
+			set_not_unique(e);
+		return e;
+	} else if (is_semi(rel->op) ||
+		   is_select(rel->op) ||
+		   is_topn(rel->op) ||
+		   is_sample(rel->op)) {
+		if (rel->l)
+			return rel_bind_column3(sql, rel->l, sname, tname, cname, f);
 	}
 	return NULL;
 }
@@ -915,7 +958,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 				list_append(gexps, e);
 			} else {
 				const char *ername = exp_relname(e), *nername = exp_relname(ne), *ename = exp_name(e), *nename = exp_name(ne);
-				if ((ername && !nername) || (!ername && nername) || 
+				if ((ername && !nername) || (!ername && nername) ||
 					(ername && nername && strcmp(ername,nername) != 0) || strcmp(ename,nename) != 0)
 					list_append(gexps, e);
 			}
@@ -980,16 +1023,32 @@ rel_project_exp(mvc *sql, sql_exp *e)
 }
 
 sql_rel *
+rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r)
+{
+	sql_rel *rel = rel_create(sa);
+	if (!rel)
+		return NULL;
+	if (!l)
+		return r;
+	rel->l = l;
+	rel->r = r;
+	rel->op = op_ddl;
+	rel->flag = ddl_list;
+	return rel;
+}
+
+sql_rel *
 rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps)
 {
 	sql_rel *rel = rel_create(sa);
 	if(!rel)
 		return NULL;
-	rel->l = l;
 	rel->r = r;
 	rel->exps = exps;
 	rel->op = op_ddl;
 	rel->flag = ddl_exception;
+	if (l)
+		return rel_list(sa, rel, l); /* keep base relation on the right ! */
 	return rel;
 }
 
@@ -1813,7 +1872,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		}
 		break;
 	case e_atom:
-		if (e->f && exp_deps(sql, e->f, refs, l) != 0)
+		if (e->f && exps_deps(sql, e->f, refs, l) != 0)
 			return -1;
 		break;
 	case e_column:
@@ -1903,11 +1962,15 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 				continue;
 			} else if (oname[0] == '%') {
 				sql_idx *i = find_sql_idx(t, oname+1);
-				cond_append(l, &i->base);
-			} else {
-				sql_column *c = find_sql_column(t, oname);
-				cond_append(l, &c->base);
+				if (i) {
+					cond_append(l, &i->base);
+					continue;
+				}
 			}
+			sql_column *c = find_sql_column(t, oname);
+			if (!c)
+				return -1;
+			cond_append(l, &c->base);
 		}
 	} break;
 	case op_table: {
@@ -2193,6 +2256,7 @@ rel_exp_visitor_bottomup(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter
 }
 
 static list *exps_rel_visitor(visitor *v, list *exps, rel_rewrite_fptr rel_rewriter, bool topdown);
+static list *exps_exps_rel_visitor(visitor *v, list *lists, rel_rewrite_fptr rel_rewriter, bool topdown);
 
 static sql_exp *
 exp_rel_visitor(visitor *v, sql_exp *e, rel_rewrite_fptr rel_rewriter, bool topdown)
@@ -2211,7 +2275,7 @@ exp_rel_visitor(visitor *v, sql_exp *e, rel_rewrite_fptr rel_rewriter, bool topd
 	case e_aggr:
 	case e_func:
 		if (e->r) /* rewrite rank */
-			if ((e->r = exps_rel_visitor(v, e->r, rel_rewriter, topdown)) == NULL)
+			if ((e->r = exps_exps_rel_visitor(v, e->r, rel_rewriter, topdown)) == NULL)
 				return NULL;
 		if (e->l)
 			if ((e->l = exps_rel_visitor(v, e->l, rel_rewriter, topdown)) == NULL)
@@ -2274,6 +2338,17 @@ exps_rel_visitor(visitor *v, list *exps, rel_rewrite_fptr rel_rewriter, bool top
 		if (n->data && (n->data = exp_rel_visitor(v, n->data, rel_rewriter, topdown)) == NULL)
 			return NULL;
 	return exps;
+}
+
+static list *
+exps_exps_rel_visitor(visitor *v, list *lists, rel_rewrite_fptr rel_rewriter, bool topdown)
+{
+	if (list_empty(lists))
+		return lists;
+	for (node *n = lists->h; n; n = n->next)
+		if (n->data && (n->data = exps_rel_visitor(v, n->data, rel_rewriter, topdown)) == NULL)
+			return NULL;
+	return lists;
 }
 
 static inline sql_rel *

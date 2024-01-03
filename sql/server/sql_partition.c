@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -309,104 +313,12 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 	return msg;
 }
 
-void
-find_partition_type(sql_subtype *tpe, sql_table *mt)
-{
-	if (isPartitionedByColumnTable(mt)) {
-		*tpe = mt->part.pcol->type;
-	} else if (isPartitionedByExpressionTable(mt)) {
-		*tpe = mt->part.pexp->type;
-	} else {
-		assert(0);
-	}
-}
-
 str
-initialize_sql_parts(mvc *sql, sql_table *mt)
+parse_sql_parts(mvc *sql, sql_table *mt)
 {
 	str res = NULL;
-	sql_subtype found;
-	int localtype;
-	sql_trans *tr = sql->session->tr;
 
 	if (isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, mt, 0)) != NULL)
 		return res;
-
-	find_partition_type(&found, mt);
-	localtype = found.type->localtype;
-
-	if (localtype != TYPE_str && mt->members && list_length(mt->members)) {
-		for (node *n = mt->members->h; n; n = n->next) {
-			sql_part *p = n->data;
-
-			if (isListPartitionTable(mt)) {
-				for (node *m = p->part.values->h; m; m = m->next) {
-					sql_part_value *v = (sql_part_value*) m->data, ov = *v;
-					ValRecord vvalue;
-					ptr ok;
-
-					vvalue = (ValRecord) {.vtype = TYPE_void,};
-					ok = VALinit(&vvalue, TYPE_str, v->value);
-					if (ok)
-						ok = VALconvert(localtype, &vvalue);
-					if (ok) {
-						v->value = SA_NEW_ARRAY(tr->sa, char, vvalue.len);
-						memcpy(v->value, VALget(&vvalue), vvalue.len);
-						v->length = vvalue.len;
-					}
-					VALclear(&vvalue);
-					if (!ok) {
-						res = createException(SQL, "sql.partition",
-											  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
-						return res;
-					}
-					_DELETE(ov.value);
-				}
-			} else if (isRangePartitionTable(mt)) {
-				ValRecord vmin, vmax;
-				ptr ok;
-
-				vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
-				ok = VALinit(&vmin, TYPE_str, p->part.range.minvalue);
-				if (ok)
-					ok = VALinit(&vmax, TYPE_str, p->part.range.maxvalue);
-				_DELETE(p->part.range.minvalue);
-				_DELETE(p->part.range.maxvalue);
-				if (ok) {
-					if (strNil((const char *)VALget(&vmin)) &&
-						strNil((const char *)VALget(&vmax))) {
-						const void *nil_ptr = ATOMnilptr(localtype);
-						size_t nil_len = ATOMlen(localtype, nil_ptr);
-
-						p->part.range.minvalue = SA_NEW_ARRAY(tr->sa, char, nil_len);
-						p->part.range.maxvalue = SA_NEW_ARRAY(tr->sa, char, nil_len);
-						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
-						memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
-						p->part.range.minlength = nil_len;
-						p->part.range.maxlength = nil_len;
-					} else {
-						ok = VALconvert(localtype, &vmin);
-						if (ok)
-							ok = VALconvert(localtype, &vmax);
-						if (ok) {
-							p->part.range.minvalue = SA_NEW_ARRAY(tr->sa, char, vmin.len);
-							p->part.range.maxvalue = SA_NEW_ARRAY(tr->sa, char, vmax.len);
-							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
-							memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
-							p->part.range.minlength = vmin.len;
-							p->part.range.maxlength = vmax.len;
-						}
-					}
-				}
-				VALclear(&vmin);
-				VALclear(&vmax);
-				if (!ok) {
-					res = createException(SQL, "sql.partition",
-										  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
-					return res;
-				}
-			}
-		}
-	}
 	return res;
 }

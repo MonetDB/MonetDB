@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -2512,7 +2516,7 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		return NULL;
 	}
 
-        bn = COLnew(ci1.hseq, b1->ttype, ci1.ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ci1.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ci1.ncand == 0)
@@ -4026,6 +4030,13 @@ bailout:
 	return NULL;
 }
 
+#define HANDLE_TIMEOUT							\
+	do {								\
+		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		BBPreclaim(bn);						\
+		bn = NULL;						\
+	} while (0)
+
 BAT *
 BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 	       bool symmetric, bool linc, bool hinc, bool nils_false, bool anti)
@@ -4062,20 +4073,50 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 	BATiter bi = bat_iterator(b);
 	BATiter loi = bat_iterator(lo);
 	BATiter hii = bat_iterator(hi);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
-				   loi.base, 1,
-				   loi.vh ? loi.vh->base : NULL,
-				   loi.width,
-				   hii.base, 1,
-				   hii.vh ? hii.vh->base : NULL,
-				   hii.width,
-				   bi.type,
-				   &ci, &cilo, &cihi,
-				   b->hseqbase, lo->hseqbase, hi->hseqbase,
-				   symmetric, anti, linc, hinc,
-				   nils_false, __func__);
+	if (b->ttype == TYPE_void || lo->ttype == TYPE_void || hi->ttype == TYPE_void) {
+		lng timeoffset = 0;
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
+		if (bn) {
+			bit *restrict dst = (bit *) Tloc(bn, 0);
+			BUN i, j, k, l;
+			BUN nils = 0;
+			TIMEOUT_LOOP_IDX(l, ci.ncand, timeoffset) {
+				i = canditer_next(&ci) - b->hseqbase;
+				j = canditer_next(&cilo) - lo->hseqbase;
+				k = canditer_next(&cihi) - hi->hseqbase;
+				dst[l] = BETWEEN(BUNtoid(b, i),
+						 BUNtoid(lo, j),
+						 BUNtoid(hi, k), oid);
+				nils += is_bit_nil(dst[l]);
+			}
+			BATsetcount(bn, ci.ncand);
+			bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->tkey = ci.ncand <= 1;
+			bn->tnil = nils != 0;
+			bn->tnonil = nils == 0;
+			TIMEOUT_CHECK(timeoffset, HANDLE_TIMEOUT);
+		}
+	} else {
+		bn = BATcalcbetween_intern(bi.base, 1,
+					   bi.vh ? bi.vh->base : NULL,
+					   bi.width,
+					   loi.base, 1,
+					   loi.vh ? loi.vh->base : NULL,
+					   loi.width,
+					   hii.base, 1,
+					   hii.vh ? hii.vh->base : NULL,
+					   hii.width,
+					   bi.type,
+					   &ci, &cilo, &cihi,
+					   b->hseqbase, lo->hseqbase, hi->hseqbase,
+					   symmetric, anti, linc, hinc,
+					   nils_false, __func__);
+	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&loi);
 	bat_iterator_end(&hii);
@@ -4113,18 +4154,45 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 	canditer_init(&ci, b, s);
 
 	BATiter bi = bat_iterator(b);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
-				   VALptr(lo), 0, NULL, 0,
-				   VALptr(hi), 0, NULL, 0,
-				   bi.type,
-				   &ci,
-				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				   b->hseqbase, 0, 0, symmetric, anti,
-				   linc, hinc, nils_false,
-				   __func__);
+	if (b->ttype == TYPE_void) {
+		lng timeoffset = 0;
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
+		if (bn) {
+			bit *restrict dst = (bit *) Tloc(bn, 0);
+			BUN i, l;
+			BUN nils = 0;
+			TIMEOUT_LOOP_IDX(l, ci.ncand, timeoffset) {
+				i = canditer_next(&ci) - b->hseqbase;
+				dst[l] = BETWEEN(BUNtoid(b, i), lo->val.oval,
+						 hi->val.oval, oid);
+				nils += is_bit_nil(dst[l]);
+			}
+			BATsetcount(bn, ci.ncand);
+			bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->tkey = ci.ncand <= 1;
+			bn->tnil = nils != 0;
+			bn->tnonil = nils == 0;
+			TIMEOUT_CHECK(timeoffset, HANDLE_TIMEOUT);
+		}
+	} else {
+		bn = BATcalcbetween_intern(bi.base, 1,
+					   bi.vh ? bi.vh->base : NULL,
+					   bi.width,
+					   VALptr(lo), 0, NULL, 0,
+					   VALptr(hi), 0, NULL, 0,
+					   bi.type,
+					   &ci,
+					   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+					   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+					   b->hseqbase, 0, 0, symmetric, anti,
+					   linc, hinc, nils_false,
+					   __func__);
+	}
 	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
@@ -4163,21 +4231,49 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 
 	BATiter bi = bat_iterator(b);
 	BATiter loi = bat_iterator(lo);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
-				   loi.base, 1,
-				   loi.vh ? loi.vh->base : NULL,
-				   loi.width,
-				   VALptr(hi), 0, NULL, 0,
-				   bi.type,
-				   &ci,
-				   &cilo,
-				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				   b->hseqbase, lo->hseqbase, 0,
-				   symmetric, anti,
-				   linc, hinc, nils_false,
-				   __func__);
+	if (b->ttype == TYPE_void || lo->ttype == TYPE_void) {
+		lng timeoffset = 0;
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
+		if (bn) {
+			bit *restrict dst = (bit *) Tloc(bn, 0);
+			BUN i, j, l;
+			BUN nils = 0;
+			TIMEOUT_LOOP_IDX(l, ci.ncand, timeoffset) {
+				i = canditer_next(&ci) - b->hseqbase;
+				j = canditer_next(&cilo) - lo->hseqbase;
+				dst[l] = BETWEEN(BUNtoid(b, i), BUNtoid(lo, j),
+						 hi->val.oval, oid);
+				nils += is_bit_nil(dst[l]);
+			}
+			BATsetcount(bn, ci.ncand);
+			bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->tkey = ci.ncand <= 1;
+			bn->tnil = nils != 0;
+			bn->tnonil = nils == 0;
+			TIMEOUT_CHECK(timeoffset, HANDLE_TIMEOUT);
+		}
+	} else {
+		bn = BATcalcbetween_intern(bi.base, 1,
+					   bi.vh ? bi.vh->base : NULL,
+					   bi.width,
+					   loi.base, 1,
+					   loi.vh ? loi.vh->base : NULL,
+					   loi.width,
+					   VALptr(hi), 0, NULL, 0,
+					   bi.type,
+					   &ci,
+					   &cilo,
+					   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+					   b->hseqbase, lo->hseqbase, 0,
+					   symmetric, anti,
+					   linc, hinc, nils_false,
+					   __func__);
+	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&loi);
 
@@ -4219,21 +4315,49 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 
 	BATiter bi = bat_iterator(b);
 	BATiter hii = bat_iterator(hi);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
-				   VALptr(lo), 0, NULL, 0,
-				   hii.base, 1,
-				   hii.vh ? hii.vh->base : NULL,
-				   hii.width,
-				   bi.type,
-				   &ci,
-				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				   &cihi,
-				   b->hseqbase, 0, hi->hseqbase,
-				   symmetric, anti,
-				   linc, hinc, nils_false,
-				   __func__);
+	if (b->ttype == TYPE_void || hi->ttype == TYPE_void) {
+		lng timeoffset = 0;
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
+		if (bn) {
+			bit *restrict dst = (bit *) Tloc(bn, 0);
+			BUN i, k, l;
+			BUN nils = 0;
+			TIMEOUT_LOOP_IDX(l, ci.ncand, timeoffset) {
+				i = canditer_next(&ci) - b->hseqbase;
+				k = canditer_next(&cihi) - hi->hseqbase;
+				dst[l] = BETWEEN(BUNtoid(b, i), lo->val.oval,
+						 BUNtoid(hi, k), oid);
+				nils += is_bit_nil(dst[l]);
+			}
+			BATsetcount(bn, ci.ncand);
+			bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->tkey = ci.ncand <= 1;
+			bn->tnil = nils != 0;
+			bn->tnonil = nils == 0;
+			TIMEOUT_CHECK(timeoffset, HANDLE_TIMEOUT);
+		}
+	} else {
+		bn = BATcalcbetween_intern(bi.base, 1,
+					   bi.vh ? bi.vh->base : NULL,
+					   bi.width,
+					   VALptr(lo), 0, NULL, 0,
+					   hii.base, 1,
+					   hii.vh ? hii.vh->base : NULL,
+					   hii.width,
+					   bi.type,
+					   &ci,
+					   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+					   &cihi,
+					   b->hseqbase, 0, hi->hseqbase,
+					   symmetric, anti,
+					   linc, hinc, nils_false,
+					   __func__);
+	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&hii);
 

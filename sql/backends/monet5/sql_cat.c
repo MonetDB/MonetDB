@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -24,7 +28,6 @@
 #include "opt_prelude.h"
 #include "querylog.h"
 #include "mal_builder.h"
-#include "mal_debugger.h"
 
 #include "rel_select.h"
 #include "rel_prop.h"
@@ -33,6 +36,7 @@
 #include "rel_bin.h"
 #include "rel_dump.h"
 #include "orderidx.h"
+#include "sql_user.h"
 
 #define initcontext() \
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\
@@ -259,6 +263,10 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
 		goto finish;
 	}
+	if (!min_null && !max_null && ATOMcmp(tp1, min, max) == 0) {
+		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is equal to the maximum value");
+		goto finish;
+	}
 
 	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tpe, min, max, with_nills, update, &err);
 	switch (errcode) {
@@ -389,7 +397,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
 		goto finish;
 	}
-	values = list_new(sql->session->tr->sa, (fdestroy) &part_value_destroy);
+	values = list_create((fdestroy) &part_value_destroy);
 	for ( i = pci->retc+6; i < pci->argc; i++){
 		sql_part_value *nextv = NULL;
 		ValRecord *vnext = &(stk)->stk[(pci)->argv[i]];
@@ -403,8 +411,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 			goto finish;
 		}
 
-		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->value = SA_NEW_ARRAY(sql->session->tr->sa, char, len);
+		nextv = ZNEW(sql_part_value); /* instantiate the part value */
+		nextv->value = NEW_ARRAY(char, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
 
@@ -522,19 +530,25 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 {
 	sql_trigger *tri = NULL, *other = NULL;
 	sql_schema *s = NULL;
-	sql_table *t;
+	sql_table *t = NULL;
 	const char *base = replace ? "CREATE OR REPLACE TRIGGER" : "CREATE TRIGGER";
 
-	if (!(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
-	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_trigger",SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+	if (!strNil(sname) && !strNil(tname)) {
+		if (!(s = mvc_bind_schema(sql, sname)))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
+		if (!mvc_schema_privs(sql, s))
+			throw(SQL,"sql.create_trigger",SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+		if (!(t = mvc_bind_table(sql, s, tname)))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: unknown table '%s'", base, tname);
+		if (isView(t))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: cannot create trigger on view '%s'", base, tname);
+	} else {
+		if (!(s = mvc_bind_schema(sql, "sys")))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
+	}
+
 	if ((other = mvc_bind_trigger(sql, s, triggername)) && !replace)
 		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: name '%s' already in use", base, triggername);
-	if (!(t = mvc_bind_table(sql, s, tname)))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: unknown table '%s'", base, tname);
-	if (isView(t))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: cannot create trigger on view '%s'", base, tname);
 
 	if (replace && other) {
 		if (other->t->base.id != t->base.id) /* defensive line */
@@ -624,7 +638,7 @@ drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 	return MAL_SUCCEED;
 }
 
-static char *
+char *
 drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
 	sql_schema *s = NULL;
@@ -675,7 +689,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	return mvc_drop_table(sql, s, t, drop_action);
 }
 
-static char *
+char *
 drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
 	sql_table *t = NULL;
@@ -740,7 +754,7 @@ IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void 
 
 	if (!b)
 		throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
-	if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+	if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 		BBPunfix(b->batCacheid);
 		if (!(b = BATdescriptor(nb->batCacheid)))
 			throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
@@ -1106,7 +1120,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 {
 	sql_schema *s = NULL;
@@ -1119,6 +1133,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (!(nt = mvc_bind_table(sql, s, t->base.name)))
 		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
+
+	sql_table *gt = NULL;
+	if (nt && isTempTable(nt)) {
+		gt = (sql_table*)os_find_id(s->tables, sql->session->tr, nt->base.id);
+		if (gt)
+			nt = gt;
+	}
 
 	/* First check if all the changes are allowed */
 	if (t->idxs) {
@@ -1178,6 +1199,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (c->null == 0) {
 				const void *nilptr = ATOMnilptr(c->type.type->localtype);
 				rids *nils = store->table_api.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);
+				if (!nils)
+					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				int has_nils = !is_oid_nil(store->table_api.rids_next(nils));
 
 				store->table_api.rids_destroy(nils);
@@ -1236,6 +1259,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (i->base.new || !i->base.deleted)
 					continue;
 				sql_idx *ni = mvc_bind_idx(sql, s, i->base.name);
+				if (ni == NULL)
+					throw(SQL, "sql.alter_table", "Couldn't bind index %s", i->base.name);
 				switch (mvc_drop_idx(sql, s, ni)) {
 					case -1:
 						throw(SQL,"sql.alter_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1258,7 +1283,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				sql_kc *ic = i->columns->h->data;
 				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
-				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+				if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 					BBPunfix(b->batCacheid);
 					if (!(b = BATdescriptor(nb->batCacheid)))
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
@@ -1275,7 +1300,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				sql_kc *ic = i->columns->h->data;
 				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
-				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+				if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 					BBPunfix(b->batCacheid);
 					if (!(b = BATdescriptor(nb->batCacheid)))
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
@@ -1386,8 +1411,8 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "Only one value allowed to alter a sequence value");
 		}
+		bi = bat_iterator(b);
 		if (getBatType(getArgType(mb, pci, 4)) == TYPE_lng) {
-			bi = bat_iterator(b);
 			val = (lng*)bi.base;
 		}
 	}
@@ -1495,10 +1520,23 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1);
 	//str tname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
-	int temp = *getArgReference_int(stk, pci, 4);
+	int temp = *getArgReference_int(stk, pci, 4), remote = (pci->argc == 7);
+	int pw_encrypted = temp;
 
 	initcontext();
+	if (remote)
+		temp = 0;
 	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0);
+	if (!msg && remote) {
+		str username = *getArgReference_str(stk, pci, 5);
+		str password = *getArgReference_str(stk, pci, 6);
+
+		sql_schema *s = mvc_bind_schema(sql, sname);
+		t = s?mvc_bind_table(sql, s, t->base.name):NULL;
+		if (t)
+			return remote_create(sql, t->base.id, username, password, pw_encrypted);
+		throw(SQL, "sql.create_table", SQLSTATE(3F000) "Internal error");
+	}
 	return msg;
 }
 
@@ -1778,9 +1816,11 @@ SQLalter_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *schema_path = SaveArgReference(stk, pci, 5);
 	char *oldpasswd = SaveArgReference(stk, pci, 6);
 	char *role = SaveArgReference(stk, pci, 7);
+	lng max_memory = *getArgReference_lng(stk, pci, 8);
+	int max_workers = *getArgReference_int(stk, pci, 9);
 
 	initcontext();
-	msg = sql_alter_user(sql, sname, passwd, enc, schema, schema_path, oldpasswd, role);
+	msg = sql_alter_user(sql, sname, passwd, enc, schema, schema_path, oldpasswd, role, max_memory, max_workers);
 
 	return msg;
 }

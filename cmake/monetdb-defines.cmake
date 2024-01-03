@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 # This function should only run find functions. The resulting
@@ -65,12 +69,12 @@ function(monetdb_configure_defines)
   check_symbol_exists("asctime_r" "time.h" HAVE_ASCTIME_R)
   check_symbol_exists("clock_gettime" "time.h" HAVE_CLOCK_GETTIME)
   check_symbol_exists("ctime_r" "time.h" HAVE_CTIME_R)
+  check_struct_has_member("struct tm" tm_gmtoff time.h HAVE_TM_GMTOFF)
   check_symbol_exists("dispatch_semaphore_create"
     "dispatch/dispatch.h" HAVE_DISPATCH_SEMAPHORE_CREATE)
   # Linux specific, in the future, it might be ported to other platforms
   check_symbol_exists("fallocate" "fcntl.h" HAVE_FALLOCATE)
   check_function_exists("fcntl" HAVE_FCNTL)
-  check_symbol_exists("fork" "unistd.h" HAVE_FORK)
   check_symbol_exists("fsync" "unistd.h" HAVE_FSYNC)
   check_symbol_exists("ftime" "sys/timeb.h" HAVE_FTIME)
   check_function_exists("getentropy" HAVE_GETENTROPY)
@@ -104,6 +108,7 @@ function(monetdb_configure_defines)
   check_function_exists("setsid" HAVE_SETSID)
   check_function_exists("shutdown" HAVE_SHUTDOWN)
   check_function_exists("sigaction" HAVE_SIGACTION)
+  check_function_exists("siglongjmp" HAVE_SIGLONGJMP)
   check_symbol_exists("stpcpy" "string.h" HAVE_STPCPY)
   check_function_exists("strcasestr" HAVE_STRCASESTR)
   check_symbol_exists("strncasecmp" "strings.h" HAVE_STRNCASECMP)
@@ -118,8 +123,10 @@ function(monetdb_configure_defines)
   cmake_push_check_state()
     set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
     check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
+    check_function_exists("pthread_setname_np" HAVE_PTHREAD_SETNAME_NP)
     check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
   cmake_pop_check_state()
+  check_function_exists("SetThreadDescription" HAVE_SETTHREADDESCRIPTION)
   check_symbol_exists("regcomp" "regex.h" HAVE_POSIX_REGEX)
 endfunction()
 
@@ -148,6 +155,9 @@ macro(monetdb_macro_variables)
   set(RHOME "${LIBR_HOME}")
   set(HAVE_GEOM ${GEOS_FOUND})
   set(HAVE_SHP ${GDAL_FOUND})
+  set(SANITIZER ${SANITIZER})
+  set(HAVE_RTREE ${RTREE_FOUND})
+  set(HAVE_OPENSSL ${OPENSSL_FOUND})
 
   if(PY3INTEGRATION)
     set(HAVE_LIBPY3 "${Python3_NumPy_FOUND}")

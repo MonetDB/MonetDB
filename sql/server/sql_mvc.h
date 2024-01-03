@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* multi version catalog */
@@ -24,6 +28,8 @@
 #include "sql_atom.h"
 #include "sql_tokens.h"
 #include "sql_symbol.h"
+
+#define REMOTE_USER_INFO "remote_user_info"
 
 #define ERRSIZE 8192
 #define ERR_AMBIGUOUS	050000
@@ -62,10 +68,9 @@
 
 /* different query execution modifiers (emod) */
 #define mod_none 	0
-#define mod_debug 	1
-#define mod_trace 	2
-#define mod_explain 	4
-#define mod_exec 	8
+#define mod_trace 	1
+#define mod_explain 	2
+#define mod_exec 	4
 
 typedef struct sql_groupby_expression {
 	symbol *sdef;
@@ -128,7 +133,7 @@ typedef struct mvc {
 	int frame;
 	struct symbol *sym;
 
-	int8_t use_views:1,
+	bool use_views:1,
 		   schema_path_has_sys:1, /* speed up object search */
 		   schema_path_has_tmp:1;
 	struct qc *qc;
@@ -162,7 +167,7 @@ typedef struct mvc {
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 
 /* should return structure */
-extern sql_store mvc_init(int debug, store_type store, int ro, int su);
+extern sql_store mvc_init(int debug, store_type store, int ro, int su, const char *initpasswd);
 extern void mvc_exit(sql_store store);
 
 extern void mvc_logmanager(sql_store store);
@@ -212,7 +217,7 @@ extern int mvc_drop_schema(mvc *c, sql_schema *s, int drop_action);
 extern int mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner);
 extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern str mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
-extern int mvc_create_table(sql_table **t, mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
+sql_export int mvc_create_table(sql_table **t, mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
 extern int mvc_create_view(sql_table **t, mvc *m, sql_schema *s, const char *name, int persistence, const char *sql, bit system);
 extern int mvc_create_remote(sql_table **t, mvc *m, sql_schema *s, const char *name, int persistence, const char *loc);
 
@@ -316,8 +321,13 @@ extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
 
 static inline int mvc_highwater(mvc *sql)
 {
-	int l = 0, rc = 0;
+#if defined(__GNUC__) || defined(__clang__)
+	uintptr_t c = (uintptr_t) __builtin_frame_address(0);
+#else
+	int l = 0;
 	uintptr_t c = (uintptr_t) (&l);
+#endif
+	int rc = 0;
 
 	size_t diff = c < sql->sp ? sql->sp - c : c - sql->sp;
 	if (diff > THREAD_STACK_SIZE - 280 * 1024)

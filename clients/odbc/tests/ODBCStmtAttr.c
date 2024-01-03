@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifdef _MSC_VER
@@ -186,12 +190,19 @@ main(int argc, char **argv)
 		"Set SQL_ATTR_MAX_LENGTH: 2147483641\n"
 		"Get SQL_ATTR_MAX_LENGTH: 0\n"
 		" which is different from 2147483641 !!\n");
+#if (SIZEOF_LONG_INT == 8)
 	GetSetReGetStmtAttr(stmt, SQL_ATTR_MAX_LENGTH, -1,	/* test also what happens with a negative value */
 		"Get SQL_ATTR_MAX_LENGTH: 0\n"
 		"Set SQL_ATTR_MAX_LENGTH: 18446744073709551615\n"
 		"Get SQL_ATTR_MAX_LENGTH: 0\n"
 		" which is different from 18446744073709551615 !!\n");
-
+#else
+	GetSetReGetStmtAttr(stmt, SQL_ATTR_MAX_LENGTH, -1,	/* test also what happens with a negative value */
+		"Get SQL_ATTR_MAX_LENGTH: 0\n"
+		"Set SQL_ATTR_MAX_LENGTH: 4294967295\n"
+		"Get SQL_ATTR_MAX_LENGTH: 0\n"
+		" which is different from 4294967295 !!\n");
+#endif
 	GetSetReGetStmtAttr(stmt, SQL_ATTR_MAX_ROWS, 0,
 		"Get SQL_ATTR_MAX_ROWS: 0\n"
 		"Set SQL_ATTR_MAX_ROWS: 0\n"
@@ -206,11 +217,19 @@ main(int argc, char **argv)
 		"Set SQL_ATTR_MAX_ROWS: 2147483642\n"
 		"Get SQL_ATTR_MAX_ROWS: 0\n"
 		" which is different from 2147483642 !!\n");
+#if (SIZEOF_LONG_INT == 8)
 	GetSetReGetStmtAttr(stmt, SQL_ATTR_MAX_ROWS, -2,	/* test also what happens with a negative value */
 		"Get SQL_ATTR_MAX_ROWS: 0\n"
 		"Set SQL_ATTR_MAX_ROWS: 18446744073709551614\n"
 		"Get SQL_ATTR_MAX_ROWS: 0\n"
 		" which is different from 18446744073709551614 !!\n");
+#else
+	GetSetReGetStmtAttr(stmt, SQL_ATTR_MAX_ROWS, -2,	/* test also what happens with a negative value */
+		"Get SQL_ATTR_MAX_ROWS: 0\n"
+		"Set SQL_ATTR_MAX_ROWS: 4294967294\n"
+		"Get SQL_ATTR_MAX_ROWS: 0\n"
+		" which is different from 4294967294 !!\n");
+#endif
 
 	GetSetReGetStmtAttr(stmt, SQL_ATTR_QUERY_TIMEOUT, 0,
 		"Get SQL_ATTR_QUERY_TIMEOUT: 0\n"
@@ -227,11 +246,19 @@ main(int argc, char **argv)
 		"Set SQL_ATTR_QUERY_TIMEOUT: 2147483643\n"
 		"Get SQL_ATTR_QUERY_TIMEOUT: 2147483647\n"
 		" which is different from 2147483643 !!\n");
+#if (SIZEOF_LONG_INT == 8)
 	GetSetReGetStmtAttr(stmt, SQL_ATTR_QUERY_TIMEOUT, -3,	/* test also what happens with a negative value */
 		"Get SQL_ATTR_QUERY_TIMEOUT: 2147483647\n"
 		"Set SQL_ATTR_QUERY_TIMEOUT: 18446744073709551613\n"
 		"Get SQL_ATTR_QUERY_TIMEOUT: 2147483647\n"
 		" which is different from 18446744073709551613 !!\n");
+#else
+	GetSetReGetStmtAttr(stmt, SQL_ATTR_QUERY_TIMEOUT, -3,	/* test also what happens with a negative value */
+		"Get SQL_ATTR_QUERY_TIMEOUT: 2147483647\n"
+		"Set SQL_ATTR_QUERY_TIMEOUT: 4294967293\n"
+		"Get SQL_ATTR_QUERY_TIMEOUT: 2147483647\n"
+		" which is different from 4294967293 !!\n");
+#endif
 
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle (STMT)");

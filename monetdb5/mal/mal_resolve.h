@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MAL_RESOLVE_H
@@ -19,7 +23,8 @@
 mal_export str chkProgram(Module s, MalBlkPtr mb);
 mal_export int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
 mal_export str chkTypes(Module s, MalBlkPtr mb, int silent);
-mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int p_idx, int silent);
+mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int p_idx,
+							int silent);
 
 /*
  * @- Type resolution algorithm.
@@ -30,6 +35,6 @@ mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int p_idx, i
  * i.e. of type 'any'. The type resolution algorithm creates the concrete
  * type for subsequent use.
  */
-mal_export int resolveType(int dsttype, int srctype);
+mal_export int resolvedType(int dsttype, int srctype);
 
-#endif /*  _MAL_RESOLVE_H*/
+#endif /*  _MAL_RESOLVE_H */

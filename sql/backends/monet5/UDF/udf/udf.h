@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* In your own module, replace "UDF" & "udf" by your module's name */
@@ -34,7 +38,7 @@ udf_export str UDFBATreverse(bat *ret, const bat *arg);
 
 /* using C macro for convenient type-expansion */
 #define UDFfuse_scalar_decl(in,out) \
-        udf_export char * UDFfuse_##in##_##out(out *ret, const in *one, const in *two)
+		udf_export char * UDFfuse_##in##_##out(out *ret, const in *one, const in *two)
 UDFfuse_scalar_decl(bte, sht);
 UDFfuse_scalar_decl(sht, int);
 UDFfuse_scalar_decl(int, lng);

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -315,6 +319,14 @@ discoveryRunner(void *d)
 
 	socks[0] = ((int *) d)[0];
 	socks[1] = ((int *) d)[1];
+
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 
 	/* start shouting around that we're here ;) request others to tell
 	 * what databases they have */

@@ -16,3 +16,4 @@ clients.setQryTimeoutMicro(qto);
 X_sum:hge := aggr.sum(a);
 qto:= 0:lng;
 clients.setQryTimeoutMicro(qto);
+

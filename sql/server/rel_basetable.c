@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -22,7 +26,7 @@ typedef struct rel_base_t {
 	sql_table *mt;
 	char *name;
 	int disallowed;	/* ie check per column */
-	uint32_t used[FLEXIBLE_ARRAY_MEMBER];
+	uint32_t used[];
 } rel_base_t;
 
 void
@@ -189,7 +193,7 @@ rel_base_bind_column( mvc *sql, sql_rel *rel, const char *cname, int no_tname)
 	sql_table *t = rel->l;
 	rel_base_t *ba = rel->r;
 	(void)no_tname;
-	node *n = ol_find_name(t->columns, cname);
+	node *n = t ? ol_find_name(t->columns, cname) : NULL;
 	if (!n)
 		return NULL;
 	return bind_col(sql, rel, ba->name?ba->name:t->base.name, n->data);
@@ -224,6 +228,15 @@ rel_base_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cn
 		return NULL;
 	sql_column *c = n->data;
 	return bind_col(sql, rel, ba->name?ba->name:t->base.name, c);
+}
+
+sql_exp *
+rel_base_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, const char *cname)
+{
+	sql_table *t = rel->l;
+	if (!t->s || strcmp(t->s->base.name, sname) != 0)
+		return NULL;
+	return rel_base_bind_column2(sql, rel, tname, cname);
 }
 
 list *

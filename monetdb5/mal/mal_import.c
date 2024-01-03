@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* Author(s) M.L. Kersten
@@ -27,11 +31,12 @@
 #include "monetdb_config.h"
 #include "mal_import.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "mal_linker.h"		/* for loadModuleLibrary() */
+#include "mal_linker.h"			/* for loadModuleLibrary() */
 #include "mal_scenario.h"
 #include "mal_parser.h"
 #include "mal_authorize.h"
 #include "mal_private.h"
+#include "mal_internal.h"
 #include "mal_session.h"
 #include "mal_utils.h"
 
@@ -92,7 +97,8 @@ malLoadScript(str name, bstream **fdin)
 	fd = malOpenSource(name);
 	if (fd == NULL || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		close_stream(fd);
-		throw(MAL, "malInclude", "could not open file: %s: %s", name, mnstr_peek_error(NULL));
+		throw(MAL, "malInclude", "could not open file: %s: %s", name,
+			  mnstr_peek_error(NULL));
 	}
 	sz = getFileSize(fd);
 	if (sz > (size_t) 1 << 29) {
@@ -100,9 +106,9 @@ malLoadScript(str name, bstream **fdin)
 		throw(MAL, "malInclude", "file %s too large to process", name);
 	}
 	*fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
-	if(*fdin == NULL) {
+	if (*fdin == NULL) {
 		close_stream(fd);
-		throw(MAL, "malInclude", MAL_MALLOC_FAIL);
+		throw(MAL, "malInclude", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (bstream_next(*fdin) < 0) {
 		bstream_destroy(*fdin);
@@ -130,7 +136,6 @@ malLoadScript(str name, bstream **fdin)
 	c->blkmode = oldblkmode; \
 	c->bak = oldbak; \
 	c->srcFile = oldsrcFile; \
-	if(c->prompt) GDKfree(c->prompt); \
 	c->prompt = oldprompt; \
 	c->promptlength = strlen(c->prompt);
 #define restoreClient2 \
@@ -144,7 +149,8 @@ malLoadScript(str name, bstream **fdin)
 	restoreClient2
 
 str
-malIncludeString(Client c, const char *name, str mal, int listing, MALfcn address)
+malIncludeString(Client c, const char *name, str mal, int listing,
+				 MALfcn address)
 {
 	str msg = MAL_SUCCEED;
 
@@ -154,7 +160,7 @@ malIncludeString(Client c, const char *name, str mal, int listing, MALfcn addres
 	enum clientmode oldmode = c->mode;
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
-	str oldprompt = c->prompt;
+	const char *oldprompt = c->prompt;
 	const char *oldsrcFile = c->srcFile;
 
 	MalStkPtr oldglb = c->glb;
@@ -162,20 +168,20 @@ malIncludeString(Client c, const char *name, str mal, int listing, MALfcn addres
 	Module oldcurmodule = c->curmodule;
 	Symbol oldprg = c->curprg;
 
-	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
+	c->prompt = "";				/* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
 	c->fdin = NULL;
 
 	size_t mal_len = strlen(mal);
-	buffer* mal_buf;
-	stream* mal_stream;
+	buffer *mal_buf;
+	stream *mal_stream;
 
 	if ((mal_buf = GDKmalloc(sizeof(buffer))) == NULL)
-		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((mal_stream = buffer_rastream(mal_buf, name)) == NULL) {
 		GDKfree(mal_buf);
-		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	buffer_init(mal_buf, mal, mal_len);
 	c->srcFile = name;
@@ -184,7 +190,7 @@ malIncludeString(Client c, const char *name, str mal, int listing, MALfcn addres
 	if ((c->fdin = bstream_create(mal_stream, mal_len)) == NULL) {
 		mnstr_destroy(mal_stream);
 		GDKfree(mal_buf);
-		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bstream_next(c->fdin);
 	parseMAL(c, c->curprg, 1, INT_MAX, address);
@@ -213,7 +219,7 @@ malInclude(Client c, const char *name, int listing)
 	enum clientmode oldmode = c->mode;
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
-	str oldprompt = c->prompt;
+	const char *oldprompt = c->prompt;
 	const char *oldsrcFile = c->srcFile;
 
 	MalStkPtr oldglb = c->glb;
@@ -221,7 +227,7 @@ malInclude(Client c, const char *name, int listing)
 	Module oldcurmodule = c->curmodule;
 	Symbol oldprg = c->curprg;
 
-	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
+	c->prompt = "";				/* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
 	c->fdin = NULL;
@@ -253,78 +259,6 @@ malInclude(Client c, const char *name, int listing)
 	return msg;
 }
 
-/*File and input processing
- * A recurring situation is to execute a stream of simple MAL instructions
- * stored on a file or comes from standard input. We parse one MAL
- * instruction line at a time and attempt to execute it immediately.
- * Note, this precludes entering complex MAL structures on the primary
- * input channel, because 1) this requires complex code to keep track
- * that we are in 'definition mode' 2) this requires (too) careful
- * typing by the user, because he cannot make a typing error
- *
- * Therefore, all compound code fragments should be loaded and executed
- * using the evalFile and callString command. It will parse the complete
- * file into a MAL program block and execute it.
- *
- * Running looks much like an Import operation, except for the execution
- * phase. This is performed in the context of an a priori defined
- * stack frame. Life becomes a little complicated when the script contains
- * a definition.
- */
-str
-evalFile(str fname, int listing)
-{
-	Client c, c_old;
-	stream *fd;
-	str filename;
-	str msg = MAL_SUCCEED;
-	bstream *bs;
-
-	filename = malResolveFile(fname);
-	if (filename == NULL)
-		throw(MAL, "mal.eval","could not open file: %s\n", fname);
-	fd = malOpenSource(filename);
-	GDKfree(filename);
-	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-		if (fd)
-			close_stream(fd);
-		throw(MAL,"mal.eval", "WARNING: could not open file '%s'\n", fname);
-	}
-	if (!(bs = bstream_create(fd, 128 * BLOCK))) {
-		if (fd)
-			close_stream(fd);
-		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	c_old = setClientContext(NULL); // save context
-	c = MCinitClient(MAL_ADMIN, bs, 0);
-	if( c == NULL){
-		throw(MAL,"mal.eval","Can not create user context");
-	}
-	c->curmodule = c->usermodule = userModule();
-	if(c->curmodule == NULL) {
-		MCcloseClient(c);
-		setClientContext(c_old); // restore context
-		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	c->promptlength = 0;
-	c->listing = listing;
-
-	if ( (msg = defaultScenario(c)) ) {
-		MCcloseClient(c);
-		setClientContext(c_old); // restore context
-		return msg;
-	}
-	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
-		MCcloseClient(c);
-		setClientContext(c_old); // restore context
-		return msg;
-	}
-
-	msg = runScenario(c,0);
-	MCcloseClient(c);
-	setClientContext(c_old); // restore context
-	return msg;
-}
 
 /* patch a newline character if needed */
 static str
@@ -346,7 +280,8 @@ mal_cmdline(char *s, size_t *len)
 str
 compileString(Symbol *fcn, Client cntxt, str s)
 {
-	Client c, c_old;
+	Client c;
+	QryCtx *qc_old;
 	size_t len = strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
@@ -359,15 +294,15 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	qry = s;
 	if (old == s) {
 		qry = GDKstrdup(s);
-		if(!qry)
-			throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (!qry)
+			throw(MAL, "mal.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	mal_unquote(qry);
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL) {
 		GDKfree(qry);
-		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "mal.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	buffer_init(b, qry, len);
@@ -375,151 +310,54 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	if (bs == NULL) {
 		GDKfree(qry);
 		GDKfree(b);
-		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "mal.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	fdin = bstream_create(bs, b->len);
 	if (fdin == NULL) {
 		GDKfree(qry);
 		GDKfree(b);
-		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "mal.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	strncpy(fdin->buf, qry, len+1);
+	strncpy(fdin->buf, qry, len + 1);
 
-	c_old = setClientContext(NULL); // save context
+	qc_old = MT_thread_get_qry_ctx();
 	// compile in context of called for
 	c = MCinitClient(MAL_ADMIN, fdin, 0);
-	if( c == NULL){
+	if (c == NULL) {
 		GDKfree(qry);
 		GDKfree(b);
-		throw(MAL,"mal.eval","Can not create user context");
+		MT_thread_set_qry_ctx(qc_old);
+		throw(MAL, "mal.eval", "Can not create user context");
 	}
 	c->curmodule = c->usermodule = cntxt->usermodule;
 	c->promptlength = 0;
 	c->listing = 0;
 
-	if ( (msg = defaultScenario(c)) ) {
+	if ((msg = defaultScenario(c))) {
 		GDKfree(qry);
 		GDKfree(b);
-		c->usermodule= 0;
+		c->usermodule = 0;
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
+		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 
-	msg = MSinitClientPrg(c, "user", "main");/* create new context */
-	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER])
-		msg = (str) (*c->phase[MAL_SCENARIO_PARSER])(c);
-	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_OPTIMIZE])
-		msg = (str) (*c->phase[MAL_SCENARIO_OPTIMIZE])(c);
+	msg = MSinitClientPrg(c, "user", "main");	/* create new context */
+	if (msg == MAL_SUCCEED)
+		msg = MALparser(c);
+	/*
+	   if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER])
+	   msg = (str) (*c->phase[MAL_SCENARIO_PARSER])(c);
+	   if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_OPTIMIZE])
+	   msg = (str) (*c->phase[MAL_SCENARIO_OPTIMIZE])(c);
+	 */
 
 	*fcn = c->curprg;
 	c->curprg = 0;
-	c->usermodule= 0;
+	c->usermodule = 0;
 	/* restore IO channel */
 	MCcloseClient(c);
-	setClientContext(c_old); // restore context
-	GDKfree(qry);
-	GDKfree(b);
-	return msg;
-}
-
-str
-callString(Client cntxt, str s, int listing)
-{
-	Client c, c_old;
-	int i;
-	size_t len = strlen(s);
-	buffer *b;
-	str old =s;
-	str msg = MAL_SUCCEED, qry;
-	bstream *bs;
-
-	s = mal_cmdline(s, &len);
-	qry = s;
-	if (old == s) {
-		qry = GDKstrdup(s);
-		if(!qry)
-			throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	mal_unquote(qry);
-	b = (buffer *) GDKzalloc(sizeof(buffer));
-	if (b == NULL){
-		GDKfree(qry);
-		throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	buffer_init(b, qry, len);
-	bs = bstream_create(buffer_rastream(b, "callString"), b->len);
-	if (bs == NULL){
-		GDKfree(b);
-		GDKfree(qry);
-		throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	c_old = setClientContext(NULL); // save context
-	c= MCinitClient(MAL_ADMIN, bs, cntxt->fdout);
-	if( c == NULL){
-		GDKfree(b);
-		GDKfree(qry);
-		throw(MAL,"mal.call","Can not create user context");
-	}
-	strncpy(c->fdin->buf, qry, len+1);
-	c->curmodule = c->usermodule =  cntxt->usermodule;
-	c->promptlength = 0;
-	c->listing = listing;
-
-	if ( (msg = defaultScenario(c)) ) {
-		c->usermodule = 0;
-		GDKfree(b);
-		GDKfree(qry);
-		MCcloseClient(c);
-		setClientContext(c_old); // restore context
-		return msg;
-	}
-
-	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {/* create new context */
-		c->usermodule = 0;
-		GDKfree(b);
-		GDKfree(qry);
-		c->fdout = GDKstdout;
-		MCcloseClient(c);
-		setClientContext(c_old); // restore context
-		return msg;
-	}
-	msg = runScenario(c,1);
-	c->fdout = GDKstdout;
-	if (msg != MAL_SUCCEED) {
-		c->usermodule = 0;
-		GDKfree(b);
-		GDKfree(qry);
-		MCcloseClient(c);
-		setClientContext(c_old); // restore context
-		return msg;
-	}
-	// The command may have changed the environment of the calling client.
-	// These settings should be propagated for further use.
-	//if( msg == MAL_SUCCEED){
-		cntxt->scenario = c->scenario;
-		c->scenario = 0;
-		cntxt->sqlcontext = c->sqlcontext;
-		c->sqlcontext = 0;
-		for(i=1; i< SCENARIO_PROPERTIES; i++){
-			cntxt->state[i] = c->state[i];
-			c->state[i]  = 0;
-			cntxt->phase[i] = c->phase[i];
-			c->phase[i]  = 0;
-		}
-		if(msg == MAL_SUCCEED && cntxt->phase[0] != c->phase[0]){
-			cntxt->phase[0] = c->phase[0];
-			cntxt->state[0] = c->state[0];
-			msg = (str) (*cntxt->phase[0])(cntxt);	// force re-initialize client context
-		}
-	//}
-	c->usermodule = 0; // keep it around
-	bstream_destroy(c->fdin);
-	c->fdin = 0;
-	MCcloseClient(c);
-	setClientContext(c_old); // restore context
+	MT_thread_set_qry_ctx(qc_old);
 	GDKfree(qry);
 	GDKfree(b);
 	return msg;

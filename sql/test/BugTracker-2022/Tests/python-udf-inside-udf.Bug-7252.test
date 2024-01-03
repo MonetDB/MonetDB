@@ -1,8 +1,6 @@
-@connection(id=1, username=monetdb, password=monetdb)
 statement ok
 START TRANSACTION
 
-@connection(id=1)
 statement ok
 CREATE FUNCTION pyfunc(i integer) returns table (pyi integer)
 language P
@@ -11,18 +9,15 @@ language P
 	return([x])
 }
 
-@connection(id=1)
 statement ok
 CREATE FUNCTION ups(i integer) returns table (i integer)
 BEGIN
 	RETURN SELECT pyi FROM pyfunc(i);
 END
 
-@connection(id=1)
 statement ok
 COMMIT
 
-@connection(id=1)
 query I nosort
 select i from ups(1)
 ----
@@ -47,3 +42,4 @@ DROP FUNCTION ups
 @connection(id=2)
 statement ok
 DROP FUNCTION pyfunc
+

@@ -1,9 +1,74 @@
+-- SPDX-License-Identifier: MPL-2.0
+--
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+-- Copyright 2024 MonetDB Foundation;
+-- Copyright August 2008 - 2023 MonetDB B.V.;
+-- Copyright 1997 - July 2008 CWI.
 
+CREATE FUNCTION sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean)
+  RETURNS varchar(1024)
+BEGIN
+  RETURN
+    CASE mtype
+    WHEN 'char' THEN sys.ifthenelse(nameonly OR digits <= 1, sys.ifthenelse(shortname, 'CHAR', 'CHARACTER'), sys.ifthenelse(shortname, 'CHAR(', 'CHARACTER(') || digits || ')')
+    WHEN 'varchar' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'VARCHAR', 'CHARACTER VARYING'), sys.ifthenelse(shortname, 'VARCHAR(', 'CHARACTER VARYING(') || digits || ')')
+    WHEN 'clob' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'CLOB', 'CHARACTER LARGE OBJECT'), sys.ifthenelse(shortname, 'CLOB(', 'CHARACTER LARGE OBJECT(') || digits || ')')
+    WHEN 'blob' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'BLOB', 'BINARY LARGE OBJECT'), sys.ifthenelse(shortname, 'BLOB(', 'BINARY LARGE OBJECT(') || digits || ')')
+    WHEN 'int' THEN 'INTEGER'
+    WHEN 'bigint' THEN 'BIGINT'
+    WHEN 'smallint' THEN 'SMALLINT'
+    WHEN 'tinyint' THEN 'TINYINT'
+    WHEN 'hugeint' THEN 'HUGEINT'
+    WHEN 'boolean' THEN 'BOOLEAN'
+    WHEN 'date' THEN 'DATE'
+    WHEN 'time' THEN sys.ifthenelse(nameonly OR digits = 1, 'TIME', 'TIME(' || (digits -1) || ')')
+    WHEN 'timestamp' THEN sys.ifthenelse(nameonly OR digits = 7, 'TIMESTAMP', 'TIMESTAMP(' || (digits -1) || ')')
+    WHEN 'timestamptz' THEN sys.ifthenelse(nameonly OR digits = 7, 'TIMESTAMP WITH TIME ZONE', 'TIMESTAMP(' || (digits -1) || ') WITH TIME ZONE')
+    WHEN 'timetz' THEN sys.ifthenelse(nameonly OR digits = 1, 'TIME WITH TIME ZONE', 'TIME(' || (digits -1) || ') WITH TIME ZONE')
+    WHEN 'decimal' THEN sys.ifthenelse(nameonly OR digits = 0, 'DECIMAL', 'DECIMAL(' || digits || sys.ifthenelse(tscale = 0, '', ',' || tscale) || ')')
+    WHEN 'double' THEN sys.ifthenelse(nameonly OR (digits = 53 AND tscale = 0), sys.ifthenelse(shortname, 'DOUBLE', 'DOUBLE PRECISION'), 'FLOAT(' || digits || ')')
+    WHEN 'real' THEN sys.ifthenelse(nameonly OR (digits = 24 AND tscale = 0), 'REAL', 'FLOAT(' || digits || ')')
+    WHEN 'day_interval' THEN 'INTERVAL DAY'
+    WHEN 'month_interval' THEN CASE digits WHEN 1 THEN 'INTERVAL YEAR' WHEN 2 THEN 'INTERVAL YEAR TO MONTH' WHEN 3 THEN 'INTERVAL MONTH' END
+    WHEN 'sec_interval' THEN
+	CASE digits
+	WHEN 4 THEN 'INTERVAL DAY'
+	WHEN 5 THEN 'INTERVAL DAY TO HOUR'
+	WHEN 6 THEN 'INTERVAL DAY TO MINUTE'
+	WHEN 7 THEN 'INTERVAL DAY TO SECOND'
+	WHEN 8 THEN 'INTERVAL HOUR'
+	WHEN 9 THEN 'INTERVAL HOUR TO MINUTE'
+	WHEN 10 THEN 'INTERVAL HOUR TO SECOND'
+	WHEN 11 THEN 'INTERVAL MINUTE'
+	WHEN 12 THEN 'INTERVAL MINUTE TO SECOND'
+	WHEN 13 THEN 'INTERVAL SECOND'
+	END
+    WHEN 'oid' THEN 'OID'
+    WHEN 'json' THEN sys.ifthenelse(nameonly OR digits = 0, 'JSON', 'JSON(' || digits || ')')
+    WHEN 'url' THEN sys.ifthenelse(nameonly OR digits = 0, 'URL', 'URL(' || digits || ')')
+    WHEN 'xml' THEN sys.ifthenelse(nameonly OR digits = 0, 'XML', 'XML(' || digits || ')')
+    WHEN 'geometry' THEN
+	sys.ifthenelse(nameonly, 'GEOMETRY',
+	CASE digits
+	WHEN 4 THEN 'GEOMETRY(POINT' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 8 THEN 'GEOMETRY(LINESTRING' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 16 THEN 'GEOMETRY(POLYGON' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 20 THEN 'GEOMETRY(MULTIPOINT' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 24 THEN 'GEOMETRY(MULTILINESTRING' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 28 THEN 'GEOMETRY(MULTIPOLYGON' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 32 THEN 'GEOMETRY(GEOMETRYCOLLECTION' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	ELSE 'GEOMETRY'
+        END)
+    ELSE sys.ifthenelse(mtype = lower(mtype), upper(mtype), '"' || mtype || '"') || sys.ifthenelse(nameonly OR digits = 0, '', '(' || digits || sys.ifthenelse(tscale = 0, '', ',' || tscale) || ')')
+    END;
+END;
+
+GRANT EXECUTE ON FUNCTION sys.sql_datatype(varchar(999), integer, integer, boolean, boolean) TO PUBLIC;
+
+-- ToDo improve sys.describe_type() by calling sql_datatype(ctype, digits, tscale, false, false)
 CREATE FUNCTION sys.describe_type(ctype string, digits integer, tscale integer)
   RETURNS string
 BEGIN
@@ -269,9 +334,8 @@ BEGIN
 		FROM (VALUES (tid)) t(id) LEFT JOIN sys.table_partitions tp ON t.id = tp.table_id;
 END;
 
---TODO: gives mergejoin errors when inlined
 CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN
-	RETURN SELECT ' ON ' || sys.SQ(uri) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
+	RETURN SELECT ' ON ' || sys.SQ(tt.query) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ(sys.decypher("password")) FROM sys.remote_user_info r, sys._tables tt, sys.schemas ss where tt.name = t and ss.name = s and tt.schema_id = ss.id and r.table_id = tt.id;
 END;
 
 CREATE VIEW sys.describe_tables AS
@@ -339,38 +403,24 @@ CREATE VIEW sys.fully_qualified_functions AS
 		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
 
 CREATE VIEW sys.describe_comments AS
-		SELECT
-			o.id id,
-			o.tpe tpe,
-			o.nme fqn,
-			c.remark rem
-		FROM (
-			SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas
-
-			UNION ALL
-
-			SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
-			FROM sys.schemas s JOIN sys.tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
-			WHERE s.name <> 'tmp'
-
-			UNION ALL
-
-			SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id
-
-			UNION ALL
-
-			SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE idx.table_id = t.id AND t.schema_id = s.id
-
-			UNION ALL
-
-			SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
-
-			UNION ALL
-
-			SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf WHERE f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
-
-			) AS o(id, tpe, nme)
-			JOIN sys.comments c ON c.id = o.id;
+	SELECT o.id AS id, o.tpe AS tpe, o.nme AS fqn, cm.remark AS rem
+	FROM (
+		SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas WHERE NOT system
+		UNION ALL
+		SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
+		  FROM sys.schemas s JOIN sys._tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
+		 WHERE NOT t.system
+		UNION ALL
+		SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys._tables t, sys.schemas s WHERE NOT t.system AND c.table_id = t.id AND t.schema_id = s.id
+		UNION ALL
+		SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE NOT t.system AND idx.table_id = t.id AND t.schema_id = s.id
+		UNION ALL
+		SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
+		UNION ALL
+		SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf
+		 WHERE NOT f.system AND f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
+		) AS o(id, tpe, nme)
+	JOIN sys.comments cm ON cm.id = o.id;
 
 CREATE VIEW sys.describe_privileges AS
 	SELECT
@@ -600,6 +650,21 @@ BEGIN
 		WHERE f.name=functionName AND s.name = schemaName;
 END;
 
+CREATE VIEW sys.describe_accessible_tables AS
+    SELECT
+        schemas.name AS schema,
+        tables.name  AS table,
+        tt.table_type_name AS table_type,
+        pc.privilege_code_name AS privs,
+        p.privileges AS privs_code
+    FROM privileges p
+    JOIN sys.roles ON p.auth_id = roles.id
+    JOIN sys.tables ON p.obj_id = tables.id
+    JOIN sys.table_types tt ON tables.type = tt.table_type_id
+    JOIN sys.schemas ON tables.schema_id = schemas.id
+    JOIN sys.privilege_codes pc ON p.privileges = pc.privilege_code_id
+    WHERE roles.name = current_role;
+
 GRANT SELECT ON sys.describe_constraints TO PUBLIC;
 GRANT SELECT ON sys.describe_indices TO PUBLIC;
 GRANT SELECT ON sys.describe_column_defaults TO PUBLIC;
@@ -613,3 +678,4 @@ GRANT SELECT ON sys.describe_user_defined_types TO PUBLIC;
 GRANT SELECT ON sys.describe_partition_tables TO PUBLIC;
 GRANT SELECT ON sys.describe_sequences TO PUBLIC;
 GRANT SELECT ON sys.describe_functions TO PUBLIC;
+GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;

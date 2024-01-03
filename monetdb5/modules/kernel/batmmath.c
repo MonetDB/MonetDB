@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -14,7 +18,7 @@
 
 static str
 CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
-				float (*ffunc)(float), double (*dfunc)(double),
+				float (*ffunc)(float), double(*dfunc)(double),
 				const char *malfunc)
 {
 	bat bid;
@@ -45,8 +49,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
 	if (bn == NULL || ci.ncand == 0) {
 		BBPunfix(b->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(s);
 		if (bn == NULL)
 			throw(MAL, malfunc, GDK_EXCEPTION);
 		goto doreturn;
@@ -56,7 +59,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	feclearexcept(FE_ALL_EXCEPT);
 	bi = bat_iterator(b);
 	switch (b->ttype) {
-	case TYPE_flt: {
+	case TYPE_flt:{
 		const flt *restrict fsrc = (const flt *) bi.base;
 		flt *restrict fdst = (flt *) Tloc(bn, 0);
 		for (i = 0; i < ci.ncand; i++) {
@@ -70,7 +73,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		}
 		break;
 	}
-	case TYPE_dbl: {
+	case TYPE_dbl:{
 		const dbl *restrict dsrc = (const dbl *) bi.base;
 		dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 		for (i = 0; i < ci.ncand; i++) {
@@ -91,13 +94,13 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	e = errno;
 	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (e != 0 || ex != 0) {
 		const char *err;
+		char buf[128];
 		BBPunfix(bn->batCacheid);
 		if (e)
-			err = GDKstrerror(e, (char[128]){0}, 128);
+			err = GDKstrerror(e, buf, 128);
 		else if (ex & FE_DIVBYZERO)
 			err = "Divide by zero";
 		else if (ex & FE_OVERFLOW)
@@ -121,13 +124,14 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 
 static str
 CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
-				 float (*ffunc)(float, float), double (*dfunc)(double, double),
+				 float (*ffunc)(float, float), double(*dfunc)(double, double),
 				 const char *malfunc)
 {
 	bat bid;
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2;
-	struct canditer ci1 = (struct canditer){0}, ci2 = (struct canditer){0};
+	struct canditer ci1 = (struct canditer) { 0 },
+		ci2 = (struct canditer) { 0 };
 	oid x1, x2, off1, off2;
 	BUN i, ncand, nils = 0;
 	int e = 0, ex = 0;
@@ -220,8 +224,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			for (i = 0; i < ncand; i++) {
 				x1 = canditer_next(&ci1) - off1;
 				x2 = canditer_next(&ci2) - off2;
-				if (is_flt_nil(fsrc1[x1]) ||
-					is_flt_nil(fsrc2[x2])) {
+				if (is_flt_nil(fsrc1[x1]) || is_flt_nil(fsrc2[x2])) {
 					fdst[i] = flt_nil;
 					nils++;
 				} else {
@@ -241,7 +244,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					fdst[i] = ffunc(fsrc1[x1], fval2);
 				}
 			}
-		} else /* b2 == NULL */ {
+		} else {				/* b2 == NULL */
 			flt fval1 = stk->stk[getArg(pci, 1)].val.fval;
 			const flt *restrict fsrc2 = (const flt *) b2i.base;
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
@@ -264,8 +267,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			for (i = 0; i < ncand; i++) {
 				x1 = canditer_next(&ci1) - off1;
 				x2 = canditer_next(&ci2) - off2;
-				if (is_dbl_nil(dsrc1[x1]) ||
-					is_dbl_nil(dsrc2[x2])) {
+				if (is_dbl_nil(dsrc1[x1]) || is_dbl_nil(dsrc2[x2])) {
 					ddst[i] = dbl_nil;
 					nils++;
 				} else {
@@ -285,7 +287,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					ddst[i] = dfunc(dsrc1[x1], dval2);
 				}
 			}
-		} else /* b2 == NULL */ {
+		} else {				/* b2 == NULL */
 			dbl dval1 = stk->stk[getArg(pci, 1)].val.dval;
 			const dbl *restrict dsrc2 = (const dbl *) b2i.base;
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
@@ -316,21 +318,18 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	BATkey(bn, false);
 
   doreturn:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	if (e != 0 || ex != 0) {
 		const char *err;
+		char buf[128];
 		BBPunfix(bn->batCacheid);
 		if (e)
-			err = GDKstrerror(e, (char[128]){0}, 128);
+			err = GDKstrerror(e, buf, 128);
 		else if (ex & FE_DIVBYZERO)
 			err = "Divide by zero";
 		else if (ex & FE_OVERFLOW)
@@ -344,16 +343,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	return MAL_SUCCEED;
 
   bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 /* cannot happen
-	if (s1)
-		BBPunfix(s1->batCacheid);
+	BBPreclaim(s1);
 */
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -378,17 +373,19 @@ CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
 }
 
 static str
-CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						  InstrPtr pci)
 {
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	BUN q = 0;
 	int *restrict vals;
-	struct canditer ci = {0};
+	struct canditer ci = { 0 };
 	bat *res = getArgReference_bat(stk, pci, 0);
 
 	(void) cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
-		bat *bid = getArgReference_bat(stk, pci, 1), *sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+		bat *bid = getArgReference_bat(stk, pci, 1),
+			*sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
 		if (!(b = BBPquickdesc(*bid))) {
 			throw(MAL, "batmmath.rand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -397,8 +394,7 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 		canditer_init(&ci, b, bs);
 		q = ci.ncand;
-		if (bs)
-			BBPunfix(bs->batCacheid);
+		BBPreclaim(bs);
 	} else {
 		q = (BUN) *getArgReference_lng(stk, pci, 1);
 	}
@@ -430,31 +426,29 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 scienceImpl(acos)
-scienceImpl(asin)
-scienceImpl(atan)
-scienceImpl(cos)
-scienceImpl(sin)
-scienceImpl(tan)
-scienceImpl(cot)
-scienceImpl(cosh)
-scienceImpl(sinh)
-scienceImpl(tanh)
-scienceImpl(radians)
-scienceImpl(degrees)
-scienceImpl(exp)
-scienceImpl(log)
-scienceImpl(log10)
-scienceImpl(log2)
-scienceImpl(sqrt)
-scienceImpl(cbrt)
-scienceImpl(ceil)
-scienceImpl(fabs)
-scienceImpl(floor)
-
-scienceBinaryImpl(atan2)
-scienceBinaryImpl(pow)
-scienceBinaryImpl(logbs)
-
+		scienceImpl(asin)
+		scienceImpl(atan)
+		scienceImpl(cos)
+		scienceImpl(sin)
+		scienceImpl(tan)
+		scienceImpl(cot)
+		scienceImpl(cosh)
+		scienceImpl(sinh)
+		scienceImpl(tanh)
+		scienceImpl(radians)
+		scienceImpl(degrees)
+		scienceImpl(exp)
+		scienceImpl(log)
+		scienceImpl(log10)
+		scienceImpl(log2)
+		scienceImpl(sqrt)
+		scienceImpl(cbrt)
+		scienceImpl(ceil)
+		scienceImpl(fabs)
+		scienceImpl(floor)
+		scienceBinaryImpl(atan2)
+		scienceBinaryImpl(pow)
+		scienceBinaryImpl(logbs)
 #include "mel.h"
 mel_func batmmath_init_funcs[] = {
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),

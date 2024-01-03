@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 statement ok
 START TRANSACTION
 
@@ -253,10 +255,10 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT 1 as count FROM t2 JOIN
 ----
 135
 
-query R rowsort
-SELECT sub0.c2 FROM t2 JOIN (SELECT DISTINCT t2.c2, 3 FROM t2) AS sub0(c2,c3) on t2.c2 = sub0.c2
+query I rowsort
+SELECT count(sub0.c2) FROM t2 JOIN (SELECT DISTINCT t2.c2, 3 FROM t2) AS sub0(c2,c3) on t2.c2 = sub0.c2
 ----
-135 values hashing to 39898748a4604c294a5bcb3435b482a0
+135
 
 statement ok
 ROLLBACK
@@ -313,7 +315,7 @@ SELECT vx.vc0 FROM vx WHERE vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> 
 1970-01-01
 NULL
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT max((SELECT (SELECT rt2.c1 FROM t2) FROM t2 as rt2))
 
 statement ok
@@ -330,7 +332,7 @@ SELECT 1 FROM (select 4) v100(vc0) WHERE (3) NOT IN (COALESCE((SELECT 1 WHERE FA
 ----
 1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 select 1 from t1 where exists (select min((select t2.c0 from t1)) from t1 as t2)
 
 query I rowsort
@@ -679,3 +681,4 @@ SELECT c0 FROM tmp.t2
 
 statement ok
 DROP TABLE t2
+

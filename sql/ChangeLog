@@ -1,8 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Thu Aug 25 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Removed code for Workload Capture and Replace.  The code was
-  experimental, and it didn't work out.  A different approach will
-  be taken.
-

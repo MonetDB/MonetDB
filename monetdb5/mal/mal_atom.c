@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -25,7 +29,8 @@
 #include "mal_exception.h"
 #include "mal_private.h"
 
-static void setAtomName(InstrPtr pci)
+static void
+setAtomName(InstrPtr pci)
 {
 	char buf[FILENAME_MAX];
 	snprintf(buf, FILENAME_MAX, "#%s", getFunctionId(pci));
@@ -37,7 +42,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 {
 	const char *name;
 	int tpe;
-	(void)mb;  /* fool compilers */
+	(void) mb;					/* fool compilers */
 	assert(pci != 0);
 	name = getFunctionId(pci);
 	tpe = getAtomIndex(getModuleId(pci), strlen(getModuleId(pci)), TYPE_any);
@@ -47,14 +52,14 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	switch (name[0]) {
 	case 'd':
 		if (idcmp("del", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomDel = (void (*)(Heap *, var_t *))pci->fcn;
+			BATatoms[tpe].atomDel = (void (*)(Heap *, var_t *)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'c':
 		if (idcmp("cmp", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomCmp = (int (*)(const void *, const void *))pci->fcn;
+			BATatoms[tpe].atomCmp = (int (*)(const void *, const void *)) pci->fcn;
 			BATatoms[tpe].linear = true;
 			setAtomName(pci);
 			return MAL_SUCCEED;
@@ -62,12 +67,12 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'f':
 		if (idcmp("fromstr", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *, bool))pci->fcn;
+			BATatoms[tpe].atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *, bool)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		if (idcmp("fix", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomFix = (gdk_return (*)(const void *))pci->fcn;
+			BATatoms[tpe].atomFix = (gdk_return (*)(const void *)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -77,75 +82,75 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(ATOMsize(tpe)), ATOMsize(tpe));
-			BATatoms[tpe].atomHeap = (gdk_return (*)(Heap *, size_t))pci->fcn;
+			BATatoms[tpe].atomHeap = (gdk_return (*)(Heap *, size_t)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		if (idcmp("hash", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomHash = (BUN (*)(const void *))pci->fcn;
+			BATatoms[tpe].atomHash = (BUN (*)(const void *)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'l':
 		if (idcmp("length", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomLen = (size_t (*)(const void *))pci->fcn;
+			BATatoms[tpe].atomLen = (size_t (*)(const void *)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'n':
 		if (idcmp("null", name) == 0 && pci->argc == 1) {
-			const void *atmnull = ((const void *(*)(void))pci->fcn)();
+			const void *atmnull = ((const void *(*)(void)) pci->fcn)();
 
 			BATatoms[tpe].atomNull = atmnull;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		if (idcmp("nequal", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomCmp = (int (*)(const void *, const void *))pci->fcn;
+			BATatoms[tpe].atomCmp = (int (*)(const void *, const void *)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'p':
 		if (idcmp("put", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomPut = (var_t (*)(BAT *, var_t *, const void *))pci->fcn;
+			BATatoms[tpe].atomPut = (var_t (*)(BAT *, var_t *, const void *)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		break;
 	case 's':
 		if (idcmp("storage", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].storage = (*(int (*)(void))pci->fcn)();
+			BATatoms[tpe].storage = (*(int (*)(void)) pci->fcn) ();
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		break;
 	case 't':
 		if (idcmp("tostr", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomToStr = (ssize_t (*)(str *, size_t *, const void *, bool))pci->fcn;
+			BATatoms[tpe].atomToStr = (ssize_t (*)(str *, size_t *, const void *, bool)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'u':
 		if (idcmp("unfix", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomUnfix = (gdk_return (*)(const void *))pci->fcn;
+			BATatoms[tpe].atomUnfix = (gdk_return (*)(const void *)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'r':
 		if (idcmp("read", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomRead = (void *(*)(void *, size_t *, stream *, size_t))pci->fcn;
+			BATatoms[tpe].atomRead = (void *(*)(void *, size_t *, stream *, size_t)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'w':
 		if (idcmp("write", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomWrite = (gdk_return (*)(const void *, stream *, size_t))pci->fcn;
+			BATatoms[tpe].atomWrite = (gdk_return (*)(const void *, stream *, size_t)) pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -153,6 +158,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	}
 	return MAL_SUCCEED;
 }
+
 /*
  * Atoms are constructed incrementally in the kernel using the
  * ATOMallocate function. It takes an existing type as a base
@@ -167,7 +173,7 @@ malAtomDefinition(const char *name, int tpe)
 	int i;
 
 	if (strlen(name) >= IDLENGTH) {
-		throw (SYNTAX, "atomDefinition", "Atom name '%s' too long", name);
+		throw(SYNTAX, "atomDefinition", "Atom name '%s' too long", name);
 	}
 	if (ATOMindex(name) >= 0) {
 		return MAL_SUCCEED;
@@ -180,23 +186,25 @@ malAtomDefinition(const char *name, int tpe)
 
 	i = ATOMallocate(name);
 	if (is_int_nil(i))
-		throw(TYPE,"atomDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(TYPE, "atomDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	/* overload atom ? */
 	if (tpe) {
 		BATatoms[i] = BATatoms[tpe];
 		strcpy_len(BATatoms[i].name, name, sizeof(BATatoms[i].name));
 		BATatoms[i].storage = ATOMstorage(tpe);
-	} else { /* cannot overload void atoms */
+	} else {					/* cannot overload void atoms */
 		BATatoms[i].storage = i;
 		BATatoms[i].linear = false;
 	}
 	return MAL_SUCCEED;
 }
+
 /*
  * User defined modules may introduce fixed sized types
  * to store information in BATs.
  */
-int malAtomSize(int size, const char *name)
+int
+malAtomSize(int size, const char *name)
 {
 	int i = 0;
 
@@ -211,8 +219,8 @@ void
 mal_atom_reset(void)
 {
 	int i;
-	for( i = 0; i < GDKatomcnt; i++)
-	if( BATatoms[i].atomNull){
-		// TBD
-	}
+	for (i = 0; i < GDKatomcnt; i++)
+		if (BATatoms[i].atomNull) {
+			// TBD
+		}
 }

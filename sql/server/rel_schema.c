@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -47,6 +51,30 @@ rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 }
 
 static sql_rel *
+rel_create_remote(mvc *sql, int cat_type, const char *sname, sql_table *t, int pw_encrypted, const char *username, const char *passwd)
+{
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
+	if (!rel || !exps)
+		return NULL;
+
+	append(exps, exp_atom_int(sql->sa, pw_encrypted));
+	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, t->base.name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_ptr(sql->sa, t));
+	append(exps, exp_atom_str(sql->sa, username, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, passwd, sql_bind_localtype("str") ));
+	rel->l = rel_basetable(sql, t, t->base.name);
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = cat_type;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
 rel_create_view_ddl(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr, int replace)
 {
 	sql_rel *rel = rel_table(sql, cat_type, sname, t, nr);
@@ -79,21 +107,6 @@ rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *
 	rel->exps = exps;
 	rel->card = CARD_MULTI;
 	rel->nrcols = 0;
-	return rel;
-}
-
-sql_rel *
-rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r)
-{
-	sql_rel *rel = rel_create(sa);
-	if (!rel)
-		return NULL;
-	if (!l)
-		return r;
-	rel->l = l;
-	rel->r = r;
-	rel->op = op_ddl;
-	rel->flag = ddl_list;
 	return rel;
 }
 
@@ -707,6 +720,10 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 		}
 		if (isTempSchema(t->s) != isTempSchema(ft->s)) { /* disable foreign key between temp and non temp */
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables");
+			return SQL_ERR;
+		}
+		if (isTempTable(ft) && !isGlobal(ft) && ft != t) { /* disable foreign key on local temporary table */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key with local temporary tables");
 			return SQL_ERR;
 		}
 		if (isUnloggedTable(t) != isUnloggedTable(ft)) { /* disable foreign key between logged and unlogged */
@@ -1352,8 +1369,8 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already declared", action, name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	} else if (temp == SQL_PERSIST && isTempSchema(s)){
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create persistent table '%s' in the schema '%s'", name, s->base.name);
+	} else if ((temp == SQL_PERSIST || temp == SQL_MERGE_TABLE || temp == SQL_REMOTE || temp == SQL_REPLICA_TABLE || temp == SQL_UNLOGGED_TABLE) && isTempSchema(s)) {
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: cannot create persistent table '%s' in the schema '%s'", TABLE_TYPE_DESCRIPTION(tt, properties), name, s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) {
 		/* table element list */
 		dnode *n;
@@ -1361,16 +1378,8 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		int res = LOG_OK;
 
 		if (tt == tt_remote) {
-			char *local_user = get_string_global_var(sql, "current_user");
-			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, s->base.name, "."), name);
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
-
-			const char *remote_uri = mapiuri_uri(loc, sql->sa);
-			char *reg_credentials = AUTHaddRemoteTableCredentials(local_table, local_user, remote_uri, username, password, pw_encrypted);
-			if (reg_credentials != 0) {
-				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot register credentials for remote table '%s' in vault: %s", action, name, reg_credentials);
-			}
 			res = mvc_create_remote(&t, sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
 			res = mvc_create_table(&t, sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, properties);
@@ -1401,6 +1410,9 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 			return NULL;
 
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
+
+		if (tt == tt_remote)
+			return rel_create_remote(sql, ddl_create_table, s->base.name, t, pw_encrypted, username, password);
 		return rel_table(sql, ddl_create_table, s->base.name, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
@@ -1794,37 +1806,37 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			return NULL;
 		if (isView(pt))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s",
-								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		if (isDeclaredTable(pt))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a declared table into a %s",
-								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		if (isTempSchema(pt->s))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s",
-								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		if (isReplicaTable(t) && isMergeTable(pt))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a %s table into a %s",
-							 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+							TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		nsname = pt->s->base.name;
 		if (strcmp(sname, nsname) != 0)
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be "
-								"part of schema '%s'", sname, tname, sname);
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'",
+						sname, tname, sname);
 
 		if (te->token == SQL_TABLE) {
 			symbol *extra = dl->h->next->next->next->data.sym;
 
 			if (!extra) {
 				if (isRangePartitionTable(t)) {
-					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a %s",
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				} else if (isListPartitionTable(t)) {
-					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a %s",
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				}
 				return rel_alter_table(sql->sa, ddl_alter_table_add_table, sname, tname, nsname, ntname, 0);
 			}
 			if ((isMergeTable(pt) || isReplicaTable(pt)) && list_length(pt->members)==0)
-				return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
-								 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s '%s'.'%s' should have at least one table associated",
+								TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
 
 			if (extra->token == SQL_MERGE_PARTITION) { /* partition to hold null values only */
 				dlist* ll = extra->data.lval;
@@ -1836,7 +1848,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 					return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, NULL, true, update);
 				} else {
 					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				}
 			} else if (extra->token == SQL_PARTITION_RANGE) {
 				dlist* ll = extra->data.lval;
@@ -1845,7 +1857,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 				if (!isRangePartitionTable(t)) {
 					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				}
 
 				assert(nills == 0 || nills == 1);
@@ -1856,7 +1868,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 				if (!isListPartitionTable(t)) {
 					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				}
 
 				assert(nills == 0 || nills == 1);
@@ -2275,8 +2287,8 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 	append(exps, exp_atom_clob(sa, schema));
 	append(exps, exp_atom_clob(sa, schema_path));
 	append(exps, exp_atom_clob(sa, fullname));
-	append(exps, exp_atom_lng(sa, max_memory));
-	append(exps, exp_atom_int(sa, max_workers));
+	append(exps, exp_atom_lng(sa, max_memory >= 0 ? max_memory : 0));
+	append(exps, exp_atom_int(sa, max_workers >= 0 ? max_workers: 0));
 	append(exps, exp_atom_clob(sa, optimizer));
 	append(exps, exp_atom_clob(sa, default_role));
 	rel->l = NULL;
@@ -2290,7 +2302,7 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 }
 
 static sql_rel *
-rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role)
+rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2304,6 +2316,9 @@ rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schem
 	append(exps, exp_atom_clob(sa, schema_path));
 	append(exps, exp_atom_clob(sa, oldpasswd));
 	append(exps, exp_atom_clob(sa, role));
+	append(exps, exp_atom_lng(sa, max_memory));
+	append(exps, exp_atom_int(sa, max_workers));
+
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -2944,7 +2959,9 @@ rel_schemas(sql_query *query, symbol *s)
 			     a->next->data.sval,	/* schema */
 				 a->next->next->data.sval, /* schema path */
 			     a->next->next->next->next->data.sval, /* old passwd */
-			     l->h->next->next->data.sval /* default role */
+			     l->h->next->next->data.sval, /* default role */
+			     l->h->next->next->next->data.l_val, /* max_memory */
+			     l->h->next->next->next->next->data.i_val /* max_workers */
 		    );
 	} 	break;
 	case SQL_RENAME_USER: {

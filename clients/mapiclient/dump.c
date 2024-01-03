@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -331,6 +335,42 @@ bailout:
 }
 
 static bool
+has_schema_max_memory(Mapi mid)
+{
+	MapiHdl hdl;
+	bool ret;
+	static int answer = -1;
+
+	if (answer >= 0)
+		return answer;
+
+	if ((hdl = mapi_query(mid, "select id from sys._columns where table_id = (select id from sys._tables where name = 'db_user_info' and schema_id = (select id from sys.schemas where name = 'sys')) and name = 'max_memory'")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	answer = ret;
+	return ret;
+
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return false;
+}
+
+static bool
 has_table_partitions(Mapi mid)
 {
 	MapiHdl hdl;
@@ -343,6 +383,47 @@ has_table_partitions(Mapi mid)
 	if ((hdl = mapi_query(mid,
 			      "select id from sys._tables"
 			      " where name = 'table_partitions'"
+			      " and schema_id = ("
+			      "select id from sys.schemas"
+			      " where name = 'sys')")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	answer = ret;
+	return ret;
+
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return false;
+}
+
+static bool
+has_remote_user_info_table(Mapi mid)
+{
+	MapiHdl hdl;
+	bool ret;
+	static int answer = -1;
+
+	if (answer >= 0)
+		return answer;
+
+	if ((hdl = mapi_query(mid,
+			      "select id from sys._tables"
+			      " where name = 'remote_user_info'"
 			      " and schema_id = ("
 			      "select id from sys.schemas"
 			      " where name = 'sys')")) == NULL ||
@@ -731,7 +812,7 @@ dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_di
 			space = mnstr_printf(toConsole, "INTERVAL MONTH");
 		else
 			fprintf(stderr, "Internal error: unrecognized month interval %s\n", c_type_digits);
-	} else if (strlen(c_type) > 4 && strcmp(c_type+3, "_interval") == 0) {
+	} else if (strcmp(c_type, "day_interval") == 0 || strcmp(c_type, "sec_interval") == 0) {
 		if (strcmp(c_type_digits, "4") == 0)
 			space = mnstr_printf(toConsole, "INTERVAL DAY");
 		else if (strcmp(c_type_digits, "5") == 0)
@@ -1282,10 +1363,17 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		} else if (type == 5) { /* remote table */
 			char *rt_user = NULL;
 			char *rt_hash = NULL;
-			snprintf(query, maxquerylen,
-				 "SELECT username, hash "
-				 "FROM sys.remote_table_credentials('%s.%s')",
-				 schema, tname);
+			if (has_remote_user_info_table(mid)) {
+				snprintf(query, maxquerylen,
+					"SELECT username, sys.decypher(password) "
+					"FROM sys.remote_user_info where table_id = (select t.id from sys._tables t, sys.schemas s where "
+					"t.schema_id = s.id and s.name = '%s' and t.name = '%s')", schema, tname);
+			} else {
+				snprintf(query, maxquerylen,
+					"SELECT username, hash "
+					"FROM sys.remote_table_credentials('%s.%s')",
+					schema, tname);
+			}
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
 			cnt = 0;
@@ -1788,7 +1876,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			if (s == NULL)
 				mnstr_printf(toConsole, "NULL");
 			else if (useInserts) {
-				if (strlen(tp) > 4 && strcmp(tp+3, "_interval") == 0) {
+				if (strcmp(tp, "day_interval") == 0 || strcmp(tp, "sec_interval") == 0) {
 					const char *p = strchr(s, '.');
 					if (p == NULL)
 						p = s + strlen(s);
@@ -2122,13 +2210,13 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 
 	query_len = snprintf(query, query_size,
 		      "SELECT f.id, "
-			     "f.func, "
-			     "f.language, "
-			     "f.type, "
-			     "s.name, "
-			     "f.name, "
-			     "ft.function_type_keyword, "
-			     "fl.language_keyword, "
+					 "f.func, "
+					 "f.language, "
+					 "f.type, "
+					 "s.name, "
+					 "f.name, "
+					 "ft.function_type_keyword, "
+					 "fl.language_keyword, "
 		             "c.remark "
 		      "FROM sys.functions f "
 			   "JOIN sys.schemas s ON f.schema_id = s.id "
@@ -2534,11 +2622,28 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"ORDER BY s.name, t.sqlname";
 	const char *users =
 		has_schema_path(mid) ?
+		has_schema_max_memory(mid) ?
 		"SELECT ui.name, "
 		       "ui.fullname, "
-		       "password_hash(ui.name), "
+		       "sys.password_hash(ui.name), "
 		       "s.name, "
-			   "ui.schema_path "
+			   "ui.schema_path, "
+			   "ui.max_memory, "
+			   "ui.max_workers, "
+			   "ui.optimizer, "
+			   "au.name "
+		"FROM sys.db_user_info ui LEFT OUTER JOIN sys.auths au on ui.default_role = au.id, "
+		     "sys.schemas s "
+		"WHERE ui.default_schema = s.id "
+		  "AND ui.name <> 'monetdb' "
+		  "AND ui.name <> '.snapshot' "
+		"ORDER BY ui.name" :
+		"SELECT ui.name, "
+		       "ui.fullname, "
+		       "sys.password_hash(ui.name), "
+		       "s.name, "
+			   "ui.schema_path, "
+			   "0, 0, 'default_pipe', cast(null as clob) "
 		"FROM sys.db_user_info ui, "
 		     "sys.schemas s "
 		"WHERE ui.default_schema = s.id "
@@ -2547,9 +2652,10 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"ORDER BY ui.name" :
 		"SELECT ui.name, "
 		       "ui.fullname, "
-		       "password_hash(ui.name), "
+		       "sys.password_hash(ui.name), "
 		       "s.name, "
-			   "cast(null as clob) "
+			   "cast(null as clob), "
+			   "0, 0, 'default_pipe', cast(null as clob) "
 		"FROM sys.db_user_info ui, "
 		     "sys.schemas s "
 		"WHERE ui.default_schema = s.id "
@@ -2563,13 +2669,17 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND grantor <> 0 "
 		"ORDER BY name";
 	const char *grants =
+		/* all grants granting roles to users excepting the default role */
 		"SELECT a1.name, "
 		       "a2.name "
 		"FROM sys.auths a1, "
 		     "sys.auths a2, "
-		     "sys.user_role ur "
+		     "sys.user_role ur, "
+		     "sys.db_user_info ui "
 		"WHERE a1.id = ur.login_id "
 		  "AND a2.id = ur.role_id "
+		  "AND a1.name = ui.name "
+		  "AND a2.id <> ui.default_role "
 		"ORDER BY a1.name, a2.name";
 	const char *table_grants =
 		"SELECT s.name, t.name, "
@@ -2611,24 +2721,42 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND p.grantable = go.id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
 	const char *function_grants =
-		"SELECT s.name, f.name, a.name, "
-		       "pc.privilege_code_name, "
-		       "g.name, go.opt, "
-		       "ft.function_type_keyword "
-		"FROM sys.schemas s, sys.functions f, "
-		     "sys.auths a, sys.privileges p, sys.auths g, "
-		     "sys.function_types ft, "
-		     "sys.privilege_codes pc, "
-		     "(VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
-		"WHERE s.id = f.schema_id "
+		"SELECT f.id, "
+			   "s.name, "
+			   "f.name, "
+			   "a.type, "
+			   "a.type_digits, "
+			   "a.type_scale, "
+			   "a.inout, "
+			   "a.number, "
+			   "au.name, "
+			   "pc.privilege_code_name, "
+			   "go.opt, "
+			   "ft.function_type_keyword "
+		"FROM sys.schemas s, "
+			 "sys.functions f LEFT OUTER JOIN sys.args a ON f.id = a.func_id, "
+			 "sys.auths au, "
+			 "sys.privileges p, "
+			 "sys.auths g, "
+			 "sys.function_types ft, "
+			 "sys.privilege_codes pc, "
+			 "(VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
+		"WHERE NOT f.system "
+		  "AND s.id = f.schema_id "
 		  "AND f.id = p.obj_id "
-		  "AND p.auth_id = a.id "
+		  "AND p.auth_id = au.id "
 		  "AND p.grantor = g.id "
 		  "AND p.privileges = pc.privilege_code_id "
 		  "AND f.type = ft.function_type_id "
-		  "AND NOT f.system "
 		  "AND p.grantable = go.id "
-		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
+		"ORDER BY s.name, "
+				 "f.name, "
+				 "au.name, "
+				 "g.name, "
+				 "p.grantable, "
+				 "f.id, "
+				 "a.inout DESC, "
+				 "a.number";
 	const char *global_grants =
 		"SELECT a.name, pc.grnt, g.name, go.opt "
 		"FROM sys.privileges p, "
@@ -2758,6 +2886,9 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	char *curschema = NULL;
 	MapiHdl hdl = NULL;
 	int rc = 0;
+	int lastfid = 0;
+	const char *sep;
+	bool hashge = has_hugeint(mid);
 
 	/* start a transaction for the dump */
 	mnstr_printf(toConsole, "%s;\n", start_trx);
@@ -2803,6 +2934,10 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			const char *pwhash = mapi_fetch_field(hdl, 2);
 			const char *sname = mapi_fetch_field(hdl, 3);
 			const char *spath = mapi_fetch_field(hdl, 4);
+			const char *mmemory = mapi_fetch_field(hdl, 5);
+			const char *mworkers = mapi_fetch_field(hdl, 6);
+			const char *optimizer = mapi_fetch_field(hdl, 7);
+			const char *defrole = mapi_fetch_field(hdl, 8);
 
 			mnstr_printf(toConsole, "CREATE USER ");
 			dquoted_print(toConsole, uname, " ");
@@ -2815,6 +2950,20 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			if (spath && strcmp(spath, "\"sys\"") != 0) {
 				mnstr_printf(toConsole, " SCHEMA PATH ");
 				squoted_print(toConsole, spath, '\'', false);
+			}
+			if (mmemory && strcmp(mmemory, "0") != 0) {
+				mnstr_printf(toConsole, " MAX_MEMORY %s", mmemory);
+			}
+			if (mworkers && strcmp(mworkers, "0") != 0) {
+				mnstr_printf(toConsole, " MAX_WORKERS %s", mworkers);
+			}
+			if (optimizer && strcmp(optimizer, "default_pipe") != 0) {
+				mnstr_printf(toConsole, " OPTIMIZER ");
+				squoted_print(toConsole, optimizer, '\'', false);
+			}
+			if (defrole && strcmp(defrole, uname) != 0) {
+				mnstr_printf(toConsole, " DEFAULT ROLE ");
+				dquoted_print(toConsole, defrole, NULL);
 			}
 			mnstr_printf(toConsole, ";\n");
 		}
@@ -3269,7 +3418,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		if (priv == 79) {
 			mnstr_printf(toConsole, " ALL PRIVILEGES");
 		} else {
-			const char *sep = "";
+			sep = "";
 
 			if (priv & 1) {
 				mnstr_printf(toConsole, "%s SELECT", sep);
@@ -3297,7 +3446,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			}
 			if (priv & 64) {
 				mnstr_printf(toConsole, "%s TRUNCATE", sep);
-				sep = ",";
+				// sep = ",";		/* sep will be overwritten after this */
 			}
 		}
 		mnstr_printf(toConsole, " ON TABLE ");
@@ -3327,7 +3476,11 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		dquoted_print(toConsole, cname, ") ON ");
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, tname, " TO ");
-		dquoted_print(toConsole, aname, grantable);
+		if (strcmp(aname, "public") == 0) {
+			mnstr_printf(toConsole, "PUBLIC%s", grantable);
+		} else {
+			dquoted_print(toConsole, aname, grantable);
+		}
 		mnstr_printf(toConsole, ";\n");
 	}
 	if (mapi_error(mid))
@@ -3338,21 +3491,44 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	    mapi_error(mid))
 		goto bailout;
 
+	sep = "";
 	while (mapi_fetch_row(hdl) != 0) {
-		const char *schema = mapi_fetch_field(hdl, 0);
-		const char *fname = mapi_fetch_field(hdl, 1);
-		const char *aname = mapi_fetch_field(hdl, 2);
-		const char *priv = mapi_fetch_field(hdl, 3);
-		const char *grantable = mapi_fetch_field(hdl, 5);
-		const char *ftype = mapi_fetch_field(hdl, 6);
+		const char *fid = mapi_fetch_field(hdl, 0);
+		const char *schema = mapi_fetch_field(hdl, 1);
+		const char *fname = mapi_fetch_field(hdl, 2);
+		const char *argtype = mapi_fetch_field(hdl, 3);
+		const char *argdigits = mapi_fetch_field(hdl, 4);
+		const char *argscale = mapi_fetch_field(hdl, 5);
+		const char *arginout = mapi_fetch_field(hdl, 6);
+		const char *argnumber = mapi_fetch_field(hdl, 7);
+		const char *aname = mapi_fetch_field(hdl, 8);
+		const char *priv = mapi_fetch_field(hdl, 9);
+		const char *grantable = mapi_fetch_field(hdl, 10);
+		const char *ftype = mapi_fetch_field(hdl, 11);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
-		mnstr_printf(toConsole, "GRANT %s ON %s ", priv, ftype);
-		dquoted_print(toConsole, schema, ".");
-		dquoted_print(toConsole, fname, " TO ");
-		dquoted_print(toConsole, aname, grantable);
-		mnstr_printf(toConsole, ";\n");
+		int thisfid = atoi(fid);
+		if (lastfid != thisfid) {
+			lastfid = thisfid;
+			sep = "";
+			mnstr_printf(toConsole, "GRANT %s ON %s ", priv, ftype);
+			dquoted_print(toConsole, schema, ".");
+			dquoted_print(toConsole, fname, "(");
+		}
+		if (arginout != NULL && strcmp(arginout, "1") == 0) {
+			mnstr_printf(toConsole, "%s", sep);
+			dump_type(mid, toConsole, argtype, argdigits, argscale, hashge);
+			sep = ", ";
+		} else if (argnumber == NULL || strcmp(argnumber, "0") == 0) {
+			mnstr_printf(toConsole, ") TO ");
+			if (strcmp(aname, "public") == 0) {
+				mnstr_printf(toConsole, "PUBLIC%s", grantable);
+			} else {
+				dquoted_print(toConsole, aname, grantable);
+			}
+			mnstr_printf(toConsole, ";\n");
+		}
 	}
 	if (mapi_error(mid))
 		goto bailout;

@@ -1,4 +1,3 @@
-@connection(id=1, username=monetdb, password=monetdb)
 statement ok
 START TRANSACTION
 
@@ -50,6 +49,6 @@ COMMIT
 statement ok
 DROP TABLE a
 
-@connection(id=1)
 statement ok
 ROLLBACK
+

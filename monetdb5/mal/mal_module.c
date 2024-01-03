@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -15,7 +19,7 @@
 
 #include "monetdb_config.h"
 #include "mal_module.h"
-#include "mal_function.h"   /* for printFunction() */
+#include "mal_function.h"		/* for printFunction() */
 #include "mal_namespace.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -37,15 +41,14 @@ MALfcn
 findFunctionImplementation(const char *cname)
 {
 	for (int i = 0; i < MODULE_HASH_SIZE; i++) {
-		if (moduleIndex[i] != NULL && moduleIndex[i]->space != NULL) {
+		if (moduleIndex[i] != NULL) {
 			for (int j = 0; j < MAXSCOPE; j++) {
 				Symbol s;
 				if ((s = moduleIndex[i]->space[j]) != NULL) {
 					do {
 						if (s->def &&
 							strcmp(s->def->binding, cname) == 0 &&
-							s->def->stmt &&
-							s->def->stmt[0] &&
+							s->def->stmt &&s->def->stmt[0] &&
 							s->def->stmt[0]->fcn) {
 							return s->def->stmt[0]->fcn;
 						}
@@ -62,19 +65,19 @@ getModules(void)
 {
 	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
 	int i;
-	Module s,n;
+	Module s, n;
 
 	if (!b)
 		return NULL;
-	for( i = 0; i< MODULE_HASH_SIZE; i++){
+	for (i = 0; i < MODULE_HASH_SIZE; i++) {
 		s = moduleIndex[i];
-		while(s){
+		while (s) {
 			if (BUNappend(b, s->name, FALSE) != GDK_SUCCEED) {
 				BBPreclaim(b);
 				return NULL;
 			}
 			n = s->link;
-			while(n)
+			while (n)
 				n = n->link;
 			s = s->link;
 		}
@@ -87,18 +90,19 @@ void
 dumpModules(stream *out)
 {
 	int i;
-	Module s,n;
-	for( i = 0; i< MODULE_HASH_SIZE; i++){
-		s= moduleIndex[i];
-		while(s){
-			mnstr_printf(out,"[%d] module %s\n", i, s->name);
+	Module s, n;
+	for (i = 0; i < MODULE_HASH_SIZE; i++) {
+		s = moduleIndex[i];
+		while (s) {
+			mnstr_printf(out, "[%d] module %s\n", i, s->name);
 			n = s->link;
-			while(n){
-				if( n == s)
-					mnstr_printf(out,"ASSERTION error, double occurrence of symbol in symbol table\n");
-				n= n->link;
+			while (n) {
+				if (n == s)
+					mnstr_printf(out,
+								 "ASSERTION error, double occurrence of symbol in symbol table\n");
+				n = n->link;
 			}
-			s= s->link;
+			s = s->link;
 		}
 	}
 }
@@ -110,10 +114,10 @@ mal_module_reset(void)
 	int i;
 	Module m;
 
-	for(i = 0; i < MODULE_HASH_SIZE; i++) {
-		m= moduleIndex[i];
+	for (i = 0; i < MODULE_HASH_SIZE; i++) {
+		m = moduleIndex[i];
 		moduleIndex[i] = 0;
-		while(m) {
+		while (m) {
 			Module next = m->link;
 			freeModule(m);
 			m = next;
@@ -121,15 +125,19 @@ mal_module_reset(void)
 	}
 }
 
-static int getModuleIndex(const char *name) {
+static int
+getModuleIndex(const char *name)
+{
 	return (int) (strHash(name) % MODULE_HASH_SIZE);
 }
 
-static void clrModuleIndex(Module cur){
+static void
+clrModuleIndex(Module cur)
+{
 	int index = getModuleIndex(cur->name);
 	Module prev = NULL;
 	Module m = moduleIndex[index];
-	while(m) {
+	while (m) {
 		if (m == cur) {
 			if (!prev) {
 				moduleIndex[index] = m->link;
@@ -143,16 +151,20 @@ static void clrModuleIndex(Module cur){
 	}
 }
 
-static void addModuleToIndex(Module cur){
+static void
+addModuleToIndex(Module cur)
+{
 	int index = getModuleIndex(cur->name);
 	cur->link = moduleIndex[index];
 	moduleIndex[index] = cur;
 }
 
-Module getModule(const char *name) {
+Module
+getModule(const char *name)
+{
 	int index = getModuleIndex(name);
 	Module m = moduleIndex[index];
-	while(m) {
+	while (m) {
 		if (name == m->name)
 			return m;
 		m = m->link;
@@ -160,13 +172,15 @@ Module getModule(const char *name) {
 	return NULL;
 }
 
-void getModuleList(Module** out, int* length) {
+void
+getModuleList(Module **out, int *length)
+{
 	int i;
 	int moduleCount = 0;
 	int currentIndex = 0;
-	for(i = 0; i < MODULE_HASH_SIZE; i++) {
+	for (i = 0; i < MODULE_HASH_SIZE; i++) {
 		Module m = moduleIndex[i];
-		while(m) {
+		while (m) {
 			moduleCount++;
 			m = m->link;
 		}
@@ -177,16 +191,18 @@ void getModuleList(Module** out, int* length) {
 	}
 	*length = moduleCount;
 
-	for(i = 0; i < MODULE_HASH_SIZE; i++) {
+	for (i = 0; i < MODULE_HASH_SIZE; i++) {
 		Module m = moduleIndex[i];
-		while(m) {
+		while (m) {
 			(*out)[currentIndex++] = m;
 			m = m->link;
 		}
 	}
 }
 
-void freeModuleList(Module* list) {
+void
+freeModuleList(Module *list)
+{
 	GDKfree(list);
 }
 
@@ -194,93 +210,95 @@ void freeModuleList(Module* list) {
  * Module scope management
  * It will contain the symbol table of all globally accessible functions.
  */
-Module globalModule(const char *nme)
-{	Module cur;
+Module
+globalModule(const char *nme)
+{
+	Module cur;
 
 	// Global modules are not named 'user'
-	assert (strcmp(nme, "user"));
+	assert(strcmp(nme, "user"));
 	nme = putName(nme);
+	if (nme == NULL)
+		return NULL;
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
 		return NULL;
 	cur->name = nme;
 	cur->link = NULL;
-	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
-	if (cur->space == NULL) {
-		GDKfree(cur);
-		return NULL;
-	}
 	addModuleToIndex(cur);
 	return cur;
 }
 
 /* Every client record has a private module name 'user'
  * for keeping around non-shared functions */
-Module userModule(void){
+Module
+userModule(void)
+{
 	Module cur;
 
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
 		return NULL;
 	cur->name = putName("user");
-	cur->link = NULL;
-	cur->space = NULL;
-	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
-	if (cur->space == NULL) {
+	if (cur->name == NULL) {
 		GDKfree(cur);
 		return NULL;
 	}
+	cur->link = NULL;
 	return cur;
 }
+
 /*
  * The scope can be fixed. This is used by the parser.
  * Reading a module often calls for creation first.
  */
-Module fixModule(const char *nme) {
+Module
+fixModule(const char *nme)
+{
 	Module m;
 
 	m = getModule(nme);
-	if (m) return m;
+	if (m)
+		return m;
 	return globalModule(nme);
 }
+
 /*
  * The freeModule operation throws away a symbol without
  * concerns on it whereabouts in the scope structure.
  */
-static void freeSubScope(Module scope)
+static void
+freeSubScope(Module scope)
 {
 	int i;
 	Symbol s;
 
-	if (scope->space == NULL)
-		return;
-	for(i = 0; i < MAXSCOPE; i++) {
-		if( scope->space[i]){
-			s= scope->space[i];
+	for (i = 0; i < MAXSCOPE; i++) {
+		if (scope->space[i]) {
+			s = scope->space[i];
 			scope->space[i] = NULL;
 			freeSymbolList(s);
 		}
 	}
-	GDKfree(scope->space);
-	scope->space = 0;
 }
 
-void freeModule(Module m)
+void
+freeModule(Module m)
 {
 	Symbol s;
 
 	if (m == NULL)
 		return;
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
-		InstrPtr pci = getInstrPtr(s->def,0);
+		InstrPtr pci = getInstrPtr(s->def, 0);
 		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
 			int status = 0;
 			str ret = MAL_SUCCEED;
 
 			assert(pci->fcn != NULL);
-			ret = (*pci->fcn)(&status);
+			ret = (*(str (*)(int *)) pci->fcn) (&status);
 			freeException(ret);
-			(void)status;
+			(void) status;
 		}
 	}
 	freeSubScope(m);
@@ -298,40 +316,36 @@ void freeModule(Module m)
  * This speeds up searching provided the modules adhere to the
  * structure and group the functions as well.
  */
-void insertSymbol(Module scope, Symbol prg){
+void
+insertSymbol(Module scope, Symbol prg)
+{
 	InstrPtr sig;
 	int t;
 	Module c;
 
 	assert(scope);
 	sig = getSignature(prg);
-	if(getModuleId(sig) && getModuleId(sig)!= scope->name){
+	if (getModuleId(sig) && getModuleId(sig) != scope->name) {
 		/* move the definition to the proper place */
 		/* default scope is the last resort */
-		c= findModule(scope,getModuleId(sig));
-		if ( c )
+		c = findModule(scope, getModuleId(sig));
+		if (c)
 			scope = c;
 	}
 	t = getSymbolIndex(getFunctionId(sig));
-	if( scope->space == NULL) {
-		scope->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
-		if (scope->space == NULL)
-			return;
-	}
-	assert(scope->space);
-	if (scope->space[t] == prg){
+	if (scope->space[t] == prg) {
 		/* already known, last inserted */
 	} else {
-		prg->peer= scope->space[t];
+		prg->peer = scope->space[t];
 		scope->space[t] = prg;
-		if( prg->peer &&
-			idcmp(prg->name,prg->peer->name) == 0)
+		if (prg->peer && idcmp(prg->name, prg->peer->name) == 0)
 			prg->skip = prg->peer->skip;
 		else
 			prg->skip = prg->peer;
 	}
 	assert(prg != prg->peer);
 }
+
 /*
  * Removal of elements from the symbol table should be
  * done with care. For, it should be assured that
@@ -339,16 +353,18 @@ void insertSymbol(Module scope, Symbol prg){
  * moment of removal. This situation can not easily
  * checked at runtime, without tremendous overhead.
  */
-void deleteSymbol(Module scope, Symbol prg){
+void
+deleteSymbol(Module scope, Symbol prg)
+{
 	InstrPtr sig;
 	int t;
 
 	sig = getSignature(prg);
-	if (getModuleId(sig) && getModuleId(sig)!= scope->name ){
+	if (getModuleId(sig) && getModuleId(sig) != scope->name) {
 		/* move the definition to the proper place */
 		/* default scope is the last resort */
-		Module c= findModule(scope, getModuleId(sig));
-		if(c )
+		Module c = findModule(scope, getModuleId(sig));
+		if (c)
 			scope = c;
 	}
 	t = getSymbolIndex(getFunctionId(sig));
@@ -377,15 +393,20 @@ void deleteSymbol(Module scope, Symbol prg){
  * The 'user' module is an alias for the scope attached
  * to the current user.
  */
-Module findModule(Module scope, const char *name){
+Module
+findModule(Module scope, const char *name)
+{
 	Module def = scope;
 	Module m;
-	if (name == NULL) return scope;
+	if (name == NULL)
+		return scope;
 	m = getModule(name);
-	if (m) return m;
+	if (m)
+		return m;
 
 	/* default is always matched with current */
-	if (def->name == NULL) return NULL;
+	if (def->name == NULL)
+		return NULL;
 	return def;
 }
 
@@ -400,18 +421,24 @@ Module findModule(Module scope, const char *name){
  * The variation on this routine is to dump the definition of
  * all matching definitions.
  */
-Symbol findSymbolInModule(Module v, const char *fcn) {
+Symbol
+findSymbolInModule(Module v, const char *fcn)
+{
 	Symbol s;
-	if (v == NULL || fcn == NULL) return NULL;
-	s = v->space[(int)(*fcn)];
+	if (v == NULL || fcn == NULL)
+		return NULL;
+	s = v->space[(int) (*fcn)];
 	while (s != NULL) {
-		if (idcmp(s->name,fcn)==0) return s;
+		if (idcmp(s->name, fcn) == 0)
+			return s;
 		s = s->skip;
 	}
 	return NULL;
 }
 
-Symbol findSymbol(Module usermodule, const char *mod, const char *fcn) {
+Symbol
+findSymbol(Module usermodule, const char *mod, const char *fcn)
+{
 	Module m = findModule(usermodule, mod);
 	return findSymbolInModule(m, fcn);
 }

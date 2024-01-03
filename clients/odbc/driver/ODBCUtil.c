@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -314,13 +318,15 @@ ODBCutf82wchar(const SQLCHAR *src,
  * understands.
  *
  * Precondition: query != NULL
- * Postcondition: returns a newly allocated null terminated strings.
+ * Postcondition: returns a newly allocated null terminated string.
  */
 /*
   Escape sequences:
   {d 'yyyy-mm-dd'}
   {t 'hh:mm:ss'}
   {ts 'yyyy-mm-dd hh:mm:ss[.f...]'}
+  {interval ...}
+  {guid 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'}
   {fn scalar-function}
   {escape 'escape-character'}
   {oj outer-join}
@@ -338,32 +344,32 @@ static struct scalars {
 	{
 		.name = "abs",
 		.nargs = 1,
-		.repl = "sys.\"abs\"(\1)",
+		.repl = "sys.\"abs\"",
 	},
 	{
 		.name = "acos",
 		.nargs = 1,
-		.repl = "sys.\"acos\"(\1)",
+		.repl = "sys.\"acos\"",
 	},
 	{
 		.name = "ascii",
 		.nargs = 1,
-		.repl = "sys.\"ascii\"(\1)",
+		.repl = "sys.\"ascii\"",
 	},
 	{
 		.name = "asin",
 		.nargs = 1,
-		.repl = "sys.\"asin\"(\1)",
+		.repl = "sys.\"asin\"",
 	},
 	{
 		.name = "atan",
 		.nargs = 1,
-		.repl = "sys.\"atan\"(\1)",
+		.repl = "sys.\"atan\"",
 	},
 	{
 		.name = "atan2",
 		.nargs = 2,
-		.repl = "sys.\"atan\"(\1,\2)", /* note: not atan2 */
+		.repl = "sys.\"atan\"", /* note: not atan2 */
 	},
 	{
 		.name = "bit_length",
@@ -373,29 +379,32 @@ static struct scalars {
 	{
 		.name = "ceiling",
 		.nargs = 1,
-		.repl = "sys.\"ceiling\"(\1)",
+		.repl = "sys.\"ceiling\"",
 	},
 	{
 		.name = "char",
 		.nargs = 1,
-		.repl = "sys.\"code\"(\1)",
+		.repl = "sys.\"code\"",
 	},
 	{
 		.name = "character_length",
 		.nargs = 1,
-		.repl = "sys.\"character_length\"(\1)",
+		.repl = "sys.\"character_length\"",
 	},
 	{
 		.name = "char_length",
 		.nargs = 1,
-		.repl = "sys.\"char_length\"(\1)",
+		.repl = "sys.\"char_length\"",
 	},
 	{
 		.name = "concat",
 		.nargs = 2,
-		.repl = "sys.\"concat\"(\1,\2)",
+		.repl = "sys.\"concat\"",
 	},
 	{
+		/* second argument is an ODBC type name that also gets
+		 * translated.  Note: convert is implemented in the
+		 * parser */
 		.name = "convert",
 		.nargs = 2,
 		.repl = NULL,
@@ -403,27 +412,27 @@ static struct scalars {
 	{
 		.name = "cos",
 		.nargs = 1,
-		.repl = "sys.\"cos\"(\1)",
+		.repl = "sys.\"cos\"",
 	},
 	{
 		.name = "cot",
 		.nargs = 1,
-		.repl = "sys.\"cot\"(\1)",
+		.repl = "sys.\"cot\"",
 	},
 	{
 		.name = "curdate",
 		.nargs = 0,
-		.repl = "sys.\"curdate\"()",
+		.repl = "sys.\"curdate\"",
 	},
 	{
 		.name = "current_date",
 		.nargs = 0,
-		.repl = "sys.\"current_date\"()",
+		.repl = "sys.\"current_date\"",
 	},
 	{
 		.name = "current_time",
 		.nargs = 0,
-		.repl = "sys.\"current_time\"()",
+		.repl = "sys.\"current_time\"",
 	},
 	{
 		.name = "current_time",
@@ -433,7 +442,7 @@ static struct scalars {
 	{
 		.name = "current_timestamp",
 		.nargs = 0,
-		.repl = "sys.\"current_timestamp\"()",
+		.repl = "sys.\"current_timestamp\"",
 	},
 	{
 		.name = "current_timestamp",
@@ -443,7 +452,7 @@ static struct scalars {
 	{
 		.name = "curtime",
 		.nargs = 0,
-		.repl = "sys.\"curtime\"()",
+		.repl = "sys.\"curtime\"",
 	},
 	{
 		.name = "database",
@@ -458,112 +467,112 @@ static struct scalars {
 	{
 		.name = "dayofmonth",
 		.nargs = 1,
-		.repl = "sys.\"dayofmonth\"(\1)",
+		.repl = "sys.\"dayofmonth\"",
 	},
 	{
 		.name = "dayofweek",
 		.nargs = 1,
-		.repl = "sys.\"dayofweek\"(\1)",
+		.repl = "sys.\"dayofweek\"",
 	},
 	{
 		.name = "dayofyear",
 		.nargs = 1,
-		.repl = "sys.\"dayofyear\"(\1)",
+		.repl = "sys.\"dayofyear\"",
 	},
 	{
 		.name = "degrees",
 		.nargs = 1,
-		.repl = "sys.\"degrees\"(\1)",
+		.repl = "sys.\"degrees\"",
 	},
 	{
 		.name = "difference",
 		.nargs = 2,
-		.repl = "sys.\"difference\"(\1,\2)",
+		.repl = "sys.\"difference\"",
 	},
 	{
 		.name = "exp",
 		.nargs = 1,
-		.repl = "sys.\"exp\"(\1)",
+		.repl = "sys.\"exp\"",
 	},
 	{
 		.name = "extract",
 		.nargs = 1,
-		.repl = "EXTRACT(\1)", /* include "X FROM " in argument */
+		.repl = "EXTRACT", /* include "X FROM " in argument */
 	},
 	{
 		.name = "floor",
 		.nargs = 1,
-		.repl = "sys.\"floor\"(\1)",
+		.repl = "sys.\"floor\"",
 	},
 	{
 		.name = "hour",
 		.nargs = 1,
-		.repl = "sys.\"hour\"(\1)",
+		.repl = "sys.\"hour\"",
 	},
 	{
 		.name = "ifnull",
 		.nargs = 2,
-		.repl = "sys.\"coalesce\"(\1,\2)",
+		.repl = "sys.\"coalesce\"",
 	},
 	{
 		.name = "insert",
 		.nargs = 4,
-		.repl = "sys.\"insert\"(\1,\2,\3,\4)",
+		.repl = "sys.\"insert\"",
 	},
 	{
 		.name = "lcase",
 		.nargs = 1,
-		.repl = "sys.\"lcase\"(\1)",
+		.repl = "sys.\"lcase\"",
 	},
 	{
 		.name = "left",
 		.nargs = 2,
-		.repl = "sys.\"left\"(\1,\2)",
+		.repl = "sys.\"left\"",
 	},
 	{
 		.name = "length",
 		.nargs = 1,
-		.repl = "sys.\"length\"(\1)",
+		.repl = "sys.\"length\"",
 	},
 	{
 		.name = "locate",
 		.nargs = 2,
-		.repl = "sys.\"locate\"(\1,\2)",
+		.repl = "sys.\"locate\"",
 	},
 	{
 		.name = "locate",
 		.nargs = 3,
-		.repl = "sys.\"locate\"(\1,\2,\3)",
+		.repl = "sys.\"locate\"",
 	},
 	{
 		.name = "log10",
 		.nargs = 1,
-		.repl = "sys.\"log10\"(\1)",
+		.repl = "sys.\"log10\"",
 	},
 	{
 		.name = "log",
 		.nargs = 1,
-		.repl = "sys.\"log\"(\1)",
+		.repl = "sys.\"log\"",
 	},
 	{
 		.name = "ltrim",
 		.nargs = 1,
-		.repl = "sys.\"ltrim\"(\1)",
+		.repl = "sys.\"ltrim\"",
 	},
 	{
 		.name = "minute",
 		.nargs = 1,
-		.repl = "sys.\"minute\"(\1)",
+		.repl = "sys.\"minute\"",
 	},
 	{
 		.name = "mod",
 		.nargs = 2,
-		.repl = "sys.\"mod\"(\1,\2)",
+		.repl = "sys.\"mod\"",
 	},
 	{
 		.name = "month",
 		.nargs = 1,
-		.repl = "sys.\"month\"(\1)",
+		.repl = "sys.\"month\"",
 	},
 	{
 		.name = "monthname",
@@ -573,114 +582,114 @@ static struct scalars {
 	{
 		.name = "now",
 		.nargs = 0,
-		.repl = "sys.\"now\"()",
+		.repl = "sys.\"now\"",
 	},
 	{
 		.name = "octet_length",
 		.nargs = 1,
-		.repl = "sys.\"octet_length\"(\1)",
+		.repl = "sys.\"octet_length\"",
 	},
 	{
 		.name = "pi",
 		.nargs = 0,
-		.repl = "sys.\"pi\"()",
+		.repl = "sys.\"pi\"",
 	},
 	{
 		.name = "position",
 		.nargs = 1,
 		 /* includes " IN str" in first argument. Note:
 		  * POSITION is implemented in the parser. */
-		.repl = "POSITION(\1)",
+		.repl = "position",
 	},
 	{
 		.name = "power",
 		.nargs = 2,
-		.repl = "sys.\"power\"(\1,\2)",
+		.repl = "sys.\"power\"",
 	},
 	{
 		.name = "quarter",
 		.nargs = 1,
-		.repl = "sys.\"quarter\"(\1)",
+		.repl = "sys.\"quarter\"",
 	},
 	{
 		.name = "radians",
 		.nargs = 1,
-		.repl = "sys.\"radians\"(\1)",
+		.repl = "sys.\"radians\"",
 	},
 	{
 		.name = "rand",
 		.nargs = 0,
-		.repl = "sys.\"rand\"()",
+		.repl = "sys.\"rand\"",
 	},
 	{
 		.name = "rand",
 		.nargs = 1,
-		.repl = "sys.\"rand\"(\1)",
+		.repl = "sys.\"rand\"",
 	},
 	{
 		.name = "repeat",
 		.nargs = 2,
-		.repl = "sys.\"repeat\"(\1,\2)",
+		.repl = "sys.\"repeat\"",
 	},
 	{
 		.name = "replace",
 		.nargs = 3,
-		.repl = "sys.\"replace\"(\1,\2,\3)",
+		.repl = "sys.\"replace\"",
 	},
 	{
 		.name = "right",
 		.nargs = 2,
-		.repl = "sys.\"right\"(\1,\2)",
+		.repl = "sys.\"right\"",
 	},
 	{
 		.name = "round",
 		.nargs = 2,
-		.repl = "sys.\"round\"(\1,\2)",
+		.repl = "sys.\"round\"",
 	},
 	{
 		.name = "rtrim",
 		.nargs = 1,
-		.repl = "sys.\"rtrim\"(\1)",
+		.repl = "sys.\"rtrim\"",
 	},
 	{
 		.name = "second",
 		.nargs = 1,
-		.repl = "sys.\"second\"(\1)",
+		.repl = "sys.\"second\"",
 	},
 	{
 		.name = "sign",
 		.nargs = 1,
-		.repl = "sys.\"sign\"(\1)",
+		.repl = "sys.\"sign\"",
 	},
 	{
 		.name = "sin",
 		.nargs = 1,
-		.repl = "sys.\"sin\"(\1)",
+		.repl = "sys.\"sin\"",
 	},
 	{
 		.name = "soundex",
 		.nargs = 1,
-		.repl = "sys.\"soundex\"(\1)",
+		.repl = "sys.\"soundex\"",
 	},
 	{
 		.name = "space",
 		.nargs = 1,
-		.repl = "sys.\"space\"(\1)",
+		.repl = "sys.\"space\"",
 	},
 	{
 		.name = "sqrt",
 		.nargs = 1,
-		.repl = "sys.\"sqrt\"(\1)",
+		.repl = "sys.\"sqrt\"",
 	},
 	{
 		.name = "substring",
 		.nargs = 3,
-		.repl = "sys.\"substring\"(\1,\2,\3)",
+		.repl = "sys.\"substring\"",
 	},
 	{
 		.name = "tan",
 		.nargs = 1,
-		.repl = "sys.\"tan\"(\1)",
+		.repl = "sys.\"tan\"",
 	},
 	{
 		.name = "timestampadd",
@@ -695,12 +704,12 @@ static struct scalars {
 	{
 		.name = "truncate",
 		.nargs = 2,
-		.repl = "sys.\"ms_trunc\"(\1,\2)",
+		.repl = "sys.\"ms_trunc\"",
 	},
 	{
 		.name = "ucase",
 		.nargs = 1,
-		.repl = "sys.\"ucase\"(\1)",
+		.repl = "sys.\"ucase\"",
 	},
 	{
 		.name = "user",
@@ -710,12 +719,12 @@ static struct scalars {
 	{
 		.name = "week",
 		.nargs = 1,
-		.repl = "sys.\"week\"(\1)",
+		.repl = "sys.\"week\"",
 	},
 	{
 		.name = "year",
 		.nargs = 1,
-		.repl = "sys.\"year\"(\1)",
+		.repl = "sys.\"year\"",
 	},
 	{
 		0		/* sentinel */
@@ -771,10 +780,6 @@ static struct convert {
 		.server = "integer",
 	},
 	{
-		.odbc =  "SQL_INTERVAL_DAY",
-		.server = "interval day",
-	},
-	{
 		.odbc =  "SQL_INTERVAL_DAY_TO_HOUR",
 		.server = "interval day to hour",
 	},
@@ -787,8 +792,8 @@ static struct convert {
 		.server = "interval day to second",
 	},
 	{
-		.odbc =  "SQL_INTERVAL_HOUR",
-		.server = "interval hour",
+		.odbc =  "SQL_INTERVAL_DAY",
+		.server = "interval day",
 	},
 	{
 		.odbc =  "SQL_INTERVAL_HOUR_TO_MINUTE",
@@ -799,12 +804,16 @@ static struct convert {
 		.server = "interval hour to second",
 	},
 	{
-		.odbc =  "SQL_INTERVAL_MINUTE",
-		.server = "interval minute",
+		.odbc =  "SQL_INTERVAL_HOUR",
+		.server = "interval hour",
 	},
 	{
 		.odbc =  "SQL_INTERVAL_MINUTE_TO_SECOND",
 		.server = "interval minute to second",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_MINUTE",
+		.server = "interval minute",
 	},
 	{
 		.odbc =  "SQL_INTERVAL_MONTH",
@@ -815,12 +824,12 @@ static struct convert {
 		.server = "interval second",
 	},
 	{
-		.odbc =  "SQL_INTERVAL_YEAR",
-		.server = "interval year",
-	},
-	{
 		.odbc =  "SQL_INTERVAL_YEAR_TO_MONTH",
 		.server = "interval year to month",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_YEAR",
+		.server = "interval year",
 	},
 	{
 		.odbc =  "SQL_LONGVARBINARY",
@@ -843,12 +852,12 @@ static struct convert {
 		.server = "smallint",
 	},
 	{
-		.odbc =  "SQL_TIME",
-		.server = "time",
-	},
-	{
 		.odbc =  "SQL_TIMESTAMP",
 		.server = "timestamp",
+	},
+	{
+		.odbc =  "SQL_TIME",
+		.server = "time",
 	},
 	{
 		.odbc =  "SQL_TINYINT",
@@ -882,444 +891,360 @@ static struct convert {
 char *
 ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN noscan)
 {
-	char *nquery;
-	const char *p;
-	char *q;
-	char buf[512];
-	unsigned yr, mt, dy, hr, mn, sc;
-	unsigned long fr = 0;
-	int n, pr;
-	struct {
-		uint32_t d1;
-		uint16_t d2, d3;
-		uint8_t d4[8];
-	} u;
+	/* we only need to read limited amounts of data into these
+	 * buffers (timestamp, interval, function name), so 128 bytes is
+	 * plenty long enough */
+	char buf[128], buf2[128];
 
-	nquery = dupODBCstring(query, length);
-	if (nquery == NULL)
-		return NULL;
-	if (noscan == SQL_NOSCAN_ON)
-		return nquery;
-	/* scan from the back in preparation for dealing with nested escapes */
-	q = nquery + length;
-	while (q > nquery) {
-		if (*--q != '{')
-			continue;
-		p = q;
-		while (*++p == ' ')
-			;
-		if (sscanf(p, "ts '%u-%u-%u %u:%u:%u%n",
-			   &yr, &mt, &dy, &hr, &mn, &sc, &n) >= 6) {
-			p += n;
-			pr = 0;
-			if (*p == '.') {
-				char *e;
+	/* From Jun2023 release (11.47) the mserver5 SQL parser supports all
+	 * ODBC escape sequences, so no scanning or translation is required here.
+	 */
+	if (dbc->minor >= 47)
+		noscan = SQL_NOSCAN_ON;
 
-				p++;
-				fr = strtoul(p, &e, 10);
-				if (e > p) {
-					pr = (int) (e - p);
-					p = e;
-				} else {
-					continue;
+	if (noscan != SQL_NOSCAN_ON) {
+		char *nquery;
+		bool quoted = false, rawstring = false, dquoted = false;
+
+		for (size_t i = 0; i < length; i++) {
+			if (quoted && query[i] == '\\') {
+				i++;
+				continue;
+			}
+			if (quoted || rawstring) {
+				if (query[i] == '\'')
+					quoted = rawstring = false;
+				continue;
+			}
+			if (dquoted) {
+				if (query[i] == '"')
+					dquoted = false;
+				continue;
+			}
+			if (query[i] == '\'') {
+				if (dbc->raw_strings ?
+				    (i > 0 &&
+				     query[i - 1] != 'e' &&
+				     query[i - 1] != 'E') :
+				    (i > 0 &&
+				     (query[i - 1] == 'r' ||
+				      query[i - 1] == 'R')))
+					rawstring = true;
+				else
+					quoted = true;
+				continue;
+			}
+			if (query[i] == '"') {
+				dquoted = true;
+				continue;
+			}
+			if (query[i] != '{')
+				continue;
+			size_t n = 0;
+			if (sscanf((const char *) query + i, "{ ts '%127[0-9:. -]' }%zn", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				size_t len = strlen(buf) + strlen(rest);
+				nquery = malloc(i + len + 13);
+				snprintf(nquery, i + len + 13,
+					 "%.*sTIMESTAMP '%s'%s",
+					 (int) i, query, buf, rest);
+				free(rest);
+				return nquery;
+			}
+			if (sscanf((const char *) query + i, "{ t '%127[0-9:]' }%zn", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				size_t len = strlen(buf) + strlen(rest);
+				nquery = malloc(i + len + 8);
+				snprintf(nquery, i + len + 8,
+					 "%.*sTIME '%s'%s",
+					 (int) i, query, buf, rest);
+				free(rest);
+				return nquery;
+			}
+			if (sscanf((const char *) query + i, "{ d '%127[0-9-]' }%zn", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				size_t len = strlen(buf) + strlen(rest);
+				nquery = malloc(i + len + 8);
+				snprintf(nquery, i + len + 8,
+					 "%.*sDATE '%s'%s",
+					 (int) i, query, buf, rest);
+				free(rest);
+				return nquery;
+			}
+			if (sscanf((const char *) query + i, "{ guid '%127[0-9a-fA-F-]' }%zn", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				size_t len = strlen(buf) + strlen(rest);
+				nquery = malloc(i + len + 8);
+				snprintf(nquery, i + len + 8,
+					 "%.*sUUID '%s'%s",
+					 (int) i, query, buf, rest);
+				free(rest);
+				return nquery;
+			}
+			if (sscanf((const char *) query + i, "{ escape '%127[^']' }%zn", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				size_t len = strlen(buf) + strlen(rest);
+				nquery = malloc(i + len + 10);
+				snprintf(nquery, i + len + 10,
+					 "%.*sESCAPE '%s'%s",
+					 (int) i, query, buf, rest);
+				free(rest);
+				return nquery;
+			}
+			if (sscanf((const char *) query + i, "{ interval '%127[^']' %127[a-zA-Z ] }%zn", buf, buf2, &n) >= 2 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				size_t len = strlen(buf) + strlen(buf2) + strlen(rest);
+				nquery = malloc(i + len + 14);
+				snprintf(nquery, i + len + 14,
+					 "%.*sINTERVAL '%s' %s %s",
+					 (int) i, query, buf, buf2, rest);
+				free(rest);
+				return nquery;
+			}
+			if (sscanf((const char *) query + i, "{ interval + '%127[^']' %127[a-zA-Z ] }%zn", buf, buf2, &n) >= 2 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				size_t len = strlen(buf) + strlen(buf2) + strlen(rest);
+				nquery = malloc(i + len + 15);
+				snprintf(nquery, i + len + 15,
+					 "%.*sINTERVAL +'%s' %s %s",
+					 (int) i, query, buf, buf2, rest);
+				free(rest);
+				return nquery;
+			}
+			if (sscanf((const char *) query + i, "{ interval - '%127[^']' %127[a-zA-Z ] }%zn", buf, buf2, &n) >= 2 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				size_t len = strlen(buf) + strlen(buf2) + strlen(rest);
+				nquery = malloc(i + len + 15);
+				snprintf(nquery, i + len + 15,
+					 "%.*sINTERVAL -'%s' %s %s",
+					 (int) i, query, buf, buf2, rest);
+				free(rest);
+				return nquery;
+			}
+			if (sscanf((const char *) query + i, "{ oj %zn", &n) >= 0 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				for (size_t j = 0; rest[j]; j++) {
+					if (quoted && rest[j] == '\\') {
+						j++;
+						continue;
+					}
+					if (quoted || rawstring) {
+						if (rest[j] == '\'')
+							quoted = rawstring = false;
+						continue;
+					}
+					if (dquoted) {
+						if (rest[j] == '"')
+							dquoted = false;
+						continue;
+					}
+					if (rest[j] == '\'') {
+						if (dbc->raw_strings ?
+						    (j > 0 &&
+						     rest[j - 1] != 'e' &&
+						     rest[j - 1] != 'E') :
+						    (j > 0 &&
+						     (rest[j - 1] == 'r' ||
+						      rest[j - 1] == 'R')))
+							rawstring = true;
+						else
+							quoted = true;
+						continue;
+					}
+					if (rest[j] == '"') {
+						dquoted = true;
+						continue;
+					}
+					if (rest[j] == '}') {
+						size_t len = strlen(rest);
+						nquery = malloc(i + len + 2);
+						snprintf(nquery, i + len + 2,
+							 "%.*s %.*s %s",
+							 (int) i, query,
+							 (int) j, rest,
+							 rest + j + 1);
+						free(rest);
+						return nquery;
+					}
 				}
-			}
-			if (*p != '\'')
+				free(rest);
 				continue;
-			while (*++p && *p == ' ')
-				;
-			if (*p != '}')
-				continue;
-			p++;
-			if (pr > 0) {
-				snprintf(buf, sizeof(buf),
-					 "TIMESTAMP '%04u-%02u-%02u %02u:%02u:%02u.%0*lu'",
-					 yr, mt, dy, hr, mn, sc, pr, fr);
-			} else {
-				snprintf(buf, sizeof(buf),
-					 "TIMESTAMP '%04u-%02u-%02u %02u:%02u:%02u'",
-					 yr, mt, dy, hr, mn, sc);
 			}
-			n = (int) (q - nquery);
-			pr = (int) (p - q);
-			length += strlen(buf) + 1 - pr;
-			q = malloc(length);
-			if (q == NULL) {
-				free(nquery);
-				return NULL;
-			}
-			length = (size_t) snprintf(q, length, "%.*s%s%s", n, nquery, buf, p);
-			free(nquery);
-			nquery = q;
-			q += n;
-		} else if (sscanf(p, "t '%u:%u:%u%n", &hr, &mn, &sc, &n) >= 3) {
-			p += n;
-			pr = 0;
-			if (*p == '.') {
-				char *e;
-
-				p++;
-				fr = strtoul(p, &e, 10);
-				if (e > p) {
-					pr = (int) (e - p);
-					p = e;
-				} else
-					continue;
-			}
-			if (*p != '\'')
-				continue;
-			while (*++p && *p == ' ')
-				;
-			if (*p != '}')
-				continue;
-			p++;
-			if (pr > 0) {
-				snprintf(buf, sizeof(buf),
-					 "TIME '%02u:%02u:%02u.%0*lu'",
-					 hr, mn, sc, pr, fr);
-			} else {
-				snprintf(buf, sizeof(buf),
-					 "TIME '%02u:%02u:%02u'", hr, mn, sc);
-			}
-			n = (int) (q - nquery);
-			pr = (int) (p - q);
-			length += strlen(buf) + 1 - pr;
-			q = malloc(length);
-			if (q == NULL) {
-				free(nquery);
-				return NULL;
-			}
-			length = (size_t) snprintf(q, length, "%.*s%s%s", n, nquery, buf, p);
-			free(nquery);
-			nquery = q;
-			q += n;
-		} else if (sscanf(p, "d '%u-%u-%u'%n", &yr, &mt, &dy, &n) >= 3) {
-			p += n;
-			while (*p == ' ')
-				p++;
-			if (*p != '}')
-				continue;
-			p++;
-			snprintf(buf, sizeof(buf),
-				 "DATE '%04u-%02u-%02u'", yr, mt, dy);
-			n = (int) (q - nquery);
-			pr = (int) (p - q);
-			length += strlen(buf) + 1 - pr;
-			q = malloc(length);
-			if (q == NULL) {
-				free(nquery);
-				return NULL;
-			}
-			length = (size_t) snprintf(q, length, "%.*s%s%s", n, nquery, buf, p);
-			free(nquery);
-			nquery = q;
-			q += n;
-		} else if (strncasecmp(p, "interval ", 9) == 0) {
-			const char *intv = p;
-			size_t intvl;
-
-			p = strchr(p, '}');
-			if (p == NULL)
-				continue;
-			intvl = p - intv;
-			while (intv[intvl - 1] == ' ')
-				intvl--;
-			p++;
-			n = (int) (q - nquery);
-			pr = (int) (p - q);
-			length += intvl + 1 - pr;
-			q = malloc(length);
-			if (q == NULL) {
-				free(nquery);
-				return NULL;
-			}
-			length = (size_t) snprintf(q, length, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
-			free(nquery);
-			nquery = q;
-			q += n;
-		} else if (sscanf(p, "guid '%8"SCNx32"-%4"SCNx16"-%4"SCNx16
-				  "-%2"SCNx8"%2"SCNx8"-%2"SCNx8"%2"SCNx8
-				  "%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8"'%n",
-				  &u.d1, &u.d2, &u.d3, &u.d4[0], &u.d4[1],
-				  &u.d4[2], &u.d4[3], &u.d4[4], &u.d4[5],
-				  &u.d4[6], &u.d4[7], &n) >= 11) {
-			p += n;
-			while (*p == ' ')
-				p++;
-			if (*p != '}')
-				continue;
-			p++;
-			snprintf(buf, sizeof(buf),
-				 "UUID '%08"PRIx32"-%04"PRIx16"-%04"PRIx16
-				 "-%02"PRIx8"%02"PRIx8"-%02"PRIx8"%02"PRIx8
-				 "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8"'",
-				 u.d1, u.d2, u.d3, u.d4[0], u.d4[1], u.d4[2],
-				 u.d4[3], u.d4[4], u.d4[5], u.d4[6], u.d4[7]);
-			n = (int) (q - nquery);
-			pr = (int) (p - q);
-			length += strlen(buf) + 1 - pr;
-			q = malloc(length);
-			if (q == NULL) {
-				free(nquery);
-				return NULL;
-			}
-			length = (size_t) snprintf(q, length, "%.*s%s%s", n, nquery, buf, p);
-			free(nquery);
-			nquery = q;
-			q += n;
-		} else if (strncasecmp(p, "escape ", 7) == 0) {
-			/* note that in ODBC the syntax is
-			 * {escape '\'}
-			 * whereas MonetDB expects
-			 * ESCAPE '\\'
-			 */
-			char esc;
-			p += 7;
-			while (*p == ' ')
-				p++;
-			if (*p++ != '\'')
-				continue;
-			if (*p == '\'' && p[1] == '\'' && p[2] == '\'') {
-				esc = '\'';
-				p += 3;
-			} else if (*p != '\'' && p[1] == '\'') {
-				esc = *p;
-				if (esc & 0200)
-					continue;
-				p += 2;
-			} else
-				continue;
-			while (*p == ' ')
-				p++;
-			if (*p++ != '}')
-				continue;
-			n = (int) (q - nquery);
-			pr = (int) (p - q);
-			length += 13 + 1 - pr;
-			q = malloc(length);
-			if (q == NULL) {
-				free(nquery);
-				return NULL;
-			}
-			switch (esc) {
-			case '\'':
-				length = (size_t) snprintf(q, length, "%.*s ESCAPE '''' %s", n, nquery, p);
-				break;
-			case '\\':
-				length = (size_t) snprintf(q, length, "%.*s ESCAPE r'\\' %s", n, nquery, p);
-				break;
-			default:
-				length = (size_t) snprintf(q, length, "%.*s ESCAPE '%c' %s", n, nquery, esc, p);
-				break;
-			}
-			free(nquery);
-			nquery = q;
-			q += n;
-		} else if (strncasecmp(p, "call ", 5) == 0) {
-			const char *proc, *procend;
-
-			p += 5;
-			while (*p == ' ')
-				p++;
-			proc = p;
-			while (*p && isascii((unsigned char) *p) &&
-			       (*p == '_' || isalnum((unsigned char) *p)))
-				p++;
-			if (p == proc ||
-			    (isascii((unsigned char) *proc) &&
-			     !isalpha((unsigned char) *proc)))
-				continue;
-			procend = p;
-			while (*p == ' ')
-				p++;
-			if (*p == '(') {
-				int nparen = 0;
-				int q1 = 0, q2 = 0;
-
-				p++;
-				while (*p && (*p != ')' || nparen > 0 || q1 || q2)) {
-					nparen += *p == '(';
-					nparen -= *p == ')';
-					q1 ^= (*p == '\'') & !q2;
-					q2 ^= (*p == '"') & !q1;
-					p++;
+			if (sscanf((const char *) query + i, "{ call %zn", &n) >= 0 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				for (size_t j = 0; rest[j]; j++) {
+					if (quoted && rest[j] == '\\') {
+						j++;
+						continue;
+					}
+					if (quoted || rawstring) {
+						if (rest[j] == '\'')
+							quoted = rawstring = false;
+						continue;
+					}
+					if (dquoted) {
+						if (rest[j] == '"')
+							dquoted = false;
+						continue;
+					}
+					if (rest[j] == '\'') {
+						if (dbc->raw_strings ?
+						    (j > 0 &&
+						     rest[j - 1] != 'e' &&
+						     rest[j - 1] != 'E') :
+						    (j > 0 &&
+						     (rest[j - 1] == 'r' ||
+						      rest[j - 1] == 'R')))
+							rawstring = true;
+						else
+							quoted = true;
+						continue;
+					}
+					if (rest[j] == '"') {
+						dquoted = true;
+						continue;
+					}
+					if (rest[j] == '}') {
+						size_t len = strlen(rest);
+						nquery = malloc(i + len + 6);
+						snprintf(nquery, i + len + 6,
+							 "%.*sCALL %.*s %s",
+							 (int) i, query,
+							 (int) j, rest,
+							 rest + j + 1);
+						free(rest);
+						return nquery;
+					}
 				}
-				if (*p == 0)
-					break;
-				procend = ++p;
-				while (*p == ' ')
-					p++;
-			}
-			if (*p != '}')
-				break;
-			p++;
-			n = (int) (q - nquery);
-			pr = (int) (p - q);
-			length += (procend - proc) + 6 - pr;
-			q = malloc(length);
-			if (q == NULL) {
-				free(nquery);
-				return NULL;
-			}
-			length = (size_t) snprintf(q, length, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
-			free(nquery);
-			nquery = q;
-			q += n;
-		} else if (p[0] == 'f' && p[1] == 'n' && p[2] == ' ') {
-			const char *scalarfunc;
-			size_t scalarfunclen;
-			struct arg {
-				const char *argstart;
-				size_t arglen;
-			} args[4];
-			int nargs;
-			struct scalars *func;
-
-			p += 3;
-			while (*p == ' ')
-				p++;
-			scalarfunc = p;
-			while (*p && isascii((unsigned char) *p) &&
-			       (*p == '_' || isalnum((unsigned char) *p)))
-				p++;
-			if (p == scalarfunc ||
-			    (isascii((unsigned char) *scalarfunc) &&
-			     !isalpha((unsigned char) *scalarfunc)))
+				free(rest);
 				continue;
-			scalarfunclen = p - scalarfunc;
-			while (*p == ' ')
-				p++;
-			if (*p++ != '(')
-				continue;
-			while (*p == ' ')
-				p++;
-			nargs = 0;
-			while (*p && *p != ')') {
-				int nparen = 0;
+			}
+			if (sscanf((const char *) query + i, "{ fn %127[a-zA-Z0-9_] ( %zn", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+				size_t arglen = 0;
+				size_t lastarg = 0;
+				int nargs = 0;
+				int nparen = 1;
+				bool seenarg = false;
 
-				if (nargs == 4) {
-					/* too many args to be matched */
-					break;
-				}
-				args[nargs].argstart = p;
-				while (*p &&
-				       (nparen != 0 ||
-					(*p != ')' && *p != ','))) {
-					if (*p == '"') {
-						while (*++p && *p != '"')
-							;
-						if (*p)
-							p++;
-					} else if (*p == '\'') {
-						while (*++p && *p != '\'')
-							;
-						if (*p)
-							p++;
-					} else {
-						if (*p == '(')
-							nparen++;
-						else if (*p == ')')
+				for (size_t j = 0; rest[j] && nargs < 5; j++) {
+					if (quoted && rest[j] == '\\') {
+						j++;
+						continue;
+					}
+					if (quoted || rawstring) {
+						if (rest[j] == '\'')
+							quoted = rawstring = false;
+						continue;
+					}
+					if (dquoted) {
+						if (rest[j] == '"')
+							dquoted = false;
+						continue;
+					}
+					if (rest[j] == '\'') {
+						seenarg = true;
+						if (dbc->raw_strings ?
+						    (j > 0 &&
+						     rest[j - 1] != 'e' &&
+						     rest[j - 1] != 'E') :
+						    (j > 0 &&
+						     (rest[j - 1] == 'r' ||
+						      rest[j - 1] == 'R')))
+							rawstring = true;
+						else
+							quoted = true;
+						continue;
+					}
+					if (rest[j] == '"') {
+						seenarg = true;
+						dquoted = true;
+						continue;
+					}
+					if (rest[j] == '(') {
+						seenarg = true;
+						nparen++;
+						continue;
+					}
+					if (nparen > 1) {
+						if (rest[j] == ')')
 							nparen--;
-						p++;
+						continue;
 					}
-				}
-				args[nargs].arglen = p - args[nargs].argstart;
-				while (args[nargs].argstart[args[nargs].arglen - 1] == ' ')
-					args[nargs].arglen--;
-				if (*p == ',') {
-					p++;
-					while (*p == ' ')
-						p++;
-				}
-				nargs++;
-			}
-			if (*p != ')')
-				continue;
-			while (*++p && *p == ' ')
-				;
-			if (*p != '}')
-				continue;
-			p++;
-			n = (int) (q - nquery);
-			pr = (int) (p - q);
-			for (func = scalars; func->name; func++) {
-				if (strncasecmp(func->name, scalarfunc, scalarfunclen) == 0 && func->name[scalarfunclen] == 0 && func->nargs == nargs) {
-					if (func->repl) {
-						const char *r;
-						q = malloc(length - pr + strlen(func->repl) - nargs + (nargs > 0 ? args[0].arglen + 1 : 0) + (nargs > 1 ? args[1].arglen + 1 : 0) + (nargs > 2 ? args[2].arglen + 1 : 0) + 1);
-						if (q == NULL) {
-							free(nquery);
-							return NULL;
-						}
-						pr = n;
-						strncpy(q, nquery, pr);
-						for (r = func->repl; *r; r++) {
-							if (*r == '\1' || *r == '\2' || *r == '\3' || *r == '\4') {
-								assert(*r <= func->nargs);
-								if (args[*r - 1].argstart[0] == '\'')
-									q[pr++] = 'r';
-								strncpy(q + pr, args[*r - 1].argstart, args[*r - 1].arglen);
-								pr += (int) args[*r - 1].arglen;
-							} else {
-								q[pr++] = *r;
-							}
-						}
-						strcpy(q + pr, p);
-						length = pr + strlen(p);
-						free(nquery);
-						nquery = q;
-						q += n;
-					} else if (strcmp(func->name, "user") == 0) {
-						length += (dbc->Connected && dbc->uid ? strlen(dbc->uid) : 0) + 3 - pr;
-						q = malloc(length);
-						if (q == NULL) {
-							free(nquery);
-							return NULL;
-						}
-						length = (size_t) snprintf(q, length, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
-						free(nquery);
-						nquery = q;
-						q += n;
-					} else if (strcmp(func->name, "database") == 0) {
-						length += (dbc->Connected && dbc->dbname ? strlen(dbc->dbname) : 0) + 3 - pr;
-						q = malloc(length);
-						if (q == NULL) {
-							free(nquery);
-							return NULL;
-						}
-						length = (size_t) snprintf(q, length, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
-						free(nquery);
-						nquery = q;
-						q += n;
-					} else if (strcmp(func->name, "convert") == 0) {
-						struct convert *c;
-						for (c = convert; c->odbc; c++) {
-							if (strncasecmp(c->odbc, args[1].argstart, args[1].arglen) == 0 &&
-							    c->odbc[args[1].arglen] == 0) {
-								const char *raw;
-								length += 11 + args[0].arglen + 1 + strlen(c->server) - pr;
-								q = malloc(length);
-								if (q == NULL) {
-									free(nquery);
-									return NULL;
+					if (rest[j] == ',') {
+						if (!seenarg)
+							break;
+						nargs++;
+						seenarg = false;
+						continue;
+					}
+					if (rest[j] == ')') {
+						if (--nparen < 0)
+							break;
+						arglen = j;
+						if (seenarg)
+							nargs++;
+						else if (nargs > 0)
+							break;
+						seenarg = false;
+						continue;
+					}
+					if (rest[j] == '}') {
+						if (nparen != 0 || seenarg)
+							break;
+						for (struct scalars *func = scalars; func->name; func++) {
+							if (strcasecmp(func->name, buf) == 0 && func->nargs == nargs) {
+								const char *repl = func->repl;
+								const char *repl2 = "";
+								const char *repl3 = "";
+								const char *p1 = "(";
+								const char *p2 = ")";
+								const char *quote = "";
+								size_t repl3len = 0;
+								if (repl == NULL) {
+									if (strcmp(func->name, "user") == 0) {
+										repl = dbc->uid;
+										p1 = p2 = "";
+										quote = "'";
+									} else if (strcmp(func->name, "database") == 0) {
+										repl = dbc->dbname;
+										p1 = p2 = "";
+										quote = "'";
+									} else if (strcmp(func->name, "convert") == 0) {
+										repl = "convert";
+										for (struct convert *c = convert; c->odbc; c++) {
+											if (strncasecmp(rest + lastarg, c->odbc, strlen(c->odbc)) == 0) {
+												repl2 = c->server;
+												repl3len = arglen - lastarg - strlen(c->odbc);
+												repl3 = rest + lastarg + strlen(c->odbc);
+												arglen = lastarg;
+												break;
+											}
+										}
+									}
+									if (repl == NULL)
+										break;
 								}
-								if (args[0].argstart[0] == '\'')
-									raw = "r";
-								else
-									raw = "";
-								length = (size_t) snprintf(q, length, "%.*scast(%s%.*s as %s)%s", n, nquery, raw, (int) args[0].arglen, args[0].argstart, c->server, p);
-								free(nquery);
-								nquery = q;
-								break;
+								size_t l = i + strlen(repl) + 2 + arglen + strlen(rest) - j + 1 + strlen(repl2) + repl3len;
+								nquery = malloc(l);
+								snprintf(nquery, l, "%.*s%s%s%s%s%.*s%s%.*s%s%s", (int) i, query, quote, repl, quote, p1, (int) arglen, rest, repl2, (int) repl3len, repl3, p2, rest + j + 1);
+								free(rest);
+								return nquery;
 							}
 						}
+						break;
 					}
-					break;
+					if (!seenarg && !isspace((unsigned char) rest[j])) {
+						lastarg = j;
+						seenarg = true;
+					}
 				}
+				free(rest);
+				continue;
 			}
 		}
 	}
-	return nquery;
+	return dupODBCstring(query, length);
 }
 
 char *
@@ -1350,7 +1275,7 @@ ODBCParseOA(const char *tab, const char *col, const char *arg, size_t len)
 }
 
 char *
-ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len)
+ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len, const ODBCDbc *dbc)
 {
 	size_t i;
 	char *res;
@@ -1371,7 +1296,13 @@ ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len)
 			res[i++] = *s;
 		res[i++] = *s;
 	}
-	for (s = "' escape r'\\'"; *s; s++)
+	/* raw strings prefix syntax is only supported by servers since Jun2020 (11.37) */
+	if (dbc->major == 11 && dbc->minor >= 37) {
+		s = "' escape r'\\'";
+	} else {
+		s = "' escape '\\\\'";
+	}
+	for (; *s; s++)
 		res[i++] = *s;
 	res[i] = 0;
 	return res;
@@ -2126,7 +2057,11 @@ struct sql_types ODBC_c_types[] = {
 
 #ifdef ODBCDEBUG
 
+#ifdef NATIVE_WIN32
+const wchar_t *ODBCdebug;
+#else
 const char *ODBCdebug;
+#endif
 static char unknown[32];
 
 char *
@@ -2697,15 +2632,26 @@ ODBCLOG(const char *fmt, ...)
 
 	va_start(ap, fmt);
 	if (ODBCdebug == NULL) {
+#ifdef NATIVE_WIN32
+		if ((ODBCdebug = _wgetenv(L"ODBCDEBUG")) == NULL)
+			ODBCdebug = _wcsdup(L"");
+		else
+			ODBCdebug = _wcsdup(ODBCdebug);
+#else
 		if ((ODBCdebug = getenv("ODBCDEBUG")) == NULL)
 			ODBCdebug = strdup("");
 		else
 			ODBCdebug = strdup(ODBCdebug);
+#endif
 	}
 	if (ODBCdebug != NULL && *ODBCdebug != 0) {
 		FILE *f;
 
+#ifdef NATIVE_WIN32
+		f = _wfopen(ODBCdebug, L"a");
+#else
 		f = fopen(ODBCdebug, "a");
+#endif
 		if (f) {
 			vfprintf(f, fmt, ap);
 			fclose(f);

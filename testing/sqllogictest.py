@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 # skipif <system>
 # onlyif <system>
@@ -33,10 +37,19 @@ import MonetDBtesting.malmapi as malmapi
 import hashlib
 import re
 import sys
+import platform
 import importlib
 import MonetDBtesting.utils as utils
 from pathlib import Path
 from typing import Optional
+import difflib
+
+architecture = platform.machine()
+if architecture == 'AMD64':     # Windows :-(
+    architecture = 'x86_64'
+if architecture == 'arm64':     # MacOS :-(
+    architecture = 'aarch64'
+system = platform.system()
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
@@ -65,16 +78,13 @@ class SQLLogicConnection(object):
 
 
 def is_copyfrom_stmt(stmt:[str]=[]):
-    try:
-        index = stmt.index('<COPY_INTO_DATA>')
-        return True
-    except ValueError:
-        pass
-    return False
+    return '<COPY_INTO_DATA>' in stmt
 
 def prepare_copyfrom_stmt(stmt:[str]=[]):
     index = stmt.index('<COPY_INTO_DATA>')
     head = stmt[:index]
+    if stmt[index-1].endswith(';'):
+        stmt[index-1] = stmt[index-1][:-1]
     # check for escape character (single period)
     tail = []
     for l in stmt[index+1:]:
@@ -82,9 +92,11 @@ def prepare_copyfrom_stmt(stmt:[str]=[]):
             tail.append('')
         else:
             tail.append(l)
-    head = '\n'.join(head) + ';'
+    head = '\n'.join(head)
+    if not head.endswith(';'):
+        head += ';'
     tail='\n'.join(tail)
-    return head + '\n' + tail, head
+    return head + '\n' + tail, head, stmt
 
 class SQLLogic:
     def __init__(self, report=None, out=sys.stdout):
@@ -101,6 +113,7 @@ class SQLLogic:
         self.approve = None
         self.threshold = 100
         self.seenerr = False
+        self.__last = ''
 
     def __enter__(self):
         return self
@@ -246,6 +259,9 @@ class SQLLogic:
                     # check whether failed as expected
                     err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
                     if expected_err_code and expected_err_msg and err_code_received and err_msg_received:
+                        if expected_err_msg.endswith('...') and expected_err_code == err_code_received and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
+                            result.append(err_code_received + '!' + expected_err_msg)
+                            return result
                         result.append(err_code_received + '!' + err_msg_received)
                         if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
                             return result
@@ -254,7 +270,10 @@ class SQLLogic:
                             result.append(err_code_received + '!')
                             if expected_err_code == err_code_received:
                                 return result
-                        if expected_err_msg and err_msg_received:
+                        elif expected_err_msg and err_msg_received:
+                            if expected_err_msg.endswith('...') and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
+                                result.append(expected_err_msg)
+                                return result
                             result.append(err_msg_received)
                             if expected_err_msg.lower() == err_msg_received.lower():
                                 return result
@@ -328,7 +347,7 @@ class SQLLogic:
                     else:
                         self.raise_error('incorrect column type indicator')
                 except TypeError:
-                    self.query_error(query, 'bad column type')
+                    self.query_error(query, f'bad column type {columns[i]} at {i}')
                     return None
             ndata.append(tuple(nrow))
         return ndata
@@ -349,21 +368,6 @@ class SQLLogic:
               file=self.out)
         print("query text:", file=self.out)
         print(query, file=self.out)
-        print('', file=self.out)
-        if data is not None:
-            if len(data) < 100:
-                print('query result:', file=self.out)
-            else:
-                print('truncated query result:', file=self.out)
-            for row in data[:100]:
-                sep=''
-                for col in row:
-                    if col is None:
-                        print(sep, 'NULL', sep='', end='', file=self.out)
-                    else:
-                        print(sep, col, sep='', end='', file=self.out)
-                    sep = '|'
-                print('', file=self.out)
 
     def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
         err = False
@@ -441,12 +445,15 @@ class SQLLogic:
             for col in ndata:
                 if expected is not None:
                     if i < len(expected) and col != expected[i]:
-                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
+                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
                         err = True
                     i += 1
                 m.update(bytes(col, encoding='ascii'))
                 m.update(b'\n')
                 result.append(col)
+            if err:
+                print('Differences:', file=self.out)
+                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
             if resdata is not None:
                 result = []
                 ndata = []
@@ -484,9 +491,10 @@ class SQLLogic:
                 except NameError:
                     self.query_error(query, 'cannot find filter function')
                     err = True
+            ndata = data
             if not err:
                 try:
-                    data = pyfnc(data)
+                    ndata = pyfnc(data)
                 except:
                     self.query_error(query, 'filter function failed')
                     err = True
@@ -496,21 +504,24 @@ class SQLLogic:
                     except:
                         resdata = None
             ncols = 1
-            if (len(data)):
-                ncols = len(data[0])
-            if len(data)*ncols != nresult:
-                self.query_error(query, 'received {} rows, expected {} rows'.format(len(data)*ncols, nresult), data=data)
+            if (len(ndata)):
+                ncols = len(ndata[0])
+            if len(ndata)*ncols != nresult:
+                self.query_error(query, 'received {} rows, expected {} rows'.format(len(ndata)*ncols, nresult), data=data)
                 err = True
-            for row in data:
+            for row in ndata:
                 for col in row:
                     if expected is not None:
                         if i < len(expected) and col != expected[i]:
-                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
+                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
                             err = True
                         i += 1
                     m.update(bytes(col, encoding='ascii'))
                     m.update(b'\n')
                     result.append(col)
+            if err:
+                print('Differences:', file=self.out)
+                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
             if resdata is not None:
                 result = []
                 for row in resdata:
@@ -519,10 +530,11 @@ class SQLLogic:
                         resm.update(b'\n')
                         result.append(col)
         else:
+            ndata = data
             if sorting == 'rowsort':
-                data.sort()
+                ndata = sorted(data)
             err_msg_buff = []
-            for row in data:
+            for row in ndata:
                 for col in row:
                     if expected is not None:
                         if i < len(expected) and col != expected[i]:
@@ -534,7 +546,13 @@ class SQLLogic:
                     m.update(b'\n')
                     result.append(col)
             if err:
-                self.query_error(query, '\n'.join(err_msg_buff), data=data)
+                self.query_error(query, '\n'.join(err_msg_buff))
+                recv = []
+                for row in ndata:
+                    for col in row:
+                        recv.append(col + '\n')
+                print('Differences:', file=self.out)
+                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], recv)))
             if resdata is not None:
                 if sorting == 'rowsort':
                     resdata.sort()
@@ -544,6 +562,22 @@ class SQLLogic:
                         resm.update(bytes(col, encoding='ascii'))
                         resm.update(b'\n')
                         result.append(col)
+        if err:
+            if data is not None:
+                if len(data) < 100:
+                    print('Query result:', file=self.out)
+                else:
+                    print('Truncated query result:', file=self.out)
+                for row in data[:100]:
+                    sep=''
+                    for col in row:
+                        if col is None:
+                            print(sep, 'NULL', sep='', end='', file=self.out)
+                        else:
+                            print(sep, col, sep='', end='', file=self.out)
+                        sep = '|'
+                    print(file=self.out)
+            print(file=self.out)
         h = m.hexdigest()
         if resdata is not None:
             resh = resm.hexdigest()
@@ -579,24 +613,37 @@ class SQLLogic:
         if defines:
             for define in defines:
                 key, val = define.split('=', 1)
-                defs.append((re.compile(r'\$' + key.strip() + r'\b'),
-                             val.strip().replace('\\', r'\\')))
-        self.defines = defs
+                key = key.strip()
+                val = val.strip()
+                defs.append((re.compile(r'\$(' + key + r'\b|{' + key + '})'),
+                             val, key))
+        self.defines = sorted(defs, key=lambda x: (-len(x[1]), x[1], x[2]))
         self.lines = []
 
     def readline(self):
         self.line += 1
         origline = line = self.file.readline()
-        for key, val in self.defines:
-            line = key.sub(val, line)
+        for reg, val, key in self.defines:
+            line = reg.sub(val.replace('\\', r'\\'), line)
         if self.approve:
             self.lines.append((origline, line))
         return line
 
-    def writeline(self, line=''):
+    def writeline(self, line='', replace=False):
         if self.approve:
+            if not line and self.__last == '':
+                return
+            self.__last = line
             if not line.endswith('\n'):
                 line = line + '\n'
+            if replace:
+                for reg, val, key in self.defines:
+                    # line = line.replace('\''+val.replace('\\', '\\\\'),
+                    #                     '\'${Q'+key+'}')
+                    # line = line.replace(val, '${'+key+'}')
+                    line = line.replace('\''+val.replace('\\', '\\\\'),
+                                        '\'$Q'+key)
+                    line = line.replace(val, '$'+key)
             i = 0
             while i < len(self.lines):
                 if self.lines[i][1] == line:
@@ -636,41 +683,61 @@ class SQLLogic:
     def parse(self, f, approve=None, verbose=False, defines=None):
         self.approve = approve
         self.initfile(f, defines)
+        nthreads = None
         if self.language == 'sql':
-            self.crs.execute(f'call sys.setsession(cast({self.timeout or 0} as bigint))')
+            self.crs.execute(f'call sys.setsessiontimeout({self.timeout or 0})')
         else:
-            self.crs.execute(f'clients.setsession({self.timeout or 0}:lng)')
+            self.crs.execute(f'clients.setsessiontimeout({self.timeout or 0}:int)')
         while True:
             skipping = False
             line = self.readline()
             if not line:
                 break
-            if line[0] == '#': # skip mal comments
-                if self.approve:
-                    self.approve.write(line)
+            if line.startswith('#'): # skip mal comments
+                self.writeline(line.rstrip())
+                continue
+            if self.language == 'sql' and line.startswith('--'):
+                self.writeline(line.rstrip())
+                continue
+            if line == '\n':
+                self.writeline()
                 continue
             conn = None
             # look for connection string
             if line.startswith('@connection'):
                 conn_params = self.parse_connection_string(line)
                 conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
-                self.writeline(line)
+                self.writeline(line.rstrip())
                 line = self.readline()
-            words = line.split()
+            words = line.split(maxsplit=2)
             if not words:
                 continue
             while words[0] == 'skipif' or words[0] == 'onlyif':
-                if words[0] == 'skipif' and words[1] == 'MonetDB':
-                    skipping = True
-                elif words[0] == 'onlyif' and words[1] != 'MonetDB':
-                    skipping = True
-                self.writeline(line)
+                if words[0] == 'skipif':
+                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}'):
+                        skipping = True
+                    elif words[1].startswith('threads='):
+                        if nthreads is None:
+                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                            nthreads = self.crs.fetchall()[0][0]
+                        if words[1] == f'threads={nthreads}':
+                            skipping = True
+                elif words[0] == 'onlyif':
+                    if words[1] not in ('MonetDB', f'arch={architecture}', f'system={system}'):
+                        skipping = True
+                    elif words[1].startswith('threads='):
+                        if nthreads is None:
+                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                            nthreads = self.crs.fetchall()[0][0]
+                        if words[1] != f'threads={nthreads}':
+                            skipping = True
+                self.writeline(line.rstrip())
                 line = self.readline()
-                words = line.split()
+                words = line.split(maxsplit=2)
             hashlabel = None
             if words[0] == 'hash-threshold':
                 self.threshold = int(words[1])
-                self.writeline(line)
+                self.writeline(line.rstrip())
                 self.writeline()
             elif words[0] == 'statement':
                 expected_err_code = None
@@ -679,10 +746,11 @@ class SQLLogic:
                 expectok = words[1] == 'ok'
                 if len(words) > 2:
                     if expectok:
-                        if words[2] == 'rowcount':
-                            expected_rowcount = int(words[3])
+                        rwords = words[2].split()
+                        if rwords[0] == 'rowcount':
+                            expected_rowcount = int(rwords[1])
                     else:
-                        err_str = " ".join(words[2:])
+                        err_str = words[2]
                         expected_err_code, expected_err_msg = utils.parse_mapi_err_msg(err_str)
                 statement = []
                 self.qline = self.line + 1
@@ -694,27 +762,35 @@ class SQLLogic:
                     statement.append(line.rstrip('\n'))
                 if not skipping:
                     if is_copyfrom_stmt(statement):
-                        stmt, stmt_less_data = prepare_copyfrom_stmt(statement)
+                        stmt, stmt_less_data, statement = prepare_copyfrom_stmt(statement)
                         result = self.exec_statement(stmt, expectok, err_stmt=stmt_less_data, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn, verbose=verbose)
                     else:
+                        if self.language == 'sql' and statement[-1].endswith(';'):
+                            statement[-1] = statement[-1][:-1]
                         result = self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn, verbose=verbose)
                     self.writeline(' '.join(result))
                 else:
                     self.writeline(stline)
+                dostrip = True
                 for line in statement:
-                    self.writeline(line)
+                    if dostrip:
+                        line = line.rstrip()
+                    self.writeline(line, replace=True)
+                    if dostrip and '<COPY_INTO_DATA>' in line:
+                        dostrip = False
                 self.writeline()
             elif words[0] == 'query':
                 columns = words[1]
                 pyscript = None
                 if len(words) > 2:
-                    sorting = words[2]  # nosort,rowsort,valuesort
+                    rwords = words[2].split()
+                    sorting = rwords[0]  # nosort,rowsort,valuesort
                     if sorting == 'python':
-                        pyscript = words[3]
-                        if len(words) > 4:
-                            hashlabel = words[4]
-                    elif len(words) > 3:
-                        hashlabel = words[3]
+                        pyscript = rwords[1]
+                        if len(rwords) > 2:
+                            hashlabel = rwords[2]
+                    elif len(rwords) > 1:
+                        hashlabel = rwords[1]
                 else:
                     sorting = 'nosort'
                 query = []
@@ -725,6 +801,8 @@ class SQLLogic:
                     if not line or line == '\n' or line.startswith('----'):
                         break
                     query.append(line.rstrip('\n'))
+                if self.language == 'sql' and query[-1].endswith(';'):
+                    query[-1] = query[-1][:-1]
                 if not line.startswith('----'):
                     self.raise_error('---- expected')
                 line = self.readline()
@@ -746,14 +824,14 @@ class SQLLogic:
                     result1, result2 = self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=conn, verbose=verbose)
                     self.writeline(' '.join(result1))
                     for line in query:
-                        self.writeline(line)
+                        self.writeline(line.rstrip(), replace=True)
                     self.writeline('----')
                     for line in result2:
                         self.writeline(line)
                 else:
-                    self.writeline(qrline)
+                    self.writeline(qrline.rstrip())
                     for line in query:
-                        self.writeline(line)
+                        self.writeline(line.rstrip())
                     self.writeline('----')
                     if hash:
                         self.writeline('{} values hashing to {}'.format(

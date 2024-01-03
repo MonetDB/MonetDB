@@ -1,0 +1,51 @@
+# ref: https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/system-functions
+
+query I rowsort
+select { fn LENGTH( { fn DATABASE ( ) })} > 0
+----
+1
+
+query I rowsort
+select length(DATABASE()) > 0
+----
+1
+
+
+query I rowsort
+select { fn IFNULL(NULL, 1) }
+----
+1
+
+query T rowsort
+select { fn IFNULL('abc', 'def') }
+----
+abc
+
+query R rowsort
+select { fn IFNULL(NULLIF(3,3), -9.0/+4) }
+----
+-2.250
+
+query I rowsort
+select IFNULL(NULL, 1)
+----
+1
+
+query T rowsort
+select IFNULL('abc', 'def')
+----
+abc
+
+query R rowsort
+select IFNULL(NULLIF(3,3), -9.0/+4)
+----
+-2.250
+
+
+query T rowsort
+select { fn USER() }
+----
+monetdb
+
+statement error
+select USER()

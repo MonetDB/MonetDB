@@ -156,3 +156,4 @@ DROP VIEW PhotoTag
 
 statement ok
 COMMIT
+

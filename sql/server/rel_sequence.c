@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -268,11 +272,11 @@ rel_alter_seq(
 	char *sname = qname_schema(qname);
 	char *name = qname_schema_object(qname);
 	sql_sequence *seq;
-	int start_type = start_list->h->data.i_val;
+	int start_type = start_list?start_list->h->data.i_val:0;
 	sql_rel *r = NULL;
 	sql_exp *val = NULL;
 
-	assert(start_list->h->type == type_int);
+	assert(!start_list || start_list->h->type == type_int);
 	(void) tpe;
 	if (!(seq = find_sequence_on_scope(sql, sname, name, "ALTER SEQUENCE")))
 		return NULL;

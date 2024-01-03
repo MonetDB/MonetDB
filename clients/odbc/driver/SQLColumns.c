@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -79,21 +83,24 @@ MNDBColumns(ODBCStmt *stmt,
 		if (NameLength2 > 0) {
 			sch = ODBCParsePV("s", "name",
 					  (const char *) SchemaName,
-					  (size_t) NameLength2);
+					  (size_t) NameLength2,
+					  stmt->Dbc);
 			if (sch == NULL)
 				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			tab = ODBCParsePV("t", "name",
 					  (const char *) TableName,
-					  (size_t) NameLength3);
+					  (size_t) NameLength3,
+					  stmt->Dbc);
 			if (tab == NULL)
 				goto nomem;
 		}
 		if (NameLength4 > 0) {
 			col = ODBCParsePV("c", "name",
 					  (const char *) ColumnName,
-					  (size_t) NameLength4);
+					  (size_t) NameLength4,
+					  stmt->Dbc);
 			if (col == NULL)
 				goto nomem;
 		}
@@ -122,7 +129,7 @@ MNDBColumns(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 6500 + (sch ? strlen(sch) : 0) +
+	querylen = 6600 + (sch ? strlen(sch) : 0) +
 		(tab ? strlen(tab) : 0) + (col ? strlen(col) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
@@ -212,7 +219,6 @@ MNDBColumns(ODBCStmt *stmt,
 #endif
 		/* from clause: */
 		stmt->Dbc->has_comment ? " left outer join sys.comments com on com.id = c.id" : "");
-	assert(pos < 6300);
 
 	/* depending on the input parameter values we must add a
 	   variable selection condition dynamically */
@@ -243,6 +249,8 @@ MNDBColumns(ODBCStmt *stmt,
 
 	/* add the ordering (exclude table_cat as it is the same for all rows) */
 	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"ORDINAL_POSITION\"", querylen - pos);
+	if (pos >= querylen)
+		fprintf(stderr, "pos >= querylen, %zu > %zu\n", pos, querylen);
 	assert(pos < querylen);
 
 	/* debug: fprintf(stdout, "SQLColumns query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -25,49 +29,68 @@ static malType getPolyType(malType t, int *polytype);
 static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
 static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 
-/*
- * We found the proper function. Copy some properties. In particular,
- * determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
- * Beware that polymorphic functions may produce type-incorrect clones.
- * This piece of code may be shared by the separate binder
- */
-#define bindFunction(s, p, idx, mb)									\
-	do {															\
-		if (p->token == ASSIGNsymbol) {								\
-			switch (getSignature(s)->token) {						\
-			case COMMANDsymbol:										\
-				p->token = CMDcall;									\
-				p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */ \
-				if (p->fcn == NULL) {								\
-					if(!silent)  mb->errors = createMalException(mb, idx, TYPE, \
-										"object code for command %s.%s missing", \
-										p->modname, p->fcnname);	\
-					p->typechk = TYPE_UNKNOWN;						\
-					goto wrapup;									\
-				}													\
-				break;												\
-			case PATTERNsymbol:										\
-				p->token = PATcall;									\
-				p->fcn = getSignature(s)->fcn;      /* C implementation optional */	\
-				break;												\
-			case FACTORYsymbol:										\
-				p->token = FACcall;									\
-				p->fcn = getSignature(s)->fcn;      /* C implementation optional */	\
-				break;												\
-			case FUNCTIONsymbol:									\
-				p->token = FCNcall;									\
-				if (getSignature(s)->fcn)							\
-					p->fcn = getSignature(s)->fcn;     /* C implementation optional */ \
-				break;												\
-			default: {												\
-					if(!silent) mb->errors = createMalException(mb, idx, MAL, \
-										"MALresolve: unexpected token type"); \
-				goto wrapup;										\
-			}														\
-			}														\
-			p->blk = s->def;										\
-		}															\
-	} while (0)
+int
+resolvedType(int dsttype, int srctype)
+{
+	if (dsttype == srctype || dsttype == TYPE_any || srctype == TYPE_any ||
+       (isaBatType(srctype) && dsttype == TYPE_bat) ||
+	   (isaBatType(dsttype) && srctype == TYPE_bat))
+		return 0;
+
+	if (isaBatType(dsttype) && isaBatType(srctype)) {
+		int t1 = getBatType(dsttype);
+		int t2 = getBatType(srctype);
+		if (t1 == t2 || t1 == TYPE_any || t2 == TYPE_any)
+			return 0;
+	}
+	return -1;
+}
+
+static int
+resolveType(int *rtype, int dsttype, int srctype)
+{
+	if (dsttype == srctype) {
+		*rtype = dsttype;
+		return 0;
+	}
+	if (dsttype == TYPE_any) {
+		*rtype = srctype;
+		return 0;
+	}
+	if (srctype == TYPE_any) {
+		*rtype = dsttype;
+		return 0;
+	}
+	/*
+	 * A bat reference can be coerced to bat type.
+	 */
+	if (isaBatType(srctype) && dsttype == TYPE_bat) {
+		*rtype = srctype;
+		return 0;
+	}
+	if (isaBatType(dsttype) && srctype == TYPE_bat) {
+		*rtype = dsttype;
+		return 0;
+	}
+	if (isaBatType(dsttype) && isaBatType(srctype)) {
+		int t1, t2, t3;
+		t1 = getBatType(dsttype);
+		t2 = getBatType(srctype);
+		if (t1 == t2)
+			t3 = t1;
+		else if (t1 == TYPE_any)
+			t3 = t2;
+		else if (t2 == TYPE_any)
+			t3 = t1;
+		else {
+			return -1;
+		}
+		*rtype = newBatType(t3);
+		return 0;
+	}
+	return -1;
+}
+
 
 /*
  * Since we now know the storage type of the receiving variable, we can
@@ -76,7 +99,7 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 #define prepostProcess(tp, p, b, mb)					\
 	do {												\
 		if( isaBatType(tp) ||							\
-			ATOMtype(tp) == TYPE_str ||				\
+			ATOMtype(tp) == TYPE_str ||					\
 			(!isPolyType(tp) && tp < TYPE_any &&		\
 			 tp >= 0 && ATOMextern(tp))) {				\
 			getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;	\
@@ -117,8 +140,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	if (s == 0)
 		return -1;
 
-	if ( p->retc < 256){
-		for (i=0; i< p->retc; i++)
+	if (p->retc < 256) {
+		for (i = 0; i < p->retc; i++)
 			returns[i] = 0;
 		returntype = returns;
 	} else {
@@ -169,7 +192,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			int limit = sig->polymorphic;
 			if (!(sig->argc == p->argc ||
 				  (sig->argc < p->argc && sig->varargs & (VARARGS | VARRETS)))
-				) {
+					) {
 				s = s->peer;
 				continue;
 			}
@@ -215,7 +238,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				 * If it fails, we know this isn't the function we are
 				 * looking for.
 				 */
-				if (resolveType(formal, actual) == -1) {
+				if (resolvedType(formal, actual) < 0) {
 					unmatched = i;
 					break;
 				}
@@ -244,7 +267,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 						formal = getPolyType(formal, polytype);
 						if (formal == actual || formal == TYPE_any)
 							continue;
-						if (resolveType(formal, actual) == -1) {
+						if (resolvedType(formal, actual) < 0) {
 							unmatched = i;
 							break;
 						}
@@ -265,7 +288,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			for (i = p->retc; i < p->argc; i++) {
 				int actual = getArgType(mb, p, i);
 				int formal = getArgType(s->def, sig, i);
-				if (resolveType(formal, actual) == -1) {
+				if (resolvedType(formal, actual) < 0) {
 					unmatched = i;
 					break;
 				}
@@ -306,13 +329,11 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 
 				s1 = getPolyType(formal, polytype);
 
-				returntype[i] = resolveType(s1, actual);
-				if (returntype[i] == -1) {
+				if (resolveType(returntype+i, s1, actual) < 0) {
 					s1 = -1;
 					break;
 				}
-			}
-		else
+		} else
 			/* check for non-polymorphic return */
 			for (k = i = 0; i < p->retc; i++) {
 				int actual = getArgType(mb, p, i);
@@ -324,8 +345,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				if (actual == formal)
 					returntype[i] = actual;
 				else {
-					returntype[i] = resolveType(formal, actual);
-					if (returntype[i] == -1) {
+					if (resolveType(returntype+i, formal, actual) < 0) {
 						s1 = -1;
 						break;
 					}
@@ -349,7 +369,10 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		for (i = 0; i < p->retc; i++) {
 			int ts = returntype[i];
 			if (isVarConstant(mb, getArg(p, i))) {
-					if(!silent) { mb->errors = createMalException(mb, idx, TYPE, "Assignment to constant"); }
+				if (!silent) {
+					mb->errors = createMalException(mb, idx, TYPE,
+													"Assignment to constant");
+				}
 				p->typechk = TYPE_UNKNOWN;
 				goto wrapup;
 			}
@@ -395,7 +418,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				if (isAnyExpression(actual))
 					cnt++;
 			}
-			if (cnt == 0 && s->kind != COMMANDsymbol && s->kind != PATTERNsymbol) {
+			if (cnt == 0 && s->kind != COMMANDsymbol
+				&& s->kind != PATTERNsymbol) {
 				s = cloneFunction(scope, s, mb, p);
 				if (mb->errors)
 					goto wrapup;
@@ -403,17 +427,55 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		}
 		/* Any previousely found error in the block
 		 * turns the complete block into erroneous.
-		if (mb->errors) {
-			p->typechk = TYPE_UNKNOWN;
-			goto wrapup;
-		}															\
+		 if (mb->errors) {
+		 p->typechk = TYPE_UNKNOWN;
+		 goto wrapup;
+		 }
 		 */
-		bindFunction(s, p, idx, mb);
+
+		/*
+		 * We found the proper function. Copy some properties. In
+		 * particular, determine the calling strategy, i.e. FCNcall,
+		 * CMDcall, PATcall Beware that polymorphic functions
+		 * may produce type-incorrect clones.  This piece of code may be
+		 * shared by the separate binder
+		 */
+		if (p->token == ASSIGNsymbol) {
+			switch (getSignature(s)->token) {
+			case COMMANDsymbol:
+				p->token = CMDcall;
+				p->fcn = getSignature(s)->fcn;	/* C implementation mandatory */
+				if (p->fcn == NULL) {
+					if (!silent)
+						mb->errors = createMalException(mb, idx, TYPE,
+														"object code for command %s.%s missing",
+														p->modname, p->fcnname);
+					p->typechk = TYPE_UNKNOWN;
+					goto wrapup;
+				}
+				break;
+			case PATTERNsymbol:
+				p->token = PATcall;
+				p->fcn = getSignature(s)->fcn;	/* C implementation optional */
+				break;
+			case FUNCTIONsymbol:
+				p->token = FCNcall;
+				if (getSignature(s)->fcn)
+					p->fcn = getSignature(s)->fcn;	/* C implementation optional */
+				break;
+			default:
+				if (!silent)
+					mb->errors = createMalException(mb, idx, MAL,
+													"MALresolve: unexpected token type");
+				goto wrapup;
+			}
+			p->blk = s->def;
+		}
 
 		if (returntype != returns)
 			GDKfree(returntype);
 		return s1;
-	} /* while */
+	}							/* while */
 	/*
 	 * We haven't found the correct function.  To ease debugging, we
 	 * may reveal that we found an instruction with the proper
@@ -423,40 +485,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	if (returntype != returns)
 		GDKfree(returntype);
 	return -3;
-}
-
-int
-resolveType(int dsttype, int srctype)
-{
-	if (dsttype == srctype)
-		return dsttype;
-	if (dsttype == TYPE_any)
-		return srctype;
-	if (srctype == TYPE_any)
-		return dsttype;
-	/*
-	 * A bat reference can be coerced to bat type.
-	 */
-	if (isaBatType(srctype) && dsttype == TYPE_bat)
-		return srctype;
-	if (isaBatType(dsttype) && srctype == TYPE_bat)
-		return dsttype;
-	if (isaBatType(dsttype) && isaBatType(srctype)) {
-		int t1, t2, t3;
-		t1 = getBatType(dsttype);
-		t2 = getBatType(srctype);
-		if (t1 == t2)
-			t3 = t1;
-		else if (t1 == TYPE_any)
-			t3 = t2;
-		else if (t2 == TYPE_any)
-			t3 = t1;
-		else {
-			return -1;
-		}
-		return newBatType(t3);
-	}
-	return -1;
 }
 
 /*
@@ -473,7 +501,8 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int idx, int lhs, int rhs, int silent)
 	if (!silent) {
 		n1 = getTypeName(lhs);
 		n2 = getTypeName(rhs);
-		mb->errors = createMalException(mb, idx, TYPE, "type mismatch %s := %s", n1, n2);
+		mb->errors = createMalException(mb, idx, TYPE, "type mismatch %s := %s", n1,
+										n2);
 		GDKfree(n1);
 		GDKfree(n2);
 	}
@@ -539,24 +568,34 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				char *errsig = NULL;
 				if (!malLibraryEnabled(p->modname)) {
 					mb->errors = createMalException(mb, idx, TYPE,
-										"'%s%s%s' library error in: %s",
-										(getModuleId(p) ? getModuleId(p) : ""),
-										(getModuleId(p) ? "." : ""),
-										getFunctionId(p), malLibraryHowToEnable(p->modname));
+													"'%s%s%s' library error in: %s",
+													(getModuleId(p) ?
+													 getModuleId(p) : ""),
+													(getModuleId(p) ? "." : ""),
+													getFunctionId(p),
+													malLibraryHowToEnable(p->
+																		  modname));
 				} else {
 					bool free_errsig = false, special_undefined = false;
 					errsig = malLibraryHowToEnable(p->modname);
 					if (!strcmp(errsig, "")) {
-						errsig = instruction2str(mb,0,p, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+						errsig = instruction2str(mb, 0, p,
+												 (LIST_MAL_NAME | LIST_MAL_TYPE
+												  | LIST_MAL_VALUE));
 						free_errsig = true;
 					} else {
 						special_undefined = true;
 					}
 					mb->errors = createMalException(mb, idx, TYPE,
-										"'%s%s%s' undefined%s: %s",
-										(getModuleId(p) ? getModuleId(p) : ""),
-										(getModuleId(p) ? "." : ""),
-										getFunctionId(p), special_undefined ? "" : " in", errsig?errsig:"failed instruction2str()");
+													"'%s%s%s' undefined%s: %s",
+													(getModuleId(p) ?
+													 getModuleId(p) : ""),
+													(getModuleId(p) ? "." : ""),
+													getFunctionId(p),
+													special_undefined ? "" :
+													" in",
+													errsig ? errsig :
+													"failed instruction2str()");
 					if (free_errsig)
 						GDKfree(errsig);
 				}
@@ -572,12 +611,13 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	 * This is achieved by propagation of the rhs types to the lhs
 	 * variables.
 	 */
-	if (getFunctionId(p)){
+	if (getFunctionId(p)) {
 		return;
 	}
 	if (p->retc >= 1 && p->argc > p->retc && p->argc != 2 * p->retc) {
-		if (!silent){
-			mb->errors  = createMalException(mb, idx, TYPE, "Multiple assignment mismatch");
+		if (!silent) {
+			mb->errors = createMalException(mb, idx, TYPE,
+											"Multiple assignment mismatch");
 		}
 		p->typechk = TYPE_RESOLVED;
 	} else
@@ -587,8 +627,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		int lhs = getArgType(mb, p, k);
 
 		if (rhs != TYPE_void) {
-			s1 = resolveType(lhs, rhs);
-			if (s1 == -1) {
+			if (resolveType(&s1, lhs, rhs) < 0) {
 				typeMismatch(mb, p, idx, lhs, rhs, silent);
 				return;
 			}
@@ -607,7 +646,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 
 				rhs = isaBatType(lhs) ? TYPE_bat : lhs;
 				k = defConstant(mb, rhs, &cst);
-				if( k >=0)
+				if (k >= 0)
 					p->argv[i] = k;
 				rhs = lhs;
 			}
@@ -624,7 +663,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	if (p->barrier && p->retc == p->argc)
 		for (k = 0; k < p->retc; k++) {
 			int tpe = getArgType(mb, p, k);
-			if (isaBatType(tpe)  ||
+			if (isaBatType(tpe) ||
 				ATOMtype(tpe) == TYPE_str ||
 				(!isPolyType(tpe) && tpe < MAXATOMS && ATOMextern(tpe)))
 				setVarCleanup(mb, getArg(p, k));
@@ -652,18 +691,17 @@ chkTypes(Module s, MalBlkPtr mb, int silent)
 {
 	InstrPtr p = 0;
 	int i;
-	str msg= MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 
-	for (i = 0; i < mb->stop; i++) {
+	for (i = 0; mb->errors == NULL && i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		assert (p != NULL);
+		assert(p != NULL);
 		if (p->typechk != TYPE_RESOLVED)
 			typeChecker(s, mb, p, i, silent);
-		if (mb->errors){
-			msg = mb->errors;
-			mb->errors = NULL;
-			return msg;
-		}
+	}
+	if (mb->errors) {
+		msg = mb->errors;
+		mb->errors = NULL;
 	}
 	return msg;
 }
@@ -675,7 +713,7 @@ chkTypes(Module s, MalBlkPtr mb, int silent)
 int
 chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 {
-	if( mb->errors == MAL_SUCCEED){
+	if (mb->errors == MAL_SUCCEED) {
 		p->typechk = TYPE_UNKNOWN;
 		typeChecker(s, mb, p, getPC(mb, p), TRUE);
 	}
@@ -688,15 +726,20 @@ chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 str
 chkProgram(Module s, MalBlkPtr mb)
 {
-	str msg = MAL_SUCCEED;
+	str msg;
 /* it is not ready yet, too fragile
 		mb->typefixed = mb->stop == chk; ignored END */
 /*	if( mb->flowfixed == 0)*/
 
+	if (mb->errors) {
+		msg = mb->errors;
+		mb->errors = NULL;
+		return msg;
+	}
 	msg = chkTypes(s, mb, FALSE);
-	if( msg == MAL_SUCCEED)
+	if (msg == MAL_SUCCEED)
 		msg = chkFlow(mb);
-	if(msg == MAL_SUCCEED)
+	if (msg == MAL_SUCCEED)
 		msg = chkDeclarations(mb);
 	return msg;
 }

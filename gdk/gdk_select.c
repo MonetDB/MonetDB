@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -60,7 +64,6 @@ virtualize(BAT *bn)
 		bn->tseqbase = tseq;
 		if (VIEWtparent(bn)) {
 			Heap *h = GDKmalloc(sizeof(Heap));
-			bat bid = VIEWtparent(bn);
 			if (h == NULL) {
 				BBPunfix(bn->batCacheid);
 				return NULL;
@@ -71,10 +74,10 @@ virtualize(BAT *bn)
 			h->base = NULL;
 			h->hasfile = false;
 			ATOMIC_INIT(&h->refs, 1);
+			if (bn->theap->parentid != bn->batCacheid)
+				BBPrelease(bn->theap->parentid);
 			HEAPdecref(bn->theap, false);
 			bn->theap = h;
-			BBPunshare(bid);
-			BBPunfix(bid);
 		} else {
 			HEAPfree(bn->theap, true);
 		}
@@ -106,6 +109,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	BUN l, h, d = 0;
 	oid seq;
 	int (*cmp)(const void *, const void *);
+	BAT *b2 = NULL;
 
 	size_t counter = 0;
 	lng timeoffset = 0;
@@ -120,8 +124,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	h = canditer_last(ci) + 1 - seq;
 
 	*algo = "hashselect";
-	if (phash) {
-		BAT *b2 = BBP_cache(VIEWtparent(bi->b));
+	if (phash && (b2 = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
 		*algo = "hashselect on parent";
 		TRC_DEBUG(ALGO, ALGOBATFMT
 			  " using parent(" ALGOBATFMT ") "
@@ -138,6 +141,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	if (!havehash) {
 		if (BAThash(bi->b) != GDK_SUCCEED) {
 			BBPreclaim(bn);
+			BBPreclaim(b2);
 			return NULL;
 		}
 		MT_rwlock_rdlock(&bi->b->thashlock);
@@ -185,6 +189,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		}
 	}
 	MT_rwlock_rdunlock(&bi->b->thashlock);
+	BBPreclaim(b2);
 	BATsetcount(bn, cnt);
 	bn->tkey = true;
 	if (cnt > 1) {
@@ -203,6 +208,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 
   bailout:
 	MT_rwlock_rdunlock(&bi->b->thashlock);
+	BBPreclaim(b2);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -218,8 +224,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
-						BBPreclaim(bn);		\
-						return BUN_NONE;	\
+						goto bailout;		\
 					}				\
 					cnt++;				\
 					p++;				\
@@ -229,8 +234,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
-						BBPreclaim(bn);		\
-						return BUN_NONE;	\
+						goto bailout;		\
 					}				\
 					cnt += (TEST) != 0;		\
 					p++;				\
@@ -254,8 +258,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
-						BBPreclaim(bn);		\
-						return BUN_NONE;	\
+						goto bailout;		\
 					}				\
 					cnt++;				\
 					p++;				\
@@ -265,8 +268,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
-						BBPreclaim(bn);		\
-						return BUN_NONE;	\
+						goto bailout;		\
 					}				\
 					cnt += (TEST) != 0;		\
 					p++;				\
@@ -392,6 +394,8 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 		if (anti ?						\
 		    vl < imp_min && vh > imp_max :			\
 		    vl > imp_max || vh < imp_min) {			\
+			if (pbat)					\
+				BBPunfix(pbat->batCacheid);		\
 			return 0;					\
 		}							\
 	} while (false)
@@ -419,7 +423,8 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 			checkMINMAX(64, TYPE);				\
 			impsmask(ISDENSE,TEST,64);			\
 			break;						\
-		default: assert(0); break;				\
+		default:						\
+			MT_UNREACHABLE();				\
 		}							\
 	} while (false)
 
@@ -440,8 +445,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 							 * (dbl) (ncand-p) * 1.1 + 1024), \
 							maximum);	\
 					if (dst == NULL) {		\
-						BBPreclaim(bn);		\
-						return BUN_NONE;	\
+						goto bailout;		\
 					}				\
 					cnt++;				\
 				}					\
@@ -539,6 +543,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	BUN p;								\
 	BUN pr_off = 0;							\
 	bat parent = 0;							\
+	BAT *pbat = NULL;						\
 	(void) li;							\
 	(void) hi;							\
 	(void) lval;							\
@@ -555,10 +560,15 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	}								\
 	if (imprints && imprints->imprints.parentid != bi->b->batCacheid) {	\
 		parent = imprints->imprints.parentid;			\
-		BAT *pbat = BBP_cache(parent);				\
-		assert(pbat);						\
-		basesrc = (const TYPE *) Tloc(pbat, 0);			\
-		pr_off = (BUN) (src - basesrc);				\
+		pbat = BATdescriptor(parent);				\
+		if (pbat == NULL) {					\
+			/* can't load parent: don't use imprints */	\
+			imprints = NULL;				\
+			basesrc = src;					\
+		} else {						\
+			basesrc = (const TYPE *) Tloc(pbat, 0);		\
+			pr_off = (BUN) (src - basesrc);			\
+		}							\
 	} else {							\
 		basesrc = src;						\
 	}								\
@@ -582,8 +592,12 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	} else {							\
 		choose(NAME, ISDENSE, v >= vl && v <= vh, TYPE);	\
 	}								\
+	if (pbat)							\
+		BBPunfix(pbat->batCacheid);				\
 	return cnt;							\
   bailout:								\
+	if (pbat)							\
+		BBPunfix(pbat->batCacheid);				\
 	BBPreclaim(bn);							\
 	return BUN_NONE;						\
 }
@@ -1190,6 +1204,124 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	} while (0)
 #endif
 
+static enum range_comp_t
+BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
+{
+	enum range_comp_t range;
+	const ValRecord *minprop = NULL, *maxprop = NULL;
+	const void *minval = NULL, *maxval = NULL;
+	bool maxincl = true;
+	int c;
+	int (*atomcmp) (const void *, const void *) = ATOMcompare(bi->type);
+
+	if (tl && (*atomcmp)(tl, ATOMnilptr(bi->type)) == 0)
+		tl = NULL;
+	if (th && (*atomcmp)(th, ATOMnilptr(bi->type)) == 0)
+		th = NULL;
+	if (tl == NULL && th == NULL)
+		return range_contains; /* looking for everything */
+
+	/* keep locked while we look at the property values */
+	MT_lock_set(&bi->b->theaplock);
+	if (bi->minpos != BUN_NONE)
+		minval = BUNtail(*bi, bi->minpos);
+	else if ((minprop = BATgetprop_nolock(bi->b, GDK_MIN_BOUND)) != NULL)
+		minval = VALptr(minprop);
+	if (bi->maxpos != BUN_NONE) {
+		maxval = BUNtail(*bi, bi->maxpos);
+		maxincl = true;
+	} else if ((maxprop = BATgetprop_nolock(bi->b, GDK_MAX_BOUND)) != NULL) {
+		maxval = VALptr(maxprop);
+		maxincl = false;
+	}
+
+	if (minprop == NULL && maxprop == NULL) {
+		range = range_inside; /* strictly: unknown */
+	} else if (maxprop &&
+		   tl &&
+		   ((c = atomcmp(tl, maxval)) > 0 ||
+		    ((!maxincl || !li) && c == 0))) {
+		range = range_after;
+	} else if (minprop &&
+		   th &&
+		   ((c = atomcmp(th, minval)) < 0 ||
+		    (!hi && c == 0))) {
+		range = range_before;
+	} else if (tl == NULL) {
+		if (minprop == NULL) {
+			c = atomcmp(th, maxval);
+			if (c < 0 || ((maxincl || !hi) && c == 0))
+				range = range_atstart;
+			else
+				range = range_contains;
+		} else {
+			c = atomcmp(th, minval);
+			if (c < 0 || (!hi && c == 0))
+				range = range_before;
+			else if (maxprop == NULL)
+				range = range_atstart;
+			else {
+				c = atomcmp(th, maxval);
+				if (c < 0 || ((maxincl || !hi) && c == 0))
+					range = range_atstart;
+				else
+					range = range_contains;
+			}
+		}
+	} else if (th == NULL) {
+		if (maxprop == NULL) {
+			c = atomcmp(tl, minval);
+			if (c >= 0)
+				range = range_atend;
+			else
+				range = range_contains;
+		} else {
+			c = atomcmp(tl, maxval);
+			if (c > 0 || ((!maxincl || !li) && c == 0))
+				range = range_after;
+			else if (minprop == NULL)
+				range = range_atend;
+			else {
+				c = atomcmp(tl, minval);
+				if (c >= 0)
+					range = range_atend;
+				else
+					range = range_contains;
+			}
+		}
+	} else if (minprop == NULL) {
+		c = atomcmp(th, maxval);
+		if (c < 0 || ((maxincl || !hi) && c == 0))
+			range = range_inside;
+		else
+			range = range_atend;
+	} else if (maxprop == NULL) {
+		c = atomcmp(tl, minval);
+		if (c >= 0)
+			range = range_inside;
+		else
+			range = range_atstart;
+	} else {
+		c = atomcmp(tl, minval);
+		if (c >= 0) {
+			c = atomcmp(th, maxval);
+			if (c < 0 || ((maxincl || !hi) && c == 0))
+				range = range_inside;
+			else
+				range = range_atend;
+		} else {
+			c = atomcmp(th, maxval);
+			if (c < 0 || ((maxincl || !hi) && c == 0))
+				range = range_atstart;
+			else
+				range = range_contains;
+		}
+	}
+
+	MT_lock_unset(&bi->b->theaplock);
+	return range;
+}
+
 /* generic range select
  *
  * Return a BAT with the OID values of b for qualifying tuples.  The
@@ -1296,6 +1428,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		dbl v_dbl;
 		oid v_oid;
 	} vl, vh;
+	enum range_comp_t range;
+	const bool notnull = BATgetprop(b, GDK_NOT_NULL) != NULL;
 	lng t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -1329,7 +1463,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	nil = ATOMnilptr(t);
 	/* can we use the base type? */
 	t = ATOMbasetype(t);
-	lnil = ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
+	lnil = nil && ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
 
 	if (!lnil && th != NULL && (!li || !hi) && !anti && ATOMcmp(t, tl, th) == 0) {
 		/* upper and lower bound of range are equal and we
@@ -1354,6 +1488,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (th == NULL)
 			hi = li;
 		th = tl;
+		hval = true;
+	} else if (nil == NULL) {
 		hval = true;
 	} else {
 		hval = ATOMcmp(t, th, nil) != 0;
@@ -1453,7 +1589,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		bat_iterator_end(&bi);
 		return bn;
 	}
-	if (equi && lnil && bi.nonil) {
+	if (equi && lnil && (notnull || bi.nonil)) {
 		/* return all nils, but there aren't any */
 		MT_thread_setalgorithm("select: equi-nil, nonil");
 		bn = BATdense(0, 0, 0);
@@ -1467,7 +1603,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return bn;
 	}
 
-	if (!equi && !lval && !hval && lnil && bi.nonil) {
+	if (!equi && !lval && !hval && lnil && (notnull || bi.nonil)) {
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
 		MT_thread_setalgorithm("select: everything, nonil");
@@ -1482,78 +1618,83 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return bn;
 	}
 
+	/* figure out how the searched for range compares with the known
+	 * minimum and maximum values */
+	range = BATrange(&bi, lval ? tl : NULL, hval ? th : NULL, li, hi);
 	if (anti) {
-		int c;
-
-		if (bi.minpos != BUN_NONE) {
-			c = ATOMcmp(t, tl, BUNtail(bi, bi.minpos));
-			if (c < 0 || (li && c == 0)) {
-				if (bi.maxpos != BUN_NONE) {
-					c = ATOMcmp(t, th, BUNtail(bi, bi.maxpos));
-					if (c > 0 || (hi && c == 0)) {
-						/* tl..th range fully
-						 * inside MIN..MAX
-						 * range of values in
-						 * BAT, so nothing
-						 * left over for
-						 * anti */
-						MT_thread_setalgorithm("select: nothing, out of range");
-						bn = BATdense(0, 0, 0);
-						TRC_DEBUG(ALGO, "b=" ALGOBATFMT
-							  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-							  " (" LLFMT " usec): "
-							  "nothing, out of range\n",
-							  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
-						bat_iterator_end(&bi);
-						return bn;
-					}
-				}
+		switch (range) {
+		case range_contains:
+			/* MIN..MAX range of values in BAT fully inside
+			 * tl..th range, so nothing left over for
+			 * anti */
+			MT_thread_setalgorithm("select: nothing, out of range");
+			bn = BATdense(0, 0, 0);
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+				  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
+				  "nothing, out of range\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+			bat_iterator_end(&bi);
+			return bn;
+		case range_before:
+		case range_after:
+			if (notnull || b->tnonil) {
+				/* search range does not overlap with BAT range,
+				 * and there are no nils, so we can return
+				 * everything */
+				MT_thread_setalgorithm("select: everything, anti, nonil");
+				bn = canditer_slice(&ci, 0, ci.ncand);
+				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+					  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+					  " (" LLFMT " usec): "
+					  "everything, nonil\n",
+					  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+					  ALGOOPTBATPAR(bn), GDKusec() - t0);
+				bat_iterator_end(&bi);
+				return bn;
 			}
+			break;
+		default:
+			break;
 		}
 	} else if (!equi || !lnil) {
-		int c;
-
-		if (hval) {
-			if (bi.minpos != BUN_NONE) {
-				c = ATOMcmp(t, th, BUNtail(bi, bi.minpos));
-				if (c < 0 || (!hi && c == 0)) {
-					/* smallest value in BAT larger than
-					 * what we're looking for */
-					MT_thread_setalgorithm("select: nothing, out of range");
-					bn = BATdense(0, 0, 0);
-					TRC_DEBUG(ALGO, "b="
-						  ALGOBATFMT ",s="
-						  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-						  " (" LLFMT " usec): "
-						  "nothing, out of range\n",
-						  ALGOBATPAR(b),
-						  ALGOOPTBATPAR(s), anti,
-						  ALGOOPTBATPAR(bn), GDKusec() - t0);
-					bat_iterator_end(&bi);
-					return bn;
-				}
+		switch (range) {
+		case range_before:
+		case range_after:
+			/* range we're looking for either completely
+			 * before or complete after the range of values
+			 * in the BAT */
+			MT_thread_setalgorithm("select: nothing, out of range");
+			bn = BATdense(0, 0, 0);
+			TRC_DEBUG(ALGO, "b="
+				  ALGOBATFMT ",s="
+				  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
+				  "nothing, out of range\n",
+				  ALGOBATPAR(b),
+				  ALGOOPTBATPAR(s), anti,
+				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+			bat_iterator_end(&bi);
+			return bn;
+		case range_contains:
+			if (notnull || b->tnonil) {
+				/* search range contains BAT range, and
+				 * there are no nils, so we can return
+				 * everything */
+				MT_thread_setalgorithm("select: everything, nonil");
+				bn = canditer_slice(&ci, 0, ci.ncand);
+				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+					  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+					  " (" LLFMT " usec): "
+					  "everything, nonil\n",
+					  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+					  ALGOOPTBATPAR(bn), GDKusec() - t0);
+				bat_iterator_end(&bi);
+				return bn;
 			}
-		}
-		if (lval) {
-			if (bi.maxpos != BUN_NONE) {
-				c = ATOMcmp(t, tl, BUNtail(bi, bi.maxpos));
-				if (c > 0 || (!li && c == 0)) {
-					/* largest value in BAT smaller than
-					 * what we're looking for */
-					MT_thread_setalgorithm("select: nothing, out of range");
-					bn = BATdense(0, 0, 0);
-					TRC_DEBUG(ALGO, "b="
-						  ALGOBATFMT ",s="
-						  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-						  " (" LLFMT " usec): "
-						  "nothing, out of range\n",
-						  ALGOBATPAR(b),
-						  ALGOOPTBATPAR(s), anti,
-						  ALGOOPTBATPAR(bn), GDKusec() - t0);
-					bat_iterator_end(&bi);
-					return bn;
-				}
-			}
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -1592,7 +1733,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	BAT *pb;
 	BATiter pbi;
 	if (parent > 0)
-		pb = BBP_cache(parent);
+		pb = BATdescriptor(parent);
 	else
 		pb = NULL;
 	pbi = bat_iterator(pb);
@@ -1601,80 +1742,37 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
 	if (equi) {
-		havehash = BATcheckhash(b);
-		if (havehash) {
-			MT_rwlock_rdlock(&b->thashlock);
-			if (b->thash == NULL) {
-				MT_rwlock_rdunlock(&b->thashlock);
-				havehash = false;
+		double cost = joincost(b, 1, &ci, &havehash, &phash, NULL);
+		if (cost > 0 && cost < ci.ncand) {
+			wanthash = true;
+			if (havehash) {
+				if (phash) {
+					MT_rwlock_rdlock(&pb->thashlock);
+					if (pb->thash == NULL) {
+						MT_rwlock_rdunlock(&pb->thashlock);
+						havehash = false;
+					}
+				} else {
+					MT_rwlock_rdlock(&b->thashlock);
+					if (b->thash == NULL) {
+						MT_rwlock_rdunlock(&b->thashlock);
+						havehash = false;
+					}
+				}
 			}
-		}
-		wanthash = havehash ||
-			((!bi.transient ||
-			  (b->batRole == PERSISTENT && GDKinmemory(0))) &&
-			 ATOMsize(bi.type) >= sizeof(BUN) / 4 &&
-			 bi.count * (ATOMsize(bi.type) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
-		if (!wanthash) {
-			MT_lock_set(&b->theaplock);
-			if (++b->selcnt > 1000) {
-				wanthash = true;
-				b->selcnt = 1000; /* limit value */
+			if (wanthash && !havehash && b->batRole != PERSISTENT) {
+				MT_lock_set(&b->theaplock);
+				if (++b->selcnt > 1000)
+					b->selcnt = 1000; /* limit value */
+				else
+					wanthash = false;
+				MT_lock_unset(&b->theaplock);
 			}
-			MT_lock_unset(&b->theaplock);
-		}
-		if (wanthash && !havehash) {
-			if (bi.unique_est != 0 &&
-			    bi.unique_est < bi.count / no_hash_select_fraction) {
-				/* too many duplicates: not worth it */
-				wanthash = false;
-			}
+		} else {
+			wanthash = havehash = false;
 		}
 	}
 
-	if (equi && !havehash && parent != 0) {
-		/* use parent hash if it already exists and if either
-		 * a quick check shows the value we're looking for
-		 * does not occur, or if it is cheaper to check the
-		 * candidate list for each value in the hash chain
-		 * than to scan (cost for probe is average length of
-		 * hash chain (count divided by #slots) times the cost
-		 * to do a binary search on the candidate list (or 1
-		 * if no need for search)) */
-		if (BATcheckhash(pb)) {
-			MT_rwlock_rdlock(&pb->thashlock);
-			phash = pb->thash != NULL &&
-				(pbi.count == bi.count ||
-				 pbi.count / pb->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : bi.count) ||
-				 HASHget(pb->thash, HASHprobe(pb->thash, tl)) == BUN_NONE);
-			if (phash)
-				havehash = wanthash = true;
-			else
-				MT_rwlock_rdunlock(&pb->thashlock);
-		}
-		/* create a hash on the parent bat (and use it) if it is
-		 * the same size as the view and it is persistent */
-		bool wantphash = false;
-		if (!phash) {
-			MT_lock_set(&pb->theaplock);
-			if (++pb->selcnt > 1000) {
-				wantphash = true;
-				pb->selcnt = 1000;
-			}
-			MT_lock_unset(&pb->theaplock);
-		}
-		if (!phash &&
-		    (!pbi.transient ||
-		     wantphash ||
-		     (pb->batRole == PERSISTENT && GDKinmemory(0))) &&
-		    pbi.count == bi.count &&
-		    BAThash(pb) == GDK_SUCCEED) {
-			MT_rwlock_rdlock(&pb->thashlock);
-			if (pb->thash)
-				havehash = wanthash = phash = true;
-			else
-				MT_rwlock_rdunlock(&pb->thashlock);
-		}
-	}
 	/* at this point, if havehash is set, we have the hash lock
 	 * the lock is on the parent if phash is set, on b itself if not
 	 * also, if havehash is set, then so is wanthash (but not v.v.) */
@@ -1707,8 +1805,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if ((oidxh = b->torderidx) != NULL)
 			HEAPincref(oidxh);
 		MT_lock_unset(&b->batIdxLock);
-		if (oidxh == NULL && parent) {
-			BAT *pb = BBP_cache(parent);
+		if (oidxh == NULL && pb != NULL) {
 			(void) BATcheckorderidx(pb);
 			MT_lock_set(&pb->batIdxLock);
 			if ((oidxh = pb->torderidx) != NULL) {
@@ -1872,6 +1969,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					HEAPdecref(oidxh, false);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&pbi);
+					BBPreclaim(pb);
 					return NULL;
 				}
 
@@ -1913,6 +2011,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 		bat_iterator_end(&bi);
 		bat_iterator_end(&pbi);
+		BBPreclaim(pb);
 		return bn;
 	}
 
@@ -1928,7 +2027,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		} else if (b->thash->nunique == bi.count)
 			estimate = 1;
 	}
-	if (estimate == BUN_NONE && (bi.key || (parent != 0 && BBP_cache(parent)->tkey))) {
+	if (estimate == BUN_NONE && (bi.key || (pb != NULL && pbi.key))) {
 		/* exact result size in special cases */
 		if (equi) {
 			estimate = 1;
@@ -2017,6 +2116,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		bat_iterator_end(&bi);
 		bat_iterator_end(&pbi);
+		BBPreclaim(pb);
 		return NULL;
 	}
 
@@ -2034,9 +2134,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (!equi &&
 		    /* DISABLES CODE */ (0) && imprintable(bi.type) &&
 		    (!bi.transient ||
-		     (parent != 0 &&
-		      pb != NULL &&
-		      !pbi.transient)) &&
+		     (pb != NULL && !pbi.transient)) &&
 		    BATimprints(b) == GDK_SUCCEED) {
 			if (pb != NULL) {
 				MT_lock_set(&pb->batIdxLock);
@@ -2064,6 +2162,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&pbi);
+	BBPreclaim(pb);
 
 	bn = virtualize(bn);
 	MT_thread_setalgorithm(algo);
@@ -2261,6 +2360,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		MT_lock_unset(&l->batIdxLock);
 #if 0 /* needs checking */
 		if (oidxh == NULL && VIEWtparent(l)) {
+/* if enabled, need to fix/unfix parent bat */
 			BAT *pb = BBP_cache(VIEWtparent(l));
 			(void) BATcheckorderidx(pb);
 			MT_lock_set(&pb->batIdxLock);
@@ -2395,11 +2495,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
-	} else if (!anti && !symmetric &&
-		   /* DISABLES CODE */ (0) && imprintable(li.type) &&
+	} else if (/* DISABLES CODE */ (0) &&
+		   !anti && !symmetric &&
+		   imprintable(li.type) &&
 		   (BATcount(rl) > 2 ||
 		    !li.transient ||
 		    (VIEWtparent(l) != 0 &&
+/* if enabled, need to fix/unfix parent bat */
 		     (tmp = BBP_cache(VIEWtparent(l))) != NULL &&
 		     /* batTransient access needs to be protected */
 		     !tmp->batTransient) ||
@@ -2680,7 +2782,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			default:
 				ncnt = BUN_NONE;
 				GDKerror("unsupported type\n");
-				assert(0);
+				MT_UNREACHABLE();
 			}
 			if (ncnt == BUN_NONE) {
 				IMPSdecref(imprints, false);

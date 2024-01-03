@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -47,7 +51,7 @@ typedef struct versionhead  {
 } versionhead ;
 
 typedef struct objectset {
-	int refcnt;
+	ATOMIC_TYPE refcnt;
 	sql_allocator *sa;
 	destroy_fptr destroy;
 	MT_RWLock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
@@ -62,7 +66,8 @@ typedef struct objectset {
 	bool
 		temporary:1,
 		unique:1, /* names are unique */
-		concurrent:1;	/* concurrent inserts are allowed */
+		concurrent:1,	/* concurrent inserts are allowed */
+	    nested:1;
 	sql_store store;
 } objectset;
 
@@ -135,9 +140,9 @@ find_id(objectset *os, sqlid id)
 				return n;
 			}
 		}
+		unlock_reader(os);
 	}
 
-	unlock_reader(os);
 	return NULL;
 }
 
@@ -163,7 +168,7 @@ hash_delete(sql_hash *h, void *data)
 }
 
 static void
-node_destroy(objectset *os, sqlstore *store, versionhead  *n)
+node_destroy_(objectset *os, sqlstore *store, versionhead  *n)
 {
 	if (!os->sa)
 		_DELETE(n);
@@ -392,16 +397,18 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 	bte state = os_atmc_get_state(ov);
 
 	if (state & name_based_versionhead_owner) {
-		node_destroy(ov->os, store, ov->name_based_head);
+		node_destroy_(ov->os, store, ov->name_based_head);
 	}
 
 	if (state & id_based_versionhead_owner) {
-		node_destroy(ov->os, store, ov->id_based_head);
+		node_destroy_(ov->os, store, ov->id_based_head);
 	}
 
-	if (os->destroy)
+	if (os->destroy && ov->b)
 		os->destroy(store, ov->b);
 
+	if (os->temporary && (state & deleted || state & under_destruction || state & rollbacked))
+		os_destroy(os, store); // TODO transaction_layer_revamp: embed into refcounting subproject : reference is already dropped by os_cleanup
 	_DELETE(ov);
 }
 
@@ -496,6 +503,18 @@ os_rollback(objectversion *ov, sqlstore *store)
 	return LOG_OK;
 }
 
+static void
+ov_destroy_obj_recursive(sqlstore* store, objectversion *ov)
+{
+	if (ov->id_based_older && ov->id_based_older == ov->name_based_older) {
+		ov_destroy_obj_recursive(store, ov->id_based_older);
+	}
+	if (ov->os->destroy && ov->b) {
+		ov->os->destroy(store, ov->b);
+		ov->b = NULL;
+	}
+}
+
 static inline void
 try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 {
@@ -521,6 +540,8 @@ try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 		}
 
 		ov->ts = store_get_timestamp(store)+1;
+		if (!ov->os->nested)
+			ov_destroy_obj_recursive(store, ov);
 	}
 }
 
@@ -573,12 +594,16 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 		if (ov->ts <= oldest) {
 			// the oldest relevant state is deleted so lets try to mark it as destroyed
 			try_to_mark_deleted_for_destruction(store, ov);
+			return LOG_OK+1;
 		}
 
 		// Keep it inplace on the cleanup list, either because it is now marked for destruction or
 		// we want to retry marking it for destruction later.
 		return LOG_OK;
 	}
+
+	assert(os_atmc_get_state(ov) != deleted && os_atmc_get_state(ov) != under_destruction && os_atmc_get_state(ov) != rollbacked);
+	if (ov->os->temporary) os_destroy(ov->os, store); // TODO transaction_layer_revamp: embed into refcounting subproject: (old) live versions should drop their reference to the os
 
 	while (ov->id_based_older && ov->id_based_older == ov->name_based_older && ov->ts >= oldest) {
 		ov = ov->id_based_older;
@@ -596,14 +621,14 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 static int
 tc_gc_objectversion(sql_store store, sql_change *change, ulng oldest)
 {
-	assert(!change->handled);
+//	assert(!change->handled);
 	objectversion *ov = (objectversion*)change->data;
 
-	if (oldest && oldest >= TRANSACTION_ID_BASE)
+	if (oldest >= TRANSACTION_ID_BASE)
 		return 0;
 	int res = os_cleanup( (sqlstore*) store, ov, oldest);
 	change->handled = (res)?true:false;
-	return res;
+	return res>=0?LOG_OK:LOG_ERR;
 }
 
 static int
@@ -626,20 +651,24 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store)
+os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store)
 {
+	assert(!sa);
 	objectset *os = SA_NEW(sa, objectset);
-	*os = (objectset) {
-		.refcnt = 1,
-		.sa = sa,
-		.destroy = destroy,
-		.temporary = temporary,
-		.unique = unique,
-		.concurrent = concurrent,
-		.store = store
-	};
-	os->destroy = destroy;
-	MT_rwlock_init(&os->rw_lock, "sa_readers_lock");
+	if (os) {
+		*os = (objectset) {
+			.refcnt = ATOMIC_VAR_INIT(1),
+			.sa = sa,
+			.destroy = destroy,
+			.temporary = temporary,
+			.unique = unique,
+			.concurrent = concurrent,
+			.nested = nested,
+			.store = store
+		};
+		os->destroy = destroy;
+		MT_rwlock_init(&os->rw_lock, "sa_readers_lock");
+	}
 
 	return os;
 }
@@ -647,16 +676,17 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, boo
 objectset *
 os_dup(objectset *os)
 {
-	os->refcnt++;
+	ATOMIC_INC(&os->refcnt);
 	return os;
 }
 
 void
 os_destroy(objectset *os, sql_store store)
 {
-	if (--os->refcnt > 0)
+	if (ATOMIC_DEC(&os->refcnt) > 0)
 		return;
 	MT_rwlock_destroy(&os->rw_lock);
+	ATOMIC_DESTROY(&os->refcnt);
 	versionhead* n=os->id_based_h;
 	while(n) {
 		objectversion *ov = n->ov;
@@ -666,14 +696,14 @@ os_destroy(objectset *os, sql_store store)
 			ov = older;
 		}
 		versionhead* hn =n->next;
-		node_destroy(os, store, n);
+		node_destroy_(os, store, n);
 		n = hn;
 	}
 
 	n=os->name_based_h;
 	while(n) {
 		versionhead* hn =n->next;
-		node_destroy(os, store, n);
+		node_destroy_(os, store, n);
 		n = hn;
 	}
 
@@ -890,8 +920,8 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		return res;
 	}
 
-	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+	if (os->temporary) (void) os_dup(os); // TODO transaction_layer_revamp: embed into refcounting subproject
+	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return res;
 }
 
@@ -993,8 +1023,8 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		return res;
 	}
 
-	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+	if (os->temporary) (void) os_dup(os); // TODO transaction_layer_revamp: embed into refcounting subproject
+	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return res;
 }
 
@@ -1095,6 +1125,7 @@ oi_next(struct os_iter *oi)
 	if (oi->name) {
 		versionhead  *n = oi->n;
 
+		lock_reader(oi->os); /* intentionally outside of while loop */
 		while (n && !b) {
 
 			if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
@@ -1105,24 +1136,23 @@ oi_next(struct os_iter *oi)
 				if (ov && os_atmc_get_state(ov) == active)
 					b = ov->b;
 			} else {
-				lock_reader(oi->os);
 				n = oi->n = n->next;
-				unlock_reader(oi->os);
 			}
 	 	}
+		unlock_reader(oi->os);
 	} else {
 		versionhead  *n = oi->n;
 
+		lock_reader(oi->os); /* intentionally outside of while loop */
 		while (n && !b) {
 			objectversion *ov = n->ov;
-			lock_reader(oi->os);
 			n = oi->n = n->next;
-			unlock_reader(oi->os);
 
 			ov = get_valid_object_id(oi->tr, ov);
 			if (ov && os_atmc_get_state(ov) == active)
 				b = ov->b;
 		}
+		unlock_reader(oi->os);
 	}
 	return b;
 }

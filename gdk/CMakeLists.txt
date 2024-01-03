@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 set(gdk_public_headers
@@ -18,7 +22,6 @@ set(gdk_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_utils.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_cand.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_calc.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_strimps.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_time.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_system.h>
@@ -31,7 +34,6 @@ set(gdk_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_utils.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_calc.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_cand.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_strimps.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_time.h>)
 
 add_library(bat SHARED)
@@ -39,9 +41,13 @@ add_library(bat SHARED)
 target_sources(bat
   PRIVATE
   gdk_select.c
+  gdk_calc_compare_eq.c gdk_calc_compare_ne.c
   gdk_calc.c gdk_calc.h
-  gdk_calc_addsub.c gdk_calc_muldiv.c gdk_calc_convert.c gdk_calc_compare.c
-  gdk_calc_compare.h gdk_calc_private.h
+  gdk_calc_addsub.c gdk_calc_mul.c gdk_calc_div.c gdk_calc_mod.c gdk_calc_convert.c
+  gdk_calc_compare_lt.c gdk_calc_compare_gt.c
+  gdk_calc_compare_le.c gdk_calc_compare_ge.c
+  gdk_calc_compare_generic.c
+  gdk_calc.c gdk_calc.h
   gdk_ssort.c gdk_ssort_impl.h
   gdk_aggr.c
   gdk_batop.c
@@ -77,7 +83,6 @@ target_sources(bat
   gdk_project.c
   gdk_time.c gdk_time.h
   gdk_unique.c
-  gdk_interprocess.c gdk_interprocess.h
   gdk_firstn.c
   gdk_subquery.c gdk_subquery.h
   gdk_analytic_bounds.c
@@ -85,6 +90,7 @@ target_sources(bat
   gdk_analytic_func.c
   gdk_analytic.h
   gdk_tracer.c gdk_tracer.h
+  gdk_rtree.c
   gdk_strimps.c
   PUBLIC
   ${gdk_public_headers})
@@ -94,6 +100,7 @@ target_include_directories(bat
   $<TARGET_PROPERTY:stream,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:matomic,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:mstring,INTERFACE_INCLUDE_DIRECTORIES>
+  $<$<BOOL:${RTREE_FOUND}>:$<TARGET_PROPERTY:rtree::rtree,INTERFACE_INCLUDE_DIRECTORIES>>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
@@ -105,6 +112,7 @@ target_link_libraries(bat
   monetdb_config_header
   moptions
   mutils
+  $<$<BOOL:${RTREE_FOUND}>:rtree::rtree>
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:ws2_32>
   $<$<BOOL:${KVM_FOUND}>:KVM::KVM>
@@ -137,6 +145,7 @@ install(TARGETS
   EXPORT gdkTargets
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT monetdb
   LIBRARY
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
   COMPONENT monetdb
@@ -147,8 +156,7 @@ install(TARGETS
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT monetdbdev
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  COMPONENT monetdbdev)
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(EXPORT gdkTargets
   FILE gdkTargets.cmake

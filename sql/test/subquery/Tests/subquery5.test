@@ -404,7 +404,7 @@ SELECT SUM((SELECT MAX(i1.i + i2.i) FROM integers i2)) FROM integers i1
 ----
 15
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT CORR((SELECT i1.i FROM integers i2), (SELECT SUM(i1.i + i2.i) FROM integers i2)) FROM integers i1
 
 query I rowsort
@@ -441,10 +441,10 @@ query I rowsort
 SELECT MAX(i1.i) FROM integers i1 HAVING (VALUES((AVG(i1.i))) EXCEPT VALUES(AVG(i1.i))) <> 0
 ----
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 SELECT (VALUES(SUM(i1.i)) UNION VALUES(AVG(i1.i))) FROM integers i1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 SELECT ((SELECT SUM(i1.i)) UNION ALL (SELECT AVG(i1.i))) FROM integers i1
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function

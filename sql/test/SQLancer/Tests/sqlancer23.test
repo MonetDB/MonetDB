@@ -168,7 +168,7 @@ SELECT 1 FROM t0 GROUP BY t0.c0 HAVING max(FALSE) IS NULL
 ----
 
 # Postgres doesn't give an error here, but we are confident it must
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 SELECT 1 FROM t0 CROSS JOIN LATERAL (SELECT (VALUES (y.y), (y.y)) FROM (SELECT 1) y(y) WHERE t0.c0 = 2) x(x)
 
 statement ok
@@ -195,10 +195,10 @@ SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 statement error 21000!Cardinality violation, scalar value expected
 SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: selectjoin: more than one match
 SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
 
 statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
@@ -246,3 +246,4 @@ SELECT (SELECT 1 WHERE count(*) = 1)
 query I nosort
 SELECT 1 WHERE 0.8574837 < 0.6612825109479848
 ----
+

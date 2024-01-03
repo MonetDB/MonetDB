@@ -51,7 +51,7 @@ f:= json.text(b,",")
 query T rowsort
 io.print(f)
 ----
-"1,2,3"
+"3,2"
 
 statement ok
 b:= json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4], \"f3\":true}")

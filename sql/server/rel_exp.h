@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _REL_EXP_H_
@@ -48,7 +52,7 @@ extern sql_exp *exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char 
 #define exp_totype(e)	((list*)e->r)->h->next->data
 extern sql_exp *exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype );
 sql_export str number2name(str s, int len, int i);
-extern sql_exp *exp_op(sql_allocator *sa, list *l, sql_subfunc *f );
+sql_export sql_exp *exp_op(sql_allocator *sa, list *l, sql_subfunc *f );
 extern sql_exp *exp_rank_op(sql_allocator *sa, list *largs, list *gbe, list *obe, sql_subfunc *f );
 
 #define append(l,v) list_append(l,v)
@@ -72,17 +76,17 @@ extern sql_exp * exp_atom_max(sql_allocator *sa, sql_subtype *tpe);
 extern sql_exp * exp_atom_bool(sql_allocator *sa, int b);
 extern sql_exp * exp_atom_bte(sql_allocator *sa, bte i);
 extern sql_exp * exp_atom_sht(sql_allocator *sa, sht i);
-extern sql_exp * exp_atom_int(sql_allocator *sa, int i);
-extern sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
+sql_export sql_exp * exp_atom_int(sql_allocator *sa, int i);
+sql_export sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
 extern sql_exp *exp_atom_oid(sql_allocator *sa, oid i);
 #ifdef HAVE_HGE
 extern sql_exp * exp_atom_hge(sql_allocator *sa, hge l);
 #endif
 extern sql_exp * exp_atom_flt(sql_allocator *sa, flt f);
 extern sql_exp * exp_atom_dbl(sql_allocator *sa, dbl d);
-extern sql_exp * exp_atom_str(sql_allocator *sa, const char *s, sql_subtype *st);
+sql_export sql_exp * exp_atom_str(sql_allocator *sa, const char *s, sql_subtype *st);
 extern sql_exp * exp_atom_clob(sql_allocator *sa, const char *s);
-extern sql_exp * exp_atom_ptr(sql_allocator *sa, void *s);
+sql_export sql_exp * exp_atom_ptr(sql_allocator *sa, void *s);
 extern sql_exp * exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe);
 extern sql_exp * exp_null(sql_allocator *sa, sql_subtype *tpe);
 extern sql_exp * exp_zero(sql_allocator *sa, sql_subtype *tpe); /* Apply it to numeric types only obviously */
@@ -143,6 +147,7 @@ extern int exp_refers( sql_exp *p, sql_exp *c);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern sql_exp* exps_find_exp( list *l, sql_exp *e);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
+extern int exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics);
 extern sql_exp* exps_any_match(list *l, sql_exp *e);
 /* match just the column (cmp equality) expressions */
 extern int exp_match_col_exps( sql_exp *e, list *l);
@@ -204,7 +209,6 @@ extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
 
 extern int exp_aggr_is_count(sql_exp *e);
 extern list *check_distinct_exp_names(mvc *sql, list *exps);
-extern void exps_reset_freevar(list *exps);
 
 extern sql_exp *exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
 extern int rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast);

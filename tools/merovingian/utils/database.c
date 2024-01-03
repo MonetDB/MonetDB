@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* NOTE: for this file to work correctly, msab_init must be called. */
@@ -256,8 +260,8 @@ char* db_rename(const char *olddb, const char *newdb) {
 char* db_lock(const char *dbname) {
 	char *e;
 	sabdb *stats;
-	char path[8096];
-	char buf[8096];
+	char path[FILENAME_MAX];
+	char buf[sizeof(path) + 512];
 	FILE *f;
 
 	/* the argument is the database to take under maintenance, see
@@ -296,8 +300,8 @@ char* db_lock(const char *dbname) {
 char *db_release(const char *dbname) {
 	char *e;
 	sabdb *stats;
-	char path[8096];
-	char buf[8096];
+	char path[FILENAME_MAX];
+	char buf[sizeof(path) + 512];
 
 	/* the argument is the database to take under maintenance, see
 	 * what Sabaoth can tell us about it */

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -71,6 +75,14 @@ MFconnectionManager(void *d)
 #endif
 
 	(void)d;
+
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 
 	while (_mero_keep_listening == 1) {
 #ifdef HAVE_POLL
@@ -711,6 +723,14 @@ multiplexThread(void *d)
 	ssize_t len;
 	int r, i;
 	dpair p, q;
+
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 
 	/* select on upstream clients, on new data, read query, forward,
 	 * union all results, send back, and restart cycle. */

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -58,10 +62,10 @@ main(int argc, char **argv)
 #endif
 {
 	int port = 0;
-	char *user = NULL;
-	char *passwd = NULL;
-	char *host = NULL;
-	char *dbname = NULL;
+	const char *user = NULL;
+	const char *passwd = NULL;
+	const char *host = NULL;
+	const char *dbname = NULL;
 	DotMonetdb dotfile = {0};
 	bool trace = false;
 	bool describe = false;
@@ -106,18 +110,16 @@ main(int argc, char **argv)
 #endif
 
 	parse_dotmonetdb(&dotfile);
-        user = dotfile.user;
-        passwd = dotfile.passwd;
-        dbname = dotfile.dbname;
+	user = dotfile.user;
+	passwd = dotfile.passwd;
+	dbname = dotfile.dbname;
 	host = dotfile.host;
 	port = dotfile.port;
 
 	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NeXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
-			if (user)
-				free(user);
-			user = strdup(optarg);
+			user = optarg;
 			user_set_as_flag = true;
 			break;
 		case 'h':
@@ -128,9 +130,7 @@ main(int argc, char **argv)
 			port = atoi(optarg);
 			break;
 		case 'd':
-			if (dbname)
-				free(dbname);
-			dbname = strdup(optarg);
+			dbname = optarg;
 			break;
 		case 'D':
 			describe = true;
@@ -168,6 +168,7 @@ main(int argc, char **argv)
 				printf(" (hg id: %s)", rev);
 #endif
 			printf("\n");
+			destroy_dotmonetdb(&dotfile);
 			return 0;
 		}
 		case '?':
@@ -181,7 +182,7 @@ main(int argc, char **argv)
 	}
 
 	if (optind == argc - 1)
-		dbname = strdup(argv[optind]);
+		dbname = argv[optind];
 	else if (optind != argc)
 		usage(argv[0], -1);
 
@@ -193,20 +194,35 @@ main(int argc, char **argv)
 		printf("msqldump, please specify a database\n");
 		usage(argv[0], -1);
 	}
-	if (user == NULL)
-		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-	if (passwd == NULL)
-		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
+	char *user_allocated = NULL;
+	if (user == NULL) {
+		user_allocated = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+		user = user_allocated;
+	}
+	char *passwd_allocated = NULL;
+	if (passwd == NULL) {
+		passwd_allocated = simple_prompt("password", BUFSIZ, 0, NULL);
+		passwd = passwd_allocated;
+	}
 
-	mid = mapi_mapi(host, port, user, passwd, "sql", dbname);
-	if (user)
-		free(user);
-	if (passwd)
-		free(passwd);
-	if (dbname)
-		free(dbname);
+	if (dbname != NULL && strchr(dbname, ':') != NULL) {
+		mid = mapi_mapiuri(dbname, user, passwd, "sql");
+	} else {
+		mid = mapi_mapi(host, port, user, passwd, "sql", dbname);
+	}
+	free(user_allocated);
+	user_allocated = NULL;
+	free(passwd_allocated);
+	passwd_allocated = NULL;
+	user = NULL;
+	passwd = NULL;
+	dbname = NULL;
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
+		exit(2);
+	}
+	if (mapi_error(mid)) {
+		mapi_explain(mid, stderr);
 		exit(2);
 	}
 	mapi_set_time_zone(mid, 0);
@@ -276,12 +292,13 @@ main(int argc, char **argv)
 
 	mapi_destroy(mid);
 	if (mnstr_errnr(out) != MNSTR_NO__ERROR) {
-		char *err = mnstr_error(out);
-		fprintf(stderr, "%s: %s\n", argv[0], err);
-		free(err);
-		return 1;
+		fprintf(stderr, "%s: %s\n", argv[0], mnstr_peek_error(out));
+		c = 1;
 	}
 
 	mnstr_destroy(out);
+
+	destroy_dotmonetdb(&dotfile);
+
 	return c;
 }

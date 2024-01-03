@@ -20,10 +20,10 @@ project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
-query R nosort
+query I nosort
 select 2.0 ^ 3.0 
 ----
-1.000
+1
 
 statement error
 select |/ 25.0 
@@ -300,24 +300,8 @@ select power(2, 5), power(2, 31)
 32.000
 2147483648.000
 
-query RR nosort
--- select rand()
-----
-32.000
-2147483648.000
-
 query I nosort
 select 2144156907 / 2147483648
-----
-0
-
-query I nosort
--- select rand() / 2147483648
-----
-0
-
-query I nosort
--- select cast(rand() as float) / 2147483648
 ----
 0
 
@@ -329,24 +313,9 @@ project (
 ) [ "sys"."sql_div"(double(53)["sys"."rand"()], double(53) "2147483648") ]
 
 query I nosort
-select rand(0)
+select rand(-5) >= 0
 ----
-1868859049
-
-query I nosort
-select rand(1)
-----
-847553797
-
-query I nosort
-select rand(2)
-----
-543032001
-
-query I nosort
-select rand(-5)
-----
-1345532277
+1
 
 statement error
 select random()
@@ -462,8 +431,10 @@ select asin(1.0), atan(1), atan(0.5), atan(1.0, 2.0)
 0.464
 0.464
 
-statement error
+query R nosort
 select atan2(1.0, 2.0)
+-----
+0.464
 
 query RRR nosort
 select cos(12.2), cosh(3.0), cot(16.0)

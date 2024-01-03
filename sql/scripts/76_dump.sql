@@ -1,8 +1,12 @@
+-- SPDX-License-Identifier: MPL-2.0
+--
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+-- Copyright 2024 MonetDB Foundation;
+-- Copyright August 2008 - 2023 MonetDB B.V.;
+-- Copyright 1997 - July 2008 CWI.
 
 CREATE VIEW sys.dump_create_roles AS
   SELECT
@@ -283,7 +287,7 @@ BEGIN
           SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));
           SET SELECT_DATA_STMT = (SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype));
         END WHILE;
-        SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
+        SET COPY_INTO_STMT = (COPY_INTO_STMT || R') FROM STDIN USING DELIMITERS ''|'',E''\n'',''"'';');
         SET SELECT_DATA_STMT = (SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl));
         INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
         CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');
@@ -350,7 +354,7 @@ BEGIN
   INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
 
   --TODO Improve performance of dump_table_data.
-  --TODO loaders ,procedures, window and filter sys.functions.
+  --TODO loaders, procedures, window and filter sys.functions.
   --TODO look into order dependent group_concat
 
   INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');

@@ -1,0 +1,92 @@
+statement ok
+create table foo_p1 (n int, m text)
+
+statement ok
+insert into foo_p1 values (1, 'hello'), (2, 'world'), (3, '!!')
+
+statement ok
+create remote table foo_p2 (n int, m text) on 'mapi:monetdb://localhost:50002/node2'
+
+statement ok
+create remote table foo_p3 (n int, m text) on 'mapi:monetdb://localhost:50003/node3'
+
+statement ok
+create merge table foo_merge (n int, m text)
+
+statement ok
+alter table foo_merge add table foo_p1
+
+statement ok
+alter table foo_merge add table foo_p2
+
+statement ok
+alter table foo_merge add table foo_p3
+
+# create members_rpl with members LOCAL and members_rmt REMOTE
+
+statement ok
+create table members_n1 (n int, m text)
+
+statement ok
+insert into members_n1 values (1, 'alice'), (2, 'bob')
+
+statement ok
+create remote table members_n2 (n int, m text) on 'mapi:monetdb://localhost:50002/node2'
+
+statement ok
+create remote table members_n3 (n int, m text) on 'mapi:monetdb://localhost:50003/node3'
+
+statement ok
+create replica table members_rpl (n int, m text)
+
+statement ok
+alter table members_rpl add table members_n1
+
+statement ok
+alter table members_rpl add table members_n2
+
+statement ok
+alter table members_rpl add table members_n3
+
+# this statement is so to have the UNIQUE property for the foo_p1 plan
+# of the merge. It is not there the first time we execute the plan so
+# the next query-test will fail without this statement
+
+statement ok
+select * from foo_p1
+
+# check that the plan is executing the join of the remote part of the
+# merge table with the remote part of the replica and then transfers the
+# result in the master node (hint: the remote plan is wrapped around a
+# 'table' returning relational operator)
+
+query T nosort
+plan select * from foo_merge, members_rpl
+----
+union (
+| union (
+| | project (
+| | | crossproduct (
+| | | | table("sys"."foo_p1") [ "foo_p1"."n" UNIQUE as "foo_merge"."n", "foo_p1"."m" as "foo_merge"."m" ],
+| | | | table("sys"."members_n1") [ "members_n1"."n" UNIQUE as "members_rpl"."n", "members_n1"."m" UNIQUE as "members_rpl"."m", "members_n1"."%TID%" NOT NULL UNIQUE as "members_rpl"."%TID%" ]
+| | | ) [  ]
+| | ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ],
+| | table (
+| | | project (
+| | | | crossproduct (
+| | | | | REMOTE("sys"."foo_p2") [ "foo_p2"."n" as "foo_merge"."n", "foo_p2"."m" as "foo_merge"."m" ],
+| | | | | REMOTE("sys"."members_n2") [ "members_n2"."n" as "members_rpl"."n", "members_n2"."m" as "members_rpl"."m", "members_n2"."%TID%" NOT NULL UNIQUE as "members_rpl"."%TID%" ]
+| | | | ) [  ]
+| | | ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ] REMOTE mapi:monetdb://localhost:50002/node2
+| | ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ]
+| ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ],
+| table (
+| | project (
+| | | crossproduct (
+| | | | REMOTE("sys"."foo_p3") [ "foo_p3"."n" as "foo_merge"."n", "foo_p3"."m" as "foo_merge"."m" ],
+| | | | REMOTE("sys"."members_n3") [ "members_n3"."n" as "members_rpl"."n", "members_n3"."m" as "members_rpl"."m", "members_n3"."%TID%" NOT NULL UNIQUE as "members_rpl"."%TID%" ]
+| | | ) [  ]
+| | ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ] REMOTE mapi:monetdb://localhost:50003/node3
+| ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ]
+) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ]
+

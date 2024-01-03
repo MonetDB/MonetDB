@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -69,7 +73,8 @@
  */
 
 static str
-SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 
 	bat *r, *b;
 	lng sample_size;
@@ -85,19 +90,18 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL, "sample.subuniform", INTERNAL_BAT_ACCESS);
 	}
 
-	if (getArgType(mb, pci, 2) == TYPE_dbl)
-	{
+	if (getArgType(mb, pci, 2) == TYPE_dbl) {
 		dbl pr = *getArgReference_dbl(stk, pci, 2);
 
-		if ( pr < 0.0 || pr > 1.0 ) {
+		if (pr < 0.0 || pr > 1.0) {
 			BBPunfix(bb->batCacheid);
 			throw(MAL, "sample.subuniform", ILLEGAL_ARGUMENT
-					" p should be between 0 and 1.0" );
-		} else if (pr == 0) {/* special case */
+				  " p should be between 0 and 1.0");
+		} else if (pr == 0) {	/* special case */
 			sample_size = 0;
 			// TODO: Add special case for pr == 1.0.
 		} else {
-			sample_size = (lng) (pr*(double)BATcount(bb));
+			sample_size = (lng) (pr * (double) BATcount(bb));
 		}
 	} else {
 		sample_size = *getArgReference_lng(stk, pci, 2);
@@ -106,8 +110,7 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if (pci->argc == 4) {
 		seed = (unsigned) *getArgReference_int(stk, pci, 3);
 		br = BATsample_with_seed(bb, (BUN) sample_size, seed);
-	}
-	else {
+	} else {
 		br = BATsample(bb, (BUN) sample_size);
 	}
 

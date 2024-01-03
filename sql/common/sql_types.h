@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef SQL_TYPES_H
@@ -32,10 +36,10 @@ extern char *sql_bind_alias(const char *alias);
 
 extern sql_subtype *arg_type( sql_arg *a);
 
-extern int sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsigned int scale);
+sql_export int sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsigned int scale);
 extern sql_subtype *sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits);
 
-extern sql_subtype *sql_bind_subtype(sql_allocator *sa, const char *name, unsigned int digits, unsigned int scale);
+sql_export sql_subtype *sql_bind_subtype(sql_allocator *sa, const char *name, unsigned int digits, unsigned int scale);
 extern sql_subtype *sql_bind_localtype(const char *name);
 extern sql_subtype *sql_create_subtype(sql_allocator *sa, sql_type *t, unsigned int s, unsigned int d);
 sql_export void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale);
