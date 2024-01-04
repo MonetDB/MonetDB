@@ -404,44 +404,15 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		int scale_diff = ((int) ct->scale - (int) et->scale);
 
 		if (scale_diff) {
-			sql_subtype *it = sql_bind_localtype(et->type->impl);
-			sql_subfunc *c = NULL;
-			bool swapped = false;
-
 			if (scale_diff < 0) {
 				if (!both)
 					return e;
-				sql_subtype st;
-				int scale = ct->scale;
-				int digits = et->digits+scale;
-				(void)sql_find_subtype(&st, ct->type->base.name, digits, scale);
-				return exp_convert(sql->sa, e, et, &st);
-				c = sql_bind_func(sql, "sys", "scale_down", et, it, F_FUNC, true, true);
-			} else {
-				sql_subtype st;
-				int scale = ct->scale;
-				int digits = et->digits+scale;
-				(void)sql_find_subtype(&st, ct->type->base.name, digits, scale);
-				return exp_convert(sql->sa, e, et, &st);
-				if (!(c = sql_bind_func(sql, "sys", "scale_up", et, it, F_FUNC, true, true))) {
-					if ((c = sql_bind_func(sql, "sys", "scale_up", it, et, F_FUNC, true, true)))
-						swapped = true;
-				}
 			}
-			if (c) {
-#ifdef HAVE_HGE
-				hge val = scale2value(scale_diff);
-#else
-				lng val = scale2value(scale_diff);
-#endif
-				sql_exp *atom_exp = exp_atom(sql->sa, atom_int(sql->sa, it, val));
-				sql_subtype *res = c->res->h->data;
-
-				res->scale = (et->scale + scale_diff);
-				return exp_binop(sql->sa, swapped ? atom_exp : e, swapped ? e : atom_exp, c);
-			} else {
-				TRC_CRITICAL(SQL_PARSER, "scale_down/up missing (%s)\n", et->type->base.name);
-			}
+			sql_subtype st;
+			int scale = ct->scale;
+			int digits = et->digits-et->scale+scale;
+			(void)sql_find_subtype(&st, ct->type->base.name, digits, scale);
+			return exp_convert(sql->sa, e, et, &st);
 		}
 	} else if (always && et->scale) {	/* scale down */
 		int scale_diff = -(int) et->scale;
@@ -523,7 +494,7 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 			ntp = res;
 		} else if (t && ntp->scale == 0 && ntp->type->eclass == EC_DEC) {
 			ntp = sql_create_subtype(sql->sa, a->type.type, t->type->eclass == EC_NUM?bits2digits(t->digits):t->digits, t->scale);
-		} else if (sf->func->fix_scale != SCALE_EQ && t->type == ntp->type) {
+		} else if (t->type == ntp->type) {
 			ntp = t;
 		}
 		if (!(e = exp_check_type(sql, ntp, rel, e, type_equal)))
