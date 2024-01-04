@@ -50,7 +50,7 @@ returns bool external name json.isvalid;
 GRANT EXECUTE ON FUNCTION json.isvalid(string) TO PUBLIC;
 
 create function json.isvalid(js json)
-returns bool begin return true; end;
+returns bool begin return case when js is NULL then NULL else true end; end;
 GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;
 
 create function json.isobject(js json)
