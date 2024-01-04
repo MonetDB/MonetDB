@@ -307,14 +307,40 @@ static int
 socket_getoob(const stream *s)
 {
 	SOCKET fd = s->stream_data.s;
+#ifdef HAVE_POLL
 	struct pollfd pfd = (struct pollfd) {
 		.fd = fd,
 		.events = POLLPRI,
 	};
-	if (poll(&pfd, 1, 0) > 0) {
+	if (poll(&pfd, 1, 0) > 0)
+#else
+	fd_set fds;
+	struct timeval t = (struct timeval) {
+		.tv_sec = 0,
+		.tv_usec = 0,
+	};
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+	if (select(
+#ifdef _MSC_VER
+			0,	/* ignored on Windows */
+#else
+			fd + 1,
+#endif
+			NULL, NULL, &fds, &t) > 0)
+#endif
+	{
 		char b = 0;
-		recv(fd, &b, 1, MSG_OOB);
-		return b;
+		switch (recv(fd, &b, 1, MSG_OOB)) {
+		case 0:
+			/* unexpectedly didn't receive a byte */
+			break;
+		case 1:
+			return b;
+		case -1:
+			perror("recv OOB");
+			return -1;
+		}
 	}
 	return 0;
 }
