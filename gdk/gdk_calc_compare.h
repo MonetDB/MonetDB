@@ -67,7 +67,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 				}
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		break;
 	}
 	case TYPE_bit:
@@ -668,7 +668,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 					}
 				}
 			}
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		} else if (tp2 == TYPE_oid) {
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(oid, oid, TPE, OP);
@@ -708,7 +708,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 				dst[k] = OP(x, 0);
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		break;
 	default:
 		if (tp1 != tp2 ||
@@ -767,7 +767,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 				dst[k] = OP(x, 0);
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		break;
 	}
 

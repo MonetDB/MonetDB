@@ -48,7 +48,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
@@ -65,7 +65,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -103,7 +103,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] + rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
@@ -122,7 +122,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] + rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -1469,7 +1469,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 		}
 	}
 	TIMEOUT_CHECK(qry_ctx,
-		      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	GDKfree(s);
 	bn->theap->dirty = true;
 	return nils;
@@ -1792,7 +1792,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
@@ -1809,7 +1809,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -1847,7 +1847,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] - rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
@@ -1866,7 +1866,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] - rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }

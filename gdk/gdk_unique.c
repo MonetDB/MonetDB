@@ -133,7 +133,7 @@ BATunique(BAT *b, BAT *s)
 			}
 		}
 		TIMEOUT_CHECK(qry_ctx,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (ATOMbasetype(bi.type) == TYPE_sht ||
 		   (bi.width == 2 &&
 		    ATOMstorage(bi.type) == TYPE_str &&
@@ -159,7 +159,7 @@ BATunique(BAT *b, BAT *s)
 			}
 		}
 		TIMEOUT_CHECK(qry_ctx,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
 		algomsg = "unique: sorted";
@@ -173,7 +173,7 @@ BATunique(BAT *b, BAT *s)
 			prev = v;
 		}
 		TIMEOUT_CHECK(qry_ctx,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (BATcheckhash(b) ||
 		   ((!bi.transient ||
 		     (b->batRole == PERSISTENT && GDKinmemory(0))) &&
@@ -218,7 +218,7 @@ BATunique(BAT *b, BAT *s)
 		}
 		MT_rwlock_rdunlock(&b->thashlock);
 		TIMEOUT_CHECK(qry_ctx,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else {
 		BUN prb;
 		BUN p;
@@ -275,7 +275,7 @@ BATunique(BAT *b, BAT *s)
 			}
 		}
 		TIMEOUT_CHECK(qry_ctx,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);

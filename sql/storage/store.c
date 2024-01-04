@@ -2688,7 +2688,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char command;
 	long size;
 	while (sscanf(p, "%c %ld %100s\n%n", &command, &size, src_name, &len) == 3) {
-		GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(end));
+		GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(end, qry_ctx));
 		p += len;
 		strcpy(dest_name, src_name);
 		if (size < 0) {

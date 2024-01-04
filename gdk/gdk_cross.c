@@ -94,7 +94,7 @@ BATcrossci(BAT **r1p, BAT **r2p, struct canditer *ci1, struct canditer *ci2)
 		bn1->tnonil = true;
 		p = (oid *) Tloc(bn1, 0);
 		for (i = 0; i < ci1->ncand; i++) {
-			GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			oid x = canditer_next(ci1);
 			for (j = 0; j < ci2->ncand; j++) {
 				*p++ = x;
@@ -111,7 +111,7 @@ BATcrossci(BAT **r1p, BAT **r2p, struct canditer *ci1, struct canditer *ci2)
 			bn2->tnonil = true;
 			p = (oid *) Tloc(bn2, 0);
 			for (i = 0; i < ci1->ncand; i++) {
-				GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 				for (j = 0; j < ci2->ncand; j++) {
 					*p++ = canditer_next(ci2);
 				}

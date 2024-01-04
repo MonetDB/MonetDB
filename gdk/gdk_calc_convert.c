@@ -142,7 +142,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				dst[i] = (TYPE2) v / div;		\
 		}							\
 	}								\
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));		\
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));	\
 	return nils;							\
 }
 
@@ -190,7 +190,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
@@ -203,7 +203,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -233,7 +233,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
@@ -247,7 +247,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -359,7 +359,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			}						\
 		}							\
 	}								\
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));		\
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));	\
 	return nils;							\
 }
 
@@ -403,7 +403,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
@@ -423,7 +423,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -449,7 +449,7 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 			} else						\
 				dst[i] = (bit) (src[x] != 0);		\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
@@ -459,7 +459,7 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 			} else						\
 				dst[i] = (bit) (src[x] != 0);		\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -487,7 +487,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			}						\
 			dst[i] = mask;					\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		cnt = ci->ncand % 32;					\
 		if (cnt > 0) {						\
 			mask = 0;					\
@@ -506,7 +506,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			}						\
 			dst[i] = mask;					\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		cnt = ci->ncand % 32;					\
 		if (cnt > 0) {						\
 			mask = 0;					\
@@ -559,7 +559,7 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 			oid x = canditer_next(ci) - candoff;		\
 			dst[k] = (TYPE) ((src[x / 32] & (1U << (x % 32))) != 0); \
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -740,7 +740,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 		}
 	}
 	GDKfree(dst);
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
@@ -783,7 +783,7 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 		}
 	}
 	GDKfree(dst);
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
@@ -826,7 +826,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 				mask = 0;
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		if (j > 0)
 			*d = mask;
 		return 0;
@@ -850,7 +850,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		}
 		dst = (void *) ((char *) dst + len);
 	}
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	return nils;
 
   conversion_failed:
@@ -978,7 +978,7 @@ convert_void_any(oid seq, BAT *bn,
 	default:
 		return BUN_NONE + 1;
 	}
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 
 	bn->theap->dirty = true;
 	return nils;

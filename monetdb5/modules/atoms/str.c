@@ -5112,7 +5112,7 @@ STRasciify(str *r, const str *s)
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
 					vals[cnt++] = p;									\
@@ -5120,7 +5120,7 @@ STRasciify(str *r, const str *s)
 		} else {														\
 			for (; p < ncands; p++) {									\
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
@@ -5139,7 +5139,7 @@ STRasciify(str *r, const str *s)
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
 					vals[cnt++] = p;									\
@@ -5147,7 +5147,7 @@ STRasciify(str *r, const str *s)
 		} else {														\
 			for (; p < ncands; p++) {									\
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
@@ -5366,7 +5366,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
 			BAT *filtered_sl = NULL;									\
-			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
+			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
 			rlen = STR_LEN;												\
@@ -5439,7 +5439,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define str_antijoin_loop(STRCMP, STR_LEN)								\
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
-			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
+			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
 			rlen = STR_LEN;												\

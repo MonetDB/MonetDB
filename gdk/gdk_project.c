@@ -61,7 +61,7 @@ project1_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 			bt[lo] = r1t[o - r1seq];			\
 		}							\
 	}								\
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL));		\
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL, qry_ctx));	\
 	BATsetcount(bn, lo);						\
 	return GDK_SUCCEED;						\
 }
@@ -155,7 +155,7 @@ project_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 			}						\
 		}							\
 	}								\
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL));		\
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL, qry_ctx));	\
 	BATsetcount(bn, lo);						\
 	return GDK_SUCCEED;						\
 }
@@ -281,7 +281,7 @@ project_oid(BAT *restrict bn, BATiter *restrict li,
 			}
 		}
 	}
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL, qry_ctx));
 	BATsetcount(bn, lo);
 	return GDK_SUCCEED;
   nomatch:
@@ -360,7 +360,7 @@ project_any(BAT *restrict bn, BATiter *restrict li,
 			}
 		}
 	}
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL, qry_ctx));
 	BATsetcount(bn, lo);
 	bn->theap->dirty = true;
 	return GDK_SUCCEED;
@@ -565,7 +565,7 @@ project_str(BATiter *restrict li, struct canditer *restrict ci, int tpe,
 			}
 		}
 	}
-	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	BATsetcount(bn, lo);
 	bn->tsorted = bn->trevsorted = false;
 	bn->tnil = false;
@@ -1131,7 +1131,7 @@ BATprojectchain(BAT **bats)
 		n++;		/* undo for debug print */
 	}
 	bat_iterator_end(&bi);
-	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	BATsetcount(bn, ba[0].cnt);
 	bn->tsorted = (ba[0].cnt <= 1) | issorted;
 	bn->trevsorted = ba[0].cnt <= 1;

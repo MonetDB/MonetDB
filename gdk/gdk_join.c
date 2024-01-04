@@ -443,7 +443,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		}
 		do {
 			GDK_CHECK_TIMEOUT(qry_ctx, counter,
-					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+					  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -475,7 +475,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 
 			do {
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,
-						  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+						  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 				for (p = 0; p < q; p++) {
 					*o1p++ = o;
 				}
@@ -491,7 +491,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 
 			do {
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,
-						  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+						  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 				for (p = 0; p < q; p++) {
 					*o1p++ = o;
 				}
@@ -938,7 +938,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			}
 		}
 		TIMEOUT_CHECK(qry_ctx,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	} else {
 		BATiter li = bat_iterator(l);
 		const oid *lvals = (const oid *) li.base;
@@ -971,7 +971,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		}
 		bat_iterator_end(&li);
 		TIMEOUT_CHECK(qry_ctx,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	}
 	r1->tsorted = true;
 	r1->trevsorted = BATcount(r1) <= 1;
@@ -1102,7 +1102,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	while (lstart < lend && rstart < rend) {
 		GDK_CHECK_TIMEOUT(qry_ctx, counter,
-				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 
 		v = rvals[rstart];
 
@@ -1417,7 +1417,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	while (lstart < lend && rstart < rend) {
 		GDK_CHECK_TIMEOUT(qry_ctx, counter,
-				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
@@ -1734,7 +1734,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	while (lstart < lend && rci.next < rci.ncand) {
 		GDK_CHECK_TIMEOUT(qry_ctx, counter,
-				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		v = canditer_peek(&rci);
 
 		if (lvals) {
@@ -2162,7 +2162,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	 */
 	while (lci->next < lci->ncand) {
 		GDK_CHECK_TIMEOUT(qry_ctx, counter,
-				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		bit mark = defmark;
 		if (lscan == 0) {
 			/* always search r completely */
@@ -2790,7 +2790,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		TYPE *lvals = li.base;					\
 		TYPE v;							\
 		while (lci->next < lci->ncand) {			\
-			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			lo = canditer_next(lci);			\
 			v = lvals[lo - l->hseqbase];			\
 			nr = 0;						\
@@ -3123,7 +3123,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	default:
 		while (lci->next < lci->ncand) {
 			GDK_CHECK_TIMEOUT(qry_ctx, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			lo = canditer_next(lci);
 			if (BATtdensebi(&li))
 				lval = lo - l->hseqbase + l->tseqbase;
@@ -3835,7 +3835,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 				nr++;
 			}
 			TIMEOUT_CHECK(qry_ctx,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		}
 		if (nr > 1) {
 			r1->tkey = false;
@@ -4759,7 +4759,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	/* nested loop implementation for band join */
 	for (BUN lidx = 0; lidx < lci.ncand; lidx++) {
 		GDK_CHECK_TIMEOUT(qry_ctx, counter,
-				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		lo = canditer_next(&lci);
 		vl = FVALUE(l, lo - l->hseqbase);
 		if (cmp(vl, nil) == 0)

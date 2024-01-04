@@ -50,7 +50,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
@@ -69,7 +69,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -111,7 +111,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
@@ -135,7 +135,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -176,7 +176,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
@@ -200,7 +200,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(					\
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }

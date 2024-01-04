@@ -679,7 +679,7 @@ BAThashsave(BAT *b, bool dosync)
 			o = canditer_next(ci);				\
 		}							\
 		TIMEOUT_CHECK(qry_ctx,					\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
@@ -705,7 +705,7 @@ BAThashsave(BAT *b, bool dosync)
 			p++;						\
 		}							\
 		TIMEOUT_CHECK(qry_ctx,					\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 /* Internal function to create a hash table for the given BAT b.
@@ -884,7 +884,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 				o = canditer_next(ci);
 			}
 			TIMEOUT_CHECK(qry_ctx,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			break;
 		}
 		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
@@ -955,7 +955,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			p++;
 		}
 		TIMEOUT_CHECK(qry_ctx,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		break;
 	}
 	bat_iterator_end(&bi);

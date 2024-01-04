@@ -366,7 +366,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 			}						\
 		}							\
 		TIMEOUT_CHECK(qry_ctx,					\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 #define UNARY_2TYPE_FUNC_nilcheck(TYPE1, TYPE2, FUNC, on_overflow)	\
@@ -386,7 +386,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 			}						\
 		}							\
 		TIMEOUT_CHECK(qry_ctx,					\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 #define BINARY_3TYPE_FUNC(TYPE1, TYPE2, TYPE3, FUNC)			\
@@ -407,7 +407,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
 			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
@@ -423,7 +423,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -447,7 +447,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 						on_overflow;		\
 				}					\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
 			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
@@ -465,7 +465,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 						on_overflow;		\
 				}					\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -488,7 +488,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
 			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
@@ -503,7 +503,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -520,7 +520,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
 			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
@@ -531,7 +531,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -550,7 +550,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 				if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
 					on_overflow;			\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
 			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
@@ -563,7 +563,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 				if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
 					on_overflow;			\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -592,7 +592,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
 			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
@@ -615,7 +615,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 

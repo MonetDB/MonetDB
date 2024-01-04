@@ -834,7 +834,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		}
 		canditer_reset(ci);
-		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
@@ -882,7 +882,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 
 			single_str[offset] = '\0';
-			TIMEOUT_CHECK(qry_ctx, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout); } while (0));
+			TIMEOUT_CHECK(qry_ctx, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx); } while (0));
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
 					GDKfree(single_str);
@@ -971,7 +971,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(finish));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(finish, qry_ctx));
 
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
@@ -1043,7 +1043,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(finish));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(finish, qry_ctx));
 
 		for (i = 0; i < ngrp; i++) {
 			if (astrings[i]) {

@@ -307,7 +307,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			r++;
 		}
 	}
-	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL, qry_ctx));
 	MT_rwlock_wrlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, oldcnt + ci->ncand);
@@ -963,7 +963,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 					HASHappend_locked(b, r, t);
 				r++;
 			}
-			TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		}
 		BUN nunique;
 		nunique = b->thash ? b->thash->nunique : 0;

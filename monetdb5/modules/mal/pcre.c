@@ -1970,7 +1970,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = p;									\
@@ -1978,7 +1978,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {														\
 			for (; p < ncands; p++) {									\
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
@@ -2290,7 +2290,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
 			GDK_CHECK_TIMEOUT(qry_ctx, counter,							\
-							  GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
+							  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
 			nl = 0;														\

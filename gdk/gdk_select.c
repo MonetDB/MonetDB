@@ -161,7 +161,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(*bi, bi->b->thash, i, tl, l, h) {
 			GDK_CHECK_TIMEOUT(qry_ctx, counter,
-					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+					  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			o = (oid) (i + seq - d);
 			if (canditer_contains(ci, o)) {
 				dst = buninsfix(bn, dst, cnt, o,
@@ -175,7 +175,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	} else {
 		HASHloop_bound(*bi, bi->b->thash, i, tl, l, h) {
 			GDK_CHECK_TIMEOUT(qry_ctx, counter,
-					  GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+					  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			o = (oid) (i + seq - d);
 			dst = buninsfix(bn, dst, cnt, o,
 					maximum - BATcapacity(bn),
@@ -295,7 +295,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		for (i = 0, dcnt = 0, icnt = 0, p = 0;			\
 		     dcnt < imprints->dictcnt && i <= w - hseq + pr_off && p < ncand; \
 		     dcnt++) {						\
-			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			limit = ((BUN) d[dcnt].cnt) << rpp;		\
 			while (i + limit <= o - hseq + pr_off) {	\
 				i += limit;				\
@@ -456,7 +456,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 				cnt += (TEST) != 0;			\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (false)
 
 /* argument list for type-specific core scan select function call */
@@ -746,7 +746,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			}
 		}
 	}
-	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	return cnt;
   bailout:
 	BBPreclaim(bn);
@@ -926,7 +926,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		break;
 	}
 	}
-	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	return cnt;
   bailout:
 	BBPreclaim(bn);
@@ -2477,7 +2477,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		}
 		if (oidxh)
 			HEAPdecref(oidxh, false);
-		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 	} else if (/* DISABLES CODE */ (0) &&
@@ -2792,7 +2792,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			}
 		}
 		IMPSdecref(imprints, false);
-		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	} else {
 	  nestedloop:;
 		/* nested loop implementation */
@@ -2854,7 +2854,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				}
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 	}

@@ -47,7 +47,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] % rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
@@ -63,7 +63,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] % rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -98,7 +98,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						      (TYPE3) rgt[j]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
@@ -115,7 +115,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						      (TYPE3) rgt[j]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }

@@ -2361,22 +2361,23 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 #define CHECK_QRY_TIMEOUT_MASK	(CHECK_QRY_TIMEOUT_STEP - 1)
 
 #define TIMEOUT_MSG "Timeout was reached!"
+#define INTERRUPT_MSG "Query interrupted"
 #define EXITING_MSG "Server is exiting!"
 
 #define QRY_TIMEOUT (-1)
 #define QRY_INTERRUPT (-2)
 
-#define TIMEOUT_HANDLER(rtpe)						\
+#define TIMEOUT_HANDLER(rtpe, qc)					\
 	do {								\
-		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : (qc) && (qc)->endtime == QRY_INTERRUPT ? INTERRUPT_MSG : TIMEOUT_MSG); \
 		return rtpe;						\
 	} while(0)
 
 #define TIMEOUT_TEST(QC)	((QC) && ((QC)->endtime < 0 || ((QC)->endtime && GDKusec() > (QC)->endtime && ((QC)->endtime = QRY_TIMEOUT)) || (bstream_getoob((QC)->bs) > 0 && ((QC)->endtime = QRY_INTERRUPT))))
 
-#define GOTO_LABEL_TIMEOUT_HANDLER(label)				\
+#define GOTO_LABEL_TIMEOUT_HANDLER(label, qc)				\
 	do {								\
-		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : (qc) && (qc)->endtime == QRY_INTERRUPT ? INTERRUPT_MSG : TIMEOUT_MSG); \
 		goto label;						\
 	} while(0)
 
