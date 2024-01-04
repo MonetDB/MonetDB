@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -199,9 +201,14 @@ BUN HASHinsert(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-BUN HASHmask(BUN cnt)
-	__attribute__((__const__))
-	__attribute__((__visibility__("hidden")));
+static inline BUN __attribute__((__const__))
+HASHmask(BUN cnt)
+{
+	cnt = cnt * 8 / 7;
+	if (cnt < BATTINY)
+		cnt = BATTINY;
+	return cnt;
+}
 gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -63,28 +65,6 @@ hashmask(BUN m)
 #if SIZEOF_BUN == 8
 	m |= m >> 32;
 #endif
-	return m;
-}
-
-BUN
-HASHmask(BUN cnt)
-{
-	BUN m = cnt;
-
-#if 0
-	/* find largest power of 2 smaller than or equal to cnt */
-	m = hashmask(m);
-	m -= m >> 1;
-
-	/* if cnt is more than 1/3 into the gap between m and 2*m,
-	   double m */
-	if (m + m - cnt < 2 * (cnt - m))
-		m += m;
-#else
-	m = m * 8 / 7;
-#endif
-	if (m < BATTINY)
-		m = BATTINY;
 	return m;
 }
 
