@@ -396,7 +396,7 @@ find_func(mvc *sql, char *sname, char *fname, int len, sql_ftype type, bool priv
 }
 
 static sql_exp *
-exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
+exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e)
 {
 	sql_subtype *et = exp_subtype(e);
 
@@ -404,34 +404,13 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		int scale_diff = ((int) ct->scale - (int) et->scale);
 
 		if (scale_diff) {
-			if (scale_diff < 0) {
-				if (!both)
-					return e;
-			}
+			if (scale_diff < 0)
+				return e;
 			sql_subtype st;
 			int scale = ct->scale;
 			int digits = et->digits-et->scale+scale;
 			(void)sql_find_subtype(&st, ct->type->base.name, digits, scale);
 			return exp_convert(sql->sa, e, et, &st);
-		}
-	} else if (always && et->scale) {	/* scale down */
-		int scale_diff = -(int) et->scale;
-		sql_subtype *it = sql_bind_localtype(et->type->impl);
-		sql_subfunc *c = sql_bind_func(sql, "sys", "scale_down", et, it, F_FUNC, true, true);
-
-		if (c) {
-#ifdef HAVE_HGE
-			hge val = scale2value(scale_diff);
-#else
-			lng val = scale2value(scale_diff);
-#endif
-			atom *a = atom_int(sql->sa, it, val);
-			sql_subtype *res = c->res->h->data;
-
-			res->scale = 0;
-			return exp_binop(sql->sa, e, exp_atom(sql->sa, a), c);
-		} else {
-			TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", et->type->base.name);
 		}
 	}
 	return e;
@@ -502,9 +481,9 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 		if (sf->func->fix_scale == SCALE_FIX) {
 			ntp = sql_create_subtype(sql->sa, a->type.type->localtype?a->type.type:t?t->type:atp->type, digits, scale);
 
-			e = exp_fix_scale(sql, ntp, e, 0, 0);
+			e = exp_fix_scale(sql, ntp, e);
 		} else if (sf->func->fix_scale == SCALE_EQ) {
-			e = exp_fix_scale(sql, &a->type, e, 0, 0);
+			e = exp_fix_scale(sql, &a->type, e);
 		}
 		if (maybe_zero_or_one && e->card > CARD_ATOM) {
 			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(e), NULL, F_AGGR, true, false);
