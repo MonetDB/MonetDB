@@ -13,16 +13,9 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_pipelines.h"
+#include "pipeline.h"
 #include "algebra.h"
 
-#define pipeline_lock(p) MT_lock_set(&p->p->l)
-#define pipeline_unlock(p) MT_lock_unset(&p->p->l)
-
-#define pipeline_lock1(r) MT_lock_set(&r->batIdxLock)
-#define pipeline_unlock1(r) MT_lock_unset(&r->batIdxLock)
-
-#define pipeline_lock2(r) MT_lock_set(&r->theaplock)
-#define pipeline_unlock2(r) MT_lock_unset(&r->theaplock)
 /*
  * Min/Max processing using heap structure
  * ie array implementation

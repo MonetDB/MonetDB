@@ -44,7 +44,7 @@ rel_getcount(mvc *sql, sql_rel *rel)
 	case op_groupby:
 		if (rel->l && rel->r)
 			return rel_getcount(sql, rel->l);
-		return 1; /* Global GROUP BY always return 1 row. */
+		return 1; /* Global GROUP BY always returns 1 row. */
 	default:
 		if (rel->l)
 			return rel_getcount(sql, rel->l);
