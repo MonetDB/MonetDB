@@ -1549,7 +1549,6 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		gid last = ATOMIC_GET(&h->last);
 		/* pass max id */
 		g->T.maxval = last;
-		g->tkey = FALSE;
 		*uid = u->batCacheid;
 		*rid = g->batCacheid;
 		BBPkeepref(u);
@@ -1945,7 +1944,6 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		gid last = ATOMIC_GET(&h->last);
 		/* pass max id */
 		g->T.maxval = last;
-		g->tkey = FALSE;
 		*uid = u->batCacheid;
 		*rid = g->batCacheid;
 		BBPkeepref(u);
