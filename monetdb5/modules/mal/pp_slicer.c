@@ -114,8 +114,8 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 				msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
-			g->T.maxval = re;
 			re += rest;
+			g->T.maxval = re;
 			fb = 0;
 		}
 		n->start = rs;
