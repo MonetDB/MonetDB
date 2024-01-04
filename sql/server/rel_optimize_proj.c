@@ -2935,7 +2935,7 @@ rel_groupjoin(visitor *v, sql_rel *rel)
 		}
 	}
 	if (nr == list_length(gbes)) {
-		printf("#group by converted\n");
+		// printf("#group by converted\n");
 		j = rel_dup(j);
 		j->attr = rel->exps;
 		v->changes++;
