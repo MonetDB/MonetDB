@@ -319,6 +319,10 @@ socket_getoob(const stream *s)
 		.tv_sec = 0,
 		.tv_usec = 0,
 	};
+#ifdef FD_SETSIZE
+	if (fd >= FD_SETSIZE)
+		return 0;
+#endif
 	FD_ZERO(&fds);
 	FD_SET(fd, &fds);
 	if (select(
@@ -330,6 +334,15 @@ socket_getoob(const stream *s)
 			NULL, NULL, &fds, &t) > 0)
 #endif
 	{
+#ifdef HAVE_POLL
+		if (pfd.revents & (POLLHUP | POLLNVAL))
+			return -1;
+		if ((pfd.revents & POLLPRI) == 0)
+			return -1;
+#else
+		if (!FD_ISSET(fd, &fds))
+			return 0;
+#endif
 		char b = 0;
 		switch (recv(fd, &b, 1, MSG_OOB)) {
 		case 0:

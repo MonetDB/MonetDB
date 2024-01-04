@@ -2361,23 +2361,72 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 #define CHECK_QRY_TIMEOUT_MASK	(CHECK_QRY_TIMEOUT_STEP - 1)
 
 #define TIMEOUT_MSG "Timeout was reached!"
-#define INTERRUPT_MSG "Query interrupted"
+#define INTERRUPT_MSG "Query interrupted!"
+#define DISCONNECT_MSG "Client is disconnected!"
 #define EXITING_MSG "Server is exiting!"
 
-#define QRY_TIMEOUT (-1)
-#define QRY_INTERRUPT (-2)
+#define QRY_TIMEOUT (-1)	/* query timed out */
+#define QRY_INTERRUPT (-2)	/* client indicated interrupt */
+#define QRY_DISCONNECT (-3)	/* client disconnected */
+
+static inline void
+TIMEOUT_ERROR(QryCtx *qc, const char *file, const char *func, int lineno)
+{
+	if (GDKexiting())
+		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+			      "%s\n", EXITING_MSG);
+	else {
+		switch (qc->endtime) {
+		case QRY_TIMEOUT:
+			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+				      "%s\n", TIMEOUT_MSG);
+			break;
+		case QRY_INTERRUPT:
+			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+				      "%s\n", INTERRUPT_MSG);
+			break;
+		case QRY_DISCONNECT:
+			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+				      "%s\n", DISCONNECT_MSG);
+			break;
+		default:
+			MT_UNREACHABLE();
+		}
+	}
+}
 
 #define TIMEOUT_HANDLER(rtpe, qc)					\
 	do {								\
-		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : (qc) && (qc)->endtime == QRY_INTERRUPT ? INTERRUPT_MSG : TIMEOUT_MSG); \
+		TIMEOUT_ERROR(qc, __FILE__, __func__, __LINE__);	\
 		return rtpe;						\
 	} while(0)
 
-#define TIMEOUT_TEST(QC)	((QC) && ((QC)->endtime < 0 || ((QC)->endtime && GDKusec() > (QC)->endtime && ((QC)->endtime = QRY_TIMEOUT)) || (bstream_getoob((QC)->bs) > 0 && ((QC)->endtime = QRY_INTERRUPT))))
+static inline bool
+TIMEOUT_TEST(QryCtx *qc)
+{
+	if (qc == NULL)
+		return false;
+	if (qc->endtime < 0)
+		return true;
+	if (qc->endtime && GDKusec() > qc->endtime) {
+		qc->endtime = QRY_TIMEOUT;
+		return true;
+	}
+	switch (bstream_getoob(qc->bs)) {
+	case -1:
+		qc->endtime = QRY_DISCONNECT;
+		return true;
+	case 0:
+		return false;
+	default:
+		qc->endtime = QRY_INTERRUPT;
+		return true;
+	}
+}
 
 #define GOTO_LABEL_TIMEOUT_HANDLER(label, qc)				\
 	do {								\
-		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : (qc) && (qc)->endtime == QRY_INTERRUPT ? INTERRUPT_MSG : TIMEOUT_MSG); \
+		TIMEOUT_ERROR(qc, __FILE__, __func__, __LINE__);	\
 		goto label;						\
 	} while(0)
 
