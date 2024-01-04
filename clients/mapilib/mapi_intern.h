@@ -244,6 +244,7 @@ struct MapiStruct {
 	int handshake_options;	/* which settings can be sent during challenge/response? */
 	bool columnar_protocol;
 	bool sizeheader;
+	bool oobintr;
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 

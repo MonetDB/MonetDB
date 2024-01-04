@@ -2702,7 +2702,8 @@ read_line(Mapi mid)
 			len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
 			if (len == -1 && mnstr_errnr(mid->from) == MNSTR_INTERRUPT) {
 				mnstr_clearerr(mid->from);
-				mnstr_putoob(mid->to, 1);
+				if (mid->oobintr)
+					mnstr_putoob(mid->to, 1);
 			} else
 				break;
 		}

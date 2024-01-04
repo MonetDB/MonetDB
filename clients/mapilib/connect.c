@@ -453,6 +453,17 @@ mapi_handshake(Mapi mid)
 		}
 	}
 
+	/* search for OOBINTR option,
+	 * NOTE this consumes the rest of the challenge */
+	char *rest = strtok_r(NULL, ":", &strtok_state);
+	while (rest != NULL) {
+		if (strcmp(rest, "OOBINTR=1") == 0) {
+			mid->oobintr = true;
+			break;
+		}
+		rest = strtok_r(NULL, ":", &strtok_state);
+	}
+
 	/* hash password, if not already */
 	if (password[0] != '\1') {
 		char *pwdhash = NULL;
