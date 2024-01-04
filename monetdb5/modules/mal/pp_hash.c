@@ -1710,31 +1710,292 @@ error:
 	return err;
 }
 
+#define probe(Type) \
+	do { \
+		Type *ky = Tloc(k, 0); \
+		gid *hs = Tloc(h, 0); \
+		Type *vals = ht->vals; \
+		oid *mtd = Tloc(m, 0); \
+		oid *slt = Tloc(s, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, timeoffset) { \
+			gid slot = ht->gids[hs[i]]; \
+			while (slot && vals[slot] != ky[i]) { \
+				slot++; \
+			} \
+			if (slot) { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = slot; \
+				mtdcnt++; \
+			} \
+		} \
+	} while (0)
+
 /* (X_nn:bat[:oid], X_nn:bat[:oid]) := hash.probe(X_nn:bat[:any1], X_nn:bat[:any1], X_nn:bat[:any2]); */
 static str
 UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht)
 {
-	(void) LHS_matched;
-	(void) RHS_slotid;
-	(void) LHS_key;
-	(void) LHS_hash;
-	(void) RHS_ht;
+	BAT *m = NULL, *s = NULL, *k = NULL, *h = NULL, *t = NULL;
+	BUN keycnt, mtdcnt = 0;
+	lng timeoffset = 0;
+	str err = NULL;
 
+	k = BATdescriptor(*LHS_key);
+	h = BATdescriptor(*LHS_hash);
+	t = BATdescriptor(*RHS_ht);
+	if (!k || !h || !t) {
+		err = createException(SQL, "hash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	keycnt = BATcount(k);
+	m = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
+	s = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
+	if (!m || !s) {
+		err = createException(SQL, "hash.probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (keycnt) {
+		hash_table *ht = (hash_table*)t->T.sink;
+
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+
+		switch(k->ttype) {
+			case TYPE_void:
+				//vprobe();
+				//break;
+				err =  createException(MAL, "hash.probe", "TODO: TYPE_void");
+				goto error;
+			case TYPE_bit:
+				probe(bit);
+				break;
+			case TYPE_bte:
+				probe(bte);
+				break;
+			case TYPE_sht:
+				probe(sht);
+				break;
+			case TYPE_int:
+				probe(int);
+				break;
+			case TYPE_date:
+				probe(date);
+				break;
+			case TYPE_lng:
+				probe(lng);
+				break;
+			case TYPE_oid:
+				probe(oid);
+				break;
+			case TYPE_daytime:
+				probe(daytime);
+				break;
+			case TYPE_timestamp:
+				probe(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				probe(hge);
+				break;
+#endif
+			case TYPE_flt:
+				probe(flt);
+				break;
+			case TYPE_dbl:
+				probe(dbl);
+				break;
+			case TYPE_str:
+				//if (local_storage) {
+				//	aprobe_(str, p);
+				//} else {
+				//	aprobe(str);
+				//}
+				//break;
+				err =  createException(MAL, "hash.probe", "TODO: TYPE_str");
+				goto error;
+			default:
+				err = createException(MAL, "hash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				goto error;
+		}
+		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.probe", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+	}
+
+	BBPunfix(k->batCacheid);
+	BBPunfix(h->batCacheid);
+	BBPunfix(t->batCacheid);
+	BATsetcount(m, mtdcnt);
+	BATsetcount(s, mtdcnt);
+	BATnegateprops(m);
+	BATnegateprops(s);
+	m->tnonil = true;
+	s->tnonil = true;
+	m->tsorted = true;
+	BATkey(m, true);
+	*LHS_matched = m->batCacheid;
+	*RHS_slotid = s->batCacheid;
+	BBPkeepref(m);
+	BBPkeepref(m);
 	return MAL_SUCCEED;
+error:
+	BBPreclaim(m);
+	BBPreclaim(s);
+	BBPreclaim(k);
+	BBPreclaim(h);
+	BBPreclaim(t);
+	return err;
 }
+
+#define combined_probe(Type) \
+	do { \
+		Type *ky = Tloc(k, 0); \
+		gid *hs = Tloc(h, 0); \
+		oid *mt = Tloc(m, 0); \
+		Type *vals = ht->vals; \
+		gid hsh; \
+		Type val; \
+		oid *mtd = Tloc(res_m, 0); \
+		oid *slt = Tloc(res_s, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, timeoffset) { \
+			hsh = hs[mt[i]]; \
+			val = ky[mt[i]]; \
+			gid slot = ht->gids[hsh]; \
+			while (slot && vals[slot] != val) { \
+				slot++; \
+			} \
+			if (slot) { \
+				mtd[mtdcnt2] = i; \
+				slt[mtdcnt2] = slot; \
+				mtdcnt2++; \
+			} \
+		} \
+	} while (0)
 
 /* (X_nn:bat[:oid], X_nn:bat[:oid]) := hash.combined_probe(X_nn:bat[:any1], X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:any2]); */
 static str
 UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht)
 {
-	(void) LHS_matched;
-	(void) RHS_slotid;
-	(void) LHS_key;
-	(void) LHS_hash;
-	(void) LHS_selected;
-	(void) RHS_ht;
+	BAT *res_m = NULL, *res_s = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL;
+	BUN mtdcnt, mtdcnt2 = 0;
+	lng timeoffset = 0;
+	str err = NULL;
 
+	k = BATdescriptor(*LHS_key);
+	h = BATdescriptor(*LHS_hash);
+	m = BATdescriptor(*LHS_selected);
+	t = BATdescriptor(*RHS_ht);
+	if (!k || !h || !m || !t) {
+		err = createException(SQL, "hash.combined_probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	mtdcnt = BATcount(m);
+	res_m = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
+	res_s = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
+	if (!res_m || !res_s) {
+		err = createException(SQL, "hash.combined_probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (mtdcnt) {
+		hash_table *ht = (hash_table*)t->T.sink;
+
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		if (qry_ctx != NULL) {
+			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+		}
+
+		switch(k->ttype) {
+			case TYPE_void:
+				//vcombined_probe();
+				//break;
+				err =  createException(MAL, "hash.combined_probe", "TODO: TYPE_void");
+				goto error;
+			case TYPE_bit:
+				combined_probe(bit);
+				break;
+			case TYPE_bte:
+				combined_probe(bte);
+				break;
+			case TYPE_sht:
+				combined_probe(sht);
+				break;
+			case TYPE_int:
+				combined_probe(int);
+				break;
+			case TYPE_date:
+				combined_probe(date);
+				break;
+			case TYPE_lng:
+				combined_probe(lng);
+				break;
+			case TYPE_oid:
+				combined_probe(oid);
+				break;
+			case TYPE_daytime:
+				combined_probe(daytime);
+				break;
+			case TYPE_timestamp:
+				combined_probe(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				combined_probe(hge);
+				break;
+#endif
+			case TYPE_flt:
+				combined_probe(flt);
+				break;
+			case TYPE_dbl:
+				combined_probe(dbl);
+				break;
+			case TYPE_str:
+				//if (local_storage) {
+				//	acombined_probe_(str, p);
+				//} else {
+				//	acombined_probe(str);
+				//}
+				//break;
+				err =  createException(MAL, "hash.combined_probe", "TODO: TYPE_str");
+				goto error;
+			default:
+				err = createException(MAL, "hash.combined_probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				goto error;
+		}
+		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.combined_probe", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+	}
+
+	BBPunfix(k->batCacheid);
+	BBPunfix(h->batCacheid);
+	BBPunfix(m->batCacheid);
+	BBPunfix(t->batCacheid);
+	BATsetcount(res_m, mtdcnt2);
+	BATsetcount(res_s, mtdcnt2);
+	BATnegateprops(res_m);
+	BATnegateprops(res_s);
+	res_m->tnonil = true;
+	res_s->tnonil = true;
+	res_m->tsorted = true;
+	BATkey(res_m, true);
+	*LHS_matched = res_m->batCacheid;
+	*RHS_slotid = res_s->batCacheid;
+	BBPkeepref(res_m);
+	BBPkeepref(res_m);
 	return MAL_SUCCEED;
+error:
+	BBPreclaim(res_m);
+	BBPreclaim(res_s);
+	BBPreclaim(k);
+	BBPreclaim(h);
+	BBPreclaim(m);
+	BBPreclaim(t);
+	return err;
 }
 
 #define vexpand() \
