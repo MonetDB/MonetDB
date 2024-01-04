@@ -362,13 +362,11 @@ typedef enum sql_class {
 #define EC_EXACTNUM(e)		((e)==EC_NUM||(e)==EC_DEC)
 #define EC_APPNUM(e)		((e)==EC_FLT)
 #define EC_COMPUTE(e)		((e)==EC_NUM||(e)==EC_FLT)
-#define EC_BOOLEAN(e)		((e)==EC_BIT||(e)==EC_NUM||(e)==EC_FLT)
 #define EC_TEMP_TZ(e)		((e)==EC_TIME_TZ||(e)==EC_TIMESTAMP_TZ)
 #define EC_TEMP(e)			((e)==EC_TIME||(e)==EC_DATE||(e)==EC_TIMESTAMP||EC_TEMP_TZ(e))
 #define EC_TEMP_FRAC(e)		((e)==EC_TIME||(e)==EC_TIMESTAMP||EC_TEMP_TZ(e))
 #define EC_TEMP_NOFRAC(e)	((e)==EC_TIME||(e)==EC_TIMESTAMP)
 #define EC_SCALE(e)			((e)==EC_DEC||EC_TEMP_FRAC(e)||(e)==EC_SEC)
-#define EC_BACKEND_FIXED(e)	(EC_NUMBER(e)||(e)==EC_BIT||EC_TEMP(e))
 
 typedef struct sql_type {
 	sql_base base;
