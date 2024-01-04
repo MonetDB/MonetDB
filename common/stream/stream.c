@@ -654,15 +654,22 @@ mnstr_error_kind_name(mnstr_error_kind k)
 	}
 
 }
-void
-mnstr_clearerr(stream *s)
+
+static void
+clearerror(stream *s)
 {
 	if (s != NULL) {
 		s->errkind = MNSTR_NO__ERROR;
 		s->errmsg[0] = '\0';
-		if (s->clrerr)
-			s->clrerr(s);
 	}
+}
+
+void
+mnstr_clearerr(stream *s)
+{
+	clearerror(s);
+	if (s != NULL && s->clrerr)
+		s->clrerr(s);
 }
 
 
@@ -750,6 +757,7 @@ create_stream(const char *name)
 		.errkind = MNSTR_NO__ERROR,
 		.errmsg = {0},
 		.destroy = destroy_stream,
+		.clrerr = clearerror,
 	};
 	if(s->name == NULL) {
 		free(s);
