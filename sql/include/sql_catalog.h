@@ -378,7 +378,6 @@ typedef struct sql_type {
 	unsigned int scale;	/* indicates how scale is used in functions */
 	int localtype;		/* localtype, need for coersions */
 	unsigned char radix;
-	unsigned int bits;
 	sql_class eclass; 	/* types are grouped into equivalence classes */
 	sql_schema *s;
 } sql_type;

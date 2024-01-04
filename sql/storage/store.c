@@ -892,7 +892,6 @@ load_type(sql_trans *tr, sql_schema *s, oid rid)
 	t->radix = store->table_api.column_find_int(tr, find_sql_column(types, "radix"), rid);
 	t->eclass = (sql_class)store->table_api.column_find_int(tr, find_sql_column(types, "eclass"), rid);
 	t->localtype = ATOMindex(t->impl);
-	t->bits = 0;
 	t->s = s;
 	return t;
 }
