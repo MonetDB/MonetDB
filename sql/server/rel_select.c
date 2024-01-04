@@ -510,21 +510,22 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 			if (a->type.type->eclass == EC_ANY && atp)
 				ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 			rel_set_type_param(sql, ntp, rel, e, sf->func->fix_scale != INOUT && !UDF_LANG(sf->func->lang));
-		} else if (a->type.type->eclass == EC_ANY && atp)
+		} else if (a->type.type->eclass == EC_ANY && atp) {
 			ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
-		else if (t && ntp->digits == 0 && EC_VARCHAR(a->type.type->eclass))
+		} else if (t && ntp->digits == 0 && EC_VARCHAR(a->type.type->eclass)) {
 			ntp = sql_create_subtype(sql->sa, a->type.type, type_digits_to_char_digits(t), 0);
-		else if (t && ntp->digits > 0 && a->type.type->eclass == EC_NUM && t->type->eclass == EC_NUM)
+		} else if (t && ntp->digits > 0 && a->type.type->eclass == EC_NUM && t->type->eclass == EC_NUM) {
 			ntp = sql_create_subtype(sql->sa, a->type.type, t->digits, 0);
-		else if (t && ntp->scale == 0 && ntp->type->eclass == EC_DEC && EC_VARCHAR(t->type->eclass)) {
+		} else if (t && ntp->scale == 0 && ntp->type->eclass == EC_DEC && EC_VARCHAR(t->type->eclass)) {
 			sql_subtype *res = SA_NEW(sql->sa, sql_subtype);
 			int digits = t->digits?t->digits+3:ntp->digits;
 			(void)sql_find_subtype(res, a->type.type->base.name, digits, 3);
 			ntp = res;
-		} else if (t && ntp->scale == 0 && ntp->type->eclass == EC_DEC)
+		} else if (t && ntp->scale == 0 && ntp->type->eclass == EC_DEC) {
 			ntp = sql_create_subtype(sql->sa, a->type.type, t->type->eclass == EC_NUM?bits2digits(t->digits):t->digits, t->scale);
-		else if (sf->func->fix_scale != SCALE_EQ && t->type == ntp->type)
+		} else if (sf->func->fix_scale != SCALE_EQ && t->type == ntp->type) {
 			ntp = t;
+		}
 		if (!(e = exp_check_type(sql, ntp, rel, e, type_equal)))
 			return NULL;
 		if (sf->func->fix_scale == SCALE_FIX) {

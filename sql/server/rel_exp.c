@@ -2920,6 +2920,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 		/* scale fixing may require a larger type ! */
 		/* TODO make '3' setable by user (division_minimal_scale or so) */
 		scaleL = (lt->scale < 3) ? 3 : lt->scale;
+		scaleL += (scaleL < rt->scale)?(rt->scale - scaleL):0;
 		scale = scaleL;
 		scaleL += rt->scale;
 		digL = lt->digits + (scaleL - lt->scale);

@@ -718,21 +718,41 @@ sql_bind_func_result_internal(mvc *sql, list *ff, const char *fname, sql_ftype t
 	int points = 0, npoints = 0;
 
 	if (ff) {
-		node *n;
-		sql_base_loop( ff, n) {
-			sql_func *f = n->data;
-			sql_arg *firstres = NULL;
+		if (ff->ht) {
+			int key = hash_key(fname);
+			sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)];
+			for (; he; he = he->chain) {
+				sql_func *f = he->value;
+				sql_arg *firstres = NULL;
 
-			if ((!f->res && !IS_FILT(f)) || (f->private && !private))
-				continue;
-			firstres = IS_FILT(f)?tp->type:f->res->h->data;
-			if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
-				if (!cand) {
-					cand = f;
-					points = next_cand_points(f->ops, ops);
-				} else if ((npoints = next_cand_points(f->ops, ops)) > points) {
-					cand = f;
-					points = npoints;
+				if ((!f->res && !IS_FILT(f)) || (f->private && !private))
+					continue;
+				firstres = IS_FILT(f)?tp->type:f->res->h->data;
+				if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+					npoints = next_cand_points(f->ops, ops);
+
+					if (!cand || npoints > points) {
+						cand = f;
+						points = npoints;
+					}
+				}
+			}
+		} else {
+			node *n;
+			sql_base_loop( ff, n) {
+				sql_func *f = n->data;
+				sql_arg *firstres = NULL;
+
+				if ((!f->res && !IS_FILT(f)) || (f->private && !private))
+					continue;
+				firstres = IS_FILT(f)?tp->type:f->res->h->data;
+				if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+					npoints = next_cand_points(f->ops, ops);
+
+					if (!cand || npoints > points) {
+						cand = f;
+						points = npoints;
+					}
 				}
 			}
 		}
@@ -760,10 +780,9 @@ os_bind_func_result_internal(mvc *sql, struct objectset *ff, const char *fname, 
 				continue;
 			firstres = IS_FILT(f)?tp->type:f->res->h->data;
 			if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
-				if (!cand) {
-					cand = f;
-					points = next_cand_points(f->ops, ops);
-				} else if ((npoints = next_cand_points(f->ops, ops)) > points) {
+				npoints = next_cand_points(f->ops, ops);
+
+				if (!cand || npoints > points) {
 					cand = f;
 					points = npoints;
 				}
