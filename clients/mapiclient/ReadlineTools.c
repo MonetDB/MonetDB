@@ -423,10 +423,9 @@ bailout:
 	return 1;
 }
 
-static void
-prompt_int_handler(int status)
+void
+readline_int_handler(void)
 {
-	(void)status;
 	printf("\n"); // Move to a new line
 	rl_on_new_line(); // Regenerate the prompt on a newline
 	rl_replace_line("", 0); // Clear the previous text
@@ -454,8 +453,6 @@ init_readline(Mapi mid, const char *lang, bool save_history)
 
 	rl_add_funmap_entry("invoke-editor", invoke_editor);
 	rl_bind_keyseq("\\M-e", invoke_editor);
-
-	signal(SIGINT, prompt_int_handler);
 
 	if (save_history) {
 		int len;

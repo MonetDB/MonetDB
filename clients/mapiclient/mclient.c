@@ -1414,17 +1414,21 @@ SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 		SQLseparator(len, fields, '-');
 }
 
-static volatile sig_atomic_t stopped;
+static volatile sig_atomic_t state;
+#define READING		1
+#define WRITING		2
+#define IDLING		0
 
 static void
-renderer_sigint_handler(int signum)
+sigint_handler(int signum)
 {
-	if (signum == SIGINT) {
-		mnstr_printf(toConsole, "Renderer caught SIGINT\n");
-		stopped = true;
+	(void) signum;
+#ifdef HAVE_LIBREADLINE
+	if (state == READING) {
+		readline_int_handler();
 	}
-	else
-		mnstr_printf(toConsole, "SQLrenderer: Caught a non-SIGINT signal\n");
+#endif
+	state = IDLING;
 }
 
 static void
@@ -1437,7 +1441,6 @@ SQLrenderer(MapiHdl hdl)
 	int ps = rowsperpage;
 	bool skiprest = false;
 	int64_t rows;				/* total number of rows */
-	void (*prev_handler)(int);
 
 	if (ps == 0)
 		ps = pageheight;
@@ -1462,12 +1465,7 @@ SQLrenderer(MapiHdl hdl)
 		exit(2);
 	}
 
-	stopped = false;
-	prev_handler = signal(SIGINT, renderer_sigint_handler);
-	if (prev_handler == SIG_ERR) {
-		perror("SQLrenderer: Could not install signal handler");
-		prev_handler = NULL;
-	}
+	state = WRITING;
 
 	total = 0;
 	lentotal = 0;
@@ -1656,8 +1654,7 @@ SQLrenderer(MapiHdl hdl)
 			}
 		}
 
-		if (stopped) {
-			stopped = false;
+		if (state == IDLING) {
 			mapi_finish(hdl);
 			break;
 		}
@@ -1692,8 +1689,6 @@ SQLrenderer(MapiHdl hdl)
 	}
 	mnstr_printf(toConsole, "\n");
 
-	if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR)
-		perror("SQLrenderer: Could not restore previous handler");
 	free(len);
 	free(hdr);
 	free(rest);
@@ -2271,7 +2266,9 @@ myread(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 
 		if (strcmp(p->prompt, "more>") == 0)
 			func = suspend_completion();
+		state = READING;
 		p->buf = readline(p->prompt);
+		state = IDLING;
 		if (func)
 			continue_completion(func);
 		if (p->buf == NULL)
@@ -3221,6 +3218,24 @@ isfile(FILE *fp)
 	return true;
 }
 
+static void
+catch_interrupts(void)
+{
+#ifdef HAVE_SIGACTION
+	struct sigaction sa;
+	(void) sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = sigint_handler;
+	if (sigaction(SIGINT, &sa, NULL) == -1) {
+		perror("Could not install signal handler");
+	}
+#else
+	if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+		perror("Could not install signal handler");
+	}
+#endif
+}
+
 int
 #ifdef _MSC_VER
 wmain(int argc, wchar_t **wargv)
@@ -3653,6 +3668,8 @@ main(int argc, char **argv)
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
 
+		catch_interrupts();
+
 		if (mode == SQL) {
 			lang = "/SQL";
 		} else {
@@ -3752,6 +3769,7 @@ main(int argc, char **argv)
 
 			if (s == NULL) {
 				if (strcmp(arg, "-") == 0) {
+					catch_interrupts();
 					s = stdin_rastream();
 				} else {
 					s = open_rastream(arg);
