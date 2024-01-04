@@ -181,10 +181,8 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		}
 #else
 		nr = read(s->stream_data.s, buf, size);
-		if (nr == -1 && errno == EINTR)
-			continue;
 		if (nr == -1) {
-			mnstr_set_error_errno(s, MNSTR_READ_ERROR, NULL);
+			mnstr_set_error_errno(s, errno == EINTR ? MNSTR_INTERRUPT : MNSTR_READ_ERROR, NULL);
 			return -1;
 		}
 #endif
@@ -305,6 +303,33 @@ socket_isalive(const stream *s)
 #endif
 }
 
+static int
+socket_getoob(const stream *s)
+{
+	SOCKET fd = s->stream_data.s;
+	struct pollfd pfd = (struct pollfd) {
+		.fd = fd,
+		.events = POLLPRI,
+	};
+	if (poll(&pfd, 1, 0) > 0) {
+		char b = 0;
+		recv(fd, &b, 1, MSG_OOB);
+		return b;
+	}
+	return 0;
+}
+
+static int
+socket_putoob(const stream *s, char val)
+{
+	SOCKET fd = s->stream_data.s;
+	if (send(fd, &val, 1, MSG_OOB) == -1) {
+		perror("send OOB");
+		return -1;
+	}
+	return 0;
+}
+
 static stream *
 socket_open(SOCKET sock, const char *name)
 {
@@ -323,6 +348,8 @@ socket_open(SOCKET sock, const char *name)
 	s->stream_data.s = sock;
 	s->update_timeout = socket_update_timeout;
 	s->isalive = socket_isalive;
+	s->getoob = socket_getoob;
+	s->putoob = socket_putoob;
 
 	errno = 0;
 #ifdef _MSC_VER

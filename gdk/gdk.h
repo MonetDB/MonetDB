@@ -2363,13 +2363,16 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 #define TIMEOUT_MSG "Timeout was reached!"
 #define EXITING_MSG "Server is exiting!"
 
+#define QRY_TIMEOUT (-1)
+#define QRY_INTERRUPT (-2)
+
 #define TIMEOUT_HANDLER(rtpe)						\
 	do {								\
 		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
 		return rtpe;						\
 	} while(0)
 
-#define TIMEOUT_TEST(QC)	((QC) && (QC)->endtime && GDKusec() > (QC)->endtime)
+#define TIMEOUT_TEST(QC)	((QC) && ((QC)->endtime < 0 || ((QC)->endtime && GDKusec() > (QC)->endtime && ((QC)->endtime = QRY_TIMEOUT)) || (bstream_getoob((QC)->bs) > 0 && ((QC)->endtime = QRY_INTERRUPT))))
 
 #define GOTO_LABEL_TIMEOUT_HANDLER(label)				\
 	do {								\
@@ -2409,7 +2412,6 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
 		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
 			if (TIMEOUT_TEST(QC)) {				\
-				(QC)->endtime = -1;			\
 				break;					\
 			} else						\
 				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
@@ -2420,7 +2422,6 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
 		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
 			if (TIMEOUT_TEST(QC)) {				\
-				(QC)->endtime = -1;			\
 				break;					\
 			} else						\
 				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
@@ -2429,7 +2430,6 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 #define TIMEOUT_LOOP(REPEATS, QC)					\
 	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
 		if (TIMEOUT_TEST(QC)) {					\
-			(QC)->endtime = -1;				\
 			break;						\
 		} else							\
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
@@ -2445,7 +2445,7 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
  * if it did */
 #define TIMEOUT_CHECK(QC, CALLBACK)					\
 	do {								\
-		if (GDKexiting() || ((QC) && (QC)->endtime == -1))	\
+		if (GDKexiting() || ((QC) && (QC)->endtime < 0))	\
 			CALLBACK;					\
 	} while (0)
 

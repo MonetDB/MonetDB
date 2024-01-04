@@ -386,6 +386,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_internal", "Could not setup query stream"));
 		goto cleanup;
 	}
+	c->qryctx.bs = c->fdin;
 	query_stream = NULL;
 	if (bstream_next(c->fdin) < 0) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_internal", "Internal error while starting the query"));
@@ -439,6 +440,7 @@ cleanup:
 	if (fdin_changed) { //c->fdin was set
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
+		c->qryctx.bs = old_bstream;
 	}
 	if (query_stream)
 		close_stream(query_stream);

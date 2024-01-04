@@ -372,6 +372,7 @@ block_stream(stream *s)
 	ns->write = bs_write;
 	ns->close = bs_close;
 	ns->destroy = bs_destroy;
+	ns->clrerr = bs_clrerr;
 	ns->stream_data.p = (void *) b;
 
 	return ns;

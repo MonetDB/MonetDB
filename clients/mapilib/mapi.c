@@ -2698,7 +2698,14 @@ read_line(Mapi mid)
 		/* fetch one more block */
 		if (mid->trace)
 			printf("fetch next block: start at:%d\n", mid->blk.end);
-		len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
+		for (;;) {
+			len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
+			if (len == -1 && mnstr_errnr(mid->from) == MNSTR_INTERRUPT) {
+				mnstr_clearerr(mid->from);
+				mnstr_putoob(mid->to, 1);
+			} else
+				break;
+		}
 		check_stream(mid, mid->from, "Connection terminated during read line", (mid->blk.eos = true, (char *) 0));
 		mapi_log_data(mid, "RECV", mid->blk.buf + mid->blk.end, len);
 		mid->blk.buf[mid->blk.end + len] = 0;
@@ -3360,9 +3367,8 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 static void
 compute_sigint_handler(int signum)
 {
-	if (signum == SIGINT) {
-		printf("Caught sigint while computing. Ignoring\n");
-	}
+	/* do nothing, but we do need to interrupt the  */
+	(void) signum;
 }
 
 /* Read ahead and cache data read.  Depending on the second argument,
@@ -3384,9 +3390,12 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	char *line;
 	Mapi mid;
 	struct MapiResultSet *result;
-	void (*prev_handler)(int);
+#ifdef HAVE_SIGACTION
+	struct sigaction osa = {0};
+#else
+	void (*prev_handler)(int) = NULL;
+#endif
 
-	prev_handler = NULL;
 	mid = hdl->mid;
 	assert(mid->active == hdl);
 	if (hdl->needmore) {
@@ -3397,17 +3406,35 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	if ((result = hdl->active) == NULL)
 		result = hdl->result;	/* may also be NULL */
 
+#ifdef HAVE_SIGACTION
+	struct sigaction sa;
+	(void) sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = compute_sigint_handler;
+	if (sigaction(SIGINT, &sa, &osa) == -1) {
+		perror("mapi_execute_internal: could not install signal handler");
+		(void) sigemptyset(&osa.sa_mask);
+		osa.sa_flags = 0;
+		osa.sa_handler = SIG_DFL;
+	}
+#else
 	prev_handler = signal(SIGINT, compute_sigint_handler);
 	if (prev_handler == SIG_ERR) {
 		perror("mapi_execute_internal: could not install signal handler");
 		prev_handler = NULL;
 	}
+#endif
 
 	for (;;) {
 		line = read_line(mid);
 		if (line == NULL) {
+#ifdef HAVE_SIGACTION
+			if (sigaction(SIGINT, &osa, NULL) == -1)
+				perror("mapi_execute_internal: Could not restore previous handler");
+#else
 			if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR)
 				perror("mapi_execute_internal: Could not restore previous handler");
+#endif
 			if (mid->from && mnstr_eof(mid->from)) {
 				return mapi_setError(mid, "unexpected end of file", __func__, MERROR);
 			}
@@ -3467,8 +3494,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				}
 				continue;
 			}
+#ifdef HAVE_SIGACTION
+			if (sigaction(SIGINT, &osa, NULL) == -1)
+				perror("mapi_execute_internal: Could not restore previous handler");
+#else
 			if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR)
 				perror("mapi_execute_internal: Could not restore previous handler");
+#endif
 			return mid->error;
 		case '!':
 			/* start a new result set if we don't have one
@@ -3505,8 +3537,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			    (result->querytype == -1 /* unknown (not SQL) */ ||
 			     result->querytype == Q_TABLE ||
 			     result->querytype == Q_UPDATE)) {
+#ifdef HAVE_SIGACTION
+				if (sigaction(SIGINT, &osa, NULL) == -1)
+					perror("mapi_execute_internal: Could not restore previous handler");
+#else
 				if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR)
 					perror("mapi_execute_internal: Could not restore previous handler");
+#endif
 				return mid->error;
 			}
 			break;

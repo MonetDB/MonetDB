@@ -1414,7 +1414,7 @@ SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 		SQLseparator(len, fields, '-');
 }
 
-static bool stopped;
+static volatile sig_atomic_t stopped;
 
 static void
 renderer_sigint_handler(int signum)

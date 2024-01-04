@@ -503,6 +503,8 @@ mnstr_error_kind_description(mnstr_error_kind kind)
 		return "error reading";
 	case MNSTR_WRITE_ERROR:
 		return "error writing";
+	case MNSTR_INTERRUPT:
+		return "interrupted";
 	case MNSTR_TIMEOUT:
 		return "timeout";
 	case MNSTR_UNEXPECTED_EOF:
@@ -591,6 +593,22 @@ mnstr_isalive(const stream *s)
 	if (s->isalive)
 		return s->isalive(s);
 	return 1;
+}
+
+int
+mnstr_getoob(const stream *s)
+{
+	if (s->getoob)
+		return s->getoob(s);
+	return 0;
+}
+
+int
+mnstr_putoob(const stream *s, char val)
+{
+	if (s->putoob)
+		return s->putoob(s, val);
+	return 0;
 }
 
 
@@ -830,6 +848,20 @@ wrapper_isalive(const stream *s)
 }
 
 
+static int
+wrapper_getoob(const stream *s)
+{
+	return s->inner->getoob(s->inner);
+}
+
+
+static int
+wrapper_putoob(const stream *s, char val)
+{
+	return s->inner->putoob(s->inner, val);
+}
+
+
 stream *
 create_wrapper_stream(const char *name, stream *inner)
 {
@@ -859,6 +891,8 @@ create_wrapper_stream(const char *name, stream *inner)
 	s->fgetpos = inner->fgetpos == NULL ? NULL : wrapper_fgetpos;
 	s->fsetpos = inner->fsetpos == NULL ? NULL : wrapper_fsetpos;
 	s->isalive = inner->isalive == NULL ? NULL : wrapper_isalive;
+	s->getoob = inner->getoob == NULL ? NULL : wrapper_getoob;
+	s->putoob = inner->putoob == NULL ? NULL : wrapper_putoob;
 	s->update_timeout = inner->update_timeout == NULL ? NULL : wrapper_update_timeout;
 
 	return s;
