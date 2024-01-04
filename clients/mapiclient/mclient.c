@@ -2382,7 +2382,16 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 		for (;;) {
 			ssize_t l;
 			char *newbuf;
-			l = mnstr_readline(fp, buf + length, bufsiz - length);
+#ifndef HAVE_LIBREADLINE
+			do {
+				state = READING;
+				mnstr_clearerr(fp);
+#endif
+				l = mnstr_readline(fp, buf + length, bufsiz - length);
+#ifndef HAVE_LIBREADLINE
+			} while (l == -1 && state == IDLING);
+			state = IDLING;
+#endif
 			if (l <= 0)
 				break;
 			if (!seen_null_byte && strlen(buf + length) < (size_t) l) {
