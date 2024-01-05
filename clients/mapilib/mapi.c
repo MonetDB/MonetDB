@@ -2024,6 +2024,7 @@ mapi_destroy(Mapi mid)
 	free(mid->server);
 	free(mid->uri);
 	free(mid->tracebuffer);
+	free(mid->noexplain);
 	if (mid->errorstr && mid->errorstr != mapi_nomem)
 		free(mid->errorstr);
 
