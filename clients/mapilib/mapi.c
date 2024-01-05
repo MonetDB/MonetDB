@@ -1731,8 +1731,7 @@ mapi_close_handle(MapiHdl hdl)
 	/* don't use mapi_check_hdl: it's ok if we're not connected */
 	mapi_clrError(hdl->mid);
 
-	if (finish_handle(hdl) != MOK)
-		return MERROR;
+	(void) finish_handle(hdl);
 	hdl->npending_close = 0;
 	if (hdl->pending_close)
 		free(hdl->pending_close);

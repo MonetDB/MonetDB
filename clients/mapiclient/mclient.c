@@ -2363,6 +2363,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 	}
 
 	do {
+#ifndef HAVE_LIBREADLINE
+	  repeat:
+#endif
 		bool seen_null_byte = false;
 
 		if (prompt) {
@@ -2383,13 +2386,25 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 			ssize_t l;
 			char *newbuf;
 #ifndef HAVE_LIBREADLINE
-			do {
-				state = READING;
-				mnstr_clearerr(fp);
+			state = READING;
 #endif
-				l = mnstr_readline(fp, buf + length, bufsiz - length);
+			l = mnstr_readline(fp, buf + length, bufsiz - length);
 #ifndef HAVE_LIBREADLINE
-			} while (l == -1 && state == IDLING);
+			if (l == -1 && state == IDLING) {
+				/* we were interrupted */
+				mnstr_clearerr(fp);
+				if (hdl) {
+					/* on interrupt when continuing a query, force an error */
+					buf[0] = '\200';
+					buf[1] = '\n';
+					l = 2;
+					length = 0;
+				} else {
+					/* not continuing; just repeat */
+					mnstr_write(toConsole, "\n", 1, 1);
+					goto repeat;
+				}
+			}
 			state = IDLING;
 #endif
 			if (l <= 0)

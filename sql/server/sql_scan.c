@@ -711,6 +711,12 @@ scanner_read_more(struct scanner *lc, size_t n)
 		    /* we asked for more data but didn't get any */
 		    (more && b->eof && b->len < b->pos + lc->yycur + n))
 			return EOF;
+		if (more && b->pos + lc->yycur + 2 == b->len && b->buf[b->pos + lc->yycur] == '\200' && b->buf[b->pos + lc->yycur + 1] == '\n') {
+			lc->errstr = "Query aborted";
+			b->len -= 2;
+			b->buf[b->len] = 0;
+			return EOF;
+		}
 	}
 	return 1;
 }

@@ -608,7 +608,7 @@ mnstr_putoob(const stream *s, char val)
 {
 	if (s->putoob)
 		return s->putoob(s, val);
-	return 0;
+	return -1;
 }
 
 
@@ -647,6 +647,8 @@ mnstr_error_kind_name(mnstr_error_kind k)
 		return "MNSTR_READ_ERROR";
 	case MNSTR_WRITE_ERROR:
 		return "MNSTR_WRITE_ERROR";
+	case MNSTR_INTERRUPT:
+		return "MNSTR_INTERRUPT";
 	case MNSTR_TIMEOUT:
 		return "MNSTR_TIMEOUT";
 	default:
