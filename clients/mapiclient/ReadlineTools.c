@@ -36,6 +36,7 @@
 #endif
 
 #include <signal.h>
+#include <setjmp.h>
 
 static const char *sql_commands[] = {
 	"SELECT",
@@ -423,13 +424,24 @@ bailout:
 	return 1;
 }
 
+static sigjmp_buf readline_jumpbuf;
+
 void
-readline_int_handler(void)
+readline_int_handler(bool dojump)
 {
-	printf("\n"); // Move to a new line
+	if (dojump)
+		siglongjmp(readline_jumpbuf, 1);
 	rl_on_new_line(); // Regenerate the prompt on a newline
 	rl_replace_line("", 0); // Clear the previous text
 	rl_redisplay();
+}
+
+char *
+call_readline(const char *prompt)
+{
+	if (sigsetjmp(readline_jumpbuf, 0) != 0)
+		return strdup("\200");	/* interrupted */
+	return readline(prompt);	/* normal code path */
 }
 
 void

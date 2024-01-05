@@ -1416,16 +1416,23 @@ SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 
 static volatile sig_atomic_t state;
 #define READING		1
-#define WRITING		2
+#define READMORE	2
+#define WRITING		3
 #define IDLING		0
 
 static void
 sigint_handler(int signum)
 {
 	(void) signum;
+
+	mnstr_write(toConsole, "\n", 1, 1);
 #ifdef HAVE_LIBREADLINE
 	if (state == READING) {
-		readline_int_handler();
+		readline_int_handler(false);
+	} else if (state == READMORE) {
+		/* set state before the call since it jumps away */
+		state = IDLING;
+		readline_int_handler(true);
 	}
 #endif
 	state = IDLING;
@@ -2264,10 +2271,13 @@ myread(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 	if (p->buf == NULL) {
 		rl_completion_func_t *func = NULL;
 
-		if (strcmp(p->prompt, "more>") == 0)
+		if (strcmp(p->prompt, "more>") == 0) {
 			func = suspend_completion();
-		state = READING;
-		p->buf = readline(p->prompt);
+			state = READMORE;
+		} else {
+			state = READING;
+		}
+		p->buf = call_readline(p->prompt);
 		state = IDLING;
 		if (func)
 			continue_completion(func);
@@ -2401,7 +2411,6 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					length = 0;
 				} else {
 					/* not continuing; just repeat */
-					mnstr_write(toConsole, "\n", 1, 1);
 					goto repeat;
 				}
 			}

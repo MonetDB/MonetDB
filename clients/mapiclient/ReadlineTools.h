@@ -22,7 +22,8 @@ void deinit_readline(void);
 void save_line(const char *s);
 rl_completion_func_t *suspend_completion(void);
 void continue_completion(rl_completion_func_t * func);
-void readline_int_handler(void);
+void readline_int_handler(bool dojump);
+char *call_readline(const char *prompt);
 
 #endif /* HAVE_LIBREADLINE */
 #endif /* READLINETOOLS_H_INCLUDED */
