@@ -2987,7 +2987,8 @@ exps_sum_scales(sql_subfunc *f, list *exps)
 	sql_arg *ares = f->func->res->h->data;
 
 	if (ares->type.type->scale == SCALE_FIX && strcmp(sql_func_imp(f->func), "*") == 0) {
-		int digits = 0, scale = 0;
+		unsigned int digits = 0, scale = 0;
+		sql_type *largesttype = ares->type.type;
 
 		for(node *n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -2995,6 +2996,8 @@ exps_sum_scales(sql_subfunc *f, list *exps)
 
 			scale += t->scale;
 			digits += t->digits;
+			if (largesttype->localtype < t->type->localtype)
+				largesttype = t->type;
 		}
 		sql_subtype *res = f->res->h->data;
 
@@ -3037,7 +3040,10 @@ exps_sum_scales(sql_subfunc *f, list *exps)
 			else
 				sql_find_numeric(&t, ares->type.type->localtype, res->digits);
 		} else {
-			sql_find_subtype(&t, ares->type.type->base.name, res->digits, res->scale);
+			if (res->digits > largesttype->digits)
+				sql_find_subtype(&t, largesttype->base.name, res->digits, res->scale);
+			else
+				sql_init_subtype(&t, largesttype, res->digits, res->scale);
 		}
 		*res = t;
 	}
@@ -3062,7 +3068,7 @@ exps_max_bits(sql_subfunc *f, list *exps)
 	digits += 1;
 	sql_subtype *res = f->res->h->data;
 	if (digits > res->type->digits)
-        res = sql_find_numeric(res, res->type->localtype, digits);
+		res = sql_find_numeric(res, res->type->localtype, digits);
 	else
 		res->digits = digits;
 }
@@ -3076,12 +3082,15 @@ exps_inout(sql_subfunc *f, list *exps)
 	sql_subtype *res = f->res->h->data;
 	bool is_decimal = (res->type->eclass == EC_DEC);
 	unsigned int digits = 0, scale = 0;
+	sql_type *largesttype = NULL;
 	for(node *n = exps->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype(n->data);
 
 		if (!t)
 			continue;
 
+		if (is_decimal && t->type->eclass == EC_DEC && (!largesttype || largesttype->localtype < t->type->localtype))
+			largesttype = t->type;
 		if (is_decimal && t->type->eclass == EC_NUM) {
 			unsigned int d = bits2digits(t->digits);
 			digits = d>digits?d:digits;
@@ -3091,18 +3100,29 @@ exps_inout(sql_subfunc *f, list *exps)
 			scale = t->scale;
 		break;
 	}
-	if (digits > res->digits || scale > res->scale)
-		sql_find_subtype(res, res->type->base.name, digits, scale);
-	else
+	if (digits > res->digits || scale > res->scale) {
+		if (largesttype)
+			sql_init_subtype(res, largesttype, digits, scale);
+		else
+			sql_find_subtype(res, res->type->base.name, digits, scale);
+	} else
 		res->digits = digits;
 }
 
+#define is_addition(fname) (strcmp(fname, "sql_add") == 0)
+#define is_subtraction(fname) (strcmp(fname, "sql_sub") == 0)
 void
 exps_scale_fix(sql_subfunc *f, list *exps, sql_subtype *atp)
 {
 	if (!f->func->res)
 		return;
+
+	sql_subtype *res = f->res->h->data;
+	if (res->type->eclass != EC_ANY && res->type->eclass != EC_DEC)
+		return;
+
 	unsigned int digits = 0, scale = 0;
+	sql_type *largesttype = NULL;
 	for(node *n = exps->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype(n->data);
 
@@ -3112,11 +3132,18 @@ exps_scale_fix(sql_subfunc *f, list *exps, sql_subtype *atp)
 			digits = t->digits;
 		if (scale < t->scale)
 			scale = t->scale;
+		if (t->type->eclass == EC_DEC && (!largesttype || largesttype->localtype < t->type->localtype))
+			largesttype = t->type;
 	}
-	sql_subtype *res = f->res->h->data;
 	res->scale = scale;
-	if (digits > res->type->digits)
-		sql_find_subtype(res, res->type->localtype?res->type->base.name:atp->type->base.name, digits, scale);
+	if (res->type->eclass == EC_DEC)
+		digits += (is_addition(f->func->base.name) || is_subtraction(f->func->base.name));
+	if (digits > res->type->digits) {
+		if (largesttype && largesttype->localtype > res->type->localtype)
+			sql_init_subtype(res, largesttype, digits, scale);
+		else
+			sql_find_subtype(res, res->type->localtype?res->type->base.name:atp->type->base.name, digits, scale);
+	}
 }
 
 int

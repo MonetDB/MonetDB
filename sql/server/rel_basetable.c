@@ -16,6 +16,7 @@
 #include "rel_prop.h"
 #include "rel_basetable.h"
 #include "rel_remote.h"
+#include "rel_statistics.h"
 #include "sql_privileges.h"
 
 #define USED_LEN(nr) ((nr+31)/32)
@@ -166,6 +167,7 @@ bind_col_exp(mvc *sql, char *name, sql_column *c)
 		p->value.pval = NULL;
 	}
 	set_basecol(e);
+	sql_column_get_statistics(sql, c, e);
 	return e;
 }
 
@@ -343,6 +345,7 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 			p->value.pval = NULL;
 		}
 		set_basecol(e);
+		sql_column_get_statistics(sql, c, e);
 		append(r->exps, e);
 	}
 	return r;
@@ -389,6 +392,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 				p->value.pval = NULL;
 			}
 			set_basecol(e);
+			sql_column_get_statistics(sql, c, e);
 			append(rel->exps, e);
 		}
 		if (rel_base_is_used(ba, i) || list_empty(rel->exps)) /* Add TID column if no column is used */
@@ -505,6 +509,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 				p->value.pval = NULL;
 			}
 			set_basecol(ne);
+			sql_column_get_statistics(sql, c, ne);
 			rel_base_use(sql, p, rc->colnr);
 			list_append(p->exps, ne);
 		} else if (nname[0] == '%' && ol_length(mt->idxs) && (ci = ol_find_name(mt->idxs, nname + 1))) {

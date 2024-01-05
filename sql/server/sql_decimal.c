@@ -151,6 +151,24 @@ decimal_to_str(sql_allocator *sa, lng v, sql_subtype *t)
 	return sa_strdup(sa, buf+cur+1);
 }
 
+unsigned int
+#ifdef HAVE_HGE
+decimal_digits(hge val)
+#else
+decimal_digits(lng val)
+#endif
+
+{
+	if (val < 0)
+		val = -val;
+	unsigned int digits = 1;
+	while (val >= 10) {
+		val /= 10;
+		digits++;
+	}
+	return digits;
+}
+
 #ifdef HAVE_HGE
 extern hge
 #else

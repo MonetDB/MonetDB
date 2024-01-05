@@ -70,15 +70,15 @@ query T nosort
 plan select othertable.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.a = 1 and othertable.a = 1
 ----
 project (
-| select (
-| | join (
-| | | select (
-| | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
-| | | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = (int(31) "1") ],
-| | | table("sys"."othertable") [ "othertable"."a" ]
-| | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL) ]
-| ) [ ("othertable"."a") = (int(31) "1") ]
-) [ "othertable"."a" NOT NULL ]
+| join (
+| | select (
+| | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
+| | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = (int(31) "1") ],
+| | select (
+| | | table("sys"."othertable") [ "othertable"."a" UNIQUE ]
+| | ) [ ("othertable"."a" UNIQUE) = (int(31) "1") ]
+| ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL UNIQUE) ]
+) [ "othertable"."a" NOT NULL UNIQUE ]
 
 # here 'othertable.a between 2 and 5' can be pushed up too
 query T nosort
@@ -124,7 +124,7 @@ query T nosort
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
 ----
 project (
-| join (
+| semijoin (
 | |  [  [ int(31) "1", int(31) "2", int(31) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE ]
 | ) [ ("y"."y" NOT NULL) = ("testkeys"."a" NOT NULL UNIQUE) ]
@@ -134,7 +134,7 @@ query T nosort
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
 ----
 project (
-| join (
+| semijoin (
 | |  [  [ int(31) "1", int(31) "2", int(31) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" UNIQUE ]
 | ) [ ("y"."y" NOT NULL) = ("testkeys"."b" UNIQUE) ]
@@ -157,7 +157,7 @@ query T nosort
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
 ----
 project (
-| join (
+| semijoin (
 | |  [  [ int(31) "1", int(31) "2", int(31) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE ]
 | ) [ ("y"."y" NOT NULL) = ("testkeys"."a" NOT NULL UNIQUE) ]
@@ -167,7 +167,7 @@ query T nosort
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
 ----
 project (
-| join (
+| semijoin (
 | |  [  [ int(31) "1", int(31) "2", int(31) "3" ] as "y"."y" ],
 | | table("sys"."testkeys") [ "testkeys"."b" UNIQUE ]
 | ) [ ("y"."y" NOT NULL) = ("testkeys"."b" UNIQUE) ]

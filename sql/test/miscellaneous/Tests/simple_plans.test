@@ -59,7 +59,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is n
 project (
 | select (
 | | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
-| ) [ (("myx"."x" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) * = (uuid NULL)) ]
+| ) [ ("myx"."x" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) ]
 ) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 query T nosort
@@ -335,8 +335,8 @@ PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
 ----
 project (
 | select (
-| | table("sys"."another_t") [ "another_t"."col1" UNIQUE, "another_t"."col2" ]
-| ) [ ((int(31) "1") <= ("another_t"."col1" UNIQUE) <= (int(31) "2")) or (("another_t"."col2") * = (int(31) NULL)) ]
+| | table("sys"."another_t") [ "another_t"."col1" UNIQUE, "another_t"."col2" UNIQUE ]
+| ) [ ((int(31) "1") <= ("another_t"."col1" UNIQUE) <= (int(31) "2")) or (("another_t"."col2" UNIQUE) * = (int(31) NULL)) ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -500,17 +500,19 @@ plan select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.
 ----
 project (
 | join (
-| | join (
-| | | table("sys"."t1") [ "t1"."a", "t1"."b" ],
-| | | table("sys"."t2") [ "t2"."a" ]
-| | ) [ ("t1"."a") = ("t2"."a") ],
-| | table("sys"."t3") [ "t3"."b" ]
-| ) [ (varchar["t1"."b"]) FILTER "sys"."like"(varchar["t3"."b"], varchar "", boolean(1) "false") ]
+| | semijoin (
+| | | table("sys"."t1") [ "t1"."a" UNIQUE, "t1"."b" UNIQUE ],
+| | | table("sys"."t2") [ "t2"."a" UNIQUE ]
+| | ) [ ("t1"."a" UNIQUE) = ("t2"."a" UNIQUE) ],
+| | table("sys"."t3") [ "t3"."b" UNIQUE ]
+| ) [ (varchar["t1"."b" UNIQUE]) FILTER "sys"."like"(varchar["t3"."b" UNIQUE], varchar "", boolean(1) "false") ]
 ) [ "t1"."a" NOT NULL, "t1"."b" ]
 
 query T python .explain.function_histogram
 explain select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
 ----
+algebra.intersect
+1
 algebra.join
 1
 algebra.likejoin
@@ -518,7 +520,9 @@ algebra.likejoin
 algebra.projection
 4
 algebra.projectionpath
-2
+1
+bat.mirror
+1
 bat.pack
 5
 bat.single
