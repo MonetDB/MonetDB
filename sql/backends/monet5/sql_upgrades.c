@@ -6561,6 +6561,39 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 	return err;
 }
 
+static str
+sql_update_dec2023_sp1(Client c, mvc *sql, sql_schema *s)
+{
+	char *err;
+	res_table *output;
+	BAT *b;
+
+	(void) sql;
+	(void) s;
+
+	/* json.isvalid(json) has been fixed to return NULL on NULL input */
+	err = SQLstatementIntern(c, "SELECT f.id FROM sys.functions f WHERE f.name = 'isvalid' AND f.schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = 'json') AND EXISTS (SELECT * FROM sys.args a WHERE a.func_id = f.id AND a.number = 1 AND a.type = 'json') AND f.func LIKE '%begin return true%';\n", "update", true, false, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			const char *query = "drop function json.isvalid(json);\n"
+				"create function json.isvalid(js json)\n"
+				"returns bool begin return case when js is NULL then NULL else true end; end;\n"
+				"GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;\n"
+				"update sys.functions set system = true where system <> true and name = 'isvalid' and schema_id = (select id from sys.schemas where name = 'json');\n";
+			assert(BATcount(b) == 1);
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	return err;
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -6739,15 +6772,19 @@ SQLupgrades(Client c, mvc *m)
 		goto handle_error;
 	}
 
+	if ((err = sql_update_jun2023_sp3(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
 	if ((err = sql_update_dec2023(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
-	if ((err = sql_update_jun2023_sp3(c, m, s)) != NULL) {
+	if ((err = sql_update_dec2023_sp1(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-		freeException(err);
-		return -1;
+		goto handle_error;
 	}
 
 	return 0;
