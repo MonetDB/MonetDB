@@ -73,10 +73,10 @@ project (
 | join (
 | | select (
 | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
-| | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = (int(31) "1") ],
+| | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = (int(2) "1") ],
 | | select (
 | | | table("sys"."othertable") [ "othertable"."a" UNIQUE ]
-| | ) [ ("othertable"."a" UNIQUE) = (int(31) "1") ]
+| | ) [ ("othertable"."a" UNIQUE) = (int(2) "1") ]
 | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL UNIQUE) ]
 ) [ "othertable"."a" NOT NULL UNIQUE ]
 
@@ -89,10 +89,10 @@ project (
 | | join (
 | | | select (
 | | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
-| | | ) [ ("testkeys"."b" UNIQUE HASHCOL ) = (int(31) "1") ],
+| | | ) [ ("testkeys"."b" UNIQUE HASHCOL ) = (int(2) "1") ],
 | | | table("sys"."othertable") [ "othertable"."a" UNIQUE ]
 | | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL UNIQUE) ]
-| ) [ (int(31) "2") <= ("othertable"."a" UNIQUE) <= (int(31) "5") ]
+| ) [ (int(3) "2") <= ("othertable"."a" UNIQUE) <= (int(2) "5") ]
 ) [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
 
 # here 'othertable.a > 1' cannot be pushed up because 'testkeys.b is null' may pass multiple values
@@ -103,10 +103,10 @@ project (
 | join (
 | | select (
 | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
-| | ) [ ("testkeys"."b" UNIQUE HASHCOL ) * = (int(31) NULL) ],
+| | ) [ ("testkeys"."b" UNIQUE HASHCOL ) * = (int(2) NULL) ],
 | | select (
 | | | table("sys"."othertable") [ "othertable"."a" UNIQUE ]
-| | ) [ ("othertable"."a" UNIQUE) > (int(31) "1") ]
+| | ) [ ("othertable"."a" UNIQUE) > (int(2) "1") ]
 | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL UNIQUE) ]
 ) [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
 

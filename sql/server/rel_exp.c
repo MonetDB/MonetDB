@@ -2930,13 +2930,13 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 #ifdef HAVE_HGE
 		if (res->type->radix == 10 && digits > 38)
 			digits = 38;
-		if (res->type->radix == 2 && digits > 128)
-			digits = 128;
+		if (res->type->radix == 2 && digits > 127)
+			digits = 127;
 #else
 		if (res->type->radix == 10 && digits > 18)
 			digits = 18;
-		if (res->type->radix == 2 && digits > 64)
-			digits = 64;
+		if (res->type->radix == 2 && digits > 63)
+			digits = 63;
 #endif
 
 		sql_find_subtype(&nlt, lt->type->base.name, digL, scaleL);
@@ -2945,6 +2945,10 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 		l = exp_check_type(sql, &nlt, rel, l, type_equal);
 
 		sql_find_subtype(res, lt->type->base.name, digits, scale);
+	} else if (lt->type->scale == SCALE_FIX) {
+		sql_subtype *res = f->res->h->data;
+		if (res->type->eclass == EC_NUM)
+			res->digits = MAX(lt->digits, rt->digits);
 	}
 	return l;
 }
@@ -3010,8 +3014,8 @@ exps_sum_scales(sql_subfunc *f, list *exps)
 			res->digits = 38;
 			res->scale = MIN(res->scale, res->digits - 1);
 		}
-		if (ares->type.type->radix == 2 && res->digits > 128) {
-			res->digits = 128;
+		if (ares->type.type->radix == 2 && res->digits > 127) {
+			res->digits = 127;
 			res->scale = MIN(res->scale, res->digits - 1);
 		}
 #else
@@ -3019,8 +3023,8 @@ exps_sum_scales(sql_subfunc *f, list *exps)
 			res->digits = 18;
 			res->scale = MIN(res->scale, res->digits - 1);
 		}
-		if (ares->type.type->radix == 2 && res->digits > 64) {
-			res->digits = 64;
+		if (ares->type.type->radix == 2 && res->digits > 63) {
+			res->digits = 63;
 			res->scale = MIN(res->scale, res->digits - 1);
 		}
 #endif
@@ -3029,11 +3033,11 @@ exps_sum_scales(sql_subfunc *f, list *exps)
 		/* numeric types are fixed length */
 		if (ares->type.type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
-			if (ares->type.type->localtype == TYPE_hge && res->digits == 128)
+			if (ares->type.type->localtype == TYPE_hge && res->digits == 127)
 				t = *sql_bind_localtype("hge");
 			else
 #endif
-			if (ares->type.type->localtype == TYPE_lng && res->digits == 64)
+			if (ares->type.type->localtype == TYPE_lng && res->digits == 63)
 				t = *sql_bind_localtype("lng");
 			else if (res->type->digits >= res->digits)
 				t = *res; /* we cannot reduce types! */
@@ -3143,7 +3147,8 @@ exps_scale_fix(sql_subfunc *f, list *exps, sql_subtype *atp)
 			sql_init_subtype(res, largesttype, digits, scale);
 		else
 			sql_find_subtype(res, res->type->localtype?res->type->base.name:atp->type->base.name, digits, scale);
-	}
+	} else if (res->type->eclass == EC_DEC || res->type->eclass == EC_NUM)
+		res->digits = digits;
 }
 
 int

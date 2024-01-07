@@ -28,4 +28,6 @@ extern char * decimal_to_str(sql_allocator *sa, DEC_TPE v, sql_subtype *t);
 extern unsigned int decimal_digits(DEC_TPE v);
 DEC_TPE scale2value(int scale);
 
+extern unsigned int number_bits(DEC_TPE v);
+
 #endif /* _SQL_DECIMAL_H */

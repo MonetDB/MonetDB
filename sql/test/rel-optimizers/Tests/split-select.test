@@ -12,7 +12,7 @@ project (
 | select (
 | | project (
 | | | table("sys"."integers") [ "integers"."i" ]
-| | ) [ "integers"."i", "sys"."casewhen"(bigint(62)["integers"."i"], "sys"."sql_mul"("integers"."i", "integers"."i"), "integers"."i", "integers"."i") as "%1"."%1" ]
-| ) [ ("%1"."%1") > (int(31) "1") ]
+| | ) [ "integers"."i", "sys"."casewhen"("integers"."i", "sys"."sql_mul"("integers"."i", "integers"."i"), "integers"."i", "integers"."i") as "%1"."%1" ]
+| ) [ ("%1"."%1") > (int(2) "1") ]
 ) [ "integers"."i" ]
 

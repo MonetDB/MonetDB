@@ -27,11 +27,11 @@ varchar
 dummy6
 val4
 int
-31
+2
 dummy6
 val5
 int
-31
+3
 
 statement ok
 create table dummy7 as select "key", val as "val4", val as "val5" from dummy4 natural full outer join dummy5
@@ -47,11 +47,11 @@ varchar
 dummy7
 val4
 int
-31
+3
 dummy7
 val5
 int
-31
+3
 
 statement ok
 create table dummy8 as select dummy4."key" as "key4", dummy5."key" as "key5", dummy4.val as "val4", dummy5.val as "val5" from dummy4 full outer join dummy5 ON dummy4."key" = dummy5."key"
@@ -71,11 +71,11 @@ varchar
 dummy8
 val4
 int
-31
+2
 dummy8
 val5
 int
-31
+3
 
 statement ok
 rollback

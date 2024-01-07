@@ -1932,9 +1932,9 @@ column_def:
 				append_string(seqn1, m->scanner.schema);
 			append_list(l, append_string(seqn1, sn));
 			if ($2 == 1)
-				sql_find_subtype(&it, "bigint", 64, 0);
+				sql_find_subtype(&it, "bigint", 63, 0);
 			else
-				sql_find_subtype(&it, "int", 32, 0);
+				sql_find_subtype(&it, "int", 31, 0);
 			append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 			append_list(l, o);
 			append_int(l, 1); /* to be dropped */
@@ -2031,7 +2031,7 @@ generated_column:
 		append_list(l, append_string(L(), sn));
 		if (!$5)
 			$5 = L();
-		sql_find_subtype(&it, "int", 32, 0);
+		sql_find_subtype(&it, "int", 31, 0);
 		append_symbol($5, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 
 		/* finally all the options */
@@ -2065,7 +2065,7 @@ generated_column:
 		if (m->scanner.schema)
 			append_string(seqn1, m->scanner.schema);
 		append_list(l, append_string(seqn1, sn));
-		sql_find_subtype(&it, "int", 32, 0);
+		sql_find_subtype(&it, "int", 31, 0);
 		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 		append_list(l, o);
 		append_int(l, 1); /* to be dropped */
@@ -4942,16 +4942,16 @@ literal:
 
 			/* use smallest type that can accommodate the given value */
 			if (res <= GDK_bte_max)
-				sql_find_subtype(&t, "tinyint", 8, 0 );
+				sql_find_subtype(&t, "tinyint", 7, 0 );
 			else if (res <= GDK_sht_max)
-				sql_find_subtype(&t, "smallint", 16, 0 );
+				sql_find_subtype(&t, "smallint", 15, 0 );
 			else if (res <= GDK_int_max)
-				sql_find_subtype(&t, "int", 32, 0 );
+				sql_find_subtype(&t, "int", 31, 0 );
 			else if (res <= GDK_lng_max)
-				sql_find_subtype(&t, "bigint", 64, 0 );
+				sql_find_subtype(&t, "bigint", 63, 0 );
 #ifdef HAVE_HGE
 			else if (res <= GDK_hge_max)
-				sql_find_subtype(&t, "hugeint", 128, 0 );
+				sql_find_subtype(&t, "hugeint", 127, 0 );
 #endif
 			else
 				err = 1;
@@ -5000,16 +5000,16 @@ literal:
 
 			/* use smallest type that can accommodate the given value */
 			if (res <= GDK_bte_max)
-				sql_find_subtype(&t, "tinyint", 8, 0 );
+				sql_find_subtype(&t, "tinyint", 7, 0 );
 			else if (res <= GDK_sht_max)
-				sql_find_subtype(&t, "smallint", 16, 0 );
+				sql_find_subtype(&t, "smallint", 15, 0 );
 			else if (res <= GDK_int_max)
-				sql_find_subtype(&t, "int", 32, 0 );
+				sql_find_subtype(&t, "int", 31, 0 );
 			else if (res <= GDK_lng_max)
-				sql_find_subtype(&t, "bigint", 64, 0 );
+				sql_find_subtype(&t, "bigint", 63, 0 );
 #ifdef HAVE_HGE
 			else if (res <= GDK_hge_max)
-				sql_find_subtype(&t, "hugeint", 128, 0 );
+				sql_find_subtype(&t, "hugeint", 127, 0 );
 #endif
 			else
 				err = 1;
@@ -5066,16 +5066,16 @@ literal:
 
 			/* use smallest type that can accommodate the given value */
 			if (res <= GDK_bte_max)
-				sql_find_subtype(&t, "tinyint", 8, 0 );
+				sql_find_subtype(&t, "tinyint", 7, 0 );
 			else if (res <= GDK_sht_max)
-				sql_find_subtype(&t, "smallint", 16, 0 );
+				sql_find_subtype(&t, "smallint", 15, 0 );
 			else if (res <= GDK_int_max)
-				sql_find_subtype(&t, "int", 32, 0 );
+				sql_find_subtype(&t, "int", 31, 0 );
 			else if (res <= GDK_lng_max)
-				sql_find_subtype(&t, "bigint", 64, 0 );
+				sql_find_subtype(&t, "bigint", 63, 0 );
 #ifdef HAVE_HGE
 			else if (res <= GDK_hge_max)
-				sql_find_subtype(&t, "hugeint", 128, 0 );
+				sql_find_subtype(&t, "hugeint", 127, 0 );
 #endif
 			else
 				err = 1;
@@ -5150,18 +5150,7 @@ literal:
 
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
-		    int bits = 0;
-#ifdef HAVE_HGE
-		    hge m = ((hge)1)<<bits;
-		    for( ;(value & ~m) > m; bits++)
-		    	m = ((hge)1)<<bits;
-#else
-		    lng m = ((lng)1)<<bits;
-		    for( ;(value & ~m) > m; bits++)
-		    	m = ((lng)1)<<bits;
-#endif
-		    if (!bits)
-			bits = 1;
+		    int bits = number_bits(value);
 
 		    if (value >= GDK_bte_min && value <= GDK_bte_max)
 			  sql_find_subtype(&t, "tinyint", bits, 0 );

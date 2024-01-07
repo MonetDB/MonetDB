@@ -30,7 +30,7 @@ stdout of test 'prepare_unop_crash.Bug-3653` in directory 'sql/test/BugTracker-2
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar, varchar # type
 % 4,	2,	1,	0,	6,	2 # length
-[ "int",	32,	0,	"",	"tables",	"id"	]
+[ "int",	14,	0,	"",	"tables",	"id"	]
 [ "char",	0,	0,	NULL,	NULL,	NULL	]
 
 # 08:58:49 >  

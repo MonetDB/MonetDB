@@ -238,7 +238,7 @@ sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e)
 	}
 	unsigned int digits = 0;
 	sql_subtype *et = exp_subtype(e);
-	if (et->type->eclass == EC_DEC)
+	if (et->type->eclass == EC_DEC || et->type->eclass == EC_NUM)
 		digits = et->digits;
 	if ((ok & 2) == 2) {
 		if (!VALisnil(&max)) {

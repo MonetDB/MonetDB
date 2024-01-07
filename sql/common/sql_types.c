@@ -35,9 +35,9 @@ static list *localtypes = NULL;
 unsigned int digits2bits(unsigned int digits)
 {
 	if (digits < 3)
-		return 8;
+		return 7;
 	else if (digits < 5)
-		return 16;
+		return 15;
 	else if (digits <= 5)
 		return 17;
 	else if (digits <= 6)
@@ -47,15 +47,15 @@ unsigned int digits2bits(unsigned int digits)
 	else if (digits <= 8)
 		return 27;
 	else if (digits < 10)
-		return 32;
+		return 31;
 	else if (digits < 17)
 		return 51;
 #ifdef HAVE_HGE
 	else if (digits < 19)
-		return 64;
-	return 128;
+		return 63;
+	return 127;
 #else
-	return 64;
+	return 63;
 #endif
 }
 

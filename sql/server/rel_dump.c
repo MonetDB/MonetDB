@@ -1421,8 +1421,38 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					if (!execute_priv(sql, f->func))
 						return function_error_string(sql, tname, cname, exps, true, F_FUNC);
 					sql_exp *res = exps->t->data;
-					sql_subtype *restype = exp_subtype(res);
+					sql_subtype *restype = exp_subtype(res), *condtype = NULL;
 					f->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
+					/* As the inner functions may return smaller types (because of statistics and optimization),
+					 * ie upcast here */
+					/* case exps are lists of (result, condition) ending with single value */
+					/* casewhen exps are lists of first (fe) a expression followed by (resultN, valueN) ending with single  last result  (fe == value1 -> result1 etc else last result */
+					/* nullif is list of values */
+					/* coalesce is list of values */
+					bool skip = false;
+					node *n = exps->h;
+					if (strcmp(cname, "case") == 0 && n->next) {
+						skip = true;
+						n = n->next;
+					}
+					if (strcmp(cname, "casewhen") == 0) {
+						sql_exp *e = n->data;
+						condtype = exp_subtype(e);
+						n = n->next;
+					}
+					for (; n; n = n->next) {
+						sql_exp *e = n->data;
+
+						if (condtype && n->next) {
+							n->data = exp_check_type(sql, condtype, NULL, e, type_equal);
+							n = n->next;
+							e = n->data;
+						}
+						n->data = exp_check_type(sql, restype, NULL, e, type_equal);
+
+						if (skip && n->next && n->next->next)
+							n = n->next;
+					}
 				}
 			} else {
 				list *ops = sa_list(sql->sa);
@@ -1474,13 +1504,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 #ifdef HAVE_HGE
 								if (res->type->radix == 10 && digits > 38)
 									digits = 38;
-								if (res->type->radix == 2 && digits > 128)
-									digits = 128;
+								if (res->type->radix == 2 && digits > 127)
+									digits = 127;
 #else
 								if (res->type->radix == 10 && digits > 18)
 									digits = 18;
-								if (res->type->radix == 2 && digits > 64)
-									digits = 64;
+								if (res->type->radix == 2 && digits > 63)
+									digits = 63;
 #endif
 
 								sql_find_subtype(res, lt->type->base.name, digits, scale);

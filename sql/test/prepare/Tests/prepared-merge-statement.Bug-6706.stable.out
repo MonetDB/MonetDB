@@ -92,12 +92,12 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 3,	2,	1,	0,	0,	0 # length
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	1,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 #exec  9(1,2,3,4,5,6);
 [ 0	]
 #prepare select * from test.share_daily_history inner join (values('BHP',?)) as source(id,timeid)
@@ -107,17 +107,17 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	2,	1,	0,	19,	6 # length
+% 4,	1,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
 [ "char",	3,	0,	"",	"source",	"id"	]
-[ "int",	32,	0,	"",	"source",	"timeid"	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	1,	0,	"",	"source",	"timeid"	]
+[ "int",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select * from test.share_daily_history
 #inner join (values('BHP')) as source(id)
 #on source.id=share_daily_history.id;
@@ -127,14 +127,14 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	2,	1,	0,	19,	6 # length
+% 4,	1,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
 [ "char",	3,	0,	"",	"source",	"id"	]
 #prepare select * from test.share_daily_history
 #inner join (values(?), ('BHP')) as source(id)
@@ -145,14 +145,14 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	2,	1,	0,	19,	6 # length
+% 4,	1,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
 [ "char",	3,	0,	"",	"source",	"id"	]
 [ "char",	3,	0,	NULL,	NULL,	NULL	]
 #exec 17('a');
@@ -170,14 +170,14 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	2,	1,	0,	19,	6 # length
+% 4,	1,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
 [ "char",	3,	0,	"",	"source",	"id"	]
 [ "char",	3,	0,	NULL,	NULL,	NULL	]
 #exec 19('a');
@@ -195,14 +195,14 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	2,	1,	0,	19,	6 # length
+% 4,	1,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
 [ "clob",	0,	0,	"",	"source",	"id"	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #exec 21('a');
@@ -219,14 +219,14 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	2,	1,	0,	19,	6 # length
+% 4,	1,	1,	0,	19,	6 # length
 [ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
 [ "clob",	0,	0,	"",	"source",	"id"	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]

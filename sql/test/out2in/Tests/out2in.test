@@ -21,7 +21,7 @@ project (
 | | table("sys"."foo") [ "foo"."i" ],
 | | select (
 | | | table("sys"."bar") [ "bar"."i" ]
-| | ) [ ("bar"."i") ! * = (int(31) NULL) ]
+| | ) [ ("bar"."i") ! * = (int(6) NULL) ]
 | ) [ ("foo"."i") = ("bar"."i" NOT NULL) ]
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
@@ -33,7 +33,7 @@ project (
 | | table("sys"."foo") [ "foo"."i" ],
 | | select (
 | | | table("sys"."bar") [ "bar"."i", "bar"."j" ]
-| | ) [ ("bar"."j") ! * = (int(31) NULL) ]
+| | ) [ ("bar"."j") ! * = (int(9) NULL) ]
 | ) [ ("foo"."i") = ("bar"."i") ]
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
@@ -44,7 +44,7 @@ project (
 | join (
 | | select (
 | | | table("sys"."foo") [ "foo"."i" ]
-| | ) [ (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (bigint(33) "20")) or (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (bigint(33) "400"), ("sys"."sql_add"("foo"."i", "foo"."i")) = (bigint(32)["foo"."i"])) ],
+| | ) [ (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (int(8) "20")) or (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (int(9) "400"), ("sys"."sql_add"("foo"."i", "foo"."i")) = ("foo"."i")) ],
 | | table("sys"."bar") [ "bar"."i" ]
 | ) [ ("foo"."i") = ("bar"."i") ]
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
@@ -56,7 +56,7 @@ project (
 | left outer join (
 | | select (
 | | | table("sys"."foo") [ "foo"."i" ]
-| | ) [ (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (bigint(33) "20")) or (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (bigint(33) "400"), ("sys"."sql_add"("foo"."i", "foo"."i")) = (bigint(32)["foo"."i"])) ],
+| | ) [ (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (int(8) "20")) or (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (int(9) "400"), ("sys"."sql_add"("foo"."i", "foo"."i")) = ("foo"."i")) ],
 | | table("sys"."bar") [ "bar"."i" ]
 | ) [ ("foo"."i") = ("bar"."i") ]
 ) [ "foo"."i", "bar"."i" ]
@@ -69,7 +69,7 @@ project (
 | | table("sys"."foo") [ "foo"."i" ],
 | | select (
 | | | table("sys"."bar") [ "bar"."i", "bar"."j" ]
-| | ) [ ("bar"."j") ! * = (int(31) NULL) ]
+| | ) [ ("bar"."j") ! * = (int(9) NULL) ]
 | ) [ ("foo"."i") = ("bar"."i") ]
 ) [ "foo"."i", "bar"."i" ]
 
@@ -80,10 +80,10 @@ project (
 | join (
 | | select (
 | | | table("sys"."foo") [ "foo"."i" ]
-| | ) [ (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (bigint(33) "20")) or (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (bigint(33) "400"), ("sys"."sql_add"("foo"."i", "foo"."i")) = (bigint(32)["foo"."i"])) ],
+| | ) [ (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (int(8) "20")) or (("sys"."sql_mul"("foo"."i", tinyint(2) "2")) > (int(9) "400"), ("sys"."sql_add"("foo"."i", "foo"."i")) = ("foo"."i")) ],
 | | select (
 | | | table("sys"."bar") [ "bar"."i", "bar"."j" ]
-| | ) [ ("bar"."j") ! * = (int(31) NULL) ]
+| | ) [ ("bar"."j") ! * = (int(9) NULL) ]
 | ) [ ("foo"."i") = ("bar"."i") ]
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 

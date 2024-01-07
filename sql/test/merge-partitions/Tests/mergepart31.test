@@ -668,7 +668,7 @@ plan select 1 from table1 where a > 11
 ----
 project (
 | select (
-| |  [ int(31) NULL as "table1"."a" ]
+| |  [ int(4) NULL as "table1"."a" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
