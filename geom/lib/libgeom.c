@@ -42,7 +42,7 @@ libgeom_init(void)
     GEOSContext_setNoticeHandler_r(geoshandle, (GEOSMessageHandler) geomerror);
     GEOSContext_setErrorHandler_r(geoshandle, (GEOSMessageHandler) geomerror);
     // TODO: deprecated call REMOVE
-	GEOS_setWKBByteOrder(1);	/* NDR (little endian) */
+	GEOS_setWKBByteOrder_r(geoshandle, 1);	/* NDR (little endian) */
 	printf("# MonetDB/GIS module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */
 }
