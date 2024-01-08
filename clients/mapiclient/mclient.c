@@ -1405,6 +1405,7 @@ SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 	if (sz < 0 && mnstr_errnr(fromConsole) == MNSTR_INTERRUPT) {
 		/* interrupted, equivalent to typing 'q' */
 		mnstr_clearerr(fromConsole);
+		mnstr_printf(toConsole, "\n");
 		*skiprest = true;
 	} else if (sz > 0) {
 		if (buf[0] == 'c')
@@ -1422,14 +1423,16 @@ SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 static volatile sig_atomic_t state;
 #define READING		1
 #define WRITING		2
+#define QUERYING	3
 #define IDLING		0
+#define INTERRUPT	(-1)
 
 static void
 sigint_handler(int signum)
 {
 	(void) signum;
 
-	state = IDLING;
+	state = INTERRUPT;
 #ifdef HAVE_LIBREADLINE
 	readline_int_handler();
 #endif
@@ -1469,6 +1472,13 @@ SQLrenderer(MapiHdl hdl)
 		exit(2);
 	}
 
+	if (state == INTERRUPT) {
+		free(len);
+		free(hdr);
+		free(rest);
+		free(numeric);
+		return;
+	}
 	state = WRITING;
 
 	total = 0;
@@ -1651,14 +1661,15 @@ SQLrenderer(MapiHdl hdl)
 
 		if (ps > 0 && lines >= ps && fromConsole != NULL) {
 			SQLpagemove(len, printfields, &ps, &skiprest);
-			lines = 0;
 			if (skiprest) {
 				mapi_finish(hdl);
 				break;
 			}
+			lines = 0;
 		}
 
-		if (state == IDLING) {
+		if (state == INTERRUPT) {
+			skiprest = true;
 			mapi_finish(hdl);
 			break;
 		}
@@ -1666,6 +1677,7 @@ SQLrenderer(MapiHdl hdl)
 		nrows++;
 		lines += SQLrow(len, numeric, rest, printfields, 2, 0);
 	}
+	state = IDLING;
 	if (fields && !skiprest)
 		SQLseparator(len, printfields, '-');
 	if (skiprest)
@@ -1970,6 +1982,8 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			SQLdebugRendering(hdl);
 			continue;
 		}
+		if (state == INTERRUPT)
+			break;
 		if (debugMode())
 			RAWrenderer(hdl);
 		else {
@@ -2014,7 +2028,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 		}
-	} while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (rc = mapi_next_result(hdl)) == 1);
+	} while (state != INTERRUPT && mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (rc = mapi_next_result(hdl)) == 1);
 	/*
 	 * in case we called timerHuman() in the loop above with "total == false",
 	 * call it again with "total == true" to get the total wall-clock time
@@ -2030,6 +2044,10 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 #ifdef HAVE_POPEN
 	end_pager(saveFD);
 #endif
+
+	if (state == INTERRUPT)
+		mnstr_printf(toConsole, "\n");
+	state = IDLING;
 
 	return rc;
 }
@@ -2395,7 +2413,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 			char *newbuf;
 			state = READING;
 			l = mnstr_readline(fp, buf + length, bufsiz - length);
-			if (l == -1 && state == IDLING) {
+			if (l == -1 && state == INTERRUPT) {
 				/* we were interrupted */
 				mnstr_clearerr(fp);
 				mnstr_write(toConsole, "\n", 1, 1);

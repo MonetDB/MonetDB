@@ -1069,6 +1069,8 @@ SQLreader(Client c, backend *be)
 				}
 				in->eof = false;
 			}
+			while (bstream_getoob(in) > 0)
+				;
 			if (in->buf == NULL) {
 				more = false;
 				go = false;
