@@ -30,11 +30,13 @@
 #define libgeom_export extern
 #endif
 
+#define GEOS_USE_ONLY_R_API 1
 #include <geos_c.h>
 #ifdef HAVE_PROJ
 #include <proj.h>
 #endif
 
+extern GEOSContextHandle_t geoshandle;
 /* geos does not support 3d envelope */
 typedef struct mbr {
 	float xmin;

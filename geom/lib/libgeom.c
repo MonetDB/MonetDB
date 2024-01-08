@@ -20,6 +20,8 @@
 #include "monetdb_config.h"
 #include "libgeom.h"
 
+GEOSContextHandle_t geoshandle;
+
 static void __attribute__((__format__(__printf__, 1, 2)))
 geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 {
@@ -35,8 +37,8 @@ geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 void
 libgeom_init(void)
 {
-	initGEOS((GEOSMessageHandler) geomerror, (GEOSMessageHandler) geomerror);
-    // TODO: deprecated call REMOVE	
+	geoshandle = initGEOS_r((GEOSMessageHandler) geomerror, (GEOSMessageHandler) geomerror);
+    // TODO: deprecated call REMOVE
 	GEOS_setWKBByteOrder(1);	/* NDR (little endian) */
 	printf("# MonetDB/GIS module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */
@@ -45,7 +47,7 @@ libgeom_init(void)
 void
 libgeom_exit(void)
 {
-	finishGEOS();
+	finishGEOS_r(geoshandle);
 }
 
 bool
@@ -67,7 +69,7 @@ wkb2geos(const wkb *geomWKB)
 	geosGeometry = GEOSGeomFromWKB_buf((unsigned char *) geomWKB->data, geomWKB->len);
 
 	if (geosGeometry != NULL)
-		GEOSSetSRID(geosGeometry, geomWKB->srid);
+		GEOSSetSRID_r(geoshandle, geosGeometry, geomWKB->srid);
 
 	return geosGeometry;
 }
