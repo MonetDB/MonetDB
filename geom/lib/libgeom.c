@@ -37,7 +37,10 @@ geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 void
 libgeom_init(void)
 {
-	geoshandle = initGEOS_r((GEOSMessageHandler) geomerror, (GEOSMessageHandler) geomerror);
+	//geoshandle = initGEOS_r((GEOSMessageHandler) geomerror, (GEOSMessageHandler) geomerror);
+	geoshandle = GEOS_init_r ();
+    GEOSContext_setNoticeHandler_r(geoshandle, (GEOSMessageHandler) geomerror);
+    GEOSContext_setErrorHandler_r(geoshandle, (GEOSMessageHandler) geomerror);
     // TODO: deprecated call REMOVE
 	GEOS_setWKBByteOrder(1);	/* NDR (little endian) */
 	printf("# MonetDB/GIS module loaded\n");
@@ -47,7 +50,7 @@ libgeom_init(void)
 void
 libgeom_exit(void)
 {
-	finishGEOS_r(geoshandle);
+	GEOS_finish_r(geoshandle);
 }
 
 bool
