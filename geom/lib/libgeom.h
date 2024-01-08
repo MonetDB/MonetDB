@@ -36,7 +36,9 @@
 #include <proj.h>
 #endif
 
+/* TODO make this per thread */
 extern GEOSContextHandle_t geoshandle;
+
 /* geos does not support 3d envelope */
 typedef struct mbr {
 	float xmin;
