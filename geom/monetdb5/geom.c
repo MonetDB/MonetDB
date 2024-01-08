@@ -2378,8 +2378,8 @@ geos2wkb(const GEOSGeometry *geosGeometry)
 		return wkbNULLcopy();
 	}
 
-	GEOS_setWKBOutputDims(GEOSGeom_getCoordinateDimension_r(geoshandle, geosGeometry));
-	w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
+	GEOS_setWKBOutputDims_r(geoshandle, GEOSGeom_getCoordinateDimension_r(geoshandle, geosGeometry));
+	w = GEOSGeomToWKB_buf_r(geoshandle, geosGeometry, &wkbLen);
 
 	if (w == NULL)
 		return NULL;
