@@ -2127,7 +2127,7 @@ doFileBulk(Mapi mid, stream *fp)
 				errseen = true;
 				break;
 			}
-			if (errseen)
+			if (length < 0)
 				break;			/* nothing more to do */
 			buf[length] = 0;
 			if (length == 0) {
