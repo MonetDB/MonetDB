@@ -241,10 +241,10 @@ _rel_partition(mvc *sql, sql_rel *rel)
 		/*  TODO, we now pick first (okay?)! In case of self joins we need to pick the correct table */
 		r->partition = 1;
 	}
-        /* Now that we've marked the (largest) table for partition, we go over
-         * this 'rel' (sub)tree to process all relational operators based on this
-         * knowledge. */
-        // TODO: instead of a new function, we can probably reuse rel_partition_ for this.
+	/* Now that we've marked the (largest) table for partition, we go over
+	 * this 'rel' (sub)tree to process all relational operators based on this
+	 * knowledge. */
+	// TODO: instead of a new function, we can probably reuse rel_partition_ for this.
 	return rel_mark_partition(rel);
 }
 
@@ -313,19 +313,19 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 
 			if ((e->l && exps_are_atoms(e->l)) || /* e.g. SUM(42) */
 				!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
-			      strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
-			     (sum = (strcmp(sf->func->base.name, "sum") == 0)) || strcmp(sf->func->base.name, "prod") == 0))
+				  strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+				 (sum = (strcmp(sf->func->base.name, "sum") == 0)) || strcmp(sf->func->base.name, "prod") == 0))
 				return false;
 			if (sum && list_length(e->l) == 1 && !mvc_debug_on(sql, 32)) {
 				list *l = e->l;
 				sql_exp *i = l->h->data;
 				sql_subtype *t = exp_subtype(i);
 
-                                /* Summing over dbl/flt, the current parallel
-                                 * impl. can lose precision. Hence, don't do
-                                 * parallel. */
-                                // TODO: we can relax this rule later if the precision-loss is within an acceptable range or
-                                //       if the user explicitly wants the parallel version
+				/* Summing over dbl/flt, the current parallel
+				 * impl. can lose precision. Hence, don't do
+				 * parallel. */
+				// TODO: we can relax this rule later if the precision-loss is within an acceptable range or
+				//       if the user explicitly wants the parallel version
 				if (EC_APPNUM(t->type->eclass))
 					/* TODO in case of a safe range (to be defined) or user override we could still do simple dbl/float sums * */
 					return false;
@@ -356,9 +356,9 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_groupby(rel->op)) {
 		bool safe = rel_groupby_partition_safe(sql, rel) && !rel_is_ref(rel);
 		if (rel->l)
-                        /* In principle, we always (try to) process a GROUP BY in parallel.
+			/* In principle, we always (try to) process a GROUP BY in parallel.
 			 * When a GROUP BY is parallel-unsafe, this (sub)tree
-                         * is certainly unsafe, independent of the current 'pb'.
+			 * is certainly unsafe, independent of the current 'pb'.
 			 * Otherwise, pass SPB to indicate that a `pb' should
 			 * be started in the subtree (if possible).
 			 */
@@ -376,14 +376,14 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			/* Msg from upper tree that a 'pb' block is needed somewhere in this subtree */
 			if (pb) {
 				/* result of this GROUP BY can/should be
- 				 * partitioned, i.e. start a 2nd after its end.
+				 * partitioned, i.e. start a 2nd 'pb' after its end.
 				 */
 				rel->partition = 1;
 				if (res) // TODO: maybe we should remove this condition, since we don't care about the subtree, instead, we always want to inform upper tree that we're starting a PB here.
 					res = SPB;
 			} else
 				/* if this GROUP BY is 'safe' and has not
-				 * started a 2nd 'pb', end we need to End the
+				 * started a 2nd 'pb', then we need to End the
 				 * current 'pb'. */
 				res = EPB;
 		}
@@ -434,11 +434,11 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			//}
 		}
 		// TODO: the following block code should probably be removed.
-		// 	 Instead of force returning a 0, the code above should
-		// 	 assign 'res' the proper value
+		//       Instead of force returning a 0, the code above should
+		//       assign 'res' the proper value
 		sql_rel *r = rel->r;
 		if (!is_basetable(r->op))
-		   return 0;
+			return 0;
 	} else if (is_set(rel->op) || is_merge(rel->op)) {
 		if (rel->l)
 			lres = rel_partition_(sql, rel->l, 0);
@@ -474,8 +474,8 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		} else {
 			if (is_left(rel->op)) /* and pb == 0 */
 				return rel_partition_(sql, rel->l, pb);
-                        /* For now we only try to partition in case of a equi-join.
-                         * The other joins are too complex to handle. */
+			/* For now we only try to partition in case of a equi-join.
+			 * The other joins are too complex to handle. */
 			if (pb) /* and rel->op == op_join */
 				res = _rel_partition(sql, rel);
 		}
