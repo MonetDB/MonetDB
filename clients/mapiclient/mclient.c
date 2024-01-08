@@ -1402,11 +1402,16 @@ SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 	mnstr_printf(toConsole, "next page? (continue,quit,next)");
 	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 	sz = mnstr_readline(fromConsole, buf, sizeof(buf));
-	if (sz > 0) {
+	if (sz < 0 && mnstr_errnr(fromConsole) == MNSTR_INTERRUPT) {
+		/* interrupted, equivalent to typing 'q' */
+		mnstr_clearerr(fromConsole);
+		*skiprest = true;
+	} else if (sz > 0) {
 		if (buf[0] == 'c')
 			*ps = 0;
 		if (buf[0] == 'q')
 			*skiprest = true;
+		/* make sure we read the whole line */
 		while (sz > 0 && buf[sz - 1] != '\n')
 			sz = mnstr_readline(fromConsole, buf, sizeof(buf));
 	}
@@ -1416,8 +1421,7 @@ SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 
 static volatile sig_atomic_t state;
 #define READING		1
-#define READMORE	2
-#define WRITING		3
+#define WRITING		2
 #define IDLING		0
 
 static void
@@ -1425,17 +1429,10 @@ sigint_handler(int signum)
 {
 	(void) signum;
 
-	mnstr_write(toConsole, "\n", 1, 1);
-#ifdef HAVE_LIBREADLINE
-	if (state == READING) {
-		readline_int_handler(false);
-	} else if (state == READMORE) {
-		/* set state before the call since it jumps away */
-		state = IDLING;
-		readline_int_handler(true);
-	}
-#endif
 	state = IDLING;
+#ifdef HAVE_LIBREADLINE
+	readline_int_handler();
+#endif
 }
 
 static void
@@ -2123,26 +2120,29 @@ doFileBulk(Mapi mid, stream *fp)
 			length = 0;
 			buf[0] = 0;
 		} else {
-			if ((length = mnstr_read(fp, buf, 1, bufsize)) < 0) {
+			while ((length = mnstr_read(fp, buf, 1, bufsize)) < 0) {
+				if (mnstr_errnr(fp) == MNSTR_INTERRUPT)
+					continue;
 				/* error */
 				errseen = true;
-				break;	/* nothing more to do */
+				break;
+			}
+			if (errseen)
+				break;			/* nothing more to do */
+			buf[length] = 0;
+			if (length == 0) {
+				/* end of file */
+				if (semicolon2 == 0 && hdl == NULL)
+					break;	/* nothing more to do */
 			} else {
-				buf[length] = 0;
-				if (length == 0) {
-					/* end of file */
-					if (semicolon2 == 0 && hdl == NULL)
-						break;	/* nothing more to do */
-				} else {
-					if (strlen(buf) < (size_t) length) {
-						mnstr_printf(stderr_stream, "NULL byte in input\n");
-						errseen = true;
-						break;
-					}
-					while (length > 1 && buf[length - 1] == ';') {
-						semicolon1++;
-						buf[--length] = 0;
-					}
+				if (strlen(buf) < (size_t) length) {
+					mnstr_printf(stderr_stream, "NULL byte in input\n");
+					errseen = true;
+					break;
+				}
+				while (length > 1 && buf[length - 1] == ';') {
+					semicolon1++;
+					buf[--length] = 0;
 				}
 			}
 		}
@@ -2273,14 +2273,14 @@ myread(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 
 		if (strcmp(p->prompt, "more>") == 0) {
 			func = suspend_completion();
-			state = READMORE;
-		} else {
-			state = READING;
 		}
 		p->buf = call_readline(p->prompt);
-		state = IDLING;
 		if (func)
 			continue_completion(func);
+		if (p->buf == (char *) -1) {
+			p->buf = NULL;
+			return -1;
+		}
 		if (p->buf == NULL)
 			return 0;
 		p->len = strlen(p->buf);
@@ -2373,9 +2373,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 	}
 
 	do {
-#ifndef HAVE_LIBREADLINE
 	  repeat:
-#endif
 		bool seen_null_byte = false;
 
 		if (prompt) {
@@ -2395,14 +2393,12 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 		for (;;) {
 			ssize_t l;
 			char *newbuf;
-#ifndef HAVE_LIBREADLINE
 			state = READING;
-#endif
 			l = mnstr_readline(fp, buf + length, bufsiz - length);
-#ifndef HAVE_LIBREADLINE
 			if (l == -1 && state == IDLING) {
 				/* we were interrupted */
 				mnstr_clearerr(fp);
+				mnstr_write(toConsole, "\n", 1, 1);
 				if (hdl) {
 					/* on interrupt when continuing a query, force an error */
 					buf[0] = '\200';
@@ -2415,7 +2411,6 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 				}
 			}
 			state = IDLING;
-#endif
 			if (l <= 0)
 				break;
 			if (!seen_null_byte && strlen(buf + length) < (size_t) l) {

@@ -425,23 +425,27 @@ bailout:
 }
 
 static sigjmp_buf readline_jumpbuf;
+static volatile sig_atomic_t mayjump;
 
 void
-readline_int_handler(bool dojump)
+readline_int_handler(void)
 {
-	if (dojump)
+	if (mayjump) {
+		mayjump = false;
 		siglongjmp(readline_jumpbuf, 1);
-	rl_on_new_line(); // Regenerate the prompt on a newline
-	rl_replace_line("", 0); // Clear the previous text
-	rl_redisplay();
+	}
 }
 
 char *
 call_readline(const char *prompt)
 {
+	char *res;
 	if (sigsetjmp(readline_jumpbuf, 0) != 0)
-		return strdup("\200");	/* interrupted */
-	return readline(prompt);	/* normal code path */
+		return (char *) -1;		/* interrupted */
+	mayjump = true;
+	res = readline(prompt);		/* normal code path */
+	mayjump = false;
+	return res;
 }
 
 void
