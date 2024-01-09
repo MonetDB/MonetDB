@@ -2353,6 +2353,13 @@ geom_prelude(void)
 	return MAL_SUCCEED;
 }
 
+static str
+geom_epilogue(void *ret)
+{
+	(void) ret;
+	return MAL_SUCCEED;
+}
+
 /* create the WKB out of the GEOSGeometry
  * It makes sure to make all checks before returning
  * the input geosGeometry should not be altered by this function
@@ -5771,6 +5778,7 @@ static mel_func geom_init_funcs[] = {
  command("geom", "mbrDistance", mbrDistance, false, "Returns the distance of the centroids of the two boxes", args(1,3, arg("",dbl),arg("box1",mbr),arg("box2",mbr))),
  command("geom", "coordinateFromWKB", wkbCoordinateFromWKB, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry", args(1,3, arg("",dbl),arg("",wkb),arg("",int))),
  command("geom", "coordinateFromMBR", wkbCoordinateFromMBR, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr", args(1,3, arg("",dbl),arg("",mbr),arg("",int))),
+ command("geom", "epilogue", geom_epilogue, false, "", args(1,1, arg("",void))),
  command("batgeom", "FromText", wkbFromText_bat, false, "", args(1,4, batarg("",wkb),batarg("wkt",str),arg("srid",int),arg("type",int))),
  command("batgeom", "ToText", wkbAsText_bat, false, "", args(1,3, batarg("",str),batarg("w",wkb),arg("withSRID",int))),
  command("batgeom", "GeometryType", wkbGeometryType_bat, false, "", args(1,3, batarg("",str),batarg("w",wkb),arg("flag",int))),

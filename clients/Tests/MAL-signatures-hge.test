@@ -46229,6 +46229,11 @@ command geom.coordinateFromWKB(X_0:wkb, X_1:int):dbl
 wkbCoordinateFromWKB;
 returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry
 geom
+epilogue
+command geom.epilogue():void 
+geom_epilogue;
+(empty)
+geom
 getSRID
 command geom.getSRID(X_0:wkb):int 
 wkbGetSRID;
