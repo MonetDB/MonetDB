@@ -154,9 +154,6 @@ sql_symbol2relation(backend *be, symbol *sym)
 		rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
-	/* FIXME: when debugging or plan-printing, skip rel_physical() to keep
-	 * the plan clean.  Should be removed later when the pipeline code is
-	 * more mature. */
 	if (rel && (be->mvc->emode != m_plan || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0))
 		rel = rel_physical(be->mvc, rel);
 	Tend = GDKusec();

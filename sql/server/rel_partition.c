@@ -19,10 +19,8 @@
 #include "rel_select.h"
 #include "rel_rewriter.h"
 
-/* Estimate how many rows this 'rel' might return to help _rel_partition()
- * picking a base table for partitioning.
- * For now, we simply return the row count of a base table or whatever count
- * info we can get fom the properties of this 'rel' (i.e. get_rel_count()). */
+/* Returns the row count of a base table or any count info we can get fom the
+ * PROP_COUNT of this 'rel' (i.e.  get_rel_count()). */
 static lng
 rel_getcount(mvc *sql, sql_rel *rel)
 {
@@ -324,10 +322,10 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 				/* Summing over dbl/flt, the current parallel
 				 * impl. can lose precision. Hence, don't do
 				 * parallel. */
-				// TODO: we can relax this rule later if the precision-loss is within an acceptable range or
-				//       if the user explicitly wants the parallel version
+				// TODO: if the precision-loss is within a (to be defined) safe
+				//       range or if the user explicitly wants the parallel
+				//       version, then we could still do simple dbl/float sums
 				if (EC_APPNUM(t->type->eclass))
-					/* TODO in case of a safe range (to be defined) or user override we could still do simple dbl/float sums * */
 					return false;
 			}
 		}
