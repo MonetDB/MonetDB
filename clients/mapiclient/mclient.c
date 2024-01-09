@@ -2391,8 +2391,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 	}
 
 	do {
+		bool seen_null_byte;
 	  repeat:
-		bool seen_null_byte = false;
+		seen_null_byte = false;
 
 		if (prompt) {
 			char *p = hdl ? "more>" : prompt;
