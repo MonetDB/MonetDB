@@ -30,18 +30,18 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 
 	if (geosGeometry) {
 		size_t l;
-		GEOSWKTWriter *WKT_wr = GEOSWKTWriter_create();
+		GEOSWKTWriter *WKT_wr = GEOSWKTWriter_create_r(geoshandle);
 		//set the number of dimensions in the writer so that it can
 		//read correctly the geometry coordinates
-		GEOSWKTWriter_setOutputDimension(WKT_wr, GEOSGeom_getCoordinateDimension(geosGeometry));
-		GEOSWKTWriter_setTrim(WKT_wr, 1);
-		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
+		GEOSWKTWriter_setOutputDimension_r(geoshandle, WKT_wr, GEOSGeom_getCoordinateDimension_r(geoshandle, geosGeometry));
+		GEOSWKTWriter_setTrim_r(geoshandle, WKT_wr, 1);
+		wkt = GEOSWKTWriter_write_r(geoshandle, WKT_wr, geosGeometry);
 		if (wkt == NULL) {
 			GDKerror("GEOSWKTWriter_write failed\n");
 			return -1;
 		}
-		GEOSWKTWriter_destroy(WKT_wr);
-		GEOSGeom_destroy(geosGeometry);
+		GEOSWKTWriter_destroy_r(geoshandle, WKT_wr);
+		GEOSGeom_destroy_r(geoshandle, geosGeometry);
 
 		l = strlen(wkt);
 		dstStrLen = l;
@@ -51,7 +51,7 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 			*len = dstStrLen + 1;
 			GDKfree(*geomWKT);
 			if ((*geomWKT = GDKmalloc(*len)) == NULL) {
-				GEOSFree(wkt);
+				GEOSFree_r(geoshandle, wkt);
 				return -1;
 			}
 		}
@@ -59,7 +59,7 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 			snprintf(*geomWKT, *len, "\"%s\"", wkt);
 		else
 			strcpy(*geomWKT, wkt);
-		GEOSFree(wkt);
+		GEOSFree_r(geoshandle, wkt);
 
 		return (ssize_t) dstStrLen;
 	}
@@ -316,14 +316,14 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	}
 	////////////////////////// UP TO HERE ///////////////////////////
 
-	WKT_reader = GEOSWKTReader_create();
+	WKT_reader = GEOSWKTReader_create_r(geoshandle);
 	if (WKT_reader == NULL) {
 		if (geomWKT_new)
 			GDKfree(geomWKT_new);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_create failed");
 	}
-	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT);
-	GEOSWKTReader_destroy(WKT_reader);
+	geosGeometry = GEOSWKTReader_read_r(geoshandle, WKT_reader, geomWKT);
+	GEOSWKTReader_destroy_r(geoshandle, WKT_reader);
 
 	if (geosGeometry == NULL) {
 		if (geomWKT_new)
@@ -331,21 +331,21 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_read failed");
 	}
 
-	if (GEOSGeomTypeId(geosGeometry) == -1) {
+	if (GEOSGeomTypeId_r(geoshandle, geosGeometry) == -1) {
 		if (geomWKT_new)
 			GDKfree(geomWKT_new);
-		GEOSGeom_destroy(geosGeometry);
+		GEOSGeom_destroy_r(geoshandle, geosGeometry);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSGeomTypeId failed");
 	}
 
-	GEOSSetSRID(geosGeometry, srid);
+	GEOSSetSRID_r(geoshandle, geosGeometry, srid);
 	/* the srid was lost with the transformation of the GEOSGeom to wkb
 	 * so we decided to store it in the wkb */
 
 	/* we have a GEOSGeometry with number of coordinates and SRID and we
 	 * want to get the wkb out of it */
 	*geomWKB = geos2wkb(geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
+	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 	if (*geomWKB == NULL) {
 		if (geomWKT_new)
 			GDKfree(geomWKT_new);
@@ -465,7 +465,7 @@ mbrFROMSTR(const char *src, size_t *len, void **ATOM, bool external)
 		nchars = strlen(src);
 	}
 	if (geosMbr)
-		GEOSGeom_destroy(geosMbr);
+		GEOSGeom_destroy_r(geoshandle, geosMbr);
 	assert(nchars <= GDK_int_max);
 	return (ssize_t) nchars;
 }
@@ -607,7 +607,7 @@ wkbMBR(mbr **geomMBR, wkb **geomWKB)
 
 	*geomMBR = mbrFromGeos(geosGeometry);
 
-	GEOSGeom_destroy(geosGeometry);
+	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 
 	if (*geomMBR == NULL || is_mbr_nil(*geomMBR)) {
 		GDKfree(*geomMBR);
@@ -637,18 +637,18 @@ wkbBox2D(mbr **box, wkb **point1, wkb **point2)
 	point2_geom = wkb2geos(*point2);
 	if (point1_geom == NULL || point2_geom == NULL) {
 		if (point1_geom)
-			GEOSGeom_destroy(point1_geom);
+			GEOSGeom_destroy_r(geoshandle, point1_geom);
 		if (point2_geom)
-			GEOSGeom_destroy(point2_geom);
+			GEOSGeom_destroy_r(geoshandle, point2_geom);
 		throw(MAL, "geom.MakeBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (GEOSGeomTypeId(point1_geom) + 1 != wkbPoint_mdb ||
-	    GEOSGeomTypeId(point2_geom) + 1 != wkbPoint_mdb) {
+	if (GEOSGeomTypeId_r(geoshandle, point1_geom) + 1 != wkbPoint_mdb ||
+	    GEOSGeomTypeId_r(geoshandle, point2_geom) + 1 != wkbPoint_mdb) {
 		err = createException(MAL, "geom.MakeBox2D", SQLSTATE(38000) "Geometries should be points");
-	} else if (GEOSGeomGetX(point1_geom, &xmin) == -1 ||
-		   GEOSGeomGetY(point1_geom, &ymin) == -1 ||
-		   GEOSGeomGetX(point2_geom, &xmax) == -1 ||
-		   GEOSGeomGetY(point2_geom, &ymax) == -1) {
+	} else if (GEOSGeomGetX_r(geoshandle, point1_geom, &xmin) == -1 ||
+		   GEOSGeomGetY_r(geoshandle, point1_geom, &ymin) == -1 ||
+		   GEOSGeomGetX_r(geoshandle, point2_geom, &xmax) == -1 ||
+		   GEOSGeomGetY_r(geoshandle, point2_geom, &ymax) == -1) {
 
 		err = createException(MAL, "geom.MakeBox2D", SQLSTATE(38000) "Geos error in reading the points' coordinates");
 	} else {
@@ -663,8 +663,8 @@ wkbBox2D(mbr **box, wkb **point1, wkb **point2)
 			(*box)->ymax = (float) (ymax > ymin ? ymax : ymin);
 		}
 	}
-	GEOSGeom_destroy(point1_geom);
-	GEOSGeom_destroy(point2_geom);
+	GEOSGeom_destroy_r(geoshandle, point1_geom);
+	GEOSGeom_destroy_r(geoshandle, point2_geom);
 
 	return err;
 }
@@ -1437,8 +1437,8 @@ wkbInteriorRings(wkba **geomArray, wkb **geomWKB)
 		throw(MAL, "geom.InteriorRings", SQLSTATE(38000) "Geos operation  wkb2geos failed");
 	}
 
-	if ((GEOSGeomTypeId(geosGeometry) + 1) != wkbPolygon_mdb) {
-		GEOSGeom_destroy(geosGeometry);
+	if ((GEOSGeomTypeId_r(geoshandle, geosGeometry) + 1) != wkbPolygon_mdb) {
+		GEOSGeom_destroy_r(geoshandle, geosGeometry);
 		throw(MAL, "geom.interiorRings", SQLSTATE(38000) "Geometry not a Polygon");
 
 	}
@@ -1446,13 +1446,13 @@ wkbInteriorRings(wkba **geomArray, wkb **geomWKB)
 	ret = wkbNumRings(&interiorRingsNum, geomWKB, &i);
 
 	if (ret != MAL_SUCCEED) {
-		GEOSGeom_destroy(geosGeometry);
+		GEOSGeom_destroy_r(geoshandle, geosGeometry);
 		return ret;
 	}
 
 	*geomArray = GDKmalloc(wkba_size(interiorRingsNum));
 	if (*geomArray == NULL) {
-		GEOSGeom_destroy(geosGeometry);
+		GEOSGeom_destroy_r(geoshandle, geosGeometry);
 		throw(MAL, "geom.InteriorRings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	(*geomArray)->itemsNum = interiorRingsNum;
@@ -1462,12 +1462,12 @@ wkbInteriorRings(wkba **geomArray, wkb **geomWKB)
 		wkb *interiorRingWKB;
 
 		// get the interior ring of the geometry
-		interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, i);
+		interiorRingGeometry = GEOSGetInteriorRingN_r(geoshandle, geosGeometry, i);
 		if (interiorRingGeometry == NULL) {
 			while (--i >= 0)
 				GDKfree((*geomArray)->data[i]);
 			GDKfree(*geomArray);
-			GEOSGeom_destroy(geosGeometry);
+			GEOSGeom_destroy_r(geoshandle, geosGeometry);
 			*geomArray = NULL;
 			throw(MAL, "geom.InteriorRings", SQLSTATE(38000) "Geos operation GEOSGetInteriorRingN failed");
 		}
@@ -1477,14 +1477,14 @@ wkbInteriorRings(wkba **geomArray, wkb **geomWKB)
 			while (--i >= 0)
 				GDKfree((*geomArray)->data[i]);
 			GDKfree(*geomArray);
-			GEOSGeom_destroy(geosGeometry);
+			GEOSGeom_destroy_r(geoshandle, geosGeometry);
 			*geomArray = NULL;
 			throw(MAL, "geom.InteriorRings", SQLSTATE(38000) "Geos operation wkb2geos failed");
 		}
 
 		(*geomArray)->data[i] = interiorRingWKB;
 	}
-	GEOSGeom_destroy(geosGeometry);
+	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 
 	return MAL_SUCCEED;
 }

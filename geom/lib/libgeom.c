@@ -32,20 +32,43 @@ geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	va_end(va);
 }
 
-void
-libgeom_init(void)
+static MT_TLS_t geom_tls_key;
+
+static void
+libgeom_tls_init(void *dummy)
 {
-	initGEOS((GEOSMessageHandler) geomerror, (GEOSMessageHandler) geomerror);
-    // TODO: deprecated call REMOVE	
-	GEOS_setWKBByteOrder(1);	/* NDR (little endian) */
-	printf("# MonetDB/GIS module loaded\n");
-	fflush(stdout);		/* make merovingian see this *now* */
+	(void)dummy;
+	GEOSContextHandle_t ctx = GEOS_init_r ();
+	GEOSContext_setNoticeHandler_r(ctx, (GEOSMessageHandler) geomerror);
+	GEOSContext_setErrorHandler_r(ctx, (GEOSMessageHandler) geomerror);
+	GEOS_setWKBByteOrder_r(ctx, 1);	/* NDR (little endian) */
+	MT_tls_set(geom_tls_key, ctx);
 }
 
-void
-libgeom_exit(void)
+static void
+libgeom_tls_exit(void *dummy)
 {
-	finishGEOS();
+	(void)dummy;
+	GEOSContextHandle_t ctx = MT_tls_get(geom_tls_key);
+	GEOS_finish_r(ctx);
+}
+
+GEOSContextHandle_t
+libgeom_tls(void)
+{
+	return MT_tls_get(geom_tls_key);
+}
+
+gdk_return
+libgeom_init(void)
+{
+	if (MT_alloc_tls(&geom_tls_key) != GDK_SUCCEED ||
+		MT_thread_init_add_callback(libgeom_tls_init, libgeom_tls_exit, NULL) != GDK_SUCCEED)
+		return GDK_FAIL;
+
+	printf("# MonetDB/GIS module loaded\n");
+	fflush(stdout);		/* make merovingian see this *now* */
+	return GDK_SUCCEED;
 }
 
 bool
@@ -64,10 +87,10 @@ wkb2geos(const wkb *geomWKB)
 	if (is_wkb_nil(geomWKB))
 		return NULL;
 
-	geosGeometry = GEOSGeomFromWKB_buf((unsigned char *) geomWKB->data, geomWKB->len);
+	geosGeometry = GEOSGeomFromWKB_buf_r(geoshandle, (unsigned char *) geomWKB->data, geomWKB->len);
 
 	if (geosGeometry != NULL)
-		GEOSSetSRID(geosGeometry, geomWKB->srid);
+		GEOSSetSRID_r(geoshandle, geosGeometry, geomWKB->srid);
 
 	return geosGeometry;
 }
