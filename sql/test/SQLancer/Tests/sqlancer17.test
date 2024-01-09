@@ -363,7 +363,7 @@ create or replace view v30(vc0) as (select cast(null as clob))
 query I nosort
 select json."isvalid"(CAST(v30.vc0 AS JSON)) FROM v30
 ----
-1
+NULL
 
 statement ok
 ROLLBACK
