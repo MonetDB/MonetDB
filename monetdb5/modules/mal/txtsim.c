@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -448,10 +450,21 @@ typedef struct {
 static inline int
 popcount64(uint64_t x)
 {
+#if defined(__GNUC__)
+	return (int) __builtin_popcountll(x);
+#elif defined(_MSC_VER)
+#if SIZEOF_OID == 4
+	/* no __popcnt64 on 32 bit Windows */
+	return (int) (__popcnt((uint32_t) x) + __popcnt((uint32_t) (x >> 32)));
+#else
+	return (int) __popcnt64(x);
+#endif
+#else
 	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
 	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
 	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
-	return (x * 0x0101010101010101ULL) >> 56;
+	return (int) ((x * 0x0101010101010101ULL) >> 56);
+#endif
 }
 
 static int

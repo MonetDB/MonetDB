@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -2998,7 +3000,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 		if (!list_empty(r->attr)) {
 			nr = rel_groupby(sql, nr, NULL);
 			if (nr) {
-				printf("# introduced groupby  \n");
+				// printf("# introduced groupby  \n");
 				nr->r = append(sa_list(sql->sa), le);
 				nr->exps = r->attr;
 			}
@@ -3634,7 +3636,7 @@ rel_select_leftgroup_2_semi(visitor *v, sql_rel *rel)
 			sql_exp *a = attrs->h->data;
 
 			if (exps_find_exp(l->attr, e->l) && exp_is_true(e->r) && e->flag == cmp_equal /*&& exp_is_true(a)*/) {
-				printf("# optimize select leftgroup -> semi\n");
+				// printf("# optimize select leftgroup -> semi\n");
 				if (!list_empty(l->exps)) {
 					for(node *m = l->exps->h; m; m = m->next) {
 						sql_exp *j = m->data;

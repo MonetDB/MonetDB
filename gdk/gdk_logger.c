@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -207,7 +209,7 @@ logbat_new(int tt, BUN size, role_t role)
 		if (role == PERSISTENT)
 			BATmode(nb, false);
 	} else {
-		TRC_CRITICAL(GDK, "creating new BAT[void:%s]#" BUNFMT " failed\n", ATOMname(tt), size);
+		TRC_CRITICAL(GDK, "creating new BAT[%s]#" BUNFMT " failed\n", ATOMname(tt), size);
 	}
 	return nb;
 }
@@ -2308,7 +2310,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	    lg->dir == NULL ||
 	    lg->rbuf == NULL ||
 	    lg->wbuf == NULL) {
-		TRC_CRITICAL(GDK, "strdup failed\n");
+		TRC_CRITICAL(GDK, "allocating for logger structure failed\n");
 		GDKfree(lg->fn);
 		GDKfree(lg->dir);
 		GDKfree(lg->rbuf);
@@ -2582,7 +2584,7 @@ log_flush(logger *lg, ulng ts)
 			}
 			if (strlen(filename) >= FILENAME_MAX) {
 				GDKfree(updated);
-				GDKerror("Logger filename path is too large\n");
+				TRC_CRITICAL(GDK, "Logger filename path is too large\n");
 				GDKfree(filename);
 				return GDK_FAIL;
 			}
@@ -3426,13 +3428,11 @@ log_printinfo(logger *lg)
 	printf("number of flushers: %d\n", (int) ATOMIC_GET(&lg->nr_flushers));
 	printf("number of catalog entries "BUNFMT", of which "BUNFMT" deleted\n",
 	       lg->catalog_bid->batCount, lg->dcatalog->batCount);
-	int npend = 0;
 	for (logged_range *p = lg->pending; p; p = p->next) {
 		char buf[32];
 		if (p->output_log == NULL ||
 		    snprintf(buf, sizeof(buf), ", file size %"PRIu64, (uint64_t) getfilepos(getFile(lg->current->output_log))) >= (int) sizeof(buf))
 			buf[0] = 0;
 		printf("pending range "ULLFMT": drops %"PRIu64", last_ts %"PRIu64", flushed_ts %"PRIu64", refcount %"PRIu64"%s%s\n", p->id, (uint64_t) ATOMIC_GET(&p->drops), (uint64_t) ATOMIC_GET(&p->last_ts), (uint64_t) ATOMIC_GET(&p->flushed_ts), (uint64_t) ATOMIC_GET(&p->refcount), buf, p == lg->current ? " (current)" : "");
-		npend++;
 	}
 }
