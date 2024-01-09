@@ -2790,7 +2790,7 @@ get_simple_equi_joins_first(mvc *sql, sql_rel *rel, list *exps, bool *equality_o
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (can_join_exp(rel, e, false) && is_equi_exp_(e))
+		if (can_join_exp(rel, e, false) && is_equi_exp_(e) && !is_any(e))
 			list_append(new_exps, e);
 		else
 			*equality_only = false;
@@ -2798,7 +2798,7 @@ get_simple_equi_joins_first(mvc *sql, sql_rel *rel, list *exps, bool *equality_o
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (!is_equi_exp_(e) || !can_join_exp(rel, e, false))
+		if (!is_equi_exp_(e) || !can_join_exp(rel, e, false) || is_any(e))
 			list_append(new_exps, e);
 	}
 	return new_exps;
