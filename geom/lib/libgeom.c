@@ -39,8 +39,8 @@ libgeom_tls_init(void *dummy)
 {
 	(void)dummy;
 	GEOSContextHandle_t ctx = GEOS_init_r ();
-    GEOSContext_setNoticeHandler_r(ctx, (GEOSMessageHandler) geomerror);
-    GEOSContext_setErrorHandler_r(ctx, (GEOSMessageHandler) geomerror);
+	GEOSContext_setNoticeHandler_r(ctx, (GEOSMessageHandler) geomerror);
+	GEOSContext_setErrorHandler_r(ctx, (GEOSMessageHandler) geomerror);
 	GEOS_setWKBByteOrder_r(ctx, 1);	/* NDR (little endian) */
 	MT_tls_set(geom_tls_key, ctx);
 }
@@ -66,7 +66,6 @@ libgeom_init(void)
 		MT_thread_init_add_callback(libgeom_tls_init, libgeom_tls_exit, NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-    // TODO: deprecated call REMOVE
 	printf("# MonetDB/GIS module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */
 	return GDK_SUCCEED;
