@@ -20,8 +20,6 @@
 #include "monetdb_config.h"
 #include "libgeom.h"
 
-GEOSContextHandle_t geoshandle;
-
 static void __attribute__((__format__(__printf__, 1, 2)))
 geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 {
@@ -34,23 +32,44 @@ geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	va_end(va);
 }
 
-void
-libgeom_init(void)
+static MT_TLS_t geom_tls_key;
+
+static void
+libgeom_tls_init(void *dummy)
 {
-	//geoshandle = initGEOS_r((GEOSMessageHandler) geomerror, (GEOSMessageHandler) geomerror);
-	geoshandle = GEOS_init_r ();
-    GEOSContext_setNoticeHandler_r(geoshandle, (GEOSMessageHandler) geomerror);
-    GEOSContext_setErrorHandler_r(geoshandle, (GEOSMessageHandler) geomerror);
-    // TODO: deprecated call REMOVE
-	GEOS_setWKBByteOrder_r(geoshandle, 1);	/* NDR (little endian) */
-	printf("# MonetDB/GIS module loaded\n");
-	fflush(stdout);		/* make merovingian see this *now* */
+	(void)dummy;
+	GEOSContextHandle_t ctx = GEOS_init_r ();
+    GEOSContext_setNoticeHandler_r(ctx, (GEOSMessageHandler) geomerror);
+    GEOSContext_setErrorHandler_r(ctx, (GEOSMessageHandler) geomerror);
+	GEOS_setWKBByteOrder_r(ctx, 1);	/* NDR (little endian) */
+	MT_tls_set(geom_tls_key, ctx);
 }
 
-void
-libgeom_exit(void)
+static void
+libgeom_tls_exit(void *dummy)
 {
-	GEOS_finish_r(geoshandle);
+	(void)dummy;
+	GEOSContextHandle_t ctx = MT_tls_get(geom_tls_key);
+	GEOS_finish_r(ctx);
+}
+
+GEOSContextHandle_t
+libgeom_tls(void)
+{
+	return MT_tls_get(geom_tls_key);
+}
+
+gdk_return
+libgeom_init(void)
+{
+	if (MT_alloc_tls(&geom_tls_key) != GDK_SUCCEED ||
+		MT_thread_init_add_callback(libgeom_tls_init, libgeom_tls_exit, NULL) != GDK_SUCCEED)
+		return GDK_FAIL;
+
+    // TODO: deprecated call REMOVE
+	printf("# MonetDB/GIS module loaded\n");
+	fflush(stdout);		/* make merovingian see this *now* */
+	return GDK_SUCCEED;
 }
 
 bool

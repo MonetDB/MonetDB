@@ -36,8 +36,6 @@
 #include <proj.h>
 #endif
 
-/* TODO make this per thread */
-extern GEOSContextHandle_t geoshandle;
 
 /* geos does not support 3d envelope */
 typedef struct mbr {
@@ -100,6 +98,9 @@ Type values:
 
 */
 
+libgeom_export GEOSContextHandle_t libgeom_tls(void);
+#define geoshandle (libgeom_tls())
+
 typedef enum wkb_type {
     // TODO: deprecated	type REMOVE
 	//wkbGeometry_mbd = 0,
@@ -133,8 +134,7 @@ typedef struct {
 	wkb wkb;
 } geom_geometry;
 
-libgeom_export void libgeom_init(void);
-libgeom_export void libgeom_exit(void);
+libgeom_export gdk_return libgeom_init(void);
 
 #define mbr_nil mbrFromGeos(NULL);
 

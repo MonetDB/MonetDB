@@ -2347,18 +2347,9 @@ geom_prelude(void)
 	mbrNIL.xmax = flt_nil;
 	mbrNIL.ymin = flt_nil;
 	mbrNIL.ymax = flt_nil;
-	libgeom_init();
+	if (libgeom_init() != GDK_SUCCEED)
+		throw(MAL, "geom.prelude", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	TYPE_mbr = malAtomSize(sizeof(mbr), "mbr");
-
-	return MAL_SUCCEED;
-}
-
-/* clean geos */
-str
-geom_epilogue(void *ret)
-{
-	(void) ret;
-	libgeom_exit();
 	return MAL_SUCCEED;
 }
 
@@ -5780,7 +5771,6 @@ static mel_func geom_init_funcs[] = {
  command("geom", "mbrDistance", mbrDistance, false, "Returns the distance of the centroids of the two boxes", args(1,3, arg("",dbl),arg("box1",mbr),arg("box2",mbr))),
  command("geom", "coordinateFromWKB", wkbCoordinateFromWKB, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry", args(1,3, arg("",dbl),arg("",wkb),arg("",int))),
  command("geom", "coordinateFromMBR", wkbCoordinateFromMBR, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr", args(1,3, arg("",dbl),arg("",mbr),arg("",int))),
- command("geom", "epilogue", geom_epilogue, false, "", args(1,1, arg("",void))),
  command("batgeom", "FromText", wkbFromText_bat, false, "", args(1,4, batarg("",wkb),batarg("wkt",str),arg("srid",int),arg("type",int))),
  command("batgeom", "ToText", wkbAsText_bat, false, "", args(1,3, batarg("",str),batarg("w",wkb),arg("withSRID",int))),
  command("batgeom", "GeometryType", wkbGeometryType_bat, false, "", args(1,3, batarg("",str),batarg("w",wkb),arg("flag",int))),
