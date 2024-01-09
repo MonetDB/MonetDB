@@ -4333,7 +4333,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		sql_exp *e = en->data;
 		prop *p;
 
-		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
+		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL && !is_anti(e)) {
 			sql_idx *i = p->value.pval;
 			int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
