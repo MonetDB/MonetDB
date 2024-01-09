@@ -3135,6 +3135,10 @@ getfile(void *data, const char *filename, bool binary,
 				return (char*) mnstr_peek_error(NULL);
 		}
 		while (offset > 1) {
+			if (state == INTERRUPT) {
+				close_stream(f);
+				return "interrupted";
+			}
 			s = mnstr_readline(f, buf, READSIZE);
 			if (s < 0) {
 				close_stream(f);
@@ -3157,6 +3161,11 @@ getfile(void *data, const char *filename, bool binary,
 			priv->f = NULL;
 			return NULL;
 		}
+	}
+	if (state == INTERRUPT) {
+		close_stream(f);
+		priv->f = NULL;
+		return "interrupted";
 	}
 	s = mnstr_read(f, buf, 1, READSIZE);
 	if (s <= 0) {

@@ -150,6 +150,7 @@ setup_transfer(const char *req, const char *filename, bstream *bs, stream *ws)
 	ssize_t nwritten;
 	ssize_t nread;
 	bool ok;
+	int oob = 0;
 
 	while (!bs->eof)
 		bstream_next(bs);
@@ -169,9 +170,19 @@ setup_transfer(const char *req, const char *filename, bstream *bs, stream *ws)
 
 	char buf[256];
 	nread = mnstr_readline(rs, buf, sizeof(buf));
-	ok = (nread == 0 || (nread == 1 && buf[0] == '\n'));
+	ok = (nread == 0 || (nread == 1 && buf[0] == '\n') || !(oob = mnstr_getoob(rs)));
 	if (!ok) {
-		msg = buf;
+		switch (oob) {
+		case 1:					/* client side interrupt */
+			msg = "Query aborted";
+			break;
+		case 2:
+			msg = "Read error on client";
+			break;
+		default:
+			msg = nread > 0 ? buf : "Unknown error";
+			break;
+		}
 		discard(rs);
 		goto end;
 	}

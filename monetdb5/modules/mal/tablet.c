@@ -1249,6 +1249,12 @@ SQLproducer(void *p)
 
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
+		if (bstream_getoob(task->cntxt->fdin)) {
+			tablet_error(task, rowno, lineno, int_nil,
+						 "problem reported by client", s);
+			goto reportlackofinput;
+		}
+
 		if (ateof[cur] && partial) {
 			if (unlikely(partial)) {
 				tablet_error(task, rowno, lineno, int_nil,

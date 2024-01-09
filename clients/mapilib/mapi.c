@@ -3340,6 +3340,12 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 			data = mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, &size);
 		}
 	}
+	if (data != NULL && size == 0) {
+		/* some error occurred */
+		mnstr_clearerr(mid->from);
+		if (mid->oobintr)
+			mnstr_putoob(mid->to, 1);
+	}
 	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
 	line = read_line(mid);
 	if (line == NULL)
