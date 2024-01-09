@@ -333,7 +333,6 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 	return true;
 }
 
-// TODO: find better names for _rel_partition and rel_partition_ :)
 static int
 rel_partition_(mvc *sql, sql_rel *rel, int pb)
 {
