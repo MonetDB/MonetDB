@@ -440,7 +440,7 @@ char *
 call_readline(const char *prompt)
 {
 	char *res;
-	if (sigsetjmp(readline_jumpbuf, 0) != 0)
+	if (sigsetjmp(readline_jumpbuf, 1) != 0)
 		return (char *) -1;		/* interrupted */
 	mayjump = true;
 	res = readline(prompt);		/* normal code path */
