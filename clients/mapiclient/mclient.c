@@ -3219,15 +3219,17 @@ putfile(void *data, const char *filename, bool binary, const void *buf, size_t b
 		return flush < 0 ? "error writing output" : NULL;
 	}
 	if (state == INTERRUPT) {
-		char *filename;
+		char *fname;
 	  interrupted:
-		filename = strdup(mnstr_name(priv->f));
+		fname = strdup(mnstr_name(priv->f));
 		close_stream(priv->f);
 		priv->f = NULL;
-		if (filename) {
-			MT_remove(filename);
-			free(filename);
+		if (fname) {
+			MT_remove(fname);
+			free(fname);
 		}
+		if (filename == NULL)
+			(void) mapi_query_abort(mapi_get_active(priv->mid), 1);
 		return "query aborted";
 	}
 	if (mnstr_write(priv->f, buf, 1, bufsize) < (ssize_t) bufsize) {
