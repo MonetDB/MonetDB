@@ -995,8 +995,8 @@ sqltypeinit( sql_allocator *sa)
 	/* this requires a type definition */
 
 	floats = t;
-	FLT = *t++ = sql_create_type(sa, "REAL", 24, SCALE_NOFIX, 2, EC_FLT, "flt");
-	DBL = *t++ = sql_create_type(sa, "DOUBLE", 53, SCALE_NOFIX, 2, EC_FLT, "dbl");
+	FLT = *t++ = sql_create_type(sa, "REAL", 24, SCALE_NONE, 2, EC_FLT, "flt");
+	DBL = *t++ = sql_create_type(sa, "DOUBLE", 53, SCALE_NONE, 2, EC_FLT, "dbl");
 
 	dates = t;
 	MONINT = *t++ = sql_create_type(sa, "MONTH_INTERVAL", 3, 0, 10, EC_MONTH, "int"); /* 1 .. 13 enumerates the 13 different interval types */
