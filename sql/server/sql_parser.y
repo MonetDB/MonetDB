@@ -7298,6 +7298,10 @@ sqlformaterror(mvc * sql, _In_z_ _Printf_format_string_ const char *format, ...)
 	const char *sqlstate = NULL;
 	size_t len = 0;
 
+	if (sql->scanner.aborted) {
+		snprintf(sql->errstr, ERRSIZE, "Query aborted\n");
+		return 1;
+	}
 	va_start (ap,format);
 	if (format && strlen(format) > 6 && format[5] == '!') {
 		/* sql state provided */

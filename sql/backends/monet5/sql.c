@@ -2622,7 +2622,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
 		if (!onclient && !tostdout)
 			close_stream(s);
-		goto wrapup_result_set1;
+		if (ok != -5)
+			goto wrapup_result_set1;
 	}
 	if (onclient) {
 		mnstr_flush(s, MNSTR_FLUSH_DATA);

@@ -1284,7 +1284,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		}
 	}
 	if (i == t->nr_cols + 1)
-		ok = TABLEToutput_file(&as, NULL, s);
+		ok = TABLEToutput_file(&as, NULL, s, m->scanner.rs);
 	for (i = 0; i <= t->nr_cols; i++) {
 		fmt[i].sep = NULL;
 		fmt[i].rsep = NULL;
@@ -1295,10 +1295,10 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		bat_iterator_end(&fmt[i].ci);
 	TABLETdestroy_format(&as);
 	GDKfree(tres);
-	if (mnstr_errnr(s) != MNSTR_NO__ERROR)
-		return -4;
 	if (ok < 0)
 		return ok;
+	if (mnstr_errnr(s) != MNSTR_NO__ERROR)
+		return -4;
 	return 0;
 }
 
@@ -1847,16 +1847,18 @@ mvc_export_error(backend *be, stream *s, int err_code)
 {
 	(void) be;
 	switch (err_code) {
-		case -1: /* Allocation failure */
-			return MAL_MALLOC_FAIL;
-		case -2: /* BAT descriptor error */
-			return RUNTIME_OBJECT_MISSING;
-		case -3: /* GDK error */
-			return GDKerrbuf;
-		case -4: /* Stream error */
-			return mnstr_peek_error(s);
-		default: /* Unknown, must be a bug */
-			return "Unknown internal error";
+	case -1: /* Allocation failure */
+		return MAL_MALLOC_FAIL;
+	case -2: /* BAT descriptor error */
+		return RUNTIME_OBJECT_MISSING;
+	case -3: /* GDK error */
+		return GDKerrbuf;
+	case -4: /* Stream error */
+		return mnstr_peek_error(s);
+	case -5:
+		return "Query aborted";
+	default: /* Unknown, must be a bug */
+		return "Unknown internal error";
 	}
 }
 

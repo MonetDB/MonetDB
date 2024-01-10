@@ -1652,12 +1652,11 @@ mapi_new_handle(Mapi mid)
 		mapi_setError(mid, "Memory allocation failure", __func__, MERROR);
 		return NULL;
 	}
+	/* initialize and add to doubly-linked list */
 	*hdl = (struct MapiStatement) {
 		.mid = mid,
-		.needmore = false,
+		.next = mid->first,
 	};
-	/* add to doubly-linked list */
-	hdl->next = mid->first;
 	mid->first = hdl;
 	if (hdl->next)
 		hdl->next->prev = hdl;
@@ -2181,8 +2180,7 @@ mapi_disconnect(Mapi mid)
  * The arguments are:
  * private - the value of the filecontentprivate argument to
  *           mapi_setfilecallback;
- * filename - the file to be written, files are always written as text
- *            files;
+ * filename - the file to be written;
  * binary - if set, the data to be written is binary and the file
  *          should therefore be opened in binary mode, otherwise the
  *          data is UTF-8 encoded text;
@@ -2702,8 +2700,10 @@ read_line(Mapi mid)
 			len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
 			if (len == -1 && mnstr_errnr(mid->from) == MNSTR_INTERRUPT) {
 				mnstr_clearerr(mid->from);
-				if (mid->oobintr)
+				if (mid->oobintr && !mid->active->aborted) {
+					mid->active->aborted = true;
 					mnstr_putoob(mid->to, 1);
+				}
 			} else
 				break;
 		}
@@ -3239,10 +3239,24 @@ write_file(MapiHdl hdl, char *filename, bool binary)
 		return;
 	}
 	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
-	while ((len = mnstr_read(mid->from, data, 1, sizeof(data))) > 0) {
-		if (line == NULL)
+	for (;;) {
+		len = mnstr_read(mid->from, data, 1, sizeof(data));
+		if (len == -1) {
+			if (mnstr_errnr(mid->from) == MNSTR_INTERRUPT) {
+				mnstr_clearerr(mid->from);
+				if (mid->oobintr && !hdl->aborted) {
+					hdl->aborted = true;
+					mnstr_putoob(mid->to, 1);
+				}
+			} else {
+				break;
+			}
+		} else if (len == 0) {
+			break;
+		} else if (line == NULL) {
 			line = mid->putfilecontent(mid->filecontentprivate,
 						   NULL, binary, data, len);
+		}
 	}
 	if (line == NULL)
 		line = mid->putfilecontent(mid->filecontentprivate,
@@ -3343,8 +3357,10 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 	if (data != NULL && size == 0) {
 		/* some error occurred */
 		mnstr_clearerr(mid->from);
-		if (mid->oobintr)
+		if (mid->oobintr && !hdl->aborted) {
+			hdl->aborted = true;
 			mnstr_putoob(mid->to, 1);
+		}
 	}
 	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
 	line = read_line(mid);
@@ -3695,6 +3711,23 @@ mapi_query_done(MapiHdl hdl)
 	if (ret == MOK)
 		ret = read_into_cache(hdl, 1);
 	return ret == MOK && hdl->needmore ? MMORE : ret;
+}
+
+MapiMsg
+mapi_query_abort(MapiHdl hdl, int reason)
+{
+	Mapi mid;
+
+	assert(reason > 0 && reason <= 127);
+	mapi_hdl_check(hdl);
+	mid = hdl->mid;
+	assert(mid->active == NULL || mid->active == hdl);
+	if (mid->oobintr && !hdl->aborted) {
+		mnstr_putoob(mid->to, reason);
+		hdl->aborted = true;
+		return MOK;
+	}
+	return MERROR;
 }
 
 MapiMsg

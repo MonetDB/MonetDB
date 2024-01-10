@@ -2420,9 +2420,12 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 				mnstr_write(toConsole, "\n", 1, 1);
 				if (hdl) {
 					/* on interrupt when continuing a query, force an error */
-					buf[0] = '\200';
-					buf[1] = '\n';
-					l = 2;
+					l = 0;
+					if (mapi_query_abort(hdl, 1) != MOK) {
+						/* if abort failed, insert something not allowed */
+						buf[l++] = '\200';
+					}
+					buf[l++] = '\n';
 					length = 0;
 				} else {
 					/* not continuing; just repeat */
@@ -3060,6 +3063,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 struct privdata {
 	stream *f;
 	char *buf;
+	Mapi mid;
 };
 
 #define READSIZE	(1 << 16)
@@ -3165,13 +3169,18 @@ getfile(void *data, const char *filename, bool binary,
 	if (state == INTERRUPT) {
 		close_stream(f);
 		priv->f = NULL;
+		(void) mapi_query_abort(mapi_get_active(priv->mid), 1);
 		return "interrupted";
 	}
 	s = mnstr_read(f, buf, 1, READSIZE);
 	if (s <= 0) {
 		close_stream(f);
 		priv->f = NULL;
-		return s < 0 ? "error reading file" : NULL;
+		if (s < 0) {
+			(void) mapi_query_abort(mapi_get_active(priv->mid), state == INTERRUPT ? 1 : 2);
+			return "error reading file";
+		}
+		return NULL;
 	}
 	if (size)
 		*size = (size_t) s;
@@ -3198,6 +3207,8 @@ putfile(void *data, const char *filename, bool binary, const void *buf, size_t b
 			}
 		}
 #endif
+		if (state == INTERRUPT)
+			goto interrupted;
 		if (buf == NULL || bufsize == 0)
 			return NULL; /* successfully opened file */
 	} else if (buf == NULL) {
@@ -3206,6 +3217,18 @@ putfile(void *data, const char *filename, bool binary, const void *buf, size_t b
 		close_stream(priv->f);
 		priv->f = NULL;
 		return flush < 0 ? "error writing output" : NULL;
+	}
+	if (state == INTERRUPT) {
+		char *filename;
+	  interrupted:
+		filename = strdup(mnstr_name(priv->f));
+		close_stream(priv->f);
+		priv->f = NULL;
+		if (filename) {
+			MT_remove(filename);
+			free(filename);
+		}
+		return "query aborted";
 	}
 	if (mnstr_write(priv->f, buf, 1, bufsize) < (ssize_t) bufsize) {
 		close_stream(priv->f);
@@ -3716,7 +3739,7 @@ main(int argc, char **argv)
 	}
 
 	struct privdata priv;
-	priv = (struct privdata) {0};
+	priv = (struct privdata) {.mid = mid};
 	mapi_setfilecallback2(mid, getfile, putfile, &priv);
 
 	mapi_trace(mid, trace);
