@@ -660,7 +660,7 @@ mvc_export_warning(stream *s, str w)
 }
 
 static int
-mvc_export_binary_bat(stream *s, BAT* bn)
+mvc_export_binary_bat(stream *s, BAT* bn, bstream *in)
 {
 	BATiter bni = bat_iterator(bn);
 	bool sendtheap = bni.type != TYPE_void, sendtvheap = sendtheap && bni.vh;
@@ -703,6 +703,8 @@ mvc_export_binary_bat(stream *s, BAT* bn)
 		}
 	}
 	bat_iterator_end(&bni);
+	if (bstream_getoob(in))
+		return -5;
 	return 0;
 }
 
@@ -1134,7 +1136,7 @@ mvc_export_row(backend *b, stream *s, res_table *t, const char *btag, const char
 }
 
 static int
-mvc_export_table_columnar(stream *s, res_table *t)
+mvc_export_table_columnar(stream *s, res_table *t, bstream *in)
 {
 	int i, res = 0;
 
@@ -1151,7 +1153,7 @@ mvc_export_table_columnar(stream *s, res_table *t)
 		if (b == NULL)
 			return -2;
 
-		res = mvc_export_binary_bat(s, b);
+		res = mvc_export_binary_bat(s, b, in);
 		BBPunfix(b->batCacheid);
 		if (res < 0)
 			return res;
@@ -1738,7 +1740,7 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (b->client->protocol == PROTOCOL_COLUMNAR) {
 		if (mnstr_flush(s, MNSTR_FLUSH_DATA) < 0)
 			return -4;
-		return mvc_export_table_columnar(s, t);
+		return mvc_export_table_columnar(s, t, m->scanner.rs);
 	}
 
 	count = m->reply_size;
