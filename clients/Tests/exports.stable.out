@@ -681,6 +681,7 @@ MapiMsg mapi_ping(Mapi mid) __attribute__((__nonnull__(1)));
 MapiHdl mapi_prepare(Mapi mid, const char *cmd) __attribute__((__nonnull__(1)));
 MapiMsg mapi_prepare_handle(MapiHdl hdl, const char *cmd) __attribute__((__nonnull__(1)));
 MapiHdl mapi_query(Mapi mid, const char *cmd) __attribute__((__nonnull__(1)));
+MapiMsg mapi_query_abort(MapiHdl hdl, int reason) __attribute__((__nonnull__(1)));
 MapiMsg mapi_query_done(MapiHdl hdl) __attribute__((__nonnull__(1)));
 MapiMsg mapi_query_handle(MapiHdl hdl, const char *cmd) __attribute__((__nonnull__(1)));
 MapiMsg mapi_query_part(MapiHdl hdl, const char *cmd, size_t size) __attribute__((__nonnull__(1)));
@@ -797,7 +798,7 @@ BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *
 str TABLETcollect(BAT **bats, Tablet *as);
 str TABLETcreate_bats(Tablet *as, BUN est);
 void TABLETdestroy_format(Tablet *as);
-int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
+int TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in);
 int TRACEtable(Client cntxt, BAT **r);
 int TYPE_xml;
 int UTF8_strlen(const char *restrict s);
