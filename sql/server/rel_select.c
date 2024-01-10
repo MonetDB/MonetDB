@@ -416,6 +416,23 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e)
 	return e;
 }
 
+static lng
+rel_get_count(sql_rel *rel)
+{
+	if (!rel)
+		return 0;
+	prop *p = NULL;
+	if (rel->p && (p = find_prop(rel->p, PROP_COUNT)) != NULL)
+		return p->value.lval;
+	else if(rel->l) {
+		if (is_select(rel->op) || is_project(rel->op))
+			return rel_get_count(rel->l);
+	}
+	return 0;
+}
+
+#define is_sum_aggr(f) (f->type == F_AGGR && strcmp(f->base.name, "sum") == 0)
+
 list *
 check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sql_subfunc *sf, int maybe_zero_or_one, bool internal)
 {
@@ -507,7 +524,9 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 		exps_digits_add(sf, nexps);
 	} else if (sf->func->fix_scale == INOUT) {
 		exps_inout(sf, nexps);
-	}
+	} else if (is_sum_aggr(sf->func))
+		exps_largest_int(sf, nexps, rel_get_count(rel));
+
 	/* dirty hack */
 	if (sf->func->type != F_PROC && sf->func->type != F_UNION && sf->func->type != F_LOADER && res) {
 		if (res->type->eclass == EC_ANY && atp)

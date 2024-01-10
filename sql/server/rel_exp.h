@@ -210,6 +210,7 @@ extern void exps_sum_scales(sql_subfunc *f, list *exps);
 extern sql_exp *exps_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, list *exps);
 extern void exps_digits_add(sql_subfunc *f, list *exps);
 extern void exps_inout(sql_subfunc *f, list *exps);
+extern void exps_largest_int(sql_subfunc *f, list *exps, lng cnt);
 
 extern int exp_aggr_is_count(sql_exp *e);
 extern list *check_distinct_exp_names(mvc *sql, list *exps);

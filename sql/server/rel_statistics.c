@@ -270,6 +270,8 @@ sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e)
 	}
 	if (digits)
 		et->digits = digits;
+	if (et->type->eclass == EC_DEC && et->digits <= et->scale)
+		et->digits = et->scale + 1;
 }
 
 static void

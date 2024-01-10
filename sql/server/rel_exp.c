@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 #include "sql_relation.h"
 #include "sql_semantic.h"
+#include "sql_decimal.h"
 #include "rel_exp.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
@@ -3111,6 +3112,43 @@ exps_inout(sql_subfunc *f, list *exps)
 			sql_find_subtype(res, res->type->base.name, digits, scale);
 	} else
 		res->digits = digits;
+}
+
+/* for aggregates we can reduce the result types size based on real digits/bits used number of known input rows */
+void
+exps_largest_int(sql_subfunc *f, list *exps, lng cnt)
+{
+	if (!f->func->res || cnt == 0)
+		return;
+	sql_subtype *res = f->res->h->data;
+	if (res->type->eclass != EC_DEC && res->type->eclass != EC_NUM)
+		return;
+	bool is_decimal = (res->type->eclass == EC_DEC);
+	unsigned int digits = 0, scale = 0, mdigits = is_decimal ? decimal_digits(cnt) : number_bits(cnt);
+	sql_type *largesttype = NULL;
+	for(node *n = exps->h; n; n = n->next) {
+		sql_subtype *t = exp_subtype(n->data);
+
+		if (!t)
+			continue;
+
+		largesttype = t->type;
+		if (is_decimal && t->type->eclass == EC_NUM) {
+			unsigned int d = bits2digits(t->digits);
+			digits = d>digits?d:digits;
+		} else if (digits < t->digits)
+			digits = t->digits;
+		if (scale < t->scale)
+			scale = t->scale;
+		break;
+	}
+	digits += mdigits;
+	if (largesttype && digits <= largesttype->digits)
+		sql_init_subtype(res, largesttype, digits, scale);
+	else if (is_decimal)
+		sql_find_subtype(res, res->type->base.name, digits, scale);
+	else
+		sql_find_numeric(res, 1, digits);
 }
 
 #define is_addition(fname) (strcmp(fname, "sql_add") == 0)

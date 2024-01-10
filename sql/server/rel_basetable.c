@@ -17,6 +17,7 @@
 #include "rel_basetable.h"
 #include "rel_remote.h"
 #include "rel_statistics.h"
+#include "rel_rewriter.h"
 #include "sql_privileges.h"
 
 #define USED_LEN(nr) ((nr+31)/32)
@@ -106,10 +107,13 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	sql_rel *rel = rel_create(sa);
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
 	rel_base_t *ba = (rel_base_t*)sa_zalloc(sa, sizeof(rel_base_t) + sizeof(int)*USED_LEN(end));
+	sqlstore *store = sql->session->tr->store;
 
 	if(!rel || !ba)
 		return NULL;
 
+	if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
+		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 10));
 	assert(atname);
 	if (strcmp(atname, t->base.name) != 0)
 		ba->name = sa_strdup(sa, atname);
