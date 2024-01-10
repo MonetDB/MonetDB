@@ -385,6 +385,7 @@ const char *MT_thread_getalgorithm(void);
 void *MT_thread_getdata(void);
 const char *MT_thread_getname(void);
 bool MT_thread_init(void);
+gdk_return MT_thread_init_add_callback(void (*init)(void *), void (*destroy)(void *), void *data);
 bool MT_thread_register(void);
 void MT_thread_set_qry_ctx(QryCtx *ctx);
 void MT_thread_setalgorithm(const char *algo);

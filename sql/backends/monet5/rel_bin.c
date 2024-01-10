@@ -4333,7 +4333,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		sql_exp *e = en->data;
 		prop *p;
 
-		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
+		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL && !is_anti(e)) {
 			sql_idx *i = p->value.pval;
 			int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
 
@@ -5143,6 +5143,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 		*/
 		if (!isNew(k)) {
 			stmt *nu_tids = stmt_tdiff(be, dels, u_tids, NULL); /* not updated ids */
+			nu_tids = stmt_project(be, nu_tids, dels);
 			list *lje = sa_list(sql->sa);
 			list *rje = sa_list(sql->sa);
 
@@ -5256,6 +5257,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 		/* s should be empty */
 		if (!isNew(k)) {
 			stmt *nu_tids = stmt_tdiff(be, dels, u_tids, NULL); /* not updated ids */
+			nu_tids = stmt_project(be, nu_tids, dels);
 			assert (updates);
 
 			h = updates[c->c->colnr];
