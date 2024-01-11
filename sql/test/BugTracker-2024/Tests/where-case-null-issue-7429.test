@@ -1,0 +1,50 @@
+statement ok
+CREATE TABLE t7429(c0 VARCHAR)
+
+statement ok
+INSERT INTO t7429 (c0) VALUES ('a'),('b')
+
+query T
+SELECT * FROM t7429
+----
+a
+b
+
+query I
+SELECT (((CASE (NULL)/(1) WHEN NULL THEN true END)OR(false)) IS NULL) FROM t7429
+----
+1
+1
+
+query T
+SELECT * FROM t7429 WHERE (((CASE (NULL)/(1) WHEN NULL THEN true END)OR(false)) IS NULL)
+----
+a
+b
+
+query II
+SELECT (CASE (NULL)/(1) WHEN NULL THEN true END), (CASE (NULL)/(1) WHEN NULL THEN true END)OR(false)
+----
+NULL
+NULL
+
+query I
+SELECT (CASE (NULL)/(1) WHEN NULL THEN true END)OR(false) FROM t7429
+----
+NULL
+NULL
+
+query T
+SELECT * FROM t7429 WHERE NULL
+----
+
+query T
+SELECT * FROM t7429 WHERE (NULL)OR(false)
+----
+
+query T
+SELECT * FROM t7429 WHERE (CASE (NULL)/(1) WHEN NULL THEN true END)OR(false)
+----
+
+statement ok
+DROP TABLE t7429
