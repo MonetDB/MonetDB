@@ -119,6 +119,7 @@ MCpushClientInput(Client c, bstream *new_input, int listing, const char *prompt)
 	x->next = c->bak;
 	c->bak = x;
 	c->fdin = new_input;
+	c->qryctx.bs = new_input;
 	c->listing = listing;
 	c->prompt = prompt ? prompt : "";
 	c->promptlength = strlen(c->prompt);
@@ -135,6 +136,7 @@ MCpopClientInput(Client c)
 		bstream_destroy(c->fdin);
 	}
 	c->fdin = x->fdin;
+	c->qryctx.bs = c->fdin;
 	c->yycur = x->yycur;
 	c->listing = x->listing;
 	c->prompt = x->prompt;
@@ -213,6 +215,7 @@ MCexitClient(Client c)
 		}
 		c->fdout = NULL;
 		c->fdin = NULL;
+		c->qryctx.bs = NULL;
 	}
 	assert(c->query == NULL);
 	if (profilerStatus > 0) {
@@ -241,6 +244,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		TRC_ERROR(MAL_SERVER, "No stdin channel available\n");
 		return NULL;
 	}
+	c->qryctx.bs = c->fdin;
 	c->yycur = 0;
 	c->bak = NULL;
 
@@ -260,10 +264,11 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->qryctx.querytimeout = 0;
+	c->querytimeout = 0;
 	c->sessiontimeout = 0;
 	c->logical_sessiontimeout = 0;
 	c->qryctx.starttime = 0;
+	c->qryctx.endtime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
 	c->maxmem = 0;
@@ -392,7 +397,8 @@ MCcloseClient(Client c)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->qryctx.querytimeout = 0;
+	c->querytimeout = 0;
+	c->qryctx.endtime = 0;
 	c->sessiontimeout = 0;
 	c->logical_sessiontimeout = 0;
 	c->user = oid_nil;

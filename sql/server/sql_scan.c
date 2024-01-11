@@ -605,6 +605,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 		.ws = ws,
 		.mode = LINE_N,
 		.raw_string_mode = GDKgetenv_istrue("raw_strings"),
+		.aborted = false,
 	};
 }
 
@@ -694,6 +695,8 @@ scanner_read_more(struct scanner *lc, size_t n)
 	bool more = false;
 
 
+	if (lc->aborted)
+		return EOF;
 	while (b->len < b->pos + lc->yycur + n) {
 
 		if (lc->mode == LINE_1 || !lc->started)
@@ -701,6 +704,10 @@ scanner_read_more(struct scanner *lc, size_t n)
 
 		/* query is not finished ask for more */
 		if (b->eof || !isa_block_stream(b->s)) {
+			if (bstream_getoob(b)) {
+				lc->aborted = true;
+				return EOF;
+			}
 			if (mnstr_write(lc->ws, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
 				mnstr_flush(lc->ws, MNSTR_FLUSH_DATA);
 			b->eof = false;
@@ -711,6 +718,12 @@ scanner_read_more(struct scanner *lc, size_t n)
 		    /* we asked for more data but didn't get any */
 		    (more && b->eof && b->len < b->pos + lc->yycur + n))
 			return EOF;
+		if (more && b->pos + lc->yycur + 2 == b->len && b->buf[b->pos + lc->yycur] == '\200' && b->buf[b->pos + lc->yycur + 1] == '\n') {
+			lc->errstr = "Query aborted";
+			b->len -= 2;
+			b->buf[b->len] = 0;
+			return EOF;
+		}
 	}
 	return 1;
 }

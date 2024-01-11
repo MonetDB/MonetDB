@@ -43,11 +43,8 @@ BATunique(BAT *b, BAT *s)
 	const char *algomsg = "";
 	lng t0 = 0;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -120,7 +117,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: byte-sized atoms";
 		uint32_t seen[256 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			val = ((const uint8_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -135,8 +132,8 @@ BATunique(BAT *b, BAT *s)
 				}
 			}
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (ATOMbasetype(bi.type) == TYPE_sht ||
 		   (bi.width == 2 &&
 		    ATOMstorage(bi.type) == TYPE_str &&
@@ -146,7 +143,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: short-sized atoms";
 		uint32_t seen[65536 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			val = ((const uint16_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -161,12 +158,12 @@ BATunique(BAT *b, BAT *s)
 				}
 			}
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
 		algomsg = "unique: sorted";
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			if (prev == NULL || (*cmp)(v, prev) != 0) {
@@ -175,8 +172,8 @@ BATunique(BAT *b, BAT *s)
 			}
 			prev = v;
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (BATcheckhash(b) ||
 		   ((!bi.transient ||
 		     (b->batRole == PERSISTENT && GDKinmemory(0))) &&
@@ -194,7 +191,7 @@ BATunique(BAT *b, BAT *s)
 			MT_rwlock_rdunlock(&b->thashlock);
 			goto lost_hash;
 		}
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			BUN p;
 
 			o = canditer_next(&ci);
@@ -220,8 +217,8 @@ BATunique(BAT *b, BAT *s)
 			}
 		}
 		MT_rwlock_rdunlock(&b->thashlock);
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else {
 		BUN prb;
 		BUN p;
@@ -258,7 +255,7 @@ BATunique(BAT *b, BAT *s)
 			GDKerror("cannot allocate hash table\n");
 			goto bunins_failed;
 		}
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			prb = HASHprobe(hs, v);
@@ -277,8 +274,8 @@ BATunique(BAT *b, BAT *s)
 				HASHput(hs, prb, p);
 			}
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);

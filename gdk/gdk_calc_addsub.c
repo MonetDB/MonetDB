@@ -29,14 +29,11 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -51,9 +48,9 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -68,7 +65,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -85,14 +82,11 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -109,9 +103,9 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] + rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -128,7 +122,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] + rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -1438,11 +1432,8 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	size_t slen, llen, rlen;
 	oid candoff1, candoff2;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(b1 != NULL || b2 != NULL); /* at least one not NULL */
 	candoff1 = b1 ? b1->hseqbase : 0;
@@ -1451,7 +1442,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	s = GDKmalloc(slen);
 	if (s == NULL)
 		return BUN_NONE;
-	TIMEOUT_LOOP_IDX_DECL(i, ncand, timeoffset) {
+	TIMEOUT_LOOP_IDX_DECL(i, ncand, qry_ctx) {
 		oid x1 = canditer_next(ci1) - candoff1;
 		oid x2 = canditer_next(ci2) - candoff2;
 		if (b1)
@@ -1477,8 +1468,8 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 				goto bailout;
 		}
 	}
-	TIMEOUT_CHECK(timeoffset,
-		      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+	TIMEOUT_CHECK(qry_ctx,
+		      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	GDKfree(s);
 	bn->theap->dirty = true;
 	return nils;
@@ -1782,14 +1773,11 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -1804,9 +1792,9 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -1821,7 +1809,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -1838,14 +1826,11 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -1862,9 +1847,9 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] - rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -1881,7 +1866,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] - rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }

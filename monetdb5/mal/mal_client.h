@@ -80,6 +80,7 @@ typedef struct CLIENT {
 	lng maxmem;					/* max_memory from db_user_info table */
 	lng sessiontimeout;			/* session abort after x usec, 0 = no limit */
 	lng logical_sessiontimeout;	/* logical session timeout, client defined */
+	lng querytimeout;			/* timeout per query in usec, 0 = no limit */
 	QryCtx qryctx;				/* per query limitations */
 
 	time_t login;				/* Time when this session started */
