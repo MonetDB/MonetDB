@@ -319,9 +319,8 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 				sql_exp *i = l->h->data;
 				sql_subtype *t = exp_subtype(i);
 
-				/* Summing over dbl/flt, the current parallel
-				 * impl. can lose precision. Hence, don't do
-				 * parallel. */
+				/* Summing over dbl/flt, the current parallel impl. can lose
+				 * precision. Hence, don't do parallel. */
 				// TODO: if the precision-loss is within a (to be defined) safe
 				//       range or if the user explicitly wants the parallel
 				//       version, then we could still do simple dbl/float sums
