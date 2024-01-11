@@ -18,3 +18,4 @@ join-on-row_number-over-7403
 parse_interval-crash-7412
 between-crash-7413
 corr-issue-7414
+insert-delete-insert-crash-7415
