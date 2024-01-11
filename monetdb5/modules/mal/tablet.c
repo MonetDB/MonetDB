@@ -414,7 +414,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 	}
 	for (q = offset + as->nr, p = offset, id = order->hseqbase + offset; p < q;
 		 p++, id++) {
-		if (bstream_getoob(in)) {
+		if (((p - offset) & 8191) == 8191 && bstream_getoob(in)) {
 			res = -5;
 			break;
 		}
@@ -442,7 +442,7 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 		return -1;
 	}
 	for (i = 0; i < as->nr; i++) {
-		if (bstream_getoob(in)) {
+		if ((i & 8191) == 8191 && bstream_getoob(in)) {
 			res = -5;			/* "Query aborted" */
 			break;
 		}
@@ -470,7 +470,7 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 	for (q = offset + as->nr, p = offset; p < q; p++, i++) {
 		oid h = order->hseqbase + p;
 
-		if (bstream_getoob(in)) {
+		if (((p - offset) & 8191) == 8191 && bstream_getoob(in)) {
 			res = -5;
 			break;
 		}
@@ -1265,7 +1265,7 @@ SQLproducer(void *p)
 
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
-		if (task->aborted || bstream_getoob(task->cntxt->fdin)) {
+		if (task->aborted || ((lineno & 8191) == 0 && bstream_getoob(task->cntxt->fdin))) {
 			tablet_error(task, rowno, lineno, int_nil,
 						 "problem reported by client", s);
 			ateof[cur] = true;
