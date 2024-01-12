@@ -14,11 +14,8 @@ except pymonetdb.DatabaseError as e:
 
 try:
     cur1.execute('select                             10000000                *          100000 * 11.51                +          51.097 *          100000;')
-    if has_huge:
-        if cur1.fetchall()[0][0] != Decimal('11510005109700.000'):
-            sys.stderr.write("Decimal('.11510005109700.000') expected")
-    else:
-        sys.stderr.write("Exception expected")
+    if cur1.fetchall()[0][0] != Decimal('11510005109700.000'):
+        sys.stderr.write("Decimal('.11510005109700.000') expected")
 except pymonetdb.DatabaseError as e:
     if not has_huge:
         if "overflow in calculation" not in str(e):
