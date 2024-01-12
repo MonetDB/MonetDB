@@ -91,8 +91,15 @@
 
 #define STRIMP_VERSION (uint64_t)2
 #define STRIMP_HISTSIZE (256*256)
+
+#define BIT_SHARING 1
 #define STRIMP_HEADER_SIZE 64
+#if BIT_SHARING
+#define STRIMP_PAIRS 2048
+#else
 #define STRIMP_PAIRS (STRIMP_HEADER_SIZE - 1)
+#endif
+
 #define STRIMP_CREATION_THRESHOLD				\
 	((BUN) ((ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)? 100 : 5000))
 
@@ -108,8 +115,8 @@ typedef struct {
 } CharPair;
 
 typedef struct {
-	size_t pos;
-	size_t lim;
+	ssize_t pos;
+	ssize_t lim;
 	const char *s;
 } PairIterator;
 
@@ -150,7 +157,6 @@ pair_equal(const CharPair *p1, const CharPair *p2)
  */
 
 /* We disregard spaces, digits and punctuation characters */
-#define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
 #define pairToIndex(b1, b2) (size_t)(((uint16_t)b2)<<8 | ((uint16_t)b1))
 
 inline static size_t
@@ -161,13 +167,21 @@ bytes2histindex(uint8_t *bytes, uint8_t psize)
 }
 
 inline static bool
-pair_at(const PairIterator *pi, CharPair *p)
+pair_at(const PairIterator *pi, CharPair *p, bte sce)
 {
-	if (pi->pos >= pi->lim - 1)
+	if (pi->pos >= (pi->lim - ((sce&2)?1:0)))
 		return false;
 
-	p->pbytes[0] = (uint8_t)tolower((unsigned char) pi->s[pi->pos]);
-	p->pbytes[1] = (uint8_t)tolower((unsigned char) pi->s[pi->pos + 1]);
+	if (sce&1 && pi->pos < 0) {
+		p->pbytes[0] = '^';
+		p->pbytes[1] = (uint8_t)tolower((unsigned char) pi->s[0]);
+	} else if (sce&2 && pi->pos == (pi->lim - 1)) {
+		p->pbytes[0] = (uint8_t)tolower((unsigned char) pi->s[pi->pos]);
+		p->pbytes[1] = '$';
+	} else {
+		p->pbytes[0] = (uint8_t)tolower((unsigned char) pi->s[pi->pos]);
+		p->pbytes[1] = (uint8_t)tolower((unsigned char) pi->s[pi->pos + 1]);
+	}
 
 	p->psize = 2;
 	p->idx = pairToIndex(p->pbytes[0], p->pbytes[1]);
@@ -175,21 +189,12 @@ pair_at(const PairIterator *pi, CharPair *p)
 }
 
 inline static bool
-next_pair(PairIterator *pi)
+next_pair(PairIterator *pi, bte sce)
 {
-	if (pi->pos >= pi->lim - 1)
+	if (pi->pos >= (pi->lim - ((sce&2)?1:0)))
 		return false;
 	pi->pos++;
 	return true;
-}
-
-/* Returns true if the specified char is ignored.
- */
-inline static bool
-ignored(const CharPair *p, uint8_t elm)
-{
-	assert(elm == 0 || elm == 1);
-	return isIgnored(p->pbytes[elm]);
 }
 
 inline static strimp_masks_t
@@ -223,7 +228,7 @@ STRMPpairLookup(const Strimps *s, const CharPair *p)
  *
  */
 static uint64_t
-STRMPmakebitstring(const char *s, Strimps *r)
+STRMPmakebitstring(const char *s, Strimps *r, bte sce)
 {
 	uint64_t ret = 0;
 	/* int8_t pair_idx = 0; */
@@ -231,16 +236,16 @@ STRMPmakebitstring(const char *s, Strimps *r)
 	CharPair cp;
 
 	pi.s = s;
-	pi.pos = 0;
+	pi.pos = (sce&1)?-1:0;
 	pi.lim = strlen(s);
 
-	if (pi.lim < 2) {
+	if ((pi.lim + (sce?1:0)) < 2) {
 		return ret;
 	}
 
-	while(pair_at(&pi, &cp)) {
+	while(pair_at(&pi, &cp, sce)) {
 		ret |= STRMPpairLookup(r, &cp);
-		next_pair(&pi);
+		next_pair(&pi, sce);
 	}
 
 	return ret;
@@ -255,6 +260,30 @@ STRMPmakebitstring(const char *s, Strimps *r)
 
 
 
+#if BIT_SHARING
+static void
+STRMPchoosePairs(const PairHistogramElem *hist, size_t hist_size, CharPair *cp)
+{
+	lng t0 = 0;
+	size_t i;
+
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
+
+	int j = 0, k = 0;
+	for(i = 0; k < STRIMP_PAIRS && k < (int)hist_size && i < hist_size; i++) {
+		if (hist[i].cnt == 0)
+			continue;
+		cp[k].idx = i;
+		cp[k].psize = 2;
+		cp[k].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - j - 1);
+		j++;
+		k++;
+		if (j==63)
+			j=0;
+	}
+	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
+}
+#else
 static void
 STRMPchoosePairs(const PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 {
@@ -277,6 +306,7 @@ STRMPchoosePairs(const PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 			}
 		}
 	}
+	cp[STRIMP_PAIRS] = (CharPair) {.psize = 2};
 
 	for(i = 0; i < STRIMP_PAIRS; i++) {
 		cp[i].pbytes[1] = (uint8_t)(indices[i] & 0xFF);
@@ -284,11 +314,11 @@ STRMPchoosePairs(const PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 		cp[i].idx = indices[i];
 		cp[i].psize = 2;
 		cp[i].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - i - 1);
+		printf("cp i=%d '%c' '%c' %d\n", (int)i, cp[i].pbytes[0], cp[i].pbytes[1], (int)hist[cp[i].idx].cnt);
 	}
-	cp[STRIMP_PAIRS] = (CharPair) {.psize = 2};
-
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
 }
+#endif
 
 /* Given a BAT b and a candidate list s constructs the header elements
  * of the strimp.
@@ -305,7 +335,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	size_t hidx;
 	oid x;
 	size_t hlen;
-	PairHistogramElem *hist;
+	PairHistogramElem *hist = NULL;
 	PairIterator pi;
 	CharPair cp;
 	struct canditer ci;
@@ -330,46 +360,29 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
 		const char *cs = BUNtvar(bi, x);
+		const bte sce = 3;
 		if (!strNil(cs)) {
 			pi.s = cs;
 			pi.pos = 0;
 			pi.lim = strlen(pi.s);
-			if (pi.lim < 2) {
+			if (pi.lim < 1) {
 				continue;
 			}
-			while (pair_at(&pi, &cp)) {
-				if(ignored(&cp, 1)) {
-					/* Skip this AND the next pair
-					 * if the second char of the
-					 * pair is ignored.
-					 */
-					next_pair(&pi);
-				} else if (ignored(&cp, 0)) {
-					/* Skip this pair if the first
-					 * char is ignored. This should
-					 * only happen at the beginnig
-					 * of a string, since the pair
-					 * will have been ignored in the
-					 * previous case.
-					 */
-					;
-
-				} else {
-					/* hidx = histogram_index(hist, hlen, &cp); */
-					hidx = cp.idx;
+			while (pair_at(&pi, &cp, sce)) {
+				/* hidx = histogram_index(hist, hlen, &cp); */
+				hidx = cp.idx;
 #ifndef UTF8STRINGS
-					assert(hidx < hlen);
+				assert(hidx < hlen);
 #else
-					if (hidx >= hlen) {
-						// TODO: Note and realloc. Should not happen for bytepairs.
-						continue;
-					}
-#endif
-					if (!hist[hidx].cnt)
-						values++;
-					hist[hidx].cnt++;
+				if (hidx >= hlen) {
+					// TODO: Note and realloc. Should not happen for bytepairs.
+					continue;
 				}
-				next_pair(&pi);
+#endif
+				if (!hist[hidx].cnt)
+					values++;
+				hist[hidx].cnt++;
+				next_pair(&pi, sce);
 			}
 		}
 	}
@@ -384,6 +397,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	GDKfree(hist);
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
+	printf("values %d\n", (int)values);
 	if (!(res = values >= STRIMP_HEADER_SIZE))
 		GDKerror("Not enough distinct values to create strimp index\n");
 	return res;
@@ -520,8 +534,18 @@ BATcheckstrimps(BAT *b)
 	do {								\
 		for (i = 0; i < ci.ncand; i++) {			\
 			x = next(&ci);					\
+			if ((bitstring_array[x] & qbmask) == qbmask) { \
+				rvals[j++] = x;				\
+			}						\
+		}							\
+	} while (0)
+
+#define STRMPfilterloop_keepnils(next)					\
+	do {								\
+		for (i = 0; i < ci.ncand; i++) {			\
+			x = next(&ci);					\
 			if ((bitstring_array[x] & qbmask) == qbmask || \
-			    (keep_nils && (bitstring_array[x] & ((uint64_t)0x1 << (STRIMP_HEADER_SIZE - 1))))) { \
+			    (bitstring_array[x] & ((uint64_t)0x1 << (STRIMP_HEADER_SIZE - 1)))) { \
 				rvals[j++] = x;				\
 			}						\
 		}							\
@@ -537,7 +561,7 @@ BATcheckstrimps(BAT *b)
  * final result.
  */
 BAT *
-STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
+STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils, bte sce /* include ^first bit 1, last$ bit 2 */)
 {
 	BAT *r = NULL;
 	BUN i, j = 0;
@@ -583,17 +607,33 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 		goto sfilter_fail;
 	}
 
-	qbmask = STRMPmakebitstring(q, strmps);
+	qbmask = STRMPmakebitstring(q, strmps, sce);
+
 	assert((qbmask & ((uint64_t)0x1 << (STRIMP_HEADER_SIZE - 1))) == 0);
 	TRC_DEBUG(ACCELERATOR, "strimp filtering with pattern '%s' bitmap: %#016" PRIx64 "\n",
 		  q, qbmask);
+	//printf("strimp filtering with pattern '%s' bitmap: %#016" PRIx64 "\n", q, qbmask);
 	bitstring_array = (uint64_t *)strmps->bitstrings_base;
 	rvals = Tloc(r, 0);
 
 	if (ci.tpe == cand_dense) {
-		STRMPfilterloop(canditer_next_dense);
+		if (keep_nils) {
+			STRMPfilterloop_keepnils(canditer_next_dense);
+		} else {
+		//	STRMPfilterloop(canditer_next_dense);
+		for (i = 0; i < ci.ncand; i++) {			\
+			x = canditer_next_dense(&ci);					\
+			if ((bitstring_array[x] & qbmask) == qbmask) { \
+				rvals[j++] = x;				\
+			}						\
+		}							\
+		}
 	} else {
-		STRMPfilterloop(canditer_next);
+		if (keep_nils) {
+			STRMPfilterloop_keepnils(canditer_next);
+		} else {
+			STRMPfilterloop(canditer_next);
+		}
 	}
 
 	BATsetcount(r, j);
@@ -607,6 +647,8 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 		  " items (%.2f%%).\n",
 		  ci.ncand, GDKusec()-t0, r->batCount,
 		  100*r->batCount/(double)ci.ncand);
+	//printf("result %d\n", (int)r->batCount);
+	fflush(stdout);
 	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	STRMPdecref(strmps, false);
 	if (pb != b)
@@ -702,7 +744,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	uint64_t descriptor;
 	size_t i;
 	uint16_t sz;
-	CharPair *hpairs = (CharPair*)GDKzalloc(sizeof(CharPair)*STRIMP_HEADER_SIZE);
+	CharPair *hpairs = (CharPair*)GDKzalloc(sizeof(CharPair)*(STRIMP_PAIRS+1));
 	const char *nme;
 
 	if (!hpairs)
@@ -774,6 +816,17 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	return r;
 }
 
+/* This macro takes a bat and checks if the strimp construction has been
+ * completed. It is completed when it is an actual pointer and the
+ * number of bitstrings computed is the same as the number of elements
+ * in the BAT.
+ */
+#define STRIMP_COMPLETE(b)						\
+	(b)->tstrimps != NULL &&					\
+		(b)->tstrimps != (Strimps *)1 &&			\
+		(b)->tstrimps != (Strimps *)2 &&			\
+		(((b)->tstrimps->strimps.free - ((char *)(b)->tstrimps->bitstrings_base - (b)->tstrimps->strimps.base)) == (b)->batCount*sizeof(uint64_t))
+
 /* Check if there is a strimp index for the given BAT.
  */
 bool
@@ -789,11 +842,13 @@ BAThasstrimps(BAT *b)
 	}
 
 	MT_lock_set(&pb->batIdxLock);
-	ret = pb->tstrimps != NULL;
+	ret = STRIMP_COMPLETE(pb);
 	MT_lock_unset(&pb->batIdxLock);
 
 	if (pb != b)
 		BBPunfix(pb->batCacheid);
+	if (ret)
+		printf("complete hasstrimps\n");
 	return ret;
 
 }
@@ -832,18 +887,6 @@ BATsetstrimps(BAT *b)
 	return GDK_SUCCEED;
 }
 
-/* This macro takes a bat and checks if the strimp construction has been
- * completed. It is completed when it is an actual pointer and the
- * number of bitstrings computed is the same as the number of elements
- * in the BAT.
- */
-#define STRIMP_COMPLETE(b)						\
-	(b)->tstrimps != NULL &&					\
-		(b)->tstrimps != (Strimps *)1 &&			\
-		(b)->tstrimps != (Strimps *)2 &&			\
-		(((b)->tstrimps->strimps.free - ((char *)(b)->tstrimps->bitstrings_base - (b)->tstrimps->strimps.base)) == (b)->batCount*sizeof(uint64_t))
-
-
 /* Strimp creation.
  *
  * First we attempt to take the index lock of the BAT. The first thread
@@ -871,6 +914,9 @@ STRMPcreate(BAT *b, BAT *s)
 	oid x;
 	struct canditer ci;
 	uint64_t *dh;
+	bool all = true;
+
+	printf("create\n");
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	TRC_DEBUG(ACCELERATOR, "creating strimp");
@@ -882,6 +928,8 @@ STRMPcreate(BAT *b, BAT *s)
 	if (VIEWtparent(b)) {
 		pb = BATdescriptor(VIEWtparent(b));
 		assert(pb);
+		if (BATcount(b) < BATcount(pb))
+			all = false;
 	} else {
 		pb = b;
 	}
@@ -902,6 +950,8 @@ STRMPcreate(BAT *b, BAT *s)
 		 */
 		if (pb->tstrimps == (Strimps *)2)
 			pb->tstrimps = NULL;
+		if (all && pb != b)
+			s = NULL;
 		if (pb->tstrimps == NULL || pb->tstrimps == (Strimps*)1) {
 			if (BATcheckstrimps(pb)) {
 				MT_lock_unset(&pb->batIdxLock);
@@ -933,14 +983,28 @@ STRMPcreate(BAT *b, BAT *s)
 			}
 			pb->tstrimps = r;
 		}
-		MT_lock_unset(&pb->batIdxLock);
+		if (all && STRIMP_COMPLETE(pb)) {
+	printf("complete strimps 1\n");
+			MT_lock_unset(&pb->batIdxLock);
+			if (pb != b)
+				BBPunfix(pb->batCacheid);
+			return GDK_SUCCEED;
+		}
+		if (!all)
+			MT_lock_unset(&pb->batIdxLock);
+	} else if (all && pb != b) {
+		MT_lock_set(&pb->batIdxLock);
 	}
 
 	if (STRIMP_COMPLETE(pb)) {
+	printf("complete strimps\n");
+		if (all && pb != b)
+			MT_lock_unset(&pb->batIdxLock);
 		if (pb != b)
 			BBPunfix(pb->batCacheid);
 		return GDK_SUCCEED;
 	}
+	printf("fill strimps\n");
 
 	/* At this point pb->tstrimps should be a valid strimp heap. */
 	assert(pb->tstrimps);
@@ -955,7 +1019,7 @@ STRMPcreate(BAT *b, BAT *s)
 		x = canditer_next(&ci) - b->hseqbase;
 		const char *cs = BUNtvar(bi, x);
 		if (!strNil(cs))
-			*dh++ = STRMPmakebitstring(cs, r);
+			*dh++ = STRMPmakebitstring(cs, r, 3);
 		else
 			*dh++ = (uint64_t)0x1 << (STRIMP_HEADER_SIZE - 1); /* Encode NULL strings in the most significant bit */
 	}
@@ -969,6 +1033,8 @@ STRMPcreate(BAT *b, BAT *s)
 	}
 	MT_lock_unset(&b->batIdxLock);
 	STRMPdecref(r, false);
+	if (all && pb != b)
+		MT_lock_unset(&pb->batIdxLock);
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
 	if (pb != b)
@@ -1098,7 +1164,7 @@ STRMPappendBitstring(BAT *b, const char *s)
 		strmp->bitstrings_base = strmp->strimps.base + bitstrings_offset;
 	}
 	dh = (uint64_t *)strmp->strimps.base + pb->tstrimps->strimps.free;
-	*dh = STRMPmakebitstring(s, strmp);
+	*dh = STRMPmakebitstring(s, strmp, 3);
 	strmp->strimps.free += sizeof(uint64_t);
 
 	strmp->rec_cnt++;

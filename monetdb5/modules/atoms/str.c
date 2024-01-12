@@ -5177,7 +5177,7 @@ do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 static str
 string_select(bat *ret, const bat *bid, const bat *sid, const str *key,
 			  const bit *anti, bit (*str_cmp)(const char *, const char *, int),
-			  const str fname)
+			  const str fname, bte sce)
 {
 	BAT *b, *s = NULL, *bn = NULL, *old_s = NULL;;
 	str msg = MAL_SUCCEED;
@@ -5198,9 +5198,9 @@ string_select(bat *ret, const bat *bid, const bat *sid, const str *key,
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
-	if (BAThasstrimps(b)) {
+	if (!BAThasstrimps(b)) {
 		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
-			BAT *tmp_s = STRMPfilter(b, s, *key, *anti);
+			BAT *tmp_s = STRMPfilter(b, s, *key, *anti, sce);
 			if (tmp_s) {
 				old_s = s;
 				s = tmp_s;
@@ -5212,6 +5212,11 @@ string_select(bat *ret, const bat *bid, const bat *sid, const str *key,
 		} else {				/* If we cannot filter with the strimp just continue normally */
 			GDKclrerr();
 		}
+	} else {
+		if (!*anti)
+			with_strimps = true;
+		else
+			with_strimps_anti = true;
 	}
 
 	MT_thread_setalgorithm(with_strimps ?
@@ -5302,7 +5307,7 @@ STRstartswithselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return string_select(ret, bid, sid, key, anti,
 						 icase ? str_is_iprefix : str_is_prefix,
-						 "str.startswithselect");
+						 "str.startswithselect", 1);
 }
 
 static str
@@ -5319,7 +5324,7 @@ STRendswithselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return string_select(ret, bid, sid, key, anti,
 						 icase ? str_is_isuffix : str_is_suffix,
-						 "str.endswithselect");
+						 "str.endswithselect", 2);
 }
 
 static str
@@ -5336,7 +5341,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return string_select(ret, bid, sid, key, anti,
 						 icase ? str_icontains : str_contains,
-						 "str.containsselect");
+						 "str.containsselect", 0);
 }
 
 #define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
@@ -5354,6 +5359,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define str_join_loop(STRCMP, STR_LEN)									\
 	do {																\
+		int total  = 0;\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
 			BAT *filtered_sl = NULL;									\
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
@@ -5362,11 +5368,12 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			rlen = STR_LEN;												\
 			nl = 0;														\
 			if (with_strimps)											\
-				filtered_sl = STRMPfilter(l, sl, vr, anti);				\
+				filtered_sl = STRMPfilter(l, sl, vr, anti, sce);		\
 			if (filtered_sl)											\
 				canditer_init(&lci, l, filtered_sl);					\
 			else														\
 				canditer_init(&lci, l, sl);								\
+			total += (int)lci.ncand;\
 			for (BUN lidx = 0; lidx < lci.ncand; lidx++) {				\
 				lo = canditer_next(&lci);								\
 				vl = VALUE(l, lo - lbase);								\
@@ -5424,6 +5431,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				r1->trevsorted = false;									\
 			}															\
 		}																\
+		printf("total %d\n", total);\
 	} while (0)
 
 #define str_antijoin_loop(STRCMP, STR_LEN)								\
@@ -5495,7 +5503,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
-		bit (*str_cmp)(const char *, const char *, int), const str fname)
+		bit (*str_cmp)(const char *, const char *, int), const str fname, bte sce)
 {
 	 (void) anti;
 	struct canditer lci, rci;
@@ -5513,12 +5521,25 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ?
 				(qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
-	if (BAThasstrimps(l)) {
+	if (r2 && BATcount(l) < BATcount(r)) {
+		BAT *s = l;
+		l = r;
+		r = s;
+		s = sl;
+		sl = sr;
+		sr = s;
+		s = r1;
+		r1 = r2;
+		r2 = s;
+	}
+	if (!BAThasstrimps(l)) {
 		with_strimps = true;
 		if (STRMPcreate(l, NULL) != GDK_SUCCEED) {
 			GDKclrerr();
 			with_strimps = false;
 		}
+	} else {
+		with_strimps = true;
 	}
 
 	TRC_DEBUG(ALGO,
@@ -5603,7 +5624,7 @@ static str
 STRjoin(bat *r1, bat *r2, const bat lid, const bat rid, const bat slid,
 		const bat srid, const bit anti, bit (*str_cmp)(const char *,
 													   const char *, int),
-		const str fname)
+		const str fname, bte sce)
 {
 	BAT *left = NULL, *right = NULL, *cleft = NULL, *cright = NULL,
 			*res1 = NULL, *res2 = NULL;
@@ -5636,7 +5657,7 @@ STRjoin(bat *r1, bat *r2, const bat lid, const bat rid, const bat slid,
 	if (r2)
 		set_empty_bat_props(res2);
 
-	msg = strjoin(res1, res2, left, right, cleft, cright, anti, str_cmp, fname);
+	msg = strjoin(res1, res2, left, right, cleft, cright, anti, str_cmp, fname, sce);
 
 	if (!msg) {
 		*r1 = res1->batCacheid;
@@ -5700,7 +5721,7 @@ STRstartswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg ? msg : STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0,
 							   srid ? *srid : 0, *anti,
 							   (caseignore) ? str_is_iprefix : str_is_prefix,
-							   "str.startswithjoin");
+							   "str.startswithjoin", 1);
 }
 
 static str
@@ -5724,7 +5745,7 @@ STRstartswithjoin1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg ? msg : STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0,
 							   srid ? *srid : 0, *anti,
 							   (caseignore) ? str_is_iprefix : str_is_prefix,
-							   "str.startswithjoin1");
+							   "str.startswithjoin1", 1);
 }
 
 static str
@@ -5749,7 +5770,7 @@ STRendswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg ? msg : STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0,
 							   srid ? *srid : 0, *anti,
 							   (caseignore) ? str_is_isuffix : str_is_suffix,
-							   "str.endswithjoin");
+							   "str.endswithjoin", 2);
 }
 
 static str
@@ -5773,7 +5794,7 @@ STRendswithjoin1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg ? msg : STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0,
 							   srid ? *srid : 0, *anti,
 							   (caseignore) ? str_is_isuffix : str_is_suffix,
-							   "str.endswithjoin1");
+							   "str.endswithjoin1", 2);
 }
 
 static str
@@ -5798,7 +5819,7 @@ STRcontainsjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg ? msg : STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0,
 							   srid ? *srid : 0, *anti,
 							   (caseignore) ? str_icontains : str_contains,
-							   "str.containsjoin");
+							   "str.containsjoin", 0);
 }
 
 static str
@@ -5821,7 +5842,7 @@ STRcontainsjoin1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg ? msg : STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0,
 							   srid ? *srid : 0, *anti,
 							   (caseignore) ? str_icontains : str_contains,
-							   "str.containsjoin1");
+							   "str.containsjoin1", 0);
 }
 
 #include "mel.h"

@@ -547,8 +547,8 @@ utf8_constexpr14_impl size_t utf8nlen(const utf8_int8_t *str, size_t n) {
 
 utf8_constexpr14_impl int utf8ncasecmp(const utf8_int8_t *src1,
                                        const utf8_int8_t *src2, size_t n) {
-  utf8_int32_t src1_lwr_cp = 0, src2_lwr_cp = 0, src1_upr_cp = 0,
-               src2_upr_cp = 0, src1_orig_cp = 0, src2_orig_cp = 0;
+  utf8_int32_t src1_lwr_cp = 0, src2_lwr_cp = 0, /*src1_upr_cp = 0,*/
+               /*src2_upr_cp = 0,*/ src1_orig_cp = 0, src2_orig_cp = 0;
 
   do {
     const utf8_int8_t *const s1 = src1;
@@ -600,13 +600,13 @@ utf8_constexpr14_impl int utf8ncasecmp(const utf8_int8_t *src1,
     src1_lwr_cp = utf8lwrcodepoint(src1_orig_cp);
     src2_lwr_cp = utf8lwrcodepoint(src2_orig_cp);
 
-    src1_upr_cp = utf8uprcodepoint(src1_orig_cp);
-    src2_upr_cp = utf8uprcodepoint(src2_orig_cp);
+    //src1_upr_cp = utf8uprcodepoint(src1_orig_cp);
+    //src2_upr_cp = utf8uprcodepoint(src2_orig_cp);
 
     /* check if the lowered codepoints match */
     if ((0 == src1_orig_cp) && (0 == src2_orig_cp)) {
       return 0;
-    } else if ((src1_lwr_cp == src2_lwr_cp) || (src1_upr_cp == src2_upr_cp)) {
+    } else if ((src1_lwr_cp == src2_lwr_cp) /*|| (src1_upr_cp == src2_upr_cp)*/) {
       continue;
     }
 
@@ -1315,7 +1315,9 @@ void utf8upr(utf8_int8_t *utf8_restrict str) {
 }
 
 utf8_constexpr14_impl utf8_int32_t utf8lwrcodepoint(utf8_int32_t cp) {
-  if (((0x0041 <= cp) && (0x005a >= cp)) ||
+  if (cp < 0x0041 || (cp < 0x007b && cp > 0x005a)) {
+		return cp;
+  } else if (((0x0041 <= cp) && (0x005a >= cp)) ||
       ((0x00c0 <= cp) && (0x00d6 >= cp)) ||
       ((0x00d8 <= cp) && (0x00de >= cp)) ||
       ((0x0391 <= cp) && (0x03a1 >= cp)) ||

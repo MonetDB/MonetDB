@@ -2167,7 +2167,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 	 */
 	if (BAThasstrimps(b)) {
 		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
-			BAT *tmp_s = STRMPfilter(b, s, *pat, *anti);
+			BAT *tmp_s = STRMPfilter(b, s, *pat, *anti, 0);
 			if (tmp_s) {
 				old_s = s;
 				s = tmp_s;
