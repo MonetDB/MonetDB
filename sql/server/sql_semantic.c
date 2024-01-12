@@ -511,10 +511,10 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 			score++;
 			if (ec == EC_DEC)
 				return 0;
-			if (a && EC_NUMBER(ec))
+			if (a && EC_NUMBER(ec) && !EC_INTERVAL(ec))
 				score += a->type.type->localtype * 10; /* premium on larger types */
 			else if (a) /* all other types */
-				score += 110;
+				score += 109;
 			continue;
 		}
 
@@ -525,6 +525,10 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 			t->type->eclass == EC_EXTERNAL &&
 			t->type->localtype == a->type.type->localtype)
 				nscore = 10;
+		if (nscore &&
+			t->type->eclass == EC_NUM && a->type.type->eclass == EC_DEC &&
+			t->type->localtype > a->type.type->localtype)
+			*downcast = true;
 		if (nscore == 0)
 			return 0;
 		nscore *= 100; /* first based on prefered conversions */

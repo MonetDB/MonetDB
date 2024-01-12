@@ -408,7 +408,7 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e)
 				return e;
 			sql_subtype st;
 			int scale = ct->scale;
-			int digits = et->digits-et->scale+scale;
+			int digits = ((et->type->eclass == EC_NUM)?bits2digits(et->digits):et->digits)-et->scale+scale;
 			(void)sql_find_subtype(&st, ct->type->base.name, digits, scale);
 			return exp_convert(sql->sa, e, et, &st);
 		}
@@ -497,7 +497,6 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 			return NULL;
 		if (sf->func->fix_scale == SCALE_FIX) {
 			ntp = sql_create_subtype(sql->sa, a->type.type->localtype?a->type.type:t?t->type:atp->type, digits, scale);
-
 			e = exp_fix_scale(sql, ntp, e);
 		} else if (sf->func->fix_scale == SCALE_EQ) {
 			e = exp_fix_scale(sql, &a->type, e);
