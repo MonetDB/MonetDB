@@ -13,5 +13,51 @@ delete from ttt where id=2
 statement ok
 update ttt set id = 3 where id = 3
 
+query II
+select id, k from ttt order by id
+----
+1
+3
+3
+4
+4
+3
+5
+3
+
 statement ok
 drop table ttt
+
+-- repeat test but within a transaction
+statement ok
+start transaction
+
+statement ok
+create table ttt(id int primary key,k int NOT NULL DEFAULT '0')
+
+statement ok
+insert into ttt values(1,3),(2,3),(3,3),(4,3),(5,3)
+
+statement ok
+update ttt set k=k+1 where id=3
+
+statement ok
+delete from ttt where id=2
+
+statement ok
+update ttt set id = 3 where id = 3
+
+query II
+select id, k from ttt order by id
+----
+1
+3
+3
+4
+4
+3
+5
+3
+
+statement ok
+rollback

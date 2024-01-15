@@ -1,0 +1,37 @@
+statement ok
+CREATE TABLE t7414 ( v1 , v2 ) as ( select i , cast ( i as string ) from generate_series ( 1 , 1000 ) as t ( i ) )
+
+query I
+SELECT COUNT(*) FROM t7414
+----
+999
+
+statement error 22018!conversion of string to type bit failed.
+DELETE FROM t7414 WHERE NULLIF ( v2 , v2 = ( SELECT corr ( v1 , v1 ) OVER ( ROWS 2 PRECEDING ) ) )
+
+query I nosort
+SELECT corr ( v1 , v1 ) OVER ( ROWS 2 PRECEDING ) FROM t7414 WHERE v1<5
+----
+NULL
+1
+1
+1
+
+query T nosort
+SELECT NULLIF ( v2 , ( SELECT corr ( v1 , v1 ) OVER ( ROWS 2 PRECEDING ) ) ) FROM t7414 WHERE v1<5
+----
+1
+2
+3
+4
+
+statement ok
+DELETE FROM t7414 WHERE NULLIF ( v2 , v2 = ( SELECT corr ( v1 , v1 ) OVER ( ROWS 2 PRECEDING ) ) ) IS NULL
+
+query I
+SELECT COUNT(*) FROM t7414
+----
+999
+
+statement ok
+DROP TABLE t7414

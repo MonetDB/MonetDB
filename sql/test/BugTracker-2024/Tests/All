@@ -1,2 +1,5 @@
 inequality-hash-issue-7426
 pkey-check-failed-7425
+where-between-issue-7428
+where-case-null-issue-7429
+create-index-query-issue-7430
