@@ -2511,12 +2511,14 @@ log_activate(logger *lg)
 	bool flush_cleanup = false;
 	gdk_return res = GDK_SUCCEED;
 
+	rotation_lock(lg);
 	const lng current_file_size = LOG_DISABLED(lg) ? 0 : (lng) getfilepos(getFile(lg->current->output_log));
 
-	if (current_file_size == -1)
+	if (current_file_size == -1) {
+		rotation_unlock(lg);
 		return GDK_FAIL;
+	}
 
-	rotation_lock(lg);
 	if (!lg->flushnow &&
 	    !lg->current->next &&
 	    current_file_size > 2 &&
