@@ -90,6 +90,7 @@
 #define RUNTIME_OBJECT_UNDEFINED "Object not found"
 #define RUNTIME_UNKNOWN_INSTRUCTION "Instruction type not supported"
 #define RUNTIME_QRY_TIMEOUT "Query aborted due to timeout"
+#define RUNTIME_QRY_INTERRUPT "Query interrupted"
 #define RUNTIME_SESSION_TIMEOUT "Query aborted due to session timeout"
 #define OPERATION_FAILED "operation failed"
 #define _OPERATION_FAILED "Operation failed"

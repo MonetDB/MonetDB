@@ -2335,7 +2335,6 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 static logged_range *
 do_flush_range_cleanup(logger *lg)
 {
-	rotation_lock(lg);
 	logged_range *frange = lg->flush_ranges;
 	logged_range *first = frange;
 
@@ -2345,7 +2344,6 @@ do_flush_range_cleanup(logger *lg)
 		frange = frange->next;
 	}
 	if (first == frange) {
-		rotation_unlock(lg);
 		return first;
 	}
 
@@ -2361,7 +2359,6 @@ do_flush_range_cleanup(logger *lg)
 			frange->output_log = NULL;
 		}
 	}
-	rotation_unlock(lg);
 	return flast;
 }
 
@@ -2514,12 +2511,14 @@ log_activate(logger *lg)
 	bool flush_cleanup = false;
 	gdk_return res = GDK_SUCCEED;
 
+	rotation_lock(lg);
 	const lng current_file_size = LOG_DISABLED(lg) ? 0 : (lng) getfilepos(getFile(lg->current->output_log));
 
-	if (current_file_size == -1)
+	if (current_file_size == -1) {
+		rotation_unlock(lg);
 		return GDK_FAIL;
+	}
 
-	rotation_lock(lg);
 	if (!lg->flushnow &&
 	    !lg->current->next &&
 	    current_file_size > 2 &&
@@ -2535,9 +2534,9 @@ log_activate(logger *lg)
 		flush_cleanup = true;
 		do_rotate(lg);
 	}
-	rotation_unlock(lg);
 	if (flush_cleanup)
 		(void) do_flush_range_cleanup(lg);
+	rotation_unlock(lg);
 	return res;
 }
 
@@ -3162,15 +3161,16 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 		if (log_open_output(lg) != GDK_SUCCEED)
 			GDKfatal("Could not create new log file\n");	/* TODO: does not have to be fatal (yet) */
 		do_rotate(lg);
-		rotation_unlock(lg);
 		(void) do_flush_range_cleanup(lg);
 		assert(lg->flush_ranges == lg->current);
+		rotation_unlock(lg);
 		return log_commit(lg, p, NULL, 0);
 	}
 
 	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
+	rotation_lock(lg);
 	logged_range *frange = do_flush_range_cleanup(lg);
 
 	while (frange->next && frange->id < file_id) {
@@ -3192,22 +3192,20 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 	/* else somebody else has flushed our log file */
 
 	if (ATOMIC_DEC(&frange->refcount) == 1 && !LOG_DISABLED(lg)) {
-		rotation_lock(lg);
 		if (frange != lg->current && frange->output_log) {
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
 		}
-		rotation_unlock(lg);
 	}
 
 	if (ATOMIC_DEC(&lg->nr_flushers) == 0) {
 		/* I am the last flusher
 		 * if present,
 		 * wake up the exclusive flusher in log_tstart */
-		rotation_lock(lg);
+		/* rotation_lock is still being held */
 		MT_cond_signal(&lg->excl_flush_cv);
-		rotation_unlock(lg);
 	}
+	rotation_unlock(lg);
 
 	return GDK_SUCCEED;
 }
@@ -3381,8 +3379,8 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 				GDKfatal("Could not create new log file\n");	/* TODO: does not have to be fatal (yet) */
 		}
 		do_rotate(lg);
-		rotation_unlock(lg);
 		(void) do_flush_range_cleanup(lg);
+		rotation_unlock(lg);
 
 		if (lg->saved_id + 1 < lg->id)
 			log_flush(lg, (1ULL << 63));

@@ -194,6 +194,8 @@ mapi_export MapiMsg mapi_query_part(MapiHdl hdl, const char *cmd, size_t size)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_query_done(MapiHdl hdl)
 	__attribute__((__nonnull__(1)));
+mapi_export MapiMsg mapi_query_abort(MapiHdl hdl, int reason)
+	__attribute__((__nonnull__(1)));
 mapi_export MapiHdl mapi_send(Mapi mid, const char *cmd)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_read_response(MapiHdl hdl)

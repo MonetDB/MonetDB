@@ -106,7 +106,7 @@
 		if (ci.tpe == cand_dense) {				\
 			if (grps) {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, groups"); \
-				TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next_dense(&ci) - hseqb; \
 					INIT_1;				\
 					if (ngrp == 0 || grps[r] != prev || DIFFER) { \
@@ -119,11 +119,11 @@
 					KEEP;				\
 					prev = grps[r];			\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			} else {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, !groups"); \
-				TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next_dense(&ci) - hseqb; \
 					INIT_1;				\
 					if (ngrp == 0 || DIFFER) {	\
@@ -135,13 +135,13 @@
 					}				\
 					KEEP;				\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			}						\
 		} else {						\
 			if (grps) {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, groups"); \
-				TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next(&ci) - hseqb;	\
 					INIT_1;				\
 					if (ngrp == 0 || grps[r] != prev || DIFFER) { \
@@ -154,11 +154,11 @@
 					KEEP;				\
 					prev = grps[r];			\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			} else {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, !groups"); \
-				TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next(&ci) - hseqb;	\
 					INIT_1;				\
 					if (ngrp == 0 || DIFFER) {	\
@@ -170,8 +170,8 @@
 					}				\
 					KEEP;				\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			}						\
 		}							\
 	} while(0)
@@ -209,7 +209,7 @@
 		j = 0;							\
 		if (ci.tpe == cand_dense) {				\
 			MT_thread_setalgorithm("GRP_subscan_old_groups, dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
 				if (ngrp != 0 && EQUAL) {		\
@@ -247,11 +247,11 @@
 				/* start a new group */			\
 				GRPnotfound();				\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
 			MT_thread_setalgorithm("GRP_subscan_old_groups, !dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\
 				if (ngrp != 0 && EQUAL) {		\
@@ -289,8 +289,8 @@
 				/* start a new group */			\
 				GRPnotfound();				\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		}							\
 	} while(0)
 
@@ -345,7 +345,7 @@
 		assert(grps == NULL);					\
 		if (ci.tpe == cand_dense) {				\
 			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, dense, parent hash" : "GRP_use_existing_hash_table, dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next_dense(&ci);	\
 				p = o - hseqb + lo;			\
 				INIT_1;					\
@@ -377,11 +377,11 @@
 					GRPnotfound();			\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
 			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, !dense, parent hash" : "GRP_use_existing_hash_table, !dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next(&ci);		\
 				p = o - hseqb + lo;			\
 				INIT_1;					\
@@ -413,8 +413,8 @@
 					GRPnotfound();			\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		}							\
 	} while(0)
 
@@ -497,7 +497,7 @@ ctz(oid x)
 	do {								\
 		if (ci.tpe == cand_dense) {				\
 			MT_thread_setalgorithm("GRP_create_partial_hash_table, dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
 				prb = HASH;				\
@@ -527,11 +527,11 @@ ctz(oid x)
 					HASHput(hs, prb, p);		\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
 			MT_thread_setalgorithm("GRP_create_partial_hash_table, !dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\
 				prb = HASH;				\
@@ -561,8 +561,8 @@ ctz(oid x)
 					HASHput(hs, prb, p);		\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		}							\
 	} while (0)
 #define GCGRPTST(i, j)	if (grps[i] != grps[j]) { hb = BUN_NONE; break; }
@@ -609,7 +609,7 @@ ctz(oid x)
 		ngrp = 0;						\
 		gn->tsorted = true;					\
 		if (ci.tpe == cand_dense) {				\
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next_dense(&ci);	\
 				p = o - hseqb;				\
 				uint##BG##_t x = GV;			\
@@ -626,7 +626,7 @@ ctz(oid x)
 					cnts[v]++;			\
 			}						\
 		} else {						\
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next(&ci);		\
 				p = o - hseqb;				\
 				uint##BG##_t x = GV;			\
@@ -643,8 +643,8 @@ ctz(oid x)
 					cnts[v]++;			\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(error));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 	} while (0)
 
 gdk_return
@@ -673,11 +673,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	const char *algomsg = "";
 	bool locked = false;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if (b == NULL) {
