@@ -23040,12 +23040,12 @@ MTIMEdate_sub_msec_interval_bulk_p2;
 (empty)
 batmtime
 date_to_str
-pattern batmtime.date_to_str(X_0:bat[:str], X_1:bat[:str]):bat[:str] 
+pattern batmtime.date_to_str(X_0:bat[:date], X_1:bat[:str]):bat[:str] 
 MTIMEdate_to_str_bulk;
 (empty)
 batmtime
 date_to_str
-pattern batmtime.date_to_str(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:str] 
+pattern batmtime.date_to_str(X_0:bat[:date], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:str] 
 MTIMEdate_to_str_bulk;
 (empty)
 batmtime
@@ -36397,7 +36397,7 @@ mtime
 epoch
 command mtime.epoch(X_0:lng):timestamp 
 MTIMEtimestamp_frommsec_epoch;
-convert milli seconds since epoch into a timestamp
+convert milliseconds since epoch into a timestamp
 mtime
 epoch
 command mtime.epoch(X_0:int):timestamp 

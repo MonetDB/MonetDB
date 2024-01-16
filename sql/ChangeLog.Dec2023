@@ -1,3 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Jan 15 2024 Sjoerd Mullender <sjoerd@acm.org>
+- The function json.isvalid(json) incorrectly returned true if the
+  argument was null.  It should return null.
+
