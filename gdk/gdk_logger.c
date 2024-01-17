@@ -804,6 +804,10 @@ la_bat_create(logger *lg, logaction *la, int tid)
 	/* formerly head column type, should be void */
 	if ((b = COLnew(0, la->tt, BATSIZE, PERSISTENT)) == NULL)
 		return GDK_FAIL;
+	/* file size of 2 means only endian indicator present
+	 * (i.e. effectively empty) */
+	if (current_file_size <= 2)
+		return GDK_SUCCEED;
 
 	if (la->tt < 0)
 		BATtseqbase(b, 0);
@@ -2517,6 +2521,12 @@ log_activate(logger *lg)
 	if (current_file_size == -1) {
 		rotation_unlock(lg);
 		return GDK_FAIL;
+	}
+	/* file size of 2 means only endian indicator present
+	 * (i.e. effectively empty) */
+	if (current_file_size <= 2) {
+		rotation_unlock(lg);
+		return GDK_SUCCEED;
 	}
 
 	if (!lg->flushnow &&
