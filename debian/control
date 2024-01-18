@@ -1,7 +1,7 @@
 Source: monetdb
 Section: database
 Priority: optional
-Maintainer: MonetDB BV <info@monetdb.org>
+Maintainer: MonetDB Foundation <info@monetdb.org>
 Homepage: https://www.monetdb.org/
 Vcs-Browser: https://dev.monetdb.org/hg/MonetDB/
 Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/ -b Dec2023

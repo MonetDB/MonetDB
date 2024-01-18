@@ -2518,6 +2518,12 @@ log_activate(logger *lg)
 		rotation_unlock(lg);
 		return GDK_FAIL;
 	}
+	/* file size of 2 means only endian indicator present
+	 * (i.e. effectively empty) */
+	if (current_file_size <= 2) {
+		rotation_unlock(lg);
+		return GDK_SUCCEED;
+	}
 
 	if (!lg->flushnow &&
 	    !lg->current->next &&
