@@ -76,7 +76,7 @@ dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost,
 	int above;					/* contents of cell immediately above */
 	int left;					/* contents of cell immediately to left */
 	int diag;					/* contents of cell immediately above and to left */
-	int sz;						/* number of cells in matrix */
+	lng sz;					/* number of cells in matrix */
 	int diag2 = 0, cost2 = 0;
 
 	if (strNil(*S) || strNil(*T)) {
@@ -98,7 +98,7 @@ dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost,
 	sz = (n + 1) * (m + 1) * sizeof(int);
 	d = (int *) GDKmalloc(sz);
 	if (d == NULL)
-		throw(MAL, "levenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* Step 2 */
 	for (i = 0; i <= n; i++) {
