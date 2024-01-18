@@ -782,13 +782,24 @@ URLnew(url *u, str *val)
 static str
 URLnew3(url *u, str *protocol, str *server, str *file)
 {
+	str Protocol = *protocol;
+	str Server = *server;
+	str File = *file;
 	size_t l;
 
-	l = strLen(*file) + strLen(*server) + strLen(*protocol) + 10;
+	if (strNil(File))
+		File = "";
+	else if (*File == '/')
+		File++;
+	if (strNil(Server))
+		Server = "";
+	if (strNil(Protocol))
+		Protocol = "";
+	l = strlen(File) + strlen(Server) + strlen(Protocol) + 10;
 	*u = GDKmalloc(l);
 	if (*u == NULL)
 		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	snprintf(*u, l, "%s://%s/%s", *protocol, *server, *file);
+	snprintf(*u, l, "%s://%s/%s", Protocol, Server, File);
 	return MAL_SUCCEED;
 }
 
