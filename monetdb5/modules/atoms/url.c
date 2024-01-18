@@ -808,6 +808,7 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 {
 	str Protocol = *protocol;
 	str Server = *server;
+	int Port = *port;
 	str File = *file;
 	size_t l;
 
@@ -817,13 +818,15 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 		File++;
 	if (strNil(Server))
 		Server = "";
+	if (is_int_nil(Port))
+		Port = 0;
 	if (strNil(Protocol))
 		Protocol = "";
 	l = strlen(File) + strlen(Server) + strlen(Protocol) + 20;
 	*u = GDKmalloc(l);
 	if (*u == NULL)
 		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	snprintf(*u, l, "%s://%s:%d/%s", Protocol, Server, *port, File);
+	snprintf(*u, l, "%s://%s:%d/%s", Protocol, Server, Port, File);
 	return MAL_SUCCEED;
 }
 

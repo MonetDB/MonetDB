@@ -22,3 +22,18 @@ query T
 SELECT TRIM(newurl(1,1,NULL), newurl(1,1,NULL))
 ----
 (empty)
+
+query T
+SELECT newurl(NULL,1,NULL)
+----
+://1/
+
+query T
+SELECT newurl(NULL,NULL,NULL)
+----
+:///
+
+query T
+SELECT newurl(NULL,NULL,NULL,NULL)
+----
+://:0/
