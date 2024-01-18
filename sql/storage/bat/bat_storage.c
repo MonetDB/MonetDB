@@ -4397,7 +4397,7 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
-	if (d->next) {
+	if (d && d->next) {
 
 		assert(!drop);
 		if (d->cs.ts > oldest)
