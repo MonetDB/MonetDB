@@ -21,3 +21,4 @@ corr-issue-7414
 insert-delete-insert-crash-7415
 orderby-debug-crash-7416
 newurl-issue-7417
+rel_order_by-assertion-7418
