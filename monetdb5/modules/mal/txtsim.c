@@ -96,7 +96,9 @@ dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost,
 		return MAL_SUCCEED;
 	}
 	sz = (n + 1) * (m + 1) * sizeof(int);
-	d = (int *) GDKmalloc(sz);
+	if (sz > (1<<30))
+		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	d = (int *) GDKmalloc((size_t)sz);
 	if (d == NULL)
 		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 

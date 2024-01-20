@@ -2376,15 +2376,31 @@ exps_have_func(list *exps)
 	return 0;
 }
 
-int
-exp_has_func(sql_exp *e)
+static int exp_has_func_or_cmp(sql_exp *e, bool cmp);
+
+static int
+exps_have_func_or_cmp(list *exps, bool cmp)
+{
+	if (list_empty(exps))
+		return 0;
+	for(node *n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
+
+		if (exp_has_func_or_cmp(e, cmp))
+			return 1;
+	}
+	return 0;
+}
+
+static int
+exp_has_func_or_cmp(sql_exp *e, bool cmp)
 {
 	if (!e)
 		return 0;
 	switch (e->type) {
 	case e_atom:
 		if (e->f)
-			return exps_have_func(e->f);
+			return exps_have_func_or_cmp(e->f, true);
 		return 0;
 	case e_convert:
 		return exp_has_func(e->l);
@@ -2392,22 +2408,30 @@ exp_has_func(sql_exp *e)
 		return 1;
 	case e_aggr:
 		if (e->l)
-			return exps_have_func(e->l);
+			return exps_have_func_or_cmp(e->l, true);
 		return 0;
 	case e_cmp:
+		if (cmp)
+			return 1;
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return (exps_have_func(e->l) || exps_have_func(e->r));
+			return (exps_have_func_or_cmp(e->l, true) || exps_have_func_or_cmp(e->r, true));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return (exp_has_func(e->l) || exps_have_func(e->r));
+			return (exp_has_func_or_cmp(e->l, true) || exps_have_func_or_cmp(e->r, true));
 		} else {
-			return (exp_has_func(e->l) || exp_has_func(e->r) ||
-					(e->f && exp_has_func(e->f)));
+			return (exp_has_func_or_cmp(e->l, true) || exp_has_func_or_cmp(e->r, true) ||
+					(e->f && exp_has_func_or_cmp(e->f, true)));
 		}
 	case e_column:
 	case e_psm:
 		return 0;
 	}
 	return 0;
+}
+
+int
+exp_has_func(sql_exp *e)
+{
+	return exp_has_func_or_cmp(e, false);
 }
 
 static int

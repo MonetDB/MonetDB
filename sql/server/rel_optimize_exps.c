@@ -454,7 +454,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 		sql_exp *le = n->data;
 		sql_exp *re = n->next->data;
 
-		if (exp_is_atom(le) && exp_is_atom(re) && le->type == e_atom && le->l && re->type == e_atom && re->l) {
+		if (exp_is_atom(le) && !exp_is_null(le) && exp_is_atom(re) && le->type == e_atom && le->l && re->type == e_atom && re->l) {
 			n = n->next->next;
 			if (exp_match_exp(le, re)) { /* x==y -> a */
 				sql_exp *res = n->data;
