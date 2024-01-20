@@ -14,8 +14,10 @@ statement error 42000!MAX: aggregate functions cannot be nested
 SELECT 0 IS NOT NULL FROM t7418 ORDER BY AVG ( max ( 331 ) ) NULLS LAST
 
 -- next causes: sql/server/rel_select.c:4766: rel_order_by: Assertion `is_project(rel->op)' failed.
-statement error 42000!MAX: aggregate functions cannot be nested
+query I
 SELECT 0 IS NOT NULL FROM t7418 ORDER BY AVG ( max ( 331 ) ) OVER ( ORDER BY 634 NULLS FIRST ) NULLS LAST
+----
+1
 
 query I
 SELECT * FROM t7418 ORDER BY v1
