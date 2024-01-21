@@ -65,8 +65,8 @@ dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost,
 	char *s = *S;
 	char *t = *T;
 	int *d;						/* pointer to matrix */
-	lng n;						/* length of s */
-	lng m;						/* length of t */
+	int n;						/* length of s */
+	int m;						/* length of t */
 	int i;						/* iterates through s */
 	int j;						/* iterates through t */
 	char s_i;					/* ith character of s */
@@ -95,7 +95,7 @@ dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost,
 		*res = n;
 		return MAL_SUCCEED;
 	}
-	sz = (n + 1) * (m + 1) * sizeof(int);
+	sz = (((lng)n) + 1) * (((lng)m) + 1) * sizeof(int);
 	if (sz > (LL_CONSTANT(1)<<28))
 		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	d = (int *) GDKmalloc((size_t)sz);
