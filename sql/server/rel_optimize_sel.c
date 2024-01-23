@@ -3586,6 +3586,8 @@ rel_use_index(visitor *v, sql_rel *rel)
 		for( n = exps->h; n && single_table; n = n->next) {
 			sql_exp *e = n->data, *nre = e->l;
 
+			if (!is_compare(e->type) || is_anti(e) || e->flag != cmp_equal)
+				return rel;
 			if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, nre)) || (!left && rel_find_exp(rel->r, nre))))
 				nre = e->r;
 			single_table = (!re || (exp_relname(nre) && exp_relname(re) && strcmp(exp_relname(nre), exp_relname(re)) == 0));
