@@ -105,16 +105,13 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	TYPE1 v;							\
 	oid x;								\
 	const TYPE1 div = (TYPE1) scales[scale1];			\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = 8 * sizeof(TYPE1) > MANT_DIG;				\
 	if (ci->tpe == cand_dense) {					\
 		if (div == 1) {						\
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -124,7 +121,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					dst[i] = (TYPE2) v;		\
 			}						\
 		} else {						\
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -135,7 +132,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			}						\
 		}							\
 	} else {							\
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -145,7 +142,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				dst[i] = (TYPE2) v / div;		\
 		}							\
 	}								\
-	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));		\
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));	\
 	return nils;							\
 }
 
@@ -177,15 +174,12 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 {									\
 	BUN i, nils = 0;						\
 	oid x;								\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -196,9 +190,9 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -209,7 +203,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -222,15 +216,12 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 {									\
 	BUN i, nils = 0;						\
 	oid x;								\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -242,9 +233,9 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				dst[i] = oid_nil;			\
@@ -256,7 +247,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -291,11 +282,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 	const TYPE2 min = GDK_##TYPE2##_min / mul;			\
 	const TYPE2 max = GDK_##TYPE2##_max / mul;			\
 	const TYPE2 prec = (TYPE2) scales[precision] / mul;		\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	assert(div == 1 || mul == 1);					\
 	assert(div >= 1 && mul >= 1);					\
@@ -303,7 +291,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 	*reduce = div > 1;						\
 	if (ci->tpe == cand_dense) {					\
 		if (div == 1 && mul == 1) {				\
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -318,7 +306,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 				}					\
 			}						\
 		} else if (div == 1) {					\
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -334,7 +322,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			}						\
 		} else {						\
 			/* mul == 1 */					\
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
 				x = canditer_next_dense(ci) - candoff;	\
 				v = src[x];				\
 				if (is_##TYPE1##_nil(v)) {		\
@@ -353,7 +341,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			}						\
 		}							\
 	} else {							\
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -371,7 +359,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			}						\
 		}							\
 	}								\
-	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));		\
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));	\
 	return nils;							\
 }
 
@@ -392,15 +380,12 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	const TYPE2 min = GDK_##TYPE2##_min;				\
 	const TYPE2 max = GDK_##TYPE2##_max;				\
 	const TYPE2 prec = (TYPE2) scales[precision];			\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next_dense(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -418,9 +403,9 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
 			v = src[x];					\
 			if (is_##TYPE1##_nil(v)) {			\
@@ -438,7 +423,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -451,15 +436,12 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 {									\
 	BUN i, nils = 0;						\
 	oid x;								\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next_dense(ci) - candoff;		\
 			if (is_##TYPE##_nil(src[x])) {			\
 				dst[i] = bit_nil;			\
@@ -467,9 +449,9 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 			} else						\
 				dst[i] = (bit) (src[x] != 0);		\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
 			if (is_##TYPE##_nil(src[x])) {			\
 				dst[i] = bit_nil;			\
@@ -477,7 +459,7 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 			} else						\
 				dst[i] = (bit) (src[x] != 0);		\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -492,15 +474,12 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 	BUN i, j;							\
 	uint32_t mask;							\
 	oid x;								\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
+		TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {			\
 			mask = 0;					\
 			for (j = 0; j < 32; j++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
@@ -508,7 +487,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			}						\
 			dst[i] = mask;					\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		cnt = ci->ncand % 32;					\
 		if (cnt > 0) {						\
 			mask = 0;					\
@@ -519,7 +498,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			dst[i] = mask;					\
 		}							\
 	} else {							\
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
+		TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {			\
 			mask = 0;					\
 			for (j = 0; j < 32; j++) {			\
 				x = canditer_next(ci) - candoff;	\
@@ -527,7 +506,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			}						\
 			dst[i] = mask;					\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		cnt = ci->ncand % 32;					\
 		if (cnt > 0) {						\
 			mask = 0;					\
@@ -548,11 +527,8 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 {									\
 	BUN nils = 0;							\
 	BUN k;								\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
@@ -579,11 +555,11 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 			}						\
 		}							\
 	} else {							\
-		TIMEOUT_LOOP_IDX(k, ci->ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(k, ci->ncand, qry_ctx) {		\
 			oid x = canditer_next(ci) - candoff;		\
 			dst[k] = (TYPE) ((src[x / 32] & (1U << (x % 32))) != 0); \
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -707,16 +683,13 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 	oid x;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (atomtostr == BATatoms[TYPE_str].atomToStr) {
 		/* compatible with str, we just copy the value */
 		assert(bi->type != TYPE_void);
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			src = BUNtvar(*bi, x);
 			if (strNil(src))
@@ -727,7 +700,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 		}
 	} else if (bi->b->tvheap) {
 		assert(bi->type != TYPE_void);
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			src = BUNtvar(*bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
@@ -743,7 +716,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	} else if (ATOMstorage(bi->type) == TYPE_msk) {
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			const char *v;
 			x = canditer_next(ci) - candoff;
 			v = Tmskval(bi, x) ? "1" : "0";
@@ -751,7 +724,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 				goto bailout;
 		}
 	} else {
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			src = BUNtloc(*bi, x);
 			if ((*atomcmp)(src, nil) == 0) {
@@ -767,7 +740,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 		}
 	}
 	GDKfree(dst);
-	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
@@ -789,13 +762,10 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	oid x;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-	TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+	TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 		x = canditer_next(ci) - candoff;
 		src = BUNtvar(*bi, x);
 		if (strNil(src)) {
@@ -813,7 +783,7 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 		}
 	}
 	GDKfree(dst);
-	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
@@ -832,17 +802,14 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	const char *s = NULL;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (ATOMstorage(tp) == TYPE_msk) {
 		uint32_t mask = 0;
 		uint32_t *d = dst;
 		int j = 0;
-		TIMEOUT_LOOP(ci->ncand, timeoffset) {
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 			oid x = canditer_next(ci) - candoff;
 			uint32_t v;
 			s = BUNtvar(*bi, x);
@@ -859,13 +826,13 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 				mask = 0;
 			}
 		}
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		if (j > 0)
 			*d = mask;
 		return 0;
 	}
 
-	TIMEOUT_LOOP(ci->ncand, timeoffset) {
+	TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 		oid x = canditer_next(ci) - candoff;
 		const char *s = BUNtvar(*bi, x);
 		if (strNil(s)) {
@@ -883,7 +850,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		}
 		dst = (void *) ((char *) dst + len);
 	}
-	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	return nils;
 
   conversion_failed:
@@ -923,11 +890,8 @@ convert_void_any(oid seq, BAT *bn,
 	size_t len = 0;
 	oid x;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	*reduce = false;
 	assert(!is_oid_nil(seq));
@@ -939,11 +903,11 @@ convert_void_any(oid seq, BAT *bn,
 				x = canditer_next(ci) - candoff;
 				((bit *) dst)[0] = x + seq != 0;
 			}
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 				((bit *) dst)[i] = 1;
 			}
 		} else {
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 				x = canditer_next(ci) - candoff;
 				if (seq + x > GDK_bte_max) {
 					CONV_OVERFLOW(oid, "bte", seq + x);
@@ -954,7 +918,7 @@ convert_void_any(oid seq, BAT *bn,
 		}
 		break;
 	case TYPE_sht:
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			if (seq + x > GDK_sht_max) {
 				CONV_OVERFLOW(oid, "sht", seq + x);
@@ -964,7 +928,7 @@ convert_void_any(oid seq, BAT *bn,
 		}
 		break;
 	case TYPE_int:
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 #if SIZEOF_OID > SIZEOF_INT
 			if (seq + x > GDK_int_max) {
@@ -975,33 +939,33 @@ convert_void_any(oid seq, BAT *bn,
 		}
 		break;
 	case TYPE_lng:
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			((lng *) dst)[i] = (lng) (seq + x);
 		}
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			((hge *) dst)[i] = (hge) (seq + x);
 		}
 		break;
 #endif
 	case TYPE_flt:
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			((flt *) dst)[i] = (flt) (seq + x);
 		}
 		break;
 	case TYPE_dbl:
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			((dbl *) dst)[i] = (dbl) (seq + x);
 		}
 		break;
 	case TYPE_str:
-		TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			if ((*atomtostr)(&s, &len, &(oid){seq + x}, false) < 0)
 				goto bailout;
@@ -1014,7 +978,7 @@ convert_void_any(oid seq, BAT *bn,
 	default:
 		return BUN_NONE + 1;
 	}
-	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 
 	bn->theap->dirty = true;
 	return nils;

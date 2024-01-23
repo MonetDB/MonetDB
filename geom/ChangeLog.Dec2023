@@ -1,3 +1,7 @@
 # ChangeLog file for geom
 # This file is updated with Maddlog
 
+* Mon Jan 15 2024 Sjoerd Mullender <sjoerd@acm.org>
+- We switched over to using the reentrant interface of the geos library.
+  This fixed a number of bugs that would occur sporadically.
+

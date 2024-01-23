@@ -1,0 +1,16 @@
+query II
+SELECT 0 , 827 ORDER BY 1
+----
+0
+827
+
+query I
+SELECT debug
+----
+0
+
+statement error 42000!SELECT: the order by column number (0) is not in the number of projections range (2)
+SELECT 0 , 827 ORDER BY 0
+
+statement error 42000!SELECT: the order by column number (0) is not in the number of projections range (2)
+SELECT 0 , 827 ORDER BY debug

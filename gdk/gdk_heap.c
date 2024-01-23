@@ -1247,6 +1247,13 @@ HEAP_malloc(BAT *b, size_t nbytes)
 void
 HEAP_free(Heap *heap, var_t mem)
 {
+/* we cannot free pieces of the heap because we may have used
+ * append_varsized_bat to create the heap; if we did, there may be
+ * multiple locations in the offset heap that refer to the same entry in
+ * the vheap, so we cannot free any until we free all */
+	(void) heap;
+	(void) mem;
+#if 0
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 	CHUNK *beforep;
 	CHUNK *blockp;
@@ -1318,6 +1325,7 @@ HEAP_free(Heap *heap, var_t mem)
 		 */
 		hheader->head = block;
 	}
+#endif
 }
 
 void

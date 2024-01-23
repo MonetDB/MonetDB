@@ -1,3 +1,12 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Jan 10 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented interrupt handling in mclient.  When using mclient
+  interactively, an interrupt (usually control-C) stops whatever the
+  client is doing.  When editing a line, the line is discarded; when
+  editing a second or later line of a query, the whole query is discarded;
+  when a query is being executed, the server is asked to stop the query
+  at its earliest convenience.  Stopping a running query can only be
+  done with an up-to-date server.  All of this does not work on Windows.
+

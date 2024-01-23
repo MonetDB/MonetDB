@@ -113,7 +113,7 @@ atom_get_int(atom *a)
 	lng r = 0;
 #endif
 
-	if (!a->isnull) {
+	if (a && !a->isnull) {
 		switch (ATOMstorage(a->data.vtype)) {
 		case TYPE_bte:
 			r = a->data.val.btval;

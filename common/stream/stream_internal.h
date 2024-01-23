@@ -172,6 +172,8 @@ struct stream {
 	int (*fsetpos)(stream *restrict s, fpos_t *restrict p);
 	void (*update_timeout)(stream *s);
 	int (*isalive)(const stream *s);
+	int (*getoob)(const stream *s);
+	int (*putoob)(const stream *s, char val);
 	mnstr_error_kind errkind;
 	char errmsg[1024]; // avoid allocation on error. We don't have THAT many streams..
 };

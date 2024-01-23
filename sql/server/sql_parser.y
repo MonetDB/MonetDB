@@ -7287,6 +7287,10 @@ sqlformaterror(mvc * sql, _In_z_ _Printf_format_string_ const char *format, ...)
 	const char *sqlstate = NULL;
 	size_t len = 0;
 
+	if (sql->scanner.aborted) {
+		snprintf(sql->errstr, ERRSIZE, "Query aborted\n");
+		return 1;
+	}
 	va_start (ap,format);
 	if (format && strlen(format) > 6 && format[5] == '!') {
 		/* sql state provided */
@@ -7309,9 +7313,9 @@ sqlformaterror(mvc * sql, _In_z_ _Printf_format_string_ const char *format, ...)
 }
 
 static int
-sqlerror(mvc * sql, const char *err)
+sqlerror(mvc *sql, const char *err)
 {
-	return sqlformaterror(sql, "%s", err);
+	return sqlformaterror(sql, "%s", sql->scanner.errstr ? sql->scanner.errstr : err);
 }
 
 static void *ma_alloc(sql_allocator *sa, size_t sz)
