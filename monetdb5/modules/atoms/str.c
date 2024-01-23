@@ -4259,6 +4259,7 @@ trimchars(str *buf, size_t *buflen, size_t *n, const char *s, size_t len_s,
 	size_t len = 0, nlen = len_s * sizeof(int);
 	int c, *cbuf;
 
+	assert(s);
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nlen, malfunc);
 	cbuf = *(int **) buf;
 

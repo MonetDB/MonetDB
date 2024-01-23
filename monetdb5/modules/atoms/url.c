@@ -782,19 +782,6 @@ URLnew(url *u, str *val)
 static str
 URLnew3(url *u, str *protocol, str *server, str *file)
 {
-	size_t l;
-
-	l = strLen(*file) + strLen(*server) + strLen(*protocol) + 10;
-	*u = GDKmalloc(l);
-	if (*u == NULL)
-		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	snprintf(*u, l, "%s://%s/%s", *protocol, *server, *file);
-	return MAL_SUCCEED;
-}
-
-static str
-URLnew4(url *u, str *protocol, str *server, int *port, str *file)
-{
 	str Protocol = *protocol;
 	str Server = *server;
 	str File = *file;
@@ -808,11 +795,38 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 		Server = "";
 	if (strNil(Protocol))
 		Protocol = "";
+	l = strlen(File) + strlen(Server) + strlen(Protocol) + 10;
+	*u = GDKmalloc(l);
+	if (*u == NULL)
+		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	snprintf(*u, l, "%s://%s/%s", Protocol, Server, File);
+	return MAL_SUCCEED;
+}
+
+static str
+URLnew4(url *u, str *protocol, str *server, int *port, str *file)
+{
+	str Protocol = *protocol;
+	str Server = *server;
+	int Port = *port;
+	str File = *file;
+	size_t l;
+
+	if (strNil(File))
+		File = "";
+	else if (*File == '/')
+		File++;
+	if (strNil(Server))
+		Server = "";
+	if (is_int_nil(Port))
+		Port = 0;
+	if (strNil(Protocol))
+		Protocol = "";
 	l = strlen(File) + strlen(Server) + strlen(Protocol) + 20;
 	*u = GDKmalloc(l);
 	if (*u == NULL)
 		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	snprintf(*u, l, "%s://%s:%d/%s", Protocol, Server, *port, File);
+	snprintf(*u, l, "%s://%s:%d/%s", Protocol, Server, Port, File);
 	return MAL_SUCCEED;
 }
 

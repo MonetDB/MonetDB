@@ -5105,7 +5105,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	/* Order By */
 	if (order_by_clause) {
-		obe = rel_order_by(query, &p, order_by_clause, 0, nf | sql_window);
+		obe = rel_order_by(query, &p, order_by_clause, 0, sql_window);
 		if (!obe)
 			return NULL;
 	}
