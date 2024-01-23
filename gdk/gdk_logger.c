@@ -214,12 +214,17 @@ logbat_new(int tt, BUN size, role_t role)
 	return nb;
 }
 
-static int
+static bool
 log_read_format(logger *lg, logformat *data)
 {
 	assert(!lg->inmemory);
-	return mnstr_read(lg->input_log, &data->flag, 1, 1) == 1 &&
-		mnstr_readInt(lg->input_log, &data->id) == 1;
+	if (mnstr_read(lg->input_log, &data->flag, 1, 1) == 1) {
+		if (mnstr_readInt(lg->input_log, &data->id) == 1)
+			return true;
+		/* could only read part, so complain */
+		TRC_CRITICAL(GDK, "read failed\n");
+	}
+	return false;
 }
 
 static gdk_return
@@ -254,17 +259,23 @@ log_read_seq(logger *lg, logformat *l)
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
 		assert(lg->seqs_val->hseqbase == 0);
-		if (BUNreplace(lg->seqs_val, p, &val, true) != GDK_SUCCEED)
+		if (BUNreplace(lg->seqs_val, p, &val, true) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "replace of %s_seqs_val failed\n", lg->fn);
 			return LOG_ERR;
+		}
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;
-			if (BUNappend(lg->dseqs, &pos, true) != GDK_SUCCEED)
+			if (BUNappend(lg->dseqs, &pos, true) != GDK_SUCCEED) {
+				TRC_CRITICAL(GDK, "append to %s_dseqs failed\n", lg->fn);
 				return LOG_ERR;
+			}
 		}
 		if (BUNappend(lg->seqs_id, &seq, true) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_val, &val, true) != GDK_SUCCEED)
+		    BUNappend(lg->seqs_val, &val, true) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "append to %s_seqs_val/id failed\n", lg->fn);
 			return LOG_ERR;
+		}
 	}
 	return LOG_OK;
 }
@@ -303,19 +314,25 @@ string_reader(logger *lg, BAT *b, lng nr)
 	log_return res = LOG_OK;
 
 	while (nr && res == LOG_OK) {
-		if (mnstr_readLng(lg->input_log, &SZ) != 1)
+		if (mnstr_readLng(lg->input_log, &SZ) != 1) {
+			TRC_CRITICAL(GDK, "read failed\n");
 			return LOG_EOF;
+		}
 		sz = (size_t) SZ;
 		char *buf = lg->rbuf;
 		if (lg->rbufsize < sz) {
-			if (!(buf = GDKrealloc(lg->rbuf, sz)))
+			if (!(buf = GDKrealloc(lg->rbuf, sz))) {
+				TRC_CRITICAL(GDK, "couldn't grow string buffer\n");
 				return LOG_ERR;
+			}
 			lg->rbuf = buf;
 			lg->rbufsize = sz;
 		}
 
-		if (mnstr_read(lg->input_log, buf, sz, 1) != 1)
+		if (mnstr_read(lg->input_log, buf, sz, 1) != 1) {
+			TRC_CRITICAL(GDK, "read failed\n");
 			return LOG_EOF;
+		}
 		/* handle strings */
 		char *t = buf;
 		/* chunked */
@@ -327,8 +344,10 @@ string_reader(logger *lg, BAT *b, lng nr)
 			strings[cur++] = t;
 			if (cur == CHUNK_SIZE &&
 			    b &&
-			    BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED)
+			    BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED) {
+				TRC_CRITICAL(GDK, "append to string bat failed\n");
 				res = LOG_ERR;
+			}
 			if (cur == CHUNK_SIZE)
 				cur = 0;
 			/* find next */
@@ -338,8 +357,10 @@ string_reader(logger *lg, BAT *b, lng nr)
 		}
 		if (cur &&
 		    b &&
-		    BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED)
+		    BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "append to string bat failed\n");
 			res = LOG_ERR;
+		}
 	}
 	return res;
 }
@@ -363,8 +384,10 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 	TRC_DEBUG(WAL, "found %d %s", id, l->flag == LOG_UPDATE ? "update" : "update_buld");
 
 	if (mnstr_readLng(lg->input_log, &nr) != 1 ||
-	    mnstr_read(lg->input_log, &type_id, 1, 1) != 1)
-		return LOG_ERR;
+	    mnstr_read(lg->input_log, &type_id, 1, 1) != 1) {
+		TRC_CRITICAL(GDK, "read failed\n");
+		return LOG_EOF;
+	}
 
 	pnr = nr;
 	tpe = find_type_nr(lg, type_id);
@@ -378,13 +401,16 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 		if (!lg->flushing && l->flag == LOG_UPDATE) {
 			uid = COLnew(0, TYPE_oid, (BUN) nr, PERSISTENT);
 			if (uid == NULL) {
+				TRC_CRITICAL(GDK, "creating bat failed\n");
 				return LOG_ERR;
 			}
 		}
 
 		if (l->flag == LOG_UPDATE_CONST) {
-			if (mnstr_readLng(lg->input_log, &offset) != 1)
-				return LOG_ERR;
+			if (mnstr_readLng(lg->input_log, &offset) != 1) {
+				TRC_CRITICAL(GDK, "read failed\n");
+				return LOG_EOF;
+			}
 			if (cands) {
 				/* This const range actually represents a segment of candidates corresponding to updated bat entries */
 
@@ -398,18 +424,23 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 					BAT *dense = BATdense(0, (oid) offset, (BUN) nr);
 					BAT *newcands = NULL;
 					if (!dense) {
+						TRC_CRITICAL(GDK, "creating bat failed\n");
 						res = LOG_ERR;
 					} else if ((*cands)->ttype == TYPE_void) {
 						if ((newcands = BATmergecand(*cands, dense))) {
 							BBPreclaim(*cands);
 							*cands = newcands;
-						} else
+						} else {
+							TRC_CRITICAL(GDK, "creating bat failed\n");
 							res = LOG_ERR;
+						}
 					} else {
 						assert((*cands)->ttype == TYPE_oid);
 						assert(BATcount(*cands) > 0);
-						if (BATappend(*cands, dense, NULL, true) != GDK_SUCCEED)
+						if (BATappend(*cands, dense, NULL, true) != GDK_SUCCEED) {
+							TRC_CRITICAL(GDK, "appending to bat failed\n");
 							res = LOG_ERR;
+						}
 					}
 					BBPreclaim(dense);
 				}
@@ -418,7 +449,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 				size_t tlen = lg->rbufsize;
 				void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
 				if (t == NULL) {
-					res = LOG_ERR;
+					TRC_CRITICAL(GDK, "read failed\n");
+					res = LOG_EOF;
 				}
 				return res;
 			}
@@ -437,14 +469,17 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 			size_t tlen = lg->rbufsize;
 			void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
 			if (t == NULL) {
-				res = LOG_ERR;
+				TRC_CRITICAL(GDK, "read failed\n");
+				res = LOG_EOF;
 			} else {
 				lg->rbuf = t;
 				lg->rbufsize = tlen;
 				if (r) {
 					for (BUN p = 0; p < (BUN) nr; p++) {
-						if (BUNappend(r, t, true) != GDK_SUCCEED)
+						if (BUNappend(r, t, true) != GDK_SUCCEED) {
+							TRC_CRITICAL(GDK, "append to bat failed\n");
 							res = LOG_ERR;
+						}
 					}
 				}
 			}
@@ -452,14 +487,17 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 			if (mnstr_readLng(lg->input_log, &offset) != 1) {
 				if (r)
 					BBPreclaim(r);
-				return LOG_ERR;
+				TRC_CRITICAL(GDK, "read failed\n");
+				return LOG_EOF;
 			}
 			if (tpe == TYPE_msk) {
 				if (r) {
 					if (mnstr_readIntArray(lg->input_log, Tloc(r, 0), (size_t) ((nr + 31) / 32)))
 						BATsetcount(r, (BUN) nr);
-					else
-						res = LOG_ERR;
+					else {
+						TRC_CRITICAL(GDK, "read failed\n");
+						res = LOG_EOF;
+					}
 				} else {
 					size_t tlen = lg->rbufsize / sizeof(int);
 					size_t cnt = 0, snr = (size_t) nr;
@@ -467,8 +505,10 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 					assert(tlen);
 					for (; res == LOG_OK && snr > 0; snr -= cnt) {
 						cnt = snr > tlen ? tlen : snr;
-						if (!mnstr_readIntArray(lg->input_log, lg->rbuf, cnt))
-							res = LOG_ERR;
+						if (!mnstr_readIntArray(lg->input_log, lg->rbuf, cnt)) {
+							TRC_CRITICAL(GDK, "read failed\n");
+							res = LOG_EOF;
+						}
 					}
 				}
 			} else {
@@ -487,8 +527,10 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 							break;
 						}
 						assert(t == lg->rbuf);
-						if (r && BUNappendmulti(r, t, cnt, true) != GDK_SUCCEED)
+						if (r && BUNappendmulti(r, t, cnt, true) != GDK_SUCCEED) {
+							TRC_CRITICAL(GDK, "append to bat failed\n");
 							res = LOG_ERR;
+						}
 					}
 				} else if (tpe == TYPE_str) {
 					/* efficient string */
@@ -507,11 +549,14 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 								res = LOG_EOF;
 							else
 								res = LOG_ERR;
+							TRC_CRITICAL(GDK, "read failed\n");
 						} else {
 							lg->rbuf = t;
 							lg->rbufsize = tlen;
-							if (r && BUNappend(r, t, true) != GDK_SUCCEED)
+							if (r && BUNappend(r, t, true) != GDK_SUCCEED) {
+								TRC_CRITICAL(GDK, "append to bat failed\n");
 								res = LOG_ERR;
+							}
 						}
 					}
 				}
@@ -521,23 +566,29 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 			void *hv = ATOMnil(TYPE_oid);
 			offset = 0;
 
-			if (hv == NULL)
-				res = LOG_ERR;
+			if (hv == NULL) {
+				TRC_CRITICAL(GDK, "read failed\n");
+				res = LOG_EOF;
+			}
 			for (; res == LOG_OK && nr > 0; nr--) {
 				size_t hlen = sizeof(oid);
 				void *h = rh(hv, &hlen, lg->input_log, 1);
 				assert(hlen == sizeof(oid));
 				assert(h == hv);
-				if ((uid && BUNappend(uid, h, true) != GDK_SUCCEED))
+				if ((uid && BUNappend(uid, h, true) != GDK_SUCCEED)) {
+					TRC_CRITICAL(GDK, "append to bat failed\n");
 					res = LOG_ERR;
+				}
 			}
 			nr = pnr;
 			if (tpe == TYPE_msk) {
 				if (r) {
 					if (mnstr_readIntArray(lg->input_log, Tloc(r, 0), (size_t) ((nr + 31) / 32)))
 						BATsetcount(r, (BUN) nr);
-					else
-						res = LOG_ERR;
+					else {
+						TRC_CRITICAL(GDK, "read failed\n");
+						res = LOG_EOF;
+					}
 				} else {
 					for (lng i = 0; i < nr; i += 32) {
 						int v;
@@ -551,6 +602,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 							res = LOG_ERR;
 							break;
 						}
+						TRC_CRITICAL(GDK, "read failed\n");
 						break;
 					}
 				}
@@ -567,11 +619,14 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 							res = LOG_EOF;
 						else
 							res = LOG_ERR;
+						TRC_CRITICAL(GDK, "read failed\n");
 					} else {
 						lg->rbuf = t;
 						lg->rbufsize = tlen;
-						if ((r && BUNappend(r, t, true) != GDK_SUCCEED))
+						if ((r && BUNappend(r, t, true) != GDK_SUCCEED)) {
+							TRC_CRITICAL(GDK, "append to bat failed\n");
 							res = LOG_ERR;
+						}
 					}
 				}
 			}
@@ -608,10 +663,11 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 				tr->changes[tr->nr].uid = uid;
 				tr->nr++;
 			} else {
+				TRC_CRITICAL(GDK, "memory allocation failed\n");
 				res = LOG_ERR;
 			}
 		}
-		if (res == LOG_ERR) {
+		if (res != LOG_OK) {
 			if (r)
 				BBPreclaim(r);
 			if (cands && uid)
@@ -621,6 +677,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 		}
 	} else {
 		/* bat missing ERROR or ignore ? currently error. */
+		TRC_CRITICAL(GDK, "unknown type\n");
 		res = LOG_ERR;
 	}
 	return res;
@@ -751,6 +808,7 @@ log_read_destroy(logger *lg, trans *tr, log_id id)
 		tr->nr++;
 		return LOG_OK;
 	}
+	TRC_CRITICAL(GDK, "memory allocation failed\n");
 	return LOG_ERR;
 }
 
@@ -781,8 +839,10 @@ log_read_create(logger *lg, trans *tr, log_id id)
 	assert(!lg->inmemory);
 	TRC_DEBUG(WAL, "create %d", id);
 
-	if (mnstr_read(lg->input_log, &tt, 1, 1) != 1)
-		return LOG_ERR;
+	if (mnstr_read(lg->input_log, &tt, 1, 1) != 1) {
+		TRC_CRITICAL(GDK, "read failed\n");
+		return LOG_EOF;
+	}
 
 	tpe = find_type_nr(lg, tt);
 	/* read create */
@@ -793,6 +853,7 @@ log_read_create(logger *lg, trans *tr, log_id id)
 		tr->nr++;
 		return LOG_OK;
 	}
+	TRC_CRITICAL(GDK, "memory allocation failed\n");
 	return LOG_ERR;
 }
 
@@ -960,6 +1021,7 @@ tr_commit(logger *lg, trans *tr)
 
 	for (i = 0; i < tr->nr; i++) {
 		if (la_apply(lg, &tr->changes[i], tr->tid) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "aborting transaction\n");
 			do {
 				tr = tr_abort_(lg, tr, i);
 			} while (tr != NULL);
@@ -1133,6 +1195,7 @@ log_open_input(logger *lg, const char *filename, bool *filemissing)
 	switch (mnstr_read(lg->input_log, &byteorder, sizeof(byteorder), 1)) {
 	case -1:
 		log_close_input(lg);
+		TRC_CRITICAL(GDK, "read failed\n");
 		return GDK_FAIL;
 	case 0:
 		/* empty file is ok */
@@ -1156,7 +1219,7 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 	logformat l;
 	trans *tr = NULL;
 	log_return err = LOG_OK;
-	int ok = 1;
+	bool ok = true;
 	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 
 	if (!lg->flushing)
@@ -1215,6 +1278,7 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 			if (l.id > lg->tid)	/* TODO: check that this can only happen during initialisation */
 				lg->tid = l.id;
 			if ((tr = tr_create(tr, l.id)) == NULL) {
+				TRC_CRITICAL(GDK, "memory allocation failed\n");
 				err = LOG_ERR;
 				break;
 			}
@@ -1259,11 +1323,14 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 				if (l.id > 0) {
 					/* START OF LOG_BAT_GROUP */
 					cands = COLnew(0, TYPE_void, 0, SYSTRANS);
-					if (!cands)
+					if (!cands) {
+						TRC_CRITICAL(GDK, "creating bat failed\n");
 						err = LOG_ERR;
+					}
 				} else if (cands == NULL) {
 					/* should have gone through the
 					 * above option earlier */
+					TRC_CRITICAL(GDK, "unexpected error\n");
 					err = LOG_ERR;
 				} else {
 					/* END OF LOG_BAT_GROUP */
@@ -1273,16 +1340,20 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 			}
 			break;
 		default:
+			TRC_CRITICAL(GDK, "unrecognized log entry %d", l.flag);
 			err = LOG_ERR;
 		}
 		if (tr == (trans *) -1) {
+			/* message already generated by tr_commit */
 			err = LOG_ERR;
 			tr = NULL;
 			break;
 		}
 	}
-	while (tr)
+	while (tr) {
+		TRC_WARNING(GDK, "aborting transaction\n");
 		tr = tr_abort(lg, tr);
+	}
 	if (!lg->flushing)
 		ATOMIC_SET(&GDKdebug, dbg);
 
