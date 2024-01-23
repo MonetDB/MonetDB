@@ -3591,6 +3591,29 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigg
 	return res;
 }
 
+static int
+type_digits(sql_subtype *type)
+{
+	int digits = type->digits;
+
+	if (digits && type->type->eclass == EC_NUM) {
+		if(type->type->localtype == TYPE_bte) {
+			digits = 7;
+		} else if(type->type->localtype == TYPE_sht) {
+			digits = 15;
+		} else if(type->type->localtype == TYPE_int) {
+			digits = 31;
+		} else if(type->type->localtype == TYPE_lng) {
+			digits = 63;
+#if HAVE_HGE
+		} else if(type->type->localtype == TYPE_hge) {
+			digits = 127;
+#endif
+		}
+	}
+	return digits;
+}
+
 int
 sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **cres)
 {
@@ -3636,8 +3659,9 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 
 	if (!isDeclaredTable(t)) {
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
+		int digits = type_digits(&col->type);
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name,
-					&col->type.digits, &col->type.scale, &t->base.id,
+					&digits, &col->type.scale, &t->base.id,
 					(col->def) ? &col->def : &strnil, &col->null, &col->colnr,
 					(col->storage_type) ? &col->storage_type : &strnil))) {
 			ATOMIC_PTR_DESTROY(&col->data);
@@ -6079,7 +6103,8 @@ sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const ch
 		}
 	if (!isDeclaredTable(t)) {
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
-		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &col->type.digits, &col->type.scale,
+		int digits = type_digits(&col->type);
+		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &digits, &col->type.scale,
 										  &t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil))) {
 			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
