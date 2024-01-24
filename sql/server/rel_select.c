@@ -4816,11 +4816,13 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct,
 					if (!found) {
 						if (needs_distinct)
 							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
-						append(rel->exps, e);
+						if (!is_freevar(e))
+							append(rel->exps, e);
 					} else {
 						e = found;
 					}
-					e = exp_ref(sql, e);
+					if (!is_freevar(e))
+						e = exp_ref(sql, e);
 				}
 			}
 
