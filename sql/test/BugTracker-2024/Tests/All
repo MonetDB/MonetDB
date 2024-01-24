@@ -8,3 +8,4 @@ gc-col-crash-7440
 unaligned_mats-7442
 recursive-merge-table-crash-7443
 greatest-as-colname-7444
+is-col-uniq-crash-7441
