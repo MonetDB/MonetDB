@@ -1191,10 +1191,19 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 					/* count_nil(* or constant) -> count(t.TID) */
 					if (exp_is_count(e, r) && (!e->l || exps_is_constant(e->l))) {
 						sql_rel *p = r->l; /* ugh */
+						sql_rel *pp = r;
+						while(p && p->l && (!is_project(p->op) && !is_base(p->op))) { /* find first project */
+							pp = p;
+							p = p->l;
+						}
+						if (p && p->l && is_project(p->op) && list_empty(p->exps)) { /* skip empty project */
+							pp = p;
+							p = p->l;
+						}
 						sql_exp *col = list_length(p->exps) ? p->exps->t->data : NULL;
 						const char *cname = col ? exp_name(col) : NULL;
 
-						if ((!cname || strcmp(cname, TID) != 0) && !(r->l = p = rel_add_identity(sql, p, &col)))
+						if ((!cname || strcmp(cname, TID) != 0) && !(pp->l = p = rel_add_identity(sql, p, &col)))
 							return NULL;
 						col = exp_ref(sql, col);
 						append(e->l=sa_list(sql->sa), col);
