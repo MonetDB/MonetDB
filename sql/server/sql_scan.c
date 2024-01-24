@@ -590,8 +590,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SQL_TSI_QUARTER", SQL_TSI_QUARTER);
 	failed += keywords_insert("SQL_TSI_YEAR", SQL_TSI_YEAR);
 
-	failed += keywords_insert("LEAST", LEAST);
-	failed += keywords_insert("GREATEST", GREATEST);
+	failed += keywords_insert("LEAST", MARGFUNC);
+	failed += keywords_insert("GREATEST", MARGFUNC);
 	return failed;
 }
 
@@ -1472,7 +1472,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 		token = aTYPE;
 
 	if (token == IDENT || token == COMPARISON ||
-	    token == RANK || token == aTYPE || token == ALIAS) {
+	    token == RANK || token == aTYPE || token == ALIAS || token == MARGFUNC) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 		lc->next_string_is_raw = false;
 	} else if (token == STRING) {
