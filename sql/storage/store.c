@@ -3605,7 +3605,7 @@ type_digits(sql_subtype *type)
 			digits = 31;
 		} else if(type->type->localtype == TYPE_lng) {
 			digits = 63;
-#if HAVE_HGE
+#ifdef HAVE_HGE
 		} else if(type->type->localtype == TYPE_hge) {
 			digits = 127;
 #endif
