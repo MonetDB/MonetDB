@@ -5,4 +5,6 @@ where-case-null-issue-7429
 create-index-query-issue-7430
 alloc-overflow-7432
 gc-col-crash-7440
+unaligned_mats-7442
+recursive-merge-table-crash-7443
 greatest-as-colname-7444

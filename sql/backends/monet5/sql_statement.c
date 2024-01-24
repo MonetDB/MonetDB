@@ -595,7 +595,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	if (t && isTable(t) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
-		BUN rows = (BUN) store->storage_api.count_col(tr, ol_first_node(t->columns)->data, QUICK);
+		BUN rows = (BUN) store->storage_api.count_col(tr, ol_first_node(t->columns)->data, RDONLY);
 		setRowCnt(mb,getArg(q,0),rows);
 	}
 
