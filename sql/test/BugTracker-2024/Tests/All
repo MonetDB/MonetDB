@@ -4,6 +4,8 @@ where-between-issue-7428
 where-case-null-issue-7429
 create-index-query-issue-7430
 alloc-overflow-7432
+rewrite-count-crash-7433
+bind-exps-crash-7438
 exps-cards-crash-7439
 gc-col-crash-7440
 is-col-uniq-crash-7441

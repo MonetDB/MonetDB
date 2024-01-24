@@ -1,0 +1,5 @@
+statement ok
+CREATE TABLE v0 ( v1 VARCHAR ( 217 ) )
+
+statement ok
+UPDATE v0 SET v1 = ( SELECT ( v1 IN ( SELECT COUNT ( * ) WHERE v1 = 1 ) ) AS new_column )

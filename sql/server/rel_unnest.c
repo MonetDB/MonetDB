@@ -1144,8 +1144,6 @@ exp_is_count(sql_exp *e, sql_rel *rel)
 		sql_exp *ne = rel_find_exp(rel->l, e);
 		return exp_is_count(ne, rel->l);
 	}
-	if (is_convert(e->type))
-		return exp_is_count(e->l, rel);
 	if (is_aggr(e->type) && exp_aggr_is_count(e))
 		return 1;
 	return 0;
@@ -2373,7 +2371,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 									}
 								} else {
 									e->tpe = *exp_subtype(te);
-									if (e->l)
+									if (e->l && e->type == e_atom)
 										e->l = atom_set_type(v->sql->sa, e->l, &e->tpe);
 								}
 							}
