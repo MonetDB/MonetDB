@@ -5,7 +5,10 @@ where-case-null-issue-7429
 create-index-query-issue-7430
 alloc-overflow-7432
 rewrite-count-crash-7433
+exp-bin-crash-7434
+aggr-exp-copy-crash-7435
 count-unnest-crash-7436
+add-partition-crash-7437
 bind-exps-crash-7438
 exps-cards-crash-7439
 gc-col-crash-7440

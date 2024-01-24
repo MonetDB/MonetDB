@@ -1,0 +1,8 @@
+statement ok
+CREATE MERGE TABLE testagain (a int, b varchar(32)) PARTITION BY VALUES ON (a)
+
+statement ok
+CREATE TABLE sublimits2 (a int, b varchar(32))
+
+statement error 42000!SELECT: no such unary operator 'addtwo'(tinyint)
+ALTER TABLE testagain ADD TABLE sublimits2 AS PARTITION IN (-100 * 2, '-90', '120', addtwo(55), 11.2)
