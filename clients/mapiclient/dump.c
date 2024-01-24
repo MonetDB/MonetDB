@@ -1213,32 +1213,17 @@ bailout:
 	return 1;
 }
 
-int
+static int
 describe_table(Mapi mid, const char *schema, const char *tname,
 	       stream *toConsole, bool foreign, bool databaseDump)
 {
 	int cnt, table_id = 0;
 	MapiHdl hdl = NULL;
-	char *query = NULL, *view = NULL, *remark = NULL, *sname = NULL, *s = NULL, *t = NULL;
+	char *query = NULL, *view = NULL, *remark = NULL, *s = NULL, *t = NULL;
 	int type = 0;
 	int ca = 0;
 	size_t maxquerylen;
 	bool hashge;
-
-	if (schema == NULL) {
-		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname + 1;
-
-			sname = malloc(len);
-			if (sname == NULL)
-				goto bailout;
-			strcpy_len(sname, tname, len);
-			tname += len;
-		} else if ((sname = get_schema(mid)) == NULL) {
-			return 1;
-		}
-		schema = sname;
-	}
 
 	hashge = has_hugeint(mid);
 
@@ -1537,8 +1522,6 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		free(remark);
 	if (query != NULL)
 		free(query);
-	if (sname != NULL)
-		free(sname);
 	return 0;
 
 bailout:
@@ -1559,8 +1542,6 @@ bailout2:
 		free(view);
 	if (remark)
 		free(remark);
-	if (sname != NULL)
-		free(sname);
 	if (query != NULL)
 		free(query);
 	if (s != NULL)
@@ -1738,8 +1719,8 @@ describe_schema(Mapi mid, const char *sname, stream *toConsole)
 }
 
 static int
-dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConsole,
-				bool useInserts, bool noescape)
+dump_table_data(Mapi mid, const char *schema, const char *tname,
+				stream *toConsole, bool useInserts, bool noescape)
 {
 	int cnt, i;
 	int64_t rows;
@@ -1747,23 +1728,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 	char *query = NULL;
 	size_t maxquerylen;
 	unsigned char *string = NULL;
-	char *sname = NULL;
 	char *s, *t;
-
-	if (schema == NULL) {
-		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname + 1;
-
-			sname = malloc(len);
-			if (sname == NULL)
-				goto bailout;
-			strcpy_len(sname, tname, len);
-			tname += len;
-		} else if ((sname = get_schema(mid)) == NULL) {
-			goto bailout;
-		}
-		schema = sname;
-	}
 
 	maxquerylen = 5120 + 2*strlen(tname) + 2*strlen(schema);
 	query = malloc(maxquerylen);
@@ -1938,8 +1903,6 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 		mapi_close_handle(hdl);
 	if (query != NULL)
 		free(query);
-	if (sname != NULL)
-		free(sname);
 	return 0;
 
 bailout:
@@ -1955,8 +1918,6 @@ bailout:
 		mapi_explain(mid, stderr);
 	else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 		fprintf(stderr, "malloc failure\n");
-	if (sname != NULL)
-		free(sname);
 	if (query != NULL)
 		free(query);
 	if (string != NULL)
@@ -1967,28 +1928,12 @@ bailout:
 static int
 dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *toConsole)
 {
-	char *sname = NULL;
 	char *query = NULL;
 	size_t maxquerylen;
 	MapiHdl hdl = NULL;
 	char *s = NULL;
 	char *t = NULL;
 	int rc = 1;
-
-	if (schema == NULL) {
-		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname + 1;
-
-			sname = malloc(len);
-			if (sname == NULL)
-				goto bailout;
-			strcpy_len(sname, tname, len);
-			tname += len;
-		} else if ((sname = get_schema(mid)) == NULL) {
-			goto bailout;
-		}
-		schema = sname;
-	}
 
 	maxquerylen = 5120 + 2*strlen(tname) + 2*strlen(schema);
 	query = malloc(maxquerylen);
@@ -2025,35 +1970,18 @@ dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *toCo
 	free(s);
 	free(t);
 	mapi_close_handle(hdl);		/* may be NULL */
-	free(sname);				/* may be NULL */
 	return rc;
 }
 
 static int
 dump_table_access(Mapi mid, const char *schema, const char *tname, stream *toConsole)
 {
-	char *sname = NULL;
 	char *query = NULL;
 	size_t maxquerylen;
 	MapiHdl hdl = NULL;
 	char *s = NULL;
 	char *t = NULL;
 	int rc = 1;
-
-	if (schema == NULL) {
-		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname + 1;
-
-			sname = malloc(len);
-			if (sname == NULL)
-				goto bailout;
-			strcpy_len(sname, tname, len);
-			tname += len;
-		} else if ((sname = get_schema(mid)) == NULL) {
-			goto bailout;
-		}
-		schema = sname;
-	}
 
 	maxquerylen = 5120 + 2*strlen(tname) + 2*strlen(schema);
 	query = malloc(maxquerylen);
@@ -2090,35 +2018,18 @@ dump_table_access(Mapi mid, const char *schema, const char *tname, stream *toCon
 	free(s);
 	free(t);
 	mapi_close_handle(hdl);		/* may be NULL */
-	free(sname);				/* may be NULL */
 	return rc;
 }
 
 static int
 dump_table_defaults(Mapi mid, const char *schema, const char *tname, stream *toConsole)
 {
-	char *sname = NULL;
 	char *query = NULL;
 	size_t maxquerylen;
 	MapiHdl hdl = NULL;
 	char *s = NULL;
 	char *t = NULL;
 	int rc = 1;
-
-	if (schema == NULL && tname != NULL) {
-		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname + 1;
-
-			sname = malloc(len);
-			if (sname == NULL)
-				goto bailout;
-			strcpy_len(sname, tname, len);
-			tname += len;
-		} else if ((sname = get_schema(mid)) == NULL) {
-			goto bailout;
-		}
-		schema = sname;
-	}
 
 	maxquerylen = 512;
 	if (schema != NULL && tname != NULL) {
@@ -2169,7 +2080,6 @@ dump_table_defaults(Mapi mid, const char *schema, const char *tname, stream *toC
 	free(s);
 	free(t);
 	mapi_close_handle(hdl);		/* may be NULL */
-	free(sname);				/* may be NULL */
 	return rc;
 }
 
@@ -2178,7 +2088,23 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 		   bool describe, bool foreign, bool useInserts, bool databaseDump,
 		   bool noescape)
 {
+	char *sname = NULL;
 	int rc;
+
+	if (schema == NULL) {
+		if ((sname = strchr(tname, '.')) != NULL) {
+			size_t len = sname - tname + 1;
+
+			sname = malloc(len);
+			if (sname == NULL)
+				return 1;
+			strcpy_len(sname, tname, len);
+			tname += len;
+		} else if ((sname = get_schema(mid)) == NULL) {
+			return 1;
+		}
+		schema = sname;
+	}
 
 	rc = describe_table(mid, schema, tname, toConsole, foreign, databaseDump);
 	if (rc == 0)
@@ -2189,6 +2115,7 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 		rc = dump_table_access(mid, schema, tname, toConsole);
 	if (rc == 0 && !databaseDump)
 		rc = dump_table_defaults(mid, schema, tname, toConsole);
+	free(sname);				/* may be NULL, but that's OK */
 	return rc;
 }
 

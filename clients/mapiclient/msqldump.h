@@ -10,7 +10,6 @@
  * Copyright 1997 - July 2008 CWI.
  */
 
-extern int describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, bool foreign, bool databaseDump);
 extern int describe_sequence(Mapi mid, const char *schema, const char *sname, stream *toConsole);
 extern int describe_schema(Mapi mid, const char *sname, stream *toConsole);
 extern int dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, bool describe, bool foreign, bool useInserts, bool databaseDump, bool noescape);
