@@ -284,7 +284,7 @@ main(int argc, char **argv)
 		mnstr_printf(out, "COMMIT;\n");
 	} else if (table) {
 		mnstr_printf(out, "START TRANSACTION;\n");
-		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false, noescape);
+		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false, noescape, true);
 		mnstr_printf(out, "COMMIT;\n");
 	} else
 		c = dump_database(mid, out, describe, useinserts, noescape);

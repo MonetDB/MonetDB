@@ -249,7 +249,7 @@ bailout:
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
 		else
-			fprintf(stderr, "malloc failure1\n");
+			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
@@ -2086,24 +2086,112 @@ dump_table_defaults(Mapi mid, const char *schema, const char *tname, stream *toC
 int
 dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 		   bool describe, bool foreign, bool useInserts, bool databaseDump,
-		   bool noescape)
+		   bool noescape, bool percent)
 {
 	char *sname = NULL;
-	int rc;
+	int rc = 1;
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
 			size_t len = sname - tname + 1;
 
 			sname = malloc(len);
-			if (sname == NULL)
+			if (sname == NULL) {
+				fprintf(stderr, "malloc failure\n");
 				return 1;
+			}
 			strcpy_len(sname, tname, len);
 			tname += len;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
 		}
 		schema = sname;
+
+		if (percent && (strchr(schema, '%') != NULL || strchr(tname, '%') != NULL)) {
+			char *s = sescape(schema);
+			char *t = sescape(tname);
+			if (s == NULL || t == NULL) {
+				free(s);
+				free(t);
+				fprintf(stderr, "malloc failure\n");
+				goto doreturn;
+			}
+			size_t qlen = strlen(s) + strlen(t) + 256;
+			char *query = malloc(qlen);
+			if (query == NULL) {
+				free(s);
+				free(t);
+				fprintf(stderr, "malloc failure\n");
+				goto doreturn;
+			}
+			snprintf(query, qlen, "SELECT s.name, t.name FROM sys._tables t, sys.schemas s WHERE t.schema_id = s.id AND s.name LIKE '%s' AND t.name LIKE '%s' ORDER BY t.id", s, t);
+			free(s);
+			free(t);
+			MapiHdl hdl = mapi_query(mid, query);
+			free(query);
+			if (hdl == NULL) {
+				if (mapi_error(mid))
+					mapi_explain(mid, stderr);
+				else
+					fprintf(stderr, "malloc failure\n");
+				goto doreturn;
+			}
+			if (mapi_error(mid)) {
+				if (mapi_result_error(hdl))
+					mapi_explain_result(hdl, stderr);
+				else if (mapi_error(mid))
+					mapi_explain_query(hdl, stderr);
+				else
+					fprintf(stderr, "malloc failure\n");
+				mapi_close_handle(hdl);
+				goto doreturn;
+			}
+			struct tables {
+				char *schema;
+				char *table;
+			} *tables;
+			int64_t rows = mapi_get_row_count(hdl);
+			if (rows == 0) {
+				mapi_close_handle(hdl);
+				fprintf(stderr, "no tables matching %s.%s\n", schema, tname);
+				goto doreturn;
+			}
+			tables = malloc(rows * sizeof(struct tables));
+			if (tables == NULL) {
+				mapi_close_handle(hdl);
+				fprintf(stderr, "malloc failure\n");
+				goto doreturn;
+			}
+			for (int64_t i = 0; i < rows; i++) {
+				mapi_fetch_row(hdl);
+				tables[i].schema = strdup(mapi_fetch_field(hdl, 0));
+				tables[i].table = strdup(mapi_fetch_field(hdl, 1));
+				if (tables[i].schema == NULL || tables[i].table == NULL) {
+					do {
+						free(tables[i].schema);
+						free(tables[i].table);
+					} while (i-- > 0);
+					free(tables);
+					mapi_close_handle(hdl);
+					fprintf(stderr, "malloc failure\n");
+					goto doreturn;
+				}
+			}
+			mapi_close_handle(hdl);
+			for (int64_t i = 0; i < rows; i++) {
+				rc = dump_table(mid, tables[i].schema, tables[i].table, toConsole,
+								describe, foreign, useInserts, databaseDump,
+								noescape, false);
+				if (rc != 0)
+					break;
+			}
+			for (int64_t i = 0; i < rows; i++) {
+				free(tables[i].schema);
+				free(tables[i].table);
+			}
+			free(tables);
+			goto doreturn;
+		}
 	}
 
 	rc = describe_table(mid, schema, tname, toConsole, foreign, databaseDump);
@@ -2115,6 +2203,7 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 		rc = dump_table_access(mid, schema, tname, toConsole);
 	if (rc == 0 && !databaseDump)
 		rc = dump_table_defaults(mid, schema, tname, toConsole);
+  doreturn:
 	free(sname);				/* may be NULL, but that's OK */
 	return rc;
 }
@@ -3073,7 +3162,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			}
 		}
 		int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
-		rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true, noescape);
+		rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true, noescape, false);
 		free(id);
 		free(schema);
 		free(name);

@@ -2640,8 +2640,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 
 						start_pager(&saveFD);
 #endif
-						if (x & MD_TABLE || x & MD_VIEW)
-							dump_table(mid, NULL, line, toConsole, true, true, false, false, false);
+						if (x & (MD_TABLE | MD_VIEW))
+							dump_table(mid, NULL, line, toConsole, true, true, false, false, false, false);
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
@@ -2799,7 +2799,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 #endif
 					if (*line) {
 						mnstr_printf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, NULL, line, toConsole, false, true, useinserts, false, false);
+						dump_table(mid, NULL, line, toConsole, false, true, useinserts, false, false, false);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
 						dump_database(mid, toConsole, false, useinserts, false);
