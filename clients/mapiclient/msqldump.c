@@ -278,7 +278,7 @@ main(int argc, char **argv)
 			fprintf(stderr, "malloc failure\n");
 			exit(2);
 		}
-		if (mkdir(outputdir, 0777) == -1 && errno != EEXIST) {
+		if (MT_mkdir(outputdir) == -1 && errno != EEXIST) {
 			perror("cannot create output directory");
 			exit(2);
 		}
