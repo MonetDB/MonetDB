@@ -322,31 +322,49 @@ DROP TABLE v0
 -- statement ok
 -- DROP TABLE v0
 
--- -- 24.sql
+-- 24.sql
 -- statement ok
 -- CREATE TABLE v0(v1 FLOAT)
 
 -- statement ok
 -- INSERT INTO v0 VALUES (0),(67),(127),(-1),(NULL),(NULL),(NULL),(NULL)
 
+-- query IT nosort
+-- SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
+-- ----
+-- 0
+-- x
+-- 67
+-- x
+-- 127
+-- x
+-- -1
+-- x
+
 -- statement ok
 -- WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v1 * 0 / 77
 
--- statement ok
+-- query I
+-- SELECT count(*) FROM v0
+-- ----
+-- 131080
+
+-- statement crashes server
 -- SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
+-- mul_bte_bte_bte: ERROR: 22003!overflow in calculation 87*39.
 
 -- statement ok
 -- DROP TABLE v0
 
--- -- 25.sql
--- statement ok
--- CREATE TABLE IF NOT EXISTS v0(v1 INTEGER)
+-- 25.sql
+statement ok
+CREATE TABLE IF NOT EXISTS v0(v1 INTEGER)
 
--- statement ok
--- UPDATE v0 AS v9 SET v1 = (WITH v0 (v1) AS (SELECT v1 % (12 ^ 55 + v1 + 57159072.000000)) SELECT NULL AS v8 WINDOW v7 AS (PARTITION BY 8, 95, 92150085.000000, 57) ORDER BY v1, v1 DESC NULLS LAST)
+statement ok
+UPDATE v0 AS v9 SET v1 = (WITH v0 (v1) AS (SELECT v1 % (12 ^ 55 + v1 + 57159072.000000)) SELECT NULL AS v8 WINDOW v7 AS (PARTITION BY 8, 95, 92150085.000000, 57) ORDER BY v1, v1 DESC NULLS LAST)
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 26.sql
 statement ok
@@ -364,29 +382,45 @@ UPDATE v0 SET v1 = -1 WHERE CASE WHEN v1 > -1 THEN (SELECT STDDEV_SAMP((18 * v1 
 statement ok
 DROP TABLE v0
 
--- -- 27.sql
--- statement ok
--- CREATE TABLE v0(v1 SMALLINT PRIMARY KEY)
+-- 27.sql
+statement ok
+CREATE TABLE v0(v1 SMALLINT PRIMARY KEY)
 
--- statement ok
--- INSERT INTO v0 VALUES ('x' IN (SELECT - SUM(18) OVER ( ) * 8 AS v2)), (-128), (34), (39)
+statement ok
+INSERT INTO v0 VALUES ('x' IN (SELECT - SUM(18) OVER ( ) * 8 AS v2)), (-128), (34), (39)
 
--- -- 28.sql
--- statement ok
--- CREATE TABLE v0(v1 DECIMAL NOT NULL)
+query I
+SELECT * FROM v0 order by 1
+----
+-128
+0
+34
+39
 
--- statement ok
--- INSERT INTO v0 VALUES (22542428.000000), (54), (19), (0), (0), (0)
+statement ok
+DROP TABLE v0
 
--- statement ok
--- SELECT * FROM v0 WHERE (v1 >= 0 AND v1 <= 0) OR (51867923.000000 LIKE 'x' AND (SELECT v1 BETWEEN 47130623.000000 AND v1) LIKE 'x')
+-- 28.sql
+statement ok
+CREATE TABLE v0(v1 DECIMAL NOT NULL)
 
--- statement ok
--- DROP TABLE v0
+statement ok
+INSERT INTO v0 VALUES (22542428.000000), (54), (19), (0), (0), (0)
+
+query I
+SELECT * FROM v0 WHERE (v1 >= 0 AND v1 <= 0) OR (51867923.000000 LIKE 'x' AND (SELECT v1 BETWEEN 47130623.000000 AND v1) LIKE 'x')
+----
+0
+0
+0
+
+statement ok
+DROP TABLE v0
 
 -- -- 29.sql
--- statement ok
+-- statement error
 -- SELECT ALL ( SELECT - - - - - - - - - - 48 FROM ( SELECT NULL - - - - - - - - 89 FROM ( VALUES ( - - - - - - - - - - 74 ) , ( - - - - - 128 ) , ( - - - - - - 8 ) , ( - - - - 61 ) ) AS v1 ( v1 ) GROUP BY ( ) , GROUPING SETS ( GROUPING SETS ( GROUPING SETS ( ( ) ) ) ) , ( ) ORDER BY - - - - - - - - - - 255 LIKE v1 / CASE WHEN v1 IS NULL THEN - - 75 END DESC , v1 , v1 LIMIT 63 ) AS v1 UNION SELECT - - - - - - - - - - - - - 74 WHERE - v1 < - 89088397.000000 ) FROM ( SELECT * FROM ( VALUES ( - - - - - - - 61 ) , ( - - - 42 ) ) AS v1 ( v1 ) ) AS v1 ( v1 )
+-- sql/server/rel_select.c:4614: rel_groupings: Assertion `next_set' failed.
 
 -- -- 30.sql
 -- statement ok
