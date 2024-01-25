@@ -293,7 +293,7 @@ monetdbe_mapi_dump_database(monetdbe_database dbhdl, const char *filename)
 	/* open file stream */
 	stream *fd = open_wastream(filename);
 	if (fd) {
-		if (dump_database(&mid, fd, 0, 0, false)) {
+		if (dump_database(&mid, fd, NULL, NULL, false, false, false)) {
 			if (mid.msg)
 				msg = mid.msg;
 		}
@@ -313,7 +313,7 @@ monetdbe_mapi_dump_table(monetdbe_database dbhdl, const char *sname, const char 
 	/* open file stream */
 	stream *fd = open_wastream(filename);
 	if (fd) {
-		if (dump_table(&mid, sname, tname, fd, false, false, false, false, false, false)) {
+		if (dump_table(&mid, sname, tname, fd, NULL, NULL, false, false, false, false, false, false)) {
 			if (mid.msg)
 				msg = mid.msg;
 		}

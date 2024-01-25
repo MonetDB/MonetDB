@@ -110,6 +110,46 @@ or
 contains percent characters, all tables matching the (SQL) search
 pattern are dumped.
 .TP
+\fB\-\-output=\fP\fIfilename\fP (\fB\-o\fP \fIfilename\fP)
+Write the dump to the specified file.
+If
+.I filename
+contains a recognized compression scheme suffix, the file will be
+compressed using that scheme.
+.TP
+\fB\-\-outputdir=\fP\fIdirectory\fP (\fB\-O\fP \fIdirectory\fP)
+Write the dump to the file
+.B dump.sql
+in the specified directory which is created if it does not exist.
+The data of the tables will be stored in separate CSV files in the
+directory.
+If the
+.B \-\-compression
+option is used, the CSV files will be compressed using the specified
+compression scheme.
+If both the 
+.B \-\-outputdir
+option and the
+.B \-\-output
+option are specified, the last one is used.
+The
+.B \-\-outputdir
+option is not compatible with the
+\B \-\-inserts
+option.
+.TP
+\fB\-\-compression=\fP\fIextension\fP (\fB\-x\fP \fIextension\fP)
+Compress the CSV files produced with the
+.B \-\-outputdir
+option using the specified compression scheme.
+Depending on how the program is compiled, the following compression
+schemes are recognized:
+.BR gz ,
+.BR bz2 ,
+.BR xz ,
+and
+.BR lz4 .
+.TP
 \fB\-\-quiet\fP (\fB\-q\fP)
 Don't print the welcome message.
 .TP

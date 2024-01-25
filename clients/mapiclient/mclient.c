@@ -2641,7 +2641,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						start_pager(&saveFD);
 #endif
 						if (x & (MD_TABLE | MD_VIEW))
-							dump_table(mid, NULL, line, toConsole, true, true, false, false, false, false);
+							dump_table(mid, NULL, line, toConsole, NULL, NULL, true, true, false, false, false, false);
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
@@ -2799,10 +2799,10 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 #endif
 					if (*line) {
 						mnstr_printf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, NULL, line, toConsole, false, true, useinserts, false, false, false);
+						dump_table(mid, NULL, line, toConsole, NULL, NULL, false, true, useinserts, false, false, false);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
-						dump_database(mid, toConsole, false, useinserts, false);
+						dump_database(mid, toConsole, NULL, NULL, false, useinserts, false);
 #ifdef HAVE_POPEN
 					end_pager(saveFD);
 #endif
@@ -3733,7 +3733,7 @@ main(int argc, char **argv)
 	}
 	if (dump) {
 		if (mode == SQL) {
-			exit(dump_database(mid, toConsole, false, useinserts, false));
+			exit(dump_database(mid, toConsole, NULL, NULL, false, useinserts, false));
 		} else {
 			mnstr_printf(stderr_stream, "Dump only supported for SQL\n");
 			exit(1);

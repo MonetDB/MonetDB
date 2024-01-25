@@ -1720,7 +1720,8 @@ describe_schema(Mapi mid, const char *sname, stream *sqlf)
 
 static int
 dump_table_data(Mapi mid, const char *schema, const char *tname,
-				stream *sqlf, bool useInserts, bool noescape)
+				stream *sqlf, const char *ddir, const char *ext,
+				bool useInserts, bool noescape)
 {
 	int cnt, i;
 	int64_t rows;
@@ -1729,6 +1730,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname,
 	size_t maxquerylen;
 	unsigned char *string = NULL;
 	char *s, *t;
+	stream *datf = sqlf;
 
 	maxquerylen = 5120 + 2*strlen(tname) + 2*strlen(schema);
 	query = malloc(maxquerylen);
@@ -1809,8 +1811,33 @@ dump_table_data(Mapi mid, const char *schema, const char *tname,
 		mnstr_printf(sqlf, "COPY %" PRId64 " RECORDS INTO ", rows);
 		dquoted_print(sqlf, schema, ".");
 		dquoted_print(sqlf, tname, NULL);
-		mnstr_printf(sqlf, " FROM stdin USING DELIMITERS "
-					 "E'\\t',E'\\n','\"'%s;\n", noescape ? " NO ESCAPE" : "");
+		if (ddir) {
+			size_t fnl = strlen(ddir) + strlen(schema) + strlen(tname) + (ext ? strlen(ext) + 1 : 0) + 7;
+			char *fn = malloc(fnl);
+			if (fn == NULL)
+				goto bailout;
+			int off;
+#ifdef MSC_VER
+			/* bloody Windows: enable %n format specifier */
+			_set_printf_count_output(1);
+#endif
+			if (ext)
+				snprintf(fn, fnl, "%s%c%n%s.%s.csv.%s", ddir, DIR_SEP, &off, schema, tname, ext);
+			else
+				snprintf(fn, fnl, "%s%c%n%s.%s.csv", ddir, DIR_SEP, &off, schema, tname);
+			mnstr_printf(sqlf, " FROM E");
+			squoted_print(sqlf, fn + off, '\'', false);
+			mnstr_printf(sqlf, " ON CLIENT");
+			datf = open_wastream(fn);
+			free(fn);
+			if (datf == NULL) {
+				goto bailout;
+			}
+		} else {
+			mnstr_printf(sqlf, " FROM stdin");
+		}
+		mnstr_printf(sqlf, " USING DELIMITERS E'\\t',E'\\n','\"'%s;\n",
+					 noescape ? " NO ESCAPE" : "");
 	}
 	string = malloc(sizeof(unsigned char) * cnt);
 	if (string == NULL)
@@ -1830,68 +1857,68 @@ dump_table_data(Mapi mid, const char *schema, const char *tname,
 		const char *s;
 
 		if (useInserts) {
-			mnstr_printf(sqlf, "INSERT INTO ");
-			dquoted_print(sqlf, schema, ".");
-			dquoted_print(sqlf, tname, " VALUES (");
+			mnstr_printf(datf, "INSERT INTO ");
+			dquoted_print(datf, schema, ".");
+			dquoted_print(datf, tname, " VALUES (");
 		}
 
 		for (i = 0; i < cnt; i++) {
 			const char *tp = mapi_get_type(hdl, i);
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
-				mnstr_printf(sqlf, "NULL");
+				mnstr_printf(datf, "NULL");
 			else if (useInserts) {
 				if (strcmp(tp, "day_interval") == 0 || strcmp(tp, "sec_interval") == 0) {
 					const char *p = strchr(s, '.');
 					if (p == NULL)
 						p = s + strlen(s);
-					mnstr_printf(sqlf, "INTERVAL '%.*s' SECOND", (int) (p - s), s);
+					mnstr_printf(datf, "INTERVAL '%.*s' SECOND", (int) (p - s), s);
 				} else if (strcmp(tp, "month_interval") == 0)
-					mnstr_printf(sqlf, "INTERVAL '%s' MONTH", s);
+					mnstr_printf(datf, "INTERVAL '%s' MONTH", s);
 				else if (strcmp(tp, "timestamptz") == 0)
-					mnstr_printf(sqlf, "TIMESTAMP WITH TIME ZONE '%s'", s);
+					mnstr_printf(datf, "TIMESTAMP WITH TIME ZONE '%s'", s);
 				else if (strcmp(tp, "timestamp") == 0)
-					mnstr_printf(sqlf, "TIMESTAMP '%s'", s);
+					mnstr_printf(datf, "TIMESTAMP '%s'", s);
 				else if (strcmp(tp, "timetz") == 0)
-					mnstr_printf(sqlf, "TIME WITH TIME ZONE '%s'", s);
+					mnstr_printf(datf, "TIME WITH TIME ZONE '%s'", s);
 				else if (strcmp(tp, "time") == 0)
-					mnstr_printf(sqlf, "TIME '%s'", s);
+					mnstr_printf(datf, "TIME '%s'", s);
 				else if (strcmp(tp, "date") == 0)
-					mnstr_printf(sqlf, "DATE '%s'", s);
+					mnstr_printf(datf, "DATE '%s'", s);
 				else if (strcmp(tp, "blob") == 0)
-					mnstr_printf(sqlf, "BINARY LARGE OBJECT '%s'", s);
+					mnstr_printf(datf, "BINARY LARGE OBJECT '%s'", s);
 				else if (strcmp(tp, "inet") == 0 ||
 					 strcmp(tp, "json") == 0 ||
 					 strcmp(tp, "url") == 0 ||
 					 strcmp(tp, "uuid") == 0 ||
 					 string[i])
-					squoted_print(sqlf, s, '\'', false);
+					squoted_print(datf, s, '\'', false);
 				else
-					mnstr_printf(sqlf, "%s", s);
+					mnstr_printf(datf, "%s", s);
 			} else if (string[i]) {
 				/* write double-quoted string with
 				   certain characters escaped */
-				squoted_print(sqlf, s, '"', noescape);
+				squoted_print(datf, s, '"', noescape);
 			} else if (strcmp(tp, "blob") == 0) {
 				/* inside blobs, special characters
 				   don't occur */
-				mnstr_printf(sqlf, "\"%s\"", s);
+				mnstr_printf(datf, "\"%s\"", s);
 			} else
-				mnstr_printf(sqlf, "%s", s);
+				mnstr_printf(datf, "%s", s);
 
 			if (useInserts) {
 				if (i < cnt - 1)
-					mnstr_printf(sqlf, ", ");
+					mnstr_printf(datf, ", ");
 				else
-					mnstr_printf(sqlf, ");\n");
+					mnstr_printf(datf, ");\n");
 			} else {
 				if (i < cnt - 1)
-					mnstr_write(sqlf, "\t", 1, 1);
+					mnstr_write(datf, "\t", 1, 1);
 				else
-					mnstr_write(sqlf, "\n", 1, 1);
+					mnstr_write(datf, "\n", 1, 1);
 			}
 		}
-		if (mnstr_errnr(sqlf) != MNSTR_NO__ERROR)
+		if (mnstr_errnr(datf) != MNSTR_NO__ERROR)
 			goto bailout;
 	}
 	if (mapi_error(mid))
@@ -1899,6 +1926,8 @@ dump_table_data(Mapi mid, const char *schema, const char *tname,
 	free(string);
 
   doreturn:
+	if (datf != sqlf)
+		close_stream(datf);
 	if (hdl)
 		mapi_close_handle(hdl);
 	if (query != NULL)
@@ -1906,6 +1935,8 @@ dump_table_data(Mapi mid, const char *schema, const char *tname,
 	return 0;
 
 bailout:
+	if (datf != NULL && datf != sqlf)
+		close_stream(datf);
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
@@ -2085,6 +2116,7 @@ dump_table_defaults(Mapi mid, const char *schema, const char *tname, stream *sql
 
 int
 dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
+		   const char *ddir, const char *ext,
 		   bool describe, bool foreign, bool useInserts, bool databaseDump,
 		   bool noescape, bool percent)
 {
@@ -2180,6 +2212,7 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 			mapi_close_handle(hdl);
 			for (int64_t i = 0; i < rows; i++) {
 				rc = dump_table(mid, tables[i].schema, tables[i].table, sqlf,
+								ddir, ext,
 								describe, foreign, useInserts, databaseDump,
 								noescape, false);
 				if (rc != 0)
@@ -2198,7 +2231,7 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 	if (rc == 0)
 		rc = dump_table_storage(mid, schema, tname, sqlf);
 	if (rc == 0 && !describe)
-		rc = dump_table_data(mid, schema, tname, sqlf, useInserts, noescape);
+		rc = dump_table_data(mid, schema, tname, sqlf, ddir, ext, useInserts, noescape);
 	if (rc == 0)
 		rc = dump_table_access(mid, schema, tname, sqlf);
 	if (rc == 0 && !databaseDump)
@@ -2622,7 +2655,7 @@ bailout:
 }
 
 int
-dump_database(Mapi mid, stream *sqlf, bool describe, bool useInserts, bool noescape)
+dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool describe, bool useInserts, bool noescape)
 {
 	const char *start_trx = "START TRANSACTION";
 	const char *end = "ROLLBACK";
@@ -3162,7 +3195,7 @@ dump_database(Mapi mid, stream *sqlf, bool describe, bool useInserts, bool noesc
 			}
 		}
 		int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
-		rc = dump_table(mid, schema, name, sqlf, dont_describe || describe, describe, useInserts, true, noescape, false);
+		rc = dump_table(mid, schema, name, sqlf, ddir, ext, dont_describe || describe, describe, useInserts, true, noescape, false);
 		free(id);
 		free(schema);
 		free(name);
