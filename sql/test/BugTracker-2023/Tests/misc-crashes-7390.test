@@ -198,7 +198,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0 (v1 SMALLINT)
 
-statement ok
+statement error 42000!SELECT: cannot use non GROUP BY column 'v0.v1' in query results without an aggregate function
 UPDATE v0 SET v1 = CASE WHEN v1 > 37 THEN (SELECT ALL AVG (v1) AS v2 FROM (SELECT SUM(v1) OVER (ORDER BY v1 RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)) AS v3 WHERE v1 = v1 AND v1 = v1) / 99 ELSE 8 END ^ 16 + 1 ^ -32768
 
 statement ok
@@ -398,43 +398,49 @@ DROP TABLE v0
 -- statement ok
 -- DROP TABLE v0
 
--- -- 31.sql
--- SELECT ALL ( SELECT - - - - - - - - - - - 1 - - - - - - 16 FROM ( SELECT NULL - - - - - - - - - - - - - - - - 1 FROM ( SELECT - - - - 1 * - - - - - - 2147483648 * - - - 43 * 77745222.000000 ) AS v1 ( v1 ) GROUP BY GROUPING SETS ( GROUPING SETS ( CUBE ( v1 ) ) ) ORDER BY v1 , - - - 86 + - - 93 ^ v1 , v1 LIMIT 21 ) AS v1 UNION SELECT - - - - - - - - - - - - 93 WHERE - v1 < - 63226945.000000 - - - - - - - - - - 68 ) FROM ( VALUES ( - - - - - - - - - 40 / - ( SELECT - - - - - - - - 0 WHERE - - - - - - - 40 = - - - - - 0 ) ) , ( - - 88 ) ) v1 ( v1 )
+-- 31.sql
+statement error 22003!overflow in conversion of -7179133497070583808000000000000 (approx. value) to sht.
+SELECT ALL ( SELECT - - - - - - - - - - - 1 - - - - - - 16 FROM ( SELECT NULL - - - - - - - - - - - - - - - - 1 FROM ( SELECT - - - - 1 * - - - - - - 2147483648 * - - - 43 * 77745222.000000 ) AS v1 ( v1 ) GROUP BY GROUPING SETS ( GROUPING SETS ( CUBE ( v1 ) ) ) ORDER BY v1 , - - - 86 + - - 93 ^ v1 , v1 LIMIT 21 ) AS v1 UNION SELECT - - - - - - - - - - - - 93 WHERE - v1 < - 63226945.000000 - - - - - - - - - - 68 ) FROM ( VALUES ( - - - - - - - - - 40 / - ( SELECT - - - - - - - - 0 WHERE - - - - - - - 40 = - - - - - 0 ) ) , ( - - 88 ) ) v1 ( v1 )
 
--- -- 32.sql
--- statement ok
--- CREATE TABLE v0(v1 REAL)
+-- 32.sql
+statement ok
+CREATE TABLE v0(v1 REAL)
 
--- statement ok
--- SELECT CAST(max((SELECT NULL AS v2 GROUP BY v1)) AS INTEGER) FROM v0 UNION SELECT 3
+query I nosort
+SELECT CAST(max((SELECT NULL AS v2 GROUP BY v1)) AS INTEGER) FROM v0 UNION SELECT 3
+----
+NULL
+3
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- -- 33.sql
--- statement ok
--- CREATE TABLE v0 (v2 CHAR(1), v1 REAL)
+-- 33.sql
+statement ok
+CREATE TABLE v0 (v2 CHAR(1), v1 REAL)
 
--- statement ok
--- SELECT DISTINCT SUM(max((SELECT NULL AS v2 GROUP BY v2))) OVER (ORDER BY '013') FROM v0
+query I
+SELECT DISTINCT SUM(max((SELECT NULL AS v2 GROUP BY v2))) OVER (ORDER BY '013') FROM v0
+----
+NULL
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- -- 34.sql
--- statement ok
--- CREATE TABLE v0(v1 BIGINT)
+-- 34.sql
+statement ok
+CREATE TABLE v0(v1 BIGINT)
 
--- statement ok
--- INSERT INTO v0 SELECT NULLIF(74, RANK ( ) OVER ( )) = -32768 FROM COLUMNS, PRIVILEGES AS v0
+statement ok
+INSERT INTO v0 SELECT NULLIF(74, RANK ( ) OVER ( )) = -32768 FROM COLUMNS, PRIVILEGES AS v0
 
--- statement ok
--- SELECT * FROM v0 ORDER BY (60 - v1), v1, v1 = 74364935.000000 LIMIT 2147483647
+statement ok
+SELECT * FROM v0 ORDER BY (60 - v1), v1, v1 = 74364935.000000 LIMIT 2147483647
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- -- 35.sql
+-- 35.sql
 -- statement ok
 -- CREATE TABLE v0(v1 FLOAT (41, 29) DEFAULT 745433.000000)
 
@@ -464,24 +470,24 @@ statement ok
 DROP TABLE v0
 
 -- 37.sql
--- statement ok
--- CREATE TABLE v0(v1 VARCHAR(30), v2 CHAR(20))
+statement ok
+CREATE TABLE v0(v1 VARCHAR(30), v2 CHAR(20))
 
--- statement ok
--- DELETE FROM v0 WHERE (SELECT v1 WHERE (SELECT COUNT (*) OVER (ORDER BY v1 DESC NULLS LAST)) = v2 GROUP BY 2.100000 HAVING 0 NOT LIKE v2)
+statement ok
+DELETE FROM v0 WHERE (SELECT v1 WHERE (SELECT COUNT (*) OVER (ORDER BY v1 DESC NULLS LAST)) = v2 GROUP BY 2.100000 HAVING 0 NOT LIKE v2)
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 38.sql
--- statement ok
--- CREATE TABLE v0(v1 DOUBLE, v5 DOUBLE, v3 INT, v6 DOUBLE, v2 INT, v4 INTEGER)
+statement ok
+CREATE TABLE v0(v1 DOUBLE, v5 DOUBLE, v3 INT, v6 DOUBLE, v2 INT, v4 INTEGER)
 
--- statement ok
--- UPDATE v0 SET v2 = (SELECT NULL WHERE v5 = v3 GROUP BY v1, v2) WHERE v2 > 10
+statement ok
+UPDATE v0 SET v2 = (SELECT NULL WHERE v5 = v3 GROUP BY v1, v2) WHERE v2 > 10
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 39.sql
 statement ok
