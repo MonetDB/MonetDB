@@ -11,3 +11,6 @@ query I rowsort
 SELECT count ( v1 ) FROM v0 WHERE v2 IN ( SELECT ( row_number ( ) OVER ( ) ) FROM v0 )
 ----
 0
+
+statement ok
+DROP TABLE v0

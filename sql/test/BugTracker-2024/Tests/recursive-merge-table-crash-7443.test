@@ -16,3 +16,12 @@ ALTER TABLE t1 ADD TABLE a AS PARTITION FROM '0' TO '100'
 query IT
 SELECT c, d FROM t1 
 ----
+
+statement ok
+DROP TABLE id CASCADE
+
+statement ok
+DROP TABLE t1
+
+statement ok
+DROP TABLE a

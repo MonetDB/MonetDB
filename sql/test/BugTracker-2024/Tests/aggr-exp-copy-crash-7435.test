@@ -3,3 +3,6 @@ CREATE TABLE v0 ( v1 , v2 ) as ( select i , cast ( i as string ) from generate_s
 
 statement ok
 DELETE FROM v0 WHERE NOT ( v1 = ( SELECT 3 WHERE v2 = ( SELECT sum ( v2 ) OVER ( ) ) GROUP BY 7 ))
+
+statement ok
+DROP TABLE v0

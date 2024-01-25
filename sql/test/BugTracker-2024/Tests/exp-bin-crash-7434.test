@@ -3,3 +3,6 @@ CREATE TABLE v0 ( v1 REAL )
 
 statement error conversion of string '<js>null</js>' to type hge failed.
 SELECT ( NULL IN ( ( SELECT median ( 1 ) ) , ntile ( '<js>null</js>' ) OVER ( ) ) ) AS new_column FROM v0
+
+statement ok
+DROP TABLE v0
