@@ -2592,6 +2592,8 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 			h = stmt_unop(be, s, NULL, hf);
 		}
 	}
+	if (n != NULL) /* need to use all cols of the index */
+		return NULL;
 	if (h && h->nrcols) {
 		if (!swap_rel) {
 			return stmt_join(be, idx, h, 0, cmp_equal, 0, semantics, false);
