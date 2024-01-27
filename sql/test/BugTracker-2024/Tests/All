@@ -18,3 +18,4 @@ recursive-merge-table-crash-7443
 greatest-as-colname-7444
 where-cond-issue-7447
 where-cond-issue-7448
+function_return_issue
