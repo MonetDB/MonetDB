@@ -166,6 +166,18 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 		{ "isnull",            "isnil",         "void", F_FUNC, },
 		{0},
 	};
+	char *err;
+
+	/* cleanup_types: change introduced post Dec2023 */
+	err = SQLstatementIntern(c,
+							 "update sys._columns set type_digits = 7 where type = 'tinyint' and type_digits <> 7;\n"
+							 "update sys._columns set type_digits = 15 where type = 'smallint' and type_digits <> 15;\n"
+							 "update sys._columns set type_digits = 31 where type = 'int' and type_digits <> 31;\n"
+							 "update sys._columns set type_digits = 63 where type = 'bigint' and type_digits <> 63;\n"
+							 "update sys._columns set type_digits = 127 where type = 'hugeint' and type_digits <> 127;\n",
+							 "update", true, false, NULL);
+	if (err)
+		return err;
 
 	/* if any of the tested function's internal ID does not match the ID
 	 * in the sys.functions table, we recreate the internal part of the
@@ -188,7 +200,7 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 				 "select id from sys.functions where name = '%s' and func = '%s' and schema_id = 2000;\n",
 				 tests[i].name, tests[i].func);
 		res_table *output = NULL;
-		char *err = SQLstatementIntern(c, buf, "update", true, false, &output);
+		err = SQLstatementIntern(c, buf, "update", true, false, &output);
 		if (err)
 			return err;
 		BAT *b;
