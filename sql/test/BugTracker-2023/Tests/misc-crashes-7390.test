@@ -277,15 +277,15 @@ UPDATE v0 SET v1 = 59 % v1 WHERE (WITH v0 (v1) AS (SELECT ('x' + 95) ORDER BY - 
 statement ok
 DROP TABLE v0
 
--- -- 20.sql
--- statement ok
--- CREATE TABLE v0(v1 REAL PRIMARY KEY)
+-- 20.sql
+statement ok
+CREATE TABLE v0(v1 REAL PRIMARY KEY)
 
--- statement ok
--- SELECT (SELECT COUNT(v1) OVER ( ) FROM SUM (STDDEV_POP(MIN ('x')))) AS v2 FROM v0 WHERE v1 = -1
+statement error 42000!MIN: aggregate functions not allowed in functions in FROM
+SELECT (SELECT COUNT(v1) OVER ( ) FROM SUM (STDDEV_POP(MIN ('x')))) AS v2 FROM v0 WHERE v1 = -1
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 21.sql
 statement ok
