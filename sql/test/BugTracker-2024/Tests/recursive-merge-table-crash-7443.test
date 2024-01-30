@@ -1,0 +1,27 @@
+statement ok
+CREATE MERGE TABLE a (b int, subtable2 varchar(32)) PARTITION BY VALUES ON (b) 
+
+statement ok
+CREATE MERGE TABLE t1 (c int, d varchar(32)) PARTITION BY RANGE ON (c)
+
+statement ok
+CREATE TABLE id (t1907060_1 int, age varchar(32))
+
+statement ok
+ALTER TABLE a ADD TABLE id AS PARTITION IN ('1', '2', '3')
+
+statement ok
+ALTER TABLE t1 ADD TABLE a AS PARTITION FROM '0' TO '100'
+
+query IT
+SELECT c, d FROM t1 
+----
+
+statement ok
+DROP TABLE id CASCADE
+
+statement ok
+DROP TABLE t1
+
+statement ok
+DROP TABLE a

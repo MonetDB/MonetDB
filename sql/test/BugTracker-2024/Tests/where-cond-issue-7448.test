@@ -1,0 +1,28 @@
+statement ok
+CREATE TABLE t0(c0 BOOLEAN,  c1 VARCHAR)
+
+statement ok
+INSERT INTO t0 (c0, c1) VALUES (true, true)
+
+statement ok
+CREATE INDEX i0 ON t0(c1 , c0 )
+
+query IT
+SELECT * FROM t0
+----
+1
+true
+
+query I
+SELECT (t0.c1=(t0.c0 OR true))AND(t0.c0) FROM t0
+----
+1
+
+query IT
+SELECT * FROM t0 WHERE ((t0.c1=(t0.c0 OR true))AND(t0.c0))
+----
+1
+true
+
+statement ok
+DROP TABLE t0 CASCADE

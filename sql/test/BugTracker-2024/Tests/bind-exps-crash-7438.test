@@ -1,0 +1,8 @@
+statement ok
+CREATE TABLE v0 ( v2 INTEGER , v1 INTEGER )
+
+statement ok
+SELECT CAST ( ( ( SELECT NULL v1 WHERE v2 IS NULL OR ( 'www' > ANY ( v1 ) ) ) ) AS BIGINT ) FROM v0
+
+statement ok
+DROP TABLE v0

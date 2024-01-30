@@ -1,0 +1,16 @@
+statement ok
+CREATE TABLE v0 ( v2 , v1 ) as ( select i , cast ( i as string ) from generate_series ( 1 , 1000 ) as t ( i ) )
+
+statement ok
+INSERT INTO v0 ( v1 ) SELECT v0 . v2 FROM v0 , v0 AS sum_f1
+
+statement ok
+DELETE FROM v0 WHERE ( 10 )
+
+query I rowsort
+SELECT count ( v1 ) FROM v0 WHERE v2 IN ( SELECT ( row_number ( ) OVER ( ) ) FROM v0 )
+----
+0
+
+statement ok
+DROP TABLE v0

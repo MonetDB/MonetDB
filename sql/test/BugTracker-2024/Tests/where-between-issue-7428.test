@@ -50,4 +50,3 @@ DROP TABLE t0
 
 statement ok
 DROP TABLE t1
-

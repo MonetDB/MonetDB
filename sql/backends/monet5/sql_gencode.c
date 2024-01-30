@@ -1066,17 +1066,6 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 		}
 		pushInstruction(mb, q);
 	}
-	/* generate a dummy return assignment for functions */
-	if (getArgType(mb, getInstrPtr(mb, 0), 0) != TYPE_void && getInstrPtr(mb, mb->stop - 1)->barrier != RETURNsymbol) {
-		q = newAssignment(mb);
-		if (q == NULL) {
-			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return -1;
-		}
-		getArg(q, 0) = getArg(getInstrPtr(mb, 0), 0);
-		q->barrier = RETURNsymbol;
-		pushInstruction(mb, q);
-	}
 	if (add_end)
 		pushEndInstruction(mb);
 	if (querylog)
