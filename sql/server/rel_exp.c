@@ -322,9 +322,11 @@ sql_exp *
 exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier)
 {
 	sql_subfunc *cmp_func = sql_bind_func(sql, "sys", compareop, exp_subtype(le), exp_subtype(le), F_FUNC, true);
-	sql_exp *e;
+	sql_exp *e = NULL;
 
-	assert(cmp_func);
+	if (cmp_func == NULL)
+		return NULL;
+
 	e = exp_binop(sql->sa, le, re, cmp_func);
 	if (e) {
 		e->flag = quantifier;

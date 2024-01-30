@@ -217,15 +217,15 @@ UPDATE v0 SET v1 = v1 % (WITH v0 (v1) AS (SELECT -2147483648 WHERE (v1 < -1 OR v
 statement ok
 DROP TABLE v0
 
--- -- 15.sql
--- statement ok
--- CREATE TABLE v0(v1 SMALLINT)
+-- 15.sql
+statement ok
+CREATE TABLE v0(v1 SMALLINT)
 
--- statement ok
--- UPDATE v0 SET v1 = v1 <= (WITH v0 (v1) AS (SELECT (CASE WHEN 59 THEN (0 * (('x' < v1 = 255 > v1 - v1))) END)) SELECT v1 > 16 OR v1 > 2147483647 AND v1 >= 27 AS v4 FROM v0 ORDER BY v1 > v1 % v1 % (v1) NULLS LAST) OR v1 > -1
+statement ok
+UPDATE v0 SET v1 = v1 <= (WITH v0 (v1) AS (SELECT (CASE WHEN 59 THEN (0 * (('x' < v1 = 255 > v1 - v1))) END)) SELECT v1 > 16 OR v1 > 2147483647 AND v1 >= 27 AS v4 FROM v0 ORDER BY v1 > v1 % v1 % (v1) NULLS LAST) OR v1 > -1
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 16.sql
 statement ok
@@ -241,15 +241,14 @@ statement ok
 DROP TABLE v0
 
 -- 17.sql
--- statement ok
--- CREATE TABLE v0(v1 INT)
+statement ok
+CREATE TABLE v0(v1 INT)
 
--- statement ok
--- UPDATE v0 SET v1 = (WITH v0 AS (SELECT 42039652.000000) SELECT STDDEV_POP (96) OVER (ORDER BY v1) FROM v0, v0 LIMIT 37 OFFSET 62) = 8
--- sql/server/rel_exp.c:327: exp_compare_func: Assertion `cmp_func' failed.
+statement error
+UPDATE v0 SET v1 = (WITH v0 AS (SELECT 42039652.000000) SELECT STDDEV_POP (96) OVER (ORDER BY v1) FROM v0, v0 LIMIT 37 OFFSET 62) = 8
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- -- 18.sql
 -- statement ok
