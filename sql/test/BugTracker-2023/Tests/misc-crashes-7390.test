@@ -434,7 +434,7 @@ DROP TABLE v0
 -- DROP TABLE v0
 
 -- 31.sql
-statement error 22003!overflow in conversion of -7179133497070583808000000000000 (approx. value) to sht.
+statement error 22003!overflow ...
 SELECT ALL ( SELECT - - - - - - - - - - - 1 - - - - - - 16 FROM ( SELECT NULL - - - - - - - - - - - - - - - - 1 FROM ( SELECT - - - - 1 * - - - - - - 2147483648 * - - - 43 * 77745222.000000 ) AS v1 ( v1 ) GROUP BY GROUPING SETS ( GROUPING SETS ( CUBE ( v1 ) ) ) ORDER BY v1 , - - - 86 + - - 93 ^ v1 , v1 LIMIT 21 ) AS v1 UNION SELECT - - - - - - - - - - - - 93 WHERE - v1 < - 63226945.000000 - - - - - - - - - - 68 ) FROM ( VALUES ( - - - - - - - - - 40 / - ( SELECT - - - - - - - - 0 WHERE - - - - - - - 40 = - - - - - 0 ) ) , ( - - 88 ) ) v1 ( v1 )
 
 -- 32.sql
