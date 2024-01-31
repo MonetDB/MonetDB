@@ -476,17 +476,17 @@ statement ok
 DROP TABLE v0
 
 -- 35.sql
--- statement ok
--- CREATE TABLE v0(v1 FLOAT (41, 29) DEFAULT 745433.000000)
+statement ok
+CREATE TABLE v0(v1 FLOAT (41, 29) DEFAULT 745433.000000)
 
--- statement ok
--- INSERT INTO v0 VALUES (0), (93), (NULL), (-128), (0), (59), (24)
+statement ok
+INSERT INTO v0 VALUES (0), (93), (NULL), (-128), (0), (59), (24)
 
--- statement ok
--- SELECT AVG(v1) OVER (PARTITION BY -1) AS VALUE FROM v0 v0 NATURAL JOIN v0 VARIABLES
+statement ok
+SELECT AVG(v1) OVER (PARTITION BY -1) AS VALUE FROM v0 v0 NATURAL JOIN v0 VARIABLES
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 36.sql
 statement ok
