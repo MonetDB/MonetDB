@@ -1831,15 +1831,12 @@ BATslice(BAT *b, BUN l, BUN h)
 
 	BATcheck(b, NULL);
 	BATiter bi = bat_iterator(b);
+	if (l > bi.count)
+		l = bi.count;
 	if (h > bi.count)
 		h = bi.count;
 	if (h < l)
 		h = l;
-
-	if (l > BUN_MAX || h > BUN_MAX) {
-		GDKerror("boundary out of range\n");
-		goto doreturn;
-	}
 
 	if (complex_cand(b)) {
 		/* slicing a candidate list with exceptions */
