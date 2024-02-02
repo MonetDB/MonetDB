@@ -56,7 +56,7 @@ project (
 | | | | | | | | ) [ "f"."id" NOT NULL, "p"."number" ] [ "f"."id" ASC NOT NULL, "p"."number" ASC ]
 | | | | | | | ) [ "f"."id" NOT NULL, "p"."number" ] [ "f"."id" ASC NOT NULL, "p"."number" NULLS LAST ]
 | | | | | | ) [ "f"."id" NOT NULL, "p"."number" ] [ "f"."id" ASC NOT NULL, "p"."number" ASC ]
-| | | | | ) [ "f"."id" NOT NULL, "sys"."row_number"(clob["sys"."star"()], boolean(1) "false", "sys"."diff"("sys"."diff"("f"."id" NOT NULL), "p"."number")) as "line" ]
+| | | | | ) [ "f"."id" NOT NULL, "sys"."row_number"(varchar["sys"."star"()], boolean(1) "false", "sys"."diff"("sys"."diff"("f"."id" NOT NULL), "p"."number")) as "line" ]
 | | | | ) [ "f"."id" NOT NULL as "fid", "line" ]
 | | | ) [ "fid" NOT NULL ] [ "line" ASC ]
 | | ) [ "fid" NOT NULL as "commented_function_signatures_6542"."fid" ]

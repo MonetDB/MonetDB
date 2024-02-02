@@ -50,7 +50,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1
 project (
 | select (
 | | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
-| ) [ (("myx"."x" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) ]
+| ) [ (("myx"."x" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) ]
 ) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 query T nosort
@@ -59,7 +59,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is n
 project (
 | select (
 | | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
-| ) [ ("myx"."x" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) ]
+| ) [ ("myx"."x" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) ]
 ) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 query T nosort
@@ -68,7 +68,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5
 project (
 | select (
 | | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
-| ) [ (("myx"."x" NOT NULL UNIQUE) in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) = (uuid[char(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL)) ]
+| ) [ (("myx"."x" NOT NULL UNIQUE) in (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[varchar(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL)) ]
 ) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 statement ok
@@ -503,7 +503,7 @@ project (
 | | | table("sys"."t2") [ "t2"."a" UNIQUE ]
 | | ) [ ("t1"."a" UNIQUE) = ("t2"."a" UNIQUE) ],
 | | table("sys"."t3") [ "t3"."b" UNIQUE ]
-| ) [ (varchar["t1"."b" UNIQUE]) FILTER "sys"."like"(varchar["t3"."b" UNIQUE], varchar "", boolean(1) "false") ]
+| ) [ ("t1"."b" UNIQUE) FILTER "sys"."like"("t3"."b" UNIQUE, varchar "", boolean(1) "false") ]
 ) [ "t1"."a" NOT NULL, "t1"."b" ]
 
 query T python .explain.function_histogram

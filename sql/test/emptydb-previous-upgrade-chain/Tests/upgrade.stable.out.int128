@@ -679,3 +679,294 @@ returns bool begin return case when js is NULL then NULL else true end; end;
 GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;
 update sys.functions set system = true where system <> true and name = 'isvalid' and schema_id = (select id from sys.schemas where name = 'json');
 
+Running database upgrade commands:
+drop function sys.dump_database(boolean);
+drop view sys.dump_comments;
+drop view sys.dump_tables;
+drop view sys.dump_functions;
+drop view sys.dump_function_grants;
+drop function sys.describe_columns(string, string);
+drop view sys.describe_functions;
+drop view sys.describe_privileges;
+drop view sys.describe_comments;
+drop view sys.fully_qualified_functions;
+drop view sys.describe_tables;
+drop function sys.describe_type(string, integer, integer);
+CREATE FUNCTION sys.describe_type(ctype string, digits integer, tscale integer)
+ RETURNS string
+BEGIN
+ RETURN sys.sql_datatype(ctype, digits, tscale, false, false);
+END;
+CREATE VIEW sys.describe_tables AS
+ SELECT
+ t.id o,
+ s.name sch,
+ t.name tab,
+ ts.table_type_name typ,
+ (SELECT
+ ' (' ||
+ GROUP_CONCAT(
+ sys.DQ(c.name) || ' ' ||
+ sys.describe_type(c.type, c.type_digits, c.type_scale) ||
+ ifthenelse(c."null" = 'false', ' NOT NULL', '')
+ , ', ') || ')'
+ FROM sys._columns c
+ WHERE c.table_id = t.id) col,
+ CASE ts.table_type_name
+ WHEN 'REMOTE TABLE' THEN
+ sys.get_remote_table_expressions(s.name, t.name)
+ WHEN 'MERGE TABLE' THEN
+ sys.get_merge_table_partition_expressions(t.id)
+ WHEN 'VIEW' THEN
+ sys.schema_guard(s.name, t.name, t.query)
+ ELSE
+ ''
+ END opt
+ FROM sys.schemas s, sys.table_types ts, sys.tables t
+ WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE', 'UNLOGGED TABLE')
+ AND t.system = FALSE
+ AND s.id = t.schema_id
+ AND ts.table_type_id = t.type
+ AND s.name <> 'tmp';
+CREATE VIEW sys.fully_qualified_functions AS
+ WITH fqn(id, tpe, sig, num) AS
+ (
+ SELECT
+ f.id,
+ ft.function_type_keyword,
+ CASE WHEN a.type IS NULL THEN
+ sys.fqn(s.name, f.name) || '()'
+ ELSE
+ sys.fqn(s.name, f.name) || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
+ END,
+ a.number
+ FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
+ WHERE s.id= f.schema_id AND f.type = ft.function_type_id
+ )
+ SELECT
+ fqn1.id id,
+ fqn1.tpe tpe,
+ fqn1.sig nme
+ FROM
+ fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
+ ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
+CREATE VIEW sys.describe_comments AS
+ SELECT o.id AS id, o.tpe AS tpe, o.nme AS fqn, cm.remark AS rem
+ FROM (
+ SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas WHERE NOT system
+ UNION ALL
+ SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
+ FROM sys.schemas s JOIN sys._tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
+ WHERE NOT t.system
+ UNION ALL
+ SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys._tables t, sys.schemas s WHERE NOT t.system AND c.table_id = t.id AND t.schema_id = s.id
+ UNION ALL
+ SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE NOT t.system AND idx.table_id = t.id AND t.schema_id = s.id
+ UNION ALL
+ SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
+ UNION ALL
+ SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf
+ WHERE NOT f.system AND f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
+ ) AS o(id, tpe, nme)
+ JOIN sys.comments cm ON cm.id = o.id;
+CREATE VIEW sys.describe_privileges AS
+ SELECT
+ CASE
+ WHEN o.tpe IS NULL AND pc.privilege_code_name = 'SELECT' THEN --GLOBAL privileges: SELECT maps to COPY FROM
+ 'COPY FROM'
+ WHEN o.tpe IS NULL AND pc.privilege_code_name = 'UPDATE' THEN --GLOBAL privileges: UPDATE maps to COPY INTO
+ 'COPY INTO'
+ ELSE
+ o.nme
+ END o_nme,
+ coalesce(o.tpe, 'GLOBAL') o_tpe,
+ pc.privilege_code_name p_nme,
+ a.name a_nme,
+ g.name g_nme,
+ p.grantable grantable
+ FROM
+ sys.privileges p LEFT JOIN
+ (
+ SELECT t.id, s.name || '.' || t.name , 'TABLE'
+ from sys.schemas s, sys.tables t where s.id = t.schema_id
+ UNION ALL
+ SELECT c.id, s.name || '.' || t.name || '.' || c.name, 'COLUMN'
+ FROM sys.schemas s, sys.tables t, sys.columns c where s.id = t.schema_id AND t.id = c.table_id
+ UNION ALL
+ SELECT f.id, f.nme, f.tpe
+ FROM sys.fully_qualified_functions f
+ ) o(id, nme, tpe) ON o.id = p.obj_id,
+ sys.privilege_codes pc,
+ auths a, auths g
+ WHERE
+ p.privileges = pc.privilege_code_id AND
+ p.auth_id = a.id AND
+ p.grantor = g.id;
+CREATE VIEW sys.describe_functions AS
+ WITH func_args_all(func_id, number, max_number, func_arg) AS
+ (
+ SELECT
+ func_id,
+ number,
+ max(number) OVER (PARTITION BY func_id ORDER BY number DESC),
+ group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number)
+ FROM sys.args
+ WHERE inout = 1
+ ),
+ func_args(func_id, func_arg) AS
+ (
+ SELECT func_id, func_arg
+ FROM func_args_all
+ WHERE number = max_number
+ ),
+ func_rets_all(func_id, number, max_number, func_ret, func_ret_type) AS
+ (
+ SELECT
+ func_id,
+ number,
+ max(number) OVER (PARTITION BY func_id ORDER BY number DESC),
+ group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number),
+ group_concat(sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number)
+ FROM sys.args
+ WHERE inout = 0
+ ),
+ func_rets(func_id, func_ret, func_ret_type) AS
+ (
+ SELECT
+ func_id,
+ func_ret,
+ func_ret_type
+ FROM func_rets_all
+ WHERE number = max_number
+ )
+ SELECT
+ f.id o,
+ s.name sch,
+ f.name fun,
+ CASE WHEN f.language IN (1, 2) THEN f.func ELSE 'CREATE ' || ft.function_type_keyword || ' ' || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ')' || CASE WHEN f.type = 5 THEN ' RETURNS TABLE (' || coalesce(fr.func_ret, '') || ')' WHEN f.type IN (1,3) THEN ' RETURNS ' || fr.func_ret_type ELSE '' END || CASE WHEN fl.language_keyword IS NULL THEN '' ELSE ' LANGUAGE ' || fl.language_keyword END || ' ' || f.func END def
+ FROM sys.functions f
+ LEFT OUTER JOIN func_args fa ON fa.func_id = f.id
+ LEFT OUTER JOIN func_rets fr ON fr.func_id = f.id
+ JOIN sys.schemas s ON f.schema_id = s.id
+ JOIN sys.function_types ft ON f.type = ft.function_type_id
+ LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
+ WHERE s.name <> 'tmp' AND NOT f.system;
+CREATE FUNCTION sys.describe_columns(schemaName string, tableName string)
+ RETURNS TABLE(name string, type string, digits integer, scale integer, Nulls boolean, cDefault string, number integer, sqltype string, remark string)
+BEGIN
+ RETURN SELECT c.name, c."type", c.type_digits, c.type_scale, c."null", c."default", c.number, sys.describe_type(c."type", c.type_digits, c.type_scale), com.remark
+ FROM sys._tables t, sys.schemas s, sys._columns c
+ LEFT OUTER JOIN sys.comments com ON c.id = com.id
+ WHERE c.table_id = t.id
+ AND t.name = tableName
+ AND t.schema_id = s.id
+ AND s.name = schemaName
+ ORDER BY c.number;
+END;
+CREATE VIEW sys.dump_function_grants AS
+ WITH func_args_all(func_id, number, max_number, func_arg) AS
+ (SELECT a.func_id,
+ a.number,
+ max(a.number) OVER (PARTITION BY a.func_id ORDER BY a.number DESC),
+ group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ', ') OVER (PARTITION BY a.func_id ORDER BY a.number)
+ FROM sys.args a
+ WHERE a.inout = 1),
+ func_args(func_id, func_arg) AS
+ (SELECT func_id, func_arg FROM func_args_all WHERE number = max_number)
+ SELECT
+ 'GRANT ' || pc.privilege_code_name || ' ON ' || ft.function_type_keyword || ' '
+ || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ') TO '
+ || ifthenelse(a.name = 'public', 'PUBLIC', sys.dq(a.name))
+ || CASE WHEN p.grantable = 1 THEN ' WITH GRANT OPTION' ELSE '' END || ';' stmt,
+ s.name schema_name,
+ f.name function_name,
+ a.name grantee
+ FROM sys.schemas s,
+ sys.functions f LEFT OUTER JOIN func_args fa ON f.id = fa.func_id,
+ sys.auths a,
+ sys.privileges p,
+ sys.auths g,
+ sys.function_types ft,
+ sys.privilege_codes pc
+ WHERE s.id = f.schema_id
+ AND f.id = p.obj_id
+ AND p.auth_id = a.id
+ AND p.grantor = g.id
+ AND p.privileges = pc.privilege_code_id
+ AND f.type = ft.function_type_id
+ AND NOT f.system
+ ORDER BY s.name, f.name, a.name, g.name, p.grantable;
+CREATE VIEW sys.dump_functions AS
+ SELECT f.o o, sys.schema_guard(f.sch, f.fun, f.def) stmt,
+ f.sch schema_name,
+ f.fun function_name
+ FROM sys.describe_functions f;
+CREATE VIEW sys.dump_tables AS
+ SELECT
+ t.o o,
+ CASE
+ WHEN t.typ <> 'VIEW' THEN
+ 'CREATE ' || t.typ || ' ' || sys.FQN(t.sch, t.tab) || t.col || t.opt || ';'
+ ELSE
+ t.opt
+ END stmt,
+ t.sch schema_name,
+ t.tab table_name
+ FROM sys.describe_tables t;
+CREATE VIEW sys.dump_comments AS
+ SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;
+CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
+BEGIN
+ SET SCHEMA sys;
+ TRUNCATE sys.dump_statements;
+ INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
+ INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA "sys";');
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
+
+ --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
+ FROM (
+ SELECT f.o, f.stmt FROM sys.dump_functions f
+ UNION ALL
+ SELECT t.o, t.stmt FROM sys.dump_tables t
+ ) AS stmts(o, s);
+
+ -- dump table data before adding constraints and fixing sequences
+ IF NOT DESCRIBE THEN
+ CALL sys.dump_table_data();
+ END IF;
+
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
+
+ --TODO Improve performance of dump_table_data.
+ --TODO loaders, procedures, window and filter sys.functions.
+ --TODO look into order dependent group_concat
+
+ INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
+
+ RETURN sys.dump_statements;
+END;
+GRANT SELECT ON sys.describe_tables TO PUBLIC;
+GRANT SELECT ON sys.describe_comments TO PUBLIC;
+GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;
+GRANT SELECT ON sys.describe_privileges TO PUBLIC;
+GRANT SELECT ON sys.describe_functions TO PUBLIC;
+update sys.functions set system = true where not system and schema_id = 2000 and name in ('dump_database', 'describe_columns', 'describe_type');
+update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_comments', 'dump_tables', 'dump_functions', 'dump_function_grants', 'describe_functions', 'describe_privileges', 'describe_comments', 'fully_qualified_functions', 'describe_tables');
+

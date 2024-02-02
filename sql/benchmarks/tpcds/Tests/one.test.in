@@ -6833,31 +6833,31 @@ select
  	,w_country
  	,'DHL' || ',' || 'BARIAN' as ship_carriers
        ,d_year as "year"
- 	,sum(case when d_moy = 1 
+ 	,sum(case when d_moy = 1
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as jan_sales
- 	,sum(case when d_moy = 2 
+ 	,sum(case when d_moy = 2
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as feb_sales
- 	,sum(case when d_moy = 3 
+ 	,sum(case when d_moy = 3
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as mar_sales
- 	,sum(case when d_moy = 4 
+ 	,sum(case when d_moy = 4
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as apr_sales
- 	,sum(case when d_moy = 5 
+ 	,sum(case when d_moy = 5
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as may_sales
- 	,sum(case when d_moy = 6 
+ 	,sum(case when d_moy = 6
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as jun_sales
- 	,sum(case when d_moy = 7 
+ 	,sum(case when d_moy = 7
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as jul_sales
- 	,sum(case when d_moy = 8 
+ 	,sum(case when d_moy = 8
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as aug_sales
- 	,sum(case when d_moy = 9 
+ 	,sum(case when d_moy = 9
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as sep_sales
- 	,sum(case when d_moy = 10 
+ 	,sum(case when d_moy = 10
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as oct_sales
  	,sum(case when d_moy = 11
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as nov_sales
  	,sum(case when d_moy = 12
  		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as dec_sales
- 	,sum(case when d_moy = 1 
+ 	,sum(case when d_moy = 1
  		then ws_net_paid * ws_quantity else 0 end) as jan_net
  	,sum(case when d_moy = 2
  		then ws_net_paid * ws_quantity else 0 end) as feb_net

@@ -202,7 +202,7 @@ query T nosort
 plan select count(distinct a) from dummyme
 ----
 project (
-|  [ "sys"."cnt"(clob "sys", clob "dummyme") NOT NULL as "%1"."%1" ]
+|  [ "sys"."cnt"(varchar "sys", varchar "dummyme") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query I nosort
@@ -308,7 +308,7 @@ PLAN select count(a) as x, count(*) as y from dummyme
 ----
 project (
 | project (
-| |  [ "sys"."cnt"(clob "sys", clob "dummyme") NOT NULL as "%1"."%1" ]
+| |  [ "sys"."cnt"(varchar "sys", varchar "dummyme") NOT NULL as "%1"."%1" ]
 | ) [ "%1"."%1" NOT NULL, "%1"."%1" NOT NULL as "%2"."%2" ]
 ) [ "%1"."%1" NOT NULL as "x", "%2"."%2" NOT NULL as "y" ]
 

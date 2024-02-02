@@ -8,22 +8,22 @@ SELECT least(3, 4, 2, 1)
 ----
 1
 
-query I nosort
+query T nosort
 SELECT greatest(3, 4, '0', '5')
 ----
 5
 
-query I nosort
+query T nosort
 SELECT least(3, 4, 1, 2, '0', '5')
 ----
 0
 
-query R nosort
+query T nosort
 SELECT greatest(3.321, 4.4321, '0.210', '5.54321', -6.54321)
 ----
 5.54321
 
-query R nosort
+query T nosort
 SELECT least(3.321, 4.4321, '0.210', '5.54321', -6.54321)
 ----
 -6.54321

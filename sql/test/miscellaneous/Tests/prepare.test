@@ -1,7 +1,8 @@
 statement ok
 prepare select 1=?+?
 
-query T 
+query I nosort
 exec 0(1,0)
 ----
-True
+1
+

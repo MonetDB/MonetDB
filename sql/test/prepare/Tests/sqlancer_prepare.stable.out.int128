@@ -47,12 +47,12 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	2,	2 # length
-[ "hugeint",	65,	0,	"",	"%3",	"%3"	]
+[ "hugeint",	66,	0,	"",	"%3",	"%3"	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	2,	2 # length
-[ "hugeint",	65,	0,	"",	"%3",	"%3"	]
+[ "hugeint",	66,	0,	"",	"%3",	"%3"	]
 [ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #PREPARE SELECT round(-'b', ?);
 #PREPARE SELECT round(-'b', ?);
@@ -69,14 +69,14 @@
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	2,	2 # length
 [ "double",	53,	0,	"",	"%2",	"%2"	]
-[ "char",	9,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	9,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	7,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 6,	2,	1,	0,	3,	2 # length
+% 7,	2,	1,	0,	3,	2 # length
 [ "bigint",	63,	0,	"",	"%12",	"%4"	]
-[ "char",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 [ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
 #PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
@@ -105,8 +105,8 @@
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "decimal",	3,	2,	"",	"%1",	"%1"	]
-[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
-[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	2,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	2,	0,	NULL,	NULL,	NULL	]
 #START TRANSACTION;
 #CREATE FUNCTION myintudf(a INT) RETURNS INT RETURN a + 1;
 #PREPARE SELECT myintudf(?);
@@ -165,12 +165,12 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	3,	3 # length
-[ "char",	1,	0,	"",	"%22",	"%14"	]
-[ "char",	1,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	1,	0,	"",	"%22",	"%14"	]
+[ "varchar",	1,	0,	NULL,	NULL,	NULL	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 % .%22 # table_name
 % %14 # name
-% char # type
+% varchar # type
 % 1 # length
 [ "b"	]
 [ 9999	]

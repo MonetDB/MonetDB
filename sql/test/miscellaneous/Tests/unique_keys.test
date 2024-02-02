@@ -91,7 +91,7 @@ project (
 | | | | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL , "testkeys"."b" UNIQUE HASHCOL  ]
 | | | ) [ ("testkeys"."b" UNIQUE HASHCOL ) = (int(2) "1") ],
 | | | table("sys"."othertable") [ "othertable"."a" UNIQUE ]
-| | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL UNIQUE) ]
+| | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" UNIQUE) ]
 | ) [ (int(3) "2") <= ("othertable"."a" UNIQUE) <= (int(2) "5") ]
 ) [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
 

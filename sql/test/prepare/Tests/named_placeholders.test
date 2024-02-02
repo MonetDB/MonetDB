@@ -1,8 +1,8 @@
 statement error 42000!SELECT: named placeholder ('banana') but named values list is missing
-SELECT :banana;
+SELECT :banana
 
 statement error 42000!Named placeholder ('pear') not used in the query.
-SELECT :banana : ( pear 'mango' );
+SELECT :banana : ( pear 'mango' )
 
 query T nosort
 SELECT :banana : ( banana 'foo')

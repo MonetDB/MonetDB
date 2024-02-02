@@ -862,14 +862,14 @@ plan select nullif('ac', 'ac')
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."nullif"(char(2) "ac", char(2) "ac") ]
+) [ "sys"."nullif"(varchar(2) "ac", varchar(2) "ac") ]
 
 query T nosort
 plan select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char NULL, char "ac") ]
+) [ "sys"."case"("sys"."="(varchar(2) "ac", varchar(2) "ac") NOT NULL, varchar NULL, varchar "ac") ]
 
 query T nosort
 plan select nullif(9, 9)

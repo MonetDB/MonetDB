@@ -77,7 +77,7 @@ bigint
 12
 extra
 uuid
-clob
+varchar
 12
 
 statement ok

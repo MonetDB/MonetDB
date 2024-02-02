@@ -28,10 +28,10 @@ stdout of test 'prepare_unop_crash.Bug-3653` in directory 'sql/test/BugTracker-2
 #PREPARE SELECT id FROM tables WHERE name = LOWER(?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	varchar,	varchar, varchar # type
-% 4,	2,	1,	0,	6,	2 # length
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 7,	2,	1,	0,	6,	2 # length
 [ "int",	14,	0,	"",	"tables",	"id"	]
-[ "char",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 
 # 08:58:49 >  
 # 08:58:49 >  "Done."

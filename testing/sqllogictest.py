@@ -456,7 +456,7 @@ class SQLLogic:
                 m.update(bytes(col, encoding='ascii'))
                 m.update(b'\n')
                 result.append(col)
-            if err:
+            if err and expected is not None:
                 print('Differences:', file=self.out)
                 self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
             if resdata is not None:
@@ -524,7 +524,7 @@ class SQLLogic:
                     m.update(bytes(col, encoding='ascii'))
                     m.update(b'\n')
                     result.append(col)
-            if err:
+            if err and expected is not None:
                 print('Differences:', file=self.out)
                 self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
             if resdata is not None:
@@ -550,7 +550,7 @@ class SQLLogic:
                     m.update(bytes(col, encoding='ascii'))
                     m.update(b'\n')
                     result.append(col)
-            if err:
+            if err and expected is not None:
                 self.query_error(query, '\n'.join(err_msg_buff))
                 recv = []
                 for row in ndata:

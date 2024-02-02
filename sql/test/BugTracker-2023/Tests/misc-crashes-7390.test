@@ -451,7 +451,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0 (v2 CHAR(1), v1 REAL)
 
-query I nosort
+query R nosort
 SELECT DISTINCT SUM(max((SELECT NULL AS v2 GROUP BY v2))) OVER (ORDER BY '013') FROM v0
 ----
 NULL

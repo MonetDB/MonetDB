@@ -145,13 +145,13 @@
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "boolean",	1,	0,	"",	"%1",	"%1"	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	3,	3 # length
 [ "tinyint",	1,	0,	"",	"%11",	"%11"	]
 [ "int",	31,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #drop table tab0;
 #drop table tab1;
