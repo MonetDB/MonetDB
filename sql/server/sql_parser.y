@@ -444,7 +444,6 @@ int yydebug=1;
 	XML_PI_target
 	opt_optimizer
 	opt_default_role
-	multi_arg_func_name
 
 %type <l>
 	argument_list
@@ -642,7 +641,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT UIDENT aTYPE ALIAS RANK sqlINT OIDNUM HEXADECIMALNUM OCTALNUM BINARYNUM INTNUM APPROXNUM
+	IDENT UIDENT aTYPE ALIAS RANK MARGFUNC sqlINT OIDNUM HEXADECIMALNUM OCTALNUM BINARYNUM INTNUM APPROXNUM
 	USING
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -664,7 +663,6 @@ int yydebug=1;
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE SNAPSHOT
-%token  LEAST GREATEST
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <operation> ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
@@ -5865,6 +5863,7 @@ calc_ident:
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  RANK	{ $$ = $1; }	/* without '(' */
+ |  MARGFUNC	{ $$ = $1; }	/* without '(' */
  |  non_reserved_word
  ;
 
@@ -7003,13 +7002,8 @@ odbc_tsi_qualifier:
 	{ $$ = iyear; }
 ;
 
-multi_arg_func_name:
-    LEAST	{ $$ = sa_strdup(SA, "least"); }
- |  GREATEST	{ $$ = sa_strdup(SA, "greatest"); }
- ;
-
 multi_arg_func:
-    multi_arg_func_name '(' case_search_condition_commalist ')' /* create nested calls of binary function */
+    MARGFUNC '(' case_search_condition_commalist ')' /* create nested calls of binary function */
 	{ dlist *args = $3;
 	  dnode *f = args->h;
 	  symbol *cur = f->data.sym;

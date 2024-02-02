@@ -1,47 +1,47 @@
 statement ok
-CREATE TABLE my_table1 ( id INT NOT NULL, col1 VARCHAR(1) ) 
+CREATE TABLE my_table1 ( id INT NOT NULL, col1 VARCHAR(1) )
 
 statement ok
-CREATE TABLE my_table2 ( col1 VARCHAR(1) NOT NULL, col2 INT NOT NULL) 
+CREATE TABLE my_table2 ( col1 VARCHAR(1) NOT NULL, col2 INT NOT NULL)
 
 statement ok
-INSERT INTO my_table1 VALUES (1,  'A') 
+INSERT INTO my_table1 VALUES (1,  'A')
 
 statement ok
-INSERT INTO my_table1 VALUES (2,  'B') 
+INSERT INTO my_table1 VALUES (2,  'B')
 
 statement ok
-INSERT INTO my_table1 VALUES (3,  'B') 
+INSERT INTO my_table1 VALUES (3,  'B')
 
 statement ok
-INSERT INTO my_table1 VALUES (4,  'C') 
+INSERT INTO my_table1 VALUES (4,  'C')
 
 statement ok
-INSERT INTO my_table1 VALUES (5,  'C') 
+INSERT INTO my_table1 VALUES (5,  'C')
 
 statement ok
-INSERT INTO my_table1 VALUES (6,  'C') 
+INSERT INTO my_table1 VALUES (6,  'C')
 
 statement ok
-INSERT INTO my_table1 VALUES (7,  NULL) 
+INSERT INTO my_table1 VALUES (7,  NULL)
 
 statement ok
-INSERT INTO my_table1 VALUES (8,  NULL) 
+INSERT INTO my_table1 VALUES (8,  NULL)
 
 statement ok
-INSERT INTO my_table1 VALUES (9,  NULL) 
+INSERT INTO my_table1 VALUES (9,  NULL)
 
 statement ok
-INSERT INTO my_table1 VALUES (10, NULL) 
+INSERT INTO my_table1 VALUES (10, NULL)
 
 statement ok
-INSERT INTO my_table2 VALUES ('A', 1) 
+INSERT INTO my_table2 VALUES ('A', 1)
 
 statement ok
-INSERT INTO my_table2 VALUES ('B', 2) 
+INSERT INTO my_table2 VALUES ('B', 2)
 
 statement ok
-INSERT INTO my_table2 VALUES ('C', 3) 
+INSERT INTO my_table2 VALUES ('C', 3)
 
 query II rowsort
 SELECT id,
@@ -73,8 +73,8 @@ NULL
 NULL
 
 statement ok
-DROP   TABLE my_table1 
+DROP   TABLE my_table1
 
 statement ok
-DROP   TABLE my_table2 
+DROP   TABLE my_table2
 

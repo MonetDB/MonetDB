@@ -1,4 +1,4 @@
-query TTTTTIIIITTTIIIITTT rowsort
+query ITTTTIIIIIITIIIIIII rowsort
 SELECT	null AS TABLE_CAT,
 	schemas.name AS TABLE_SCHEM,
 	tables.name AS TABLE_NAME,

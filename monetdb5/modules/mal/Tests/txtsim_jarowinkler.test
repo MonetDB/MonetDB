@@ -11,11 +11,11 @@ statement ok
 insert into bar values ('joHan'),('aajAne'),('rOObert')
 
 query TT rowsort
-select * from foo,bar where [foo.x] minjarowinkler [bar.x, 1];
+select * from foo,bar where [foo.x] minjarowinkler [bar.x, 1]
 ----
 
 query TT rowsort
-select * from foo,bar where [foo.x] minjarowinkler [bar.x, 0.5];
+select * from foo,bar where [foo.x] minjarowinkler [bar.x, 0.5]
 ----
 jane
 aajAne
@@ -31,7 +31,7 @@ robert
 rOObert
 
 query TT rowsort
-select * from foo,bar where [foo.x] minjarowinkler [bar.x, 0.8];
+select * from foo,bar where [foo.x] minjarowinkler [bar.x, 0.8]
 ----
 jane
 aajAne
@@ -41,7 +41,8 @@ robert
 rOObert
 
 statement ok
-drop table foo;
+drop table foo
 
 statement ok
-drop table bar;
+drop table bar
+

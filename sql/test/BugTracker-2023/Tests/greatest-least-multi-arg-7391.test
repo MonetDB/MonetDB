@@ -1,29 +1,29 @@
-query I
+query I nosort
 SELECT greatest(3, 4, 2, 1)
 ----
 4
 
-query I
+query I nosort
 SELECT least(3, 4, 2, 1)
 ----
 1
 
-query T
+query I nosort
 SELECT greatest(3, 4, '0', '5')
 ----
 5
 
-query T
+query I nosort
 SELECT least(3, 4, 1, 2, '0', '5')
 ----
 0
 
-query T
+query R nosort
 SELECT greatest(3.321, 4.4321, '0.210', '5.54321', -6.54321)
 ----
 5.54321
 
-query T
+query R nosort
 SELECT least(3.321, 4.4321, '0.210', '5.54321', -6.54321)
 ----
 -6.54321
@@ -38,22 +38,22 @@ SELECT least(3, 4, 1, 2, '0', '5', 'A', 'z')
 ----
 0
 
-query T
+query T nosort
 SELECT greatest('!', 3, 4, '0', '5', 'A', 'z')
 ----
 z
 
-query T
+query T nosort
 SELECT least('!', 3, 4, 1, 2, '0', '5', 'A', 'z')
 ----
 !
 
-query T
+query T nosort
 SELECT greatest('!', 'z3', 'z4', 'z0', 'z5', 'A', 'z')
 ----
 z5
 
-query T
+query T nosort
 SELECT least('!z3', '!z4', '!0', '!5', 'A', 'z')
 ----
 !0

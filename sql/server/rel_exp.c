@@ -323,9 +323,11 @@ sql_exp *
 exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier)
 {
 	sql_subfunc *cmp_func = sql_bind_func(sql, "sys", compareop, exp_subtype(le), exp_subtype(le), F_FUNC, true, true);
-	sql_exp *e;
+	sql_exp *e = NULL;
 
-	assert(cmp_func);
+	if (cmp_func == NULL)
+		return NULL;
+
 	e = exp_binop(sql->sa, le, re, cmp_func);
 	if (e) {
 		e->flag = quantifier;
@@ -2882,8 +2884,11 @@ exp_copy(mvc *sql, sql_exp * e)
 			ne = exp_aggr(sql->sa, l, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 		if (e->r) { /* copy obe and gbe lists */
 			list *er = (list*) e->r;
-			assert(list_length(er) == 2);
-			ne->r = list_append(list_append(sa_list(sql->sa), exps_copy(sql, er->h->data)), exps_copy(sql, er->h->next->data));
+			assert(list_length(er) <= 2);
+			if (list_length(er) == 2)
+				ne->r = list_append(list_append(sa_list(sql->sa), exps_copy(sql, er->h->data)), exps_copy(sql, er->h->next->data));
+			else
+				ne->r = list_append(sa_list(sql->sa), exps_copy(sql, er->h->data));
 		}
 		break;
 	}

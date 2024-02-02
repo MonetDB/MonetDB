@@ -33,7 +33,7 @@ CREATE TABLE forums(
     id BIGINT NOT NULL PRIMARY KEY,
     title VARCHAR(80) NOT NULL,
     creationDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
-    moderator BIGINT  
+    moderator BIGINT
 )
 
 statement ok
@@ -62,7 +62,7 @@ CREATE TABLE friends(
 statement ok
 CREATE TABLE organisations(
     id BIGINT NOT NULL PRIMARY KEY,
-    "type" VARCHAR(40) NOT NULL,  
+    "type" VARCHAR(40) NOT NULL,
     name VARCHAR(160) NOT NULL,
     url VARCHAR(2000) NOT NULL,
     place_id BIGINT NOT NULL
@@ -138,7 +138,7 @@ statement ok
 CREATE TABLE places(
     id BIGINT NOT NULL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
-    url VARCHAR(2000) NOT NULL,  
+    url VARCHAR(2000) NOT NULL,
     "type" VARCHAR(40) NOT NULL,
     isPartOf BIGINT
 )
@@ -169,7 +169,7 @@ statement ok
 CREATE TABLE tags(
     id BIGINT NOT NULL PRIMARY KEY,
     name VARCHAR(160) NOT NULL,
-    url VARCHAR(2000) NOT NULL  
+    url VARCHAR(2000) NOT NULL
 )
 
 statement ok
@@ -183,7 +183,7 @@ statement ok
 CREATE TABLE tagclasses(
     id BIGINT NOT NULL PRIMARY KEY,
     name VARCHAR(40) NOT NULL,
-    url VARCHAR(2000) NOT NULL  
+    url VARCHAR(2000) NOT NULL
 )
 
 statement ok

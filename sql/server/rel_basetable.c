@@ -495,7 +495,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 	for (node *n = mt_rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		node *cn = NULL, *ci = NULL;
-		const char *nname = exp_name(e);
+		const char *nname = e->r;
 
 		if (nname[0] == '%' && strcmp(nname, TID) == 0) {
 			list_append(p->exps, exp_alias(sql->sa, mtalias, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
@@ -504,7 +504,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			sql_column *c = cn->data, *rc = ol_fetch(t->columns, c->colnr);
 
 			/* with name find column in merge table, with colnr find column in member */
-			sql_exp *ne = exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, is_column_unique(rc), 0);
+			sql_exp *ne = exp_alias(sql->sa, mtalias, exp_name(e), pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, is_column_unique(rc), 0);
 			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
 				p->value.pval = rc->t->pkey;

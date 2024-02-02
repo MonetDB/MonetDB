@@ -1,11 +1,11 @@
 statement ok
 CREATE TABLE t7418 ( v1 BIGINT NOT NULL PRIMARY KEY )
 
-query I
+query I nosort
 SELECT * FROM t7418 ORDER BY v1
 ----
 
-query I
+query I nosort
 SELECT 0 IS NOT NULL FROM t7418 ORDER BY AVG ( v1 ) NULLS LAST
 ----
 1
@@ -14,14 +14,15 @@ statement error 42000!MAX: aggregate functions cannot be nested
 SELECT 0 IS NOT NULL FROM t7418 ORDER BY AVG ( max ( 331 ) ) NULLS LAST
 
 -- next causes: sql/server/rel_select.c:4766: rel_order_by: Assertion `is_project(rel->op)' failed.
-query I
+query I nosort
 SELECT 0 IS NOT NULL FROM t7418 ORDER BY AVG ( max ( 331 ) ) OVER ( ORDER BY 634 NULLS FIRST ) NULLS LAST
 ----
 1
 
-query I
+query I nosort
 SELECT * FROM t7418 ORDER BY v1
 ----
 
 statement ok
 DROP TABLE t7418
+

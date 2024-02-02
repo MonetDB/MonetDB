@@ -3896,7 +3896,7 @@ BBPbackup(BAT *b, bool subcommit)
 		return GDK_SUCCEED;
 	}
 	assert(b->theap->parentid == b->batCacheid);
-	if (b->oldtail) {
+	if (b->oldtail && b->oldtail != (Heap *) 1) {
 		bi.h = b->oldtail;
 		bi.hdirty = b->oldtail->dirty;
 	}

@@ -1,18 +1,18 @@
-statement error 42000!syntax error, unexpected GREATEST, expecting FOREIGN or PRIMARY or UNIQUE in: "create table t7444a(greatest"
+statement ok
 create table t7444a(greatest int)
 
-statement error 42000!syntax error, unexpected FROM, expecting '(' in: "select greatest from"
+statement ok
 select greatest from t7444a
 
 statement ok
 create table t7444b("greatest" int)
 
-query I
+query I nosort
 select "greatest" from t7444b
 ----
 
 -- check if GREATEST or greatest is a (reserved) keyword
-query T
+query T nosort
 select keyword from sys.keywords where keyword ilike 'GREATEST'
 ----
 
@@ -22,23 +22,22 @@ drop table if exists t7444a
 statement ok
 drop table if exists t7444b
 
-
 -- also check it for: least
-statement error 42000!syntax error, unexpected LEAST, expecting FOREIGN or PRIMARY or UNIQUE in: "create table t7444c(least"
+statement ok
 create table t7444c(least int)
 
-statement error 42000!syntax error, unexpected FROM, expecting '(' in: "select least from"
+statement ok
 select least from t7444c
 
 statement ok
 create table t7444d("least" int)
 
-query I
+query I nosort
 select "least" from t7444d
 ----
 
 -- check if LEAST or least is a (reserved) keyword
-query T
+query T nosort
 select keyword from sys.keywords where keyword ilike 'LEAST'
 ----
 
@@ -47,3 +46,4 @@ drop table if exists t7444c
 
 statement ok
 drop table if exists t7444d
+

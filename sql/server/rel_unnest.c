@@ -1144,8 +1144,6 @@ exp_is_count(sql_exp *e, sql_rel *rel)
 		sql_exp *ne = rel_find_exp(rel->l, e);
 		return exp_is_count(ne, rel->l);
 	}
-	if (is_convert(e->type))
-		return exp_is_count(e->l, rel);
 	if (is_aggr(e->type) && exp_aggr_is_count(e))
 		return 1;
 	return 0;
@@ -1193,10 +1191,19 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 					/* count_nil(* or constant) -> count(t.TID) */
 					if (exp_is_count(e, r) && (!e->l || exps_is_constant(e->l))) {
 						sql_rel *p = r->l; /* ugh */
+						sql_rel *pp = r;
+						while(p && p->l && (!is_project(p->op) && !is_base(p->op))) { /* find first project */
+							pp = p;
+							p = p->l;
+						}
+						if (p && p->l && is_project(p->op) && list_empty(p->exps)) { /* skip empty project */
+							pp = p;
+							p = p->l;
+						}
 						sql_exp *col = list_length(p->exps) ? p->exps->t->data : NULL;
 						const char *cname = col ? exp_name(col) : NULL;
 
-						if ((!cname || strcmp(cname, TID) != 0) && !(r->l = p = rel_add_identity(sql, p, &col)))
+						if ((!cname || strcmp(cname, TID) != 0) && !(pp->l = p = rel_add_identity(sql, p, &col)))
 							return NULL;
 						col = exp_ref(sql, col);
 						append(e->l=sa_list(sql->sa), col);
@@ -2373,7 +2380,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 									}
 								} else {
 									e->tpe = *exp_subtype(te);
-									if (e->l)
+									if (e->l && e->type == e_atom)
 										e->l = atom_set_type(v->sql->sa, e->l, &e->tpe);
 								}
 							}
@@ -3179,7 +3186,6 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (!is_tuple && !lsq && !rsq) { /* trivial case, just re-write into a comparison */
 				e->flag = 0; /* remove quantifier */
 
-				rel_bind_var(v->sql, rel, re);
 				if (rel_convert_types(v->sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
 					return NULL;
 				if (depth == 0 && is_select(rel->op)) {

@@ -416,6 +416,8 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 			symbol* next = dn->data.sym;
 			sql_exp *pnext = generate_partition_limits(query, &rel_psm, next, tpe, true);
 
+			if (!pnext)
+				return NULL;
 			if (next->token == SQL_NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a list value cannot be null");
 			append(lvals, pnext);

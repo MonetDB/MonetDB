@@ -64,8 +64,8 @@ Z
 
 statement ok
 CREATE VIEW extended_onboard AS
-SELECT number, number_sup, trip, trip_sup, onboard_at_departure, death_at_cape, 
+SELECT number, number_sup, trip, trip_sup, onboard_at_departure, death_at_cape,
    left_at_cape, onboard_at_cape, death_during_voyage, onboard_at_arrival,
-   death_during_voyage - left_at_cape AS death_at_arrival 
+   death_during_voyage - left_at_cape AS death_at_arrival
 FROM onboard_people
 

@@ -1,5 +1,4 @@
 statement error
- 
 SELECT cast('01:00' as interval second) AS "One hour"
 
 statement error
@@ -114,7 +113,6 @@ SELECT '' AS fortyfive, r1.*, r2.*
 ----
 
 query TT rowsort
- 
 SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL order by f1 desc
 ----
 (empty)

@@ -33,6 +33,10 @@ comparison_find_column(sql_exp *input, sql_exp *e)
 	}
 }
 
+/* multi lo <= col <= hi, maybe still be false even if lo or hi are NULL, possibly similar for filter on multiple
+ * columns */
+#define comp_single_column(c) (!c->f)
+
 static sql_exp *
 rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 {
@@ -69,7 +73,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 								*rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 
 							/* not semantics found or if explicitly filtering not null values from the column */
-							found_without_semantics |= !is_semantics(comp) || (comp->flag == cmp_equal && lne && is_anti(comp) && exp_is_null(re));
+							found_without_semantics |= (!is_semantics(comp) && comp_single_column(comp)) || (comp->flag == cmp_equal && lne && is_anti(comp) && exp_is_null(re));
 							still_unique |= comp->flag == cmp_equal && is_unique(le) && is_unique(re); /* unique if only equi-joins on unique columns are there */
 							if (is_full(rel->op) || (is_left(rel->op) && found_left) || (is_right(rel->op) && found_right)) /* on outer joins, min and max cannot be propagated on some cases */
 								continue;

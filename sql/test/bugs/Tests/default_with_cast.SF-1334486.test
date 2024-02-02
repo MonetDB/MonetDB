@@ -5,7 +5,7 @@ create table t (
 )
 
 statement ok
-insert into t 
+insert into t
 
 query T rowsort
 select cast(now() as date) - d from t
