@@ -233,7 +233,7 @@ NULL
 NULL
 NULL
 
-query RTIIIII rowsort
+query RRIIIII rowsort
 select avg(10), avg(NULL),
        patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL)
 ----
@@ -672,11 +672,11 @@ select x as z, y as z from (select 1, 2) as x(x,y) group by z
 statement error
 select x as z, y as z from (select 1, 2) as x(x,y) order by z
 
-query IT rowsort
+query II rowsort
 select 1, null except select 1, null
 ----
 
-query IT rowsort
+query II rowsort
 select 1, null intersect select 1, null
 ----
 1
@@ -1116,7 +1116,7 @@ create or replace function scale_down(x decimal(8,2), y int) returns decimal(8,2
 statement error 42000!DROP FUNCTION: no such function 'any' (boolean, boolean, boolean)
 drop function "any"(boolean, boolean, boolean)
 
-query I
+query I nosort
 select patindex('%bc%', 'abcd')
 ----
 3

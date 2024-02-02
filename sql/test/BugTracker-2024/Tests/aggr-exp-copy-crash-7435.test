@@ -6,3 +6,4 @@ DELETE FROM v0 WHERE NOT ( v1 = ( SELECT 3 WHERE v2 = ( SELECT sum ( v2 ) OVER (
 
 statement ok
 DROP TABLE v0
+

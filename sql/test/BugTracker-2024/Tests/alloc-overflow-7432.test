@@ -12,3 +12,4 @@ SELECT levenshtein (v1, v1, 16, 10, 561), v1, v1 FROM v0
 
 statement ok
 DROP TABLE v0
+

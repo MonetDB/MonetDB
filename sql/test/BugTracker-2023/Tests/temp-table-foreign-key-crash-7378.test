@@ -1,8 +1,9 @@
 statement ok
-START TRANSACTION;
+START TRANSACTION
 
 statement ok
-CREATE TEMPORARY TABLE temptest3(col int PRIMARY KEY) ON COMMIT DROP;
+CREATE TEMPORARY TABLE temptest3(col int PRIMARY KEY) ON COMMIT DROP
 
 statement error
-CREATE TEMPORARY TABLE temptest4(col int, FOREIGN KEY (col) REFERENCES temptest3);
+CREATE TEMPORARY TABLE temptest4(col int, FOREIGN KEY (col) REFERENCES temptest3)
+

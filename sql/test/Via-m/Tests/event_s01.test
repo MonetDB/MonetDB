@@ -440,7 +440,7 @@ begin
   if video_sets_identifier is not null then
     declare next_file_number integer;
     -- the next id to be inserted is equal to the current number
-    -- of files in the set. 
+    -- of files in the set.
     set next_file_number = (select count(v1.video_set_id)
                             from   video_set as v1,
                                    video_sets as v2
@@ -468,7 +468,7 @@ create function add_file (id_media integer,
                           url_download varchar(256),
                           url_account varchar(128),
                           file_width integer,
-                          file_height integer) 
+                          file_height integer)
 returns integer
 begin
   declare next_quid bigint;
@@ -575,7 +575,7 @@ begin
     declare keyid integer;
     set keyid = (select keyword_id from keyword where keyword_name = keyword);
     declare modelrefid integer;
-    set modelrefid = (select m.model_ref_id 
+    set modelrefid = (select m.model_ref_id
                       from   model_ref as m,
                              keyword_set as k
                       where  m.model_name = modelname
@@ -639,7 +639,7 @@ begin
     set modelsetsid = (select model_sets_id
                        from model_sets
                        where model_sets_name_id = modelsetsnameid
-                       and model_ref_id = modelrefid); 
+                       and model_ref_id = modelrefid);
     declare featureid integer;
     set featureid = (select feature_id from feature where feature_name = featurename);
     declare modelid integer;
@@ -749,7 +749,7 @@ begin
 end
 
 statement ok
-create function add_media_description (description_media varchar(64)) 
+create function add_media_description (description_media varchar(64))
 returns integer
 begin
   insert into media_description (
@@ -767,7 +767,7 @@ create function add_event (name_event varchar(256),
                            date_event date,
                            event_artist varchar(256),
                            event_location varchar(256),
-                           event_description varchar(256)) 
+                           event_description varchar(256))
 returns integer
 begin
   insert into event (
@@ -808,7 +808,7 @@ end
 
 statement ok
 create function
-i_add_video_file(mediadescription varchar(64), setname varchar(128), 
+i_add_video_file(mediadescription varchar(64), setname varchar(128),
                  quid bigint, filename varchar(256),
                  width integer, height integer, framerate real,
                  framecount integer, codec varchar(64), bitrate varchar(64))
@@ -824,7 +824,7 @@ begin
     set eventname = concat(concat(setname, '_'), quid);
     set eventid = (select event_id from event where event_name = eventname);
     if eventid is null then
-        set eventid = add_event(eventname, '2000-01-01', 'no artist', 'no location', 
+        set eventid = add_event(eventname, '2000-01-01', 'no artist', 'no location',
                                 'no description');
     end if;
     declare mediaid integer;
@@ -906,7 +906,7 @@ end
 statement ok
 create function add_production (id_file integer,
                                 id_model_sets_name integer,
-                                id_production_type integer) 
+                                id_production_type integer)
 returns integer
 begin
   insert into production (

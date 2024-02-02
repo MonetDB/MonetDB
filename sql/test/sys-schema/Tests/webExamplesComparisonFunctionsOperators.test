@@ -125,7 +125,7 @@ select ifnull(null, 'ams') as ams
 ----
 ams
 
-query T rowsort
+query I rowsort
 select ifnull(null, null) as nul
 ----
 NULL
@@ -150,7 +150,7 @@ select {fn IFNULL(NULL, 'ams')} as ams
 ----
 ams
 
-query T rowsort
+query I rowsort
 select {fn IFNULL(NULL, NULL)} as nul
 ----
 NULL
@@ -253,7 +253,6 @@ bb2
 6
 bb2
 bb2
-
 
 query ITITT rowsort
 select i, c, coalesce(i, 2*3) as "ifnull(i,2*3)", coalesce(c, 'has null') as "ifnull(i,'x')", coalesce(i, c) as "ifnull(i,c)" from t6933

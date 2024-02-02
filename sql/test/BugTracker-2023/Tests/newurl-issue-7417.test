@@ -1,39 +1,40 @@
-query T
+query T nosort
 SELECT newurl(1,1,NULL)
 ----
 1://1/
 
-query T
+query T nosort
 SELECT TRIM(NULL, NULL)
 ----
 NULL
 
-query T
+query T nosort
 SELECT TRIM(newurl(1,1,NULL), null)
 ----
 NULL
 
-query T
+query T nosort
 SELECT TRIM(null, newurl(1,1,NULL))
 ----
 NULL
 
-query T
+query T nosort
 SELECT TRIM(newurl(1,1,NULL), newurl(1,1,NULL))
 ----
 (empty)
 
-query T
+query T nosort
 SELECT newurl(NULL,1,NULL)
 ----
 ://1/
 
-query T
+query T nosort
 SELECT newurl(NULL,NULL,NULL)
 ----
 :///
 
-query T
+query T nosort
 SELECT newurl(NULL,NULL,NULL,NULL)
 ----
 ://:0/
+

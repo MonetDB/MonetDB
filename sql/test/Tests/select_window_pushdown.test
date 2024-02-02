@@ -190,7 +190,7 @@ project (
 | ) [ ("t2"."rank") = (int(32) "1"), (("t1"."flag" NOT NULL) = (boolean(1) "false")) or (("t1"."k" NOT NULL) = (int(32) "10")) ]
 ) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", "t2"."rank" NOT NULL ]
 
-# filter on k and v and both are partition columns, both filters can be pushed down 
+# filter on k and v and both are partition columns, both filters can be pushed down
 query T nosort
 plan SELECT *
 FROM (

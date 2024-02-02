@@ -13,7 +13,7 @@ delete from ttt where id=2
 statement ok
 update ttt set id = 3 where id = 3
 
-query II
+query II nosort
 select id, k from ttt order by id
 ----
 1
@@ -47,7 +47,7 @@ delete from ttt where id=2
 statement ok
 update ttt set id = 3 where id = 3
 
-query II
+query II nosort
 select id, k from ttt order by id
 ----
 1
@@ -61,3 +61,4 @@ select id, k from ttt order by id
 
 statement ok
 rollback
+

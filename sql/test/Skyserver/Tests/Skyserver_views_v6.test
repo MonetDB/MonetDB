@@ -13,9 +13,9 @@ SELECT name,
 statement ok
 CREATE VIEW FieldMask
 AS
-SELECT 
-	name, 
-	cast(value as int) as value, 
+SELECT
+	name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='FieldMask'
@@ -23,8 +23,8 @@ SELECT
 statement ok
 CREATE VIEW FieldQuality
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='FieldQuality'
@@ -32,8 +32,8 @@ SELECT name,
 statement ok
 CREATE VIEW FramesStatus
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='FramesStatus'
@@ -50,8 +50,8 @@ SELECT name,
 statement ok
 CREATE VIEW ImageMask
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='ImageMask'
@@ -59,8 +59,8 @@ SELECT name,
 statement ok
 CREATE VIEW InsideMask
 AS
-SELECT name, 
-	cast(value as smallint) as value, 
+SELECT name,
+	cast(value as smallint) as value,
 	description
     FROM DataConstants
     WHERE field='InsideMask'
@@ -68,8 +68,8 @@ SELECT name,
 statement ok
 CREATE VIEW MaskType
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='MaskType'
@@ -103,9 +103,9 @@ SELECT * FROM PhotoObjAll g
 statement ok
 CREATE VIEW PhotoFlags
 AS
-SELECT 
-	name, 
-	value, 
+SELECT
+	name,
+	value,
 	description
     FROM DataConstants
     WHERE field='PhotoFlags'
@@ -113,11 +113,11 @@ SELECT
 statement ok
 CREATE VIEW PhotoMode
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
-    WHERE field = 'PhotoMode' 
+    WHERE field = 'PhotoMode'
 
 statement ok
 CREATE VIEW PhotoObj
@@ -126,7 +126,7 @@ SELECT * FROM PhotoObjAll g
 	WHERE mode in (1,2)
 
 statement ok
-CREATE VIEW PhotoPrimary 
+CREATE VIEW PhotoPrimary
 AS
 SELECT * FROM PhotoObjAll g
     WHERE mode=1
@@ -134,7 +134,7 @@ SELECT * FROM PhotoObjAll g
 statement ok
 CREATE VIEW Galaxy
 AS
-SELECT * 
+SELECT *
     FROM PhotoPrimary
     WHERE type = 3
 
@@ -147,8 +147,8 @@ SELECT * FROM PhotoObjAll g
 statement ok
 CREATE VIEW PhotoStatus
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='PhotoStatus'
@@ -156,8 +156,8 @@ SELECT name,
 statement ok
 CREATE VIEW PhotoType
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='PhotoType'
@@ -165,8 +165,8 @@ SELECT name,
 statement ok
 CREATE VIEW PrimTarget
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='PrimTarget'
@@ -183,8 +183,8 @@ SELECT name,
 statement ok
 CREATE VIEW PspStatus
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='PspStatus'
@@ -192,7 +192,7 @@ SELECT name,
 statement ok
 CREATE VIEW QsoCatalog
 AS
-     SELECT * FROM QsoCatalogAll g 
+     SELECT * FROM QsoCatalogAll g
      WHERE QsoPrimary = 1
 
 statement ok
@@ -204,7 +204,7 @@ AS
 statement ok
 CREATE VIEW RegionConvex
 AS
-	SELECT	regionid, convexid, patchid as patch, type, 
+	SELECT	regionid, convexid, patchid as patch, type,
 			radius, ra,"dec",x,y,z,c, htmid, convexString
 	FROM RegionPatch
 
@@ -218,8 +218,8 @@ SELECT segmentID, run, rerun, field0, nFields
 statement ok
 CREATE VIEW SecTarget
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='SecTarget'
@@ -227,7 +227,7 @@ SELECT name,
 statement ok
 CREATE VIEW Sky
 AS
-SELECT * 
+SELECT *
     FROM PhotoPrimary
     WHERE type = 8
 
@@ -267,54 +267,54 @@ SELECT	specobjid,
 	ecoeff2,
 	ecoeff3,
 	ecoeff4,
-	ecoeff5 
+	ecoeff5
 FROM sppParams
 WHERE spec_cln NOT IN (1,5,6)
 
 statement ok
 CREATE VIEW SpecClass
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='SpecClass'
 
 statement ok
-CREATE VIEW SpecLine 
+CREATE VIEW SpecLine
 AS
-SELECT * 
+SELECT *
     FROM specLineAll g
     WHERE category=2
 
 statement ok
 CREATE VIEW SpecLineNames
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='SpecLineNames'
 
 statement ok
-CREATE VIEW SpecObj 
+CREATE VIEW SpecObj
 AS
-SELECT * 
+SELECT *
     FROM specObjAll g
-    WHERE sciencePrimary = 1 
+    WHERE sciencePrimary = 1
 
 statement ok
-CREATE VIEW SpecPhoto 
+CREATE VIEW SpecPhoto
 AS
-SELECT * 
+SELECT *
     FROM SpecPhotoAll g
     WHERE sciencePrimary = 1 and mode=1
 
 statement ok
 CREATE VIEW SpecZStatus
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='SpecZStatus'
@@ -322,8 +322,8 @@ SELECT name,
 statement ok
 CREATE VIEW SpecZWarning
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='SpecZWarning'
@@ -331,7 +331,7 @@ SELECT name,
 statement ok
 CREATE VIEW Star
 AS
-SELECT * 
+SELECT *
     FROM PhotoPrimary
     WHERE type = 6
 
@@ -342,7 +342,7 @@ SELECT * FROM TargPhotoObjAll g
 	WHERE mode in (1,2)
 
 statement ok
-CREATE VIEW TargPhotoPrimary 
+CREATE VIEW TargPhotoPrimary
 AS
 SELECT * FROM TargPhotoObjAll g
     WHERE mode=1
@@ -356,28 +356,28 @@ SELECT * FROM TargPhotoObjAll g
 statement ok
 CREATE VIEW Tile
 AS
-SELECT * 
+SELECT *
     FROM TileAll g
     WHERE untiled = 0
 
 statement ok
 CREATE VIEW TiledTarget
 AS
-SELECT * 
+SELECT *
     FROM TiledTargetAll g
     WHERE untiled = 0
 
 statement ok
 CREATE VIEW TilingBoundary
 AS
-SELECT * 
+SELECT *
     FROM TilingGeometry g
     WHERE isMask = 0
 
 statement ok
 CREATE VIEW TilingMask
 AS
-SELECT * 
+SELECT *
     FROM TilingGeometry g
     WHERE isMask = 1
 
@@ -393,8 +393,8 @@ SELECT name,
 statement ok
 CREATE VIEW UberCalibStatus
 AS
-SELECT name, 
-	cast(value as smallint) as value, 
+SELECT name,
+	cast(value as smallint) as value,
 	description
     FROM DataConstants
     WHERE field='UberCalibStatus'
@@ -402,7 +402,7 @@ SELECT name,
 statement ok
 CREATE VIEW Unknown
 AS
-SELECT * 
+SELECT *
     FROM PhotoPrimary
     WHERE type not in (3,6,8)
 
@@ -481,14 +481,14 @@ SELECT 	objID,
 statement ok
 CREATE VIEW StarTag
 AS
-SELECT * 
+SELECT *
     FROM PhotoTag g
     WHERE type = 6 and mode=1
 
 statement ok
 CREATE VIEW GalaxyTag
 AS
-SELECT * 
+SELECT *
     FROM PhotoTag g
     WHERE type = 3 and mode=1
 

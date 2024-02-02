@@ -25,7 +25,6 @@ select * from file_loader('/tmp/FileNotFound.csv.gz') as file(col1, col2)
 statement error 42000!SELECT: file_loader function failed 'File not found'
 select * from file_loader('/tmp/FileNotFound.csv') file(col1, col2)
 
-
 statement error 42000!SELECT: no such table returning function 'sys'.'file_loader'(char)
 select * from sys.file_loader('')
 

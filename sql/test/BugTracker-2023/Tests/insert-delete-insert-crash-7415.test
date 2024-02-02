@@ -1,7 +1,7 @@
 statement ok
 CREATE TABLE t1 AS SELECT  t1.value AS id, CAST( sys.group_concat(  CASE WHEN id.value IS NOT NULL THEN 'DB' ELSE '' END  , '')  AS BLOB) AS name FROM  sys.generate_series(0, 1000) AS t1 LEFT JOIN sys.generate_series(0, 1000) AS id ON id.value < t1.value GROUP BY id ORDER BY id
 
-query I
+query I nosort
 select count(*) from t1
 ----
 1000
@@ -18,12 +18,12 @@ insert into t1 (select * from t1)
 statement ok
 insert into t1 (select * from t1)
 
-query I
+query I nosort
 select count(*) from t1
 ----
 16000
 
-query I
+query I nosort
 select count(*) from t1 WHERE id=1
 ----
 16
@@ -34,7 +34,7 @@ DELETE FROM t1 WHERE id=1
 --statement error 42S02!SELECT: no such table 'analytics'
 --select nth_value(aa, 1) over (partition by bb) from analytics
 
-query I
+query I nosort
 select count(*) from t1
 ----
 15984
@@ -46,10 +46,11 @@ insert into t1 (select * from t1)
 statement ok
 insert into t1 (select * from t1)
 
-query I
+query I nosort
 select count(*) from t1
 ----
 63936
 
 statement ok
 DROP TABLE t1
+
