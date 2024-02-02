@@ -980,7 +980,7 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 			tpe = l->type->base.name;
 			digits = (!r->digits)?0:l->digits;
 		} else { /* both */
-			tpe = !strcmp(l->type->base.name, "clob")?l->type->base.name:!strcmp(r->type->base.name, "clob")?r->type->base.name:
+			tpe = !strcmp(l->type->base.name, "varchar")?l->type->base.name:!strcmp(r->type->base.name, "varchar")?r->type->base.name:
 			(l->type->base.id > r->type->base.id)?l->type->base.name:r->type->base.name;
 			digits = (!l->digits||!r->digits)?0:sql_max(l->digits, r->digits);
 		}

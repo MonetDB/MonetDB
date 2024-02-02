@@ -139,7 +139,7 @@ stmt_atom_string_nil(backend *be)
 {
 	sql_subtype t;
 
-	sql_find_subtype(&t, "clob", 0, 0);
+	sql_find_subtype(&t, "varchar", 0, 0);
 	return stmt_atom(be, atom_string(be->mvc->sa, &t, NULL));
 }
 

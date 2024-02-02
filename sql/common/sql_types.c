@@ -560,8 +560,8 @@ supertype_opt_string(sql_subtype *super, sql_subtype *r, sql_subtype *i, bool su
 	lsuper = *r;
 	/* EC_STRING class is superior to EC_CHAR */
 	if (EC_VARCHAR(i->type->eclass) && EC_VARCHAR(r->type->eclass)) {
-		if (!strcmp(i->type->base.name, "clob") || !strcmp(r->type->base.name, "clob")) {
-			lsuper = !strcmp(i->type->base.name, "clob") ? *i : *r;
+		if (!strcmp(i->type->base.name, "varchar") || !strcmp(r->type->base.name, "varchar")) {
+			lsuper = !strcmp(i->type->base.name, "varchar") ? *i : *r;
 			radix = lsuper.type->radix;
 			tpe = lsuper.type->base.name;
 			eclass = lsuper.type->eclass;
@@ -926,7 +926,7 @@ static void
 sqltypeinit( sql_allocator *sa)
 {
 	sql_type *ts[100];
-	sql_type **strings, **numerical;
+	sql_type **numerical;
 	sql_type **decimals, **floats, **dates, **t;
 	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *FLT, *DBL, *DEC;
 #ifdef HAVE_HGE
@@ -950,10 +950,7 @@ sqltypeinit( sql_allocator *sa)
 	BIT = *t++ = sql_create_type(sa, "BOOLEAN", 1, 0, 2, EC_BIT, "bit");
 	sql_create_alias(sa, BIT->base.name, "BOOL");
 
-	strings = t;
-	/* create clob type first, so functions by default will bind to the clob version which doesn't require length validation on some cases */
-	STR = *t++ = sql_create_type(sa, "CLOB",    0, 0, 0, EC_STRING, "str");
-	*t++ = sql_create_type(sa, "VARCHAR", 0, 0, 0, EC_STRING, "str");
+	STR = *t++ = sql_create_type(sa, "VARCHAR", 0, 0, 0, EC_STRING, "str");
 	*t++ = sql_create_type(sa, "CHAR",    0, 0, 0, EC_CHAR,   "str");
 
 	numerical = t;
@@ -1648,56 +1645,55 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "second", "mtime", "seconds", FALSE, FALSE, SCALE_NONE, 0, INT, 1, SECINT);
 	sql_create_func(sa, "epoch_ms", "mtime", "epoch_ms", FALSE, FALSE, SCALE_NONE, 3, BigDEC, 1, SECINT);
 
-	for (t = strings; t < numerical; t++) {
-		sql_create_func(sa, "next_value_for", "sql", "next_value", TRUE, FALSE, SCALE_NONE, 0, LNG, 2, *t, *t);
-		sql_create_func(sa, "get_value_for", "sql", "get_value", TRUE, FALSE, SCALE_NONE, 0, LNG, 2, *t, *t);
-		sql_create_func(sa, "restart", "sql", "restart", TRUE, FALSE, SCALE_NONE, 0, LNG, 3, *t, *t, LNG);
+	sql_create_func(sa, "next_value_for", "sql", "next_value", TRUE, FALSE, SCALE_NONE, 0, LNG, 2, STR, STR);
+	sql_create_func(sa, "get_value_for", "sql", "get_value", TRUE, FALSE, SCALE_NONE, 0, LNG, 2, STR, STR);
+	sql_create_func(sa, "restart", "sql", "restart", TRUE, FALSE, SCALE_NONE, 0, LNG, 3, STR, STR, LNG);
 
-		sql_create_func(sa, "locate", "str", "locate", FALSE, FALSE, SCALE_NONE, 0, INT, 2, *t, *t);
-		sql_create_func(sa, "locate", "str", "locate3", FALSE, FALSE, SCALE_NONE, 0, INT, 3, *t, *t, INT);
-		sql_create_func(sa, "charindex", "str", "locate", FALSE, FALSE, SCALE_NONE, 0, INT, 2, *t, *t);
-		sql_create_func(sa, "charindex", "str", "locate3", FALSE, FALSE, SCALE_NONE, 0, INT, 3, *t, *t, INT);
-		sql_create_func(sa, "splitpart", "str", "splitpart", FALSE, FALSE, INOUT, 0, *t, 3, *t, *t, INT);
-		sql_create_func(sa, "substring", "str", "substring", FALSE, FALSE, INOUT, 0, *t, 2, *t, INT);
-		sql_create_func(sa, "substring", "str", "substring3", FALSE, FALSE, INOUT, 0, *t, 3, *t, INT, INT);
-		sql_create_func(sa, "substr", "str", "substring", FALSE, FALSE, INOUT, 0, *t, 2, *t, INT);
-		sql_create_func(sa, "substr", "str", "substring3", FALSE, FALSE, INOUT, 0, *t, 3, *t, INT, INT);
+	sql_create_func(sa, "locate", "str", "locate", FALSE, FALSE, SCALE_NONE, 0, INT, 2, STR, STR);
+	sql_create_func(sa, "locate", "str", "locate3", FALSE, FALSE, SCALE_NONE, 0, INT, 3, STR, STR, INT);
+	sql_create_func(sa, "charindex", "str", "locate", FALSE, FALSE, SCALE_NONE, 0, INT, 2, STR, STR);
+	sql_create_func(sa, "charindex", "str", "locate3", FALSE, FALSE, SCALE_NONE, 0, INT, 3, STR, STR, INT);
+	sql_create_func(sa, "splitpart", "str", "splitpart", FALSE, FALSE, INOUT, 0, STR, 3, STR, STR, INT);
+	sql_create_func(sa, "substring", "str", "substring", FALSE, FALSE, INOUT, 0, STR, 2, STR, INT);
+	sql_create_func(sa, "substring", "str", "substring3", FALSE, FALSE, INOUT, 0, STR, 3, STR, INT, INT);
+	sql_create_func(sa, "substr", "str", "substring", FALSE, FALSE, INOUT, 0, STR, 2, STR, INT);
+	sql_create_func(sa, "substr", "str", "substring3", FALSE, FALSE, INOUT, 0, STR, 3, STR, INT, INT);
 
-		sql_create_filter(sa, "like", "algebra", "like", FALSE, FALSE, SCALE_NONE, 0, 4, *t, *t, *t, BIT);
-		sql_create_filter(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, 4, *t, *t, *t, BIT);
+	sql_create_filter(sa, "like", "algebra", "like", FALSE, FALSE, SCALE_NONE, 0, 4, STR, STR, STR, BIT);
+	sql_create_filter(sa, "not_like", "algebra", "not_like", FALSE, FALSE, SCALE_NONE, 0, 4, STR, STR, STR, BIT);
 
-		sql_create_func(sa, "patindex", "pcre", "patindex", FALSE, FALSE, SCALE_NONE, 0, INT, 2, *t, *t);
-		sql_create_func(sa, "truncate", "str", "stringleft", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
-		sql_create_func(sa, "concat", "calc", "+", FALSE, FALSE, DIGITS_ADD, 0, *t, 2, *t, *t);
-		sql_create_func(sa, "ascii", "str", "ascii", TRUE, FALSE, SCALE_NONE, 0, INT, 1, *t); /* ascii of empty string is null */
-		sql_create_func(sa, "code", "str", "unicode", FALSE, FALSE, SCALE_NONE, 0, *t, 1, INT);
-		sql_create_func(sa, "length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);
-		sql_create_func(sa, "right", "str", "stringright", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
-		sql_create_func(sa, "left", "str", "stringleft", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
-		sql_create_func(sa, "upper", "str", "toUpper", FALSE, FALSE, INOUT, 0, *t, 1, *t);
-		sql_create_func(sa, "ucase", "str", "toUpper", FALSE, FALSE, INOUT, 0, *t, 1, *t);
-		sql_create_func(sa, "lower", "str", "toLower", FALSE, FALSE, INOUT, 0, *t, 1, *t);
-		sql_create_func(sa, "lcase", "str", "toLower", FALSE, FALSE, INOUT, 0, *t, 1, *t);
-		sql_create_func(sa, "btrim", "str", "trim", FALSE, FALSE, INOUT, 0, *t, 1, *t);
-		sql_create_func(sa, "btrim", "str", "trim2", FALSE, FALSE, INOUT, 0, *t, 2, *t, *t);
-		sql_create_func(sa, "ltrim", "str", "ltrim", FALSE, FALSE, INOUT, 0, *t, 1, *t);
-		sql_create_func(sa, "ltrim", "str", "ltrim2", FALSE, FALSE, INOUT, 0, *t, 2, *t, *t);
-		sql_create_func(sa, "rtrim", "str", "rtrim", FALSE, FALSE, INOUT, 0, *t, 1, *t);
-		sql_create_func(sa, "rtrim", "str", "rtrim2", FALSE, FALSE, INOUT, 0, *t, 2, *t, *t);
+	sql_create_func(sa, "patindex", "pcre", "patindex", FALSE, FALSE, SCALE_NONE, 0, INT, 2, STR, STR);
+	sql_create_func(sa, "truncate", "str", "stringleft", FALSE, FALSE, SCALE_NONE, 0, STR, 2, STR, INT);
+	sql_create_func(sa, "concat", "calc", "+", FALSE, FALSE, DIGITS_ADD, 0, STR, 2, STR, STR);
+	sql_create_func(sa, "ascii", "str", "ascii", TRUE, FALSE, SCALE_NONE, 0, INT, 1, STR); /* ascii of empty string is null */
+	sql_create_func(sa, "code", "str", "unicode", FALSE, FALSE, SCALE_NONE, 0, STR, 1, INT);
+	sql_create_func(sa, "length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, STR);
+	sql_create_func(sa, "right", "str", "stringright", FALSE, FALSE, SCALE_NONE, 0, STR, 2, STR, INT);
+	sql_create_func(sa, "left", "str", "stringleft", FALSE, FALSE, SCALE_NONE, 0, STR, 2, STR, INT);
+	sql_create_func(sa, "upper", "str", "toUpper", FALSE, FALSE, INOUT, 0, STR, 1, STR);
+	sql_create_func(sa, "ucase", "str", "toUpper", FALSE, FALSE, INOUT, 0, STR, 1, STR);
+	sql_create_func(sa, "lower", "str", "toLower", FALSE, FALSE, INOUT, 0, STR, 1, STR);
+	sql_create_func(sa, "lcase", "str", "toLower", FALSE, FALSE, INOUT, 0, STR, 1, STR);
+	sql_create_func(sa, "btrim", "str", "trim", FALSE, FALSE, INOUT, 0, STR, 1, STR);
+	sql_create_func(sa, "btrim", "str", "trim2", FALSE, FALSE, INOUT, 0, STR, 2, STR, STR);
+	sql_create_func(sa, "ltrim", "str", "ltrim", FALSE, FALSE, INOUT, 0, STR, 1, STR);
+	sql_create_func(sa, "ltrim", "str", "ltrim2", FALSE, FALSE, INOUT, 0, STR, 2, STR, STR);
+	sql_create_func(sa, "rtrim", "str", "rtrim", FALSE, FALSE, INOUT, 0, STR, 1, STR);
+	sql_create_func(sa, "rtrim", "str", "rtrim2", FALSE, FALSE, INOUT, 0, STR, 2, STR, STR);
 
-		sql_create_func(sa, "lpad", "str", "lpad", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
-		sql_create_func(sa, "lpad", "str", "lpad3", FALSE, FALSE, SCALE_NONE, 0, *t, 3, *t, INT, *t);
-		sql_create_func(sa, "rpad", "str", "rpad", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT);
-		sql_create_func(sa, "rpad", "str", "rpad3", FALSE, FALSE, SCALE_NONE, 0, *t, 3, *t, INT, *t);
+	sql_create_func(sa, "lpad", "str", "lpad", FALSE, FALSE, SCALE_NONE, 0, STR, 2, STR, INT);
+	sql_create_func(sa, "lpad", "str", "lpad3", FALSE, FALSE, SCALE_NONE, 0, STR, 3, STR, INT, STR);
+	sql_create_func(sa, "rpad", "str", "rpad", FALSE, FALSE, SCALE_NONE, 0, STR, 2, STR, INT);
+	sql_create_func(sa, "rpad", "str", "rpad3", FALSE, FALSE, SCALE_NONE, 0, STR, 3, STR, INT, STR);
 
-		sql_create_func(sa, "insert", "str", "insert", FALSE, FALSE, SCALE_NONE, 0, *t, 4, *t, INT, INT, *t);
-		sql_create_func(sa, "replace", "str", "replace", FALSE, FALSE, SCALE_NONE, 0, *t, 3, *t, *t, *t);
-		sql_create_func(sa, "repeat", "str", "repeat", TRUE, FALSE, SCALE_NONE, 0, *t, 2, *t, INT); /* repeat -1 times is null */
-		sql_create_func(sa, "space", "str", "space", TRUE, FALSE, SCALE_NONE, 0, *t, 1, INT); /* space -1 times is null */
-		sql_create_func(sa, "char_length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);
-		sql_create_func(sa, "character_length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);
-		sql_create_func(sa, "octet_length", "str", "nbytes", FALSE, FALSE, SCALE_NONE, 0, INT, 1, *t);
-	}
+	sql_create_func(sa, "insert", "str", "insert", FALSE, FALSE, SCALE_NONE, 0, STR, 4, STR, INT, INT, STR);
+	sql_create_func(sa, "replace", "str", "replace", FALSE, FALSE, SCALE_NONE, 0, STR, 3, STR, STR, STR);
+	sql_create_func(sa, "repeat", "str", "repeat", TRUE, FALSE, SCALE_NONE, 0, STR, 2, STR, INT); /* repeat -1 times is null */
+	sql_create_func(sa, "space", "str", "space", TRUE, FALSE, SCALE_NONE, 0, STR, 1, INT); /* space -1 times is null */
+	sql_create_func(sa, "char_length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, STR);
+	sql_create_func(sa, "character_length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, STR);
+	sql_create_func(sa, "octet_length", "str", "nbytes", FALSE, FALSE, SCALE_NONE, 0, INT, 1, STR);
+
 	/* copyfrom fname (arg 12) */
 	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", TRUE, SCALE_FIX, 0, TABLE, 12, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT);
 	f->varres = 1;

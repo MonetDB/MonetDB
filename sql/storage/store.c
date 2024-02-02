@@ -555,6 +555,8 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	sz = *(int*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "type_digits"));
 	d = *(int*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "type_scale"));
 	tpe = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "type"));
+	if (tpe && strcmp(tpe, "clob") == 0)
+		tpe = "varchar";
 	if (!sql_find_subtype(&c->type, tpe, sz, d)) {
 		sql_type *lt = sql_trans_bind_type(tr, t->s, tpe);
 		if (lt == NULL) {
@@ -915,6 +917,8 @@ load_arg(sql_trans *tr, sql_func *f, oid rid)
 	scale = store->table_api.column_find_int(tr, find_sql_column(args, "type_scale"), rid);
 
 	tpe = store->table_api.column_find_string_start(tr, find_sql_column(args, "type"), rid, &cbat);
+	if (tpe && strcmp(tpe, "clob") == 0)
+		tpe = "varchar";
 	if (!sql_find_subtype(&a->type, tpe, digits, scale)) {
 		sql_type *lt = sql_trans_bind_type(tr, f->s, tpe);
 		if (lt == NULL) {

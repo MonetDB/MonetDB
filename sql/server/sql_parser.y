@@ -4905,7 +4905,7 @@ literal:
     string	{ const char *s = $1;
 		  int len = UTF8_strlen(s);
 		  sql_subtype t;
-		  sql_find_subtype(&t, "char", len, 0 );
+		  sql_find_subtype(&t, "varchar", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
 
  |  BINARYNUM { int len = _strlen($1), i = 2, err = 0;
@@ -5594,13 +5594,13 @@ data_type:
     CHARACTER
 			{ sql_find_subtype(&$$, "char", 1, 0); }
  |  varchar		{ sql_find_subtype(&$$, "varchar", 0, 0); }
- |  clob		{ sql_find_subtype(&$$, "clob", 0, 0); }
+ |  clob		{ sql_find_subtype(&$$, "varchar", 0, 0); }
  |  CHARACTER '(' nonzero ')'
 			{ sql_find_subtype(&$$, "char", $3, 0); }
  |  varchar '(' nonzero ')'
 			{ sql_find_subtype(&$$, "varchar", $3, 0); }
  |  clob '(' nonzero ')'
-			{ sql_find_subtype(&$$, "clob", $3, 0);
+			{ sql_find_subtype(&$$, "varchar", $3, 0);
 			  /* NOTE: CLOB may be called as CLOB(2K) which is equivalent
 			   *       to CLOB(2048).  Due to 'nonzero' it is not possible
 			   *       to enter this as the parser rejects it.  However it
@@ -6957,7 +6957,7 @@ odbc_data_type:
     | SQL_LONGVARBINARY
 	{ sql_find_subtype(&$$, "blob", 0, 0); }
     | SQL_LONGVARCHAR
-	{ sql_find_subtype(&$$, "clob", 0, 0); }
+	{ sql_find_subtype(&$$, "varchar", 0, 0); }
     | SQL_NUMERIC
 	{ sql_find_subtype(&$$, "decimal", 18, 3); }
     | SQL_REAL
@@ -6977,7 +6977,7 @@ odbc_data_type:
     | SQL_WCHAR
 	{ sql_find_subtype(&$$, "char", 0, 0); }
     | SQL_WLONGVARCHAR
-	{ sql_find_subtype(&$$, "clob", 0, 0); }
+	{ sql_find_subtype(&$$, "varchar", 0, 0); }
     | SQL_WVARCHAR
 	{ sql_find_subtype(&$$, "varchar", 0, 0); }
 ;

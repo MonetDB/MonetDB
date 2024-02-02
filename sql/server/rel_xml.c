@@ -54,7 +54,7 @@ rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd
 				if (type_cmp(st->type, xml_type.type) != 0) {
 					sql_subtype str_type;
 
-					sql_find_subtype(&str_type, "clob", 0, 0);
+					sql_find_subtype(&str_type, "varchar", 0, 0);
 					/* convert to string first */
 					c_st = exp_check_type(sql, &str_type, rel ? *rel : NULL, c_st, type_equal);
 					/* then to xml */
@@ -135,7 +135,7 @@ rel_xmlforest(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 			if (type_cmp(st->type, xml_type.type) != 0) {
 				sql_subtype str_type;
 
-				sql_find_subtype(&str_type, "clob", 0, 0);
+				sql_find_subtype(&str_type, "varchar", 0, 0);
 				/* convert to string first */
 				c_st = exp_check_type(sql, &str_type, rel ? *rel : NULL, c_st, type_equal);
 				/* then to xml */
@@ -193,7 +193,7 @@ rel_xmlattribute(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind k
 	}
 	sql_subtype str_type;
 
-	sql_find_subtype(&str_type, "clob", 0, 0);
+	sql_find_subtype(&str_type, "varchar", 0, 0);
 	attr_name_st = exp_atom_str(query->sql->sa, attr_name, &str_type);
 	return rel_binop_(query->sql, rel ? *rel : NULL, attr_name_st, attr_st, NULL, "attribute", card_value, false);
 }
@@ -240,7 +240,7 @@ rel_xmlpi(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	sql_exp *target_st, *val_st;
 	sql_subtype str_type;
 
-	sql_find_subtype(&str_type, "clob", 0, 0);
+	sql_find_subtype(&str_type, "varchar", 0, 0);
 	target_st = exp_atom_str(query->sql->sa, target, &str_type);
 	if (!val)
 		val_st = rel_value_exp(query, rel, val, f, knd);

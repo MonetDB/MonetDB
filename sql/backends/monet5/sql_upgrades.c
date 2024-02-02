@@ -174,7 +174,14 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 							 "update sys._columns set type_digits = 15 where type = 'smallint' and type_digits <> 15;\n"
 							 "update sys._columns set type_digits = 31 where type = 'int' and type_digits <> 31;\n"
 							 "update sys._columns set type_digits = 63 where type = 'bigint' and type_digits <> 63;\n"
-							 "update sys._columns set type_digits = 127 where type = 'hugeint' and type_digits <> 127;\n",
+							 "update sys._columns set type_digits = 127 where type = 'hugeint' and type_digits <> 127;\n"
+							 "update sys._columns set type = 'varchar' where type in ('clob', 'char') and table_id in (select id from sys._tables where system and name <> 'netcdf_files');\n"
+							 "update sys.args set type_digits = 7 where type = 'tinyint' and type_digits <> 7;\n"
+							 "update sys.args set type_digits = 15 where type = 'smallint' and type_digits <> 15;\n"
+							 "update sys.args set type_digits = 31 where type = 'int' and type_digits <> 31;\n"
+							 "update sys.args set type_digits = 63 where type = 'bigint' and type_digits <> 63;\n"
+							 "update sys.args set type_digits = 127 where type = 'hugeint' and type_digits <> 127;\n"
+							 "update sys.args set type = 'varchar' where type in ('clob', 'char');\n",
 							 "update", true, false, NULL);
 	if (err)
 		return err;

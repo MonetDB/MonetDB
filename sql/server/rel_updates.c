@@ -1708,7 +1708,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				char *fname = sa_alloc(sql->sa, l+8);
 
 				snprintf(fname, l+8, "str_to_%s", strcmp(cs->type.type->base.name, "timestamptz") == 0 ? "timestamp" : cs->type.type->base.name);
-				sql_find_subtype(&st, "clob", 0, 0);
+				sql_find_subtype(&st, "varchar", 0, 0);
 				if (!(f = sql_bind_func_result(sql, "sys", fname, F_FUNC, true, &cs->type, 2, &st, &st)))
 					return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: '%s' missing for type %s", fname, cs->type.type->base.name);
 				append(args, e);

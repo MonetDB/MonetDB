@@ -166,7 +166,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	q = pushArgument(mb,q, k);
-	q = pushStr(mb,q,"clob");
+	q = pushStr(mb,q,"varchar");
 	pushInstruction(mb, q);
 
 	resultset = pushArgument(mb,resultset, getArg(q,0));

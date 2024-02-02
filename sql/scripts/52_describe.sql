@@ -195,7 +195,7 @@ BEGIN
 	  ELSE 'TIME(' || (digits - 1) || ')'
 	END || ' WITH TIME ZONE'
       WHEN 'tinyint' THEN 'TINYINT'
-      WHEN 'varchar' THEN 'CHARACTER VARYING(' || digits || ')'
+      WHEN 'varchar' THEN CASE WHEN digits then 'CHARACTER VARYING(' || digits || ')' ELSE 'CHARACTER VARYING' END
       ELSE
         CASE
           WHEN lower(ctype) = ctype THEN upper(ctype)
