@@ -994,8 +994,8 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		       oid candoff, bool *reduce,
 		       uint8_t scale1, uint8_t scale2, uint8_t precision)
 {
-	assert(scale1 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
-	assert(scale2 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
+	assert(stp == TYPE_flt || stp == TYPE_dbl || scale1 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
+	assert(dtp == TYPE_flt || dtp == TYPE_dbl || scale2 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
 	switch (ATOMbasetype(stp)) {
 	case TYPE_msk:
 		switch (ATOMbasetype(dtp)) {

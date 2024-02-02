@@ -75,9 +75,6 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 	return base;
 }
 
-static gdk_return HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc);
-static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free, MT_Lock *lock);
-
 static char *
 decompose_filename(str nme)
 {

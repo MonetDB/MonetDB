@@ -70,6 +70,9 @@ statistics_atom_min(mvc *sql, atom *v1, atom *v2)
 static inline void
 set_minmax_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 {
+	if (val == NULL)
+		return;
+
 	sql_subtype *tpe = exp_subtype(e);
 	prop *found = find_prop(e->p, kind);
 
