@@ -127,6 +127,7 @@ SELECT '' AS five, q1, q2, q1 - q2 AS minus FROM INT8_TBL
 -4567890123456789
 9135780246913578
 
+onlyif has-hugeint
 query TIII nosort
 SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL WHERE q2 <> 4567890123456789 ORDER BY q1, q2
 ----
@@ -260,11 +261,23 @@ statement error 42000!SELECT: no such binary operator 'to_char'(bigint,char)
 SELECT '' AS to_char_2, to_char(q1, '9G999G999G999G999G999D999G999'), to_char(q2, '9,999,999,999,999,999.999,999')
 	FROM INT8_TBL
 
+onlyif has-hugeint
 statement error 42000!SELECT: no such binary operator 'to_char'(hugeint,char)
 SELECT '' AS to_char_3, to_char( (q1 * -1), '9999999999999999PR'), to_char( (q2 * -1), '9999999999999999.999PR')
 	FROM INT8_TBL
 
+skipif has-hugeint
+statement error 42000!SELECT: no such binary operator 'to_char'(bigint,char)
+SELECT '' AS to_char_3, to_char( (q1 * -1), '9999999999999999PR'), to_char( (q2 * -1), '9999999999999999.999PR')
+	FROM INT8_TBL
+
+onlyif has-hugeint
 statement error 42000!SELECT: no such binary operator 'to_char'(hugeint,char)
+SELECT '' AS to_char_4, to_char( (q1 * -1), '9999999999999999S'), to_char( (q2 * -1), 'S9999999999999999')
+	FROM INT8_TBL
+
+skipif has-hugeint
+statement error 42000!SELECT: no such binary operator 'to_char'(bigint,char)
 SELECT '' AS to_char_4, to_char( (q1 * -1), '9999999999999999S'), to_char( (q2 * -1), 'S9999999999999999')
 	FROM INT8_TBL
 
