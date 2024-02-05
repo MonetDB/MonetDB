@@ -71,7 +71,7 @@ static stmt *
 stmt_selectnil(backend *be, stmt *col)
 {
 	sql_subtype *t = tail_type(col);
-	return stmt_uselect(be, col, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)), cmp_equal, NULL, 0, 1);
+	return stmt_uselect(be, col, stmt_atom(be, atom_general(be->mvc->sa, t, NULL, 0)), cmp_equal, NULL, 0, 1);
 }
 
 static stmt *
@@ -397,7 +397,7 @@ static stmt *
 stmt_selectnonil(backend *be, stmt *col, stmt *s)
 {
 	sql_subtype *t = tail_type(col);
-	return stmt_uselect(be, col, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)), cmp_equal, s, 1, 1);
+	return stmt_uselect(be, col, stmt_atom(be, atom_general(be->mvc->sa, t, NULL, 0)), cmp_equal, s, 1, 1);
 }
 
 static int
@@ -764,7 +764,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 				stmt *l = isel;
 				if (!l)
 					l = bin_find_smallest_column(be, left);
-				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL, 0)));
 				ires = l;
 				if (res)
 					res->cand = isel;
@@ -981,7 +981,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				stmt *l = isel;
 				if (!l)
 					l = bin_find_smallest_column(be, left);
-				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL, 0)));
 				ires = l;
 				if (res)
 					res->cand = isel;
@@ -1106,7 +1106,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				stmt *l = isel;
 				if (!l)
 					l = bin_find_smallest_column(be, left);
-				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL, 0)));
 				if (res)
 					res->cand = isel;
 			}
@@ -1510,7 +1510,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (from->type->localtype == 0) {
 			l = exp_bin(be, e->l, left, right, grp, ext, cnt, sel, depth+1, 0, push);
 			if (l)
-				l = stmt_atom(be, atom_general(sql->sa, to, NULL));
+				l = stmt_atom(be, atom_general(sql->sa, to, NULL, 0));
 		} else {
 			l = exp_bin(be, e->l, left, right, grp, ext, cnt, sel, depth+1, 0, push);
 		}
@@ -1522,6 +1522,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		node *en;
 		list *l = sa_list(sql->sa), *exps = e->l;
 		sql_subfunc *f = e->f;
+		const char *fname = f->func->base.name;
 		stmt *rows = NULL;
 		const char *mod, *fimp;
 
@@ -1529,7 +1530,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			return NULL;
 
 		/* attempt to instantiate MAL functions now, so we can know if we can push candidate lists */
-		if (f->func->lang == FUNC_LANG_MAL && backend_create_mal_func(be->mvc, f->func) < 0)
+		if (f->func->lang == FUNC_LANG_MAL && backend_create_mal_func(be->mvc, f) < 0)
 			return NULL;
 		mod = sql_func_mod(f->func);
 		fimp = backend_function_imp(be, f->func);
@@ -1539,7 +1540,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		assert(!e->r);
 		if (strcmp(mod, "") == 0 && strcmp(fimp, "") == 0) {
-			const char *fname = f->func->base.name;
 			if (strcmp(fname, "star") == 0) {
 				if (!left)
 					return const_column(be, stmt_bool(be, 1));
@@ -1562,7 +1562,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			unsigned nrcols = 0;
 			int push_cands = can_push_cands(sel, mod, fimp);
 
-			assert(list_length(exps) == list_length(f->func->ops) || f->func->type == F_ANALYTIC || f->func->type == F_LOADER || f->func->vararg || f->func->varres);
 			for (en = exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 				stmt *es = exp_bin(be, e, left, right, grp, ext, cnt, (push_cands)?sel:NULL, depth+1, 0, push);
@@ -1877,7 +1876,7 @@ stmt_col(backend *be, sql_column *c, stmt *del, int part)
 			stmt *v = stmt_bat(be, c, RD_EXT, part);
 			sc = stmt_dict(be, sc, v);
 		} else if (c->storage_type && c->storage_type[0] == 'F') {
-			sc = stmt_for(be, sc, stmt_atom(be, atom_general(be->mvc->sa, &c->type, c->storage_type+4/*skip FOR-*/)));
+			sc = stmt_for(be, sc, stmt_atom(be, atom_general(be->mvc->sa, &c->type, c->storage_type+4/*skip FOR-*/, be->mvc->timezone)));
 		}
 		if (del)
 			sc = stmt_project(be, del, sc);
@@ -3259,7 +3258,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		if (rel->op == op_left || rel->op == op_full)
 			s = stmt_append(be, s, stmt_project(be, ld, c));
 		if (rel->op == op_right || rel->op == op_full)
-			s = stmt_append(be, s, stmt_const(be, rd, (c->flag&OUTER_ZERO)?stmt_atom_lng(be, 0):stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL))));
+			s = stmt_append(be, s, stmt_const(be, rd, (c->flag&OUTER_ZERO)?stmt_atom_lng(be, 0):stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL, 0))));
 
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);
@@ -3274,7 +3273,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
 			s = create_const_column(be, s);
 		if (rel->op == op_left || rel->op == op_full)
-			s = stmt_append(be, s, stmt_const(be, ld, (c->flag&OUTER_ZERO)?stmt_atom_lng(be, 0):stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL))));
+			s = stmt_append(be, s, stmt_const(be, ld, (c->flag&OUTER_ZERO)?stmt_atom_lng(be, 0):stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL, 0))));
 		if (rel->op == op_right || rel->op == op_full)
 			s = stmt_append(be, s, stmt_project(be, rd, c));
 
@@ -5497,10 +5496,10 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 					return NULL;
 				upd = sq;
 			} else {
-				upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL));
+				upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL, 0));
 			}
 		} else {
-			upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL));
+			upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL, 0));
 		}
 
 		if (!upd || (upd = check_types(be, &fc->c->type, upd, type_equal)) == NULL)
@@ -5555,10 +5554,10 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 					return NULL;
 				upd = sq;
 			} else {
-				upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL));
+				upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL, 0));
 			}
 		} else if (action == ACT_SET_NULL) {
-			upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL));
+			upd = stmt_atom(be, atom_general(sql->sa, &fc->c->type, NULL, 0));
 		}
 
 		if (!upd || (upd = check_types(be, &fc->c->type, upd, type_equal)) == NULL)

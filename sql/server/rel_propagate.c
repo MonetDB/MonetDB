@@ -133,7 +133,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 	} else if (s->token == SQL_NULL && !nilok) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
 	} else if (s->token == SQL_MINVALUE) {
-		atom *amin = atom_general(sql->sa, &tpe, NULL);
+		atom *amin = atom_general(sql->sa, &tpe, NULL, 0);
 		if (!amin) {
 			char *err = sql_subtype_string(sql->ta, &tpe);
 			if (!err)
@@ -143,7 +143,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 		}
 		return exp_atom(sql->sa, amin);
 	} else if (s->token == SQL_MAXVALUE) {
-		atom *amax = atom_general(sql->sa, &tpe, NULL);
+		atom *amax = atom_general(sql->sa, &tpe, NULL, 0);
 		if (!amax) {
 			char *err = sql_subtype_string(sql->ta, &tpe);
 			if (!err)
@@ -356,8 +356,8 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 			with_nills = bit_nil; /* holds all values in range */
 		all_ranges = (min->token == SQL_MINVALUE && max->token == SQL_MAXVALUE);
 	} else {
-		pmin = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
-		pmax = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
+		pmin = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL, 0));
+		pmax = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL, 0));
 	}
 
 	/* generate the psm statement */
@@ -370,7 +370,7 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 	}
 	append(exps, pmin);
 	append(exps, pmax);
-	append(exps, is_bit_nil(with_nills) ? exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL)) : exp_atom_bool(sql->sa, with_nills));
+	append(exps, is_bit_nil(with_nills) ? exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL, 0)) : exp_atom_bool(sql->sa, with_nills));
 	append(exps, exp_atom_int(sql->sa, update));
 	rel_psm->l = NULL;
 	rel_psm->r = NULL;

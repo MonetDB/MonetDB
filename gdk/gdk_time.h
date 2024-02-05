@@ -127,4 +127,7 @@ gdk_export ssize_t timestamp_tz_fromstr(const char *buf, size_t *len, timestamp 
 gdk_export ssize_t timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool external);
 gdk_export ssize_t timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, bool external);
 
+gdk_export ssize_t sql_daytime_fromstr(const char *buf, daytime *d, long tz_sec, bool tzlocal);
+gdk_export ssize_t sql_timestamp_fromstr(const char *buf, timestamp *d, long tz_sec, bool tzlocal);
+
 #endif	/* _GDK_TIME_H_ */

@@ -83,11 +83,11 @@ rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd
 	}
 
 	if (!ns_st)
-		ns_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
+		ns_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL, 0));
 	if (!attr_st)
-		attr_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
+		attr_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL, 0));
 	if (!res)
-		res = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
+		res = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL, 0));
 
 	if (!ns_st || !attr_st || !res)
 		return NULL;
@@ -112,11 +112,11 @@ rel_xmlforest(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	if (ns) {
 		ns_st = rel_value_exp(query, rel, ns, f, knd);
 	} else {
-		ns_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
+		ns_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL, 0));
 	}
 	if (!ns_st)
 		return NULL;
-	attr_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL));
+	attr_st = exp_atom(sql->sa, atom_general(sql->sa, &xml_type, NULL, 0));
 	if (elms) {
 		dnode *e;
 
@@ -245,7 +245,7 @@ rel_xmlpi(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	if (!val)
 		val_st = rel_value_exp(query, rel, val, f, knd);
 	else
-		val_st = exp_atom(query->sql->sa, atom_general(query->sql->sa, &str_type, NULL));
+		val_st = exp_atom(query->sql->sa, atom_general(query->sql->sa, &str_type, NULL, 0));
 	if (!val_st)
 		return NULL;
 	return rel_binop_(query->sql, rel ? *rel : NULL, target_st, val_st, NULL, "pi", card_value, false);

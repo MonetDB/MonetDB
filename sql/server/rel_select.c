@@ -2340,7 +2340,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		if (exp_is_null_no_value_opt(ls) && exp_is_null_no_value_opt(rs))
-			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL));
+			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL, 0));
 
 		return exp_compare_func(sql, ls, rs, compare_func(cmp_type, need_not), quantifier);
 	}
@@ -2691,7 +2691,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			return NULL;
 		if (!(t = exp_subtype(le)))
 			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) for IS%s NULL operator", sc->token == SQL_IS_NOT_NULL ? " NOT" : "");
-		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, t, NULL)), cmp_equal);
+		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, t, NULL, 0)), cmp_equal);
 		if (sc->token == SQL_IS_NOT_NULL)
 			set_anti(le);
 		set_has_no_nil(le);
@@ -5285,7 +5285,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 			}
 			list_append(exps, l);
 		} else
-			list_append(exps, exp_atom(sql->sa, atom_general(sql->sa, lng, NULL)));
+			list_append(exps, exp_atom(sql->sa, atom_general(sql->sa, lng, NULL, 0)));
 		if (sn->offset) {
 			sql_exp *o = rel_value_exp( query, NULL, sn->offset, 0, ek);
 			if (!o || !(o=exp_check_type(sql, lng, NULL, o, type_equal)))

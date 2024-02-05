@@ -654,7 +654,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 							assert(list_length(args) == 1);
 							l = args->h->data;
 							if (exp_subtype(l)) {
-								r = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(l), NULL));
+								r = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(l), NULL, 0));
 								e = exp_compare(v->sql->sa, l, r, e->flag);
 								if (e && !flag)
 									set_anti(e);

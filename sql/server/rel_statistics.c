@@ -806,7 +806,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			rel_destroy(rel->r);
 			rel->r = NULL;
 			for (node *n = rel->exps->h ; n ; n = n->next) {
-				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 				exp_prop_alias(v->sql->sa, a, e);
 				n->data = a;
 			}

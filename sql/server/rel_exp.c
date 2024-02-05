@@ -582,7 +582,7 @@ exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe)
 sql_exp *
 exp_null(sql_allocator *sa, sql_subtype *tpe)
 {
-	atom *a = atom_general(sa, tpe, NULL);
+	atom *a = atom_general(sa, tpe, NULL, 0);
 	return exp_atom(sa, a);
 }
 

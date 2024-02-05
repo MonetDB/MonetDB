@@ -53,6 +53,7 @@
 #include "msabaoth.h"		/* msab_getUUID */
 #include "muuid.h"
 #include "rel_remote.h"
+#include "rel_physical.h"
 #include "sql_user.h"
 
 int
@@ -1280,6 +1281,14 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 		*side_effect = 0;
 		return 1;
 	}
+	if (strcmp(fname, "timestamp_to_str") == 0 ||
+	    strcmp(fname, "time_to_str") == 0 ||
+	    strcmp(fname, "str_to_timestamp") == 0 ||
+	    strcmp(fname, "str_to_time") == 0 ||
+	    strcmp(fname, "str_to_date") == 0) {
+		*side_effect = 0;
+		return 1;
+	}
 
 	c = MCgetClient(clientID);
 	MT_lock_set(&sql_gencodeLock);
@@ -1415,9 +1424,10 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 }
 
 int
-backend_create_mal_func(mvc *m, sql_func *f)
+backend_create_mal_func(mvc *m, sql_subfunc *sf)
 {
 	char *F = NULL, *fn = NULL;
+	sql_func *f = sf->func;
 	bool old_side_effect = f->side_effect, new_side_effect = 0;
 	int clientid = m->clientid;
 	str fimp = NULL;
@@ -1465,8 +1475,10 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	sql_rel *r;
 
 	r = rel_parse(m, f->s, f->query, prepare?m_prepare:m_instantiate);
-	if (r)
+	if (r) {
 		r = sql_processrelation(m, r, 0, 1, 1, 0);
+		r = rel_physical(m, r);
+	}
 	if (!r) {
 		goto cleanup;
 	}
@@ -1606,12 +1618,13 @@ cleanup:
 }
 
 static int
-backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
+backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 {
 	mvc *m = be->mvc;
 	Client c = be->client;
 	Symbol symbackup = c->curprg;
 	backend bebackup = *be;		/* backup current backend */
+	sql_func *f = sf->func;
 	bool prepare = f->imp;
 	const char *sql_shared_module = putName(sql_shared_module_name);
 	const char *sql_private_module = putName(sql_private_module_name);
@@ -1656,9 +1669,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 }
 
 static int
-backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
+backend_create_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 {
-	switch(f->lang) {
+	switch(sf->func->lang) {
 	case FUNC_LANG_INT:
 	case FUNC_LANG_R:
 	case FUNC_LANG_PY:
@@ -1667,9 +1680,9 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_CPP:
 		return 0; /* these languages don't require internal instantiation */
 	case FUNC_LANG_MAL:
-		return backend_create_mal_func(be->mvc, f);
+		return backend_create_mal_func(be->mvc, sf);
 	case FUNC_LANG_SQL:
-		return backend_create_sql_func(be, f, restypes, ops);
+		return backend_create_sql_func(be, sf, restypes, ops);
 	default:
 		sql_error(be->mvc, 10, SQLSTATE(42000) "Function language without a MAL backend");
 		return -1;
@@ -1679,7 +1692,7 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 int
 backend_create_subfunc(backend *be, sql_subfunc *f, list *ops)
 {
-	return backend_create_func(be, f->func, f->res, ops);
+	return backend_create_func(be, f, f->res, ops);
 }
 
 void
