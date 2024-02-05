@@ -1362,6 +1362,8 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 
 	file_loader_t *fl = fl_find(ext);
 	if (!fl)
+		fl = fl_find("csv");
+	if (!fl)
 		return NULL;
 	sql_exp *fexp = arg_list->h->data;
 	assert(is_atom(fexp->type));

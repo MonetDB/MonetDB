@@ -98,6 +98,7 @@ SELECT v, convert(v, bigint) from T_BOOLEAN
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, convert(v, hugeint) from T_BOOLEAN
 ----
@@ -321,6 +322,7 @@ SELECT v, cast(v as bigint) from T_BOOLEAN
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, cast(v as hugeint) from T_BOOLEAN
 ----
@@ -956,6 +958,7 @@ SELECT v, convert(v, bigint) from T_tinyint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, convert(v, hugeint) from T_tinyint
 ----
@@ -1336,6 +1339,7 @@ SELECT v, cast(v as bigint) from T_tinyint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, cast(v as hugeint) from T_tinyint
 ----
@@ -1754,6 +1758,7 @@ SELECT v, convert(v, bigint) from T_smallint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, convert(v, hugeint) from T_smallint
 ----
@@ -2212,6 +2217,7 @@ SELECT v, cast(v as bigint) from T_smallint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, cast(v as hugeint) from T_smallint
 ----
@@ -2706,6 +2712,7 @@ SELECT v, convert(v, bigint) from T_int
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, convert(v, hugeint) from T_int
 ----
@@ -3238,6 +3245,7 @@ SELECT v, cast(v as bigint) from T_int
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, cast(v as hugeint) from T_int
 ----
@@ -3796,6 +3804,7 @@ SELECT v, convert(v, bigint) from T_bigint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, convert(v, hugeint) from T_bigint
 ----
@@ -4328,6 +4337,7 @@ SELECT v, cast(v as bigint) from T_bigint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, cast(v as hugeint) from T_bigint
 ----
@@ -4865,6 +4875,7 @@ SELECT v, convert(v, bigint) from T_float
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_float
 ----
@@ -5376,6 +5387,7 @@ SELECT v, cast(v as bigint) from T_float
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_float
 ----
@@ -5906,6 +5918,7 @@ SELECT v, convert(v, bigint) from T_real
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_real
 ----
@@ -6467,6 +6480,7 @@ SELECT v, cast(v as bigint) from T_real
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_real
 ----
@@ -7081,6 +7095,7 @@ SELECT v, convert(v, bigint) from T_double
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_double
 ----
@@ -7667,6 +7682,7 @@ SELECT v, cast(v as bigint) from T_double
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_double
 ----
@@ -8281,6 +8297,7 @@ SELECT v, convert(v, bigint) from T_num
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_num
 ----
@@ -8874,6 +8891,7 @@ SELECT v, cast(v as bigint) from T_num
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_num
 ----
@@ -9495,6 +9513,7 @@ SELECT v, convert(v, bigint) from T_dec
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_dec
 ----
@@ -10081,6 +10100,7 @@ SELECT v, cast(v as bigint) from T_dec
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_dec
 ----
@@ -10631,6 +10651,7 @@ SELECT v, convert(v, bigint) from T_char where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, convert(v, hugeint) from T_char where v in ('0', '1')
 ----
@@ -10886,6 +10907,7 @@ SELECT v, cast(v as bigint) from T_char where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, cast(v as hugeint) from T_char where v in ('0', '1')
 ----
@@ -11164,6 +11186,7 @@ SELECT v, convert(v, bigint) from T_varchar where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, convert(v, hugeint) from T_varchar where v in ('0', '1')
 ----
@@ -11419,6 +11442,7 @@ SELECT v, cast(v as bigint) from T_varchar where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, cast(v as hugeint) from T_varchar where v in ('0', '1')
 ----
@@ -11697,6 +11721,7 @@ SELECT v, convert(v, bigint) from T_clob where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, convert(v, hugeint) from T_clob where v in ('0', '1')
 ----
@@ -11952,6 +11977,7 @@ SELECT v, cast(v as bigint) from T_clob where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, cast(v as hugeint) from T_clob where v in ('0', '1')
 ----

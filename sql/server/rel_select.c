@@ -592,7 +592,9 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 			*d = 0;
 			fl = fl_find(ext);
 		}
-		if (!fl)
+		if (!fl) /* fallback */
+			fl = fl_find("csv");
+		if (!fl) /* not expected */
 			return sa_message(sql->ta, "Filename extension '%s' missing", ext?ext:"");
 	}
 	str err = fl->add_types(sql, f, filename, res_exps, tname);
