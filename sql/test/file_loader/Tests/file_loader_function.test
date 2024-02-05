@@ -7,7 +7,7 @@ select * from file_loader('FileNotFound')
 statement error 42000!SELECT: file_loader function failed 'File not found'
 select * from file_loader('/tmp/FileNotFound.csv')
 
-statement error 42000!SELECT: file_loader function failed 'Filename extension 'gz' missing'
+statement error 42000!SELECT: file_loader function failed 'File not found'
 select * from file_loader('/tmp/FileNotFound.gz')
 
 statement error 42000!SELECT: file_loader function failed 'File not found'

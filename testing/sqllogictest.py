@@ -13,6 +13,17 @@
 # skipif <system>
 # onlyif <system>
 
+# The skipif/onlyif mechanism has been slightly extended.  Recognized
+# "system"s are:
+# MonetDB, arch=<architecture>, system=<system>, bits=<bits>,
+# threads=<threads>, has-hugeint
+# where <architecture> is generally what the Python call
+# platform.machine() returns (i.e. x86_64, i686, aarch64, ppc64,
+# ppc64le, note 'AMD64' is translated to 'x86_64' and 'arm64' to
+# 'aarch64'); <system> is whatever platform.system() returns
+# (i.e. Linux, Darwin, Windows); <bits> is either 32bit or 64bit;
+# <threads> is the number of threads.
+
 # statement (ok|ok rowcount|error) [arg]
 # query (I|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
 #       I: integer; T: text (string); R: real (decimal)
@@ -55,6 +66,7 @@ if bits == '32bit' and architecture == 'x86_64':
 elif architecture == 'x86':     # Windows
     architecture = 'i686'
 system = platform.system()
+hashge = False                  # may get updated at start of testing
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
@@ -691,6 +703,8 @@ class SQLLogic:
         nthreads = None
         if self.language == 'sql':
             self.crs.execute(f'call sys.setsessiontimeout({self.timeout or 0})')
+            global hashge
+            hashge = self.crs.execute("select * from sys.types where sqlname = 'hugeint'") == 1
         else:
             self.crs.execute(f'clients.setsessiontimeout({self.timeout or 0}:int)')
         while True:
@@ -727,6 +741,8 @@ class SQLLogic:
                             nthreads = self.crs.fetchall()[0][0]
                         if words[1] == f'threads={nthreads}':
                             skipping = True
+                    elif words[1] == 'has-hugeint':
+                        skipping = hashge
                 elif words[0] == 'onlyif':
                     if words[1] not in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
                         skipping = True
@@ -736,6 +752,8 @@ class SQLLogic:
                             nthreads = self.crs.fetchall()[0][0]
                         if words[1] != f'threads={nthreads}':
                             skipping = True
+                    elif words[1] == 'has-hugeint':
+                        skipping = not hashge
                 self.writeline(line.rstrip())
                 line = self.readline()
                 words = line.split(maxsplit=2)
