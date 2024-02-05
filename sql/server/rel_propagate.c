@@ -32,8 +32,6 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 
 		res = rel_base_bind_colnr(sql, *anti_rel, colr);
 		return res;
-		//res = list_fetch((*anti_rel)->exps, colr);
-		//res = exp_ref(sql, res);
 	} else if (isPartitionedByExpressionTable(mt)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
 		if (!(res = rel_parse_val(sql, mt->s, mt->part.pexp->exp, NULL, sql->emode, (*anti_rel)->l)))
@@ -170,7 +168,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp = NULL, *anti_le, *e1, *e2, *anti_nils;
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	char buf[BUFSIZ];
 	sql_subtype tpe;
 
@@ -180,6 +178,9 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	anti_nils = rel_unop_(sql, anti_rel, anti_le, "sys", "isnull", card_value);
 	set_has_no_nil(anti_nils);
 	if (pmin && pmax) {
+		/* type could have changed because of partition expression */
+		if (!(anti_le = exp_check_type(sql, &tpe, NULL, anti_le, type_equal)))
+			return NULL;
 		if (all_ranges) { /*if holds all values in range, don't generate the range comparison */
 			assert(!with_nills);
 		} else {
@@ -236,7 +237,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	char buf[BUFSIZ];
 	sql_subtype tpe;
 
@@ -247,6 +248,11 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 
 	set_has_no_nil(anti_nils);
 	if (list_length(anti_exps) > 0) {
+		sql_exp *ae = anti_exps->h->data;
+		sql_subtype *ntpe = exp_subtype(ae);
+		/* function may need conversion */
+		if (!(anti_le = exp_check_type(sql, ntpe, NULL, anti_le, type_equal)))
+			return NULL;
 		anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
 		if (!with_nills) {
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
@@ -704,7 +710,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 	sql_rel *new_table = NULL, *sel = NULL, *anti_rel = NULL;
 	sql_exp *anti_exp = NULL, *anti_le = NULL, *anti_nils = NULL, *accum = NULL, *aggr = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	char buf[BUFSIZ];
 	sql_subtype tp;
 
@@ -965,7 +971,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper->t), *aggr = NULL,
 			*exception = NULL, *anti_nils = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	char buf[BUFSIZ];
 	bool found_nils = false, found_all_range_values = false;
 	sql_subtype tp;

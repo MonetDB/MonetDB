@@ -150,12 +150,12 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						/* (x*c1)*c2 -> x * (c1*c2) */
 						sql_exp *ne = NULL;
 
-						if (!(le = rel_binop_(sql, NULL, lre, re, "sys", "sql_mul", card_value))) {
+						if (!(le = rel_binop_(sql, NULL, lre, re, "sys", "sql_mul", card_value, true))) {
 							sql->session->status = 0;
 							sql->errstr[0] = '\0';
 							return e; /* error, fallback to original expression */
 						}
-						if (!(ne = rel_binop_(sql, NULL, lle, le, "sys", "sql_mul", card_value))) {
+						if (!(ne = rel_binop_(sql, NULL, lle, le, "sys", "sql_mul", card_value, true))) {
 							sql->session->status = 0;
 							sql->errstr[0] = '\0';
 							return e; /* error, fallback to original expression */
@@ -577,7 +577,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 #else
 							arg2 = exp_atom_lng(v->sql->sa, val);
 #endif
-							if ((f = sql_bind_func(v->sql, "sys", "scale_down", exp_subtype(arg1), exp_subtype(arg2), F_FUNC, true))) {
+							if ((f = sql_bind_func(v->sql, "sys", "scale_down", exp_subtype(arg1), exp_subtype(arg2), F_FUNC, true, true))) {
 								e = exp_compare(v->sql->sa, le->l, exp_binop(v->sql->sa, arg1, arg2, f), e->flag);
 								if (anti) set_anti(e);
 								v->changes++;

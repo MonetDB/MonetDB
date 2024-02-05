@@ -5,7 +5,7 @@ query T nosort
    plan select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2
 ----
 project (
-|  [ "sys"."cnt"(clob "sys", clob "fk") NOT NULL as "%1"."%1" ]
+|  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query T nosort
@@ -42,7 +42,7 @@ query T nosort
    plan select count(*) from pk2 right outer join (pk1 right outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2
 ----
 project (
-|  [ "sys"."cnt"(clob "sys", clob "fk") NOT NULL as "%1"."%1" ]
+|  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query T nosort
@@ -79,7 +79,7 @@ query T nosort
    plan select count(*) from pk2 full outer join (pk1 full outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2
 ----
 project (
-|  [ "sys"."cnt"(clob "sys", clob "fk") NOT NULL as "%1"."%1" ]
+|  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query T nosort

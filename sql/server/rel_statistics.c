@@ -224,39 +224,69 @@ atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValRecord *v)
 	return a;
 }
 
-static inline void
+void
+sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e)
+{
+	bool nonil = false, unique = false;
+	double unique_est = 0.0;
+	ValRecord min, max;
+	int ok = mvc_col_stats(sql, c, &nonil, &unique, &unique_est, &min, &max);
+
+	if (has_nil(e) && nonil)
+		set_has_no_nil(e);
+	if (!is_unique(e) && unique)
+		set_unique(e);
+	if (unique_est != 0.0) {
+		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+		p->value.dval = unique_est;
+	}
+	unsigned int digits = 0;
+	sql_subtype *et = exp_subtype(e);
+	if (et->type->eclass == EC_DEC || et->type->eclass == EC_NUM)
+		digits = et->digits;
+	if ((ok & 2) == 2) {
+		if (!VALisnil(&max)) {
+			prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
+			p->value.pval = atom_from_valptr(sql->sa, &c->type, &max);
+			if (digits) {
+				unsigned int nd = atom_digits(p->value.pval);
+				if (nd < digits)
+					digits = nd;
+				if (!digits)
+					digits = 1;
+			}
+		}
+		VALclear(&max);
+	}
+	if ((ok & 1) == 1) {
+		if (!VALisnil(&min)) {
+			prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
+			p->value.pval = atom_from_valptr(sql->sa, &c->type, &min);
+			if (digits) {
+				unsigned int nd = atom_digits(p->value.pval);
+				if (nd > digits) /* possibly set to low by max value */
+					digits = nd;
+				if (!digits)
+					digits = 1;
+			}
+		}
+		VALclear(&min);
+	}
+	if (digits)
+		et->digits = digits;
+	if (et->type->eclass == EC_DEC && et->digits <= et->scale)
+		et->digits = et->scale + 1;
+}
+
+static void
 rel_basetable_column_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 {
+	if (e->p)
+		return;
 	sql_column *c = NULL;
 
 	if ((c = name_find_column(rel, exp_relname(e), exp_name(e), -2, NULL))) {
-		bool nonil = false, unique = false;
-		double unique_est = 0.0;
-		ValRecord min, max;
-		int ok = mvc_col_stats(sql, c, &nonil, &unique, &unique_est, &min, &max);
-
-		if (has_nil(e) && nonil)
-			set_has_no_nil(e);
-		if (!is_unique(e) && unique)
-			set_unique(e);
-		if (unique_est != 0.0) {
-			prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
-			p->value.dval = unique_est;
-		}
-		if ((ok & 2) == 2) {
-			if (!VALisnil(&max)) {
-				prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
-				p->value.pval = atom_from_valptr(sql->sa, &c->type, &max);
-			}
-			VALclear(&max);
-		}
-		if ((ok & 1) == 1) {
-			if (!VALisnil(&min)) {
-				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
-				p->value.pval = atom_from_valptr(sql->sa, &c->type, &min);
-			}
-			VALclear(&min);
-		}
+		sql_column_get_statistics(sql, c, e);
 	}
 }
 

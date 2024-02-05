@@ -204,7 +204,7 @@ SELECT 1 FROM v4 JOIN (SELECT 2) AS sub0 ON COALESCE(v4.vc0, v4.vc0 BETWEEN v4.v
 statement ok
 ROLLBACK
 
-statement error 42000!types char(4,0) and tinyint(4,0) are not equal
+statement error 42000!types varchar(4,0) and tinyint(4,0) are not equal
 (SELECT 4) EXCEPT (SELECT 3 || (VALUES (3),(6)))
 
 statement ok
@@ -382,7 +382,7 @@ PLAN SELECT (SELECT c0 FROM t0) FROM t0
 ----
 project (
 | single left outer join (
-| | table("sys"."t0") [ "t0"."%t0_c3_c0_unique" UNIQUE HASHIDX  ],
+| | table("sys"."t0") [ "t0"."%t0_c3_c0_unique" HASHIDX  ],
 | | project (
 | | | table("sys"."t0") [ "t0"."c0" NOT NULL UNIQUE HASHCOL  ]
 | | ) [ "t0"."c0" NOT NULL UNIQUE HASHCOL  as "%1"."%1" ]

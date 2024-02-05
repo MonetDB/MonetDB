@@ -68,7 +68,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" INTERVAL SECOND NOT NULL)
 
-statement error 42000!types sec_interval(13,0) and int(32,0) are not equal
+statement error 42000!types sec_interval(13,0) and int(31,0) are not equal
 SELECT CASE '5'^3 WHEN COUNT(TRUE) THEN 1 END FROM t0 GROUP BY 2 IN ((CAST(INTERVAL '-2' SECOND AS INT))%2)
 
 statement ok
@@ -772,7 +772,7 @@ ILIKE(CAST(30792 AS STRING(381))))) as res
 statement ok
 ROLLBACK
 
-statement error 42000!types bigint(64,0) and sec_interval(13,0) are not equal
+statement error 42000!types bigint(63,0) and sec_interval(13,0) are not equal
 select cast(count(1) as interval second) from (values (false)) as v6(vc0)
 
 statement ok

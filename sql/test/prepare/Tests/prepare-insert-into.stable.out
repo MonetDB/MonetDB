@@ -3,70 +3,70 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	0,	0 # length
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	50,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 [ 1	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	0,	0 # length
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	50,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	50,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 [ 2	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	0,	0 # length
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	50,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	50,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	50,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 [ 3	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	0,	0 # length
 [ "tinyint",	4,	0,	NULL,	NULL,	NULL	]
-[ "char",	3,	0,	NULL,	NULL,	NULL	]
-[ "char",	3,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	3,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	3,	0,	NULL,	NULL,	NULL	]
 [ 3	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	0,	0 # length
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	50,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 [ 1	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	0,	0 # length
-[ "char",	3,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	3,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	4,	0,	NULL,	NULL,	NULL	]
-[ "char",	3,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	3,	0,	NULL,	NULL,	NULL	]
 [ 2	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	0,	0 # length
-[ "char",	3,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	3,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	5,	0,	NULL,	NULL,	NULL	]
-[ "char",	3,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	3,	0,	NULL,	NULL,	NULL	]
 [ 2	]
 % sys.TestBulkDataInsert,	sys.TestBulkDataInsert,	sys.TestBulkDataInsert # table_name
 % c1,	c2,	c3 # name
-% bigint,	varchar,	clob # type
+% bigint,	varchar,	varchar # type
 % 2,	3,	3 # length
 [ 1,	"1a",	"1b"	]
 [ 2,	"2a",	"2b"	]

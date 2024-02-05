@@ -226,7 +226,7 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 					    f->flag == cmp_lte))
 						continue;
 
-					supertype(&super, exp_subtype(le), exp_subtype(lf));
+					cmp_supertype(&super, exp_subtype(le), exp_subtype(lf));
 					if (!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal)) ||
 						!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
 						!(re = exp_check_type(v->sql, &super, rel, re, type_equal))) {
@@ -307,7 +307,7 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 					if (lt && (ff == cmp_lt || ff == cmp_lte))
 						continue;
 
-					supertype(&super, exp_subtype(le), exp_subtype(lf));
+					cmp_supertype(&super, exp_subtype(le), exp_subtype(lf));
 					if (!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal)) ||
 						!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
 						!(re = exp_check_type(v->sql, &super, rel, re, type_equal))) {
@@ -647,7 +647,7 @@ try_rewrite_equal_or_is_null(mvc *sql, sql_rel *rel, sql_exp *or, list *l1, list
 			if (valid && first_is_null_found && second_is_null_found) {
 				sql_subtype super;
 
-				supertype(&super, exp_subtype(first), exp_subtype(second)); /* first and second must have the same type */
+				cmp_supertype(&super, exp_subtype(first), exp_subtype(second)); /* first and second must have the same type */
 				if (!(first = exp_check_type(sql, &super, rel, first, type_equal)) ||
 					!(second = exp_check_type(sql, &super, rel, second, type_equal))) {
 						sql->session->status = 0;
@@ -875,12 +875,12 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 				   le->flag == re->flag && le->flag <= cmp_lt) {
 				sql_exp *mine = NULL, *maxe = NULL;
 
-				if (!(mine = rel_binop_(sql, NULL, le->r, re->r, "sys", "sql_min", card_value))) {
+				if (!(mine = rel_binop_(sql, NULL, le->r, re->r, "sys", "sql_min", card_value, true))) {
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
 					continue;
 				}
-				if (!(maxe = rel_binop_(sql, NULL, le->f, re->f, "sys", "sql_max", card_value))) {
+				if (!(maxe = rel_binop_(sql, NULL, le->f, re->f, "sys", "sql_max", card_value, true))) {
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
 					continue;

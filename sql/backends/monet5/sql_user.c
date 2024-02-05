@@ -414,7 +414,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	mvc_create_column_(&col, m, t, "name", "varchar", 1024);
 	mvc_create_column_(&col, m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(&col, m, t, "default_schema", "int", 9);
-	mvc_create_column_(&col, m, t, "schema_path", "clob", 0);
+	mvc_create_column_(&col, m, t, "schema_path", "varchar", 0);
 	mvc_create_column_(&col, m, t, "max_memory", "bigint", 64);
 	mvc_create_column_(&col, m, t, "max_workers", "int", 32);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);

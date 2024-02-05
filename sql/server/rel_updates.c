@@ -180,7 +180,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
 
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
@@ -840,7 +840,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
 		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *lnl, *rnl, *je;
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
 			/* TODO add access error */
@@ -1708,7 +1708,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				char *fname = sa_alloc(sql->sa, l+8);
 
 				snprintf(fname, l+8, "str_to_%s", strcmp(cs->type.type->base.name, "timestamptz") == 0 ? "timestamp" : cs->type.type->base.name);
-				sql_find_subtype(&st, "clob", 0, 0);
+				sql_find_subtype(&st, "varchar", 0, 0);
 				if (!(f = sql_bind_func_result(sql, "sys", fname, F_FUNC, true, &cs->type, 2, &st, &st)))
 					return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: '%s' missing for type %s", fname, cs->type.type->base.name);
 				append(args, e);

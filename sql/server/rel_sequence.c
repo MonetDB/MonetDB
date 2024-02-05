@@ -326,7 +326,7 @@ rel_alter_seq(
 		val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);
 	}
 	if (val && val->card > CARD_ATOM) {
-		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(val), NULL, F_AGGR, true);
+		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(val), NULL, F_AGGR, true, true);
 		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, has_nil(val));
 	}
 	return rel_seq(sql->sa, ddl_alter_seq, seq->s->base.name, seq, r, val);

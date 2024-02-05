@@ -26,10 +26,10 @@ project (
 | join (
 | | project (
 | | | table("sys"."a7403") [ "a7403"."i" ]
-| | ) [ "sys"."row_number"("sys"."star"(), boolean(1) "false", boolean(1) "false") as "a1"."r", "a7403"."i" as "a1"."i" ],
+| | ) [ "sys"."row_number"(varchar["sys"."star"()], boolean(1) "false", boolean(1) "false") as "a1"."r", "a7403"."i" as "a1"."i" ],
 | | project (
 | | | table("sys"."b7403") [ "b7403"."i" ]
-| | ) [ "sys"."row_number"("sys"."star"(), boolean(1) "false", boolean(1) "false") as "b1"."r", "b7403"."i" as "b1"."i" ]
+| | ) [ "sys"."row_number"(varchar["sys"."star"()], boolean(1) "false", boolean(1) "false") as "b1"."r", "b7403"."i" as "b1"."i" ]
 | ) [ ("a1"."r") = ("b1"."r") ]
 ) [ "a1"."i", "b1"."i" ]
 

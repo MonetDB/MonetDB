@@ -4789,7 +4789,7 @@ SELECT v FROM T_float ORDER BY v
 32767.000
 NULL
 
-statement error
+statement ok
 SELECT v, convert(v, boolean) from T_float
 
 statement error
@@ -5301,7 +5301,7 @@ SELECT v, convert(v, time with time zone) from T_float
 statement error
 SELECT v, convert(v, timestamp with time zone) from T_float
 
-statement error
+statement ok
 SELECT v, cast(v as boolean) from T_float
 
 statement error
@@ -5841,7 +5841,7 @@ SELECT v FROM T_real ORDER BY v
 32767.000
 NULL
 
-statement error
+statement ok
 SELECT v, convert(v, boolean) from T_real
 
 statement error
@@ -6403,7 +6403,7 @@ SELECT v, convert(v, time with time zone) from T_real
 statement error
 SELECT v, convert(v, timestamp with time zone) from T_real
 
-statement error
+statement ok
 SELECT v, cast(v as boolean) from T_real
 
 statement error
@@ -6993,7 +6993,7 @@ SELECT v FROM T_double ORDER BY v
 32767.000
 NULL
 
-statement error
+statement ok
 SELECT v, convert(v, boolean) from T_double
 
 statement error
@@ -7580,7 +7580,7 @@ SELECT v, convert(v, time with time zone) from T_double
 statement error
 SELECT v, convert(v, timestamp with time zone) from T_double
 
-statement error
+statement ok
 SELECT v, cast(v as boolean) from T_double
 
 statement error

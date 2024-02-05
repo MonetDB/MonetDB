@@ -36,7 +36,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                     sys.stderr.write(str(e))
             try:
                 cur2.execute("select col1 from tab2;")  # col1 is not a floating point column
-                sys.stderr.write('Exception expected')
+                # because of casts on the remote side this succeeds
             except pymonetdb.DatabaseError as e:
                 if 'Exception occurred in the remote server, please check the log there' not in str(e):
                     sys.stderr.write(str(e))

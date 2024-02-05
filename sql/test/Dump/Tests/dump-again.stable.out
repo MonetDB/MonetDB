@@ -49,7 +49,7 @@ CREATE TABLE "sys"."typestest" (
 	"blob"           BINARY LARGE OBJECT,
 	"blob100"        BINARY LARGE OBJECT(100),
 	"clob"           CHARACTER LARGE OBJECT,
-	"clob100"        CHARACTER LARGE OBJECT(100),
+	"clob100"        VARCHAR(100),
 	"character"      CHAR(1),
 	"varchar100"     VARCHAR(100),
 	"character10"    CHAR(10),

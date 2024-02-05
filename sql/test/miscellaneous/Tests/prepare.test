@@ -1,6 +1,8 @@
-statement error
+statement ok
 prepare select 1=?+?
 
-statement error
-exec ** (1,0)
+query I nosort
+exec 0(1,0)
+----
+1
 

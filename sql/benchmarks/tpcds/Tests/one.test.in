@@ -6378,7 +6378,7 @@ AAAAAAAAJMFCAAAA
 102.500
 3305.820
 94.400
-3501.600
+3501.603
 
 query TTIRRRRRRR rowsort
 -- query 59
@@ -6834,29 +6834,29 @@ select
  	,'DHL' || ',' || 'BARIAN' as ship_carriers
        ,d_year as "year"
  	,sum(case when d_moy = 1
- 		then ws_ext_sales_price* ws_quantity else 0 end) as jan_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as jan_sales
  	,sum(case when d_moy = 2
- 		then ws_ext_sales_price* ws_quantity else 0 end) as feb_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as feb_sales
  	,sum(case when d_moy = 3
- 		then ws_ext_sales_price* ws_quantity else 0 end) as mar_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as mar_sales
  	,sum(case when d_moy = 4
- 		then ws_ext_sales_price* ws_quantity else 0 end) as apr_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as apr_sales
  	,sum(case when d_moy = 5
- 		then ws_ext_sales_price* ws_quantity else 0 end) as may_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as may_sales
  	,sum(case when d_moy = 6
- 		then ws_ext_sales_price* ws_quantity else 0 end) as jun_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as jun_sales
  	,sum(case when d_moy = 7
- 		then ws_ext_sales_price* ws_quantity else 0 end) as jul_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as jul_sales
  	,sum(case when d_moy = 8
- 		then ws_ext_sales_price* ws_quantity else 0 end) as aug_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as aug_sales
  	,sum(case when d_moy = 9
- 		then ws_ext_sales_price* ws_quantity else 0 end) as sep_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as sep_sales
  	,sum(case when d_moy = 10
- 		then ws_ext_sales_price* ws_quantity else 0 end) as oct_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as oct_sales
  	,sum(case when d_moy = 11
- 		then ws_ext_sales_price* ws_quantity else 0 end) as nov_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as nov_sales
  	,sum(case when d_moy = 12
- 		then ws_ext_sales_price* ws_quantity else 0 end) as dec_sales
+ 		then ws_ext_sales_price* ws_quantity else 0 end) * 1.00 as dec_sales
  	,sum(case when d_moy = 1
  		then ws_net_paid * ws_quantity else 0 end) as jan_net
  	,sum(case when d_moy = 2
@@ -8248,12 +8248,12 @@ with sr_items as
  group by i_item_id)
   select  sr_items.item_id
        ,sr_item_qty
--- added 3 time "*1.0000" and extra 0s
-       ,(sr_item_qty*1.0000)/(sr_item_qty+cr_item_qty+wr_item_qty)/3.0000 * 100 sr_dev
+-- added 3 time "*1.00000000" and extra 0s
+       ,(sr_item_qty*1.00000000)/(sr_item_qty+cr_item_qty+wr_item_qty)/3.0000 * 100 sr_dev
        ,cr_item_qty
-       ,(cr_item_qty*1.0000)/(sr_item_qty+cr_item_qty+wr_item_qty)/3.0000 * 100 cr_dev
+       ,(cr_item_qty*1.00000000)/(sr_item_qty+cr_item_qty+wr_item_qty)/3.0000 * 100 cr_dev
        ,wr_item_qty
-       ,(wr_item_qty*1.0000)/(sr_item_qty+cr_item_qty+wr_item_qty)/3.0000 * 100 wr_dev
+       ,(wr_item_qty*1.00000000)/(sr_item_qty+cr_item_qty+wr_item_qty)/3.0000 * 100 wr_dev
        ,(sr_item_qty+cr_item_qty+wr_item_qty)/3.0 average
  from sr_items
      ,cr_items

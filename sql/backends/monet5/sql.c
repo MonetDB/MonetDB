@@ -644,7 +644,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		sql_column *col = NULL;
 
 		if (!strcmp(atomname, "str"))
-			sql_find_subtype(&tpe, "clob", 0, 0);
+			sql_find_subtype(&tpe, "varchar", 0, 0);
 		else {
 			sql_subtype *t = sql_bind_localtype(atomname);
 			if (!t)

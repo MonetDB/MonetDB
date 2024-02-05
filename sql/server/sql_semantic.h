@@ -38,14 +38,11 @@ extern bool find_variable_on_scope(mvc *sql, const char *sname, const char *name
 /* These functions find catalog functions according to scoping rules */
 /* The private flag tells to attempt to bind functions that cannot be seen by users */
 sql_export sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private, sql_subfunc *prev);
-extern sql_subfunc *sql_bind_member(mvc *sql, const char *sname, const char *fname, sql_subtype *tp, sql_ftype type, int nrargs, bool private, sql_subfunc *prev);
-extern sql_subfunc *sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type, bool private);
+extern sql_subfunc *sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type, bool private, bool exact);
 extern sql_subfunc *sql_bind_func3(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type, bool private);
 extern sql_subfunc *sql_bind_func_result(mvc *sql, const char *sname, const char *fname, sql_ftype type, bool private, sql_subtype *res, int nargs, ...);
-extern sql_subfunc *sql_bind_func_(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private);
-extern sql_subfunc *sql_resolve_function_with_undefined_parameters(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private);
+extern sql_subfunc *sql_bind_func_(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private, bool exact);
 
-extern list *sql_find_funcs(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private);
 extern list *sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype type, bool private);
 
 extern char *qname_schema(dlist *qname);
@@ -54,7 +51,6 @@ extern char *qname_catalog(dlist *qname);
 #define qname_module(qname) qname_schema(qname)
 
 extern sql_subtype *result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r);
-extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
 
 typedef enum {
 	type_set,	/* set operations have very limiting coersion rules */
