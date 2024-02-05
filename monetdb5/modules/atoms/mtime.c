@@ -1139,7 +1139,9 @@ timestamp_to_str_withtz(str *buf, const timestamp *d, str *format, const char *t
 		.tm_hour = daytime_hour(t),
 		.tm_min = daytime_min(t),
 		.tm_sec = daytime_sec(t),
+#if defined(HAVE_TM_GMTOFF)
 		.tm_gmtoff = gmtoff,
+#endif
 	};
 	if (strftime(*buf, MTIME_STR_BUFFER_LENGTH, *format, &tm) == 0)
 		throw(MAL, malfunc, "cannot convert %s", type);
@@ -1236,7 +1238,7 @@ str_to_time(daytime *ret, str s, str format, lng tz_msec)
 {
 	str msg = MAL_SUCCEED;
 	timestamp ts;
-	if ((msg = str_to_timestamp(&ts, &s, &format, tz_msec/1000, "time",
+	if ((msg = str_to_timestamp(&ts, &s, &format, (long)(tz_msec/1000), "time",
 								"mtime.str_to_time")) != MAL_SUCCEED)
 		return msg;
 	*ret = timestamp_daytime(ts);
@@ -1253,7 +1255,7 @@ func3(MTIMEstr_to_time, "str_to_time",
 static inline str
 str_to_timestamp_func(timestamp *ret, str s, str format, lng tz_msec)
 {
-	return str_to_timestamp(ret, &s, &format, tz_msec/1000, "timestamp",
+	return str_to_timestamp(ret, &s, &format, (long)(tz_msec/1000), "timestamp",
 							"mtime.str_to_timestamp");
 }
 
@@ -1296,7 +1298,7 @@ static inline str
 timetz_to_str(str *ret, daytime d, str format, lng tz_msec)
 {
 	timestamp ts = timestamp_create(timestamp_date(timestamp_current()), d);
-	return timestamptz_to_str(ret, &ts, &format, "time", "mtime.timetz_to_str", tz_msec/1000);
+	return timestamptz_to_str(ret, &ts, &format, "time", "mtime.timetz_to_str", (long)(tz_msec/1000));
 }
 func3(MTIMEtimetz_to_str, "timetz_to_str",
 	  daytime, str, str, timetz_to_str, func3_except,
@@ -1321,7 +1323,7 @@ func2(MTIMEtimestamp_to_str, "timestamp_to_str",
 static inline str
 timestamptz_to_str_func(str *ret, timestamp d, str format, lng tz_msec)
 {
-	return timestamptz_to_str(ret, &d, &format, "timestamp", "mtime.timestamptz_to_str", tz_msec/1000);
+	return timestamptz_to_str(ret, &d, &format, "timestamp", "mtime.timestamptz_to_str", (long)(tz_msec/1000));
 }
 
 func3(MTIMEtimestamptz_to_str, "timestamptz_to_str",
