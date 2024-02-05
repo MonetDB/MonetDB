@@ -1,14 +1,14 @@
 statement ok
-CREATE TABLE test01 ( col1 INT, col2 INT ) 
+CREATE TABLE test01 ( col1 INT, col2 INT )
 
 statement ok
-INSERT INTO test01 VALUES (1,2) 
+INSERT INTO test01 VALUES (1,2)
 
 statement ok
-INSERT INTO test01 VALUES (3,4) 
+INSERT INTO test01 VALUES (3,4)
 
 statement ok
-INSERT INTO test01 VALUES (5,6) 
+INSERT INTO test01 VALUES (5,6)
 
 query II rowsort
 select * from test01
@@ -21,7 +21,7 @@ select * from test01
 6
 
 statement ok
-ALTER TABLE test01 ADD COLUMN col3 INT 
+ALTER TABLE test01 ADD COLUMN col3 INT
 
 query III rowsort
 select * from test01
@@ -37,13 +37,13 @@ NULL
 NULL
 
 statement ok
-INSERT INTO test01 VALUES (1,2,3) 
+INSERT INTO test01 VALUES (1,2,3)
 
 statement ok
-INSERT INTO test01 VALUES (3,4,5) 
+INSERT INTO test01 VALUES (3,4,5)
 
 statement ok
-INSERT INTO test01 VALUES (5,6,7) 
+INSERT INTO test01 VALUES (5,6,7)
 
 query III rowsort
 select * from test01
@@ -68,10 +68,10 @@ NULL
 NULL
 
 statement ok
-ALTER TABLE test01 DROP COLUMN col2 
+ALTER TABLE test01 DROP COLUMN col2
 
 statement ok
-INSERT INTO test01 VALUES (7,8) 
+INSERT INTO test01 VALUES (7,8)
 
 query II rowsort
 select * from test01
@@ -92,5 +92,5 @@ NULL
 8
 
 statement ok
-DROP   TABLE test01 
+DROP   TABLE test01
 

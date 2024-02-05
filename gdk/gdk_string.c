@@ -767,11 +767,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	BAT *bn = NULL;
 	gdk_return rres = GDK_FAIL;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* exactly one of bnp and pt must be NULL, the other non-NULL */
 	assert((bnp == NULL) != (pt == NULL));
@@ -795,7 +792,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 
 		if (separator) {
 			assert(sep == NULL);
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 				p = canditer_next(ci) - seqb;
 				const char *s = BUNtvar(bi, p);
 				if (strNil(s)) {
@@ -812,7 +809,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 				p = canditer_next(ci) - seqb;
 				const char *s = BUNtvar(bi, p);
 				const char *sl = BUNtvar(bis, p);
@@ -837,7 +834,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		}
 		canditer_reset(ci);
-		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
@@ -850,7 +847,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 			empty = true;
 			if (separator) {
-				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 					p = canditer_next(ci) - seqb;
 					const char *s = BUNtvar(bi, p);
 					if (strNil(s))
@@ -866,7 +863,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			} else { /* sep case */
 				assert(sep != NULL);
-				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 					p = canditer_next(ci) - seqb;
 					const char *s = BUNtvar(bi, p);
 					const char *sl = BUNtvar(bis, p);
@@ -885,7 +882,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 
 			single_str[offset] = '\0';
-			TIMEOUT_CHECK(timeoffset, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout); } while (0));
+			TIMEOUT_CHECK(qry_ctx, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx); } while (0));
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
 					GDKfree(single_str);
@@ -932,7 +929,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			astrings[i] = (char *) str_nil;
 
 		if (separator) {
-			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -951,7 +948,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -974,7 +971,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
-		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(finish));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(finish, qry_ctx));
 
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
@@ -1003,7 +1000,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		canditer_reset(ci);
 
 		if (separator) {
-			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -1024,7 +1021,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -1046,7 +1043,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
-		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(finish));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(finish, qry_ctx));
 
 		for (i = 0; i < ngrp; i++) {
 			if (astrings[i]) {

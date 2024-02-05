@@ -7,9 +7,9 @@ CREATE TABLE Algorithm(
 	name varchar(128)  NOT NULL,
 	ucd varchar(128)  NOT NULL,
 	"text" text  NOT NULL,
- CONSTRAINT pk_Algorithm_key PRIMARY KEY  
+ CONSTRAINT pk_Algorithm_key PRIMARY KEY
 (
-	key 
+	key
 )
 )
 
@@ -22,9 +22,9 @@ CREATE TABLE Ap7Mag(
 	psfMagErr_r real NOT NULL,
 	apMag_r real NOT NULL,
 	apMagErr_r real NOT NULL,
- CONSTRAINT pk_Ap7Mag_objID PRIMARY KEY  
+ CONSTRAINT pk_Ap7Mag_objID PRIMARY KEY
 (
-	objID 
+	objID
 )
 )
 
@@ -37,10 +37,10 @@ CREATE TABLE BestTarget2Sector(
 	secTarget int NOT NULL,
 	petroMag_r real NOT NULL,
 	extinction_r real NOT NULL,
- CONSTRAINT pk_BestTarget2Sector_objid_regio PRIMARY KEY  
+ CONSTRAINT pk_BestTarget2Sector_objid_regio PRIMARY KEY
 (
 	objID ,
-	regionID 
+	regionID
 )
 )
 
@@ -54,9 +54,9 @@ CREATE TABLE Chunk(
 	stripe int NOT NULL,
 	exportVersion varchar(32)  NOT NULL,
 	loadVersion int NOT NULL,
- CONSTRAINT pk_Chunk_chunkID PRIMARY KEY  
+ CONSTRAINT pk_Chunk_chunkID PRIMARY KEY
 (
-	chunkID 
+	chunkID
 )
 )
 
@@ -66,10 +66,10 @@ CREATE TABLE DataConstants(
 	name varchar(128)  NOT NULL,
 	value bigint, --NOT NULL,
 	description varchar(2000)  NOT NULL,
- CONSTRAINT pk_DataConstants_field_name PRIMARY KEY  
+ CONSTRAINT pk_DataConstants_field_name PRIMARY KEY
 (
 	field ,
-	name 
+	name
 )
 )
 
@@ -82,10 +82,10 @@ CREATE TABLE DBColumns(
 	enum varchar(64)  NOT NULL,
 	description varchar(2000)  NOT NULL,
 	rank int NOT NULL DEFAULT (0),
- CONSTRAINT pk_DBColumns_tableName_name PRIMARY KEY  
+ CONSTRAINT pk_DBColumns_tableName_name PRIMARY KEY
 (
 	tablename ,
-	name 
+	name
 )
 )
 
@@ -97,9 +97,9 @@ CREATE TABLE DBObjects(
 	description varchar(256)  NOT NULL,
 	"text" varchar(7200)  NOT NULL,
 	rank int NOT NULL,
- CONSTRAINT pk_DBObjects_name PRIMARY KEY  
+ CONSTRAINT pk_DBObjects_name PRIMARY KEY
 (
-	name 
+	name
 )
 )
 
@@ -108,10 +108,10 @@ CREATE TABLE DBViewCols(
 	name varchar(64)  NOT NULL,
 	viewname varchar(128)  NOT NULL,
 	parent varchar(128)  NOT NULL,
- CONSTRAINT pk_DBViewCols_viewName_name PRIMARY KEY  
+ CONSTRAINT pk_DBViewCols_viewName_name PRIMARY KEY
 (
 	viewname ,
-	name 
+	name
 )
 )
 
@@ -120,10 +120,10 @@ CREATE TABLE Dependency(
 	filename varchar(128)  NOT NULL,
 	parent varchar(128)  NOT NULL,
 	child varchar(128)  NOT NULL,
- CONSTRAINT pk_Dependency_parent_child PRIMARY KEY  
+ CONSTRAINT pk_Dependency_parent_child PRIMARY KEY
 (
 	parent ,
-	child 
+	child
 )
 )
 
@@ -132,9 +132,9 @@ CREATE TABLE Diagnostics(
 	name varchar(64)  NOT NULL,
 	"type" varchar(8)  NOT NULL,
 	count bigint NULL,
- CONSTRAINT pk_Diagnostics_name PRIMARY KEY  
+ CONSTRAINT pk_Diagnostics_name PRIMARY KEY
 (
-	name 
+	name
 )
 )
 
@@ -206,9 +206,9 @@ CREATE TABLE DR3QuasarCatalog(
 	t_psfmagerr_z real NOT NULL,
 	object_name varchar(64)  NULL,
 	specObjId bigint NOT NULL,
- CONSTRAINT pk_DR3QuasarCatalog_SpecObjID PRIMARY KEY  
+ CONSTRAINT pk_DR3QuasarCatalog_SpecObjID PRIMARY KEY
 (
-	specObjId 
+	specObjId
 )
 )
 
@@ -291,9 +291,9 @@ CREATE TABLE DR5QuasarCatalog(
 	t_psfmagerr_i real NOT NULL,
 	t_psfmag_z real NOT NULL,
 	t_psfmagerr_z real NOT NULL,
- CONSTRAINT pk_DR5QuasarCatalog_SpecObjID PRIMARY KEY  
+ CONSTRAINT pk_DR5QuasarCatalog_SpecObjID PRIMARY KEY
 (
-	specObjId 
+	specObjId
 )
 )
 
@@ -306,9 +306,9 @@ CREATE TABLE ELRedShift(
 	nFit int NOT NULL,
 	wtFit real NOT NULL,
 	specObjID bigint NOT NULL,
- CONSTRAINT pk_ELRedShift_elRedShiftID PRIMARY KEY  
+ CONSTRAINT pk_ELRedShift_elRedShiftID PRIMARY KEY
 (
-	elRedShiftID 
+	elRedShiftID
 )
 )
 
@@ -736,9 +736,9 @@ CREATE TABLE Field(
 	nProf_z int NOT NULL,
 	loadVersion int NOT NULL,
 	segmentID bigint NOT NULL,
- CONSTRAINT pk_Field_fieldID PRIMARY KEY  
+ CONSTRAINT pk_Field_fieldID PRIMARY KEY
 (
-	fieldID 
+	fieldID
 )
 )
 
@@ -750,11 +750,11 @@ CREATE TABLE FieldProfile(
 	profMed real NOT NULL,
 	profSig real NOT NULL,
 	fieldID bigint NOT NULL,
- CONSTRAINT pk_FieldProfile_fieldID_bin_band PRIMARY KEY  
+ CONSTRAINT pk_FieldProfile_fieldID_bin_band PRIMARY KEY
 (
 	fieldID ,
 	bin ,
-	band 
+	band
 )
 )
 
@@ -764,9 +764,9 @@ CREATE TABLE FileGroupMap(
 	tableFileGroup varchar(100)  NOT NULL,
 	indexFileGroup varchar(100)  NOT NULL,
 	comment varchar(4000)  NULL,
- CONSTRAINT pk_FileGroupMap_tableName PRIMARY KEY  
+ CONSTRAINT pk_FileGroupMap_tableName PRIMARY KEY
 (
-	tableName 
+	tableName
 )
 )
 
@@ -784,9 +784,9 @@ CREATE TABLE First(
 	lambda float NOT NULL,
 	eta float NOT NULL,
 	objID bigint NOT NULL,
- CONSTRAINT pk_First_objID PRIMARY KEY  
+ CONSTRAINT pk_First_objID PRIMARY KEY
 (
-	objID 
+	objID
 )
 )
 
@@ -821,10 +821,10 @@ CREATE TABLE Frame(
 	cz float NOT NULL DEFAULT (0),
 	htmID bigint NOT NULL DEFAULT (0),
 --	img image NOT NULL DEFAULT (0x1111),
- CONSTRAINT pk_Frame_fieldID_zoom PRIMARY KEY  
+ CONSTRAINT pk_Frame_fieldID_zoom PRIMARY KEY
 (
 	fieldID ,
-	zoom 
+	zoom
 )
 )
 
@@ -834,9 +834,9 @@ CREATE TABLE Glossary(
 	name varchar(128)  NOT NULL,
 	ucd varchar(128)  NOT NULL,
 	"text" varchar(7200)  NOT NULL,
- CONSTRAINT pk_Glossary_key PRIMARY KEY  
+ CONSTRAINT pk_Glossary_key PRIMARY KEY
 (
-	key 
+	key
 )
 )
 
@@ -849,9 +849,9 @@ CREATE TABLE HalfSpace(
 	y float NOT NULL,
 	z float NOT NULL,
 	c float NOT NULL,
- CONSTRAINT pk_HalfSpace_constraintid PRIMARY KEY  
+ CONSTRAINT pk_HalfSpace_constraintid PRIMARY KEY
 (
-	constraintid 
+	constraintid
 )
 )
 
@@ -862,9 +862,9 @@ CREATE TABLE History(
 	date varchar(64)  NOT NULL,
 	name varchar(64)  NOT NULL,
 	description varchar(7200)  NOT NULL,
- CONSTRAINT pk_History_id PRIMARY KEY  
+ CONSTRAINT pk_History_id PRIMARY KEY
 (
-	id 
+	id
 )
 )
 
@@ -881,9 +881,9 @@ CREATE TABLE HoleObj(
 	ra float NOT NULL,
 	"dec" float NOT NULL,
 	loadVersion int NOT NULL,
- CONSTRAINT pk_HoleObj_HoleID PRIMARY KEY  
+ CONSTRAINT pk_HoleObj_HoleID PRIMARY KEY
 (
-	holeID 
+	holeID
 )
 )
 
@@ -896,9 +896,9 @@ CREATE TABLE IndexMap(
 	fieldList varchar(1000)  NOT NULL,
 	foreignKey varchar(1000)  NOT NULL,
 	indexgroup varchar(128)  NOT NULL,
- CONSTRAINT pk_IndexMap_indexmapid PRIMARY KEY  
+ CONSTRAINT pk_IndexMap_indexmapid PRIMARY KEY
 (
-	indexmapid 
+	indexmapid
 )
 )
 
@@ -907,10 +907,10 @@ CREATE TABLE Inventory(
 	filename varchar(128)  NOT NULL,
 	name varchar(128)  NOT NULL,
 	"type" varchar(2)  NOT NULL,
- CONSTRAINT pk_Inventory_filename_name PRIMARY KEY  
+ CONSTRAINT pk_Inventory_filename_name PRIMARY KEY
 (
 	filename ,
-	name 
+	name
 )
 )
 
@@ -920,10 +920,10 @@ CREATE TABLE LoadHistory(
 	tstart timestamp NOT NULL,
 	tend timestamp NOT NULL,
 	dbname varchar(64)  NOT NULL,
- CONSTRAINT pk_LoadHistory_loadVersion_tStar PRIMARY KEY  
+ CONSTRAINT pk_LoadHistory_loadVersion_tStar PRIMARY KEY
 (
 	loadversion ,
-	tstart 
+	tstart
 )
 )
 
@@ -946,9 +946,9 @@ CREATE TABLE Mask(
 	cy float NOT NULL DEFAULT (0),
 	cz float NOT NULL DEFAULT (0),
 	htmID bigint NOT NULL DEFAULT (0),
- CONSTRAINT pk_Mask_maskID PRIMARY KEY  
+ CONSTRAINT pk_Mask_maskID PRIMARY KEY
 (
-	maskID 
+	maskID
 )
 )
 
@@ -957,10 +957,10 @@ CREATE TABLE MaskedObject(
 	objid bigint NOT NULL,
 	maskID bigint NOT NULL,
 	maskType int NOT NULL,
- CONSTRAINT pk_MaskedObject_objid_maskid PRIMARY KEY  
+ CONSTRAINT pk_MaskedObject_objid_maskid PRIMARY KEY
 (
 	objid ,
-	maskID 
+	maskID
 )
 )
 
@@ -977,10 +977,10 @@ CREATE TABLE Match(
 	distance float NOT NULL,
 	miss char(1)  NOT NULL,
 	matchHead bigint NOT NULL,
- CONSTRAINT pk_Match_objID1_objID2 PRIMARY KEY  
+ CONSTRAINT pk_Match_objID1_objID2 PRIMARY KEY
 (
 	objID1 ,
-	objID2 
+	objID2
 )
 )
 
@@ -993,9 +993,9 @@ CREATE TABLE MatchHead(
 	varDec float NOT NULL DEFAULT (0),
 	matchCount tinyint NOT NULL DEFAULT (0),
 	missCount tinyint NOT NULL DEFAULT (0),
- CONSTRAINT pk_MatchHead_objID PRIMARY KEY  
+ CONSTRAINT pk_MatchHead_objID PRIMARY KEY
 (
-	objID 
+	objID
 )
 )
 
@@ -1008,10 +1008,10 @@ CREATE TABLE Neighbors(
 	neighborType tinyint NOT NULL,
 	"mode" tinyint NOT NULL,
 	neighborMode tinyint NOT NULL,
- CONSTRAINT pk_Neighbors_objID_NeighborObjID PRIMARY KEY  
+ CONSTRAINT pk_Neighbors_objID_NeighborObjID PRIMARY KEY
 (
 	objID ,
-	neighborObjID 
+	neighborObjID
 )
 )
 
@@ -1028,9 +1028,9 @@ CREATE TABLE ObjMask(
 	cmax int NOT NULL,
 	npix int NOT NULL,
 	span text  NOT NULL,
- CONSTRAINT pk_ObjMask_objID PRIMARY KEY  
+ CONSTRAINT pk_ObjMask_objID PRIMARY KEY
 (
-	objID 
+	objID
 )
 )
 
@@ -1039,9 +1039,9 @@ CREATE TABLE PartitionMap(
 	fileGroupName varchar(100)  NOT NULL,
 	size real NOT NULL,
 	comment varchar(4000)  NULL,
- CONSTRAINT pk_PartitionMap_fileGroupName PRIMARY KEY  
+ CONSTRAINT pk_PartitionMap_fileGroupName PRIMARY KEY
 (
-	fileGroupName 
+	fileGroupName
 )
 )
 
@@ -1501,9 +1501,9 @@ CREATE TABLE PhotoObjAll(
 	dered_r real NOT NULL DEFAULT (-9999),
 	dered_i real NOT NULL DEFAULT (-9999),
 	dered_z real NOT NULL DEFAULT (-9999),
- CONSTRAINT pk_PhotoObjAll_objID PRIMARY KEY  
+ CONSTRAINT pk_PhotoObjAll_objID PRIMARY KEY
 (
-	objID 
+	objID
 )
 )
 
@@ -1514,11 +1514,11 @@ CREATE TABLE PhotoProfile(
 	profMean real NOT NULL,
 	profErr real NOT NULL,
 	objID bigint NOT NULL,
- CONSTRAINT pk_PhotoProfile_objID_bin_band PRIMARY KEY  
+ CONSTRAINT pk_PhotoProfile_objID_bin_band PRIMARY KEY
 (
 	objID ,
 	bin ,
-	band 
+	band
 )
 )
 
@@ -1555,11 +1555,11 @@ CREATE TABLE Photoz(
 	absMag_r real NOT NULL,
 	absMag_i real NOT NULL,
 	absMag_z real NOT NULL,
- CONSTRAINT pk_Photoz_objID_rank_pId PRIMARY KEY  
+ CONSTRAINT pk_Photoz_objID_rank_pId PRIMARY KEY
 (
 	objID ,
 	rank ,
-	pId 
+	pId
 )
 )
 
@@ -1571,9 +1571,9 @@ CREATE TABLE Photoz2(
 	photozd1 float NOT NULL,
 	photozerrd1 float NOT NULL,
 	flag tinyint NOT NULL,
- CONSTRAINT pk_Photoz2_objID PRIMARY KEY  
+ CONSTRAINT pk_Photoz2_objID PRIMARY KEY
 (
-	objid 
+	objid
 )
 )
 
@@ -1656,9 +1656,9 @@ CREATE TABLE PlateX(
 	programName varchar(32)  NOT NULL,
 	loadVersion int NOT NULL,
 	expID blob NULL,
- CONSTRAINT pk_PlateX_plateID PRIMARY KEY  
+ CONSTRAINT pk_PlateX_plateID PRIMARY KEY
 (
-	plateID 
+	plateID
 )
 )
 
@@ -1671,9 +1671,9 @@ CREATE TABLE ProfileDefs(
 	rOuter float NOT NULL,
 	aAnn float NOT NULL,
 	aDisk float NOT NULL,
- CONSTRAINT pk_ProfileDefs_bin PRIMARY KEY  
+ CONSTRAINT pk_ProfileDefs_bin PRIMARY KEY
 (
-	bin 
+	bin
 )
 )
 
@@ -1701,9 +1701,9 @@ CREATE TABLE ProperMotions(
 	dist20 real NOT NULL,
 	dist22 real NOT NULL,
 	objid bigint NOT NULL,
- CONSTRAINT pk_ProperMotions_objID PRIMARY KEY  
+ CONSTRAINT pk_ProperMotions_objID PRIMARY KEY
 (
-	objid 
+	objid
 )
 )
 
@@ -1713,10 +1713,10 @@ CREATE TABLE PubHistory(
 	nrows int NOT NULL,
 	tend timestamp NOT NULL,
 	loadversion int NOT NULL,
- CONSTRAINT pk_PubHistory_name_loadversion PRIMARY KEY  
+ CONSTRAINT pk_PubHistory_name_loadversion PRIMARY KEY
 (
 	name ,
-	loadversion 
+	loadversion
 )
 )
 
@@ -1769,9 +1769,9 @@ CREATE TABLE QsoBest(
 	bestRosatCps float NOT NULL,
 	bestMi float NOT NULL,
 	BestQsoTargeted tinyint NOT NULL,
- CONSTRAINT pk_QsoBest_bestObjID PRIMARY KEY  
+ CONSTRAINT pk_QsoBest_bestObjID PRIMARY KEY
 (
-	bestObjID 
+	bestObjID
 )
 )
 
@@ -1787,9 +1787,9 @@ CREATE TABLE QsoBunch(
 	targetPrimaries int NOT NULL,
 	specPrimaries int NOT NULL,
 	bestPrimaries int NOT NULL,
- CONSTRAINT pk_QsoBunch_headObjID PRIMARY KEY  
+ CONSTRAINT pk_QsoBunch_headObjID PRIMARY KEY
 (
-	HeadObjID 
+	HeadObjID
 )
 )
 
@@ -1813,9 +1813,9 @@ CREATE TABLE QsoCatalogAll(
 	dist_Best_Spec float NOT NULL DEFAULT (9999),
 	psfmag_i_diff float NOT NULL DEFAULT (9999),
 	psfmag_g_i_diff float NOT NULL DEFAULT (9999),
- CONSTRAINT pk_QsoCatalogAll_tripleID PRIMARY KEY  
+ CONSTRAINT pk_QsoCatalogAll_tripleID PRIMARY KEY
 (
-	tripleID 
+	tripleID
 )
 )
 
@@ -1952,9 +1952,9 @@ CREATE TABLE QsoConcordanceAll(
 	bestRosatID int NOT NULL,
 	bestRosatCps float NOT NULL,
 	bestMi float NOT NULL,
- CONSTRAINT pk_QsoConcordanceAll_tripleID PRIMARY KEY  
+ CONSTRAINT pk_QsoConcordanceAll_tripleID PRIMARY KEY
 (
-	tripleID 
+	tripleID
 )
 )
 
@@ -1986,9 +1986,9 @@ CREATE TABLE QsoSpec(
 	SpecTargetID bigint NOT NULL,
 	SpecPlateSn1_i float NOT NULL,
 	SpecPlateSn2_i float NOT NULL,
- CONSTRAINT pk_QsoSpec_specObjID PRIMARY KEY  
+ CONSTRAINT pk_QsoSpec_specObjID PRIMARY KEY
 (
-	SpecObjID 
+	SpecObjID
 )
 )
 
@@ -2044,9 +2044,9 @@ CREATE TABLE QsoTarget(
 	targetMi float NOT NULL,
 	TargetQsoTargeted tinyint NOT NULL,
 	targetUniform tinyint NOT NULL,
- CONSTRAINT pk_QsoTarget_targetObjID PRIMARY KEY  
+ CONSTRAINT pk_QsoTarget_targetObjID PRIMARY KEY
 (
-	targetObjID 
+	targetObjID
 )
 )
 
@@ -2059,10 +2059,10 @@ CREATE TABLE QueryResults(
 	row_count bigint NOT NULL,
 	time timestamp NOT NULL DEFAULT (localtimestamp),
 	comment varchar(100)  NULL DEFAULT (''),
- CONSTRAINT pk_QueryResults_query_time PRIMARY KEY  
+ CONSTRAINT pk_QueryResults_query_time PRIMARY KEY
 (
 	query ,
-	time 
+	time
 )
 )
 
@@ -2135,9 +2135,9 @@ CREATE TABLE RC3(
 	cy float NOT NULL,
 	cz float NOT NULL,
 	objId bigint NOT NULL,
- CONSTRAINT pk_RC3_objID PRIMARY KEY  
+ CONSTRAINT pk_RC3_objID PRIMARY KEY
 (
-	objId 
+	objId
 )
 )
 
@@ -2145,10 +2145,10 @@ statement ok
 CREATE TABLE RecentQueries(
 	ipAddr varchar(30)  NOT NULL,
 	lastQueryTime timestamp NOT NULL,
- CONSTRAINT pk_RecentQueries_ipAddr_lastQuer PRIMARY KEY  
+ CONSTRAINT pk_RecentQueries_ipAddr_lastQuer PRIMARY KEY
 (
 	ipAddr ,
-	lastQueryTime 
+	lastQueryTime
 )
 )
 
@@ -2162,9 +2162,9 @@ CREATE TABLE Region(
 	area float NOT NULL,
 	regionString text  NULL,
 	regionBinary blob NULL,
- CONSTRAINT pk_Region_regionId PRIMARY KEY  
+ CONSTRAINT pk_Region_regionId PRIMARY KEY
 (
-	regionid 
+	regionid
 )
 )
 
@@ -2174,11 +2174,11 @@ CREATE TABLE Region2Box(
 	id bigint NOT NULL,
 	boxType varchar(16)  NOT NULL,
 	boxid bigint NOT NULL,
- CONSTRAINT pk_Region2Box_regionType_id_boxI PRIMARY KEY  
+ CONSTRAINT pk_Region2Box_regionType_id_boxI PRIMARY KEY
 (
 	regionType ,
 	id ,
-	boxid 
+	boxid
 )
 )
 
@@ -2200,11 +2200,11 @@ CREATE TABLE RegionArcs(
 	z float NOT NULL,
 	c float NOT NULL,
 	length float NOT NULL DEFAULT (0.0),
- CONSTRAINT pk_RegionArcs_regionId_convexid_ PRIMARY KEY  
+ CONSTRAINT pk_RegionArcs_regionId_convexid_ PRIMARY KEY
 (
 	regionid ,
 	convexid ,
-	arcid 
+	arcid
 )
 )
 
@@ -2224,11 +2224,11 @@ CREATE TABLE RegionPatch(
 	htmid bigint NOT NULL,
 	area float NOT NULL,
 	convexString text  NULL,
- CONSTRAINT pk_RegionPatch_regionid_convexid PRIMARY KEY  
+ CONSTRAINT pk_RegionPatch_regionid_convexid PRIMARY KEY
 (
 	regionid ,
 	convexid ,
-	patchid 
+	patchid
 )
 )
 
@@ -2239,10 +2239,10 @@ CREATE TABLE Rmatrix(
 	x float NOT NULL,
 	y float NOT NULL,
 	z float NOT NULL,
- CONSTRAINT pk_RMatrix_mode_row PRIMARY KEY  
+ CONSTRAINT pk_RMatrix_mode_row PRIMARY KEY
 (
 	"mode" ,
-	row 
+	row
 )
 )
 
@@ -2262,9 +2262,9 @@ CREATE TABLE Rosat(
 	extentLike real NOT NULL,
 	detectLike real NOT NULL,
 	objID bigint NOT NULL,
- CONSTRAINT pk_Rosat_objID PRIMARY KEY  
+ CONSTRAINT pk_Rosat_objID PRIMARY KEY
 (
-	objID 
+	objID
 )
 )
 
@@ -2306,9 +2306,9 @@ CREATE TABLE RunQA(
 	seeing_r real NOT NULL,
 	seeing_i real NOT NULL,
 	seeing_z real NOT NULL,
- CONSTRAINT pk_RunQA_fieldID PRIMARY KEY  
+ CONSTRAINT pk_RunQA_fieldID PRIMARY KEY
 (
-	fieldID 
+	fieldID
 )
 )
 
@@ -2316,9 +2316,9 @@ statement ok
 CREATE TABLE RunShift(
 	run int NOT NULL,
 	shift float NOT NULL,
- CONSTRAINT pk_RunShift_run PRIMARY KEY  
+ CONSTRAINT pk_RunShift_run PRIMARY KEY
 (
-	run 
+	run
 )
 )
 
@@ -2328,9 +2328,9 @@ CREATE TABLE SDSSConstants(
 	value float NOT NULL,
 	unit varchar(32)  NOT NULL,
 	description varchar(2000)  NOT NULL,
- CONSTRAINT pk_SDSSConstants_name PRIMARY KEY  
+ CONSTRAINT pk_SDSSConstants_name PRIMARY KEY
 (
-	name 
+	name
 )
 )
 
@@ -2341,9 +2341,9 @@ CREATE TABLE Sector(
 	tiles varchar(256)  NOT NULL,
 	targetVersion varchar(64)  NOT NULL,
 	area real NOT NULL,
- CONSTRAINT pk_Sector_regionId PRIMARY KEY  
+ CONSTRAINT pk_Sector_regionId PRIMARY KEY
 (
-	regionID 
+	regionID
 )
 )
 
@@ -2353,10 +2353,10 @@ CREATE TABLE Sector2Tile(
 	"type" varchar(16)  NOT NULL,
 	tile smallint NOT NULL,
 	isMask int NOT NULL,
- CONSTRAINT pk_Sector2Tile_regionId_tile PRIMARY KEY  
+ CONSTRAINT pk_Sector2Tile_regionId_tile PRIMARY KEY
 (
 	regionID ,
-	tile 
+	tile
 )
 )
 
@@ -2411,9 +2411,9 @@ CREATE TABLE Segment(
 	targetSource varchar(32)  NOT NULL,
 	targetVersion varchar(32)  NOT NULL,
 	loadVersion int NOT NULL,
- CONSTRAINT pk_Segment_segmentID PRIMARY KEY  
+ CONSTRAINT pk_Segment_segmentID PRIMARY KEY
 (
-	segmentID 
+	segmentID
 )
 )
 
@@ -2422,9 +2422,9 @@ CREATE TABLE SiteConstants(
 	name varchar(64)  NOT NULL,
 	value varchar(64)  NOT NULL,
 	comment varchar(256)  NOT NULL,
- CONSTRAINT pk_SiteConstants_name PRIMARY KEY  
+ CONSTRAINT pk_SiteConstants_name PRIMARY KEY
 (
-	name 
+	name
 )
 )
 
@@ -2440,9 +2440,9 @@ CREATE TABLE SiteDiagnostics(
 	name varchar(64)  NOT NULL,
 	"type" varchar(8)  NOT NULL,
 	count bigint NULL,
- CONSTRAINT pk_SiteDiagnostics_name PRIMARY KEY  
+ CONSTRAINT pk_SiteDiagnostics_name PRIMARY KEY
 (
-	name 
+	name
 )
 )
 
@@ -2475,9 +2475,9 @@ CREATE TABLE SpecLineAll(
 	lineMask int NOT NULL,
 	category smallint NOT NULL,
 	specobjID bigint NOT NULL,
- CONSTRAINT pk_SpecLineAll_specLineID PRIMARY KEY  
+ CONSTRAINT pk_SpecLineAll_specLineID PRIMARY KEY
 (
-	specLineID 
+	specLineID
 )
 )
 
@@ -2494,9 +2494,9 @@ CREATE TABLE SpecLineIndex(
 	z real NOT NULL,
 	sn real NOT NULL,
 	specobjID bigint NOT NULL,
- CONSTRAINT pk_SpecLineIndex_specLineIndexID PRIMARY KEY  
+ CONSTRAINT pk_SpecLineIndex_specLineIndexID PRIMARY KEY
 (
-	specLineIndexID 
+	specLineIndexID
 )
 )
 
@@ -2565,9 +2565,9 @@ CREATE TABLE SpecObjAll(
 	targetObjID bigint NOT NULL,
 	bestObjID bigint NOT NULL,
 --	img image NOT NULL,
- CONSTRAINT pk_SpecObjAll_specObjID PRIMARY KEY  
+ CONSTRAINT pk_SpecObjAll_specObjID PRIMARY KEY
 (
-	specObjID 
+	specObjID
 )
 )
 
@@ -2673,9 +2673,9 @@ CREATE TABLE SpecPhotoAll(
 	tiPriority int NULL,
 	tiMask int NULL,
 	collisionGroupID int NULL,
- CONSTRAINT pk_SpecPhotoAll_specObjID PRIMARY KEY  
+ CONSTRAINT pk_SpecPhotoAll_specObjID PRIMARY KEY
 (
-	specObjID 
+	specObjID
 )
 )
 
@@ -2995,9 +2995,9 @@ CREATE TABLE sppLines(
 	CaH3mask tinyint NULL,
 	SN real NULL,
 	lineindexstatus varchar(32)  NULL,
- CONSTRAINT pk_sppLines_specObjID PRIMARY KEY  
+ CONSTRAINT pk_sppLines_specObjID PRIMARY KEY
 (
-	specobjid 
+	specobjid
 )
 )
 
@@ -3211,9 +3211,9 @@ CREATE TABLE sppParams(
 	ecoeff4 real NOT NULL,
 	ecoeff5 real NOT NULL,
 	inspect int NOT NULL,
- CONSTRAINT pk_sppParams_specObjID PRIMARY KEY  
+ CONSTRAINT pk_sppParams_specObjID PRIMARY KEY
 (
-	specobjid 
+	specobjid
 )
 )
 
@@ -3240,9 +3240,9 @@ CREATE TABLE Stetson(
 	nI int NULL,
 	vary float NULL,
 	objid bigint NULL,
- CONSTRAINT pk_Stetson_name PRIMARY KEY  
+ CONSTRAINT pk_Stetson_name PRIMARY KEY
 (
-	name 
+	name
 )
 )
 
@@ -3254,9 +3254,9 @@ CREATE TABLE StripeDefs(
 	lambdaMin float NOT NULL,
 	lambdaMax float NOT NULL,
 	htmArea varchar(1024)  NOT NULL,
- CONSTRAINT pk_StripeDefs_stripe PRIMARY KEY  
+ CONSTRAINT pk_StripeDefs_stripe PRIMARY KEY
 (
-	stripe 
+	stripe
 )
 )
 
@@ -3266,9 +3266,9 @@ CREATE TABLE TableDesc(
 	"type" varchar(128)  NOT NULL,
 	ucd varchar(128)  NOT NULL,
 	"text" varchar(7200)  NOT NULL,
- CONSTRAINT pk_TableDesc_key PRIMARY KEY  
+ CONSTRAINT pk_TableDesc_key PRIMARY KEY
 (
-	key 
+	key
 )
 )
 
@@ -3292,9 +3292,9 @@ CREATE TABLE Target(
 	specObjID bigint NOT NULL,
 	bestMode tinyint NOT NULL,
 	loadVersion int NOT NULL,
- CONSTRAINT pk_Target_targetID PRIMARY KEY  
+ CONSTRAINT pk_Target_targetID PRIMARY KEY
 (
-	targetID 
+	targetID
 )
 )
 
@@ -3310,10 +3310,10 @@ CREATE TABLE TargetInfo(
 	programName varchar(32)  NOT NULL,
 	targetMode tinyint NOT NULL,
 	loadVersion int NOT NULL,
- CONSTRAINT pk_TargetInfo_skyVersion_targetI PRIMARY KEY  
+ CONSTRAINT pk_TargetInfo_skyVersion_targetI PRIMARY KEY
 (
 	skyVersion ,
-	targetID 
+	targetID
 )
 )
 
@@ -3322,10 +3322,10 @@ CREATE TABLE TargetParam(
 	targetVersion varchar(32)  NOT NULL,
 	name varchar(32)  NOT NULL,
 	value varchar(32)  NOT NULL,
- CONSTRAINT pk_TargetParam_targetVersion_nam PRIMARY KEY  
+ CONSTRAINT pk_TargetParam_targetVersion_nam PRIMARY KEY
 (
 	targetVersion ,
-	name 
+	name
 )
 )
 
@@ -3888,9 +3888,9 @@ CREATE TABLE TargRunQA(
 	seeing_r real NOT NULL,
 	seeing_i real NOT NULL,
 	seeing_z real NOT NULL,
- CONSTRAINT pk_TargRunQA_fieldID PRIMARY KEY  
+ CONSTRAINT pk_TargRunQA_fieldID PRIMARY KEY
 (
-	fieldID 
+	fieldID
 )
 )
 
@@ -3915,9 +3915,9 @@ CREATE TABLE TileAll(
 	extinction_z real NOT NULL,
 	completeTileVersion varchar(32)  NOT NULL,
 	loadVersion int NOT NULL,
- CONSTRAINT pk_TileAll_tile PRIMARY KEY  
+ CONSTRAINT pk_TileAll_tile PRIMARY KEY
 (
-	tile 
+	tile
 )
 )
 
@@ -3935,10 +3935,10 @@ CREATE TABLE TiledTargetAll(
 	duplicate tinyint NOT NULL,
 	untiled tinyint NOT NULL,
 	loadVersion int NOT NULL,
- CONSTRAINT pk_TiledTargetAll_targetID_tile PRIMARY KEY  
+ CONSTRAINT pk_TiledTargetAll_targetID_tile PRIMARY KEY
 (
 	targetID ,
-	tile 
+	tile
 )
 )
 
@@ -3959,9 +3959,9 @@ CREATE TABLE TilingGeometry(
 	targetVersion varchar(32)  NOT NULL,
 	firstArea float NOT NULL,
 	loadVersion int NOT NULL,
- CONSTRAINT pk_TilingGeometry_tilingGeometry PRIMARY KEY  
+ CONSTRAINT pk_TilingGeometry_tilingGeometry PRIMARY KEY
 (
-	tilingGeometryID 
+	tilingGeometryID
 )
 )
 
@@ -3975,10 +3975,10 @@ CREATE TABLE TilingInfo(
 	collisionGroupID int NOT NULL,
 	targetID bigint NOT NULL,
 	loadVersion int NOT NULL,
- CONSTRAINT pk_TilingInfo_tileRun_targetID PRIMARY KEY  
+ CONSTRAINT pk_TilingInfo_tileRun_targetID PRIMARY KEY
 (
 	tileRun ,
-	targetID 
+	targetID
 )
 )
 
@@ -3987,9 +3987,9 @@ CREATE TABLE TilingNote(
 	tilingNoteID int NOT NULL,
 	tileRun smallint NOT NULL,
 	tilingNote text  NOT NULL,
- CONSTRAINT pk_TilingNote_tilingNoteID PRIMARY KEY  
+ CONSTRAINT pk_TilingNote_tilingNoteID PRIMARY KEY
 (
-	tilingNoteID 
+	tilingNoteID
 )
 )
 
@@ -4003,9 +4003,9 @@ CREATE TABLE TilingRun(
 	primTargetMask int NOT NULL,
 	secTargetMask int NOT NULL,
 	loadVersion int NOT NULL,
- CONSTRAINT pk_TilingRun_tileRun PRIMARY KEY  
+ CONSTRAINT pk_TilingRun_tileRun PRIMARY KEY
 (
-	tileRun 
+	tileRun
 )
 )
 
@@ -4037,9 +4037,9 @@ CREATE TABLE UberCal(
 	calibStatus_r smallint NOT NULL,
 	calibStatus_i smallint NOT NULL,
 	calibStatus_z smallint NOT NULL,
- CONSTRAINT pk_UberCal_objID PRIMARY KEY  
+ CONSTRAINT pk_UberCal_objID PRIMARY KEY
 (
-	objID 
+	objID
 )
 )
 
@@ -4052,9 +4052,9 @@ CREATE TABLE USNO(
 	blue real NOT NULL,
 	red real NOT NULL,
 	objID bigint NOT NULL,
- CONSTRAINT pk_USNO_objID PRIMARY KEY  
+ CONSTRAINT pk_USNO_objID PRIMARY KEY
 (
-	objID 
+	objID
 )
 )
 
@@ -4068,9 +4068,9 @@ CREATE TABLE Versions(
 	"text" varchar(2000)  NOT NULL,
 	who varchar(256)  NOT NULL,
 	"when" varchar(256)  NOT NULL,
- CONSTRAINT pk_Versions_version PRIMARY KEY  
+ CONSTRAINT pk_Versions_version PRIMARY KEY
 (
-	version 
+	version
 )
 )
 
@@ -4090,9 +4090,9 @@ CREATE TABLE XCRedshift(
 	delta real NOT NULL,
 	rms real NOT NULL,
 	specObjID bigint NOT NULL,
- CONSTRAINT pk_XCRedshift_xcRedshiftID PRIMARY KEY  
+ CONSTRAINT pk_XCRedshift_xcRedshiftID PRIMARY KEY
 (
-	xcRedShiftID 
+	xcRedShiftID
 )
 )
 
@@ -4108,32 +4108,32 @@ CREATE TABLE Zone(
 	cy float NOT NULL,
 	cz float NOT NULL,
 	native tinyint NOT NULL,
- CONSTRAINT pk_Zone_zoneID_ra_objID PRIMARY KEY  
+ CONSTRAINT pk_Zone_zoneID_ra_objID PRIMARY KEY
 (
 	zoneID ,
 	ra ,
-	objID 
+	objID
 )
 )
 
 statement ok
 ---- Additional one to make the functions load working ----
 CREATE TABLE sysobjects(
-	id int, 
+	id int,
 	uid int,
 	nme char(100)
 )
 
 statement ok
 CREATE TABLE sysusers(
-	id int, 
+	id int,
 	uid int,
 	nme char(100)
 )
 
 statement ok
 CREATE TABLE systypes(
-	id int, 
+	id int,
 	uid int,
 	nme char(100),
 	xtype char(100)
@@ -4141,8 +4141,8 @@ CREATE TABLE systypes(
 
 statement ok
 CREATE TABLE syscolumns(
-	id int, 
-	colid int, 
+	id int,
+	colid int,
 	isoutparam int,
 	length int,
 	uid int,

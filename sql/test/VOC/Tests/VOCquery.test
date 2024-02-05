@@ -22,17 +22,17 @@ and v.departure_harbour ='Texel')
 
 query I rowsort
 select count(*) from craftsmen c, passengers p
-where c.trip = p.trip and exists (select 1) 
+where c.trip = p.trip and exists (select 1)
 ----
 1308285
 
 query I rowsort
-select count(*) from craftsmen c 
+select count(*) from craftsmen c
 ----
 2349
 
 query I rowsort
-select count(*) from craftsmen c where exists (select 1) 
+select count(*) from craftsmen c where exists (select 1)
 ----
 2349
 

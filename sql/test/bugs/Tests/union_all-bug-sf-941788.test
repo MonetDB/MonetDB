@@ -1,4 +1,4 @@
-query TTTTTTTTTT rowsort
+query ITTTTIIITT rowsort
 SELECT * FROM ( SELECT null AS
 "TABLE_CAT", "schemas"."name" AS "TABLE_SCHEM",
 "ptables"."name" AS "TABLE_NAME", 'SYSTEM TABLE' AS
@@ -114,7 +114,7 @@ NULL
 id
 SYSTEM
 
-query TTTTTTTTTT rowsort
+query ITTTTIIITT rowsort
 SELECT * FROM (
 SELECT null AS "TABLE_CAT", "schemas"."name" AS
 "TABLE_SCHEM", "ptables"."name" AS "TABLE_NAME",

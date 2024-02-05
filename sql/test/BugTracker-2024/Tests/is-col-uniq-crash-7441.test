@@ -1,0 +1,12 @@
+statement ok
+CREATE TABLE v0 (v1 integer)
+
+statement ok
+SELECT 1 IS NOT NULL FROM v0 ORDER BY AVG(max(286)) OVER (ORDER BY 111 NULLS FIRST) NULLS LAST
+
+statement ok
+SELECT DISTINCT * FROM v0 AS cor0 WHERE (2) IN (v1 / - v1, v1)
+
+statement ok
+DROP TABLE v0
+

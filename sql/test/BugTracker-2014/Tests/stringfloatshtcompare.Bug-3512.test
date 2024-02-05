@@ -2,19 +2,19 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE TABLE bug3512 (a VARCHAR(100) ) 
+CREATE TABLE bug3512 (a VARCHAR(100) )
 
 statement ok
-INSERT INTO bug3512 (a) VALUES ('9999') 
+INSERT INTO bug3512 (a) VALUES ('9999')
 
 statement ok
-INSERT INTO bug3512 (a) VALUES ('32767') 
+INSERT INTO bug3512 (a) VALUES ('32767')
 
 statement ok
-INSERT INTO bug3512 (a) VALUES ('32768') 
+INSERT INTO bug3512 (a) VALUES ('32768')
 
 statement ok
-INSERT INTO bug3512 (a) VALUES ('327670') 
+INSERT INTO bug3512 (a) VALUES ('327670')
 
 query T rowsort
 SELECT * FROM bug3512 WHERE a > 8888
@@ -28,7 +28,7 @@ statement ok
 INSERT INTO bug3512 (a) VALUES ('0.10')
 
 statement ok
-INSERT INTO bug3512 (a) VALUES ('9999.00') 
+INSERT INTO bug3512 (a) VALUES ('9999.00')
 
 query T rowsort
 SELECT * FROM bug3512 WHERE a = 9999

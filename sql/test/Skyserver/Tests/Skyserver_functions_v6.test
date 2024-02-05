@@ -64,28 +64,28 @@ BEGIN
     DECLARE two bigint, sky int;
     SET two = 2;
     SET sky = skyversion;
-    IF skyversion=-1 
+    IF skyversion=-1
 	THEN SET sky=15;
     END IF;
-    RETURN ( cast(sky*left_shift(two,59) + rerun*left_shift(two,48) + 
-	run*left_shift(two,32) + camcol*left_shift(two,29) + 
+    RETURN ( cast(sky*left_shift(two,59) + rerun*left_shift(two,48) +
+	run*left_shift(two,32) + camcol*left_shift(two,29) +
 	field*left_shift(two,16)+obj as bigint));
 END
 
 statement ok
-CREATE FUNCTION fObjidFromSDSSWithFF(skyversion int, run int, rerun int, 
-				     camcol int, field int, obj int, 
+CREATE FUNCTION fObjidFromSDSSWithFF(skyversion int, run int, rerun int,
+				     camcol int, field int, obj int,
 				     firstfield int)
 RETURNS BIGINT
 BEGIN
     DECLARE two bigint, sky int;
     SET two = 2;
     SET sky = skyversion;
-    IF skyversion=-1 
+    IF skyversion=-1
 	THEN SET sky=15;
     END IF;
-    RETURN ( cast(sky*left_shift(two,59) + rerun*left_shift(two,48) + 
-	run*left_shift(two,32) + camcol*left_shift(two,29) + 
+    RETURN ( cast(sky*left_shift(two,59) + rerun*left_shift(two,48) +
+	run*left_shift(two,32) + camcol*left_shift(two,29) +
 	field*left_shift(two,16)+firstfield*left_shift(two,28)+obj as bigint));
 END
 
@@ -133,8 +133,8 @@ BEGIN
 	WHILE bit > 0 DO
 		SET bit = bit-1;
 		SET mask = left_shift(cast(2 as bigint),bit);
-		CASE 
-			WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
+		CASE
+			WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 			ELSE SET out = out || (coalesce((select name from PhotoStatus where value=mask),'')||' ');
 	    	END CASE;
 	END WHILE;
@@ -142,11 +142,11 @@ BEGIN
 END
 
 statement ok
-CREATE FUNCTION fPhotoStatus(pname varchar(40)) 
-RETURNS int 
-BEGIN 
+CREATE FUNCTION fPhotoStatus(pname varchar(40))
+RETURNS int
+BEGIN
 	declare x int;
-	SELECT cast(value as int) into x FROM PhotoStatus WHERE name = UPPER(pname); 
+	SELECT cast(value as int) into x FROM PhotoStatus WHERE name = UPPER(pname);
 	RETURN x;
 END
 
@@ -160,8 +160,8 @@ BEGIN
     WHILE (bit>0) DO
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
-	    CASE 
-		WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
+	    CASE
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from PrimTarget where value=mask),'')||' ');
 	    END CASE;
     END WHILE;
@@ -198,8 +198,8 @@ BEGIN
     WHILE (bit>0) DO
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
-	    CASE 
-		WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
+	    CASE
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from SecTarget where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
@@ -226,8 +226,8 @@ BEGIN
     WHILE (bit>0) DO
 	    SET bit = bit-1;
 	    SET mask = left_shift(2,bit);
-	    CASE 
-		WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
+	    CASE
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from InsideMask where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
@@ -236,7 +236,7 @@ END
 
 statement ok
 CREATE FUNCTION fSpecZWarning(nme varchar(40))
-RETURNS INT 
+RETURNS INT
 BEGIN
     RETURN ( SELECT cast(value as int)
 	FROM SpecZWarning
@@ -254,7 +254,7 @@ BEGIN
     WHILE (bit>0) DO
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
-	    CASE 
+	    CASE
 		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from SpecZWarning where value=mask),'')||' ');
 	    END CASE;
@@ -282,8 +282,8 @@ BEGIN
     WHILE (bit>0) DO
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
-	    CASE 
-		WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
+	    CASE
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from ImageMask where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
@@ -310,7 +310,7 @@ BEGIN
     WHILE (bit>0) DO
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
-	    CASE 
+	    CASE
 		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from TiMask where value=mask),'')||' ');
 	    END CASE;
@@ -598,8 +598,8 @@ BEGIN
     WHILE (bit>0) DO
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
-	    CASE 
-		WHEN (bit_and(mask,val)=0) THEN SET out = out || ''; 
+	    CASE
+		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from FieldMask where value=mask),'')||' ');
 	    END CASE;
 	END WHILE;
@@ -616,7 +616,7 @@ BEGIN
     WHILE (bit>0) DO
 	    SET bit = bit-1;
 	    SET mask = left_shift(cast(2 as bigint),bit);
-	    CASE 
+	    CASE
 		WHEN (bit_and(mask,val)=0) THEN SET out = out || '';
 		ELSE SET out = out || (coalesce((select name from PhotoFlags where value=mask),'')||' ');
 	    END CASE;
@@ -638,7 +638,7 @@ statement ok
 CREATE FUNCTION fWedgeV3(x1 float,y1 float, z1 float, x2 float, y2 float, z2 float)
 RETURNS TABLE(x float, y float, z float)
 BEGIN
-    RETURN TABLE(SELECT 
+    RETURN TABLE(SELECT
 	(y1*z2 - y2*z1) as x,
     	(x2*z1 - x1*z2) as y,
 	(x1*y2 - x2*y1) as z);
@@ -647,11 +647,11 @@ END
 statement ok
 CREATE FUNCTION fRotateV3(mod varchar(16),cx float,cy float,cz float)
 RETURNS TABLE (
-	x float, 
-	y float, 
+	x float,
+	y float,
 	z float)
 BEGIN
-    -- 
+    --
     DECLARE xx float, yy float, zz float;
     --
     SELECT x*cx+y*cy+z*cz INTO xx FROM Rmatrix WHERE mode=mod and row=1;
@@ -664,44 +664,44 @@ END
 statement ok
 CREATE FUNCTION fMJDToGMT(mjd float)
 RETURNS varchar(32)
-BEGIN 
+BEGIN
     DECLARE jd int, l int, n int,i int, j int,
 	    rem real, days bigint, d int ,m int,
-	    y int, hr int, min int, sec float; 
+	    y int, hr int, min int, sec float;
     SET jd = mjd + 2400000.5 + 0.5;   -- convert from MDJ to JD  (the .5 fudge makes it work).
-    SET l = jd + 68569; 
+    SET l = jd + 68569;
     SET n = ( 4 * l ) / 146097;
     SET l = l - ( 146097 * n + 3 ) / 4;
     SET i = ( 4000 * ( l + 1 ) ) / 1461001 ;
     SET l = l - ( 1461 * i ) / 4 + 31 ;
     SET j = ( 80 * l ) / 2447;
-    SET d = (l - ( 2447 * j ) / 80);  
+    SET d = (l - ( 2447 * j ) / 80);
     SET l = j / 11;
     SET m = j + 2 - ( 12 * l );
     SET y = 100 * ( n - 49 ) + i + l;
-    SET rem =  mjd - floor(mjd); -- extract hh:mm:ss.sssssss  
-    SET hr = 24*rem; 
+    SET rem =  mjd - floor(mjd); -- extract hh:mm:ss.sssssss
+    SET hr = 24*rem;
     SET min = 60*(24*rem -hr);
     SET sec = 60*(60*(24*rem -hr)-min);
-    RETURN (cast(y as varchar(4)) || '-' || 
-                cast(m as varchar(2)) || '-' || 
-                cast(d as varchar(2)) || ':' || 
-                cast(hr as varchar(2))|| ':' || 
-                cast(min as varchar(2))|| ':' || 
-                cast(sec as varchar(9))); 
+    RETURN (cast(y as varchar(4)) || '-' ||
+                cast(m as varchar(2)) || '-' ||
+                cast(d as varchar(2)) || ':' ||
+                cast(hr as varchar(2))|| ':' ||
+                cast(min as varchar(2))|| ':' ||
+                cast(sec as varchar(9)));
 END
 
 statement ok
-CREATE FUNCTION fDistanceArcMinXYZ(nx1 float, ny1 float, nz1 float, 
+CREATE FUNCTION fDistanceArcMinXYZ(nx1 float, ny1 float, nz1 float,
 					nx2 float, ny2 float, nz2 float)
 RETURNS float
 BEGIN
-    DECLARE d2r float; 
+    DECLARE d2r float;
     RETURN ( 2*SYS.DEGREES(ASIN(sqrt(left_shift(nx1-nx2,2)+left_shift(ny1-ny2,2)+left_shift(nz1-nz2,2))/2))*60);
 END
 
 statement ok
-CREATE FUNCTION fDistanceArcMinEq(ra1 float, dec1 float, 
+CREATE FUNCTION fDistanceArcMinEq(ra1 float, dec1 float,
                                   ra2 float, dec2 float)
 RETURNS float
 BEGIN
@@ -720,24 +720,24 @@ statement ok
 CREATE  FUNCTION fDMSbase(deg float, truncat int, precision int)
 RETURNS varchar(32)
 BEGIN
-    DECLARE	
-	s char(1), 
-	d float, 
-	nd int, 
-	np int, 
+    DECLARE
+	s char(1),
+	d float,
+	nd int,
+	np int,
 	q varchar(32),
 	t varchar(32);
 	--
 	SET s = '+';
- 	IF  deg<0 
+ 	IF  deg<0
 		THEN SET s = '-';
 	END IF;
 	--
 	SET t = '00:00:00.0';
-	IF (precision < 1) 
+	IF (precision < 1)
 		THEN SET precision = 1;
 	END IF;
-	IF (precision > 10) 
+	IF (precision > 10)
 		THEN SET precision = 10;
 	END IF;
 	SET np = 0;
@@ -758,10 +758,10 @@ BEGIN
 	-- seconds
 	SET d  = SYS.MS_ROUND( 60.0 * (d-nd),precision,truncat );
 --	SET d  = 60.0 * (d-nd);
-	IF (precision = 1) 
+	IF (precision = 1)
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(7)));
 	END IF;
-	IF (precision = 10) 
+	IF (precision = 10)
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(16)));
 	END IF;
 	SET t = SYS.MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
@@ -795,16 +795,16 @@ RETURNS varchar(32)
 BEGIN
     DECLARE
 	d float,
-	nd int, 
-	np int, 
+	nd int,
+	np int,
 	q varchar(10),
 	t varchar(16);
 	--
 	SET t = '00:00:00.0';
-	IF (precision < 1) 
+	IF (precision < 1)
 		THEN SET precision = 1;
 	END IF;
-	IF (precision > 10) 
+	IF (precision > 10)
 		THEN SET precision = 10;
 	END IF;
 	SET np = 0;
@@ -824,10 +824,10 @@ BEGIN
 	SET t  = SYS.MS_STUFF(t,6-LENGTH(q),LENGTH(q), q);
 	-- seconds
 	SET d  = SYS.MS_ROUND( 60.0 * (d-nd),precision,truncat );
-	IF (precision = 1) 
+	IF (precision = 1)
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(7)));
 	END IF;
-	IF (precision = 10) 
+	IF (precision = 10)
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(16)));
 	END IF;
 	SET t = SYS.MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
@@ -856,7 +856,7 @@ BEGIN
 	WHEN 3 THEN SET bparm = 1.8E-10;
 	WHEN 4 THEN SET bparm = 7.4E-10;
     END CASE;
-    IF (mag < -99.0 ) 
+    IF (mag < -99.0 )
 	THEN SET mag = 1.0;
     END IF;
     SET counts1 = (mag/ -1.0857362048) - LOG(bparm);
@@ -893,7 +893,7 @@ BEGIN
     SET y = COS(SYS.RADIANS(eta));
     SET z = 0.0;
     --
-    RETURN TABLE(SELECT v2.x, v2.y, v2.z 
+    RETURN TABLE(SELECT v2.x, v2.y, v2.z
 	FROM fRotateV3('S2J', x, y, z) v2);
 END
 
@@ -905,15 +905,15 @@ BEGIN
     DECLARE TABLE t(x float, y float, z float);
     DECLARE x float, y float, z float, eta float;
     --
-    IF (stripe < 0 or stripe>86) 
+    IF (stripe < 0 or stripe>86)
 --	THEN return TABLE(SELECT * from t);
 	THEN return t;
     END IF;
-    IF (stripe is null) 
+    IF (stripe is null)
 	THEN SET stripe = 10;	-- default is the equator
     END IF;
     --
-    CASE 
+    CASE
 	WHEN (stripe<50) THEN SET eta = (stripe-10)*2.5 -32.5;
 	ELSE SET eta = (stripe-82)*2.5 -32.5;
     END CASE;
@@ -922,7 +922,7 @@ BEGIN
     SET y = COS(SYS.RADIANS(eta));
     SET z = 0.0;
     --
-    RETURN TABLE(SELECT v2.x, v2.y, v2.z 
+    RETURN TABLE(SELECT v2.x, v2.y, v2.z
 	FROM fRotateV3('S2J',x, y, z) v2);
 END
 
@@ -941,7 +941,7 @@ RETURNS float
 BEGIN
     DECLARE lon float;
     SELECT SYS.DEGREES(ATAN(v3.y,v3.x)) INTO lon FROM fRotateV3(mode,cx,cy,cz) v3;
-    IF lon<0 
+    IF lon<0
 	THEN SET lon=lon+360;
     END IF;
     RETURN lon;
@@ -957,7 +957,7 @@ BEGIN
     SELECT SYS.DEGREES(ATAN(v3.y,v3.x)), SYS.DEGREES(ASIN(v3.z)) INTO lon, lat
 	FROM fRotateV3(mode,cx,cy,cz) v3;
     --
-    IF lon<0 
+    IF lon<0
 	THEN SET lon=lon+360;
     END IF;
     RETURN TABLE (SELECT lon as lon, lat as lat);
@@ -974,7 +974,7 @@ RETURNS TABLE (ra float, decim float, cx float, cy float, cz float)
 BEGIN
     DECLARE
 	rmu float, rnu float, rin float,
-	ra float, deci float, 
+	ra float, deci float,
 	cx float, cy float, cz float,
 	gx float, gy float, gz float;
 	--
@@ -993,7 +993,7 @@ BEGIN
     --
     SET deci = SYS.DEGREES(asin(cz));
     SET ra  = SYS.DEGREES(ATAN(cy,cx)) + node;
-    IF  ra<0 
+    IF  ra<0
 	THEN SET ra = ra+360 ;
     END IF;
     --
@@ -1016,10 +1016,10 @@ RETURNS TABLE (
     nu float
 )
 BEGIN
-    DECLARE 
+    DECLARE
 	cx float, cy float, cz float,
 	qx float, qy float, qz float,
-	lambda float, eta float, 
+	lambda float, eta float,
 	stripe int, incl float,
 	mu float, nu float,
         stripeEta float;
@@ -1035,36 +1035,36 @@ BEGIN
     SET eta    =  sys.degrees(ATAN(cz,cy))-32.5;
     SET stripeEta = eta;
     --
-    IF lambda < -180.0 
+    IF lambda < -180.0
 	THEN SET lambda = lambda+360.0;
     END IF;
-    IF lambda >= 180.0 
+    IF lambda >= 180.0
 	THEN SET lambda = lambda-360.0;
     END IF;
     IF ABS(lambda) > 90.0
-       THEN 
+       THEN
            SET lambda = 180.0-lambda;
            SET eta = eta+180.0;
     END IF;
-    IF lambda < -180.0 
+    IF lambda < -180.0
 	THEN SET lambda = lambda+360.0;
     END IF;
-    IF lambda >= 180.0 
+    IF lambda >= 180.0
 	THEN SET lambda = lambda-360.0;
     END IF;
-    IF eta < 0.0 
+    IF eta < 0.0
 	THEN SET eta = eta+360.0;
     END IF;
-    IF eta >= 360.0 
+    IF eta >= 360.0
 	THEN SET eta = eta-360.0;
     END IF;
-    IF ABS(lambda) = 90.0 
+    IF ABS(lambda) = 90.0
 	THEN SET eta = 0.0;
     END IF;
-    IF eta < -180.0 
+    IF eta < -180.0
 	THEN SET eta = eta+360.0;
     END IF;
-    IF eta >= 180.0 
+    IF eta >= 180.0
 	THEN SET eta = eta-360.0;
     END IF;
     IF eta > 90.0-32.5
@@ -1072,20 +1072,20 @@ BEGIN
            SET eta = eta-180.0;
            SET lambda = 180.0-lambda;
     END IF;
-    IF lambda < -180.0 
+    IF lambda < -180.0
 	THEN SET lambda = lambda+360.0;
     END IF;
-    IF lambda >= 180.0 
+    IF lambda >= 180.0
 	THEN SET lambda = lambda-360.0;
     END IF;
     --
-    IF  stripeEta<-180 
+    IF  stripeEta<-180
 	THEN SET stripeEta = stripeEta+360;
     END IF;
     SET stripe = 23 + floor(stripeEta/2.5+0.5);
     --
     SET incl = (stripe-10)*2.5;
-    IF  stripe>50 
+    IF  stripe>50
 	THEN SET incl = (stripe-82)*2.5;
     END IF;
     --
@@ -1095,7 +1095,7 @@ BEGIN
     --
     SET mu = sys.degrees(ATAN(qy,qx))+95.0;
     SET nu = sys.degrees(asin(qz));
-    IF  stripe>50 
+    IF  stripe>50
 	THEN SET mu = mu+360;
     END IF;
     --
@@ -1107,10 +1107,10 @@ statement ok
 CREATE FUNCTION fMuFromEq(ra float,deci float)
 RETURNS float
 BEGIN
-    DECLARE 
+    DECLARE
 	cx float, cy float, cz float,
 	qx float, qy float, qz float,
-	eta float, 
+	eta float,
 	stripe int, incl float,
 	mu float;
     --
@@ -1120,13 +1120,13 @@ BEGIN
     --
     SET eta = sys.degrees(ATAN(cz,cy));
     SET eta = eta -32.5;
-    IF  eta<-180 
+    IF  eta<-180
 	THEN SET eta = eta+360;
     END IF;
     SET stripe = 23 + floor(eta/2.5+0.5);
-    -- 
+    --
     SET incl = (stripe-10)*2.5;
-    IF  stripe>50 
+    IF  stripe>50
 	THEN SET incl = (stripe-82)*2.5;
     END IF;
     --
@@ -1135,7 +1135,7 @@ BEGIN
     SET qz =-cy*sin(sys.radians(incl))+cz*cos(sys.radians(incl));
     --
     SET mu = sys.degrees(ATAN(qy,qx))+95.0;
-    IF  stripe>50 
+    IF  stripe>50
 	THEN SET mu = mu+360;
     END IF;
     --
@@ -1146,10 +1146,10 @@ statement ok
 CREATE FUNCTION fNuFromEq(ra float,deci float)
 RETURNS float
 BEGIN
-    DECLARE 
+    DECLARE
 	cy float, cz float,
 	qz float,
-	eta float, 
+	eta float,
 	stripe int, incl float,
 	nu float;
     --
@@ -1158,14 +1158,14 @@ BEGIN
     --
     SET eta    =  sys.degrees(ATAN(cz,cy));
     SET eta	= eta -32.5;
-    IF  eta<-180 
+    IF  eta<-180
 	THEN SET eta = eta+360;
     END IF;
     --
     SET stripe = 23 + floor(eta/2.5+0.5);
-    -- 
+    --
     SET incl = (stripe-10)*2.5;
-    IF  stripe>50 
+    IF  stripe>50
 	THEN SET incl = (stripe-82)*2.5;
     END IF;
     --
@@ -1180,9 +1180,9 @@ statement ok
 CREATE FUNCTION fEtaFromEq(ra float,deci float)
 RETURNS float
 BEGIN
-    DECLARE 
+    DECLARE
 	cx float, cy float, cz float,
-	lambda float, eta float, 
+	lambda float, eta float,
         stripeEta float;
     --
     SET cx = cos(sys.radians(deci))* cos(sys.radians(ra-95.0));
@@ -1196,36 +1196,36 @@ BEGIN
     SET eta    =  sys.degrees(ATAN(cz,cy))-32.5;
     SET stripeEta = eta;
     --
-    IF lambda < -180.0 
+    IF lambda < -180.0
 	THEN SET lambda = lambda+360.0;
     END IF;
-    IF lambda >= 180.0 
+    IF lambda >= 180.0
 	THEN SET lambda = lambda-360.0;
     END IF;
     IF ABS(lambda) > 90.0
-       THEN 
+       THEN
            SET lambda = 180.0-lambda;
            SET eta = eta+180.0;
     END IF;
-    IF lambda < -180.0 
+    IF lambda < -180.0
 	THEN SET lambda = lambda+360.0;
     END IF;
-    IF lambda >= 180.0 
+    IF lambda >= 180.0
 	THEN SET lambda = lambda-360.0;
     END IF;
-    IF eta < 0.0 
+    IF eta < 0.0
 	THEN SET eta = eta+360.0;
     END IF;
-    IF eta >= 360.0 
+    IF eta >= 360.0
 	THEN SET eta = eta-360.0;
     END IF;
-    IF ABS(lambda) = 90.0 
+    IF ABS(lambda) = 90.0
 	THEN SET eta = 0.0;
     END IF;
-    IF eta < -180.0 
+    IF eta < -180.0
 	THEN SET eta = eta+360.0;
     END IF;
-    IF eta >= 180.0 
+    IF eta >= 180.0
 	THEN SET eta = eta-360.0;
     END IF;
     IF eta > 57.5	-- 90.0-32.5
@@ -1239,9 +1239,9 @@ statement ok
 CREATE FUNCTION fLambdaFromEq(ra float,deci float)
 RETURNS float
 BEGIN
-    DECLARE 
+    DECLARE
 	cx float, cy float, cz float,
-	lambda float, eta float, 
+	lambda float, eta float,
         stripeEta float;
     --
     SET cx = cos(sys.radians(deci))* cos(sys.radians(ra-95.0));
@@ -1255,10 +1255,10 @@ BEGIN
     SET eta    =  sys.degrees(ATAN(cz,cy))-32.5;
     SET stripeEta = eta;
     --
-    IF lambda < -180.0 
+    IF lambda < -180.0
 	THEN SET lambda = lambda+360.0;
     END IF;
-    IF lambda >= 180.0 
+    IF lambda >= 180.0
 	THEN SET lambda = lambda-360.0;
     END IF;
     IF ABS(lambda) > 90.0
@@ -1266,25 +1266,25 @@ BEGIN
            SET lambda = 180.0-lambda;
            SET eta = eta+180.0;
     END IF;
-    IF lambda < -180.0 
+    IF lambda < -180.0
 	THEN SET lambda = lambda+360.0;
     END IF;
-    IF lambda >= 180.0 
+    IF lambda >= 180.0
 	THEN SET lambda = lambda-360.0;
     END IF;
-    IF eta < 0.0 
+    IF eta < 0.0
 	THEN SET eta = eta+360.0;
     END IF;
-    IF eta >= 360.0 
+    IF eta >= 360.0
 	THEN SET eta = eta-360.0;
     END IF;
-    IF ABS(lambda) = 90.0 
+    IF ABS(lambda) = 90.0
 	THEN SET eta = 0.0;
     END IF;
-    IF eta < -180.0 
+    IF eta < -180.0
 	THEN SET eta = eta+360.0;
     END IF;
-    IF eta >= 180.0 
+    IF eta >= 180.0
 	THEN SET eta = eta-360.0;
     END IF;
     IF eta > 90.0-32.5
@@ -1292,10 +1292,10 @@ BEGIN
            SET eta = eta-180.0;
            SET lambda = 180.0-lambda;
     END IF;
-    IF lambda < -180.0 
+    IF lambda < -180.0
 	THEN SET lambda = lambda+360.0;
     END IF;
-    IF lambda >= 180.0 
+    IF lambda >= 180.0
 	THEN SET lambda = lambda-360.0;
     END IF;
     --
@@ -1332,10 +1332,10 @@ BEGIN
     --
     SET nu = SYS.DEGREES(ASIN(gz));
     SET mu = SYS.DEGREES(ATAN(gy,gx)) + node;
-    IF  mu<0 
+    IF  mu<0
 	THEN SET mu = mu+360 ;
     END IF;
-    IF  (stripe>50 AND mu<180) 
+    IF  (stripe>50 AND mu<180)
 	THEN SET mu = mu+360 ;
     END IF;
     --
@@ -1343,20 +1343,20 @@ BEGIN
 END
 
 statement ok
-CREATE FUNCTION fTokenNext(s VARCHAR(8000), i int) 
+CREATE FUNCTION fTokenNext(s VARCHAR(8000), i int)
 RETURNS VARCHAR(8000)
 BEGIN
 	DECLARE j INT;
 	-- eliminate multiple blanks
 	SET j = LOCATE(' ',s,i);
-	IF (j >0) 
+	IF (j >0)
 		THEN RETURN ltrim(rtrim(substring(s,i,j-i)));
     	END IF;
 	RETURN '';
 END
 
 statement ok
-CREATE FUNCTION fTokenAdvance(s VARCHAR(8000), i int) 
+CREATE FUNCTION fTokenAdvance(s VARCHAR(8000), i int)
 RETURNS INT
 BEGIN
 	DECLARE j int;
@@ -1364,14 +1364,14 @@ BEGIN
 	-- eliminate multiple blanks
 	-----------------------------
 	SET j = LOCATE(' ',s,i);
-	IF (j >0) 
+	IF (j >0)
 		THEN RETURN j+1;
     	END IF;
 	RETURN 0;
 END
 
 statement ok
-CREATE FUNCTION fNormalizeString(s VARCHAR(8000)) 
+CREATE FUNCTION fNormalizeString(s VARCHAR(8000))
 RETURNS VARCHAR(8000)
 BEGIN
 	DECLARE i int;
@@ -1386,7 +1386,7 @@ BEGIN
 	----------------------
 	-- trim trailing zeros
 	----------------------
-	WHILE(i >0) DO			
+	WHILE(i >0) DO
  		SET s = replace(s, '0 ', ' ');
  		SET i = patindex('%00 %', s);
  	END WHILE;
@@ -1397,7 +1397,7 @@ BEGIN
 	---------------------
 	-- trim double blanks
 	---------------------
-	WHILE(i >0) DO	
+	WHILE(i >0) DO
  		SET s = replace(s, '  ', ' ');
  		SET i = patindex('%  %', s);
  	END WHILE;
@@ -1405,13 +1405,13 @@ BEGIN
 	-- drop minus zero
 	------------------
  	SET s = replace(s, '-0.0 ', '0.0 ');
-	RETURN s; 
+	RETURN s;
 END
 
 statement ok
-CREATE FUNCTION fTokenStringToTable(types VARCHAR(8000)) 
+CREATE FUNCTION fTokenStringToTable(types VARCHAR(8000))
 RETURNS TABLE (token VARCHAR(16))
-BEGIN  
+BEGIN
 	DECLARE tokenStart int;
 	DECLARE TABLE tokens(token VARCHAR(16));
 	SET tokenStart = 1;
@@ -1425,11 +1425,11 @@ END
 
 statement ok
 CREATE FUNCTION fReplace(OldString VARCHAR(8000), Pattern VARCHAR(1000), Replacement VARCHAR(1000))
-RETURNS VARCHAR(8000) 
+RETURNS VARCHAR(8000)
 BEGIN
 		DECLARE NewString VARCHAR(8000);
 		SET NewString = '';
-		IF (LTRIM(Pattern) = '') 
+		IF (LTRIM(Pattern) = '')
 			THEN RETURN( NewString || OldString);
 		END IF;
 		DECLARE LowerOld VARCHAR(8000);
@@ -1440,7 +1440,6 @@ BEGIN
 		SET offset_val = 0;
 		DECLARE PatLen INT;
        		SET PatLen = LENGTH(Pattern);
-		 
 		WHILE (LOCATE(LowerPattern, LowerOld, 1) <> 0 ) DO
 			SET offset_val = LOCATE(LowerPattern, LowerOld, 1);
 			SET NewString = NewString || SUBSTRING(OldString,1,offset_val-1) || Replacement;
@@ -1453,19 +1452,19 @@ END
 statement ok
 CREATE FUNCTION fIsNumbers (string_val varchar(8000), start_val int, stop int)
 RETURNS INT
-BEGIN 
+BEGIN
 	DECLARE offset_val int,		-- current offfset in string
 		char_val   char,		-- current char in string
 		dot	int,		-- flag says we saw a dot.
 		num	int;		-- flag says we saw a digit
 	SET dot = 0;			--
 	SET num = 0;			--
-	SET offset_val = start_val;		-- 
-	IF (stop > LENGTH(string_val)) 
+	SET offset_val = start_val;		--
+	IF (stop > LENGTH(string_val))
 		THEN RETURN 0;   -- stop if past end
 	END IF;
 	SET char_val = substring(string_val,offset_val,1); -- handle sign
-	IF(char_val ='+' or char_val='-') 
+	IF(char_val ='+' or char_val='-')
 		THEN SET offset_val = offset_val + 1;
 	END IF;
 	-- process number
@@ -1474,8 +1473,8 @@ BEGIN
 		SET char_val = substring(string_val,offset_val,1);
 		IF (char_val = '.') 	-- if a decmial point
 			  		-- reject duplicate
-			THEN 
-				IF (dot = 1) 
+			THEN
+				IF (dot = 1)
 					THEN RETURN 0;
 				END IF;
 				SET dot = 1;	-- set flag
@@ -1487,8 +1486,8 @@ BEGIN
 			     	SET offset_val = offset_val + 1;
 				SET num= 1;	-- set digit flag
 		END IF; 			-- end loop
-	-- test for bigint overflow	
-		IF (stop-start_val > 19) 
+	-- test for bigint overflow
+		IF (stop-start_val > 19)
 			THEN RETURN 0; -- reject giant numbers
 		END IF;
 	      	IF  (dot = 0 and  stop-start_val >= 19 )
@@ -1499,11 +1498,11 @@ BEGIN
 					THEN  RETURN 0;
 				END IF;		--
 		END IF; 			-- end bigint overflow test
-		IF (num = 0) 
+		IF (num = 0)
 			THEN RETURN 0;		-- complain if no digits
 		END IF;
-		IF (dot = 0) 
-			THEN RETURN 1; 	-- number ok, is it an int 
+		IF (dot = 0)
+			THEN RETURN 1; 	-- number ok, is it an int
 		END IF;
 	END WHILE;
 	RETURN -1 ;			-- or a float?
@@ -1521,25 +1520,25 @@ BEGIN
 	 ------------------------------------------
 	 -- loop over the HTM pulling off a triangle till we have a faceid left (1...8)
 	 WHILE (HTMtemp > 0) DO
-	  	IF (HTMtemp <= 4)   		-- its a face  
+	  	IF (HTMtemp <= 4)   		-- its a face
 	   					-- add face to string.
 			THEN
-				IF (HTMtemp=3) 
+				IF (HTMtemp=3)
 					THEN SET Answer='N'||Answer;
 				END IF;
-				IF (HTMtemp=2) 
+				IF (HTMtemp=2)
 					THEN SET Answer='S'||Answer;
 				END IF;
 				SET HTMtemp  = 0;
 	   		   			-- end face case
-	  		ELSE 
+	  		ELSE
 	   					-- its a triangle
 				SET Triangle = HTMtemp % 4; 	-- get the id into answer
 				SET Answer =  CAST(Triangle as VARCHAR(4)) || Answer;
 	     			SET HTMTemp = HTMtemp / 4;  	-- move on to next triangle
 	  	END IF;
 	END WHILE;    			-- end loop
-	RETURN(Answer);     			
+	RETURN(Answer);
 END
 
 statement ok
@@ -1551,19 +1550,19 @@ BEGIN
 END
 
 statement ok
-CREATE FUNCTION fHtmLookupXyz(x float, y float, z float) 
-RETURNS bigint 
-BEGIN 
-	DECLARE cmd varchar(100); 
-        SET cmd = 'CARTESIAN 20 ' 
+CREATE FUNCTION fHtmLookupXyz(x float, y float, z float)
+RETURNS bigint
+BEGIN
+	DECLARE cmd varchar(100);
+        SET cmd = 'CARTESIAN 20 '
              ||cast(round(x,7) as varchar(15))||' '||cast(round(y,7) as varchar(15))||' '||cast(round(z,7) as varchar(15));
 	RETURN fHtmLookup(cmd);
 END
 
 statement ok
-CREATE FUNCTION fHtmXyz(x float, y float, z float) 
+CREATE FUNCTION fHtmXyz(x float, y float, z float)
 RETURNS bigint
-BEGIN  
+BEGIN
 	RETURN fHtmLookupXyz(x, y, z);
 END
 
@@ -1571,7 +1570,7 @@ statement ok
 CREATE FUNCTION fHtmLookupEq(ra float, deci float)
 RETURNS bigint
 BEGIN
-	DECLARE x float, y float, z float; 
+	DECLARE x float, y float, z float;
 	SET x  = COS(SYS.RADIANS(deci))*COS(SYS.RADIANS(ra));
 	SET y  = COS(SYS.RADIANS(deci))*SIN(SYS.RADIANS(ra));
 	SET z  = SIN(SYS.RADIANS(deci));
@@ -1594,11 +1593,11 @@ CREATE FUNCTION fIndexName(
 )
 RETURNS varchar(32)
 BEGIN
-	DECLARE constraint_val varchar(2000), 
+	DECLARE constraint_val varchar(2000),
 		head varchar(8),
 		fk varchar(1000);
 	--
-	SET head = CASE code 
+	SET head = CASE code
 		WHEN 'K' THEN 'pk_'
 		WHEN 'F' THEN 'fk_'
 		WHEN 'I' THEN 'i_'
@@ -1607,7 +1606,7 @@ BEGIN
 	SET fk = replace(replace(replace(foreignKey,',','_'),')',''),'(','_');
 	SET constraint_val = head || tableName || '_'
 		|| replace(replace(fieldList,' ',''),',','_');
-	IF foreignkey <> '' 
+	IF foreignkey <> ''
 		THEN SET constraint_val = constraint_val || '_' || fk;
 	END IF;
 	--
@@ -1617,11 +1616,11 @@ BEGIN
 END
 
 statement ok
-CREATE FUNCTION fTileFileName (zoom int, 
-	run int, rerun int,camcol int, field int)  
+CREATE FUNCTION fTileFileName (zoom int,
+	run int, rerun int,camcol int, field int)
 RETURNS varchar(512)
 BEGIN
-    DECLARE TheName VARCHAR(100), field4 char(4), 
+    DECLARE TheName VARCHAR(100), field4 char(4),
 	run6 char(6), c1 char(1), z2 char(2);
 	-----------------------------------------
 	SET field4 = cast( field as varchar(4));
@@ -1651,8 +1650,8 @@ RETURNS TABLE (
 )
 BEGIN
     RETURN TABLE(
-    select  enum, nme, type, length, unit, ucd, description, rank 
-    from ( SELECT	
+    select  enum, nme, type, length, unit, ucd, description, rank
+    from ( SELECT
 	--distinct convert(sysnme,c.nme) as nme,
 			c.nme as nme,
 			t.nme as type,
@@ -1674,15 +1673,15 @@ BEGIN
 		    AND c.id = o.id
 		    AND t.xtype = c.xtype
 		    AND d.ss_dtype = c.xtype
- --		    AND coalesce(d."AUTO_INCREMENT",0) = 
+ --		    AND coalesce(d."AUTO_INCREMENT",0) =
 --		    	coalesce(ColumnProperty (c.id, c.nme, 'IsIdentity'),0)
-		    AND (m.tablename = tabname 
-			OR (m.tablename IN 
-				(select distinct b.parent from DBViewCols a, DBViewCols b 
+		    AND (m.tablename = tabname
+			OR (m.tablename IN
+				(select distinct b.parent from DBViewCols a, DBViewCols b
 				where a.viewname = tabname AND a.parent = b.viewname)
-				) 
-			OR (m.tablename IN 
-				(select distinct parent 
+				)
+			OR (m.tablename IN
+				(select distinct parent
 				from DBViewCols where viewname = tabname )
 			)
 		    )
@@ -1705,7 +1704,7 @@ RETURNS TABLE (
 BEGIN
     RETURN TABLE(
     select  enum, nme, type, length, unit, ucd, description
-    from ( SELECT	
+    from ( SELECT
 	--distinct convert(sysnme,c.nme) as nme,
 			c.nme as nme,
 			t.nme as type,
@@ -1726,15 +1725,15 @@ BEGIN
 		    AND c.id = o.id
 		    AND t.xtype = c.xtype
 		    AND d.ss_dtype = c.xtype
- --		    AND coalesce(d."AUTO_INCREMENT",0) = 
+ --		    AND coalesce(d."AUTO_INCREMENT",0) =
 --		    	coalesce(ColumnProperty (c.id, c.nme, 'IsIdentity'),0)
-		    AND (m.tablename = tabname 
-			OR (m.tablename IN 
-				(select distinct b.parent from DBViewCols a, DBViewCols b 
+		    AND (m.tablename = tabname
+			OR (m.tablename IN
+				(select distinct b.parent from DBViewCols a, DBViewCols b
 				where a.viewname = tabname AND a.parent = b.viewname)
-				) 
-			OR (m.tablename IN 
-				(select distinct parent 
+				)
+			OR (m.tablename IN
+				(select distinct parent
 				from DBViewCols where viewname = tabname )
 			)
 		    )
@@ -1754,23 +1753,23 @@ RETURNS TABLE (
 )
 BEGIN
     RETURN TABLE(
-    SELECT  nme, type, length, 
+    SELECT  nme, type, length,
 	(case output when 'yes' then 'output' else 'input' end) as inout,
 	pnum
-    FROM ( 
-	SELECT	
+    FROM (
+	SELECT
 	--distinct convert(sysnme,c.nme) as nme,
 			c.nme as nme,
 		t.nme as type,
-		coalesce(d.length, c.length) as length, 
-		case (substring(c.nme,1,1)) 
-			when '' then 'yes' else 'no' end as input,   
-		case isoutparam  
-			when 1 then 'yes' else 
-			    case substring(c.nme,1,1)  
+		coalesce(d.length, c.length) as length,
+		case (substring(c.nme,1,1))
+			when '' then 'yes' else 'no' end as input,
+		case isoutparam
+			when 1 then 'yes' else
+			    case substring(c.nme,1,1)
 				when '' then 'no' else 'yes' end
 			end as output,
-		c.colid as pnum 
+		c.colid as pnum
 		FROM 	sysobjects o,
 			sysusers u,
    			spt_datatype_info d,
@@ -1781,7 +1780,7 @@ BEGIN
 		  AND c.id = o.id
 		  AND t.xtype = c.xtype
 		  AND d.ss_dtype = c.xtype
- 	--	  AND coalesce(d."AUTO_INCREMENT",0) = 
+ 	--	  AND coalesce(d."AUTO_INCREMENT",0) =
 	--	    	coalesce(ColumnProperty (c.id, c.nme, 'IsIdentity'),0)
 		) as Param
 	order by output, pnum asc);
@@ -1795,7 +1794,7 @@ BEGIN
 	DECLARE itFlags bigint ;
 	--
 	SET itStatus = (SELECT status FROM PhotoObjAll WHERE objID = ObjectID);
-	SET itFlags  = (SELECT  flags FROM PhotoObjAll WHERE objID = ObjectID); 
+	SET itFlags  = (SELECT  flags FROM PhotoObjAll WHERE objID = ObjectID);
 	RETURN 	(select fPhotoStatusN(itSTatus)) ||'| '
 		||(select fPhotoFlagsN(itFlags))||'|';
 END
@@ -1843,21 +1842,21 @@ BEGIN
 END
 
 statement ok
-CREATE FUNCTION fRegionFuzz(d float, buffer float) 
+CREATE FUNCTION fRegionFuzz(d float, buffer float)
 RETURNS float
-BEGIN 
+BEGIN
 	DECLARE fuzzR float;
 	SET fuzzR = SYS.RADIANS(buffer/60.00000000);
 	-----------------------------------------
 	-- convert it to a normal form (blank separated trailing blank, upper case)
 	-----------------------------------------
-	IF d >  1 
+	IF d >  1
 		THEN SET d = 1;
 	END IF;
-	IF d < -1 
+	IF d < -1
 		THEN SET d = -1;
 	END IF;
-	CASE WHEN ACOS(d) + fuzzR <PI() 
+	CASE WHEN ACOS(d) + fuzzR <PI()
 	  	THEN SET d = COS(ACOS(d)+fuzzR);
 	  	ELSE SET d = -1 ;
 	END CASE;
@@ -1906,14 +1905,14 @@ statement ok
 CREATE FUNCTION fHtmCoverCircleXyz(x float, y float, z float, radius float)
 RETURNS  TABLE (
 	HtmIDStart bigint ,
-	HtmIDEnd bigint 
+	HtmIDEnd bigint
 )
 BEGIN
 	RETURN TABLE (SELECT 1,2);
 END
 
 statement ok
-CREATE FUNCTION fGetNearbyFrameEq (ra float, deci float, 
+CREATE FUNCTION fGetNearbyFrameEq (ra float, deci float,
 					radius float, zoo int)
 RETURNS TABLE (
 	fieldID 	bigint ,
@@ -1925,11 +1924,11 @@ RETURNS TABLE (
 	f 		    float  ,
 	node 		float  ,
 	incl 		float  ,
-	distance    float 		-- distance in arc minutes 
-  ) 
+	distance    float 		-- distance in arc minutes
+  )
 BEGIN
 	--
-	DECLARE nx float,ny float,nz float; 
+	DECLARE nx float,ny float,nz float;
 	SET nx  = COS(SYS.RADIANS(deci))*COS(SYS.RADIANS(ra));
 	SET ny  = COS(SYS.RADIANS(deci))*SIN(SYS.RADIANS(ra));
 	SET nz  = SIN(SYS.RADIANS(deci));
@@ -1942,7 +1941,7 @@ BEGIN
 	INSERT into cover
 		SELECT htmidStart, htmidEnd
 		FROM fHtmCoverCircleXyz(nx,ny,nz,radius);
-	RETURN TABLE(SELECT  fieldID,a,b,c,d,e,f,node,incl, 
+	RETURN TABLE(SELECT  fieldID,a,b,c,d,e,f,node,incl,
            (2*SYS.DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) as val
 	    FROM cover H inner join Frame F ON  (F.HtmID BETWEEN H.htmidStart AND H.htmidEnd )
 	    WHERE zoom = zoo
@@ -1961,13 +1960,13 @@ RETURNS TABLE (
 	f 		float  ,
 	node 		float  ,
 	incl 		float  ,
-        distance        float 		-- distance in arc minutes 
-  ) 
+        distance        float 		-- distance in arc minutes
+  )
 BEGIN
 	RETURN TABLE (
 	    SELECT fieldID, a, b, c, d, e, f, node, incl, distance  -- look up to 81
 	    FROM fGetNearbyFrameEq (ra , deci, 81, zoom )	-- arcmin away from center.
-            ORDER BY distance ASC LIMIT 1);   
+            ORDER BY distance ASC LIMIT 1);
 END
 
 statement ok
@@ -2038,7 +2037,6 @@ begin
         select ra into raa
                 from PhotoObjAll
                 where objID = objIdd;
-        
         select "dec" into decc
                 from PhotoObjAll
                 where objID = objIdd;
@@ -2048,13 +2046,13 @@ end
 statement ok
 CREATE FUNCTION fGetUrlFrameImg(frameId bigint, zoom int)
 returns varchar(256)
-begin   
+begin
         declare WebServerURL varchar(500);
         set WebServerURL = 'http://localhost/';
-        select cast(value as varchar(500)) into WebServerURL 
+        select cast(value as varchar(500)) into WebServerURL
                 from SiteConstants
                 where name ='WebServerURL';
-        return WebServerURL || 'get/frameById.asp?id=' 
+        return WebServerURL || 'get/frameById.asp?id='
                 || cast(frameId as varchar(32))
                 || '&zoom=' || cast(zoom as varchar(6)) ;
 end
@@ -2064,7 +2062,7 @@ CREATE FUNCTION fGetUrlFitsField(fieldIdd bigint)
 RETURNS varchar(128)
 BEGIN
 	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
-		run6 varchar(10), stripe varchar(8), camcol varchar(8), 
+		run6 varchar(10), stripe varchar(8), camcol varchar(8),
 		field varchar(8), startMu varchar(10), skyVersion varchar(8);
 	SET link = (select value from SiteConstants where name='DataServerURL');
 	SET link = link || 'imaging/';
@@ -2079,30 +2077,30 @@ BEGIN
 	END IF;
 	SELECT  cast(f.run as varchar(8)) into run
 	    FROM Field f, Segment s
-	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
-	SELECT  
-		cast(f.rerun as varchar(8)) into rerun 
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID;
+	SELECT
+		cast(f.rerun as varchar(8)) into rerun
 	    FROM Field f, Segment s
-	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
-	SELECT  
-		cast(s.startMu as varchar(10)) into startMu 
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID;
+	SELECT
+		cast(s.startMu as varchar(10)) into startMu
 	    FROM Field f, Segment s
-	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
-	SELECT  
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID;
+	SELECT
 		cast(s.stripe as varchar(8)) into stripe
 	    FROM Field f, Segment s
-	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
-	SELECT  
-		cast(f.camcol as varchar(8)) into camcol 
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID;
+	SELECT
+		cast(f.camcol as varchar(8)) into camcol
 	    FROM Field f, Segment s
-	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
-	SELECT  
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID;
+	SELECT
 		cast(f.field as varchar(8)) into field
 	    FROM Field f, Segment s
-	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID;
 	SET run6   = substring('000000',1,6-length(run)) || run;
 	SET field = substring('0000',1,4-length(field)) || field;
-	RETURN 	 link || 'stripe' || stripe || '_mu' || startMu || '_' 
+	RETURN 	 link || 'stripe' || stripe || '_mu' || startMu || '_'
 		|| skyVersion || '/' || camcol || '/tsField-' || run6 || '-'
 		|| camcol || '-' || rerun || '-' || field || '.fit';
 END
@@ -2122,10 +2120,10 @@ RETURNS TABLE (
     cz float ,
     htmID bigint,
     distance float		-- distance in arc minutes
-  ) 
+  )
 BEGIN
-	RETURN TABLE (SELECT 
-	    objID, 
+	RETURN TABLE (SELECT
+	    objID,
 	    run,
 	    camcol,
 	    field,
@@ -2136,8 +2134,8 @@ BEGIN
 	    cy,
 	    cz,
 	    htmID,
- 	    2*SYS.DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 as deg 
-	    --sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/d2r*60 
+ 	    2*SYS.DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 as deg
+	    --sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/d2r*60
 	    FROM fHtmCoverCircleXyz(nx,ny,nz,rr) H join PhotoObjAll P
 	             ON  (P.HtmID BETWEEN H.HtmIDstart AND H.HtmIDend )
 	    AND ( (2*SYS.DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60)< r)
@@ -2159,7 +2157,7 @@ RETURNS TABLE (
     cz float ,
     htmID bigint,
     distance float		-- distance in arc minutes
-  ) 
+  )
 BEGIN
 	DECLARE d2r float, nx float,ny float,nz float ;
 	DECLARE TABLE t(
@@ -2175,16 +2173,16 @@ BEGIN
 	    cz float ,
 	    htmID bigint,
 	    distance float		-- distance in arc minutes
-  	); 
+  	);
 	set d2r = PI()/180.0;
-	if (r<0) 
+	if (r<0)
 		THEN RETURN t;
 	END IF;
 	set nx  = COS("dec"*d2r)*COS(ra*d2r);
 	set ny  = COS("dec"*d2r)*SIN(ra*d2r);
 	set nz  = SIN("dec"*d2r);
-	RETURN TABLE (	
-	SELECT * FROM fGetNearbyObjAllXYZ(nx,ny,nz,r)); 
+	RETURN TABLE (
+	SELECT * FROM fGetNearbyObjAllXYZ(nx,ny,nz,r));
 END
 
 statement ok
@@ -2193,29 +2191,29 @@ returns varchar(256)
 begin
 	declare WebServerURL varchar(500);
 	set WebServerURL = 'http://localhost/';
-	select cast(value as varchar(500)) into WebServerURL 
+	select cast(value as varchar(500)) into WebServerURL
 	from SiteConstants
 		where name ='WebServerURL';
-	return WebServerURL || 'get/specById.asp?id=' 
+	return WebServerURL || 'get/specById.asp?id='
 		|| cast(coalesce(specObjId,0) as varchar(32));
 end
 
 statement ok
 CREATE FUNCTION fGetUrlFitsSpectrum(specObjIdd bigint)
-RETURNS varchar(128) 
+RETURNS varchar(128)
 BEGIN
         DECLARE link varchar(128), plate varchar(16), mjd varchar(16), fiber varchar(16), rerun int;
-        SET link = (select value from SiteConstants where name='DataServerURL');        
+        SET link = (select value from SiteConstants where name='DataServerURL');
 	SET rerun=(select p.spRerun from specobjall s, platex p where s.plateid=p.plateid and s.specobjid=specObjIdd);
         SET link = link || 'spectro/1d_' || cast(rerun as varchar(4)) || '/';
         SELECT cast(p.mjd as varchar(8)) into mjd
-            FROM PlateX p, specObjAll s 
+            FROM PlateX p, specObjAll s
             WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
 	SELECT cast(p.plate as varchar(8)) into plate
-            FROM PlateX p, specObjAll s 
+            FROM PlateX p, specObjAll s
             WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
-	SELECT cast(s.fiberID as varchar(8)) into fiber  
-            FROM PlateX p, specObjAll s 
+	SELECT cast(s.fiberID as varchar(8)) into fiber
+            FROM PlateX p, specObjAll s
             WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
         SET plate = substring('0000',1,4-length(plate)) || plate;
         SET fiber = substring( '000',1,3-length(fiber)) || fiber;
@@ -2237,14 +2235,14 @@ RETURNS TABLE (
     cz float ,
     htmID bigint,
     distance float		-- distance in arc minutes
-  ) 
+  )
 BEGIN
 	DECLARE d2r float,nx float,ny float,nz float ;
 	set d2r = PI()/180.0;
 	set nx  = COS("dec"*d2r)*COS(ra*d2r);
 	set ny  = COS("dec"*d2r)*SIN(ra*d2r);
 	set nz  = SIN("dec"*d2r);
-	RETURN TABLE (SELECT * 
+	RETURN TABLE (SELECT *
 	FROM fGetNearbyObjAllXYZ(nx,ny,nz,r)
 	ORDER BY distance ASC LIMIT 1);   -- order by needed to get the closest one.
 END
@@ -2255,7 +2253,7 @@ returns varchar(256)
 begin
         declare WebServerURL varchar(500);
         set WebServerURL = 'http://localhost/';
-        select cast(value as varchar(500)) into WebServerURL 
+        select cast(value as varchar(500)) into WebServerURL
                 from SiteConstants
                 where name ='WebServerURL';
         return WebServerURL || 'tools/explore/obj.asp?ra='

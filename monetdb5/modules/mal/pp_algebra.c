@@ -716,7 +716,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
@@ -746,7 +746,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
@@ -776,7 +776,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
@@ -807,7 +807,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
@@ -842,7 +842,6 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	str err = NULL;
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
-	lng timeoffset = 0;
 
 	BAT *u = BATdescriptor(*uid);
 	BAT *b = BATdescriptor(*bid);
@@ -879,9 +878,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			oid *gp = Tloc(g, 0);
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			if (qry_ctx != NULL) {
-				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-			}
+			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 			unique(bit)
 			unique(bte)
 			unique(sht)
@@ -899,7 +896,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			cunique(uuid, hge)
 #endif
 			aunique(str)
-			TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp algebra.unique", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.unique", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err) {
 			BBPunfix(g->batCacheid);
@@ -929,7 +926,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
@@ -960,7 +957,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
@@ -991,7 +988,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
@@ -1023,7 +1020,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
@@ -1059,7 +1056,6 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	str err = NULL;
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
-	lng timeoffset = 0;
 
 	BAT *u = BATdescriptor(*uid);
 	BAT *G = BATdescriptor(*Gid);
@@ -1100,9 +1096,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			int prime = hash_prime_nr[h->bits-5];
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			if (qry_ctx != NULL) {
-				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-			}
+			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 			gunique(bit)
 			gunique(bte)
 			gunique(sht)
@@ -1120,7 +1114,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			gcunique(uuid, hge)
 #endif
 			gaunique(str)
-			TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp algebra.(group_)unique", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.(group_)unique", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err) {
 			BBPunfix(ng->batCacheid);
@@ -1154,7 +1148,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			gid k = (gid)_hash_##Type(bp[i])&h->mask; \
 			gid g = 0; \
@@ -1269,7 +1263,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
 			gid g = 0; \
@@ -1307,7 +1301,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 			gid k = (gid)h->hsh(bpi)&h->mask; \
@@ -1348,7 +1342,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		Type *vals = h->vals; \
 		mallocator *ma = h->allocators[P->wid]; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 			gid k = (gid)str_hsh(bpi)&h->mask; \
@@ -1387,7 +1381,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		char **vals = h->vals; \
 		mallocator *ma = h->allocators[P->wid]; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 			gid k = (gid)h->hsh(bpi)&h->mask; \
@@ -1428,7 +1422,6 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
 	str err = NULL;
 	BAT *u = NULL, *b = NULL;
-	lng timeoffset = 0;
 
 	b = BATdescriptor(*bid);
 	if (!b)
@@ -1507,9 +1500,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			oid *gp = Tloc(g, 0);
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			if (qry_ctx != NULL) {
-				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-			}
+			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 			vgroup()
 			group(bit)
 			group(bte)
@@ -1530,7 +1521,10 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			} else {
 				agroup(str)
 			}
-			TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp group.group", RUNTIME_QRY_TIMEOUT));
+			if (ATOMstorage(tt) > TYPE_str) {
+				err = createException(MAL, "pp group.group", "Type (%s) not handled yet\n", ATOMname(tt));
+			}
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp group.group", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
 			BBPunfix(g->batCacheid);
@@ -1569,7 +1563,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			gid k = (gid)combine(gi[i], _hash_##Type(bp[i]), prime)&h->mask; \
 			gid g = 0; \
@@ -1608,7 +1602,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		oid bpi = b->tseqbase; \
 		oid *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
 			gid g = 0; \
@@ -1647,7 +1641,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
 			gid g = 0; \
@@ -1686,7 +1680,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 			gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1728,7 +1722,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		Type *vals = h->vals; \
 		mallocator *ma = h->allocators[P->wid]; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 			gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
@@ -1768,7 +1762,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		Type *vals = h->vals; \
 		mallocator *ma = h->allocators[P->wid]; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 			gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1809,7 +1803,6 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	Pipeline *p = (Pipeline*)*H;
 	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
 	str err = NULL;
-	lng timeoffset = 0;
 	BAT *u = NULL;
 
 	BAT *b = BATdescriptor(*bid);
@@ -1902,9 +1895,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			int prime = hash_prime_nr[h->bits-5];
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			if (qry_ctx != NULL) {
-				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-			}
+			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 			vderive()
 			derive(bit)
 			derive(bte)
@@ -1925,7 +1916,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			} else {
 				aderive(str)
 			}
-			TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp group.group(derive)", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp group.group(derive)", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
 			BBPunfix(g->batCacheid);
@@ -1965,10 +1956,10 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		Type *o = Tloc(r, 0); \
 		if (g->ttype == TYPE_void) { \
 			oid gi = g->tseqbase; \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				o[gi + i] = v[i]; \
 		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				o[gp[i]] = v[i]; \
 		} \
 	}
@@ -1979,10 +1970,10 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		oid *o = Tloc(r, 0); \
 		if (g->ttype == TYPE_void) { \
 			oid gi = g->tseqbase; \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				o[gi + i] = vi + i; \
 		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				o[gp[i]] = vi + i; \
 		} \
 	}
@@ -1993,10 +1984,10 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		Toff *o = Tloc(r, 0); \
 		if (g->ttype == TYPE_void) { \
 			oid gi = g->tseqbase; \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				o[gi + i] = v[i]; \
 		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				o[gp[i]] = v[i]; \
 		} \
 	}
@@ -2008,7 +1999,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		int ins = 0; \
 		if (g->ttype == TYPE_void) { \
 			oid gi = g->tseqbase; \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				int w = r->twidth; \
 				if(w == 1) { \
 					uint8_t *o = Tloc(r, 0); \
@@ -2035,7 +2026,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 					TIMEOUT_LOOP_BREAK; \
 			} \
 		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				int w = r->twidth; \
 				if(w == 1) { \
 					uint8_t *o = Tloc(r, 0); \
@@ -2074,7 +2065,6 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
-	lng timeoffset = 0;
 	bool private = true, local_storage = false, locked = false;
 
 	g = BATdescriptor(*gid);
@@ -2170,9 +2160,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		oid *gp = Tloc(g, 0);
 		tt = b->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		if (qry_ctx != NULL) {
-			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-		}
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 		vproject()
 			project(bte)
 			project(sht)
@@ -2197,7 +2185,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 					aproject(str,4,uint32_t)
 					aproject(str,8,var_t)
 			}
-		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp algebra.projection", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.projection", RUNTIME_QRY_TIMEOUT));
 	}
 	if (err)
 		goto error;
@@ -2232,7 +2220,6 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	(void)H;
 	BAT *r = NULL, *g = NULL;
 	str err = NULL;
-	lng timeoffset = 0;
 	bool private = true, locked = false;
 
 	if ((g = BATdescriptor(*gid)) == NULL) {
@@ -2282,14 +2269,12 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	cnt = BATcount(g);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	oid *v = Tloc(g, 0);
 	lng *o = Tloc(r, 0);
-	TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset)
+	TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
 		o[v[i]]++;
-	TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp aggr.count(star)", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.count(star)", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -2318,7 +2303,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 #define gcount(Type) \
 	if (tt == TYPE_##Type) { \
 			Type *in = Tloc(b, 0); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				o[v[i]]+= (!is_##Type##_nil(in[i])); \
 	}
 
@@ -2326,7 +2311,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	if (tt == TYPE_##Type) { \
 			Type *in = Tloc(b, 0); \
 		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				o[v[i]]+= cmp(in+i, &Type##_nil) != 0; \
 	}
 
@@ -2335,7 +2320,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 			BATiter bi = bat_iterator(b); \
 			const void *nil = ATOMnilptr(tt); \
 		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				Type bpi = BUNtvar(bi, i); \
 				o[v[i]]+= cmp(bpi, nil)!=0; \
 			} \
@@ -2352,7 +2337,6 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	/* use bid to check for null values */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
-	lng timeoffset = 0;
 	bool private = true, locked = false;
 
 	g = BATdescriptor(*gid);
@@ -2405,13 +2389,11 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	cnt = BATcount(g);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	oid *v = Tloc(g, 0);
 	lng *o = Tloc(r, 0);
 	if (b->tnonil) {
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset)
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
 			o[v[i]]++;
 	} else { /* per type */
 		int tt = b->ttype;
@@ -2432,7 +2414,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 		gcount(dbl);
 		gacount(str);
 	}
-	TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp aggr.count", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.count", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -2465,7 +2447,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	if (tt == TYPE_##InType && ot == TYPE_##OutType) { \
 			InType *in = Tloc(b, 0); \
 			OutType *o = Tloc(r, 0); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				if (!is_##InType##_nil(in[i])) { \
 					if (is_##OutType##_nil(o[grp[i]])) \
 						o[grp[i]] = in[i]; \
@@ -2486,7 +2468,6 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *pid = getArgReference_bat(stk, pci, 4);
 	BAT *b = NULL, *g = NULL, *r = NULL;
 	str err = NULL;
-	lng timeoffset = 0;
 	bool private = true, locked = false;
 
 	g = BATdescriptor(*gid);
@@ -2544,9 +2525,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tt = b->ttype, ot = r->ttype;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	oid *grp = Tloc(g, 0);
 
 	gsum(bte,bte);
@@ -2569,7 +2548,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	gsum(flt,flt);
 	gsum(dbl,flt);
 	gsum(dbl,dbl);
-	TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp aggr.sum", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.sum", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -2600,7 +2579,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tt == TYPE_##InType && ot == TYPE_##OutType) { \
 			InType *in = Tloc(b, 0); \
 			OutType *o = Tloc(r, 0); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				if (!is_##InType##_nil(in[i])) { \
 					if (is_##OutType##_nil(o[grp[i]])) \
 						o[grp[i]] = in[i]; \
@@ -2621,7 +2600,6 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *pid = getArgReference_bat(stk, pci, 4);
 	BAT *b = NULL, *g = NULL, *r = NULL;
 	str err = NULL;
-	lng timeoffset = 0;
 	bool private = true, locked = false;
 
 	g = BATdescriptor(*gid);
@@ -2679,9 +2657,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tt = b->ttype, ot = r->ttype;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	oid *grp = Tloc(g, 0);
 
 	gprod(lng,bte);
@@ -2697,7 +2673,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	gprod(flt,flt);
 	gprod(dbl,dbl);
-	TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp aggr.prod", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.prod", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -2747,7 +2723,6 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *cn = bn ? BATdescriptor(*rcid) : NULL;
 	BAT *rn = bn && rrem ? BATdescriptor(*rrem) : NULL;
 	bool private = (bn == NULL || bn->T.private_bat), locked = false;
-	lng timeoffset = 0;
 	str err = NULL;
 
 	if (!private) {
@@ -2804,9 +2779,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng *rrems = Tloc(rn, 0);
 		oid *grps = Tloc(g, 0);
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		if (qry_ctx != NULL) {
-			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-		}
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte: {
 			bte *vals = Tloc(b, 0);
@@ -2816,7 +2789,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				rcnts[i] = 0;
 				rrems[i] = 0;
 			}
-			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, timeoffset) {
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
 				avg_aggr_comb(bte, vals[i], rems[i], cnts[i],
 							  rvals[grps[i]], rrems[grps[i]], rcnts[grps[i]]);
 			}
@@ -2830,7 +2803,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				rcnts[i] = 0;
 				rrems[i] = 0;
 			}
-			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, timeoffset) {
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
 				avg_aggr_comb(sht, vals[i], rems[i], cnts[i],
 							  rvals[grps[i]], rrems[grps[i]], rcnts[grps[i]]);
 			}
@@ -2844,7 +2817,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				rcnts[i] = 0;
 				rrems[i] = 0;
 			}
-			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, timeoffset) {
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
 				avg_aggr_comb(int, vals[i], rems[i], cnts[i],
 							  rvals[grps[i]], rrems[grps[i]], rcnts[grps[i]]);
 			}
@@ -2858,7 +2831,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				rcnts[i] = 0;
 				rrems[i] = 0;
 			}
-			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, timeoffset) {
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
 				avg_aggr_comb(lng, vals[i], rems[i], cnts[i],
 							  rvals[grps[i]], rrems[grps[i]], rcnts[grps[i]]);
 			}
@@ -2873,7 +2846,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				rcnts[i] = 0;
 				rrems[i] = 0;
 			}
-			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, timeoffset) {
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
 				avg_aggr_comb(hge, vals[i], rems[i], cnts[i],
 							  rvals[grps[i]], rrems[grps[i]], rcnts[grps[i]]);
 			}
@@ -2881,7 +2854,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 #endif
 		}
-		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp aggr.avg", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.avg", RUNTIME_QRY_TIMEOUT));
 		if (err) goto error;
 
 		pipeline_lock2(bn);
@@ -2946,7 +2919,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tt == TYPE_##Type) { \
 			Type *in = Tloc(b, 0); \
 			Type *o = Tloc(r, 0); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				if (is_##Type##_nil(o[grp[i]])) \
 					o[grp[i]] = in[i]; \
 				else if (!is_##Type##_nil(in[i])) \
@@ -2958,7 +2931,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
 			Type *in = Tloc(b, 0); \
 			Type *o = Tloc(r, 0); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				if (is_##Type##_nil(o[grp[i]])) \
 					o[grp[i]] = in[i]; \
 				else if (!is_##Type##_nil(in[i])) \
@@ -2992,24 +2965,24 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				op += GDK_VAROFFSET; \
 				uint8_t *in = Tloc(b, 0); \
 				uint8_t *o = Tloc(r, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 					f(cmp, o, grp[i], op, in, i, bp, nil); \
 			} else if (b->twidth == 2) { \
 				bp += GDK_VAROFFSET; \
 				op += GDK_VAROFFSET; \
 				uint16_t *in = Tloc(b, 0); \
 				uint16_t *o = Tloc(r, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 					f(cmp, o, grp[i], op, in, i, bp, nil); \
 			} else if (b->twidth == 4) { \
 				uint32_t *in = Tloc(b, 0); \
 				uint32_t *o = Tloc(r, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 					f(cmp, o, grp[i], op, in, i, bp, nil); \
 			} else if (b->twidth == 8) { \
 				var_t *in = Tloc(b, 0); \
 				var_t *o = Tloc(r, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 					f(cmp, o, grp[i], op, in, i, bp, nil); \
 			} \
 			bat_iterator_end(&bi); \
@@ -3064,20 +3037,20 @@ getoffset(const void *b, BUN p, int w)
 			if (b->twidth == 1) { \
 				bp += GDK_VAROFFSET; \
 				uint8_t *in = Tloc(b, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 					f##_(cmp, grp[i], in, i, bp, nil); \
 			} else if (b->twidth == 2) { \
 				bp += GDK_VAROFFSET; \
 				uint16_t *in = Tloc(b, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 					f##_(cmp, grp[i], in, i, bp, nil); \
 			} else if (b->twidth == 4) { \
 				uint32_t *in = Tloc(b, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 					f##_(cmp, grp[i], in, i, bp, nil); \
 			} else if (b->twidth == 8) { \
 				var_t *in = Tloc(b, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 					f##_(cmp, grp[i], in, i, bp, nil); \
 			} \
 			bat_iterator_end(&bi); \
@@ -3090,7 +3063,6 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
-	lng timeoffset = 0;
 	bool private = true, local_storage = false, locked = false;
 
 	g = BATdescriptor(*gid);
@@ -3193,9 +3165,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	cnt = BATcount(g);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	oid *grp = Tloc(g, 0);
 
 	gfunc(bit,min);
@@ -3217,7 +3187,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	} else {
 		gafunc(vamin);
 	}
-	TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp aggr.min", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.min", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -3251,7 +3221,6 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
-	lng timeoffset = 0;
 	bool private = true, local_storage = false, locked = false;
 
 	g = BATdescriptor(*gid);
@@ -3352,9 +3321,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	cnt = BATcount(g);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	oid *grp = Tloc(g, 0);
 
 	gfunc(bit,max);
@@ -3376,7 +3343,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	} else {
 		gafunc(vamax);
 	}
-	TIMEOUT_CHECK(timeoffset, err = createException(SQL, "pp aggr.max", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.max", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}

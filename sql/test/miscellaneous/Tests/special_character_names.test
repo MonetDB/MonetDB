@@ -7,7 +7,7 @@ start transaction
 statement ok
 create table "a!1" ("a!1" int )
 
-query I
+query I nosort
 select "a!1" from "a!1"
 ----
 
@@ -23,196 +23,196 @@ create table "a#1" ("a#1" int )
 statement ok
 create table "a$1" ("a$1" int )
 
-query I
+query I nosort
 select "a$1" from "a$1"
 ----
 
 statement ok
 create table "a%1" ("a%1" int )
 
-query I
+query I nosort
 select "a%1" from "a%1"
 ----
 
 statement ok
 create table "a&1" ("a&1" int )
 
-query I
+query I nosort
 select "a&1" from "a&1"
 ----
 
 statement ok
 create table "a'1" ("a'1" int )
 
-query I
+query I nosort
 select "a'1" from "a'1"
 ----
 
 statement ok
 create table "a(1" ("a(1" int )
 
-query I
+query I nosort
 select "a(1" from "a(1"
 ----
 
 statement ok
 create table "a)1" ("a)1" int )
 
-query I
+query I nosort
 select "a)1" from "a)1"
 ----
 
 statement ok
 create table "a*1" ("a*1" int )
 
-query I
+query I nosort
 select "a*1" from "a*1"
 ----
 
 statement ok
 create table "a+1" ("a+1" int )
 
-query I
+query I nosort
 select "a+1" from "a+1"
 ----
 
 statement ok
 create table "a,1" ("a,1" int )
 
-query I
+query I nosort
 select "a,1" from "a,1"
 ----
 
 statement ok
 create table "a-1" ("a-1" int )
 
-query I
+query I nosort
 select "a-1" from "a-1"
 ----
 
 statement ok
 create table "a.1" ("a.1" int )
 
-query I
+query I nosort
 select "a.1" from "a.1"
 ----
 
 statement ok
 create table "a/1" ("a/1" int )
 
-query I
+query I nosort
 select "a/1" from "a/1"
 ----
 
 statement ok
 create table "a:1" ("a:1" int )
 
-query I
+query I nosort
 select "a:1" from "a:1"
 ----
 
 statement ok
 create table "a;1" ("a;1" int )
 
-query I
+query I nosort
 select "a;1" from "a;1"
 ----
 
 statement ok
 create table "a<1" ("a<1" int )
 
-query I
+query I nosort
 select "a<1" from "a<1"
 ----
 
 statement ok
 create table "a=1" ("a=1" int )
 
-query I
+query I nosort
 select "a=1" from "a=1"
 ----
 
 statement ok
 create table "a>1" ("a>1" int )
 
-query I
+query I nosort
 select "a>1" from "a>1"
 ----
 
 statement ok
 create table "a?1" ("a?1" int )
 
-query I
+query I nosort
 select "a?1" from "a?1"
 ----
 
 statement ok
 create table "a@1" ("a@1" int )
 
-query I
+query I nosort
 select "a@1" from "a@1"
 ----
 
 statement ok
 create table "a[1" ("a[1" int )
 
-query I
+query I nosort
 select "a[1" from "a[1"
 ----
 
 statement ok
 create table "a]1" ("a]1" int )
 
-query I
+query I nosort
 select "a]1" from "a]1"
 ----
 
 statement ok
 create table "a^1" ("a^1" int )
 
-query I
+query I nosort
 select "a^1" from "a^1"
 ----
 
 statement ok
 create table "a_1" ("a_1" int )
 
-query I
+query I nosort
 select "a_1" from "a_1"
 ----
 
 statement ok
 create table "a`1" ("a`1" int )
 
-query I
+query I nosort
 select "a`1" from "a`1"
 ----
 
 statement ok
 create table "a{1" ("a{1" int )
 
-query I
+query I nosort
 select "a{1" from "a{1"
 ----
 
 statement ok
 create table "a|1" ("a|1" int )
 
-query I
+query I nosort
 select "a|1" from "a|1"
 ----
 
 statement ok
 create table "a}1" ("a}1" int )
 
-query I
+query I nosort
 select "a}1" from "a}1"
 ----
 
 statement ok
 create table "a~1" ("a~1" int )
 
-query I
+query I nosort
 select "a~1" from "a~1"
 ----
 
@@ -220,7 +220,7 @@ select "a~1" from "a~1"
 statement ok
 create table "a""1" ("a""1" int )
 
-query I
+query I nosort
 select "a""1" from "a""1"
 ----
 

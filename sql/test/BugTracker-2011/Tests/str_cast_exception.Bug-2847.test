@@ -21,7 +21,7 @@ statement ok
 INSERT INTO "testschema"."test" VALUES ('OUTPUT','greet_person','3')
 
 query I rowsort
-SELECT "output_min_time_value_1" FROM "testschema"."test" WHERE "type" = 'OUTPUT' AND "output" = 'greet_person' 
+SELECT "output_min_time_value_1" FROM "testschema"."test" WHERE "type" = 'OUTPUT' AND "output" = 'greet_person'
 ----
 3
 

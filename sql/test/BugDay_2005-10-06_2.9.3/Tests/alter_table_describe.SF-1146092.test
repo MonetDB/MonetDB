@@ -237,7 +237,7 @@ select * from describe_columns('sys', 'experiment')
 ----
 config_id
 int
-32
+31
 0
 1
 NULL
@@ -246,7 +246,7 @@ INTEGER
 NULL
 exp_id
 int
-32
+31
 0
 0
 NULL
@@ -255,7 +255,7 @@ INTEGER
 NULL
 result_id
 int
-32
+31
 0
 1
 NULL
@@ -264,7 +264,7 @@ INTEGER
 NULL
 table_id
 int
-32
+31
 0
 1
 NULL
@@ -273,7 +273,7 @@ INTEGER
 NULL
 user_id
 int
-32
+31
 0
 1
 NULL
@@ -322,7 +322,7 @@ CHARACTER VARYING(50)
 NULL
 user_id
 int
-32
+31
 0
 0
 NULL
@@ -335,7 +335,7 @@ select * from describe_columns('sys', 'config')
 ----
 config_id
 int
-32
+31
 0
 0
 NULL
@@ -353,7 +353,7 @@ CHARACTER VARYING(25)
 NULL
 sysinf_id
 int
-32
+31
 0
 1
 NULL
@@ -362,7 +362,7 @@ INTEGER
 NULL
 target_id
 int
-32
+31
 0
 1
 NULL
@@ -375,7 +375,7 @@ select * from describe_columns('sys', 'tapestry_table')
 ----
 fast
 int
-32
+31
 0
 1
 NULL
@@ -384,7 +384,7 @@ INTEGER
 NULL
 nrcols
 int
-32
+31
 0
 1
 NULL
@@ -393,7 +393,7 @@ INTEGER
 NULL
 nrrows
 int
-32
+31
 0
 1
 NULL
@@ -402,7 +402,7 @@ INTEGER
 NULL
 seed
 int
-32
+31
 0
 1
 NULL
@@ -411,7 +411,7 @@ INTEGER
 NULL
 table_id
 int
-32
+31
 0
 0
 NULL
@@ -433,7 +433,7 @@ CHARACTER VARYING(256)
 NULL
 result_id
 int
-32
+31
 0
 0
 NULL
@@ -482,7 +482,7 @@ CHARACTER VARYING(10)
 NULL
 target_id
 int
-32
+31
 0
 0
 NULL
@@ -495,7 +495,7 @@ select * from describe_columns('sys', 'sysinf')
 ----
 cpu_id
 int
-32
+31
 0
 1
 NULL
@@ -504,7 +504,7 @@ INTEGER
 NULL
 disk_id
 int
-32
+31
 0
 1
 NULL
@@ -513,7 +513,7 @@ INTEGER
 NULL
 memory_id
 int
-32
+31
 0
 1
 NULL
@@ -522,7 +522,7 @@ INTEGER
 NULL
 platform_id
 int
-32
+31
 0
 1
 NULL
@@ -531,7 +531,7 @@ INTEGER
 NULL
 sysinf_id
 int
-32
+31
 0
 0
 NULL
@@ -562,7 +562,7 @@ CHARACTER VARYING(50)
 NULL
 platform_id
 int
-32
+31
 0
 0
 NULL
@@ -575,7 +575,7 @@ select * from describe_columns('sys', 'cpu')
 ----
 cpu_id
 int
-32
+31
 0
 0
 NULL
@@ -597,7 +597,7 @@ select * from describe_columns('sys', 'memory')
 ----
 memory_id
 int
-32
+31
 0
 0
 NULL
@@ -606,7 +606,7 @@ INTEGER
 NULL
 size
 int
-32
+31
 0
 1
 NULL
@@ -628,7 +628,7 @@ select * from describe_columns('sys', 'disk')
 ----
 disk_id
 int
-32
+31
 0
 0
 NULL
@@ -637,7 +637,7 @@ INTEGER
 NULL
 size
 int
-32
+31
 0
 1
 NULL
@@ -659,7 +659,7 @@ select * from describe_columns('sys', 'query_walk')
 ----
 begin_x
 int
-32
+31
 0
 1
 NULL
@@ -668,7 +668,7 @@ INTEGER
 NULL
 begin_y
 int
-32
+31
 0
 1
 NULL
@@ -677,7 +677,7 @@ INTEGER
 NULL
 end_x
 int
-32
+31
 0
 1
 NULL
@@ -686,7 +686,7 @@ INTEGER
 NULL
 end_y
 int
-32
+31
 0
 1
 NULL
@@ -695,7 +695,7 @@ INTEGER
 NULL
 nr_runs
 int
-32
+31
 0
 1
 NULL
@@ -704,7 +704,7 @@ INTEGER
 NULL
 nr_steps
 int
-32
+31
 0
 1
 NULL
@@ -713,7 +713,7 @@ INTEGER
 NULL
 step_size
 int
-32
+31
 0
 1
 NULL
@@ -722,7 +722,7 @@ INTEGER
 NULL
 walk_id
 int
-32
+31
 0
 0
 NULL

@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE t7274 ( "id" INTEGER, "g"  GEOMETRY )
 
-query IT
+query IT nosort
 select id, st_collect(g) as g from t7274  where false  group by id
 ----
 

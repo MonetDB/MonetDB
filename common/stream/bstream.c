@@ -28,19 +28,19 @@ bstream_create(stream *s, size_t size)
 		return NULL;
 	if ((b = malloc(sizeof(*b))) == NULL)
 		return NULL;
+	if (size == 0)
+		size = BUFSIZ;
 	*b = (bstream) {
 		.mode = size,
 		.s = s,
 		.eof = false,
+		.size = size,
+		.buf = malloc(size + 1 + 1),
 	};
-	if (size == 0)
-		size = BUFSIZ;
-	b->buf = malloc(size + 1 + 1);
 	if (b->buf == NULL) {
 		free(b);
 		return NULL;
 	}
-	b->size = size;
 	return b;
 }
 
@@ -200,3 +200,10 @@ bstream_destroy(bstream *s)
 	}
 }
 
+int
+bstream_getoob(bstream *s)
+{
+	if (s && s->s)
+		return mnstr_getoob(s->s);
+	return 0;
+}

@@ -82,7 +82,6 @@ VALUES
     (8500000000 - 250000000 / 2
     ,8500000000 + 250000000 / 2
     )
-  
 
 statement ok
 CREATE FUNCTION getBand(ifreq_eff DOUBLE) RETURNS INT

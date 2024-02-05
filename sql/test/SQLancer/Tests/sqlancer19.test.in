@@ -368,7 +368,7 @@ SELECT CAST(trim('14', 'abc') AS STRING(408)), CAST(trim('14', 'abc') AS VARCHAR
 14
 14
 
-query TTTTTT nosort
+query ITTTTT nosort
 SELECT NULL, 'NULL', 'null', cast(NULL as clob), cast('NULL' as clob), cast('null' as clob) FROM t3 where t3.c0 = 1
 ----
 NULL
@@ -378,7 +378,7 @@ NULL
 NULL
 null
 
-query TTTTTT nosort
+query ITTTTT nosort
 SELECT NULL, 'NULL', 'null', cast(NULL as clob), cast('NULL' as clob), cast('null' as clob) FROM rt3 where rt3.c0 = 1
 ----
 NULL

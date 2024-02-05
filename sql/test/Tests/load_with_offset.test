@@ -5,7 +5,7 @@ CREATE TABLE my_test (
   col3  INT,
   col4  VARCHAR(1),
   col5  VARCHAR(1)
-) 
+)
 
 statement ok
 COPY 5 OFFSET 5 RECORDS INTO my_test FROM stdin USING DELIMITERS '|',E'\n' NULL as ''
@@ -141,5 +141,5 @@ COPY 9 RECORDS INTO my_test FROM stdin USING DELIMITERS '|',E'\n' NULL as '' NO 
 <COPY_INTO_DATA>
 
 statement ok
-DROP   TABLE my_test 
+DROP   TABLE my_test
 

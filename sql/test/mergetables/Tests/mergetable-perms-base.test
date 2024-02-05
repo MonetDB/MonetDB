@@ -31,3 +31,4 @@ alter table allparts_2 add table part1
 
 statement ok
 alter table allparts_2 add table part2
+

@@ -30,20 +30,20 @@ select { fn convert('2022-11-10', SQL_DATE) }
 ----
 2022-11-10
 
-query T rowsort
+query R rowsort
 select { fn convert('3.12345', SQL_DECIMAL) }
 ----
 3.123
 
-query T rowsort
+query R rowsort
 select { fn convert('3.12345', SQL_DOUBLE) }
 ----
-3.12345
+3.123
 
-query T rowsort
+query R rowsort
 select { fn convert('3.12345', SQL_FLOAT) }
 ----
-3.12345
+3.123
 
 query T rowsort
 select { fn convert('a338a15d-0422-4242-a7f0-65316edae19a', SQL_GUID) }
@@ -55,7 +55,7 @@ select { fn convert('+123456789', SQL_INTEGER) }
 ----
 123456789
 
-query I rowsort
+query T rowsort
 select { fn convert('1', SQL_INTERVAL_YEAR) }
 ----
 12
@@ -65,7 +65,7 @@ select { fn convert('1-2', SQL_INTERVAL_YEAR_TO_MONTH) }
 ----
 14
 
-query I rowsort
+query T rowsort
 select { fn convert('12', SQL_INTERVAL_MONTH) }
 ----
 12
@@ -75,12 +75,12 @@ select { fn convert('1', SQL_INTERVAL_DAY) }
 ----
 1
 
-query I rowsort
+query T rowsort
 select { fn convert(date'2022-10-8' - date'2022-10-7', SQL_INTERVAL_DAY) }
 ----
 1
 
-query I rowsort
+query T rowsort
 select { fn convert({d'2022-10-8'} - {d'2022-10-7'}, SQL_INTERVAL_DAY) }
 ----
 1
@@ -150,15 +150,15 @@ select { fn convert('abc', SQL_LONGVARCHAR) }
 ----
 abc
 
-query T rowsort
+query R rowsort
 select { fn convert('3.12345', SQL_NUMERIC) }
 ----
 3.123
 
-query T rowsort
+query R rowsort
 select { fn convert('3.123456', SQL_REAL) }
 ----
-3.123456
+3.123
 
 query I rowsort
 select { fn convert('3', SQL_SMALLINT) }
@@ -204,3 +204,4 @@ query T rowsort
 select { fn convert('abc', SQL_WLONGVARCHAR) }
 ----
 abc
+

@@ -4,15 +4,15 @@ create table foo(x string, y string)
 statement ok
 insert into foo values ('johndoe','doe'),('janedoe','doe'),('robertdoe','doe')
 
-query T
-select levenshtein(x,y) from foo;
+query I nosort
+select levenshtein(x,y) from foo
 ----
 4
 4
 6
 
 statement ok
-drop table foo;
+drop table foo
 
 statement ok
 create table foo(x string)
@@ -47,7 +47,8 @@ robert
 rOObert
 
 statement ok
-drop table foo;
+drop table foo
 
 statement ok
-drop table bar;
+drop table bar
+

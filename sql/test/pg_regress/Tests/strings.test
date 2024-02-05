@@ -8,7 +8,7 @@ first line - next line - third line
 
 query T rowsort
 SELECT 'first line'
-' - next line'  
+' - next line'
 ' - third line'
 	AS "Illegal comment within continuation"
 ----
@@ -515,7 +515,6 @@ statement ok
 insert into toasttest values(repeat('1234567890',10000))
 
 statement ok
- 
 insert into toasttest values(repeat('1234567890',10000))
 
 statement ok
@@ -572,7 +571,6 @@ statement ok
 insert into toasttest values(repeat('1234567890',10000))
 
 statement error
- 
 insert into toasttest values(decode(repeat('1234567890',10000),'escape'))
 
 statement error

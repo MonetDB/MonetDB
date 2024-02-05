@@ -1,7 +1,7 @@
 # TODO: Those test must be part of the ST_DWithin.test
 
 # for gbox, hbox let us define
-# ambiguous_zone_min = dist(gbox, hbox) - diagonal(gbox)/2 - diagonal(hbox)/2 
+# ambiguous_zone_min = dist(gbox, hbox) - diagonal(gbox)/2 - diagonal(hbox)/2
 # ambiguous_zone_max = dist(gbox, hbox)
 # for every distance d in the ST_DWithin (last arg) that falls in the
 # zone we need to calculate the exact distance between for each
@@ -13,7 +13,7 @@
 # - distance < ambiguous_zone_min expect false
 # - dstance in ambiguous_zone AND distance > actual_distance expect true
 # - distance > ambiguous_zone_max expect true
-query T rowsort
+query I rowsort
 SELECT
     ST_DWithin2(g, h, mbr(g), mbr(h), dist)
 FROM (
@@ -23,16 +23,16 @@ FROM (
         (ST_WKTToSQL('LINESTRING(1 1, 2 2)'), ST_WKTToSQL('LINESTRING(3 3, 4 4)'), 3)
 ) AS REL(g, h, dist)
 ----
-False
-True
-True
+0
+1
+1
 
 # ambiguous_zone = [sqrt(2), 2 * sqrt(2)]
 # actual_distance = 2 * sqrt(2)
 # - distance < ambiguous_zone_min expect false
 # - dstance in ambiguous_zone AND distance < actual_distance expect false
 # - distance > ambiguous_zone_max expect true
-query T rowsort
+query I rowsort
 SELECT
     ST_DWithin2(g, h, mbr(g), mbr(h), dist)
 FROM (
@@ -42,9 +42,9 @@ FROM (
         (ST_WKTToSQL('LINESTRING(1 2, 2 1)'), ST_WKTToSQL('LINESTRING(3 4, 4 3)'), 3)
 ) AS REL(g, h, dist)
 ----
-False
-False
-True
+0
+0
+1
 
 # the shapes are equilateral rhombuses
 # ambiguous_zone = [sqrt(2), 2 * sqrt(2)]
@@ -53,7 +53,7 @@ True
 # - distance in ambiguous_zone AND distance < actual_distance expect false
 # - distance in ambiguous_zone AND distance > actual_distance expect true
 # - distance > ambiguous_zone_max expect true
-query T rowsort
+query I rowsort
 SELECT
     ST_DWithin2(g, h, mbr(g), mbr(h), dist)
 FROM (
@@ -80,8 +80,8 @@ FROM (
         )
 ) AS REL(g, h, dist)
 ----
-False
-False
-True
-True
+0
+0
+1
+1
 

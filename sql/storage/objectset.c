@@ -1113,7 +1113,11 @@ os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, cons
 	};
 
 	lock_reader(os);
-	oi->n =	os->name_based_h;
+	if (name && os->name_map) {
+		int key = hash_key(name);
+		oi->n = (void*)os->name_map->buckets[key&(os->name_map->size-1)];
+	} else
+		oi->n =	os->name_based_h;
 	unlock_reader(os);
 }
 
@@ -1123,22 +1127,39 @@ oi_next(struct os_iter *oi)
 	sql_base *b = NULL;
 
 	if (oi->name) {
-		versionhead  *n = oi->n;
-
 		lock_reader(oi->os); /* intentionally outside of while loop */
-		while (n && !b) {
+		if (oi->os->name_map) {
+			sql_hash_e  *he = (void*)oi->n;
 
-			if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
-				objectversion *ov = n->ov;
+			for (; he && !b; he = he->chain) {
+				versionhead  *n = he->value;
 
-				n = oi->n = n->next;
-				ov = get_valid_object_name(oi->tr, ov);
-				if (ov && os_atmc_get_state(ov) == active)
-					b = ov->b;
-			} else {
-				n = oi->n = n->next;
+				if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
+					objectversion *ov = n->ov;
+
+					ov = get_valid_object_name(oi->tr, ov);
+					if (ov && os_atmc_get_state(ov) == active)
+						b = ov->b;
+				}
 			}
-	 	}
+			oi->n = (void*)he;
+		} else {
+			versionhead  *n = oi->n;
+
+			while (n && !b) {
+
+				if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
+					objectversion *ov = n->ov;
+
+					n = oi->n = n->next;
+					ov = get_valid_object_name(oi->tr, ov);
+					if (ov && os_atmc_get_state(ov) == active)
+						b = ov->b;
+				} else {
+					n = oi->n = n->next;
+				}
+			}
+		}
 		unlock_reader(oi->os);
 	} else {
 		versionhead  *n = oi->n;

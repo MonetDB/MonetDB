@@ -1,4 +1,5 @@
 import sys, os, pymonetdb
+from decimal import *
 
 db = os.getenv("TSTDB")
 port = int(os.getenv("MAPIPORT"))
@@ -13,11 +14,8 @@ except pymonetdb.DatabaseError as e:
 
 try:
     cur1.execute('select                             10000000                *          100000 * 11.51                +          51.097 *          100000;')
-    if has_huge:
-        if cur1.fetchall() != [(11510005109700,)]:
-            sys.stderr.write('[(11510005109700,)] expected')
-    else:
-        sys.stderr.write("Exception expected")
+    if cur1.fetchall()[0][0] != Decimal('11510005109700.000'):
+        sys.stderr.write("Decimal('.11510005109700.000') expected")
 except pymonetdb.DatabaseError as e:
     if not has_huge:
         if "overflow in calculation" not in str(e):
@@ -27,8 +25,8 @@ except pymonetdb.DatabaseError as e:
 try:
     cur1.execute('select          convert(1000000000000000000 , decimal(20)) * 100000000000000 * 11.51                +          51.097 * 100000000000000;')
     if has_huge:
-        if cur1.fetchall() != [(11510005109700,)]:
-            sys.stderr.write('[(11510005109700,)] expected')
+        if cur1.fetchall()[0][0] != Decimal('1151000000000000005109700000000000.000'):
+            sys.stderr.write("Decimal('1151000000000000005109700000000000.000') expected")
     else:
         sys.stderr.write("Exception expected")
 except pymonetdb.DatabaseError as e:

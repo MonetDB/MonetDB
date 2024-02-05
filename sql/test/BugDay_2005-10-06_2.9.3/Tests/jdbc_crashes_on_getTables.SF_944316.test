@@ -1,4 +1,4 @@
-query TTTTTTTTTT rowsort
+query ITTTTIIITT rowsort
 SELECT * FROM (
 	SELECT
 		null AS "TABLE_CAT",

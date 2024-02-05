@@ -17,7 +17,7 @@ statement ok
 	        type VARCHAR(64) NOT NULL,
 	        platform VARCHAR(64) NOT NULL,
 	        PRIMARY KEY (activityId, offs)
-	) 
+	)
 
 statement ok
 	CREATE TABLE prv_cnf_PolicyKey
@@ -27,7 +27,7 @@ statement ok
 	        validityBegin TIMESTAMP NULL,
 	        validityEnd TIMESTAMP NULL,
 	        PRIMARY KEY (policyKeyId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE prv_cnf_SoftwarePackage
@@ -38,7 +38,7 @@ statement ok
 	        validityBegin TIMESTAMP NULL,
 	        validityEnd TIMESTAMP NULL,
 	        PRIMARY KEY (packageId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE prv_Filter
@@ -52,7 +52,7 @@ statement ok
 	        PRIMARY KEY (filterId)
 	        --UNIQUE name(name),
 	        --INDEX focalPlaneId (focalPlaneId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE prv_PolicyFile
@@ -62,7 +62,7 @@ statement ok
 	        hashValue CHAR(32) NOT NULL,
 	        modifiedDate BIGINT NOT NULL,
 	        PRIMARY KEY (policyFileId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE prv_PolicyKey
@@ -73,7 +73,7 @@ statement ok
 	        keyType VARCHAR(16) NOT NULL,
 	        PRIMARY KEY (policyKeyId)
 	        -- KEY (policyFileId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE prv_Run
@@ -82,7 +82,7 @@ statement ok
 	        runId VARCHAR(255) UNIQUE NOT NULL,
 	        PRIMARY KEY (offs)
 	        --UNIQUE UQ_prv_Run_runId(runId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE prv_SoftwarePackage
@@ -90,7 +90,7 @@ statement ok
 	        packageId INTEGER NOT NULL,
 	        packageName VARCHAR(64) NOT NULL,
 	        PRIMARY KEY (packageId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE _MovingObjectToType
@@ -100,7 +100,7 @@ statement ok
 	        probability TINYINT NULL DEFAULT 100
 	        -- KEY (typeId),
 	        -- KEY (movingObjectId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE _ObjectToType
@@ -110,7 +110,7 @@ statement ok
 	        probability TINYINT NULL DEFAULT 100
 	        --KEY (typeId),
 	        --KEY (objectId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE _qservChunkMap
@@ -121,7 +121,7 @@ statement ok
 	        declMax DOUBLE NOT NULL,
 	        chunkId INTEGER NOT NULL,
 	        objCount INTEGER NOT NULL
-	) 
+	)
 
 statement ok
 	CREATE TABLE _qservObjectIdMap
@@ -129,7 +129,7 @@ statement ok
 	        objectId BIGINT NOT NULL,
 	        chunkId INTEGER NOT NULL,
 	        subChunkId INTEGER NOT NULL
-	) 
+	)
 
 statement ok
 	CREATE TABLE _qservSubChunkMap
@@ -141,20 +141,20 @@ statement ok
 	        chunkId INTEGER NOT NULL,
 	        subChunkId INTEGER NOT NULL,
 	        objCount INTEGER NOT NULL
-	) 
+	)
 
 statement ok
 	CREATE TABLE _tmpl_Id
 	(
 	        id BIGINT NOT NULL
-	) 
+	)
 
 statement ok
 	CREATE TABLE _tmpl_IdPair
 	(
 	        first BIGINT NOT NULL,
 	        scnd BIGINT NOT NULL
-	) 
+	)
 
 statement ok
 	CREATE TABLE _tmpl_MatchPair
@@ -162,7 +162,7 @@ statement ok
 	        first BIGINT NOT NULL,
 	        scnd BIGINT NOT NULL,
 	        distance DOUBLE NOT NULL
-	) 
+	)
 
 statement ok
 	CREATE TABLE Ccd_Detector
@@ -174,7 +174,7 @@ statement ok
 	        rdNoise FLOAT NULL,
 	        saturate FLOAT NULL,
 	        PRIMARY KEY (ccdDetectorId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Durations
@@ -196,7 +196,7 @@ statement ok
 	        --INDEX dur_runid (RUNID ASC),
 	        --INDEX idx_durations_pipeline (PIPELINE ASC),
 	        --INDEX idx_durations_name (name ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Filter
@@ -206,7 +206,7 @@ statement ok
 	        photClam FLOAT NOT NULL,
 	        photBW FLOAT NOT NULL,
 	        PRIMARY KEY (filterId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Logs
@@ -236,7 +236,7 @@ statement ok
 	        systemtime BIGINT NULL,
 	        PRIMARY KEY (id)
 	        --INDEX a (RUNID ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE ObjectType
@@ -244,7 +244,7 @@ statement ok
 	        typeId SMALLINT NOT NULL,
 	        description VARCHAR(255) NULL,
 	        PRIMARY KEY (typeId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE sdqa_ImageStatus
@@ -253,7 +253,7 @@ statement ok
 	        statusName VARCHAR(30) NOT NULL,
 	        definition VARCHAR(255) NOT NULL,
 	        PRIMARY KEY (sdqa_imageStatusId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE sdqa_Metric
@@ -265,7 +265,7 @@ statement ok
 	        definition VARCHAR(255) NOT NULL,
 	        PRIMARY KEY (sdqa_metricId)
 	        --UNIQUE UQ_sdqaMetric_metricName(metricName)
-	) 
+	)
 
 statement ok
 	CREATE TABLE sdqa_Rating_ForScienceAmpExposure
@@ -281,7 +281,7 @@ statement ok
 	        --KEY (sdqa_metricId),
 	        --KEY (sdqa_thresholdId),
 	        --KEY (ampExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE sdqa_Rating_ForScienceCcdExposure
@@ -297,7 +297,7 @@ statement ok
 	        --KEY (sdqa_metricId),
 	        --KEY (sdqa_thresholdId),
 	        --KEY (ccdExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE sdqa_Threshold
@@ -310,7 +310,7 @@ statement ok
 	        PRIMARY KEY (sdqa_thresholdId)
 	        --?? UNIQUE UQ_sdqa_Threshold_sdqa_metricId(sdqa_metricId),
 	        --KEY (sdqa_metricId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE _mops_Config
@@ -318,7 +318,7 @@ statement ok
 	        configId BIGINT NOT NULL AUTO_INCREMENT,
 	        configText TEXT NULL,
 	        PRIMARY KEY (configId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE _mops_EonQueue
@@ -330,7 +330,7 @@ statement ok
 	        status CHAR(1) NULL DEFAULT 'I',
 	        PRIMARY KEY (movingObjectId,movingObjectVersion)
 	        --INDEX idx__mopsEonQueue_eventId (eventId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE _mops_MoidQueue
@@ -342,7 +342,7 @@ statement ok
 	        PRIMARY KEY (movingObjectId, movingObjectVersion)
 	        --KEY (movingObjectId),
 	        --INDEX idx_mopsMoidQueue_eventId (eventId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE _tmpl_mops_Ephemeris
@@ -357,7 +357,7 @@ statement ok
 	        pa DOUBLE NULL,
 	        mag DOUBLE NULL
 	        --INDEX idx_mopsEphemeris_movingObjectId (movingObjectId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE _tmpl_mops_Prediction
@@ -372,7 +372,7 @@ statement ok
 	        pa DOUBLE NOT NULL,
 	        mag DOUBLE NOT NULL,
 	        magErr FLOAT NOT NULL
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_Event
@@ -395,7 +395,7 @@ statement ok
 	        --INDEX idx_mopsEvent_movingObjectId (movingObjectId ASC, movingObjectVersion ASC),
 	        --INDEX idx_mopsEvent_procHistoryId (procHistoryId ASC),
 	        --INDEX idx_mopsEvent_ssmId (ssmId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_Event_OrbitDerivation
@@ -405,7 +405,7 @@ statement ok
 	        PRIMARY KEY (eventId, trackletId)
 	        --INDEX idx_mopsEventDerivation_trackletId (trackletId ASC),
 	        --KEY (eventId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_Event_OrbitIdentification
@@ -414,7 +414,7 @@ statement ok
 	        childObjectId BIGINT NOT NULL,
 	        PRIMARY KEY (eventId)
 	        --INDEX idx_mopsEventOrbitIdentification2MovingObject_childObjectId (childObjectId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_Event_TrackletAttribution
@@ -425,7 +425,7 @@ statement ok
 	        ephemerisUncertainty FLOAT NULL,
 	        PRIMARY KEY (eventId)
 	        --INDEX idx_mopsEventTrackletAttribution_trackletId (trackletId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_Event_TrackletPrecovery
@@ -436,7 +436,7 @@ statement ok
 	        ephemerisUncertainty FLOAT NULL,
 	        PRIMARY KEY (eventId)
 	        --INDEX idx_mopsEventTrackletPrecovery_trackletId (trackletId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_Event_TrackletRemoval
@@ -445,7 +445,7 @@ statement ok
 	        trackletId BIGINT NOT NULL,
 	        PRIMARY KEY (eventId)
 	        --INDEX idx_mopsEventTrackletRemoval_trackletId (trackletId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_MovingObjectToTracklet
@@ -454,7 +454,7 @@ statement ok
 	        trackletId BIGINT NOT NULL
 	        --INDEX idx_mopsMovingObjectToTracklets_movingObjectId (movingObjectId ASC),
 	        --INDEX idx_mopsMovingObjectToTracklets_trackletId (trackletId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_SSM
@@ -477,7 +477,7 @@ statement ok
 	        --??UNIQUE UQ_mopsSSM_ssmObjectName(ssmObjectName),
 	        --INDEX idx_mopsSSM_ssmDescId (ssmDescId ASC),
 	        --INDEX idx_mopsSSM_epoch (epoch ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_SSMDesc
@@ -486,7 +486,7 @@ statement ok
 	        prefix CHAR(4) NULL,
 	        description VARCHAR(100) NULL,
 	        PRIMARY KEY (ssmDescId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_Tracklet
@@ -519,7 +519,7 @@ statement ok
 	        --INDEX idx_mopsTracklets_ssmId (ssmId ASC),
 	        --INDEX idx_mopsTracklets_classification (classification ASC),
 	        --INDEX idx_mopsTracklets_extEpoch (extEpoch ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_TrackletToDiaSource
@@ -529,7 +529,7 @@ statement ok
 	        PRIMARY KEY (trackletId, diaSourceId)
 	        --INDEX idx_mopsTrackletsToDIASource_diaSourceId (diaSourceId ASC),
 	        --KEY (trackletId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE mops_TrackToTracklet
@@ -538,7 +538,7 @@ statement ok
 	        trackletId BIGINT NOT NULL,
 	        PRIMARY KEY (trackId, trackletId)
 	        --INDEX IDX_mopsTrackToTracklet_trackletId (trackletId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE _Raw_Ccd_ExposureToVisit
@@ -547,7 +547,7 @@ statement ok
 	        ccdExposureId BIGINT UNIQUE NOT NULL
 	        --KEY (ccdExposureId),
 	        --KEY (visitId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE FpaMetadata
@@ -557,7 +557,7 @@ statement ok
 	        metadataKey VARCHAR(255) NOT NULL,
 	        metadataValue VARCHAR(255) NULL,
 	        PRIMARY KEY (ccdExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE RaftMetadata
@@ -566,7 +566,7 @@ statement ok
 	        metadataKey VARCHAR(255) NOT NULL,
 	        metadataValue VARCHAR(255) NULL,
 	        PRIMARY KEY (raftId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Raw_Amp_Exposure
@@ -576,7 +576,7 @@ statement ok
 	        ampId INTEGER NOT NULL,
 	        PRIMARY KEY (rawAmpExposureId)
 	        -- KEY (rawCcdExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Raw_Amp_Exposure_Metadata
@@ -586,7 +586,7 @@ statement ok
 	        metadataKey VARCHAR(255) NOT NULL,
 	        metadataValue VARCHAR(255) NULL,
 	        PRIMARY KEY (rawAmpExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Raw_Ccd_Exposure
@@ -616,7 +616,7 @@ statement ok
 	        taiObs TIMESTAMP NOT NULL, -- DEFAULT 0,
 	        expTime FLOAT NOT NULL,
 	        PRIMARY KEY (rawCcdExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Raw_Ccd_Exposure_Metadata
@@ -626,7 +626,7 @@ statement ok
 	        metadataKey VARCHAR(255) NOT NULL,
 	        metadataValue VARCHAR(255) NULL,
 	        PRIMARY KEY (rawCcdExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Science_Amp_Exposure
@@ -638,7 +638,7 @@ statement ok
 	        PRIMARY KEY (scienceAmpExposureId)
 	        --KEY (scienceCcdExposureId),
 	        --KEY (rawAmpExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Science_Amp_Exposure_Metadata
@@ -648,7 +648,7 @@ statement ok
 	        metadataKey VARCHAR(255) NOT NULL,
 	        metadataValue VARCHAR(255) NULL,
 	        PRIMARY KEY (scienceAmpExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Science_Ccd_Exposure
@@ -684,7 +684,7 @@ statement ok
 	        gain DOUBLE NULL,
 	        PRIMARY KEY (scienceCcdExposureId)
 	        --KEY (rawCcdExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Science_Ccd_Exposure_Metadata
@@ -694,13 +694,13 @@ statement ok
 	        metadataKey VARCHAR(255) NOT NULL,
 	        metadataValue VARCHAR(255) NULL,
 	        PRIMARY KEY (scienceCcdExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Visit
 	(
 	        visitId INTEGER NOT NULL
-	) 
+	)
 
 statement ok
 	CREATE TABLE CalibSource
@@ -736,7 +736,7 @@ statement ok
 	        --KEY (ccdExposureId),
 	        --KEY (filterId),
 	        --KEY (xAstromSigma)
-	) 
+	)
 
 statement ok
 	CREATE TABLE DiaSource
@@ -820,7 +820,7 @@ statement ok
 	        _chunkId INTEGER NULL,
 	        _subChunkId INTEGER NULL,
 	        PRIMARY KEY (objectId, ccdExposureId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE MovingObject
@@ -914,7 +914,7 @@ statement ok
 	        --INDEX idx_MovingObject_ssmId (ssmId ASC),
 	        --INDEX idx_MovingObject_ssmObjectName (ssmObjectName ASC),
 	        --INDEX idx_MovingObject_status (mopsStatus ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Object
@@ -1147,7 +1147,7 @@ statement ok
 	        _chunkId INTEGER NULL,
 	        _subChunkId INTEGER NULL,
 	        PRIMARY KEY (objectId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE ObjectExtras
@@ -1300,7 +1300,7 @@ statement ok
 	        _chunkId INTEGER NULL,
 	        _subChunkId INTEGER NULL,
 	        PRIMARY KEY (objectId)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Source_pt1
@@ -1403,7 +1403,7 @@ statement ok
 	        --INDEX movingObjectId (movingObjectId ASC),
 	        --INDEX objectId (objectId ASC),
 	        --INDEX procHistoryId (procHistoryId ASC)
-	) 
+	)
 
 statement ok
 	CREATE TABLE Source_pt2
@@ -1474,7 +1474,7 @@ statement ok
 	        --KEY (filterId),
 	        --KEY (movingObjectId),
 	        --KEY (objectId)
-	) 
+	)
 
 statement ok
 	ALTER TABLE prv_cnf_PolicyKey ADD CONSTRAINT FK_prv_cnf_PolicyKey_prv_PolicyKey

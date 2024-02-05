@@ -48,11 +48,10 @@ select * from limittest LIMIT 5 OFFSET 20 ROWS
 statement error
 select * from limittest LIMIT 5 ROWS OFFSET 20
 
-
 -- tests  [ OFFSET pos_lng [ {ROW|ROWS} ] ]  [ FETCH {FIRST|NEXT} nonzero_lng {ROW|ROWS} ONLY ]
 
 statement error
-select * from limittest OFFSET 
+select * from limittest OFFSET
 
 statement error
 select * from limittest OFFSET ROW
@@ -148,7 +147,6 @@ query I nosort
 select * from limittest ORDER BY value OFFSET 222
 ----
 
-
 statement error
 select * from limittest LIMIT 6 OFFSET 5 FETCH NEXT 4 ROWS ONLY
 
@@ -186,3 +184,4 @@ select * from (select * from limittest order by 1 desc OFFSET 50 ROWS FETCH FIRS
 
 statement ok
 drop table if exists limittest
+

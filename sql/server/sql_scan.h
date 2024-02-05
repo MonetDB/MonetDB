@@ -35,6 +35,7 @@ struct scanner {
 	prot mode;		/* which mode (line (1,N), blocked) */
 	char *schema;	/* Keep schema name of create statement, needed AUTO_INCREMENT, SERIAL */
 	char *errstr;	/* error message from the bowels of the scanner */
+	bool aborted;
 
 
 	/* Currently, MonetDB interprets \ specially in strings.  This is contrary

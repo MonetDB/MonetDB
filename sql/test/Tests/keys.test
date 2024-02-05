@@ -202,7 +202,7 @@ query T nosort
 plan select count(distinct a) from dummyme
 ----
 project (
-|  [ "sys"."cnt"(clob "sys", clob "dummyme") NOT NULL as "%1"."%1" ]
+|  [ "sys"."cnt"(varchar "sys", varchar "dummyme") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query I nosort
@@ -246,7 +246,7 @@ project (
 | group by (
 | | project (
 | | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL UNIQUE HASHCOL  ]
-| | ) [ bigint(33)["dummyme"."a" NOT NULL UNIQUE HASHCOL ] NOT NULL as "%3"."%3", "sys"."sql_add"("%3"."%3" NOT NULL, bigint(33) "1") NOT NULL as "%2"."%2" ]
+| | ) [ "sys"."sql_add"("dummyme"."a" NOT NULL UNIQUE HASHCOL , int(1) "1") NOT NULL as "%2"."%2" ]
 | ) [  ] [ "sys"."count" unique  no nil ("%2"."%2" NOT NULL) NOT NULL UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
@@ -262,7 +262,7 @@ project (
 | group by (
 | | project (
 | | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL UNIQUE HASHCOL , "dummyme"."b" ]
-| | ) [ bigint(33)["dummyme"."a" NOT NULL UNIQUE HASHCOL ] NOT NULL as "%3"."%3", bigint(33)["dummyme"."b"] as "%4"."%4", "sys"."sql_add"("%3"."%3" NOT NULL, "%4"."%4") as "%2"."%2" ]
+| | ) [ "sys"."sql_add"("dummyme"."a" NOT NULL UNIQUE HASHCOL , "dummyme"."b") as "%2"."%2" ]
 | ) [  ] [ "sys"."count" unique  no nil ("%2"."%2") NOT NULL UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
@@ -308,7 +308,7 @@ PLAN select count(a) as x, count(*) as y from dummyme
 ----
 project (
 | project (
-| |  [ "sys"."cnt"(clob "sys", clob "dummyme") NOT NULL as "%1"."%1" ]
+| |  [ "sys"."cnt"(varchar "sys", varchar "dummyme") NOT NULL as "%1"."%1" ]
 | ) [ "%1"."%1" NOT NULL, "%1"."%1" NOT NULL as "%2"."%2" ]
 ) [ "%1"."%1" NOT NULL as "x", "%2"."%2" NOT NULL as "y" ]
 

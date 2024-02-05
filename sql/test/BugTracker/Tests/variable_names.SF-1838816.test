@@ -7,5 +7,5 @@ select foo(2)
 2
 
 statement ok
-drop all function foo 
+drop all function foo
 

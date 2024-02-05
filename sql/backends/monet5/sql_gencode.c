@@ -1066,17 +1066,6 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 		}
 		pushInstruction(mb, q);
 	}
-	/* generate a dummy return assignment for functions */
-	if (getArgType(mb, getInstrPtr(mb, 0), 0) != TYPE_void && getInstrPtr(mb, mb->stop - 1)->barrier != RETURNsymbol) {
-		q = newAssignment(mb);
-		if (q == NULL) {
-			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return -1;
-		}
-		getArg(q, 0) = getArg(getInstrPtr(mb, 0), 0);
-		q->barrier = RETURNsymbol;
-		pushInstruction(mb, q);
-	}
 	if (add_end)
 		pushEndInstruction(mb);
 	if (querylog)
@@ -1746,7 +1735,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 			nl, nl);
 	mnstr_printf(fd, "%% .plan # table_name\n");
 	mnstr_printf(fd, "%% rel # name\n");
-	mnstr_printf(fd, "%% clob # type\n");
+	mnstr_printf(fd, "%% varchar # type\n");
 	mnstr_printf(fd, "%% %zu # length\n", len - 1 /* remove = */);
 
 	/* output the data */

@@ -56,8 +56,8 @@ try:
 except pymonetdb.DatabaseError as e:
     if has_huge:
         raise e
-    elif "overflow in conversion" not in str(e):
-        sys.stderr.write('Wrong error %s, expected overflow in conversion' % (str(e)))
+    elif "overflow in calculation" not in str(e):
+        sys.stderr.write('Wrong error %s, expected overflow in calculation' % (str(e)))
 
 cur1.execute("drop table test_num_data;")
 cur1.close()

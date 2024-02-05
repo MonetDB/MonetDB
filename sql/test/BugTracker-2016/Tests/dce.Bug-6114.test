@@ -5,7 +5,6 @@ statement ok
 SET SCHEMA foo
 
 statement ok
- 
 CREATE TABLE comments(
     id BIGINT NOT NULL PRIMARY KEY,
     creationDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
@@ -31,7 +30,7 @@ CREATE TABLE forums(
     id BIGINT NOT NULL PRIMARY KEY,
     title VARCHAR(80) NOT NULL,
     creationDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
-    moderator BIGINT  
+    moderator BIGINT
 )
 
 statement ok
@@ -60,7 +59,7 @@ CREATE TABLE friends(
 statement ok
 CREATE TABLE organisations(
     id BIGINT NOT NULL PRIMARY KEY,
-    "type" VARCHAR(40) NOT NULL,  
+    "type" VARCHAR(40) NOT NULL,
     name VARCHAR(160) NOT NULL,
     url VARCHAR(2000) NOT NULL,
     place_id BIGINT NOT NULL
@@ -136,7 +135,7 @@ statement ok
 CREATE TABLE places(
     id BIGINT NOT NULL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
-    url VARCHAR(2000) NOT NULL,  
+    url VARCHAR(2000) NOT NULL,
     "type" VARCHAR(40) NOT NULL,
     isPartOf BIGINT
 )
@@ -167,7 +166,7 @@ statement ok
 CREATE TABLE tags(
     id BIGINT NOT NULL PRIMARY KEY,
     name VARCHAR(160) NOT NULL,
-    url VARCHAR(2000) NOT NULL  
+    url VARCHAR(2000) NOT NULL
 )
 
 statement ok
@@ -181,7 +180,7 @@ statement ok
 CREATE TABLE tagclasses(
     id BIGINT NOT NULL PRIMARY KEY,
     name VARCHAR(40) NOT NULL,
-    url VARCHAR(2000) NOT NULL  
+    url VARCHAR(2000) NOT NULL
 )
 
 statement ok
@@ -192,7 +191,6 @@ CREATE TABLE tagclass_inheritance(
 )
 
 statement ok
- 
 ALTER TABLE comments ADD FOREIGN KEY(creator) REFERENCES persons(id)
 
 statement ok
@@ -305,7 +303,7 @@ ALTER TABLE tagclass_inheritance ADD FOREIGN KEY(superclass_id) REFERENCES tagcl
 
 query IITTTTTTT rowsort
 WITH
-    params AS (  
+    params AS (
         SELECT
            2199023260527 AS id,
            CAST('Lin' AS VARCHAR(40)) AS name

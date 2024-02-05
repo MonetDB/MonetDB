@@ -125,7 +125,7 @@ select ifnull(null, 'ams') as ams
 ----
 ams
 
-query T rowsort
+query I rowsort
 select ifnull(null, null) as nul
 ----
 NULL
@@ -150,7 +150,7 @@ select {fn IFNULL(NULL, 'ams')} as ams
 ----
 ams
 
-query T rowsort
+query I rowsort
 select {fn IFNULL(NULL, NULL)} as nul
 ----
 NULL
@@ -253,7 +253,6 @@ bb2
 6
 bb2
 bb2
-
 
 query ITITT rowsort
 select i, c, coalesce(i, 2*3) as "ifnull(i,2*3)", coalesce(c, 'has null') as "ifnull(i,'x')", coalesce(i, c) as "ifnull(i,c)" from t6933
@@ -849,28 +848,28 @@ plan select nullif(null, null)
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."nullif"(smallint(16) NULL, smallint(16) NULL) ]
+) [ "sys"."nullif"(smallint(15) NULL, smallint(15) NULL) ]
 
 query T nosort
 plan select CASE WHEN null = null THEN NULL ELSE null END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"(boolean(1) NULL, smallint(16) NULL, smallint(16) NULL) ]
+) [ "sys"."case"(boolean(1) NULL, smallint(15) NULL, smallint(15) NULL) ]
 
 query T nosort
 plan select nullif('ac', 'ac')
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."nullif"(char(2) "ac", char(2) "ac") ]
+) [ "sys"."nullif"(varchar(2) "ac", varchar(2) "ac") ]
 
 query T nosort
 plan select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char NULL, char "ac") ]
+) [ "sys"."case"("sys"."="(varchar(2) "ac", varchar(2) "ac") NOT NULL, varchar NULL, varchar "ac") ]
 
 query T nosort
 plan select nullif(9, 9)
@@ -884,7 +883,7 @@ plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"("sys"."="(tinyint(4) "9", tinyint(4) "9") NOT NULL, tinyint(8) NULL, tinyint(8) "9") ]
+) [ "sys"."case"("sys"."="(tinyint(4) "9", tinyint(4) "9") NOT NULL, tinyint(7) NULL, tinyint(7) "9") ]
 
 query I rowsort
 select 'db' between 'abc' and 'db' as tru

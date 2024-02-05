@@ -594,7 +594,7 @@ CREATE TABLE t1(c2 CLOB)
 statement ok rowcount 3
 INSERT INTO t1(c2) VALUES('aaa'), ('y2qxM9H'), (')pI')
 
-query T rowsort
+query I rowsort
 SELECT min(NULL) FROM t1 GROUP BY (0.58)|(232)
 ----
 NULL

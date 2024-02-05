@@ -76,7 +76,7 @@ def main():
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
     print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB5" UpgradeCode="{}" Version="{}">'.format(upgradecode[arch], sys.argv[1]))
-    print(r'    <Package Id="*" Comments="MonetDB5/SQL Server and Client" Compressed="yes" InstallerVersion="301" Keywords="MonetDB5 MonetDB SQL Database" Languages="1033" Manufacturer="MonetDB BV" Platform="{}"/>'.format(arch))
+    print(r'    <Package Id="*" Comments="MonetDB5/SQL Server and Client" Compressed="yes" InstallerVersion="301" Keywords="MonetDB5 MonetDB SQL Database" Languages="1033" Manufacturer="MonetDB Foundation" Platform="{}"/>'.format(arch))
     print(r'    <Upgrade Id="{}">'.format(geomupgradecode[arch]))
     # up to and including 11.29.3, the geom module can not be
     # uninstalled if MonetDB/SQL is not installed; this somehow also

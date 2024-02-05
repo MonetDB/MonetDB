@@ -2,10 +2,10 @@
 --    [SCHEMA schema_name] [SCHEMA PATH string] [MAX_MEMORY bytes] [MAX_WORKERS count] [OPTIMIZER optimizer] [DEFAULT ROLE ident]
 
 statement error 42000!syntax error...
-create user testu01;
+create user testu01
 
 statement error 42000!syntax error...
-create user testu02 with password 'testu02';
+create user testu02 with password 'testu02'
 
 statement ok
 create user testu03 with password e'test\tu03' name e'Test\bu03'
@@ -36,7 +36,6 @@ create role testR1
 
 statement ok
 create user testu09 with password r'test\tu09' name r'Test\bu09' DEFAULT role testR1
-
 
 query TTITIITI rowsort
 select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%' order by name
@@ -151,7 +150,6 @@ drop user testu02
 
 statement error 0P000!DROP USER: no such user role 'testu01'
 drop user testu01
-
 
 -- note: create user statements without SCHEMA ... also create a schema implicitly !!! show them
 query TII rowsort

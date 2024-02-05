@@ -73,15 +73,15 @@ stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/Bug
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	1,	1,	0,	2,	2 # length
-[ "clob",	0,	0,	"",	"%1",	"aa"	]
-[ "clob",	0,	0,	"",	"%1",	"bb"	]
-[ "clob",	0,	0,	"",	"%1",	"cc"	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+% 7,	1,	1,	0,	2,	2 # length
+[ "varchar",	0,	0,	"",	"%1",	"aa"	]
+[ "varchar",	0,	0,	"",	"%1",	"bb"	]
+[ "varchar",	0,	0,	"",	"%1",	"cc"	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #exec  9('a');
 % .%1,	.%1,	.%1 # table_name
 % aa,	bb,	cc # name
-% clob,	clob,	clob # type
+% varchar,	varchar,	varchar # type
 % 1,	1,	1 # length
 [ "a",	"b",	"c"	]
 #prepare select * from get_onet(?) tt where tt.aa = ?;
@@ -89,38 +89,38 @@ stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/Bug
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	1,	1,	0,	2,	2 # length
-[ "clob",	0,	0,	"",	"tt",	"aa"	]
-[ "clob",	0,	0,	"",	"tt",	"bb"	]
-[ "clob",	0,	0,	"",	"tt",	"cc"	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+% 7,	1,	1,	0,	2,	2 # length
+[ "varchar",	0,	0,	"",	"tt",	"aa"	]
+[ "varchar",	0,	0,	"",	"tt",	"bb"	]
+[ "varchar",	0,	0,	"",	"tt",	"cc"	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #exec 11('a', 'b');
 % .tt,	.tt,	.tt # table_name
 % aa,	bb,	cc # name
-% clob,	clob,	clob # type
+% varchar,	varchar,	varchar # type
 % 0,	0,	0 # length
 #prepare with something as (select a from onet where a = ?) select * from get_onet(?), something;
 #prepare with something as (select a from onet where a = ?) select * from get_onet(?), something;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	1,	1,	0,	9,	2 # length
-[ "clob",	0,	0,	"",	"%1",	"aa"	]
-[ "clob",	0,	0,	"",	"%1",	"bb"	]
-[ "clob",	0,	0,	"",	"%1",	"cc"	]
-[ "clob",	0,	0,	"",	"something",	"a"	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+% 7,	1,	1,	0,	9,	2 # length
+[ "varchar",	0,	0,	"",	"%1",	"aa"	]
+[ "varchar",	0,	0,	"",	"%1",	"bb"	]
+[ "varchar",	0,	0,	"",	"%1",	"cc"	]
+[ "varchar",	0,	0,	"",	"something",	"a"	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #exec 13('a', 'a');
 % .%1,	.%1,	.%1,	sys.something # table_name
 % aa,	bb,	cc,	a # name
-% clob,	clob,	clob,	clob # type
+% varchar,	varchar,	varchar,	varchar # type
 % 1,	1,	1,	1 # length
 [ "a",	"b",	"c",	"a"	]
 #drop function get_onet;
 #drop table onet;
-#CREATE FUNCTION twoargs(input1 INT, input2 CLOB) RETURNS TABLE (outt CLOB) BEGIN RETURN TABLE(SELECT input1 || input2); END;
+#CREATE FUNCTION twoargs(input1 INT, input2 VARCHAR) RETURNS TABLE (outt VARCHAR) BEGIN RETURN TABLE(SELECT input1 || input2); END;
 #prepare select 1 from twoargs(?,?);
 #prepare select 1 from twoargs(?,?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
@@ -129,7 +129,7 @@ stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/Bug
 % 7,	2,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%5",	"%5"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #rollback;
 
 # 13:30:56 >  

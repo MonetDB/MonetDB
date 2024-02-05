@@ -185,7 +185,7 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 	if (ctype == SQL_C_CHAR) {
 		compareResult("testGetDataTruncatedString(SQL_C_CHAR)", outp,
 			"SQLExecDirect\nSQLRowCount is 1\nSQLNumResultCols is 1\nSQLFetch\n"
-			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -10\n"	/* -10 = SQL_WLONGVARCHAR */
+			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -9\n"	/* -9 = SQL_WVARCHAR */
 			"SQLColAttribute(1, SQL_DESC_LENGTH) returns 0, NumAttr 47\n"
 			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 47\n"
 			"SQLGetData(1, SQL_C_CHAR, 20) returns 1, vallen 47, buf: '1234567890123456789'\n"
@@ -195,7 +195,7 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 	if (ctype == SQL_C_WCHAR) {
 		compareResult("testGetDataTruncatedString(SQL_C_WCHAR)", outp,
 			"SQLExecDirect\nSQLRowCount is 1\nSQLNumResultCols is 1\nSQLFetch\n"
-			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -10\n"	/* -10 = SQL_WLONGVARCHAR */
+			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -9\n"	/* -9 = SQL_WVARCHAR */
 			"SQLColAttribute(1, SQL_DESC_LENGTH) returns 0, NumAttr 47\n"
 			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 47\n"
 			"SQLGetData(1, SQL_C_WCHAR, 20) returns 1, vallen 94, buf: ''\n"

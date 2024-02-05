@@ -253,62 +253,63 @@ statement ok
 DROP TABLE tmp.tt2
 
 statement ok
-START TRANSACTION;
+START TRANSACTION
 
 statement ok
-CREATE MERGE TABLE "mt0" ("c1" DECIMAL(18,3));
+CREATE MERGE TABLE "mt0" ("c1" DECIMAL(18,3))
 
 statement ok
-CREATE TABLE "rmct00" ("c1" DECIMAL(18,3));
+CREATE TABLE "rmct00" ("c1" DECIMAL(18,3))
 
 statement ok
-CREATE REMOTE TABLE "rrmct00" ("c1" DECIMAL(18,3)) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/rmct00';
+CREATE REMOTE TABLE "rrmct00" ("c1" DECIMAL(18,3)) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/rmct00'
 
 statement ok
-CREATE TABLE "rmct01" ("c1" DECIMAL(18,3));
+CREATE TABLE "rmct01" ("c1" DECIMAL(18,3))
 
 statement ok
-INSERT INTO "rmct01" VALUES (NULL);
+INSERT INTO "rmct01" VALUES (NULL)
 
 statement ok
-CREATE REMOTE TABLE "rrmct01" ("c1" DECIMAL(18,3)) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/rmct01';
+CREATE REMOTE TABLE "rrmct01" ("c1" DECIMAL(18,3)) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/rmct01'
 
 statement ok
-ALTER TABLE "mt0" ADD TABLE "rrmct00";
+ALTER TABLE "mt0" ADD TABLE "rrmct00"
 
 statement ok
-ALTER TABLE "mt0" ADD TABLE "rrmct01";
+ALTER TABLE "mt0" ADD TABLE "rrmct01"
 
 statement ok
-COMMIT;
+COMMIT
 
 query I nosort
-SELECT 1 FROM rmct00, (SELECT mt0.c1 + 0.4870337739393783 FROM mt0) x(x);
+SELECT 1 FROM rmct00, (SELECT mt0.c1 + 0.4870337739393783 FROM mt0) x(x)
 ----
 
 statement ok
-START TRANSACTION;
+START TRANSACTION
 
 statement ok
-ALTER TABLE mt0 DROP TABLE rrmct00;
+ALTER TABLE mt0 DROP TABLE rrmct00
 
 statement ok
-ALTER TABLE mt0 DROP TABLE rrmct01;
+ALTER TABLE mt0 DROP TABLE rrmct01
 
 statement ok
-DROP TABLE mt0;
+DROP TABLE mt0
 
 statement ok
-DROP TABLE rrmct00;
+DROP TABLE rrmct00
 
 statement ok
-DROP TABLE rrmct01;
+DROP TABLE rrmct01
 
 statement ok
-DROP TABLE rmct00;
+DROP TABLE rmct00
 
 statement ok
-DROP TABLE rmct01;
+DROP TABLE rmct01
 
 statement ok
-COMMIT;
+COMMIT
+

@@ -29,9 +29,6 @@ SELECT i FROM foo
 statement ok
 ROLLBACK
 
-
-
-
 statement ok
 START TRANSACTION
 
@@ -53,9 +50,6 @@ COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/maxint.be'
 
 statement ok
 ROLLBACK
-
-
-
 
 statement ok
 START TRANSACTION

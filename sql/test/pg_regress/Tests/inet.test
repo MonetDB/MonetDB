@@ -271,7 +271,6 @@ statement ok
 CREATE INDEX inet_idx1 ON inet_tbl(i)
 
 query TT rowsort
- 
 SELECT * FROM inet_tbl WHERE i<<cast('192.168.1.0/24' as inet)
 ----
 192.168.1.0/26
@@ -292,7 +291,6 @@ SELECT * FROM inet_tbl WHERE i<<=cast('192.168.1.0/24' as inet)
 192.168.1.226
 
 statement ok
- 
 DROP INDEX inet_idx1
 
 statement ok

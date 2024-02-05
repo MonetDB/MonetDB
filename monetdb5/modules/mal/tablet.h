@@ -81,7 +81,7 @@ mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 mal_export str TABLETcreate_bats(Tablet *as, BUN est);
 mal_export str TABLETcollect(BAT **bats, Tablet *as);
 mal_export void TABLETdestroy_format(Tablet *as);
-mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
+mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in);
 mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci);
 mal_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk,

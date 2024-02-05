@@ -15,4 +15,10 @@ KNOWFAIL?misc-crashes-7390
 greatest-least-multi-arg-7391
 union-query-7401
 join-on-row_number-over-7403
+parse_interval-crash-7412
 between-crash-7413
+corr-issue-7414
+insert-delete-insert-crash-7415
+orderby-debug-crash-7416
+newurl-issue-7417
+rel_order_by-assertion-7418

@@ -8,7 +8,7 @@ CREATE TABLE "portmapping" (
 	  CONSTRAINT "port" UNIQUE ("port","type"),
 	  CONSTRAINT "appname" UNIQUE ("appname","type"),
 	  PRIMARY KEY ("id")
-) 
+)
 
 statement ok
 INSERT INTO "portmapping" VALUES (2,1,1,'name','test')

@@ -151,6 +151,24 @@ decimal_to_str(sql_allocator *sa, lng v, sql_subtype *t)
 	return sa_strdup(sa, buf+cur+1);
 }
 
+unsigned int
+#ifdef HAVE_HGE
+decimal_digits(hge val)
+#else
+decimal_digits(lng val)
+#endif
+
+{
+	if (val < 0)
+		val = -val;
+	unsigned int digits = 1;
+	while (val >= 10) {
+		val /= 10;
+		digits++;
+	}
+	return digits;
+}
+
 #ifdef HAVE_HGE
 extern hge
 #else
@@ -170,4 +188,28 @@ scale2value(int scale)
 		val = val * 10;
 	}
 	return val;
+}
+
+unsigned int
+#ifdef HAVE_HGE
+number_bits(hge val)
+#else
+number_bits(lng val)
+#endif
+{
+	if (val < 0)
+		val = -val;
+	unsigned bits = 0;
+#ifdef HAVE_HGE
+	hge m = ((hge)1)<<bits;
+	for( ;(val & ~m) > m; bits++)
+		m = ((hge)1)<<bits;
+#else
+	lng m = ((lng)1)<<bits;
+	for( ;(val & ~m) > m; bits++)
+		m = ((lng)1)<<bits;
+#endif
+	if (!bits)
+		bits = 1;
+	return bits;
 }

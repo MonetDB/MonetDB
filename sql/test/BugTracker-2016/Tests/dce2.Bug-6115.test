@@ -6,7 +6,7 @@ CREATE TABLE repro_persons(id BIGINT NOT NULL, firstName VARCHAR(40) NOT NULL)
 
 query IIT rowsort
 WITH
-    params AS (  
+    params AS (
         SELECT
            2199023260527 AS id,
            CAST('Lin' AS VARCHAR(40)) AS name

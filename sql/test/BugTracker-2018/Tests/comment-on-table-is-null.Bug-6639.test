@@ -42,7 +42,7 @@ select number, name, type, type_digits, "null" from sys._columns where table_id 
 0
 id
 int
-32
+31
 0
 1
 remark

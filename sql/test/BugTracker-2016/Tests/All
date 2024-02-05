@@ -1,5 +1,5 @@
 HAVE_GEOM?storagemodel
-HAVE_HGE?convert-function-test.Bug-3460
+convert-function-test.Bug-3460
 HAVE_HGE?convert-function-test-hge.Bug-3460
 groupby_on_column_expression.Bug-3832
 LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908

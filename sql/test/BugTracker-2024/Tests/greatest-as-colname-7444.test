@@ -1,0 +1,49 @@
+statement ok
+create table t7444a(greatest int)
+
+statement ok
+select greatest from t7444a
+
+statement ok
+create table t7444b("greatest" int)
+
+query I nosort
+select "greatest" from t7444b
+----
+
+-- check if GREATEST or greatest is a (reserved) keyword
+query T nosort
+select keyword from sys.keywords where keyword ilike 'GREATEST'
+----
+
+statement ok
+drop table if exists t7444a
+
+statement ok
+drop table if exists t7444b
+
+-- also check it for: least
+statement ok
+create table t7444c(least int)
+
+statement ok
+select least from t7444c
+
+statement ok
+create table t7444d("least" int)
+
+query I nosort
+select "least" from t7444d
+----
+
+-- check if LEAST or least is a (reserved) keyword
+query T nosort
+select keyword from sys.keywords where keyword ilike 'LEAST'
+----
+
+statement ok
+drop table if exists t7444c
+
+statement ok
+drop table if exists t7444d
+

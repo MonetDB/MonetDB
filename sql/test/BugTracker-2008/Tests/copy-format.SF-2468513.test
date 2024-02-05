@@ -5,7 +5,7 @@ col2 INT,
 col3 INT,
 col4 VARCHAR(1),
 col5 VARCHAR(1)
-) 
+)
 
 statement error
 COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|',E'\n'
