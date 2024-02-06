@@ -372,7 +372,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 					ret[i] = daytime_nil;
 					nils = true;
 				} else {
-					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, tz/1000);
+					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		} else {
@@ -384,7 +384,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 					ret[i] = daytime_nil;
 					nils = true;
 				} else {
-					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, tz/1000);
+					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		}
@@ -394,7 +394,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 		if (strNil(next))
 			*ret = daytime_nil;
 		else
-			msg = str_2time_daytimetz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier, tz/1000);
+			msg = str_2time_daytimetz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 	}
 
 bailout:
@@ -873,7 +873,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 					ret[i] = timestamp_nil;
 					nils = true;
 				} else {
-					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, tz/1000);
+					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		} else {
@@ -885,7 +885,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 					ret[i] = timestamp_nil;
 					nils = true;
 				} else {
-					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, tz/1000);
+					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		}
@@ -895,7 +895,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 		if (strNil(next))
 			*ret = timestamp_nil;
 		else
-			msg = str_2time_timestamptz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier, tz/1000);
+			msg = str_2time_timestamptz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 	}
 
 bailout:
