@@ -798,7 +798,7 @@ lng shift, lng divider, lng multiplier, lng tz_off
 	ssize_t pos = 0;
 	timestamp tp = 0;
 
-	pos = fromstr_func(next, &tp, tz_off, false);
+	pos = fromstr_func(next, &tp, (long)tz_off, false);
 	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_timestamp_nil(tp))
 		return createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(22007) "Timestamp '%s' has incorrect format", next);
 	*ret = timestamp_2time_timestamp_imp(tp, shift, divider, multiplier);
