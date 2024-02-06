@@ -1903,7 +1903,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	log_unlock(lg);
 	TRC_DEBUG_IF(WAL)
 		t0 = GDKusec();
-	res = TMsubcommit_list(n, cnts ? sizes : NULL, i, lg->saved_id, lg->saved_tid);
+	res = TMsubcommit_list(n, cnts ? sizes : NULL, i, lg->saved_id);
 	TRC_DEBUG(WAL, "subcommit " LLFMT "usec\n", GDKusec() - t0);
 	if (res == GDK_SUCCEED) {	/* now cleanup */
 		for (i = 0; i < rcnt; i++) {
@@ -2361,7 +2361,6 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 
 		.id = 0,
 		.saved_id = getBBPlogno(),	/* get saved log numer from bbp */
-		.saved_tid = (int) getBBPtransid(),	/* get saved transaction id from bbp */
 	};
 
 	/* probably open file and check version first, then call call old logger code */

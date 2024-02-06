@@ -3489,7 +3489,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 	gdk_return ret = GDK_FAIL;
 	int lineno = 0;
 	bat bbpsize = 0;
-	lng logno, transid;
+	lng logno;
 	unsigned bbpversion;
 
 	len = snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
@@ -3507,7 +3507,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Could not open %s for reading: %s", bbpdir, mnstr_peek_error(NULL));
 		return GDK_FAIL;
 	}
-	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid, false);
+	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, false);
 	if (bbpversion == 0)
 		goto end;
 	assert(bbpversion == GDKLIBRARY);

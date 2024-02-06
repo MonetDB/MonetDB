@@ -1795,7 +1795,7 @@ old_logger_destroy(old_logger *lg)
 	}
 	lg->lg->id = (ulng) lg->id;
 	lg->lg->saved_id = lg->lg->id;
-	rc = TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id, lg->lg->saved_tid);
+	rc = TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id);
 	GDKfree(subcommit);
 	if (rc != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");

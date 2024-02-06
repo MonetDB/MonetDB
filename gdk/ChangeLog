@@ -1,6 +1,9 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Feb  6 2024 Sjoerd Mullender <sjoerd@acm.org>
+- The SQL transaction ID is no longer saved in the BBP.dir file.
+
 * Wed Jan  3 2024 Sjoerd Mullender <sjoerd@acm.org>
 - Made some changes to the TIMEOUT macros.  Most importantly, they
   now get a pointer to a QryCtx structure as argument instead of the

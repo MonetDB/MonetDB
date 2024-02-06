@@ -2104,7 +2104,7 @@ BUNtoid(BAT *b, BUN p)
  */
 gdk_export gdk_return TMsubcommit(BAT *bl)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid)
+gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno)
 	__attribute__((__warn_unused_result__));
 
 /*

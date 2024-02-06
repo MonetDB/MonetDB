@@ -4714,7 +4714,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 			 BBPrename(u, NULL) != 0 ||
 			 BBPrename(p, NULL) != 0 ||
 			 BBPrename(d, NULL) != 0 ||
-			 TMsubcommit_list(authbats, NULL, 4, -1, -1) != GDK_SUCCEED)) {
+			 TMsubcommit_list(authbats, NULL, 4, -1) != GDK_SUCCEED)) {
 				fprintf(stderr, "Committing removal of old user/password BATs failed\n");
 		}
 		BBPunfix(u->batCacheid);
@@ -5787,7 +5787,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 			BBPrename(rt_uri, NULL) != 0 ||
 			BATmode(rt_deleted, true) != GDK_SUCCEED ||
 			BBPrename(rt_deleted, NULL) != 0 ||
-			TMsubcommit_list(rtauthbats, NULL, 6, -1, -1) != GDK_SUCCEED) {
+			TMsubcommit_list(rtauthbats, NULL, 6, -1) != GDK_SUCCEED) {
 			fprintf(stderr, "Committing removal of old remote user/password BATs failed\n");
 		}
 		BBPunfix(rt_key->batCacheid);
