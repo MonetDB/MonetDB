@@ -2188,7 +2188,7 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 				fprintf(stderr, "no tables matching %s.%s\n", schema, tname);
 				goto doreturn;
 			}
-			tables = malloc(rows * sizeof(struct tables));
+			tables = malloc((size_t) rows * sizeof(struct tables));
 			if (tables == NULL) {
 				mapi_close_handle(hdl);
 				fprintf(stderr, "malloc failure\n");
