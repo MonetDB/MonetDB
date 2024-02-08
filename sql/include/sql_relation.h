@@ -305,14 +305,10 @@ typedef struct relation {
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
 
-	 parallel:1,		/* this rel. op. should/can be run in a parallel block */
-	 partition:2,		/* should or can the data be partitioned or not.
-				 * For a base table, this annotation applies to
-				 * the table data. For (all?) other operators,
-				 * this annotation applies to this operator's
-				 * result.
-				 * 0 (no), 1 (left relation), 2 (right relation) */
-	 spb:1;			/* start a parallel block at the beginning of this relational operator*/
+	 parallel:1,	/* suitable for parallel pipeline? */
+	 partition:2,	/* partition input relation?
+					 * 0 (no), 1 (left relation), 2 (right relation) */
+	 spb:1;			/* should this `rel` start a pipeline block? */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly

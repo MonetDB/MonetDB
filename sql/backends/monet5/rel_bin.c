@@ -4481,11 +4481,11 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *cursub;
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
-	bool partition = SQLrunning && rel->parallel && !_2phases && rel_groupby_partition(be, rel);
-	bool df2 = (SQLrunning && rel->parallel && !partition && rel_groupby_pp(rel, _2phases));
+	bool value_partition = SQLrunning && rel->parallel && !_2phases && rel_groupby_partition(be, rel);
+	bool df2 = (SQLrunning && rel->parallel && !value_partition && rel_groupby_pp(rel, _2phases));
 	int neededpp = rel->partition && get_and_disable_need_pipeline(be);
 
-	if (partition)
+	if (value_partition)
 		return rel2bin_groupby_partition(be, rel, refs);
 
 	sql_rel *p = rel->l;
@@ -4695,9 +4695,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			}
 		}
 	}
-	/* After having finished with the GROUP BY, if needed, we start a
-	 * second pipeline() block to partition the result of this GROUP BY to
-	 * be prepared for the upper-level operators, e.g. topN. */
+	/* GROUP BY ends the current pipeline() block.  If needed, start a new
+	 * block to partition the result of this GROUP BY for the upper-level
+	 * operators, e.g. topN. */
 	if (neededpp) {
 		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, cursub)));
 		cursub = rel2bin_slicer(be, cursub, 1);
