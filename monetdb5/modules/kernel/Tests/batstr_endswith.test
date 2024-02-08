@@ -16,19 +16,19 @@ create table foo(x string)
 statement ok
 insert into foo values ('johndoe'),('janedoe'),('robertdoe')
 
-query T
+query I nosort
 select endswith(x, '') from foo
 ----
-True
-True
-True
+1
+1
+1
 
-query T
+query I nosort
 select endswith('', x) from foo
 ----
-False
-False
-False
+0
+0
+0
 
 statement ok
 drop table foo
@@ -39,12 +39,12 @@ create table bar(x string, y string)
 statement ok
 insert into bar values ('johndoe','doe'),('Müller Thomas', 'Thomas Müller'),('Thomas Müller', 'Müller Thomas')
 
-query T
+query I nosort
 select endswith(x, 'Müller') from bar
 ----
-False
-False
-True
+0
+0
+1
 
 statement ok
 drop table bar
@@ -61,19 +61,19 @@ insert into baz values ('john doe'),('jane doe'),('robert doe')
 statement ok
 insert into bazbaz values ('doe'),('doe'),('doe')
 
-query T
-select * from baz where [baz.x] endswith ['john', true];
+query T nosort
+select * from baz where [baz.x] endswith ['john', true]
 ----
 
-query T
-select * from baz where [baz.x] endswith ['doe', true];
+query T nosort
+select * from baz where [baz.x] endswith ['doe', true]
 ----
 john doe
 jane doe
 robert doe
 
 query T rowsort
-select baz.x from baz,bazbaz where [baz.x] endswith [bazbaz.x, true];
+select baz.x from baz,bazbaz where [baz.x] endswith [bazbaz.x, true]
 ----
 jane doe
 jane doe
@@ -90,3 +90,4 @@ drop table baz
 
 statement ok
 drop table bazbaz
+

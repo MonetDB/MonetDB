@@ -65,3 +65,4 @@ ROLLBACK
 
 statement error 42000!MIN: aggregate functions cannot be nested
 SELECT (SELECT 1 FROM (SELECT 1) x(x) HAVING min(min((SELECT x.x))) = 0) FROM (SELECT 1) y(y)
+

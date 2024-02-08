@@ -139,25 +139,29 @@ parse_interval_(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int
 	switch (sk) {
 	case imonth:
 		if (val >= 12) {
-			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in months (" LLFMT ")\n"), val);
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow detected in months (" LLFMT ")\n"), val);
 			return -1;
 		}
 		break;
 	case ihour:
 		if (val >= 24) {
-			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in hours (" LLFMT ")\n"), val);
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow detected in hours (" LLFMT ")\n"), val);
 			return -1;
 		}
 		break;
 	case imin:
 		if (val >= 60) {
-			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in minutes (" LLFMT ")\n"), val);
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow detected in minutes (" LLFMT ")\n"), val);
 			return -1;
 		}
 		break;
 	case isec:
 		if (val >= 60000) {
-			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in seconds (" LLFMT ")\n"), val);
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow detected in seconds (" LLFMT ")\n"), val);
 			return -1;
 		}
 		break;

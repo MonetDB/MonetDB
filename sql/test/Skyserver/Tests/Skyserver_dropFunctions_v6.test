@@ -275,10 +275,10 @@ statement ok
 DROP FUNCTION fReplace
 
 statement ok
-DROP FUNCTION fIsNumbers 
+DROP FUNCTION fIsNumbers
 
 statement ok
-DROP FUNCTION   fHtmToString 
+DROP FUNCTION   fHtmToString
 
 statement ok
 DROP FUNCTION fHtmXyz
@@ -296,7 +296,7 @@ statement ok
 DROP FUNCTION fHtmLookup
 
 statement ok
-DROP FUNCTION fTileFileName 
+DROP FUNCTION fTileFileName
 
 statement ok
 DROP FUNCTION fDocColumnsWithRank
@@ -305,7 +305,7 @@ statement ok
 DROP FUNCTION fDocColumns
 
 statement ok
-DROP FUNCTION fDocFunctionParams 
+DROP FUNCTION fDocFunctionParams
 
 statement ok
 DROP FUNCTION fStripeOfRun
@@ -332,13 +332,13 @@ statement ok
 DROP FUNCTION fRegionsContainingPointXYZ
 
 statement ok
-DROP FUNCTION fGetNearestFrameidEq 
+DROP FUNCTION fGetNearestFrameidEq
 
 statement ok
-DROP FUNCTION fGetNearestFrameEq 
+DROP FUNCTION fGetNearestFrameEq
 
 statement ok
-DROP FUNCTION fGetNearbyFrameEq 
+DROP FUNCTION fGetNearbyFrameEq
 
 statement ok
 DROP FUNCTION fHtmCoverCircleXyz

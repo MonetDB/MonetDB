@@ -62,7 +62,7 @@ NULL
 NULL
 
 query TI rowsort
-SELECT * FROM t1841754a natural FULL JOIN t1841754b 
+SELECT * FROM t1841754a natural FULL JOIN t1841754b
 ----
 aa
 11

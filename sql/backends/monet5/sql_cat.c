@@ -1011,7 +1011,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			}
 		}
 
-		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type, false)) != NULL) {
+		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type, false, true)) != NULL) {
 			sql_func *sff = sf->func;
 
 			if (!sff->s || sff->system)

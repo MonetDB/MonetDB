@@ -10,7 +10,6 @@ create remote table foo_r2 (n int, m text) on 'mapi:monetdb://localhost:50002/no
 statement ok
 create remote table foo_r3 (n int, m text) on 'mapi:monetdb://localhost:50003/node3'
 
-
 statement ok
 create table bar_local (n int, m text)
 

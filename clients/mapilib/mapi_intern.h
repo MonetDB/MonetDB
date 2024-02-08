@@ -196,13 +196,14 @@ struct MapiStatement {
 	char *template;		/* keep parameterized query text around */
 	char *query;
 	int maxbindings;
-	struct MapiBinding *bindings;
 	int maxparams;
+	struct MapiBinding *bindings;
 	struct MapiParam *params;
 	struct MapiResultSet *result, *active, *lastresult;
-	bool needmore;		/* need more input */
 	int *pending_close;
 	int npending_close;
+	bool needmore;		/* need more input */
+	bool aborted;		/* this query was aborted */
 	MapiHdl prev, next;
 };
 
@@ -244,6 +245,7 @@ struct MapiStruct {
 	int handshake_options;	/* which settings can be sent during challenge/response? */
 	bool columnar_protocol;
 	bool sizeheader;
+	bool oobintr;
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 

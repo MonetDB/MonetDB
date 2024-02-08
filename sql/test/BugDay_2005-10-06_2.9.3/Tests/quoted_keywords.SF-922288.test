@@ -15,7 +15,7 @@ select * from tab
 3
 4
 
-query TI rowsort
+query II rowsort
 SELECT null AS test, "null" AS nullable FROM tab
 ----
 NULL

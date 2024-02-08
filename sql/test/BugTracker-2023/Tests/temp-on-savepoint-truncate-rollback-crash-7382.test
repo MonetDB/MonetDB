@@ -21,3 +21,4 @@ ROLLBACK
 
 statement ok
 SELECT 1
+

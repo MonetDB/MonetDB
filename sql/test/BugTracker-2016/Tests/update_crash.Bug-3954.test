@@ -1,5 +1,5 @@
 statement ok
-create table temp (t timestamp, sensor integer, val decimal(8,2)) 
+create table temp (t timestamp, sensor integer, val decimal(8,2))
 
 statement ok
 insert into temp values(timestamp '2016-03-13 08:58:14', 1, 23.4)

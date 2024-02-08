@@ -840,7 +840,7 @@ SELECT ((SELECT DISTINCT 3 FROM t0 AS l2t0) EXCEPT ALL (SELECT 2 FROM t0 AS l2t0
 1
 
 query T rowsort
-SELECT t1.c2 FROM t1, t2 RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A-5EF2Ca7963a8', ((4)&(sql_max(1220354535, -236857972))))) AS sub0 ON ((((NOT (FALSE))AND("isauuid"('*O'))))AND((('h')NOT LIKE('N')))) 
+SELECT t1.c2 FROM t1, t2 RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A-5EF2Ca7963a8', ((4)&(sql_max(1220354535, -236857972))))) AS sub0 ON ((((NOT (FALSE))AND("isauuid"('*O'))))AND((('h')NOT LIKE('N'))))
 WHERE (((SELECT DISTINCT BLOB '' FROM t0 AS l2t0, t2 AS l2t2 WHERE TRUE) EXCEPT ALL (SELECT BLOB 'afd907d0A0' FROM t0 AS l2t0 WHERE TRUE))) IS NULL
 ----
 7982
@@ -863,7 +863,7 @@ WHERE (((SELECT DISTINCT BLOB '' FROM t0 AS l2t0, t2 AS l2t2 WHERE TRUE) EXCEPT 
 7982
 
 query I rowsort
-SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((SELECT DISTINCT BLOB '' FROM t0 AS l2t0, t2 AS l2t2 WHERE TRUE) EXCEPT ALL (SELECT BLOB 'afd907d0A0' FROM t0 AS l2t0 WHERE TRUE))) IS NULL AS INT) as count FROM t1, t2 
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((SELECT DISTINCT BLOB '' FROM t0 AS l2t0, t2 AS l2t2 WHERE TRUE) EXCEPT ALL (SELECT BLOB 'afd907d0A0' FROM t0 AS l2t0 WHERE TRUE))) IS NULL AS INT) as count FROM t1, t2
 RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A-5EF2Ca7963a8', ((4)&(sql_max(1220354535, -236857972))))) AS sub0 ON ((((NOT (FALSE))AND("isauuid"('*O'))))AND((('h')NOT LIKE('N'))))) as res
 ----
 18
@@ -934,7 +934,7 @@ select 1 from t0 having min(t0.c0) > 2 order by null asc nulls last, '0.9' desc 
 ----
 
 query TI nosort
-select interval '4' month, count(*) from t2, t0, t1 cross join (select t2.c0, case when least(false, true) then 2 when (date '1970-01-01') is not null then 3.2 when (values (true), (true)) 
+select interval '4' month, count(*) from t2, t0, t1 cross join (select t2.c0, case when least(false, true) then 2 when (date '1970-01-01') is not null then 3.2 when (values (true), (true))
 then sql_max(0.54, 0.15) end from t1, t2, t0 full outer join (select (select 0.16 from t1 as l2t1, t2 as l2t2 where true) from t0 as l1t0, t1 as l1t1, t2 as l1t2 where false) as sub0 on case blob ''
 when blob '14' then false when blob '15' then false end where ((t2.c2)ilike(t2.c2))) as sub0 where ((nullif(t2.c2, t2.c2))ilike((select l2t2.c2 from t2 as l2t2, t1 as l2t1 where true))) group by 5
 having (min(case when ((t2.c2)ilike(t2.c2)) then t0.c0 end)) between asymmetric (cast(0.42 as smallint)) and (least(-3, 0.31)) order by null asc nulls last, lower('0.4') desc nulls last

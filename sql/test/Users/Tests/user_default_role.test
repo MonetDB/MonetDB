@@ -48,7 +48,7 @@ select current_role
 ----
 foo
 
--- Check if the default role was actually granted to the user  
+-- Check if the default role was actually granted to the user
 @connection(id=foo)
 statement ok
 set role bartender

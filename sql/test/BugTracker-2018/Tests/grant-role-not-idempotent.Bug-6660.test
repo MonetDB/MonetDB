@@ -5,7 +5,7 @@ create user mydummyuser with password 'mydummyuser' name 'mydummyuser' schema sy
 statement error 42000!Role (sysadmin) missing
 set role sysadmin
 
-query I
+query I nosort
 select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser')
 ----
 0
@@ -13,7 +13,7 @@ select count(*) from user_role where login_id in (select id from sys.auths where
 statement ok
 grant sysadmin to mydummyuser
 
-query I
+query I nosort
 select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser')
 ----
 1
@@ -25,7 +25,7 @@ set role sysadmin
 statement error M1M05!GRANT: User 'mydummyuser' already has ROLE 'sysadmin'
 grant sysadmin to mydummyuser
 
-query I
+query I nosort
 select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser')
 ----
 1
@@ -33,7 +33,7 @@ select count(*) from user_role where login_id in (select id from sys.auths where
 statement ok
 revoke sysadmin from mydummyuser
 
-query I
+query I nosort
 select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser')
 ----
 0
@@ -41,7 +41,7 @@ select count(*) from user_role where login_id in (select id from sys.auths where
 statement error 01006!REVOKE: User 'mydummyuser' does not have ROLE 'sysadmin'
 revoke sysadmin from mydummyuser
 
-query I
+query I nosort
 select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser')
 ----
 0

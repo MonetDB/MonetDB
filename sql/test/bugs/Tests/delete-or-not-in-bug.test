@@ -5,23 +5,23 @@ CREATE TABLE "sys"."foo" (
         "ak"  INTEGER,
         "bk"  INTEGER,
         CONSTRAINT "foo_id_unique" UNIQUE ("id")
-);
+)
 
 statement ok
 CREATE TABLE "sys"."bar" (
         "cid" INTEGER,
         "akr" INTEGER,
         "bkr" INTEGER
-);
+)
 
 statement ok
-INSERT INTO foo VALUES (1, 9, 10, 12), (2, 9, 11, 13), (3, 10, 20, 25), (4, 10, 452, 435), (5, 9, 130, 140);
+INSERT INTO foo VALUES (1, 9, 10, 12), (2, 9, 11, 13), (3, 10, 20, 25), (4, 10, 452, 435), (5, 9, 130, 140)
 
 statement ok
-INSERT INTO bar VALUES (9, 120, 180), (3, 111, 134), (5, 183, 154), (9, 142, 182), (9, 102, 134);
+INSERT INTO bar VALUES (9, 120, 180), (3, 111, 134), (5, 183, 154), (9, 142, 182), (9, 102, 134)
 
-query IIII 
-select * FROM foo WHERE cid = 9 AND ((ak NOT IN (SELECT akr FROM bar WHERE cid = 9)) OR (bk NOT IN (SELECT bkr FROM bar WHERE cid = 9)));
+query IIII nosort
+select * FROM foo WHERE cid = 9 AND ((ak NOT IN (SELECT akr FROM bar WHERE cid = 9)) OR (bk NOT IN (SELECT bkr FROM bar WHERE cid = 9)))
 ----
 1
 9
@@ -37,14 +37,15 @@ select * FROM foo WHERE cid = 9 AND ((ak NOT IN (SELECT akr FROM bar WHERE cid =
 140
 
 statement ok
-DELETE FROM foo WHERE cid = 9 AND ((ak NOT IN (SELECT akr FROM bar WHERE cid = 9)) OR (bk NOT IN (SELECT bkr FROM bar WHERE cid = 9)));
+DELETE FROM foo WHERE cid = 9 AND ((ak NOT IN (SELECT akr FROM bar WHERE cid = 9)) OR (bk NOT IN (SELECT bkr FROM bar WHERE cid = 9)))
 
-query IIII 
-select * FROM foo WHERE cid = 9 AND ((ak NOT IN (SELECT akr FROM bar WHERE cid = 9)) OR (bk NOT IN (SELECT bkr FROM bar WHERE cid = 9)));
+query IIII nosort
+select * FROM foo WHERE cid = 9 AND ((ak NOT IN (SELECT akr FROM bar WHERE cid = 9)) OR (bk NOT IN (SELECT bkr FROM bar WHERE cid = 9)))
 ----
 
 statement ok
-drop table foo;
+drop table foo
 
 statement ok
-drop table bar;
+drop table bar
+

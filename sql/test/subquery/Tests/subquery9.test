@@ -216,7 +216,7 @@ Head Office
 CA
 
 query ITT rowsort
-SELECT table1.bid, table1.bdesc, table1.bloc FROM branches AS table1, branches AS table2 WHERE table2.bid = 1101 AND table2.cid = 110 AND table1.bloc = table2.bloc 
+SELECT table1.bid, table1.bdesc, table1.bloc FROM branches AS table1, branches AS table2 WHERE table2.bid = 1101 AND table2.cid = 110 AND table1.bloc = table2.bloc
 ----
 1011
 Corporate HQ

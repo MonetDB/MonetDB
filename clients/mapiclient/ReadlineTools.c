@@ -35,6 +35,9 @@
 #include <sys/stat.h>
 #endif
 
+#include <signal.h>
+#include <setjmp.h>
+
 static const char *sql_commands[] = {
 	"SELECT",
 	"INSERT",
@@ -421,6 +424,30 @@ bailout:
 	return 1;
 }
 
+static sigjmp_buf readline_jumpbuf;
+static volatile sig_atomic_t mayjump;
+
+void
+readline_int_handler(void)
+{
+	if (mayjump) {
+		mayjump = false;
+		siglongjmp(readline_jumpbuf, 1);
+	}
+}
+
+char *
+call_readline(const char *prompt)
+{
+	char *res;
+	if (sigsetjmp(readline_jumpbuf, 1) != 0)
+		return (char *) -1;		/* interrupted */
+	mayjump = true;
+	res = readline(prompt);		/* normal code path */
+	mayjump = false;
+	return res;
+}
+
 void
 init_readline(Mapi mid, const char *lang, bool save_history)
 {
@@ -500,6 +527,5 @@ save_line(const char *s)
 	if (_save_history)
 		append_history(1, _history_file);
 }
-
 
 #endif /* HAVE_LIBREADLINE */

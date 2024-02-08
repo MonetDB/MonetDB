@@ -1,8 +1,8 @@
 statement ok
-create table countt1( a int , b int ) 
+create table countt1( a int , b int )
 
 statement ok
-insert into countt1 values ( 3, 1 ) , ( 4, 2 ) , ( 5, 3 ) , ( 6, 4 ) , ( 7, 5 ) 
+insert into countt1 values ( 3, 1 ) , ( 4, 2 ) , ( 5, 3 ) , ( 6, 4 ) , ( 7, 5 )
 
 query II rowsort
 select * from countt1

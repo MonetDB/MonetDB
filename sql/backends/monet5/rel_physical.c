@@ -25,7 +25,7 @@ find_func( mvc *sql, char *name, list *exps )
 
 	for(n = exps->h; n; n = n->next)
 		append(l, exp_subtype(n->data));
-	return sql_bind_func_(sql, "sys", name, l, F_FUNC, false);
+	return sql_bind_func_(sql, "sys", name, l, F_FUNC, false, true);
 
 }
 
@@ -86,6 +86,8 @@ find_aggr_exp(mvc *sql, list *exps, char *name)
 	return NULL;
 }
 
+/* Filter out the 0's introducted by the parallel group by.
+ * Must be done before using the values. */
 static sql_rel *
 rel_count_gt_zero(visitor *v, sql_rel *rel)
 {
@@ -103,7 +105,7 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		if (e && e->type == e_column)
 			ea = exps_find_exp(rel->exps, e);
 		if (!ea || !list_empty(ea->l)) {
-			sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+			sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 
 			e = exp_aggr(sql->sa, NULL, cf, 0, 0, CARD_AGGR, 0);
 
@@ -175,14 +177,14 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 
 			/* create nsum/cnt exp */
 			if (!cnt) {
-				sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", append(sa_list(sql->sa), avg_input_t), F_AGGR, false);
+				sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", append(sa_list(sql->sa), avg_input_t), F_AGGR, false, true);
 				sql_exp *e = exp_aggr(sql->sa, list_dup(avg->l, (fdup)NULL), cf, need_distinct(avg), need_no_nil(avg), avg->card, has_nil(avg));
 
 				append(nexps, e);
 				cnt = exp_ref(sql, e);
 			}
 			if (!sum) {
-				sql_subfunc *sf = sql_bind_func_(sql, "sys", "sum", append(sa_list(sql->sa), avg_input_t), F_AGGR, false);
+				sql_subfunc *sf = sql_bind_func_(sql, "sys", "sum", append(sa_list(sql->sa), avg_input_t), F_AGGR, false, true);
 				sql_exp *e = exp_aggr(sql->sa, list_dup(avg->l, (fdup)NULL), sf, need_distinct(avg), need_no_nil(avg), avg->card, has_nil(avg));
 
 				append(nexps, e);
@@ -286,7 +288,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 }
 
 #define IS_ORDER_BASED_AGGR(name) (strcmp((name), "quantile") == 0 || strcmp((name), "quantile_avg") == 0 || \
-				   strcmp((name), "median") == 0 || strcmp((name), "median_avg") == 0)
+                                   strcmp((name), "median") == 0 || strcmp((name), "median_avg") == 0)
 
 static sql_rel *
 rel_add_orderby(visitor *v, sql_rel *rel)
@@ -299,10 +301,10 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 
 				if (is_aggr(e->type)) {
 					sql_subfunc *af = e->f;
-                        		list *aa = e->l;
+					list *aa = e->l;
 
 					/* for now we only handle one sort order */
-                        		if (IS_ORDER_BASED_AGGR(af->func->base.name) && aa && list_length(aa) == 2) {
+					if (IS_ORDER_BASED_AGGR(af->func->base.name) && aa && list_length(aa) == 2) {
 						sql_exp *nobe = aa->h->data;
 						if (nobe && !obe) {
 							sql_rel *l = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
@@ -339,6 +341,6 @@ rel_physical(mvc *sql, sql_rel *rel)
 
 	rel = rel_visitor_bottomup(&v, rel, &rel_add_orderby);
 	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
-	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero); /* the select > 0 should be done before using the values */
+	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero);
 	return rel;
 }

@@ -5,7 +5,7 @@ statement ok
 insert into testdistinct values ('test'),('test'), ('test'), ('other'), ('other'), ('other')
 
 query T rowsort
-select * from testdistinct 
+select * from testdistinct
 ----
 other
 other
@@ -15,18 +15,18 @@ test
 test
 
 query T rowsort
-select distinct(testcol) from testdistinct 
+select distinct(testcol) from testdistinct
 ----
 other
 test
 
 query I rowsort
-select count(distinct(testcol)) from testdistinct 
+select count(distinct(testcol)) from testdistinct
 ----
 2
 
 query I rowsort
-select count(distinct testcol ) from testdistinct 
+select count(distinct testcol ) from testdistinct
 ----
 2
 

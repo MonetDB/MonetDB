@@ -363,7 +363,7 @@ error:
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			gid k = (gid)_hash_##Type(bp[i])&h->mask; \
 			gid g = 0; \
@@ -478,7 +478,7 @@ error:
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
 			gid g = 0; \
@@ -517,7 +517,7 @@ error:
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 			gid k = (gid)h->hsh(bpi)&h->mask; \
@@ -559,7 +559,7 @@ error:
 			Type *vals = h->vals; \
 			mallocator *ma = h->allocators[P->wid]; \
 			\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
 				Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 				gid k = (gid)str_hsh(bpi)&h->mask; \
@@ -598,7 +598,7 @@ error:
 			char **vals = h->vals; \
 			mallocator *ma = h->allocators[P->wid]; \
 			\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
 				void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 				gid k = (gid)h->hsh(bpi)&h->mask; \
@@ -641,7 +641,6 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
 	str err = NULL;
 	BAT *u, *b = NULL;
-	lng timeoffset = 0;
 
    	b = BATdescriptor(*key);
 	if (!b)
@@ -716,9 +715,8 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 			gid *gp = Tloc(g, 0);
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			if (qry_ctx != NULL) {
-				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-			}
+			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
 			switch(tt) {
 			case TYPE_void:
 				vgroup();
@@ -772,7 +770,7 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 				err = createException(MAL, "hash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 			}
 			if (!err)
-				TIMEOUT_CHECK(timeoffset, throw(MAL, "hash.build_table", RUNTIME_QRY_TIMEOUT));
+				TIMEOUT_CHECK(qry_ctx, throw(MAL, "hash.build_table", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
 			BBPunfix(g->batCacheid);
@@ -812,7 +810,7 @@ error:
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			gid k = (gid)combine(gi[i], _hash_##Type(bp[i]), prime)&h->mask; \
 			gid g = 0; \
@@ -851,7 +849,7 @@ error:
 		oid bpi = b->tseqbase; \
 		oid *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
 			gid g = 0; \
@@ -890,7 +888,7 @@ error:
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
 			gid g = 0; \
@@ -929,7 +927,7 @@ error:
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 			gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -972,7 +970,7 @@ error:
 			Type *vals = h->vals; \
 			mallocator *ma = h->allocators[P->wid]; \
 			\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
 				Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 				gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
@@ -1012,7 +1010,7 @@ error:
 			Type *vals = h->vals; \
 			mallocator *ma = h->allocators[P->wid]; \
 			\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
 				Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1055,7 +1053,6 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
 	str err = NULL;
 	BAT *u =  NULL;
-	lng timeoffset = 0;
 
 	BAT *b = BATdescriptor(*key);
 	BAT *G = BATdescriptor(*parent_slotid);
@@ -1145,9 +1142,8 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 			int prime = hash_prime_nr[h->bits-5];
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			if (qry_ctx != NULL) {
-				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-			}
+			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
 			switch(tt) {
 			case TYPE_void:
 				vderive();
@@ -1201,7 +1197,7 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 				err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 			}
 			if (!err)
-				TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.build_combined_table", RUNTIME_QRY_TIMEOUT));
+				TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.build_combined_table", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
 			BBPunfix(g->batCacheid);
@@ -1237,7 +1233,7 @@ error:
 	do { \
 		((oid*)hp->payload)[0] = pld->tseqbase; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			ATOMIC_INC(&freqs[sltid[i]]); \
 		} \
 	} while (0)
@@ -1249,7 +1245,7 @@ error:
 		Type *pvals = Tloc(pld, 0); \
 		Type *hpvals = hp->payload; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			gid slt = sltid[i]; \
 			if (slt >= (gid)hp->nr_slots) { \
 				hp->rehash = 1; \
@@ -1275,7 +1271,6 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, bat *parent_ht, 
 	bool private = (!*hp_sink || is_bat_nil(*hp_sink)), local_storage = false;
 	str err = NULL;
 	BAT *res =  NULL;
-	lng timeoffset = 0;
 
 	BAT *pld = BATdescriptor(*payload);
 	BAT *slt = BATdescriptor(*parent_slotid);
@@ -1365,9 +1360,8 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, bat *parent_ht, 
 			ATOMIC_TYPE *freqs = hp->frequency;
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			if (qry_ctx != NULL) {
-				timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-			}
+			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
 			switch(tt) {
 			case TYPE_void:
 				vaddpld();
@@ -1424,7 +1418,7 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, bat *parent_ht, 
 				err = createException(MAL, "hash.add_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 			}
-			TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.add_payload", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.add_payload", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
 			if (!err)
@@ -1449,7 +1443,7 @@ error:
 		gid *hs = Tloc(h, 0); \
 		gid hsh = (gid)_hash_oid(k->tseqbase) & mask; \
 	\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = hsh; \
 		} \
 	} while (0)
@@ -1459,7 +1453,7 @@ error:
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
 	\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)_hash_##Type(ky[i]) & mask; \
 		} \
 	} while (0)
@@ -1469,7 +1463,7 @@ error:
 		Type *ky = Tloc(k, 0); \
 		Type *hs = Tloc(h, 0); \
 	\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)_hash_##Type(*(((BaseType*)ky)+i)) & mask; \
 		} \
 	} while (0)
@@ -1480,7 +1474,6 @@ UHASHhash(bat *hsh, bat *key)
 {
 	BAT *h = NULL, *k = NULL;
 	BUN cnt;
-	lng timeoffset = 0;
 	str err = NULL;
 
 	k = BATdescriptor(*key);
@@ -1498,9 +1491,8 @@ UHASHhash(bat *hsh, bat *key)
 		unsigned int mask = compute_mask(cnt);
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		if (qry_ctx != NULL) {
-			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-		}
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
 		switch(k->ttype) {
 			case TYPE_void:
 				vhash();
@@ -1556,7 +1548,7 @@ UHASHhash(bat *hsh, bat *key)
 				err = createException(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.hash", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.hash", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -1576,7 +1568,7 @@ error:
 		gid *hs = Tloc(h, 0); \
 		oid hsh = _hash_oid(k->tseqbase); \
 	\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)combine(ps[i], hsh, prime) & mask; \
 		} \
 	} while (0)
@@ -1586,7 +1578,7 @@ error:
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
 	\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)combine(ps[i], _hash_##Type(ky[sl[i]]), prime) & mask; \
 		} \
 	} while (0)
@@ -1596,7 +1588,7 @@ error:
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
 	\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)combine(ps[i], _hash_##Type(*(((BaseType*)ky)+sl[i])), prime) & mask; \
 		} \
 	} while (0)
@@ -1607,7 +1599,6 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid)
 {
 	BAT *h = NULL, *k = NULL, *s = NULL, *p = NULL;
 	BUN cnt;
-	lng timeoffset = 0;
 	str err = NULL;
 
 	k = BATdescriptor(*key);
@@ -1633,9 +1624,8 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid)
 		unsigned int prime = compute_hash_prime_idx(cnt);
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		if (qry_ctx != NULL) {
-			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-		}
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
 		switch(k->ttype) {
 			case TYPE_void:
 				vhash_combined();
@@ -1691,7 +1681,7 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid)
 				err = createException(MAL, "hash.combined_hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.combined_hash", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.combined_hash", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -1717,7 +1707,7 @@ error:
 		Type *vals = ht->vals; \
 		oid *mtd = Tloc(m, 0); \
 		oid *slt = Tloc(s, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, keycnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			gid slot = ht->gids[hs[i]]; \
 			while (slot && vals[slot] != ky[i]) { \
 				slot++; \
@@ -1736,7 +1726,6 @@ UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *
 {
 	BAT *m = NULL, *s = NULL, *k = NULL, *h = NULL, *t = NULL;
 	BUN keycnt, mtdcnt = 0;
-	lng timeoffset = 0;
 	str err = NULL;
 
 	k = BATdescriptor(*LHS_key);
@@ -1759,9 +1748,7 @@ UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *
 		hash_table *ht = (hash_table*)t->T.sink;
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		if (qry_ctx != NULL) {
-			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-		}
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 		switch(k->ttype) {
 			case TYPE_void:
@@ -1820,7 +1807,7 @@ UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *
 				err = createException(MAL, "hash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.probe", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.probe", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -1860,7 +1847,7 @@ error:
 		Type val; \
 		oid *mtd = Tloc(res_m, 0); \
 		oid *slt = Tloc(res_s, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
 			hsh = hs[mt[i]]; \
 			val = ky[mt[i]]; \
 			gid slot = ht->gids[hsh]; \
@@ -1881,7 +1868,6 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 {
 	BAT *res_m = NULL, *res_s = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
-	lng timeoffset = 0;
 	str err = NULL;
 
 	k = BATdescriptor(*LHS_key);
@@ -1905,9 +1891,7 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 		hash_table *ht = (hash_table*)t->T.sink;
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		if (qry_ctx != NULL) {
-			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-		}
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 		switch(k->ttype) {
 			case TYPE_void:
@@ -1966,7 +1950,7 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 				err = createException(MAL, "hash.combined_probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.combined_probe", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.combined_probe", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -2002,7 +1986,7 @@ error:
 	do { \
 		oid val = k->tseqbase; \
 		oid *res = Tloc(e, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, rescnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
 			res[i] = val; \
 		} \
 	} while (0)
@@ -2011,10 +1995,10 @@ error:
 	do { \
 		Type *val = Tloc(k, 0); \
 		Type *res = Tloc(e, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			Type v = val[sel[i]]; \
 			gid freq = (gid)hp->frequency[sid[i]]; \
-			TIMEOUT_LOOP_IDX_DECL(j, freq, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 				res[idx++] = v; \
 			} \
 		} \
@@ -2026,9 +2010,7 @@ HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink)
 {
 	BAT *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt = 0;
-	lng timeoffset = 0;
 	str err = NULL;
-	QryCtx *qry_ctx = NULL;
 
 	k = BATdescriptor(*key);
 	s = BATdescriptor(*selected);
@@ -2044,16 +2026,14 @@ HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink)
 
 	gid *sid = Tloc(l, 0);
 	hash_payload *hp = (hash_payload*)h->T.sink;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	cnt = BATcount(l);
 	if (cnt) {
-		qry_ctx = MT_thread_get_qry_ctx();
-		if (qry_ctx != NULL) {
-			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-		}
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 			rescnt += hp->frequency[sid[i]];
 		}
-		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.expand", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -2068,11 +2048,6 @@ HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink)
 	if (cnt) {
 		BUN idx = 0;
 		oid *sel = Tloc(s, 0);
-
-		timeoffset =  0;
-		if (qry_ctx != NULL) {
-			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-		}
 
 		switch(tt) {
 			case TYPE_void:
@@ -2129,7 +2104,7 @@ HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink)
 				err = createException(MAL, "hash.expand", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.expand", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 
@@ -2158,7 +2133,7 @@ error:
 	do { \
 		oid val = ((oid*)hp->payload)[0]; \
 		oid *res = Tloc(p, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, rescnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
 			res[i] = val; \
 		} \
 	} while (0)
@@ -2168,9 +2143,9 @@ error:
 		int prime = hash_prime_nr[hp->bits-5]; \
 		Type *val = hp->payload; \
 		Type *res = Tloc(p, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			gid freq = (gid)hp->frequency[sid[i]]; \
-			TIMEOUT_LOOP_IDX_DECL(j, freq, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 				gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&hp->mask; \
 				res[idx++] = val[hsh]; \
 			} \
@@ -2183,9 +2158,7 @@ HASHfetch_payload(bat *payload, bat *slotid, bat *hp_sink)
 {
 	BAT *p = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt =  0;
-	lng timeoffset = 0;
 	str err = NULL;
-	QryCtx *qry_ctx = NULL;
 
 	l = BATdescriptor(*slotid);
 	h = BATdescriptor(*hp_sink);
@@ -2196,16 +2169,14 @@ HASHfetch_payload(bat *payload, bat *slotid, bat *hp_sink)
 
 	gid *sid = Tloc(l, 0);
 	hash_payload *hp = (hash_payload*)h->T.sink;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	cnt = BATcount(l);
 	if (cnt) {
-		qry_ctx = MT_thread_get_qry_ctx();
-		if (qry_ctx != NULL) {
-			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-		}
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) {
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 			rescnt += hp->frequency[sid[i]];
 		}
-		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.fetch_payload", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.fetch_payload", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -2219,11 +2190,6 @@ HASHfetch_payload(bat *payload, bat *slotid, bat *hp_sink)
 
 	if (cnt) {
 		BUN idx = 0;
-
-		timeoffset =  0;
-		if (qry_ctx != NULL) {
-			timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-		}
 
 		switch(tt) {
 			case TYPE_void:
@@ -2280,7 +2246,7 @@ HASHfetch_payload(bat *payload, bat *slotid, bat *hp_sink)
 				err = createException(MAL, "hash.fetch_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(timeoffset, err = createException(SQL, "hash.fetch_payload", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.fetch_payload", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 

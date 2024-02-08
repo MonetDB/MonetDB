@@ -33,11 +33,11 @@ stdout of test 'crash_with_prepare_statement.Bug-2549` in directory 'sql/test/Bu
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar, varchar # type
-% 7,	2,	1,	0,	0,	0 # length
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "decimal",	9,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+% 6,	2,	1,	0,	0,	0 # length
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
+[ "double",	53,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 #drop table TB.STOCK_ITEM;
 #drop schema TB;
 

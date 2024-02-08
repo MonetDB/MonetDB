@@ -100,7 +100,7 @@ exp_exists(mvc *sql, sql_exp *le, int exists)
 {
 	sql_subfunc *exists_func = NULL;
 
-	if (!(exists_func = sql_bind_func(sql, "sys", exists ? "sql_exists" : "sql_not_exists", exp_subtype(le), NULL, F_FUNC, true)))
+	if (!(exists_func = sql_bind_func(sql, "sys", exists ? "sql_exists" : "sql_not_exists", exp_subtype(le), NULL, F_FUNC, true, true)))
 		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le) ? exp_subtype(le)->type->base.name : "unknown");
 	sql_exp *res = exp_unop(sql->sa, le, exists_func);
 	set_has_no_nil(res);

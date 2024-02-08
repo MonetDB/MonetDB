@@ -53,7 +53,7 @@ CREATE INDEX "chg_t_expd_tm" ON "sys"."chg" ("t_expd_tm")
 
 statement ok
 CREATE FUNCTION Get_r(in_cur_1 text, in_cur_2 text, in_chg_date timestamp)
-RETURNS NUMERIC(13,6) 
+RETURNS NUMERIC(13,6)
   RETURN
   (
     SELECT (case when MAX(n_chg_rte) is not null then MAX(n_chg_rte) else 0 end)

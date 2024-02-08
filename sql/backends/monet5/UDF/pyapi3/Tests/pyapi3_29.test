@@ -17,7 +17,7 @@ CREATE FUNCTION myfunc() RETURNS TABLE(n STRING) LANGUAGE PYTHON_MAP {
 
 query T rowsort
 SELECT n FROM myfunc()
------
+----
 5.0
 
 statement ok

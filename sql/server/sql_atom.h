@@ -66,6 +66,8 @@ extern int atom_is_true(atom *a);
 extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
 
+extern unsigned int atom_digits(atom *a);
+
 #ifdef HAVE_HGE
 #define MAX_SCALE 39
 extern const hge scales[MAX_SCALE];
@@ -76,4 +78,5 @@ extern const lng scales[MAX_SCALE];
 
 extern atom *atom_zero_value(sql_allocator *sa, sql_subtype *tpe);
 extern atom *atom_max_value(sql_allocator *sa, sql_subtype *tpe);
+
 #endif /* _SQL_ATOM_H_ */

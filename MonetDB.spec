@@ -85,7 +85,7 @@ Name: %{name}
 Version: %{version}
 Release: %{release}
 Summary: Monet Database Management System
-Vendor: MonetDB BV <info@monetdb.org>
+Vendor: MonetDB Foundation <info@monetdb.org>
 
 Group: Applications/Databases
 License: MPL-2.0

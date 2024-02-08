@@ -92,7 +92,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			if (cname[0] == '%') /* Ignore TID and indexes here */
 				continue;
 
-			mt_col = ol_find_name(mt->columns, exp_name(e))->data;
+			mt_col = ol_find_name(mt->columns, cname)->data;
 			col = ol_fetch(pt->columns, mt_col->colnr);
 			assert(e && e->type == e_column && col);
 

@@ -14,7 +14,7 @@ SELECT a as d, MIN(b), (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
 project (
 | group by (
 | | table("sys"."dbg") [ "dbg"."a" UNIQUE, "dbg"."b" UNIQUE ]
-| ) [ "dbg"."a" UNIQUE as "d" ] [ "d", "sys"."min" no nil ("dbg"."b" UNIQUE) as "%1"."%1" ]
+| ) [ "dbg"."a" UNIQUE as "d" ] [ "d" UNIQUE, "sys"."min" no nil ("dbg"."b" UNIQUE) as "%1"."%1" ]
 ) [ "d" UNIQUE, "%1"."%1", "sys"."sql_mul"("sys"."sql_div"("%1"."%1", tinyint(2) "2"), tinyint(2) "2") as "f" ]
 
 statement ok
@@ -49,7 +49,7 @@ SELECT a as d, MIN(b) as e, (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
 project (
 | group by (
 | | table("sys"."dbg") [ "dbg"."a" UNIQUE, "dbg"."b" UNIQUE ]
-| ) [ "dbg"."a" UNIQUE as "d" ] [ "d", "sys"."min" no nil ("dbg"."b" UNIQUE) as "%1"."%1" ]
+| ) [ "dbg"."a" UNIQUE as "d" ] [ "d" UNIQUE, "sys"."min" no nil ("dbg"."b" UNIQUE) as "%1"."%1" ]
 ) [ "d" UNIQUE, "%1"."%1" as "e", "sys"."sql_mul"("sys"."sql_div"("%1"."%1", tinyint(2) "2"), tinyint(2) "2") as "f" ]
 
 statement ok

@@ -267,12 +267,12 @@ least(true, false) then least(true, true) else ((true)and(false)) end) as res
 statement ok
 ROLLBACK
 
-query R rowsort
+query T rowsort
 values (0.51506835), (2), (least('a', 0.5667308))
 ----
-0.515
-0.567
-2.000
+0.51506835
+0.5667308
+2
 
 statement ok
 START TRANSACTION

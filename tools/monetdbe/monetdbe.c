@@ -386,6 +386,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_internal", "Could not setup query stream"));
 		goto cleanup;
 	}
+	c->qryctx.bs = c->fdin;
 	query_stream = NULL;
 	if (bstream_next(c->fdin) < 0) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_internal", "Internal error while starting the query"));
@@ -439,6 +440,7 @@ cleanup:
 	if (fdin_changed) { //c->fdin was set
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
+		c->qryctx.bs = old_bstream;
 	}
 	if (query_stream)
 		close_stream(query_stream);
@@ -563,7 +565,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 	mdbe->c->curmodule = mdbe->c->usermodule = userModule();
 	mdbe->c->workerlimit = monetdbe_workers_internal(mdbe, opts);
 	mdbe->c->memorylimit = monetdbe_memory_internal(mdbe, opts);
-	mdbe->c->qryctx.querytimeout = monetdbe_querytimeout_internal(mdbe, opts);
+	mdbe->c->querytimeout = monetdbe_querytimeout_internal(mdbe, opts);
 	mdbe->c->sessiontimeout = monetdbe_sessiontimeout_internal(mdbe, opts);
 	if (mdbe->msg)
 		goto cleanup;
@@ -876,6 +878,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	}
 	stk->keepAlive = TRUE;
 	c->qryctx.starttime = GDKusec();
+	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);

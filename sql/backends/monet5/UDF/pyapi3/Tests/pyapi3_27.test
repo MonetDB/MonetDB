@@ -12,7 +12,7 @@ CREATE FUNCTION rvalfunc() RETURNS TABLE(groupcol INTEGER, intcol INTEGER, fltco
 }
 
 statement ok
-CREATE AGGREGATE aggrmedian_int(val integer) RETURNS integer LANGUAGE PYTHON_MAP { 
+CREATE AGGREGATE aggrmedian_int(val integer) RETURNS integer LANGUAGE PYTHON_MAP {
 	if 'aggr_group' in locals():
 		unique = numpy.unique(aggr_group)
 		x = numpy.zeros(shape=(unique.size))
@@ -20,11 +20,11 @@ CREATE AGGREGATE aggrmedian_int(val integer) RETURNS integer LANGUAGE PYTHON_MAP
 			x[i] = numpy.median(val[numpy.where(aggr_group==unique[i])])
 		return(x)
 	else:
-		return numpy.median(val) 
+		return numpy.median(val)
 }
 
 statement ok
-CREATE AGGREGATE aggrmedian_flt(val float) RETURNS integer LANGUAGE PYTHON_MAP { 
+CREATE AGGREGATE aggrmedian_flt(val float) RETURNS integer LANGUAGE PYTHON_MAP {
 	if 'aggr_group' in locals():
 		unique = numpy.unique(aggr_group)
 		x = numpy.zeros(shape=(unique.size))
@@ -32,11 +32,11 @@ CREATE AGGREGATE aggrmedian_flt(val float) RETURNS integer LANGUAGE PYTHON_MAP {
 			x[i] = numpy.median(val[numpy.where(aggr_group==unique[i])])
 		return(x)
 	else:
-		return numpy.median(val) 
+		return numpy.median(val)
 }
 
 statement ok
-CREATE AGGREGATE aggrmedian_dbl(val double) RETURNS integer LANGUAGE PYTHON_MAP { 
+CREATE AGGREGATE aggrmedian_dbl(val double) RETURNS integer LANGUAGE PYTHON_MAP {
 	if 'aggr_group' in locals():
 		unique = numpy.unique(aggr_group)
 		x = numpy.zeros(shape=(unique.size))
@@ -44,11 +44,11 @@ CREATE AGGREGATE aggrmedian_dbl(val double) RETURNS integer LANGUAGE PYTHON_MAP 
 			x[i] = numpy.median(val[numpy.where(aggr_group==unique[i])])
 		return(x)
 	else:
-		return numpy.median(val) 
+		return numpy.median(val)
 }
 
 statement ok
-CREATE AGGREGATE aggrmedian_str(val string) RETURNS integer LANGUAGE PYTHON_MAP { 
+CREATE AGGREGATE aggrmedian_str(val string) RETURNS integer LANGUAGE PYTHON_MAP {
 	if 'aggr_group' in locals():
 		unique = numpy.unique(aggr_group)
 		x = numpy.zeros(shape=(unique.size))
@@ -56,7 +56,7 @@ CREATE AGGREGATE aggrmedian_str(val string) RETURNS integer LANGUAGE PYTHON_MAP 
 			x[i] = numpy.median([int(x) for x in val[numpy.where(aggr_group==unique[i])]])
 		return(x)
 	else:
-		return numpy.median([int(x) for x in val]) 
+		return numpy.median([int(x) for x in val])
 }
 
 query I nosort

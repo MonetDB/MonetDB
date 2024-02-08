@@ -6,7 +6,7 @@ CREATE TABLE my_table6 (
    col2          VARCHAR(10),
    col3          VARCHAR(10)
 --
-) 
+)
 
 statement ok
 CREATE TABLE my_table7 (
@@ -16,10 +16,10 @@ CREATE TABLE my_table7 (
    col2          VARCHAR(10),
    col3          VARCHAR(10)
 --
-) 
+)
 
 statement ok
-COPY 9 RECORDS INTO my_table6 FROM STDIN DELIMITERS '|',E'\n','' 
+COPY 9 RECORDS INTO my_table6 FROM STDIN DELIMITERS '|',E'\n',''
 <COPY_INTO_DATA>
 10|aa||aaa
 20|ab|NULL|aab
@@ -89,8 +89,8 @@ NULL
 aai
 
 statement ok
-DROP   TABLE my_table6 
+DROP   TABLE my_table6
 
 statement ok
-DROP   TABLE my_table7 
+DROP   TABLE my_table7
 

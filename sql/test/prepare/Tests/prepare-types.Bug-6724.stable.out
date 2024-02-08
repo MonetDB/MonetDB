@@ -70,9 +70,9 @@ stdout of test 'prepare-types.Bug-6724` in directory 'sql/test/BugTracker-2019` 
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	2,	1,	0,	2,	2 # length
-[ "int",	32,	0,	"",	"%2",	"%2"	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+% 7,	2,	1,	0,	2,	2 # length
+[ "int",	31,	0,	"",	"%2",	"%2"	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #exec  7('abc');
 % .%2 # table_name
 % %2 # name
@@ -84,9 +84,9 @@ stdout of test 'prepare-types.Bug-6724` in directory 'sql/test/BugTracker-2019` 
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 4,	2,	1,	0,	2,	2 # length
-[ "int",	32,	0,	"",	"%2",	"%2"	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+% 7,	2,	1,	0,	2,	2 # length
+[ "int",	31,	0,	"",	"%2",	"%2"	]
+[ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #exec  9('abc');
 % .%2 # table_name
 % %2 # name
@@ -100,8 +100,8 @@ stdout of test 'prepare-types.Bug-6724` in directory 'sql/test/BugTracker-2019` 
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 3,	2,	1,	0,	2,	2 # length
-[ "int",	32,	0,	"",	"%3",	"%3"	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	"",	"%3",	"%3"	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 #exec  2(1);
 % .%3 # table_name
 % %3 # name

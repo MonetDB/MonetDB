@@ -188,7 +188,8 @@ typedef int64_t lng;
 
 typedef struct QryCtx {
 	lng starttime;
-	lng querytimeout;
+	lng endtime;
+	struct bstream *bs;
 	ATOMIC_TYPE datasize;
 	ATOMIC_BASE_TYPE maxmem;
 } QryCtx;
@@ -198,6 +199,7 @@ gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d,
 				const char *threadname);
+gdk_export gdk_return MT_thread_init_add_callback(void (*init)(void *), void (*destroy)(void *), void *data);
 gdk_export bool MT_thread_register(void);
 gdk_export void MT_thread_deregister(void);
 gdk_export const char *MT_thread_getname(void);

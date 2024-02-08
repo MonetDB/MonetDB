@@ -652,6 +652,7 @@ MALparser(Client c)
 	c->fdin->pos += c->yycur;
 	c->yycur = 0;
 	c->qryctx.starttime = GDKusec();
+	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
 	/* check for unfinished blocks */
 	if (!c->curprg->def->errors && c->blkmode)

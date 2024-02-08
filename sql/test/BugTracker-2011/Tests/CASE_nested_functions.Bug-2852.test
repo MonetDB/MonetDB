@@ -23,7 +23,6 @@ SELECT
         , 0) AS BIGINT)
     FROM
       t2852
-  
 ----
 0
 

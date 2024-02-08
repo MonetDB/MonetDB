@@ -113,7 +113,7 @@ atom_get_int(atom *a)
 	lng r = 0;
 #endif
 
-	if (!a->isnull) {
+	if (a && !a->isnull) {
 		switch (ATOMstorage(a->data.vtype)) {
 		case TYPE_bte:
 			r = a->data.val.btval;
@@ -1132,6 +1132,49 @@ atom_is_false(atom *a)
 		return a->data.val.dval == 0;
 	default:
 		return 0;
+	}
+}
+
+unsigned int
+atom_digits(atom *a)
+{
+	if (a->isnull || !ATOMlinear(a->tpe.type->localtype) ||
+			(a->tpe.type->eclass != EC_DEC && a->tpe.type->eclass != EC_NUM))
+		return 0;
+	if (a->tpe.type->eclass == EC_DEC) {
+		switch (ATOMstorage(a->tpe.type->localtype)) {
+			case TYPE_bte:
+				return decimal_digits(a->data.val.btval);
+			case TYPE_sht:
+				return decimal_digits(a->data.val.shval);
+			case TYPE_int:
+				return decimal_digits(a->data.val.ival);
+			case TYPE_lng:
+				return decimal_digits(a->data.val.lval);
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				return decimal_digits(a->data.val.hval);
+#endif
+			default:
+				return 0;
+		}
+	} else {
+		switch (ATOMstorage(a->tpe.type->localtype)) {
+			case TYPE_bte:
+				return number_bits(a->data.val.btval);
+			case TYPE_sht:
+				return number_bits(a->data.val.shval);
+			case TYPE_int:
+				return number_bits(a->data.val.ival);
+			case TYPE_lng:
+				return number_bits(a->data.val.lval);
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				return number_bits(a->data.val.hval);
+#endif
+			default:
+				return 0;
+		}
 	}
 }
 

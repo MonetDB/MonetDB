@@ -42,6 +42,9 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
 	fprintf(stderr, " -u user     | --user=user        user id\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
+	fprintf(stderr, " -o filename | --output=filename  write dump to filename\n");
+	fprintf(stderr, " -O dir      | --outputdir=dir    write multi-file dump to dir\n");
+	fprintf(stderr, " -x ext      | --compression=ext  compression method ext for multi-file dump\n");
 	fprintf(stderr, " -f          | --functions        dump functions\n");
 	fprintf(stderr, " -t table    | --table=table      dump a database table\n");
 	fprintf(stderr, " -D          | --describe         describe database\n");
@@ -51,6 +54,9 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
 	fprintf(stderr, "--functions and --table are mutually exclusive\n");
+	fprintf(stderr, "--output and --outputdir are mutually exclusive\n");
+	fprintf(stderr, "--inserts and --outputdir are mutually exclusive\n");
+	fprintf(stderr, "--compression only has effect with --outputdir\n");
 	exit(xit);
 }
 
@@ -66,6 +72,9 @@ main(int argc, char **argv)
 	const char *passwd = NULL;
 	const char *host = NULL;
 	const char *dbname = NULL;
+	const char *output = NULL;
+	const char *outputdir = NULL;
+	const char *ext = NULL;
 	DotMonetdb dotfile = {0};
 	bool trace = false;
 	bool describe = false;
@@ -82,6 +91,9 @@ main(int argc, char **argv)
 		{"host", 1, 0, 'h'},
 		{"port", 1, 0, 'p'},
 		{"database", 1, 0, 'd'},
+		{"output", 1, 0, 'o'},
+		{"outputdir", 1, 0, 'O'},
+		{"compression", 1, 0, 'x'},
 		{"describe", 0, 0, 'D'},
 		{"functions", 0, 0, 'f'},
 		{"table", 1, 0, 't'},
@@ -116,7 +128,7 @@ main(int argc, char **argv)
 	host = dotfile.host;
 	port = dotfile.port;
 
-	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NeXu:qv?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "h:p:d:o:O:x:Dft:NeXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			user = optarg;
@@ -131,6 +143,17 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			dbname = optarg;
+			break;
+		case 'o':
+			output = optarg;
+			outputdir = NULL;
+			break;
+		case 'O':
+			outputdir = optarg;
+			output = NULL;
+			break;
+		case 'x':
+			ext = optarg;
 			break;
 		case 'D':
 			describe = true;
@@ -179,6 +202,10 @@ main(int argc, char **argv)
 		default:
 			usage(argv[0], -1);
 		}
+	}
+
+	if ((output != NULL || useinserts) && outputdir) {
+		usage(argv[0], -1);
 	}
 
 	if (optind == argc - 1)
@@ -240,9 +267,38 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	mapi_cache_limit(mid, -1);
 
-	out = stdout_wastream();
+	if (output) {
+		out = open_wastream(output);
+	} else if (outputdir) {
+		size_t fnl = strlen(outputdir) + 10;
+		if (ext)
+			fnl += strlen(ext) + 1;
+		char *fn = malloc(fnl);
+		if (fn == NULL) {
+			fprintf(stderr, "malloc failure\n");
+			exit(2);
+		}
+		if (MT_mkdir(outputdir) == -1 && errno != EEXIST) {
+			perror("cannot create output directory");
+			exit(2);
+		}
+		snprintf(fn, fnl, "%s%cdump.sql", outputdir, DIR_SEP);
+		out = open_wastream(fn);
+		free(fn);
+		(void) ext;
+	} else {
+		out = stdout_wastream();
+	}
 	if (out == NULL) {
-		fprintf(stderr, "failed to allocate stream: %s\n", mnstr_peek_error(NULL));
+		if (output)
+			fprintf(stderr, "cannot open file: %s: %s\n",
+					output, mnstr_peek_error(NULL));
+		else if (outputdir)
+			fprintf(stderr, "cannot open file: %s%cdump.sql: %s\n",
+					outputdir, DIR_SEP, mnstr_peek_error(NULL));
+		else
+			fprintf(stderr, "failed to allocate stream: %s\n",
+					mnstr_peek_error(NULL));
 		exit(2);
 	}
 	if (!quiet) {
@@ -284,10 +340,10 @@ main(int argc, char **argv)
 		mnstr_printf(out, "COMMIT;\n");
 	} else if (table) {
 		mnstr_printf(out, "START TRANSACTION;\n");
-		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false, noescape);
+		c = dump_table(mid, NULL, table, out, outputdir, ext, describe, true, useinserts, false, noescape, true);
 		mnstr_printf(out, "COMMIT;\n");
 	} else
-		c = dump_database(mid, out, describe, useinserts, noescape);
+		c = dump_database(mid, out, outputdir, ext, describe, useinserts, noescape);
 	mnstr_flush(out, MNSTR_FLUSH_DATA);
 
 	mapi_destroy(mid);
@@ -296,7 +352,7 @@ main(int argc, char **argv)
 		c = 1;
 	}
 
-	mnstr_destroy(out);
+	close_stream(out);
 
 	destroy_dotmonetdb(&dotfile);
 

@@ -2,7 +2,7 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE VIEW SpecObj 
+CREATE VIEW SpecObj
 ---------------------------------------------------------------
 --/H A view of Spectro objects that just has the clean spectra.
 --
@@ -10,12 +10,12 @@ CREATE VIEW SpecObj
 --/T way to access the spectro objects.
 ---------------------------------------------------------------
 AS
-SELECT * 
-    FROM specObjAll 
-    WHERE sciencePrimary = 1 
+SELECT *
+    FROM specObjAll
+    WHERE sciencePrimary = 1
 
 statement ok
-CREATE VIEW SpecLine 
+CREATE VIEW SpecLine
 ---------------------------------------------------------------
 --/H A view of SpecLines objects that have been measured
 --
@@ -24,12 +24,12 @@ CREATE VIEW SpecLine
 --/T use to access the SpecLine data.
 ---------------------------------------------------------------
 AS
-SELECT * 
-    FROM specLineAll 
+SELECT *
+    FROM specLineAll
     WHERE category=2
 
 statement ok
-CREATE VIEW SpecPhoto 
+CREATE VIEW SpecPhoto
 ---------------------------------------------------------------
 --/H A view of joined Spectro and Photo objects that have the clean spectra.
 --
@@ -37,8 +37,8 @@ CREATE VIEW SpecPhoto
 --/T sciencePrimary, and the BEST PhotoObj is a PRIMARY (mode=1).
 ---------------------------------------------------------------
 AS
-SELECT * 
-    FROM SpecPhotoAll 
+SELECT *
+    FROM SpecPhotoAll
     WHERE sciencePrimary = 1 and mode=1
 
 statement ok
@@ -49,7 +49,7 @@ CREATE VIEW Tile
 --/T The view excludes those Tiles that have been untiled.
 ---------------------------------------------------------------
 AS
-SELECT * 
+SELECT *
     FROM TileAll
     WHERE untiled = 0
 
@@ -58,11 +58,11 @@ CREATE VIEW TilingBoundary
 ---------------------------------------------------------------
 --/H A view of TilingGeometry objects that have isMask = 0
 --
---/T The view excludes those TilingGeometry objects that have 
+--/T The view excludes those TilingGeometry objects that have
 --/T isMask = 1.  See also TilingMask.
 ---------------------------------------------------------------
 AS
-SELECT * 
+SELECT *
     FROM TilingGeometry
     WHERE isMask = 0
 
@@ -71,11 +71,11 @@ CREATE VIEW TilingMask
 ---------------------------------------------------------------
 --/H A view of TilingGeometry objects that have isMask = 1
 --
---/T The view excludes those TilingGeometry objects that have 
+--/T The view excludes those TilingGeometry objects that have
 --/T isMask = 0.  See also TilingBoundary.
 ---------------------------------------------------------------
 AS
-SELECT * 
+SELECT *
     FROM TilingGeometry
     WHERE isMask = 1
 
@@ -84,21 +84,21 @@ CREATE VIEW TiledTarget
 ---------------------------------------------------------------
 --/H A view of TiledTargetAll objects that have untiled = 0
 --
---/T The view excludes those TiledTarget objects that have 
+--/T The view excludes those TiledTarget objects that have
 --/T been untiled.
 ---------------------------------------------------------------
 AS
-SELECT * 
+SELECT *
     FROM TiledTargetAll
     WHERE untiled = 0
 
 statement ok
-CREATE VIEW Columns 
+CREATE VIEW Columns
 ---------------------------------------------------------------
 --/H Aliias the DBColumns table also as Columns, for legacy SkyQuery
 ---------------------------------------------------------------
 AS
-SELECT * 
+SELECT *
     FROM DBColumns
 
 statement ok
@@ -119,19 +119,19 @@ CREATE VIEW PhotoSecondary
 AS
 SELECT * FROM PhotoObjAll
     WHERE mode=2
---status & 0x00001000 > 0 
+--status & 0x00001000 > 0
 
 statement ok
 CREATE VIEW PhotoFamily
 ----------------------------------------------------------------------
 --/H These are in PhotoObj, but neither PhotoPrimary or Photosecondary.
 --
---/T These objects are generated if they are neither primary nor 
---/T secondary survey objects but a composite object that has been 
---/T deblended or the part of an object that has been deblended 
---/T wrongfully (like the spiral arms of a galaxy). These objects 
---/T are kept to track how the deblender is working. It inherits 
---/T all members of the PhotoObj class. 
+--/T These objects are generated if they are neither primary nor
+--/T secondary survey objects but a composite object that has been
+--/T deblended or the part of an object that has been deblended
+--/T wrongfully (like the spiral arms of a galaxy). These objects
+--/T are kept to track how the deblender is working. It inherits
+--/T all members of the PhotoObj class.
 ----------------------------------------------------------------------
 AS
 SELECT * FROM PhotoObjAll
@@ -143,7 +143,7 @@ SELECT * FROM PhotoObjAll
 statement ok
 CREATE VIEW PhotoObj
 ----------------------------------------------------------------------
---/H All primary and secondary objects in the PhotoObjAll table, which contains all the attributes of each photometric (image) object. 
+--/H All primary and secondary objects in the PhotoObjAll table, which contains all the attributes of each photometric (image) object.
 --
 --/T It selects PhotoObj with mode=1 or 2.
 ----------------------------------------------------------------------
@@ -152,16 +152,16 @@ SELECT * FROM PhotoObjAll
 	WHERE mode in (1,2)
 
 statement ok
-CREATE VIEW PhotoPrimary 
+CREATE VIEW PhotoPrimary
 ----------------------------------------------------------------------
---/H These objects are the primary survey objects. 
+--/H These objects are the primary survey objects.
 --
---/T Each physical object 
---/T on the sky has only one primary object associated with it. Upon 
---/T subsequent observations secondary objects are generated. Since the 
---/T survey stripes overlap, there will be secondary objects for over 10% 
---/T of all primary objects, and in the southern stripes there will be a 
---/T multitude of secondary objects for each primary (i.e. reobservations). 
+--/T Each physical object
+--/T on the sky has only one primary object associated with it. Upon
+--/T subsequent observations secondary objects are generated. Since the
+--/T survey stripes overlap, there will be secondary objects for over 10%
+--/T of all primary objects, and in the southern stripes there will be a
+--/T multitude of secondary objects for each primary (i.e. reobservations).
 --/T <p>
 --/T They are defined by the status flag: (PRIMARY &  OK_RUN) = 0x2010.
 ----------------------------------------------------------------------
@@ -186,8 +186,8 @@ CREATE VIEW PhotoStatus
 --/H Contains the PhotoStatus flag values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='PhotoStatus'
@@ -198,8 +198,8 @@ CREATE VIEW PrimTarget
 --/H Contains the PrimTarget flag values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='PrimTarget'
@@ -210,8 +210,8 @@ CREATE VIEW SecTarget
 --/H Contains the SecTarget flag values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='SecTarget'
@@ -222,8 +222,8 @@ CREATE VIEW InsideMask
 --/H Contains the InsideMask flag values from DataConstants as smallint
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as smallint) as value, 
+SELECT name,
+	cast(value as smallint) as value,
 	description
     FROM DataConstants
     WHERE field='InsideMask'
@@ -234,8 +234,8 @@ CREATE VIEW SpecZWarning
 --/H Contains the SpecZWarning flag values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='SpecZWarning'
@@ -246,8 +246,8 @@ CREATE VIEW ImageMask
 --/H Contains the ImageMask flag values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='ImageMask'
@@ -270,11 +270,11 @@ CREATE VIEW PhotoMode
 --/H Contains the PhotoMode enumerated values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
-    WHERE field = 'PhotoMode' 
+    WHERE field = 'PhotoMode'
 
 statement ok
 CREATE VIEW PhotoType
@@ -282,8 +282,8 @@ CREATE VIEW PhotoType
 --/H Contains the PhotoType enumerated values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='PhotoType'
@@ -294,8 +294,8 @@ CREATE VIEW MaskType
 --/H Contains the MaskType enumerated values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='MaskType'
@@ -306,8 +306,8 @@ CREATE VIEW FieldQuality
 --/H Contains the FieldQuality enumerated values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='FieldQuality'
@@ -318,8 +318,8 @@ CREATE VIEW PspStatus
 --/H Contains the PspStatus enumerated values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='PspStatus'
@@ -330,8 +330,8 @@ CREATE VIEW FramesStatus
 --/H Contains the FramesStatus enumerated values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='FramesStatus'
@@ -342,8 +342,8 @@ CREATE VIEW SpecClass
 --/H Contains the SpecClass enumerated values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='SpecClass'
@@ -354,8 +354,8 @@ CREATE VIEW SpecLineNames
 --/H Contains the SpecLineNames enumerated values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='SpecLineNames'
@@ -366,8 +366,8 @@ CREATE VIEW SpecZStatus
 --/H Contains the SpecZStatus enumerated values from DataConstants as int
 ------------------------------------------
 AS
-SELECT name, 
-	cast(value as int) as value, 
+SELECT name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='SpecZStatus'
@@ -426,9 +426,9 @@ CREATE VIEW FieldMask
 --/H Contains the FieldMask flag values from DataConstants as int
 ------------------------------------------
 AS
-SELECT 
-	name, 
-	cast(value as int) as value, 
+SELECT
+	name,
+	cast(value as int) as value,
 	description
     FROM DataConstants
     WHERE field='FieldMask'
@@ -439,9 +439,9 @@ CREATE VIEW PhotoFlags
 --/H Contains the PhotoFlags flag values from DataConstants as binary(8)
 ------------------------------------------
 AS
-SELECT 
-	name, 
-	value, 
+SELECT
+	name,
+	value,
 	description
     FROM DataConstants
     WHERE field='PhotoFlags'
@@ -456,7 +456,7 @@ CREATE VIEW Star
 --/T point-like objects, including quasars.
 --------------------------------------------------------------
 AS
-SELECT * 
+SELECT *
     FROM PhotoPrimary
     WHERE type = 6
 
@@ -470,7 +470,7 @@ CREATE VIEW Galaxy
 --/T resolved primary objects.
 ---------------------------------------------------------------
 AS
-SELECT * 
+SELECT *
     FROM PhotoPrimary
     WHERE type = 3
 
@@ -480,7 +480,7 @@ CREATE VIEW Sky
 --/H The objects selected as sky samples in PhotoPrimary
 ---------------------------------------------------------------
 AS
-SELECT * 
+SELECT *
     FROM PhotoPrimary
     WHERE type = 8
 
@@ -490,7 +490,7 @@ CREATE VIEW Unknown
 --/H Everything in PhotoPrimary, which is not a galaxy, star or sky
 --------------------------------------------------------------------
 AS
-SELECT * 
+SELECT *
     FROM PhotoPrimary
     WHERE type not in (3,6,8)
 

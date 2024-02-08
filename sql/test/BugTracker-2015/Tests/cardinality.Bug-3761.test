@@ -86,12 +86,12 @@ COPY 4 RECORDS INTO schms FROM stdin USING DELIMITERS E'\t',E'\n','"'
 6821	"json"	3	3	true
 7176	"bam"	3	3	true
 
-query TT rowsort
+query IT rowsort
 SELECT NULL AS table_catalog, (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema FROM tbls t ORDER BY table_schema
 ----
 108 values hashing to 6727addaaf6d5fc792d7a107a1d2990a
 
-query TT rowsort
+query TI rowsort
 SELECT (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema, NULL AS table_catalog FROM tbls t ORDER BY table_schema
 ----
 108 values hashing to f08b718ea6c0835723561128c351f60b

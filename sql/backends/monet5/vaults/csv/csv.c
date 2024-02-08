@@ -189,6 +189,8 @@ detect_bool(const char *s, const char *e)
 static bool
 detect_bigint(const char *s, const char *e)
 {
+	if (s[0] == '-' || s[0] == '+')
+		s++;
 	while(s < e) {
 		if (!isdigit(*s))
 			break;
@@ -204,6 +206,8 @@ detect_decimal(const char *s, const char *e, int *scale)
 {
 	int dotseen = 0;
 
+	if (s[0] == '-' || s[0] == '+')
+		s++;
 	while(s < e) {
 		if (!dotseen && *s == '.')
 			dotseen = (int)(e-(s+1));
@@ -371,6 +375,7 @@ typedef struct csv_t {
 	char quote;
 	char delim;
 	bool has_header;
+	bool extra_tsep;
 } csv_t;
 
 /*
@@ -402,7 +407,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	if (l<0)
 		return RUNTIME_LOAD_ERROR;
 	buf[l] = 0;
-	bool has_header = false;
+	bool has_header = false, extra_tsep = false;
 	int nr_fields = 0;
 	char q = detect_quote(buf);
 	char d = detect_delimiter(buf, q, &nr_fields);
@@ -425,13 +430,20 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			sql_subtype *t = (types[col].type == CSV_DECIMAL)?
 					sql_bind_subtype(sql->sa, st, 18, types[col].scale):
 					sql_bind_subtype(sql->sa, st,  0, types[col].scale);
-
-			list_append(typelist, t);
-			list_append(res_exps, exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0));
+			if (!t && (col+1) == nr_fields && types[col].type == CSV_NULL) {
+				nr_fields--;
+				extra_tsep = true;
+			} else if (t) {
+				list_append(typelist, t);
+				list_append(res_exps, exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0));
+			} else {
+				GDKfree(types);
+				throw(SQL, SQLSTATE(42000), "csv" "type %s not found\n", st);
+			}
 		} else {
 			/* shouldn't be possible, we fallback to strings */
 			GDKfree(types);
-			assert(0);
+			throw(SQL, SQLSTATE(42000), "csv" "type unknown\n");
 		}
 	}
 	GDKfree(types);
@@ -443,6 +455,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	r->sname[0] = 0;
 	r->quote = q;
 	r->delim = d;
+	r->extra_tsep = extra_tsep;
 	r->has_header = has_header;
 	f->sname = (char*)r; /* pass schema++ */
 	return MAL_SUCCEED;
@@ -467,7 +480,7 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 		sql_subtype *tp = tn->data;
 		sql_column *c = NULL;
 
-		if (mvc_create_column(&c, be->mvc, t, name, tp) != LOG_OK) {
+		if (!tp || mvc_create_column(&c, be->mvc, t, name, tp) != LOG_OK) {
 			//throw(SQL, SQLSTATE(42000), "csv" RUNTIME_LOAD_ERROR);
 			return NULL;
 		}
@@ -480,15 +493,23 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 
 	sql_subtype tpe;
 	sql_find_subtype(&tpe, "varchar", 0, 0);
-	char tsep[2], ssep[2];
+	char tsep[2], rsep[3], ssep[2];
 	tsep[0] = r->delim;
 	tsep[1] = 0;
 	ssep[0] = r->quote;
 	ssep[1] = 0;
+	if (r->extra_tsep) {
+		rsep[0] = r->delim;
+		rsep[1] = '\n';
+		rsep[2] = 0;
+	} else {
+		rsep[0] = '\n';
+		rsep[1] = 0;
+	}
 	list *args = append( append( append( append( append( new_exp_list(sql->sa),
 	exp_atom_ptr(sql->sa, t)),
 	exp_atom_str(sql->sa, tsep, &tpe)),
-	exp_atom_str(sql->sa, "\n", &tpe)),
+	exp_atom_str(sql->sa, rsep, &tpe)),
 	exp_atom_str(sql->sa, ssep, &tpe)),
 	exp_atom_str(sql->sa, "", &tpe));
 

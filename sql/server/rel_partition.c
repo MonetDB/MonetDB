@@ -120,7 +120,7 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 /* To start parallel processing within a (query plan) graph, we need to mark
  * the places where partitioning is needed, and where to start or end a
  * parallel block.
- * REL_PARTITION: partition the table via bind
+ * REL_PARTITION: partition the table via bind (needed)
  * SPB: Start Parallel Block
  * EPB: End Parallel Block
  * NPB: currently not used
@@ -242,7 +242,6 @@ _rel_partition(mvc *sql, sql_rel *rel)
 	/* Now that we've marked the (largest) table for partition, we go over
 	 * this 'rel' (sub)tree to process all relational operators based on this
 	 * knowledge. */
-	// TODO: instead of a new function, we can probably reuse rel_partition_ for this.
 	return rel_mark_partition(rel);
 }
 
@@ -295,10 +294,6 @@ has_groupby(sql_rel *rel)
 	return 0;
 }
 
-/*
- * REL_PARTITION (need partition via bind).
- */
-
 static bool
 rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 {
@@ -319,9 +314,8 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 				sql_exp *i = l->h->data;
 				sql_subtype *t = exp_subtype(i);
 
-				/* Summing over dbl/flt, the current parallel
-				 * impl. can lose precision. Hence, don't do
-				 * parallel. */
+				/* Summing over dbl/flt, the current parallel impl. can lose
+				 * precision. Hence, don't do parallel. */
 				// TODO: if the precision-loss is within a (to be defined) safe
 				//       range or if the user explicitly wants the parallel
 				//       version, then we could still do simple dbl/float sums
@@ -353,35 +347,25 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_groupby(rel->op)) {
 		bool safe = rel_groupby_partition_safe(sql, rel) && !rel_is_ref(rel);
 		if (rel->l)
-			/* In principle, we always (try to) process a GROUP BY in parallel.
-			 * When a GROUP BY is parallel-unsafe, this (sub)tree
-			 * is certainly unsafe, independent of the current 'pb'.
-			 * Otherwise, pass SPB to indicate that a `pb' should
-			 * be started in the subtree (if possible).
-			 */
+			/* if `safe`, process this GROUP BY + subtree in a `pb`. */
 			res = rel_partition_(sql, rel->l, safe?SPB:0);
 		if (safe) {
 			rel->parallel = 1;
-			/* 'safe' means that a 'pb' should be started within
-			 * the subtree rooted at this GROUP BY.
-			 * If that hasn't been done in the subtree under this
-			 * GROUP BY yet, the GROUP BY will do that.
-			 * rel->spb = 1: start a 'pb' block at the beginning of this GROUP BY
-			 */
 			if (res == REL_PARTITION)
+				/* partition via bind (still) needed in the subtree,
+				 * let's start one at this `rel`. */
 				rel->spb = 1;
-			/* Msg from upper tree that a 'pb' block is needed somewhere in this subtree */
 			if (pb) {
-				/* result of this GROUP BY can/should be
-				 * partitioned, i.e. start a 2nd 'pb' after its end.
+				/* If the supertree is also in a `pb`, a new `pb` should be
+				 * started after this GROUP BY ends (to partition its results)
 				 */
 				rel->partition = 1;
 				if (res) // TODO: maybe we should remove this condition, since we don't care about the subtree, instead, we always want to inform upper tree that we're starting a PB here.
 					res = SPB;
 			} else
-				/* if this GROUP BY is 'safe' and has not
-				 * started a 2nd 'pb', then we need to End the
-				 * current 'pb'. */
+				/* GROUP BY is a blocking operation, so it always ends a `pb`
+				 * if it has started one.
+				 */
 				res = EPB;
 		}
 	} else if (is_topn(rel->op)) {
@@ -392,6 +376,8 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (pp_useful) {
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
+				/* partition via bind (still) needed in the subtree,
+				 * let's start on at this `rel`. */
 				rel->spb = 1;
 			if (pb) {
 				rel->partition = 1;

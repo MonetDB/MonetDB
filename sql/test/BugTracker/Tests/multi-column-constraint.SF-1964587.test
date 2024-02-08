@@ -14,7 +14,7 @@ select * from describe_columns('sys', 'test_property')
 ----
 p1
 int
-32
+31
 0
 1
 NULL
@@ -23,7 +23,7 @@ INTEGER
 NULL
 p2
 int
-32
+31
 0
 1
 NULL
@@ -32,7 +32,7 @@ INTEGER
 NULL
 subject
 int
-32
+31
 0
 1
 NULL

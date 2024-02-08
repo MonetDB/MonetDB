@@ -873,9 +873,6 @@ DEP_FUNC
 table_types
 describe_table
 DEP_FUNC
-types
-describe_type
-DEP_FUNC
 
 query TTT rowsort
 SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
@@ -1127,9 +1124,6 @@ DEP_FUNC
 side_effect
 describe_function
 DEP_FUNC
-sqlname
-describe_type
-DEP_FUNC
 srid
 getproj4
 DEP_FUNC
@@ -1362,6 +1356,9 @@ regexp_replace
 DEP_FUNC
 sq
 get_remote_table_expressions
+DEP_FUNC
+sql_datatype
+describe_type
 DEP_FUNC
 st_geometryn
 st_patchn

@@ -14,7 +14,7 @@ select bit_and(cast(16 as smallint), cast(16 as smallint)) = cast(16 as smallint
 1
 
 query I rowsort
-select bit_and(16,16) 
+select bit_and(16,16)
 ----
 16
 
@@ -24,7 +24,7 @@ select 16 and cast(16 as int)
 1
 
 query I rowsort
-select bit_and(16,cast(16 as int)) 
+select bit_and(16,cast(16 as int))
 ----
 16
 

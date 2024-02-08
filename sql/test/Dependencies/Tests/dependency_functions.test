@@ -85,6 +85,9 @@ DEP_FUNC
 sq
 get_remote_table_expressions
 DEP_FUNC
+sql_datatype
+describe_type
+DEP_FUNC
 st_geometryn
 st_patchn
 DEP_FUNC
@@ -139,6 +142,9 @@ regexp_replace
 DEP_FUNC
 sq
 get_remote_table_expressions
+DEP_FUNC
+sql_datatype
+describe_type
 DEP_FUNC
 st_geometryn
 st_patchn

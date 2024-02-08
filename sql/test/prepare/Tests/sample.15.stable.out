@@ -22,27 +22,27 @@ stdout of test 'sample.15` in directory 'sql/test/sample` itself:
 #prepare select * from GENERATE_SERIES(1,41) sample ?;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	varchar,	varchar, varchar # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	2,	5 # length
-[ "tinyint",	8,	0,	"",	"%3",	"value"	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	7,	0,	"",	"%3",	"value"	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #prepare select * from GENERATE_SERIES(1,41) sample 0.2 seed ?;
 #prepare select * from GENERATE_SERIES(1,41) sample 0.2 seed ?;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	2,	1,	0,	2,	5 # length
-[ "tinyint",	8,	0,	"",	"%3",	"value"	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	7,	0,	"",	"%3",	"value"	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 #prepare select * from GENERATE_SERIES(1,41) sample ? seed ?;
 #prepare select * from GENERATE_SERIES(1,41) sample ? seed ?;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar, varchar # type
 % 7,	2,	1,	0,	2,	5 # length
-[ "tinyint",	8,	0,	"",	"%3",	"value"	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	7,	0,	"",	"%3",	"value"	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 
 
 # 10:58:47 >  

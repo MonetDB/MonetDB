@@ -67,13 +67,13 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 #select "statement" from prepared_statements; --only 1
 % .prepared_statements # table_name
 % statement # name
-% clob # type
+% varchar # type
 % 58 # length
 [ "prepare select \"system\" or ? from sys._tables where false;"	]
 #select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from sys.prepared_statements_args; --only 1
 % .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
 % inout,	number,	type,	type_digits,	type_scale,	schema,	table,	column # name
-% tinyint,	int,	clob,	int,	int,	clob,	clob,	clob # type
+% tinyint,	int,	varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 1,	1,	7,	1,	1,	0,	2,	2 # length
 [ 0,	0,	"boolean",	1,	0,	NULL,	"%1",	"%1"	]
 [ 1,	1,	"boolean",	1,	0,	NULL,	NULL,	NULL	]
@@ -82,7 +82,7 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 #inner join prepared_statements_args psa on prep."statementid" = psa."statementid"; --two rows
 % .prep,	.psa,	.psa,	.psa,	.psa,	.psa,	.psa,	.psa,	.psa # table_name
 % statement,	inout,	number,	type,	type_digits,	type_scale,	schema,	table,	column # name
-% clob,	tinyint,	int,	clob,	int,	int,	clob,	clob,	clob # type
+% varchar,	tinyint,	int,	varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 58,	1,	1,	7,	1,	1,	0,	2,	2 # length
 [ "prepare select \"system\" or ? from sys._tables where false;",	0,	0,	"boolean",	1,	0,	NULL,	"%1",	"%1"	]
 [ "prepare select \"system\" or ? from sys._tables where false;",	1,	1,	"boolean",	1,	0,	NULL,	NULL,	NULL	]
@@ -94,13 +94,13 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 #select "statement" from prepared_statements; --only 1
 % .prepared_statements # table_name
 % statement # name
-% clob # type
+% varchar # type
 % 58 # length
 [ "prepare select \"system\" or ? from sys._tables where false;"	]
 #select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from sys.prepared_statements_args; --only 1
 % .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
 % inout,	number,	type,	type_digits,	type_scale,	schema,	table,	column # name
-% tinyint,	int,	clob,	int,	int,	clob,	clob,	clob # type
+% tinyint,	int,	varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 1,	1,	7,	1,	1,	0,	2,	2 # length
 [ 0,	0,	"boolean",	1,	0,	NULL,	"%1",	"%1"	]
 [ 1,	1,	"boolean",	1,	0,	NULL,	NULL,	NULL	]
@@ -108,12 +108,12 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 #select "statement" from prepared_statements; --empty
 % .prepared_statements # table_name
 % statement # name
-% clob # type
+% varchar # type
 % 0 # length
 #select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args; --empty
 % .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
 % inout,	number,	type,	type_digits,	type_scale,	schema,	table,	column # name
-% tinyint,	int,	clob,	int,	int,	clob,	clob,	clob # type
+% tinyint,	int,	varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 1,	1,	0,	1,	1,	0,	0,	0 # length
 #prepare select "system" or ? from _tables WHERE false;
 #prepare select "system" or ? from _tables WHERE false;
@@ -132,23 +132,23 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 #select "statement" from prepared_statements; --empty
 % .prepared_statements # table_name
 % statement # name
-% clob # type
+% varchar # type
 % 0 # length
 #select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args; --empty
 % .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
 % inout,	number,	type,	type_digits,	type_scale,	schema,	table,	column # name
-% tinyint,	int,	clob,	int,	int,	clob,	clob,	clob # type
+% tinyint,	int,	varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 1,	1,	0,	1,	1,	0,	0,	0 # length
 #DEALLOCATE ALL;
 #select "statement" from prepared_statements; --empty
 % .prepared_statements # table_name
 % statement # name
-% clob # type
+% varchar # type
 % 0 # length
 #select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args; --empty
 % .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
 % inout,	number,	type,	type_digits,	type_scale,	schema,	table,	column # name
-% tinyint,	int,	clob,	int,	int,	clob,	clob,	clob # type
+% tinyint,	int,	varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 1,	1,	0,	1,	1,	0,	0,	0 # length
 
 # 13:56:29 >  
