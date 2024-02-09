@@ -4441,6 +4441,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	cursub = stmt_list(be, l);
 	if (cursub == NULL)
 		return NULL;
+	if (aggrs && !aggrs->h && ext)
+		list_append(l, ext);
 	for (n = aggrs->h; n; n = n->next) {
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;
