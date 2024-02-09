@@ -611,6 +611,18 @@ GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;
 update sys.functions set system = true where system <> true and name = 'isvalid' and schema_id = (select id from sys.schemas where name = 'json');
 
 Running database upgrade commands:
+update sys._columns set type_digits = 7 where type = 'tinyint' and type_digits <> 7;
+update sys._columns set type_digits = 15 where type = 'smallint' and type_digits <> 15;
+update sys._columns set type_digits = 31 where type = 'int' and type_digits <> 31;
+update sys._columns set type_digits = 63 where type = 'bigint' and type_digits <> 63;
+update sys._columns set type_digits = 127 where type = 'hugeint' and type_digits <> 127;
+update sys._columns set type = 'varchar' where type in ('clob', 'char') and table_id in (select id from sys._tables where system and name <> 'netcdf_files');
+update sys.args set type_digits = 7 where type = 'tinyint' and type_digits <> 7;
+update sys.args set type_digits = 15 where type = 'smallint' and type_digits <> 15;
+update sys.args set type_digits = 31 where type = 'int' and type_digits <> 31;
+update sys.args set type_digits = 63 where type = 'bigint' and type_digits <> 63;
+update sys.args set type_digits = 127 where type = 'hugeint' and type_digits <> 127;
+update sys.args set type = 'varchar' where type in ('clob', 'char');
 drop function if exists sys.time_to_str(time with time zone, string) cascade;
 drop function if exists sys.timestamp_to_str(timestamp with time zone, string) cascade;
 create function time_to_str(d time, format string) returns string
