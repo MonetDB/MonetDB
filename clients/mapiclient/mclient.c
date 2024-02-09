@@ -3771,8 +3771,7 @@ main(int argc, char **argv)
 		if (mode == SQL)
 			dump_version(mid, toConsole, "Database:");
 
-		mnstr_printf(toConsole, "FOLLOW US on https://twitter.com/MonetDB "
-					"or https://github.com/MonetDB/MonetDB\n"
+		mnstr_printf(toConsole, "FOLLOW US on https://github.com/MonetDB/MonetDB\n"
 					"Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)
 			mnstr_printf(toConsole, "auto commit mode: %s\n",
