@@ -680,18 +680,30 @@ GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;
 update sys.functions set system = true where system <> true and name = 'isvalid' and schema_id = (select id from sys.schemas where name = 'json');
 
 Running database upgrade commands:
-drop function sys.dump_database(boolean);
+drop function if exists sys.time_to_str(time with time zone, string) cascade;
+drop function if exists sys.timestamp_to_str(timestamp with time zone, string) cascade;
+create function time_to_str(d time, format string) returns string
+ external name mtime."time_to_str";
+create function time_to_str(d time with time zone, format string) returns string
+ external name mtime."timetz_to_str";
+create function timestamp_to_str(d timestamp with time zone, format string) returns string
+ external name mtime."timestamptz_to_str";
+grant execute on function time_to_str(time, string) to public;
+grant execute on function time_to_str(time with time zone, string) to public;
+grant execute on function timestamp_to_str(timestamp with time zone, string) to public;
+update sys.functions set system = true where not system and schema_id = 2000 and name in ('time_to_str', 'timestamp_to_str');
+drop function if exists sys.dump_database(boolean) cascade;
 drop view sys.dump_comments;
 drop view sys.dump_tables;
 drop view sys.dump_functions;
 drop view sys.dump_function_grants;
-drop function sys.describe_columns(string, string);
+drop function if exists sys.describe_columns(string, string) cascade;
 drop view sys.describe_functions;
 drop view sys.describe_privileges;
 drop view sys.describe_comments;
 drop view sys.fully_qualified_functions;
 drop view sys.describe_tables;
-drop function sys.describe_type(string, integer, integer);
+drop function if exists sys.describe_type(string, integer, integer) cascade;
 CREATE FUNCTION sys.describe_type(ctype string, digits integer, tscale integer)
  RETURNS string
 BEGIN
