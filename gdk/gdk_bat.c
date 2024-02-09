@@ -1702,10 +1702,13 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			default:
 				MT_UNREACHABLE();
 			}
+			MT_lock_set(&b->theaplock);
 			if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
 				MT_rwlock_wrunlock(&b->thashlock);
 				goto bailout;
 			}
+			MT_lock_unset(&b->theaplock);
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */

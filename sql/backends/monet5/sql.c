@@ -4432,7 +4432,7 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sizes[i] = d_bi.count;
 			i++;
 
-			if (TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED) {
+			if (TMsubcommit_list(commit_list, sizes, i, -1) != GDK_SUCCEED) {
 				MT_lock_unset(&lock_persist_unlogged);
 				GDKfree(commit_list);
 				GDKfree(sizes);

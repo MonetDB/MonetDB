@@ -116,6 +116,8 @@ void BBPrelinquish(void)
 	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
+gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
+	__attribute__((__visibility__("hidden")));
 BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
@@ -182,8 +184,6 @@ gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *e
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
 		      GDK, NULL, format, ##__VA_ARGS__)
 lng getBBPlogno(void)
-	__attribute__((__visibility__("hidden")));
-lng getBBPtransid(void)
 	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));

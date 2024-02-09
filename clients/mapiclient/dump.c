@@ -2188,7 +2188,7 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 				fprintf(stderr, "no tables matching %s.%s\n", schema, tname);
 				goto doreturn;
 			}
-			tables = malloc(rows * sizeof(struct tables));
+			tables = malloc((size_t) rows * sizeof(struct tables));
 			if (tables == NULL) {
 				mapi_close_handle(hdl);
 				fprintf(stderr, "malloc failure\n");
@@ -3203,6 +3203,123 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
+	/* dump views, functions and triggers */
+	if ((hdl = mapi_query(mid, views_functions_triggers)) == NULL ||
+		mapi_error(mid))
+		goto bailout;
+
+	while (rc == 0 &&
+	       mnstr_errnr(sqlf) == MNSTR_NO__ERROR &&
+	       mapi_fetch_row(hdl) != 0) {
+		char *id = strdup(mapi_fetch_field(hdl, 0));
+		char *schema = strdup(mapi_fetch_field(hdl, 1));
+		char *name = strdup(mapi_fetch_field(hdl, 2));
+		const char *query = mapi_fetch_field(hdl, 3);
+		const char *remark = mapi_fetch_field(hdl, 4);
+
+		if (mapi_error(mid) || id == NULL || schema == NULL || name == NULL) {
+			free(id);
+			free(schema);
+			free(name);
+			goto bailout;
+		}
+		if (sname != NULL && strcmp(schema, sname) != 0) {
+			free(id);
+			free(schema);
+			free(name);
+			continue;
+		}
+		if (curschema == NULL || strcmp(schema, curschema) != 0) {
+			if (curschema)
+				free(curschema);
+			curschema = strdup(schema);
+			if (curschema == NULL) {
+				free(id);
+				free(schema);
+				free(name);
+				goto bailout;
+			}
+			mnstr_printf(sqlf, "SET SCHEMA ");
+			dquoted_print(sqlf, curschema, ";\n");
+		}
+		if (query) {
+			/* view or trigger */
+			mnstr_printf(sqlf, "%s\n", query);
+			/* only views have comments due to query */
+			comment_on(sqlf, "VIEW", schema, name, NULL, remark);
+		} else {
+			/* procedure */
+			dump_functions(mid, sqlf, 0, schema, name, id);
+		}
+		free(id);
+		free(schema);
+		free(name);
+	}
+	mapi_close_handle(hdl);
+	hdl = NULL;
+
+	/* dump DEFAULT clauses for tables */
+	if (dump_table_defaults(mid, NULL, NULL, sqlf))
+		goto bailout2;
+
+	if (!describe) {
+		if (dump_foreign_keys(mid, NULL, NULL, NULL, sqlf))
+			goto bailout2;
+
+		/* dump sequences, part 2 */
+		if ((hdl = mapi_query(mid, sequences2)) == NULL ||
+		    mapi_error(mid))
+			goto bailout;
+
+		while (mapi_fetch_row(hdl) != 0) {
+			const char *schema = mapi_fetch_field(hdl, 0);		/* sch */
+			const char *name = mapi_fetch_field(hdl, 1);		/* seq */
+			const char *restart = mapi_fetch_field(hdl, 3);		/* rs */
+			const char *minvalue;
+			const char *maxvalue;
+			const char *increment = mapi_fetch_field(hdl, 6);	/* inc */
+			const char *cycle = mapi_fetch_field(hdl, 8);		/* cycle */
+
+			if (mapi_get_field_count(hdl) > 9) {
+				/* new version (Jan2022) of sys.describe_sequences */
+				minvalue = mapi_fetch_field(hdl, 11);			/* rmi */
+				maxvalue = mapi_fetch_field(hdl, 12);			/* rma */
+			} else {
+				/* old version (pre Jan2022) of sys.describe_sequences */
+				minvalue = mapi_fetch_field(hdl, 4);			/* minvalue */
+				maxvalue = mapi_fetch_field(hdl, 5);			/* maxvalue */
+				if (strcmp(minvalue, "0") == 0)
+					minvalue = NULL;
+				if (strcmp(maxvalue, "0") == 0)
+					maxvalue = NULL;
+			}
+
+			if (sname != NULL && strcmp(schema, sname) != 0)
+				continue;
+
+			mnstr_printf(sqlf,
+				     "ALTER SEQUENCE ");
+			dquoted_print(sqlf, schema, ".");
+			dquoted_print(sqlf, name, NULL);
+			mnstr_printf(sqlf, " RESTART WITH %s", restart);
+			if (strcmp(increment, "1") != 0)
+				mnstr_printf(sqlf, " INCREMENT BY %s", increment);
+			if (minvalue)
+				mnstr_printf(sqlf, " MINVALUE %s", minvalue);
+			if (maxvalue)
+				mnstr_printf(sqlf, " MAXVALUE %s", maxvalue);
+			mnstr_printf(sqlf, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
+			if (mnstr_errnr(sqlf) != MNSTR_NO__ERROR) {
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				goto bailout2;
+			}
+		}
+		if (mapi_error(mid))
+			goto bailout;
+		mapi_close_handle(hdl);
+	}
+
 	/* add tables to MERGE tables */
 	if ((hdl = mapi_query(mid, mergetables)) == NULL || mapi_error(mid))
 		goto bailout;
@@ -3333,123 +3450,6 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
-
-	/* dump views, functions and triggers */
-	if ((hdl = mapi_query(mid, views_functions_triggers)) == NULL ||
-		mapi_error(mid))
-		goto bailout;
-
-	while (rc == 0 &&
-	       mnstr_errnr(sqlf) == MNSTR_NO__ERROR &&
-	       mapi_fetch_row(hdl) != 0) {
-		char *id = strdup(mapi_fetch_field(hdl, 0));
-		char *schema = strdup(mapi_fetch_field(hdl, 1));
-		char *name = strdup(mapi_fetch_field(hdl, 2));
-		const char *query = mapi_fetch_field(hdl, 3);
-		const char *remark = mapi_fetch_field(hdl, 4);
-
-		if (mapi_error(mid) || id == NULL || schema == NULL || name == NULL) {
-			free(id);
-			free(schema);
-			free(name);
-			goto bailout;
-		}
-		if (sname != NULL && strcmp(schema, sname) != 0) {
-			free(id);
-			free(schema);
-			free(name);
-			continue;
-		}
-		if (curschema == NULL || strcmp(schema, curschema) != 0) {
-			if (curschema)
-				free(curschema);
-			curschema = strdup(schema);
-			if (curschema == NULL) {
-				free(id);
-				free(schema);
-				free(name);
-				goto bailout;
-			}
-			mnstr_printf(sqlf, "SET SCHEMA ");
-			dquoted_print(sqlf, curschema, ";\n");
-		}
-		if (query) {
-			/* view or trigger */
-			mnstr_printf(sqlf, "%s\n", query);
-			/* only views have comments due to query */
-			comment_on(sqlf, "VIEW", schema, name, NULL, remark);
-		} else {
-			/* procedure */
-			dump_functions(mid, sqlf, 0, schema, name, id);
-		}
-		free(id);
-		free(schema);
-		free(name);
-	}
-	mapi_close_handle(hdl);
-	hdl = NULL;
-
-	/* dump DEFAULT clauses for tables */
-	if (dump_table_defaults(mid, NULL, NULL, sqlf))
-		goto bailout2;
-
-	if (!describe) {
-		if (dump_foreign_keys(mid, NULL, NULL, NULL, sqlf))
-			goto bailout2;
-
-		/* dump sequences, part 2 */
-		if ((hdl = mapi_query(mid, sequences2)) == NULL ||
-		    mapi_error(mid))
-			goto bailout;
-
-		while (mapi_fetch_row(hdl) != 0) {
-			const char *schema = mapi_fetch_field(hdl, 0);		/* sch */
-			const char *name = mapi_fetch_field(hdl, 1);		/* seq */
-			const char *restart = mapi_fetch_field(hdl, 3);		/* rs */
-			const char *minvalue;
-			const char *maxvalue;
-			const char *increment = mapi_fetch_field(hdl, 6);	/* inc */
-			const char *cycle = mapi_fetch_field(hdl, 8);		/* cycle */
-
-			if (mapi_get_field_count(hdl) > 9) {
-				/* new version (Jan2022) of sys.describe_sequences */
-				minvalue = mapi_fetch_field(hdl, 11);			/* rmi */
-				maxvalue = mapi_fetch_field(hdl, 12);			/* rma */
-			} else {
-				/* old version (pre Jan2022) of sys.describe_sequences */
-				minvalue = mapi_fetch_field(hdl, 4);			/* minvalue */
-				maxvalue = mapi_fetch_field(hdl, 5);			/* maxvalue */
-				if (strcmp(minvalue, "0") == 0)
-					minvalue = NULL;
-				if (strcmp(maxvalue, "0") == 0)
-					maxvalue = NULL;
-			}
-
-			if (sname != NULL && strcmp(schema, sname) != 0)
-				continue;
-
-			mnstr_printf(sqlf,
-				     "ALTER SEQUENCE ");
-			dquoted_print(sqlf, schema, ".");
-			dquoted_print(sqlf, name, NULL);
-			mnstr_printf(sqlf, " RESTART WITH %s", restart);
-			if (strcmp(increment, "1") != 0)
-				mnstr_printf(sqlf, " INCREMENT BY %s", increment);
-			if (minvalue)
-				mnstr_printf(sqlf, " MINVALUE %s", minvalue);
-			if (maxvalue)
-				mnstr_printf(sqlf, " MAXVALUE %s", maxvalue);
-			mnstr_printf(sqlf, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
-			if (mnstr_errnr(sqlf) != MNSTR_NO__ERROR) {
-				mapi_close_handle(hdl);
-				hdl = NULL;
-				goto bailout2;
-			}
-		}
-		if (mapi_error(mid))
-			goto bailout;
-		mapi_close_handle(hdl);
-	}
 
 	if ((hdl = mapi_query(mid, table_grants)) == NULL || mapi_error(mid))
 		goto bailout;

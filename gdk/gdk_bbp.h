@@ -61,7 +61,7 @@
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
 
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
-gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool allow_hge_upgrade);
+gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, bool allow_hge_upgrade);
 gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 #ifdef GDKLIBRARY_HASHASH
 			      int *hashash,
@@ -79,7 +79,6 @@ gdk_export int BBPrename(BAT *b, const char *nme);
 gdk_export bat BBPindex(const char *nme);
 
 /* swapping interface */
-gdk_export gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid);
 gdk_export int BBPfix(bat b);
 gdk_export int BBPunfix(bat b);
 static inline void

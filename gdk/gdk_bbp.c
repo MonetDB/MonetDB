@@ -134,7 +134,6 @@ static void BBPcallbacks(void);
 /* two lngs of extra info in BBP.dir */
 /* these two are atomic because of their use in log_new() */
 static ATOMIC_TYPE BBPlogno = ATOMIC_VAR_INIT(0);
-static ATOMIC_TYPE BBPtransid = ATOMIC_VAR_INIT(0);
 
 #define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)
 
@@ -180,12 +179,6 @@ lng
 getBBPlogno(void)
 {
 	return (lng) ATOMIC_GET(&BBPlogno);
-}
-
-lng
-getBBPtransid(void)
-{
-	return (lng) ATOMIC_GET(&BBPtransid);
 }
 
 
@@ -1016,7 +1009,7 @@ BBPcheckbats(unsigned bbpversion)
 #endif
 
 unsigned
-BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool allow_hge_upgrade)
+BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, bool allow_hge_upgrade)
 {
 	char buf[BUFSIZ];
 	int sz, ptrsize, oidsize, intsize;
@@ -1090,12 +1083,14 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid, bool al
 			TRC_CRITICAL(GDK, "short BBP");
 			return 0;
 		}
-		if (sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, logno, transid) != 2) {
+		if (bbpversion <= GDKLIBRARY_STATUS ?
+		    sscanf(buf, "BBPinfo=" LLSCN " %*d", logno) != 1 :
+		    sscanf(buf, "BBPinfo=" LLSCN, logno) != 1) {
 			TRC_CRITICAL(GDK, "no info value found\n");
 			return 0;
 		}
 	} else {
-		*logno = *transid = 0;
+		*logno = 0;
 	}
 	return bbpversion;
 }
@@ -1736,7 +1731,7 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 	}
 	BBPunlock();
 	if (nupd > 1 &&
-	    TMsubcommit_list(upd, NULL, nupd, -1, -1) != GDK_SUCCEED) {
+	    TMsubcommit_list(upd, NULL, nupd, -1) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "failed to commit changes\n");
 		GDKfree(upd);
 		return GDK_FAIL;
@@ -1964,16 +1959,14 @@ BBPinit(bool allow_hge_upgrade)
 	if (GDKinmemory(0)) {
 		bbpversion = GDKLIBRARY;
 	} else {
-		lng logno, transid;
-		bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid, allow_hge_upgrade);
+		lng logno;
+		bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, allow_hge_upgrade);
 		if (bbpversion == 0) {
 			ATOMIC_SET(&GDKdebug, dbg);
 			return GDK_FAIL;
 		}
 		assert(bbpversion > GDKLIBRARY_MINMAX_POS || logno == 0);
-		assert(bbpversion > GDKLIBRARY_MINMAX_POS || transid == 0);
 		ATOMIC_SET(&BBPlogno, logno);
-		ATOMIC_SET(&BBPtransid, transid);
 	}
 
 	/* allocate BBP records */
@@ -2352,16 +2345,16 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 }
 
 static gdk_return
-BBPdir_header(FILE *f, int n, lng logno, lng transid)
+BBPdir_header(FILE *f, int n, lng logno)
 {
-	if (fprintf(f, "BBP.dir, GDKversion %u\n%d %d %d\nBBPsize=%d\nBBPinfo=" LLFMT " " LLFMT "\n",
+	if (fprintf(f, "BBP.dir, GDKversion %u\n%d %d %d\nBBPsize=%d\nBBPinfo=" LLFMT "\n",
 		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID,
 #ifdef HAVE_HGE
 		    SIZEOF_HGE
 #else
 		    SIZEOF_LNG
 #endif
-		    , n, logno, transid) < 0 ||
+		    , n, logno) < 0 ||
 	    ferror(f)) {
 		GDKsyserror("Writing BBP.dir header failed\n");
 		return GDK_FAIL;
@@ -2370,12 +2363,11 @@ BBPdir_header(FILE *f, int n, lng logno, lng transid)
 }
 
 static gdk_return
-BBPdir_first(bool subcommit, lng logno, lng transid,
-	     FILE **obbpfp, FILE **nbbpfp)
+BBPdir_first(bool subcommit, lng logno, FILE **obbpfp, FILE **nbbpfp)
 {
 	FILE *obbpf = NULL, *nbbpf = NULL;
 	int n = 0;
-	lng ologno, otransid;
+	lng ologno;
 
 	if (obbpfp)
 		*obbpfp = NULL;
@@ -2410,7 +2402,7 @@ BBPdir_first(bool subcommit, lng logno, lng transid,
 		}
 		/* fourth line contains BBPinfo */
 		if (fgets(buf, sizeof(buf), obbpf) == NULL ||
-		    sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &ologno, &otransid) != 2) {
+		    sscanf(buf, "BBPinfo=" LLSCN, &ologno) != 1) {
 			GDKerror("cannot read BBPinfo in backup BBP.dir.");
 			goto bailout;
 		}
@@ -2421,7 +2413,7 @@ BBPdir_first(bool subcommit, lng logno, lng transid,
 
 	TRC_DEBUG(IO_, "writing BBP.dir (%d bats).\n", n);
 
-	if (BBPdir_header(nbbpf, n, logno, transid) != GDK_SUCCEED) {
+	if (BBPdir_header(nbbpf, n, logno) != GDK_SUCCEED) {
 		goto bailout;
 	}
 
@@ -2545,7 +2537,7 @@ BBPdir_init(void)
 	FILE *fp;
 	gdk_return rc;
 
-	rc = BBPdir_first(false, 0, 0, NULL, &fp);
+	rc = BBPdir_first(false, 0, NULL, &fp);
 	if (rc == GDK_SUCCEED)
 		rc = BBPdir_last(-1, NULL, 0, NULL, fp);
 	return rc;
@@ -3962,7 +3954,7 @@ BBPcheckBBPdir(void)
 	int lineno = 0;
 	bat bbpsize = 0;
 	unsigned bbpversion;
-	lng logno, transid;
+	lng logno;
 
 	fp = GDKfileopen(0, BAKDIR, "BBP", "dir", "r");
 	assert(fp != NULL);
@@ -3972,7 +3964,7 @@ BBPcheckBBPdir(void)
 		if (fp == NULL)
 			return;
 	}
-	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid, false);
+	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, false);
 	if (bbpversion == 0) {
 		fclose(fp);
 		return;		/* error reading file */
@@ -4044,7 +4036,7 @@ BBPcheckBBPdir(void)
  * The BBP.dir is also moved into the BAKDIR.
  */
 gdk_return
-BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid)
+BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 {
 	gdk_return ret = GDK_SUCCEED;
 	lng t0 = 0, t1 = 0;
@@ -4103,8 +4095,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 	/* PHASE 2: save the repository and write new BBP.dir file */
 	if (ret == GDK_SUCCEED) {
-		ret = BBPdir_first(subcommit != NULL, logno, transid,
-				   &obbpf, &nbbpf);
+		ret = BBPdir_first(subcommit != NULL, logno, &obbpf, &nbbpf);
 	}
 
 	for (int idx = 1; ret == GDK_SUCCEED && idx < cnt; idx++) {
@@ -4199,7 +4190,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	/* AFTERMATH */
 	if (ret == GDK_SUCCEED) {
 		ATOMIC_SET(&BBPlogno, logno);	/* the new value */
-		ATOMIC_SET(&BBPtransid, transid);
 		backup_files = subcommit ? (backup_files - backup_subdir) : 0;
 		backup_dir = backup_subdir = 0;
 		if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
