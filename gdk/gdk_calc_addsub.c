@@ -1590,9 +1590,9 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp)
 
 	/* if the input is sorted, and no overflow occurred, the result
 	 * is also sorted */
-	bn->tsorted = (bi.sorted && nils == 0) ||
+	bn->tsorted = (bi.sorted && nils == 0 && bi.type != TYPE_str) ||
 		ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = (bi.revsorted && nils == 0) ||
+	bn->trevsorted = (bi.revsorted && nils == 0 && bi.type != TYPE_str) ||
 		ci.ncand <= 1 || nils == ci.ncand;
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
