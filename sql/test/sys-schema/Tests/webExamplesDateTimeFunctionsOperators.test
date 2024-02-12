@@ -231,12 +231,12 @@ select sys.epoch(1234567890.456)
 2009-02-14 01:31:30.456000+02:00
 
 query I nosort
-select sys.epoch(timestamp '2009-02-13 23:31:30.0')
+select sys.epoch(timestamp with time zone '2009-02-13 23:31:30.0+00:00')
 ----
 1234567890
 
 query R nosort
-select epoch_ms(timestamp '2009-02-13 23:31:30.0')
+select epoch_ms(timestamp with time zone '2009-02-13 23:31:30.0+00:00')
 ----
 1234567890.000
 
@@ -368,12 +368,12 @@ select sys.str_to_date('4/30/2021', '%m/%d/%Y')
 query T nosort
 select sys.str_to_time('09:30:49','%H:%M:%S')
 ----
-11:30:49+02:00
+09:30:49+02:00
 
 query T nosort
 select sys.str_to_timestamp('4/30/2021 09:30:49','%m/%d/%Y %H:%M:%S')
 ----
-2021-04-30 11:30:49+02:00
+2021-04-30 09:30:49+02:00
 
 skipif system=Windows
 query T nosort

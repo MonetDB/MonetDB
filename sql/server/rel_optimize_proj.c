@@ -1153,7 +1153,7 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 		set_processed(nrel);
 
 		for (node *n = rel->exps->h ; n ; n = n->next) {
-			sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+			sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 			exp_prop_alias(v->sql->sa, a, e);
 			list_append(converted, a);
 		}

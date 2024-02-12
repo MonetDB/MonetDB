@@ -37,17 +37,17 @@ statement error
 SELECT timestamp with time zone '20011227T040506.789-08'
 
 query T rowsort
-SELECT timestamp with time zone '2001-12-27 04:05:06.789-08'
+SELECT timestamp with time zone '2001-12-27 04:05:06.789-0800'
 ----
-2001-12-27 05:05:06.789000+01:00
+2001-12-27 13:05:06.789000+01:00
 
 statement error
 SELECT timestamp with time zone '2001.12.27 04:05:06.789-08'
 
 query T rowsort
-SELECT timestamp with time zone '2001/12/27 04:05:06.789-08'
+SELECT timestamp with time zone '2001/12/27 04:05:06.789-0800'
 ----
-2001-12-27 05:05:06.789000+01:00
+2001-12-27 13:05:06.789000+01:00
 
 statement error
 SELECT timestamp with time zone '12/27/2001 04:05:06.789-08'

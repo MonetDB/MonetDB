@@ -583,6 +583,8 @@ void rewinddir(DIR *dir);
 ssize_t shtFromStr(const char *src, size_t *len, sht **dst, bool external);
 ssize_t shtToStr(str *dst, size_t *len, const sht *src, bool external);
 const sht sht_nil;
+ssize_t sql_daytime_fromstr(const char *buf, daytime *d, long tz_sec, bool tzlocal);
+ssize_t sql_timestamp_fromstr(const char *buf, timestamp *d, long tz_sec, bool tzlocal);
 ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst, bool external);
 const char str_nil[2];
 int strerror_r(int errnum, char *buf, size_t buflen);

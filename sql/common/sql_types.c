@@ -159,10 +159,10 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_DEC */		{ 0, 0, 0, 1, 1, 0, 2, 2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_FLT */		{ 0, 0, 2, 1, 1, 0, 2, 2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_TIME */		{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0 },
-/* EC_TIME_TZ */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0 },
+/* EC_TIME_TZ */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 0, 0, 0, 0, 0 },
 /* EC_DATE */		{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 0, 0 },
 /* EC_TSTAMP */		{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 0, 0 },
-/* EC_TSTAMP_TZ */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0 },
+/* EC_TSTAMP_TZ */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 1, 0, 0 },
 /* EC_GEOM */		{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
 /* EC_EXTERNAL*/	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
@@ -186,10 +186,10 @@ static int convert_preference_matrix[EC_MAX][EC_MAX] = {
 /* EC_SEC*/		  { 10,  0,  0, -1, -1,  0,  0,  0,  0, 99,  0,  0, 10, 10,  0,  0,  0,  0,  0 },
 /* EC_DEC */	  { 10,  0,  0, -1, -1,  0,-10,-10,  0,  0, 99, 10,  0,  0,  0,  0,  0,  0,  0 },
 /* EC_FLT */	  { 10,  0, -5, -1, -1,  0,-10,-10,  0,  0, 10, 199, 0,  0,  0,  0,  0,  0,  0 },
-/* EC_TIME */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0, 99,-10,  0,  0,  0,  0,  0 },
+/* EC_TIME */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0, 99, 10,  0,  0,  0,  0,  0 },
 /* EC_TIME_TZ */  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0, 10, 99,  0,  0,  0,  0,  0 },
 /* EC_DATE */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99, 10,-10,  0,  0 },
-/* EC_TSTAMP */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0, 10, 10, 10, 99,-10,  0,  0 },
+/* EC_TSTAMP */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0, 10, 10, 10, 99, 10,  0,  0 },
 /* EC_TSTAMP_TZ */{ 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0, 10, 10, 10, 10, 99,  0,  0 },
 /* EC_GEOM */	  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 99,  0 },
 /* EC_EXTERNAL*/  { 10,  0,  0, -1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 }
@@ -1529,58 +1529,58 @@ sqltypeinit( sql_allocator *sa)
 	// odbc timestampdiff variants
 	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, DTE, TMESTAMPTZ);
+	//sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, DTE, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, DTE, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, DTE);
+	//sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, DTE);
 	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, DTE);
 	// --
 	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, DTE, TMESTAMPTZ);
+	//sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, DTE, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, DTE, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, DTE);
+	//sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, DTE);
 	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, DTE);
 	// --
 	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, DTE, TMESTAMPTZ);
+	//sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, DTE, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, DTE, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, DTE);
+	//sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, DTE);
 	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, DTE);
 	// --
 	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
+	//sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
+	//sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
 	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
 	// --
 	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
+	//sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
+	//sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
 	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
 	// --
 	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
+	//sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
+	//sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
 	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
 	// --
 	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
+	//sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
+	//sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
 	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
 	// --
 	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
+	//sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
-	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
+	//sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
 	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
 
 	// end odbc
@@ -1604,10 +1604,10 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "hour", "mtime", "hours", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TME);
 	sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TME);
 	sql_create_func(sa, "second", "mtime", "sql_seconds", FALSE, FALSE, SCALE_NONE, 6, DEC, 1, TME);
-	sql_create_func(sa, "epoch_ms", "mtime", "epoch_ms", FALSE, FALSE, SCALE_NONE, 3, BigDEC, 1, TME);
-	sql_create_func(sa, "hour", "mtime", "hours", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMETZ);
-	sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMETZ);
-	sql_create_func(sa, "second", "mtime", "sql_seconds", FALSE, FALSE, SCALE_NONE, 6, DEC, 1, TMETZ);
+	//sql_create_func(sa, "epoch_ms", "mtime", "epoch_ms", FALSE, FALSE, SCALE_NONE, 3, BigDEC, 1, TME);
+	//sql_create_func(sa, "hour", "mtime", "hours", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMETZ);
+	//sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMETZ);
+	//sql_create_func(sa, "second", "mtime", "sql_seconds", FALSE, FALSE, SCALE_NONE, 6, DEC, 1, TMETZ);
 	sql_create_func(sa, "epoch_ms", "mtime", "epoch_ms", FALSE, FALSE, SCALE_NONE, 3, BigDEC, 1, TMETZ);
 
 	sql_create_func(sa, "century", "mtime", "century", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMP);
@@ -1619,17 +1619,17 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "hour", "mtime", "hours", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMP);
 	sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMP);
 	sql_create_func(sa, "second", "mtime", "sql_seconds", FALSE, FALSE, SCALE_NONE, 6, DEC, 1, TMESTAMP);
-	sql_create_func(sa, "epoch_ms", "mtime", "epoch_ms", FALSE, FALSE, SCALE_NONE, 3, BigDEC, 1, TMESTAMP);
+	//sql_create_func(sa, "epoch_ms", "mtime", "epoch_ms", FALSE, FALSE, SCALE_NONE, 3, BigDEC, 1, TMESTAMP);
 
-	sql_create_func(sa, "century", "mtime", "century", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
-	sql_create_func(sa, "decade", "mtime", "decade", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
-	sql_create_func(sa, "year", "mtime", "year", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
-	sql_create_func(sa, "quarter", "mtime", "quarter", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
-	sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
-	sql_create_func(sa, "day", "mtime", "day", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
-	sql_create_func(sa, "hour", "mtime", "hours", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
-	sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
-	sql_create_func(sa, "second", "mtime", "sql_seconds", FALSE, FALSE, SCALE_NONE, 6, DEC, 1, TMESTAMPTZ);
+	//sql_create_func(sa, "century", "mtime", "century", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
+	//sql_create_func(sa, "decade", "mtime", "decade", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
+	//sql_create_func(sa, "year", "mtime", "year", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
+	//sql_create_func(sa, "quarter", "mtime", "quarter", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
+	//sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
+	//sql_create_func(sa, "day", "mtime", "day", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
+	//sql_create_func(sa, "hour", "mtime", "hours", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
+	//sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
+	//sql_create_func(sa, "second", "mtime", "sql_seconds", FALSE, FALSE, SCALE_NONE, 6, DEC, 1, TMESTAMPTZ);
 	sql_create_func(sa, "epoch_ms", "mtime", "epoch_ms", FALSE, FALSE, SCALE_NONE, 3, BigDEC, 1, TMESTAMPTZ);
 
 	sql_create_func(sa, "year", "mtime", "year", FALSE, FALSE, SCALE_NONE, 0, INT, 1, MONINT);

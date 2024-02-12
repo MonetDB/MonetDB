@@ -5265,7 +5265,7 @@ literal:
 		  if (precision == 1 && strlen($4) > 9)
 			precision += (int) strlen($4) - 9;
 		  r = sql_find_subtype(&t, ($3)?"timetz":"time", precision, 0);
-		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
+		  if (!r || (a = atom_general(SA, &t, $4, m->timezone)) == NULL) {
 			sqlformaterror(m, SQLSTATE(22007) "Incorrect time value (%s)", $4);
 			$$ = NULL;
 			YYABORT;
@@ -5279,7 +5279,7 @@ literal:
 		  int r;
 
 		  r = sql_find_subtype(&t, ($3)?"timestamptz":"timestamp",$2,0);
-		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
+		  if (!r || (a = atom_general(SA, &t, $4, m->timezone)) == NULL) {
 			sqlformaterror(m, SQLSTATE(22007) "Incorrect timestamp value (%s)", $4);
 			$$ = NULL;
 			YYABORT;
@@ -5296,7 +5296,7 @@ literal:
 
 		  $$ = NULL;
 		  r = sql_find_subtype(&t, "blob", 0, 0);
-		  if (r && (a = atom_general(SA, &t, $2)) != NULL)
+		  if (r && (a = atom_general(SA, &t, $2, m->timezone)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
 			sqlformaterror(m, SQLSTATE(22M28) "Incorrect blob (%s)", $2);
@@ -5310,7 +5310,7 @@ literal:
 
 		  $$ = NULL;
 		  r = sql_find_subtype(&t, "blob", 0, 0);
-		  if (r && (a = atom_general(SA, &t, $1)) != NULL)
+		  if (r && (a = atom_general(SA, &t, $1, m->timezone)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
 			sqlformaterror(m, SQLSTATE(22M28) "Incorrect blob (%s)", $1);
@@ -5326,7 +5326,7 @@ literal:
 			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
-		  if (!(a = atom_general(SA, &t, $2))) {
+		  if (!(a = atom_general(SA, &t, $2, m->timezone))) {
 			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
 			YYABORT;
 		  }
@@ -5341,7 +5341,7 @@ literal:
 			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
-		  if (!(a = atom_general(SA, &t, $2))) {
+		  if (!(a = atom_general(SA, &t, $2, m->timezone))) {
 			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
 			YYABORT;
 		  }
@@ -5358,7 +5358,7 @@ literal:
 			YYABORT;
 		  }
 		  sql_init_subtype(&tpe, t, 0, 0);
-		  if (!(a = atom_general(SA, &tpe, $2))) {
+		  if (!(a = atom_general(SA, &tpe, $2, m->timezone))) {
 			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
 			YYABORT;
 		  }
@@ -7037,7 +7037,7 @@ makeAtomNode(mvc *m, const char* typename, const char* val, unsigned int digits,
     } else {
         sub_t_found = sql_find_subtype(&sub_t, typename, digits, scale);
     }
-    if ((!bind && !sub_t_found) || (a = atom_general(m->sa, &sub_t, val)) == NULL) {
+    if ((!bind && !sub_t_found) || (a = atom_general(m->sa, &sub_t, val, m->timezone)) == NULL) {
         sqlformaterror(m, SQLSTATE(22007) "Incorrect %s value (%s)", typename, val);
         return NULL;
     }

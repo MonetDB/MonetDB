@@ -1932,7 +1932,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		if (c->def) {
 			e = rel_parse_val(sql, nt->s, c->def, &c->type, sql->emode, NULL);
 		} else {
-			e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+			e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 		}
 		if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
 			rel_destroy(r);

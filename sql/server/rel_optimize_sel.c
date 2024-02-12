@@ -1057,7 +1057,7 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 			}
 			if (c) {
 				e->type = e_atom;
-				e->l = atom_general(sql->sa, &e->tpe, NULL);
+				e->l = atom_general(sql->sa, &e->tpe, NULL, 0);
 				e->r = e->f = NULL;
 			}
 		}
@@ -3009,7 +3009,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 	}
 
 	/* remove NULL values, ie generate a select not null */
-	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
+	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_equal);
 	set_anti(nje);
 	set_has_no_nil(nje);
 	set_semantics(nje);
@@ -3086,7 +3086,7 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *
 	}
 
 	/* remove NULL values, ie generate a select not null */
-	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
+	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_equal);
 	set_anti(nje);
 	set_has_no_nil(nje);
 	set_semantics(nje);

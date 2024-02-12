@@ -27794,6 +27794,36 @@ pattern batcalc.date(X_0:bat[:oid]):bat[:date]
 nil_2_date;
 cast to date
 batcalc
+datetz
+pattern batcalc.datetz(X_0:bat[:timestamp], X_1:bat[:lng]):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk;
+(empty)
+batcalc
+datetz
+pattern batcalc.datetz(X_0:bat[:timestamp], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid]):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk;
+(empty)
+batcalc
+datetz
+pattern batcalc.datetz(X_0:timestamp, X_1:bat[:lng]):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk_p1;
+(empty)
+batcalc
+datetz
+pattern batcalc.datetz(X_0:timestamp, X_1:bat[:lng], X_2:bat[:oid]):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk_p1;
+(empty)
+batcalc
+datetz
+pattern batcalc.datetz(X_0:bat[:timestamp], X_1:lng):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk_p2;
+(empty)
+batcalc
+datetz
+pattern batcalc.datetz(X_0:bat[:timestamp], X_1:lng, X_2:bat[:oid]):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk_p2;
+(empty)
+batcalc
 daytime
 pattern batcalc.daytime(X_0:bat[:daytime], X_1:bat[:oid]):bat[:daytime] 
 MTIMEdaytime_daytime_bulk;
@@ -27835,14 +27865,14 @@ second_interval_2_daytime;
 cast second_interval to a daytime and check for overflow
 batcalc
 daytime
-pattern batcalc.daytime(X_0:bat[:str], X_1:bat[:oid], X_2:int, X_3:int):bat[:daytime] 
-str_2time_daytimetz;
-cast daytime to daytime and check for overflow
-batcalc
-daytime
 pattern batcalc.daytime(X_0:bat[:timestamp], X_1:bat[:oid], X_2:int):bat[:daytime] 
 timestamp_2_daytime;
 cast timestamp to a daytime and check for overflow
+batcalc
+daytimetz
+pattern batcalc.daytimetz(X_0:bat[:str], X_1:bat[:oid], X_2:int, X_3:lng):bat[:daytime] 
+str_2time_daytimetz;
+cast daytime to daytime and check for overflow
 batcalc
 dbl
 pattern batcalc.dbl(X_0:bat[:bit]):bat[:dbl] 
@@ -30285,11 +30315,6 @@ batstr_2time_timestamp;
 cast to timestamp and check for overflow
 batcalc
 timestamp
-command batcalc.timestamp(X_0:bat[:str], X_1:bat[:oid], X_2:int, X_3:int):bat[:timestamp] 
-batstr_2time_timestamptz;
-cast to timestamp and check for overflow
-batcalc
-timestamp
 pattern batcalc.timestamp(X_0:bat[:date], X_1:bat[:oid], X_2:int):bat[:timestamp] 
 date_2_timestamp;
 cast date to a timestamp and check for overflow
@@ -30303,6 +30328,11 @@ timestamp
 pattern batcalc.timestamp(X_0:bat[:timestamp], X_1:bat[:oid], X_2:int):bat[:timestamp] 
 timestamp_2time_timestamp;
 cast timestamp to timestamp and check for overflow
+batcalc
+timestamptz
+command batcalc.timestamptz(X_0:bat[:str], X_1:bat[:oid], X_2:int, X_3:lng):bat[:timestamp] 
+batstr_2time_timestamptz;
+cast to timestamp and check for overflow
 batcalc
 uuid
 command batcalc.uuid(X_0:bat[:str], X_1:bat[:oid]):bat[:uuid] 
@@ -32335,92 +32365,92 @@ MTIMEtimestamp_sql_seconds_bulk;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:bat[:str]):bat[:date] 
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:lng):bat[:date] 
 MTIMEstr_to_date_bulk;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:date] 
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:bat[:str], X_2:lng):bat[:date] 
 MTIMEstr_to_date_bulk;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:str, X_1:bat[:str]):bat[:date] 
+pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:date] 
 MTIMEstr_to_date_bulk_p1;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:date] 
+pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:lng):bat[:date] 
 MTIMEstr_to_date_bulk_p1;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:str):bat[:date] 
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:date] 
 MTIMEstr_to_date_bulk_p2;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:date] 
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:lng):bat[:date] 
 MTIMEstr_to_date_bulk_p2;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:bat[:str]):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:bat[:str], X_2:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:str, X_1:bat[:str]):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk_p1;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk_p1;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:str):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk_p2;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk_p2;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:bat[:str]):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:bat[:str], X_2:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str]):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk_p1;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk_p1;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk_p2;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk_p2;
 (empty)
 batmtime
@@ -33382,6 +33412,66 @@ batmtime
 timestampdiff_year
 pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
 MTIMEtimestampdiff_year_ts_t_bulk_p2;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:bat[:str], X_2:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk_p1;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk_p1;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:bat[:oid], X_3:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk_p2;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk_p2;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:bat[:str], X_2:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk_p1;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk_p1;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:bat[:oid], X_3:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk_p2;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk_p2;
 (empty)
 batmtime
 usweekofyear
@@ -43279,6 +43369,11 @@ pattern calc.date(X_0:void):date
 nil_2_date;
 cast to date
 calc
+datetz
+command calc.datetz(X_0:timestamp, X_1:lng):date 
+MTIMEtimestamp_tz_extract_date;
+(empty)
+calc
 daytime
 command calc.daytime(X_0:daytime):daytime 
 MTIMEdaytime_daytime;
@@ -43315,14 +43410,14 @@ str_2time_daytime;
 cast to daytime and check for overflow
 calc
 daytime
-pattern calc.daytime(X_0:str, X_1:int, X_2:int):daytime 
-str_2time_daytimetz;
-cast to daytime and check for overflow
-calc
-daytime
 pattern calc.daytime(X_0:timestamp, X_1:int):daytime 
 timestamp_2_daytime;
 cast timestamp to a daytime and check for overflow
+calc
+daytimetz
+pattern calc.daytimetz(X_0:str, X_1:int, X_2:lng):daytime 
+str_2time_daytimetz;
+cast to daytime and check for overflow
 calc
 dbl
 pattern calc.dbl(X_0:bit):dbl 
@@ -44670,14 +44765,14 @@ str_2time_timestamp;
 cast to timestamp and check for overflow
 calc
 timestamp
-pattern calc.timestamp(X_0:str, X_1:int, X_2:int):timestamp 
-str_2time_timestamptz;
-cast to timestamp and check for overflow
-calc
-timestamp
 pattern calc.timestamp(X_0:timestamp, X_1:int):timestamp 
 timestamp_2time_timestamp;
 cast timestamp to timestamp and check for overflow
+calc
+timestamptz
+pattern calc.timestamptz(X_0:str, X_1:int, X_2:lng):timestamp 
+str_2time_timestamptz;
+cast to timestamp and check for overflow
 calc
 url
 command calc.url(X_0:str):url 
@@ -48085,17 +48180,17 @@ MTIMEtimestamp_sql_seconds;
 (empty)
 mtime
 str_to_date
-command mtime.str_to_date(X_0:str, X_1:str):date 
+command mtime.str_to_date(X_0:str, X_1:str, X_2:lng):date 
 MTIMEstr_to_date;
 create a date from the string, using the specified format (see man strptime)
 mtime
 str_to_time
-command mtime.str_to_time(X_0:str, X_1:str):daytime 
+command mtime.str_to_time(X_0:str, X_1:str, X_2:lng):daytime 
 MTIMEstr_to_time;
 create a time from the string, using the specified format (see man strptime)
 mtime
 str_to_timestamp
-command mtime.str_to_timestamp(X_0:str, X_1:str):timestamp 
+command mtime.str_to_timestamp(X_0:str, X_1:str, X_2:lng):timestamp 
 MTIMEstr_to_timestamp;
 create a timestamp from the string, using the specified format (see man strptime)
 mtime
@@ -48258,6 +48353,16 @@ timestampdiff_year
 command mtime.timestampdiff_year(X_0:timestamp, X_1:daytime):int 
 MTIMEtimestampdiff_year_ts_t;
 diff in months between 'val1' and 'val2'.
+mtime
+timestamptz_to_str
+command mtime.timestamptz_to_str(X_0:timestamp, X_1:str, X_2:lng):str 
+MTIMEtimestamptz_to_str;
+create a string from the time, using the specified format (see man strftime)
+mtime
+timetz_to_str
+command mtime.timetz_to_str(X_0:daytime, X_1:str, X_2:lng):str 
+MTIMEtimetz_to_str;
+create a string from the time, using the specified format (see man strftime)
 mtime
 usweekofyear
 command mtime.usweekofyear(X_0:date):bte 

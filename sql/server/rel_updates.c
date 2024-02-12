@@ -30,7 +30,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 {
 	mvc *sql = query->sql;
 	if (s->token == SQL_NULL) {
-		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
 			sql_exp *e = rel_parse_val(sql, c->t->s, c->def, &c->type, sql->emode, NULL);
@@ -219,7 +219,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
+		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
 		exp_setname(sql->sa, e, alias, iname);
 		append(_nlls->exps, e);
 	} else {
@@ -385,7 +385,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 					if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL)
 						return NULL;
 				} else {
-					atom *a = atom_general(sql->sa, &c->type, NULL);
+					atom *a = atom_general(sql->sa, &c->type, NULL, 0);
 					e = exp_atom(sql->sa, a);
 				}
 				if (!e)
@@ -881,7 +881,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
+		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
 		exp_setname(sql->sa, e, alias, iname);
 		append(_nlls->exps, e);
 	} else {
@@ -1135,7 +1135,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (!exp_is_atom(v) || outer)
 					v = exp_ref(sql, v);
 				if (!v) /* check for NULL */
-					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 				if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 					return NULL;
 				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, 0));
@@ -1168,7 +1168,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				}
 			}
 			if (!v)
-				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 			if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 				return NULL;
 			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, 0));

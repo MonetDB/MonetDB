@@ -916,7 +916,7 @@ exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_
 
 	if (strncmp(r+*pos, "NULL",  strlen("NULL")) == 0) {
 		(*pos)+= (int) strlen("NULL");
-		a = atom_general(sql->sa, tpe, NULL);
+		a = atom_general(sql->sa, tpe, NULL, 0);
 	} else {
 		void *ptr = readAtomString(tpe->type->localtype, r, pos);
 		if (!ptr)
@@ -1007,7 +1007,7 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 {
 	if (strncmp(r+*pos, "NULL",  strlen("NULL")) == 0) {
 		(*pos)+= (int) strlen("NULL");
-		return exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
+		return exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL, 0));
 	} else {
 		void *ptr = readAtomString(tpe->type->localtype, r, pos);
 		if (!ptr)

@@ -3813,7 +3813,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 							exp_prop_alias(v->sql->sa, ne, e);
 					} else if (e->type == e_column && !exps_find_exp(l, e) && !has_label(e)) {
 						/* do not include in the output of the group by, but add to the project as null */
-						ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+						ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);
 					} else {
@@ -3953,7 +3953,7 @@ add_null_projects(visitor *v, sql_rel *prel, sql_rel *irel, bool end)
 
 		if (!tp)
 			return sql_error(v->sql, 10, SQLSTATE(42000) "Cannot rewrite subquery because of parameter with unknown type");
-		ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, tp, NULL));
+		ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, tp, NULL, 0));
 		exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
 		if (end)
 			append(nilrel->exps, ne);

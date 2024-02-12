@@ -221,7 +221,7 @@ extern str nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 extern str str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str batstr_2time_timestamp(bat *res, const bat *v, const bat *s, const int *len);
-extern str batstr_2time_timestamptz(bat *res, const bat *v, const bat *s, const int *len, int *tz);
+extern str batstr_2time_timestamptz(bat *res, const bat *v, const bat *s, const int *len, const lng *tz);
 extern str timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 extern str nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

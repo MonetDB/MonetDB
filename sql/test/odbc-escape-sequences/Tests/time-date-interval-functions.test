@@ -21,12 +21,12 @@ select length((select { fn curdate() })) > 0
 1
 
 query I rowsort
-select { fn current_time() } >= time'00:00:00'
+select { fn current_time() } >= time with time zone '00:00:00+0000'
 ----
 1
 
 query I rowsort
-select { fn CURRENT_TIME() } >= {t'00:00:00'}
+select { fn CURRENT_TIME() } >= {t'01:00:00'}
 ----
 1
 

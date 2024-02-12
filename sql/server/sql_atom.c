@@ -258,7 +258,7 @@ const lng scales[19] = {
 #endif
 
 atom *
-atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
+atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 {
 	atom *a = atom_create(sa);
 
@@ -275,6 +275,14 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			a->data.len = strLen(val);
 			a->data.val.sval = sa_alloc(sa, a->data.len);
 			memcpy(a->data.val.sval, val, a->data.len);
+		} else if (type == TYPE_timestamp) {
+			if (sql_timestamp_fromstr(val, &a->data.val.lval, tz_offset/1000, tpe->type->eclass == EC_TIMESTAMP) < 0 ||
+					(timestamp)a->data.val.lval == timestamp_nil)
+					return NULL;
+		} else if (type == TYPE_daytime) {
+			if (sql_daytime_fromstr(val, &a->data.val.lval, tz_offset/1000, tpe->type->eclass == EC_TIME) < 0 ||
+					(daytime)a->data.val.lval == daytime_nil)
+					return NULL;
 		} else {
 			ptr p = NULL;
 			ssize_t res = ATOMfromstr(type, &p, &a->data.len, val, false);
@@ -935,7 +943,7 @@ atom_add(sql_allocator *sa, atom *a1, atom *a2)
 		a2 = t;
 	}
 	if (a1->isnull || a2->isnull)
-		return atom_general(sa, &a1->tpe, NULL);
+		return atom_general(sa, &a1->tpe, NULL, 0);
 	dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcadd(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
@@ -969,7 +977,7 @@ atom_sub(sql_allocator *sa, atom *a1, atom *a2)
 		a1 = na1;
 	}
 	if (a1->isnull || a2->isnull)
-		return atom_general(sa, &a1->tpe, NULL);
+		return atom_general(sa, &a1->tpe, NULL, 0);
 	dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcsub(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
@@ -997,7 +1005,7 @@ atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 		a2 = t;
 	}
 	if (a1->isnull || a2->isnull)
-		return atom_general(sa, &a1->tpe, NULL);
+		return atom_general(sa, &a1->tpe, NULL, 0);
 	dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcmul(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
@@ -1020,7 +1028,7 @@ atom_div(sql_allocator *sa, atom *a1, atom *a2)
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->isnull || a2->isnull)
-		return atom_general(sa, &a1->tpe, NULL);
+		return atom_general(sa, &a1->tpe, NULL, 0);
 	dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcdiv(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
