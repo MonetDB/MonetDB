@@ -1817,14 +1817,11 @@ dump_table_data(Mapi mid, const char *schema, const char *tname,
 			if (fn == NULL)
 				goto bailout;
 			int off;
-#ifdef MSC_VER
-			/* bloody Windows: enable %n format specifier */
-			_set_printf_count_output(1);
-#endif
+			off = snprintf(fn, fnl, "%s%c", ddir, DIR_SEP);
 			if (ext)
-				snprintf(fn, fnl, "%s%c%n%s.%s.csv.%s", ddir, DIR_SEP, &off, schema, tname, ext);
+				snprintf(fn + off, fnl - off, "%s.%s.csv.%s", schema, tname, ext);
 			else
-				snprintf(fn, fnl, "%s%c%n%s.%s.csv", ddir, DIR_SEP, &off, schema, tname);
+				snprintf(fn + off, fnl - off, "%s.%s.csv", schema, tname);
 			mnstr_printf(sqlf, " FROM E");
 			squoted_print(sqlf, fn + off, '\'', false);
 			mnstr_printf(sqlf, " ON CLIENT");
