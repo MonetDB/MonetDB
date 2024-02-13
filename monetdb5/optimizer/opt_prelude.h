@@ -174,6 +174,7 @@ mal_export const char *mulRef;
 mal_export const char *multiplexRef;
 mal_export const char *mvcRef;
 mal_export const char *newRef;
+mal_export const char *new_payloadRef;
 mal_export const char *nextRef;
 mal_export const char *no_slicesRef;
 mal_export const char *not_likeRef;

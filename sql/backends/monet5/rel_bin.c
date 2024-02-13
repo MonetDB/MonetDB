@@ -14,6 +14,7 @@
 
 #include "rel_bin.h"
 #include "rel_copy.h"
+#include "rel_pphash.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
@@ -3102,8 +3103,11 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ld = NULL, *rd = NULL, *res;
 	int need_left = (rel->flag & LEFT_JOIN);
 
-        if (rel->attr && list_length(rel->attr) > 0)
-                return rel2bin_groupjoin(be, rel, refs);
+	if (rel->attr && list_length(rel->attr) > 0)
+		return rel2bin_groupjoin(be, rel, refs);
+
+	if (0 && rel->hashjoin)
+		rel2bin_pp_hashjoin(be, rel, refs);
 
 	// TODO: GROUP BY and topN code at rel->partition, so, either the rel->spb below is an error or it means something else */
 	int neededpp = rel->spb && get_and_disable_need_pipeline(be);

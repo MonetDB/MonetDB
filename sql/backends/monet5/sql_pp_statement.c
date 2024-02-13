@@ -405,7 +405,6 @@ stmt_hash_new(backend *be, int tt, lng estimate, int parent)
 	InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
 
 	if (q == NULL)
-		//return -1;
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushType(be->mb, q, tt);
@@ -413,6 +412,36 @@ stmt_hash_new(backend *be, int tt, lng estimate, int parent)
 	q = pushInt(be->mb, q, (int)estimate);
 	if (parent)
 		q = pushArgument(be->mb, q, parent);
+	pushInstruction(be->mb, q);
+	return q;
+}
+
+InstrPtr
+stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent)
+{
+	InstrPtr q = newStmt(be->mb, putName("hash"), new_payloadRef);
+	if (q == NULL) return NULL;
+
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	q = pushOid(be->mb, q, (oid)nr_slots);
+	q = pushOid(be->mb, q, (oid)pld_size);
+	q = pushArgument(be->mb, q, parent);
+	pushInstruction(be->mb, q);
+	return q;
+}
+
+InstrPtr
+stmt_hash_build_table(backend *be, int tt, lng nr_slots, lng pld_size, int parent)
+{
+	InstrPtr q = newStmt(be->mb, putName("hash"), new_payloadRef);
+	if (q == NULL) return NULL;
+
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	q = pushOid(be->mb, q, (oid)nr_slots);
+	q = pushOid(be->mb, q, (oid)pld_size);
+	q = pushArgument(be->mb, q, parent);
 	pushInstruction(be->mb, q);
 	return q;
 }

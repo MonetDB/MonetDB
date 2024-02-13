@@ -442,6 +442,29 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_join(rel->op)) {
 		if (pb && is_outerjoin(rel->op))
 			return 0;
+
+		/* Generate paralle hash join plan for equi-joins on at least one base
+		 * table.
+		 */
+		if (!is_outerjoin(rel->op)) {
+			sql_rel *l = rel->l, *r = rel->r;
+			if(is_basetable(l->op) && is_basetable(r->op)) {
+				lng lc = rel_getcount(sql, l), rc = rel_getcount(sql, r);
+				if (lc < rc)
+					l->hashjoin = 1;
+				else
+					r->hashjoin = 1;
+				rel->hashjoin = 1;
+			}
+			else if(is_basetable(l->op) && !is_basetable(r->op)) {
+				l->hashjoin = 1;
+				rel->hashjoin = 1;
+			} else if(is_basetable(r->op) && !is_basetable(l->op)) {
+				r->hashjoin = 1;
+				rel->hashjoin = 1;
+			}
+		}
+
 		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
 		if (0 && (l || r)) {
 			int lres = rel_partition_(sql, rel->l, 0);
