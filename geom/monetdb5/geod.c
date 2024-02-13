@@ -1,3 +1,15 @@
+/*
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
+ */
+
 #include "geod.h"
 
 /**
@@ -154,8 +166,8 @@ static GeoPoint
 geoPointFromGeom(GEOSGeom geom)
 {
 	GeoPoint geo;
-	GEOSGeomGetX(geom, &(geo.lon));
-	GEOSGeomGetY(geom, &(geo.lat));
+	GEOSGeomGetX_r(geoshandle, geom, &(geo.lon));
+	GEOSGeomGetY_r(geoshandle, geom, &(geo.lat));
 	return geo;
 }
 
@@ -164,12 +176,12 @@ geoPointFromGeom(GEOSGeom geom)
 static GeoLines
 geoLinesFromGeom(GEOSGeom geom)
 {
-	const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq(geom);
+	const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq_r(geoshandle, geom);
 	GeoLines geo;
-	geo.pointCount = GEOSGeomGetNumPoints(geom);
+	geo.pointCount = GEOSGeomGetNumPoints_r(geoshandle, geom);
 	geo.points = GDKmalloc(sizeof(GeoPoint) * geo.pointCount);
 	for (int i = 0; i < geo.pointCount; i++)
-		GEOSCoordSeq_getXY(gcs, i, &geo.points[i].lon, &geo.points[i].lat);
+		GEOSCoordSeq_getXY_r(geoshandle, gcs, i, &geo.points[i].lon, &geo.points[i].lat);
 	geo.bbox = NULL;
 	return geo;
 }
@@ -183,8 +195,8 @@ geoPolygonFromGeom(GEOSGeom geom)
 {
 	GeoPolygon geo;
 	//Get exterior ring GeoLines
-	geo.exteriorRing = geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing(geom));
-	geo.interiorRingsCount = GEOSGetNumInteriorRings(geom);
+	geo.exteriorRing = geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing_r(geoshandle, geom));
+	geo.interiorRingsCount = GEOSGetNumInteriorRings_r(geoshandle, geom);
 	//If there are interior rings, allocate space to their GeoLines representation
 	if (geo.interiorRingsCount > 0)
 		//TODO Malloc fail exception?
@@ -193,7 +205,7 @@ geoPolygonFromGeom(GEOSGeom geom)
 		geo.interiorRings = NULL;
 	//Get interior rings GeoLines
 	for (int i = 0; i < geo.interiorRingsCount; i++)
-		geo.interiorRings[i] = geoLinesFromGeom((GEOSGeom)GEOSGetInteriorRingN(geom, i));
+		geo.interiorRings[i] = geoLinesFromGeom((GEOSGeom)GEOSGetInteriorRingN_r(geoshandle, geom, i));
 	// If the geometry doesn't have BoundingBoxe, calculate it
 	geo.bbox = boundingBoxLines(geo.exteriorRing);
 	return geo;
@@ -255,9 +267,9 @@ wkbGetCompatibleGeometries(wkb * const *a, wkb * const *b, GEOSGeom *ga, GEOSGeo
 	(*gb) = wkb2geos(*b);
 	if ((*ga) == NULL || (*gb) == NULL)
 		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geos operation wkb2geos failed");
-	else if (GEOSGetSRID((*ga)) != GEOSGetSRID(*gb)) {
-		GEOSGeom_destroy(*ga);
-		GEOSGeom_destroy(*gb);
+	else if (GEOSGetSRID_r(geoshandle, (*ga)) != GEOSGetSRID_r(geoshandle, *gb)) {
+		GEOSGeom_destroy_r(geoshandle, *ga);
+		GEOSGeom_destroy_r(geoshandle, *gb);
 		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geometries of different SRID");
 	}
 	return err;
@@ -304,10 +316,10 @@ cartesianLineFromGeoPoints(GeoPoint p1, GeoPoint p2)
 	CartPoint3D p1_cart, p2_cart;
 	p1_cart = geo2cartFromDegrees(p1);
 	p2_cart = geo2cartFromDegrees(p2);
-	GEOSCoordSequence *lineSeq = GEOSCoordSeq_create(2, 3);
-	GEOSCoordSeq_setXYZ(lineSeq, 0, p1_cart.x, p1_cart.y, p1_cart.z);
-	GEOSCoordSeq_setXYZ(lineSeq, 1, p2_cart.x, p2_cart.y, p2_cart.z);
-	return GEOSGeom_createLineString(lineSeq);
+	GEOSCoordSequence *lineSeq = GEOSCoordSeq_create_r(geoshandle, 2, 3);
+	GEOSCoordSeq_setXYZ_r(geoshandle, lineSeq, 0, p1_cart.x, p1_cart.y, p1_cart.z);
+	GEOSCoordSeq_setXYZ_r(geoshandle, lineSeq, 1, p2_cart.x, p2_cart.y, p2_cart.z);
+	return GEOSGeom_createLineString_r(geoshandle, lineSeq);
 }
 
 /**
@@ -576,16 +588,16 @@ pointWithinPolygon(GeoPolygon polygon, GeoPoint point)
 	polygonRing = polygon.exteriorRing;
 	for (int i = 0; i < polygonRing.pointCount-1; i++) {
 		segmentPolygon = cartesianLineFromGeoPoints(polygonRing.points[i], polygonRing.points[i+1]);
-		intersectionPoints = GEOSIntersection(segmentPolygon, outInLine);
+		intersectionPoints = GEOSIntersection_r(geoshandle, segmentPolygon, outInLine);
 
 		//If there is an intersection, a point will be returned (line when there is none)
-		if (GEOSGeomTypeId(intersectionPoints) == GEOS_POINT)
+		if (GEOSGeomTypeId_r(geoshandle, intersectionPoints) == GEOS_POINT)
 			intersectionNum++;
 
 		if (intersectionPoints != NULL)
-			GEOSGeom_destroy(intersectionPoints);
+			GEOSGeom_destroy_r(geoshandle, intersectionPoints);
 		if (segmentPolygon != NULL)
-			GEOSGeom_destroy(segmentPolygon);
+			GEOSGeom_destroy_r(geoshandle, segmentPolygon);
 	}
 
 	//Count the number of intersections between the polygon interior rings and the constructed line
@@ -593,21 +605,21 @@ pointWithinPolygon(GeoPolygon polygon, GeoPoint point)
 		polygonRing = polygon.interiorRings[j];
 		for (int i = 0; i < polygonRing.pointCount-1; i++) {
 			segmentPolygon = cartesianLineFromGeoPoints(polygonRing.points[i], polygonRing.points[i+1]);
-			intersectionPoints = GEOSIntersection(segmentPolygon, outInLine);
+			intersectionPoints = GEOSIntersection_r(geoshandle, segmentPolygon, outInLine);
 
 			//If there is an intersection, a point will be returned (line when there is none)
-			if (GEOSGeomTypeId(intersectionPoints) == GEOS_POINT)
+			if (GEOSGeomTypeId_r(geoshandle, intersectionPoints) == GEOS_POINT)
 				intersectionNum++;
 
 			if (intersectionPoints != NULL)
-				GEOSGeom_destroy(intersectionPoints);
+				GEOSGeom_destroy_r(geoshandle, intersectionPoints);
 			if (segmentPolygon != NULL)
-				GEOSGeom_destroy(segmentPolygon);
+				GEOSGeom_destroy_r(geoshandle, segmentPolygon);
 		}
 	}
 
 	if (outInLine != NULL)
-		GEOSGeom_destroy(outInLine);
+		GEOSGeom_destroy_r(geoshandle, outInLine);
 
 	//If even, the point is not within the polygon. If odd, it is within
 	return intersectionNum % 2 == 1;
@@ -676,8 +688,8 @@ geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom, double distance_min_limit)
 {
 	int dimA, dimB;
 	double distance = INT_MAX;
-	dimA = GEOSGeom_getDimensions(aGeom);
-	dimB = GEOSGeom_getDimensions(bGeom);
+	dimA = GEOSGeom_getDimensions_r(geoshandle, aGeom);
+	dimB = GEOSGeom_getDimensions_r(geoshandle, bGeom);
 	if (dimA == 0 && dimB == 0) {
 		/* Point and Point */
 		GeoPoint a = geoPointFromGeom(aGeom);
@@ -745,13 +757,13 @@ geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom, double distance_min_limit)
 static double
 geoDistanceInternal(GEOSGeom a, GEOSGeom b, double distance_min_limit)
 {
-	int numGeomsA = GEOSGetNumGeometries(a), numGeomsB = GEOSGetNumGeometries(b);
+	int numGeomsA = GEOSGetNumGeometries_r(geoshandle, a), numGeomsB = GEOSGetNumGeometries_r(geoshandle, b);
 	double distance, min_distance = INT_MAX;
 	GEOSGeometry *geo1, *geo2;
 	for (int i = 0; i < numGeomsA; i++) {
-		geo1 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)a, i);
+		geo1 = (GEOSGeometry *)GEOSGetGeometryN_r(geoshandle, (const GEOSGeometry *)a, i);
 		for (int j = 0; j < numGeomsB; j++) {
-			geo2 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)b, j);
+			geo2 = (GEOSGeometry *)GEOSGetGeometryN_r(geoshandle, (const GEOSGeometry *)b, j);
 			distance = geoDistanceSingle(geo1, geo2, distance_min_limit);
 			//Shortcut, if the geometries are already at their minimum distance (0 in the case of normal Distance)
 			if (distance <= distance_min_limit)
@@ -777,8 +789,8 @@ wkbDistanceGeographic(dbl *out, wkb * const *a, wkb * const *b)
 	if (ga && gb) {
 		(*out) = geoDistanceInternal(ga, gb, 0);
 	}
-	GEOSGeom_destroy(ga);
-	GEOSGeom_destroy(gb);
+	GEOSGeom_destroy_r(geoshandle, ga);
+	GEOSGeom_destroy_r(geoshandle, gb);
 	return err;
 }
 
@@ -798,8 +810,8 @@ wkbDWithinGeographic(bit *out, wkb * const *a, wkb * const *b, const dbl *d)
 		distance = geoDistanceInternal(ga, gb, *d);
 		(*out) = (distance <= (*d));
 	}
-	GEOSGeom_destroy(ga);
-	GEOSGeom_destroy(gb);
+	GEOSGeom_destroy_r(geoshandle, ga);
+	GEOSGeom_destroy_r(geoshandle, gb);
 	return err;
 }
 
@@ -819,8 +831,8 @@ wkbIntersectsGeographic(bit *out, wkb * const *a, wkb * const *b)
 		distance = geoDistanceInternal(ga, gb, 0);
 		(*out) = (distance == 0);
 	}
-	GEOSGeom_destroy(ga);
-	GEOSGeom_destroy(gb);
+	GEOSGeom_destroy_r(geoshandle, ga);
+	GEOSGeom_destroy_r(geoshandle, gb);
 	return err;
 }
 
@@ -846,7 +858,7 @@ geoPointEquals(GeoPoint pointA, GeoPoint pointB)
 static bool
 geoCoversSingle(GEOSGeom a, GEOSGeom b)
 {
-	int dimA = GEOSGeom_getDimensions(a), dimB = GEOSGeom_getDimensions(b);
+	int dimA = GEOSGeom_getDimensions_r(geoshandle, a), dimB = GEOSGeom_getDimensions_r(geoshandle, b);
 	if (dimA < dimB)
 		//If the dimension of A is smaller than B, then it must not cover it
 		return false;
@@ -894,12 +906,12 @@ geoCoversSingle(GEOSGeom a, GEOSGeom b)
 static bool
 geoCoversInternal(GEOSGeom a, GEOSGeom b)
 {
-	int numGeomsA = GEOSGetNumGeometries(a), numGeomsB = GEOSGetNumGeometries(b);
+	int numGeomsA = GEOSGetNumGeometries_r(geoshandle, a), numGeomsB = GEOSGetNumGeometries_r(geoshandle, b);
 	GEOSGeometry *geo1, *geo2;
 	for (int i = 0; i < numGeomsA; i++) {
-		geo1 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)a, i);
+		geo1 = (GEOSGeometry *)GEOSGetGeometryN_r(geoshandle, (const GEOSGeometry *)a, i);
 		for (int j = 0; j < numGeomsB; j++) {
-			geo2 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)b, j);
+			geo2 = (GEOSGeometry *)GEOSGetGeometryN_r(geoshandle, (const GEOSGeometry *)b, j);
 			if (geoCoversSingle(geo1, geo2) == 0)
 				return 0;
 		}
@@ -921,8 +933,8 @@ wkbCoversGeographic(bit *out, wkb * const *a, wkb * const *b)
 	if (ga && gb)
 		(*out) = geoCoversInternal(ga, gb);
 
-	GEOSGeom_destroy(ga);
-	GEOSGeom_destroy(gb);
+	GEOSGeom_destroy_r(geoshandle, ga);
+	GEOSGeom_destroy_r(geoshandle, gb);
 
 	return err;
 }
@@ -977,9 +989,9 @@ filterSelectGeomGeomDoubleToBit(bat* outid, const bat *bid , const bat *sid, con
 		const wkb *col_wkb = BUNtvar(b_iter, c_oid - b->hseqbase);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL)
 			continue;
-		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
-			GEOSGeom_destroy(col_geom);
-			GEOSGeom_destroy(const_geom);
+		if (GEOSGetSRID_r(geoshandle, col_geom) != GEOSGetSRID_r(geoshandle, const_geom)) {
+			GEOSGeom_destroy_r(geoshandle, col_geom);
+			GEOSGeom_destroy_r(geoshandle, const_geom);
 			bat_iterator_end(&b_iter);
 			BBPunfix(b->batCacheid);
 			if (s)
@@ -992,9 +1004,9 @@ filterSelectGeomGeomDoubleToBit(bat* outid, const bat *bid , const bat *sid, con
 		if (cond != anti) {
 			if (BUNappend(out, &c_oid, false) != GDK_SUCCEED) {
 				if (col_geom)
-					GEOSGeom_destroy(col_geom);
+					GEOSGeom_destroy_r(geoshandle, col_geom);
 				if (const_geom)
-					GEOSGeom_destroy(const_geom);
+					GEOSGeom_destroy_r(geoshandle, const_geom);
 				bat_iterator_end(&b_iter);
 				BBPunfix(b->batCacheid);
 				if (s)
@@ -1003,9 +1015,9 @@ filterSelectGeomGeomDoubleToBit(bat* outid, const bat *bid , const bat *sid, con
 				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
-		GEOSGeom_destroy(col_geom);
+		GEOSGeom_destroy_r(geoshandle, col_geom);
 	}
-	GEOSGeom_destroy(const_geom);
+	GEOSGeom_destroy_r(geoshandle, const_geom);
 	bat_iterator_end(&b_iter);
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -1097,7 +1109,7 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 					continue;
 			}
 			//TODO Do we need to do this check for every element?
-			if (GEOSGetSRID(l_geom) != GEOSGetSRID(r_geom)) {
+			if (GEOSGetSRID_r(geoshandle, l_geom) != GEOSGetSRID_r(geoshandle, r_geom)) {
 				msg = createException(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 				bat_iterator_end(&l_iter);
 				bat_iterator_end(&r_iter);
@@ -1117,13 +1129,13 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 	}
 	if (l_geoms) {
 		for (BUN i = 0; i < l_ci.ncand; i++) {
-			GEOSGeom_destroy(l_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
 		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
-			GEOSGeom_destroy(r_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
 		GDKfree(r_geoms);
 	}
@@ -1143,13 +1155,13 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 free:
 	if (l_geoms) {
 		for (BUN i = 0; i < l_ci.ncand; i++) {
-			GEOSGeom_destroy(l_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
 		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
-			GEOSGeom_destroy(r_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
 		GDKfree(r_geoms);
 	}

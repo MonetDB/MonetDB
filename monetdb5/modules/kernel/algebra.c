@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -118,10 +120,6 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 	}
 	if (is_lng_nil(end))
 		end = BATcount(b);
-	if (start > (lng) BUN_MAX || end >= (lng) BUN_MAX) {
-		GDKerror("argument out of range\n");
-		return GDK_FAIL;
-	}
 
 	return (*retval = BATslice(b, (BUN) start, (BUN) end + 1)) ? GDK_SUCCEED : GDK_FAIL;
 }
@@ -468,6 +466,7 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 	res1->tnil = false;
 	res1->tnonil = true;
 	res2->tnonil = false;
+	res2->tkey = false;
 
 	BBPreclaim(g);
 	BBPreclaim(m);
@@ -567,6 +566,7 @@ ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid,
 	res1->tnil = false;
 	res1->tnonil = true;
 	res2->tnonil = false;
+	res2->tkey = false;
 
 	BBPreclaim(g);
 	BBPreclaim(m);
@@ -967,8 +967,10 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(pci->argc - pci->retc >= 5 && pci->argc - pci->retc <= 7);
 
 	n = *getArgReference_lng(stk, pci, pci->argc - 4);
-	if (n < 0 || (lng) n >= (lng) BUN_MAX)
+	if (n < 0)
 		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
+	if (n > (lng) BUN_MAX)
+		n = BUN_MAX;
 	ret1 = getArgReference_bat(stk, pci, 0);
 	if (pci->retc == 2)
 		ret2 = getArgReference_bat(stk, pci, 1);
@@ -1429,8 +1431,7 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 	BAT *b, *bn;
 	BUN s, e;
 
-	if (*start < 0 || *start > (lng) BUN_MAX ||
-		(*end < 0 && !is_lng_nil(*end)) || *end >= (lng) BUN_MAX)
+	if (*start < 0 || (*end < 0 && !is_lng_nil(*end)))
 		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
 	if ((b = BBPquickdesc(*bid)) == NULL)
 		throw(MAL, "algebra.subslice", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);

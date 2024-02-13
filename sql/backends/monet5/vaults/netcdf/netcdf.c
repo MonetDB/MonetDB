@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -210,6 +212,7 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 	BATsetcount(bn, cnt);
 	bn->tsorted = (cnt <= 1 || (series == 1 && step > 0));
 	bn->trevsorted = (cnt <= 1 || (series == 1 && step < 0));
+	bn->tkey = (cnt <= 1);
 	bn->tnonil = true;
 	*bid = bn->batCacheid;
 	BBPkeepref(bn);

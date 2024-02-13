@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -75,7 +77,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.hseqbase = hseq,
 
 		.ttype = tt,
-		.tkey = false,
+		.tkey = true,
 		.tnonil = true,
 		.tnil = false,
 		.tsorted = ATOMlinear(tt),
@@ -964,8 +966,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		BUN h = BATcount(b);
 		bn->tsorted = bi.sorted;
 		bn->trevsorted = bi.revsorted;
-		if (bi.key)
-			BATkey(bn, true);
+		BATkey(bn, bi.key);
 		bn->tnonil = bi.nonil;
 		bn->tnil = bi.nil;
 		if (bi.nosorted > 0 && bi.nosorted < h)
@@ -990,6 +991,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	} else {
 		bn->tsorted = bn->trevsorted = false; /* set based on count later */
 		bn->tnonil = bn->tnil = false;
+		bn->tkey = false;
 		bn->tnosorted = bn->tnorevsorted = 0;
 		bn->tnokey[0] = bn->tnokey[1] = 0;
 	}
@@ -1692,10 +1694,13 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			default:
 				MT_UNREACHABLE();
 			}
+			MT_lock_set(&b->theaplock);
 			if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
 				MT_rwlock_wrunlock(&b->thashlock);
 				goto bailout;
 			}
+			MT_lock_unset(&b->theaplock);
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */

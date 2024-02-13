@@ -2799,11 +2799,6 @@ unsafe pattern alarm.sleep(X_0:any_1):void
 ALARMsleep;
 Sleep a few milliseconds
 alarm
-sleep
-unsafe pattern alarm.sleep(X_0:bat[:any_1]):bat[:any_1] 
-ALARMsleep;
-Sleep a few milliseconds and return the slept value
-alarm
 time
 unsafe command alarm.time():int 
 ALARMtime;
@@ -3428,16 +3423,6 @@ replace
 command bat.replace(X_0:bat[:any_1], X_1:oid, X_2:any_1, X_3:bit):bat[:any_1] 
 BKCbun_inplace_force;
 Replace the tail value of one BUN that has some head value.
-bat
-reuse
-command bat.reuse(X_0:bat[:any_1], X_1:bat[:oid]):bat[:any_1] 
-BKCreuseBAT;
-Shuffle the values around to restore a dense representation of buns.
-bat
-reuseMap
-command bat.reuseMap(X_0:bat[:any_1], X_1:bat[:oid]):bat[:oid] 
-BKCreuseBATmap;
-Derive the oid mapping for reuse BAT based on list of to-be-deleted
 bat
 save
 command bat.save(X_0:bat[:any_1]):void 
@@ -19499,6 +19484,36 @@ pattern batcalc.date(X_0:bat[:oid]):bat[:date]
 nil_2_date;
 cast to date
 batcalc
+datetz
+pattern batcalc.datetz(X_0:bat[:timestamp], X_1:bat[:lng]):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk;
+(empty)
+batcalc
+datetz
+pattern batcalc.datetz(X_0:bat[:timestamp], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid]):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk;
+(empty)
+batcalc
+datetz
+pattern batcalc.datetz(X_0:timestamp, X_1:bat[:lng]):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk_p1;
+(empty)
+batcalc
+datetz
+pattern batcalc.datetz(X_0:timestamp, X_1:bat[:lng], X_2:bat[:oid]):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk_p1;
+(empty)
+batcalc
+datetz
+pattern batcalc.datetz(X_0:bat[:timestamp], X_1:lng):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk_p2;
+(empty)
+batcalc
+datetz
+pattern batcalc.datetz(X_0:bat[:timestamp], X_1:lng, X_2:bat[:oid]):bat[:date] 
+MTIMEtimestamp_tz_extract_date_bulk_p2;
+(empty)
+batcalc
 daytime
 pattern batcalc.daytime(X_0:bat[:daytime], X_1:bat[:oid]):bat[:daytime] 
 MTIMEdaytime_daytime_bulk;
@@ -19540,14 +19555,14 @@ second_interval_2_daytime;
 cast second_interval to a daytime and check for overflow
 batcalc
 daytime
-pattern batcalc.daytime(X_0:bat[:str], X_1:bat[:oid], X_2:int, X_3:int):bat[:daytime] 
-str_2time_daytimetz;
-cast daytime to daytime and check for overflow
-batcalc
-daytime
 pattern batcalc.daytime(X_0:bat[:timestamp], X_1:bat[:oid], X_2:int):bat[:daytime] 
 timestamp_2_daytime;
 cast timestamp to a daytime and check for overflow
+batcalc
+daytimetz
+pattern batcalc.daytimetz(X_0:bat[:str], X_1:bat[:oid], X_2:int, X_3:lng):bat[:daytime] 
+str_2time_daytimetz;
+cast daytime to daytime and check for overflow
 batcalc
 dbl
 pattern batcalc.dbl(X_0:bat[:bit]):bat[:dbl] 
@@ -21525,11 +21540,6 @@ batstr_2time_timestamp;
 cast to timestamp and check for overflow
 batcalc
 timestamp
-command batcalc.timestamp(X_0:bat[:str], X_1:bat[:oid], X_2:int, X_3:int):bat[:timestamp] 
-batstr_2time_timestamptz;
-cast to timestamp and check for overflow
-batcalc
-timestamp
 pattern batcalc.timestamp(X_0:bat[:date], X_1:bat[:oid], X_2:int):bat[:timestamp] 
 date_2_timestamp;
 cast date to a timestamp and check for overflow
@@ -21543,6 +21553,11 @@ timestamp
 pattern batcalc.timestamp(X_0:bat[:timestamp], X_1:bat[:oid], X_2:int):bat[:timestamp] 
 timestamp_2time_timestamp;
 cast timestamp to timestamp and check for overflow
+batcalc
+timestamptz
+command batcalc.timestamptz(X_0:bat[:str], X_1:bat[:oid], X_2:int, X_3:lng):bat[:timestamp] 
+batstr_2time_timestamptz;
+cast to timestamp and check for overflow
 batcalc
 uuid
 command batcalc.uuid(X_0:bat[:str], X_1:bat[:oid]):bat[:uuid] 
@@ -23055,12 +23070,12 @@ MTIMEdate_sub_msec_interval_bulk_p2;
 (empty)
 batmtime
 date_to_str
-pattern batmtime.date_to_str(X_0:bat[:str], X_1:bat[:str]):bat[:str] 
+pattern batmtime.date_to_str(X_0:bat[:date], X_1:bat[:str]):bat[:str] 
 MTIMEdate_to_str_bulk;
 (empty)
 batmtime
 date_to_str
-pattern batmtime.date_to_str(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:str] 
+pattern batmtime.date_to_str(X_0:bat[:date], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:str] 
 MTIMEdate_to_str_bulk;
 (empty)
 batmtime
@@ -23545,92 +23560,92 @@ MTIMEtimestamp_sql_seconds_bulk;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:bat[:str]):bat[:date] 
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:lng):bat[:date] 
 MTIMEstr_to_date_bulk;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:date] 
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:bat[:str], X_2:lng):bat[:date] 
 MTIMEstr_to_date_bulk;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:str, X_1:bat[:str]):bat[:date] 
+pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:date] 
 MTIMEstr_to_date_bulk_p1;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:date] 
+pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:lng):bat[:date] 
 MTIMEstr_to_date_bulk_p1;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:str):bat[:date] 
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:date] 
 MTIMEstr_to_date_bulk_p2;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:date] 
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:lng):bat[:date] 
 MTIMEstr_to_date_bulk_p2;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:bat[:str]):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:bat[:str], X_2:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:str, X_1:bat[:str]):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk_p1;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk_p1;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:str):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk_p2;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:daytime] 
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:lng):bat[:daytime] 
 MTIMEstr_to_time_bulk_p2;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:bat[:str]):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:bat[:str], X_2:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str]):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk_p1;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk_p1;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk_p2;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:timestamp] 
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:lng):bat[:timestamp] 
 MTIMEstr_to_timestamp_bulk_p2;
 (empty)
 batmtime
@@ -24592,6 +24607,66 @@ batmtime
 timestampdiff_year
 pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
 MTIMEtimestampdiff_year_ts_t_bulk_p2;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:bat[:str], X_2:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk_p1;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk_p1;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:bat[:oid], X_3:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk_p2;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:lng):bat[:str] 
+MTIMEtimestamptz_to_str_bulk_p2;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:bat[:str], X_2:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk_p1;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk_p1;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:bat[:oid], X_3:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk_p2;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:lng):bat[:str] 
+MTIMEtimetz_to_str_bulk_p2;
 (empty)
 batmtime
 usweekofyear
@@ -32099,6 +32174,11 @@ pattern calc.date(X_0:void):date
 nil_2_date;
 cast to date
 calc
+datetz
+command calc.datetz(X_0:timestamp, X_1:lng):date 
+MTIMEtimestamp_tz_extract_date;
+(empty)
+calc
 daytime
 command calc.daytime(X_0:daytime):daytime 
 MTIMEdaytime_daytime;
@@ -32135,14 +32215,14 @@ str_2time_daytime;
 cast to daytime and check for overflow
 calc
 daytime
-pattern calc.daytime(X_0:str, X_1:int, X_2:int):daytime 
-str_2time_daytimetz;
-cast to daytime and check for overflow
-calc
-daytime
 pattern calc.daytime(X_0:timestamp, X_1:int):daytime 
 timestamp_2_daytime;
 cast timestamp to a daytime and check for overflow
+calc
+daytimetz
+pattern calc.daytimetz(X_0:str, X_1:int, X_2:lng):daytime 
+str_2time_daytimetz;
+cast to daytime and check for overflow
 calc
 dbl
 pattern calc.dbl(X_0:bit):dbl 
@@ -33190,14 +33270,14 @@ str_2time_timestamp;
 cast to timestamp and check for overflow
 calc
 timestamp
-pattern calc.timestamp(X_0:str, X_1:int, X_2:int):timestamp 
-str_2time_timestamptz;
-cast to timestamp and check for overflow
-calc
-timestamp
 pattern calc.timestamp(X_0:timestamp, X_1:int):timestamp 
 timestamp_2time_timestamp;
 cast timestamp to timestamp and check for overflow
+calc
+timestamptz
+pattern calc.timestamptz(X_0:str, X_1:int, X_2:lng):timestamp 
+str_2time_timestamptz;
+cast to timestamp and check for overflow
 calc
 url
 command calc.url(X_0:str):url 
@@ -36412,7 +36492,7 @@ mtime
 epoch
 command mtime.epoch(X_0:lng):timestamp 
 MTIMEtimestamp_frommsec_epoch;
-convert milli seconds since epoch into a timestamp
+convert milliseconds since epoch into a timestamp
 mtime
 epoch
 command mtime.epoch(X_0:int):timestamp 
@@ -36530,17 +36610,17 @@ MTIMEtimestamp_sql_seconds;
 (empty)
 mtime
 str_to_date
-command mtime.str_to_date(X_0:str, X_1:str):date 
+command mtime.str_to_date(X_0:str, X_1:str, X_2:lng):date 
 MTIMEstr_to_date;
 create a date from the string, using the specified format (see man strptime)
 mtime
 str_to_time
-command mtime.str_to_time(X_0:str, X_1:str):daytime 
+command mtime.str_to_time(X_0:str, X_1:str, X_2:lng):daytime 
 MTIMEstr_to_time;
 create a time from the string, using the specified format (see man strptime)
 mtime
 str_to_timestamp
-command mtime.str_to_timestamp(X_0:str, X_1:str):timestamp 
+command mtime.str_to_timestamp(X_0:str, X_1:str, X_2:lng):timestamp 
 MTIMEstr_to_timestamp;
 create a timestamp from the string, using the specified format (see man strptime)
 mtime
@@ -36703,6 +36783,16 @@ timestampdiff_year
 command mtime.timestampdiff_year(X_0:timestamp, X_1:daytime):int 
 MTIMEtimestampdiff_year_ts_t;
 diff in months between 'val1' and 'val2'.
+mtime
+timestamptz_to_str
+command mtime.timestamptz_to_str(X_0:timestamp, X_1:str, X_2:lng):str 
+MTIMEtimestamptz_to_str;
+create a string from the time, using the specified format (see man strftime)
+mtime
+timetz_to_str
+command mtime.timetz_to_str(X_0:daytime, X_1:str, X_2:lng):str 
+MTIMEtimetz_to_str;
+create a string from the time, using the specified format (see man strftime)
 mtime
 usweekofyear
 command mtime.usweekofyear(X_0:date):bte 
@@ -36914,16 +37004,6 @@ pattern optimizer.inline(X_0:str, X_1:str):str
 OPTwrapper;
 Expand inline functions
 optimizer
-macro
-pattern optimizer.macro(X_0:str, X_1:str):void 
-OPTmacro;
-Inline the code of the target function.
-optimizer
-macro
-pattern optimizer.macro(X_0:str, X_1:str, X_2:str, X_3:str):void 
-OPTmacro;
-Inline a target function used in a specific function.
-optimizer
 matpack
 pattern optimizer.matpack():str 
 OPTwrapper;
@@ -36978,16 +37058,6 @@ optimize
 pattern optimizer.optimize(X_0:str, X_1:str):void 
 QOToptimize;
 Optimize a specific operation
-optimizer
-orcam
-pattern optimizer.orcam(X_0:str, X_1:str):void 
-OPTorcam;
-Inverse macro processor for current function
-optimizer
-orcam
-pattern optimizer.orcam(X_0:str, X_1:str, X_2:str, X_3:str):void 
-OPTorcam;
-Inverse macro, find pattern and replace with a function call.
 optimizer
 postfix
 pattern optimizer.postfix():str 

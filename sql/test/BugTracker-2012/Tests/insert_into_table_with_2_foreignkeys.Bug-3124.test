@@ -5,10 +5,10 @@ statement ok
 create table t3 (id int auto_increment ,text varchar(8) ,primary key (id))
 
 statement ok
-create table t2 (id int auto_increment ,ds int not null ,ra double not null ,primary key (id) ,foreign key (ds) references t3 (id)) 
+create table t2 (id int auto_increment ,ds int not null ,ra double not null ,primary key (id) ,foreign key (ds) references t3 (id))
 
 statement ok
-create table t1 (id int auto_increment ,runcat int ,ds int not null ,ra double default 0 ,primary key (id) ,foreign key (runcat) references t2 (id) ,foreign key (ds) references t3 (id)) 
+create table t1 (id int auto_increment ,runcat int ,ds int not null ,ra double default 0 ,primary key (id) ,foreign key (runcat) references t2 (id) ,foreign key (ds) references t3 (id))
 
 statement ok
 insert into t3 (text) values ('test')

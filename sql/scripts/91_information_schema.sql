@@ -4,7 +4,9 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+-- Copyright 2024 MonetDB Foundation;
+-- Copyright August 2008 - 2023 MonetDB B.V.;
+-- Copyright 1997 - July 2008 CWI.
 
 -- ISO/IEC SQL/Schemata (as defined in ISO_9075_11_Schemata_2011_E.pdf)
 -- defines INFORMATION_SCHEMA schema and standardised views
@@ -131,7 +133,7 @@ CREATE VIEW INFORMATION_SCHEMA.COLUMNS AS SELECT
   cast(sys.ifthenelse(c."null", 'YES', 'NO') AS varchar(3)) AS IS_NULLABLE,
   cast(sys."sql_datatype"(c."type", c."type_digits", c."type_scale", true, true) AS varchar(1024)) AS DATA_TYPE,
   cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml') AND c."type_digits" > 0, c."type_digits", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,
-  cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml') AND c."type_digits" > 0, 4 * c."type_digits", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,
+  cast(sys.ifthenelse(c."type" IN ('varchar','clob','char','json','url','xml') AND c."type_digits" > 0, 4 * cast(c."type_digits" as bigint), NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_digits", NULL) AS int) AS NUMERIC_PRECISION,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(c."type" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,
   cast(sys.ifthenelse(c."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), c."type_scale", NULL) AS int) AS NUMERIC_SCALE,
@@ -277,7 +279,7 @@ CREATE VIEW INFORMATION_SCHEMA.ROUTINES AS SELECT
   cast(NULL AS varchar(1)) AS UDT_NAME,
   cast(CASE f."type" WHEN 1 THEN sys."sql_datatype"(a."type", a."type_digits", a."type_scale", true, true) WHEN 2 THEN NULL WHEN 5 THEN 'TABLE' WHEN 7 THEN 'TABLE' ELSE NULL END AS varchar(1024)) AS DATA_TYPE,
   cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, a."type_digits", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,
-  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, 4 * a."type_digits", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,
+  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, 4 * cast(a."type_digits" as bigint), NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
   'UTF-8' AS CHARACTER_SET_NAME,
@@ -389,7 +391,7 @@ CREATE VIEW INFORMATION_SCHEMA.PARAMETERS AS SELECT
   cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_NAME,
   cast(sys."sql_datatype"(a."type", a."type_digits", a."type_scale", true, true) AS varchar(1024)) AS DATA_TYPE,
   cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, a."type_digits", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,
-  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, 4 * a."type_digits", NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,
+  cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, 4 * cast(a."type_digits" as bigint), NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
   cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
   cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml'), 'UTF-8', NULL) AS varchar(16)) AS CHARACTER_SET_NAME,

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -756,7 +758,8 @@ typedef struct {
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
 #define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
 #define GDKLIBRARY_JSON 	061046U /* first in Sep2022: json storage changes*/
-#define GDKLIBRARY		061047U /* first in Dec2023 */
+#define GDKLIBRARY_STATUS	061047U /* first in Dec2023: no status/filename columns */
+#define GDKLIBRARY		061050U /* first after Dec2023 */
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -1717,7 +1720,7 @@ gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
 		      GDK, NULL, format, ##__VA_ARGS__)
 #define GDKsyserr(errno, format, ...)					\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,		\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,		\
 		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
 		      format, ##__VA_ARGS__)
 #define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
@@ -2101,7 +2104,7 @@ BUNtoid(BAT *b, BUN p)
  */
 gdk_export gdk_return TMsubcommit(BAT *bl)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid)
+gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno)
 	__attribute__((__warn_unused_result__));
 
 /*
@@ -2246,7 +2249,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * The first parameter is a BAT, the p and q are BUN pointers, where p
  * is the iteration variable.
  */
-#define BATloop(r, p, q)			\
+#define BATloop(r, p, q)				\
 	for (q = BATcount(r), p = 0; p < q; p++)
 
 /*
@@ -2358,74 +2361,125 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 #define CHECK_QRY_TIMEOUT_MASK	(CHECK_QRY_TIMEOUT_STEP - 1)
 
 #define TIMEOUT_MSG "Timeout was reached!"
+#define INTERRUPT_MSG "Query interrupted!"
+#define DISCONNECT_MSG "Client is disconnected!"
 #define EXITING_MSG "Server is exiting!"
 
-#define TIMEOUT_HANDLER(rtpe)						\
+#define QRY_TIMEOUT (-1)	/* query timed out */
+#define QRY_INTERRUPT (-2)	/* client indicated interrupt */
+#define QRY_DISCONNECT (-3)	/* client disconnected */
+
+static inline void
+TIMEOUT_ERROR(QryCtx *qc, const char *file, const char *func, int lineno)
+{
+	if (GDKexiting())
+		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+			      "%s\n", EXITING_MSG);
+	else {
+		switch (qc->endtime) {
+		case QRY_TIMEOUT:
+			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+				      "%s\n", TIMEOUT_MSG);
+			break;
+		case QRY_INTERRUPT:
+			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+				      "%s\n", INTERRUPT_MSG);
+			break;
+		case QRY_DISCONNECT:
+			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+				      "%s\n", DISCONNECT_MSG);
+			break;
+		default:
+			MT_UNREACHABLE();
+		}
+	}
+}
+
+#define TIMEOUT_HANDLER(rtpe, qc)					\
 	do {								\
-		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		TIMEOUT_ERROR(qc, __FILE__, __func__, __LINE__);	\
 		return rtpe;						\
 	} while(0)
 
-#define GOTO_LABEL_TIMEOUT_HANDLER(label)				\
+static inline bool
+TIMEOUT_TEST(QryCtx *qc)
+{
+	if (qc == NULL)
+		return false;
+	if (qc->endtime < 0)
+		return true;
+	if (qc->endtime && GDKusec() > qc->endtime) {
+		qc->endtime = QRY_TIMEOUT;
+		return true;
+	}
+	switch (bstream_getoob(qc->bs)) {
+	case -1:
+		qc->endtime = QRY_DISCONNECT;
+		return true;
+	case 0:
+		return false;
+	default:
+		qc->endtime = QRY_INTERRUPT;
+		return true;
+	}
+}
+
+#define GOTO_LABEL_TIMEOUT_HANDLER(label, qc)				\
 	do {								\
-		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		TIMEOUT_ERROR(qc, __FILE__, __func__, __LINE__);	\
 		goto label;						\
 	} while(0)
 
-#define GDK_CHECK_TIMEOUT_BODY(timeoffset, callback)		\
-	do {							\
-		if (GDKexiting() ||				\
-		    (timeoffset && GDKusec() > timeoffset)) {	\
-			callback;				\
-		}						\
+#define GDK_CHECK_TIMEOUT_BODY(qc, callback)		\
+	do {						\
+		if (GDKexiting() || TIMEOUT_TEST(qc)) {	\
+			callback;			\
+		}					\
 	} while (0)
 
-#define GDK_CHECK_TIMEOUT(timeoffset, counter, callback)		\
-	do {								\
-		if (counter > CHECK_QRY_TIMEOUT_STEP) {			\
-			GDK_CHECK_TIMEOUT_BODY(timeoffset, callback);	\
-			counter = 0;					\
-		} else {						\
-			counter++;					\
-		}							\
+#define GDK_CHECK_TIMEOUT(qc, counter, callback)		\
+	do {							\
+		if (counter > CHECK_QRY_TIMEOUT_STEP) {		\
+			GDK_CHECK_TIMEOUT_BODY(qc, callback);	\
+			counter = 0;				\
+		} else {					\
+			counter++;				\
+		}						\
 	} while (0)
 
 /* here are some useful constructs to iterate a number of times (the
  * REPEATS argument--only evaluated once) and checking for a timeout
- * every once in a while; the TIMEOFFSET value is a variable of type lng
+ * every once in a while; the QC->endtime value is a variable of type lng
  * which is either 0 or the GDKusec() compatible time after which the
  * loop should terminate; check for this condition after the loop using
  * the TIMEOUT_CHECK macro; in order to break out of any of these loops,
  * use TIMEOUT_LOOP_BREAK since plain break won't do it; it is perfectly
  * ok to use continue inside the body */
 
-/* use IDX as a loop variable, initializing it to 0 and incrementing it
- * on each iteration */
-#define TIMEOUT_LOOP_IDX(IDX, REPEATS, TIMEOFFSET)			\
+/* use IDX as a loop variable (already declared), initializing it to 0
+ * and incrementing it on each iteration */
+#define TIMEOUT_LOOP_IDX(IDX, REPEATS, QC)				\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
-			if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
-				TIMEOFFSET = -1;			\
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
+			if (TIMEOUT_TEST(QC)) {				\
 				break;					\
 			} else						\
 				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
  * incrementing it on each iteration */
-#define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, TIMEOFFSET)			\
+#define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, QC)				\
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
-			if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
-				TIMEOFFSET = -1;			\
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
+			if (TIMEOUT_TEST(QC)) {				\
 				break;					\
 			} else						\
 				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* there is no user-visible loop variable */
-#define TIMEOUT_LOOP(REPEATS, TIMEOFFSET)				\
-	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
-		if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
-			TIMEOFFSET = -1;				\
+#define TIMEOUT_LOOP(REPEATS, QC)					\
+	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
+		if (TIMEOUT_TEST(QC)) {					\
 			break;						\
 		} else							\
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
@@ -2439,10 +2493,10 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 
 /* check whether a timeout occurred, and execute the CALLBACK argument
  * if it did */
-#define TIMEOUT_CHECK(TIMEOFFSET, CALLBACK)	\
-	do {					\
-		if (TIMEOFFSET == -1)		\
-			CALLBACK;		\
+#define TIMEOUT_CHECK(QC, CALLBACK)					\
+	do {								\
+		if (GDKexiting() || ((QC) && (QC)->endtime < 0))	\
+			CALLBACK;					\
 	} while (0)
 
 typedef struct gdk_callback {

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -718,6 +720,8 @@ static void
 sql_min_max_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
+	if (list_empty(l))
+		return;
 	sql_exp *first = l->h->data;
 	atom *omin, *omax;
 

@@ -505,7 +505,7 @@ select 'sys.objects', o.name, case when nr < 2000 then cast(nr as string) else s
 --  schemas
 select 'default schema of user', s.name, u.name from sys.schemas s, sys.users u where s.id = u.default_schema order by s.name, u.name;
 --  tables
-select 'grant on table', t.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where t.id = p.obj_id and p.auth_id = a.id order by t.name, a.name;
+select 'grant on table', t.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where t.id = p.obj_id and p.auth_id = a.id order by t.name, a.name, g.name nulls first;
 --  columns
 select 'grant on column', t.name, c.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
 --  functions

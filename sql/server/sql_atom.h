@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _SQL_ATOM_H_
@@ -25,7 +27,7 @@ extern atom *atom_int( allocator *sa, sql_subtype *tpe, lng val);
 #endif
 extern atom *atom_float( allocator *sa, sql_subtype *tpe, dbl val);
 extern atom *atom_string( allocator *sa, sql_subtype *tpe, const char *val);
-extern atom *atom_general( allocator *sa, sql_subtype *tpe, const char *val);
+extern atom *atom_general( allocator *sa, sql_subtype *tpe, const char *val, long tz_offset);
 #ifdef HAVE_HGE
 extern atom *atom_dec( allocator *sa, sql_subtype *tpe, hge val);
 #else
@@ -64,6 +66,8 @@ extern int atom_is_true(atom *a);
 extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
 
+extern unsigned int atom_digits(atom *a);
+
 #ifdef HAVE_HGE
 #define MAX_SCALE 39
 extern const hge scales[MAX_SCALE];
@@ -74,4 +78,5 @@ extern const lng scales[MAX_SCALE];
 
 extern atom *atom_zero_value(allocator *sa, sql_subtype *tpe);
 extern atom *atom_max_value(allocator *sa, sql_subtype *tpe);
+
 #endif /* _SQL_ATOM_H_ */

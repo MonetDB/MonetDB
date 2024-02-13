@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -4401,7 +4403,7 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
-	if (d->next) {
+	if (d && d->next) {
 
 		assert(!drop);
 		if (d->cs.ts > oldest)

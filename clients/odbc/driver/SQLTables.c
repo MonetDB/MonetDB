@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -222,8 +224,8 @@ MNDBTables(ODBCStmt *stmt,
 					}
 					buf[j] = 0;
 					/* Some ODBC applications use different table type names.
-					 * Replace those names to valid MonetDB table type names
-					 * as defined in sys.tables_types */
+					 * Replace some SQL synonyms to valid MonetDB
+					 * table type names as defined in sys.table_types */
 					if (strcmp("BASE TABLE", buf) == 0) {
 						strcpy(buf, "TABLE");
 					} else

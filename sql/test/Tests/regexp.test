@@ -1,4 +1,4 @@
-# for the regex options look into `man 3 pcreapi` 
+# for the regex options look into `man 3 pcreapi`
 
 # basic
 query T rowsort

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -263,7 +265,7 @@ _initQlog(void)
 	}
 
 	QLOG_init = true;
-	if (TMsubcommit_list(commitlist, NULL, committop, -1, -1) != GDK_SUCCEED)
+	if (TMsubcommit_list(commitlist, NULL, committop, -1) != GDK_SUCCEED)
 		throw(MAL, "querylog.init", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -351,7 +353,7 @@ QLOGempty(void *ret)
 	BATclear(QLOG_calls_cpuload, true);
 	BATclear(QLOG_calls_iowait, true);
 
-	if (TMsubcommit_list(commitlist, NULL, committop, -1, -1) != GDK_SUCCEED)
+	if (TMsubcommit_list(commitlist, NULL, committop, -1) != GDK_SUCCEED)
 		msg = createException(MAL, "querylog.empty", GDK_EXCEPTION);
 	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
@@ -391,7 +393,7 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "querylog.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	if (TMsubcommit_list(commitlist, NULL, committop, -1, -1) != GDK_SUCCEED)
+	if (TMsubcommit_list(commitlist, NULL, committop, -1) != GDK_SUCCEED)
 		msg = createException(MAL, "querylog", GDK_EXCEPTION);
 	MT_lock_unset(&QLOGlock);
 	return msg;
@@ -453,7 +455,7 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_unset(&QLOGlock);
 		throw(MAL, "querylog.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (TMsubcommit_list(commitlist, NULL, committop, -1, -1) != GDK_SUCCEED)
+	if (TMsubcommit_list(commitlist, NULL, committop, -1) != GDK_SUCCEED)
 		msg = createException(MAL, "querylog", GDK_EXCEPTION);
 	MT_lock_unset(&QLOGlock);
 	return msg;

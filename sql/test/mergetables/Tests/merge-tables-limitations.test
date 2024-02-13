@@ -274,18 +274,6 @@ DROP TABLE tmp.gttbl
 statement ok
 DROP TABLE tmp.lttbl
 
-42S02!DROP TABLE: no such table 'tmp'.'mtbl'
-DROP TABLE tmp.mtbl
-
-42S02!DROP TABLE: no such table 'tmp'.'rmtbl'
-DROP TABLE tmp.rmtbl
-
-42S02!DROP TABLE: no such table 'tmp'.'rtbl'
-DROP TABLE tmp.rtbl
-
-42S02!DROP TABLE: no such table 'tmp'.'utbl'
-DROP TABLE tmp.utbl
-
 statement ok
 DROP TABLE tst.mtbl
 

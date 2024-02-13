@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -112,7 +114,7 @@ atom_get_int(atom *a)
 	lng r = 0;
 #endif
 
-	if (!a->isnull) {
+	if (a && !a->isnull) {
 		switch (ATOMstorage(a->data.vtype)) {
 		case TYPE_bte:
 			r = a->data.val.btval;
@@ -257,7 +259,7 @@ const lng scales[19] = {
 #endif
 
 atom *
-atom_general(allocator *sa, sql_subtype *tpe, const char *val)
+atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 {
 	atom *a = atom_create(sa);
 
@@ -274,6 +276,14 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val)
 			a->data.len = strLen(val);
 			a->data.val.sval = sa_alloc(sa, a->data.len);
 			memcpy(a->data.val.sval, val, a->data.len);
+		} else if (type == TYPE_timestamp) {
+			if (sql_timestamp_fromstr(val, &a->data.val.lval, tz_offset/1000, tpe->type->eclass == EC_TIMESTAMP) < 0 ||
+					(timestamp)a->data.val.lval == timestamp_nil)
+					return NULL;
+		} else if (type == TYPE_daytime) {
+			if (sql_daytime_fromstr(val, &a->data.val.lval, tz_offset/1000, tpe->type->eclass == EC_TIME) < 0 ||
+					(daytime)a->data.val.lval == daytime_nil)
+					return NULL;
 		} else {
 			ptr p = NULL;
 			ssize_t res = ATOMfromstr(type, &p, &a->data.len, val, false);
@@ -929,7 +939,7 @@ atom_add(allocator *sa, atom *a1, atom *a2)
 		a2 = t;
 	}
 	if (a1->isnull || a2->isnull)
-		return atom_general(sa, &a1->tpe, NULL);
+		return atom_general(sa, &a1->tpe, NULL, 0);
 	ValRecord dst = { .vtype = a1->tpe.type->localtype };
 	if (VARcalcadd(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
@@ -961,7 +971,7 @@ atom_sub(allocator *sa, atom *a1, atom *a2)
 		a1 = na1;
 	}
 	if (a1->isnull || a2->isnull)
-		return atom_general(sa, &a1->tpe, NULL);
+		return atom_general(sa, &a1->tpe, NULL, 0);
 	ValRecord dst = { .vtype = a1->tpe.type->localtype };
 	if (VARcalcsub(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
@@ -987,7 +997,7 @@ atom_mul(allocator *sa, atom *a1, atom *a2)
 		a2 = t;
 	}
 	if (a1->isnull || a2->isnull)
-		return atom_general(sa, &a1->tpe, NULL);
+		return atom_general(sa, &a1->tpe, NULL, 0);
 	ValRecord dst = { .vtype = a1->tpe.type->localtype };
 	if (VARcalcmul(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
@@ -1008,7 +1018,7 @@ atom_div(allocator *sa, atom *a1, atom *a2)
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->isnull || a2->isnull)
-		return atom_general(sa, &a1->tpe, NULL);
+		return atom_general(sa, &a1->tpe, NULL, 0);
 	ValRecord dst = { .vtype = a1->tpe.type->localtype };
 	if (VARcalcdiv(&dst, &a1->data, &a2->data) != GDK_SUCCEED) {
 		GDKclrerr();
@@ -1118,6 +1128,49 @@ atom_is_false(atom *a)
 		return a->data.val.dval == 0;
 	default:
 		return 0;
+	}
+}
+
+unsigned int
+atom_digits(atom *a)
+{
+	if (a->isnull || !ATOMlinear(a->tpe.type->localtype) ||
+			(a->tpe.type->eclass != EC_DEC && a->tpe.type->eclass != EC_NUM))
+		return 0;
+	if (a->tpe.type->eclass == EC_DEC) {
+		switch (ATOMstorage(a->tpe.type->localtype)) {
+			case TYPE_bte:
+				return decimal_digits(a->data.val.btval);
+			case TYPE_sht:
+				return decimal_digits(a->data.val.shval);
+			case TYPE_int:
+				return decimal_digits(a->data.val.ival);
+			case TYPE_lng:
+				return decimal_digits(a->data.val.lval);
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				return decimal_digits(a->data.val.hval);
+#endif
+			default:
+				return 0;
+		}
+	} else {
+		switch (ATOMstorage(a->tpe.type->localtype)) {
+			case TYPE_bte:
+				return number_bits(a->data.val.btval);
+			case TYPE_sht:
+				return number_bits(a->data.val.shval);
+			case TYPE_int:
+				return number_bits(a->data.val.ival);
+			case TYPE_lng:
+				return number_bits(a->data.val.lval);
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				return number_bits(a->data.val.hval);
+#endif
+			default:
+				return 0;
+		}
 	}
 }
 

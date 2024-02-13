@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -100,7 +102,8 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 		throw(MAL, "malEmbeddedBoot", "Failed to initialize client");
 	c->workerlimit = workerlimit;
 	c->memorylimit = memorylimit;
-	c->qryctx.querytimeout = querytimeout * 1000000;	// from sec to usec
+	c->querytimeout = querytimeout * 1000000;	// from sec to usec
+	c->qryctx.endtime = c->qryctx.starttime && c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 	c->sessiontimeout = sessiontimeout * 1000000;
 	c->curmodule = c->usermodule = userModule();
 	if (c->usermodule == NULL) {

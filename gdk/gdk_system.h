@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _GDK_SYSTEM_H_
@@ -186,7 +188,8 @@ typedef int64_t lng;
 
 typedef struct QryCtx {
 	lng starttime;
-	lng querytimeout;
+	lng endtime;
+	struct bstream *bs;
 	ATOMIC_TYPE datasize;
 	ATOMIC_BASE_TYPE maxmem;
 } QryCtx;
@@ -196,6 +199,7 @@ gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d,
 				const char *threadname);
+gdk_export gdk_return MT_thread_init_add_callback(void (*init)(void *), void (*destroy)(void *), void *data);
 gdk_export bool MT_thread_register(void);
 gdk_export void MT_thread_deregister(void);
 gdk_export const char *MT_thread_getname(void);

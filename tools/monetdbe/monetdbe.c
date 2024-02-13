@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -384,6 +386,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_internal", "Could not setup query stream"));
 		goto cleanup;
 	}
+	c->qryctx.bs = c->fdin;
 	query_stream = NULL;
 	if (bstream_next(c->fdin) < 0) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_internal", "Internal error while starting the query"));
@@ -437,6 +440,7 @@ cleanup:
 	if (fdin_changed) { //c->fdin was set
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
+		c->qryctx.bs = old_bstream;
 	}
 	if (query_stream)
 		close_stream(query_stream);
@@ -561,7 +565,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 	mdbe->c->curmodule = mdbe->c->usermodule = userModule();
 	mdbe->c->workerlimit = monetdbe_workers_internal(mdbe, opts);
 	mdbe->c->memorylimit = monetdbe_memory_internal(mdbe, opts);
-	mdbe->c->qryctx.querytimeout = monetdbe_querytimeout_internal(mdbe, opts);
+	mdbe->c->querytimeout = monetdbe_querytimeout_internal(mdbe, opts);
 	mdbe->c->sessiontimeout = monetdbe_sessiontimeout_internal(mdbe, opts);
 	if (mdbe->msg)
 		goto cleanup;
@@ -874,6 +878,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	}
 	stk->keepAlive = TRUE;
 	c->qryctx.starttime = GDKusec();
+	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);
@@ -1064,7 +1069,7 @@ monetdbe_set_autocommit(monetdbe_database dbhdl, int value)
 
 	if (!validate_database_handle_noerror(mdbe)) {
 
-		return 0;
+		return NULL;
 	}
 
 	mvc *m = ((backend *) mdbe->c->sqlcontext)->mvc;
@@ -1783,7 +1788,7 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 	assert(mdbe->c);
 	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (!result) {
-		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_cleanup_result_internal", "Parameter result is NULL"));
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_cleanup_result", "Parameter result is NULL"));
 	} else {
 		mdbe->msg = monetdbe_cleanup_result_internal(mdbe, res);
 	}
@@ -1794,14 +1799,14 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 static inline void
 cleanup_get_columns_result(size_t column_count, monetdbe_column* columns)
 {
-		if (columns) for (size_t c = 0; c < column_count; c++) {
-			 GDKfree(columns[c].name);
-			 GDKfree(columns[c].sql_type.name);
+	if (columns) {
+		for (size_t c = 0; c < column_count; c++) {
+			GDKfree(columns[c].name);
+			GDKfree(columns[c].sql_type.name);
 		}
-
 		GDKfree(columns);
-
 		columns = NULL;
+	}
 }
 
 static char *

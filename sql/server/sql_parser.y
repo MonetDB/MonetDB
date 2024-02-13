@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 %{
@@ -442,7 +444,6 @@ int yydebug=1;
 	XML_PI_target
 	opt_optimizer
 	opt_default_role
-	multi_arg_func_name
 
 %type <l>
 	argument_list
@@ -640,7 +641,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT UIDENT aTYPE ALIAS RANK sqlINT OIDNUM HEXADECIMALNUM OCTALNUM BINARYNUM INTNUM APPROXNUM
+	IDENT UIDENT aTYPE ALIAS RANK MARGFUNC sqlINT OIDNUM HEXADECIMALNUM OCTALNUM BINARYNUM INTNUM APPROXNUM
 	USING
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -662,7 +663,6 @@ int yydebug=1;
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE SNAPSHOT
-%token  LEAST GREATEST
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <operation> ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
@@ -1930,9 +1930,9 @@ column_def:
 				append_string(seqn1, m->scanner.schema);
 			append_list(l, append_string(seqn1, sn));
 			if ($2 == 1)
-				sql_find_subtype(&it, "bigint", 64, 0);
+				sql_find_subtype(&it, "bigint", 63, 0);
 			else
-				sql_find_subtype(&it, "int", 32, 0);
+				sql_find_subtype(&it, "int", 31, 0);
 			append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 			append_list(l, o);
 			append_int(l, 1); /* to be dropped */
@@ -2029,7 +2029,7 @@ generated_column:
 		append_list(l, append_string(L(), sn));
 		if (!$5)
 			$5 = L();
-		sql_find_subtype(&it, "int", 32, 0);
+		sql_find_subtype(&it, "int", 31, 0);
 		append_symbol($5, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 
 		/* finally all the options */
@@ -2063,7 +2063,7 @@ generated_column:
 		if (m->scanner.schema)
 			append_string(seqn1, m->scanner.schema);
 		append_list(l, append_string(seqn1, sn));
-		sql_find_subtype(&it, "int", 32, 0);
+		sql_find_subtype(&it, "int", 31, 0);
 		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 		append_list(l, o);
 		append_int(l, 1); /* to be dropped */
@@ -4903,7 +4903,7 @@ literal:
     string	{ const char *s = $1;
 		  int len = UTF8_strlen(s);
 		  sql_subtype t;
-		  sql_find_subtype(&t, "char", len, 0 );
+		  sql_find_subtype(&t, "varchar", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
 
  |  BINARYNUM { int len = _strlen($1), i = 2, err = 0;
@@ -4940,16 +4940,16 @@ literal:
 
 			/* use smallest type that can accommodate the given value */
 			if (res <= GDK_bte_max)
-				sql_find_subtype(&t, "tinyint", 8, 0 );
+				sql_find_subtype(&t, "tinyint", 7, 0 );
 			else if (res <= GDK_sht_max)
-				sql_find_subtype(&t, "smallint", 16, 0 );
+				sql_find_subtype(&t, "smallint", 15, 0 );
 			else if (res <= GDK_int_max)
-				sql_find_subtype(&t, "int", 32, 0 );
+				sql_find_subtype(&t, "int", 31, 0 );
 			else if (res <= GDK_lng_max)
-				sql_find_subtype(&t, "bigint", 64, 0 );
+				sql_find_subtype(&t, "bigint", 63, 0 );
 #ifdef HAVE_HGE
 			else if (res <= GDK_hge_max)
-				sql_find_subtype(&t, "hugeint", 128, 0 );
+				sql_find_subtype(&t, "hugeint", 127, 0 );
 #endif
 			else
 				err = 1;
@@ -4998,16 +4998,16 @@ literal:
 
 			/* use smallest type that can accommodate the given value */
 			if (res <= GDK_bte_max)
-				sql_find_subtype(&t, "tinyint", 8, 0 );
+				sql_find_subtype(&t, "tinyint", 7, 0 );
 			else if (res <= GDK_sht_max)
-				sql_find_subtype(&t, "smallint", 16, 0 );
+				sql_find_subtype(&t, "smallint", 15, 0 );
 			else if (res <= GDK_int_max)
-				sql_find_subtype(&t, "int", 32, 0 );
+				sql_find_subtype(&t, "int", 31, 0 );
 			else if (res <= GDK_lng_max)
-				sql_find_subtype(&t, "bigint", 64, 0 );
+				sql_find_subtype(&t, "bigint", 63, 0 );
 #ifdef HAVE_HGE
 			else if (res <= GDK_hge_max)
-				sql_find_subtype(&t, "hugeint", 128, 0 );
+				sql_find_subtype(&t, "hugeint", 127, 0 );
 #endif
 			else
 				err = 1;
@@ -5064,16 +5064,16 @@ literal:
 
 			/* use smallest type that can accommodate the given value */
 			if (res <= GDK_bte_max)
-				sql_find_subtype(&t, "tinyint", 8, 0 );
+				sql_find_subtype(&t, "tinyint", 7, 0 );
 			else if (res <= GDK_sht_max)
-				sql_find_subtype(&t, "smallint", 16, 0 );
+				sql_find_subtype(&t, "smallint", 15, 0 );
 			else if (res <= GDK_int_max)
-				sql_find_subtype(&t, "int", 32, 0 );
+				sql_find_subtype(&t, "int", 31, 0 );
 			else if (res <= GDK_lng_max)
-				sql_find_subtype(&t, "bigint", 64, 0 );
+				sql_find_subtype(&t, "bigint", 63, 0 );
 #ifdef HAVE_HGE
 			else if (res <= GDK_hge_max)
-				sql_find_subtype(&t, "hugeint", 128, 0 );
+				sql_find_subtype(&t, "hugeint", 127, 0 );
 #endif
 			else
 				err = 1;
@@ -5128,15 +5128,13 @@ literal:
 				filtered[j] = d;
 				++j;
 			}
-			int digits = j, err = 0;
+			int err = 0;
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  size_t len = sizeof(hge);
-		  const hge one = 1;
 #else
 		  lng value, *p = &value;
 		  size_t len = sizeof(lng);
-		  const lng one = 1;
 #endif
 		  sql_subtype t;
 
@@ -5150,16 +5148,7 @@ literal:
 
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
-		    int bits = (int) digits2bits(digits), obits = bits;
-
-		    while (bits > 0 &&
-			   (bits == sizeof(value) * 8 ||
-			    (one << (bits - 1)) > value))
-			  bits--;
-
-		    if (bits != obits &&
-		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
-				bits++;
+		    int bits = number_bits(value);
 
 		    if (value >= GDK_bte_min && value <= GDK_bte_max)
 			  sql_find_subtype(&t, "tinyint", bits, 0 );
@@ -5276,7 +5265,7 @@ literal:
 		  if (precision == 1 && strlen($4) > 9)
 			precision += (int) strlen($4) - 9;
 		  r = sql_find_subtype(&t, ($3)?"timetz":"time", precision, 0);
-		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
+		  if (!r || (a = atom_general(SA, &t, $4, m->timezone)) == NULL) {
 			sqlformaterror(m, SQLSTATE(22007) "Incorrect time value (%s)", $4);
 			$$ = NULL;
 			YYABORT;
@@ -5290,7 +5279,7 @@ literal:
 		  int r;
 
 		  r = sql_find_subtype(&t, ($3)?"timestamptz":"timestamp",$2,0);
-		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
+		  if (!r || (a = atom_general(SA, &t, $4, m->timezone)) == NULL) {
 			sqlformaterror(m, SQLSTATE(22007) "Incorrect timestamp value (%s)", $4);
 			$$ = NULL;
 			YYABORT;
@@ -5307,7 +5296,7 @@ literal:
 
 		  $$ = NULL;
 		  r = sql_find_subtype(&t, "blob", 0, 0);
-		  if (r && (a = atom_general(SA, &t, $2)) != NULL)
+		  if (r && (a = atom_general(SA, &t, $2, m->timezone)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
 			sqlformaterror(m, SQLSTATE(22M28) "Incorrect blob (%s)", $2);
@@ -5321,7 +5310,7 @@ literal:
 
 		  $$ = NULL;
 		  r = sql_find_subtype(&t, "blob", 0, 0);
-		  if (r && (a = atom_general(SA, &t, $1)) != NULL)
+		  if (r && (a = atom_general(SA, &t, $1, m->timezone)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
 			sqlformaterror(m, SQLSTATE(22M28) "Incorrect blob (%s)", $1);
@@ -5337,7 +5326,7 @@ literal:
 			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
-		  if (!(a = atom_general(SA, &t, $2))) {
+		  if (!(a = atom_general(SA, &t, $2, m->timezone))) {
 			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
 			YYABORT;
 		  }
@@ -5352,7 +5341,7 @@ literal:
 			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
-		  if (!(a = atom_general(SA, &t, $2))) {
+		  if (!(a = atom_general(SA, &t, $2, m->timezone))) {
 			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
 			YYABORT;
 		  }
@@ -5369,7 +5358,7 @@ literal:
 			YYABORT;
 		  }
 		  sql_init_subtype(&tpe, t, 0, 0);
-		  if (!(a = atom_general(SA, &tpe, $2))) {
+		  if (!(a = atom_general(SA, &tpe, $2, m->timezone))) {
 			sqlformaterror(m, SQLSTATE(22000) "Incorrect %s (%s)", $1, $2);
 			YYABORT;
 		  }
@@ -5603,13 +5592,13 @@ data_type:
     CHARACTER
 			{ sql_find_subtype(&$$, "char", 1, 0); }
  |  varchar		{ sql_find_subtype(&$$, "varchar", 0, 0); }
- |  clob		{ sql_find_subtype(&$$, "clob", 0, 0); }
+ |  clob		{ sql_find_subtype(&$$, "varchar", 0, 0); }
  |  CHARACTER '(' nonzero ')'
 			{ sql_find_subtype(&$$, "char", $3, 0); }
  |  varchar '(' nonzero ')'
 			{ sql_find_subtype(&$$, "varchar", $3, 0); }
  |  clob '(' nonzero ')'
-			{ sql_find_subtype(&$$, "clob", $3, 0);
+			{ sql_find_subtype(&$$, "varchar", $3, 0);
 			  /* NOTE: CLOB may be called as CLOB(2K) which is equivalent
 			   *       to CLOB(2048).  Due to 'nonzero' it is not possible
 			   *       to enter this as the parser rejects it.  However it
@@ -5874,6 +5863,7 @@ calc_ident:
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  RANK	{ $$ = $1; }	/* without '(' */
+ |  MARGFUNC	{ $$ = $1; }	/* without '(' */
  |  non_reserved_word
  ;
 
@@ -6966,7 +6956,7 @@ odbc_data_type:
     | SQL_LONGVARBINARY
 	{ sql_find_subtype(&$$, "blob", 0, 0); }
     | SQL_LONGVARCHAR
-	{ sql_find_subtype(&$$, "clob", 0, 0); }
+	{ sql_find_subtype(&$$, "varchar", 0, 0); }
     | SQL_NUMERIC
 	{ sql_find_subtype(&$$, "decimal", 18, 3); }
     | SQL_REAL
@@ -6986,7 +6976,7 @@ odbc_data_type:
     | SQL_WCHAR
 	{ sql_find_subtype(&$$, "char", 0, 0); }
     | SQL_WLONGVARCHAR
-	{ sql_find_subtype(&$$, "clob", 0, 0); }
+	{ sql_find_subtype(&$$, "varchar", 0, 0); }
     | SQL_WVARCHAR
 	{ sql_find_subtype(&$$, "varchar", 0, 0); }
 ;
@@ -7012,13 +7002,8 @@ odbc_tsi_qualifier:
 	{ $$ = iyear; }
 ;
 
-multi_arg_func_name:
-    LEAST	{ $$ = sa_strdup(SA, "least"); }
- |  GREATEST	{ $$ = sa_strdup(SA, "greatest"); }
- ;
-
 multi_arg_func:
-    multi_arg_func_name '(' case_search_condition_commalist ')' /* create nested calls of binary function */
+    MARGFUNC '(' case_search_condition_commalist ')' /* create nested calls of binary function */
 	{ dlist *args = $3;
 	  dnode *f = args->h;
 	  symbol *cur = f->data.sym;
@@ -7052,7 +7037,7 @@ makeAtomNode(mvc *m, const char* typename, const char* val, unsigned int digits,
     } else {
         sub_t_found = sql_find_subtype(&sub_t, typename, digits, scale);
     }
-    if ((!bind && !sub_t_found) || (a = atom_general(m->sa, &sub_t, val)) == NULL) {
+    if ((!bind && !sub_t_found) || (a = atom_general(m->sa, &sub_t, val, m->timezone)) == NULL) {
         sqlformaterror(m, SQLSTATE(22007) "Incorrect %s value (%s)", typename, val);
         return NULL;
     }
@@ -7296,6 +7281,10 @@ sqlformaterror(mvc * sql, _In_z_ _Printf_format_string_ const char *format, ...)
 	const char *sqlstate = NULL;
 	size_t len = 0;
 
+	if (sql->scanner.aborted) {
+		snprintf(sql->errstr, ERRSIZE, "Query aborted\n");
+		return 1;
+	}
 	va_start (ap,format);
 	if (format && strlen(format) > 6 && format[5] == '!') {
 		/* sql state provided */
@@ -7318,15 +7307,16 @@ sqlformaterror(mvc * sql, _In_z_ _Printf_format_string_ const char *format, ...)
 }
 
 static int
-sqlerror(mvc * sql, const char *err)
+sqlerror(mvc *sql, const char *err)
 {
-	return sqlformaterror(sql, "%s", err);
+	return sqlformaterror(sql, "%s", sql->scanner.errstr ? sql->scanner.errstr : err);
 }
 
 static void *ma_alloc(allocator *sa, size_t sz)
 {
 	return sa_alloc(sa, sz);
 }
+
 static void ma_free(void *p)
 {
 	(void)p;

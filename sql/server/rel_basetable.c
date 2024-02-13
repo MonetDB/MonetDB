@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -14,6 +16,8 @@
 #include "rel_prop.h"
 #include "rel_basetable.h"
 #include "rel_remote.h"
+#include "rel_statistics.h"
+#include "rel_rewriter.h"
 #include "sql_privileges.h"
 
 #define USED_LEN(nr) ((nr+31)/32)
@@ -103,10 +107,13 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	sql_rel *rel = rel_create(sa);
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
 	rel_base_t *ba = (rel_base_t*)sa_zalloc(sa, sizeof(rel_base_t) + sizeof(int)*USED_LEN(end));
+	sqlstore *store = sql->session->tr->store;
 
 	if(!rel || !ba)
 		return NULL;
 
+	if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
+		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 10));
 	assert(atname);
 	if (strcmp(atname, t->base.name) != 0)
 		ba->name = sa_strdup(sa, atname);
@@ -164,6 +171,7 @@ bind_col_exp(mvc *sql, char *name, sql_column *c)
 		p->value.pval = NULL;
 	}
 	set_basecol(e);
+	sql_column_get_statistics(sql, c, e);
 	return e;
 }
 
@@ -341,6 +349,7 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 			p->value.pval = NULL;
 		}
 		set_basecol(e);
+		sql_column_get_statistics(sql, c, e);
 		append(r->exps, e);
 	}
 	return r;
@@ -387,6 +396,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 				p->value.pval = NULL;
 			}
 			set_basecol(e);
+			sql_column_get_statistics(sql, c, e);
 			append(rel->exps, e);
 		}
 		if (rel_base_is_used(ba, i) || list_empty(rel->exps)) /* Add TID column if no column is used */
@@ -485,7 +495,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 	for (node *n = mt_rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		node *cn = NULL, *ci = NULL;
-		const char *nname = exp_name(e);
+		const char *nname = e->r;
 
 		if (nname[0] == '%' && strcmp(nname, TID) == 0) {
 			list_append(p->exps, exp_alias(sql->sa, mtalias, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
@@ -494,7 +504,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			sql_column *c = cn->data, *rc = ol_fetch(t->columns, c->colnr);
 
 			/* with name find column in merge table, with colnr find column in member */
-			sql_exp *ne = exp_alias(sql->sa, mtalias, c->base.name, pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, is_column_unique(rc), 0);
+			sql_exp *ne = exp_alias(sql->sa, mtalias, exp_name(e), pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, is_column_unique(rc), 0);
 			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
 				p->value.pval = rc->t->pkey;
@@ -503,6 +513,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 				p->value.pval = NULL;
 			}
 			set_basecol(ne);
+			sql_column_get_statistics(sql, c, ne);
 			rel_base_use(sql, p, rc->colnr);
 			list_append(p->exps, ne);
 		} else if (nname[0] == '%' && ol_length(mt->idxs) && (ci = ol_find_name(mt->idxs, nname + 1))) {

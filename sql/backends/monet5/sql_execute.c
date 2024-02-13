@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -164,7 +166,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	q = pushArgument(mb,q, k);
-	q = pushStr(mb,q,"clob");
+	q = pushStr(mb,q,"varchar");
 	pushInstruction(mb, q);
 
 	resultset = pushArgument(mb,resultset, getArg(q,0));
@@ -739,6 +741,25 @@ RAstatement2_return(backend *be, mvc *m, int nlevels, struct global_var_entry *g
 	return RAcommit_statement(be, msg);
 }
 
+static void
+subtype_from_string(mvc *sql, sql_subtype *st, char *type)
+{
+	unsigned digits = 0, scale = 0;
+
+	char *end = strchr(type, '(');
+	if (end) {
+		end[0] = 0;
+		digits = strtol(end+1, &end, 10);
+		if (end && end[0] == ',')
+			scale = strtol(end+1, NULL, 10);
+	}
+	if (!sql_find_subtype(st, type, digits, scale)) {
+		sql_type *t = mvc_bind_type(sql, type);
+		if (t)
+			sql_init_subtype(st, t, 0, 0);
+	}
+}
+
 str
 RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -888,14 +909,20 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else {
 			int i = 1;
 			for (node *n = rel->exps->h, *m = types_list->h ; n && m && !msg ; n = n->next, m = m->next) {
-				sql_exp *e = (sql_exp *) n->data;
-				sql_subtype *t = exp_subtype(e);
-				str got = sql_subtype_string(be->mvc->ta, t), expected = (str) m->data;
+				sql_exp *e = n->data, *ne = NULL;
+				sql_subtype *t = exp_subtype(e), et;
 
-				if (!got)
-					msg = createException(SQL, "RAstatement2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				else if (strcmp(expected, got) != 0)
+				subtype_from_string(be->mvc, &et, m->data);
+				if (!is_subtype(t, &et) && (ne = exp_check_type(be->mvc, &et, rel, e, type_equal)) == NULL) {
+					str got = sql_subtype_string(be->mvc->ta, t), expected = (str) m->data;
+					if (!got)
+						msg = createException(SQL, "RAstatement2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "Parameter %d has wrong SQL type, expected %s, but got %s instead", i, expected, got);
+				}
+				if (ne) {
+					exp_setname(be->mvc->sa, ne, exp_relname(e), exp_name(e));
+					n->data = ne;
+				}
 				i++;
 			}
 		}

@@ -94,3 +94,4 @@ select n from allparts_2
 @connection(id=tc2, username=tom, password=123tom)
 statement error SELECT: identifier 'm' unknown
 select m from allparts_2
+

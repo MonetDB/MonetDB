@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -190,8 +192,10 @@ doChallenge(void *data)
 		return;
 	}
 
-	// Send the challenge over the block stream
-	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:BINARY=1:",
+	/* Send the challenge over the block stream
+	 * We can do binary transfers, and we can interrupt queries using
+	 * out-of-band messages */
+	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:BINARY=1:OOBINTR=1:",
 				 challenge, mcrypt_getHashAlgorithms(),
 #ifdef WORDS_BIGENDIAN
 				 "BIG",

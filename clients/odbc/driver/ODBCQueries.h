@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* this file contains parts of queries that are used in multiple
@@ -302,7 +304,7 @@
 
 #define CHAR_OCTET_LENGTH(t)								\
 		"cast(case when " #t ".type in ('varchar','clob','char','json','url','xml') "	\
-		     "then 4 * " #t ".type_digits "				\
+		     "then 4 * cast(" #t ".type_digits as bigint) "			\
 		     "when " #t ".type = 'blob' then " #t ".type_digits "	\
-		     "else cast(null as integer) "					\
+		     "else null "						\
 		"end as integer) as \"CHAR_OCTET_LENGTH\""

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -1151,7 +1153,7 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 		set_processed(nrel);
 
 		for (node *n = rel->exps->h ; n ; n = n->next) {
-			sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+			sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 			exp_prop_alias(v->sql->sa, a, e);
 			list_append(converted, a);
 		}
@@ -1406,7 +1408,7 @@ rel_groupby_add_count_star(mvc *sql, sql_rel *rel, sql_exp *count_star_exp, bool
 				return e;
 		}
 	}
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	*count_added = true;
 	return rel_groupby_add_aggr(sql, rel, exp_aggr(sql->sa, NULL, cf, 0, 0, rel->card, 0));
 }
@@ -1480,7 +1482,7 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 						/* add count star */
 						count_star_exp = rel_groupby_add_count_star(v->sql, groupby, count_star_exp, &count_added);
 						/* multiply constant by count star */
-						if (!(mul = rel_binop_(v->sql, NULL, constant, exp_ref(v->sql, count_star_exp), "sys", "sql_mul", card_value))) {
+						if (!(mul = rel_binop_(v->sql, NULL, constant, exp_ref(v->sql, count_star_exp), "sys", "sql_mul", card_value, true))) {
 							v->sql->session->status = 0;
 							v->sql->errstr[0] = '\0';
 							continue;
@@ -1499,7 +1501,7 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 							continue;
 						}
 						/* update sum to use the column side only */
-						sql_subfunc *a = sql_bind_func(v->sql, "sys", "sum", exp_subtype(colref), NULL, F_AGGR, true);
+						sql_subfunc *a = sql_bind_func(v->sql, "sys", "sum", exp_subtype(colref), NULL, F_AGGR, true, true);
 						if (!a)
 							continue;
 						naggr = exp_aggr(v->sql->sa, list_append(sa_list(v->sql->sa), colref), a, need_distinct(e), need_no_nil(e), groupby->card, has_nil(e));
@@ -1511,7 +1513,7 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 						}
 
 						/* generate addition/subtraction. subtraction is not commutative, so keep original order! */
-						if (!(newop = rel_binop_(v->sql, NULL, e1 == constant ? mul : exp_ref(v->sql, naggr), e1 == constant ? exp_ref(v->sql, naggr) : mul, "sys", expf->func->base.name, card_value))) {
+						if (!(newop = rel_binop_(v->sql, NULL, e1 == constant ? mul : exp_ref(v->sql, naggr), e1 == constant ? exp_ref(v->sql, naggr) : mul, "sys", expf->func->base.name, card_value, true))) {
 							v->sql->session->status = 0;
 							v->sql->errstr[0] = '\0';
 							continue;
@@ -1981,7 +1983,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			if (oa->type == e_aggr) {
 				sql_subfunc *f = oa->f;
 				int cnt = exp_aggr_is_count(oa);
-				sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR, true);
+				sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR, true, true);
 
 				assert(a);
 				/* union of aggr result may have nils
@@ -2493,7 +2495,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 					rel->r = NULL; /* transform it into a global aggregate */
 					rel->exps = list_merge(nexps, rel->exps, (fdup) NULL); /* add grouping columns back as projections */
 					/* global aggregates may return 1 row, so filter it based on the count */
-					sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+					sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 					sql_exp *count = exp_aggr(v->sql->sa, NULL, cf, 0, 1, CARD_ATOM, 0);
 					count = rel_groupby_add_aggr(v->sql, rel, count);
 					sql_exp *cp = exp_compare(v->sql->sa, exp_ref(v->sql, count), exp_atom(v->sql->sa, atom_int(v->sql->sa, exp_subtype(count), 0)), cmp_notequal);
@@ -2595,7 +2597,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 			sql_exp *v;
 			sql_subfunc *f = e->f;
 			int cnt = exp_aggr_is_count(e);
-			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR, true);
+			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR, true, true);
 
 			append(aggrs, e);
 			if (!exp_name(e))
@@ -2767,7 +2769,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 
 		srel = r->l;
 		{
-			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 			sql_exp *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(v->sql->sa, e, ++v->sql->label);
@@ -2779,7 +2781,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 
 		srel = r->r;
 		{
-			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 			sql_exp *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(v->sql->sa, e, ++v->sql->label);
@@ -2792,7 +2794,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 		cp = rel_crossproduct(v->sql->sa, gbl, gbr, op_join);
 		set_processed(cp);
 
-		if (!(nce = rel_binop_(v->sql, NULL, cnt1, cnt2, "sys", "sql_mul", card_value))) {
+		if (!(nce = rel_binop_(v->sql, NULL, cnt1, cnt2, "sys", "sql_mul", card_value, true))) {
 			v->sql->session->status = 0;
 			v->sql->errstr[0] = '\0';
 			return rel; /* error, fallback to original expression */
@@ -2826,7 +2828,7 @@ rel_basecount(visitor *v, sql_rel *rel)
 			/* I need to get the declared table's frame number to make this work correctly for those */
 			if (!isTable(t) || isDeclaredTable(t))
 				return rel;
-			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "cnt", sql_bind_localtype("str"), sql_bind_localtype("str"), F_FUNC, true);
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "cnt", sql_bind_localtype("str"), sql_bind_localtype("str"), F_FUNC, true, true);
 			list *exps = sa_list(v->sql->sa);
 			append(exps, exp_atom_str(v->sql->sa, t->s->base.name, sql_bind_localtype("str")));
 			append(exps, exp_atom_str(v->sql->sa, t->base.name, sql_bind_localtype("str")));
@@ -2857,7 +2859,7 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 				if (list_length(e->l) == 0) {
 					ncountstar++;
 				} else if (list_length(e->l) == 1 && !has_nil((sql_exp*)((list*)e->l)->h->data)) {
-					sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+					sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 					sql_exp *ne = exp_aggr(sql->sa, NULL, cf, 0, 0, e->card, 0);
 					if (exp_name(e))
 						exp_prop_alias(sql->sa, ne, e);
@@ -2933,7 +2935,7 @@ rel_groupjoin(visitor *v, sql_rel *rel)
 		}
 	}
 	if (nr == list_length(gbes)) {
-		printf("#group by converted\n");
+		// printf("#group by converted\n");
 		j = rel_dup(j);
 		j->attr = rel->exps;
 		v->changes++;

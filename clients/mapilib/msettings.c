@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -557,10 +559,10 @@ validate_certhash(msettings *mp)
 	if (*certhash == '\0')
 		return NULL;
 
-	if (strncmp(certhash, "{sha256}", 8) == 0) {
-		certhash += 8;
+	if (strncmp(certhash, "sha256:", 7) == 0) {
+		certhash += 7;
 	} else {
-		return "expected certhash to start with '{sha256}'";
+		return "expected certhash to start with 'sha256:'";
 	}
 
 	size_t i = 0;
@@ -631,7 +633,7 @@ msettings_validate(msettings *mp, char **errmsg)
 		return false;
 	}
 
-	// 5. If **certhash** is not empty, it must be of the form `{sha256}hexdigits`
+	// 5. If **certhash** is not empty, it must be of the form `sha256:hexdigits`
 	//    where hexdigits is a non-empty sequence of 0-9, a-f, A-F and colons.
 	const char *certhash_msg = validate_certhash(mp);
 	if (certhash_msg) {

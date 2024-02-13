@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -642,7 +644,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		sql_column *col = NULL;
 
 		if (!strcmp(atomname, "str"))
-			sql_find_subtype(&tpe, "clob", 0, 0);
+			sql_find_subtype(&tpe, "varchar", 0, 0);
 		else {
 			sql_subtype *t = sql_bind_localtype(atomname);
 			if (!t)
@@ -2484,10 +2486,13 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&iterdig);
 	bat_iterator_end(&iterscl);
 	/* now send it to the channel cntxt->fdout */
-	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, cntxt->qryctx.starttime, mb->optimize)) < 0)
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
+	if (bstream_getoob(cntxt->fdin))
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY000) "Query aboted");
+	else if (!msg && (ok = mvc_export_result(be, cntxt->fdout, res, true, cntxt->qryctx.starttime, mb->optimize)) < 0)
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, cntxt->fdout, ok));
   wrapup_result_set:
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2623,7 +2628,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
 		if (!onclient && !tostdout)
 			close_stream(s);
-		goto wrapup_result_set1;
+		if (ok != -5)
+			goto wrapup_result_set1;
 	}
 	if (onclient) {
 		mnstr_flush(s, MNSTR_FLUSH_DATA);
@@ -2637,6 +2643,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
   wrapup_result_set1:
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2719,6 +2726,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
   wrapup_result_set:
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2869,6 +2877,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
   wrapup_result_set:
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2928,6 +2937,7 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = cntxt->sqlcontext;
 	ok = mvc_export_affrows(b, b->out, nr, "", mb->tag, cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.affectedRows", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, b->out, ok));
@@ -2949,6 +2959,7 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = cntxt->sqlcontext;
 	ok = mvc_export_head(b, *s, res_id, FALSE, TRUE, cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportHead", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, *s, ok));
@@ -2971,6 +2982,7 @@ mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sout = pci->argc > 5 ? cntxt->fdout : *s;
 	ok = mvc_export_result(b, sout, res_id, false, cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportResult", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, sout, ok));
@@ -3019,6 +3031,7 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (b->out)
 		ok = mvc_export_operation(b, b->out, "", cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportOperation", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, b->out, ok));
@@ -3048,21 +3061,25 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// scalar values are single-column result sets
 	if ((res_id = mvc_result_table(be, mb->tag, 1, Q_TABLE)) < 0) {
 		cntxt->qryctx.starttime = 0;
+		cntxt->qryctx.endtime = 0;
 		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((ok = mvc_result_value(be, tn, cn, type, digits, scale, p, mtype)) < 0) {
 		cntxt->qryctx.starttime = 0;
+		cntxt->qryctx.endtime = 0;
 		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
 	}
 	if (be->output_format == OFMT_NONE) {
 		cntxt->qryctx.starttime = 0;
+		cntxt->qryctx.endtime = 0;
 		mb->optimize = 0;
 		return MAL_SUCCEED;
 	}
 	ok = mvc_export_result(be, be->out, res_id, true, cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
@@ -4420,7 +4437,7 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sizes[i] = d_bi.count;
 			i++;
 
-			if (TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED) {
+			if (TMsubcommit_list(commit_list, sizes, i, -1) != GDK_SUCCEED) {
 				MT_lock_unset(&lock_persist_unlogged);
 				GDKfree(commit_list);
 				GDKfree(sizes);
@@ -5449,17 +5466,17 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  pattern("calc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",void),arg("digits",int))),
  pattern("batcalc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",oid),arg("digits",int))),
  pattern("calc", "timestamp", str_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",str),arg("digits",int))),
- pattern("calc", "timestamp", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("has_tz",int))),
+ pattern("calc", "timestamptz", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("tz_msec",lng))),
  pattern("calc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",timestamp),arg("digits",int))),
  command("batcalc", "timestamp", batstr_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",str),batarg("s",oid),arg("digits",int))),
- command("batcalc", "timestamp", batstr_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,5, batarg("",timestamp),batarg("v",str),batarg("s",oid),arg("digits",int),arg("has_tz",int))),
+ command("batcalc", "timestamptz", batstr_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,5, batarg("",timestamp),batarg("v",str),batarg("s",oid),arg("digits",int),arg("tz_msec",lng))),
  pattern("batcalc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",timestamp),batarg("s",oid),arg("digits",int))),
  pattern("batcalc", "daytime", nil_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",oid),arg("digits",int))),
  pattern("calc", "daytime", str_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",str),arg("digits",int))),
- pattern("calc", "daytime", str_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, arg("",daytime),arg("v",str),arg("digits",int),arg("has_tz",int))),
+ pattern("calc", "daytimetz", str_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, arg("",daytime),arg("v",str),arg("digits",int),arg("tz_msec",lng))),
  pattern("calc", "daytime", daytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",daytime),arg("digits",int))),
  command("batcalc", "daytime", batstr_2time_daytime, false, "cast to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",str),batarg("s",oid),arg("digits",int))),
- pattern("batcalc", "daytime", str_2time_daytimetz, false, "cast daytime to daytime and check for overflow", args(1,5, batarg("",daytime),batarg("v",str),batarg("s",oid),arg("digits",int),arg("has_tz",int))),
+ pattern("batcalc", "daytimetz", str_2time_daytimetz, false, "cast daytime to daytime and check for overflow", args(1,5, batarg("",daytime),batarg("v",str),batarg("s",oid),arg("digits",int),arg("tz_msec",lng))),
  pattern("batcalc", "daytime", daytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",daytime),batarg("s",oid),arg("digits",int))),
  command("sql", "date_trunc", bat_date_trunc, false, "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)", args(1,3, batarg("",timestamp),arg("scale",str),batarg("v",timestamp))),
  command("sql", "date_trunc", date_trunc, false, "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)", args(1,3, arg("",timestamp),arg("scale",str),arg("v",timestamp))),

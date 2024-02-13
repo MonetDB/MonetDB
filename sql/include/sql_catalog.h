@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef SQL_CATALOG_H
@@ -80,11 +82,11 @@ typedef enum sql_dependency {
 #define SCALE_NONE	0
 #define SCALE_FIX	1	/* many numerical functions require equal
 						   scales/precision for all their inputs */
-#define SCALE_NOFIX	2
+#define MAX_BITS	2
 #define SCALE_MUL	3	/* multiplication gives the sum of scales */
 #define SCALE_DIV	4	/* div on the other hand reduces the scales */
 #define DIGITS_ADD	5	/* some types grow under functions (concat) */
-#define INOUT		6	/* output type equals input type */
+#define INOUT		6	/* output type equals input type (of first input) */
 #define SCALE_EQ	7	/* user defined functions need equal scales */
 
 #define RDONLY 0
@@ -368,13 +370,11 @@ typedef enum sql_class {
 #define EC_EXACTNUM(e)		((e)==EC_NUM||(e)==EC_DEC)
 #define EC_APPNUM(e)		((e)==EC_FLT)
 #define EC_COMPUTE(e)		((e)==EC_NUM||(e)==EC_FLT)
-#define EC_BOOLEAN(e)		((e)==EC_BIT||(e)==EC_NUM||(e)==EC_FLT)
 #define EC_TEMP_TZ(e)		((e)==EC_TIME_TZ||(e)==EC_TIMESTAMP_TZ)
 #define EC_TEMP(e)			((e)==EC_TIME||(e)==EC_DATE||(e)==EC_TIMESTAMP||EC_TEMP_TZ(e))
 #define EC_TEMP_FRAC(e)		((e)==EC_TIME||(e)==EC_TIMESTAMP||EC_TEMP_TZ(e))
 #define EC_TEMP_NOFRAC(e)	((e)==EC_TIME||(e)==EC_TIMESTAMP)
 #define EC_SCALE(e)			((e)==EC_DEC||EC_TEMP_FRAC(e)||(e)==EC_SEC)
-#define EC_BACKEND_FIXED(e)	(EC_NUMBER(e)||(e)==EC_BIT||EC_TEMP(e))
 
 typedef struct sql_type {
 	sql_base base;
@@ -384,7 +384,6 @@ typedef struct sql_type {
 	unsigned int scale;	/* indicates how scale is used in functions */
 	int localtype;		/* localtype, need for coersions */
 	unsigned char radix;
-	unsigned int bits;
 	sql_class eclass; 	/* types are grouped into equivalence classes */
 	sql_schema *s;
 } sql_type;
@@ -509,7 +508,7 @@ typedef struct sql_func {
 	private:1;	/* certain functions cannot be bound from user queries */
 	int fix_scale;
 			/*
-	   		   SCALE_NOFIX/SCALE_NONE => nothing
+	   		   SCALE_NONE => nothing
 	   		   SCALE_FIX => input scale fixing,
 	   		   SCALE_ADD => leave inputs as is and do add scales
 	   		   example numerical multiplication

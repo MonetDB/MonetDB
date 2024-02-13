@@ -1,24 +1,24 @@
 statement ok
-CREATE TABLE test456 (col1 INT) 
+CREATE TABLE test456 (col1 INT)
 
 statement ok
-INSERT INTO test456 VALUES (20080101) 
+INSERT INTO test456 VALUES (20080101)
 
 statement ok
-INSERT INTO test456 VALUES (20080227) 
+INSERT INTO test456 VALUES (20080227)
 
 statement ok
-INSERT INTO test456 VALUES (20080215) 
+INSERT INTO test456 VALUES (20080215)
 
 statement ok
-INSERT INTO test456 VALUES (NULL) 
+INSERT INTO test456 VALUES (NULL)
 
 statement ok
-INSERT INTO test456 VALUES (NULL) 
+INSERT INTO test456 VALUES (NULL)
 
 query ITTT rowsort
 SELECT col1, SUBSTRING(col1,1,4), SUBSTRING(col1 ,5,2), SUBSTRING(col1 ,7,2)
-FROM   test456  
+FROM   test456
 ----
 20080101
 2008
@@ -47,7 +47,7 @@ SELECT CASE
            THEN CAST(SUBSTRING(col1 ,1,4)||'-'||SUBSTRING(col1
 ,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
        END
-FROM   test456 
+FROM   test456
 ----
 2008-01-01
 2008-02-15
@@ -59,12 +59,12 @@ query T rowsort
 SELECT CAST(SUBSTRING(col1 ,1,4)||'-'||SUBSTRING(col1
 ,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
 FROM   test456
-WHERE  col1 IS NOT NULL 
+WHERE  col1 IS NOT NULL
 ----
 2008-01-01
 2008-02-15
 2008-02-27
 
 statement ok
-DROP TABLE test456 
+DROP TABLE test456
 

@@ -20,5 +20,3 @@ webExamplesStringFunctions
 webExamplesUrlFunctions
 
 utilities
-
-HAVE_JDBCCLIENT_JAR?ValidateSystemCatalogTables

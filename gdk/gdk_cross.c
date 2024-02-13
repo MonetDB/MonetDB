@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -24,11 +26,8 @@ BATcrossci(BAT **r1p, BAT **r2p, struct canditer *ci1, struct canditer *ci2)
 	oid *restrict p;
 	BUN i, j;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* first some special cases */
 	if (ci1->ncand == 0 || ci2->ncand == 0) {
@@ -95,7 +94,7 @@ BATcrossci(BAT **r1p, BAT **r2p, struct canditer *ci1, struct canditer *ci2)
 		bn1->tnonil = true;
 		p = (oid *) Tloc(bn1, 0);
 		for (i = 0; i < ci1->ncand; i++) {
-			GDK_CHECK_TIMEOUT_BODY(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			oid x = canditer_next(ci1);
 			for (j = 0; j < ci2->ncand; j++) {
 				*p++ = x;
@@ -112,7 +111,7 @@ BATcrossci(BAT **r1p, BAT **r2p, struct canditer *ci1, struct canditer *ci2)
 			bn2->tnonil = true;
 			p = (oid *) Tloc(bn2, 0);
 			for (i = 0; i < ci1->ncand; i++) {
-				GDK_CHECK_TIMEOUT_BODY(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 				for (j = 0; j < ci2->ncand; j++) {
 					*p++ = canditer_next(ci2);
 				}

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -137,25 +139,29 @@ parse_interval_(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int
 	switch (sk) {
 	case imonth:
 		if (val >= 12) {
-			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in months (" LLFMT ")\n"), val);
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow detected in months (" LLFMT ")\n"), val);
 			return -1;
 		}
 		break;
 	case ihour:
 		if (val >= 24) {
-			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in hours (" LLFMT ")\n"), val);
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow detected in hours (" LLFMT ")\n"), val);
 			return -1;
 		}
 		break;
 	case imin:
 		if (val >= 60) {
-			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in minutes (" LLFMT ")\n"), val);
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow detected in minutes (" LLFMT ")\n"), val);
 			return -1;
 		}
 		break;
 	case isec:
 		if (val >= 60000) {
-			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in seconds (" LLFMT ")\n"), val);
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow detected in seconds (" LLFMT ")\n"), val);
 			return -1;
 		}
 		break;

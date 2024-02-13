@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -63,28 +65,6 @@ hashmask(BUN m)
 #if SIZEOF_BUN == 8
 	m |= m >> 32;
 #endif
-	return m;
-}
-
-BUN
-HASHmask(BUN cnt)
-{
-	BUN m = cnt;
-
-#if 0
-	/* find largest power of 2 smaller than or equal to cnt */
-	m = hashmask(m);
-	m -= m >> 1;
-
-	/* if cnt is more than 1/3 into the gap between m and 2*m,
-	   double m */
-	if (m + m - cnt < 2 * (cnt - m))
-		m += m;
-#else
-	m = m * 8 / 7;
-#endif
-	if (m < BATTINY)
-		m = BATTINY;
 	return m;
 }
 
@@ -678,7 +658,7 @@ BAThashsave(BAT *b, bool dosync)
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		TIMEOUT_LOOP(p, timeoffset) {				\
+		TIMEOUT_LOOP(p, qry_ctx) {				\
 			hget = HASHget(h, c);				\
 			if (hget == BUN_NONE) {				\
 				if (h->nheads == maxslots)		\
@@ -698,13 +678,13 @@ BAThashsave(BAT *b, bool dosync)
 			HASHput(h, c, p);				\
 			o = canditer_next(ci);				\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		TIMEOUT_LOOP(ci->ncand - p, timeoffset) {		\
+		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {			\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			h->nheads += hget == BUN_NONE;			\
@@ -724,8 +704,8 @@ BAThashsave(BAT *b, bool dosync)
 			HASHput(h, c, p);				\
 			p++;						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 /* Internal function to create a hash table for the given BAT b.
@@ -748,11 +728,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	unsigned int tpe = ATOMbasetype(bi.type);
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 	assert(bi.type != TYPE_msk);
@@ -882,7 +859,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			starthash(uuid);
 			break;
 		default:
-			TIMEOUT_LOOP(p, timeoffset) {
+			TIMEOUT_LOOP(p, qry_ctx) {
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = hash_any(h, v);
 				hget = HASHget(h, c);
@@ -906,8 +883,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 				HASHput(h, c, p);
 				o = canditer_next(ci);
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			break;
 		}
 		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
@@ -958,7 +935,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		finishhash(uuid);
 		break;
 	default:
-		TIMEOUT_LOOP(ci->ncand - p, timeoffset) {
+		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
@@ -977,8 +954,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			o = canditer_next(ci);
 			p++;
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		break;
 	}
 	bat_iterator_end(&bi);

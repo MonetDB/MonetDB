@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* The Mapi Client Interface
@@ -124,9 +126,9 @@ static timertype t0, t1;	/* used for timing */
 #ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
 #endif
-#ifdef HAVE_SIGACTION
-#include <signal.h>		/* to block SIGPIPE */
-#endif
+
+#include <signal.h>
+
 static int rowsperpage = -1;	/* for SQL pagination */
 static int pagewidth = 0;	/* -1: take whatever is necessary, >0: limit */
 static int pageheight = 0;	/* -1: take whatever is necessary, >0: limit */
@@ -1400,16 +1402,40 @@ SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 	mnstr_printf(toConsole, "next page? (continue,quit,next)");
 	mnstr_flush(toConsole, MNSTR_FLUSH_DATA);
 	sz = mnstr_readline(fromConsole, buf, sizeof(buf));
-	if (sz > 0) {
+	if (sz < 0 && mnstr_errnr(fromConsole) == MNSTR_INTERRUPT) {
+		/* interrupted, equivalent to typing 'q' */
+		mnstr_clearerr(fromConsole);
+		mnstr_printf(toConsole, "\n");
+		*skiprest = true;
+	} else if (sz > 0) {
 		if (buf[0] == 'c')
 			*ps = 0;
 		if (buf[0] == 'q')
 			*skiprest = true;
+		/* make sure we read the whole line */
 		while (sz > 0 && buf[sz - 1] != '\n')
 			sz = mnstr_readline(fromConsole, buf, sizeof(buf));
 	}
 	if (!*skiprest)
 		SQLseparator(len, fields, '-');
+}
+
+static volatile sig_atomic_t state;
+#define READING		1
+#define WRITING		2
+#define QUERYING	3
+#define IDLING		0
+#define INTERRUPT	(-1)
+
+static void
+sigint_handler(int signum)
+{
+	(void) signum;
+
+	state = INTERRUPT;
+#ifdef HAVE_LIBREADLINE
+	readline_int_handler();
+#endif
 }
 
 static void
@@ -1445,6 +1471,15 @@ SQLrenderer(MapiHdl hdl)
 		fprintf(stderr,"Malloc for SQLrenderer failed");
 		exit(2);
 	}
+
+	if (state == INTERRUPT) {
+		free(len);
+		free(hdr);
+		free(rest);
+		free(numeric);
+		return;
+	}
+	state = WRITING;
 
 	total = 0;
 	lentotal = 0;
@@ -1626,16 +1661,23 @@ SQLrenderer(MapiHdl hdl)
 
 		if (ps > 0 && lines >= ps && fromConsole != NULL) {
 			SQLpagemove(len, printfields, &ps, &skiprest);
-			lines = 0;
 			if (skiprest) {
 				mapi_finish(hdl);
 				break;
 			}
+			lines = 0;
+		}
+
+		if (state == INTERRUPT) {
+			skiprest = true;
+			mapi_finish(hdl);
+			break;
 		}
 
 		nrows++;
 		lines += SQLrow(len, numeric, rest, printfields, 2, 0);
 	}
+	state = IDLING;
 	if (fields && !skiprest)
 		SQLseparator(len, printfields, '-');
 	if (skiprest)
@@ -1940,6 +1982,8 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			SQLdebugRendering(hdl);
 			continue;
 		}
+		if (state == INTERRUPT)
+			break;
 		if (debugMode())
 			RAWrenderer(hdl);
 		else {
@@ -1984,7 +2028,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 		}
-	} while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (rc = mapi_next_result(hdl)) == 1);
+	} while (state != INTERRUPT && mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (rc = mapi_next_result(hdl)) == 1);
 	/*
 	 * in case we called timerHuman() in the loop above with "total == false",
 	 * call it again with "total == true" to get the total wall-clock time
@@ -2000,6 +2044,10 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 #ifdef HAVE_POPEN
 	end_pager(saveFD);
 #endif
+
+	if (state == INTERRUPT)
+		mnstr_printf(toConsole, "\n");
+	state = IDLING;
 
 	return rc;
 }
@@ -2090,26 +2138,29 @@ doFileBulk(Mapi mid, stream *fp)
 			length = 0;
 			buf[0] = 0;
 		} else {
-			if ((length = mnstr_read(fp, buf, 1, bufsize)) < 0) {
+			while ((length = mnstr_read(fp, buf, 1, bufsize)) < 0) {
+				if (mnstr_errnr(fp) == MNSTR_INTERRUPT)
+					continue;
 				/* error */
 				errseen = true;
-				break;	/* nothing more to do */
+				break;
+			}
+			if (length < 0)
+				break;			/* nothing more to do */
+			buf[length] = 0;
+			if (length == 0) {
+				/* end of file */
+				if (semicolon2 == 0 && hdl == NULL)
+					break;	/* nothing more to do */
 			} else {
-				buf[length] = 0;
-				if (length == 0) {
-					/* end of file */
-					if (semicolon2 == 0 && hdl == NULL)
-						break;	/* nothing more to do */
-				} else {
-					if (strlen(buf) < (size_t) length) {
-						mnstr_printf(stderr_stream, "NULL byte in input\n");
-						errseen = true;
-						break;
-					}
-					while (length > 1 && buf[length - 1] == ';') {
-						semicolon1++;
-						buf[--length] = 0;
-					}
+				if (strlen(buf) < (size_t) length) {
+					mnstr_printf(stderr_stream, "NULL byte in input\n");
+					errseen = true;
+					break;
+				}
+				while (length > 1 && buf[length - 1] == ';') {
+					semicolon1++;
+					buf[--length] = 0;
 				}
 			}
 		}
@@ -2238,11 +2289,16 @@ myread(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 	if (p->buf == NULL) {
 		rl_completion_func_t *func = NULL;
 
-		if (strcmp(p->prompt, "more>") == 0)
+		if (strcmp(p->prompt, "more>") == 0) {
 			func = suspend_completion();
-		p->buf = readline(p->prompt);
+		}
+		p->buf = call_readline(p->prompt);
 		if (func)
 			continue_completion(func);
+		if (p->buf == (char *) -1) {
+			p->buf = NULL;
+			return -1;
+		}
 		if (p->buf == NULL)
 			return 0;
 		p->len = strlen(p->buf);
@@ -2335,7 +2391,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 	}
 
 	do {
-		bool seen_null_byte = false;
+		bool seen_null_byte;
+	  repeat:
+		seen_null_byte = false;
 
 		if (prompt) {
 			char *p = hdl ? "more>" : prompt;
@@ -2354,7 +2412,27 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 		for (;;) {
 			ssize_t l;
 			char *newbuf;
+			state = READING;
 			l = mnstr_readline(fp, buf + length, bufsiz - length);
+			if (l == -1 && state == INTERRUPT) {
+				/* we were interrupted */
+				mnstr_clearerr(fp);
+				mnstr_write(toConsole, "\n", 1, 1);
+				if (hdl) {
+					/* on interrupt when continuing a query, force an error */
+					l = 0;
+					if (mapi_query_abort(hdl, 1) != MOK) {
+						/* if abort failed, insert something not allowed */
+						buf[l++] = '\200';
+					}
+					buf[l++] = '\n';
+					length = 0;
+				} else {
+					/* not continuing; just repeat */
+					goto repeat;
+				}
+			}
+			state = IDLING;
 			if (l <= 0)
 				break;
 			if (!seen_null_byte && strlen(buf + length) < (size_t) l) {
@@ -2401,8 +2479,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 			if (mode != MAL)
 				while (length > 0 &&
 				       (*line == '\f' ||
-					*line == '\n' ||
-					*line == ' ')) {
+						*line == '\n' ||
+						*line == ' ')) {
 					line++;
 					length--;
 				}
@@ -2562,8 +2640,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 
 						start_pager(&saveFD);
 #endif
-						if (x & MD_TABLE || x & MD_VIEW)
-							dump_table(mid, NULL, line, toConsole, true, true, false, false, false);
+						if (x & (MD_TABLE | MD_VIEW))
+							dump_table(mid, NULL, line, toConsole, NULL, NULL, true, true, false, false, false, false);
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
@@ -2721,10 +2799,10 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 #endif
 					if (*line) {
 						mnstr_printf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, NULL, line, toConsole, false, true, useinserts, false, false);
+						dump_table(mid, NULL, line, toConsole, NULL, NULL, false, true, useinserts, false, false, false);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
-						dump_database(mid, toConsole, false, useinserts, false);
+						dump_database(mid, toConsole, NULL, NULL, false, useinserts, false);
 #ifdef HAVE_POPEN
 					end_pager(saveFD);
 #endif
@@ -2985,6 +3063,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 struct privdata {
 	stream *f;
 	char *buf;
+	Mapi mid;
 };
 
 #define READSIZE	(1 << 16)
@@ -3060,6 +3139,10 @@ getfile(void *data, const char *filename, bool binary,
 				return (char*) mnstr_peek_error(NULL);
 		}
 		while (offset > 1) {
+			if (state == INTERRUPT) {
+				close_stream(f);
+				return "interrupted";
+			}
 			s = mnstr_readline(f, buf, READSIZE);
 			if (s < 0) {
 				close_stream(f);
@@ -3083,11 +3166,21 @@ getfile(void *data, const char *filename, bool binary,
 			return NULL;
 		}
 	}
+	if (state == INTERRUPT) {
+		close_stream(f);
+		priv->f = NULL;
+		(void) mapi_query_abort(mapi_get_active(priv->mid), 1);
+		return "interrupted";
+	}
 	s = mnstr_read(f, buf, 1, READSIZE);
 	if (s <= 0) {
 		close_stream(f);
 		priv->f = NULL;
-		return s < 0 ? "error reading file" : NULL;
+		if (s < 0) {
+			(void) mapi_query_abort(mapi_get_active(priv->mid), state == INTERRUPT ? 1 : 2);
+			return "error reading file";
+		}
+		return NULL;
 	}
 	if (size)
 		*size = (size_t) s;
@@ -3114,6 +3207,8 @@ putfile(void *data, const char *filename, bool binary, const void *buf, size_t b
 			}
 		}
 #endif
+		if (state == INTERRUPT)
+			goto interrupted;
 		if (buf == NULL || bufsize == 0)
 			return NULL; /* successfully opened file */
 	} else if (buf == NULL) {
@@ -3122,6 +3217,20 @@ putfile(void *data, const char *filename, bool binary, const void *buf, size_t b
 		close_stream(priv->f);
 		priv->f = NULL;
 		return flush < 0 ? "error writing output" : NULL;
+	}
+	if (state == INTERRUPT) {
+		char *fname;
+	  interrupted:
+		fname = strdup(mnstr_name(priv->f));
+		close_stream(priv->f);
+		priv->f = NULL;
+		if (fname) {
+			MT_remove(fname);
+			free(fname);
+		}
+		if (filename == NULL)
+			(void) mapi_query_abort(mapi_get_active(priv->mid), 1);
+		return "query aborted";
 	}
 	if (mnstr_write(priv->f, buf, 1, bufsize) < (ssize_t) bufsize) {
 		close_stream(priv->f);
@@ -3188,6 +3297,24 @@ isfile(FILE *fp)
 		return false;
 	}
 	return true;
+}
+
+static void
+catch_interrupts(void)
+{
+#ifdef HAVE_SIGACTION
+	struct sigaction sa;
+	(void) sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = sigint_handler;
+	if (sigaction(SIGINT, &sa, NULL) == -1) {
+		perror("Could not install signal handler");
+	}
+#else
+	if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+		perror("Could not install signal handler");
+	}
+#endif
 }
 
 int
@@ -3275,17 +3402,11 @@ main(int argc, char **argv)
 		fprintf(stderr, "error: could not set locale\n");
 		exit(2);
 	}
-#endif
-#ifdef HAVE_SIGACTION
-	struct sigaction act;
-	/* ignore SIGPIPE so that we get an error instead of signal */
-	act.sa_handler = SIG_IGN;
-	(void) sigemptyset(&act.sa_mask);
-	act.sa_flags = 0;
-	if (sigaction(SIGPIPE, &act, NULL) == -1)
+
+	/* Windows does't know about SIGPIPE */
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		perror("sigaction");
 #endif
-
 	if (mnstr_init() < 0) {
 		fprintf(stderr, "error: could not initialize streams library");
 		exit(2);
@@ -3612,7 +3733,7 @@ main(int argc, char **argv)
 	}
 	if (dump) {
 		if (mode == SQL) {
-			exit(dump_database(mid, toConsole, false, useinserts, false));
+			exit(dump_database(mid, toConsole, NULL, NULL, false, useinserts, false));
 		} else {
 			mnstr_printf(stderr_stream, "Dump only supported for SQL\n");
 			exit(1);
@@ -3620,13 +3741,15 @@ main(int argc, char **argv)
 	}
 
 	struct privdata priv;
-	priv = (struct privdata) {0};
+	priv = (struct privdata) {.mid = mid};
 	mapi_setfilecallback2(mid, getfile, putfile, &priv);
 
 	mapi_trace(mid, trace);
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
+
+		catch_interrupts();
 
 		if (mode == SQL) {
 			lang = "/SQL";
@@ -3648,8 +3771,7 @@ main(int argc, char **argv)
 		if (mode == SQL)
 			dump_version(mid, toConsole, "Database:");
 
-		mnstr_printf(toConsole, "FOLLOW US on https://twitter.com/MonetDB "
-					"or https://github.com/MonetDB/MonetDB\n"
+		mnstr_printf(toConsole, "FOLLOW US on https://github.com/MonetDB/MonetDB\n"
 					"Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)
 			mnstr_printf(toConsole, "auto commit mode: %s\n",
@@ -3727,6 +3849,7 @@ main(int argc, char **argv)
 
 			if (s == NULL) {
 				if (strcmp(arg, "-") == 0) {
+					catch_interrupts();
 					s = stdin_rastream();
 				} else {
 					s = open_rastream(arg);

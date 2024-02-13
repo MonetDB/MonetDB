@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -74,7 +76,7 @@ dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost,
 	int above;					/* contents of cell immediately above */
 	int left;					/* contents of cell immediately to left */
 	int diag;					/* contents of cell immediately above and to left */
-	int sz;						/* number of cells in matrix */
+	lng sz;					/* number of cells in matrix */
 	int diag2 = 0, cost2 = 0;
 
 	if (strNil(*S) || strNil(*T)) {
@@ -93,10 +95,12 @@ dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost,
 		*res = n;
 		return MAL_SUCCEED;
 	}
-	sz = (n + 1) * (m + 1) * sizeof(int);
-	d = (int *) GDKmalloc(sz);
+	sz = (((lng)n) + 1) * (((lng)m) + 1) * sizeof(int);
+	if (sz > (LL_CONSTANT(1)<<28))
+		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	d = (int *) GDKmalloc((size_t)sz);
 	if (d == NULL)
-		throw(MAL, "levenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* Step 2 */
 	for (i = 0; i <= n; i++) {
@@ -448,10 +452,21 @@ typedef struct {
 static inline int
 popcount64(uint64_t x)
 {
+#if defined(__GNUC__)
+	return (int) __builtin_popcountll(x);
+#elif defined(_MSC_VER)
+#if SIZEOF_OID == 4
+	/* no __popcnt64 on 32 bit Windows */
+	return (int) (__popcnt((uint32_t) x) + __popcnt((uint32_t) (x >> 32)));
+#else
+	return (int) __popcnt64(x);
+#endif
+#else
 	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
 	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
 	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
-	return (x * 0x0101010101010101ULL) >> 56;
+	return (int) ((x * 0x0101010101010101ULL) >> 56);
+#endif
 }
 
 static int
@@ -614,14 +629,14 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 #define VALUE(s, x) (s##vars + VarHeapVal(s##vals, (x), s##width))
 #define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
 
-#define PREP_BAT_STRITEM(B, CI, SI)									\
+#define PREP_BAT_STRITEM(B, CI, SI)										\
 		do {															\
 			for (n = 0; n < CI.ncand; n++) {							\
 				SI[n].matches = 0;										\
 				SI[n].o = canditer_next(&CI);							\
 				SI[n].val = (str) VALUE(B, SI[n].o - B->hseqbase);		\
 				SI[n].cp_sequence = NULL;								\
-				SI[n].len = UTF8_strlen(SI[n].val);					\
+				SI[n].len = UTF8_strlen(SI[n].val);						\
 				SI[n].cp_seq_len = str_strlen(SI[n].val);				\
 				if ((msg = str_2_codepointseq(&SI[n])) != MAL_SUCCEED)	\
 					goto exit;											\
@@ -630,30 +645,30 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 		} while (false)
 
 #define FINALIZE_BATS(L, R, LCI, RCI, LSI, RSI)	\
-		do {										\
+		do {									\
 			assert(BATcount(L) == BATcount(R));	\
-			BATsetcount(L, BATcount(L));			\
-			BATsetcount(R, BATcount(R));			\
-			for (n = 0; n < LCI.ncand; n++) {		\
-				if (LSI[n].matches > 1) {			\
-					L->tkey = false;				\
-					break;							\
-				}									\
-			}										\
-			if (n == LCI.ncand) {					\
+			BATsetcount(L, BATcount(L));		\
+			BATsetcount(R, BATcount(R));		\
+			for (n = 0; n < LCI.ncand; n++) {	\
+				if (LSI[n].matches > 1) {		\
+					L->tkey = false;			\
+					break;						\
+				}								\
+			}									\
+			if (n == LCI.ncand) {				\
 				L->tkey = true;					\
-			}										\
-			for (n = 0; n < RCI.ncand; n++) {		\
-				if (RSI[n].matches > 1) {			\
-					R->tkey = false;				\
-					break;							\
-				}									\
-			}										\
-			if (n == RCI.ncand) {					\
+			}									\
+			for (n = 0; n < RCI.ncand; n++) {	\
+				if (RSI[n].matches > 1) {		\
+					R->tkey = false;			\
+					break;						\
+				}								\
+			}									\
+			if (n == RCI.ncand) {				\
 				R->tkey = true;					\
-			}										\
-			BATordered(L);							\
-			BATordered(R);							\
+			}									\
+			BATordered(L);						\
+			BATordered(R);						\
 			L->theap->dirty |= BATcount(L) > 0;	\
 			R->theap->dirty |= BATcount(R) > 0;	\
 		} while (false)
@@ -887,7 +902,7 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN n;
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars;
-	int lwidth, rwidth, lb, ub, m = -1, *x_flags = NULL, *y_flags = NULL;
+	int lwidth, rwidth, lb = 0, ub = 0, m = -1, *x_flags = NULL, *y_flags = NULL;
 	str_item *ssl = NULL, *ssr = NULL, shortest;
 	str msg = MAL_SUCCEED;
 	const bool sliding_window_allowed = threshold > (2.01 + JARO_WINKLER_PREFIX_LEN * JARO_WINKLER_SCALING_FACTOR) / 3.0;

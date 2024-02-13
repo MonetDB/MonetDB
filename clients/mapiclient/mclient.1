@@ -4,9 +4,11 @@
 .\" License, v. 2.0.  If a copy of the MPL was not distributed with this
 .\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
 .\"
-.\" Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+.\" Copyright 2024 MonetDB Foundation;
+.\" Copyright August 2008 - 2023 MonetDB B.V.;
+.\" Copyright 1997 - July 2008 CWI.
 .\"
-.TH MCLIENT 1 2023-06-22 MonetDB "MonetDB Applications"
+.TH MCLIENT 1 2023-12-21 MonetDB "MonetDB Applications"
 .SH NAME
 mclient \- the MonetDB command-line tool
 .SH SYNOPSIS
@@ -105,6 +107,9 @@ To disable reading the
 file, set the variable
 .B DOTMONETDBFILE
 to the empty string in the environment.
+.PP
+When working interactively, an interrupt (usually control-C) will clear
+any query being edited and will stop any running query.
 .SH OPTIONS
 .SS
 General Options

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _REL_STATISTICS_H_
@@ -24,6 +26,8 @@ struct function_properties {
 
 #define atom_max(X,Y) atom_cmp(X, Y) > 0 ? X : Y
 #define atom_min(X,Y) atom_cmp(X, Y) > 0 ? Y : X
+
+extern void sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e);
 
 static inline atom *
 statistics_atom_max(mvc *sql, atom *v1, atom *v2)
@@ -68,6 +72,9 @@ statistics_atom_min(mvc *sql, atom *v1, atom *v2)
 static inline void
 set_minmax_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 {
+	if (val == NULL)
+		return;
+
 	sql_subtype *tpe = exp_subtype(e);
 	prop *found = find_prop(e->p, kind);
 

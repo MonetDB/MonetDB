@@ -466,7 +466,7 @@ plan select 1 from splitted2 where stamp = 5
 project (
 | select (
 | | table("sys"."third_decade2") [ "third_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) = (int(32) "5") ]
+| ) [ ("splitted2"."stamp" UNIQUE) = (int(31) "5") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -477,18 +477,18 @@ union (
 | | project (
 | | | select (
 | | | | table("sys"."first_decade2") [ "first_decade2"."val" UNIQUE as "splitted2"."val" ]
-| | | ) [ ("splitted2"."val" UNIQUE) = (int(32) "1") ]
+| | | ) [ ("splitted2"."val" UNIQUE) = (int(31) "1") ]
 | | ) [ tinyint(1) "1" ],
 | | project (
 | | | select (
 | | | | table("sys"."second_decade2") [ "second_decade2"."val" UNIQUE as "splitted2"."val" ]
-| | | ) [ ("splitted2"."val" UNIQUE) = (int(32) "1") ]
+| | | ) [ ("splitted2"."val" UNIQUE) = (int(31) "1") ]
 | | ) [ tinyint(1) "1" ]
 | ) [ "%6"."%6" NOT NULL ],
 | project (
 | | select (
 | | | table("sys"."third_decade2") [ "third_decade2"."val" UNIQUE as "splitted2"."val" ]
-| | ) [ ("splitted2"."val" UNIQUE) = (int(32) "1") ]
+| | ) [ ("splitted2"."val" UNIQUE) = (int(31) "1") ]
 | ) [ tinyint(1) "1" ]
 ) [ "%5"."%5" NOT NULL ]
 
@@ -498,7 +498,7 @@ plan select 1 from splitted2 where stamp is null
 project (
 | select (
 | | table("sys"."second_decade2") [ "second_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) * = (int(32) NULL) ]
+| ) [ ("splitted2"."stamp" UNIQUE) * = (int(31) NULL) ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -538,7 +538,7 @@ plan select 1 from splitted2 where stamp in (2,1)
 project (
 | select (
 | | table("sys"."first_decade2") [ "first_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) in (int(32) "2", int(32) "1") ]
+| ) [ ("splitted2"."stamp" UNIQUE) in (int(31) "2", int(31) "1") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -547,7 +547,7 @@ plan select 1 from splitted2 where stamp in (4)
 project (
 | select (
 | | table("sys"."second_decade2") [ "second_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) = (int(32) "4") ]
+| ) [ ("splitted2"."stamp" UNIQUE) = (int(31) "4") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -556,7 +556,7 @@ plan select 1 from splitted2 where stamp in (5,6) and stamp in (6,7)
 project (
 | select (
 | | table("sys"."third_decade2") [ "third_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) in (int(32) "5", int(32) "6"), ("splitted2"."stamp" UNIQUE) in (int(32) "6", int(32) "7") ]
+| ) [ ("splitted2"."stamp" UNIQUE) in (int(31) "5", int(31) "6"), ("splitted2"."stamp" UNIQUE) in (int(31) "6", int(31) "7") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -565,7 +565,7 @@ plan select 1 from splitted2 where stamp in (5,6) and stamp > 100
 project (
 | select (
 | | table("sys"."third_decade2") [ "third_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) > (int(32) "100"), ("splitted2"."stamp" UNIQUE) in (int(32) "5", int(32) "6") ]
+| ) [ ("splitted2"."stamp" UNIQUE) > (int(31) "100"), ("splitted2"."stamp" UNIQUE) in (int(31) "5", int(31) "6") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -611,7 +611,7 @@ plan select 1 from table1 where a = 10
 project (
 | select (
 | | table("sys"."another1") [ "another1"."a" NOT NULL UNIQUE as "table1"."a" ]
-| ) [ ("table1"."a" NOT NULL UNIQUE) = (int(32) "10") ]
+| ) [ ("table1"."a" NOT NULL UNIQUE) = (int(31) "10") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -620,7 +620,7 @@ plan select 1 from table1 where a = 11
 project (
 | select (
 | | table("sys"."another2") [ "another2"."a" NOT NULL UNIQUE as "table1"."a" ]
-| ) [ ("table1"."a" NOT NULL UNIQUE) = (int(32) "11") ]
+| ) [ ("table1"."a" NOT NULL UNIQUE) = (int(31) "11") ]
 ) [ tinyint(1) "1" ]
 
 statement ok rowcount 2
@@ -642,12 +642,12 @@ union (
 | project (
 | | select (
 | | | table("sys"."another1") [ "another1"."a" NOT NULL as "table1"."a" ]
-| | ) [ ("table1"."a" NOT NULL) in (int(32) "10", int(32) "11") ]
+| | ) [ ("table1"."a" NOT NULL) in (int(31) "10", int(31) "11") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
 | | | table("sys"."another2") [ "another2"."a" NOT NULL as "table1"."a" ]
-| | ) [ ("table1"."a" NOT NULL) in (int(32) "10", int(32) "11") ]
+| | ) [ ("table1"."a" NOT NULL) in (int(31) "10", int(31) "11") ]
 | ) [ tinyint(1) "1" ]
 ) [ "%5"."%5" NOT NULL ]
 
@@ -668,7 +668,7 @@ plan select 1 from table1 where a > 11
 ----
 project (
 | select (
-| |  [ int(32) NULL as "table1"."a" ]
+| |  [ int(4) NULL as "table1"."a" ]
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
@@ -693,12 +693,12 @@ union (
 | project (
 | | select (
 | | | table("sys"."another1") [ "another1"."a" NOT NULL as "table1"."a", "another1"."b" NOT NULL UNIQUE as "table1"."b" ]
-| | ) [ (("table1"."a" NOT NULL) = (int(32) "10")) or (("table1"."b" NOT NULL UNIQUE) = (int(32) "11")) ]
+| | ) [ (("table1"."a" NOT NULL) = (int(31) "10")) or (("table1"."b" NOT NULL UNIQUE) = (int(31) "11")) ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
 | | | table("sys"."another2") [ "another2"."a" NOT NULL as "table1"."a", "another2"."b" NOT NULL UNIQUE as "table1"."b" ]
-| | ) [ (("table1"."a" NOT NULL) = (int(32) "10")) or (("table1"."b" NOT NULL UNIQUE) = (int(32) "11")) ]
+| | ) [ (("table1"."a" NOT NULL) = (int(31) "10")) or (("table1"."b" NOT NULL UNIQUE) = (int(31) "11")) ]
 | ) [ tinyint(1) "1" ]
 ) [ "%5"."%5" NOT NULL ]
 

@@ -6,7 +6,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
@@ -555,7 +557,7 @@ class MapiHandler(socketserver.BaseRequestHandler):
                     cert = self.tlstester.certs.get_file(f"{self.redirect}.der")
                     algo = 'sha256'
                     digest = hashlib.new(algo, cert).hexdigest()
-                    fingerprint = "{" + algo + "}" + digest
+                    fingerprint = algo + ":" + digest
                     msg = f"^monetdbs://{host}:{port}?certhash={fingerprint}\n"
                     self.send_message(bytes(msg, 'ascii'))
                     log.debug(

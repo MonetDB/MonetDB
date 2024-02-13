@@ -7,7 +7,7 @@ SELECT
 FROM geometries_rtree
 WHERE
     [ST_POINT(10,10)]
-    ST_INTERSECTS 
+    ST_INTERSECTS
     [geom]
 ----
 POLYGON ((10 10, 20 10, 10 20, 10 10))
@@ -19,7 +19,7 @@ SELECT
 FROM geometries_rtree
 WHERE
     [ST_POINT(15,10)]
-    ST_INTERSECTS 
+    ST_INTERSECTS
     [geom]
 ----
 POLYGON ((10 10, 20 10, 10 20, 10 10))
@@ -31,7 +31,7 @@ SELECT
 FROM geometries_rtree
 WHERE
     [ST_POINT(15,15)]
-    ST_INTERSECTS 
+    ST_INTERSECTS
     [geom]
 ----
 POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
@@ -45,7 +45,7 @@ SELECT
 FROM geometries_rtree
 WHERE
     [ST_POINT(17.5,17.5)]
-    ST_INTERSECTS 
+    ST_INTERSECTS
     [geom]
 ----
 POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
@@ -58,10 +58,9 @@ SELECT
 FROM geometries_rtree
 WHERE
     [ST_POINT(5,15)]
-    ST_INTERSECTS 
+    ST_INTERSECTS
     [geom]
 ----
-
 
 ## Line - Polygon
 query T rowsort
@@ -70,7 +69,7 @@ SELECT
 FROM geometries_rtree
 WHERE
     [ST_GEOMFROMTEXT('LINESTRING (0 0, 15 15)')]
-    ST_INTERSECTS 
+    ST_INTERSECTS
     [geom]
 ----
 POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))

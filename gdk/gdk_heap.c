@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -72,9 +74,6 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 	GDKfree(path);
 	return base;
 }
-
-static gdk_return HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc);
-static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free, MT_Lock *lock);
 
 static char *
 decompose_filename(str nme)
@@ -1245,6 +1244,13 @@ HEAP_malloc(BAT *b, size_t nbytes)
 void
 HEAP_free(Heap *heap, var_t mem)
 {
+/* we cannot free pieces of the heap because we may have used
+ * append_varsized_bat to create the heap; if we did, there may be
+ * multiple locations in the offset heap that refer to the same entry in
+ * the vheap, so we cannot free any until we free all */
+	(void) heap;
+	(void) mem;
+#if 0
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 	CHUNK *beforep;
 	CHUNK *blockp;
@@ -1316,6 +1322,7 @@ HEAP_free(Heap *heap, var_t mem)
 		 */
 		hheader->head = block;
 	}
+#endif
 }
 
 void

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -588,8 +590,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SQL_TSI_QUARTER", SQL_TSI_QUARTER);
 	failed += keywords_insert("SQL_TSI_YEAR", SQL_TSI_YEAR);
 
-	failed += keywords_insert("LEAST", LEAST);
-	failed += keywords_insert("GREATEST", GREATEST);
+	failed += keywords_insert("LEAST", MARGFUNC);
+	failed += keywords_insert("GREATEST", MARGFUNC);
 	return failed;
 }
 
@@ -603,6 +605,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 		.ws = ws,
 		.mode = LINE_N,
 		.raw_string_mode = GDKgetenv_istrue("raw_strings"),
+		.aborted = false,
 	};
 }
 
@@ -692,6 +695,8 @@ scanner_read_more(struct scanner *lc, size_t n)
 	bool more = false;
 
 
+	if (lc->aborted)
+		return EOF;
 	while (b->len < b->pos + lc->yycur + n) {
 
 		if (lc->mode == LINE_1 || !lc->started)
@@ -699,6 +704,10 @@ scanner_read_more(struct scanner *lc, size_t n)
 
 		/* query is not finished ask for more */
 		if (b->eof || !isa_block_stream(b->s)) {
+			if (bstream_getoob(b)) {
+				lc->aborted = true;
+				return EOF;
+			}
 			if (mnstr_write(lc->ws, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
 				mnstr_flush(lc->ws, MNSTR_FLUSH_DATA);
 			b->eof = false;
@@ -709,6 +718,12 @@ scanner_read_more(struct scanner *lc, size_t n)
 		    /* we asked for more data but didn't get any */
 		    (more && b->eof && b->len < b->pos + lc->yycur + n))
 			return EOF;
+		if (more && b->pos + lc->yycur + 2 == b->len && b->buf[b->pos + lc->yycur] == '\200' && b->buf[b->pos + lc->yycur + 1] == '\n') {
+			lc->errstr = "Query aborted";
+			b->len -= 2;
+			b->buf[b->len] = 0;
+			return EOF;
+		}
 	}
 	return 1;
 }
@@ -1470,7 +1485,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 		token = aTYPE;
 
 	if (token == IDENT || token == COMPARISON ||
-	    token == RANK || token == aTYPE || token == ALIAS) {
+	    token == RANK || token == aTYPE || token == ALIAS || token == MARGFUNC) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 		lc->next_string_is_raw = false;
 	} else if (token == STRING) {

@@ -208,7 +208,6 @@ select group_concat('', '') over () from testmore
 (empty)
 
 query T rowsort
- 
 select listagg(a) from testmore
 ----
 1,1,1,2,3,2,3,2,1,3,2,1

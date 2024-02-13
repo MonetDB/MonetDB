@@ -27,7 +27,7 @@ query TTIIITI rowsort
 select c.name, c.type, c.type_digits, c.type_scale, c."null", c."default", c.number from sys._columns c, sys._tables t, sys.schemas s
 where c.table_id = t.id and t.name = 'voyages' and t.schema_id = s.id and s.name = 'sys' order by c.number
 ----
-147 values hashing to 628a8987f9948accbeea76f3738054f8
+147 values hashing to 71b8f126541446a87e6fce3e6c582794
 
 statement ok
 drop table voyages

@@ -4,7 +4,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 %global name MonetDB
 %global version 11.50.0
@@ -83,13 +85,13 @@ Name: %{name}
 Version: %{version}
 Release: %{release}
 Summary: Monet Database Management System
-Vendor: MonetDB BV <info@monetdb.org>
+Vendor: MonetDB Foundation <info@monetdb.org>
 
 Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Jun2023-SP3/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2023/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -143,13 +145,6 @@ BuildRequires: python3-numpy
 %endif
 %if %{with rintegration}
 BuildRequires: pkgconfig(libR)
-%if (0%{?fedora} == 32)
-# work around a packaging bug on Fedora 32 (18 Nov 2020)
-# problem is things like:
-# file /etc/texlive/web2c/updmap.cfg conflicts between attempted installs of texlive-tetex-7:20190410-12.fc32.noarch and texlive-texlive-scripts-7:20200327-16.fc32.noarch
-# texlive-tetex is obsoleted by texlive-obsolete
-BuildRequires: texlive-obsolete
-%endif
 %endif
 # optional packages:
 # BuildRequires: pkgconfig(cmocka)      # -DWITH_CMOCKA=ON
@@ -329,6 +324,7 @@ This package contains the files needed to develop with the
 %dir %{_includedir}/monetdb
 %{_libdir}/libmapi.so
 %{_includedir}/monetdb/mapi*.h
+%{_includedir}/monetdb/msettings.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
 
 %package client-odbc
@@ -920,6 +916,158 @@ fi
 %endif
 
 %changelog
+* Thu Dec 21 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- Rebuilt.
+- GH#6933: Add support for scalar function IFNULL(expr1, expr2)
+- GH#7044: Improve error message regarding 3-level SQL names
+- GH#7261: Misleading error message
+- GH#7274: Aggregate function ST_Collect crashes mserver5
+- GH#7376: Concurrency Issue: Second Python UDF Awaits Completion of First
+  UDF
+- GH#7391: SQL 2023 : greatest/least functions with unlimited arguments
+  (not only 2)
+- GH#7403: Join not recognized between two row_number() columns
+- GH#7413: MonetDB server crashes in `BATcalcbetween_intern`
+
+* Tue Dec 19 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- monetdb5: Removed MAL functions bat.reuse and bat.reuseMap.
+
+* Tue Dec 12 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.49.1-20231221
+- gdk: Introduced options wal_max_dropped, wal_max_file_age and
+  wal_max_file_size that control the write-ahead log file rotation.
+
+* Wed Dec  6 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- monetdb5: The MAL functions io.import and io.export have been removed.
+
+* Tue Dec  5 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.49.1-20231221
+- sql: Introduction of table returning function `persist_unlogged(schema
+  string, table string)` that attempts to persist data in disk if
+  "schema"."table" is unlogged table in insert only mode.  If persist
+  attempt is successful, the count of the persisted rows is returned,
+  otherwise the count is 0.
+
+* Fri Dec  1 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- MonetDB: All binary packages are now signed with a new key with key fingerprint
+  DBCE 5625 94D7 1959 7B54  CE85 3F1A D47F 5521 A603.
+
+* Thu Nov 30 2023 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.49.1-20231221
+- odbc: Corrected the output value of column CHAR_OCTET_LENGTH of ODBC functions
+  SQLColumns() and SQLProcedureColumns().
+
+* Thu Nov 23 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- geom: Because recent changes to the geom module require the use of geos
+  3.10, the geom module is no longer available in older versions of
+  Debian and Ubuntu.  Specifically, Debian 10 and 11 (buster and
+  bullseye) and Ubuntu 20.04 (Focal Fossa) are affected.  There is no
+  automatic upgrade available for databases that were geom enabled to
+  databases that are not, so dump + restore is the only option (if no
+  geom types are actually used).
+
+* Thu Nov 23 2023 stefanos mavros <stemavros@gmail.com> - 11.49.1-20231221
+- geom: Implements Rtree index in GDK layer based on librtree. The index is
+  used in the implementation of the filter functions ST_Intersects and
+  ST_Dwithin for geometric points.
+- geom: Improves shapefile support by replacing functions SHPattach,
+  SHPpartialimport, ahd SHPimport with SHPload.
+- geom: Introduces functions ST_DistanceGeographic, ST_DwithinGeographic,
+  ST_IntersectsGeographic, ST_CoversGeographic, ST_Collects with geodesic
+  semantics. ST_Transform can be used to convert geodetic into geographic
+  data using libPROJ.
+
+* Tue Nov 21 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- gdk: Fixed a (rare) race condition between copying a bat (COLcopy) and
+  updates happening in parallel to that same bat.  This may only be
+  an actual problem with string bats, and then only in very particular
+  circumstances.
+
+* Mon Nov 20 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- gdk: Removed function BATroles to set column names on BATs.
+
+* Mon Nov 20 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- monetdb5: Removed MAL functions bat.getRole and bat.setColumn since the
+  underlying function BATroles was removed.
+
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- gdk: Removed the compiled-in limit on the number of threads that can be used.
+  The number of threads are still limited, but the limit is dictated
+  solely by the operating system and the availability of enough memory.
+
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- MonetDB: The ranges of merge partitions are now pushed down into the low
+  level GDK operations, giving them a handle to sometimes execute more
+  efficiently.
+
+* Thu Nov 16 2023 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.49.1-20231221
+- monetdb5: Change how json is stored in the database: We now normalize json
+  strings after parsing, removing whitespace and eliminating duplicate
+  keys in objects.
+- monetdb5: The function json.filter now properly returns json scalars instead of
+  wrapping them in an array.
+
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- gdk: We now prevent accidental upgrades from a database without 128 bit
+  integers to one with 128 bit integers (also known as HUGEINT) from
+  happening.  Upgrades will only be done if the server is started with
+  the option --set allow_hge_upgrade=yes.
+
+* Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
+- monetdb5: Removed the MAL tokenizer module.  It was never usable from SQL and
+  in this form never would be.
+
+* Thu Nov 16 2023 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.49.1-20231221
+- sql: Added ISO/IEC 9075-11 SQL/Schemata (SQL:2011) with SQL system views:
+   information_schema.schemata
+   information_schema.tables
+   information_schema.views
+   information_schema.columns
+   information_schema.character_sets
+   information_schema.check_constraints
+   information_schema.table_constraints
+   information_schema.referential_constraints
+   information_schema.routines
+   information_schema.parameters
+   information_schema.sequences
+  For details see
+  https://www.monetdb.org/documentation/user-guide/sql-catalog/information_schema/
+  Most views have been extended (after the standard columns) with MonetDB
+  specific information columns such as schema_id, table_id, column_id, etc.
+  This simplifies filtering and joins with system tables/views in sys schema
+  when needed.
+  Note: MonetDB does NOT support catalog qualifiers in object names, so all the
+  CATALOG columns in these information_schema views will always return NULL.
+
+* Thu Nov 16 2023 Niels Nes <niels.nes@monetdbsolutions.com> - 11.49.1-20231221
+- sql: Added support for generated column syntax:
+   GENERATED BY DEFAULT AS IDENTITY ...
+  This allows the user to override the default generated sequence value
+  during inserts.
+
+* Thu Nov 16 2023 Niels Nes <niels@cwi.nl> - 11.49.1-20231221
+- MonetDB: Removed the PYTHON MAP external language option, as after a fork the
+  synchronization primitives could be in any state, leading to deadlocks.
+  During the upgrade function definitions will fallback to the normal
+  PYTHON language option.
+
+* Thu Nov 16 2023 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.49.1-20231221
+- MonetDB: Implemented direct masking for strimp construction. The strimps
+  datastructure now keeps an array of 65K 64-bit integers that is zero
+  everywhere except at the indexes that correspond to header pairs. The
+  entry for the nth pair in order has the nth bit of the bitstring
+  on. These can be used to quickly construct bitstrings.
+
+* Thu Nov 16 2023 Niels Nes <niels.nes@monetdbsolutions.com> - 11.49.1-20231221
+- sql: Added SQL support for: <result offset clause> and <fetch first clause>
+  in  <query expression> ::=
+      [ <with clause> ] <query expression body>
+      [ <order by clause> ]
+      [ <result offset clause> ]
+      [ <fetch first clause> ]
+      [ <sample clause> ]
+  <result offset clause> ::=
+     OFFSET <offset row count> [ {ROW|ROWS} ]
+  <fetch first clause> ::=
+     FETCH {FIRST|NEXT} <fetch first row count> {ROW|ROWS} ONLY
+
 * Thu Nov 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.17-20231116
 - Rebuilt.
 
@@ -1163,419 +1311,4 @@ fi
 - sql: Removed code for Workload Capture and Replace, including system schemas
   "wlc" and "wlr" and the objects in those schemas. The code was
   experimental, and it didn't work out. A different approach will be taken.
-
-* Tue Jun 06 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.17-20230606
-- Rebuilt.
-
-* Tue Jun  6 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.17-20230606
-- sql: Fixed a regression introduced in the previous build: when a table is
-  dropped in the same transaction where it was created, the data wasn't
-  removed from disk.
-
-* Tue May 30 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- Rebuilt.
-- GH#7360: Aggregates returning string crash
-- GH#7361: Table data is lost on DB restart, but only when a table has
-  2147483647 or more rows.
-
-* Tue May 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- gdk: Warnings and informational messages are now sent to stdout instead of
-  stderr, which means that monetdbd will now log them with the tag MSG
-  instead of ERR.
-
-* Tue Apr 25 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- gdk: Fixed parsing of the BBP.dir file when BAT ids grow larger than 2**24
-  (i.e. 100000000 in octal).
-
-* Thu Apr 20 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- gdk: Fixed yet another occurrence of a missing .tailN file.  This one could
-  happen if a string bat was appended to in stages so that between appends
-  the column was committed.  If an append caused both a realloc of the
-  tail heap because it was getting longer and a realloc because it got
-  wider, the file might get removed before the GDK level commit happened.
-
-* Mon Apr 17 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- clients: If the number of rows in mclient is set to 0 (using either --rows=0
-  option or \r0 on the mclient command line), the internal pager is used
-  and it then uses the height of the terminal window.
-
-* Wed Apr  5 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- sql: When creating a hot snapshot, allow other clients to proceed, even
-  with updating queries.
-
-* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- gdk: When processing the WAL, if a to-be-destroyed object cannot be found,
-  don't stop, but keep processing the rest of the WAL.
-
-* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- monetdb5: Client connections are cleaned up better so that we get fewer instances
-  of clients that cannot connect.
-
-* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- sql: Increased the size of a variable counting the number of changes made
-  to the database (e.g. in case more than 2 billion rows are added to
-  a table).
-- sql: Improved cleanup after failures such as failed memory allocations.
-
-* Mon Feb 20 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- gdk: A race condition was fixed where certain write-ahead log messages
-  could get intermingled, resulting in a corrupted WAL file.
-- gdk: If opening of a file failed when it was supposed to get memory mapped,
-  an incorrect value was returned to indicate the failure, causing
-  crashes later on.  This has been fixed.
-
-* Thu Feb 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- gdk: A race condition was fixed that could result in a missing tail file
-  for a string bat (i.e. a file with .tail1, .tail2, or .tail4 extension).
-
-* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- gdk: When saving a bat failed for some reason during a low-level commit,
-  this was logged in the log file, but the error was then subsequently
-  ignored, possibly leading to files that are too short or even missing.
-- gdk: The write-ahead log (WAL) is now rotated a bit more efficiently by
-  doing multiple log files in one go (i.e. in one low-level transaction).
-
-* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
-- sql: An insert into a table from which a column was dropped in a parallel
-  transaction was incorrectly not flagged as a transaction conflict.
-
-* Thu Jan 26 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.45.15-20230530
-- sql: Fix bug where boolean NULLs were not recognized by COPY BINARY INTO
-
-* Tue Jan 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
-- Rebuilt.
-- GH#7343: GDKmmap requesting 0 virtual memory
-- GH#7347: A bug where an exception occurs even though it is a query with
-  normal syntax (Merge Table)
-
-* Mon Jan 23 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
-- sql: Fixed a regression where when there are multiple concurrent
-  transactions, the dependencies weren't checked properly.
-
-* Mon Jan 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
-- gdk: Fixed a race condition that could lead to a bat being added to the SQL
-  catalog but nog being made persistent, causing a subsequent restart
-  of the system to fail (and crash).
-
-* Wed Jan  4 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
-- odbc: A crash in the ODBC driver was fixed when certain unsupported functions
-  where used in a {fn ...} escape.
-
-* Wed Dec 21 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
-- odbc: Prepare of a query where the sum of the number of parameters (question
-  marks in the query) and the number of output columns is larger than
-  100 could fail with an unexpected error.  This has been fixed.
-
-* Fri Dec 16 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
-- sql: Added some error checking to prevent crashes.  Errors would mainly
-  occur under memory pressure.
-
-* Wed Dec 14 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
-- gdk: Fixed a race condition where a hash could have been created on a
-  bat using the old bat count while in another thread the bat count
-  got updated.  This would make the hash be based on too small a size,
-  causing failures later on.
-
-* Wed Dec 14 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
-- sql: Fixed cleanup after a failed allocation where the data being cleaned
-  up was unitialized but still used as pointers to memory that also had
-  to be freed.
-
-* Thu Dec  8 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
-- gdk: When extending a bat failed, the capacity had been updated already and
-  was therefore too large.  This could then later cause a crash.  This has
-  been fixed by only updating the capacity if the extend succeeded.
-
-* Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
-- sql: Fixed a double cleanup after a failed allocation in COPY INTO.  The
-  double cleanup could cause a crash due to a race condition it enabled.
-
-* Mon Dec 05 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.11-20221205
-- Rebuilt.
-- GH#7342: column which datatype is double couldn't group or aggregation
-  in version 11.45.7
-
-* Mon Nov 28 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
-- Rebuilt.
-- GH#7330: Creating temporary table fails after reconnect
-- GH#7333: DLLs fail to load on Windows with accented characters in path
-- GH#7336: Selecting from a literal-value table returns wrong values
-- GH#7339: MonetDB corrupted state after SIGKILL
-
-* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
-- clients: Also dump the new options of CREATE USER.
-
-* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
-- gdk: On Windows, use the wide-character interface of system calls when
-  dealing with the environment (i.e. file names and getenv()).
-- gdk: Memory leaks have been fixed.
-- gdk: Improved maintenance of the estimated number of distinct values in BATs.
-  The estimate helps in deciding which low-level algorithm to use.
-
-* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
-- monetdb5: Fixed a crash when the server runs out of client contexts (i.e. more
-  concurrent clients than the server is configured to handle).
-- monetdb5: A race condition in the SHA hash code was fixed which resulted in
-  occasional failed connection attempts when they occurred concurrently.
-
-* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
-- sql: Improved the handling of the "idle" value in the sys.sessions function
-  and view.
-
-* Wed Oct 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
-- monetdb5: Fix a bug where the MAL optimizer would use the starttime of the
-  previous query to determine whether a query timeout occurred.
-
-* Thu Oct 13 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.9-20221128
-- odbc: Fixed issue with generated raw strings prefix when ODBC driver is used
-  against a server older than Jun2020 (11.37).
-
-* Wed Oct 12 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
-- merovingian: Stop logging references to monetdbd's logfile in said logfile.
-
-* Mon Oct 10 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
-- gdk: Offset heaps (.tailN files) were growing too fast and unnecessarily
-  under certain conditions.  This has been fixed.  Also, when such too
-  large files are now loaded into the system, it is recognized they are
-  too large and they are truncated to a more reasonable size.
-
-* Fri Sep 23 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.7-20220923
-- Rebuilt.
-
-* Thu Sep 22 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.5-20220922
-- Rebuilt.
-
-* Wed Sep 21 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
-- Rebuilt.
-
-* Wed Sep 21 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
-- clients: Dumping of function GRANTs was improved by adding the types of the
-  function (and procedure) arguments.
-
-* Wed Sep 21 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
-- sql: The function sys.tracelog is now executable by anyone.  The function
-  (and view of the same name) returns the tracing information of a query
-  that was prepended with the TRACE keyword.
-
-* Mon Sep 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
-- gdk: Fixed a bug in ORDER BY with both NULLS LAST and LIMIT when the ordering
-  was on an interger or integer-like column and NULL values are present.
-
-* Mon Sep 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
-- sql: Fixed a bug in COPY BINARY INTO where the input wasn't checked
-  thoroughly enough.
-
-* Tue Sep 13 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
-- gdk: The median_avg and quantile_avg returned bogus results in the
-  non-grouped case (i.e. something like SELECT sys.median_avg(i) FROM t).
-
-* Tue Sep 13 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- Rebuilt.
-- GH#6982: Wrong constraint name in error message of constraint violation
-- GH#7209: Configuration option for merovingian.log
-- GH#7225: Invalid memory access when extending a BAT during appends
-- GH#7227: Date calculations, bug or feature
-- GH#7273: Concurrent reads and writes causes "BATproject2: does not match
-  always" error
-- GH#7282: call sys.dump_table_data(); fails
-- GH#7285: C-UDFs: aggr_group.count has wrong value (number of input rows
-  instead of number of groups).
-- GH#7296: Implictly cast a timestamp string to DATE when appropriate
-- GH#7297: Parsing partial dates behaves unpredictable
-- GH#7306: ODBC Driver Assertion `stmt->Dbc->FirstStmt' Failed
-- GH#7314: ODBC Driver : please mask/hide password
-- GH#7318: distinct in a subquery not working properly
-
-* Thu Sep  1 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: Improved SQLSetPos(). It now allows RowNumber to be 0 when Operation
-  is SQL_POSITION.
-
-* Fri Aug 26 2022 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.45.1-20220913
-- sql: Extended the built-in profiler to emit non-MAL events related to query
-  compilation, optimization, transactions and client connections. To
-  minimize, simplify and optimize the process of generating and processing
-  profiler output, only the events marking the end of an operation are
-  emitted in most cases and the emitted json messages themselves are
-  trimmed down to their essential fields. Furthermore, the MAL instruction
-  profiler.openstream now requires an integer as a single argument, "0" for
-  default behaviour or "4" to turn on the profiler in minimal mode,
-  which causes it to only emit general events and excludes individual MAL
-  instruction execution events from the profiler streams.
-  The MAL instruction profiler.openstream with zero arguments is deprecated.
-
-* Thu Aug 25 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- sql: Extended system view sys.users with columns: schema_path, max_memory,
-  max_workers, optimizer and default_role.
-  Extended system table sys.db_user_info with columns: schema_path,
-  max_memory, max_workers, optimizer, default_role and password.
-  The password is encrypted. This table can only be queried when the
-  user has been granted the select privilege from monetdb.
-
-* Wed Aug 24 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- gdk: The median_avg and quantile_avg returned bogus results in the
-  non-grouped case (i.e. something like SELECT sys.median_avg(i) FROM t).
-
-* Wed Aug 24 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- merovingian: In certain cases (when an mserver5 process exits right after producing
-  a message) the log message was logged over and over again, causing
-  monetdbd to use 100% CPU.  This has been fixed.
-
-* Fri Aug 19 2022 svetlin <svetlin.stalinov@monetdbsolutions.com> - 11.45.1-20220913
-- sql: CREATE USER statement has been extended to take more optional arguments
-  like MAX_MEMORY, MAX_WORKERS, OPTIMIZER, DEFAULT ROLE. ALTER USER statement
-  has also been extended with DEFAULT ROLE.
-
-* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- sql: A new function sys.url_extract_host(string, bool) which returns the
-  host name from the given URL has been implemented.  The bool argument,
-  if true, causes the www. prefix to be removed.
-
-* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- gdk: The abort_on_error parameter of all GDK-level functions has been removed.
-  Errors (e.g. overflow) now also results in an error.
-
-* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- sql: The user authentication tables are now administered by the SQL layer
-  instead of the MAL layer.  This means that changing (adding, dropping,
-  altering) user and role information is now transaction-safe.
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: Improved ODBC Error/Warning messages. They now include the name of the
-  Data Source as required by the ODBC specification:
-  [MonetDB][ODBC driver VERSION][data-source-name] data-source-supplied-text
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: Improved MonetDB ODBC Data Source Configuration dialog on MS Windows by
-  hiding the typed in password text. It now shows dots for the characters.
-  This fixes request  https://github.com/MonetDB/MonetDB/issues/7314
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: Changed output of TABLE_CAT or PROCEDURE_CAT result columns as returned
-  by ODBC functions: SQLTables(), SQLColumns(), SQLPrimaryKeys(),
-  SQLForeignKeys(), SQLStatistics(), SQLTablePrivileges(),
-  SQLColumnPrivileges(), SQLProcedures() and SQLProcedureColumns().
-  They used to return the static database name but now they will return
-  NULL as MonetDB does not support CATALOG objects or qualifiers.
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: Removed the possibility to retrieve or set the CURRENT_CATALOG
-  via SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, ...) and
-  SQLSetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, ...) as MonetDB does
-  not support CATALOG objects (no SQL support for: CREATE CATALOG abc
-  or SET CATALOG abc) and therefore there is no CURRENT_CATALOG.
-
-* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- gdk: Implemented BC/AD (and BCE/CE) suffixes when parsing dates.
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: Corrected ODBC functions SQLTablePrivileges() and SQLColumnPrivileges()
-  for local temporary tables located in schema tmp. They did not return
-  any rows when the temporary table had privileges set. Now they do return
-  rows as expected.
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: Improved SQLProcedures() and SQLProcedureColumns(). They now list
-  information also for all built-in system procedures and functions, not
-  only those created via SQL. Also corrected the value of ORDINAL_POSITION
-  for scalar function arguments. It would start at 2 instead of 1.
-- odbc: Extended output of SQLProcedures() and SQLProcedureColumns() resultsets
-  with an extra column SPECIFIC_NAME. This column contains the name which
-  uniquely identifies this procedure or function within its schema. As
-  MonetDB supports overloaded procedures and functions, the combination of
-  PROCEDURE_SCHEM and PROCEDURE_NAME is not enough to uniquely identify
-  a procedure or function. This extra column allows you to correctly
-  match the corresponding rows returned by SQLProcedureColumns() with the
-  specific rows of SQLProcedures(). This extra column SPECIFIC_NAME is
-  implemented similar to the JDBC DatabaseMetaData methods getProcedures()
-  and getProcedureColumns().
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: For SQLForeignKeys() corrected the output of columns UPDATE_RULE and
-  DELETE_RULE. These columns used to always return 3 (= SQL_NO_ACTION)
-  but now they will report the action codes as specified in the FOREIGN KEY
-  CONSTRAINT construction.
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: Fixed issue in function SQLProcedureColumns(). When the argument ColumnName
-  was not empty it generated an invalid SQL query which failed with error:
-   SELECT: no such column 'c.name'. This has been resolved.
-- odbc: Corrected implementation of SQLGetInfo(hdbc, SQL_MAX_DRIVER_CONNECTIONS, ...).
-  It used to always return 64. Now it returns the value from the MonetDB server.
-- odbc: Changed the column names case of the result sets as returned by
-  SQLTables(), SQLColumns(), SQLSpecialColumns(), SQLPrimaryKeys(),
-  SQLForeignKeys(), SQLStatistics(), SQLTablePrivileges(),
-  SQLColumnPrivileges(), SQLProcedures() and SQLProcedureColumns(). The
-  column names where all in lowercase but the ODBC specification defines
-  them in uppercase, so changed them to uppercase.
-
-* Fri Aug 19 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.45.1-20220913
-- gdk: The interface for using strimps has not changed (create an imprint index
-  on a column of a read only table), but now construction happens at the
-  beginning of the first query that uses the strimp and is performed in
-  a multithreaded manner.
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: Corrected SQLSpecialColumns(..., SQL_BEST_ROWID, ...). Previously it only
-  returned rows when the table had a primary key. Now it also returns
-  rows when a table has a unique constraint.
-- odbc: Corrected SQLStatistics(..., SQL_INDEX_ALL, ...). Previously it only
-  returned rows when the table had a primary or unique key. Now it also
-  returns rows for indices which are not based on a key.
-- odbc: Corrected SQLStatistics(..., SQL_ENSURE). It now returns CARDINALITY
-  information for columns based on a primary/unique key. Previously it
-  always returned NULL for the CARDINALITY result column.
-
-* Fri Aug 19 2022 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.45.1-20220913
-- gdk: Implemented the use of strimps for NOT LIKE queries. The idea is to
-  run the corresponding LIKE query using strimps and take the complement
-  of the result. We keep around NULL values both during strimp filtering
-  and during the pcre part of the LIKE query so that they get discarded
-  automatically when we take the complement.
-
-* Fri Aug 19 2022 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.45.1-20220913
-- monetdb5: Disabled volcano pipeline due to known issues.
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- odbc: Corrected ODBC functions SQLPrimaryKeys(), SQLSpecialColumns() and
-  SQLStatistics() for local temporary tables located in schema tmp. They did
-  not return any rows when the temp table had a primary or unique key or
-  index. Now they do return rows as expected.
-
-* Fri Aug 19 2022 Nuno Faria <nunofpfaria@gmail.com> - 11.45.1-20220913
-- sql: Added the UNLOGGED TABLE feature.
-
-* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- gdk: The function BBPkeepref now gets a BAT pointer as argument instead of
-  a bat id.
-
-* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- gdk: Get rid of macro Tsize, use ->twidth instead.
-- gdk: Get rid of macro BUNlast, just use BATcount instead.
-
-* Fri Aug 19 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
-- merovingian: Added "loglevel" property for monetdbd logging (to merovingian.log).
-  The loglevel can be set to: error or warning or information or debug.
-  The loglevel property can be changed dynamically via command:
-   monetdbd set loglevel=warning /path/to/dbfarm
-  Default the loglevel is set to: information
-  When loglevel is error, only errors are logged.
-  When loglevel is warning, errors and warnings are logged.
-  When loglevel is information, errors and warnings and information messages
-  are logged.  When loglevel is debug, all messages are logged.
-
-* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- merovingian: There is now a loadmodules property that can be used to add --loadmodule
-  arguments to the mserver5 command line.  See the monetdb and mserver5
-  manual pages.
-
-* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- sql: Removed functions sys.index and sys.strings.
-
-* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- gdk: The BLOB type has been moved into the GDK layer.
-
-* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
-- gdk: When adding or subtracting months from a date or timestamp value,
-  clamp the result to the calculated month instead of wrapping to the
-  beginning of the next month.  See bug 7227.
 

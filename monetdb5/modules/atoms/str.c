@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -4257,6 +4259,7 @@ trimchars(str *buf, size_t *buflen, size_t *n, const char *s, size_t len_s,
 	size_t len = 0, nlen = len_s * sizeof(int);
 	int c, *cbuf;
 
+	assert(s);
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nlen, malfunc);
 	cbuf = *(int **) buf;
 
@@ -5103,22 +5106,22 @@ STRasciify(str *r, const str *s)
 /* scan select loop with or without candidates */
 #define scanloop(TEST, KEEP_NULLS)									    \
 	do {																\
-		TRC_DEBUG(ALGO,												\
-				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
+		TRC_DEBUG(ALGO,													\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "					\
 				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  anti, #TEST);										\
+				  anti, #TEST);											\
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
 					vals[cnt++] = p;									\
 			}															\
 		} else {														\
 			for (; p < ncands; p++) {									\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
@@ -5128,24 +5131,24 @@ STRasciify(str *r, const str *s)
 	} while (0)
 
 /* scan select loop with or without candidates */
-#define scanloop_anti(TEST, KEEP_NULLS)							    \
+#define scanloop_anti(TEST, KEEP_NULLS)									\
 	do {																\
-		TRC_DEBUG(ALGO,												\
-				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
+		TRC_DEBUG(ALGO,													\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "					\
 				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  anti, #TEST);										\
+				  anti, #TEST);											\
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
 					vals[cnt++] = p;									\
 			}															\
 		} else {														\
 			for (; p < ncands; p++) {									\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
@@ -5167,12 +5170,8 @@ do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 	int klen = str_strlen(key);
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL)
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (anti)					/* keep nulls ? (use false for now) */
 		scanloop_anti(v && *v != '\200'
@@ -5358,7 +5357,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do {										\
 		B->tnil = false;						\
 		B->tnonil = true;						\
-		B->tkey = true;						\
+		B->tkey = true;							\
 		B->tsorted = true;						\
 		B->trevsorted = true;					\
 		B->tseqbase = 0;						\
@@ -5368,7 +5367,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
 			BAT *filtered_sl = NULL;									\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
+			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
 			rlen = STR_LEN;												\
@@ -5441,7 +5440,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define str_antijoin_loop(STRCMP, STR_LEN)								\
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
+			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
 			rlen = STR_LEN;												\
@@ -5519,11 +5518,8 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 	char *msg = MAL_SUCCEED;
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL)
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ?
-				(qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (BAThasstrimps(l)) {
 		with_strimps = true;

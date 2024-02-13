@@ -5,9 +5,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
-
 
 /* stream
  * ======
@@ -502,6 +503,8 @@ mnstr_error_kind_description(mnstr_error_kind kind)
 		return "error reading";
 	case MNSTR_WRITE_ERROR:
 		return "error writing";
+	case MNSTR_INTERRUPT:
+		return "interrupted";
 	case MNSTR_TIMEOUT:
 		return "timeout";
 	case MNSTR_UNEXPECTED_EOF:
@@ -592,6 +595,22 @@ mnstr_isalive(const stream *s)
 	return 1;
 }
 
+int
+mnstr_getoob(const stream *s)
+{
+	if (s->getoob)
+		return s->getoob(s);
+	return 0;
+}
+
+int
+mnstr_putoob(const stream *s, char val)
+{
+	if (s->putoob)
+		return s->putoob(s, val);
+	return -1;
+}
+
 
 bool
 mnstr_eof(const stream *s)
@@ -628,6 +647,8 @@ mnstr_error_kind_name(mnstr_error_kind k)
 		return "MNSTR_READ_ERROR";
 	case MNSTR_WRITE_ERROR:
 		return "MNSTR_WRITE_ERROR";
+	case MNSTR_INTERRUPT:
+		return "MNSTR_INTERRUPT";
 	case MNSTR_TIMEOUT:
 		return "MNSTR_TIMEOUT";
 	default:
@@ -635,15 +656,22 @@ mnstr_error_kind_name(mnstr_error_kind k)
 	}
 
 }
-void
-mnstr_clearerr(stream *s)
+
+static void
+clearerror(stream *s)
 {
 	if (s != NULL) {
 		s->errkind = MNSTR_NO__ERROR;
 		s->errmsg[0] = '\0';
-		if (s->clrerr)
-			s->clrerr(s);
 	}
+}
+
+void
+mnstr_clearerr(stream *s)
+{
+	clearerror(s);
+	if (s != NULL && s->clrerr)
+		s->clrerr(s);
 }
 
 
@@ -731,6 +759,7 @@ create_stream(const char *name)
 		.errkind = MNSTR_NO__ERROR,
 		.errmsg = {0},
 		.destroy = destroy_stream,
+		.clrerr = clearerror,
 	};
 	if(s->name == NULL) {
 		free(s);
@@ -829,6 +858,20 @@ wrapper_isalive(const stream *s)
 }
 
 
+static int
+wrapper_getoob(const stream *s)
+{
+	return s->inner->getoob(s->inner);
+}
+
+
+static int
+wrapper_putoob(const stream *s, char val)
+{
+	return s->inner->putoob(s->inner, val);
+}
+
+
 stream *
 create_wrapper_stream(const char *name, stream *inner)
 {
@@ -858,6 +901,8 @@ create_wrapper_stream(const char *name, stream *inner)
 	s->fgetpos = inner->fgetpos == NULL ? NULL : wrapper_fgetpos;
 	s->fsetpos = inner->fsetpos == NULL ? NULL : wrapper_fsetpos;
 	s->isalive = inner->isalive == NULL ? NULL : wrapper_isalive;
+	s->getoob = inner->getoob == NULL ? NULL : wrapper_getoob;
+	s->putoob = inner->putoob == NULL ? NULL : wrapper_putoob;
 	s->update_timeout = inner->update_timeout == NULL ? NULL : wrapper_update_timeout;
 
 	return s;

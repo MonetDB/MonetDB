@@ -1,8 +1,8 @@
 statement ok
-CREATE TABLE mtcars ( rownames VARCHAR(255) , mpg DOUBLE PRECISION , cyl DOUBLE PRECISION , disp DOUBLE PRECISION , hp DOUBLE PRECISION , drat DOUBLE PRECISION , wt DOUBLE PRECISION , qsec DOUBLE PRECISION , vs DOUBLE PRECISION , am DOUBLE PRECISION , gear DOUBLE PRECISION , carb DOUBLE PRECISION ) 
+CREATE TABLE mtcars ( rownames VARCHAR(255) , mpg DOUBLE PRECISION , cyl DOUBLE PRECISION , disp DOUBLE PRECISION , hp DOUBLE PRECISION , drat DOUBLE PRECISION , wt DOUBLE PRECISION , qsec DOUBLE PRECISION , vs DOUBLE PRECISION , am DOUBLE PRECISION , gear DOUBLE PRECISION , carb DOUBLE PRECISION )
 
 statement ok
-COPY 32 offset 2 records into mtcars from stdin USING DELIMITERS ',',E'\n','"' NULL as '' 
+COPY 32 offset 2 records into mtcars from stdin USING DELIMITERS ',',E'\n','"' NULL as ''
 <COPY_INTO_DATA>
 "","mpg","cyl","disp","hp","drat","wt","qsec","vs","am","gear","carb"
 "Mazda RX4",21,6,160,110,3.9,2.62,16.46,0,1,4,4
@@ -44,7 +44,7 @@ select * from mtcars
 384 values hashing to 31efc067b483b60b2828cb4a72a89b86
 
 statement ok
-create table mtcars2 as select carb , count( distinct case when gear in ( 3 , 4 ) then mpg end ) as prob1 from mtcars group by carb with data 
+create table mtcars2 as select carb , count( distinct case when gear in ( 3 , 4 ) then mpg end ) as prob1 from mtcars group by carb with data
 
 query RI rowsort
 select * from mtcars2
@@ -99,7 +99,7 @@ statement ok
 drop table mtcars2
 
 statement ok
-create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as tinyint) as prob1 from mtcars group by carb with data 
+create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as tinyint) as prob1 from mtcars group by carb with data
 
 query RI rowsort
 select * from mtcars2
@@ -154,7 +154,7 @@ statement ok
 drop table mtcars2
 
 statement ok
-create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as smallint) as prob1 from mtcars group by carb with data 
+create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as smallint) as prob1 from mtcars group by carb with data
 
 query RI rowsort
 select * from mtcars2
@@ -209,7 +209,7 @@ statement ok
 drop table mtcars2
 
 statement ok
-create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as integer) as prob1 from mtcars group by carb with data 
+create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as integer) as prob1 from mtcars group by carb with data
 
 query RI rowsort
 select * from mtcars2
@@ -264,7 +264,7 @@ statement ok
 drop table mtcars2
 
 statement ok
-create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as bigint) as prob1 from mtcars group by carb with data 
+create table mtcars2 as select carb , cast(count( distinct case when gear in ( 3 , 4 ) then mpg end ) as bigint) as prob1 from mtcars group by carb with data
 
 query RI rowsort
 select * from mtcars2

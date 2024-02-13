@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MAPI_H_INCLUDED
@@ -191,6 +193,8 @@ mapi_export MapiHdl mapi_query_prep(Mapi mid)
 mapi_export MapiMsg mapi_query_part(MapiHdl hdl, const char *cmd, size_t size)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_query_done(MapiHdl hdl)
+	__attribute__((__nonnull__(1)));
+mapi_export MapiMsg mapi_query_abort(MapiHdl hdl, int reason)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiHdl mapi_send(Mapi mid, const char *cmd)
 	__attribute__((__nonnull__(1)));

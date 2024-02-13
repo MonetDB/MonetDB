@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -1065,6 +1067,9 @@ SQLreader(Client c, backend *be)
 				}
 				in->eof = false;
 			}
+			while (bstream_getoob(in) > 0)
+				;
+			m->scanner.aborted = false;
 			if (in->buf == NULL) {
 				more = false;
 				go = false;
@@ -1239,13 +1244,19 @@ SQLparser_body(Client c, backend *be)
 	m->emod = mod_none;
 	c->query = NULL;
 	c->qryctx.starttime = Tbegin = Tend = GDKusec();
+	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
 	if ((err = sqlparse(m)) ||
+		m->scanner.aborted ||
+		((m->scanner.aborted |= bstream_getoob(m->scanner.rs) != 0) != false) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
-		if (!err &&m->scanner.started)	/* repeat old errors, with a parsed query */
+		if (!err && m->scanner.started)	/* repeat old errors, with a parsed query */
 			err = mvc_status(m);
-		if (err && *m->errstr) {
+		if (m->scanner.aborted) {
+			msg = createException(PARSE, "SQLparser", "Query aborted");
+			*m->errstr = 0;
+		} else if (err && *m->errstr) {
 			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else

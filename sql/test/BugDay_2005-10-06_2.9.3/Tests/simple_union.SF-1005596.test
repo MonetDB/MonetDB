@@ -5,7 +5,7 @@ create table test (
 	id3 int null
 )
 
-query TTTTTTTTTT rowsort
+query TTTTTIIITT rowsort
 SELECT * FROM ( SELECT 'demo' AS "TABLE_CAT",
 "schemas"."name" AS "TABLE_SCHEM", "tables"."name" AS
 "TABLE_NAME", 'SYSTEM TABLE' AS "TABLE_TYPE", '' AS
@@ -78,7 +78,7 @@ null AS "TYPE_NAME", 'rowid' AS
 AND "tables"."system" = false AND "tables".name = 'test'
 AND "tables"."type" = 1 ) AS "tables" WHERE 1 = 1 AND ("TABLE_TYPE" LIKE
 'TABLE' OR "TABLE_TYPE" LIKE 'VIEW') ORDER BY
-"TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME" 
+"TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME"
 ----
 demo
 sys

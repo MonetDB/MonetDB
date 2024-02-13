@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -606,13 +608,13 @@ main(int argc, char **argv)
 		"Resultset with 18 columns\n"
 		"Resultset with 7 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
-		"NULL	odbctst	nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	odbctst.nopk_twoucs.id2 column comment	NULL	4	NULL	NULL	1	NO\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
+		"NULL	odbctst	nopk_twoucs	id2	4	INTEGER	31	11	0	2	0	odbctst.nopk_twoucs.id2 column comment	NULL	4	NULL	NULL	1	NO\n"
 		"NULL	odbctst	nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	odbctst.nopk_twoucs.name2 column comment	NULL	-9	NULL	396	2	YES\n"
-		"NULL	odbctst	pk2c	pkc1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	odbctst	pk2c	pkc1	4	INTEGER	31	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"NULL	odbctst	pk2c	pkc2	-9	VARCHAR	99	198	NULL	NULL	0	NULL	NULL	-9	NULL	396	2	NO\n"
 		"NULL	odbctst	pk2c	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	3	YES\n"
-		"NULL	odbctst	pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	odbctst	pk_uc	id1	4	INTEGER	31	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"NULL	odbctst	pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n");
 
 	// All columns of all tmp tables containg 'pk' in their name
@@ -623,14 +625,14 @@ main(int argc, char **argv)
 		"Resultset with 18 columns\n"
 		"Resultset with 8 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
-		"NULL	tmp	glbl_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
+		"NULL	tmp	glbl_nopk_twoucs	id2	4	INTEGER	31	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"NULL	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
-		"NULL	tmp	glbl_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	tmp	glbl_pk_uc	id1	4	INTEGER	31	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"NULL	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
-		"NULL	tmp	tmp_nopk_twoucs	id2	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	tmp	tmp_nopk_twoucs	id2	4	INTEGER	31	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"NULL	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
-		"NULL	tmp	tmp_pk_uc	id1	4	INTEGER	32	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
+		"NULL	tmp	tmp_pk_uc	id1	4	INTEGER	31	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"NULL	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n");
 
 	// All columns of all tmp tables containg 'pk' in their name and the column matching name_ pattern
@@ -641,7 +643,7 @@ main(int argc, char **argv)
 		"Resultset with 18 columns\n"
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(2048)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR(3)\n"
 		"NULL	tmp	glbl_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
 		"NULL	tmp	glbl_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
 		"NULL	tmp	tmp_nopk_twoucs	name2	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n"
@@ -673,8 +675,8 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
-		"1	table_type_id	5	SMALLINT	16	6	0	1\n");
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
+		"1	table_type_id	5	SMALLINT	15	6	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
@@ -704,7 +706,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
@@ -713,7 +715,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n");
 
 	// odbctst.pk_uc
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -732,8 +734,8 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
-		"1	id1	4	INTEGER	32	11	0	1\n");
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
+		"1	id1	4	INTEGER	31	11	0	1\n");
 
 	ret = SQLSpecialColumns(stmt, SQL_ROWVER, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_uc", SQL_NTS,
@@ -774,7 +776,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 4 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n"
 		"NULL	odbctst	pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
 		"NULL	odbctst	pk_uc	_SYSTEM	monetdb	INSERT	NO\n"
 		"NULL	odbctst	pk_uc	monetdb	PUBLIC	SELECT	NO\n"
@@ -787,7 +789,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n");
 
 	// tmp.tmp_pk_uc
 	ret = SQLPrimaryKeys(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -806,8 +808,8 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
-		"1	id1	4	INTEGER	32	11	0	1\n");
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
+		"1	id1	4	INTEGER	31	11	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_pk_uc", SQL_NTS,
@@ -839,7 +841,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n"
 		"NULL	tmp	tmp_pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
 		"NULL	tmp	tmp_pk_uc	_SYSTEM	monetdb	INSERT	NO\n");
 
@@ -850,7 +852,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 3 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n"
 		"NULL	tmp	tmp_pk_uc	id1	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	tmp	tmp_pk_uc	name1	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	tmp	tmp_pk_uc	name1	_SYSTEM	monetdb	UPDATE	NO\n");
@@ -872,8 +874,8 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
-		"1	id1	4	INTEGER	32	11	0	1\n");
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
+		"1	id1	4	INTEGER	31	11	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_pk_uc", SQL_NTS,
@@ -905,7 +907,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n"
 		"NULL	tmp	glbl_pk_uc	_SYSTEM	monetdb	DELETE	NO\n"
 		"NULL	tmp	glbl_pk_uc	_SYSTEM	monetdb	INSERT	NO\n");
 
@@ -916,7 +918,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 3 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n"
 		"NULL	tmp	glbl_pk_uc	id1	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	tmp	glbl_pk_uc	name1	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	tmp	glbl_pk_uc	name1	_SYSTEM	monetdb	UPDATE	NO\n");
@@ -937,8 +939,8 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
-		"1	id2	4	INTEGER	32	11	0	1\n");
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
+		"1	id2	4	INTEGER	31	11	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS,
@@ -970,7 +972,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"nopk_twoucs", SQL_NTS,
@@ -979,7 +981,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 3 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n"
 		"NULL	odbctst	nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	odbctst	nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	odbctst	nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
@@ -1000,8 +1002,8 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
-		"1	id2	4	INTEGER	32	11	0	1\n");
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
+		"1	id2	4	INTEGER	31	11	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"tmp_nopk_twoucs", SQL_NTS,
@@ -1033,7 +1035,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n"
 		"NULL	tmp	tmp_nopk_twoucs	_SYSTEM	monetdb	DELETE	NO\n"
 		"NULL	tmp	tmp_nopk_twoucs	_SYSTEM	monetdb	INSERT	NO\n");
 
@@ -1044,7 +1046,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 3 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n"
 		"NULL	tmp	tmp_nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	tmp	tmp_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	tmp	tmp_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
@@ -1065,8 +1067,8 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 1 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
-		"1	id2	4	INTEGER	32	11	0	1\n");
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
+		"1	id2	4	INTEGER	31	11	0	1\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"glbl_nopk_twoucs", SQL_NTS,
@@ -1098,7 +1100,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n"
 		"NULL	tmp	glbl_nopk_twoucs	_SYSTEM	monetdb	DELETE	NO\n"
 		"NULL	tmp	glbl_nopk_twoucs	_SYSTEM	monetdb	INSERT	NO\n");
 
@@ -1109,7 +1111,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 3 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n"
 		"NULL	tmp	glbl_nopk_twoucs	id2	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
@@ -1122,15 +1124,15 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 10 rows\n"
 		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
-		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
 		"1	schema	-9	VARCHAR	1024	2048	NULL	1\n"
 		"1	table	-9	VARCHAR	1024	2048	NULL	1\n"
 		"1	column	-9	VARCHAR	1024	2048	NULL	1\n"
 		"1	type	-9	VARCHAR	1024	2048	NULL	1\n"
-		"1	typewidth	4	INTEGER	32	11	0	1\n"
-		"1	count	-5	BIGINT	64	20	0	1\n"
-		"1	distinct	-5	BIGINT	64	20	0	1\n"
-		"1	atomwidth	4	INTEGER	32	11	0	1\n"
+		"1	typewidth	4	INTEGER	31	11	0	1\n"
+		"1	count	-5	BIGINT	63	20	0	1\n"
+		"1	distinct	-5	BIGINT	63	20	0	1\n"
+		"1	atomwidth	4	INTEGER	31	11	0	1\n"
 		"1	reference	-7	BOOLEAN	1	1	NULL	1\n"
 		"1	isacolumn	-7	BOOLEAN	1	1	NULL	1\n");
 
@@ -1218,7 +1220,7 @@ main(int argc, char **argv)
 		"Resultset with 7 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n");
 
 	ret = SQLColumnPrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"pk_2c", SQL_NTS,
@@ -1227,7 +1229,7 @@ main(int argc, char **argv)
 		"Resultset with 8 columns\n"
 		"Resultset with 0 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	COLUMN_NAME	GRANTOR	GRANTEE	PRIVILEGE	IS_GRANTABLE\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WCHAR(1024)	WCHAR(1024)	WVARCHAR(40)	WCHAR(3)\n");
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(1024)	WVARCHAR(40)	WVARCHAR(3)\n");
 
 
 	// test procedure sys.analyze(). There are 4 overloaded variants of this procedure in MonetDB with 0, 1, 2 or 3 input parameters.
@@ -1250,7 +1252,7 @@ main(int argc, char **argv)
 		"Resultset with 20 columns\n"
 		"Resultset with 6 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR	WVARCHAR(10)\n"
 		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
 		"NULL	sys	analyze	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
 		"NULL	sys	analyze	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
@@ -1276,7 +1278,7 @@ main(int argc, char **argv)
 		"Resultset with 20 columns\n"
 		"Resultset with 4 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR	WVARCHAR(10)\n"
 		"NULL	sys	sin	arg_1	1	7	REAL	24	14	7	2	2	NULL	NULL	7	NULL	NULL	1		replacedId\n"
 		"NULL	sys	sin	res_0	5	7	REAL	24	14	7	2	2	NULL	NULL	7	NULL	NULL	0		replacedId\n"
 		"NULL	sys	sin	arg_1	1	8	DOUBLE	53	24	15	2	2	NULL	NULL	8	NULL	NULL	1		replacedId\n"
@@ -1299,7 +1301,7 @@ main(int argc, char **argv)
 		"Resultset with 20 columns\n"
 		"Resultset with 2 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR	WVARCHAR(10)\n"
 		"NULL	sys	env	name	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
 		"NULL	sys	env	value	3	-9	VARCHAR	2048	4096	NULL	NULL	2	NULL	NULL	-9	NULL	8192	2		replacedId\n");
 
@@ -1323,52 +1325,52 @@ main(int argc, char **argv)
 		"Resultset with 20 columns\n"
 		"Resultset with 58 rows\n"
 		"PROCEDURE_CAT	PROCEDURE_SCHEM	PROCEDURE_NAME	COLUMN_NAME	COLUMN_TYPE	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	NUM_PREC_RADIX	NULLABLE	REMARKS	COLUMN_DEF	SQL_DATA_TYPE	SQL_DATETIME_SUB	CHAR_OCTET_LENGTH	ORDINAL_POSITION	IS_NULLABLE	SPECIFIC_NAME\n"
-		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WCHAR	WVARCHAR(10)\n"
+		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(256)	WVARCHAR(256)	SMALLINT	SMALLINT	WVARCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(65000)	WVARCHAR(1)	SMALLINT	SMALLINT	INTEGER	INTEGER	WVARCHAR	WVARCHAR(10)\n"
 		// 0 input argument and 13 result columns of sys.statistics()
-		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"NULL	sys	statistics	column_id	3	4	INTEGER	31	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
 		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
 		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n"
 		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	4		replacedId\n"
 		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	5		replacedId\n"
-		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
-		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"NULL	sys	statistics	width	3	4	INTEGER	31	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"NULL	sys	statistics	count	3	-5	BIGINT	63	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
 		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
 		"NULL	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
-		"NULL	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
-		"NULL	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"NULL	sys	statistics	minval	3	-9	VARCHAR	0	0	NULL	NULL	2	NULL	NULL	-9	NULL	0	10		replacedId\n"
+		"NULL	sys	statistics	maxval	3	-9	VARCHAR	0	0	NULL	NULL	2	NULL	NULL	-9	NULL	0	11		replacedId\n"
 		"NULL	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
 		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
 
 		// 1 input argument and 13 result columns of sys.statistics(sname)
 		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
-		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"NULL	sys	statistics	column_id	3	4	INTEGER	31	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
 		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
 		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n"
 		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	4		replacedId\n"
 		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	5		replacedId\n"
-		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
-		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"NULL	sys	statistics	width	3	4	INTEGER	31	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"NULL	sys	statistics	count	3	-5	BIGINT	63	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
 		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
 		"NULL	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
-		"NULL	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
-		"NULL	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"NULL	sys	statistics	minval	3	-9	VARCHAR	0	0	NULL	NULL	2	NULL	NULL	-9	NULL	0	10		replacedId\n"
+		"NULL	sys	statistics	maxval	3	-9	VARCHAR	0	0	NULL	NULL	2	NULL	NULL	-9	NULL	0	11		replacedId\n"
 		"NULL	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
 		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
 
 		// 2 input arguments and 13 result columns of sys.statistics(sname, tname)
 		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
 		"NULL	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
-		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"NULL	sys	statistics	column_id	3	4	INTEGER	31	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
 		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
 		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n"
 		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	4		replacedId\n"
 		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	5		replacedId\n"
-		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
-		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"NULL	sys	statistics	width	3	4	INTEGER	31	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"NULL	sys	statistics	count	3	-5	BIGINT	63	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
 		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
 		"NULL	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
-		"NULL	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
-		"NULL	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"NULL	sys	statistics	minval	3	-9	VARCHAR	0	0	NULL	NULL	2	NULL	NULL	-9	NULL	0	10		replacedId\n"
+		"NULL	sys	statistics	maxval	3	-9	VARCHAR	0	0	NULL	NULL	2	NULL	NULL	-9	NULL	0	11		replacedId\n"
 		"NULL	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
 		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n"
 
@@ -1376,17 +1378,17 @@ main(int argc, char **argv)
 		"NULL	sys	statistics	sname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	1		replacedId\n"
 		"NULL	sys	statistics	tname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
 		"NULL	sys	statistics	cname	1	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n"
-		"NULL	sys	statistics	column_id	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
+		"NULL	sys	statistics	column_id	3	4	INTEGER	31	11	0	2	2	NULL	NULL	4	NULL	NULL	1		replacedId\n"
 		"NULL	sys	statistics	schema	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	2		replacedId\n"
 		"NULL	sys	statistics	table	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	3		replacedId\n"
 		"NULL	sys	statistics	column	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	4		replacedId\n"
 		"NULL	sys	statistics	type	3	-9	VARCHAR	1024	2048	NULL	NULL	2	NULL	NULL	-9	NULL	4096	5		replacedId\n"
-		"NULL	sys	statistics	width	3	4	INTEGER	32	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
-		"NULL	sys	statistics	count	3	-5	BIGINT	64	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
+		"NULL	sys	statistics	width	3	4	INTEGER	31	11	0	2	2	NULL	NULL	4	NULL	NULL	6		replacedId\n"
+		"NULL	sys	statistics	count	3	-5	BIGINT	63	20	0	2	2	NULL	NULL	-5	NULL	NULL	7		replacedId\n"
 		"NULL	sys	statistics	unique	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	8		replacedId\n"
 		"NULL	sys	statistics	nils	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	9		replacedId\n"
-		"NULL	sys	statistics	minval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	10		replacedId\n"
-		"NULL	sys	statistics	maxval	3	-10	CHARACTER LARGE OBJECT	0	0	NULL	NULL	2	NULL	NULL	-10	NULL	0	11		replacedId\n"
+		"NULL	sys	statistics	minval	3	-9	VARCHAR	0	0	NULL	NULL	2	NULL	NULL	-9	NULL	0	10		replacedId\n"
+		"NULL	sys	statistics	maxval	3	-9	VARCHAR	0	0	NULL	NULL	2	NULL	NULL	-9	NULL	0	11		replacedId\n"
 		"NULL	sys	statistics	sorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	12		replacedId\n"
 		"NULL	sys	statistics	revsorted	3	-7	BOOLEAN	1	1	NULL	NULL	2	NULL	NULL	-7	NULL	NULL	13		replacedId\n");
 
@@ -1395,7 +1397,7 @@ main(int argc, char **argv)
 		"Resultset with 19 columns\n"
 		"Resultset with 44 rows\n"
 		"TYPE_NAME	DATA_TYPE	COLUMN_SIZE	LITERAL_PREFIX	LITERAL_SUFFIX	CREATE_PARAMS	NULLABLE	CASE_SENSITIVE	SEARCHABLE	UNSIGNED_ATTRIBUTE	FIXED_PREC_SCALE	AUTO_UNIQUE_VALUE	LOCAL_TYPE_NAME	MINIMUM_SCALE	MAXIMUM_SCALE	SQL_DATA_TYPE	SQL_DATETIME_SUB	NUM_PREC_RADIX	INTERVAL_PRECISION\n"
-		"WCHAR(128)	SMALLINT	INTEGER	WCHAR(11)	WCHAR(1)	WCHAR(15)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	WCHAR(16)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	INTEGER	SMALLINT\n"
+		"WVARCHAR(128)	SMALLINT	INTEGER	WVARCHAR(11)	WVARCHAR(1)	WVARCHAR(15)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(16)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	INTEGER	SMALLINT\n"
 		"uuid	-11	36	uuid '	'	NULL	1	0	2	-1	0	-1	uuid	-1	-1	-11	-1	-1	-1\n"
 		"character large object	-10	1000000	'	'	NULL	1	1	3	-1	0	0	NULL	-1	-1	-10	-1	-1	-1\n"
 		"json	-10	1000000	json '	'	NULL	1	1	3	-1	0	0	json	-1	-1	-10	-1	-1	-1\n"
@@ -1456,7 +1458,7 @@ main(int argc, char **argv)
 		"Resultset with 19 columns\n"
 		"Resultset with 45 rows\n"
 		"TYPE_NAME	DATA_TYPE	COLUMN_SIZE	LITERAL_PREFIX	LITERAL_SUFFIX	CREATE_PARAMS	NULLABLE	CASE_SENSITIVE	SEARCHABLE	UNSIGNED_ATTRIBUTE	FIXED_PREC_SCALE	AUTO_UNIQUE_VALUE	LOCAL_TYPE_NAME	MINIMUM_SCALE	MAXIMUM_SCALE	SQL_DATA_TYPE	SQL_DATETIME_SUB	NUM_PREC_RADIX	INTERVAL_PRECISION\n"
-		"WCHAR(128)	SMALLINT	INTEGER	WCHAR(11)	WCHAR(1)	WCHAR(15)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	WCHAR(16)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	INTEGER	SMALLINT\n"
+		"WVARCHAR(128)	SMALLINT	INTEGER	WVARCHAR(11)	WVARCHAR(1)	WVARCHAR(15)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	SMALLINT	WVARCHAR(16)	SMALLINT	SMALLINT	SMALLINT	SMALLINT	INTEGER	SMALLINT\n"
 		"uuid	-11	36	uuid '	'	NULL	1	0	2	-1	0	-1	uuid	-1	-1	-11	-1	-1	-1\n"
 		"character large object	-10	1000000	'	'	NULL	1	1	3	-1	0	0	NULL	-1	-1	-10	-1	-1	-1\n"
 		"json	-10	1000000	json '	'	NULL	1	1	3	-1	0	0	json	-1	-1	-10	-1	-1	-1\n"
@@ -1520,7 +1522,7 @@ main(int argc, char **argv)
 		"Resultset with 1 columns\n"
 		"Resultset with 3 rows\n"
 		"rel\n"
-		"WLONGVARCHAR(176)\n"
+		"WVARCHAR(176)\n"
 		"project (\n"
 		"| table(\"odbctst\".\"LINES\") [ \"LINES\".\"ORDERID\" NOT NULL UNIQUE HASHCOL , \"LINES\".\"LINES\" NOT NULL UNIQUE, \"LINES\".\"PARTID\" NOT NULL UNIQUE, \"LINES\".\"QUANTITY\" NOT NULL UNIQUE ]\n"
 		") [ \"LINES\".\"ORDERID\" NOT NULL UNIQUE HASHCOL , \"LINES\".\"LINES\" NOT NULL UNIQUE, \"LINES\".\"PARTID\" NOT NULL UNIQUE, \"LINES\".\"QUANTITY\" NOT NULL UNIQUE ]\n");
@@ -1543,7 +1545,7 @@ main(int argc, char **argv)
 		"    X_38:bat[:str] := bat.pack(\"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str);\n"
 		"    X_39:bat[:str] := bat.pack(\"ORDERID\":str, \"LINES\":str, \"PARTID\":str, \"QUANTITY\":str);\n"
 		"    X_40:bat[:str] := bat.pack(\"int\":str, \"int\":str, \"int\":str, \"decimal\":str);\n"
-		"    X_41:bat[:int] := bat.pack(32:int, 32:int, 32:int, 9:int);\n"
+		"    X_41:bat[:int] := bat.pack(31:int, 31:int, 31:int, 9:int);\n"
 		"    X_42:bat[:int] := bat.pack(0:int, 0:int, 0:int, 3:int);\n"
 		"\n"
 		"    X_37:int := sql.resultSet(X_38:bat[:str], X_39:bat[:str], X_40:bat[:str], X_41:bat[:int], X_42:bat[:int], X_33:bat[:int], X_34:bat[:int], X_35:bat[:int], X_36:bat[:int]);\n"
@@ -1566,7 +1568,7 @@ main(int argc, char **argv)
 		"    X_38:bat[:str] := bat.pack(\"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str);\n"
 		"    X_39:bat[:str] := bat.pack(\"ORDERID\":str, \"LINES\":str, \"PARTID\":str, \"QUANTITY\":str);\n"
 		"    X_40:bat[:str] := bat.pack(\"int\":str, \"int\":str, \"int\":str, \"decimal\":str);\n"
-		"    X_41:bat[:int] := bat.pack(32:int, 32:int, 32:int, 9:int);\n"
+		"    X_41:bat[:int] := bat.pack(31:int, 31:int, 31:int, 9:int);\n"
 		"    X_42:bat[:int] := bat.pack(0:int, 0:int, 0:int, 3:int);\n"
 		"    X_37:int := sql.resultSet(X_38:bat[:str], X_39:bat[:str], X_40:bat[:str], X_41:bat[:int], X_42:bat[:int], X_33:bat[:int], X_34:bat[:int], X_35:bat[:int], X_36:bat[:int]);\n"
 		"end user.main;\n"
@@ -1592,7 +1594,7 @@ main(int argc, char **argv)
 			"Resultset with 2 columns\n"
 			"Resultset with 12 rows\n"
 			"usec	statement\n"
-			"BIGINT	WLONGVARCHAR(213)\n"
+			"BIGINT	WVARCHAR(213)\n"
 			"4	variable output\n"
 			"4	variable output\n"
 			"4	variable output\n"
@@ -1609,7 +1611,7 @@ main(int argc, char **argv)
 			"Resultset with 2 columns\n"
 			"Resultset with 11 rows\n"
 			"usec	statement\n"
-			"BIGINT	WLONGVARCHAR(213)\n"
+			"BIGINT	WVARCHAR(213)\n"
 			"4	variable output\n"
 			"4	variable output\n"
 			"4	variable output\n"

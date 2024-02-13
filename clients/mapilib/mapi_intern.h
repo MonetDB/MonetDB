@@ -5,17 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
- */
-
-/*
- * SPDX-License-Identifier: MPL-2.0
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "msettings.h"
@@ -204,13 +196,14 @@ struct MapiStatement {
 	char *template;		/* keep parameterized query text around */
 	char *query;
 	int maxbindings;
-	struct MapiBinding *bindings;
 	int maxparams;
+	struct MapiBinding *bindings;
 	struct MapiParam *params;
 	struct MapiResultSet *result, *active, *lastresult;
-	bool needmore;		/* need more input */
 	int *pending_close;
 	int npending_close;
+	bool needmore;		/* need more input */
+	bool aborted;		/* this query was aborted */
 	MapiHdl prev, next;
 };
 
@@ -252,6 +245,7 @@ struct MapiStruct {
 	int handshake_options;	/* which settings can be sent during challenge/response? */
 	bool columnar_protocol;
 	bool sizeheader;
+	bool oobintr;
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 
@@ -315,7 +309,8 @@ MapiMsg mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue);
 
 extern const struct MapiStruct MapiStructDefaults;
 
-Mapi mapi_new(void);
+// 'settings' will be newly allocated if NULL
+Mapi mapi_new(msettings *settings);
 
 MapiMsg wrap_tls(Mapi mid, SOCKET sock);
 MapiMsg mapi_wrap_streams(Mapi mid, stream *rstream, stream *wstream);
