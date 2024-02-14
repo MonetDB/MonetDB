@@ -726,7 +726,8 @@ typedef struct {
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
-		revsorted:1;	/* column is sorted in descending order */
+		revsorted:1,	/* column is sorted in descending order */
+		ascii:1;	/* string column is fully ASCII (7 bit) */
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
@@ -820,6 +821,7 @@ typedef struct BAT {
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
+#define tascii		T.ascii
 #define torderidx	T.orderidx
 #define twidth		T.width
 #define tshift		T.shift
@@ -1079,7 +1081,8 @@ typedef struct BATiter {
 		hdirty:1,
 		vhdirty:1,
 		copiedtodisk:1,
-		transient:1;
+		transient:1,
+		ascii:1;
 	restrict_t restricted:2;
 #ifndef NDEBUG
 	bool locked:1;
@@ -1126,6 +1129,7 @@ bat_iterator_nolock(BAT *b)
 			.nil = b->tnil,
 			.sorted = b->tsorted,
 			.revsorted = b->trevsorted,
+			.ascii = b->tascii,
 			/* only look at heap dirty flag if we own it */
 			.hdirty = b->theap->parentid == b->batCacheid && b->theap->dirty,
 			/* also, if there is no vheap, it's not dirty */

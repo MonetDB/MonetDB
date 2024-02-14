@@ -206,6 +206,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 		/* fill should solve initialization problems within valgrind */
 		memset(h->base, 0, h->size);
 #endif
+		b->tascii = true;
 	}
 
 	off = strHash(v);
@@ -311,6 +312,15 @@ strPut(BAT *b, var_t *dst, const void *V)
 		*(stridx_t *) (h->base + pos) = *bucket;
 	}
 	*bucket = (stridx_t) pos;	/* set bucket to the new string */
+
+	if (b->tascii && !strNil(v)) {
+		for (const uint8_t *p = (const uint8_t *) v; *p; p++) {
+			if (*p >= 128) {
+				b->tascii = false;
+				break;
+			}
+		}
+	}
 
 	return *dst;
 }

@@ -117,6 +117,7 @@ VIEWcreate(oid seq, BAT *b)
 	bn->tshift = b->tshift;
 	bn->tnonil = b->tnonil;
 	bn->tnil = b->tnil;
+	bn->tascii = b->tascii;
 	bn->tnokey[0] = b->tnokey[0];
 	bn->tnokey[1] = b->tnokey[1];
 	bn->tnosorted = b->tnosorted;
