@@ -327,6 +327,39 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 	return true;
 }
 
+static void
+mark_hashjoin(sql_rel *rel)
+{
+	/* For now, only generate paralle hash join plan for equi-joins on at
+	 * least one base table.
+	 */
+	if (rel->op != op_join)
+		return;
+
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (!is_compare(e->type) || e->flag != cmp_equal)
+			return;
+	}
+
+	sql_rel *l = rel->l, *r = rel->r;
+	if(is_basetable(l->op) && is_basetable(r->op)) {
+		lng lc = rel_getcount(sql, l), rc = rel_getcount(sql, r);
+		if (lc < rc)
+			l->hashjoin = 1;
+		else
+			r->hashjoin = 1;
+		rel->hashjoin = 1;
+	}
+	else if(is_basetable(l->op) && !is_basetable(r->op)) {
+		l->hashjoin = 1;
+		rel->hashjoin = 1;
+	} else if(is_basetable(r->op) && !is_basetable(l->op)) {
+		r->hashjoin = 1;
+		rel->hashjoin = 1;
+	}
+}
+
 static int
 rel_partition_(mvc *sql, sql_rel *rel, int pb)
 {
@@ -443,27 +476,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (pb && is_outerjoin(rel->op))
 			return 0;
 
-		/* Generate paralle hash join plan for equi-joins on at least one base
-		 * table.
-		 */
-		if (!is_outerjoin(rel->op)) {
-			sql_rel *l = rel->l, *r = rel->r;
-			if(is_basetable(l->op) && is_basetable(r->op)) {
-				lng lc = rel_getcount(sql, l), rc = rel_getcount(sql, r);
-				if (lc < rc)
-					l->hashjoin = 1;
-				else
-					r->hashjoin = 1;
-				rel->hashjoin = 1;
-			}
-			else if(is_basetable(l->op) && !is_basetable(r->op)) {
-				l->hashjoin = 1;
-				rel->hashjoin = 1;
-			} else if(is_basetable(r->op) && !is_basetable(l->op)) {
-				r->hashjoin = 1;
-				rel->hashjoin = 1;
-			}
-		}
+		mark_hashjoin(rel);
 
 		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
 		if (0 && (l || r)) {
