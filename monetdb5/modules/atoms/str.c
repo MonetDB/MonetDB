@@ -3025,8 +3025,8 @@ STRepilogue(void *ret)
 }
 
 #ifndef NDEBUG
-static void
-UTF8_assert(const char *restrict s)
+static inline void
+UTF8_assert(const char *s)
 {
 	int c;
 
@@ -3143,7 +3143,7 @@ UTF8_offset(char *restrict s, int n)
 }
 
 int
-UTF8_strlen(const char *restrict s)
+UTF8_strlen(const char *s)
 {								/* This function assumes, s is never nil */
 	size_t pos = 0;
 
@@ -3160,7 +3160,7 @@ UTF8_strlen(const char *restrict s)
 }
 
 int
-str_strlen(const char *restrict s)
+str_strlen(const char *s)
 {								/* This function assumes, s is never nil */
 	size_t pos = strlen(s);
 	assert(pos < INT_MAX);
@@ -3169,7 +3169,7 @@ str_strlen(const char *restrict s)
 
 /* return the display width of s */
 int
-UTF8_strwidth(const char *restrict s)
+UTF8_strwidth(const char *s)
 {
 	int len = 0;
 	int c;

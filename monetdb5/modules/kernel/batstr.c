@@ -76,7 +76,7 @@ str_prefix(str *buf, size_t *buflen, const char *s, int l)
 
 static str
 do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  const char *name, int (*func)(const char *restrict))
+			  const char *name, int (*func)(const char *))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
