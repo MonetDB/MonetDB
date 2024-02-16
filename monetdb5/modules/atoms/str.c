@@ -69,6 +69,9 @@
 #include <iconv.h>
 #include <locale.h>
 #endif
+#ifdef HAVE_WCWIDTH
+#include <wchar.h>
+#endif
 #include "mal_interpreter.h"
 
 #include "utf8.h"
@@ -3164,6 +3167,7 @@ str_strlen(const char *restrict s)
 	return (int) pos;
 }
 
+/* return the display width of s */
 int
 UTF8_strwidth(const char *restrict s)
 {
@@ -3184,6 +3188,14 @@ UTF8_strwidth(const char *restrict s)
 			c = (c << 6) | (*s & 0x3F);
 			if (--n == 0) {
 				/* last byte of a multi-byte character */
+#ifdef HAVE_WCWIDTH
+				n = wcwidth(c);
+				if (n >= 0)
+					len += n;
+				else
+					len++;		/* assume width 1 if unprintable */
+				n = 0;
+#else
 				len++;
 				/* this list was created by combining
 				 * the code points marked as
@@ -3299,6 +3311,7 @@ UTF8_strwidth(const char *restrict s)
 					(0x20000 <= c && c <= 0x2FFFD) ||
 					(0x30000 <= c && c <= 0x3FFFD))
 					len++;
+#endif
 			}
 		} else if ((*s & 0xE0) == 0xC0) {
 			assert(n == 0);
