@@ -441,11 +441,10 @@ stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int paren
 InstrPtr
 stmt_hash_build_table(backend *be, int ht_sink, int key, stmt *pp)
 {
-	int tt = 0;
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("build_table"), 4);
 	if (q == NULL) return NULL;
 
-	setVarType(be->mb, q, newBatType(TYPE_oid));
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 	q = pushArgument(be->mb, q, key);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	//int tt = getArgType(be->mb, q, 2);

@@ -15,6 +15,7 @@
 #include "rel_rewriter.h"
 #include "sql_pp_statement.h"
 #include "bin_partition.h"
+#include "bin_partition_by_value.h"
 
 /* Generates global shared variables:
  *   X_5:bat[:int] := hash.new(nil:int, 10:int); # <join-col1>
@@ -23,20 +24,15 @@
  *   X_8:bat[:int] := hash.new_payload(nil:int, 10:int,   10:int,     X_6:bat[:int]); # <sel-col1>
  *   X_9:bat[:int] := hash.new_payload(nil:int, 10:int,   10:int,     X_6:bat[:int]); # <sel-col2>
  *
- * `rel`: the JOIN relation
- * `rel2hsh`: the left/right child of `rel` to be hashed
- *
- * Returns: a list with two sublists containing the int BAT IDs of the shared
- *   variables; first one for the hash-table columns; second one for the
- *   hash-payload columns. For instance, the result for the above MAL
- *   statements is: ((5, 6), (8, 9))
+ * Returns: a list with two sublists
+ *   `HTs`: the hash-table stmt-s
+ *   `HPs`: the hash-payload stmt-s
  */
 static list *
-rel2bin_pphash_prepare(backend *be, sql_rel *rel, sql_rel *rel2hsh)
+rel2bin_pphash_prepare(backend *be, BUN est, list *exps_ht, list *exps_hp)
 {
 	mvc *sql = be->mvc;
 	list *HTres= sa_list(sql->sa), *HTs = sa_list(sql->sa), *HPs = sa_list(sql->sa);
-	BUN est = get_rel_count(rel2hsh);
 	int curhash = 0;
 
 	// TODO better estimation
@@ -44,28 +40,28 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel, sql_rel *rel2hsh)
 		est = 85000000;
 	}
 
-	/* the join columns */
-	for (node *n = rel->exps->h; n; n = n->next) {
+	/* the hash columns */
+	for (node *n = exps_ht->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 
 		InstrPtr q = stmt_hash_new(be, t->type->localtype, est, curhash);
 		if (q == NULL) return NULL;
+
 		q->inout = 0;
 		curhash = getArg(q,0);
-		append(HTs, q->argv);
+		append(HTs, q);
 	}
 
 	/* the payload columns */
-	// TODO remove the false positives!
-	list *payloads = rel_projections(sql, rel2hsh, 0, 0, 0);
-	for (node *n = payloads->h; n; n = n->next) {
+	for (node *n = exps_hp->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 
 		// TODO better and separate est. for nr_slots and pld_size
 		InstrPtr q = stmt_hash_new_payload(be, t->type->localtype, est, est, curhash);
 		if (q == NULL) return NULL;
 		q->inout = 0;
-		append(HPs, q->argv);
+
+		append(HPs, q);
 	}
 
 	append(HTres, HTs);
@@ -96,27 +92,85 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel, sql_rel *rel2hsh)
  *   redo X_17:bit := calc.<(X_18:int, 2:int);
  * exit X_17:bit;
  */
-static stmt *
-rel2bin_pphash_table(list *htresults, backend *be, sql_rel *rel, list *refs)
+stmt *
+rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 {
-	//mvc *sql = be->mvc;
-	stmt *res = NULL, *pp = NULL, *sub = NULL;
-	list *HTs = (list *)htresults->h->data,
-	     *HPs = (list *)htresults->h->next->data;
-	int parent_slt = 0, parent_ht = 0;
+	mvc *sql = be->mvc;
+	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
+	stmt *pp = NULL, *sub = NULL, *cursub = NULL;
+	BUN est = BUN_NONE;
+	list *eq_exps = sa_list(sql->sa);
+	list *hsh_hts = NULL, *hsh_hps = NULL; /* hash and payload columns of hash side */
+	list *prb_hts = NULL, *prb_hps = NULL; /* hash and payload columns of probe side */
+	list *htres = NULL, *htres_hts = NULL, *htres_hps = NULL; /* stmts of HT global vars in 2 sublists */
+	int neededpp = rel->partition && get_and_disable_need_pipeline(be);
 
-	/* Since we always generates a pipelines() block to compute the parallel
-	 * hash table, no other active pipelines() block is allowed */
-	assert(get_pipeline(be) == NULL && is_basetable(rel->op));
+	/* get equi-joins */
+	for (node *en = rel->exps->h; en; en = en->next) {
+		sql_exp *e = en->data;
+		if (e->type == e_cmp && e->flag == cmp_equal)
+			append(eq_exps, e);
+	}
+	// TODO get no-equi-joins
 
-	pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel));
-	set_pipeline(be, pp);
+	/* find the hash-table (i.e. hsh_*) vs hash-probe (i.e. prb_*) sub-rel, and
+	 * for each side the hash (i.e. *_hts) and payload (i.e. *_hps) columns.
+	 */
+	// TODO delay deciding which side to compute hash until here?
+	// TODO remove false positives from hsh_hps
+	if (((sql_rel*)rel->l)->hashjoin) {
+		rel_hsh = rel->l;
+		rel_prb = rel->r;
+	} else {
+		assert(((sql_rel*)rel->r)->hashjoin);
+		rel_hsh = rel->r;
+		rel_prb = rel->l;
+	}
+	for (node *n = eq_exps->h; n; n = n->next) {
+		sql_exp *e = n->data, *cmpl = e->l, *cmpr = e->r;
+		if (rel_find_exp(rel_hsh, cmpl)) {
+			append(hsh_hts, cmpl);
+			append(prb_hts, cmpr);
+		} else {
+			assert(rel_find_exp(rel_hsh, cmpr));
+			append(hsh_hts, cmpr);
+			append(prb_hts, cmpl);
+		}
+	}
+	hsh_hps = rel_projections(sql, rel_hsh, 0, 0, 0);
+	prb_hps = rel_projections(sql, rel_prb, 0, 0, 0);
+	est = get_rel_count(rel_hsh);
 
-	/* first construct the base table */
-	sub = subrel_bin(be, rel, refs);
-	sub = subrel_project(be, sub, refs, rel);
+	/* init the global variables */
+	htres = rel2bin_pphash_prepare(be, est, hsh_hts, hsh_hps);
+	htres_hts = htres->h->data;
+	htres_hps = htres->h->next->data;
+
+	(void)prb_hps;
+	(void)htres_hts;
+	(void)htres_hps;
+
+	/* the pipelines() block to compute the hash table */
+	if (pp_can_not_start(be->mvc, rel_hsh)) {
+		set_need_pipeline(be);
+	} else {
+		pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel));
+		set_pipeline(be, pp);
+	}
+
+	/* first construct the sub-relation */
+	sub = subrel_bin(be, rel_hsh, refs);
+	sub = subrel_project(be, sub, refs, rel_hsh);
 	if (!sub) return NULL;
 
+	pp = get_pipeline(be);
+	if (!pp) {
+		(void)get_and_disable_need_pipeline(be);
+		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
+		sub = rel2bin_slicer(be, sub, 1);
+	}
+
+	/*
 	for (node *n = rel->exps->h, *o = HTs->h, *p = sub->op4.lval->h;
 	     n && o && p; n = n->next, o = o->next, p = p->next) {
 		InstrPtr q;
@@ -129,30 +183,19 @@ rel2bin_pphash_table(list *htresults, backend *be, sql_rel *rel, list *refs)
 		parent_slt = getArg(q,0);
 		parent_ht = *(int *) o->data;
 	}
+	*/
 
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
 
-	return res;
-}
+	// FIXME what is cursub?????
+	cursub = sub;
 
-stmt *
-rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
-{
-	//mvc *sql = be->mvc;
-	sql_rel *l = rel->l, *r = rel->r;
-	stmt *hsh_tbl = NULL, *res = NULL;
-	list *htresults = NULL;
-
-	if (l->hashjoin) {
-		htresults = rel2bin_pphash_prepare(be, rel, rel->l);
-		hsh_tbl = rel2bin_pphash_table(be, rel, rel->l, refs, htresults);
-	} else {
-		htresults = rel2bin_pphash_prepare(be, rel, rel->r);
-		hsh_tbl = rel2bin_pphash_table(be, rel, rel->r, refs, htresults);
+	if (neededpp) {
+		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, cursub)));
+		cursub = rel2bin_slicer(be, cursub, 1);
 	}
 
-	res = hsh_tbl;
-	return res;
+	return cursub;
 }
 

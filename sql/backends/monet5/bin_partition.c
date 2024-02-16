@@ -50,7 +50,7 @@ rel_is_not_pp_safe(visitor *v, sql_rel *rel)
 {
 	if (is_groupby(rel->op) ||
 	    rel->op == op_table ||
-		rel->hashjoin)
+		(is_join(rel->op) && rel->hashjoin))
 		*((int*)v->data) = 1;
 	return rel;
 }

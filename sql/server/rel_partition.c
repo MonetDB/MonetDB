@@ -328,7 +328,7 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 }
 
 static void
-mark_hashjoin(sql_rel *rel)
+mark_hashjoin(mvc *sql, sql_rel *rel)
 {
 	/* For now, only generate paralle hash join plan for equi-joins on at
 	 * least one base table.
@@ -336,7 +336,7 @@ mark_hashjoin(sql_rel *rel)
 	if (rel->op != op_join)
 		return;
 
-	for (node *n = exps->h; n; n = n->next) {
+	for (node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		if (!is_compare(e->type) || e->flag != cmp_equal)
 			return;
@@ -476,7 +476,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (pb && is_outerjoin(rel->op))
 			return 0;
 
-		mark_hashjoin(rel);
+		mark_hashjoin(sql, rel);
 
 		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
 		if (0 && (l || r)) {
