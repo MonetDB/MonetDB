@@ -3119,29 +3119,6 @@ UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 	return dst;
 }
 
-static inline str
-UTF8_offset(char *restrict s, int n)
-{
-	UTF8_assert(s);
-	while (*s && n) {
-		if ((*s & 0xF8) == 0xF0) {
-			/* 4 byte UTF-8 sequence */
-			s += 4;
-		} else if ((*s & 0xF0) == 0xE0) {
-			/* 3 byte UTF-8 sequence */
-			s += 3;
-		} else if ((*s & 0xE0) == 0xC0) {
-			/* 2 byte UTF-8 sequence */
-			s += 2;
-		} else {
-			/* 1 byte UTF-8 "sequence" */
-			s++;
-		}
-		n--;
-	}
-	return s;
-}
-
 int
 UTF8_strlen(const char *s)
 {								/* This function assumes, s is never nil */
@@ -4957,7 +4934,7 @@ str_insert(str *buf, size_t *buflen, const char *s, int strt, int l,
 		v = UTF8_strncpy(v, s, strt);
 	strcpy(v, s2);
 	if (strt + l < l1)
-		strcat(v, UTF8_offset((char *) s, strt + l));
+		strcat(v, UTF8_strtail((char *) s, strt + l));
 	return MAL_SUCCEED;
 }
 
