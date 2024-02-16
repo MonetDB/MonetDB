@@ -3056,6 +3056,7 @@ UTF8_assert(const char *s)
 #define UTF8_assert(s)		((void) 0)
 #endif
 
+/* return how many codepoints in the substring end in s starts */
 static inline int
 UTF8_strpos(const char *s, const char *end)
 {
@@ -3074,6 +3075,8 @@ UTF8_strpos(const char *s, const char *end)
 	return pos;
 }
 
+/* return a pointer to the byte that starts the pos'th (0-based)
+ * codepoint in s */
 static inline str
 UTF8_strtail(const char *s, int pos)
 {
@@ -3089,6 +3092,7 @@ UTF8_strtail(const char *s, int pos)
 	return (str) s;
 }
 
+/* copy n Unicode codepoints from s to dst, return pointer to new end */
 static inline str
 UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 {
@@ -3119,9 +3123,10 @@ UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 	return dst;
 }
 
+/* return number of Unicode codepoints in s; s is not nil */
 int
 UTF8_strlen(const char *s)
-{								/* This function assumes, s is never nil */
+{								/* This function assumes s is never nil */
 	size_t pos = 0;
 
 	UTF8_assert(s);
@@ -3136,9 +3141,10 @@ UTF8_strlen(const char *s)
 	return (int) pos;
 }
 
+/* return (int) strlen(s); s is not nil */
 int
 str_strlen(const char *s)
-{								/* This function assumes, s is never nil */
+{								/* This function assumes s is never nil */
 	size_t pos = strlen(s);
 	assert(pos < INT_MAX);
 	return (int) pos;
@@ -3556,6 +3562,10 @@ STRTail(str *res, const str *arg1, const int *offset)
 	return msg;
 }
 
+/* copy the substring s[off:off+l] into *buf, replacing *buf with a
+ * freshly allocated buffer if the substring doesn't fit; off is 0
+ * based, and both off and l count in Unicode codepoints (i.e. not
+ * bytes); if off < 0, off counts from the end of the string */
 str
 str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 {

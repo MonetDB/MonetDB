@@ -22,9 +22,11 @@
 #include <iconv.h>
 #endif
 
-/* In order to make avaialble a bulk version of a string function with candidates, all possible combinations of scalar/vector
-	version of each argument must be avaiable for the function. Obviously this won't scale for functions with a large number of
-	arguments, so we keep a blacklist for functions without candidate versions. */
+/* In order to make available a bulk version of a string function with
+ * candidates, all possible combinations of scalar/vector version of
+ * each argument must be avaiable for the function. Obviously this won't
+ * scale for functions with a large number of arguments, so we keep a
+ * blacklist for functions without candidate versions. */
 static const char *batstr_funcs_with_no_cands[8] =
 		{ "lpad3", "rpad3", "splitpart", "substitute", "locate3", "insert",
 "replace", NULL };
