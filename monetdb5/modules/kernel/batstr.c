@@ -22,9 +22,11 @@
 #include <iconv.h>
 #endif
 
-/* In order to make avaialble a bulk version of a string function with candidates, all possible combinations of scalar/vector
-	version of each argument must be avaiable for the function. Obviously this won't scale for functions with a large number of
-	arguments, so we keep a blacklist for functions without candidate versions. */
+/* In order to make available a bulk version of a string function with
+ * candidates, all possible combinations of scalar/vector version of
+ * each argument must be avaiable for the function. Obviously this won't
+ * scale for functions with a large number of arguments, so we keep a
+ * blacklist for functions without candidate versions. */
 static const char *batstr_funcs_with_no_cands[8] =
 		{ "lpad3", "rpad3", "splitpart", "substitute", "locate3", "insert",
 "replace", NULL };
@@ -76,7 +78,7 @@ str_prefix(str *buf, size_t *buflen, const char *s, int l)
 
 static str
 do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  const char *name, int (*func)(const char *restrict))
+			  const char *name, int (*func)(const char *))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
@@ -1978,7 +1980,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	ynil = strNil(y);
-	ylen = str_strlen(y);
+	ylen = ynil ? 0 : str_strlen(y); /* not used if nil */
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -2354,7 +2356,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	ynil = strNil(y);
-	ylen = str_strlen(y);
+	ylen = ynil ? 0 : str_strlen(y); /* not used if nil */
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);

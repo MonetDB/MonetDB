@@ -141,9 +141,9 @@
 	} while (0)
 
 mal_export bool batstr_func_has_candidates(const char *func);
-mal_export int UTF8_strwidth(const char *restrict s);
-mal_export int UTF8_strlen(const char *restrict s);
-mal_export int str_strlen(const char *restrict s);
+mal_export int UTF8_strwidth(const char *s);
+mal_export int UTF8_strlen(const char *s);
+mal_export int str_strlen(const char *s);
 
 /* For str returning functions, the result is passed as the input parameter buf. The returned str indicates
    if the function succeeded (ie malloc failure or invalid unicode character). str_wchr_at function also

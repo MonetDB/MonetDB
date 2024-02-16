@@ -206,8 +206,10 @@ logbat_new(int tt, BUN size, role_t role)
 
 	if (nb) {
 		BBP_pid(nb->batCacheid) = 0;
-		if (role == PERSISTENT)
+		if (role == PERSISTENT) {
 			BATmode(nb, false);
+			nb = BATsetaccess(nb, BAT_READ);
+		}
 	} else {
 		TRC_CRITICAL(GDK, "creating new BAT[%s]#" BUNFMT " failed\n", ATOMname(tt), size);
 	}
@@ -1661,14 +1663,14 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 		if (lid == -1)
 			continue;	/* remove */
 
-		if (BUNappend(nbids, &col, false) != GDK_SUCCEED ||
-		    BUNappend(noids, &nid, false) != GDK_SUCCEED ||
+		if (BUNappend(nbids, &col, true) != GDK_SUCCEED ||
+		    BUNappend(noids, &nid, true) != GDK_SUCCEED ||
 		    BUNappend(nlids, &lid, false) != GDK_SUCCEED ||
 		    BUNappend(ncnts, &cnt, false) != GDK_SUCCEED)
 			err = 1;
 		if (BUNfnd(lg->dcatalog, &pos) != BUN_NONE) {
 			pos = (oid) (BATcount(nbids) - 1);
-			if (BUNappend(ndels, &pos, false) != GDK_SUCCEED)
+			if (BUNappend(ndels, &pos, true) != GDK_SUCCEED)
 				err = 1;
 		}
 	}
@@ -1684,10 +1686,7 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	/* point of no return */
 	if (log_switch_bat(catalog_bid, nbids, lg->fn, "catalog_bid") != GDK_SUCCEED ||
 	    log_switch_bat(catalog_id, noids, lg->fn, "catalog_id") != GDK_SUCCEED ||
-	    log_switch_bat(dcatalog, ndels, lg->fn, "dcatalog") != GDK_SUCCEED ||
-	    (nbids = BATsetaccess(nbids, BAT_READ)) == NULL ||
-	    (noids = BATsetaccess(noids, BAT_READ)) == NULL ||
-	    (ndels = BATsetaccess(ndels, BAT_READ)) == NULL) {
+	    log_switch_bat(dcatalog, ndels, lg->fn, "dcatalog") != GDK_SUCCEED) {
 		logbat_destroy(nbids);
 		logbat_destroy(noids);
 		logbat_destroy(ndels);
@@ -1869,9 +1868,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 		BATclear(lg->dseqs, true);
 
 		if (log_switch_bat(lg->seqs_id, ids, lg->fn, "seqs_id") != GDK_SUCCEED ||
-		    log_switch_bat(lg->seqs_val, vals, lg->fn, "seqs_val") != GDK_SUCCEED ||
-		    (ids = BATsetaccess(ids, BAT_READ)) == NULL ||
-		    (vals = BATsetaccess(vals, BAT_READ)) == NULL) {
+		    log_switch_bat(lg->seqs_val, vals, lg->fn, "seqs_val") != GDK_SUCCEED) {
 			logbat_destroy(ids);
 			logbat_destroy(vals);
 			GDKfree(n);
@@ -2056,11 +2053,6 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 			GDKerror("cannot create catalog bats");
 			goto error;
 		}
-		if ((lg->catalog_bid = BATsetaccess(lg->catalog_bid, BAT_READ)) == NULL ||
-		    (lg->catalog_id = BATsetaccess(lg->catalog_id, BAT_READ)) == NULL ||
-		    (lg->dcatalog = BATsetaccess(lg->dcatalog, BAT_READ)) == NULL) {
-			goto error;
-		}
 		TRC_INFO(WAL, "create %s catalog\n", fn);
 
 		/* give the catalog bats names so we can find them
@@ -2211,6 +2203,11 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 			GDKerror("Logger_new: cannot load seqs bats");
 			goto error;
 		}
+		if ((lg->seqs_val = BATsetaccess(lg->seqs_val, BAT_READ)) == NULL ||
+		    (lg->seqs_id = BATsetaccess(lg->seqs_id, BAT_READ)) == NULL ||
+		    (lg->dseqs = BATsetaccess(lg->dseqs, BAT_READ)) == NULL) {
+			goto error;
+		}
 	} else {
 		lg->seqs_id = logbat_new(TYPE_int, 1, PERSISTENT);
 		lg->seqs_val = logbat_new(TYPE_lng, 1, PERSISTENT);
@@ -2237,11 +2234,6 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 			goto error;
 		}
 		needcommit = true;
-	}
-	if ((lg->seqs_val = BATsetaccess(lg->seqs_val, BAT_READ)) == NULL ||
-	    (lg->seqs_id = BATsetaccess(lg->seqs_id, BAT_READ)) == NULL ||
-	    (lg->dseqs = BATsetaccess(lg->dseqs, BAT_READ)) == NULL) {
-		goto error;
 	}
 	dbg = ATOMIC_GET(&GDKdebug);
 	ATOMIC_AND(&GDKdebug, ~CHECKMASK);

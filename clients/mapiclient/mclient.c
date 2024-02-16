@@ -47,6 +47,10 @@
 
 #include <locale.h>
 
+#ifdef HAVE_WCWIDTH
+#include <wchar.h>
+#endif
+
 #ifdef HAVE_ICONV
 #include <iconv.h>
 #ifdef HAVE_NL_LANGINFO
@@ -413,6 +417,14 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 			c = (c << 6) | (*s & 0x3F);
 			if (--n == 0) {
 				/* last byte of a multi-byte character */
+#ifdef HAVE_WCWIDTH
+				n = wcwidth(c);
+				if (n >= 0)
+					len += n;
+				else
+					len++;		/* assume width 1 if unprintable */
+				n = 0;
+#else
 				len++;
 				/* this list was created by combining
 				 * the code points marked as
@@ -546,7 +558,7 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 					len++;
 				else if (0x0080 <= c && c <= 0x009F)
 					len += 5;
-
+#endif
 			}
 		} else if ((*s & 0xE0) == 0xC0) {
 			assert(n == 0);
