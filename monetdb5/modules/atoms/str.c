@@ -3028,29 +3028,7 @@ STRepilogue(void *ret)
 static inline void
 UTF8_assert(const char *s)
 {
-	int c;
-
-	if (s == NULL)
-		return;
-	if (*s == '\200' && s[1] == '\0')
-		return;					/* str_nil */
-	while ((c = *s++) != '\0') {
-		if ((c & 0x80) == 0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xE0) == 0xC0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xF0) == 0xE0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xF8) == 0xF0)
-			continue;
-		assert(0);
-	}
+	assert(strNil(s) || utf8valid(s) == 0);
 }
 #else
 #define UTF8_assert(s)		((void) 0)
@@ -3060,19 +3038,12 @@ UTF8_assert(const char *s)
 static inline int
 UTF8_strpos(const char *s, const char *end)
 {
-	int pos = 0;
-
 	UTF8_assert(s);
 
 	if (s > end) {
 		return -1;
 	}
-	while (s < end) {
-		/* just count leading bytes of encoded code points; only works
-		 * for correctly encoded UTF-8 */
-		pos += (*s++ & 0xC0) != 0x80;
-	}
-	return pos;
+	return (int) utf8nlen(s, (size_t) (end - s));
 }
 
 /* return a pointer to the byte that starts the pos'th (0-based)
@@ -3127,27 +3098,20 @@ UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 int
 UTF8_strlen(const char *s)
 {								/* This function assumes s is never nil */
-	size_t pos = 0;
-
 	UTF8_assert(s);
 	assert(!strNil(s));
 
-	while (*s) {
-		/* just count leading bytes of encoded code points; only works
-		 * for correctly encoded UTF-8 */
-		pos += (*s++ & 0xC0) != 0x80;
-	}
-	assert(pos < INT_MAX);
-	return (int) pos;
+	return (int) utf8len(s);
 }
 
 /* return (int) strlen(s); s is not nil */
 int
 str_strlen(const char *s)
 {								/* This function assumes s is never nil */
-	size_t pos = strlen(s);
-	assert(pos < INT_MAX);
-	return (int) pos;
+	UTF8_assert(s);
+	assert(!strNil(s));
+
+	return (int) strlen(s);
 }
 
 /* return the display width of s */
@@ -3791,11 +3755,15 @@ STRstartswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *arg1, prefix = *arg2, msg = MAL_SUCCEED;
-	int plen = str_strlen(prefix);
+	if (strNil(s) || strNil(prefix)) {
+		*res = bit_nil;
+	} else {
+		int plen = str_strlen(prefix);
 
-	*res = (strNil(s) || strNil(prefix)) ? bit_nil :
-			icase ? str_is_iprefix(s, prefix, plen) : str_is_prefix(s, prefix,
-																	plen);
+		*res = icase ?
+			str_is_iprefix(s, prefix, plen) :
+			str_is_prefix(s, prefix, plen);
+	}
 	return msg;
 }
 
@@ -3834,11 +3802,15 @@ STRendswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *arg1, suffix = *arg2, msg = MAL_SUCCEED;
-	int sul = str_strlen(suffix);
+	if (strNil(s) || strNil(suffix)) {
+		*res = bit_nil;
+	} else {
+		int sul = str_strlen(suffix);
 
-	*res = (strNil(s) || strNil(suffix)) ? bit_nil :
-			icase ? str_is_isuffix(s, suffix, sul) : str_is_suffix(s, suffix,
-																   sul);
+		*res = icase ?
+			str_is_isuffix(s, suffix, sul) :
+			str_is_suffix(s, suffix, sul);
+	}
 	return msg;
 }
 
@@ -3876,12 +3848,15 @@ STRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str haystack = *arg1, needle = *arg2, msg = MAL_SUCCEED;
-	int needle_len = str_strlen(needle);
+	if (strNil(haystack) || strNil(needle)) {
+		*res = bit_nil;
+	} else {
+		int needle_len = str_strlen(needle);
 
-	*res = (strNil(haystack) || strNil(needle)) ? bit_nil :
-			icase ? str_icontains(haystack, needle,
-								  needle_len) : str_contains(haystack, needle,
-															 needle_len);
+		*res = icase ?
+			str_icontains(haystack, needle, needle_len) :
+			str_contains(haystack, needle, needle_len);
+	}
 	return msg;
 }
 
@@ -3919,11 +3894,15 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
-	int needle_len = str_strlen(h);
+	if (strNil(s) || strNil(h)) {
+		*res = bit_nil;
+	} else {
+		int needle_len = str_strlen(h);
 
-	*res = (strNil(s) || strNil(h)) ? bit_nil :
-			icase ? str_isearch(s, h, needle_len) : str_search(s, h,
-															   needle_len);
+		*res = icase ?
+			str_isearch(s, h, needle_len) :
+			str_search(s, h, needle_len);
+	}
 	return msg;
 }
 
@@ -3977,12 +3956,15 @@ STRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
-	int needle_len = str_strlen(h);
+	if (strNil(s) || strNil(h)) {
+		*res = bit_nil;
+	} else {
+		int needle_len = str_strlen(h);
 
-	*res = (strNil(s) || strNil(h)) ? bit_nil :
-			icase ? str_reverse_str_isearch(s, h,
-											needle_len) :
+		*res = icase ?
+			str_reverse_str_isearch(s, h, needle_len) :
 			str_reverse_str_search(s, h, needle_len);
+	}
 	return msg;
 }
 
@@ -4902,8 +4884,9 @@ STRlocate3(int *ret, const str *needle, const str *haystack, const int *start)
 	const char *s = *needle, *s2 = *haystack;
 	int st = *start;
 
-	*ret = (strNil(s) || strNil(s2)
-			|| is_int_nil(st)) ? int_nil : str_locate2(s, s2, st);
+	*ret = (strNil(s) || strNil(s2) || is_int_nil(st)) ?
+		int_nil :
+		str_locate2(s, s2, st);
 	return MAL_SUCCEED;
 }
 
@@ -5163,6 +5146,9 @@ do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 				 bit (*str_cmp)(const char *, const char *, int),
 				 bool keep_nulls)
 {
+	if (strNil(key))
+		return MAL_SUCCEED;
+
 	BATiter bi = bat_iterator(b);
 	BUN cnt = 0, ncands = ci->ncand;
 	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
@@ -5370,6 +5356,8 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
+			if (strNil(vr))												\
+				continue;												\
 			rlen = STR_LEN;												\
 			nl = 0;														\
 			if (with_strimps)											\
@@ -5443,6 +5431,8 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
+			if (strNil(vr))												\
+				continue;												\
 			rlen = STR_LEN;												\
 			nl = 0;														\
 			canditer_init(&lci, l, sl);									\
