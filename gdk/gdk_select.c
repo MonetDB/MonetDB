@@ -1199,6 +1199,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	const ValRecord *minprop = NULL, *maxprop = NULL;
 	const void *minval = NULL, *maxval = NULL;
 	bool maxincl = true;
+	BAT *pb = NULL;
 	int c;
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(bi->type);
 
@@ -1221,6 +1222,27 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	} else if ((maxprop = BATgetprop_nolock(bi->b, GDK_MAX_BOUND)) != NULL) {
 		maxval = VALptr(maxprop);
 		maxincl = false;
+	}
+	if (minprop == NULL || maxprop == NULL) {
+		if (VIEWtparent(bi->b) &&
+		    (pb = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
+			bool keep = false;
+			MT_lock_set(&pb->theaplock);
+			if (minprop == NULL && (minprop = BATgetprop_nolock(pb, GDK_MIN_BOUND)) != NULL) {
+				keep = true;
+				minval = VALptr(minprop);
+			}
+			if (maxprop == NULL && (maxprop = BATgetprop_nolock(pb, GDK_MAX_BOUND)) != NULL) {
+				keep = true;
+				maxval = VALptr(maxprop);
+				maxincl = true;
+			}
+			if (!keep) {
+				MT_lock_unset(&pb->theaplock);
+				BBPreclaim(pb);
+				pb = NULL;
+			}
+		}
 	}
 
 	if (minprop == NULL && maxprop == NULL) {
@@ -1304,6 +1326,11 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 			else
 				range = range_contains;
 		}
+	}
+
+	if (pb) {
+		MT_lock_unset(&pb->theaplock);
+		BBPreclaim(pb);
 	}
 
 	MT_lock_unset(&bi->b->theaplock);

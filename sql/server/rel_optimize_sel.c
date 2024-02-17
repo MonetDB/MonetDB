@@ -2397,6 +2397,11 @@ rel_join_order_(visitor *v, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
+	/*
+	if (is_join(rel->op))
+		rel = reorder_join(v, rel);
+	return rel;
+	*/
 
 	switch (rel->op) {
 	case op_basetable:
@@ -2454,6 +2459,10 @@ rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_join_order_(v, rel);
+	/*
+	rel = rel_visitor_bottomup(v, rel, &rel_join_order_);
+	return rel;
+	*/
 }
 
 run_optimizer
