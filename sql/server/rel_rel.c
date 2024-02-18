@@ -2180,8 +2180,12 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 		break;
 	case op_table:
 		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+			bool changed = false;
 			if (rel->l)
 				if ((rel->l = rel_exp_visitor(v, rel->l, exp_rewriter, topdown, relations_topdown)) == NULL)
+					return NULL;
+			if (rel->r)
+				if ((rel->r = exp_visitor(v, rel, rel->r, 0, exp_rewriter, topdown, relations_topdown, &changed)) == NULL)
 					return NULL;
 		}
 		break;
