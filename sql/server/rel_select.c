@@ -2920,7 +2920,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 	}
 
 	sql_subfunc *f = bind_func(sql, sname, fname, t1, t2, 2, type, false, &found, exact);
-	if(f && check_card(card,f)) {
+	if (f && check_card(card,f)) {
 		t1 = exp_subtype(l);
 		t2 = exp_subtype(r);
 		list *args = list_append(list_append(sa_list(sql->sa), l), r);

@@ -196,6 +196,15 @@ exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti)
 	if (e == NULL)
 		return NULL;
 	e->card = MAX(exps_card(l),exps_card(r));
+	if (!r) { /* split l */
+		list *nl = sa_list(sa), *nr = sa_list(sa);
+		node *n = l->h;
+		append(nl, n->data); /* sofar only first is left */
+		for(n = n->next; n; n = n->next)
+			append(nr, n->data);
+		l = nl;
+		r = nr;
+	}
 	e->l = l;
 	e->r = r;
 	e->f = f;
@@ -370,6 +379,8 @@ exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype 
 sql_exp *
 exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 {
+	if (f->func->type == F_FILT)
+		return exp_filter(sa, l, NULL, f, false);
 	sql_exp *e = exp_create(sa, e_func);
 	if (e == NULL)
 		return NULL;

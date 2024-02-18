@@ -121,6 +121,7 @@ scanner_init_keywords(void)
 
 	failed += keywords_insert("false", BOOL_FALSE);
 	failed += keywords_insert("true", BOOL_TRUE);
+	failed += keywords_insert("bool", BOOL);
 
 	failed += keywords_insert("ALTER", ALTER);
 	failed += keywords_insert("ADD", ADD);
@@ -1476,16 +1477,11 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 
 	yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
 
-	/* This is needed as ALIAS and aTYPE get defined too late, see
-	   sql_keyword.h */
-	if (token == KW_ALIAS)
-		token = ALIAS;
-
 	if (token == KW_TYPE)
 		token = aTYPE;
 
 	if (token == IDENT || token == COMPARISON ||
-	    token == RANK || token == aTYPE || token == ALIAS || token == MARGFUNC) {
+	    token == RANK || token == aTYPE || token == MARGFUNC) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 		lc->next_string_is_raw = false;
 	} else if (token == STRING) {
