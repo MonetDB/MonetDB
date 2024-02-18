@@ -1,0 +1,30 @@
+statement ok
+CREATE TABLE t0(c0 VARCHAR(500), c1 BOOLEAN)
+
+statement ok
+INSERT INTO t0 (c0, c1) VALUES ('a', false)
+
+statement ok
+INSERT INTO t0 (c0) VALUES ('b')
+
+query TT
+SELECT * FROM t0
+----
+a
+False
+b
+NULL
+
+query T
+SELECT (1 AND 3) FROM t0
+----
+True
+True
+
+query TT
+SELECT * FROM t0 WHERE (1 AND 3)
+----
+a
+False
+b
+NULL
