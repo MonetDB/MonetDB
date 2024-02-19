@@ -647,7 +647,7 @@ int yydebug=1;
 	sqlDECIMAL sqlFLOAT
 	TINYINT SMALLINT BIGINT HUGEINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
-	BOOL BOOL_FALSE BOOL_TRUE
+	sqlBOOL BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	BIG LITTLE NATIVE ENDIAN
 	LEX_ERROR
@@ -5330,7 +5330,7 @@ literal:
 		  }
 		  $$ = _newAtomNode(a);
 		}
- | BOOL string
+ | sqlBOOL string
 		{ sql_subtype t;
 		  atom *a = NULL;
 		  int r;
@@ -5679,7 +5679,7 @@ data_type:
  | aTYPE		{ sql_find_subtype(&$$, $1, 0, 0); }
  | aTYPE '(' nonzero ')'
 			{ sql_find_subtype(&$$, $1, $3, 0); }
- | BOOL			{ sql_find_subtype(&$$, "boolean", 0, 0); }
+ | sqlBOOL		{ sql_find_subtype(&$$, "boolean", 0, 0); }
  | ident_or_uident	{
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
@@ -5881,7 +5881,7 @@ non_reserved_word:
 | ASC		{ $$ = sa_strdup(SA, "asc"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
 | BIG		{ $$ = sa_strdup(SA, "big"); }
-| BOOL		{ $$ = sa_strdup(SA, "bool"); }
+| sqlBOOL	{ $$ = sa_strdup(SA, "bool"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
 | CENTURY	{ $$ = sa_strdup(SA, "century"); }
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }

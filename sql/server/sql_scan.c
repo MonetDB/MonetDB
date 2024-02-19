@@ -121,7 +121,7 @@ scanner_init_keywords(void)
 
 	failed += keywords_insert("false", BOOL_FALSE);
 	failed += keywords_insert("true", BOOL_TRUE);
-	failed += keywords_insert("bool", BOOL);
+	failed += keywords_insert("bool", sqlBOOL);
 
 	failed += keywords_insert("ALTER", ALTER);
 	failed += keywords_insert("ADD", ADD);
