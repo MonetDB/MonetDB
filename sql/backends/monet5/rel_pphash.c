@@ -24,15 +24,15 @@
  *   X_8:bat[:int] := hash.new_payload(nil:int, 10:int,   10:int,     X_6:bat[:int]); # <sel-col1>
  *   X_9:bat[:int] := hash.new_payload(nil:int, 10:int,   10:int,     X_6:bat[:int]); # <sel-col2>
  *
- * Returns: a list with two sublists
- *   `HTs`: the hash-table stmt-s
+ * Returns: parallel hash result in a list with two sublists
+ *   `PHres_hts`: the hash-table stmt-s
  *   `HPs`: the hash-payload stmt-s
  */
 static list *
 rel2bin_pphash_prepare(backend *be, BUN est, list *exps_ht, list *exps_hp)
 {
 	mvc *sql = be->mvc;
-	list *HTres= sa_list(sql->sa), *HTs = sa_list(sql->sa), *HPs = sa_list(sql->sa);
+	list *PHres= sa_list(sql->sa), *HTs = sa_list(sql->sa), *HPs = sa_list(sql->sa);
 	int curhash = 0;
 
 	// TODO better estimation
@@ -64,9 +64,9 @@ rel2bin_pphash_prepare(backend *be, BUN est, list *exps_ht, list *exps_hp)
 		append(HPs, q);
 	}
 
-	append(HTres, HTs);
-	append(HTres, HPs);
-	return HTres;
+	append(PHres, HTs);
+	append(PHres, HPs);
+	return PHres;
 }
 
 /* Generates the parallel block to compute a hash table:
@@ -100,24 +100,13 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	stmt *pp = NULL, *sub = NULL, *cursub = NULL;
 	BUN est = BUN_NONE;
 	list *eq_exps = sa_list(sql->sa);
-	list *hsh_hts = NULL, *hsh_hps = NULL; /* hash and payload columns of hash side */
-	list *prb_hts = NULL, *prb_hps = NULL; /* hash and payload columns of probe side */
-	list *htres = NULL, *htres_hts = NULL, *htres_hps = NULL; /* stmts of HT global vars in 2 sublists */
-	int neededpp = rel->partition && get_and_disable_need_pipeline(be);
+	list *hsh_hts = sa_list(sql->sa), *prb_hts = sa_list(sql->sa); /* hash-table column exps */
+	list *hsh_hps = sa_list(sql->sa), *prb_hps = sa_list(sql->sa); /* hash-payload column exps */
+	list *PHres = NULL, *PHres_hts = NULL, *PHres_hps = NULL;
+	int prnt_slts = 0, prnt_ht = 0;
+	int neededpp = rel->partition && get_need_pipeline(be);
 
-	/* get equi-joins */
-	for (node *en = rel->exps->h; en; en = en->next) {
-		sql_exp *e = en->data;
-		if (e->type == e_cmp && e->flag == cmp_equal)
-			append(eq_exps, e);
-	}
-	// TODO get no-equi-joins
-
-	/* find the hash-table (i.e. hsh_*) vs hash-probe (i.e. prb_*) sub-rel, and
-	 * for each side the hash (i.e. *_hts) and payload (i.e. *_hps) columns.
-	 */
-	// TODO delay deciding which side to compute hash until here?
-	// TODO remove false positives from hsh_hps
+	/* find the hash- vs probe-side */
 	if (((sql_rel*)rel->l)->hashjoin) {
 		rel_hsh = rel->l;
 		rel_prb = rel->r;
@@ -126,6 +115,16 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		rel_hsh = rel->r;
 		rel_prb = rel->l;
 	}
+
+	/* get equi-joins */
+	for (node *en = rel->exps->h; en; en = en->next) {
+		sql_exp *e = en->data;
+		if (e->type == e_cmp && e->flag == cmp_equal)
+			append(eq_exps, e);
+		else // TODO get no-equi-joins
+			assert(0);
+	}
+	/* find join column exps of hash- vs probe- side */
 	for (node *n = eq_exps->h; n; n = n->next) {
 		sql_exp *e = n->data, *cmpl = e->l, *cmpr = e->r;
 		if (rel_find_exp(rel_hsh, cmpl)) {
@@ -137,20 +136,20 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 			append(prb_hts, cmpl);
 		}
 	}
+
+	// TODO remove false positives from hsh_hps
 	hsh_hps = rel_projections(sql, rel_hsh, 0, 0, 0);
 	prb_hps = rel_projections(sql, rel_prb, 0, 0, 0);
 	est = get_rel_count(rel_hsh);
 
 	/* init the global variables */
-	htres = rel2bin_pphash_prepare(be, est, hsh_hts, hsh_hps);
-	htres_hts = htres->h->data;
-	htres_hps = htres->h->next->data;
+	PHres = rel2bin_pphash_prepare(be, est, hsh_hts, hsh_hps);
+	PHres_hts = PHres->h->data;
+	PHres_hps = PHres->h->next->data;
+	assert(PHres_hts->cnt == hsh_hts->cnt);
+	assert(PHres_hps->cnt == hsh_hps->cnt);
 
-	(void)prb_hps;
-	(void)htres_hts;
-	(void)htres_hps;
-
-	/* the pipelines() block to compute the hash table */
+	/*** HASH PHASE ***/
 	if (pp_can_not_start(be->mvc, rel_hsh)) {
 		set_need_pipeline(be);
 	} else {
@@ -162,40 +161,54 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	sub = subrel_bin(be, rel_hsh, refs);
 	sub = subrel_project(be, sub, refs, rel_hsh);
 	if (!sub) return NULL;
+	cursub = sub; /* remember the projection stmt-s */
+	assert(cursub && cursub->type == st_list && cursub->op4.lval->h);
 
 	pp = get_pipeline(be);
 	if (!pp) {
-		(void)get_and_disable_need_pipeline(be);
+		(void)get_need_pipeline(be);
 		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 
-	/*
-	for (node *n = rel->exps->h, *o = HTs->h, *p = sub->op4.lval->h;
-	     n && o && p; n = n->next, o = o->next, p = p->next) {
-		InstrPtr q;
-		if (!parent_slt) {
-			q = stmt_hash_build_table(be, *(int *) o->data, ((stmt *)p->data)->nr, pp);
+	for (node *n = hsh_hts->h, *inout = PHres_hps->h; n && inout;
+	     n = n->next, inout = inout->next) {
+		stmt *k = exp_bin(be, n->data, cursub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(k); /* must find */
+		InstrPtr q = NULL, sink = inout->data, key = k->q;
+		if (prnt_slts == 0) {
+			q = stmt_hash_build_table(be, *sink->argv, *key->argv, pp);
 		} else {
-			q = stmt_hash_build_combined_table(be, *(int *) o->data, ((stmt *)p->data)->nr, parent_slt, parent_ht, pp);
+			q = stmt_hash_build_combined_table(be, *sink->argv, *key->argv, prnt_slts, prnt_ht, pp);
 		}
 		if (q == NULL) return NULL;
-		parent_slt = getArg(q,0);
-		parent_ht = *(int *) o->data;
+		prnt_slts = getArg(q, 0);
+		prnt_ht = *sink->argv;
 	}
-	*/
+
+	assert(prnt_slts != 0); /* must be set */
+	for (node *n = hsh_hts->h, *inout = PHres_hps->h; n && inout;
+	     n = n->next, inout = inout->next) {
+		stmt *pld = exp_bin(be, n->data, cursub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(pld); /* must find */
+		InstrPtr q = NULL, sink = inout->data, payload = pld->q;
+		q = stmt_hash_add_payload(be, sink, *payload->argv, prnt_slts, pp);
+		if (q == NULL) return NULL;
+	}
 
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
 
-	// FIXME what is cursub?????
-	cursub = sub;
+	/*** PROBE PHASE ***/
+	// TODO
+	(void)prb_hps;
+	(void)PHres_hps;
 
 	if (neededpp) {
-		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, cursub)));
-		cursub = rel2bin_slicer(be, cursub, 1);
+		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
+		sub = rel2bin_slicer(be, sub, 1);
 	}
 
-	return cursub;
+	return sub;
 }
 

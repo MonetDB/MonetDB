@@ -3110,7 +3110,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		rel2bin_pp_hashjoin(be, rel, refs);
 
 	// TODO: GROUP BY and topN code at rel->partition, so, either the rel->spb below is an error or it means something else */
-	int neededpp = rel->spb && get_and_disable_need_pipeline(be);
+	int neededpp = rel->spb && get_need_pipeline(be);
 
 	if (rel->partition == 1) {
 		if (rel->r) { /* first construct the right sub relation */
@@ -3550,7 +3550,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	assert(rel->op != op_anti);
 
-	int neededpp = rel->spb && get_and_disable_need_pipeline(be);
+	int neededpp = rel->spb && get_need_pipeline(be);
 	if (rel->partition == 1 || rel->op == op_anti) {
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
@@ -4487,7 +4487,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
 	bool value_partition = SQLrunning && rel->parallel && !_2phases && rel_groupby_partition(be, rel);
 	bool df2 = (SQLrunning && rel->parallel && !value_partition && rel_groupby_pp(rel, _2phases));
-	int neededpp = rel->partition && get_and_disable_need_pipeline(be);
+	int neededpp = rel->partition && get_need_pipeline(be);
 
 	if (value_partition)
 		return rel2bin_groupby_partition(be, rel, refs);
@@ -4516,7 +4516,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	if (df2)
 		pp = get_pipeline(be);
 	if (df2 && !pp) {
-		(void)get_and_disable_need_pipeline(be);
+		(void)get_need_pipeline(be);
 		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
@@ -4890,7 +4890,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 
 	stmt *pp = get_pipeline(be);
 	if (!pp) {
-		(void)get_and_disable_need_pipeline(be);
+		(void)get_need_pipeline(be);
 		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
@@ -5059,7 +5059,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	int _2phases = rel_topn_2_phases(rel);
 	list *projectresults = NULL;
 	bool df2 = (SQLrunning && rel->parallel && _2phases);
-	int neededpp = rel->partition && get_and_disable_need_pipeline(be);
+	int neededpp = rel->partition && get_need_pipeline(be);
 
 	sql_exp *le = topn_limit(rel);
 	sql_exp *oe = topn_offset(rel);
@@ -5117,7 +5117,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	if (df2)
 		pp = get_pipeline(be);
 	if (df2 && !pp) {
-		(void)get_and_disable_need_pipeline(be);
+		(void)get_need_pipeline(be);
 		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
@@ -7917,9 +7917,9 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		/* needs a proper fix!! */
 		if (s)
 			return s;
-		neededpp = get_and_disable_need_pipeline(be);
+		neededpp = get_need_pipeline(be);
 	} else if (rel->spb && (!is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op)))
-		neededpp = get_and_disable_need_pipeline(be);
+		neededpp = get_need_pipeline(be);
 
 	switch (rel->op) {
 	case op_basetable:

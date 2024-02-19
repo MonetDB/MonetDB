@@ -445,12 +445,9 @@ stmt_hash_build_table(backend *be, int ht_sink, int key, stmt *pp)
 	if (q == NULL) return NULL;
 
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	q = pushReturn(be->mb, q, ht_sink);
 	q = pushArgument(be->mb, q, key);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-	//int tt = getArgType(be->mb, q, 2);
-	q = pushReturn(be->mb, q, ht_sink);
-	//setVarType(be->mb, q, newBatType(TYPE_oid));
-	getArg(q, 1) = ht_sink;
 	q->inout = 1;
 	pushInstruction(be->mb, q);
 	return q;
@@ -461,19 +458,38 @@ stmt_hash_build_table(backend *be, int ht_sink, int key, stmt *pp)
  *   (X_48:bat[:oid], !C_6:bat[:int]) := hash.build_combined_table(X_44:bat[:int], X_46:bat[:oid], X_5:bat[:int], X_19:ptr);
  */
 InstrPtr
-stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_sltid, int prnt_ht, stmt *pp)
+stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_slts, int prnt_ht, stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("build_combined_table"), 6);
 	if (q == NULL) return NULL;
 
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	q = pushReturn(be->mb, q, ht_sink);
 	q = pushArgument(be->mb, q, key);
-	q = pushArgument(be->mb, q, prnt_sltid);
+	q = pushArgument(be->mb, q, prnt_slts);
 	q = pushArgument(be->mb, q, prnt_ht);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(getArgType(be->mb, q, 2))));
-	getArg(q, 1) = ht_sink;
 	q->inout = 1;
+	pushInstruction(be->mb, q);
+	return q;
+}
+
+/* Generates:
+ *   #hp_sink                           payload         parent_slotid   PTR
+ *   !C_8:bat[:int] := hash.add_payload(X_44:bat[:int], X_48:bat[:oid], X_19:ptr);
+ */
+InstrPtr
+stmt_hash_add_payload(backend *be, InstrPtr ht_sink, int payload, int prnt_slts, stmt *pp)
+{
+	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("add_payload"), 4);
+	if (q == NULL) return NULL;
+
+	setVarType(be->mb, getArg(q, 0), newBatType(getArgType(be->mb, ht_sink, 0)));
+	getArg(q, 0) = *ht_sink->argv;
+	q = pushArgument(be->mb, q, payload);
+	q = pushArgument(be->mb, q, prnt_slts);
+	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
+	q->inout = 0;
 	pushInstruction(be->mb, q);
 	return q;
 }

@@ -14,8 +14,8 @@
 extern InstrPtr stmt_hash_new(backend *be, int tt, lng estimate, int parent);
 extern InstrPtr stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent);
 extern InstrPtr stmt_hash_build_table(backend *be, int ht_sink, int key, stmt *pp);
-extern InstrPtr stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_sltid, int prnt_ht, stmt
-*pp);
+extern InstrPtr stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_sltid, int prnt_ht, stmt *pp);
+extern InstrPtr stmt_hash_add_payload(backend *be, InstrPtr ht_sink, int payload, int prnt_slts, stmt *pp);
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);
 

@@ -372,7 +372,7 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs)
 	}
 	pp = get_pipeline(be);
 	if (!pp) {
-		(void)get_and_disable_need_pipeline(be);
+		(void)get_need_pipeline(be);
 		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}

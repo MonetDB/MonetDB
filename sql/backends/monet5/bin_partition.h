@@ -13,7 +13,7 @@
 #include "mal_backend.h"
 
 extern void set_need_pipeline(backend *be);
-extern bool get_and_disable_need_pipeline(backend *be);
+extern bool get_need_pipeline(backend *be);
 
 /* TODO inline part of .h */
 extern void set_pipeline(backend *be, stmt *pp);

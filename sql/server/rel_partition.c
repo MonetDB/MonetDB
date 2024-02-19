@@ -333,7 +333,7 @@ mark_hashjoin(mvc *sql, sql_rel *rel)
 	/* For now, only generate paralle hash join plan for equi-joins on at
 	 * least one base table.
 	 */
-	if (rel->op != op_join)
+	if ((rel->op != op_join) || !rel->exps)
 		return;
 
 	for (node *n = rel->exps->h; n; n = n->next) {
