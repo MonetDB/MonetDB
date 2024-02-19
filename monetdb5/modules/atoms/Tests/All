@@ -38,5 +38,6 @@ startswith
 endswith
 contains
 HAVE_ICONV?asciify
+starts_ends_contains_joins
 
 ts_and_tstz_to_str_bug
