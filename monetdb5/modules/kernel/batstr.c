@@ -1866,7 +1866,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	} else {
@@ -1880,7 +1880,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	}
@@ -1988,7 +1988,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, ylen);
+				vals[i] = func(x, y, ylen) == 0;
 			}
 		}
 	} else {
@@ -2000,7 +2000,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, ylen);
+				vals[i] = func(x, y, ylen) == 0;
 			}
 		}
 	}
@@ -2112,7 +2112,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	} else {
@@ -2124,7 +2124,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	}
