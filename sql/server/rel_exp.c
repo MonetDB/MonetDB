@@ -2405,7 +2405,7 @@ exp_has_func_or_cmp(sql_exp *e, bool cmp)
 			return exps_have_func_or_cmp(e->f, true);
 		return 0;
 	case e_convert:
-		return exp_has_func(e->l);
+		return exp_has_func_or_cmp(e->l, cmp);
 	case e_func:
 		return 1;
 	case e_aggr:

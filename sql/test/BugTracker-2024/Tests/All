@@ -19,3 +19,9 @@ greatest-as-colname-7444
 where-cond-issue-7447
 where-cond-issue-7448
 function_return_issue
+where_null-7450
+between-boolean-7451
+concat_order-7455
+order-by-false-or-false-Bug-7456
+constant-expression-issue-7457
+sign-issue-7458

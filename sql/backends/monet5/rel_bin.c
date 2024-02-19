@@ -1362,6 +1362,8 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 
 	file_loader_t *fl = fl_find(ext);
 	if (!fl)
+		fl = fl_find("csv");
+	if (!fl)
 		return NULL;
 	sql_exp *fexp = arg_list->h->data;
 	assert(is_atom(fexp->type));
@@ -4354,8 +4356,10 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 		if (s->nrcols == 0){
-			if (!predicate && sub)
+			if (!predicate && sub && !list_empty(sub->op4.lval))
 				predicate = stmt_const(be, bin_find_smallest_column(be, sub), stmt_bool(be, 1));
+			else if (!predicate)
+				predicate = const_column(be, stmt_bool(be, 1));
 			if (e->type != e_cmp) {
 				sql_subtype *bt = sql_bind_localtype("bit");
 
@@ -4439,6 +4443,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	cursub = stmt_list(be, l);
 	if (cursub == NULL)
 		return NULL;
+	if (aggrs && !aggrs->h && ext)
+		list_append(l, ext);
 	for (n = aggrs->h; n; n = n->next) {
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;

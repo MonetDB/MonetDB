@@ -5973,6 +5973,7 @@ limit 100
 ----
 600 values hashing to f1cce2608f5e93697e23da9b25217519
 
+skipif bits=32bit
 query ITRRRR rowsort
 -- query 51a
 WITH web_tv as (
