@@ -918,8 +918,10 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 		return NULL;
 	if (!single_value && !case_when->nrcols) {
 		stmt *l = isel;
-		if (!l)
+		if (!l && left)
 			l = bin_find_smallest_column(be, left);
+		else if (!l)
+			return NULL;
 		case_when = stmt_const(be, l, case_when);
 		if (case_when)
 			case_when->cand = isel;
