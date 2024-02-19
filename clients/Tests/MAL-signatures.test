@@ -38765,7 +38765,12 @@ SQLwindow_bound;
 computes window ranges for each row
 sqlcatalog
 alter_add_range_partition
-pattern sqlcatalog.alter_add_range_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:any_1, X_5:any_1, X_6:bit, X_7:int):void 
+pattern sqlcatalog.alter_add_range_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:any_1, X_5:any_1, X_6:bit, X_7:int, X_8:bat[:lng]):void 
+SQLalter_add_range_partition;
+Catalog operation alter_add_range_partition
+sqlcatalog
+alter_add_range_partition
+pattern sqlcatalog.alter_add_range_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:any_1, X_5:any_1, X_6:bit, X_7:int, X_8:lng):void 
 SQLalter_add_range_partition;
 Catalog operation alter_add_range_partition
 sqlcatalog
@@ -38775,12 +38780,22 @@ SQLalter_add_table;
 Catalog operation alter_add_table
 sqlcatalog
 alter_add_value_partition
-pattern sqlcatalog.alter_add_value_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit, X_5:int):void 
+pattern sqlcatalog.alter_add_value_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit, X_5:int, X_6:bat[:lng]):void 
 SQLalter_add_value_partition;
 Catalog operation alter_add_value_partition
 sqlcatalog
 alter_add_value_partition
-pattern sqlcatalog.alter_add_value_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit, X_5:int, X_6:any...):void 
+pattern sqlcatalog.alter_add_value_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit, X_5:int, X_6:bat[:lng], X_7:any...):void 
+SQLalter_add_value_partition;
+Catalog operation alter_add_value_partition
+sqlcatalog
+alter_add_value_partition
+pattern sqlcatalog.alter_add_value_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit, X_5:int, X_6:lng):void 
+SQLalter_add_value_partition;
+Catalog operation alter_add_value_partition
+sqlcatalog
+alter_add_value_partition
+pattern sqlcatalog.alter_add_value_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit, X_5:int, X_6:lng, X_7:any...):void 
 SQLalter_add_value_partition;
 Catalog operation alter_add_value_partition
 sqlcatalog

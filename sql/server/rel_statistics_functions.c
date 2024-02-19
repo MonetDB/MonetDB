@@ -409,7 +409,11 @@ sql_sign_propagate_statistics(mvc *sql, sql_exp *e)
 		atom *zero1 = atom_zero_value(sql->sa, &(omin->tpe));
 		int cmp1 = atom_cmp(omax, zero1), cmp2 = atom_cmp(omin, zero1);
 
-		if (cmp1 >= 0 && cmp2 >= 0) {
+		if (cmp1 == 0 && cmp2 == 0) {
+			set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, bte, 0));
+			set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, bte, 0));
+			properties_set = true;
+		} else if (cmp1 > 0 && cmp2 > 0) {
 			set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, bte, 1));
 			set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, bte, 1));
 			properties_set = true;
