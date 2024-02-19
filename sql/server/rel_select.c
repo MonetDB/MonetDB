@@ -2799,10 +2799,12 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		sql_find_subtype(&bt, "boolean", 0, 0);
-		if (!(le = exp_check_type(sql, &bt, rel, le, type_equal)))
-			return NULL;
-		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
+		if (le && !is_compare(le->type)) {
+			sql_find_subtype(&bt, "boolean", 0, 0);
+			if (!(le = exp_check_type(sql, &bt, rel, le, type_equal)))
+				return NULL;
+			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
+		}
 		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 	}
 	}
