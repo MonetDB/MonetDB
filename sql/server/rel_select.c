@@ -2805,7 +2805,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				return NULL;
 			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
 		}
-		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
+		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, (le->flag < cmp_filter)?le->f:NULL, f);
 	}
 	}
 	/* never reached, as all switch cases have a `return` */
