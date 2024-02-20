@@ -5606,7 +5606,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 static void
-strrev(char *dst, const char *src, size_t len)
+do_strrev(char *dst, const char *src, size_t len)
 {
 	dst[len] = 0;
 	if (strNil(src)) {
@@ -5689,7 +5689,7 @@ batstr_strrev(BAT **r, BAT *b)
 			}
 			dst = ndst;
 		}
-		strrev(dst, src, len);
+		do_strrev(dst, src, len);
 		if (BUNappend(bn, dst, false) != GDK_SUCCEED) {
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
