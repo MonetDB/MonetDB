@@ -158,7 +158,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	}
 
 	int prnt_slts = 0, prnt_ht = 0;
-	for (node *n = hsh_hts->h, *inout = PHres_hps->h; n && inout;
+	for (node *n = hsh_hts->h, *inout = PHres_hts->h; n && inout;
 	     n = n->next, inout = inout->next) {
 		stmt *k = exp_bin(be, n->data, cursub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(k); /* must find */
@@ -253,13 +253,22 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	}
 	
 	assert(matched && rhs_slts); /* must be set */
-	//for (node *n = prb_hps->h; n; n = n->next) {
-	//}
+	int rhp = *((InstrPtr)PHres_hps->h->data)->argv;
+	for (node *n = prb_hps->h; n; n = n->next) {
+		stmt *k = exp_bin(be, n->data, cursub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(k); /* must find */
+		InstrPtr q = NULL, key = k->q;
+		// TODO make this into a stmt and add to sub
+		q = stmt_hash_expand(be, *key->argv, matched, rhs_slts, rhp);
+		if (q == NULL) return NULL;
+	}
 
-	(void)prb_hps;
-	(void)PHres_hps;
-	//stmt_hash_expand(backend *be, int col, int sel, int prnt, int rhp)
-	//stmt_hash_fetch_payload(backend *be, int slt, int hp)
+	for (node *n = PHres_hps->h; n; n = n->next) {
+		int hp = *((InstrPtr)n->data)->argv;
+		// TODO make this into a stmt and add to sub
+		InstrPtr q = stmt_hash_fetch_payload(be, rhs_slts, hp);
+		if (q == NULL) return NULL;
+	}
 
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
