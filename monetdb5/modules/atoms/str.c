@@ -5887,7 +5887,7 @@ exit:
 }
 
 static str
-startswith_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
+startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 				bit anti, bit (*str_cmp)(const char *, const char *, int), str fname)
 {
 	str msg = MAL_SUCCEED;
@@ -5898,6 +5898,12 @@ startswith_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 	if (qry_ctx != NULL)
 		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ?
 			(qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
+	BAT *sorted_l = NULL, *sorted_r = NULL,
+		*sorted_cl = NULL, *sorted_cr = NULL,
+		*ord_sorted_l = NULL, *ord_sorted_r = NULL,
+		*proj_rl = NULL, *proj_rr = NULL,
+		*rl = *rl_ptr, *rr = *rr_ptr;
 
 	TRC_DEBUG(ALGO,
 			  "(%s, %s, l=%s#" BUNFMT "[%s]%s%s,"
@@ -5917,11 +5923,10 @@ startswith_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 			  cr && cr->tsorted ? "-sorted" : "",
 			  cr && cr->trevsorted ? "-revsorted" : "");
 
-	BAT *sorted_l = NULL, *sorted_r = NULL,
-		*sorted_cl = NULL, *sorted_cr = NULL,
-		*ord_sorted_l = NULL, *ord_sorted_r = NULL;
+	bool l_sorted = BATordered(l);
+	bool r_sorted = BATordered(r);
 
-	if (!BATordered(l)) {
+	if (l_sorted == FALSE) {
 		rc = BATsort(&sorted_l, &ord_sorted_l, NULL,
 					 l, NULL, NULL, false, false, false);
 		if (rc != GDK_SUCCEED) {
@@ -5936,12 +5941,12 @@ startswith_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 				}
 			}
 		}
+	} else {
+		sorted_l = l;
+		sorted_cl = cl;
 	}
 
-	assert(sorted_l);
-	assert((cl && sorted_cl) || (!cl));
-
-	if (!BATordered(r)) {
+	if (r_sorted == FALSE) {
 		rc = BATsort(&sorted_r, &ord_sorted_r, NULL,
 					 r, NULL, NULL, false, false, false);
 		if (rc != GDK_SUCCEED) {
@@ -5957,10 +5962,12 @@ startswith_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 				}
 			}
 		}
+	} else {
+		sorted_r = r;
+		sorted_cr = cr;
 	}
 
-	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
-	assert(ATOMtype(l->ttype) == TYPE_str);
+	assert(BATordered(sorted_l) && BATordered(sorted_r));
 
 	BATiter li = bat_iterator(sorted_l);
 	BATiter ri = bat_iterator(sorted_r);
@@ -6000,18 +6007,27 @@ startswith_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 			rr->tseqbase = 0;
 	}
 
-	BAT *proj_rl = NULL, *proj_rr = NULL;
+	if (l_sorted == FALSE) {
+		proj_rl = BATproject(rl, ord_sorted_l);
+		if (!proj_rl) {
+			msg = createException(MAL, fname, "Project left pre-sort order failed");
+			goto exit;
+		} else {
+			BBPreclaim(rl);
+			*rl_ptr = proj_rl;
+		}
+	}
 
-	proj_rl = BATproject(rl, ord_sorted_l);
-	if (rr)
+	if (rr && r_sorted == FALSE) {
 		proj_rr = BATproject(rr, ord_sorted_r);
-	if (!proj_rl || (rr && !proj_rr)) {
-		BBPreclaim(proj_rl);
-		msg = createException(MAL, fname, "Project pre-sort order failed");
-	} else {
-		BBPnreclaim(2, rl, rr);
-		*rl = *proj_rl;
-		*rr = *proj_rr;
+		if (!proj_rr) {
+			BBPreclaim(proj_rl);
+			msg = createException(MAL, fname, "Project right pre-sort order failed");
+			goto exit;
+		} else {
+			BBPreclaim(rr);
+			*rr_ptr = proj_rr;
+		}
 	}
 
 	TRC_DEBUG(ALGO,
@@ -6025,8 +6041,12 @@ startswith_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 			  rr && rr->trevsorted ? "-revsorted" : "");
 
 exit:
-	BBPnreclaim(6, sorted_l, ord_sorted_l, sorted_cl,
-				sorted_r, ord_sorted_r, sorted_cr);
+	if (l_sorted == FALSE)
+		BBPnreclaim(3, sorted_l, ord_sorted_l, sorted_cl);
+
+	if (r_sorted == FALSE)
+		BBPnreclaim(3, sorted_r, ord_sorted_r, sorted_cr);
+
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
 	return msg;
@@ -6067,6 +6087,9 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 	if (rr_id)
 		set_empty_bat_props(rr);
 
+	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
+	assert(ATOMtype(l->ttype) == TYPE_str);
+
 	if (strcmp(fname, "str.containsjoin") == 0) {
 		msg = contains_join(rl, rr, l, r, cl, cr, anti, str_cmp, fname);
 		if (msg) {
@@ -6087,7 +6110,7 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 			msg = str_join_nested(rl, rr, l, r, cl, cr, anti, str_cmp, fname);
 		else {
 			if (strcmp(fname, "str.startswithjoin") == 0)
-				msg = startswith_join(rl, rr, l, r, cl, cr, anti, str_cmp, fname);
+				msg = startswith_join(&rl, &rr, l, r, cl, cr, anti, str_cmp, fname);
 			else {
 				assert(strcmp(fname, "str.endswithjoin") == 0);
 
@@ -6106,8 +6129,8 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 				}
 
 				msg = (str_cmp == &str_is_isuffix) ?
-					startswith_join(rl, rr, l_rev, r_rev, cl, cr, anti, str_is_iprefix, fname) :
-					startswith_join(rl, rr, l_rev, r_rev, cl, cr, anti, str_is_prefix, fname);
+					startswith_join(&rl, &rr, l_rev, r_rev, cl, cr, anti, str_is_iprefix, fname) :
+					startswith_join(&rl, &rr, l_rev, r_rev, cl, cr, anti, str_is_prefix, fname);
 
 				BBPnreclaim(2, l_rev, r_rev);
 			}
