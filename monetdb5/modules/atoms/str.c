@@ -5631,8 +5631,10 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (strNil(vl))										\
 					continue;											\
 				cmp = STR_CMP;											\
-				if (cmp < 0)											\
+				if (cmp < 0) {											\
+					lidx++;											\
 					continue;											\
+				}														\
 				else if (cmp > 0)										\
 					break;												\
 				if (BATcount(rl) == BATcapacity(rl)) {					\
@@ -6068,8 +6070,79 @@ startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 
 	if (anti)
 		STR_JOIN_NESTED_LOOP((str_cmp(vl, vr, vr_len) != 0), str_strlen(vr), fname);
-	else
-		STARTSWITH_SORTED_LOOP(str_cmp(vl, vr, vr_len), str_strlen(vr), fname);
+	else {
+		/* STARTSWITH_SORTED_LOOP(str_cmp(vl, vr, vr_len), str_strlen(vr), fname); */
+		canditer_init(&rci, sorted_r, sorted_cr);
+		for (BUN lidx = 0,ridx = 0; ridx < rci.ncand; ridx++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit));
+			ro = canditer_next(&rci);
+			vr = VALUE(r, ro - rbase);
+			if (strNil(vr))
+				continue;
+			vr_len = str_strlen(vr);
+			matches = 0;
+			canditer_init(&lci, sorted_l, sorted_cl);
+			for (BUN n = lidx; lidx < lci.ncand; n++) {
+				lo = canditer_next(&lci);
+				vl = VALUE(l, lo - lbase);
+				if (strNil(vl))
+					continue;
+				cmp = str_cmp(vl, vr, vr_len);
+				if (cmp < 0) {
+					lidx++;
+					continue;
+				}
+				else if (cmp > 0)
+					break;
+				if (BATcount(rl) == BATcapacity(rl)) {
+					newcap = BATgrows(rl);
+					BATsetcount(rl, BATcount(rl));
+					if (rr)
+						BATsetcount(rr, BATcount(rr));
+					if (BATextend(rl, newcap) != GDK_SUCCEED ||
+						(rr && BATextend(rr, newcap) != GDK_SUCCEED)) {
+						msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto exit;
+					}
+					assert(!rr || BATcapacity(rl) == BATcapacity(rr));
+				}
+				if (BATcount(rl) > 0) {
+					if (last_lo + 1 != lo)
+						rl->tseqbase = oid_nil;
+					if (matches == 0) {
+						if (rr)
+							rr->trevsorted = false;
+						if (last_lo > lo) {
+							rl->tsorted = false;
+							rl->tkey = false;
+						} else if (last_lo < lo) {
+							rl->trevsorted = false;
+						} else {
+							rl->tkey = false;
+						}
+					}
+				}
+				APPEND(rl, lo);
+				if (rr)
+					APPEND(rr, ro);
+				last_lo = lo;
+				matches++;
+			}
+			if (rr) {
+				if (matches > 1) {
+					rr->tkey = false;
+					rr->tseqbase = oid_nil;
+					rl->trevsorted = false;
+				} else if (matches == 0) {
+					rskipped = BATcount(rr) > 0;
+				} else if (rskipped) {
+					rr->tseqbase = oid_nil;
+				}
+			} else if (matches > 1) {
+				rl->trevsorted = false;
+			}
+		}
+	}
 
 	assert(!rr || BATcount(rl) == BATcount(rr));
 	BATsetcount(rl, BATcount(rl));
