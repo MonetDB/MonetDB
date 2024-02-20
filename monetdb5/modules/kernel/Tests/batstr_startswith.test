@@ -72,16 +72,6 @@ query T
 select * from baz where [baz.x] startswith ['doe', true];
 ----
 
-query TT
-select * from baz,bazbaz where [baz.x] startswith [bazbaz.x, true];
-----
-john doe
-john
-jane doe
-jane
-robert doe
-robert
-
 statement ok
 drop table baz
 

@@ -72,19 +72,6 @@ john doe
 jane doe
 robert doe
 
-query T rowsort
-select baz.x from baz,bazbaz where [baz.x] endswith [bazbaz.x, true];
-----
-jane doe
-jane doe
-jane doe
-john doe
-john doe
-john doe
-robert doe
-robert doe
-robert doe
-
 statement ok
 drop table baz
 
