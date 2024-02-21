@@ -6158,7 +6158,7 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 
 	rl = COLnew(0, TYPE_oid, BATcount(l), TRANSIENT);
 	if (rr_id)
-		rr = COLnew(0, TYPE_oid, BATcount(r), TRANSIENT);
+		rr = COLnew(0, TYPE_oid, BATcount(l), TRANSIENT);
 
 	if (!rl || (rr_id && !rr)) {
 		BBPnreclaim(6, l, r, cl, cr, rl, rr);
