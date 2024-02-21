@@ -46,7 +46,8 @@ add_executable(streamcat
 target_link_libraries(streamcat
   PRIVATE
   monetdb_config_header
-  stream)
+  stream
+  $<$<BOOL:${CURL_FOUND}>:CURL::libcurl>)
 
 add_executable(testcondvar
   testcondvar.c)

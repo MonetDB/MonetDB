@@ -110,20 +110,6 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 	return res;
 }
 
-static void
-generate_alter_table_error_message(char* buf, sql_table *mt)
-{
-	char *s1 = isRangePartitionTable(mt) ? "range":"list of values";
-	if (isPartitionedByColumnTable(mt)) {
-		sql_column* col = mt->part.pcol;
-		snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in column %s outside the partition %s", col->base.name, s1);
-	} else if (isPartitionedByExpressionTable(mt)) {
-		snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in the expression outside the partition %s", s1);
-	} else {
-		assert(0);
-	}
-}
-
 static sql_exp *
 generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype tpe, bool nilok)
 {
@@ -162,14 +148,13 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 	}
 }
 
-static sql_rel*
+static sql_exp*
 create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, bit with_nills, sql_exp *pmin, sql_exp *pmax, bool all_ranges, bool max_equal_min)
 {
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
-	sql_exp *exception, *aggr, *anti_exp = NULL, *anti_le, *e1, *e2, *anti_nils;
+	sql_exp *aggr, *anti_exp = NULL, *anti_le, *e1, *e2, *anti_nils;
 	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
-	char buf[BUFSIZ];
 	sql_subtype tpe;
 
 	find_partition_type(&tpe, mt);
@@ -223,22 +208,16 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	set_processed(anti_rel);
 	exp_label(sql->sa, aggr, ++sql->label);
 
-	/* generate the exception */
-	aggr = exp_ref(sql, aggr);
-	generate_alter_table_error_message(buf, mt);
-	exception = exp_exception(sql->sa, aggr, buf);
-
-	return rel_exception(sql->sa, NULL, anti_rel, list_append(new_exp_list(sql->sa), exception));
+	return exp_rel(sql, anti_rel);
 }
 
-static sql_rel*
+static sql_exp*
 create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, bit with_nills, list *anti_exps)
 {
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
-	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
+	sql_exp *aggr, *anti_exp, *anti_le, *anti_nils;
 	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
-	char buf[BUFSIZ];
 	sql_subtype tpe;
 
 	find_partition_type(&tpe, mt);
@@ -271,17 +250,21 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
 	set_processed(anti_rel);
 	exp_label(sql->sa, aggr, ++sql->label);
+	return exp_rel(sql, anti_rel);
+}
 
-	/* generate the exception */
-	aggr = exp_ref(sql, aggr);
-	generate_alter_table_error_message(buf, mt);
-	exception = exp_exception(sql->sa, aggr, buf);
-
-	return rel_exception(sql->sa, NULL, anti_rel, list_append(new_exp_list(sql->sa), exception));
+static sql_exp *
+add_check_count(mvc *sql,  sql_exp *a, sql_exp *b)
+{
+	if (!a)
+		return b;
+	sql_subtype *lng = sql_bind_localtype("lng");
+    sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
+	return exp_binop(sql->sa, a, b, add);
 }
 
 static sql_rel *
-propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table *pt, sql_rel *rel)
+propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table *pt, sql_rel *rel, sql_exp *check_count)
 {
 	mvc *sql = query->sql;
 	sql_part *it = NULL;
@@ -310,8 +293,10 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 					assert(spt->with_nills);
 					found_all = is_bit_nil(spt->with_nills);
 				}
-				if (!found_all || !spt->with_nills)
-					rel = rel_list(sql->sa, rel, create_range_partition_anti_rel(query, it->t, pt, spt->with_nills, e1, e2, false, max_equal_min));
+				if (!found_all || !spt->with_nills) {
+					sql_exp *nres = create_range_partition_anti_rel(query, it->t, pt, spt->with_nills, e1, e2, false, max_equal_min);
+					check_count = add_check_count(sql, check_count, nres);
+				}
 			} else if (isListPartitionTable(it->t)) {
 				list *exps = new_exp_list(sql->sa);
 				for (node *n = spt->part.values->h ; n ; n = n->next) {
@@ -319,13 +304,19 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 					sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, next->value));
 					list_append(exps, e1);
 				}
-				rel = rel_list(sql->sa, rel, create_list_partition_anti_rel(query, it->t, pt, spt->with_nills, exps));
+				sql_exp *nres = create_list_partition_anti_rel(query, it->t, pt, spt->with_nills, exps);
+				check_count = add_check_count(sql, check_count, nres);
 			} else {
 				assert(0);
 			}
 		} else { /* the sql_part should exist */
 			assert(0);
 		}
+	}
+	if (check_count) {
+		append(rel->exps, check_count);
+	} else {
+		append(rel->exps, exp_atom_lng(sql->sa, 0));
 	}
 	return rel;
 }
@@ -335,11 +326,12 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 									char *tname2, symbol* min, symbol* max, bit with_nills, int update)
 {
 	mvc *sql = query->sql;
-	sql_rel *rel_psm = rel_create(sql->sa), *res;
+	sql_rel *rel_psm = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
 	sql_exp *pmin, *pmax;
 	sql_subtype tpe;
 	bool all_ranges = false;
+	sql_exp *check_count = NULL;
 
 	if (!rel_psm || !exps)
 		return NULL;
@@ -386,14 +378,9 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 			atom *e1 = pmin->l, *e2 = pmax->l;
 			min_max_equal = ATOMcmp(tpe.type->localtype, &e1->data.val, &e2->data.val) == 0;
 		}
-		res = create_range_partition_anti_rel(query, mt, pt, with_nills, (min && max) ? pmin : NULL, (min && max) ? pmax : NULL, all_ranges, min_max_equal);
-		/* create a list, such that we first check the content of the table/column before creating/altering a new partition */
-		res = rel_list(query->sql->sa, res, rel_psm);
-	} else {
-		res = rel_psm;
+		check_count = create_range_partition_anti_rel(query, mt, pt, with_nills, (min && max) ? pmin : NULL, (min && max) ? pmax : NULL, all_ranges, min_max_equal);
 	}
-
-	return propagate_validation_to_upper_tables(query, mt, pt, res);
+	return propagate_validation_to_upper_tables(query, mt, pt, rel_psm, check_count); /* this adds the check_count to the rel_psm exps list */
 }
 
 sql_rel *
@@ -401,7 +388,7 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 								   char *tname2, dlist* values, bit with_nills, int update)
 {
 	mvc *sql = query->sql;
-	sql_rel *rel_psm = rel_create(sql->sa), *res;
+	sql_rel *rel_psm = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
 	sql_subtype tpe;
 	sql_exp *converted_values = NULL;
@@ -445,14 +432,14 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 	rel_psm->r = NULL;
 	rel_psm->op = op_ddl;
 	rel_psm->flag = ddl_alter_table_add_list_partition;
-	rel_psm->exps = list_merge(exps, converted_values->f, (fdup)NULL);
+	rel_psm->exps = exps;
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;
 
-	res = create_list_partition_anti_rel(query, mt, pt, with_nills, exps_copy(sql, (list*)converted_values->f));
-	res->l = rel_psm;
-
-	return propagate_validation_to_upper_tables(query, mt, pt, res);
+	sql_exp *check_count = create_list_partition_anti_rel(query, mt, pt, with_nills, exps_copy(sql, (list*)converted_values->f));
+	rel_psm = propagate_validation_to_upper_tables(query, mt, pt, rel_psm, check_count); /* this adds check_count to the rel_psm exps list */
+	rel_psm->exps = list_merge(rel_psm->exps, converted_values->f, (fdup)NULL);
+	return rel_psm;
 }
 
 static sql_rel* rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt);

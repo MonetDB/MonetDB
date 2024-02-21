@@ -301,7 +301,7 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 		r->l = NULL; /* omit table from list of dependencies */
 		(void) rel_project_add_exp(sql, r, exp);
 
-		nr = sql_processrelation(sql, nr, 0, 0, 0, 0);
+		nr = sql_processrelation(sql, nr, 0, instantiate, 0, 0);
 		if (nr) {
 			list *blist = rel_dependencies(sql, nr);
 			if (mvc_create_dependencies(sql, blist, mt->base.id, FUNC_DEPENDENCY))

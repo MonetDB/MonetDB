@@ -2799,11 +2799,13 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		sql_find_subtype(&bt, "boolean", 0, 0);
-		if (!(le = exp_check_type(sql, &bt, rel, le, type_equal)))
-			return NULL;
-		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
-		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
+		if (le && !is_compare(le->type)) {
+			sql_find_subtype(&bt, "boolean", 0, 0);
+			if (!(le = exp_check_type(sql, &bt, rel, le, type_equal)))
+				return NULL;
+			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
+		}
+		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, (le->flag < cmp_filter)?le->f:NULL, f);
 	}
 	}
 	/* never reached, as all switch cases have a `return` */
@@ -2920,7 +2922,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 	}
 
 	sql_subfunc *f = bind_func(sql, sname, fname, t1, t2, 2, type, false, &found, exact);
-	if(f && check_card(card,f)) {
+	if (f && check_card(card,f)) {
 		t1 = exp_subtype(l);
 		t2 = exp_subtype(r);
 		list *args = list_append(list_append(sa_list(sql->sa), l), r);
