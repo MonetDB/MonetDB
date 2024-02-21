@@ -1728,7 +1728,6 @@ int mnstr_writeShtArray(stream *restrict s, const int16_t *restrict val, size_t 
 int mnstr_writeStr(stream *restrict s, const char *restrict val);
 stream *open_rastream(const char *filename);
 stream *open_rstream(const char *filename);
-stream *open_urlstream(const char *url);
 stream *open_wastream(const char *filename);
 stream *open_wstream(const char *filename);
 stream *openssl_rstream(const char *hostname, BIO *bio);
