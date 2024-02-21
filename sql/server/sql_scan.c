@@ -1504,9 +1504,12 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 		case 'e':
 		case 'E':
 			assert(yylval->sval[1] == '\'');
-			GDKstrFromStr((unsigned char *) str,
-						  (unsigned char *) yylval->sval + 2,
-						  lc->yycur-lc->yysval - 2, '\'');
+			if (GDKstrFromStr((unsigned char *) str,
+							  (unsigned char *) yylval->sval + 2,
+							  lc->yycur-lc->yysval - 2, '\'') < 0) {
+				sql_error(c, 1, SQLSTATE(42000) "%s", GDKerrbuf);
+				return LEX_ERROR;
+			}
 			quote = '\'';
 			break;
 		case 'u':
@@ -1548,10 +1551,13 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 						src++;
 				*dst = 0;
 			} else {
-				GDKstrFromStr((unsigned char *)str,
-							  (unsigned char *)yylval->sval + 1,
-							  lc->yycur - lc->yysval - 1,
-							  '\'');
+				if (GDKstrFromStr((unsigned char *)str,
+								  (unsigned char *)yylval->sval + 1,
+								  lc->yycur - lc->yysval - 1,
+								  '\'') < 0) {
+					sql_error(c, 1, SQLSTATE(42000) "%s", GDKerrbuf);
+					return LEX_ERROR;
+				}
 			}
 			break;
 		}
