@@ -441,10 +441,9 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 			(meropid = atoi(buf)) != 0 &&
 			kill(meropid, SIGHUP) == -1)
 		{
-			fprintf(stderr, "sending SIGHUP to monetdbd[%d] failed: %s\n",
+			/* maybe monetdbd crashed and did not get the chance to clean up */
+			fprintf(stderr, "WARNING: sending SIGHUP to monetdbd[%d] failed: %s\n",
 					(int)meropid, strerror(errno));
-			fclose(pfile);
-			return(1);
 		}
 		fclose(pfile);
 	}
