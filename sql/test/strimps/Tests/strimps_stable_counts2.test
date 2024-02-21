@@ -1,3 +1,5 @@
+hash-threshold 200
+
 statement ok
 CREATE TABLE fal(x STRING)
 
@@ -212,7 +214,7 @@ Michele
 Joseph
 Carolyn
 
-query TT
+query TT nosort
 SELECT * FROM fal,f WHERE [fal.x] startswith [f.y] ORDER BY x
 ----
 Andrew Alvarado
@@ -314,7 +316,7 @@ William
 William Franco
 William
 
-query TT
+query TT nosort
 SELECT * FROM fal,f WHERE [fal.x] endswith [f.y] ORDER BY x
 ----
 Christopher Russell
@@ -322,7 +324,7 @@ Russell
 Elizabeth Joseph
 Joseph
 
-query TT
+query TT nosort
 SELECT * FROM fal,f WHERE [fal.x] contains [f.y] ORDER BY x
 ----
 Andrew Alvarado
@@ -442,7 +444,7 @@ ALTER TABLE fal SET READ ONLY
 statement ok
 CREATE IMPRINTS INDEX fal_index ON fal(x)
 
-query TT
+query TT nosort
 SELECT * FROM fal,f WHERE [fal.x] startswith [f.y] ORDER BY x
 ----
 Andrew Alvarado
@@ -544,7 +546,7 @@ William
 William Franco
 William
 
-query TT
+query TT nosort
 SELECT * FROM fal,f WHERE [fal.x] endswith [f.y] ORDER BY x
 ----
 Christopher Russell
@@ -552,7 +554,7 @@ Russell
 Elizabeth Joseph
 Joseph
 
-query TT
+query TT nosort
 SELECT * FROM fal,f WHERE [fal.x] contains [f.y] ORDER BY x
 ----
 Andrew Alvarado
@@ -671,3 +673,4 @@ DROP TABLE fal CASCADE
 
 statement ok
 DROP TABLE f
+

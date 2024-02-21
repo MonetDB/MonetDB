@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -124,7 +126,9 @@ tmp_schema(mvc *sql)
 			if (!(next = mvc_bind_schema(sql, sname))) \
 				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", error, sname); \
 			EXTRA_CONDITION(EXTRA); /* for functions without schema, 'sys' is a valid schema to bind them */ \
-			CALL; \
+			if (!res) { \
+				CALL; \
+			} \
 		} else { \
 			sql_schema *cur = cur_schema(sql); \
 			char *session_schema = cur->base.name; \
@@ -263,44 +267,58 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 	unsigned int scale = 0, digits = 0;
 	sql_subfunc *ares = SA_ZNEW(sa, sql_subfunc);
 
-	assert (a->res);
 
 	ares->func = a;
-	ares->res = sa_list(sa);
-	for(tn = a->res->h; tn; tn = tn->next) {
-		sql_arg *rarg = tn->data;
-		sql_subtype *res, *r = &rarg->type;
+	if (IS_FILT(a)) {
+		ares->res = sa_list(sa);
+        list_append(ares->res, sql_bind_localtype("bit"));
+	} else if (IS_FUNC(a) || IS_UNION(a) || IS_ANALYTIC(a) || IS_AGGR(a)) { /* not needed for PROC */
+		if (a->res) {
+			ares->res = sa_list(sa);
+			for(tn = a->res->h; tn; tn = tn->next) {
+				sql_arg *rarg = tn->data;
+				sql_subtype *res, *r = &rarg->type;
 
-		digits = r->digits;
-		scale = r->scale;
-		/* same scale as the input */
-		if (member && (member->scale != scale ||
-			(digits != member->digits && !EC_NUMBER(member->type->eclass)))) {
-			if (member->digits > digits)
-				digits = member->digits;
-			scale = member->scale;
+				if (a->fix_scale == SCALE_EQ) {
+					res = r;
+				} else {
+					digits = r->digits;
+					scale = r->scale;
+					/* same scale as the input */
+					if (member && (member->scale != scale ||
+								(digits != member->digits && !EC_NUMBER(member->type->eclass)))) {
+						if (member->digits > digits)
+							digits = member->digits;
+						scale = member->scale;
+					}
+					/* same type as the input */
+					if (r->type->eclass == EC_ANY && member) {
+						r = member;
+						digits = member->digits;
+					}
+					if (!EC_SCALE(r->type->eclass))
+						scale = 0;
+					res = sql_create_subtype(sa, r->type, digits, scale);
+				}
+				list_append(ares->res, res);
+			}
 		}
-		/* same type as the input */
-		if (r->type->eclass == EC_ANY && member) {
-			r = member;
-			digits = member->digits;
-		}
-		if (!EC_SCALE(r->type->eclass))
-			scale = 0;
-		res = sql_create_subtype(sa, r->type, digits, scale);
-		list_append(ares->res, res);
 	}
 	return ares;
 }
+
+
 
 static sql_subfunc *
 func_cmp(sql_allocator *sa, sql_func *f, const char *name, int nrargs)
 {
 	if (strcmp(f->base.name, name) == 0) {
 		if (f->vararg)
-			return (f->type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, NULL);
+			//return (f->type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, NULL);
+			return _dup_subaggr(sa, f, NULL);
 		if (nrargs < 0 || list_length(f->ops) == nrargs)
-			return (f->type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, NULL);
+			//return (f->type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, NULL);
+			return _dup_subaggr(sa, f, NULL);
 	}
 	return NULL;
 }
@@ -400,129 +418,8 @@ sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_fty
 	return res;
 }
 
-static int
-is_subtypeof(sql_subtype *sub, sql_subtype *super)
-/* returns true if sub is a sub type of super */
-{
-	if (!sub || !super)
-		return 0;
-	if (super->digits > 0 && sub->digits > super->digits)
-		return 0;
-	/* while binding a function, 'char' types match each other */
-	if (super->digits == 0 &&
-		((super->type->eclass == EC_STRING && EC_VARCHAR(sub->type->eclass)) ||
-		 (super->type->eclass == EC_CHAR && sub->type->eclass == EC_CHAR)))
-		return 1;
-	if (super->type->eclass == sub->type->eclass)
-		return 1;
-	/* subtypes are only equal iff
-	   they map onto the same systemtype */
-	return (type_cmp(sub->type, super->type) == 0);
-}
-
-/* find function based on first argument */
-static sql_subfunc *
-sql_bind_member_internal(mvc *sql, list *ff, const char *fname, sql_subtype *tp, sql_ftype type, int nrargs, bool private, sql_subfunc *prev)
-{
-	sql_func *cand = NULL;
-	int points = 0, npoints = 0, found = 1;
-
-	assert(nrargs);
-	if (ff) {
-		node *n = ff->h;
-		if (prev) {
-			found = 0;
-			for(; n && !found; n = n->next)
-				if (n->data == prev->func)
-					found = 1;
-		}
-		for (; n; n = n->next) {
-			sql_func *f = n->data;
-
-			if ((!f->res && !IS_FILT(f)) || (f->private && !private))
-				continue;
-			if (strcmp(f->base.name, fname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
-				sql_subtype *ft = &((sql_arg *) f->ops->h->data)->type;
-				if ((f->fix_scale == INOUT && type_cmp(tp->type, ft->type) == 0) || (f->fix_scale != INOUT && is_subtypeof(tp, ft))) {
-					if (!cand) {
-						cand = f;
-						points = tp->type->eclass == ft->type->eclass;
-					} else if ((npoints = tp->type->eclass == ft->type->eclass) > points) {
-						cand = f;
-						points = npoints;
-					}
-				}
-			}
-		}
-	}
-	if (cand)
-		return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, NULL) : sql_dup_subfunc(sql->sa, cand, NULL, tp);
-	return NULL;
-}
-
-static sql_subfunc *
-os_bind_member_internal(mvc *sql, struct objectset *ff, const char *fname, sql_subtype *tp, sql_ftype type, int nrargs, bool private, sql_subfunc *prev)
-{
-	sql_func *cand = NULL;
-	int points = 0, npoints = 0;
-
-	assert(nrargs);
-	if (ff) {
-		struct os_iter oi;
-		os_iterator(&oi, ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
-			sql_func *f = (sql_func*)b;
-			if (prev && prev->func != f)
-				continue;
-			else if (prev) {
-				prev = NULL;
-				continue;
-			}
-
-			if ((!f->res && !IS_FILT(f)) || (f->private && !private))
-				continue;
-			if (strcmp(f->base.name, fname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
-				sql_subtype *ft = &((sql_arg *) f->ops->h->data)->type;
-				if ((f->fix_scale == INOUT && type_cmp(tp->type, ft->type) == 0) || (f->fix_scale != INOUT && is_subtypeof(tp, ft))) {
-					if (!cand) {
-						cand = f;
-						points = tp->type->eclass == ft->type->eclass;
-					} else if ((npoints = tp->type->eclass == ft->type->eclass) > points) {
-						cand = f;
-						points = npoints;
-					}
-				}
-			}
-		}
-	}
-	if (cand)
-		return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, tp) : sql_dup_subfunc(sql->sa, cand, NULL, tp);
-	return NULL;
-}
-
-
-#define sql_bind_member_extra \
-	do { \
-		if (!res && (res = sql_bind_member_internal(sql, funcs, name, tp, type, nrargs, private, prev))) /* search system wide functions first */ \
-			return res; \
-	} while (0)
-
 sql_subfunc *
-sql_bind_member(mvc *sql, const char *sname, const char *name, sql_subtype *tp, sql_ftype type, int nrargs, bool private, sql_subfunc *prev)
-{
-	char *F = NULL, *objstr = NULL;
-	const char *error = "CATALOG";
-	sql_subfunc *res = NULL;
-
-	FUNC_TYPE_STR(type, F, objstr);
-	(void) F; /* not used */
-
-	search_object_on_path(res = os_bind_member_internal(sql, next->funcs, name, tp, type, nrargs, private, prev), functions_without_schema, sql_bind_member_extra, SQLSTATE(42000));
-	return res;
-}
-
-sql_subfunc *
-sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type, bool private)
+sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type, bool private, bool exact)
 {
 	list *l = sa_list(sql->sa);
 
@@ -530,7 +427,7 @@ sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, 
 		list_append(l, tp1);
 	if (tp2)
 		list_append(l, tp2);
-	return sql_bind_func_(sql, sname, fname, l, type, private);
+	return sql_bind_func_(sql, sname, fname, l, type, private, exact);
 }
 
 sql_subfunc *
@@ -544,7 +441,7 @@ sql_bind_func3(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1,
 		list_append(l, tp2);
 	if (tp3)
 		list_append(l, tp3);
-	return sql_bind_func_(sql, sname, fname, l, type, private);
+	return sql_bind_func_(sql, sname, fname, l, type, private, false);
 }
 
 static int /* bind the function version with more identical type matches */
@@ -557,53 +454,207 @@ next_cand_points(list *args, list *ops)
 		sql_arg *a = n->data;
 		sql_subtype *t = m->data;
 
-		if (t)
+		if (a->type.type->eclass == EC_ANY)
+			res += 100;
+		else if (t)
 			res += a->type.type->base.id == t->type->base.id;
 	}
+	res += (list_empty(args) && list_empty(ops));
 	return res;
 }
 
+static int
+score_func( sql_func *f, list *tl, bool exact, bool *downcast)
+{
+	int score = 0;
+	node *n, *m;
+
+	if (exact)
+		return next_cand_points(f->ops, tl);
+	if (!tl)
+		return 1;
+	if (f->vararg)
+		return 1;
+	unsigned int digits = 0, scale = 0;
+	if (f->fix_scale == SCALE_FIX) {
+		for (n = f->ops->h, m = tl->h; n && m; n = n->next, m = m->next) {
+			sql_subtype *t = m->data;
+
+			if (!t)
+				continue;
+			if (t->type->eclass == EC_DEC) {
+				if (digits < t->digits)
+					digits = t->digits;
+				if (scale < t->scale)
+					scale = t->scale;
+			}
+		}
+		for (n = f->ops->h, m = tl->h; n && m; n = n->next, m = m->next) {
+			sql_arg *a = n->data;
+			sql_subtype *t = m->data;
+
+			if (!t)
+				continue;
+			if (a->type.type->eclass == EC_DEC && t->type->eclass == EC_NUM) {
+				if (digits < scale + bits2digits(t->digits))
+					digits = scale + bits2digits(t->digits);
+			}
+		}
+	}
+	int nr_strconverts = 0;
+	for (n = f->ops->h, m = tl->h; n && m; n = n->next, m = m->next) {
+		sql_arg *a = n->data;
+		sql_subtype *t = m->data;
+
+		if (!t) { /* parameters */
+			int ec = a->type.type->eclass;
+			score++;
+			if (ec == EC_DEC)
+				return 0;
+			if (a && EC_NUMBER(ec) && !EC_INTERVAL(ec))
+				score += a->type.type->localtype * 10; /* premium on larger types */
+			else if (a) /* all other types */
+				score += 109;
+			continue;
+		}
+
+		int nscore = sql_type_convert_preference(t->type->eclass, a->type.type->eclass);
+		/* EX_EXTERNAL can only convert between equal implementation types */
+		if (nscore == 0 &&
+			t->type->eclass == a->type.type->eclass &&
+			t->type->eclass == EC_EXTERNAL &&
+			t->type->localtype == a->type.type->localtype)
+				nscore = 10;
+		if (nscore &&
+			t->type->eclass == EC_NUM && a->type.type->eclass == EC_DEC &&
+			t->type->localtype > a->type.type->localtype)
+			*downcast = true;
+		if (nscore == 0)
+			return 0;
+		nscore *= 100; /* first based on prefered conversions */
+		if (nscore < 0) {
+			*downcast = true;
+			nscore = -nscore;
+		}
+		score += nscore;
+		if (EC_VARCHAR(t->type->eclass) && EC_NUMBER(a->type.type->eclass))
+			nr_strconverts++;
+		if (nr_strconverts > 1)
+			return 0;
+
+		if (f->fix_scale == SCALE_FIX && a->type.type->eclass == EC_DEC && digits > a->type.type->digits) /* doesn't fit */
+			return 0;
+		/* sql types equal but implementation differences */
+		else if (t->type->eclass == EC_BIT && a->type.type->eclass == EC_NUM && t->type->localtype <= a->type.type->localtype) /* convert bits into smallest number */
+			score += (11 + t->type->localtype - a->type.type->localtype) * 8;
+		/* sql types close but digits/scale diffs */
+		else if (t->type->eclass == EC_NUM && a->type.type->eclass == EC_DEC && /*t->type->localtype <= a->type.type->localtype*/ bits2digits(t->digits) < a->type.type->digits)
+			//score += (10 + t->type->localtype - a->type.type->localtype) * 8;
+			score += (38 + bits2digits(t->digits) - a->type.type->digits);
+		/* same class over converting to other class */
+		else if (t->type->eclass == a->type.type->eclass && t->type->localtype <= a->type.type->localtype) {
+			score += (11 + t->type->localtype - a->type.type->localtype) * 4;
+			/* handle intervals (day, hour, minutes, second) mapped
+			 * within same eclass and implementation type. */
+			if (t->type->eclass == a->type.type->eclass && t->type->eclass == EC_SEC)
+				score += ((t->type->digits > 4 && a->type.type->digits > 4) ||
+				          (t->type->digits <= 4 && a->type.type->digits <= 4)) * 4;
+		}
+		/* conversion matrix needs check if conversion is possible */
+		else if (t->type->eclass == a->type.type->eclass) {
+				if (t->type->localtype <= a->type.type->localtype) {
+					int nscore = sql_type_convert_preference(t->type->eclass, a->type.type->eclass);
+					score += (10 + t->type->localtype - a->type.type->localtype) * nscore;
+				} else if (t->type->eclass == EC_NUM || t->type->eclass == EC_FLT) { /* down casting */
+					*downcast = true;
+					score += 10 * (10 - t->type->localtype - a->type.type->localtype);
+				}
+		}
+	}
+	score += (list_empty(tl) && list_empty(f->ops));
+	return score;
+}
+
+
 static sql_subfunc *
-sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type, bool private)
+sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type, bool private, bool exact)
 {
 	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 	sql_subtype *input_type = NULL;
-	sql_func *cand = NULL;
-	int points = 0, npoints = 0;
+	sql_func *cand = NULL, *dcand = NULL;
+	int points = 0, dpoints = 0;
 
 	if (ops && ops->h)
 		input_type = ops->h->data;
 
+	assert(ff==funcs);
 	if (ff) {
-		node *n;
-		sql_base_loop(ff, n) {
-			sql_func *f = n->data;
+		if (ff->ht) {
+			int key = hash_key(fname);
+			sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)];
+			for (; he; he = he->chain) {
+				sql_func *f = he->value;
+				bool downcast = false;
 
-			if ((f->type != type && f->type != filt) || (f->private && !private))
-				continue;
-			if (strcmp(f->base.name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
-				if (!cand) {
-					cand = f;
-					points = next_cand_points(f->ops, ops);
-				} else if ((npoints = next_cand_points(f->ops, ops)) > points) {
-					cand = f;
-					points = npoints;
+				if ((f->type != type && f->type != filt) || (f->private && !private))
+					continue;
+				if (strcmp(f->base.name, fname) == 0 && ((!exact && (list_length(f->ops) == list_length(ops) || (list_length(f->ops) <= list_length(ops) && f->vararg))) || (exact && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0))) {
+					int npoints = score_func(f, ops, exact, &downcast);
+					if (downcast) {
+						if ((!dcand && (npoints || exact)) || (dcand && npoints > dpoints)) {
+							dcand = f;
+							dpoints = npoints;
+						}
+					} else {
+						if ((!cand && (npoints || exact)) || (cand && npoints > points)) {
+							cand = f;
+							points = npoints;
+						}
+					}
+				}
+			}
+		} else {
+			node *n;
+			sql_base_loop(ff, n) {
+				sql_func *f = n->data;
+				bool downcast = false;
+
+				if ((f->type != type && f->type != filt) || (f->private && !private))
+					continue;
+				if (strcmp(f->base.name, fname) == 0 && ((!exact && (list_length(f->ops) == list_length(ops) || (list_length(f->ops) <= list_length(ops) && f->vararg))) || (exact && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0))) {
+					int npoints = score_func(f, ops, exact, &downcast);
+					if (downcast) {
+						if ((!dcand && (npoints || exact)) || (dcand && npoints > dpoints)) {
+							dcand = f;
+							dpoints = npoints;
+						}
+					} else {
+						if ((!cand && (npoints || exact)) || (cand && npoints > points)) {
+							cand = f;
+							points = npoints;
+						}
+					}
 				}
 			}
 		}
 	}
+	if (!cand && dcand)
+		cand = dcand;
+	if (cand && exact && type != F_AGGR)
+			return sql_dup_subfunc(sql->sa, cand, ops, NULL);
 	if (cand)
-		return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, input_type) : sql_dup_subfunc(sql->sa, cand, ops, NULL);
+		//return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, input_type) : sql_dup_subfunc(sql->sa, cand, ops, NULL);
+		return _dup_subaggr(sql->sa, cand, (type == F_AGGR) ?input_type: NULL);
 	return NULL;
 }
 
 static sql_subfunc *
-os_bind_func__(mvc *sql, struct objectset *ff, const char *fname, list *ops, sql_ftype type, bool private)
+os_bind_func__(mvc *sql, struct objectset *ff, const char *fname, list *ops, sql_ftype type, bool private, bool exact)
 {
 	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 	sql_subtype *input_type = NULL;
-	sql_func *cand = NULL;
-	int points = 0, npoints = 0;
+	sql_func *cand = NULL, *dcand = NULL;
+	int points = 0, dpoints = 0;
 
 	if (ops && ops->h)
 		input_type = ops->h->data;
@@ -613,33 +664,44 @@ os_bind_func__(mvc *sql, struct objectset *ff, const char *fname, list *ops, sql
 		os_iterator(&oi, ff, sql->session->tr, fname);
 		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
+			bool downcast = false;
 
 			if ((f->type != type && f->type != filt) || (f->private && !private))
 				continue;
-			if (strcmp(f->base.name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
-				if (!cand) {
-					cand = f;
-					points = next_cand_points(f->ops, ops);
-				} else if ((npoints = next_cand_points(f->ops, ops)) > points) {
-					cand = f;
-					points = npoints;
+			if (strcmp(f->base.name, fname) == 0 && ((!exact && (list_length(f->ops) == list_length(ops) || (list_length(f->ops) <= list_length(ops) && f->vararg))) || (exact && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0))) {
+				int npoints = score_func(f, ops, exact, &downcast);
+				if (downcast) {
+					if ((!dcand && (npoints || exact)) || (dcand && npoints > dpoints)) {
+						dcand = f;
+						dpoints = npoints;
+					}
+				} else {
+					if ((!cand && (npoints || exact)) || (cand && npoints > points)) {
+						cand = f;
+						points = npoints;
+					}
 				}
 			}
 		}
 	}
+	if (!cand && dcand)
+		cand = dcand;
+	if (cand && exact && type != F_AGGR)
+			return sql_dup_subfunc(sql->sa, cand, ops, NULL);
 	if (cand)
-		return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, input_type) : sql_dup_subfunc(sql->sa, cand, ops, NULL);
+		//return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, input_type) : sql_dup_subfunc(sql->sa, cand, ops, NULL);
+		return _dup_subaggr(sql->sa, cand, (type == F_AGGR) ?input_type: NULL);
 	return NULL;
 }
 
 #define sql_bind_func__extra \
 	do { \
-		if (!res && (res = sql_bind_func__(sql, funcs, name, ops, type, private))) /* search system wide functions first */ \
+		if (!res && (res = sql_bind_func__(sql, funcs, name, ops, type, private, exact))) /* search system wide functions first */ \
 			return res; \
 	} while (0)
 
 sql_subfunc *
-sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_ftype type, bool private)
+sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_ftype type, bool private, bool exact)
 {
 	char *F = NULL, *objstr = NULL;
 	const char *error = "CATALOG";
@@ -648,7 +710,7 @@ sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_fty
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
 
-	search_object_on_path(res = os_bind_func__(sql, next->funcs, name, ops, type, private), functions_without_schema, sql_bind_func__extra, SQLSTATE(42000));
+	search_object_on_path(res = os_bind_func__(sql, next->funcs, name, ops, type, private, exact), functions_without_schema, sql_bind_func__extra, SQLSTATE(42000));
 	return res;
 }
 
@@ -660,21 +722,41 @@ sql_bind_func_result_internal(mvc *sql, list *ff, const char *fname, sql_ftype t
 	int points = 0, npoints = 0;
 
 	if (ff) {
-		node *n;
-		sql_base_loop( ff, n) {
-			sql_func *f = n->data;
-			sql_arg *firstres = NULL;
+		if (ff->ht) {
+			int key = hash_key(fname);
+			sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)];
+			for (; he; he = he->chain) {
+				sql_func *f = he->value;
+				sql_arg *firstres = NULL;
 
-			if ((!f->res && !IS_FILT(f)) || (f->private && !private))
-				continue;
-			firstres = IS_FILT(f)?tp->type:f->res->h->data;
-			if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
-				if (!cand) {
-					cand = f;
-					points = next_cand_points(f->ops, ops);
-				} else if ((npoints = next_cand_points(f->ops, ops)) > points) {
-					cand = f;
-					points = npoints;
+				if ((!f->res && !IS_FILT(f)) || (f->private && !private))
+					continue;
+				firstres = IS_FILT(f)?tp->type:f->res->h->data;
+				if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+					npoints = next_cand_points(f->ops, ops);
+
+					if (!cand || npoints > points) {
+						cand = f;
+						points = npoints;
+					}
+				}
+			}
+		} else {
+			node *n;
+			sql_base_loop( ff, n) {
+				sql_func *f = n->data;
+				sql_arg *firstres = NULL;
+
+				if ((!f->res && !IS_FILT(f)) || (f->private && !private))
+					continue;
+				firstres = IS_FILT(f)?tp->type:f->res->h->data;
+				if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+					npoints = next_cand_points(f->ops, ops);
+
+					if (!cand || npoints > points) {
+						cand = f;
+						points = npoints;
+					}
 				}
 			}
 		}
@@ -702,10 +784,9 @@ os_bind_func_result_internal(mvc *sql, struct objectset *ff, const char *fname, 
 				continue;
 			firstres = IS_FILT(f)?tp->type:f->res->h->data;
 			if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
-				if (!cand) {
-					cand = f;
-					points = next_cand_points(f->ops, ops);
-				} else if ((npoints = next_cand_points(f->ops, ops)) > points) {
+				npoints = next_cand_points(f->ops, ops);
+
+				if (!cand || npoints > points) {
 					cand = f;
 					points = npoints;
 				}
@@ -719,9 +800,10 @@ os_bind_func_result_internal(mvc *sql, struct objectset *ff, const char *fname, 
 
 #define sql_bind_func_result_extra \
 	do { \
-		if (!res && (res = sql_bind_func_result_internal(sql, funcs, name, type, private, ops, r_res))) /* search system wide functions first */ \
-			return res; \
+		if (!res) \
+			res = sql_bind_func_result_internal(sql, funcs, name, type, private, ops, r_res); /* search system wide functions first */ \
 	} while (0)
+
 
 sql_subfunc *
 sql_bind_func_result(mvc *sql, const char *sname, const char *name, sql_ftype type, bool private, sql_subtype *r_res, int nargs, ...)
@@ -743,181 +825,8 @@ sql_bind_func_result(mvc *sql, const char *sname, const char *name, sql_ftype ty
 	va_end(valist);
 
 	search_object_on_path(res = os_bind_func_result_internal(sql, next->funcs, name, type, private, ops, r_res), functions_without_schema, sql_bind_func_result_extra, SQLSTATE(42000));
-	return res;
-}
-
-static int
-arg_subtype_cmp_null(sql_arg *a, sql_subtype *t)
-{
-	if (a->type.type->eclass == EC_ANY)
-		return 0;
-	if (!t)
-		return 0;
-	return (is_subtypeof(t, &a->type )?0:-1);
-}
-
-static sql_subfunc *
-sql_resolve_function_with_undefined_parameters_internal(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type, bool private)
-{
-	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
-	sql_func *cand = NULL;
-	int points = 0, npoints = 0;
-
-	if (ff) {
-		node *n;
-		sql_base_loop( ff, n) {
-			sql_func *f = n->data;
-
-			if ((f->type != type && f->type != filt) || (f->private && !private))
-				continue;
-			if (strcmp(f->base.name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) {
-				if (!cand) {
-					cand = f;
-					points = next_cand_points(f->ops, ops);
-				} else if ((npoints = next_cand_points(f->ops, ops)) > points) {
-					cand = f;
-					points = npoints;
-				}
-			}
-		}
-	}
-	if (cand)
-		return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, NULL) : sql_dup_subfunc(sql->sa, cand, ops, NULL);
-	return NULL;
-}
-
-static sql_subfunc *
-os_resolve_function_with_undefined_parameters_internal(mvc *sql, struct objectset *ff, const char *fname, list *ops, sql_ftype type, bool private)
-{
-	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
-	sql_func *cand = NULL;
-	int points = 0, npoints = 0;
-
-	if (ff) {
-		struct os_iter oi;
-		os_iterator(&oi, ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
-			sql_func *f = (sql_func*)b;
-
-			if ((f->type != type && f->type != filt) || (f->private && !private))
-				continue;
-			if (strcmp(f->base.name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) {
-				if (!cand) {
-					cand = f;
-					points = next_cand_points(f->ops, ops);
-				} else if ((npoints = next_cand_points(f->ops, ops)) > points) {
-					cand = f;
-					points = npoints;
-				}
-			}
-		}
-	}
-	if (cand)
-		return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, NULL) : sql_dup_subfunc(sql->sa, cand, ops, NULL);
-	return NULL;
-}
-
-#define sql_resolve_function_with_undefined_parameters_extra \
-	do { \
-		if (!res && (res = sql_resolve_function_with_undefined_parameters_internal(sql, funcs, name, ops, type, private))) /* search system wide functions first */ \
-			return res; \
-	} while (0)
-
-sql_subfunc *
-sql_resolve_function_with_undefined_parameters(mvc *sql, const char *sname, const char *name, list *ops, sql_ftype type, bool private)
-{
-	char *F = NULL, *objstr = NULL;
-	const char *error = "CATALOG";
-	sql_subfunc *res = NULL;
-
-	FUNC_TYPE_STR(type, F, objstr);
-	(void) F; /* not used */
-
-	search_object_on_path(res = os_resolve_function_with_undefined_parameters_internal(sql, next->funcs, name, ops, type, private), functions_without_schema, sql_resolve_function_with_undefined_parameters_extra, SQLSTATE(42000));
-	return res;
-}
-
-static list *
-sql_find_funcs_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_ftype type, bool private)
-{
-	sql_subfunc *fres;
-	int key = hash_key(fname);
-	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
-	list *res = NULL;
-
-	if (ff) {
-		if (ff->ht) {
-			for (sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)]; he; he = he->chain) {
-				sql_func *f = he->value;
-
-				if ((f->type != type && f->type != filt) || (f->private && !private))
-					continue;
-				if ((fres = func_cmp(sql->sa, f, fname, nrargs )) != NULL) {
-					if (!res)
-						res = sa_list(sql->sa);
-					list_append(res, fres);
-				}
-			}
-		} else {
-			node *n;
-			sql_base_loop( ff, n) {
-				sql_func *f = n->data;
-
-				if ((f->type != type && f->type != filt) || (f->private && !private))
-					continue;
-				if ((fres = func_cmp(sql->sa, f, fname, nrargs )) != NULL) {
-					if (!res)
-						res = sa_list(sql->sa);
-					list_append(res, fres);
-				}
-			}
-		}
-	}
-	return res;
-}
-
-static list *
-os_find_funcs_internal(mvc *sql, struct objectset *ff, const char *fname, int nrargs, sql_ftype type, bool private)
-{
-	sql_subfunc *fres;
-	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
-	list *res = NULL;
-
-	if (ff) {
-		struct os_iter oi;
-		os_iterator(&oi, ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
-			sql_func *f = (sql_func*)b;
-
-			if ((f->type != type && f->type != filt) || (f->private && !private))
-				continue;
-			if ((fres = func_cmp(sql->sa, f, fname, nrargs )) != NULL) {
-				if (!res)
-					res = sa_list(sql->sa);
-				list_append(res, fres);
-			}
-		}
-	}
-	return res;
-}
-
-#define sql_find_funcs_extra \
-	do { \
-		if (!res && (res = sql_find_funcs_internal(sql, funcs, name, nrargs, type, private))) /* search system wide functions first */ \
-			return res; \
-	} while (0)
-
-list *
-sql_find_funcs(mvc *sql, const char *sname, const char *name, int nrargs, sql_ftype type, bool private)
-{
-	char *F = NULL, *objstr = NULL;
-	const char *error = "CATALOG";
-	list *res = NULL;
-
-	FUNC_TYPE_STR(type, F, objstr);
-	(void) F; /* not used */
-
-	search_object_on_path(res = os_find_funcs_internal(sql, next->funcs, name, nrargs, type, private), functions_without_schema, sql_find_funcs_extra, SQLSTATE(42000));
+	if (res) /* make sure we have the correct result type */
+		res->res->h->data = r_res;
 	return res;
 }
 
@@ -1053,7 +962,7 @@ set_type_param(mvc *sql, sql_subtype *type, int nr)
 
 /*
  * Find the result_datatype for certain combinations of values
- * (like case expressions or coumns in a result of a query expression).
+ * (like case expressions or columns in a result of a query expression).
  * See standaard pages 505-507 Result of data type combinations */
 sql_subtype *
 result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
@@ -1071,7 +980,7 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 			tpe = l->type->base.name;
 			digits = (!r->digits)?0:l->digits;
 		} else { /* both */
-			tpe = !strcmp(l->type->base.name, "clob")?l->type->base.name:!strcmp(r->type->base.name, "clob")?r->type->base.name:
+			tpe = !strcmp(l->type->base.name, "varchar")?l->type->base.name:!strcmp(r->type->base.name, "varchar")?r->type->base.name:
 			(l->type->base.id > r->type->base.id)?l->type->base.name:r->type->base.name;
 			digits = (!l->digits||!r->digits)?0:sql_max(l->digits, r->digits);
 		}
@@ -1124,81 +1033,6 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 	} else {
 		return supertype(super, l, r);
 	}
-	return super;
-}
-
-sql_subtype *
-supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
-{
-	/* first find super type */
-	char *tpe = r->type->base.name;
-	unsigned int radix = (unsigned int) r->type->radix;
-	unsigned int digits = 0;
-	unsigned int idigits = i->digits;
-	unsigned int rdigits = r->digits;
-	unsigned int scale = sql_max(i->scale, r->scale);
-	sql_class eclass = r->type->eclass;
-	sql_subtype lsuper;
-
-	lsuper = *r;
-	/* EC_STRING class is superior to EC_CHAR */
-	if (EC_VARCHAR(i->type->eclass) && EC_VARCHAR(r->type->eclass)) {
-		if (!strcmp(i->type->base.name, "clob") || !strcmp(r->type->base.name, "clob")) {
-			lsuper = !strcmp(i->type->base.name, "clob") ? *i : *r;
-			radix = lsuper.type->radix;
-			tpe = lsuper.type->base.name;
-			eclass = lsuper.type->eclass;
-		} else {
-			lsuper = i->type->base.id > r->type->base.id ? *i : *r;
-			radix = lsuper.type->radix;
-			tpe = lsuper.type->base.name;
-			eclass = lsuper.type->eclass;
-		}
-	} else if (i->type->base.id > r->type->base.id || (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
-		lsuper = *i;
-		radix = i->type->radix;
-		tpe = i->type->base.name;
-		eclass = i->type->eclass;
-	}
-	if (!EC_SCALE(lsuper.type->eclass))
-		scale = 0; /* reset scale for types without it */
-	if (!lsuper.type->localtype) {
-		tpe = "smallint";
-		eclass = EC_NUM;
-	}
-	/*
-	 * In case of different radix we should change one.
-	 */
-	if (i->type->radix != r->type->radix) {
-		if (radix == 10 || radix == 0 /* strings */) {
-			/* change to radix 10 */
-			if (i->type->radix == 2)
-				idigits = bits2digits(idigits);
-			if (r->type->radix == 2)
-				rdigits = bits2digits(rdigits);
-		} else if (radix == 2) { /* change to radix 2 */
-			if (i->type->radix == 10)
-				idigits = digits2bits(idigits);
-			if (r->type->radix == 10)
-				rdigits = digits2bits(rdigits);
-		}
-	}
-	/* handle OID horror */
-	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->base.name, "oid") == 0) {
-		tpe = i->type->base.name;
-		eclass = EC_POS;
-	}
-	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
-		sql_find_subtype(&lsuper, tpe, 0, 0);
-	} else {
-		/* for strings use the max of both */
-		if (EC_VARCHAR(eclass))
-			digits = sql_max(type_digits_to_char_digits(i), type_digits_to_char_digits(r));
-		else
-			digits = sql_max(idigits - i->scale, rdigits - r->scale);
-		sql_find_subtype(&lsuper, tpe, digits+scale, scale);
-	}
-	*super = lsuper;
 	return super;
 }
 

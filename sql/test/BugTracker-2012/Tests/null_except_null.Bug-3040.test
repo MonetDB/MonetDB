@@ -1,4 +1,4 @@
-query T rowsort
+query I rowsort
 SELECT null EXCEPT SELECT null
 ----
 

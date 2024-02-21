@@ -9,119 +9,119 @@ select 2 + 3 as add23, 2 - 3 as sub23, 2 * 3 as mul23, 5 / 2 as div52, 5.0 / 2 a
 1
 
 query I nosort
-select 2 ^ 3 
+select 2 ^ 3
 ----
 1
 
 query T nosort
-plan select 2 ^ 3 
+plan select 2 ^ 3
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query I nosort
-select 2.0 ^ 3.0 
+select 2.0 ^ 3.0
 ----
 1
 
 statement error
-select |/ 25.0 
+select |/ 25.0
 
 statement error
-select ||/ 27.0 
+select ||/ 27.0
 
 statement error
-select 5! 
+select 5!
 
 statement error
-select !! 5 
+select !! 5
 
 statement error
-select @ -5.0 
+select @ -5.0
 
 query I nosort
-select 91 & 15 
+select 91 & 15
 ----
 11
 
 query I nosort
-select 32 | 3 
+select 32 | 3
 ----
 35
 
 query I nosort
-select 17 # 5 
+select 17 # 5
 ----
 17
 
 query I nosort
-select 17 ^ 5 
+select 17 ^ 5
 ----
 20
 
 query T nosort
-plan select 17 ^ 5 
+plan select 17 ^ 5
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(tinyint(5) "17", tinyint(3) "5") NOT NULL ]
 
 query I nosort
-select 2 ^ 3 
+select 2 ^ 3
 ----
 1
 
 query T nosort
-plan select 2 ^ 3 
+plan select 2 ^ 3
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query I nosort
-select ~1 
+select ~1
 ----
 -2
 
 query T nosort
-plan select ~1 
+plan select ~1
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."bit_not"(tinyint(1) "1") NOT NULL ]
 
 query I nosort
-select 1 << 4 
+select 1 << 4
 ----
 16
 
 query T nosort
-plan select 1 << 4 
+plan select 1 << 4
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."left_shift"(tinyint(8) "1", int(32) "4") NOT NULL ]
+) [ "sys"."left_shift"(tinyint(1) "1", int(3) "4") NOT NULL ]
 
 query I nosort
-select left_shift(1, 4) 
+select left_shift(1, 4)
 ----
 16
 
 query I nosort
-select 8 >> 2 
+select 8 >> 2
 ----
 2
 
 query T nosort
-plan select 8 >> 2 
+plan select 8 >> 2
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."right_shift"(tinyint(8) "8", int(32) "2") NOT NULL ]
+) [ "sys"."right_shift"(tinyint(4) "8", int(2) "2") NOT NULL ]
 
 query I nosort
-select right_shift(16, 2) 
+select right_shift(16, 2)
 ----
 4
 
@@ -300,24 +300,8 @@ select power(2, 5), power(2, 31)
 32.000
 2147483648.000
 
-query RR nosort
--- select rand()
-----
-32.000
-2147483648.000
-
 query I nosort
 select 2144156907 / 2147483648
-----
-0
-
-query I nosort
--- select rand() / 2147483648
-----
-0
-
-query I nosort
--- select cast(rand() as float) / 2147483648
 ----
 0
 
@@ -329,24 +313,9 @@ project (
 ) [ "sys"."sql_div"(double(53)["sys"."rand"()], double(53) "2147483648") ]
 
 query I nosort
-select rand(0)
+select rand(-5) >= 0
 ----
-1868859049
-
-query I nosort
-select rand(1)
-----
-847553797
-
-query I nosort
-select rand(2)
-----
-543032001
-
-query I nosort
-select rand(-5)
-----
-1345532277
+1
 
 statement error
 select random()
@@ -464,7 +433,7 @@ select asin(1.0), atan(1), atan(0.5), atan(1.0, 2.0)
 
 query R nosort
 select atan2(1.0, 2.0)
------
+----
 0.464
 
 query RRR nosort

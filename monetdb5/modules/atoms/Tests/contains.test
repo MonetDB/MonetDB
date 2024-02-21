@@ -1,57 +1,57 @@
-query T
+query I nosort
 select contains(NULL, '')
 ----
 NULL
 
-query T
+query I nosort
 select contains('', NULL)
 ----
 NULL
 
-query T
+query I nosort
 select contains('', '')
 ----
-True
+1
 
-query T
+query I nosort
 select contains('johndoe', '')
 ----
-True
+1
 
-query T
+query I nosort
 select contains('', 'johndoe')
 ----
-False
+0
 
-query T
+query I nosort
 select contains('johndoe', 'john')
 ----
-True
+1
 
-query T
+query I nosort
 select contains('one two three', 'three', true)
 ----
-True
+1
 
-query T
+query I nosort
 select contains('one two three', 'THREE', true)
 ----
-True
+1
 
-query T
+query I nosort
 select contains('one two three', 'THREE', false)
 ----
-False
+0
 
-query T
+query I nosort
 select contains('Müller Thomas', 'müller', true)
 ----
-True
+1
 
-query T
+query I nosort
 select contains('Müller Thomas', 'müller', false)
 ----
-False
+0
 
 statement ok
 create table foo(x string)
@@ -65,15 +65,15 @@ insert into foo values ('johnleft'),('janeright'),('robertright'),('timup'),('le
 statement ok
 insert into bar values ('left'),('right'),('up'),('down')
 
-query T
+query I nosort
 select contains(x, 'left') from foo
 ----
-True
-False
-False
-False
-True
-True
+1
+0
+0
+0
+1
+1
 
 query TT rowsort
 select * from foo,bar where [foo.x] contains [bar.x, false]
@@ -96,3 +96,4 @@ drop table foo
 
 statement ok
 drop table bar
+

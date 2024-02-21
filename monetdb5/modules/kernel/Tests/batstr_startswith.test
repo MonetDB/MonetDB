@@ -1,4 +1,4 @@
-query T
+query T nosort
 select name from tables where startswith(name, 'id')
 ----
 idxs
@@ -11,19 +11,19 @@ create table foo(x string)
 statement ok
 insert into foo values ('johndoe'),('janedoe'),('robertdoe')
 
-query T
+query I nosort
 select startswith(x, '') from foo
 ----
-True
-True
-True
+1
+1
+1
 
-query T
+query I nosort
 select startswith('', x) from foo
 ----
-False
-False
-False
+0
+0
+0
 
 statement ok
 drop table foo
@@ -34,19 +34,19 @@ create table bar(x string, y string)
 statement ok
 insert into bar values ('johndoe','doe'),('Müller Thomas', 'Thomas Müller'),('Thomas Müller', 'Müller Thomas')
 
-query T
+query I nosort
 select startswith(x, 'Müller') from bar
 ----
-False
-True
-False
+0
+1
+0
 
-query T
+query I nosort
 select startswith('Müller', x) from bar
 ----
-False
-False
-False
+0
+0
+0
 
 statement ok
 drop table bar
@@ -63,17 +63,17 @@ insert into baz values ('john doe'),('jane doe'),('robert doe')
 statement ok
 insert into bazbaz values ('john'),('jane'),('robert')
 
-query T
-select * from baz where [baz.x] startswith ['john', true];
+query T nosort
+select * from baz where [baz.x] startswith ['john', true]
 ----
 john doe
 
-query T
-select * from baz where [baz.x] startswith ['doe', true];
+query T nosort
+select * from baz where [baz.x] startswith ['doe', true]
 ----
 
-query TT
-select * from baz,bazbaz where [baz.x] startswith [bazbaz.x, true];
+query TT nosort
+select * from baz,bazbaz where [baz.x] startswith [bazbaz.x, true]
 ----
 john doe
 john
@@ -87,3 +87,4 @@ drop table baz
 
 statement ok
 drop table bazbaz
+

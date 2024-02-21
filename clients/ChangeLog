@@ -1,3 +1,25 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Thu Jan 25 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Msqldump now accepts --output and --outputdir options.  When the
+  --outputdir option is used, the dump is placed in the file dump.sql in
+  the specified directory and all tables are dumped to separate CSV files.
+  In this way it is feasible to edit the dump script by hand if needed,
+  even for a large database.
+
+* Wed Jan 24 2024 Sjoerd Mullender <sjoerd@acm.org>
+- The --table (-t) option of msqldump now accepts SQL-style % wildcard
+  characters to dump all tables that match the pattern.  E.g. -t
+  %test%.%test% dumps all tables with 'test' in both the schema and
+  table name.
+
+* Wed Jan 10 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented interrupt handling in mclient.  When using mclient
+  interactively, an interrupt (usually control-C) stops whatever the
+  client is doing.  When editing a line, the line is discarded; when
+  editing a second or later line of a query, the whole query is discarded;
+  when a query is being executed, the server is asked to stop the query
+  at its earliest convenience.  Stopping a running query can only be
+  done with an up-to-date server.  All of this does not work on Windows.
+

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -66,6 +68,9 @@
 #ifdef HAVE_ICONV
 #include <iconv.h>
 #include <locale.h>
+#endif
+#ifdef HAVE_WCWIDTH
+#include <wchar.h>
 #endif
 #include "mal_interpreter.h"
 
@@ -3020,55 +3025,29 @@ STRepilogue(void *ret)
 }
 
 #ifndef NDEBUG
-static void
-UTF8_assert(const char *restrict s)
+static inline void
+UTF8_assert(const char *s)
 {
-	int c;
-
-	if (s == NULL)
-		return;
-	if (*s == '\200' && s[1] == '\0')
-		return;					/* str_nil */
-	while ((c = *s++) != '\0') {
-		if ((c & 0x80) == 0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xE0) == 0xC0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xF0) == 0xE0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xF8) == 0xF0)
-			continue;
-		assert(0);
-	}
+	assert(strNil(s) || utf8valid(s) == 0);
 }
 #else
 #define UTF8_assert(s)		((void) 0)
 #endif
 
+/* return how many codepoints in the substring end in s starts */
 static inline int
 UTF8_strpos(const char *s, const char *end)
 {
-	int pos = 0;
-
 	UTF8_assert(s);
 
 	if (s > end) {
 		return -1;
 	}
-	while (s < end) {
-		/* just count leading bytes of encoded code points; only works
-		 * for correctly encoded UTF-8 */
-		pos += (*s++ & 0xC0) != 0x80;
-	}
-	return pos;
+	return (int) utf8nlen(s, (size_t) (end - s));
 }
 
+/* return a pointer to the byte that starts the pos'th (0-based)
+ * codepoint in s */
 static inline str
 UTF8_strtail(const char *s, int pos)
 {
@@ -3084,6 +3063,7 @@ UTF8_strtail(const char *s, int pos)
 	return (str) s;
 }
 
+/* copy n Unicode codepoints from s to dst, return pointer to new end */
 static inline str
 UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 {
@@ -3114,56 +3094,29 @@ UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 	return dst;
 }
 
-static inline str
-UTF8_offset(char *restrict s, int n)
-{
-	UTF8_assert(s);
-	while (*s && n) {
-		if ((*s & 0xF8) == 0xF0) {
-			/* 4 byte UTF-8 sequence */
-			s += 4;
-		} else if ((*s & 0xF0) == 0xE0) {
-			/* 3 byte UTF-8 sequence */
-			s += 3;
-		} else if ((*s & 0xE0) == 0xC0) {
-			/* 2 byte UTF-8 sequence */
-			s += 2;
-		} else {
-			/* 1 byte UTF-8 "sequence" */
-			s++;
-		}
-		n--;
-	}
-	return s;
-}
-
+/* return number of Unicode codepoints in s; s is not nil */
 int
-UTF8_strlen(const char *restrict s)
-{								/* This function assumes, s is never nil */
-	size_t pos = 0;
-
+UTF8_strlen(const char *s)
+{								/* This function assumes s is never nil */
 	UTF8_assert(s);
 	assert(!strNil(s));
 
-	while (*s) {
-		/* just count leading bytes of encoded code points; only works
-		 * for correctly encoded UTF-8 */
-		pos += (*s++ & 0xC0) != 0x80;
-	}
-	assert(pos < INT_MAX);
-	return (int) pos;
+	return (int) utf8len(s);
 }
 
+/* return (int) strlen(s); s is not nil */
 int
-str_strlen(const char *restrict s)
-{								/* This function assumes, s is never nil */
-	size_t pos = strlen(s);
-	assert(pos < INT_MAX);
-	return (int) pos;
+str_strlen(const char *s)
+{								/* This function assumes s is never nil */
+	UTF8_assert(s);
+	assert(!strNil(s));
+
+	return (int) strlen(s);
 }
 
+/* return the display width of s */
 int
-UTF8_strwidth(const char *restrict s)
+UTF8_strwidth(const char *s)
 {
 	int len = 0;
 	int c;
@@ -3182,6 +3135,14 @@ UTF8_strwidth(const char *restrict s)
 			c = (c << 6) | (*s & 0x3F);
 			if (--n == 0) {
 				/* last byte of a multi-byte character */
+#ifdef HAVE_WCWIDTH
+				n = wcwidth(c);
+				if (n >= 0)
+					len += n;
+				else
+					len++;		/* assume width 1 if unprintable */
+				n = 0;
+#else
 				len++;
 				/* this list was created by combining
 				 * the code points marked as
@@ -3297,6 +3258,7 @@ UTF8_strwidth(const char *restrict s)
 					(0x20000 <= c && c <= 0x2FFFD) ||
 					(0x30000 <= c && c <= 0x3FFFD))
 					len++;
+#endif
 			}
 		} else if ((*s & 0xE0) == 0xC0) {
 			assert(n == 0);
@@ -3344,6 +3306,27 @@ str_case_hash_unlock(bool upper)
 	MT_rwlock_rdunlock(&b->thashlock);
 }
 
+static const char upper2lower[128] = {
+      0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,
+     18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+     36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
+     54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 97, 98, 99,100,101,102,103,
+    104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,
+    122, 91, 92, 93, 94, 95, 96, 97, 98, 99,100,101,102,103,104,105,106,107,
+    108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,
+    126,127
+};
+static const char lower2upper[128] = {
+      0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,
+     18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+     36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
+     54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
+     72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
+     90, 91, 92, 93, 94, 95, 96, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75,
+     76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90,123,124,125,
+    126,127
+};
+
 static inline str
 convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src,
 			const char *malfunc)
@@ -3359,51 +3342,44 @@ convertCase(BAT *from, BAT *to, str *buf, size_t *buflen, const char *src,
 	/* the from and to bats are not views */
 	assert(from->tbaseoff == 0);
 	assert(to->tbaseoff == 0);
-	CHECK_STR_BUFFER_LENGTH(buf, buflen, len + 1, malfunc);
-	dst = *buf;
-	while (src < end) {
-		int c;
 
-		UTF8_GETCHAR(c, src);
-		if (c < 192) {			/* the first 191 characters in unicode are trivial to convert */
-			/* for ASCII characters we don't need to do a hash lookup */
-			if (lower_to_upper) {
-				if ('a' <= c && c <= 'z')
-					c += 'A' - 'a';
-			} else {
-				if ('A' <= c && c <= 'Z')
-					c += 'a' - 'A';
-			}
+	CHECK_STR_BUFFER_LENGTH(buf, buflen, 2 * len + 1, malfunc);
+	/* use len*2 because only case changing code points exists which change from length 2 to 3 */
+	dst = *buf;
+
+	while (src < end) {
+		if (lower_to_upper) {
+			for (; src < end && (src[0] & 0x80) == 0; )
+				*dst++ = lower2upper[*src++];
 		} else {
-			/* use hash, even though BAT is sorted */
-			for (BUN hb = HASHget(h, hash_int(h, &c));
-				 hb != BUN_NONE; hb = HASHgetlink(h, hb)) {
-				if (c == fromb[hb]) {
-					c = tob[hb];
-					break;
+			for (; src < end && (src[0] & 0x80) == 0; )
+				*dst++ = upper2lower[*src++];
+		}
+		if (src < end) { /* fall back code for complex codepoints */
+			int c;
+
+			UTF8_GETCHAR(c, src);
+			if (c < 192) {			/* the first 191 characters in unicode are trivial to convert */
+				/* for ASCII characters we don't need to do a hash lookup */
+				if (lower_to_upper) {
+					if ('a' <= c && c <= 'z')
+						c += 'A' - 'a';
+				} else {
+					if (c <= 'Z' && 'A' <= c)
+						c += 'a' - 'A';
+				}
+			} else {
+				/* use hash, even though BAT is sorted */
+				for (BUN hb = HASHget(h, hash_int(h, &c));
+						hb != BUN_NONE; hb = HASHgetlink(h, hb)) {
+					if (c == fromb[hb]) {
+						c = tob[hb];
+						break;
+					}
 				}
 			}
+			UTF8_PUTCHAR(c, dst);
 		}
-		if (dst + UTF8_CHARLEN(c) > *buf + len) {
-			/* doesn't fit, so allocate more space;
-			 * also allocate enough for the rest of the
-			 * source */
-			size_t off = dst - *buf;
-			size_t nextlen = (len += 4 + (end - src)) + 1;
-
-			/* Don't use CHECK_STR_BUFFER_LENGTH here, because it
-			 * does GDKmalloc instead of GDKrealloc and data could be lost */
-			if (nextlen > *buflen) {
-				size_t newlen = ((nextlen + 1023) & ~1023);	/* align to a multiple of 1024 bytes */
-				str newbuf = GDKrealloc(*buf, newlen);
-				if (!newbuf)
-					throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				*buf = newbuf;
-				*buflen = newlen;
-			}
-			dst = *buf + off;
-		}
-		UTF8_PUTCHAR(c, dst);
 	}
 	*dst = 0;
 	return MAL_SUCCEED;
@@ -3550,6 +3526,10 @@ STRTail(str *res, const str *arg1, const int *offset)
 	return msg;
 }
 
+/* copy the substring s[off:off+l] into *buf, replacing *buf with a
+ * freshly allocated buffer if the substring doesn't fit; off is 0
+ * based, and both off and l count in Unicode codepoints (i.e. not
+ * bytes); if off < 0, off counts from the end of the string */
 str
 str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 {
@@ -3775,11 +3755,15 @@ STRstartswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *arg1, prefix = *arg2, msg = MAL_SUCCEED;
-	int plen = str_strlen(prefix);
+	if (strNil(s) || strNil(prefix)) {
+		*res = bit_nil;
+	} else {
+		int plen = str_strlen(prefix);
 
-	*res = (strNil(s) || strNil(prefix)) ? bit_nil :
-			icase ? str_is_iprefix(s, prefix, plen) : str_is_prefix(s, prefix,
-																	plen);
+		*res = icase ?
+			str_is_iprefix(s, prefix, plen) :
+			str_is_prefix(s, prefix, plen);
+	}
 	return msg;
 }
 
@@ -3818,11 +3802,15 @@ STRendswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *arg1, suffix = *arg2, msg = MAL_SUCCEED;
-	int sul = str_strlen(suffix);
+	if (strNil(s) || strNil(suffix)) {
+		*res = bit_nil;
+	} else {
+		int sul = str_strlen(suffix);
 
-	*res = (strNil(s) || strNil(suffix)) ? bit_nil :
-			icase ? str_is_isuffix(s, suffix, sul) : str_is_suffix(s, suffix,
-																   sul);
+		*res = icase ?
+			str_is_isuffix(s, suffix, sul) :
+			str_is_suffix(s, suffix, sul);
+	}
 	return msg;
 }
 
@@ -3860,12 +3848,15 @@ STRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str haystack = *arg1, needle = *arg2, msg = MAL_SUCCEED;
-	int needle_len = str_strlen(needle);
+	if (strNil(haystack) || strNil(needle)) {
+		*res = bit_nil;
+	} else {
+		int needle_len = str_strlen(needle);
 
-	*res = (strNil(haystack) || strNil(needle)) ? bit_nil :
-			icase ? str_icontains(haystack, needle,
-								  needle_len) : str_contains(haystack, needle,
-															 needle_len);
+		*res = icase ?
+			str_icontains(haystack, needle, needle_len) :
+			str_contains(haystack, needle, needle_len);
+	}
 	return msg;
 }
 
@@ -3903,11 +3894,15 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
-	int needle_len = str_strlen(h);
+	if (strNil(s) || strNil(h)) {
+		*res = bit_nil;
+	} else {
+		int needle_len = str_strlen(h);
 
-	*res = (strNil(s) || strNil(h)) ? bit_nil :
-			icase ? str_isearch(s, h, needle_len) : str_search(s, h,
-															   needle_len);
+		*res = icase ?
+			str_isearch(s, h, needle_len) :
+			str_search(s, h, needle_len);
+	}
 	return msg;
 }
 
@@ -3961,12 +3956,15 @@ STRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
-	int needle_len = str_strlen(h);
+	if (strNil(s) || strNil(h)) {
+		*res = bit_nil;
+	} else {
+		int needle_len = str_strlen(h);
 
-	*res = (strNil(s) || strNil(h)) ? bit_nil :
-			icase ? str_reverse_str_isearch(s, h,
-											needle_len) :
+		*res = icase ?
+			str_reverse_str_isearch(s, h, needle_len) :
 			str_reverse_str_search(s, h, needle_len);
+	}
 	return msg;
 }
 
@@ -4243,6 +4241,7 @@ trimchars(str *buf, size_t *buflen, size_t *n, const char *s, size_t len_s,
 	size_t len = 0, nlen = len_s * sizeof(int);
 	int c, *cbuf;
 
+	assert(s);
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nlen, malfunc);
 	cbuf = *(int **) buf;
 
@@ -4885,8 +4884,9 @@ STRlocate3(int *ret, const str *needle, const str *haystack, const int *start)
 	const char *s = *needle, *s2 = *haystack;
 	int st = *start;
 
-	*ret = (strNil(s) || strNil(s2)
-			|| is_int_nil(st)) ? int_nil : str_locate2(s, s2, st);
+	*ret = (strNil(s) || strNil(s2) || is_int_nil(st)) ?
+		int_nil :
+		str_locate2(s, s2, st);
 	return MAL_SUCCEED;
 }
 
@@ -4927,7 +4927,7 @@ str_insert(str *buf, size_t *buflen, const char *s, int strt, int l,
 		v = UTF8_strncpy(v, s, strt);
 	strcpy(v, s2);
 	if (strt + l < l1)
-		strcat(v, UTF8_offset((char *) s, strt + l));
+		strcat(v, UTF8_strtail((char *) s, strt + l));
 	return MAL_SUCCEED;
 }
 
@@ -5089,22 +5089,22 @@ STRasciify(str *r, const str *s)
 /* scan select loop with or without candidates */
 #define scanloop(TEST, KEEP_NULLS)									    \
 	do {																\
-		TRC_DEBUG(ALGO,												\
-				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
+		TRC_DEBUG(ALGO,													\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "					\
 				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  anti, #TEST);										\
+				  anti, #TEST);											\
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
 					vals[cnt++] = p;									\
 			}															\
 		} else {														\
 			for (; p < ncands; p++) {									\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
@@ -5114,24 +5114,24 @@ STRasciify(str *r, const str *s)
 	} while (0)
 
 /* scan select loop with or without candidates */
-#define scanloop_anti(TEST, KEEP_NULLS)							    \
+#define scanloop_anti(TEST, KEEP_NULLS)									\
 	do {																\
-		TRC_DEBUG(ALGO,												\
-				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
+		TRC_DEBUG(ALGO,													\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "					\
 				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  anti, #TEST);										\
+				  anti, #TEST);											\
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
 					vals[cnt++] = p;									\
 			}															\
 		} else {														\
 			for (; p < ncands; p++) {									\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
@@ -5146,6 +5146,9 @@ do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 				 bit (*str_cmp)(const char *, const char *, int),
 				 bool keep_nulls)
 {
+	if (strNil(key))
+		return MAL_SUCCEED;
+
 	BATiter bi = bat_iterator(b);
 	BUN cnt = 0, ncands = ci->ncand;
 	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
@@ -5153,12 +5156,8 @@ do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 	int klen = str_strlen(key);
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL)
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (anti)					/* keep nulls ? (use false for now) */
 		scanloop_anti(v && *v != '\200'
@@ -5255,14 +5254,22 @@ string_select(bat *ret, const bat *bid, const bat *sid, const str *key,
 			BAT *rev;
 			if (old_s) {
 				rev = BATdiffcand(old_s, bn);
-				assert(BATintersectcand(old_s, bn)->batCount == bn->batCount);
+#ifndef NDEBUG
+				BAT *is = BATintersectcand(old_s, bn);
+				if (is) {
+					assert(is->batCount == bn->batCount);
+					BBPreclaim(is);
+				}
 				assert(rev->batCount == old_s->batCount - bn->batCount);
+#endif
 			}
 
 			else
 				rev = BATnegcands(b->batCount, bn);
 			BBPunfix(bn->batCacheid);
 			bn = rev;
+			if (bn == NULL)
+				msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -5336,7 +5343,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do {										\
 		B->tnil = false;						\
 		B->tnonil = true;						\
-		B->tkey = true;						\
+		B->tkey = true;							\
 		B->tsorted = true;						\
 		B->trevsorted = true;					\
 		B->tseqbase = 0;						\
@@ -5345,9 +5352,12 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define str_join_loop(STRCMP, STR_LEN)									\
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
+			BAT *filtered_sl = NULL;									\
+			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
+			if (strNil(vr))												\
+				continue;												\
 			rlen = STR_LEN;												\
 			nl = 0;														\
 			if (with_strimps)											\
@@ -5398,8 +5408,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				lastl = lo;												\
 				nl++;													\
 			}															\
-			if (with_strimps && filtered_sl)							\
-				BBPreclaim(filtered_sl);								\
+			BBPreclaim(filtered_sl);									\
 			if (r2) {													\
 				if (nl > 1) {											\
 					r2->tkey = false;									\
@@ -5419,9 +5428,11 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define str_antijoin_loop(STRCMP, STR_LEN)								\
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
-			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
+			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
+			if (strNil(vr))												\
+				continue;												\
 			rlen = STR_LEN;												\
 			nl = 0;														\
 			canditer_init(&lci, l, sl);									\
@@ -5493,16 +5504,12 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 	int rskipped = 0, rlen = 0;
 	oid lbase, rbase, lo, ro, lastl = 0;
 	BUN nl, newcap;
-	BAT *filtered_sl = NULL;
 	bool with_strimps = false;
 	char *msg = MAL_SUCCEED;
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL)
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ?
-				(qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (BAThasstrimps(l)) {
 		with_strimps = true;

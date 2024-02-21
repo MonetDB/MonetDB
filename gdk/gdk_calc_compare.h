@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* this file is included multiple times by gdk_calc.c */
@@ -27,18 +29,15 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	const void *restrict nil;
 	int (*atomcmp)(const void *, const void *);
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	switch (tp1) {
 	case TYPE_void: {
 		assert(incr1);
 		assert(tp2 == TYPE_oid || incr2); /* if void, incr2==1 */
 		oid v = lft ? * (const oid *) lft : oid_nil;
-		TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(k, ncand, qry_ctx) {
 			TPE res;
 			i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -68,7 +67,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 				}
 			}
 		}
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		break;
 	}
 	case TYPE_bit:
@@ -639,7 +638,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	case TYPE_oid:
 		if (tp2 == TYPE_void) {
 			oid v = * (const oid *) rgt;
-			TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(k, ncand, qry_ctx) {
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				j = canditer_next(ci2) - candoff2;
@@ -669,7 +668,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 					}
 				}
 			}
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		} else if (tp2 == TYPE_oid) {
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(oid, oid, TPE, OP);
@@ -686,7 +685,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
-		TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(k, ncand, qry_ctx) {
 			if (incr1)
 				i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -709,7 +708,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 				dst[k] = OP(x, 0);
 			}
 		}
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		break;
 	default:
 		if (tp1 != tp2 ||
@@ -738,7 +737,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 		if (atomcmp == ATOMcompare(TYPE_dbl))
 			goto dbldbl;
 		nil = ATOMnilptr(tp1);
-		TIMEOUT_LOOP_IDX(k, ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(k, ncand, qry_ctx) {
 			if (incr1)
 				i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -768,7 +767,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 				dst[k] = OP(x, 0);
 			}
 		}
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		break;
 	}
 

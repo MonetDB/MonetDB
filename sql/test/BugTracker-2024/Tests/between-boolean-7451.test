@@ -1,0 +1,47 @@
+
+statement ok
+CREATE TABLE t0(c0 VARCHAR, PRIMARY KEY(c0))
+
+statement ok
+CREATE TABLE t1(c1 INTEGER, c2 VARCHAR(500))
+
+statement ok
+INSERT INTO t0 ( c0) VALUES ('a')
+
+statement ok
+INSERT INTO t0 (c0) VALUES (false)
+
+statement ok
+INSERT INTO t1 ( c1) VALUES (0)
+
+query IT
+SELECT t1.c1, t1.c2 FROM t1, t0
+----
+0
+NULL
+0
+NULL
+
+query T
+SELECT (NOT CAST((true BETWEEN t1.c2 AND t0.c0) AS VARCHAR)) FROM t1, t0
+----
+True
+True
+
+query IT
+SELECT t1.c1, t1.c2 FROM t1, t0 WHERE (NOT CAST((true BETWEEN t1.c2 AND t0.c0) AS VARCHAR));
+----
+0
+NULL
+0
+NULL
+
+query ITT
+SELECT * FROM t1, t0 WHERE (NOT CAST((true BETWEEN t1.c2 AND t0.c0) AS VARCHAR)); -- 2 rows
+----
+0
+NULL
+a
+0
+NULL
+false

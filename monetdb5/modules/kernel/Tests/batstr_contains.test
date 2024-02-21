@@ -10,11 +10,11 @@ fkeys
 keys
 keys
 
-query T
+query T nosort
 select name from columns where contains(name, 'x0x', false)
 ----
 
-query T
+query T nosort
 select name from columns where name like '%x0x%'
 ----
 
@@ -30,75 +30,75 @@ insert into foo values ('john doe'),('jane doe'),('robert doe')
 statement ok
 insert into bar values ('johndoe'),('Müller Thomas'),('Thomas MüLLer')
 
-query T
+query I nosort
 select contains(x, '') from foo
 ----
-True
-True
-True
+1
+1
+1
 
-query T
+query I nosort
 select contains('', x) from foo
 ----
-False
-False
-False
+0
+0
+0
 
-query T
+query I nosort
 select contains(x, 'doe') from foo
 ----
-True
-True
-True
+1
+1
+1
 
-query T
+query I nosort
 select contains('jane doe', x) from foo
 ----
-False
-True
-False
+0
+1
+0
 
-query T
+query I nosort
 select contains(x, 'MüLLer') from bar
 ----
-False
-False
-True
+0
+0
+1
 
-query T
+query I nosort
 select contains(x, 'Müller') from bar
 ----
-False
-True
-False
+0
+1
+0
 
-query T
+query I nosort
 select contains('MüLLER Thomas', x, true) from bar
 ----
-False
-True
-False
+0
+1
+0
 
-query T
+query I nosort
 select contains(x, 'DOE', true) from foo
 ----
-True
-True
-True
+1
+1
+1
 
-query T
+query I nosort
 select contains(x, 'DOE', false) from foo
 ----
-False
-False
-False
+0
+0
+0
 
-query T
+query I nosort
 select contains('doe', x, true) from foo
 ----
-False
-False
-False
+0
+0
+0
 
 statement ok
 drop table foo
@@ -118,14 +118,14 @@ insert into baz values ('john doe', 'braga'),('jane doe', 'amsterdam'),('robert 
 statement ok
 insert into bazbaz values ('john', '21'),('jane', '22'),('robert', '23')
 
-query TT
-select * from baz where [baz.x] contains ['john', true];
+query TT nosort
+select * from baz where [baz.x] contains ['john', true]
 ----
 john doe
 braga
 
-query TT
-select * from baz where [baz.x] contains ['doe', true];
+query TT nosort
+select * from baz where [baz.x] contains ['doe', true]
 ----
 john doe
 braga
@@ -134,8 +134,8 @@ amsterdam
 robert doe
 paris
 
-query TTTT
-select * from baz,bazbaz where [baz.x] contains [bazbaz.x, true];
+query TTTT nosort
+select * from baz,bazbaz where [baz.x] contains [bazbaz.x, true]
 ----
 john doe
 braga
@@ -155,3 +155,4 @@ drop table baz
 
 statement ok
 drop table bazbaz
+

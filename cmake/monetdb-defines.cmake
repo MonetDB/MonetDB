@@ -5,7 +5,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 # This function should only run find functions. The resulting
@@ -116,6 +118,7 @@ function(monetdb_configure_defines)
   check_function_exists("task_info" HAVE_TASK_INFO)
   check_function_exists("times" HAVE_TIMES)
   check_function_exists("uname" HAVE_UNAME)
+  check_symbol_exists("wcwidth" "wchar.h" HAVE_WCWIDTH)
   # Some libc versions on Linux distributions don't have it
   check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
   cmake_push_check_state()

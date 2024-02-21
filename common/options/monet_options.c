@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -87,7 +89,7 @@ mo_print_options(opt *set, int setlen)
 }
 
 
-char *
+const char *
 mo_find_option(opt *set, int setlen, const char *name)
 {
 	opt *o = NULL;
@@ -105,7 +107,7 @@ mo_find_option(opt *set, int setlen, const char *name)
 }
 
 static int
-mo_config_file(opt **Set, int setlen, char *file)
+mo_config_file(opt **Set, int setlen, const char *file)
 {
 	char buf[BUFSIZ];
 	FILE *fd = NULL;
@@ -197,7 +199,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 int
 mo_system_config(opt **Set, int setlen)
 {
-	char *cfg;
+	const char *cfg;
 
 	if (Set == NULL) {
 		if (default_set == NULL) {

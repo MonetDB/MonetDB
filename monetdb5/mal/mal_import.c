@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* Author(s) M.L. Kersten
@@ -128,6 +130,7 @@ malLoadScript(str name, bstream **fdin)
 	if (c->fdin)  \
 		bstream_destroy(c->fdin); \
 	c->fdin = oldfdin;  \
+	c->qryctx.bs = oldfdin;  \
 	c->yycur = oldyycur;  \
 	c->listing = oldlisting; \
 	c->mode = oldmode; \
@@ -170,6 +173,7 @@ malIncludeString(Client c, const char *name, str mal, int listing,
 	c->promptlength = 0;
 	c->listing = listing;
 	c->fdin = NULL;
+	c->qryctx.bs = NULL;
 
 	size_t mal_len = strlen(mal);
 	buffer *mal_buf;
@@ -190,10 +194,12 @@ malIncludeString(Client c, const char *name, str mal, int listing,
 		GDKfree(mal_buf);
 		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	c->qryctx.bs = c->fdin;
 	bstream_next(c->fdin);
 	parseMAL(c, c->curprg, 1, INT_MAX, address);
 	bstream_destroy(c->fdin);
 	c->fdin = NULL;
+	c->qryctx.bs = NULL;
 	GDKfree(mal_buf);
 
 	restoreClient;
@@ -229,6 +235,7 @@ malInclude(Client c, const char *name, int listing)
 	c->promptlength = 0;
 	c->listing = listing;
 	c->fdin = NULL;
+	c->qryctx.bs = NULL;
 
 	if ((filename = malResolveFile(name)) != NULL) {
 		char *fname = filename;
@@ -252,6 +259,7 @@ malInclude(Client c, const char *name, int listing)
 		} while (p);
 		GDKfree(fname);
 		c->fdin = NULL;
+		c->qryctx.bs = NULL;
 	}
 	restoreClient;
 	return msg;

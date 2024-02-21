@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 project = 'MonetDB'
-copyright = '2023, MonetDB Solutions'
+copyright = '2024 MonetDB Foundation'
 author = ''
 
 # The full version, including alpha/beta/rc tags

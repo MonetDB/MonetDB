@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -40,8 +42,6 @@ wkb * geos2wkb(const GEOSGeometry *geosGeometry);
 geom_export str geoHasZ(int* res, int* info);
 geom_export str geoHasM(int* res, int* info);
 geom_export str geoGetType(char** res, int* info, int* flag);
-
-geom_export str geom_epilogue(void *ret);
 
 /* functions that are used when a column is added to an existing table */
 geom_export str mbrFromMBR(mbr **w, mbr **src);

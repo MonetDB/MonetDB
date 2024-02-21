@@ -5,9 +5,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
-
 
 // Request compatibility with OpenSSL 1.1.1.
 // We need this for the hashing API.
@@ -342,21 +343,25 @@ wrap_tls(Mapi mid, SOCKET sock)
 		BIO_free_all(bio); // drops first ref
 		BIO_free_all(bio); // drops second ref
 		free(hostcolonport);
-		return croak_openssl(mid, __func__, "openssl_rstream: %s", mnstr_peek_error(rstream));
+		msg = croak_openssl(mid, __func__, "openssl_rstream: %s", mnstr_peek_error(rstream));
+		close_stream(rstream);
+		return msg;
 	}
 	// On error: free 'bio' and close 'rstream'.
 	stream *wstream = openssl_wstream(hostcolonport ? hostcolonport : "ssl wstream", bio);
 	free(hostcolonport);
 	if (wstream == NULL || mnstr_errnr(wstream) != MNSTR_NO__ERROR) {
 		BIO_free_all(bio);
-		mnstr_close(rstream);
-		return croak_openssl(mid, __func__, "openssl_wstream: %s", mnstr_peek_error(wstream));
+		close_stream(rstream);
+		msg = croak_openssl(mid, __func__, "openssl_wstream: %s", mnstr_peek_error(wstream));
+		close_stream(wstream);
+		return msg;
 	}
 	// On error: free 'rstream' and 'wstream'.
 	msg = mapi_wrap_streams(mid, rstream, wstream);
 	if (msg != MOK) {
-		mnstr_close(rstream);
-		mnstr_close(wstream);
+		close_stream(rstream);
+		close_stream(wstream);
 		return msg;
 	}
 	// 'rstream' and 'wstream' are part of 'mid' now.

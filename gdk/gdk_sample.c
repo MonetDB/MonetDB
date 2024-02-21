@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -42,7 +44,7 @@ struct oidtreenode {
 	};
 };
 
-static int
+static bool
 OIDTreeMaybeInsert(struct oidtreenode *tree, oid o, BUN allocated)
 {
 	struct oidtreenode **nodep;
@@ -50,12 +52,12 @@ OIDTreeMaybeInsert(struct oidtreenode *tree, oid o, BUN allocated)
 	if (allocated == 0) {
 		tree->left = tree->right = NULL;
 		tree->o = o;
-		return 1;
+		return true;
 	}
 	nodep = &tree;
 	while (*nodep) {
 		if (o == (*nodep)->o)
-			return 0;
+			return false;
 		if (o < (*nodep)->o)
 			nodep = &(*nodep)->left;
 		else
@@ -64,7 +66,7 @@ OIDTreeMaybeInsert(struct oidtreenode *tree, oid o, BUN allocated)
 	*nodep = &tree[allocated];
 	tree[allocated].left = tree[allocated].right = NULL;
 	tree[allocated].o = o;
-	return 1;
+	return true;
 }
 
 /* inorder traversal, gives us a sorted BAT */
@@ -134,19 +136,14 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 			return NULL;
 		}
 
+		if (lock)
+			MT_lock_set(lock);
 		/* generate a list of random numbers; note we use the
 		 * "tree" array, but we use the value from each location
 		 * before it is overwritten by the use as part of the
 		 * binary tree */
-		if (lock) {
-			MT_lock_set(lock);
-			for (rescnt = 0; rescnt < n; rescnt++)
-				tree[rescnt].r = next(rse);
-			MT_lock_unset(lock);
-		} else {
-			for (rescnt = 0; rescnt < n; rescnt++)
-				tree[rescnt].r = next(rse);
-		}
+		for (rescnt = 0; rescnt < n; rescnt++)
+			tree[rescnt].r = next(rse);
 
 		/* while we do not have enough sample OIDs yet */
 		BUN rnd = 0;
@@ -156,12 +153,8 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 				if (rnd == n) {
 					/* we ran out of random numbers,
 					 * so generate more */
-					if (lock)
-						MT_lock_set(lock);
 					for (rnd = rescnt; rnd < n; rnd++)
 						tree[rnd].r = next(rse);
-					if (lock)
-						MT_lock_unset(lock);
 					rnd = rescnt;
 				}
 				candoid = minoid + tree[rnd++].r % cnt;
@@ -169,6 +162,8 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 				 * generated, try again */
 			} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
 		}
+		if (lock)
+			MT_lock_unset(lock);
 		if (!antiset) {
 			OIDTreeToBAT(tree, bn);
 		} else {
@@ -185,24 +180,18 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 	return bn;
 }
 
+/* BATsample implements sampling for BATs */
 BAT *
-BATcreatesample(oid hseq, BUN cnt, BUN n, uint64_t seed)
+BATsample_with_seed(BAT *b, BUN n, uint64_t seed)
 {
 	random_state_engine rse;
 
 	init_random_state_engine(rse, seed);
 
-	BAT *bn = do_batsample(hseq, cnt, n, rse, NULL);
-	TRC_DEBUG(ALGO, OIDFMT "," BUNFMT "," BUNFMT " -> " ALGOOPTBATFMT "\n",
-		  hseq, cnt, n, ALGOOPTBATPAR(bn));
+	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse, NULL);
+	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT "\n",
+		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
 	return bn;
-}
-
-/* BATsample implements sampling for BATs */
-BAT *
-BATsample_with_seed(BAT *b, BUN n, uint64_t seed)
-{
-	return BATcreatesample(b->hseqbase, b->batCount, n, seed);
 }
 
 static MT_Lock rse_lock = MT_LOCK_INITIALIZER(rse_lock);

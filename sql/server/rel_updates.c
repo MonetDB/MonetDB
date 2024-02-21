@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -28,7 +30,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 {
 	mvc *sql = query->sql;
 	if (s->token == SQL_NULL) {
-		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
 			sql_exp *e = rel_parse_val(sql, c->t->s, c->def, &c->type, sql->emode, NULL);
@@ -178,7 +180,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
 
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
@@ -217,7 +219,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
+		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
 		exp_setname(sql->sa, e, alias, iname);
 		append(_nlls->exps, e);
 	} else {
@@ -383,7 +385,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 					if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL)
 						return NULL;
 				} else {
-					atom *a = atom_general(sql->sa, &c->type, NULL);
+					atom *a = atom_general(sql->sa, &c->type, NULL, 0);
 					e = exp_atom(sql->sa, a);
 				}
 				if (!e)
@@ -838,7 +840,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
 		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *lnl, *rnl, *je;
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
 			/* TODO add access error */
@@ -879,7 +881,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
+		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
 		exp_setname(sql->sa, e, alias, iname);
 		append(_nlls->exps, e);
 	} else {
@@ -1133,7 +1135,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (!exp_is_atom(v) || outer)
 					v = exp_ref(sql, v);
 				if (!v) /* check for NULL */
-					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 				if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 					return NULL;
 				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, 0));
@@ -1166,7 +1168,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				}
 			}
 			if (!v)
-				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 			if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 				return NULL;
 			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, 0));
@@ -1706,7 +1708,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				char *fname = sa_alloc(sql->sa, l+8);
 
 				snprintf(fname, l+8, "str_to_%s", strcmp(cs->type.type->base.name, "timestamptz") == 0 ? "timestamp" : cs->type.type->base.name);
-				sql_find_subtype(&st, "clob", 0, 0);
+				sql_find_subtype(&st, "varchar", 0, 0);
 				if (!(f = sql_bind_func_result(sql, "sys", fname, F_FUNC, true, &cs->type, 2, &st, &st)))
 					return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: '%s' missing for type %s", fname, cs->type.type->base.name);
 				append(args, e);

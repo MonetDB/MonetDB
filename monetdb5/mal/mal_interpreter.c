@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -368,10 +370,16 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		garbageCollector(cntxt, mb, stk, env != stk);
 	if (stk && stk != env)
 		freeStack(stk);
-	if (ret == MAL_SUCCEED && cntxt->qryctx.querytimeout
-		&& cntxt->qryctx.starttime
-		&& GDKusec() - cntxt->qryctx.starttime > cntxt->qryctx.querytimeout)
-		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+	if (ret == MAL_SUCCEED) {
+		switch (cntxt->qryctx.endtime) {
+		case QRY_TIMEOUT:
+			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+		case QRY_INTERRUPT:
+			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
+		default:
+			break;
+		}
+	}
 	return ret;
 }
 
@@ -458,10 +466,16 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 	}
 	if (stk)
 		garbageCollector(cntxt, mb, stk, TRUE);
-	if (ret == MAL_SUCCEED && cntxt->qryctx.querytimeout
-		&& cntxt->qryctx.starttime
-		&& GDKusec() - cntxt->qryctx.starttime > cntxt->qryctx.querytimeout)
-		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+	if (ret == MAL_SUCCEED) {
+		switch (cntxt->qryctx.endtime) {
+		case QRY_TIMEOUT:
+			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+		case QRY_INTERRUPT:
+			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
+		default:
+			break;
+		}
+	}
 	return ret;
 }
 
@@ -688,14 +702,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 						if (isaBatType(t)) {
 							bat bid = stk->stk[a].val.bval;
-							BAT *_b = BATdescriptor(bid);
+							BAT *_b;
 							t = getBatType(t);
 							assert(stk->stk[a].vtype == TYPE_bat);
 							assert(is_bat_nil(bid) ||
 								   t == TYPE_any ||
-								   ATOMtype(_b->ttype) == ATOMtype(t));
-							if (_b)
-								BBPunfix(bid);
+								   ((_b = BBP_desc(bid)) != NULL &&
+									ATOMtype(_b->ttype) == ATOMtype(t)));
 						} else {
 							assert(t == stk->stk[a].vtype);
 						}
@@ -803,12 +816,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							   &runtimeProfileFunction);
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
-			if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-				&& GDKusec() - cntxt->qryctx.starttime >
-				cntxt->qryctx.querytimeout) {
+			if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
 				freeException(ret);	/* overrule exception */
-				ret = createException(MAL, "mal.interpreter",
-									  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				break;
+			} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
+				freeException(ret);	/* overrule exception */
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 				break;
 			}
 			stkpc = mb->stop;	// force end of loop
@@ -829,12 +843,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 									  "failed instruction2str");
 			}
 			// runtimeProfileBegin already sets the time in the instruction
-			if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-				&& GDKusec() - cntxt->qryctx.starttime >
-				cntxt->qryctx.querytimeout) {
-				freeException(ret);	/* in case it's set */
-				ret = createException(MAL, "mal.interpreter",
-									  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+			if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
+				freeException(ret);	/* overrule exception */
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				break;
+			} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
+				freeException(ret);	/* overrule exception */
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 				break;
 			}
 
@@ -943,12 +958,12 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
-				if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-					&& GDKusec() - cntxt->qryctx.starttime >
-					cntxt->qryctx.querytimeout) {
-					freeException(ret);
-					ret = createException(MAL, "mal.interpreter",
-										  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
+					freeException(ret);	/* overrule exception */
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
+					freeException(ret);	/* overrule exception */
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 				}
 				stkpc = mb->stop;
 				continue;
@@ -985,12 +1000,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 			if (stkpc == mb->stop) {
-				if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-					&& GDKusec() - cntxt->qryctx.starttime >
-					cntxt->qryctx.querytimeout) {
-					freeException(ret);
-					ret = createException(MAL, "mal.interpreter",
-										  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
+					freeException(ret);	/* overrule exception */
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+					stkpc = mb->stop;
+				} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
+					freeException(ret);	/* overrule exception */
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 					stkpc = mb->stop;
 				}
 				continue;
@@ -1203,12 +1219,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		default:
 			stkpc++;
 		}
-		if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-			&& GDKusec() - cntxt->qryctx.starttime >
-			cntxt->qryctx.querytimeout) {
+		if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
 			if (ret == MAL_SUCCEED)
-				ret = createException(MAL, "mal.interpreter",
-									  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+			stkpc = mb->stop;
+		} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
+			if (ret == MAL_SUCCEED)
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 			stkpc = mb->stop;
 		}
 	}

@@ -1,0 +1,15 @@
+statement ok
+CREATE TABLE v0(v1 char(300000))
+
+statement ok
+INSERT INTO v0 VALUES (222),(10),(3),(947),(742),(1),(306),(10),(510),(1.100000),(9223372036854775807),(333),(106),(10),(10),(10),(10),(10),(NULL),(222),(10.100000),(5),(2),(1),(2),(34)
+
+statement ok
+INSERT INTO v0 (v1) SELECT group_concat ('table tn3 row 99') FROM v0, v0 AS tri, v0 AS OMW WHERE 10 LIMIT 4
+
+statement error HY013!Could not allocate space
+SELECT levenshtein (v1, v1, 16, 10, 561), v1, v1 FROM v0
+
+statement ok
+DROP TABLE v0
+

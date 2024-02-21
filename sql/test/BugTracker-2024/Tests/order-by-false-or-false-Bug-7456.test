@@ -1,0 +1,48 @@
+query I
+SELECT false
+----
+0
+
+query I
+SELECT ((false)OR(false))
+----
+0
+
+statement ok
+CREATE TABLE t0(c0 BOOLEAN)
+
+-- when using order by false it works, when using order by false or false it fails
+statement ok
+CREATE VIEW v0(c0) AS SELECT 1 FROM t0 HAVING true ORDER BY false
+
+query I
+SELECT * FROM v0
+----
+1
+
+query II
+SELECT * FROM t0 INNER  JOIN v0 ON v0.c0
+----
+
+statement ok
+DROP VIEW v0
+
+-- repeat with using order by false or false
+statement ok
+CREATE VIEW v0(c0) AS SELECT 1 FROM t0 HAVING true ORDER BY ((false)OR(false))
+
+query I
+SELECT * FROM v0
+----
+1
+
+-- Program terminated with signal SIGSEGV, Segmentation fault in bin_find_smallest_column () from lib64/libmonetdbsql.so.14
+query II
+SELECT * FROM t0 INNER  JOIN v0 ON v0.c0
+----
+
+statement ok
+DROP VIEW v0
+
+statement ok
+DROP TABLE t0

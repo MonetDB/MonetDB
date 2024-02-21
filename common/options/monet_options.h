@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MO_H_
@@ -36,7 +38,7 @@ moptions_export void mo_print_options(opt *set, int setlen);
 
 /* mo_find_option, finds the option with the given name in the option set
    (set,setlen). */
-moptions_export char *mo_find_option(opt *set, int setlen, const char *name);
+moptions_export const char *mo_find_option(opt *set, int setlen, const char *name);
 
 /* mo_system_config will add the options from the system config file
    (returns the new setlen) */

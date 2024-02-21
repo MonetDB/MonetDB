@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -299,7 +301,7 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 		r->l = NULL; /* omit table from list of dependencies */
 		(void) rel_project_add_exp(sql, r, exp);
 
-		nr = sql_processrelation(sql, nr, 0, 0, 0, 0);
+		nr = sql_processrelation(sql, nr, 0, instantiate, 0, 0);
 		if (nr) {
 			list *blist = rel_dependencies(sql, nr);
 			if (mvc_create_dependencies(sql, blist, mt->base.id, FUNC_DEPENDENCY))

@@ -191,19 +191,6 @@ NULL
 Null
 NULL
 
-query ITI rowsort
--- SELECT val, valstr, cast(val as hugeint) as cast2hugeint FROM t_boolean order by val
-----
-0
-False
-0
-1
-True
-1
-NULL
-Null
-NULL
-
 query ITT rowsort
 -- conversions to char(1) resulting in '0' or '1'
 SELECT val, valstr, cast(cast(val as tinyint) as char(1)) as cast2char1 FROM t_boolean order by val

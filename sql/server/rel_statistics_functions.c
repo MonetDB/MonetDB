@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -407,7 +409,11 @@ sql_sign_propagate_statistics(mvc *sql, sql_exp *e)
 		atom *zero1 = atom_zero_value(sql->sa, &(omin->tpe));
 		int cmp1 = atom_cmp(omax, zero1), cmp2 = atom_cmp(omin, zero1);
 
-		if (cmp1 >= 0 && cmp2 >= 0) {
+		if (cmp1 == 0 && cmp2 == 0) {
+			set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, bte, 0));
+			set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, bte, 0));
+			properties_set = true;
+		} else if (cmp1 > 0 && cmp2 > 0) {
 			set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, bte, 1));
 			set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, bte, 1));
 			properties_set = true;
@@ -718,6 +724,8 @@ static void
 sql_min_max_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
+	if (list_empty(l))
+		return;
 	sql_exp *first = l->h->data;
 	atom *omin, *omax;
 

@@ -13,7 +13,7 @@ language c {
 }
 
 query T rowsort
-select my_test('');
+select my_test('')
 ----
 abc
 
@@ -32,7 +32,7 @@ language c {
 }
 
 query T rowsort
-select my_test(1);
+select my_test(1)
 ----
 abc
 
@@ -51,7 +51,7 @@ language c {
 }
 
 query T rowsort
-select my_test2('') from sys._tables;
+select my_test2('') from sys._tables
 ----
 abc
 
@@ -67,9 +67,10 @@ language c {
         result->data[i][2] = 'c';
         result->data[i][3] = '\0';
     }
-};
+}
 
-query T rowsort
+query I rowsort
 select count(*) > 1 from (select my_test2('') from sys._tables group by id) as c
 ----
-True
+1
+

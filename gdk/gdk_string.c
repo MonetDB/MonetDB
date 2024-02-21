@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -190,17 +192,14 @@ strPut(BAT *b, var_t *dst, const void *V)
 	BUN off;
 
 	if (h->free == 0) {
-		MT_lock_set(&b->theaplock);
 		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
 			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
-				MT_lock_unset(&b->theaplock);
 				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
 		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		h->dirty = true;
-		MT_lock_unset(&b->theaplock);
 #ifdef NDEBUG
 		memset(h->base, 0, h->free);
 #else
@@ -214,6 +213,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	bucket = ((stridx_t *) h->base) + off;
 
 	if (*bucket) {
+		assert(*bucket < h->free);
 		/* the hash list is not empty */
 		if (*bucket < GDK_ELIMLIMIT) {
 			/* small string heap (<64KiB) -- fully double
@@ -222,6 +222,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 			do {
 				pos = *ref + sizeof(stridx_t);
+				assert(pos < h->free);
 				if (strcmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
@@ -284,13 +285,10 @@ strPut(BAT *b, var_t *dst, const void *V)
 			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		MT_lock_set(&b->theaplock);
 		if (HEAPgrow(&b->tvheap, newsize, true) != GDK_SUCCEED) {
-			MT_lock_unset(&b->theaplock);
 			return (var_t) -1;
 		}
 		h = b->tvheap;
-		MT_lock_unset(&b->theaplock);
 
 		/* make bucket point into the new heap */
 		bucket = ((stridx_t *) h->base) + off;
@@ -302,10 +300,8 @@ strPut(BAT *b, var_t *dst, const void *V)
 	if (pad > 0)
 		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
-	MT_lock_set(&b->theaplock);
 	h->free += pad + len;
 	h->dirty = true;
-	MT_lock_unset(&b->theaplock);
 
 	/* maintain hash table */
 	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
@@ -771,11 +767,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	BAT *bn = NULL;
 	gdk_return rres = GDK_FAIL;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* exactly one of bnp and pt must be NULL, the other non-NULL */
 	assert((bnp == NULL) != (pt == NULL));
@@ -799,7 +792,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 
 		if (separator) {
 			assert(sep == NULL);
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 				p = canditer_next(ci) - seqb;
 				const char *s = BUNtvar(bi, p);
 				if (strNil(s)) {
@@ -816,7 +809,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 				p = canditer_next(ci) - seqb;
 				const char *s = BUNtvar(bi, p);
 				const char *sl = BUNtvar(bis, p);
@@ -841,7 +834,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		}
 		canditer_reset(ci);
-		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
@@ -854,7 +847,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 			empty = true;
 			if (separator) {
-				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 					p = canditer_next(ci) - seqb;
 					const char *s = BUNtvar(bi, p);
 					if (strNil(s))
@@ -870,7 +863,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			} else { /* sep case */
 				assert(sep != NULL);
-				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 					p = canditer_next(ci) - seqb;
 					const char *s = BUNtvar(bi, p);
 					const char *sl = BUNtvar(bis, p);
@@ -889,7 +882,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 
 			single_str[offset] = '\0';
-			TIMEOUT_CHECK(timeoffset, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout); } while (0));
+			TIMEOUT_CHECK(qry_ctx, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx); } while (0));
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
 					GDKfree(single_str);
@@ -936,7 +929,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			astrings[i] = (char *) str_nil;
 
 		if (separator) {
-			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -955,7 +948,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -978,7 +971,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
-		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(finish));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(finish, qry_ctx));
 
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
@@ -1007,7 +1000,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		canditer_reset(ci);
 
 		if (separator) {
-			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -1028,7 +1021,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -1050,7 +1043,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
-		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(finish));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(finish, qry_ctx));
 
 		for (i = 0; i < ngrp; i++) {
 			if (astrings[i]) {

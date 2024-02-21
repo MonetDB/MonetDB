@@ -1,3 +1,235 @@
+monetdb (11.49.1) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#6933: Add support for scalar function IFNULL(expr1, expr2)
+  * GH#7044: Improve error message regarding 3-level SQL names
+  * GH#7261: Misleading error message
+  * GH#7274: Aggregate function ST_Collect crashes mserver5
+  * GH#7376: Concurrency Issue: Second Python UDF Awaits Completion of First
+    UDF
+  * GH#7391: SQL 2023 : greatest/least functions with unlimited arguments
+    (not only 2)
+  * GH#7403: Join not recognized between two row_number() columns
+  * GH#7413: MonetDB server crashes in `BATcalcbetween_intern`
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 21 Dec 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * monetdb5: Removed MAL functions bat.reuse and bat.reuseMap.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 Dec 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * gdk: Introduced options wal_max_dropped, wal_max_file_age and
+    wal_max_file_size that control the write-ahead log file rotation.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 12 Dec 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * monetdb5: The MAL functions io.import and io.export have been removed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 6 Dec 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * sql: Introduction of table returning function `persist_unlogged(schema
+    string, table string)` that attempts to persist data in disk if
+    "schema"."table" is unlogged table in insert only mode.  If persist
+    attempt is successful, the count of the persisted rows is returned,
+    otherwise the count is 0.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 5 Dec 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * MonetDB: All binary packages are now signed with a new key with key fingerprint
+    DBCE 5625 94D7 1959 7B54  CE85 3F1A D47F 5521 A603.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 1 Dec 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * odbc: Corrected the output value of column CHAR_OCTET_LENGTH of ODBC functions
+    SQLColumns() and SQLProcedureColumns().
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 30 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * geom: Because recent changes to the geom module require the use of geos
+    3.10, the geom module is no longer available in older versions of
+    Debian and Ubuntu.  Specifically, Debian 10 and 11 (buster and
+    bullseye) and Ubuntu 20.04 (Focal Fossa) are affected.  There is no
+    automatic upgrade available for databases that were geom enabled to
+    databases that are not, so dump + restore is the only option (if no
+    geom types are actually used).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 23 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * geom: Implements Rtree index in GDK layer based on librtree. The index is
+    used in the implementation of the filter functions ST_Intersects and
+    ST_Dwithin for geometric points.
+  * geom: Improves shapefile support by replacing functions SHPattach,
+    SHPpartialimport, ahd SHPimport with SHPload.
+  * geom: Introduces functions ST_DistanceGeographic, ST_DwithinGeographic,
+    ST_IntersectsGeographic, ST_CoversGeographic, ST_Collects with geodesic
+    semantics. ST_Transform can be used to convert geodetic into geographic
+    data using libPROJ.
+
+ -- stefanos mavros <stemavros@gmail.com>  Thu, 23 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * gdk: Fixed a (rare) race condition between copying a bat (COLcopy) and
+    updates happening in parallel to that same bat.  This may only be
+    an actual problem with string bats, and then only in very particular
+    circumstances.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 21 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * gdk: Removed function BATroles to set column names on BATs.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * monetdb5: Removed MAL functions bat.getRole and bat.setColumn since the
+    underlying function BATroles was removed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * gdk: Removed the compiled-in limit on the number of threads that can be used.
+    The number of threads are still limited, but the limit is dictated
+    solely by the operating system and the availability of enough memory.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * MonetDB: The ranges of merge partitions are now pushed down into the low
+    level GDK operations, giving them a handle to sometimes execute more
+    efficiently.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * monetdb5: Change how json is stored in the database: We now normalize json
+    strings after parsing, removing whitespace and eliminating duplicate
+    keys in objects.
+  * monetdb5: The function json.filter now properly returns json scalars instead of
+    wrapping them in an array.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Thu, 16 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * gdk: We now prevent accidental upgrades from a database without 128 bit
+    integers to one with 128 bit integers (also known as HUGEINT) from
+    happening.  Upgrades will only be done if the server is started with
+    the option --set allow_hge_upgrade=yes.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * monetdb5: Removed the MAL tokenizer module.  It was never usable from SQL and
+    in this form never would be.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * sql: Added ISO/IEC 9075-11 SQL/Schemata (SQL:2011) with SQL system views:
+     information_schema.schemata
+     information_schema.tables
+     information_schema.views
+     information_schema.columns
+     information_schema.character_sets
+     information_schema.check_constraints
+     information_schema.table_constraints
+     information_schema.referential_constraints
+     information_schema.routines
+     information_schema.parameters
+     information_schema.sequences
+    For details see
+    https://www.monetdb.org/documentation/user-guide/sql-catalog/information_schema/
+    Most views have been extended (after the standard columns) with MonetDB
+    specific information columns such as schema_id, table_id, column_id, etc.
+    This simplifies filtering and joins with system tables/views in sys schema
+    when needed.
+    Note: MonetDB does NOT support catalog qualifiers in object names, so all the
+    CATALOG columns in these information_schema views will always return NULL.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 16 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * sql: Added support for generated column syntax:
+     GENERATED BY DEFAULT AS IDENTITY ...
+    This allows the user to override the default generated sequence value
+    during inserts.
+
+ -- Niels Nes <niels.nes@monetdbsolutions.com>  Thu, 16 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * MonetDB: Removed the PYTHON MAP external language option, as after a fork the
+    synchronization primitives could be in any state, leading to deadlocks.
+    During the upgrade function definitions will fallback to the normal
+    PYTHON language option.
+
+ -- Niels Nes <niels@cwi.nl>  Thu, 16 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * MonetDB: Implemented direct masking for strimp construction. The strimps
+    datastructure now keeps an array of 65K 64-bit integers that is zero
+    everywhere except at the indexes that correspond to header pairs. The
+    entry for the nth pair in order has the nth bit of the bitstring
+    on. These can be used to quickly construct bitstrings.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Thu, 16 Nov 2023 10:30:53 +0100
+
+monetdb (11.49.1) unstable; urgency=low
+
+  * sql: Added SQL support for: <result offset clause> and <fetch first clause>
+    in  <query expression> ::=
+        [ <with clause> ] <query expression body>
+        [ <order by clause> ]
+        [ <result offset clause> ]
+        [ <fetch first clause> ]
+        [ <sample clause> ]
+    <result offset clause> ::=
+       OFFSET <offset row count> [ {ROW|ROWS} ]
+    <fetch first clause> ::=
+       FETCH {FIRST|NEXT} <fetch first row count> {ROW|ROWS} ONLY
+
+ -- Niels Nes <niels.nes@monetdbsolutions.com>  Thu, 16 Nov 2023 10:30:53 +0100
+
+monetdb (11.47.17) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Nov 2023 10:48:27 +0100
+
+monetdb (11.47.17) unstable; urgency=low
+
+  * gdk: Fixed a regression where after a while the write-ahead log files
+    weren't being rotated, meaning from some point onwards, the newest
+    file just kept on growing.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Nov 2023 10:48:27 +0100
+
 monetdb (11.47.15) unstable; urgency=low
 
   * Rebuilt.

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -117,6 +119,7 @@ MCpushClientInput(Client c, bstream *new_input, int listing, const char *prompt)
 	x->next = c->bak;
 	c->bak = x;
 	c->fdin = new_input;
+	c->qryctx.bs = new_input;
 	c->listing = listing;
 	c->prompt = prompt ? prompt : "";
 	c->promptlength = strlen(c->prompt);
@@ -133,6 +136,7 @@ MCpopClientInput(Client c)
 		bstream_destroy(c->fdin);
 	}
 	c->fdin = x->fdin;
+	c->qryctx.bs = c->fdin;
 	c->yycur = x->yycur;
 	c->listing = x->listing;
 	c->prompt = x->prompt;
@@ -211,6 +215,7 @@ MCexitClient(Client c)
 		}
 		c->fdout = NULL;
 		c->fdin = NULL;
+		c->qryctx.bs = NULL;
 	}
 	assert(c->query == NULL);
 	if (profilerStatus > 0) {
@@ -239,6 +244,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		TRC_ERROR(MAL_SERVER, "No stdin channel available\n");
 		return NULL;
 	}
+	c->qryctx.bs = c->fdin;
 	c->yycur = 0;
 	c->bak = NULL;
 
@@ -258,10 +264,11 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->qryctx.querytimeout = 0;
+	c->querytimeout = 0;
 	c->sessiontimeout = 0;
 	c->logical_sessiontimeout = 0;
 	c->qryctx.starttime = 0;
+	c->qryctx.endtime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
 	c->maxmem = 0;
@@ -390,7 +397,8 @@ MCcloseClient(Client c)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->qryctx.querytimeout = 0;
+	c->querytimeout = 0;
+	c->qryctx.endtime = 0;
 	c->sessiontimeout = 0;
 	c->logical_sessiontimeout = 0;
 	c->user = oid_nil;
@@ -584,4 +592,37 @@ MCvalid(Client tc)
 	}
 	MT_lock_unset(&mal_contextLock);
 	return 0;
+}
+
+void
+MCprintinfo(void)
+{
+	int nrun = 0, nfinish = 0, nblock = 0;
+
+	MT_lock_set(&mal_contextLock);
+	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
+		switch (c->mode) {
+		case RUNCLIENT:
+			/* running */
+			nrun++;
+			if (c->idle)
+				printf("client %d, user %s, using %"PRIu64" bytes of transient space, idle since %s", c->idx, c->username, (uint64_t) ATOMIC_GET(&c->qryctx.datasize), ctime(&c->idle));
+			else
+				printf("client %d, user %s, using %"PRIu64" bytes of transient space\n", c->idx, c->username, (uint64_t) ATOMIC_GET(&c->qryctx.datasize));
+			break;
+		case FINISHCLIENT:
+			/* finishing */
+			nfinish++;
+			break;
+		case BLOCKCLIENT:
+			/* blocked */
+			nblock++;
+			break;
+		case FREECLIENT:
+			break;
+		}
+	}
+	MT_lock_unset(&mal_contextLock);
+	printf("%d active clients, %d finishing clients, %d blocked clients\n",
+		   nrun, nfinish, nblock);
 }

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* (author) M. Kersten */
@@ -51,6 +53,12 @@ mal_version(void)
 	return MONETDB5_VERSION;
 }
 
+static void
+MALprintinfo(void)
+{
+	MCprintinfo();
+}
+
 /*
  * Initialization of the MAL context
  */
@@ -90,6 +98,8 @@ mal_init(char *modules[], bool embedded, const char *initpasswd,
 	if (!MCinit())
 		return -1;
 	initNamespace();
+
+	GDKprintinforegister(MALprintinfo);
 
 	err = malBootstrap(modules, embedded, initpasswd);
 	if (err !=MAL_SUCCEED) {

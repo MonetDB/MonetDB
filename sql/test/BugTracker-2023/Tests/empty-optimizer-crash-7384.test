@@ -51,3 +51,4 @@ set schema sys
 
 statement ok
 drop schema test cascade
+

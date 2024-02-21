@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -1074,7 +1076,7 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	first = false;
 
 	if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient) {
-		GDK_mmap_minsize_transient = GDK_mem_maxsize / 16;
+		GDK_mmap_minsize_transient = MAX(MMAP_PAGESIZE, GDK_mem_maxsize / 16);
 		if (GDK_mmap_minsize_persistent > GDK_mmap_minsize_transient)
 			GDK_mmap_minsize_persistent = GDK_mmap_minsize_transient;
 	}
@@ -1107,13 +1109,13 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 		if (strcmp("gdk_mem_maxsize", n[i].name) == 0) {
 			GDK_mem_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
 			GDK_mem_maxsize = MAX(1 << 26, GDK_mem_maxsize);
+			if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient)
+				GDK_mmap_minsize_transient = MAX(MMAP_PAGESIZE, GDK_mem_maxsize / 16);
+			if (GDK_mmap_minsize_persistent > GDK_mmap_minsize_transient)
+				GDK_mmap_minsize_persistent = GDK_mmap_minsize_transient;
 		} else if (strcmp("gdk_vm_maxsize", n[i].name) == 0) {
 			GDK_vm_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
 			GDK_vm_maxsize = MAX(1 << 30, GDK_vm_maxsize);
-			if (GDK_vm_maxsize < GDK_mmap_minsize_persistent / 4)
-				GDK_mmap_minsize_persistent = GDK_vm_maxsize / 4;
-			if (GDK_vm_maxsize < GDK_mmap_minsize_transient / 4)
-				GDK_mmap_minsize_transient = GDK_vm_maxsize / 4;
 		} else if (strcmp("gdk_mmap_minsize_persistent", n[i].name) == 0) {
 			GDK_mmap_minsize_persistent = (size_t) strtoll(n[i].value, NULL, 10);
 		} else if (strcmp("gdk_mmap_minsize_transient", n[i].name) == 0) {
@@ -2031,14 +2033,39 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 }
 
 /* print some potentially interesting information */
+struct prinfocb {
+	struct prinfocb *next;
+	void (*func)(void);
+} *prinfocb;
+
+void
+GDKprintinforegister(void (*func)(void))
+{
+	struct prinfocb *p = GDKmalloc(sizeof(struct prinfocb));
+	if (p == NULL) {
+		GDKerror("cannot register USR1 printing function.\n");
+		return;
+	}
+	p->func = func;
+	p->next = NULL;
+	struct prinfocb **pp = &prinfocb;
+	while (*pp != NULL)
+		pp = &(*pp)->next;
+	*pp = p;
+}
+
 void
 GDKprintinfo(void)
 {
 	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
 	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
 
-	printf("Virtual memory allocated: %zu, of which %zu with malloc (limit: %zu)\n",
-	       vmallocated + allocated, allocated, GDK_vm_maxsize);
+	printf("Virtual memory allocated: %zu, of which %zu with malloc\n",
+	       vmallocated + allocated, allocated);
+	printf("gdk_vm_maxsize: %zu, gdk_mem_maxsize: %zu\n",
+	       GDK_vm_maxsize, GDK_mem_maxsize);
+	printf("gdk_mmap_minsize_persistent %zu, gdk_mmap_minsize_transient %zu\n",
+	       GDK_mmap_minsize_persistent, GDK_mmap_minsize_transient);
 #ifdef __linux__
 	int fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
 	if (fd >= 0) {
@@ -2064,4 +2091,6 @@ GDKprintinfo(void)
 	GDKlockstatistics(3);
 #endif
 	dump_threads();
+	for (struct prinfocb *p = prinfocb; p; p = p->next)
+		(*p->func)();
 }

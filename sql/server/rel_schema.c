@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -1935,7 +1937,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		if (c->def) {
 			e = rel_parse_val(sql, nt->s, c->def, &c->type, sql->emode, NULL);
 		} else {
-			e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+			e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 		}
 		if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
 			rel_destroy(r);

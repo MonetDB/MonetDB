@@ -98,6 +98,7 @@ SELECT v, convert(v, bigint) from T_BOOLEAN
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, convert(v, hugeint) from T_BOOLEAN
 ----
@@ -321,6 +322,7 @@ SELECT v, cast(v as bigint) from T_BOOLEAN
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, cast(v as hugeint) from T_BOOLEAN
 ----
@@ -956,6 +958,7 @@ SELECT v, convert(v, bigint) from T_tinyint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, convert(v, hugeint) from T_tinyint
 ----
@@ -1336,6 +1339,7 @@ SELECT v, cast(v as bigint) from T_tinyint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, cast(v as hugeint) from T_tinyint
 ----
@@ -1754,6 +1758,7 @@ SELECT v, convert(v, bigint) from T_smallint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, convert(v, hugeint) from T_smallint
 ----
@@ -2212,6 +2217,7 @@ SELECT v, cast(v as bigint) from T_smallint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, cast(v as hugeint) from T_smallint
 ----
@@ -2706,6 +2712,7 @@ SELECT v, convert(v, bigint) from T_int
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, convert(v, hugeint) from T_int
 ----
@@ -3238,6 +3245,7 @@ SELECT v, cast(v as bigint) from T_int
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, cast(v as hugeint) from T_int
 ----
@@ -3796,6 +3804,7 @@ SELECT v, convert(v, bigint) from T_bigint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, convert(v, hugeint) from T_bigint
 ----
@@ -4328,6 +4337,7 @@ SELECT v, cast(v as bigint) from T_bigint
 NULL
 NULL
 
+onlyif has-hugeint
 query II rowsort
 SELECT v, cast(v as hugeint) from T_bigint
 ----
@@ -4779,7 +4789,7 @@ SELECT v FROM T_float ORDER BY v
 32767.000
 NULL
 
-statement error
+statement ok
 SELECT v, convert(v, boolean) from T_float
 
 statement error
@@ -4865,6 +4875,7 @@ SELECT v, convert(v, bigint) from T_float
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_float
 ----
@@ -5290,7 +5301,7 @@ SELECT v, convert(v, time with time zone) from T_float
 statement error
 SELECT v, convert(v, timestamp with time zone) from T_float
 
-statement error
+statement ok
 SELECT v, cast(v as boolean) from T_float
 
 statement error
@@ -5376,6 +5387,7 @@ SELECT v, cast(v as bigint) from T_float
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_float
 ----
@@ -5829,7 +5841,7 @@ SELECT v FROM T_real ORDER BY v
 32767.000
 NULL
 
-statement error
+statement ok
 SELECT v, convert(v, boolean) from T_real
 
 statement error
@@ -5906,6 +5918,7 @@ SELECT v, convert(v, bigint) from T_real
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_real
 ----
@@ -6390,7 +6403,7 @@ SELECT v, convert(v, time with time zone) from T_real
 statement error
 SELECT v, convert(v, timestamp with time zone) from T_real
 
-statement error
+statement ok
 SELECT v, cast(v as boolean) from T_real
 
 statement error
@@ -6467,6 +6480,7 @@ SELECT v, cast(v as bigint) from T_real
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_real
 ----
@@ -6979,7 +6993,7 @@ SELECT v FROM T_double ORDER BY v
 32767.000
 NULL
 
-statement error
+statement ok
 SELECT v, convert(v, boolean) from T_double
 
 statement error
@@ -7081,6 +7095,7 @@ SELECT v, convert(v, bigint) from T_double
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_double
 ----
@@ -7565,7 +7580,7 @@ SELECT v, convert(v, time with time zone) from T_double
 statement error
 SELECT v, convert(v, timestamp with time zone) from T_double
 
-statement error
+statement ok
 SELECT v, cast(v as boolean) from T_double
 
 statement error
@@ -7667,6 +7682,7 @@ SELECT v, cast(v as bigint) from T_double
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_double
 ----
@@ -8281,6 +8297,7 @@ SELECT v, convert(v, bigint) from T_num
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_num
 ----
@@ -8874,6 +8891,7 @@ SELECT v, cast(v as bigint) from T_num
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_num
 ----
@@ -9495,6 +9513,7 @@ SELECT v, convert(v, bigint) from T_dec
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_dec
 ----
@@ -10081,6 +10100,7 @@ SELECT v, cast(v as bigint) from T_dec
 NULL
 NULL
 
+onlyif has-hugeint
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_dec
 ----
@@ -10631,6 +10651,7 @@ SELECT v, convert(v, bigint) from T_char where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, convert(v, hugeint) from T_char where v in ('0', '1')
 ----
@@ -10886,6 +10907,7 @@ SELECT v, cast(v as bigint) from T_char where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, cast(v as hugeint) from T_char where v in ('0', '1')
 ----
@@ -11164,6 +11186,7 @@ SELECT v, convert(v, bigint) from T_varchar where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, convert(v, hugeint) from T_varchar where v in ('0', '1')
 ----
@@ -11419,6 +11442,7 @@ SELECT v, cast(v as bigint) from T_varchar where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, cast(v as hugeint) from T_varchar where v in ('0', '1')
 ----
@@ -11697,6 +11721,7 @@ SELECT v, convert(v, bigint) from T_clob where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, convert(v, hugeint) from T_clob where v in ('0', '1')
 ----
@@ -11952,6 +11977,7 @@ SELECT v, cast(v as bigint) from T_clob where v in ('0', '1')
 1
 1
 
+onlyif has-hugeint
 query TI rowsort
 SELECT v, cast(v as hugeint) from T_clob where v in ('0', '1')
 ----
@@ -12354,13 +12380,13 @@ query TT rowsort
 SELECT v, convert(v, timestamp with time zone) from T_date
 ----
 1999-12-31
-1999-12-31 02:00:00+02:00
+1999-12-31 00:00:00+02:00
 2016-01-01
-2016-01-01 02:00:00+02:00
+2016-01-01 00:00:00+02:00
 2016-02-29
-2016-02-29 02:00:00+02:00
+2016-02-29 00:00:00+02:00
 2016-12-31
-2016-12-31 02:00:00+02:00
+2016-12-31 00:00:00+02:00
 NULL
 NULL
 
@@ -12533,13 +12559,13 @@ query TT rowsort
 SELECT v, cast(v as timestamp with time zone) from T_date
 ----
 1999-12-31
-1999-12-31 02:00:00+02:00
+1999-12-31 00:00:00+02:00
 2016-01-01
-2016-01-01 02:00:00+02:00
+2016-01-01 00:00:00+02:00
 2016-02-29
-2016-02-29 02:00:00+02:00
+2016-02-29 00:00:00+02:00
 2016-12-31
-2016-12-31 02:00:00+02:00
+2016-12-31 00:00:00+02:00
 NULL
 NULL
 
@@ -12697,9 +12723,9 @@ query TT rowsort
 SELECT v, convert(v, time with time zone) from T_time
 ----
 00:00:00
-02:00:00+02:00
+00:00:00+02:00
 23:59:58
-01:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
@@ -12841,9 +12867,9 @@ query TT rowsort
 SELECT v, cast(v as time with time zone) from T_time
 ----
 00:00:00
-02:00:00+02:00
+00:00:00+02:00
 23:59:58
-01:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
@@ -13062,13 +13088,13 @@ query TT rowsort
 SELECT v, convert(v, timestamp with time zone) from T_timestamp
 ----
 1999-12-31 23:59:59
-2000-01-01 01:59:59+02:00
+1999-12-31 23:59:59+02:00
 2016-01-01 00:00:00
-2016-01-01 02:00:00+02:00
+2016-01-01 00:00:00+02:00
 2016-02-29 00:00:00
-2016-02-29 02:00:00+02:00
+2016-02-29 00:00:00+02:00
 2016-12-31 23:59:58
-2017-01-01 01:59:58+02:00
+2016-12-31 23:59:58+02:00
 NULL
 NULL
 
@@ -13263,13 +13289,13 @@ query TT rowsort
 SELECT v, cast(v as timestamp with time zone) from T_timestamp
 ----
 1999-12-31 23:59:59
-2000-01-01 01:59:59+02:00
+1999-12-31 23:59:59+02:00
 2016-01-01 00:00:00
-2016-01-01 02:00:00+02:00
+2016-01-01 00:00:00+02:00
 2016-02-29 00:00:00
-2016-02-29 02:00:00+02:00
+2016-02-29 00:00:00+02:00
 2016-12-31 23:59:58
-2017-01-01 01:59:58+02:00
+2016-12-31 23:59:58+02:00
 NULL
 NULL
 
@@ -13288,8 +13314,8 @@ INSERT into T_timetz VALUES (null)
 query T rowsort
 SELECT v FROM T_timetz ORDER BY v
 ----
-01:59:58+02:00
-02:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
 NULL
 
 statement error
@@ -13352,20 +13378,20 @@ SELECT v, convert(v, char) from T_timetz
 query TT rowsort
 SELECT v, convert(v, varchar) from T_timetz
 ----
-01:59:58+02:00
-01:59:58+02:00
-02:00:00+02:00
-02:00:00+02:00
+00:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_timetz
 ----
-01:59:58+02:00
-01:59:58+02:00
-02:00:00+02:00
-02:00:00+02:00
+00:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
@@ -13378,20 +13404,20 @@ SELECT v, convert(v, long varchar) from T_timetz
 query TT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timetz
 ----
-01:59:58+02:00
-01:59:58+02:00
-02:00:00+02:00
-02:00:00+02:00
+00:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
 query TT rowsort
 SELECT v, convert(v, Clob) from T_timetz
 ----
-01:59:58+02:00
-01:59:58+02:00
-02:00:00+02:00
-02:00:00+02:00
+00:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
@@ -13413,10 +13439,10 @@ SELECT v, convert(v, date) from T_timetz
 query TT rowsort
 SELECT v, convert(v, time) from T_timetz
 ----
-01:59:58+02:00
-23:59:58
-02:00:00+02:00
+00:00:00+02:00
 00:00:00
+23:59:58+02:00
+23:59:58
 NULL
 NULL
 
@@ -13426,10 +13452,10 @@ SELECT v, convert(v, timestamp) from T_timetz
 query TT rowsort
 SELECT v, convert(v, time with time zone) from T_timetz
 ----
-01:59:58+02:00
-01:59:58+02:00
-02:00:00+02:00
-02:00:00+02:00
+00:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
@@ -13496,20 +13522,20 @@ SELECT v, cast(v as char) from T_timetz
 query TT rowsort
 SELECT v, cast(v as varchar) from T_timetz
 ----
-01:59:58+02:00
-01:59:58+02:00
-02:00:00+02:00
-02:00:00+02:00
+00:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_timetz
 ----
-01:59:58+02:00
-01:59:58+02:00
-02:00:00+02:00
-02:00:00+02:00
+00:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
@@ -13522,20 +13548,20 @@ SELECT v, cast(v as long varchar) from T_timetz
 query TT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timetz
 ----
-01:59:58+02:00
-01:59:58+02:00
-02:00:00+02:00
-02:00:00+02:00
+00:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
 query TT rowsort
 SELECT v, cast(v as Clob) from T_timetz
 ----
-01:59:58+02:00
-01:59:58+02:00
-02:00:00+02:00
-02:00:00+02:00
+00:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
@@ -13557,10 +13583,10 @@ SELECT v, cast(v as date) from T_timetz
 query TT rowsort
 SELECT v, cast(v as time) from T_timetz
 ----
-01:59:58+02:00
-23:59:58
-02:00:00+02:00
+00:00:00+02:00
 00:00:00
+23:59:58+02:00
+23:59:58
 NULL
 NULL
 
@@ -13570,10 +13596,10 @@ SELECT v, cast(v as timestamp) from T_timetz
 query TT rowsort
 SELECT v, cast(v as time with time zone) from T_timetz
 ----
-01:59:58+02:00
-01:59:58+02:00
-02:00:00+02:00
-02:00:00+02:00
+00:00:00+02:00
+00:00:00+02:00
+23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
@@ -13595,10 +13621,10 @@ INSERT into T_timestamptz VALUES (null)
 query T rowsort
 SELECT v FROM T_timestamptz ORDER BY v
 ----
-2000-01-01 01:59:59+02:00
-2016-01-01 02:00:00+02:00
-2016-02-29 02:00:00+02:00
-2017-01-01 01:59:58+02:00
+1999-12-31 23:59:59+02:00
+2016-01-01 00:00:00+02:00
+2016-02-29 00:00:00+02:00
+2016-12-31 23:59:58+02:00
 NULL
 
 statement error
@@ -13661,28 +13687,28 @@ SELECT v, convert(v, char) from T_timestamptz
 query TT rowsort
 SELECT v, convert(v, varchar) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-2000-01-01 01:59:59.000000+02:00
-2016-01-01 02:00:00+02:00
-2016-01-01 02:00:00.000000+02:00
-2016-02-29 02:00:00+02:00
-2016-02-29 02:00:00.000000+02:00
-2017-01-01 01:59:58+02:00
-2017-01-01 01:59:58.000000+02:00
+1999-12-31 23:59:59+02:00
+1999-12-31 23:59:59.000000+02:00
+2016-01-01 00:00:00+02:00
+2016-01-01 00:00:00.000000+02:00
+2016-02-29 00:00:00+02:00
+2016-02-29 00:00:00.000000+02:00
+2016-12-31 23:59:58+02:00
+2016-12-31 23:59:58.000000+02:00
 NULL
 NULL
 
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-2000-01-01 01:59:59.000000+02:00
-2016-01-01 02:00:00+02:00
-2016-01-01 02:00:00.000000+02:00
-2016-02-29 02:00:00+02:00
-2016-02-29 02:00:00.000000+02:00
-2017-01-01 01:59:58+02:00
-2017-01-01 01:59:58.000000+02:00
+1999-12-31 23:59:59+02:00
+1999-12-31 23:59:59.000000+02:00
+2016-01-01 00:00:00+02:00
+2016-01-01 00:00:00.000000+02:00
+2016-02-29 00:00:00+02:00
+2016-02-29 00:00:00.000000+02:00
+2016-12-31 23:59:58+02:00
+2016-12-31 23:59:58.000000+02:00
 NULL
 NULL
 
@@ -13695,28 +13721,28 @@ SELECT v, convert(v, long varchar) from T_timestamptz
 query TT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-2000-01-01 01:59:59.000000+02:00
-2016-01-01 02:00:00+02:00
-2016-01-01 02:00:00.000000+02:00
-2016-02-29 02:00:00+02:00
-2016-02-29 02:00:00.000000+02:00
-2017-01-01 01:59:58+02:00
-2017-01-01 01:59:58.000000+02:00
+1999-12-31 23:59:59+02:00
+1999-12-31 23:59:59.000000+02:00
+2016-01-01 00:00:00+02:00
+2016-01-01 00:00:00.000000+02:00
+2016-02-29 00:00:00+02:00
+2016-02-29 00:00:00.000000+02:00
+2016-12-31 23:59:58+02:00
+2016-12-31 23:59:58.000000+02:00
 NULL
 NULL
 
 query TT rowsort
 SELECT v, convert(v, Clob) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-2000-01-01 01:59:59.000000+02:00
-2016-01-01 02:00:00+02:00
-2016-01-01 02:00:00.000000+02:00
-2016-02-29 02:00:00+02:00
-2016-02-29 02:00:00.000000+02:00
-2017-01-01 01:59:58+02:00
-2017-01-01 01:59:58.000000+02:00
+1999-12-31 23:59:59+02:00
+1999-12-31 23:59:59.000000+02:00
+2016-01-01 00:00:00+02:00
+2016-01-01 00:00:00.000000+02:00
+2016-02-29 00:00:00+02:00
+2016-02-29 00:00:00.000000+02:00
+2016-12-31 23:59:58+02:00
+2016-12-31 23:59:58.000000+02:00
 NULL
 NULL
 
@@ -13735,13 +13761,13 @@ SELECT v, convert(v, Blob) from T_timestamptz
 query TT rowsort
 SELECT v, convert(v, date) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
+1999-12-31 23:59:59+02:00
 1999-12-31
-2016-01-01 02:00:00+02:00
+2016-01-01 00:00:00+02:00
 2016-01-01
-2016-02-29 02:00:00+02:00
+2016-02-29 00:00:00+02:00
 2016-02-29
-2017-01-01 01:59:58+02:00
+2016-12-31 23:59:58+02:00
 2016-12-31
 NULL
 NULL
@@ -13749,27 +13775,27 @@ NULL
 query TT rowsort
 SELECT v, convert(v, time) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-23:59:59
-2016-01-01 02:00:00+02:00
-00:00:00
-2016-02-29 02:00:00+02:00
-00:00:00
-2017-01-01 01:59:58+02:00
-23:59:58
+1999-12-31 23:59:59+02:00
+21:59:59
+2016-01-01 00:00:00+02:00
+22:00:00
+2016-02-29 00:00:00+02:00
+22:00:00
+2016-12-31 23:59:58+02:00
+21:59:58
 NULL
 NULL
 
 query TT rowsort
 SELECT v, convert(v, timestamp) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
+1999-12-31 23:59:59+02:00
 1999-12-31 23:59:59
-2016-01-01 02:00:00+02:00
+2016-01-01 00:00:00+02:00
 2016-01-01 00:00:00
-2016-02-29 02:00:00+02:00
+2016-02-29 00:00:00+02:00
 2016-02-29 00:00:00
-2017-01-01 01:59:58+02:00
+2016-12-31 23:59:58+02:00
 2016-12-31 23:59:58
 NULL
 NULL
@@ -13777,28 +13803,28 @@ NULL
 query TT rowsort
 SELECT v, convert(v, time with time zone) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-01:59:59+02:00
-2016-01-01 02:00:00+02:00
-02:00:00+02:00
-2016-02-29 02:00:00+02:00
-02:00:00+02:00
-2017-01-01 01:59:58+02:00
-01:59:58+02:00
+1999-12-31 23:59:59+02:00
+23:59:59+02:00
+2016-01-01 00:00:00+02:00
+00:00:00+02:00
+2016-02-29 00:00:00+02:00
+00:00:00+02:00
+2016-12-31 23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
 query TT rowsort
 SELECT v, convert(v, timestamp with time zone) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-2000-01-01 01:59:59+02:00
-2016-01-01 02:00:00+02:00
-2016-01-01 02:00:00+02:00
-2016-02-29 02:00:00+02:00
-2016-02-29 02:00:00+02:00
-2017-01-01 01:59:58+02:00
-2017-01-01 01:59:58+02:00
+1999-12-31 23:59:59+02:00
+1999-12-31 23:59:59+02:00
+2016-01-01 00:00:00+02:00
+2016-01-01 00:00:00+02:00
+2016-02-29 00:00:00+02:00
+2016-02-29 00:00:00+02:00
+2016-12-31 23:59:58+02:00
+2016-12-31 23:59:58+02:00
 NULL
 NULL
 
@@ -13862,28 +13888,28 @@ SELECT v, cast(v as char) from T_timestamptz
 query TT rowsort
 SELECT v, cast(v as varchar) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-2000-01-01 01:59:59.000000+02:00
-2016-01-01 02:00:00+02:00
-2016-01-01 02:00:00.000000+02:00
-2016-02-29 02:00:00+02:00
-2016-02-29 02:00:00.000000+02:00
-2017-01-01 01:59:58+02:00
-2017-01-01 01:59:58.000000+02:00
+1999-12-31 23:59:59+02:00
+1999-12-31 23:59:59.000000+02:00
+2016-01-01 00:00:00+02:00
+2016-01-01 00:00:00.000000+02:00
+2016-02-29 00:00:00+02:00
+2016-02-29 00:00:00.000000+02:00
+2016-12-31 23:59:58+02:00
+2016-12-31 23:59:58.000000+02:00
 NULL
 NULL
 
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-2000-01-01 01:59:59.000000+02:00
-2016-01-01 02:00:00+02:00
-2016-01-01 02:00:00.000000+02:00
-2016-02-29 02:00:00+02:00
-2016-02-29 02:00:00.000000+02:00
-2017-01-01 01:59:58+02:00
-2017-01-01 01:59:58.000000+02:00
+1999-12-31 23:59:59+02:00
+1999-12-31 23:59:59.000000+02:00
+2016-01-01 00:00:00+02:00
+2016-01-01 00:00:00.000000+02:00
+2016-02-29 00:00:00+02:00
+2016-02-29 00:00:00.000000+02:00
+2016-12-31 23:59:58+02:00
+2016-12-31 23:59:58.000000+02:00
 NULL
 NULL
 
@@ -13896,28 +13922,28 @@ SELECT v, cast(v as long varchar) from T_timestamptz
 query TT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-2000-01-01 01:59:59.000000+02:00
-2016-01-01 02:00:00+02:00
-2016-01-01 02:00:00.000000+02:00
-2016-02-29 02:00:00+02:00
-2016-02-29 02:00:00.000000+02:00
-2017-01-01 01:59:58+02:00
-2017-01-01 01:59:58.000000+02:00
+1999-12-31 23:59:59+02:00
+1999-12-31 23:59:59.000000+02:00
+2016-01-01 00:00:00+02:00
+2016-01-01 00:00:00.000000+02:00
+2016-02-29 00:00:00+02:00
+2016-02-29 00:00:00.000000+02:00
+2016-12-31 23:59:58+02:00
+2016-12-31 23:59:58.000000+02:00
 NULL
 NULL
 
 query TT rowsort
 SELECT v, cast(v as Clob) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-2000-01-01 01:59:59.000000+02:00
-2016-01-01 02:00:00+02:00
-2016-01-01 02:00:00.000000+02:00
-2016-02-29 02:00:00+02:00
-2016-02-29 02:00:00.000000+02:00
-2017-01-01 01:59:58+02:00
-2017-01-01 01:59:58.000000+02:00
+1999-12-31 23:59:59+02:00
+1999-12-31 23:59:59.000000+02:00
+2016-01-01 00:00:00+02:00
+2016-01-01 00:00:00.000000+02:00
+2016-02-29 00:00:00+02:00
+2016-02-29 00:00:00.000000+02:00
+2016-12-31 23:59:58+02:00
+2016-12-31 23:59:58.000000+02:00
 NULL
 NULL
 
@@ -13936,13 +13962,13 @@ SELECT v, cast(v as Blob) from T_timestamptz
 query TT rowsort
 SELECT v, cast(v as date) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
+1999-12-31 23:59:59+02:00
 1999-12-31
-2016-01-01 02:00:00+02:00
+2016-01-01 00:00:00+02:00
 2016-01-01
-2016-02-29 02:00:00+02:00
+2016-02-29 00:00:00+02:00
 2016-02-29
-2017-01-01 01:59:58+02:00
+2016-12-31 23:59:58+02:00
 2016-12-31
 NULL
 NULL
@@ -13950,27 +13976,27 @@ NULL
 query TT rowsort
 SELECT v, cast(v as time) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-23:59:59
-2016-01-01 02:00:00+02:00
-00:00:00
-2016-02-29 02:00:00+02:00
-00:00:00
-2017-01-01 01:59:58+02:00
-23:59:58
+1999-12-31 23:59:59+02:00
+21:59:59
+2016-01-01 00:00:00+02:00
+22:00:00
+2016-02-29 00:00:00+02:00
+22:00:00
+2016-12-31 23:59:58+02:00
+21:59:58
 NULL
 NULL
 
 query TT rowsort
 SELECT v, cast(v as timestamp) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
+1999-12-31 23:59:59+02:00
 1999-12-31 23:59:59
-2016-01-01 02:00:00+02:00
+2016-01-01 00:00:00+02:00
 2016-01-01 00:00:00
-2016-02-29 02:00:00+02:00
+2016-02-29 00:00:00+02:00
 2016-02-29 00:00:00
-2017-01-01 01:59:58+02:00
+2016-12-31 23:59:58+02:00
 2016-12-31 23:59:58
 NULL
 NULL
@@ -13978,28 +14004,28 @@ NULL
 query TT rowsort
 SELECT v, cast(v as time with time zone) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-01:59:59+02:00
-2016-01-01 02:00:00+02:00
-02:00:00+02:00
-2016-02-29 02:00:00+02:00
-02:00:00+02:00
-2017-01-01 01:59:58+02:00
-01:59:58+02:00
+1999-12-31 23:59:59+02:00
+23:59:59+02:00
+2016-01-01 00:00:00+02:00
+00:00:00+02:00
+2016-02-29 00:00:00+02:00
+00:00:00+02:00
+2016-12-31 23:59:58+02:00
+23:59:58+02:00
 NULL
 NULL
 
 query TT rowsort
 SELECT v, cast(v as timestamp with time zone) from T_timestamptz
 ----
-2000-01-01 01:59:59+02:00
-2000-01-01 01:59:59+02:00
-2016-01-01 02:00:00+02:00
-2016-01-01 02:00:00+02:00
-2016-02-29 02:00:00+02:00
-2016-02-29 02:00:00+02:00
-2017-01-01 01:59:58+02:00
-2017-01-01 01:59:58+02:00
+1999-12-31 23:59:59+02:00
+1999-12-31 23:59:59+02:00
+2016-01-01 00:00:00+02:00
+2016-01-01 00:00:00+02:00
+2016-02-29 00:00:00+02:00
+2016-02-29 00:00:00+02:00
+2016-12-31 23:59:58+02:00
+2016-12-31 23:59:58+02:00
 NULL
 NULL
 

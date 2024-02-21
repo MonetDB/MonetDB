@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -1154,6 +1156,13 @@ handle_client(void *p)
 {
 	int msgsock = * (int *) p;
 
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 	free(p);
 	ctl_handle_client("(local)", msgsock, NULL, NULL);
 	shutdown(msgsock, SHUT_RDWR);
@@ -1175,6 +1184,14 @@ controlRunner(void *d)
 	int msgsock;
 	pthread_t tid;
 	int *p;
+
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		__func__);
+#endif
 
 	do {
 		if ((p = malloc(sizeof(int))) == NULL) {

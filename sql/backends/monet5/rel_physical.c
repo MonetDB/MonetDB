@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -14,7 +18,7 @@
 #include "rel_rel.h"
 
 #define IS_ORDER_BASED_AGGR(name) (strcmp((name), "quantile") == 0 || strcmp((name), "quantile_avg") == 0 || \
-				   strcmp((name), "median") == 0 || strcmp((name), "median_avg") == 0) 
+				   strcmp((name), "median") == 0 || strcmp((name), "median_avg") == 0)
 
 static sql_rel *
 rel_add_orderby(visitor *v, sql_rel *rel)
@@ -32,7 +36,7 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 					/* for now we only handle one sort order */
                         		if (IS_ORDER_BASED_AGGR(af->func->base.name) && aa && list_length(aa) == 2) {
 						sql_exp *nobe = aa->h->data;
-						if (nobe && !obe) { 
+						if (nobe && !obe) {
 							sql_rel *l = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
 							obe = nobe;
 							oberef = nobe;
@@ -60,11 +64,38 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_exp *
+exp_timezone(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)depth;
+	(void)rel;
+	if (e && e->type == e_func) {
+		list *l = e->l;
+		sql_subfunc *f = e->f;
+		const char *fname = f->func->base.name;
+		if (list_length(l) == 2) {
+		   if (strcmp(fname, "timestamp_to_str") == 0 || strcmp(fname, "time_to_str") == 0) {
+                sql_exp *e = l->h->data;
+                sql_subtype *t = exp_subtype(e);
+                if (t->type->eclass == EC_TIMESTAMP_TZ || t->type->eclass == EC_TIME_TZ) {
+                    sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
+                    list_append(l, offset);
+                }
+            } else if (strcmp(fname, "str_to_timestamp") == 0 || strcmp(fname, "str_to_time") == 0 || strcmp(fname, "str_to_date") == 0) {
+                sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
+                list_append(l, offset);
+            }
+		}
+	}
+	return e;
+}
+
 sql_rel *
 rel_physical(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
 	rel = rel_visitor_bottomup(&v, rel, &rel_add_orderby);
+	rel = rel_exp_visitor_topdown(&v, rel, &exp_timezone, true);
 	return rel;
 }

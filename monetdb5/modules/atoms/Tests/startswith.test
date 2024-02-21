@@ -1,47 +1,47 @@
-query T
+query I nosort
 select startswith(NULL, '')
 ----
 NULL
 
-query T
+query I nosort
 select startswith('', NULL)
 ----
 NULL
 
-query T
+query I nosort
 select startswith('', '')
 ----
-True
+1
 
-query T
+query I nosort
 select startswith('johndoe', '')
 ----
-True
+1
 
-query T
+query I nosort
 select startswith('', 'johndoe')
 ----
-False
+0
 
-query T
+query I nosort
 select startswith('johndoe', 'john')
 ----
-True
+1
 
-query T
+query I nosort
 select startswith('one two three', 'three', true)
 ----
-False
+0
 
-query T
+query I nosort
 select startswith('Müller Thomas', 'müller', true)
 ----
-True
+1
 
-query T
+query I nosort
 select startswith('Müller Thomas', 'müller', false)
 ----
-False
+0
 
 statement ok
 create table foo(x string)
@@ -55,15 +55,15 @@ insert into foo values ('leftjohn'),('rightjane'),('rightrobert'),('uptim'),('le
 statement ok
 insert into bar values ('left'),('right'),('up'),('down')
 
-query T
+query I nosort
 select startswith(x, 'left') from foo
 ----
-True
-False
-False
-False
-True
-True
+1
+0
+0
+0
+1
+1
 
 query TT rowsort
 select * from foo,bar where [foo.x] startswith [bar.x, false]
@@ -86,3 +86,9 @@ drop table foo
 
 statement ok
 drop table bar
+
+query I nosort
+select ['Camón Romasan'] startsWith ['camu', true]
+----
+0
+

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -224,7 +226,7 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 					    f->flag == cmp_lte))
 						continue;
 
-					supertype(&super, exp_subtype(le), exp_subtype(lf));
+					cmp_supertype(&super, exp_subtype(le), exp_subtype(lf));
 					if (!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal)) ||
 						!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
 						!(re = exp_check_type(v->sql, &super, rel, re, type_equal))) {
@@ -305,7 +307,7 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 					if (lt && (ff == cmp_lt || ff == cmp_lte))
 						continue;
 
-					supertype(&super, exp_subtype(le), exp_subtype(lf));
+					cmp_supertype(&super, exp_subtype(le), exp_subtype(lf));
 					if (!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal)) ||
 						!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
 						!(re = exp_check_type(v->sql, &super, rel, re, type_equal))) {
@@ -645,7 +647,7 @@ try_rewrite_equal_or_is_null(mvc *sql, sql_rel *rel, sql_exp *or, list *l1, list
 			if (valid && first_is_null_found && second_is_null_found) {
 				sql_subtype super;
 
-				supertype(&super, exp_subtype(first), exp_subtype(second)); /* first and second must have the same type */
+				cmp_supertype(&super, exp_subtype(first), exp_subtype(second)); /* first and second must have the same type */
 				if (!(first = exp_check_type(sql, &super, rel, first, type_equal)) ||
 					!(second = exp_check_type(sql, &super, rel, second, type_equal))) {
 						sql->session->status = 0;
@@ -873,12 +875,12 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 				   le->flag == re->flag && le->flag <= cmp_lt) {
 				sql_exp *mine = NULL, *maxe = NULL;
 
-				if (!(mine = rel_binop_(sql, NULL, le->r, re->r, "sys", "sql_min", card_value))) {
+				if (!(mine = rel_binop_(sql, NULL, le->r, re->r, "sys", "sql_min", card_value, true))) {
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
 					continue;
 				}
-				if (!(maxe = rel_binop_(sql, NULL, le->f, re->f, "sys", "sql_max", card_value))) {
+				if (!(maxe = rel_binop_(sql, NULL, le->f, re->f, "sys", "sql_max", card_value, true))) {
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
 					continue;
@@ -1055,7 +1057,7 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 			}
 			if (c) {
 				e->type = e_atom;
-				e->l = atom_general(sql->sa, &e->tpe, NULL);
+				e->l = atom_general(sql->sa, &e->tpe, NULL, 0);
 				e->r = e->f = NULL;
 			}
 		}
@@ -2395,6 +2397,11 @@ rel_join_order_(visitor *v, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
+	/*
+	if (is_join(rel->op))
+		rel = reorder_join(v, rel);
+	return rel;
+	*/
 
 	switch (rel->op) {
 	case op_basetable:
@@ -2452,6 +2459,10 @@ rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_join_order_(v, rel);
+	/*
+	rel = rel_visitor_bottomup(v, rel, &rel_join_order_);
+	return rel;
+	*/
 }
 
 run_optimizer
@@ -2998,7 +3009,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 		if (!list_empty(r->attr)) {
 			nr = rel_groupby(sql, nr, NULL);
 			if (nr) {
-				printf("# introduced groupby  \n");
+				// printf("# introduced groupby  \n");
 				nr->r = append(sa_list(sql->sa), le);
 				nr->exps = r->attr;
 			}
@@ -3007,7 +3018,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 	}
 
 	/* remove NULL values, ie generate a select not null */
-	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
+	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_equal);
 	set_anti(nje);
 	set_has_no_nil(nje);
 	set_semantics(nje);
@@ -3084,7 +3095,7 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *
 	}
 
 	/* remove NULL values, ie generate a select not null */
-	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
+	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_equal);
 	set_anti(nje);
 	set_has_no_nil(nje);
 	set_semantics(nje);
@@ -3584,6 +3595,8 @@ rel_use_index(visitor *v, sql_rel *rel)
 		for( n = exps->h; n && single_table; n = n->next) {
 			sql_exp *e = n->data, *nre = e->l;
 
+			if (!is_compare(e->type) || is_anti(e) || e->flag != cmp_equal)
+				return rel;
 			if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, nre)) || (!left && rel_find_exp(rel->r, nre))))
 				nre = e->r;
 			single_table = (!re || (exp_relname(nre) && exp_relname(re) && strcmp(exp_relname(nre), exp_relname(re)) == 0));
@@ -3595,7 +3608,6 @@ rel_use_index(visitor *v, sql_rel *rel)
 
 				/* swapped ? */
 				if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, e->l)) || (!left && !rel_find_exp(rel->r, e->l)))) {
-					printf("# join swap exp for fk\n");
 					exp_swap(e);
 				}
 				p = find_prop(e->p, PROP_HASHCOL);
@@ -3635,7 +3647,7 @@ rel_select_leftgroup_2_semi(visitor *v, sql_rel *rel)
 			sql_exp *a = attrs->h->data;
 
 			if (exps_find_exp(l->attr, e->l) && exp_is_true(e->r) && e->flag == cmp_equal /*&& exp_is_true(a)*/) {
-				printf("# optimize select leftgroup -> semi\n");
+				// printf("# optimize select leftgroup -> semi\n");
 				if (!list_empty(l->exps)) {
 					for(node *m = l->exps->h; m; m = m->next) {
 						sql_exp *j = m->data;

@@ -1,14 +1,11 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
-* Thu Nov  2 2023 Sjoerd Mullender <sjoerd@acm.org>
-- Removed the compiled-in limit on the number of threads that can be used.
-  The number of threads are still limited, but the limit is dictated
-  solely by the operating system and the availability of enough memory.
+* Tue Feb  6 2024 Sjoerd Mullender <sjoerd@acm.org>
+- The SQL transaction ID is no longer saved in the BBP.dir file.
 
-* Thu Sep 28 2023 Sjoerd Mullender <sjoerd@acm.org>
-- We now prevent accidental upgrades from a database without 128 bit
-  integers to one with 128 bit integers (also known as HUGEINT) from
-  happening.  Upgrades will only be done if the server is started with
-  the option --set allow_hge_upgrade=yes.
+* Wed Jan  3 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Made some changes to the TIMEOUT macros.  Most importantly, they
+  now get a pointer to a QryCtx structure as argument instead of the
+  timeout value.
 

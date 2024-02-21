@@ -6,7 +6,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 #TODO:
 #=====
@@ -47,6 +49,7 @@ initdb = None
 single_in_memory = False
 restart = False
 produce_html = True
+ignore_conditions = False
 
 # extra mserver5 options
 mserver5_opts = []
@@ -1983,7 +1986,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
 
     os.chdir(TSTTRGDIR)
 
-    if COND:
+    if COND and not ignore_conditions:
         for cond in COND.split('&'):
             if cond.startswith('!'):
                 negate = True
@@ -3486,6 +3489,7 @@ def main(argv) :
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
+    parser.add_argument('--ignore-conditions', action='store_true', dest='ignore_conditions', help='ignore conditions in All file')
     parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
     parser.add_argument('--ci', action='store_true', dest='ci', help='special handling for continuous integration (no error return unless serious problem)')
     global produce_html
@@ -3509,6 +3513,8 @@ def main(argv) :
     approve = opts.approve
     global stop_crash
     stop_crash = opts.stop_crash
+    global ignore_conditions
+    ignore_conditions = opts.ignore_conditions
     produce_html = opts.produce_html
     addreqs = False
     testweb = opts.testweb

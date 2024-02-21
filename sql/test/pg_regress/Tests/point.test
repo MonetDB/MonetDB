@@ -199,7 +199,6 @@ POINT (5.1 34.5)
 34.875
 
 query TTTR rowsort
- 
 SELECT '' AS thirtysix, p1.f1 AS point1, p2.f1 AS point2, p1.f1 <-> p2.f1 AS dist
    FROM POINT_TBL p1, POINT_TBL p2
    ORDER BY dist, point1, point2
@@ -365,7 +364,6 @@ POINT (5.1 34.5)
 34.875
 
 statement ok
- 
 DROP VIEW POINT_TBL_VW
 
 statement ok

@@ -5,7 +5,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 set(PYTHON "${Python_EXECUTABLE}")
@@ -21,7 +23,7 @@ set(QXinfodir "${CMAKE_INSTALL_INFODIR}")
 set(QXlibdir "${CMAKE_INSTALL_FULL_LIBDIR}")
 set(QXlibexecdir "${CMAKE_INSTALL_LIBEXECDIR}")
 if (WIN32)
-  string(REPLACE "/" "\\\\" QXlocalstatedir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
+  string(REGEX REPLACE "[/\\]" "\\\\\\\\" QXlocalstatedir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
 else()
   set(QXlocalstatedir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
 endif()
@@ -29,7 +31,7 @@ set(QXmandir "${CMAKE_INSTALL_MANDIR}")
 set(QXprefix "${CMAKE_INSTALL_PREFIX}")
 set(QXPYTHON "${Python3_EXECUTABLE}")
 if (WIN32)
-  string(REPLACE "/" "\\\\" QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
+  string(REGEX REPLACE "[/\\]" "\\\\\\\\" QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
 else()
   set(QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
 endif()

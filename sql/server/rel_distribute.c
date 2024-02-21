@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -54,7 +56,7 @@ has_remote_or_replica( sql_rel *rel )
 	case op_insert:
 	case op_update:
 	case op_delete:
-		return has_remote_or_replica( rel->l ) || has_remote_or_replica( rel->r );
+		return has_remote_or_replica( rel->l) || has_remote_or_replica( rel->r );
 	case op_project:
 	case op_select:
 	case op_groupby:
@@ -149,7 +151,8 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 					if (list_length(rp->value.pval) > 1) {
 						list *uri = sa_list(v->sql->sa);
 						tid_uri *tu = SA_NEW(v->sql->sa, tid_uri);
-						tu->id = 0;
+						/* sql_gencode requires the proper tableid */
+						tu->id = p->member;
 						tu->uri = pt->query;
 						append(uri, tu);
 						rp->value.pval = uri;

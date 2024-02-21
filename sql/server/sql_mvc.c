@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* multi version catalog */
@@ -1556,8 +1558,12 @@ mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger **tres)
 sql_rel *
 sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
+	int emode = sql->emode;
+	if (!instantiate)
+		sql->emode = m_deps;
 	if (rel)
 		rel = rel_unnest(sql, rel);
+	sql->emode = emode;
 	if (rel)
 		rel = rel_optimizer(sql, rel, profile, instantiate, value_based_opt, storage_based_opt);
 	return rel;

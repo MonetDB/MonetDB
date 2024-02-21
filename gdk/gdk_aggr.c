@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -205,11 +207,8 @@ dofsum(const void *restrict values, oid seqb,
 	BUN nils = 0;
 	volatile flt f;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* we only deal with the two floating point types */
 	assert(tp1 == TYPE_flt || tp1 == TYPE_dbl);
@@ -238,7 +237,7 @@ dofsum(const void *restrict values, oid seqb,
 			return BUN_NONE;
 		}
 	}
-	TIMEOUT_LOOP(ci->ncand, timeoffset) {
+	TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 		listi = canditer_next(ci) - seqb;
 		grp = gids ? gids[listi] : 0;
 		if (grp < min || grp > max)
@@ -302,7 +301,7 @@ dofsum(const void *restrict values, oid seqb,
 		}
 		pergroup[grp].npartials = i;
 	}
-	TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	for (grp = 0; grp < ngrp; grp++) {
 		if (pergroup[grp].partials == NULL)
 			continue;
@@ -439,18 +438,18 @@ dofsum(const void *restrict values, oid seqb,
 			sum = 0;					\
 			if (nonil) {					\
 				*seen = ci->ncand > 0;			\
-				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) { \
 					x = vals[ci->seq + i - seqb];	\
 					ADD_WITH_CHECK(x, sum,		\
 						       TYPE2, sum,	\
 						       GDK_##TYPE2##_max, \
 						       goto overflow);	\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			} else {					\
 				bool seenval = false;			\
-				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) { \
 					x = vals[ci->seq + i - seqb];	\
 					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
@@ -466,8 +465,8 @@ dofsum(const void *restrict values, oid seqb,
 						seenval = true;		\
 					}				\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				*seen = seenval;			\
 			}						\
 			if (*seen)					\
@@ -478,7 +477,7 @@ dofsum(const void *restrict values, oid seqb,
 			bool seenval = false;				\
 			*algo = "sum: with candidates, no groups";	\
 			sum = 0;					\
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
 				x = vals[canditer_next(ci) - seqb];	\
 				if (is_##TYPE1##_nil(x)) {		\
 					if (!skip_nils) {		\
@@ -494,14 +493,14 @@ dofsum(const void *restrict values, oid seqb,
 					seenval = true;			\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			if (seenval)					\
 				*sums = sum;				\
 		} else if (ci->tpe == cand_dense) {			\
 			/* multiple groups, no candidate list */	\
 			*algo = "sum: no candidates, with groups";	\
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
@@ -529,12 +528,12 @@ dofsum(const void *restrict values, oid seqb,
 					}				\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		} else {						\
 			/* multiple groups, with candidate list */	\
 			*algo = "sum: with candidates, with groups";	\
-			TIMEOUT_LOOP(ci->ncand, timeoffset) {		\
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {		\
 				i = canditer_next(ci) - seqb;		\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
@@ -563,8 +562,8 @@ dofsum(const void *restrict values, oid seqb,
 					}				\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -579,15 +578,15 @@ dofsum(const void *restrict values, oid seqb,
 			if (nonil) {					\
 				*algo = "sum: no candidates, no groups, no nils, no overflow"; \
 				*seen = ci->ncand > 0;			\
-				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) { \
 					sum += vals[ci->seq + i - seqb]; \
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			} else {					\
 				bool seenval = false;			\
 				*algo = "sum: no candidates, no groups, no overflow"; \
-				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) { \
 					x = vals[ci->seq + i - seqb];	\
 					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
@@ -600,8 +599,8 @@ dofsum(const void *restrict values, oid seqb,
 						seenval = true;		\
 					}				\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				*seen = seenval;			\
 			}						\
 			if (*seen)					\
@@ -612,7 +611,7 @@ dofsum(const void *restrict values, oid seqb,
 			bool seenval = false;				\
 			*algo = "sum: with candidates, no groups, no overflow"; \
 			sum = 0;					\
-			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
 				x = vals[canditer_next(ci) - seqb];	\
 				if (is_##TYPE1##_nil(x)) {		\
 					if (!skip_nils) {		\
@@ -625,15 +624,15 @@ dofsum(const void *restrict values, oid seqb,
 					seenval = true;			\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			if (seenval)					\
 				*sums = sum;				\
 		} else if (ci->tpe == cand_dense) {			\
 			/* multiple groups, no candidate list */	\
 			if (nonil) {					\
 				*algo = "sum: no candidates, with groups, no nils, no overflow"; \
-				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) { \
 					if (gids == NULL ||		\
 					    (gids[i] >= min && gids[i] <= max)) { \
 						gid = gids ? gids[i] - min : (oid) i; \
@@ -646,11 +645,11 @@ dofsum(const void *restrict values, oid seqb,
 						sums[gid] += x;		\
 					}				\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			} else {					\
 				*algo = "sum: no candidates, with groups, no overflow"; \
-				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) { \
 					if (gids == NULL ||		\
 					    (gids[i] >= min && gids[i] <= max)) { \
 						gid = gids ? gids[i] - min : (oid) i; \
@@ -672,13 +671,13 @@ dofsum(const void *restrict values, oid seqb,
 						}			\
 					}				\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			}						\
 		} else {						\
 			/* multiple groups, with candidate list */	\
 			*algo = "sum: with candidates, with groups, no overflow"; \
-			TIMEOUT_LOOP(ci->ncand, timeoffset) {		\
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {		\
 				i = canditer_next(ci) - seqb;		\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
@@ -701,8 +700,8 @@ dofsum(const void *restrict values, oid seqb,
 					}				\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -719,11 +718,8 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 	oid gid;
 	unsigned int *restrict seen = NULL; /* bitmask for groups that we've seen */
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	switch (tp2) {
 	case TYPE_flt:
@@ -1195,7 +1191,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 	do {								\
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		TIMEOUT_LOOP(ci->ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {			\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1228,8 +1224,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -1237,7 +1233,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 	do {								\
 		const TYPE *vals = (const TYPE *) values;		\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		TIMEOUT_LOOP(ci->ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {			\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1266,15 +1262,15 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 #else
 #define AGGR_PROD_LNG(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		TIMEOUT_LOOP(ci->ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {			\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1306,8 +1302,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 #endif
 
@@ -1315,7 +1311,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 	do {								\
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		TIMEOUT_LOOP(ci->ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {			\
 			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1347,8 +1343,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 static BUN
@@ -1362,11 +1358,8 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 	oid gid;
 	unsigned int *restrict seen; /* bitmask for groups that we've seen */
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* allocate bitmap for seen group ids */
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
@@ -1718,10 +1711,10 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 /* ---------------------------------------------------------------------- */
 /* average */
 
-#define GOTO_BAILOUT()					\
-	do {						\
-		GDKfree(avgs);				\
-		GOTO_LABEL_TIMEOUT_HANDLER(bailout);	\
+#define GOTO_BAILOUT()						\
+	do {							\
+		GDKfree(avgs);					\
+		GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx);	\
 	} while (0)
 
 #define AGGR_AVG(TYPE)							\
@@ -1730,7 +1723,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 		TYPE *restrict avgs = GDKzalloc(ngrp * sizeof(TYPE));	\
 		if (avgs == NULL)					\
 			goto bailout;					\
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1749,7 +1742,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, GOTO_BAILOUT());		\
+		TIMEOUT_CHECK(qry_ctx, GOTO_BAILOUT());			\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
@@ -1767,7 +1760,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		for (i = 0; i < ngrp; i++)				\
 			dbls[i] = 0;					\
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -1785,8 +1778,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
@@ -1824,11 +1817,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	lng t0 = 0;
 	BATiter bi = {0};
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2017,11 +2007,8 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	BUN i;
 	oid o;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
@@ -2068,7 +2055,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	case TYPE_bte: {
 		const bte *vals = (const bte *) bi.base;
 		bte *avgs = Tloc(bn, 0);
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
 				gid = gids ? gids[o] - min : o;
@@ -2085,7 +2072,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 				AVERAGE_ITER(bte, vals[o], avgs[gid], rems[gid], cnts[gid]);
 			}
 		}
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 			if (cnts[i] == 0) {
 				avgs[i] = bte_nil;
 				bn->tnil = true;
@@ -2116,7 +2103,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	case TYPE_sht: {
 		const sht *vals = (const sht *) bi.base;
 		sht *avgs = Tloc(bn, 0);
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
 				gid = gids ? gids[o] - min : o;
@@ -2133,7 +2120,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 				AVERAGE_ITER(sht, vals[o], avgs[gid], rems[gid], cnts[gid]);
 			}
 		}
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 			if (cnts[i] == 0) {
 				avgs[i] = sht_nil;
 				bn->tnil = true;
@@ -2164,7 +2151,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	case TYPE_int: {
 		const int *vals = (const int *) bi.base;
 		int *avgs = Tloc(bn, 0);
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
 				gid = gids ? gids[o] - min : o;
@@ -2181,7 +2168,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 				AVERAGE_ITER(int, vals[o], avgs[gid], rems[gid], cnts[gid]);
 			}
 		}
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 			if (cnts[i] == 0) {
 				avgs[i] = int_nil;
 				bn->tnil = true;
@@ -2212,7 +2199,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	case TYPE_lng: {
 		const lng *vals = (const lng *) bi.base;
 		lng *avgs = Tloc(bn, 0);
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
 				gid = gids ? gids[o] - min : o;
@@ -2229,7 +2216,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 				AVERAGE_ITER(lng, vals[o], avgs[gid], rems[gid], cnts[gid]);
 			}
 		}
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 			if (cnts[i] == 0) {
 				avgs[i] = lng_nil;
 				bn->tnil = true;
@@ -2261,7 +2248,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	case TYPE_hge: {
 		const hge *vals = (const hge *) bi.base;
 		hge *avgs = Tloc(bn, 0);
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
 				gid = gids ? gids[o] - min : o;
@@ -2278,7 +2265,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 				AVERAGE_ITER(hge, vals[o], avgs[gid], rems[gid], cnts[gid]);
 			}
 		}
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 			if (cnts[i] == 0) {
 				avgs[i] = hge_nil;
 				bn->tnil = true;
@@ -2309,7 +2296,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 #endif
 	}
 	bat_iterator_end(&bi);
-	TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	BATsetcount(bn, ngrp);
 	BATsetcount(rn, ngrp);
 	BATsetcount(cn, ngrp);
@@ -2658,11 +2645,8 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	BUN i;
 	BAT *bn, *rn, *cn;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if ((err = BATgroupaggrinit(avg, g, e, NULL, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
@@ -2703,7 +2687,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	case TYPE_bte: {
 		const bte *vals = (const bte *) bi.base;
 		bte *avgs = Tloc(bn, 0);
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			if (ngrp > 1)
 				gid = gids ? gids[i] - min : i;
 			if (is_bte_nil(vals[i])) {
@@ -2719,7 +2703,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 						     ocnts[i]);
 			}
 		}
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 			if (cnts[i] == 0) {
 				avgs[i] = bte_nil;
 				bn->tnil = true;
@@ -2744,7 +2728,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	case TYPE_sht: {
 		const sht *vals = (const sht *) bi.base;
 		sht *avgs = Tloc(bn, 0);
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			if (ngrp > 1)
 				gid = gids ? gids[i] - min : i;
 			if (is_sht_nil(vals[i])) {
@@ -2760,7 +2744,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 						     ocnts[i]);
 			}
 		}
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 			if (cnts[i] == 0) {
 				avgs[i] = sht_nil;
 				bn->tnil = true;
@@ -2785,7 +2769,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	case TYPE_int: {
 		const int *vals = (const int *) bi.base;
 		int *avgs = Tloc(bn, 0);
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			if (ngrp > 1)
 				gid = gids ? gids[i] - min : i;
 			if (is_int_nil(vals[i])) {
@@ -2801,7 +2785,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 						     ocnts[i]);
 			}
 		}
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 			if (cnts[i] == 0) {
 				avgs[i] = int_nil;
 				bn->tnil = true;
@@ -2826,7 +2810,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	case TYPE_lng: {
 		const lng *vals = (const lng *) bi.base;
 		lng *avgs = Tloc(bn, 0);
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			if (ngrp > 1)
 				gid = gids ? gids[i] - min : i;
 			if (is_lng_nil(vals[i])) {
@@ -2842,7 +2826,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 						     ocnts[i]);
 			}
 		}
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 			if (cnts[i] == 0) {
 				avgs[i] = lng_nil;
 				bn->tnil = true;
@@ -2868,7 +2852,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	case TYPE_hge: {
 		const hge *vals = (const hge *) bi.base;
 		hge *avgs = Tloc(bn, 0);
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			if (ngrp > 1)
 				gid = gids ? gids[i] - min : i;
 			if (is_hge_nil(vals[i])) {
@@ -2884,7 +2868,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 						     ocnts[i]);
 			}
 		}
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 			if (cnts[i] == 0) {
 				avgs[i] = hge_nil;
 				bn->tnil = true;
@@ -2911,7 +2895,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	bat_iterator_end(&bi);
 	BBPreclaim(rn);
 	BBPreclaim(cn);
-	TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	BATsetcount(bn, ngrp);
 	bn->tnonil = !bn->tnil;
 	bn->tkey = ngrp == 1;
@@ -2930,7 +2914,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 									\
 		/* first try to calculate the sum of all values into a */ \
 		/* lng/hge */						\
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			x = ((const TYPE *) src)[i];			\
 			if (is_##TYPE##_nil(x))				\
@@ -2967,7 +2951,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 					r = n - r;			\
 				}					\
 			}						\
-			TIMEOUT_LOOP(ci.ncand, timeoffset) {		\
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {		\
 				/* loop invariant: */			\
 				/* a + r/n == average(x[0],...,x[n]); */ \
 				/* 0 <= r < n */			\
@@ -2979,8 +2963,8 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			}						\
 			*avg = a + (dbl) r / n;				\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -2993,15 +2977,15 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	do {								\
 		double a = 0;						\
 		TYPE x;							\
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			x = ((const TYPE *) src)[i];			\
 			if (is_##TYPE##_nil(x))				\
 				continue;				\
 			AVERAGE_ITER_FLOAT(TYPE, x, a, n);		\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		*avg = n > 0 ? a : dbl_nil;				\
 	} while (0)
 
@@ -3018,11 +3002,8 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	struct canditer ci;
 	const void *restrict src;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	canditer_init(&ci, b, s);
 
@@ -3075,7 +3056,7 @@ bailout:
 #define AGGR_COUNT(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) bi.base;	\
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -3108,11 +3089,8 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 	lng t0 = 0;
 	BATiter bi = {0};
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -3150,13 +3128,13 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 		/* if nils are nothing special, or if there are no
 		 * nils, we don't need to look at the values at all */
 		if (gids) {
-			TIMEOUT_LOOP(ci.ncand, timeoffset) {
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				i = canditer_next(&ci) - b->hseqbase;
 				if (gids[i] >= min && gids[i] <= max)
 					cnts[gids[i] - min]++;
 			}
 		} else {
-			TIMEOUT_LOOP(ci.ncand, timeoffset) {
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				i = canditer_next(&ci) - b->hseqbase;
 				cnts[i] = 1;
 			}
@@ -3194,7 +3172,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 			AGGR_COUNT(dbl);
 			break;
 		default:
-			TIMEOUT_LOOP(ci.ncand, timeoffset) {
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				i = canditer_next(&ci) - b->hseqbase;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
@@ -3211,7 +3189,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 		}
 		bat_iterator_end(&bi);
 	}
-	TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
@@ -3239,7 +3217,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 		const TYPE *restrict vals = (const TYPE *) bi->base;	\
 		if (ngrp == ci->ncand) {				\
 			/* single element groups */			\
-			TIMEOUT_LOOP(ci->ncand, timeoffset) {		\
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {		\
 				i = canditer_next(ci) - hseq;		\
 				if (!skip_nils ||			\
 				    !is_##TYPE##_nil(vals[i])) {	\
@@ -3249,7 +3227,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 				gid++;					\
 			}						\
 		} else {						\
-			TIMEOUT_LOOP(ci->ncand, timeoffset) {		\
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {		\
 				i = canditer_next(ci) - hseq;		\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
@@ -3284,14 +3262,11 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	nils = ngrp;
-	TIMEOUT_LOOP_IDX(i, ngrp, timeoffset)
+	TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx)
 		oids[i] = oid_nil;
 	if (ci->ncand == 0)
 		return nils;
@@ -3333,13 +3308,13 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 				nils--;
 			} else if (gdense) {
 				/* single element groups */
-				TIMEOUT_LOOP(ci->ncand, timeoffset) {
+				TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 					i = canditer_next(ci);
 					oids[gid++] = i;
 					nils--;
 				}
 			} else {
-				TIMEOUT_LOOP(ci->ncand, timeoffset) {
+				TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 					i = canditer_next(ci);
 					gid = gids[i - hseq] - min;
 					if (is_oid_nil(oids[gid])) {
@@ -3355,7 +3330,7 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 
 		if (gdense) {
 			/* single element groups */
-			TIMEOUT_LOOP(ci->ncand, timeoffset) {
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - hseq;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(*bi, i), nil) != 0) {
@@ -3365,7 +3340,7 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 				gid++;
 			}
 		} else {
-			TIMEOUT_LOOP(ci->ncand, timeoffset) {
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - hseq;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
@@ -3390,7 +3365,7 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 		}
 		break;
 	}
-	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 
 	return nils;
 }
@@ -3410,14 +3385,11 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	nils = ngrp;
-	TIMEOUT_LOOP_IDX(i, ngrp, timeoffset)
+	TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx)
 		oids[i] = oid_nil;
 	if (ci->ncand == 0)
 		return nils;
@@ -3459,13 +3431,13 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 				nils--;
 			} else if (gdense) {
 				/* single element groups */
-				TIMEOUT_LOOP(ci->ncand, timeoffset) {
+				TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 					i = canditer_next(ci);
 					oids[gid++] = i;
 					nils--;
 				}
 			} else {
-				TIMEOUT_LOOP(ci->ncand, timeoffset) {
+				TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 					i = canditer_next(ci);
 					gid = gids[i - hseq] - min;
 					if (is_oid_nil(oids[gid]))
@@ -3480,7 +3452,7 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 
 		if (gdense) {
 			/* single element groups */
-			TIMEOUT_LOOP(ci->ncand, timeoffset) {
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - hseq;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(*bi, i), nil) != 0) {
@@ -3490,7 +3462,7 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 				gid++;
 			}
 		} else {
-			TIMEOUT_LOOP(ci->ncand, timeoffset) {
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - hseq;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
@@ -3516,7 +3488,7 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 		}
 		break;
 	}
-	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 
 	return nils;
 }
@@ -4011,11 +3983,8 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	lng t0 = 0;
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4123,8 +4092,8 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		/* for each group (r and p are the beginning and end
 		 * of the current group, respectively) */
 		for (r = 0, q = BATcount(g); r < q; r = p) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+			GDK_CHECK_TIMEOUT(qry_ctx, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 			BUN qindex;
 			prev = grps[r];
 			/* search for end of current group (grps is
@@ -4370,22 +4339,22 @@ BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 /* ---------------------------------------------------------------------- */
 /* standard deviation (both biased and non-biased) */
 
-#define AGGR_STDEV_SINGLE(TYPE)					\
-	do {							\
-		TYPE x;						\
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {		\
-			x = ((const TYPE *) values)[i];		\
-			if (is_##TYPE##_nil(x))			\
-				continue;			\
-			n++;					\
-			delta = (dbl) x - mean;			\
-			mean += delta / n;			\
-			m2 += delta * ((dbl) x - mean);		\
-			if (isinf(m2))				\
-				goto overflow;			\
-		}						\
-		TIMEOUT_CHECK(timeoffset,			\
-			      TIMEOUT_HANDLER(dbl_nil));	\
+#define AGGR_STDEV_SINGLE(TYPE)						\
+	do {								\
+		TYPE x;							\
+		TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {			\
+			x = ((const TYPE *) values)[i];			\
+			if (is_##TYPE##_nil(x))				\
+				continue;				\
+			n++;						\
+			delta = (dbl) x - mean;				\
+			mean += delta / n;				\
+			m2 += delta * ((dbl) x - mean);			\
+			if (isinf(m2))					\
+				goto overflow;				\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      TIMEOUT_HANDLER(dbl_nil, qry_ctx)); \
 	} while (0)
 
 static dbl
@@ -4396,11 +4365,8 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, b
 	dbl m2 = 0;
 	dbl delta;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	switch (tp) {
 	case TYPE_bte:
@@ -4502,7 +4468,7 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 #define AGGR_COVARIANCE_SINGLE(TYPE)					\
 	do {								\
 		TYPE x, y;						\
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
+		TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {			\
 			x = ((const TYPE *) v1)[i];			\
 			y = ((const TYPE *) v2)[i];			\
 			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
@@ -4516,8 +4482,8 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 			if (isinf(m2))					\
 				goto overflow;				\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      TIMEOUT_HANDLER(dbl_nil));		\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      TIMEOUT_HANDLER(dbl_nil, qry_ctx)); \
 	} while (0)
 
 static dbl
@@ -4526,11 +4492,8 @@ calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample)
 	BUN n = 0, i;
 	dbl mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 
 	switch (tp) {
@@ -4602,7 +4565,7 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 #define AGGR_CORRELATION_SINGLE(TYPE)					\
 	do {								\
 		TYPE x, y;						\
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
+		TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {			\
 			x = ((const TYPE *) v1)[i];			\
 			y = ((const TYPE *) v2)[i];			\
 			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
@@ -4619,8 +4582,8 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 			if (isinf(up) || isinf(down1) || isinf(down2))	\
 				goto overflow;				\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 dbl
@@ -4633,11 +4596,8 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 	int tp = b1i.type;
 	lng t0 = 0;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4689,7 +4649,7 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 #define AGGR_STDEV(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) bi.base;	\
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -4708,9 +4668,9 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {				\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {			\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
 				dbls[i] = dbl_nil;			\
 				mean[i] = dbl_nil;			\
@@ -4753,11 +4713,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	lng t0 = 0;
 	BATiter bi = {0};
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4814,7 +4771,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		goto alloc_fail;
 	dbls = (dbl *) Tloc(bn, 0);
 
-	TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+	TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 		mean[i] = 0;
 		delta[i] = 0;
 		m2[i] = 0;
@@ -4941,7 +4898,7 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	do {								\
 		const TYPE *vals1 = (const TYPE *) b1i.base;		\
 		const TYPE *vals2 = (const TYPE *) b2i.base;		\
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b1->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -4962,9 +4919,9 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {				\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {			\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
 				dbls[i] = dbl_nil;			\
 				nils++;					\
@@ -4994,11 +4951,8 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	lng t0 = 0;
 	BATiter b1i = {0}, b2i = {0};
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -5041,7 +4995,7 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	if (mean1 == NULL || mean2 == NULL || delta1 == NULL || delta2 == NULL || m2 == NULL || cnts == NULL)
 		goto alloc_fail;
 
-	TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+	TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 		m2[i] = 0;
 		mean1[i] = 0;
 		mean2[i] = 0;
@@ -5150,7 +5104,7 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 	do {								\
 		const TYPE *vals1 = (const TYPE *) b1i.base;		\
 		const TYPE *vals2 = (const TYPE *) b2i.base;		\
-		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b1->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
@@ -5174,9 +5128,9 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
-		TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {				\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {			\
 			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || down1[i] == 0 || down2[i] == 0) { \
 				dbls[i] = dbl_nil;			\
 				nils++;					\
@@ -5203,11 +5157,8 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	lng t0 = 0;
 	BATiter b1i = {0}, b2i = {0};
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -5248,7 +5199,7 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	if (mean1 == NULL || mean2 == NULL || delta1 == NULL || delta2 == NULL || up == NULL || down1 == NULL || down2 == NULL || cnts == NULL)
 		goto alloc_fail;
 
-	TIMEOUT_LOOP_IDX(i, ngrp, timeoffset) {
+	TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 		up[i] = 0;
 		down1[i] = 0;
 		down2[i] = 0;

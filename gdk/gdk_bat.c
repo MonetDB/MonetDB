@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -53,16 +55,6 @@
 
 #define ATOMneedheap(tpe) (BATatoms[tpe].atomHeap != NULL)
 
-static char *BATstring_t = "t";
-
-#define default_ident(s)	((s) == BATstring_t)
-
-void
-BATinit_idents(BAT *bn)
-{
-	bn->tident = BATstring_t;
-}
-
 BAT *
 BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 {
@@ -85,12 +77,11 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.hseqbase = hseq,
 
 		.ttype = tt,
-		.tkey = false,
+		.tkey = true,
 		.tnonil = true,
 		.tnil = false,
 		.tsorted = ATOMlinear(tt),
 		.trevsorted = ATOMlinear(tt),
-		.tident = BATstring_t,
 		.tseqbase = oid_nil,
 		.tminpos = BUN_NONE,
 		.tmaxpos = BUN_NONE,
@@ -683,9 +674,6 @@ BATfree(BAT *b)
 	STRMPfree(b);
 	RTREEfree(b);
 	MT_lock_set(&b->theaplock);
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	b->tident = BATstring_t;
 	if (nunique != BUN_NONE) {
 		b->tunique_est = (double) nunique;
 	}
@@ -722,9 +710,6 @@ BATfree(BAT *b)
 void
 BATdestroy(BAT *b)
 {
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	b->tident = BATstring_t;
 	if (b->tvheap) {
 		ATOMIC_DESTROY(&b->tvheap->refs);
 		GDKfree(b->tvheap);
@@ -829,7 +814,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		return NULL;
 	}
 
-	bi = bat_iterator(b);
+	MT_lock_set(&b->theaplock);
+	bi = bat_iterator_nolock(b);
 
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
@@ -839,9 +825,9 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	    ATOMstorage(b->ttype) != TYPE_msk && /* no view on TYPE_msk */
 	    (!VIEWtparent(b) ||
 	     BBP_desc(VIEWtparent(b))->batRestricted == BAT_READ)) {
+		MT_lock_unset(&b->theaplock);
 		bn = VIEWcreate(b->hseqbase, b);
 		if (bn == NULL) {
-			bat_iterator_end(&bi);
 			return NULL;
 		}
 		if (tt != bn->ttype) {
@@ -854,6 +840,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			}
 			bn->tseqbase = ATOMtype(tt) == TYPE_oid ? bi.tseq : oid_nil;
 		}
+		return bn;
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
 		 * setting slowcopy to false) */
@@ -880,7 +867,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 
 		bn = COLnew2(b->hseqbase, tt, bi.count, role, bi.width);
 		if (bn == NULL) {
-			bat_iterator_end(&bi);
+			MT_lock_unset(&b->theaplock);
 			return NULL;
 		}
 		if (bn->tvheap != NULL && bn->tvheap->base == NULL) {
@@ -985,8 +972,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		BUN h = BATcount(b);
 		bn->tsorted = bi.sorted;
 		bn->trevsorted = bi.revsorted;
-		if (bi.key)
-			BATkey(bn, true);
+		BATkey(bn, bi.key);
 		bn->tnonil = bi.nonil;
 		bn->tnil = bi.nil;
 		if (bi.nosorted > 0 && bi.nosorted < h)
@@ -1011,6 +997,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	} else {
 		bn->tsorted = bn->trevsorted = false; /* set based on count later */
 		bn->tnonil = bn->tnil = false;
+		bn->tkey = false;
 		bn->tnosorted = bn->tnorevsorted = 0;
 		bn->tnokey[0] = bn->tnokey[1] = 0;
 	}
@@ -1023,10 +1010,10 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->batRestricted = BAT_READ;
 	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT "\n",
 		  ALGOBATPAR(b), ALGOBATPAR(bn));
-	bat_iterator_end(&bi);
+	MT_lock_unset(&b->theaplock);
 	return bn;
       bunins_failed:
-	bat_iterator_end(&bi);
+	MT_lock_unset(&b->theaplock);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -1292,12 +1279,12 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				    (count > 1 ||
 				     b->tseqbase + b->batCount != ((oid *) values)[0]))
 					b->tseqbase = oid_nil;
-				if (b->tsorted && ((oid *) b->theap->base)[b->batCount - 1] > ((oid *) values)[0]) {
+				if (b->tsorted && !is_oid_nil(((oid *) b->theap->base)[b->batCount - 1]) && ((oid *) b->theap->base)[b->batCount - 1] > ((oid *) values)[0]) {
 					b->tsorted = false;
 					if (b->tnosorted == 0)
 						b->tnosorted = b->batCount;
 				}
-				if (b->trevsorted && ((oid *) b->theap->base)[b->batCount - 1] < ((oid *) values)[0]) {
+				if (b->trevsorted && !is_oid_nil(((oid *) values)[0]) && ((oid *) b->theap->base)[b->batCount - 1] < ((oid *) values)[0]) {
 					b->trevsorted = false;
 					if (b->tnorevsorted == 0)
 						b->tnorevsorted = b->batCount;
@@ -1715,10 +1702,13 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			default:
 				MT_UNREACHABLE();
 			}
+			MT_lock_set(&b->theaplock);
 			if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
 				MT_rwlock_wrunlock(&b->thashlock);
 				goto bailout;
 			}
+			MT_lock_unset(&b->theaplock);
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
@@ -2208,22 +2198,6 @@ BATtseqbase(BAT *b, oid o)
 	}
 }
 
-gdk_return
-BATroles(BAT *b, const char *tnme)
-{
-	if (b == NULL)
-		return GDK_SUCCEED;
-	MT_lock_set(&b->theaplock);
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	if (tnme)
-		b->tident = GDKstrdup(tnme);
-	else
-		b->tident = BATstring_t;
-	MT_lock_unset(&b->theaplock);
-	return b->tident ? GDK_SUCCEED : GDK_FAIL;
-}
-
 /*
  * @- Change the BAT access permissions (read, append, write)
  * Regrettably, BAT access-permissions, persistent status and memory
@@ -2576,10 +2550,10 @@ BATmode(BAT *b, bool transient)
 	}
 
 	BATiter bi = bat_iterator(b);
+	bool mustrelease = false;
+	bat bid = b->batCacheid;
 
 	if (transient != bi.transient) {
-		bat bid = b->batCacheid;
-
 		if (!transient) {
 			if (ATOMisdescendant(b->ttype, TYPE_ptr) ||
 			    BATatoms[b->ttype].atomUnfix ||
@@ -2597,7 +2571,13 @@ BATmode(BAT *b, bool transient)
 		if (!transient) {
 			BBPretain(bid);
 		} else if (!bi.transient) {
-			BBPrelease(bid);
+			/* we need to delay the release because if there
+			 * is no fix and the bat is loaded, BBPrelease
+			 * can call BBPfree which calls BATfree which
+			 * may hang while waiting for the heap reference
+			 * that we have because of the BAT iterator to
+			 * come down, in other words, deadlock */
+			mustrelease = true;
 		}
 		MT_lock_set(&GDKswapLock(bid));
 		if (!transient) {
@@ -2628,6 +2608,9 @@ BATmode(BAT *b, bool transient)
 		MT_lock_unset(&GDKswapLock(bid));
 	}
 	bat_iterator_end(&bi);
+	/* release after bat_iterator_end because of refs to heaps */
+	if (mustrelease)
+		BBPrelease(bid);
 	return GDK_SUCCEED;
 }
 

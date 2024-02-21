@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef __string_H__
@@ -139,9 +141,9 @@
 	} while (0)
 
 mal_export bool batstr_func_has_candidates(const char *func);
-mal_export int UTF8_strwidth(const char *restrict s);
-mal_export int UTF8_strlen(const char *restrict s);
-mal_export int str_strlen(const char *restrict s);
+mal_export int UTF8_strwidth(const char *s);
+mal_export int UTF8_strlen(const char *s);
+mal_export int str_strlen(const char *s);
 
 /* For str returning functions, the result is passed as the input parameter buf. The returned str indicates
    if the function succeeded (ie malloc failure or invalid unicode character). str_wchr_at function also
