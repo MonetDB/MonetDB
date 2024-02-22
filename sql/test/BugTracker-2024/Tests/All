@@ -26,3 +26,4 @@ order-by-false-or-false-Bug-7456
 constant-expression-issue-7457
 sign-issue-7458
 unicode-escape-7461
+contains-cast-7463
