@@ -1,0 +1,45 @@
+statement ok
+CREATE TABLE t0(c0 INT, c1 INT)
+
+statement ok
+INSERT INTO t0 (c0) VALUES (0)
+
+statement ok
+INSERT INTO t0 (c0, c1) VALUES (1, 1)
+
+query II
+SELECT * FROM t0
+----
+0
+NULL
+1
+1
+
+query IIT
+SELECT t0.c0, CONTAINS(0, t0.c0), CAST(CONTAINS(0, t0.c0) AS VARCHAR) FROM t0
+----
+0
+1
+true
+1
+0
+false
+
+query I
+SELECT (t0.c1)AND(CAST(CONTAINS(0, t0.c0) AS VARCHAR)) FROM t0
+----
+NULL
+0
+
+query II
+SELECT * FROM t0 WHERE ((t0.c1)AND(CAST(CONTAINS(0, t0.c0) AS VARCHAR)))
+-----
+
+query II
+SELECT * FROM t0 WHERE (NOT ((t0.c1)AND(CAST(CONTAINS(0, t0.c0) AS VARCHAR))))
+----
+1
+1
+
+statement ok
+DROP TABLE t0
