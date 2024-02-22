@@ -3834,19 +3834,19 @@ STRupper(str *res, const str *arg1)
 }
 
 /* returns whether arg1 starts with arg2 */
-bit
+int
 str_is_prefix(const char *s, const char *prefix, int plen)
 {
 	return strncmp(s, prefix, plen);
 }
 
-bit
+int
 str_is_iprefix(const char *s, const char *prefix, int plen)
 {
 	return utf8ncasecmp(s, prefix, plen);
 }
 
-bit
+int
 str_is_suffix(const char *s, const char *suffix, int sul)
 {
 	int sl = str_strlen(s);
@@ -3857,7 +3857,7 @@ str_is_suffix(const char *s, const char *suffix, int sul)
 		return strcmp(s + sl - sul, suffix);
 }
 
-bit
+int
 str_is_isuffix(const char *s, const char *suffix, int sul)
 {
 	int sl = str_strlen(s);
@@ -3868,7 +3868,7 @@ str_is_isuffix(const char *s, const char *suffix, int sul)
 		return utf8casecmp(s + sl - sul, suffix);
 }
 
-bit
+int
 str_contains(const char *h, const char *n, int nlen)
 {
 	(void) nlen;
@@ -3876,7 +3876,7 @@ str_contains(const char *h, const char *n, int nlen)
 	return strstr(h, n) ? 0 : 1;
 }
 
-bit
+int
 str_icontains(const char *h, const char *n, int nlen)
 {
 	(void) nlen;
@@ -5236,7 +5236,7 @@ BBPnreclaim(int nargs, ...)
 static str
 str_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 				 BUN *rcnt, const char *key, bool anti,
-				 bit (*str_cmp)(const char *, const char *, int),
+				 int (*str_cmp)(const char *, const char *, int),
 				 bool keep_nulls)
 {
 	BATiter bi = bat_iterator(b);
@@ -5266,7 +5266,7 @@ str_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 
 static str
 STRselect(bat *r_id, const bat *b_id, const bat *cb_id, const char *key,
-			  const bit anti, bit (*str_cmp)(const char *, const char *, int),
+			  const bit anti, int (*str_cmp)(const char *, const char *, int),
 			  const str fname)
 {
 	str msg = MAL_SUCCEED;
@@ -5616,21 +5616,21 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define STARTSWITH_SORTED_LOOP(STR_CMP, STR_LEN, FNAME)				\
 	do {																\
 		canditer_init(&rci, sorted_r, sorted_cr);						\
+		canditer_init(&lci, sorted_l, sorted_cl);						\
 		for (BUN lidx = 0,ridx = 0; ridx < rci.ncand; ridx++) {		\
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
 			if (strNil(vr))											\
 				continue;												\
-			vr_len = STR_LEN;											\
+			vr_len = str_strlen(vr);									\
 			matches = 0;												\
-			canditer_init(&lci, sorted_l, sorted_cl);					\
-			for (n = lidx; n < lci.ncand; n++) {						\
+			for (canditer_setidx(&lci, lidx), n = lidx; n < lci.ncand; n++) { \
 				lo = canditer_next(&lci);								\
 				vl = VALUE(l, lo - lbase);								\
 				if (strNil(vl))										\
 					continue;											\
-				cmp = STR_CMP;											\
+				cmp = str_cmp(vl, vr, vr_len);							\
 				if (cmp < 0) {											\
 					lidx++;											\
 					continue;											\
@@ -5644,7 +5644,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						BATsetcount(rr, BATcount(rr));					\
 					if (BATextend(rl, newcap) != GDK_SUCCEED ||		\
 						(rr && BATextend(rr, newcap) != GDK_SUCCEED)) { \
-						msg = createException(MAL, FNAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+						msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 						goto exit;										\
 					}													\
 					assert(!rr || BATcapacity(rl) == BATcapacity(rr));	\
@@ -5788,7 +5788,7 @@ batstr_strrev(BAT **r, BAT *b)
 
 static str
 str_join_nested(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
-				bit anti, bit (*str_cmp)(const char *, const char *, int), str fname)
+				bit anti, int (*str_cmp)(const char *, const char *, int), str fname)
 {
 	str msg = MAL_SUCCEED;
 
@@ -5875,7 +5875,7 @@ exit:
 
 static str
 contains_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr, bit anti,
-			  bit (*str_cmp)(const char *, const char *, int), const str fname)
+			  int (*str_cmp)(const char *, const char *, int), const str fname)
 {
 	str msg = MAL_SUCCEED;
 
@@ -5970,7 +5970,7 @@ exit:
 
 static str
 startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
-				bit anti, bit (*str_cmp)(const char *, const char *, int), str fname)
+				bit anti, int (*str_cmp)(const char *, const char *, int), str fname)
 {
 	str msg = MAL_SUCCEED;
 	gdk_return rc;
@@ -6137,7 +6137,7 @@ exit:
 static str
 STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 		const bat cl_id, const bat cr_id, const bit anti,
-		bit (*str_cmp)(const char *, const char *, int), str fname)
+		int (*str_cmp)(const char *, const char *, int), str fname)
 {
 	str msg = MAL_SUCCEED;
 
