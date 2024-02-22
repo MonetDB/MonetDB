@@ -244,7 +244,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v1 INT)
 
-statement error
+statement error 42000!CATALOG: no such function 'sys'.'='
 UPDATE v0 SET v1 = (WITH v0 AS (SELECT 42039652.000000) SELECT STDDEV_POP (96) OVER (ORDER BY v1) FROM v0, v0 LIMIT 37 OFFSET 62) = 8
 
 statement ok
@@ -423,15 +423,15 @@ DROP TABLE v0
 -- SELECT ALL ( SELECT - - - - - - - - - - 48 FROM ( SELECT NULL - - - - - - - - 89 FROM ( VALUES ( - - - - - - - - - - 74 ) , ( - - - - - 128 ) , ( - - - - - - 8 ) , ( - - - - 61 ) ) AS v1 ( v1 ) GROUP BY ( ) , GROUPING SETS ( GROUPING SETS ( GROUPING SETS ( ( ) ) ) ) , ( ) ORDER BY - - - - - - - - - - 255 LIKE v1 / CASE WHEN v1 IS NULL THEN - - 75 END DESC , v1 , v1 LIMIT 63 ) AS v1 UNION SELECT - - - - - - - - - - - - - 74 WHERE - v1 < - 89088397.000000 ) FROM ( SELECT * FROM ( VALUES ( - - - - - - - 61 ) , ( - - - 42 ) ) AS v1 ( v1 ) ) AS v1 ( v1 )
 -- sql/server/rel_select.c:4614: rel_groupings: Assertion `next_set' failed.
 
--- -- 30.sql
--- statement ok
--- CREATE TABLE v0(v2 DOUBLE PRIMARY KEY, v1 VARCHAR(1))
+-- 30.sql
+statement ok
+CREATE TABLE v0(v2 DOUBLE PRIMARY KEY, v1 VARCHAR(1))
 
--- statement ok
--- DELETE FROM v0 WHERE (SELECT v2 FROM v0 WHERE v0.v2 = v0.v1 GROUP BY 2.100000, v1) IN (10.100000, 10, 10 )
+statement ok
+DELETE FROM v0 WHERE (SELECT v2 FROM v0 WHERE v0.v2 = v0.v1 GROUP BY 2.100000, v1) IN (10.100000, 10, 10 )
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 31.sql
 statement error 22003!overflow ...
