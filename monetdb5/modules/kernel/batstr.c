@@ -1807,7 +1807,7 @@ STRbatRpad3_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 static str
 prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-				 const char *name, bit (*func)(const char *, const char *, int),
+				 const char *name, int (*func)(const char *, const char *, int),
 				 bit *icase)
 {
 	 (void) cntxt;
@@ -1935,7 +1935,7 @@ BATSTRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-					 const char *name, bit (*func)(const char *, const char *,
+					 const char *name, int (*func)(const char *, const char *,
 												   int), bit *icase)
 {
 	 (void) cntxt;
@@ -2058,7 +2058,7 @@ BATSTRcontains_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-						const char *name, bit (*func)(const char *,
+						const char *name, int (*func)(const char *,
 													  const char *, int),
 						bit *icase)
 {
