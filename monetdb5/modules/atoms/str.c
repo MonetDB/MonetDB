@@ -5730,10 +5730,9 @@ do_strrev(char *dst, const char *src, size_t len)
 	assert(len == 0);
 }
 
-static str
-batstr_strrev(BAT **r, BAT *b)
+static BAT *
+batstr_strrev(BAT *b)
 {
-	str msg = MAL_SUCCEED;
 	BAT *bn = NULL;
 	BATiter bi;
 	BUN p, q;
@@ -5752,7 +5751,7 @@ batstr_strrev(BAT **r, BAT *b)
 	bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		GDKfree(dst);
-		throw(MAL, "batstr.strrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
 	}
 
 	bi = bat_iterator(b);
@@ -5767,7 +5766,7 @@ batstr_strrev(BAT **r, BAT *b)
 				bat_iterator_end(&bi);
 				BBPreclaim(bn);
 				GDKfree(dst);
-				throw(MAL, "batstr.strrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return NULL;
 			}
 			dst = ndst;
 		}
@@ -5776,14 +5775,44 @@ batstr_strrev(BAT **r, BAT *b)
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
 			GDKfree(dst);
-			throw(MAL, "batstr.strrev", "BUNappend operation failed");
+			return NULL;
 		}
 	}
 
 	bat_iterator_end(&bi);
 	GDKfree(dst);
-	*r = bn;
-	return msg;
+	return bn;
+}
+
+static BAT *
+batstr_strlower(BAT *b)
+{
+	BAT *bn = NULL;
+	BATiter bi;
+	BUN p, q;
+
+	assert(b->ttype == TYPE_str);
+
+	bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		str vb = BUNtail(bi, p), vb_low;
+		if (STRlower(&vb_low, &vb)) {
+			bat_iterator_end(&bi);
+			BBPreclaim(bn);
+			return NULL;
+		}
+		if (BUNappend(bn, vb, false) != GDK_SUCCEED) {
+			bat_iterator_end(&bi);
+			BBPreclaim(bn);
+			return NULL;
+		}
+	}
+	bat_iterator_end(&bi);
+	return bn;
 }
 
 static str
@@ -6136,14 +6165,12 @@ exit:
 
 static str
 STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
-		const bat cl_id, const bat cr_id, const bit anti,
-		int (*str_cmp)(const char *, const char *, int), str fname)
+		const bat cl_id, const bat cr_id, const bit anti, bool icase,
+		int (*str_cmp)(const char *, const char *, int), const str fname)
 {
 	str msg = MAL_SUCCEED;
 
-	BAT *rl = NULL, *rr = NULL,
-		*l = NULL, *r = NULL,
-		*cl = NULL, *cr = NULL;
+	BAT *rl = NULL, *rr = NULL, *l = NULL, *r = NULL, *cl = NULL, *cr = NULL;
 
 	if (!(l = BATdescriptor(l_id)) || !(r = BATdescriptor(r_id))) {
 		BBPnreclaim(2, l, r);
@@ -6172,6 +6199,8 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
 
+	BAT **l_ptr = &l, **r_ptr = &r;
+
 	if (strcmp(fname, "str.containsjoin") == 0) {
 		msg = contains_join(rl, rr, l, r, cl, cr, anti, str_cmp, fname);
 		if (msg) {
@@ -6186,36 +6215,45 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 		BUN lcnt = lci.ncand, rcnt = rci.ncand;
 		BUN nl_cost = lci.ncand * rci.ncand,
 			sorted_cost =
-			(BUN) floor(0.8 * (lcnt*log2((double)lcnt) + rcnt*log2((double)rcnt)));
+			(BUN) floor(0.8 * (lcnt*log2((double)lcnt)
+							   + rcnt*log2((double)rcnt)));
 
-		if (nl_cost < sorted_cost)
-			msg = str_join_nested(rl, rr, l, r, cl, cr, anti, str_cmp, fname);
-		else {
-			if (strcmp(fname, "str.startswithjoin") == 0)
-				msg = startswith_join(&rl, &rr, l, r, cl, cr, anti, str_cmp, fname);
-			else {
-				assert(strcmp(fname, "str.endswithjoin") == 0);
-
-				BAT *l_rev = NULL;
-				msg = batstr_strrev(&l_rev, l);
-				if (msg) {
-					BBPnreclaim(6, rl, rr, l, r, cl, cr);
-					return msg;
+		if (nl_cost < sorted_cost) {
+			msg = str_join_nested(rl, rr, *l_ptr, *r_ptr, cl, cr, anti, str_cmp, fname);
+		} else {
+			BAT *l_low = NULL, *r_low = NULL, *l_rev = NULL, *r_rev = NULL;
+			if (icase) {
+				l_low = batstr_strlower(*l_ptr);
+				if (l_low == NULL) {
+					BBPnreclaim(6, rl, rr, *l_ptr, *r_ptr, cl, cr);
+					throw(MAL, fname, "Failed lowering strings of left input");
 				}
-
-				BAT *r_rev = NULL;
-				msg = batstr_strrev(&r_rev, r);
-				if (msg) {
-					BBPnreclaim(6, rl, rr, l, r, cl, cr);
-					return msg;
+				r_low = batstr_strlower(*r_ptr);
+				if (r_low == NULL) {
+					BBPnreclaim(7, rl, rr, *l_ptr, *r_ptr, cl, cr, l_low);
+					throw(MAL, fname, "Failed lowering strings of right input");
 				}
-
-				msg = (str_cmp == &str_is_isuffix) ?
-					startswith_join(&rl, &rr, l_rev, r_rev, cl, cr, anti, str_is_iprefix, fname) :
-					startswith_join(&rl, &rr, l_rev, r_rev, cl, cr, anti, str_is_prefix, fname);
-
-				BBPnreclaim(2, l_rev, r_rev);
+				BBPnreclaim(2, *l_ptr, *r_ptr);
+				l_ptr = &l_low;
+				r_ptr = &r_low;
 			}
+			if (strcmp(fname, "str.endswithjoin") == 0) {
+				l_rev = batstr_strrev(*l_ptr);
+				if (l_rev == NULL) {
+					BBPnreclaim(6, rl, rr, *l_ptr, *r_ptr, cl, cr);
+					throw(MAL, fname, "Failed reversing strings of left input");
+				}
+				r_rev = batstr_strrev(*r_ptr);
+				if (r_rev == NULL) {
+					BBPnreclaim(7, rl, rr, *l_ptr, *r_ptr, cl, cr, l_rev);
+					throw(MAL, fname, "Failed reversing strings of right input");
+				}
+				BBPnreclaim(2, *l_ptr, *r_ptr);
+				l_ptr = &l_rev;
+				r_ptr = &r_rev;
+			}
+			msg = startswith_join(&rl, &rr, *l_ptr, *r_ptr, cl, cr,
+								  anti, str_is_prefix, fname);
 		}
 	}
 
@@ -6230,7 +6268,7 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 		BBPnreclaim(2, rl, rr);
 	}
 
-	BBPnreclaim(4, l, r, cl, cr);
+	BBPnreclaim(4, *l_ptr, *r_ptr, cl, cr);
 	return msg;
 }
 
@@ -6296,7 +6334,7 @@ STRstartswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg ? msg : STRjoin(rl_id, rr_id, *l_id, *r_id,
 							   cl_id ? *cl_id : 0,
 							   cr_id ? *cr_id : 0,
-							   *anti, icase ? str_is_iprefix : str_is_prefix,
+							   *anti, icase, icase ? str_is_iprefix : str_is_prefix,
 							   "str.startswithjoin");
 }
 
@@ -6327,9 +6365,8 @@ STRendswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = ignorecase(ic_id, &icase, "str.endswithjoin");
 
 	return msg ? msg : STRjoin(rl_id, rr_id, *l_id, *r_id,
-							   cl_id ? *cl_id : 0,
-							   cr_id ? *cr_id : 0,
-							   *anti, icase ? str_is_isuffix : str_is_suffix,
+							   cl_id ? *cl_id : 0, cr_id ? *cr_id : 0,
+							   *anti, icase, icase ? str_is_isuffix : str_is_suffix,
 							   "str.endswithjoin");
 }
 
@@ -6360,9 +6397,8 @@ STRcontainsjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = ignorecase(ic_id, &icase, "str.containsjoin");
 
 	return msg ? msg : STRjoin(rl_id, rr_id, *l_id, *r_id,
-							   cl_id ? *cl_id : 0,
-							   cr_id ? *cr_id : 0,
-							   *anti, icase ? str_icontains : str_contains,
+							   cl_id ? *cl_id : 0, cr_id ? *cr_id : 0,
+							   *anti, icase, icase ? str_icontains : str_contains,
 							   "str.containsjoin");
 }
 
