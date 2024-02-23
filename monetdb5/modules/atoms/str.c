@@ -5623,14 +5623,14 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			vr = VALUE(r, ro - rbase);									\
 			if (strNil(vr))											\
 				continue;												\
-			vr_len = str_strlen(vr);									\
+			vr_len = STR_LEN;											\
 			matches = 0;												\
 			for (canditer_setidx(&lci, lidx), n = lidx; n < lci.ncand; n++) { \
 				lo = canditer_next(&lci);								\
 				vl = VALUE(l, lo - lbase);								\
 				if (strNil(vl))										\
 					continue;											\
-				cmp = str_cmp(vl, vr, vr_len);							\
+				cmp = STR_CMP;											\
 				if (cmp < 0) {											\
 					lidx++;											\
 					continue;											\
@@ -5644,7 +5644,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						BATsetcount(rr, BATcount(rr));					\
 					if (BATextend(rl, newcap) != GDK_SUCCEED ||		\
 						(rr && BATextend(rr, newcap) != GDK_SUCCEED)) { \
-						msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+						msg = createException(MAL, FNAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 						goto exit;										\
 					}													\
 					assert(!rr || BATcapacity(rl) == BATcapacity(rr));	\
