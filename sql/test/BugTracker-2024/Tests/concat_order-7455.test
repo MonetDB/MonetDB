@@ -58,7 +58,7 @@ False
 False
 
 query TTT
-SELECT * FROM v0, t0 WHERE (t0.c0||true BETWEEN v0.c0 AND v0.c0); 
+SELECT * FROM v0, t0 WHERE (t0.c0||true BETWEEN v0.c0 AND v0.c0)
 ----
 True
 (empty)
@@ -69,3 +69,10 @@ True
 True
 (empty)
 0
+
+statement ok
+DROP VIEW v0
+
+statement ok
+DROP TABLE t0
+

@@ -12,3 +12,10 @@ SELECT * FROM t0, v0 WHERE CAST((t0.c2 BETWEEN 0 AND v0.c0) AS BOOLEAN)
 ----
 True
 1
+
+statement ok
+DROP VIEW v0
+
+statement ok
+DROP TABLE t0
+

@@ -28,3 +28,7 @@ a
 False
 b
 NULL
+
+statement ok
+DROP TABLE t0
+

@@ -1,20 +1,28 @@
 statement ok
-CREATE TABLE t0(c0 INT);
+CREATE TABLE t0(c0 INT)
 
 statement ok
-INSERT INTO t0 ( c0) VALUES (false);
+INSERT INTO t0 ( c0) VALUES (false)
 
 statement ok
-CREATE VIEW v0(c0) AS SELECT true FROM t0 WHERE NULL GROUP BY t0.c0, true;
+CREATE VIEW v0(c0) AS SELECT true FROM t0 WHERE NULL GROUP BY t0.c0, true
 
 query I
-SELECT * FROM v0;
+SELECT * FROM v0
 ----
 
 query I
-SELECT * FROM v0 WHERE true;
+SELECT * FROM v0 WHERE true
 ----
 
 query I
-SELECT * FROM v0 WHERE true UNION ALL SELECT * FROM v0 WHERE (NOT true);
+SELECT * FROM v0 WHERE true UNION ALL SELECT * FROM v0 WHERE (NOT true)
 ----
+
+
+statement ok
+DROP VIEW v0
+
+statement ok
+DROP TABLE t0
+

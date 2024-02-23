@@ -3075,6 +3075,10 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 #ifdef HAVE_CURL
 #include <curl/curl.h>
 
+#ifndef CURL_WRITEFUNC_ERROR
+#define CURL_WRITEFUNC_ERROR 0
+#endif
+
 static size_t
 write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 {

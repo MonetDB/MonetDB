@@ -1507,7 +1507,12 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			if (GDKstrFromStr((unsigned char *) str,
 							  (unsigned char *) yylval->sval + 2,
 							  lc->yycur-lc->yysval - 2, '\'') < 0) {
-				sql_error(c, 1, SQLSTATE(42000) "%s", GDKerrbuf);
+				char *err = GDKerrbuf;
+				if (strncmp(err, GDKERROR, strlen(GDKERROR)) == 0)
+					err += strlen(GDKERROR);
+				else if (*err == '!')
+					err++;
+				sql_error(c, 1, SQLSTATE(42000) "%s", err);
 				return LEX_ERROR;
 			}
 			quote = '\'';
