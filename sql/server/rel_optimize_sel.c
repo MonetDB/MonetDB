@@ -875,12 +875,12 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 				   le->flag == re->flag && le->flag <= cmp_lt) {
 				sql_exp *mine = NULL, *maxe = NULL;
 
-				if (!(mine = rel_binop_(sql, NULL, le->r, re->r, "sys", "sql_min", card_value))) {
+				if (!(mine = rel_binop_(sql, NULL, exp_copy(sql, le->r), exp_copy(sql, re->r), "sys", "sql_min", card_value))) {
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
 					continue;
 				}
-				if (!(maxe = rel_binop_(sql, NULL, le->f, re->f, "sys", "sql_max", card_value))) {
+				if (!(maxe = rel_binop_(sql, NULL, exp_copy(sql, le->f), exp_copy(sql, re->f), "sys", "sql_max", card_value))) {
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
 					continue;
