@@ -1530,10 +1530,27 @@ push_join_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *L, sql_exp *R, sql_ex
 }
 
 static sql_rel *
+rel_select_push_filter_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, list *l, list *r, int ff)
+{
+	sql_exp *ll, *rr;
+	if (exps_card(r) <= CARD_ATOM && (exps_are_atoms(r) || exps_have_freevar(sql, r) || exps_have_freevar(sql, l))) {
+		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
+			return rel_select(sql->sa, rel, e);
+		if ((ll = exps_find_one_multi_exp(l)))
+			return push_select_exp(sql, rel, e, ll, ff);
+	} else if ((ll = exps_find_one_multi_exp(l)) && (rr = exps_find_one_multi_exp(r))) { /* join */
+		return push_join_exp(sql, rel, e, ll, rr, NULL, ff);
+	}
+	if (is_outerjoin(rel->op))
+		return rel_select(sql->sa, rel, e);
+	return rel_select_add_exp(sql->sa, rel, e);
+}
+
+static sql_rel *
 rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_op, int anti, int ff)
 {
 	node *n;
-	sql_exp *e = NULL, *ll, *rr;
+	sql_exp *e = NULL;
 	sql_subfunc *f = NULL;
 	list *tl = sa_list(sql->sa);
 	bool found = false;
@@ -1602,20 +1619,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 		}
 	}
-	if (!is_join(rel->op) && !is_select(rel->op))
-		return rel_select(sql->sa, rel, e);
-	if (exps_card(r) <= CARD_ATOM && (exps_are_atoms(r) || exps_have_freevar(sql, r) || exps_have_freevar(sql, l))) {
-		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
-			return rel_select(sql->sa, rel, e);
-
-		if ((ll = exps_find_one_multi_exp(l)))
-			return push_select_exp(sql, rel, e, ll, ff);
-	} else if ((ll = exps_find_one_multi_exp(l)) && (rr = exps_find_one_multi_exp(r))) { /* join */
-		return push_join_exp(sql, rel, e, ll, rr, NULL, ff);
-	}
-	if (is_outerjoin(rel->op))
-		return rel_select(sql->sa, rel, e);
-	return rel_select_add_exp(sql->sa, rel, e);
+	return rel_select_push_filter_exp_down(sql, rel, e, l, r, ff);
 }
 
 static sql_rel *
@@ -1634,7 +1638,7 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *r1, sql_exp *r2, s
 }
 
 static sql_rel *
-rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int f)
+rel_select_push_compare_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int f)
 {
 	if (!is_join(rel->op) && !is_select(rel->op))
 		return rel_select(sql->sa, rel, e);
@@ -1701,7 +1705,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
 		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	return rel_select_push_exp_down(sql, rel, e, ls, rs, rs2, f);
+	return rel_select_push_compare_exp_down(sql, rel, e, ls, rs, rs2, f);
 }
 
 static sql_rel *
@@ -2696,7 +2700,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			set_anti(le);
 		set_has_no_nil(le);
 		set_semantics(le);
-		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
+		return rel_select_push_compare_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 	}
 	case SQL_NOT: {
 		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
@@ -2710,7 +2714,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!le || !(le = exp_check_type(sql, &bt, rel, le, type_equal)))
 			return NULL;
 		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 0), cmp_equal);
-		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
+		return rel_select_push_compare_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 	}
 	case SQL_ATOM: {
 		/* TRUE or FALSE */
@@ -2727,7 +2731,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!e || or != rel)
 			return NULL;
 		e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 1), cmp_equal);
-		return rel_select_push_exp_down(sql, rel, e, e->l, e->r, NULL, f);
+		return rel_select_push_compare_exp_down(sql, rel, e, e->l, e->r, NULL, f);
 	}
 	case SQL_IDENT:
 	case SQL_COLUMN: {
@@ -2743,7 +2747,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!e || or != rel)
 			return NULL;
 		e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 1), cmp_equal);
-		return rel_select_push_exp_down(sql, rel, e, e->l, e->r, NULL, f);
+		return rel_select_push_compare_exp_down(sql, rel, e, e->l, e->r, NULL, f);
 	}
 	case SQL_UNION:
 	case SQL_EXCEPT:
@@ -2784,7 +2788,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			if (!le)
 				return NULL;
 			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
-			return rel_select_push_exp_down(sql, rel, le, le->l, le->r, NULL, f);
+			return rel_select_push_compare_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 		} else {
 			sq = rel_crossproduct(sql->sa, rel, sq, (f==sql_sel || is_single(sq))?op_left:op_join);
 			set_processed(sq);
@@ -2799,13 +2803,16 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		if (le && !is_compare(le->type)) {
+		if (le && (!is_compare(le->type) || le->flag > cmp_filter)) {
 			sql_find_subtype(&bt, "boolean", 0, 0);
 			if (!(le = exp_check_type(sql, &bt, rel, le, type_equal)))
 				return NULL;
 			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
 		}
-		return rel_select_push_exp_down(sql, rel, le, le->l, le->r, (le->flag < cmp_filter)?le->f:NULL, f);
+		if (le->flag == cmp_filter)
+			return rel_select_push_filter_exp_down(sql, rel, le, le->l, le->r, f);
+		else
+			return rel_select_push_compare_exp_down(sql, rel, le, le->l, le->r, le->f, f);
 	}
 	}
 	/* never reached, as all switch cases have a `return` */
