@@ -6010,6 +6010,8 @@ startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ?
 			(qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
+	assert(*rl_ptr && *rr_ptr);
+
 	BAT *sorted_l = NULL, *sorted_r = NULL,
 		*sorted_cl = NULL, *sorted_cr = NULL,
 		*ord_sorted_l = NULL, *ord_sorted_r = NULL,
