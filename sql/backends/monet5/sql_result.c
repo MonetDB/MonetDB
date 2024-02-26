@@ -459,14 +459,10 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		break;
 	case TYPE_str: {
 		sql_column *col = (sql_column *) c->extra;
-		int slen;
 
 		s = c->data;
-		slen = strNil(s) ? int_nil : UTF8_strlen(s);
-		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
-			len = UTF8_strwidth(c->data);
-			if (len > (ssize_t) col->type.digits)
-				return NULL;
+		if (col->type.digits > 0 && len > 0 && !strNil(s) && UTF8_strlen(s) > (int) col->type.digits) {
+			return NULL;
 		}
 		break;
 	}

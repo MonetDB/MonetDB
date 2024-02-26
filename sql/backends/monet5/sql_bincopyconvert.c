@@ -369,7 +369,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 			}
 			if (tpe == TYPE_str) {
 					if (width > 0) {
-						int w = UTF8_strwidth(start);
+						int w = UTF8_strlen(start);
 						if (w > width) {
 							msg = createException(SQL, "sql.importColumn", "string too wide for column");
 							goto end;
