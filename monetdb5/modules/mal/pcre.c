@@ -52,248 +52,14 @@ typedef regex_t pcre;
 /* current implementation assumes simple %keyword% [keyw%]* */
 struct RE {
 	char *k;
-	uint32_t *w;
-	bool search:1, atend:1, is_ascii:1, case_ignore:1;
-	size_t len;
+	bool search:1, atend:1, case_ignore:1;
+	size_t len;					/* number of bytes in string */
+	size_t ulen;				/* number of codepoints in string */
 	struct RE *n;
 };
 
 /* We cannot use strcasecmp and strncasecmp since they work byte for
- * byte and don't deal with multibyte encodings (such as UTF-8).
- *
- * We implement our own conversion from UTF-8 encoding to Unicode code
- * points which we store in uint32_t.  The reason for this is,
- * functions like mbsrtowcs are locale-dependent (so we need a UTF-8
- * locale to use them), and on Windows, wchar_t is only 2 bytes and
- * therefore cannot hold all Unicode code points.  We do use functions
- * such as towlower to convert a Unicode code point to its lower-case
- * equivalent, but again on Windows, if the code point doesn't fit in
- * 2 bytes, we skip this conversion and compare the unconverted code
- * points.
- *
- * Note, towlower is also locale-dependent, but we don't need a UTF-8
- * locale in order to use it. */
-
-/* helper function to convert a UTF-8 multibyte character to a wide
- * character */
-static size_t
-utfc8touc(uint32_t *restrict dest, const char *restrict src)
-{
-	if ((src[0] & 0x80) == 0) {
-		*dest = src[0];
-		return src[0] != 0;
-	} else if ((src[0] & 0xE0) == 0xC0
-			   && (src[1] & 0xC0) == 0x80 && (src[0] & 0x1E) != 0) {
-		*dest = (src[0] & 0x1F) << 6 | (src[1] & 0x3F);
-		return 2;
-	} else if ((src[0] & 0xF0) == 0xE0
-			   && (src[1] & 0xC0) == 0x80
-			   && (src[2] & 0xC0) == 0x80
-			   && ((src[0] & 0x0F) != 0 || (src[1] & 0x20) != 0)) {
-		*dest = (src[0] & 0x0F) << 12 | (src[1] & 0x3F) << 6 | (src[2] & 0x3F);
-		return 3;
-	} else if ((src[0] & 0xF8) == 0xF0
-			   && (src[1] & 0xC0) == 0x80
-			   && (src[2] & 0xC0) == 0x80 && (src[3] & 0xC0) == 0x80) {
-		uint32_t c = (src[0] & 0x07) << 18
-				| (src[1] & 0x3F) << 12
-				| (src[2] & 0x3F) << 6 | (src[3] & 0x3F);
-		if (c < 0x10000 || c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
-			return (size_t) -1;
-		*dest = c;
-		return 4;
-	}
-	return (size_t) -1;
-}
-
-/* helper function to convert a UTF-8 string to a wide character
- * string, the wide character string is allocated */
-static uint32_t *
-utf8stoucs(const char *src)
-{
-	uint32_t *dest;
-	size_t i = 0;
-	size_t j = 0;
-
-	/* count how many uint32_t's we need, while also checking for
-	 * correctness of the input */
-	while (src[j]) {
-		i++;
-		if ((src[j + 0] & 0x80) == 0) {
-			j += 1;
-		} else if ((src[j + 0] & 0xE0) == 0xC0
-				   && (src[j + 1] & 0xC0) == 0x80 && (src[j + 0] & 0x1E) != 0) {
-			j += 2;
-		} else if ((src[j + 0] & 0xF0) == 0xE0
-				   && (src[j + 1] & 0xC0) == 0x80
-				   && (src[j + 2] & 0xC0) == 0x80
-				   && ((src[j + 0] & 0x0F) != 0 || (src[j + 1] & 0x20) != 0)) {
-			j += 3;
-		} else if ((src[j + 0] & 0xF8) == 0xF0
-				   && (src[j + 1] & 0xC0) == 0x80
-				   && (src[j + 2] & 0xC0) == 0x80
-				   && (src[j + 3] & 0xC0) == 0x80) {
-			uint32_t c = (src[j + 0] & 0x07) << 18
-					| (src[j + 1] & 0x3F) << 12
-					| (src[j + 2] & 0x3F) << 6 | (src[j + 3] & 0x3F);
-			if (c < 0x10000 || c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
-				return NULL;
-			j += 4;
-		} else {
-			return NULL;
-		}
-	}
-	dest = GDKmalloc((i + 1) * sizeof(uint32_t));
-	if (dest == NULL)
-		return NULL;
-	/* go through the source string again, this time we can skip
-	 * the correctness tests */
-	i = j = 0;
-	while (src[j]) {
-		if ((src[j + 0] & 0x80) == 0) {
-			dest[i++] = src[j + 0];
-			j += 1;
-		} else if ((src[j + 0] & 0xE0) == 0xC0) {
-			dest[i++] = (src[j + 0] & 0x1F) << 6 | (src[j + 1] & 0x3F);
-			j += 2;
-		} else if ((src[j + 0] & 0xF0) == 0xE0) {
-			dest[i++] = (src[j + 0] & 0x0F) << 12
-					| (src[j + 1] & 0x3F) << 6 | (src[j + 2] & 0x3F);
-			j += 3;
-		} else if ((src[j + 0] & 0xF8) == 0xF0) {
-			dest[i++] = (src[j + 0] & 0x07) << 18
-					| (src[j + 1] & 0x3F) << 12
-					| (src[j + 2] & 0x3F) << 6 | (src[j + 3] & 0x3F);
-			j += 4;
-		}
-	}
-	dest[i] = 0;
-	return dest;
-}
-
-static size_t
-myucslen(const uint32_t *ucs)
-{
-	size_t i = 0;
-
-	while (ucs[i])
-		i++;
-	return i;
-}
-
-static inline bool
-mywstrncaseeq(const char *restrict s1, const uint32_t *restrict s2, size_t n2,
-			  bool atend)
-{
-	uint32_t c1;
-
-	while (n2 > 0) {
-		size_t nn1 = utfc8touc(&c1, s1);
-		if (nn1 == 0 || nn1 == (size_t) -1)
-			return (*s2 == 0);
-		if (*s2 == 0)
-			return false;
-#if SIZEOF_WCHAR_T == 2
-		if (c1 > 0xFFFF || *s2 > 0xFFFF) {
-			if (c1 != *s2)
-				return false;
-		} else
-#endif
-		if (towlower((wint_t) c1) != towlower((wint_t) * s2))
-			return false;
-		s1 += nn1;
-		n2--;
-		s2++;
-	}
-	return !atend || *s1 == 0;
-}
-
-static inline int
-mystrcasecmp(const char *s1, const char *s2)
-{
-	uint32_t c1 = 0, c2 = 0;
-
-	for (;;) {
-		size_t nn1 = utfc8touc(&c1, s1);
-		size_t nn2 = utfc8touc(&c2, s2);
-		if (nn1 == 0 || nn1 == (size_t) -1)
-			return -(nn2 != 0 && nn2 != (size_t) -1);
-		if (nn2 == 0 || nn2 == (size_t) -1)
-			return 1;
-#if SIZEOF_WCHAR_T == 2
-		if (c1 > 0xFFFF || c2 > 0xFFFF) {
-			if (c1 != c2)
-				return c1 - c2;
-		} else
-#endif
-		if (towlower((wint_t) c1) != towlower((wint_t) c2))
-			return towlower((wint_t) c1) - towlower((wint_t) c2);
-		s1 += nn1;
-		s2 += nn2;
-	}
-}
-
-static inline int
-mywstrcasecmp(const char *restrict s1, const uint32_t *restrict s2)
-{
-	uint32_t c1 = 0;
-
-	for (;;) {
-		size_t nn1 = utfc8touc(&c1, s1);
-		if (nn1 == 0 || nn1 == (size_t) -1)
-			return -(*s2 != 0);
-		if (*s2 == 0)
-			return 1;
-#if SIZEOF_WCHAR_T == 2
-		if (c1 > 0xFFFF || *s2 > 0xFFFF) {
-			if (c1 != *s2)
-				return c1 - *s2;
-		} else
-#endif
-		if (towlower((wint_t) c1) != towlower((wint_t) * s2))
-			return towlower((wint_t) c1) - towlower((wint_t) * s2);
-		s1 += nn1;
-		s2++;
-	}
-}
-
-static inline const char *
-mywstrcasestr(const char *restrict haystack, const uint32_t *restrict wneedle,
-			  bool atend)
-{
-	size_t nlen = myucslen(wneedle);
-
-	if (nlen == 0)
-		return atend ? haystack + strlen(haystack) : haystack;
-
-	while (*haystack) {
-		size_t i;
-		size_t h;
-		size_t step = 0;
-		for (i = h = 0; i < nlen; i++) {
-			uint32_t c = 0;
-			size_t j = utfc8touc(&c, haystack + h);
-			if (j == 0 || j == (size_t) -1)
-				return NULL;
-			if (i == 0) {
-				step = j;
-			}
-#if SIZEOF_WCHAR_T == 2
-			if (c > 0xFFFF || wneedle[i] > 0xFFFF) {
-				if (c != wneedle[i])
-					break;
-			} else
-#endif
-			if (towlower((wint_t) c) != towlower((wint_t) wneedle[i]))
-				break;
-			h += j;
-		}
-		if (i == nlen && (!atend || haystack[h] == 0))
-			return haystack;
-		haystack += step;
-	}
-	return NULL;
-}
+ * byte and don't deal with multibyte encodings (such as UTF-8). */
 
 /* returns true if the pattern does not contain unescaped `_' (single
  * character match) and ends with unescaped `%' (any sequence
@@ -350,167 +116,59 @@ is_strcmpable(const char *pat, const char *esc)
 	return strlen(esc) == 0 || strNil(esc) || strstr(pat, esc) == NULL;
 }
 
-/* Compare two strings ignoring case. When both strings are
- * lower case this function returns the same result as strcmp.
- */
-static int
-istrcmp(const char *s1, const char *s2)
-{
-	char c1, c2;
-	const char *p1, *p2;
-	for (p1 = s1, p2 = s2; *p1 && *p2; p1++, p2++) {
-		c1 = *p1;
-		c2 = *p2;
-
-		if ('A' <= c1 && c1 <= 'Z')
-			c1 += 'a' - 'A';
-
-		if ('A' <= c2 && c2 <= 'Z')
-			c2 += 'a' - 'A';
-
-		if (c1 != c2)
-			return (c1 - c2);
-	}
-
-	if (*p1 != *p2)
-		return *p1 - *p2;
-
-	return 0;
-}
-
-/* Compare at most len characters of two strings ignoring
- * case. When both strings are lowercase this function
- * returns the same result as strncmp.
- */
-static int
-istrncmp(const char *s1, const char *s2, size_t len)
-{
-	char c1, c2;
-	const char *p1, *p2;
-	size_t n = 0;
-
-	for (p1 = s1, p2 = s2; *p1 && *p2 && (n < len); p1++, p2++, n++) {
-		c1 = *p1;
-		c2 = *p2;
-
-		if ('A' <= c1 && c1 <= 'Z')
-			c1 += 'a' - 'A';
-
-		if ('A' <= c2 && c2 <= 'Z')
-			c2 += 'a' - 'A';
-
-		if (c1 != c2)
-			return c1 - c2;
-	}
-
-	if (*p1 != *p2 && n < len)
-		return *p1 - *p2;
-
-	return 0;
-}
-
-
-/* Find the first occurence of the substring needle in
- * haystack ignoring case.
- *
- * NOTE: This function assumes that the needle is already
- * lowercase.
- */
-static const char *
-istrstr(const char *haystack, const char *needle)
-{
-	const char *ph;
-	const char *pn;
-	const char *p1;
-	bool match = true;
-
-	for (ph = haystack; *ph; ph++) {
-		match = true;
-		for (pn = needle, p1 = ph; *pn && *p1; pn++, p1++) {
-			char c1 = *pn;
-			char c2 = ('A' <= *p1 && *p1 <= 'Z') ? *p1 - 'A' + 'a' : *p1;
-			if (c1 != c2) {
-				match = false;
-				break;
-			}
-		}
-
-		/* We reached the end of the haystack, but we still have characters in
-		 * needle. None of the future iterations will match.
-		 */
-		if (*p1 == 0 && *pn != 0) {
-			break;
-		}
-
-		if (match) {
-			return ph;
-		}
-	}
-	return NULL;
-}
-
 /* Match regular expression by comparing bytes.
- *
- * This is faster than re_match_ignore, because it does not
- * need to decode characters. This function should be used
- * in all cases except when we need to perform UTF-8
- * comparisons ignoring case.
- *
- * TODO: The name of the function is no longer accurate and
- * needs to change.
  */
 static inline bool
-re_match_no_ignore(const char *restrict s, const struct RE *restrict pattern)
+re_match(const char *restrict s, const struct RE *restrict pattern)
 {
 	const struct RE *r;
-	size_t l;
 
 	for (r = pattern; r; r = r->n) {
 		if (*r->k == 0 && (r->search || *s == 0))
 			return true;
-		if (!*s ||
-			(r->search
-			 ? (r->atend
-				? (r->case_ignore
-				   ? (l = strlen(s)) < r->len || istrcmp(s + l - r->len, r->k) != 0
-				   : (l = strlen(s)) < r->len || strcmp(s + l - r->len, r->k) != 0)
-				: (r->case_ignore ? (s = istrstr(s, r->k)) == NULL
-				   : (s = strstr(s, r->k)) == NULL))
-			 : (r->atend
-				? (r->case_ignore ? istrcmp(s, r->k) != 0
-				   : strcmp(s, r->k) != 0)
-				: (r->case_ignore ? istrncmp(s, r->k, r->len) != 0
-				   : strncmp(s, r->k, r->len) != 0))))
-			return false;
-		s += r->len;
-	}
-	return true;
-}
-
-/* Match a regular expression by comparing wide characters.
- *
- * This needs to be used when we need to perform a
- * case-ignoring comparions involving UTF-8 characters.
- */
-static inline bool
-re_match_ignore(const char *restrict s, const struct RE *restrict pattern)
-{
-	const struct RE *r;
-
-	/* Since the pattern is ascii, do the cheaper comparison */
-	if (pattern->is_ascii) {
-		return re_match_no_ignore(s, pattern);
-	}
-
-	for (r = pattern; r; r = r->n) {
-		if (*r->w == 0 && (r->search || *s == 0))
-			return true;
-		if (!*s ||
-			(r->search
-			 ? (s = mywstrcasestr(s, r->w, r->atend)) == NULL
-			 : !mywstrncaseeq(s, r->w, r->len, r->atend)))
-			return false;
-		s += r->len;
+		if (r->case_ignore) {
+			for (;;) {
+				if (*s == '\0')
+					return false;
+				/* in "atend" comparison, include NUL byte in the compare */
+				if (GDKstrncasecmp(s, r->k, SIZE_MAX, r->len + r->atend) != 0) {
+					/* no match */
+					if (!r->search)
+						return false;
+					/* try again with next character */
+					do
+						s++;
+					while (*s != '\0' && (*s & 0xC0) == 0x80);
+					continue;
+				}
+				/* match; find end of match by counting codepoints */
+				for (size_t i = 0; *s && i < r->ulen; s++)
+					i += (*s & 0xC0) != 0x80;
+				break;
+			}
+		} else {
+			/* search for first byte in pattern */
+			if (r->search && (s = strchr(s, r->k[0])) == NULL)
+				return false;
+			for (;;) {
+				if (*s == '\0')
+					return false;
+				/* in "atend" comparison, include NUL byte in the compare */
+				if (strncmp(s, r->k, r->len + r->atend) != 0) {
+					/* no match */
+					if (!r->search)
+						return false;
+					/* try again with next character: have search start
+					 * after current first byte */
+					if ((s = strchr(s + 1, r->k[0])) == NULL)
+						return false;
+					continue;
+				}
+				/* match */
+				s += r->len;
+				break;
+			}
+		}
 	}
 	return true;
 }
@@ -520,7 +178,6 @@ re_destroy(struct RE *p)
 {
 	if (p) {
 		GDKfree(p->k);
-		GDKfree(p->w);
 		do {
 			struct RE *n = p->n;
 
@@ -539,10 +196,11 @@ re_destroy(struct RE *p)
  * the first.
  */
 static struct RE *
-re_create(const char *pat, bool caseignore, bool ascii_pattern, uint32_t esc)
+re_create(const char *pat, bool caseignore, uint32_t esc)
 {
 	struct RE *r = GDKmalloc(sizeof(struct RE)), *n = r;
 	bool escaped = false;
+	char *p, *q;
 
 	if (r == NULL)
 		return NULL;
@@ -552,107 +210,50 @@ re_create(const char *pat, bool caseignore, bool ascii_pattern, uint32_t esc)
 		pat++;					/* skip % */
 		r->search = true;
 	}
-	if (caseignore && !ascii_pattern) {
-		uint32_t *wp;
-		uint32_t *wq;
-		wp = utf8stoucs(pat);
-		if (wp == NULL) {
-			GDKfree(r);
-			return NULL;
-		}
-		r->w = wp;
-		wq = wp;
-		while (*wp) {
-			if (escaped) {
-				*wq++ = *wp;
-				n->len++;
-				escaped = false;
-			} else if (*wp == esc) {
-				escaped = true;
-			} else if (*wp == '%') {
-				n->atend = false;
-				while (wp[1] == '%')
-					wp++;
-				if (wp[1]) {
-					n = n->n = GDKmalloc(sizeof(struct RE));
-					if (n == NULL)
-						goto bailout;
-					*n = (struct RE) {
-						.search = true,
-						.atend = true,
-						.w = wp + 1,
-					};
-				}
-				*wq = 0;
-				wq = wp + 1;
-			} else {
-				*wq++ = *wp;
-				n->len++;
-			}
-			wp++;
-		}
-		*wq = 0;
-	} else {
-		char *p, *q;
-		if ((p = GDKstrdup(pat)) == NULL) {
-			GDKfree(r);
-			return NULL;
-		}
-		if (ascii_pattern)
-			n->is_ascii = true;
-		if (caseignore)
-			n->case_ignore = true;
-
-		if (ascii_pattern && caseignore) {
-			for (q = p; *q != 0; q++) {
-				if ('A' <= *q && *q <= 'Z')
-					*q += 'a' - 'A';
-			}
-		}
-
-		r->k = p;
-		q = p;
-		while (*p) {
-			if (escaped) {
-				*q++ = *p;
-				n->len++;
-				escaped = false;
-			} else if ((unsigned char) *p == esc) {
-				escaped = true;
-			} else if (*p == '%') {
-				n->atend = false;
-				while (p[1] == '%')
-					p++;
-				if (p[1]) {
-					n = n->n = GDKmalloc(sizeof(struct RE));
-					if (n == NULL)
-						goto bailout;
-					*n = (struct RE) {
-						.search = true,
-						.atend = true,
-						.k = p + 1
-					};
-					if (ascii_pattern) {
-						n->is_ascii = true;
-					}
-					if (caseignore) {
-						n->case_ignore = true;
-					}
-				}
-				*q = 0;
-				q = p + 1;
-			} else {
-				char c = *p;
-				if (ascii_pattern && caseignore && 'A' <= c && c <= 'Z') {
-					c += 'a' - 'A';
-				}
-				*q++ = c;
-				n->len++;
-			}
-			p++;
-		}
-		*q = 0;
+	if ((p = GDKstrdup(pat)) == NULL) {
+		GDKfree(r);
+		return NULL;
 	}
+	if (caseignore)
+		n->case_ignore = true;
+
+	r->k = p;
+	q = p;
+	while (*p) {
+		if (escaped) {
+			*q++ = *p;
+			n->len++;
+			n->ulen += (*p & 0xC0) != 0x80;
+			escaped = false;
+		} else if ((unsigned char) *p == esc) {
+			escaped = true;
+		} else if (*p == '%') {
+			n->atend = false;
+			while (p[1] == '%')
+				p++;
+			if (p[1]) {
+				n = n->n = GDKmalloc(sizeof(struct RE));
+				if (n == NULL)
+					goto bailout;
+				*n = (struct RE) {
+					.search = true,
+					.atend = true,
+					.k = p + 1
+				};
+				if (caseignore) {
+					n->case_ignore = true;
+				}
+			}
+			*q = 0;
+			q = p + 1;
+		} else {
+			*q++ = *p;
+			n->len++;
+			n->ulen += (*p & 0xC0) != 0x80;
+		}
+		p++;
+	}
+	*q = 0;
 	return r;
   bailout:
 	re_destroy(r);
@@ -1453,29 +1054,15 @@ PCREsql2pcre(str *ret, const str *pat, const str *esc)
 	return sql2pcre(ret, *pat, *esc);
 }
 
-static bool
-is_ascii_str(const char *pat)
-{
-	size_t len = strlen(pat);
-	for (size_t i = 0; i < len; i++) {
-		if (pat[i] & 0x80)
-			return false;
-	}
-
-	return true;
-}
-
 static inline str
 choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty,
-				 bool *ascii_pattern, const char *pat, const char *esc)
+				 const char *pat, const char *esc)
 {
 	str res = MAL_SUCCEED;
 	*use_re = false;
 	*use_strcmp = false;
 	*empty = false;
 
-
-	*ascii_pattern = is_ascii_str(pat);
 
 	if (strNil(pat) || strNil(esc)) {
 		*empty = true;
@@ -1509,10 +1096,10 @@ PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc,
 {
 	str res = MAL_SUCCEED;
 	char *ppat = NULL;
-	bool use_re = false, use_strcmp = false, empty = false, ascii_pattern = false;
+	bool use_re = false, use_strcmp = false, empty = false;
 	struct RE *re = NULL;
 
-	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &ascii_pattern,
+	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty,
 								*pat, *esc)) != MAL_SUCCEED)
 		return res;
 
@@ -1525,18 +1112,14 @@ PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc,
 		*ret = bit_nil;
 	} else if (use_re) {
 		if (use_strcmp) {
-			*ret = *isens ? (ascii_pattern
-							 ? istrcmp(*s, *pat) == 0
-							 : mystrcasecmp(*s, *pat) == 0)
+			*ret = *isens ? GDKstrcasecmp(*s, *pat) == 0
 				: strcmp(*s, *pat) == 0;
 		} else {
-			if (!(re = re_create(*pat, *isens, ascii_pattern, (unsigned char) **esc)))
+			if (!(re = re_create(*pat, *isens, (unsigned char) **esc)))
 				res = createException(MAL, "pcre.like4",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			else
-				*ret = (*isens && !re->is_ascii)
-					? re_match_ignore(*s, re)
-					: re_match_no_ignore(*s, re);
+				*ret = re_match(*s, re);
 		}
 	} else {
 		res = *isens ? PCREimatch(ret, s, &ppat) : PCREmatch(ret, s, &ppat);
@@ -1568,15 +1151,11 @@ PCREnotlike(bit *ret, const str *s, const str *pat, const str *esc,
 }
 
 static inline str
-re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore,
-			  bool use_strcmp, bool ascii_pattern, uint32_t esc)
+re_like_build(struct RE **re, const char *pat, bool caseignore,
+			  bool use_strcmp, uint32_t esc)
 {
 	if (!use_strcmp) {
-		if (!(*re = re_create(pat, caseignore, ascii_pattern, esc)))
-			return createException(MAL, "pcre.re_like_build",
-								   SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else if (caseignore && !ascii_pattern) {
-		if (!(*wpat = utf8stoucs(pat)))
+		if (!(*re = re_create(pat, caseignore, esc)))
 			return createException(MAL, "pcre.re_like_build",
 								   SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -1593,22 +1172,15 @@ re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore,
 
 static inline bit
 re_like_proj_apply(const char *s, const struct RE *restrict re,
-				   const uint32_t *restrict wpat, const char *pat,
-				   bool caseignore, bool anti, bool use_strcmp, bool is_ascii)
+				   const char *pat,
+				   bool caseignore, bool anti, bool use_strcmp)
 {
 	if (use_strcmp) {
 		if (caseignore) {
-			if (is_ascii) {
-				if (anti)
-					proj_scanloop(istrcmp(s, pat) != 0);
-				else
-					proj_scanloop(istrcmp(s, pat) == 0);
-			} else {
-				if (anti)
-					proj_scanloop(mywstrcasecmp(s, wpat) != 0);
-				else
-					proj_scanloop(mywstrcasecmp(s, wpat) == 0);
-			}
+			if (anti)
+				proj_scanloop(GDKstrcasecmp(s, pat) != 0);
+			else
+				proj_scanloop(GDKstrcasecmp(s, pat) == 0);
 		} else {
 			if (anti)
 				proj_scanloop(strcmp(s, pat) != 0);
@@ -1619,30 +1191,19 @@ re_like_proj_apply(const char *s, const struct RE *restrict re,
 		/* Use re_match_ignore only if the pattern is UTF-8
 		 * and we need to ignore case
 		 */
-		if (caseignore && !is_ascii) {
-			if (anti)
-				proj_scanloop(!re_match_ignore(s, re));
-			else
-				proj_scanloop(re_match_ignore(s, re));
-		} else {
-			if (anti)
-				proj_scanloop(!re_match_no_ignore(s, re));
-			else
-				proj_scanloop(re_match_no_ignore(s, re));
-		}
+		if (anti)
+			proj_scanloop(!re_match(s, re));
+		else
+			proj_scanloop(re_match(s, re));
 	}
 }
 
 static inline void
-re_like_clean(struct RE **re, uint32_t **wpat)
+re_like_clean(struct RE **re)
 {
 	if (*re) {
 		re_destroy(*re);
 		*re = NULL;
-	}
-	if (*wpat) {
-		GDKfree(*wpat);
-		*wpat = NULL;
 	}
 }
 
@@ -1774,7 +1335,6 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		isensitive = (bool) *isens,
 		anti = (bool) *not,
 		has_nil = false,
-		ascii_pattern =	false,
 		input_is_a_bat = isaBatType(getArgType(mb, pci, 1)),
 		pattern_is_a_bat = isaBatType(getArgType(mb, pci, 2));
 	bat *r = getArgReference_bat(stk, pci, 0);
@@ -1788,7 +1348,6 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	void *ex = NULL;
 #endif
 	struct RE *re_simple = NULL;
-	uint32_t *wpat = NULL;
 	BATiter bi = (BATiter) { 0 }, pi;
 
 	(void) cntxt;
@@ -1831,7 +1390,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				*np = BUNtvar(pi, p);
 
 			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty,
-										&ascii_pattern, np, *esc)) != MAL_SUCCEED) {
+										np, *esc)) != MAL_SUCCEED) {
 				bat_iterator_end(&pi);
 				if (b)
 					bat_iterator_end(&bi);
@@ -1839,18 +1398,17 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 
 			if (use_re) {
-				if ((msg = re_like_build(&re_simple, &wpat, np, isensitive,
-										 use_strcmp, ascii_pattern,
+				if ((msg = re_like_build(&re_simple, np, isensitive,
+										 use_strcmp,
 										 (unsigned char) **esc)) != MAL_SUCCEED) {
 					bat_iterator_end(&pi);
 					if (b)
 						bat_iterator_end(&bi);
 					goto bailout;
 				}
-				ret[p] = re_like_proj_apply(next_input, re_simple, wpat, np,
-											isensitive, anti, use_strcmp,
-											ascii_pattern);
-				re_like_clean(&re_simple, &wpat);
+				ret[p] = re_like_proj_apply(next_input, re_simple, np,
+											isensitive, anti, use_strcmp);
+				re_like_clean(&re_simple);
 			} else if (empty) {
 				ret[p] = bit_nil;
 			} else {
@@ -1878,7 +1436,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		const char *pat = *getArgReference_str(stk, pci, 2);
 		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty,
-									&ascii_pattern, pat, *esc)) != MAL_SUCCEED)
+									pat, *esc)) != MAL_SUCCEED)
 			goto bailout;
 
 		bi = bat_iterator(b);
@@ -1888,15 +1446,15 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							   "pcrelike: pattern matching using pcre");
 
 		if (use_re) {
-			if ((msg = re_like_build(&re_simple, &wpat, pat, isensitive, use_strcmp,
-									 ascii_pattern, (unsigned char) **esc)) != MAL_SUCCEED) {
+			if ((msg = re_like_build(&re_simple, pat, isensitive, use_strcmp,
+									 (unsigned char) **esc)) != MAL_SUCCEED) {
 				bat_iterator_end(&bi);
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
 				const char *s = BUNtvar(bi, p);
-				ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive,
-											anti, use_strcmp, ascii_pattern);
+				ret[p] = re_like_proj_apply(s, re_simple, pat, isensitive,
+											anti, use_strcmp);
 				has_nil |= is_bit_nil(ret[p]);
 			}
 		} else if (empty) {
@@ -1922,7 +1480,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
   bailout:
 	GDKfree(ppat);
-	re_like_clean(&re_simple, &wpat);
+	re_like_clean(&re_simple);
 	pcre_clean(&re, &ex);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
@@ -2032,41 +1590,30 @@ pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 static str
 re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 			  BUN *rcnt, const char *pat, bool caseignore, bool anti,
-			  bool use_strcmp, uint32_t esc, bool keep_nulls,
-			  bool ascii_pattern)
+			  bool use_strcmp, uint32_t esc, bool keep_nulls)
 {
 	BATiter bi = bat_iterator(b);
 	BUN cnt = 0, ncands = ci->ncand;
 	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
 	struct RE *re = NULL;
-	uint32_t *wpat = NULL;
 	str msg = MAL_SUCCEED;
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-	if ((msg = re_like_build(&re, &wpat, pat, caseignore, use_strcmp, ascii_pattern,
+	if ((msg = re_like_build(&re, pat, caseignore, use_strcmp,
 							 esc)) != MAL_SUCCEED)
 		goto bailout;
 
 	if (use_strcmp) {
 		if (caseignore) {
-			if (ascii_pattern) {
-				if (anti)
-					pcrescanloop(!strNil(v)
-								 && istrcmp(v, pat) != 0, keep_nulls);
-				else
-					pcrescanloop(!strNil(v)
-								 && istrcmp(v, pat) == 0, keep_nulls);
-			} else {
-				if (anti)
-					pcrescanloop(!strNil(v)
-								 && mywstrcasecmp(v, wpat) != 0, keep_nulls);
-				else
-					pcrescanloop(!strNil(v)
-								 && mywstrcasecmp(v, wpat) == 0, keep_nulls);
-			}
+			if (anti)
+				pcrescanloop(!strNil(v)
+							 && GDKstrcasecmp(v, pat) != 0, keep_nulls);
+			else
+				pcrescanloop(!strNil(v)
+							 && GDKstrcasecmp(v, pat) == 0, keep_nulls);
 		} else {
 			if (anti)
 				pcrescanloop(!strNil(v) && strcmp(v, pat) != 0, keep_nulls);
@@ -2075,35 +1622,26 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 		}
 	} else {
 		if (caseignore) {
-			/* ascii_pattern == true is encoded in re */
 			if (anti) {
-				if (ascii_pattern)
-					pcrescanloop(!strNil(v)
-								 && !re_match_no_ignore(v, re), keep_nulls);
-				else
-					pcrescanloop(!strNil(v)
-								 && !re_match_ignore(v, re), keep_nulls);
+				pcrescanloop(!strNil(v)
+							 && !re_match(v, re), keep_nulls);
 			} else {
-				if (ascii_pattern)
-					pcrescanloop(!strNil(v)
-								 && re_match_no_ignore(v, re), keep_nulls);
-				else
-					pcrescanloop(!strNil(v)
-								 && re_match_ignore(v, re), keep_nulls);
+				pcrescanloop(!strNil(v)
+							 && re_match(v, re), keep_nulls);
 			}
 		} else {
 			if (anti)
 				pcrescanloop(!strNil(v)
-							 && !re_match_no_ignore(v, re), keep_nulls);
+							 && !re_match(v, re), keep_nulls);
 			else
 				pcrescanloop(!strNil(v)
-							 && re_match_no_ignore(v, re), keep_nulls);
+							 && re_match(v, re), keep_nulls);
 		}
 	}
 
   bailout:
 	bat_iterator_end(&bi);
-	re_like_clean(&re, &wpat);
+	re_like_clean(&re);
 	*rcnt = cnt;
 	return msg;
 }
@@ -2117,8 +1655,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 	char *ppat = NULL;
 	bool use_re = false,
 		use_strcmp = false,
-		empty = false,
-		ascii_pattern =	false;
+		empty = false;
 	bool with_strimps = false;
 	bool with_strimps_anti = false;
 	BUN p = 0, q = 0, rcnt = 0;
@@ -2137,7 +1674,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
-	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &ascii_pattern,
+	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty,
 								*pat, *esc)) != MAL_SUCCEED)
 		goto bailout;
 
@@ -2215,8 +1752,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 	if (use_re) {
 		msg = re_likeselect(bn, b, s, &ci, p, q, &rcnt, *pat, *caseignore, *anti
 							&& !with_strimps_anti, use_strcmp,
-							(unsigned char) **esc, with_strimps_anti,
-							ascii_pattern);
+							(unsigned char) **esc, with_strimps_anti);
 	} else {
 		msg = pcre_likeselect(bn, b, s, &ci, p, q, &rcnt, ppat, *caseignore,
 							  *anti && !with_strimps_anti, with_strimps_anti);
@@ -2294,12 +1830,12 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
 			nl = 0;														\
-			ascii_pattern = use_re = use_strcmp = empty = false;		\
-			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, &ascii_pattern, vr, esc))) \
+			use_re = use_strcmp = empty = false;						\
+			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, vr, esc))) \
 				goto bailout;											\
 			if (!empty) {												\
 				if (use_re) {											\
-					if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, ascii_pattern, (unsigned char) *esc)) != MAL_SUCCEED) \
+					if ((msg = re_like_build(&re, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 						goto bailout;									\
 				} else if (pcrepat) {									\
 					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
@@ -2361,7 +1897,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 					lastl = lo;											\
 					nl++;												\
 				}														\
-				re_like_clean(&re, &wpat);								\
+				re_like_clean(&re);										\
 				pcre_clean(&pcrere, &pcreex);							\
 			}															\
 			if (r2) {													\
@@ -2393,9 +1929,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 	struct RE *re = NULL;
 	bool use_re = false,
 		use_strcmp = false,
-		empty = false,
-		ascii_pattern = false;
-	uint32_t *wpat = NULL;
+		empty = false;
 #ifdef HAVE_LIBPCRE
 	pcre *pcrere = NULL;
 	pcre_extra *pcreex = NULL;
@@ -2456,17 +1990,17 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 
 	if (anti) {
 		if (caseignore) {
-			pcre_join_loop(ascii_pattern ? istrcmp(vl, vr) == 0 : mywstrcasecmp(vl, wpat) == 0,
-						   re_match_ignore(vl, re), !PCRE_EXEC_COND);
+			pcre_join_loop(GDKstrcasecmp(vl, vr) == 0,
+						   re_match(vl, re), !PCRE_EXEC_COND);
 		} else {
-			pcre_join_loop(strcmp(vl, vr) == 0, re_match_no_ignore(vl, re), !PCRE_EXEC_COND);
+			pcre_join_loop(strcmp(vl, vr) == 0, re_match(vl, re), !PCRE_EXEC_COND);
 		}
 	} else {
 		if (caseignore) {
-			pcre_join_loop(ascii_pattern ? istrcmp(vl, vr) != 0 : mywstrcasecmp(vl, wpat) != 0,
-						   !re_match_ignore(vl, re), PCRE_EXEC_COND);
+			pcre_join_loop(GDKstrcasecmp(vl, vr) != 0,
+						   !re_match(vl, re), PCRE_EXEC_COND);
 		} else {
-			pcre_join_loop(strcmp(vl, vr) != 0, !re_match_no_ignore(vl, re), PCRE_EXEC_COND);
+			pcre_join_loop(strcmp(vl, vr) != 0, !re_match(vl, re), PCRE_EXEC_COND);
 		}
 	}
 	bat_iterator_end(&li);
@@ -2510,7 +2044,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
 	GDKfree(pcrepat);
-	re_like_clean(&re, &wpat);
+	re_like_clean(&re);
 	pcre_clean(&pcrere, &pcreex);
 	assert(msg != MAL_SUCCEED);
 	return msg;

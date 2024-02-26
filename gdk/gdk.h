@@ -2341,6 +2341,12 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
 
 #include "gdk_calc.h"
 
+gdk_export gdk_return GDKtoupper(char **buf, size_t *buflen, const char *s);
+gdk_export gdk_return GDKtolower(char **buf, size_t *buflen, const char *s);
+gdk_export int GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2);
+gdk_export int GDKstrcasecmp(const char *s1, const char *s2);
+gdk_export char *GDKstrcasestr(const char *haystack, const char *needle);
+
 /*
  * @- BAT sample operators
  *

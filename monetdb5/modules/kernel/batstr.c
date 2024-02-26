@@ -147,7 +147,15 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 static str
 STRbatLength(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_int(cntxt, mb, stk, pci, "batstr.length", UTF8_strlen);
+	bat bid = *getArgReference_bat(stk, pci, 1);
+	BAT *b = BATdescriptor(bid);
+	str err;
+	if (b && b->tascii)
+		err = do_batstr_int(cntxt, mb, stk, pci, "batstr.bytes", str_strlen);
+	else
+		err = do_batstr_int(cntxt, mb, stk, pci, "batstr.length", UTF8_strlen);
+	BBPreclaim(b);
+	return err;
 }
 
 static str
@@ -1599,25 +1607,13 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 static str
 STRbatLower(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str msg = MAL_SUCCEED;
-
-	if ((msg = str_case_hash_lock(false)))
-		return msg;
-	msg = do_batstr_str(cntxt, mb, stk, pci, "batstr.lower", str_lower);
-	str_case_hash_unlock(false);
-	return msg;
+	return do_batstr_str(cntxt, mb, stk, pci, "batstr.lower", str_lower);
 }
 
 static str
 STRbatUpper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str msg = MAL_SUCCEED;
-
-	if ((msg = str_case_hash_lock(true)))
-		return msg;
-	msg = do_batstr_str(cntxt, mb, stk, pci, "batstr.upper", str_upper);
-	str_case_hash_unlock(true);
-	return msg;
+	return do_batstr_str(cntxt, mb, stk, pci, "batstr.upper", str_upper);
 }
 
 static str
@@ -2185,8 +2181,8 @@ BATSTRcontains_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-				  const char *name, int (*func)(const char *, const char *,
-												int), bit *icase)
+				  const char *name, int (*func)(const char *, const char *),
+				  bit *icase)
 {
 	 (void) cntxt;
 	(void) mb;
@@ -2244,7 +2240,7 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y);
 			}
 		}
 	} else {
@@ -2258,7 +2254,7 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y);
 			}
 		}
 	}
@@ -2304,15 +2300,15 @@ BATSTRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	}
 	return search_string_bat(cntxt, mb, stk, pci, "batstr.r_search",
-							 (icase
-							  && *icase) ? str_reverse_str_isearch :
+							 (icase && *icase) ?
+							 str_reverse_str_isearch :
 							 str_reverse_str_search, icase);
 }
 
 static str
 search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-					  const char *name, int (*func)(const char *, const char *,
-													int), bit *icase)
+					  const char *name, int (*func)(const char *, const char *),
+					  bit *icase)
 {
 	 (void) cntxt;
 	(void) mb;
@@ -2328,7 +2324,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat *res = getArgReference_bat(stk, pci, 0),
 		*bid = getArgReference_bat(stk, pci, 1),
 		*sid1 = NULL;
-	int ynil, ylen;
+	int ynil;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
 		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
@@ -2356,7 +2352,6 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	ynil = strNil(y);
-	ylen = ynil ? 0 : str_strlen(y); /* not used if nil */
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -2366,7 +2361,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, ylen);
+				vals[i] = func(x, y);
 			}
 		}
 	} else {
@@ -2378,7 +2373,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, ylen);
+				vals[i] = func(x, y);
 			}
 		}
 	}
@@ -2431,7 +2426,7 @@ BATSTRrevstr_search_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						 InstrPtr pci, const char *name,
-						 int (*func)(const char *, const char *, int),
+						 int (*func)(const char *, const char *),
 						 bit *icase)
 {
 	 (void) cntxt;
@@ -2484,7 +2479,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y);
 			}
 		}
 	} else {
@@ -2496,7 +2491,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y);
 			}
 		}
 	}
