@@ -5638,7 +5638,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			vr_len = STR_LEN;									\
 			matches = 0;												\
 			for (canditer_setidx(&lci, lx), n = lx; n < lci.ncand; n++) { \
-				lo = canditer_next(&lci);								\
+				lo = canditer_next_dense(&lci);						\
 				vl = VALUE(l, lo - lbase);								\
 				cmp = STR_CMP;											\
 				if (cmp < 0) {											\
