@@ -1832,7 +1832,7 @@ UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *
 	*LHS_matched = m->batCacheid;
 	*RHS_slotid = s->batCacheid;
 	BBPkeepref(m);
-	BBPkeepref(m);
+	BBPkeepref(s);
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(m);
@@ -1978,7 +1978,7 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 	*LHS_matched = res_m->batCacheid;
 	*RHS_slotid = res_s->batCacheid;
 	BBPkeepref(res_m);
-	BBPkeepref(res_m);
+	BBPkeepref(res_s);
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(res_m);
