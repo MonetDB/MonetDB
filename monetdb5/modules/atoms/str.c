@@ -5617,22 +5617,32 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do {																\
 		canditer_init(&rci, sorted_r, sorted_cr);						\
 		canditer_init(&lci, sorted_l, sorted_cl);						\
-		for (BUN lidx = 0,ridx = 0; ridx < rci.ncand; ridx++) {		\
+		for (lx = 0; lx < lci.ncand; lx++) {							\
+			lo = canditer_next(&lci);									\
+			vl = VALUE(l, lo - lbase);									\
+			if (!strNil(vl))											\
+				break;													\
+		}																\
+		for (rx = 0; rx < rci.ncand; rx++) {							\
+			ro = canditer_next(&rci);									\
+			vr = VALUE(r, ro - rbase);									\
+			if (!strNil(vr)) {											\
+				canditer_setidx(&rci, rx);								\
+				break;													\
+			}															\
+		}																\
+		for (; rx < rci.ncand; rx++) {									\
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
-			if (strNil(vr))											\
-				continue;												\
-			vr_len = STR_LEN;											\
+			vr_len = STR_LEN;									\
 			matches = 0;												\
-			for (canditer_setidx(&lci, lidx), n = lidx; n < lci.ncand; n++) { \
+			for (canditer_setidx(&lci, lx), n = lx; n < lci.ncand; n++) { \
 				lo = canditer_next(&lci);								\
 				vl = VALUE(l, lo - lbase);								\
-				if (strNil(vl))										\
-					continue;											\
 				cmp = STR_CMP;											\
 				if (cmp < 0) {											\
-					lidx++;											\
+					lx++;												\
 					continue;											\
 				}														\
 				else if (cmp > 0)										\
@@ -6095,7 +6105,7 @@ startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 		*lvars = li.vh->base,
 		*rvars = ri.vh->base,
 		*vl, *vr;
-	BUN matches, newcap, n = 0;
+	BUN matches, newcap, n = 0, rx = 0, lx = 0;
 	int rskipped = 0, vr_len = 0, cmp = 0;
 	size_t counter = 0;
 
