@@ -131,7 +131,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	 *   X_44:bat[:int] := algebra.projection(...); # col2
 	 *   (X_46:bat[:oid], !X_5:bat[:int]) := hash.build_table(X_43, ...);
 	 *   (X_48:bat[:oid], !X_6:bat[:int]) := hash.build_combined_table(X_44, X_46, X_5, ...);
-	 *   !X_8:bat[:int] := hash.add_payload(X_44, X_48, ...);
+	 *   !X_8:bat[:int] := hash.add_payload(X_44, X_48, X_6, ...);
 	 *   X_18:int := pipeline.counter(X_19:ptr);
 	 *   redo X_17:bit := calc.<(X_18:int, 2:int);
 	 * exit X_17:bit;
@@ -180,7 +180,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		stmt *payload = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(payload); /* must find */
 		InstrPtr sink = inout->data;
-		stmt *hp = stmt_hash_add_payload(be, sink, payload, prnt_slts, pp);
+		stmt *hp = stmt_hash_add_payload(be, sink, payload, prnt_slts, prnt_ht, pp);
 		if (hp == NULL) return NULL;
 		append(l_hps, hp);
 	}

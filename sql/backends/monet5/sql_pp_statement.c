@@ -476,16 +476,16 @@ stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_slts,
 }
 
 /* Generates:
- *   #hp_sink                           payload         parent_slotid   PTR
- *   !C_8:bat[:int] := hash.add_payload(X_44:bat[:int], X_48:bat[:oid], X_19:ptr);
+ *   #hp_sink                           payload         parent_slotid   parent_ht,    PTR
+ *   !C_8:bat[:int] := hash.add_payload(X_44:bat[:int], X_48:bat[:oid], X6:bat[:int], X_19:ptr);
  */
 stmt *
-stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int prnt_slts, stmt *pp)
+stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int prnt_slts, int prnt_ht, stmt *pp)
 {
 	MalBlkPtr mb = be->mb;
 	mvc *sql = be->mvc;
 
-	InstrPtr q = newStmtArgs(mb, putName("hash"), putName("add_payload"), 4);
+	InstrPtr q = newStmtArgs(mb, putName("hash"), putName("add_payload"), 5);
 	if (q == NULL)
 		goto bailout;
 
@@ -494,6 +494,7 @@ stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int prnt_slt
 	getArg(q, 0) = *ht_sink->argv;
 	q = pushArgument(mb, q, getDestVar(payload->q));
 	q = pushArgument(mb, q, prnt_slts);
+	q = pushArgument(mb, q, prnt_ht);
 	q = pushArgument(mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	q->inout = 0;
 	pushInstruction(mb, q);

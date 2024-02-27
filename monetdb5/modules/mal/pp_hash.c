@@ -322,8 +322,8 @@ UHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	bat *res = getArgReference_bat(s, p, 0);
 	int tt = getArgType(m, p, 1);
-	size_t nslots = *getArgReference_int(s, p, 2);
-	size_t nplds = *getArgReference_int(s, p, 3);
+	size_t nslots = *getArgReference_lng(s, p, 2);
+	size_t nplds = *getArgReference_lng(s, p, 3);
 	bat pid = *getArgReference_bat(s, p, 4);
 	str err = NULL;
 
@@ -2287,7 +2287,7 @@ static mel_func pp_hash_init_funcs[] = {
 
  command("hash", "build_table", UHASHbuild_table, false, "Build a hash table for the given column. Returns the slot ID for each key and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
  command("hash", "build_combined_table", UHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
- command("hash", "add_payload", HASHadd_payload, false, "Add a payload column with the given hash table. Returns a sink containing the hash payload", args(1,4, batargany("hp_sink",1),batargany("payload",1),batarg("parent_slotid",oid),arg("pipeline",ptr))),
+ command("hash", "add_payload", HASHadd_payload, false, "Add a payload column with the given hash table. Returns a sink containing the hash payload", args(1,5, batargany("hp_sink",1),batargany("payload",1),batarg("parent_slotid",oid),batargany("parent_ht",2), arg("pipeline",ptr))),
 
  command("hash", "hash", UHASHhash, false, "Compute the hashs for the given column", args(1,3, batargany("hsh",1),batargany("key",1),arg("pipeline",ptr))),
  command("hash", "combined_hash", UHASHcombined_hash, false, "Compute the hashs for the selected items in the given column in combination with the slot IDs of a parent column", args(1,5, batargany("hsh",1),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
