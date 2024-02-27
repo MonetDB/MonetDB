@@ -54,6 +54,7 @@ target_link_libraries(mclient
   mapi
   stream
   $<$<BOOL:${READLINE_FOUND}>:Readline::Readline>
+  $<$<BOOL:${CURL_FOUND}>:CURL::libcurl>
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
 
