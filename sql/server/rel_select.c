@@ -1414,8 +1414,51 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) {
-			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column3(sql, inner->l, sname, tname, cname, f)))
-				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column3(sql, inner->l, sname, tname, cname, f))) {
+				sql_table* t = find_table_or_view_on_scope(sql, NULL, sname, tname, "SELECT", false);
+				bool check_pk_with_uk = false;
+				if (t) {
+					sql_idx* pki = NULL;
+					sql_idx* uki = NULL;
+					for (node * n = ol_first_node(t->idxs); n; n = n->next) {
+						sql_idx *i = n->data;
+
+						switch (i->key->type) {
+						case pkey:
+							pki = i;
+							continue;
+						case ukey:
+						case unndkey:
+							uki = i;
+							continue;
+						default:
+							continue;
+						}
+					}
+
+					if (uki && pki) {
+						if (pki->columns->cnt == 1 && uki->columns->cnt == 1 && ((list*) inner->r)->cnt == 1) {
+							sql_column* pkc = ((sql_kc *)pki->columns->h->data)->c;
+							sql_column* ukc = ((sql_kc *)uki->columns->h->data)->c;
+							(void) pkc;
+							(void) ukc;
+							sql_exp* gbe = ((list*) inner->r)->h->data;
+							assert(gbe->type == e_column);
+							if (strcmp(gbe->alias.name, pkc->base.name) == 0 && strcmp(exp->alias.name, ukc->base.name) == 0)
+								check_pk_with_uk = true;
+						}
+					}
+				}
+
+				if (check_pk_with_uk) {
+					sql->session->status = 0;
+					sql->errstr[0] = 0;
+					exp->card = CARD_AGGR;
+					list_append(inner->exps, exp);
+				}
+				else
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+			}
 		}
 
 		if (!exp)
