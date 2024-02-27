@@ -64,7 +64,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
-	stmt *pp = NULL, *sub = NULL, *cursub = NULL;
+	stmt *pp = NULL, *sub = NULL;
 	BUN est = BUN_NONE;
 	list *eq_exps = sa_list(sql->sa);
 	list *hsh_hts = sa_list(sql->sa), *prb_hts = sa_list(sql->sa); /* join column exps */
@@ -147,8 +147,6 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	sub = subrel_bin(be, rel_hsh, refs);
 	sub = subrel_project(be, sub, refs, rel_hsh);
 	if (!sub) return NULL;
-	cursub = sub; /* remember the projection stmt-s */
-	assert(cursub && cursub->type == st_list && cursub->op4.lval->h);
 
 	pp = get_pipeline(be);
 	if (!pp) {
@@ -160,34 +158,39 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	int prnt_slts = 0, prnt_ht = 0;
 	for (node *n = hsh_hts->h, *inout = PHres_hts->h; n && inout;
 	     n = n->next, inout = inout->next) {
-		stmt *k = exp_bin(be, n->data, cursub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		stmt *k = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(k); /* must find */
-		InstrPtr q = NULL, sink = inout->data, key = k->q;
+		int sink = getDestVar((InstrPtr)inout->data);
+		int key = getDestVar(k->q);
+		InstrPtr q = NULL;
 		if (prnt_slts == 0) {
-			q = stmt_hash_build_table(be, *sink->argv, *key->argv, pp);
+			q = stmt_hash_build_table(be, sink, key, pp);
 		} else {
-			q = stmt_hash_build_combined_table(be, *sink->argv, *key->argv, prnt_slts, prnt_ht, pp);
+			q = stmt_hash_build_combined_table(be, sink, key, prnt_slts, prnt_ht, pp);
 		}
 		if (q == NULL) return NULL;
-		prnt_slts = getArg(q, 0);
-		prnt_ht = *sink->argv;
+		prnt_slts = getDestVar(q);
+		prnt_ht = sink;
 	}
 
 	assert(prnt_slts); /* must be set */
-	for (node *n = hsh_hts->h, *inout = PHres_hps->h; n && inout;
+	list *l_hps = sa_list(sql->sa);
+	for (node *n = hsh_hps->h, *inout = PHres_hps->h; n && inout;
 	     n = n->next, inout = inout->next) {
-		stmt *pld = exp_bin(be, n->data, cursub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		assert(pld); /* must find */
-		InstrPtr q = NULL, sink = inout->data, payload = pld->q;
-		q = stmt_hash_add_payload(be, sink, *payload->argv, prnt_slts, pp);
-		if (q == NULL) return NULL;
+		stmt *payload = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(payload); /* must find */
+		InstrPtr sink = inout->data;
+		stmt *hp = stmt_hash_add_payload(be, sink, payload, prnt_slts, pp);
+		if (hp == NULL) return NULL;
+		append(l_hps, hp);
 	}
+	PHres_hps = l_hps; /* NB: PHres_hps now contains stmt*-s iso InstrPtr-s */
 
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
 
 	/*** PROBE PHASE ***/
-	/* Generates the parallel block to probe the hash table and produce the 
+	/* Generates the parallel block to probe the hash table and produce the
 	 *   parallel-hash-join results.
 	 *
 	 * barrier (X_72:bit, X_73:int, X_74:ptr) := language.pipelines(11:int);
@@ -197,19 +200,19 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	 * 	X_87:bat[:int] := algebra.projection(...); # L2
 	 * 	X_88:bat[:int] := algebra.projection(...); # L3
 	 *  ### First LHS column:
-	 * 	X_93:bat[:int] := hash.hash(X_86:bat[:int]);
-	 *  (X_101:bat[:oid], X_102:bat[:oid]) := hash.probe(X_86, X_93:bat, X_5);
+	 * 	X_93:bat[:int] := hash.hash(X_86:bat[:int], X_74:ptr);
+	 *  (X_101:bat[:oid], X_102:bat[:oid]) := hash.probe(X_86, X_93:bat, X_5, X_74:ptr);
 	 *  ### Subsequent LHS columns:
-	 * 	X_94:bat[:int] := hash.combined_hash(X_87, X_101, X_102);
-	 *  (X_106:bat[:oid], X_107:bat[:oid]):= hash.combined_probe(X_87, X_94, X_101, X_6);
+	 * 	X_94:bat[:int] := hash.combined_hash(X_87, X_101, X_102, X_74:ptr);
+	 *  (X_106:bat[:oid], X_107:bat[:oid]):= hash.combined_probe(X_87, X_94, X_101, X_6, X_74:ptr);
 	 *
 	 *  ### Generate output
 	 *  # For the LHS columns, repeat each matched value.
-	 *  X_110:bat[:int] := hash.expand(X_86, X_106, X_107, X_8); # L1
-	 *  X_112:bat[:int] := hash.expand(X_88, X_106, X_107, X_8); # L3
+	 *  X_110:bat[:int] := hash.expand(X_86, X_106, X_107, X_8, X_74:ptr); # L1
+	 *  X_112:bat[:int] := hash.expand(X_88, X_106, X_107, X_8, X_74:ptr); # L3
 	 *  # For the RHS columns:
-	 *  X_115:bat[:int] := hash.fetch_payload(X_107, X_8); # R2
-	 *  X_116:bat[:int] := hash.fetch_payload(X_107, X_9); # R3
+	 *  X_115:bat[:int] := hash.fetch_payload(X_107, X_8, X_74:ptr); # R2
+	 *  X_116:bat[:int] := hash.fetch_payload(X_107, X_9, X_74:ptr); # R3
 	 */
 	if (pp_can_not_start(be->mvc, rel_prb)) {
 		set_need_pipeline(be);
@@ -222,8 +225,6 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	sub = subrel_bin(be, rel_prb, refs);
 	sub = subrel_project(be, sub, refs, rel_prb);
 	if (!sub) return NULL;
-	cursub = sub; /* remember the projection stmt-s */
-	assert(cursub && cursub->type == st_list && cursub->op4.lval->h);
 
 	pp = get_pipeline(be);
 	if (!pp) {
@@ -235,40 +236,44 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	/* PHres_hts is in the same order as the join columns */
 	int matched = 0, rhs_slts = 0;
 	for (node *n = prb_hts->h, *m = PHres_hts->h; n && m; n = n->next, m = m->next) {
-		stmt *k = exp_bin(be, n->data, cursub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		/* find n->data in sub */
+		stmt *k = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(k); /* must find */
-		InstrPtr q = NULL, key = k->q, rht = m->data;
+		int key = getDestVar(k->q);
+		int rht = getDestVar((InstrPtr)m->data);
+		InstrPtr q = NULL;
 		if (!matched) {
-			q = stmt_hash_hash(be, *key->argv);
+			q = stmt_hash_hash(be, key, pp);
 			if (q == NULL) return NULL;
-			q = stmt_hash_probe(be, *key->argv, *q->argv, *rht->argv);
+			q = stmt_hash_probe(be, key, getDestVar(q), rht, pp);
 		} else {
-			q = stmt_hash_combined_hash(be, *key->argv, matched, rhs_slts);
+			q = stmt_hash_combined_hash(be, key, matched, rhs_slts, pp);
 			if (q == NULL) return NULL;
-			q = stmt_hash_combined_probe(be, *key->argv, *q->argv, matched, *rht->argv);
+			q = stmt_hash_combined_probe(be, key, getDestVar(q), matched, rht, pp);
 		}
 		if (q == NULL) return NULL;
 		matched = getArg(q, 0);
 		rhs_slts = getArg(q, 1);
 	}
-	
-	assert(matched && rhs_slts); /* must be set */
-	int rhp = *((InstrPtr)PHres_hps->h->data)->argv;
-	for (node *n = prb_hps->h; n; n = n->next) {
-		stmt *k = exp_bin(be, n->data, cursub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		assert(k); /* must find */
-		InstrPtr q = NULL, key = k->q;
-		// TODO make this into a stmt and add to sub
-		q = stmt_hash_expand(be, *key->argv, matched, rhs_slts, rhp);
-		if (q == NULL) return NULL;
-	}
 
-	for (node *n = PHres_hps->h; n; n = n->next) {
-		int hp = *((InstrPtr)n->data)->argv;
-		// TODO make this into a stmt and add to sub
-		InstrPtr q = stmt_hash_fetch_payload(be, rhs_slts, hp);
-		if (q == NULL) return NULL;
+	/*** FINAL PHASE ***/
+	/* Construct result relations */
+	assert(matched && rhs_slts); /* must be set */
+	list *l = sa_list(sql->sa);
+	int rhp = getDestVar(((stmt *)PHres_hps->h->data)->q);
+	for (node *n = prb_hps->h; n; n = n->next) {
+		stmt *key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(key); /* must find */
+		stmt *s = stmt_hash_expand(be, key, matched, rhs_slts, rhp, pp);
+		if (s == NULL) return NULL;
+		append(l, s);
 	}
+	for (node *n = PHres_hps->h; n; n = n->next) {
+		stmt *s = stmt_hash_fetch_payload(be, rhs_slts, n->data, pp);
+		if (s == NULL) return NULL;
+		append(l, s);
+	}
+	sub = stmt_list(be, l);
 
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
@@ -277,7 +282,6 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
-
 	return sub;
 }
 

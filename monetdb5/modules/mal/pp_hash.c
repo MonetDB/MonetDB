@@ -1470,11 +1470,13 @@ error:
 
 /* X_nn:bat[:oid] := hash.hash(X_nn:bat[:any1]); */
 static str
-UHASHhash(bat *hsh, bat *key)
+UHASHhash(bat *hsh, bat *key, const ptr *H)
 {
 	BAT *h = NULL, *k = NULL;
 	BUN cnt;
 	str err = NULL;
+
+	(void) H;
 
 	k = BATdescriptor(*key);
 	if (!k)
@@ -1595,11 +1597,13 @@ error:
 
 /* X_nn:bat[:oid] := hash.combined_hash(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:oid]); */
 static str
-UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid)
+UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const ptr *H)
 {
 	BAT *h = NULL, *k = NULL, *s = NULL, *p = NULL;
 	BUN cnt;
 	str err = NULL;
+
+	(void) H;
 
 	k = BATdescriptor(*key);
 	s = BATdescriptor(*selected);
@@ -1722,11 +1726,13 @@ error:
 
 /* (X_nn:bat[:oid], X_nn:bat[:oid]) := hash.probe(X_nn:bat[:any1], X_nn:bat[:any1], X_nn:bat[:any2]); */
 static str
-UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht)
+UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, const ptr *H)
 {
 	BAT *m = NULL, *s = NULL, *k = NULL, *h = NULL, *t = NULL;
 	BUN keycnt, mtdcnt = 0;
 	str err = NULL;
+
+	(void) H;
 
 	k = BATdescriptor(*LHS_key);
 	h = BATdescriptor(*LHS_hash);
@@ -1864,11 +1870,13 @@ error:
 
 /* (X_nn:bat[:oid], X_nn:bat[:oid]) := hash.combined_probe(X_nn:bat[:any1], X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:any2]); */
 static str
-UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht)
+UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht, const ptr *H)
 {
 	BAT *res_m = NULL, *res_s = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
 	str err = NULL;
+
+	(void) H;
 
 	k = BATdescriptor(*LHS_key);
 	h = BATdescriptor(*LHS_hash);
@@ -2006,11 +2014,13 @@ error:
 
 /* X_nn:bat[:any1] := hash.expand(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:oid], X_nn:bat[:any2]); */
 static str
-HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink)
+HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink, const ptr *H)
 {
 	BAT *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt = 0;
 	str err = NULL;
+
+	(void) H;
 
 	k = BATdescriptor(*key);
 	s = BATdescriptor(*selected);
@@ -2154,11 +2164,13 @@ error:
 
 /* X_nn:bat[:any1] := hash.fetch_payload(X_nn:bat[:oid], X_nn:bat[:any1]); */
 static str
-HASHfetch_payload(bat *payload, bat *slotid, bat *hp_sink)
+HASHfetch_payload(bat *payload, bat *slotid, bat *hp_sink, const ptr *H)
 {
 	BAT *p = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt =  0;
 	str err = NULL;
+
+	(void) H;
 
 	l = BATdescriptor(*slotid);
 	h = BATdescriptor(*hp_sink);
@@ -2277,14 +2289,14 @@ static mel_func pp_hash_init_funcs[] = {
  command("hash", "build_combined_table", UHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
  command("hash", "add_payload", HASHadd_payload, false, "Add a payload column with the given hash table. Returns a sink containing the hash payload", args(1,4, batargany("hp_sink",1),batargany("payload",1),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
- command("hash", "hash", UHASHhash, false, "Compute the hashs for the given column", args(1,2, batarg("hsh",oid),batargany("key",1))),
- command("hash", "combined_hash", UHASHcombined_hash, false, "Compute the hashs for the selected items in the given column in combination with the slot IDs of a parent column", args(1,4, batarg("hsh",oid),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid))),
+ command("hash", "hash", UHASHhash, false, "Compute the hashs for the given column", args(1,3, batargany("hsh",1),batargany("key",1),arg("pipeline",ptr))),
+ command("hash", "combined_hash", UHASHcombined_hash, false, "Compute the hashs for the selected items in the given column in combination with the slot IDs of a parent column", args(1,5, batargany("hsh",1),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
- command("hash", "probe", UHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,5, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batargany("LHS_hash",1),batargany("RHS_ht",2))),
- command("hash", "combined_probe", UHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batargany("LHS_hash",1),batarg("LHS_selected",oid),batargany("RHS_ht",2))),
+ command("hash", "probe", UHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batargany("LHS_hash",1),batargany("RHS_ht",2),arg("pipeline",ptr))),
+ command("hash", "combined_probe", UHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batargany("LHS_hash",1),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
- command("hash", "expand", HASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(1,5, batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("hp_sink",2))),
- command("hash", "fetch_payload", HASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash payload.", args(1,3, batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1))),
+ command("hash", "expand", HASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(1,6, batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("hp_sink",2),arg("pipeline",ptr))),
+ command("hash", "fetch_payload", HASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash payload.", args(1,4, batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),arg("pipeline",ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"

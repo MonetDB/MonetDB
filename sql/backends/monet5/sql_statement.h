@@ -119,7 +119,7 @@ typedef struct stmt {
 	stmtdata op4;		/* only op4 will hold other types */
 
 	unsigned int
-	 nrcols:2,
+	 nrcols:2,		/* stmt cardinality, 0: const, 1: col, >1: table */
 	 key:1,			/* key (aka all values are unique) */ // TODO make this thing a bool
 	 aggr:1,		/* aggregated */
 	 partition:1,	/* selected as mitosis candidate */
