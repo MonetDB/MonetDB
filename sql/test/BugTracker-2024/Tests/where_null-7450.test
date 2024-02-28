@@ -7,18 +7,17 @@ INSERT INTO t0 ( c0) VALUES (false)
 statement ok
 CREATE VIEW v0(c0) AS SELECT true FROM t0 WHERE NULL GROUP BY t0.c0, true
 
-query I
+query I nosort
 SELECT * FROM v0
 ----
 
-query I
+query I nosort
 SELECT * FROM v0 WHERE true
 ----
 
-query I
+query I nosort
 SELECT * FROM v0 WHERE true UNION ALL SELECT * FROM v0 WHERE (NOT true)
 ----
-
 
 statement ok
 DROP VIEW v0

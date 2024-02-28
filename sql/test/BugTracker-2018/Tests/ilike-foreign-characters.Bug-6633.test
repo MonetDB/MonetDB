@@ -10,58 +10,58 @@ INSERT INTO debugme VALUES ('aa'), ('Aä'), ('AÄ'), ('aä'), ('aÄ'), ('oo'), (
 query T rowsort
 SELECT acol FROM debugme WHERE acol ILIKE 'aä'
 ----
-A@
-A@
-a@
-a@
+AÄ
+Aä
+aÄ
+aä
 
 query T rowsort
 SELECT acol FROM debugme WHERE acol ILIKE '%ä'
 ----
-A@
-A@
-a@
-a@
+AÄ
+Aä
+aÄ
+aä
 
 query T rowsort
 SELECT acol FROM debugme WHERE acol ILIKE '%ä%'
 ----
-A@
-A@
-a@
-a@
+AÄ
+Aä
+aÄ
+aä
 
 query T rowsort
 SELECT acol FROM debugme WHERE acol ILIKE 'ö%'
 ----
-@O
-@O
-@o
-@o
+ÖO
+Öo
+öO
+öo
 
 query T rowsort
 SELECT acol FROM debugme WHERE acol ILIKE '%ö%'
 ----
-@O
-@O
-@o
-@o
+ÖO
+Öo
+öO
+öo
 
 query T rowsort
 SELECT acol FROM debugme WHERE acol ILIKE 'ö_'
 ----
-@O
-@O
-@o
-@o
+ÖO
+Öo
+öO
+öo
 
 query T rowsort
 SELECT acol FROM debugme WHERE acol ILIKE 'öo'
 ----
-@O
-@O
-@o
-@o
+ÖO
+Öo
+öO
+öo
 
 statement ok
 ROLLBACK

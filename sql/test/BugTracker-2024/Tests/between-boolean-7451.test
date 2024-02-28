@@ -13,7 +13,7 @@ INSERT INTO t0 (c0) VALUES (false)
 statement ok
 INSERT INTO t1 ( c1) VALUES (0)
 
-query IT
+query IT nosort
 SELECT t1.c1, t1.c2 FROM t1, t0
 ----
 0
@@ -21,13 +21,13 @@ NULL
 0
 NULL
 
-query T
+query I nosort
 SELECT (NOT CAST((true BETWEEN t1.c2 AND t0.c0) AS VARCHAR)) FROM t1, t0
 ----
-True
-True
+1
+1
 
-query IT
+query IT nosort
 SELECT t1.c1, t1.c2 FROM t1, t0 WHERE (NOT CAST((true BETWEEN t1.c2 AND t0.c0) AS VARCHAR))
 ----
 0
@@ -35,7 +35,7 @@ NULL
 0
 NULL
 
-query ITT
+query ITT nosort
 SELECT * FROM t1, t0 WHERE (NOT CAST((true BETWEEN t1.c2 AND t0.c0) AS VARCHAR))
 ----
 0
