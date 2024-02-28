@@ -5815,7 +5815,7 @@ batstr_strlower(BAT *b)
 			BBPreclaim(bn);
 			return NULL;
 		}
-		if (BUNappend(bn, vb, false) != GDK_SUCCEED) {
+		if (BUNappend(bn, vb_low, false) != GDK_SUCCEED) {
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
 			return NULL;
@@ -6223,7 +6223,6 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 		struct canditer lci, rci;
 		canditer_init(&lci, l, cl);
 		canditer_init(&rci, r, cr);
-
 		BUN lcnt = lci.ncand, rcnt = rci.ncand;
 		BUN nl_cost = lci.ncand * rci.ncand,
 			sorted_cost =
