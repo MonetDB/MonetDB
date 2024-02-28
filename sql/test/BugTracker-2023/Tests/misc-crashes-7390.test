@@ -247,16 +247,16 @@ UPDATE v0 SET v1 = (WITH v0 AS (SELECT 42039652.000000) SELECT STDDEV_POP (96) O
 statement ok
 DROP TABLE v0
 
--- -- 18.sql
--- statement ok
--- CREATE TABLE v0(v1 NUMERIC)
+-- 18.sql
+statement ok
+CREATE TABLE v0(v1 NUMERIC)
 
--- statement ok
--- UPDATE v0 SET v1 = (WITH v0 (v1) AS (SELECT 127 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8) ^ v1
--- sql/server/rel_select.c:3102: rel_binop_: Assertion `t1 && t2' failed.
+statement ok
+UPDATE v0 SET v1 = (WITH v0 (v1) AS (SELECT 127 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8) ^ v1
+-- sql/server/rel_select.c:3104: rel_binop_: Assertion `t1 && t2' failed.
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 19.sql
 statement ok
