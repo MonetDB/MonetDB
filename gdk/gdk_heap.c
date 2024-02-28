@@ -217,6 +217,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			return GDK_FAIL;
 		}
 		GDKfree(nme);
+		TRC_DEBUG(HEAP, "%s %zu %p (mmap)\n", h->filename, size, h->base);
 	}
 	h->newstorage = h->storage;
 	return GDK_SUCCEED;
