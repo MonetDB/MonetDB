@@ -1,4 +1,4 @@
-query TTTTIT rowsort
+query ITTTIT rowsort
 SELECT
     null AS "TABLE_CAT",
     "schemas"."name" AS "TABLE_SCHEM",

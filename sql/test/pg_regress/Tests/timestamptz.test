@@ -1,5 +1,4 @@
 statement ok
- 
 CREATE TABLE TIMESTAMPTZ_TBL ( d1 timestamp(2) with time zone)
 
 statement ok
@@ -587,7 +586,6 @@ statement error
 SELECT '' AS to_timestamp_16, to_timestamp('200401', 'YYYYWW')
 
 statement error
- 
 SELECT d1, day(d1) FROM TIMESTAMPTZ_TBL
 
 query TI rowsort

@@ -2,7 +2,7 @@ statement ok
 start transaction
 
 statement ok
-create table T ( I int, F float ) 
+create table T ( I int, F float )
 
 statement ok
 insert into T values ( 1, 0.1 )

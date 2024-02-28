@@ -15,10 +15,9 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v1 VARCHAR(30))
 
-query TTI
+query TTI nosort
 SELECT DISTINCT v1 v1, v1, abs(v1)=10 FROM v0 WHERE lower (v1) IS NOT NULL
 ----
-
 
 statement ok
 DROP TABLE v0
@@ -27,17 +26,17 @@ DROP TABLE v0
 statement ok
 CREATE VIEW v0 AS SELECT CAST (NULL AS INT) INTERSECT SELECT CAST (NULL AS INT)
 
-query I
+query I nosort
 SELECT * FROM v0
 ----
 NULL
 
-query I
+query I nosort
 SELECT row_number ( ) OVER ( ORDER BY 10 * 10 , ( CASE WHEN ( 10 IS NULL ) THEN 4 ELSE 10 END ) DESC NULLS FIRST ) FROM v0
 ----
 1
 
-query IIT
+query IIT nosort
 SELECT 2, row_number() OVER (ORDER BY 10*10, (CASE WHEN (10 IS NULL) THEN 4 ELSE 10 END) DESC NULLS FIRST), '.125e+3' FROM v0 LIMIT 1
 ----
 2
@@ -60,7 +59,7 @@ INSERT INTO v0 SELECT row_number () OVER (ORDER BY 2) FROM v0, v0 AS c3_null, v0
 statement ok
 INSERT INTO v0 SELECT row_number () OVER (ORDER BY 2 NULLS LAST) AS c0 FROM v0, v0 AS contains
 
-query I
+query I nosort
 SELECT count(*) as cnt FROM v0
 ----
 122850
@@ -90,7 +89,7 @@ INSERT INTO v0 SELECT row_number () OVER (ORDER BY 3) FROM v0, v0 AS c3_null, v0
 statement ok
 INSERT INTO v0 SELECT row_number () OVER (ORDER BY 100 NULLS LAST) FROM v0, v0 AS contains
 
-query I
+query I nosort
 SELECT count(*) as cnt FROM v0
 ----
 545382
@@ -98,7 +97,7 @@ SELECT count(*) as cnt FROM v0
 statement ok
 SELECT FIRST_VALUE (v1) OVER (PARTITION BY 'HASHED' ORDER BY v1<=10 DESC NULLS FIRST, v1 DESC) FROM v0 LIMIT 300000
 
-query T rowsort
+query I rowsort
 SELECT distinct FIRST_VALUE ( v1 ) OVER ( PARTITION BY 'HASHED' ORDER BY v1 <= 10 DESC NULLS FIRST , v1 DESC ) FROM v0 WHERE v1 IS NOT NULL LIMIT 300000
 ----
 10
@@ -130,7 +129,7 @@ INSERT INTO v0 SELECT v0.v1 FROM v0, v0 AS c3_null, v0 AS a
 statement ok
 INSERT INTO v0 SELECT v0.v1 FROM v0, v0 AS c3_null, v0 AS col2
 
-query I
+query I nosort
 SELECT count(*) as cnt FROM v0
 ----
 2197130
@@ -151,10 +150,9 @@ SELECT * FROM v0 ORDER BY (SELECT *)
 statement error 42000!SELECT: subquery must return only one column
 SELECT * FROM v0 ORDER BY ( SELECT * FROM v0 )
 
-query IR
+query IR nosort
 SELECT * FROM v0 ORDER BY (SELECT -1)
 ----
-
 
 statement ok
 DROP TABLE v0
@@ -163,10 +161,9 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v1 INT PRIMARY KEY)
 
-query I
+query I nosort
 SELECT DISTINCT (SELECT v1 WHERE (5)) >= ANY(9223372036854775807) FROM v0
 ----
-
 
 statement ok
 DROP TABLE v0
@@ -390,7 +387,7 @@ CREATE TABLE v0(v1 SMALLINT PRIMARY KEY)
 statement ok
 INSERT INTO v0 VALUES ('x' IN (SELECT - SUM(18) OVER ( ) * 8 AS v2)), (-128), (34), (39)
 
-query I
+query I nosort
 SELECT * FROM v0 order by 1
 ----
 -128
@@ -408,12 +405,12 @@ CREATE TABLE v0(v1 DECIMAL NOT NULL)
 statement ok
 INSERT INTO v0 VALUES (22542428.000000), (54), (19), (0), (0), (0)
 
-query I
+query R nosort
 SELECT * FROM v0 WHERE (v1 >= 0 AND v1 <= 0) OR (51867923.000000 LIKE 'x' AND (SELECT v1 BETWEEN 47130623.000000 AND v1) LIKE 'x')
 ----
-0
-0
-0
+0.000
+0.000
+0.000
 
 statement ok
 DROP TABLE v0
@@ -454,7 +451,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0 (v2 CHAR(1), v1 REAL)
 
-query I
+query I nosort
 SELECT DISTINCT SUM(max((SELECT NULL AS v2 GROUP BY v2))) OVER (ORDER BY '013') FROM v0
 ----
 NULL

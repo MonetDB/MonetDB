@@ -223,7 +223,6 @@ URL
 2147483643
 8589934572
 
-
 -- entity integrity checks
 query ITTTT rowsort
 SELECT COUNT(*) AS duplicates, TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME
@@ -263,7 +262,6 @@ SELECT COUNT(*) AS duplicates, column_id
  GROUP BY column_id
  HAVING COUNT(*) > 1
 ----
-
 
 -- referential integrity checks
 query TTTT rowsort
@@ -326,9 +324,8 @@ SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, sequence_id
    AND (sequence_id IS NOT NULL OR IS_IDENTITY = 'YES')
 ----
 
-
 -- check ORDINAL_POSITION allowed values, should be NOT NULL and >= 1
-query TTTT rowsort
+query TTTI rowsort
 SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION
  FROM INFORMATION_SCHEMA.COLUMNS
  WHERE ORDINAL_POSITION IS NULL

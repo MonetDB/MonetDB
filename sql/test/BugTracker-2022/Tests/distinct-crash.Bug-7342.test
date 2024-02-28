@@ -27,3 +27,4 @@ SELECT d +10 as column2 FROM (SELECT d, d +10 AS column1 FROM foo ) tfoo group b
 
 statement ok
 drop table foo
+

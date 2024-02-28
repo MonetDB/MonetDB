@@ -6,3 +6,4 @@ UPDATE v0 SET v1 = ( SELECT ( v1 IN ( SELECT COUNT ( * ) WHERE v1 = 1 ) ) AS new
 
 statement ok
 DROP TABLE v0
+

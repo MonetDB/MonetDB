@@ -24,7 +24,7 @@ statement ok
 insert into testmore2 values ('1', 23, '456')
 
 query I rowsort
-select length(test1||' '||test2||' '||test3) from testmore2 
+select length(test1||' '||test2||' '||test3) from testmore2
 ----
 8
 

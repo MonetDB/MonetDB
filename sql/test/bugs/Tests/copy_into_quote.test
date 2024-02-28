@@ -15,7 +15,7 @@ CREATE TABLE test_copyinto (
   Gender                           VARCHAR(1),
   HeadOfHouseholdFlag              VARCHAR(1)
 --
-) 
+)
 
 statement ok
 copy 1 records INTO test_copyinto FROM stdin USING DELIMITERS '|',E'\n', ''

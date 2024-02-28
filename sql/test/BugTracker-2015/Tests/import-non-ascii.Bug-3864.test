@@ -16,9 +16,9 @@ query IT rowsort
 select * from varcharsize5
 ----
 1
-@@@@@
+不要让早把
 1
-@@@@@
+不要让早把
 
 statement ok
 rollback

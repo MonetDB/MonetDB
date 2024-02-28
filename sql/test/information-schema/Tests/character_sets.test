@@ -19,7 +19,6 @@ NULL
 NULL
 NULL
 
-
 -- entity integrity checks
 query ITTT rowsort
 SELECT COUNT(*) AS duplicates, CHARACTER_SET_CATALOG, CHARACTER_SET_SCHEMA, CHARACTER_SET_NAME

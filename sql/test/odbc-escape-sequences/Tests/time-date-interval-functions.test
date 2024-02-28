@@ -142,10 +142,10 @@ select { fn extract(minute from time'15:45:59') }
 ----
 45
 
-query I rowsort
+query R rowsort
 select { fn extract(second from time'15:45:59') }
 ----
-59
+59.000
 
 query I rowsort
 select { fn extract(day from timestamp'2022-01-02 15:45:59') }
@@ -182,17 +182,17 @@ select { fn extract(minute from timestamp'2022-01-02 15:45:59') }
 ----
 45
 
-query I rowsort
+query R rowsort
 select { fn extract(second from timestamp'2022-01-02 15:45:59') }
 ----
-59
+59.000
 
-query T rowsort
+query I rowsort
 select { fn hour(time'12:00:00') }
 ----
 12
 
-query T rowsort
+query I rowsort
 select { fn hour(timestamp'2022-01-02 15:45:59') }
 ----
 15
@@ -247,20 +247,20 @@ select { fn quarter(timestamp'2022-06-02 15:45:59') }
 ----
 2
 
-query I rowsort
+query R rowsort
 select { fn second(time'12:30:33') }
 ----
-33
+33.000
 
-query I rowsort
+query R rowsort
 select { fn second(timestamp'2022-01-02 15:45:59') }
 ----
-59
+59.000
 
-query I rowsort
+query R rowsort
 select { fn second(timestamp'2022-11-14 12:30:34') }
 ----
-34
+34.000
 
 query I rowsort
 select { fn week(date'2022-11-14') }
@@ -367,7 +367,6 @@ query T rowsort
 select { fn timestampadd(SQL_TSI_YEAR, 5, timestamp'2022-11-14 14:13:12') }
 ----
 2027-11-14 14:13:12
-
 
 # TIMESTAMPDIFF(interval, time_exp1, time_exp2) tests
 # Integer number of intervals of type interval by which time_exp2 is greater than time_exp1.

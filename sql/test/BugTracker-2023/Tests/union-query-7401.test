@@ -45,3 +45,4 @@ select b as a, a as b from t7401
 
 statement ok
 drop table t7401
+

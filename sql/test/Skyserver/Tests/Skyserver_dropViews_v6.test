@@ -95,16 +95,16 @@ statement ok
 DROP VIEW SpecClass
 
 statement ok
-DROP VIEW SpecLine 
+DROP VIEW SpecLine
 
 statement ok
 DROP VIEW SpecLineNames
 
 statement ok
-DROP VIEW SpecObj 
+DROP VIEW SpecObj
 
 statement ok
-DROP VIEW SpecPhoto 
+DROP VIEW SpecPhoto
 
 statement ok
 DROP VIEW SpecZStatus
@@ -122,7 +122,7 @@ statement ok
 DROP VIEW TargPhotoObj
 
 statement ok
-DROP VIEW TargPhotoPrimary 
+DROP VIEW TargPhotoPrimary
 
 statement ok
 DROP VIEW TargPhotoSecondary
@@ -149,7 +149,7 @@ statement ok
 DROP VIEW Unknown
 
 statement ok
-DROP VIEW PhotoPrimary 
+DROP VIEW PhotoPrimary
 
 statement ok
 DROP VIEW PhotoTag

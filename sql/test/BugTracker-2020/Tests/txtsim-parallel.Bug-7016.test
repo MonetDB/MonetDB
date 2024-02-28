@@ -17,15 +17,16 @@ INSERT INTO t7016(s1, s2) VALUES
 statement error 42000!SELECT: no such binary operator 'similarity'(varchar,varchar)
 select count(*) from t7016 where similarity(s1, s2)> 0.5
 
-query I
+query I nosort
 select count(*) from t7016 where difference(s1, s2)< 2
 ----
 2
 
-query I
+query I nosort
 select count(1) from t7016 where difference(s1, s2)< 2
 ----
 2
 
 statement ok
 DROP TABLE t7016
+

@@ -6,3 +6,4 @@ SELECT CAST ( ( ( SELECT NULL v1 WHERE v2 IS NULL OR ( 'www' > ANY ( v1 ) ) ) ) 
 
 statement ok
 DROP TABLE v0
+

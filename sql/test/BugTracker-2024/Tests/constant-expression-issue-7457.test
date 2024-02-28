@@ -7,24 +7,25 @@ INSERT INTO t0 (c0, c1) VALUES ('a', false)
 statement ok
 INSERT INTO t0 (c0) VALUES ('b')
 
-query TT
+query TI nosort
 SELECT * FROM t0
 ----
 a
-False
+0
 b
 NULL
 
-query T
+query I nosort
 SELECT (1 AND 3) FROM t0
 ----
-True
-True
+1
+1
 
-query TT
+query TI nosort
 SELECT * FROM t0 WHERE (1 AND 3)
 ----
 a
-False
+0
 b
 NULL
+
