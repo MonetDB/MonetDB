@@ -1,0 +1,101 @@
+statement ok
+CREATE TABLE foo(f string)
+
+statement ok
+CREATE TABLE bar(b string)
+
+-- TRIGGERS NESTED LOOP JOIN
+statement ok
+INSERT INTO foo VALUES ('JOHNLEFT'),('TRASH1'),('TRASH2'),(NULL),(NULL),('TRASH3'),('TRASH4'),('JANERIGHT'),('robertright'),('timup'),(NULL),('lexleft'),('JOELEFT'),(NULL),('TRASH5'),('TRASH6'),('TRASH7'),('TRASH8'),('TRASH9'),('TRASH10')
+
+statement ok
+INSERT INTO bar VALUES ('left'),('right'),('up')
+
+query TT
+SELECT * FROM foo,bar WHERE [foo.f] endswith [bar.b, false] order by f
+----
+lexleft
+left
+robertright
+right
+timup
+up
+
+query TT
+SELECT * FROM foo,bar WHERE [foo.f] endswith [bar.b, true] order by f
+----
+JANERIGHT
+right
+JOELEFT
+left
+JOHNLEFT
+left
+lexleft
+left
+robertright
+right
+timup
+up
+
+statement ok
+TRUNCATE TABLE foo
+
+statement ok
+TRUNCATE TABLE bar
+
+-- TRIGGERS SORT BASED JOIN
+statement ok
+INSERT INTO foo VALUES ('Καλή'),('srauschenFrühling'),('Monokel Das grüne'),('Χρονιά Καλή'),('bom dia, Olá'),('Risør'),('Wenn der Ölhahn versiegt'),('Punch-Out!! WITH LYRICS'),('Super Mario Bros. 3 WITH LYRICS'),('καταλαβαίνω Δεν'),('boa tarde, Adeus')
+
+statement ok
+INSERT INTO bar VALUES ('Δεν'),('Frühling'),(NULL),('Καλή'),('kαλή'),(NULL),('olá'),('Das grüne'),('WITH LYRICS'),('adeus'),('früh'),('sør')
+
+query TT
+SELECT * FROM foo,bar WHERE [foo.f] endswith [bar.b, false] ORDER BY f
+----
+Monokel Das gr@ne
+Das gr@ne
+Punch-Out!! WITH LYRICS
+WITH LYRICS
+Ris@r
+s@r
+Super Mario Bros. 3 WITH LYRICS
+WITH LYRICS
+srauschenFr@hling
+Fr@hling
+@@@@
+@@@@
+@@@@@@ @@@@
+@@@@
+@@@@@@@@@@@ @@@
+@@@
+
+query TT
+SELECT * FROM foo,bar WHERE [foo.f] endswith [bar.b, true] ORDER BY f
+----
+Monokel Das gr@ne
+Das gr@ne
+Punch-Out!! WITH LYRICS
+WITH LYRICS
+Ris@r
+s@r
+Super Mario Bros. 3 WITH LYRICS
+WITH LYRICS
+boa tarde, Adeus
+adeus
+bom dia, Ol@
+ol@
+srauschenFr@hling
+Fr@hling
+@@@@
+@@@@
+@@@@@@ @@@@
+@@@@
+@@@@@@@@@@@ @@@
+@@@
+
+statement ok
+drop table foo
+
+statement ok
+drop table bar
