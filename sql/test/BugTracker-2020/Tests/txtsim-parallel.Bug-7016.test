@@ -1,0 +1,31 @@
+statement ok
+CREATE TABLE t7016(s1 VARCHAR(500), s2 VARCHAR(500))
+
+statement ok
+INSERT INTO t7016(s1, s2) VALUES
+('Virg','Minn'),
+('Texa','New '),
+('Utah','Ariz'),
+('Wash','Minn'),
+('Cali','Neva'),
+('Miss','Geor'),
+('Neva','Nich'),
+('Cali','Minn'),
+('Utah','Cali'),
+('Mass','Mich')
+
+statement error 42000!SELECT: no such binary operator 'similarity'(varchar,varchar)
+select count(*) from t7016 where similarity(s1, s2)> 0.5
+
+query I
+select count(*) from t7016 where difference(s1, s2)< 2
+----
+2
+
+query I
+select count(1) from t7016 where difference(s1, s2)< 2
+----
+2
+
+statement ok
+DROP TABLE t7016
