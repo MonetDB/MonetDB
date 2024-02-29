@@ -2093,7 +2093,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
     if reason:
         pass
     elif MissingTests:
-        reason = "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests))
+        reason = "as required test%s '%s' failed." % ('s' if len(MissingTests) != 1 else '', "', '".join(MissingTests))
         elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
         reason = "as %s is not available." % env['SQLCLIENT'].split(None, 1)[0]
@@ -3838,7 +3838,7 @@ def main(argv) :
 
         exe = {}
         exe['mserver5']       = CheckExec('mserver5')     , 'mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
-                                                               (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, not nomito and '--forcemito' or '')
+                                                               (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, '--forcemito' if not nomito else '')
         exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], '${PORT}')
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}')
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}')
