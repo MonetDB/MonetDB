@@ -18,3 +18,4 @@ DROP TABLE rmt_tbl
 
 statement ok
 DROP TABLE rmt_test
+

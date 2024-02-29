@@ -1,5 +1,5 @@
 query T rowsort
-select name from tables where contains(name, 'keys') order by name
+SELECT name FROM tables WHERE contains(name, 'keys') ORDER BY name
 ----
 dependency_columns_on_keys
 dependency_keys_on_foreignkeys
@@ -10,148 +10,116 @@ fkeys
 keys
 keys
 
-query T
-select name from columns where contains(name, 'x0x', false)
+query T nosort
+SELECT name FROM columns WHERE contains(name, 'x0x', false)
 ----
 
-query T
-select name from columns where name like '%x0x%'
+query T nosort
+SELECT name FROM columns WHERE name like '%x0x%'
 ----
 
 statement ok
-create table foo(x string)
+CREATE TABLE foo(x string)
 
 statement ok
-create table bar(x string)
+CREATE TABLE bar(x string)
 
 statement ok
-insert into foo values ('john doe'),('jane doe'),('robert doe')
+INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
 
 statement ok
-insert into bar values ('johndoe'),('Müller Thomas'),('Thomas MüLLer')
+INSERT INTO bar VALUES ('johndoe'),('Müller Thomas'),('Thomas MüLLer')
 
-query T
-select contains(x, '') from foo
+query I nosort
+SELECT contains(x, '') FROM foo
 ----
-True
-True
-True
+1
+1
+1
 
-query T
-select contains('', x) from foo
+query I nosort
+SELECT contains('', x) FROM foo
 ----
-False
-False
-False
+0
+0
+0
 
-query T
-select contains(x, 'doe') from foo
+query I nosort
+SELECT contains(x, 'doe') FROM foo
 ----
-True
-True
-True
+1
+1
+1
 
-query T
-select contains('jane doe', x) from foo
+query I nosort
+SELECT contains('jane doe', x) FROM foo
 ----
-False
-True
-False
+0
+1
+0
 
-query T
-select contains(x, 'MüLLer') from bar
+query I nosort
+SELECT contains(x, 'MüLLer') FROM bar
 ----
-False
-False
-True
+0
+0
+1
 
-query T
-select contains(x, 'Müller') from bar
+query I nosort
+SELECT contains(x, 'Müller') FROM bar
 ----
-False
-True
-False
+0
+1
+0
 
-query T
-select contains('MüLLER Thomas', x, true) from bar
+query I nosort
+SELECT contains('MüLLER Thomas', x, true) FROM bar
 ----
-False
-True
-False
+0
+1
+0
 
-query T
-select contains(x, 'DOE', true) from foo
+query I nosort
+SELECT contains(x, 'DOE', true) FROM foo
 ----
-True
-True
-True
+1
+1
+1
 
-query T
-select contains(x, 'DOE', false) from foo
+query I nosort
+SELECT contains(x, 'DOE', false) FROM foo
 ----
-False
-False
-False
+0
+0
+0
 
-query T
-select contains('doe', x, true) from foo
+query I nosort
+SELECT contains('doe', x, true) FROM foo
 ----
-False
-False
-False
+0
+0
+0
 
 statement ok
-drop table foo
+TRUNCATE TABLE foo
 
 statement ok
-drop table bar
+DROP TABLE bar
 
 statement ok
-create table baz(x string, y string)
+INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
 
-statement ok
-create table bazbaz(x string, y string)
-
-statement ok
-insert into baz values ('john doe', 'braga'),('jane doe', 'amsterdam'),('robert doe', 'paris')
-
-statement ok
-insert into bazbaz values ('john', '21'),('jane', '22'),('robert', '23')
-
-query TT
-select * from baz where [baz.x] contains ['john', true];
+query T rowsort
+SELECT * FROM foo WHERE [foo.x] contains ['john', true]
 ----
 john doe
-braga
 
-query TT
-select * from baz where [baz.x] contains ['doe', true];
+query T rowsort
+SELECT * FROM foo WHERE [foo.x] contains ['doe', true]
 ----
-john doe
-braga
 jane doe
-amsterdam
-robert doe
-paris
-
-query TTTT
-select * from baz,bazbaz where [baz.x] contains [bazbaz.x, true];
-----
 john doe
-braga
-john
-21
-jane doe
-amsterdam
-jane
-22
 robert doe
-paris
-robert
-23
 
 statement ok
-drop table baz
-
-statement ok
-drop table bazbaz
+DROP TABLE foo

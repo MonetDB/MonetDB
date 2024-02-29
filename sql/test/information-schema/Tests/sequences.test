@@ -103,7 +103,6 @@ SELECT COUNT(*) AS duplicates, sequence_id
  HAVING COUNT(*) > 1
 ----
 
-
 -- referential integrity checks
 query TTT rowsort
 SELECT SEQUENCE_CATALOG, SEQUENCE_SCHEMA, SEQUENCE_NAME
@@ -142,7 +141,6 @@ SELECT SEQUENCE_SCHEMA, SEQUENCE_NAME, sequence_id
  WHERE (sequence_id) NOT IN (SELECT id FROM sys.sequences)
 ----
 
-
 -- check CYCLE_OPTION allowed values
 query TTT rowsort
 SELECT SEQUENCE_SCHEMA, SEQUENCE_NAME, CYCLE_OPTION
@@ -150,6 +148,6 @@ SELECT SEQUENCE_SCHEMA, SEQUENCE_NAME, CYCLE_OPTION
  WHERE (CYCLE_OPTION) NOT IN ('NO', 'YES')
 ----
 
-
 statement ok
 DROP sequence "information_schema sequences.test"
+

@@ -354,10 +354,17 @@ class SQLLogic:
                                     nval.append(c)
                             else:
                                 for c in str(row[i]):
-                                    if ' ' <= c <= '~':
-                                        nval.append(c)
-                                    else:
+# sqllogictest original:
+                                    # if ' ' <= c <= '~':
+                                    #     nval.append(c)
+                                    # else:
+                                    #     nval.append('@')
+# our variant, don't map printables:
+                                    if c < ' ' or '\u007f' <= c <= '\u009f':
+                                        # control characters
                                         nval.append('@')
+                                    else:
+                                        nval.append(c)
                             nrow.append(''.join(nval))
                     elif columns[i] == 'R':
                         nrow.append('%.3f' % row[i])
@@ -465,7 +472,7 @@ class SQLLogic:
                         self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
                         err = True
                     i += 1
-                m.update(bytes(col, encoding='ascii'))
+                m.update(bytes(col, encoding='utf-8'))
                 m.update(b'\n')
                 result.append(col)
             if err:
@@ -479,7 +486,7 @@ class SQLLogic:
                         ndata.append(col)
                 ndata.sort()
                 for col in ndata:
-                    resm.update(bytes(col, encoding='ascii'))
+                    resm.update(bytes(col, encoding='utf-8'))
                     resm.update(b'\n')
                     result.append(col)
         elif sorting == 'python':
@@ -533,7 +540,7 @@ class SQLLogic:
                             self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
                             err = True
                         i += 1
-                    m.update(bytes(col, encoding='ascii'))
+                    m.update(bytes(col, encoding='utf-8'))
                     m.update(b'\n')
                     result.append(col)
             if err:
@@ -543,7 +550,7 @@ class SQLLogic:
                 result = []
                 for row in resdata:
                     for col in row:
-                        resm.update(bytes(col, encoding='ascii'))
+                        resm.update(bytes(col, encoding='utf-8'))
                         resm.update(b'\n')
                         result.append(col)
         else:
@@ -559,7 +566,7 @@ class SQLLogic:
                             #self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
                             err = True
                         i += 1
-                    m.update(bytes(col, encoding='ascii'))
+                    m.update(bytes(col, encoding='utf-8'))
                     m.update(b'\n')
                     result.append(col)
             if err:
@@ -576,7 +583,7 @@ class SQLLogic:
                 result = []
                 for row in resdata:
                     for col in row:
-                        resm.update(bytes(col, encoding='ascii'))
+                        resm.update(bytes(col, encoding='utf-8'))
                         resm.update(b'\n')
                         result.append(col)
         if err:
@@ -646,8 +653,12 @@ class SQLLogic:
             self.lines.append((origline, line))
         return line
 
-    def writeline(self, line='', replace=False):
+    def writeline(self, line=None, replace=False):
         if self.approve:
+            if line is None:
+                line = ''
+            elif line == '':
+                return
             if not line and self.__last == '':
                 return
             self.__last = line

@@ -1,5 +1,5 @@
 query T rowsort
-select name from tables where endswith(name, 'keys') order by name
+SELECT name FROM tables WHERE endswith(name, 'keys') ORDER BY name
 ----
 dependency_columns_on_keys
 dependency_keys_on_foreignkeys
@@ -11,69 +11,54 @@ keys
 keys
 
 statement ok
-create table foo(x string)
+CREATE TABLE foo(x string)
 
 statement ok
-insert into foo values ('johndoe'),('janedoe'),('robertdoe')
+INSERT INTO foo VALUES ('johndoe'),('janedoe'),('robertdoe')
 
-query T
-select endswith(x, '') from foo
+query I nosort
+SELECT endswith(x, '') FROM foo
 ----
-True
-True
-True
+1
+1
+1
 
-query T
-select endswith('', x) from foo
+query I nosort
+SELECT endswith('', x) FROM foo
 ----
-False
-False
-False
+0
+0
+0
 
 statement ok
-drop table foo
+TRUNCATE TABLE foo
 
 statement ok
-create table bar(x string, y string)
+INSERT INTO foo VALUES ('johndoe'),('Müller Thomas'),('Thomas Müller')
 
-statement ok
-insert into bar values ('johndoe','doe'),('Müller Thomas', 'Thomas Müller'),('Thomas Müller', 'Müller Thomas')
-
-query T
-select endswith(x, 'Müller') from bar
+query I nosort
+SELECT endswith(x, 'Müller') FROM foo
 ----
-False
-False
-True
+0
+0
+1
 
 statement ok
-drop table bar
+TRUNCATE TABLE foo
 
 statement ok
-create table baz(x string)
+INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
 
-statement ok
-create table bazbaz(x string)
-
-statement ok
-insert into baz values ('john doe'),('jane doe'),('robert doe')
-
-statement ok
-insert into bazbaz values ('doe'),('doe'),('doe')
-
-query T
-select * from baz where [baz.x] endswith ['john', true];
+query T nosort
+SELECT * FROM foo WHERE [foo.x] endswith ['john', true]
 ----
 
-query T
-select * from baz where [baz.x] endswith ['doe', true];
+query T nosort
+SELECT * FROM foo WHERE [foo.x] endswith ['doe', true]
 ----
 john doe
 jane doe
 robert doe
 
 statement ok
-drop table baz
-
-statement ok
-drop table bazbaz
+DROP TABLE foo

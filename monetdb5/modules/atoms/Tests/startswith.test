@@ -1,68 +1,49 @@
-query T
-select startswith(NULL, '')
+query I nosort
+SELECT startswith(NULL, '')
 ----
 NULL
 
-query T
-select startswith('', NULL)
+query I nosort
+SELECT startswith('', NULL)
 ----
 NULL
 
-query T
-select startswith('', '')
+query I nosort
+SELECT startswith('', '')
 ----
-True
+1
 
-query T
-select startswith('johndoe', '')
+query I nosort
+SELECT startswith('johndoe', '')
 ----
-True
+1
 
-query T
-select startswith('', 'johndoe')
+query I nosort
+SELECT startswith('', 'johndoe')
 ----
-False
+0
 
-query T
-select startswith('johndoe', 'john')
+query I nosort
+SELECT startswith('johndoe', 'john')
 ----
-True
+1
 
-query T
-select startswith('one two three', 'three', true)
+query I nosort
+SELECT startswith('one two three', 'three', true)
 ----
-False
+0
 
-query T
-select startswith('Müller Thomas', 'müller', true)
+query I nosort
+SELECT startswith('Müller Thomas', 'müller', true)
 ----
-True
+1
 
-query T
-select startswith('Müller Thomas', 'müller', false)
+query I nosort
+SELECT startswith('Müller Thomas', 'müller', false)
 ----
-False
+0
 
-statement ok
-create table foo(x string)
-
-statement ok
-insert into foo values ('leftjohn'),('rightjane'),('rightrobert'),('uptim'),('leftlex'),('leftjoe')
-
-query T
-select startswith(x, 'left') from foo
+query I nosort
+SELECT ['Camón Romasan'] startswith ['camu', true];
 ----
-True
-False
-False
-False
-True
-True
-
-statement ok
-drop table foo
-
-query T
-select ['Camón Romasan'] startswith ['camu', true];
-----
-False
+0

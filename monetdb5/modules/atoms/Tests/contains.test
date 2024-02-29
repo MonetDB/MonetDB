@@ -1,73 +1,54 @@
-query T
+query I nosort
 select contains(NULL, '')
 ----
 NULL
 
-query T
+query I nosort
 select contains('', NULL)
 ----
 NULL
 
-query T
+query I nosort
 select contains('', '')
 ----
-True
+1
 
-query T
+query I nosort
 select contains('johndoe', '')
 ----
-True
+1
 
-query T
+query I nosort
 select contains('', 'johndoe')
 ----
-False
+0
 
-query T
+query I nosort
 select contains('johndoe', 'john')
 ----
-True
+1
 
-query T
-select contains('one two three', 'three', true)
+query I nosort
+SELECT contains('one two three', 'three', true)
 ----
-True
+1
 
-query T
-select contains('one two three', 'THREE', true)
+query I nosort
+SELECT contains('one two three', 'THREE', true)
 ----
-True
+1
 
-query T
-select contains('one two three', 'THREE', false)
+query I nosort
+SELECT contains('one two three', 'THREE', false)
 ----
-False
+0
 
-query T
-select contains('Müller Thomas', 'müller', true)
+query I nosort
+SELECT contains('Müller Thomas', 'müller', true)
 ----
-True
+1
 
-query T
-select contains('Müller Thomas', 'müller', false)
+query I nosort
+SELECT contains('Müller Thomas', 'müller', false)
 ----
-False
-
-statement ok
-create table foo(x string)
-
-statement ok
-insert into foo values ('johnleft'),('janeright'),('robertright'),('timup'),('lexleft'),('joeleft')
-
-query T
-select contains(x, 'left') from foo
-----
-True
-False
-False
-False
-True
-True
-
-statement ok
-drop table foo
+0

@@ -13,19 +13,19 @@ CREATE UNIQUE INDEX i0 ON t0(c1 , c0 )
 statement ok
 INSERT INTO t0 (c0, c1) VALUES (true, 0)
 
-query III
+query III nosort
 SELECT t0.c0, t0.c1, t1.c1 FROM t1 INNER JOIN t0 ON t0.c0
 ----
 1
 0
 0
 
-query I
+query I nosort
 SELECT (t0.c1) IS NOT NULL FROM t1 INNER  JOIN t0 ON t0.c0
 ----
 1
 
-query III
+query III nosort
 SELECT t0.c0, t0.c1, t1.c1 FROM t1 INNER  JOIN t0 ON t0.c0 WHERE (t0.c1) IS NOT NULL
 ----
 1
@@ -57,19 +57,19 @@ CREATE UNIQUE INDEX i0 ON t0(c1 , c0 )
 statement ok
 INSERT INTO t0 (c0, c1) VALUES (true, 0)
 
-query III
+query III nosort
 SELECT t0.c0, t0.c1, t1.c1 FROM t1 INNER JOIN t0 ON t0.c0
 ----
 1
 0
 0
 
-query I
+query I nosort
 SELECT (t0.c1) IS NOT NULL FROM t1 INNER  JOIN t0 ON t0.c0
 ----
 1
 
-query III
+query III nosort
 SELECT t0.c0, t0.c1, t1.c1 FROM t1 INNER  JOIN t0 ON t0.c0 WHERE (t0.c1) IS NOT NULL
 ----
 1
@@ -78,3 +78,4 @@ SELECT t0.c0, t0.c1, t1.c1 FROM t1 INNER  JOIN t0 ON t0.c0 WHERE (t0.c1) IS NOT 
 
 statement ok
 rollback
+

@@ -9,3 +9,4 @@ SELECT DISTINCT * FROM v0 AS cor0 WHERE (2) IN (v1 / - v1, v1)
 
 statement ok
 DROP TABLE v0
+

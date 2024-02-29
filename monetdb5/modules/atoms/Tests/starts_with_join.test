@@ -11,8 +11,8 @@ INSERT INTO foo VALUES ('LEFTJOHN'),('TRASH1'),('TRASH2'),(NULL),(NULL),('TRASH3
 statement ok
 INSERT INTO bar VALUES ('left'),('right'),('up')
 
-query TT
-SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, false] order by f
+query TT rowsort
+SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, false]
 ----
 leftlex
 left
@@ -21,8 +21,8 @@ right
 uptim
 up
 
-query TT
-SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, true] order by f
+query TT rowsort
+SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, true]
 ----
 LEFTJOE
 left
@@ -50,47 +50,47 @@ INSERT INTO foo VALUES ('Καλή'),('Frühlingsrauschen'),('Das grüne Monokel'
 statement ok
 INSERT INTO bar VALUES ('Δεν'),('Frühling'),(NULL),('Καλή'),('kαλή'),(NULL),('Olá'),('Das grüne'),('Punch-Out!!'),('Adeus'),('früh')
 
-query TT
-SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b] ORDER BY f
+query TT rowsort
+SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b]
 ----
 Adeus, boa tarde
 Adeus
-Das gr@ne Monokel
-Das gr@ne
-Fr@hlingsrauschen
-Fr@hling
-Ol@, bom dia
-Ol@
+Das grüne Monokel
+Das grüne
+Frühlingsrauschen
+Frühling
+Olá, bom dia
+Olá
 Punch-Out!! WITH LYRICS
 Punch-Out!!
-@@@ @@@@@@@@@@@
-@@@
-@@@@
-@@@@
-@@@@ @@@@@@
-@@@@
+Δεν καταλαβαίνω
+Δεν
+Καλή
+Καλή
+Καλή Χρονιά
+Καλή
 
-query TT
-SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, true] ORDER BY f
+query TT rowsort
+SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, true]
 ----
 Adeus, boa tarde
 Adeus
-Das gr@ne Monokel
-Das gr@ne
-Fr@hlingsrauschen
-Fr@hling
-Fr@hlingsrauschen
-fr@h
-Ol@, bom dia
-Ol@
+Das grüne Monokel
+Das grüne
+Frühlingsrauschen
+Frühling
+Frühlingsrauschen
+früh
+Olá, bom dia
+Olá
 Punch-Out!! WITH LYRICS
 Punch-Out!!
-@@@ @@@@@@@@@@@
-@@@
-@@@@
-@@@@
-@@@@ @@@@@@
-@@@@
+Δεν καταλαβαίνω
+Δεν
+Καλή
+Καλή
+Καλή Χρονιά
+Καλή
 
 statement ok
 drop table foo

@@ -52,7 +52,7 @@ NULL
 query T rowsort
 select reverse(E'8 \\rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}')
 ----
-}*4nR<!@s5j4@YMe1pb[@rcr\ 8
+}*4nR<!뮯s5j4쫺YMe1pb[੧rcr\ 8
 
 query I rowsort
 select true in (1 in (1))

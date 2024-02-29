@@ -7,7 +7,7 @@ insert into testola values ('blue', 12)
 statement ok
 insert into testola values ('red', 2)
 
-query TTI rowsort
+query TII rowsort
 select color, null as something, cast( sum(count) as bigint) from testola group by color
 ----
 blue

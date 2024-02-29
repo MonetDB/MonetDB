@@ -24,7 +24,7 @@ language PYTHON_MAP
 
 query I rowsort
 SELECT pyapi25(i) FROM pyapi25table
------
+----
 12
 3
 6
@@ -35,7 +35,7 @@ UPDATE pyapi25multiplication SET i=10
 
 query I rowsort
 SELECT pyapi25(i) FROM pyapi25table
------
+----
 10
 20
 30
@@ -83,7 +83,7 @@ language PYTHON_MAP
 
 query I rowsort
 SELECT * FROM mytable
------
+----
 1
 2
 3
@@ -91,7 +91,7 @@ SELECT * FROM mytable
 
 query I rowsort
 SELECT pyapi25map(i) FROM pyapi25table
------
+----
 1
 2
 3
@@ -99,7 +99,7 @@ SELECT pyapi25map(i) FROM pyapi25table
 
 query I rowsort
 SELECT * FROM mytable
------
+----
 10
 20
 30

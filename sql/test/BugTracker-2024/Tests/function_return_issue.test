@@ -8,7 +8,8 @@ begin
         end if;
 end
 
-query I
-select id from do_test(true);
+query I nosort
+select id from do_test(true)
 ----
 1
+

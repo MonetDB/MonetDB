@@ -126,12 +126,11 @@ SELECT TABLE_SCHEMA, TABLE_NAME, table_id
 ----
 
 -- check table_type_id reference
-query TTT rowsort
+query TTI rowsort
 SELECT TABLE_SCHEMA, TABLE_NAME, table_type_id
  FROM INFORMATION_SCHEMA.VIEWS
  WHERE (table_type_id) NOT IN (SELECT table_type_id FROM sys.table_types)
 ----
-
 
 -- check IS_UPDATABLE allowed values
 query TTT rowsort

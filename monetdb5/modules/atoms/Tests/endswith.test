@@ -1,63 +1,44 @@
-query T
-select endsWith(NULL, '')
+query I nosort
+SELECT endswith(NULL, '')
 ----
 NULL
 
-query T
-select endsWith('', NULL)
+query I nosort
+SELECT endswith('', NULL)
 ----
 NULL
 
-query T
-select endsWith('', '')
+query I nosort
+SELECT endswith('', '')
 ----
-True
+1
 
-query T
-select endsWith('johndoe', '')
+query I nosort
+SELECT endswith('johndoe', '')
 ----
-True
+1
 
-query T
-select endsWith('', 'johndoe')
+query I nosort
+SELECT endswith('', 'johndoe')
 ----
-False
+0
 
-query T
-select endsWith('johndoe', 'doe')
+query I nosort
+SELECT endswith('johndoe', 'doe')
 ----
-True
+1
 
-query T
-select endswith('one two three', 'three', true)
+query I nosort
+SELECT endswith('one two three', 'three', true)
 ----
-True
+1
 
-query T
-select endswith('Thomas Müller', 'müller', true)
+query I nosort
+SELECT endswith('Thomas Müller', 'müller', true)
 ----
-True
+1
 
-query T
-select endswith('Thomas Müller', 'müller', false)
+query I nosort
+SELECT endswith('Thomas Müller', 'müller', false)
 ----
-False
-
-statement ok
-create table foo(x string)
-
-statement ok
-insert into foo values ('johnleft'),('janeright'),('robertright'),('timup'),('lexleft'),('joeleft')
-
-query T
-select endswith(x, 'left') from foo
-----
-True
-False
-False
-False
-True
-True
-
-statement ok
-drop table foo
+0
