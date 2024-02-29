@@ -1926,18 +1926,11 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
             ('.py',           '.py',     'python', ''),
             ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
             ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-            ('.malC',         '.malC',   'mal',    'MAL'),
-            ('_s00.malC',     '.malC',   'malXs',  'MAL'),
-            ('_p00.malC',     '.malC',   'malXp',  'MAL'),
             ('.sql',          '.sql',    'sql',    'SQL'),
-            ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
-            ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
             ('.R',            '.R',      'R',      'SQL'),
             ('.rb',           '.rb',     'ruby',   'SQL'),
             #TODO:
             # ('.java',         '.java',   'Java',   'SQL'),
-            # ('_s00.java',     '.java',   'JavaXs', 'SQL'),
-            # ('_p00.java',     '.java',   'JavaXp', 'SQL'),
             # ('.odmg',         '.odmg',   'odmg',   'SQL'),
         )
         for tst, ext, cll, srv in tests:
@@ -1950,11 +1943,11 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
                 break
         else:
             if os.name == "nt":
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|malC|sql)`"
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|sql)`"
             #TODO:
             #elif os.name == "posix":
             else:
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.malC|.sql|.R|.rb]`"
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.R|.rb]`"
             if verbosity > 1:
                 print('%s%s  ' %
                       (prompt(), os.path.join(env['TSTDIR'], TST + EXT)), end='')
@@ -2102,9 +2095,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
     elif MissingTests:
         reason = "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests))
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif EXT == ".malC" and  not env['exe']['MAL_Client'][0]:
-        reason = "as %s is not available." % env['MALCLIENT'].split(None, 1)[0]
-        elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
         reason = "as %s is not available." % env['SQLCLIENT'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
@@ -2122,12 +2112,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
         #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.", length)
     elif MissingMods:
         reason = "as modules '%s` are missing." % str(MissingMods)
-        elem = SkipTest(env, TST, EXT, reason, length)
-    elif CALL == "malXp":
-        reason = "as multiple MAL clients in parallel are currently not supported by %s." % THISFILE
-        elem = SkipTest(env, TST, EXT, reason, length)
-    elif CALL == "sqlXp":
-        reason = "as multiple SQL clients in parallel are currently not supported by %s." % THISFILE
         elem = SkipTest(env, TST, EXT, reason, length)
     else:
         test = re.compile("^"+TST+r"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
@@ -2900,27 +2884,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 pass
                 cmd = [sys.executable, TST + EXT, TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
-            elif CALL in ["mal", "malXs"]:
-                TSTs = []
-                if CALL == "mal":
-                    X=""
-                else:
-                    X="_s[0-9][0-9]"
-                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = listdir(os.getcwd())
-                d.sort()
-                for f in d:
-                    if test.match(f):
-                        TSTs.append(f)
-
-                if CALL.startswith("mal"):
-                    Clnt = splitcommand(exe['MAL_Client'][1])
-                else:
-                    Clnt = []   # cannot happen
-                for f in TSTs:
-                    returncode = RunIt(Clnt, True, openutf8(f), ClntOut, ClntErr, TIMEOUT)
-                    if returncode:
-                        break
             elif CALL == "sqltest" or CALL == "maltest":
                 issqllogictest = True
                 import MonetDBtesting.sqllogictest as sqllogictest
@@ -2971,13 +2934,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                             # something went wrong, we don't know what
                             # print a stack trace and continue
                             sys.excepthook(*sys.exc_info())
-            elif CALL in ["sql", "sqlXs"]:
+            elif CALL == "sql":
                 TSTs = []
-                if CALL == "sql":
-                    X=""
-                else:
-                    X="_s[0-9][0-9]"
-                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+                test = re.compile("^"+TST+EXT+"$", re.MULTILINE)
                 d = listdir(os.getcwd())
                 d.sort()
                 for f in d:
@@ -3904,10 +3863,8 @@ def main(argv) :
                 args = [head]
                 if tail != 'All':
                     CONDITIONALS['KNOWNFAIL'] = True
-                    for ext in ('.test', '.maltest', '_s00.malC',
-                                '_p00.malC', '_s00.sql', '_p00.sql',
-                                '.MAL.py', '.SQL.py', '.malC', '.sql',
-                                '.py', '.R', '.rb', ''):
+                    for ext in ('.test', '.maltest', 'MAL.py', '.SQL.py',
+                                '.sql', '.py', '.R', '.rb', ''):
                         # extentions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
                             args.append(tail[:-len(ext + '.in')])
