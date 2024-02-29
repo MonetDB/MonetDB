@@ -2283,7 +2283,7 @@ error:
 static mel_func pp_hash_init_funcs[] = {
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("sink",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("sink",1),argany("tt",1),arg("size",int), batargany("p",2))),
- pattern("hash", "new_payload", UHASHnew_payload, false, "", args(1,5, batargany("sink",1),argany("tt",1),arg("nr_slots",lng),arg("nr_payloads",lng),batargany("parent",2))),
+ pattern("hash", "new_payload", UHASHnew_payload, false, "", args(1,6, batargany("sink",1),argany("tt",1),arg("nr_slots",lng),arg("nr_payloads",lng),batargany("parent",2), batargany("dummy",3))),
 
  command("hash", "build_table", UHASHbuild_table, false, "Build a hash table for the given column. Returns the slot ID for each key and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
  command("hash", "build_combined_table", UHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),

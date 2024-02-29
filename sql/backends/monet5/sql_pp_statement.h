@@ -12,7 +12,7 @@
 #define _SQL_PP_STATEMENT_H_
 
 extern InstrPtr stmt_hash_new(backend *be, int tt, lng estimate, int parent);
-extern InstrPtr stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent);
+extern InstrPtr stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent, int previous);
 extern InstrPtr stmt_hash_build_table(backend *be, int ht_sink, int key, stmt *pp);
 extern InstrPtr stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_sltid, int prnt_ht, stmt *pp);
 extern stmt *stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int prnt_slts, int prnt_ht, stmt *pp);

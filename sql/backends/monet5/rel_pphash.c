@@ -40,19 +40,21 @@ rel2bin_pphash_prepare(backend *be, BUN est, list *exps_ht, list *exps_hp)
 		InstrPtr q = stmt_hash_new(be, t->type->localtype, est, curhash);
 		if (q == NULL) return NULL;
 		q->inout = 0;
-		curhash = getArg(q,0);
+		curhash = getArg(q, 0);
 		append(HTs, q);
 	}
 
 	/* the payload columns */
+	int previous = 0;
 	for (node *n = exps_hp->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 
 		// TODO better and separate est. for nr_slots and pld_size
-		InstrPtr q = stmt_hash_new_payload(be, t->type->localtype, est, est, curhash);
+		InstrPtr q = stmt_hash_new_payload(be, t->type->localtype, est, est, curhash, previous);
 		if (q == NULL) return NULL;
 		q->inout = 0;
 		append(HPs, q);
+		previous = getArg(q, 0);
 	}
 	append(PHres, HTs);
 	append(PHres, HPs);

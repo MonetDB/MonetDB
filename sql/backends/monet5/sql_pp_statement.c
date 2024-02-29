@@ -421,8 +421,9 @@ stmt_hash_new(backend *be, int tt, lng estimate, int parent)
  *   X_9:bat[:int] := hash.new_payload(nil:int, 42:int, 42:int, X_6:bat[:int]);
  */
 InstrPtr
-stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent)
+stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent, int previous)
 {
+	// TODO previous is just a dummy parameter to work around the commomTerms optimiser
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), new_payloadRef, 5);
 	if (q == NULL) return NULL;
 
@@ -431,6 +432,10 @@ stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int paren
 	q = pushLng(be->mb, q, nr_slots);
 	q = pushLng(be->mb, q, pld_size);
 	q = pushArgument(be->mb, q, parent);
+	if (!previous)
+		q = pushArgument(be->mb, q, parent);
+	else
+		q = pushArgument(be->mb, q, previous);
 	pushInstruction(be->mb, q);
 	return q;
 }
