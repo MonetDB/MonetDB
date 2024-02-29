@@ -1219,6 +1219,13 @@ set_dependent_( sql_rel *r)
 		set_dependent(r);
 }
 
+static
+sql_rel* find_union(visitor *v, sql_rel *rel) {
+	if (rel->op == op_union)
+		v->data = rel;
+	return rel;
+}
+
 static sql_exp *
 rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 {
@@ -1447,6 +1454,12 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 							if (strcmp(gbe->alias.name, pkc->base.name) == 0 && strcmp(exp->alias.name, ukc->base.name) == 0)
 								check_pk_with_uk = true;
 						}
+					}
+					if (check_pk_with_uk) {
+						visitor v = {.sql=sql};
+						rel_visitor_topdown(&v, inner, &find_union);
+						if (v.data)
+							check_pk_with_uk = false;
 					}
 				}
 
