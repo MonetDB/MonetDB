@@ -391,7 +391,7 @@ CONDITIONALS = {
     'SANITIZER'            : "@SANITIZER_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
-    'KNOWNFAIL'            : False, # skip on release branch when not in testweb
+    'KNOWNFAIL'            : False, # normally skip, but --alltests or explicit
     'HAVE_MONETDBJDBC_JAR' : False,
     'HAVE_JDBCCLIENT_JAR'  : False,
     'HAVE_JDBCTESTS_JAR'   : False,
@@ -2885,7 +2885,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                         port=int(pSrvr.port),
                                         database=TSTDB,
                                         language='sql',
-                                        timeout=TIMEOUT)
+                                        timeout=TIMEOUT,
+                                        alltests=CONDITIONALS['KNOWNFAIL'])
                         except KeyboardInterrupt:
                             raise
                         except:
@@ -2935,7 +2936,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                     port=int(pSrvr.port),
                                     database=TSTDB,
                                     language=lang,
-                                    timeout=TIMEOUT)
+                                    timeout=TIMEOUT,
+                                    alltests=CONDITIONALS['KNOWNFAIL'])
                     except KeyboardInterrupt:
                         raise
                     except:
@@ -3524,8 +3526,8 @@ def main(argv) :
     nomito = opts.nomito
     global restart
     restart = opts.restart
-    if int(MonetDB_VERSION[1])%2 == 0 or opts.alltests:
-        CONDITIONALS['KNOWNFAIL'] = 'execute'
+    if opts.alltests:
+        CONDITIONALS['KNOWNFAIL'] = True
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
     env['GDK_NR_THREADS'] = str(opts.nr_threads)
@@ -3901,10 +3903,11 @@ def main(argv) :
                     ErrXit("%s: not a valid test name" % args[0])
                 args = [head]
                 if tail != 'All':
-                    CONDITIONALS['KNOWNFAIL'] = 'execute'
-                    for ext in ('_s00.malC', '_p00.malC', '_s00.sql',
-                                '_p00.sql', '.MAL.py', '.SQL.py', '.malC',
-                                '.sql', '.py', '.R', ''):
+                    CONDITIONALS['KNOWNFAIL'] = True
+                    for ext in ('.test', '.maltest', '_s00.malC',
+                                '_p00.malC', '_s00.sql', '_p00.sql',
+                                '.MAL.py', '.SQL.py', '.malC', '.sql',
+                                '.py', '.R', '.rb', ''):
                         # extentions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
                             args.append(tail[:-len(ext + '.in')])
@@ -3918,11 +3921,11 @@ def main(argv) :
                     else:
                         ErrXit("%s: not a valid test name" % args[0])
             elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
-                CONDITIONALS['KNOWNFAIL'] = 'execute'
+                CONDITIONALS['KNOWNFAIL'] = True
                 args = [head, tail]
 
-        if   len(args) == 1:
-            if   os.path.isdir(args[0]):
+        if len(args) == 1:
+            if os.path.isdir(args[0]):
                 d = os.path.realpath(args[0])
                 if startswithpath(d + os.sep, TSTSRCBASE + os.sep):
                     dirlist.append(d)
@@ -3934,7 +3937,7 @@ def main(argv) :
             elif args[0] != "All":
                 #TODO:
                 # check, whether args[0] in All
-                CONDITIONALS['KNOWNFAIL'] = 'execute'
+                CONDITIONALS['KNOWNFAIL'] = True
                 testlist.append(args[0])
         elif len(args) > 1:
             i = 0
@@ -3947,7 +3950,7 @@ def main(argv) :
                     # WARNING/ERROR
                 i = i + 1
             if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
-                CONDITIONALS['KNOWNFAIL'] = 'execute'
+                CONDITIONALS['KNOWNFAIL'] = True
                 while i < len(args):
                     if os.sep not in args[i]:
                         #TODO:
