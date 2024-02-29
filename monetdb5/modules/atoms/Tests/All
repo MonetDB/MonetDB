@@ -38,8 +38,8 @@ startswith
 endswith
 contains
 HAVE_ICONV?asciify
-starts_with_join
-ends_with_join
+startswith_join
+endswith_join
 contains_join
 
 ts_and_tstz_to_str_bug
