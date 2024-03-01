@@ -6,7 +6,7 @@ SELECT '#' || lpad('hi', 7) || '#'
 query T rowsort
 SELECT '#' || lpad('hixyäbcdef', 7) || '#'
 ----
-#hixy@bc#
+#hixyäbc#
 
 query T rowsort
 SELECT '#' || lpad('hi', 7, 'xya') || '#'
@@ -16,17 +16,17 @@ SELECT '#' || lpad('hi', 7, 'xya') || '#'
 query T rowsort
 SELECT '#' || lpad('hi', 7, 'xyä') || '#'
 ----
-#xy@xyhi#
+#xyäxyhi#
 
 query T rowsort
 SELECT '#' || lpad('hi', 7, 'xy颖äbcdef') || '#'
 ----
-#xy@@bhi#
+#xy颖äbhi#
 
 query T rowsort
 SELECT '#' || lpad('hi颖xyäbcdef', 7, 'lmn') || '#'
 ----
-#hi@xy@b#
+#hi颖xyäb#
 
 query T rowsort
 SELECT '#' || rpad('hi', 7) || '#'
@@ -36,7 +36,7 @@ SELECT '#' || rpad('hi', 7) || '#'
 query T rowsort
 SELECT '#' || rpad('hixyäbcdef', 7) || '#'
 ----
-#hixy@bc#
+#hixyäbc#
 
 query T rowsort
 SELECT '#' || rpad('hi', 7, 'xya') || '#'
@@ -46,17 +46,17 @@ SELECT '#' || rpad('hi', 7, 'xya') || '#'
 query T rowsort
 SELECT '#' || rpad('hi', 7, 'xyä') || '#'
 ----
-#hixy@xy#
+#hixyäxy#
 
 query T rowsort
 SELECT '#' || rpad('hi', 7, 'xy颖äbcdef') || '#'
 ----
-#hixy@@b#
+#hixy颖äb#
 
 query T rowsort
 SELECT '#' || rpad('hi颖xyäbcdef', 7, 'lmn') || '#'
 ----
-#hi@xy@b#
+#hi颖xyäb#
 
 statement ok
 CREATE TABLE p (s VARCHAR(20), n int)
@@ -68,25 +68,25 @@ query T rowsort
 SELECT '#' || lpad(s, 5) || '#' FROM p
 ----
 #   hi#
-#hixy@#
+#hixyä#
 
 query T rowsort
 SELECT '#' || lpad(s, n) || '#' FROM p
 ----
 #        hi#
-#hixy@bc#
+#hixyäbc#
 
 query T rowsort
 SELECT '#' || rpad(s, 5) || '#' FROM p
 ----
 #hi   #
-#hixy@#
+#hixyä#
 
 query T rowsort
 SELECT '#' || rpad(s, n) || '#' FROM p
 ----
 #hi        #
-#hixy@bc#
+#hixyäbc#
 
 statement ok
 CREATE TABLE p2 (s VARCHAR(20), n int, s2 VARCHAR(10))
@@ -97,7 +97,7 @@ INSERT INTO p2 VALUES ('hi', 6, 'xya'), ('hi', 7, 'xyä'), ('hi', 8, 'xy颖äbcd
 query T rowsort
 SELECT '#' || lpad(s, 10, 'x') || '#' FROM p2
 ----
-#hi@xy@bcde#
+#hi颖xyäbcde#
 #xxxxxxxxhi#
 #xxxxxxxxhi#
 #xxxxxxxxhi#
@@ -105,7 +105,7 @@ SELECT '#' || lpad(s, 10, 'x') || '#' FROM p2
 query T rowsort
 SELECT '#' || lpad(s, n, 'x') || '#' FROM p2
 ----
-#hi@xy@bcd#
+#hi颖xyäbcd#
 #xxxxhi#
 #xxxxxhi#
 #xxxxxxhi#
@@ -113,50 +113,50 @@ SELECT '#' || lpad(s, n, 'x') || '#' FROM p2
 query T rowsort
 SELECT '#' || lpad(s, 10, s2) || '#' FROM p2
 ----
-#hi@xy@bcde#
-#xy@@bcdehi#
-#xy@xy@xyhi#
+#hi颖xyäbcde#
 #xyaxyaxyhi#
+#xyäxyäxyhi#
+#xy颖äbcdehi#
 
 query T rowsort
 SELECT '#' || lpad(s, n, s2) || '#' FROM p2
 ----
-#hi@xy@bcd#
-#xy@@bchi#
-#xy@xyhi#
+#hi颖xyäbcd#
 #xyaxhi#
+#xyäxyhi#
+#xy颖äbchi#
 
 query T rowsort
 SELECT '#' || rpad(s, 10, 'x') || '#' FROM p2
 ----
-#hi@xy@bcde#
 #hixxxxxxxx#
 #hixxxxxxxx#
 #hixxxxxxxx#
+#hi颖xyäbcde#
 
 query T rowsort
 SELECT '#' || rpad(s, n, 'x') || '#' FROM p2
 ----
-#hi@xy@bcd#
 #hixxxx#
 #hixxxxx#
 #hixxxxxx#
+#hi颖xyäbcd#
 
 query T rowsort
 SELECT '#' || rpad(s, 10, s2) || '#' FROM p2
 ----
-#hi@xy@bcde#
-#hixy@@bcde#
-#hixy@xy@xy#
 #hixyaxyaxy#
+#hixyäxyäxy#
+#hixy颖äbcde#
+#hi颖xyäbcde#
 
 query T rowsort
 SELECT '#' || rpad(s, n, s2) || '#' FROM p2
 ----
-#hi@xy@bcd#
-#hixy@@bc#
-#hixy@xy#
 #hixyax#
+#hixyäxy#
+#hixy颖äbc#
+#hi颖xyäbcd#
 
 statement ok
 DROP TABLE p
