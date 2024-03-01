@@ -1260,19 +1260,23 @@ bool group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp,const ch
 					if (uki->columns->cnt == 1) {
 						/* for now only check simple case where unique key is a single column*/
 						sql_column* ukc = ((sql_kc *)uki->columns->h->data)->c;
-						if (strcmp(exp->alias.name, ukc->base.name) == 0)
+						if (strcmp(exp->alias.name, ukc->base.name) == 0) {
 							allow = true;
+							break;
+						}
 					}
 				}
 			}
 		}
 
-		/* sufficiency condition: abort if relation contains union subrelation
-		 * because it may break functional dependency between pk and uk */
-		visitor v = {.sql=sql};
-		rel_visitor_topdown(&v, inner, &find_union);
-		if (v.data)
-			allow = false;
+		if (allow) {
+			/* sufficiency condition: abort if relation contains union subrelation
+			* because it may break functional dependency between pk and uk */
+			visitor v = {.sql=sql};
+			rel_visitor_topdown(&v, inner, &find_union);
+			if (v.data)
+				allow = false;
+		}
 	}
 
 	return allow;
