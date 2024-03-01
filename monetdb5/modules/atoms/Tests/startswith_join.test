@@ -48,10 +48,10 @@ statement ok
 INSERT INTO foo VALUES ('Καλή'),('Frühlingsrauschen'),('Das grüne Monokel'),('Καλή Χρονιά'),('Olá, bom dia'),('Risør'),('Wenn der Ölhahn versiegt'),('Punch-Out!! WITH LYRICS'),('Super Mario Bros. 3 WITH LYRICS'),('Δεν καταλαβαίνω'),('Adeus, boa tarde')
 
 statement ok
-INSERT INTO bar VALUES ('Δεν'),('Frühling'),(NULL),('Καλή'),('kαλή'),(NULL),('Olá'),('Das grüne'),('Punch-Out!!'),('Adeus'),('früh')
+INSERT INTO bar VALUES ('Δεν'),('Frühling'),(NULL),('Καλή'),('καλή'),(NULL),('oLÁ'),('Das grüne'),('Punch-Out!!'),('Adeus'),('früh')
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b]
+SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, false]
 ----
 Adeus, boa tarde
 Adeus
@@ -59,8 +59,6 @@ Das grüne Monokel
 Das grüne
 Frühlingsrauschen
 Frühling
-Olá, bom dia
-Olá
 Punch-Out!! WITH LYRICS
 Punch-Out!!
 Δεν καταλαβαίνω
@@ -82,15 +80,19 @@ Frühling
 Frühlingsrauschen
 früh
 Olá, bom dia
-Olá
+oLÁ
 Punch-Out!! WITH LYRICS
 Punch-Out!!
 Δεν καταλαβαίνω
 Δεν
 Καλή
 Καλή
+Καλή
+καλή
 Καλή Χρονιά
 Καλή
+Καλή Χρονιά
+καλή
 
 statement ok
 drop table foo

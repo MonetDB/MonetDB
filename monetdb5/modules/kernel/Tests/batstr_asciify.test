@@ -28,7 +28,7 @@ Muller
 
 skipif system=Linux
 query T nosort
-SELECT asciify(x) FROM bar
+SELECT asciify(x) FROM foo
 ----
 Ol'a Mundo!
 Jo~ao
