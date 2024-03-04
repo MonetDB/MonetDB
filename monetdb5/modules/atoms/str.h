@@ -185,13 +185,6 @@ extern str str_suffix(str *buf, size_t *buflen, const char *s, int l)
 extern str str_repeat(str *buf, size_t *buflen, const char *s, int c)
 		__attribute__((__visibility__("hidden")));
 
-/* Make sure the UTF8_toLowerFrom hash is locked! */
-extern str str_lower(str *buf, size_t *buflen, const char *s)
-		__attribute__((__visibility__("hidden")));
-/* Make sure the UTF8_toUpperFrom hash is locked! */
-extern str str_upper(str *buf, size_t *buflen, const char *s)
-		__attribute__((__visibility__("hidden")));
-
 extern str str_strip(str *buf, size_t *buflen, const char *s)
 		__attribute__((__visibility__("hidden")));
 extern str str_ltrim(str *buf, size_t *buflen, const char *s)

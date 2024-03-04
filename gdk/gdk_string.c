@@ -4501,7 +4501,7 @@ convertcase(char **buf, size_t *buflen, const uint8_t *s, const int *convtab)
 	size_t dstoff = 0;
 	size_t bl = *buflen;
 
-	if (buf == NULL)
+	if (*buf == NULL)
 		bl = 0;
 	while (*s) {
 		/* we are at the start of a Unicode codepoint encoded in
@@ -4553,6 +4553,16 @@ convertcase(char **buf, size_t *buflen, const uint8_t *s, const int *convtab)
 			dst[dstoff++] = 0x80 | (v & 0x3F);
 		}
 	}
+	if (dstoff + 1 > bl) {
+		size_t newlen = dstoff + 1;
+		dst = GDKrealloc(*buf, newlen);
+		if (dst == NULL) {
+			*buflen = bl;
+			return GDK_FAIL;
+		}
+		*buf = (char *) dst;
+		bl = newlen;
+	}
 	dst[dstoff] = '\0';
 	*buflen = bl;
 	return GDK_SUCCEED;
@@ -4570,6 +4580,64 @@ gdk_return
 GDKtolower(char **buf, size_t *buflen, const char *s)
 {
 	return convertcase(buf, buflen, (const uint8_t *) s, lowercase);
+}
+
+static BAT *
+BATcaseconvert(BAT *b, BAT *s, const int *convtab, const char *func)
+{
+	lng t0 = 0;
+	BAT *bn;
+	struct canditer ci;
+	BATiter bi;
+	oid bhseqbase = b->hseqbase;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	BATcheck(b, NULL);
+	canditer_init(&ci, b, s);
+	bn = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	bi = bat_iterator(b);
+	char *buf = NULL;
+	size_t buflen = 0;
+	TIMEOUT_LOOP(ci.ncand, qry_ctx) {
+		BUN x = canditer_next(&ci) - bhseqbase;
+		if (convertcase(&buf, &buflen, (const uint8_t *) BUNtvar(bi, x),
+				convtab) != GDK_SUCCEED ||
+		    BUNappend(bn, buf, false) != GDK_SUCCEED) {
+			goto bailout;
+		}
+	}
+	GDKfree(buf);
+	bat_iterator_end(&bi);
+	TIMEOUT_CHECK(qry_ctx,
+		      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
+	TRC_DEBUG(ALGO, "%s: b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  func,
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+	return bn;
+
+  bailout:
+	GDKfree(buf);
+	bat_iterator_end(&bi);
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATtolower(BAT *b, BAT *s)
+{
+	return BATcaseconvert(b, s, lowercase, __func__);
+}
+
+BAT *
+BATtoupper(BAT *b, BAT *s)
+{
+	return BATcaseconvert(b, s, uppercase, __func__);
 }
 
 /* Unicode-aware case insensitive string comparison of two UTF-8 encoded

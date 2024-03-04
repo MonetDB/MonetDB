@@ -206,6 +206,8 @@ gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if
 const char *BATtailname(const BAT *b);
 gdk_return BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, bool nil_matches, BUN estimate) __attribute__((__warn_unused_result__));
 BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
+BAT *BATtolower(BAT *b, BAT *s);
+BAT *BATtoupper(BAT *b, BAT *s);
 void BATtseqbase(BAT *b, oid o);
 BAT *BATunique(BAT *b, BAT *s);
 BAT *BATunmask(BAT *b);

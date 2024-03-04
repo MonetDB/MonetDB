@@ -2346,6 +2346,8 @@ gdk_export gdk_return GDKtolower(char **buf, size_t *buflen, const char *s);
 gdk_export int GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2);
 gdk_export int GDKstrcasecmp(const char *s1, const char *s2);
 gdk_export char *GDKstrcasestr(const char *haystack, const char *needle);
+gdk_export BAT *BATtolower(BAT *b, BAT *s);
+gdk_export BAT *BATtoupper(BAT *b, BAT *s);
 
 /*
  * @- BAT sample operators

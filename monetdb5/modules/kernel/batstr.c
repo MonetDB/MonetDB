@@ -1605,15 +1605,42 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 }
 
 static str
+STRbatConvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+			  BAT *(*func)(BAT *, BAT *), const char *malfunc)
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	bat *res = getArgReference_bat(stk, pci, 0),
+		*bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		BBPreclaim(b);
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	bn = (*func)(b, bs);
+	unfix_inputs(2, b, bs);
+	if (bn == NULL)
+		throw(MAL, malfunc, GDK_EXCEPTION);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
+	return MAL_SUCCEED;
+}
+
+static str
 STRbatLower(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_str(cntxt, mb, stk, pci, "batstr.lower", str_lower);
+	return STRbatConvert(cntxt, mb, stk, pci, BATtolower, "batstr.toLower");
 }
 
 static str
 STRbatUpper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_str(cntxt, mb, stk, pci, "batstr.upper", str_upper);
+	return STRbatConvert(cntxt, mb, stk, pci, BATtoupper, "batstr.toUpper");
 }
 
 static str

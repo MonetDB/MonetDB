@@ -719,14 +719,6 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 	return str_wchr_at(res, *arg1, *at);
 }
 
-str
-str_lower(str *buf, size_t *buflen, const char *s)
-{
-	if (GDKtolower(buf, buflen, s) != GDK_SUCCEED)
-		throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
-}
-
 static inline str
 STRlower(str *res, const str *arg1)
 {
@@ -741,10 +733,9 @@ STRlower(str *res, const str *arg1)
 		*res = NULL;
 		if (!(buf = GDKmalloc(buflen)))
 			throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		msg = str_lower(&buf, &buflen, s);
-		if (msg != MAL_SUCCEED) {
+		if (GDKtolower(&buf, &buflen, s) != GDK_SUCCEED) {
 			GDKfree(buf);
-			return msg;
+			throw(MAL, "str.lower", GDK_EXCEPTION);
 		}
 		*res = GDKstrdup(buf);
 	}
@@ -754,14 +745,6 @@ STRlower(str *res, const str *arg1)
 		msg = createException(MAL, "str.lower",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
-}
-
-str
-str_upper(str *buf, size_t *buflen, const char *s)
-{
-	if (GDKtoupper(buf, buflen, s) != GDK_SUCCEED)
-		throw(MAL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
 }
 
 static str
@@ -778,10 +761,9 @@ STRupper(str *res, const str *arg1)
 		*res = NULL;
 		if (!(buf = GDKmalloc(buflen)))
 			throw(MAL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		msg = str_upper(&buf, &buflen, s);
-		if (msg != MAL_SUCCEED) {
+		if (GDKtoupper(&buf, &buflen, s) != GDK_SUCCEED) {
 			GDKfree(buf);
-			return msg;
+			throw(MAL, "str.upper", GDK_EXCEPTION);
 		}
 		*res = GDKstrdup(buf);
 	}
