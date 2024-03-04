@@ -4488,9 +4488,10 @@ sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 
 		extract_schema_and_sequence_name(NULL, col->def + strlen(next_value_for), &schema, &seq_name);
 		if (!schema || !seq_name || !(s = find_sql_schema(tr, schema))) {
+			/* didn't find the schema so no generated sequence */
 			_DELETE(schema);
 			_DELETE(seq_name);
-			return -1;
+			return res;
 		}
 
 		seq = find_sql_sequence(tr, s, seq_name);
