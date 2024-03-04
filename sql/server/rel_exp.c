@@ -1837,7 +1837,7 @@ exp_two_sided_bound_cmp_exp_is_false(sql_exp* e) {
     sql_exp* h = e->f;
     assert (v && l && h);
 
-    return is_anti(e) ? exp_is_null(v) || (exp_is_null(l) && exp_is_null(h)) : exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
+    return is_anti(e) ? exp_is_null(v) || (exp_is_null(l) && exp_is_null(h)) : false;
 }
 
 static inline bool
