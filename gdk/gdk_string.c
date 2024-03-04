@@ -4602,15 +4602,16 @@ BATcaseconvert(BAT *b, BAT *s, const int *convtab, const char *func)
 	bi = bat_iterator(b);
 	char *buf = NULL;
 	size_t buflen = 0;
-	TIMEOUT_LOOP(ci.ncand, qry_ctx) {
+	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 		BUN x = canditer_next(&ci) - bhseqbase;
 		if (convertcase(&buf, &buflen, (const uint8_t *) BUNtvar(bi, x),
 				convtab) != GDK_SUCCEED ||
-		    BUNappend(bn, buf, false) != GDK_SUCCEED) {
+		    tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
 			goto bailout;
 		}
 	}
 	GDKfree(buf);
+	BATsetcount(bn, ci.ncand);
 	bat_iterator_end(&bi);
 	TIMEOUT_CHECK(qry_ctx,
 		      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
