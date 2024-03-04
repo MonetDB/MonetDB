@@ -5809,17 +5809,19 @@ batstr_strlower(BAT *b)
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		str vb = BUNtail(bi, p), vb_low;
+		str vb = BUNtail(bi, p), vb_low = NULL;
 		if (STRlower(&vb_low, &vb)) {
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
 			return NULL;
 		}
 		if (BUNappend(bn, vb_low, false) != GDK_SUCCEED) {
+			GDKfree(vb_low);
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
 			return NULL;
 		}
+		GDKfree(vb_low);
 	}
 	bat_iterator_end(&bi);
 	return bn;
@@ -6211,7 +6213,7 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
 
-	BAT **l_ptr = &l, **r_ptr = &r;
+	BAT *nl = l, *nr = r;
 
 	if (strcmp(fname, "str.containsjoin") == 0) {
 		msg = contains_join(rl, rr, l, r, cl, cr, anti, str_cmp, fname);
@@ -6230,41 +6232,40 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 							   + rcnt*log2((double)rcnt)));
 
 		if (nl_cost < sorted_cost) {
-			msg = str_join_nested(rl, rr, *l_ptr, *r_ptr, cl, cr, anti, str_cmp, fname);
+			msg = str_join_nested(rl, rr, nl, nr, cl, cr, anti, str_cmp, fname);
 		} else {
 			BAT *l_low = NULL, *r_low = NULL, *l_rev = NULL, *r_rev = NULL;
 			if (icase) {
-				l_low = batstr_strlower(*l_ptr);
+				l_low = batstr_strlower(nl);
 				if (l_low == NULL) {
-					BBPnreclaim(6, rl, rr, *l_ptr, *r_ptr, cl, cr);
+					BBPnreclaim(6, rl, rr, nl, nr, cl, cr);
 					throw(MAL, fname, "Failed lowering strings of left input");
 				}
-				r_low = batstr_strlower(*r_ptr);
+				r_low = batstr_strlower(nr);
 				if (r_low == NULL) {
-					BBPnreclaim(7, rl, rr, *l_ptr, *r_ptr, cl, cr, l_low);
+					BBPnreclaim(7, rl, rr, nl, nr, cl, cr, l_low);
 					throw(MAL, fname, "Failed lowering strings of right input");
 				}
-				BBPnreclaim(2, *l_ptr, *r_ptr);
-				l_ptr = &l_low;
-				r_ptr = &r_low;
+				BBPnreclaim(2, nl, nr);
+				nl = l_low;
+				nr = r_low;
 			}
 			if (strcmp(fname, "str.endswithjoin") == 0) {
-				l_rev = batstr_strrev(*l_ptr);
+				l_rev = batstr_strrev(nl);
 				if (l_rev == NULL) {
-					BBPnreclaim(6, rl, rr, *l_ptr, *r_ptr, cl, cr);
+					BBPnreclaim(6, rl, rr, nl, nr, cl, cr);
 					throw(MAL, fname, "Failed reversing strings of left input");
 				}
-				r_rev = batstr_strrev(*r_ptr);
+				r_rev = batstr_strrev(nr);
 				if (r_rev == NULL) {
-					BBPnreclaim(7, rl, rr, *l_ptr, *r_ptr, cl, cr, l_rev);
+					BBPnreclaim(7, rl, rr, nl, nr, cl, cr, l_rev);
 					throw(MAL, fname, "Failed reversing strings of right input");
 				}
-				BBPnreclaim(2, *l_ptr, *r_ptr);
-				l_ptr = &l_rev;
-				r_ptr = &r_rev;
+				BBPnreclaim(2, nl, nr);
+				nl = l_rev;
+				nr = r_rev;
 			}
-			msg = startswith_join(&rl, &rr, *l_ptr, *r_ptr, cl, cr,
-								  anti, str_is_prefix, fname);
+			msg = startswith_join(&rl, &rr, nl, nr, cl, cr, anti, str_is_prefix, fname);
 		}
 	}
 
@@ -6279,7 +6280,7 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 		BBPnreclaim(2, rl, rr);
 	}
 
-	BBPnreclaim(4, *l_ptr, *r_ptr, cl, cr);
+	BBPnreclaim(4, nl, nr, cl, cr);
 	return msg;
 }
 
