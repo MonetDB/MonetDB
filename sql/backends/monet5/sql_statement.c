@@ -3715,7 +3715,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 	bool add_tz = false, pushed = (v->cand && v->cand == sel);
 
 	if (before) {
-		if (f->type->eclass == EC_TIMESTAMP_TZ && t->type->eclass == EC_TIMESTAMP) {
+		if (f->type->eclass == EC_TIMESTAMP_TZ && (t->type->eclass == EC_TIMESTAMP || t->type->eclass == EC_TIME)) {
 			/* call timestamp+local_timezone */
 			convert = "timestamp_add_msec_interval";
 			add_tz = true;
@@ -3728,7 +3728,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 			/* call timestamp+local_timezone */
 			convert = "timestamp_sub_msec_interval";
 			add_tz = true;
-		} else if (f->type->eclass == EC_TIME_TZ && t->type->eclass == EC_TIME) {
+		} else if (f->type->eclass == EC_TIME_TZ && (t->type->eclass == EC_TIME || t->type->eclass == EC_TIMESTAMP)) {
 			/* call times+local_timezone */
 			convert = "time_add_msec_interval";
 			add_tz = true;

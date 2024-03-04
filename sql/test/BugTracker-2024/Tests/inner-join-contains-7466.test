@@ -1,0 +1,46 @@
+statement ok
+CREATE TABLE t0(c1 INT)
+
+statement ok
+INSERT INTO t0 VALUES(4)
+
+statement ok
+CREATE TABLE t1(c1 VARCHAR(500))
+
+statement ok
+INSERT INTO t1 VALUES ('abc')
+
+statement ok
+CREATE VIEW v0(c0) AS SELECT (('a')||('b')) FROM t1
+
+query TIT nosort
+SELECT * FROM t1, t0 INNER  JOIN v0 ON t0.c1
+----
+abc
+4
+ab
+
+query TIT nosort
+SELECT * FROM t1, t0 INNER  JOIN v0 ON t0.c1 WHERE (NOT CONTAINS((t1.c1 > 'a'), t0.c1))
+----
+abc
+4
+ab
+
+query TIT nosort
+SELECT * FROM t1, t0 INNER  JOIN v0 ON t0.c1 WHERE CONTAINS((t1.c1 > 'a'), t0.c1)
+ UNION ALL
+SELECT * FROM t1, t0 INNER  JOIN v0 ON t0.c1 WHERE (NOT CONTAINS((t1.c1 > 'a'), t0.c1))
+----
+abc
+4
+ab
+
+statement ok
+DROP VIEW v0
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1

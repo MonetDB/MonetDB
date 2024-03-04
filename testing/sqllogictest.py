@@ -16,7 +16,7 @@
 # The skipif/onlyif mechanism has been slightly extended.  Recognized
 # "system"s are:
 # MonetDB, arch=<architecture>, system=<system>, bits=<bits>,
-# threads=<threads>, has-hugeint
+# threads=<threads>, has-hugeint, knownfail
 # where <architecture> is generally what the Python call
 # platform.machine() returns (i.e. x86_64, i686, aarch64, ppc64,
 # ppc64le, note 'AMD64' is translated to 'x86_64' and 'arm64' to
@@ -140,12 +140,13 @@ class SQLLogic:
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo',
-                language='sql', timeout=None):
+                language='sql', timeout=None, alltests=False):
         self.language = language
         self.hostname = hostname
         self.port = port
         self.database = database
         self.timeout = timeout
+        self.alltests = alltests
         if language == 'sql':
             self.dbh = pymonetdb.connect(username=username,
                                      password=password,
@@ -354,10 +355,17 @@ class SQLLogic:
                                     nval.append(c)
                             else:
                                 for c in str(row[i]):
-                                    if ' ' <= c <= '~':
-                                        nval.append(c)
-                                    else:
+# sqllogictest original:
+                                    # if ' ' <= c <= '~':
+                                    #     nval.append(c)
+                                    # else:
+                                    #     nval.append('@')
+# our variant, don't map printables:
+                                    if c < ' ' or '\u007f' <= c <= '\u009f':
+                                        # control characters
                                         nval.append('@')
+                                    else:
+                                        nval.append(c)
                             nrow.append(''.join(nval))
                     elif columns[i] == 'R':
                         nrow.append('%.3f' % row[i])
@@ -465,7 +473,7 @@ class SQLLogic:
                         self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
                         err = True
                     i += 1
-                m.update(bytes(col, encoding='ascii'))
+                m.update(bytes(col, encoding='utf-8'))
                 m.update(b'\n')
                 result.append(col)
             if err and expected is not None:
@@ -479,7 +487,7 @@ class SQLLogic:
                         ndata.append(col)
                 ndata.sort()
                 for col in ndata:
-                    resm.update(bytes(col, encoding='ascii'))
+                    resm.update(bytes(col, encoding='utf-8'))
                     resm.update(b'\n')
                     result.append(col)
         elif sorting == 'python':
@@ -533,7 +541,7 @@ class SQLLogic:
                             self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
                             err = True
                         i += 1
-                    m.update(bytes(col, encoding='ascii'))
+                    m.update(bytes(col, encoding='utf-8'))
                     m.update(b'\n')
                     result.append(col)
             if err and expected is not None:
@@ -543,7 +551,7 @@ class SQLLogic:
                 result = []
                 for row in resdata:
                     for col in row:
-                        resm.update(bytes(col, encoding='ascii'))
+                        resm.update(bytes(col, encoding='utf-8'))
                         resm.update(b'\n')
                         result.append(col)
         else:
@@ -559,7 +567,7 @@ class SQLLogic:
                             #self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
                             err = True
                         i += 1
-                    m.update(bytes(col, encoding='ascii'))
+                    m.update(bytes(col, encoding='utf-8'))
                     m.update(b'\n')
                     result.append(col)
             if err and expected is not None:
@@ -576,7 +584,7 @@ class SQLLogic:
                 result = []
                 for row in resdata:
                     for col in row:
-                        resm.update(bytes(col, encoding='ascii'))
+                        resm.update(bytes(col, encoding='utf-8'))
                         resm.update(b'\n')
                         result.append(col)
         if err:
@@ -646,8 +654,12 @@ class SQLLogic:
             self.lines.append((origline, line))
         return line
 
-    def writeline(self, line='', replace=False):
+    def writeline(self, line=None, replace=False):
         if self.approve:
+            if line is None:
+                line = ''
+            elif line == '':
+                return
             if not line and self.__last == '':
                 return
             self.__last = line
@@ -742,7 +754,9 @@ class SQLLogic:
                         if words[1] == f'threads={nthreads}':
                             skipping = True
                     elif words[1] == 'has-hugeint':
-                        skipping = hashge
+                        skipping |= hashge
+                    elif words[1] == 'knownfail':
+                        skipping |= not self.alltests
                 elif words[0] == 'onlyif':
                     if words[1] not in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
                         skipping = True
@@ -753,7 +767,9 @@ class SQLLogic:
                         if words[1] != f'threads={nthreads}':
                             skipping = True
                     elif words[1] == 'has-hugeint':
-                        skipping = not hashge
+                        skipping |= not hashge
+                    elif words[1] == 'knownfail':
+                        skipping |= self.alltests
                 self.writeline(line.rstrip())
                 line = self.readline()
                 words = line.split(maxsplit=2)
@@ -895,12 +911,14 @@ if __name__ == '__main__':
     parser.add_argument('--define', action='append',
                         help='define substitution for $var as var=replacement'
                         ' (can be repeated)')
+    parser.add_argument('--alltests', action='store_true',
+                        help='also executed "knownfail" tests')
     parser.add_argument('tests', nargs='*', help='tests to be run')
     opts = parser.parse_args()
     args = opts.tests
     sql = SQLLogic(report=opts.report)
     sql.res = opts.results
-    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language, username=opts.user, password=opts.password)
+    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language, username=opts.user, password=opts.password, alltests=opts.alltests)
     for test in args:
         try:
             if not opts.nodrop:

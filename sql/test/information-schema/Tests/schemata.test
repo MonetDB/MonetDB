@@ -42,7 +42,6 @@ WHERE SCHEMA_NAME IS NULL
    OR is_system IS NULL
 ----
 
-
 -- entity integrity checks
 query ITT rowsort
 SELECT COUNT(*) AS duplicates, CATALOG_NAME, SCHEMA_NAME
@@ -66,7 +65,6 @@ SELECT COUNT(*) AS duplicates, schema_id
  GROUP BY schema_id
  HAVING COUNT(*) > 1
 ----
-
 
 -- referential integrity checks
 query TT rowsort
@@ -93,12 +91,11 @@ SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME
 ----
 
 -- check schema_id reference
-query TT rowsort
+query TI rowsort
 SELECT SCHEMA_NAME, schema_id
  FROM INFORMATION_SCHEMA.SCHEMATA
  WHERE (schema_id) NOT IN (SELECT id FROM sys.schemas)
 ----
-
 
 -- check is_system allowed boolean values
 query TI rowsort

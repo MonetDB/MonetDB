@@ -1224,6 +1224,8 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 	bool ok = true;
 	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 
+	(void) maxupdated;	/* only used inside assert() */
+
 	if (!lg->flushing)
 		ATOMIC_AND(&GDKdebug, ~CHECKMASK);
 
@@ -1251,16 +1253,40 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 			if (updated && BAThash(lg->catalog_id) == GDK_SUCCEED) {
 				BATiter cni = bat_iterator(lg->catalog_id);
 				BUN p;
+				BUN posnew = BUN_NONE;
+				BUN posold = BUN_NONE;
 				MT_rwlock_rdlock(&cni.b->thashlock);
 				HASHloop_int(cni, cni.b->thash, p, &l.id) {
-					(void)maxupdated;
-					assert(p < maxupdated);
-					updated[p / 32] |= 1U << (p % 32);
-					/* there should only be one hit */
-					break;
+					lng lid = *(lng *) Tloc(lg->catalog_lid, p);
+					if (lid == lng_nil || lid > tr->tid)
+						posnew = p;
+					else if (lid == tr->tid)
+						posold = p;
 				}
 				MT_rwlock_rdunlock(&cni.b->thashlock);
 				bat_iterator_end(&cni);
+				/* Normally at this point, posnew is the
+				 * location of the bat that this
+				 * transaction is working on, and posold
+				 * is the location of the previous
+				 * version of the bat.  If LOG_CREATE,
+				 * both are relevant, since the latter
+				 * is the new bat, and the former is the
+				 * to-be-destroyed bat.  For
+				 * LOG_DESTROY, only posnew should be
+				 * relevant, but for the other types, if
+				 * the table is destroyed later in the
+				 * same transaction, we need posold, and
+				 * else (the normal case) we need
+				 * posnew. */
+				if (posnew != BUN_NONE) {
+					assert(posnew < maxupdated);
+					updated[posnew / 32] |= 1U << (posnew % 32);
+				}
+				if ((l.flag == LOG_CREATE || posnew == BUN_NONE) && posold != BUN_NONE) {
+					assert(posold < maxupdated);
+					updated[posold / 32] |= 1U << (posold % 32);
+				}
 			}
 			break;
 		default:
@@ -2643,8 +2669,7 @@ log_flush(logger *lg, ulng ts)
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
-			if ((filename =
-			     GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
+			if ((filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
 				GDKfree(updated);
 				return GDK_FAIL;
 			}
@@ -3386,8 +3411,9 @@ log_add_bat(logger *lg, BAT *b, log_id id, int tid)
 	bid = b->batCacheid;
 	TRC_DEBUG(WAL, "create %d\n", id);
 	assert(log_find(lg->catalog_bid, lg->dcatalog, bid) == BUN_NONE);
-	if (BUNappend(lg->catalog_bid, &bid, true) != GDK_SUCCEED || BUNappend(lg->catalog_id, &id, true) != GDK_SUCCEED
-	    || BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED ||
+	if (BUNappend(lg->catalog_bid, &bid, true) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_id, &id, true) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_lid, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (lg->current)

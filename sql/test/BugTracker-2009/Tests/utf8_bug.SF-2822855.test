@@ -19,15 +19,15 @@ select a, length(a) AS len from utf8len
 ----
 0
 1
-@
+€
 1
-@
+€
 1
 
 query T rowsort
 select 'Liever €uro' as "Liever euro"
 ----
-Liever @uro
+Liever €uro
 
 statement ok
 drop table utf8len

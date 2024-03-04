@@ -39,7 +39,7 @@ select charindex('gh', 'highigh', 4)
 query T nosort
 select code(223)
 ----
-@
+ß
 
 # expected "ß"
 
