@@ -1,3 +1,9 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Jan 11 2024 Sjoerd Mullender <sjoerd@acm.org>
+- The copyright for the MonetDB software has been transferred to the newly
+  established MonetDB Foundation, a not-for-profit foundation with the
+  express goal of furthering the MonetDB database system.  The license
+  for the software does not change: MonetDB remains fully open source.
+
