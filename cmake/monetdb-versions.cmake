@@ -43,7 +43,7 @@ set(MONETDB_VERSION "${MONETDB_VERSION_MAJOR}.${MONETDB_VERSION_MINOR}.${MONETDB
 # version of the GDK library (subdirectory gdk; also includes
 # common/options and common/utils)
 set(GDK_VERSION_MAJOR "28")
-set(GDK_VERSION_MINOR "0")
+set(GDK_VERSION_MINOR "1")
 set(GDK_VERSION_PATCH "0")
 set(GDK_VERSION "${GDK_VERSION_MAJOR}.${GDK_VERSION_MINOR}.${GDK_VERSION_PATCH}")
 
@@ -56,7 +56,7 @@ set(MAPI_VERSION "${MAPI_VERSION_MAJOR}.${MAPI_VERSION_MINOR}.${MAPI_VERSION_PAT
 # version of the MONETDB5 library (subdirectory monetdb5, not including extras or sql)
 set(MONETDB5_VERSION_MAJOR "35")
 set(MONETDB5_VERSION_MINOR "0")
-set(MONETDB5_VERSION_PATCH "0")
+set(MONETDB5_VERSION_PATCH "1")
 set(MONETDB5_VERSION "${MONETDB5_VERSION_MAJOR}.${MONETDB5_VERSION_MINOR}.${MONETDB5_VERSION_PATCH}")
 
 # version of the MONETDBE library (subdirectory tools/monetdbe)
@@ -74,5 +74,5 @@ set(STREAM_VERSION "${STREAM_VERSION_MAJOR}.${STREAM_VERSION_MINOR}.${STREAM_VER
 # version of the SQL library (subdirectory sql)
 set(SQL_VERSION_MAJOR "14")
 set(SQL_VERSION_MINOR "1")
-set(SQL_VERSION_PATCH "0")
+set(SQL_VERSION_PATCH "1")
 set(SQL_VERSION "${SQL_VERSION_MAJOR}.${SQL_VERSION_MINOR}.${SQL_VERSION_PATCH}")

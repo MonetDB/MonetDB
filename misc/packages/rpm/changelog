@@ -1,3 +1,66 @@
+* Mon Mar 04 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
+- Rebuilt.
+- GH#6800: Please add information_schema (ANSI SQL norm)
+- GH#7152: Occasional dbfarm corruption upon database restart
+- GH#7412: MonetDB server crashes in `vscanf`
+- GH#7415: MonetDB server crashes in `HEAP_malloc`
+- GH#7416: MonetDB server crashes in `atom_get_int`
+- GH#7417: MonetDB server crashes in `trimchars`.
+- GH#7418: MonetDB server crashes in `bind_col_exp`
+- GH#7420: Performance issue with lower(string)
+- GH#7425: The last statement, execution error, is a false positive?
+- GH#7426: Unexpected result for INNER JOIN with IS NOT NULL
+- GH#7428: Unexpected result when using BETWEEN operator
+- GH#7429: Unexpected result when using `CASE WHEN`
+- GH#7430: Unexpected result when using `AND` and `IS NOT NULL`
+- GH#7431: [bug] Error code found, please confirm
+- GH#7432: MonetDB server crashes in `dameraulevenshtein`
+- GH#7433: MonetDB server crashes in `exp_atom`
+- GH#7434: MonetDB server crashes in `exp_bin`
+- GH#7435: MonetDB server crashes in `exp_copy`
+- GH#7436: MonetDB server crashes in `exp_ref`
+- GH#7437: MonetDB server crashes in `exp_values_set_supertype`
+- GH#7438: MonetDB server crashes in `exps_bind_column`
+- GH#7439: MonetDB server crashes in `exps_card`
+- GH#7440: MonetDB server crashes in `gc_col`
+- GH#7441: MonetDB server crashes in `is_column_unique`
+- GH#7442: MonetDB server crashes in `mat_join2`
+- GH#7443: MonetDB server crashes in `merge_table_prune_and_unionize`
+- GH#7444: [bug] the table cannot be created because the reserved word is
+  incorrectly set
+- GH#7447: Unexpected result when using `BETWEEN` in `INNER JOIN`
+- GH#7448: Unexpected result when using `AND`/`OR` chain
+- GH#7450: Unexpected result when `CREATE VIEW` with `WHERE NULL`
+- GH#7451: Unexpected result when using `BETWEEN` and `CAST`
+- GH#7453: Cannot recover an msqldump
+- GH#7455: Unexpected result when using `BETWEEN` with `BOOLEAN` values
+- GH#7456: Crash when `INNER JOIN` with `VIEW`
+- GH#7457: Unexpected result when using `AND` with `INTEGER`
+- GH#7458: Unexpected result when using `SIGN`
+- GH#7461: Crash by potentially use of bad escape characters
+- GH#7462: Crash when using `BETWEEN AND`
+
+* Fri Mar  1 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
+- gdk: Fixed a regression where bats weren't always cleaned up when they
+  weren't needed anymore.  In particular, after a DELETE FROM table query
+  without a WHERE clause (which deletes all rows from the table), the
+  bats for the table get replaced by new ones, and the old, now unused,
+  bats weren't removed from the database.
+
+* Mon Jan 15 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
+- geom: We switched over to using the reentrant interface of the geos library.
+  This fixed a number of bugs that would occur sporadically.
+
+* Mon Jan 15 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
+- sql: The function json.isvalid(json) incorrectly returned true if the
+  argument was null.  It should return null.
+
+* Thu Jan 11 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
+- MonetDB: The copyright for the MonetDB software has been transferred to the newly
+  established MonetDB Foundation, a not-for-profit foundation with the
+  express goal of furthering the MonetDB database system.  The license
+  for the software does not change: MonetDB remains fully open source.
+
 * Thu Dec 21 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
 - Rebuilt.
 - GH#6933: Add support for scalar function IFNULL(expr1, expr2)
