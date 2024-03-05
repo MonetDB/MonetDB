@@ -1162,39 +1162,30 @@ re_like_build(struct RE **re, const char *pat, bool caseignore,
 	return MAL_SUCCEED;
 }
 
-#define proj_scanloop(TEST)	\
-	do {					\
-		if (strNil(s))		\
-			return bit_nil; \
-		else				\
-			return TEST;	\
-	} while (0)
-
 static inline bit
 re_like_proj_apply(const char *s, const struct RE *restrict re,
 				   const char *pat,
 				   bool caseignore, bool anti, bool use_strcmp)
 {
+	if (strNil(s))
+		return bit_nil;
 	if (use_strcmp) {
 		if (caseignore) {
 			if (anti)
-				proj_scanloop(GDKstrcasecmp(s, pat) != 0);
+				return GDKstrcasecmp(s, pat) != 0;
 			else
-				proj_scanloop(GDKstrcasecmp(s, pat) == 0);
+				return GDKstrcasecmp(s, pat) == 0;
 		} else {
 			if (anti)
-				proj_scanloop(strcmp(s, pat) != 0);
+				return strcmp(s, pat) != 0;
 			else
-				proj_scanloop(strcmp(s, pat) == 0);
+				return strcmp(s, pat) == 0;
 		}
 	} else {
-		/* Use re_match_ignore only if the pattern is UTF-8
-		 * and we need to ignore case
-		 */
 		if (anti)
-			proj_scanloop(!re_match(s, re));
+			return !re_match(s, re);
 		else
-			proj_scanloop(re_match(s, re));
+			return re_match(s, re);
 	}
 }
 
@@ -1825,8 +1816,6 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 #define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND)						\
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
-			GDK_CHECK_TIMEOUT(qry_ctx, counter,							\
-							  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
 			nl = 0;														\
@@ -1844,7 +1833,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 					pcrepat = NULL;										\
 				}														\
 				canditer_reset(&lci);									\
-				for (BUN lidx = 0; lidx < lci.ncand; lidx++) {			\
+				TIMEOUT_LOOP_IDX_DECL(lidx, lci.ncand, qry_ctx) {		\
 					lo = canditer_next(&lci);							\
 					vl = VALUE(l, lo - lbase);							\
 					if (strNil(vl)) {									\
@@ -1899,6 +1888,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 				}														\
 				re_like_clean(&re);										\
 				pcre_clean(&pcrere, &pcreex);							\
+				TIMEOUT_CHECK(qry_ctx,									\
+							  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			}															\
 			if (r2) {													\
 				if (nl > 1) {											\
@@ -1939,7 +1930,6 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 #endif
 	lng t0 = 0;
 
-	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
