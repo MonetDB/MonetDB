@@ -1835,10 +1835,10 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 				goto bailout;											\
 			if (!empty) {												\
 				if (use_re) {											\
-					if ((msg = re_like_build(&re, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
+					if ((msg = re_like_build(&re, vr, false, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 						goto bailout;									\
 				} else if (pcrepat) {									\
-					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
+					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, false, lci.ncand)) != MAL_SUCCEED) \
 						goto bailout;									\
 					GDKfree(pcrepat);									\
 					pcrepat = NULL;										\
@@ -1937,30 +1937,29 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 	regex_t pcrere = (regex_t) { 0 };
 	void *pcreex = NULL;
 #endif
+	lng t0 = 0;
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-	TRC_DEBUG(ALGO,
-			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"
-			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
-			  "sr=%s#" BUNFMT "%s%s)\n",
-			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
-			  l->tsorted ? "-sorted" : "",
-			  l->trevsorted ? "-revsorted" : "",
-			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
-			  r->tsorted ? "-sorted" : "",
-			  r->trevsorted ? "-revsorted" : "",
-			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
-			  sl && sl->tsorted ? "-sorted" : "",
-			  sl && sl->trevsorted ? "-revsorted" : "",
-			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
-			  sr && sr->tsorted ? "-sorted" : "",
-			  sr && sr->trevsorted ? "-revsorted" : "");
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
+
+	BAT *ol = NULL, *or = NULL;
+	if (caseignore) {
+		ol = l;
+		or = r;
+		l = BATtolower(l, NULL);
+		r = BATtolower(r, NULL);
+		if (l == NULL || r == NULL) {
+			BBPreclaim(l);
+			BBPreclaim(r);
+			throw(MAL, "pcre.join", GDK_EXCEPTION);
+		}
+	}
 
 	canditer_init(&lci, l, sl);
 	canditer_init(&rci, r, sr);
@@ -1989,22 +1988,18 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 	}
 
 	if (anti) {
-		if (caseignore) {
-			pcre_join_loop(GDKstrcasecmp(vl, vr) == 0,
-						   re_match(vl, re), !PCRE_EXEC_COND);
-		} else {
-			pcre_join_loop(strcmp(vl, vr) == 0, re_match(vl, re), !PCRE_EXEC_COND);
-		}
+		pcre_join_loop(strcmp(vl, vr) == 0, re_match(vl, re), !PCRE_EXEC_COND);
 	} else {
-		if (caseignore) {
-			pcre_join_loop(GDKstrcasecmp(vl, vr) != 0,
-						   !re_match(vl, re), PCRE_EXEC_COND);
-		} else {
-			pcre_join_loop(strcmp(vl, vr) != 0, !re_match(vl, re), PCRE_EXEC_COND);
-		}
+		pcre_join_loop(strcmp(vl, vr) != 0, !re_match(vl, re), PCRE_EXEC_COND);
 	}
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
+	if (ol) {
+		BBPreclaim(l);
+		BBPreclaim(r);
+		l = ol;
+		r = or;
+	}
 
 	assert(!r2 || BATcount(r1) == BATcount(r2));
 	/* also set other bits of heap to correct value to indicate size */
@@ -2021,23 +2016,52 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 		if (r2)
 			r2->tseqbase = 0;
 	}
+
 	if (r2)
 		TRC_DEBUG(ALGO,
-				  "pcrejoin(l=%s,r=%s)=(%s#" BUNFMT "%s%s,%s#" BUNFMT "%s%s\n",
-				  BATgetId(l), BATgetId(r),
+				  "l=%s#" BUNFMT "[%s]%s%s,"
+				  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
+				  "sr=%s#" BUNFMT "%s%s -> "
+				  "%s#" BUNFMT "%s%s,%s#" BUNFMT "%s%s (" LLFMT " usec)\n",
+				  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+				  l->tsorted ? "-sorted" : "",
+				  l->trevsorted ? "-revsorted" : "",
+				  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+				  r->tsorted ? "-sorted" : "",
+				  r->trevsorted ? "-revsorted" : "",
+				  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+				  sl && sl->tsorted ? "-sorted" : "",
+				  sl && sl->trevsorted ? "-revsorted" : "",
+				  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+				  sr && sr->tsorted ? "-sorted" : "",
+				  sr && sr->trevsorted ? "-revsorted" : "",
 				  BATgetId(r1), BATcount(r1),
 				  r1->tsorted ? "-sorted" : "",
 				  r1->trevsorted ? "-revsorted" : "",
 				  BATgetId(r2), BATcount(r2),
 				  r2->tsorted ? "-sorted" : "",
-				  r2->trevsorted ? "-revsorted" : "");
+				  r2->trevsorted ? "-revsorted" : "", GDKusec() - t0);
 	else
 		TRC_DEBUG(ALGO,
-				  "pcrejoin(l=%s,r=%s)=(%s#" BUNFMT "%s%s\n",
-				  BATgetId(l), BATgetId(r),
+				  "l=%s#" BUNFMT "[%s]%s%s,"
+				  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
+				  "sr=%s#" BUNFMT "%s%s -> "
+				  "%s#" BUNFMT "%s%s (" LLFMT " usec)\n",
+				  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+				  l->tsorted ? "-sorted" : "",
+				  l->trevsorted ? "-revsorted" : "",
+				  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+				  r->tsorted ? "-sorted" : "",
+				  r->trevsorted ? "-revsorted" : "",
+				  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+				  sl && sl->tsorted ? "-sorted" : "",
+				  sl && sl->trevsorted ? "-revsorted" : "",
+				  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+				  sr && sr->tsorted ? "-sorted" : "",
+				  sr && sr->trevsorted ? "-revsorted" : "",
 				  BATgetId(r1), BATcount(r1),
 				  r1->tsorted ? "-sorted" : "",
-				  r1->trevsorted ? "-revsorted" : "");
+				  r1->trevsorted ? "-revsorted" : "", GDKusec() - t0);
 	return MAL_SUCCEED;
 
   bailout:
