@@ -5472,74 +5472,76 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define CONTAINS_JOIN_LOOP(STR_CMP, STR_LEN)							\
 	do {																\
-		canditer_init(&rci, r, cr);									\
+		canditer_init(&rci, r, cr);										\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
 			BAT *filtered_sl = NULL;									\
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
-			vr_len = STR_LEN;											\
 			matches = 0;												\
-			if (with_strimps)											\
-				filtered_sl = STRMPfilter(l, cl, vr, anti);			\
-			if (filtered_sl)											\
-				canditer_init(&lci, l, filtered_sl);					\
-			else														\
-				canditer_init(&lci, l, cl);							\
-			for (BUN lidx = 0; lidx < lci.ncand; lidx++) {				\
-				lo = canditer_next(&lci);								\
-				vl = VALUE(l, lo - lbase);								\
-				if (strNil(vl))										\
-					continue;											\
-				if (STR_CMP)											\
-					continue;											\
-				if (BATcount(rl) == BATcapacity(rl)) {					\
-					newcap = BATgrows(rl);								\
-					BATsetcount(rl, BATcount(rl));						\
-					if (rr)											\
-						BATsetcount(rr, BATcount(rr));					\
-					if (BATextend(rl, newcap) != GDK_SUCCEED ||		\
-						(rr && BATextend(rr, newcap) != GDK_SUCCEED)) { \
-						msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-						goto exit;										\
+			if (!strNil(vr)) {											\
+				vr_len = STR_LEN;										\
+				if (with_strimps)										\
+					filtered_sl = STRMPfilter(l, cl, vr, anti);			\
+				if (filtered_sl)										\
+					canditer_init(&lci, l, filtered_sl);				\
+				else													\
+					canditer_init(&lci, l, cl);							\
+				for (BUN lidx = 0; lidx < lci.ncand; lidx++) {			\
+					lo = canditer_next(&lci);							\
+					vl = VALUE(l, lo - lbase);							\
+					if (strNil(vl))										\
+						continue;										\
+					if (STR_CMP)										\
+						continue;										\
+					if (BATcount(rl) == BATcapacity(rl)) {				\
+						newcap = BATgrows(rl);							\
+						BATsetcount(rl, BATcount(rl));					\
+						if (rr)											\
+							BATsetcount(rr, BATcount(rr));				\
+						if (BATextend(rl, newcap) != GDK_SUCCEED ||		\
+							(rr && BATextend(rr, newcap) != GDK_SUCCEED)) { \
+							msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+							goto exit;									\
+						}												\
+						assert(!rr || BATcapacity(rl) == BATcapacity(rr)); \
 					}													\
-					assert(!rr || BATcapacity(rl) == BATcapacity(rr));	\
-				}														\
-				if (BATcount(rl) > 0) {								\
-					if (lastl + 1 != lo)								\
-						rl->tseqbase = oid_nil;						\
-					if (matches == 0) {								\
-						if (rr)										\
-							rr->trevsorted = false;					\
-						if (lastl > lo) {								\
-							rl->tsorted = false;						\
-							rl->tkey = false;							\
-						} else if (lastl < lo) {						\
-							rl->trevsorted = false;					\
-						} else {										\
-							rl->tkey = false;							\
+					if (BATcount(rl) > 0) {								\
+						if (lastl + 1 != lo)							\
+							rl->tseqbase = oid_nil;						\
+						if (matches == 0) {								\
+							if (rr)										\
+								rr->trevsorted = false;					\
+							if (lastl > lo) {							\
+								rl->tsorted = false;					\
+								rl->tkey = false;						\
+							} else if (lastl < lo) {					\
+								rl->trevsorted = false;					\
+							} else {									\
+								rl->tkey = false;						\
+							}											\
 						}												\
 					}													\
+					APPEND(rl, lo);										\
+					if (rr)												\
+						APPEND(rr, ro);									\
+					lastl = lo;											\
+					matches++;											\
 				}														\
-				APPEND(rl, lo);										\
-				if (rr)												\
-					APPEND(rr, ro);									\
-				lastl = lo;											\
-				matches++;												\
+				BBPreclaim(filtered_sl);								\
 			}															\
-			BBPreclaim(filtered_sl);									\
 			if (rr) {													\
 				if (matches > 1) {										\
 					rr->tkey = false;									\
-					rr->tseqbase = oid_nil;							\
-					rl->trevsorted = false;							\
+					rr->tseqbase = oid_nil;								\
+					rl->trevsorted = false;								\
 				} else if (matches == 0) {								\
 					rskipped = BATcount(rr) > 0;						\
 				} else if (rskipped) {									\
-					rr->tseqbase = oid_nil;							\
+					rr->tseqbase = oid_nil;								\
 				}														\
 			} else if (matches > 1) {									\
-				rl->trevsorted = false;								\
+				rl->trevsorted = false;									\
 			}															\
 		}																\
 	} while (0)
