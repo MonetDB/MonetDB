@@ -5559,9 +5559,9 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (BUN lidx = 0; lidx < lci.ncand; lidx++) {				\
 				lo = canditer_next(&lci);								\
 				vl = VALUE(l, lo - lbase);								\
-				if (strNil(vl))										\
+				if (strNil(vl))											\
 					continue;											\
-				if (STR_CMP)											\
+				if (!(STR_CMP))											\
 					continue;											\
 				if (BATcount(rl) == BATcapacity(rl)) {					\
 					newcap = BATgrows(rl);								\
@@ -5878,9 +5878,9 @@ str_join_nested(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 	size_t counter = 0;
 
 	if (anti)
-		STR_JOIN_NESTED_LOOP((str_cmp(vl, vr, vr_len) == 0), str_strlen(vr), fname);
-	else
 		STR_JOIN_NESTED_LOOP((str_cmp(vl, vr, vr_len) != 0), str_strlen(vr), fname);
+	else
+		STR_JOIN_NESTED_LOOP((str_cmp(vl, vr, vr_len) == 0), str_strlen(vr), fname);
 
 	assert(!rr || BATcount(rl) == BATcount(rr));
 	BATsetcount(rl, BATcount(rl));
