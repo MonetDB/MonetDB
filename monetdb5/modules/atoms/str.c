@@ -5546,69 +5546,69 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define STR_JOIN_NESTED_LOOP(STR_CMP, STR_LEN, FNAME)					\
 	do {																\
-		canditer_init(&rci, r, cr);									\
+		canditer_init(&rci, r, cr);										\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
-			if (strNil(vr))											\
-				continue;												\
-			vr_len = STR_LEN;											\
 			matches = 0;												\
-			canditer_init(&lci, l, cl);								\
-			for (BUN lidx = 0; lidx < lci.ncand; lidx++) {				\
-				lo = canditer_next(&lci);								\
-				vl = VALUE(l, lo - lbase);								\
-				if (strNil(vl))											\
-					continue;											\
-				if (!(STR_CMP))											\
-					continue;											\
-				if (BATcount(rl) == BATcapacity(rl)) {					\
-					newcap = BATgrows(rl);								\
-					BATsetcount(rl, BATcount(rl));						\
-					if (rr)											\
-						BATsetcount(rr, BATcount(rr));					\
-					if (BATextend(rl, newcap) != GDK_SUCCEED ||		\
-						(rr && BATextend(rr, newcap) != GDK_SUCCEED)) { \
-						msg = createException(MAL, FNAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-						goto exit;										\
+			if (!strNil(vr)) {											\
+				vr_len = STR_LEN;										\
+				canditer_init(&lci, l, cl);								\
+				for (BUN lidx = 0; lidx < lci.ncand; lidx++) {			\
+					lo = canditer_next(&lci);							\
+					vl = VALUE(l, lo - lbase);							\
+					if (strNil(vl))										\
+						continue;										\
+					if (!(STR_CMP))										\
+						continue;										\
+					if (BATcount(rl) == BATcapacity(rl)) {				\
+						newcap = BATgrows(rl);							\
+						BATsetcount(rl, BATcount(rl));					\
+						if (rr)											\
+							BATsetcount(rr, BATcount(rr));				\
+						if (BATextend(rl, newcap) != GDK_SUCCEED ||		\
+							(rr && BATextend(rr, newcap) != GDK_SUCCEED)) { \
+							msg = createException(MAL, FNAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+							goto exit;									\
+						}												\
+						assert(!rr || BATcapacity(rl) == BATcapacity(rr)); \
 					}													\
-					assert(!rr || BATcapacity(rl) == BATcapacity(rr));	\
-				}														\
-				if (BATcount(rl) > 0) {								\
-					if (last_lo + 1 != lo)								\
-						rl->tseqbase = oid_nil;						\
-					if (matches == 0) {								\
-						if (rr)										\
-							rr->trevsorted = false;					\
-						if (last_lo > lo) {							\
-							rl->tsorted = false;						\
-							rl->tkey = false;							\
-						} else if (last_lo < lo) {						\
-							rl->trevsorted = false;					\
-						} else {										\
-							rl->tkey = false;							\
+					if (BATcount(rl) > 0) {								\
+						if (last_lo + 1 != lo)							\
+							rl->tseqbase = oid_nil;						\
+						if (matches == 0) {								\
+							if (rr)										\
+								rr->trevsorted = false;					\
+							if (last_lo > lo) {							\
+								rl->tsorted = false;					\
+								rl->tkey = false;						\
+							} else if (last_lo < lo) {					\
+								rl->trevsorted = false;					\
+							} else {									\
+								rl->tkey = false;						\
+							}											\
 						}												\
 					}													\
+					APPEND(rl, lo);										\
+					if (rr)												\
+						APPEND(rr, ro);									\
+					last_lo = lo;										\
+					matches++;											\
 				}														\
-				APPEND(rl, lo);										\
-				if (rr)												\
-					APPEND(rr, ro);									\
-				last_lo = lo;											\
-				matches++;												\
 			}															\
 			if (rr) {													\
 				if (matches > 1) {										\
 					rr->tkey = false;									\
-					rr->tseqbase = oid_nil;							\
-					rl->trevsorted = false;							\
+					rr->tseqbase = oid_nil;								\
+					rl->trevsorted = false;								\
 				} else if (matches == 0) {								\
 					rskipped = BATcount(rr) > 0;						\
 				} else if (rskipped) {									\
-					rr->tseqbase = oid_nil;							\
+					rr->tseqbase = oid_nil;								\
 				}														\
 			} else if (matches > 1) {									\
-				rl->trevsorted = false;								\
+				rl->trevsorted = false;									\
 			}															\
 		}																\
 	} while (0)
