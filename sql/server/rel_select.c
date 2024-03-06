@@ -1219,6 +1219,70 @@ set_dependent_( sql_rel *r)
 		set_dependent(r);
 }
 
+static
+sql_rel* find_union(visitor *v, sql_rel *rel) {
+	if (rel->op == op_union)
+		v->data = rel;
+	return rel;
+}
+
+static inline
+bool group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp,const char* sname, const char* tname) {
+	sql_table* t = find_table_or_view_on_scope(sql, NULL, sname, tname, "SELECT", false);
+	bool allow = false;
+	if (t) {
+		sql_idx* pki = NULL;
+		list *ukil = sa_list(sql->sa);
+
+		for (node * n = ol_first_node(t->idxs); n; n = n->next) {
+			sql_idx *i = n->data;
+			switch (i->key->type) {
+			case pkey:
+				pki = i;
+				continue;
+			case ukey:
+			case unndkey:
+				list_append(ukil, i);
+				continue;
+			default:
+				continue;
+			}
+		}
+		if (pki && pki->columns->cnt == 1 &&  ((list*) inner->r)->cnt == 1) {
+			/* for now only check simple case where primary key and group by expression is a single column*/
+			sql_exp* gbe = ((list*) inner->r)->h->data;
+			assert(gbe->type == e_column);
+			sql_column* pkc = ((sql_kc *)pki->columns->h->data)->c;
+			if (strcmp(gbe->alias.name, pkc->base.name) == 0) {
+				node *n;
+				for (n = ukil->h; n; n = n->next){
+					sql_idx* uki = n->data;
+					if (uki->columns->cnt == 1) {
+						/* for now only check simple case where unique key is a single column*/
+						sql_column* ukc = ((sql_kc *)uki->columns->h->data)->c;
+						if (strcmp(exp->alias.name, ukc->base.name) == 0) {
+							allow = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		if (allow) {
+			/* sufficiency condition: abort if relation contains union subrelation
+			* because it may break functional dependency between pk and uk */
+			visitor v = {.sql=sql};
+			rel_visitor_topdown(&v, inner, &find_union);
+			if (v.data)
+				allow = false;
+		}
+	}
+
+	return allow;
+
+}
+
 static sql_exp *
 rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 {
@@ -1414,8 +1478,18 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) {
-			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column3(sql, inner->l, sname, tname, cname, f)))
-				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column3(sql, inner->l, sname, tname, cname, f))) {
+				if (group_by_pk_project_uk_cond(sql, inner, exp, sname, tname)) {
+					/* SQL23 feature: very special case where primary key is used in GROUP BY expression and
+					 * unique key is in the project list or ORDER BY clause */
+					sql->session->status = 0;
+					sql->errstr[0] = 0;
+					exp->card = CARD_AGGR;
+					list_append(inner->exps, exp);
+				}
+				else
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+			}
 		}
 
 		if (!exp)

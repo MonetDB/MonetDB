@@ -2469,7 +2469,7 @@ run_optimizer
 bind_join_order(visitor *v, global_props *gp)
 {
 	int flag = v->sql->sql_optimizer;
-	return gp->opt_level == 1 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
+	return gp->opt_level == 1 && gp->opt_cycle < 10 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
 		   gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;
 }
 

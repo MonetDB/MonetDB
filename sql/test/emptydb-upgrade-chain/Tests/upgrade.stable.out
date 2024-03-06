@@ -20,6 +20,58 @@ update sys.args set type_digits = 31 where type = 'int' and type_digits <> 31;
 update sys.args set type_digits = 63 where type = 'bigint' and type_digits <> 63;
 update sys.args set type_digits = 127 where type = 'hugeint' and type_digits <> 127;
 update sys.args set type = 'varchar' where type in ('clob', 'char');
+drop aggregate median(decimal);
+drop aggregate median_avg(decimal);
+drop aggregate quantile(decimal, double);
+drop aggregate quantile_avg(decimal, double);
+create aggregate median(val DECIMAL(2)) returns DECIMAL(2)
+ external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(DECIMAL(2)) TO PUBLIC;
+create aggregate median(val DECIMAL(4)) returns DECIMAL(4)
+ external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(DECIMAL(4)) TO PUBLIC;
+create aggregate median(val DECIMAL(9)) returns DECIMAL(9)
+ external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(DECIMAL(9)) TO PUBLIC;
+create aggregate median(val DECIMAL(18)) returns DECIMAL(18)
+ external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(DECIMAL(18)) TO PUBLIC;
+create aggregate median_avg(val DECIMAL(2)) returns DOUBLE
+ external name "aggr"."median_avg";
+GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(2)) TO PUBLIC;
+create aggregate median_avg(val DECIMAL(4)) returns DOUBLE
+ external name "aggr"."median_avg";
+GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(4)) TO PUBLIC;
+create aggregate median_avg(val DECIMAL(9)) returns DOUBLE
+ external name "aggr"."median_avg";
+GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(9)) TO PUBLIC;
+create aggregate median_avg(val DECIMAL(18)) returns DOUBLE
+ external name "aggr"."median_avg";
+GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(18)) TO PUBLIC;
+create aggregate quantile(val DECIMAL(2), q DOUBLE) returns DECIMAL(2)
+ external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(2), DOUBLE) TO PUBLIC;
+create aggregate quantile(val DECIMAL(4), q DOUBLE) returns DECIMAL(4)
+ external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(4), DOUBLE) TO PUBLIC;
+create aggregate quantile(val DECIMAL(9), q DOUBLE) returns DECIMAL(9)
+ external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(9), DOUBLE) TO PUBLIC;
+create aggregate quantile(val DECIMAL(18), q DOUBLE) returns DECIMAL(18)
+ external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(18), DOUBLE) TO PUBLIC;
+create aggregate quantile_avg(val DECIMAL(2), q DOUBLE) returns DOUBLE
+ external name "aggr"."quantile_avg";
+GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(2), DOUBLE) TO PUBLIC;
+create aggregate quantile_avg(val DECIMAL(4), q DOUBLE) returns DOUBLE
+ external name "aggr"."quantile_avg";
+GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(4), DOUBLE) TO PUBLIC;
+create aggregate quantile_avg(val DECIMAL(9), q DOUBLE) returns DOUBLE
+ external name "aggr"."quantile_avg";
+GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(9), DOUBLE) TO PUBLIC;
+create aggregate quantile_avg(val DECIMAL(18), q DOUBLE) returns DOUBLE
+ external name "aggr"."quantile_avg";
+GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(18), DOUBLE) TO PUBLIC;
 drop function if exists sys.time_to_str(time with time zone, string) cascade;
 drop function if exists sys.timestamp_to_str(timestamp with time zone, string) cascade;
 create function time_to_str(d time, format string) returns string
@@ -31,7 +83,7 @@ create function timestamp_to_str(d timestamp with time zone, format string) retu
 grant execute on function time_to_str(time, string) to public;
 grant execute on function time_to_str(time with time zone, string) to public;
 grant execute on function timestamp_to_str(timestamp with time zone, string) to public;
-update sys.functions set system = true where not system and schema_id = 2000 and name in ('time_to_str', 'timestamp_to_str');
+update sys.functions set system = true where not system and schema_id = 2000 and name in ('time_to_str', 'timestamp_to_str', 'median', 'median_avg', 'quantile', 'quantile_avg');
 drop function if exists sys.dump_database(boolean) cascade;
 drop view sys.dump_comments;
 drop view sys.dump_tables;

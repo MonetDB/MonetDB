@@ -55,8 +55,8 @@ str
 sql_partition_validate_key(mvc *sql, sql_table *nt, sql_key *k, const char* op)
 {
 	if (k->type != fkey) {
-		const char *keys = (k->type == pkey) ? "primary" : "unique";
-		assert(k->type == pkey || k->type == ukey);
+		const char *keys = (k->type == pkey) ? "primary" : k->type == unndkey ? "nndunique" :  "unique";
+		assert(k->type == pkey || k->type == ukey || k->type == unndkey);
 
 		if (isPartitionedByColumnTable(nt)) {
 			assert(nt->part.pcol);
