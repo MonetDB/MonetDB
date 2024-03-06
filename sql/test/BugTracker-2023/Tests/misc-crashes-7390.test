@@ -241,7 +241,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v1 INT)
 
-statement error 42000!CATALOG: no such function 'sys'.'='
+statement ok
 UPDATE v0 SET v1 = (WITH v0 AS (SELECT 42039652.000000) SELECT STDDEV_POP (96) OVER (ORDER BY v1) FROM v0, v0 LIMIT 37 OFFSET 62) = 8
 
 statement ok
@@ -259,8 +259,7 @@ query I nosort
 WITH v0 (v1) AS (SELECT 127 FROM v0 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 ^ v1 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8
 ----
 
-skipif knownfail
-statement ok
+statement error 42000!SELECT: identifier 'v1' ambiguous
 UPDATE v0 SET v1 = (WITH v0 (v1) AS (SELECT 127 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8) ^ v1
 -- sql/server/rel_select.c:3104: rel_binop_: Assertion `t1 && t2' failed.
 
@@ -335,7 +334,6 @@ statement error 42000!SELECT: identifier 'v1' unknown
 WITH v0 AS (SELECT v1 * (95 - v1) FROM v0 ORDER BY v1, v1 DESC, ('x' < v1 AND v1 = 24)) SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16
 ----
 
-skipif knownfail
 statement ok
 UPDATE v0 SET v1 = -128 WHERE v1 = 1 AND v1 IN (WITH v0 AS (SELECT v1 * (95 - v1) FROM v0 ORDER BY v1, v1 DESC, ('x' < v1 AND v1 = 24)) SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16) OR (69 AND 30) OR ('x' >= 9)
 
@@ -374,6 +372,14 @@ skipif knownfail
 query IT nosort
 SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
 ----
+0
+x
+67
+x
+127
+x
+-1
+x
 
 -- mul_bte_bte_bte: ERROR: 22003!overflow in calculation 87*39.
 
@@ -442,8 +448,7 @@ statement ok
 DROP TABLE v0
 
 -- 29.sql
-skipif knownfail
-statement error
+statement error 42000!GROUP BY: GROUPING SETS is empty
 SELECT ALL ( SELECT - - - - - - - - - - 48 FROM ( SELECT NULL - - - - - - - - 89 FROM ( VALUES ( - - - - - - - - - - 74 ) , ( - - - - - 128 ) , ( - - - - - - 8 ) , ( - - - - 61 ) ) AS v1 ( v1 ) GROUP BY ( ) , GROUPING SETS ( GROUPING SETS ( GROUPING SETS ( ( ) ) ) ) , ( ) ORDER BY - - - - - - - - - - 255 LIKE v1 / CASE WHEN v1 IS NULL THEN - - 75 END DESC , v1 , v1 LIMIT 63 ) AS v1 UNION SELECT - - - - - - - - - - - - - 74 WHERE - v1 < - 89088397.000000 ) FROM ( SELECT * FROM ( VALUES ( - - - - - - - 61 ) , ( - - - 42 ) ) AS v1 ( v1 ) ) AS v1 ( v1 )
 -- sql/server/rel_select.c:4616: rel_groupings: Assertion `next_set' failed.
 
@@ -523,7 +528,7 @@ statement ok
 INSERT INTO v0(v1) VALUES (10),(10),(NULL),(3)
 
 statement ok
-SELECT DISTINCT group_concat(v0.v1, v1) FROM v0, v0 AS e, v0 AS c GROUP BY v0.v1
+SELECT DISTINCT group_concat(v0.v1, c.v1) FROM v0, v0 AS e, v0 AS c GROUP BY v0.v1
 
 statement ok
 DROP TABLE v0
@@ -565,8 +570,7 @@ CREATE TABLE v0(v2 DOUBLE, v1 REAL)
 statement error 42S22!SELECT: no such column 'v0.v2'
 SELECT 2 FROM v0 AS WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1
 
-skipif knownfail
-statement error 42S22!SELECT: no such column 'v0.v2'
+statement ok
 DELETE FROM v0 WHERE EXISTS ( SELECT 2 FROM v0 AS WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1 )
 
 statement ok
