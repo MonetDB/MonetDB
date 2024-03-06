@@ -2589,15 +2589,17 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 				if (exp_find_column(rl, ne->l, -2) == cl) {
 					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
 
-					equal = exp_match_exp(ne->r, e);
-					if (!equal)
+					if (e)
+						equal = exp_match_exp(ne->r, e);
+					if (!e || !equal)
 						return rel;
 					re = ne->r;
 				} else if (exp_find_column(rl, ne->r, -2) == cl) {
 					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
 
-					equal = exp_match_exp(ne->l, e);
-					if (!equal)
+					if (e)
+						equal = exp_match_exp(ne->l, e);
+					if (!e || !equal)
 						return rel;
 					re = ne->l;
 				} else
