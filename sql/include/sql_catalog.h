@@ -523,8 +523,9 @@ typedef struct sql_subfunc {
 
 typedef enum key_type {
 	pkey,
-	ukey,
-	fkey
+	ukey, /* default behavior is that NULLS are distinct, e.g. there can be multiple null values in a column with regular UNIQUE constraint */
+	fkey,
+	unndkey /* NULLS are not distinct, i.e. NULLS act as regular values for uniqueness checks */
 } key_type;
 
 typedef struct sql_kc {
