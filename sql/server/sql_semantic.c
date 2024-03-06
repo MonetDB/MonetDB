@@ -279,7 +279,7 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 				sql_arg *rarg = tn->data;
 				sql_subtype *res, *r = &rarg->type;
 
-				if (a->fix_scale == SCALE_EQ) {
+				if (a->fix_scale == SCALE_EQ && !IS_AGGR(a)) {
 					res = r;
 				} else {
 					digits = r->digits;
