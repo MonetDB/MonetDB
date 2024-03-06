@@ -54,7 +54,7 @@ create aggregate median(val HUGEINT) returns HUGEINT
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;
 
-create aggregate median(val DECIMAL(38)) returns HUGEINT
+create aggregate median(val DECIMAL(38)) returns DECIMAL(38)
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;
 
@@ -62,7 +62,7 @@ create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;
 
-create aggregate quantile(val DECIMAL(38), q DOUBLE) returns HUGEINT
+create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;
 
