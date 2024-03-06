@@ -6337,7 +6337,8 @@ STRstartswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	str msg = MAL_SUCCEED;
 	bat *rl_id = NULL, *rr_id = NULL, *l_id = NULL, *r_id = NULL,
-		*cl_id = NULL, *cr_id = NULL, *ic_id = NULL, *anti = NULL;
+		*cl_id = NULL, *cr_id = NULL, *ic_id = NULL;
+	bit *anti = NULL;
 	bool icase = false;
 
 	STRJOIN_MAPARGS(stk, pci, rl_id, rr_id, l_id, r_id, cl_id, cr_id, ic_id, anti);
@@ -6370,7 +6371,8 @@ STRendswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	str msg = MAL_SUCCEED;
 	bat *rl_id = NULL, *rr_id = NULL, *l_id = NULL, *r_id = NULL,
-		*cl_id = NULL, *cr_id = NULL, *ic_id = NULL, *anti = NULL;
+		*cl_id = NULL, *cr_id = NULL, *ic_id = NULL;
+	bit *anti = NULL;
 	bool icase = false;
 
 	STRJOIN_MAPARGS(stk, pci, rl_id, rr_id, l_id, r_id, cl_id, cr_id, ic_id, anti);
@@ -6402,7 +6404,8 @@ STRcontainsjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	str msg = MAL_SUCCEED;
 	bat *rl_id = NULL, *rr_id = NULL, *l_id = NULL, *r_id = NULL,
-		*cl_id = NULL, *cr_id = NULL, *ic_id = NULL, *anti = NULL;
+		*cl_id = NULL, *cr_id = NULL, *ic_id = NULL;
+	bit *anti = NULL;
 	bool icase = false;
 
 	STRJOIN_MAPARGS(stk, pci, rl_id, rr_id, l_id, r_id, cl_id, cr_id, ic_id, anti);
