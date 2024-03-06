@@ -359,16 +359,15 @@ x
 -1
 x
 
-statement ok
+statement error 42000!SELECT: identifier 'v1' ambiguous
 WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v1 * 0 / 77
 
 query I nosort
 SELECT count(*) FROM v0
 ----
-131080
+8
 
 -- after the second insert, rerun same query as above, now it crashes server
-skipif knownfail
 query IT nosort
 SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
 ----
