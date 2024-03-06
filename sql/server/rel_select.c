@@ -4133,7 +4133,8 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 				next_set = list_append(new_exp_list(sql->sa), new_exp_list(sql->sa));
 		}
 		if (is_sql_group_totals(f)) { /* if there are no sets, set the found one, otherwise calculate cartesian product and merge the distinct ones */
-			assert(next_set);
+			if (!next_set)
+				return sql_error(sql, 02, SQLSTATE(42000) "GROUP BY: GROUPING SETS is empty");
 			if (!*sets)
 				*sets = next_set;
 			else

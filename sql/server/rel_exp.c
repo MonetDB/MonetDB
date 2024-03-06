@@ -922,6 +922,8 @@ exp_rel(mvc *sql, sql_rel *rel)
 	e->flag = PSM_REL;
 	e->card = is_single(rel)?CARD_ATOM:rel->card;
 	assert(rel);
+	if (is_topn(rel->op))
+		rel = rel->l;
 	if (is_project(rel->op)) {
 		sql_exp *last = rel->exps->t->data;
 		sql_subtype *t = exp_subtype(last);
@@ -2340,8 +2342,13 @@ exp_rel_update_exp(mvc *sql, sql_exp *e, bool up)
 		return e;
 	case e_psm:
 		if (exp_is_rel(e)) {
-			sql_rel *r = exp_rel_get_rel(sql->sa, e);
-			e = r->exps->t->data;
+			sql_rel *r = exp_rel_get_rel(sql->sa, e), *nr = r;
+			if (is_topn(r->op)) {
+				nr = r->l;
+				if (nr && !is_project(nr->op))
+					r->l = nr = rel_project(sql->sa, nr, rel_projections(sql, nr, NULL, 1, 0));
+			}
+			e = nr->exps->t->data;
 			e = exp_ref(sql, e);
 			if (up)
 				set_freevar(e, 1);
