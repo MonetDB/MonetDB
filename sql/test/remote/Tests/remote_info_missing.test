@@ -1,0 +1,12 @@
+statement ok
+create remote table t1234 (c int) on 'mapi:monetdb://localhost:50000/demo/t1'
+
+statement ok
+delete from remote_user_info where table_id = (select id from sys._tables where name = 't1234')
+
+statement ok
+drop table t1234;
+
+query T
+select name from sys._tables where name = 't1234';
+----
