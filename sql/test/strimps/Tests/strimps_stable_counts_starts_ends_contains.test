@@ -212,7 +212,7 @@ Michele
 Joseph
 Carolyn
 
-query TT nosort
+query TT
 SELECT * FROM fal,f WHERE [fal.x] startswith [f.y] ORDER BY x
 ----
 Andrew Alvarado
@@ -314,7 +314,7 @@ William
 William Franco
 William
 
-query TT nosort
+query TT
 SELECT * FROM fal,f WHERE [fal.x] endswith [f.y] ORDER BY x
 ----
 Christopher Russell
@@ -322,10 +322,119 @@ Russell
 Elizabeth Joseph
 Joseph
 
-query TT nosort
+query TT
 SELECT * FROM fal,f WHERE [fal.x] contains [f.y] ORDER BY x
 ----
-110 values hashing to 364b5c6c8dd52695e80e5988b6e8ca5c
+Andrew Alvarado
+Andrew
+Andrew Alvarado
+Andrew
+Ashley Taylor
+Ashley
+Ashley Waters
+Ashley
+Christopher Russell
+Russell
+Christopher Williams
+William
+Christopher Williams
+William
+Christopher Williams
+William
+Christopher Williams
+William
+Daniel Sims
+Daniel
+Daniel Sullivan
+Daniel
+David Carter
+David
+David Carter
+David
+David Clark
+David
+David Clark
+David
+Donna Anderson
+Don
+Donna Rivera
+Don
+Elizabeth Joseph
+Joseph
+Emma Abbott
+Emma
+James Ballard
+James
+James Ballard
+James
+James Ballard
+James
+James Whitney
+James
+James Whitney
+James
+James Whitney
+James
+James Woodard
+James
+James Woodard
+James
+James Woodard
+James
+Jessica Miller
+Jessica
+Johnny Gibson
+Johnny
+Karen Jones
+Karen
+Laura Gonzalez
+Laura
+Laura Holland
+Laura
+Lisa Matthews
+Lisa
+Mark Cook
+Mark
+Mary Garcia
+Mary
+Mary Miller
+Mary
+Michael Mendoza
+Michael
+Michael Mendoza
+Michael
+Michael Nguyen
+Michael
+Michael Nguyen
+Michael
+Rachel Taylor
+Rachel
+Russell Walker
+Russell
+Ryan Knight
+Ryan
+Samuel Jackson
+Samuel
+Samuel Jackson
+Samuel
+Scott Young
+Scott
+Scott Young
+Scott
+Stephanie Gillespie
+Stephanie
+Stephanie Gillespie
+Stephanie
+Thomas Morales
+Thomas
+Thomas Ramirez
+Thomas
+Wanda Brooks
+Wanda
+William Franco
+William
+William Franco
+William
 
 statement ok
 ALTER TABLE fal SET READ ONLY
@@ -333,7 +442,7 @@ ALTER TABLE fal SET READ ONLY
 statement ok
 CREATE IMPRINTS INDEX fal_index ON fal(x)
 
-query TT nosort
+query TT
 SELECT * FROM fal,f WHERE [fal.x] startswith [f.y] ORDER BY x
 ----
 Andrew Alvarado
@@ -435,7 +544,7 @@ William
 William Franco
 William
 
-query TT nosort
+query TT
 SELECT * FROM fal,f WHERE [fal.x] endswith [f.y] ORDER BY x
 ----
 Christopher Russell
@@ -443,14 +552,122 @@ Russell
 Elizabeth Joseph
 Joseph
 
-query TT nosort
+query TT
 SELECT * FROM fal,f WHERE [fal.x] contains [f.y] ORDER BY x
 ----
-110 values hashing to 364b5c6c8dd52695e80e5988b6e8ca5c
+Andrew Alvarado
+Andrew
+Andrew Alvarado
+Andrew
+Ashley Taylor
+Ashley
+Ashley Waters
+Ashley
+Christopher Russell
+Russell
+Christopher Williams
+William
+Christopher Williams
+William
+Christopher Williams
+William
+Christopher Williams
+William
+Daniel Sims
+Daniel
+Daniel Sullivan
+Daniel
+David Carter
+David
+David Carter
+David
+David Clark
+David
+David Clark
+David
+Donna Anderson
+Don
+Donna Rivera
+Don
+Elizabeth Joseph
+Joseph
+Emma Abbott
+Emma
+James Ballard
+James
+James Ballard
+James
+James Ballard
+James
+James Whitney
+James
+James Whitney
+James
+James Whitney
+James
+James Woodard
+James
+James Woodard
+James
+James Woodard
+James
+Jessica Miller
+Jessica
+Johnny Gibson
+Johnny
+Karen Jones
+Karen
+Laura Gonzalez
+Laura
+Laura Holland
+Laura
+Lisa Matthews
+Lisa
+Mark Cook
+Mark
+Mary Garcia
+Mary
+Mary Miller
+Mary
+Michael Mendoza
+Michael
+Michael Mendoza
+Michael
+Michael Nguyen
+Michael
+Michael Nguyen
+Michael
+Rachel Taylor
+Rachel
+Russell Walker
+Russell
+Ryan Knight
+Ryan
+Samuel Jackson
+Samuel
+Samuel Jackson
+Samuel
+Scott Young
+Scott
+Scott Young
+Scott
+Stephanie Gillespie
+Stephanie
+Stephanie Gillespie
+Stephanie
+Thomas Morales
+Thomas
+Thomas Ramirez
+Thomas
+Wanda Brooks
+Wanda
+William Franco
+William
+William Franco
+William
 
 statement ok
 DROP TABLE fal CASCADE
 
 statement ok
 DROP TABLE f
-
