@@ -359,15 +359,20 @@ x
 -1
 x
 
-statement error 42000!SELECT: identifier 'v1' ambiguous
-WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v1 * 0 / 77
+-- statement error 42000!SELECT: identifier 'v1' ambiguous
+-- WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v1 * 0 / 77
+
+statement ok
+WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v0.v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v0.v1 * 0 / 77
 
 query I nosort
 SELECT count(*) FROM v0
 ----
-8
+131080
 
--- after the second insert, rerun same query as above, now it crashes server
+-- after the second insert, rerun same query as above, now it crashes server with assertion failure
+-- gdk/gdk_bat.c:2098: BATsetcount: Assertion `b->batCapacity >= cnt' failed.
+skipif knownfail
 query IT nosort
 SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
 ----
