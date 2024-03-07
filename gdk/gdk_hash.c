@@ -102,10 +102,12 @@ HASHclear(Hash *h)
 	memset(h->Bckt, 0xFF, h->nbucket * h->width);
 }
 
-#define HASH_VERSION		5
-/* this is only for the change of hash function of the UUID type and MBR
- * type; if HASH_VERSION is increased again from 5, the code associated
- * with HASH_VERSION_NOUUID and HASH_VERSION_NOMBR must be deleted */
+#define HASH_VERSION		6
+/* this is only for the change of hash function of the floating point
+ * types, the UUID type and the MBR type; if HASH_VERSION is increased
+ * again from 6, the code associated with HASH_VERSION_NOUUID and
+ * HASH_VERSION_NOMBR must be deleted */
+#define HASH_VERSION_FLOAT	5
 #define HASH_VERSION_NOMBR	4
 #define HASH_VERSION_NOUUID	3
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
@@ -509,6 +511,8 @@ BATcheckhash(BAT *b)
 							 ((size_t) 1 << 24) |
 #endif
 							 HASH_VERSION_NOUUID) &&
+						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
+						 strcmp(ATOMname(b->ttype), "dbl") != 0 &&
 						 strcmp(ATOMname(b->ttype), "uuid") != 0 &&
 						 strcmp(ATOMname(b->ttype), "mbr") != 0)
 #endif
@@ -519,7 +523,19 @@ BATcheckhash(BAT *b)
 							 ((size_t) 1 << 24) |
 #endif
 							 HASH_VERSION_NOMBR) &&
+						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
+						 strcmp(ATOMname(b->ttype), "dbl") != 0 &&
 						 strcmp(ATOMname(b->ttype), "mbr") != 0)
+#endif
+#ifdef HASH_VERSION_FLOAT
+					     /* if not floating point, also allow previous version */
+					     || (hdata[0] == (
+#ifdef PERSISTENTHASH
+							 ((size_t) 1 << 24) |
+#endif
+							 HASH_VERSION_FLOAT) &&
+						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
+						 strcmp(ATOMname(b->ttype), "dbl") != 0)
 #endif
 						    ) &&
 					    hdata[1] > 0 &&

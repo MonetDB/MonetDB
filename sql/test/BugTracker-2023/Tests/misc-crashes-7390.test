@@ -322,7 +322,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0 (v1 INTEGER PRIMARY KEY)
 
-query I nosort
+query R nosort
 SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16
 ----
 
@@ -347,16 +347,16 @@ CREATE TABLE v0(v1 FLOAT)
 statement ok
 INSERT INTO v0 VALUES (0),(67),(127),(-1),(NULL),(NULL),(NULL),(NULL)
 
-query IT nosort
+query RT nosort
 SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
 ----
-0
+0.000
 x
-67
+67.000
 x
-127
+127.000
 x
--1
+-1.000
 x
 
 statement ok
@@ -367,20 +367,11 @@ SELECT count(*) FROM v0
 ----
 131080
 
--- after the second insert, rerun same query as above, now it crashes server with assertion failure
--- gdk/gdk_bat.c:2098: BATsetcount: Assertion `b->batCapacity >= cnt' failed.
-skipif knownfail
-query IT nosort
+-- after the second insert, rerun same query as above, since it used to crash the server
+query RT nosort
 SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
 ----
-0
-x
-67
-x
-127
-x
--1
-x
+131080 values hashing to 6b7d0af1bd7606b28955e7b023646d9d
 
 -- mul_bte_bte_bte: ERROR: 22003!overflow in calculation 87*39.
 
@@ -576,3 +567,4 @@ DELETE FROM v0 WHERE EXISTS ( SELECT 2 FROM v0 AS WHERE v0 . v2 = ( SELECT v2 WH
 
 statement ok
 DROP TABLE v0
+
