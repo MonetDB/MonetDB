@@ -367,7 +367,8 @@ SELECT count(*) FROM v0
 ----
 131080
 
--- after the second insert, rerun same query as above, now it crashes server
+-- after the second insert, rerun same query as above, now it crashes server with assertion failure
+-- gdk/gdk_bat.c:2098: BATsetcount: Assertion `b->batCapacity >= cnt' failed.
 skipif knownfail
 query IT nosort
 SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
