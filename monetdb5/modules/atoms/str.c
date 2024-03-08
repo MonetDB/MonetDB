@@ -3234,15 +3234,15 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 	do {																\
 		RL_ID = getArgReference(STK, PCI, 0);							\
 		RR_ID = PCI->retc == 1 ? 0 : getArgReference(STK, PCI, 1);		\
-		int i = PCI->retc == 1 ? 1 : 2;								\
+		int i = PCI->retc == 1 ? 1 : 2;									\
 		L_ID = getArgReference(STK, PCI, i++);							\
 		R_ID = getArgReference(STK, PCI, i++);							\
 		IC_ID = PCI->argc - PCI->retc == 7 ?							\
 			NULL : getArgReference(stk, pci, i++);						\
-		CL_ID = getArgReference(STK, PCI, i++);						\
-		CR_ID = getArgReference(STK, PCI, i++);						\
-		ANTI = PCI->argc - PCI->retc == 7 ?							\
-			getArgReference(STK, PCI, 8) : getArgReference(STK, PCI, 9);\
+		CL_ID = getArgReference(STK, PCI, i++);							\
+		CR_ID = getArgReference(STK, PCI, i++);							\
+		ANTI = PCI->argc - PCI->retc == 7 ?								\
+			getArgReference(STK, PCI, 8) : getArgReference(STK, PCI, 9); \
 	} while (0)
 
 static inline str
