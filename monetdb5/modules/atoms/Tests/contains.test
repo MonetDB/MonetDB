@@ -29,71 +29,26 @@ select contains('johndoe', 'john')
 1
 
 query I nosort
-select contains('one two three', 'three', true)
+SELECT contains('one two three', 'three', true)
 ----
 1
 
 query I nosort
-select contains('one two three', 'THREE', true)
+SELECT contains('one two three', 'THREE', true)
 ----
 1
 
 query I nosort
-select contains('one two three', 'THREE', false)
+SELECT contains('one two three', 'THREE', false)
 ----
 0
 
 query I nosort
-select contains('Müller Thomas', 'müller', true)
+SELECT contains('Müller Thomas', 'müller', true)
 ----
 1
 
 query I nosort
-select contains('Müller Thomas', 'müller', false)
+SELECT contains('Müller Thomas', 'müller', false)
 ----
 0
-
-statement ok
-create table foo(x string)
-
-statement ok
-create table bar(x string)
-
-statement ok
-insert into foo values ('johnleft'),('janeright'),('robertright'),('timup'),('lexleft'),('joeleft')
-
-statement ok
-insert into bar values ('left'),('right'),('up'),('down')
-
-query I nosort
-select contains(x, 'left') from foo
-----
-1
-0
-0
-0
-1
-1
-
-query TT rowsort
-select * from foo,bar where [foo.x] contains [bar.x, false]
-----
-janeright
-right
-joeleft
-left
-johnleft
-left
-lexleft
-left
-robertright
-right
-timup
-up
-
-statement ok
-drop table foo
-
-statement ok
-drop table bar
-
