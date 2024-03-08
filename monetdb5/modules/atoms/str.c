@@ -3835,41 +3835,45 @@ str_is_suffix(const char *s, const char *suffix, int sul)
 		return strcmp(s + sl - sul, suffix);
 }
 
+/* case insensitive endswith check */
 int
 str_is_isuffix(const char *s, const char *suffix, int sul)
 {
-	int sl = str_strlen(s);
+	const char *e = s + strlen(s);
+	const char *sf;
 
-	if (sl < sul)
-		return -1;
-	else
-		return utf8casecmp(s + sl - sul, suffix);
+	(void) sul;
+	/* note that the uppercase and lowercase forms of a character aren't
+	 * necessarily the same length in their UTF-8 encodings */
+	for (sf = suffix; *sf && e > s; sf++) {
+		if ((*sf & 0xC0) != 0x80) {
+			while ((*--e & 0xC0) == 0x80)
+				;
+		}
+	}
+	return *sf != 0 || utf8casecmp(e, suffix) != 0;
 }
 
 int
 str_contains(const char *h, const char *n, int nlen)
 {
 	(void) nlen;
-	/* 64bit: should return lng */
-	return strstr(h, n) ? 0 : 1;
+	return strstr(h, n) == NULL;
 }
 
 int
 str_icontains(const char *h, const char *n, int nlen)
 {
 	(void) nlen;
-	/* 64bit: should return lng */
-	return utf8casestr(h, n) ? 0 : 1;
+	return utf8casestr(h, n) == NULL;
 }
 
-#define STR_MAPARGS(STK, PCI, R, S1, S2, ICASE)				\
-	do{														\
-		R = getArgReference(STK, PCI, 0);						\
-		S1 = *getArgReference_str(STK, PCI, 1);				\
-		S2 = *getArgReference_str(STK, PCI, 2);				\
-		icase = PCI->argc == 4 &&								\
-			*getArgReference_bit(STK, PCI, 3) ? true : false;	\
-																\
+#define STR_MAPARGS(STK, PCI, R, S1, S2, ICASE)							\
+	do{																	\
+		R = getArgReference(STK, PCI, 0);								\
+		S1 = *getArgReference_str(STK, PCI, 1);							\
+		S2 = *getArgReference_str(STK, PCI, 2);							\
+		icase = PCI->argc == 4 && *getArgReference_bit(STK, PCI, 3);	\
 	} while(0)
 
 static str
@@ -3970,8 +3974,7 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *res = getArgReference(stk, pci, 0);
 	const str *haystack = getArgReference(stk, pci, 1),
 		*needle = getArgReference(stk, pci, 2);
-	bit icase = pci->argc == 4
-			&& *getArgReference_bit(stk, pci, 3) ? true : false;
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
 	if (strNil(s) || strNil(h)) {
 		*res = bit_nil;
@@ -4032,8 +4035,7 @@ STRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *res = getArgReference(stk, pci, 0);
 	const str *haystack = getArgReference(stk, pci, 1);
 	const str *needle = getArgReference(stk, pci, 2);
-	bit icase = pci->argc == 4
-			&& *getArgReference_bit(stk, pci, 3) ? true : false;
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
 	if (strNil(s) || strNil(h)) {
 		*res = bit_nil;
@@ -5251,9 +5253,9 @@ str_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (anti)					/* keep nulls ? (use false for now) */
-		scanloop_anti(v && *v != '\200' && str_cmp(v, key, klen) != 0, keep_nulls);
+		scanloop_anti(!strNil(v) && str_cmp(v, key, klen) != 0, keep_nulls);
 	else
-		scanloop(v && *v != '\200' && str_cmp(v, key, klen) == 0, keep_nulls);
+		scanloop(!strNil(v) && str_cmp(v, key, klen) == 0, keep_nulls);
 
   bailout:
 	bat_iterator_end(&bi);
@@ -5380,8 +5382,8 @@ STRselect(bat *r_id, const bat *b_id, const bat *cb_id, const char *key,
 		B_ID = getArgReference(STK, PCI, 1);							\
 		CB_ID = getArgReference(STK, PCI, 2);							\
 		KEY = *getArgReference_str(STK, PCI, 3);						\
-		ICASE = PCI->argc == 5 ? false : true;							\
-		ANTI = PCI->argc == 5 ? *getArgReference_bit(STK, PCI, 4) :	\
+		ICASE = PCI->argc != 5;											\
+		ANTI = PCI->argc == 5 ? *getArgReference_bit(STK, PCI, 4) :		\
 			*getArgReference_bit(STK, PCI, 5);							\
 	} while (0)
 
@@ -5612,7 +5614,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}																\
 	} while (0)
 
-#define STARTSWITH_SORTED_LOOP(STR_CMP, STR_LEN, FNAME)				\
+#define STARTSWITH_SORTED_LOOP(STR_CMP, STR_LEN, FNAME)					\
 	do {																\
 		canditer_init(&rci, sorted_r, sorted_cr);						\
 		canditer_init(&lci, sorted_l, sorted_cl);						\
@@ -5634,10 +5636,10 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
-			vr_len = STR_LEN;									\
+			vr_len = STR_LEN;											\
 			matches = 0;												\
 			for (canditer_setidx(&lci, lx), n = lx; n < lci.ncand; n++) { \
-				lo = canditer_next_dense(&lci);						\
+				lo = canditer_next_dense(&lci);							\
 				vl = VALUE(l, lo - lbase);								\
 				cmp = STR_CMP;											\
 				if (cmp < 0) {											\
@@ -5649,49 +5651,49 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (BATcount(rl) == BATcapacity(rl)) {					\
 					newcap = BATgrows(rl);								\
 					BATsetcount(rl, BATcount(rl));						\
-					if (rr)											\
+					if (rr)												\
 						BATsetcount(rr, BATcount(rr));					\
-					if (BATextend(rl, newcap) != GDK_SUCCEED ||		\
+					if (BATextend(rl, newcap) != GDK_SUCCEED ||			\
 						(rr && BATextend(rr, newcap) != GDK_SUCCEED)) { \
 						msg = createException(MAL, FNAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 						goto exit;										\
 					}													\
 					assert(!rr || BATcapacity(rl) == BATcapacity(rr));	\
 				}														\
-				if (BATcount(rl) > 0) {								\
+				if (BATcount(rl) > 0) {									\
 					if (last_lo + 1 != lo)								\
-						rl->tseqbase = oid_nil;						\
-					if (matches == 0) {								\
-						if (rr)										\
-							rr->trevsorted = false;					\
-						if (last_lo > lo) {							\
+						rl->tseqbase = oid_nil;							\
+					if (matches == 0) {									\
+						if (rr)											\
+							rr->trevsorted = false;						\
+						if (last_lo > lo) {								\
 							rl->tsorted = false;						\
 							rl->tkey = false;							\
 						} else if (last_lo < lo) {						\
-							rl->trevsorted = false;					\
+							rl->trevsorted = false;						\
 						} else {										\
 							rl->tkey = false;							\
 						}												\
 					}													\
 				}														\
-				APPEND(rl, lo);										\
-				if (rr)												\
-					APPEND(rr, ro);									\
+				APPEND(rl, lo);											\
+				if (rr)													\
+					APPEND(rr, ro);										\
 				last_lo = lo;											\
 				matches++;												\
 			}															\
 			if (rr) {													\
 				if (matches > 1) {										\
 					rr->tkey = false;									\
-					rr->tseqbase = oid_nil;							\
-					rl->trevsorted = false;							\
+					rr->tseqbase = oid_nil;								\
+					rl->trevsorted = false;								\
 				} else if (matches == 0) {								\
 					rskipped = BATcount(rr) > 0;						\
 				} else if (rskipped) {									\
-					rr->tseqbase = oid_nil;							\
+					rr->tseqbase = oid_nil;								\
 				}														\
 			} else if (matches > 1) {									\
-				rl->trevsorted = false;								\
+				rl->trevsorted = false;									\
 			}															\
 		}																\
 	} while (0)
@@ -6102,7 +6104,7 @@ startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 	int rskipped = 0, vr_len = 0, cmp = 0;
 
 	if (anti)
-		STR_JOIN_NESTED_LOOP((str_cmp(vl, vr, vr_len) != 0), str_strlen(vr), fname);
+		STR_JOIN_NESTED_LOOP(str_cmp(vl, vr, vr_len) != 0, str_strlen(vr), fname);
 	else
 		STARTSWITH_SORTED_LOOP(str_cmp(vl, vr, vr_len), str_strlen(vr), fname);
 
