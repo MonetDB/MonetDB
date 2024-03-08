@@ -3825,6 +3825,8 @@ str_is_isuffix(const char *s, const char *suffix, int sul)
 				;
 		}
 	}
+	while ((*sf & 0xC0) == 0x80)
+		sf++;
 	return *sf != 0 || utf8casecmp(e, suffix) != 0;
 }
 
