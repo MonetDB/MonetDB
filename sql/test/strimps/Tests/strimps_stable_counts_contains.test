@@ -212,118 +212,8 @@ Michele
 Joseph
 Carolyn
 
-query TT
-SELECT * FROM fal,f WHERE [fal.x] startswith [f.y] ORDER BY x
-----
-Andrew Alvarado
-Andrew
-Andrew Alvarado
-Andrew
-Ashley Taylor
-Ashley
-Ashley Waters
-Ashley
-Daniel Sims
-Daniel
-Daniel Sullivan
-Daniel
-David Carter
-David
-David Carter
-David
-David Clark
-David
-David Clark
-David
-Donna Anderson
-Don
-Donna Rivera
-Don
-Emma Abbott
-Emma
-James Ballard
-James
-James Ballard
-James
-James Ballard
-James
-James Whitney
-James
-James Whitney
-James
-James Whitney
-James
-James Woodard
-James
-James Woodard
-James
-James Woodard
-James
-Jessica Miller
-Jessica
-Johnny Gibson
-Johnny
-Karen Jones
-Karen
-Laura Gonzalez
-Laura
-Laura Holland
-Laura
-Lisa Matthews
-Lisa
-Mark Cook
-Mark
-Mary Garcia
-Mary
-Mary Miller
-Mary
-Michael Mendoza
-Michael
-Michael Mendoza
-Michael
-Michael Nguyen
-Michael
-Michael Nguyen
-Michael
-Rachel Taylor
-Rachel
-Russell Walker
-Russell
-Ryan Knight
-Ryan
-Samuel Jackson
-Samuel
-Samuel Jackson
-Samuel
-Scott Young
-Scott
-Scott Young
-Scott
-Stephanie Gillespie
-Stephanie
-Stephanie Gillespie
-Stephanie
-Thomas Morales
-Thomas
-Thomas Ramirez
-Thomas
-Wanda Brooks
-Wanda
-William Franco
-William
-William Franco
-William
-
-query TT
-SELECT * FROM fal,f WHERE [fal.x] endswith [f.y] ORDER BY x
-----
-Christopher Russell
-Russell
-Elizabeth Joseph
-Joseph
-
-query TT
-SELECT * FROM fal,f WHERE [fal.x] contains [f.y] ORDER BY x
+query TT rowsort
+SELECT * FROM fal,f WHERE [fal.x] contains [f.y]
 ----
 Andrew Alvarado
 Andrew
@@ -435,6 +325,11 @@ William Franco
 William
 William Franco
 William
+
+query I
+SELECT COUNT(*) =  55 FROM fal,f WHERE [fal.x] contains [f.y]
+----
+1
 
 statement ok
 ALTER TABLE fal SET READ ONLY
@@ -442,118 +337,8 @@ ALTER TABLE fal SET READ ONLY
 statement ok
 CREATE IMPRINTS INDEX fal_index ON fal(x)
 
-query TT
-SELECT * FROM fal,f WHERE [fal.x] startswith [f.y] ORDER BY x
-----
-Andrew Alvarado
-Andrew
-Andrew Alvarado
-Andrew
-Ashley Taylor
-Ashley
-Ashley Waters
-Ashley
-Daniel Sims
-Daniel
-Daniel Sullivan
-Daniel
-David Carter
-David
-David Carter
-David
-David Clark
-David
-David Clark
-David
-Donna Anderson
-Don
-Donna Rivera
-Don
-Emma Abbott
-Emma
-James Ballard
-James
-James Ballard
-James
-James Ballard
-James
-James Whitney
-James
-James Whitney
-James
-James Whitney
-James
-James Woodard
-James
-James Woodard
-James
-James Woodard
-James
-Jessica Miller
-Jessica
-Johnny Gibson
-Johnny
-Karen Jones
-Karen
-Laura Gonzalez
-Laura
-Laura Holland
-Laura
-Lisa Matthews
-Lisa
-Mark Cook
-Mark
-Mary Garcia
-Mary
-Mary Miller
-Mary
-Michael Mendoza
-Michael
-Michael Mendoza
-Michael
-Michael Nguyen
-Michael
-Michael Nguyen
-Michael
-Rachel Taylor
-Rachel
-Russell Walker
-Russell
-Ryan Knight
-Ryan
-Samuel Jackson
-Samuel
-Samuel Jackson
-Samuel
-Scott Young
-Scott
-Scott Young
-Scott
-Stephanie Gillespie
-Stephanie
-Stephanie Gillespie
-Stephanie
-Thomas Morales
-Thomas
-Thomas Ramirez
-Thomas
-Wanda Brooks
-Wanda
-William Franco
-William
-William Franco
-William
-
-query TT
-SELECT * FROM fal,f WHERE [fal.x] endswith [f.y] ORDER BY x
-----
-Christopher Russell
-Russell
-Elizabeth Joseph
-Joseph
-
-query TT
-SELECT * FROM fal,f WHERE [fal.x] contains [f.y] ORDER BY x
+query TT rowsort
+SELECT * FROM fal,f WHERE [fal.x] contains [f.y]
 ----
 Andrew Alvarado
 Andrew
@@ -665,6 +450,11 @@ William Franco
 William
 William Franco
 William
+
+query I
+SELECT COUNT(*) =  55 FROM fal,f WHERE [fal.x] contains [f.y]
+----
+1
 
 statement ok
 DROP TABLE fal CASCADE

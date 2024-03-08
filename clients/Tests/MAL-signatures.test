@@ -39017,7 +39017,7 @@ str
 contains
 pattern str.contains(X_0:str, X_1:str, X_2:bit):bit 
 STRcontains;
-Check if string chaystack contains string needle, icase flag.
+Check if string haystack contains string needle, icase flag.
 str
 containsjoin
 pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
