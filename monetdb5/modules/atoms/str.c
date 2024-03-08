@@ -108,7 +108,7 @@
  */
 
 /* These tables were generated from the Unicode 13.0.0 spec. */
-const struct UTF8_lower_upper {
+static const struct UTF8_lower_upper {
 	const unsigned int from, to;
 } UTF8_toUpper[] = {			/* code points with non-null uppercase conversion */
 	{0x0061, 0x0041,},
@@ -3102,55 +3102,29 @@ STRepilogue(void *ret)
 }
 
 #ifndef NDEBUG
-static void
-UTF8_assert(const char *restrict s)
+static inline void
+UTF8_assert(const char *s)
 {
-	int c;
-
-	if (s == NULL)
-		return;
-	if (*s == '\200' && s[1] == '\0')
-		return;					/* str_nil */
-	while ((c = *s++) != '\0') {
-		if ((c & 0x80) == 0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xE0) == 0xC0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xF0) == 0xE0)
-			continue;
-		if ((*s++ & 0xC0) != 0x80)
-			assert(0);
-		if ((c & 0xF8) == 0xF0)
-			continue;
-		assert(0);
-	}
+	assert(strNil(s) || utf8valid(s) == 0);
 }
 #else
 #define UTF8_assert(s)		((void) 0)
 #endif
 
+/* return how many codepoints in the substring end in s starts */
 static inline int
 UTF8_strpos(const char *s, const char *end)
 {
-	int pos = 0;
-
 	UTF8_assert(s);
 
 	if (s > end) {
 		return -1;
 	}
-	while (s < end) {
-		/* just count leading bytes of encoded code points; only works
-		 * for correctly encoded UTF-8 */
-		pos += (*s++ & 0xC0) != 0x80;
-	}
-	return pos;
+	return (int) utf8nlen(s, (size_t) (end - s));
 }
 
+/* return a pointer to the byte that starts the pos'th (0-based)
+ * codepoint in s */
 static inline str
 UTF8_strtail(const char *s, int pos)
 {
@@ -3166,6 +3140,7 @@ UTF8_strtail(const char *s, int pos)
 	return (str) s;
 }
 
+/* copy n Unicode codepoints from s to dst, return pointer to new end */
 static inline str
 UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 {
@@ -3196,56 +3171,29 @@ UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 	return dst;
 }
 
-static inline str
-UTF8_offset(char *restrict s, int n)
-{
-	UTF8_assert(s);
-	while (*s && n) {
-		if ((*s & 0xF8) == 0xF0) {
-			/* 4 byte UTF-8 sequence */
-			s += 4;
-		} else if ((*s & 0xF0) == 0xE0) {
-			/* 3 byte UTF-8 sequence */
-			s += 3;
-		} else if ((*s & 0xE0) == 0xC0) {
-			/* 2 byte UTF-8 sequence */
-			s += 2;
-		} else {
-			/* 1 byte UTF-8 "sequence" */
-			s++;
-		}
-		n--;
-	}
-	return s;
-}
-
+/* return number of Unicode codepoints in s; s is not nil */
 int
-UTF8_strlen(const char *restrict s)
-{								/* This function assumes, s is never nil */
-	size_t pos = 0;
-
+UTF8_strlen(const char *s)
+{								/* This function assumes s is never nil */
 	UTF8_assert(s);
 	assert(!strNil(s));
 
-	while (*s) {
-		/* just count leading bytes of encoded code points; only works
-		 * for correctly encoded UTF-8 */
-		pos += (*s++ & 0xC0) != 0x80;
-	}
-	assert(pos < INT_MAX);
-	return (int) pos;
+	return (int) utf8len(s);
 }
 
+/* return (int) strlen(s); s is not nil */
 int
-str_strlen(const char *restrict s)
-{								/* This function assumes, s is never nil */
-	size_t pos = strlen(s);
-	assert(pos < INT_MAX);
-	return (int) pos;
+str_strlen(const char *s)
+{								/* This function assumes s is never nil */
+	UTF8_assert(s);
+	assert(!strNil(s));
+
+	return (int) strlen(s);
 }
 
+/* return the display width of s */
 int
-UTF8_strwidth(const char *restrict s)
+UTF8_strwidth(const char *s)
 {
 	int len = 0;
 	int c;
@@ -3632,6 +3580,10 @@ STRTail(str *res, const str *arg1, const int *offset)
 	return msg;
 }
 
+/* copy the substring s[off:off+l] into *buf, replacing *buf with a
+ * freshly allocated buffer if the substring doesn't fit; off is 0
+ * based, and both off and l count in Unicode codepoints (i.e. not
+ * bytes); if off < 0, off counts from the end of the string */
 str
 str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 {
@@ -3905,10 +3857,14 @@ STRstartswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	STR_MAPARGS(stk, pci, r, s1, s2, icase);
 
-	int s2_len = str_strlen(s2);
-	*r = (strNil(s1) || strNil(s2)) ? bit_nil :
-		icase ? str_is_iprefix(s1, s2, s2_len) == 0 :
-		        str_is_prefix(s1, s2, s2_len) == 0;
+	if (strNil(s1) || strNil(s2)) {
+		*r = bit_nil;
+	} else {
+		int s2_len = str_strlen(s2);
+		*r = icase ?
+			str_is_iprefix(s1, s2, s2_len) == 0 :
+			str_is_prefix(s1, s2, s2_len) == 0;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -3923,10 +3879,14 @@ STRendswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	STR_MAPARGS(stk, pci, r, s1, s2, icase);
 
-	int s2_len = str_strlen(s2);
-	*r = (strNil(s1) || strNil(s2)) ? bit_nil :
-		icase ? str_is_isuffix(s1, s2, s2_len) == 0 :
-		        str_is_suffix(s1, s2, s2_len) == 0;
+	if (strNil(s1) || strNil(s2)) {
+		*r = bit_nil;
+	} else {
+		int s2_len = str_strlen(s2);
+		*r = icase ?
+			str_is_isuffix(s1, s2, s2_len) == 0 :
+			str_is_suffix(s1, s2, s2_len) == 0;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -3942,10 +3902,14 @@ STRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	STR_MAPARGS(stk, pci, r, s1, s2, icase);
 
-	int s2_len = str_strlen(s2);
-	*r = (strNil(s1) || strNil(s2)) ? bit_nil :
-		icase ? str_icontains(s1, s2, s2_len) == 0 :
-		        str_contains(s1, s2, s2_len) == 0;
+	if (strNil(s1) || strNil(s2)) {
+		*r = bit_nil;
+	} else {
+		int s2_len = str_strlen(s2);
+		*r = icase ?
+			str_icontains(s1, s2, s2_len) == 0 :
+			str_contains(s1, s2, s2_len) == 0;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -3983,11 +3947,15 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
-	int needle_len = str_strlen(h);
+	if (strNil(s) || strNil(h)) {
+		*res = bit_nil;
+	} else {
+		int needle_len = str_strlen(h);
 
-	*res = (strNil(s) || strNil(h)) ? bit_nil :
-			icase ? str_isearch(s, h, needle_len) : str_search(s, h,
-															   needle_len);
+		*res = icase ?
+			str_isearch(s, h, needle_len) :
+			str_search(s, h, needle_len);
+	}
 	return msg;
 }
 
@@ -4041,12 +4009,15 @@ STRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit icase = pci->argc == 4
 			&& *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
-	int needle_len = str_strlen(h);
+	if (strNil(s) || strNil(h)) {
+		*res = bit_nil;
+	} else {
+		int needle_len = str_strlen(h);
 
-	*res = (strNil(s) || strNil(h)) ? bit_nil :
-			icase ? str_reverse_str_isearch(s, h,
-											needle_len) :
+		*res = icase ?
+			str_reverse_str_isearch(s, h, needle_len) :
 			str_reverse_str_search(s, h, needle_len);
+	}
 	return msg;
 }
 
@@ -4966,8 +4937,9 @@ STRlocate3(int *ret, const str *needle, const str *haystack, const int *start)
 	const char *s = *needle, *s2 = *haystack;
 	int st = *start;
 
-	*ret = (strNil(s) || strNil(s2)
-			|| is_int_nil(st)) ? int_nil : str_locate2(s, s2, st);
+	*ret = (strNil(s) || strNil(s2) || is_int_nil(st)) ?
+		int_nil :
+		str_locate2(s, s2, st);
 	return MAL_SUCCEED;
 }
 
@@ -5008,7 +4980,7 @@ str_insert(str *buf, size_t *buflen, const char *s, int strt, int l,
 		v = UTF8_strncpy(v, s, strt);
 	strcpy(v, s2);
 	if (strt + l < l1)
-		strcat(v, UTF8_offset((char *) s, strt + l));
+		strcat(v, UTF8_strtail((char *) s, strt + l));
 	return MAL_SUCCEED;
 }
 
@@ -5182,10 +5154,10 @@ BBPnreclaim(int nargs, ...)
 /* scan select loop with or without candidates */
 #define scanloop(TEST, KEEP_NULLS)									    \
 	do {																\
-		TRC_DEBUG(ALGO,												\
-				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
+		TRC_DEBUG(ALGO,													\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "					\
 				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  anti, #TEST);										\
+				  anti, #TEST);											\
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
 				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
@@ -5207,12 +5179,12 @@ BBPnreclaim(int nargs, ...)
 	} while (0)
 
 /* scan select loop with or without candidates */
-#define scanloop_anti(TEST, KEEP_NULLS)							    \
+#define scanloop_anti(TEST, KEEP_NULLS)									\
 	do {																\
-		TRC_DEBUG(ALGO,												\
-				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
+		TRC_DEBUG(ALGO,													\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "					\
 				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  anti, #TEST);										\
+				  anti, #TEST);											\
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
 				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
@@ -5239,6 +5211,9 @@ str_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 				 int (*str_cmp)(const char *, const char *, int),
 				 bool keep_nulls)
 {
+	if (strNil(key))
+		return MAL_SUCCEED;
+
 	BATiter bi = bat_iterator(b);
 	BUN cnt = 0, ncands = ci->ncand;
 	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
@@ -5464,7 +5439,7 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do {										\
 		B->tnil = false;						\
 		B->tnonil = true;						\
-		B->tkey = true;						\
+		B->tkey = true;							\
 		B->tsorted = true;						\
 		B->trevsorted = true;					\
 		B->tseqbase = 0;						\
