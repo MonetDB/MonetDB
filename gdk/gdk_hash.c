@@ -1082,15 +1082,17 @@ HASHprobe(const Hash *h, const void *v)
 	case TYPE_sht:
 		return hash_sht(h, v);
 	case TYPE_int:
-	case TYPE_flt:
 		return hash_int(h, v);
-	case TYPE_dbl:
 	case TYPE_lng:
 		return hash_lng(h, v);
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		return hash_hge(h, v);
 #endif
+	case TYPE_flt:
+		return hash_flt(h, v);
+	case TYPE_dbl:
+		return hash_dbl(h, v);
 	case TYPE_uuid:
 		return hash_uuid(h, v);
 	default:
