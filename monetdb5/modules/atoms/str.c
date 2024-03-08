@@ -3832,7 +3832,6 @@ int
 str_contains(const char *h, const char *n, int nlen)
 {
 	(void) nlen;
-	/* 64bit: should return lng */
 	return strstr(h, n) ? 0 : 1;
 }
 
@@ -3840,7 +3839,6 @@ int
 str_icontains(const char *h, const char *n, int nlen)
 {
 	(void) nlen;
-	/* 64bit: should return lng */
 	return utf8casestr(h, n) ? 0 : 1;
 }
 
@@ -5237,9 +5235,9 @@ str_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 												   qry_ctx->querytimeout) : 0;
 
 	if (anti)					/* keep nulls ? (use false for now) */
-		scanloop_anti(v && *v != '\200' && str_cmp(v, key, klen) != 0, keep_nulls);
+		scanloop_anti(!strNil(v) && str_cmp(v, key, klen) != 0, keep_nulls);
 	else
-		scanloop(v && *v != '\200' && str_cmp(v, key, klen) == 0, keep_nulls);
+		scanloop(!strNil(v) && str_cmp(v, key, klen) == 0, keep_nulls);
 
   bailout:
 	bat_iterator_end(&bi);
@@ -6097,7 +6095,7 @@ startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 	size_t counter = 0;
 
 	if (anti)
-		STR_JOIN_NESTED_LOOP((str_cmp(vl, vr, vr_len) != 0), str_strlen(vr), fname);
+		STR_JOIN_NESTED_LOOP(str_cmp(vl, vr, vr_len) != 0, str_strlen(vr), fname);
 	else
 		STARTSWITH_SORTED_LOOP(str_cmp(vl, vr, vr_len), str_strlen(vr), fname);
 
