@@ -1832,7 +1832,7 @@ STRbatRpad3_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 static str
 prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-				 const char *name, bit (*func)(const char *, const char *, int),
+				 const char *name, int (*func)(const char *, const char *, int),
 				 bit *icase)
 {
 	 (void) cntxt;
@@ -1891,7 +1891,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	} else {
@@ -1905,7 +1905,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	}
@@ -1960,7 +1960,7 @@ BATSTRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-					 const char *name, bit (*func)(const char *, const char *,
+					 const char *name, int (*func)(const char *, const char *,
 												   int), bit *icase)
 {
 	 (void) cntxt;
@@ -2013,7 +2013,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, ylen);
+				vals[i] = func(x, y, ylen) == 0;
 			}
 		}
 	} else {
@@ -2025,7 +2025,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, ylen);
+				vals[i] = func(x, y, ylen) == 0;
 			}
 		}
 	}
@@ -2083,7 +2083,7 @@ BATSTRcontains_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-						const char *name, bit (*func)(const char *,
+						const char *name, int (*func)(const char *,
 													  const char *, int),
 						bit *icase)
 {
@@ -2137,7 +2137,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	} else {
@@ -2149,7 +2149,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	}

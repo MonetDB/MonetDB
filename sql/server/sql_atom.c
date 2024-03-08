@@ -830,7 +830,7 @@ atom_cmp(atom *a1, atom *a2)
 	if (a1->isnull != a2->isnull)
 		return -1;
 	if ( a1->isnull)
-		return 0;
+		return !(a1->tpe.type->localtype == a2->tpe.type->localtype);
 	if ( a1->tpe.type->localtype != a2->tpe.type->localtype) {
 		switch (ATOMstorage(a1->tpe.type->localtype)) {
 		case TYPE_bte:

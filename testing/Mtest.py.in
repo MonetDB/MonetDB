@@ -2532,7 +2532,7 @@ def killProc(proc, outfile = None, cmd = None):
             out = ''
     else:
         try:
-            with process.Popen(['gdb', '-batch', '-ex', 'thread apply all bt full', '-p', str(proc.pid)], stdout=process.PIPE,
+            with process.Popen(['gdb', '-p', str(proc.pid), '-batch', '-ex', 'thread apply all bt full', '-ex', 'call dump_threads()'], stdout=process.PIPE,
                                text=True) as p:
                 try:
                     # gdb sometimes hangs when trying to get the stack

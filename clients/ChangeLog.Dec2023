@@ -1,3 +1,8 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Mar  6 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed an issue where mclient wouldn't exit if the server it had
+  connected to exited for whatever reason while the client was waiting
+  for a query result.
+

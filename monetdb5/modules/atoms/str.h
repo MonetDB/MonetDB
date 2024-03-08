@@ -156,17 +156,17 @@ extern str str_from_wchr(str *buf, size_t *buflen, int c)
 extern str str_wchr_at(int *res, const char *s, int at)
 		__attribute__((__visibility__("hidden")));
 
-extern bit str_is_prefix(const char *s, const char *prefix, int plen)
+extern int str_is_prefix(const char *s, const char *prefix, int plen)
 		__attribute__((__visibility__("hidden")));
-extern bit str_is_iprefix(const char *s, const char *prefix, int plen)
+extern int str_is_iprefix(const char *s, const char *prefix, int plen)
 		__attribute__((__visibility__("hidden")));
-extern bit str_is_suffix(const char *s, const char *suffix, int sul)
+extern int str_is_suffix(const char *s, const char *suffix, int sul)
 		__attribute__((__visibility__("hidden")));
-extern bit str_is_isuffix(const char *s, const char *suffix, int sul)
+extern int str_is_isuffix(const char *s, const char *suffix, int sul)
 		__attribute__((__visibility__("hidden")));
-extern bit str_contains(const char *h, const char *n, int nlen)
+extern int str_contains(const char *h, const char *n, int nlen)
 		__attribute__((__visibility__("hidden")));
-extern bit str_icontains(const char *h, const char *n, int nlen)
+extern int str_icontains(const char *h, const char *n, int nlen)
 		__attribute__((__visibility__("hidden")));
 
 extern str str_tail(str *buf, size_t *buflen, const char *s, int off)

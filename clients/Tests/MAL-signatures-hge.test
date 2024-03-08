@@ -50692,17 +50692,7 @@ str
 contains
 pattern str.contains(X_0:str, X_1:str, X_2:bit):bit 
 STRcontains;
-Check if string chaystack contains string needle, icase flag.
-str
-containsjoin
-pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
-STRcontainsjoin1;
-The same as STRcontainsjoin, but only produce one output + icase.
-str
-containsjoin
-pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
-STRcontainsjoin1;
-The same as STRcontainsjoin, but only produce one output.
+Check if string haystack contains string needle, icase flag.
 str
 containsjoin
 pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
@@ -50710,9 +50700,19 @@ STRcontainsjoin;
 Join the string bat L with the bat R if L contains the string of R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
 str
 containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+STRcontainsjoin;
+The same as STRcontainsjoin, but only produce one output + icase.
+str
+containsjoin
 pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
 STRcontainsjoin;
 Join the string bat L with the bat R if L contains the string of R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRcontainsjoin;
+The same as STRcontainsjoin, but only produce one output.
 str
 containsselect
 pattern str.containsselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
@@ -50735,24 +50735,24 @@ STRendswith;
 Check if string ends with substring, icase flag.
 str
 endswithjoin
-pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
-STRendswithjoin1;
-The same as STRendswithjoin, but only produce one output + icase.
-str
-endswithjoin
-pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
-STRendswithjoin1;
-The same as STRendswithjoin, but only produce one output.
-str
-endswithjoin
 pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
 STRendswithjoin;
 Join the string bat L with the suffix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
 str
 endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+STRendswithjoin;
+The same as STRendswithjoin, but only produce one output + icase.
+str
+endswithjoin
 pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
 STRendswithjoin;
 Join the string bat L with the suffix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRendswithjoin;
+The same as STRendswithjoin, but only produce one output.
 str
 endswithselect
 pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
@@ -50900,24 +50900,24 @@ STRstartswith;
 Check if string starts with substring, icase flag.
 str
 startswithjoin
-pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
-STRstartswithjoin1;
-The same as STRstartswithjoin, but only produce one output + icase.
-str
-startswithjoin
-pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
-STRstartswithjoin1;
-The same as STRstartswithjoin, but only produce one output.
-str
-startswithjoin
 pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
 STRstartswithjoin;
 Join the string bat L with the prefix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
 str
 startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+STRstartswithjoin;
+The same as STRstartswithjoin, but only produce one output + icase.
+str
+startswithjoin
 pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
 STRstartswithjoin;
 Join the string bat L with the prefix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRstartswithjoin;
+The same as STRstartswithjoin, but only produce one output.
 str
 startswithselect
 pattern str.startswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 

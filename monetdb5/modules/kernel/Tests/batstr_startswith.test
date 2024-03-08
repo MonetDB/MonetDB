@@ -1,90 +1,64 @@
 query T nosort
-select name from tables where startswith(name, 'id')
+SELECT name FROM tables WHERE startswith(name, 'id')
 ----
 idxs
 idxs
 ids
 
 statement ok
-create table foo(x string)
+CREATE TABLE foo(x string)
 
 statement ok
-insert into foo values ('johndoe'),('janedoe'),('robertdoe')
+INSERT INTO foo VALUES ('johndoe'),('janedoe'),('robertdoe')
 
 query I nosort
-select startswith(x, '') from foo
+SELECT startswith(x, '') FROM foo
 ----
 1
 1
 1
 
 query I nosort
-select startswith('', x) from foo
+SELECT startswith('', x) FROM foo
 ----
 0
 0
 0
+
+statement ok
+TRUNCATE TABLE foo
+
+statement ok
+INSERT INTO foo VALUES ('johndoe'),('Müller Thomas'),('Thomas Müller')
+
+query I nosort
+SELECT startswith(x, 'Müller') FROM foo
+----
+0
+1
+0
+
+query I nosort
+SELECT startswith('Müller', x) FROM foo
+----
+0
+0
+0
+
+statement ok
+TRUNCATE TABLE foo
+
+statement ok
+INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
+
+query T nosort
+SELECT * FROM foo WHERE [foo.x] startswith ['john', true]
+----
+john doe
+
+query T nosort
+SELECT * FROM foo WHERE [foo.x] startswith ['doe', true]
+----
 
 statement ok
 drop table foo
-
-statement ok
-create table bar(x string, y string)
-
-statement ok
-insert into bar values ('johndoe','doe'),('Müller Thomas', 'Thomas Müller'),('Thomas Müller', 'Müller Thomas')
-
-query I nosort
-select startswith(x, 'Müller') from bar
-----
-0
-1
-0
-
-query I nosort
-select startswith('Müller', x) from bar
-----
-0
-0
-0
-
-statement ok
-drop table bar
-
-statement ok
-create table baz(x string)
-
-statement ok
-create table bazbaz(x string)
-
-statement ok
-insert into baz values ('john doe'),('jane doe'),('robert doe')
-
-statement ok
-insert into bazbaz values ('john'),('jane'),('robert')
-
-query T nosort
-select * from baz where [baz.x] startswith ['john', true]
-----
-john doe
-
-query T nosort
-select * from baz where [baz.x] startswith ['doe', true]
-----
-
-query TT nosort
-select * from baz,bazbaz where [baz.x] startswith [bazbaz.x, true]
-----
-john doe
-john
-jane doe
-jane
-robert doe
-robert
-
-statement ok
-drop table baz
-
-statement ok
-drop table bazbaz
-
