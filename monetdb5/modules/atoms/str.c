@@ -3809,15 +3809,23 @@ str_is_suffix(const char *s, const char *suffix, int sul)
 		return strcmp(s + sl - sul, suffix);
 }
 
+/* case insensitive endswith check */
 int
 str_is_isuffix(const char *s, const char *suffix, int sul)
 {
-	int sl = str_strlen(s);
+	const char *e = s + strlen(s);
+	const char *sf;
 
-	if (sl < sul)
-		return -1;
-	else
-		return utf8casecmp(s + sl - sul, suffix);
+	(void) sul;
+	/* note that the uppercase and lowercase forms of a character aren't
+	 * necessarily the same length in their UTF-8 encodings */
+	for (sf = suffix; *sf && e > s; sf++) {
+		if ((*sf & 0xC0) != 0x80) {
+			while ((*--e & 0xC0) == 0x80)
+				;
+		}
+	}
+	return *sf != 0 || utf8casecmp(e, suffix) != 0;
 }
 
 int
