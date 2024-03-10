@@ -3502,6 +3502,15 @@ select_no_parens:
 	  append_int(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $5);
+	  append_int(l, 0);
+	  $$ = _symbol_create_list( SQL_UNION, l); }
+ | select_no_parens OUTER UNION set_distinct opt_corresponding select_no_parens
+	{ dlist *l = L();
+	  append_symbol(l, $1);
+	  append_int(l, $4);
+	  append_list(l, $5);
+	  append_symbol(l, $6);
+	  append_int(l, 1);
 	  $$ = _symbol_create_list( SQL_UNION, l); }
  |  select_no_parens EXCEPT set_distinct opt_corresponding select_no_parens
 	{ dlist *l = L();

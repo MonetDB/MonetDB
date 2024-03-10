@@ -1309,7 +1309,7 @@ rel_project_cse(visitor *v, sql_rel *rel)
 			sql_exp *e1 = n->data;
 
 			if (e1->type != e_column && !exp_is_atom(e1) && exp_name(e1)) {
-				for (m=n->next; m; m = m->next){
+				for (m=n->next; m && !needed; m = m->next){
 					sql_exp *e2 = m->data;
 
 					if (exp_name(e2) && exp_match_exp(e1, e2))
