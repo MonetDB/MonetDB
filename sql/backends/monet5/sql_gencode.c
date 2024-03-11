@@ -1693,7 +1693,7 @@ _rel_print(mvc *sql, sql_rel *rel)
 
 void
 _exp_print(mvc *sql, sql_exp *e) {
-	exp_print(sql, GDKstdout, e, 0, NULL, 1, 0);
+	exp_print(sql, GDKstdout, e, 0, NULL, 1, 0, 1);
 	mnstr_printf(GDKstdout, "\n");
 }
 
