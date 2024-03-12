@@ -917,6 +917,26 @@ fi
 %endif
 
 %changelog
+* Tue Mar 12 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.5-20240312
+- Rebuilt.
+- GH#7390: Some MonetDB Server crashes found
+- GH#7465: Unexpected result when using `NULL` in `BETWEEN`
+
+* Fri Mar  8 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.5-20240312
+- gdk: The internal hash function for floating point types has been changed.
+  It is now no longer based on the bit representation, but on the value,
+  meaning that +0 and -0 (yes, they both exist in floating point) now
+  hash to the same value.
+
+* Thu Mar  7 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.49.5-20240312
+- sql: performance improvement of 'startswith' and 'endswith' filter functions
+  for join operators
+
+* Wed Mar  6 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.5-20240312
+- clients: Fixed an issue where mclient wouldn't exit if the server it had
+  connected to exited for whatever reason while the client was waiting
+  for a query result.
+
 * Mon Mar 04 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
 - Rebuilt.
 - GH#6800: Please add information_schema (ANSI SQL norm)
