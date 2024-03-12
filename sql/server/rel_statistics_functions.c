@@ -86,8 +86,13 @@ sql_add_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 
 		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
-			set_minmax_property(sql, e, PROP_MAX, res1);
-			set_minmax_property(sql, e, PROP_MIN, res2);
+			if (atom_cmp(res1, res2) > 0) {
+				set_minmax_property(sql, e, PROP_MAX, res1);
+				set_minmax_property(sql, e, PROP_MIN, res2);
+			} else {
+				set_minmax_property(sql, e, PROP_MAX, res2);
+				set_minmax_property(sql, e, PROP_MIN, res1);
+			}
 		}
 		freeException(msg1);
 		freeException(msg2);
@@ -191,13 +196,10 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 
 		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
-			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
-			int cmp1 = atom_cmp(lmax, zero1), cmp2 = atom_cmp(lmin, zero1), cmp3 = atom_cmp(rmin, zero2), cmp4 = atom_cmp(rmax, zero2);
-
-			if (cmp1 >= 0 && cmp2 >= 0 && cmp3 >= 0 && cmp4 >= 0) { /* if all positive then propagate */
+			if (atom_cmp(res1, res2) > 0) {
 				set_minmax_property(sql, e, PROP_MAX, res1);
 				set_minmax_property(sql, e, PROP_MIN, res2);
-			} else if (cmp1 < 0 && cmp2 < 0 && cmp3 < 0 && cmp4 < 0) { /* if all negative propagate by swapping min and max */
+			} else {
 				set_minmax_property(sql, e, PROP_MAX, res2);
 				set_minmax_property(sql, e, PROP_MIN, res1);
 			}
