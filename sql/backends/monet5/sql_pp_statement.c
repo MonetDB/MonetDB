@@ -73,7 +73,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 		setVarType(mb, getArg(q, 0), newBatType(restype));
 		if (avg) { /* for avg also return rest and count */
 			/* TODO: check with the 'new-avg' branch (?). We'll
- 			 * want to choose between avg/rest and avg+cnt */
+			 * want to choose between avg/rest and avg+cnt */
 			if (restype != TYPE_dbl)
 				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
@@ -109,7 +109,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 		} else if (op->func->lang == FUNC_LANG_CPP) {
 			q = pushBit(mb, q, 1);
 		}
- 		q = pushStr(mb, q, op->func->query);
+		q = pushStr(mb, q, op->func->query);
 	}
 
 	if (grp && grp != op1)
@@ -417,13 +417,13 @@ stmt_hash_new(backend *be, int tt, lng estimate, int parent)
 }
 
 /* Generates:
- *   #                                 tt       nrSlts  pld_sz  parent
- *   X_9:bat[:int] := hash.new_payload(nil:int, 42:int, 42:int, X_6:bat[:int]);
+ *   pld            := hash.new_payload(tt,      nrSlts, pld_sz, parent,         previous)
+ *   X_14:bat[:int] := hash.new_payload(nil:int, 42:int, 42:int, X_13:bat[:int], X_13:bat[:int]);
+ * TODO previous is just a dummy parameter to work around the commomTerms optimiser
  */
 InstrPtr
 stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent, int previous)
 {
-	// TODO previous is just a dummy parameter to work around the commomTerms optimiser
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), new_payloadRef, 5);
 	if (q == NULL) return NULL;
 
@@ -441,8 +441,8 @@ stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int paren
 }
 
 /* Generates:
- *   #slot_id         ht_sink                             key             PTR
- *   (X_46:bat[:oid], !X_5:bat[:int]) := hash.build_table(X_43:bat[:int], X_19:ptr);
+ *   (slot_id,        ht_sink)         := hash.build_table(key,            PTR)
+ *   (X_39:bat[:oid], !X_12:bat[:int]) := hash.build_table(X_37:bat[:int], X_20:ptr);
  */
 InstrPtr
 stmt_hash_build_table(backend *be, int ht_sink, int key, stmt *pp)
@@ -460,8 +460,8 @@ stmt_hash_build_table(backend *be, int ht_sink, int key, stmt *pp)
 }
 
 /* Generates:
- *   #slot_id         ht_sink                                      key             parent_slotid   parent_ht      PTR
- *   (X_48:bat[:oid], !C_6:bat[:int]) := hash.build_combined_table(X_44:bat[:int], X_46:bat[:oid], X_5:bat[:int], X_19:ptr);
+ *   (slot_id,        ht_sink)         := hash.build_combined_table(key,            parent_slotid,  parent_ht,      PTR)
+ *   (X_40:bat[:oid], !X_13:bat[:int]) := hash.build_combined_table(X_38:bat[:int], X_39:bat[:oid], X_12:bat[:int], X_20:ptr);
  */
 InstrPtr
 stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_slts, int prnt_ht, stmt *pp)
@@ -481,8 +481,8 @@ stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_slts,
 }
 
 /* Generates:
- *   #hp_sink                           payload         parent_slotid   parent_ht,    PTR
- *   !C_8:bat[:int] := hash.add_payload(X_44:bat[:int], X_48:bat[:oid], X6:bat[:int], X_19:ptr);
+ *   hp_sink         := hash.add_payload(payload,        parent_slotid,  parent_ht,      PTR)
+ *   !X_14:bat[:int] := hash.add_payload(X_37:bat[:int], X_40:bat[:oid], X_13:bat[:int], X_20:ptr);
  */
 stmt *
 stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int prnt_slts, int prnt_ht, stmt *pp)
@@ -527,8 +527,8 @@ stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int prnt_slt
 }
 
 /* Generates:
- *   # hsh          := hash.hash(key,            PTR)
- *   X_93:bat[:int] := hash.hash(X_86:bat[:int], X_74:ptr);
+ *   hsh            := hash.hash(key,            PTR)
+ *   X_76:bat[:int] := hash.hash(X_73:bat[:int], X_48:ptr);
  */
 InstrPtr
 stmt_hash_hash(backend *be, int key, stmt *pp)
@@ -547,8 +547,8 @@ stmt_hash_hash(backend *be, int key, stmt *pp)
  *   # LHS_matched: OIDs of the matched items of LHS_key
  *   # RHS_slotid: for each LHS_matched, the slot_id of its counterpart in RHS,
  *   #             hence |LHS_matched| == |RHS_slotid|
- *   # (LHS_matched,   RHS_slotid)      := hash.probe(LHS_key,        LHS_hash,       RHS_ht,        PTR)
- *   (X_101:bat[:oid], X_102:bat[:oid]) := hash.probe(X_86:bat[:int], X_93:bat[:int], C_5:bat[:int], X_74:PTR);
+ *   (LHS_matched,     RHS_slotid)    := hash.probe(LHS_key,        LHS_hash,       RHS_ht,         PTR)
+ *   (X_77:bat[:oid], X_78:bat[:oid]) := hash.probe(X_73:bat[:int], X_76:bat[:int], X_12:bat[:int], X_48:PTR);
  */
 InstrPtr
 stmt_hash_probe(backend *be, int key, int hsh, int rht, stmt *pp)
@@ -567,8 +567,8 @@ stmt_hash_probe(backend *be, int key, int hsh, int rht, stmt *pp)
 }
 
 /* Generates:
- *   # hsh          := hash.combined_hash(LHS_key,        LHS_selected,    RHS_prnt_slotid, PTR)
- *   X_94:bat[:int] := hash.combined_hash(X_87:bat[:int], X_101:bat[:oid], X_102:bat[:oid], X_74:PTR);
+ *   hsh            := hash.combined_hash(LHS_key,        LHS_selected,   RHS_prnt_slotid, PTR)
+ *   X_79:bat[:int] := hash.combined_hash(X_74:bat[:int], X_77:bat[:oid], X_78:bat[:oid],  X_48:PTR);
  */
 InstrPtr
 stmt_hash_combined_hash(backend *be, int key, int sel, int prnt, stmt *pp)
@@ -586,8 +586,8 @@ stmt_hash_combined_hash(backend *be, int key, int sel, int prnt, stmt *pp)
 }
 
 /* Generates:
- *   # (LHS_matched, RHS_slotid)       := hash.combined_probe(LHS_key,        LHS_hash,       LHS_selected,    RHS_ht,        PTR)
- *   (X_106:bat[:oid], X_107:bat[:oid]):= hash.combined_probe(X_87:bat[:int], X_94:bat[:int], X_101:bat[:oid], C_6:bat[:int], X_74:PTR);
+ *   (LHS_matched,    RHS_slotid)     := hash.combined_probe(LHS_key,        LHS_hash,       LHS_selected,    RHS_ht,         PTR)
+ *   (X_80:bat[:oid], X_81:bat[:oid]) := hash.combined_probe(X_74:bat[:int], X_79:bat[:int], X_77:bat[:oid],  X_13:bat[:int], X_48:PTR);
  */
 InstrPtr
 stmt_hash_combined_probe(backend *be, int key, int hsh, int sel, int rht, stmt *pp)
@@ -607,89 +607,49 @@ stmt_hash_combined_probe(backend *be, int key, int hsh, int sel, int rht, stmt *
 }
 
 /* Generates:
- *   # LHS_val_expnd := hash.expand(LHS_col,        LHS_selected,    RHS_prnt_slotid, RHS_hp,        PTR)
- *   X_110:bat[:int] := hash.expand(X_86:bat[:int], X_106:bat[:oid], X_107:bat[:oid], C_8:bat[:int], X_74:PTR);
+ *   (pos,            LHS_val_expnd)  := hash.expand(LHS_col,        LHS_selected,   RHS_prnt_slotid, RHS_hp,         first,     PTR)
+ *   (X_88:bat[:oid], X_89:bat[:int]) := hash.expand(X_73:bat[:int], X_80:bat[:oid], X_81:bat[:oid],  X_14:bat[:int], false:bit, X_48:ptr);
  */
-stmt *
-stmt_hash_expand(backend *be, stmt *col, int sel, int prnt, int rhp, stmt *pp)
+InstrPtr
+stmt_hash_expand(backend *be, stmt *col, int sel, int prnt, int rhp, bit first, stmt *pp)
 {
-	MalBlkPtr mb = be->mb;
-	mvc *sql = be->mvc;
+	int tt = tail_type(col)->type->localtype;
 
-	InstrPtr q = newStmtArgs(mb, putName("hash"), putName("expand"), 6);
+	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("expand"), 8);
 	if (q == NULL)
-		goto bailout;
-	q = pushArgument(mb, q, getDestVar(col->q));
-	q = pushArgument(mb, q, sel);
-	q = pushArgument(mb, q, prnt);
-	q = pushArgument(mb, q, rhp);
-	q = pushArgument(mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-	setVarType(mb, getArg(q, 0), getArgType(mb, q, 1));
-	pushInstruction(mb, q);
-
-	stmt *s = stmt_create(sql->sa, st_join);
-	if (s == NULL)
-		goto bailout;
-
-	s->op1 = col;
-	s->op2 = col;
-	s->flag = cmp_project;
-	s->key = 0;
-	s->nrcols = 1;
-	s->nr = getDestVar(q);
-	s->q = q;
-	s->tname = col->tname;
-	s->cname = col->cname;
-	return s;
-
-  bailout:
-	if (q) freeInstruction(q);
-	if (sql->sa->eb.enabled)
-		eb_error(&sql->sa->eb, sql->errstr[0] ? sql->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
-	return NULL;
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
+	q = pushArgument(be->mb, q, getDestVar(col->q));
+	q = pushArgument(be->mb, q, sel);
+	q = pushArgument(be->mb, q, prnt);
+	q = pushArgument(be->mb, q, rhp);
+	q = pushBit(be->mb, q, first);
+	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
+	pushInstruction(be->mb, q);
+	return q;
 }
 
 /* Generates:
- *   # RHS_val_expnd := hash.fetch_payload(RHS_slotid,      RHS_hp,        PTR)
- *   X_115:bat[:int] := hash.fetch_payload(X_107:bat[:oid], C_8:bat[:int], X_74:PTR);
+ *   (pos,            RHS_val_expnd)  := hash.fetch_payload(RHS_slotid,     RHS_hp,         first,    PTR)
+ *   (X_82:bat[:oid], X_83:bat[:int]) := hash.fetch_payload(X_81:bat[:oid], X_14:bat[:int], true:bit, X_48:ptr);
  */
-stmt *
-stmt_hash_fetch_payload(backend *be, int slt, stmt *hp, stmt *pp)
+InstrPtr
+stmt_hash_fetch_payload(backend *be, int slt, stmt *hp, bit first, stmt *pp)
 {
-	MalBlkPtr mb = be->mb;
-	mvc *sql = be->mvc;
-
-	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("fetch_payload"), 4);
-	if (q == NULL)
-		goto bailout;
-
 	int tt = tail_type(hp)->type->localtype;
-	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+
+	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("fetch_payload"), 6);
+	if (q == NULL)
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
 	q = pushArgument(be->mb, q, slt);
 	q = pushArgument(be->mb, q, getDestVar(hp->q));
+	q = pushBit(be->mb, q, first);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
-
-	stmt *s = stmt_create(sql->sa, st_join);
-	if (s == NULL)
-		goto bailout;
-
-	s->op1 = hp;
-	s->op2 = hp;
-	s->flag = cmp_project;
-	s->key = 0;
-	s->nrcols = 1;
-	s->nr = getDestVar(q);
-	s->q = q;
-	s->tname = hp->tname;
-	s->cname = hp->cname;
-	return s;
-
-  bailout:
-	if (q) freeInstruction(q);
-	if (sql->sa->eb.enabled)
-		eb_error(&sql->sa->eb, sql->errstr[0] ? sql->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
-	return NULL;
+	return q;
 }
 
 InstrPtr

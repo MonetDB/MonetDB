@@ -2012,11 +2012,12 @@ error:
 		} \
 	} while (0)
 
-/* X_nn:bat[:any1] := hash.expand(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:oid], X_nn:bat[:any2]); */
+/* (X_nn:bat[:oid], X_nn:bat[:any1]) := hash.expand(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:oid], X_nn:bat[:any2], X_nn:bit);
+ */
 static str
-HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink, const ptr *H)
+HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink, bit first, const ptr *H)
 {
-	BAT *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
+	BAT *o = NULL, *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt = 0;
 	str err = NULL;
 
@@ -2121,16 +2122,31 @@ HASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink, co
 		assert(idx == rescnt);
 	}
 
+	/* NB, this only works once.
+	 * If we want to reuse the hash, we need to reset the position info.
+	 */
+	oid tseq = first? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
+	o = BATdense(0, tseq, rescnt);
+	if (!o) {
+		err = createException(SQL, "hash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
 	BBPunfix(k->batCacheid);
 	BBPunfix(s->batCacheid);
 	BBPunfix(l->batCacheid);
 	BBPunfix(h->batCacheid);
+
+	*pos = o->batCacheid;
+	BBPkeepref(o);
+
 	BATsetcount(e, rescnt);
 	BATnegateprops(e);
 	*expanded = e->batCacheid;
 	BBPkeepref(e);
 	return MAL_SUCCEED;
 error:
+	BBPreclaim(o);
 	BBPreclaim(e);
 	BBPreclaim(k);
 	BBPreclaim(s);
@@ -2162,11 +2178,11 @@ error:
 		} \
 	} while (0)
 
-/* X_nn:bat[:any1] := hash.fetch_payload(X_nn:bat[:oid], X_nn:bat[:any1]); */
+/* (X_nn:bat[:void], X_nn:bat[:any1]) := hash.fetch_payload(X_nn:bat[:oid], X_nn:bat[:any1], X_nn:bit); */
 static str
-HASHfetch_payload(bat *payload, bat *slotid, bat *hp_sink, const ptr *H)
+HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bit first, const ptr *H)
 {
-	BAT *p = NULL, *l = NULL, *h = NULL;
+	BAT *o = NULL, *p = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt =  0;
 	str err = NULL;
 
@@ -2265,14 +2281,29 @@ HASHfetch_payload(bat *payload, bat *slotid, bat *hp_sink, const ptr *H)
 		assert(idx == rescnt);
 	}
 
+	/* NB, this only works once.
+	 * If we want to reuse the hash, we need to reset the position info.
+	 */
+	oid tseq = first? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
+	o = BATdense(0, tseq, rescnt);
+	if (!o) {
+		err = createException(SQL, "hash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
 	BBPunfix(l->batCacheid);
 	BBPunfix(h->batCacheid);
+
+	*pos = o->batCacheid;
+	BBPkeepref(o);
+
 	BATsetcount(p, rescnt);
 	BATnegateprops(p);
 	*payload = p->batCacheid;
 	BBPkeepref(p);
 	return MAL_SUCCEED;
 error:
+	BBPreclaim(o);
 	BBPreclaim(p);
 	BBPreclaim(l);
 	BBPreclaim(h);
@@ -2295,8 +2326,8 @@ static mel_func pp_hash_init_funcs[] = {
  command("hash", "probe", UHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batargany("LHS_hash",1),batargany("RHS_ht",2),arg("pipeline",ptr))),
  command("hash", "combined_probe", UHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batargany("LHS_hash",1),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
- command("hash", "expand", HASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(1,6, batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("hp_sink",2),arg("pipeline",ptr))),
- command("hash", "fetch_payload", HASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash payload.", args(1,4, batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),arg("pipeline",ptr))),
+ command("hash", "expand", HASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(2,8, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("hp_sink",2),arg("first",bit),arg("pipeline",ptr))),
+ command("hash", "fetch_payload", HASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash payload.", args(2,6, batarg("pos",oid),batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),arg("first",bit),arg("pipeline",ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -214,7 +214,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 		} else {
 			estimate = (lng) est;
 		}
-		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
+		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers) */
 		list *gbexps = rel->r;
 		*aggrresults = sa_list(be->mvc->sa);
 		for(node *n = gbexps->h; n; n = n->next ) {
