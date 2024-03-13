@@ -16,6 +16,7 @@ BAT *BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s);
 BAT *BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s);
 BAT *BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s);
 gdk_return BATappend(BAT *b, BAT *n, BAT *s, bool force) __attribute__((__warn_unused_result__));
+BAT *BATasciify(BAT *b, BAT *s);
 void BATassertProps(BAT *b);
 atomDesc BATatoms[MAXATOMS];
 BAT *BATattach(int tt, const char *heapfile, role_t role);
@@ -268,6 +269,7 @@ gdk_return GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const voi
 gdk_return GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type);
 gdk_return GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type);
 gdk_return GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp1, int tp2, int unit, bool preceding, oid first_half);
+gdk_return GDKasciify(char **restrict buf, size_t *restrict buflen, const char *restrict s);
 int GDKatomcnt;
 void GDKclrerr(void);
 gdk_return GDKcopyenv(BAT **key, BAT **val, bool writable);

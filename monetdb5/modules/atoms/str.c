@@ -65,10 +65,6 @@
 #include "monetdb_config.h"
 #include "str.h"
 #include <string.h>
-#ifdef HAVE_ICONV
-#include <iconv.h>
-#include <locale.h>
-#endif
 #ifdef HAVE_WCWIDTH
 #include <wchar.h>
 #endif
@@ -2083,44 +2079,12 @@ STRspace(str *res, const int *ll)
 static str
 STRasciify(str *r, const str *s)
 {
-#ifdef HAVE_ICONV
-
-	if (strNil(*s)) {
-		if ((*r = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.asciify", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		else
-			return MAL_SUCCEED;
-	}
-
-	iconv_t cd;
-	const str f = "UTF-8", t = "ASCII//TRANSLIT";
-	str in = *s, out;
-	size_t in_len = strlen(in), out_len = in_len * 4; /* oversized as a single utf8 char could change into multiple ascii char */
-
-	if ((cd = iconv_open(t, f)) == (iconv_t) (-1))
-		throw(MAL, "str.asciify", "ICONV: cannot convert from (%s) to (%s).", f, t);
-
-	if ((*r = out = GDKmalloc(out_len)) == NULL) {
-		iconv_close(cd);
-		throw(MAL, "str.asciify", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	str o = out;
-
-	if (iconv(cd, &in, &in_len, &o, &out_len) == (size_t) -1) {
-		GDKfree(out);
-		*r = NULL;
-		iconv_close(cd);
-		throw(MAL, "str.asciify", "Conversion failed, possibly due to system locale %s.", setlocale(0, NULL));
-	}
-
-	*o = '\0';
-	iconv_close(cd);
+	char *buf = NULL;
+	size_t buflen = 0;
+	if (GDKasciify(&buf, &buflen, *s) != GDK_SUCCEED)
+		throw(MAL, "str.asciify", GDK_EXCEPTION);
+	*r = buf;
 	return MAL_SUCCEED;
-
-#else
-	throw(MAL, "str.asciify", "ICONV library not available.");
-#endif
 }
 
 static inline void

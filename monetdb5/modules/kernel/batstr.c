@@ -18,9 +18,6 @@
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 #include "str.h"
-#ifdef HAVE_ICONV
-#include <iconv.h>
-#endif
 
 /* In order to make available a bulk version of a string function with
  * candidates, all possible combinations of scalar/vector version of
@@ -5729,103 +5726,7 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATSTRasciify(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-#ifdef HAVE_ICONV
-	(void) cntxt;
-	(void) mb;
-	bat *rid = getArgReference_bat(stk, pci, 0),
-			*bid = getArgReference_bat(stk, pci, 1),
-			*sid = pci->argc == 2 ? NULL : getArgReference_bat(stk, pci, 2);
-	BAT *b = NULL, *bs = NULL, *bn = NULL;
-	BATiter bi;
-	struct canditer ci = { 0 };
-	oid off;
-	bool nils = false, dense = false;
-	size_t prev_out_len = 0, in_len = 0, out_len = 0;
-	str s = NULL, out = NULL, in = NULL, msg = MAL_SUCCEED;
-	iconv_t cd;
-	const str f = "UTF-8", t = "ASCII//TRANSLIT";
-
-	/* man iconv; /TRANSLIT */
-	if ((cd = iconv_open(t, f)) == (iconv_t) (-1))
-		throw(MAL, "batstr.asciify", "ICONV: cannot convert from (%s) to (%s).",
-			  f, t);
-
-	if (!(b = BATdescriptor(*bid))) {
-		iconv_close(cd);
-		throw(MAL, "batstr.asciify", RUNTIME_OBJECT_MISSING);
-	}
-
-	if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
-		iconv_close(cd);
-		BBPreclaim(b);
-		throw(MAL, "batstr.asciify", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-
-	canditer_init(&ci, b, bs);
-
-	if ((bn = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT)) == NULL) {
-		iconv_close(cd);
-		BBPreclaim(b);
-		BBPreclaim(bs);
-		throw(MAL, "batstr.asciify", GDK_EXCEPTION);
-	}
-
-	off = b->hseqbase;
-	bi = bat_iterator(b);
-
-	if ((s = out = GDKmalloc(64 * 1024)) == NULL) {
-		msg = createException(MAL, "batstr.asciify", MAL_MALLOC_FAIL);
-		goto exit;
-	}
-	prev_out_len = 64 * 1024;
-
-	dense = ci.tpe == cand_dense ? true : false;
-	for (BUN i = 0; i < ci.ncand; i++) {
-		oid p = dense ? (canditer_next_dense(&ci) - off) : (canditer_next(&ci) -
-															off);
-		in = BUNtvar(bi, p);
-		if (strNil(in)) {
-			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-				msg = createException(MAL, "batstr.asciify",
-									  "BUNappend failed.");
-				goto exit;
-			}
-			nils = true;
-			continue;
-		}
-		/* over sized as single utf8 symbols change into multiple ascii characters */
-		in_len = strlen(in), out_len = in_len * 4;
-		if (out_len > prev_out_len) {
-			if ((out = GDKrealloc(s, out_len)) == NULL) {
-				msg = createException(MAL, "batstr.asciify", MAL_MALLOC_FAIL);
-				goto exit;
-			}
-			prev_out_len = out_len;
-			s = out;
-		}
-		out = s;
-		if (iconv(cd, &in, &in_len, &out, &out_len) == (size_t) -1) {
-			msg = createException(MAL, "batstr.asciify",
-								  "ICONV: string conversion failed");
-			goto exit;
-		}
-		*out = '\0';
-		if (BUNappend(bn, s, false) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.asciify", GDK_EXCEPTION);
-			goto exit;
-		}
-	}
-
-  exit:
-	GDKfree(s);
-	bat_iterator_end(&bi);
-	iconv_close(cd);
-	finalize_output(rid, bn, msg, nils, ci.ncand);
-	unfix_inputs(2, b, bs);
-	return msg;
-#else
-	throw(MAL, "batstr.asciify", "ICONV library not available.");
-#endif
+	return STRbatConvert(cntxt, mb, stk, pci, BATasciify, "batstr.asciify");
 }
 
 #include "mel.h"
