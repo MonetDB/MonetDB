@@ -1564,6 +1564,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
 				return exp2bin_named_placeholders(be, e);
 		}
+		if (0 && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
+			return rel2bin_copyparpipe(be, NULL, NULL, e, false);
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
 			int push_cands = can_push_cands(sel, mod, fimp);
@@ -5773,7 +5775,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		sql_exp *copyfrom = can_use_copyparpipe(rel);
 		if (copyfrom != NULL) {
 			// dump_code(0);
-			stmt *ret = rel2bin_copyparpipe(be, rel, refs, copyfrom);
+			stmt *ret = rel2bin_copyparpipe(be, rel, refs, copyfrom, true);
 			// dump_code(-1);
 			return ret;
 		}

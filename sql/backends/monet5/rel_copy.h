@@ -19,7 +19,7 @@
 #define DEFAULT_COPY_BLOCKSIZE (1024 * 1024)
 
 
-extern stmt *rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom);
+extern stmt *rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom, bool insert);
 extern int parallel_copy_level(void);
 
 
