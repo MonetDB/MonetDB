@@ -1555,7 +1555,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 }
 
 static sql_rel *
-copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int best_effort, dlist *fwf_widths, int onclient, int escape)
+copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int best_effort, dlist *fwf_widths, int onclient, int escape, dlist *decimal_seps)
 {
 	mvc *sql = query->sql;
 	sql_rel *rel = NULL;
@@ -1570,6 +1570,8 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
 	list *collist;
 	int reorder = 0;
+	const char *decsep = decimal_seps->h->data.sval;
+
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 
@@ -1581,6 +1583,14 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		return sql_error(sql, 02, SQLSTATE(42000)
 				"COPY INTO: record separator contains '\\r\\n' but "
 				"that will never match, use '\\n' instead");
+	}
+
+	if (strlen(decsep) != 1
+			|| decsep[0] <= ' '
+			|| decsep[0] >= 127
+			|| decsep[0] == '-' || decsep[0] == '+'
+			|| (decsep[0] >= '0' && decsep[0] <= '9')) {
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: invalid decimal separator");
 	}
 
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
@@ -2089,7 +2099,8 @@ rel_updates(sql_query *query, symbol *s)
 				l->h->next->next->next->next->next->next->next->data.i_val,
 				l->h->next->next->next->next->next->next->next->next->data.lval,
 				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->data.i_val);
+				l->h->next->next->next->next->next->next->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->next->next->next->next->next->next->data.lval);
 		sql->type = Q_UPDATE;
 	}
 		break;
