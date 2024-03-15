@@ -167,9 +167,10 @@ re_match(const char *restrict s, const struct RE *restrict pattern)
 					return false;
 				if (*s == '\0')
 					return false;
-				/* in "atend" comparison, include NUL byte in the compare */
+				/* in "atend" comparison, compare whole string, else
+				 * only part */
 				if ((!r->search || r->atend) &&
-					GDKstrncasecmp(s, r->k, SIZE_MAX, r->len + r->atend) != 0) {
+					(r->atend ? GDKstrcasecmp(s, r->k) : GDKstrncasecmp(s, r->k, SIZE_MAX, r->len)) != 0) {
 					/* no match */
 					if (!r->search)
 						return false;
