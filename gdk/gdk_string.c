@@ -8488,6 +8488,12 @@ GDKasciify(char **restrict buf, size_t *restrict buflen,
 BAT *
 BATasciify(BAT *b, BAT *s)
 {
+	if (b->tascii) {
+		if (s)
+			return BATproject(s, b);
+		return COLcopy(b, TYPE_str, false, TRANSIENT);
+	}
+
 	lng t0 = 0;
 	BAT *bn;
 	struct canditer ci;
@@ -8524,9 +8530,9 @@ BATasciify(BAT *b, BAT *s)
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->theap->dirty |= BATcount(bn) > 0;
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  " -> " ALGOBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOBATPAR(bn), GDKusec() - t0);
 	return bn;
 
   bailout:
