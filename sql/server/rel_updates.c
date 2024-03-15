@@ -1493,14 +1493,14 @@ table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int best_effort, dlist *fwf_widths, int onclient, int escape, const char* decsep)
+rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int best_effort, dlist *fwf_widths, int onclient, int escape, const char* decsep, const char *decskip)
 {
 	sql_rel *res;
 	list *exps, *args;
 	node *n;
 	sql_subtype tpe;
 	sql_exp *import;
-	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 13, F_UNION, true, NULL);
+	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 14, F_UNION, true, NULL);
 	char *fwf_string = NULL;
 
 	assert(f); /* we do expect copyfrom to be there */
@@ -1537,6 +1537,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	append(args, exp_atom_int(sql->sa, onclient));
 	append(args, exp_atom_int(sql->sa, escape));
 	append(args, exp_atom_str(sql->sa, decsep, &tpe));
+	append(args, exp_atom_str(sql->sa, decskip, &tpe));
 
 	import = exp_op(sql->sa, args, f);
 
@@ -1548,6 +1549,21 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
 	return res;
+}
+
+static bool
+valid_decsep(const char *s)
+{
+	if (strlen(s) != 1)
+		return false;
+	int c = s[0];
+	if (c <= ' ' || c >= 127)
+		return false;
+	if (c == '-' || c == '+')
+		return false;
+	if (c >= '0' && c <= '9')
+		return false;
+	return true;
 }
 
 static sql_rel *
@@ -1567,6 +1583,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	list *collist;
 	int reorder = 0;
 	const char *decsep = decimal_seps->h->data.sval;
+	const char *decskip = decimal_seps->h->next ? decimal_seps->h->next->data.sval: NULL;
 
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
@@ -1581,13 +1598,12 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				"that will never match, use '\\n' instead");
 	}
 
-	if (strlen(decsep) != 1
-			|| decsep[0] <= ' '
-			|| decsep[0] >= 127
-			|| decsep[0] == '-' || decsep[0] == '+'
-			|| (decsep[0] >= '0' && decsep[0] <= '9')) {
+	if (!valid_decsep(decsep))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: invalid decimal separator");
-	}
+	if (decskip && !valid_decsep(decskip))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: invalid thousands separator");
+	if (decskip && strcmp(decsep, decskip) == 0)
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: decimal separator and thousands separator must be different");
 
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
@@ -1675,7 +1691,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return NULL;
 			}
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape, decsep);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape, decsep, decskip);
 
 			if (!rel)
 				rel = nrel;
@@ -1688,7 +1704,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		}
 	} else {
 		assert(onclient == 0);
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, best_effort, NULL, onclient, escape, decsep);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, best_effort, NULL, onclient, escape, decsep, decskip);
 	}
 	if (headers) {
 		dnode *n;

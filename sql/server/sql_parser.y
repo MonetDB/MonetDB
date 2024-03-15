@@ -3063,6 +3063,11 @@ opt_decimal_seps:
 				{ dlist *l = L();
 				  append_string(l, $3);
 				  $$ = l; }
+	| sqlDECIMAL DELIMITERS string ',' string
+				{ dlist *l = L();
+				  append_string(l, $3);
+				  append_string(l, $5);
+				  $$ = l; }
 ;
 
 opt_using:

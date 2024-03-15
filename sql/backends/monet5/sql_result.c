@@ -318,6 +318,8 @@ bat_max_length(hge, hge)
 			s++;														\
 		}																\
 		for (i = 0; *s && *s != c->decsep && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
+			if (c->decskip && *s == c->decskip)							\
+				continue;												\
 			if (!isdigit((unsigned char) *s))							\
 				break;													\
 			res *= 10;													\
@@ -325,12 +327,18 @@ bat_max_length(hge, hge)
 			if (res)													\
 				i++;													\
 		}																\
-		if (*s == c->decsep) {												\
+		if (*s == c->decsep) {											\
 			s++;														\
-			while (*s && isdigit((unsigned char) *s) && scale > 0) {	\
-				res *= 10;												\
-				res += *s++ - '0';										\
-				scale--;												\
+			while (*s && scale > 0) {									\
+				if (isdigit((unsigned char) *s)) {						\
+					res *= 10;											\
+					res += *s++ - '0';									\
+					scale--;											\
+				} else if (c->decskip && *s == c->decskip) {			\
+					s++;												\
+				} else {												\
+					break;												\
+				}														\
 			}															\
 		}																\
 		while(*s && isspace((unsigned char) *s))						\
@@ -534,7 +542,7 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape, const char *decsep)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape, const char *decsep, const char *decskip)
 {
 	int i = 0, j;
 	node *n;
@@ -584,6 +592,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].rsep = rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
 			fmt[i].decsep = '\0',
+			fmt[i].decskip = '\0',
 			fmt[i].type = sql_subtype_string(m->ta, &col->type);
 			fmt[i].adt = ATOMindex(col->type.type->impl);
 			fmt[i].tostr = &_ASCIIadt_toStr;
@@ -611,10 +620,12 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
 				fmt[i].decsep = decsep[0];  // apply DECIMAL DELIMITERS clause
+				fmt[i].decskip = decskip[0];
 			} else if (col->type.type->eclass == EC_SEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &sec_frstr;
 				fmt[i].decsep = '.';  // not sure if it should be affected by DECIMAL DELIMITERS clause
+				fmt[i].decskip = '\0';
 			}
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
