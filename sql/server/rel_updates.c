@@ -1493,25 +1493,25 @@ table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int best_effort, dlist *fwf_widths, int onclient, int escape)
+rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int best_effort, dlist *fwf_widths, int onclient, int escape, const char* decsep)
 {
 	sql_rel *res;
 	list *exps, *args;
 	node *n;
 	sql_subtype tpe;
 	sql_exp *import;
-	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 12, F_UNION, true, NULL);
+	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 13, F_UNION, true, NULL);
 	char *fwf_string = NULL;
 
 	assert(f); /* we do expect copyfrom to be there */
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&tpe, "varchar", 0, 0);
-	args = append( append( append( append( append( new_exp_list(sql->sa),
-		exp_atom_ptr(sql->sa, t)),
-		exp_atom_str(sql->sa, tsep, &tpe)),
-		exp_atom_str(sql->sa, rsep, &tpe)),
-		exp_atom_str(sql->sa, ssep, &tpe)),
-		exp_atom_str(sql->sa, ns, &tpe));
+	args = new_exp_list(sql->sa);
+	append(args, exp_atom_ptr(sql->sa, t));
+	append(args, exp_atom_str(sql->sa, tsep, &tpe));
+	append(args, exp_atom_str(sql->sa, rsep, &tpe));
+	append(args, exp_atom_str(sql->sa, ssep, &tpe));
+	append(args, exp_atom_str(sql->sa, ns, &tpe));
 
 	if (fwf_widths && dlist_length(fwf_widths) > 0) {
 		dnode *dn;
@@ -1529,20 +1529,16 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 		*fwf_string_cur = '\0';
 	}
 
-	append( args, exp_atom_str(sql->sa, filename, &tpe));
-	import = exp_op(sql->sa,
-					append(
-						append(
-							append(
-								append(
-									append(
-										append(args,
-											   exp_atom_lng(sql->sa, nr)),
-										exp_atom_lng(sql->sa, offset)),
-									exp_atom_int(sql->sa, best_effort)),
-								exp_atom_str(sql->sa, fwf_string, &tpe)),
-							exp_atom_int(sql->sa, onclient)),
-						exp_atom_int(sql->sa, escape)), f);
+	append(args, exp_atom_str(sql->sa, filename, &tpe));
+	append(args, exp_atom_lng(sql->sa, nr));
+	append(args, exp_atom_lng(sql->sa, offset));
+	append(args, exp_atom_int(sql->sa, best_effort));
+	append(args, exp_atom_str(sql->sa, fwf_string, &tpe));
+	append(args, exp_atom_int(sql->sa, onclient));
+	append(args, exp_atom_int(sql->sa, escape));
+	append(args, exp_atom_str(sql->sa, decsep, &tpe));
+
+	import = exp_op(sql->sa, args, f);
 
 	exps = new_exp_list(sql->sa);
 	for (n = ol_first_node(t->columns); n; n = n->next) {
@@ -1679,7 +1675,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return NULL;
 			}
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape, decsep);
 
 			if (!rel)
 				rel = nrel;
@@ -1692,7 +1688,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		}
 	} else {
 		assert(onclient == 0);
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, best_effort, NULL, onclient, escape);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, best_effort, NULL, onclient, escape, decsep);
 	}
 	if (headers) {
 		dnode *n;

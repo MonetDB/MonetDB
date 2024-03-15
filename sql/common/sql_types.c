@@ -1663,8 +1663,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "character_length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, STR);
 	sql_create_func(sa, "octet_length", "str", "nbytes", FALSE, FALSE, SCALE_NONE, 0, INT, 1, STR);
 
-	/* copyfrom fname (arg 12) */
-	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", TRUE, SCALE_FIX, 0, TABLE, 12, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT);
+	/* copyfrom fname (arg 13) */
+	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", TRUE, SCALE_FIX, 0, TABLE, 13, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT, STR);
 	f->varres = 1;
 
 	/* bincopyfrom */

@@ -317,7 +317,7 @@ bat_max_length(hge, hge)
 		} else if (*s == '+'){											\
 			s++;														\
 		}																\
-		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
+		for (i = 0; *s && *s != c->decsep && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
 			if (!isdigit((unsigned char) *s))							\
 				break;													\
 			res *= 10;													\
@@ -325,7 +325,7 @@ bat_max_length(hge, hge)
 			if (res)													\
 				i++;													\
 		}																\
-		if (*s == '.') {												\
+		if (*s == c->decsep) {												\
 			s++;														\
 			while (*s && isdigit((unsigned char) *s) && scale > 0) {	\
 				res *= 10;												\
@@ -356,6 +356,8 @@ bat_max_length(hge, hge)
 static void *
 dec_frstr(Column *c, int type, const char *s)
 {
+	assert(c->decsep != '\0');
+
 	/* support dec map to bte, sht, int and lng */
 	if( strcmp(s,"nil")== 0)
 		return NULL;
@@ -532,7 +534,7 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape, const char *decsep)
 {
 	int i = 0, j;
 	node *n;
@@ -581,6 +583,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].sep = (n->next) ? sep : rsep;
 			fmt[i].rsep = rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
+			fmt[i].decsep = '\0',
 			fmt[i].type = sql_subtype_string(m->ta, &col->type);
 			fmt[i].adt = ATOMindex(col->type.type->impl);
 			fmt[i].tostr = &_ASCIIadt_toStr;
@@ -607,9 +610,11 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
+				fmt[i].decsep = decsep[0];  // apply DECIMAL DELIMITERS clause
 			} else if (col->type.type->eclass == EC_SEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &sec_frstr;
+				fmt[i].decsep = '.';  // not sure if it should be affected by DECIMAL DELIMITERS clause
 			}
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
