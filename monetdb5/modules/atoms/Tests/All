@@ -37,7 +37,7 @@ strappend
 startswith
 endswith
 contains
-HAVE_ICONV?asciify
+asciify
 startswith_join
 endswith_join
 contains_join
