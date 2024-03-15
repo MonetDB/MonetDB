@@ -2918,7 +2918,7 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
-//  1    2      3    4     5                6    7                8               9               10       11         12              13              14
+//  1    2      3    4     5               6    7                8               9               10       11         12              13              14
     COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
