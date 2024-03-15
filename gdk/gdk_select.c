@@ -1235,10 +1235,10 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 		maxval = VALptr(maxprop);
 		maxincl = false;
 	}
+	bool keep = false;	/* keep lock on parent bat? */
 	if (minprop == NULL || maxprop == NULL) {
 		if (VIEWtparent(bi->b) &&
 		    (pb = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
-			bool keep = false;
 			MT_lock_set(&pb->theaplock);
 			if (minprop == NULL && (minprop = BATgetprop_nolock(pb, GDK_MIN_BOUND)) != NULL) {
 				keep = true;
@@ -1251,8 +1251,6 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 			}
 			if (!keep) {
 				MT_lock_unset(&pb->theaplock);
-				BBPreclaim(pb);
-				pb = NULL;
 			}
 		}
 	}
@@ -1340,12 +1338,13 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 		}
 	}
 
+	MT_lock_unset(&bi->b->theaplock);
 	if (pb) {
-		MT_lock_unset(&pb->theaplock);
+		if (keep)
+			MT_lock_unset(&pb->theaplock);
 		BBPreclaim(pb);
 	}
 
-	MT_lock_unset(&bi->b->theaplock);
 	return range;
 }
 
