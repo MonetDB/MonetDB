@@ -5314,9 +5314,9 @@ STRselect(bat *r_id, const bat *b_id, const bat *cb_id, const char *key,
 
 	if (!msg) {
 		BATsetcount(r, rcnt);
-		r->tsorted = r->batCount <= 1;
+		r->tsorted = true;
 		r->trevsorted = r->batCount <= 1;
-		r->tkey = false;
+		r->tkey = true;
 		r->tnil = false;
 		r->tnonil = true;
 		r->tseqbase = rcnt == 0 ?
