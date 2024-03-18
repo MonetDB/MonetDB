@@ -742,6 +742,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		    atomcmp(BUNtail(ni, ni.minpos), minbound) < 0) {
 			assert(0);
 			GDKerror("value out of bounds\n");
+			MT_lock_unset(&b->theaplock);
 			goto bailout;
 		}
 	}
@@ -753,6 +754,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		    atomcmp(BUNtail(ni, ni.maxpos), maxbound) >= 0) {
 			assert(0);
 			GDKerror("value out of bounds\n");
+			MT_lock_unset(&b->theaplock);
 			goto bailout;
 		}
 	}
@@ -805,6 +807,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				if (minbound && n->tseqbase + ci.seq - hseq < *(const oid *)minbound) {
 					assert(0);
 					GDKerror("value not within bounds\n");
+					MT_lock_unset(&b->theaplock);
 					goto bailout;
 				}
 				BATtseqbase(b, n->tseqbase + ci.seq - hseq);
@@ -812,6 +815,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			if (maxbound && b->tseqbase + BATcount(b) + ci.ncand >= *(const oid *)maxbound) {
 				assert(0);
 				GDKerror("value not within bounds\n");
+				MT_lock_unset(&b->theaplock);
 				goto bailout;
 			}
 			BATsetcount(b, BATcount(b) + ci.ncand);
@@ -824,6 +828,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			if (notnull) {
 				assert(0);
 				GDKerror("NULL value not within bounds\n");
+				MT_lock_unset(&b->theaplock);
 				goto bailout;
 			}
 			BATtseqbase(b, oid_nil);
