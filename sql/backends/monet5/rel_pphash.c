@@ -234,11 +234,11 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	 *   X_74:bat[:int] := algebra.projection(...); # r2
 	 *   X_75:bat[:int] := algebra.projection(...); # r3
 	 *   ### First LHS join column:
-	 *   X_76:bat[:int] := hash.hash(X_73:bat[:int], X_48:ptr);
-	 *   (X_77:bat[:oid], X_78:bat[:oid]) := hash.probe(X_73:bat[:int], X_76:bat[:int], X_12:bat[:int], X_48:ptr);
+	 *   X_76:bat[:lng] := hash.hash(X_73:bat[:int], X_48:ptr);
+	 *   (X_77:bat[:oid], X_78:bat[:oid]) := hash.probe(X_73:bat[:int], X_76:bat[:lng], X_12:bat[:int], X_48:ptr);
 	 *   ### Subsequent LHS join columns:
-	 *   X_79:bat[:int] := hash.combined_hash(X_74:bat[:int], X_77:bat[:oid], X_78:bat[:oid], X_48:ptr);
-	 *   (X_80:bat[:oid], X_81:bat[:oid]) := hash.combined_probe(X_74:bat[:int], X_79:bat[:int], X_77:bat[:oid], X_13:bat[:int], X_48:ptr);
+	 *   X_79:bat[:lng] := hash.combined_hash(X_74:bat[:int], X_77:bat[:oid], X_78:bat[:oid], X_48:ptr);
+	 *   (X_80:bat[:oid], X_81:bat[:oid]) := hash.combined_probe(X_74:bat[:int], X_79:bat[:lng], X_77:bat[:oid], X_13:bat[:int], X_48:ptr);
 	 *
 	 *   ### Generate output
 	 *   # For the RHS columns, fetch values from hash-payload

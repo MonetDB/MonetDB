@@ -528,7 +528,7 @@ stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int prnt_slt
 
 /* Generates:
  *   hsh            := hash.hash(key,            PTR)
- *   X_76:bat[:int] := hash.hash(X_73:bat[:int], X_48:ptr);
+ *   X_76:bat[:lng] := hash.hash(X_73:bat[:int], X_48:ptr);
  */
 InstrPtr
 stmt_hash_hash(backend *be, int key, stmt *pp)
@@ -538,7 +538,7 @@ stmt_hash_hash(backend *be, int key, stmt *pp)
 		return NULL;
 	q = pushArgument(be->mb, q, key);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-	setVarType(be->mb, getArg(q, 0), getArgType(be->mb, q, 1));
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_lng));
 	pushInstruction(be->mb, q);
 	return q;
 }
@@ -548,7 +548,7 @@ stmt_hash_hash(backend *be, int key, stmt *pp)
  *   # RHS_slotid: for each LHS_matched, the slot_id of its counterpart in RHS,
  *   #             hence |LHS_matched| == |RHS_slotid|
  *   (LHS_matched,     RHS_slotid)    := hash.probe(LHS_key,        LHS_hash,       RHS_ht,         PTR)
- *   (X_77:bat[:oid], X_78:bat[:oid]) := hash.probe(X_73:bat[:int], X_76:bat[:int], X_12:bat[:int], X_48:PTR);
+ *   (X_77:bat[:oid], X_78:bat[:oid]) := hash.probe(X_73:bat[:int], X_76:bat[:lng], X_12:bat[:int], X_48:PTR);
  */
 InstrPtr
 stmt_hash_probe(backend *be, int key, int hsh, int rht, stmt *pp)
@@ -568,7 +568,7 @@ stmt_hash_probe(backend *be, int key, int hsh, int rht, stmt *pp)
 
 /* Generates:
  *   hsh            := hash.combined_hash(LHS_key,        LHS_selected,   RHS_prnt_slotid, PTR)
- *   X_79:bat[:int] := hash.combined_hash(X_74:bat[:int], X_77:bat[:oid], X_78:bat[:oid],  X_48:PTR);
+ *   X_79:bat[:lng] := hash.combined_hash(X_74:bat[:int], X_77:bat[:oid], X_78:bat[:oid],  X_48:PTR);
  */
 InstrPtr
 stmt_hash_combined_hash(backend *be, int key, int sel, int prnt, stmt *pp)
@@ -580,14 +580,14 @@ stmt_hash_combined_hash(backend *be, int key, int sel, int prnt, stmt *pp)
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, prnt);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-	setVarType(be->mb, getArg(q, 0), getArgType(be->mb, q, 1));
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_lng));
 	pushInstruction(be->mb, q);
 	return q;
 }
 
 /* Generates:
  *   (LHS_matched,    RHS_slotid)     := hash.combined_probe(LHS_key,        LHS_hash,       LHS_selected,    RHS_ht,         PTR)
- *   (X_80:bat[:oid], X_81:bat[:oid]) := hash.combined_probe(X_74:bat[:int], X_79:bat[:int], X_77:bat[:oid],  X_13:bat[:int], X_48:PTR);
+ *   (X_80:bat[:oid], X_81:bat[:oid]) := hash.combined_probe(X_74:bat[:int], X_79:bat[:lng], X_77:bat[:oid],  X_13:bat[:int], X_48:PTR);
  */
 InstrPtr
 stmt_hash_combined_probe(backend *be, int key, int hsh, int sel, int rht, stmt *pp)

@@ -68,7 +68,7 @@ compute_mask(unsigned int n)
 }
 
 static unsigned int
-compute_hash_prime_idx(unsigned int n)
+find_hash_prime(unsigned int n)
 {
 	unsigned int nn = n * 1.2 * 2.1; // this magic is copied from UHASHnew
 	if (nn < HT_MIN_SIZE)
@@ -80,7 +80,7 @@ compute_hash_prime_idx(unsigned int n)
 	if (bits >= GIDBITS)
 		bits = GIDBITS - 1;
 
-	return bits - 5;
+	return hash_prime_nr[bits - 5];
 }
 
 /* ***** HASH TABLE ***** */
@@ -731,7 +731,40 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 				group(sht);
 				break;
 			case TYPE_int:
-				group(int);
+				//group(int);
+int slots = 0;
+gid slot = 0;
+int *bp = Tloc(b, 0);
+int *vals = h->vals;
+TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+	bool fnd = 0;
+	gid k = (gid)_hash_int(bp[i])&h->mask;
+	gid g = 0;
+
+	while (!fnd) {
+		g = ATOMIC_GET(h->gids+k);
+		while (g && vals[g] != bp[i]) {
+			k++;
+			k &= h->mask;
+			g = ATOMIC_GET(h->gids+k);
+		}
+		if (!g) {
+			if (slots == 0) {
+				slots = private?1:PRE_CLAIM;
+				slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM);
+				if (((slot*100)/70) >= (gid)h->size)
+					hash_rehash(h, p, err);
+			}
+			slots--;
+			g = ++slot;
+			vals[g] = bp[i];
+			if (!ATOMIC_CAS(h->gids+k, &expected, g))
+				continue;
+		}
+		fnd = 1;
+	}
+	gp[i] = g-1;
+}
 				break;
 			case TYPE_date:
 				group(date);
@@ -1158,7 +1191,41 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 				derive(sht);
 				break;
 			case TYPE_int:
-				derive(int);
+				//derive(int);
+int slots = 0;
+gid slot = 0;
+int *bp = Tloc(b, 0);
+int *vals = h->vals;
+TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+	bool fnd = 0;
+	gid k = (gid)combine(gi[i], _hash_int(bp[i]), prime)&h->mask;
+	gid g = 0;
+
+	while (!fnd) {
+		g = ATOMIC_GET(h->gids+k);
+		while (g && (pgids[g] != gi[i] || vals[g] != bp[i])) {
+			k++;
+			k &= h->mask;
+			g = ATOMIC_GET(h->gids+k);
+		}
+		if (!g) {
+			if (slots == 0) {
+				slots = private?1:PRE_CLAIM;
+				slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM);
+				if (((slot*100)/70) >= (gid)h->size)
+					hash_rehash(h, p, err);
+			}
+			slots--;
+			g = ++slot;
+			vals[g] = bp[i];
+			pgids[g] = gi[i];
+			if (!ATOMIC_CAS(h->gids+k, &expected, g))
+				continue;
+		}
+		fnd = 1;
+	}
+	gp[i] = g-1;
+}
 				break;
 			case TYPE_date:
 				derive(date);
@@ -1376,7 +1443,26 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *parent_slotid, bat *parent_ht, 
 				addpld(sht);
 				break;
 			case TYPE_int:
-				addpld(int);
+				//addpld(int);
+int prime = hash_prime_nr[hp->bits-5];
+int *pvals = Tloc(pld, 0);
+int *hpvals = hp->payload;
+TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+	gid slt = sltid[i];
+	if (slt >= (gid)hp->nr_slots) {
+		hp->rehash = 1;
+		err =  createException(MAL, "hash.add_payload", "hash payload needs rehash");
+		goto error;
+	}
+	size_t old_freq = ATOMIC_ADD(&freqs[sltid[i]], 1);
+	gid hsh = (gid)combine(old_freq, _hash_lng(sltid[i]), prime)&hp->mask;
+	if (hsh >= (gid)hp->nr_payloads) {
+		hp->rehash = 1;
+		err =  createException(MAL, "hash.add_payload", "hash payload needs rehash");
+		goto error;
+	}
+	hpvals[hsh] = pvals[i];
+}
 				break;
 			case TYPE_date:
 				addpld(date);
@@ -1461,14 +1547,14 @@ error:
 #define fhash(Type, BaseType) \
 	do { \
 		Type *ky = Tloc(k, 0); \
-		Type *hs = Tloc(h, 0); \
+		gid *hs = Tloc(h, 0); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)_hash_##Type(*(((BaseType*)ky)+i)) & mask; \
 		} \
 	} while (0)
 
-/* X_nn:bat[:oid] := hash.hash(X_nn:bat[:any1]); */
+/* X_nn:bat[:lng] := hash.hash(X_nn:bat[:any1]); */
 static str
 UHASHhash(bat *hsh, bat *key, const ptr *H)
 {
@@ -1483,7 +1569,7 @@ UHASHhash(bat *hsh, bat *key, const ptr *H)
 		return createException(SQL, "hash.hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	cnt = BATcount(k);
-	h = COLnew(k->hseqbase, TYPE_oid, cnt, TRANSIENT);
+	h = COLnew(k->hseqbase, TYPE_lng, cnt, TRANSIENT);
 	if (!h) {
 		err = createException(SQL, "hash.hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
@@ -1509,7 +1595,12 @@ UHASHhash(bat *hsh, bat *key, const ptr *H)
 				hash(sht);
 				break;
 			case TYPE_int:
-				hash(int);
+				//hash(int);
+int *ky = Tloc(k, 0);
+gid *hs = Tloc(h, 0);
+TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+	hs[i] = (gid)_hash_int(ky[i]) & mask;
+}
 				break;
 			case TYPE_date:
 				hash(date);
@@ -1568,7 +1659,7 @@ error:
 #define vhash_combined() \
 	do { \
 		gid *hs = Tloc(h, 0); \
-		oid hsh = _hash_oid(k->tseqbase); \
+		gid hsh = _hash_oid(k->tseqbase); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)combine(ps[i], hsh, prime) & mask; \
@@ -1595,7 +1686,7 @@ error:
 		} \
 	} while (0)
 
-/* X_nn:bat[:oid] := hash.combined_hash(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:oid]); */
+/* X_nn:bat[:lng] := hash.combined_hash(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:oid]); */
 static str
 UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const ptr *H)
 {
@@ -1615,7 +1706,7 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const 
 
 	/* only compute hashes for the 'selected' ones */
 	cnt = BATcount(s);
-	h = COLnew(k->hseqbase, k->ttype?k->ttype:TYPE_oid, cnt, TRANSIENT);
+	h = COLnew(k->hseqbase, TYPE_lng, cnt, TRANSIENT);
 	if (!h) {
 		err = createException(SQL, "hash.combined_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
@@ -1625,7 +1716,7 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const 
 		oid  *sl = Tloc(s, 0);
 		gid  *ps = Tloc(p, 0);
 		unsigned int mask = compute_mask(cnt);
-		unsigned int prime = compute_hash_prime_idx(cnt);
+		unsigned int prime = find_hash_prime(cnt);
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -1644,7 +1735,12 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const 
 				hash_combined(sht);
 				break;
 			case TYPE_int:
-				hash_combined(int);
+				//hash_combined(int);
+int *ky = Tloc(k, 0);
+gid *hs = Tloc(h, 0);
+TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+	hs[i] = (gid)combine(ps[i], _hash_int(ky[sl[i]]), prime) & mask;
+}
 				break;
 			case TYPE_date:
 				hash_combined(date);
@@ -1718,13 +1814,13 @@ error:
 			} \
 			if (slot) { \
 				mtd[mtdcnt] = i; \
-				slt[mtdcnt] = slot; \
+				slt[mtdcnt] = slot - 1; \
 				mtdcnt++; \
 			} \
 		} \
 	} while (0)
 
-/* (X_nn:bat[:oid], X_nn:bat[:oid]) := hash.probe(X_nn:bat[:any1], X_nn:bat[:any1], X_nn:bat[:any2]); */
+/* (X_nn:bat[:oid], X_nn:bat[:oid]) := hash.probe(X_nn:bat[:any1], X_nn:bat[:lng], X_nn:bat[:any2]); */
 static str
 UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, const ptr *H)
 {
@@ -1772,7 +1868,23 @@ UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *
 				probe(sht);
 				break;
 			case TYPE_int:
-				probe(int);
+				//probe(int);
+int *ky = Tloc(k, 0);
+gid *hs = Tloc(h, 0);
+int *vals = ht->vals;
+oid *mtd = Tloc(m, 0);
+oid *slt = Tloc(s, 0);
+TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) {
+	gid slot = ht->gids[hs[i]];
+	while (slot && vals[slot] != ky[i]) {
+		slot++;
+	}
+	if (slot) {
+		mtd[mtdcnt] = i;
+		slt[mtdcnt] = slot - 1;
+		mtdcnt++;
+	}
+}
 				break;
 			case TYPE_date:
 				probe(date);
@@ -1862,13 +1974,13 @@ error:
 			} \
 			if (slot) { \
 				mtd[mtdcnt2] = i; \
-				slt[mtdcnt2] = slot; \
+				slt[mtdcnt2] = slot - 1; \
 				mtdcnt2++; \
 			} \
 		} \
 	} while (0)
 
-/* (X_nn:bat[:oid], X_nn:bat[:oid]) := hash.combined_probe(X_nn:bat[:any1], X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:any2]); */
+/* (X_nn:bat[:oid], X_nn:bat[:oid]) := hash.combined_probe(X_nn:bat[:any1], X_nn:bat[:lng], X_nn:bat[:oid], X_nn:bat[:any2]); */
 static str
 UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht, const ptr *H)
 {
@@ -1917,7 +2029,28 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 				combined_probe(sht);
 				break;
 			case TYPE_int:
-				combined_probe(int);
+				//combined_probe(int);
+int *ky = Tloc(k, 0);
+gid *hs = Tloc(h, 0);
+oid *mt = Tloc(m, 0);
+int *vals = ht->vals;
+gid hsh;
+int val;
+oid *mtd = Tloc(res_m, 0);
+oid *slt = Tloc(res_s, 0);
+TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) {
+	hsh = hs[mt[i]];
+	val = ky[mt[i]];
+	gid slot = ht->gids[hsh];
+	while (slot && vals[slot] != val) {
+		slot++;
+	}
+	if (slot) {
+		mtd[mtdcnt2] = i;
+		slt[mtdcnt2] = slot - 1;
+		mtdcnt2++;
+	}
+}
 				break;
 			case TYPE_date:
 				combined_probe(date);
@@ -2074,7 +2207,16 @@ HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *h
 				expand(sht);
 				break;
 			case TYPE_int:
-				expand(int);
+				//expand(int);
+int *val = Tloc(k, 0);
+int *res = Tloc(e, 0);
+TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+	int v = val[sel[i]];
+	gid freq = (gid)hp->frequency[sid[i]];
+	TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) {
+		res[idx++] = v;
+	}
+}
 				break;
 			case TYPE_date:
 				expand(date);
@@ -2131,6 +2273,7 @@ HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *h
 		err = createException(SQL, "hash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
+	o->T.maxval = tseq + rescnt;
 
 	BBPunfix(k->batCacheid);
 	BBPunfix(s->batCacheid);
@@ -2233,7 +2376,17 @@ HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bit first, 
 				fetch(sht);
 				break;
 			case TYPE_int:
-				fetch(int);
+				//fetch(int);
+int prime = hash_prime_nr[hp->bits-5];
+int *val = hp->payload;
+int *res = Tloc(p, 0);
+TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+	gid freq = (gid)hp->frequency[sid[i]];
+	TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) {
+		gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&hp->mask;
+		res[idx++] = val[hsh];
+	}
+}
 				break;
 			case TYPE_date:
 				fetch(date);
@@ -2290,6 +2443,7 @@ HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bit first, 
 		err = createException(SQL, "hash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
+	o->T.maxval = tseq + rescnt;
 
 	BBPunfix(l->batCacheid);
 	BBPunfix(h->batCacheid);
@@ -2320,11 +2474,11 @@ static mel_func pp_hash_init_funcs[] = {
  command("hash", "build_combined_table", UHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
  command("hash", "add_payload", HASHadd_payload, false, "Add a payload column with the given hash table. Returns a sink containing the hash payload", args(1,5, batargany("hp_sink",1),batargany("payload",1),batarg("parent_slotid",oid),batargany("parent_ht",2), arg("pipeline",ptr))),
 
- command("hash", "hash", UHASHhash, false, "Compute the hashs for the given column", args(1,3, batargany("hsh",1),batargany("key",1),arg("pipeline",ptr))),
- command("hash", "combined_hash", UHASHcombined_hash, false, "Compute the hashs for the selected items in the given column in combination with the slot IDs of a parent column", args(1,5, batargany("hsh",1),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
+ command("hash", "hash", UHASHhash, false, "Compute the hashs for the given column", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
+ command("hash", "combined_hash", UHASHcombined_hash, false, "Compute the hashs for the selected items in the given column in combination with the slot IDs of a parent column", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
- command("hash", "probe", UHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batargany("LHS_hash",1),batargany("RHS_ht",2),arg("pipeline",ptr))),
- command("hash", "combined_probe", UHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batargany("LHS_hash",1),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
+ command("hash", "probe", UHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
+ command("hash", "combined_probe", UHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
  command("hash", "expand", HASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(2,8, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("hp_sink",2),arg("first",bit),arg("pipeline",ptr))),
  command("hash", "fetch_payload", HASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash payload.", args(2,6, batarg("pos",oid),batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),arg("first",bit),arg("pipeline",ptr))),
