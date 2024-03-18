@@ -3059,11 +3059,11 @@ opt_decimal_seps:
 				{ dlist *l = L();
 				  append_string(l, sa_strdup(SA, "."));
 				  $$ = l; }
-	| sqlDECIMAL DELIMITERS string
+	| sqlDECIMAL opt_as string
 				{ dlist *l = L();
 				  append_string(l, $3);
 				  $$ = l; }
-	| sqlDECIMAL DELIMITERS string ',' string
+	| sqlDECIMAL opt_as string ',' string
 				{ dlist *l = L();
 				  append_string(l, $3);
 				  append_string(l, $5);
