@@ -703,7 +703,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	}
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	BATiter ni = bat_iterator(n);
 

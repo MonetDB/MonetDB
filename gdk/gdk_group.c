@@ -674,7 +674,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	bool locked = false;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if (b == NULL) {

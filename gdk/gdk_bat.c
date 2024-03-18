@@ -906,7 +906,6 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 			TIMEOUT_LOOP_IDX_DECL(p, bi.count, qry_ctx) {
 				const void *t = BUNtail(bi, p);

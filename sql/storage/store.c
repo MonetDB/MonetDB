@@ -2677,7 +2677,6 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	stream *infile = NULL;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	int len;
 	if (sscanf(p, "%[^\n]\n%n", abs_src_path, &len) != 1) {
