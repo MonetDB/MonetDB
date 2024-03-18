@@ -3,98 +3,98 @@ create table foo(s) as values (10), (20), (NULL)
 
 
 query I nosort
-SELECT 10 NOT DISTINCT FROM 20
+SELECT 10 IS NOT DISTINCT FROM 20
 ----
 0
 
 query I nosort
-SELECT 10 DISTINCT FROM 20
+SELECT 10 IS DISTINCT FROM 20
 ----
 1
 
 
 query I nosort
-SELECT 10 DISTINCT FROM NULL
+SELECT 10 IS DISTINCT FROM NULL
 ----
 1
 
 query I nosort
-SELECT NULL DISTINCT FROM 20
+SELECT NULL IS DISTINCT FROM 20
 ----
 1
 
 query I nosort
-SELECT 10 NOT DISTINCT FROM NULL
+SELECT 10 IS NOT DISTINCT FROM NULL
 ----
 0
 
 query I nosort
-SELECT NULL NOT DISTINCT FROM 20
+SELECT NULL IS NOT DISTINCT FROM 20
 ----
 0
 
 query I nosort
-SELECT NULL DISTINCT FROM NULL
+SELECT NULL IS DISTINCT FROM NULL
 ----
 0
 
 query I nosort
-SELECT NULL NOT DISTINCT FROM NULL
-----
-1
-
-query I nosort
-select s NOT DISTINCT FROM 20 FROM foo;
-----
-0
-1
-0
-
-query I nosort
-select s DISTINCT FROM 20 FROM foo;
+SELECT NULL IS NOT DISTINCT FROM NULL
 ----
 1
-0
-1
 
 query I nosort
-select s NOT DISTINCT FROM NULL FROM foo;
-----
-0
-0
-1
-
-query I nosort
-select s DISTINCT FROM NULL FROM foo;
-----
-1
-1
-0
-
-
-query I nosort
-select 20 NOT DISTINCT FROM s FROM foo;
+select s IS NOT DISTINCT FROM 20 FROM foo;
 ----
 0
 1
 0
 
 query I nosort
-select 20 DISTINCT FROM s FROM foo;
+select s IS DISTINCT FROM 20 FROM foo;
 ----
 1
 0
 1
 
 query I nosort
-select NULL NOT DISTINCT FROM s FROM foo;
+select s IS NOT DISTINCT FROM NULL FROM foo;
 ----
 0
 0
 1
 
 query I nosort
-select NULL DISTINCT FROM s FROM foo;
+select s IS DISTINCT FROM NULL FROM foo;
+----
+1
+1
+0
+
+
+query I nosort
+select 20 IS NOT DISTINCT FROM s FROM foo;
+----
+0
+1
+0
+
+query I nosort
+select 20 IS DISTINCT FROM s FROM foo;
+----
+1
+0
+1
+
+query I nosort
+select NULL IS NOT DISTINCT FROM s FROM foo;
+----
+0
+0
+1
+
+query I nosort
+select NULL IS DISTINCT FROM s FROM foo;
 ----
 1
 1

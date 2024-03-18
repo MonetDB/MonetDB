@@ -3909,18 +3909,18 @@ comparison_predicate:
 		  append_symbol(l, $5);
 		  append_int(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
- |	pred_exp NOT DISTINCT FROM pred_exp
+ |	pred_exp IS NOT DISTINCT FROM pred_exp
+		{ dlist *l = L();
+		  append_symbol(l, $1);
+		  append_string(l, sa_strdup(SA, "="));
+		  append_symbol(l, $6);
+		  append_int(l, 2);
+		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
+ |	pred_exp IS DISTINCT FROM pred_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_string(l, sa_strdup(SA, "="));
 		  append_symbol(l, $5);
-		  append_int(l, 2);
-		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
- |	pred_exp DISTINCT FROM pred_exp
-		{ dlist *l = L();
-		  append_symbol(l, $1);
-		  append_string(l, sa_strdup(SA, "="));
-		  append_symbol(l, $4);
 		  append_int(l, 3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  ;
