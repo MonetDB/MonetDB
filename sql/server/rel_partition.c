@@ -350,12 +350,16 @@ mark_hashjoin(mvc *sql, sql_rel *rel)
 		else
 			r->hashjoin = 1;
 		rel->hashjoin = 1;
+		l->partition = 1;
+		r->partition = 1;
 	}
 	else if(is_basetable(l->op) && !is_basetable(r->op)) {
 		l->hashjoin = 1;
+		l->partition = 1;
 		rel->hashjoin = 1;
 	} else if(is_basetable(r->op) && !is_basetable(l->op)) {
 		r->hashjoin = 1;
+		r->partition = 1;
 		rel->hashjoin = 1;
 	}
 }

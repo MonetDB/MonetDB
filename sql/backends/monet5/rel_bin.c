@@ -3107,7 +3107,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	if (rel->attr && list_length(rel->attr) > 0)
 		return rel2bin_groupjoin(be, rel, refs);
 
-	if ((GDKdebug == dohashjoin) && rel->hashjoin)
+	if ((GDKdebug & dohashjoin) && rel->hashjoin)
 		return rel2bin_pp_hashjoin(be, rel, refs);
 
 	// TODO: GROUP BY and topN code at rel->partition, so, either the rel->spb below is an error or it means something else */
