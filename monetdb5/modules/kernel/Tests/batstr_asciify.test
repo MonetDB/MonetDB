@@ -1,28 +1,25 @@
 statement ok
-create table foo(x string)
+CREATE TABLE foo(x string)
 
 statement ok
-insert into foo values ('johndoe'),('janedoe'),('robertdoe')
+INSERT INTO foo VALUES ('johndoe'),('janedoe'),('robertdoe')
 
 query T nosort
-select asciify(x) from foo
+SELECT asciify(x) FROM foo
 ----
 johndoe
 janedoe
 robertdoe
 
 statement ok
-drop table foo
+TRUNCATE TABLE foo
 
 statement ok
-create table bar(y string)
-
-statement ok
-insert into bar values ('Olá Mundo!'),('João'),('Parabéns Ri!'),('Müller')
+INSERT INTO foo VALUES ('Olá Mundo!'),('João'),('Parabéns Ri!'),('Müller')
 
 onlyif system=Linux
 query T nosort
-select asciify(y) from bar
+SELECT asciify(x) FROM foo
 ----
 Ola Mundo!
 Joao
@@ -30,8 +27,8 @@ Parabens Ri!
 Muller
 
 skipif system=Linux
-query T
-select asciify(y) from bar
+query T nosort
+SELECT asciify(x) FROM foo
 ----
 Ol'a Mundo!
 Jo~ao
@@ -39,13 +36,13 @@ Parab'ens Ri!
 M"uller
 
 statement ok
-drop table bar
+DROP TABLE foo
 
 query TT nosort
-select name, asciify(name) from columns where name <> asciify(name)
+SELECT name, asciify(name) FROM columns WHERE name <> asciify(name)
 ----
 
 query TT nosort
-select name, asciify(name) from args where name <> asciify(name)
+SELECT name, asciify(name) FROM args WHERE name <> asciify(name)
 ----
 

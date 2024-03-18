@@ -8,4 +8,4 @@
 @REM Copyright August 2008 - 2023 MonetDB B.V.;
 @REM Copyright 1997 - July 2008 CWI.
 
-@python "%~dpn0" %*
+@python -Xutf8 "%~dpn0" %*

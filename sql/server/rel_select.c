@@ -5650,11 +5650,83 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 }
 
 static sql_rel *
-rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op )
+rel_setquery_corresponding(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int outer)
+{
+	mvc *sql = query->sql;
+	const char *opname = op==SQL_EXCEPT?"EXCEPT":op==SQL_INTERSECT?"INTERSECT":outer?"OUTER UNION":"UNION";
+	list *lexps = sa_list(query->sql->sa), *rexps = sa_list(query->sql->sa);
+	if (!lexps || !rexps)
+		return NULL;
+	assert(cols);
+	if (dlist_length(cols)) {
+		for (dnode *dn = cols->h; dn; dn = dn ->next) {
+			char *nm = dn->data.sym->data.lval->h->data.sval;
+			sql_exp *ls, *rs;
+
+			if (!(ls = rel_bind_column(sql, l, nm, sql_where | sql_join, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+				return NULL;
+			if (!(rs = rel_bind_column(sql, r, nm, sql_where | sql_join, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+				return NULL;
+			if ((!outer && (!ls || !rs)) || (outer && !ls && !rs))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: tables '%s' and '%s' do not have a matching column '%s'", opname, rel_name(l)?rel_name(l):"", rel_name(r)?rel_name(r):"", nm);
+			if (outer && !ls)
+				ls = exp_null(sql->sa, exp_subtype(rs));
+			if (outer && !rs)
+				rs = exp_null(sql->sa, exp_subtype(ls));
+			append(lexps, ls);
+			append(rexps, rs);
+		}
+	} else {
+		int found = 0;
+		list *exps = rel_projections(sql, l, NULL, 1, 0), *r_exps = rel_projections(sql, r, NULL, 1, 0);
+		if (!exps || !r_exps)
+			return NULL;
+		/* find cols which exist on both sides */
+		for (node *n = exps->h; n; n = n->next) {
+			sql_exp *le = n->data;
+			int multi = 0;
+			const char *rname = exp_relname(le), *name = exp_name(le);
+			sql_exp *re = exps_bind_column(r_exps, name, NULL, &multi, 0);
+			if (re) {
+				if (multi)
+					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "%s: common column name '%s' appears more than once in right table", opname, rname);
+				multi = 0;
+				le = exps_bind_column(exps, name, NULL, &multi, 0);
+				if (multi)
+					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "%s: common column name '%s' appears more than once in left table", opname, rname);
+
+				found = 1;
+				append(lexps, le);
+				append(rexps, re);
+				list_remove_data(r_exps, NULL, re);
+			} else if (outer) {
+				append(lexps, le);
+				re = exp_null(sql->sa, exp_subtype(le));
+				append(rexps, re); /* nils */
+			}
+		}
+		if (!found)
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: no columns of tables '%s' and '%s' match", opname, rel_name(l)?rel_name(l):"", rel_name(r)?rel_name(r):"");
+		if (outer) {
+			for (node *n = r_exps->h; n; n = n->next) {
+				sql_exp *re = n->data, *le;
+				append(rexps, re);
+				le = exp_null(sql->sa, exp_subtype(re));
+				append(lexps, le); /* nils */
+			}
+		}
+	}
+	return rel_setop_check_types(sql, l, r, lexps, rexps, (operator_type)op);
+}
+
+static sql_rel *
+rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int outer)
 {
 	mvc *sql = query->sql;
 	sql_rel *rel;
 
+	if (outer && !cols)
+			return sql_error(sql, 02, SQLSTATE(42000) "UNION: OUTER needs to be combined with CORRESPONDING [ BY ( column list ) ]");
 	if (!cols) {
 		list *ls, *rs;
 
@@ -5664,7 +5736,7 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op )
 		rs = rel_projections(sql, r, NULL, 0, 1);
 		rel = rel_setop_check_types(sql, l, r, ls, rs, (operator_type)op);
 	} else {
-		rel = rel_setop(sql->sa, l, r, (operator_type)op);
+		rel = rel_setquery_corresponding(query, l, r, cols, op, outer);
 	}
 	if (rel) {
 		rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
@@ -5695,7 +5767,7 @@ rel_setquery(sql_query *query, symbol *q)
 
 	rel_remove_internal_exp(t1);
 	rel_remove_internal_exp(t2);
-	if (list_length(t1->exps) != list_length(t2->exps)) {
+	if (!corresponding && list_length(t1->exps) != list_length(t2->exps)) {
 		int t1nrcols = list_length(t1->exps);
 		int t2nrcols = list_length(t2->exps);
 		char *op = "UNION";
@@ -5708,16 +5780,18 @@ rel_setquery(sql_query *query, symbol *q)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: column counts (%d and %d) do not match", op, t1nrcols, t2nrcols);
 	}
 	if ( q->token == SQL_UNION) {
+		int outer = n->next->next->next->next->data.i_val;
 		/* For EXCEPT/INTERSECT the group by is always done within the implementation */
+		/* TODO add those later in an optimizer ! */
 		if (t1 && distinct)
 			t1 = rel_distinct(t1);
 		if (t2 && distinct)
 			t2 = rel_distinct(t2);
-		res = rel_setquery_(query, t1, t2, corresponding, op_union );
+		res = rel_setquery_(query, t1, t2, corresponding, op_union, outer );
 	} else if ( q->token == SQL_EXCEPT)
-		res = rel_setquery_(query, t1, t2, corresponding, op_except );
+		res = rel_setquery_(query, t1, t2, corresponding, op_except, 0);
 	else if ( q->token == SQL_INTERSECT)
-		res = rel_setquery_(query, t1, t2, corresponding, op_inter );
+		res = rel_setquery_(query, t1, t2, corresponding, op_inter, 0);
 	if (res) {
 		set_processed(res);
 		if (distinct)
