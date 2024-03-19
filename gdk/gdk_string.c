@@ -6850,97 +6850,151 @@ GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2)
 {
 	const uint8_t *s1 = (const uint8_t *) str1;
 	const uint8_t *s2 = (const uint8_t *) str2;
+	const uint8_t *x1 = NULL, *x2 = NULL;
 	int n1, n2;
 	int v1, v2;
 
 	for (;;) {
 		/* check for the end */
-		if (l1 == 0 || l2 == 0)
+		if ((x1 == NULL && l1 == 0) || (x2 == NULL && l2 == 0))
 			return 0;
-		if (*s1 == 0)
-			return -(*s2 != 0);
-		if (*s2 == 0)
+		if (x1 == NULL && *s1 == 0)
+			return -(x2 != NULL || *s2 != 0);
+		if (x2 == NULL && *s2 == 0)
 			return 1;
-		v1 = lowercase[*s1++];
-		n1 = 1;
-		l1--;
-		while (v1 && l1 > 0 && (*s1 & 0xC0) == 0x80) {
-			assert(n1 < 4);
-			v1 = lowercase[v1 + *s1++];
-			n1++;
+
+		/* get next character from str1 */
+		if (x1 == NULL) {
+			v1 = casefold[*s1++];
+			n1 = 1;
 			l1--;
-		}
-		if (v1 == 0) {
-			while (l1 > 0 && (*s1 & 0xC0) == 0x80) {
+			while (v1 && l1 > 0 && (*s1 & 0xC0) == 0x80) {
 				assert(n1 < 4);
+				v1 = casefold[v1 + *s1++];
 				n1++;
-				s1++;
 				l1--;
 			}
-		}
-		v2 = lowercase[*s2++];
-		n2 = 1;
-		l2--;
-		while (v2 && l2 > 0 && (*s2 & 0xC0) == 0x80) {
-			assert(n2 < 4);
-			v2 = lowercase[v2 + *s2++];
-			n2++;
-			l2--;
-		}
-		if (v2 == 0) {
-			while (l2 > 0 && (*s2 & 0xC0) == 0x80) {
-				assert(n2 < 4);
-				n2++;
-				s2++;
-				l2--;
+			if (v1 == 0) {
+				while (l1 > 0 && (*s1 & 0xC0) == 0x80) {
+					assert(n1 < 4);
+					n1++;
+					s1++;
+					l1--;
+				}
+			} else if (v1 < 0) {
+				x1 = (const uint8_t *) specialcase[-v1];
+				v1 = 0;
 			}
 		}
+		if (x1 != NULL) {
+			n1 = 1;
+			while ((*++x1 & 0xC0) == 0x80)
+				n1++;
+		}
+
+		/* get next character from str2 */
+		if (x2 == NULL) {
+			v2 = casefold[*s2++];
+			n2 = 1;
+			l2--;
+			while (v2 && l2 > 0 && (*s2 & 0xC0) == 0x80) {
+				assert(n2 < 4);
+				v2 = casefold[v2 + *s2++];
+				n2++;
+				l2--;
+			}
+			if (v2 == 0) {
+				while (l2 > 0 && (*s2 & 0xC0) == 0x80) {
+					assert(n2 < 4);
+					n2++;
+					s2++;
+					l2--;
+				}
+			} else if (v2 < 0) {
+				x2 = (const uint8_t *) specialcase[-v2];
+				v2 = 0;
+			}
+		}
+		if (x2 != NULL) {
+			n2 = 1;
+			while ((*++x2 & 0xC0) == 0x80)
+				n2++;
+		}
+
+		/* At this point, if x1 != NULL (then v1 == 0), it
+		 * points to the end of a sequence of length n1 that is
+		 * (part of) the first string to be compared and if *x1
+		 * != 0, it points to the next character to be compared
+		 * (in the next iteration, else we continue with s1);
+		 * else if v1 == 0, s1 points to the end of a sequence
+		 * of length n1 that is (part of) the string to be
+		 * compared; else v1 is the codepoint to be compared.
+		 * In any case, s1 points to the start of the next
+		 * character to be compared (after x1 is exhausted).
+		 * The value in l1 is the remaining length of the first
+		 * string (i.e. what s1 points to).  The same for x2,
+		 * s2, n2, l2, and v2. */
+
+		/* compare */
 		if (v1 == 0) {
 			if (v2 == 0) {
 				/* neither converted */
 				if (n1 == n2) {
 					/* at least the same length, so simple strncmp */
-					n1 = strncmp((const char *) s1 - n1, (const char *) s2 - n2, n1);
+					n1 = strncmp((const char *) (x1?x1:s1) - n1, (const char *) (x2?x2:s2) - n2, n1);
 					if (n1 != 0)
 						return n1;
 					/* still equal */
-				} else if (n1 < n2) {
-					/* sequence in s1 is shorter, so s1 < s2 */
-					return -1;
 				} else {
-					/* sequence in s1 is longer, so s1 > s2 */
-					return 1;
+					/* length is leading: shorter
+					 * sequences come before longer
+					 * ones */
+					return n1 - n2;
 				}
 			} else {
 				switch (n1) {
 				case 1:
-					if (v2 >= 0x7F)
+					if (v2 >= 0x80)
 						return -1;
-					if (s1[-1] != v2)
-						return (s1[-1] > v2) - (s1[-1] < v2);
+					if (x1) {
+						if (x1[-1] != v2)
+							return (x1[-1] > v2) - (x1[-1] < v2);
+					} else {
+						if (s1[-1] != v2)
+							return (s1[-1] > v2) - (s1[-1] < v2);
+					}
 					break;
 				case 2:
 					if (v2 < 0x80)
 						return 1;
-					else if (v2 >= 0x7FF)
+					else if (v2 >= 0x800)
 						return -1;
-					v1 = ((s1[-2] & 0x1F) << 6) | (s1[-1] & 0x3F);
+					if (x1)
+						v1 = ((x1[-2] & 0x1F) << 6) | (x1[-1] & 0x3F);
+					else
+						v1 = ((s1[-2] & 0x1F) << 6) | (s1[-1] & 0x3F);
 					if (v1 != v2)
 						return (v1 > v2) - (v1 < v2);
 					break;
 				case 3:
 					if (v2 < 0x800)
 						return 1;
-					else if (v2 >= 0xFFFF)
+					else if (v2 >= 0x10000)
 						return -1;
-					v1 = ((s1[-3] & 0x0F) << 12) | ((s1[-2] & 0x3F) << 6) | (s1[-1] & 0x3F);
+					if (x1)
+						v1 = ((x1[-3] & 0x0F) << 12) | ((x1[-2] & 0x3F) << 6) | (x1[-1] & 0x3F);
+					else
+						v1 = ((s1[-3] & 0x0F) << 12) | ((s1[-2] & 0x3F) << 6) | (s1[-1] & 0x3F);
 					if (v1 != v2)
 						return (v1 > v2) - (v1 < v2);
 					break;
 				case 4:
 					if (v2 < 0x10000)
 						return 1;
-					v1 = ((s1[-4] & 0x07) << 18) | ((s1[-3] & 0x3F) << 12) | ((s1[-2] & 0x3F) << 6) | (s1[-1] & 0x3F);
+					if (x1)
+						v1 = ((x1[-4] & 0x07) << 18) | ((x1[-3] & 0x3F) << 12) | ((x1[-2] & 0x3F) << 6) | (x1[-1] & 0x3F);
+					else
+						v1 = ((s1[-4] & 0x07) << 18) | ((s1[-3] & 0x3F) << 12) | ((s1[-2] & 0x3F) << 6) | (s1[-1] & 0x3F);
 					if (v1 != v2)
 						return (v1 > v2) - (v1 < v2);
 					break;
@@ -6948,50 +7002,66 @@ GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2)
 					MT_UNREACHABLE();
 				}
 			}
-		} else {
-			if (v2 == 0) {
-				switch (n2) {
-				case 1:
-					if (v1 >= 0x7F)
-						return 1;
+		} else if (v2 == 0) {
+			switch (n2) {
+			case 1:
+				if (v1 >= 0x80)
+					return 1;
+				if (x2) {
+					if (x2[-1] != v1)
+						return (v1 > x2[-1]) - (v1 < x2[-1]);
+				} else {
 					if (s2[-1] != v1)
 						return (v1 > s2[-1]) - (v1 < s2[-1]);
-					break;
-				case 2:
-					if (v1 < 0x80)
-						return -1;
-					else if (v1 >= 0x7FF)
-						return 1;
+				}
+				break;
+			case 2:
+				if (v1 < 0x80)
+					return -1;
+				else if (v1 >= 0x800)
+					return 1;
+				if (x2)
+					v2 = ((x2[-2] & 0x1F) << 6) | (x2[-1] & 0x3F);
+				else
 					v2 = ((s2[-2] & 0x1F) << 6) | (s2[-1] & 0x3F);
-					if (v1 != v2)
-						return (v1 > v2) - (v1 < v2);
-					break;
-				case 3:
-					if (v1 < 0x800)
-						return -1;
-					else if (v1 >= 0xFFFF)
-						return 1;
-					v2 = ((s2[-3] & 0x0F) << 12) | ((s2[-2] & 0x3F) << 6) | (s2[-1] & 0x3F);
-					if (v1 != v2)
-						return (v1 > v2) - (v1 < v2);
-					break;
-				case 4:
-					if (v1 < 0x10000)
-						return -1;
-					v2 = ((s2[-4] & 0x07) << 18) | ((s2[-3] & 0x3F) << 12) | ((s2[-2] & 0x3F) << 6) | (s2[-1] & 0x3F);
-					if (v1 != v2)
-						return (v1 > v2) - (v1 < v2);
-					break;
-				default:
-					MT_UNREACHABLE();
-				}
-			} else {
-				if (v1 != v2) {
-					/* both converted and they're not equal */
+				if (v1 != v2)
 					return (v1 > v2) - (v1 < v2);
-				}
+				break;
+			case 3:
+				if (v1 < 0x800)
+					return -1;
+				else if (v1 >= 0x10000)
+					return 1;
+				if (x2)
+					v2 = ((x2[-3] & 0x0F) << 12) | ((x2[-2] & 0x3F) << 6) | (x2[-1] & 0x3F);
+				else
+					v2 = ((s2[-3] & 0x0F) << 12) | ((s2[-2] & 0x3F) << 6) | (s2[-1] & 0x3F);
+				if (v1 != v2)
+					return (v1 > v2) - (v1 < v2);
+				break;
+			case 4:
+				if (v1 < 0x10000)
+					return -1;
+				if (x2)
+					v2 = ((x2[-4] & 0x07) << 18) | ((x2[-3] & 0x3F) << 12) | ((x2[-2] & 0x3F) << 6) | (x2[-1] & 0x3F);
+				else
+					v2 = ((s2[-4] & 0x07) << 18) | ((s2[-3] & 0x3F) << 12) | ((s2[-2] & 0x3F) << 6) | (s2[-1] & 0x3F);
+				if (v1 != v2)
+					return (v1 > v2) - (v1 < v2);
+				break;
+			default:
+				MT_UNREACHABLE();
+			}
+		} else {
+			if (v1 != v2) {
+				/* both converted and they're not equal */
+				return (v1 > v2) - (v1 < v2);
 			}
 		}
+		if (x1 != NULL && *x1 == 0)
+			x1 = NULL;
+		if (x2 != NULL && *x2 == 0)
+			x2 = NULL;
 	}
 }
 
