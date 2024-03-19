@@ -2160,7 +2160,6 @@ str_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (anti)					/* keep nulls ? (use false for now) */
 		scanloop_anti(!strNil(v) && str_cmp(v, key, klen) != 0, keep_nulls);
@@ -2244,9 +2243,9 @@ STRselect(bat *r_id, const bat *b_id, const bat *cb_id, const char *key,
 
 	if (!msg) {
 		BATsetcount(r, rcnt);
-		r->tsorted = r->batCount <= 1;
+		r->tsorted = true;
 		r->trevsorted = r->batCount <= 1;
-		r->tkey = false;
+		r->tkey = true;
 		r->tnil = false;
 		r->tnonil = true;
 		r->tseqbase = rcnt == 0 ?
@@ -2746,7 +2745,6 @@ str_join_nested(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG(ALGO,
 			  "(%s, %s, l=%s#" BUNFMT "[%s]%s%s,"
@@ -2830,7 +2828,6 @@ contains_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr, bit anti,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG(ALGO,
 			  "(%s, l=%s#" BUNFMT "[%s]%s%s,"
@@ -2923,7 +2920,6 @@ startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(*rl_ptr && *rr_ptr);
 

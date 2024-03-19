@@ -113,7 +113,6 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(bn->ttype == TYPE_oid);
 	seq = bi->b->hseqbase;
@@ -551,7 +550,6 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	assert(hval);							\
 	size_t counter = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 	if (imprints && imprints->imprints.parentid != bi->b->batCacheid) { \
 		parent = imprints->imprints.parentid;			\
 		pbat = BATdescriptor(parent);				\
@@ -614,7 +612,6 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	(void) imprints;
 	(void) lnil;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (equi) {
 		*algo = "select: fullscan equi";
@@ -764,7 +761,6 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	BUN p, ncand = ci->ncand;
 	oid o;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (!equi || !GDK_ELIMDOUBLES(bi->vh))
 		return fullscan_any(bi, ci, bn, tl, th, li, hi, equi, anti,
@@ -1223,10 +1219,10 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 		maxval = VALptr(maxprop);
 		maxincl = false;
 	}
+	bool keep = false;	/* keep lock on parent bat? */
 	if (minprop == NULL || maxprop == NULL) {
 		if (VIEWtparent(bi->b) &&
 		    (pb = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
-			bool keep = false;
 			MT_lock_set(&pb->theaplock);
 			if (minprop == NULL && (minprop = BATgetprop_nolock(pb, GDK_MIN_BOUND)) != NULL) {
 				keep = true;
@@ -1239,8 +1235,6 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 			}
 			if (!keep) {
 				MT_lock_unset(&pb->theaplock);
-				BBPreclaim(pb);
-				pb = NULL;
 			}
 		}
 	}
@@ -1328,12 +1322,13 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 		}
 	}
 
+	MT_lock_unset(&bi->b->theaplock);
 	if (pb) {
-		MT_lock_unset(&pb->theaplock);
+		if (keep)
+			MT_lock_unset(&pb->theaplock);
 		BBPreclaim(pb);
 	}
 
-	MT_lock_unset(&bi->b->theaplock);
 	return range;
 }
 
@@ -2316,7 +2311,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	Heap *oidxh = NULL;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(ATOMtype(li.type) == ATOMtype(rli.type));
 	assert(ATOMtype(li.type) == ATOMtype(rhi.type));

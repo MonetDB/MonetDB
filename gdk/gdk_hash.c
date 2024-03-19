@@ -745,7 +745,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 	assert(bi.type != TYPE_msk);

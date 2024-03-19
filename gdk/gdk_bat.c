@@ -815,8 +815,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		return NULL;
 	}
 
-	MT_lock_set(&b->theaplock);
-	bi = bat_iterator_nolock(b);
+	bi = bat_iterator(b);
 
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
@@ -824,12 +823,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	    role == TRANSIENT &&
 	    bi.restricted == BAT_READ &&
 	    ATOMstorage(b->ttype) != TYPE_msk && /* no view on TYPE_msk */
-	    (!VIEWtparent(b) ||
-	     BBP_desc(VIEWtparent(b))->batRestricted == BAT_READ)) {
-		MT_lock_unset(&b->theaplock);
+	    (bi.h == NULL ||
+	     bi.h->parentid == b->batCacheid ||
+	     BBP_desc(bi.h->parentid)->batRestricted == BAT_READ)) {
 		bn = VIEWcreate(b->hseqbase, b);
 		if (bn == NULL) {
-			return NULL;
+			goto bunins_failed;
 		}
 		if (tt != bn->ttype) {
 			bn->ttype = tt;
@@ -841,6 +840,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			}
 			bn->tseqbase = ATOMtype(tt) == TYPE_oid ? bi.tseq : oid_nil;
 		}
+		bat_iterator_end(&bi);
 		return bn;
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
@@ -868,8 +868,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 
 		bn = COLnew2(b->hseqbase, tt, bi.count, role, bi.width);
 		if (bn == NULL) {
-			MT_lock_unset(&b->theaplock);
-			return NULL;
+			goto bunins_failed;
 		}
 		if (bn->tvheap != NULL && bn->tvheap->base == NULL) {
 			/* this combination can happen since the last
@@ -908,15 +907,16 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				bn->batCapacity = 0;
 		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
-			BUN p, q;
+			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
-			BATloop(b, p, q) {
+			TIMEOUT_LOOP_IDX_DECL(p, bi.count, qry_ctx) {
 				const void *t = BUNtail(bi, p);
 
 				if (bunfastapp_nocheck(bn, t) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
 			}
+			TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 			bn->theap->dirty |= bi.count > 0;
 		} else if (tt != TYPE_void && bi.type == TYPE_void) {
 			/* case (4): optimized for unary void
@@ -953,7 +953,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else {
 			BATtseqbase(bn, oid_nil);
 		}
-		BATkey(bn, BATtkey(b));
+		BATkey(bn, bi.key);
 		bn->tsorted = bi.sorted;
 		bn->trevsorted = bi.revsorted;
 		bn->tnorevsorted = bi.norevsorted;
@@ -971,7 +971,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->tunique_est = bi.unique_est;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
-		BUN h = BATcount(b);
+		BUN h = bi.count;
 		bn->tsorted = bi.sorted;
 		bn->trevsorted = bi.revsorted;
 		BATkey(bn, bi.key);
@@ -1008,14 +1008,14 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->trevsorted = ATOMlinear(b->ttype);
 		bn->tkey = true;
 	}
+	bat_iterator_end(&bi);
 	if (!writable)
 		bn->batRestricted = BAT_READ;
 	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT "\n",
 		  ALGOBATPAR(b), ALGOBATPAR(bn));
-	MT_lock_unset(&b->theaplock);
 	return bn;
       bunins_failed:
-	MT_lock_unset(&b->theaplock);
+	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
 }

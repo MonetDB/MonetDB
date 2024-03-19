@@ -1439,7 +1439,6 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if ((msg = re_like_build(&re, pat, caseignore, use_strcmp,
 							 esc)) != MAL_SUCCEED)
@@ -1738,7 +1737,6 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 	lng t0 = 0;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 

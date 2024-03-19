@@ -607,7 +607,6 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	assert(r2 == NULL || r1->hseqbase + r1i.count == r2->hseqbase);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (r2 && r1i.count == 0) {
 		/* unlikely special case: r1 is empty, so we just have r2 */
@@ -898,7 +897,6 @@ BATprojectchain(BAT **bats)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* count number of participating BATs and allocate some
 	 * temporary work space */
