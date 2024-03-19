@@ -757,7 +757,7 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 
 	if (isTable(t)) {
 		if (store->storage_api.create_del(tr, t) != LOG_OK) {
-			TRC_DEBUG(SQL_STORE, "Load table '%s' is missing 'deletes'", t->base.name);
+			TRC_ERROR(SQL_STORE, "Load table '%s' is missing 'deletes'", t->base.name);
 			ATOMIC_PTR_DESTROY(&t->data);
 			return NULL;
 		}
@@ -1161,6 +1161,8 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 		if (!instore(tid)) {
 			sql_table *t = load_table(tr, s, rt_tables, rt_parts,
 					rt_cols, rt_idx, rt_idxcols, rt_keys, rt_keycols, rt_triggers, rt_triggercols, tid);
+			if (t == NULL && store->debug&8) /* try to continue without this table */
+				continue;
 			if (t == NULL) {
 				schema_destroy(store, s);
 				return NULL;
