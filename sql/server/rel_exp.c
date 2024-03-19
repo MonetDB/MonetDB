@@ -2641,6 +2641,8 @@ exps_bind_column2(list *exps, const char *rname, const char *cname, int *multipl
 						*multiple = 1;
 					if (!res)
 						res = e;
+					if (res && res->alias.label) /* aliases maybe used multiple times without problems */
+						return res;
 				}
 			}
 			return res;
@@ -2653,6 +2655,8 @@ exps_bind_column2(list *exps, const char *rname, const char *cname, int *multipl
 					*multiple = 1;
 				if (!res)
 					res = e;
+				if (res && res->alias.label) /* aliases maybe used multiple times without problems */
+					return res;
 			}
 		}
 	}
