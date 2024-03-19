@@ -2148,13 +2148,11 @@ error:
 /* (X_nn:bat[:oid], X_nn:bat[:any1]) := hash.expand(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:oid], X_nn:bat[:any2], X_nn:bit);
  */
 static str
-HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink, bit first, const ptr *H)
+HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *hp_sink, bit *first, const ptr *H)
 {
 	BAT *o = NULL, *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt = 0;
 	str err = NULL;
-
-	(void) H;
 
 	k = BATdescriptor(*key);
 	s = BATdescriptor(*selected);
@@ -2267,7 +2265,7 @@ TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 	/* NB, this only works once.
 	 * If we want to reuse the hash, we need to reset the position info.
 	 */
-	oid tseq = first? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
+	oid tseq = (*first)? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
 	o = BATdense(0, tseq, rescnt);
 	if (!o) {
 		err = createException(SQL, "hash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2287,6 +2285,8 @@ TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 	BATnegateprops(e);
 	*expanded = e->batCacheid;
 	BBPkeepref(e);
+
+	(void) H;
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(o);
@@ -2323,13 +2323,11 @@ error:
 
 /* (X_nn:bat[:void], X_nn:bat[:any1]) := hash.fetch_payload(X_nn:bat[:oid], X_nn:bat[:any1], X_nn:bit); */
 static str
-HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bit first, const ptr *H)
+HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bit *first, const ptr *H)
 {
 	BAT *o = NULL, *p = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt =  0;
 	str err = NULL;
-
-	(void) H;
 
 	l = BATdescriptor(*slotid);
 	h = BATdescriptor(*hp_sink);
@@ -2437,7 +2435,7 @@ TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 	/* NB, this only works once.
 	 * If we want to reuse the hash, we need to reset the position info.
 	 */
-	oid tseq = first? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
+	oid tseq = (*first)? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
 	o = BATdense(0, tseq, rescnt);
 	if (!o) {
 		err = createException(SQL, "hash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2455,6 +2453,8 @@ TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 	BATnegateprops(p);
 	*payload = p->batCacheid;
 	BBPkeepref(p);
+
+	(void) H;
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(o);
