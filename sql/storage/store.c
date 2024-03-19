@@ -2236,6 +2236,8 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	MT_lock_unset(&store->lock);
 	MT_lock_unset(&store->flush);
 	if (!store_load(store, pa)) {
+		/* zap current change list */
+		store->changes = NULL;
 		store_exit(store);
 		return NULL;
 	}
