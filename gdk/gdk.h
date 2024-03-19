@@ -2372,10 +2372,10 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 static inline void
 TIMEOUT_ERROR(QryCtx *qc, const char *file, const char *func, int lineno)
 {
-	if (GDKexiting())
+	if (GDKexiting()) {
 		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
 			      "%s\n", EXITING_MSG);
-	else {
+	} else if (qc) {
 		switch (qc->endtime) {
 		case QRY_TIMEOUT:
 			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,

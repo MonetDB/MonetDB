@@ -113,7 +113,6 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(bn->ttype == TYPE_oid);
 	seq = bi->b->hseqbase;
@@ -551,7 +550,6 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	assert(hval);							\
 	size_t counter = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 	if (imprints && imprints->imprints.parentid != bi->b->batCacheid) { \
 		parent = imprints->imprints.parentid;			\
 		pbat = BATdescriptor(parent);				\
@@ -614,7 +612,6 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	(void) imprints;
 	(void) lnil;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (equi) {
 		*algo = "select: fullscan equi";
@@ -764,7 +761,6 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	BUN p, ncand = ci->ncand;
 	oid o;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (!equi || !GDK_ELIMDOUBLES(bi->vh))
 		return fullscan_any(bi, ci, bn, tl, th, li, hi, equi, anti,
@@ -2315,7 +2311,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	Heap *oidxh = NULL;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(ATOMtype(li.type) == ATOMtype(rli.type));
 	assert(ATOMtype(li.type) == ATOMtype(rhi.type));

@@ -377,7 +377,6 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	MT_thread_setalgorithm(__func__);
 	oid o = canditer_next(lci);
@@ -592,7 +591,6 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	assert(BATcount(r) > 0);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	MT_thread_setalgorithm(__func__);
 	/* figure out range [lo..hi) of values in r that we need to match */
@@ -1051,7 +1049,6 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	rvals = (const int *) ri.base;
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -1366,7 +1363,6 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	rvals = (const lng *) ri.base;
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -1692,7 +1688,6 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	canditer_init(&rci, NULL, r);
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -2001,7 +1996,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
@@ -2937,7 +2931,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	li = bat_iterator(l);
 	ri = bat_iterator(r);
@@ -3721,7 +3714,6 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	oid lval = oid_nil, rval = oid_nil;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert((opcode & (MASK_EQ | MASK_LT | MASK_GT)) != 0);
@@ -4644,7 +4636,6 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 
 	MT_thread_setalgorithm(__func__);

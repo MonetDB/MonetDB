@@ -30,7 +30,6 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
@@ -83,7 +82,6 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
@@ -1433,7 +1431,6 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	oid candoff1, candoff2;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(b1 != NULL || b2 != NULL); /* at least one not NULL */
 	candoff1 = b1 ? b1->hseqbase : 0;
@@ -1774,7 +1771,6 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
@@ -1827,7 +1823,6 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\

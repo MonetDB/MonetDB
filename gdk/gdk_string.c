@@ -768,7 +768,6 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	gdk_return rres = GDK_FAIL;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* exactly one of bnp and pt must be NULL, the other non-NULL */
 	assert((bnp == NULL) != (pt == NULL));

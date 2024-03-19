@@ -674,7 +674,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	bool locked = false;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if (b == NULL) {
@@ -848,14 +847,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps = b->thash->nunique;
 	MT_rwlock_rdunlock(&b->thashlock);
 	if (maxgrps == BUN_NONE) {
-		MT_lock_set(&b->theaplock);
 		if (bi.unique_est != 0) {
 			maxgrps = (BUN) bi.unique_est;
 			if (maxgrps > ci.ncand)
 				maxgrps = ci.ncand;
 		} else
 			maxgrps = ci.ncand / 10;
-		MT_lock_unset(&b->theaplock);
 	}
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;

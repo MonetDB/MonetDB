@@ -106,7 +106,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	oid x;								\
 	const TYPE1 div = (TYPE1) scales[scale1];			\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = 8 * sizeof(TYPE1) > MANT_DIG;				\
 	if (ci->tpe == cand_dense) {					\
@@ -175,7 +174,6 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 	BUN i, nils = 0;						\
 	oid x;								\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
@@ -217,7 +215,6 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 	BUN i, nils = 0;						\
 	oid x;								\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
@@ -283,7 +280,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 	const TYPE2 max = GDK_##TYPE2##_max / mul;			\
 	const TYPE2 prec = (TYPE2) scales[precision] / mul;		\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	assert(div == 1 || mul == 1);					\
 	assert(div >= 1 && mul >= 1);					\
@@ -381,7 +377,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	const TYPE2 max = GDK_##TYPE2##_max;				\
 	const TYPE2 prec = (TYPE2) scales[precision];			\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
@@ -437,7 +432,6 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 	BUN i, nils = 0;						\
 	oid x;								\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
@@ -475,7 +469,6 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 	uint32_t mask;							\
 	oid x;								\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = true;							\
 	if (ci->tpe == cand_dense) {					\
@@ -528,7 +521,6 @@ convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
 	BUN nils = 0;							\
 	BUN k;								\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	*reduce = false;						\
 	if (ci->tpe == cand_dense) {					\
@@ -684,7 +676,6 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 	oid x;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (atomtostr == BATatoms[TYPE_str].atomToStr) {
 		/* compatible with str, we just copy the value */
@@ -763,7 +754,6 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 	oid x;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 		x = canditer_next(ci) - candoff;
@@ -803,7 +793,6 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 	const char *s = NULL;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (ATOMstorage(tp) == TYPE_msk) {
 		uint32_t mask = 0;
@@ -891,7 +880,6 @@ convert_void_any(oid seq, BAT *bn,
 	oid x;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	*reduce = false;
 	assert(!is_oid_nil(seq));
