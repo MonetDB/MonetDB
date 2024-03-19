@@ -241,8 +241,8 @@ utf8towchar(const char *src)
 				| (src[j+2] & 0x3F) << 6
 				| (src[j+3] & 0x3F);
 #if SIZEOF_WCHAR_T == 2
-			dest[i++] = 0xD800 | ((c - 0x10000) >> 10);
-			dest[i++] = 0xDE00 | (c & 0x3FF);
+			dest[i++] = 0xD7C0 + (c >> 10);
+			dest[i++] = 0xDC00 + (c & 0x03FF);
 #else
 			dest[i++] = c;
 #endif
