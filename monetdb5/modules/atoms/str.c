@@ -716,7 +716,7 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 }
 
 static inline str
-STRlower(str *res, const str *arg1)
+doStrConvert(str *res, const str *arg1, gdk_return (*func)(char **restrict, size_t *restrict, const char *restrict))
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -729,7 +729,7 @@ STRlower(str *res, const str *arg1)
 		*res = NULL;
 		if (!(buf = GDKmalloc(buflen)))
 			throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if (GDKtolower(&buf, &buflen, s) != GDK_SUCCEED) {
+		if ((*func)(&buf, &buflen, s) != GDK_SUCCEED) {
 			GDKfree(buf);
 			throw(MAL, "str.lower", GDK_EXCEPTION);
 		}
@@ -743,32 +743,22 @@ STRlower(str *res, const str *arg1)
 	return msg;
 }
 
-static str
+static inline str
+STRlower(str *res, const str *arg1)
+{
+	return doStrConvert(res, arg1, GDKtolower);
+}
+
+static inline str
 STRupper(str *res, const str *arg1)
 {
-	str buf = NULL, msg = MAL_SUCCEED;
-	const char *s = *arg1;
+	return doStrConvert(res, arg1, GDKtoupper);
+}
 
-	if (strNil(s)) {
-		*res = GDKstrdup(str_nil);
-	} else {
-		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-
-		*res = NULL;
-		if (!(buf = GDKmalloc(buflen)))
-			throw(MAL, "str.upper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if (GDKtoupper(&buf, &buflen, s) != GDK_SUCCEED) {
-			GDKfree(buf);
-			throw(MAL, "str.upper", GDK_EXCEPTION);
-		}
-		*res = GDKstrdup(buf);
-	}
-
-	GDKfree(buf);
-	if (!*res)
-		msg = createException(MAL, "str.upper",
-							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return msg;
+static inline str
+STRcasefold(str *res, const str *arg1)
+{
+	return doStrConvert(res, arg1, GDKcasefold);
 }
 
 /* returns whether arg1 starts with arg2 */
@@ -3346,6 +3336,7 @@ mel_func str_init_funcs[] = {
  pattern("str", "contains", STRcontains, false, "Check if string haystack contains string needle, icase flag.", args(1,4, arg("",bit),arg("haystack",str),arg("needle",str),arg("icase",bit))),
  command("str", "toLower", STRlower, false, "Convert a string to lower case.", args(1,2, arg("",str),arg("s",str))),
  command("str", "toUpper", STRupper, false, "Convert a string to upper case.", args(1,2, arg("",str),arg("s",str))),
+ command("str", "caseFold", STRcasefold, false, "Fold the case of a string.", args(1,2, arg("",str),arg("s",str))),
  pattern("str", "search", STRstr_search, false, "Search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
  pattern("str", "search", STRstr_search, false, "Search for a substring, icase flag. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
  pattern("str", "r_search", STRrevstr_search, false, "Reverse search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),

@@ -1641,6 +1641,12 @@ STRbatUpper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
+STRbatCaseFold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return STRbatConvert(cntxt, mb, stk, pci, BATcasefold, "batstr.caseFold");
+}
+
+static str
 STRbatStrip(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_batstr_str(cntxt, mb, stk, pci, "batstr.strip", str_strip);
@@ -5739,6 +5745,8 @@ mel_func batstr_init_funcs[] = {
 	pattern("batstr", "toLower", STRbatLower, false, "Convert a string to lower case.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
 	pattern("batstr", "toUpper", STRbatUpper, false, "Convert a string to upper case.", args(1,2, batarg("",str),batarg("s",str))),
 	pattern("batstr", "toUpper", STRbatUpper, false, "Convert a string to upper case.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
+	pattern("batstr", "caseFold", STRbatCaseFold, false, "Fold the case of a string.", args(1,2, batarg("",str),batarg("s",str))),
+	pattern("batstr", "caseFold", STRbatCaseFold, false, "Fold the case of a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
 	pattern("batstr", "trim", STRbatStrip, false, "Strip whitespaces around a string.", args(1,2, batarg("",str),batarg("s",str))),
 	pattern("batstr", "trim", STRbatStrip, false, "Strip whitespaces around a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
 	pattern("batstr", "ltrim", STRbatLtrim, false, "Strip whitespaces from start of a string.", args(1,2, batarg("",str),batarg("s",str))),

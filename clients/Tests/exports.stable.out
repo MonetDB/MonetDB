@@ -109,6 +109,7 @@ dbl BATcalcvariance_population(dbl *avgp, BAT *b);
 dbl BATcalcvariance_sample(dbl *avgp, BAT *b);
 BAT *BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
 BAT *BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s);
+BAT *BATcasefold(BAT *b, BAT *s);
 bool BATcheckorderidx(BAT *b);
 gdk_return BATclear(BAT *b, bool force);
 void BATcommit(BAT *b, BUN size);
@@ -271,6 +272,7 @@ gdk_return GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int 
 gdk_return GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp1, int tp2, int unit, bool preceding, oid first_half);
 gdk_return GDKasciify(char **restrict buf, size_t *restrict buflen, const char *restrict s);
 int GDKatomcnt;
+gdk_return GDKcasefold(char **restrict buf, size_t *restrict buflen, const char *restrict s);
 void GDKclrerr(void);
 gdk_return GDKcopyenv(BAT **key, BAT **val, bool writable);
 gdk_return GDKcreatedir(const char *nme);

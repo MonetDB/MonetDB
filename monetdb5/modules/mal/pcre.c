@@ -1749,8 +1749,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 	if (caseignore) {
 		ol = l;
 		or = r;
-		l = BATtolower(l, NULL);
-		r = BATtolower(r, NULL);
+		l = BATcasefold(l, NULL);
+		r = BATcasefold(r, NULL);
 		if (l == NULL || r == NULL) {
 			BBPreclaim(l);
 			BBPreclaim(r);
