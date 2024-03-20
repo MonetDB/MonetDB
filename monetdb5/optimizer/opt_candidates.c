@@ -19,12 +19,13 @@
 #include "opt_candidates.h"
 
 str
-OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							InstrPtr pci)
+OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
 
+	if (!(ATOMIC_GET(&GDKdebug) & FORCEMITOMASK))
+		goto wrapup;
 	(void) cntxt;
 	(void) stk;					/* to fool compilers */
 	for (int i = 0; i < mb->stop; i++) {
@@ -88,6 +89,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	// if( ms== MAL_SUCCEED)
 	//      msg = chkDeclarations(mb);
 	/* keep actions taken as a fake argument */
+wrapup:
 	(void) pushInt(mb, pci, 1);
 	return msg;
 }

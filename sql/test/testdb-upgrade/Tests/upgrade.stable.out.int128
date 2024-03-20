@@ -70,13 +70,6 @@ update sys.functions set system = true where system <> true and name in ('stddev
 update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = 1;
 
 Running database upgrade commands:
-drop function json.isvalid(json);
-create function json.isvalid(js json)
-returns bool begin return case when js is NULL then NULL else true end; end;
-GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;
-update sys.functions set system = true where system <> true and name = 'isvalid' and schema_id = (select id from sys.schemas where name = 'json');
-
-Running database upgrade commands:
 update sys._columns set type_digits = 7 where type = 'tinyint' and type_digits <> 7;
 update sys._columns set type_digits = 15 where type = 'smallint' and type_digits <> 15;
 update sys._columns set type_digits = 31 where type = 'int' and type_digits <> 31;
