@@ -10,6 +10,15 @@ CREATE TABLE secs(id INT, i INTERVAL SECOND)
 statement ok
 CREATE TABLE days(id INT, i INTERVAL DAY)
 
+statement ok
+CREATE TABLE floats(id INT, r REAL)
+
+statement ok
+CREATE TABLE doubles(id INT, d DOUBLE)
+
+statement ok
+SAVEPOINT tablescreated;
+
 --
 -- this is the default behavior
 --
@@ -163,3 +172,75 @@ SELECT i FROM days ORDER BY id
 
 statement ok
 DELETE FROM days
+
+--
+-- doubles and reals, default behavior
+--
+
+statement ok
+COPY 2 RECORDS INTO floats FROM STDIN
+<COPY_INTO_DATA>
+1|-1.0e3
+2|    +00000000000000000000000000000000001.5e1
+
+query T
+SELECT r FROM floats ORDER BY id
+----
+-1000.0
+15.0
+
+statement ok
+DELETE FROM floats
+
+
+statement ok
+COPY 2 RECORDS INTO doubles FROM STDIN
+<COPY_INTO_DATA>
+1|-1.0e3
+2|    +00000000000000000000000000000000001.5e1
+
+query T
+SELECT d FROM doubles ORDER BY id
+----
+-1000.0
+15.0
+
+statement ok
+DELETE FROM doubles
+
+
+--
+-- doubles and reals, behavior with decimal comma and thousands separator
+--
+
+statement ok
+COPY 2 RECORDS INTO floats FROM STDIN DECIMAL AS ',', '_'
+<COPY_INTO_DATA>
+1|-1,0e3
+2|    +0000000000000_0000__000000000000000001,5e1
+
+query T
+SELECT r FROM floats ORDER BY id
+----
+-1000.0
+15.0
+
+statement ok
+DELETE FROM floats
+
+
+statement ok
+COPY 2 RECORDS INTO doubles FROM STDIN DECIMAL AS ',', '_'
+<COPY_INTO_DATA>
+1|-1,0e3
+2|    +0000000000000_0000__000000000000000001,5e1
+
+query T
+SELECT d FROM doubles ORDER BY id
+----
+-1000.0
+15.0
+
+statement ok
+DELETE FROM doubles
+

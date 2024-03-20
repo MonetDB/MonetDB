@@ -3123,6 +3123,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (onclient && !cntxt->filetrans)
 		throw(MAL, "sql.copy_from", SQLSTATE(42000) "Cannot transfer files from client");
+	if (strNil(decsep))
+		throw(MAL, "sql.copy_from", SQLSTATE(42000) "decimal separator cannot be nil");
+	if (strNil(decskip))
+		decskip = NULL;
 
 	be = cntxt->sqlcontext;
 	/* The CSV parser expects ssep to have the value 0 if the user does not
