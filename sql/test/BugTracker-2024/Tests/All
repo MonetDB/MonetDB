@@ -42,3 +42,4 @@ exp_equal-Bug-7478
 exp_ref-Bug-7479
 get_rel_count-Bug-7480
 mvc_row_result_wrap-Bug-7481
+bin_find_smallest_column-Bug-7482
