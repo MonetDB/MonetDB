@@ -39,3 +39,4 @@ exp_equal-Bug-7475
 rel2bin_join-Bug-7476
 atom_cmp-Bug-7477
 exp_equal-Bug-7478
+exp_ref-Bug-7479
