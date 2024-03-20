@@ -35,3 +35,4 @@ conversion-string-to-bte-failed-7470
 groupby-select1-Bug-7472
 SQLunionfunc-Bug-7473
 VLTgenerator_table-Bug-7474
+exp_equal-Bug-7475
