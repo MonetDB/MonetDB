@@ -33,3 +33,4 @@ inner-join-contains-7466
 contains-or-7469
 conversion-string-to-bte-failed-7470
 groupby-select1-Bug-7472
+SQLunionfunc-Bug-7473
