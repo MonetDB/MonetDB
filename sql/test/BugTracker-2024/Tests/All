@@ -45,3 +45,4 @@ mvc_row_result_wrap-Bug-7481
 bin_find_smallest_column-Bug-7482
 rel_setop_get_statistics-Bug-7483
 rel_groupby_cse-Bug-7484
+rel_groupby_cse-Bug-7485
