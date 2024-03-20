@@ -37,3 +37,4 @@ SQLunionfunc-Bug-7473
 VLTgenerator_table-Bug-7474
 exp_equal-Bug-7475
 rel2bin_join-Bug-7476
+atom_cmp-Bug-7477
