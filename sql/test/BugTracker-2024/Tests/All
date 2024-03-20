@@ -47,3 +47,4 @@ rel_setop_get_statistics-Bug-7483
 rel_groupby_cse-Bug-7484
 rel_groupby_cse-Bug-7485
 CMDgen_group-Bug-7486
+sql_init_subtype-Bug-7487
