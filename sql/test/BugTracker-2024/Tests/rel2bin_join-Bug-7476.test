@@ -1,0 +1,39 @@
+-- using "SELECT 1" instead of "SELECT DISTINCT 1"
+query I nosort
+WITH x ( x ) AS ( SELECT 1 ) SELECT ( SELECT x FROM x WHERE x = ( SELECT ( CASE WHEN x THEN x END ) WHERE x = x AND x GROUP BY 1 ) ) FROM x
+----
+1
+
+query I nosort
+WITH x ( x ) AS ( SELECT 1 ) SELECT ( SELECT x FROM x WHERE x = ( SELECT ( CASE WHEN x THEN x END ) WHERE x = ( SELECT x FROM x ) AND x GROUP BY 1 ) ) FROM x
+----
+1
+
+query I nosort
+SELECT ( WITH x ( x ) AS ( SELECT 1 ) SELECT ( SELECT x FROM x WHERE x = ( SELECT ( CASE WHEN x THEN x END ) WHERE x = ( SELECT x FROM x ) AND x GROUP BY 1 ) ) FROM x )
+----
+1
+
+-- replacing "CASE WHEN x THEN x END" with "x"
+query I nosort
+WITH x ( x ) AS ( SELECT DISTINCT 1 ) SELECT ( SELECT x FROM x WHERE x = ( SELECT ( x ) WHERE x = ( SELECT x FROM x ) AND x GROUP BY 1 ) ) FROM x
+----
+1
+
+query I nosort
+SELECT ( WITH x ( x ) AS ( SELECT DISTINCT 1 ) SELECT ( SELECT x FROM x WHERE x = ( SELECT ( x ) WHERE x = ( SELECT x FROM x ) AND x GROUP BY 1 ) ) FROM x )
+----
+1
+
+-- the combination leads to crash in rel2bin_join ()
+skipif knownfail
+query I nosort
+WITH x ( x ) AS ( SELECT DISTINCT 1 ) SELECT ( SELECT x FROM x WHERE x = ( SELECT ( CASE WHEN x THEN x END ) WHERE x = ( SELECT x FROM x ) AND x GROUP BY 1 ) ) FROM x
+----
+1
+
+skipif knownfail
+query I nosort
+SELECT ( WITH x ( x ) AS ( SELECT DISTINCT 1 ) SELECT ( SELECT x FROM x WHERE x = ( SELECT ( CASE WHEN x THEN x END ) WHERE x = ( SELECT x FROM x ) AND x GROUP BY 1 ) ) FROM x )
+----
+1
