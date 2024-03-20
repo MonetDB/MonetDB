@@ -1222,6 +1222,9 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	if (tl == NULL && th == NULL)
 		return range_contains; /* looking for everything */
 
+	if (VIEWtparent(bi->b))
+		pb = BATdescriptor(VIEWtparent(bi->b));
+
 	/* keep locked while we look at the property values */
 	MT_lock_set(&bi->b->theaplock);
 	if (bi->minpos != BUN_NONE)
@@ -1237,8 +1240,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	}
 	bool keep = false;	/* keep lock on parent bat? */
 	if (minprop == NULL || maxprop == NULL) {
-		if (VIEWtparent(bi->b) &&
-		    (pb = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
+		if (pb != NULL) {
 			MT_lock_set(&pb->theaplock);
 			if (minprop == NULL && (minprop = BATgetprop_nolock(pb, GDK_MIN_BOUND)) != NULL) {
 				keep = true;
