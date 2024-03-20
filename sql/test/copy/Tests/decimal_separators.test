@@ -4,6 +4,12 @@ START TRANSACTION
 statement ok
 CREATE TABLE decimals(id INT, d DECIMAL(8,2))
 
+statement ok
+CREATE TABLE secs(id INT, i INTERVAL SECOND)
+
+statement ok
+CREATE TABLE days(id INT, i INTERVAL DAY)
+
 --
 -- this is the default behavior
 --
@@ -87,3 +93,73 @@ SELECT d FROM decimals ORDER BY id
 
 statement ok
 DELETE FROM decimals
+
+
+--
+-- interval types, default behavior
+--
+
+statement ok
+COPY 2 RECORDS INTO secs FROM STDIN
+<COPY_INTO_DATA>
+1|1.000
+2|1800.000
+
+query T
+SELECT i FROM secs ORDER BY id
+----
+0:00:01
+0:30:00
+
+statement ok
+DELETE FROM secs
+
+-- is this really how we copy day intervals from csv?
+statement ok
+COPY 2 RECORDS INTO days FROM STDIN
+<COPY_INTO_DATA>
+1|86400
+2|1814400.00
+
+query T
+SELECT i FROM days ORDER BY id
+----
+1
+21
+
+statement ok
+DELETE FROM days
+
+--
+-- interval types, behavior with decimal comma and thousands separator
+--
+
+statement ok
+COPY 2 RECORDS INTO secs FROM STDIN DECIMAL AS ',', '_'
+<COPY_INTO_DATA>
+1|1,00_0
+2|1_800,00_0
+
+query T
+SELECT i FROM secs ORDER BY id
+----
+0:00:01
+0:30:00
+
+statement ok
+DELETE FROM secs
+
+statement ok
+COPY 2 RECORDS INTO days FROM STDIN DECIMAL AS ',', '_'
+<COPY_INTO_DATA>
+1|86_400
+2|1_814_400,00
+
+query T
+SELECT i FROM days ORDER BY id
+----
+1
+21
+
+statement ok
+DELETE FROM days

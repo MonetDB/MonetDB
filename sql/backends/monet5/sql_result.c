@@ -405,7 +405,11 @@ sec_frstr(Column *c, int type, const char *s)
 		neg = 0;
 		s++;
 	}
-	for (i = 0; i < (19 - 3) && *s && *s != '.'; i++, s++) {
+	for (i = 0; i < (19 - 3) && *s && *s != c->decsep; i++, s++) {
+		if (c->decskip && *s == c->decskip) {
+			i--;
+			continue;
+		}
 		if (!isdigit((unsigned char) *s))
 			return NULL;
 		res *= 10;
@@ -413,10 +417,14 @@ sec_frstr(Column *c, int type, const char *s)
 	}
 	i = 0;
 	if (*s) {
-		if (*s != '.')
+		if (*s != c->decsep)
 			return NULL;
 		s++;
 		for (; *s && i < 3; i++, s++) {
+			if (c->decskip && *s == c->decskip) {
+				i--;
+				continue;
+			}
 			if (!isdigit((unsigned char) *s))
 				return NULL;
 			res *= 10;
@@ -624,8 +632,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			} else if (col->type.type->eclass == EC_SEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &sec_frstr;
-				fmt[i].decsep = '.';  // not sure if it should be affected by DECIMAL DELIMITERS clause
-				fmt[i].decskip = '\0';
+				fmt[i].decsep = decsep[0];  // apply DECIMAL DELIMITERS clause
+				fmt[i].decskip = decskip[0];
 			}
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
