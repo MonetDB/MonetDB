@@ -22,24 +22,29 @@
  * HSHres_hps) and the hash-join results (JNres_hshs and JNres_prbs).
  */
 static int
-rel2bin_pphash_prepare(backend *be, BUN est,
+rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 	list **HSHres_hts, list **HSHres_hps, list **JNres_hshs, list **JNres_prbs,
 	list *exps_hsh_ht, list *exps_hsh_hp, list *exps_prb_hp)
 {
 	mvc *sql = be->mvc;
 	int curhash = 0;
 	int err = 1;
+	BUN hsh_est = get_rel_count(rel_hsh);
+	BUN prb_est = get_rel_count(rel_prb);
 
 	// TODO better estimation
-	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
-		est = 85000000;
+	if (hsh_est == BUN_NONE || (ulng) hsh_est > (ulng) GDK_lng_max) {
+		hsh_est = 85000000;
+	}
+	if (prb_est == BUN_NONE || (ulng) prb_est > (ulng) GDK_lng_max) {
+		prb_est = 85000000;
 	}
 
 	/* hash-side join-res */
 	*JNres_hshs = sa_list(sql->sa);
 	for (node *n = exps_hsh_hp->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
-		InstrPtr q = stmt_bat_new(be, t->type->localtype, est * 1.1);
+		InstrPtr q = stmt_bat_new(be, t->type->localtype, hsh_est * 1.1);
 		if (q == NULL) return err;
 		q->inout = 0;
 		append(*JNres_hshs, q);
@@ -49,7 +54,7 @@ rel2bin_pphash_prepare(backend *be, BUN est,
 	*JNres_prbs = sa_list(sql->sa);
 	for (node *n = exps_prb_hp->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
-		InstrPtr q = stmt_bat_new(be, t->type->localtype, est * 1.1);
+		InstrPtr q = stmt_bat_new(be, t->type->localtype, prb_est * 1.1);
 		if (q == NULL) return err;
 		q->inout = 0;
 		append(*JNres_prbs, q);
@@ -60,7 +65,7 @@ rel2bin_pphash_prepare(backend *be, BUN est,
 	for (node *n = exps_hsh_ht->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 
-		InstrPtr q = stmt_hash_new(be, t->type->localtype, est, curhash);
+		InstrPtr q = stmt_hash_new(be, t->type->localtype, hsh_est * 1.1, curhash);
 		if (q == NULL) return err;
 		q->inout = 0;
 		curhash = getArg(q, 0);
@@ -74,7 +79,7 @@ rel2bin_pphash_prepare(backend *be, BUN est,
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 
 		// TODO better and separate est. for nr_slots and pld_size
-		InstrPtr q = stmt_hash_new_payload(be, t->type->localtype, est, est, curhash, previous);
+		InstrPtr q = stmt_hash_new_payload(be, t->type->localtype, hsh_est * 1.1, hsh_est * 1.1, curhash, previous);
 		if (q == NULL) return err;
 		q->inout = 0;
 		append(*HSHres_hps, q);
@@ -90,7 +95,6 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 	stmt *pp = NULL, *sub = NULL;
-	BUN est = BUN_NONE;
 	list *eq_exps = sa_list(sql->sa);
 	list *hsh_hts = sa_list(sql->sa), *prb_hts = sa_list(sql->sa); /* join column exps */
 	list *hsh_hps = sa_list(sql->sa), *prb_hps = sa_list(sql->sa); /* payload column exps */
@@ -133,7 +137,6 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	hsh_hps = rel_projections(sql, rel_hsh, 0, 1, 0);
 	prb_hps = rel_projections(sql, rel_prb, 0, 1, 0);
 	assert(hsh_hps->cnt||prb_hps->cnt); /* at least one column will be projected */
-	est = get_rel_count(rel_hsh);
 
 	/* Example: EXPLAIN SELECT l1+r3, r2 FROM r, l WHERE r1 = l1 AND r2 = l2;
 	 *
@@ -148,7 +151,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	 *  !X_14:bat[:int] := hash.new_payload(nil:int, 3:lng, 3:lng, X_13:bat[:int], X_13:bat[:int]); # l1
 	 *  !X_17:bat[:int] := hash.new_payload(nil:int, 3:lng, 3:lng, X_13:bat[:int], X_14:bat[:int]); # l2
 	 */
-	(void)rel2bin_pphash_prepare(be, est, &HSHres_hts, &HSHres_hps, &JNres_hshs, &JNres_prbs, hsh_hts, hsh_hps, prb_hps);
+	(void)rel2bin_pphash_prepare(be, rel_hsh, rel_prb, &HSHres_hts, &HSHres_hps, &JNres_hshs, &JNres_prbs, hsh_hts, hsh_hps, prb_hps);
 	assert(HSHres_hts->cnt == hsh_hts->cnt);
 	assert(HSHres_hps->cnt == hsh_hps->cnt);
 	assert(JNres_hshs->cnt == hsh_hps->cnt);
