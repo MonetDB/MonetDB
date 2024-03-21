@@ -57,10 +57,10 @@ ulng
 store_oldest(sqlstore *store, sql_trans *tr)
 {
 	if (tr && tr->ts == (ulng) ATOMIC_GET(&store->oldest)) {
-		sql_session *s = store->active->h->data;
-		if (s->tr == tr && store->active->h->next) {
-			s = store->active->h->next->data;
-			return s->tr->ts;
+		sql_trans *otr = store->active->h->data;
+		if (otr == tr && store->active->h->next) {
+			otr = store->active->h->next->data;
+			return otr->ts;
 		}
 	}
 	return (ulng) ATOMIC_GET(&store->oldest);
