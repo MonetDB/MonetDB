@@ -4748,7 +4748,7 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 			l = l->l;
 			*/
 		if (l && (!is_project(l->op) && !is_base(l->op)))
-			rel->l = l = rel_project(be->mvc->sa, l, rel_projections(be->mvc, l, NULL, 1, 1));
+			rel->l = l = rel_project(be->mvc->sa, l, rel_projections(be->mvc, l, NULL, 1, 0));
 	}
 	if (l && ((is_simple_project(l->op) && list_empty(l->r)) || (!is_simple_project(l->op) && is_project(l->op)) || is_base(l->op)) && !list_empty(l->exps)) {
 		list *projectresults = sa_list(be->mvc->sa);
