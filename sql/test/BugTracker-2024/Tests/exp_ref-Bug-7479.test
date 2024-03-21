@@ -1,0 +1,32 @@
+query T nosort
+WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS
+----
+1
+1
+
+query T nosort
+WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT x FROM x AS )
+----
+1
+1
+
+query IRI nosort
+WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT min ( x ) OVER ( PARTITION BY x ) AS )
+----
+1
+1.000
+1
+1
+-199419.000
+1
+
+skipif knownfail
+query T nosort
+WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT x FROM x , ( SELECT min ( x ) OVER ( PARTITION BY x ) ) AS )
+----
+
+skipif knownfail
+query T nosort
+SELECT ( WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT x FROM x , ( SELECT min ( x ) OVER ( PARTITION BY x ) ) AS ) )
+----
+
