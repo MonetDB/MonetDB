@@ -1,0 +1,11 @@
+query T nosort
+SELECT 'x' x UNION SELECT 10 x
+----
+x
+10
+
+skipif knownfail
+query T nosort
+SELECT NTILE ( 1.000000 ) OVER ( ORDER BY x LIKE x ) FROM ( SELECT 'x' x UNION SELECT 10 x ) v
+----
+

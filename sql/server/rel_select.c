@@ -2367,6 +2367,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		int quantifier = 0, need_not = 0;
 		sql_exp *rs = NULL, *ls;
 		comp_type cmp_type = compare_str2type(compare_op);
+		bool is_not_distinct_from = false;
+		bool is_distinct_from = false;
 
 		/*
 		 * = ANY -> IN, <> ALL -> NOT( = ANY) -> NOT IN
@@ -2374,7 +2376,17 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		 */
 		if (n->next->next->next)
 			quantifier = n->next->next->next->data.i_val + 1;
-		assert(quantifier == 0 || quantifier == 1 || quantifier == 2);
+		assert(quantifier == 0 || quantifier == 1 || quantifier == 2 || quantifier == 3 || quantifier == 4);
+
+		/* [NOT] DISTINCT FROM */
+		if (quantifier == 3) {
+				is_not_distinct_from = true;
+				quantifier = 0;
+		}
+		else if (quantifier == 4) {
+				is_distinct_from = true;
+				quantifier = 0;
+		}
 
 		if ((quantifier == 1 && cmp_type == cmp_equal) ||
 		    (quantifier == 2 && cmp_type == cmp_notequal)) {
@@ -2405,6 +2417,15 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		rs = rel_value_exp(query, rel, ro, f|sql_farg, ek);
 		if (!rs)
 			return NULL;
+
+		if (is_distinct_from || is_not_distinct_from) {
+			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &ls, &rs, 1, type_equal_no_any) < 0)
+				return NULL;
+			sql_exp* e = exp_compare(sql->sa, ls, rs, is_not_distinct_from?cmp_equal:cmp_notequal);
+			set_semantics(e);
+			return e;
+		}
+
 		if (rs->type == e_atom)
 			quantifier = 0;
 
