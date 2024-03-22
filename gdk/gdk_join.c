@@ -3697,7 +3697,8 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 #define MASK_NE		(MASK_LT | MASK_GT)
 
 static gdk_return
-thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN estimate, const char *reason, lng t0)
+thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode,
+	  BUN estimate, bool nil_matches, const char *reason, lng t0)
 {
 	struct canditer lci, rci;
 	const char *lvals, *rvals;
@@ -3737,23 +3738,29 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 
 	if (BATtvoid(l)) {
 		if (!BATtdensebi(&li)) {
-			/* trivial: nils don't match anything */
-			bat_iterator_end(&li);
-			bat_iterator_end(&ri);
-			return nomatch(r1p, r2p, NULL, l, r, &lci,
-				       0, false, false, __func__, t0);
+			if (!nil_matches) {
+				/* trivial: nils don't match anything */
+				bat_iterator_end(&li);
+				bat_iterator_end(&ri);
+				return nomatch(r1p, r2p, NULL, l, r, &lci,
+					       0, false, false, __func__, t0);
+			}
+		} else {
+			loff = (lng) l->tseqbase - (lng) l->hseqbase;
 		}
-		loff = (lng) l->tseqbase - (lng) l->hseqbase;
 	}
 	if (BATtvoid(r)) {
 		if (!BATtdensebi(&ri)) {
-			/* trivial: nils don't match anything */
-			bat_iterator_end(&li);
-			bat_iterator_end(&ri);
-			return nomatch(r1p, r2p, NULL, l, r, &lci,
-				       0, false, false, __func__, t0);
+			if (!nil_matches) {
+				/* trivial: nils don't match anything */
+				bat_iterator_end(&li);
+				bat_iterator_end(&ri);
+				return nomatch(r1p, r2p, NULL, l, r, &lci,
+					       0, false, false, __func__, t0);
+			}
+		} else {
+			roff = (lng) r->tseqbase - (lng) r->hseqbase;
 		}
-		roff = (lng) r->tseqbase - (lng) r->hseqbase;
 	}
 
 	BUN maxsize = joininitresults(r1p, r2p, NULL, lci.ncand, rci.ncand, false, false,
@@ -3782,18 +3789,18 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 		lo = canditer_next(&lci);
 		if (lvals)
 			vl = VALUE(l, lo - l->hseqbase);
-		else
+		else if (!BATtdensebi(&li))
 			lval = (oid) ((lng) lo + loff);
 		nr = 0;
-		if (cmp(vl, nil) != 0) {
+		if (nil_matches || cmp(vl, nil) != 0) {
 			canditer_reset(&rci);
 			TIMEOUT_LOOP(rci.ncand, qry_ctx) {
 				ro = canditer_next(&rci);
 				if (rvals)
 					vr = VALUE(r, ro - r->hseqbase);
-				else
+				else if (!BATtdensebi(&ri))
 					rval = (oid) ((lng) ro + roff);
-				if (cmp(vr, nil) == 0)
+				if (!nil_matches && cmp(vr, nil) == 0)
 					continue;
 				c = cmp(vl, vr);
 				if (!((opcode & MASK_LT && c < 0) ||
@@ -4437,7 +4444,7 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, boo
 	if (joinparamcheck(l, r, NULL, sl, sr, __func__) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	return thetajoin(r1p, r2p, l, r, sl, sr, opcode, estimate,
+	return thetajoin(r1p, r2p, l, r, sl, sr, opcode, estimate, nil_matches,
 			 __func__, t0);
 }
 
@@ -5063,14 +5070,14 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 		if (!anti)
 			return nomatch(r1p, r2p, NULL, l, rl, &lci, 0, false, false,
 				       __func__, t0);
-		return thetajoin(r1p, r2p, l, rh, sl, sr, MASK_GT, estimate,
+		return thetajoin(r1p, r2p, l, rh, sl, sr, MASK_GT, estimate, false,
 				 __func__, t0);
 	}
 	if (rh->ttype == TYPE_void && is_oid_nil(rh->tseqbase)) {
 		if (!anti)
 			return nomatch(r1p, r2p, NULL, l, rl, &lci, 0, false, false,
 				       __func__, t0);
-		return thetajoin(r1p, r2p, l, rl, sl, sr, MASK_LT, estimate,
+		return thetajoin(r1p, r2p, l, rl, sl, sr, MASK_LT, estimate, false,
 				 __func__, t0);
 	}
 
