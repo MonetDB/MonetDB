@@ -456,22 +456,36 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		 * project () [ i.i L1, i.i L2 ] -> project() [ i.i L1, L1 L2 ] */
 		if (list_length(rel->exps) > 1) {
 			list *exps = rel->exps;
-			rel->exps = sa_list(v->sql->sa);
 			node *n = exps->h;
-			list_append(rel->exps, n->data);
-			for(n = n->next; n; n = n->next) {
+			bool needed = false;
+			for(n = n->next; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
 				if (e->type == e_column && !is_selfref(e)) {
-					node *m = list_find(rel->exps, e, (fcmp)&exp_match_exp_cmp);
-					if (m) {
-						sql_exp *ne = exp_ref(v->sql, m->data);
-						exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
-						exp_propagate(v->sql->sa, ne, e);
-						set_selfref(ne);
-						e = ne;
+					for(node *m = exps->h; m && m != n && !needed; m = m->next) {
+						sql_exp *h = m->data;
+						if (exp_match_exp(h,e))
+							needed = true;
 					}
 				}
-				list_append(rel->exps, e);
+			}
+			if (needed) {
+				rel->exps = sa_list(v->sql->sa);
+				node *n = exps->h;
+				list_append(rel->exps, n->data);
+				for(n = n->next; n; n = n->next) {
+					sql_exp *e = n->data;
+					if (e->type == e_column && !is_selfref(e)) {
+						node *m = list_find(rel->exps, e, (fcmp)&exp_match_exp_cmp);
+						if (m) {
+							sql_exp *ne = exp_ref(v->sql, m->data);
+							exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
+							exp_propagate(v->sql->sa, ne, e);
+							set_selfref(ne);
+							e = ne;
+						}
+					}
+					list_append(rel->exps, e);
+				}
 			}
 		}
 	}
