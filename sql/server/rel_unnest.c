@@ -2948,11 +2948,9 @@ exp_in_compare(mvc *sql, sql_exp **l, list *vals, int anyequal)
 static inline sql_exp *
 rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	sql_subfunc *sf;
-	if (e->type != e_func)
-		return e;
+	assert(e->type == e_func);
 
-	sf = e->f;
+	sql_subfunc *sf = e->f;
 	if (is_ddl(rel->op))
 		return e;
 	if (is_anyequal_func(sf) && !list_empty(e->l)) {
@@ -3134,11 +3132,12 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static inline sql_exp *
 rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	sql_subfunc *sf;
-	if (e->type != e_func || is_ddl(rel->op))
+	assert(e->type == e_func);
+
+	if (is_ddl(rel->op))
 		return e;
 
-	sf = e->f;
+	sql_subfunc *sf = e->f;
 	if (is_compare_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
 
@@ -3190,11 +3189,14 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					v->changes++;
 					return exp_compare(v->sql->sa, le, re, compare_str2type(op));
 				} else {
+					return e;
+					/*
 					le = exp_compare_func(v->sql, le, re, op, 0);
 					if (exp_name(e))
 						exp_prop_alias(v->sql->sa, le, e);
 					v->changes++;
 					return le;
+					*/
 				}
 			}
 			if (!is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
@@ -3439,11 +3441,9 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 static sql_exp *
 rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	sql_subfunc *sf;
-	if (e->type != e_func)
-		return e;
+	assert(e->type == e_func);
 
-	sf = e->f;
+	sql_subfunc *sf = e->f;
 	if (is_exists_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
 
@@ -3702,9 +3702,22 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 		sql_rel *r = rel->r;
 
 		if (!is_rewrite_fix_count_used(r->used)) {
-			/* TODO create an exp iterator */
-			list *rexps = rel_projections(v->sql, r, NULL, 1, 1), *exps;
+			list *rexps = r->exps, *exps = NULL;
 
+			if (!is_project(r->op))
+				rexps = rel_projections(v->sql, r, NULL, 1, 1);
+
+			for(node *n = rexps->h; n && !rel_changes; n=n->next) {
+				sql_exp *e = n->data;
+
+				if (exp_is_count(e, r))
+					rel_changes = 1;
+			}
+			if (!rel_changes)
+				return rel;
+
+			if (r->exps == rexps)
+				rexps = rel_projections(v->sql, r, NULL, 1, 1);
 			for(node *n = rexps->h; n; n=n->next) {
 				sql_exp *e = n->data, *ne;
 
@@ -3713,7 +3726,6 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 					list *args, *targs;
 					sql_subfunc *isnil = sql_bind_func(v->sql, "sys", "isnull", exp_subtype(e), NULL, F_FUNC, true), *ifthen;
 
-					rel_changes = 1;
 					ne = exp_unop(v->sql->sa, e, isnil);
 					set_has_no_nil(ne);
 					targs = sa_list(v->sql->sa);
@@ -3731,13 +3743,11 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 					n->data = ne;
 				}
 			}
-			if (rel_changes) { /* add project */
-				exps = list_merge(rel_projections(v->sql, rel->l, NULL, 1, 1), rexps, (fdup)NULL);
-				rel = rel_project(v->sql->sa, rel, exps);
-				set_processed(rel);
-				r->used |= rewrite_fix_count_used;
-				v->changes++;
-			}
+			exps = list_merge(rel_projections(v->sql, rel->l, NULL, 1, 1), rexps, (fdup)NULL);
+			rel = rel_project(v->sql->sa, rel, exps);
+			set_processed(rel);
+			r->used |= rewrite_fix_count_used;
+			v->changes++;
 		}
 	}
 	return rel;
@@ -4073,21 +4083,15 @@ rewrite_swap_fullouter(visitor *v, sql_rel *rel)
 static sql_exp *
 rewrite_complex(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	sql_exp *res = NULL;
-
 	if (e->type != e_func)
 		return e;
 
-	res = rewrite_anyequal(v, rel, e, depth);
-	if (!res || res != e)
-		return res;
-	res = rewrite_exists(v, rel, e, depth);
-	if (!res || res != e)
-		return res;
-	res = rewrite_compare(v, rel, e, depth);
-	if (!res || res != e)
-		return res;
-	return e;
+	sql_exp *res = rewrite_anyequal(v, rel, e, depth);
+	if (res == e)
+		res = rewrite_exists(v, rel, e, depth);
+	if (res == e)
+		res = rewrite_compare(v, rel, e, depth);
+	return res;
 }
 
 static sql_rel *
@@ -4137,6 +4141,9 @@ rewrite_values(visitor *v, sql_rel *rel)
 	if (!is_simple_project(rel->op) || list_empty(rel->exps) || is_rewrite_values_used(rel->used))
 		return rel;
 
+	sql_exp *e = rel->exps->h->data;
+	if (!is_values(e) || (!exps_have_rel_exp(rel->exps) && !exps_have_freevar(v->sql, rel->exps)))
+		return rel;
 	if (rel_is_ref(rel)) { /* need extra project */
 		rel->l = rel_project(v->sql->sa, rel->l, rel->exps);
 		rel->exps = rel_projections(v->sql, rel->l, NULL, 1, 1);
@@ -4146,9 +4153,6 @@ rewrite_values(visitor *v, sql_rel *rel)
 		v->changes++;
 		return rel;
 	}
-	sql_exp *e = rel->exps->h->data;
-	if (!is_values(e) || (!exps_have_rel_exp(rel->exps) && !exps_have_freevar(v->sql, rel->exps)))
-		return rel;
 	return flatten_values(v, rel);
 }
 
