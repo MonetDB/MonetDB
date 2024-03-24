@@ -2629,7 +2629,6 @@ static inline sql_exp *
 rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_rel *rell = NULL;
-	int needed = 0;
 
 	if (!is_simple_project(rel->op) || e->type != e_func || list_length(e->r) < 2 /* e->r means window function */)
 		return e;
@@ -2639,7 +2638,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data;
 	e->card = (rel->card == CARD_AGGR) ? CARD_AGGR : CARD_MULTI; /* After the unnesting, the cardinality of the window function becomes larger */
 
-	needed = (gbe || obe);
+	int needed = (gbe || obe);
 	if (l)
 		for (node *n = l->h; n && !needed; n = n->next) {
 			sql_exp *e = n->data;
@@ -2660,10 +2659,9 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	}
 
 	/* The following array remembers the original positions of gbe and obe expressions to replace them in order later at diff_replace_arguments */
-	int gbeoffset = list_length(gbe), i = 0, added = 0;
-	int *pos = SA_NEW_ARRAY(v->sql->ta, int, gbeoffset + list_length(obe));
-
 	if (gbe || obe) {
+		int gbeoffset = list_length(gbe), i = 0, added = 0;
+		int *pos = SA_NEW_ARRAY(v->sql->ta, int, gbeoffset + list_length(obe));
 		if (gbe)
 			for (i = 0 ; i < gbeoffset ; i++)
 				pos[i] = i;
