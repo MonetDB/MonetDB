@@ -1301,8 +1301,9 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 		 * return GDK_FAIL */
 		switch (l.flag) {
 		case LOG_START:
-			if (l.id > lg->tid)	/* TODO: check that this can only happen during initialisation */
-				lg->tid = l.id;
+			assert(!lg->flushing || l.id <= lg->tid);
+			if (!lg->flushing && l.id > lg->tid)
+				lg->tid = l.id;	/* should only happen during initialization */
 			if ((tr = tr_create(tr, l.id)) == NULL) {
 				TRC_CRITICAL(GDK, "memory allocation failed\n");
 				err = LOG_ERR;
@@ -1752,9 +1753,11 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_lid", NULL);
 	if (BBPrename(lg->catalog_lid, bak) < 0)
 		GDKclrerr();
+	rotation_lock(lg);
 	for (logged_range *p = lg->pending; p; p = p->next) {
 		p->cnt -= cleanup;
 	}
+	rotation_unlock(lg);
 	return rcnt;
 }
 
@@ -2558,9 +2561,11 @@ log_next_logfile(logger *lg, ulng ts)
 	int m = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? 1000 : 100;
 	if (!lg->pending || !lg->pending->next)
 		return NULL;
+	rotation_lock(lg);
 	if (ATOMIC_GET(&lg->pending->refcount) == 0 && lg->pending != lg->current && lg->pending != lg->flush_ranges &&
 	    (ulng) ATOMIC_GET(&lg->pending->last_ts) == (ulng) ATOMIC_GET(&lg->pending->flushed_ts) &&
 	    (ulng) ATOMIC_GET(&lg->pending->flushed_ts) <= ts) {
+		rotation_unlock(lg);
 		logged_range *p = lg->pending;
 		for (int i = 1;
 		     i < m && ATOMIC_GET(&p->refcount) == 0 && p->next && p->next != lg->current &&
@@ -2569,6 +2574,7 @@ log_next_logfile(logger *lg, ulng ts)
 			p = p->next;
 		return p;
 	}
+	rotation_unlock(lg);
 	return NULL;
 }
 
