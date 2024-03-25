@@ -330,6 +330,8 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 static void
 mark_hashjoin(mvc *sql, sql_rel *rel)
 {
+	int dohashjoin = 0;
+
 	/* For now, only generate paralle hash join plan for equi-joins on at
 	 * least one base table.
 	 */
@@ -349,18 +351,23 @@ mark_hashjoin(mvc *sql, sql_rel *rel)
 			l->hashjoin = 1;
 		else
 			r->hashjoin = 1;
-		rel->hashjoin = 1;
 		l->partition = 1;
 		r->partition = 1;
+		dohashjoin = 1;
 	}
 	else if(is_basetable(l->op) && !is_basetable(r->op)) {
 		l->hashjoin = 1;
 		l->partition = 1;
-		rel->hashjoin = 1;
+		dohashjoin = 1;
 	} else if(is_basetable(r->op) && !is_basetable(l->op)) {
 		r->hashjoin = 1;
 		r->partition = 1;
+		dohashjoin = 1;
+	}
+
+	if (dohashjoin) {
 		rel->hashjoin = 1;
+		rel->parallel = 1;
 	}
 }
 
