@@ -3894,7 +3894,7 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_table *t = NULL;
 
-		if ((res = table_dup(tr, (sql_table*)b, s, NULL, &t, true)) || (res = os_add(ns->tables, tr, t->base.name, &t->base))) {
+		if ((res = table_dup(tr, (sql_table*)b, s, NULL, &t, true))) {
 			schema_destroy(tr->store, ns);
 			return res;
 		}
@@ -4204,7 +4204,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 {
 	sqlid dep_id=0, t_id = -1;
 	sht dep_type = 0;
-	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
+	list *dep = sql_trans_get_dependents(tr, id, type, NULL);
 	node *n;
 	int res = LOG_OK;
 

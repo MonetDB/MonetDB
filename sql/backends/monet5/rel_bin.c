@@ -5589,7 +5589,7 @@ cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids)
 {
 	/* now iterate over all keys */
 	sql_trans *tr = be->mvc->session->tr;
-	list *keys = sql_trans_get_dependencies(tr, k->base.id, FKEY_DEPENDENCY, NULL);
+	list *keys = sql_trans_get_dependents(tr, k->base.id, FKEY_DEPENDENCY, NULL);
 	if (keys) {
 		for (node *n = keys->h; n; n = n->next->next) {
 			sqlid fkey_id = *(sqlid*)n->data;
@@ -6166,7 +6166,7 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_trans *tr = be->mvc->session->tr;
-	list *keys = sql_trans_get_dependencies(tr, k->base.id, FKEY_DEPENDENCY, NULL);
+	list *keys = sql_trans_get_dependents(tr, k->base.id, FKEY_DEPENDENCY, NULL);
 
 	if (keys) {
 		for (node *n = keys->h; n; n = n->next->next) {
@@ -6350,7 +6350,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 			sql_key *k = n->data;
 
 			if (k->type == ukey || k->type == pkey) {
-				list *keys = sql_trans_get_dependencies(tr, k->base.id, FKEY_DEPENDENCY, NULL);
+				list *keys = sql_trans_get_dependents(tr, k->base.id, FKEY_DEPENDENCY, NULL);
 
 				if (keys) {
 					for (node *nn = keys->h; nn; nn = nn->next->next) {

@@ -2619,24 +2619,38 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	sql_schema *s;
 	sql_rel *rel;
 	list *exps;
-	sql_trans *tr = sql->session->tr;
 
 	assert(old_name && new_name);
 	if (!(s = mvc_bind_schema(sql, old_name))) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000)
+						 "ALTER SCHEMA: no such schema '%s'", old_name);
 	}
+
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: access denied for %s to schema '%s'",
+						 get_string_global_var(sql, "current_user"), old_name);
+
 	if (s->system)
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr))
-		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: cannot rename a system schema");
+
 	if (strNil(new_name) || *new_name == '\0')
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: invalid new schema name");
+
 	if (mvc_bind_schema(sql, new_name))
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+
+	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) != NO_DEPENDENCY) {
+		return sql_error(sql, 02,
+						 SQLSTATE(2BM37) "ALTER SCHEMA: unable to "
+						 "rename schema '%s', there are database objects"
+						 " (views) which depend on it", old_name);
+	}
 
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);
@@ -2645,6 +2659,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	rel->op = op_ddl;
 	rel->flag = ddl_rename_schema;
 	rel->exps = exps;
+
 	return rel;
 }
 

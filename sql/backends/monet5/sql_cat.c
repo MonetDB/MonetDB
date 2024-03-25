@@ -38,12 +38,12 @@
 #include "orderidx.h"
 #include "sql_user.h"
 
-#define initcontext() \
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\
-		return msg;\
-	if ((msg = checkSQLContext(cntxt)) != NULL)\
-		return msg;\
-	if (store_readonly(sql->session->tr->store))\
+#define initcontext()													\
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)			\
+		return msg;														\
+	if ((msg = checkSQLContext(cntxt)) != NULL)							\
+		return msg;														\
+	if (store_readonly(sql->session->tr->store))						\
 		throw(SQL,"sql.cat",SQLSTATE(25006) "Schema statements cannot be executed on a readonly database.");
 
 static char *
@@ -2125,34 +2125,50 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 
 	initcontext();
-	sql_trans *tr = sql->session->tr;
 	sql_schema *cur = cur_schema(sql);
 
 	if (!(s = mvc_bind_schema(sql, old_name)))
-		throw(SQL, "sql.rename_schema", SQLSTATE(42S02) "ALTER SCHEMA: no such schema '%s'", old_name);
+		throw(SQL, "sql.rename_schema", SQLSTATE(42S02)
+			  "ALTER SCHEMA: no such schema '%s'", old_name);
+
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL, "sql.rename_schema", SQLSTATE(42000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
+		throw(SQL, "sql.rename_schema", SQLSTATE(42000)
+			  "ALTER SCHEMA: access denied for %s to schema '%s'",
+			  get_string_global_var(sql, "current_user"), old_name);
+
 	if (s->system)
-		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr))
-		throw(SQL, "sql.rename_schema", SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000)
+			  "ALTER SCHEMA: cannot rename a system schema");
+
 	if (strNil(new_name) || *new_name == '\0')
-		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000)
+			  "ALTER SCHEMA: invalid new schema name");
+
 	if (mvc_bind_schema(sql, new_name))
-		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000)
+			  "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+
+	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) == HAS_DEPENDENCY) {
+		throw(SQL, "sql.rename_schema", "ALTER SCHEMA: unable to"
+			  " rename schema '%s', there are database objects"
+			  " which depend on it", old_name);
+	}
 
 	switch (sql_trans_rename_schema(sql->session->tr, s->base.id, new_name)) {
 		case -1:
 			throw(SQL,"sql.rename_schema", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:
 		case -3:
-			throw(SQL,"sql.rename_schema", SQLSTATE(42000) "ALTER SCHEMA: transaction conflict detected");
+			throw(SQL,"sql.rename_schema", SQLSTATE(42000)
+				  "ALTER SCHEMA: transaction conflict detected");
 		default:
 			break;
 	}
+
 	if (cur && s->base.id == cur->base.id) /* change current session schema name */
 		if (!mvc_set_schema(sql, new_name))
 			throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	return msg;
 }
 
