@@ -6057,7 +6057,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 		t->base.deleted = 1;
 	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
 		return res;
-	if (t != gt && (res =os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
+	if (t != gt && (res = os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
 		return res;
 
 	sqlstore *store = tr->store;

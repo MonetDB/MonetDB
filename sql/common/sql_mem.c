@@ -72,6 +72,7 @@ sa_free(sql_allocator *pa, void *blk)
 	} else {
 		freed_t *f = blk;
 		f->n = pa->freelist;
+		f->sz = sz;
 
 		pa->freelist = f;
 	}
@@ -211,8 +212,11 @@ void *sa_zalloc( sql_allocator *sa, size_t sz )
 
 void sa_destroy( sql_allocator *sa )
 {
-	if (sa->pa)
+	if (sa->pa) {
+		sa_reset(sa);
+		sa_free(sa->pa, sa->blks[0]);
 		return;
+	}
 
 	sa_destroy_freelist(sa->freelist);
 	for (size_t i = 0; i<sa->nr; i++) {

@@ -239,9 +239,8 @@ rel_merge_projects_(visitor *v, sql_rel *rel)
 		if (project_unsafe(rel,0) || project_unsafe(prj,0) || exps_share_expensive_exp(rel->exps, prj->exps))
 			return rel;
 
-		/* here we need to fix aliases */
-		rel->exps = new_exp_list(v->sql->sa);
-
+		/* here we try to fix aliases */
+		list *nexps = NULL;
 		/* for each exp check if we can rename it */
 		for (n = exps->h; n && all; n = n->next) {
 			sql_exp *e = n->data, *ne = NULL;
@@ -253,19 +252,22 @@ rel_merge_projects_(visitor *v, sql_rel *rel)
 			}
 			ne = exp_push_down_prj(v->sql, e, prj, prj->l);
 			/* check if the refered alias name isn't used twice */
-			if (ne && ambigious_ref(rel->exps, ne)) {
+			if (ne && ambigious_ref(nexps, ne)) {
 				all = 0;
 				break;
 			}
 			if (ne) {
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, ne, e);
-				list_append(rel->exps, ne);
+				if (!nexps)
+					nexps = new_exp_list(v->sql->sa);
+				list_append(nexps, ne);
 			} else {
 				all = 0;
 			}
 		}
 		if (all) {
+			rel->exps = nexps;
 			/* we can now remove the intermediate project */
 			/* push order by expressions */
 			if (!list_empty(rel->r)) {
@@ -454,22 +456,36 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		 * project () [ i.i L1, i.i L2 ] -> project() [ i.i L1, L1 L2 ] */
 		if (list_length(rel->exps) > 1) {
 			list *exps = rel->exps;
-			rel->exps = sa_list(v->sql->sa);
 			node *n = exps->h;
-			list_append(rel->exps, n->data);
-			for(n = n->next; n; n = n->next) {
+			bool needed = false;
+			for(n = n->next; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
 				if (e->type == e_column && !is_selfref(e)) {
-					node *m = list_find(rel->exps, e, (fcmp)&exp_match_exp_cmp);
-					if (m) {
-						sql_exp *ne = exp_ref(v->sql, m->data);
-						exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
-						exp_propagate(v->sql->sa, ne, e);
-						set_selfref(ne);
-						e = ne;
+					for(node *m = exps->h; m && m != n && !needed; m = m->next) {
+						sql_exp *h = m->data;
+						if (exp_match_exp(h,e))
+							needed = true;
 					}
 				}
-				list_append(rel->exps, e);
+			}
+			if (needed) {
+				rel->exps = sa_list(v->sql->sa);
+				node *n = exps->h;
+				list_append(rel->exps, n->data);
+				for(n = n->next; n; n = n->next) {
+					sql_exp *e = n->data;
+					if (e->type == e_column && !is_selfref(e)) {
+						node *m = list_find(rel->exps, e, (fcmp)&exp_match_exp_cmp);
+						if (m) {
+							sql_exp *ne = exp_ref(v->sql, m->data);
+							exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
+							exp_propagate(v->sql->sa, ne, e);
+							set_selfref(ne);
+							e = ne;
+						}
+					}
+					list_append(rel->exps, e);
+				}
 			}
 		}
 	}
@@ -494,6 +510,23 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op)))) ||
 		   (is_join(rel->op) && (r->op == op_project && (!r->l || r->r || project_unsafe(r,0))))))
 			return rel;
+
+		if (l->op == op_project && l->l) {
+			for (n = l->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				if (!(is_column(e->type) && exp_is_atom(e) && !(is_right(rel->op) || is_full(rel->op))) &&
+					!(e->type == e_column && !has_label(e)))
+						return rel;
+			}
+		}
+		if (is_join(rel->op) && r->op == op_project && r->l) {
+			for (n = r->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				if (!(is_column(e->type) && exp_is_atom(e) && !(is_right(rel->op) || is_full(rel->op))) &&
+					!(e->type == e_column && !has_label(e)))
+						return rel;
+			}
+		}
 
 		if (l->op == op_project && l->l) {
 			/* Go through the list of project expressions.
