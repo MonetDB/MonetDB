@@ -66,11 +66,20 @@ static void merge_delta( sql_delta *obat);
 		((!seg->deleted && VALID_4_READ(seg->ts, tr)) || \
 		 (seg->deleted && OLD_VALID_4_READ(seg->ts, seg->oldts, tr)))
 
-static inline void
+static inline BAT *
 transfer_to_systrans(BAT *b)
 {
 	/* transfer a BAT from the TRANSIENT farm to the SYSTRANS farm */
 	MT_lock_set(&b->theaplock);
+	if (VIEWtparent(b) || VIEWvtparent(b)) {
+		MT_lock_unset(&b->theaplock);
+		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		BBPreclaim(b);
+		b = bn;
+		if (b == NULL)
+			return NULL;
+		MT_lock_set(&b->theaplock);
+	}
 	if (b->theap->farmid == TRANSIENT ||
 		(b->tvheap && b->tvheap->farmid == TRANSIENT)) {
 		QryCtx *qc = MT_thread_get_qry_ctx();
@@ -87,6 +96,7 @@ transfer_to_systrans(BAT *b)
 		}
 	}
 	MT_lock_unset(&b->theaplock);
+	return b;
 }
 
 static void
@@ -1160,8 +1170,8 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 				}
 				if (cs->bid && !new)
 					temp_destroy(cs->bid);
+				n = transfer_to_systrans(n);
 				bat_set_access(n, BAT_READ);
-				transfer_to_systrans(n);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
 				if (cs->ebid && !new)
@@ -1203,8 +1213,8 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 				}
 				if (cs->bid && !new)
 					temp_destroy(cs->bid);
+				n = transfer_to_systrans(n);
 				bat_set_access(n, BAT_READ);
-				transfer_to_systrans(n);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
 				cs->cleared = true;
@@ -1256,8 +1266,8 @@ for_append_bat(column_storage *cs, BAT *i, char *storage_type)
 				return NULL;
 			if (cs->bid)
 				temp_destroy(cs->bid);
+			n = transfer_to_systrans(n);
 			bat_set_access(n, BAT_READ);
-			transfer_to_systrans(n);
 			cs->bid = temp_create(n);
 			cs->ucnt = 0;
 			if (cs->uibid)
@@ -1511,8 +1521,8 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 				} else {
 					temp_destroy(cs->uibid);
 					temp_destroy(cs->uvbid);
-					transfer_to_systrans(ui);
-					transfer_to_systrans(uv);
+					ui = transfer_to_systrans(ui);
+					uv = transfer_to_systrans(uv);
 					cs->uibid = temp_create(ui);
 					cs->uvbid = temp_create(uv);
 					cs->ucnt = BATcount(ui);
@@ -1605,8 +1615,8 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 						if (res == LOG_OK) {
 							temp_destroy(cs->uibid);
 							temp_destroy(cs->uvbid);
-							transfer_to_systrans(nui);
-							transfer_to_systrans(nuv);
+							nui = transfer_to_systrans(nui);
+							nuv = transfer_to_systrans(nuv);
 							cs->uibid = temp_create(nui);
 							cs->uvbid = temp_create(nuv);
 							cs->ucnt = BATcount(nui);
@@ -1698,8 +1708,8 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 				}
 				if (cs->bid && !new)
 					temp_destroy(cs->bid);
+				n = transfer_to_systrans(n);
 				bat_set_access(n, BAT_READ);
-				transfer_to_systrans(n);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
 				if (cs->ebid && !new)
@@ -1736,8 +1746,8 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 				}
 				if (cs->bid)
 					temp_destroy(cs->bid);
+				n = transfer_to_systrans(n);
 				bat_set_access(n, BAT_READ);
-				transfer_to_systrans(n);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
 				cs->cleared = true;
@@ -1773,8 +1783,8 @@ for_append_val(column_storage *cs, void *i, BUN cnt, char *storage_type, int tt)
 			/* TODO decompress updates if any */
 			if (cs->bid)
 				temp_destroy(cs->bid);
+			n = transfer_to_systrans(n);
 			bat_set_access(n, BAT_READ);
-			transfer_to_systrans(n);
 			cs->bid = temp_create(n);
 			cs->st = ST_DEFAULT;
 			/* at append_col the column's storage type is cleared */
@@ -4932,13 +4942,13 @@ col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 	d->cs.cleared = true;
 	if (d->cs.bid)
 		temp_destroy(d->cs.bid);
+	o = transfer_to_systrans(o);
 	bat_set_access(o, BAT_READ);
-	transfer_to_systrans(o);
 	d->cs.bid = temp_create(o);
 	if (u) {
 		if (d->cs.ebid)
 			temp_destroy(d->cs.ebid);
-		transfer_to_systrans(u);
+		u = transfer_to_systrans(u);
 		d->cs.ebid = temp_create(u);
 	}
 	return LOG_OK;
