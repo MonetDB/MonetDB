@@ -710,7 +710,7 @@ SQLinit(Client c, const char *initpasswd)
 			msg = createException(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else if (maybeupgrade) {
 			if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
-				int res = 0; // SQLupgrades(c, m);
+				int res = SQLupgrades(c, m);
 				/* Commit at the end of the upgrade */
 				assert(m->session->tr->active);
 				if (mvc_status(m) < 0 || res)
