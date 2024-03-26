@@ -642,7 +642,7 @@ DESCload(int i)
 
 	b = BBP_desc(i);
 
-	if (b == NULL) {
+	if (b->batCacheid == 0) {
 		GDKerror("no descriptor for BAT %d\n", i);
 		return NULL;
 	}

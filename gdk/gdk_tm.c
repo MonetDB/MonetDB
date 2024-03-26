@@ -87,7 +87,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			MT_lock_unset(&b->theaplock);
 		}
 		b = BBP_desc(bid);
-		if (b && b->ttype >= 0 && ATOMvarsized(b->ttype)) {
+		if (b->batCacheid != 0 && b->ttype >= 0 && ATOMvarsized(b->ttype)) {
 			MT_lock_set(&b->theaplock);
 			ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
 			if (p != NULL) {

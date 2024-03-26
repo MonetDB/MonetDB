@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Tue Mar 26 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Made some changes to how BAT descriptors are allocated.  They are now
+  allocated in bulk, meaning fewer malloc/free calls during processing.
 - Removed macro BBP_cache and its associated code.  Checking whether a
   BAT is cached (loaded in memory) can be done by checking the BBPLOADED
   bit in the BBP_status value.  Getting a pointer to the BAT descriptor

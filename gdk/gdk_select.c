@@ -2510,9 +2510,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		    !li.transient ||
 		    (VIEWtparent(l) != 0 &&
 /* if enabled, need to fix/unfix parent bat */
-		     (tmp = BBP_desc(VIEWtparent(l))) != NULL &&
 		     /* batTransient access needs to be protected */
-		     !tmp->batTransient) ||
+		     !(tmp = BBP_desc(VIEWtparent(l)))->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
 		/* implementation using imprints on left column

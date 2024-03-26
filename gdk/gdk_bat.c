@@ -58,22 +58,49 @@
 BAT *
 BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 {
+	bat bid;
 	BAT *bn;
+	Heap *h = NULL, *vh = NULL;
 
 	/*
 	 * Alloc space for the BAT and its dependent records.
 	 */
 	assert(tt >= 0);
 
-	bn = GDKmalloc(sizeof(BAT));
+	if (heapnames) {
+		if ((h = GDKmalloc(sizeof(Heap))) == NULL) {
+			return NULL;
+		}
+		*h = (Heap) {
+			.farmid = BBPselectfarm(role, tt, offheap),
+			.dirty = true,
+		};
 
-	if (bn == NULL)
+		if (ATOMneedheap(tt)) {
+			if ((vh = GDKmalloc(sizeof(Heap))) == NULL) {
+				GDKfree(h);
+				return NULL;
+			}
+			*vh = (Heap) {
+				.farmid = BBPselectfarm(role, tt, varheap),
+				.dirty = true,
+			};
+		}
+	}
+
+	bid = BBPallocbat(tt);
+	if (bid == 0) {
+		GDKfree(h);
+		GDKfree(vh);
 		return NULL;
+	}
+	bn = BBP_desc(bid);
 
 	/*
 	 * Fill in basic column info
 	 */
 	*bn = (BAT) {
+		.batCacheid = bid,
 		.hseqbase = hseq,
 
 		.ttype = tt,
@@ -90,39 +117,11 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.batRole = role,
 		.batTransient = true,
 		.batRestricted = BAT_WRITE,
+		.theap = h,
+		.tvheap = vh,
+		.creator_tid = MT_getpid(),
 	};
 
-	if (heapnames) {
-		if ((bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
-			GDKfree(bn);
-			return NULL;
-		}
-		*bn->theap = (Heap) {
-			.farmid = BBPselectfarm(role, bn->ttype, offheap),
-			.dirty = true,
-		};
-
-		if (ATOMneedheap(tt)) {
-			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL) {
-				GDKfree(bn->theap);
-				GDKfree(bn);
-				return NULL;
-			}
-			*bn->tvheap = (Heap) {
-				.farmid = BBPselectfarm(role, bn->ttype, varheap),
-				.dirty = true,
-			};
-		}
-	}
-	/*
-	 * add to BBP
-	 */
-	if (BBPinsert(bn) == 0) {
-		GDKfree(bn->tvheap);
-		GDKfree(bn->theap);
-		GDKfree(bn);
-		return NULL;
-	}
 	if (bn->theap) {
 		bn->theap->parentid = bn->batCacheid;
 		ATOMIC_INIT(&bn->theap->refs, 1);
@@ -729,7 +728,9 @@ BATdestroy(BAT *b)
 		HEAPdecref(b->oldtail, false);
 		b->oldtail = NULL;
 	}
-	GDKfree(b);
+	*b = (BAT) {
+		.batCacheid = 0,
+	};
 }
 
 /*

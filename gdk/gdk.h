@@ -958,7 +958,7 @@ gdk_export void HEAPincref(Heap *h);
 typedef struct {
 	char *logical;		/* logical name (may point at bak) */
 	char bak[16];		/* logical name backup (tmp_%o) */
-	BAT *desc;		/* the BAT descriptor */
+	BAT descr;		/* the BAT descriptor */
 	char *options;		/* A string list of options */
 #if SIZEOF_VOID_P == 4
 	char physical[20];	/* dir + basename for storage */
@@ -997,7 +997,7 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_next(i)	BBP_record(i).next
 #define BBP_physical(i)	BBP_record(i).physical
 #define BBP_options(i)	BBP_record(i).options
-#define BBP_desc(i)	BBP_record(i).desc
+#define BBP_desc(i)	(&BBP_record(i).descr)
 #define BBP_refs(i)	BBP_record(i).refs
 #define BBP_lrefs(i)	BBP_record(i).lrefs
 #define BBP_status(i)	((unsigned) ATOMIC_GET(&BBP_record(i).status))

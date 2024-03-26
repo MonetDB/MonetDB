@@ -80,8 +80,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		if (!BBPcheck(bid))
 			return 0;
 		b = BBP_desc(bid);
-		if (b == NULL)
-			return 0;
 		MT_lock_set(&b->theaplock);
 		if (flag && isVIEW(b)) {
 			MT_lock_unset(&b->theaplock);

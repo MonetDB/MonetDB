@@ -1607,7 +1607,7 @@ bm_get_counts(logger *lg)
 			assert(b);
 			cnt = BATcount(b);
 		} else {
-			lid = BBP_desc(bids[p]) && log_find(lg->catalog_bid, lg->dcatalog, bids[p]) == BUN_NONE ? 1 : -1;
+			lid = BBP_desc(bids[p])->batCacheid != 0 && log_find(lg->catalog_bid, lg->dcatalog, bids[p]) == BUN_NONE ? 1 : -1;
 		}
 		if (BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
 			return GDK_FAIL;
@@ -1664,10 +1664,10 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 			continue;
 
 		if (lids[pos] >= 0) {
-			BAT *lb;
 			bat bid = bids[pos];
+			BAT *lb = BBP_desc(bid);
 
-			if ((lb = BBP_desc(bid)) == NULL || BATmode(lb, true /*transient */ ) != GDK_SUCCEED) {
+			if (lb->batCacheid == 0 || BATmode(lb, true /*transient */ ) != GDK_SUCCEED) {
 				GDKwarning("Failed to set bat(%d) transient\n", bid);
 			} else {
 				lids[pos] = -1;	/* mark as transient */
@@ -3378,10 +3378,10 @@ bm_commit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdated)
 	bids = (log_bid *) Tloc(b, 0);
 	for (BUN p = b->batInserted, cnt = pending ? pending->cnt : BATcount(b); p < cnt; p++) {
 		log_bid bid = bids[p];
-		BAT *lb;
+		BAT *lb = BBP_desc(bid);
 
 		assert(bid);
-		if ((lb = BBP_desc(bid)) == NULL || BATmode(lb, false) != GDK_SUCCEED) {
+		if (lb->batCacheid == 0 || BATmode(lb, false) != GDK_SUCCEED) {
 			GDKwarning("Failed to set bat (%d%s) persistent\n", bid, !lb ? " gone" : "");
 			log_unlock(lg);
 			return GDK_FAIL;

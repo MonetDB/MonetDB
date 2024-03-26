@@ -431,7 +431,7 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 	for (i = 1; i < sz; i++) {
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			bn = BBP_desc(i);
-			if (bn) {
+			if (bn->batCacheid != 0) {
 				lng l = BATcount(bn);
 				int heat_ = 0, len;
 				char *loc = BBP_status(i) & BBPLOADED ? "load" : "disk";
