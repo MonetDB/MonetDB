@@ -497,7 +497,7 @@ stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int prnt_slt
 	int tt = tail_type(payload)->type->localtype;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
 	getArg(q, 0) = *ht_sink->argv;
-	q = pushArgument(mb, q, getDestVar(payload->q));
+	q = pushArgument(mb, q, payload->nr);
 	q = pushArgument(mb, q, prnt_slts);
 	q = pushArgument(mb, q, prnt_ht);
 	q = pushArgument(mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
@@ -620,7 +620,7 @@ stmt_hash_expand(backend *be, stmt *col, int sel, int prnt, int rhp, bit first, 
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
-	q = pushArgument(be->mb, q, getDestVar(col->q));
+	q = pushArgument(be->mb, q, col->nr);
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, prnt);
 	q = pushArgument(be->mb, q, rhp);
@@ -645,7 +645,7 @@ stmt_hash_fetch_payload(backend *be, int slt, stmt *hp, bit first, stmt *pp)
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
 	q = pushArgument(be->mb, q, slt);
-	q = pushArgument(be->mb, q, getDestVar(hp->q));
+	q = pushArgument(be->mb, q, hp->nr);
 	q = pushBit(be->mb, q, first);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
