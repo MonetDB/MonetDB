@@ -1830,8 +1830,17 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (ATOMextern(tpe) && !ATOMvarsized(tpe))
 		ins = *(ptr *) ins;
-	if ( tpe == TYPE_bat)
+	if ( tpe == TYPE_bat) {
 		b =  (BAT*) ins;
+		if (VIEWtparent(b) || VIEWvtparent(b)) {
+			/* note, b == (BAT*)ins */
+			b = COLcopy(b, b->ttype, true, TRANSIENT);
+			BBPreclaim(ins);
+			ins = b;
+			if (b == NULL)
+				throw(SQL, "sql.append", GDK_EXCEPTION);
+		}
+	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
 		bat_destroy(pos);

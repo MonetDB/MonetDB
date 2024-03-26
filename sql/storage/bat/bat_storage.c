@@ -73,12 +73,9 @@ transfer_to_systrans(BAT *b)
 	MT_lock_set(&b->theaplock);
 	if (VIEWtparent(b) || VIEWvtparent(b)) {
 		MT_lock_unset(&b->theaplock);
-		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		BAT *bn = COLcopy(b, b->ttype, true, SYSTRANS);
 		BBPreclaim(b);
-		b = bn;
-		if (b == NULL)
-			return NULL;
-		MT_lock_set(&b->theaplock);
+		return bn;
 	}
 	if (b->theap->farmid == TRANSIENT ||
 		(b->tvheap && b->tvheap->farmid == TRANSIENT)) {
@@ -2158,7 +2155,7 @@ delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 		bat_set_access(i, BAT_READ);
 		if (bat->cs.bid)
 			temp_destroy(bat->cs.bid);
-		transfer_to_systrans(i);
+		i = transfer_to_systrans(i);
 		bat->cs.bid = temp_create(i);
 	} else if (!offsets && offset == b->hseqbase+BATcount(b)) {
 		if (BATappend(b, oi, NULL, true) != GDK_SUCCEED)
