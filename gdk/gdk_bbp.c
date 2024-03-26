@@ -101,8 +101,9 @@
  * are found in O(1) by keeping a freelist that uses the 'next' field
  * in the BBPrec records.
  */
-BBPrec *BBP[N_BBPINIT];		/* fixed base VM address of BBP array */
-bat BBPlimit = 0;		/* current committed VM BBP array */
+static BBPrec BBP0[BBPINIT];
+BBPrec *BBP[N_BBPINIT] = {[0] = BBP0}; /* fixed base VM address of BBP array */
+bat BBPlimit = BBPINIT;		/* current committed VM BBP array */
 static ATOMIC_TYPE BBPsize = ATOMIC_VAR_INIT(0); /* current used size of BBP array */
 
 struct BBPfarm_t BBPfarms[MAXFARMS];
@@ -1951,8 +1952,10 @@ BBPinit(bool allow_hge_upgrade)
 	}
 
 	/* scan the BBP.dir to obtain current size */
-	BBPlimit = 0;
+	BBPlimit = BBPINIT;
+	memset(BBP0, 0, sizeof(BBP0));
 	memset(BBP, 0, sizeof(BBP));
+	BBP[0] = BBP0;
 
 	bat bbpsize;
 	bbpsize = 1;
@@ -4685,13 +4688,14 @@ gdk_bbp_reset(void)
 	int i;
 
 	BBP_free = 0;
-	while (BBPlimit > 0) {
+	while (BBPlimit > BBPINIT) {
 		BBPlimit -= BBPINIT;
 		assert(BBPlimit >= 0);
 		GDKfree(BBP[BBPlimit >> BBPINITLOG]);
 		BBP[BBPlimit >> BBPINITLOG] = NULL;
 	}
 	ATOMIC_SET(&BBPsize, 0);
+	memset(BBP0, 0, sizeof(BBP0));
 	for (i = 0; i < MAXFARMS; i++)
 		GDKfree((void *) BBPfarms[i].dirname); /* loose "const" */
 	memset(BBPfarms, 0, sizeof(BBPfarms));
