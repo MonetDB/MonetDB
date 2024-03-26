@@ -3789,7 +3789,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode,
 		lo = canditer_next(&lci);
 		if (lvals)
 			vl = VALUE(l, lo - l->hseqbase);
-		else if (!BATtdensebi(&li))
+		else if (BATtdensebi(&li))
 			lval = (oid) ((lng) lo + loff);
 		nr = 0;
 		if (nil_matches || cmp(vl, nil) != 0) {
@@ -3798,7 +3798,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode,
 				ro = canditer_next(&rci);
 				if (rvals)
 					vr = VALUE(r, ro - r->hseqbase);
-				else if (!BATtdensebi(&ri))
+				else if (BATtdensebi(&ri))
 					rval = (oid) ((lng) ro + roff);
 				if (!nil_matches && cmp(vr, nil) == 0)
 					continue;
