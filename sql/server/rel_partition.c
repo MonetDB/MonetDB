@@ -19,6 +19,8 @@
 #include "rel_select.h"
 #include "rel_rewriter.h"
 
+static int rel_partition_(mvc *sql, sql_rel *rel, int pb);
+
 /* Returns the row count of a base table or any count info we can get fom the
  * PROP_COUNT of this 'rel' (i.e.  get_rel_count()). */
 static lng
@@ -330,10 +332,11 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 static void
 mark_hashjoin(mvc *sql, sql_rel *rel)
 {
-	int dohashjoin = 0;
+	ATOMIC_TYPE dohashjoin = (1U<<19);
+	if (!(GDKdebug & dohashjoin))
+		return;
 
-	/* For now, only generate paralle hash join plan for equi-joins on at
-	 * least one base table.
+	/* For now, only generate paralle hash join plan for equi-joins.
 	 */
 	if ((rel->op != op_join) || !rel->exps)
 		return;
@@ -345,30 +348,22 @@ mark_hashjoin(mvc *sql, sql_rel *rel)
 	}
 
 	sql_rel *l = rel->l, *r = rel->r;
-	if(is_basetable(l->op) && is_basetable(r->op)) {
-		lng lc = rel_getcount(sql, l), rc = rel_getcount(sql, r);
-		if (lc < rc)
-			l->hashjoin = 1;
-		else
-			r->hashjoin = 1;
-		l->partition = 1;
-		r->partition = 1;
-		dohashjoin = 1;
-	}
-	else if(is_basetable(l->op) && !is_basetable(r->op)) {
-		l->hashjoin = 1;
-		l->partition = 1;
-		dohashjoin = 1;
-	} else if(is_basetable(r->op) && !is_basetable(l->op)) {
-		r->hashjoin = 1;
-		r->partition = 1;
-		dohashjoin = 1;
-	}
+	(void) rel_partition_(sql, l, 1);
+	(void) rel_partition_(sql, r, 1);
 
-	if (dohashjoin) {
-		rel->hashjoin = 1;
-		rel->parallel = 1;
-	}
+	if (rel_getcount(sql, l) < rel_getcount(sql, r))
+		l->hashjoin = 1;
+	else
+		r->hashjoin = 1;
+
+	if(is_basetable(l->op))
+		l->partition = 1;
+
+	if(is_basetable(r->op))
+		r->partition = 1;
+
+	rel->hashjoin = 1;
+	rel->parallel = 1;
 }
 
 static int
