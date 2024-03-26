@@ -158,3 +158,11 @@ NULL
 NULL
 30
 
+
+query II rowsort
+select foo.s, bar.s from foo, bar where foo.s is not distinct from bar.s
+----
+20
+20
+NULL
+NULL
