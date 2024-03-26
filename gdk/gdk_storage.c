@@ -880,15 +880,6 @@ BATload_intern(bat bid, bool lock)
 void
 BATdelete(BAT *b)
 {
-	bat bid = b->batCacheid;
-	BAT *loaded = BBP_cache(bid);
-	char o[12];
-
-	assert(bid > 0);
-	snprintf(o, sizeof(o), "%o", (unsigned) bid);
-	if (loaded) {
-		b = loaded;
-	}
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);

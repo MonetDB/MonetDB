@@ -162,7 +162,7 @@ RTREEexists(BAT *b)
 	BAT *pb;
 	bool ret;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BBP_desc(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
@@ -198,7 +198,7 @@ BATrtree(BAT *wkb, BAT *mbr)
 
 	//Check for a parent BAT of wkb, load if exists
 	if (VIEWtparent(wkb)) {
-		pb = BBP_cache(VIEWtparent(wkb));
+		pb = BBP_desc(VIEWtparent(wkb));
 		assert(pb);
 	} else {
 		pb = wkb;
@@ -254,7 +254,7 @@ RTREEfree(BAT *b)
 {
 	BAT *pb;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BBP_desc(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
@@ -275,7 +275,7 @@ RTREEdestroy(BAT *b)
 {
 	BAT *pb;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BBP_desc(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
@@ -323,7 +323,7 @@ BUN*
 RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 	BAT *pb;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BBP_desc(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;

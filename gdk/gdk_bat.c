@@ -2686,7 +2686,7 @@ BATassertProps(BAT *b)
 	assert(b != NULL);
 	assert(b->batCacheid > 0);
 	assert(b->batCacheid < getBBPsize());
-	assert(b == BBP_cache(b->batCacheid));
+	assert(b == BBP_desc(b->batCacheid));
 	assert(b->batCount >= b->batInserted);
 
 	/* headless */

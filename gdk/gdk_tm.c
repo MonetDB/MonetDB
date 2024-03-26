@@ -68,7 +68,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			 * doesn't fail */
 			BBP_status_off(bid, BBPNEW);
 			BBP_status_on(bid, BBPEXISTING);
-		} else if (BBP_status(bid) & BBPDELETED) {
+		} else if ((BBP_status(bid) & (BBPDELETED|BBPLOADED)) == (BBPDELETED|BBPLOADED)) {
 			/* check mmap modes of bats that are now
 			 * transient. this has to be done after the
 			 * commit succeeded, because the mmap modes
@@ -79,14 +79,12 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			 * but didn't due to the failure, would be a
 			 * consistency risk.
 			 */
-			b = BBP_cache(bid);
-			if (b) {
-				/* check mmap modes */
-				MT_lock_set(&b->theaplock);
-				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					GDKwarning("BATcheckmodes failed\n");
-				MT_lock_unset(&b->theaplock);
-			}
+			b = BBP_desc(bid);
+			/* check mmap modes */
+			MT_lock_set(&b->theaplock);
+			if (BATcheckmodes(b, true) != GDK_SUCCEED)
+				GDKwarning("BATcheckmodes failed\n");
+			MT_lock_unset(&b->theaplock);
 		}
 		b = BBP_desc(bid);
 		if (b && b->ttype >= 0 && ATOMvarsized(b->ttype)) {

@@ -956,7 +956,6 @@ gdk_export void HEAPincref(Heap *h);
  * field.
  */
 typedef struct {
-	BAT *cache;		/* if loaded: BAT* handle */
 	char *logical;		/* logical name (may point at bak) */
 	char bak[16];		/* logical name backup (tmp_%o) */
 	BAT *desc;		/* the BAT descriptor */
@@ -993,7 +992,6 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
 #define BBP_record(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)]
-#define BBP_cache(i)	BBP_record(i).cache
 #define BBP_logical(i)	BBP_record(i).logical
 #define BBP_bak(i)	BBP_record(i).bak
 #define BBP_next(i)	BBP_record(i).next
@@ -1005,7 +1003,7 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_status(i)	((unsigned) ATOMIC_GET(&BBP_record(i).status))
 #define BBP_pid(i)	BBP_record(i).pid
 #define BATgetId(b)	BBP_logical((b)->batCacheid)
-#define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
+#define BBPvalid(i)	(BBP_logical(i) != NULL)
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)

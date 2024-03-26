@@ -1757,10 +1757,10 @@ BBPtrim(bool aggressive, bat nbat)
 		MT_lock_set(&GDKswapLock(bid));
 		BAT *b = NULL;
 		bool swap = false;
-		if (!(BBP_status(bid) & flag) &&
+		if ((BBP_status(bid) & (flag | BBPLOADED)) == BBPLOADED &&
 		    BBP_refs(bid) == 0 &&
 		    BBP_lrefs(bid) != 0 &&
-		    (b = BBP_cache(bid)) != NULL) {
+		    (b = BBP_desc(bid)) != NULL) {
 			MT_lock_set(&b->theaplock);
 			if (!BATshared(b) &&
 			    !isVIEW(b) &&
@@ -2561,7 +2561,7 @@ BBPdump(void)
 		       BBP_refs(i),
 		       BBP_lrefs(i),
 		       status,
-		       BBP_cache(i) ? "" : " not cached");
+		       status & BBPLOADED ? "" : " not cached");
 		if (b == NULL) {
 			printf(", no descriptor\n");
 			continue;
@@ -2762,7 +2762,6 @@ BBPinsert(BAT *bn)
 
 	MT_lock_set(&GDKswapLock(i));
 	BBP_status_set(i, BBPDELETING|BBPHOT);
-	BBP_cache(i) = NULL;
 	BBP_desc(i) = bn;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
@@ -2802,8 +2801,6 @@ BBPcacheit(BAT *bn, bool lock)
 	mode = (BBP_status(i) | BBPLOADED) & ~(BBPLOADING | BBPDELETING | BBPSWAPPED);
 
 	/* cache it! */
-	BBP_cache(i) = bn;
-
 	BBP_status_set(i, mode);
 
 	if (lock)
@@ -2828,13 +2825,11 @@ BBPuncacheit(bat i, bool unloaddesc)
 		assert(unloaddesc || BBP_refs(i) == 0);
 
 		if (b) {
-			if (BBP_cache(i)) {
+			if (BBP_status(i) & BBPLOADED) {
 				TRC_DEBUG(BAT_, "uncache %d (%s)\n", (int) i, BBP_logical(i));
 
 				/* clearing bits can be done without the lock */
 				BBP_status_off(i, BBPLOADED);
-
-				BBP_cache(i) = NULL;
 			}
 			if (unloaddesc) {
 				BBP_desc(i) = NULL;
@@ -3184,7 +3179,7 @@ decref(bat i, bool logical, bool lock, const char *func)
 			MT_lock_set(&GDKswapLock(i));
 	}
 
-	b = BBP_cache(i);
+	b = (BBP_status(i) & BBPLOADED) ? BBP_desc(i) : NULL;
 
 	/* decrement references by one */
 	if (logical) {
@@ -3357,14 +3352,15 @@ BATdescriptor(bat i)
 			}
 		}
 		if (incref(i, false, false) > 0) {
-			b = BBP_cache(i);
-			if (b == NULL) {
+			if ((BBP_status(i) & BBPLOADED) == 0) {
 				b = getBBPdescriptor(i);
 				if (b == NULL) {
 					/* if loading failed, we need to
 					 * compensate for the incref */
 					decref(i, false, false, __func__);
 				}
+			} else {
+				b = BBP_desc(i);
 			}
 		}
 		if (lock)
@@ -3390,16 +3386,16 @@ getBBPdescriptor(bat i)
 		return NULL;
 	}
 	assert(BBP_refs(i));
-	if ((b = BBP_cache(i)) == NULL || BBP_status(i) & BBPWAITING) {
-
+	unsigned status = BBP_status(i);
+	b = BBP_desc(i);
+	if ((status & BBPLOADED) == 0 || status & BBPWAITING) {
 		while (BBP_status(i) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
 			MT_lock_unset(&GDKswapLock(i));
 			BBPspin(i, __func__, BBPWAITING);
 			MT_lock_set(&GDKswapLock(i));
 		}
 		if (BBPvalid(i)) {
-			b = BBP_cache(i);
-			if (b == NULL) {
+			if ((BBP_status(i) & BBPLOADED) == 0) {
 				load = true;
 				TRC_DEBUG(BAT_, "set to loading BAT %d\n", i);
 				BBP_status_on(i, BBPLOADING);
@@ -3411,7 +3407,6 @@ getBBPdescriptor(bat i)
 
 		b = BATload_intern(i, false);
 
-		/* clearing bits can be done without the lock */
 		BBP_status_off(i, BBPLOADING);
 		CHECKDEBUG if (b != NULL)
 			BATassertProps(b);
@@ -3541,7 +3536,7 @@ BBPfree(BAT *b)
 	/* write dirty BATs before unloading */
 	ret = BBPsave(b);
 	if (ret == GDK_SUCCEED) {
-		if (BBP_cache(bid))
+		if (BBP_status(bid) & BBPLOADED)
 			BATfree(b);	/* free memory */
 		BBPuncacheit(bid, false);
 	}
@@ -3597,8 +3592,8 @@ dirty_bat(bat *i, bool subcommit)
 	if (BBPvalid(*i)) {
 		BAT *b;
 		BBPspin(*i, __func__, BBPSAVING);
-		b = BBP_cache(*i);
-		if (b != NULL) {
+		if (BBP_status(*i) & BBPLOADED) {
+			b = BBP_desc(*i);
 			MT_lock_set(&b->theaplock);
 			if ((BBP_status(*i) & BBPNEW) &&
 			    BATcheckmodes(b, false) != GDK_SUCCEED) /* check mmap modes */
@@ -4503,9 +4498,9 @@ static bool
 persistent_bat(bat bid)
 {
 	if (bid >= 0 && bid < (bat) ATOMIC_GET(&BBPsize) && BBPvalid(bid)) {
-		BAT *b = BBP_cache(bid);
-
-		if (b == NULL || b->batCopiedtodisk) {
+		BAT *b;
+		if ((BBP_status(bid) & BBPLOADED) == 0 ||
+		    ((b = BBP_desc(bid)) != NULL && b->batCopiedtodisk)) {
 			return true;
 		}
 	}
