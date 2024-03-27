@@ -545,8 +545,12 @@ class SQLLogic:
                     m.update(b'\n')
                     result.append(col)
             if err and expected is not None:
+                recv = []
+                for row in ndata:
+                    for col in row:
+                        recv.append(col)
                 print('Differences:', file=self.out)
-                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
+                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in recv])))
             if resdata is not None:
                 result = []
                 for row in resdata:
