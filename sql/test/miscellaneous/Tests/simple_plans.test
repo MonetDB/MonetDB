@@ -208,7 +208,7 @@ EXPLAIN SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2
 algebra.project
 1
 algebra.projection
-3
+2
 algebra.rangejoin
 1
 bat.pack
@@ -216,7 +216,7 @@ bat.pack
 querylog.define
 1
 sql.bind
-2
+1
 sql.mvc
 1
 sql.resultSet
@@ -232,17 +232,17 @@ EXPLAIN SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2
 algebra.project
 1
 algebra.projection
-3
+2
 algebra.rangejoin
 1
 bat.pack
 5
 batcalc.lng
-2
+1
 querylog.define
 1
 sql.bind
-2
+1
 sql.mvc
 1
 sql.resultSet
@@ -258,7 +258,7 @@ EXPLAIN SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2
 algebra.project
 2
 algebra.projection
-3
+2
 algebra.rangejoin
 1
 bat.pack
@@ -266,7 +266,7 @@ bat.pack
 querylog.define
 1
 sql.bind
-2
+1
 sql.mvc
 1
 sql.resultSet
@@ -284,7 +284,7 @@ algebra.likejoin
 algebra.project
 1
 algebra.projection
-3
+2
 bat.pack
 5
 bat.single
@@ -292,7 +292,7 @@ bat.single
 querylog.define
 1
 sql.bind
-2
+1
 sql.mvc
 1
 sql.resultSet
