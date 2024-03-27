@@ -90,6 +90,8 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 			}
 		}
 	}
+	/* ToDo handle usefull renames, ie new relation name and unique set of attribute names (could reduce set of * attributes) */
+	/* handle both useless and usefull with project [ group by ] */
 	return rel;
 }
 
@@ -391,6 +393,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		}
 		if (!ne)
 			return e;
+		sql_exp *oe = e;
 		e = NULL;
 		if (exp_name(ne) && ne->r && ne->l)
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
@@ -401,6 +404,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			sql->errstr[0] = 0;
 			if (exp_is_atom(ne))
 				return ne;
+			return oe;
 		}
 		return exp_ref(sql, e);
 	case e_cmp:

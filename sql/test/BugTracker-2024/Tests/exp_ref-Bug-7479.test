@@ -10,23 +10,16 @@ WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN (
 1
 1
 
-query IRI nosort
+statment error syntax error, unexpected ')' in: "with x as ( select 1 x union select - '199419' ) select 1 from x as where x in ("
 WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT min ( x ) OVER ( PARTITION BY x ) AS )
 ----
-1
-1.000
-1
-1
--199419.000
-1
 
-skipif knownfail
 query T nosort
 WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT x FROM x , ( SELECT min ( x ) OVER ( PARTITION BY x ) ) AS )
 ----
+1
+1
 
-skipif knownfail
-query T nosort
+statment error GDK reported error: BATsubcross: more than one match
 SELECT ( WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT x FROM x , ( SELECT min ( x ) OVER ( PARTITION BY x ) ) AS ) )
 ----
-
