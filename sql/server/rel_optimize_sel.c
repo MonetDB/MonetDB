@@ -2360,14 +2360,20 @@ reorder_join(visitor *v, sql_rel *rel)
 {
 	list *exps, *rels;
 
-	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr))
+	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr)) {
+		if (list_empty(rel->exps)) {
+			sql_rel *l = rel->l, *r = rel->r;
+			if (!is_innerjoin(l->op) && !is_innerjoin(r->op))
+				return rel;
+		}
 		rel->exps = push_up_join_exps(v->sql, rel);
+	}
 
 	if (!is_innerjoin(rel->op) || is_single(rel) || rel_is_ref(rel) || list_empty(rel->exps) || !list_empty(rel->attr)) {
 		if (!list_empty(rel->exps)) { /* cannot add join idxs to cross products */
 			exps = rel->exps;
 			rel->exps = NULL; /* should be all crosstables by now */
-			rels = sa_list(v->sql->sa);
+			rels = sa_list(v->sql->ta);
 			/* try to use an join index also for outer joins */
 			get_inner_relations(v->sql, rel, rels);
 			int cnt = list_length(exps);
@@ -2380,7 +2386,7 @@ reorder_join(visitor *v, sql_rel *rel)
 	} else {
 		exps = rel->exps;
 		rel->exps = NULL; /* should be all crosstables by now */
-		rels = sa_list(v->sql->sa);
+		rels = sa_list(v->sql->ta);
 		get_relations(v, rel, rels);
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(v->sql, rels, exps);
@@ -2397,11 +2403,6 @@ rel_join_order_(visitor *v, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
-	/*
-	if (is_join(rel->op))
-		rel = reorder_join(v, rel);
-	return rel;
-	*/
 
 	switch (rel->op) {
 	case op_basetable:
@@ -2458,11 +2459,9 @@ static sql_rel *
 rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_join_order_(v, rel);
-	/*
-	rel = rel_visitor_bottomup(v, rel, &rel_join_order_);
-	return rel;
-	*/
+	sql_rel *r = rel_join_order_(v, rel);
+	sa_reset(v->sql->ta);
+	return r;
 }
 
 run_optimizer

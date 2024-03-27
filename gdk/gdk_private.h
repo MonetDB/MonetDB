@@ -107,7 +107,7 @@ void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPinit(bool allow_hge_upgrade)
 	__attribute__((__visibility__("hidden")));
-bat BBPinsert(BAT *bn)
+bat BBPallocbat(int tt)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BBPprintinfo(void)

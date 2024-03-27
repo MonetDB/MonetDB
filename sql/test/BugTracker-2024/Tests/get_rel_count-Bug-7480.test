@@ -1,0 +1,15 @@
+query I nosort
+SELECT CASE WHEN ( SELECT 2 WHERE FALSE ) > ANY ( 1 ) THEN 1 END
+----
+NULL
+
+query I nosort
+SELECT NULL GROUP BY 1
+----
+NULL
+
+skipif knownfail
+query I nosort
+SELECT CASE WHEN ( SELECT 2 WHERE FALSE ) > ANY ( 1 ) THEN 1 END GROUP BY 1
+----
+NULL

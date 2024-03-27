@@ -57,10 +57,10 @@ ulng
 store_oldest(sqlstore *store, sql_trans *tr)
 {
 	if (tr && tr->ts == (ulng) ATOMIC_GET(&store->oldest)) {
-		sql_session *s = store->active->h->data;
-		if (s->tr == tr && store->active->h->next) {
-			s = store->active->h->next->data;
-			return s->tr->ts;
+		sql_trans *otr = store->active->h->data;
+		if (otr == tr && store->active->h->next) {
+			otr = store->active->h->next->data;
+			return otr->ts;
 		}
 	}
 	return (ulng) ATOMIC_GET(&store->oldest);
@@ -6057,7 +6057,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 		t->base.deleted = 1;
 	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
 		return res;
-	if (t != gt && (res =os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
+	if (t != gt && (res = os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
 		return res;
 
 	sqlstore *store = tr->store;

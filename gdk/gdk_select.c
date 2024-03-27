@@ -2369,7 +2369,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 #if 0 /* needs checking */
 		if (oidxh == NULL && VIEWtparent(l)) {
 /* if enabled, need to fix/unfix parent bat */
-			BAT *pb = BBP_cache(VIEWtparent(l));
+			BAT *pb = BBP_desc(VIEWtparent(l));
 			(void) BATcheckorderidx(pb);
 			MT_lock_set(&pb->batIdxLock);
 			if ((oidxh = pb->torderidx) != NULL) {
@@ -2510,9 +2510,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		    !li.transient ||
 		    (VIEWtparent(l) != 0 &&
 /* if enabled, need to fix/unfix parent bat */
-		     (tmp = BBP_cache(VIEWtparent(l))) != NULL &&
 		     /* batTransient access needs to be protected */
-		     !tmp->batTransient) ||
+		     !(tmp = BBP_desc(VIEWtparent(l)))->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
 		/* implementation using imprints on left column
