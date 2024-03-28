@@ -1869,6 +1869,7 @@ UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *
 				break;
 			case TYPE_int:
 				//probe(int);
+if(1) {
 int *ky = Tloc(k, 0);
 gid *hs = Tloc(h, 0);
 int *vals = ht->vals;
@@ -1885,15 +1886,52 @@ TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) {
 		mtdcnt++;
 	}
 }
+}
 				break;
 			case TYPE_date:
 				probe(date);
 				break;
 			case TYPE_lng:
-				probe(lng);
+				//probe(lng);
+if(1) {
+		lng *ky = Tloc(k, 0);
+		gid *hs = Tloc(h, 0);
+		lng *vals = ht->vals;
+		oid *mtd = Tloc(m, 0);
+		oid *slt = Tloc(s, 0);
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) {
+			gid slot = ht->gids[hs[i]];
+			while (slot && vals[slot] != ky[i]) {
+				slot++;
+			}
+			if (slot) {
+				mtd[mtdcnt] = i;
+				slt[mtdcnt] = slot - 1;
+				mtdcnt++;
+			}
+		}
+}
 				break;
 			case TYPE_oid:
-				probe(oid);
+				//probe(oid);
+if(1) {
+oid *ky = Tloc(k, 0);
+gid *hs = Tloc(h, 0);
+oid *vals = ht->vals;
+oid *mtd = Tloc(m, 0);
+oid *slt = Tloc(s, 0);
+TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) {
+	gid slot = ht->gids[hs[i]];
+	while (slot && vals[slot] != ky[i]) {
+		slot++;
+	}
+	if (slot) {
+		mtd[mtdcnt] = i;
+		slt[mtdcnt] = slot - 1;
+		mtdcnt++;
+	}
+}
+}
 				break;
 			case TYPE_daytime:
 				probe(daytime);
@@ -2472,6 +2510,7 @@ static mel_func pp_hash_init_funcs[] = {
 
  command("hash", "build_table", UHASHbuild_table, false, "Build a hash table for the given column. Returns the slot ID for each key and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
  command("hash", "build_combined_table", UHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
+// command("hash", "frequency", HASHfrequency, false, "Add a payload column with the given hash table. Returns a sink containing the hash payload", args(1,5, batargany("hp_sink",1),batargany("payload",1),batarg("parent_slotid",oid),batargany("parent_ht",2), arg("pipeline",ptr))),
  command("hash", "add_payload", HASHadd_payload, false, "Add a payload column with the given hash table. Returns a sink containing the hash payload", args(1,5, batargany("hp_sink",1),batargany("payload",1),batarg("parent_slotid",oid),batargany("parent_ht",2), arg("pipeline",ptr))),
 
  command("hash", "hash", UHASHhash, false, "Compute the hashs for the given column", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),

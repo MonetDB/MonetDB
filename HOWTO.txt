@@ -1,0 +1,84 @@
+1. To enable hashjoin:
+
+select debug(524288); -- hashjoin == 1U<<19
+select debug(537395200); -- forcemito & hashjoin == 1U<<19 & 1U<<29
+
+2. Basic query:
+
+drop table if exists l;
+drop table if exists r;
+create table l (l1 int, l2 int, l3 int);
+create table r (r1 int, r2 int, r3 int);
+create table s (s1 int, s2 int, s3 int);
+
+insert into l values
+  (42, 44, 11),
+  (41, 45, 22),
+  (43, 42, 33);
+
+insert into r values
+  (41, 44, 10),
+  (42, 44, 20),
+  (43, 44, 30),
+  (41, 45, 40),
+  (43, 45, 50),
+  (43, 44, 60),
+  (42, 44, 70),
+  (42, 44, 80);
+
+insert into s values
+  (41, 44, 10),
+  (42, 44, 20),
+  (34, 44, 30),
+  (41, 45, 40),
+  (34, 45, 50),
+  (34, 44, 60),
+  (42, 44, 70),
+  (42, 44, 80);
+
+select r1, count(l1), sum(s1)  from l, r, s where r1 = l1 and r1 = s1 group by r1;
+
+3. TPC-H query:
+3.1 load your own tpc-h data, probably an SF smaller than 1GB
+3.2 remove the keys:
+
+alter table orders rename to orders_key;
+alter table customer rename to customer_key;
+alter table lineitem rename to lineitem_key;
+
+create table orders (like orders_key);
+create table customer (like customer_key);
+create table lineitem (like lineitem_key);
+
+insert into orders select * from orders_key;
+insert into customer select * from customer_key;
+insert into lineitem select * from lineitem_key;
+
+3.3 run 03.sql:
+
+select 
+	l_orderkey
+--	, count(o_orderkey) -- ERR: if key, then nested dataflow blocks; if no key, then crash
+	, sum(l_extendedprice * (1 - l_discount)) as revenue
+	, o_orderdate
+	, o_shippriority
+from
+	lineitem
+	, orders
+	, customer
+where	
+	l_orderkey = o_orderkey
+	and c_custkey = o_custkey
+--	and c_mktsegment = 'BUILDING' -- STR not supported yet
+	and o_orderdate < date '1995-03-15'
+	and l_shipdate > date '1995-03-15'
+group by
+	l_orderkey
+	, o_orderdate
+	, o_shippriority
+order by
+	revenue desc
+	, o_orderdate
+limit 10
+;
+
