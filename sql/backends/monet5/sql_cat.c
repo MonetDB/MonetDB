@@ -2165,9 +2165,16 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 	}
 
-	if (cur && s->base.id == cur->base.id) /* change current session schema name */
+	if (cur && s->base.id == cur->base.id) {
 		if (!mvc_set_schema(sql, new_name))
 			throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		s = mvc_bind_schema(sql, "sys");
+		assert(s);
+
+		if (!sqlvar_set_string(find_global_var(sql, s, "current_schema"), new_name))
+			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	return msg;
 }

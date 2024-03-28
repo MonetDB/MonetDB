@@ -2647,9 +2647,9 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 
 	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) != NO_DEPENDENCY) {
 		return sql_error(sql, 02,
-						 SQLSTATE(2BM37) "ALTER SCHEMA: unable to "
-						 "rename schema '%s', there are database objects"
-						 " (views) which depend on it", old_name);
+						 SQLSTATE(2BM37) "ALTER SCHEMA: unable to"
+						 " rename schema '%s', there are database objects"
+						 " which depend on it", old_name);
 	}
 
 	rel = rel_create(sql->sa);

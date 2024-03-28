@@ -710,7 +710,7 @@ typedef struct sql_table {
 	int drop_action;	/* only needed for alter drop table */
 
 	ATOMIC_PTR_TYPE data;
-	struct sql_schema *s;
+	sql_schema *s;
 
 	union {
 		struct sql_column *pcol; /* If it is partitioned on a column */
