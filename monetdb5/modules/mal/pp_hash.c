@@ -2438,7 +2438,7 @@ TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 	oid tseq = (*first)? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
 	o = BATdense(0, tseq, rescnt);
 	if (!o) {
-		err = createException(SQL, "hash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "hash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 	o->T.maxval = tseq + rescnt;
