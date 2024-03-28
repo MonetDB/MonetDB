@@ -90,8 +90,8 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 			}
 		}
 	}
-	/* ToDo handle usefull renames, ie new relation name and unique set of attribute names (could reduce set of * attributes) */
-	/* handle both useless and usefull with project [ group by ] */
+	/* ToDo handle useful renames, ie new relation name and unique set of attribute names (could reduce set of * attributes) */
+	/* handle both useless and useful with project [ group by ] */
 	return rel;
 }
 
@@ -1568,7 +1568,7 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 						/* the new generate function calls are valid, update relations */
 						/* we need a new relation for the multiplication and addition/subtraction */
 						if (!upper) {
-							/* be carefull with relations with more than 1 reference, so do in-place replacement */
+							/* be careful with relations with more than 1 reference, so do in-place replacement */
 							list *projs = rel_projections(v->sql, rel, NULL, 1, 1);
 							sql_rel *nrel = rel_groupby(v->sql, rel->l, NULL);
 							nrel->exps = rel->exps;
