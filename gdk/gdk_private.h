@@ -112,8 +112,6 @@ bat BBPinsert(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 void BBPprintinfo(void)
 	__attribute__((__visibility__("hidden")));
-void BBPrelinquish(void)
-	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
