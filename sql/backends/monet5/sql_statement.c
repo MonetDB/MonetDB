@@ -3715,7 +3715,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 	bool add_tz = false, pushed = (v->cand && v->cand == sel);
 
 	if (before) {
-		if (f->type->eclass == EC_TIMESTAMP_TZ && t->type->eclass == EC_TIMESTAMP) {
+		if (f->type->eclass == EC_TIMESTAMP_TZ && (t->type->eclass == EC_TIMESTAMP || t->type->eclass == EC_TIME)) {
 			/* call timestamp+local_timezone */
 			convert = "timestamp_add_msec_interval";
 			add_tz = true;
@@ -3728,7 +3728,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 			/* call timestamp+local_timezone */
 			convert = "timestamp_sub_msec_interval";
 			add_tz = true;
-		} else if (f->type->eclass == EC_TIME_TZ && t->type->eclass == EC_TIME) {
+		} else if (f->type->eclass == EC_TIME_TZ && (t->type->eclass == EC_TIME || t->type->eclass == EC_TIMESTAMP)) {
 			/* call times+local_timezone */
 			convert = "time_add_msec_interval";
 			add_tz = true;
@@ -4057,14 +4057,14 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			q = pushArgument(mb, q, e1->nr);
 			pushInstruction(mb, q);
 		}
-		push_cands = can_push_cands(sel, mod, fimp);
+		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 	}
 	if (q == NULL) {
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			goto bailout;
 		mod = sql_func_mod(f->func);
 		fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
-		push_cands = can_push_cands(sel, mod, fimp);
+		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
 			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
@@ -4124,7 +4124,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* push candidate lists if that's the case */
-		if (f->func->type == F_FUNC && push_cands) {
+		if (push_cands) {
 			for (node *n = ops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 

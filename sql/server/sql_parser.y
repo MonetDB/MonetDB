@@ -432,7 +432,6 @@ int yydebug=1;
 	restricted_ident
 	sstring
 	string
-	type_alias
 	user_schema
 	opt_schema_path
 	ustring
@@ -641,14 +640,14 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT UIDENT aTYPE ALIAS RANK MARGFUNC sqlINT OIDNUM HEXADECIMALNUM OCTALNUM BINARYNUM INTNUM APPROXNUM
+	IDENT UIDENT aTYPE RANK MARGFUNC sqlINT OIDNUM HEXADECIMALNUM OCTALNUM BINARYNUM INTNUM APPROXNUM
 	USING
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
 	sqlDECIMAL sqlFLOAT
 	TINYINT SMALLINT BIGINT HUGEINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
-	BOOL_FALSE BOOL_TRUE
+	sqlBOOL BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	BIG LITTLE NATIVE ENDIAN
 	LEX_ERROR
@@ -2144,6 +2143,8 @@ column_constraint_type:
     NOT sqlNULL	{ $$ = _symbol_create( SQL_NOT_NULL, NULL); }
  |  sqlNULL	{ $$ = _symbol_create( SQL_NULL, NULL); }
  |  UNIQUE	{ $$ = _symbol_create( SQL_UNIQUE, NULL ); }
+ |  UNIQUE NULLS DISTINCT	{ $$ = _symbol_create( SQL_UNIQUE, NULL ); }
+ |  UNIQUE NULLS NOT DISTINCT	{ $$ = _symbol_create( SQL_UNIQUE_NULLS_NOT_DISTINCT, NULL ); }
  |  PRIMARY KEY	{ $$ = _symbol_create( SQL_PRIMARY_KEY, NULL ); }
  |  REFERENCES qname opt_column_list opt_match opt_ref_action
 
@@ -2160,6 +2161,10 @@ column_constraint_type:
 table_constraint_type:
     UNIQUE column_commalist_parens
 			{ $$ = _symbol_create_list( SQL_UNIQUE, $2); }
+ |  UNIQUE NULLS DISTINCT column_commalist_parens
+			{ $$ = _symbol_create_list( SQL_UNIQUE, $4); }
+ |  UNIQUE NULLS NOT DISTINCT column_commalist_parens
+			{ $$ = _symbol_create_list( SQL_UNIQUE_NULLS_NOT_DISTINCT, $5); }
  |  PRIMARY KEY column_commalist_parens
 			{ $$ = _symbol_create_list( SQL_PRIMARY_KEY, $3); }
  |  FOREIGN KEY column_commalist_parens
@@ -3497,6 +3502,15 @@ select_no_parens:
 	  append_int(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $5);
+	  append_int(l, 0);
+	  $$ = _symbol_create_list( SQL_UNION, l); }
+ | select_no_parens OUTER UNION set_distinct opt_corresponding select_no_parens
+	{ dlist *l = L();
+	  append_symbol(l, $1);
+	  append_int(l, $4);
+	  append_list(l, $5);
+	  append_symbol(l, $6);
+	  append_int(l, 1);
 	  $$ = _symbol_create_list( SQL_UNION, l); }
  |  select_no_parens EXCEPT set_distinct opt_corresponding select_no_parens
 	{ dlist *l = L();
@@ -4649,8 +4663,7 @@ column_exp:
 
 opt_alias_name:
     /* empty */	{ $$ = NULL; }
- |  AS ident	{ $$ = $2; }
- |  ident	{ $$ = $1; }
+ |  opt_as ident	{ $$ = $2; }
  ;
 
 atom:
@@ -5332,12 +5345,12 @@ literal:
 		  }
 		  $$ = _newAtomNode(a);
 		}
- | type_alias string
+ | sqlBOOL string
 		{ sql_subtype t;
 		  atom *a = NULL;
 		  int r;
 
-		  if (!(r = sql_find_subtype(&t, $1, 0, 0))) {
+		  if (!(r = sql_find_subtype(&t, "boolean", 0, 0))) {
 			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
 			YYABORT;
 		  }
@@ -5423,17 +5436,14 @@ interval_expression:
 
 qname:
     ident			{ $$ = append_string(L(), $1); }
- |  ident '.' ident		{
-				  m->scanner.schema = $1;
+ |  ident '.' ident		{ m->scanner.schema = $1;
 				  $$ = append_string(
 					append_string(L(), $1), $3);}
- |  ident '.' ident '.' ident	{
-				  m->scanner.schema = $1;
+ |  ident '.' ident '.' ident	{ m->scanner.schema = $1;
 				  $$ = append_string(
 					append_string(
 						append_string(L(), $1), $3),
-					$5)
-				;}
+					$5);}
  ;
 
 column_ref:
@@ -5684,18 +5694,7 @@ data_type:
  | aTYPE		{ sql_find_subtype(&$$, $1, 0, 0); }
  | aTYPE '(' nonzero ')'
 			{ sql_find_subtype(&$$, $1, $3, 0); }
- | type_alias		{ sql_find_subtype(&$$, $1, 0, 0); }
- | type_alias '(' nonzero ')'
-			{ sql_find_subtype(&$$, $1, $3, 0); }
- | type_alias '(' intval ',' intval ')'
-			{ if ($5 >= $3) {
-				sqlformaterror(m, SQLSTATE(22003) "Precision(%d) should be less than number of digits(%d)", $5, $3);
-				$$.type = NULL;
-				YYABORT;
-			  } else {
-				sql_find_subtype(&$$, $1, $3, $5);
-			  }
-			}
+ | sqlBOOL		{ sql_find_subtype(&$$, "boolean", 0, 0); }
  | ident_or_uident	{
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
@@ -5805,18 +5804,6 @@ subgeometry_type:
     }
 ;
 
-type_alias:
- ALIAS
-	{	char *t = sql_bind_alias($1);
-		if (!t) {
-			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
-			$$ = NULL;
-			YYABORT;
-		}
-		$$ = t;
-	}
- ;
-
 varchar:
 	VARCHAR				{ $$ = $1; }
  |	CHARACTER VARYING		{ $$ = $1; }
@@ -5841,7 +5828,6 @@ calc_restricted_ident:
  |  UIDENT opt_uescape
 		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
- |  ALIAS	{ $$ = $1; }
  |  RANK	{ $$ = $1; }	/* without '(' */
  ;
 
@@ -5861,7 +5847,6 @@ calc_ident:
  |  UIDENT opt_uescape
 		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
- |  ALIAS	{ $$ = $1; }
  |  RANK	{ $$ = $1; }	/* without '(' */
  |  MARGFUNC	{ $$ = $1; }	/* without '(' */
  |  non_reserved_word
@@ -5911,6 +5896,7 @@ non_reserved_word:
 | ASC		{ $$ = sa_strdup(SA, "asc"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
 | BIG		{ $$ = sa_strdup(SA, "big"); }
+| sqlBOOL	{ $$ = sa_strdup(SA, "bool"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
 | CENTURY	{ $$ = sa_strdup(SA, "century"); }
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
@@ -7231,6 +7217,7 @@ char *token2string(tokens token)
 	SQL(TYPE);
 	SQL(UNION);
 	SQL(UNIQUE);
+	SQL(UNIQUE_NULLS_NOT_DISTINCT);
 	SQL(UNOP);
 	SQL(UPDATE);
 	SQL(USING);

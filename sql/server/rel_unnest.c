@@ -4197,11 +4197,97 @@ rewrite_rel(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+typedef struct sql_args {
+	list *args;
+	list *exps;
+} sql_args;
+
+static int
+var_name_cmp(sql_arg *v, char *name)
+{
+	return strcmp(v->name, name);
+}
+
+static sql_exp *
+exp_inline_arg(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)rel;
+	(void)depth;
+	sql_args *args = v->data;
+	if (e->type == e_atom && e->r) {
+		sql_arg *a = e->r;
+		int level = is_freevar(e);
+		node *n = list_find(args->args, a->name, (fcmp)&var_name_cmp);
+		if (n) {
+			sql_exp *val = list_fetch(args->exps, list_position(args->args, n->data));
+			val = exp_copy(v->sql, val);
+			exp_setname(v->sql->sa, val, exp_relname(e), exp_name(e));
+			if (level)
+				set_freevar(val, level-1);
+			return val;
+		}
+	}
+	return e;
+}
+
+static sql_rel *
+rel_inline_table_func(visitor *v, sql_rel *rel)
+{
+	if (!rel_is_ref(rel) && rel->op == op_table && !rel->l && rel->r) { /* TODO add input relation (rel->l) rewritting */
+		sql_exp *opf = rel->r;
+		if (opf->type == e_func) {
+			sql_subfunc *f = opf->f;
+
+			if (f->func->vararg || f->func->varres)
+				return rel;
+
+			if (f->func->lang == FUNC_LANG_SQL && f->func->type == F_UNION) {
+				sql_rel *r = rel_parse(v->sql, f->func->s, f->func->query, m_instantiate);
+
+				if (r && is_ddl(r->op) && list_length(r->exps) == 1) {
+					sql_exp *psm = r->exps->h->data;
+					if (psm && psm->type == e_psm && psm->flag == PSM_RETURN) {
+						sql_exp *ret = psm->l;
+						if (ret && ret->type == e_psm && ret->flag == PSM_REL) {
+							r = ret->l;
+							list *exps = r->exps;
+							r = rel_project(v->sql->sa, r, sa_list(v->sql->sa));
+							for(node *n = rel->exps->h, *m = exps->h; n && m; n = n->next, m = m->next) {
+								sql_exp *e = m->data;
+								sql_exp *pe = n->data;
+
+								e = exp_ref(v->sql, e);
+								exp_setname(v->sql->sa, e, exp_relname(pe), exp_name(pe));
+								if (is_freevar(pe))
+									set_freevar(e, is_freevar(pe)-1);
+								append(r->exps, e);
+							}
+							sql_args a;
+							if (f->func->ops) {
+								a.args = f->func->ops;
+								a.exps = opf->l;
+								v->data = &a;
+								r = rel_exp_visitor_topdown(v, r, &exp_inline_arg, true);
+								v->data = NULL;
+							}
+							r = rel_unnest(v->sql, r);
+							return r;
+						}
+					}
+				}
+			}
+		}
+	}
+	return rel;
+}
+
 /* add an dummy true projection column */
 static sql_rel *
 rel_unnest_simplify(visitor *v, sql_rel *rel)
 {
 	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed at rewrite_simplify */
+	if (rel && v->sql->emode != m_deps)
+		rel = rel_inline_table_func(v, rel);
 	if (rel)
 		rel = rewrite_basetable(v->sql, rel);	/* add proper exps lists */
 	if (rel)

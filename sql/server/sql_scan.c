@@ -121,6 +121,7 @@ scanner_init_keywords(void)
 
 	failed += keywords_insert("false", BOOL_FALSE);
 	failed += keywords_insert("true", BOOL_TRUE);
+	failed += keywords_insert("bool", sqlBOOL);
 
 	failed += keywords_insert("ALTER", ALTER);
 	failed += keywords_insert("ADD", ADD);
@@ -1476,16 +1477,11 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 
 	yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
 
-	/* This is needed as ALIAS and aTYPE get defined too late, see
-	   sql_keyword.h */
-	if (token == KW_ALIAS)
-		token = ALIAS;
-
 	if (token == KW_TYPE)
 		token = aTYPE;
 
 	if (token == IDENT || token == COMPARISON ||
-	    token == RANK || token == aTYPE || token == ALIAS || token == MARGFUNC) {
+	    token == RANK || token == aTYPE || token == MARGFUNC) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 		lc->next_string_is_raw = false;
 	} else if (token == STRING) {
@@ -1508,9 +1504,17 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 		case 'e':
 		case 'E':
 			assert(yylval->sval[1] == '\'');
-			GDKstrFromStr((unsigned char *) str,
-						  (unsigned char *) yylval->sval + 2,
-						  lc->yycur-lc->yysval - 2, '\'');
+			if (GDKstrFromStr((unsigned char *) str,
+							  (unsigned char *) yylval->sval + 2,
+							  lc->yycur-lc->yysval - 2, '\'') < 0) {
+				char *err = GDKerrbuf;
+				if (strncmp(err, GDKERROR, strlen(GDKERROR)) == 0)
+					err += strlen(GDKERROR);
+				else if (*err == '!')
+					err++;
+				sql_error(c, 1, SQLSTATE(42000) "%s", err);
+				return LEX_ERROR;
+			}
 			quote = '\'';
 			break;
 		case 'u':
@@ -1552,10 +1556,13 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 						src++;
 				*dst = 0;
 			} else {
-				GDKstrFromStr((unsigned char *)str,
-							  (unsigned char *)yylval->sval + 1,
-							  lc->yycur - lc->yysval - 1,
-							  '\'');
+				if (GDKstrFromStr((unsigned char *)str,
+								  (unsigned char *)yylval->sval + 1,
+								  lc->yycur - lc->yysval - 1,
+								  '\'') < 0) {
+					sql_error(c, 1, SQLSTATE(42000) "%s", GDKerrbuf);
+					return LEX_ERROR;
+				}
 			}
 			break;
 		}

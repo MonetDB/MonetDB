@@ -47,6 +47,10 @@
 
 #include <locale.h>
 
+#ifdef HAVE_WCWIDTH
+#include <wchar.h>
+#endif
+
 #ifdef HAVE_ICONV
 #include <iconv.h>
 #ifdef HAVE_NL_LANGINFO
@@ -413,6 +417,14 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 			c = (c << 6) | (*s & 0x3F);
 			if (--n == 0) {
 				/* last byte of a multi-byte character */
+#ifdef HAVE_WCWIDTH
+				n = wcwidth(c);
+				if (n >= 0)
+					len += n;
+				else
+					len++;		/* assume width 1 if unprintable */
+				n = 0;
+#else
 				len++;
 				/* this list was created by combining
 				 * the code points marked as
@@ -546,7 +558,7 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 					len++;
 				else if (0x0080 <= c && c <= 0x009F)
 					len += 5;
-
+#endif
 			}
 		} else if ((*s & 0xE0) == 0xC0) {
 			assert(n == 0);
@@ -3060,10 +3072,74 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 	return errseen;
 }
 
+#ifdef HAVE_CURL
+#include <curl/curl.h>
+
+#ifndef CURL_WRITEFUNC_ERROR
+#define CURL_WRITEFUNC_ERROR 0
+#endif
+
+static size_t
+write_callback(char *buffer, size_t size, size_t nitems, void *userp)
+{
+	stream *s = userp;
+
+	/* size is expected to always be 1 */
+
+	ssize_t sz = mnstr_write(s, buffer, size, nitems);
+	if (sz < 0)
+		return CURL_WRITEFUNC_ERROR; /* indicate failure to library */
+	return (size_t) sz * size;
+}
+
+static stream *
+open_urlstream(const char *url, char *errbuf)
+{
+	CURL *handle;
+	stream *s;
+	CURLcode ret;
+
+	s = buffer_wastream(NULL, url);
+	if (s == NULL) {
+		snprintf(errbuf, CURL_ERROR_SIZE, "could not allocate memory");
+		return NULL;
+	}
+
+	if ((handle = curl_easy_init()) == NULL) {
+		mnstr_destroy(s);
+		snprintf(errbuf, CURL_ERROR_SIZE, "could not create CURL handle");
+		return NULL;
+	}
+
+	errbuf[0] = 0;
+
+	if ((ret = curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_URL, url)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_WRITEDATA, s)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_VERBOSE, 0)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK ||
+	    (ret = curl_easy_perform(handle)) != CURLE_OK) {
+		curl_easy_cleanup(handle);
+		mnstr_destroy(s);
+		if (errbuf[0] == 0)
+			snprintf(errbuf, CURL_ERROR_SIZE, "%s", curl_easy_strerror(ret));
+		return NULL;
+	}
+	curl_easy_cleanup(handle);
+	(void) mnstr_get_buffer(s);	/* switch to read-only */
+	return s;
+}
+#endif
+
 struct privdata {
 	stream *f;
 	char *buf;
 	Mapi mid;
+#ifdef HAVE_CURL
+	char errbuf[CURL_ERROR_SIZE];
+#endif
 };
 
 #define READSIZE	(1 << 16)
@@ -3074,7 +3150,7 @@ static const char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 static char *
 getfile(void *data, const char *filename, bool binary,
-	uint64_t offset, size_t *size)
+		uint64_t offset, size_t *size)
 {
 	stream *f;
 	char *buf;
@@ -3104,9 +3180,13 @@ getfile(void *data, const char *filename, bool binary,
 				    && filename[x] == ':'
 				    && filename[x+1] == '/'
 				    && filename[x+2] == '/') {
-					if (allow_remote)
-						f = open_urlstream(filename);
-					else
+#ifdef HAVE_CURL
+					if (allow_remote) {
+						f = open_urlstream(filename, priv->errbuf);
+						if (f == NULL && priv->errbuf[0])
+							return priv->errbuf;
+					} else
+#endif
 						return "client refuses to retrieve remote content";
 				}
 			}
@@ -3149,7 +3229,7 @@ getfile(void *data, const char *filename, bool binary,
 				return "error reading file";
 			}
 			if (s == 0) {
-				/* reached EOF withing offset lines */
+				/* reached EOF within offset lines */
 				close_stream(f);
 				return NULL;
 			}

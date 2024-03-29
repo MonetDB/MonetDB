@@ -80,10 +80,12 @@ HASHclear(Hash *h)
 	memset(h->Bckt, 0xFF, h->nbucket * h->width);
 }
 
-#define HASH_VERSION		5
-/* this is only for the change of hash function of the UUID type and MBR
- * type; if HASH_VERSION is increased again from 5, the code associated
- * with HASH_VERSION_NOUUID and HASH_VERSION_NOMBR must be deleted */
+#define HASH_VERSION		6
+/* this is only for the change of hash function of the floating point
+ * types, the UUID type and the MBR type; if HASH_VERSION is increased
+ * again from 6, the code associated with HASH_VERSION_NOUUID and
+ * HASH_VERSION_NOMBR must be deleted */
+#define HASH_VERSION_FLOAT	5
 #define HASH_VERSION_NOMBR	4
 #define HASH_VERSION_NOUUID	3
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
@@ -487,6 +489,8 @@ BATcheckhash(BAT *b)
 							 ((size_t) 1 << 24) |
 #endif
 							 HASH_VERSION_NOUUID) &&
+						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
+						 strcmp(ATOMname(b->ttype), "dbl") != 0 &&
 						 strcmp(ATOMname(b->ttype), "uuid") != 0 &&
 						 strcmp(ATOMname(b->ttype), "mbr") != 0)
 #endif
@@ -497,7 +501,19 @@ BATcheckhash(BAT *b)
 							 ((size_t) 1 << 24) |
 #endif
 							 HASH_VERSION_NOMBR) &&
+						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
+						 strcmp(ATOMname(b->ttype), "dbl") != 0 &&
 						 strcmp(ATOMname(b->ttype), "mbr") != 0)
+#endif
+#ifdef HASH_VERSION_FLOAT
+					     /* if not floating point, also allow previous version */
+					     || (hdata[0] == (
+#ifdef PERSISTENTHASH
+							 ((size_t) 1 << 24) |
+#endif
+							 HASH_VERSION_FLOAT) &&
+						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
+						 strcmp(ATOMname(b->ttype), "dbl") != 0)
 #endif
 						    ) &&
 					    hdata[1] > 0 &&
@@ -729,7 +745,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 	assert(bi.type != TYPE_msk);
@@ -1041,15 +1056,17 @@ HASHprobe(const Hash *h, const void *v)
 	case TYPE_sht:
 		return hash_sht(h, v);
 	case TYPE_int:
-	case TYPE_flt:
 		return hash_int(h, v);
-	case TYPE_dbl:
 	case TYPE_lng:
 		return hash_lng(h, v);
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		return hash_hge(h, v);
 #endif
+	case TYPE_flt:
+		return hash_flt(h, v);
+	case TYPE_dbl:
+		return hash_dbl(h, v);
 	case TYPE_uuid:
 		return hash_uuid(h, v);
 	default:

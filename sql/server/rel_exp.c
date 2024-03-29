@@ -196,6 +196,15 @@ exp_filter(allocator *sa, list *l, list *r, sql_subfunc *f, int anti)
 	if (e == NULL)
 		return NULL;
 	e->card = MAX(exps_card(l),exps_card(r));
+	if (!r) { /* split l */
+		list *nl = sa_list(sa), *nr = sa_list(sa);
+		node *n = l->h;
+		append(nl, n->data); /* sofar only first is left */
+		for(n = n->next; n; n = n->next)
+			append(nr, n->data);
+		l = nl;
+		r = nr;
+	}
 	e->l = l;
 	e->r = r;
 	e->f = f;
@@ -370,6 +379,8 @@ exp_convert(allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype *tot
 sql_exp *
 exp_op( allocator *sa, list *l, sql_subfunc *f )
 {
+	if (f->func->type == F_FILT)
+		return exp_filter(sa, l, NULL, f, false);
 	sql_exp *e = exp_create(sa, e_func);
 	if (e == NULL)
 		return NULL;
@@ -911,6 +922,8 @@ exp_rel(mvc *sql, sql_rel *rel)
 	e->flag = PSM_REL;
 	e->card = is_single(rel)?CARD_ATOM:rel->card;
 	assert(rel);
+	if (is_topn(rel->op))
+		rel = rel->l;
 	if (is_project(rel->op)) {
 		sql_exp *last = rel->exps->t->data;
 		sql_subtype *t = exp_subtype(last);
@@ -1838,7 +1851,7 @@ exp_two_sided_bound_cmp_exp_is_false(sql_exp* e) {
     sql_exp* h = e->f;
     assert (v && l && h);
 
-    return is_anti(e) ? exp_is_null(v) || (exp_is_null(l) && exp_is_null(h)) : exp_is_null(l) || exp_is_null(v) || exp_is_null(h);
+    return is_anti(e) ? exp_is_null(v) || (exp_is_null(l) && exp_is_null(h)) : false;
 }
 
 static inline bool
@@ -2329,8 +2342,13 @@ exp_rel_update_exp(mvc *sql, sql_exp *e, bool up)
 		return e;
 	case e_psm:
 		if (exp_is_rel(e)) {
-			sql_rel *r = exp_rel_get_rel(sql->sa, e);
-			e = r->exps->t->data;
+			sql_rel *r = exp_rel_get_rel(sql->sa, e), *nr = r;
+			if (is_topn(r->op)) {
+				nr = r->l;
+				if (nr && !is_project(nr->op))
+					r->l = nr = rel_project(sql->sa, nr, rel_projections(sql, nr, NULL, 1, 0));
+			}
+			e = nr->exps->t->data;
 			e = exp_ref(sql, e);
 			if (up)
 				set_freevar(e, 1);
@@ -2635,6 +2653,8 @@ exps_bind_column2(list *exps, const char *rname, const char *cname, int *multipl
 						*multiple = 1;
 					if (!res)
 						res = e;
+					if (res && res->alias.label) /* aliases maybe used multiple times without problems */
+						return res;
 				}
 			}
 			return res;
@@ -2647,6 +2667,8 @@ exps_bind_column2(list *exps, const char *rname, const char *cname, int *multipl
 					*multiple = 1;
 				if (!res)
 					res = e;
+				if (res && res->alias.label) /* aliases maybe used multiple times without problems */
+					return res;
 			}
 		}
 	}

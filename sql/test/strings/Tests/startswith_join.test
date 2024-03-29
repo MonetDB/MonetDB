@@ -1,0 +1,431 @@
+statement ok
+CREATE TABLE foo(f string)
+
+statement ok
+CREATE TABLE bar(b string)
+
+-- TRIGGERS NESTED LOOP JOIN
+statement ok
+INSERT INTO foo VALUES ('LEFTJOHN'),('TRASH1'),('TRASH2'),(NULL),(NULL),('TRASH3'),('TRASH4'),('RIGHTJANE'),('rightrobert'),('uptim'),(NULL),('leftlex'),('LEFTJOE'),(NULL),('TRASH5'),('TRASH6'),('TRASH7'),('TRASH8'),('TRASH9'),('TRASH10')
+
+statement ok
+INSERT INTO bar VALUES ('left'),('right'),('up')
+
+query TT rowsort
+SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, false]
+----
+leftlex
+left
+rightrobert
+right
+uptim
+up
+
+query TT rowsort
+SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, true]
+----
+LEFTJOE
+left
+LEFTJOHN
+left
+RIGHTJANE
+right
+leftlex
+left
+rightrobert
+right
+uptim
+up
+
+statement ok
+TRUNCATE TABLE foo
+
+statement ok
+TRUNCATE TABLE bar
+
+-- TRIGGERS SORT BASED JOIN
+statement ok
+INSERT INTO foo VALUES ('Καλή'),('Frühlingsrauschen'),('Das grüne Monokel'),('Καλή Χρονιά'),('Olá, bom dia'),('Risør'),('Wenn der Ölhahn versiegt'),('Punch-Out!! WITH LYRICS'),('Super Mario Bros. 3 WITH LYRICS'),('Δεν καταλαβαίνω'),('Adeus, boa tarde')
+
+statement ok
+INSERT INTO bar VALUES ('Δεν'),('Frühling'),(NULL),('Καλή'),('καλή'),(NULL),('oLÁ'),('Das grüne'),('Punch-Out!!'),('Adeus'),('früh')
+
+query TT rowsort
+SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, false]
+----
+Adeus, boa tarde
+Adeus
+Das grüne Monokel
+Das grüne
+Frühlingsrauschen
+Frühling
+Punch-Out!! WITH LYRICS
+Punch-Out!!
+Δεν καταλαβαίνω
+Δεν
+Καλή
+Καλή
+Καλή Χρονιά
+Καλή
+
+query TT rowsort
+SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, true]
+----
+Adeus, boa tarde
+Adeus
+Das grüne Monokel
+Das grüne
+Frühlingsrauschen
+Frühling
+Frühlingsrauschen
+früh
+Olá, bom dia
+oLÁ
+Punch-Out!! WITH LYRICS
+Punch-Out!!
+Δεν καταλαβαίνω
+Δεν
+Καλή
+Καλή
+Καλή
+καλή
+Καλή Χρονιά
+Καλή
+Καλή Χρονιά
+καλή
+
+statement ok
+drop table foo
+
+statement ok
+drop table bar
+
+statement ok
+CREATE TABLE fal(x STRING)
+
+statement ok
+CREATE TABLE f(y STRING)
+
+statement ok
+COPY 100 RECORDS INTO fal FROM STDIN
+<COPY_INTO_DATA>
+Mary Garcia
+James Ballard
+Alexandria Harris
+Dakota Howell
+Tracy Glover
+Mark Cook
+James Woodard
+Sophia Stone
+Jeffrey Ramirez
+Ryan Knight
+Taylor Lane
+Christopher Russell
+Daniel Sims
+Tony Watts
+Dwayne Johnson
+Jason Dunlap
+Abigail Burton
+Maria Lewis
+Ashley Taylor
+Emma Abbott
+James Whitney
+Philip Maldonado
+Rachel Taylor
+Tina Singleton
+Ricky Johnson
+Anthony Peterson
+Eugene Mata
+Tyler Terry
+Thomas Morales
+Kathy Moore
+William Franco
+Christopher Williams
+David Carter
+Andrew Alvarado
+John Jenkins
+Anthony Charles
+Jose Tran
+Amy Stafford
+Vincent Malone
+Ashley Waters
+Cindy Huffman
+Anthony Hernandez
+Brett Hardy
+Lisa Matthews
+Jeffrey Ingram
+Jessica Miller
+Karen Jones
+Terry Sanders
+Aaron Rodriguez
+Kyle Ortega
+David Clark
+Brent Garrett
+Scott Young
+Shannon Edwards
+Tiffany Macias
+Ricky Gonzalez
+Devin Logan
+Russell Walker
+Michael Nguyen
+Heather Robinson
+April Lawrence
+Christopher Williams
+Laura Gonzalez
+Patrick Ortiz
+Sylvia Phillips
+Cynthia Kemp
+Stephanie Gillespie
+Elizabeth Joseph
+Jay Collins
+Johnny Gibson
+Dr. Audrey Sellers MD
+Desiree Li
+Heather Brown
+Shelly Bauer
+Donna Anderson
+Amy Sharp
+Olivia Howell
+Margaret Tran
+Alexandra Jarvis
+Glen Ray
+Michael Mendoza
+Sarah Hall
+Dennis Moss
+Wanda Brooks
+Debra Powers
+Shannon Nguyen
+Daisy Mcdonald
+Donna Rivera
+Samuel Jackson
+Wendy Howe
+Connor Howell
+Jeffrey Newman
+Daniel Sullivan
+Megan Dunn
+Laura Holland
+Brendan Bates
+Mary Miller
+Thomas Ramirez
+Leah Holland
+Megan Warren
+
+statement ok
+COPY 100 RECORDS INTO f FROM STDIN
+<COPY_INTO_DATA>
+Noah
+Ronald
+Mary
+Jennifer
+Tanya
+Ivan
+Randy
+Erin
+Ryan
+Scott
+Kathryn
+Brandi
+Rebecca
+Katie
+Diane
+Stephen
+Michael
+Jeremiah
+Timothy
+James
+Mark
+Thomas
+Leslie
+Robert
+Joel
+James
+Anna
+Alan
+Janet
+Samuel
+Tanya
+Russell
+Alexis
+Scott
+Jenna
+Eric
+Andrew
+Sandra
+Stephanie
+Jeremy
+Don
+Lisa
+Jacqueline
+Melissa
+Patricia
+Ana
+Danielle
+Cheryl
+Justin
+Karen
+Pamela
+Beverly
+Becky
+Caitlin
+Michael
+Emma
+Darlene
+Darrell
+David
+Wanda
+Sydney
+Susan
+Louis
+Brittany
+William
+Daniel
+Laura
+Kevin
+Jonathon
+James
+Robert
+Denise
+Cassandra
+Stephanie
+Samuel
+Kaitlyn
+David
+Katrina
+Nathan
+Jessica
+Michelle
+Veronica
+Rachel
+Andrew
+Jennifer
+William
+Melanie
+Larry
+Ronald
+Sally
+Joshua
+Chelsea
+Ashley
+Johnny
+Chad
+Nicole
+Joshua
+Michele
+Joseph
+Carolyn
+
+query TT rowsort
+SELECT * FROM fal,f WHERE [fal.x] startswith [f.y]
+----
+Andrew Alvarado
+Andrew
+Andrew Alvarado
+Andrew
+Ashley Taylor
+Ashley
+Ashley Waters
+Ashley
+Daniel Sims
+Daniel
+Daniel Sullivan
+Daniel
+David Carter
+David
+David Carter
+David
+David Clark
+David
+David Clark
+David
+Donna Anderson
+Don
+Donna Rivera
+Don
+Emma Abbott
+Emma
+James Ballard
+James
+James Ballard
+James
+James Ballard
+James
+James Whitney
+James
+James Whitney
+James
+James Whitney
+James
+James Woodard
+James
+James Woodard
+James
+James Woodard
+James
+Jessica Miller
+Jessica
+Johnny Gibson
+Johnny
+Karen Jones
+Karen
+Laura Gonzalez
+Laura
+Laura Holland
+Laura
+Lisa Matthews
+Lisa
+Mark Cook
+Mark
+Mary Garcia
+Mary
+Mary Miller
+Mary
+Michael Mendoza
+Michael
+Michael Mendoza
+Michael
+Michael Nguyen
+Michael
+Michael Nguyen
+Michael
+Rachel Taylor
+Rachel
+Russell Walker
+Russell
+Ryan Knight
+Ryan
+Samuel Jackson
+Samuel
+Samuel Jackson
+Samuel
+Scott Young
+Scott
+Scott Young
+Scott
+Stephanie Gillespie
+Stephanie
+Stephanie Gillespie
+Stephanie
+Thomas Morales
+Thomas
+Thomas Ramirez
+Thomas
+Wanda Brooks
+Wanda
+William Franco
+William
+William Franco
+William
+
+query TT rowsort
+SELECT * FROM fal,f WHERE [fal.x] endswith [f.y]
+----
+Christopher Russell
+Russell
+Elizabeth Joseph
+Joseph
+
+statement ok
+DROP TABLE fal CASCADE
+
+statement ok
+DROP TABLE f

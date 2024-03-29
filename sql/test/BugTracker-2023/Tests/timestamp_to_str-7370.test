@@ -1,7 +1,8 @@
 statement ok
-set time zone interval '+1' hour;
+set time zone interval '+1' hour
 
-query T
-select timestamp_to_str(timestamptz '1970-01-01 14:00:00+01:00', '%d/%m/%Y %H:%M:%S');
+query T nosort
+select timestamp_to_str(timestamptz '1970-01-01 14:00:00+01:00', '%d/%m/%Y %H:%M:%S')
 ----
 01/01/1970 14:00:00
+

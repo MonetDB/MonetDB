@@ -327,6 +327,9 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 		case SQL_UNIQUE:
 			suffix = "unique";
 			break;
+		case SQL_UNIQUE_NULLS_NOT_DISTINCT:
+			suffix = "nndunique";
+			break;
 		case SQL_PRIMARY_KEY:
 			suffix = "pkey";
 			break;
@@ -368,8 +371,9 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 	}
 	switch (s->token) {
 	case SQL_UNIQUE:
+	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
 	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
+		key_type kt = (s->token == SQL_UNIQUE) ? ukey : (s->token == SQL_UNIQUE_NULLS_NOT_DISTINCT) ? unndkey : pkey;
 		sql_key *k;
 		const char *ns = name;
 
@@ -612,10 +616,12 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					}
 					used |= (1<<COL_DEFAULT);
 
-					if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT) {
+					if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT || sym->token == SQL_NEXT) {
 						exp_kind ek = {type_value, card_value, FALSE};
 						sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
 
+						if (!e)
+							return SQL_ERR;
 						if (e && is_atom(e->type)) {
 							atom *a = exp_value(sql, e);
 
@@ -830,8 +836,9 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 
 	switch (s->token) {
 	case SQL_UNIQUE:
+	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
 	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
+		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : s->token == SQL_UNIQUE ? ukey : unndkey);
 		dnode *nms = s->data.lval->h;
 		sql_key *k;
 		const char *ns = name;
@@ -1086,6 +1093,34 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		if (!c) {
 			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
+		}
+		if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT || sym->token == SQL_NEXT) {
+				exp_kind ek = {type_value, card_value, FALSE};
+				sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
+
+				if (!e)
+					return SQL_ERR;
+				if (e && is_atom(e->type)) {
+					atom *a = exp_value(sql, e);
+
+					if (a && atom_null(a)) {
+						switch (mvc_default(sql, c, NULL)) {
+						case -1:
+							(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+							return SQL_ERR;
+						case -2:
+						case -3:
+							(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
+							return SQL_ERR;
+						default:
+							break;
+					}
+					break;
+				}
+			}
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
 		}
 		r = symbol2string(sql, sym, 0, &err);
 		if (!r) {

@@ -1673,7 +1673,7 @@ finish_handle(MapiHdl hdl)
 	if (hdl == NULL)
 		return MERROR;
 	mid = hdl->mid;
-	if (mid->active == hdl && !hdl->needmore &&
+	if (mid->active == hdl && !hdl->needmore && !mnstr_eof(mid->from) &&
 	    read_into_cache(hdl, 0) != MOK)
 		return MERROR;
 	if (mid->to) {
@@ -3423,7 +3423,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 		line = read_line(mid);
 		if (line == NULL) {
 			if (mid->from && mnstr_eof(mid->from)) {
-				return mapi_setError(mid, "unexpected end of file", __func__, MERROR);
+				return mapi_setError(mid, "unexpected end of file", __func__, MTIMEOUT);
 			}
 
 			return mid->error;

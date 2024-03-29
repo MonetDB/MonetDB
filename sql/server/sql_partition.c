@@ -55,8 +55,8 @@ str
 sql_partition_validate_key(mvc *sql, sql_table *nt, sql_key *k, const char* op)
 {
 	if (k->type != fkey) {
-		const char *keys = (k->type == pkey) ? "primary" : "unique";
-		assert(k->type == pkey || k->type == ukey);
+		const char *keys = (k->type == pkey) ? "primary" : k->type == unndkey ? "nndunique" :  "unique";
+		assert(k->type == pkey || k->type == ukey || k->type == unndkey);
 
 		if (isPartitionedByColumnTable(nt)) {
 			assert(nt->part.pcol);
@@ -301,7 +301,7 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 		r->l = NULL; /* omit table from list of dependencies */
 		(void) rel_project_add_exp(sql, r, exp);
 
-		nr = sql_processrelation(sql, nr, 0, 0, 0, 0);
+		nr = sql_processrelation(sql, nr, 0, instantiate, 0, 0);
 		if (nr) {
 			list *blist = rel_dependencies(sql, nr);
 			if (mvc_create_dependencies(sql, blist, mt->base.id, FUNC_DEPENDENCY))

@@ -875,12 +875,12 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 				   le->flag == re->flag && le->flag <= cmp_lt) {
 				sql_exp *mine = NULL, *maxe = NULL;
 
-				if (!(mine = rel_binop_(sql, NULL, le->r, re->r, "sys", "sql_min", card_value, true))) {
+				if (!(mine = rel_binop_(sql, NULL, exp_copy(sql, le->r), exp_copy(sql, re->r), "sys", "sql_min", card_value, true))) {
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
 					continue;
 				}
-				if (!(maxe = rel_binop_(sql, NULL, le->f, re->f, "sys", "sql_max", card_value, true))) {
+				if (!(maxe = rel_binop_(sql, NULL, exp_copy(sql, le->f), exp_copy(sql, re->f), "sys", "sql_max", card_value, true))) {
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
 					continue;
@@ -2397,6 +2397,11 @@ rel_join_order_(visitor *v, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
+	/*
+	if (is_join(rel->op))
+		rel = reorder_join(v, rel);
+	return rel;
+	*/
 
 	switch (rel->op) {
 	case op_basetable:
@@ -2454,13 +2459,17 @@ rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_join_order_(v, rel);
+	/*
+	rel = rel_visitor_bottomup(v, rel, &rel_join_order_);
+	return rel;
+	*/
 }
 
 run_optimizer
 bind_join_order(visitor *v, global_props *gp)
 {
 	int flag = v->sql->sql_optimizer;
-	return gp->opt_level == 1 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
+	return gp->opt_level == 1 && gp->opt_cycle < 10 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
 		   gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;
 }
 
@@ -2580,15 +2589,17 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 				if (exp_find_column(rl, ne->l, -2) == cl) {
 					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
 
-					equal = exp_match_exp(ne->r, e);
-					if (!equal)
+					if (e)
+						equal = exp_match_exp(ne->r, e);
+					if (!e || !equal)
 						return rel;
 					re = ne->r;
 				} else if (exp_find_column(rl, ne->r, -2) == cl) {
 					sql_exp *e = (or != r)?rel_find_exp(or, re):re;
 
-					equal = exp_match_exp(ne->l, e);
-					if (!equal)
+					if (e)
+						equal = exp_match_exp(ne->l, e);
+					if (!e || !equal)
 						return rel;
 					re = ne->l;
 				} else

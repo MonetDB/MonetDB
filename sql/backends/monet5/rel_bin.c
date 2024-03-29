@@ -918,8 +918,10 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 		return NULL;
 	if (!single_value && !case_when->nrcols) {
 		stmt *l = isel;
-		if (!l)
+		if (!l && left)
 			l = bin_find_smallest_column(be, left);
+		else if (!l)
+			return NULL;
 		case_when = stmt_const(be, l, case_when);
 		if (case_when)
 			case_when->cand = isel;
@@ -1709,7 +1711,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				}
 				if (!s)
 					return s;
-				if (s->nrcols == 0 && first)
+				if (s->nrcols == 0 && first && left)
 					s = stmt_const(be, bin_find_smallest_column(be, swapped?right:left), s);
 				list_append(ops, s);
 				first = 0;
@@ -4352,8 +4354,10 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 		if (s->nrcols == 0){
-			if (!predicate && sub)
+			if (!predicate && sub && !list_empty(sub->op4.lval))
 				predicate = stmt_const(be, bin_find_smallest_column(be, sub), stmt_bool(be, 1));
+			else if (!predicate)
+				predicate = const_column(be, stmt_bool(be, 1));
 			if (e->type != e_cmp) {
 				sql_subtype *bt = sql_bind_localtype("bit");
 
@@ -4645,7 +4649,9 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt_add_column_predicate(be, c->c);
 
 				col = stmt_col(be, c->c, dels, dels->partition);
-				if ((k->type == ukey) && stmt_has_null(col)) {
+				if (k->type == unndkey)
+					s = stmt_uselect(be, col, cs, cmp_equal, s, 0, 1);
+				else if ((k->type == ukey) && stmt_has_null(col)) {
 					stmt *nn = stmt_selectnonil(be, col, s);
 					s = stmt_uselect(be, col, cs, cmp_equal, nn, 0, 0);
 				} else {
@@ -4670,7 +4676,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				list_append(lje, col);
 				list_append(rje, cs);
 			}
-			s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, 0, 0);
+			s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, 0, k->type == unndkey? 1: 0);
 			s = stmt_result(be, s, 0);
 		}
 		s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), NULL, ne);
@@ -4734,12 +4740,12 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			s = stmt_project(be, nn, s);
 		}
 		if (h->nrcols) {
-			s = stmt_join(be, s, h, 0, cmp_equal, 0, 0, false);
+			s = stmt_join(be, s, h, 0, cmp_equal, 0, k->type == unndkey? 1: 0, false);
 			/* s should be empty */
 			s = stmt_result(be, s, 0);
 			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 		} else {
-			s = stmt_uselect(be, s, h, cmp_equal, NULL, 0, 0);
+			s = stmt_uselect(be, s, h, cmp_equal, NULL, 0, k->type == unndkey? 1: 0);
 			/* s should be empty */
 			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 		}
@@ -4846,7 +4852,7 @@ sql_insert_key(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stmt *
 	 *      insert values
 	 *      insert fkey/pkey index
 	 */
-	if (k->type == pkey || k->type == ukey) {
+	if (k->type == pkey || k->type == ukey || k->type == unndkey) {
 		return insert_check_ukey(be, inserts, k, idx_inserts);
 	} else {		/* foreign keys */
 		return insert_check_fkey(be, inserts, k, idx_inserts, pin);

@@ -391,7 +391,7 @@ CONDITIONALS = {
     'SANITIZER'            : "@SANITIZER_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
-    'KNOWNFAIL'            : False, # skip on release branch when not in testweb
+    'KNOWNFAIL'            : False, # normally skip, but --alltests or explicit
     'HAVE_MONETDBJDBC_JAR' : False,
     'HAVE_JDBCCLIENT_JAR'  : False,
     'HAVE_JDBCTESTS_JAR'   : False,
@@ -1926,18 +1926,11 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
             ('.py',           '.py',     'python', ''),
             ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
             ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-            ('.malC',         '.malC',   'mal',    'MAL'),
-            ('_s00.malC',     '.malC',   'malXs',  'MAL'),
-            ('_p00.malC',     '.malC',   'malXp',  'MAL'),
             ('.sql',          '.sql',    'sql',    'SQL'),
-            ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
-            ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
             ('.R',            '.R',      'R',      'SQL'),
             ('.rb',           '.rb',     'ruby',   'SQL'),
             #TODO:
             # ('.java',         '.java',   'Java',   'SQL'),
-            # ('_s00.java',     '.java',   'JavaXs', 'SQL'),
-            # ('_p00.java',     '.java',   'JavaXp', 'SQL'),
             # ('.odmg',         '.odmg',   'odmg',   'SQL'),
         )
         for tst, ext, cll, srv in tests:
@@ -1950,11 +1943,11 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
                 break
         else:
             if os.name == "nt":
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|malC|sql)`"
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|sql)`"
             #TODO:
             #elif os.name == "posix":
             else:
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.malC|.sql|.R|.rb]`"
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.R|.rb]`"
             if verbosity > 1:
                 print('%s%s  ' %
                       (prompt(), os.path.join(env['TSTDIR'], TST + EXT)), end='')
@@ -2100,10 +2093,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
     if reason:
         pass
     elif MissingTests:
-        reason = "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests))
-        elem = SkipTest(env, TST, EXT, reason, length)
-    elif EXT == ".malC" and  not env['exe']['MAL_Client'][0]:
-        reason = "as %s is not available." % env['MALCLIENT'].split(None, 1)[0]
+        reason = "as required test%s '%s' failed." % ('s' if len(MissingTests) != 1 else '', "', '".join(MissingTests))
         elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
         reason = "as %s is not available." % env['SQLCLIENT'].split(None, 1)[0]
@@ -2122,12 +2112,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
         #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.", length)
     elif MissingMods:
         reason = "as modules '%s` are missing." % str(MissingMods)
-        elem = SkipTest(env, TST, EXT, reason, length)
-    elif CALL == "malXp":
-        reason = "as multiple MAL clients in parallel are currently not supported by %s." % THISFILE
-        elem = SkipTest(env, TST, EXT, reason, length)
-    elif CALL == "sqlXp":
-        reason = "as multiple SQL clients in parallel are currently not supported by %s." % THISFILE
         elem = SkipTest(env, TST, EXT, reason, length)
     else:
         test = re.compile("^"+TST+r"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
@@ -2548,7 +2532,7 @@ def killProc(proc, outfile = None, cmd = None):
             out = ''
     else:
         try:
-            with process.Popen(['gdb', '-batch', '-ex', 'thread apply all bt full', '-p', str(proc.pid)], stdout=process.PIPE,
+            with process.Popen(['gdb', '-p', str(proc.pid), '-batch', '-ex', 'thread apply all bt full', '-ex', 'call dump_threads()'], stdout=process.PIPE,
                                text=True) as p:
                 try:
                     # gdb sometimes hangs when trying to get the stack
@@ -2885,7 +2869,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                         port=int(pSrvr.port),
                                         database=TSTDB,
                                         language='sql',
-                                        timeout=TIMEOUT)
+                                        timeout=TIMEOUT,
+                                        alltests=CONDITIONALS['KNOWNFAIL'])
                         except KeyboardInterrupt:
                             raise
                         except:
@@ -2899,27 +2884,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 pass
                 cmd = [sys.executable, TST + EXT, TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
-            elif CALL in ["mal", "malXs"]:
-                TSTs = []
-                if CALL == "mal":
-                    X=""
-                else:
-                    X="_s[0-9][0-9]"
-                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = listdir(os.getcwd())
-                d.sort()
-                for f in d:
-                    if test.match(f):
-                        TSTs.append(f)
-
-                if CALL.startswith("mal"):
-                    Clnt = splitcommand(exe['MAL_Client'][1])
-                else:
-                    Clnt = []   # cannot happen
-                for f in TSTs:
-                    returncode = RunIt(Clnt, True, openutf8(f), ClntOut, ClntErr, TIMEOUT)
-                    if returncode:
-                        break
             elif CALL == "sqltest" or CALL == "maltest":
                 issqllogictest = True
                 import MonetDBtesting.sqllogictest as sqllogictest
@@ -2935,7 +2899,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                     port=int(pSrvr.port),
                                     database=TSTDB,
                                     language=lang,
-                                    timeout=TIMEOUT)
+                                    timeout=TIMEOUT,
+                                    alltests=CONDITIONALS['KNOWNFAIL'])
                     except KeyboardInterrupt:
                         raise
                     except:
@@ -2969,13 +2934,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                             # something went wrong, we don't know what
                             # print a stack trace and continue
                             sys.excepthook(*sys.exc_info())
-            elif CALL in ["sql", "sqlXs"]:
+            elif CALL == "sql":
                 TSTs = []
-                if CALL == "sql":
-                    X=""
-                else:
-                    X="_s[0-9][0-9]"
-                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+                test = re.compile("^"+TST+EXT+"$", re.MULTILINE)
                 d = listdir(os.getcwd())
                 d.sort()
                 for f in d:
@@ -3524,8 +3485,8 @@ def main(argv) :
     nomito = opts.nomito
     global restart
     restart = opts.restart
-    if int(MonetDB_VERSION[1])%2 == 0 or opts.alltests:
-        CONDITIONALS['KNOWNFAIL'] = 'execute'
+    if opts.alltests:
+        CONDITIONALS['KNOWNFAIL'] = True
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
     env['GDK_NR_THREADS'] = str(opts.nr_threads)
@@ -3877,7 +3838,7 @@ def main(argv) :
 
         exe = {}
         exe['mserver5']       = CheckExec('mserver5')     , 'mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
-                                                               (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, not nomito and '--forcemito' or '')
+                                                               (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, '--forcemito' if not nomito else '')
         exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], '${PORT}')
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}')
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}')
@@ -3901,10 +3862,9 @@ def main(argv) :
                     ErrXit("%s: not a valid test name" % args[0])
                 args = [head]
                 if tail != 'All':
-                    CONDITIONALS['KNOWNFAIL'] = 'execute'
-                    for ext in ('_s00.malC', '_p00.malC', '_s00.sql',
-                                '_p00.sql', '.MAL.py', '.SQL.py', '.malC',
-                                '.sql', '.py', '.R', ''):
+                    CONDITIONALS['KNOWNFAIL'] = True
+                    for ext in ('.test', '.maltest', 'MAL.py', '.SQL.py',
+                                '.sql', '.py', '.R', '.rb', ''):
                         # extentions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
                             args.append(tail[:-len(ext + '.in')])
@@ -3918,11 +3878,11 @@ def main(argv) :
                     else:
                         ErrXit("%s: not a valid test name" % args[0])
             elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
-                CONDITIONALS['KNOWNFAIL'] = 'execute'
+                CONDITIONALS['KNOWNFAIL'] = True
                 args = [head, tail]
 
-        if   len(args) == 1:
-            if   os.path.isdir(args[0]):
+        if len(args) == 1:
+            if os.path.isdir(args[0]):
                 d = os.path.realpath(args[0])
                 if startswithpath(d + os.sep, TSTSRCBASE + os.sep):
                     dirlist.append(d)
@@ -3934,7 +3894,7 @@ def main(argv) :
             elif args[0] != "All":
                 #TODO:
                 # check, whether args[0] in All
-                CONDITIONALS['KNOWNFAIL'] = 'execute'
+                CONDITIONALS['KNOWNFAIL'] = True
                 testlist.append(args[0])
         elif len(args) > 1:
             i = 0
@@ -3947,7 +3907,7 @@ def main(argv) :
                     # WARNING/ERROR
                 i = i + 1
             if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
-                CONDITIONALS['KNOWNFAIL'] = 'execute'
+                CONDITIONALS['KNOWNFAIL'] = True
                 while i < len(args):
                     if os.sep not in args[i]:
                         #TODO:

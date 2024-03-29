@@ -1230,7 +1230,7 @@ rel_select_order(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* Compute the efficiency of using this expression earl	y in a group by list */
+/* Compute the efficiency of using this expression early in a group by list */
 static int
 score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 {

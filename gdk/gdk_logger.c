@@ -206,8 +206,10 @@ logbat_new(int tt, BUN size, role_t role)
 
 	if (nb) {
 		BBP_pid(nb->batCacheid) = 0;
-		if (role == PERSISTENT)
+		if (role == PERSISTENT) {
 			BATmode(nb, false);
+			nb = BATsetaccess(nb, BAT_READ);
+		}
 	} else {
 		TRC_CRITICAL(GDK, "creating new BAT[%s]#" BUNFMT " failed\n", ATOMname(tt), size);
 	}
@@ -1222,6 +1224,8 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 	bool ok = true;
 	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 
+	(void) maxupdated;	/* only used inside assert() */
+
 	if (!lg->flushing)
 		ATOMIC_AND(&GDKdebug, ~CHECKMASK);
 
@@ -1249,16 +1253,40 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 			if (updated && BAThash(lg->catalog_id) == GDK_SUCCEED) {
 				BATiter cni = bat_iterator(lg->catalog_id);
 				BUN p;
+				BUN posnew = BUN_NONE;
+				BUN posold = BUN_NONE;
 				MT_rwlock_rdlock(&cni.b->thashlock);
 				HASHloop_int(cni, cni.b->thash, p, &l.id) {
-					(void)maxupdated;
-					assert(p < maxupdated);
-					updated[p / 32] |= 1U << (p % 32);
-					/* there should only be one hit */
-					break;
+					lng lid = *(lng *) Tloc(lg->catalog_lid, p);
+					if (lid == lng_nil || lid > tr->tid)
+						posnew = p;
+					else if (lid == tr->tid)
+						posold = p;
 				}
 				MT_rwlock_rdunlock(&cni.b->thashlock);
 				bat_iterator_end(&cni);
+				/* Normally at this point, posnew is the
+				 * location of the bat that this
+				 * transaction is working on, and posold
+				 * is the location of the previous
+				 * version of the bat.  If LOG_CREATE,
+				 * both are relevant, since the latter
+				 * is the new bat, and the former is the
+				 * to-be-destroyed bat.  For
+				 * LOG_DESTROY, only posnew should be
+				 * relevant, but for the other types, if
+				 * the table is destroyed later in the
+				 * same transaction, we need posold, and
+				 * else (the normal case) we need
+				 * posnew. */
+				if (posnew != BUN_NONE) {
+					assert(posnew < maxupdated);
+					updated[posnew / 32] |= 1U << (posnew % 32);
+				}
+				if ((l.flag == LOG_CREATE || posnew == BUN_NONE) && posold != BUN_NONE) {
+					assert(posold < maxupdated);
+					updated[posold / 32] |= 1U << (posold % 32);
+				}
 			}
 			break;
 		default:
@@ -1661,14 +1689,14 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 		if (lid == -1)
 			continue;	/* remove */
 
-		if (BUNappend(nbids, &col, false) != GDK_SUCCEED ||
-		    BUNappend(noids, &nid, false) != GDK_SUCCEED ||
+		if (BUNappend(nbids, &col, true) != GDK_SUCCEED ||
+		    BUNappend(noids, &nid, true) != GDK_SUCCEED ||
 		    BUNappend(nlids, &lid, false) != GDK_SUCCEED ||
 		    BUNappend(ncnts, &cnt, false) != GDK_SUCCEED)
 			err = 1;
 		if (BUNfnd(lg->dcatalog, &pos) != BUN_NONE) {
 			pos = (oid) (BATcount(nbids) - 1);
-			if (BUNappend(ndels, &pos, false) != GDK_SUCCEED)
+			if (BUNappend(ndels, &pos, true) != GDK_SUCCEED)
 				err = 1;
 		}
 	}
@@ -1684,10 +1712,7 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	/* point of no return */
 	if (log_switch_bat(catalog_bid, nbids, lg->fn, "catalog_bid") != GDK_SUCCEED ||
 	    log_switch_bat(catalog_id, noids, lg->fn, "catalog_id") != GDK_SUCCEED ||
-	    log_switch_bat(dcatalog, ndels, lg->fn, "dcatalog") != GDK_SUCCEED ||
-	    (nbids = BATsetaccess(nbids, BAT_READ)) == NULL ||
-	    (noids = BATsetaccess(noids, BAT_READ)) == NULL ||
-	    (ndels = BATsetaccess(ndels, BAT_READ)) == NULL) {
+	    log_switch_bat(dcatalog, ndels, lg->fn, "dcatalog") != GDK_SUCCEED) {
 		logbat_destroy(nbids);
 		logbat_destroy(noids);
 		logbat_destroy(ndels);
@@ -1869,9 +1894,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 		BATclear(lg->dseqs, true);
 
 		if (log_switch_bat(lg->seqs_id, ids, lg->fn, "seqs_id") != GDK_SUCCEED ||
-		    log_switch_bat(lg->seqs_val, vals, lg->fn, "seqs_val") != GDK_SUCCEED ||
-		    (ids = BATsetaccess(ids, BAT_READ)) == NULL ||
-		    (vals = BATsetaccess(vals, BAT_READ)) == NULL) {
+		    log_switch_bat(lg->seqs_val, vals, lg->fn, "seqs_val") != GDK_SUCCEED) {
 			logbat_destroy(ids);
 			logbat_destroy(vals);
 			GDKfree(n);
@@ -2056,11 +2079,6 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 			GDKerror("cannot create catalog bats");
 			goto error;
 		}
-		if ((lg->catalog_bid = BATsetaccess(lg->catalog_bid, BAT_READ)) == NULL ||
-		    (lg->catalog_id = BATsetaccess(lg->catalog_id, BAT_READ)) == NULL ||
-		    (lg->dcatalog = BATsetaccess(lg->dcatalog, BAT_READ)) == NULL) {
-			goto error;
-		}
 		TRC_INFO(WAL, "create %s catalog\n", fn);
 
 		/* give the catalog bats names so we can find them
@@ -2211,6 +2229,11 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 			GDKerror("Logger_new: cannot load seqs bats");
 			goto error;
 		}
+		if ((lg->seqs_val = BATsetaccess(lg->seqs_val, BAT_READ)) == NULL ||
+		    (lg->seqs_id = BATsetaccess(lg->seqs_id, BAT_READ)) == NULL ||
+		    (lg->dseqs = BATsetaccess(lg->dseqs, BAT_READ)) == NULL) {
+			goto error;
+		}
 	} else {
 		lg->seqs_id = logbat_new(TYPE_int, 1, PERSISTENT);
 		lg->seqs_val = logbat_new(TYPE_lng, 1, PERSISTENT);
@@ -2237,11 +2260,6 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 			goto error;
 		}
 		needcommit = true;
-	}
-	if ((lg->seqs_val = BATsetaccess(lg->seqs_val, BAT_READ)) == NULL ||
-	    (lg->seqs_id = BATsetaccess(lg->seqs_id, BAT_READ)) == NULL ||
-	    (lg->dseqs = BATsetaccess(lg->dseqs, BAT_READ)) == NULL) {
-		goto error;
 	}
 	dbg = ATOMIC_GET(&GDKdebug);
 	ATOMIC_AND(&GDKdebug, ~CHECKMASK);
@@ -2651,8 +2669,7 @@ log_flush(logger *lg, ulng ts)
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
-			if ((filename =
-			     GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
+			if ((filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
 				GDKfree(updated);
 				return GDK_FAIL;
 			}
@@ -3394,8 +3411,9 @@ log_add_bat(logger *lg, BAT *b, log_id id, int tid)
 	bid = b->batCacheid;
 	TRC_DEBUG(WAL, "create %d\n", id);
 	assert(log_find(lg->catalog_bid, lg->dcatalog, bid) == BUN_NONE);
-	if (BUNappend(lg->catalog_bid, &bid, true) != GDK_SUCCEED || BUNappend(lg->catalog_id, &id, true) != GDK_SUCCEED
-	    || BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED ||
+	if (BUNappend(lg->catalog_bid, &bid, true) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_id, &id, true) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_lid, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (lg->current)

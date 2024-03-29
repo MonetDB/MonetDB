@@ -25,7 +25,6 @@
 #include "sql_types.h"
 #include "sql_keyword.h"	/* for keyword_exists(), keywords_insert(), init_keywords(), exit_keywords() */
 
-list *aliases = NULL;
 list *types = NULL;
 list *funcs = NULL;
 
@@ -740,35 +739,6 @@ sql_dup_subfunc(allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 }
 
 
-static void
-sql_create_alias(allocator *sa, const char *name, const char *alias)
-{
-	sql_alias *a = SA_ZNEW(sa, sql_alias);
-
-	if(a) {
-		a->name = sa_strdup(sa, name);
-		a->alias = sa_strdup(sa, alias);
-		list_append(aliases, a);
-		if (!keyword_exists(a->alias) )
-			(void) keywords_insert(a->alias, KW_ALIAS);
-	}
-}
-
-char *
-sql_bind_alias(const char *alias)
-{
-	node *n;
-
-	for (n = aliases->h; n; n = n->next) {
-		sql_alias *a = n->data;
-
-		if (strcmp(a->alias, alias) == 0) {
-			return a->name;
-		}
-	}
-	return NULL;
-}
-
 static sqlid local_id = 1;
 
 static sql_type *
@@ -969,7 +939,6 @@ sqltypeinit( allocator *sa)
 	PTR = *t++ = sql_create_type(sa, "PTR", 0, 0, 0, EC_TABLE, "ptr");
 
 	BIT = *t++ = sql_create_type(sa, "BOOLEAN", 1, 0, 2, EC_BIT, "bit");
-	sql_create_alias(sa, BIT->base.name, "BOOL");
 
 	STR = *t++ = sql_create_type(sa, "VARCHAR", 0, 0, 0, EC_STRING, "str");
 	*t++ = sql_create_type(sa, "CHAR",    0, 0, 0, EC_CHAR,   "str");
@@ -1736,10 +1705,9 @@ void
 types_init(allocator *sa)
 {
 	local_id = 1;
-	aliases = sa_list(sa);
 	types = sa_list(sa);
 	localtypes = sa_list(sa);
 	funcs = sa_list(sa);
-	funcs->ht = hash_new(sa, 1024, (fkeyvalue)&base_key);
+	funcs->ht = hash_new(sa, 64*1024, (fkeyvalue)&base_key);
 	sqltypeinit( sa );
 }

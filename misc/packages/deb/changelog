@@ -1,3 +1,113 @@
+monetdb (11.49.5) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7390: Some MonetDB Server crashes found
+  * GH#7465: Unexpected result when using `NULL` in `BETWEEN`
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 12 Mar 2024 10:20:32 +0100
+
+monetdb (11.49.5) unstable; urgency=low
+
+  * gdk: The internal hash function for floating point types has been changed.
+    It is now no longer based on the bit representation, but on the value,
+    meaning that +0 and -0 (yes, they both exist in floating point) now
+    hash to the same value.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 8 Mar 2024 10:20:32 +0100
+
+monetdb (11.49.5) unstable; urgency=low
+
+  * sql: performance improvement of 'startswith' and 'endswith' filter functions
+    for join operators
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Thu, 7 Mar 2024 10:20:32 +0100
+
+monetdb (11.49.5) unstable; urgency=low
+
+  * clients: Fixed an issue where mclient wouldn't exit if the server it had
+    connected to exited for whatever reason while the client was waiting
+    for a query result.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 6 Mar 2024 10:20:32 +0100
+
+monetdb (11.49.3) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#6800: Please add information_schema (ANSI SQL norm)
+  * GH#7152: Occasional dbfarm corruption upon database restart
+  * GH#7412: MonetDB server crashes in `vscanf`
+  * GH#7415: MonetDB server crashes in `HEAP_malloc`
+  * GH#7416: MonetDB server crashes in `atom_get_int`
+  * GH#7417: MonetDB server crashes in `trimchars`.
+  * GH#7418: MonetDB server crashes in `bind_col_exp`
+  * GH#7420: Performance issue with lower(string)
+  * GH#7425: The last statement, execution error, is a false positive?
+  * GH#7426: Unexpected result for INNER JOIN with IS NOT NULL
+  * GH#7428: Unexpected result when using BETWEEN operator
+  * GH#7429: Unexpected result when using `CASE WHEN`
+  * GH#7430: Unexpected result when using `AND` and `IS NOT NULL`
+  * GH#7431: [bug] Error code found, please confirm
+  * GH#7432: MonetDB server crashes in `dameraulevenshtein`
+  * GH#7433: MonetDB server crashes in `exp_atom`
+  * GH#7434: MonetDB server crashes in `exp_bin`
+  * GH#7435: MonetDB server crashes in `exp_copy`
+  * GH#7436: MonetDB server crashes in `exp_ref`
+  * GH#7437: MonetDB server crashes in `exp_values_set_supertype`
+  * GH#7438: MonetDB server crashes in `exps_bind_column`
+  * GH#7439: MonetDB server crashes in `exps_card`
+  * GH#7440: MonetDB server crashes in `gc_col`
+  * GH#7441: MonetDB server crashes in `is_column_unique`
+  * GH#7442: MonetDB server crashes in `mat_join2`
+  * GH#7443: MonetDB server crashes in `merge_table_prune_and_unionize`
+  * GH#7444: [bug] the table cannot be created because the reserved word is
+    incorrectly set
+  * GH#7447: Unexpected result when using `BETWEEN` in `INNER JOIN`
+  * GH#7448: Unexpected result when using `AND`/`OR` chain
+  * GH#7450: Unexpected result when `CREATE VIEW` with `WHERE NULL`
+  * GH#7451: Unexpected result when using `BETWEEN` and `CAST`
+  * GH#7453: Cannot recover an msqldump
+  * GH#7455: Unexpected result when using `BETWEEN` with `BOOLEAN` values
+  * GH#7456: Crash when `INNER JOIN` with `VIEW`
+  * GH#7457: Unexpected result when using `AND` with `INTEGER`
+  * GH#7458: Unexpected result when using `SIGN`
+  * GH#7461: Crash by potentially use of bad escape characters
+  * GH#7462: Crash when using `BETWEEN AND`
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 04 Mar 2024 15:07:11 +0100
+
+monetdb (11.49.3) unstable; urgency=low
+
+  * gdk: Fixed a regression where bats weren't always cleaned up when they
+    weren't needed anymore.  In particular, after a DELETE FROM table query
+    without a WHERE clause (which deletes all rows from the table), the
+    bats for the table get replaced by new ones, and the old, now unused,
+    bats weren't removed from the database.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 1 Mar 2024 15:07:11 +0100
+
+monetdb (11.49.3) unstable; urgency=low
+
+  * geom: We switched over to using the reentrant interface of the geos library.
+    This fixed a number of bugs that would occur sporadically.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 15 Jan 2024 15:07:11 +0100
+
+monetdb (11.49.3) unstable; urgency=low
+
+  * sql: The function json.isvalid(json) incorrectly returned true if the
+    argument was null.  It should return null.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 15 Jan 2024 15:07:11 +0100
+
+monetdb (11.49.3) unstable; urgency=low
+
+  * MonetDB: The copyright for the MonetDB software has been transferred to the newly
+    established MonetDB Foundation, a not-for-profit foundation with the
+    express goal of furthering the MonetDB database system.  The license
+    for the software does not change: MonetDB remains fully open source.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 11 Jan 2024 15:07:11 +0100
+
 monetdb (11.49.1) unstable; urgency=low
 
   * Rebuilt.

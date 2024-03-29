@@ -674,7 +674,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
 	if (*opt && rel)
-		rel = sql_processrelation(m, rel, 0, 0, 0, 0);
+		rel = sql_processrelation(m, rel, 0, 1, 0, 0);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement", "%s", m->errstr);
@@ -890,7 +890,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	refs = sa_list(m->sa);
 	rel = rel_read(m, expr, &pos, refs);
 	if (rel)
-		rel = sql_processrelation(m, rel, 0, 0, 0, 0);
+		rel = sql_processrelation(m, rel, 0, 1, 0, 0);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement2", "%s", m->errstr);

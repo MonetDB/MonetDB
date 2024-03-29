@@ -1296,8 +1296,9 @@ mvc_create_remote(sql_table **t, mvc *m, sql_schema *s, const char *name, int pe
 }
 
 static str
-remote_drop(mvc *m, sqlid id)
+remote_drop(mvc *m, sql_table *t)
 {
+	sqlid id = t->base.id;
 	int log_res = 0;
 	sql_trans *tr = m->session->tr;
 	sqlstore *store = tr->store;
@@ -1305,7 +1306,9 @@ remote_drop(mvc *m, sqlid id)
 	sql_table *remote_user_info = find_sql_table(tr, sys, REMOTE_USER_INFO);
 	sql_column *remote_user_info_id = find_sql_column(remote_user_info, "table_id");
 	oid rid = store->table_api.column_find_row(tr, remote_user_info_id, &id, NULL);
-	if (is_oid_nil(rid) || (log_res = store->table_api.table_delete(tr, remote_user_info, rid)) != 0)
+	if (is_oid_nil(rid)) {
+		TRC_WARNING(SQL_TRANS, "Drop table: %s %s no remote info\n", t->s->base.name, t->base.name);
+	} else if ((log_res = store->table_api.table_delete(tr, remote_user_info, rid)) != 0)
 		throw(SQL, "sql.drop_table", SQLSTATE(42000) "Drop table failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
@@ -1316,7 +1319,7 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 	char *msg = NULL;
 	TRC_DEBUG(SQL_TRANS, "Drop table: %s %s\n", s->base.name, t->base.name);
 
-	if (isRemote(t) && (msg = remote_drop(m, t->base.id)) != NULL)
+	if (isRemote(t) && (msg = remote_drop(m, t)) != NULL)
 		return msg;
 
 	switch (sql_trans_drop_table(m->session->tr, s, t->base.name, drop_action ? DROP_CASCADE_START : DROP_RESTRICT)) {
@@ -1558,8 +1561,12 @@ mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger **tres)
 sql_rel *
 sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
+	int emode = sql->emode;
+	if (!instantiate)
+		sql->emode = m_deps;
 	if (rel)
 		rel = rel_unnest(sql, rel);
+	sql->emode = emode;
 	if (rel)
 		rel = rel_optimizer(sql, rel, profile, instantiate, value_based_opt, storage_based_opt);
 	return rel;

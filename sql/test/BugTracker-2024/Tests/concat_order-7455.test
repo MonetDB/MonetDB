@@ -13,59 +13,66 @@ INSERT INTO t0 (c0) VALUES ('a')
 statement ok
 INSERT INTO t0 (c0) VALUES ('b')
 
-query TTT
+query ITT nosort
 SELECT * FROM v0, t0
 ----
-True
+1
 (empty)
 0
-True
+1
 a
 NULL
-True
+1
 b
 NULL
-True
+1
 (empty)
 0
-True
+1
 a
 NULL
-True
+1
 b
 NULL
-True
+1
 (empty)
 0
-True
+1
 a
 NULL
-True
+1
 b
 NULL
 
-query T
+query I nosort
 SELECT (t0.c0||true BETWEEN v0.c0 AND v0.c0) FROM v0, t0
 ----
-True
-False
-False
-True
-False
-False
-True
-False
-False
+1
+0
+0
+1
+0
+0
+1
+0
+0
 
-query TTT
-SELECT * FROM v0, t0 WHERE (t0.c0||true BETWEEN v0.c0 AND v0.c0); 
+query ITT nosort
+SELECT * FROM v0, t0 WHERE (t0.c0||true BETWEEN v0.c0 AND v0.c0)
 ----
-True
+1
 (empty)
 0
-True
+1
 (empty)
 0
-True
+1
 (empty)
 0
+
+statement ok
+DROP VIEW v0
+
+statement ok
+DROP TABLE t0
+

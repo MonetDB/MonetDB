@@ -392,6 +392,8 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 		for (node *n = rel->attr->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
+			if (e->type != e_aggr) /* keep all group by's */
+				e->used = 1;
 			if (e->used)
 				nr += exp_mark_used(subrel, e, -2);
 		}

@@ -1,0 +1,125 @@
+query T rowsort
+SELECT name FROM tables WHERE contains(name, 'keys') ORDER BY name
+----
+dependency_columns_on_keys
+dependency_keys_on_foreignkeys
+dependency_tables_on_foreignkeys
+describe_foreign_keys
+dump_foreign_keys
+fkeys
+keys
+keys
+
+query T nosort
+SELECT name FROM columns WHERE contains(name, 'x0x', false)
+----
+
+query T nosort
+SELECT name FROM columns WHERE name like '%x0x%'
+----
+
+statement ok
+CREATE TABLE foo(x string)
+
+statement ok
+CREATE TABLE bar(x string)
+
+statement ok
+INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
+
+statement ok
+INSERT INTO bar VALUES ('johndoe'),('Müller Thomas'),('Thomas MüLLer')
+
+query I nosort
+SELECT contains(x, '') FROM foo
+----
+1
+1
+1
+
+query I nosort
+SELECT contains('', x) FROM foo
+----
+0
+0
+0
+
+query I nosort
+SELECT contains(x, 'doe') FROM foo
+----
+1
+1
+1
+
+query I nosort
+SELECT contains('jane doe', x) FROM foo
+----
+0
+1
+0
+
+query I nosort
+SELECT contains(x, 'MüLLer') FROM bar
+----
+0
+0
+1
+
+query I nosort
+SELECT contains(x, 'Müller') FROM bar
+----
+0
+1
+0
+
+query I nosort
+SELECT contains('MüLLER Thomas', x, true) FROM bar
+----
+0
+1
+0
+
+query I nosort
+SELECT contains(x, 'DOE', true) FROM foo
+----
+1
+1
+1
+
+query I nosort
+SELECT contains(x, 'DOE', false) FROM foo
+----
+0
+0
+0
+
+query I nosort
+SELECT contains('doe', x, true) FROM foo
+----
+0
+0
+0
+
+statement ok
+TRUNCATE TABLE foo
+
+statement ok
+DROP TABLE bar
+
+statement ok
+INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
+
+query T rowsort
+SELECT * FROM foo WHERE [foo.x] contains ['john', true]
+----
+john doe
+
+query T rowsort
+SELECT * FROM foo WHERE [foo.x] contains ['doe', true]
+----
+jane doe
+john doe
+robert doe
+
+statement ok
+DROP TABLE foo

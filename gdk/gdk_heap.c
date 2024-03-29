@@ -217,6 +217,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			return GDK_FAIL;
 		}
 		GDKfree(nme);
+		TRC_DEBUG(HEAP, "%s %zu %p (mmap)\n", h->filename, size, h->base);
 	}
 	h->newstorage = h->storage;
 	return GDK_SUCCEED;
@@ -774,13 +775,14 @@ HEAPincref(Heap *h)
  *
  * If we find file X.new, we move it over X (if present) and open it.
  */
-static gdk_return
-HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc)
+gdk_return
+HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 {
 	size_t minsize;
 	int ret = 0;
 	char *srcpath, *dstpath;
 	lng t0;
+	const char suffix[] = ".new";
 
 	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID) {
 		size_t allocated;
@@ -889,12 +891,6 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	return GDK_SUCCEED;
 }
 
-gdk_return
-HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
-{
-	return HEAPload_intern(h, nme, ext, ".new", trunc);
-}
-
 /*
  * @- HEAPsave
  *
@@ -910,12 +906,13 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
  * After GDKsave returns successfully (>=0), we assume the heaps are
  * safe on stable storage.
  */
-static gdk_return
-HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free, MT_Lock *lock)
+gdk_return
+HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 {
 	storage_t store = h->newstorage;
 	long_str extension;
 	gdk_return rc;
+	const char suffix[] = ".new";
 
 	if (h->base == NULL) {
 		GDKerror("no heap to save\n");
@@ -963,12 +960,6 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	if (lock)
 		MT_lock_unset(lock);
 	return rc;
-}
-
-gdk_return
-HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
-{
-	return HEAPsave_intern(h, nme, ext, ".new", dosync, free, lock);
 }
 
 int
