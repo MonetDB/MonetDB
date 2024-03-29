@@ -1040,7 +1040,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		    (/* DISABLES CODE */ (0) &&
 		     (parent = VIEWtparent(b)) != 0 &&
 /* if enabled, need to fix/unfix parent bat */
-		     BATcheckhash(BBP_cache(parent))))) {
+		     BATcheckhash(BBP_desc(parent))))) {
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table;
@@ -1058,7 +1058,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * calculate the bounds [lo, lo+BATcount(b))
 			 * in the parent that b uses */
 /* if enabled, need to fix/unfix parent bat */
-			BAT *b2 = BBP_cache(parent);
+			BAT *b2 = BBP_desc(parent);
 			MT_rwlock_rdunlock(&b->thashlock);
 			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;

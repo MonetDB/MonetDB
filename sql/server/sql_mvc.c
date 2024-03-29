@@ -52,7 +52,7 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_trans_alter_null(m->session->tr, c, 0);
 }
 
-sql_table *
+static sql_table *
 mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 {
 	sql_table *t = NULL;
