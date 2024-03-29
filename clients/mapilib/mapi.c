@@ -2025,8 +2025,6 @@ mapi_destroy(Mapi mid)
 	free(mid->noexplain);
 	if (mid->errorstr && mid->errorstr != mapi_nomem)
 		free(mid->errorstr);
-	if (mid->noexplain)
-		free(mid->noexplain);
 
 	msettings_destroy(mid->settings);
 
