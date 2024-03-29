@@ -211,7 +211,7 @@ resetMalBlk(MalBlkPtr mb)
 	InstrPtr *new;
 	VarRecord *vnew;
 
-	for (i = MALCHUNK; i < mb->ssize; i++) {
+	for (i = 1/*MALCHUNK*/; i < mb->ssize; i++) {
 		freeInstruction(mb->stmt[i]);
 		mb->stmt[i] = NULL;
 	}
@@ -228,7 +228,7 @@ resetMalBlk(MalBlkPtr mb)
 		mb->ssize = MALCHUNK;
 	}
 	/* Reuse the initial function statement */
-	mb->stop = 0;
+	mb->stop = 1;
 
 	for (i = 0; i < mb->vtop; i++) {
 		if (mb->var[i].name)

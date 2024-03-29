@@ -541,8 +541,11 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			be->depth++;
 			msg = SQLrun(c,m);
 			be->depth--;
-			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, NULL, oldvtop);
+			if (c->curprg->def->stop > 1) {
+				assert(0);
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop);
+			}
 			sqlcleanup(sql, 0);
 			if (!execute)
 				goto endofcompile;
