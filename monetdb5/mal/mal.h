@@ -158,6 +158,7 @@ typedef struct INSTR {
 	struct MALBLK *blk;			/* resolved MAL function address */
 	/* inline statistics */
 	lng wbytes;					/* number of bytes produced in last instruction */
+	lng ticks;					/* number of clock ticks this instruction has run */
 	/* the core admin */
 	const char *modname;		/* module context, reference into namespace */
 	const char *fcnname;		/* function name, reference into namespace */

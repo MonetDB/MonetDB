@@ -279,6 +279,8 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	Pipelines *s = GDKmalloc(sizeof(Pipelines));
 	if (!s)
 		throw(MAL, "pipelines", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	bool profiler = cntxt->sqlprofiler;
+	cntxt->sqlprofiler = false;
 	s->mb = mb;
 	s->cntxt = cntxt;
 	s->start = startpc;
@@ -316,7 +318,16 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	ATOMIC_PTR_DESTROY(&s->error);
 	MT_cond_destroy(&s->cond);
 	restart = (!err && s->status);
+	if (!restart && profiler) {
+		lng clk = GDKusec();
+
+		for(int i = s->start; i<s->stop; i++) {
+			InstrPtr pci = mb->stmt[i];
+			sqlProfilerEvent(cntxt, mb, stk, pci, clk, pci->ticks);
+		}
+	}
 	GDKfree(s);
+	cntxt->sqlprofiler = profiler;
 	if (restart) /* TODO move into new loop around pipeline */
 		return runMALpipelines(cntxt, mb, startpc, stoppc, maxparts, stk);
 	return err;

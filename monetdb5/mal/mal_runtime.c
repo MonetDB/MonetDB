@@ -370,6 +370,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 {
 	lng ticks = GDKusec();
 
+	pci->ticks += ticks - prof->ticks;
 	if (profilerStatus > 0)
 		profilerEvent(&(struct MalEvent) { cntxt, mb, stk, pci, ticks,
 					  ticks - prof->ticks },
