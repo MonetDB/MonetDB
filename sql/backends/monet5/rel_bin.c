@@ -1828,8 +1828,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 												   tail_type(l), tail_type(l), F_FUNC, true, true);
 					assert(f);
 					if (is_semantics(e)) {
-						if (exp_is_null(e->l) && exp_is_null(e->r)) {
-							s = stmt_bool(be, !is_anti(e));
+						if (exp_is_null(e->l) && exp_is_null(e->r) && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
+							s = stmt_bool(be, e->flag == cmp_equal ? !is_anti(e): is_anti(e));
 						} else {
 							list *args = sa_list(sql->sa);
 							if (args == NULL)

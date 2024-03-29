@@ -953,9 +953,8 @@ BKCsave(bit *res, const char *const *input)
 
 	*res = FALSE;
 	if (!is_bat_nil(bid)) {
-		if (BBPfix(bid) > 0) {
-			b = BBP_cache(bid);
-			if (b && BATdirty(b)) {
+		if ((b = BATdescriptor(bid)) != NULL) {
+			if (BATdirty(b)) {
 				if (BBPsave(b) == GDK_SUCCEED)
 					*res = TRUE;
 			}

@@ -2157,6 +2157,7 @@ sa_free(allocator *pa, void *blk)
 	} else {
 		freed_t *f = blk;
 		f->n = pa->freelist;
+		f->sz = sz;
 
 		pa->freelist = f;
 	}
@@ -2239,7 +2240,7 @@ sa_alloc( allocator *sa, size_t sz )
 	if (sz > (SA_BLOCK-sa->used)) {
 		if (sa->pa)
 			r = (char*)sa_alloc(sa->pa, (sz > SA_BLOCK ? sz : SA_BLOCK));
-	    else if (sz <= SA_BLOCK && sa->freelist) {
+		else if (sz <= SA_BLOCK && sa->freelist) {
 			r = sa_use_freed(sa, SA_BLOCK);
 		} else
 			r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
@@ -2296,8 +2297,11 @@ void *sa_zalloc( allocator *sa, size_t sz )
 
 void sa_destroy( allocator *sa )
 {
-	if (sa->pa)
+	if (sa->pa) {
+		sa_reset(sa);
+		sa_free(sa->pa, sa->blks[0]);
 		return;
+	}
 
 	sa_destroy_freelist(sa->freelist);
 	for (size_t i = 0; i<sa->nr; i++) {

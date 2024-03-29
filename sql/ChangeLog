@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Mar 21 2024 Yunus Koning <yunus.koning@monetdbsolutions.com>
+- Introduce IS [NOT] DISTINCT FROM syntax. The syntax allows two values
+  to be compared. The comparison always returns boolean FALSE or TRUE
+  never NULL.
+
 * Wed Mar  6 2024 Yunus Koning <yunus.koning@monetdbsolutions.com>
 - SQL2023 feature: Introduce UNIQUE NULLS [NOT] DISTINCT syntax which
   allows for NULLS to be treated as unique, i.e. a column with this

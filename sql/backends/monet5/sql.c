@@ -339,7 +339,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			break;
 	}
 	osa = sql->sa;
-	sql->sa = sql->ta;
+	allocator *nsa = sql->sa = sa_create(NULL);
 	/* first check default values */
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
@@ -349,13 +349,14 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			const char *next_value_for = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
 
-			sql->sa = sql->ta;
+			sa_reset(nsa);
+			sql->sa = nsa;
 			r = rel_parse(sql, s, sa_message(sql->ta, "select %s;", c->def), m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 ||
 				exp_check_type(sql, &c->type, r, r->exps->h->data, type_equal) == NULL) {
 				if (r)
 					rel_destroy(r);
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 					throw(SQL, "sql.catalog", "%s", sql->errstr);
@@ -367,12 +368,11 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			if (strncmp(c->def, next_value_for, strlen(next_value_for)) != 0) {
 				list *blist = rel_dependencies(sql, r);
 				if (mvc_create_dependencies(sql, blist, nt->base.id, FUNC_DEPENDENCY)) {
-					rel_destroy(r);
-					sa_reset(sql->sa);
+					sa_destroy(nsa);
+					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
-			rel_destroy(r);
 			sa_reset(sql->sa);
 		}
 	}
@@ -382,12 +382,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		switch (mvc_copy_column(sql, nt, c, &copied)) {
 			case -1:
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			case -2:
 			case -3:
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
 			default:
@@ -402,17 +402,20 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 		_DELETE(nt->part.pexp->exp);
 		nt->part.pexp->exp = _STRDUP(t->part.pexp->exp);
 		err = bootstrap_partition_expression(sql, nt, 1);
-		sa_reset(sql->ta);
 		if (err) {
+			sa_destroy(nsa);
 			sql->sa = osa;
 			return err;
 		}
+		sa_reset(nsa);
 	}
 	check = sql_trans_set_partition_table(sql->session->tr, nt);
 	if (check == -4) {
+		sa_destroy(nsa);
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
 	} else if (check) {
+		sa_destroy(nsa);
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
 	}
@@ -423,10 +426,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			switch (mvc_copy_idx(sql, nt, i, NULL)) {
 				case -1:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s index conflicts", s->base.name, t->base.name, i->base.name);
 				default:
@@ -440,22 +445,26 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			char *err = NULL;
 
 			err = sql_partition_validate_key(sql, nt, k, "CREATE");
-			sa_reset(sql->ta);
 			if (err) {
+				sa_destroy(nsa);
 				sql->sa = osa;
 				return err;
 			}
+			sa_reset(sql->sa);
 			switch (mvc_copy_key(sql, nt, k, NULL)) {
 				case -1:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s constraint conflicts", s->base.name, t->base.name, k->base.name);
 				default:
 					break;
 			}
+			sa_reset(sql->sa);
 		}
 	}
 	if (t->triggers) {
@@ -464,10 +473,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			switch (mvc_copy_trigger(sql, nt, tr, NULL)) {
 				case -1:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s trigger conflicts", s->base.name, t->base.name, nt->base.name);
 				default:
@@ -479,26 +490,28 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 	if (nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 
+		sa_reset(nsa);
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(sql, r);
 			if (mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY)) {
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
-		sa_reset(sql->ta);
+		sql->sa = osa;
 		if (!r) {
-			sql->sa = osa;
+			sa_destroy(nsa);
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.catalog", "%s", sql->errstr);
 			else
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 		}
 	}
+	sa_destroy(nsa);
 	sql->sa = osa;
 	return MAL_SUCCEED;
 }
@@ -1821,8 +1834,17 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (!isbat && ATOMextern(tpe) && !ATOMvarsized(tpe))
 		ins = *(ptr *) ins;
-	if (isbat)
+	if (isbat) {
 		b =  (BAT*) ins;
+		if (VIEWtparent(b) || VIEWvtparent(b)) {
+			/* note, b == (BAT*)ins */
+			b = COLcopy(b, b->ttype, true, TRANSIENT);
+			BBPreclaim(ins);
+			ins = b;
+			if (b == NULL)
+				throw(SQL, "sql.append", GDK_EXCEPTION);
+		}
+	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
 		bat_destroy(pos);

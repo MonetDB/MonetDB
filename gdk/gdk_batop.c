@@ -2149,7 +2149,7 @@ BATordered(BAT *b)
 	bat pbid = VIEWtparent(b);
 	MT_lock_unset(&b->theaplock);
 	if (pbid) {
-		BAT *pb = BBP_cache(pbid);
+		BAT *pb = BBP_desc(pbid);
 		MT_lock_set(&pb->theaplock);
 		if (bi.count == BATcount(pb) &&
 		    bi.h == pb->theap &&
@@ -2268,7 +2268,7 @@ BATordered_rev(BAT *b)
 	bat pbid = VIEWtparent(b);
 	MT_lock_unset(&b->theaplock);
 	if (pbid) {
-		BAT *pb = BBP_cache(pbid);
+		BAT *pb = BBP_desc(pbid);
 		MT_lock_set(&pb->theaplock);
 		if (bi.count == BATcount(pb) &&
 		    bi.h == pb->theap &&

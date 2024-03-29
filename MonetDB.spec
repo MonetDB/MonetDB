@@ -807,9 +807,7 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-# use /var/run/monetdb since that's what it says in the monetdb.fc file
-# it says that because /run/monetdb for some reason doesn't work
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb /var/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -838,6 +836,13 @@ fi
 %setup -q
 
 %build
+# from Fedora 40, selinux uses /run where before it used /var/run
+# the code is now for Fedora 40 but needs a patch for older versions
+%if (0%{?fedora} < 40)
+sed -i 's;@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb;@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/run/monetdb;' misc/selinux/monetdb.fc.in
+sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
+%endif
+
 %cmake3 \
         -DCMAKE_INSTALL_RUNSTATEDIR=/run \
         -DRELEASE_VERSION=ON \

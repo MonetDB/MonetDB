@@ -3675,7 +3675,6 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				if ((pb == NULL || bi.count == BATcount(pb)) &&
 				    BATcheckimprints(b)) {
 					if (pb != NULL) {
-						BAT *pb = BBP_cache(VIEWtparent(b));
 						MT_lock_set(&pb->batIdxLock);
 						imprints = pb->timprints;
 						if (imprints != NULL)
@@ -3842,7 +3841,6 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 				if ((pb == NULL || BATcount(b) == BATcount(pb)) &&
 				    BATcheckimprints(b)) {
 					if (pb != NULL) {
-						BAT *pb = BBP_cache(VIEWtparent(b));
 						MT_lock_set(&pb->batIdxLock);
 						imprints = pb->timprints;
 						if (imprints != NULL)

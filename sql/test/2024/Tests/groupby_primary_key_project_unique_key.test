@@ -54,10 +54,11 @@ ORDER BY product.product_code, product.product_id
 statement error
 SELECT product.product_id, sum(product_part.num) as sum_num
 FROM
-        (SELECT * FROM product UNION ALL VALUES (1, 'telephone5', 'telephone5')) AS product 
+        (SELECT * FROM product UNION ALL VALUES (1, 'telephone5', 'telephone5')) AS product
     JOIN
         product_part
     ON product.product_id = product_part.product_id
 GROUP BY product.product_id
 ORDER BY product.product_code, product.product_id
 ----
+

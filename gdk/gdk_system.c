@@ -280,15 +280,17 @@ dump_threads(void)
 	char buf[1024];
 	thread_lock();
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
+		MT_Lock *lk = t->lockwait;
+		MT_Sema *sm = t->semawait;
+		MT_Cond *cn = t->condwait;
+		struct mtthread *jn = t->joinwait;
 		int pos = snprintf(buf, sizeof(buf),
-				   "%s, tid %zu, waiting for %s, working on %.200s",
+				   "%s, tid %zu, %"PRIu32" free bats, waiting for %s%s, working on %.200s",
 				   t->threadname,
 				   t->tid,
-				   t->lockwait ? t->lockwait->name :
-				   t->semawait ? t->semawait->name :
-				   t->condwait ? t->condwait->name :
-				   t->joinwait ? t->joinwait->threadname :
-				   "nothing",
+				   t->freebats.nfreebats,
+				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
+				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
 				   ATOMIC_GET(&t->exited) ? "exiting" :
 				   t->working ? t->working : "nothing");
 #ifdef LOCK_OWNER
@@ -313,6 +315,7 @@ rm_mtthread(struct mtthread *t)
 	struct mtthread **pt;
 
 	assert(t != &mainthread);
+	BBPrelinquish(&t->freebats);
 	thread_lock();
 	for (pt = &mtthreads; *pt && *pt != t; pt = &(*pt)->next)
 		;
