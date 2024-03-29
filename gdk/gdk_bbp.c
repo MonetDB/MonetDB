@@ -1721,27 +1721,21 @@ BBPtrim(bool aggressive, bat nbat)
 	int n = 0;
 	int waitctr = 0;
 	bool changed = false;
-	bool locked = false;
 	unsigned flag = BBPUNLOADING | BBPSYNCING | BBPSAVING;
 	if (!aggressive)
 		flag |= BBPHOT;
 	lng t0 = GDKusec();
 	for (bat bid = 1; bid < nbat && !GDKexiting(); bid++) {
+		/* quick check to see if we might possibly have to do
+		 * work (includes free bats) */
+		if ((BBP_status(bid) & BBPLOADED) == 0)
+			continue;
 		/* don't do this during a (sub)commit */
-		if (!locked) {
-			BBPtmlock();
-			locked = true;
-		}
+		BBPtmlock();
 		MT_lock_set(&GDKswapLock(bid));
 		BAT *b = NULL;
 		bool swap = false;
-		unsigned status = BBP_status(bid);
-		if (status == 0) {
-			/* quickly skip free bats */
-			MT_lock_unset(&GDKswapLock(bid));
-			continue;
-		}
-		if (!(status & flag) &&
+		if (!(BBP_status(bid) & flag) &&
 		    BBP_refs(bid) == 0 &&
 		    BBP_lrefs(bid) != 0 &&
 		    (b = BBP_cache(bid)) != NULL) {
@@ -1765,15 +1759,12 @@ BBPtrim(bool aggressive, bat nbat)
 			changed = true;
 		}
 		BBPtmunlock();
-		locked = false;
 		/* every once in a while, give others a chance */
 		if (++waitctr >= 1000) {
 			waitctr = 0;
 			MT_sleep_ms(2);
 		}
 	}
-	if (locked)
-		BBPtmunlock();
 	if (n > 0)
 		TRC_INFO(BAT_, "unloaded %d bats in "LLFMT" usec%s\n", n, GDKusec() - t0, aggressive ? " (also hot)" : "");
 	return changed;
