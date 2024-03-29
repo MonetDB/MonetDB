@@ -2110,15 +2110,15 @@ order_joins(visitor *v, list *rels, list *exps)
 			r1[ci] = rels_find_one_rel(rels_a, nr_rels, cje->l);
 			r2[ci] = rels_find_one_rel(rels_a, nr_rels, cje->r);
 			if (r1[ci])
-				h[ci] |= 1L<<((r1[ci]-1)%64);
+				h[ci] |= LL_CONSTANT(1)<<((r1[ci]-1)%64);
 			if (r2[ci])
-				h[ci] |= 1L<<((r2[ci]-1)%64);
+				h[ci] |= LL_CONSTANT(1)<<((r2[ci]-1)%64);
 			if (cje->f) {
 				r3[ci] = rels_find_one_rel(rels_a, nr_rels, cje->f);
 				if (r3[ci] == r2[ci])
 					r3[ci] = 0;
 				if (r3[ci])
-					h[ci] |= 1L<<((r3[ci]-1)%64);
+					h[ci] |= LL_CONSTANT(1)<<((r3[ci]-1)%64);
 			}
 		}
 	}
@@ -2188,9 +2188,9 @@ order_joins(visitor *v, list *rels, list *exps)
 
 			cje = djn->data;
 			if ((h[cje->tmp] & rel_mask) > 0) {
-				if (rel_mask & (1L<<((r1[cje->tmp]-1)%64)))
+				if (rel_mask & (LL_CONSTANT(1)<<((r1[cje->tmp]-1)%64)))
 					l = rels_a[r1[cje->tmp]];
-				if (rel_mask & (1L<<((r2[cje->tmp]-1)%64)))
+				if (rel_mask & (LL_CONSTANT(1)<<((r2[cje->tmp]-1)%64)))
 					r = rels_a[r2[cje->tmp]];
 			}
 			if (!direct) { /* check if atleast one side in n_rels */
