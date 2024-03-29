@@ -33,10 +33,10 @@ exps_simplify_exp(visitor *v, list *exps)
 
 		needed = (exp_is_true(e) || exp_is_false(e) || (is_compare(e->type) && e->flag == cmp_or));
 	}
-	/* if there's only one expression and it is false, we have to keep it */
-	if (list_length(exps) == 1 && exp_is_false(exps->h->data))
-		return exps;
 	if (needed) {
+		/* if there's only one expression and it is false, we have to keep it */
+		if (list_length(exps) == 1 && exp_is_false(exps->h->data))
+			return exps;
 		list *nexps = sa_list(v->sql->sa);
 		for (node *n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
