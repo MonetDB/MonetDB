@@ -2627,7 +2627,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
  * also push simple expressions of a semijoin down if they only
  * involve the left sided of the semijoin.
  *
- * in some cases the other way is usefull, ie push join down
+ * in some cases the other way is useful, ie push join down
  * semijoin. When the join reduces (ie when there are selects on it).
  *
  * At the moment, we only flag changes by this optimizer on the first level of optimization

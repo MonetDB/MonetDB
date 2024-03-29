@@ -112,8 +112,6 @@ bat BBPallocbat(int tt)
 	__attribute__((__visibility__("hidden")));
 void BBPprintinfo(void)
 	__attribute__((__visibility__("hidden")));
-void BBPrelinquish(void)
-	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)

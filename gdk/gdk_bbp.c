@@ -1746,6 +1746,10 @@ BBPtrim(bool aggressive, bat nbat)
 		flag |= BBPHOT;
 	lng t0 = GDKusec();
 	for (bat bid = 1; bid < nbat && !GDKexiting(); bid++) {
+		/* quick check to see if we might possibly have to do
+		 * work (includes free bats) */
+		if ((BBP_status(bid) & BBPLOADED) == 0)
+			continue;
 		/* don't do this during a (sub)commit */
 		BBPtmlock();
 		MT_lock_set(&GDKswapLock(bid));
@@ -2930,10 +2934,8 @@ BBPclear(bat i)
 }
 
 void
-BBPrelinquish(void)
+BBPrelinquish(struct freebats *t)
 {
-	struct freebats *t = MT_thread_getfreebats();
-
 	if (t->nfreebats == 0)
 		return;
 	MT_lock_set(&GDKcacheLock);

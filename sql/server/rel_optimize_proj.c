@@ -90,6 +90,8 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 			}
 		}
 	}
+	/* ToDo handle useful renames, ie new relation name and unique set of attribute names (could reduce set of * attributes) */
+	/* handle both useless and useful with project [ group by ] */
 	return rel;
 }
 
@@ -391,6 +393,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		}
 		if (!ne)
 			return e;
+		sql_exp *oe = e;
 		e = NULL;
 		if (exp_name(ne) && ne->r && ne->l)
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
@@ -401,6 +404,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			sql->errstr[0] = 0;
 			if (exp_is_atom(ne))
 				return ne;
+			return oe;
 		}
 		return exp_ref(sql, e);
 	case e_cmp:
@@ -1564,7 +1568,7 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 						/* the new generate function calls are valid, update relations */
 						/* we need a new relation for the multiplication and addition/subtraction */
 						if (!upper) {
-							/* be carefull with relations with more than 1 reference, so do in-place replacement */
+							/* be careful with relations with more than 1 reference, so do in-place replacement */
 							list *projs = rel_projections(v->sql, rel, NULL, 1, 1);
 							sql_rel *nrel = rel_groupby(v->sql, rel->l, NULL);
 							nrel->exps = rel->exps;
