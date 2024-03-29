@@ -610,6 +610,13 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
+		if (rel->op == op_table && rel->l) {
+			rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
+			if (rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
+				rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
+				list_append(refs, rel->l);
+			}
+		}
 		break;
 	case op_ddl:
 		if (rel->flag == ddl_list || rel->flag == ddl_exception) {
