@@ -56,29 +56,22 @@ insert into lineitem select * from lineitem_key;
 
 3.3 run 03.sql:
 
-select 
+select
 	l_orderkey
---	, count(o_orderkey) -- ERR: if key, then nested dataflow blocks; if no key, then crash
 	, sum(l_extendedprice * (1 - l_discount)) as revenue
 	, o_orderdate
 	, o_shippriority
 from
-	lineitem
-	, orders
-	, customer
+	lineitem, orders, customer
 where	
 	l_orderkey = o_orderkey
 	and c_custkey = o_custkey
---	and c_mktsegment = 'BUILDING' -- STR not supported yet
+	and c_mktsegment = 'BUILDING'
 	and o_orderdate < date '1995-03-15'
 	and l_shipdate > date '1995-03-15'
 group by
-	l_orderkey
-	, o_orderdate
-	, o_shippriority
+	l_orderkey, o_orderdate, o_shippriority
 order by
-	revenue desc
-	, o_orderdate
+	revenue desc, o_orderdate
 limit 10
 ;
-
