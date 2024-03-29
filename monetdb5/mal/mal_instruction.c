@@ -694,7 +694,8 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 			nme[i] = name[i];
 		nme[len] = 0;
 		kind = nme[0];
-	} mb->vtop++;
+	}
+	mb->vtop++;
 	setVarKind(mb, n, kind);
 	setVariableType(mb, n, type);
 	return n;

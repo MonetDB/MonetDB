@@ -102,7 +102,7 @@ mal_init(char *modules[], bool embedded, const char *initpasswd,
 	GDKprintinforegister(MALprintinfo);
 
 	err = malBootstrap(modules, embedded, initpasswd);
-	if (err !=MAL_SUCCEED) {
+	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 		TRC_CRITICAL(MAL_SERVER, "%s\n", err);
 		freeException(err);
