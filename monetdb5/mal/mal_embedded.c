@@ -56,6 +56,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 	if (embeddedinitialized)
 		return MAL_SUCCEED;
 
+	mal_startup();
 	{
 		/* unlock the vault, first see if we can find the file which
 		 * holds the secret */

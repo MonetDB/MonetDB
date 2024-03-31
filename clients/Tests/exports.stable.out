@@ -1320,6 +1320,7 @@ char *monetdbe_get_autocommit(monetdbe_database dbhdl, int *result);
 char *monetdbe_get_columns(monetdbe_database dbhdl, const char *schema_name, const char *table_name, size_t *column_count, monetdbe_column **columns);
 const char *monetdbe_get_mapi_port(void);
 int monetdbe_in_transaction(monetdbe_database dbhdl);
+char *monetdbe_load_extension(monetdbe_database dbhdl, const char *file);
 const void *monetdbe_null(monetdbe_database dbhdl, monetdbe_types t);
 int monetdbe_open(monetdbe_database *db, char *url, monetdbe_options *opts);
 char *monetdbe_prepare(monetdbe_database dbhdl, char *query, monetdbe_statement **stmt, monetdbe_result **result);

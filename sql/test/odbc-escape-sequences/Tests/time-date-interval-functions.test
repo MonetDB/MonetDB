@@ -1,4 +1,7 @@
 # ref: https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/time-date-and-interval-functions
+#
+statement ok
+set time zone interval '1' hour
 
 query I rowsort
 select { fn current_date() } > date'2023-01-02'

@@ -19,6 +19,7 @@
 #include "mal_embedded.h"
 #include "mal_backend.h"
 #include "mal_builder.h"
+#include "mal_linker.h"
 #include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
@@ -587,6 +588,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		set_error(mdbe, createException(SQL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL));
 		goto cleanup;
 	}
+	m->no_int128 = opts?opts->no_int128:false;
 cleanup:
 	if (mdbe->msg)
 		return -2;
@@ -989,6 +991,26 @@ monetdbe_error(monetdbe_database dbhdl)
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	return mdbe->msg;
+}
+
+char*
+monetdbe_load_extension(monetdbe_database dbhdl, const char *file)
+{
+	if (!dbhdl)
+		return 0;
+
+	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+
+	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
+		return mdbe->msg;
+	}
+	char *modules[2];
+	modules[0] = (char*)file;
+	modules[1] = NULL;
+	char *msg = loadLibrary(file, -1);
+	if (msg)
+		return msg;
+	return malIncludeModules(mdbe->c, modules, 0, true, NULL);
 }
 
 char*
@@ -1743,8 +1765,13 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 			goto cleanup;
 		}
 
-		(*(monetdbe_result_internal**) result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
 		res_internal = *(monetdbe_result_internal**)result;
+		res_internal->type = (b->results) ? Q_TABLE : Q_UPDATE;
+		if (res_internal->monetdbe_resultset && res_internal->monetdbe_resultset->query_type == Q_TABLE) {
+			res_internal->type = Q_TABLE;
+			if (affected_rows)
+				*affected_rows = res_internal->monetdbe_resultset->nr_rows;
+		}
 	}
 
 cleanup:

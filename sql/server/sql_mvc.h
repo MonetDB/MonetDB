@@ -135,7 +135,8 @@ typedef struct mvc {
 
 	bool use_views:1,
 		   schema_path_has_sys:1, /* speed up object search */
-		   schema_path_has_tmp:1;
+		   schema_path_has_tmp:1,
+		   no_int128:1;
 	struct qc *qc;
 	int clientid;		/* id of the owner */
 

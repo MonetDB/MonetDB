@@ -29,7 +29,7 @@
 #include "mal_prelude.h"
 
 #define MAX_MAL_MODULES 128
-static int mel_modules = 0;
+static int mel_modules = 0, mel_modules_loaded = 0;
 static struct mel_module {
 	const char *name;
 	mel_atom *atoms;
@@ -42,6 +42,7 @@ int
 mal_startup(void)
 {
 	/* clean up the MAL internal structures before restart */
+	mel_modules_loaded = 0;
 	return 0;
 }
 
@@ -390,7 +391,7 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 
 	(void) listing;
 	/* Add all atom definitions */
-	for (i = 0; i < mel_modules; i++) {
+	for (i = mel_modules_loaded; i < mel_modules; i++) {
 		if (mel_module[i].atoms) {
 			msg = addAtom(mel_module[i].atoms);
 			if (msg)
@@ -399,7 +400,7 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 	}
 
 	/* Add the signatures, where we now have access to all atoms */
-	for (i = 0; i < mel_modules; i++) {
+	for (i = mel_modules_loaded; i < mel_modules; i++) {
 		const char *name = putName(mel_module[i].name);
 		if (!malLibraryEnabled(name))
 			continue;
@@ -434,6 +435,7 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 				return msg;
 		}
 	}
+	mel_modules_loaded = mel_modules;
 	return MAL_SUCCEED;
 }
 
