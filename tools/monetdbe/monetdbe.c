@@ -588,6 +588,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		set_error(mdbe, createException(SQL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL));
 		goto cleanup;
 	}
+	m->no_int128 = opts?opts->no_int128:false;
 cleanup:
 	if (mdbe->msg)
 		return -2;

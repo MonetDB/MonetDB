@@ -844,6 +844,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	}
 	m->schema_path_has_sys = true;
 	m->schema_path_has_tmp = false;
+	m->no_int128 = false;
 	m->store = store;
 
 	m->session = sql_session_create(m->store, m->pa, 1 /*autocommit on*/);

@@ -117,6 +117,7 @@ typedef struct {
 	int querytimeout;  // graceful terminate query after a few seconds
 	int sessiontimeout;  // graceful terminate the session after a few seconds
 	int nr_threads;  // maximum number of worker treads, limits level of parallelism
+	bool no_int128;	 // client has no int128 support
 	monetdbe_remote* remote;
 	monetdbe_mapi_server* mapi_server;
 	const char *trace_file;		// file to which log output should be written
