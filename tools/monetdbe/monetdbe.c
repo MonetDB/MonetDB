@@ -1743,8 +1743,13 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 			goto cleanup;
 		}
 
-		(*(monetdbe_result_internal**) result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
 		res_internal = *(monetdbe_result_internal**)result;
+		res_internal->type = (b->results) ? Q_TABLE : Q_UPDATE;
+		if (res_internal->monetdbe_resultset && res_internal->monetdbe_resultset->query_type == Q_TABLE) {
+			res_internal->type = Q_TABLE;
+			if (affected_rows)
+				*affected_rows = res_internal->monetdbe_resultset->nr_rows;
+		}
 	}
 
 cleanup:
