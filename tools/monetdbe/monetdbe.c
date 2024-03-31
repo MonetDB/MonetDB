@@ -19,6 +19,7 @@
 #include "mal_embedded.h"
 #include "mal_backend.h"
 #include "mal_builder.h"
+#include "mal_linker.h"
 #include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
@@ -989,6 +990,26 @@ monetdbe_error(monetdbe_database dbhdl)
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	return mdbe->msg;
+}
+
+char*
+monetdbe_load_extension(monetdbe_database dbhdl, const char *file)
+{
+	if (!dbhdl)
+		return 0;
+
+	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+
+	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
+		return mdbe->msg;
+	}
+	char *modules[2];
+	modules[0] = (char*)file;
+	modules[1] = NULL;
+	char *msg = loadLibrary(file, -1);
+	if (msg)
+		return msg;
+	return malIncludeModules(mdbe->c, modules, 0, true, NULL);
 }
 
 char*

@@ -182,6 +182,8 @@ monetdbe_export const void* monetdbe_null(monetdbe_database dbhdl, monetdbe_type
 
 monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, monetdbe_column **columns);
 
+monetdbe_export char* monetdbe_load_extension(monetdbe_database dbhdl, const char *file);
+
 monetdbe_export char* monetdbe_dump_database(monetdbe_database dbhdl, const char *backupfile);
 monetdbe_export char* monetdbe_dump_table(monetdbe_database dbhdl, const char *schema_name, const char *table_name, const char *backupfile);
 monetdbe_export const char* monetdbe_get_mapi_port(void);

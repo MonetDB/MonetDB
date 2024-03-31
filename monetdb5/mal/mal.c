@@ -72,6 +72,7 @@ mal_init(char *modules[], bool embedded, const char *initpasswd,
  */
 	str err;
 
+	mal_startup();
 	/* check that library that we're linked against is compatible with
 	 * the one we were compiled with */
 	int maj, min, patch;
