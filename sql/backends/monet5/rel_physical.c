@@ -334,6 +334,69 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_add_project(mvc *sql, sql_rel *rel)
+{
+	if (!rel)
+		return rel;
+
+	switch (rel->op) {
+	case op_basetable:
+	case op_table:
+		break;
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+
+	case op_semi:
+	case op_anti:
+
+	case op_union:
+	case op_inter:
+	case op_except:
+		rel->l = rel_add_project(sql, rel->l);
+		rel->r = rel_add_project(sql, rel->r);
+		if (is_join(rel->op) && !rel_is_ref(rel))
+			rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+		break;
+	case op_project:
+	case op_select:
+	case op_groupby:
+	case op_topn:
+	case op_sample:
+		rel->l = rel_add_project(sql, rel->l);
+		if (is_select(rel->op) && !rel_is_ref(rel))
+			rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+		break;
+	case op_ddl:
+		rel->l = rel_add_project(sql, rel->l);
+		if (rel->r)
+			rel->r = rel_add_project(sql, rel->r);
+		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+	case op_truncate:
+	case op_merge:
+		rel->r = rel_add_project(sql, rel->r);
+		break;
+	}
+
+	if (0 && rel_is_ref(rel) && !is_project(rel->op)) {
+		/* ughly inplace */
+		sql_rel *n = rel_create(sql->sa);
+
+		*n = *rel;
+		n->ref.refcnt = 1;
+		rel->op = op_project;
+		rel->l = n;
+		rel->r = NULL;
+		rel->exps = rel_projections(sql, n, NULL, 1, 1);
+	}
+	return rel;
+}
+
 sql_rel *
 rel_physical(mvc *sql, sql_rel *rel)
 {
@@ -342,5 +405,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rel_add_orderby);
 	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
 	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero);
+	rel = rel_add_project(sql, rel);
+	rel = rel_dce(&v, NULL, rel);
 	return rel;
 }

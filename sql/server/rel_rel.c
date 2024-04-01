@@ -1006,6 +1006,7 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 		else
 			rel->nrcols = l->nrcols;
 		rel->single = is_single(l);
+		rel->hashjoin = l->hashjoin;
 	}
 	if (e && !list_empty(e)) {
 		set_processed(rel);

@@ -1053,7 +1053,7 @@ rel_dce_(mvc *sql, sql_rel *rel)
 }
 
 /* Remove unused expressions */
-static sql_rel *
+sql_rel *
 rel_dce(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
