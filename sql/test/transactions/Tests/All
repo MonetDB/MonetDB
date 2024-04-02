@@ -8,3 +8,5 @@ view-deps
 chaining
 truncate-insert-restart
 update_drop_crash
+KNOWNFAIL?update_drop_crash2
+KNOWNFAIL?insert_drop_crash
