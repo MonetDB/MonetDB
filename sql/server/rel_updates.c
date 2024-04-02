@@ -251,8 +251,6 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 static sql_rel *
 rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 {
-	sql_rel *p = inserts->r;
-
 	if (!ol_length(t->idxs))
 		return inserts;
 
@@ -267,18 +265,6 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 			if (rel_insert_join_idx(sql, alias, i, inserts) == NULL)
 				return NULL;
 		}
-	}
-	if (inserts->r != p) {
-		sql_rel *r = rel_create(sql->sa);
-		if(!r)
-			return NULL;
-
-		r->op = op_insert;
-		r->l = rel_dup(p);
-		r->r = inserts;
-		r->card = inserts->card;
-		r->flag |= UPD_COMP; /* mark as special update */
-		return r;
 	}
 	return inserts;
 }

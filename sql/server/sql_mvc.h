@@ -135,7 +135,8 @@ typedef struct mvc {
 
 	bool use_views:1,
 		   schema_path_has_sys:1, /* speed up object search */
-		   schema_path_has_tmp:1;
+		   schema_path_has_tmp:1,
+		   no_int128:1;
 	struct qc *qc;
 	int clientid;		/* id of the owner */
 
@@ -163,8 +164,6 @@ typedef struct mvc {
 	list *schema_path; /* schema search path for object lookup */
 	uintptr_t sp;
 } mvc;
-
-extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 
 /* should return structure */
 extern sql_store mvc_init(int debug, store_type store, int ro, int su, const char *initpasswd);

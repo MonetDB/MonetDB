@@ -1362,7 +1362,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * an error raised deeply inside the system.
  *
  * The policy is to require all C-functions to return a string-pointer.
- * Upon a successfull call, it is a NULL string. Otherwise it contains an
+ * Upon a successful call, it is a NULL string. Otherwise it contains an
  * encoding of the exceptional state encountered. This message
  * starts with the exception identifer, followed by contextual details.
  */
@@ -1377,7 +1377,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * A key issue is to deal with temporary BATs in an efficient way.
  * References to bats in the buffer pool may cause dangling references
  * at the language level. This appears as soons as your share
- * a reference and delete the BAT from one angle. If not carefull, the
+ * a reference and delete the BAT from one angle. If not careful, the
  * dangling pointer may subsequently be associated with another BAT
  *
  * All string values are private to the VALrecord, which means they

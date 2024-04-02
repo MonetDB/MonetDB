@@ -52,7 +52,7 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_trans_alter_null(m->session->tr, c, 0);
 }
 
-sql_table *
+static sql_table *
 mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 {
 	sql_table *t = NULL;
@@ -844,6 +844,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	}
 	m->schema_path_has_sys = true;
 	m->schema_path_has_tmp = false;
+	m->no_int128 = false;
 	m->store = store;
 
 	m->session = sql_session_create(m->store, m->pa, 1 /*autocommit on*/);

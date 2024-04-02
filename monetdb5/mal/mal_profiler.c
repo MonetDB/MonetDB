@@ -401,12 +401,9 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						cnt = di.count;
 						if (isVIEW(d)) {
 							BAT *v = BBP_desc(VIEWtparent(d));
-							bool vtransient = true;
-							if (v) {
-								MT_lock_set(&v->theaplock);
-								vtransient = v->batTransient;
-								MT_lock_unset(&v->theaplock);
-							}
+							MT_lock_set(&v->theaplock);
+							bool vtransient = v->batTransient;
+							MT_lock_unset(&v->theaplock);
 							if (!logadd(&logbuf,
 										",\"view\":\"true\""
 										",\"parent\":%d"
