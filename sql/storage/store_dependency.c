@@ -116,7 +116,7 @@ sql_trans_get_dependents(sql_trans* tr, sqlid id,
 	void *v;
 	oid rid;
 	rids *rs;
-	sqlid lowest_id = id, highest_id = lowest_id;
+	sqlid low_id = id, high_id = -1;
 
 	if (!dep_list)
 		return NULL;
@@ -145,14 +145,16 @@ sql_trans_get_dependents(sql_trans* tr, sqlid id,
 				return NULL;
 			}
 			if (first) {
-				lowest_id = b->id;
+				low_id = b->id;
 				first = false;
 			}
-			highest_id = b->id;
+			high_id = b->id;
 		}
 	}
 
-	rs = table_api.rids_select(tr, dep_id, &lowest_id, &highest_id, NULL);
+	rs = table_api.rids_select(tr, dep_id, &low_id,
+							   high_id == -1 ? &low_id : &high_id,
+							   NULL);
 	if (rs == NULL) {
 		list_destroy(dep_list);
 		list_destroy(schema_tables);

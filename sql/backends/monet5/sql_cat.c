@@ -1150,11 +1150,19 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	node *n;
 
 	if (!(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.alter_table", SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
-	if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP))
-		throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.alter_table",
+			  SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
+
+	if (!mvc_schema_privs(sql, s) &&
+		!(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP))
+		throw(SQL,"sql.alter_table",
+			  SQLSTATE(42000) "ALTER TABLE: insufficient privileges for"
+			  " user '%s' in schema '%s'",
+			  get_string_global_var(sql, "current_user"), s->base.name);
+
 	if (!(nt = mvc_bind_table(sql, s, t->base.name)))
-		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
+		throw(SQL,"sql.alter_table",
+			  SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
 
 	sql_table *gt = NULL;
 	if (nt && isTempTable(nt)) {
@@ -1172,7 +1180,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (!i->base.new || i->base.deleted)
 					continue;
 				if (i->key && i->key->type == pkey)
-					throw(SQL,"sql.alter_table", SQLSTATE(40000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+					throw(SQL,"sql.alter_table",
+						  SQLSTATE(40000) "CONSTRAINT PRIMARY KEY: a"
+						  " table can have only one PRIMARY KEY\n");
 			}
 		}
 	}
@@ -1191,7 +1201,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					throw(SQL,"sql.alter_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
-					throw(SQL,"sql.alter_table",SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
+					throw(SQL,"sql.alter_table",
+						  SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
 				default:
 					break;
 			}
