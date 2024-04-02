@@ -119,6 +119,7 @@ static MT_Lock BBPnameLock = MT_LOCK_INITIALIZER(BBPnameLock);
 static bat BBP_hash[BBP_mask+1];	/* BBP logical name hash buckets */
 static MT_Lock GDKcacheLock = MT_LOCK_INITIALIZER(GDKcacheLock);
 static bat BBP_free;
+static uint32_t BBP_nfree;
 #define BBP_FREE_LOWATER	10
 #define BBP_FREE_HIWATER	50
 
@@ -1983,6 +1984,7 @@ BBPinit(bool allow_hge_upgrade)
 		if (BBP_desc(i) == NULL) {
 			BBP_next(i) = BBP_free;
 			BBP_free = i;
+			BBP_nfree++;
 		}
 	}
 
@@ -2698,6 +2700,7 @@ maybeextend(void)
 		BBP_next(sz) = ++size;
 	}
 	BBP_next(size) = 0;
+	BBP_nfree += BBP_FREE_LOWATER;
 	return GDK_SUCCEED;
 }
 
@@ -2737,6 +2740,7 @@ BBPinsert(BAT *bn)
 		for (int x = 0; x < BBP_FREE_LOWATER && i; x++) {
 			assert(BBP_next(i) == 0 || BBP_next(i) > i);
 			t->nfreebats++;
+			BBP_nfree--;
 			l = i;
 			i = BBP_next(i);
 		}
@@ -2873,6 +2877,7 @@ BBPhandover(struct freebats *t, uint32_t n)
 	if (n >= t->nfreebats) {
 		bid = t->freebats;
 		t->freebats = 0;
+		BBP_nfree += t->nfreebats;
 		t->nfreebats = 0;
 	} else {
 		p = &t->freebats;
@@ -2880,6 +2885,7 @@ BBPhandover(struct freebats *t, uint32_t n)
 			p = &BBP_next(*p);
 		bid = *p;
 		*p = 0;
+		BBP_nfree += n;
 		t->nfreebats -= n;
 	}
 	p = &BBP_free;
@@ -2962,9 +2968,10 @@ BBPclear(bat i)
 }
 
 void
-BBPrelinquish(struct freebats *t)
+BBPrelinquish(void)
 {
-	if (t->nfreebats == 0)
+	struct freebats *t = MT_thread_getfreebats();
+	if (t == NULL || t->nfreebats == 0)
 		return;
 	MT_lock_set(&GDKcacheLock);
 	while (t->nfreebats > 0) {
@@ -4709,6 +4716,7 @@ gdk_bbp_reset(void)
 	int i;
 
 	BBP_free = 0;
+	BBP_nfree = 0;
 	while (BBPlimit > 0) {
 		BBPlimit -= BBPINIT;
 		assert(BBPlimit >= 0);
@@ -4943,4 +4951,5 @@ BBPprintinfo(void)
 	printf("%d persistent bats using %zu virtual memory (%zu malloced)\n", pn, pvm, pmem);
 	printf("%d transient bats using %zu virtual memory (%zu malloced)\n", tn, tvm, tmem);
 	printf("%d bats are \"hot\" (i.e. currently or recently used)\n", nh);
+	printf("%"PRIu32" bats are in global free list\n", BBP_nfree);
 }
