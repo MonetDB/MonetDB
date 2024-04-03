@@ -100,7 +100,7 @@ type_destroy(sqlstore *store, sql_type *t)
 {
 	(void)store;
 	assert(t->base.refcnt > 0);
-	if (--(t->base.refcnt) > 0)
+	if (ATOMIC_DEC(&t->base.refcnt) > 0)
 		return;
 	_DELETE(t->impl);
 	_DELETE(t->base.name);
@@ -119,7 +119,7 @@ static void
 func_destroy(sqlstore *store, sql_func *f)
 {
 	assert(f->base.refcnt > 0);
-	if (--(f->base.refcnt) > 0)
+	if (ATOMIC_DEC(&f->base.refcnt) > 0)
 		return;
 	if (f->lang == FUNC_LANG_SQL && f->instantiated) {
 		/* clean backend code */
@@ -140,7 +140,7 @@ seq_destroy(sqlstore *store, sql_sequence *s)
 {
 	(void)store;
 	assert(s->base.refcnt > 0);
-	if (--(s->base.refcnt) > 0)
+	if (ATOMIC_DEC(&s->base.refcnt) > 0)
 		return;
 	_DELETE(s->base.name);
 	_DELETE(s);
@@ -157,7 +157,7 @@ static void
 key_destroy(sqlstore *store, sql_key *k)
 {
 	assert(k->base.refcnt > 0);
-	if (--(k->base.refcnt) > 0)
+	if (ATOMIC_DEC(&k->base.refcnt) > 0)
 		return;
 	list_destroy2(k->columns, store);
 	k->columns = NULL;
@@ -169,7 +169,7 @@ void
 idx_destroy(sqlstore *store, sql_idx * i)
 {
 	assert(i->base.refcnt > 0);
-	if (--(i->base.refcnt) > 0)
+	if (ATOMIC_DEC(&i->base.refcnt) > 0)
 		return;
 	list_destroy2(i->columns, store);
 	i->columns = NULL;
@@ -185,7 +185,7 @@ static void
 trigger_destroy(sqlstore *store, sql_trigger *t)
 {
 	assert(t->base.refcnt > 0);
-	if (--(t->base.refcnt) > 0)
+	if (ATOMIC_DEC(&t->base.refcnt) > 0)
 		return;
 	/* remove trigger from schema */
 	if (t->columns) {
@@ -204,7 +204,7 @@ void
 column_destroy(sqlstore *store, sql_column *c)
 {
 	assert(c->base.refcnt > 0);
-	if (--(c->base.refcnt) > 0)
+	if (ATOMIC_DEC(&c->base.refcnt) > 0)
 		return;
 	if (ATOMIC_PTR_GET(&c->data))
 		store->storage_api.destroy_col(store, c);
@@ -228,7 +228,7 @@ void
 table_destroy(sqlstore *store, sql_table *t)
 {
 	assert(t->base.refcnt > 0);
-	if (--(t->base.refcnt) > 0)
+	if (ATOMIC_DEC(&t->base.refcnt) > 0)
 		return;
 	if (isTable(t))
 		store->storage_api.destroy_del(store, t);
@@ -262,7 +262,7 @@ static void
 part_destroy(sqlstore *store, sql_part *p)
 {
 	assert(p->base.refcnt > 0);
-	if (--(p->base.refcnt) > 0)
+	if (ATOMIC_DEC(&p->base.refcnt) > 0)
 		return;
 	if (p->part.range.maxvalue) {
 		_DELETE(p->part.range.minvalue);
@@ -277,7 +277,7 @@ static void
 schema_destroy(sqlstore *store, sql_schema *s)
 {
 	assert(s->base.refcnt > 0);
-	if (--(s->base.refcnt) > 0)
+	if (ATOMIC_DEC(&s->base.refcnt) > 0)
 		return;
 	/* cleanup its parts */
 	os_destroy(s->parts, store);
@@ -700,10 +700,10 @@ sql_trans_update_tables(sql_trans* tr, sql_schema *s)
 	(void)s;
 }
 
-static sql_base *
+sql_base *
 dup_base(sql_base *b)
 {
-	b->refcnt++;
+	ATOMIC_INC(&b->refcnt);
 	return b;
 }
 
@@ -3871,7 +3871,7 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_table *t = NULL;
 
-		if ((res = table_dup(tr, (sql_table*)b, s, NULL, &t, true)) || (res = os_add(ns->tables, tr, t->base.name, &t->base))) {
+		if ((res = table_dup(tr, (sql_table*)b, ns, NULL, &t, true)) || (res = os_add(ns->tables, tr, t->base.name, &t->base))) {
 			schema_destroy(tr->store, ns);
 			return res;
 		}
@@ -6249,8 +6249,11 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		if ((res = store->storage_api.drop_col(tr, (sql_column*)dup_base(&col->base))))
 			return res;
 
-	if (isNew(col)) /* remove create from changes */
+	if (isNew(col)) { /* remove create from changes */
 		trans_del(tr, &col->base);
+		if (!isNew(col->t))
+			column_destroy(store, col);
+	}
 	ol_del(t->columns, store, n);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {

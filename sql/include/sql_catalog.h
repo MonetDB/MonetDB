@@ -195,8 +195,8 @@ typedef void *sql_store;
 typedef struct sql_base {
 	unsigned int
 		new:1,
-		deleted:1,
-		refcnt:30;
+		deleted:1;
+	ATOMIC_TYPE refcnt;
 	sqlid id;
 	char *name;
 } sql_base;

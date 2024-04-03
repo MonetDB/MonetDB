@@ -164,9 +164,9 @@ base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, const char *nam
 	*b = (sql_base) {
 		.id = id,
 		.new = isnew,
-		.refcnt = 1,
 		.name = (name) ? SA_STRDUP(sa, name) : NULL,
 	};
+	ATOMIC_INIT(&b->refcnt, 1);
 }
 
 void

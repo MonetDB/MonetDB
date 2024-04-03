@@ -1251,7 +1251,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			sql_rel *gp = inner;
 			while (gp && is_select(gp->op))
 				gp = gp->l;
-			if (gp && gp->l && !(exp = rel_bind_column(sql, gp->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+			if (gp && !is_basetable(gp->op) && gp->l && !(exp = rel_bind_column(sql, gp->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		}
 		if (!exp && query && query_has_outer(query)) {
@@ -1347,7 +1347,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			sql_rel *gp = inner;
 			while (gp && is_select(gp->op))
 				gp = gp->l;
-			if (gp && gp->l && !(exp = rel_bind_column3(sql, gp->l, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+			if (gp && !is_basetable(gp->op) && gp->l && !(exp = rel_bind_column3(sql, gp->l, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		}
 		if (!exp && query && query_has_outer(query)) {
