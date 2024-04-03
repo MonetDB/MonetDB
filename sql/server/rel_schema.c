@@ -20,6 +20,7 @@
 #include "rel_schema.h"
 #include "rel_remote.h"
 #include "rel_psm.h"
+#include "rel_dump.h"
 #include "rel_propagate.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
@@ -359,10 +360,41 @@ foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
 		return lt->type->localtype == rt->type->localtype;
 	return lt->type->eclass == rt->type->eclass || (EC_VARCHAR(lt->type->eclass) && EC_VARCHAR(rt->type->eclass));
 }
+static str
+rel2str( mvc *sql, sql_rel *rel)
+{
+	buffer *b = NULL;
+	stream *s = NULL;
+	list *refs = NULL;
+	char *res = NULL;
+
+	b = buffer_create(1024);
+	if(b == NULL)
+		goto cleanup;
+	s = buffer_wastream(b, "rel_dump");
+	if(s == NULL)
+		goto cleanup;
+	refs = sa_list(sql->sa);
+	if (!refs)
+		goto cleanup;
+
+	rel_print_refs(sql, s, rel, 0, refs, 0);
+	rel_print_(sql, s, rel, 0, refs, 0);
+	mnstr_printf(s, "\n");
+	res = buffer_get_buf(b);
+
+cleanup:
+	if(b)
+		buffer_destroy(b);
+	if(s)
+		close_stream(s);
+	return res;
+}
 
 static int
-column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
+column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
 {
+	mvc *sql = query->sql;
 	int res = SQL_ERR;
 
 	if (isDeclared && (s->token != SQL_NULL && s->token != SQL_NOT_NULL)) {
@@ -571,6 +603,23 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		res = SQL_OK;
 	} 	break;
 	case SQL_CHECK: {
+		
+		exp_kind ek = {type_value, card_value, FALSE};
+		sql_rel* rel3 = rel_basetable(sql, t, t->base.name);
+		sql_exp *e = rel_logical_value_exp(query, &rel3, s->data.sym, sql_sel, ek);
+		sql_rel *rel = rel_project_exp(sql, e);
+		(void) rel;
+
+		char* rel_str = rel2str(sql, rel);
+
+		int pos = 0;
+		list *refs = sa_list(sql->sa);
+		sql_rel* rel2 = rel_read(sql, rel_str, &pos, refs);
+		(void) rel_str;
+		(void) rel2;
+		char *err = NULL, *r;
+		r = symbol2string(sql, s->data.sym, 0, &err);
+		(void) r;
 		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported");
 		return SQL_ERR;
 	} 	break;
@@ -604,7 +653,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					if (!opt_name && !(default_name = column_constraint_name(sql, sym, cs, t)))
 						return SQL_ERR;
 
-					res = column_constraint_type(sql, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
+					res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
 				} 	break;
 				case SQL_DEFAULT: {
 					symbol *sym = s->data.sym;
