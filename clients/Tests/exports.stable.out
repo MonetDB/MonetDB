@@ -224,6 +224,7 @@ void BBPlock(void);
 BAT *BBPquickdesc(bat b);
 int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn, int *hashash, char *batname, char *filename, char **options);
 int BBPrelease(bat b);
+void BBPrelinquishbats(void);
 int BBPrename(BAT *b, const char *nme);
 int BBPretain(bat b);
 gdk_return BBPsave(BAT *b);
