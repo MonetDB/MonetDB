@@ -618,6 +618,7 @@ typedef struct sql_column {
 	char unique; 		/* 0 NOT UNIQUE, 1 SUB_UNIQUE, 2 UNIQUE */
 	int drop_action;	/* only used for alter statements */
 	char *storage_type;
+	char *check; /* check condition*/
 	size_t dcount;
 	void *min;
 	void *max;

@@ -545,7 +545,7 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *columns = find_sql_table(tr, syss, "_columns");
 	sqlstore *store = tr->store;
-	str v, def, tpe, st;
+	str v, def, tpe, st, ch;
 	int sz, d;
 
 	sqlid cid = *(sqlid*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "id"));
@@ -576,6 +576,10 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	st = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "storage"));
 	if (!strNil(st))
 		c->storage_type =_STRDUP(st);
+	c->check = NULL;
+	ch = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "check"));
+	if (!strNil(ch))
+		c->check =_STRDUP(ch);
 	ATOMIC_PTR_INIT(&c->data, NULL);
 	c->t = t;
 	if (isTable(c->t))
@@ -1489,7 +1493,7 @@ insert_schemas(sql_trans *tr)
 				sql_column *c = o->data;
 
 				if ((res = store->table_api.table_insert(tr, syscolumn, &c->base.id, &c->base.name, &c->type.type->base.name, &c->type.digits, &c->type.scale,
-										&t->base.id, (c->def) ? &c->def : &strnil, &c->null, &c->colnr, (c->storage_type)? &c->storage_type : &strnil)))
+										&t->base.id, (c->def) ? &c->def : &strnil, &c->null, &c->colnr, (c->storage_type)? &c->storage_type : &strnil, (c->check)? &c->check : &strnil)))
 					return res;
 			}
 		}
@@ -1593,6 +1597,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, const char *name, sqlid id,
 	col->t = t;
 	col->unique = 0;
 	col->storage_type = NULL;
+	col->check = NULL;
 	if (ol_add(t->columns, &col->base))
 		return NULL;
 
@@ -1678,6 +1683,11 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	col->storage_type = NULL;
 	if (c->storage_type)
 		col->storage_type = SA_STRDUP(sa, c->storage_type);
+	if (ol_add(t->columns, &col->base))
+		return NULL;
+	col->check = NULL;
+	if (c->check)
+		col->check = SA_STRDUP(sa, c->check);
 	if (ol_add(t->columns, &col->base))
 		return NULL;
 	return col;
@@ -2017,6 +2027,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 		bootstrap_create_column(tr, t, "null", 2084, "boolean", 1) == NULL ||
 		bootstrap_create_column(tr, t, "number", 2085, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "storage", 2086, "varchar", 2048) == NULL ||
+		bootstrap_create_column(tr, t, "check", 2165, "varchar", 2048) == NULL ||
 
 		(t = bootstrap_create_table(tr, s, "keys", 2087)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2088, "int", 31) == NULL ||
@@ -2078,6 +2089,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 		bootstrap_create_column(tr, t, "null", 2132, "boolean", 1) == NULL ||
 		bootstrap_create_column(tr, t, "number", 2133, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "storage", 2134, "varchar", 2048) == NULL ||
+		bootstrap_create_column(tr, t, "check", 2166, "varchar", 2048) == NULL ||
 
 		(t = bootstrap_create_table(tr, s, "keys", 2135)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2136, "int", 31) == NULL ||
@@ -2976,6 +2988,9 @@ column_dup(sql_trans *tr, sql_column *oc, sql_table *t, sql_column **cres)
 	c->storage_type = NULL;
 	if (oc->storage_type)
 		c->storage_type =_STRDUP(oc->storage_type);
+	c->check = NULL;
+	if (oc->check)
+		c->check =_STRDUP(oc->check);
 	ATOMIC_PTR_INIT(&c->data, NULL);
 
 	if (isTable(c->t)) {
@@ -3642,6 +3657,9 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	col->storage_type = NULL;
 	if (c->storage_type)
 		col->storage_type =_STRDUP(c->storage_type);
+	col->check = NULL;
+	if (c->check)
+		col->check =_STRDUP(c->check);
 
 	if ((res = ol_add(t->columns, &col->base)))
 		return res;
@@ -3666,7 +3684,8 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name,
 					&digits, &col->type.scale, &t->base.id,
 					(col->def) ? &col->def : &strnil, &col->null, &col->colnr,
-					(col->storage_type) ? &col->storage_type : &strnil))) {
+					(col->storage_type) ? &col->storage_type : &strnil,
+					(col->check) ? &col->check : &strnil))) {
 			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}
@@ -5993,6 +6012,7 @@ create_sql_column_with_id(sql_allocator *sa, sqlid id, sql_table *t, const char 
 	col->t = t;
 	col->unique = 0;
 	col->storage_type = NULL;
+	col->check = NULL;
 
 	if (ol_add(t->columns, &col->base))
 		return NULL;
@@ -6109,7 +6129,7 @@ sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const ch
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
 		int digits = type_digits(&col->type);
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &digits, &col->type.scale,
-										  &t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil))) {
+										  &t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil, (col->check) ? &col->check : &strnil))) {
 			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}
