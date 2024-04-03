@@ -2968,7 +2968,7 @@ BBPclear(bat i)
 }
 
 void
-BBPrelinquish(void)
+BBPrelinquishbats(void)
 {
 	struct freebats *t = MT_thread_getfreebats();
 	if (t == NULL || t->nfreebats == 0)
