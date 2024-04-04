@@ -429,7 +429,7 @@ class SQLLogic:
         for row in data:
             nrow = []
             for col in row:
-                if type(col) == type(''):
+                if isinstance(col, str):
                     res = geosre.search(col)
                     if res is not None:
                         points = ptsre.sub(r'(\g<0>)', res.group('points'))
