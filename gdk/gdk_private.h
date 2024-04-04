@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -67,8 +69,6 @@ gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__visibility__("hidden")));
 BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	__attribute__((__visibility__("hidden")));
-BAT *BATcreatesample(oid hseq, BUN cnt, BUN n, uint64_t seed)
-	__attribute__((__visibility__("hidden")));
 void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATdestroy(BAT *b)
@@ -81,8 +81,6 @@ gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, B
 Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
 	__attribute__((__visibility__("hidden")));
 void BAThashsave(BAT *b, bool dosync)
-	__attribute__((__visibility__("hidden")));
-void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 bool BATiscand(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -109,14 +107,14 @@ void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPinit(bool allow_hge_upgrade)
 	__attribute__((__visibility__("hidden")));
-bat BBPinsert(BAT *bn)
+bat BBPallocbat(int tt)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BBPprintinfo(void)
 	__attribute__((__visibility__("hidden")));
-void BBPrelinquish(void)
-	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
+	__attribute__((__visibility__("hidden")));
+gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
@@ -185,8 +183,6 @@ gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *e
 		      GDK, NULL, format, ##__VA_ARGS__)
 lng getBBPlogno(void)
 	__attribute__((__visibility__("hidden")));
-lng getBBPtransid(void)
-	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHappend_locked(BAT *b, BUN i, const void *v)
@@ -203,9 +199,14 @@ BUN HASHinsert(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-BUN HASHmask(BUN cnt)
-	__attribute__((__const__))
-	__attribute__((__visibility__("hidden")));
+static inline BUN __attribute__((__const__))
+HASHmask(BUN cnt)
+{
+	cnt = cnt * 8 / 7;
+	if (cnt < BATTINY)
+		cnt = BATTINY;
+	return cnt;
+}
 gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -180,10 +182,7 @@ typedef struct MALBLK {
 	 unsafeProp:1;				/* unsafe property */
 
 	str errors;					/* left over errors */
-	struct MALBLK *history;		/* of optimizer actions */
-	short keephistory;			/* do we need the history at all */
 	int maxarg;					/* keep track on the maximal arguments used */
-	ptr replica;				/* for the replicator tests */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
 	ATOMIC_TYPE workers;

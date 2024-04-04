@@ -4,7 +4,9 @@
 .\" License, v. 2.0.  If a copy of the MPL was not distributed with this
 .\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
 .\"
-.\" Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+.\" Copyright 2024 MonetDB Foundation;
+.\" Copyright August 2008 - 2023 MonetDB B.V.;
+.\" Copyright 1997 - July 2008 CWI.
 .\"
 .TH MSQLDUMP 1 MonetDB
 .SH NAME
@@ -96,8 +98,57 @@ query.
 \fB\-\-functions\fP (\fB\-f\fP)
 Only dump functions definitions.
 .TP
-\fB\-\-table=\fP\fItable\fP (\fB\-t\fP \fItable\fP)
-Only dump the specified \fItable\fP.
+\fB\-\-table=[\fIschema\fP\fB.\fP]\fItable\fP (\fB\-t\fP [\fIschema\fP\fB.\fP]\fItable\fP)
+Only dump the specified table.
+If
+.I schema
+is not specified, the user's current schema is used.
+When either
+.I schema
+or
+.I table
+contains percent characters, all tables matching the (SQL) search
+pattern are dumped.
+.TP
+\fB\-\-output=\fP\fIfilename\fP (\fB\-o\fP \fIfilename\fP)
+Write the dump to the specified file.
+If
+.I filename
+contains a recognized compression scheme suffix, the file will be
+compressed using that scheme.
+.TP
+\fB\-\-outputdir=\fP\fIdirectory\fP (\fB\-O\fP \fIdirectory\fP)
+Write the dump to the file
+.B dump.sql
+in the specified directory which is created if it does not exist.
+The data of the tables will be stored in separate CSV files in the
+directory.
+If the
+.B \-\-compression
+option is used, the CSV files will be compressed using the specified
+compression scheme.
+If both the 
+.B \-\-outputdir
+option and the
+.B \-\-output
+option are specified, the last one is used.
+The
+.B \-\-outputdir
+option is not compatible with the
+\B \-\-inserts
+option.
+.TP
+\fB\-\-compression=\fP\fIextension\fP (\fB\-x\fP \fIextension\fP)
+Compress the CSV files produced with the
+.B \-\-outputdir
+option using the specified compression scheme.
+Depending on how the program is compiled, the following compression
+schemes are recognized:
+.BR gz ,
+.BR bz2 ,
+.BR xz ,
+and
+.BR lz4 .
 .TP
 \fB\-\-quiet\fP (\fB\-q\fP)
 Don't print the welcome message.

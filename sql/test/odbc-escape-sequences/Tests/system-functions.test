@@ -10,7 +10,6 @@ select length(DATABASE()) > 0
 ----
 1
 
-
 query I rowsort
 select { fn IFNULL(NULL, 1) }
 ----
@@ -41,7 +40,6 @@ select IFNULL(NULLIF(3,3), -9.0/+4)
 ----
 -2.250
 
-
 query T rowsort
 select { fn USER() }
 ----
@@ -49,3 +47,4 @@ monetdb
 
 statement error
 select USER()
+

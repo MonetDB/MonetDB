@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -433,6 +435,75 @@ opener_rastream(char *filename)
 		croak(2, "open_rastream returned binary stream");
 	return s;
 }
+
+#ifdef HAVE_CURL
+#include <curl/curl.h>
+
+#ifndef CURL_WRITEFUNC_ERROR
+#define CURL_WRITEFUNC_ERROR 0
+#endif
+
+static size_t
+write_callback(char *buffer, size_t size, size_t nitems, void *userp)
+{
+	stream *s = userp;
+
+	/* size is expected to always be 1 */
+
+	ssize_t sz = mnstr_write(s, buffer, size, nitems);
+	if (sz < 0)
+		return CURL_WRITEFUNC_ERROR; /* indicate failure to library */
+	return (size_t) sz * size;
+}
+
+static stream *
+open_urlstream(const char *url)
+{
+	CURL *handle;
+	stream *s;
+	CURLcode ret;
+	char errbuf[CURL_ERROR_SIZE];
+
+	s = buffer_wastream(NULL, url);
+	if (s == NULL) {
+		return NULL;
+	}
+
+	if ((handle = curl_easy_init()) == NULL) {
+		mnstr_destroy(s);
+		return NULL;
+	}
+
+	errbuf[0] = 0;
+
+	if ((ret = curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_URL, url)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_WRITEDATA, s)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_VERBOSE, 0)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK ||
+	    (ret = curl_easy_perform(handle)) != CURLE_OK) {
+		curl_easy_cleanup(handle);
+		mnstr_destroy(s);
+		if (errbuf[0])
+			fprintf(stderr, "%s\n", errbuf);
+		else
+			fprintf(stderr, "%s\n", curl_easy_strerror(ret));
+		return NULL;
+	}
+	curl_easy_cleanup(handle);
+	(void) mnstr_get_buffer(s);	/* switch to read-only */
+	return s;
+}
+#else
+static stream *
+open_urlstream(const char *url)
+{
+	(void) url;
+	return NULL;
+}
+#endif
 
 static stream *
 opener_urlstream(char *url)

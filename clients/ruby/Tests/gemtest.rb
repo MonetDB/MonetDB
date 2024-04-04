@@ -46,12 +46,12 @@ class MapiRubyInterfaceTestCase
 	end
 
 	def test9(query_results)
-		result = query_results.type_fields == {"id"=>"int", "stringtest"=>"clob", "integertest"=>"int"}
+		result = query_results.type_fields == {"id"=>"int", "stringtest"=>"varchar", "integertest"=>"int"}
 		return result, "can get the type of fields from a query"
 	end
 
 	def test10(query_results)
-		result = query_results.type_fields == {"id"=>"int", "stringtest"=>"clob", "integertest"=>"int"}
+		result = query_results.type_fields == {"id"=>"int", "stringtest"=>"varchar", "integertest"=>"int"}
 		return result, "get the type of fields from a query"
 	end
 

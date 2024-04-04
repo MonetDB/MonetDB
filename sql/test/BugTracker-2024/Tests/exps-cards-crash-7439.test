@@ -1,0 +1,9 @@
+statement ok
+CREATE TABLE v0 ( v1 oid )
+
+statement ok
+DELETE FROM v0 WHERE NOT ( v1 IN ( SELECT MAX ( DISTINCT ( SELECT NULL WHERE v1 AND v1 = 'aggordview1' GROUP BY v1 ) ) FROM v0 ) )
+
+statement ok
+DROP TABLE v0
+

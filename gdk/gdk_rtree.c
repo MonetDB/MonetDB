@@ -1,3 +1,15 @@
+/*
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
+ */
+
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
@@ -150,8 +162,7 @@ RTREEexists(BAT *b)
 	BAT *pb;
 	bool ret;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
+		pb = BBP_desc(VIEWtparent(b));
 	} else {
 		pb = b;
 	}
@@ -186,8 +197,7 @@ BATrtree(BAT *wkb, BAT *mbr)
 
 	//Check for a parent BAT of wkb, load if exists
 	if (VIEWtparent(wkb)) {
-		pb = BBP_cache(VIEWtparent(wkb));
-		assert(pb);
+		pb = BBP_desc(VIEWtparent(wkb));
 	} else {
 		pb = wkb;
 	}
@@ -242,8 +252,7 @@ RTREEfree(BAT *b)
 {
 	BAT *pb;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
+		pb = BBP_desc(VIEWtparent(b));
 	} else {
 		pb = b;
 	}
@@ -263,8 +272,7 @@ RTREEdestroy(BAT *b)
 {
 	BAT *pb;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
+		pb = BBP_desc(VIEWtparent(b));
 	} else {
 		pb = b;
 	}
@@ -311,8 +319,7 @@ BUN*
 RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 	BAT *pb;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
+		pb = BBP_desc(VIEWtparent(b));
 	} else {
 		pb = b;
 	}

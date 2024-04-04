@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -656,7 +658,8 @@ typedef struct {
 
 /* interface definitions */
 gdk_export void *VALconvert(int typ, ValPtr t);
-gdk_export char *VALformat(const ValRecord *res);
+gdk_export char *VALformat(const ValRecord *res)
+	__attribute__((__warn_unused_result__));
 gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
@@ -685,7 +688,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *           BUN    batCount;         // Tuple count
  *           // Tail properties
  *           int    ttype;            // Tail type number
- *           str    tident;           // name for tail column
  *           bool   tkey;             // tail values are unique
  *           bool   tnonil;           // tail has no nils
  *           bool   tsorted;          // are tail values currently ordered?
@@ -717,8 +719,6 @@ typedef struct PROPrec PROPrec;
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
-	str id;			/* label for column */
-
 	uint16_t width;		/* byte-width of the atom array */
 	int8_t type;		/* type id. */
 	uint8_t shift;		/* log2 of bun width */
@@ -757,7 +757,9 @@ typedef struct {
 #define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
 #define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
-#define GDKLIBRARY		061046U /* first in Sep2022 */
+#define GDKLIBRARY_JSON 	061046U /* first in Sep2022: json storage changes*/
+#define GDKLIBRARY_STATUS	061047U /* first in Dec2023: no status/filename columns */
+#define GDKLIBRARY		061050U /* first after Dec2023 */
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -818,7 +820,6 @@ typedef struct BAT {
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
-#define tident		T.id
 #define torderidx	T.orderidx
 #define twidth		T.width
 #define tshift		T.shift
@@ -955,10 +956,9 @@ gdk_export void HEAPincref(Heap *h);
  * field.
  */
 typedef struct {
-	BAT *cache;		/* if loaded: BAT* handle */
 	char *logical;		/* logical name (may point at bak) */
 	char bak[16];		/* logical name backup (tmp_%o) */
-	BAT *desc;		/* the BAT descriptor */
+	BAT descr;		/* the BAT descriptor */
 	char *options;		/* A string list of options */
 #if SIZEOF_VOID_P == 4
 	char physical[20];	/* dir + basename for storage */
@@ -992,19 +992,18 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
 #define BBP_record(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)]
-#define BBP_cache(i)	BBP_record(i).cache
 #define BBP_logical(i)	BBP_record(i).logical
 #define BBP_bak(i)	BBP_record(i).bak
 #define BBP_next(i)	BBP_record(i).next
 #define BBP_physical(i)	BBP_record(i).physical
 #define BBP_options(i)	BBP_record(i).options
-#define BBP_desc(i)	BBP_record(i).desc
+#define BBP_desc(i)	(&BBP_record(i).descr)
 #define BBP_refs(i)	BBP_record(i).refs
 #define BBP_lrefs(i)	BBP_record(i).lrefs
 #define BBP_status(i)	((unsigned) ATOMIC_GET(&BBP_record(i).status))
 #define BBP_pid(i)	BBP_record(i).pid
 #define BATgetId(b)	BBP_logical((b)->batCacheid)
-#define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
+#define BBPvalid(i)	(BBP_logical(i) != NULL)
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)
@@ -1421,7 +1420,6 @@ gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, bool onoff);
 gdk_export gdk_return BATmode(BAT *b, bool transient);
-gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 
@@ -1720,7 +1718,7 @@ gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
 		      GDK, NULL, format, ##__VA_ARGS__)
 #define GDKsyserr(errno, format, ...)					\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,		\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,		\
 		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
 		      format, ##__VA_ARGS__)
 #define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
@@ -1746,7 +1744,10 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	gdk_return rc;
 	assert(b->tbaseoff == 0);
 	assert(b->theap->parentid == b->batCacheid);
-	if ((rc = ATOMputVAR(b, &d, v)) != GDK_SUCCEED)
+	MT_lock_set(&b->theaplock);
+	rc = ATOMputVAR(b, &d, v);
+	MT_lock_unset(&b->theaplock);
+	if (rc != GDK_SUCCEED)
 		return rc;
 	if (b->twidth < SIZEOF_VAR_T &&
 	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
@@ -2101,7 +2102,7 @@ BUNtoid(BAT *b, BUN p)
  */
 gdk_export gdk_return TMsubcommit(BAT *bl)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid)
+gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno)
 	__attribute__((__warn_unused_result__));
 
 /*
@@ -2246,7 +2247,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * The first parameter is a BAT, the p and q are BUN pointers, where p
  * is the iteration variable.
  */
-#define BATloop(r, p, q)			\
+#define BATloop(r, p, q)				\
 	for (q = BATcount(r), p = 0; p < q; p++)
 
 /*
@@ -2329,10 +2330,6 @@ gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 
 gdk_export BAT *BATunique(BAT *b, BAT *s);
 
-gdk_export BAT *BATmergecand(BAT *a, BAT *b);
-gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
-gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
-
 gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__warn_unused_result__));
 
@@ -2362,74 +2359,125 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 #define CHECK_QRY_TIMEOUT_MASK	(CHECK_QRY_TIMEOUT_STEP - 1)
 
 #define TIMEOUT_MSG "Timeout was reached!"
+#define INTERRUPT_MSG "Query interrupted!"
+#define DISCONNECT_MSG "Client is disconnected!"
 #define EXITING_MSG "Server is exiting!"
 
-#define TIMEOUT_HANDLER(rtpe)						\
+#define QRY_TIMEOUT (-1)	/* query timed out */
+#define QRY_INTERRUPT (-2)	/* client indicated interrupt */
+#define QRY_DISCONNECT (-3)	/* client disconnected */
+
+static inline void
+TIMEOUT_ERROR(QryCtx *qc, const char *file, const char *func, int lineno)
+{
+	if (GDKexiting()) {
+		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+			      "%s\n", EXITING_MSG);
+	} else if (qc) {
+		switch (qc->endtime) {
+		case QRY_TIMEOUT:
+			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+				      "%s\n", TIMEOUT_MSG);
+			break;
+		case QRY_INTERRUPT:
+			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+				      "%s\n", INTERRUPT_MSG);
+			break;
+		case QRY_DISCONNECT:
+			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+				      "%s\n", DISCONNECT_MSG);
+			break;
+		default:
+			MT_UNREACHABLE();
+		}
+	}
+}
+
+#define TIMEOUT_HANDLER(rtpe, qc)					\
 	do {								\
-		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		TIMEOUT_ERROR(qc, __FILE__, __func__, __LINE__);	\
 		return rtpe;						\
 	} while(0)
 
-#define GOTO_LABEL_TIMEOUT_HANDLER(label)				\
+static inline bool
+TIMEOUT_TEST(QryCtx *qc)
+{
+	if (qc == NULL)
+		return false;
+	if (qc->endtime < 0)
+		return true;
+	if (qc->endtime && GDKusec() > qc->endtime) {
+		qc->endtime = QRY_TIMEOUT;
+		return true;
+	}
+	switch (bstream_getoob(qc->bs)) {
+	case -1:
+		qc->endtime = QRY_DISCONNECT;
+		return true;
+	case 0:
+		return false;
+	default:
+		qc->endtime = QRY_INTERRUPT;
+		return true;
+	}
+}
+
+#define GOTO_LABEL_TIMEOUT_HANDLER(label, qc)				\
 	do {								\
-		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		TIMEOUT_ERROR(qc, __FILE__, __func__, __LINE__);	\
 		goto label;						\
 	} while(0)
 
-#define GDK_CHECK_TIMEOUT_BODY(timeoffset, callback)		\
-	do {							\
-		if (GDKexiting() ||				\
-		    (timeoffset && GDKusec() > timeoffset)) {	\
-			callback;				\
-		}						\
+#define GDK_CHECK_TIMEOUT_BODY(qc, callback)		\
+	do {						\
+		if (GDKexiting() || TIMEOUT_TEST(qc)) {	\
+			callback;			\
+		}					\
 	} while (0)
 
-#define GDK_CHECK_TIMEOUT(timeoffset, counter, callback)		\
-	do {								\
-		if (counter > CHECK_QRY_TIMEOUT_STEP) {			\
-			GDK_CHECK_TIMEOUT_BODY(timeoffset, callback);	\
-			counter = 0;					\
-		} else {						\
-			counter++;					\
-		}							\
+#define GDK_CHECK_TIMEOUT(qc, counter, callback)		\
+	do {							\
+		if (counter > CHECK_QRY_TIMEOUT_STEP) {		\
+			GDK_CHECK_TIMEOUT_BODY(qc, callback);	\
+			counter = 0;				\
+		} else {					\
+			counter++;				\
+		}						\
 	} while (0)
 
 /* here are some useful constructs to iterate a number of times (the
  * REPEATS argument--only evaluated once) and checking for a timeout
- * every once in a while; the TIMEOFFSET value is a variable of type lng
+ * every once in a while; the QC->endtime value is a variable of type lng
  * which is either 0 or the GDKusec() compatible time after which the
  * loop should terminate; check for this condition after the loop using
  * the TIMEOUT_CHECK macro; in order to break out of any of these loops,
  * use TIMEOUT_LOOP_BREAK since plain break won't do it; it is perfectly
  * ok to use continue inside the body */
 
-/* use IDX as a loop variable, initializing it to 0 and incrementing it
- * on each iteration */
-#define TIMEOUT_LOOP_IDX(IDX, REPEATS, TIMEOFFSET)			\
+/* use IDX as a loop variable (already declared), initializing it to 0
+ * and incrementing it on each iteration */
+#define TIMEOUT_LOOP_IDX(IDX, REPEATS, QC)				\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
-			if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
-				TIMEOFFSET = -1;			\
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
+			if (TIMEOUT_TEST(QC)) {				\
 				break;					\
 			} else						\
 				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
  * incrementing it on each iteration */
-#define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, TIMEOFFSET)			\
+#define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, QC)				\
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
-			if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
-				TIMEOFFSET = -1;			\
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
+			if (TIMEOUT_TEST(QC)) {				\
 				break;					\
 			} else						\
 				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* there is no user-visible loop variable */
-#define TIMEOUT_LOOP(REPEATS, TIMEOFFSET)				\
-	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++) \
-		if (GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET)) { \
-			TIMEOFFSET = -1;				\
+#define TIMEOUT_LOOP(REPEATS, QC)					\
+	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
+		if (TIMEOUT_TEST(QC)) {					\
 			break;						\
 		} else							\
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
@@ -2443,10 +2491,10 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 
 /* check whether a timeout occurred, and execute the CALLBACK argument
  * if it did */
-#define TIMEOUT_CHECK(TIMEOFFSET, CALLBACK)	\
-	do {					\
-		if (TIMEOFFSET == -1)		\
-			CALLBACK;		\
+#define TIMEOUT_CHECK(QC, CALLBACK)					\
+	do {								\
+		if (GDKexiting() || ((QC) && (QC)->endtime < 0))	\
+			CALLBACK;					\
 	} while (0)
 
 typedef struct gdk_callback {

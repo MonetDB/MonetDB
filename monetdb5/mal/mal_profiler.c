@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* (c) M.L. Kersten
@@ -399,12 +401,9 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						cnt = di.count;
 						if (isVIEW(d)) {
 							BAT *v = BBP_desc(VIEWtparent(d));
-							bool vtransient = true;
-							if (v) {
-								MT_lock_set(&v->theaplock);
-								vtransient = v->batTransient;
-								MT_lock_unset(&v->theaplock);
-							}
+							MT_lock_set(&v->theaplock);
+							bool vtransient = v->batTransient;
+							MT_lock_unset(&v->theaplock);
 							if (!logadd(&logbuf,
 										",\"view\":\"true\""
 										",\"parent\":%d"
@@ -888,6 +887,12 @@ TRACEtable(Client cntxt, BAT **r)
 	r[2] = COLcopy(cntxt->profevents, cntxt->profevents->ttype, false,
 				   TRANSIENT);
 	MT_lock_unset(&mal_profileLock);
+	if (r[0] == NULL || r[1] == NULL || r[2] == NULL) {
+		BBPreclaim(r[0]);
+		BBPreclaim(r[1]);
+		BBPreclaim(r[2]);
+		return -1;
+	}
 	return 3;
 }
 

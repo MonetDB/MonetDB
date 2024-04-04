@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -19,35 +21,23 @@
 #include "sql.h"
 #include "mapi_prompt.h"
 #include "sql_result.h"
-#include "sql_gencode.h"
 #include "sql_storage.h"
 #include "sql_scenario.h"
 #include "store_sequence.h"
-#include "sql_optimizer.h"
-#include "sql_datetime.h"
 #include "sql_partition.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
-#include "rel_statistics.h"
 #include "rel_partition.h"
-#include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
-#include "rel_dump.h"
-#include "rel_bin.h"
 #include "rel_physical.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
-#include "mal_module.h"
-#include "mal_session.h"
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_profiler.h"
 #include "bat5.h"
 #include "opt_pipes.h"
-#include "orderidx.h"
 #include "clients.h"
 #include "mal_instruction.h"
 #include "mal_resource.h"
@@ -349,7 +339,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			break;
 	}
 	osa = sql->sa;
-	sql->sa = sql->ta;
+	sql_allocator *nsa = sql->sa = sa_create(NULL);
 	/* first check default values */
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
@@ -359,13 +349,14 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			const char *next_value_for = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
 
-			sql->sa = sql->ta;
+			sa_reset(nsa);
+			sql->sa = nsa;
 			r = rel_parse(sql, s, sa_message(sql->ta, "select %s;", c->def), m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 ||
 				exp_check_type(sql, &c->type, r, r->exps->h->data, type_equal) == NULL) {
 				if (r)
 					rel_destroy(r);
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 					throw(SQL, "sql.catalog", "%s", sql->errstr);
@@ -377,12 +368,11 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			if (strncmp(c->def, next_value_for, strlen(next_value_for)) != 0) {
 				list *blist = rel_dependencies(sql, r);
 				if (mvc_create_dependencies(sql, blist, nt->base.id, FUNC_DEPENDENCY)) {
-					rel_destroy(r);
-					sa_reset(sql->sa);
+					sa_destroy(nsa);
+					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
-			rel_destroy(r);
 			sa_reset(sql->sa);
 		}
 	}
@@ -392,12 +382,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		switch (mvc_copy_column(sql, nt, c, &copied)) {
 			case -1:
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			case -2:
 			case -3:
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
 			default:
@@ -412,17 +402,20 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 		_DELETE(nt->part.pexp->exp);
 		nt->part.pexp->exp = _STRDUP(t->part.pexp->exp);
 		err = bootstrap_partition_expression(sql, nt, 1);
-		sa_reset(sql->ta);
 		if (err) {
+			sa_destroy(nsa);
 			sql->sa = osa;
 			return err;
 		}
+		sa_reset(nsa);
 	}
 	check = sql_trans_set_partition_table(sql->session->tr, nt);
 	if (check == -4) {
+		sa_destroy(nsa);
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
 	} else if (check) {
+		sa_destroy(nsa);
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
 	}
@@ -433,10 +426,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			switch (mvc_copy_idx(sql, nt, i, NULL)) {
 				case -1:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s index conflicts", s->base.name, t->base.name, i->base.name);
 				default:
@@ -450,22 +445,26 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			char *err = NULL;
 
 			err = sql_partition_validate_key(sql, nt, k, "CREATE");
-			sa_reset(sql->ta);
 			if (err) {
+				sa_destroy(nsa);
 				sql->sa = osa;
 				return err;
 			}
+			sa_reset(sql->sa);
 			switch (mvc_copy_key(sql, nt, k, NULL)) {
 				case -1:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s constraint conflicts", s->base.name, t->base.name, k->base.name);
 				default:
 					break;
 			}
+			sa_reset(sql->sa);
 		}
 	}
 	if (t->triggers) {
@@ -474,10 +473,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			switch (mvc_copy_trigger(sql, nt, tr, NULL)) {
 				case -1:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s trigger conflicts", s->base.name, t->base.name, nt->base.name);
 				default:
@@ -489,26 +490,28 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 	if (nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 
+		sa_reset(nsa);
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(sql, r);
 			if (mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY)) {
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
-		sa_reset(sql->ta);
+		sql->sa = osa;
 		if (!r) {
-			sql->sa = osa;
+			sa_destroy(nsa);
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.catalog", "%s", sql->errstr);
 			else
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 		}
 	}
+	sa_destroy(nsa);
 	sql->sa = osa;
 	return MAL_SUCCEED;
 }
@@ -654,7 +657,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		sql_column *col = NULL;
 
 		if (!strcmp(atomname, "str"))
-			sql_find_subtype(&tpe, "clob", 0, 0);
+			sql_find_subtype(&tpe, "varchar", 0, 0);
 		else {
 			sql_subtype *t = sql_bind_localtype(atomname);
 			if (!t)
@@ -1827,8 +1830,17 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (ATOMextern(tpe) && !ATOMvarsized(tpe))
 		ins = *(ptr *) ins;
-	if ( tpe == TYPE_bat)
+	if ( tpe == TYPE_bat) {
 		b =  (BAT*) ins;
+		if (VIEWtparent(b) || VIEWvtparent(b)) {
+			/* note, b == (BAT*)ins */
+			b = COLcopy(b, b->ttype, true, TRANSIENT);
+			BBPreclaim(ins);
+			ins = b;
+			if (b == NULL)
+				throw(SQL, "sql.append", GDK_EXCEPTION);
+		}
+	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
 		bat_destroy(pos);
@@ -2490,10 +2502,13 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&iterdig);
 	bat_iterator_end(&iterscl);
 	/* now send it to the channel cntxt->fdout */
-	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, cntxt->qryctx.starttime, mb->optimize)) < 0)
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
+	if (bstream_getoob(cntxt->fdin))
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY000) "Query aboted");
+	else if (!msg && (ok = mvc_export_result(be, cntxt->fdout, res, true, cntxt->qryctx.starttime, mb->optimize)) < 0)
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, cntxt->fdout, ok));
   wrapup_result_set:
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2629,7 +2644,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
 		if (!onclient && !tostdout)
 			close_stream(s);
-		goto wrapup_result_set1;
+		if (ok != -5)
+			goto wrapup_result_set1;
 	}
 	if (onclient) {
 		mnstr_flush(s, MNSTR_FLUSH_DATA);
@@ -2643,6 +2659,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
   wrapup_result_set1:
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2725,6 +2742,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
   wrapup_result_set:
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2875,6 +2893,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
   wrapup_result_set:
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2934,6 +2953,7 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = cntxt->sqlcontext;
 	ok = mvc_export_affrows(b, b->out, nr, "", mb->tag, cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.affectedRows", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, b->out, ok));
@@ -2955,6 +2975,7 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = cntxt->sqlcontext;
 	ok = mvc_export_head(b, *s, res_id, FALSE, TRUE, cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportHead", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, *s, ok));
@@ -2977,6 +2998,7 @@ mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sout = pci->argc > 5 ? cntxt->fdout : *s;
 	ok = mvc_export_result(b, sout, res_id, false, cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportResult", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, sout, ok));
@@ -3025,6 +3047,7 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (b->out)
 		ok = mvc_export_operation(b, b->out, "", cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportOperation", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, b->out, ok));
@@ -3054,21 +3077,25 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// scalar values are single-column result sets
 	if ((res_id = mvc_result_table(be, mb->tag, 1, Q_TABLE)) < 0) {
 		cntxt->qryctx.starttime = 0;
+		cntxt->qryctx.endtime = 0;
 		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((ok = mvc_result_value(be, tn, cn, type, digits, scale, p, mtype)) < 0) {
 		cntxt->qryctx.starttime = 0;
+		cntxt->qryctx.endtime = 0;
 		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
 	}
 	if (be->output_format == OFMT_NONE) {
 		cntxt->qryctx.starttime = 0;
+		cntxt->qryctx.endtime = 0;
 		mb->optimize = 0;
 		return MAL_SUCCEED;
 	}
 	ok = mvc_export_result(be, be->out, res_id, true, cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
@@ -3482,12 +3509,10 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (TRACEtable(cntxt, t) != 3)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
-	for(i=0; i < 3; i++)
-	if( t[i]){
+	for (i = 0; i < 3; i++) {
 		*getArgReference_bat(stk, pci, i) = t[i]->batCacheid;
 		BBPkeepref(t[i]);
-	} else
-		throw(SQL,"dump_trace", SQLSTATE(45000) "Missing trace BAT ");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -3803,7 +3828,8 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (!(b = store->storage_api.bind_col(m->session->tr, c, RDONLY)))
 			throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
-		if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
+		if (VIEWtparent(b)) {
+			nb = BBP_desc(VIEWtparent(b));
 			BBPunfix(b->batCacheid);
 			if (!(b = BATdescriptor(nb->batCacheid)))
 				throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -4321,175 +4347,155 @@ end:
 	return msg;
 }
 
+MT_Lock lock_persist_unlogged = MT_LOCK_INITIALIZER(lock_persist_unlogged);
+
 str
 SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)stk;
 	(void)pci;
 
-	bool schema_wide = (pci->argc == 3 || pci->argc == 4),
-		bat_exists = false;
+	assert(pci->argc == 5);
 
 	bat *o0 = getArgReference_bat(stk, pci, 0),
 		*o1 = getArgReference_bat(stk, pci, 1),
 		*o2 = getArgReference_bat(stk, pci, 2);
+	str sname = *getArgReference_str(stk, pci, 3),
+		tname = *getArgReference_str(stk, pci, 4),
+		msg = MAL_SUCCEED;
 
-	str i1 = schema_wide && pci->argc == 4 ? *getArgReference_str(stk, pci, 3) : NULL;
-	str i2 = !schema_wide ? *getArgReference_str(stk, pci, 4) : NULL;
-
-	str msg = MAL_SUCCEED;
-	sqlstore *store = NULL;
 	mvc *m = NULL;
-	sql_trans *tr = NULL;
-	node *ncol;
-	storage *t_del = NULL;
-
-	BAT *b = NULL, *d = NULL, *tables = NULL, *sqlids = NULL, *rowcounts = NULL;
-
 	msg = getSQLContext(cntxt, mb, &m, NULL);
 
 	if (msg)
 		return msg;
 
-	store = m->session->tr->store;
-	tr = m->session->tr;
+	sqlstore *store = store = m->session->tr->store;
 
-	sql_schema *s = NULL;
-	if (i1) {
-		s = mvc_bind_schema(m, i1);
-		if (s == NULL)
-			throw(SQL, "sql.persist_unlogged", SQLSTATE(3F000) "Schema missing %s.", i1);
-	} else {
-		s = m->session->schema;
-	}
+	sql_schema *s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(3F000) "Schema missing %s.", sname);
 
-	if (pci->argc != 3 && !mvc_schema_privs(m, s))
+	if (!mvc_schema_privs(m, s))
 		throw(SQL, "sql.persist_unlogged", SQLSTATE(42000) "Access denied for %s to schema '%s'.",
 			  get_string_global_var(m, "current_user"), s->base.name);
 
-	int n = 100;
-	bat *commit_list = GDKzalloc(sizeof(bat) * (n + 1));
-	BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 1));
+	sql_table *t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
 
-	tables = COLnew(0, TYPE_str, 0, TRANSIENT);
-	sqlids = COLnew(0, TYPE_int, 0, TRANSIENT);
-	rowcounts = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	if (!isUnloggedTable(t) || t->access != TABLE_APPENDONLY)
+		throw(SQL, "sql.persist_unlogged", "Unlogged and Insert Only mode combination required for table %s.%s", sname, tname);
 
-	if (commit_list == NULL || sizes == NULL || tables == NULL || sqlids == NULL || rowcounts == NULL) {
-		GDKfree(commit_list);
-		GDKfree(sizes);
-		BBPnreclaim(3, tables, sqlids, rowcounts);
+	lng count = 0;
+
+	sql_trans *tr = m->session->tr;
+	storage *t_del = bind_del_data(tr, t, NULL);
+
+	BAT *d = BATdescriptor(t_del->cs.bid);
+
+	if (t_del == NULL || d == NULL)
+		throw(SQL, "sql.persist_unlogged", "Cannot access %s column storage.", tname);
+
+	MT_lock_set(&lock_persist_unlogged);
+	BATiter d_bi = bat_iterator(d);
+
+	if (BBP_status(d->batCacheid) & BBPEXISTING) {
+
+		assert(d->batInserted <= d_bi.count);
+
+		if (d->batInserted < d_bi.count) {
+
+			int n = 100;
+			bat *commit_list = GDKzalloc(sizeof(bat) * (n + 1));
+			BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 1));
+
+			if (commit_list == NULL || sizes == NULL) {
+				MT_lock_unset(&lock_persist_unlogged);
+				GDKfree(commit_list);
+				GDKfree(sizes);
+				throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+			}
+
+			commit_list[0] = 0;
+			sizes[0] = 0;
+			int i = 1;
+
+			for (node *ncol = ol_first_node(t->columns); ncol; ncol = ncol->next) {
+
+				sql_column *c = (sql_column *) ncol->data;
+				BAT *b = store->storage_api.bind_col(tr, c, QUICK);
+
+				if (b == NULL) {
+					MT_lock_unset(&lock_persist_unlogged);
+					GDKfree(commit_list);
+					GDKfree(sizes);
+					throw(SQL, "sql.persist_unlogged", "Cannot access column descriptor.");
+				}
+
+				if (i == n && ncol->next) {
+					n = n * 2;
+					commit_list = GDKrealloc(commit_list, sizeof(bat) * n);
+					sizes = GDKrealloc(sizes, sizeof(BUN) * n);
+				}
+
+				if (commit_list == NULL || sizes == NULL) {
+					MT_lock_unset(&lock_persist_unlogged);
+					GDKfree(commit_list);
+					GDKfree(sizes);
+					throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+				}
+
+				commit_list[i] = b->batCacheid;
+				sizes[i] = d_bi.count;
+				i++;
+			}
+
+			commit_list[i] = d->batCacheid;
+			sizes[i] = d_bi.count;
+			i++;
+
+			if (TMsubcommit_list(commit_list, sizes, i, -1) != GDK_SUCCEED) {
+				MT_lock_unset(&lock_persist_unlogged);
+				GDKfree(commit_list);
+				GDKfree(sizes);
+				throw(SQL, "sql.persist_unlogged", "Lower level commit operation failed");
+			}
+
+			GDKfree(commit_list);
+			GDKfree(sizes);
+		}
+
+		count = d_bi.count;
+	}
+
+	bat_iterator_end(&d_bi);
+	MT_lock_unset(&lock_persist_unlogged);
+	BBPreclaim(d);
+
+	BAT *table = COLnew(0, TYPE_str, 0, TRANSIENT),
+		*tableid = COLnew(0, TYPE_int, 0, TRANSIENT),
+		*rowcount = COLnew(0, TYPE_lng, 0, TRANSIENT);
+
+	if (table == NULL || tableid == NULL || rowcount == NULL) {
+		BBPnreclaim(3, table, tableid, rowcount);
 		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 	}
 
-	commit_list[0] = 0;
-	sizes[0] = 0;
-	int i = 1;
-
-	MT_lock_set(&store->commit);
-
-	if (s->tables) {
-		struct os_iter oi;
-		os_iterator(&oi, s->tables, tr, NULL);
-
-		for (sql_base *bt = oi_next(&oi); bt; bt = oi_next(&oi)) {
-			sql_table *t = (sql_table *) bt;
-
-			if (!schema_wide && strcmp(i2, t->base.name) != 0)
-				continue;
-
-			if (isTable(t) && t->access == TABLE_APPENDONLY && isUnloggedTable(t)) {
-				str t_name = t->base.name;
-				sqlid t_id = t->base.id;
-				t_del = bind_del_data(tr, t, NULL);
-
-				if (t_del == NULL || (d = BATdescriptor(t_del->cs.bid)) == NULL) {
-					MT_lock_unset(&store->commit);
-					GDKfree(commit_list);
-					GDKfree(sizes);
-					BBPnreclaim(3, tables, sqlids, rowcounts);
-					throw(SQL, "sql.persist_unlogged", "Cannot access %s column storage.", t_name);
-				}
-
-				if (ol_first_node(t->columns)) {
-
-					for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
-						sql_column *c = (sql_column *) ncol->data;
-						b = store->storage_api.bind_col(tr, c, RDONLY);
-
-						if (b == NULL) {
-							MT_lock_unset(&store->commit);
-							GDKfree(commit_list);
-							GDKfree(sizes);
-							BBPnreclaim(3, tables, sqlids, rowcounts);
-							throw(SQL, "sql.persist_unlogged", "Cannot access column descriptor.");
-						}
-
-						if (isVIEW(b))
-							b = BATdescriptor(VIEWtparent(b));
-
-						if (i == n && ncol->next) {
-							n = n * 2;
-							commit_list = GDKrealloc(commit_list, sizeof(bat) * n);
-							sizes = GDKrealloc(sizes, sizeof(BUN) * n);
-						}
-
-						if (commit_list == NULL || sizes == NULL) {
-							MT_lock_unset(&store->commit);
-							GDKfree(commit_list);
-							GDKfree(sizes);
-							BBPnreclaim(3, tables, sqlids, rowcounts);
-							throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
-						}
-
-						if (BBP_status(b->batCacheid) & BBPEXISTING) {
-							commit_list[i] = b->batCacheid;
-							sizes[i] = BATcount(b);
-							i++;
-							bat_exists = true;
-						}
-
-						if (BUNappend(tables, t_name, false) != GDK_SUCCEED ||
-							BUNappend(sqlids, &t_id, false) != GDK_SUCCEED ||
-							BUNappend(rowcounts, bat_exists ? sizes + (i - 1) : sizes, false) != GDK_SUCCEED) {
-							MT_lock_unset(&store->commit);
-							GDKfree(commit_list);
-							GDKfree(sizes);
-							BBPnreclaim(3, tables, sqlids, rowcounts);
-							throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
-						}
-					}
-				}
-
-				if (bat_exists) {
-					commit_list[i] = d->batCacheid;
-					sizes[i] = BATcount(d);
-					i++;
-				}
-
-				bat_exists = false;
-			}
-		}
+	if (BUNappend(table, tname, false) != GDK_SUCCEED ||
+		BUNappend(tableid, &(t->base.id), false) != GDK_SUCCEED ||
+		BUNappend(rowcount, &count, false) != GDK_SUCCEED) {
+		BBPnreclaim(3, table, tableid, rowcount);
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 	}
 
-	MT_lock_unset(&store->commit);
+	*o0 = table->batCacheid;
+	*o1 = tableid->batCacheid;
+	*o2 = rowcount->batCacheid;
+	BBPkeepref(table);
+	BBPkeepref(tableid);
+	BBPkeepref(rowcount);
 
-	if (commit_list[1] > 0 && TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED)
-		msg = createException(SQL, "sql.persist_unlogged", GDK_EXCEPTION);
-
-	GDKfree(commit_list);
-	GDKfree(sizes);
-
-	if (msg) {
-		BBPnreclaim(3, tables, sqlids, rowcounts);
-	} else {
-		*o0 = tables->batCacheid;
-		*o1 = sqlids->batCacheid;
-		*o2 = rowcounts->batCacheid;
-		BBPkeepref(tables);
-		BBPkeepref(sqlids);
-		BBPkeepref(rowcounts);
-	}
 	return msg;
 }
 
@@ -5245,8 +5251,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
- pattern("sql", "persist_unlogged", SQLpersist_unlogged, true, "Persist deltas on append only tables in current schema", args(3, 3, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng))),
- pattern("sql", "persist_unlogged", SQLpersist_unlogged, true, "Persist deltas on append only tables in schema s", args(3, 4, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng), arg("s", str))),
  pattern("sql", "persist_unlogged", SQLpersist_unlogged, true, "Persist deltas on append only table in schema s table t", args(3, 5, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng), arg("s", str), arg("t", str))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
@@ -5481,17 +5485,17 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  pattern("calc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",void),arg("digits",int))),
  pattern("batcalc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",oid),arg("digits",int))),
  pattern("calc", "timestamp", str_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",str),arg("digits",int))),
- pattern("calc", "timestamp", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("has_tz",int))),
+ pattern("calc", "timestamptz", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("tz_msec",lng))),
  pattern("calc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",timestamp),arg("digits",int))),
  command("batcalc", "timestamp", batstr_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",str),batarg("s",oid),arg("digits",int))),
- command("batcalc", "timestamp", batstr_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,5, batarg("",timestamp),batarg("v",str),batarg("s",oid),arg("digits",int),arg("has_tz",int))),
+ command("batcalc", "timestamptz", batstr_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,5, batarg("",timestamp),batarg("v",str),batarg("s",oid),arg("digits",int),arg("tz_msec",lng))),
  pattern("batcalc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",timestamp),batarg("s",oid),arg("digits",int))),
  pattern("batcalc", "daytime", nil_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",oid),arg("digits",int))),
  pattern("calc", "daytime", str_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",str),arg("digits",int))),
- pattern("calc", "daytime", str_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, arg("",daytime),arg("v",str),arg("digits",int),arg("has_tz",int))),
+ pattern("calc", "daytimetz", str_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, arg("",daytime),arg("v",str),arg("digits",int),arg("tz_msec",lng))),
  pattern("calc", "daytime", daytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",daytime),arg("digits",int))),
  command("batcalc", "daytime", batstr_2time_daytime, false, "cast to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",str),batarg("s",oid),arg("digits",int))),
- pattern("batcalc", "daytime", str_2time_daytimetz, false, "cast daytime to daytime and check for overflow", args(1,5, batarg("",daytime),batarg("v",str),batarg("s",oid),arg("digits",int),arg("has_tz",int))),
+ pattern("batcalc", "daytimetz", str_2time_daytimetz, false, "cast daytime to daytime and check for overflow", args(1,5, batarg("",daytime),batarg("v",str),batarg("s",oid),arg("digits",int),arg("tz_msec",lng))),
  pattern("batcalc", "daytime", daytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",daytime),batarg("s",oid),arg("digits",int))),
  command("sql", "date_trunc", bat_date_trunc, false, "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)", args(1,3, batarg("",timestamp),arg("scale",str),batarg("v",timestamp))),
  command("sql", "date_trunc", date_trunc, false, "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)", args(1,3, arg("",timestamp),arg("scale",str),arg("v",timestamp))),
@@ -6066,9 +6070,12 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  pattern("sqlcatalog", "alter_add_table", SQLalter_add_table, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
  pattern("sqlcatalog", "alter_del_table", SQLalter_del_table, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
  pattern("sqlcatalog", "alter_set_table", SQLalter_set_table, false, "Catalog operation alter_set_table", args(0,3, arg("sname",str),arg("tnme",str),arg("access",int))),
- pattern("sqlcatalog", "alter_add_range_partition", SQLalter_add_range_partition, false, "Catalog operation alter_add_range_partition", args(0,8, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),argany("min",1),argany("max",1),arg("nills",bit),arg("update",int))),
- pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,6, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int))),
- pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,7, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),varargany("arg",0))),
+ pattern("sqlcatalog", "alter_add_range_partition", SQLalter_add_range_partition, false, "Catalog operation alter_add_range_partition", args(0,9, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),argany("min",1),argany("max",1),arg("nills",bit),arg("update",int),arg("assert",lng))),
+ pattern("sqlcatalog", "alter_add_range_partition", SQLalter_add_range_partition, false, "Catalog operation alter_add_range_partition", args(0,9, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),argany("min",1),argany("max",1),arg("nills",bit),arg("update",int),batarg("assert",lng))),
+ pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,7, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),arg("assert",lng))),
+ pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,8, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),arg("assert",lng), varargany("arg",0))),
+ pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,7, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),batarg("assert",lng))),
+ pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,8, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),batarg("assert",lng), varargany("arg",0))),
  pattern("sqlcatalog", "comment_on", SQLcomment_on, false, "Catalog operation comment_on", args(0,2, arg("objid",int),arg("remark",str))),
  pattern("sqlcatalog", "rename_schema", SQLrename_schema, false, "Catalog operation rename_schema", args(0,2, arg("sname",str),arg("newnme",str))),
  pattern("sqlcatalog", "rename_table", SQLrename_table, false, "Catalog operation rename_table", args(0,4, arg("osname",str),arg("nsname",str),arg("otname",str),arg("ntname",str))),

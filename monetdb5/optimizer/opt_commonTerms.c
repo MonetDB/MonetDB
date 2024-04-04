@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -137,7 +139,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 		/* simple SQL bind operations need not be merged, they are cheap
 		 * and/or can be duplicated eliminated elsewhere cheaper */
-		if (getModuleId(p) == sqlRef && getFunctionId(p) != tidRef) {
+		if (getModuleId(p) == sqlRef && (getFunctionId(p) != tidRef && getFunctionId(p) != bindRef)) {
 			pushInstruction(mb, p);
 			old[i] = NULL;
 			continue;

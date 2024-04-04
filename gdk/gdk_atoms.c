@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -121,6 +123,26 @@ hgeHash(const hge *v)
 	return (BUN) mix_hge(*(const uhge *) v);
 }
 #endif
+
+static BUN
+fltHash(const flt *v)
+{
+	if (is_flt_nil(*v))
+		return (BUN) mix_int(GDK_int_min);
+	if (*v == 0)
+		return (BUN) mix_int(0);
+	return (BUN) mix_int(*(const unsigned int *) v);
+}
+
+static BUN
+dblHash(const dbl *v)
+{
+	if (is_dbl_nil(*v))
+		return (BUN) mix_lng(GDK_lng_min);
+	if (*v == 0)
+		return (BUN) mix_lng(0);
+	return (BUN) mix_lng(*(const ulng *) v);
+}
 
 /*
  * @+ Standard Atoms
@@ -1784,7 +1806,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) fltRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) fltWrite,
 		.atomCmp = (int (*)(const void *, const void *)) fltCmp,
-		.atomHash = (BUN (*)(const void *)) intHash,
+		.atomHash = (BUN (*)(const void *)) fltHash,
 	},
 	[TYPE_dbl] = {
 		.name = "dbl",
@@ -1797,7 +1819,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) dblRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) dblWrite,
 		.atomCmp = (int (*)(const void *, const void *)) dblCmp,
-		.atomHash = (BUN (*)(const void *)) lngHash,
+		.atomHash = (BUN (*)(const void *)) dblHash,
 	},
 	[TYPE_lng] = {
 		.name = "lng",

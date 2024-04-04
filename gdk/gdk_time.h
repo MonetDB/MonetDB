@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _GDK_TIME_H_
@@ -124,5 +126,8 @@ gdk_export ssize_t timestamp_fromstr(const char *buf, size_t *len, timestamp **d
 gdk_export ssize_t timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external);
 gdk_export ssize_t timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool external);
 gdk_export ssize_t timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, bool external);
+
+gdk_export ssize_t sql_daytime_fromstr(const char *buf, daytime *d, long tz_sec, bool tzlocal);
+gdk_export ssize_t sql_timestamp_fromstr(const char *buf, timestamp *d, long tz_sec, bool tzlocal);
 
 #endif	/* _GDK_TIME_H_ */

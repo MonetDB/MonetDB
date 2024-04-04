@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* (author) M.L. Kersten
@@ -78,8 +80,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		if (!BBPcheck(bid))
 			return 0;
 		b = BBP_desc(bid);
-		if (b == NULL)
-			return 0;
 		MT_lock_set(&b->theaplock);
 		if (flag && isVIEW(b)) {
 			MT_lock_unset(&b->theaplock);

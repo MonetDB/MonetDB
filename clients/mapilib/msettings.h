@@ -5,11 +5,15 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MSETTINGS_H
 #define _MSETTINGS_H 1
+
+#include "mapi.h"
 #include <stdbool.h>
 
 #define MP__BOOL_START (100)
@@ -30,6 +34,11 @@ extern "C" {
 #else
 #define mapi_export extern
 #endif
+
+/////////////////////////////////////////////////////////////////////
+// This enum identifies properties that can be set that affect how a
+// connection is made. In particular we have functies to parse strings
+// into a an enum value, and back.
 
 typedef enum mparm {
 	MP_UNKNOWN,
@@ -84,6 +93,15 @@ mparm_classify(mparm parm)
 mapi_export mparm mparm_parse(const char *name);
 const char *mparm_name(mparm parm);
 bool mparm_is_core(mparm parm);
+
+
+/////////////////////////////////////////////////////////////////////
+// This type hold all properties that can be set that affect how a
+// connection is made. There are methods to create/destroy etc.,
+// getters and setters based on enum mparm above, and getters
+// and setters based on string values.
+// Also, msettings_validate, msettings_parse_url and a number
+// of helper functions.
 
 typedef struct msettings msettings;
 
@@ -157,6 +175,22 @@ long msettings_password_generation(const msettings *mp);
 bool msettings_lang_is_mal(const msettings *mp);
 bool msettings_lang_is_sql(const msettings *mp);
 bool msettings_lang_is_profiler(const msettings *mp);
+
+/////////////////////////////////////////////////////////////////////
+// Extend mapi.h
+
+// Mutable access settings of existing Mapi.
+// Do not make changes while connected.
+mapi_export msettings *mapi_get_settings(Mapi mid)
+	__attribute__((__nonnull__(1)));
+
+// Create Mapi from settings.
+// Takes ownership of the settings except if malloc fails etc.
+// In that case NULL is returned and ownership of the settings remains with
+// the caller.
+mapi_export Mapi mapi_settings(msettings *settings)
+	__attribute__((__nonnull__(1)));
+
 
 #ifdef __cplusplus
 }

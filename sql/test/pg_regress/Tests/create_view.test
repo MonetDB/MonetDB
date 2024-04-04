@@ -6,7 +6,7 @@ CREATE VIEW street AS
 
 statement ok
 CREATE VIEW iexit AS
-   SELECT ih.name, ih.thepath 
+   SELECT ih.name, ih.thepath
    FROM ihighway ih, ramp r
    WHERE ih.thepath = r.thepath
 

@@ -5,9 +5,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
-
 
 #include "monetdb_config.h"
 
@@ -405,6 +406,8 @@ parse_classic_tcp(msettings *mp, scanner *sc)
 
 	// parse the host
 	char *host = find(sc, ":?/");
+	if (strchr(host, '@') != NULL)
+		return complain(sc, "host@user syntax is not allowed");
 	if (!store(mp, sc, MP_HOST, host))
 		return false;
 
@@ -512,7 +515,7 @@ parse_by_scheme(msettings *mp, scanner *sc)
 		msetting_set_bool(mp, MP_TLS, false);
 		return parse_classic(mp, sc);
 	} else {
-		return complain(sc, "unknown scheme '%s'", scheme);
+		return complain(sc, "unknown URL scheme '%s'", scheme);
 	}
 }
 

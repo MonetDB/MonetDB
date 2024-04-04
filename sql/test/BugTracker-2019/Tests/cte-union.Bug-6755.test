@@ -34,7 +34,7 @@ ALTER TABLE "ontime" SET READ ONLY
 statement ok
 ANALYZE sys.ontime
 
-query TIR rowsort
+query TTR rowsort
 WITH t1 AS (
     SELECT "Carrier", CAST (FLOOR("CRSDepTime"%2400/100) AS INT) AS "Hour",
            CAST(AVG("ArrDelay") AS DECIMAL(8,2)) AS "PredictedArrDelay"

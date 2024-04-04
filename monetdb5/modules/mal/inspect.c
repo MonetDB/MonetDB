@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -30,20 +32,6 @@
 #include "mal_interpreter.h"
 #include "mal_listing.h"
 #include "mal_namespace.h"
-
-static int
-pseudo(bat *ret, BAT *b, str X1, str X2, str X3)
-{
-	char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "%s_%s_%s", X1, X2, X3);
-	if (BBPindex(buf) <= 0 && BBPrename(b, buf) != 0)
-		return -1;
-	if (BATroles(b, X2) != GDK_SUCCEED)
-		return -1;
-	*ret = b->batCacheid;
-	BBPkeepref(b);
-	return 0;
-}
 
 /*
  * Symbol table
@@ -84,8 +72,8 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	if (pseudo(ret, b, "view", "symbol", "function"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	freeModuleList(moduleList);
 
 	return MAL_SUCCEED;
@@ -126,8 +114,8 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	if (pseudo(ret, b, "view", "symbol", "module"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	freeModuleList(moduleList);
 
 	return MAL_SUCCEED;
@@ -168,8 +156,8 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	if (pseudo(ret, b, "view", "symbol", "kind"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	freeModuleList(moduleList);
 
 	return MAL_SUCCEED;
@@ -212,8 +200,8 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 	}
-	if (pseudo(ret, b, "view", " symbol", "address"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	freeModuleList(moduleList);
 
 	return MAL_SUCCEED;
@@ -258,8 +246,8 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 	}
-	if (pseudo(ret, b, "view", " symbol", "address"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	freeModuleList(moduleList);
 
 	return MAL_SUCCEED;
@@ -303,8 +291,8 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		s = s->peer;
 	}
-	if (pseudo(ret, b, "view", "fcn", "stmt"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 
 	return MAL_SUCCEED;
   bailout:
@@ -374,8 +362,8 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (pseudo(ret, b, "view", "input", "result"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
@@ -406,8 +394,8 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (pseudo(ret, b, "view", "input", "result"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
@@ -486,8 +474,8 @@ INSPECTatom_names(bat *ret)
 		if (BUNappend(b, ATOMname(i), false) != GDK_SUCCEED)
 			goto bailout;
 
-	if (pseudo(ret, b, "view", "atom", "name"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 
 	return MAL_SUCCEED;
   bailout:
@@ -548,8 +536,8 @@ INSPECTatom_sup_names(bat *ret)
 			goto bailout;
 	}
 
-	if (pseudo(ret, b, "view", "atom", "sup_name"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 
 	return MAL_SUCCEED;
   bailout:
@@ -573,8 +561,8 @@ INSPECTatom_sizes(bat *ret)
 			goto bailout;
 	}
 
-	if (pseudo(ret, b, "view", "atom", "size"))
-		goto bailout;
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 
 	return MAL_SUCCEED;
   bailout:

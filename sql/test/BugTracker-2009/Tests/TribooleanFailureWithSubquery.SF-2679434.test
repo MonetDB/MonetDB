@@ -47,7 +47,7 @@ FROM (
 HAVING SUM(a) > 0
 ----
 
-query IT rowsort
+query II rowsort
 SELECT *
 FROM (
   SELECT cast( SUM(a) as bigint) AS suma, NULL AS mynull
@@ -62,7 +62,7 @@ FROM (
 WHERE suma > 0
 ----
 
-query IT rowsort
+query II rowsort
 SELECT *
 FROM (
   SELECT cast( SUM(a) as bigint) AS suma, NULL AS mynull
@@ -77,7 +77,7 @@ FROM (
 WHERE mynull > 0
 ----
 
-query IT rowsort
+query II rowsort
 SELECT *
 FROM (
   SELECT 1 AS a, NULL AS b
@@ -85,7 +85,7 @@ FROM (
 WHERE b>0
 ----
 
-query IT rowsort
+query II rowsort
 SELECT *
 FROM (
   SELECT 1 AS a, NULL AS b

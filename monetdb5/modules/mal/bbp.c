@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -26,21 +28,6 @@
 #include "mal_profiler.h"
 #include "bat5.h"
 #include "mutils.h"
-
-static int
-pseudo(bat *ret, BAT *b, str X1, str X2)
-{
-	char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "%s_%s", X1, X2);
-	if ((BBPindex(buf) <= 0 && BBPrename(b, buf) != 0)
-		|| BATroles(b, X2) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		return -1;
-	}
-	*ret = b->batCacheid;
-	BBPkeepref(b);
-	return -0;
-}
 
 static str
 CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -122,8 +109,8 @@ CMDbbpNames(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "name"))
-		throw(MAL, "catalog.bbpNames", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -176,8 +163,8 @@ CMDbbpCount(bat *ret)
 				}
 			}
 		}
-	if (pseudo(ret, b, "bbp", "count"))
-		throw(MAL, "catalog.bbpCount", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -221,8 +208,8 @@ CMDbbpLocation(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "location"))
-		throw(MAL, "catalog.bbpLocation", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -243,7 +230,7 @@ CMDbbpDirty(bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				BAT *bn = BBP_cache(i);
+				BAT *bn = BBP_status(i) & BBPLOADED ? BBP_desc(i) : NULL;
 
 				if (BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED) {
 					BBPunlock();
@@ -253,8 +240,8 @@ CMDbbpDirty(bat *ret)
 				}
 			}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "status"))
-		throw(MAL, "catalog.bbpDirty", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -275,7 +262,7 @@ CMDbbpStatus(bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				char *loc = BBP_cache(i) ? "load" : "disk";
+				char *loc = BBP_status(i) & BBPLOADED ? "load" : "disk";
 
 				if (BUNappend(b, loc, false) != GDK_SUCCEED) {
 					BBPunlock();
@@ -285,8 +272,8 @@ CMDbbpStatus(bat *ret)
 				}
 			}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "status"))
-		throw(MAL, "catalog.bbpStatus", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -318,8 +305,8 @@ CMDbbpKind(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "kind"))
-		throw(MAL, "catalog.bbpKind", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -347,8 +334,8 @@ CMDbbpRefCount(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "refcnt"))
-		throw(MAL, "catalog.bbpRefCount", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -376,8 +363,8 @@ CMDbbpLRefCount(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (pseudo(ret, b, "bbp", "lrefcnt"))
-		throw(MAL, "catalog.bbpLRefCount", GDK_EXCEPTION);
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 	return MAL_SUCCEED;
 }
 
@@ -444,10 +431,10 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 	for (i = 1; i < sz; i++) {
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			bn = BBP_desc(i);
-			if (bn) {
+			if (bn->batCacheid != 0) {
 				lng l = BATcount(bn);
 				int heat_ = 0, len;
-				char *loc = BBP_cache(i) ? "load" : "disk";
+				char *loc = BBP_status(i) & BBPLOADED ? "load" : "disk";
 				char *mode = "persistent";
 				int refs = BBP_refs(i);
 				int lrefs = BBP_lrefs(i);
@@ -472,7 +459,7 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 					|| BUNappend(location, buf, false) != GDK_SUCCEED
 					|| BUNappend(heat, &heat_, false) != GDK_SUCCEED
 					|| BUNappend(dirty,
-								 BBP_cache(i) ? BATdirty(bn) ? "dirty" :
+								 (BBP_status(i) & BBPLOADED) ? BATdirty(bn) ? "dirty" :
 								 DELTAdirty(bn) ? "diffs" : "clean"
 								 : (BBP_status(i) & BBPSWAPPED) ? "diffs" :
 								 "clean", false) != GDK_SUCCEED

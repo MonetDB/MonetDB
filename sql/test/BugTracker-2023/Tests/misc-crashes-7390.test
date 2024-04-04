@@ -15,10 +15,9 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v1 VARCHAR(30))
 
-query TTI
+query TTI nosort
 SELECT DISTINCT v1 v1, v1, abs(v1)=10 FROM v0 WHERE lower (v1) IS NOT NULL
 ----
-
 
 statement ok
 DROP TABLE v0
@@ -27,17 +26,17 @@ DROP TABLE v0
 statement ok
 CREATE VIEW v0 AS SELECT CAST (NULL AS INT) INTERSECT SELECT CAST (NULL AS INT)
 
-query I
+query I nosort
 SELECT * FROM v0
 ----
 NULL
 
-query I
-SELECT row_number ( ) OVER ( ORDER BY 10 * 10 , ( CASE WHEN ( 10 IS NULL ) THEN 4 ELSE 10 END ) DESC NULLS FIRST ) FROM v0;
+query I nosort
+SELECT row_number ( ) OVER ( ORDER BY 10 * 10 , ( CASE WHEN ( 10 IS NULL ) THEN 4 ELSE 10 END ) DESC NULLS FIRST ) FROM v0
 ----
 1
 
-query IIT
+query IIT nosort
 SELECT 2, row_number() OVER (ORDER BY 10*10, (CASE WHEN (10 IS NULL) THEN 4 ELSE 10 END) DESC NULLS FIRST), '.125e+3' FROM v0 LIMIT 1
 ----
 2
@@ -60,7 +59,7 @@ INSERT INTO v0 SELECT row_number () OVER (ORDER BY 2) FROM v0, v0 AS c3_null, v0
 statement ok
 INSERT INTO v0 SELECT row_number () OVER (ORDER BY 2 NULLS LAST) AS c0 FROM v0, v0 AS contains
 
-query I
+query I nosort
 SELECT count(*) as cnt FROM v0
 ----
 122850
@@ -75,7 +74,7 @@ SELECT distinct FIRST_VALUE(v1) OVER (PARTITION BY v1=5 ORDER BY 3003*v1 DESC NU
 5
 
 statement ok
-DROP TABLE v0;
+DROP TABLE v0
 
 -- 05.sql
 statement ok
@@ -90,7 +89,7 @@ INSERT INTO v0 SELECT row_number () OVER (ORDER BY 3) FROM v0, v0 AS c3_null, v0
 statement ok
 INSERT INTO v0 SELECT row_number () OVER (ORDER BY 100 NULLS LAST) FROM v0, v0 AS contains
 
-query I
+query I nosort
 SELECT count(*) as cnt FROM v0
 ----
 545382
@@ -98,7 +97,7 @@ SELECT count(*) as cnt FROM v0
 statement ok
 SELECT FIRST_VALUE (v1) OVER (PARTITION BY 'HASHED' ORDER BY v1<=10 DESC NULLS FIRST, v1 DESC) FROM v0 LIMIT 300000
 
-query T rowsort
+query I rowsort
 SELECT distinct FIRST_VALUE ( v1 ) OVER ( PARTITION BY 'HASHED' ORDER BY v1 <= 10 DESC NULLS FIRST , v1 DESC ) FROM v0 WHERE v1 IS NOT NULL LIMIT 300000
 ----
 10
@@ -130,7 +129,7 @@ INSERT INTO v0 SELECT v0.v1 FROM v0, v0 AS c3_null, v0 AS a
 statement ok
 INSERT INTO v0 SELECT v0.v1 FROM v0, v0 AS c3_null, v0 AS col2
 
-query I
+query I nosort
 SELECT count(*) as cnt FROM v0
 ----
 2197130
@@ -151,10 +150,9 @@ SELECT * FROM v0 ORDER BY (SELECT *)
 statement error 42000!SELECT: subquery must return only one column
 SELECT * FROM v0 ORDER BY ( SELECT * FROM v0 )
 
-query IR
+query IR nosort
 SELECT * FROM v0 ORDER BY (SELECT -1)
 ----
-
 
 statement ok
 DROP TABLE v0
@@ -163,144 +161,152 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v1 INT PRIMARY KEY)
 
-query I
+query I nosort
 SELECT DISTINCT (SELECT v1 WHERE (5)) >= ANY(9223372036854775807) FROM v0
 ----
-
 
 statement ok
 DROP TABLE v0
 
 -- 11.sql
 statement ok
-CREATE TABLE v0(v1 BIGINT UNIQUE PRIMARY KEY);
+CREATE TABLE v0(v1 BIGINT UNIQUE PRIMARY KEY)
 
 statement error 42000!PARTITION BY: subqueries not allowed in PARTITION BY clause
-UPDATE v0 SET v1 = v1 * 73 WHERE v1 = (SELECT SUM(v1) OVER (PARTITION BY 52, (NOT EXISTS (SELECT 0 + (SELECT v1 WHERE v1 * v1 * v1 GROUP BY v1) AS v3 WHERE v1 = 'x' OR 'x' OR v1)), v1, 37 ORDER BY v1 NULLS LAST) IS NOT NULL AS v2 GROUP BY v1 HAVING v1 > 'x') AND NOT ((v1 = 66 AND v1 < 'x') AND v1 = 50) AND 35 >= 65;
+UPDATE v0 SET v1 = v1 * 73 WHERE v1 = (SELECT SUM(v1) OVER (PARTITION BY 52, (NOT EXISTS (SELECT 0 + (SELECT v1 WHERE v1 * v1 * v1 GROUP BY v1) AS v3 WHERE v1 = 'x' OR 'x' OR v1)), v1, 37 ORDER BY v1 NULLS LAST) IS NOT NULL AS v2 GROUP BY v1 HAVING v1 > 'x') AND NOT ((v1 = 66 AND v1 < 'x') AND v1 = 50) AND 35 >= 65
 
 statement ok
 DROP TABLE v0
 
 -- 12.sql
--- statement ok
--- CREATE TABLE v0 (v1 VARCHAR(255) NULL)
+statement ok
+CREATE TABLE v0 (v1 VARCHAR(255) NULL)
 
--- statement ok
--- INSERT INTO v0 (v1) VALUES (2),(10),(99),(1.100000),(3)
+statement ok
+INSERT INTO v0 (v1) VALUES (2),(10),(99),(1.100000),(3)
 
--- statement ok
--- UPDATE v0 SET v1 = (SELECT MIN(v1) OVER (ROWS 10 PRECEDING) WHERE (10 = v1 OR v1 = ((3 - 10.100000))) AND 3 NOT LIKE v1);
+statement error 22018!conversion of string to type bte failed.
+UPDATE v0 SET v1 = (SELECT MIN(v1) OVER (ROWS 10 PRECEDING) WHERE (10 = v1 OR v1 = ((3 - 10.100000))) AND 3 NOT LIKE v1)
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- -- 13.sql
--- statement ok
--- CREATE TABLE v0 (v1 SMALLINT)
+-- 13.sql
+statement ok
+CREATE TABLE v0 (v1 SMALLINT)
 
--- statement ok
--- UPDATE v0 SET v1 = CASE WHEN v1 > 37 THEN (SELECT ALL AVG (v1) AS v2 FROM (SELECT SUM(v1) OVER (ORDER BY v1 RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)) AS v3 WHERE v1 = v1 AND v1 = v1) / 99 ELSE 8 END ^ 16 + 1 ^ -32768
+statement error 42000!SELECT: cannot use non GROUP BY column 'v0.v1' in query results without an aggregate function
+UPDATE v0 SET v1 = CASE WHEN v1 > 37 THEN (SELECT ALL AVG (v1) AS v2 FROM (SELECT SUM(v1) OVER (ORDER BY v1 RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)) AS v3 WHERE v1 = v1 AND v1 = v1) / 99 ELSE 8 END ^ 16 + 1 ^ -32768
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- -- 14.sql
--- statement ok
--- CREATE TABLE v0(v1 INT)
+-- 14.sql
+statement ok
+CREATE TABLE v0(v1 INT)
 
--- statement ok
--- INSERT INTO v0 VALUES (-1),(NULL),(57),(NULL),(NULL)
+statement ok
+INSERT INTO v0 VALUES (-1),(NULL),(57),(NULL),(NULL)
 
--- statement ok
--- UPDATE v0 SET v1 = v1 % (WITH v0 (v1) AS (SELECT -2147483648 WHERE (v1 < -1 OR v1 = 37 % 127) AND v1 - 85 = 45 AND v1 IS NOT NULL) SELECT DISTINCT -1 FROM v0) + v1;
+statement error
+UPDATE v0 SET v1 = v1 % (WITH v0 (v1) AS (SELECT -2147483648 WHERE (v1 < -1 OR v1 = 37 % 127) AND v1 - 85 = 45 AND v1 IS NOT NULL) SELECT DISTINCT -1 FROM v0) + v1
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- -- 15.sql
--- statement ok
--- CREATE TABLE v0(v1 SMALLINT)
+-- 15.sql
+statement ok
+CREATE TABLE v0(v1 SMALLINT)
 
--- statement ok
--- UPDATE v0 SET v1 = v1 <= (WITH v0 (v1) AS (SELECT (CASE WHEN 59 THEN (0 * (('x' < v1 = 255 > v1 - v1))) END)) SELECT v1 > 16 OR v1 > 2147483647 AND v1 >= 27 AS v4 FROM v0 ORDER BY v1 > v1 % v1 % (v1) NULLS LAST) OR v1 > -1
+statement ok
+UPDATE v0 SET v1 = v1 <= (WITH v0 (v1) AS (SELECT (CASE WHEN 59 THEN (0 * (('x' < v1 = 255 > v1 - v1))) END)) SELECT v1 > 16 OR v1 > 2147483647 AND v1 >= 27 AS v4 FROM v0 ORDER BY v1 > v1 % v1 % (v1) NULLS LAST) OR v1 > -1
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- -- 16.sql
--- statement ok
--- CREATE TABLE v0(v1 FLOAT)
+-- 16.sql
+statement ok
+CREATE TABLE v0(v1 FLOAT)
 
--- statement ok
--- INSERT INTO v0 VALUES (82),((SELECT 0 FROM v0 AS v2 GROUP BY (SELECT -128))),(15255709.000000),(12)
+statement ok
+INSERT INTO v0 VALUES (82),((SELECT 0 FROM v0 AS v2 GROUP BY (SELECT -128))),(15255709.000000),(12)
 
--- statement ok
--- SELECT v1 = 2147483647 - v1 ^ v1 AS v4 FROM v0 AS v3, v0, v0 AS v6,v0 AS v5, v0 AS v7 ORDER BY 35 >= (SELECT VAR_SAMP(v1 >= 72 ) OVER (ROWS BETWEEN v1 + -128 * -32768 PRECEDING AND CURRENT ROW) IS NOT NULL) ASC
+statement error 42000!SELECT: identifier 'v1' ambiguous
+SELECT v1 = 2147483647 - v1 ^ v1 AS v4 FROM v0 AS v3, v0, v0 AS v6,v0 AS v5, v0 AS v7 ORDER BY 35 >= (SELECT VAR_SAMP(v1 >= 72 ) OVER (ROWS BETWEEN v1 + -128 * -32768 PRECEDING AND CURRENT ROW) IS NOT NULL) ASC
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- -- 17.sql
--- statement ok
--- CREATE TABLE v0(v1 INT)
+-- 17.sql
+statement ok
+CREATE TABLE v0(v1 INT)
 
--- statement ok
--- UPDATE v0 SET v1 = (WITH v0 AS (SELECT 42039652.000000) SELECT STDDEV_POP (96) OVER (ORDER BY v1) FROM v0, v0 LIMIT 37 OFFSET 62) = 8
+statement ok
+UPDATE v0 SET v1 = (WITH v0 AS (SELECT 42039652.000000) SELECT STDDEV_POP (96) OVER (ORDER BY v1) FROM v0, v0 LIMIT 37 OFFSET 62) = 8
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- -- 18.sql
--- statement ok
--- CREATE TABLE v0(v1 NUMERIC)
+-- 18.sql
+statement ok
+CREATE TABLE v0(v1 NUMERIC)
 
--- statement ok
--- UPDATE v0 SET v1 = (WITH v0 (v1) AS (SELECT 127 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8) ^ v1
+query I nosort
+SELECT 38 ^ v1 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8
+----
 
--- statement ok
--- DROP TABLE v0
+query I nosort
+WITH v0 (v1) AS (SELECT 127 FROM v0 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 ^ v1 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8
+----
 
--- -- 19.sql
--- statement ok
--- CREATE TABLE v0(v1 BIGINT)
+statement error 42000!
+UPDATE v0 SET v1 = (WITH v0 (v1) AS (SELECT 127 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8) ^ v1
+-- sql/server/rel_select.c:3104: rel_binop_: Assertion `t1 && t2' failed.
 
--- statement ok
--- INSERT INTO v0 VALUES (16),(22),(-128),(60),(76),(127),(89)
+statement ok
+DROP TABLE v0
 
--- statement ok
--- WITH v0 AS (SELECT -1, * FROM v0) INSERT INTO v0 SELECT v1 * 255 FROM v0 AS v5, v0, v0 AS v4, v0 AS v3, v0 AS v2 ORDER BY v1 * -128 ^ -1
+-- 19.sql
+statement ok
+CREATE TABLE v0(v1 BIGINT)
 
--- statement ok
--- UPDATE v0 SET v1 = 59 % v1 WHERE (WITH v0 (v1) AS (SELECT ('x' + 95) ORDER BY - (v1), v1) SELECT STDDEV_POP(v1) OVER (ROWS BETWEEN v1 IS NOT NULL PRECEDING AND 89 FOLLOWING) IS NOT NULL) + 0 % v1 % 46 + 45 * v1
+statement ok
+INSERT INTO v0 VALUES (16),(22),(-128),(60),(76),(127),(89)
 
--- statement ok
--- DROP TABLE v0
+statement error 42000!SELECT: identifier 'v1' ambiguous
+WITH v0 AS (SELECT -1, * FROM v0) INSERT INTO v0 SELECT v1 * 255 FROM v0 AS v5, v0, v0 AS v4, v0 AS v3, v0 AS v2 ORDER BY v1 * -128 ^ -1
 
--- -- 20.sql
--- statement ok
--- CREATE TABLE v0(v1 REAL PRIMARY KEY)
+statement ok
+UPDATE v0 SET v1 = 59 % v1 WHERE (WITH v0 (v1) AS (SELECT ('x' + 95) ORDER BY - (v1), v1) SELECT STDDEV_POP(v1) OVER (ROWS BETWEEN v1 IS NOT NULL PRECEDING AND 89 FOLLOWING) IS NOT NULL) + 0 % v1 % 46 + 45 * v1
 
--- statement ok
--- SELECT (SELECT COUNT(v1) OVER ( ) FROM SUM (STDDEV_POP(MIN ('x')))) AS v2 FROM v0 WHERE v1 = -1
+statement ok
+DROP TABLE v0
 
--- statement ok
--- DROP TABLE v0
+-- 20.sql
+statement ok
+CREATE TABLE v0(v1 REAL PRIMARY KEY)
 
--- -- 21.sql
--- statement ok
--- CREATE TABLE v0(v1 BIGINT)
+statement error 42000!MIN: aggregate functions not allowed in functions in FROM
+SELECT (SELECT COUNT(v1) OVER ( ) FROM SUM (STDDEV_POP(MIN ('x')))) AS v2 FROM v0 WHERE v1 = -1
 
--- statement ok
--- INSERT INTO v0 VALUES (13),(53),(-1),(13),(54),((SELECT v1 FROM v0 WHERE v1 IS NULL AND v1 IN (7 ^ v1))),(72),(2147483647)
+statement ok
+DROP TABLE v0
 
--- statement ok
--- WITH v0 AS (SELECT 2147483647, * FROM v0) INSERT INTO v0 SELECT v1 * -32768 FROM v0 AS v2,v0,v0 AS v5,v0 AS v3,v0 AS v4 ORDER BY v1 * 127 ^ -1
+-- 21.sql
+statement ok
+CREATE TABLE v0(v1 BIGINT)
 
--- statement ok
--- UPDATE v0 SET v1 = -128 % v1 WHERE (WITH v0 (v1) AS (SELECT 8 WHERE (v1 < -1 OR v1 > 40) AND 80 ^ 0 % v1 <= 75 = 127 AND v1 IS NOT NULL) SELECT VAR_POP((52 * (v1 IN (127,47)))) OVER (ROWS BETWEEN CURRENT ROW AND v1 - NULL FOLLOWING) * -32768) > v1
+statement ok
+INSERT INTO v0 VALUES (13),(53),(-1),(13),(54),((SELECT v1 FROM v0 WHERE v1 IS NULL AND v1 IN (7 ^ v1))),(72),(2147483647)
 
--- statement ok
--- DROP TABLE v0
+statement ok
+WITH v0 AS (SELECT 2147483647, * FROM v0) INSERT INTO v0 SELECT v1 * -32768 FROM v0 AS v2,v0,v0 AS v5,v0 AS v3,v0 AS v4 ORDER BY v1 * 127 ^ -1
+
+statement error 42000!row frame bound must be non negative and non null.
+UPDATE v0 SET v1 = -128 % v1 WHERE (WITH v0 (v1) AS (SELECT 8 WHERE (v1 < -1 OR v1 > 40) AND 80 ^ 0 % v1 <= 75 = 127 AND v1 IS NOT NULL) SELECT VAR_POP((52 * (v1 IN (127,47)))) OVER (ROWS BETWEEN CURRENT ROW AND v1 - NULL FOLLOWING) * -32768) > v1
+
+statement ok
+DROP TABLE v0
 
 -- 22.sql
 statement ok
@@ -312,140 +318,199 @@ UPDATE v0 SET v1 = (SELECT LAG(v1 * v1) OVER (PARTITION BY 0 ,(NOT EXISTS (SELEC
 statement ok
 DROP TABLE v0
 
--- -- 23.sql
--- statement ok
--- CREATE TABLE v0 (v1 INTEGER PRIMARY KEY)
+-- 23.sql
+statement ok
+CREATE TABLE v0 (v1 INTEGER PRIMARY KEY)
 
--- statement ok
--- UPDATE v0 SET v1 = -128 WHERE v1 = 1 AND v1 IN (WITH v0 AS (SELECT v1 * (95 - v1) FROM v0 ORDER BY v1, v1 DESC, ('x' < v1 AND v1 = 24)) SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16) OR (69 AND 30) OR ('x' >= 9)
+query R nosort
+SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16
+----
 
--- statement ok
--- DROP TABLE v0
+query I nosort
+SELECT v1 * (95 - v1) FROM v0 ORDER BY v1, v1 DESC, ('x' < v1 AND v1 = 24)
+----
 
--- -- 24.sql
--- statement ok
--- CREATE TABLE v0(v1 FLOAT)
+statement error 42000!SELECT: identifier 'v1' unknown
+WITH v0 AS (SELECT v1 * (95 - v1) FROM v0 ORDER BY v1, v1 DESC, ('x' < v1 AND v1 = 24)) SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16
+----
 
--- statement ok
--- INSERT INTO v0 VALUES (0),(67),(127),(-1),(NULL),(NULL),(NULL),(NULL)
+statement ok
+UPDATE v0 SET v1 = -128 WHERE v1 = 1 AND v1 IN (WITH v0 AS (SELECT v1 * (95 - v1) FROM v0 ORDER BY v1, v1 DESC, ('x' < v1 AND v1 = 24)) SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16) OR (69 AND 30) OR ('x' >= 9)
 
--- statement ok
+statement ok
+DROP TABLE v0
+
+-- 24.sql
+statement ok
+CREATE TABLE v0(v1 FLOAT)
+
+statement ok
+INSERT INTO v0 VALUES (0),(67),(127),(-1),(NULL),(NULL),(NULL),(NULL)
+
+query RT nosort
+SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
+----
+0.000
+x
+67.000
+x
+127.000
+x
+-1.000
+x
+
+-- statement error 42000!SELECT: identifier 'v1' ambiguous
 -- WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v1 * 0 / 77
 
--- statement ok
--- SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
+statement ok
+WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v0.v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v0.v1 * 0 / 77
 
--- statement ok
--- DROP TABLE v0
+query I nosort
+SELECT count(*) FROM v0
+----
+131080
 
--- -- 25.sql
--- statement ok
--- CREATE TABLE IF NOT EXISTS v0(v1 INTEGER)
+-- after the second insert, rerun same query as above, since it used to crash the server
+query RT rowsort
+SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
+----
+131080 values hashing to c051bd7cdccd1fd3636c9e0973aca08e
 
--- statement ok
--- UPDATE v0 AS v9 SET v1 = (WITH v0 (v1) AS (SELECT v1 % (12 ^ 55 + v1 + 57159072.000000)) SELECT NULL AS v8 WINDOW v7 AS (PARTITION BY 8, 95, 92150085.000000, 57) ORDER BY v1, v1 DESC NULLS LAST)
+-- mul_bte_bte_bte: ERROR: 22003!overflow in calculation 87*39.
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- -- 26.sql
--- statement ok
--- CREATE TABLE v0(v1 BIGINT NOT NULL)
+-- 25.sql
+statement ok
+CREATE TABLE IF NOT EXISTS v0(v1 INTEGER)
 
--- statement ok
--- INSERT INTO v0 VALUES (-1),(127),(4),(-128),(11),(-1),(-128),(-128),(-1)
+statement ok
+UPDATE v0 AS v9 SET v1 = (WITH v0 (v1) AS (SELECT v1 % (12 ^ 55 + v1 + 57159072.000000)) SELECT NULL AS v8 WINDOW v7 AS (PARTITION BY 8, 95, 92150085.000000, 57) ORDER BY v1, v1 DESC NULLS LAST)
 
--- statement ok
--- WITH v0 AS (SELECT -1, * FROM v0) INSERT INTO v0 SELECT v1 * 29 FROM v0 AS v3, v0, v0 AS v2, v0 AS v4, v0 ORDER BY v1 * 0 ^ 83
+statement ok
+DROP TABLE v0
 
--- statement ok
--- UPDATE v0 SET v1 = -1 WHERE CASE WHEN v1 > -1 THEN (SELECT STDDEV_SAMP((18 * v1 + (v1 IN (21 , -1)))) OVER (ROWS BETWEEN CURRENT ROW AND v1 - NULL FOLLOWING) * 17) > v1 / (SELECT -1 WHERE (88 IN (96))) ELSE 82 END ^ -128 ^ v1
+-- 26.sql
+statement ok
+CREATE TABLE v0(v1 BIGINT NOT NULL)
 
--- statement ok
--- DROP TABLE v0
+statement ok
+INSERT INTO v0 VALUES (-1),(127),(4),(-128),(11),(-1),(-128),(-128),(-1)
 
--- -- 27.sql
--- statement ok
--- CREATE TABLE v0(v1 SMALLINT PRIMARY KEY)
+statement error 42000!SELECT: identifier 'v1' ambiguous
+WITH v0 AS (SELECT -1, * FROM v0) INSERT INTO v0 SELECT v1 * 29 FROM v0 AS v3, v0, v0 AS v2, v0 AS v4, v0 ORDER BY v1 * 0 ^ 83
 
--- statement ok
--- INSERT INTO v0 VALUES ('x' IN (SELECT - SUM(18) OVER ( ) * 8 AS v2)), (-128), (34), (39)
+statement error 42000!row frame bound must be non negative and non null.
+UPDATE v0 SET v1 = -1 WHERE CASE WHEN v1 > -1 THEN (SELECT STDDEV_SAMP((18 * v1 + (v1 IN (21 , -1)))) OVER (ROWS BETWEEN CURRENT ROW AND v1 - NULL FOLLOWING) * 17) > v1 / (SELECT -1 WHERE (88 IN (96))) ELSE 82 END ^ -128 ^ v1
 
--- -- 28.sql
--- statement ok
--- CREATE TABLE v0(v1 DECIMAL NOT NULL)
+statement ok
+DROP TABLE v0
 
--- statement ok
--- INSERT INTO v0 VALUES (22542428.000000), (54), (19), (0), (0), (0)
+-- 27.sql
+statement ok
+CREATE TABLE v0(v1 SMALLINT PRIMARY KEY)
 
--- statement ok
--- SELECT * FROM v0 WHERE (v1 >= 0 AND v1 <= 0) OR (51867923.000000 LIKE 'x' AND (SELECT v1 BETWEEN 47130623.000000 AND v1) LIKE 'x')
+statement ok
+INSERT INTO v0 VALUES ('x' IN (SELECT - SUM(18) OVER ( ) * 8 AS v2)), (-128), (34), (39)
 
--- statement ok
--- DROP TABLE v0
+query I nosort
+SELECT * FROM v0 order by 1
+----
+-128
+0
+34
+39
 
--- -- 29.sql
--- statement ok
--- SELECT ALL ( SELECT - - - - - - - - - - 48 FROM ( SELECT NULL - - - - - - - - 89 FROM ( VALUES ( - - - - - - - - - - 74 ) , ( - - - - - 128 ) , ( - - - - - - 8 ) , ( - - - - 61 ) ) AS v1 ( v1 ) GROUP BY ( ) , GROUPING SETS ( GROUPING SETS ( GROUPING SETS ( ( ) ) ) ) , ( ) ORDER BY - - - - - - - - - - 255 LIKE v1 / CASE WHEN v1 IS NULL THEN - - 75 END DESC , v1 , v1 LIMIT 63 ) AS v1 UNION SELECT - - - - - - - - - - - - - 74 WHERE - v1 < - 89088397.000000 ) FROM ( SELECT * FROM ( VALUES ( - - - - - - - 61 ) , ( - - - 42 ) ) AS v1 ( v1 ) ) AS v1 ( v1 )
+statement ok
+DROP TABLE v0
 
--- -- 30.sql
--- statement ok
--- CREATE TABLE v0(v2 DOUBLE PRIMARY KEY, v1 VARCHAR(1))
+-- 28.sql
+statement ok
+CREATE TABLE v0(v1 DECIMAL NOT NULL)
 
--- statement ok
--- DELETE FROM v0 WHERE (SELECT v2 FROM v0 WHERE v0.v2 = v0.v1 GROUP BY 2.100000, v1) IN (10.100000, 10, 10 )
+statement ok
+INSERT INTO v0 VALUES (22542428.000000), (54), (19), (0), (0), (0)
 
--- statement ok
--- DROP TABLE v0
+query R nosort
+SELECT * FROM v0 WHERE (v1 >= 0 AND v1 <= 0) OR (51867923.000000 LIKE 'x' AND (SELECT v1 BETWEEN 47130623.000000 AND v1) LIKE 'x')
+----
+0.000
+0.000
+0.000
 
--- -- 31.sql
--- SELECT ALL ( SELECT - - - - - - - - - - - 1 - - - - - - 16 FROM ( SELECT NULL - - - - - - - - - - - - - - - - 1 FROM ( SELECT - - - - 1 * - - - - - - 2147483648 * - - - 43 * 77745222.000000 ) AS v1 ( v1 ) GROUP BY GROUPING SETS ( GROUPING SETS ( CUBE ( v1 ) ) ) ORDER BY v1 , - - - 86 + - - 93 ^ v1 , v1 LIMIT 21 ) AS v1 UNION SELECT - - - - - - - - - - - - 93 WHERE - v1 < - 63226945.000000 - - - - - - - - - - 68 ) FROM ( VALUES ( - - - - - - - - - 40 / - ( SELECT - - - - - - - - 0 WHERE - - - - - - - 40 = - - - - - 0 ) ) , ( - - 88 ) ) v1 ( v1 )
+statement ok
+DROP TABLE v0
 
--- -- 32.sql
--- statement ok
--- CREATE TABLE v0(v1 REAL)
+-- 29.sql
+statement error 42000!GROUP BY: GROUPING SETS is empty
+SELECT ALL ( SELECT - - - - - - - - - - 48 FROM ( SELECT NULL - - - - - - - - 89 FROM ( VALUES ( - - - - - - - - - - 74 ) , ( - - - - - 128 ) , ( - - - - - - 8 ) , ( - - - - 61 ) ) AS v1 ( v1 ) GROUP BY ( ) , GROUPING SETS ( GROUPING SETS ( GROUPING SETS ( ( ) ) ) ) , ( ) ORDER BY - - - - - - - - - - 255 LIKE v1 / CASE WHEN v1 IS NULL THEN - - 75 END DESC , v1 , v1 LIMIT 63 ) AS v1 UNION SELECT - - - - - - - - - - - - - 74 WHERE - v1 < - 89088397.000000 ) FROM ( SELECT * FROM ( VALUES ( - - - - - - - 61 ) , ( - - - 42 ) ) AS v1 ( v1 ) ) AS v1 ( v1 )
+-- sql/server/rel_select.c:4616: rel_groupings: Assertion `next_set' failed.
 
--- statement ok
--- SELECT CAST(max((SELECT NULL AS v2 GROUP BY v1)) AS INTEGER) FROM v0 UNION SELECT 3
+-- 30.sql
+statement ok
+CREATE TABLE v0(v2 DOUBLE PRIMARY KEY, v1 VARCHAR(1))
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DELETE FROM v0 WHERE (SELECT v2 FROM v0 WHERE v0.v2 = v0.v1 GROUP BY 2.100000, v1) IN (10.100000, 10, 10 )
 
--- -- 33.sql
--- statement ok
--- CREATE TABLE v0 (v2 CHAR(1), v1 REAL)
+statement ok
+DROP TABLE v0
 
--- statement ok
--- SELECT DISTINCT SUM(max((SELECT NULL AS v2 GROUP BY v2))) OVER (ORDER BY '013') FROM v0
+-- 31.sql
+statement error 22003!overflow ...
+SELECT ALL ( SELECT - - - - - - - - - - - 1 - - - - - - 16 FROM ( SELECT NULL - - - - - - - - - - - - - - - - 1 FROM ( SELECT - - - - 1 * - - - - - - 2147483648 * - - - 43 * 77745222.000000 ) AS v1 ( v1 ) GROUP BY GROUPING SETS ( GROUPING SETS ( CUBE ( v1 ) ) ) ORDER BY v1 , - - - 86 + - - 93 ^ v1 , v1 LIMIT 21 ) AS v1 UNION SELECT - - - - - - - - - - - - 93 WHERE - v1 < - 63226945.000000 - - - - - - - - - - 68 ) FROM ( VALUES ( - - - - - - - - - 40 / - ( SELECT - - - - - - - - 0 WHERE - - - - - - - 40 = - - - - - 0 ) ) , ( - - 88 ) ) v1 ( v1 )
 
--- statement ok
--- DROP TABLE v0
+-- 32.sql
+statement ok
+CREATE TABLE v0(v1 REAL)
 
--- -- 34.sql
--- statement ok
--- CREATE TABLE v0(v1 BIGINT)
+query I nosort
+SELECT CAST(max((SELECT NULL AS v2 GROUP BY v1)) AS INTEGER) FROM v0 UNION SELECT 3
+----
+NULL
+3
 
--- statement ok
--- INSERT INTO v0 SELECT NULLIF(74, RANK ( ) OVER ( )) = -32768 FROM COLUMNS, PRIVILEGES AS v0
+statement ok
+DROP TABLE v0
 
--- statement ok
--- SELECT * FROM v0 ORDER BY (60 - v1), v1, v1 = 74364935.000000 LIMIT 2147483647
+-- 33.sql
+statement ok
+CREATE TABLE v0 (v2 CHAR(1), v1 REAL)
 
--- statement ok
--- DROP TABLE v0
+query R nosort
+SELECT DISTINCT SUM(max((SELECT NULL AS v2 GROUP BY v2))) OVER (ORDER BY '013') FROM v0
+----
+NULL
 
--- -- 35.sql
--- statement ok
--- CREATE TABLE v0(v1 FLOAT (41, 29) DEFAULT 745433.000000)
+statement ok
+DROP TABLE v0
 
--- statement ok
--- INSERT INTO v0 VALUES (0), (93), (NULL), (-128), (0), (59), (24)
+-- 34.sql
+statement ok
+CREATE TABLE v0(v1 BIGINT)
 
--- statement ok
--- SELECT AVG(v1) OVER (PARTITION BY -1) AS VALUE FROM v0 v0 NATURAL JOIN v0 VARIABLES
+statement ok
+INSERT INTO v0 SELECT NULLIF(74, RANK ( ) OVER ( )) = -32768 FROM COLUMNS, PRIVILEGES AS v0
 
--- statement ok
--- DROP TABLE v0
+statement ok
+SELECT * FROM v0 ORDER BY (60 - v1), v1, v1 = 74364935.000000 LIMIT 2147483647
+
+statement ok
+DROP TABLE v0
+
+-- 35.sql
+statement ok
+CREATE TABLE v0(v1 FLOAT (41, 29) DEFAULT 745433.000000)
+
+statement ok
+INSERT INTO v0 VALUES (0), (93), (NULL), (-128), (0), (59), (24)
+
+statement ok
+SELECT AVG(v1) OVER (PARTITION BY -1) AS VALUE FROM v0 v0 NATURAL JOIN v0 VARIABLES
+
+statement ok
+DROP TABLE v0
 
 -- 36.sql
 statement ok
@@ -458,32 +523,32 @@ statement ok
 INSERT INTO v0(v1) VALUES (10),(10),(NULL),(3)
 
 statement ok
-SELECT DISTINCT group_concat(v0.v1, v1) FROM v0, v0 AS e, v0 AS c GROUP BY v0.v1
+SELECT DISTINCT group_concat(v0.v1, c.v1) FROM v0, v0 AS e, v0 AS c GROUP BY v0.v1
 
 statement ok
 DROP TABLE v0
 
 -- 37.sql
--- statement ok
--- CREATE TABLE v0(v1 VARCHAR(30), v2 CHAR(20))
+statement ok
+CREATE TABLE v0(v1 VARCHAR(30), v2 CHAR(20))
 
--- statement ok
--- DELETE FROM v0 WHERE (SELECT v1 WHERE (SELECT COUNT (*) OVER (ORDER BY v1 DESC NULLS LAST)) = v2 GROUP BY 2.100000 HAVING 0 NOT LIKE v2)
+statement ok
+DELETE FROM v0 WHERE (SELECT v1 WHERE (SELECT COUNT (*) OVER (ORDER BY v1 DESC NULLS LAST)) = v2 GROUP BY 2.100000 HAVING 0 NOT LIKE v2)
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 38.sql
--- statement ok
--- CREATE TABLE v0(v1 DOUBLE, v5 DOUBLE, v3 INT, v6 DOUBLE, v2 INT, v4 INTEGER)
+statement ok
+CREATE TABLE v0(v1 DOUBLE, v5 DOUBLE, v3 INT, v6 DOUBLE, v2 INT, v4 INTEGER)
 
--- statement ok
--- UPDATE v0 SET v2 = (SELECT NULL WHERE v5 = v3 GROUP BY v1, v2) WHERE v2 > 10
+statement ok
+UPDATE v0 SET v2 = (SELECT NULL WHERE v5 = v3 GROUP BY v1, v2) WHERE v2 > 10
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
--- 39.sq
+-- 39.sql
 statement ok
 CREATE TABLE v0 (v1 VARCHAR(30))
 
@@ -494,11 +559,15 @@ statement ok
 DROP TABLE v0
 
 -- 40.sql
--- statement ok
--- CREATE TABLE v0(v2 DOUBLE, v1 REAL)
+statement ok
+CREATE TABLE v0(v2 DOUBLE, v1 REAL)
 
--- statement ok
--- DELETE FROM v0 WHERE EXISTS (SELECT 2 FROM v0 AS WHERE v0.v2 = (SELECT v2 WHERE v2 = 2) + v0.v1)
+statement error 42S22!SELECT: no such column 'v0.v2'
+SELECT 2 FROM v0 AS WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DELETE FROM v0 WHERE EXISTS ( SELECT 2 FROM v0 AS WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1 )
+
+statement ok
+DROP TABLE v0
+

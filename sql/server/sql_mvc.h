@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* multi version catalog */
@@ -133,7 +135,8 @@ typedef struct mvc {
 
 	bool use_views:1,
 		   schema_path_has_sys:1, /* speed up object search */
-		   schema_path_has_tmp:1;
+		   schema_path_has_tmp:1,
+		   no_int128:1;
 	struct qc *qc;
 	int clientid;		/* id of the owner */
 
@@ -161,8 +164,6 @@ typedef struct mvc {
 	list *schema_path; /* schema search path for object lookup */
 	uintptr_t sp;
 } mvc;
-
-extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 
 /* should return structure */
 extern sql_store mvc_init(int debug, store_type store, int ro, int su, const char *initpasswd);

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -66,7 +68,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			 * doesn't fail */
 			BBP_status_off(bid, BBPNEW);
 			BBP_status_on(bid, BBPEXISTING);
-		} else if (BBP_status(bid) & BBPDELETED) {
+		} else if ((BBP_status(bid) & (BBPDELETED|BBPLOADED)) == (BBPDELETED|BBPLOADED)) {
 			/* check mmap modes of bats that are now
 			 * transient. this has to be done after the
 			 * commit succeeded, because the mmap modes
@@ -77,17 +79,15 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			 * but didn't due to the failure, would be a
 			 * consistency risk.
 			 */
-			b = BBP_cache(bid);
-			if (b) {
-				/* check mmap modes */
-				MT_lock_set(&b->theaplock);
-				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					GDKwarning("BATcheckmodes failed\n");
-				MT_lock_unset(&b->theaplock);
-			}
+			b = BBP_desc(bid);
+			/* check mmap modes */
+			MT_lock_set(&b->theaplock);
+			if (BATcheckmodes(b, true) != GDK_SUCCEED)
+				GDKwarning("BATcheckmodes failed\n");
+			MT_lock_unset(&b->theaplock);
 		}
 		b = BBP_desc(bid);
-		if (b && b->ttype >= 0 && ATOMvarsized(b->ttype)) {
+		if (b->batCacheid != 0 && b->ttype >= 0 && ATOMvarsized(b->ttype)) {
 			MT_lock_set(&b->theaplock);
 			ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
 			if (p != NULL) {
@@ -144,7 +144,7 @@ TMcommit(void)
 
 	/* commit with the BBP globally locked */
 	BBPlock();
-	if (BBPsync(getBBPsize(), NULL, NULL, getBBPlogno(), getBBPtransid()) == GDK_SUCCEED) {
+	if (BBPsync(getBBPsize(), NULL, NULL, getBBPlogno()) == GDK_SUCCEED) {
 		epilogue(getBBPsize(), NULL, true);
 		ret = GDK_SUCCEED;
 	}
@@ -179,7 +179,7 @@ TMcommit(void)
  * a real global TMcommit.
  */
 gdk_return
-TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid)
+TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno)
 {
 	int xx;
 	gdk_return ret = GDK_FAIL;
@@ -213,9 +213,7 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 	BBPtmlock();
 	if (logno < 0)
 		logno = getBBPlogno();
-	if (transid < 0)
-		transid = getBBPtransid();
-	if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
+	if (BBPsync(cnt, subcommit, sizes, logno) == GDK_SUCCEED) { /* write BBP.dir (++) */
 		epilogue(cnt, subcommit, false);
 		ret = GDK_SUCCEED;
 	}
@@ -247,7 +245,7 @@ TMsubcommit(BAT *b)
 	}
 	bat_iterator_end(&bi);
 
-	ret = TMsubcommit_list(subcommit, NULL, cnt, -1, -1);
+	ret = TMsubcommit_list(subcommit, NULL, cnt, -1);
 	GDKfree(subcommit);
 	return ret;
 }

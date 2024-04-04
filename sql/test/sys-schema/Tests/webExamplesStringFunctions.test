@@ -1,356 +1,356 @@
 # These apply to MonetDB SQL character string types: character, character varying, varchar, clob and subtypes: json and url.
 # In MonetDB all character strings are **UTF-8** encoded.
 
-query T
+query T nosort
 select 'Monet'||'DB'
 ----
 MonetDB
 
-query T
+query T nosort
 select 'Value: '||42
 ----
 Value: 42
 
-query T
+query I nosort
 select ascii(R'€')
 ----
 8364
 
-query I
+query I nosort
 select char_length(R'2€')
 ----
 2
 
-query I
+query I nosort
 select character_length(R'2€')
 ----
 2
 
-query I
+query I nosort
 select charindex('gh', 'highigh')
 ----
 3
 
-query I
+query I nosort
 select charindex('gh', 'highigh', 4)
 ----
 6
 
-query T
+query T nosort
 select code(223)
 ----
-@
+ß
 
 # expected "ß"
 
-query T
+query T nosort
 select concat('Front ', 242)
 ----
 Front 242
 
-query I
+query I nosort
 select contains('abcd', 'bc')
 ----
 1
 
-query I
+query I nosort
 select contains('abcd', 'BC', true)
 ----
 1
 
-query I
+query I nosort
 select endswith('abc', 'bc')
 ----
 1
 
-query I
+query I nosort
 select endswith('abc', 'BC', true)
 ----
 1
 
-query T
+query T nosort
 select greatest('ab', 'ac')
 ----
 ac
 
-query T
+query T nosort
 select insert('abcdef', 2, 1, 'XY')
 ----
 abXYdef
 
-query T
+query T nosort
 select lcase('MonetDB')
 ----
 monetdb
 
-query T
+query T nosort
 select least('ab', 'ac')
 ----
 ab
 
-query T
+query T nosort
 select left('MonetDB', 3)
 ----
 Mon
 
-query I
+query I nosort
 select length('2€')
 ----
 2
 
-query I
+query I nosort
 select locate('DB', 'MonetDB')
 ----
 6
 
-query I
+query I nosort
 select locate('DB', 'DBMonetDB', 3)
 ----
 8
 
-query T
+query T nosort
 select lower('MonetDB')
 ----
 monetdb
 
-query T
+query T nosort
 select lpad('abc', 6)
 ----
    abc
 
-query T
+query T nosort
 select lpad('abc', 6, 'DB')
 ----
 DBDabc
 
-query T
+query T nosort
 select ltrim(E' \t\fab \tdf ')
 ----
 ab @df 
 
-query T
+query T nosort
 select ltrim('aabcdaa', 'a')
 ----
 bcdaa
 
-query T
+query T nosort
 select sys.md5('abc')
 ----
 900150983cd24fb0d6963f7d28e17f72
 
-query T
+query T nosort
 select sys.ms_stuff('abcdef', 2, 1, 'XY')
 ----
 aXYcdef
 
-query I
+query I nosort
 select octet_length(R'2€')
 ----
 4
 
-query I
+query I nosort
 select position('DB' IN 'MonetDB')
 ----
 6
 
-query T
+query T nosort
 select repeat('kiss,', 3)
 ----
 kiss,kiss,kiss,
 
-query T
+query T nosort
 select replace('abc', 'b', 'X')
 ----
 aXc
 
-query T
+query T nosort
 select right('MonetDB', 4)
 ----
 etDB
 
-query T
+query T nosort
 select rpad('abc', 6) || 'End'
 ----
 abc   End
 
-query T
+query T nosort
 select rpad('abc', 6, 'DB')
 ----
 abcDBD
 
-query T
+query T nosort
 select rtrim(E'ab df \t\n')
 ----
 ab df
 
-query T
+query T nosort
 select rtrim('aabcdaa', 'a')
 ----
 aabcd
 
-query T
+query T nosort
 select 's' || space(4) || 'e'
 ----
 s    e
 
-query T
+query T nosort
 select splitpart('a|a|bc|cd', '|', 3)
 ----
 bc
 
-query T
+query T nosort
 select sql_max('ab', 'ac')
 ----
 ac
 
-query T
+query T nosort
 select sql_min('ab', 'ac')
 ----
 ab
 
-query I
+query I nosort
 select startswith('bcd', 'bc')
 ----
 1
 
-query I
+query I nosort
 select startswith('bcd', 'BC', true)
 ----
 1
 
-query T
+query T nosort
 select substr('abCde', 3)
 ----
 Cde
 
-query T
+query T nosort
 select substr('abCde', 2, 3)
 ----
 bCd
 
-query T
+query T nosort
 select substring('abcde', 3)
 ----
 cde
 
-query T
+query T nosort
 select substring('abcde', 2, 2)
 ----
 bc
 
-query T
+query T nosort
 select trim(E' \t\fab df \t\n')
 ----
 ab df
 
-query T
+query T nosort
 select trim('aabcdaa', 'a')
 ----
 bcd
 
-query T
+query T nosort
 select "truncate"('Truncate', 4)
 ----
 Trun
 
-query T
+query T nosort
 select ucase('MonetDB')
 ----
 MONETDB
 
-query T
+query T nosort
 select upper('MonetDB')
 ----
 MONETDB
 
 # Text analysis functions
 
-query I
+query I nosort
 select contains('abcd', 'bc')
 ----
 1
 
-query I
+query I nosort
 select contains('abcd', 'BC', true)
 ----
 1
 
-query I
+query I nosort
 select dameraulevenshtein('MonetDB', 'DB3')
 ----
 6
 
-query I
+query I nosort
 select dameraulevenshtein('MonetDB', 'DB3', 4, 2, 1)
 ----
 8
 
-query I
+query I nosort
 select difference('MonetDB', 'DB3')
 ----
 4
 
-query I
+query I nosort
 select editdistance('MonetDB', 'DB3')
 ----
 6
 
-query I
+query I nosort
 select editdistance2('MonetDB', 'DB3')
 ----
 6
 
-query I
+query I nosort
 select endswith('abc', 'bc')
 ----
 1
 
-query I
+query I nosort
 select endswith('abc', 'BC', true)
 ----
 1
 
-query R
+query R nosort
 select jarowinkler('MonetDB', 'DB3')
 ----
 0.000
 
-query R
+query R nosort
 select jarowinkler('MonetDB', 'DB free')
 ----
 0.429
 
-query I
+query I nosort
 select levenshtein('MonetDB', 'DB3')
 ----
 6
 
-query I
+query I nosort
 select levenshtein('MonetDB', 'DB3', 4, 2)
 ----
 9
 
-query I
+query I nosort
 select levenshtein('MonetDB', 'DB3', 4, 2, 1)
 ----
 8
 
-query T
+query T nosort
 select qgramnormalize(R'Prize €50!')
 ----
 PRIZE 50
 
-query T
+query T nosort
 select soundex('MonetDB')
 ----
 M533
 
-query I
+query I nosort
 select startswith('bcd', 'bc')
 ----
 1
 
-query I
+query I nosort
 select startswith('bcd', 'BC', true)
 ----
 1

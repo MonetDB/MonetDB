@@ -116,3 +116,4 @@ savepoint-release
 procedure-recompile
 rse_bug
 delete-or-not-in-bug
+default-error

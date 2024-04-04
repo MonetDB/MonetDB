@@ -1,0 +1,27 @@
+statement ok
+CREATE TABLE "experiments" (
+	"id"           BIGINT        NOT NULL,
+	"host_id"      INTEGER,
+	"software_id"  INTEGER,
+	"name"         CHARACTER LARGE OBJECT,
+	"policy"       CHARACTER LARGE OBJECT,
+	"dbname"       CHARACTER LARGE OBJECT,
+	"tags"         VARCHAR(256),
+	"comment"      CHARACTER LARGE OBJECT,
+	"start_time"   TIMESTAMP,
+	"end_time"     TIMESTAMP,
+	"inserted_at"  TIMESTAMP,
+	"description"  CHARACTER LARGE OBJECT,
+	"sf"           CHARACTER LARGE OBJECT,
+	"benchmark_id" INTEGER       NOT NULL,
+	"tload"        DECIMAL(18,3),
+	"cpu_log"      UUID,
+	"memory_log"   UUID,
+	"disk_log"     UUID,
+	"proc_log"     UUID,
+	CONSTRAINT "experiments_id_pkey" PRIMARY KEY ("id"),
+	CONSTRAINT "experiments__uc" UNIQUE ("host_id", "software_id", "name", "sf", "policy")
+)
+
+statement error
+ALTER TABLE "experiments" ALTER COLUMN "id" SET DEFAULT next value for "results"."seq_8059"

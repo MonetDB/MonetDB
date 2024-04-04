@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -66,28 +68,6 @@ hashmask(BUN m)
 	return m;
 }
 
-BUN
-HASHmask(BUN cnt)
-{
-	BUN m = cnt;
-
-#if 0
-	/* find largest power of 2 smaller than or equal to cnt */
-	m = hashmask(m);
-	m -= m >> 1;
-
-	/* if cnt is more than 1/3 into the gap between m and 2*m,
-	   double m */
-	if (m + m - cnt < 2 * (cnt - m))
-		m += m;
-#else
-	m = m * 8 / 7;
-#endif
-	if (m < BATTINY)
-		m = BATTINY;
-	return m;
-}
-
 static inline void
 HASHclear(Hash *h)
 {
@@ -100,10 +80,12 @@ HASHclear(Hash *h)
 	memset(h->Bckt, 0xFF, h->nbucket * h->width);
 }
 
-#define HASH_VERSION		5
-/* this is only for the change of hash function of the UUID type and MBR
- * type; if HASH_VERSION is increased again from 5, the code associated
- * with HASH_VERSION_NOUUID and HASH_VERSION_NOMBR must be deleted */
+#define HASH_VERSION		6
+/* this is only for the change of hash function of the floating point
+ * types, the UUID type and the MBR type; if HASH_VERSION is increased
+ * again from 6, the code associated with HASH_VERSION_NOUUID and
+ * HASH_VERSION_NOMBR must be deleted */
+#define HASH_VERSION_FLOAT	5
 #define HASH_VERSION_NOMBR	4
 #define HASH_VERSION_NOUUID	3
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
@@ -507,6 +489,8 @@ BATcheckhash(BAT *b)
 							 ((size_t) 1 << 24) |
 #endif
 							 HASH_VERSION_NOUUID) &&
+						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
+						 strcmp(ATOMname(b->ttype), "dbl") != 0 &&
 						 strcmp(ATOMname(b->ttype), "uuid") != 0 &&
 						 strcmp(ATOMname(b->ttype), "mbr") != 0)
 #endif
@@ -517,7 +501,19 @@ BATcheckhash(BAT *b)
 							 ((size_t) 1 << 24) |
 #endif
 							 HASH_VERSION_NOMBR) &&
+						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
+						 strcmp(ATOMname(b->ttype), "dbl") != 0 &&
 						 strcmp(ATOMname(b->ttype), "mbr") != 0)
+#endif
+#ifdef HASH_VERSION_FLOAT
+					     /* if not floating point, also allow previous version */
+					     || (hdata[0] == (
+#ifdef PERSISTENTHASH
+							 ((size_t) 1 << 24) |
+#endif
+							 HASH_VERSION_FLOAT) &&
+						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
+						 strcmp(ATOMname(b->ttype), "dbl") != 0)
 #endif
 						    ) &&
 					    hdata[1] > 0 &&
@@ -678,7 +674,7 @@ BAThashsave(BAT *b, bool dosync)
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		TIMEOUT_LOOP(p, timeoffset) {				\
+		TIMEOUT_LOOP(p, qry_ctx) {				\
 			hget = HASHget(h, c);				\
 			if (hget == BUN_NONE) {				\
 				if (h->nheads == maxslots)		\
@@ -698,13 +694,13 @@ BAThashsave(BAT *b, bool dosync)
 			HASHput(h, c, p);				\
 			o = canditer_next(ci);				\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		TIMEOUT_LOOP(ci->ncand - p, timeoffset) {		\
+		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {			\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			h->nheads += hget == BUN_NONE;			\
@@ -724,8 +720,8 @@ BAThashsave(BAT *b, bool dosync)
 			HASHput(h, c, p);				\
 			p++;						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 /* Internal function to create a hash table for the given BAT b.
@@ -748,11 +744,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	unsigned int tpe = ATOMbasetype(bi.type);
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 	assert(bi.type != TYPE_msk);
@@ -882,7 +874,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			starthash(uuid);
 			break;
 		default:
-			TIMEOUT_LOOP(p, timeoffset) {
+			TIMEOUT_LOOP(p, qry_ctx) {
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = hash_any(h, v);
 				hget = HASHget(h, c);
@@ -906,8 +898,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 				HASHput(h, c, p);
 				o = canditer_next(ci);
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			break;
 		}
 		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
@@ -958,7 +950,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		finishhash(uuid);
 		break;
 	default:
-		TIMEOUT_LOOP(ci->ncand - p, timeoffset) {
+		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
@@ -977,8 +969,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			o = canditer_next(ci);
 			p++;
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		break;
 	}
 	bat_iterator_end(&bi);
@@ -1064,15 +1056,17 @@ HASHprobe(const Hash *h, const void *v)
 	case TYPE_sht:
 		return hash_sht(h, v);
 	case TYPE_int:
-	case TYPE_flt:
 		return hash_int(h, v);
-	case TYPE_dbl:
 	case TYPE_lng:
 		return hash_lng(h, v);
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		return hash_hge(h, v);
 #endif
+	case TYPE_flt:
+		return hash_flt(h, v);
+	case TYPE_dbl:
+		return hash_dbl(h, v);
 	case TYPE_uuid:
 		return hash_uuid(h, v);
 	default:

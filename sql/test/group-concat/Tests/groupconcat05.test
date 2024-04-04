@@ -115,15 +115,15 @@ another1testing1todo2lets3get2harder3even2more13even1
 query T rowsort
 select group_concat('😀', '😁') as "😃" from (values (1),(2),(3), (NULL)) v
 ----
-@@@@@@@
+😀😁😀😁😀😁😀
 
 query T rowsort
 select group_concat('😀', '😁') over () as "😃" from (values (1),(2),(3), (NULL)) v
 ----
-@@@@@@@
-@@@@@@@
-@@@@@@@
-@@@@@@@
+😀😁😀😁😀😁😀
+😀😁😀😁😀😁😀
+😀😁😀😁😀😁😀
+😀😁😀😁😀😁😀
 
 query T rowsort
 select group_concat(null) || 'a'
@@ -208,7 +208,6 @@ select group_concat('', '') over () from testmore
 (empty)
 
 query T rowsort
- 
 select listagg(a) from testmore
 ----
 1,1,1,2,3,2,3,2,1,3,2,1

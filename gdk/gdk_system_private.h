@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -31,7 +33,7 @@ bool MT_thread_override_limits(void)
 			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), \
 			      (LPTSTR) _osmsgbuf, sizeof(_osmsgbuf),	\
 			      NULL);					\
-		GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,	\
+		GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
 			      GDK, _osmsgbuf, format, ##__VA_ARGS__);	\
 		SetLastError(0);					\
 	} while (0)
@@ -42,4 +44,6 @@ struct freebats {
 	uint32_t nfreebats;
 };
 struct freebats *MT_thread_getfreebats(void)
+	__attribute__((__visibility__("hidden")));
+void BBPrelinquish(void)
 	__attribute__((__visibility__("hidden")));

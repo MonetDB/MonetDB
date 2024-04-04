@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* This file contains shared definitions for gdk_calc.c and gdk_aggr.c */
@@ -354,7 +356,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 	do {								\
 		const TYPE1 *restrict src = (const TYPE1 *) bi.base;	\
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {		\
 			x = canditer_next(&ci) - bhseqbase;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				nils++;					\
@@ -363,15 +365,15 @@ BUN dofsum(const void *restrict values, oid seqb,
 				dst[i] = FUNC(src[x]);			\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 #define UNARY_2TYPE_FUNC_nilcheck(TYPE1, TYPE2, FUNC, on_overflow)	\
 	do {								\
 		const TYPE1 *restrict src = (const TYPE1 *) bi.base;	\
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {		\
 			x = canditer_next(&ci) - bhseqbase;		\
 			if (is_##TYPE1##_nil(src[x])) {			\
 				nils++;					\
@@ -383,15 +385,15 @@ BUN dofsum(const void *restrict values, oid seqb,
 				}					\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 #define BINARY_3TYPE_FUNC(TYPE1, TYPE2, TYPE3, FUNC)			\
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -405,9 +407,9 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -421,7 +423,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -429,7 +431,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -445,9 +447,9 @@ BUN dofsum(const void *restrict values, oid seqb,
 						on_overflow;		\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -463,7 +465,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 						on_overflow;		\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -473,7 +475,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -486,9 +488,9 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -501,7 +503,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -509,7 +511,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -518,9 +520,9 @@ BUN dofsum(const void *restrict values, oid seqb,
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -529,7 +531,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -537,7 +539,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -548,9 +550,9 @@ BUN dofsum(const void *restrict values, oid seqb,
 				if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
 					on_overflow;			\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -561,7 +563,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 				if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
 					on_overflow;			\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -569,7 +571,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 	do {								\
 		i = j = 0;						\
 		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next_dense(ci1) - candoff1; \
 				if (incr2)				\
@@ -590,9 +592,9 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		} else {						\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
 				if (incr1)				\
 					i = canditer_next(ci1) - candoff1; \
 				if (incr2)				\
@@ -613,7 +615,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE)); \
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
 	} while (0)
 

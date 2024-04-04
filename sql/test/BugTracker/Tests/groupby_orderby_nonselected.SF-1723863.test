@@ -3,7 +3,7 @@ CREATE TABLE data_1to10 (
      id           INTEGER      NOT NULL,
      col1         INTEGER      NOT NULL,
      col2         VARCHAR(10)  NOT NULL
-) 
+)
 
 statement error
 select count(*)

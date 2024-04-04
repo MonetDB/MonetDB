@@ -1,0 +1,64 @@
+statement ok
+CREATE TABLE IF NOT EXISTS product (
+	product_id int PRIMARY KEY,
+	product_name varchar,
+	product_code varchar UNIQUE
+)
+----
+
+statement ok
+CREATE TABLE IF NOT EXISTS product_part (
+	product_id int,
+	part_id int,
+	num int,
+	PRIMARY KEY (product_id, part_id)
+)
+----
+
+statement ok
+insert into product values
+(1, 'telephone1', 'telepone1'),
+(2, 'telephone2', 'telepone2'),
+(3, 'telephone3', NULL),
+(4, 'telephone4', NULL)
+----
+
+statement ok
+insert into product_part values
+(1, 10, 100),
+(1, 20, 200),
+(2, 10, 100),
+(2, 20, 200),
+(2, 30, 300),
+(3, 10, 100),
+(4, 10, 100),
+(4, 20, 200),
+(4, 30, 300)
+----
+
+query II nosort
+SELECT product.product_id, sum(product_part.num) as sum_num
+FROM product JOIN product_part ON product.product_id = product_part.product_id
+GROUP BY product.product_id
+ORDER BY product.product_code, product.product_id
+----
+3
+100
+4
+600
+1
+300
+2
+600
+
+statement error
+SELECT product.product_id, sum(product_part.num) as sum_num
+FROM
+        (SELECT * FROM product UNION ALL VALUES (1, 'telephone5', 'telephone5')) AS product
+    JOIN
+        product_part
+    ON product.product_id = product_part.product_id
+GROUP BY product.product_id
+ORDER BY product.product_code, product.product_id
+----
+

@@ -1,0 +1,130 @@
+statement ok
+create replica table foo_rpl (n int, m text)
+
+statement ok
+alter table foo_rpl add table foo_local
+
+statement ok
+alter table foo_rpl add table foo_r2
+
+statement ok
+alter table foo_rpl add table foo_r3
+
+statement ok
+create replica table bar_rpl (n int, m text)
+
+statement ok
+alter table bar_rpl add table bar_local
+
+statement ok
+alter table bar_rpl add table bar_r2
+
+statement ok
+alter table bar_rpl add table bar_r3
+
+query T nosort
+plan select * from foo_rpl
+----
+project (
+| table("sys"."foo_local") [ "foo_local"."n" as "foo_rpl"."n", "foo_local"."m" as "foo_rpl"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl"."%TID%" ]
+) [ "foo_rpl"."n", "foo_rpl"."m" ]
+
+query T nosort
+plan select * from foo_rpl, bar_rpl
+----
+project (
+| crossproduct (
+| | table("sys"."foo_local") [ "foo_local"."n" as "foo_rpl"."n", "foo_local"."m" as "foo_rpl"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl"."%TID%" ],
+| | table("sys"."bar_local") [ "bar_local"."n" as "bar_rpl"."n", "bar_local"."m" as "bar_rpl"."m", "bar_local"."%TID%" NOT NULL UNIQUE as "bar_rpl"."%TID%" ]
+| ) [  ]
+) [ "foo_rpl"."n", "foo_rpl"."m", "bar_rpl"."n", "bar_rpl"."m" ]
+
+# we can execute this test because we are not expecting any data send to
+# any remote. the crossproduct is going to be executed locally
+query ITIT rowsort
+select * from foo_rpl, bar_rpl
+----
+1
+again
+10
+alice
+1
+again
+20
+bob
+1
+again
+20
+mary
+1
+again
+30
+tom
+1
+hello
+10
+alice
+1
+hello
+20
+bob
+1
+hello
+20
+mary
+1
+hello
+30
+tom
+2
+world
+10
+alice
+2
+world
+20
+bob
+2
+world
+20
+mary
+2
+world
+30
+tom
+3
+!!
+10
+alice
+3
+!!
+20
+bob
+3
+!!
+20
+mary
+3
+!!
+30
+tom
+
+# In the next test and given the implentation of the remote optimizer we
+# expect the replicas to be resolved to the remote tables. The optimizer
+# could be in principle be adapted to resolve the replica crossproduct
+# to local tables
+query T nosort
+plan select * from foo_rpl, bar_rpl, buz_rmt
+----
+table (
+| project (
+| | crossproduct (
+| | | crossproduct (
+| | | | REMOTE("sys"."foo_r2") [ "foo_r2"."n" as "foo_rpl"."n", "foo_r2"."m" as "foo_rpl"."m", "foo_r2"."%TID%" NOT NULL UNIQUE as "foo_rpl"."%TID%" ],
+| | | | REMOTE("sys"."bar_r2") [ "bar_r2"."n" as "bar_rpl"."n", "bar_r2"."m" as "bar_rpl"."m", "bar_r2"."%TID%" NOT NULL UNIQUE as "bar_rpl"."%TID%" ]
+| | | ) [  ],
+| | | REMOTE("sys"."buz_rmt") [ "buz_rmt"."l" ]
+| | ) [  ]
+| ) [ "foo_rpl"."n", "foo_rpl"."m", "bar_rpl"."n", "bar_rpl"."m", "buz_rmt"."l" ] REMOTE mapi:monetdb://localhost:50002/node2
+) [ "foo_rpl"."n", "foo_rpl"."m", "bar_rpl"."n", "bar_rpl"."m", "buz_rmt"."l" ]
+

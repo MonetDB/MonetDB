@@ -101,7 +101,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #FROM myschema.mytable
 #WHERE ("first" = '227 / 0' AND "eleventh" = 'Lekker' AND (EXTRACT(YEAR FROM mytable."eighth")*100 + EXTRACT(MONTH FROM mytable."eighth"))/100.0 = '2014.030')
 #GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT 1001;
-% .,	.mytable,	.mytable,	.mytable,	.mytable # table_name
+% myschema.,	myschema.mytable,	myschema.mytable,	myschema.mytable,	myschema.mytable # table_name
 % first-projection,	twentieth,	twentieth-seventh,	twentieth-third,	twentieth-second # name
 % date,	char,	char,	double,	double # type
 % 10,	100,	100,	24,	24 # length
@@ -158,10 +158,10 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 [ "double",	53,	0,	"",	"mytable",	"twentieth-second"	]
 [ "char",	100,	0,	NULL,	NULL,	NULL	]
 [ "char",	100,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #exec 15 ('a', 'b', 923, 51, 942, 544);
 % myschema.,	myschema.mytable,	myschema.mytable,	myschema.mytable,	myschema.mytable # table_name
 % first-projection,	twentieth,	twentieth-seventh,	twentieth-third,	twentieth-second # name
@@ -233,10 +233,10 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 [ "double",	53,	0,	"",	"mytable",	"twentieth-second"	]
 [ "char",	100,	0,	NULL,	NULL,	NULL	]
 [ "char",	100,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #exec 23 ('a', 'b', 923, 51, 942, 544);
 % myschema.,	myschema.mytable,	myschema.mytable,	myschema.mytable,	myschema.mytable # table_name
 % first-projection,	twentieth,	twentieth-seventh,	twentieth-third,	twentieth-second # name
@@ -320,7 +320,7 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #LIMIT 1001 OFFSET 0;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	varchar,	varchar, varchar # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%2",	"%2"	]
 #exec  6 (); 
@@ -333,16 +333,16 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 #prepare select cast(? as interval second);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	varchar,	varchar, varchar # type
-% 12,	3,	1,	0,	2,	2 # length
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 12,	2,	1,	0,	2,	2 # length
 [ "sec_interval",	13,	0,	"",	"%2",	"%2"	]
 [ "sec_interval",	13,	0,	NULL,	NULL,	NULL	]
 #prepare select cast(? as interval second);
 #prepare select cast(? as interval second);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	varchar,	varchar, varchar # type
-% 12,	3,	1,	0,	2,	2 # length
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
+% 12,	2,	1,	0,	2,	2 # length
 [ "sec_interval",	13,	0,	"",	"%2",	"%2"	]
 [ "sec_interval",	13,	0,	NULL,	NULL,	NULL	]
 #drop schema "myschema" cascade;

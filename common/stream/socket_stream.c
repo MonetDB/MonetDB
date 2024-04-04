@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* Generic stream handling code such as init and close */
@@ -179,10 +181,8 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		}
 #else
 		nr = read(s->stream_data.s, buf, size);
-		if (nr == -1 && errno == EINTR)
-			continue;
 		if (nr == -1) {
-			mnstr_set_error_errno(s, MNSTR_READ_ERROR, NULL);
+			mnstr_set_error_errno(s, errno == EINTR ? MNSTR_INTERRUPT : MNSTR_READ_ERROR, NULL);
 			return -1;
 		}
 #endif
@@ -303,6 +303,72 @@ socket_isalive(const stream *s)
 #endif
 }
 
+static int
+socket_getoob(const stream *s)
+{
+	SOCKET fd = s->stream_data.s;
+#ifdef HAVE_POLL
+	struct pollfd pfd = (struct pollfd) {
+		.fd = fd,
+		.events = POLLPRI,
+	};
+	if (poll(&pfd, 1, 0) > 0)
+#else
+	fd_set fds;
+	struct timeval t = (struct timeval) {
+		.tv_sec = 0,
+		.tv_usec = 0,
+	};
+#ifdef FD_SETSIZE
+	if (fd >= FD_SETSIZE)
+		return 0;
+#endif
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+	if (select(
+#ifdef _MSC_VER
+			0,	/* ignored on Windows */
+#else
+			fd + 1,
+#endif
+			NULL, NULL, &fds, &t) > 0)
+#endif
+	{
+#ifdef HAVE_POLL
+		if (pfd.revents & (POLLHUP | POLLNVAL))
+			return -1;
+		if ((pfd.revents & POLLPRI) == 0)
+			return -1;
+#else
+		if (!FD_ISSET(fd, &fds))
+			return 0;
+#endif
+		char b = 0;
+		switch (recv(fd, &b, 1, MSG_OOB)) {
+		case 0:
+			/* unexpectedly didn't receive a byte */
+			break;
+		case 1:
+			return b;
+		case -1:
+			perror("recv OOB");
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static int
+socket_putoob(const stream *s, char val)
+{
+	SOCKET fd = s->stream_data.s;
+	if (send(fd, &val, 1, MSG_OOB) == -1) {
+		perror("send OOB");
+		return -1;
+	}
+	return 0;
+}
+
 static stream *
 socket_open(SOCKET sock, const char *name)
 {
@@ -321,6 +387,8 @@ socket_open(SOCKET sock, const char *name)
 	s->stream_data.s = sock;
 	s->update_timeout = socket_update_timeout;
 	s->isalive = socket_isalive;
+	s->getoob = socket_getoob;
+	s->putoob = socket_putoob;
 
 	errno = 0;
 #ifdef _MSC_VER

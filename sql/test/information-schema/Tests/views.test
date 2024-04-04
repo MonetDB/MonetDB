@@ -24,6 +24,7 @@ NO
 NO
 NO
 
+-- check for NULL and empty string value violations on NOT NULL columns
 query TTTTTTTTTTIIIIT rowsort
 SELECT
   TABLE_CATALOG,
@@ -42,12 +43,134 @@ SELECT
   is_system,
   comments
 FROM INFORMATION_SCHEMA.VIEWS
-WHERE TABLE_SCHEMA = '' OR TABLE_NAME = ''
+WHERE TABLE_SCHEMA IS NULL
+   OR TABLE_SCHEMA = ''
+   OR TABLE_NAME IS NULL
+   OR TABLE_NAME = ''
+   OR VIEW_DEFINITION IS NULL
+   OR VIEW_DEFINITION = ''
+   OR schema_id IS NULL
+   OR table_id IS NULL
+   OR table_type_id IS NULL
+   OR is_system IS NULL
 ----
 
+-- entity integrity checks
 query ITTT rowsort
-SELECT COUNT(*) AS duplicates, TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS
+SELECT COUNT(*) AS duplicates, TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME
+ FROM INFORMATION_SCHEMA.VIEWS
  GROUP BY TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME
  HAVING COUNT(*) > 1
+----
+
+-- as TABLE_CATALOG is always NULL the TABLE_SCHEMA, TABLE_NAME combo should be unique also
+query ITT rowsort
+SELECT COUNT(*) AS duplicates, TABLE_SCHEMA, TABLE_NAME
+ FROM INFORMATION_SCHEMA.VIEWS
+ GROUP BY TABLE_SCHEMA, TABLE_NAME
+ HAVING COUNT(*) > 1
+----
+
+-- it should also be unique when using schema_id instead of TABLE_SCHEMA
+query IIT rowsort
+SELECT COUNT(*) AS duplicates, schema_id, TABLE_NAME
+ FROM INFORMATION_SCHEMA.VIEWS
+ GROUP BY schema_id, TABLE_NAME
+ HAVING COUNT(*) > 1
+----
+
+-- table_id alone should be unique also
+query II rowsort
+SELECT COUNT(*) AS duplicates, table_id
+ FROM INFORMATION_SCHEMA.VIEWS
+ GROUP BY table_id
+ HAVING COUNT(*) > 1
+----
+
+-- referential integrity checks
+query TTT rowsort
+SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (TABLE_CATALOG, TABLE_SCHEMA)
+ NOT IN (SELECT CATALOG_NAME, SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA)
+----
+
+-- as TABLE_CATALOG is always NULL leave it out of the check
+query TT rowsort
+SELECT TABLE_SCHEMA, TABLE_NAME
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (TABLE_SCHEMA)
+ NOT IN (SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA)
+----
+
+-- it should also be correct when using schema_id instead of TABLE_SCHEMA
+query ITT rowsort
+SELECT schema_id, TABLE_SCHEMA, TABLE_NAME
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (schema_id)
+ NOT IN (SELECT schema_id FROM INFORMATION_SCHEMA.SCHEMATA)
+----
+
+-- check schema_id reference
+query TTI rowsort
+SELECT TABLE_SCHEMA, TABLE_NAME, schema_id
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (schema_id) NOT IN (SELECT id FROM sys.schemas)
+----
+
+-- check table_id reference
+query TTI rowsort
+SELECT TABLE_SCHEMA, TABLE_NAME, table_id
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (table_id) NOT IN (SELECT id FROM sys.tables)
+----
+
+-- check table_type_id reference
+query TTI rowsort
+SELECT TABLE_SCHEMA, TABLE_NAME, table_type_id
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (table_type_id) NOT IN (SELECT table_type_id FROM sys.table_types)
+----
+
+-- check IS_UPDATABLE allowed values
+query TTT rowsort
+SELECT TABLE_SCHEMA, TABLE_NAME, IS_UPDATABLE
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (IS_UPDATABLE) NOT IN ('NO', 'YES')
+----
+
+-- check INSERTABLE_INTO allowed values
+query TTT rowsort
+SELECT TABLE_SCHEMA, TABLE_NAME, INSERTABLE_INTO
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (INSERTABLE_INTO) NOT IN ('NO', 'YES')
+----
+
+-- check IS_TRIGGER_UPDATABLE allowed values
+query TTT rowsort
+SELECT TABLE_SCHEMA, TABLE_NAME, IS_TRIGGER_UPDATABLE
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (IS_TRIGGER_UPDATABLE) NOT IN ('NO', 'YES')
+----
+
+-- check IS_TRIGGER_DELETABLE allowed values
+query TTT rowsort
+SELECT TABLE_SCHEMA, TABLE_NAME, IS_TRIGGER_DELETABLE
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (IS_TRIGGER_DELETABLE) NOT IN ('NO', 'YES')
+----
+
+-- check IS_TRIGGER_INSERTABLE_INTO allowed values
+query TTT rowsort
+SELECT TABLE_SCHEMA, TABLE_NAME, IS_TRIGGER_INSERTABLE_INTO
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (IS_TRIGGER_INSERTABLE_INTO) NOT IN ('NO', 'YES')
+----
+
+-- check is_system allowed boolean values
+query TTI rowsort
+SELECT TABLE_SCHEMA, TABLE_NAME, is_system
+ FROM INFORMATION_SCHEMA.VIEWS
+ WHERE (is_system) NOT IN (FALSE, TRUE)
 ----
 

@@ -416,40 +416,75 @@ select 0x00000000000000007fffffffffffffff
 ----
 9223372036854775807
 
+onlyif has-hugeint
 query I rowsort
 select 0x8000000000000000
 ----
 9223372036854775808
 
+skipif has-hugeint
+statement error
+select 0x8000000000000000
+
+onlyif has-hugeint
 query I rowsort
 select 0x00000000000000008000000000000000
 ----
 9223372036854775808
 
+skipif has-hugeint
+statement error
+select 0x00000000000000008000000000000000
+
+onlyif has-hugeint
 query I rowsort
 select 0x8000000000000001
 ----
 9223372036854775809
 
+skipif has-hugeint
+statement error
+select 0x8000000000000001
+
+onlyif has-hugeint
 query I rowsort
 select 0x00000000000000008000000000000001
 ----
 9223372036854775809
 
+skipif has-hugeint
+statement error
+select 0x00000000000000008000000000000001
+
+onlyif has-hugeint
 query I rowsort
 select 0xffffffffffffffff
 ----
 18446744073709551615
 
+skipif has-hugeint
+statement error
+select 0xffffffffffffffff
+
+onlyif has-hugeint
 query I rowsort
 select 0x0000000000000000ffffffffffffffff
 ----
 18446744073709551615
 
+skipif has-hugeint
+statement error
+select 0x0000000000000000ffffffffffffffff
+
+onlyif has-hugeint
 query I rowsort
 select 0x7fffffffffffffffffffffffffffffff
 ----
 170141183460469231731687303715884105727
+
+skipif has-hugeint
+statement error
+select 0x7fffffffffffffffffffffffffffffff
 
 statement error
 select 0x80000000000000000000000000000000
@@ -495,15 +530,25 @@ select 0x123456789abcdef0
 ----
 1311768467463790320
 
+onlyif has-hugeint
 query I rowsort
 select 0x123456789abcdef01
 ----
 20988295479420645121
 
+skipif has-hugeint
+statement error
+select 0x123456789abcdef01
+
+onlyif has-hugeint
 query I rowsort
 select 0x123456789abcdef0123456789abcdef0
 ----
 24197857203266734864793317670504947440
+
+skipif has-hugeint
+statement error
+select 0x123456789abcdef0123456789abcdef0
 
 statement error
 select 0x123456789abcdef0123456789abcdef01
@@ -926,40 +971,75 @@ select -0x00000000000000007fffffffffffffff
 ----
 -9223372036854775807
 
+onlyif has-hugeint
 query I rowsort
 select -0x8000000000000000
 ----
 -9223372036854775808
 
+skipif has-hugeint
+statement error
+select -0x8000000000000000
+
+onlyif has-hugeint
 query I rowsort
 select -0x00000000000000008000000000000000
 ----
 -9223372036854775808
 
+skipif has-hugeint
+statement error
+select -0x00000000000000008000000000000000
+
+onlyif has-hugeint
 query I rowsort
 select -0x8000000000000001
 ----
 -9223372036854775809
 
+skipif has-hugeint
+statement error
+select -0x8000000000000001
+
+onlyif has-hugeint
 query I rowsort
 select -0x00000000000000008000000000000001
 ----
 -9223372036854775809
 
+skipif has-hugeint
+statement error
+select -0x00000000000000008000000000000001
+
+onlyif has-hugeint
 query I rowsort
 select -0xffffffffffffffff
 ----
 -18446744073709551615
 
+skipif has-hugeint
+statement error
+select -0xffffffffffffffff
+
+onlyif has-hugeint
 query I rowsort
 select -0x0000000000000000ffffffffffffffff
 ----
 -18446744073709551615
 
+skipif has-hugeint
+statement error
+select -0x0000000000000000ffffffffffffffff
+
+onlyif has-hugeint
 query I rowsort
 select -0x7fffffffffffffffffffffffffffffff
 ----
 -170141183460469231731687303715884105727
+
+skipif has-hugeint
+statement error
+select -0x7fffffffffffffffffffffffffffffff
 
 statement error
 select -0x80000000000000000000000000000000
@@ -1005,15 +1085,25 @@ select -0x123456789abcdef0
 ----
 -1311768467463790320
 
+onlyif has-hugeint
 query I rowsort
 select -0x123456789abcdef01
 ----
 -20988295479420645121
 
+skipif has-hugeint
+statement error
+select -0x123456789abcdef01
+
+onlyif has-hugeint
 query I rowsort
 select -0x123456789abcdef0123456789abcdef0
 ----
 -24197857203266734864793317670504947440
+
+skipif has-hugeint
+statement error
+select -0x123456789abcdef0123456789abcdef0
 
 statement error
 select -0x123456789abcdef0123456789abcdef01

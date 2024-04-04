@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -45,11 +47,7 @@ BATcalcnot(BAT *b, BAT *s)
 	oid x, bhseqbase;
 	struct canditer ci;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -74,27 +72,27 @@ BATcalcnot(BAT *b, BAT *s)
 			int bits = (ci.seq - b->hseqbase) % 32;
 			BUN ncand = (ci.ncand + 31) / 32;
 			if (bits == 0) {
-				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX(i, ncand, qry_ctx) {
 					dst[i] = ~src[i];
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX(i, ncand, qry_ctx) {
 					dst[i] = (~src[i] >> bits) | ~(src[i + 1] >> (32 - bits));
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 			if (ci.ncand % 32 != 0)
 				dst[ci.ncand / 32] &= (1U << (ci.ncand % 32)) - 1;
 		} else {
-			TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 				x = canditer_next(&ci) - bhseqbase;
 				mskSetVal(bn, i, !Tmskval(&bi, x));
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		}
 		break;
 	case TYPE_bte:
@@ -241,11 +239,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	oid x, bhseqbase;
 	struct canditer ci;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -383,11 +377,7 @@ BATcalcabsolute(BAT *b, BAT *s)
 	oid x, bhseqbase;
 	struct canditer ci;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -529,11 +519,7 @@ BATcalciszero(BAT *b, BAT *s)
 	oid x, bhseqbase;
 	struct canditer ci;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -672,11 +658,7 @@ BATcalcsign(BAT *b, BAT *s)
 	oid x, bhseqbase;
 	struct canditer ci;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -809,11 +791,11 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 #define ISNIL_TYPE(TYPE, NOTNIL)					\
 	do {								\
 		const TYPE *restrict src = (const TYPE *) bi.base;	\
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {		\
 			x = canditer_next(&ci) - bhseqbase;		\
 			dst[i] = (bit) (is_##TYPE##_nil(src[x]) ^ NOTNIL); \
 		}							\
-		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 static BAT *
@@ -828,11 +810,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	BUN nils = 0;
 	oid bhseqbase;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -890,11 +868,11 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 		int (*atomcmp)(const void *, const void *) = ATOMcompare(bi.type);
 		const void *nil = ATOMnilptr(bi.type);
 
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			x = canditer_next(&ci) - bhseqbase;
 			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, x), nil) == 0) ^ notnil);
 		}
-		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		break;
 	}
 	}
@@ -960,7 +938,7 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 	do {								\
 		TYPE *tb1 = b1i.base, *tb2 = b2i.base, *restrict tbn = Tloc(bn, 0); \
 		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {	\
 				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -971,10 +949,10 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 					tbn[i] = p1 OP p2 ? p1 : p2;	\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		} else {						\
-			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {	\
 				oid x1 = canditer_next(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -985,8 +963,8 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 					tbn[i] = p1 OP p2 ? p1 : p2;	\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -999,11 +977,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	struct canditer ci1, ci2;
 	oid b1hseqbase, b2hseqbase;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1060,7 +1034,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1075,10 +1049,10 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1093,14 +1067,14 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1114,10 +1088,10 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1131,8 +1105,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		}
 	}
@@ -1174,7 +1148,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	do {								\
 		TYPE *tb1 = b1i.base, *tb2 = b2i.base, *restrict tbn = Tloc(bn, 0); \
 		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {	\
 				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -1189,10 +1163,10 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		} else {						\
-			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {	\
 				oid x1 = canditer_next(&ci1) - b1hseqbase; \
 				oid x2 = canditer_next(&ci2) - b2hseqbase; \
 				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
@@ -1207,8 +1181,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -1221,11 +1195,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	struct canditer ci1, ci2;
 	oid b1hseqbase, b2hseqbase;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1282,7 +1252,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1301,10 +1271,10 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1323,14 +1293,14 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1348,10 +1318,10 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1369,8 +1339,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		}
 	}
@@ -1411,7 +1381,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 #define MINMAX_CST_TYPE(TYPE, OP)					\
 	do {								\
 		TYPE *restrict tb = bi.base, *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
-		TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {	\
+		TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {		\
 			oid x = canditer_next(&ci) - bhseqbase;		\
 			TYPE p1 = tb[x];				\
 			if (is_##TYPE##_nil(p1)) {			\
@@ -1421,8 +1391,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				tbn[i] = p1 OP pp2 ? p1 : pp2;		\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 BAT *
@@ -1437,11 +1407,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	int (*cmp)(const void *, const void *);
 	oid bhseqbase;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1493,7 +1459,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		break;
 	default:
 		if (ATOMvarsized(bi.type)) {
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtvar(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -1506,12 +1472,12 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 					goto bailout;
 				}
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtloc(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -1523,8 +1489,8 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 				memcpy(bcast, p1, width);
 				bcast += width;
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		}
 	}
 	bat_iterator_end(&bi);
@@ -1566,16 +1532,16 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 	do {								\
 		TYPE *restrict tb = bi.base, *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
 		if (is_##TYPE##_nil(pp2)) {				\
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {	\
 				oid x = canditer_next(&ci) - bhseqbase; \
 				TYPE p1 = tb[x];			\
 				nils |= is_##TYPE##_nil(p1);		\
 				tbn[i] = p1;				\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		} else {						\
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) { \
+			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {	\
 				oid x = canditer_next(&ci) - bhseqbase; \
 				TYPE p1 = tb[x];			\
 				if (is_##TYPE##_nil(p1)) {		\
@@ -1584,8 +1550,8 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 					tbn[i] = p1 OP pp2 ? p1 : pp2;	\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		}							\
 	} while (0)
 
@@ -1601,11 +1567,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	int (*cmp)(const void *, const void *);
 	oid bhseqbase;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1661,7 +1623,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	default:
 		if (ATOMvarsized(bi.type)) {
 			if (cmp(p2, nil) == 0) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
@@ -1669,10 +1631,10 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
@@ -1680,32 +1642,32 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (cmp(p2, nil) == 0) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		}
 	}
@@ -1753,11 +1715,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	struct canditer ci1, ci2;
 	oid b1hseqbase, b2hseqbase;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1814,7 +1772,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1829,10 +1787,10 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtvar(b1i, x1);
@@ -1847,14 +1805,14 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1868,10 +1826,10 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(b1i, x1);
@@ -1885,8 +1843,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		}
 	}
@@ -1933,11 +1891,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	struct canditer ci1, ci2;
 	oid b1hseqbase, b2hseqbase;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1994,7 +1948,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 
 		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2014,10 +1968,10 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2037,14 +1991,14 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2063,10 +2017,10 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2085,8 +2039,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		}
 	}
@@ -2136,11 +2090,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	int (*cmp)(const void *, const void *);
 	oid bhseqbase;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2192,7 +2142,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		break;
 	default:
 		if (ATOMvarsized(bi.type)) {
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtvar(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -2205,12 +2155,12 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 					goto bailout;
 				}
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtloc(bi, x);
 				if (cmp(p1, nil) == 0) {
@@ -2222,8 +2172,8 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 				memcpy(bcast, p1, width);
 				bcast += width;
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		}
 	}
 	bat_iterator_end(&bi);
@@ -2273,11 +2223,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	int (*cmp)(const void *, const void *);
 	oid bhseqbase;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2334,7 +2280,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	default:
 		if (ATOMvarsized(bi.type)) {
 			if (cmp(p2, nil) == 0) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
@@ -2342,10 +2288,10 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
@@ -2353,32 +2299,32 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 						goto bailout;
 					}
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (cmp(p2, nil) == 0) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
+				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			}
 		}
 	}
@@ -2435,11 +2381,7 @@ xor_typeswitchloop(const void *lft, bool incr1,
 	BUN i, j, k;
 	BUN nils = 0;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
@@ -2656,11 +2598,7 @@ or_typeswitchloop(const void *lft, bool incr1,
 	BUN i = 0, j = 0, k;
 	BUN nils = 0;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	/* note, we don't have to check whether the result is equal to
 	 * NIL when using bitwise OR: there is only a single bit set in
@@ -2671,7 +2609,7 @@ or_typeswitchloop(const void *lft, bool incr1,
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				if (incr2)
@@ -2681,7 +2619,7 @@ or_typeswitchloop(const void *lft, bool incr1,
 				((bit *) dst)[k] = or3(v1, v2);
 				nils += is_bit_nil(((bit *) dst)[k]);
 			}
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		} else {
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, bte, OR);
@@ -2895,17 +2833,13 @@ and_typeswitchloop(const void *lft, bool incr1,
 	BUN i = 0, j = 0, k;
 	BUN nils = 0;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {
+			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				if (incr2)
@@ -2915,7 +2849,7 @@ and_typeswitchloop(const void *lft, bool incr1,
 				((bit *) dst)[k] = and3(v1, v2);
 				nils += is_bit_nil(((bit *) dst)[k]);
 			}
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
+			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		} else {
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil_nilcheck(bte, bte, bte, AND, ON_OVERFLOW(bte, bte, "AND"));
@@ -3143,11 +3077,7 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	BUN i, j, k;
 	BUN nils = 0;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	tp1 = ATOMbasetype(tp1);
 	tp2 = ATOMbasetype(tp2);
@@ -3497,11 +3427,7 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	BUN i, j, k;
 	BUN nils = 0;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	tp1 = ATOMbasetype(tp1);
 	tp2 = ATOMbasetype(tp2);
@@ -3881,7 +3807,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define BETWEEN_LOOP_TYPE(TYPE, canditer_next)				\
 	do {								\
 		i = j = k = 0;						\
-		TIMEOUT_LOOP_IDX(l, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX(l, ncand, qry_ctx) {			\
 			if (incr1)					\
 				i = canditer_next(ci) - seqbase1;	\
 			if (incr2)					\
@@ -3894,8 +3820,8 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 					 TYPE);				\
 			nils += is_bit_nil(dst[l]);			\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 static BAT *
@@ -3917,11 +3843,7 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	bn = COLnew(ci->hseq, TYPE_bit, ncand, TRANSIENT);
 	if (bn == NULL)
@@ -3989,7 +3911,7 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 		}
 		nil = ATOMnilptr(tp);
 		i = j = k = 0;
-		TIMEOUT_LOOP_IDX(l, ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(l, ncand, qry_ctx) {
 			if (incr1)
 				i = canditer_next(ci) - seqbase1;
 			if (incr2)
@@ -4009,8 +3931,8 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 			dst[l] = BETWEEN(p1, p2, p3, any);
 			nils += is_bit_nil(dst[l]);
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		break;
 	}
 
@@ -4027,6 +3949,13 @@ bailout:
 	BBPunfix(bn->batCacheid);
 	return NULL;
 }
+
+#define HANDLE_TIMEOUT							\
+	do {								\
+		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		BBPreclaim(bn);						\
+		bn = NULL;						\
+	} while (0)
 
 BAT *
 BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
@@ -4064,20 +3993,46 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 	BATiter bi = bat_iterator(b);
 	BATiter loi = bat_iterator(lo);
 	BATiter hii = bat_iterator(hi);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
-				   loi.base, 1,
-				   loi.vh ? loi.vh->base : NULL,
-				   loi.width,
-				   hii.base, 1,
-				   hii.vh ? hii.vh->base : NULL,
-				   hii.width,
-				   bi.type,
-				   &ci, &cilo, &cihi,
-				   b->hseqbase, lo->hseqbase, hi->hseqbase,
-				   symmetric, anti, linc, hinc,
-				   nils_false, __func__);
+	if (b->ttype == TYPE_void || lo->ttype == TYPE_void || hi->ttype == TYPE_void) {
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
+		if (bn) {
+			bit *restrict dst = (bit *) Tloc(bn, 0);
+			BUN i, j, k, l;
+			BUN nils = 0;
+			TIMEOUT_LOOP_IDX(l, ci.ncand, qry_ctx) {
+				i = canditer_next(&ci) - b->hseqbase;
+				j = canditer_next(&cilo) - lo->hseqbase;
+				k = canditer_next(&cihi) - hi->hseqbase;
+				dst[l] = BETWEEN(BUNtoid(b, i),
+						 BUNtoid(lo, j),
+						 BUNtoid(hi, k), oid);
+				nils += is_bit_nil(dst[l]);
+			}
+			BATsetcount(bn, ci.ncand);
+			bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->tkey = ci.ncand <= 1;
+			bn->tnil = nils != 0;
+			bn->tnonil = nils == 0;
+			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT);
+		}
+	} else {
+		bn = BATcalcbetween_intern(bi.base, 1,
+					   bi.vh ? bi.vh->base : NULL,
+					   bi.width,
+					   loi.base, 1,
+					   loi.vh ? loi.vh->base : NULL,
+					   loi.width,
+					   hii.base, 1,
+					   hii.vh ? hii.vh->base : NULL,
+					   hii.width,
+					   bi.type,
+					   &ci, &cilo, &cihi,
+					   b->hseqbase, lo->hseqbase, hi->hseqbase,
+					   symmetric, anti, linc, hinc,
+					   nils_false, __func__);
+	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&loi);
 	bat_iterator_end(&hii);
@@ -4115,18 +4070,41 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 	canditer_init(&ci, b, s);
 
 	BATiter bi = bat_iterator(b);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
-				   VALptr(lo), 0, NULL, 0,
-				   VALptr(hi), 0, NULL, 0,
-				   bi.type,
-				   &ci,
-				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				   b->hseqbase, 0, 0, symmetric, anti,
-				   linc, hinc, nils_false,
-				   __func__);
+	if (b->ttype == TYPE_void) {
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
+		if (bn) {
+			bit *restrict dst = (bit *) Tloc(bn, 0);
+			BUN i, l;
+			BUN nils = 0;
+			TIMEOUT_LOOP_IDX(l, ci.ncand, qry_ctx) {
+				i = canditer_next(&ci) - b->hseqbase;
+				dst[l] = BETWEEN(BUNtoid(b, i), lo->val.oval,
+						 hi->val.oval, oid);
+				nils += is_bit_nil(dst[l]);
+			}
+			BATsetcount(bn, ci.ncand);
+			bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->tkey = ci.ncand <= 1;
+			bn->tnil = nils != 0;
+			bn->tnonil = nils == 0;
+			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT);
+		}
+	} else {
+		bn = BATcalcbetween_intern(bi.base, 1,
+					   bi.vh ? bi.vh->base : NULL,
+					   bi.width,
+					   VALptr(lo), 0, NULL, 0,
+					   VALptr(hi), 0, NULL, 0,
+					   bi.type,
+					   &ci,
+					   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+					   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+					   b->hseqbase, 0, 0, symmetric, anti,
+					   linc, hinc, nils_false,
+					   __func__);
+	}
 	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
@@ -4165,21 +4143,45 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 
 	BATiter bi = bat_iterator(b);
 	BATiter loi = bat_iterator(lo);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
-				   loi.base, 1,
-				   loi.vh ? loi.vh->base : NULL,
-				   loi.width,
-				   VALptr(hi), 0, NULL, 0,
-				   bi.type,
-				   &ci,
-				   &cilo,
-				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				   b->hseqbase, lo->hseqbase, 0,
-				   symmetric, anti,
-				   linc, hinc, nils_false,
-				   __func__);
+	if (b->ttype == TYPE_void || lo->ttype == TYPE_void) {
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
+		if (bn) {
+			bit *restrict dst = (bit *) Tloc(bn, 0);
+			BUN i, j, l;
+			BUN nils = 0;
+			TIMEOUT_LOOP_IDX(l, ci.ncand, qry_ctx) {
+				i = canditer_next(&ci) - b->hseqbase;
+				j = canditer_next(&cilo) - lo->hseqbase;
+				dst[l] = BETWEEN(BUNtoid(b, i), BUNtoid(lo, j),
+						 hi->val.oval, oid);
+				nils += is_bit_nil(dst[l]);
+			}
+			BATsetcount(bn, ci.ncand);
+			bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->tkey = ci.ncand <= 1;
+			bn->tnil = nils != 0;
+			bn->tnonil = nils == 0;
+			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT);
+		}
+	} else {
+		bn = BATcalcbetween_intern(bi.base, 1,
+					   bi.vh ? bi.vh->base : NULL,
+					   bi.width,
+					   loi.base, 1,
+					   loi.vh ? loi.vh->base : NULL,
+					   loi.width,
+					   VALptr(hi), 0, NULL, 0,
+					   bi.type,
+					   &ci,
+					   &cilo,
+					   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+					   b->hseqbase, lo->hseqbase, 0,
+					   symmetric, anti,
+					   linc, hinc, nils_false,
+					   __func__);
+	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&loi);
 
@@ -4221,21 +4223,45 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 
 	BATiter bi = bat_iterator(b);
 	BATiter hii = bat_iterator(hi);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
-				   VALptr(lo), 0, NULL, 0,
-				   hii.base, 1,
-				   hii.vh ? hii.vh->base : NULL,
-				   hii.width,
-				   bi.type,
-				   &ci,
-				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				   &cihi,
-				   b->hseqbase, 0, hi->hseqbase,
-				   symmetric, anti,
-				   linc, hinc, nils_false,
-				   __func__);
+	if (b->ttype == TYPE_void || hi->ttype == TYPE_void) {
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
+		if (bn) {
+			bit *restrict dst = (bit *) Tloc(bn, 0);
+			BUN i, k, l;
+			BUN nils = 0;
+			TIMEOUT_LOOP_IDX(l, ci.ncand, qry_ctx) {
+				i = canditer_next(&ci) - b->hseqbase;
+				k = canditer_next(&cihi) - hi->hseqbase;
+				dst[l] = BETWEEN(BUNtoid(b, i), lo->val.oval,
+						 BUNtoid(hi, k), oid);
+				nils += is_bit_nil(dst[l]);
+			}
+			BATsetcount(bn, ci.ncand);
+			bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
+			bn->tkey = ci.ncand <= 1;
+			bn->tnil = nils != 0;
+			bn->tnonil = nils == 0;
+			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT);
+		}
+	} else {
+		bn = BATcalcbetween_intern(bi.base, 1,
+					   bi.vh ? bi.vh->base : NULL,
+					   bi.width,
+					   VALptr(lo), 0, NULL, 0,
+					   hii.base, 1,
+					   hii.vh ? hii.vh->base : NULL,
+					   hii.width,
+					   bi.type,
+					   &ci,
+					   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+					   &cihi,
+					   b->hseqbase, 0, hi->hseqbase,
+					   symmetric, anti,
+					   linc, hinc, nils_false,
+					   __func__);
+	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&hii);
 
@@ -4309,7 +4335,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 
 #define IFTHENELSELOOP(TYPE)						\
 	do {								\
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
+		TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {			\
 			if (src[i] && !is_bit_nil(src[i])) {		\
 				((TYPE *) dst)[i] = ((TYPE *) col1)[k]; \
 			} else {					\
@@ -4318,12 +4344,12 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 			k += incr1;					\
 			l += incr2;					\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 #define IFTHENELSELOOP_msk(TYPE)					\
 	do {								\
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
+		TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {			\
 			if (n == 32) {					\
 				n = 0;					\
 				mask = src[i / 32];			\
@@ -4335,8 +4361,8 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 			l += incr2;					\
 			n++;						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
 static BAT *
@@ -4353,11 +4379,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 	const void *p;
 	BUN cnt = bi->count;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	/* col1 and col2 can only be NULL for void columns */
 	assert(col1 != NULL || ATOMtype(tpe) == TYPE_oid);
@@ -4381,7 +4403,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 		if (ATOMstorage(bi->type) == TYPE_msk) {
 			const uint32_t *src = bi->base;
 			BUN n = cnt / 32;
-			TIMEOUT_LOOP_IDX(i, n + 1, timeoffset) {
+			TIMEOUT_LOOP_IDX(i, n + 1, qry_ctx) {
 				BUN rem = i == n ? cnt % 32 : 32;
 				uint32_t mask = rem != 0 ? src[i] : 0;
 				for (BUN j = 0; j < rem; j++) {
@@ -4403,11 +4425,11 @@ BATcalcifthenelse_intern(BATiter *bi,
 					l += incr2;
 				}
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		} else {
 			const bit *src = bi->base;
-			TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+			TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {
 				if (src[i] && !is_bit_nil(src[i])) {
 					if (heap1)
 						p = heap1 + VarHeapVal(col1, k, width1);
@@ -4425,8 +4447,8 @@ BATcalcifthenelse_intern(BATiter *bi,
 				k += incr1;
 				l += incr2;
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		}
 	} else {
 		assert(heap1 == NULL);
@@ -4436,7 +4458,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 			uint32_t mask = 0;
 			BUN n = 32;
 			if (ATOMtype(tpe) == TYPE_oid) {
-				TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+				TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {
 					if (n == 32) {
 						n = 0;
 						mask = src[i / 32];
@@ -4450,8 +4472,8 @@ BATcalcifthenelse_intern(BATiter *bi,
 					seq2 += incr2;
 					n++;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else if (ATOMstorage(tpe) == TYPE_msk) {
 				uint32_t v1, v2;
 				if (incr1) {
@@ -4465,7 +4487,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 					v2 = * (msk *) col2 ? ~0U : 0U;
 				}
 				n = (cnt + 31) / 32;
-				TIMEOUT_LOOP_IDX(i, n, timeoffset) {
+				TIMEOUT_LOOP_IDX(i, n, qry_ctx) {
 					if (incr1)
 						v1 = ((uint32_t *) col1)[i];
 					if (incr2)
@@ -4473,8 +4495,8 @@ BATcalcifthenelse_intern(BATiter *bi,
 					((uint32_t *) dst)[i] = (src[i] & v1)
 						| (~src[i] & v2);
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
 				switch (bn->twidth) {
 				case 1:
@@ -4497,7 +4519,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 #endif
 					break;
 				default:
-					TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+					TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {
 						if (n == 32) {
 							n = 0;
 							mask = src[i / 32];
@@ -4512,14 +4534,14 @@ BATcalcifthenelse_intern(BATiter *bi,
 						l += incr2;
 						n++;
 					}
-					TIMEOUT_CHECK(timeoffset,
-						      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+					TIMEOUT_CHECK(qry_ctx,
+						      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 				}
 			}
 		} else {
 			const bit *src = bi->base;
 			if (ATOMtype(tpe) == TYPE_oid) {
-				TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+				TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {
 					if (src[i] && !is_bit_nil(src[i])) {
 						((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1;
 					} else {
@@ -4530,8 +4552,8 @@ BATcalcifthenelse_intern(BATiter *bi,
 					seq1 += incr1;
 					seq2 += incr2;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else if (ATOMstorage(tpe) == TYPE_msk) {
 				uint32_t v1, v2;
 				uint32_t *d = dst;
@@ -4546,7 +4568,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 					v2 = * (msk *) col2 ? ~0U : 0U;
 				}
 				i = 0;
-				TIMEOUT_LOOP(cnt / 32, timeoffset) {
+				TIMEOUT_LOOP(cnt / 32, qry_ctx) {
 					uint32_t mask = 0;
 					if (incr1)
 						v1 = ((uint32_t *) col1)[i/32];
@@ -4558,8 +4580,8 @@ BATcalcifthenelse_intern(BATiter *bi,
 					*d++ = (mask & v1) | (~mask & v2);
 					i += 32;
 				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 				/* do the last word */
 				if (i < cnt) {
 					uint32_t mask = 0;
@@ -4596,7 +4618,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 #endif
 					break;
 				default:
-					TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+					TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {
 						if (src[i] && !is_bit_nil(src[i])) {
 							p = ((const char *) col1) + k * width1;
 						} else {
@@ -4607,8 +4629,8 @@ BATcalcifthenelse_intern(BATiter *bi,
 						k += incr1;
 						l += incr2;
 					}
-					TIMEOUT_CHECK(timeoffset,
-						      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+					TIMEOUT_CHECK(qry_ctx,
+						      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 				}
 			}
 		}

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -93,6 +95,8 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 {
 	gdk_return rc;
 	newcol = BATsetaccess(newcol, BAT_READ);
+	if (newcol == NULL)
+		return GDK_FAIL;
 	if (old_lg != NULL) {
 		if ((rc = BUNappend(old_lg->del, &oldcolid, false)) == GDK_SUCCEED &&
 			(rc = BUNappend(old_lg->add, &newcol->batCacheid, false)) == GDK_SUCCEED &&
@@ -2519,6 +2523,10 @@ bl_postversion(void *Store, void *Lg)
 			/* and type = 'char' */
 			b3 = BATselect(b1, b2, "char", NULL, true, false, false);
 			bat_destroy(b2);
+			if (b3 == NULL) {
+				bat_destroy(b1);
+				return GDK_FAIL;
+			}
 			if (BATcount(b3) > 0) {
 				if (BUNfnd(old_lg->add, &b1->batCacheid) == BUN_NONE) {
 					/* replace sys.args.type with a copy that we can modify */
@@ -3481,7 +3489,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 	gdk_return ret = GDK_FAIL;
 	int lineno = 0;
 	bat bbpsize = 0;
-	lng logno, transid;
+	lng logno;
 	unsigned bbpversion;
 
 	len = snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
@@ -3499,7 +3507,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Could not open %s for reading: %s", bbpdir, mnstr_peek_error(NULL));
 		return GDK_FAIL;
 	}
-	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid, false);
+	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, false);
 	if (bbpversion == 0)
 		goto end;
 	assert(bbpversion == GDKLIBRARY);

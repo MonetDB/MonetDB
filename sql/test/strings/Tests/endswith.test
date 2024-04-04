@@ -1,0 +1,44 @@
+query I nosort
+SELECT endswith(NULL, '')
+----
+NULL
+
+query I nosort
+SELECT endswith('', NULL)
+----
+NULL
+
+query I nosort
+SELECT endswith('', '')
+----
+1
+
+query I nosort
+SELECT endswith('johndoe', '')
+----
+1
+
+query I nosort
+SELECT endswith('', 'johndoe')
+----
+0
+
+query I nosort
+SELECT endswith('johndoe', 'doe')
+----
+1
+
+query I nosort
+SELECT endswith('one two three', 'three', true)
+----
+1
+
+query I nosort
+SELECT endswith('Thomas Müller', 'müller', true)
+----
+1
+
+query I nosort
+SELECT endswith('Thomas Müller', 'müller', false)
+----
+0

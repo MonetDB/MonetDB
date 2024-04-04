@@ -5,7 +5,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 add_library(mapi
@@ -32,7 +34,8 @@ target_sources(mapi
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/mapi_querytype.h>
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/msettings.h>
   $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/mapi.h>
-  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/mapi_querytype.h>)
+  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/mapi_querytype.h>
+  $<INSTALL_INTERFACE:$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>/msettings.h>)
 
 target_include_directories(mapi
   PUBLIC
@@ -58,7 +61,7 @@ set_target_properties(mapi
   PROPERTIES
   VERSION ${MAPI_VERSION}
   SOVERSION ${MAPI_VERSION_MAJOR}
-  PUBLIC_HEADER "mapi.h;mapi_querytype.h")
+  PUBLIC_HEADER "mapi.h;mapi_querytype.h;msettings.h")
 
 if (NOT WIN32)
   configure_file(monetdb-mapi.pc.in

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -84,12 +86,14 @@
 #define RMTT_64_BITS    (1<<2)
 #define RMTT_32_OIDS    (0<<3)
 #define RMTT_64_OIDS    (1<<3)
+#define RMTT_HGE	    (1<<4)
 
 typedef struct _connection {
 	MT_Lock lock;				/* lock to avoid interference */
 	str name;					/* the handle for this connection */
 	Mapi mconn;					/* the Mapi handle for the connection */
 	unsigned char type;			/* binary profile of the connection target */
+	bool int128;				/* has int128 support */
 	size_t nextid;				/* id counter */
 	struct _connection *next;	/* the next connection in the list */
 } *connection;
@@ -104,6 +108,7 @@ static MT_Lock mal_remoteLock = MT_LOCK_INITIALIZER(mal_remoteLock);
 
 static connection conns = NULL;
 static unsigned char localtype = 0177;
+static bool int128 = false;
 
 static inline str RMTquery(MapiHdl *ret, const char *func, Mapi conn,
 						   const char *query);
@@ -295,7 +300,19 @@ RMTconnectScen(str *ret,
 #ifdef _DEBUG_MAPI_
 	mapi_trace(c->mconn, true);
 #endif
-
+	if (c->type != localtype && (c->type | RMTT_HGE) == localtype) {
+		/* we support hge, and for remote, we don't know */
+		msg = RMTquery(&hdl, "remote.connect", m, "x := 0:hge;");
+		if (msg) {
+			c->int128 = false;
+		} else {
+			mapi_close_handle(hdl);
+			c->int128 = true;
+			c->type |= RMTT_HGE;
+		}
+	} else if (c->type == localtype) {
+		c->int128 = int128;
+	}
 	MT_lock_unset(&mal_remoteLock);
 
 	*ret = GDKstrdup(conn);
@@ -500,6 +517,10 @@ RMTprelude(void)
 #else
 	type |= RMTT_32_OIDS;
 #endif
+#ifdef HAVE_HGE
+	type |= RMTT_HGE;
+	int128 = true;
+#endif
 	localtype = (unsigned char) type;
 
 	return (MAL_SUCCEED);
@@ -568,7 +589,7 @@ typedef struct _binbat_v1 {
 } binbat;
 
 static str
-RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
+RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, bool cint128)
 {
 	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0 };
 	char *nme = NULL;
@@ -579,6 +600,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
 
 	BAT *b;
 
+	(void) cint128;
 	/* hdr is a JSON structure that looks like
 	 * {"version":1,"ttype":6,"tseqbase":0,"tailsize":4,"theapsize":0}
 	 * we take the binary data directly from the stream */
@@ -682,6 +704,12 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
 		}
 		hdr++;
 	}
+#ifdef HAVE_HGE
+	if (int128 && !cint128 && bb.Ttype >= TYPE_hge)
+		bb.Ttype++;
+#else
+	(void) cint128;
+#endif
 
 	b = COLnew2(bb.Hseqbase, bb.Ttype, bb.size, TRANSIENT,
 				bb.size > 0 ? (uint16_t) (bb.tailsize / bb.size) : 0);
@@ -786,7 +814,7 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	GDKfree(rt);
 
-	if (isaBatType(rtype) && (localtype == 0177 || localtype != c->type)) {
+	if (isaBatType(rtype) && (localtype == 0177 || (localtype != c->type && localtype != (c->type | RMTT_HGE)))) {
 		int t;
 		size_t s;
 		ptr r;
@@ -878,7 +906,7 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return tmp;
 		}
 
-		if ((tmp = RMTinternalcopyfrom(&b, buf, sin, true)) != MAL_SUCCEED) {
+		if ((tmp = RMTinternalcopyfrom(&b, buf, sin, true, c->int128)) != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
 			return (tmp);
 		}
@@ -1376,7 +1404,7 @@ RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *b = NULL;
 
 				if ((tmp = RMTreadbatheader(sin, buf)) != MAL_SUCCEED ||
-					(tmp = RMTinternalcopyfrom(&b, buf, sin, i == fields - 1)) != MAL_SUCCEED) {
+					(tmp = RMTinternalcopyfrom(&b, buf, sin, i == fields - 1, c->int128)) != MAL_SUCCEED) {
 					break;
 				}
 
@@ -1587,8 +1615,7 @@ RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	cntxt->fdin->buf[cntxt->fdin->len] = '\0';
 	err = RMTinternalcopyfrom(&b,
-							  &cntxt->fdin->buf[cntxt->fdin->pos],
-							  cntxt->fdin->s, true);
+			&cntxt->fdin->buf[cntxt->fdin->pos], cntxt->fdin->s, true, int128 /* library should be compatible */);
 	/* skip the JSON line */
 	cntxt->fdin->pos = ++cntxt->fdin->len;
 	if (err !=MAL_SUCCEED)
@@ -1609,30 +1636,13 @@ RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int type = 0;
-	(void) mb;
-	(void) stk;
-	(void) pci;
+	(void)mb;
+	(void)stk;
+	(void)pci;
 
-#ifdef WORDS_BIGENDIAN
-	type |= RMTT_B_ENDIAN;
-#else
-	type |= RMTT_L_ENDIAN;
-#endif
-#if SIZEOF_SIZE_T == SIZEOF_LNG
-	type |= RMTT_64_BITS;
-#else
-	type |= RMTT_32_BITS;
-#endif
-#if SIZEOF_OID == SIZEOF_LNG
-	type |= RMTT_64_OIDS;
-#else
-	type |= RMTT_32_OIDS;
-#endif
-
-	mnstr_printf(cntxt->fdout, "[ %d ]\n", type);
-
-	return (MAL_SUCCEED);
+	/* TODO bintype should include the (bin) protocol version */
+	mnstr_printf(cntxt->fdout, "[ %d ]\n", localtype);
+	return(MAL_SUCCEED);
 }
 
 /**
