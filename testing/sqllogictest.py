@@ -55,6 +55,13 @@ from pathlib import Path
 from typing import Optional
 import difflib
 
+# this stuff is for geos pre 3.12: 3.12 introduced an extra set of
+# parentheses in MULTIPOINT values
+geosre = re.compile(r'MULTIPOINT *\((?P<points>[^()]*)\)')
+ptsre = re.compile(r'-?\d+ -?\d+')
+geoszre = re.compile(r'MULTIPOINT *Z *\((?P<points>[^()]*)\)')
+ptszre = re.compile(r'-?\d+ -?\d+ -?\d+')
+
 architecture = platform.machine()
 if architecture == 'AMD64':     # Windows :-(
     architecture = 'x86_64'
@@ -407,7 +414,7 @@ class SQLLogic:
         except KeyboardInterrupt:
             raise
         except:
-            type, value, traceback = sys.exc_info()
+            tpe, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
             return ['statement', 'error'], []
         try:
@@ -415,9 +422,25 @@ class SQLLogic:
         except KeyboardInterrupt:
             raise
         except:
-            type, value, traceback = sys.exc_info()
+            tpe, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
             return ['statement', 'error'], []
+        ndata = []
+        for row in data:
+            nrow = []
+            for col in row:
+                if type(col) in (type(''), type(b'')):
+                    res = geosre.search(col)
+                    if res is not None:
+                        points = ptsre.sub(r'(\g<0>)', res.group('points'))
+                        col = col[:res.start('points')] + points + col[res.end('points'):]
+                    res = geoszre.search(col)
+                    if res is not None:
+                        points = ptszre.sub(r'(\g<0>)', res.group('points'))
+                        col = col[:res.start('points')] + points + col[res.end('points'):]
+                nrow.append(col)
+            ndata.append(nrow)
+        data = ndata
         if crs.description:
             rescols = []
             for desc in crs.description:
