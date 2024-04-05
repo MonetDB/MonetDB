@@ -357,13 +357,6 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #include "stream.h"
 #include "mstring.h"
 
-#ifdef HAVE_RTREE
-#ifndef SIZEOF_RTREE_COORD_T
-#define SIZEOF_RTREE_COORD_T 4
-#endif
-#include <rtree.h>
-#endif
-
 #undef MIN
 #undef MAX
 #define MAX(A,B)	((A)<(B)?(B):(A))
@@ -1902,21 +1895,12 @@ gdk_export gdk_return BATsetstrimps(BAT *b);
 
 /* Rtree structure functions */
 #ifdef HAVE_RTREE
-//TODO REMOVE
-typedef struct mbr_t {
-	float xmin;
-	float ymin;
-	float xmax;
-	float ymax;
-
-} mbr_t;
-
 gdk_export bool RTREEexists(BAT *b);
-gdk_export bool RTREEexists_bid(bat *bid);
+gdk_export bool RTREEexists_bid(bat bid);
 gdk_export gdk_return BATrtree(BAT *wkb, BAT* mbr);
-gdk_export BUN* RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit);
-gdk_export void RTREEdecref(BAT *b);
-gdk_export void RTREEincref(BAT *b);
+/* inMBR is really a struct mbr * from geom module, but that is not
+ * available here */
+gdk_export BUN* RTREEsearch(BAT *b, const void *inMBR, int result_limit);
 #endif
 
 gdk_export void RTREEdestroy(BAT *b);
