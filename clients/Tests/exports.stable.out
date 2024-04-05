@@ -1005,7 +1005,7 @@ int getStrConstant(MalBlkPtr mb, str val);
 const char *getTraceRef;
 str getTypeIdentifier(malType tpe);
 str getTypeName(malType tpe);
-char *getVarNameIntoBuffer(MalBlkPtr mb, int idx, const char *buf);
+char *getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf);
 const char *getVariableRef;
 Module globalModule(const char *nme);
 const char *grantRef;
