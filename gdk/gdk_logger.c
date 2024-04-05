@@ -881,19 +881,19 @@ la_bat_create(logger *lg, logaction *la, int tid)
 }
 
 static gdk_return
-log_write_new_types(logger *lg, FILE *fp, bool append)
+log_write_new_types(logger *lg, FILE *fp)
 {
 	bte id = 0;
 
 	/* write types and insert into bats */
+	memset(lg->type_id, -1, sizeof(lg->type_id));
+	memset(lg->type_nr, 255, sizeof(lg->type_nr));
 	/* first the fixed sized types */
 	for (int i = 0; i < GDKatomcnt; i++) {
 		if (ATOMvarsized(i))
 			continue;
-		if (append) {
-			lg->type_id[i] = id;
-			lg->type_nr[id] = i;
-		}
+		lg->type_id[i] = id;
+		lg->type_nr[id] = i;
 		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
 			return GDK_FAIL;
 		id++;
@@ -903,10 +903,8 @@ log_write_new_types(logger *lg, FILE *fp, bool append)
 	for (int i = 0; i < GDKatomcnt; i++) {
 		if (!ATOMvarsized(i))
 			continue;
-		if (append) {
-			lg->type_id[i] = id;
-			lg->type_nr[256 + id] = i;
-		}
+		lg->type_id[i] = id;
+		lg->type_nr[256 + id] = i;
 		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
 			return GDK_FAIL;
 		id++;
@@ -1036,13 +1034,15 @@ tr_commit(logger *lg, trans *tr)
 }
 
 static gdk_return
-log_read_types_file(logger *lg, FILE *fp)
+log_read_types_file(logger *lg, FILE *fp, int version)
 {
 	int id = 0;
 	char atom_name[IDLENGTH];
 
 	/* scanf should use IDLENGTH somehow */
 	while (fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
+		if (version < 52303 && strcmp(atom_name, "BAT") == 0)
+			continue;
 		int i = ATOMindex(atom_name);
 
 		if (id < -127 || id > 127 || i < 0) {
@@ -1057,7 +1057,7 @@ log_read_types_file(logger *lg, FILE *fp)
 
 
 gdk_return
-log_create_types_file(logger *lg, const char *filename, bool append)
+log_create_types_file(logger *lg, const char *filename)
 {
 	FILE *fp;
 
@@ -1073,7 +1073,7 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 		return GDK_FAIL;
 	}
 
-	if (log_write_new_types(lg, fp, append) != GDK_SUCCEED) {
+	if (log_write_new_types(lg, fp) != GDK_SUCCEED) {
 		fclose(fp);
 		GDKerror("writing log file %s failed", filename);
 		if (MT_remove(filename) < 0)
@@ -1544,7 +1544,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 		fclose(fp);
 		return GDK_FAIL;
 	}
-	if (log_read_types_file(lg, fp) != GDK_SUCCEED) {
+	if (log_read_types_file(lg, fp, version) != GDK_SUCCEED) {
 		fclose(fp);
 		return GDK_FAIL;
 	}
@@ -2106,7 +2106,7 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 				GDKerror("cannot create directory for log file %s\n", filename);
 				goto error;
 			}
-			if (log_create_types_file(lg, filename, true) != GDK_SUCCEED)
+			if (log_create_types_file(lg, filename) != GDK_SUCCEED)
 				goto error;
 		}
 
@@ -2284,7 +2284,7 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 				TRC_CRITICAL(GDK, "couldn't move log to log.bak\n");
 				return GDK_FAIL;
 			}
-			if (log_create_types_file(lg, filename, false) != GDK_SUCCEED) {
+			if (log_create_types_file(lg, filename) != GDK_SUCCEED) {
 				TRC_CRITICAL(GDK, "couldn't write new log\n");
 				return GDK_FAIL;
 			}

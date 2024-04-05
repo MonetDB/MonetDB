@@ -23,7 +23,7 @@
 #include "bat/bat_logger.h"
 
 /* version 05.23.02 of catalog */
-#define CATALOG_VERSION 52302	/* first in Sep2022 */
+#define CATALOG_VERSION 52303	/* first after Dec2023 */
 
 ulng
 store_function_counter(sqlstore *store)
