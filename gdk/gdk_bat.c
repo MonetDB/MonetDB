@@ -775,9 +775,7 @@ wrongtype(int t1, int t2)
 			if (ATOMvarsized(t1) ||
 			    ATOMvarsized(t2) ||
 			    t1 == TYPE_msk || t2 == TYPE_msk ||
-			    ATOMsize(t1) != ATOMsize(t2) ||
-			    BATatoms[t1].atomFix ||
-			    BATatoms[t2].atomFix)
+			    ATOMsize(t1) != ATOMsize(t2))
 				return true;
 		}
 	}
@@ -898,7 +896,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				bn->batCapacity = (BUN) (bn->theap->size >> bn->tshift);
 			else
 				bn->batCapacity = 0;
-		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
+		} else if (tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -2543,9 +2541,7 @@ BATmode(BAT *b, bool transient)
 
 	if (transient != bi.transient) {
 		if (!transient) {
-			if (ATOMisdescendant(b->ttype, TYPE_ptr) ||
-			    BATatoms[b->ttype].atomUnfix ||
-			    BATatoms[b->ttype].atomFix) {
+			if (ATOMisdescendant(b->ttype, TYPE_ptr)) {
 				GDKerror("%s type implies that %s[%s] "
 					 "cannot be made persistent.\n",
 					 ATOMname(b->ttype), BATgetId(b),

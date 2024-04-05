@@ -432,7 +432,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			BBPrelease(oh->parentid);
 		HEAPdecref(oh, false);
 	}
-	if (BATcount(b) == 0 && BATatoms[b->ttype].atomFix == NULL &&
+	if (BATcount(b) == 0 &&
 	    ci->tpe == cand_dense && ci->ncand == ni->count) {
 		/* just copy the heaps */
 		MT_lock_set(&b->theaplock);
@@ -926,8 +926,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 		MT_rwlock_wrlock(&b->thashlock);
 		hlocked = true;
-		if (BATatoms[b->ttype].atomFix == NULL &&
-		    b->ttype != TYPE_void &&
+		if (b->ttype != TYPE_void &&
 		    ni.type != TYPE_void &&
 		    ci.tpe == cand_dense) {
 			/* use fast memcpy if we can */
@@ -1898,8 +1897,7 @@ BATslice(BAT *b, BUN l, BUN h)
 
 		if (bn->ttype == TYPE_void) {
 			BATsetcount(bn, h - l);
-		} else if (bn->tvheap == NULL &&
-			   BATatoms[bn->ttype].atomFix == NULL) {
+		} else if (bn->tvheap == NULL) {
 			assert(BATatoms[bn->ttype].atomPut == NULL);
 			memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
 			       (q - p) << bn->tshift);

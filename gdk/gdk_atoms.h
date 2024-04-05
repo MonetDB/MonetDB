@@ -53,9 +53,6 @@ typedef struct {
 	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
-	/* optional functions */
-	gdk_return (*atomFix) (const void *atom);
-	gdk_return (*atomUnfix) (const void *atom);
 
 	/* varsized atom-only ADT functions */
 	var_t (*atomPut) (BAT *, var_t *off, const void *src);
