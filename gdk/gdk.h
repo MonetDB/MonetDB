@@ -1314,8 +1314,6 @@ gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
-	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 	__attribute__((__warn_unused_result__));
 
@@ -2100,8 +2098,6 @@ BUNtoid(BAT *b, BUN p)
 /*
  * @+ Transaction Management
  */
-gdk_export gdk_return TMsubcommit(BAT *bl)
-	__attribute__((__warn_unused_result__));
 gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno)
 	__attribute__((__warn_unused_result__));
 
