@@ -1194,7 +1194,7 @@ InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
 InstrPtr pushSht(MalBlkPtr mb, InstrPtr q, sht val);
 InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);
 InstrPtr pushType(MalBlkPtr mb, InstrPtr q, int tpe);
-InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, ValPtr cst);
+InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, const ValRecord *cst);
 InstrPtr pushVoid(MalBlkPtr mb, InstrPtr q);
 InstrPtr pushZero(MalBlkPtr mb, InstrPtr q, int tpe);
 const char *putName(const char *nme);

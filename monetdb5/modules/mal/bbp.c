@@ -69,9 +69,11 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	BBPkeepref(b);
-	lhs->vtype = tt;
-	lhs->bat = true;
-	lhs->val.bval = i;
+	*lhs = (ValRecord) {
+		.vtype = tt,
+		.bat = true,
+		.val.bval = i,
+	};
 	return MAL_SUCCEED;
 }
 

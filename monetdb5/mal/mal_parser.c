@@ -538,9 +538,11 @@ cstToken(Client cntxt, ValPtr cst)
 	int i = 0;
 	str s = CURRENT(cntxt);
 
-	cst->vtype = TYPE_int;
-	cst->val.lval = 0;
-	cst->bat = false;
+	*cst = (ValRecord) {
+		.vtype = TYPE_int,
+		.val.lval = 0,
+		.bat = false,
+	};
 	switch (*s) {
 	case '{':
 	case '[':

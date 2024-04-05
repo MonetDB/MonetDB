@@ -873,9 +873,11 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(r);
 			}
 
-		v->val.bval = b->batCacheid;
-		v->bat = true;
-		v->vtype = b->ttype;
+		*v = (ValRecord) {
+			.val.bval = b->batCacheid,
+			.bat = true,
+			.vtype = b->ttype,
+		};
 		BBPkeepref(b);
 
 		mapi_close_handle(mhdl);
@@ -913,9 +915,11 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return (tmp);
 		}
 
-		v->val.bval = b->batCacheid;
-		v->bat = true;
-		v->vtype = b->ttype;
+		*v = (ValRecord) {
+			.val.bval = b->batCacheid,
+			.bat = true,
+			.vtype = b->ttype,
+		};
 		BBPkeepref(b);
 
 		MT_lock_unset(&c->lock);
@@ -1510,9 +1514,11 @@ RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(r);
 	}
 
-	v->val.bval = b->batCacheid;
-	v->bat = true;
-	v->vtype = b->ttype;
+	*v = (ValRecord) {
+		.val.bval = b->batCacheid,
+		.bat = true,
+		.vtype = b->ttype,
+	};
 	BBPkeepref(b);
 
 	return msg;
@@ -1626,9 +1632,11 @@ RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return (err);
 
 	v = &stk->stk[pci->argv[0]];
-	v->val.bval = b->batCacheid;
-	v->bat = true;
-	v->vtype = b->ttype;
+	*v = (ValRecord) {
+		.val.bval = b->batCacheid,
+		.bat = true,
+		.vtype = b->ttype,
+	};
 	BBPkeepref(b);
 
 	return (MAL_SUCCEED);

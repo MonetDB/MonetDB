@@ -488,7 +488,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * arbitrary functions.
  */
 static void
-printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index)
+printStackHdr(stream *f, MalBlkPtr mb, const ValRecord *v, int index)
 {
 	char name[IDLENGTH] = { 0 };
 	if (v == 0 && isVarConstant(mb, index))
@@ -555,7 +555,7 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 }
 
 static void
-printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
+printStackElm(stream *f, MalBlkPtr mb, const ValRecord *v, int index, BUN cnt, BUN first)
 {
 	str nme, nmeOnStk;
 	VarPtr n = getVar(mb, index);
