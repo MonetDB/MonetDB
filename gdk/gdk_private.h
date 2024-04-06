@@ -459,14 +459,6 @@ struct Strimps {
 				 * bitstring construction */
 };
 
-#ifdef HAVE_RTREE
-struct RTree {
-	ATOMIC_TYPE refs; 	/* counter for logical references to the rtree */
-	rtree_t *rtree; 	/* rtree structure */
-	bool destroy;		/* destroy rtree when there are no more logical references */
-};
-#endif
-
 typedef struct {
 	MT_Lock swap;
 } batlock_t;

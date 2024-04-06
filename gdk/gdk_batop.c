@@ -1783,12 +1783,14 @@ BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 	return BATappend_or_update(b, p, NULL, n, true, false, force);
 }
 
+#if 0				/* not used */
 /* like BATreplace, but the positions are given by an array of oid values */
 gdk_return
 BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 {
 	return BATappend_or_update(b, NULL, positions, n, false, autoincr, force);
 }
+#endif
 
 /* like BATreplace, but the positions are given by an array of oid
  * values, and they may specify locations beyond the end of b */
