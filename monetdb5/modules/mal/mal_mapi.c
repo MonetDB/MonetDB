@@ -1741,6 +1741,7 @@ SERVERexplain(str *ret, int *key)
 static int
 SERVERfieldAnalysis(str fld, int tpe, ValPtr v)
 {
+	v->bat = false;
 	v->vtype = tpe;
 	switch (tpe) {
 	case TYPE_void:

@@ -652,7 +652,7 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 }
 
 InstrPtr
-pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
+pushValue(MalBlkPtr mb, InstrPtr q, const ValRecord *vr)
 {
 	int _t;
 	ValRecord cst;

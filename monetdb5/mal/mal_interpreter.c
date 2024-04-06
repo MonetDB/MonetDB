@@ -1390,11 +1390,7 @@ void
 garbageElement(Client cntxt, ValPtr v)
 {
 	(void) cntxt;
-	if (!v->bat && ATOMstorage(v->vtype) == TYPE_str) {
-		GDKfree(v->val.sval);
-		v->val.sval = NULL;
-		v->len = 0;
-	} else if (v->bat) {
+	if (v->bat) {
 		/*
 		 * All operations are responsible to properly set the
 		 * reference count of the BATs being produced or destroyed.
@@ -1412,6 +1408,10 @@ garbageElement(Client cntxt, ValPtr v)
 			return;
 		BBPcold(bid);
 		BBPrelease(bid);
+	} else if (ATOMstorage(v->vtype) == TYPE_str) {
+		GDKfree(v->val.sval);
+		v->val.sval = NULL;
+		v->len = 0;
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
 		GDKfree(v->val.pval);
 		v->val.pval = 0;
@@ -1445,11 +1445,13 @@ garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	(void) cntxt;
 	for (int k = 0; k < stk->stktop; k++) {
 		//  if (isVarCleanup(mb, k) ){
-		ValPtr v;
-		garbageElement(cntxt, v = &stk->stk[k]);
-		v->vtype = TYPE_int;
-		v->val.ival = int_nil;
-		v->bat = false;
+		ValPtr v = &stk->stk[k];
+		garbageElement(cntxt, v);
+		*v = (ValRecord) {
+			.vtype = TYPE_int,
+			.val.ival = int_nil,
+			.bat = false,
+		};
 		//  }
 	}
 }

@@ -297,10 +297,10 @@ extern atom *sqlvar_set(sql_var *var, ValRecord *v);
 extern str sqlvar_get_string(sql_var *var);
 extern str sqlvar_set_string(sql_var *var, const char *v);
 #ifdef HAVE_HGE
-extern hge val_get_number(ValRecord *val);
+extern hge val_get_number(const ValRecord *val);
 extern void sqlvar_set_number(sql_var *var, hge v);
 #else
-extern lng val_get_number(ValRecord *val);
+extern lng val_get_number(const ValRecord *val);
 extern void sqlvar_set_number(sql_var *var, lng v);
 #endif
 

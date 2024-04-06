@@ -141,10 +141,11 @@ VALclear(ValPtr v)
 void
 VALempty(ValPtr v)
 {
-	v->bat = false;
-	v->len = 0;
-	v->val.oval = oid_nil;
-	v->vtype = TYPE_void;
+	*v = (ValRecord) {
+		.bat = false,
+		.val.oval = oid_nil,
+		.vtype = TYPE_void,
+	};
 }
 
 /* Create a copy of S into D, allocating space for external values

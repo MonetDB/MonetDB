@@ -1050,8 +1050,7 @@ BATdel(BAT *b, BAT *d)
 			BUN p = o - b->hseqbase;
 			BUN q = p + c;
 			while (p < q) {
-				if (atmdel)
-					(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, p));
+				(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, p));
 				p++;
 			}
 		}

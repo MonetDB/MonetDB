@@ -600,17 +600,17 @@ setVariableType(MalBlkPtr mb, const int n, malType type)
 }
 
 char *
-getVarNameIntoBuffer(MalBlkPtr mb, int idx, const char *buf)
+getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf)
 {
 	char *s = mb->var[idx].name;
 	if (getVarKind(mb, idx) == 0)
 		setVarKind(mb, idx, REFMARKER);
 	if (s == NULL) {
-		(void) snprintf((char*)buf, IDLENGTH, "%c_%d", getVarKind(mb, idx), idx);
+		(void) snprintf(buf, IDLENGTH, "%c_%d", getVarKind(mb, idx), idx);
 	} else {
-		(void) snprintf((char*)buf, IDLENGTH, "%s", s);
+		(void) snprintf(buf, IDLENGTH, "%s", s);
 	}
-	return (char*)buf;
+	return buf;
 }
 
 int
