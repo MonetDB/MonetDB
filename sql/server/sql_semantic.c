@@ -514,7 +514,7 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 			if (a && EC_NUMBER(ec) && !EC_INTERVAL(ec))
 				score += a->type.type->localtype * 10; /* premium on larger types */
 			else if (a) /* all other types */
-				score += 109;
+				score += 99;
 			continue;
 		}
 
