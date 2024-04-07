@@ -404,7 +404,7 @@ void RTREEdestroy(BAT *b);
 bool RTREEexists(BAT *b);
 bool RTREEexists_bid(bat bid);
 void RTREEfree(BAT *b);
-BUN *RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit);
+BUN *RTREEsearch(BAT *b, const void *inMBR, int result_limit);
 BUN SORTfnd(BAT *b, const void *v);
 BUN SORTfndfirst(BAT *b, const void *v);
 BUN SORTfndlast(BAT *b, const void *v);
