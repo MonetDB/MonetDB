@@ -127,7 +127,8 @@ findName(const char *nme, size_t len, bool allocate)
 		namespace = ns;
 	}
 	m = &namespace->data[namespace->count++];
-	strncpy(m->nme, nme, len);
+	if (m->nme != nme)
+		strncpy(m->nme, nme, len);
 	m->nme[len] = 0;
 	m->length = (unsigned short) len;
 	m->next = *n;
