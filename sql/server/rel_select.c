@@ -5870,7 +5870,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		list *outexps = new_exp_list(sql->sa), *exps;
 		node *m;
 
-		rnme = number2name(rname, sizeof(rname), ++sql->label);
+		rnme = sa_strdup(sql->sa, number2name(rname, sizeof(rname), ++sql->label));
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 			sql_exp *cond, *ls, *rs;

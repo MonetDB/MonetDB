@@ -951,10 +951,11 @@ exp_exception(sql_allocator *sa, sql_exp *cond, const char *error_message)
 void
 exp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name )
 {
+	(void)sa;
 	e->alias.label = 0;
 	if (name)
-		e->alias.name = sa_strdup(sa, name);
-	e->alias.rname = (rname)?sa_strdup(sa, rname):NULL;
+		e->alias.name = name;
+	e->alias.rname = (rname);
 }
 
 void

@@ -793,7 +793,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	char tname[16], *tnme;
 	char cname[16], *cnme = NULL;
 
-	tnme = number2name(tname, sizeof(tname), nr);
+	tnme = sa_strdup(sql->sa, number2name(tname, sizeof(tname), nr));
 	if (!is_simple_project(r->op))
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	if (!list_empty(r->exps)) {
@@ -804,7 +804,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 			if (!is_freevar(e)) {
 				if (all) {
 					nr = ++sql->label;
-					cnme = number2name(cname, sizeof(cname), nr);
+					cnme = sa_strdup(sql->sa, number2name(cname, sizeof(cname), nr));
 				}
 				exp_setname(sql->sa, e, tnme, cnme );
 			}
@@ -815,7 +815,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		for (node *ne = ((list*)r->r)->h; ne; ne = ne->next) {
 			if (all) {
 				nr = ++sql->label;
-				cnme = number2name(cname, sizeof(cname), nr);
+				cnme = sa_strdup(sql->sa, number2name(cname, sizeof(cname), nr));
 			}
 			exp_setname(sql->sa, ne->data, tnme, cnme );
 		}
