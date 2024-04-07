@@ -1639,7 +1639,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		if (r[*pos] != '.') {
 			cname = tname;
 			tname = NULL;
-			exp_setname(sql->sa, exp, NULL, cname);
+			exp_setname(sql->sa, exp, NULL, sa_strdup(sql->sa, cname));
 			skipWS(r, pos);
 		} else {
 			(*pos)++;
@@ -1648,7 +1648,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			convertIdent(cname);
 			(*pos)++;
 			skipWS(r, pos);
-			exp_setname(sql->sa, exp, tname, cname);
+			exp_setname(sql->sa, exp, sa_strdup(sql->sa, tname), sa_strdup(sql->sa, cname));
 		}
 		rlabel = try_update_label_count(sql, tname);
 		nlabel = try_update_label_count(sql, cname);
