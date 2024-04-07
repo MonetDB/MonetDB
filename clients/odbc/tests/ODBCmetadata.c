@@ -1611,7 +1611,7 @@ main(int argc, char **argv)
 			"Resultset with 2 columns\n"
 			"Resultset with 11 rows\n"
 			"usec	statement\n"
-			"BIGINT	WVARCHAR(249)\n"
+			"BIGINT	WVARCHAR(240)\n"
 			"4	variable output\n"
 			"4	variable output\n"
 			"4	variable output\n"
