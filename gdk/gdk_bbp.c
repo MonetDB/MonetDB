@@ -3484,19 +3484,6 @@ BBPdestroy(BAT *b)
 	bat tp = VIEWtparent(b);
 	bat vtp = VIEWvtparent(b);
 
-	if (tp == 0) {
-		/* bats that get destroyed must unfix their atoms */
-		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		if (tunfix) {
-			BUN p, q;
-			BATiter bi = bat_iterator_nolock(b);
-
-			BATloop(b, p, q) {
-				/* ignore errors */
-				(void) (*tunfix)(BUNtail(bi, p));
-			}
-		}
-	}
 	if (b->theap) {
 		HEAPdecref(b->theap, tp == 0);
 		b->theap = NULL;

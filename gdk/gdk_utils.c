@@ -2094,3 +2094,256 @@ GDKprintinfo(void)
 	for (struct prinfocb *p = prinfocb; p; p = p->next)
 		(*p->func)();
 }
+
+exception_buffer *
+eb_init(exception_buffer *eb)
+{
+	if (eb) {
+		eb->enabled = 0;
+		eb->code = 0;
+		eb->msg = NULL;
+	}
+	return eb;
+}
+
+void
+eb_error( exception_buffer *eb, char *msg, int val )
+{
+	eb->code = val;
+	eb->msg = msg;
+	eb->enabled = 0;			/* not any longer... */
+#ifdef HAVE_SIGLONGJMP
+	siglongjmp(eb->state, eb->code);
+#else
+	longjmp(eb->state, eb->code);
+#endif
+}
+
+#define SA_BLOCK (64*1024)
+
+typedef struct freed_t {
+	struct freed_t *n;
+	size_t sz;
+} freed_t;
+
+static void
+sa_destroy_freelist( freed_t *f )
+{
+	while(f) {
+		freed_t *n = f->n;
+		GDKfree(f);
+		f = n;
+	}
+}
+
+static void
+sa_free(allocator *pa, void *blk)
+{
+	assert(!pa->pa);
+	size_t i;
+
+	for(i = 0; i < pa->nr; i++) {
+		if (pa->blks[i] == blk)
+			break;
+	}
+	assert (i < pa->nr);
+	for (; i < pa->nr-1; i++)
+		pa->blks[i] = pa->blks[i+1];
+	pa->nr--;
+
+	size_t sz = GDKmallocated(blk);
+	if (sz > (SA_BLOCK + 32)) {
+		GDKfree(blk);
+	} else {
+		freed_t *f = blk;
+		f->n = pa->freelist;
+		f->sz = sz;
+
+		pa->freelist = f;
+	}
+}
+
+static void *
+sa_use_freed(allocator *pa, size_t sz)
+{
+	(void)sz;
+
+	freed_t *f = pa->freelist;
+	pa->freelist = f->n;
+	return f;
+}
+
+allocator *
+sa_create(allocator *pa)
+{
+	allocator *sa = (pa)?(allocator*)sa_alloc(pa, sizeof(allocator)):(allocator*)GDKmalloc(sizeof(allocator));
+	if (sa == NULL)
+		return NULL;
+	eb_init(&sa->eb);
+	sa->pa = pa;
+	sa->size = 64;
+	sa->nr = 1;
+	sa->blks = pa?(char**)sa_alloc(pa, sizeof(char*) * sa->size):(char**)GDKmalloc(sizeof(char*) * sa->size);
+	sa->freelist = NULL;
+	if (sa->blks == NULL) {
+		if (!pa)
+			GDKfree(sa);
+		return NULL;
+	}
+	sa->blks[0] = pa?(char*)sa_alloc(pa, SA_BLOCK):(char*)GDKmalloc(SA_BLOCK);
+	sa->usedmem = SA_BLOCK;
+	if (sa->blks[0] == NULL) {
+		if (!pa)
+			GDKfree(sa->blks);
+		if (!pa)
+			GDKfree(sa);
+		return NULL;
+	}
+	sa->used = 0;
+	return sa;
+}
+
+allocator *sa_reset( allocator *sa )
+{
+	size_t i ;
+
+	for (i = 1; i<sa->nr; i++) {
+		if (!sa->pa)
+			GDKfree(sa->blks[i]);
+		else
+			sa_free(sa->pa, sa->blks[i]);
+	}
+	sa->nr = 1;
+	sa->used = 0;
+	sa->usedmem = SA_BLOCK;
+	return sa;
+}
+
+#undef sa_realloc
+#undef sa_alloc
+void *
+sa_realloc( allocator *sa, void *p, size_t sz, size_t oldsz )
+{
+	void *r = sa_alloc(sa, sz);
+
+	if (r)
+		memcpy(r, p, oldsz);
+	return r;
+}
+
+#define round16(sz) ((sz+15)&~15)
+void *
+sa_alloc( allocator *sa, size_t sz )
+{
+	char *r;
+	sz = round16(sz);
+	if (sz > (SA_BLOCK-sa->used)) {
+		if (sa->pa)
+			r = (char*)sa_alloc(sa->pa, (sz > SA_BLOCK ? sz : SA_BLOCK));
+		else if (sz <= SA_BLOCK && sa->freelist) {
+			r = sa_use_freed(sa, SA_BLOCK);
+		} else
+			r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
+		if (r == NULL) {
+			if (sa->eb.enabled)
+				eb_error(&sa->eb, "out of memory", 1000);
+			return NULL;
+		}
+		if (sa->nr >= sa->size) {
+			char **tmp;
+			size_t osz = sa->size;
+			sa->size *=2;
+			if (sa->pa)
+				tmp = (char**)sa_realloc(sa->pa, sa->blks, sizeof(char*) * sa->size, sizeof(char*) * osz);
+			else
+				tmp = GDKrealloc(sa->blks, sizeof(char*) * sa->size);
+			if (tmp == NULL) {
+				sa->size /= 2; /* undo */
+				if (sa->eb.enabled)
+					eb_error(&sa->eb, "out of memory", 1000);
+				if (!sa->pa)
+					GDKfree(r);
+				return NULL;
+			}
+			sa->blks = tmp;
+		}
+		if (sz > SA_BLOCK) {
+			sa->blks[sa->nr] = sa->blks[sa->nr-1];
+			sa->blks[sa->nr-1] = r;
+			sa->nr ++;
+			sa->usedmem += sz;
+		} else {
+			sa->blks[sa->nr] = r;
+			sa->nr ++;
+			sa->used = sz;
+			sa->usedmem += SA_BLOCK;
+		}
+	} else {
+		r = sa->blks[sa->nr-1] + sa->used;
+		sa->used += sz;
+	}
+	return r;
+}
+
+#undef sa_zalloc
+void *sa_zalloc( allocator *sa, size_t sz )
+{
+	void *r = sa_alloc(sa, sz);
+
+	if (r)
+		memset(r, 0, sz);
+	return r;
+}
+
+void sa_destroy( allocator *sa )
+{
+	if (sa->pa) {
+		sa_reset(sa);
+		sa_free(sa->pa, sa->blks[0]);
+		return;
+	}
+
+	sa_destroy_freelist(sa->freelist);
+	for (size_t i = 0; i<sa->nr; i++) {
+		GDKfree(sa->blks[i]);
+	}
+	GDKfree(sa->blks);
+	GDKfree(sa);
+}
+
+#undef sa_strndup
+char *sa_strndup( allocator *sa, const char *s, size_t l)
+{
+	char *r = sa_alloc(sa, l+1);
+
+	if (r) {
+		memcpy(r, s, l);
+		r[l] = 0;
+	}
+	return r;
+}
+
+#undef sa_strdup
+char *sa_strdup( allocator *sa, const char *s )
+{
+	return sa_strndup( sa, s, strlen(s));
+}
+
+char *sa_strconcat( allocator *sa, const char *s1, const char *s2 )
+{
+	size_t l1 = strlen(s1);
+	size_t l2 = strlen(s2);
+	char *r = sa_alloc(sa, l1+l2+1);
+
+	if (l1)
+		memcpy(r, s1, l1);
+	if (l2)
+		memcpy(r+l1, s2, l2);
+	r[l1+l2] = 0;
+	return r;
+}
+
+size_t sa_size( allocator *sa )
+{
+	return sa->usedmem;
+}

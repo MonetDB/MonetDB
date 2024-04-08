@@ -191,7 +191,7 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 		return GDK_SUCCEED;
 
 	/* sort the list on BAT id */
-	GDKqsort(subcommit + 1, sizes ? sizes + 1 : NULL, NULL, cnt - 1, sizeof(bat), sizes ? sizeof(BUN) : 0, TYPE_bat, false, false);
+	GDKqsort(subcommit + 1, sizes ? sizes + 1 : NULL, NULL, cnt - 1, sizeof(bat), sizes ? sizeof(BUN) : 0, TYPE_int, false, false);
 
 	assert(cnt == 1 || subcommit[1] > 0);  /* all values > 0 */
 	/* de-duplication of BAT ids in subcommit list

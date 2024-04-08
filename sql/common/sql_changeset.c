@@ -14,7 +14,7 @@
 #include "sql_catalog.h"
 
 void
-cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy, fkeyvalue hfunc)
+cs_new(changeset * cs, allocator *sa, fdestroy destroy, fkeyvalue hfunc)
 {
 	*cs = (changeset) {
 		.sa = sa,

@@ -513,7 +513,7 @@ get_rel_count(sql_rel *rel)
 }
 
 void
-set_count_prop(sql_allocator *sa, sql_rel *rel, BUN val)
+set_count_prop(allocator *sa, sql_rel *rel, BUN val)
 {
 	if (val != BUN_NONE) {
 		prop *found = find_prop(rel->p, PROP_COUNT);

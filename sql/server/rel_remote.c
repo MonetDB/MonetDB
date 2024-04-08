@@ -70,7 +70,7 @@ mapiuri_valid( const char *uri)
 
 /* mapiuri_uri prefix including database name */
 const char *
-mapiuri_uri( const char *uri, sql_allocator *sa)
+mapiuri_uri( const char *uri, allocator *sa)
 {
 	const char *p = uri, *b = uri, *e;
 
@@ -85,7 +85,7 @@ mapiuri_uri( const char *uri, sql_allocator *sa)
 }
 
 const char *
-mapiuri_database( const char *uri, sql_allocator *sa)
+mapiuri_database( const char *uri, allocator *sa)
 {
 	const char *p = uri, *b, *e;
 
@@ -102,7 +102,7 @@ mapiuri_database( const char *uri, sql_allocator *sa)
 }
 
 const char *
-mapiuri_schema( const char *uri, sql_allocator *sa, const char *fallback)
+mapiuri_schema( const char *uri, allocator *sa, const char *fallback)
 {
 	const char *p = uri, *b, *e;
 
@@ -122,7 +122,7 @@ mapiuri_schema( const char *uri, sql_allocator *sa, const char *fallback)
 }
 
 const char *
-mapiuri_table( const char *uri, sql_allocator *sa, const char *fallback)
+mapiuri_table( const char *uri, allocator *sa, const char *fallback)
 {
 	const char *p = uri, *b;
 

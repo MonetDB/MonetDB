@@ -52,7 +52,7 @@ typedef struct versionhead  {
 
 typedef struct objectset {
 	ATOMIC_TYPE refcnt;
-	sql_allocator *sa;
+	allocator *sa;
 	destroy_fptr destroy;
 	MT_RWLock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
 	versionhead  *name_based_h;
@@ -247,7 +247,7 @@ os_remove_id_based_chain(objectset *os, objectversion* ov)
 }
 
 static versionhead  *
-node_create(sql_allocator *sa, objectversion *ov)
+node_create(allocator *sa, objectversion *ov)
 {
 	versionhead  *n = SA_NEW(sa, versionhead );
 
@@ -651,7 +651,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store)
+os_new(allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store)
 {
 	assert(!sa);
 	objectset *os = SA_NEW(sa, objectset);

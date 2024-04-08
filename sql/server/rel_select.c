@@ -3927,7 +3927,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 static sql_exp *
 rel_selection_ref(sql_query *query, sql_rel **rel, char *name, dlist *selection)
 {
-	sql_allocator *sa = query->sql->sa;
+	allocator *sa = query->sql->sa;
 	dlist *nl;
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_exp *res = NULL;
@@ -4028,7 +4028,7 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 }
 
 static list*
-list_power_set(sql_allocator *sa, list* input) /* cube */
+list_power_set(allocator *sa, list* input) /* cube */
 {
 	list *res = sa_list(sa);
 	/* N stores total number of subsets */
@@ -4050,7 +4050,7 @@ list_power_set(sql_allocator *sa, list* input) /* cube */
 }
 
 static list*
-list_rollup(sql_allocator *sa, list* input)
+list_rollup(allocator *sa, list* input)
 {
 	list *res = sa_list(sa);
 
@@ -4082,7 +4082,7 @@ list_equal(list* list1, list* list2)
 }
 
 static list*
-lists_cartesian_product_and_distinct(sql_allocator *sa, list *l1, list *l2)
+lists_cartesian_product_and_distinct(allocator *sa, list *l1, list *l2)
 {
 	list *res = sa_list(sa);
 

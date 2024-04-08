@@ -78,7 +78,7 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 }
 
 static const char *
-dump_escape_ident(sql_allocator *sa, const char *s)
+dump_escape_ident(allocator *sa, const char *s)
 {
 	char *res = NULL;
 	if (s) {
@@ -97,7 +97,7 @@ dump_escape_ident(sql_allocator *sa, const char *s)
 }
 
 static char *
-dump_sql_subtype(sql_allocator *sa, sql_subtype *t)
+dump_sql_subtype(allocator *sa, sql_subtype *t)
 {
 	char buf[BUFSIZ];
 

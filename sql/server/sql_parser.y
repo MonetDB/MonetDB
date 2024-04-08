@@ -25,7 +25,7 @@ static int sqlerror(mvc *sql, const char *err);
 static int sqlformaterror(mvc *sql, _In_z_ _Printf_format_string_ const char *format, ...)
 	        __attribute__((__format__(__printf__, 2, 3)));
 
-static void *ma_alloc(sql_allocator *sa, size_t sz);
+static void *ma_alloc(allocator *sa, size_t sz);
 static void ma_free(void *p);
 static inline symbol*
 makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, unsigned int scale, bool bind);
@@ -7313,7 +7313,7 @@ sqlerror(mvc *sql, const char *err)
 	return sqlformaterror(sql, "%s", sql->scanner.errstr ? sql->scanner.errstr : err);
 }
 
-static void *ma_alloc(sql_allocator *sa, size_t sz)
+static void *ma_alloc(allocator *sa, size_t sz)
 {
 	return sa_alloc(sa, sz);
 }

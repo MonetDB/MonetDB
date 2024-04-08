@@ -1666,6 +1666,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp)
 gdk_return
 VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
+	ret->bat = false;
 	if (add_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
@@ -1746,6 +1747,7 @@ BATcalcincr(BAT *b, BAT *s)
 gdk_return
 VARcalcincr(ValPtr ret, const ValRecord *v)
 {
+	ret->bat = false;
 	if (add_typeswitchloop(VALptr(v), v->vtype, false,
 			       &(bte){1}, TYPE_bte, false,
 			       VALget(ret), ret->vtype,
@@ -3333,6 +3335,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp)
 gdk_return
 VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
+	ret->bat = false;
 	if (sub_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
@@ -3353,6 +3356,7 @@ BATcalcdecr(BAT *b, BAT *s)
 gdk_return
 VARcalcdecr(ValPtr ret, const ValRecord *v)
 {
+	ret->bat = false;
 	if (sub_typeswitchloop(VALptr(v), v->vtype, false,
 			       &(bte){1}, TYPE_bte, false,
 			       VALget(ret), ret->vtype,

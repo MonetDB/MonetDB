@@ -34,7 +34,7 @@ str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
 
 str malAtomDefinition(const char *name,int tpe)
 	__attribute__((__visibility__("hidden")));
-str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
+str malAtomProperty(mel_func *f)
 	__attribute__((__visibility__("hidden")));
 
 #ifdef MAXSCOPE
@@ -82,4 +82,8 @@ char *dupError(const char *err)
 	__attribute__((__visibility__("hidden"), __returns_nonnull__));
 
 void MCprintinfo(void)
+	__attribute__((__visibility__("hidden")));
+
+void
+setPoly(mel_func *f, malType tpe)
 	__attribute__((__visibility__("hidden")));

@@ -23,7 +23,7 @@
 #include "bat/bat_logger.h"
 
 /* version 05.23.02 of catalog */
-#define CATALOG_VERSION 52302	/* first in Sep2022 */
+#define CATALOG_VERSION 52303	/* first after Dec2023 */
 
 ulng
 store_function_counter(sqlstore *store)
@@ -1605,7 +1605,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, const char *name, sqlid id,
 }
 
 static sql_table *
-create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type, bit system, int persistence, int commit_action, bte properties)
+create_sql_table_with_id(allocator *sa, sqlid id, const char *name, sht type, bit system, int persistence, int commit_action, bte properties)
 {
 	sql_table *t = SA_ZNEW(sa, sql_table);
 
@@ -1636,7 +1636,7 @@ create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type
 }
 
 sql_table *
-create_sql_table(sqlstore *store, sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bte properties)
+create_sql_table(sqlstore *store, allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bte properties)
 {
 	return create_sql_table_with_id(sa, next_oid(store), name, type, system, persistence, commit_action, properties);
 }
@@ -1664,7 +1664,7 @@ dup_sql_type(sql_trans *tr, sql_schema *s, sql_subtype *oc, sql_subtype *nc)
 }
 
 static sql_column *
-dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
+dup_sql_column(allocator *sa, sql_table *t, sql_column *c)
 {
 	sql_column *col = SA_ZNEW(sa, sql_column);
 
@@ -1686,7 +1686,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 }
 
 static sql_part *
-dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
+dup_sql_part(allocator *sa, sql_table *mt, sql_part *op)
 {
 	sql_part *p = SA_ZNEW(sa, sql_part);
 
@@ -1718,7 +1718,7 @@ dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 }
 
 sql_table *
-dup_sql_table(sql_allocator *sa, sql_table *t)
+dup_sql_table(allocator *sa, sql_table *t)
 {
 	node *n;
 	sql_table *nt = create_sql_table_with_id(sa, t->base.id, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action, t->properties);
@@ -1869,7 +1869,7 @@ dep_hash_destroy(sql_hash *h)
 }
 
 static sqlstore *
-store_load(sqlstore *store, sql_allocator *pa)
+store_load(sqlstore *store, allocator *pa)
 {
 	sql_trans *tr;
 	sql_table *t, *types, *functions, *arguments;
@@ -2167,7 +2167,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 sqlstore *
 store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 {
-	sql_allocator *pa;
+	allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
 
 	if (debug&2)
@@ -2252,7 +2252,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 void
 store_exit(sqlstore *store)
 {
-	sql_allocator *sa = store->sa;
+	allocator *sa = store->sa;
 	MT_lock_set(&store->commit);
 	MT_lock_set(&store->flush);
 	MT_lock_set(&store->lock);
@@ -5009,7 +5009,7 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 }
 
 sql_func *
-create_sql_func(sqlstore *store, sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
+create_sql_func(sqlstore *store, allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
 				const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
@@ -5879,7 +5879,7 @@ sql_trans_set_partition_table(sql_trans *tr, sql_table *t)
 }
 
 sql_key *
-create_sql_kc(sqlstore *store, sql_allocator *sa, sql_key *k, sql_column *c)
+create_sql_kc(sqlstore *store, allocator *sa, sql_key *k, sql_column *c)
 {
 	sql_kc *kc = SA_ZNEW(sa, sql_kc);
 
@@ -5893,7 +5893,7 @@ create_sql_kc(sqlstore *store, sql_allocator *sa, sql_key *k, sql_column *c)
 }
 
 sql_key *
-create_sql_ukey(sqlstore *store, sql_allocator *sa, sql_table *t, const char *name, key_type kt)
+create_sql_ukey(sqlstore *store, allocator *sa, sql_table *t, const char *name, key_type kt)
 {
 	sql_key *nk = NULL;
 	sql_ukey *tk;
@@ -5916,7 +5916,7 @@ create_sql_ukey(sqlstore *store, sql_allocator *sa, sql_table *t, const char *na
 }
 
 sql_fkey *
-create_sql_fkey(sqlstore *store, sql_allocator *sa, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
+create_sql_fkey(sqlstore *store, allocator *sa, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
 {
 	sql_key *nk;
 	sql_fkey *fk = NULL;
@@ -5943,7 +5943,7 @@ create_sql_fkey(sqlstore *store, sql_allocator *sa, sql_table *t, const char *na
 }
 
 sql_idx *
-create_sql_idx(sqlstore *store, sql_allocator *sa, sql_table *t, const char *name, idx_type it)
+create_sql_idx(sqlstore *store, allocator *sa, sql_table *t, const char *name, idx_type it)
 {
 	sql_idx *ni = SA_ZNEW(sa, sql_idx);
 
@@ -5958,7 +5958,7 @@ create_sql_idx(sqlstore *store, sql_allocator *sa, sql_table *t, const char *nam
 }
 
 sql_idx *
-create_sql_ic(sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c)
+create_sql_ic(sqlstore *store, allocator *sa, sql_idx *i, sql_column *c)
 {
 	sql_kc *ic = SA_ZNEW(sa, sql_kc);
 
@@ -5985,7 +5985,7 @@ create_sql_idx_done(sql_trans *tr, sql_idx *i)
 }
 
 static sql_column *
-create_sql_column_with_id(sql_allocator *sa, sqlid id, sql_table *t, const char *name, sql_subtype *tpe)
+create_sql_column_with_id(allocator *sa, sqlid id, sql_table *t, const char *name, sql_subtype *tpe)
 {
 	sql_column *col = SA_ZNEW(sa, sql_column);
 
@@ -6005,7 +6005,7 @@ create_sql_column_with_id(sql_allocator *sa, sqlid id, sql_table *t, const char 
 }
 
 sql_column *
-create_sql_column(sqlstore *store, sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe)
+create_sql_column(sqlstore *store, allocator *sa, sql_table *t, const char *name, sql_subtype *tpe)
 {
 	return create_sql_column_with_id(sa, next_oid(store), t, name, tpe);
 }
@@ -6673,7 +6673,7 @@ table_has_idx( sql_table *t, list *keycols)
 }
 
 sql_key *
-key_create_done(sql_trans *tr, sql_allocator *sa, sql_key *k)
+key_create_done(sql_trans *tr, allocator *sa, sql_key *k)
 {
 	sql_idx *i;
 	sqlstore *store = tr->store;
@@ -7045,7 +7045,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 }
 
 static sql_sequence *
-create_sql_sequence_with_id(sql_allocator *sa, sqlid id, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc,
+create_sql_sequence_with_id(allocator *sa, sqlid id, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc,
 					lng cacheinc, bit cycle)
 {
 	sql_sequence *seq = SA_ZNEW(sa, sql_sequence);
@@ -7063,7 +7063,7 @@ create_sql_sequence_with_id(sql_allocator *sa, sqlid id, sql_schema *s, const ch
 }
 
 sql_sequence *
-create_sql_sequence(sqlstore *store, sql_allocator *sa, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc,
+create_sql_sequence(sqlstore *store, allocator *sa, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc,
 					lng cacheinc, bit cycle)
 {
 	return create_sql_sequence_with_id(sa, next_oid(store), s, name, start, min, max, inc, cacheinc, cycle);
@@ -7194,7 +7194,7 @@ sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start)
 }
 
 sql_session *
-sql_session_create(sqlstore *store, sql_allocator *sa, int ac)
+sql_session_create(sqlstore *store, allocator *sa, int ac)
 {
 	sql_session *s;
 

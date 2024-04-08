@@ -1742,7 +1742,7 @@ table_colexp(sql_exp *e, sql_rel *r)
 }
 
 static list *
-matching_joins(sql_allocator *sa, list *rels, list *exps, sql_exp *je)
+matching_joins(allocator *sa, list *rels, list *exps, sql_exp *je)
 {
 	sql_rel *l, *r;
 
@@ -3259,7 +3259,7 @@ get_diff_function_columns(sql_exp *diffExp, list *columns) {
  * window functions. Returns NULL if the window function does not partition by any column
  */
 static list *
-get_aggregation_key_columns(sql_allocator *sa, sql_rel *r) {
+get_aggregation_key_columns(allocator *sa, sql_rel *r) {
 	for (node* n = r->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -3588,7 +3588,7 @@ sjexp_col(sql_exp *e, sql_rel *r)
 }
 
 static sql_idx *
-find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
+find_index(allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 {
 	node *n;
 
