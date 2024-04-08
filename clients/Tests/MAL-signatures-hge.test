@@ -34230,142 +34230,72 @@ SQLvar_pop;
 return the variance population of groups
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat[:bte]):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat?[:bte]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat[:dbl]):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat?[:dbl]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat[:flt]):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat?[:flt]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat[:hge]):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat?[:hge]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat[:int]):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat?[:int]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat[:lng]):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat?[:lng]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat[:sht]):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bat?[:sht]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:bte):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat?[:bte]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:dbl):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat?[:dbl]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:flt):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat?[:flt]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:hge):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat?[:hge]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:int):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat?[:int]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:lng):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat?[:lng]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batsql
 window_bound
-pattern batsql.window_bound(X_0:bat[:any_1], X_1:int, X_2:int, X_3:int, X_4:sht):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat[:bte]):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat[:dbl]):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat[:flt]):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat[:hge]):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat[:int]):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat[:lng]):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat[:sht]):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bte):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:dbl):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:flt):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:hge):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:int):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:lng):bat[:oid]
-SQLwindow_bound;
-computes window ranges for each row
-batsql
-window_bound
-pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:sht):bat[:oid]
+pattern batsql.window_bound(X_0:bat[:bit], X_1:bat[:any_1], X_2:int, X_3:int, X_4:int, X_5:bat?[:sht]):bat[:oid]
 SQLwindow_bound;
 computes window ranges for each row
 batstr
