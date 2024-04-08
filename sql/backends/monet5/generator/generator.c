@@ -78,7 +78,12 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || is_##TPE##_nil(f) || is_##TPE##_nil(l)) \
 			throw(MAL, "generator.table",								\
 			      SQLSTATE(42000) "Illegal generator range");			\
-		n = (BUN) ((l - f) / s);										\
+		if (s < 0)														\
+			n = ((BUN)f - l);											\
+		else															\
+			n = ((BUN)l - f);											\
+		step = s<0?-s:s;												\
+		n = n/step;														\
 		if ((TPE) (n * s + f) != l)										\
 			n++;														\
 		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);						\
@@ -94,7 +99,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BUN c, n;
+	BUN c, n, step;
 	BAT *bn;
 	int tpe;
 	(void) cntxt;
