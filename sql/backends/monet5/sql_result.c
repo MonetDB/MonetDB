@@ -317,7 +317,9 @@ bat_max_length(hge, hge)
 		} else if (*s == '+'){											\
 			s++;														\
 		}																\
-		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
+		for (i = 0; *s && *s != c->decsep && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
+			if (c->decskip && *s == c->decskip)							\
+				continue;												\
 			if (!isdigit((unsigned char) *s))							\
 				break;													\
 			res *= 10;													\
@@ -325,12 +327,18 @@ bat_max_length(hge, hge)
 			if (res)													\
 				i++;													\
 		}																\
-		if (*s == '.') {												\
+		if (*s == c->decsep) {											\
 			s++;														\
-			while (*s && isdigit((unsigned char) *s) && scale > 0) {	\
-				res *= 10;												\
-				res += *s++ - '0';										\
-				scale--;												\
+			while (*s && scale > 0) {									\
+				if (isdigit((unsigned char) *s)) {						\
+					res *= 10;											\
+					res += *s++ - '0';									\
+					scale--;											\
+				} else if (c->decskip && *s == c->decskip) {			\
+					s++;												\
+				} else {												\
+					break;												\
+				}														\
 			}															\
 		}																\
 		while(*s && isspace((unsigned char) *s))						\
@@ -356,6 +364,8 @@ bat_max_length(hge, hge)
 static void *
 dec_frstr(Column *c, int type, const char *s)
 {
+	assert(c->decsep != '\0');
+
 	/* support dec map to bte, sht, int and lng */
 	if( strcmp(s,"nil")== 0)
 		return NULL;
@@ -395,7 +405,11 @@ sec_frstr(Column *c, int type, const char *s)
 		neg = 0;
 		s++;
 	}
-	for (i = 0; i < (19 - 3) && *s && *s != '.'; i++, s++) {
+	for (i = 0; i < (19 - 3) && *s && *s != c->decsep; i++, s++) {
+		if (c->decskip && *s == c->decskip) {
+			i--;
+			continue;
+		}
 		if (!isdigit((unsigned char) *s))
 			return NULL;
 		res *= 10;
@@ -403,10 +417,14 @@ sec_frstr(Column *c, int type, const char *s)
 	}
 	i = 0;
 	if (*s) {
-		if (*s != '.')
+		if (*s != c->decsep)
 			return NULL;
 		s++;
 		for (; *s && i < 3; i++, s++) {
+			if (c->decskip && *s == c->decskip) {
+				i--;
+				continue;
+			}
 			if (!isdigit((unsigned char) *s))
 				return NULL;
 			res *= 10;
@@ -427,6 +445,64 @@ sec_frstr(Column *c, int type, const char *s)
 	else
 		*r = res;
 	return (void *) r;
+}
+
+static void *
+fltdbl_frStr(Column *c, int type, const char *s)
+{
+	// The regular fltFromStr/dblFromStr functions do not take decimal commas
+	// and thousands separators into account. When these are in use, this
+	// function first converts them to decimal dots and empty strings,
+	// respectively. We use a fixed size buffer so abnormally long floats such
+	// as
+	// +00000000000000000000000000000000000000000000000000000000000000000000001.5e1
+	// will be rejected.
+
+	if (c->decskip || c->decsep != '.') {
+		// According to Stack Overflow https://stackoverflow.com/questions/1701055/what-is-the-maximum-length-in-chars-needed-to-represent-any-double-value
+		// 24 bytes is a reasonable buffer but we'll make it a bit larger.
+		char tmp[120];
+		char *p = &tmp[0];
+
+		while (GDKisspace(*s))
+			s++;
+		while (*s != '\0') {
+			if (p >= tmp + sizeof(tmp) - 1) {
+				// If the input is this big it's probably an error.
+				// Exception: only whitespace remains.
+				while (GDKisspace(*s))
+					s++;
+				if (*s == '\0') {
+					// there was only trailing whitespace
+					break;
+				} else {
+					// not just trailing whitespace, abort!
+					return NULL;
+				}
+			}
+			char ch = *s++;
+			if (ch == c->decskip) {
+				continue;
+			} else if (ch == c->decsep) {
+				ch = '.';
+			} else if (ch == '.') {
+				// We're mapping c->decsep to '.', if there are already
+				// periods in the input we're losing information
+				return NULL;
+			}
+			*p++ = ch;
+		}
+		// If we're here either we either encountered the end of s or the buffer is
+		// full. In the latter case we still need to write the NUL.
+		// We left room for it.
+		*p = '\0';
+
+		// now process the converted text rather than the original
+		s = &tmp[0];
+	}
+
+	ssize_t len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data, false);
+	return (len > 0) ? c->data : NULL;
 }
 
 /* Literal parsing for SQL all pass through this routine */
@@ -532,7 +608,7 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape, const char *decsep, const char *decskip)
 {
 	int i = 0, j;
 	node *n;
@@ -581,6 +657,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].sep = (n->next) ? sep : rsep;
 			fmt[i].rsep = rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
+			fmt[i].decsep = decsep[0],
+			fmt[i].decskip = decskip != NULL ? decskip[0] : '\0',
 			fmt[i].type = sql_subtype_string(m->ta, &col->type);
 			fmt[i].adt = ATOMindex(col->type.type->impl);
 			fmt[i].tostr = &_ASCIIadt_toStr;
@@ -610,6 +688,9 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			} else if (col->type.type->eclass == EC_SEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &sec_frstr;
+			} else if (col->type.type->eclass == EC_FLT) {
+				// no need to override .tostr, only .frstr
+				fmt[i].frstr = &fltdbl_frStr;
 			}
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
