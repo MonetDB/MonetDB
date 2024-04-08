@@ -53,6 +53,6 @@ extern int exps_unique(mvc *sql, sql_rel *rel, list *exps);
 extern sql_column *exp_find_column(sql_rel *rel, sql_exp *exp, int pnr);
 
 extern BUN get_rel_count(sql_rel *rel);
-extern void set_count_prop(sql_allocator *sa, sql_rel *rel, BUN val);
+extern void set_count_prop(allocator *sa, sql_rel *rel, BUN val);
 
 #endif /*_REL_REWRITER_H_*/

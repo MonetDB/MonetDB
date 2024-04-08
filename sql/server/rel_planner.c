@@ -66,7 +66,7 @@ memo_find(list *memo, const char *name)
 }
 
 static char *
-merge_names( sql_allocator *sa, const char *lname, const char *rname)
+merge_names( allocator *sa, const char *lname, const char *rname)
 {
 	size_t l = strlen(lname) + strlen(rname) + 2;
 	char *n = SA_NEW_ARRAY(sa, char, l);
@@ -89,7 +89,7 @@ merge_names( sql_allocator *sa, const char *lname, const char *rname)
 }
 
 static memoitem *
-memoitem_create( list *memo, sql_allocator *sa, const char *lname, const char *rname, int level)
+memoitem_create( list *memo, allocator *sa, const char *lname, const char *rname, int level)
 {
 	const char *name = lname;
 	memoitem *mi;
@@ -571,7 +571,7 @@ memo_add_attr(list *memo, mvc *sql, list *rels, list *jes)
 
 /* Rule 1: Commutativity A join B -> B join A */
 static int
-memoitem_apply_r1(memoitem *mi, sql_allocator *sa)
+memoitem_apply_r1(memoitem *mi, allocator *sa)
 {
 	int changes = 0;
 	node *n;
@@ -603,7 +603,7 @@ memoitem_apply_r1(memoitem *mi, sql_allocator *sa)
 
 /* Rule 2: Right Associativity (A join B) join C -> A join (B join C) */
 static int
-memoitem_apply_r2(memoitem *mi, sql_allocator *sa, list *memo)
+memoitem_apply_r2(memoitem *mi, allocator *sa, list *memo)
 {
 	int changes = 0;
 	node *n;
@@ -645,7 +645,7 @@ memoitem_apply_r2(memoitem *mi, sql_allocator *sa, list *memo)
 
 /* Rule 4: Exchange (A join B) join (C join D) -> (A join C) join (B join D)
 static int
-memoitem_apply_r4(memoitem *mi, sql_allocator *sa, list *memo)
+memoitem_apply_r4(memoitem *mi, allocator *sa, list *memo)
 {
 	int changes = 0;
 	node *n;
@@ -685,7 +685,7 @@ memoitem_apply_r4(memoitem *mi, sql_allocator *sa, list *memo)
  * */
 
 static void
-memo_apply_rules(list *memo, sql_allocator *sa, int len)
+memo_apply_rules(list *memo, allocator *sa, int len)
 {
 	int level;
 	node *n;

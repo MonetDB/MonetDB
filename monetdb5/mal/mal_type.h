@@ -22,13 +22,16 @@
 
 #define newBatType(T)  (1<<16 |  (T & 0377) )
 #define getBatType(X)  ((X) & 0377 )
-#define isaBatType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
+#define isaBatType(X)   (((1<<16) & (X)) != 0)
 
 #define isAnyExpression(X) ((X) >> 17)
-#define isPolymorphic(X) (isAnyExpression(X) || (X)== TYPE_any)
+#define isPolymorphic(X) (isAnyExpression(X))
 
-#define setTypeIndex(X,I) X |= ((I & 017)<<18);
-#define getTypeIndex(X)  (((X)>>18) & 017)
+#define setTypeIndex(X,I) X |= ((I & 7)<<18);
+#define getTypeIndex(X)  (((X)>>18) & 7)
+
+#define setOptBat(X)   X |= (1<<9)
+#define getOptBat(X)   (((X)>>9) & 1)
 
 #define isPolyType(X) (isAnyExpression(X) && getTypeIndex(X)>0)
 /*
@@ -53,8 +56,7 @@
 
 #define FCNcall     50			/* internal symbols */
 #define CMDcall     51
-#define THRDcall    52
-#define PATcall     53			/* pattern call */
+#define PATcall     52			/* pattern call */
 
 #define REMsymbol     99		/* commentary to be retained */
 

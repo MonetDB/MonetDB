@@ -348,7 +348,7 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 }
 
 static const char *
-get_name(sql_allocator *sa, const char *s, const char *es, const char **E, char delim, char quote, bool has_header, int col)
+get_name(allocator *sa, const char *s, const char *es, const char **E, char delim, char quote, bool has_header, int col)
 {
 	if (!has_header) {
 		char buff[25];

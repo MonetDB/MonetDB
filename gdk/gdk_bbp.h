@@ -92,6 +92,7 @@ gdk_export int BBPrelease(bat b);
 gdk_export void BBPkeepref(BAT *b)
 	__attribute__((__nonnull__(1)));
 gdk_export void BBPcold(bat i);
+gdk_export void BBPrelinquishbats(void);
 #ifdef GDKLIBRARY_JSON
 typedef gdk_return ((*json_storage_conversion)(char **, const char **));
 gdk_export gdk_return BBPjson_upgrade(json_storage_conversion);

@@ -1742,7 +1742,7 @@ table_colexp(sql_exp *e, sql_rel *r)
 }
 
 static list *
-matching_joins(sql_allocator *sa, list *rels, list *exps, sql_exp *je)
+matching_joins(allocator *sa, list *rels, list *exps, sql_exp *je)
 {
 	sql_rel *l, *r;
 
@@ -2049,12 +2049,17 @@ popcount64(uint64_t x)
 #if defined(__GNUC__)
 	return (uint32_t) __builtin_popcountll(x);
 #elif defined(_MSC_VER)
-	return (uint32_t) __popcnt64(x);
+#if SIZEOF_OID == 4
+	/* no __popcnt64 on 32 bit Windows */
+	return (int) (__popcnt((uint32_t) x) + __popcnt((uint32_t) (x >> 32)));
 #else
-	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
-	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
-	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
-	return (x * 0x0101010101010101ULL) >> 56;
+	return (uint32_t) __popcnt64(x);
+#endif
+#else
+	x = (x & UINT64_C(0x5555555555555555)) + ((x >> 1) & UINT64_C(0x5555555555555555));
+	x = (x & UINT64_C(0x3333333333333333)) + ((x >> 2) & UINT64_C(0x3333333333333333));
+	x = (x & UINT64_C(0x0F0F0F0F0F0F0F0F)) + ((x >> 4) & UINT64_C(0x0F0F0F0F0F0F0F0F));
+	return (x * UINT64_C(0x0101010101010101)) >> 56;
 #endif
 }
 
@@ -2110,15 +2115,15 @@ order_joins(visitor *v, list *rels, list *exps)
 			r1[ci] = rels_find_one_rel(rels_a, nr_rels, cje->l);
 			r2[ci] = rels_find_one_rel(rels_a, nr_rels, cje->r);
 			if (r1[ci])
-				h[ci] |= 1L<<((r1[ci]-1)%64);
+				h[ci] |= ((ulng)1)<<((r1[ci]-1)%64);
 			if (r2[ci])
-				h[ci] |= 1L<<((r2[ci]-1)%64);
+				h[ci] |= ((ulng)1)<<((r2[ci]-1)%64);
 			if (cje->f) {
 				r3[ci] = rels_find_one_rel(rels_a, nr_rels, cje->f);
 				if (r3[ci] == r2[ci])
 					r3[ci] = 0;
 				if (r3[ci])
-					h[ci] |= 1L<<((r3[ci]-1)%64);
+					h[ci] |= ((ulng)1)<<((r3[ci]-1)%64);
 			}
 		}
 	}
@@ -2188,9 +2193,9 @@ order_joins(visitor *v, list *rels, list *exps)
 
 			cje = djn->data;
 			if ((h[cje->tmp] & rel_mask) > 0) {
-				if (rel_mask & (1L<<((r1[cje->tmp]-1)%64)))
+				if (rel_mask & (((ulng)1)<<((r1[cje->tmp]-1)%64)))
 					l = rels_a[r1[cje->tmp]];
-				if (rel_mask & (1L<<((r2[cje->tmp]-1)%64)))
+				if (rel_mask & (((ulng)1)<<((r2[cje->tmp]-1)%64)))
 					r = rels_a[r2[cje->tmp]];
 			}
 			if (!direct) { /* check if atleast one side in n_rels */
@@ -3254,7 +3259,7 @@ get_diff_function_columns(sql_exp *diffExp, list *columns) {
  * window functions. Returns NULL if the window function does not partition by any column
  */
 static list *
-get_aggregation_key_columns(sql_allocator *sa, sql_rel *r) {
+get_aggregation_key_columns(allocator *sa, sql_rel *r) {
 	for (node* n = r->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -3583,7 +3588,7 @@ sjexp_col(sql_exp *e, sql_rel *r)
 }
 
 static sql_idx *
-find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
+find_index(allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 {
 	node *n;
 

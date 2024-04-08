@@ -251,8 +251,6 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 static sql_rel *
 rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 {
-	sql_rel *p = inserts->r;
-
 	if (!ol_length(t->idxs))
 		return inserts;
 
@@ -267,18 +265,6 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 			if (rel_insert_join_idx(sql, alias, i, inserts) == NULL)
 				return NULL;
 		}
-	}
-	if (inserts->r != p) {
-		sql_rel *r = rel_create(sql->sa);
-		if(!r)
-			return NULL;
-
-		r->op = op_insert;
-		r->l = rel_dup(p);
-		r->r = inserts;
-		r->card = inserts->card;
-		r->flag |= UPD_COMP; /* mark as special update */
-		return r;
 	}
 	return inserts;
 }
@@ -1241,7 +1227,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 }
 
 sql_rel *
-rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes)
+rel_delete(allocator *sa, sql_rel *t, sql_rel *deletes)
 {
 	sql_rel *r = rel_create(sa);
 	if(!r)
@@ -1255,7 +1241,7 @@ rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes)
 }
 
 sql_rel *
-rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_action)
+rel_truncate(allocator *sa, sql_rel *t, int restart_sequences, int drop_action)
 {
 	sql_rel *r = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1319,7 +1305,7 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 }
 
 static sql_rel *
-rel_merge(sql_allocator *sa, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
+rel_merge(allocator *sa, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
 {
 	sql_rel *r = rel_create(sa);
 
@@ -1465,7 +1451,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 }
 
 static list *
-table_column_types(sql_allocator *sa, sql_table *t)
+table_column_types(allocator *sa, sql_table *t)
 {
 	node *n;
 	list *types = sa_list(sa);
@@ -1479,7 +1465,7 @@ table_column_types(sql_allocator *sa, sql_table *t)
 }
 
 static list *
-table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
+table_column_names_and_defaults(allocator *sa, sql_table *t)
 {
 	node *n;
 	list *types = sa_list(sa);

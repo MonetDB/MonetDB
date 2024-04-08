@@ -49,10 +49,11 @@ mal_export InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, flt val);
 mal_export InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);
 mal_export InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, bit val);
 mal_export InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
+mal_export InstrPtr pushNilBat(MalBlkPtr mb, InstrPtr q);
 mal_export InstrPtr pushType(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 mal_export InstrPtr pushZero(MalBlkPtr mb, InstrPtr q, int tpe);
-mal_export InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, ValPtr cst);
+mal_export InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, const ValRecord *cst);
 
 mal_export int getIntConstant(MalBlkPtr mb, int val);
 mal_export int getLngConstant(MalBlkPtr mb, lng val);

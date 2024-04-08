@@ -190,13 +190,22 @@ typedef enum commit_action_t {
 } ca_t;
 
 typedef int sqlid;
+
+typedef struct sql_ref {
+	int refcnt;
+} sql_ref;
+
+extern sql_ref *sql_ref_init(sql_ref *r);
+extern int sql_ref_inc(sql_ref *r);
+extern int sql_ref_dec(sql_ref *r);
+
 typedef void *sql_store;
 
 typedef struct sql_base {
 	unsigned int
 		new:1,
-		deleted:1,
-		refcnt:30;
+		deleted:1;
+	ATOMIC_TYPE refcnt;
 	sqlid id;
 	char *name;
 } sql_base;
@@ -204,10 +213,10 @@ typedef struct sql_base {
 #define isNew(x)          ((x)->base.new)
 #define isDeleted(x)      ((x)->base.deleted)
 
-extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name);
+extern void base_init(allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name);
 
 typedef struct changeset {
-	sql_allocator *sa;
+	allocator *sa;
 	fdestroy destroy;
 	fkeyvalue fkeyvalue;
 	struct list *set;
@@ -241,7 +250,7 @@ typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng olde
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
 typedef int (*validate_fptr)(struct sql_trans *tr, sql_base *b, int delete);
 
-extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store);
+extern struct objectset *os_new(allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store);
 extern struct objectset *os_dup(struct objectset *os);
 extern void os_destroy(struct objectset *os, sql_store store);
 extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
@@ -257,7 +266,7 @@ extern sql_base *oi_next(struct os_iter *oi);
 extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
 extern bool os_has_changes(struct objectset *os, struct sql_trans *tr);
 
-extern objlist *ol_new(sql_allocator *sa, destroy_fptr destroy, sql_store store);
+extern objlist *ol_new(allocator *sa, destroy_fptr destroy, sql_store store);
 extern void ol_destroy(objlist *ol, sql_store store);
 extern int ol_add(objlist *ol, sql_base *data);
 extern void ol_del(objlist *ol, sql_store store, node *data);
@@ -269,7 +278,7 @@ extern node *ol_rehash(objlist *ol, const char *oldname, node *n);
 #define ol_last_node(ol) (ol->l->t)
 #define ol_fetch(ol,nr) (list_fetch(ol->l, nr))
 
-extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy, fkeyvalue hfunc);
+extern void cs_new(changeset * cs, allocator *sa, fdestroy destroy, fkeyvalue hfunc);
 extern void cs_destroy(changeset * cs, void *data);
 extern changeset *cs_add(changeset * cs, void *elm, bool isnew);
 extern changeset *cs_del(changeset * cs, void *gdata, node *n, bool force);
@@ -510,7 +519,7 @@ typedef struct sql_func {
 	   		   example string concat
 	 		*/
 	sql_schema *s;
-	sql_allocator *sa;
+	allocator *sa;
 } sql_func;
 
 typedef struct sql_subfunc {
@@ -745,7 +754,7 @@ typedef struct res_table {
 } res_table;
 
 typedef struct sql_session {
-	sql_allocator *sa;
+	allocator *sa;
 	sql_trans *tr; 		/* active transaction */
 
 	char *schema_name; /* transaction's schema name */
@@ -817,7 +826,7 @@ extern node *members_find_child_id(list *l, sqlid id);
 #define extracting_sequence 2
 
 static inline void
-extract_schema_and_sequence_name(sql_allocator *sa, char *default_value, char **schema, char **sequence)
+extract_schema_and_sequence_name(allocator *sa, char *default_value, char **schema, char **sequence)
 {
 	int status = outside_str, identifier = extracting_schema;
 	char next_identifier[1024]; /* needs one extra character for null terminator */
@@ -871,8 +880,8 @@ typedef struct atom {
 } atom;
 
 /* duplicate atom */
-extern ValPtr SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s);
-extern atom *atom_copy(sql_allocator *sa, atom *a);
+extern ValPtr SA_VALcopy(allocator *sa, ValPtr d, const ValRecord *s);
+extern atom *atom_copy(allocator *sa, atom *a);
 
 typedef struct pl {
 	sql_column *c;

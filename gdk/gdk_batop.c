@@ -434,7 +434,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			BBPrelease(oh->parentid);
 		HEAPdecref(oh, false);
 	}
-	if (BATcount(b) == 0 && BATatoms[b->ttype].atomFix == NULL &&
+	if (BATcount(b) == 0 &&
 	    ci->tpe == cand_dense && ci->ncand == ni->count) {
 		/* just copy the heaps */
 		MT_lock_set(&b->theaplock);
@@ -928,8 +928,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 		MT_rwlock_wrlock(&b->thashlock);
 		hlocked = true;
-		if (BATatoms[b->ttype].atomFix == NULL &&
-		    b->ttype != TYPE_void &&
+		if (b->ttype != TYPE_void &&
 		    ni.type != TYPE_void &&
 		    ci.tpe == cand_dense) {
 			/* use fast memcpy if we can */
@@ -1015,7 +1014,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 gdk_return
 BATdel(BAT *b, BAT *d)
 {
-	gdk_return (*unfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 	void (*atmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 	MT_lock_set(&b->theaplock);
 	BATiter bi = bat_iterator_nolock(b);
@@ -1050,14 +1048,11 @@ BATdel(BAT *b, BAT *d)
 			c = b->hseqbase + BATcount(b) - o;
 		if (c == 0)
 			return GDK_SUCCEED;
-		if (unfix || atmdel) {
+		if (atmdel) {
 			BUN p = o - b->hseqbase;
 			BUN q = p + c;
 			while (p < q) {
-				if (unfix && (*unfix)(BUNtail(bi, p)) != GDK_SUCCEED)
-					return GDK_FAIL;
-				if (atmdel)
-					(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, p));
+				(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, p));
 				p++;
 			}
 		}
@@ -1114,8 +1109,6 @@ BATdel(BAT *b, BAT *d)
 			p = Tloc(b, pos);
 		while (c > 0 && *o < b->hseqbase + BATcount(b)) {
 			size_t n;
-			if (unfix)
-				(*unfix)(BUNtail(bi, *o - b->hseqbase));
 			if (atmdel)
 				(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, *o - b->hseqbase));
 			o++;
@@ -1792,12 +1785,14 @@ BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 	return BATappend_or_update(b, p, NULL, n, true, false, force);
 }
 
+#if 0				/* not used */
 /* like BATreplace, but the positions are given by an array of oid values */
 gdk_return
 BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 {
 	return BATappend_or_update(b, NULL, positions, n, false, autoincr, force);
 }
+#endif
 
 /* like BATreplace, but the positions are given by an array of oid
  * values, and they may specify locations beyond the end of b */
@@ -1905,8 +1900,7 @@ BATslice(BAT *b, BUN l, BUN h)
 
 		if (bn->ttype == TYPE_void) {
 			BATsetcount(bn, h - l);
-		} else if (bn->tvheap == NULL &&
-			   BATatoms[bn->ttype].atomFix == NULL) {
+		} else if (bn->tvheap == NULL) {
 			assert(BATatoms[bn->ttype].atomPut == NULL);
 			memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
 			       (q - p) << bn->tshift);

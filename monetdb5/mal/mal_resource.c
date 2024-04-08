@@ -75,7 +75,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 	BAT *b;
 
 	(void) mb;
-	if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
+	if (stk->stk[getArg(pci, i)].bat) {
 		bat bid = stk->stk[getArg(pci, i)].val.bval;
 		if (!BBPcheck(bid))
 			return 0;

@@ -357,13 +357,6 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #include "stream.h"
 #include "mstring.h"
 
-#ifdef HAVE_RTREE
-#ifndef SIZEOF_RTREE_COORD_T
-#define SIZEOF_RTREE_COORD_T 4
-#endif
-#include <rtree.h>
-#endif
-
 #undef MIN
 #undef MAX
 #define MAX(A,B)	((A)<(B)?(B):(A))
@@ -439,7 +432,6 @@ enum {
 	TYPE_bit,		/* TRUE, FALSE, or nil */
 	TYPE_bte,
 	TYPE_sht,
-	TYPE_bat,		/* BAT id: index in BBPcache */
 	TYPE_int,
 	TYPE_oid,
 	TYPE_ptr,		/* C pointer! */
@@ -653,7 +645,8 @@ typedef struct {
 		uuid uval;
 	} val;
 	size_t len;
-	int vtype;
+	short vtype;
+	bool bat;
 } *ValPtr, ValRecord;
 
 /* interface definitions */
@@ -1318,8 +1311,6 @@ gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
-	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 	__attribute__((__warn_unused_result__));
 
@@ -1908,21 +1899,12 @@ gdk_export gdk_return BATsetstrimps(BAT *b);
 
 /* Rtree structure functions */
 #ifdef HAVE_RTREE
-//TODO REMOVE
-typedef struct mbr_t {
-	float xmin;
-	float ymin;
-	float xmax;
-	float ymax;
-
-} mbr_t;
-
 gdk_export bool RTREEexists(BAT *b);
-gdk_export bool RTREEexists_bid(bat *bid);
+gdk_export bool RTREEexists_bid(bat bid);
 gdk_export gdk_return BATrtree(BAT *wkb, BAT* mbr);
-gdk_export BUN* RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit);
-gdk_export void RTREEdecref(BAT *b);
-gdk_export void RTREEincref(BAT *b);
+/* inMBR is really a struct mbr * from geom module, but that is not
+ * available here */
+gdk_export BUN* RTREEsearch(BAT *b, const void *inMBR, int result_limit);
 #endif
 
 gdk_export void RTREEdestroy(BAT *b);
@@ -2104,8 +2086,6 @@ BUNtoid(BAT *b, BUN p)
 /*
  * @+ Transaction Management
  */
-gdk_export gdk_return TMsubcommit(BAT *bl)
-	__attribute__((__warn_unused_result__));
 gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno)
 	__attribute__((__warn_unused_result__));
 
@@ -2528,5 +2508,107 @@ typedef gdk_return gdk_callback_func(int argc, void *argv[]);
 gdk_export gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void
 		*argv[], int interval);
 gdk_export gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
+
+
+#include <setjmp.h>
+
+typedef struct exception_buffer {
+#ifdef HAVE_SIGLONGJMP
+	sigjmp_buf state;
+#else
+	jmp_buf state;
+#endif
+	int code;
+	char *msg;
+	int enabled;
+} exception_buffer;
+
+gdk_export exception_buffer *eb_init(exception_buffer *eb);
+
+/* != 0 on when we return to the savepoint */
+#ifdef HAVE_SIGLONGJMP
+#define eb_savepoint(eb) ((eb)->enabled = 1, sigsetjmp((eb)->state, 0))
+#else
+#define eb_savepoint(eb) ((eb)->enabled = 1, setjmp((eb)->state))
+#endif
+gdk_export _Noreturn void eb_error(exception_buffer *eb, char *msg, int val);
+
+typedef struct allocator {
+	struct allocator *pa;
+	size_t size;
+	size_t nr;
+	char **blks;
+	size_t used; 	/* memory used in last block */
+	size_t usedmem;	/* used memory */
+	void *freelist;	/* list of freed blocks */
+	exception_buffer eb;
+} allocator;
+
+gdk_export allocator *sa_create( allocator *pa );
+gdk_export allocator *sa_reset( allocator *sa );
+gdk_export void *sa_alloc( allocator *sa,  size_t sz );
+gdk_export void *sa_zalloc( allocator *sa,  size_t sz );
+gdk_export void *sa_realloc( allocator *sa,  void *ptr, size_t sz, size_t osz );
+gdk_export void sa_destroy( allocator *sa );
+gdk_export char *sa_strndup( allocator *sa, const char *s, size_t l);
+gdk_export char *sa_strdup( allocator *sa, const char *s);
+gdk_export char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
+gdk_export size_t sa_size( allocator *sa );
+
+#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
+#define sa_alloc(sa, sz)					\
+	({							\
+		allocator *_sa = (sa);				\
+		size_t _sz = (sz);				\
+		void *_res = sa_alloc(_sa, _sz);		\
+		TRC_DEBUG(ALLOC,				\
+				"sa_alloc(%p,%zu) -> %p\n",	\
+				_sa, _sz, _res);		\
+		_res;						\
+	})
+#define sa_zalloc(sa, sz)					\
+	({							\
+		allocator *_sa = (sa);				\
+		size_t _sz = (sz);				\
+		void *_res = sa_zalloc(_sa, _sz);		\
+		TRC_DEBUG(ALLOC,				\
+				"sa_zalloc(%p,%zu) -> %p\n",	\
+				_sa, _sz, _res);		\
+		_res;						\
+	})
+#define sa_realloc(sa, ptr, sz, osz)					\
+	({								\
+		allocator *_sa = (sa);					\
+		void *_ptr = (ptr);					\
+		size_t _sz = (sz);					\
+		size_t _osz = (osz);					\
+		void *_res = sa_realloc(_sa, _ptr, _sz, _osz);		\
+		TRC_DEBUG(ALLOC,					\
+				"sa_realloc(%p,%p,%zu,%zu) -> %p\n",	\
+				_sa, _ptr, _sz, _osz, _res);		\
+		_res;							\
+	})
+#define sa_strdup(sa, s)						\
+	({								\
+		allocator *_sa = (sa);					\
+		const char *_s = (s);					\
+		char *_res = sa_strdup(_sa, _s);			\
+		TRC_DEBUG(ALLOC,					\
+				"sa_strdup(%p,len=%zu) -> %p\n",	\
+				_sa, strlen(_s), _res);			\
+		_res;							\
+	})
+#define sa_strndup(sa, s, l)						\
+	({								\
+		allocator *_sa = (sa);					\
+		const char *_s = (s);					\
+		size_t _l = (l);					\
+		char *_res = sa_strndup(_sa, _s, _l);			\
+		TRC_DEBUG(ALLOC,					\
+				"sa_strndup(%p,len=%zu) -> %p\n", 	\
+				_sa, _l, _res);				\
+		_res;							\
+	})
+#endif
 
 #endif /* _GDK_H_ */

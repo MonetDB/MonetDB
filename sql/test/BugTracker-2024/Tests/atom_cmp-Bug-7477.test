@@ -1,5 +1,5 @@
 -- trying first without function "abs ( x )"
-statement error TypeException:user.main[12]:'calc.==' undefined in:     X_0:bit := calc.==(X_1:str, X_2:bte);
+statement error TypeException:user.main[12]:'calc.==' undefined in:     X_20:bit := calc.==(X_17:str, X_18:bte);
 SELECT - 66 x GROUP BY x HAVING ( x IN ( SELECT '' x WHERE ( x = ( x = 1 ) ) UNION SELECT 1 ) )
 
 -- changing '' into 1, so a string into int
@@ -14,6 +14,6 @@ SELECT - 66 x GROUP BY x HAVING ( abs ( x ) IN ( SELECT 1 x WHERE ( x = ( x = 1 
 -66
 
 skipif knownfail
-statement error TypeException:user.main[12]:'calc.==' undefined in:     X_0:bit := calc.==(X_1:str, X_2:bte);
+statement error TypeException:user.main[12]:'calc.==' undefined in:     X_0:bit := calc.==(X_1:str, X_2:bte)
 SELECT - 66 x GROUP BY x HAVING ( abs ( x ) IN ( SELECT '' x WHERE ( x = ( x = 1 ) ) UNION SELECT 1 ) )
 

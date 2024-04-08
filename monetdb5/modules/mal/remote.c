@@ -434,13 +434,14 @@ RMTgetId(char *buf, size_t buflen, MalBlkPtr mb, InstrPtr p, int arg)
 	const char *mod;
 	char *var;
 	str rt;
+	char name[IDLENGTH] = { 0 };
 	static ATOMIC_TYPE idtag = ATOMIC_VAR_INIT(0);
 
 	if (p->retc == 0)
 		throw(MAL, "remote.getId",
 			  ILLEGAL_ARGUMENT "MAL instruction misses retc");
 
-	var = getArgName(mb, p, arg);
+	var = getArgNameIntoBuffer(mb, p, arg, name);
 	f = getInstrPtr(mb, 0);		/* top level function */
 	mod = getModuleId(f);
 	if (mod == NULL)
@@ -872,8 +873,11 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(r);
 			}
 
-		v->val.bval = b->batCacheid;
-		v->vtype = TYPE_bat;
+		*v = (ValRecord) {
+			.val.bval = b->batCacheid,
+			.bat = true,
+			.vtype = b->ttype,
+		};
 		BBPkeepref(b);
 
 		mapi_close_handle(mhdl);
@@ -911,8 +915,11 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return (tmp);
 		}
 
-		v->val.bval = b->batCacheid;
-		v->vtype = TYPE_bat;
+		*v = (ValRecord) {
+			.val.bval = b->batCacheid,
+			.bat = true,
+			.vtype = b->ttype,
+		};
 		BBPkeepref(b);
 
 		MT_lock_unset(&c->lock);
@@ -996,7 +1003,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* depending on the input object generate actions to store the
 	 * object remotely*/
-	if (type == TYPE_any || type == TYPE_bat || isAnyExpression(type)) {
+	if (type == TYPE_any || isAnyExpression(type)) {
 		char *tpe, *msg;
 		MT_lock_unset(&c->lock);
 		tpe = getTypeName(type);
@@ -1507,8 +1514,11 @@ RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(r);
 	}
 
-	v->val.bval = b->batCacheid;
-	v->vtype = TYPE_bat;
+	*v = (ValRecord) {
+		.val.bval = b->batCacheid,
+		.bat = true,
+		.vtype = b->ttype,
+	};
 	BBPkeepref(b);
 
 	return msg;
@@ -1622,8 +1632,11 @@ RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return (err);
 
 	v = &stk->stk[pci->argv[0]];
-	v->val.bval = b->batCacheid;
-	v->vtype = TYPE_bat;
+	*v = (ValRecord) {
+		.val.bval = b->batCacheid,
+		.bat = true,
+		.vtype = b->ttype,
+	};
 	BBPkeepref(b);
 
 	return (MAL_SUCCEED);

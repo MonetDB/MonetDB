@@ -1451,6 +1451,26 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             interrupted = True
         finally:
             if pSrvr is not None:
+                try:
+                    dbh = pymonetdb.connect(username='monetdb',
+                                            password='monetdb',
+                                            hostname=HOST,
+                                            port=int(pSrvr.port),
+                                            database=TSTDB,
+                                            autocommit=True)
+                except KeyboardInterrupt:
+                    interrupted = True
+                except:
+                    pass
+                else:
+                    crs = dbh.cursor()
+                    crs.execute("select count(*), max(id) from sys.bbp()")
+                    nbats, maxid = crs.fetchall()[0]
+                    crs.close()
+                    dbh.close()
+                    if maxid > nbats and maxid - nbats > 10000:
+                        pSrvr.outfile.write(f'Too many free bats.  Max ID = {maxid}, # used = {nbats}, diff = {maxid - nbats}.\n')
+                        pSrvr.sendusr1()
                 pSrvr.terminate()
                 pSrvr = None
                 if produce_html:
@@ -2604,6 +2624,11 @@ class ServerClass:
             self.outfile.write(self.proc.stdout.read())
         self.outfile.close()
         self.errfile.close()
+
+    def sendusr1(self):
+        if os.name != 'nt':
+            self.proc.send_signal(signal.SIGUSR1)
+            time.sleep(1)
 
     def LaunchIt(self):
         global setpgrp
