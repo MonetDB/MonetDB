@@ -226,6 +226,7 @@ sql_export int mvc_create_column(sql_column **col, mvc *m, sql_table *t, const c
 extern int mvc_create_column_(sql_column **col, mvc *m, sql_table *t, const char *name, const char *type, unsigned int digits);
 extern int mvc_null(mvc *c, sql_column *col, int flag);
 extern int mvc_default(mvc *c, sql_column *col, char *val);
+extern int mvc_check(mvc *m, sql_column *col, char *check);
 extern int mvc_drop_default(mvc *c, sql_column *col);
 extern int mvc_storage(mvc *c, sql_column *col, char *storage);
 extern int mvc_access(mvc *m, sql_table *t, sht access);

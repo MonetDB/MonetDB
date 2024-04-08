@@ -6432,6 +6432,39 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 }
 
 int
+sql_trans_alter_check(sql_trans *tr, sql_column *col, char *check)
+{
+	int res = LOG_OK;
+	sqlstore *store = tr->store;
+
+	if ((col->check || check) && (!col->check || !check || strcmp(col->check, check) != 0)) {
+		void *p = check ? check : (void *) ATOMnilptr(TYPE_str);
+		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp");
+		sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
+		sql_column *col_ids = find_sql_column(syscolumn, "id");
+		sql_column *col_chks = find_sql_column(syscolumn, "check");
+		oid rid = store->table_api.column_find_row(tr, col_ids, &col->base.id, NULL);
+		sql_column *dup = NULL;
+
+		if (is_oid_nil(rid))
+			return -1;
+		if ((res = store->table_api.column_update_value(tr, col_chks, rid, p)))
+			return res;
+
+		if ((res = new_column(tr, col, &dup)))
+			return res;
+		_DELETE(dup->check);
+		if (check)
+			dup->check =_STRDUP(check);
+		if (!isNew(col) && isGlobal(col->t) && !isGlobalTemp(col->t) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml)))
+			return res;
+		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql functions depending on the table */
+			return res;
+	}
+	return res;
+}
+
+int
 sql_trans_is_sorted( sql_trans *tr, sql_column *col )
 {
 	sqlstore *store = tr->store;

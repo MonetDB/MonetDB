@@ -610,18 +610,29 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 		sql_rel *rel = rel_project_exp(sql, e);
 		(void) rel;
 
-		char* rel_str = rel2str(sql, rel);
+		char* check = rel2str(sql, rel);
 
 		int pos = 0;
 		list *refs = sa_list(sql->sa);
-		sql_rel* rel2 = rel_read(sql, rel_str, &pos, refs);
-		(void) rel_str;
+		sql_rel* rel2 = rel_read(sql, check, &pos, refs);
+		(void) check;
 		(void) rel2;
 		char *err = NULL, *r;
 		r = symbol2string(sql, s->data.sym, 0, &err);
 		(void) r;
-		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported");
-		return SQL_ERR;
+
+		switch (mvc_check(sql, cs, check)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CHECK CONSTRAINT: transaction conflict detected");
+				return SQL_ERR;
+			default:
+				break;
+		}
+		res = SQL_OK;
 	} 	break;
 	default:{
 		res = SQL_ERR;

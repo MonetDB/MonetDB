@@ -410,6 +410,7 @@ extern int sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop
 extern int sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
 extern int sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
 extern int sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
+extern int sql_trans_alter_check(sql_trans *tr, sql_column *col, char *check);
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);

@@ -1496,6 +1496,18 @@ mvc_storage(mvc *m, sql_column *col, char *storage)
 }
 
 int
+mvc_check(mvc *m, sql_column *col, char *check)
+{
+	TRC_DEBUG(SQL_TRANS, "Check: %s %s\n", col->base.name, check);
+	if (col->t->persistence == SQL_DECLARED_TABLE) {
+		col->check = check?sa_strdup(m->sa, check):NULL;
+		return 0;
+	} else {
+		return sql_trans_alter_check(m->session->tr, col, check);
+	}
+}
+
+int
 mvc_access(mvc *m, sql_table *t, sht access)
 {
 	TRC_DEBUG(SQL_TRANS, "Access: %s %d\n", t->base.name, access);
