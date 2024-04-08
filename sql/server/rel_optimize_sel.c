@@ -2049,12 +2049,17 @@ popcount64(uint64_t x)
 #if defined(__GNUC__)
 	return (uint32_t) __builtin_popcountll(x);
 #elif defined(_MSC_VER)
-	return (uint32_t) __popcnt64(x);
+#if SIZEOF_OID == 4
+	/* no __popcnt64 on 32 bit Windows */
+	return (int) (__popcnt((uint32_t) x) + __popcnt((uint32_t) (x >> 32)));
 #else
-	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
-	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
-	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
-	return (x * 0x0101010101010101ULL) >> 56;
+	return (uint32_t) __popcnt64(x);
+#endif
+#else
+	x = (x & UINT64_C(0x5555555555555555)) + ((x >> 1) & UINT64_C(0x5555555555555555));
+	x = (x & UINT64_C(0x3333333333333333)) + ((x >> 2) & UINT64_C(0x3333333333333333));
+	x = (x & UINT64_C(0x0F0F0F0F0F0F0F0F)) + ((x >> 4) & UINT64_C(0x0F0F0F0F0F0F0F0F));
+	return (x * UINT64_C(0x0101010101010101)) >> 56;
 #endif
 }
 
