@@ -912,8 +912,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
 				bn->tvheap->free = bi.vhfree;
 				bn->tvheap->dirty = true;
-				if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE)
-					memcpy(b->tvheap->base, strhash, GDK_STRHASHSIZE);
+				if (ATOMstorage(b->ttype) == TYPE_str && bi.vhfree >= GDK_STRHASHSIZE)
+					memcpy(bn->tvheap->base, strhash, GDK_STRHASHSIZE);
 			}
 
 			/* make sure we use the correct capacity */
