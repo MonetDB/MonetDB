@@ -48925,7 +48925,7 @@ mvc_clear_table_wrap;
 Clear the table sname.tname.
 sql
 copy_from
-unsafe pattern sql.copy_from(X_0:ptr, X_1:str, X_2:str, X_3:str, X_4:str, X_5:str, X_6:lng, X_7:lng, X_8:int, X_9:str, X_10:int, X_11:int):bat[:any]...
+unsafe pattern sql.copy_from(X_0:ptr, X_1:str, X_2:str, X_3:str, X_4:str, X_5:str, X_6:lng, X_7:lng, X_8:int, X_9:str, X_10:int, X_11:int, X_12:str, X_13:str):bat[:any]...
 mvc_import_table_wrap;
 Import a table from bstream s with the @given tuple and seperators (sep/rsep)
 sql
