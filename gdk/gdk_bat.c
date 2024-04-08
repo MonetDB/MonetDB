@@ -798,6 +798,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	bool slowcopy = false;
 	BAT *bn = NULL;
 	BATiter bi;
+	char strhash[GDK_STRHASHSIZE];
 
 	BATcheck(b, NULL);
 
@@ -810,7 +811,24 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		return NULL;
 	}
 
-	bi = bat_iterator(b);
+	/* in case of a string bat, we save the string heap hash table
+	 * while we have the lock so that we can restore it in the copy;
+	 * this is because during our operation, a parallel thread could
+	 * be adding strings to the vheap which would modify the hash
+	 * table and that would result in buckets containing values
+	 * beyond the original vheap that we're copying */
+	MT_lock_set(&b->theaplock);
+	bi = bat_iterator_nolock(b);
+	if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE)
+		memcpy(strhash, b->tvheap->base, GDK_STRHASHSIZE);
+
+#ifndef NDEBUG
+	bi.locked = true;
+#endif
+	HEAPincref(bi.h);
+	if (bi.vh)
+		HEAPincref(bi.vh);
+	MT_lock_unset(&b->theaplock);
 
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
@@ -887,6 +905,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
 				bn->tvheap->free = bi.vhfree;
 				bn->tvheap->dirty = true;
+				if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE)
+					memcpy(b->tvheap->base, strhash, GDK_STRHASHSIZE);
 			}
 
 			/* make sure we use the correct capacity */
