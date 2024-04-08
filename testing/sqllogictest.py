@@ -58,9 +58,9 @@ import difflib
 # this stuff is for geos pre 3.12: 3.12 introduced an extra set of
 # parentheses in MULTIPOINT values
 geosre = re.compile(r'MULTIPOINT *\((?P<points>[^()]*)\)')
-ptsre = re.compile(r'-?\d+ -?\d+')
+ptsre = re.compile(r'-?\d+(?:\.\d+)? -?\d+(?:\.\d+)?')
 geoszre = re.compile(r'MULTIPOINT *Z *\((?P<points>[^()]*)\)')
-ptszre = re.compile(r'-?\d+ -?\d+ -?\d+')
+ptszre = re.compile(r'-?\d+(?:\.\d+)? -?\d+(?:\.\d+)? -?\d+(?:\.\d+)?')
 
 architecture = platform.machine()
 if architecture == 'AMD64':     # Windows :-(
