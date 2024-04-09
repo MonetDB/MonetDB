@@ -78,7 +78,7 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 }
 
 static const char *
-dump_escape_ident(sql_allocator *sa, const char *s)
+dump_escape_ident(allocator *sa, const char *s)
 {
 	char *res = NULL;
 	if (s) {
@@ -97,7 +97,7 @@ dump_escape_ident(sql_allocator *sa, const char *s)
 }
 
 static char *
-dump_sql_subtype(sql_allocator *sa, sql_subtype *t)
+dump_sql_subtype(allocator *sa, sql_subtype *t)
 {
 	char buf[BUFSIZ];
 
@@ -1639,7 +1639,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		if (r[*pos] != '.') {
 			cname = tname;
 			tname = NULL;
-			exp_setname(sql->sa, exp, NULL, cname);
+			exp_setname(sql->sa, exp, NULL, sa_strdup(sql->sa, cname));
 			skipWS(r, pos);
 		} else {
 			(*pos)++;
@@ -1648,7 +1648,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			convertIdent(cname);
 			(*pos)++;
 			skipWS(r, pos);
-			exp_setname(sql->sa, exp, tname, cname);
+			exp_setname(sql->sa, exp, sa_strdup(sql->sa, tname), sa_strdup(sql->sa, cname));
 		}
 		rlabel = try_update_label_count(sql, tname);
 		nlabel = try_update_label_count(sql, cname);

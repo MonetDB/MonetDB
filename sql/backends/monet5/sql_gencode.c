@@ -1294,14 +1294,26 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 	MT_lock_set(&sql_gencodeLock);
 	for (m = findModule(c->usermodule, mname); m; m = m->link) {
 		for (Symbol s = findSymbolInModule(m, fname); s; s = s->peer) {
-			InstrPtr sig = getSignature(s);
-			int argc = sig->argc - sig->retc, nfargs = list_length(f->ops), nfres = list_length(f->res);
+			int argc = 0, retc = 0, varargs = 0, unsafe = 0;
+			if (s->kind == FUNCTIONsymbol) {
+				InstrPtr sig = getSignature(s);
+				retc = sig->retc;
+				argc = sig->argc - sig->retc;
+				varargs = (sig->varargs & VARARGS) == VARARGS;
+				unsafe = s->def->unsafeProp;
+			} else {
+				retc = s->func->retc;
+				argc = s->func->argc - s->func->retc;
+				varargs = s->func->vargs;
+				unsafe = s->func->unsafe;
+			}
+			int nfargs = list_length(f->ops), nfres = list_length(f->res);
 
-			if ((sig->varargs & VARARGS) == VARARGS || f->vararg || f->varres) {
-				*side_effect = (bool) s->def->unsafeProp;
+			if (varargs || f->vararg || f->varres) {
+				*side_effect = (bool) unsafe;
 				MT_lock_unset(&sql_gencodeLock);
 				return 1;
-			} else if (nfargs == argc && (nfres == sig->retc || (sig->retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
+			} else if (nfargs == argc && (nfres == retc || (retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
 				/* I removed this code because, it was triggering many errors on te SQL <-> MAL translation */
 				/* Check for types of inputs and outputs. SQL procedures and filter functions always return 1 value in the MAL implementation
 				bool all_match = true;
@@ -1335,7 +1347,7 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 					}
 				}
 				if (all_match)*/
-				*side_effect = (bool) s->def->unsafeProp;
+				*side_effect = (bool) unsafe;
 				MT_lock_unset(&sql_gencodeLock);
 				return 1;
 			}

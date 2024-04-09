@@ -2213,6 +2213,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp)
 gdk_return
 VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
+	ret->bat = false;
 	if (mul_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,

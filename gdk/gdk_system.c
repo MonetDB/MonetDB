@@ -315,7 +315,6 @@ rm_mtthread(struct mtthread *t)
 	struct mtthread **pt;
 
 	assert(t != &mainthread);
-	BBPrelinquish(&t->freebats);
 	thread_lock();
 	for (pt = &mtthreads; *pt && *pt != t; pt = &(*pt)->next)
 		;
@@ -770,6 +769,7 @@ thread_starter(void *arg)
 			(*self->thread_funcs[i].destroy)(self->thread_funcs[i].data);
 	}
 	free(self->thread_funcs);
+	BBPrelinquishbats();
 	ATOMIC_SET(&self->exited, 1);
 	TRC_DEBUG(THRD, "Exit thread \"%s\"\n", self->threadname);
 	return 0;		/* NULL for pthreads, 0 for Windows */

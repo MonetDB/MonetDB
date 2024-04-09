@@ -19,7 +19,7 @@
 #include "gdk_time.h"
 
 qc *
-qc_create(sql_allocator *sa, int clientid, int seqnr)
+qc_create(allocator *sa, int clientid, int seqnr)
 {
 	qc *r = SA_NEW(sa, qc);
 	if (!r)
@@ -128,7 +128,7 @@ qc_find(qc *cache, int id)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *cmd, int no_mitosis)
+qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *cmd, int no_mitosis)
 {
 	int namelen;
 	sql_func *f = SA_NEW(sa, sql_func);

@@ -586,7 +586,7 @@ is_column_unique(sql_column *c)
 }
 
 ValPtr
-SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
+SA_VALcopy(allocator *sa, ValPtr d, const ValRecord *s)
 {
 	if (sa == NULL)
 		return VALcopy(d, s);
@@ -621,7 +621,7 @@ SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
 }
 
 atom *
-atom_copy(sql_allocator *sa, atom *a)
+atom_copy(allocator *sa, atom *a)
 {
 	atom *r = sa ?SA_NEW(sa, atom):MNEW(atom);
 	if (!r)

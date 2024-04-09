@@ -119,9 +119,9 @@ end_state:
 
 char *
 #ifdef HAVE_HGE
-decimal_to_str(sql_allocator *sa, hge v, sql_subtype *t)
+decimal_to_str(allocator *sa, hge v, sql_subtype *t)
 #else
-decimal_to_str(sql_allocator *sa, lng v, sql_subtype *t)
+decimal_to_str(allocator *sa, lng v, sql_subtype *t)
 #endif
 {
 	char buf[64];

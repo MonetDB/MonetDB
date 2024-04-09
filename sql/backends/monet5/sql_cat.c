@@ -593,7 +593,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		default: {
 			char *buf;
 			sql_rel *r = NULL;
-			sql_allocator *sa = sql->sa;
+			allocator *sa = sql->sa;
 
 			if (!(sql->sa = sa_create(sql->pa))) {
 				sql->sa = sa;
@@ -1080,7 +1080,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	case FUNC_LANG_SQL: {
 		char *buf;
 		sql_rel *r = NULL;
-		sql_allocator *sa = sql->sa;
+		allocator *sa = sql->sa;
 
 		assert(nf->query);
 		if (!(sql->sa = sa_create(sql->pa))) {

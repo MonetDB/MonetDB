@@ -128,7 +128,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		if (getFunctionId(p) == emptybindRef) {
 			setFunctionId(p, bindRef);
-			p->typechk = TYPE_UNKNOWN;
+			p->typeresolved = false;
 			empty[getArg(p, 0)] = i;
 			if (p->retc == 2) {
 				empty[getArg(p, 1)] = i;
@@ -171,7 +171,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		if (getFunctionId(p) == emptybindidxRef) {
 			setFunctionId(p, bindidxRef);
-			p->typechk = TYPE_UNKNOWN;
+			p->typeresolved = false;
 			empty[getArg(p, 0)] = i;
 			if (p->retc == 2) {
 				empty[getArg(p, 1)] = i;
@@ -225,7 +225,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				setModuleId(p, algebraRef);
 				setFunctionId(p, projectionRef);
 				p->argc = 3;
-				p->typechk = TYPE_UNKNOWN;
+				p->typeresolved = false;
 			}
 			continue;
 		}

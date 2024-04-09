@@ -65,7 +65,7 @@ struct scanner {
 
 #define QUERY(scanner) (scanner.rs->buf+scanner.rs->pos)
 
-extern char *query_cleaned(sql_allocator *sa, const char *query);
+extern char *query_cleaned(allocator *sa, const char *query);
 extern void scanner_init(struct scanner *s, bstream *rs, stream *ws);
 sql_export void scanner_query_processed(struct scanner *s);
 

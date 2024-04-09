@@ -18,8 +18,6 @@
 #include "mal_listing.h"
 #include "mal_exception.h"
 
-#define MAXTYPEVAR  10
-
 mal_export str chkProgram(Module s, MalBlkPtr mb);
 mal_export int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
 mal_export str chkTypes(Module s, MalBlkPtr mb, int silent);
