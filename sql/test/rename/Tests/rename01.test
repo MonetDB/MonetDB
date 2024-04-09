@@ -65,3 +65,23 @@ query TI rowsort
 select "name", "system" from sys.schemas where "name" in ('changeme', 'changed', 'another')
 ----
 
+statement ok
+create schema foo
+
+statement ok
+create table foo.a as select * from generate_series(0,10)
+
+statement ok
+create schema bar
+
+statement ok
+create view av as select * from foo.a
+
+statement error 2BM37!ALTER SCHEMA: unable to rename schema 'foo', there are database objects which depend on it
+alter schema foo rename to foofoo
+
+statement ok
+drop schema foo cascade
+
+statement ok
+drop schema bar cascade
