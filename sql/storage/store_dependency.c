@@ -138,6 +138,10 @@ sql_trans_get_dependents(sql_trans* tr, sqlid id,
 		bool first = true;
 		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sqlid* local_id = MNEW(sqlid);
+			if (local_id == NULL) {
+				list_destroy(dep_list);
+				return NULL;
+			}
 			*local_id = b->id;
 			if (list_append(schema_tables, local_id) == NULL) {
 				list_destroy(dep_list);
@@ -153,7 +157,8 @@ sql_trans_get_dependents(sql_trans* tr, sqlid id,
 	}
 
 	rs = table_api.rids_select(tr, dep_id, &low_id,
-							   high_id == -1 ? &low_id : &high_id,
+							   high_id == -1 ? &low_id :
+							   low_id == high_id ? &low_id : &high_id,
 							   NULL);
 	if (rs == NULL) {
 		list_destroy(dep_list);
