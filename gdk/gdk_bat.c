@@ -822,12 +822,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE)
 		memcpy(strhash, b->tvheap->base, GDK_STRHASHSIZE);
 
-#ifndef NDEBUG
-	bi.locked = true;
-#endif
-	HEAPincref(bi.h);
-	if (bi.vh)
-		HEAPincref(bi.vh);
+	bat_iterator_incref(&bi);
 	MT_lock_unset(&b->theaplock);
 
 	/* first try case (1); create a view, possibly with different

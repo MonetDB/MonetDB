@@ -2464,7 +2464,8 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 			}
 		}
 	}
-	if (BBP_status(bid) & BBPPERSISTENT) {
+	if (bi) {
+		assert(BBP_status(bid) & BBPPERSISTENT);
 		if (new_bbpentry(nbbpf, bid, size, bi) != GDK_SUCCEED)
 			goto bailout;
 	}
@@ -3871,12 +3872,7 @@ BBPbackup(BAT *b, bool subcommit)
 		bi.h = b->oldtail;
 		bi.hdirty = b->oldtail->dirty;
 	}
-#ifndef NDEBUG
-	bi.locked = true;
-#endif
-	HEAPincref(bi.h);
-	if (bi.vh)
-		HEAPincref(bi.vh);
+	bat_iterator_incref(&bi);
 	MT_lock_unset(&b->theaplock);
 
 	/* determine location dir and physical suffix */
@@ -4038,9 +4034,15 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 
 	ret = BBPprepare(subcommit != NULL);
 
-	/* PHASE 1: safeguard everything in a backup-dir */
+	if (ret == GDK_SUCCEED) {
+		ret = BBPdir_first(subcommit != NULL, logno, &obbpf, &nbbpf);
+	}
+
 	for (int idx = 1; ret == GDK_SUCCEED && idx < cnt; idx++) {
 		bat i = subcommit ? subcommit[idx] : idx;
+		BUN size = sizes ? sizes[idx] : BUN_NONE;
+		BATiter bi, *bip;
+
 		const bat bid = i;
 		if (lock)
 			MT_lock_set(&GDKswapLock(bid));
@@ -4059,40 +4061,27 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 				MT_lock_set(&GDKswapLock(bid));
 		}
 		BAT *b = dirty_bat(&i, subcommit != NULL);
-		if (i <= 0 ||
-		    (BBP_status(bid) & BBPEXISTING &&
-		     b != NULL &&
-		     b->batInserted > 0 &&
-		     BBPbackup(b, subcommit != NULL) != GDK_SUCCEED)) {
+		if (i <= 0)
 			ret = GDK_FAIL;
-		}
+		else if (BBP_status(bid) & BBPEXISTING &&
+			 b != NULL &&
+			 b->batInserted > 0)
+			ret = BBPbackup(b, subcommit != NULL);
+
 		if (lock)
 			MT_lock_unset(&GDKswapLock(bid));
-	}
-	TRC_DEBUG(PERF, "move time "LLFMT" usec, %d files\n", (t1 = GDKusec()) - t0, backup_files);
 
-	/* PHASE 2: save the repository and write new BBP.dir file */
-	if (ret == GDK_SUCCEED) {
-		ret = BBPdir_first(subcommit != NULL, logno, &obbpf, &nbbpf);
-	}
-
-	for (int idx = 1; ret == GDK_SUCCEED && idx < cnt; idx++) {
-		bat i = subcommit ? subcommit[idx] : idx;
-		BUN size = sizes ? sizes[idx] : BUN_NONE;
-		BATiter bi;
+		if (ret != GDK_SUCCEED)
+			break;
 
 		if (BBP_status(i) & BBPPERSISTENT) {
-			BAT *b = dirty_bat(&i, subcommit != NULL);
-			if (i <= 0) {
-				ret = GDK_FAIL;
-				break;
-			}
-			bi = bat_iterator(BBP_desc(i));
+			MT_lock_set(&BBP_desc(i)->theaplock);
+			bi = bat_iterator_nolock(BBP_desc(i));
+			bat_iterator_incref(&bi);
 			assert(sizes == NULL || size <= bi.count);
 			assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
 			if (size > bi.count) /* includes sizes==NULL */
 				size = bi.count;
-			MT_lock_set(&bi.b->theaplock);
 			bi.b->batInserted = size;
 			if (bi.b->ttype >= 0 && ATOMvarsized(bi.b->ttype)) {
 				/* see epilogue() for other part of this */
@@ -4127,15 +4116,17 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 				ret = BATsave_iter(b, &bi, size);
 				BBP_status_off(i, BBPSAVING);
 			}
+			bip = &bi;
 		} else {
-			bi = bat_iterator(NULL);
+			bip = NULL;
 		}
 		if (ret == GDK_SUCCEED) {
-			n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, &bi);
+			n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, bip);
 			if (n < -1)
 				ret = GDK_FAIL;
 		}
-		bat_iterator_end(&bi);
+		if (bip)
+			bat_iterator_end(bip);
 		/* we once again have a saved heap */
 	}
 
