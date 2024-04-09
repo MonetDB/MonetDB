@@ -608,18 +608,7 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 		sql_rel* rel3 = rel_basetable(sql, t, t->base.name);
 		sql_exp *e = rel_logical_value_exp(query, &rel3, s->data.sym, sql_sel, ek);
 		sql_rel *rel = rel_project_exp(sql, e);
-		(void) rel;
-
 		char* check = rel2str(sql, rel);
-
-		int pos = 0;
-		list *refs = sa_list(sql->sa);
-		sql_rel* rel2 = rel_read(sql, check, &pos, refs);
-		(void) check;
-		(void) rel2;
-		char *err = NULL, *r;
-		r = symbol2string(sql, s->data.sym, 0, &err);
-		(void) r;
 
 		switch (mvc_check(sql, cs, check)) {
 			case -1:

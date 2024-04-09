@@ -16,6 +16,7 @@
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
+#include "rel_dump.h"
 #include "rel_psm.h"
 #include "rel_prop.h"
 #include "rel_select.h"
@@ -4926,6 +4927,42 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	return res;
 }
 
+static void
+sql_insert_check(backend *be, sql_table *t, sql_rel *rel, list *refs)
+{
+	mvc *sql = be->mvc;
+	node *m, *n;
+
+	sql_rel* rel2 = rel_copy(sql, rel, 1);
+
+	list* exps = rel2->exps;
+
+	sql_rel* rel3;
+
+
+	sql_subtype *bt = sql_bind_localtype("bit");
+
+	for (n = ol_first_node(t->columns), m = exps->h; n && m;
+		n = n->next, m = m->next) {
+		sql_exp *i = m->data;
+		sql_column *c = n->data;
+		if (c->check) {
+			i->alias.rname= sa_strdup(sql->sa, t->base.name);
+			i->alias.name= sa_strdup(sql->sa, c->base.name);
+
+			int pos = 0;
+			rel3 = rel_read(sql, sa_strdup(sql->sa, c->check), &pos, sa_list(sql->sa));
+			rel3->l = rel2;
+			stmt* s = subrel_bin(be, rel3, refs);
+			s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
+			sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+			char *msg = sa_message(sql->sa, SQLSTATE(40002) "INSERT INTO: CHECK constraint violated for column %s.%s", c->t->base.name, c->base.name);
+			(void)stmt_exception(be, s, msg, 00001);
+		}
+	}
+}
+
 static sql_table *
 sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 {
@@ -5003,6 +5040,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
+
+	sql_insert_check(be, t, rel->r, refs);
 
 	if (!sql_insert_check_null(be, t, inserts->op4.lval))
 		return NULL;
