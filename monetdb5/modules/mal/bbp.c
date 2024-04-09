@@ -69,8 +69,11 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	BBPkeepref(b);
-	lhs->vtype = TYPE_bat;
-	lhs->val.bval = i;
+	*lhs = (ValRecord) {
+		.vtype = tt,
+		.bat = true,
+		.val.bval = i,
+	};
 	return MAL_SUCCEED;
 }
 
@@ -230,7 +233,7 @@ CMDbbpDirty(bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				BAT *bn = BBP_cache(i);
+				BAT *bn = BBP_status(i) & BBPLOADED ? BBP_desc(i) : NULL;
 
 				if (BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED) {
 					BBPunlock();
@@ -262,7 +265,7 @@ CMDbbpStatus(bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				char *loc = BBP_cache(i) ? "load" : "disk";
+				char *loc = BBP_status(i) & BBPLOADED ? "load" : "disk";
 
 				if (BUNappend(b, loc, false) != GDK_SUCCEED) {
 					BBPunlock();
@@ -431,10 +434,10 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 	for (i = 1; i < sz; i++) {
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			bn = BBP_desc(i);
-			if (bn) {
+			if (bn->batCacheid != 0) {
 				lng l = BATcount(bn);
 				int heat_ = 0, len;
-				char *loc = BBP_cache(i) ? "load" : "disk";
+				char *loc = BBP_status(i) & BBPLOADED ? "load" : "disk";
 				char *mode = "persistent";
 				int refs = BBP_refs(i);
 				int lrefs = BBP_lrefs(i);
@@ -459,7 +462,7 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 					|| BUNappend(location, buf, false) != GDK_SUCCEED
 					|| BUNappend(heat, &heat_, false) != GDK_SUCCEED
 					|| BUNappend(dirty,
-								 BBP_cache(i) ? BATdirty(bn) ? "dirty" :
+								 (BBP_status(i) & BBPLOADED) ? BATdirty(bn) ? "dirty" :
 								 DELTAdirty(bn) ? "diffs" : "clean"
 								 : (BBP_status(i) & BBPSWAPPED) ? "diffs" :
 								 "clean", false) != GDK_SUCCEED
@@ -531,8 +534,8 @@ CMDsetName(str *rname, const bat *bid, str *name)
 
 #include "mel.h"
 mel_func bbp_init_funcs[] = {
- pattern("bbp", "bind", CMDbbpbind, false, "Locate the BAT using its logical name", args(1,2, batargany("",2),arg("name",str))),
- command("bbp", "getIndex", CMDbbpgetIndex, false, "Retrieve the index in the BBP", args(1,2, arg("",int),batargany("b",2))),
+ pattern("bbp", "bind", CMDbbpbind, false, "Locate the BAT using its logical name", args(1,2, batargany("",1),arg("name",str))),
+ command("bbp", "getIndex", CMDbbpgetIndex, false, "Retrieve the index in the BBP", args(1,2, arg("",int),batargany("b",1))),
  command("bbp", "getNames", CMDbbpNames, false, "Map BAT into its bbp name", args(1,1, batarg("",str))),
  command("bbp", "get", CMDbbp, false, "bpp", args(11,11, batarg("id",int),batarg("ns",str),batarg("tt",str),batarg("cnt",lng),batarg("refcnt",int),batarg("lrefcnt",int),batarg("location",str),batarg("heat",int),batarg("dirty",str),batarg("status",str),batarg("kind",str))),
  command("bbp", "getName", CMDbbpName, false, "Map a BAT into its internal name", args(1,2, arg("",str),batargany("b",1))),

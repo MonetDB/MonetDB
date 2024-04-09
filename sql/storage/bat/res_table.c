@@ -53,7 +53,7 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_quer
 }
 
 res_col *
-res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *val, bool cached)
+res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, bool isbat, char mtype, void *val, bool cached)
 {
 	res_col *c = t->cols + t->cur_col;
 	BAT *b;
@@ -70,7 +70,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	c->b = 0;
 	c->p = NULL;
 	c->mtype = mtype;
-	if (mtype == TYPE_bat) {
+	if (isbat) {
 		b = (BAT*)val;
 		if (b && t->cur_col == 0)
 			t->nr_rows = BATcount(b);

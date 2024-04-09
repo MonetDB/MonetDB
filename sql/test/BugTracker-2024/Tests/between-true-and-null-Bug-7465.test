@@ -14,7 +14,6 @@ SELECT (((t1.c0 NOT IN (true)))=((t1.c0 BETWEEN true AND NULL))) FROM t1
 ----
 NULL
 
-skipif knownfail
 query I
 SELECT * FROM t1 WHERE (((t1.c0 NOT IN (true)))=((t1.c0 BETWEEN true AND NULL)))
 ----

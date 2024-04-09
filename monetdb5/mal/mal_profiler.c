@@ -296,10 +296,6 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (profilerUser != MAL_ADMIN && profilerUser != cntxt->user)
 		return NULL;
 
-	/* align the variable namings with EXPLAIN and TRACE */
-	if (pci->pc == 1)
-		renameVariables(mb);
-
 	logbuf = (struct logbuf) { 0 };
 
 	mclk = (uint64_t) clk - ((uint64_t) startup_time.tv_sec * 1000000 -
@@ -342,6 +338,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (profilerMode == 0 && stk) {
 			if (!logadd(&logbuf, ",\"args\":["))
 				goto cleanup_and_exit;
+			char name[IDLENGTH] = { 0 };
 			for (j = 0; j < pci->argc; j++) {
 				int tpe = getVarType(mb, getArg(pci, j));
 				str tname = 0, cv;
@@ -359,9 +356,9 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 				if (!logadd(&logbuf, "\"%s\":%d,\"var\":\"%s\"",
 							j < pci->retc ? "ret" : "arg", j,
-							getVarName(mb, getArg(pci, j))))
+							getVarNameIntoBuffer(mb, getArg(pci, j), name)))
 					goto cleanup_and_exit;
-				c = getVarName(mb, getArg(pci, j));
+				//c = getVarName(mb, getArg(pci, j), name);
 				if (getVarSTC(mb, getArg(pci, j))) {
 					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb, getArg(pci, j)));
 					if (stc && getModuleId(stc)
@@ -401,12 +398,9 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						cnt = di.count;
 						if (isVIEW(d)) {
 							BAT *v = BBP_desc(VIEWtparent(d));
-							bool vtransient = true;
-							if (v) {
-								MT_lock_set(&v->theaplock);
-								vtransient = v->batTransient;
-								MT_lock_unset(&v->theaplock);
-							}
+							MT_lock_set(&v->theaplock);
+							bool vtransient = v->batTransient;
+							MT_lock_unset(&v->theaplock);
 							if (!logadd(&logbuf,
 										",\"view\":\"true\""
 										",\"parent\":%d"

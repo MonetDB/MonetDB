@@ -881,19 +881,19 @@ la_bat_create(logger *lg, logaction *la, int tid)
 }
 
 static gdk_return
-log_write_new_types(logger *lg, FILE *fp, bool append)
+log_write_new_types(logger *lg, FILE *fp)
 {
 	bte id = 0;
 
 	/* write types and insert into bats */
+	memset(lg->type_id, -1, sizeof(lg->type_id));
+	memset(lg->type_nr, 255, sizeof(lg->type_nr));
 	/* first the fixed sized types */
 	for (int i = 0; i < GDKatomcnt; i++) {
 		if (ATOMvarsized(i))
 			continue;
-		if (append) {
-			lg->type_id[i] = id;
-			lg->type_nr[id] = i;
-		}
+		lg->type_id[i] = id;
+		lg->type_nr[id] = i;
 		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
 			return GDK_FAIL;
 		id++;
@@ -903,10 +903,8 @@ log_write_new_types(logger *lg, FILE *fp, bool append)
 	for (int i = 0; i < GDKatomcnt; i++) {
 		if (!ATOMvarsized(i))
 			continue;
-		if (append) {
-			lg->type_id[i] = id;
-			lg->type_nr[256 + id] = i;
-		}
+		lg->type_id[i] = id;
+		lg->type_nr[256 + id] = i;
 		if (fprintf(fp, "%d,%s\n", id, BATatoms[i].name) < 0)
 			return GDK_FAIL;
 		id++;
@@ -1036,13 +1034,15 @@ tr_commit(logger *lg, trans *tr)
 }
 
 static gdk_return
-log_read_types_file(logger *lg, FILE *fp)
+log_read_types_file(logger *lg, FILE *fp, int version)
 {
 	int id = 0;
 	char atom_name[IDLENGTH];
 
 	/* scanf should use IDLENGTH somehow */
 	while (fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
+		if (version < 52303 && strcmp(atom_name, "BAT") == 0)
+			continue;
 		int i = ATOMindex(atom_name);
 
 		if (id < -127 || id > 127 || i < 0) {
@@ -1057,7 +1057,7 @@ log_read_types_file(logger *lg, FILE *fp)
 
 
 gdk_return
-log_create_types_file(logger *lg, const char *filename, bool append)
+log_create_types_file(logger *lg, const char *filename)
 {
 	FILE *fp;
 
@@ -1073,7 +1073,7 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 		return GDK_FAIL;
 	}
 
-	if (log_write_new_types(lg, fp, append) != GDK_SUCCEED) {
+	if (log_write_new_types(lg, fp) != GDK_SUCCEED) {
 		fclose(fp);
 		GDKerror("writing log file %s failed", filename);
 		if (MT_remove(filename) < 0)
@@ -1303,8 +1303,9 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 		 * return GDK_FAIL */
 		switch (l.flag) {
 		case LOG_START:
-			if (l.id > lg->tid)	/* TODO: check that this can only happen during initialisation */
-				lg->tid = l.id;
+			assert(!lg->flushing || l.id <= lg->tid);
+			if (!lg->flushing && l.id > lg->tid)
+				lg->tid = l.id;	/* should only happen during initialization */
 			if ((tr = tr_create(tr, l.id)) == NULL) {
 				TRC_CRITICAL(GDK, "memory allocation failed\n");
 				err = LOG_ERR;
@@ -1543,7 +1544,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 		fclose(fp);
 		return GDK_FAIL;
 	}
-	if (log_read_types_file(lg, fp) != GDK_SUCCEED) {
+	if (log_read_types_file(lg, fp, version) != GDK_SUCCEED) {
 		fclose(fp);
 		return GDK_FAIL;
 	}
@@ -1606,7 +1607,7 @@ bm_get_counts(logger *lg)
 			assert(b);
 			cnt = BATcount(b);
 		} else {
-			lid = BBP_desc(bids[p]) && log_find(lg->catalog_bid, lg->dcatalog, bids[p]) == BUN_NONE ? 1 : -1;
+			lid = BBP_desc(bids[p])->batCacheid != 0 && log_find(lg->catalog_bid, lg->dcatalog, bids[p]) == BUN_NONE ? 1 : -1;
 		}
 		if (BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
 			return GDK_FAIL;
@@ -1663,10 +1664,10 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 			continue;
 
 		if (lids[pos] >= 0) {
-			BAT *lb;
 			bat bid = bids[pos];
+			BAT *lb = BBP_desc(bid);
 
-			if ((lb = BBP_desc(bid)) == NULL || BATmode(lb, true /*transient */ ) != GDK_SUCCEED) {
+			if (lb->batCacheid == 0 || BATmode(lb, true /*transient */ ) != GDK_SUCCEED) {
 				GDKwarning("Failed to set bat(%d) transient\n", bid);
 			} else {
 				lids[pos] = -1;	/* mark as transient */
@@ -1751,9 +1752,11 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_lid", NULL);
 	if (BBPrename(lg->catalog_lid, bak) < 0)
 		GDKclrerr();
+	rotation_lock(lg);
 	for (logged_range *p = lg->pending; p; p = p->next) {
 		p->cnt -= cleanup;
 	}
+	rotation_unlock(lg);
 	return rcnt;
 }
 
@@ -2103,7 +2106,7 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 				GDKerror("cannot create directory for log file %s\n", filename);
 				goto error;
 			}
-			if (log_create_types_file(lg, filename, true) != GDK_SUCCEED)
+			if (log_create_types_file(lg, filename) != GDK_SUCCEED)
 				goto error;
 		}
 
@@ -2281,7 +2284,7 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 				TRC_CRITICAL(GDK, "couldn't move log to log.bak\n");
 				return GDK_FAIL;
 			}
-			if (log_create_types_file(lg, filename, false) != GDK_SUCCEED) {
+			if (log_create_types_file(lg, filename) != GDK_SUCCEED) {
 				TRC_CRITICAL(GDK, "couldn't write new log\n");
 				return GDK_FAIL;
 			}
@@ -2549,9 +2552,11 @@ log_next_logfile(logger *lg, ulng ts)
 	int m = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? 1000 : 100;
 	if (!lg->pending || !lg->pending->next)
 		return NULL;
+	rotation_lock(lg);
 	if (ATOMIC_GET(&lg->pending->refcount) == 0 && lg->pending != lg->current && lg->pending != lg->flush_ranges &&
 	    (ulng) ATOMIC_GET(&lg->pending->last_ts) == (ulng) ATOMIC_GET(&lg->pending->flushed_ts) &&
 	    (ulng) ATOMIC_GET(&lg->pending->flushed_ts) <= ts) {
+		rotation_unlock(lg);
 		logged_range *p = lg->pending;
 		for (int i = 1;
 		     i < m && ATOMIC_GET(&p->refcount) == 0 && p->next && p->next != lg->current &&
@@ -2560,6 +2565,7 @@ log_next_logfile(logger *lg, ulng ts)
 			p = p->next;
 		return p;
 	}
+	rotation_unlock(lg);
 	return NULL;
 }
 
@@ -3372,10 +3378,10 @@ bm_commit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdated)
 	bids = (log_bid *) Tloc(b, 0);
 	for (BUN p = b->batInserted, cnt = pending ? pending->cnt : BATcount(b); p < cnt; p++) {
 		log_bid bid = bids[p];
-		BAT *lb;
+		BAT *lb = BBP_desc(bid);
 
 		assert(bid);
-		if ((lb = BBP_desc(bid)) == NULL || BATmode(lb, false) != GDK_SUCCEED) {
+		if (lb->batCacheid == 0 || BATmode(lb, false) != GDK_SUCCEED) {
 			GDKwarning("Failed to set bat (%d%s) persistent\n", bid, !lb ? " gone" : "");
 			log_unlock(lg);
 			return GDK_FAIL;

@@ -1,3 +1,43 @@
+monetdb (11.49.7) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7469: Crash when using `CONTAINS`
+  * GH#7479: MonetDB server crashes in `exp_ref`
+  * GH#7490: commonTerms optimizer no longer works
+  * GH#7495: Crash when simultaneously querying and updating a string column.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 09 Apr 2024 10:43:09 +0200
+
+monetdb (11.49.7) unstable; urgency=low
+
+  * gdk: Threads have their own list of free bats.  The list was not returned
+    to the system when a thread exited, meaning that the free bats that
+    were in the list would not be reused by any thread.  This has been
+    fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 28 Mar 2024 10:43:09 +0200
+
+monetdb (11.49.7) unstable; urgency=low
+
+  * monetdb5: Fixed interaction between mserver5 and remote mserver5 when only one
+    of the two has 128 bit integer support.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 Mar 2024 10:43:09 +0200
+
+monetdb (11.49.7) unstable; urgency=low
+
+  * sql: Fixed issue where equal column aliases were created. When those
+    aliases were parsed on the remote side it could give crashes.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 Mar 2024 10:43:09 +0200
+
+monetdb (11.49.7) unstable; urgency=low
+
+  * gdk: Fixed a couple of deadlock situations, one actually observed, one
+    never observed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 18 Mar 2024 10:43:09 +0200
+
 monetdb (11.49.5) unstable; urgency=low
 
   * Rebuilt.

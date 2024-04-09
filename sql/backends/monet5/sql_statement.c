@@ -187,7 +187,7 @@ stmt_bool(backend *be, int b)
 }
 
 static stmt *
-stmt_create(sql_allocator *sa, st_type type)
+stmt_create(allocator *sa, st_type type)
 {
 	stmt *s = SA_NEW(sa, stmt);
 
@@ -264,7 +264,7 @@ stmt_unique(backend *be, stmt *s)
 		goto bailout;
 
 	q = pushArgument(mb, q, s->nr);
-	q = pushNil(mb, q, TYPE_bat); /* candidate list */
+	q = pushNilBat(mb, q); /* candidate list */
 
 	bool enabled = be->mvc->sa->eb.enabled;
 	be->mvc->sa->eb.enabled = false;
@@ -309,7 +309,7 @@ create_bat(MalBlkPtr mb, int tt)
 }
 
 static int *
-dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
+dump_table(allocator *sa, MalBlkPtr mb, sql_table *t)
 {
 	int i = 0;
 	node *n;
@@ -1260,11 +1260,11 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		if (p)
 			q = pushArgument(mb, q, p);
 		else
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		if (g)
 			q = pushArgument(mb, q, g);
 		else
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		q = pushArgument(mb, q, topn);
 		q = pushBit(mb, q, dir);
 		q = pushBit(mb, q, nullslast);
@@ -1607,7 +1607,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		if (sub)
 			q = pushArgument(mb, q, sub->nr);
 		else
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 
 		for (n = rops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
@@ -1701,12 +1701,12 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		if (sub && (op1->cand || op2->cand)) {
 			if (op1->cand && !op2->cand) {
 				if (op1->nrcols > 0)
-					q = pushNil(mb, q, TYPE_bat);
+					q = pushNilBat(mb, q);
 				q = pushArgument(mb, q, sub->nr);
 			} else if (!op1->cand && op2->cand) {
 				q = pushArgument(mb, q, sub->nr);
 				if (op2->nrcols > 0)
-					q = pushNil(mb, q, TYPE_bat);
+					q = pushNilBat(mb, q);
 			}
 			sub = NULL;
 		}
@@ -1756,7 +1756,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				q = pushArgument(mb, q, sub->nr);
 			} else {
 				assert(!sub || op1->cand == sub);
-				q = pushNil(mb, q, TYPE_bat);
+				q = pushNilBat(mb, q);
 				sub = NULL;
 			}
 			q = pushArgument(mb, q, r);
@@ -1898,18 +1898,18 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		/* cands */
 		if ((sub && !reduce) || op1->cand || op2->cand || op3->cand) { /* some already handled the previous selection */
 			if (op1->cand && op1->nrcols)
-				p = pushNil(mb, p, TYPE_bat);
+				p = pushNilBat(mb, p);
 			else if (op1->nrcols)
 				p = pushArgument(mb, p, sub->nr);
 			if (op2->nrcols) {
 				if (op2->cand)
-					p = pushNil(mb, p, TYPE_bat);
+					p = pushNilBat(mb, p);
 				else if (op2->nrcols)
 					p = pushArgument(mb, p, sub->nr);
 			}
 			if (op3->nrcols) {
 				if (op3->cand)
-					p = pushNil(mb, p, TYPE_bat);
+					p = pushNilBat(mb, p);
 				else if (op3->nrcols)
 					p = pushArgument(mb, p, sub->nr);
 			}
@@ -1991,8 +1991,8 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 			q = pushArgument(mb, q, r2);
 		}
 		if (type == st_join2) {
-			q = pushNil(mb, q, TYPE_bat);
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
+			q = pushNilBat(mb, q);
 		}
 
 		switch (cmp & 3) {
@@ -2120,8 +2120,8 @@ stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, l->nr); /* left ids */
 	q = pushArgument(mb, q, r->nr); /* mark info mask */
-	q = pushNil(mb, q, TYPE_bat);
-	q = pushNil(mb, q, TYPE_bat);
+	q = pushNilBat(mb, q);
+	q = pushNilBat(mb, q);
 	q = pushNil(mb, q, TYPE_lng);
 	pushInstruction(mb, q);
 
@@ -2217,8 +2217,8 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	if (lcand)
 		q = pushArgument(mb, q, lcand->nr); /* left */
 	else
-		q = pushNil(mb, q, TYPE_bat); /* left candidate */
-	q = pushNil(mb, q, TYPE_bat); /* right candidate */
+		q = pushNilBat(mb, q); /* left candidate */
+	q = pushNilBat(mb, q); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
 	q = pushBit(mb, q, FALSE);    /* do not clear nils */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
@@ -2264,8 +2264,8 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	if (lcand)
 		q = pushArgument(mb, q, lcand->nr); /* left */
 	else
-		q = pushNil(mb, q, TYPE_bat); /* left candidate */
-	q = pushNil(mb, q, TYPE_bat); /* right candidate */
+		q = pushNilBat(mb, q); /* left candidate */
+	q = pushNilBat(mb, q); /* right candidate */
 	q = pushBit(mb, q, FALSE);     /* nil matches */
 	q = pushBit(mb, q, TRUE);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
@@ -2308,8 +2308,8 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 		goto bailout;
 	q = pushArgument(mb, q, op1->nr); /* left */
 	q = pushArgument(mb, q, op2->nr); /* right */
-	q = pushNil(mb, q, TYPE_bat); /* left candidate */
-	q = pushNil(mb, q, TYPE_bat); /* right candidate */
+	q = pushNilBat(mb, q); /* left candidate */
+	q = pushNilBat(mb, q); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
 	q = pushBit(mb, q, single?TRUE:FALSE);    /* max_one */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
@@ -2367,11 +2367,11 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
 		if (!lcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, lcand->nr);
 		if (!rcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, rcand->nr);
 		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
@@ -2390,11 +2390,11 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
 		if (!lcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, lcand->nr);
 		if (!rcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, rcand->nr);
 		if (inner)
@@ -2416,11 +2416,11 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
 		if (!lcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, lcand->nr);
 		if (!rcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, rcand->nr);
 		if (cmptype == cmp_lt)
@@ -2443,8 +2443,8 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
 		if (!inner) {
-			q = pushNil(mb, q, TYPE_bat);
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
+			q = pushNilBat(mb, q);
 		}
 		q = pushBit(mb, q, single?TRUE:FALSE); /* max_one */
 		assert(!lcand && !rcand);
@@ -2506,11 +2506,11 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	if (lcand)
 		q = pushArgument(mb, q, lcand->nr);
 	else
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 	if (rcand)
 		q = pushArgument(mb, q, rcand->nr);
 	else
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 	q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 	q = pushBit(mb, q, single?TRUE:FALSE); /* max_one */
 	q = pushNil(mb, q, TYPE_lng);
@@ -2805,8 +2805,8 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 
 		q = pushArgument(mb, q, op->nr);
 	}
-	q = pushNil(mb, q, TYPE_bat); /* candidate lists */
-	q = pushNil(mb, q, TYPE_bat); /* candidate lists */
+	q = pushNilBat(mb, q); /* candidate lists */
+	q = pushNilBat(mb, q); /* candidate lists */
 	q = pushBit(mb, q, TRUE);     /* nil_matches */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 	q = pushBit(mb, q, anti?TRUE:FALSE); /* 'not' matching */
@@ -3784,7 +3784,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 		q = pushArgument(mb, q, sel->nr);
 		pushed = 1;
 	} else if (v->nrcols > 0) {
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 	}
 
 	bool enabled = be->mvc->sa->eb.enabled;
@@ -3911,7 +3911,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushArgument(mb, q, sel->nr);
 		pushed = 1;
 	} else if (v->nrcols > 0 && !no_candidates) {
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 	}
 	if (!add_tz && (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass))) {
 		/* digits, scale of the result decimal */
@@ -4130,7 +4130,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 
 				if (op->nrcols > 0) {
 					if (op->cand && op->cand == sel) {
-						q = pushNil(mb, q, TYPE_bat);
+						q = pushNilBat(mb, q);
 					} else {
 						q = pushArgument(mb, q, sel->nr);
 					}
@@ -4236,7 +4236,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		}
 	}
 
-	sql_allocator *sa = be->mvc->sa;
+	allocator *sa = be->mvc->sa;
 	bool enabled = be->mvc->sa->eb.enabled;
 	be->mvc->sa->eb.enabled = false;
 	stmt *o = NULL, *s = stmt_create(sa, st_func);
@@ -4382,7 +4382,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		q = pushArgument(mb, q, ext->nr);
 		if (LANG_INT_OR_MAL(op->func->lang)) {
 			if (avg) /* push nil candidates */
-				q = pushNil(mb, q, TYPE_bat);
+				q = pushNilBat(mb, q);
 			q = pushBit(mb, q, no_nil);
 		}
 	} else if (LANG_INT_OR_MAL(op->func->lang) && no_nil && strncmp(aggrfunc, "count", 5) == 0) {
@@ -4390,7 +4390,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	} else if (LANG_INT_OR_MAL(op->func->lang) && !nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
 	} else if (LANG_INT_OR_MAL(op->func->lang) && avg) { /* push candidates */
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 		q = pushBit(mb, q, no_nil);
 	}
 
@@ -4566,7 +4566,7 @@ stmt_has_null(stmt *s)
 }
 
 static const char *
-func_name(sql_allocator *sa, const char *n1, const char *n2)
+func_name(allocator *sa, const char *n1, const char *n2)
 {
 	size_t l1 = _strlen(n1), l2;
 
@@ -4591,10 +4591,10 @@ func_name(sql_allocator *sa, const char *n1, const char *n2)
 	}
 }
 
-static const char *_column_name(sql_allocator *sa, stmt *st);
+static const char *_column_name(allocator *sa, stmt *st);
 
 const char *
-column_name(sql_allocator *sa, stmt *st)
+column_name(allocator *sa, stmt *st)
 {
 	if (!st->cname)
 		st->cname = _column_name(sa, st);
@@ -4602,7 +4602,7 @@ column_name(sql_allocator *sa, stmt *st)
 }
 
 static const char *
-_column_name(sql_allocator *sa, stmt *st)
+_column_name(allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_order:
@@ -4668,14 +4668,14 @@ _column_name(sql_allocator *sa, stmt *st)
 }
 
 const char *
-table_name(sql_allocator *sa, stmt *st)
+table_name(allocator *sa, stmt *st)
 {
 	(void)sa;
 	return st->tname;
 }
 
 const char *
-schema_name(sql_allocator *sa, stmt *st)
+schema_name(allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_const:

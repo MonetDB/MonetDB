@@ -98,30 +98,29 @@ mal_export const char *mal_version(void);
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_FLOW)
 #define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_MAPI)
 
-/* type check status is kept around to improve type checking efficiency */
-#define TYPE_ERROR      -1
-#define TYPE_UNKNOWN     0
-#define TYPE_RESOLVED    2
-#define GARBAGECONTROL   3
-
 #define VARARGS 1				/* deal with variable arguments */
 #define VARRETS 2
 
 typedef int malType;
 typedef void (*MALfcn)(void);
 
+#include "mel.h"
+
 typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
 	struct SYMDEF *skip;		/* skip to next different symbol */
 	const char *name;
 	int kind;					/* what kind of symbol */
+	bool allocated;				/* allocated using mallocs or compiled inside the binary */
 	struct MALBLK *def;			/* the details of the MAL fcn */
+	mel_func *func;
 } *Symbol, SymRecord;
 
+
 typedef struct VARRECORD {
-	char name[IDLENGTH];		/* use the space for the full name */
-	char kind;					/* Could be either _, X or C to stamp the variable type */
+	char *name;					/* use the space for the full name */
 	malType type;				/* internal type signature */
+	char kind;					/* Could be either _, X or C to stamp the variable type */
 	bool constant:1,
 		typevar:1,
 		fixedtype:1,
@@ -143,14 +142,16 @@ typedef struct VARRECORD {
  * mal_profiler.c)
  */
 
-typedef struct {
+typedef struct INSTR {
 	bte token;					/* instruction type */
-	bit barrier;				/* flow of control modifier takes:
+	bte barrier;				/* flow of control modifier takes:
 								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */
-	bit typechk;				/* type check status */
-	bte gc;						/* garbage control flags */
-	bte polymorphic;			/* complex type analysis */
-	bit varargs;				/* variable number of arguments */
+	uint16_t polymorphic:3,		/* complex type analysis */
+		varargs:2,				/* variable number of arguments */
+		inlineProp:1,			/* inline property */
+		unsafeProp:1,			/* unsafe property */
+		gc:1,					/* garbage control flags */
+		typeresolved:1;			/* true if type is resolved */
 	int jump;					/* controlflow program counter */
 	int pc;						/* location in MAL plan for profiler */
 	MALfcn fcn;					/* resolved function address */
@@ -167,12 +168,9 @@ typedef struct {
 typedef struct MALBLK {
 	char binding[IDLENGTH];		/* related C-function */
 	str help;					/* supportive commentary */
-	str statichelp;				/* static help string should not be freed */
 	oid tag;					/* unique block tag */
-	struct MALBLK *alternative;
 	int vtop;					/* next free slot */
 	int vsize;					/* size of variable arena */
-	int vid;					/* generate local variable counter */
 	VarRecord *var;				/* Variable table */
 	int stop;					/* next free slot */
 	int ssize;					/* byte size of arena */

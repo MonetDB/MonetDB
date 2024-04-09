@@ -147,7 +147,7 @@ bailout:
 gdk_return
 VARcalcnot(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = v->vtype;
+	*ret = (ValRecord) {.vtype = v->vtype};
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_msk:
 		ret->val.mval = !v->val.mval;
@@ -311,7 +311,7 @@ bailout:
 gdk_return
 VARcalcnegate(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = v->vtype;
+	*ret = (ValRecord) {.vtype = v->vtype};
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (is_bte_nil(v->val.btval))
@@ -451,7 +451,7 @@ bailout:
 gdk_return
 VARcalcabsolute(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = v->vtype;
+	*ret = (ValRecord) {.vtype = v->vtype};
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (is_bte_nil(v->val.btval))
@@ -589,7 +589,7 @@ bailout:
 gdk_return
 VARcalciszero(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = TYPE_bit;
+	*ret = (ValRecord) {.vtype = TYPE_bit};
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (is_bte_nil(v->val.btval))
@@ -731,7 +731,7 @@ bailout:
 gdk_return
 VARcalcsign(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = TYPE_bte;
+	*ret = (ValRecord) {.vtype = TYPE_bte};
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (is_bte_nil(v->val.btval))
@@ -921,16 +921,20 @@ BATcalcisnotnil(BAT *b, BAT *s)
 gdk_return
 VARcalcisnil(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = TYPE_bit;
-	ret->val.btval = (bit) VALisnil(v);
+	*ret = (ValRecord) {
+		.vtype = TYPE_bit,
+		.val.btval = (bat) VALisnil(v),
+	};
 	return GDK_SUCCEED;
 }
 
 gdk_return
 VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = TYPE_bit;
-	ret->val.btval = (bit) !VALisnil(v);
+	*ret = (ValRecord) {
+		.vtype = TYPE_bit,
+		.val.btval = (bat) !VALisnil(v),
+	};
 	return GDK_SUCCEED;
 }
 
@@ -2569,6 +2573,7 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
+	ret->bat = false;
 	if (xor_typeswitchloop(VALptr(lft), false,
 			       VALptr(rgt), false,
 			       VALget(ret), lft->vtype,
@@ -2804,6 +2809,7 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
+	ret->bat = false;
 	if (or_typeswitchloop(VALptr(lft), false,
 			      VALptr(rgt), false,
 			      VALget(ret), lft->vtype,
@@ -3034,6 +3040,7 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
+	ret->bat = false;
 	if (and_typeswitchloop(VALptr(lft), false,
 			       VALptr(rgt), false,
 			       VALget(ret), lft->vtype,
@@ -3399,7 +3406,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s)
 gdk_return
 VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	ret->vtype = lft->vtype;
+	*ret = (ValRecord) {.vtype = lft->vtype};
 	if (lsh_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret),
@@ -3749,7 +3756,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s)
 gdk_return
 VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	ret->vtype = lft->vtype;
+	*ret = (ValRecord) {.vtype = lft->vtype};
 	if (rsh_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret),
@@ -4296,7 +4303,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 
 	t = ATOMbasetype(t);
 
-	ret->vtype = TYPE_bit;
+	*ret = (ValRecord) {.vtype = TYPE_bit};
 	switch (t) {
 	case TYPE_bte:
 		ret->val.btval = BETWEEN(v->val.btval, lo->val.btval, hi->val.btval, bte);

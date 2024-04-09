@@ -1714,12 +1714,6 @@ joinexp_col(sql_exp *e, sql_rel *r)
 	return NULL;
 }
 
-static int
-rel_has_exp2(sql_rel *r, sql_exp *e)
-{
-	return rel_has_exp(r, e, false);
-}
-
 static sql_column *
 table_colexp(sql_exp *e, sql_rel *r)
 {
@@ -1748,7 +1742,7 @@ table_colexp(sql_exp *e, sql_rel *r)
 }
 
 static list *
-matching_joins(sql_allocator *sa, list *rels, list *exps, sql_exp *je)
+matching_joins(allocator *sa, list *rels, list *exps, sql_exp *je)
 {
 	sql_rel *l, *r;
 
@@ -2033,28 +2027,106 @@ find_fk( mvc *sql, list *rels, list *exps)
 	return sdje;
 }
 
+static int
+rels_find_one_rel( sql_rel **rels, int nr, sql_exp *e)
+{
+	int fnd = 0;
+
+	for(int i = 1; i<=nr; i++) {
+		if (rel_has_exp(rels[i], e, false) == 0) {
+			if (fnd)
+				return 0;
+			fnd = i;
+		}
+	}
+	return fnd;
+}
+
+/* TODO move popcount and popcount64 into gdk_*.h, used in gdk_cand, strimps and here */
+static inline int
+popcount64(uint64_t x)
+{
+#if defined(__GNUC__)
+	return (uint32_t) __builtin_popcountll(x);
+#elif defined(_MSC_VER)
+#if SIZEOF_OID == 4
+	/* no __popcnt64 on 32 bit Windows */
+	return (int) (__popcnt((uint32_t) x) + __popcnt((uint32_t) (x >> 32)));
+#else
+	return (uint32_t) __popcnt64(x);
+#endif
+#else
+	x = (x & UINT64_C(0x5555555555555555)) + ((x >> 1) & UINT64_C(0x5555555555555555));
+	x = (x & UINT64_C(0x3333333333333333)) + ((x >> 2) & UINT64_C(0x3333333333333333));
+	x = (x & UINT64_C(0x0F0F0F0F0F0F0F0F)) + ((x >> 4) & UINT64_C(0x0F0F0F0F0F0F0F0F));
+	return (x * UINT64_C(0x0101010101010101)) >> 56;
+#endif
+}
+
 static sql_rel *
 order_joins(visitor *v, list *rels, list *exps)
 {
 	sql_rel *top = NULL, *l = NULL, *r = NULL;
 	sql_exp *cje;
 	node *djn;
-	list *sdje, *n_rels = sa_list(v->sql->sa);
+	list *sdje, *n_rels = NULL;
 	int fnd = 0;
 	unsigned int rsingle;
+	int direct = 1;
 
 	/* find foreign keys and reorder the expressions on reducing quality */
 	sdje = find_fk(v->sql, rels, exps);
 
+	for(djn = sdje->h; djn; djn = djn->next ) {
+		sql_exp *e = djn->data;
+		list_remove_data(exps, NULL, e);
+	}
 	if (list_length(rels) > 2 && mvc_debug_on(v->sql, 256)) {
-		for(djn = sdje->h; djn; djn = djn->next ) {
-			sql_exp *e = djn->data;
-			list_remove_data(exps, NULL, e);
-		}
 		top =  rel_planner(v->sql, rels, sdje, exps);
 		return top;
 	}
 
+	int nr_exps = list_length(sdje), nr_rels = list_length(rels), ci = 1;
+	if (nr_rels > 64) {
+		direct = 0;
+		n_rels = sa_list(v->sql->ta);
+	}
+	sql_rel **rels_a = SA_NEW_ARRAY(v->sql->ta, sql_rel*, nr_rels+1); /* don't use slot 0 */
+	rels_a[0] = NULL;
+	for (node *n = rels->h; n; n = n->next, ci++) {
+		rels_a[ci] = n->data;
+	}
+	ulng *h = SA_NEW_ARRAY(v->sql->ta, ulng, nr_exps), rel_mask = 0;	/* bit field (for > 64 its an imprint) */
+	uint16_t *r1 = SA_NEW_ARRAY(v->sql->ta, uint16_t, nr_exps);
+	uint16_t *r2 = SA_NEW_ARRAY(v->sql->ta, uint16_t, nr_exps);
+	/* change r3 into rest list's */
+	int *r3 = SA_NEW_ARRAY(v->sql->ta, int, nr_exps);
+
+	ci = 0;
+	for (node *n = sdje->h; n; n = n->next, ci++) {
+		sql_exp *cje = n->data;
+
+		h[ci] = r1[ci] = r2[ci] = 0;
+		r3[ci] = 0;
+		/* h[ci] = exp_find_rels(cje, rels) */
+		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
+		   (cje->type == e_cmp && cje->f == NULL)) {
+			cje->tmp = ci;
+			r1[ci] = rels_find_one_rel(rels_a, nr_rels, cje->l);
+			r2[ci] = rels_find_one_rel(rels_a, nr_rels, cje->r);
+			if (r1[ci])
+				h[ci] |= ((ulng)1)<<((r1[ci]-1)%64);
+			if (r2[ci])
+				h[ci] |= ((ulng)1)<<((r2[ci]-1)%64);
+			if (cje->f) {
+				r3[ci] = rels_find_one_rel(rels_a, nr_rels, cje->f);
+				if (r3[ci] == r2[ci])
+					r3[ci] = 0;
+				if (r3[ci])
+					h[ci] |= ((ulng)1)<<((r3[ci]-1)%64);
+			}
+		}
+	}
 	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
 	if (list_length(rels) >= 2 && sdje->h) {
@@ -2066,22 +2138,26 @@ order_joins(visitor *v, list *rels, list *exps)
 		/* complex expressions may touch multiple base tables
 		 * Should be pushed up to extra selection.
 		 * */
+		if (0 && popcount64(h[cje->tmp]) > 2)
+			assert(0);
 		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
 		   (cje->type == e_cmp && cje->f == NULL)) {
-			l = find_one_rel(rels, cje->l);
-			r = find_one_rel(rels, cje->r);
+			l = rels_a[r1[cje->tmp]];
+			r = rels_a[r2[cje->tmp]];
+			rel_mask |= h[cje->tmp];
 		}
+		cje->tmp = 0;
 
-		if (l && r && l != r) {
+		if (l && r && l != r)
 			list_remove_data(sdje, NULL, cje);
-			list_remove_data(exps, NULL, cje);
-		}
 	}
 	if (l && r && l != r) {
 		list_remove_data(rels, NULL, l);
 		list_remove_data(rels, NULL, r);
-		list_append(n_rels, l);
-		list_append(n_rels, r);
+		if (!direct) {
+			list_append(n_rels, l);
+			list_append(n_rels, r);
+		}
 
 		/* Create a relation between l and r. Since the calling
 	   	   functions rewrote the join tree, into a list of expressions
@@ -2105,43 +2181,44 @@ order_joins(visitor *v, list *rels, list *exps)
 			}
 			en = next;
 		}
-		/* Remove other joins on the current 'n_rels' set in the distinct list too */
-		for (node *en = sdje->h; en; ) {
-			node *next = en->next;
-			sql_exp *e = en->data;
-			if (rel_rebind_exp(v->sql, top, e))
-				list_remove_data(sdje, NULL, en->data);
-			en = next;
-		}
 		fnd = 1;
 	}
 	/* build join tree using the ordered list */
-	while(list_length(exps) && fnd) {
+	while(list_length(sdje) && fnd) {
 		fnd = 0;
 		/* find the first expression which could be added */
-		if (list_length(sdje) > 1)
-			sdje = order_join_expressions(v->sql, sdje, rels);
 		for(djn = sdje->h; djn && !fnd && rels->h; djn = (!fnd)?djn->next:NULL) {
-			node *ln, *rn, *en;
+			node *en;
+			l = r = NULL;
 
 			cje = djn->data;
-			ln = list_find(n_rels, cje->l, (fcmp)&rel_has_exp2);
-			rn = list_find(n_rels, cje->r, (fcmp)&rel_has_exp2);
+			if ((h[cje->tmp] & rel_mask) > 0) {
+				if (rel_mask & (((ulng)1)<<((r1[cje->tmp]-1)%64)))
+					l = rels_a[r1[cje->tmp]];
+				if (rel_mask & (((ulng)1)<<((r2[cje->tmp]-1)%64)))
+					r = rels_a[r2[cje->tmp]];
+			}
+			if (!direct) { /* check if atleast one side in n_rels */
+				if (l && !list_find(n_rels, l, NULL))
+					l = NULL;
+				if (r && !list_find(n_rels, r, NULL))
+					r = NULL;
+			}
 
-			if (ln && rn) {
+			if (l && r) {
 				assert(0);
 				/* create a selection on the current */
-				l = ln->data;
-				r = rn->data;
 				rel_join_add_exp(v->sql->sa, top, cje);
 				fnd = 1;
-			} else if (ln || rn) {
-				if (ln) {
-					l = ln->data;
-					r = find_rel(rels, cje->r);
+			} else if (l || r) {
+				/* TODO: handle case for joins which need > 2 relations, ie where the current 'top' of the
+				 * join tree needs to add more then one relation */
+				rel_mask |= h[cje->tmp];
+				if (l) {
+					r = rels_a[r2[cje->tmp]];
 				} else {
-					l = rn->data;
-					r = find_rel(rels, cje->l);
+					l = r;
+					r = rels_a[r1[cje->tmp]];
 				}
 				if (!r) {
 					fnd = 1; /* not really, but this bails out */
@@ -2151,10 +2228,10 @@ order_joins(visitor *v, list *rels, list *exps)
 
 				/* remove the expression from the lists */
 				list_remove_data(sdje, NULL, cje);
-				list_remove_data(exps, NULL, cje);
 
 				list_remove_data(rels, NULL, r);
-				append(n_rels, r);
+				if (!direct)
+					append(n_rels, r);
 
 				/* create a join using the current expression */
 				rsingle = is_single(r);
@@ -2179,8 +2256,11 @@ order_joins(visitor *v, list *rels, list *exps)
 				for (en = sdje->h; en; ) {
 					node *next = en->next;
 					sql_exp *e = en->data;
-					if (rel_rebind_exp(v->sql, top, e))
+					if ((direct && ((e->flag <= cmp_notequal && (h[e->tmp] & rel_mask) == h[e->tmp]) || (e->flag > cmp_notequal && rel_rebind_exp(v->sql, top, e))))  ||
+					    (!direct && rel_rebind_exp(v->sql, top, e))) {
+						rel_join_add_exp(v->sql->sa, top, e);
 						list_remove_data(sdje, NULL, en->data);
+					}
 					en = next;
 				}
 				fnd = 1;
@@ -2202,21 +2282,17 @@ order_joins(visitor *v, list *rels, list *exps)
 				top = nr;
 		}
 	}
+	if (list_length(sdje)) {
+		if (list_empty(exps))
+			exps = sdje;
+		else
+			exps = list_merge(exps, sdje, (fdup)NULL);
+	}
 	if (list_length(exps)) { /* more expressions (add selects) */
 		top = rel_select(v->sql->sa, top, NULL);
 		for(node *n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			/* find the involved relations */
-
-			/* complex expressions may touch multiple base tables
-		 	 * Should be push up to extra selection. */
-			/*
-			l = find_one_rel(rels, e->l);
-			r = find_one_rel(rels, e->r);
-
-			if (l && r)
-			*/
 			if (exp_is_join_exp(e) == 0) {
 				sql_rel *nr = NULL;
 				if (is_theta_exp(e->flag)) {
@@ -2360,14 +2436,20 @@ reorder_join(visitor *v, sql_rel *rel)
 {
 	list *exps, *rels;
 
-	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr))
+	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr)) {
+		if (list_empty(rel->exps)) {
+			sql_rel *l = rel->l, *r = rel->r;
+			if (!is_innerjoin(l->op) && !is_innerjoin(r->op))
+				return rel;
+		}
 		rel->exps = push_up_join_exps(v->sql, rel);
+	}
 
 	if (!is_innerjoin(rel->op) || is_single(rel) || rel_is_ref(rel) || list_empty(rel->exps) || !list_empty(rel->attr)) {
 		if (!list_empty(rel->exps)) { /* cannot add join idxs to cross products */
 			exps = rel->exps;
 			rel->exps = NULL; /* should be all crosstables by now */
-			rels = sa_list(v->sql->sa);
+			rels = sa_list(v->sql->ta);
 			/* try to use an join index also for outer joins */
 			get_inner_relations(v->sql, rel, rels);
 			int cnt = list_length(exps);
@@ -2380,7 +2462,7 @@ reorder_join(visitor *v, sql_rel *rel)
 	} else {
 		exps = rel->exps;
 		rel->exps = NULL; /* should be all crosstables by now */
-		rels = sa_list(v->sql->sa);
+		rels = sa_list(v->sql->ta);
 		get_relations(v, rel, rels);
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(v->sql, rels, exps);
@@ -2397,11 +2479,6 @@ rel_join_order_(visitor *v, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
-	/*
-	if (is_join(rel->op))
-		rel = reorder_join(v, rel);
-	return rel;
-	*/
 
 	switch (rel->op) {
 	case op_basetable:
@@ -2458,11 +2535,9 @@ static sql_rel *
 rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_join_order_(v, rel);
-	/*
-	rel = rel_visitor_bottomup(v, rel, &rel_join_order_);
-	return rel;
-	*/
+	sql_rel *r = rel_join_order_(v, rel);
+	sa_reset(v->sql->ta);
+	return r;
 }
 
 run_optimizer
@@ -2628,7 +2703,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
  * also push simple expressions of a semijoin down if they only
  * involve the left sided of the semijoin.
  *
- * in some cases the other way is usefull, ie push join down
+ * in some cases the other way is useful, ie push join down
  * semijoin. When the join reduces (ie when there are selects on it).
  *
  * At the moment, we only flag changes by this optimizer on the first level of optimization
@@ -3184,7 +3259,7 @@ get_diff_function_columns(sql_exp *diffExp, list *columns) {
  * window functions. Returns NULL if the window function does not partition by any column
  */
 static list *
-get_aggregation_key_columns(sql_allocator *sa, sql_rel *r) {
+get_aggregation_key_columns(allocator *sa, sql_rel *r) {
 	for (node* n = r->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -3513,7 +3588,7 @@ sjexp_col(sql_exp *e, sql_rel *r)
 }
 
 static sql_idx *
-find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
+find_index(allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 {
 	node *n;
 

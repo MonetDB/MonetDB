@@ -107,12 +107,10 @@ void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPinit(bool allow_hge_upgrade)
 	__attribute__((__visibility__("hidden")));
-bat BBPinsert(BAT *bn)
+bat BBPallocbat(int tt)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BBPprintinfo(void)
-	__attribute__((__visibility__("hidden")));
-void BBPrelinquish(void)
 	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
@@ -460,14 +458,6 @@ struct Strimps {
 	strimp_masks_t *masks;  /* quick access to masks for
 				 * bitstring construction */
 };
-
-#ifdef HAVE_RTREE
-struct RTree {
-	ATOMIC_TYPE refs; 	/* counter for logical references to the rtree */
-	rtree_t *rtree; 	/* rtree structure */
-	bool destroy;		/* destroy rtree when there are no more logical references */
-};
-#endif
 
 typedef struct {
 	MT_Lock swap;

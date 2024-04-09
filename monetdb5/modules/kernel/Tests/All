@@ -3,8 +3,3 @@ TriBool
 batstr
 math
 select
-
-HAVE_ICONV?batstr_asciify
-batstr_startswith
-batstr_endswith
-batstr_contains

@@ -119,7 +119,7 @@ typedef struct {
 typedef struct mvc {
 	char errstr[ERRSIZE];
 
-	sql_allocator *sa, *ta, *pa;
+	allocator *sa, *ta, *pa;
 
 	struct scanner scanner;
 
@@ -135,7 +135,8 @@ typedef struct mvc {
 
 	bool use_views:1,
 		   schema_path_has_sys:1, /* speed up object search */
-		   schema_path_has_tmp:1;
+		   schema_path_has_tmp:1,
+		   no_int128:1;
 	struct qc *qc;
 	int clientid;		/* id of the owner */
 
@@ -164,15 +165,13 @@ typedef struct mvc {
 	uintptr_t sp;
 } mvc;
 
-extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
-
 /* should return structure */
 extern sql_store mvc_init(int debug, store_type store, int ro, int su, const char *initpasswd);
 extern void mvc_exit(sql_store store);
 
 extern void mvc_logmanager(sql_store store);
 
-extern mvc *mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws);
+extern mvc *mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs, stream *ws);
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
@@ -208,7 +207,7 @@ extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, const char *tname);
 extern int mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl);
 extern int mvc_drop_type(mvc *sql, sql_schema *s, sql_type *t, int drop_action);
 
-extern int mvc_create_func(sql_func **f, mvc *m, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
+extern int mvc_create_func(sql_func **f, mvc *m, allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
 						   const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect);
 extern int mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern int mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
@@ -299,10 +298,10 @@ extern atom *sqlvar_set(sql_var *var, ValRecord *v);
 extern str sqlvar_get_string(sql_var *var);
 extern str sqlvar_set_string(sql_var *var, const char *v);
 #ifdef HAVE_HGE
-extern hge val_get_number(ValRecord *val);
+extern hge val_get_number(const ValRecord *val);
 extern void sqlvar_set_number(sql_var *var, hge v);
 #else
-extern lng val_get_number(ValRecord *val);
+extern lng val_get_number(const ValRecord *val);
 extern void sqlvar_set_number(sql_var *var, lng v);
 #endif
 

@@ -1306,7 +1306,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			sql_rel *gp = inner;
 			while (gp && is_select(gp->op))
 				gp = gp->l;
-			if (gp && gp->l && !(exp = rel_bind_column(sql, gp->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+			if (gp && !is_basetable(gp->op) && gp->l && !(exp = rel_bind_column(sql, gp->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		}
 		if (!exp && query && query_has_outer(query)) {
@@ -1402,7 +1402,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			sql_rel *gp = inner;
 			while (gp && is_select(gp->op))
 				gp = gp->l;
-			if (gp && gp->l && !(exp = rel_bind_column3(sql, gp->l, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+			if (gp && !is_basetable(gp->op) && gp->l && !(exp = rel_bind_column3(sql, gp->l, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		}
 		if (!exp && query && query_has_outer(query)) {
@@ -1730,7 +1730,7 @@ rel_select_push_compare_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls
 }
 
 static sql_rel *
-rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti, int quantifier, int f, int symmetric)
+rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti, int quantifier, int f, int symmetric, int is_semantics)
 {
 	mvc *sql = query->sql;
 	sql_exp *e = NULL;
@@ -1758,6 +1758,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		e = exp_compare(sql->sa, ls, rs, type);
+		if (is_semantics) set_semantics(e);
 	} else {
 		assert(rs2);
 		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
@@ -1783,7 +1784,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 }
 
 static sql_rel *
-rel_compare_exp(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_op, int reduce, int quantifier, int need_not, int f)
+rel_compare_exp(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_op, int reduce, int quantifier, int need_not, int f, int is_semantics)
 {
 	mvc *sql = query->sql;
 	comp_type type = cmp_equal;
@@ -1816,11 +1817,11 @@ rel_compare_exp(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *
 	}
 	type = compare_str2type(compare_op);
 	assert(type != cmp_filter);
-	return rel_compare_exp_(query, rel, ls, rs, NULL, type, need_not, quantifier, f, 0);
+	return rel_compare_exp_(query, rel, ls, rs, NULL, type, need_not, quantifier, f, 0, is_semantics);
 }
 
 static sql_rel *
-rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, char *compare_op, int f, exp_kind k, int quantifier)
+rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, char *compare_op, int f, exp_kind k, int quantifier, int is_semantics)
 {
 	mvc *sql = query->sql;
 	sql_exp *rs = NULL, *ls;
@@ -1884,7 +1885,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(rs), exp_name(rs));
 		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	return rel_compare_exp(query, rel, ls, rs, compare_op, k.reduce, quantifier, need_not, f);
+	return rel_compare_exp(query, rel, ls, rs, compare_op, k.reduce, quantifier, need_not, f, is_semantics);
 }
 
 static sql_exp*
@@ -2367,6 +2368,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		int quantifier = 0, need_not = 0;
 		sql_exp *rs = NULL, *ls;
 		comp_type cmp_type = compare_str2type(compare_op);
+		bool is_not_distinct_from = false;
+		bool is_distinct_from = false;
 
 		/*
 		 * = ANY -> IN, <> ALL -> NOT( = ANY) -> NOT IN
@@ -2374,7 +2377,17 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		 */
 		if (n->next->next->next)
 			quantifier = n->next->next->next->data.i_val + 1;
-		assert(quantifier == 0 || quantifier == 1 || quantifier == 2);
+		assert(quantifier == 0 || quantifier == 1 || quantifier == 2 || quantifier == 3 || quantifier == 4);
+
+		/* [NOT] DISTINCT FROM */
+		if (quantifier == 3) {
+				is_not_distinct_from = true;
+				quantifier = 0;
+		}
+		else if (quantifier == 4) {
+				is_distinct_from = true;
+				quantifier = 0;
+		}
 
 		if ((quantifier == 1 && cmp_type == cmp_equal) ||
 		    (quantifier == 2 && cmp_type == cmp_notequal)) {
@@ -2405,6 +2418,15 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		rs = rel_value_exp(query, rel, ro, f|sql_farg, ek);
 		if (!rs)
 			return NULL;
+
+		if (is_distinct_from || is_not_distinct_from) {
+			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &ls, &rs, 1, type_equal_no_any) < 0)
+				return NULL;
+			sql_exp* e = exp_compare(sql->sa, ls, rs, is_not_distinct_from?cmp_equal:cmp_notequal);
+			set_semantics(e);
+			return e;
+		}
+
 		if (rs->type == e_atom)
 			quantifier = 0;
 
@@ -2682,11 +2704,19 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		symbol *ro = n->next->next->data.sym;
 		char *compare_op = n->next->data.sval;
 		int quantifier = 0;
+		int is_semantics = 0;
 
 		if (n->next->next->next)
 			quantifier = n->next->next->next->data.i_val + 1;
-		assert(quantifier == 0 || quantifier == 1 || quantifier == 2);
-		return rel_compare(query, rel, sc, lo, ro, compare_op, f, ek, quantifier);
+		assert(quantifier == 0 || quantifier == 1 || quantifier == 2 || quantifier == 3 || quantifier == 4);
+
+		if (quantifier >= 3) {
+			quantifier = 0;
+			is_semantics = 1;
+		}
+
+		/* [NOT] DISTINCT FROM */
+		return rel_compare(query, rel, sc, lo, ro, compare_op, f, ek, quantifier, is_semantics);
 	}
 	/* Set Member ship */
 	case SQL_IN:
@@ -2756,7 +2786,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		    (re2 = exp_check_type(sql, &super, rel, re2, type_equal)) == NULL)
 			return NULL;
 
-		return rel_compare_exp_(query, rel, le, re1, re2, 3, sc->token == SQL_NOT_BETWEEN ? 1 : 0, 0, f, symmetric);
+		return rel_compare_exp_(query, rel, le, re1, re2, 3, sc->token == SQL_NOT_BETWEEN ? 1 : 0, 0, f, symmetric, 0);
 	}
 	case SQL_IS_NULL:
 	case SQL_IS_NOT_NULL:
@@ -3897,7 +3927,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 static sql_exp *
 rel_selection_ref(sql_query *query, sql_rel **rel, char *name, dlist *selection)
 {
-	sql_allocator *sa = query->sql->sa;
+	allocator *sa = query->sql->sa;
 	dlist *nl;
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_exp *res = NULL;
@@ -3998,7 +4028,7 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 }
 
 static list*
-list_power_set(sql_allocator *sa, list* input) /* cube */
+list_power_set(allocator *sa, list* input) /* cube */
 {
 	list *res = sa_list(sa);
 	/* N stores total number of subsets */
@@ -4020,7 +4050,7 @@ list_power_set(sql_allocator *sa, list* input) /* cube */
 }
 
 static list*
-list_rollup(sql_allocator *sa, list* input)
+list_rollup(allocator *sa, list* input)
 {
 	list *res = sa_list(sa);
 
@@ -4052,7 +4082,7 @@ list_equal(list* list1, list* list2)
 }
 
 static list*
-lists_cartesian_product_and_distinct(sql_allocator *sa, list *l1, list *l2)
+lists_cartesian_product_and_distinct(allocator *sa, list *l1, list *l2)
 {
 	list *res = sa_list(sa);
 
@@ -5436,7 +5466,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "NATURAL JOIN: common column name '%s' appears more than once in left table", rname);
 
 			found = 1;
-			if (!(rel = rel_compare_exp(query, rel, le, re, "=", TRUE, 0, 0, 0)))
+			if (!(rel = rel_compare_exp(query, rel, le, re, "=", TRUE, 0, 0, 0, 0)))
 				return NULL;
 			if (full) {
 				sql_exp *cond = rel_unop_(sql, rel, le, "sys", "isnull", card_value);
@@ -5840,7 +5870,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		list *outexps = new_exp_list(sql->sa), *exps;
 		node *m;
 
-		rnme = number2name(rname, sizeof(rname), ++sql->label);
+		rnme = sa_strdup(sql->sa, number2name(rname, sizeof(rname), ++sql->label));
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 			sql_exp *cond, *ls, *rs;
@@ -5851,7 +5881,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 				return NULL;
 			if (!ls || !rs)
 				return sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
-			if (!(rel = rel_compare_exp(query, rel, ls, rs, "=", TRUE, 0, 0, 0)))
+			if (!(rel = rel_compare_exp(query, rel, ls, rs, "=", TRUE, 0, 0, 0, 0)))
 				return NULL;
 			if (op != op_join) {
 				if (!(cond = rel_unop_(sql, rel, ls, "sys", "isnull", card_value)))

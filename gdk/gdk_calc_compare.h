@@ -970,7 +970,7 @@ VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt
 #endif
 	)
 {
-	ret->vtype = TYPE_TPE;
+	*ret = (ValRecord) {.vtype = TYPE_TPE};
 	if (op_typeswitchloop(VALptr(lft),
 			      ATOMtype(lft->vtype) == TYPE_oid ? lft->vtype : ATOMbasetype(lft->vtype),
 			      false,

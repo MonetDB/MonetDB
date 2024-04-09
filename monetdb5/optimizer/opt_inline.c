@@ -35,9 +35,9 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	/* add all variables of the new block to the target environment */
 	for (n = 0; n < mc->vtop; n++) {
-		if (isExceptionVariable(getVarName(mc, n))) {
-			nv[n] = newVariable(mb, getVarName(mc, n),
-								strlen(getVarName(mc, n)), TYPE_str);
+		char *nme = mc->var[n].name;
+		if (nme && isExceptionVariable(nme)) {
+			nv[n] = newVariable(mb, nme, strlen(nme), TYPE_str);
 		} else if (isVarTypedef(mc, n)) {
 			nv[n] = newTypeVariable(mb, getVarType(mc, n));
 		} else if (isVarConstant(mc, n)) {
@@ -92,7 +92,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 				clrVarFixed(mb, getArg(ns[k], n));	/* for typing */
 			setModuleId(ns[k], getModuleId(q));
 			setFunctionId(ns[k], getFunctionId(q));
-			ns[k]->typechk = TYPE_UNKNOWN;
+			ns[k]->typeresolved = false;
 			ns[k]->barrier = 0;
 			ns[k]->token = ASSIGNsymbol;
 		}

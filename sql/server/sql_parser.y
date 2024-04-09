@@ -25,7 +25,7 @@ static int sqlerror(mvc *sql, const char *err);
 static int sqlformaterror(mvc *sql, _In_z_ _Printf_format_string_ const char *format, ...)
 	        __attribute__((__format__(__printf__, 2, 3)));
 
-static void *ma_alloc(sql_allocator *sa, size_t sz);
+static void *ma_alloc(allocator *sa, size_t sz);
 static void ma_free(void *p);
 static inline symbol*
 makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, unsigned int scale, bool bind);
@@ -489,6 +489,7 @@ int yydebug=1;
 	opt_referencing_list
 	opt_schema_element_list
 	opt_seps
+	opt_decimal_seps
 	opt_seq_params
 	opt_typelist
 	opt_with_encrypted_password
@@ -2916,8 +2917,8 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
-//  1    2      3    4     5                6    7                8               9               10       11         12              13              14
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_fwf_widths
+//  1    2      3    4     5               6    7                8               9               10       11               12         13              14              15
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_decimal_seps opt_escape opt_null_string opt_best_effort opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2925,14 +2926,15 @@ copyfrom_stmt:
 	  append_list(l, $8);
 	  append_list(l, $10);
 	  append_list(l, $2);
-	  append_string(l, $12);
-	  append_int(l, $13);
-	  append_list(l, $14);
+	  append_string(l, $13);
+	  append_int(l, $14);
+	  append_list(l, $15);
 	  append_int(l, $9);
-	  append_int(l, $11);
+	  append_int(l, $12);
+	  append_list(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-//  1    2      3    4     5               6    7      8               9        10         11              12
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_best_effort
+//  1    2      3    4     5               6    7      8               9        10               11         12              13
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_decimal_seps opt_escape opt_null_string opt_best_effort
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2940,11 +2942,12 @@ copyfrom_stmt:
 	  append_list(l, $8);
 	  append_list(l, $9);
 	  append_list(l, $2);
-	  append_string(l, $11);
-	  append_int(l, $12);
+	  append_string(l, $12);
+	  append_int(l, $13);
 	  append_list(l, NULL);
 	  append_int(l, 0);
-	  append_int(l, $10);
+	  append_int(l, $11);
+	  append_list(l, $10);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
 //  1    2         3    4     5    6
   | COPY sqlLOADER INTO qname FROM func_ref
@@ -3048,6 +3051,22 @@ opt_seps:
 				  append_string(l, $7);
 				  $$ = l; }
  ;
+
+opt_decimal_seps:
+	/* empty */
+				{ dlist *l = L();
+				  append_string(l, sa_strdup(SA, "."));
+				  $$ = l; }
+	| sqlDECIMAL opt_as string
+				{ dlist *l = L();
+				  append_string(l, $3);
+				  $$ = l; }
+	| sqlDECIMAL opt_as string ',' string
+				{ dlist *l = L();
+				  append_string(l, $3);
+				  append_string(l, $5);
+				  $$ = l; }
+;
 
 opt_using:
     /* empty */			{ $$ = NULL; }
@@ -3906,6 +3925,20 @@ comparison_predicate:
 		  append_string(l, sa_strdup(SA, "="));
 		  append_symbol(l, $5);
 		  append_int(l, $3);
+		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
+ |	pred_exp IS NOT DISTINCT FROM pred_exp
+		{ dlist *l = L();
+		  append_symbol(l, $1);
+		  append_string(l, sa_strdup(SA, "="));
+		  append_symbol(l, $6);
+		  append_int(l, 2);
+		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
+ |	pred_exp IS DISTINCT FROM pred_exp
+		{ dlist *l = L();
+		  append_symbol(l, $1);
+		  append_string(l, sa_strdup(SA, "<>"));
+		  append_symbol(l, $5);
+		  append_int(l, 3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  ;
 
@@ -7297,7 +7330,7 @@ sqlerror(mvc *sql, const char *err)
 	return sqlformaterror(sql, "%s", sql->scanner.errstr ? sql->scanner.errstr : err);
 }
 
-static void *ma_alloc(sql_allocator *sa, size_t sz)
+static void *ma_alloc(allocator *sa, size_t sz)
 {
 	return sa_alloc(sa, sz);
 }

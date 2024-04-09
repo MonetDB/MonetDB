@@ -593,7 +593,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		default: {
 			char *buf;
 			sql_rel *r = NULL;
-			sql_allocator *sa = sql->sa;
+			allocator *sa = sql->sa;
 
 			if (!(sql->sa = sa_create(sql->pa))) {
 				sql->sa = sa;
@@ -775,7 +775,8 @@ IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void 
 
 	if (!b)
 		throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
-	if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
+	if (VIEWtparent(b)) {
+		nb = BBP_desc(VIEWtparent(b));
 		BBPunfix(b->batCacheid);
 		if (!(b = BATdescriptor(nb->batCacheid)))
 			throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
@@ -1079,7 +1080,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	case FUNC_LANG_SQL: {
 		char *buf;
 		sql_rel *r = NULL;
-		sql_allocator *sa = sql->sa;
+		allocator *sa = sql->sa;
 
 		assert(nf->query);
 		if (!(sql->sa = sa_create(sql->pa))) {
@@ -1304,7 +1305,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				sql_kc *ic = i->columns->h->data;
 				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
-				if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
+				if (VIEWtparent(b)) {
+					nb = BBP_desc(VIEWtparent(b));
 					BBPunfix(b->batCacheid);
 					if (!(b = BATdescriptor(nb->batCacheid)))
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
@@ -1321,7 +1323,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				sql_kc *ic = i->columns->h->data;
 				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
-				if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
+				if (VIEWtparent(b)) {
+					nb = BBP_desc(VIEWtparent(b));
 					BBPunfix(b->batCacheid);
 					if (!(b = BATdescriptor(nb->batCacheid)))
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);

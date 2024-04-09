@@ -64,6 +64,11 @@ mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9]+:(?P<port>\d+)/')
 
 geos_version = '@GEOS_VERSION@'.split('.')
 
+# free bats, used bats, total bats
+fbre = re.compile(r' (?P<bats>\d+) free bats')
+ubre = re.compile(r'^(?P<bats>\d+) (persistent|transient) bats')
+tbre = re.compile(r'^(?P<bats>\d+) bats total')
+
 # default is no color (these three functions may get redefined)
 def prred(str):
     print(str, end='')
@@ -1451,6 +1456,24 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             interrupted = True
         finally:
             if pSrvr is not None:
+                try:
+                    dbh = pymonetdb.connect(username='monetdb',
+                                            password='monetdb',
+                                            hostname=HOST,
+                                            port=int(pSrvr.port),
+                                            database=TSTDB,
+                                            autocommit=True)
+                except KeyboardInterrupt:
+                    interrupted = True
+                except:
+                    pass
+                else:
+                    crs = dbh.cursor()
+                    crs.execute("select count(*), max(id) from sys.bbp()")
+                    nbats, maxid = crs.fetchall()[0]
+                    crs.close()
+                    dbh.close()
+                    pSrvr.sendusr1()
                 pSrvr.terminate()
                 pSrvr = None
                 if produce_html:
@@ -1460,10 +1483,31 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         o.write('<head><title>{} standard {}</title></head>\n'.format(TSTDIR, 'output' if ext == 'out' else 'error'))
                         o.write('<body>\n')
                         empty = True
+                        sigusr1 = False
+                        nfree = 0
+                        nused = 0
+                        ntotal = 0
                         for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
                             if empty:
                                 o.write('<pre>\n')
                             empty = False
+                            if 'SIGUSR1 info start' in line:
+                                sigusr1 = True
+                                line = '#' + line
+                            elif 'SIGUSR1 info end' in line:
+                                sigusr1 = False
+                                line = '#' + line
+                            elif sigusr1:
+                                res = fbre.search(line)
+                                if res is not None:
+                                    nfree += int(res.group('bats'))
+                                res = ubre.search(line)
+                                if res is not None:
+                                    nused += int(res.group('bats'))
+                                res = tbre.search(line)
+                                if res is not None:
+                                    ntotal = int(res.group('bats'))
+                                line = '#' + line
                             span1 = span2 = ''
                             if line != '\n' and not line.startswith('#'):
                                 if ext == 'out':
@@ -1474,6 +1518,8 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                                 span2 = '</span>\n'
                                 line = line.rstrip('\n')
                             o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
+                        if nused + nfree != ntotal:
+                            o.write(f'<span style="background-color: rgb(100%,0%,0%);">Mismatch in free bats: total bats = {ntotal}, #free = {nfree}, #used = {nused}</span>\n')
                         o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
                         o.close()
                 else:
@@ -2604,6 +2650,11 @@ class ServerClass:
             self.outfile.write(self.proc.stdout.read())
         self.outfile.close()
         self.errfile.close()
+
+    def sendusr1(self):
+        if os.name != 'nt':
+            self.proc.send_signal(signal.SIGUSR1)
+            time.sleep(1)
 
     def LaunchIt(self):
         global setpgrp
