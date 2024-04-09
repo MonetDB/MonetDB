@@ -4866,7 +4866,8 @@ BBPprintinfo(void)
 	int nh = 0;
 
 	BBPtmlock();
-	for (bat i = 1, sz = (bat) ATOMIC_GET(&BBPsize); i < sz; i++) {
+	bat sz = (bat) ATOMIC_GET(&BBPsize);
+	for (bat i = 1; i < sz; i++) {
 		MT_lock_set(&GDKswapLock(i));
 		if (BBP_refs(i) > 0 || BBP_lrefs(i) > 0) {
 			BAT *b = BBP_desc(i);
@@ -4896,9 +4897,13 @@ BBPprintinfo(void)
 		}
 		MT_lock_unset(&GDKswapLock(i));
 	}
+	uint32_t nfree = BBP_nfree;
 	BBPtmunlock();
-	printf("%d persistent bats using %zu virtual memory (%zu malloced)\n", pn, pvm, pmem);
-	printf("%d transient bats using %zu virtual memory (%zu malloced)\n", tn, tvm, tmem);
+	printf("%d persistent bats using %zu virtual memory (%zu malloced)\n",
+	       pn, pvm, pmem);
+	printf("%d transient bats using %zu virtual memory (%zu malloced)\n",
+	       tn, tvm, tmem);
 	printf("%d bats are \"hot\" (i.e. currently or recently used)\n", nh);
-	printf("%"PRIu32" bats are in global free list\n", BBP_nfree);
+	printf("%d bats total, %"PRIu32" free bats in common shared list\n",
+	       sz - 1, nfree);
 }
