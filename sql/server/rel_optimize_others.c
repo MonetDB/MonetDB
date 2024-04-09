@@ -373,7 +373,7 @@ positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 }
 
 static void
-rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
+rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 {
 	int nr = 0;
 
@@ -392,6 +392,8 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 		for (node *n = rel->attr->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
+			if (e->type != e_aggr) /* keep all group by's */
+				e->used = 1;
 			if (e->used)
 				nr += exp_mark_used(subrel, e, -2);
 		}
@@ -1147,7 +1149,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 	}
 
 	if ((is_topn(rel->op) || is_sample(rel->op)) && topn_sample_safe_exps(rel->exps, true)) {
-		sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
+		sql_rel *(*func) (allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
 
 		/* nested topN relations */
 		if (r && is_topn(rel->op) && is_topn(r->op) && !rel_is_ref(r)) {

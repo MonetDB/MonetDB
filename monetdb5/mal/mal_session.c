@@ -62,20 +62,10 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		MCcloseClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
-	if ((msg = malIncludeModules(c, modules, 0, embedded,
-								 initpasswd)) != MAL_SUCCEED) {
+	if ((msg = malIncludeModules(c, modules, 0, embedded, initpasswd)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		return msg;
 	}
-	/*
-	   pushEndInstruction(c->curprg->def);
-	   msg = chkProgram(c->usermodule, c->curprg->def);
-	   if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
-	   MCcloseClient(c);
-	   return msg;
-	   }
-	   msg = MALengine(c);
-	 */
 	MCcloseClient(c);
 	return msg;
 }
@@ -441,6 +431,8 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 	if (mb->errors == MAL_SUCCEED) {
 		for (i = sig->argc; i < mb->vtop; i++) {
 			if (glb && i < glb->stktop && isTmpVar(mb, i) && !glb->keepTmps) {
+				if (mb->var[i].name)
+					GDKfree(mb->var[i].name);
 				/* clean stack entry */
 				garbageElement(cntxt, &glb->stk[i]);
 				glb->stk[i].vtype = TYPE_int;
@@ -582,7 +574,7 @@ MALinitClient(Client c)
 str
 MALexitClient(Client c)
 {
-	if (c->glb && c->curprg->def->errors == MAL_SUCCEED)
+	if (c->glb && c->curprg->def && c->curprg->def->errors == MAL_SUCCEED)
 		garbageCollector(c, c->curprg->def, c->glb, TRUE);
 	c->mode = FINISHCLIENT;
 	if (c->backup) {

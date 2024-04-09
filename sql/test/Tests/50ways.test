@@ -413,24 +413,26 @@ select 51
 ----
 51
 
-statement error
+query T rowsort
 SELECT  DISTINCT S.SNAME
       FROM  (  ( SELECT * FROM S )
                        INTERSECT CORRESPONDING
                        (SELECT * FROM SP
                          WHERE SP.PNR = 'P2' ) ) AS POINTLESS
                        NATURAL JOIN S
+----
 
 query I rowsort
 select 52
 ----
 52
 
-statement error
+query T rowsort
 SELECT  DISTINCT S.SNAME
       FROM  (  ( SELECT * FROM S )
                        INTERSECT CORRESPONDING BY ( SNR )
                        (SELECT * FROM SP
                          WHERE SP.PNR = 'P2' ) ) AS POINTLESS
                        NATURAL JOIN S
+----
 

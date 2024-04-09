@@ -30,7 +30,6 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
@@ -80,7 +79,6 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
@@ -1286,6 +1284,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp)
 gdk_return
 VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
+	ret->bat = false;
 	if (mod_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,

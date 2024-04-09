@@ -1,0 +1,64 @@
+query T rowsort
+SELECT name FROM tables WHERE endswith(name, 'keys') ORDER BY name
+----
+dependency_columns_on_keys
+dependency_keys_on_foreignkeys
+dependency_tables_on_foreignkeys
+describe_foreign_keys
+dump_foreign_keys
+fkeys
+keys
+keys
+
+statement ok
+CREATE TABLE foo(x string)
+
+statement ok
+INSERT INTO foo VALUES ('johndoe'),('janedoe'),('robertdoe')
+
+query I nosort
+SELECT endswith(x, '') FROM foo
+----
+1
+1
+1
+
+query I nosort
+SELECT endswith('', x) FROM foo
+----
+0
+0
+0
+
+statement ok
+TRUNCATE TABLE foo
+
+statement ok
+INSERT INTO foo VALUES ('johndoe'),('Müller Thomas'),('Thomas Müller')
+
+query I nosort
+SELECT endswith(x, 'Müller') FROM foo
+----
+0
+0
+1
+
+statement ok
+TRUNCATE TABLE foo
+
+statement ok
+INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
+
+query T nosort
+SELECT * FROM foo WHERE [foo.x] endswith ['john', true]
+----
+
+query T nosort
+SELECT * FROM foo WHERE [foo.x] endswith ['doe', true]
+----
+john doe
+jane doe
+robert doe
+
+statement ok
+DROP TABLE foo

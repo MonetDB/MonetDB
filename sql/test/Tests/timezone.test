@@ -17,11 +17,33 @@ query TT rowsort
 select * from time_example
 ----
 1995-07-15 07:30:00
+1995-07-15 07:30:00+10:00
+1995-07-15 07:30:00
+1995-07-15 07:30:00+10:00
+1995-07-15 07:30:00
+1995-07-15 07:30:00+10:00
+
+statement ok
+delete from time_example
+
+statement ok
+insert into time_example values ( TIMESTAMP '1995-07-15 07:30', TIMESTAMP WITH TIME ZONE '1995-07-15 07:30')
+
+statement ok
+insert into time_example values ( TIMESTAMP '1995-07-15 07:30', TIMESTAMP WITH TIME ZONE '1995-07-15 07:30+02:30')
+
+statement ok
+insert into time_example values ( TIMESTAMP '1995-07-15 07:30', TIMESTAMP WITH TIME ZONE '1995-07-15 07:30+04:30')
+
+query TT rowsort
+select * from time_example
+----
+1995-07-15 07:30:00
+1995-07-15 07:30:00+10:00
+1995-07-15 07:30:00
 1995-07-15 13:00:00+10:00
 1995-07-15 07:30:00
 1995-07-15 15:00:00+10:00
-1995-07-15 07:30:00
-1995-07-15 17:30:00+10:00
 
 statement ok
 set time zone local

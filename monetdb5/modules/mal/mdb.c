@@ -237,8 +237,7 @@ MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 }
 
 static str
-MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth,
-			const char *name)
+MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *name)
 {
 	ValPtr v;
 	int i;
@@ -248,11 +247,13 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth,
 		depth--;
 		s = s->up;
 	}
-	if (s != 0)
+	if (s != 0) {
+		char namebuf[IDLENGTH];
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
-			if ((buf = ATOMformat(v->vtype, VALptr(v))) == NULL ||
-				BUNappend(b, getVarName(mb, i), false) != GDK_SUCCEED ||
+			if ((v->bat && (buf = ATOMformat(TYPE_int, &v->val.ival)) == NULL) ||
+			    (!v->bat && (buf = ATOMformat(v->vtype, VALptr(v))) == NULL) ||
+				BUNappend(b, getVarNameIntoBuffer(mb, i, namebuf), false) != GDK_SUCCEED ||
 				BUNappend(bn, buf, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
@@ -262,6 +263,7 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth,
 			GDKfree(buf);
 			buf = NULL;
 		}
+	}
 	return MAL_SUCCEED;
 }
 
@@ -486,11 +488,12 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * arbitrary functions.
  */
 static void
-printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index)
+printStackHdr(stream *f, MalBlkPtr mb, const ValRecord *v, int index)
 {
+	char name[IDLENGTH] = { 0 };
 	if (v == 0 && isVarConstant(mb, index))
 		v = &getVarConstant(mb, index);
-	mnstr_printf(f, "#[%2d] %5s", index, getVarName(mb, index));
+	mnstr_printf(f, "#[%2d] %5s", index, getVarNameIntoBuffer(mb, index, name));
 	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb, index),
 				 getLastUpdate(mb, index), getEndScope(mb, index));
 	if (v)
@@ -552,14 +555,14 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 }
 
 static void
-printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
+printStackElm(stream *f, MalBlkPtr mb, const ValRecord *v, int index, BUN cnt, BUN first)
 {
 	str nme, nmeOnStk;
 	VarPtr n = getVar(mb, index);
 
 	printStackHdr(f, mb, v, index);
 
-	if (v && v->vtype == TYPE_bat) {
+	if (v && v->bat) {
 		bat i = v->val.bval;
 		BAT *b = BBPquickdesc(i);
 
@@ -584,8 +587,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	mnstr_printf(f, "\n");
 	GDKfree(nmeOnStk);
 
-	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat)
-		&& !is_bat_nil(v->val.bval)) {
+	if (cnt && v && (isaBatType(n->type) || v->bat) && !is_bat_nil(v->val.bval)) {
 		printBATelm(f, v->val.bval, cnt, first);
 	}
 }

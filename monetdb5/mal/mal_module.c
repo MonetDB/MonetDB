@@ -46,11 +46,18 @@ findFunctionImplementation(const char *cname)
 				Symbol s;
 				if ((s = moduleIndex[i]->space[j]) != NULL) {
 					do {
-						if (s->def &&
-							strcmp(s->def->binding, cname) == 0 &&
-							s->def->stmt &&s->def->stmt[0] &&
-							s->def->stmt[0]->fcn) {
-							return s->def->stmt[0]->fcn;
+						if (s->kind != FUNCTIONsymbol) {
+							if (s->func && s->func->cname &&
+								strcmp(s->func->cname, cname) == 0)
+								return s->func->imp;
+						} else {
+							if (s->def &&
+								strcmp(s->def->binding, cname) == 0 &&
+								s->def->stmt &&s->def->stmt[0] &&
+								s->def->stmt[0]->fcn) {
+								assert(0);
+								return s->def->stmt[0]->fcn;
+							}
 						}
 					} while ((s = s->peer) != NULL);
 				}
@@ -290,13 +297,11 @@ freeModule(Module m)
 	if (m == NULL)
 		return;
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
-		InstrPtr pci = getInstrPtr(s->def, 0);
-		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
+		if (s->kind == COMMANDsymbol && s->func->argc <= 1 /* zero or one arg */) {
 			int status = 0;
 			str ret = MAL_SUCCEED;
 
-			assert(pci->fcn != NULL);
-			ret = (*(str (*)(int *)) pci->fcn) (&status);
+			ret = (*(str (*)(int *)) s->func->imp) (&status);
 			freeException(ret);
 			(void) status;
 		}
@@ -319,23 +324,11 @@ freeModule(Module m)
 void
 insertSymbol(Module scope, Symbol prg)
 {
-	InstrPtr sig;
 	int t;
-	Module c;
 
 	assert(scope);
-	sig = getSignature(prg);
-	if (getModuleId(sig) && getModuleId(sig) != scope->name) {
-		/* move the definition to the proper place */
-		/* default scope is the last resort */
-		c = findModule(scope, getModuleId(sig));
-		if (c)
-			scope = c;
-	}
-	t = getSymbolIndex(getFunctionId(sig));
-	if (scope->space[t] == prg) {
-		/* already known, last inserted */
-	} else {
+	t = getSymbolIndex(prg->name);
+	if (scope->space[t] != prg) {
 		prg->peer = scope->space[t];
 		scope->space[t] = prg;
 		if (prg->peer && idcmp(prg->name, prg->peer->name) == 0)

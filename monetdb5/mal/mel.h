@@ -21,6 +21,11 @@
 #define MEL_OK 0
 #define MEL_ERR 1
 
+struct CLIENT;
+struct MALBLK;
+struct MALSTK;
+struct INSTR;
+
 typedef struct __attribute__((__designated_init__)) mel_atom {
 	char name[14];
 	char basetype[14];
@@ -37,16 +42,14 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 	void (*del)(Heap *, var_t *);
 	size_t (*length)(const void *);
 	gdk_return (*heap)(Heap *, size_t);
-	gdk_return (*fix)(const void *);
-	gdk_return (*unfix)(const void *);
 	int (*storage)(void);
 } mel_atom;
 
 /*strings */
 #ifdef MEL_STR
 
-#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
-#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .pimp=IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
+#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=1, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
+#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=0, .mod=MOD, .fcn=FCN, .pimp=IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
 
 /* ARGC = arg-count + ret-count */
 //#define args(RETC,ARGC,...) (mel_arg[ARGC?ARGC:1]){__VA_ARGS__}, .retc=RETC, .argc=ARGC
@@ -54,12 +57,14 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define noargs		    NULL, .retc=0, .argc=0
 
 #define arg(n,t)			{ /*.name=n,*/ .type=# t }
+#define optbatarg(n,t)		{ /*.name=n,*/ .type=# t, .opt=1 }
 #define vararg(n,t)			{ /*.name=n,*/ .type=# t, .vargs=true }
 #define batarg(n,t)			{ /*.name=n,*/ .type=# t, .isbat=true }
 #define batvararg(n,t)		{ /*.name=n,*/ .type=# t, .isbat=true, .vargs=true }
 #define argany(n,a)			{ /*.name=n,*/ .nr=a, }
 #define varargany(n,a)		{ /*.name=n,*/ .nr=a, .vargs=true, }
 #define batargany(n,a)		{ /*.name=n,*/ .isbat=true, .nr=a, }
+#define optbatargany(n,a)	{ /*.name=n,*/ .nr=a, .opt=1, }
 #define batvarargany(n,a)	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
 
 #define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .shared=true, .inout=true }
@@ -68,26 +73,24 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 typedef struct __attribute__((__designated_init__)) mel_arg {
 	//char *name;
 	char type[15];
-	uint8_t isbat:1,
-		vargs:1,
+	uint16_t typeid:8, nr:2, isbat:1, vargs:1, opt:1,
 		inout:1,	/* some arguments may be used as input and output */
-		shared:1,	/* mark arguments as shared among the various pipeline execution workers, shared implies inout */
-		nr:4;
+		shared:1;	/* mark arguments as shared among the various pipeline execution workers, shared implies inout */
 } mel_arg;
 
-#include "mal_client.h"
+/* nr for any tyes 0, 1,2 */
+
 typedef struct __attribute__((__designated_init__)) mel_func {
-	char mod[16];
-	char fcn[30];
+	const char *mod;
+	const char *fcn;
 	const char *cname;
-	uint16_t command:1, unsafe:1, retc:6, argc:6;
-// comment on MAL instructions should also be available when TRACEing the queries
 	char *comment;
+	uint32_t command:1, unsafe:1, vargs:1, vrets:1, poly:3, retc:5, argc:5;
 	union {
 		MALfcn imp;
-		char *(*pimp)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
+		char *(*pimp)(struct CLIENT *, struct MALBLK *, struct MALSTK *, struct INSTR *);
 	};
-	const mel_arg *args;
+	mel_arg *args;
 } mel_func;
 
 #else
@@ -136,7 +139,7 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 typedef str (*mel_init)(void);
 
 typedef struct __attribute__((__designated_init__)) mel_func_arg {
-	uint16_t type:8, nr:4, isbat:1, vargs:1;
+	uint16_t type:8, nr:2, isbat:1, vargs:1, opt:1;
 } mel_func_arg;
 
 /* var arg of arguments of type mel_func_arg */
@@ -148,7 +151,7 @@ int melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 typedef struct __attribute__((__designated_init__)) mal_spec {
 	union {
 		MALfcn imp;
-		char *(*pimp)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
+		char *(*pimp)(struct CLIENT *, struct MALBLK *, struct MALSTK *, struct INSTR *);
 	};
 	char *mal;
 } mal_spec;

@@ -1,0 +1,246 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE decimals(id INT, d DECIMAL(8,2))
+
+statement ok
+CREATE TABLE secs(id INT, i INTERVAL SECOND)
+
+statement ok
+CREATE TABLE days(id INT, i INTERVAL DAY)
+
+statement ok
+CREATE TABLE floats(id INT, r REAL)
+
+statement ok
+CREATE TABLE doubles(id INT, d DOUBLE)
+
+statement ok
+SAVEPOINT tablescreated;
+
+--
+-- this is the default behavior
+--
+
+statement ok
+COPY 3 RECORDS INTO decimals FROM STDIN
+<COPY_INTO_DATA>
+1| 123.45
+2|+123.45
+3|-123.45
+
+query T
+SELECT d FROM decimals ORDER BY id
+----
+123.45
+123.45
+-123.45
+
+statement ok
+DELETE FROM decimals
+
+--
+-- customize the decimal separator
+--
+
+statement ok
+COPY 3 RECORDS INTO decimals FROM STDIN DECIMAL AS ','
+<COPY_INTO_DATA>
+1| 123,45
+2|+123,45
+3|-123,45
+
+query T
+SELECT d FROM decimals ORDER BY id
+----
+123.45
+123.45
+-123.45
+
+statement ok
+DELETE FROM decimals
+
+--
+-- also set a thousands separator
+--
+
+statement ok
+COPY 3 RECORDS INTO decimals FROM STDIN DECIMAL AS ',', '_'
+<COPY_INTO_DATA>
+1| 1_23,45
+2|+1_23,45
+3|-1_23,45
+
+query T
+SELECT d FROM decimals ORDER BY id
+----
+123.45
+123.45
+-123.45
+
+statement ok
+DELETE FROM decimals
+
+--
+-- the 'AS' is optional
+--
+
+statement ok
+COPY 3 RECORDS INTO decimals FROM STDIN DECIMAL ',', '_'
+<COPY_INTO_DATA>
+1| 1_23,45
+2|+1_23,4__5
+3|-1_23,_45
+
+query T
+SELECT d FROM decimals ORDER BY id
+----
+123.45
+123.45
+-123.45
+
+statement ok
+DELETE FROM decimals
+
+
+--
+-- interval types, default behavior
+--
+
+statement ok
+COPY 2 RECORDS INTO secs FROM STDIN
+<COPY_INTO_DATA>
+1|1.000
+2|1800.000
+
+query T
+SELECT i FROM secs ORDER BY id
+----
+0:00:01
+0:30:00
+
+statement ok
+DELETE FROM secs
+
+-- is this really how we copy day intervals from csv?
+statement ok
+COPY 2 RECORDS INTO days FROM STDIN
+<COPY_INTO_DATA>
+1|86400
+2|1814400.00
+
+query T
+SELECT i FROM days ORDER BY id
+----
+1
+21
+
+statement ok
+DELETE FROM days
+
+--
+-- interval types, behavior with decimal comma and thousands separator
+--
+
+statement ok
+COPY 2 RECORDS INTO secs FROM STDIN DECIMAL AS ',', '_'
+<COPY_INTO_DATA>
+1|1,00_0
+2|1_800,00_0
+
+query T
+SELECT i FROM secs ORDER BY id
+----
+0:00:01
+0:30:00
+
+statement ok
+DELETE FROM secs
+
+statement ok
+COPY 2 RECORDS INTO days FROM STDIN DECIMAL AS ',', '_'
+<COPY_INTO_DATA>
+1|86_400
+2|1_814_400,00
+
+query T
+SELECT i FROM days ORDER BY id
+----
+1
+21
+
+statement ok
+DELETE FROM days
+
+--
+-- doubles and reals, default behavior
+--
+
+statement ok
+COPY 2 RECORDS INTO floats FROM STDIN
+<COPY_INTO_DATA>
+1|-1.0e3
+2|    +00000000000000000000000000000000001.5e1
+
+query T
+SELECT r FROM floats ORDER BY id
+----
+-1000.0
+15.0
+
+statement ok
+DELETE FROM floats
+
+
+statement ok
+COPY 2 RECORDS INTO doubles FROM STDIN
+<COPY_INTO_DATA>
+1|-1.0e3
+2|    +00000000000000000000000000000000001.5e1
+
+query T
+SELECT d FROM doubles ORDER BY id
+----
+-1000.0
+15.0
+
+statement ok
+DELETE FROM doubles
+
+
+--
+-- doubles and reals, behavior with decimal comma and thousands separator
+--
+
+statement ok
+COPY 2 RECORDS INTO floats FROM STDIN DECIMAL AS ',', '_'
+<COPY_INTO_DATA>
+1|-1,0e3
+2|    +0000000000000_0000__000000000000000001,5e1
+
+query T
+SELECT r FROM floats ORDER BY id
+----
+-1000.0
+15.0
+
+statement ok
+DELETE FROM floats
+
+
+statement ok
+COPY 2 RECORDS INTO doubles FROM STDIN DECIMAL AS ',', '_'
+<COPY_INTO_DATA>
+1|-1,0e3
+2|    +0000000000000_0000__000000000000000001,5e1
+
+query T
+SELECT d FROM doubles ORDER BY id
+----
+-1000.0
+15.0
+
+statement ok
+DELETE FROM doubles
+

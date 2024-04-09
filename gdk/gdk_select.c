@@ -113,7 +113,6 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(bn->ttype == TYPE_oid);
 	seq = bi->b->hseqbase;
@@ -551,7 +550,6 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	assert(hval);							\
 	size_t counter = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 	if (imprints && imprints->imprints.parentid != bi->b->batCacheid) { \
 		parent = imprints->imprints.parentid;			\
 		pbat = BATdescriptor(parent);				\
@@ -614,7 +612,6 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	(void) imprints;
 	(void) lnil;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (equi) {
 		*algo = "select: fullscan equi";
@@ -764,7 +761,6 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	BUN p, ncand = ci->ncand;
 	oid o;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if (!equi || !GDK_ELIMDOUBLES(bi->vh))
 		return fullscan_any(bi, ci, bn, tl, th, li, hi, equi, anti,
@@ -1199,6 +1195,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	const ValRecord *minprop = NULL, *maxprop = NULL;
 	const void *minval = NULL, *maxval = NULL;
 	bool maxincl = true;
+	BAT *pb = NULL;
 	int c;
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(bi->type);
 
@@ -1208,6 +1205,9 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 		th = NULL;
 	if (tl == NULL && th == NULL)
 		return range_contains; /* looking for everything */
+
+	if (VIEWtparent(bi->b))
+		pb = BATdescriptor(VIEWtparent(bi->b));
 
 	/* keep locked while we look at the property values */
 	MT_lock_set(&bi->b->theaplock);
@@ -1221,6 +1221,24 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	} else if ((maxprop = BATgetprop_nolock(bi->b, GDK_MAX_BOUND)) != NULL) {
 		maxval = VALptr(maxprop);
 		maxincl = false;
+	}
+	bool keep = false;	/* keep lock on parent bat? */
+	if (minprop == NULL || maxprop == NULL) {
+		if (pb != NULL) {
+			MT_lock_set(&pb->theaplock);
+			if (minprop == NULL && (minprop = BATgetprop_nolock(pb, GDK_MIN_BOUND)) != NULL) {
+				keep = true;
+				minval = VALptr(minprop);
+			}
+			if (maxprop == NULL && (maxprop = BATgetprop_nolock(pb, GDK_MAX_BOUND)) != NULL) {
+				keep = true;
+				maxval = VALptr(maxprop);
+				maxincl = true;
+			}
+			if (!keep) {
+				MT_lock_unset(&pb->theaplock);
+			}
+		}
 	}
 
 	if (minprop == NULL && maxprop == NULL) {
@@ -1307,6 +1325,12 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	}
 
 	MT_lock_unset(&bi->b->theaplock);
+	if (pb) {
+		if (keep)
+			MT_lock_unset(&pb->theaplock);
+		BBPreclaim(pb);
+	}
+
 	return range;
 }
 
@@ -2289,7 +2313,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	Heap *oidxh = NULL;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(ATOMtype(li.type) == ATOMtype(rli.type));
 	assert(ATOMtype(li.type) == ATOMtype(rhi.type));
@@ -2346,7 +2369,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 #if 0 /* needs checking */
 		if (oidxh == NULL && VIEWtparent(l)) {
 /* if enabled, need to fix/unfix parent bat */
-			BAT *pb = BBP_cache(VIEWtparent(l));
+			BAT *pb = BBP_desc(VIEWtparent(l));
 			(void) BATcheckorderidx(pb);
 			MT_lock_set(&pb->batIdxLock);
 			if ((oidxh = pb->torderidx) != NULL) {
@@ -2487,9 +2510,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		    !li.transient ||
 		    (VIEWtparent(l) != 0 &&
 /* if enabled, need to fix/unfix parent bat */
-		     (tmp = BBP_cache(VIEWtparent(l))) != NULL &&
 		     /* batTransient access needs to be protected */
-		     !tmp->batTransient) ||
+		     !(tmp = BBP_desc(VIEWtparent(l)))->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
 		/* implementation using imprints on left column

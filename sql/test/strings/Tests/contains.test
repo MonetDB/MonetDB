@@ -1,0 +1,54 @@
+query I nosort
+select contains(NULL, '')
+----
+NULL
+
+query I nosort
+select contains('', NULL)
+----
+NULL
+
+query I nosort
+select contains('', '')
+----
+1
+
+query I nosort
+select contains('johndoe', '')
+----
+1
+
+query I nosort
+select contains('', 'johndoe')
+----
+0
+
+query I nosort
+select contains('johndoe', 'john')
+----
+1
+
+query I nosort
+SELECT contains('one two three', 'three', true)
+----
+1
+
+query I nosort
+SELECT contains('one two three', 'THREE', true)
+----
+1
+
+query I nosort
+SELECT contains('one two three', 'THREE', false)
+----
+0
+
+query I nosort
+SELECT contains('Müller Thomas', 'müller', true)
+----
+1
+
+query I nosort
+SELECT contains('Müller Thomas', 'müller', false)
+----
+0

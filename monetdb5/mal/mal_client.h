@@ -46,7 +46,6 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;
 } ClientInput;
 
-struct CLIENT;
 typedef str (*init_client)(struct CLIENT *, const char *, const char *,
 						   const char *);
 typedef str (*exit_client)(struct CLIENT *);

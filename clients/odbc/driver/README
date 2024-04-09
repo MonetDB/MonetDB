@@ -19,12 +19,8 @@ ODBC is chosen to be implemented first because:
 - it can be implemented as a C library (same programming language as MonetDB)
 - its driver manager is available on all platforms where MonetDB is ported
   (on UNIX/Linux we use unixODBC as the driver manager)
-- there are JDBC-ODBC bridge drivers available (i.e. Sun) which provide
-  a JDBC driver implementation on top of an ODBC driver. This is not
-  optimal for performance and stability but we don't have to build it
-  ourselves to get this functionality now.
-Update 2016: the JDBC-ODBC bridge driver is no longer needed nor supported in JRE.
-We provide a 100% pure (type 4) JDBC driver implementation for MonetDB.
+
+Since 2009 we also provide a 100% pure (type 4) JDBC driver implementation for MonetDB.
 See: https://www.monetdb.org/downloads/Java/
 
 Tip:
@@ -40,7 +36,7 @@ For compilation you need the ODBC API include header files:
 	sqlext.h	/* ODBC extension (level 1 and 2) API functions */
 	sqlucode.h	/* Unicode versions of the ODBC API functions */
 We use the ones distributed with unixODBC.
-At CWI these are located in /usr/include/
+On Linux these are located in /usr/include/
 
 
 Files organization (in clients/odbc/driver/*):
@@ -68,8 +64,7 @@ In the implementation section below it is explained why these are necessary.
 For convenience there is also an ODBCUtil.[ch] which contains
  general ODBC specific utility functions.
 
-Of course there is a Makefile. Because we use autoconf and automake
-the source file is Makefile.ag.
+We use CMake, so there is a CMakeLists.txt file.
 
 Lastly there is this README documentation file:
 
@@ -86,10 +81,9 @@ be defined before the ODBC header files (sql.h etc.) are included!
 In ODBC the API functions can be grouped in several ways:
 a) ODBC 1 or 2 API compliance (Core, extension level 1, extension level 2)
 b) ODBC 3 API compliance (ISO 92, X/Open, ODBC, Deprecated)
-c) handle type (environment, connection, statement, descriptor)
-I chose to use the handle type organization and created new files
-ODBC*[ch] to define the structs and functions for the first three handle
-types. Descriptor handles are currently not supported.
+c) handle type (Environment, Connection, Statement, Descriptor)
+We chose to use the handle type organization and created new files
+ODBC*[ch] to define the structs and functions for the handle types.
 
 In ODBC multiple environments (each application uses its own environment),
  multiple database connections (an application can open multiple database
@@ -193,8 +187,9 @@ The next ODBC API functions always return SQL_ERROR (or SQL_INVALID_HANDLE):
 - SQLPutData()
 - SQLGetCursorName()
 - SQLSetCursorName()
-- SQLSetScrollOptions()
-- SQLSetParam()      It is mapped to SQLBindParameter(..., SQL_PARAM_INPUT_OUTPUT, ...).
+- SQLSetScrollOptions()    deprecated in ODBC 3.0 (replaced by SQLSetStmtAttr()
+- SQLSetParam()      It is mapped to SQLBindParameter(..., SQL_PARAM_INPUT_OUTPUT, ...)
+                     which will return SQL_ERROR, Output parameters are not supported.
 - SQLDrivers()       Note on MS Windows this is implemented by the ODBC Driver Manager
 - SQLDataSources()   Note on MS Windows this is implemented by the ODBC Driver Manager
 
@@ -228,5 +223,5 @@ Most important are:
 
 TODO 2) No performance analysis or tuning is done yet.
  On the ODBC level not much performance tuning can be done as ODBC is
- a thin wrapper around the Monet SQL frontend API.
+ a thin wrapper around the MonetDB mapi protocol API.
 

@@ -1,0 +1,22 @@
+statement ok
+CREATE TABLE t0(c0 VARCHAR(500), c1 VARCHAR(500))
+
+statement ok
+INSERT INTO t0(c1) VALUES ('a')
+
+query TTI nosort
+SELECT t0.c1, t0.c0, (((t0.c1 BETWEEN -1 AND 1))OR((t0.c1 BETWEEN -1 AND ('b' IN (t0.c1, t0.c0))))) FROM t0
+----
+a
+NULL
+NULL
+
+-- next query fails in: sql/backends/monet5/rel_bin.c:1680: exp_bin: Assertion `s' failed.
+-- with assertion disabled it fails to return a result set
+query TT nosort
+SELECT t0.c1, t0.c0 FROM t0 WHERE (((t0.c1 BETWEEN -1 AND 1))OR((t0.c1 BETWEEN -1 AND ('b' IN (t0.c1, t0.c0)))))
+----
+
+statement ok
+DROP TABLE t0
+

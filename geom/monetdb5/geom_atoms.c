@@ -272,8 +272,8 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 {
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	GEOSWKTReader *WKT_reader;
-	const char *polyhedralSurface = "POLYHEDRALSURFACE";
-	const char *multiPolygon = "MULTIPOLYGON";
+	static const char polyhedralSurface[] = "POLYHEDRALSURFACE";
+	static const char multiPolygon[] = "MULTIPOLYGON";
 	char *geomWKT_new = NULL;
 	size_t parsedCharacters = 0;
 

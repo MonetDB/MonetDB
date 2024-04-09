@@ -14,7 +14,7 @@
 #include "sql_stack.h"
 
 sql_stack *
-sql_stack_new(sql_allocator *sa, int size)
+sql_stack_new(allocator *sa, int size)
 {
 	assert(sa);
 	sql_stack *s = SA_NEW(sa, sql_stack);

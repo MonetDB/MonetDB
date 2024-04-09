@@ -29,9 +29,9 @@ PushArgument(MalBlkPtr mb, InstrPtr p, int arg, int pos)
 }
 
 static InstrPtr
-ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
+ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos)
 {
-	p = pushNil(mb, p, tpe);	/* push at end */
+	p = pushNilBat(mb, p);	/* push at end */
 	getArg(p, pos) = getArg(p, p->argc - 1);
 	p->argc--;
 	return p;
@@ -73,7 +73,7 @@ lastbat_arg(MalBlkPtr mb, InstrPtr p)
 	int i = 0;
 	for (i = p->retc; i < p->argc; i++) {
 		int type = getArgType(mb, p, i);
-		if (!isaBatType(type) && type != TYPE_bat)
+		if (!isaBatType(type))
 			break;
 	}
 	if (i < p->argc)
@@ -386,7 +386,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							r = pushArgument(mb, r, getArg(p, 2));
 							offset = 1;
 						} else if (isaBatType(getArgType(mb, q, 1))) {	/* likeselect calls have a candidate parameter */
-							r = pushNil(mb, r, TYPE_bat);
+							r = pushNilBat(mb, r);
 							offset = 1;
 						}
 						for (int a = 2; a < q->argc; a++)
@@ -605,7 +605,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(r, 0));
 				getArg(r, 1) = getArg(q, 1);	/* column */
-				r->typechk = TYPE_UNKNOWN;
+				r->typeresolved = false;
 				pushInstruction(mb, r);
 				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(t, 0));
@@ -621,7 +621,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(u, 0) = getArg(p, 0);
 				getArg(u, 1) = getArg(r, 0);
 				getArg(u, 2) = getArg(t, 0);
-				u->typechk = TYPE_UNKNOWN;
+				u->typeresolved = false;
 				pushInstruction(mb, u);
 				oclean[i] = true;
 				continue;
@@ -642,16 +642,16 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(r, 0));
 				getArg(r, 1) = getArg(q, 1);	/* column */
-				r->typechk = TYPE_UNKNOWN;
+				r->typeresolved = false;
 				pushInstruction(mb, r);
 				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(s, 0));
 				getArg(s, 1) = getArg(q, 3);	/* updates */
-				s = ReplaceWithNil(mb, s, 2, TYPE_bat);	/* no candidate list */
+				s = ReplaceWithNil(mb, s, 2);	/* no candidate list */
 				setArgType(mb, s, 2, newBatType(TYPE_oid));
 				/* make sure to resolve again */
 				s->token = ASSIGNsymbol;
-				s->typechk = TYPE_UNKNOWN;
+				s->typeresolved = false;
 				s->fcn = NULL;
 				s->blk = NULL;
 				pushInstruction(mb, s);
@@ -663,7 +663,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(u, 3) = getArg(q, 2);	/* update ids */
 				u = pushArgument(mb, u, getArg(s, 0));	/* selected updated values ids */
 				u->token = ASSIGNsymbol;
-				u->typechk = TYPE_UNKNOWN;
+				u->typeresolved = false;
 				u->fcn = NULL;
 				u->blk = NULL;
 				pushInstruction(mb, u);
@@ -695,7 +695,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				setVarCList(mb, getArg(r, 0));
 				getArg(r, 1) = getArg(s, 1);
 				getArg(r, 2) = getArg(q, 1);	/* column */
-				r->typechk = TYPE_UNKNOWN;
+				r->typeresolved = false;
 				pushInstruction(mb, r);
 				getArg(t, 0) = newTmpVariable(mb, getArgType(mb, p, 0));
 				setVarCList(mb, getArg(t, 0));
@@ -712,7 +712,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(u, 0) = getArg(p, 0);
 				getArg(u, 1) = getArg(r, 0);
 				getArg(u, 2) = getArg(t, 0);
-				u->typechk = TYPE_UNKNOWN;
+				u->typeresolved = false;
 				pushInstruction(mb, u);
 				oclean[i] = true;
 				continue;
@@ -762,16 +762,16 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(r, 0));
 				getArg(r, 1) = getArg(q, 1);	/* column */
-				r->typechk = TYPE_UNKNOWN;
+				r->typeresolved = false;
 				pushInstruction(mb, r);
 				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb, getArg(s, 0));
 				getArg(s, 1) = getArg(q, 3);	/* updates */
-				s = ReplaceWithNil(mb, s, 3, TYPE_bat);	/* no candidate list */
+				s = ReplaceWithNil(mb, s, 3);	/* no candidate list */
 				setArgType(mb, s, 3, newBatType(TYPE_oid));
 				/* make sure to resolve again */
 				s->token = ASSIGNsymbol;
-				s->typechk = TYPE_UNKNOWN;
+				s->typeresolved = false;
 				s->fcn = NULL;
 				s->blk = NULL;
 				pushInstruction(mb, s);
@@ -785,7 +785,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				p = pushArgument(mb, u, getArg(s, 0));	/* push at end */
 				/* make sure to resolve again */
 				u->token = ASSIGNsymbol;
-				u->typechk = TYPE_UNKNOWN;
+				u->typeresolved = false;
 				u->fcn = NULL;
 				u->blk = NULL;
 				pushInstruction(mb, u);

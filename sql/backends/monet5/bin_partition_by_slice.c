@@ -160,7 +160,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			int tt = t->type->localtype;
 			int avg = e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0;
 
-			stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)));
+			stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, t, NULL, 0)));
 			if (!cc)
 				return NULL;
 			append(shared, &cc->nr);

@@ -261,7 +261,7 @@ find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **
 }
 
 static sql_subfunc *
-_dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
+_dup_subaggr(allocator *sa, sql_func *a, sql_subtype *member)
 {
 	node *tn;
 	unsigned int scale = 0, digits = 0;
@@ -279,7 +279,7 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 				sql_arg *rarg = tn->data;
 				sql_subtype *res, *r = &rarg->type;
 
-				if (a->fix_scale == SCALE_EQ) {
+				if (a->fix_scale == SCALE_EQ && !IS_AGGR(a)) {
 					res = r;
 				} else {
 					digits = r->digits;
@@ -310,7 +310,7 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 
 
 static sql_subfunc *
-func_cmp(sql_allocator *sa, sql_func *f, const char *name, int nrargs)
+func_cmp(allocator *sa, sql_func *f, const char *name, int nrargs)
 {
 	if (strcmp(f->base.name, name) == 0) {
 		if (f->vararg)
@@ -514,7 +514,7 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 			if (a && EC_NUMBER(ec) && !EC_INTERVAL(ec))
 				score += a->type.type->localtype * 10; /* premium on larger types */
 			else if (a) /* all other types */
-				score += 109;
+				score += 99;
 			continue;
 		}
 
@@ -542,7 +542,7 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 		if (nr_strconverts > 1)
 			return 0;
 
-		if (f->fix_scale == SCALE_FIX && a->type.type->eclass == EC_DEC && digits > a->type.type->digits)
+		if (f->fix_scale == SCALE_FIX && a->type.type->eclass == EC_DEC && digits > a->type.type->digits) /* doesn't fit */
 			return 0;
 		/* sql types equal but implementation differences */
 		else if (t->type->eclass == EC_BIT && a->type.type->eclass == EC_NUM && t->type->localtype <= a->type.type->localtype) /* convert bits into smallest number */
@@ -1087,7 +1087,7 @@ dlist2string(mvc *sql, dlist *l, int expression, char **err)
 }
 
 static const char *
-symbol_escape_ident(sql_allocator *sa, const char *s)
+symbol_escape_ident(allocator *sa, const char *s)
 {
 	char *res = NULL;
 	if (s) {

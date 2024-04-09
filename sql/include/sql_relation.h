@@ -46,7 +46,8 @@ typedef struct expression {
 	void *l;
 	void *r;
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
-	unsigned int flag; /* cmp types, PSM types/level */
+	unsigned short flag; /* cmp types, PSM types/level */
+	unsigned short tmp;
 	unsigned int
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:4,	/* free variable, ie binds to the upper dependent join */

@@ -23,6 +23,7 @@
 #define CATALOG_OCT2020 52205	/* first in Oct2020 */
 #define CATALOG_JUL2021 52300	/* first in Jul2021 */
 #define CATALOG_JAN2022 52301	/* first in Jan2022 */
+#define CATALOG_SEP2022 52302	/* first in Sep2022 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -77,6 +78,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #ifdef CATALOG_JAN2022
 	if (oldversion == CATALOG_JAN2022) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_SEP2022
+	if (oldversion == CATALOG_SEP2022) {
 		/* upgrade to default releases */
 		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -3489,7 +3498,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 	gdk_return ret = GDK_FAIL;
 	int lineno = 0;
 	bat bbpsize = 0;
-	lng logno, transid;
+	lng logno;
 	unsigned bbpversion;
 
 	len = snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
@@ -3507,7 +3516,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Could not open %s for reading: %s", bbpdir, mnstr_peek_error(NULL));
 		return GDK_FAIL;
 	}
-	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid, false);
+	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, false);
 	if (bbpversion == 0)
 		goto end;
 	assert(bbpversion == GDKLIBRARY);

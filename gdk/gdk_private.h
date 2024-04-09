@@ -107,14 +107,14 @@ void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPinit(bool allow_hge_upgrade)
 	__attribute__((__visibility__("hidden")));
-bat BBPinsert(BAT *bn)
+bat BBPallocbat(int tt)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BBPprintinfo(void)
 	__attribute__((__visibility__("hidden")));
-void BBPrelinquish(void)
-	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
+	__attribute__((__visibility__("hidden")));
+gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
@@ -182,8 +182,6 @@ gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *e
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
 		      GDK, NULL, format, ##__VA_ARGS__)
 lng getBBPlogno(void)
-	__attribute__((__visibility__("hidden")));
-lng getBBPtransid(void)
 	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
@@ -460,14 +458,6 @@ struct Strimps {
 	strimp_masks_t *masks;  /* quick access to masks for
 				 * bitstring construction */
 };
-
-#ifdef HAVE_RTREE
-struct RTree {
-	ATOMIC_TYPE refs; 	/* counter for logical references to the rtree */
-	rtree_t *rtree; 	/* rtree structure */
-	bool destroy;		/* destroy rtree when there are no more logical references */
-};
-#endif
 
 typedef struct {
 	MT_Lock swap;

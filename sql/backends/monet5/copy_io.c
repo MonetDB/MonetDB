@@ -8,9 +8,9 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include "mel.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include "mel.h"
 
 #include "mapi_prompt.h"
 #include "copy.h"

@@ -1,0 +1,10 @@
+statement ok
+CREATE TABLE t0(c0 INTEGER, c1 VARCHAR(500))
+
+query IT nosort
+SELECT * FROM t0 ORDER BY CONTAINS(((CASE '1' WHEN t0.c0 THEN '' ELSE t0.c0 END ) NOT BETWEEN 0 AND t0.c0>=t0.c1), t0.c1) DESC
+----
+
+statement ok
+DROP TABLE t0
+

@@ -153,7 +153,6 @@ PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
-	ATOMunfix(tpe, mailbox);
 	if (ATOMputFIX(tpe, mailbox, value) != GDK_SUCCEED) {
 		msg = createException(MAL, "pipeline.send", GDK_EXCEPTION);
 		goto bailout;
@@ -200,7 +199,6 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				msg = createException(MAL, "pipeline.recv", GDK_EXCEPTION);
 				goto bailout;
 			}
-			ATOMunfix(tpe, mailbox);
 			if (ATOMputFIX(tpe, mailbox, ATOMnilptr(tpe)) != GDK_SUCCEED) {
 				msg = createException(MAL, "pipeline.recv", GDK_EXCEPTION);
 				goto bailout;

@@ -420,7 +420,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom, bo
 	InstrPtr q;
 	MalBlkPtr mb = be->mb;
 	mvc *mvc = be->mvc;
-	sql_allocator *sa = mvc->sa;
+	allocator *sa = mvc->sa;
 
 	switch (parallel_copy_level()) {
 		case 0:

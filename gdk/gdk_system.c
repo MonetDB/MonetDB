@@ -280,15 +280,17 @@ dump_threads(void)
 	char buf[1024];
 	thread_lock();
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
+		MT_Lock *lk = t->lockwait;
+		MT_Sema *sm = t->semawait;
+		MT_Cond *cn = t->condwait;
+		struct mtthread *jn = t->joinwait;
 		int pos = snprintf(buf, sizeof(buf),
-				   "%s, tid %zu, waiting for %s, working on %.200s",
+				   "%s, tid %zu, %"PRIu32" free bats, waiting for %s%s, working on %.200s",
 				   t->threadname,
 				   t->tid,
-				   t->lockwait ? t->lockwait->name :
-				   t->semawait ? t->semawait->name :
-				   t->condwait ? t->condwait->name :
-				   t->joinwait ? t->joinwait->threadname :
-				   "nothing",
+				   t->freebats.nfreebats,
+				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
+				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
 				   ATOMIC_GET(&t->exited) ? "exiting" :
 				   t->working ? t->working : "nothing");
 #ifdef LOCK_OWNER
@@ -767,6 +769,7 @@ thread_starter(void *arg)
 			(*self->thread_funcs[i].destroy)(self->thread_funcs[i].data);
 	}
 	free(self->thread_funcs);
+	BBPrelinquishbats();
 	ATOMIC_SET(&self->exited, 1);
 	TRC_DEBUG(THRD, "Exit thread \"%s\"\n", self->threadname);
 	return 0;		/* NULL for pthreads, 0 for Windows */

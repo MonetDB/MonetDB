@@ -1,4 +1,7 @@
 statement ok
+set time zone interval '0' hour
+
+statement ok
 CREATE TABLE day1 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) )
 
 statement ok

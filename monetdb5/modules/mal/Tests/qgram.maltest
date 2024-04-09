@@ -36,27 +36,27 @@ query IT rowsort
 io.print(b)
 ----
 0
-##h@
+##hä
 1
-#h@l
+#häl
 10
-r@@$
+rłð$
 11
-@@$$
+łð$$
 2
-h@ll
+häll
 3
-@ll@
+ällö
 4
-ll@ 
+llö 
 5
-l@ w
+lö w
 6
-@ w@
+ö wø
 7
- w@r
+ wør
 8
-w@r@
+wørł
 9
-@r@@
+ørłð
 

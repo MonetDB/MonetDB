@@ -1,4 +1,7 @@
 statement ok
+SET TIME ZONE INTERVAL '1' HOUR
+
+statement ok
 CREATE TABLE TIME_TBL (f1 time(2))
 
 statement ok
@@ -187,15 +190,15 @@ query TR rowsort
 SELECT f1, extract(epoch from f1) FROM TIME_TBL
 ----
 00:00:00
-0.000
+82800.000
 01:00:00
-3600.000
+0.000
 12:00:00
-43200.000
+39600.000
 12:01:00
-43260.000
+39660.000
 23:59:00
-86340.000
+82740.000
 NULL
 NULL
 

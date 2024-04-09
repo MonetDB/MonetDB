@@ -8,11 +8,11 @@ insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i" NOT NULL UNIQUE, "cm_tmp"."%TID%" NOT NULL UNIQUE ]
 | union (
 | | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "/file1", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar NULL, int(9) "0", int(9) "1"), 
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "/file1", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar NULL, int(9) "0", int(9) "1", varchar ".", varchar NULL), 
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ],
 | | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "/file2", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar NULL, int(9) "0", int(9) "1"), 
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "/file2", bigint(18) "-1", bigint(18) "0", int(9) "0", varchar NULL, int(9) "0", int(9) "1", varchar ".", varchar NULL), 
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ]
 | ) [ int(31) NULL ]

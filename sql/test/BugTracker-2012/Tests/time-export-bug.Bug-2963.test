@@ -110,7 +110,7 @@ INSERT INTO kv17 (destinationname50, timestamp, journeynumber, lineplanningnumbe
 query TTTTRRTRTTRTTTRRTTTTTTTT rowsort
 select * from kv17
 ----
-624 values hashing to b6213a2af1767ea9b0b817fc1a5b0936
+624 values hashing to 30601d89b3f60718864f8f1c52a8cdd9
 
 statement ok
 rollback

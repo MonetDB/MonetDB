@@ -138,7 +138,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 	} else if (LANG_INT_OR_MAL(op->func->lang) && !nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
 	} else if (LANG_INT_OR_MAL(op->func->lang) && avg && (restype != TYPE_dbl)) { /* push candidates */
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 		q = pushBit(mb, q, no_nil);
 	}
 	q->inout = 0;
@@ -380,7 +380,7 @@ stmt_unique_sharedout(backend *be, stmt *s, int output)
 	q->inout = 1;
 	q = pushArgument(mb, q, be->pipeline);
 	q = pushArgument(mb, q, s->nr);
-	q = pushNil(mb, q, TYPE_bat); /* candidate list */
+	q = pushNilBat(mb, q); /* candidate list */
 	pushInstruction(mb, q);
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_unique);

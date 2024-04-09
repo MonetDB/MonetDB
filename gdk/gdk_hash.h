@@ -210,8 +210,8 @@ HASHgetlink(const Hash *h, BUN i)
 #define hash_oid(H,V)	hash_lng(H,V)
 #endif
 
-#define hash_flt(H,V)	hash_int(H,V)
-#define hash_dbl(H,V)	hash_lng(H,V)
+#define hash_flt(H,V)	HASHbucket(H, ATOMhash(TYPE_flt, (V)))
+#define hash_dbl(H,V)	HASHbucket(H, ATOMhash(TYPE_dbl, (V)))
 
 static inline BUN __attribute__((__pure__))
 mix_uuid(const uuid *u)

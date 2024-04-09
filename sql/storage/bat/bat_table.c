@@ -207,7 +207,7 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store->storage_api.update_col(tr, c, &rid, value, c->type.type->localtype);
+	return store->storage_api.update_col(tr, c, &rid, value, false);
 }
 
 static int
@@ -234,7 +234,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		val = va_arg(va, void *);
 		if (!val)
 			break;
-		ok = store->storage_api.append_col(tr, c, offset, NULL, val, 1, c->type.type->localtype);
+		ok = store->storage_api.append_col(tr, c, offset, NULL, val, 1, false, c->type.type->localtype);
 		if (ok != LOG_OK) {
 			va_end(va);
 			return ok;
@@ -257,7 +257,7 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store->storage_api.delete_tab(tr, t, &rid, TYPE_oid);
+	return store->storage_api.delete_tab(tr, t, &rid, false);
 }
 
 static res_table *
@@ -416,7 +416,7 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 			return NULL;
 		}
 		bat_destroy(b);
-		if (!res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, TYPE_bat, rc, true)) {
+		if (!res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, true, rc->ttype, rc, true)) {
 			bat_destroy(cl);
 			res_table_destroy(rt);
 			return NULL;

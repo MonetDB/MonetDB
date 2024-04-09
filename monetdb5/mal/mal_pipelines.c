@@ -145,7 +145,7 @@ stack_copy(MalStkPtr stk, int start)
 				rhs = &getVarConstant(stk->blk, i);
 				if(VALcopy(lhs, rhs) == NULL)
 					break;
-				if (rhs->vtype == TYPE_bat && rhs->val.bval)
+				if (rhs->bat && rhs->val.bval)
 					BBPretain(rhs->val.bval);
 			}
 		} else {
@@ -156,7 +156,7 @@ stack_copy(MalStkPtr stk, int start)
 			} else {
 				VALinit(lhs, rhs->vtype, ATOMnilptr(rhs->vtype));
 			}
-			if (lhs->vtype == TYPE_bat && lhs->val.bval)
+			if (lhs->bat && lhs->val.bval)
 				BBPretain(lhs->val.bval);
 		}
 	}

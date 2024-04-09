@@ -3,3 +3,4 @@ HAVE_DATA_PATH?creds
 HAVE_DATA_PATH?invalid_creds
 HAVE_DATA_PATH?different_user
 THREADS>=2?partition_elim
+remote_info_missing

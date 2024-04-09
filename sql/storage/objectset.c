@@ -52,7 +52,7 @@ typedef struct versionhead  {
 
 typedef struct objectset {
 	ATOMIC_TYPE refcnt;
-	sql_allocator *sa;
+	allocator *sa;
 	destroy_fptr destroy;
 	MT_RWLock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
 	versionhead  *name_based_h;
@@ -168,7 +168,7 @@ hash_delete(sql_hash *h, void *data)
 }
 
 static void
-node_destroy_(objectset *os, sqlstore *store, versionhead  *n)
+node_destroy(objectset *os, sqlstore *store, versionhead  *n)
 {
 	if (!os->sa)
 		_DELETE(n);
@@ -247,7 +247,7 @@ os_remove_id_based_chain(objectset *os, objectversion* ov)
 }
 
 static versionhead  *
-node_create(sql_allocator *sa, objectversion *ov)
+node_create(allocator *sa, objectversion *ov)
 {
 	versionhead  *n = SA_NEW(sa, versionhead );
 
@@ -397,11 +397,11 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 	bte state = os_atmc_get_state(ov);
 
 	if (state & name_based_versionhead_owner) {
-		node_destroy_(ov->os, store, ov->name_based_head);
+		node_destroy(ov->os, store, ov->name_based_head);
 	}
 
 	if (state & id_based_versionhead_owner) {
-		node_destroy_(ov->os, store, ov->id_based_head);
+		node_destroy(ov->os, store, ov->id_based_head);
 	}
 
 	if (os->destroy && ov->b)
@@ -651,7 +651,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store)
+os_new(allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store)
 {
 	assert(!sa);
 	objectset *os = SA_NEW(sa, objectset);
@@ -696,14 +696,14 @@ os_destroy(objectset *os, sql_store store)
 			ov = older;
 		}
 		versionhead* hn =n->next;
-		node_destroy_(os, store, n);
+		node_destroy(os, store, n);
 		n = hn;
 	}
 
 	n=os->name_based_h;
 	while(n) {
 		versionhead* hn =n->next;
-		node_destroy_(os, store, n);
+		node_destroy(os, store, n);
 		n = hn;
 	}
 

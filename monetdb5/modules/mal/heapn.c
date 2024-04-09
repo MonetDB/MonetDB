@@ -1224,7 +1224,7 @@ HEAPproject(bat *rid, bat *cand, bat *del, bat *ins, bat *in, lng *n, const ptr 
 			MT_lock_unset(&r->theaplock);
 			err = 1;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
-				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
@@ -1239,7 +1239,7 @@ HEAPproject(bat *rid, bat *cand, bat *del, bat *ins, bat *in, lng *n, const ptr 
 		}
 	} else if (!err && !r) {
 		MT_lock_set(&b->theaplock);
-		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
+		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_desc(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			uint16_t width = b->twidth;
 			MT_lock_unset(&b->theaplock);
 			r = COLnew2(0, tt, *n, TRANSIENT, width);

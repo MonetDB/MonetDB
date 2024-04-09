@@ -221,7 +221,7 @@ extern str nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 extern str str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str batstr_2time_timestamp(bat *res, const bat *v, const bat *s, const int *len);
-extern str batstr_2time_timestamptz(bat *res, const bat *v, const bat *s, const int *len, int *tz);
+extern str batstr_2time_timestamptz(bat *res, const bat *v, const bat *s, const int *len, const lng *tz);
 extern str timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 extern str nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -273,7 +273,7 @@ extern str second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 sql5_export str checkSQLContext(Client cntxt);
 sql5_export str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b);
 
-extern void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid);
+extern void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop);
 extern str second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

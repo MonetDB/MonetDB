@@ -61,17 +61,17 @@ POLYGON Z ((10 10 10, 20 20 20, 30 30 30, 10 10 10))
 query T rowsort
 select st_astext(st_mpointfromtext('multipoint(10 10, 20 20)'))
 ----
-MULTIPOINT (10 10, 20 20)
+MULTIPOINT ((10 10), (20 20))
 
 query T rowsort
 select st_astext(st_mpointfromtext('multipoint(20 20, 30 30)', 4326))
 ----
-MULTIPOINT (20 20, 30 30)
+MULTIPOINT ((20 20), (30 30))
 
 query T rowsort
 select st_astext(st_mpointfromtext('multipoint(20 20 20, 30 30 30)', 4326))
 ----
-MULTIPOINT Z (20 20 20, 30 30 30)
+MULTIPOINT Z ((20 20 20), (30 30 30))
 
 query T rowsort
 select st_astext(st_mlinefromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'))
@@ -121,7 +121,7 @@ POLYGON ((10 10, 20 20, 30 30, 10 10))
 query T rowsort
 select st_astext(st_geomfromtext('multipoint(10 10, 20 20)'))
 ----
-MULTIPOINT (10 10, 20 20)
+MULTIPOINT ((10 10), (20 20))
 
 query T rowsort
 select st_astext(st_geomfromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'))

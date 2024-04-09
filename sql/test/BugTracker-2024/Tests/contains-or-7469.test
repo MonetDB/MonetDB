@@ -1,0 +1,24 @@
+statement ok
+CREATE TABLE t0(c0 BOOLEAN, c1 VARCHAR)
+
+statement ok
+INSERT INTO t0(c0, c1) VALUES (true, 'a')
+
+statement ok
+INSERT INTO t0(c0, c1) VALUES (true, 'b')
+
+statement ok
+INSERT INTO t0(c0, c1) VALUES (false, 'c')
+
+query TI rowsort
+SELECT t0.c1, t0.c0 FROM t0 WHERE ((CONTAINS(t0.c1, ''))OR(t0.c0))
+----
+a
+1
+b
+1
+c
+0
+
+statement ok
+DROP TABLE t0

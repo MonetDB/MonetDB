@@ -1,0 +1,27 @@
+query I nosort
+WITH x AS ( SELECT 1 x UNION SELECT 1 ) SELECT x FROM x
+----
+1
+
+query I nosort
+WITH x AS ( SELECT 1 x UNION SELECT 1 ) SELECT x FROM ( SELECT ( CASE WHEN 1 THEN x END ) x , 1 * x FROM x) AS
+----
+1
+
+skipif knownfail
+query I nosort
+WITH x AS ( SELECT 1 x UNION SELECT 1 ) SELECT x FROM ( SELECT ( CASE WHEN 1 THEN x END ) x , 1 * x FROM x UNION SELECT 1 , 1 ) AS
+----
+1
+
+skipif knownfail
+query I nosort
+WITH x AS ( SELECT 1 x UNION SELECT 1 ) SELECT x FROM x WHERE ( SELECT x FROM ( SELECT ( CASE WHEN 1 THEN x END ) x , 1 * x FROM x UNION SELECT x , x ) AS )
+----
+1
+
+skipif knownfail
+query I nosort
+SELECT ( WITH x AS ( SELECT 1 x UNION SELECT 1 ) SELECT x FROM x WHERE ( SELECT x FROM ( SELECT ( CASE WHEN 1 THEN x END ) x , 1 * x FROM x UNION SELECT x , x ) AS ) )
+----
+1

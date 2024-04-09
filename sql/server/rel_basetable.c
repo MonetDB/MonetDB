@@ -103,7 +103,7 @@ rel_base_use_all( mvc *sql, sql_rel *rel)
 sql_rel *
 rel_basetable(mvc *sql, sql_table *t, const char *atname)
 {
-	sql_allocator *sa = sql->sa;
+	allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
 	rel_base_t *ba = (rel_base_t*)sa_zalloc(sa, sizeof(rel_base_t) + sizeof(int)*USED_LEN(end));
@@ -130,7 +130,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 void
 rel_base_copy(mvc *sql, sql_rel *in, sql_rel *out)
 {
-	sql_allocator *sa = sql->sa;
+	allocator *sa = sql->sa;
 	sql_table *t = in->l;
 	rel_base_t *ba = in->r;
 
@@ -359,7 +359,7 @@ sql_rel *
 rewrite_basetable(mvc *sql, sql_rel *rel)
 {
 	if (is_basetable(rel->op) && !rel->exps) {
-		sql_allocator *sa = sql->sa;
+		allocator *sa = sql->sa;
 		sql_table *t = rel->l;
 		rel_base_t *ba = rel->r;
 
@@ -448,7 +448,7 @@ basetable_get_tid_or_add_it(mvc *sql, sql_rel *rel)
 	sql_exp *res = NULL;
 
 	if (is_basetable(rel->op)) {
-		sql_allocator *sa = sql->sa;
+		allocator *sa = sql->sa;
 		sql_table *t = rel->l;
 		rel_base_t *ba = rel->r;
 		const char *tname = t->base.name;

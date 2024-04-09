@@ -1,0 +1,123 @@
+
+statement ok
+CREATE TABLE und1 (i1 int, i2 int, UNIQUE (i1, i2))
+
+statement ok
+CREATE TABLE und2 (i1 int, i2 int, UNIQUE NULLS DISTINCT (i1, i2))
+
+statement ok
+CREATE TABLE unnd1 (i1 int, i2 int, UNIQUE NULLS NOT DISTINCT (i1, i2))
+
+statement ok
+INSERT INTO und1 VALUES (NULL, 10)
+
+statement ok
+INSERT INTO und1 VALUES (NULL, 10), (NULL, 10)
+
+statement ok
+INSERT INTO und1 VALUES (20, 10)
+
+statement error
+INSERT INTO und1 VALUES (20, 10)
+
+statement error
+INSERT INTO und1 VALUES (30, 10), (30, 10)
+
+statement ok
+INSERT INTO und2 VALUES (NULL, 10)
+
+statement ok
+INSERT INTO und2 VALUES (NULL, 10), (NULL, 10)
+
+statement ok
+INSERT INTO und2 VALUES (20, 10)
+
+statement error
+INSERT INTO und2 VALUES (20, 10)
+
+statement error
+INSERT INTO und2 VALUES (30, 10), (30, 10)
+
+statement error
+INSERT INTO unnd1 VALUES (NULL, 10), (NULL, 10)
+
+statement ok
+INSERT INTO unnd1 VALUES (NULL, 10)
+
+statement error
+INSERT INTO unnd1 VALUES (NULL, 10)
+
+statement ok
+INSERT INTO unnd1 VALUES (20, 10)
+
+statement error
+INSERT INTO unnd1 VALUES (20, 10)
+
+statement error
+INSERT INTO unnd1 VALUES (30, 10), (30, 10)
+
+statement ok
+CREATE TABLE und3 (i1 int UNIQUE)
+
+statement ok
+CREATE TABLE und4 (i1 int UNIQUE NULLS DISTINCT )
+
+statement ok
+CREATE TABLE unnd2 (i1 int UNIQUE NULLS NOT DISTINCT)
+
+statement ok
+INSERT INTO und3 VALUES (NULL)
+
+statement ok
+INSERT INTO und3 VALUES (NULL), (NULL)
+
+statement ok
+INSERT INTO und3 VALUES (10)
+
+statement error
+INSERT INTO und3 VALUES (10)
+
+statement error
+INSERT INTO und3 VALUES (10), (20)
+
+statement error
+INSERT INTO und3 VALUES (30), (30)
+
+statement ok
+INSERT INTO und4 VALUES (NULL)
+
+statement ok
+INSERT INTO und4 VALUES (NULL), (NULL)
+
+statement ok
+INSERT INTO und4 VALUES (10)
+
+statement error
+INSERT INTO und4 VALUES (10)
+
+statement error
+INSERT INTO und4 VALUES (10), (20)
+
+statement error
+INSERT INTO und4 VALUES (30), (30)
+
+statement error
+INSERT INTO unnd2 VALUES (NULL), (NULL)
+
+statement ok
+INSERT INTO unnd2 VALUES (NULL)
+
+statement error
+INSERT INTO unnd2 VALUES (NULL)
+
+statement ok
+INSERT INTO unnd2 VALUES (10)
+
+statement error
+INSERT INTO unnd2 VALUES (10)
+
+statement error
+INSERT INTO unnd2 VALUES (10), (20)
+
+statement error
+INSERT INTO unnd2 VALUES (30), (30)

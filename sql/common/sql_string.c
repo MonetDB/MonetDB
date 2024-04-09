@@ -112,7 +112,7 @@ sql_strdup(char *s)
 }
 
 const char *
-sql_escape_ident(sql_allocator *sa, const char *s)
+sql_escape_ident(allocator *sa, const char *s)
 {
 	size_t l = strlen(s);
 	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
@@ -141,7 +141,7 @@ char *sql_message( const char *format, ... )
 	return GDKstrdup(buf);
 }
 
-char *sa_message( sql_allocator *sa, const char *format, ... )
+char *sa_message( allocator *sa, const char *format, ... )
 {
 	char buf[BUFSIZ];
 	va_list	ap;

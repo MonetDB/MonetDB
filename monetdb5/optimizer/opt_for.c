@@ -263,7 +263,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					t = pushArgument(mb, t, varisdict[k]);
 					t = pushArgument(mb, t, getArg(s, 0));
 					t = pushArgument(mb, t, cand);
-					t = pushNil(mb, t, TYPE_bat);
+					t = pushNil(mb, t);
 					t = pushBit(mb, t, TRUE);	/* nil matches */
 					t = pushBit(mb, t, TRUE);	/* max_one */
 					t = pushNil(mb, t, TYPE_lng);	/* estimate */

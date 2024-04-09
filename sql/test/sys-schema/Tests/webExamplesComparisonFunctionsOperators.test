@@ -920,7 +920,7 @@ select 'db' not between SYMMETRIC 'db' and 'abc' as fals
 ----
 0
 
-statement error
+statement ok
 select 'a' IS DISTINCT FROM 'b' as tru
 
 query I rowsort

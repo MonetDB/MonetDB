@@ -92,6 +92,6 @@ set_minmax_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 }
 
 extern sql_hash *sql_functions_lookup __attribute__((__visibility__("hidden")));
-extern void initialize_sql_functions_lookup(sql_allocator *sa) __attribute__((__visibility__("hidden")));
+extern void initialize_sql_functions_lookup(allocator *sa) __attribute__((__visibility__("hidden")));
 
 #endif /*_REL_STATISTICS_H_*/

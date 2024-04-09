@@ -48,7 +48,6 @@ BATcalcnot(BAT *b, BAT *s)
 	struct canditer ci;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -148,7 +147,7 @@ bailout:
 gdk_return
 VARcalcnot(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = v->vtype;
+	*ret = (ValRecord) {.vtype = v->vtype};
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_msk:
 		ret->val.mval = !v->val.mval;
@@ -241,7 +240,6 @@ BATcalcnegate(BAT *b, BAT *s)
 	struct canditer ci;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -313,7 +311,7 @@ bailout:
 gdk_return
 VARcalcnegate(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = v->vtype;
+	*ret = (ValRecord) {.vtype = v->vtype};
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (is_bte_nil(v->val.btval))
@@ -380,7 +378,6 @@ BATcalcabsolute(BAT *b, BAT *s)
 	struct canditer ci;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -454,7 +451,7 @@ bailout:
 gdk_return
 VARcalcabsolute(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = v->vtype;
+	*ret = (ValRecord) {.vtype = v->vtype};
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (is_bte_nil(v->val.btval))
@@ -523,7 +520,6 @@ BATcalciszero(BAT *b, BAT *s)
 	struct canditer ci;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -593,7 +589,7 @@ bailout:
 gdk_return
 VARcalciszero(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = TYPE_bit;
+	*ret = (ValRecord) {.vtype = TYPE_bit};
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (is_bte_nil(v->val.btval))
@@ -663,7 +659,6 @@ BATcalcsign(BAT *b, BAT *s)
 	struct canditer ci;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -736,7 +731,7 @@ bailout:
 gdk_return
 VARcalcsign(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = TYPE_bte;
+	*ret = (ValRecord) {.vtype = TYPE_bte};
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
 		if (is_bte_nil(v->val.btval))
@@ -816,7 +811,6 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	oid bhseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -927,16 +921,20 @@ BATcalcisnotnil(BAT *b, BAT *s)
 gdk_return
 VARcalcisnil(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = TYPE_bit;
-	ret->val.btval = (bit) VALisnil(v);
+	*ret = (ValRecord) {
+		.vtype = TYPE_bit,
+		.val.btval = (bat) VALisnil(v),
+	};
 	return GDK_SUCCEED;
 }
 
 gdk_return
 VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 {
-	ret->vtype = TYPE_bit;
-	ret->val.btval = (bit) !VALisnil(v);
+	*ret = (ValRecord) {
+		.vtype = TYPE_bit,
+		.val.btval = (bat) !VALisnil(v),
+	};
 	return GDK_SUCCEED;
 }
 
@@ -984,7 +982,6 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	oid b1hseqbase, b2hseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1203,7 +1200,6 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	oid b1hseqbase, b2hseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1416,7 +1412,6 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	oid bhseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1577,7 +1572,6 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	oid bhseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1726,7 +1720,6 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	oid b1hseqbase, b2hseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1903,7 +1896,6 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	oid b1hseqbase, b2hseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2103,7 +2095,6 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	oid bhseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2237,7 +2228,6 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	oid bhseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2396,7 +2386,6 @@ xor_typeswitchloop(const void *lft, bool incr1,
 	BUN nils = 0;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
@@ -2584,6 +2573,7 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
+	ret->bat = false;
 	if (xor_typeswitchloop(VALptr(lft), false,
 			       VALptr(rgt), false,
 			       VALget(ret), lft->vtype,
@@ -2614,7 +2604,6 @@ or_typeswitchloop(const void *lft, bool incr1,
 	BUN nils = 0;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* note, we don't have to check whether the result is equal to
 	 * NIL when using bitwise OR: there is only a single bit set in
@@ -2820,6 +2809,7 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
+	ret->bat = false;
 	if (or_typeswitchloop(VALptr(lft), false,
 			      VALptr(rgt), false,
 			      VALget(ret), lft->vtype,
@@ -2850,7 +2840,6 @@ and_typeswitchloop(const void *lft, bool incr1,
 	BUN nils = 0;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
@@ -3051,6 +3040,7 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
+	ret->bat = false;
 	if (and_typeswitchloop(VALptr(lft), false,
 			       VALptr(rgt), false,
 			       VALget(ret), lft->vtype,
@@ -3095,7 +3085,6 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	BUN nils = 0;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	tp1 = ATOMbasetype(tp1);
 	tp2 = ATOMbasetype(tp2);
@@ -3417,7 +3406,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s)
 gdk_return
 VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	ret->vtype = lft->vtype;
+	*ret = (ValRecord) {.vtype = lft->vtype};
 	if (lsh_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret),
@@ -3446,7 +3435,6 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	BUN nils = 0;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	tp1 = ATOMbasetype(tp1);
 	tp2 = ATOMbasetype(tp2);
@@ -3768,7 +3756,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s)
 gdk_return
 VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	ret->vtype = lft->vtype;
+	*ret = (ValRecord) {.vtype = lft->vtype};
 	if (rsh_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret),
@@ -3863,7 +3851,6 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 	int (*atomcmp)(const void *, const void *);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	bn = COLnew(ci->hseq, TYPE_bit, ncand, TRANSIENT);
 	if (bn == NULL)
@@ -4015,7 +4002,6 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 	BATiter hii = bat_iterator(hi);
 	if (b->ttype == TYPE_void || lo->ttype == TYPE_void || hi->ttype == TYPE_void) {
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
 		if (bn) {
 			bit *restrict dst = (bit *) Tloc(bn, 0);
@@ -4093,7 +4079,6 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 	BATiter bi = bat_iterator(b);
 	if (b->ttype == TYPE_void) {
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
 		if (bn) {
 			bit *restrict dst = (bit *) Tloc(bn, 0);
@@ -4167,7 +4152,6 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 	BATiter loi = bat_iterator(lo);
 	if (b->ttype == TYPE_void || lo->ttype == TYPE_void) {
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
 		if (bn) {
 			bit *restrict dst = (bit *) Tloc(bn, 0);
@@ -4248,7 +4232,6 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 	BATiter hii = bat_iterator(hi);
 	if (b->ttype == TYPE_void || hi->ttype == TYPE_void) {
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 		bn = COLnew(ci.seq, TYPE_bit, ci.ncand, TRANSIENT);
 		if (bn) {
 			bit *restrict dst = (bit *) Tloc(bn, 0);
@@ -4320,7 +4303,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 
 	t = ATOMbasetype(t);
 
-	ret->vtype = TYPE_bit;
+	*ret = (ValRecord) {.vtype = TYPE_bit};
 	switch (t) {
 	case TYPE_bte:
 		ret->val.btval = BETWEEN(v->val.btval, lo->val.btval, hi->val.btval, bte);
@@ -4404,7 +4387,6 @@ BATcalcifthenelse_intern(BATiter *bi,
 	BUN cnt = bi->count;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* col1 and col2 can only be NULL for void columns */
 	assert(col1 != NULL || ATOMtype(tpe) == TYPE_oid);

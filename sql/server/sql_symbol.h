@@ -47,15 +47,15 @@ typedef struct dlist {
 	int cnt;
 } dlist;
 
-extern dlist *dlist_create(sql_allocator *sa);
+extern dlist *dlist_create(allocator *sa);
 extern int dlist_length(dlist *l);
 
-extern dlist *dlist_append_string(sql_allocator *sa, dlist *l, const char *data);
-extern dlist *dlist_append_list(sql_allocator *sa, dlist *l, dlist *data);
-extern dlist *dlist_append_int(sql_allocator *sa, dlist *l, int data);
-extern dlist *dlist_append_lng(sql_allocator *sa, dlist *l, lng data);
-extern dlist *dlist_append_symbol(sql_allocator *sa, dlist *l, struct symbol *data);
-extern dlist *dlist_append_type(sql_allocator *sa, dlist *l, struct sql_subtype *data);
+extern dlist *dlist_append_string(allocator *sa, dlist *l, const char *data);
+extern dlist *dlist_append_list(allocator *sa, dlist *l, dlist *data);
+extern dlist *dlist_append_int(allocator *sa, dlist *l, int data);
+extern dlist *dlist_append_lng(allocator *sa, dlist *l, lng data);
+extern dlist *dlist_append_symbol(allocator *sa, dlist *l, struct symbol *data);
+extern dlist *dlist_append_type(allocator *sa, dlist *l, struct sql_subtype *data);
 
 typedef struct symbol {
 	tokens token;
@@ -88,15 +88,15 @@ typedef struct AtomNode {
 	struct atom *a;
 } AtomNode;
 
-extern symbol *symbol_create(sql_allocator *sa, tokens token, char *data);
-extern symbol *symbol_create_list(sql_allocator *sa, tokens token, dlist *data);
-extern symbol *symbol_create_int(sql_allocator *sa, tokens token, int data);
-extern symbol *symbol_create_lng(sql_allocator *sa, tokens token, lng data);
-extern symbol *symbol_create_symbol(sql_allocator *sa, tokens token, symbol *data);
+extern symbol *symbol_create(allocator *sa, tokens token, char *data);
+extern symbol *symbol_create_list(allocator *sa, tokens token, dlist *data);
+extern symbol *symbol_create_int(allocator *sa, tokens token, int data);
+extern symbol *symbol_create_lng(allocator *sa, tokens token, lng data);
+extern symbol *symbol_create_symbol(allocator *sa, tokens token, symbol *data);
 
-extern symbol *newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window);
+extern symbol *newSelectNode(allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window);
 
-extern symbol *newAtomNode(sql_allocator *sa, atom *a);
+extern symbol *newAtomNode(allocator *sa, atom *a);
 
 #endif /* SQL_SYMBOL_H */
 
