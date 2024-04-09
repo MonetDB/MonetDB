@@ -2060,6 +2060,7 @@ GDKprintinfo(void)
 	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
 	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
 
+	printf("SIGUSR1 info start\n");
 	printf("Virtual memory allocated: %zu, of which %zu with malloc\n",
 	       vmallocated + allocated, allocated);
 	printf("gdk_vm_maxsize: %zu, gdk_mem_maxsize: %zu\n",
@@ -2093,4 +2094,5 @@ GDKprintinfo(void)
 	dump_threads();
 	for (struct prinfocb *p = prinfocb; p; p = p->next)
 		(*p->func)();
+	printf("SIGUSR1 info end\n");
 }
