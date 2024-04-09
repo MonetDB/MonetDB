@@ -1,7 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Tue Mar 19 2024 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed issue where equal column aliases were created. When those
-  aliases were parsed on the remote side it could give crashes.
-
