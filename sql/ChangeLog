@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Apr  8 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Add a DECIMAL AS clause to COPY INTO that configures the decimal separator
+  and thousands separator for decimals, temporal types and floats.
+
 * Thu Mar 21 2024 Yunus Koning <yunus.koning@monetdbsolutions.com>
 - Introduce IS [NOT] DISTINCT FROM syntax. The syntax allows two values
   to be compared. The comparison always returns boolean FALSE or TRUE
