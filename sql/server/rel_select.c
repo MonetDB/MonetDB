@@ -5764,7 +5764,7 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int
 
 /* Generate n-ary set operator */
 static sql_rel *
-rel_setquery_n_ary_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op)
+rel_setquery_n_ary_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int outer)
 {
 	/* even though this is for a general n-ary operators in this phase of the query
 	 * processing we gonna have only two operands (so technically it's binary). In
@@ -5776,6 +5776,8 @@ rel_setquery_n_ary_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int o
 	mvc *sql = query->sql;
 	sql_rel *rel;
 
+	if (outer && !cols)
+			return sql_error(sql, 02, SQLSTATE(42000) "UNION: OUTER needs to be combined with CORRESPONDING [ BY ( column list ) ]");
 	if (!cols) {
 		// TODO: make rel_setop_n_ary_check_types to accept a list of rels
 		// and a list of lists of exps
@@ -5846,7 +5848,7 @@ rel_setquery(sql_query *query, symbol *q)
 			t2 = rel_distinct(t2);
 		// TODO: this has to be fixed
 		/*res = rel_setquery_(query, t1, t2, corresponding, op_union, outer);*/
-		res = rel_setquery_n_ary_(query, t1, t2, corresponding, op_munion);
+		res = rel_setquery_n_ary_(query, t1, t2, corresponding, op_munion, outer);
 	} else if ( q->token == SQL_EXCEPT)
 		res = rel_setquery_(query, t1, t2, corresponding, op_except, 0);
 	else if ( q->token == SQL_INTERSECT)

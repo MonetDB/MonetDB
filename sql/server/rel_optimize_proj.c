@@ -2149,7 +2149,7 @@ rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 		if (oa->type == e_aggr) {
 			sql_subfunc *f = oa->f;
 			int cnt = exp_aggr_is_count(oa);
-			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR, true);
+			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR, true, true);
 
 			assert(a);
 			/* munion of aggr result may have nils

@@ -532,7 +532,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
-		exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
+		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate);
 		break;
 	case op_project:
 	case op_select:
