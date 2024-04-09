@@ -9,7 +9,7 @@
 # Copyright 1997 - July 2008 CWI.
 
 %global name MonetDB
-%global version 11.49.7
+%global version 11.49.8
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
