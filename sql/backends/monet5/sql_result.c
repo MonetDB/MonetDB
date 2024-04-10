@@ -458,10 +458,10 @@ fltdbl_frStr(Column *c, int type, const char *s)
 	// +00000000000000000000000000000000000000000000000000000000000000000000001.5e1
 	// will be rejected.
 
+	// According to Stack Overflow https://stackoverflow.com/questions/1701055/what-is-the-maximum-length-in-chars-needed-to-represent-any-double-value
+	// 24 bytes is a reasonable buffer but we'll make it a bit larger.
 	char tmp[120];
 	if (c->decskip || c->decsep != '.') {
-		// According to Stack Overflow https://stackoverflow.com/questions/1701055/what-is-the-maximum-length-in-chars-needed-to-represent-any-double-value
-		// 24 bytes is a reasonable buffer but we'll make it a bit larger.
 		char *p = &tmp[0];
 
 		while (GDKisspace(*s))
