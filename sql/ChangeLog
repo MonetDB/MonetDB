@@ -1,7 +1,13 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Tue Apr  8 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+* Wed Apr 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Make schema renaming more permissive. A schema can be renamed if it
+  does not contain objects that are a dependency for objects outside
+  the schema. If such dependencies exist, they are shown in the
+  table sys.dependencies.
+
+* Tue Apr  8 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - Add a DECIMAL AS clause to COPY INTO that configures the decimal separator
   and thousands separator for decimals, temporal types and floats.
 
