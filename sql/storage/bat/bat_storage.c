@@ -1136,7 +1136,8 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 		return NULL;
 	BUN max_cnt = (BATcount(u) < 256)?256:64*1024;
 	if (DICTprepare4append(&newoffsets, i, u) < 0) {
-		assert(0);
+		bat_destroy(u);
+		return NULL;
 	} else {
 		int new = 0;
 		/* returns new offset bat (ie to be appended), possibly with larger type ! */
@@ -1255,7 +1256,8 @@ for_append_bat(column_storage *cs, BAT *i, char *storage_type)
 		return NULL;
 
 	if (FORprepare4append(&newoffsets, i, offsetval, b->ttype) < 0) {
-		assert(0);
+		bat_destroy(b);
+		return NULL;
 	} else {
 		/* returns new offset bat if values within min/max, else decompress */
 		if (!newoffsets) { /* decompress */
@@ -1707,7 +1709,8 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 		return NULL;
 	BUN max_cnt = (BATcount(u) < 256)?256:64*1024;
 	if (DICTprepare4append_vals(&newoffsets, i, cnt, u) < 0) {
-		assert(0);
+		bat_destroy(u);
+		return NULL;
 	} else {
 		int new = 0;
 		/* returns new offset bat (ie to be appended), possibly with larger type ! */
@@ -1810,7 +1813,8 @@ for_append_val(column_storage *cs, void *i, BUN cnt, char *storage_type, int tt)
 		return NULL;
 
 	if (FORprepare4append_vals(&newoffsets, i, cnt, offsetval, tt, b->ttype) < 0) {
-		assert(0);
+		bat_destroy(b);
+		return NULL;
 	} else {
 		/* returns new offset bat if values within min/max, else decompress */
 		if (!newoffsets) {
@@ -4348,7 +4352,6 @@ static storage *
 savepoint_commit_storage( storage *dbat, ulng commit_ts)
 {
 	if (dbat && dbat->cs.ts == commit_ts && dbat->next) {
-		assert(0);
 		storage *od = dbat->next;
 		if (od->cs.ts == commit_ts) {
 			storage t = *od, *n = od->next;
