@@ -100,6 +100,8 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 			return rel;
 		/* introduce select * from l where cnt > 0 */
 		/* find count */
+		if (list_empty(rel->exps)) /* no result expressions, just project the extends */
+			rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 		exps = rel_projections(sql, rel, NULL, 1, 1);
 		sql_exp *e = find_aggr_exp(sql, rel->exps, "count"), *ea = e;
 		if (e && e->type == e_column)
