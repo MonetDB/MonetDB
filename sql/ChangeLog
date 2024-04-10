@@ -4,10 +4,10 @@
 * Wed Apr 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
 - Schema renaming is more permissive. If schema does not contain objects
   that are a dependency then schema renaming is allowed. If schema
-  containects that are dependencies, these are shown in system table
+  contains objects that are dependencies, these are shown in system table
   `dependencies` and schema renaming is not possible.
 
-* Tue Apr  8 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+* Tue Apr  8 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - Add a DECIMAL AS clause to COPY INTO that configures the decimal separator
   and thousands separator for decimals, temporal types and floats.
 
