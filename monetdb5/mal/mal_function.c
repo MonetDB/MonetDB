@@ -696,7 +696,7 @@ chkDeclarations(MalBlkPtr mb)
 {
 	int pc, i, k, l;
 	InstrPtr p, sig;
-	short blks[MAXDEPTH], top = 0, blkId = 1, curBlk;
+	short blks[MAXDEPTH], top = 0, blkId = 1;
 	int dflow = -1;
 	str msg = MAL_SUCCEED;
 	char name[IDLENGTH] = { 0 };
@@ -704,7 +704,6 @@ chkDeclarations(MalBlkPtr mb)
 	if (mb->errors)
 		return GDKstrdup(mb->errors);
 	blks[top] = blkId;
-	curBlk = blkId;
 
 	/* initialize the scope */
 	for (i = 0; i < mb->vtop; i++)
@@ -713,7 +712,7 @@ chkDeclarations(MalBlkPtr mb)
 	/* all signature variables are declared at outer level */
 	sig = getInstrPtr(mb, 0);
 	for (k = 0; k < sig->argc; k++)
-		setVarScope(mb, getArg(sig, k), curBlk);
+		setVarScope(mb, getArg(sig, k), blkId);
 
 	for (pc = 1; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
@@ -795,10 +794,9 @@ chkDeclarations(MalBlkPtr mb)
 					dflow = blkId;
 				}
 				blks[++top] = blkId;
-				curBlk = blkId;
 			}
 			if (blockExit(p) && top > 0) {
-				if (dflow == curBlk) {
+				if (dflow == blkId) {
 					dflow = -1;
 				} else
 					/*
@@ -812,7 +810,6 @@ chkDeclarations(MalBlkPtr mb)
 							clrVarInit(mb, l);
 						}
 				top--;
-				curBlk = blks[top];
 			}
 		}
 	}
