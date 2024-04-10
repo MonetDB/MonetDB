@@ -304,7 +304,6 @@ stmt_bat_new(backend *be, int tt, lng estimate)
 	InstrPtr q = newStmt(be->mb, batRef, newRef);
 
 	if (q == NULL)
-		//return -1;
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushType(be->mb, q, tt);
