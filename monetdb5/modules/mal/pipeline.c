@@ -108,12 +108,15 @@ PPchannel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	void *mailbox = getArgReference(stk, pci, 0);
 	int *metadata = getArgReference_int(stk, pci, 1);
 	void *value = getArgReference(stk, pci, 2);
-	int tpe = getArgGDKType(mb, pci, 2);
+	int tpe = getArgType(mb, pci, 2);
 
-	if (ATOMvarsized(tpe))
+	if (!isaBatType(tpe) && ATOMvarsized(tpe))
 		throw(MAL, "pipeline.chanel", SQLSTATE(42000)"cannot make channel for varsized items");
 
-	if (ATOMputFIX(tpe, mailbox, value) != GDK_SUCCEED) {
+	if (isaBatType(tpe)) {
+		*(bat*)mailbox = *(bat*)value;
+		BBPretain(*(bat*)mailbox);
+	} else if (ATOMputFIX(tpe, mailbox, value) != GDK_SUCCEED) {
 		throw(MAL, "pipeline.send", GDK_EXCEPTION);
 	}
 	*metadata = 0;
@@ -153,7 +156,10 @@ PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
-	if (ATOMputFIX(tpe, mailbox, value) != GDK_SUCCEED) {
+	if (isaBatType(tpe)) {
+		*(bat*)mailbox = *(bat*)value;
+		BBPretain(*(bat*)mailbox);
+	} else if (ATOMputFIX(tpe, mailbox, value) != GDK_SUCCEED) {
 		msg = createException(MAL, "pipeline.send", GDK_EXCEPTION);
 		goto bailout;
 	}
@@ -195,11 +201,17 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int myself = pp->counters[p->wid];
 		if (*metadata == myself) {
 			// found it, drop out
-			if (ATOMputFIX(tpe, ret, mailbox) != GDK_SUCCEED) {
+			if (isaBatType(tpe)) {
+				*(bat*)ret = *(bat*)mailbox;
+				BBPretain(*(bat*)ret);
+			} else if (ATOMputFIX(tpe, ret, mailbox) != GDK_SUCCEED) {
 				msg = createException(MAL, "pipeline.recv", GDK_EXCEPTION);
 				goto bailout;
 			}
-			if (ATOMputFIX(tpe, mailbox, ATOMnilptr(tpe)) != GDK_SUCCEED) {
+			if (isaBatType(tpe)) {
+				BBPrelease(*(bat*)mailbox);
+				*(bat*)mailbox = bat_nil;
+			} else if (ATOMputFIX(tpe, mailbox, ATOMnilptr(tpe)) != GDK_SUCCEED) {
 				msg = createException(MAL, "pipeline.recv", GDK_EXCEPTION);
 				goto bailout;
 			}
