@@ -15,9 +15,9 @@
 
 #if 0
 static InstrPtr
-ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
+ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos)
 {
-	p = pushNil(mb, p, tpe);	/* push at end */
+	p = pushNilBat(mb, p);	/* push at end */
 	getArg(p, pos) = getArg(p, p->argc - 1);
 	p->argc--;
 	return p;
@@ -239,7 +239,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					getArg(r, j) = vardictvalue[k];
 					if (cand)
-						r = ReplaceWithNil(mb, r, j + 1, TYPE_bat);	/* no candidate list */
+						r = ReplaceWithNil(mb, r, j + 1);	/* no candidate list */
 					pushInstruction(mb, r);
 
 					int tpe = getVarType(mb, varisdict[k]);
@@ -263,7 +263,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					t = pushArgument(mb, t, varisdict[k]);
 					t = pushArgument(mb, t, getArg(s, 0));
 					t = pushArgument(mb, t, cand);
-					t = pushNil(mb, t, TYPE_bat);
+					t = pushNilBat(mb, t);
 					t = pushBit(mb, t, TRUE);	/* nil matches */
 					t = pushBit(mb, t, TRUE);	/* max_one */
 					t = pushNil(mb, t, TYPE_lng);	/* estimate */
