@@ -16,8 +16,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define MEL_STR
-
 #define MEL_OK 0
 #define MEL_ERR 1
 
@@ -45,9 +43,6 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 	int (*storage)(void);
 } mel_atom;
 
-/*strings */
-#ifdef MEL_STR
-
 #define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=1, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
 #define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=0, .mod=MOD, .fcn=FCN, .pimp=IMP, .cname=#IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
 
@@ -68,11 +63,11 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define batvarargany(n,a)	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
 
 #define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .shared=true, .inout=true }
-#define sharedbatarg(n,t){ /*.name=n,*/ .type=# t, .isbat=true, .shared=true, .inout=true }
+#define sharedbatarg(n,t)   { /*.name=n,*/ .type=# t, .isbat=true, .shared=true, .inout=true }
 
 typedef struct __attribute__((__designated_init__)) mel_arg {
 	//char *name;
-	char type[15];
+	char type[14];
 	uint16_t typeid:8, nr:2, isbat:1, vargs:1, opt:1,
 		inout:1,	/* some arguments may be used as input and output */
 		shared:1;	/* mark arguments as shared among the various pipeline execution workers, shared implies inout */
@@ -92,49 +87,6 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 	};
 	mel_arg *args;
 } mel_func;
-
-#else
-
-//#ifdef NDEBUG
-#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
-#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .pimp=IMP, .unsafe=UNSAFE, .args=ARGS, .comment=COMMENT }
-//#else
-//#define command(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=true, .mod=MOD, .fcn=FCN, .imp=(MALfcn)IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS, .comment=COMMENT }
-//#define pattern(MOD,FCN,IMP,UNSAFE,COMMENT,ARGS) { .command=false, .mod=MOD, .fcn=FCN, .pimp=IMP, .unsafe=UNSAFE, .comment=COMMENT, .args=ARGS, .comment=COMMENT }
-//#endif
-
-#define args(RETC,ARGC,...) {__VA_ARGS__}, .retc=RETC, .argc=ARGC
-
-#define arg(n,t)			{ /*.name=n,*/ .type=TYPE_##t }
-#define vararg(n,t)			{ /*.name=n,*/ .type=TYPE_##t, .vargs=true }
-#define batarg(n,t)			{ /*.name=n,*/ .type=TYPE_##t, .isbat=true }
-#define batvararg(n,t)		{ /*.name=n,*/ .type=TYPE_##t, .isbat=true, .vargs=true }
-#define argany(n,a)			{ /*.name=n,*/ .nr=a, .type=TYPE_any }
-#define varargany(n,a)		{ /*.name=n,*/ .nr=a, .vargs=true, .type=TYPE_any }
-#define batargany(n,a)		{ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any }
-#define batvarargany(n,a)	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
-
-#define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any, .shared=true, .inout=true }
-#define sharedbatarg(n,t){ /*.name=n,*/ .type=# t, .isbat=true, .shared=true, .inout=true }
-
-typedef struct __attribute__((__designated_init__)) mel_arg {
-	uint16_t type:8, nr:4, isbat:1, vargs:1;
-} mel_arg;
-
-typedef struct __attribute__((__designated_init__)) mel_func {
-	char mod[14];
-	char fcn[30];
-	uint16_t command:1, unsafe:1, retc:6, argc:6;
-// comment on MAL instructions should also be available when TRACEing the queries
-	char *comment;
-	union {
-		MALfcn imp;
-		char *(*pimp)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
-	};
-	mel_arg args[20];
-} mel_func;
-
-#endif
 
 typedef str (*mel_init)(void);
 
