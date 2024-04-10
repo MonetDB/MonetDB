@@ -142,28 +142,28 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	return res;
 }
 
-#define column_find_tpe(TPE) \
-static TPE \
-column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
-{ \
-	BUN q = BUN_NONE; \
-	BAT *b; \
-	TPE res = -1; \
- \
-	b = full_column(tr, c); \
-	if (b) { \
-		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b)) \
-			q = BUN_NONE; \
-		else \
-			q = rid - b->hseqbase; \
-	} \
-	if (q != BUN_NONE) { \
-		BATiter bi = bat_iterator(b); \
-		res = *(TPE*)BUNtloc(bi, q); \
-		bat_iterator_end(&bi); \
-	} \
-	bat_destroy(b); \
-	return res; \
+#define column_find_tpe(TPE)										\
+static TPE															\
+column_find_##TPE(sql_trans *tr, sql_column *c, oid rid)			\
+{																	\
+	BUN q = BUN_NONE;												\
+	BAT *b;															\
+	TPE res = -1;													\
+																	\
+	b = full_column(tr, c);											\
+	if (b) {														\
+		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))	\
+			q = BUN_NONE;											\
+		else														\
+			q = rid - b->hseqbase;									\
+	}																\
+	if (q != BUN_NONE) {											\
+		BATiter bi = bat_iterator(b);								\
+		res = *(TPE*)BUNtloc(bi, q);								\
+		bat_iterator_end(&bi);										\
+	}																\
+	bat_destroy(b);													\
+	return res;														\
 }
 
 column_find_tpe(sqlid)

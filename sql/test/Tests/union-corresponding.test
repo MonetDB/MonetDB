@@ -113,7 +113,8 @@ two
 
 query I rowsort
 SELECT * FROM buz
-UNION CORRESPONDING BY (a)
+UNION 
+    CORRESPONDING BY (a)
 SELECT * FROM bar
 ----
 3
@@ -121,4 +122,126 @@ SELECT * FROM bar
 5
 6
 
+query I rowsort
+SELECT * FROM foo
+UNION CORRESPONDING
+SELECT * FROM bar
+----
+1
+2
+3
+4
+
+query I rowsort
+SELECT * FROM foo
+UNION 
+    CORRESPONDING BY (a)
+SELECT * FROM bar
+----
+1
+2
+3
+4
+
+statement error
+SELECT * FROM foo
+UNION 
+    CORRESPONDING BY (b)
+SELECT * FROM bar
+
+statement error
+SELECT * FROM foo
+UNION 
+    CORRESPONDING BY (c)
+SELECT * FROM bar
+
+query ITT rowsort
+SELECT * FROM foo
+OUTER UNION CORRESPONDING
+SELECT * FROM bar
+----
+1
+alice
+NULL
+2
+bob
+NULL
+3
+NULL
+hello
+4
+NULL
+world
+
+query T rowsort
+SELECT * FROM foo
+OUTER UNION 
+    CORRESPONDING BY (b)
+SELECT * FROM bar
+----
+NULL
+alice
+bob
+
+query T rowsort
+SELECT * FROM foo
+OUTER UNION ALL
+    CORRESPONDING BY (b)
+SELECT * FROM bar
+----
+NULL
+NULL
+alice
+bob
+
+query T rowsort
+SELECT * FROM foo
+OUTER UNION 
+    CORRESPONDING BY (c)
+SELECT * FROM bar
+----
+NULL
+hello
+world
+
+query T rowsort
+SELECT * FROM foo
+OUTER UNION ALL
+    CORRESPONDING BY (c)
+SELECT * FROM bar
+----
+NULL
+NULL
+hello
+world
+
+query TT rowsort
+SELECT * FROM foo
+OUTER UNION 
+    CORRESPONDING BY (c, b)
+SELECT * FROM bar
+----
+NULL
+alice
+NULL
+bob
+hello
+NULL
+world
+NULL
+
+query TT rowsort
+SELECT * FROM foo
+OUTER UNION ALL
+    CORRESPONDING BY (c, b)
+SELECT * FROM bar
+----
+NULL
+alice
+NULL
+bob
+hello
+NULL
+world
+NULL
 

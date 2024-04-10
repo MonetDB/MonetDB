@@ -3165,7 +3165,8 @@ trigger_dup(sql_trans *tr, sql_trigger *i, sql_table *t, sql_trigger **tres)
 }
 
 static int
-table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_table **tres, bool dup_global_as_global)
+table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name,
+		  sql_table **tres, bool dup_global_as_global)
 {
 	sqlstore *store = tr->store;
 	sql_table *t = ZNEW(sql_table);
@@ -3192,7 +3193,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 		t->members = list_create((fdestroy) &part_destroy);
 
 	t->pkey = NULL;
-	t->s = s?s:tr->tmp;
+	t->s = s ? s : tr->tmp;
 	t->sz = ot->sz;
 	ATOMIC_PTR_INIT(&t->data, NULL);
 
@@ -3893,8 +3894,7 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 	os_iterator(&oi, s->tables, tr, NULL);
 	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_table *t = NULL;
-
-		if ((res = table_dup(tr, (sql_table*)b, ns, NULL, &t, true)) || (res = os_add(ns->tables, tr, t->base.name, &t->base))) {
+		if ((res = table_dup(tr, (sql_table*)b, ns, NULL, &t, true))) {
 			schema_destroy(tr->store, ns);
 			return res;
 		}
@@ -4204,7 +4204,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 {
 	sqlid dep_id=0, t_id = -1;
 	sht dep_type = 0;
-	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
+	list *dep = sql_trans_get_dependents(tr, id, type, NULL);
 	node *n;
 	int res = LOG_OK;
 
@@ -5239,26 +5239,31 @@ int
 sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 {
 	sqlstore *store = tr->store;
-	sql_table *sysschema = find_sql_table(tr, find_sql_schema(tr, "sys"), "schemas");
+	table_functions table_api = store->table_api;
+	sql_table *schemas = find_sql_table(tr, find_sql_schema(tr, "sys"), "schemas");
 	sql_schema *s = find_sql_schema_id(tr, id), *ns = NULL;
 	oid rid;
 	int res = LOG_OK;
 
 	assert(!strNil(new_name));
 
-	rid = store->table_api.column_find_row(tr, find_sql_column(sysschema, "id"), &id, NULL);
+	rid = table_api.column_find_row(tr, find_sql_column(schemas, "id"), &id, NULL);
 	assert(!is_oid_nil(rid));
-	if ((res = store->table_api.column_update_value(tr, find_sql_column(sysschema, "name"), rid, (void*) new_name)))
+	if ((res = table_api.column_update_value(tr, find_sql_column(schemas, "name"), rid, (void*) new_name)))
 		return res;
 
 	if (!isNew(s) && (res = sql_trans_add_dependency_change(tr, id, ddl)))
 		return res;
+
 	/* delete schema, add schema */
 	if ((res = os_del(tr->cat->schemas, tr, s->base.name, dup_base(&s->base))))
 		return res;
-	if ((res = schema_dup(tr, s, new_name, &ns)) || (res = os_add(tr->cat->schemas, tr, ns->base.name, &ns->base))) {
+
+	if ((res = schema_dup(tr, s, new_name, &ns)) ||
+		(res = os_add(tr->cat->schemas, tr, ns->base.name, &ns->base))) {
 		return res;
 	}
+
 	return res;
 }
 
