@@ -427,6 +427,7 @@ stmt_part_new(backend *be, int nr_parts)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 	q = pushInt(be->mb, q, nr_parts);
+	pushInstruction(be->mb, q);
 	return q;
 }
 
@@ -441,6 +442,7 @@ stmt_mat_new(backend *be, int tt, int nr_parts)
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushType(be->mb, q, tt);
 	q = pushInt(be->mb, q, nr_parts);
+	pushInstruction(be->mb, q);
 	return q;
 }
 
