@@ -174,6 +174,7 @@ PARTprefixsum( bat *pos, const bat *gid, lng *max )
 		cnts[id[i]]++;
 	*pos = p->batCacheid;
 	BBPunfix(g->batCacheid);
+	BATnegateprops(p);
 	BBPkeepref(p);
 	return MAL_SUCCEED;
 }
@@ -209,6 +210,7 @@ PARTpartition( bat *pos, const bat *part, const bat *glen )
 	*pos = posb->batCacheid;
 	BBPunfix(p->batCacheid);
 	BBPunfix(g->batCacheid);
+	BATnegateprops(posb);
 	BBPkeepref(posb);
 	return MAL_SUCCEED;
 }
@@ -256,7 +258,9 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 		err = createException(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	lng *curpos = (lng*)Tloc(p, 0);
+	lng *curpos = GDKmalloc(sizeof(lng) * BATcount(p));
+	for (BUN i = 0; i < BATcount(p); i++)
+		curpos[i] = *(lng*)Tloc(p, i);
 	lng *lp = (lng*)Tloc(l, 0);
 	lng *grp = (lng*)Tloc(g, 0);
 	mat_t *mt = (mat_t*)m->T.sink;
@@ -285,6 +289,7 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 	MT_lock_unset(&m->theaplock);
 	if (err)
 		goto error;
+	GDKfree(curpos);
 	BBPkeepref(m);
 	BBPunfix(p->batCacheid);
 	BBPunfix(l->batCacheid);
@@ -292,6 +297,7 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 	BBPunfix(d->batCacheid);
 	return MAL_SUCCEED;
 error:
+	GDKfree(curpos);
 	BBPreclaim(m);
 	BBPreclaim(p);
 	BBPreclaim(l);
