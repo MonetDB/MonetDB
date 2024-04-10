@@ -4477,6 +4477,9 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 {
+	if (list_empty(rel->exps)) /* empty */
+		return stmt_list(be, sa_list(be->mvc->sa));
+
 	mvc *sql = be->mvc;
 	list *l, *aggrs, *gbexps = sa_list(sql->sa), *aggrresults = NULL, *shared = NULL;
 	node *n, *en, *m = NULL;
