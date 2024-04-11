@@ -47,7 +47,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 	}
 
 	//Get a candidate list from searching on the rtree with the constant mbr
-	BUN* results_rtree = RTREEsearch(b,(mbr_t*)const_mbr, b->batCount);
+	BUN* results_rtree = RTREEsearch(b, const_mbr, b->batCount);
 	if (results_rtree == NULL) {
 		BBPunfix(b->batCacheid);
 		if (s)
@@ -190,7 +190,7 @@ str
 wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
 #ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
-	if (RTREEexists_bid((bat*)bid)) {
+	if (RTREEexists_bid(*bid)) {
 		//Calculate MBR of constant geometry first
 		GEOSGeom const_geom;
 		if ((const_geom = wkb2geos(*wkb_const)) == NULL) {
@@ -218,7 +218,7 @@ str
 wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, dbl* distance, bit *anti) {
 #ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
-	if (RTREEexists_bid((bat*)bid)) {
+	if (RTREEexists_bid(*bid)) {
 		//Calculate MBR of constant geometry first
 		GEOSGeom const_geom;
 		if ((const_geom = wkb2geos(*wkb_const)) == NULL) {
@@ -522,7 +522,7 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 
 		//Calculate the MBR for the constant geometry
 		mbr *outer_mbr = mbrFromGeos(outer_geom);
-		BUN* results_rtree = RTREEsearch(inner_b,(mbr_t*)outer_mbr, outer_ci.ncand);
+		BUN* results_rtree = RTREEsearch(inner_b, outer_mbr, outer_ci.ncand);
 		if (results_rtree == NULL) {
 			msg = createException(MAL, name, "RTreesearch failed, returned NULL candidates");
 			goto free;
@@ -619,7 +619,7 @@ str
 wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
 #ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
-	if (RTREEexists_bid((bat*)l_id) && RTREEexists_bid((bat*)r_id))
+	if (RTREEexists_bid(*l_id) && RTREEexists_bid(*r_id))
 		return filterJoinRTree(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsJoinRTree");
 	else
 		return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsJoinNoIndex");
@@ -632,7 +632,7 @@ wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r
 str
 wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, dbl *distance, bit *nil_matches, lng *estimate, bit *anti) {
 #ifdef HAVE_RTREE
-	if (RTREEexists_bid((bat*)l_id) && RTREEexists_bid((bat*)r_id))
+	if (RTREEexists_bid(*l_id) && RTREEexists_bid(*r_id))
 		return filterJoinRTree(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbDWithinJoinRTree");
 	else
 		return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbDWithinJoinNoIndex");

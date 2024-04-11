@@ -25,7 +25,7 @@ log_base2(unsigned int n)
 }
 
 sql_hash *
-hash_new(sql_allocator *sa, int size, fkeyvalue key)
+hash_new(allocator *sa, int size, fkeyvalue key)
 {
 	sql_hash *ht = SA_NEW(sa, sql_hash);
 

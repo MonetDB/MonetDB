@@ -1092,7 +1092,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 	char *nseparator = (char *)separator;
 
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
-	res->vtype = TYPE_str;
+	*res = (ValRecord) {.vtype = TYPE_str};
 
 	canditer_init(&ci, b, s);
 

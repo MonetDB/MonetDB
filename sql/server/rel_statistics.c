@@ -215,7 +215,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 }
 
 static atom *
-atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValRecord *v)
+atom_from_valptr( allocator *sa, sql_subtype *tpe, ValRecord *v)
 {
 	atom *a = SA_NEW(sa, atom);
 

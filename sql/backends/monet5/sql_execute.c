@@ -249,7 +249,6 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	pushInstruction(mb,resultset);
 	pushEndInstruction(mb);
 	msg = chkTypes(cntxt->usermodule, mb, TRUE);
-	renameVariables(mb);
 	return msg;
 }
 
@@ -343,7 +342,7 @@ SQLescapeString(str s)
 str
 SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit output, res_table **result)
 {
-	int status = 0, err = 0, oldvtop, oldstop = 1, oldvid, inited = 0, ac, sizeframes, topframes;
+	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
 	unsigned int label;
 	mvc *o = NULL, *m = NULL;
 	sql_frame **frames;
@@ -492,7 +491,6 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		}
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
-		oldvid = c->curprg->def->vid;
 		r = sql_symbol2relation(sql, m->sym);
 
 		assert(m->emode != m_prepare);
@@ -507,7 +505,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			sqlcleanup(sql, err);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, c->glb, oldvtop, oldvid);
+			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			goto endofcompile;
 		}
@@ -532,7 +530,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			sqlcleanup(sql, err);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, c->glb, oldvtop, oldvid);
+			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			goto endofcompile;
 		}
@@ -543,8 +541,11 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			be->depth++;
 			msg = SQLrun(c,m);
 			be->depth--;
-			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+			if (c->curprg->def->stop > 1) {
+				assert(0);
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop);
+			}
 			sqlcleanup(sql, 0);
 			if (!execute)
 				goto endofcompile;
@@ -625,7 +626,7 @@ SQLengineIntern(Client c, backend *be)
 		m->session->status = -10;
 	sqlcleanup(be, (!msg) ? 0 : -1);
 	MSresetInstructions(c->curprg->def, 1);
-	freeVariables(c, c->curprg->def, NULL, be->vtop, be->vid);
+	freeVariables(c, c->curprg->def, NULL, be->vtop);
 	//be->language = oldlang;
 	/*
 	 * Any error encountered during execution should block further processing

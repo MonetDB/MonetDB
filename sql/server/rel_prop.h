@@ -43,12 +43,12 @@ typedef struct tid_uri {
 	const char* uri;
 } tid_uri;
 
-extern prop * prop_create( sql_allocator *sa, rel_prop kind, prop *pre );
-extern prop * prop_copy( sql_allocator *sa, prop *p);
+extern prop * prop_create( allocator *sa, rel_prop kind, prop *pre );
+extern prop * prop_copy( allocator *sa, prop *p);
 extern prop * prop_remove( prop *plist, prop *p);
 extern prop * find_prop( prop *p, rel_prop kind);
 extern void * find_prop_and_get(prop *p, rel_prop kind);
 extern const char * propkind2string( prop *p);
-extern char * propvalue2string(sql_allocator *sa, prop *p);
+extern char * propvalue2string(allocator *sa, prop *p);
 
 #endif /* _REL_PROP_H_ */

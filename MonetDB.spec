@@ -91,7 +91,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Dec2023-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2023-SP2/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -679,7 +679,6 @@ This package contains files needed to develop SQL extensions.
 
 %files SQL-server5-devel
 %defattr(-,root,root)
-%{_includedir}/monetdb/exception_buffer.h
 %{_includedir}/monetdb/opt_backend.h
 %{_includedir}/monetdb/rel_*.h
 %{_includedir}/monetdb/sql*.h
@@ -922,6 +921,31 @@ fi
 %endif
 
 %changelog
+* Tue Apr 09 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- Rebuilt.
+- GH#7469: Crash when using `CONTAINS`
+- GH#7479: MonetDB server crashes in `exp_ref`
+- GH#7490: commonTerms optimizer no longer works
+- GH#7495: Crash when simultaneously querying and updating a string column.
+
+* Thu Mar 28 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- gdk: Threads have their own list of free bats.  The list was not returned
+  to the system when a thread exited, meaning that the free bats that
+  were in the list would not be reused by any thread.  This has been
+  fixed.
+
+* Tue Mar 19 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- monetdb5: Fixed interaction between mserver5 and remote mserver5 when only one
+  of the two has 128 bit integer support.
+
+* Tue Mar 19 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- sql: Fixed issue where equal column aliases were created. When those
+  aliases were parsed on the remote side it could give crashes.
+
+* Mon Mar 18 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- gdk: Fixed a couple of deadlock situations, one actually observed, one
+  never observed.
+
 * Tue Mar 12 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.5-20240312
 - Rebuilt.
 - GH#7390: Some MonetDB Server crashes found

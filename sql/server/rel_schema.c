@@ -85,7 +85,7 @@ rel_create_view_ddl(mvc *sql, int cat_type, const char *sname, sql_table *t, int
 }
 
 static sql_rel *
-rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *sname2, char *tname2, int action)
+rel_alter_table(allocator *sa, int cattype, char *sname, char *tname, char *sname2, char *tname2, int action)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1583,7 +1583,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 }
 
 static sql_rel *
-rel_schema2(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
+rel_schema2(allocator *sa, int cat_type, char *sname, char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1604,7 +1604,7 @@ rel_schema2(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
-rel_schema3(sql_allocator *sa, int cat_type, char *sname, char *tname, char *name)
+rel_schema3(allocator *sa, int cat_type, char *sname, char *tname, char *name)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1669,7 +1669,7 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
+rel_drop(allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1692,7 +1692,7 @@ rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *se
 }
 
 static sql_rel *
-rel_create_schema_dll(sql_allocator *sa, char *sname, char *auth, int nr)
+rel_create_schema_dll(allocator *sa, char *sname, char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1984,7 +1984,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 }
 
 static sql_rel *
-rel_role(sql_allocator *sa, char *grantee, char *auth, int grantor, int admin, int type)
+rel_role(allocator *sa, char *grantee, char *auth, int grantor, int admin, int type)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2028,7 +2028,7 @@ rel_grant_or_revoke_roles(mvc *sql, dlist *roles, dlist *grantees, int grant, in
 }
 
 static sql_rel *
-rel_priv(sql_allocator *sa, char *sname, char *name, char *grantee, int privs, char *cname, int grant, int grantor, int type)
+rel_priv(allocator *sa, char *sname, char *name, char *grantee, int privs, char *cname, int grant, int grantor, int type)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2054,7 +2054,7 @@ rel_priv(sql_allocator *sa, char *sname, char *name, char *grantee, int privs, c
 }
 
 static sql_rel *
-rel_func_priv(sql_allocator *sa, char *sname, int func, char *grantee, int privs, int grant, int grantor, int type)
+rel_func_priv(allocator *sa, char *sname, int func, char *grantee, int privs, int grant, int grantor, int type)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2309,7 +2309,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 }
 
 static sql_rel *
-rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role)
+rel_create_user(allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2337,7 +2337,7 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 }
 
 static sql_rel *
-rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
+rel_alter_user(allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2564,7 +2564,7 @@ rel_find_designated_object(mvc *sql, symbol *sym, sql_schema **schema_out)
 }
 
 static sql_rel *
-rel_comment_on(sql_allocator *sa, sqlid obj_id, const char *remark)
+rel_comment_on(allocator *sa, sqlid obj_id, const char *remark)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2619,24 +2619,38 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	sql_schema *s;
 	sql_rel *rel;
 	list *exps;
-	sql_trans *tr = sql->session->tr;
 
 	assert(old_name && new_name);
 	if (!(s = mvc_bind_schema(sql, old_name))) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000)
+						 "ALTER SCHEMA: no such schema '%s'", old_name);
 	}
+
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: access denied for %s to schema '%s'",
+						 get_string_global_var(sql, "current_user"), old_name);
+
 	if (s->system)
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr))
-		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: cannot rename a system schema");
+
 	if (strNil(new_name) || *new_name == '\0')
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: invalid new schema name");
+
 	if (mvc_bind_schema(sql, new_name))
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+
+	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) != NO_DEPENDENCY) {
+		return sql_error(sql, 02,
+						 SQLSTATE(2BM37) "ALTER SCHEMA: unable to"
+						 " rename schema '%s', there are database objects"
+						 " which depend on it", old_name);
+	}
 
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);
@@ -2645,6 +2659,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	rel->op = op_ddl;
 	rel->flag = ddl_rename_schema;
 	rel->exps = exps;
+
 	return rel;
 }
 

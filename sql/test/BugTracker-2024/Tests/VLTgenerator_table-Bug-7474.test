@@ -10,8 +10,7 @@ SELECT ( NULLIF ( -1 , 255 ) ) FROM GENERATE_SERIES ( 2 , -1 )
 -1
 -1
 
-skipif knownfail
 query I nosort
-SELECT ( NULLIF ( -1 , 255 ) ) FROM GENERATE_SERIES ( 2147483647 , -1 )
+SELECT count(*) FROM GENERATE_SERIES ( 2147483647 , -2, -10000000 )
 ----
--1
+215

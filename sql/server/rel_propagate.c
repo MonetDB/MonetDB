@@ -18,7 +18,7 @@
 #include "rel_updates.h"
 #include "sql_partition.h"
 
-extern sql_rel *rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r);
+extern sql_rel *rel_list(allocator *sa, sql_rel *l, sql_rel *r);
 
 static sql_exp*
 rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_table *pt)

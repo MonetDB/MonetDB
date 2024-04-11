@@ -298,8 +298,8 @@ insert into points_tbl values (st_geomfromtext('linestring(10 10, 20 20, 30 40)'
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT (10 10, 20 20)
-MULTIPOINT (30 30, 40 40)
+MULTIPOINT ((10 10), (20 20))
+MULTIPOINT ((30 30), (40 40))
 
 statement ok
 drop table points_tbl
@@ -322,7 +322,7 @@ insert into points_tbl values (st_geomfromtext('linestring(10 10, 20 20, 30 40)'
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT (20 20, 30 30)
+MULTIPOINT ((20 20), (30 30))
 
 statement ok
 drop table points_tbl
@@ -345,8 +345,8 @@ insert into points_tbl values (st_geomfromtext('linestring(10 10 10, 20 20 20, 3
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT Z (10 10 10, 20 20 20)
-MULTIPOINT Z (30 30 30, 40 40 40)
+MULTIPOINT Z ((10 10 10), (20 20 20))
+MULTIPOINT Z ((30 30 30), (40 40 40))
 
 statement ok
 drop table points_tbl
@@ -369,7 +369,7 @@ insert into points_tbl values (st_geomfromtext('linestring(10 10 10, 20 20 20, 3
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT Z (20 20 20, 30 30 30)
+MULTIPOINT Z ((20 20 20), (30 30 30))
 
 statement ok
 drop table points_tbl
@@ -568,7 +568,7 @@ select st_geomfromtext(geom) from geometriesTxt
 GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))
 LINESTRING (10 20, 30 40, 50 60)
 MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))
-MULTIPOINT (10 20, 30 40)
+MULTIPOINT ((10 20), (30 40))
 MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))
 MULTIPOLYGON EMPTY
 POINT (10 20)

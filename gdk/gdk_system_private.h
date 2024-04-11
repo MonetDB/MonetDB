@@ -45,5 +45,3 @@ struct freebats {
 };
 struct freebats *MT_thread_getfreebats(void)
 	__attribute__((__visibility__("hidden")));
-void BBPrelinquish(void)
-	__attribute__((__visibility__("hidden")));
