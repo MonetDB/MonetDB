@@ -4271,7 +4271,7 @@ VALUES (%s, '%s', '%s', '%s',
                 for f in Failure[x]:
                     what += "        %s\n" % f
         print(file=sys.stderr, end='', flush=True)
-        if verbosity == 0:
+        if verbosity == 0 or verbosity == 1:
             if Failed or errseen:
                 prred('ERROR')
             else:

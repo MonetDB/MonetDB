@@ -781,22 +781,27 @@ class SQLLogic:
                         if words[1] == f'threads={nthreads}':
                             skipping = True
                     elif words[1] == 'has-hugeint':
-                        skipping |= hashge
+                        if hashge:
+                            skipping = True
                     elif words[1] == 'knownfail':
-                        skipping |= not self.alltests
+                        if self.alltests:
+                            skipping = True
                 elif words[0] == 'onlyif':
-                    if words[1] not in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
-                        skipping = True
+                    skipping = True
+                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
+                        skipping = False
                     elif words[1].startswith('threads='):
                         if nthreads is None:
                             self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
                             nthreads = self.crs.fetchall()[0][0]
-                        if words[1] != f'threads={nthreads}':
-                            skipping = True
+                        if words[1] == f'threads={nthreads}':
+                            skipping = False
                     elif words[1] == 'has-hugeint':
-                        skipping |= not hashge
+                        if hashge:
+                            skipping = False
                     elif words[1] == 'knownfail':
-                        skipping |= self.alltests
+                        if self.alltests:
+                            skipping = False
                 self.writeline(line.rstrip())
                 line = self.readline()
                 words = line.split(maxsplit=2)
