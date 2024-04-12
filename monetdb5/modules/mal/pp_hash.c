@@ -51,6 +51,7 @@ log_base2(unsigned int n)
 	return l ;
 }
 
+/*
 static unsigned int
 compute_mask(unsigned int n)
 {
@@ -66,6 +67,7 @@ compute_mask(unsigned int n)
 
 	return (1 << bits) - 1;
 }
+*/
 
 static unsigned int
 find_hash_prime(unsigned int n)
@@ -1662,7 +1664,7 @@ error:
 		gid hsh = _hash_oid(k->tseqbase); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			hs[i] = (gid)combine(ps[i], hsh, prime) & mask; \
+			hs[i] = (gid)combine(ps[i], hsh, prime) /* & mask */; \
 		} \
 	} while (0)
 
@@ -1672,7 +1674,7 @@ error:
 		gid *hs = Tloc(h, 0); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			hs[i] = (gid)combine(ps[i], _hash_##Type(ky[sl[i]]), prime) & mask; \
+			hs[i] = (gid)combine(ps[i], _hash_##Type(ky[sl[i]]), prime) /* & mask */; \
 		} \
 	} while (0)
 
@@ -1682,7 +1684,7 @@ error:
 		gid *hs = Tloc(h, 0); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			hs[i] = (gid)combine(ps[i], _hash_##Type(*(((BaseType*)ky)+sl[i])), prime) & mask; \
+			hs[i] = (gid)combine(ps[i], _hash_##Type(*(((BaseType*)ky)+sl[i])), prime) /* & mask */; \
 		} \
 	} while (0)
 
@@ -1715,7 +1717,7 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const 
 	if (cnt) {
 		oid  *sl = Tloc(s, 0);
 		gid  *ps = Tloc(p, 0);
-		unsigned int mask = compute_mask(cnt);
+		//unsigned int mask = compute_mask(cnt);
 		unsigned int prime = find_hash_prime(cnt);
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1739,7 +1741,7 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const 
 int *ky = Tloc(k, 0);
 gid *hs = Tloc(h, 0);
 TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-	hs[i] = (gid)combine(ps[i], _hash_int(ky[sl[i]]), prime) & mask;
+	hs[i] = (gid)combine(ps[i], _hash_int(ky[sl[i]]), prime) /* & mask */;
 }
 				break;
 			case TYPE_date:
@@ -2017,11 +2019,13 @@ error:
 		oid *mtd = Tloc(res_m, 0); \
 		oid *slt = Tloc(res_s, 0); \
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
-			hsh = hs[mt[i]]; \
+			hsh = hs[mt[i]]&ht->mask; \
 			val = ky[mt[i]]; \
 			gid slot = ht->gids[hsh]; \
 			while (slot && vals[slot] != val) { \
-				slot++; \
+				hsh++; \
+				hsh &= ht->mask; \
+				slot = ht->gids[hsh]; \
 			} \
 			if (slot) { \
 				mtd[mtdcnt2] = i; \
@@ -2090,11 +2094,13 @@ int val;
 oid *mtd = Tloc(res_m, 0);
 oid *slt = Tloc(res_s, 0);
 TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) {
-	hsh = hs[mt[i]];
+	hsh = hs[mt[i]]&ht->mask;
 	val = ky[mt[i]];
 	gid slot = ht->gids[hsh];
 	while (slot && vals[slot] != val) {
-		slot++;
+		hsh++;
+		hsh &= ht->mask;
+		slot = ht->gids[hsh];
 	}
 	if (slot) {
 		mtd[mtdcnt2] = i;
