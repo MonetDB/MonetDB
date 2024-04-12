@@ -5667,7 +5667,7 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 
 /* NOTE: does NOT "set" query but instead generate set ops (union, except, intersect) */
 static sql_rel *
-rel_setquery_corresponding(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int outer)
+rel_setquery_corresponding(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int outer, bool n_ary_op)
 {
 	mvc *sql = query->sql;
 	const char *opname = op==SQL_EXCEPT?"EXCEPT":op==SQL_INTERSECT?"INTERSECT":outer?"OUTER UNION":"UNION";
@@ -5733,7 +5733,9 @@ rel_setquery_corresponding(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols
 			}
 		}
 	}
-	return rel_setop_check_types(sql, l, r, lexps, rexps, (operator_type)op);
+	return n_ary_op ?
+		rel_setop_n_ary_check_types(sql, l, r, lexps, rexps, (operator_type)op) :
+		rel_setop_check_types(sql, l, r, lexps, rexps, (operator_type)op);
 }
 
 static sql_rel *
@@ -5753,7 +5755,7 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int
 		rs = rel_projections(sql, r, NULL, 0, 1);
 		rel = rel_setop_check_types(sql, l, r, ls, rs, (operator_type)op);
 	} else {
-		rel = rel_setquery_corresponding(query, l, r, cols, op, outer);
+		rel = rel_setquery_corresponding(query, l, r, cols, op, outer, false);
 	}
 	if (rel) {
 		rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
@@ -5789,10 +5791,7 @@ rel_setquery_n_ary_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int o
 		rs = rel_projections(sql, r, NULL, 0, 1);
 		rel = rel_setop_n_ary_check_types(sql, l, r, ls, rs, (operator_type)op);
 	} else {
-		list *rels = sa_list(sql->sa);
-		append(rels, l);
-		append(rels, r);
-		rel = rel_setop_n_ary(sql->sa, rels, (operator_type)op);
+		rel = rel_setquery_corresponding(query, l, r, cols, op, outer, true);
 	}
 
 	if (rel) {
