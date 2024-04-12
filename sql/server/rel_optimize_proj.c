@@ -71,7 +71,7 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 	if (v->depth > 1 && is_simple_project(rel->op) && !need_distinct(rel) && !rel_is_ref(rel) && rel->l && !rel->r &&
 			v->parent &&
 			!is_modify(v->parent->op) && !is_topn(v->parent->op) && !is_sample(v->parent->op) &&
-			!is_ddl(v->parent->op) && !is_set(v->parent->op) &&
+			!is_ddl(v->parent->op) && !is_set(v->parent->op) && !is_munion(v->parent->op) &&
 			list_check_prop_all(rel->exps, (prop_check_func)&exp_is_rename)) {
 		sql_rel *l = rel->l;
 
