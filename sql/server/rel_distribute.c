@@ -24,6 +24,30 @@ typedef struct rmt_prop_state {
 	bool no_rmt_branch_rpl_leaf;
 } rps;
 
+static sql_rel*
+rel_unique_exps(mvc *sql, sql_rel *rel)
+{
+	list *l;
+
+	if (!is_project(rel->op))
+		return rel;
+	l = sa_list(sql->sa);
+	for (node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (e->type == e_column) {
+			const char *name = exp_name(e);
+			const char *rname = exp_relname(e);
+
+			/* If there are two identical expression names, there will be ambiguity */
+			if (name && rname && exps_bind_column2(l, rname, name, NULL))
+				exp_label(sql->sa, e, ++sql->label);
+		}
+		append(l,e);
+	}
+	rel->exps = l;
+	return rel;
+}
+
 static int
 has_remote_or_replica( sql_rel *rel )
 {
@@ -497,6 +521,7 @@ rel_remote_func_(visitor *v, sql_rel *rel)
 
 	if (find_prop(rel->p, PROP_REMOTE) != NULL) {
 		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
+		rel = rel_unique_exps(v->sql, rel); /* remove any duplicate results (aliases) */
 		rel = rel_relational_func(v->sql->sa, rel, exps);
 	}
 	return rel;

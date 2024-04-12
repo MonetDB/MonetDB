@@ -214,7 +214,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 }
 
 static atom *
-atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValRecord *v)
+atom_from_valptr( allocator *sa, sql_subtype *tpe, ValRecord *v)
 {
 	atom *a = SA_NEW(sa, atom);
 
@@ -806,7 +806,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			rel_destroy(rel->r);
 			rel->r = NULL;
 			for (node *n = rel->exps->h ; n ; n = n->next) {
-				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 				exp_prop_alias(v->sql->sa, a, e);
 				n->data = a;
 			}
@@ -1064,7 +1064,7 @@ run_optimizer
 bind_get_statistics(visitor *v, global_props *gp)
 {
 	(void) v;
-	return (gp->opt_level == 1 && !gp->cnt[op_insert]) ? rel_get_statistics : NULL;
+	return (gp->opt_level == 1 /*&& !gp->cnt[op_insert]*/) ? rel_get_statistics : NULL;
 }
 
 
@@ -1230,7 +1230,7 @@ rel_select_order(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* Compute the efficiency of using this expression earl	y in a group by list */
+/* Compute the efficiency of using this expression early in a group by list */
 static int
 score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 {

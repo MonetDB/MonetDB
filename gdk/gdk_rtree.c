@@ -25,15 +25,37 @@
  * - DB Farm is persistent i.e. not in memory
  */
 #ifdef HAVE_RTREE
+
+#ifndef SIZEOF_RTREE_COORD_T
+#define SIZEOF_RTREE_COORD_T 4
+#endif
+#include <rtree.h>
+
+struct RTree {
+	ATOMIC_TYPE refs; 	/* counter for logical references to the rtree */
+	rtree_t *rtree; 	/* rtree structure */
+	bool destroy;		/* destroy rtree when there are no more logical references */
+};
+
+/* this is a copy from the geom module */
+typedef struct mbr {
+	float xmin;
+	float ymin;
+	float xmax;
+	float ymax;
+
+} mbr;
+
 static bool
-RTREEpersistcheck (BAT *b) {
+RTREEpersistcheck(BAT *b)
+{
 	return ((BBP_status(b->batCacheid) & BBPEXISTING)
 	     	&& b->batInserted == b->batCount
 	     	&& !b->theap->dirty
 	     	&& !GDKinmemory(b->theap->farmid));
 }
 
-void
+static void
 RTREEdecref(BAT *b)
 {
 	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&b->trtree->refs);
@@ -48,7 +70,7 @@ RTREEdecref(BAT *b)
 
 }
 
-void
+static void
 RTREEincref(BAT *b)
 {
 	(void) ATOMIC_INC(&b->trtree->refs);
@@ -56,7 +78,7 @@ RTREEincref(BAT *b)
 
 // Persist rtree to disk if the conditions are right
 static gdk_return
-persistRtree (BAT *b)
+persistRtree(BAT *b)
 {
 	if (RTREEpersistcheck(b)) {
 		//TODO Necessary?
@@ -67,8 +89,7 @@ persistRtree (BAT *b)
 			const char * filename = BBP_physical(b->batCacheid);
 			int farmid = b->theap->farmid;
 
-			int fd = GDKfdlocate(farmid, filename, "w", "bsrt");
-			FILE *file_stream = fdopen(fd,"w");
+			FILE *file_stream = GDKfilelocate(farmid, filename, "w", "bsrt");
 
 			if (file_stream != NULL) {
 				int err;
@@ -79,20 +100,21 @@ persistRtree (BAT *b)
 					return GDK_FAIL;
 				}
 
-				if (!(GDKdebug & NOSYNCMASK)) {
-	#if defined(NATIVE_WIN32)
-					_commit(fd);
-	#elif defined(HAVE_FDATASYNC)
-					fdatasync(fd);
-	#elif defined(HAVE_FSYNC)
-					fsync(fd);
-	#endif
+				if (fflush(file_stream) == EOF ||
+				    (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
+#if defined(NATIVE_WIN32)
+				     && _commit(_fileno(file_stream)) < 0
+#elif defined(HAVE_FDATASYNC)
+				     && fdatasync(fileno(file_stream)) < 0
+#elif defined(HAVE_FSYNC)
+				     && fsync(fileno(file_stream)) < 0
+#endif
+					    )) {
+					GDKsyserror("Syncing %s.bsrt failed\n", filename);
 				}
 				fclose(file_stream);
 			}
 			else {
-				GDKerror("%s",strerror(errno));
-				close(fd);
 				return GDK_FAIL;
 			}
 		}
@@ -103,16 +125,13 @@ persistRtree (BAT *b)
 }
 
 static gdk_return
-BATcheckrtree(BAT *b) {
+BATcheckrtree(BAT *b)
+{
 	const char * filename = BBP_physical(b->batCacheid);
 	int farmid = b->theap->farmid;
-	int fd = GDKfdlocate(farmid, filename, "r", "bsrt");
 
 	//Do we have the rtree on file?
-	if (fd == -1)
-		return GDK_SUCCEED;
-
-	FILE *file_stream = fdopen(fd,"r");
+	FILE *file_stream = GDKfilelocate(farmid, filename, "r", "bsrt");
 	if (file_stream != NULL) {
 		rtree_t* rtree = rtree_bsrt_read(file_stream);
 		if (!rtree) {
@@ -128,15 +147,14 @@ BATcheckrtree(BAT *b) {
 		return GDK_SUCCEED;
 	}
 	else {
-		GDKerror("%s",strerror(errno));
-		close(fd);
 		return GDK_FAIL;
 	}
 }
 
 //Check if RTree exists on file (previously created index)
 static bool
-RTREEexistsonfile(BAT *b) {
+RTREEexistsonfile(BAT *b)
+{
 	const char * filename = BBP_physical(b->batCacheid);
 
 	if (!b->theap) return false;
@@ -162,8 +180,7 @@ RTREEexists(BAT *b)
 	BAT *pb;
 	bool ret;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
+		pb = BBP_desc(VIEWtparent(b));
 	} else {
 		pb = b;
 	}
@@ -177,11 +194,11 @@ RTREEexists(BAT *b)
 }
 
 bool
-RTREEexists_bid(bat *bid)
+RTREEexists_bid(bat bid)
 {
 	BAT *b;
 	bool ret;
-	if ((b = BATdescriptor(*bid)) == NULL)
+	if ((b = BATdescriptor(bid)) == NULL)
 		return false;
 	ret = RTREEexists(b);
 	BBPunfix(b->batCacheid);
@@ -189,7 +206,7 @@ RTREEexists_bid(bat *bid)
 }
 
 gdk_return
-BATrtree(BAT *wkb, BAT *mbr)
+BATrtree(BAT *wkb, BAT *mbrb)
 {
 	BAT *pb;
 	BATiter bi;
@@ -198,8 +215,7 @@ BATrtree(BAT *wkb, BAT *mbr)
 
 	//Check for a parent BAT of wkb, load if exists
 	if (VIEWtparent(wkb)) {
-		pb = BBP_cache(VIEWtparent(wkb));
-		assert(pb);
+		pb = BBP_desc(VIEWtparent(wkb));
 	} else {
 		pb = wkb;
 	}
@@ -221,12 +237,12 @@ BATrtree(BAT *wkb, BAT *mbr)
 			GDKerror("rtree_new failed\n");
 			return GDK_FAIL;
 		}
-		bi = bat_iterator(mbr);
-		canditer_init(&ci, mbr,NULL);
+		bi = bat_iterator(mbrb);
+		canditer_init(&ci, mbrb,NULL);
 
 		for (BUN i = 0; i < ci.ncand; i++) {
-			oid p = canditer_next(&ci) - mbr->hseqbase;
-			mbr_t *inMBR = (mbr_t *)BUNtail(bi, p);
+			oid p = canditer_next(&ci) - mbrb->hseqbase;
+			const mbr *inMBR = (const mbr *)BUNtail(bi, p);
 
 			rtree_id_t rtree_id = i;
 			rtree_coord_t rect[4];
@@ -254,8 +270,7 @@ RTREEfree(BAT *b)
 {
 	BAT *pb;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
+		pb = BBP_desc(VIEWtparent(b));
 	} else {
 		pb = b;
 	}
@@ -275,8 +290,7 @@ RTREEdestroy(BAT *b)
 {
 	BAT *pb;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
+		pb = BBP_desc(VIEWtparent(b));
 	} else {
 		pb = b;
 	}
@@ -312,7 +326,8 @@ struct results_rtree {
 };
 
 static int
-f (rtree_id_t id, void *context) {
+f(rtree_id_t id, void *context)
+{
 	struct results_rtree *results_rtree = (struct results_rtree *) context;
 	results_rtree->candidates[results_rtree->results_next++] = (BUN) id;
 	--results_rtree->results_left;
@@ -320,11 +335,12 @@ f (rtree_id_t id, void *context) {
 }
 
 BUN*
-RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
+RTREEsearch(BAT *b, const void *inMBRptr, int result_limit)
+{
 	BAT *pb;
+	const mbr *inMBR = inMBRptr;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
+		pb = BBP_desc(VIEWtparent(b));
 	} else {
 		pb = b;
 	}
@@ -369,12 +385,14 @@ RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 }
 #else
 void
-RTREEdestroy(BAT *b) {
+RTREEdestroy(BAT *b)
+{
 	(void) b;
 }
 
 void
-RTREEfree(BAT *b) {
+RTREEfree(BAT *b)
+{
 	(void) b;
 }
 #endif

@@ -768,7 +768,6 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	gdk_return rres = GDK_FAIL;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* exactly one of bnp and pt must be NULL, the other non-NULL */
 	assert((bnp == NULL) != (pt == NULL));
@@ -1093,7 +1092,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 	char *nseparator = (char *)separator;
 
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
-	res->vtype = TYPE_str;
+	*res = (ValRecord) {.vtype = TYPE_str};
 
 	canditer_init(&ci, b, s);
 

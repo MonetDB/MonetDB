@@ -145,7 +145,7 @@ stack_copy(MalStkPtr stk, int start)
 				rhs = &getVarConstant(stk->blk, i);
 				if(VALcopy(lhs, rhs) == NULL)
 					break;
-				if (rhs->vtype == TYPE_bat && rhs->val.bval)
+				if (rhs->bat && rhs->val.bval)
 					BBPretain(rhs->val.bval);
 			}
 		} else {
@@ -153,10 +153,15 @@ stack_copy(MalStkPtr stk, int start)
 			if (/*getVarScope(stk->blk, i) < stk->calldepth ||*/ ((getVarDeclared(stk->blk, i) <= start && getVarEolife(stk->blk, i) > start)) || !rhs->vtype) {
 				if(VALcopy(lhs, rhs) == NULL)
 					break;
+			} else if (rhs->bat) {
+                lhs->bat = rhs->bat;
+                lhs->vtype = rhs->vtype;
+                lhs->len = 0;
+                lhs->val.bval = bat_nil;
 			} else {
 				VALinit(lhs, rhs->vtype, ATOMnilptr(rhs->vtype));
 			}
-			if (lhs->vtype == TYPE_bat && lhs->val.bval)
+			if (lhs->bat && lhs->val.bval)
 				BBPretain(lhs->val.bval);
 		}
 	}

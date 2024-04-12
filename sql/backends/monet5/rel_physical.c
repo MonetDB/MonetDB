@@ -100,6 +100,8 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 			return rel;
 		/* introduce select * from l where cnt > 0 */
 		/* find count */
+		if (list_empty(rel->exps)) /* no result expressions, just project the extends */
+			rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 		exps = rel_projections(sql, rel, NULL, 1, 1);
 		sql_exp *e = find_aggr_exp(sql, rel->exps, "count"), *ea = e;
 		if (e && e->type == e_column)
@@ -205,7 +207,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 
 				args = new_exp_list(sql->sa);
 				append(args, cond);
-				append(args, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(cnt_d), NULL)));
+				append(args, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(cnt_d), NULL, 0)));
 				/* TODO only ifthenelse if value column may have nil's*/
 				append(args, cnt_d);
 				ifthen = find_func(sql, "ifthenelse", args);
@@ -397,6 +399,32 @@ rel_add_project(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_exp *
+exp_timezone(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)depth;
+	(void)rel;
+	if (e && e->type == e_func) {
+		list *l = e->l;
+		sql_subfunc *f = e->f;
+		const char *fname = f->func->base.name;
+		if (list_length(l) == 2) {
+		   if (strcmp(fname, "timestamp_to_str") == 0 || strcmp(fname, "time_to_str") == 0) {
+                sql_exp *e = l->h->data;
+                sql_subtype *t = exp_subtype(e);
+                if (t->type->eclass == EC_TIMESTAMP_TZ || t->type->eclass == EC_TIME_TZ) {
+                    sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
+                    list_append(l, offset);
+                }
+            } else if (strcmp(fname, "str_to_timestamp") == 0 || strcmp(fname, "str_to_time") == 0 || strcmp(fname, "str_to_date") == 0) {
+                sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
+                list_append(l, offset);
+            }
+		}
+	}
+	return e;
+}
+
 sql_rel *
 rel_physical(mvc *sql, sql_rel *rel)
 {
@@ -407,5 +435,22 @@ rel_physical(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero);
 	rel = rel_add_project(sql, rel);
 	rel = rel_dce(&v, NULL, rel);
+	rel = rel_exp_visitor_topdown(&v, rel, &exp_timezone, true);
+
+#ifdef HAVE_HGE
+	if (rel && sql->no_int128) {
+		sql_rel *r = rel;
+		if (is_topn(r->op))
+				r = r->l;
+		if (r && is_project(r->op) && !list_empty(r->exps)) {
+			for (node *n = r->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (exp_subtype(e)->type->localtype == TYPE_hge) /* down cast */
+					e = n->data = exp_convert(sql->sa, e, exp_subtype(e), sql_bind_localtype("lng"));
+			}
+		}
+	}
+#endif
 	return rel;
 }

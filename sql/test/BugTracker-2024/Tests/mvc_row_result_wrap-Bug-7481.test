@@ -1,0 +1,16 @@
+query I nosort
+SELECT COUNT ( ) OVER ( )
+----
+1
+
+query I nosort
+SELECT CASE WHEN COUNT ( ) OVER ( ) THEN ( 63 ) END
+----
+63
+
+skipif knownfail
+query II nosort
+SELECT 50 , CASE WHEN COUNT ( ) OVER ( ) THEN ( 63 ) END
+----
+50
+63

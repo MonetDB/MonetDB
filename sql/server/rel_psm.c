@@ -33,7 +33,7 @@
 static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
 sql_rel *
-rel_psm_block(sql_allocator *sa, list *l)
+rel_psm_block(allocator *sa, list *l)
 {
 	if (l) {
 		sql_rel *r = rel_create(sa);
@@ -49,7 +49,7 @@ rel_psm_block(sql_allocator *sa, list *l)
 }
 
 sql_rel *
-rel_psm_stmt(sql_allocator *sa, sql_exp *e)
+rel_psm_stmt(allocator *sa, sql_exp *e)
 {
 	if (e) {
 		list *l = sa_list(sa);
@@ -764,7 +764,7 @@ create_type_list(mvc *sql, dlist *params, int param)
 }
 
 static sql_rel*
-rel_create_function(sql_allocator *sa, const char *sname, sql_func *f, int replace)
+rel_create_function(allocator *sa, const char *sname, sql_func *f, int replace)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1042,7 +1042,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 }
 
 static sql_rel*
-rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr, sql_ftype type, int action)
+rel_drop_function(allocator *sa, const char *sname, const char *name, int nr, sql_ftype type, int action)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);

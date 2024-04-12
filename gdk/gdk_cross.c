@@ -27,7 +27,6 @@ BATcrossci(BAT **r1p, BAT **r2p, struct canditer *ci1, struct canditer *ci2)
 	BUN i, j;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* first some special cases */
 	if (ci1->ncand == 0 || ci2->ncand == 0) {

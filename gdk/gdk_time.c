@@ -798,13 +798,14 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 	return n;
 }
 
-ssize_t
-daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
+static ssize_t
+daytime_tz_fromstr_internal(const char *buf, size_t *len, daytime **ret, long tz_sec, bool tzlocal, bool external)
 {
 	const char *s = buf;
 	ssize_t pos;
 	daytime val;
 	int offset = 0;
+	bool has_tz = false;
 
 	pos = daytime_fromstr(s, len, ret, external);
 	if (pos < 0 || is_daytime_nil(**ret))
@@ -826,9 +827,14 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		if (s[0] == '+')
 			offset = -offset;	/* East of Greenwich */
 		s += pos;
+		has_tz = true;
 	}
-	/* convert to UTC */
-	val = **ret + offset * LL_CONSTANT(1000000);
+	val = **ret;
+	(void)tz_sec;
+	if (!tzlocal && has_tz) /* convert into utc */
+		val += offset * LL_CONSTANT(1000000);
+	if (!tzlocal && !has_tz) /* convert into utc */
+		val -= tz_sec * LL_CONSTANT(1000000);
 	if (val < 0)
 		val += DAY_USEC;
 	else if (val >= DAY_USEC)
@@ -838,6 +844,19 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 	while (*s && GDKisspace(*s))
 		s++;
 	return (ssize_t) (s - buf);
+}
+
+ssize_t
+daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
+{
+	return daytime_tz_fromstr_internal(buf, len, ret, 0, false, external);
+}
+
+ssize_t
+sql_daytime_fromstr(const char *buf, daytime *ret, long tz_sec, bool tclocal)
+{
+	size_t len = sizeof(daytime);
+	return daytime_tz_fromstr_internal(buf, &len, &ret, tz_sec, tclocal, false);
 }
 
 static ssize_t
@@ -908,8 +927,8 @@ daytime_tostr(str *buf, size_t *len, const daytime *val, bool external)
 	return daytime_precision_tostr(buf, len, *val, 6, external);
 }
 
-ssize_t
-timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+static ssize_t
+timestamp_fromstr_internal(const char *buf, size_t *len, timestamp **ret, bool external, bool parse_offset)
 {
 	const char *s = buf;
 	ssize_t pos;
@@ -954,22 +973,24 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 		lng offset = 0;
 
 		**ret = mktimestamp(dt, tm);
-		while (GDKisspace(*s))
-			s++;
-		/* in case of gmt we need to add the time zone */
-		if (fleximatch(s, "gmt", 0) == 3) {
-			s += 3;
+		if (parse_offset) {
+			while (GDKisspace(*s))
+				s++;
+			/* in case of gmt we need to add the time zone */
+			if (fleximatch(s, "gmt", 0) == 3) {
+				s += 3;
+			}
+			if ((s[0] == '-' || s[0] == '+') &&
+				GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos = 4]) &&
+				((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos = 3]))) {
+				offset = (((s[1] - '0') * LL_CONSTANT(10) + (s[2] - '0')) * LL_CONSTANT(60) + (s[pos] - '0') * LL_CONSTANT(10) + (s[pos + 1] - '0')) * LL_CONSTANT(60000000);
+				pos += 2;
+				if (s[0] != '-')
+					offset = -offset;
+				s += pos;
+			}
+			**ret = timestamp_add_usec(**ret, offset);
 		}
-		if ((s[0] == '-' || s[0] == '+') &&
-		    GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos = 4]) &&
-		    ((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos = 3]))) {
-			offset = (((s[1] - '0') * LL_CONSTANT(10) + (s[2] - '0')) * LL_CONSTANT(60) + (s[pos] - '0') * LL_CONSTANT(10) + (s[pos + 1] - '0')) * LL_CONSTANT(60000000);
-			pos += 2;
-			if (s[0] != '-')
-				offset = -offset;
-			s += pos;
-		}
-		**ret = timestamp_add_usec(**ret, offset);
 	}
 	while (*s && GDKisspace(*s))
 		s++;
@@ -977,11 +998,18 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 }
 
 ssize_t
-timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+{
+	return timestamp_fromstr_internal(buf, len, ret, external, true);
+}
+
+static ssize_t
+timestamp_tz_fromstr_internal(const char *buf, size_t *len, timestamp **ret, long tz_sec, bool tzlocal, bool external)
 {
 	const char *s = buf;
-	ssize_t pos = timestamp_fromstr(s, len, ret, external);
+	ssize_t pos = timestamp_fromstr_internal(s, len, ret, external, false);
 	lng offset = 0;
+	bool has_tz = false;
 
 	if (pos < 0 || is_timestamp_nil(**ret))
 		return pos;
@@ -1002,11 +1030,29 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool externa
 		if (s[0] != '-')
 			offset = -offset;
 		s += pos;
+		has_tz = true;
 	}
-	**ret = timestamp_add_usec(**ret, offset);
+	if (!tzlocal && has_tz) /* convert into utc */
+		**ret = timestamp_add_usec(**ret, offset);
+	if (!tzlocal && !has_tz)
+		**ret = timestamp_add_usec(**ret, -tz_sec * LL_CONSTANT(1000000));
 	while (*s && GDKisspace(*s))
 		s++;
 	return (ssize_t) (s - buf);
+}
+
+ssize_t
+timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+{
+	return timestamp_tz_fromstr_internal(buf, len, ret, 0, false, external);
+}
+
+/* timestamp from str (return timestamp in local time */
+ssize_t
+sql_timestamp_fromstr(const char *buf, timestamp *ret, long tz_sec, bool tzlocal)
+{
+	size_t len = sizeof(timestamp);
+	return timestamp_tz_fromstr_internal(buf, &len, &ret, tz_sec, tzlocal, false);
 }
 
 ssize_t

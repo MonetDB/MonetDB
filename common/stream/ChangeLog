@@ -1,3 +1,7 @@
 # ChangeLog file for stream
 # This file is updated with Maddlog
 
+* Wed Feb 21 2024 Sjoerd Mullender <sjoerd@acm.org>
+- CURL support has been removed from the stream library.  If support is
+  needed, look at the source code in either streamcat.c or mclient.c.
+

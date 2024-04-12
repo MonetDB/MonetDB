@@ -1788,14 +1788,14 @@ old_logger_destroy(old_logger *lg)
 		GDKfree(subcommit);
 		return rc;
 	}
-	if ((rc = log_create_types_file(lg->lg, lg->filename, true)) != GDK_SUCCEED) {
+	if ((rc = log_create_types_file(lg->lg, lg->filename)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		GDKfree(subcommit);
 		return rc;
 	}
 	lg->lg->id = (ulng) lg->id;
 	lg->lg->saved_id = lg->lg->id;
-	rc = TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id, lg->lg->saved_tid);
+	rc = TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id);
 	GDKfree(subcommit);
 	if (rc != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");

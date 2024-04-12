@@ -273,14 +273,14 @@ extern stmt *stmt_assign(backend *be, const char *sname, const char *varname, st
 extern sql_subtype *tail_type(stmt *st);
 extern int stmt_has_null(stmt *s);
 
-extern const char *column_name(sql_allocator *sa, stmt *st);
-extern const char *table_name(sql_allocator *sa, stmt *st);
-extern const char *schema_name(sql_allocator *sa, stmt *st);
+extern const char *column_name(allocator *sa, stmt *st);
+extern const char *table_name(allocator *sa, stmt *st);
+extern const char *schema_name(allocator *sa, stmt *st);
 
 extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);
 extern stmt *stmt_rename(backend *ba, sql_exp *e, stmt *s);
 extern stmt *stmt_instruction(backend *ba, InstrPtr p, stmt *s);
-extern stmt *stmt_create(sql_allocator *sa, st_type type);
+extern stmt *stmt_create(allocator *sa, st_type type);
 
 #endif /* _SQL_STATEMENT_H_ */

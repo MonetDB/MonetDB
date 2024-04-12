@@ -462,10 +462,10 @@ popcount64(uint64_t x)
 	return (int) __popcnt64(x);
 #endif
 #else
-	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
-	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
-	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
-	return (int) ((x * 0x0101010101010101ULL) >> 56);
+	x = (x & UINT64_C(0x5555555555555555)) + ((x >> 1) & UINT64_C(0x5555555555555555));
+	x = (x & UINT64_C(0x3333333333333333)) + ((x >> 2) & UINT64_C(0x3333333333333333));
+	x = (x & UINT64_C(0x0F0F0F0F0F0F0F0F)) + ((x >> 4) & UINT64_C(0x0F0F0F0F0F0F0F0F));
+	return (int) ((x * UINT64_C(0x0101010101010101)) >> 56);
 #endif
 }
 
@@ -501,10 +501,10 @@ str_alphabet_bitmap(str_item *s)
 {
 	int i;
 
-	s->abm = 0ULL;
+	s->abm = UINT64_C(0);
 
 	for (i = 0; i < s->len; i++)
-		s->abm |= 1ULL << (s->cp_sequence[i] % 64);
+		s->abm |= UINT64_C(1) << (s->cp_sequence[i] % 64);
 
 	s->abm_popcount = popcount64(s->abm);
 }

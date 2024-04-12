@@ -84,7 +84,16 @@ mnstr_get_buffer(stream *s)
 {
 	if (s == NULL)
 		return NULL;
-	return (buffer *) s->stream_data.p;
+	buffer *b = (buffer *) s->stream_data.p;
+	if (b == NULL)
+		return NULL;
+	if (!s->readonly) {
+		/* switching from write mode to read mode */
+		s->readonly = true;
+		b->len = b->pos;
+	}
+	b->pos = 0;
+	return b;
 }
 
 static ssize_t
@@ -95,7 +104,11 @@ buffer_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 
 	b = (buffer *) s->stream_data.p;
 	assert(b);
-	if (size && b && b->pos + size <= b->len) {
+	if (b == NULL)
+		return -1;
+	if (size != 0) {
+		if (size + b->pos > b->len)
+			size = b->len - b->pos;
 		memcpy(buf, b->buf + b->pos, size);
 		b->pos += size;
 		return (ssize_t) (size / elmsize);
@@ -152,6 +165,13 @@ buffer_flush(stream *s, mnstr_flush_level flush_level)
 	return 0;
 }
 
+static void
+buffer_destroy_stream(stream *s)
+{
+	buffer_destroy(s->stream_data.p);
+	destroy_stream(s);
+}
+
 stream *
 buffer_rastream(buffer *restrict b, const char *restrict name)
 {
@@ -180,8 +200,8 @@ buffer_wastream(buffer *restrict b, const char *restrict name)
 {
 	stream *s;
 
-	if (b == NULL || name == NULL) {
-		mnstr_set_open_error(name, 0, "no buffer or no name");
+	if (name == NULL) {
+		mnstr_set_open_error(name, 0, "no name");
 		return NULL;
 	}
 #ifdef STREAM_DEBUG
@@ -195,6 +215,14 @@ buffer_wastream(buffer *restrict b, const char *restrict name)
 	s->write = buffer_write;
 	s->close = buffer_close;
 	s->flush = buffer_flush;
+	if (b == NULL) {
+		b = buffer_create(1 << 20);
+		if (b == NULL) {
+			destroy_stream(s);
+			return NULL;
+		}
+		s->destroy = buffer_destroy_stream;
+	}
 	s->stream_data.p = (void *) b;
 	return s;
 }

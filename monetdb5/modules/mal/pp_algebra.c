@@ -2101,7 +2101,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			err = createException(MAL, "pp algebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
-				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
@@ -2116,7 +2116,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		}
 	} else if (!r) {
 		MT_lock_set(&b->theaplock);
-		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
+		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_desc(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			uint16_t width = b->twidth;
 			MT_lock_unset(&b->theaplock);
 			r = COLnew2(0, tt, max, TRANSIENT, width);
@@ -3102,7 +3102,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			err = createException(MAL, "pp aggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
-				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
@@ -3117,7 +3117,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		}
 	} else if (!r) {
 		MT_lock_set(&b->theaplock);
-		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
+		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_desc(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			uint16_t width = b->twidth;
 			MT_lock_unset(&b->theaplock);
 			r = COLnew2(0, b->ttype, max, TRANSIENT, width);
@@ -3260,7 +3260,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			err = createException(MAL, "pp aggr.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
-				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			assert(r->tvheap->parentid == r->batCacheid);
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
@@ -3275,7 +3275,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		}
 	} else if (!r) {
 		MT_lock_set(&b->theaplock);
-		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
+		if (ATOMvarsized(b->ttype) && VIEWvtparent(b) && BBP_desc(VIEWvtparent(b))->batRestricted == BAT_READ) {
 			uint16_t width = b->twidth;
 			MT_lock_unset(&b->theaplock);
 			r = COLnew2(0, b->ttype, max, TRANSIENT, width);
@@ -3523,11 +3523,11 @@ static mel_func pp_algebra_init_funcs[] = {
  pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(3,7, sharedbatargany("", 1), sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), arg("pipeline", ptr), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),
  pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
- command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4, batargany("",3), arg("pipeline", ptr), batarg("left",oid),batargany("right",3))),
- command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid))),
- command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid), batarg("gid",oid))),
- command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("sink",3), arg("pipeline", ptr), batargany("b",4))),
- command("group", "group", LALGderive, false, "Sub Group input.", args(2,6, batarg("gid", oid), batargany("sink",3), arg("pipeline", ptr), batarg("pgid", oid), batargany("phash", 5), batargany("b",3))),
+ command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4, batargany("",1), arg("pipeline", ptr), batarg("left",oid),batargany("right",1))),
+ command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid))),
+ command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
+ command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batargany("b",2))),
+ command("group", "group", LALGderive, false, "Sub Group input.", args(2,6, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batarg("pgid", oid), batargany("phash", 2), batargany("b",1))),
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
  command("aggr", "count", LALGcount, false, "Count per group.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "count", LALGcountstar, false, "count per group.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),

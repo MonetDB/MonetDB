@@ -168,24 +168,6 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 	};
 	char *err;
 
-	/* cleanup_types: change introduced post Dec2023 */
-	err = SQLstatementIntern(c,
-							 "update sys._columns set type_digits = 7 where type = 'tinyint' and type_digits <> 7;\n"
-							 "update sys._columns set type_digits = 15 where type = 'smallint' and type_digits <> 15;\n"
-							 "update sys._columns set type_digits = 31 where type = 'int' and type_digits <> 31;\n"
-							 "update sys._columns set type_digits = 63 where type = 'bigint' and type_digits <> 63;\n"
-							 "update sys._columns set type_digits = 127 where type = 'hugeint' and type_digits <> 127;\n"
-							 "update sys._columns set type = 'varchar' where type in ('clob', 'char') and table_id in (select id from sys._tables where system and name <> 'netcdf_files');\n"
-							 "update sys.args set type_digits = 7 where type = 'tinyint' and type_digits <> 7;\n"
-							 "update sys.args set type_digits = 15 where type = 'smallint' and type_digits <> 15;\n"
-							 "update sys.args set type_digits = 31 where type = 'int' and type_digits <> 31;\n"
-							 "update sys.args set type_digits = 63 where type = 'bigint' and type_digits <> 63;\n"
-							 "update sys.args set type_digits = 127 where type = 'hugeint' and type_digits <> 127;\n"
-							 "update sys.args set type = 'varchar' where type in ('clob', 'char');\n",
-							 "update", true, false, NULL);
-	if (err)
-		return err;
-
 	/* if any of the tested function's internal ID does not match the ID
 	 * in the sys.functions table, we recreate the internal part of the
 	 * system tables */
@@ -782,7 +764,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0, ppos;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
-	sql_allocator *old_sa = sql->sa;
+	allocator *old_sa = sql->sa;
 	bool first = true;
 	sql_trans *tr = sql->session->tr;
 	struct os_iter si;
@@ -3295,7 +3277,7 @@ sql_update_jan2022(Client c, mvc *sql)
 	sql_table *t;
 
 	/* this bit of code is to upgrade from a Jan2022 RC to the Jan2022 release */
-	sql_allocator *old_sa = sql->sa;
+	allocator *old_sa = sql->sa;
 	if ((sql->sa = sa_create(sql->pa)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
@@ -4714,7 +4696,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 			 BBPrename(u, NULL) != 0 ||
 			 BBPrename(p, NULL) != 0 ||
 			 BBPrename(d, NULL) != 0 ||
-			 TMsubcommit_list(authbats, NULL, 4, -1, -1) != GDK_SUCCEED)) {
+			 TMsubcommit_list(authbats, NULL, 4, -1) != GDK_SUCCEED)) {
 				fprintf(stderr, "Committing removal of old user/password BATs failed\n");
 		}
 		BBPunfix(u->batCacheid);
@@ -5245,7 +5227,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	}
 
 	/* new function sys.regexp_replace */
-	sql_allocator *old_sa = sql->sa;
+	allocator *old_sa = sql->sa;
 	if ((sql->sa = sa_create(sql->pa)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
@@ -5787,7 +5769,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 			BBPrename(rt_uri, NULL) != 0 ||
 			BATmode(rt_deleted, true) != GDK_SUCCEED ||
 			BBPrename(rt_deleted, NULL) != 0 ||
-			TMsubcommit_list(rtauthbats, NULL, 6, -1, -1) != GDK_SUCCEED) {
+			TMsubcommit_list(rtauthbats, NULL, 6, -1) != GDK_SUCCEED) {
 			fprintf(stderr, "Committing removal of old remote user/password BATs failed\n");
 		}
 		BBPunfix(rt_key->batCacheid);
@@ -6066,7 +6048,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 	}
 
 	/* 52_describe.sql New function sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean) */
-	sql_allocator *old_sa = sql->sa;
+	allocator *old_sa = sql->sa;
 	if ((sql->sa = sa_create(sql->pa)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
@@ -6630,18 +6612,115 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		if (BATcount(b) == 0) {
 			/* do update */
 			sql_table *t;
-			const char *query = "drop function sys.dump_database(boolean);\n"
+			const char *query =
+				"update sys._columns set type_digits = 7 where type = 'tinyint' and type_digits <> 7;\n"
+				"update sys._columns set type_digits = 15 where type = 'smallint' and type_digits <> 15;\n"
+				"update sys._columns set type_digits = 31 where type = 'int' and type_digits <> 31;\n"
+				"update sys._columns set type_digits = 63 where type = 'bigint' and type_digits <> 63;\n"
+				"update sys._columns set type_digits = 127 where type = 'hugeint' and type_digits <> 127;\n"
+				"update sys._columns set type = 'varchar' where type in ('clob', 'char') and table_id in (select id from sys._tables where system and name <> 'netcdf_files');\n"
+				"update sys.args set type_digits = 7 where type = 'tinyint' and type_digits <> 7;\n"
+				"update sys.args set type_digits = 15 where type = 'smallint' and type_digits <> 15;\n"
+				"update sys.args set type_digits = 31 where type = 'int' and type_digits <> 31;\n"
+				"update sys.args set type_digits = 63 where type = 'bigint' and type_digits <> 63;\n"
+				"update sys.args set type_digits = 127 where type = 'hugeint' and type_digits <> 127;\n"
+				"update sys.args set type = 'varchar' where type in ('clob', 'char');\n"
+				"drop aggregate median(decimal);\n"
+				"drop aggregate median_avg(decimal);\n"
+				"drop aggregate quantile(decimal, double);\n"
+				"drop aggregate quantile_avg(decimal, double);\n"
+				"create aggregate median(val DECIMAL(2)) returns DECIMAL(2)\n"
+				" external name \"aggr\".\"median\";\n"
+				"GRANT EXECUTE ON AGGREGATE median(DECIMAL(2)) TO PUBLIC;\n"
+				"create aggregate median(val DECIMAL(4)) returns DECIMAL(4)\n"
+				" external name \"aggr\".\"median\";\n"
+				"GRANT EXECUTE ON AGGREGATE median(DECIMAL(4)) TO PUBLIC;\n"
+				"create aggregate median(val DECIMAL(9)) returns DECIMAL(9)\n"
+				" external name \"aggr\".\"median\";\n"
+				"GRANT EXECUTE ON AGGREGATE median(DECIMAL(9)) TO PUBLIC;\n"
+				"create aggregate median(val DECIMAL(18)) returns DECIMAL(18)\n"
+				" external name \"aggr\".\"median\";\n"
+				"GRANT EXECUTE ON AGGREGATE median(DECIMAL(18)) TO PUBLIC;\n"
+#ifdef HAVE_HGE
+				"create aggregate median(val DECIMAL(38)) returns DECIMAL(38)\n"
+				" external name \"aggr\".\"median\";\n"
+				"GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;\n"
+#endif
+				"create aggregate median_avg(val DECIMAL(2)) returns DOUBLE\n"
+				" external name \"aggr\".\"median_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(2)) TO PUBLIC;\n"
+				"create aggregate median_avg(val DECIMAL(4)) returns DOUBLE\n"
+				" external name \"aggr\".\"median_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(4)) TO PUBLIC;\n"
+				"create aggregate median_avg(val DECIMAL(9)) returns DOUBLE\n"
+				" external name \"aggr\".\"median_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(9)) TO PUBLIC;\n"
+				"create aggregate median_avg(val DECIMAL(18)) returns DOUBLE\n"
+				" external name \"aggr\".\"median_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(18)) TO PUBLIC;\n"
+#ifdef HAVE_HGE
+				"create aggregate median_avg(val DECIMAL(38)) returns DOUBLE\n"
+				" external name \"aggr\".\"median_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;\n"
+#endif
+				"create aggregate quantile(val DECIMAL(2), q DOUBLE) returns DECIMAL(2)\n"
+				" external name \"aggr\".\"quantile\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(2), DOUBLE) TO PUBLIC;\n"
+				"create aggregate quantile(val DECIMAL(4), q DOUBLE) returns DECIMAL(4)\n"
+				" external name \"aggr\".\"quantile\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(4), DOUBLE) TO PUBLIC;\n"
+				"create aggregate quantile(val DECIMAL(9), q DOUBLE) returns DECIMAL(9)\n"
+				" external name \"aggr\".\"quantile\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(9), DOUBLE) TO PUBLIC;\n"
+				"create aggregate quantile(val DECIMAL(18), q DOUBLE) returns DECIMAL(18)\n"
+				" external name \"aggr\".\"quantile\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(18), DOUBLE) TO PUBLIC;\n"
+#ifdef HAVE_HGE
+				"create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)\n"
+				" external name \"aggr\".\"quantile\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;\n"
+#endif
+				"create aggregate quantile_avg(val DECIMAL(2), q DOUBLE) returns DOUBLE\n"
+				" external name \"aggr\".\"quantile_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(2), DOUBLE) TO PUBLIC;\n"
+				"create aggregate quantile_avg(val DECIMAL(4), q DOUBLE) returns DOUBLE\n"
+				" external name \"aggr\".\"quantile_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(4), DOUBLE) TO PUBLIC;\n"
+				"create aggregate quantile_avg(val DECIMAL(9), q DOUBLE) returns DOUBLE\n"
+				" external name \"aggr\".\"quantile_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(9), DOUBLE) TO PUBLIC;\n"
+				"create aggregate quantile_avg(val DECIMAL(18), q DOUBLE) returns DOUBLE\n"
+				" external name \"aggr\".\"quantile_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(18), DOUBLE) TO PUBLIC;\n"
+#ifdef HAVE_HGE
+				"create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE\n"
+				" external name \"aggr\".\"quantile_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;\n"
+#endif
+				"drop function if exists sys.time_to_str(time with time zone, string) cascade;\n"
+				"drop function if exists sys.timestamp_to_str(timestamp with time zone, string) cascade;\n"
+				"create function time_to_str(d time, format string) returns string\n"
+				" external name mtime.\"time_to_str\";\n"
+				"create function time_to_str(d time with time zone, format string) returns string\n"
+				" external name mtime.\"timetz_to_str\";\n"
+				"create function timestamp_to_str(d timestamp with time zone, format string) returns string\n"
+				" external name mtime.\"timestamptz_to_str\";\n"
+				"grant execute on function time_to_str(time, string) to public;\n"
+				"grant execute on function time_to_str(time with time zone, string) to public;\n"
+				"grant execute on function timestamp_to_str(timestamp with time zone, string) to public;\n"
+				"update sys.functions set system = true where not system and schema_id = 2000 and name in ('time_to_str', 'timestamp_to_str', 'median', 'median_avg', 'quantile', 'quantile_avg');\n"
+				"drop function if exists sys.dump_database(boolean) cascade;\n"
 				"drop view sys.dump_comments;\n"
 				"drop view sys.dump_tables;\n"
 				"drop view sys.dump_functions;\n"
 				"drop view sys.dump_function_grants;\n"
-				"drop function sys.describe_columns(string, string);\n"
+				"drop function if exists sys.describe_columns(string, string) cascade;\n"
 				"drop view sys.describe_functions;\n"
 				"drop view sys.describe_privileges;\n"
 				"drop view sys.describe_comments;\n"
 				"drop view sys.fully_qualified_functions;\n"
 				"drop view sys.describe_tables;\n"
-				"drop function sys.describe_type(string, integer, integer);\n"
+				"drop function if exists sys.describe_type(string, integer, integer) cascade;\n"
 				"CREATE FUNCTION sys.describe_type(ctype string, digits integer, tscale integer)\n"
 				" RETURNS string\n"
 				"BEGIN\n"

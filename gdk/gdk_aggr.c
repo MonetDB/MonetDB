@@ -218,7 +218,6 @@ dofsum(const void *restrict values, oid seqb,
 	volatile flt f;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* we only deal with the two floating point types */
 	assert(tp1 == TYPE_flt || tp1 == TYPE_dbl);
@@ -729,7 +728,6 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 	unsigned int *restrict seen = NULL; /* bitmask for groups that we've seen */
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	switch (tp2) {
 	case TYPE_flt:
@@ -1425,7 +1423,6 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 	unsigned int *restrict seen; /* bitmask for groups that we've seen */
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	/* allocate bitmap for seen group ids */
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
@@ -1951,7 +1948,6 @@ BATgroupavg2(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, BUN
 	BATiter bi = {0};
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2168,7 +2164,6 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	lng *cnts;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if ((err = BATgroupaggrinit2(true, b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
@@ -2940,7 +2935,6 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	BAT *bn, *rn, *cn;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	if ((err = BATgroupaggrinit(avg, g, e, NULL, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
@@ -3348,7 +3342,6 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 	}
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	canditer_init(&ci, b, s);
 
@@ -3435,7 +3428,6 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 	BATiter bi = {0};
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -3608,7 +3600,6 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 	int (*atomcmp)(const void *, const void *);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	nils = ngrp;
 	TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx)
@@ -3731,7 +3722,6 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 	int (*atomcmp)(const void *, const void *);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	nils = ngrp;
 	TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx)
@@ -4030,7 +4020,6 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 				if ((pb == NULL || bi.count == BATcount(pb)) &&
 				    BATcheckimprints(b)) {
 					if (pb != NULL) {
-						BAT *pb = BBP_cache(VIEWtparent(b));
 						MT_lock_set(&pb->batIdxLock);
 						imprints = pb->timprints;
 						if (imprints != NULL)
@@ -4202,7 +4191,6 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 				if ((pb == NULL || BATcount(b) == BATcount(pb)) &&
 				    BATcheckimprints(b)) {
 					if (pb != NULL) {
-						BAT *pb = BBP_cache(VIEWtparent(b));
 						MT_lock_set(&pb->batIdxLock);
 						imprints = pb->timprints;
 						if (imprints != NULL)
@@ -4339,7 +4327,6 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4721,7 +4708,6 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, b
 	dbl delta;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	switch (tp) {
 	case TYPE_bte:
@@ -4848,7 +4834,6 @@ calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample)
 	dbl mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 
 	switch (tp) {
@@ -4952,7 +4937,6 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 	lng t0 = 0;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -5069,7 +5053,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	BATiter bi = {0};
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -5307,7 +5290,6 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	BATiter b1i = {0}, b2i = {0};
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -5513,7 +5495,6 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	BATiter b1i = {0}, b2i = {0};
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 

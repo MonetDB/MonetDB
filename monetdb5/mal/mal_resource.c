@@ -75,13 +75,11 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 	BAT *b;
 
 	(void) mb;
-	if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
+	if (stk->stk[getArg(pci, i)].bat) {
 		bat bid = stk->stk[getArg(pci, i)].val.bval;
 		if (!BBPcheck(bid))
 			return 0;
 		b = BBP_desc(bid);
-		if (b == NULL)
-			return 0;
 		MT_lock_set(&b->theaplock);
 		if (flag && isVIEW(b)) {
 			MT_lock_unset(&b->theaplock);

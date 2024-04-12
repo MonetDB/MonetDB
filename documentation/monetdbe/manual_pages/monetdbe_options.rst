@@ -31,9 +31,9 @@ MonetDBe options struct. Object can be passed to a monetdbe_open() function. Can
 (2) int querytimeout. Gracefully terminate query after a few seconds.
 (3) int sessiontimeout. Graceful terminate the session after a few seconds.
 (4) int nr_threads. Maximum number of worker treads, limits level of parallelism.
-(5) monetdbe_remote* remote. Pointer to a monetdbe_remote object.
-(6) monetdbe_mapi_server* mapi_server. Pointer to a monetdbe_mapi_server object.
-(7) const char *trace_file. File to which log output should be written.
+(5) monetdbe_remote\* remote. Pointer to a monetdbe_remote object.
+(6) monetdbe_mapi_server\* mapi_server. Pointer to a monetdbe_mapi_server object.
+(7) const char \*trace_file. File to which log output should be written.
 
 EXAMPLES
 ========

@@ -25,17 +25,30 @@
 #include "mal_private.h"
 #include "mal_linker.h"
 
+#define MAXTYPEVAR  4
+
 static malType getPolyType(malType t, int *polytype);
 static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
-static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
+static bool typeResolved(MalBlkPtr mb, InstrPtr p, int i);
 
 int
 resolvedType(int dsttype, int srctype)
 {
-	if (dsttype == srctype || dsttype == TYPE_any || srctype == TYPE_any ||
-       (isaBatType(srctype) && dsttype == TYPE_bat) ||
-	   (isaBatType(dsttype) && srctype == TYPE_bat))
+	if (dsttype == srctype || dsttype == TYPE_any || srctype == TYPE_any)
 		return 0;
+
+	if (getOptBat(dsttype) && isaBatType(srctype)) {
+		int t1 = getBatType(dsttype);
+		int t2 = getBatType(srctype);
+		if (t1 == t2 || t1 == TYPE_any || t2 == TYPE_any)
+			return 0;
+	}
+	if (getOptBat(dsttype) && !isaBatType(srctype)) {
+		int t1 = getBatType(dsttype);
+		int t2 = srctype;
+		if (t1 == t2 || t1 == TYPE_any || t2 == TYPE_any)
+			return 0;
+	}
 
 	if (isaBatType(dsttype) && isaBatType(srctype)) {
 		int t1 = getBatType(dsttype);
@@ -64,14 +77,6 @@ resolveType(int *rtype, int dsttype, int srctype)
 	/*
 	 * A bat reference can be coerced to bat type.
 	 */
-	if (isaBatType(srctype) && dsttype == TYPE_bat) {
-		*rtype = srctype;
-		return 0;
-	}
-	if (isaBatType(dsttype) && srctype == TYPE_bat) {
-		*rtype = dsttype;
-		return 0;
-	}
 	if (isaBatType(dsttype) && isaBatType(srctype)) {
 		int t1, t2, t3;
 		t1 = getBatType(dsttype);
@@ -102,18 +107,41 @@ resolveType(int *rtype, int dsttype, int srctype)
 			ATOMtype(tp) == TYPE_str ||					\
 			(!isPolyType(tp) && tp < TYPE_any &&		\
 			 tp >= 0 && ATOMextern(tp))) {				\
-			getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;	\
+			getInstrPtr(mb, 0)->gc = true;				\
 			setVarCleanup(mb, getArg(p, b));			\
-			p->gc |= GARBAGECONTROL;					\
+			p->gc = true;								\
 		}												\
 	} while (0)
+
+static malType
+getFormalArgType( Symbol s, int arg)
+{
+	if (s->kind == FUNCTIONsymbol)
+		return getArgType(s->def, getSignature(s), arg);
+	mel_arg *a = s->func->args+arg;
+	malType tpe = TYPE_any;
+	if (a->nr || !a->type[0]) {
+		if (a->isbat)
+			tpe = newBatType(TYPE_any);
+		else
+			tpe = a->typeid;
+		setTypeIndex(tpe, a->nr);
+	} else {
+		if (a->isbat)
+			tpe = newBatType(a->typeid);
+		else
+			tpe = a->typeid;
+	}
+	if (a->opt == 1)
+		setOptBat(tpe);
+	return tpe;
+}
 
 static malType
 findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 {
 	Module m;
 	Symbol s;
-	InstrPtr sig;
 	int i, k, unmatched = 0, s1;
 	int polytype[MAXTYPEVAR];
 	int returns[256];
@@ -173,7 +201,29 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * type(Ai)=type(Yi). Furthermore, the variables Xi obtain
 		 * their type from Bi (or type(Bi)==type(Xi)).
 		 */
-		sig = getSignature(s);
+		int argc = 0, argcc = 0, retc = 0, varargs = 0, varrets = 0, unsafe = 0, inlineprop = 0, polymorphic = 0;
+		if (s->kind == FUNCTIONsymbol) {
+			InstrPtr sig = getSignature(s);
+			retc = sig->retc;
+			argc = sig->argc;
+			varargs = (sig->varargs & (VARARGS | VARRETS));
+			varrets = (sig->varargs & VARRETS);
+			unsafe = s->def->unsafeProp;
+			inlineprop = s->def->inlineProp;
+			polymorphic = sig->polymorphic;
+			argcc = argc;
+		} else {
+			retc = s->func->retc;
+			argc = s->func->argc;
+			varargs = /*retc == 0 ||*/ s->func->vargs || s->func->vrets;
+			varrets = retc == 0 || s->func->vrets;
+			unsafe = s->func->unsafe;
+			inlineprop = 0;
+			polymorphic = s->func->poly;
+			if (!retc && !polymorphic)
+				polymorphic = 1;
+			argcc = argc + ((retc == 0)?1:0);
+		}
 		unmatched = 0;
 
 		/*
@@ -188,15 +238,13 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * the limited type nesting permitted.  Note, each function
 		 * returns at least one value.
 		 */
-		if (sig->polymorphic) {
-			int limit = sig->polymorphic;
-			if (!(sig->argc == p->argc ||
-				  (sig->argc < p->argc && sig->varargs & (VARARGS | VARRETS)))
-					) {
+		if (polymorphic) {
+			int limit = polymorphic;
+			if (!(argcc == p->argc || (argc < p->argc && varargs))) {
 				s = s->peer;
 				continue;
 			}
-			if (sig->retc != p->retc && !(sig->varargs & VARRETS)) {
+			if (retc != p->retc && !varrets) {
 				s = s->peer;
 				continue;
 			}
@@ -211,10 +259,10 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			 */
 			i = p->retc;
 			/* first handle the variable argument list */
-			for (k = sig->retc; i < p->argc; k++, i++) {
+			for (k = retc; i < p->argc; k++, i++) {
 				int actual = getArgType(mb, p, i);
-				int formal = getArgType(s->def, sig, k);
-				if (k == sig->argc - 1 && sig->varargs & VARARGS)
+				int formal = getFormalArgType(s, k);
+				if (k == argc - 1 && varargs)
 					k--;
 				/*
 				 * Take care of variable argument lists.
@@ -226,6 +274,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				 * In all other cases the type should apply to all
 				 * remaining arguments.
 				 */
+				if (getOptBat(formal) && !isAnyExpression(formal) && getBatType(actual) == getBatType(formal))
+					formal = actual;
 				if (formal == actual)
 					continue;
 				if (updateTypeMap(formal, actual, polytype)) {
@@ -252,19 +302,21 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			 * first element in the list determines the required type
 			 * of all.
 			 */
-			if (sig->varargs) {
-				if (sig->token != PATTERNsymbol)
+			if (varargs) {
+				if (s->kind != PATTERNsymbol && retc)
 					unmatched = i;
 				else {
 					/* resolve the arguments */
 					for (; i < p->argc; i++) {
 						/* the type of the last one has already been set */
 						int actual = getArgType(mb, p, i);
-						int formal = getArgType(s->def, sig, k);
-						if (k == sig->argc - 1 && sig->varargs & VARARGS)
+						int formal = getFormalArgType(s, k);
+						if (k == argc - 1 && varargs)
 							k--;
 
 						formal = getPolyType(formal, polytype);
+						if (getOptBat(formal) && !isAnyExpression(formal) && getBatType(actual) == getBatType(formal))
+							formal = actual;
 						if (formal == actual || formal == TYPE_any)
 							continue;
 						if (resolvedType(formal, actual) < 0) {
@@ -279,7 +331,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			 * We have to check the argument types to determine a
 			 * possible match for the non-polymorphic case.
 			 */
-			if (sig->argc != p->argc || sig->retc != p->retc) {
+			if (argc != p->argc || retc != p->retc) {
 				s = s->peer;
 				continue;
 			}
@@ -287,7 +339,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 
 			for (i = p->retc; i < p->argc; i++) {
 				int actual = getArgType(mb, p, i);
-				int formal = getArgType(s->def, sig, i);
+				int formal = getFormalArgType(s, i);
 				if (resolvedType(formal, actual) < 0) {
 					unmatched = i;
 					break;
@@ -319,38 +371,42 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * then the resulting type can not be determined.
 		 */
 		s1 = 0;
-		if (sig->polymorphic)
-			for (k = i = 0; i < p->retc; k++, i++) {
+		if (polymorphic) {
+			for (k = i = 0; i < p->retc && k < retc; k++, i++) {
 				int actual = getArgType(mb, p, i);
-				int formal = getArgType(s->def, sig, k);
+				int formal = getFormalArgType(s, k);
 
-				if (k == sig->retc - 1 && sig->varargs & VARRETS)
+				if (k == retc - 1 && varrets)
 					k--;
 
 				s1 = getPolyType(formal, polytype);
 
+				if (getOptBat(formal) && !isAnyExpression(formal) && getBatType(actual) == getBatType(formal))
+					s1 = actual;
 				if (resolveType(returntype+i, s1, actual) < 0) {
 					s1 = -1;
 					break;
 				}
-		} else
+			}
+		} else {
 			/* check for non-polymorphic return */
 			for (k = i = 0; i < p->retc; i++) {
 				int actual = getArgType(mb, p, i);
-				int formal = getArgType(s->def, sig, i);
+				int formal = getFormalArgType(s, i);
 
-				if (k == sig->retc - 1 && sig->varargs & VARRETS)
+				if (k == retc - 1 && varrets)
 					k--;
 
-				if (actual == formal)
+				if (actual == formal) {
 					returntype[i] = actual;
-				else {
+				} else {
 					if (resolveType(returntype+i, formal, actual) < 0) {
 						s1 = -1;
 						break;
 					}
 				}
 			}
+		}
 		if (s1 < 0) {
 			s = s->peer;
 			continue;
@@ -365,7 +421,9 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * Beware, this is not yet effectuated in the interpreter.
 		 */
 
-		p->typechk = TYPE_RESOLVED;
+		p->typeresolved = true;
+		p->inlineProp = inlineprop;
+		p->unsafeProp = unsafe;
 		for (i = 0; i < p->retc; i++) {
 			int ts = returntype[i];
 			if (isVarConstant(mb, getArg(p, i))) {
@@ -373,7 +431,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 					mb->errors = createMalException(mb, idx, TYPE,
 													"Assignment to constant");
 				}
-				p->typechk = TYPE_UNKNOWN;
+				p->typeresolved = false;
 				goto wrapup;
 			}
 			if (!isVarFixed(mb, getArg(p, i)) && ts >= 0) {
@@ -388,14 +446,13 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 */
 		for (i = p->retc; i < p->argc; i++)
 			if (ATOMtype(getArgType(mb, p, i)) == TYPE_str ||
-				getArgType(mb, p, i) == TYPE_bat ||
 				isaBatType(getArgType(mb, p, i)) ||
 				(!isPolyType(getArgType(mb, p, i)) &&
 				 getArgType(mb, p, i) < TYPE_any &&
 				 getArgType(mb, p, i) >= 0 &&
 				 ATOMstorage(getArgType(mb, p, i)) == TYPE_str)) {
-				getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;
-				p->gc |= GARBAGECONTROL;
+				getInstrPtr(mb, 0)->gc = true;
+				p->gc = true;
 			}
 		/*
 		 * It may happen that an argument was still untyped and as a
@@ -411,7 +468,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * cloned does not contain errors detected earlier in the
 		 * process, nor does it contain polymorphic actual arguments.
 		 */
-		if (sig->polymorphic) {
+		if (polymorphic) {
 			int cnt = 0;
 			for (k = i = p->retc; i < p->argc; i++) {
 				int actual = getArgType(mb, p, i);
@@ -420,6 +477,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			}
 			if (cnt == 0 && s->kind != COMMANDsymbol
 				&& s->kind != PATTERNsymbol) {
+				assert(s->kind == FUNCTIONsymbol);
 				s = cloneFunction(scope, s, mb, p);
 				if (mb->errors)
 					goto wrapup;
@@ -428,7 +486,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		/* Any previousely found error in the block
 		 * turns the complete block into erroneous.
 		 if (mb->errors) {
-		 p->typechk = TYPE_UNKNOWN;
+		 p->typeresolved = false;
 		 goto wrapup;
 		 }
 		 */
@@ -441,22 +499,22 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * shared by the separate binder
 		 */
 		if (p->token == ASSIGNsymbol) {
-			switch (getSignature(s)->token) {
+			switch (s->kind) {
 			case COMMANDsymbol:
 				p->token = CMDcall;
-				p->fcn = getSignature(s)->fcn;	/* C implementation mandatory */
+				p->fcn = s->func->imp;				/* C implementation mandatory */
 				if (p->fcn == NULL) {
 					if (!silent)
 						mb->errors = createMalException(mb, idx, TYPE,
 														"object code for command %s.%s missing",
 														p->modname, p->fcnname);
-					p->typechk = TYPE_UNKNOWN;
+					p->typeresolved = false;
 					goto wrapup;
 				}
 				break;
 			case PATTERNsymbol:
 				p->token = PATcall;
-				p->fcn = getSignature(s)->fcn;	/* C implementation optional */
+				p->fcn = s->func->imp;				/* C implementation optional */
 				break;
 			case FUNCTIONsymbol:
 				p->token = FCNcall;
@@ -506,7 +564,7 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int idx, int lhs, int rhs, int silent)
 		GDKfree(n1);
 		GDKfree(n2);
 	}
-	p->typechk = TYPE_UNKNOWN;
+	p->typeresolved = false;
 }
 
 /*
@@ -527,7 +585,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	int s1 = -1, i, k;
 	Module m = 0;
 
-	p->typechk = TYPE_UNKNOWN;
+	p->typeresolved = false;
 	if ((p->fcn || p->blk) && p->token >= FCNcall && p->token <= PATcall) {
 		p->token = ASSIGNsymbol;
 		p->fcn = NULL;
@@ -540,13 +598,22 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		for (k = p->retc; k < p->argc; k++) {
 			prepostProcess(getArgType(mb, p, k), p, k, mb);
 		}
-		p->typechk = TYPE_RESOLVED;
+		p->typeresolved = true;
 		for (k = 0; k < p->retc; k++)
-			p->typechk = MIN(p->typechk, typeKind(mb, p, 0));
+			p->typeresolved &= typeResolved(mb, p, 0);
 		return;
 	}
 	if (getFunctionId(p) && getModuleId(p)) {
 		m = findModule(scope, getModuleId(p));
+
+		if (!m || strcmp(m->name, getModuleId(p)) != 0) {
+			if (!silent)
+				mb->errors = createMalException(mb, idx, TYPE, "'%s%s%s' undefined",
+					(getModuleId(p) ?  getModuleId(p) : ""),
+					(getModuleId(p) ? "." : ""),
+					getFunctionId(p));
+			return;
+		}
 		s1 = findFunctionType(m, mb, p, idx, silent);
 
 		if (s1 >= 0)
@@ -600,9 +667,9 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 						GDKfree(errsig);
 				}
 			}
-			p->typechk = TYPE_UNKNOWN;
+			p->typeresolved = false;
 		} else
-			p->typechk = TYPE_RESOLVED;
+			p->typeresolved = true;
 		return;
 	}
 	/*
@@ -619,9 +686,9 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			mb->errors = createMalException(mb, idx, TYPE,
 											"Multiple assignment mismatch");
 		}
-		p->typechk = TYPE_RESOLVED;
+		p->typeresolved = true;
 	} else
-		p->typechk = TYPE_RESOLVED;
+		p->typeresolved = true;
 	for (k = 0, i = p->retc; k < p->retc && i < p->argc; i++, k++) {
 		int rhs = getArgType(mb, p, i);
 		int lhs = getArgType(mb, p, k);
@@ -637,15 +704,10 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			 * using the target type.
 			 */
 			if (lhs != TYPE_void && lhs != TYPE_any) {
-				ValRecord cst;
+				ValRecord cst = { .vtype = TYPE_void, .val.oval = void_nil, .bat = isaBatType(lhs) };
 				int k;
 
-				cst.vtype = TYPE_void;
-				cst.val.oval = void_nil;
-				cst.len = 0;
-
-				rhs = isaBatType(lhs) ? TYPE_bat : lhs;
-				k = defConstant(mb, rhs, &cst);
+				k = defConstant(mb, lhs, &cst);
 				if (k >= 0)
 					p->argv[i] = k;
 				rhs = lhs;
@@ -696,7 +758,7 @@ chkTypes(Module s, MalBlkPtr mb, int silent)
 	for (i = 0; mb->errors == NULL && i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		assert(p != NULL);
-		if (p->typechk != TYPE_RESOLVED)
+		if (!p->typeresolved)
 			typeChecker(s, mb, p, i, silent);
 	}
 	if (mb->errors) {
@@ -714,7 +776,7 @@ int
 chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 {
 	if (mb->errors == MAL_SUCCEED) {
-		p->typechk = TYPE_UNKNOWN;
+		p->typeresolved = false;
 		typeChecker(s, mb, p, getPC(mb, p), TRUE);
 	}
 	return mb->errors != MAL_SUCCEED;
@@ -752,14 +814,14 @@ chkProgram(Module s, MalBlkPtr mb)
  * header leads to a dynamic typed statement. In principle we have
  * to type check the function upon each call.
  */
-static int
-typeKind(MalBlkPtr mb, InstrPtr p, int i)
+static bool
+typeResolved(MalBlkPtr mb, InstrPtr p, int i)
 {
 	malType t = getArgType(mb, p, i);
 	if (t == TYPE_any || isAnyExpression(t)) {
-		return TYPE_UNKNOWN;
+		return false;
 	}
-	return TYPE_RESOLVED;
+	return true;
 }
 
 /*
@@ -771,23 +833,29 @@ static malType
 getPolyType(malType t, int *polytype)
 {
 	int ti;
-	int tail;
+	malType tail;
 
 	ti = getTypeIndex(t);
-	if (!isaBatType(t) && ti > 0)
-		return polytype[ti];
+	if (!isaBatType(t) && ti > 0) {
+		tail = polytype[ti];
+		if (getOptBat(t))
+			setOptBat(tail);
+		return tail;
+	}
 
 	tail = ti == 0 ? getBatType(t) : polytype[ti];
 	if (isaBatType(t)) {
 		tail = newBatType(tail);
 	}
+	if (getOptBat(t))
+		setOptBat(tail);
 	return tail;
 }
 
 /*
  * Each argument is checked for binding of polymorphic arguments.
  * This routine assumes that the type index is indeed smaller than maxarg.
- * (The parser currently enforces a single digit from 1-9 )
+ * (The parser currently enforces a single digit from 1-2 )
  * The polymorphic type 'any', i.e. any_0, does never constraint an operation
  * it can match with all polymorphic types.
  * The routine returns the instanciated formal type for subsequent
@@ -798,32 +866,29 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 {
 	int h, t, ret = 0;
 
-	if (formal == TYPE_bat && isaBatType(actual))
+	if (!isAnyExpression(formal) && isaBatType(formal) && isaBatType(actual))
 		return 0;
 
 	if ((h = getTypeIndex(formal))) {
-		if (isaBatType(actual) && !isaBatType(formal) &&
+		if (isaBatType(actual) && !isaBatType(formal) && !getOptBat(formal) &&
 			(polytype[h] == TYPE_any || polytype[h] == actual)) {
 			polytype[h] = actual;
-			ret = 0;
-			goto updLabel;
+			return 0;
 		}
 		t = getBatType(actual);
 		if (t != polytype[h]) {
-			if (polytype[h] == TYPE_bat && isaBatType(actual))
+			if (isaBatType(polytype[h]) && isaBatType(actual))
 				ret = 0;
 			else if (polytype[h] == TYPE_any)
 				polytype[h] = t;
 			else {
-				ret = -1;
-				goto updLabel;
+				return -1;
 			}
 		}
 	}
 	if (isaBatType(formal)) {
-		if (!isaBatType(actual) && actual != TYPE_bat)
+		if (!isaBatType(actual))
 			return -1;
 	}
-  updLabel:
 	return ret;
 }

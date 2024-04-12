@@ -8,7 +8,7 @@ except ImportError:
 # this stuff is for geos pre 3.12
 import re
 geosre = re.compile(r'MULTIPOINT *\((?P<points>[^()]*)\)')
-ptsre = re.compile(r'\d+ \d+')
+ptsre = re.compile(r'-?\d+ -?\d+')
 
 with process.client('sqldump',
                     stdin=process.PIPE,
@@ -26,7 +26,7 @@ if len(sys.argv) == 2 and sys.argv[1] in ('dump', 'dump-nogeom'):
         res = geosre.search(line)
         if res is not None:
             points = ptsre.sub(r'(\g<0>)', res.group('points'))
-            output[i] = line[:res.start(0)] + f'MULTIPOINT ({points})' + line[res.end(0):]
+            output[i] = line[:res.start('points')] + points + line[res.end('points'):]
     stableout = '{}.stable.out'.format(sys.argv[1])
     stable = open(stableout, encoding='utf-8').readlines()
     import difflib

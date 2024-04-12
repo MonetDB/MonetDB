@@ -118,6 +118,7 @@ function(monetdb_configure_defines)
   check_function_exists("task_info" HAVE_TASK_INFO)
   check_function_exists("times" HAVE_TIMES)
   check_function_exists("uname" HAVE_UNAME)
+  check_symbol_exists("wcwidth" "wchar.h" HAVE_WCWIDTH)
   # Some libc versions on Linux distributions don't have it
   check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
   cmake_push_check_state()

@@ -124,6 +124,6 @@ struct old_logger {
 };
 
 gdk_return old_logger_load(logger *lg, const char *fn, const char *logdir, FILE *fp, int version, const char *filename);
-gdk_return log_create_types_file(logger *lg, const char *filename, bool append);
+gdk_return log_create_types_file(logger *lg, const char *filename);
 
 #endif /* _LOGGER_INTERNALS_H_ */

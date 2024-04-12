@@ -115,7 +115,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	(void) mb;
 	(void) stk;
 	(void) pci;
 	if (!s)
@@ -254,9 +253,8 @@ SQLexecPostLoginTriggers(Client c)
 					// cache state
 					int oldvtop = c->curprg->def->vtop;
 					int oldstop = c->curprg->def->stop;
-					int oldvid = c->curprg->def->vid;
 					Symbol curprg = c->curprg;
-					sql_allocator *sa = m->sa;
+					allocator *sa = m->sa;
 
 					if (!(m->sa = sa_create(m->pa))) {
 						m->sa = sa;
@@ -276,7 +274,7 @@ SQLexecPostLoginTriggers(Client c)
 
 					setVarType(c->curprg->def, 0, 0);
 					if (backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0) {
-						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+						freeVariables(c, c->curprg->def, NULL, oldvtop);
 						c->curprg = curprg;
 						sa_destroy(m->sa);
 						m->sa = sa;
@@ -293,7 +291,7 @@ SQLexecPostLoginTriggers(Client c)
 					// restore previous state
 					be->out = out;
 					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+					freeVariables(c, c->curprg->def, NULL, oldvtop);
 					sqlcleanup(be, 0);
 					c->curprg = curprg;
 					sa_destroy(m->sa);
@@ -371,7 +369,7 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 	str msg = MAL_SUCCEED;
 
 	if (c->sqlcontext == 0) {
-		sql_allocator *sa = sa_create(NULL);
+		allocator *sa = sa_create(NULL);
 		if (sa == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout2;
@@ -512,7 +510,7 @@ SQLresetClient(Client c)
 	if (c->sqlcontext == NULL)
 		throw(SQL, "SQLexitClient", SQLSTATE(42000) "MVC catalogue not available");
 	if (c->sqlcontext) {
-		sql_allocator *pa = NULL;
+		allocator *pa = NULL;
 		backend *be = c->sqlcontext;
 		mvc *m = be->mvc;
 
@@ -1334,11 +1332,9 @@ SQLparser_body(Client c, backend *be)
 			goto finalize;
 		}
 
-		int oldvid = c->curprg->def->vid;
 		int oldvtop = c->curprg->def->vtop;
 		int oldstop = c->curprg->def->stop;
 		be->vtop = oldvtop;
-		be->vid = oldvid;
 		(void)runtimeProfileSetTag(c); /* generate and set the tag in the mal block of the clients current program. */
 		if (m->emode != m_prepare || (m->emode == m_prepare && (m->emod & mod_exec) && is_ddl(r->op)) /* direct execution prepare */) {
 			scanner_query_processed(&(m->scanner));
@@ -1367,7 +1363,7 @@ SQLparser_body(Client c, backend *be)
 					msg = handle_error(m, 0, msg);
 					err = 1;
 					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+					freeVariables(c, c->curprg->def, NULL, oldvtop);
 				}
 				r = r->l;
 				m->emode = m_normal;
@@ -1377,7 +1373,7 @@ SQLparser_body(Client c, backend *be)
 				msg = handle_error(m, 0, msg);
 				err = 1;
 				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				freeVariables(c, c->curprg->def, NULL, oldvtop);
 				freeException(c->curprg->def->errors);
 				c->curprg->def->errors = NULL;
 			} else
@@ -1410,7 +1406,7 @@ SQLparser_body(Client c, backend *be)
 						str other = c->curprg->def->errors;
 						c->curprg->def->errors = 0;
 						MSresetInstructions(c->curprg->def, oldstop);
-						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+						freeVariables(c, c->curprg->def, NULL, oldvtop);
 						if (other != msg)
 							freeException(other);
 						goto finalize;
@@ -1423,7 +1419,7 @@ SQLparser_body(Client c, backend *be)
 					c->curprg->def->errors = 0;
 					/* restore the state */
 					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+					freeVariables(c, c->curprg->def, NULL, oldvtop);
 					if (msg == NULL && *m->errstr){
 						if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 							msg = createException(PARSE, "SQLparser", "%s", m->errstr);

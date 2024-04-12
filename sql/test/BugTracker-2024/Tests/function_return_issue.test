@@ -13,3 +13,6 @@ select id from do_test(true)
 ----
 1
 
+statement ok
+drop function do_test
+

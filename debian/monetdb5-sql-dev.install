@@ -1,4 +1,3 @@
-debian/tmp/usr/include/monetdb/exception_buffer.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/opt_backend.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/rel_*.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/sql*.h usr/include/monetdb

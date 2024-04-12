@@ -1,0 +1,64 @@
+query T nosort
+SELECT name FROM tables WHERE startswith(name, 'id')
+----
+idxs
+idxs
+ids
+
+statement ok
+CREATE TABLE foo(x string)
+
+statement ok
+INSERT INTO foo VALUES ('johndoe'),('janedoe'),('robertdoe')
+
+query I nosort
+SELECT startswith(x, '') FROM foo
+----
+1
+1
+1
+
+query I nosort
+SELECT startswith('', x) FROM foo
+----
+0
+0
+0
+
+statement ok
+TRUNCATE TABLE foo
+
+statement ok
+INSERT INTO foo VALUES ('johndoe'),('Müller Thomas'),('Thomas Müller')
+
+query I nosort
+SELECT startswith(x, 'Müller') FROM foo
+----
+0
+1
+0
+
+query I nosort
+SELECT startswith('Müller', x) FROM foo
+----
+0
+0
+0
+
+statement ok
+TRUNCATE TABLE foo
+
+statement ok
+INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
+
+query T nosort
+SELECT * FROM foo WHERE [foo.x] startswith ['john', true]
+----
+john doe
+
+query T nosort
+SELECT * FROM foo WHERE [foo.x] startswith ['doe', true]
+----
+
+statement ok
+drop table foo

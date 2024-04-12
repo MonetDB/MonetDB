@@ -1,6 +1,8 @@
 ifnull-6933
 HAVE_GEOM?empty-result-aggr-crash-7274
+timestamp_to_str-7370
 ambiguous-identifiers-7372
+date_time-7374
 temp-table-foreign-key-crash-7378
 update-mask-id-crash-7379
 blob-crash-7380

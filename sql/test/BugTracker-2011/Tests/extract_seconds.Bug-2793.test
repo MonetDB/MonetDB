@@ -36,7 +36,7 @@ select extract(minute from timestamp '2011-3-10 9:30:42.246+01:00')
 query I rowsort
 select extract(hour from timestamp '2011-3-10 9:30:42.246+01:00')
 ----
-8
+9
 
 query I rowsort
 select extract(month from timestamp '2011-3-10 9:30:42.246+01:00')

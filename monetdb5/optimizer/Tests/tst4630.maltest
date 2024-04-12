@@ -1,5 +1,5 @@
 statement ok
-function qry( a:bat[:any_2], b:bat[:any_3], c:bat[:any_4]):bat[:any_4];
+function qry( a:bat[:any_1], b:bat[:any_2], c:bat[:any_3]):bat[:any_3];
 	a1:= a;
 	b1:=b;
 	c1:=c;

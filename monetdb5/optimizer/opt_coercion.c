@@ -55,16 +55,14 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	if (a == r && coerce[varid].src && coerce[varid].fromtype < r) {
 		// Remove upcast on first argument
 		getArg(p, 1) = coerce[varid].src;
-		if (chkInstruction(cntxt->usermodule, mb, p)
-			|| p->typechk == TYPE_UNKNOWN)
+		if (chkInstruction(cntxt->usermodule, mb, p) || !p->typeresolved)
 			getArg(p, 1) = varid;
 	}
 	varid = getArg(p, 2);
 	if (b == r && coerce[varid].src && coerce[varid].fromtype < r) {
 		// Remove upcast on second argument
 		getArg(p, 2) = coerce[varid].src;
-		if (chkInstruction(cntxt->usermodule, mb, p)
-			|| p->typechk == TYPE_UNKNOWN)
+		if (chkInstruction(cntxt->usermodule, mb, p) || !p->typeresolved)
 			getArg(p, 2) = varid;
 	}
 	return;
@@ -87,8 +85,7 @@ coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	k = getArg(p, 1);
 	if (r == TYPE_dbl && coerce[k].src) {
 		getArg(p, 1) = coerce[k].src;
-		if (chkInstruction(cntxt->usermodule, mb, p)
-			|| p->typechk == TYPE_UNKNOWN)
+		if (chkInstruction(cntxt->usermodule, mb, p) || !p->typeresolved)
 			getArg(p, 1) = k;
 	}
 	return;

@@ -62,7 +62,8 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sqlstore *store = m->session->tr->store;
 	if (!(b = store->storage_api.bind_col(m->session->tr, c, RDONLY)))
 		throw(SQL,"sql.createorderindex", SQLSTATE(HY005) "Column can not be accessed");
-	if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
+	if (VIEWtparent(b)) {
+		nb = BBP_desc(VIEWtparent(b));
 		BBPunfix(b->batCacheid);
 		if (!(b = BATdescriptor(nb->batCacheid)))
 			throw(SQL,"sql.createorderindex", SQLSTATE(HY005) "Column can not be accessed");
@@ -110,7 +111,8 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sqlstore *store = m->session->tr->store;
 	if (!(b = store->storage_api.bind_col(m->session->tr, c, RDONLY)))
 		throw(SQL,"sql.droporderindex", SQLSTATE(HY005) "Column can not be accessed");
-	if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
+	if (VIEWtparent(b)) {
+		nb = BBP_desc(VIEWtparent(b));
 		BBPunfix(b->batCacheid);
 		if (!(b = BATdescriptor(nb->batCacheid)))
 			throw(SQL,"sql.droporderindex", SQLSTATE(HY005) "Column can not be accessed");

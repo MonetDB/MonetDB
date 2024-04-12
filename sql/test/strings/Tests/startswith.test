@@ -1,0 +1,49 @@
+query I nosort
+SELECT startswith(NULL, '')
+----
+NULL
+
+query I nosort
+SELECT startswith('', NULL)
+----
+NULL
+
+query I nosort
+SELECT startswith('', '')
+----
+1
+
+query I nosort
+SELECT startswith('johndoe', '')
+----
+1
+
+query I nosort
+SELECT startswith('', 'johndoe')
+----
+0
+
+query I nosort
+SELECT startswith('johndoe', 'john')
+----
+1
+
+query I nosort
+SELECT startswith('one two three', 'three', true)
+----
+0
+
+query I nosort
+SELECT startswith('Müller Thomas', 'müller', true)
+----
+1
+
+query I nosort
+SELECT startswith('Müller Thomas', 'müller', false)
+----
+0
+
+query I nosort
+SELECT ['Camón Romasan'] startswith ['camu', true];
+----
+0

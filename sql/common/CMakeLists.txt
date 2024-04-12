@@ -14,7 +14,6 @@ add_library(sqlcommon STATIC)
 
 target_sources(sqlcommon
   PRIVATE
-  sql_mem.c
   sql_list.c
   sql_hash.c
   sql_stack.c
@@ -25,7 +24,6 @@ target_sources(sqlcommon
   sql_string.c
   sql_backend.h
   sql_string.h
-  exception_buffer.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/sql_types.h)
 

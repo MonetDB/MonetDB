@@ -138,7 +138,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 	} else if (LANG_INT_OR_MAL(op->func->lang) && !nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
 	} else if (LANG_INT_OR_MAL(op->func->lang) && avg && (restype != TYPE_dbl)) { /* push candidates */
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 		q = pushBit(mb, q, no_nil);
 	}
 	q->inout = 0;
@@ -380,7 +380,7 @@ stmt_unique_sharedout(backend *be, stmt *s, int output)
 	q->inout = 1;
 	q = pushArgument(mb, q, be->pipeline);
 	q = pushArgument(mb, q, s->nr);
-	q = pushNil(mb, q, TYPE_bat); /* candidate list */
+	q = pushNilBat(mb, q); /* candidate list */
 	pushInstruction(mb, q);
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_unique);
@@ -661,6 +661,7 @@ stmt_part_new(backend *be, int nr_parts)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 	q = pushInt(be->mb, q, nr_parts);
+	pushInstruction(be->mb, q);
 	return q;
 }
 
@@ -674,6 +675,7 @@ stmt_mat_new(backend *be, int tt, int nr_parts)
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushType(be->mb, q, tt);
 	q = pushInt(be->mb, q, nr_parts);
+	pushInstruction(be->mb, q);
 	return q;
 }
 
@@ -822,10 +824,11 @@ stmt_slice(backend *be, stmt *col, stmt *limit)
 static stmt *
 stmt_pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input)
 {
-	InstrPtr q = newStmtArgs(be->mb, languageRef, "pipelines", 4);
+	InstrPtr q = newStmtArgs(be->mb, languageRef, pipelinesRef, 4), r = NULL;
 	if (q == NULL)
 		return NULL;
 	q->barrier = BARRIERsymbol;
+	setArgType(be->mb, q, 0, TYPE_bit);
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_int));
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_ptr));
 	if (input >= 0 && nrparts == 0)
@@ -835,21 +838,23 @@ stmt_pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input)
 
 	pushInstruction(be->mb, q);
 	be->nrparts = nrparts;
-	be->pp = getArg(q, 1); /* counter */
-	be->pipeline = getArg(q, 2); /* pipeline */
-	int label = getArg(q, 0);
+	int label = getArg(q, 0);	 /* barrier */
+	be->pp = getArg(q, 1);		 /* counter */
+	be->pipeline = getArg(q, 2); /* pipeline handle */
 
-	InstrPtr r = newStmtArgs(be->mb, calcRef, ">=", 3);
-	r->barrier = LEAVEsymbol;
-	getArg(r, 0) = label;
-	r = pushArgument(be->mb, r, be->pp);
-	if (input >= 0 && nrparts == 0)
-		r = pushArgument(be->mb, r, input);
-	else
-		r = pushInt(be->mb, r, nrparts);
-	pushInstruction(be->mb, r);
+	if (nrparts >= 0) {
+		r = newStmtArgs(be->mb, calcRef, ">=", 3);
+		r->barrier = LEAVEsymbol;
+		getArg(r, 0) = label;
+		r = pushArgument(be->mb, r, be->pp);
+		if (input >= 0 && nrparts == 0)
+			r = pushArgument(be->mb, r, input);
+		else
+			r = pushInt(be->mb, r, nrparts);
+		pushInstruction(be->mb, r);
+	}
 
-	if (r && q) {
+	if ((nrparts < 0 || r) && q) {
 		stmt *s = stmt_create(be->mvc->sa, st_none);
 
 		s->nr = label;
@@ -892,13 +897,20 @@ stmt_pp_jump(backend *be, stmt *label, int nrparts)
 	r = pushArgument(be->mb, r, getArg(label->q, 2) /* pipeline */);
 	pushInstruction(be->mb, r);
 
-	r = newStmtArgs(be->mb, calcRef, "<", 3);
+	if (be->nrparts >= 0)
+		r = newStmtArgs(be->mb, calcRef, "<", 3);
+	else
+		r = newAssignment(be->mb);
 	if (r == NULL)
 		return -1;
 	r->barrier = REDOsymbol;
 	getArg(r, 0) = label->nr;
-	r = pushArgument(be->mb, r, getArg(label->q, 1)); /* current nr */
-	r = pushArgument(be->mb, r, getArg(label->q, 3)); /* nrparts */
+	if (be->nrparts >= 0) {
+		r = pushArgument(be->mb, r, getArg(label->q, 1)); /* current nr */
+		r = pushArgument(be->mb, r, getArg(label->q, 3)); /* nrparts */
+	} else {
+		pushBit(be->mb, r, true);
+	}
 	(void)nrparts;
 	//r = pushInt(be->mb, r, nrparts);
 	pushInstruction(be->mb, r);

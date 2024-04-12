@@ -1,0 +1,12 @@
+query I nosort
+select 'a'>1
+----
+1
+
+statement error 22018!conversion of string 'a' to type bte failed.
+select 1>'a'
+
+query I nosort
+select cast(1 as string)>'a'
+----
+0

@@ -58,22 +58,49 @@
 BAT *
 BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 {
+	bat bid;
 	BAT *bn;
+	Heap *h = NULL, *vh = NULL;
 
 	/*
 	 * Alloc space for the BAT and its dependent records.
 	 */
 	assert(tt >= 0);
 
-	bn = GDKmalloc(sizeof(BAT));
+	if (heapnames) {
+		if ((h = GDKmalloc(sizeof(Heap))) == NULL) {
+			return NULL;
+		}
+		*h = (Heap) {
+			.farmid = BBPselectfarm(role, tt, offheap),
+			.dirty = true,
+		};
 
-	if (bn == NULL)
+		if (ATOMneedheap(tt)) {
+			if ((vh = GDKmalloc(sizeof(Heap))) == NULL) {
+				GDKfree(h);
+				return NULL;
+			}
+			*vh = (Heap) {
+				.farmid = BBPselectfarm(role, tt, varheap),
+				.dirty = true,
+			};
+		}
+	}
+
+	bid = BBPallocbat(tt);
+	if (bid == 0) {
+		GDKfree(h);
+		GDKfree(vh);
 		return NULL;
+	}
+	bn = BBP_desc(bid);
 
 	/*
 	 * Fill in basic column info
 	 */
 	*bn = (BAT) {
+		.batCacheid = bid,
 		.hseqbase = hseq,
 
 		.ttype = tt,
@@ -90,39 +117,11 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.batRole = role,
 		.batTransient = true,
 		.batRestricted = BAT_WRITE,
+		.theap = h,
+		.tvheap = vh,
+		.creator_tid = MT_getpid(),
 	};
 
-	if (heapnames) {
-		if ((bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
-			GDKfree(bn);
-			return NULL;
-		}
-		*bn->theap = (Heap) {
-			.farmid = BBPselectfarm(role, bn->ttype, offheap),
-			.dirty = true,
-		};
-
-		if (ATOMneedheap(tt)) {
-			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL) {
-				GDKfree(bn->theap);
-				GDKfree(bn);
-				return NULL;
-			}
-			*bn->tvheap = (Heap) {
-				.farmid = BBPselectfarm(role, bn->ttype, varheap),
-				.dirty = true,
-			};
-		}
-	}
-	/*
-	 * add to BBP
-	 */
-	if (BBPinsert(bn) == 0) {
-		GDKfree(bn->tvheap);
-		GDKfree(bn->theap);
-		GDKfree(bn);
-		return NULL;
-	}
 	if (bn->theap) {
 		bn->theap->parentid = bn->batCacheid;
 		ATOMIC_INIT(&bn->theap->refs, 1);
@@ -241,7 +240,6 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 
 	assert(cap <= BUN_MAX);
 	assert(hseq <= oid_nil);
-	assert(tt != TYPE_bat);
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "tt error\n", NULL);
 
 	/* round up to multiple of BATTINY */
@@ -557,8 +555,7 @@ BATextend(BAT *b, BUN newcap)
  * the transaction rules; so stable elements must be moved to the
  * "deleted" section of the BAT (they cannot be fully deleted
  * yet). For the elements that really disappear, we must free
- * heapspace and unfix the atoms if they have fix/unfix handles. As an
- * optimization, in the case of no stable elements, we quickly empty
+ * heapspace. As an optimization, in the case of no stable elements, we quickly empty
  * the heaps by copying a standard small empty image over them.
  */
 gdk_return
@@ -731,7 +728,9 @@ BATdestroy(BAT *b)
 		HEAPdecref(b->oldtail, false);
 		b->oldtail = NULL;
 	}
-	GDKfree(b);
+	*b = (BAT) {
+		.batCacheid = 0,
+	};
 }
 
 /*
@@ -778,9 +777,7 @@ wrongtype(int t1, int t2)
 			if (ATOMvarsized(t1) ||
 			    ATOMvarsized(t2) ||
 			    t1 == TYPE_msk || t2 == TYPE_msk ||
-			    ATOMsize(t1) != ATOMsize(t2) ||
-			    BATatoms[t1].atomFix ||
-			    BATatoms[t2].atomFix)
+			    ATOMsize(t1) != ATOMsize(t2))
 				return true;
 		}
 	}
@@ -803,9 +800,9 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	bool slowcopy = false;
 	BAT *bn = NULL;
 	BATiter bi;
+	char strhash[GDK_STRHASHSIZE];
 
 	BATcheck(b, NULL);
-	assert(tt != TYPE_bat);
 
 	/* maybe a bit ugly to change the requested bat type?? */
 	if (b->ttype == TYPE_void && !writable)
@@ -816,8 +813,19 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		return NULL;
 	}
 
+	/* in case of a string bat, we save the string heap hash table
+	 * while we have the lock so that we can restore it in the copy;
+	 * this is because during our operation, a parallel thread could
+	 * be adding strings to the vheap which would modify the hash
+	 * table and that would result in buckets containing values
+	 * beyond the original vheap that we're copying */
 	MT_lock_set(&b->theaplock);
 	bi = bat_iterator_nolock(b);
+	if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE)
+		memcpy(strhash, b->tvheap->base, GDK_STRHASHSIZE);
+
+	bat_iterator_incref(&bi);
+	MT_lock_unset(&b->theaplock);
 
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
@@ -825,12 +833,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	    role == TRANSIENT &&
 	    bi.restricted == BAT_READ &&
 	    ATOMstorage(b->ttype) != TYPE_msk && /* no view on TYPE_msk */
-	    (!VIEWtparent(b) ||
-	     BBP_desc(VIEWtparent(b))->batRestricted == BAT_READ)) {
-		MT_lock_unset(&b->theaplock);
+	    (bi.h == NULL ||
+	     bi.h->parentid == b->batCacheid ||
+	     BBP_desc(bi.h->parentid)->batRestricted == BAT_READ)) {
 		bn = VIEWcreate(b->hseqbase, b);
 		if (bn == NULL) {
-			return NULL;
+			goto bunins_failed;
 		}
 		if (tt != bn->ttype) {
 			bn->ttype = tt;
@@ -842,15 +850,13 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			}
 			bn->tseqbase = ATOMtype(tt) == TYPE_oid ? bi.tseq : oid_nil;
 		}
+		bat_iterator_end(&bi);
 		return bn;
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
 		 * setting slowcopy to false) */
 		if (ATOMsize(tt) != ATOMsize(bi.type)) {
 			/* oops, void materialization */
-			slowcopy = true;
-		} else if (BATatoms[tt].atomFix) {
-			/* oops, we need to fix/unfix atoms */
 			slowcopy = true;
 		} else if (bi.h && bi.h->parentid != b->batCacheid &&
 			   BATcapacity(BBP_desc(bi.h->parentid)) > bi.count + bi.count) {
@@ -869,8 +875,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 
 		bn = COLnew2(b->hseqbase, tt, bi.count, role, bi.width);
 		if (bn == NULL) {
-			MT_lock_unset(&b->theaplock);
-			return NULL;
+			goto bunins_failed;
 		}
 		if (bn->tvheap != NULL && bn->tvheap->base == NULL) {
 			/* this combination can happen since the last
@@ -897,6 +902,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
 				bn->tvheap->free = bi.vhfree;
 				bn->tvheap->dirty = true;
+				if (ATOMstorage(b->ttype) == TYPE_str && bi.vhfree >= GDK_STRHASHSIZE)
+					memcpy(bn->tvheap->base, strhash, GDK_STRHASHSIZE);
 			}
 
 			/* make sure we use the correct capacity */
@@ -906,17 +913,18 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				bn->batCapacity = (BUN) (bn->theap->size >> bn->tshift);
 			else
 				bn->batCapacity = 0;
-		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
+		} else if (tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
-			BUN p, q;
+			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
-			BATloop(b, p, q) {
+			TIMEOUT_LOOP_IDX_DECL(p, bi.count, qry_ctx) {
 				const void *t = BUNtail(bi, p);
 
 				if (bunfastapp_nocheck(bn, t) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
 			}
+			TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 			bn->theap->dirty |= bi.count > 0;
 		} else if (tt != TYPE_void && bi.type == TYPE_void) {
 			/* case (4): optimized for unary void
@@ -953,7 +961,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		} else {
 			BATtseqbase(bn, oid_nil);
 		}
-		BATkey(bn, BATtkey(b));
+		BATkey(bn, bi.key);
 		bn->tsorted = bi.sorted;
 		bn->trevsorted = bi.revsorted;
 		bn->tnorevsorted = bi.norevsorted;
@@ -971,7 +979,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->tunique_est = bi.unique_est;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
-		BUN h = BATcount(b);
+		BUN h = bi.count;
 		bn->tsorted = bi.sorted;
 		bn->trevsorted = bi.revsorted;
 		BATkey(bn, bi.key);
@@ -1008,14 +1016,14 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->trevsorted = ATOMlinear(b->ttype);
 		bn->tkey = true;
 	}
+	bat_iterator_end(&bi);
 	if (!writable)
 		bn->batRestricted = BAT_READ;
 	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT "\n",
 		  ALGOBATPAR(b), ALGOBATPAR(bn));
-	MT_lock_unset(&b->theaplock);
 	return bn;
       bunins_failed:
-	MT_lock_unset(&b->theaplock);
+	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -1455,8 +1463,6 @@ BUNdelete(BAT *b, oid o)
 	if (b->tminpos == p)
 		b->tminpos = BUN_NONE;
 	MT_lock_unset(&b->theaplock);
-	if (ATOMunfix(b->ttype, val) != GDK_SUCCEED)
-		return GDK_FAIL;
 	nunique = HASHdelete(&bi, p, val);
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
 	if (p != BATcount(b) - 1 &&
@@ -1704,10 +1710,13 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			default:
 				MT_UNREACHABLE();
 			}
+			MT_lock_set(&b->theaplock);
 			if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
 				MT_rwlock_wrunlock(&b->thashlock);
 				goto bailout;
 			}
+			MT_lock_unset(&b->theaplock);
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
@@ -1748,11 +1757,6 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			mskSetVal(b, p, * (msk *) t);
 		} else {
 			assert(BATatoms[b->ttype].atomPut == NULL);
-			if (ATOMfix(b->ttype, t) != GDK_SUCCEED ||
-			    ATOMunfix(b->ttype, BUNtloc(bi, p)) != GDK_SUCCEED) {
-				MT_rwlock_wrunlock(&b->thashlock);
-				goto bailout;
-			}
 			switch (ATOMsize(b->ttype)) {
 			case 0:	     /* void */
 				break;
@@ -2554,9 +2558,7 @@ BATmode(BAT *b, bool transient)
 
 	if (transient != bi.transient) {
 		if (!transient) {
-			if (ATOMisdescendant(b->ttype, TYPE_ptr) ||
-			    BATatoms[b->ttype].atomUnfix ||
-			    BATatoms[b->ttype].atomFix) {
+			if (ATOMisdescendant(b->ttype, TYPE_ptr)) {
 				GDKerror("%s type implies that %s[%s] "
 					 "cannot be made persistent.\n",
 					 ATOMname(b->ttype), BATgetId(b),
@@ -2685,7 +2687,7 @@ BATassertProps(BAT *b)
 	assert(b != NULL);
 	assert(b->batCacheid > 0);
 	assert(b->batCacheid < getBBPsize());
-	assert(b == BBP_cache(b->batCacheid));
+	assert(b == BBP_desc(b->batCacheid));
 	assert(b->batCount >= b->batInserted);
 
 	/* headless */
@@ -2703,7 +2705,6 @@ BATassertProps(BAT *b)
 
 	assert(b->ttype >= TYPE_void);
 	assert(b->ttype < GDKatomcnt);
-	assert(b->ttype != TYPE_bat);
 	assert(isview1 ||
 	       b->ttype == TYPE_void ||
 	       BBPfarms[b->theap->farmid].roles & (1 << b->batRole));

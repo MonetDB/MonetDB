@@ -27,12 +27,12 @@ insert into unicodetest values (U&'%23ba%23bb%23bc%23bd' UESCAPE '%')
 query T rowsort
 select * from unicodetest
 ----
-@@@@
-@@@@
-@@@@
-@@@@
-@@@@
-@@@@
+⎺⎻⎼⎽
+⎺⎻⎼⎽
+⎺⎻⎼⎽
+🔥🚒🛱🧯
+🔥🚒🛱🧯
+🔥🚒🛱🧯
 
 statement ok
 rollback

@@ -167,13 +167,17 @@ Miscellaneous
 
     Return the internal NULL representation for the specific monetdbe type or NULL when the type is not found/supported.
 
-.. c:function:: const char* monetdbe_get_mapi_port(void)
+.. c:function:: const char * monetdbe_get_mapi_port(void)
 
     Return the mapi port or NULL if not used.
 
 .. c:function:: const char * monetdbe_version(void)
 
     Return the MonetDBe version.
+
+.. c:function:: const char * monetdbe_load_extension(monetdbe_database dbhdl, char *module_name)
+
+    Load the module with name, module_name. The lib_module_name.so (or ddl) should be in the applications current working directory.
 
 Caveats and errors
 ------------------

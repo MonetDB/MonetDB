@@ -94,7 +94,7 @@ statement ok
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 1 TO 10
 
 statement error 22018!conversion of string 'abc' to type int failed.
-ALTER TABLE testme ADD TABLE subtable3 AS PARTITION FROM 'abc' TO 'cde'
+ALTER TABLE testme ADD TABLE subtable3 AS PARTITION FROM 'abc' TO '1'
 
 statement ok rowcount 4
 INSERT INTO testme VALUES (1, 'first'), (10, 'second'), (2, 'third'), (15, 'fourth')

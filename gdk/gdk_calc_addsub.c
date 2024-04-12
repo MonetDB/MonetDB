@@ -30,7 +30,6 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
@@ -83,7 +82,6 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
@@ -1433,7 +1431,6 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	oid candoff1, candoff2;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	assert(b1 != NULL || b2 != NULL); /* at least one not NULL */
 	candoff1 = b1 ? b1->hseqbase : 0;
@@ -1590,9 +1587,9 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp)
 
 	/* if the input is sorted, and no overflow occurred, the result
 	 * is also sorted */
-	bn->tsorted = (bi.sorted && nils == 0) ||
+	bn->tsorted = (bi.sorted && nils == 0 && bi.type != TYPE_str) ||
 		ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = (bi.revsorted && nils == 0) ||
+	bn->trevsorted = (bi.revsorted && nils == 0 && bi.type != TYPE_str) ||
 		ci.ncand <= 1 || nils == ci.ncand;
 	bn->tkey = ci.ncand <= 1;
 	bn->tnil = nils != 0;
@@ -1669,6 +1666,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp)
 gdk_return
 VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
+	ret->bat = false;
 	if (add_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
@@ -1749,6 +1747,7 @@ BATcalcincr(BAT *b, BAT *s)
 gdk_return
 VARcalcincr(ValPtr ret, const ValRecord *v)
 {
+	ret->bat = false;
 	if (add_typeswitchloop(VALptr(v), v->vtype, false,
 			       &(bte){1}, TYPE_bte, false,
 			       VALget(ret), ret->vtype,
@@ -1774,7 +1773,6 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
@@ -1827,7 +1825,6 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};		\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
 		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
@@ -3338,6 +3335,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp)
 gdk_return
 VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
+	ret->bat = false;
 	if (sub_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
@@ -3358,6 +3356,7 @@ BATcalcdecr(BAT *b, BAT *s)
 gdk_return
 VARcalcdecr(ValPtr ret, const ValRecord *v)
 {
+	ret->bat = false;
 	if (sub_typeswitchloop(VALptr(v), v->vtype, false,
 			       &(bte){1}, TYPE_bte, false,
 			       VALget(ret), ret->vtype,

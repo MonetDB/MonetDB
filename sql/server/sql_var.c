@@ -707,7 +707,7 @@ hge
 #else
 lng
 #endif
-val_get_number(ValRecord *v)
+val_get_number(const ValRecord *v)
 {
 	if (v != NULL) {
 #ifdef HAVE_HGE

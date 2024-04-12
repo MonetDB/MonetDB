@@ -674,7 +674,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	bool locked = false;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if (b == NULL) {
@@ -848,14 +847,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps = b->thash->nunique;
 	MT_rwlock_rdunlock(&b->thashlock);
 	if (maxgrps == BUN_NONE) {
-		MT_lock_set(&b->theaplock);
 		if (bi.unique_est != 0) {
 			maxgrps = (BUN) bi.unique_est;
 			if (maxgrps > ci.ncand)
 				maxgrps = ci.ncand;
 		} else
 			maxgrps = ci.ncand / 10;
-		MT_lock_unset(&b->theaplock);
 	}
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
@@ -1043,7 +1040,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		    (/* DISABLES CODE */ (0) &&
 		     (parent = VIEWtparent(b)) != 0 &&
 /* if enabled, need to fix/unfix parent bat */
-		     BATcheckhash(BBP_cache(parent))))) {
+		     BATcheckhash(BBP_desc(parent))))) {
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table;
@@ -1061,7 +1058,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * calculate the bounds [lo, lo+BATcount(b))
 			 * in the parent that b uses */
 /* if enabled, need to fix/unfix parent bat */
-			BAT *b2 = BBP_cache(parent);
+			BAT *b2 = BBP_desc(parent);
 			MT_rwlock_rdunlock(&b->thashlock);
 			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;

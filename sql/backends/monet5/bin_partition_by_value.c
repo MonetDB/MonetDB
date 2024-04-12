@@ -17,6 +17,7 @@
 #include "bin_partition.h"
 #include "rel_bin.h"
 #include "rel_exp.h"
+#include "rel_rewriter.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
 #include "sql_pp_statement.h"
@@ -86,6 +87,13 @@ rel_groupby_partition(backend *be, sql_rel *rel)
 		}
 	}
 	/* check size */
+	BUN est = get_rel_count(rel);
+	if (est == BUN_NONE) {
+		printf("relational cardinality isn't known\n");
+		return partition;
+	}
+	if (est >= 1000000)
+		return true;
 	return partition;
 }
 
@@ -160,9 +168,11 @@ partition_groupby_part(backend *be, sql_rel *rel, InstrPtr part, list *mats, stm
 	InstrPtr l = newStmt(be->mb, "part", "prefixsum");
 	l = pushArgument(be->mb, l, g->nr);
 	l = pushLng(be->mb, l, 256);
+	pushInstruction(be->mb, l);
 	InstrPtr p = newStmt(be->mb, "part", "partition");
 	p = pushArgument(be->mb, p, getArg(part, 0));
 	p = pushArgument(be->mb, p, getArg(l, 0));
+	pushInstruction(be->mb, p);
 	for(node *n = mats->h, *m = sub->op4.lval->h; n && m; n = n->next, m = m->next) {
 		int *mat = (int*)n->data;
 		stmt *s = m->data;
@@ -174,6 +184,7 @@ partition_groupby_part(backend *be, sql_rel *rel, InstrPtr part, list *mats, stm
 		mp = pushArgument(be->mb, mp, g->nr);
 		mp = pushArgument(be->mb, mp, s->nr);
 		mp->inout = 0;
+		pushInstruction(be->mb, mp);
 		append(res, mp->argv);
 	}
 	return res;
@@ -189,6 +200,7 @@ partition_groupby_fetch(backend *be, stmt *sub, list *mats)
 		InstrPtr mp = newStmt(be->mb, "mat", "fetch");
 		mp = pushArgument(be->mb, mp, *(int*)m->data);
 		mp = pushArgument(be->mb, mp, be->pp);
+		pushInstruction(be->mb, mp);
 		s->nr = getArg(mp, 0);
 	}
 	return sub;
@@ -311,6 +323,7 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub)
 		mp = pushArgument(be->mb, mp, aggrstmt->nr);
 		mp = pushArgument(be->mb, mp, be->pp);
 		mp->inout = 0;
+		pushInstruction(be->mb, mp);
 		aggrstmt->nr = getArg(mp, 0);
 
 		aggrstmt = stmt_rename(be, aggrexp, aggrstmt);
@@ -334,6 +347,7 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub)
 
 		InstrPtr mp = newStmt(be->mb, "mat", "pack");
 		mp = pushArgument(be->mb, mp, *(int*)m->data);
+		pushInstruction(be->mb, mp);
 		/* keep names from aggrstmt */
 		aggrstmt = stmt_instruction(be, mp, aggrstmt);
 

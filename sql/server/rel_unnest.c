@@ -1049,7 +1049,7 @@ push_up_topn_and_sample(mvc *sql, sql_rel *rel)
 
 		if (r && (is_topn(r->op) || is_sample(r->op))) {
 			/* remove old topn/sample */
-			sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
+			sql_rel *(*func) (allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
 			rel->r = rel_dup(r->l);
 			rel = func(sql->sa, rel, r->exps);
 			set_processed(rel);
@@ -2315,7 +2315,7 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 }
 
 static sql_exp *
-exp_set_type(sql_allocator *sa, sql_exp *te, sql_exp *e)
+exp_set_type(allocator *sa, sql_exp *te, sql_exp *e)
 {
 	if (te->type == e_convert) {
 		if (e->type == e_column)  {
@@ -2629,7 +2629,6 @@ static inline sql_exp *
 rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_rel *rell = NULL;
-	int needed = 0;
 
 	if (!is_simple_project(rel->op) || e->type != e_func || list_length(e->r) < 2 /* e->r means window function */)
 		return e;
@@ -2639,7 +2638,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data;
 	e->card = (rel->card == CARD_AGGR) ? CARD_AGGR : CARD_MULTI; /* After the unnesting, the cardinality of the window function becomes larger */
 
-	needed = (gbe || obe);
+	int needed = (gbe || obe);
 	if (l)
 		for (node *n = l->h; n && !needed; n = n->next) {
 			sql_exp *e = n->data;
@@ -2660,10 +2659,9 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	}
 
 	/* The following array remembers the original positions of gbe and obe expressions to replace them in order later at diff_replace_arguments */
-	int gbeoffset = list_length(gbe), i = 0, added = 0;
-	int *pos = SA_NEW_ARRAY(v->sql->ta, int, gbeoffset + list_length(obe));
-
 	if (gbe || obe) {
+		int gbeoffset = list_length(gbe), i = 0, added = 0;
+		int *pos = SA_NEW_ARRAY(v->sql->ta, int, gbeoffset + list_length(obe));
 		if (gbe)
 			for (i = 0 ; i < gbeoffset ; i++)
 				pos[i] = i;
@@ -2950,11 +2948,9 @@ exp_in_compare(mvc *sql, sql_exp **l, list *vals, int anyequal)
 static inline sql_exp *
 rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	sql_subfunc *sf;
-	if (e->type != e_func)
-		return e;
+	assert(e->type == e_func);
 
-	sf = e->f;
+	sql_subfunc *sf = e->f;
 	if (is_ddl(rel->op))
 		return e;
 	if (is_anyequal_func(sf) && !list_empty(e->l)) {
@@ -3136,11 +3132,12 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static inline sql_exp *
 rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	sql_subfunc *sf;
-	if (e->type != e_func || is_ddl(rel->op))
+	assert(e->type == e_func);
+
+	if (is_ddl(rel->op))
 		return e;
 
-	sf = e->f;
+	sql_subfunc *sf = e->f;
 	if (is_compare_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
 
@@ -3192,11 +3189,14 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					v->changes++;
 					return exp_compare(v->sql->sa, le, re, compare_str2type(op));
 				} else {
+					return e;
+					/*
 					le = exp_compare_func(v->sql, le, re, op, 0);
 					if (exp_name(e))
 						exp_prop_alias(v->sql->sa, le, e);
 					v->changes++;
 					return le;
+					*/
 				}
 			}
 			if (!is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
@@ -3441,11 +3441,9 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 static sql_exp *
 rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	sql_subfunc *sf;
-	if (e->type != e_func)
-		return e;
+	assert(e->type == e_func);
 
-	sf = e->f;
+	sql_subfunc *sf = e->f;
 	if (is_exists_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
 
@@ -3704,9 +3702,22 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 		sql_rel *r = rel->r;
 
 		if (!is_rewrite_fix_count_used(r->used)) {
-			/* TODO create an exp iterator */
-			list *rexps = rel_projections(v->sql, r, NULL, 1, 1), *exps;
+			list *rexps = r->exps, *exps = NULL;
 
+			if (!is_project(r->op))
+				rexps = rel_projections(v->sql, r, NULL, 1, 1);
+
+			for(node *n = rexps->h; n && !rel_changes; n=n->next) {
+				sql_exp *e = n->data;
+
+				if (exp_is_count(e, r))
+					rel_changes = 1;
+			}
+			if (!rel_changes)
+				return rel;
+
+			if (r->exps == rexps)
+				rexps = rel_projections(v->sql, r, NULL, 1, 1);
 			for(node *n = rexps->h; n; n=n->next) {
 				sql_exp *e = n->data, *ne;
 
@@ -3715,7 +3726,6 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 					list *args, *targs;
 					sql_subfunc *isnil = sql_bind_func(v->sql, "sys", "isnull", exp_subtype(e), NULL, F_FUNC, true, true), *ifthen;
 
-					rel_changes = 1;
 					ne = exp_unop(v->sql->sa, e, isnil);
 					set_has_no_nil(ne);
 					targs = sa_list(v->sql->sa);
@@ -3733,13 +3743,11 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 					n->data = ne;
 				}
 			}
-			if (rel_changes) { /* add project */
-				exps = list_merge(rel_projections(v->sql, rel->l, NULL, 1, 1), rexps, (fdup)NULL);
-				rel = rel_project(v->sql->sa, rel, exps);
-				set_processed(rel);
-				r->used |= rewrite_fix_count_used;
-				v->changes++;
-			}
+			exps = list_merge(rel_projections(v->sql, rel->l, NULL, 1, 1), rexps, (fdup)NULL);
+			rel = rel_project(v->sql->sa, rel, exps);
+			set_processed(rel);
+			r->used |= rewrite_fix_count_used;
+			v->changes++;
 		}
 	}
 	return rel;
@@ -3813,7 +3821,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 							exp_prop_alias(v->sql->sa, ne, e);
 					} else if (e->type == e_column && !exps_find_exp(l, e) && !has_label(e)) {
 						/* do not include in the output of the group by, but add to the project as null */
-						ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+						ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);
 					} else {
@@ -3953,7 +3961,7 @@ add_null_projects(visitor *v, sql_rel *prel, sql_rel *irel, bool end)
 
 		if (!tp)
 			return sql_error(v->sql, 10, SQLSTATE(42000) "Cannot rewrite subquery because of parameter with unknown type");
-		ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, tp, NULL));
+		ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, tp, NULL, 0));
 		exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
 		if (end)
 			append(nilrel->exps, ne);
@@ -4075,21 +4083,15 @@ rewrite_swap_fullouter(visitor *v, sql_rel *rel)
 static sql_exp *
 rewrite_complex(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	sql_exp *res = NULL;
-
 	if (e->type != e_func)
 		return e;
 
-	res = rewrite_anyequal(v, rel, e, depth);
-	if (!res || res != e)
-		return res;
-	res = rewrite_exists(v, rel, e, depth);
-	if (!res || res != e)
-		return res;
-	res = rewrite_compare(v, rel, e, depth);
-	if (!res || res != e)
-		return res;
-	return e;
+	sql_exp *res = rewrite_anyequal(v, rel, e, depth);
+	if (res == e)
+		res = rewrite_exists(v, rel, e, depth);
+	if (res == e)
+		res = rewrite_compare(v, rel, e, depth);
+	return res;
 }
 
 static sql_rel *
@@ -4139,6 +4141,9 @@ rewrite_values(visitor *v, sql_rel *rel)
 	if (!is_simple_project(rel->op) || list_empty(rel->exps) || is_rewrite_values_used(rel->used))
 		return rel;
 
+	sql_exp *e = rel->exps->h->data;
+	if (!is_values(e) || (!exps_have_rel_exp(rel->exps) && !exps_have_freevar(v->sql, rel->exps)))
+		return rel;
 	if (rel_is_ref(rel)) { /* need extra project */
 		rel->l = rel_project(v->sql->sa, rel->l, rel->exps);
 		rel->exps = rel_projections(v->sql, rel->l, NULL, 1, 1);
@@ -4148,9 +4153,6 @@ rewrite_values(visitor *v, sql_rel *rel)
 		v->changes++;
 		return rel;
 	}
-	sql_exp *e = rel->exps->h->data;
-	if (!is_values(e) || (!exps_have_rel_exp(rel->exps) && !exps_have_freevar(v->sql, rel->exps)))
-		return rel;
 	return flatten_values(v, rel);
 }
 
@@ -4197,11 +4199,97 @@ rewrite_rel(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+typedef struct sql_args {
+	list *args;
+	list *exps;
+} sql_args;
+
+static int
+var_name_cmp(sql_arg *v, char *name)
+{
+	return strcmp(v->name, name);
+}
+
+static sql_exp *
+exp_inline_arg(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)rel;
+	(void)depth;
+	sql_args *args = v->data;
+	if (e->type == e_atom && e->r) {
+		sql_arg *a = e->r;
+		int level = is_freevar(e);
+		node *n = list_find(args->args, a->name, (fcmp)&var_name_cmp);
+		if (n) {
+			sql_exp *val = list_fetch(args->exps, list_position(args->args, n->data));
+			val = exp_copy(v->sql, val);
+			exp_setname(v->sql->sa, val, exp_relname(e), exp_name(e));
+			if (level)
+				set_freevar(val, level-1);
+			return val;
+		}
+	}
+	return e;
+}
+
+static sql_rel *
+rel_inline_table_func(visitor *v, sql_rel *rel)
+{
+	if (!rel_is_ref(rel) && rel->op == op_table && !rel->l && rel->r) { /* TODO add input relation (rel->l) rewritting */
+		sql_exp *opf = rel->r;
+		if (opf->type == e_func) {
+			sql_subfunc *f = opf->f;
+
+			if (f->func->vararg || f->func->varres)
+				return rel;
+
+			if (f->func->lang == FUNC_LANG_SQL && f->func->type == F_UNION) {
+				sql_rel *r = rel_parse(v->sql, f->func->s, f->func->query, m_instantiate);
+
+				if (r && is_ddl(r->op) && list_length(r->exps) == 1) {
+					sql_exp *psm = r->exps->h->data;
+					if (psm && psm->type == e_psm && psm->flag == PSM_RETURN) {
+						sql_exp *ret = psm->l;
+						if (ret && ret->type == e_psm && ret->flag == PSM_REL) {
+							r = ret->l;
+							list *exps = r->exps;
+							r = rel_project(v->sql->sa, r, sa_list(v->sql->sa));
+							for(node *n = rel->exps->h, *m = exps->h; n && m; n = n->next, m = m->next) {
+								sql_exp *e = m->data;
+								sql_exp *pe = n->data;
+
+								e = exp_ref(v->sql, e);
+								exp_setname(v->sql->sa, e, exp_relname(pe), exp_name(pe));
+								if (is_freevar(pe))
+									set_freevar(e, is_freevar(pe)-1);
+								append(r->exps, e);
+							}
+							sql_args a;
+							if (f->func->ops) {
+								a.args = f->func->ops;
+								a.exps = opf->l;
+								v->data = &a;
+								r = rel_exp_visitor_topdown(v, r, &exp_inline_arg, true);
+								v->data = NULL;
+							}
+							r = rel_unnest(v->sql, r);
+							return r;
+						}
+					}
+				}
+			}
+		}
+	}
+	return rel;
+}
+
 /* add an dummy true projection column */
 static sql_rel *
 rel_unnest_simplify(visitor *v, sql_rel *rel)
 {
 	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed at rewrite_simplify */
+	if (rel && v->sql->emode != m_deps)
+		rel = rel_inline_table_func(v, rel);
 	if (rel)
 		rel = rewrite_basetable(v->sql, rel);	/* add proper exps lists */
 	if (rel)

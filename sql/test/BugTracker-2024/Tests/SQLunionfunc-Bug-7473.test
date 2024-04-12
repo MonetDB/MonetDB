@@ -1,0 +1,5 @@
+skipif knownfail
+query I nosort
+SELECT ( WITH x ( x ) AS ( SELECT 1 ) SELECT ( WITH x ( x ) AS ( SELECT DISTINCT SUM ( 1 ) ) SELECT ( SELECT ( NULLIF ( 9.000000 , 0 ) ) FROM GENERATE_SERIES ( 1 , x ) ) FROM x ) FROM x )
+----
+1

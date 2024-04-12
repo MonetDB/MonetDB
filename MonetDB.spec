@@ -91,7 +91,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Dec2023/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2023-SP2/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -679,7 +679,6 @@ This package contains files needed to develop SQL extensions.
 
 %files SQL-server5-devel
 %defattr(-,root,root)
-%{_includedir}/monetdb/exception_buffer.h
 %{_includedir}/monetdb/opt_backend.h
 %{_includedir}/monetdb/rel_*.h
 %{_includedir}/monetdb/sql*.h
@@ -808,9 +807,7 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-# use /var/run/monetdb since that's what it says in the monetdb.fc file
-# it says that because /run/monetdb for some reason doesn't work
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb /var/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -839,6 +836,13 @@ fi
 %setup -q
 
 %build
+# from Fedora 40, selinux uses /run where before it used /var/run
+# the code is now for Fedora 40 but needs a patch for older versions
+%if (0%{?fedora} < 40)
+sed -i 's;@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb;@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/run/monetdb;' misc/selinux/monetdb.fc.in
+sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
+%endif
+
 %cmake3 \
         -DCMAKE_INSTALL_RUNSTATEDIR=/run \
         -DRELEASE_VERSION=ON \
@@ -917,6 +921,114 @@ fi
 %endif
 
 %changelog
+* Tue Apr 09 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- Rebuilt.
+- GH#7469: Crash when using `CONTAINS`
+- GH#7479: MonetDB server crashes in `exp_ref`
+- GH#7490: commonTerms optimizer no longer works
+- GH#7495: Crash when simultaneously querying and updating a string column.
+
+* Thu Mar 28 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- gdk: Threads have their own list of free bats.  The list was not returned
+  to the system when a thread exited, meaning that the free bats that
+  were in the list would not be reused by any thread.  This has been
+  fixed.
+
+* Tue Mar 19 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- monetdb5: Fixed interaction between mserver5 and remote mserver5 when only one
+  of the two has 128 bit integer support.
+
+* Tue Mar 19 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- sql: Fixed issue where equal column aliases were created. When those
+  aliases were parsed on the remote side it could give crashes.
+
+* Mon Mar 18 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- gdk: Fixed a couple of deadlock situations, one actually observed, one
+  never observed.
+
+* Tue Mar 12 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.5-20240312
+- Rebuilt.
+- GH#7390: Some MonetDB Server crashes found
+- GH#7465: Unexpected result when using `NULL` in `BETWEEN`
+
+* Fri Mar  8 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.5-20240312
+- gdk: The internal hash function for floating point types has been changed.
+  It is now no longer based on the bit representation, but on the value,
+  meaning that +0 and -0 (yes, they both exist in floating point) now
+  hash to the same value.
+
+* Thu Mar  7 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.49.5-20240312
+- sql: performance improvement of 'startswith' and 'endswith' filter functions
+  for join operators
+
+* Wed Mar  6 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.5-20240312
+- clients: Fixed an issue where mclient wouldn't exit if the server it had
+  connected to exited for whatever reason while the client was waiting
+  for a query result.
+
+* Mon Mar 04 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
+- Rebuilt.
+- GH#6800: Please add information_schema (ANSI SQL norm)
+- GH#7152: Occasional dbfarm corruption upon database restart
+- GH#7412: MonetDB server crashes in `vscanf`
+- GH#7415: MonetDB server crashes in `HEAP_malloc`
+- GH#7416: MonetDB server crashes in `atom_get_int`
+- GH#7417: MonetDB server crashes in `trimchars`.
+- GH#7418: MonetDB server crashes in `bind_col_exp`
+- GH#7420: Performance issue with lower(string)
+- GH#7425: The last statement, execution error, is a false positive?
+- GH#7426: Unexpected result for INNER JOIN with IS NOT NULL
+- GH#7428: Unexpected result when using BETWEEN operator
+- GH#7429: Unexpected result when using `CASE WHEN`
+- GH#7430: Unexpected result when using `AND` and `IS NOT NULL`
+- GH#7431: [bug] Error code found, please confirm
+- GH#7432: MonetDB server crashes in `dameraulevenshtein`
+- GH#7433: MonetDB server crashes in `exp_atom`
+- GH#7434: MonetDB server crashes in `exp_bin`
+- GH#7435: MonetDB server crashes in `exp_copy`
+- GH#7436: MonetDB server crashes in `exp_ref`
+- GH#7437: MonetDB server crashes in `exp_values_set_supertype`
+- GH#7438: MonetDB server crashes in `exps_bind_column`
+- GH#7439: MonetDB server crashes in `exps_card`
+- GH#7440: MonetDB server crashes in `gc_col`
+- GH#7441: MonetDB server crashes in `is_column_unique`
+- GH#7442: MonetDB server crashes in `mat_join2`
+- GH#7443: MonetDB server crashes in `merge_table_prune_and_unionize`
+- GH#7444: [bug] the table cannot be created because the reserved word is
+  incorrectly set
+- GH#7447: Unexpected result when using `BETWEEN` in `INNER JOIN`
+- GH#7448: Unexpected result when using `AND`/`OR` chain
+- GH#7450: Unexpected result when `CREATE VIEW` with `WHERE NULL`
+- GH#7451: Unexpected result when using `BETWEEN` and `CAST`
+- GH#7453: Cannot recover an msqldump
+- GH#7455: Unexpected result when using `BETWEEN` with `BOOLEAN` values
+- GH#7456: Crash when `INNER JOIN` with `VIEW`
+- GH#7457: Unexpected result when using `AND` with `INTEGER`
+- GH#7458: Unexpected result when using `SIGN`
+- GH#7461: Crash by potentially use of bad escape characters
+- GH#7462: Crash when using `BETWEEN AND`
+
+* Fri Mar  1 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
+- gdk: Fixed a regression where bats weren't always cleaned up when they
+  weren't needed anymore.  In particular, after a DELETE FROM table query
+  without a WHERE clause (which deletes all rows from the table), the
+  bats for the table get replaced by new ones, and the old, now unused,
+  bats weren't removed from the database.
+
+* Mon Jan 15 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
+- geom: We switched over to using the reentrant interface of the geos library.
+  This fixed a number of bugs that would occur sporadically.
+
+* Mon Jan 15 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
+- sql: The function json.isvalid(json) incorrectly returned true if the
+  argument was null.  It should return null.
+
+* Thu Jan 11 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.3-20240304
+- MonetDB: The copyright for the MonetDB software has been transferred to the newly
+  established MonetDB Foundation, a not-for-profit foundation with the
+  express goal of furthering the MonetDB database system.  The license
+  for the software does not change: MonetDB remains fully open source.
+
 * Thu Dec 21 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.49.1-20231221
 - Rebuilt.
 - GH#6933: Add support for scalar function IFNULL(expr1, expr2)

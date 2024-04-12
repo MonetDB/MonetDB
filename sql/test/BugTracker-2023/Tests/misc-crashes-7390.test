@@ -241,22 +241,30 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v1 INT)
 
-statement error
+statement ok
 UPDATE v0 SET v1 = (WITH v0 AS (SELECT 42039652.000000) SELECT STDDEV_POP (96) OVER (ORDER BY v1) FROM v0, v0 LIMIT 37 OFFSET 62) = 8
 
 statement ok
 DROP TABLE v0
 
--- -- 18.sql
--- statement ok
--- CREATE TABLE v0(v1 NUMERIC)
+-- 18.sql
+statement ok
+CREATE TABLE v0(v1 NUMERIC)
 
--- statement ok
--- UPDATE v0 SET v1 = (WITH v0 (v1) AS (SELECT 127 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8) ^ v1
--- sql/server/rel_select.c:3102: rel_binop_: Assertion `t1 && t2' failed.
+query I nosort
+SELECT 38 ^ v1 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8
+----
 
--- statement ok
--- DROP TABLE v0
+query I nosort
+WITH v0 (v1) AS (SELECT 127 FROM v0 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 ^ v1 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8
+----
+
+statement error 42000!
+UPDATE v0 SET v1 = (WITH v0 (v1) AS (SELECT 127 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8) ^ v1
+-- sql/server/rel_select.c:3104: rel_binop_: Assertion `t1 && t2' failed.
+
+statement ok
+DROP TABLE v0
 
 -- 19.sql
 statement ok
@@ -310,49 +318,68 @@ UPDATE v0 SET v1 = (SELECT LAG(v1 * v1) OVER (PARTITION BY 0 ,(NOT EXISTS (SELEC
 statement ok
 DROP TABLE v0
 
--- -- 23.sql
--- statement ok
--- CREATE TABLE v0 (v1 INTEGER PRIMARY KEY)
+-- 23.sql
+statement ok
+CREATE TABLE v0 (v1 INTEGER PRIMARY KEY)
 
--- statement ok
--- UPDATE v0 SET v1 = -128 WHERE v1 = 1 AND v1 IN (WITH v0 AS (SELECT v1 * (95 - v1) FROM v0 ORDER BY v1, v1 DESC, ('x' < v1 AND v1 = 24)) SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16) OR (69 AND 30) OR ('x' >= 9)
+query R nosort
+SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16
+----
 
--- statement ok
--- DROP TABLE v0
+query I nosort
+SELECT v1 * (95 - v1) FROM v0 ORDER BY v1, v1 DESC, ('x' < v1 AND v1 = 24)
+----
+
+statement error 42000!SELECT: identifier 'v1' unknown
+WITH v0 AS (SELECT v1 * (95 - v1) FROM v0 ORDER BY v1, v1 DESC, ('x' < v1 AND v1 = 24)) SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16
+----
+
+statement ok
+UPDATE v0 SET v1 = -128 WHERE v1 = 1 AND v1 IN (WITH v0 AS (SELECT v1 * (95 - v1) FROM v0 ORDER BY v1, v1 DESC, ('x' < v1 AND v1 = 24)) SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16) OR (69 AND 30) OR ('x' >= 9)
+
+statement ok
+DROP TABLE v0
 
 -- 24.sql
--- statement ok
--- CREATE TABLE v0(v1 FLOAT)
+statement ok
+CREATE TABLE v0(v1 FLOAT)
 
--- statement ok
--- INSERT INTO v0 VALUES (0),(67),(127),(-1),(NULL),(NULL),(NULL),(NULL)
+statement ok
+INSERT INTO v0 VALUES (0),(67),(127),(-1),(NULL),(NULL),(NULL),(NULL)
 
--- query IT nosort
--- SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
--- ----
--- 0
--- x
--- 67
--- x
--- 127
--- x
--- -1
--- x
+query RT nosort
+SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
+----
+0.000
+x
+67.000
+x
+127.000
+x
+-1.000
+x
 
--- statement ok
+-- statement error 42000!SELECT: identifier 'v1' ambiguous
 -- WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v1 * 0 / 77
 
--- query I
--- SELECT count(*) FROM v0
--- ----
--- 131080
+statement ok
+WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v0.v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v0.v1 * 0 / 77
 
--- statement crashes server
--- SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
+query I nosort
+SELECT count(*) FROM v0
+----
+131080
+
+-- after the second insert, rerun same query as above, since it used to crash the server
+query RT rowsort
+SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
+----
+131080 values hashing to c051bd7cdccd1fd3636c9e0973aca08e
+
 -- mul_bte_bte_bte: ERROR: 22003!overflow in calculation 87*39.
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 25.sql
 statement ok
@@ -415,20 +442,20 @@ SELECT * FROM v0 WHERE (v1 >= 0 AND v1 <= 0) OR (51867923.000000 LIKE 'x' AND (S
 statement ok
 DROP TABLE v0
 
--- -- 29.sql
--- statement error
--- SELECT ALL ( SELECT - - - - - - - - - - 48 FROM ( SELECT NULL - - - - - - - - 89 FROM ( VALUES ( - - - - - - - - - - 74 ) , ( - - - - - 128 ) , ( - - - - - - 8 ) , ( - - - - 61 ) ) AS v1 ( v1 ) GROUP BY ( ) , GROUPING SETS ( GROUPING SETS ( GROUPING SETS ( ( ) ) ) ) , ( ) ORDER BY - - - - - - - - - - 255 LIKE v1 / CASE WHEN v1 IS NULL THEN - - 75 END DESC , v1 , v1 LIMIT 63 ) AS v1 UNION SELECT - - - - - - - - - - - - - 74 WHERE - v1 < - 89088397.000000 ) FROM ( SELECT * FROM ( VALUES ( - - - - - - - 61 ) , ( - - - 42 ) ) AS v1 ( v1 ) ) AS v1 ( v1 )
--- sql/server/rel_select.c:4614: rel_groupings: Assertion `next_set' failed.
+-- 29.sql
+statement error 42000!GROUP BY: GROUPING SETS is empty
+SELECT ALL ( SELECT - - - - - - - - - - 48 FROM ( SELECT NULL - - - - - - - - 89 FROM ( VALUES ( - - - - - - - - - - 74 ) , ( - - - - - 128 ) , ( - - - - - - 8 ) , ( - - - - 61 ) ) AS v1 ( v1 ) GROUP BY ( ) , GROUPING SETS ( GROUPING SETS ( GROUPING SETS ( ( ) ) ) ) , ( ) ORDER BY - - - - - - - - - - 255 LIKE v1 / CASE WHEN v1 IS NULL THEN - - 75 END DESC , v1 , v1 LIMIT 63 ) AS v1 UNION SELECT - - - - - - - - - - - - - 74 WHERE - v1 < - 89088397.000000 ) FROM ( SELECT * FROM ( VALUES ( - - - - - - - 61 ) , ( - - - 42 ) ) AS v1 ( v1 ) ) AS v1 ( v1 )
+-- sql/server/rel_select.c:4616: rel_groupings: Assertion `next_set' failed.
 
--- -- 30.sql
--- statement ok
--- CREATE TABLE v0(v2 DOUBLE PRIMARY KEY, v1 VARCHAR(1))
+-- 30.sql
+statement ok
+CREATE TABLE v0(v2 DOUBLE PRIMARY KEY, v1 VARCHAR(1))
 
--- statement ok
--- DELETE FROM v0 WHERE (SELECT v2 FROM v0 WHERE v0.v2 = v0.v1 GROUP BY 2.100000, v1) IN (10.100000, 10, 10 )
+statement ok
+DELETE FROM v0 WHERE (SELECT v2 FROM v0 WHERE v0.v2 = v0.v1 GROUP BY 2.100000, v1) IN (10.100000, 10, 10 )
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DROP TABLE v0
 
 -- 31.sql
 statement error 22003!overflow ...
@@ -532,11 +559,15 @@ statement ok
 DROP TABLE v0
 
 -- 40.sql
--- statement ok
--- CREATE TABLE v0(v2 DOUBLE, v1 REAL)
+statement ok
+CREATE TABLE v0(v2 DOUBLE, v1 REAL)
 
--- statement ok
--- DELETE FROM v0 WHERE EXISTS (SELECT 2 FROM v0 AS WHERE v0.v2 = (SELECT v2 WHERE v2 = 2) + v0.v1)
+statement error 42S22!SELECT: no such column 'v0.v2'
+SELECT 2 FROM v0 AS WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1
 
--- statement ok
--- DROP TABLE v0
+statement ok
+DELETE FROM v0 WHERE EXISTS ( SELECT 2 FROM v0 AS WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1 )
+
+statement ok
+DROP TABLE v0
+

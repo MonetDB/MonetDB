@@ -33,10 +33,10 @@ exps_simplify_exp(visitor *v, list *exps)
 
 		needed = (exp_is_true(e) || exp_is_false(e) || (is_compare(e->type) && e->flag == cmp_or));
 	}
-	/* if there's only one expression and it is false, we have to keep it */
-	if (list_length(exps) == 1 && exp_is_false(exps->h->data))
-		return exps;
 	if (needed) {
+		/* if there's only one expression and it is false, we have to keep it */
+		if (list_length(exps) == 1 && exp_is_false(exps->h->data))
+			return exps;
 		list *nexps = sa_list(v->sql->sa);
 		for (node *n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -216,7 +216,7 @@ rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 				toconvert = list_merge(toconvert, rel_projections(v->sql, rel->r, NULL, 1, 1), NULL);
 
 			for (node *n = toconvert->h ; n ; n = n->next) {
-				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 				exp_prop_alias(v->sql->sa, a, e);
 				list_append(nexps, a);
 			}
@@ -515,7 +515,7 @@ get_rel_count(sql_rel *rel)
 }
 
 void
-set_count_prop(sql_allocator *sa, sql_rel *rel, BUN val)
+set_count_prop(allocator *sa, sql_rel *rel, BUN val)
 {
 	if (val != BUN_NONE) {
 		prop *found = find_prop(rel->p, PROP_COUNT);

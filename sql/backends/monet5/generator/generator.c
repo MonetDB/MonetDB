@@ -78,7 +78,36 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || is_##TPE##_nil(f) || is_##TPE##_nil(l)) \
 			throw(MAL, "generator.table",								\
 			      SQLSTATE(42000) "Illegal generator range");			\
-		n = (BUN) ((l - f) / s);										\
+		if (s < 0)														\
+			n = ((BUN)f - l);											\
+		else															\
+			n = ((BUN)l - f);											\
+		step = s<0?-s:s;												\
+		n = n/step;														\
+		if ((TPE) (n * s + f) != l)										\
+			n++;														\
+		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);						\
+		if (bn == NULL)													\
+			throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		v = (TPE*) Tloc(bn, 0);											\
+		for (c = 0; c < n; c++)											\
+			*v++ = (TPE) (f + c * s);									\
+		bn->tsorted = s > 0 || n <= 1;									\
+		bn->trevsorted = s < 0 || n <= 1;								\
+	} while (0)
+
+#define VLTmaterialize_flt(TPE)											\
+	do {																\
+		TPE *v, f, l, s;												\
+		f = *getArgReference_##TPE(stk, pci, 1);						\
+		l = *getArgReference_##TPE(stk, pci, 2);						\
+		if ( pci->argc == 3)											\
+			s = f<l? (TPE) 1: (TPE)-1;									\
+		else s =  *getArgReference_##TPE(stk,pci, 3);					\
+		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || is_##TPE##_nil(f) || is_##TPE##_nil(l)) \
+			throw(MAL, "generator.table",								\
+			      SQLSTATE(42000) "Illegal generator range");			\
+		n = (BUN) ((l - f) / s);                                        \
 		if ((TPE) (n * s + f) != l)										\
 			n++;														\
 		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);						\
@@ -94,7 +123,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BUN c, n;
+	BUN c, n, step;
 	BAT *bn;
 	int tpe;
 	(void) cntxt;
@@ -120,10 +149,10 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		break;
 #endif
 	case TYPE_flt:
-		VLTmaterialize(flt);
+		VLTmaterialize_flt(flt);
 		break;
 	case TYPE_dbl:
-		VLTmaterialize(dbl);
+		VLTmaterialize_flt(dbl);
 		break;
 	default:
 		if (tpe == TYPE_timestamp) {

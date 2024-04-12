@@ -1,0 +1,168 @@
+query I nosort
+SELECT 10 IS NOT DISTINCT FROM 20
+----
+0
+
+query I nosort
+SELECT 10 IS DISTINCT FROM 20
+----
+1
+
+query I nosort
+SELECT 10 IS DISTINCT FROM NULL
+----
+1
+
+query I nosort
+SELECT NULL IS DISTINCT FROM 20
+----
+1
+
+query I nosort
+SELECT 10 IS NOT DISTINCT FROM NULL
+----
+0
+
+query I nosort
+SELECT NULL IS NOT DISTINCT FROM 20
+----
+0
+
+query I nosort
+SELECT NULL IS DISTINCT FROM NULL
+----
+0
+
+query I nosort
+SELECT NULL IS NOT DISTINCT FROM NULL
+----
+1
+
+statement ok
+create table foo(s) as values (10), (20), (NULL)
+
+query I nosort
+select s IS NOT DISTINCT FROM 20 FROM foo
+----
+0
+1
+0
+
+query I nosort
+select s IS DISTINCT FROM 20 FROM foo
+----
+1
+0
+1
+
+query I nosort
+select s IS NOT DISTINCT FROM NULL FROM foo
+----
+0
+0
+1
+
+query I nosort
+select s IS DISTINCT FROM NULL FROM foo
+----
+1
+1
+0
+
+query I nosort
+select 20 IS NOT DISTINCT FROM s FROM foo
+----
+0
+1
+0
+
+query I nosort
+select 20 IS DISTINCT FROM s FROM foo
+----
+1
+0
+1
+
+query I nosort
+select NULL IS NOT DISTINCT FROM s FROM foo
+----
+0
+0
+1
+
+query I nosort
+select NULL IS DISTINCT FROM s FROM foo
+----
+1
+1
+0
+
+statement ok
+create table bar(s) as values (20), (30), (NULL)
+
+query IIII rowsort
+select foo.s, bar.s, foo.s IS DISTINCT FROM bar.s, foo.s IS NOT DISTINCT FROM bar.s FROM foo, bar
+----
+10
+20
+1
+0
+10
+30
+1
+0
+10
+NULL
+1
+0
+20
+20
+0
+1
+20
+30
+1
+0
+20
+NULL
+1
+0
+NULL
+20
+1
+0
+NULL
+30
+1
+0
+NULL
+NULL
+0
+1
+
+query II rowsort
+select foo.s, bar.s from foo, bar where foo.s is distinct from bar.s
+----
+10
+20
+10
+30
+10
+NULL
+20
+30
+20
+NULL
+NULL
+20
+NULL
+30
+
+
+query II rowsort
+select foo.s, bar.s from foo, bar where foo.s is not distinct from bar.s
+----
+20
+20
+NULL
+NULL

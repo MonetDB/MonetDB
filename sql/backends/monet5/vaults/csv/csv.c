@@ -348,7 +348,7 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 }
 
 static const char *
-get_name(sql_allocator *sa, const char *s, const char *es, const char **E, char delim, char quote, bool has_header, int col)
+get_name(allocator *sa, const char *s, const char *es, const char **E, char delim, char quote, bool has_header, int col)
 {
 	if (!has_header) {
 		char buff[25];
@@ -488,7 +488,7 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	/* (res bats) := import(table T, 'delimit', '\n', 'quote', str:nil, fname, lng:nil, 0/1, 0, str:nil, int:nil, * int:nil ); */
 
 	/* lookup copy_from */
-	sql_subfunc *cf = sql_find_func(sql, "sys", "copyfrom", 12, F_UNION, true, NULL);
+	sql_subfunc *cf = sql_find_func(sql, "sys", "copyfrom", 14, F_UNION, true, NULL);
 	cf->res = f->res;
 
 	sql_subtype tpe;
@@ -506,27 +506,27 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 		rsep[0] = '\n';
 		rsep[1] = 0;
 	}
-	list *args = append( append( append( append( append( new_exp_list(sql->sa),
-	exp_atom_ptr(sql->sa, t)),
-	exp_atom_str(sql->sa, tsep, &tpe)),
-	exp_atom_str(sql->sa, rsep, &tpe)),
-	exp_atom_str(sql->sa, ssep, &tpe)),
-	exp_atom_str(sql->sa, "", &tpe));
+	list *args = new_exp_list(sql->sa);
 
-	append( args, exp_atom_str(sql->sa, filename, &tpe));
-	sql_exp *import = exp_op(sql->sa,
-		append(
-			append(
-			    append(
-			        append(
-			            append(
-			                append(args, topn?topn:
-			                       exp_atom_lng(sql->sa, -1)),
-			                exp_atom_lng(sql->sa, r->has_header?2:1)),
-			            exp_atom_int(sql->sa, 0)),
-			        exp_atom_str(sql->sa, NULL, &tpe)),
-			    exp_atom_int(sql->sa, 0)),
-			exp_atom_int(sql->sa, 0)), cf);
+	append(args, exp_atom_ptr(sql->sa, t));
+	append(args, exp_atom_str(sql->sa, tsep, &tpe));
+	append(args, exp_atom_str(sql->sa, rsep, &tpe));
+	append(args, exp_atom_str(sql->sa, ssep, &tpe));
+
+	append(args, exp_atom_str(sql->sa, "", &tpe));
+	append(args, exp_atom_str(sql->sa, filename, &tpe));
+	append(args, topn ? topn: exp_atom_lng(sql->sa, -1));
+	append(args, exp_atom_lng(sql->sa, r->has_header?2:1));
+
+	append(args, exp_atom_int(sql->sa, 0));
+	append(args, exp_atom_str(sql->sa, NULL, &tpe));
+	append(args, exp_atom_int(sql->sa, 0));
+	append(args, exp_atom_int(sql->sa, 0));
+
+	append(args, exp_atom_str(sql->sa, ".", &tpe));
+	append(args, exp_atom_str(sql->sa, NULL, &tpe));
+
+	sql_exp *import = exp_op(sql->sa, args, cf);
 
 	return exp_bin(be, import, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 }

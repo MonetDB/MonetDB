@@ -19,6 +19,7 @@
 #include "mal_embedded.h"
 #include "mal_backend.h"
 #include "mal_builder.h"
+#include "mal_linker.h"
 #include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
@@ -587,6 +588,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		set_error(mdbe, createException(SQL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL));
 		goto cleanup;
 	}
+	m->no_int128 = opts?opts->no_int128:false;
 cleanup:
 	if (mdbe->msg)
 		return -2;
@@ -992,6 +994,26 @@ monetdbe_error(monetdbe_database dbhdl)
 }
 
 char*
+monetdbe_load_extension(monetdbe_database dbhdl, const char *file)
+{
+	if (!dbhdl)
+		return 0;
+
+	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+
+	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
+		return mdbe->msg;
+	}
+	char *modules[2];
+	modules[0] = (char*)file;
+	modules[1] = NULL;
+	char *msg = loadLibrary(file, -1);
+	if (msg)
+		return msg;
+	return malIncludeModules(mdbe->c, modules, 0, true, NULL);
+}
+
+char*
 monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 {
 	if (!dbhdl)
@@ -1215,7 +1237,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	InstrPtr o = NULL, e = NULL, r = NULL;
 	sql_rel* rel = NULL;
 	list *args = NULL, *rets = NULL;
-	sql_allocator* sa = NULL;
+	allocator* sa = NULL;
 	ValRecord v = { .len=0 };
 	ptr vp = NULL;
 	struct callback_context* ccontext= NULL;
@@ -1381,7 +1403,6 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	}
 	freeMalBlk(prg->def);
 	prg->def = mb;
-	setFunctionId(getSignature(prg), be->q->name);
 
 	// finally add this beautiful new function to the local user module.
 	insertSymbol(mdbe->c->usermodule, prg);
@@ -1608,6 +1629,7 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 
 		if (q && stmt_internal) {
 			Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
+			assert(s->def);
 			InstrPtr p = s->def->stmt[0];
 			stmt_internal->mdbe = mdbe;
 			stmt_internal->q = q;
@@ -1743,8 +1765,13 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 			goto cleanup;
 		}
 
-		(*(monetdbe_result_internal**) result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
 		res_internal = *(monetdbe_result_internal**)result;
+		res_internal->type = (b->results) ? Q_TABLE : Q_UPDATE;
+		if (res_internal->monetdbe_resultset && res_internal->monetdbe_resultset->query_type == Q_TABLE) {
+			res_internal->type = Q_TABLE;
+			if (affected_rows)
+				*affected_rows = res_internal->monetdbe_resultset->nr_rows;
+		}
 	}
 
 cleanup:
@@ -2071,32 +2098,6 @@ append_create_remote_append_mal_program(
 	_prg	= newFunctionArgs(userRef, putName(remote_program_name), FUNCTIONsymbol, (int) ccount + 1); // remote program
 	mb		= _prg->def;
 
-	{ // START OF HACK
-		/*
-		 * This is a hack to make sure that the serialized remote program is correctly parsed on the remote side.
-		 * Since the mal serializer (mal_listing) on the local side will use generated variable names,
-		 * The parsing process on the remote side can and will clash with generated variable names on the remote side.
-		 * Because serialiser and the parser will both use the same namespace of generated variable names.
-		 * Adding an offset to the counter that generates the variable names on the local side
-		 * circumvents this shortcoming in the MAL parser.
-		 */
-
-		assert(mb->vid == 0);
-
-		/*
-			* Comments generate variable names during parsing:
-			* sql.mvc has one comment and for each column there is one sql.append statement plus comment.
-			*/
-		const int nr_of_comments = (int) (1 + ccount);
-		/*
-			* constant terms generate variable names during parsing:
-			* Each sql.append has three constant terms: schema + table + column_name.
-			* There is one sql.append stmt for each column.
-			*/
-		const int nr_of_constant_terms =  (int)  (3 * ccount);
-		mb->vid = nr_of_comments + nr_of_constant_terms;
-	} // END OF HACK
-
 	f = getInstrPtr(mb, 0);
 	f->retc = f->argc = 0;
 	f = pushReturn(mb, f, newTmpVariable(mb, TYPE_int));
@@ -2391,7 +2392,7 @@ remote_cleanup:
 				bn->tnil = false;
 			}
 
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, bn, cnt, TYPE_bat) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, bn, cnt, true, bn->ttype) != 0) {
 				bn->theap->base = prev_base;
 				bn->theap->free = prev_size;
 				BBPreclaim(bn);
@@ -2413,7 +2414,7 @@ remote_cleanup:
 					goto cleanup;
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				goto cleanup;
 			}
@@ -2435,7 +2436,7 @@ remote_cleanup:
 					d[j] = timestamp_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2460,7 +2461,7 @@ remote_cleanup:
 					d[j] = date_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2485,7 +2486,7 @@ remote_cleanup:
 					d[j] = time_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2519,7 +2520,7 @@ remote_cleanup:
 					d[j] = b;
 				}
 			}
-			if (!err && store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (!err && store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2584,7 +2585,7 @@ remote_cleanup:
 			}
 
 			int idx = newTmpVariable(mb, newBatType(c->type.type->localtype));
-			ValRecord v = { .vtype = TYPE_bat, .len = ATOMlen(TYPE_bat, &b->batCacheid), .val.bval = b->batCacheid};
+			ValRecord v = { .bat = true, .vtype = b->ttype, .len = sizeof(int), .val.bval = b->batCacheid};
 			getVarConstant(mb, idx) = v;
 			setVarConstant(mb, idx);
 			BBPunfix(b->batCacheid);

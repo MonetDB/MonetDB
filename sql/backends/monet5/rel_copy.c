@@ -12,6 +12,8 @@
 #include "rel_copy.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
+#include "sql_pp_statement.h"
+#include "bin_partition.h"
 #include "sql_scenario.h"
 
 void dump_code(int);
@@ -135,11 +137,12 @@ struct loop_vars {
 
 static void
 emit_pipelined_loop(
+	backend *be,
 	MalBlkPtr mb, struct loop_vars *loop_vars,
 	str fname, bool onclient, int block_size,
 	int var_line_sep, int var_quote_char, bool escape,
 	int var_failures_bat,
-	lng offset, lng nrecords_or_minusone)
+	lng offset, lng nrecords_or_minusone, bool insert)
 {
 	InstrPtr q;
 	int bte_bat_type = newBatType(TYPE_bte);
@@ -179,10 +182,12 @@ emit_pipelined_loop(
 	}
 	pushInstruction(mb, q);
 
-	q = newStmt(mb, "copy", "defer_close");
-	q = pushArgument(mb, q, var_stream);
-	pushInstruction(mb, q);
-	loop_vars->defer_close = getDestVar(q);
+	if (insert) {
+		q = newStmt(mb, "copy", "defer_close");
+		q = pushArgument(mb, q, var_stream);
+		pushInstruction(mb, q);
+		loop_vars->defer_close = getDestVar(q);
+	}
 
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
@@ -247,13 +252,20 @@ emit_pipelined_loop(
 
 
 	// START LOOP
-	q = newStmt(mb, languageRef, pipelinesRef);
-	q->barrier = BARRIERsymbol;
-	setArgType(mb, q, 0, TYPE_bit);
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
-	q = pushInt(mb, q, -1);
-	pushInstruction(mb, q);
+	if (insert) {
+		q = newStmt(mb, languageRef, pipelinesRef);
+		q->barrier = BARRIERsymbol;
+		setArgType(mb, q, 0, TYPE_bit);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
+		q = pushInt(mb, q, -1);
+		pushInstruction(mb, q);
+	} else {
+		set_pipeline(be, stmt_pp_start_nrparts(be, -1));
+		stmt *s = be->ppstmt;
+		q = s->q;
+	}
+
 	// int var_iter_id = getArg(q, 1);
 	loop_vars->loop_barrier = getArg(q, 0);
 	loop_vars->loop_iter = getArg(q, 1);
@@ -398,7 +410,7 @@ emit_loop_end(MalBlkPtr mb, struct loop_vars *loop_vars)
 }
 
 stmt *
-rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
+rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom, bool insert)
 {
 	(void)rel;
 	(void)refs;
@@ -408,7 +420,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	InstrPtr q;
 	MalBlkPtr mb = be->mb;
 	mvc *mvc = be->mvc;
-	sql_allocator *sa = mvc->sa;
+	allocator *sa = mvc->sa;
 
 	switch (parallel_copy_level()) {
 		case 0:
@@ -481,7 +493,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	pushInstruction(mb, q);
 	InstrPtr claim_channel_stmt = emit_channel(mb, getDestVar(q));
 
-	emit_pipelined_loop(mb, &loop_vars, fname, on_client, block_size, var_line_sep, var_quote_char, escape, var_failures_bat, offset, num_rows);
+	emit_pipelined_loop(be, mb, &loop_vars, fname, on_client, block_size, var_line_sep, var_quote_char, escape, var_failures_bat, offset, num_rows, insert);
 
 	int var_claim_token = emit_receive(mb, loop_vars.loop_handle, claim_channel_stmt);
 
@@ -502,23 +514,26 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	setDestVar(q, var_claim_block);
 	pushInstruction(mb, q);
 
-	q = newStmt(mb, "sql", "claim");
-	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid)));
-	q = pushArgument(mb, q, be->mvc_var);
-	q = pushStr(mb, q, schema_name);
-	q = pushStr(mb, q, table_name);
-	q = pushArgument(mb, q, loop_vars.our_line_count);
-	pushInstruction(mb, q);
-	int var_position = getArg(q, 0);
-	int var_positions = getArg(q, 1);
+	int var_position = 0, var_positions = 0;
+	if (insert) {
+		q = newStmt(mb, "sql", "claim");
+		q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid)));
+		q = pushArgument(mb, q, be->mvc_var);
+		q = pushStr(mb, q, schema_name);
+		q = pushStr(mb, q, table_name);
+		q = pushArgument(mb, q, loop_vars.our_line_count);
+		pushInstruction(mb, q);
+		var_position = getArg(q, 0);
+		var_positions = getArg(q, 1);
 
-	q = newStmt(mb, "copy", "trackrowids");
-	q = pushReturn(mb, q, var_new_oids_bat);
-	q = pushArgument(mb, q, var_new_oids_bat);
-	q = pushArgument(mb, q, loop_vars.our_line_count);
-	q = pushArgument(mb, q, var_position);
-	q = pushArgument(mb, q, var_positions);
-	pushInstruction(mb, q);
+		q = newStmt(mb, "copy", "trackrowids");
+		q = pushReturn(mb, q, var_new_oids_bat);
+		q = pushArgument(mb, q, var_new_oids_bat);
+		q = pushArgument(mb, q, loop_vars.our_line_count);
+		q = pushArgument(mb, q, var_position);
+		q = pushArgument(mb, q, var_positions);
+		pushInstruction(mb, q);
+	}
 
 	emit_send(mb, loop_vars.loop_handle, claim_channel_stmt, var_claim_token);
 
@@ -625,20 +640,32 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		}
 		int var_converted = getDestVar(q);
 
-		q = newStmt(mb, "sql", "append");
-		q = pushArgument(mb, q, be->mvc_var);
-		q = pushStr(mb, q, schema_name);
-		q = pushStr(mb, q, table_name);
-		q = pushStr(mb, q, column_name);
-		q = pushArgument(mb, q, var_position);
-		q = pushArgument(mb, q, var_positions);
-		q = pushArgument(mb, q, var_converted);
-		pushInstruction(mb, q);
+		if (insert) {
+			q = newStmt(mb, "sql", "append");
+			q = pushArgument(mb, q, be->mvc_var);
+			q = pushStr(mb, q, schema_name);
+			q = pushStr(mb, q, table_name);
+			q = pushStr(mb, q, column_name);
+			q = pushArgument(mb, q, var_position);
+			q = pushArgument(mb, q, var_positions);
+			q = pushArgument(mb, q, var_converted);
+			pushInstruction(mb, q);
+		} else {
+			stmt *s = stmt_none(be);
+			s->nr = getArg(q, 0);
+			s->nrcols = 1;
+			s->q = q;
+			s->op4.typeval = col->type;
+			s = stmt_alias(be, s, table_name, column_name);
+			list_append(intermediate_stmts, s);
+		}
 	}
 
 	// END LOOP
-	emit_redo(mb, &loop_vars);
-	emit_loop_end(mb, &loop_vars);
+	if (insert) {
+		emit_redo(mb, &loop_vars);
+		emit_loop_end(mb, &loop_vars);
+	}
 
 	// BEST EFFORT post processing
 
@@ -700,25 +727,27 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 
 	// END OF BEST EFFORT
 
-	q = newStmt(mb, "aggr", "count");
-	q = pushArgument(mb, q, var_new_oids_bat);
-	q = pushBit(mb, q, false);
-	pushInstruction(mb, q);
-	int var_row_count = getDestVar(q);
+	if (insert) {
+		q = newStmt(mb, "aggr", "count");
+		q = pushArgument(mb, q, var_new_oids_bat);
+		q = pushBit(mb, q, false);
+		pushInstruction(mb, q);
+		int var_row_count = getDestVar(q);
 
-	q = newStmt(mb, "sql", "depend");
-	q = pushStr(mb, q, schema_name);
-	q = pushStr(mb, q, table_name);
-	q = pushArgument(mb, q, var_row_count);
-	pushInstruction(mb, q);
+		q = newStmt(mb, "sql", "depend");
+		q = pushStr(mb, q, schema_name);
+		q = pushStr(mb, q, table_name);
+		q = pushArgument(mb, q, var_row_count);
+		pushInstruction(mb, q);
 
-	if (add_to_rowcount_accumulator(be, var_row_count) < 0)
-		return NULL;
+		if (add_to_rowcount_accumulator(be, var_row_count) < 0)
+			return NULL;
+	}
 	// dump_code(-1);
 
 	// I'm assuming that attaching the stmt list to op4.lval
 	// will make some else free the arg_stmt's we created here.
-	stmt *dummy_stmt = stmt_none(be);
-	dummy_stmt->op4.lval = intermediate_stmts;
+	stmt *dummy_stmt = stmt_list(be, intermediate_stmts);
+	//dummy_stmt->op4.lval = intermediate_stmts;
 	return dummy_stmt;
 }

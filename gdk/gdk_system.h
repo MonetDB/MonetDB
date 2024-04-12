@@ -498,7 +498,6 @@ typedef struct MT_Lock {
 
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && (_DBG_LOCK_LOCKER(l), true))
 
-#ifdef LOCK_STATS
 #define MT_lock_set(l)						\
 	do {							\
 		_DBG_LOCK_COUNT_0(l);				\
@@ -511,14 +510,6 @@ typedef struct MT_Lock {
 		_DBG_LOCK_LOCKER(l);				\
 		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
-#else
-#define MT_lock_set(l)				\
-	do {					\
-		pthread_mutex_lock(&(l)->lock);	\
-		_DBG_LOCK_LOCKER(l);		\
-	} while (0)
-#endif
-
 #define MT_lock_unset(l)				\
 	do {						\
 		_DBG_LOCK_UNLOCKER(l);			\

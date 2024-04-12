@@ -1,0 +1,16 @@
+query I nosort
+SELECT ( NULLIF ( -1 , 255 ) )
+----
+-1
+
+query I nosort
+SELECT ( NULLIF ( -1 , 255 ) ) FROM GENERATE_SERIES ( 2 , -1 )
+----
+-1
+-1
+-1
+
+query I nosort
+SELECT count(*) FROM GENERATE_SERIES ( 2147483647 , -2, -10000000 )
+----
+215

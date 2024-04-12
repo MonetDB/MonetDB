@@ -139,7 +139,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 		/* simple SQL bind operations need not be merged, they are cheap
 		 * and/or can be duplicated eliminated elsewhere cheaper */
-		if (getModuleId(p) == sqlRef && getFunctionId(p) != tidRef) {
+		if (getModuleId(p) == sqlRef && (getFunctionId(p) != tidRef && getFunctionId(p) != bindRef)) {
 			pushInstruction(mb, p);
 			old[i] = NULL;
 			continue;

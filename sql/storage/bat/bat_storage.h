@@ -17,7 +17,7 @@
 #include "bat_logger.h"
 
 typedef struct column_storage {
-	int refcnt;
+	ATOMIC_TYPE refcnt;
 	int bid;
 	int ebid;		/* extra bid */
 	int uibid;		/* bat with positions of updates */

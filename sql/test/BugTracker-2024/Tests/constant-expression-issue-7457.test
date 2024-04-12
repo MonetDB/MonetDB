@@ -1,0 +1,34 @@
+statement ok
+CREATE TABLE t0(c0 VARCHAR(500), c1 BOOLEAN)
+
+statement ok
+INSERT INTO t0 (c0, c1) VALUES ('a', false)
+
+statement ok
+INSERT INTO t0 (c0) VALUES ('b')
+
+query TI nosort
+SELECT * FROM t0
+----
+a
+0
+b
+NULL
+
+query I nosort
+SELECT (1 AND 3) FROM t0
+----
+1
+1
+
+query TI nosort
+SELECT * FROM t0 WHERE (1 AND 3)
+----
+a
+0
+b
+NULL
+
+statement ok
+DROP TABLE t0
+

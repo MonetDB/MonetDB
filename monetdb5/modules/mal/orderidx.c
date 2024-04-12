@@ -226,7 +226,8 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		goto bailout;
 	}
 	newstk->up = 0;
-	newstk->stk[arg].vtype = TYPE_bat;
+	newstk->stk[arg].vtype = b->ttype;
+	newstk->stk[arg].bat = true;
 	newstk->stk[arg].val.bval = b->batCacheid;
 	BBPretain(newstk->stk[arg].val.bval);
 	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
