@@ -784,7 +784,7 @@ class SQLLogic:
                         if hashge:
                             skipping = True
                     elif words[1] == 'knownfail':
-                        if self.alltests:
+                        if not self.alltests:
                             skipping = True
                 elif words[0] == 'onlyif':
                     skipping = True
