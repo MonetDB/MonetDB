@@ -1228,7 +1228,7 @@ set_dependent_( sql_rel *r)
 
 static
 sql_rel* find_union(visitor *v, sql_rel *rel) {
-	if (rel->op == op_union)
+	if (rel->op == op_union || rel->op == op_munion)
 		v->data = rel;
 	return rel;
 }
