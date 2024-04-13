@@ -513,7 +513,7 @@ const sql_optimizer pre_sql_optimizers[] = {
 	{18, "push_func_and_select_down", bind_push_func_and_select_down},
 	{19, "push_topn_and_sample_down", bind_push_topn_and_sample_down},
 	{20, "distinct_project2groupby", bind_distinct_project2groupby},
-	{21, "merge_table_rewrite", bind_merge_table_rewrite},
+	//{21, "merge_table_rewrite", bind_merge_table_rewrite},
 	{ 0, NULL, NULL}
 };
 

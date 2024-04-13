@@ -1267,7 +1267,8 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sqlstore *store = m->store;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
-	if (t && !isTable(t))
+	bool is_merge = t && isMergeTable(t);
+	if (t && !isTable(t) && !is_merge)
 		throw(SQL, "sql.bind", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	sql_column *c = mvc_bind_column(m, t, cname);
@@ -1276,6 +1277,21 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* partitioned access */
 		int part_nr = *getArgReference_int(stk, pci, 6 + upd);
 		int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
+		if (is_merge) {
+			int nr_members = list_length(t->members);
+			/* remap into SQLtid in partition */
+			int parts_per_member = (nr_parts/nr_members);
+			int member = part_nr/parts_per_member;
+			int p_nr = part_nr % parts_per_member;
+			sql_part *pd = list_fetch(t->members, member);
+			sql_table *pt = find_sql_table_id(m->session->tr, s, pd->member);
+
+			c = mvc_bind_column(m, pt, cname);
+
+			t = pt;
+			part_nr = p_nr;
+			nr_parts = parts_per_member;
+		}
 		BUN cnt = store->storage_api.count_col(m->session->tr, c, 0), psz;
 		oid l, h;
 		psz = cnt ? (cnt / nr_parts) : 0;
@@ -2414,7 +2430,8 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.tid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
-	if (!isTable(t))
+	bool is_merge = isMergeTable(t);
+	if (!isTable(t) && !is_merge)
 		throw(SQL, "sql.tid", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
@@ -2426,7 +2443,19 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		part_nr = *getArgReference_int(stk, pci, 4);
 		nr_parts = *getArgReference_int(stk, pci, 5);
 	}
-	BAT *b = store->storage_api.bind_cands(tr, t, nr_parts, part_nr);
+	BAT *b = NULL;
+	if (is_merge) {
+		int nr_members = list_length(t->members);
+		/* remap into SQLtid in partition */
+		int parts_per_member = (nr_parts/nr_members);
+		int member = part_nr/parts_per_member;
+		int p_nr = part_nr % parts_per_member;
+		sql_part *pd = list_fetch(t->members, member);
+        sql_table *pt = find_sql_table_id(m->session->tr, s, pd->member);
+		b = store->storage_api.bind_cands(tr, pt, parts_per_member, p_nr);
+	} else {
+		b = store->storage_api.bind_cands(tr, t, nr_parts, part_nr);
+	}
 	if (b) {
 		*res = b->batCacheid;
 		BBPkeepref(b);
