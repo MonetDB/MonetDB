@@ -1370,6 +1370,7 @@ rel_project_cse(visitor *v, sql_rel *rel)
 						sql_exp *ne = exp_alias(v->sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_unique(e2), is_intern(e1));
 
 						ne = exp_propagate(v->sql->sa, ne, e1);
+						set_selfref(ne);
 						exp_prop_alias(v->sql->sa, ne, e1);
 						e1 = ne;
 						break;
