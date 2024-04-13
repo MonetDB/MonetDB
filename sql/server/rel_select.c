@@ -4099,7 +4099,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 					found = true; /* something was found */
 				} else {
 					a = sf;
-					exps = nexps;
+					if (!sf->func->vararg)
+						exps = nexps;
 				}
 			}
 		} else {
