@@ -1407,32 +1407,3 @@ HASHfree(BAT *b)
 		MT_rwlock_wrunlock(&b->thashlock);
 	}
 }
-
-bool
-HASHgonebad(BAT *b, const void *v)
-{
-	Hash *h = b->thash;
-	BUN cnt, hit;
-
-	if (h == NULL)
-		return true;	/* no hash is bad hash? */
-
-	BATiter bi = bat_iterator(b);
-	if (h->nbucket * 2 < BATcount(b)) {
-		int (*cmp) (const void *, const void *) = ATOMcompare(bi.type);
-		BUN i = HASHget(h, (BUN) HASHprobe(h, v));
-		for (cnt = hit = 1; i != BUN_NONE; i = HASHgetlink(h, i), cnt++)
-			hit += ((*cmp) (v, BUNtail(bi, (BUN) i)) == 0);
-
-		if (cnt / hit > 4) {
-			bat_iterator_end(&bi);
-			return true;	/* linked list too long */
-		}
-
-		/* in this case, linked lists are long but contain the
-		 * desired values such hash tables may be useful for
-		 * locating all duplicates */
-	}
-	bat_iterator_end(&bi);
-	return false;		/* a-ok */
-}

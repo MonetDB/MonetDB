@@ -439,57 +439,6 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	return GDK_FAIL;
 }
 
-gdk_return
-HEAPshrink(Heap *h, size_t size)
-{
-	char *p = NULL;
-
-	assert(size >= h->free);
-	assert(size <= h->size);
-	if (h->storage == STORE_MEM) {
-		p = GDKrealloc(h->base, size);
-		TRC_DEBUG(HEAP, "Shrinking malloced heap %s %zu %zu %p %p\n",
-			  h->filename, h->size, size, h->base, p);
-	} else {
-		char *path;
-
-		assert(h->hasfile);
-		/* shrink memory mapped file */
-		/* round up to multiple of GDK_mmap_pagesize with
-		 * minimum of one */
-		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
-		if (size == 0)
-			size = GDK_mmap_pagesize;
-		if (size >= h->size) {
-			/* don't grow */
-			return GDK_SUCCEED;
-		}
-		if ((path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL)) == NULL)
-			return GDK_FAIL;
-		p = GDKmremap(path,
-			      h->storage == STORE_PRIV ?
-				MMAP_COPY | MMAP_READ | MMAP_WRITE :
-				MMAP_READ | MMAP_WRITE,
-			      h->base, h->size, &size);
-		GDKfree(path);
-		TRC_DEBUG(HEAP, "Shrinking %s mmapped "
-			  "heap (%s) %zu %zu %p %p\n",
-			  h->storage == STORE_MMAP ? "shared" : "privately",
-			  h->filename, h->size, size, h->base, p);
-	}
-	if (p) {
-		if (h->farmid == 1) {
-			QryCtx *qc = MT_thread_get_qry_ctx();
-			if (qc)
-				ATOMIC_SUB(&qc->datasize, h->size - size);
-		}
-		h->size = size;
-		h->base = p;
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
 /* grow the string offset heap so that the value v fits (i.e. wide
  * enough to fit the value), and it has space for at least cap elements;
  * copy ncopy BUNs, or up to the heap size, whichever is smaller */
@@ -970,22 +919,6 @@ gdk_return
 HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 {
 	return HEAPsave_intern(h, nme, ext, ".new", dosync, free, lock);
-}
-
-int
-HEAPwarm(Heap *h)
-{
-	int bogus_result = 0;
-
-	if (h->storage != STORE_MEM) {
-		/* touch the heap sequentially */
-		int *cur = (int *) h->base;
-		int *lim = (int *) (h->base + h->free) - 4096;
-
-		for (; cur < lim; cur += 4096)	/* try to schedule 4 parallel memory accesses */
-			bogus_result |= cur[0] | cur[1024] | cur[2048] | cur[3072];
-	}
-	return bogus_result;
 }
 
 

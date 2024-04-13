@@ -665,7 +665,7 @@ append_msk_bat(BAT *b, BATiter *ni, struct canditer *ci)
 /* Append the contents of BAT n (subject to the optional candidate
  * list s) to BAT b.  If b is empty, b will get the seqbase of s if it
  * was passed in, and else the seqbase of n. */
-gdk_return
+static gdk_return
 BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 {
 	struct canditer ci;

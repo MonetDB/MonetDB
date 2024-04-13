@@ -375,6 +375,12 @@ SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, IS_GENERATED
  WHERE (IS_GENERATED) NOT IN ('NO', 'YES')
 ----
 
+query TTTI rowsort
+SELECT TABLE_NAME, COLUMN_NAME, "is_generated", length("is_generated") as data_length
+  FROM "information_schema"."columns"
+ WHERE "is_generated" IS NOT NULL AND length("is_generated") > 2
+----
+
 -- check IS_UPDATABLE allowed values
 query TTTT rowsort
 SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, IS_UPDATABLE

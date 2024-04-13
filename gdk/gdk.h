@@ -893,9 +893,6 @@ mskGetVal(BAT *b, BUN p)
  * @item int
  * @tab
  *  HEAPcopy (Heap *dst,*src);
- * @item int
- * @tab
- *  HEAPwarm (Heap *h);
  * @end multitable
  *
  *
