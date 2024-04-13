@@ -254,11 +254,12 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 	BAT *l = BATdescriptor(*lid);
 	BAT *g = BATdescriptor(*gid);
 	BAT *d = BATdescriptor(*data);
+	lng *curpos = NULL;
 	if (!m || !p || !l || !g || !d) {
 		err = createException(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	lng *curpos = GDKmalloc(sizeof(lng) * BATcount(p));
+	curpos = GDKmalloc(sizeof(lng) * BATcount(p));
 	for (BUN i = 0; i < BATcount(p); i++)
 		curpos[i] = *(lng*)Tloc(p, i);
 	lng *lp = (lng*)Tloc(l, 0);
