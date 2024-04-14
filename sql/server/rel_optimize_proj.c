@@ -691,7 +691,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		for (n = rel->exps->h; n && !fnd; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type != e_aggr && e->type != e_column && e->type != e_atom) {
+			if (e->type != e_aggr && e->type != e_column && e->type != e_atom && e->card > CARD_ATOM) {
 				fnd = 1;
 			}
 		}

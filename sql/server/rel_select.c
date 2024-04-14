@@ -5651,36 +5651,34 @@ group_merge_exps(mvc *sql, list *gexps, list *exps)
 {
 	int nexps = list_length(gexps) + list_length(exps);
 
-	if (nexps < 5) {
-		return list_distinct(list_merge(gexps, exps, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
-	} else { /* for longer lists, use hashing */
-		sql_hash *ht = hash_new(sql->ta, nexps, (fkeyvalue)&exp_key);
+	sql_hash *ht = hash_new(sql->ta, nexps, (fkeyvalue)&exp_key);
 
-		for (node *n = gexps->h; n ; n = n->next) { /* first add grouping expressions */
-			sql_exp *e = n->data;
-			int key = ht->key(e);
+	for (node *n = gexps->h; n ; n = n->next) { /* first add grouping expressions */
+		sql_exp *e = n->data;
+		int key = ht->key(e);
 
-			hash_add(ht, key, e);
-		}
-
-		for (node *n = exps->h; n ; n = n->next) { /* then test if the new grouping expressions are already there */
-			sql_exp *e = n->data;
-			int key = ht->key(e);
-			sql_hash_e *he = ht->buckets[key&(ht->size-1)];
-			bool duplicates = false;
-
-			for (; he && !duplicates; he = he->chain) {
-				sql_exp *f = he->value;
-
-				if (!exp_equal(e, f))
-					duplicates = true;
-			}
-			hash_add(ht, key, e);
-			if (!duplicates)
-				list_append(gexps, e);
-		}
-		return gexps;
+		hash_add(ht, key, e);
 	}
+
+	for (node *n = exps->h; n ; n = n->next) { /* then test if the new grouping expressions are already there */
+		sql_exp *e = n->data;
+		int key = ht->key(e);
+		sql_hash_e *he = ht->buckets[key&(ht->size-1)];
+		bool duplicates = false;
+
+		for (; he && !duplicates; he = he->chain) {
+			sql_exp *f = he->value;
+
+			if (!exp_equal(e, f))
+				duplicates = true;
+		}
+		hash_add(ht, key, e);
+		if (!duplicates) {
+			list_append(gexps, e);
+			n->data = exp_ref(sql, e);
+		}
+	}
+	return gexps;
 }
 
 static list *
