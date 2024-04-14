@@ -2361,6 +2361,8 @@ rel_set_type(visitor *v, sql_rel *rel)
 						if (l->type == e_column) {
 							sql_rel *sl = rel->l;
 							sql_exp *e = rel_find_exp(sl, l);
+							if (!e)
+								continue;
 							if (is_groupby(sl->op) && exp_equal(e, l) == 0) {
 								sql_exp *e2 = list_find_exp(sl->r, l);
 								if (e2) {
