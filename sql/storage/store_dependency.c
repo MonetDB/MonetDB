@@ -340,6 +340,12 @@ sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 		list_append(l,v);
 	}
 	store->table_api.rids_destroy(users);
+
+	if (list_length(l) == 0) {
+		list_destroy(l);
+		l = NULL;
+	}
+
 	return l;
 }
 
