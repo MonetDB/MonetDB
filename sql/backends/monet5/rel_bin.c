@@ -4923,17 +4923,13 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 }
 
 static void
-sql_insert_check(backend *be, sql_table *t, sql_rel *rel, list *refs)
+sql_insert_check(backend *be, sql_table *t, sql_rel *inserts, list *refs)
 {
 	mvc *sql = be->mvc;
 	node *m, *n;
 
-	sql_rel* rel2 = rel_copy(sql, rel, 1);
-
-	list* exps = rel2->exps;
-
-	sql_rel* rel3;
-
+	inserts = rel_copy(sql, inserts, 1);
+	list* exps = inserts->exps;
 
 	sql_subtype *bt = sql_bind_localtype("bit");
 
@@ -4946,9 +4942,9 @@ sql_insert_check(backend *be, sql_table *t, sql_rel *rel, list *refs)
 			i->alias.name= sa_strdup(sql->sa, c->base.name);
 
 			int pos = 0;
-			rel3 = rel_read(sql, sa_strdup(sql->sa, c->check), &pos, sa_list(sql->sa));
-			rel3->l = rel2;
-			stmt* s = subrel_bin(be, rel3, refs);
+			sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, c->check), &pos, sa_list(sql->sa));
+			rel->l = inserts;
+			stmt* s = subrel_bin(be, rel, refs);
 			s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
 			sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
