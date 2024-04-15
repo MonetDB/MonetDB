@@ -1959,9 +1959,6 @@ VALptr(const ValRecord *v)
 
 #define THREADS		1024	/* maximum value for gdk_nr_threads */
 
-typedef struct threadStruct *Thread;
-
-
 gdk_export stream *GDKstdout;
 gdk_export stream *GDKstdin;
 
