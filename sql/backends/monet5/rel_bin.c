@@ -5916,6 +5916,31 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 }
 
 static void
+sql_update_check(backend *be, sql_table *t, sql_rel *rupdates, stmt **updates, list *refs)
+{
+	mvc *sql = be->mvc;
+	node *n;
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subtype *bt = sql_bind_localtype("bit");
+
+	for (n = ol_first_node(t->columns); n; n = n->next) {
+		sql_column *c = n->data;
+
+		if (updates[c->colnr] && c->check) {
+
+			int pos = 0;
+			sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, c->check), &pos, sa_list(sql->sa));
+			rel->l = rupdates;
+			stmt* s = subrel_bin(be, rel, refs);
+			s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
+			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+			char *msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: CHECK constraint violated for column %s.%s", c->t->base.name, c->base.name);
+			(void)stmt_exception(be, s, msg, 00001);
+		}
+	}
+}
+
+static void
 sql_update_check_null(backend *be, sql_table *t, stmt **updates)
 {
 	mvc *sql = be->mvc;
@@ -6044,6 +6069,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		if (c)
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
 	}
+	sql_update_check(be, t, rel->r, updates, refs);
 	sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
