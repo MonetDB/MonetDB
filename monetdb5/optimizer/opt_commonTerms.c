@@ -26,12 +26,6 @@
  * Speed up simple insert operations by skipping the common terms.
 */
 
-static inline bool __attribute__((__pure__))
-isProjectConst(const InstrRecord *p)
-{
-	return (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef);
-}
-
 static int __attribute__((__pure__))
 hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 {
@@ -45,8 +39,7 @@ hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 }
 
 str
-OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							 InstrPtr pci)
+OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, barrier = 0, bailout = 0;
 	InstrPtr p, q;
@@ -61,15 +54,15 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	InstrPtr *old = NULL;
 
 	/* catch simple insert operations */
-	if (isSimpleSQL(mb)) {
-		goto wrapup;
+	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
+		goto wrapup1;
 	}
 
-	(void) cntxt;
 	(void) stk;
-	alias = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	list = (int *) GDKzalloc(sizeof(int) * mb->stop);
-	hash = (int *) GDKzalloc(sizeof(int) * mb->vtop);
+	ma_open(cntxt->ta);
+	alias = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
+	list = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->stop);
+	hash = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
 	if (alias == NULL || list == NULL || hash == NULL) {
 		msg = createException(MAL, "optimizer.commonTerms",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -185,8 +178,9 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					&& !hasCommonResults(p, q)
 					&& !isUnsafeFunction(q)
 					&& !isUpdateInstruction(q)
-					&& !isProjectConst(q) &&	/* disable project(x,val), as its used for the result of case statements */
-					isLinearFlow(q)) {
+					/* disable project(x,val), as its used for the result of case statements */
+					&& !(getModuleId(q) == algebraRef && getFunctionId(q) == projectRef)
+					&& isLinearFlow(q)) {
 					if (safetyBarrier(p, q)) {
 						TRC_DEBUG(MAL_OPTIMIZER, "Safety barrier reached\n");
 						break;
@@ -247,16 +241,14 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			msg = chkDeclarations(mb);
 	}
   wrapup:
+	ma_close(cntxt->ta);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	if (alias)
-		GDKfree(alias);
-	if (list)
-		GDKfree(list);
-	if (hash)
-		GDKfree(hash);
+	/*
 	if (old)
-		GDKfree(old);
+		//GDKfree(old);
+		*/
 	return msg;
 }

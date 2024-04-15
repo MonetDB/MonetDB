@@ -57,23 +57,19 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	for (i = 0; i < MAXSLICES; i++)
 		top[i] = 0;
-	if (isOptimizerUsed(mb, pci, mitosisRef) <= 0) {
+	if (isOptimizerUsed(mb, pci, mitosisRef) <= 0 || MB_LARGE(mb)) {
 		goto wrapup;
 	}
-	(void) cntxt;
 	(void) stk;
 
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-	depth = (int *) GDKzalloc(mb->vtop * sizeof(int));
-	if (depth == NULL) {
-		throw(MAL, "optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(depth);
+	ma_open(cntxt->ta);
+	depth = (int *) ma_zalloc(cntxt->ta, mb->vtop * sizeof(int));
+	if (depth == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -128,13 +124,10 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		if (top[k] == 0) {
-			blocks[k] = GDKzalloc(limit * sizeof(InstrPtr));
+			blocks[k] = ma_zalloc(cntxt->ta, limit * sizeof(InstrPtr));
 			if (blocks[k] == NULL) {
-				for (i = 0; i < blkcnt; i++)
-					if (top[i])
-						GDKfree(blocks[i]);
-				GDKfree(depth);
-				GDKfree(mb->stmt);
+				ma_close(cntxt->ta);
+				//GDKfree(mb->stmt);
 				mb->stop = limit;
 				mb->ssize = slimit;
 				mb->stmt = old;
@@ -173,14 +166,10 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* keep all actions taken as a post block comment */
 	//mnstr_printf(cntxt->fdout,"REORDER RESULT ");
 	//printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+	ma_close(cntxt->ta);
   wrapup:
-	for (i = 0; i <= blkcnt; i++)
-		if (top[i])
-			GDKfree(blocks[i]);
-
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
-	GDKfree(depth);
-	GDKfree(old);
+	//GDKfree(old);
 	return msg;
 }

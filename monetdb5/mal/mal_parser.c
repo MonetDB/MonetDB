@@ -31,7 +31,7 @@
 #define NL(X) ((X)=='\n' || (X)=='\r')
 
 static str idCopy(Client cntxt, int len);
-static str strCopy(Client cntxt, int len);
+static str strCopy(allocator *va, Client cntxt, int len);
 
 /*
  * For error reporting we may have to find the start of the previous line,
@@ -490,14 +490,14 @@ stringLength(Client cntxt)
  * at once. This may cause problems when the net string length is zero.
 */
 
-str
-strCopy(Client cntxt, int length)
+static str
+strCopy(allocator *va, Client cntxt, int length)
 {
 	str s;
 	int i;
 
 	i = length < 4 ? 4 : length;
-	s = GDKmalloc(i);
+	s = va?ma_alloc(va, i) : GDKmalloc(i);
 	if (s == 0)
 		return NULL;
 	memcpy(s, CURRENT(cntxt) + 1, (size_t) (length - 2));
@@ -533,7 +533,7 @@ operatorLength(Client cntxt)
  * The constant structure is initialized for later use.
  */
 static int
-cstToken(Client cntxt, ValPtr cst)
+cstToken(Client cntxt, MalBlkPtr mb, ValPtr cst)
 {
 	int i = 0;
 	str s = CURRENT(cntxt);
@@ -550,7 +550,7 @@ cstToken(Client cntxt, ValPtr cst)
 		break;
 	case '"':
 		i = stringLength(cntxt);
-		VALset(cst, TYPE_str, strCopy(cntxt, i));
+		VALset(cst, TYPE_str, strCopy(mb->ma, cntxt, i));
 		return i;
 	case '-':
 		i++;
@@ -934,7 +934,7 @@ typeElm(Client cntxt, int def)
   * An atom statement does not introduce a new module.
   */
 static void
-helpInfo(Client cntxt, str *help)
+helpInfo(Client cntxt, allocator *va, str *help)
 {
 	int l = 0;
 	char c, *e, *s;
@@ -948,12 +948,12 @@ helpInfo(Client cntxt, str *help)
 			for (; *e; l++, e++)
 				if (*e == ';')
 					break;
-			*help = strCopy(cntxt, l);
+			*help = strCopy(va, cntxt, l);
 			skipToEnd(cntxt);
 		} else {
 			if ((l = stringLength(cntxt))) {
 				GDKfree(*help);
-				*help = strCopy(cntxt, l);
+				*help = strCopy(va, cntxt, l);
 				if (*help)
 					advance(cntxt, l - 1);
 				skipToEnd(cntxt);
@@ -1028,7 +1028,7 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 	int cstidx = -1;
 	malType tpe = TYPE_any;
 
-	if ((i = cstToken(cntxt, &cst))) {
+	if ((i = cstToken(cntxt, curBlk, &cst))) {
 		advance(cntxt, i);
 		if (currChar(cntxt) != ':' && cst.vtype == TYPE_dbl
 			&& cst.val.dval > FLT_MIN && cst.val.dval <= FLT_MAX) {
@@ -1141,7 +1141,7 @@ parseAtom(Client cntxt)
 		cntxt->curmodule = cntxt->usermodule;
 	cntxt->usermodule->isAtomModule = TRUE;
 	skipSpace(cntxt);
-	helpInfo(cntxt, &cntxt->usermodule->help);
+	helpInfo(cntxt, NULL, &cntxt->usermodule->help);
 	return 0;
 }
 
@@ -1177,7 +1177,7 @@ parseModule(Client cntxt)
 	else
 		cntxt->curmodule = cntxt->usermodule;
 	skipSpace(cntxt);
-	helpInfo(cntxt, &cntxt->usermodule->help);
+	helpInfo(cntxt, NULL, &cntxt->usermodule->help);
 	return 0;
 }
 
@@ -1616,7 +1616,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		return NULL;
 	}
 
-	helpInfo(cntxt, &curFunc->comment);
+	helpInfo(cntxt, NULL, &curFunc->comment);
 	return curPrg;
 }
 
@@ -1846,7 +1846,7 @@ parseFunction(Client cntxt, int kind)
 		skipSpace(cntxt);
 	}
 	/* block is terminated at the END statement */
-	helpInfo(cntxt, &curBlk->help);
+	helpInfo(cntxt, curBlk->ma, &curBlk->help);
 	return curBlk;
 }
 
@@ -2036,7 +2036,7 @@ parseAssign(Client cntxt, int cntrl)
 		curInstr->retc = 0;
 		while (currChar(cntxt) != ')' && currChar(cntxt)) {
 			l = idLength(cntxt);
-			i = cstToken(cntxt, &cst);
+			i = cstToken(cntxt, curBlk, &cst);
 			if (l == 0 || i) {
 				parseError(cntxt, "<identifier> or <literal> expected\n");
 				freeInstruction(curInstr);
@@ -2067,7 +2067,7 @@ parseAssign(Client cntxt, int cntrl)
 	} else {
 		/* are we dealing with a simple assignment? */
 		l = idLength(cntxt);
-		i = cstToken(cntxt, &cst);
+		i = cstToken(cntxt, curBlk, &cst);
 		if (l == 0 || i) {
 			/* we haven't seen a target variable */
 			/* flow of control statements may end here. */
@@ -2317,7 +2317,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines,
 				}
 				curInstr->token = REMsymbol;
 				curInstr->barrier = 0;
-				if (VALinit(&cst, TYPE_str, start) == NULL) {
+				if (VALinit(curBlk->ma, &cst, TYPE_str, start) == NULL) {
 					parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					freeInstruction(curInstr);
 					continue;

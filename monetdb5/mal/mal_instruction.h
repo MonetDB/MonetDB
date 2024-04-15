@@ -148,8 +148,8 @@ mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme,
 								   const char *fcnnme);
 mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme,
 									   const char *fcnnme, int args);
-mal_export InstrPtr copyInstruction(const InstrRecord *p);
-mal_export InstrPtr copyInstructionArgs(const InstrRecord *p, int args);
+mal_export InstrPtr copyInstruction(MalBlkPtr mb, const InstrRecord *p);
+mal_export InstrPtr copyInstructionArgs(MalBlkPtr mb, const InstrRecord *p, int args);
 mal_export void clrInstruction(InstrPtr p);
 mal_export void freeInstruction(InstrPtr p);
 mal_export void clrFunction(InstrPtr p);

@@ -43,11 +43,10 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *varisfor = NULL, *varforvalue = NULL;
 	str msg = MAL_SUCCEED;
 
-	(void) cntxt;
 	(void) stk;					/* to fool compilers */
 
 	if (mb->inlineProp)
-		goto wrapup;
+		goto wrapup1;
 
 	limit = mb->stop;
 
@@ -59,18 +58,18 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if (i == limit)
-		goto wrapup;			/* nothing to do */
+		goto wrapup1;			/* nothing to do */
 
-	varisfor = GDKzalloc(2 * mb->vtop * sizeof(int));
-	varforvalue = GDKzalloc(2 * mb->vtop * sizeof(int));
+	ma_open(cntxt->ta);
+	varisfor = ma_zalloc(cntxt->ta, 2 * mb->vtop * sizeof(int));
+	varforvalue = ma_zalloc(cntxt->ta, 2 * mb->vtop * sizeof(int));
 	if (varisfor == NULL || varforvalue == NULL)
 		goto wrapup;
 
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(varisfor);
-		GDKfree(varforvalue);
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.for", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	// Consolidate the actual need for variables
@@ -96,7 +95,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* projection(cand, col) with col = for.decompress(o,min_val)
 					 * v1 = projection(cand, o)
 					 * for.decompress(v1, min_val) */
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -125,7 +124,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						   && getFunctionId(p) == subsliceRef) {
 					/* pos = subslice(col, l, h) with col = for.decompress(o,min_val)
 					 * pos = subslice(o, l, h) */
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -142,7 +141,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							   && getFunctionId(p) == identityRef)) {
 					/* id = mirror/identity(col) with col = for.decompress(o,min_val)
 					 * id = mirror/identity(o) */
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -188,7 +187,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					r = pushArgument(mb, r, getArg(q, 0));
 					pushInstruction(mb, r);
 
-					q = copyInstruction(p);
+					q = copyInstruction(mb, p);
 					if (q == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -231,7 +230,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					 * pos = intersect(o, tp2, cand, nil) */
 
 					int cand = getArg(p, j + 1);
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -310,7 +309,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* group.group[done](col) | group.subgroup[done](col, grp) with col = for.decompress(o,min_val)
 					 * v1 = group.group[done](o) | group.subgroup[done](o, grp) */
 					int input = varisfor[k];
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -361,11 +360,11 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* keep all actions taken as a post block comment */
   wrapup:
+	ma_close(cntxt->ta);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	GDKfree(old);
-	GDKfree(varisfor);
-	GDKfree(varforvalue);
+	//GDKfree(old);
 	return msg;
 }

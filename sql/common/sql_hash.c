@@ -24,6 +24,8 @@ log_base2(unsigned int n)
 	return l ;
 }
 
+#define MIN_SIZE 64
+
 sql_hash *
 hash_new(allocator *sa, int size, fkeyvalue key)
 {
@@ -33,6 +35,8 @@ hash_new(allocator *sa, int size, fkeyvalue key)
 		return NULL;
 	ht->sa = sa;
 	ht->entries = 0;
+	if (size < MIN_SIZE)
+		size = MIN_SIZE;
 	ht->size = (1<<log_base2(size-1));
 	ht->key = key;
 	ht->buckets = (ht->sa)?SA_ZNEW_ARRAY(sa, sql_hash_e*, ht->size):ZNEW_ARRAY(sql_hash_e*, ht->size);

@@ -95,6 +95,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 		freeInstruction(p);
 		return 0;
 	}
+	printf("#remapped: %s.%s\n", getModuleId(p), getFunctionId(p));
 	pushInstruction(mb, p);
 	return 1;
 }
@@ -159,8 +160,10 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	}
 	sig = getInstrPtr(mq, 0);
 
-	upgrade = (bit *) GDKzalloc(sizeof(bit) * mq->vtop);
+	ma_open(cntxt->ta);
+	upgrade = (bit *) ma_zalloc(cntxt->ta, sizeof(bit) * mq->vtop);
 	if (upgrade == NULL) {
+		ma_close(cntxt->ta);
 		freeMalBlk(mq);
 		return 0;
 	}
@@ -238,7 +241,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 				setVarType(mq, getArg(q, 0), tpe);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, projectRef);
-				q = pushArgument(mb, q, getArg(q, 1));
+				q = pushArgument(mq, q, getArg(q, 1));
 				mq->stmt[i] = q;
 				getArg(q, 1) = refbat;
 			}
@@ -323,8 +326,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	if (mq->errors) {
   terminateMX:
 
+		ma_close(cntxt->ta);
 		freeMalBlk(mq);
-		GDKfree(upgrade);
 
 		/* ugh ugh, fallback to non inline, but optimized code */
 		msg = OPTmultiplexSimple(cntxt, s->def);
@@ -334,6 +337,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 			s->def->inlineProp = 0;
 		return 0;
 	}
+	ma_close(cntxt->ta);
 	/*
 	 * We have successfully constructed a variant
 	 * of the to-be-inlined function. Put it in place
@@ -342,10 +346,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	 */
 	delArgument(p, 2);
 	delArgument(p, 1);
-	inlineMALblock(mb, pc, mq);
+	inlineMALblock(cntxt, mb, pc, mq);
 
 	freeMalBlk(mq);
-	GDKfree(upgrade);
 	return 1;
 }
 
@@ -464,13 +467,13 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* group aggr.avg -> aggr.sum/aggr.count */
 			InstrPtr sum, avg, t, iszero;
 			InstrPtr cnt;
-			sum = copyInstruction(p);
+			sum = copyInstruction(mb, p);
 			if (sum == NULL) {
 				msg = createException(MAL, "optimizer.remap",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
-			cnt = copyInstruction(p);
+			cnt = copyInstruction(mb, p);
 			if (cnt == NULL) {
 				freeInstruction(sum);
 				msg = createException(MAL, "optimizer.remap",
@@ -551,7 +554,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
+	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {

@@ -2028,7 +2028,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		return GDK_SUCCEED;
 	}
 	ValRecord zero;
-	(void) VALinit(&zero, TYPE_bte, &(bte){0});
+	(void) VALinit(NULL, &zero, TYPE_bte, &(bte){0});
 	bn = BATconstant(min, b->ttype, VALconvert(b->ttype, &zero),
 			 ngrp, TRANSIENT);
 	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
@@ -2656,7 +2656,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 				   ATOMnilptr(avg->ttype), ngrp, TRANSIENT);
 	}
 	ValRecord zero;
-	(void) VALinit(&zero, TYPE_bte, &(bte){0});
+	(void) VALinit(NULL, &zero, TYPE_bte, &(bte){0});
 	bn = BATconstant(min, avg->ttype, VALconvert(avg->ttype, &zero),
 			 ngrp, TRANSIENT);
 	/* rn and cn are temporary storage of intermediates */

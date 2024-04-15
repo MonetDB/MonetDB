@@ -135,16 +135,14 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	(void) stk;
 
-	if (mb->inlineProp)
+	if (mb->inlineProp || MB_LARGE(mb))
 		return MAL_SUCCEED;
 
-	assigned = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	if (assigned == NULL)
-		throw(MAL, "optimizer.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	alias = (int *) GDKzalloc(mb->vsize * sizeof(int) * 2);	/* we introduce more */
-	if (alias == NULL) {
-		GDKfree(assigned);
+	ma_open(cntxt->ta);
+	assigned = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
+	alias = (int *) ma_zalloc(cntxt->ta, mb->vtop * sizeof(int) * 2);	/* we introduce more */
+	if (assigned == NULL || alias == NULL) {
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	// arguments are implicitly assigned by context
@@ -198,7 +196,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 				actions++;
 				cst.vtype = 0;
-				if (VALcopy(&cst, &env->stk[getArg(p, 0)]) == NULL) {
+				if (VALcopy(mb->ma, &cst, &env->stk[getArg(p, 0)]) == NULL) {
 					msg = createException(MAL, "optimizer.evaluate",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto wrapup;
@@ -209,7 +207,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (nvar >= 0)
 					getArg(p, 1) = nvar;
 				if (nvar >= env->stktop) {
-					if (VALcopy(&env->stk[getArg(p, 1)],
+					if (VALcopy(mb->ma, &env->stk[getArg(p, 1)],
 								&getVarConstant(mb, getArg(p, 1))) == NULL) {
 						msg = createException(MAL, "optimizer.evaluate",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -249,6 +247,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* keep all actions taken as a post block comment */
 
   wrapup:
+	ma_close(cntxt->ta);
+
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
@@ -256,9 +256,5 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		assert(env->stktop < env->stksize);
 		freeStack(env);
 	}
-	if (assigned)
-		GDKfree(assigned);
-	if (alias)
-		GDKfree(alias);
 	return msg;
 }

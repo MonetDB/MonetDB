@@ -887,7 +887,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
 
-		if (!VALcopy(res, in))
+		if (!VALcopy(NULL, res, in))
 			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -947,7 +947,7 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
 
-		if (!VALcopy(res, in))
+		if (!VALcopy(NULL, res, in))
 			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -976,13 +976,13 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
 		if (VALisnil(nth) || val > 1) { \
 			ValRecord def = (ValRecord) {.vtype = TYPE_void,}; \
-			if (!VALinit(&def, tp1, ATOMnilptr(tp1)) || !VALcopy(res, &def)) { \
+			if (!VALinit(NULL, &def, tp1, ATOMnilptr(tp1)) || !VALcopy(NULL, res, &def)) { \
 				VALclear(&def); \
 				throw(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			} \
 			VALclear(&def); \
 		} else { \
-			if (!VALcopy(res, in)) \
+			if (!VALcopy(NULL, res, in)) \
 				throw(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 		} \
 	} while(0)
@@ -1059,14 +1059,14 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (is_lng_nil(nth) || nth > 1) {
 			ValRecord def = (ValRecord) {.vtype = TYPE_void,};
-			if (!VALinit(&def, tpe, ATOMnilptr(tpe)) || !VALcopy(res, &def)) {
+			if (!VALinit(NULL, &def, tpe, ATOMnilptr(tpe)) || !VALcopy(NULL, res, &def)) {
 				VALclear(&def);
 				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			VALclear(&def);
 		} else {
-			if (!VALcopy(res, in))
+			if (!VALcopy(NULL, res, in))
 				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
@@ -1216,12 +1216,12 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
 
 		if (l_value == 0) {
-			if (!VALcopy(res, in))
+			if (!VALcopy(NULL, res, in))
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			ValRecord def = (ValRecord) {.vtype = TYPE_void,};
 
-			if (!VALinit(&def, tp1, default_value) || !VALcopy(res, &def))
+			if (!VALinit(NULL, &def, tp1, default_value) || !VALcopy(NULL, res, &def))
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			VALclear(&def);
 		}
@@ -1647,7 +1647,7 @@ SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef HAVE_HGE
 			case TYPE_hge:
 #endif
-				if (!VALcopy(res, in))
+				if (!VALcopy(NULL, res, in))
 					msg = createException(SQL, "sql.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL); /* malloc failure should never happen, but let it be here */
 				break;
 			default:

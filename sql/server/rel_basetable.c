@@ -124,6 +124,19 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	rel->op = op_basetable;
 	rel->card = CARD_MULTI;
 	rel->nrcols = nrcols;
+	/*
+	if (t->pkey) {
+		prop *p = rel->p = prop_create(sql->sa, PROP_HASHCOL, rel->p);
+		p->value.pval = t->pkey;
+	}
+	*/
+	for (node *in = ol_first_node(t->idxs); in; in = in->next){
+		sql_idx *li = in->data;
+		if (li->type == join_idx) {
+			rel->p = prop_create(sql->sa, PROP_JOINIDX, rel->p);
+			break;
+		}
+	}
 	return rel;
 }
 

@@ -169,6 +169,7 @@ const char *minRef;
 const char *minusRef;
 const char *mirrorRef;
 const char *mitosisRef;
+const char *mkeyRef;
 const char *mmathRef;
 const char *modRef;
 const char *mtimeRef;
@@ -429,6 +430,7 @@ optimizerInit(void)
 	minusRef = putName("-");
 	mirrorRef = putName("mirror");
 	mitosisRef = putName("mitosis");
+	mkeyRef = putName("mkey");
 	mmathRef = putName("mmath");
 	modRef = putName("%");
 	mtimeRef = putName("mtime");

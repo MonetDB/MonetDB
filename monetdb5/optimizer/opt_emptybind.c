@@ -184,10 +184,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (q && getModuleId(q) == sqlRef
 					&& (getFunctionId(q) == appendRef
 						|| getFunctionId(q) == updateRef)) {
-					if (strcmp(getVarConstant(mb, getArg(q, 2)).val.sval, sch)
-						== 0
-						&& strcmp(getVarConstant(mb, getArg(q, 3)).val.sval,
-								  tbl) == 0) {
+					if (strcmp(getVarConstant(mb, getArg(q, 2)).val.sval, sch) == 0
+						&& strcmp(getVarConstant(mb, getArg(q, 3)).val.sval, tbl) == 0) {
 						empty[getArg(p, 0)] = 0;
 						if (p->retc == 2) {
 							empty[getArg(p, 1)] = 0;
@@ -290,7 +288,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
+	//GDKfree(old);
 	GDKfree(empty);
 	GDKfree(updated);
 	/* Defense line against incorrect plans */

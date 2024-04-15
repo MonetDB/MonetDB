@@ -1831,14 +1831,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						if (exp_is_null(e->l) && exp_is_null(e->r) && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
 							s = stmt_bool(be, e->flag == cmp_equal ? !is_anti(e): is_anti(e));
 						} else {
-							list *args = sa_list(sql->sa);
-							if (args == NULL)
-								return NULL;
-							/* add nil semantics bit */
-							list_append(args, l);
-							list_append(args, r);
-							list_append(args, stmt_bool(be, 1));
-							s = stmt_Nop(be, stmt_list(be, args), sel, f, NULL);
+							s = stmt_binop_semantics(be, l, r, sel, f);
 						}
 					} else {
 						s = stmt_binop(be, l, r, sel, f);

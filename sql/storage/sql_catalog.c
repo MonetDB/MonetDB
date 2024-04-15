@@ -588,8 +588,10 @@ is_column_unique(sql_column *c)
 ValPtr
 SA_VALcopy(allocator *sa, ValPtr d, const ValRecord *s)
 {
+	return VALcopy(sa, d, s);
+	/*
 	if (sa == NULL)
-		return VALcopy(d, s);
+		return VALcopy(NULL, d, s);
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == 0) {
@@ -618,6 +620,7 @@ SA_VALcopy(allocator *sa, ValPtr d, const ValRecord *s)
 		memcpy(d->val.pval, p, d->len);
 	}
 	return d;
+	*/
 }
 
 atom *

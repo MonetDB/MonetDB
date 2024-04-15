@@ -35,15 +35,15 @@
 #define ZNEW_ARRAY( type, size ) (type*)GDKzalloc((size)*sizeof(type))
 #define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type))
 
-#define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)
-#define _STRDUP( ptr )	GDKstrdup((char*)ptr)
-
 #define SA_NEW( sa, type ) (sa?((type*)sa_alloc( sa, sizeof(type))):MNEW(type))
 #define SA_ZNEW( sa, type ) (sa?((type*)sa_zalloc( sa, sizeof(type))):ZNEW(type))
 #define SA_NEW_ARRAY( sa, type, size ) (sa?(type*)sa_alloc( sa, ((size)*sizeof(type))):NEW_ARRAY(type,size))
 #define SA_ZNEW_ARRAY( sa, type, size ) (type*)sa_zalloc( sa, ((size)*sizeof(type)))
 #define SA_RENEW_ARRAY( sa, type, ptr, sz, osz ) (sa?(type*)sa_realloc( sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type))):RENEW_ARRAY(type,ptr,sz))
 #define SA_STRDUP( sa, s) (sa?sa_strdup(sa, s):_STRDUP(s))
+
+#define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)
+#define _STRDUP( ptr )	GDKstrdup((char*)ptr)
 
 #define _strlen(s) (int)strlen(s)
 

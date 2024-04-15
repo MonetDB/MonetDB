@@ -546,35 +546,6 @@ list_match(list *l1, list *l2, fcmp cmp)
 }
 
 list *
-list_keysort(list *l, int *keys, fdup dup)
-{
-	list *res;
-	node *n = NULL;
-	int i, cnt = list_length(l);
-	void **data;
-
-	data = GDKmalloc(cnt*sizeof(void *));
-	if (data == NULL) {
-		return NULL;
-	}
-	res = list_new_(l);
-	if (res == NULL) {
-		GDKfree(data);
-		return NULL;
-	}
-	for (n = l->h, i = 0; n; n = n->next, i++) {
-		data[i] = n->data;
-	}
-	/* sort descending */
-	GDKqsort(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int, true, true);
-	for(i=0; i<cnt; i++) {
-		list_append(res, dup?dup(data[i]):data[i]);
-	}
-	GDKfree(data);
-	return res;
-}
-
-list *
 list_sort(list *l, fkeyvalue key, fdup dup)
 {
 	list *res;

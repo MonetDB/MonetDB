@@ -28,10 +28,11 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	(void) cntxt;
 	(void) stk;					/* to fool compilers */
 
-	if (mb->inlineProp)
-		goto wrapup;
+	if (mb->inlineProp || MB_LARGE(mb))
+		goto wrapup1;
 
-	varused = GDKzalloc(mb->vtop * sizeof(int));
+	ma_open(cntxt->ta);
+	varused = ma_zalloc(cntxt->ta, mb->vtop * sizeof(int));
 	if (varused == NULL)
 		goto wrapup;
 
@@ -39,7 +40,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(varused);
+		ma_close( cntxt->ta );
 		throw(MAL, "optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	//mnstr_printf(cntxt->fdout,"deadcode limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
@@ -122,12 +123,14 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			msg = chkDeclarations(mb);
 	}
   wrapup:
+	ma_close( cntxt->ta );
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
+	/*
 	if (old)
-		GDKfree(old);
-	if (varused)
-		GDKfree(varused);
+		//GDKfree(old);
+		*/
 	return msg;
 }

@@ -472,7 +472,7 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 				sql_schema *s = mvc_bind_schema(m, "sys");
 				sql_var *var = find_global_var(m, s, "current_timezone");
 				ValRecord val;
-				VALinit(&val, TYPE_lng, &(lng){1000 * value});
+				VALinit(NULL, &val, TYPE_lng, &(lng){1000 * value});
 				if ((msg = sql_update_var(m, s, "current_timezone", &val)))
 					goto bailout1;
 				sqlvar_set(var, &val);
@@ -1389,7 +1389,7 @@ SQLparser_body(Client c, backend *be)
 				pushEndInstruction(c->curprg->def);
 
 				/* check the query wrapper for errors */
-				if (msg == MAL_SUCCEED)
+				if (msg == MAL_SUCCEED && !opt)
 					msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
 
 				if (msg == MAL_SUCCEED && opt) {

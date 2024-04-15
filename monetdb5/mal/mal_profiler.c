@@ -266,7 +266,8 @@ format_val2json(const ValPtr res)
 		return buf;
 
 	ValRecord val;
-	if (VALinit(&val, TYPE_str, buf) == NULL) {
+	/* TODO use ta */
+	if (VALinit(NULL, &val, TYPE_str, buf) == NULL) {
 		GDKfree(buf);
 		return NULL;
 	}

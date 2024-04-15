@@ -42,13 +42,14 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	str msg = MAL_SUCCEED;
 	InstrPtr p, q;
 
-	if (isSimpleSQL(mb)) {
-		goto wrapup;
+	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
+		goto wrapup1;
 	}
-	alias = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	cand = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	cst = (VarPtr *) GDKzalloc(sizeof(VarPtr) * mb->vtop);
-	index = (int *) GDKzalloc(sizeof(int) * mb->vtop);
+	ma_open(cntxt->ta);
+	alias = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
+	cand = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
+	cst = (VarPtr *) ma_zalloc(cntxt->ta, sizeof(VarPtr) * mb->vtop);
+	index = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
 
 	if (alias == NULL || cst == NULL || index == NULL || cand == NULL) {
 		msg = createException(MAL, "optimizer.constants",
@@ -124,16 +125,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	//      msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
   wrapup:
+	ma_close(cntxt->ta);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
-
-	if (cand)
-		GDKfree(cand);
-	if (alias)
-		GDKfree(alias);
-	if (cst)
-		GDKfree(cst);
-	if (index)
-		GDKfree(index);
 	return msg;
 }

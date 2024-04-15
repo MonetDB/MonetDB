@@ -855,7 +855,7 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
 	src = &(var->var.data);
 	dst = &stk->stk[getArg(pci, 0)];
-	if (VALcopy(dst, src) == NULL)
+	if (VALcopy(NULL, dst, src) == NULL)
 		throw(MAL, "sql.getVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -896,7 +896,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			gdk_return res;
 
 			if (value.tpe.type->localtype != TYPE_str) {
-				ptr ok = VALcopy(&val, myptr);
+				ptr ok = VALcopy(NULL, &val, myptr);
 				if (ok)
 					ok = VALconvert(TYPE_str, &val);
 				if (!ok) {

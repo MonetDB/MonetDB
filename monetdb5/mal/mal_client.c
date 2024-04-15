@@ -286,6 +286,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->filetrans = false;
 	c->handshake_options = NULL;
 	c->query = NULL;
+	c->ta = ma_create(NULL);
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
@@ -432,6 +433,7 @@ MCcloseClient(Client c)
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
 	c->idle = c->login = c->lastcmd = 0;
+	ma_destroy(c->ta);
 	if (shutdowninprogress) {
 		c->mode = BLOCKCLIENT;
 	} else {

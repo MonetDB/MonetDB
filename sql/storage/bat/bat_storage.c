@@ -923,7 +923,7 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access, size_t cnt)
 }
 
 static BAT *
-cs_bind_bat( column_storage *cs, int access, size_t cnt)
+cs_bind_bat( column_storage *cs, int access, size_t cnt, bool view)
 {
 	BAT *b;
 
@@ -939,9 +939,12 @@ cs_bind_bat( column_storage *cs, int access, size_t cnt)
 		return NULL;
 	assert(b->batRestricted == BAT_READ);
 	/* return slice */
-	BAT *s = BATslice(b, 0, cnt);
-	bat_destroy(b);
-	return s;
+	if (view) {
+		BAT *s = BATslice(b, 0, cnt);
+		bat_destroy(b);
+		b = s;
+	}
+	return b;
 }
 
 static int
@@ -1013,10 +1016,32 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	size_t cnt = count_col(tr, c, 0);
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access, cnt);
-	BAT *b = cs_bind_bat( &d->cs, access, cnt);
+	BAT *b = cs_bind_bat( &d->cs, access, cnt, true);
 	assert(!b || ((c->storage_type && access != RD_EXT) || b->ttype == c->type.type->localtype) || (access == QUICK && b->ttype < 0));
 	return b;
 }
+
+static void *					/* BAT * */
+bind_col_no_view(sql_trans *tr, sql_column *c, int access)
+{
+	assert(access == QUICK || tr->active);
+	if (!isTable(c->t))
+		return NULL;
+	sql_delta *d = col_timestamp_delta(tr, c);
+	if (!d)
+		return NULL;
+	size_t cnt = 0;
+	assert(access != RD_UPD_ID);
+	if (access == RD_UPD_VAL) {
+		size_t cnt = count_col(tr, c, 0);
+		/* TODO: needs work for using non view u-bats! */
+		return bind_ucol(tr, c, access, cnt);
+	}
+	BAT *b = cs_bind_bat( &d->cs, access, cnt, false);
+	assert(!b || ((c->storage_type && access != RD_EXT) || b->ttype == c->type.type->localtype) || (access == QUICK && b->ttype < 0));
+	return b;
+}
+
 
 static void *					/* BAT * */
 bind_idx(sql_trans *tr, sql_idx * i, int access)
@@ -1030,7 +1055,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	size_t cnt = count_idx(tr, i, 0);
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_uidx(tr, i, access, cnt);
-	return cs_bind_bat( &d->cs, access, cnt);
+	return cs_bind_bat( &d->cs, access, cnt, true);
 }
 
 static int
@@ -2706,7 +2731,7 @@ dcount_col(sql_trans *tr, sql_column *c)
 		return 1;
 	size_t cnt = s->segs->t->end;
 	if (cnt) {
-		BAT *v = cs_bind_bat( &b->cs, QUICK, cnt);
+		BAT *v = cs_bind_bat( &b->cs, QUICK, cnt, false);
 		size_t dcnt = 0;
 
 		if (v)
@@ -2714,18 +2739,6 @@ dcount_col(sql_trans *tr, sql_column *c)
 		return dcnt;
 	}
 	return cnt;
-}
-
-static BAT *
-bind_no_view(BAT *b, bool quick)
-{
-	if (isVIEW(b)) { /* If it is a view get the parent BAT */
-		BAT *nb = BBP_desc(VIEWtparent(b));
-		bat_destroy(b);
-		if (!(b = quick ? quick_descriptor(nb->batCacheid) : temp_descriptor(nb->batCacheid)))
-			return NULL;
-	}
-	return b;
 }
 
 static int
@@ -2740,7 +2753,7 @@ set_stats_col(sql_trans *tr, sql_column *c, double *unique_est, char *min, char 
 		sql_delta *d;
 		if ((d = ATOMIC_PTR_GET(&c->data)) && d->cs.st == ST_DEFAULT) {
 			BAT *b;
-			if ((b = bind_col(tr, c, RDONLY)) && (b = bind_no_view(b, false))) {
+			if ((b = bind_col_no_view(tr, c, RDONLY))) {
 				MT_lock_set(&b->theaplock);
 				b->tunique_est = *unique_est;
 				MT_lock_unset(&b->theaplock);
@@ -2791,11 +2804,7 @@ min_max_col(sql_trans *tr, sql_column *c)
 		}
 		_DELETE(c->min);
 		_DELETE(c->max);
-		if ((b = bind_col(tr, c, access))) {
-			if (!(b = bind_no_view(b, false))) {
-				unlock_column(tr->store, c->base.id);
-				return 0;
-			}
+		if ((b = bind_col_no_view(tr, c, access))) {
 			BATiter bi = bat_iterator(b);
 			if (bi.minpos != BUN_NONE && bi.maxpos != BUN_NONE) {
 				const void *nmin = BUNtail(bi, bi.minpos), *nmax = BUNtail(bi, bi.maxpos);
@@ -2936,21 +2945,19 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 		}
 		int eclass = c->type.type->eclass;
 		int access = d->cs.st == ST_DICT ? RD_EXT : RDONLY;
-		if ((b = bind_col(tr, c, access))) {
-			if (!(b = bind_no_view(b, false)))
-				return ok;
+		if ((b = bind_col_no_view(tr, c, access))) {
 			BATiter bi = bat_iterator(b);
 			*nonil = bi.nonil && !bi.nil;
 
 			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
 				d->cs.ucnt == 0 && (bi.minpos != BUN_NONE || bi.maxpos != BUN_NONE)) {
-				if (c->min && VALinit(min, bi.type, c->min))
+				if (c->min && VALinit(NULL, min, bi.type, c->min))
 					ok |= 1;
-				else if (bi.minpos != BUN_NONE && VALinit(min, bi.type, BUNtail(bi, bi.minpos)))
+				else if (bi.minpos != BUN_NONE && VALinit(NULL, min, bi.type, BUNtail(bi, bi.minpos)))
 					ok |= 1;
-				if (c->max && VALinit(max, bi.type, c->max))
+				if (c->max && VALinit(NULL, max, bi.type, c->max))
 					ok |= 2;
-				else if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
+				else if (bi.maxpos != BUN_NONE && VALinit(NULL, max, bi.type, BUNtail(bi, bi.maxpos)))
 					ok |= 2;
 			}
 			if (d->cs.ucnt == 0) {
@@ -2959,7 +2966,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 					*unique_est = bi.unique_est;
 					if (*unique_est == 0)
 						*unique_est = (double)BATguess_uniques(b,NULL);
-				} else if (d->cs.st == ST_DICT && (off = bind_col(tr, c, QUICK)) && (off = bind_no_view(off, true))) {
+				} else if (d->cs.st == ST_DICT && (off = bind_col_no_view(tr, c, QUICK))) {
 					/* for dict, check the offsets bat for uniqueness */
 					MT_lock_set(&off->theaplock);
 					*unique = off->tkey;
@@ -2971,7 +2978,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			bat_destroy(b);
 			if (*nonil && d->cs.ucnt > 0) {
 				/* This could use a quick descriptor */
-				if (!(upv = bind_col(tr, c, RD_UPD_VAL)) || !(upv = bind_no_view(upv, false))) {
+				if (!(upv = bind_col_no_view(tr, c, RD_UPD_VAL))) {
 					*nonil = false;
 				} else {
 					MT_lock_set(&upv->theaplock);

@@ -207,7 +207,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		if (tpe == TYPE_timestamp) {
 			timestamp *v,f,l;
 			lng s;
-			ValRecord ret;
+			ValRecord ret = { 0 };
 			if (VARcalccmp(&ret, &stk->stk[pci->argv[1]],
 				       &stk->stk[pci->argv[2]]) != GDK_SUCCEED)
 				throw(MAL, "generator.table",

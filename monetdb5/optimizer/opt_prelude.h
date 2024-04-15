@@ -167,6 +167,7 @@ mal_export const char *minjarowinklerRef;
 mal_export const char *minusRef;
 mal_export const char *mirrorRef;
 mal_export const char *mitosisRef;
+mal_export const char *mkeyRef;
 mal_export const char *mmathRef;
 mal_export const char *modRef;
 mal_export const char *mtimeRef;

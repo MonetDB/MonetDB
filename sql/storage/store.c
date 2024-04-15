@@ -5465,11 +5465,11 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	if (!mt->members)
 		mt->members = list_create((fdestroy) &part_destroy);
 	if (min) {
-		ok = VALinit(&vmin, localtype, min);
+		ok = VALinit(NULL, &vmin, localtype, min);
 		if (ok && localtype != TYPE_str)
 			ok = VALconvert(TYPE_str, &vmin);
 	} else {
-		ok = VALinit(&vmin, TYPE_str, ATOMnilptr(TYPE_str));
+		ok = VALinit(NULL, &vmin, TYPE_str, ATOMnilptr(TYPE_str));
 		min = (ptr) ATOMnilptr(localtype);
 	}
 	if (!ok) {
@@ -5483,11 +5483,11 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	}
 
 	if (max) {
-		ok = VALinit(&vmax, localtype, max);
+		ok = VALinit(NULL, &vmax, localtype, max);
 		if (ok && localtype != TYPE_str)
 			ok = VALconvert(TYPE_str, &vmax);
 	} else {
-		ok = VALinit(&vmax, TYPE_str, ATOMnilptr(TYPE_str));
+		ok = VALinit(NULL, &vmax, TYPE_str, ATOMnilptr(TYPE_str));
 		max = (ptr) ATOMnilptr(localtype);
 	}
 	if (!ok) {
@@ -5636,7 +5636,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if (with_nills) { /* store the null value first */
 		ValRecord vnnil;
-		if (VALinit(&vnnil, TYPE_str, ATOMnilptr(TYPE_str)) == NULL) {
+		if (VALinit(NULL, &vnnil, TYPE_str, ATOMnilptr(TYPE_str)) == NULL) {
 			if (!update)
 				part_destroy(store, p);
 			list_destroy2(vals, store);
@@ -5661,7 +5661,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 			list_destroy2(vals, store);
 			return -i - 10;
 		}
-		ok = VALinit(&vvalue, localtype, next->value);
+		ok = VALinit(NULL, &vvalue, localtype, next->value);
 		if (ok && localtype != TYPE_str)
 			ok = VALconvert(TYPE_str, &vvalue);
 		if (!ok) {
@@ -7346,7 +7346,7 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 					ptr ok;
 
 					vvalue = (ValRecord) {.vtype = TYPE_void,};
-					ok = VALinit(&vvalue, TYPE_str, v->value);
+					ok = VALinit(NULL, &vvalue, TYPE_str, v->value);
 					if (ok)
 						ok = VALconvert(localtype, &vvalue);
 					if (ok) {
@@ -7364,9 +7364,9 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 				ptr ok;
 
 				vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
-				ok = VALinit(&vmin, TYPE_str, p->part.range.minvalue);
+				ok = VALinit(NULL, &vmin, TYPE_str, p->part.range.minvalue);
 				if (ok)
-					ok = VALinit(&vmax, TYPE_str, p->part.range.maxvalue);
+					ok = VALinit(NULL, &vmax, TYPE_str, p->part.range.maxvalue);
 				_DELETE(p->part.range.minvalue);
 				_DELETE(p->part.range.maxvalue);
 				if (ok) {

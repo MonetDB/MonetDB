@@ -336,8 +336,7 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states,
    executed, either sequentially or in parallel */
 
 str
-OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-						  InstrPtr pci)
+OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, start, slimit, breakpoint, actions = 0;
 	bool simple = true;
@@ -349,7 +348,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	str msg = MAL_SUCCEED;
 
 	/* don't use dataflow on single processor systems */
-	if (GDKnr_threads <= 1 || cntxt->workerlimit == 1)
+	if (GDKnr_threads <= 1 || cntxt->workerlimit == 1 || MB_LARGE(mb))
 		goto wrapup;
 
 	if (optimizerIsApplied(mb, dataflowRef))
@@ -359,9 +358,11 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (mb->inlineProp)
 		goto wrapup;
 
-	vlimit = mb->vsize;
-	states = (States) GDKzalloc(vlimit * sizeof(char));
+	vlimit = mb->vtop *2;
+	ma_open( cntxt->ta );
+	states = (States) ma_zalloc(cntxt->ta, vlimit * sizeof(char));
 	if (states == NULL) {
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -371,7 +372,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(states);
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -410,7 +411,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							&& getEndScope(mb, getArg(q, k)) == j
 							&& isaBatType(getVarType(mb, getArg(q, k)))) {
 							InstrPtr r;
-							r = newInstruction(NULL, languageRef, passRef);
+							r = newInstruction(mb, languageRef, passRef);
 							if (r == NULL) {
 								msg = createException(MAL, "optimizer.dataflow",
 													  SQLSTATE(HY013)
@@ -483,13 +484,14 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				msg = chkDeclarations(mb);
 		}
 	}
+
+	ma_close( cntxt->ta );
   wrapup:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
-
-	if (states)
-		GDKfree(states);
+	/*
 	if (old)
-		GDKfree(old);
+		//GDKfree(old);
+		*/
 	return msg;
 }

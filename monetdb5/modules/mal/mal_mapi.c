@@ -1807,10 +1807,10 @@ SERVERfieldAnalysis(str fld, int tpe, ValPtr v)
 		break;
 	case TYPE_str:
 		if (fld == 0 || strcmp(fld, "nil") == 0) {
-			if (VALinit(v, TYPE_str, str_nil) == NULL)
+			if (VALinit(NULL, v, TYPE_str, str_nil) == NULL)
 				return -1;
 		} else {
-			if (VALinit(v, TYPE_str, fld) == NULL)
+			if (VALinit(NULL, v, TYPE_str, fld) == NULL)
 				return -1;
 		}
 		break;

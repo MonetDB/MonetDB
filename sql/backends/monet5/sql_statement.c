@@ -43,6 +43,7 @@ convertMultiplexFcn(const char *op)
 	return op;
 }
 
+/*
 static InstrPtr
 multiplex2(MalBlkPtr mb, const char *mod, const char *name, int o1, int o2, int rtype)
 {
@@ -59,6 +60,7 @@ multiplex2(MalBlkPtr mb, const char *mod, const char *name, int o1, int o2, int 
 	pushInstruction(mb, q);
 	return q;
 }
+*/
 
 static InstrPtr
 dump_1(MalBlkPtr mb, const char *mod, const char *name, stmt *o1)
@@ -1669,7 +1671,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 	}
 	if (op2->nrcols >= 1) {
 		bit need_not = FALSE;
-		const char *mod = calcRef;
+		//const char *mod = calcRef;
 		const char *op = "=";
 		int k;
 
@@ -1696,8 +1698,12 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			TRC_ERROR(SQL_EXECUTION, "Unknown operator\n");
 		}
 
-		if ((q = multiplex2(mb, mod, convertMultiplexFcn(op), l, r, TYPE_bit)) == NULL)
+		if ((q = newStmtArgs(mb, batcalcRef, convertMultiplexFcn(op), 6)) == NULL)
+		//if ((q = multiplex2(mb, mod, convertMultiplexFcn(op), l, r, TYPE_bit)) == NULL)
 			goto bailout;
+		setVarType(mb, getArg(q, 0), newBatType(TYPE_bit));
+		q = pushArgument(mb, q, l);
+		q = pushArgument(mb, q, r);
 		if (sub && (op1->cand || op2->cand)) {
 			if (op1->cand && !op2->cand) {
 				if (op1->nrcols > 0)
@@ -1713,6 +1719,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		if (is_semantics)
 			q = pushBit(mb, q, TRUE);
 		k = getDestVar(q);
+		pushInstruction(mb, q);
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		if (q == NULL)
@@ -4002,6 +4009,78 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 #define LANG_INT_OR_MAL(l)  ((l)==FUNC_LANG_INT || (l)==FUNC_LANG_MAL)
 
 stmt *
+stmt_binop_semantics(backend *be, stmt *l, stmt *r, stmt *sel, sql_subfunc *f)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+	const char *fimp = backend_function_imp(be, f->func);
+	stmt *o = NULL;
+
+	if (l == NULL || r == NULL)
+		goto bailout;
+
+	o = l;
+	if (o->nrcols == 0)
+		o = r;
+
+	fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
+
+	sql_subtype *res = f->res->h->data;
+
+	q = newStmtArgs(mb, o->nrcols ? batcalcRef : calcRef, fimp, 6);
+	if (q == NULL)
+		goto bailout;
+	if (o->nrcols)
+		setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
+	else
+		setVarType(mb, getArg(q, 0), res->type->localtype);
+
+	q = pushArgument(mb, q, l->nr);
+	q = pushArgument(mb, q, r->nr);
+	/* push candidate lists if that's the case */
+	if (l->nrcols > 0) {
+		if ((l->cand && l->cand == sel) || !sel)
+			q = pushNilBat(mb, q);
+		else
+			q = pushArgument(mb, q, sel->nr);
+	}
+	if (r->nrcols > 0) {
+		if ((r->cand && r->cand == sel) || !sel)
+			q = pushNilBat(mb, q);
+		else
+			q = pushArgument(mb, q, sel->nr);
+	}
+	q = pushBit(mb, q, 1); /* semantic */
+
+	pushInstruction(mb, q);
+
+	stmt *s = stmt_create(be->mvc->sa, st_Nop);
+	if(!s)
+		goto bailout;
+	s->op1 = l;
+	s->op2 = r;
+	if (o) {
+		s->nrcols = o->nrcols;
+		s->key = o->key;
+		s->aggr = o->aggr;
+	} else {
+		s->nrcols = 0;
+		s->key = 1;
+	}
+	s->op4.funcval = f;
+	s->nr = getDestVar(q);
+	s->q = q;
+	if (sel && s->nrcols)
+		s->cand = sel;
+	return s;
+
+  bailout:
+	if (be->mvc->sa->eb.enabled)
+		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+}
+
+stmt *
 stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 {
 	MalBlkPtr mb = be->mb;
@@ -4062,7 +4141,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 	if (q == NULL) {
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			goto bailout;
-		mod = sql_func_mod(f->func);
+		mod = getName(sql_func_mod(f->func));
 		fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
 		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
@@ -4072,15 +4151,42 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		}
 
 		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
+			bool no_multiplex = 0;
 			sql_subtype *res = f->res->h->data;
 
-			q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
+			if (f->func->type != F_UNION && !rows && ((mod == calcRef && (
+						fimp[0] == '+' ||
+						fimp[0] == '-' ||
+						fimp[0] == '*' ||
+						fimp[0] == '/' ||
+						fimp[0] == '=' ||
+						fimp[0] == '>' ||
+						fimp[0] == '<' ||
+						strcmp(fimp, "not") == 0 ||
+						strcmp(fimp, "and") == 0 ||
+						strcmp(fimp, "or") == 0 ||
+						strcmp(fimp, "min") == 0 ||
+						strcmp(fimp, "max") == 0 ||
+						strcmp(fimp, "abs") == 0 ||
+						strcmp(fimp, "identity") == 0 ||
+						strcmp(fimp, "ifthenelse") == 0 ||
+						strcmp(fimp, "isnil") == 0 ||
+						strcmp(fimp, "isnotnil") == 0)
+							) || (mod == mkeyRef))) {
+				no_multiplex = 1;
+				if (strcmp(fimp, "identity") != 0 && strcmp(fimp, "ifthenelse") != 0)
+					push_cands = 1;
+				q = newStmtArgs(mb, mod == mkeyRef ? batmkeyRef : batcalcRef, fimp, default_nargs);
+			} else
+				q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
 			if (q == NULL)
 				goto bailout;
 			if (rows)
 				q = pushArgument(mb, q, card->nr);
-			q = pushStr(mb, q, mod);
-			q = pushStr(mb, q, fimp);
+			if (!no_multiplex) {
+				q = pushStr(mb, q, mod);
+				q = pushStr(mb, q, fimp);
+			}
 			setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 		} else {
 			q = newStmtArgs(mb, mod, fimp, default_nargs);
@@ -4129,7 +4235,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 				stmt *op = n->data;
 
 				if (op->nrcols > 0) {
-					if (op->cand && op->cand == sel) {
+					if ((op->cand && op->cand == sel) || !sel) {
 						q = pushNilBat(mb, q);
 					} else {
 						q = pushArgument(mb, q, sel->nr);

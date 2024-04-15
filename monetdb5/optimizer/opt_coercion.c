@@ -99,12 +99,17 @@ OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	InstrPtr p;
 	int actions = 0;
 	const char *calcRef = putName("calc");
-	Coercion *coerce = GDKzalloc(sizeof(Coercion) * mb->vtop);
 	str msg = MAL_SUCCEED;
 
-	if (coerce == NULL)
+	if (MB_LARGE(mb))
+		goto wrapup;
+
+	ma_open(cntxt->ta);
+	Coercion *coerce = ma_zalloc(cntxt->ta, sizeof(Coercion) * mb->vtop);
+	if (coerce == NULL) {
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.coercion", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	(void) cntxt;
+	}
 	(void) stk;					/* to fool compilers */
 
 	for (i = 1; i < mb->stop; i++) {
@@ -162,7 +167,7 @@ OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	 * This optimizer affects the flow, but not the type and declaration
 	 * structure. A cheaper optimizer is sufficient.
 	 */
-	GDKfree(coerce);
+	ma_close(cntxt->ta);
 
 	/* Defense line against incorrect plans */
 	if (actions > 0) {
@@ -172,6 +177,7 @@ OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
+wrapup:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;

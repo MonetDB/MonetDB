@@ -16,8 +16,7 @@
 #include "querylog.h"
 
 str
-OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-						  InstrPtr pci)
+OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, limit, slimit, actions = 0;
 	InstrPtr p = 0, *old = mb->stmt, q, r;
@@ -54,7 +53,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	pushInstruction(mb, old[0]);
 	/* run the querylog.define operation */
-	defineQuery = copyInstruction(defineQuery);
+	defineQuery = copyInstruction(mb, defineQuery);
 	if (defineQuery == NULL) {
 		msg = createException(MAL, "optimizer.querylog",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -288,7 +287,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
+	//GDKfree(old);
 	if (msg == MAL_SUCCEED) {
 		/* Defense line against incorrect plans */
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);

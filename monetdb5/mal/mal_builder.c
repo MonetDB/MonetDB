@@ -128,7 +128,7 @@ newComment(MalBlkPtr mb, const char *val)
 		return NULL;
 	q->token = REMsymbol;
 	q->barrier = 0;
-	if (VALinit(&cst, TYPE_str, val) == NULL) {
+	if (VALinit(mb->ma, &cst, TYPE_str, val) == NULL) {
 		str msg = createException(MAL, "newComment", "Can not allocate comment");
 		addMalException(mb, msg);
 		freeException(msg);
@@ -471,7 +471,7 @@ getStrConstant(MalBlkPtr mb, str val)
 	VALset(&cst, TYPE_str, val);
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0) {
-		if ((cst.val.sval = GDKmalloc(cst.len)) == NULL)
+		if ((cst.val.sval = /*GDKmalloc*/ma_alloc(mb->ma, cst.len)) == NULL)
 			return -1;
 		memcpy(cst.val.sval, val, cst.len);	/* includes terminating \0 */
 		_t = defConstant(mb, TYPE_str, &cst);
@@ -487,7 +487,7 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 
 	if (q == NULL || mb->errors)
 		return q;
-	if (VALinit(&cst, TYPE_str, Val) == NULL) {
+	if (VALinit(mb->ma, &cst, TYPE_str, Val) == NULL) {
 		str msg = createException(MAL, "pushStr",
 								  "Can not allocate string variable");
 		addMalException(mb, msg);
@@ -540,7 +540,7 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 			cst.vtype = TYPE_void;
 			cst.val.oval = oid_nil;
 		} else {
-			if (VALinit(&cst, tpe, ATOMnilptr(tpe)) == NULL) {
+			if (VALinit(mb->ma, &cst, tpe, ATOMnilptr(tpe)) == NULL) {
 				str msg = createException(MAL, "pushNil",
 										  "Can not allocate nil variable");
 				addMalException(mb, msg);
@@ -659,7 +659,7 @@ pushValue(MalBlkPtr mb, InstrPtr q, const ValRecord *vr)
 
 	if (q == NULL || mb->errors)
 		return q;
-	if (VALcopy(&cst, vr) == NULL) {
+	if (VALcopy(mb->ma, &cst, vr) == NULL) {
 		str msg = createException(MAL, "pushValue", "Can not allocate variable");
 		addMalException(mb, msg);
 		freeException(msg);

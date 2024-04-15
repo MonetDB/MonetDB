@@ -731,7 +731,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	MT_lock_set(&b->theaplock);
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
 	if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
-	    VALcopy(&minprop, prop) != NULL) {
+	    VALcopy(NULL, &minprop, prop) != NULL) {
 		minbound = VALptr(&minprop);
 		if (ci.ncand == BATcount(n) &&
 		    ni.minpos != BUN_NONE &&
@@ -743,7 +743,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 	}
 	if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
-	    VALcopy(&maxprop, prop) != NULL) {
+	    VALcopy(NULL, &maxprop, prop) != NULL) {
 		maxbound = VALptr(&maxprop);
 		if (ci.ncand == BATcount(n) &&
 		    ni.maxpos != BUN_NONE &&
@@ -3032,7 +3032,7 @@ BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	} else {
 		VALclear(&p->v);
 	}
-	if (VALinit(&p->v, type, v) == NULL) {
+	if (VALinit(NULL, &p->v, type, v) == NULL) {
 		/* failed to initialize, so remove property */
 		BATrmprop_nolock(b, idx);
 		GDKclrerr();

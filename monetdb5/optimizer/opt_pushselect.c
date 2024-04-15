@@ -109,15 +109,20 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	subselect_t subselects;
 	str msg = MAL_SUCCEED;
 
+	if (MB_LARGE(mb))
+			return msg;
 	subselects = (subselect_t) { 0 };
 	if (mb->errors)
 		throw(MAL, "optimizer.pushselect", "%s", mb->errors);
 
 	no_mito = !isOptimizerEnabled(mb, mitosisRef);
 	(void) stk;
-	vars = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	if (vars == NULL)
+	ma_open(cntxt->ta);
+	vars = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
+	if (vars == NULL) {
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -136,7 +141,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (getModuleId(p) == algebraRef
 			&& ((!no_mito && getFunctionId(p) == intersectRef)
 				|| getFunctionId(p) == differenceRef)) {
-			GDKfree(vars);
 			goto wrapup;
 		}
 
@@ -215,7 +219,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				}
 			}
 			if (tid && subselect_add(&subselects, tid, getArg(p, 0)) < 0) {
-				GDKfree(vars);
 				goto wrapup;
 			}
 		}
@@ -248,7 +251,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				}
 			}
 			if (tid && subselect_add(&subselects, tid, getArg(p, 0)) < 0) {
-				GDKfree(vars);
 				goto wrapup;
 			}
 		}
@@ -281,7 +283,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				}
 			}
 			if (tid && subselect_add(&subselects, tid, getArg(p, 1)) < 0) {
-				GDKfree(vars);
 				goto wrapup;
 			}
 		}
@@ -289,7 +290,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	if (nr_likes || subselects.nr) {
 		if (newMalBlkStmt(mb, mb->ssize) < 0) {
-			GDKfree(vars);
 			goto wrapup;
 		}
 
@@ -416,9 +416,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (; i < slimit; i++)
 			if (old[i])
 				freeInstruction(old[i]);
-		GDKfree(old);
+		//GDKfree(old);
 		if (msg != MAL_SUCCEED || !push_down_delta) {
-			GDKfree(vars);
 			goto wrapup;
 		}
 	}
@@ -428,20 +427,15 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-	nvars = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	slices = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	rslices = (bool *) GDKzalloc(sizeof(bool) * mb->vtop);
-	oclean = (bool *) GDKzalloc(sizeof(bool) * mb->vtop);
+	nvars = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
+	slices = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
+	rslices = (bool *) ma_zalloc(cntxt->ta, sizeof(bool) * mb->vtop);
+	oclean = (bool *) ma_zalloc(cntxt->ta, sizeof(bool) * mb->vtop);
 	if (!nvars || !slices || !rslices || !oclean
 		|| newMalBlkStmt(mb,
 						 mb->stop + (5 * push_down_delta) + (2 * nr_topn)) <
 		0) {
 		mb->stmt = old;
-		GDKfree(vars);
-		GDKfree(nvars);
-		GDKfree(slices);
-		GDKfree(rslices);
-		GDKfree(oclean);
 		goto wrapup;
 	}
 	pushInstruction(mb, old[0]);
@@ -461,8 +455,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			InstrPtr q = old[vars[var]];
 			if (q && getModuleId(q) == sqlRef
 				&& getFunctionId(q) == projectdeltaRef) {
-				InstrPtr r = copyInstruction(p);
-				InstrPtr s = copyInstruction(q);
+				InstrPtr r = copyInstruction(mb, p);
+				InstrPtr s = copyInstruction(mb, q);
 				if (r == NULL || s == NULL) {
 					freeInstruction(r);
 					freeInstruction(s);
@@ -515,7 +509,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					}
 					if (s && getModuleId(s) == sqlRef
 						&& getFunctionId(s) == projectdeltaRef) {
-						InstrPtr t = copyInstruction(s);
+						InstrPtr t = copyInstruction(mb, s);
 						if (t == NULL) {
 							msg = createException(MAL, "optimizer.pushselect",
 												  SQLSTATE(HY013)
@@ -528,7 +522,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						nvars[getArg(s, 0)] = getArg(t, 0) = newTmpVariable(mb, getArgType(mb, t, 0));
 						pushInstruction(mb, t);
 						if (u) {	/* add again */
-							if ((t = copyInstruction(u)) == NULL) {
+							if ((t = copyInstruction(mb, u)) == NULL) {
 								msg = createException(MAL,
 													  "optimizer.pushselect",
 													  SQLSTATE(HY013)
@@ -592,8 +586,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			}
 			if (no_mito && q && getModuleId(q) == matRef
 				&& getFunctionId(q) == packRef && q->argc == (q->retc + 2)) {
-				InstrPtr r = copyInstruction(p);
-				InstrPtr t = copyInstruction(p);
+				InstrPtr r = copyInstruction(mb, p);
+				InstrPtr t = copyInstruction(mb, p);
 
 				if (r == NULL || t == NULL) {
 					freeInstruction(r);
@@ -612,7 +606,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(t, 1) = getArg(q, 2);	/* inserts */
 				pushInstruction(mb, t);
 
-				InstrPtr u = copyInstruction(q);	/* pack result */
+				InstrPtr u = copyInstruction(mb, q);	/* pack result */
 				if (u == NULL) {
 					msg = createException(MAL, "optimizer.pushselect",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -627,9 +621,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				continue;
 			} else if (q && getModuleId(q) == sqlRef
 					   && getFunctionId(q) == deltaRef) {
-				InstrPtr r = copyInstruction(p);
-				InstrPtr s = copyInstruction(p);
-				InstrPtr u = copyInstruction(q);
+				InstrPtr r = copyInstruction(mb, p);
+				InstrPtr s = copyInstruction(mb, p);
+				InstrPtr u = copyInstruction(mb, q);
 
 				if (r == NULL || s == NULL || u == NULL) {
 					freeInstruction(r);
@@ -681,8 +675,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				&& getFunctionId(q) == packRef && q->argc == 3
 				&& getModuleId(s) == matRef && getFunctionId(s) == packRef
 				&& s->argc == 3) {
-				InstrPtr r = copyInstruction(p);
-				InstrPtr t = copyInstruction(p);
+				InstrPtr r = copyInstruction(mb, p);
+				InstrPtr t = copyInstruction(mb, p);
 
 				if (r == NULL || t == NULL) {
 					freeInstruction(r);
@@ -703,7 +697,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(t, 2) = getArg(q, 2);	/* inserts */
 				pushInstruction(mb, t);
 
-				InstrPtr u = copyInstruction(q);	/* pack result */
+				InstrPtr u = copyInstruction(mb, q);	/* pack result */
 				if (u == NULL) {
 					msg = createException(MAL, "optimizer.pushselect",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -718,7 +712,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				continue;
 			} else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef
 					   && q->argc == 4) {
-				q = copyInstruction(q);
+				q = copyInstruction(mb, q);
 				if (q == NULL) {
 					msg = createException(MAL, "optimizer.pushselect",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -747,9 +741,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				q = old[vars[var]];
 			}
 			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
-				InstrPtr r = copyInstruction(p);
-				InstrPtr s = copyInstruction(p);
-				InstrPtr u = copyInstruction(q);
+				InstrPtr r = copyInstruction(mb, p);
+				InstrPtr s = copyInstruction(mb, p);
+				InstrPtr u = copyInstruction(mb, q);
 
 				if (r == NULL || s == NULL || u == NULL) {
 					freeInstruction(r);
@@ -802,12 +796,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(vars);
-	GDKfree(nvars);
-	GDKfree(slices);
-	GDKfree(rslices);
-	GDKfree(oclean);
-	GDKfree(old);
+	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
@@ -818,6 +807,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			msg = chkDeclarations(mb);
 	}
   wrapup:
+	ma_close(cntxt->ta);
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;

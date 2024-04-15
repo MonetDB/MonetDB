@@ -904,7 +904,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				return GDK_FAIL;
 			}
 		} else {
-			if (VALinit(pt, TYPE_str, str_nil) == NULL) {
+			if (VALinit(NULL, pt, TYPE_str, str_nil) == NULL) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
 				return GDK_FAIL;
@@ -1107,7 +1107,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 	}
 
 	if (ci.ncand == 0 || (nseparator && strNil(nseparator))) {
-		if (VALinit(res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
+		if (VALinit(NULL, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
 		if (free_nseparator)
 			GDKfree(nseparator);

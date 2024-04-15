@@ -98,8 +98,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * find the actual arguments at the proper place of the callee.
 	 */
 
-	alias = (int *) GDKmalloc(sizeof(int) * pci->maxarg);
-	resB = (int *) GDKmalloc(sizeof(int) * pci->retc);
+	ma_open(cntxt->ta);
+	alias = (int *) ma_alloc(cntxt->ta, sizeof(int) * pci->maxarg);
+	resB = (int *) ma_alloc(cntxt->ta, sizeof(int) * pci->retc);
 	if (alias == NULL || resB == NULL) {
 		goto nomem;
 	}
@@ -219,13 +220,11 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		q = pushArgument(mb, q, resB[i]);
 		pushInstruction(mb, q);
 	}
-	GDKfree(alias);
-	GDKfree(resB);
+	ma_close(cntxt->ta);
 	return MAL_SUCCEED;
 
   nomem:
-	GDKfree(alias);
-	GDKfree(resB);
+	ma_close(cntxt->ta);
 	throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
@@ -312,7 +311,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
+	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {

@@ -42,7 +42,7 @@ newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 		}
 
 		if (args > 0) {
-			InstrPtr p = newInstructionArgs(NULL, mod, nme, args);
+			InstrPtr p = newInstructionArgs(s->def, mod, nme, args);
 			if (p == NULL) {
 				freeSymbol(s);
 				return NULL;

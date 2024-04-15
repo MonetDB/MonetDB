@@ -2202,6 +2202,8 @@ sa_create(allocator *pa)
 		return NULL;
 	}
 	sa->used = 0;
+	sa->tmp_active = 0;
+	sa->tmp_used = 0;
 	return sa;
 }
 
@@ -2239,6 +2241,9 @@ sa_alloc( allocator *sa, size_t sz )
 {
 	char *r;
 	sz = round16(sz);
+	/* we don't want super large allocs for temp storage */
+	//if (sa->tmp_active && sz >= SA_BLOCK)
+	//	assert(0);
 	if (sz > (SA_BLOCK-sa->used)) {
 		if (sa->pa)
 			r = (char*)sa_alloc(sa->pa, (sz > SA_BLOCK ? sz : SA_BLOCK));
@@ -2348,4 +2353,27 @@ char *sa_strconcat( allocator *sa, const char *s1, const char *s2 )
 size_t sa_size( allocator *sa )
 {
 	return sa->usedmem;
+}
+
+void
+sa_open( allocator *sa )
+{
+	assert(!sa->tmp_active);
+	sa->tmp_active = 1;
+	sa->tmp_used = 0;
+}
+
+void
+sa_close( allocator *sa )
+{
+	assert(sa->tmp_active);
+	sa->tmp_active = 0;
+	while (sa->tmp_used) {
+		assert(sa->used >= sa->tmp_used);
+		if (sa->used >= sa->tmp_used) {
+			sa->used -= sa->tmp_used;
+			sa->usedmem -= sa->tmp_used;
+			sa->tmp_used = 0;
+		}
+	}
 }

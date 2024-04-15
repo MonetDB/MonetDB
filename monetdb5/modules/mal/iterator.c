@@ -153,7 +153,7 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*head = 0;
 
 	bi = bat_iterator(b);
-	if (VALinit(tail, ATOMtype(b->ttype), BUNtail(bi, *head)) == NULL) {
+	if (VALinit(NULL, tail, ATOMtype(b->ttype), BUNtail(bi, *head)) == NULL) {
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "iterator.nextChunk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -189,7 +189,7 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	bi = bat_iterator(b);
-	if (VALinit(tail, ATOMtype(b->ttype), BUNtail(bi, *head)) == NULL) {
+	if (VALinit(NULL, tail, ATOMtype(b->ttype), BUNtail(bi, *head)) == NULL) {
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "iterator.nextChunk", SQLSTATE(HY013) MAL_MALLOC_FAIL);

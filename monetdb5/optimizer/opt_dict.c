@@ -42,15 +42,15 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *dictunique = NULL;
 	str msg = MAL_SUCCEED;
 
-	(void) cntxt;
 	(void) stk;					/* to fool compilers */
 
-	if (mb->inlineProp)
-		goto wrapup;
+	if (mb->inlineProp || MB_LARGE(mb))
+		goto wrapup1;
 
-	varisdict = GDKzalloc(2 * mb->vtop * sizeof(int));
-	vardictvalue = GDKzalloc(2 * mb->vtop * sizeof(int));
-	dictunique = GDKzalloc(2 * mb->vtop * sizeof(bit));
+	ma_open(cntxt->ta);
+	varisdict = ma_zalloc(cntxt->ta, 2 * mb->vtop * sizeof(int));
+	vardictvalue = ma_zalloc(cntxt->ta, 2 * mb->vtop * sizeof(int));
+	dictunique = ma_zalloc(cntxt->ta, 2 * mb->vtop * sizeof(bit));
 	if (varisdict == NULL || vardictvalue == NULL || dictunique == NULL)
 		goto wrapup;
 
@@ -58,9 +58,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(varisdict);
-		GDKfree(vardictvalue);
-		GDKfree(dictunique);
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.dict", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/* Consolidate the actual need for variables */
@@ -88,7 +86,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* projection(cand, col) with col = dict.decompress(o,u)
 					 * v1 = projection(cand, o)
 					 * dict.decompress(v1, u) */
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.dict",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -121,7 +119,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						   && getFunctionId(p) == subsliceRef) {
 					/* pos = subslice(col, l, h) with col = dict.decompress(o,u)
 					 * pos = subslice(o, l, h) */
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.dict",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -139,7 +137,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							   && getFunctionId(p) == identityRef)) {
 					/* id = mirror/identity(col) with col = dict.decompress(o,u)
 					 * id = mirror/identity(o) */
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.dict",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -196,7 +194,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						 * pos = intersect(o, tp2, cand, nil) */
 
 						int has_cand = getArgType(mb, p, 2) == newBatType(TYPE_oid);
-						InstrPtr r = copyInstruction(p);
+						InstrPtr r = copyInstruction(mb, p);
 						InstrPtr s = newInstructionArgs(mb, dictRef, putName("convert"), 3);
 						InstrPtr t = newInstructionArgs(mb, algebraRef, intersectRef, 9);
 						if (r == NULL || s == NULL || t == NULL) {
@@ -247,7 +245,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					 *              iff u1 == u2
 					 *                      (r1, r2) = algebra.join(o1, o2, cand1, cand2, ...) */
 					int l = getArg(p, j + 1);
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.dict",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -296,7 +294,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* batcalc.-(1, col) with col = dict.decompress(o,u)
 					 * v1 = batcalc.-(1, u)
 					 * dict.decompress(o, v1) */
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.dict",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -355,7 +353,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 						input = getArg(s, 0);
 					}
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.dict",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -409,12 +407,11 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* keep all actions taken as a post block comment */
   wrapup:
+	ma_close(cntxt->ta);
+	//GDKfree(old);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	GDKfree(old);
-	GDKfree(varisdict);
-	GDKfree(vardictvalue);
-	GDKfree(dictunique);
 	return msg;
 }

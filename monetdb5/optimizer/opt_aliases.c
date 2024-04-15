@@ -26,7 +26,9 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p;
 
 	(void) stk;
-	(void) cntxt;
+
+	if (MB_LARGE(mb))
+		goto wrapup;
 
 	limit = mb->stop;
 	for (i = 1; i < limit; i++) {
@@ -39,12 +41,15 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		goto wrapup;
 	}
 	k = i;
+	ma_open(cntxt->ta);
 	if (i < limit) {
-		alias = GDKzalloc(sizeof(int) * mb->vtop);
-		if (alias == NULL)
+		alias = ma_alloc(cntxt->ta, sizeof(int) * mb->vtop);
+		if (alias == NULL) {
+			ma_close(cntxt->ta);
 			throw(MAL, "optimizer.aliases", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		setVariableScope(mb);
-		for (j = 1; j < mb->vtop; j++)
+		for (j = 0; j < mb->vtop; j++)
 			alias[j] = j;
 	}
 	for (; i < limit; i++) {
@@ -68,7 +73,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		mb->stmt[i] = NULL;
 
 	mb->stop = k;
-	GDKfree(alias);
+	ma_close(cntxt->ta);
 
 	/* Defense line against incorrect plans */
 	/* Plan is unaffected */

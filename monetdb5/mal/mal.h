@@ -181,6 +181,7 @@ typedef struct MALBLK {
 
 	str errors;					/* left over errors */
 	int maxarg;					/* keep track on the maximal arguments used */
+	allocator *ma;				/* mal blocks are fully allocated using a single allocator */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
 	ATOMIC_TYPE workers;

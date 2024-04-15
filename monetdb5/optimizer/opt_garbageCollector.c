@@ -37,7 +37,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
-	if (mb->inlineProp)
+	if (mb->inlineProp /*|| MB_LARGE(mb)*/)
 		goto wrapup;
 
 	limit = mb->stop;

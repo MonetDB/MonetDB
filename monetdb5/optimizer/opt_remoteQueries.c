@@ -20,16 +20,12 @@
  * from the debugger.
  */
 static str
-RQcall2str(MalBlkPtr mb, InstrPtr p)
+RQcall2str(str msg, MalBlkPtr mb, InstrPtr p)
 {
 	int k;
 	size_t len = 1;
-	str msg;
 	str s, cv = NULL;
 
-	msg = (str) GDKmalloc(BUFSIZ);
-	if (msg == NULL)
-		return NULL;
 	msg[0] = '#';
 	msg[1] = 0;
 	if (p->barrier)
@@ -59,7 +55,6 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 					sprintf(msg + len, "nil");
 				} else {
 					if ((cv = VALformat(&v->value)) == NULL) {
-						GDKfree(msg);
 						return NULL;
 					}
 					sprintf(msg + len, "%s:%s", cv, ATOMname(v->type));
@@ -154,9 +149,8 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 
 #define remoteAction()							\
 	do {										\
-		s = RQcall2str(mb, p);					\
+		s = RQcall2str(buf, mb, p);				\
 		r = pushStr(mb, r, s + 1);				\
-		GDKfree(s);								\
 		pushInstruction(mb, r);					\
 		freeInstruction(p);						\
 		actions++;								\
@@ -186,28 +180,20 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	cst.val.ival = 0;
 	cst.len = 0;
 
-	(void) cntxt;
 	(void) stk;
 
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-	location = (int *) GDKzalloc(mb->vsize * sizeof(int));
-	if (location == NULL)
-		throw(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	dbalias = (DBalias *) GDKzalloc(128 * sizeof(DBalias));
-	if (dbalias == NULL) {
-		GDKfree(location);
+	ma_open(cntxt->ta);
+	location = (int *) ma_zalloc(cntxt->ta, mb->vsize * sizeof(int));
+	dbalias = (DBalias *) ma_zalloc(cntxt->ta, 128 * sizeof(DBalias));
+	if (location == NULL || dbalias == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	dbtop = 0;
-
-	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(dbalias);
-		GDKfree(location);
-		throw(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -252,9 +238,8 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(p, 1) = getArg(p, 2);
 
 				prepareRemote(TYPE_void);
-				s = RQcall2str(mb, p);
+				s = RQcall2str(buf, mb, p);
 				r = pushStr(mb, r, s + 1);
-				GDKfree(s);
 				pushInstruction(mb, r);
 				freeInstruction(p);
 				actions++;
@@ -378,10 +363,9 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						q = pushArgument(mb, q, getArg(p, j));
 						pushInstruction(mb, q);
 					}
-				s = RQcall2str(mb, p);
+				s = RQcall2str(buf, mb, p);
 				pushInstruction(mb, r);
 				(void) pushStr(mb, r, s + 1);
-				GDKfree(s);
 				for (j = 0; j < p->retc; j++)
 					location[getArg(p, j)] = remoteSite;
 				freeInstruction(p);
@@ -391,12 +375,11 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 	}
   bailout:
+	ma_close(cntxt->ta);
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
-	GDKfree(location);
-	GDKfree(dbalias);
+	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions) {

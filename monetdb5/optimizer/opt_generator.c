@@ -123,12 +123,10 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (!needed)
 		goto wrapup;
 
-	series = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
-	if (series == NULL)
-		throw(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(series);
+	ma_open(cntxt->ta);
+	series = (InstrPtr *) ma_zalloc(cntxt->ta, sizeof(InstrPtr) * mb->vtop);
+	if (series == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -207,13 +205,13 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	for (; i < limit; i++)
 		pushInstruction(mb, old[i]);
+	ma_close(cntxt->ta);
   bailout:
 	for (; i < slimit; i++) {
 		if (old[i])
 			pushInstruction(mb, old[i]);
 	}
-	GDKfree(old);
-	GDKfree(series);
+	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	/* all new/modified statements are already checked */

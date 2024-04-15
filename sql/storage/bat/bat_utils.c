@@ -31,8 +31,10 @@ BAT *
 bat_new(int tt, BUN size, role_t role)
 {
 	BAT *bn = COLnew(0, tt, size, role);
-	if (bn)
+	if (bn) {
 		BBP_pid(bn->batCacheid) = 0;
+		BATsettrivprop(bn);
+	}
 	return bn;
 }
 

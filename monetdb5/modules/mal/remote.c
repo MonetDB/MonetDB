@@ -937,7 +937,7 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		val = mapi_fetch_field(mhdl, 0);
 
 		if (ATOMbasetype(rtype) == TYPE_str) {
-			if (!VALinit(v, rtype, val == NULL ? str_nil : val)) {
+			if (!VALinit(NULL, v, rtype, val == NULL ? str_nil : val)) {
 				mapi_close_handle(mhdl);
 				throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -1139,7 +1139,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* return the identifier */
 	v = &stk->stk[pci->argv[0]];
-	if (VALinit(v, TYPE_str, ident) == NULL)
+	if (VALinit(NULL, v, TYPE_str, ident) == NULL)
 		throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return (MAL_SUCCEED);
 }

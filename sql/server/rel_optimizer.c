@@ -28,6 +28,11 @@ rel_properties(visitor *v, sql_rel *rel)
 	/* Don't flag any changes here! */
 	gp->cnt[(int)rel->op]++;
 	gp->needs_distinct |= need_distinct(rel);
+	if ((is_select(rel->op) || is_project(rel->op)) && rel->l && !rel->p) {
+		assert(0);
+		sql_rel *l = rel->l;
+		rel->p = l->p;
+	}
 	if (gp->instantiate && is_basetable(rel->op)) {
 		mvc *sql = v->sql;
 		sql_table *t = (sql_table *) rel->l;

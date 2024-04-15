@@ -249,6 +249,7 @@ extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, st
 extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sql_subtype *to);
 extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op);
+extern stmt *stmt_binop_semantics(backend *be, stmt *l, stmt *r, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op, stmt* rows);
 extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);

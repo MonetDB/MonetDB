@@ -379,7 +379,7 @@ atom *
 sqlvar_set(sql_var *var, ValRecord *v)
 {
 	VALclear(&(var->var.data));
-	if (VALcopy(&(var->var.data), v) == NULL)
+	if (VALcopy(NULL, &(var->var.data), v) == NULL)
 		return NULL;
 	var->var.isnull = VALisnil(v);
 	return &(var->var);

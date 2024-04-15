@@ -340,7 +340,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n,
 				case -1:
 					return NULL;
 				case 1:
-					q = copyInstruction(p);
+					q = copyInstruction(mb, p);
 					if (!q) {
 						freeInstruction(r);
 						return NULL;
@@ -368,7 +368,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n,
 		}
 	} else {
 		for (k = 1; k < mat[m].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 			if (!q) {
 				freeInstruction(r);
 				return NULL;
@@ -491,7 +491,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 	}
 	for (k = 1; k < mat[m].mi->argc; k++) {
 		int res = 0;
-		if ((q = copyInstruction(p)) == NULL) {
+		if ((q = copyInstruction(mb, p)) == NULL) {
 			freeInstruction(r);
 			return -1;
 		}
@@ -582,7 +582,7 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 
 	for (k = 1; k < ml->v[matvar[0]].mi->argc; k++) {
 		int tpe;
-		InstrPtr q = copyInstruction(p);
+		InstrPtr q = copyInstruction(mb, p);
 		if (q == NULL) {
 			for (k = 0; k < p->retc; k++)
 				freeInstruction(r[k]);
@@ -647,7 +647,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 		assert(o < 0 || mat[m].mi->argc == mat[o].mi->argc);
 
 		for (k = 1; mb->errors == NULL && k < mat[m].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 			InstrPtr s = newInstructionArgs(mb, matRef, packRef,
 											mat[n].mi->argc);
 			int ttpe = 0;
@@ -706,7 +706,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 		assert(o < 0 || mat[m].mi->argc == mat[o].mi->argc);
 
 		for (k = 1; mb->errors == NULL && k < mat[m].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 			if (!q) {
 				freeInstruction(r);
 				return -1;
@@ -763,7 +763,7 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 					freeInstruction(r);
 					return -1;
 				case 1:
-					q = copyInstruction(p);
+					q = copyInstruction(mb, p);
 
 					if (!q) {
 						freeInstruction(r);
@@ -797,7 +797,7 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		getArg(r, 0) = getArg(p, 0);
 
 		for (k = 1; mb->errors == NULL && k < mat[m].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 
 			if (!q) {
 				freeInstruction(r);
@@ -850,7 +850,7 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 
 		for (k = 1; k < mat[m].mi->argc; k++) {
 			for (j = 1; j < mat[n].mi->argc; j++) {
-				InstrPtr q = copyInstruction(p);
+				InstrPtr q = copyInstruction(mb, p);
 
 				if (!q) {
 					freeInstruction(l);
@@ -902,7 +902,7 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 		getArg(r, 0) = getArg(p, 1);
 
 		for (k = 1; k < mat[mv].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 
 			if (!q) {
 				freeInstruction(l);
@@ -1043,7 +1043,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		/* now detect split point */
 		for (k = 1; k < mat[mv1].mi->argc; k++) {
 			for (j = 1; j < mat[mv2].mi->argc; j++) {
-				InstrPtr q = copyInstruction(p);
+				InstrPtr q = copyInstruction(mb, p);
 				if (!q) {
 					freeInstruction(r);
 					freeInstruction(l);
@@ -1094,7 +1094,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		getArg(r, 0) = getArg(p, 1);
 
 		for (k = 1; k < mat[mv].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 			if (!q) {
 				freeInstruction(r);
 				freeInstruction(l);
@@ -1392,7 +1392,7 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 
 	assert(mat[e].mi->argc == mat[a].mi->argc);
 	for (k = 1; k < mat[a].mi->argc; k++) {
-		InstrPtr q = copyInstruction(p);
+		InstrPtr q = copyInstruction(mb, p);
 		if (!q) {
 			freeInstruction(ai1);
 			return -1;
@@ -1419,7 +1419,7 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 		return -1;
 	}
 
-	if ((r = copyInstruction(p)) == NULL)
+	if ((r = copyInstruction(mb, p)) == NULL)
 		return -1;
 	getArg(r, 1) = mat[e].mv;
 	getArg(r, 2) = getArg(ai1, 0);
@@ -1466,7 +1466,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 
 	for (k = 1; mb->errors == NULL && k < mat[b].mi->argc; k++) {
 		int off = 0;
-		InstrPtr q = copyInstructionArgs(p, p->argc + (isAvg && tpe == TYPE_dbl));
+		InstrPtr q = copyInstructionArgs(mb, p, p->argc + (isAvg && tpe == TYPE_dbl));
 		if (!q) {
 			freeInstruction(ai1);
 			freeInstruction(ai10);
@@ -1746,7 +1746,7 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 	getArg(attr, 0) = getArg(ml->v[b].mi, 0);
 
 	for (i = 1; mb->errors == NULL && i < ml->v[b].mi->argc; i++) {
-		InstrPtr q = copyInstruction(p), r;
+		InstrPtr q = copyInstruction(mb, p), r;
 		if (!q) {
 			freeInstruction(r0);
 			freeInstruction(r1);
@@ -1835,7 +1835,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 		push = 1;
 
 	if (ml->v[g].im == -1) {	/* already packed */
-		InstrPtr q = copyInstruction(p);
+		InstrPtr q = copyInstruction(mb, p);
 		if (!q)
 			return -1;
 		pushInstruction(mb, q);
@@ -1875,7 +1875,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 
 	/* we need overlapping ranges */
 	for (i = 1; mb->errors == NULL && i < ml->v[b].mi->argc; i++) {
-		InstrPtr q = copyInstruction(p), r;
+		InstrPtr q = copyInstruction(mb, p), r;
 		if (!q) {
 			freeInstruction(r0);
 			freeInstruction(r1);
@@ -1967,7 +1967,7 @@ mat_topn_project(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 	getArg(pck, 0) = newTmpVariable(mb, tpe);
 
 	for (k = 1; mb->errors == NULL && k < mat[m].mi->argc; k++) {
-		InstrPtr q = copyInstruction(p);
+		InstrPtr q = copyInstruction(mb, p);
 		if (!q) {
 			freeInstruction(pck);
 			return -1;
@@ -1982,7 +1982,7 @@ mat_topn_project(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 	}
 	pushInstruction(mb, pck);
 
-	if (mb->errors || (q = copyInstruction(p)) == NULL)
+	if (mb->errors || (q = copyInstruction(mb, p)) == NULL)
 		return -1;
 	getArg(q, 2) = getArg(pck, 0);
 	pushInstruction(mb, q);
@@ -2028,7 +2028,7 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr slc, mat_t *mat, int m)
 
 		a = pck;
 
-		if (mb->errors || (tpn = copyInstruction(otopn)) == NULL)
+		if (mb->errors || (tpn = copyInstruction(mb, otopn)) == NULL)
 			return -1;
 		var = 1;
 		if (cur) {
@@ -2087,7 +2087,7 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			   && ml->v[m].mi->argc == ml->v[o].mi->argc));
 
 	for (k = 1; mb->errors == NULL && k < ml->v[m].mi->argc; k++) {
-		if ((q = copyInstruction(p)) == NULL) {
+		if ((q = copyInstruction(mb, p)) == NULL) {
 			freeInstruction(gpck);
 			freeInstruction(pck);
 			return -1;
@@ -2140,7 +2140,7 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 				r = pushArgument(mb, r, getArg(pck, k));
 			pushInstruction(mb, r);
 
-			if ((q = copyInstruction(p)) == NULL)
+			if ((q = copyInstruction(mb, p)) == NULL)
 				return -1;
 			setFunctionId(q, subsliceRef);
 			if (ml->v[m].type != mat_tpn || is_slice)
@@ -2181,7 +2181,7 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	getArg(pck, 0) = newTmpVariable(mb, tpe);
 
 	for (k = 1; mb->errors == NULL && k < ml->v[m].mi->argc; k++) {
-		if ((q = copyInstruction(p)) == NULL) {
+		if ((q = copyInstruction(mb, p)) == NULL) {
 			freeInstruction(pck);
 			return -1;
 		}
@@ -2198,7 +2198,7 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	}
 	pushInstruction(mb, pck);
 
-	if ((q = copyInstruction(p)) == NULL)
+	if ((q = copyInstruction(mb, p)) == NULL)
 		return -1;
 	getArg(q, 0) = newTmpVariable(mb, tpe);
 	getArg(q, q->retc) = getArg(pck, 0);
@@ -2338,15 +2338,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	slimit = mb->ssize;
 	size = (mb->stop * 1.2 < mb->ssize) ? mb->ssize : (int) (mb->stop * 1.2);
-	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
-	if (mb->stmt == NULL) {
-		mb->stmt = old;
+	if (newMalBlkStmt(mb, size) < 0) {
 		msg = createException(MAL, "optimizer.mergetable",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
-	mb->ssize = size;
-	mb->stop = 0;
 
 	for (i = 0; i < oldtop; i++) {
 		int bats = 0, nilbats = 0;
@@ -2373,7 +2369,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		 * Otherwise we have to decide on either packing them or replacement.
 		 */
 		if ((match = nr_of_mats(p, &ml)) == 0) {
-			cp = copyInstruction(p);
+			cp = copyInstruction(mb, p);
 			if (!cp) {
 				msg = createException(MAL, "optimizer.mergetable",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2577,7 +2573,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					goto cleanup;
 				}
 			} else {
-				cp = copyInstruction(p);
+				cp = copyInstruction(mb, p);
 				if (!cp) {
 					msg = createException(MAL, "optimizer.mergetable",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2592,7 +2588,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			&& (m = is_a_mat(getArg(p, 1), &ml)) >= 0
 			&& (ml.v[m].type == mat_ext)) {
 			assert(ml.v[m].pushed);
-			cp = copyInstruction(p);
+			cp = copyInstruction(mb, p);
 			if (!cp) {
 				msg = createException(MAL, "optimizer.mergetable",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2712,7 +2708,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 && (m = is_a_mat(getArg(p, fm), &ml)) >= 0 && !ml.v[m].packed &&	/* not packed yet */
 			(getArg(p, fm - 1) > maxvars
 			 || getModuleId(old[vars[getArg(p, fm - 1)]]) == sqlRef)) {
-			if ((r = copyInstruction(p)) == NULL) {
+			if ((r = copyInstruction(mb, p)) == NULL) {
 				msg = createException(MAL, "optimizer.mergetable",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -2789,7 +2785,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (msg)
 			break;
 
-		cp = copyInstruction(p);
+		cp = copyInstruction(mb, p);
 		if (!cp) {
 			msg = createException(MAL, "optimizer.mergetable",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2809,7 +2805,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				break;
 			freeInstruction(old[i]);
 		}
-		GDKfree(old);
+		//GDKfree(old);
 	}
 	for (i = 0; i < ml.top; i++) {
 		if (ml.v[i].mi && !ml.v[i].pushed)

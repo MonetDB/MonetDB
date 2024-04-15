@@ -585,11 +585,11 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		} else { // single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
 			if (bat_type != TYPE_str) {
-				if (VALinit(&stk->stk[pci->argv[i]], bat_type, li.base) ==
+				if (VALinit(NULL, &stk->stk[pci->argv[i]], bat_type, li.base) ==
 					NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
-				if (VALinit(&stk->stk[pci->argv[i]], bat_type,
+				if (VALinit(NULL, &stk->stk[pci->argv[i]], bat_type,
 							BUNtail(li, 0)) == NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -849,7 +849,7 @@ static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else { // single value return, only for non-grouped aggregations
 			// return NULL to conform to SQL aggregates
 			int tpe = getArgType(mb, pci, i);
-			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+			if (!VALinit(NULL, &stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
 				msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}

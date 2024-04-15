@@ -153,6 +153,7 @@ typedef struct CLIENT {
 	Symbol backup;				/* saving the parser context for functions,commands/patterns */
 	MalStkPtr glb;				/* global variable stack */
 
+	allocator *ta;				/* temporary allocator used during parsing and optimization */
 	/*
 	 * Here are pointers to scenario backends contexts.  For the time
 	 * being just SQL.  We need a pointer for each of them, since they

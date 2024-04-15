@@ -35,7 +35,7 @@ external name sql.ms_trunc;
 
 grant execute on function MS_TRUNC to public;
 
-CREATE FUNCTION MS_ROUND(num double, prc int, truncat int)
+CREATE FUNCTION MS_ROUND(num double, prc tinyint, truncat int)
 RETURNS double
 BEGIN
 	IF (truncat = 0)
@@ -46,7 +46,7 @@ END;
 
 grant execute on function MS_ROUND to public;
 
-CREATE FUNCTION MS_STR(num float, prc int, truncat int)
+CREATE FUNCTION MS_STR(num float, prc tinyint, truncat int)
 RETURNS string
 BEGIN
 	RETURN CAST(num as string);
