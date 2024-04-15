@@ -887,9 +887,6 @@ mskGetVal(BAT *b, BUN p)
  * @item int
  * @tab
  *  HEAPcopy (Heap *dst,*src);
- * @item int
- * @tab
- *  HEAPwarm (Heap *h);
  * @end multitable
  *
  *
@@ -1132,6 +1129,17 @@ bat_iterator_nolock(BAT *b)
 	return (BATiter) {0};
 }
 
+static inline void
+bat_iterator_incref(BATiter *bi)
+{
+#ifndef NDEBUG
+	bi->locked = true;
+#endif
+	HEAPincref(bi->h);
+	if (bi->vh)
+		HEAPincref(bi->vh);
+}
+
 static inline BATiter
 bat_iterator(BAT *b)
 {
@@ -1158,12 +1166,7 @@ bat_iterator(BAT *b)
 			MT_lock_set(&pvb->theaplock);
 		}
 		bi = bat_iterator_nolock(b);
-#ifndef NDEBUG
-		bi.locked = true;
-#endif
-		HEAPincref(bi.h);
-		if (bi.vh)
-			HEAPincref(bi.vh);
+		bat_iterator_incref(&bi);
 		if (pvb)
 			MT_lock_unset(&pvb->theaplock);
 		if (pb)

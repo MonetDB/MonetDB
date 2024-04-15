@@ -4,7 +4,8 @@ create table foo (a int, b text)
 statement ok
 insert into foo values
  (1, 'alice'),
- (2, 'bob')
+ (2, 'bob'),
+ (9,  null)
 
 statement ok
 create table bar (c text, a int)
@@ -12,7 +13,8 @@ create table bar (c text, a int)
 statement ok
 insert into bar values
  ('hello', 3),
- ('world', 4)
+ ('world', 4),
+ (null,    9)
 
 statement ok
 create table buz (a int, c text)
@@ -28,16 +30,6 @@ create table empty_a (a int, c text)
 statement ok
 create table empty_b (c int, a text)
 
-query I rowsort
-SELECT * FROM foo
-UNION CORRESPONDING
-SELECT * FROM bar
-----
-1
-2
-3
-4
-
 query IT rowsort
 SELECT * FROM foo
 UNION
@@ -51,6 +43,24 @@ bob
 one
 6
 two
+9
+NULL
+
+query IT rowsort
+SELECT * FROM foo
+UNION ALL
+SELECT * FROM buz
+----
+1
+alice
+2
+bob
+5
+one
+6
+two
+9
+NULL
 
 query I rowsort
 SELECT * FROM foo
@@ -61,6 +71,18 @@ SELECT * FROM buz
 2
 5
 6
+9
+
+query I rowsort
+SELECT * FROM foo
+UNION ALL CORRESPONDING
+SELECT * FROM buz
+----
+1
+2
+5
+6
+9
 
 query I rowsort
 SELECT a FROM foo
@@ -70,6 +92,7 @@ NATURAL FULL JOIN buz
 2
 5
 6
+9
 
 statement error
 SELECT * FROM foo
@@ -91,6 +114,7 @@ SELECT * FROM buz
 4
 5
 6
+9
 
 statement error
 SELECT * FROM buz
@@ -110,15 +134,192 @@ world
 one
 6
 two
+9
+NULL
 
 query I rowsort
 SELECT * FROM buz
-UNION CORRESPONDING BY (a)
+UNION 
+    CORRESPONDING BY (a)
 SELECT * FROM bar
 ----
 3
 4
 5
 6
+9
 
+query I rowsort
+SELECT * FROM foo
+UNION CORRESPONDING
+SELECT * FROM bar
+----
+1
+2
+3
+4
+9
+
+query I rowsort
+SELECT * FROM foo
+UNION ALL CORRESPONDING
+SELECT * FROM bar
+----
+1
+2
+3
+4
+9
+9
+
+query I rowsort
+SELECT * FROM foo
+UNION 
+    CORRESPONDING BY (a)
+SELECT * FROM bar
+----
+1
+2
+3
+4
+9
+
+statement error
+SELECT * FROM foo
+UNION 
+    CORRESPONDING BY (b)
+SELECT * FROM bar
+
+statement error
+SELECT * FROM foo
+UNION 
+    CORRESPONDING BY (c)
+SELECT * FROM bar
+
+query ITT rowsort
+SELECT * FROM foo
+OUTER UNION CORRESPONDING
+SELECT * FROM bar
+----
+1
+alice
+NULL
+2
+bob
+NULL
+3
+NULL
+hello
+4
+NULL
+world
+9
+NULL
+NULL
+
+query ITT rowsort
+SELECT * FROM foo
+OUTER UNION ALL CORRESPONDING
+SELECT * FROM bar
+----
+1
+alice
+NULL
+2
+bob
+NULL
+3
+NULL
+hello
+4
+NULL
+world
+9
+NULL
+NULL
+9
+NULL
+NULL
+
+query T rowsort
+SELECT * FROM foo
+OUTER UNION 
+    CORRESPONDING BY (b)
+SELECT * FROM bar
+----
+NULL
+alice
+bob
+
+query T rowsort
+SELECT * FROM foo
+OUTER UNION ALL
+    CORRESPONDING BY (b)
+SELECT * FROM bar
+----
+NULL
+NULL
+NULL
+NULL
+alice
+bob
+
+query T rowsort
+SELECT * FROM foo
+OUTER UNION 
+    CORRESPONDING BY (c)
+SELECT * FROM bar
+----
+NULL
+hello
+world
+
+query T rowsort
+SELECT * FROM foo
+OUTER UNION ALL
+    CORRESPONDING BY (c)
+SELECT * FROM bar
+----
+NULL
+NULL
+NULL
+NULL
+hello
+world
+
+query TT rowsort
+SELECT * FROM foo
+OUTER UNION 
+    CORRESPONDING BY (c, b)
+SELECT * FROM bar
+----
+NULL
+NULL
+NULL
+alice
+NULL
+bob
+hello
+NULL
+world
+NULL
+
+query TT rowsort
+SELECT * FROM foo
+OUTER UNION ALL
+    CORRESPONDING BY (c, b)
+SELECT * FROM bar
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+alice
+NULL
+bob
+hello
+NULL
+world
+NULL
 
