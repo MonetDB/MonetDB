@@ -72,17 +72,17 @@
 #if ATOMIC_LLONG_LOCK_FREE != 1
 #error "we need _Atomic(unsigned [long] long) to be lock free"
 #endif
-typedef atomic_ulong ATOMIC_TYPE;
+typedef atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
 typedef unsigned long ATOMIC_BASE_TYPE;
 #else
-typedef atomic_ullong ATOMIC_TYPE;
+typedef atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #endif
 #elif SIZEOF_LONG == 8
 #if ATOMIC_LONG_LOCK_FREE != 2
 #error "we need _Atomic(unsigned long) to be lock free"
 #endif
-typedef atomic_ulong ATOMIC_TYPE;
+typedef atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
 typedef unsigned long ATOMIC_BASE_TYPE;
 #else
 #error "we need a 64 bit atomic type"
@@ -97,17 +97,17 @@ typedef unsigned long ATOMIC_BASE_TYPE;
 #if ATOMIC_LLONG_LOCK_FREE != 1
 #error "we need _Atomic(unsigned [long] long) to be lock free"
 #endif
-typedef atomic_ulong ATOMIC_TYPE;
+typedef atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
 typedef unsigned long ATOMIC_BASE_TYPE;
 #else
-typedef volatile atomic_ullong ATOMIC_TYPE;
+typedef volatile atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #endif
 #elif SIZEOF_LONG == 8
 #if ATOMIC_LONG_LOCK_FREE != 2
 #error "we need _Atomic(unsigned long) to be lock free"
 #endif
-typedef volatile atomic_ulong ATOMIC_TYPE;
+typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
 typedef unsigned long ATOMIC_BASE_TYPE;
 #else
 #error "we need a 64 bit atomic type"
@@ -272,7 +272,7 @@ typedef volatile int ATOMIC_FLAG;
  * __sync_* primitives is not supported) */
 
 typedef uint64_t ATOMIC_BASE_TYPE;
-typedef volatile ATOMIC_BASE_TYPE ATOMIC_TYPE;
+typedef volatile ATOMIC_BASE_TYPE ATOMIC_TYPE __attribute__((__aligned__ (8)));
 
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
