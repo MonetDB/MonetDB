@@ -12,7 +12,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
 
     with process.server(mapiport='0', dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
-                        stdin = process.PIPE,
+                        stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
         with SQLTestCase() as tc:
             tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
