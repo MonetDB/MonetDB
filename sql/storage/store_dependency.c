@@ -174,8 +174,10 @@ sql_trans_get_dependents(sql_trans* tr, sqlid id,
 				table_api.rids_destroy(rs);
 				return NULL;
 			}
-			if (list_find_id(schema_tables, *(sqlid*)v) == NULL)
+			if (list_find_id(schema_tables, *(sqlid*)v) == NULL) {
+				_DELETE(v);
 				continue;
+			}
 		}
 		if (!(v = table_api.column_find_value(tr, dep_dep_id, rid))) {
 			list_destroy(dep_list);
