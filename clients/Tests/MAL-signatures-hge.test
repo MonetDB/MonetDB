@@ -29385,27 +29385,27 @@ CMDbatNOT;
 Unary bitwise not over the tail of the bat with candidates list
 batcalc
 num_div
-pattern batcalc.num_div(X_0:bat[:bte], X_1:bat[:lng]):bat[:bte] 
+pattern batcalc.num_div(X_0:bat[:bte], X_1:bat[:lng]):bat[:bte]
 CMDbatDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 batcalc
 num_div
-pattern batcalc.num_div(X_0:bat[:hge], X_1:bat[:lng]):bat[:hge] 
+pattern batcalc.num_div(X_0:bat[:hge], X_1:bat[:lng]):bat[:hge]
 CMDbatDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 batcalc
 num_div
-pattern batcalc.num_div(X_0:bat[:int], X_1:bat[:lng]):bat[:int] 
+pattern batcalc.num_div(X_0:bat[:int], X_1:bat[:lng]):bat[:int]
 CMDbatDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 batcalc
 num_div
-pattern batcalc.num_div(X_0:bat[:lng], X_1:bat[:lng]):bat[:lng] 
+pattern batcalc.num_div(X_0:bat[:lng], X_1:bat[:lng]):bat[:lng]
 CMDbatDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 batcalc
 num_div
-pattern batcalc.num_div(X_0:bat[:sht], X_1:bat[:lng]):bat[:sht] 
+pattern batcalc.num_div(X_0:bat[:sht], X_1:bat[:lng]):bat[:sht]
 CMDbatDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 batcalc
@@ -43970,27 +43970,27 @@ CMDvarNOT;
 Unary bitwise not of V
 calc
 num_div
-pattern calc.num_div(X_0:bte, X_1:lng):bte 
+pattern calc.num_div(X_0:bte, X_1:lng):bte
 CMDvarDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 calc
 num_div
-pattern calc.num_div(X_0:hge, X_1:lng):hge 
+pattern calc.num_div(X_0:hge, X_1:lng):hge
 CMDvarDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 calc
 num_div
-pattern calc.num_div(X_0:int, X_1:lng):int 
+pattern calc.num_div(X_0:int, X_1:lng):int
 CMDvarDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 calc
 num_div
-pattern calc.num_div(X_0:lng, X_1:lng):lng 
+pattern calc.num_div(X_0:lng, X_1:lng):lng
 CMDvarDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 calc
 num_div
-pattern calc.num_div(X_0:sht, X_1:lng):sht 
+pattern calc.num_div(X_0:sht, X_1:lng):sht
 CMDvarDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 calc
