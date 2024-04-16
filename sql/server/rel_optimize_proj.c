@@ -2949,7 +2949,7 @@ find_func( mvc *sql, char *name, list *exps )
 
 	for(n = exps->h; n; n = n->next)
 		append(l, exp_subtype(n->data));
-	return sql_bind_func_(sql, "sys", name, l, F_FUNC, false);
+	return sql_bind_func_(sql, "sys", name, l, F_FUNC, false, true);
 }
 
 static sql_exp *
@@ -3047,14 +3047,14 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 
 			/* create nsum/cnt exp */
 			if (!cnt) {
-				sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", append(sa_list(sql->sa), avg_input_t), F_AGGR, false);
+				sql_subfunc *cf = sql_bind_func(sql, "sys", "count", avg_input_t, NULL, F_AGGR, true, true);
 				sql_exp *e = exp_aggr(sql->sa, list_dup(avg->l, (fdup)NULL), cf, need_distinct(avg), need_no_nil(avg), avg->card, has_nil(avg));
 
 				append(nexps, e);
 				cnt = exp_ref(sql, e);
 			}
 			if (!sum) {
-				sql_subfunc *sf = sql_bind_func_(sql, "sys", "sum", append(sa_list(sql->sa), avg_input_t), F_AGGR, false);
+				sql_subfunc *sf = sql_bind_func(sql, "sys", "sum", avg_input_t, NULL, F_AGGR, true, true);
 				sql_exp *e = exp_aggr(sql->sa, list_dup(avg->l, (fdup)NULL), sf, need_distinct(avg), need_no_nil(avg), avg->card, has_nil(avg));
 
 				append(nexps, e);
@@ -3075,7 +3075,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 
 				args = new_exp_list(sql->sa);
 				append(args, cond);
-				append(args, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(cnt_d), NULL)));
+				append(args, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(cnt_d), NULL, 0)));
 				/* TODO only ifthenelse if value column may have nil's*/
 				append(args, cnt_d);
 				ifthen = find_func(sql, "ifthenelse", args);
