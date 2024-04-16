@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MAL_CLIENT_H_
@@ -44,7 +46,6 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;
 } ClientInput;
 
-struct CLIENT;
 typedef str (*init_client)(struct CLIENT *, const char *, const char *,
 						   const char *);
 typedef str (*exit_client)(struct CLIENT *);
@@ -78,6 +79,7 @@ typedef struct CLIENT {
 	lng maxmem;					/* max_memory from db_user_info table */
 	lng sessiontimeout;			/* session abort after x usec, 0 = no limit */
 	lng logical_sessiontimeout;	/* logical session timeout, client defined */
+	lng querytimeout;			/* timeout per query in usec, 0 = no limit */
 	QryCtx qryctx;				/* per query limitations */
 
 	time_t login;				/* Time when this session started */

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _REL_PROP_H_
@@ -35,12 +37,18 @@ typedef struct prop {
 	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
 } prop;
 
-extern prop * prop_create( sql_allocator *sa, rel_prop kind, prop *pre );
-extern prop * prop_copy( sql_allocator *sa, prop *p);
+/* for REMOTE prop we need to keep a list with tids and uris for the remote tables */
+typedef struct tid_uri {
+	sqlid id;
+	const char* uri;
+} tid_uri;
+
+extern prop * prop_create( allocator *sa, rel_prop kind, prop *pre );
+extern prop * prop_copy( allocator *sa, prop *p);
 extern prop * prop_remove( prop *plist, prop *p);
 extern prop * find_prop( prop *p, rel_prop kind);
 extern void * find_prop_and_get(prop *p, rel_prop kind);
 extern const char * propkind2string( prop *p);
-extern char * propvalue2string(sql_allocator *sa, prop *p);
+extern char * propvalue2string(allocator *sa, prop *p);
 
 #endif /* _REL_PROP_H_ */

@@ -1,0 +1,20 @@
+statement ok
+CREATE OR REPLACE AGGREGATE python_aggregate (*)
+RETURNS INTEGER
+LANGUAGE PYTHON
+{
+try:
+	unique = numpy.unique(aggr_group)
+	x = numpy.zeros(shape=(unique.size))
+	for i in range(0, unique.size):
+		x[i] = numpy.sum(val[aggr_group==unique[i]])
+except NameError:
+# aggr_group doesn't exist. no groups, aggregate on all data
+	x = numpy.sum(arg2)
+return (x)
+}
+
+query I nosort
+select python_aggregate(5,2);
+----
+2

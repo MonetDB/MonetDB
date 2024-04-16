@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -1380,9 +1382,8 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 	int v[3];
 
 	v[0] = v[1] = *res = 0;
-	if (pcre_exec
-		(pattern, NULL, *s, (int) strlen(*s), 0, PCRE_NO_UTF8_CHECK, v,
-		 3) >= 0) {
+	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0,
+				  PCRE_NO_UTF8_CHECK, v, 3) >= 0) {
 		*res = v[1];
 	}
 	return MAL_SUCCEED;
@@ -1968,16 +1969,16 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				  anti, #TEST);											\
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = p;									\
 			}															\
 		} else {														\
 			for (; p < ncands; p++) {									\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
@@ -2010,13 +2011,7 @@ pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 	str msg = MAL_SUCCEED;
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
-	}
 
 	if ((msg = pcre_like_build(&re, &ex, pat, caseignore, ci->ncand)) != MAL_SUCCEED)
 		goto bailout;
@@ -2047,13 +2042,7 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 	str msg = MAL_SUCCEED;
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
-	}
 
 	if ((msg = re_like_build(&re, &wpat, pat, caseignore, use_strcmp, ascii_pattern,
 							 esc)) != MAL_SUCCEED)
@@ -2245,8 +2234,14 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 			BAT *rev;
 			if (old_s) {
 				rev = BATdiffcand(old_s, bn);
-				assert(BATintersectcand(old_s, bn)->batCount == bn->batCount);
+#ifndef NDEBUG
+				BAT *is = BATintersectcand(old_s, bn);
+				if (is) {
+					assert(is->batCount == bn->batCount);
+					BBPreclaim(is);
+				}
 				assert(rev->batCount == old_s->batCount - bn->batCount);
+#endif
 			}
 
 			else
@@ -2292,8 +2287,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 #define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND)						\
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
-			GDK_CHECK_TIMEOUT(timeoffset, counter,						\
-							  GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
+			GDK_CHECK_TIMEOUT(qry_ctx, counter,							\
+							  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
 			nl = 0;														\
@@ -2408,13 +2403,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 #endif
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG(ALGO,
 			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"

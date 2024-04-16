@@ -4,7 +4,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 from hashlib import sha256
 import logging
@@ -62,10 +64,10 @@ server = tlstester.TLSTester(
 server_thread = threading.Thread(target=server.serve_forever, daemon=True)
 server_thread.start()
 
-def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True, **params):
+def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True, host='localhost', **params):
     port = server.get_port(portname)
     scheme = 'monetdbs' if tls else 'monetdb'
-    url = f"{scheme}://localhost:{port}/demo"
+    url = f"{scheme}://{host}:{port}/demo"
     if params:
         # should be percent-escaped
         url += '?' + '&'.join(f"{k}={v}" for k, v in params.items())
@@ -75,7 +77,10 @@ def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True,
     logging.debug(f"cmd={cmd}")
     proc = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     logging.debug(f"mclient exited with code {proc.returncode}, err={proc.stderr}")
-    assert proc.returncode == 2, f"mclient is supposed to exit with status 2, not {proc.returncode}"
+    if proc.returncode != 2:
+        msg = str(proc.stderr, 'utf-8')
+        print(f"mclient is supposed to exit with status 2, not {proc.returncode}.\n--- stderr ---\n{msg}\n---end stderr ---", file=sys.stderr)
+        assert proc.returncode == 2, f"mclient is supposed to exit with status 2, not {proc.returncode}"
     output = str(proc.stderr, 'utf-8').rstrip()
     actual_error = None if 'Sorry, this is not' in output else output
 
@@ -117,7 +122,7 @@ attempt('connect_tls', 'server1', None, cert=certpath('ca1.crt'))
 # Connect to port 'server1' over TLS, without passing a certificate. The
 # connection should fail because ca1.crt is not in the system trust root store.
 
-attempt('refuse_no_cert', 'server1', "verify failed")
+attempt('refuse_no_cert', 'server1', "") # we expect "verify failed" but Mac gives "No such file or directory", i.e. still an error so we take it
 
 # refuse_wrong_cert
 #
@@ -125,6 +130,14 @@ attempt('refuse_no_cert', 'server1', "verify failed")
 # The client should refuse to let the connection proceed.
 
 attempt('refuse_wrong_cert', 'server1', 'verify failed', cert=certpath('ca2.crt'))
+
+# refuse_wrong_host
+#
+# Connect to port 'server1' over TLS, but using an alternative host name.
+# For example, `localhost.localdomain` instead of `localhost`.
+# The client should refuse to let the connection proceed.
+
+attempt('refuse_wrong_host', 'server1', 'verify failed', host='localhost.localdomain', cert=certpath('ca1.crt'))
 
 # refuse_tlsv12
 #
@@ -185,7 +198,7 @@ attempt('connect_server_name', 'sni', None, cert=certpath('ca1.crt'))
 # of the server certificate in DER form. Have a succesful MAPI exchange.
 
 server1hash = sha256(certs.get_file('server1.der')).hexdigest()
-attempt('connect_right_hash', 'server1', None, certhash='{sha256}' + server1hash[:6])
+attempt('connect_right_hash', 'server1', None, certhash='sha256:' + server1hash[:6])
 
 # connect_wrong_hash
 #
@@ -197,7 +210,7 @@ first_digit = server1hash[0]
 other_digit = f"{8 ^ int(first_digit, 16):x}"
 wronghash = other_digit + server1hash[1:]
 
-attempt('connect_wrong_hash', 'server1', "does not match certhash", certhash='{sha256}' + wronghash[:6])
+attempt('connect_wrong_hash', 'server1', "does not match certhash", certhash='sha256:' + wronghash[:6])
 
 
 # connect_ca_hash
@@ -206,7 +219,7 @@ attempt('connect_wrong_hash', 'server1', "does not match certhash", certhash='{s
 # of the CA1 certificate in DER form. This should fail.
 
 ca1hash = sha256(certs.get_file('ca1.der')).hexdigest()
-attempt('connect_ca_hash', 'server1', "does not match certhash", certhash='{sha256}' + ca1hash[:6])
+attempt('connect_ca_hash', 'server1', "does not match certhash", certhash='sha256:' + ca1hash[:6])
 
 
 

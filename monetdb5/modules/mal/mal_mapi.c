@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -190,8 +192,10 @@ doChallenge(void *data)
 		return;
 	}
 
-	// Send the challenge over the block stream
-	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:BINARY=1:",
+	/* Send the challenge over the block stream
+	 * We can do binary transfers, and we can interrupt queries using
+	 * out-of-band messages */
+	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:BINARY=1:OOBINTR=1:",
 				 challenge, mcrypt_getHashAlgorithms(),
 #ifdef WORDS_BIGENDIAN
 				 "BIG",
@@ -704,7 +708,13 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		}
 		char sport[10];
 		snprintf(sport, sizeof(sport), "%d", port);
-		GDKsetenv("mapi_port", sport);
+		if (GDKsetenv("mapi_port", sport) != GDK_SUCCEED) {
+			for (int i = 0; i < 3; i++) {
+				if (socks[i] != INVALID_SOCKET)
+					closesocket(socks[i]);
+			}
+			throw(MAL, "mal_mapi.listen", GDK_EXCEPTION);
+		}
 	}
 
 #ifdef HAVE_SYS_UN_H
@@ -814,7 +824,13 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				GDKfree(usockfilenew);
 			return buf;
 		}
-		GDKsetenv("mapi_usock", usockfile);
+		if (GDKsetenv("mapi_usock", usockfile) != GDK_SUCCEED) {
+			for (int i = 0; i < 3; i++) {
+				if (socks[i] != INVALID_SOCKET)
+					closesocket(socks[i]);
+			}
+			throw(MAL, "mal_mapi.listen", GDK_EXCEPTION);
+		}
 	}
 #endif
 
@@ -1725,6 +1741,7 @@ SERVERexplain(str *ret, int *key)
 static int
 SERVERfieldAnalysis(str fld, int tpe, ValPtr v)
 {
+	v->bat = false;
 	v->vtype = tpe;
 	switch (tpe) {
 	case TYPE_void:
@@ -1860,9 +1877,8 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			case TYPE_flt:
 			case TYPE_dbl:
 			case TYPE_str:
-				if (SERVERfieldAnalysis
-					(fld, getVarType(mb, getArg(pci, j)),
-					 &stk->stk[pci->argv[j]]) < 0) {
+				if (SERVERfieldAnalysis(fld, getVarType(mb, getArg(pci, j)),
+										&stk->stk[pci->argv[j]]) < 0) {
 					mapi_close_handle(hdl);
 					throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
@@ -1950,8 +1966,9 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = getArgReference_str(stk, pci, pci->retc + 1);
 	val = getArgReference(stk, pci, pci->retc + 2);
 	accessTest(*key, "put");
-	switch ((tpe = getArgType(mb, pci, pci->retc + 2))) {
-	case TYPE_bat:{
+
+	tpe = getArgType(mb, pci, pci->retc + 2);
+	if (isaBatType(tpe)) {
 		/* generate a tuple batch */
 		/* and reload it into the proper format */
 		str ht, tt;
@@ -1976,23 +1993,24 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		GDKfree(ht);
 		GDKfree(tt);
-		break;
-	}
-	case TYPE_str:
-		snprintf(buf, BUFSIZ, "%s:=%s;", *nme, *(char **) val);
-		if (SERVERsessions[i].hdl)
-			mapi_close_handle(SERVERsessions[i].hdl);
-		SERVERsessions[i].hdl = mapi_query(mid, buf);
-		break;
-	default:
-		if ((w = ATOMformat(tpe, val)) == NULL)
-			throw(MAL, "mapi.put", GDK_EXCEPTION);
-		snprintf(buf, BUFSIZ, "%s:=%s;", *nme, w);
-		GDKfree(w);
-		if (SERVERsessions[i].hdl)
-			mapi_close_handle(SERVERsessions[i].hdl);
-		SERVERsessions[i].hdl = mapi_query(mid, buf);
-		break;
+	} else {
+		switch (tpe) {
+		case TYPE_str:
+			snprintf(buf, BUFSIZ, "%s:=%s;", *nme, *(char **) val);
+			if (SERVERsessions[i].hdl)
+				mapi_close_handle(SERVERsessions[i].hdl);
+			SERVERsessions[i].hdl = mapi_query(mid, buf);
+			break;
+		default:
+			if ((w = ATOMformat(tpe, val)) == NULL)
+				throw(MAL, "mapi.put", GDK_EXCEPTION);
+			snprintf(buf, BUFSIZ, "%s:=%s;", *nme, w);
+			GDKfree(w);
+			if (SERVERsessions[i].hdl)
+				mapi_close_handle(SERVERsessions[i].hdl);
+			SERVERsessions[i].hdl = mapi_query(mid, buf);
+			break;
+		}
 	}
 	catchErrors("mapi.put");
 	return MAL_SUCCEED;
@@ -2010,8 +2028,10 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = getArgReference_str(stk, pci, 0);
 	nme = getArgReference_str(stk, pci, pci->retc);
 	val = getArgReference(stk, pci, pci->retc + 1);
-	switch ((tpe = getArgType(mb, pci, pci->retc + 1))) {
-	case TYPE_bat:
+	tpe = getArgType(mb, pci, pci->retc + 1);
+	if (isaBatType(tpe))
+		throw(MAL, "mapi.glue", "Unsupported type");
+	switch (tpe) {
 	case TYPE_ptr:
 		throw(MAL, "mapi.glue", "Unsupported type");
 	case TYPE_str:
@@ -2039,6 +2059,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Mapi mid;
 	MapiHdl hdl = 0;
 	char buf[BUFSIZ];
+	char name[IDLENGTH] = { 0 };
 
 	(void) cntxt;
 	key = getArgReference_int(stk, pci, pci->retc);
@@ -2051,20 +2072,20 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		i = *getArgReference_int(stk, pci, pci->retc + 4);
 		tn = getTypeName(getBatType(getVarType(mb, getDestVar(pci))));
 		snprintf(buf, BUFSIZ, "%s:bat[:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
-				 getVarName(mb, getDestVar(pci)), tn, *nme, *tab, *col, i);
+				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme, *tab, *col, i);
 		GDKfree(tn);
 	} else if (pci->argc == 5) {
 		tab = getArgReference_str(stk, pci, pci->retc + 2);
 		i = *getArgReference_int(stk, pci, pci->retc + 3);
 		snprintf(buf, BUFSIZ, "%s:bat[:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
-				 getVarName(mb, getDestVar(pci)), *nme, *tab, i);
+				 getVarNameIntoBuffer(mb, getDestVar(pci), name), *nme, *tab, i);
 	} else {
 		str hn, tn;
 		int target = getArgType(mb, pci, 0);
 		hn = getTypeName(TYPE_oid);
 		tn = getTypeName(getBatType(target));
 		snprintf(buf, BUFSIZ, "%s:bat[:%s]:=bbp.bind(\"%s\");",
-				 getVarName(mb, getDestVar(pci)), tn, *nme);
+				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme);
 		GDKfree(hn);
 		GDKfree(tn);
 	}
@@ -2122,12 +2143,12 @@ mel_func mal_mapi_init_funcs[] = {
  command("mapi", "explain", SERVERexplain, false, "Turn the error seen into a string.", args(1,2, arg("",str),arg("mid",int))),
  pattern("mapi", "put", SERVERput, false, "Send a value to a remote site.", args(1,4, arg("",void),arg("mid",int),arg("nme",str),argany("val",1))),
  pattern("mapi", "put", SERVERputLocal, false, "Prepare sending a value to a remote site.", args(1,3, arg("",str),arg("nme",str),argany("val",1))),
- pattern("mapi", "rpc", SERVERmapi_rpc_single_row, false, "Send a simple query for execution and fetch result.", args(1,3, argany("",0),arg("key",int),vararg("qry",str))),
- pattern("mapi", "rpc", SERVERmapi_rpc_bat, false, "", args(1,3, batargany("",2),arg("key",int),arg("qry",str))),
+ pattern("mapi", "rpc", SERVERmapi_rpc_single_row, false, "Send a simple query for execution and fetch result.", args(1,3, argany("",1),arg("key",int),vararg("qry",str))),
+ pattern("mapi", "rpc", SERVERmapi_rpc_bat, false, "", args(1,3, batargany("",1),arg("key",int),arg("qry",str))),
  command("mapi", "rpc", SERVERquery, false, "Send a simple query for execution.", args(1,3, arg("",int),arg("key",int),arg("qry",str))),
- pattern("mapi", "bind", SERVERbindBAT, false, "Bind a remote variable to a local one.", args(1,6, batargany("",2),arg("key",int),arg("rschema",str),arg("rtable",str),arg("rcolumn",str),arg("i",int))),
- pattern("mapi", "bind", SERVERbindBAT, false, "Bind a remote variable to a local one.", args(1,5, batargany("",2),arg("key",int),arg("rschema",str),arg("rtable",str),arg("i",int))),
- pattern("mapi", "bind", SERVERbindBAT, false, "Bind a remote variable to a local one.", args(1,3, batargany("",2),arg("key",int),arg("remoteName",str))),
+ pattern("mapi", "bind", SERVERbindBAT, false, "Bind a remote variable to a local one.", args(1,6, batargany("",1),arg("key",int),arg("rschema",str),arg("rtable",str),arg("rcolumn",str),arg("i",int))),
+ pattern("mapi", "bind", SERVERbindBAT, false, "Bind a remote variable to a local one.", args(1,5, batargany("",1),arg("key",int),arg("rschema",str),arg("rtable",str),arg("i",int))),
+ pattern("mapi", "bind", SERVERbindBAT, false, "Bind a remote variable to a local one.", args(1,3, batargany("",1),arg("key",int),arg("remoteName",str))),
 #ifdef HAVE_HGE
  command("mapi", "fetch_field", SERVERfetch_field_hge, false, "Retrieve a single hge field.", args(1,3, arg("",hge),arg("hdl",int),arg("fnr",int))),
 #endif

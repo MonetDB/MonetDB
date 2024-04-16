@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* (author) M.L. Kersten
@@ -60,20 +62,10 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		MCcloseClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
-	if ((msg = malIncludeModules(c, modules, 0, embedded,
-								 initpasswd)) != MAL_SUCCEED) {
+	if ((msg = malIncludeModules(c, modules, 0, embedded, initpasswd)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		return msg;
 	}
-	/*
-	   pushEndInstruction(c->curprg->def);
-	   msg = chkProgram(c->usermodule, c->curprg->def);
-	   if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
-	   MCcloseClient(c);
-	   return msg;
-	   }
-	   msg = MALengine(c);
-	 */
 	MCcloseClient(c);
 	return msg;
 }
@@ -115,11 +107,6 @@ MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
 			throw(MAL, "resetClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	setVarType(mb, findVariable(mb, fcn), TYPE_void);
-	/* remove any MAL history */
-	if (mb->history) {
-		freeMalBlk(mb->history);
-		mb->history = 0;
-	}
 	return MAL_SUCCEED;
 }
 
@@ -444,6 +431,8 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 	if (mb->errors == MAL_SUCCEED) {
 		for (i = sig->argc; i < mb->vtop; i++) {
 			if (glb && i < glb->stktop && isTmpVar(mb, i) && !glb->keepTmps) {
+				if (mb->var[i].name)
+					GDKfree(mb->var[i].name);
 				/* clean stack entry */
 				garbageElement(cntxt, &glb->stk[i]);
 				glb->stk[i].vtype = TYPE_int;
@@ -585,7 +574,7 @@ MALinitClient(Client c)
 str
 MALexitClient(Client c)
 {
-	if (c->glb && c->curprg->def->errors == MAL_SUCCEED)
+	if (c->glb && c->curprg->def && c->curprg->def->errors == MAL_SUCCEED)
 		garbageCollector(c, c->curprg->def, c->glb, TRUE);
 	c->mode = FINISHCLIENT;
 	if (c->backup) {
@@ -655,6 +644,7 @@ MALparser(Client c)
 	c->fdin->pos += c->yycur;
 	c->yycur = 0;
 	c->qryctx.starttime = GDKusec();
+	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
 	/* check for unfinished blocks */
 	if (!c->curprg->def->errors && c->blkmode)
@@ -868,8 +858,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 		p = getInstrPtr(mb, pc);
 		if (getModuleId(p) == optimizerRef && p->fcn && p->token != REMsymbol) {
 			actions++;
-			msg = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr)) p->
-				   fcn) (cntxt, mb, 0, p);
+			msg = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr)) p->fcn) (cntxt, mb, 0, p);
 			if (mb->errors) {
 				freeException(msg);
 				msg = mb->errors;

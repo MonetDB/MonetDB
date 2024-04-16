@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -27,7 +29,7 @@ sql_next_seq_name(mvc *m)
 }
 
 static sql_rel *
-rel_drop_seq(sql_allocator *sa, char *sname, char *seqname)
+rel_drop_seq(allocator *sa, char *sname, char *seqname)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -48,7 +50,7 @@ rel_drop_seq(sql_allocator *sa, char *sname, char *seqname)
 }
 
 static sql_rel *
-rel_seq(sql_allocator *sa, int cat_type, char *sname, sql_sequence *s, sql_rel *r, sql_exp *val)
+rel_seq(allocator *sa, int cat_type, char *sname, sql_sequence *s, sql_rel *r, sql_exp *val)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -324,7 +326,7 @@ rel_alter_seq(
 		val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);
 	}
 	if (val && val->card > CARD_ATOM) {
-		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(val), NULL, F_AGGR, true);
+		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(val), NULL, F_AGGR, true, true);
 		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, has_nil(val));
 	}
 	return rel_seq(sql->sa, ddl_alter_seq, seq->s->base.name, seq, r, val);

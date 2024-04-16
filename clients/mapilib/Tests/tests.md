@@ -45,8 +45,8 @@ TODO before 1.0 does the above explanation make sense?
 
 ```test
 ACCEPT monetdb:///demo
-EXPECT connect_scan=true
 EXPECT database=demo
+EXPECT connect_scan=true
 ```
 
 ```test
@@ -115,6 +115,7 @@ EXPECT database=demo
 
 ```test
 ACCEPT monetdb://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:12345/demo
+EXPECT host=2001:0db8:85a3:0000:0000:8a2e:0370:7334
 EXPECT connect_scan=false
 EXPECT connect_unix=
 EXPECT connect_tcp=2001:0db8:85a3:0000:0000:8a2e:0370:7334
@@ -176,20 +177,31 @@ EXPECT database=demo
 ```
 
 ```test
-ACCEPT monetdbs://mdb.example.com/demo?certhash={sha256}fb:67:20:aa:00:9f:33:4c
+ACCEPT monetdbs://mdb.example.com/demo?certhash=sha256:fb:67:20:aa:00:9f:33:4c
 EXPECT connect_scan=false
 EXPECT connect_unix=
 EXPECT connect_tcp=mdb.example.com
 EXPECT connect_port=50000
 EXPECT tls=on
 EXPECT connect_tls_verify=hash
-EXPECT certhash={sha256}fb:67:20:aa:00:9f:33:4c
+EXPECT certhash=sha256:fb:67:20:aa:00:9f:33:4c
 EXPECT connect_certhash_digits=fb6720aa009f334c
 EXPECT database=demo
 ```
 
 ```test
 ACCEPT monetdb:///demo?sock=/var/monetdb/_sock&user=dbuser
+EXPECT connect_scan=false
+EXPECT connect_unix=/var/monetdb/_sock
+EXPECT connect_tcp=
+EXPECT tls=off
+EXPECT database=demo
+EXPECT user=dbuser
+EXPECT password=
+```
+
+```test
+ACCEPT monetdb://localhost/demo?sock=/var/monetdb/_sock&user=dbuser
 EXPECT connect_scan=false
 EXPECT connect_unix=/var/monetdb/_sock
 EXPECT connect_tcp=
@@ -258,6 +270,7 @@ EXPECT port=-1
 EXPECT database=
 EXPECT tableschema=
 EXPECT table=
+EXPECT binary=on
 ```
 
 ### sock
@@ -268,8 +281,20 @@ Not supported on Windows, but they should still parse.
 EXPECT sock=
 ACCEPT monetdb:///?sock=/tmp/sock
 EXPECT sock=/tmp/sock
+ACCEPT monetdb:///?sock=C:/TEMP/sock
+EXPECT sock=C:/TEMP/sock
+NOT jdbc
 ACCEPT monetdb:///?sock=C:\TEMP\sock
 EXPECT sock=C:\TEMP\sock
+```
+
+### sockdir
+
+```test
+EXPECT sockdir=/tmp
+ACCEPT monetdb:///demo?sockdir=/tmp/nonstandard
+EXPECT sockdir=/tmp/nonstandard
+EXPECT connect_unix=/tmp/nonstandard/.s.monetdb.50000
 ```
 
 ### cert
@@ -278,6 +303,9 @@ EXPECT sock=C:\TEMP\sock
 EXPECT cert=
 ACCEPT monetdbs:///?cert=/tmp/cert.pem
 EXPECT cert=/tmp/cert.pem
+ACCEPT monetdbs:///?cert=C:/TEMP/cert.pem
+EXPECT cert=C:/TEMP/cert.pem
+NOT jdbc
 ACCEPT monetdbs:///?cert=C:\TEMP\cert.pem
 EXPECT cert=C:\TEMP\cert.pem
 ```
@@ -286,53 +314,80 @@ EXPECT cert=C:\TEMP\cert.pem
 
 ```test
 EXPECT certhash=
-ACCEPT monetdbs:///?certhash={sha256}001122ff
-ACCEPT monetdbs:///?certhash={sha256}00:11:22:ff
-ACCEPT monetdbs:///?certhash={sha256}::::aa::ff:::::
-ACCEPT monetdbs:///?certhash={sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+ACCEPT monetdbs:///?certhash=sha256:001122ff
+ACCEPT monetdbs:///?certhash=sha256:00:11:22:ff
+ACCEPT monetdbs:///?certhash=sha256:::::aa::ff:::::
+ACCEPT monetdbs:///?certhash=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 ```
 
 This string of hexdigits is longer than the length of a SHA-256 digest.
 It still parses, it will just never match.
 
 ```test
-ACCEPT monetdbs:///?certhash={sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8550
-ACCEPT monetdbs:///?certhash={sha256}e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855000000000000000000000000000000000000000001
+ACCEPT monetdbs:///?certhash=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8550
+ACCEPT monetdbs:///?certhash=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855000000000000000000000000000000000000000001
 ```
 
 ```test
 REJECT monetdbs:///?certhash=001122ff
-REJECT monetdbs:///?certhash={Sha256}001122ff
-REJECT monetdbs:///?certhash=sha256:001122ff
-REJECT monetdbs:///?certhash={sha256}001122gg
-REJECT monetdbs:///?certhash={sha256}}001122
-REJECT monetdbs:///?certhash={{sha256}001122
-REJECT monetdbs:///?certhash={{sha256}
-REJECT monetdbs:///?certhash={sha
-REJECT monetdbs:///?certhash={sha1}aabbcc
-REJECT monetdbs:///?certhash={sha1}
-REJECT monetdbs:///?certhash={sha1}X
-REJECT monetdbs:///?certhash={sha99}aabbcc
-REJECT monetdbs:///?certhash={sha99}
-REJECT monetdbs:///?certhash={sha99}X
+REJECT monetdbs:///?certhash=Sha256:001122ff
+REJECT monetdbs:///?certhash=sha256:001122gg
+REJECT monetdbs:///?certhash=sha
+REJECT monetdbs:///?certhash=sha1:aabbcc
+REJECT monetdbs:///?certhash=sha1:
+REJECT monetdbs:///?certhash=sha1:X
+REJECT monetdbs:///?certhash=sha99:aabbcc
+REJECT monetdbs:///?certhash=sha99:
+REJECT monetdbs:///?certhash=sha99:X
 ```
 
 ### clientkey, clientcert
 
 ```test
 EXPECT clientkey=
+EXPECT clientcert=
 ACCEPT monetdbs:///?clientkey=/tmp/clientkey.pem
 EXPECT clientkey=/tmp/clientkey.pem
+ACCEPT monetdbs:///?clientkey=C:/TEMP/clientkey.pem
+EXPECT clientkey=C:/TEMP/clientkey.pem
+NOT jdbc
 ACCEPT monetdbs:///?clientkey=C:\TEMP\clientkey.pem
 EXPECT clientkey=C:\TEMP\clientkey.pem
 ```
 
-### clientcert
+```test
+EXPECT connect_clientkey=
+EXPECT connect_clientcert=
+```
 
 ```test
+SET clientkey=/tmp/key.pem
+SET clientcert=/tmp/cert.pem
+EXPECT valid=true
+EXPECT connect_clientkey=/tmp/key.pem
+EXPECT connect_clientcert=/tmp/cert.pem
+```
+
+```test
+SET clientkey=/tmp/key.pem
+EXPECT valid=true
+EXPECT connect_clientkey=/tmp/key.pem
+EXPECT connect_clientcert=/tmp/key.pem
+```
+
+```test
+SET clientcert=/tmp/cert.pem
+EXPECT valid=false
+```
+
+```test
+SET clientkey=dummy
 EXPECT clientcert=
 ACCEPT monetdbs:///?clientcert=/tmp/clientcert.pem
 EXPECT clientcert=/tmp/clientcert.pem
+ACCEPT monetdbs:///?clientcert=C:/TEMP/clientcert.pem
+EXPECT clientcert=C:/TEMP/clientcert.pem
+NOT jdbc
 ACCEPT monetdbs:///?clientcert=C:\TEMP\clientcert.pem
 EXPECT clientcert=C:\TEMP\clientcert.pem
 ```
@@ -471,14 +526,8 @@ ACCEPT monetdb:///?binary=0100
 EXPECT connect_binary=100
 ```
 
-We take empty to be 'on'
-
 ```test
-ACCEPT monetdb:///?binary=
-EXPECT connect_binary=65535
-```
-
-```test
+REJECT monetdb:///?binary=
 REJECT monetdb:///?binary=-1
 REJECT monetdb:///?binary=1.0
 REJECT monetdb:///?binary=banana
@@ -488,6 +537,9 @@ REJECT monetdb:///?binary=banana
 
 ```test
 REJECT monetdb:///?banana=bla
+```
+
+```test
 ACCEPT monetdb:///?ban_ana=bla
 ACCEPT monetdb:///?hash=sha1
 ACCEPT monetdb:///?debug=true
@@ -539,13 +591,20 @@ Rule: fetchsize is an alias for replysize, last occurrence counts
 
 ```test
 SET replysize=200
-SET fetchsize=300
-EXPECT replysize=300
 ACCEPT monetdb:///?fetchsize=400
 EXPECT replysize=400
 ACCEPT monetdb:///?replysize=500&fetchsize=600
 EXPECT replysize=600
 ```
+
+```test
+NOT jdbc
+SET replysize=200
+SET fetchsize=300
+EXPECT replysize=300
+```
+
+
 
 Rule: parsing a URL sets all of tls, host, port and database
 even if left out of the URL
@@ -609,14 +668,14 @@ EXPECT password=
 General form
 
 ```test
+REJECT monetdb:
+REJECT monetdbs:
+REJECT monetdb:/
+REJECT monetdbs:/
 ACCEPT monetdb://
 ACCEPT monetdbs://
 ACCEPT monetdb:///
 ACCEPT monetdbs:///
-REJECT monetdb:/
-REJECT monetdbs:/
-REJECT monetdb:
-REJECT monetdbs:
 ```
 
 
@@ -837,6 +896,8 @@ EXPECT valid=no
 ```
 
 ```test
+SET database=demo
+SET tableschema=sys
 SET table=
 EXPECT valid=yes
 SET table=banana
@@ -850,6 +911,8 @@ EXPECT valid=yes
 ```
 
 ```test
+SET database=demo
+SET tableschema=sys
 SET table=with/slash
 EXPECT valid=no
 SET table=-flag
@@ -871,12 +934,12 @@ EXPECT valid=no
 ```test
 ACCEPT monetdbs:///?cert=/a/path
 EXPECT connect_tls_verify=cert
-ACCEPT monetdbs:///?certhash={sha256}aa
+ACCEPT monetdbs:///?certhash=sha256:aa
 EXPECT connect_tls_verify=hash
-ACCEPT monetdbs:///?cert=/a/path&certhash={sha256}aa
+ACCEPT monetdbs:///?cert=/a/path&certhash=sha256:aa
 EXPECT connect_tls_verify=hash
 REJECT monetdb:///?cert=/a/path
-REJECT monetdb:///?certhash={sha256}aa
+REJECT monetdb:///?certhash=sha256:aa
 ```
 
 ```test
@@ -890,7 +953,7 @@ EXPECT connect_tls_verify=
 ```test
 SET tls=off
 SET cert=
-SET certhash={sha256}abcdef
+SET certhash=sha256:abcdef
 EXPECT valid=no
 ```
 
@@ -904,7 +967,7 @@ EXPECT valid=no
 ```test
 SET tls=off
 SET cert=/foo
-SET certhash={sha256}abcdef
+SET certhash=sha256:abcdef
 EXPECT valid=no
 ```
 
@@ -919,7 +982,7 @@ EXPECT connect_tls_verify=system
 ```test
 SET tls=on
 SET cert=
-SET certhash={sha256}abcdef
+SET certhash=sha256:abcdef
 EXPECT valid=yes
 EXPECT connect_tls_verify=hash
 ```
@@ -935,7 +998,7 @@ EXPECT connect_tls_verify=cert
 ```test
 SET tls=on
 SET cert=/foo
-SET certhash={sha256}abcdef
+SET certhash=sha256:abcdef
 EXPECT valid=yes
 EXPECT connect_tls_verify=hash
 ```
@@ -1129,6 +1192,21 @@ EXPECT connect_tcp=not.localhost
 REJECT monetdbs://not.localhost/?sock=/a/path
 ```
 
+### sock and sockdir
+
+Sockdir only applies to implicit Unix domain sockets,
+not to ones that are given explicitly
+
+```test
+EXPECT sockdir=/tmp
+EXPECT port=-1
+EXPECT host=
+EXPECT connect_unix=/tmp/.s.monetdb.50000
+SET sockdir=/somewhere/else
+EXPECT connect_unix=/somewhere/else/.s.monetdb.50000
+SET port=12345
+EXPECT connect_unix=/somewhere/else/.s.monetdb.12345
+```
 
 ## Legacy URL's
 
@@ -1137,17 +1215,6 @@ REJECT mapi:
 REJECT mapi:monetdb
 REJECT mapi:monetdb:
 REJECT mapi:monetdb:/
-```
-
-This one is refused by mclient but accepted by pymonetdb:
-
-```test
-ACCEPT mapi:monetdb://
-EXPECT host=
-EXPECT port=-1
-EXPECT connect_scan=off
-EXPECT connect_unix=/tmp/.s.monetdb.50000
-EXPECT connect_tcp=localhost
 ```
 
 ```test
@@ -1247,9 +1314,6 @@ SET password=turing
 ACCEPT mapi:monetdb://localhost:12345/demo?user=foo
 EXPECT user=alan
 EXPECT password=turing
-ACCEPT mapi:monetdb://localhost:12345/demo?username=foo
-EXPECT user=alan
-EXPECT password=turing
 ACCEPT mapi:monetdb://localhost:12345/demo?password=foo
 EXPECT user=alan
 EXPECT password=turing
@@ -1271,29 +1335,12 @@ EXPECT user=banana
 EXPECT password=
 ```
 
-Libmapi never accepted user name and password before
-the host name, it accepted the @ as part of the host name
-and got confused about the colon. Let's preserve this
-behaviour.
-
 ```test
-ONLY libmapi
+NOT pymonetdb
 SET user=alan
 SET password=turing
 REJECT mapi:monetdb://foo:bar@localhost:12345/demo
-ACCEPT mapi:monetdb://banana@localhost:12345/demo
-EXPECT host=banana@localhost
-EXPECT user=alan
-EXPECT password=turing
-```
-
-Any new implementations should reject both.
-
-```test
-NOT pymonetdb
-NOT libmapi
-REJECT mapi:monetdb://foo:bar@localhost:12345/demo
-REJECTmapi:monetdb://banana@localhost:12345/demo
+REJECT mapi:monetdb://banana@localhost:12345/demo
 ```
 
 Unix domain sockets

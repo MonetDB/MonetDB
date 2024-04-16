@@ -4,12 +4,14 @@
 .\" License, v. 2.0.  If a copy of the MPL was not distributed with this
 .\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
 .\"
-.\" Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+.\" Copyright 2024 MonetDB Foundation;
+.\" Copyright August 2008 - 2023 MonetDB B.V.;
+.\" Copyright 1997 - July 2008 CWI.
 .\"
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 2023-06-22 MonetDB "MonetDB Applications"
+.TH MONETDB 1 2023-12-21 MonetDB "MonetDB Applications"
 .SH NAME
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS
@@ -110,7 +112,7 @@ steps before releasing it to users, unless the
 .B \-p
 argument is supplied.  See also
 .BR "monetdb lock" .
-The name of the database must match the expression [A\-Za\-z0\-9\-_]+.
+The name of the database must match the expression [A\-Za\-z0\-9_\-]+.
 .RS
 .TP
 \fB\-m\fP \fIpattern\fP
@@ -480,7 +482,7 @@ section
 Next to database URIs the hostnames and ports for monetdbds that
 allow to be controlled remotely can be found in the discover list masked
 with an asterisk.  These entries can easily be filtered out using an
-expression (e.g. "mapi:monetdb:*") if desired.  The control entries come
+expression (e.g. ``mapi:monetdb:*'') if desired.  The control entries come
 in handy when one wants to get an overview of available monetdbds in
 e.g. a local cluster.  Note that for
 .I monetdbd
@@ -512,9 +514,9 @@ These expressions are
 limited shell-globbing like, where the * in any position is expanded to
 an arbitrary string.  The * can occur multiple times in the expression,
 allowing for more advanced matches.  Note that the empty string also
-matches the *, hence "de*mo" can return "demo" as match.  To match the
-literal '*' character, one has to escape it using a backslash, e.g.
-"\e*".
+matches the *, hence ``de*mo'' can return ``demo'' as match.  To match the
+literal ``*'' character, one has to escape it using a backslash, e.g.
+``\[rs]*''.
 .SH RETURN VALUE
 The
 .I monetdb

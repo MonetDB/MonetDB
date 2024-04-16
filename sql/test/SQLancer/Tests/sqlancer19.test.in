@@ -368,7 +368,7 @@ SELECT CAST(trim('14', 'abc') AS STRING(408)), CAST(trim('14', 'abc') AS VARCHAR
 14
 14
 
-query TTTTTT nosort
+query ITTTTT nosort
 SELECT NULL, 'NULL', 'null', cast(NULL as clob), cast('NULL' as clob), cast('null' as clob) FROM t3 where t3.c0 = 1
 ----
 NULL
@@ -378,7 +378,7 @@ NULL
 NULL
 null
 
-query TTTTTT nosort
+query ITTTTT nosort
 SELECT NULL, 'NULL', 'null', cast(NULL as clob), cast('NULL' as clob), cast('null' as clob) FROM rt3 where rt3.c0 = 1
 ----
 NULL
@@ -979,17 +979,17 @@ query T nosort
 SELECT c1 FROM t6
 ----
 3
-8@k|1*
+8ጮk|1*
 27
-Vrx^qA@
+Vrx^qA齀
 J
 18
->*4@pAP
+>*4嘁pAP
 +Jm*W0{{
->V@
+>V鷓
 BW5z
 .#OJruk
-lU1@Nlm
+lU1覃Nlm
 NULL
 968786590
 
@@ -997,17 +997,17 @@ query T nosort
 SELECT c1 FROM rt6
 ----
 3
-8@k|1*
+8ጮk|1*
 27
-Vrx^qA@
+Vrx^qA齀
 J
 18
->*4@pAP
+>*4嘁pAP
 +Jm*W0{{
->V@
+>V鷓
 BW5z
 .#OJruk
-lU1@Nlm
+lU1覃Nlm
 NULL
 968786590
 

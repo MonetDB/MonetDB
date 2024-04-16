@@ -73,13 +73,13 @@ update(
 | | | | project (
 | | | | | select (
 | | | | | | table("sys"."cm_flux") [ "cm_flux"."runcat" NOT NULL UNIQUE, "cm_flux"."filter" NOT NULL UNIQUE, "cm_flux"."active" NOT NULL UNIQUE ]
-| | | | | ) [ ("cm_flux"."active" NOT NULL UNIQUE) = (boolean(1) "true"), ("cm_flux"."filter" NOT NULL UNIQUE) = (char(1) "g") ]
+| | | | | ) [ ("cm_flux"."active" NOT NULL UNIQUE) = (boolean(1) "true"), (varchar(1)["cm_flux"."filter" NOT NULL UNIQUE] NOT NULL) = (varchar(1) "g") ]
 | | | | ) [ "cm_flux"."runcat" NOT NULL UNIQUE, "cm_flux"."filter" NOT NULL UNIQUE as "%11"."%11" ]
 | | | ) [ ("cm_flux"."runcat" NOT NULL UNIQUE) = ("fluxz"."runcat" NOT NULL UNIQUE), ("%11"."%11" NOT NULL UNIQUE) = ("fluxz"."filter" NOT NULL UNIQUE) ],
 | | | single project (
 | | | | select (
 | | | | | table("sys"."cm_flux") [ "cm_flux"."runcat" NOT NULL UNIQUE, "cm_flux"."filter" NOT NULL UNIQUE, "cm_flux"."f_datapoints" NOT NULL UNIQUE, "cm_flux"."active" NOT NULL UNIQUE, "cm_flux"."avg_flux" NOT NULL UNIQUE, "cm_flux"."avg_fluxsq" NOT NULL UNIQUE, "cm_flux"."avg_w" NOT NULL UNIQUE, "cm_flux"."avg_wflux" NOT NULL UNIQUE, "cm_flux"."avg_wfluxsq" NOT NULL UNIQUE, "cm_flux"."avg_dec_zone_deg" NOT NULL UNIQUE ]
-| | | | ) [ ("cm_flux"."active" NOT NULL UNIQUE) = (boolean(1) "true"), ("cm_flux"."filter" NOT NULL UNIQUE) = (char(1) "g") ]
+| | | | ) [ ("cm_flux"."active" NOT NULL UNIQUE) = (boolean(1) "true"), (varchar(1)["cm_flux"."filter" NOT NULL UNIQUE] NOT NULL) = (varchar(1) "g") ]
 | | | ) [ "cm_flux"."filter" NOT NULL UNIQUE as "%1"."%1", "cm_flux"."f_datapoints" NOT NULL UNIQUE as "%2"."%2", "cm_flux"."avg_flux" NOT NULL UNIQUE as "%3"."%3", "cm_flux"."avg_fluxsq" NOT NULL UNIQUE as "%4"."%4", "cm_flux"."avg_w" NOT NULL UNIQUE as "%5"."%5", "cm_flux"."avg_wflux" NOT NULL UNIQUE as "%6"."%6", "cm_flux"."avg_wfluxsq" NOT NULL UNIQUE as "%7"."%7", "cm_flux"."avg_dec_zone_deg" NOT NULL UNIQUE as "%10"."%10", "cm_flux"."runcat" NOT NULL UNIQUE as "%12"."%12" ]
 | | ) [ ("fluxz"."runcat" NOT NULL UNIQUE) = ("%12"."%12" NOT NULL UNIQUE), ("fluxz"."filter" NOT NULL UNIQUE) = ("%1"."%1" NOT NULL UNIQUE) ]
 | ) [ "fluxz"."%TID%" NOT NULL, "%1"."%1" UNIQUE as "fluxz"."filter", "%2"."%2" as "fluxz"."f_datapoints", "%3"."%3" as "fluxz"."avg_flux", "%4"."%4" as "fluxz"."avg_fluxsq", "%5"."%5" as "fluxz"."avg_w", "%6"."%6" as "fluxz"."avg_wflux", "%7"."%7" as "fluxz"."avg_wfluxsq", "%10"."%10" as "fluxz"."avg_dec_zone_deg" ]

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /**
@@ -2509,8 +2511,11 @@ main(int argc, char *argv[])
 		if (mero_host == NULL)
 			mero_host = "/tmp";
 		/* first try the port given (or else its default) */
-		snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
-			 mero_host, mero_port == -1 ? MAPI_PORT : mero_port);
+		if (snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
+					 mero_host, mero_port == -1 ? MAPI_PORT : mero_port) >= (int) sizeof(buf)) {
+			fprintf(stderr, "monetdb: directory name too long\n");
+			exit(1);
+		}
 		if ((err = control_ping(buf, -1, NULL)) == NULL) {
 			mero_host = buf;
 		} else {
@@ -2530,9 +2535,11 @@ main(int argc, char *argv[])
 				while ((e = readdir(d)) != NULL) {
 					if (strncmp(e->d_name, ".s.merovingian.", 15) != 0)
 						continue;
-					snprintf(buf, sizeof(buf), "%s/%s", mero_host, e->d_name);
-					if (stat(buf, &s) == -1)
+					if (snprintf(buf, sizeof(buf), "%s/%s", mero_host, e->d_name) >= (int) sizeof(buf) ||
+						stat(buf, &s) == -1) {
+						/* too long or doesn't exist */
 						continue;
+					}
 					if (S_ISSOCK(s.st_mode)) {
 						char *nerr;
 						if ((nerr = control_ping(buf, -1, NULL)) == NULL) {

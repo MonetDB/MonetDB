@@ -17,11 +17,13 @@ worldwide. This software is distributed without any warranty.
 
 See <http://creativecommons.org/publicdomain/zero/1.0/>. */
 
-static inline uint64_t rotl(const uint64_t x, int k) {
+typedef uint64_t random_state_engine[4];
+
+static inline uint64_t
+rotl(const uint64_t x, int k)
+{
 	return (x << k) | (x >> (64 - k));
 }
-
-typedef uint64_t random_state_engine[4];
 
 static inline void
 init_random_state_engine(random_state_engine engine, uint64_t seed)
@@ -40,8 +42,10 @@ init_random_state_engine(random_state_engine engine, uint64_t seed)
 	}
 }
 
-static inline uint64_t next(random_state_engine rse) {
-	const uint64_t output = rotl(rse[0] * 5, 7) * 9;
+static inline uint64_t
+next(random_state_engine rse)
+{
+	const uint64_t output = rotl(rse[1] * 5, 7) * 9;
 
 	const uint64_t t = rse[1] << 17;
 

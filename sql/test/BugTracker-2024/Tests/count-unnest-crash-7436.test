@@ -1,0 +1,9 @@
+statement ok
+CREATE TABLE v0 ( v1 DOUBLE )
+
+statement ok
+DELETE FROM v0 WHERE ( v1 ) IS NULL OR ( SELECT DENSE_RANK ( ) OVER ( PARTITION BY count ( * ) ORDER BY v1 % 10 ) WHERE 0 BETWEEN v1 AND v1 ) < 4
+
+statement ok
+DROP TABLE v0
+

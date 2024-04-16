@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -508,19 +510,27 @@ JSONstr2json(json *ret, const char **j)
 	size_t ln = strlen(*j)+1;
 	size_t out_size = 0;
 
-	JSON *jt = JSONparse(*j);
-	CHECK_JSON(jt);
+	JSON *jt = NULL;
 
-	buf = (json)GDKmalloc(ln);
+	if (strNil(*j)) {
+		buf = GDKstrdup(*j);
+	} else {
+		jt = JSONparse(*j);
+		CHECK_JSON(jt);
+
+		buf = (json)GDKmalloc(ln);
+	}
 	if (buf == NULL) {
 		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	msg = JSONtoStorageString(jt, 0, &buf, &out_size);
-	if (msg != MAL_SUCCEED) {
-		GDKfree(buf);
-		goto bailout;
+	if (jt != NULL) {
+		msg = JSONtoStorageString(jt, 0, &buf, &out_size);
+		if (msg != MAL_SUCCEED) {
+			GDKfree(buf);
+			goto bailout;
+		}
 	}
 
 	*ret = buf;
@@ -573,10 +583,69 @@ JSONisarray(bit *ret, json *js)
 	return MAL_SUCCEED;
 }
 
+#ifdef GDKLIBRARY_JSON
+static gdk_return
+upgradeJSONStorage(char **out, const char **in)
+{
+	str msg;
+	if ((msg = JSONstr2json(out, in)) != MAL_SUCCEED) {
+		freeException(msg);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+static str
+jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
+{
+	str out = NULL;
+	str msg;
+
+	if ((a = BATatoms[TYPE_str].atomRead(a, dstlen, s, cnt)) == NULL)
+		return NULL;
+
+	if ((msg = JSONstr2json(&out, (const char **) &a)) != MAL_SUCCEED) {
+		freeException(msg);
+		GDKfree(a);
+		return NULL;
+	}
+	*dstlen = strlen(out) + 1;
+	GDKfree(a);
+
+	a = out;
+
+	return a;
+}
+
+#endif
+
+
 static str
 JSONprelude(void)
 {
 	TYPE_json = ATOMindex("json");
+#ifdef GDKLIBRARY_JSON
+/* Run the gdk upgrade libary function with a callback that
+ * performs the actual upgrade.
+ */
+	char *jsonupgrade;
+	struct stat st;
+	if ((jsonupgrade = GDKfilepath(0, BATDIR, "jsonupgradeneeded", NULL)) == NULL) {
+		throw(MAL, "json.prelude", "cannot allocate filename for json upgrade signal file");
+	}
+	int r = stat(jsonupgrade, &st);
+	GDKfree(jsonupgrade);
+	if (r == 0) {
+		/* The file exists so we need to run the upgrade code */
+		if (BBPjson_upgrade(upgradeJSONStorage) != GDK_SUCCEED) {
+			throw(MAL, "json.prelude", "JSON storage upgrade failed");
+		}
+		/* Change the read function of the json atom so that any values in the WAL
+		 * will also be upgraded.
+		 */
+		BATatoms[TYPE_json].atomRead = (void *(*)(void *, size_t *, stream *, size_t)) jsonRead;
+	}
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -1963,9 +2032,6 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		JSONfree(jt);
 		throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	bk->tsorted = true;
-	bk->trevsorted = false;
-	bk->tnonil = true;
 
 	if (od) {
 		bo = COLnew(0, TYPE_oid, 64, TRANSIENT);
@@ -1974,9 +2040,6 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 			JSONfree(jt);
 			throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		bo->tsorted = true;
-		bo->trevsorted = false;
-		bo->tnonil = true;
 	}
 
 	bv = COLnew(0, TYPE_json, 64, TRANSIENT);
@@ -1986,9 +2049,6 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		BBPreclaim(bk);
 		throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	bv->tsorted = true;
-	bv->trevsorted = false;
-	bv->tnonil = true;
 
 	if (jt->elm[0].kind == JSON_ARRAY || jt->elm[0].kind == JSON_OBJECT)
 		msg = JSONunfoldContainer(jt, 0, (od ? bo : 0), bk, bv, &o);
@@ -2030,9 +2090,6 @@ JSONkeyTable(bat *ret, json *js)
 		JSONfree(jt);
 		throw(MAL, "json.keys", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	bn->tsorted = true;
-	bn->trevsorted = false;
-	bn->tnonil = true;
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		r = JSONgetValue(jt, i);
@@ -2130,9 +2187,6 @@ JSONvalueTable(bat *ret, json *js)
 		JSONfree(jt);
 		throw(MAL, "json.values", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	bn->tsorted = true;
-	bn->trevsorted = false;
-	bn->tnonil = true;
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		if (jt->elm[i].kind == JSON_ELEMENT)
@@ -3126,9 +3180,10 @@ JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
 	return JSONsubjsoncand(retval, bid, gid, eid, NULL, skip_nils);
 }
 
+
 #include "mel.h"
 static mel_atom json_init_atoms[] = {
- { .name="json", .basetype="str", .fromstr=JSONfromString, .tostr=JSONtoString, },  { .cmp=NULL }
+	{ .name="json", .basetype="str", .fromstr=JSONfromString, .tostr=JSONtoString },  { .cmp=NULL },
 };
 static mel_func json_init_funcs[] = {
  command("json", "new", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),

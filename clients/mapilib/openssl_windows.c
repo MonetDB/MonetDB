@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -31,12 +33,8 @@ process_sysstore_item(Mapi mid, X509_STORE *x509_store, int nr, const CERT_CONTE
 
 	bool is_x509 = (typ & X509_ASN_ENCODING);
 	bool is_pkcs7 = (typ & PKCS_7_ASN_ENCODING);
-	mapi_log_record(
-		mid, "CONN", "Processing item #%d of type %lu [%s%s], size %zu",
-		nr,
-		typ, (is_x509 ? "X" : ""), (is_pkcs7 ? "P" : ""),
-		size
-	);
+
+	// mapi_log_data(mid, "CERT", (char*)data, size);
 
 	if (!is_x509)
 		return mapi_printError(mid, __func__, MERROR, "sys store certificate #%d must be in X509 format", nr);
@@ -93,7 +91,7 @@ add_system_certificates(Mapi mid, SSL_CTX *ctx)
 		case ERROR_NO_MORE_FILES:
 			// Normal exit codes according to the documentation at
 			// https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certenumcertificatesinstore
-			mapi_log_record(mid, "CONN", "Added %d certificates", count);
+			mapi_log_record(mid, "CONN", "Found %d certificates", count);
 			return MOK;
 		default:
 			// Anything else is problematic

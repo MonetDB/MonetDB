@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -1650,12 +1652,11 @@ mapi_new_handle(Mapi mid)
 		mapi_setError(mid, "Memory allocation failure", __func__, MERROR);
 		return NULL;
 	}
+	/* initialize and add to doubly-linked list */
 	*hdl = (struct MapiStatement) {
 		.mid = mid,
-		.needmore = false,
+		.next = mid->first,
 	};
-	/* add to doubly-linked list */
-	hdl->next = mid->first;
 	mid->first = hdl;
 	if (hdl->next)
 		hdl->next->prev = hdl;
@@ -1672,7 +1673,7 @@ finish_handle(MapiHdl hdl)
 	if (hdl == NULL)
 		return MERROR;
 	mid = hdl->mid;
-	if (mid->active == hdl && !hdl->needmore &&
+	if (mid->active == hdl && !hdl->needmore && !mnstr_eof(mid->from) &&
 	    read_into_cache(hdl, 0) != MOK)
 		return MERROR;
 	if (mid->to) {
@@ -1729,8 +1730,7 @@ mapi_close_handle(MapiHdl hdl)
 	/* don't use mapi_check_hdl: it's ok if we're not connected */
 	mapi_clrError(hdl->mid);
 
-	if (finish_handle(hdl) != MOK)
-		return MERROR;
+	(void) finish_handle(hdl);
 	hdl->npending_close = 0;
 	if (hdl->pending_close)
 		free(hdl->pending_close);
@@ -1772,17 +1772,18 @@ const struct MapiStruct MapiStructDefaults = {
 
 /* Allocate a new connection handle. */
 Mapi
-mapi_new(void)
+mapi_new(msettings *settings)
 {
 	Mapi mid;
-	msettings *settings;
 	static ATOMIC_TYPE index = ATOMIC_VAR_INIT(0);
 
 	mid = malloc(sizeof(*mid));
-	settings = msettings_create();
-	if (mid == NULL || settings == NULL) {
+	if (mid == NULL)
+		return NULL;
+	if (settings == NULL)
+		settings = msettings_create();
+	if (settings == NULL) {
 		free(mid);
-		msettings_destroy(settings);
 		return NULL;
 	}
 
@@ -1847,7 +1848,7 @@ set_uri(Mapi mid)
 	const char *host = msetting_string(mid->settings, MP_HOST);
 	const char *database = msetting_string(mid->settings, MP_DATABASE);
 	int port = msetting_long(mid->settings, MP_PORT);
-	size_t urilen = strlen(host) + strlen(database) + 32;
+	size_t urilen = strlen(host) + (database ? strlen(database) : 0) + 32;
 	char *uri = malloc(urilen);
 
 	/* uri looks as follows:
@@ -1889,7 +1890,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 			return NULL;
 	}
 
-	mid = mapi_new();
+	mid = mapi_new(NULL);
 	if (mid == NULL)
 		return NULL;
 
@@ -1948,7 +1949,7 @@ mapi_mapi(const char *host, int port, const char *username,
 			return NULL;
 	}
 
-	mid = mapi_new();
+	mid = mapi_new(NULL);
 	if (mid == NULL)
 		return NULL;
 	msettings *settings = mid->settings;
@@ -1987,6 +1988,19 @@ mapi_mapi(const char *host, int port, const char *username,
 	return mid;
 }
 
+Mapi
+mapi_settings(msettings *settings)
+{
+	assert(settings);
+	Mapi mid = mapi_new(settings);
+	if (mid == NULL)
+		return mid;
+
+	set_uri(mid);
+	return mid;
+}
+
+
 /* Close a connection and free all memory associated with the
    connection handle. */
 MapiMsg
@@ -2008,6 +2022,7 @@ mapi_destroy(Mapi mid)
 	free(mid->server);
 	free(mid->uri);
 	free(mid->tracebuffer);
+	free(mid->noexplain);
 	if (mid->errorstr && mid->errorstr != mapi_nomem)
 		free(mid->errorstr);
 
@@ -2165,8 +2180,7 @@ mapi_disconnect(Mapi mid)
  * The arguments are:
  * private - the value of the filecontentprivate argument to
  *           mapi_setfilecallback;
- * filename - the file to be written, files are always written as text
- *            files;
+ * filename - the file to be written;
  * binary - if set, the data to be written is binary and the file
  *          should therefore be opened in binary mode, otherwise the
  *          data is UTF-8 encoded text;
@@ -2682,7 +2696,17 @@ read_line(Mapi mid)
 		/* fetch one more block */
 		if (mid->trace)
 			printf("fetch next block: start at:%d\n", mid->blk.end);
-		len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
+		for (;;) {
+			len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
+			if (len == -1 && mnstr_errnr(mid->from) == MNSTR_INTERRUPT) {
+				mnstr_clearerr(mid->from);
+				if (mid->oobintr && !mid->active->aborted) {
+					mid->active->aborted = true;
+					mnstr_putoob(mid->to, 1);
+				}
+			} else
+				break;
+		}
 		check_stream(mid, mid->from, "Connection terminated during read line", (mid->blk.eos = true, (char *) 0));
 		mapi_log_data(mid, "RECV", mid->blk.buf + mid->blk.end, len);
 		mid->blk.buf[mid->blk.end + len] = 0;
@@ -3215,10 +3239,24 @@ write_file(MapiHdl hdl, char *filename, bool binary)
 		return;
 	}
 	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
-	while ((len = mnstr_read(mid->from, data, 1, sizeof(data))) > 0) {
-		if (line == NULL)
+	for (;;) {
+		len = mnstr_read(mid->from, data, 1, sizeof(data));
+		if (len == -1) {
+			if (mnstr_errnr(mid->from) == MNSTR_INTERRUPT) {
+				mnstr_clearerr(mid->from);
+				if (mid->oobintr && !hdl->aborted) {
+					hdl->aborted = true;
+					mnstr_putoob(mid->to, 1);
+				}
+			} else {
+				break;
+			}
+		} else if (len == 0) {
+			break;
+		} else if (line == NULL) {
 			line = mid->putfilecontent(mid->filecontentprivate,
 						   NULL, binary, data, len);
+		}
 	}
 	if (line == NULL)
 		line = mid->putfilecontent(mid->filecontentprivate,
@@ -3316,6 +3354,14 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 			data = mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, &size);
 		}
 	}
+	if (data != NULL && size == 0) {
+		/* some error occurred */
+		mnstr_clearerr(mid->from);
+		if (mid->oobintr && !hdl->aborted) {
+			hdl->aborted = true;
+			mnstr_putoob(mid->to, 1);
+		}
+	}
 	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
 	line = read_line(mid);
 	if (line == NULL)
@@ -3339,6 +3385,7 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 	assert(line[1] == PROMPT3[1]);
 	(void) read_line(mid);
 }
+
 
 /* Read ahead and cache data read.  Depending on the second argument,
    reading may stop at the first non-header and non-error line, or at
@@ -3369,12 +3416,14 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	}
 	if ((result = hdl->active) == NULL)
 		result = hdl->result;	/* may also be NULL */
+
 	for (;;) {
 		line = read_line(mid);
 		if (line == NULL) {
 			if (mid->from && mnstr_eof(mid->from)) {
-				return mapi_setError(mid, "unexpected end of file", __func__, MERROR);
+				return mapi_setError(mid, "unexpected end of file", __func__, MTIMEOUT);
 			}
+
 			return mid->error;
 		}
 		switch (*line) {
@@ -3465,8 +3514,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			if (lookahead > 0 &&
 			    (result->querytype == -1 /* unknown (not SQL) */ ||
 			     result->querytype == Q_TABLE ||
-			     result->querytype == Q_UPDATE))
+			     result->querytype == Q_UPDATE)) {
 				return mid->error;
+			}
 			break;
 		}
 	}
@@ -3513,6 +3563,7 @@ mapi_execute_internal(MapiHdl hdl)
 	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
 	check_stream(mid, mid->to, "write error on stream", mid->error);
 	mid->active = hdl;
+
 	return MOK;
 }
 
@@ -3660,6 +3711,23 @@ mapi_query_done(MapiHdl hdl)
 	if (ret == MOK)
 		ret = read_into_cache(hdl, 1);
 	return ret == MOK && hdl->needmore ? MMORE : ret;
+}
+
+MapiMsg
+mapi_query_abort(MapiHdl hdl, int reason)
+{
+	Mapi mid;
+
+	assert(reason > 0 && reason <= 127);
+	mapi_hdl_check(hdl);
+	mid = hdl->mid;
+	assert(mid->active == NULL || mid->active == hdl);
+	if (mid->oobintr && !hdl->aborted) {
+		mnstr_putoob(mid->to, reason);
+		hdl->aborted = true;
+		return MOK;
+	}
+	return MERROR;
 }
 
 MapiMsg
@@ -4663,6 +4731,12 @@ MapiHdl
 mapi_get_active(Mapi mid)
 {
 	return mid->active;
+}
+
+msettings*
+mapi_get_settings(Mapi mid)
+{
+	return mid->settings;
 }
 
 

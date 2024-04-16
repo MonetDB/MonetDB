@@ -33,10 +33,3 @@ jsonrender
 
 uuid00
 strappend
-
-startswith
-endswith
-contains
-HAVE_ICONV?asciify
-
-ts_and_tstz_to_str_bug

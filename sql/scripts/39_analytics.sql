@@ -4,7 +4,9 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+-- Copyright 2024 MonetDB Foundation;
+-- Copyright August 2008 - 2023 MonetDB B.V.;
+-- Copyright 1997 - July 2008 CWI.
 
 create aggregate stddev_samp(val TINYINT) returns DOUBLE
 	external name "aggr"."stdev";
@@ -252,9 +254,18 @@ GRANT EXECUTE ON AGGREGATE median(INTEGER) TO PUBLIC;
 create aggregate median(val BIGINT) returns BIGINT
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(BIGINT) TO PUBLIC;
-create aggregate median(val DECIMAL) returns DECIMAL
+create aggregate median(val DECIMAL(2)) returns DECIMAL(2)
 	external name "aggr"."median";
-GRANT EXECUTE ON AGGREGATE median(DECIMAL) TO PUBLIC;
+GRANT EXECUTE ON AGGREGATE median(DECIMAL(2)) TO PUBLIC;
+create aggregate median(val DECIMAL(4)) returns DECIMAL(4)
+	external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(DECIMAL(4)) TO PUBLIC;
+create aggregate median(val DECIMAL(9)) returns DECIMAL(9)
+	external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(DECIMAL(9)) TO PUBLIC;
+create aggregate median(val DECIMAL(18)) returns DECIMAL(18)
+	external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(DECIMAL(18)) TO PUBLIC;
 create aggregate median(val REAL) returns REAL
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(REAL) TO PUBLIC;
@@ -294,9 +305,18 @@ GRANT EXECUTE ON AGGREGATE quantile(INTEGER, DOUBLE) TO PUBLIC;
 create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(BIGINT, DOUBLE) TO PUBLIC;
-create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL
+create aggregate quantile(val DECIMAL(2), q DOUBLE) returns DECIMAL(2)
 	external name "aggr"."quantile";
-GRANT EXECUTE ON AGGREGATE quantile(DECIMAL, DOUBLE) TO PUBLIC;
+GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(2), DOUBLE) TO PUBLIC;
+create aggregate quantile(val DECIMAL(4), q DOUBLE) returns DECIMAL(4)
+	external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(4), DOUBLE) TO PUBLIC;
+create aggregate quantile(val DECIMAL(9), q DOUBLE) returns DECIMAL(9)
+	external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(9), DOUBLE) TO PUBLIC;
+create aggregate quantile(val DECIMAL(18), q DOUBLE) returns DECIMAL(18)
+	external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(18), DOUBLE) TO PUBLIC;
 create aggregate quantile(val REAL, q DOUBLE) returns REAL
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(REAL, DOUBLE) TO PUBLIC;
@@ -337,9 +357,18 @@ create aggregate median_avg(val BIGINT) returns DOUBLE
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(BIGINT) TO PUBLIC;
 /* like avg we need a proper decimal returning version
-create aggregate median_avg(val DECIMAL) returns DOUBLE
+create aggregate median_avg(val DECIMAL(2)) returns DOUBLE
 	external name "aggr"."median_avg";
-GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL) TO PUBLIC;
+GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(2)) TO PUBLIC;
+create aggregate median_avg(val DECIMAL(4)) returns DOUBLE
+	external name "aggr"."median_avg";
+GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(4)) TO PUBLIC;
+create aggregate median_avg(val DECIMAL(9)) returns DOUBLE
+	external name "aggr"."median_avg";
+GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(9)) TO PUBLIC;
+create aggregate median_avg(val DECIMAL(18)) returns DOUBLE
+	external name "aggr"."median_avg";
+GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(18)) TO PUBLIC;
 */
 create aggregate median_avg(val REAL) returns DOUBLE
 	external name "aggr"."median_avg";
@@ -361,9 +390,18 @@ GRANT EXECUTE ON AGGREGATE quantile_avg(INTEGER, DOUBLE) TO PUBLIC;
 create aggregate quantile_avg(val BIGINT, q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(BIGINT, DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val DECIMAL, q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val DECIMAL(2), q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile_avg";
-GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL, DOUBLE) TO PUBLIC;
+GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(2), DOUBLE) TO PUBLIC;
+create aggregate quantile_avg(val DECIMAL(4), q DOUBLE) returns DOUBLE
+	external name "aggr"."quantile_avg";
+GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(4), DOUBLE) TO PUBLIC;
+create aggregate quantile_avg(val DECIMAL(9), q DOUBLE) returns DOUBLE
+	external name "aggr"."quantile_avg";
+GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(9), DOUBLE) TO PUBLIC;
+create aggregate quantile_avg(val DECIMAL(18), q DOUBLE) returns DOUBLE
+	external name "aggr"."quantile_avg";
+GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(18), DOUBLE) TO PUBLIC;
 create aggregate quantile_avg(val REAL, q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(REAL, DOUBLE) TO PUBLIC;

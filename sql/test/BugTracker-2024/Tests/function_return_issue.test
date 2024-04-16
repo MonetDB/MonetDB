@@ -1,0 +1,18 @@
+statement ok
+create or replace function do_test(icache boolean) returns table (id int, d double)
+begin
+        if icache = TRUE then
+                return table ( select 1 as id, pi() as d);
+        else
+                return table ( select 2 as id, exp(1) as d);
+        end if;
+end
+
+query I nosort
+select id from do_test(true)
+----
+1
+
+statement ok
+drop function do_test
+

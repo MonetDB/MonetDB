@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -371,7 +373,7 @@ positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 }
 
 static void
-rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
+rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 {
 	int nr = 0;
 
@@ -390,6 +392,8 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 		for (node *n = rel->attr->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
+			if (e->type != e_aggr) /* keep all group by's */
+				e->used = 1;
 			if (e->used)
 				nr += exp_mark_used(subrel, e, -2);
 		}
@@ -1089,7 +1093,7 @@ sum_limit_offset(mvc *sql, sql_rel *rel)
 		return exps_copy(sql, rel->exps);
 	assert(list_length(rel->exps) == 2);
 	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_exp *add = rel_binop_(sql, NULL, exp_copy(sql, rel->exps->h->data), exp_copy(sql, rel->exps->h->next->data), "sys", "sql_add", card_value);
+	sql_exp *add = rel_binop_(sql, NULL, exp_copy(sql, rel->exps->h->data), exp_copy(sql, rel->exps->h->next->data), "sys", "sql_add", card_value, true);
 	/* for remote plans, make sure the output type is a bigint */
 	if (subtype_cmp(lng, exp_subtype(add)) != 0)
 		add = exp_convert(sql->sa, add, exp_subtype(add), lng);
@@ -1145,7 +1149,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 	}
 
 	if ((is_topn(rel->op) || is_sample(rel->op)) && topn_sample_safe_exps(rel->exps, true)) {
-		sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
+		sql_rel *(*func) (allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
 
 		/* nested topN relations */
 		if (r && is_topn(rel->op) && is_topn(r->op) && !rel_is_ref(r)) {

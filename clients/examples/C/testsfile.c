@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -235,6 +237,10 @@ handle_expect_command(const char *location, char *key, char *value)
 		return expect_string(location, MP_UNKNOWN, msettings_connect_certhash_digits, value);
 	if (strcmp("connect_binary", key) == 0)
 		return expect_long(location, MP_UNKNOWN, msettings_connect_binary, value);
+	if (strcmp("connect_clientkey", key) == 0)
+		return expect_string(location, MP_UNKNOWN, msettings_connect_clientkey, value);
+	if (strcmp("connect_clientcert", key) == 0)
+		return expect_string(location, MP_UNKNOWN, msettings_connect_clientcert, value);
 
 	const mparm parm = mparm_parse(key);
 	if (parm == MP_UNKNOWN) {

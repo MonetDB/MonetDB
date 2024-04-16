@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -714,8 +716,8 @@ static const struct types {
 		.type_name = "interval year",
 		.data_type = SQL_INTERVAL_YEAR,	/* 101 */
 		.column_size = 9,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' year'",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
@@ -735,8 +737,8 @@ static const struct types {
 		.type_name = "interval month",
 		.data_type = SQL_INTERVAL_MONTH,	/* 102 */
 		.column_size = 10,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' month'",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
@@ -756,8 +758,8 @@ static const struct types {
 		.type_name = "interval day",
 		.data_type = SQL_INTERVAL_DAY,	/* 103 */
 		.column_size = 5,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' day'",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
@@ -777,8 +779,8 @@ static const struct types {
 		.type_name = "interval hour",
 		.data_type = SQL_INTERVAL_HOUR,	/* 104 */
 		.column_size = 6,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' hour'",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
@@ -798,8 +800,8 @@ static const struct types {
 		.type_name = "interval minute",
 		.data_type = SQL_INTERVAL_MINUTE,	/* 105 */
 		.column_size = 8,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' minute'",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
@@ -819,9 +821,9 @@ static const struct types {
 		.type_name = "interval second",
 		.data_type = SQL_INTERVAL_SECOND,	/* 106 */
 		.column_size = 10,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
-		.create_params = "'precision'",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' second'",
+		.create_params = "'scale'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -840,8 +842,8 @@ static const struct types {
 		.type_name = "interval year to month",
 		.data_type = SQL_INTERVAL_YEAR_TO_MONTH,	/* 107 */
 		.column_size = 12,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' year to month'",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
@@ -861,8 +863,8 @@ static const struct types {
 		.type_name = "interval day to hour",
 		.data_type = SQL_INTERVAL_DAY_TO_HOUR,	/* 108 */
 		.column_size = 8,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' day to hour'",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
@@ -882,8 +884,8 @@ static const struct types {
 		.type_name = "interval day to minute",
 		.data_type = SQL_INTERVAL_DAY_TO_MINUTE,	/* 109 */
 		.column_size = 11,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' day to minute'",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
@@ -903,9 +905,9 @@ static const struct types {
 		.type_name = "interval day to second",
 		.data_type = SQL_INTERVAL_DAY_TO_SECOND,	/* 110 */
 		.column_size = 14,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
-		.create_params = "'precision'",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' day to second'",
+		.create_params = "'scale'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -924,8 +926,8 @@ static const struct types {
 		.type_name = "interval hour to minute",
 		.data_type = SQL_INTERVAL_HOUR_TO_MINUTE,	/* 111 */
 		.column_size = 9,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' hour to minute'",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
@@ -945,9 +947,9 @@ static const struct types {
 		.type_name = "interval hour to second",
 		.data_type = SQL_INTERVAL_HOUR_TO_SECOND,	/* 112 */
 		.column_size = 12,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
-		.create_params = "'precision'",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' hour to second'",
+		.create_params = "'scale'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -966,9 +968,9 @@ static const struct types {
 		.type_name = "interval minute to second",
 		.data_type = SQL_INTERVAL_MINUTE_TO_SECOND,	/* 113 */
 		.column_size = 13,
-		.literal_prefix = "''''",
-		.literal_suffix = "''''",
-		.create_params = "'precision'",
+		.literal_prefix = "'interval '''",
+		.literal_suffix = "''' minute to second'",
+		.create_params = "'scale'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -1035,7 +1037,7 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 {
 	const struct types *t;
 	int i;
-	char query[4352];
+	char query[4400];
 
 	switch (DataType) {
 	case SQL_ALL_TYPES:

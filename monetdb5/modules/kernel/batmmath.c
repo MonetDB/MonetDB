@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -138,7 +140,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
 
-	if (tp1 == TYPE_bat) {
+	if (stk->stk[getArg(pci, 1)].bat) {
 		bid = *getArgReference_bat(stk, pci, 1);
 		b1 = BATdescriptor(bid);
 		if (b1 == NULL)
@@ -146,7 +148,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		tp1 = b1->ttype;
 	}
 
-	if (tp2 == TYPE_bat) {
+	if (stk->stk[getArg(pci, 2)].bat) {
 		bid = *getArgReference_bat(stk, pci, 2);
 		b2 = BATdescriptor(bid);
 		if (b2 == NULL)

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef __MTIME_H__
@@ -48,8 +50,7 @@ date_sub_msec_interval(date *ret, date d, lng ms)
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_date_nil
-		((*ret = date_add_day(d, (int) (-ms / (24 * 60 * 60 * 1000))))))
+	if (is_date_nil((*ret = date_add_day(d, (int) (-ms / (24 * 60 * 60 * 1000))))))
 		throw(MAL, "mtime.date_sub_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -62,8 +63,7 @@ date_add_msec_interval(date *ret, date d, lng ms)
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_date_nil
-		((*ret = date_add_day(d, (int) (ms / (24 * 60 * 60 * 1000))))))
+	if (is_date_nil((*ret = date_add_day(d, (int) (ms / (24 * 60 * 60 * 1000))))))
 		throw(MAL, "mtime.date_add_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;

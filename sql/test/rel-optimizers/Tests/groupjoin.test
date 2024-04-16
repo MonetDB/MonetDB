@@ -6,7 +6,7 @@ insert into integers values(1),(2),(3),(NULL)
 
 # split case into project under select
 query T nosort
-plan select i, i in (select i from integers where i = i1.i) or i is NULL from integers i1;
+plan select i, i in (select i from integers where i = i1.i) or i is NULL from integers i1
 ----
 project (
 | left outer group join (
@@ -16,3 +16,4 @@ project (
 | | ) [ "integers"."i" as "%4"."%4" ]
 | ) [ ("i1"."i") + = ("%4"."%4") ] [ boolean(1) "true" as "%5"."%5" ]
 ) [ "i1"."i", "sys"."or"("%5"."%5", "sys"."isnull"("i1"."i") NOT NULL) ]
+

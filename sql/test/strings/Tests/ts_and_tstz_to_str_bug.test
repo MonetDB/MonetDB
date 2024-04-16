@@ -1,0 +1,17 @@
+statement ok
+CREATE TABLE t2 (dt TIMESTAMP)
+
+statement ok
+INSERT INTO t2 (dt) VALUES('2023-10-11 11:36')
+
+query I nosort
+SELECT
+        levenshtein(sys.timestamp_to_str(cast(dt as timestamp with time zone), '%Y-%d-%d %H:%M:%S'),
+        sys.timestamp_to_str(dt, '%Y-%d-%d %H:%M:%S'))
+FROM t2
+----
+0
+
+statement ok
+DROP TABLE t2
+

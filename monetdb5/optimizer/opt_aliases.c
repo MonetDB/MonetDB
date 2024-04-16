@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -15,16 +17,8 @@
 /* an alias is recognized by a simple assignment */
 #define OPTisAlias(X) (X->argc == 2 && X->token == ASSIGNsymbol && X->barrier == 0 )
 
-static inline void
-OPTaliasRemap(InstrPtr p, int *alias)
-{
-	for (int i = 0; i < p->argc; i++)
-		getArg(p, i) = alias[getArg(p, i)];
-}
-
 str
-OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-						 InstrPtr pci)
+OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k = 1, limit, actions = 0;
 	int *alias = 0;
@@ -65,7 +59,8 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			k--;
 			mb->stmt[k] = 0;
 		} else {
-			OPTaliasRemap(p, alias);
+			for (int i = 0; i < p->argc; i++)
+				getArg(p, i) = alias[getArg(p, i)];
 		}
 	}
 

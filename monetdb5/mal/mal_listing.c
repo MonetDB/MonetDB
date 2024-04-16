@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -63,11 +65,10 @@ static str
 renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 {
 	char *buf = 0;
-	char *nme = 0;
 	int nameused = 0;
 	size_t len = 0, maxlen = BUFSIZ;
 	ValRecord *val = 0;
-	char *cv = 0, *c;
+	char *cv = 0;//, *c;
 	str tpe;
 	int showtype = 0, closequote = 0;
 	int varid = getArg(p, idx);
@@ -80,8 +81,8 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb, varid)
 		&& !isVarTypedef(mb, varid)) {
-		nme = getVarName(mb, varid);
-		len += snprintf(buf, maxlen, "%s", nme);
+		char *nme = getVarNameIntoBuffer(mb, varid, buf);
+		len += strlen(nme);
 		nameused = 1;
 	}
 	// show the value when required or being a constant
@@ -116,7 +117,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			buf = nbuf;
 		}
 
-		if (strcmp(cv, "nil") == 0) {
+		if (!val->bat && strcmp(cv, "nil") == 0) {
 			strcat(buf + len, cv);
 			len += strlen(buf + len);
 			GDKfree(cv);
@@ -133,14 +134,16 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				strcat(buf + len, "\"");
 				len++;
 			}
-			if (isaBatType(getVarType(mb, varid))) {
+			/*
+			if (isaBatType(getVarType(mb, varid)) && !is_bat_nil(val->val.bval)) {
 				c = strchr(cv, '>');
 				strcat(buf + len, c + 1);
 				len += strlen(buf + len);
 			} else {
+			*/
 				strcat(buf + len, cv);
 				len += strlen(buf + len);
-			}
+			//}
 			GDKfree(cv);
 
 			if (closequote) {
@@ -185,6 +188,111 @@ It receives the space to store the definition
 The MAL profiler dumps some performance data at the
 beginning of each line.
 */
+
+str
+cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
+{
+	unsigned int i;
+	str arg, tpe;
+	mel_func *f = s->func;
+
+	len -= t - base;
+	if (!flg && !copystring(&t, "#", &len))
+		return base;
+	if (f->unsafe && !copystring(&t, "unsafe ", &len))
+		return base;
+	if (!copystring(&t, operatorName(s->kind), &len) ||
+		!copystring(&t, " ", &len) ||
+		!copystring(&t, f->mod ? f->mod : "user", &len) ||
+		!copystring(&t, ".", &len) ||
+		!copystring(&t, f->fcn, &len) || !copystring(&t, "(", &len))
+		return base;
+
+	char var[16];
+	for (i = f->retc; i < f->argc; i++) {
+		if (snprintf(var, 16, "X_%d:", i-f->retc) >= 16 || !copystring(&t, var, &len))
+			return base;
+		if ((f->args[i].isbat || (f->args[i].opt == 1)) && !copystring(&t, (f->args[i].opt == 1)?"bat?[:":"bat[:", &len))
+			return base;
+		arg = f->args[i].type;
+		if (arg[0] && !copystring(&t, arg, &len))
+			return base;
+		if (!arg[0]) {
+			if (f->args[i].nr) {
+				if (snprintf(var, 16, "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
+					return base;
+			} else if (!copystring(&t, "any", &len))
+				return base;
+		}
+		if ((f->args[i].isbat || f->args[i].opt == 1) && !copystring(&t, "]", &len))
+			return base;
+		if (i+1 < f->argc && !copystring(&t, ", ", &len))
+			return base;
+	}
+
+	advance(t, base, len);
+	if (f->vargs && !copystring(&t, "...", &len))
+		return base;
+
+	if (f->retc == 0) {
+		if (!copystring(&t, "):void", &len))
+			return base;
+	} else if (f->retc == 1) {
+		if (!copystring(&t, "):", &len))
+			return base;
+		if ((f->args[0].isbat || f->args[0].opt == 1) && !copystring(&t, (f->args[0].opt == 1)?"bat?[:":"bat[:", &len))
+			return base;
+		tpe = f->args[0].type;
+		if (tpe[0] && !copystring(&t, tpe, &len))
+			return base;
+		if (!tpe[0]) {
+			if (f->args[0].nr) {
+				if (snprintf(var, 16, "any_%d", f->args[0].nr ) >= 16 || !copystring(&t, var, &len))
+					return base;
+			} else if (!copystring(&t, "any", &len))
+				return base;
+		}
+		if ((f->args[0].isbat || f->args[0].opt == 1) && !copystring(&t, "]", &len))
+			return base;
+		if (f->vrets && !copystring(&t, "...", &len))
+			return base;
+	} else {
+		if (!copystring(&t, ") (", &len))
+			return base;
+		for (i = 0; i < f->retc; i++) {
+			if (snprintf(var, 16, "X_%d:", i+(f->argc-f->retc)) >= 16 || !copystring(&t, var, &len))
+				return base;
+			if ((f->args[i].isbat || (f->args[i].opt == 1)) && !copystring(&t, (f->args[i].opt == 1)?"bat?[:":"bat[:", &len))
+				return base;
+			arg = f->args[i].type;
+			if (arg[0] && !copystring(&t, arg, &len))
+				return base;
+			if (!arg[0]) {
+				if (f->args[i].nr) {
+					if (snprintf(var, 16, "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
+						return base;
+				} else if (!copystring(&t, "any", &len))
+				return base;
+			}
+			if ((f->args[i].isbat || f->args[i].opt == 1) && !copystring(&t, "]", &len))
+				return base;
+			if (i+1 < f->retc && !copystring(&t, ", ", &len))
+				return base;
+		}
+		if (f->vrets && !copystring(&t, "...", &len))
+			return base;
+		if (!copystring(&t, ")", &len))
+			return base;
+	}
+
+	if (f->cname) {
+		if (!copystring(&t, " address ", &len) ||
+			!copystring(&t, f->cname, &len))
+			return base;
+	}
+	(void) copystring(&t, ";", &len);
+	return base;
+}
 
 str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
@@ -283,7 +391,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
-			if (p->typechk == TYPE_UNKNOWN) {
+			if (!p->typeresolved) {
 				if (!copystring(&t, " type check needed", &len))
 					return base;
 			}
@@ -301,7 +409,7 @@ fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base,
 	if (!copystring(&t, "# ", &len))
 		return base;
 
-	if (pci && pci->argc == 3) {
+	if (pci->argc == 3) {
 		if (getFunctionId(pci)) {
 			char *arg1 = renderTerm(mb, stk, pci, 1, flg);
 			char *arg2 = renderTerm(mb, stk, pci, 2, flg);
@@ -361,12 +469,13 @@ operatorName(int i)
 
 		/* internal symbols */
 	case FCNcall:
+		assert(0);
 		return "FCNcall";
 	case CMDcall:
+		assert(0);
 		return "CMDcall";
-	case THRDcall:
-		return "THRcall";
 	case PATcall:
+		assert(0);
 		return "PATcall";
 	}
 	return "";
@@ -386,7 +495,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	if (!flg) {
 		*t++ = '#';
 		len--;
-		if (p->typechk == TYPE_UNKNOWN) {
+		if (!p->typeresolved) {
 			*t++ = '!';			/* error */
 			len--;
 		}
@@ -538,7 +647,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
-			if (p->typechk == TYPE_UNKNOWN) {
+			if (!p->typeresolved) {
 				if (!copystring(&t, " type check needed", &len))
 					return base;
 			}
@@ -679,33 +788,4 @@ printSignature(stream *fd, Symbol s, int flg)
 		GDKfree(txt);
 	} else
 		mnstr_printf(fd, "printSignature: " MAL_MALLOC_FAIL);
-}
-
-void
-showMalBlkHistory(stream *out, MalBlkPtr mb)
-{
-	MalBlkPtr m = mb;
-	InstrPtr p = NULL, sig;
-	int i, j = 0;
-	str msg;
-
-	sig = getInstrPtr(mb, 0);
-	m = m->history;
-	while (m) {
-		// find the last optimizer step
-		for (i = m->stop - 1; i > 0; i--) {
-			p = getInstrPtr(m, i);
-			if (p->argc > 1)
-				break;
-		}
-		msg = instruction2str(m, 0, p, FALSE);
-		if (msg) {
-			mnstr_printf(out, "%s.%s[%2d] %s\n",
-						 getModuleId(sig), getFunctionId(sig), j++, msg + 3);
-			GDKfree(msg);
-		} else {
-			mnstr_printf(out, "#failed instruction2str()\n");
-		}
-		m = m->history;
-	}
 }

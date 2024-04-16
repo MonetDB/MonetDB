@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -50,7 +52,7 @@ typedef struct versionhead  {
 
 typedef struct objectset {
 	ATOMIC_TYPE refcnt;
-	sql_allocator *sa;
+	allocator *sa;
 	destroy_fptr destroy;
 	MT_RWLock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
 	versionhead  *name_based_h;
@@ -166,7 +168,7 @@ hash_delete(sql_hash *h, void *data)
 }
 
 static void
-node_destroy_(objectset *os, sqlstore *store, versionhead  *n)
+node_destroy(objectset *os, sqlstore *store, versionhead  *n)
 {
 	if (!os->sa)
 		_DELETE(n);
@@ -245,7 +247,7 @@ os_remove_id_based_chain(objectset *os, objectversion* ov)
 }
 
 static versionhead  *
-node_create(sql_allocator *sa, objectversion *ov)
+node_create(allocator *sa, objectversion *ov)
 {
 	versionhead  *n = SA_NEW(sa, versionhead );
 
@@ -395,11 +397,11 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 	bte state = os_atmc_get_state(ov);
 
 	if (state & name_based_versionhead_owner) {
-		node_destroy_(ov->os, store, ov->name_based_head);
+		node_destroy(ov->os, store, ov->name_based_head);
 	}
 
 	if (state & id_based_versionhead_owner) {
-		node_destroy_(ov->os, store, ov->id_based_head);
+		node_destroy(ov->os, store, ov->id_based_head);
 	}
 
 	if (os->destroy && ov->b)
@@ -649,7 +651,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store)
+os_new(allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store)
 {
 	assert(!sa);
 	objectset *os = SA_NEW(sa, objectset);
@@ -694,14 +696,14 @@ os_destroy(objectset *os, sql_store store)
 			ov = older;
 		}
 		versionhead* hn =n->next;
-		node_destroy_(os, store, n);
+		node_destroy(os, store, n);
 		n = hn;
 	}
 
 	n=os->name_based_h;
 	while(n) {
 		versionhead* hn =n->next;
-		node_destroy_(os, store, n);
+		node_destroy(os, store, n);
 		n = hn;
 	}
 
@@ -966,7 +968,9 @@ os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 
 static int
 os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov) {
+
 	versionhead  *id_based_node;
+
 	if (ov->name_based_older && ov->name_based_older->b->id == id)
 		id_based_node = ov->name_based_older->id_based_head;
 	else // Previous id based objectversion is of a different name, so now we do have to perform an extensive look up
@@ -1027,7 +1031,7 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 }
 
 int
-os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
+os_del(objectset *os, sql_trans *tr, const char *name, sql_base *b)
 {
 	store_lock(tr->store);
 	int res = os_del_(os, tr, name, b);
@@ -1111,7 +1115,11 @@ os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, cons
 	};
 
 	lock_reader(os);
-	oi->n =	os->name_based_h;
+	if (name && os->name_map) {
+		int key = hash_key(name);
+		oi->n = (void*)os->name_map->buckets[key&(os->name_map->size-1)];
+	} else
+		oi->n =	os->name_based_h;
 	unlock_reader(os);
 }
 
@@ -1121,22 +1129,39 @@ oi_next(struct os_iter *oi)
 	sql_base *b = NULL;
 
 	if (oi->name) {
-		versionhead  *n = oi->n;
-
 		lock_reader(oi->os); /* intentionally outside of while loop */
-		while (n && !b) {
+		if (oi->os->name_map) {
+			sql_hash_e  *he = (void*)oi->n;
 
-			if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
-				objectversion *ov = n->ov;
+			for (; he && !b; he = he->chain) {
+				versionhead  *n = he->value;
 
-				n = oi->n = n->next;
-				ov = get_valid_object_name(oi->tr, ov);
-				if (ov && os_atmc_get_state(ov) == active)
-					b = ov->b;
-			} else {
-				n = oi->n = n->next;
+				if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
+					objectversion *ov = n->ov;
+
+					ov = get_valid_object_name(oi->tr, ov);
+					if (ov && os_atmc_get_state(ov) == active)
+						b = ov->b;
+				}
 			}
-	 	}
+			oi->n = (void*)he;
+		} else {
+			versionhead  *n = oi->n;
+
+			while (n && !b) {
+
+				if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
+					objectversion *ov = n->ov;
+
+					n = oi->n = n->next;
+					ov = get_valid_object_name(oi->tr, ov);
+					if (ov && os_atmc_get_state(ov) == active)
+						b = ov->b;
+				} else {
+					n = oi->n = n->next;
+				}
+			}
+		}
 		unlock_reader(oi->os);
 	} else {
 		versionhead  *n = oi->n;

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -47,6 +49,8 @@
 #include <signal.h>
 #include <string.h>		/* for strerror */
 #include <unistd.h>		/* for sysconf symbols */
+
+#include "mutils.h"
 
 #ifdef LOCK_STATS
 
@@ -180,10 +184,18 @@ GDKlockstatistics(int what)
 
 #endif	/* LOCK_STATS */
 
+struct thread_funcs {
+	void (*init)(void *);
+	void (*destroy)(void *);
+	void *data;
+};
+
 static struct mtthread {
 	struct mtthread *next;
 	void (*func) (void *);	/* function to be called */
 	void *data;		/* and its data */
+	struct thread_funcs *thread_funcs; /* callback funcs */
+	int nthread_funcs;
 	MT_Lock *lockwait;	/* lock we're waiting for */
 	MT_Sema *semawait;	/* semaphore we're waiting for */
 	MT_Cond *condwait;	/* condition variable we're waiting for */
@@ -225,11 +237,11 @@ static pthread_key_t threadkey;
 #define thread_setself(self)	pthread_setspecific(threadkey, self)
 #else
 static CRITICAL_SECTION winthread_cs;
-static DWORD threadslot = TLS_OUT_OF_INDEXES;
+static DWORD threadkey = TLS_OUT_OF_INDEXES;
 #define thread_lock()		EnterCriticalSection(&winthread_cs)
 #define thread_unlock()		LeaveCriticalSection(&winthread_cs)
-#define thread_self()		TlsGetValue(threadslot)
-#define thread_setself(self)	TlsSetValue(threadslot, self)
+#define thread_self()		TlsGetValue(threadkey)
+#define thread_setself(self)	TlsSetValue(threadkey, self)
 #endif
 static bool thread_initialized = false;
 
@@ -262,51 +274,23 @@ THRhighwater(void)
 	return false;
 }
 
-static uint32_t allocated[THREADS / 32];
-static MT_Lock alloclock = MT_LOCK_INITIALIZER(alloclock);
-
-static MT_Id
-alloc_thread(void)
-{
-	MT_Id mtid = 0;
-	MT_lock_set(&alloclock);
-	for (int i = 0; i < THREADS / 32; i++) {
-		if (allocated[i] != ~UINT32_C(0)) {
-			int x = candmask_lobit(~allocated[i]);
-			allocated[i] |= UINT32_C(1) << x;
-			mtid = (MT_Id) (i * 32 + x + 1);
-			break;
-		}
-	}
-	MT_lock_unset(&alloclock);
-	return mtid;
-}
-
-static void
-dealloc_thread(MT_Id mtid)
-{
-	assert(mtid > 0 && mtid <= THREADS);
-	mtid--;
-	MT_lock_set(&alloclock);
-	allocated[mtid / 32] &= ~(UINT32_C(1) << (mtid % 32));
-	MT_lock_unset(&alloclock);
-}
-
 void
 dump_threads(void)
 {
 	char buf[1024];
 	thread_lock();
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
+		MT_Lock *lk = t->lockwait;
+		MT_Sema *sm = t->semawait;
+		MT_Cond *cn = t->condwait;
+		struct mtthread *jn = t->joinwait;
 		int pos = snprintf(buf, sizeof(buf),
-				   "%s, tid %zu, waiting for %s, working on %.200s",
+				   "%s, tid %zu, %"PRIu32" free bats, waiting for %s%s, working on %.200s",
 				   t->threadname,
 				   t->tid,
-				   t->lockwait ? t->lockwait->name :
-				   t->semawait ? t->semawait->name :
-				   t->condwait ? t->condwait->name :
-				   t->joinwait ? t->joinwait->threadname :
-				   "nothing",
+				   t->freebats.nfreebats,
+				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
+				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
 				   ATOMIC_GET(&t->exited) ? "exiting" :
 				   t->working ? t->working : "nothing");
 #ifdef LOCK_OWNER
@@ -329,7 +313,6 @@ static void
 rm_mtthread(struct mtthread *t)
 {
 	struct mtthread **pt;
-	MT_Id mtid = t->tid;
 
 	assert(t != &mainthread);
 	thread_lock();
@@ -340,7 +323,6 @@ rm_mtthread(struct mtthread *t)
 	ATOMIC_DESTROY(&t->exited);
 	free(t);
 	thread_unlock();
-	dealloc_thread(mtid);
 }
 
 bool
@@ -361,22 +343,21 @@ MT_thread_init(void)
 		return false;
 	}
 #else
-	threadslot = TlsAlloc();
-	if (threadslot == TLS_OUT_OF_INDEXES) {
+	threadkey = TlsAlloc();
+	if (threadkey == TLS_OUT_OF_INDEXES) {
 		GDKwinerror("Creating thread-local slot for thread failed");
 		return false;
 	}
 	mainthread.wtid = GetCurrentThreadId();
 	if (thread_setself(&mainthread) == 0) {
 		GDKwinerror("Setting thread-local value failed");
-		TlsFree(threadslot);
-		threadslot = TLS_OUT_OF_INDEXES;
+		TlsFree(threadkey);
+		threadkey = TLS_OUT_OF_INDEXES;
 		return false;
 	}
 	InitializeCriticalSection(&winthread_cs);
 #endif
-	allocated[0] = 1;
-	mainthread.tid = 1;
+	mainthread.tid = (MT_Id) &mainthread;
 	mainthread.next = NULL;
 	mtthreads = &mainthread;
 	thread_initialized = true;
@@ -406,11 +387,7 @@ MT_thread_register(void)
 	if (self == NULL)
 		return false;
 
-	if ((mtid = alloc_thread()) == 0) {
-		TRC_DEBUG(IO_, "Too many threads\n");
-		GDKerror("too many threads\n");
-		return false;
-	}
+	mtid = (MT_Id) self;
 	*self = (struct mtthread) {
 		.detached = false,
 #ifdef HAVE_PTHREAD_H
@@ -455,6 +432,46 @@ find_mtthread(MT_Id tid)
 		;
 	thread_unlock();
 	return t;
+}
+
+gdk_return
+MT_alloc_tls(MT_TLS_t *newkey)
+{
+#ifdef HAVE_PTHREAD_H
+	int ret;
+	if ((ret = pthread_key_create(newkey, NULL)) != 0) {
+		GDKsyserr(ret, "Creating TLS key for thread failed");
+		return GDK_FAIL;
+	}
+#else
+	if ((*newkey = TlsAlloc()) == TLS_OUT_OF_INDEXES) {
+		GDKwinerror("Creating TLS key for thread failed");
+		return GDK_FAIL;
+	}
+#endif
+	return GDK_SUCCEED;
+}
+
+void
+MT_tls_set(MT_TLS_t key, void *val)
+{
+#ifdef HAVE_PTHREAD_H
+	pthread_setspecific(key, val);
+#else
+	assert(key != TLS_OUT_OF_INDEXES);
+	TlsSetValue(key, val);
+#endif
+}
+
+void *
+MT_tls_get(MT_TLS_t key)
+{
+#ifdef HAVE_PTHREAD_H
+	return pthread_getspecific(key);
+#else
+	assert(key != TLS_OUT_OF_INDEXES);
+	return TlsGetValue(key);
+#endif
 }
 
 const char *
@@ -679,6 +696,36 @@ MT_thread_override_limits(void)
 	return self && self->limit_override;
 }
 
+static struct thread_init_cb {
+	struct thread_init_cb *next;
+	void (*init)(void *);
+	void (*destroy)(void *);
+	void *data;
+} *init_cb;
+static MT_Lock thread_init_lock = MT_LOCK_INITIALIZER(thread_init_lock);
+
+gdk_return
+MT_thread_init_add_callback(void (*init)(void *), void (*destroy)(void *), void *data)
+{
+	struct thread_init_cb *p = GDKmalloc(sizeof(struct thread_init_cb));
+
+	if (p == NULL)
+		return GDK_FAIL;
+	*p = (struct thread_init_cb) {
+		.init = init,
+		.destroy = destroy,
+		.next = NULL,
+		.data = data,
+	};
+	MT_lock_set(&thread_init_lock);
+	struct thread_init_cb **pp = &init_cb;
+	while (*pp)
+		pp = &(*pp)->next;
+	*pp = p;
+	MT_lock_unset(&thread_init_lock);
+	return GDK_SUCCEED;
+}
+
 #ifdef HAVE_PTHREAD_H
 static void *
 #else
@@ -689,10 +736,40 @@ thread_starter(void *arg)
 	struct mtthread *self = (struct mtthread *) arg;
 	void *data = self->data;
 
+#ifdef HAVE_PTHREAD_H
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	/* name can be at most 16 chars including \0 */
+	char name[16];
+	(void) strcpy_len(name, self->threadname, sizeof(name));
+	pthread_setname_np(
+#ifndef __APPLE__
+		pthread_self(),
+#endif
+		name);
+#endif
+#else
+#ifdef HAVE_SETTHREADDESCRIPTION
+	wchar_t *wname = utf8towchar(self->threadname);
+	if (wname != NULL) {
+		SetThreadDescription(GetCurrentThread(), wname);
+		free(wname);
+	}
+#endif
+#endif
 	self->data = NULL;
 	self->sp = THRsp();
 	thread_setself(self);
+	for (int i = 0; i < self->nthread_funcs; i++) {
+		if (self->thread_funcs[i].init)
+			(*self->thread_funcs[i].init)(self->thread_funcs[i].data);
+	}
 	(*self->func)(data);
+	for (int i = 0; i < self->nthread_funcs; i++) {
+		if (self->thread_funcs[i].destroy)
+			(*self->thread_funcs[i].destroy)(self->thread_funcs[i].data);
+	}
+	free(self->thread_funcs);
+	BBPrelinquishbats();
 	ATOMIC_SET(&self->exited, 1);
 	TRC_DEBUG(THRD, "Exit thread \"%s\"\n", self->threadname);
 	return 0;		/* NULL for pthreads, 0 for Windows */
@@ -784,24 +861,17 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		TRC_CRITICAL(GDK, "Thread's name is too large\n");
 		return -1;
 	}
-	if ((mtid = alloc_thread()) == 0) {
-		TRC_DEBUG(IO_, "Too many threads\n");
-		GDKerror("too many threads\n");
-		return -1;
-	}
 
 #ifdef HAVE_PTHREAD_H
 	pthread_attr_t attr;
 	int ret;
 	if ((ret = pthread_attr_init(&attr)) != 0) {
 		GDKsyserr(ret, "Cannot init pthread attr");
-		dealloc_thread(mtid);
 		return -1;
 	}
 	if ((ret = pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE)) != 0) {
 		GDKsyserr(ret, "Cannot set stack size");
 		pthread_attr_destroy(&attr);
-		dealloc_thread(mtid);
 		return -1;
 	}
 #endif
@@ -811,9 +881,9 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 #ifdef HAVE_PTHREAD_H
 		pthread_attr_destroy(&attr);
 #endif
-		dealloc_thread(mtid);
 		return -1;
 	}
+	mtid = (MT_Id) self;
 
 	*self = (struct mtthread) {
 		.func = f,
@@ -823,13 +893,41 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.refs = 1,
 		.tid = mtid,
 	};
+	MT_lock_set(&thread_init_lock);
+	/* remember the list of callback functions we need to call for
+	 * this thread (i.e. anything registered so far) */
+	for (struct thread_init_cb *p = init_cb; p; p = p->next)
+		self->nthread_funcs++;
+	if (self->nthread_funcs > 0) {
+		self->thread_funcs = malloc(self->nthread_funcs * sizeof(*self->thread_funcs));
+		if (self->thread_funcs == NULL) {
+			GDKsyserror("Cannot allocate memory\n");
+			MT_lock_unset(&thread_init_lock);
+			free(self);
+#ifdef HAVE_PTHREAD_H
+			pthread_attr_destroy(&attr);
+#endif
+			return -1;
+		}
+		int n = 0;
+		for (struct thread_init_cb *p = init_cb; p; p = p->next) {
+			self->thread_funcs[n++] = (struct thread_funcs) {
+				.init = p->init,
+				.destroy = p->destroy,
+				.data = p->data,
+			};
+		}
+	}
+	MT_lock_unset(&thread_init_lock);
+
 	ATOMIC_INIT(&self->exited, 0);
 	strcpy_len(self->threadname, threadname, sizeof(self->threadname));
 	char *p;
 	if ((p = strstr(self->threadname, "XXXX")) != NULL) {
-		/* overwrite XXXX with thread ID */
+		/* overwrite XXXX with thread ID; bottom three bits are
+		 * likely 0, so skip those */
 		char buf[5];
-		snprintf(buf, 5, "%04zu", mtid % 9999);
+		snprintf(buf, 5, "%04zu", (mtid >> 3) % 9999);
 		memcpy(p, buf, 4);
 	}
 	TRC_DEBUG(THRD, "Create thread \"%s\"\n", self->threadname);
@@ -848,8 +946,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 #endif
 	if (ret != 0) {
 		GDKsyserr(ret, "Cannot start thread");
+		free(self->thread_funcs);
 		free(self);
-		dealloc_thread(mtid);
 		return -1;
 	}
 #else
@@ -857,8 +955,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 			      0, &self->wtid);
 	if (self->hdl == NULL) {
 		GDKwinerror("Failed to create thread");
+		free(self->thread_funcs);
 		free(self);
-		dealloc_thread(mtid);
 		return -1;
 	}
 #endif
@@ -874,13 +972,13 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 MT_Id
 MT_getpid(void)
 {
-	if (!thread_initialized)
-		return 0;
-
 	struct mtthread *self;
 
-	self = thread_self();
-	return self ? self->tid : 0;
+	if (!thread_initialized)
+		self = &mainthread;
+	else
+		self = thread_self();
+	return self->tid;
 }
 
 void

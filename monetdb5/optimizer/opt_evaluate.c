@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -33,7 +35,7 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	for (i = 0; i < p->retc; i++) {
 		if (isaBatType(getArgType(mb, p, i)))
 			return false;
-		if (mb->unsafeProp)
+		if (p->unsafeProp || mb->unsafeProp)
 			return false;
 	}
 	return true;
@@ -207,9 +209,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (nvar >= 0)
 					getArg(p, 1) = nvar;
 				if (nvar >= env->stktop) {
-					if (VALcopy
-						(&env->stk[getArg(p, 1)],
-						 &getVarConstant(mb, getArg(p, 1))) == NULL) {
+					if (VALcopy(&env->stk[getArg(p, 1)],
+								&getVarConstant(mb, getArg(p, 1))) == NULL) {
 						msg = createException(MAL, "optimizer.evaluate",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto wrapup;

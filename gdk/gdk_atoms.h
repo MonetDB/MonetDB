@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _GDK_ATOMS_H_
@@ -51,9 +53,6 @@ typedef struct {
 	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
-	/* optional functions */
-	gdk_return (*atomFix) (const void *atom);
-	gdk_return (*atomUnfix) (const void *atom);
 
 	/* varsized atom-only ADT functions */
 	var_t (*atomPut) (BAT *, var_t *off, const void *src);
@@ -75,7 +74,8 @@ gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export void *ATOMnil(int id)
 	__attribute__((__malloc__));
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export char *ATOMformat(int id, const void *val);
+gdk_export char *ATOMformat(int id, const void *val)
+	__attribute__((__warn_unused_result__));
 
 gdk_export void *ATOMdup(int id, const void *val);
 
@@ -278,8 +278,6 @@ gdk_export const uuid uuid_nil;
 #define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
 #define ATOMlinear(t)		BATatoms[t].linear
 #define ATOMtype(t)		((t) == TYPE_void ? TYPE_oid : (t))
-#define ATOMfix(t,v)		(BATatoms[t].atomFix ? BATatoms[t].atomFix(v) : GDK_SUCCEED)
-#define ATOMunfix(t,v)		(BATatoms[t].atomUnfix ? BATatoms[t].atomUnfix(v) : GDK_SUCCEED)
 
 /* The base type is the storage type if the comparison function, the
  * hash function, and the nil value are the same as those of the
@@ -311,12 +309,7 @@ ATOMputVAR(BAT *b, var_t *dst, const void *src)
 static inline gdk_return __attribute__((__warn_unused_result__))
 ATOMputFIX(int type, void *dst, const void *src)
 {
-	gdk_return rc;
-
 	assert(BATatoms[type].atomPut == NULL);
-	rc = ATOMfix(type, src);
-	if (rc != GDK_SUCCEED)
-		return rc;
 	switch (ATOMsize(type)) {
 	case 0:		/* void */
 		break;
@@ -355,11 +348,9 @@ ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
 	assert(BATatoms[type].atomPut != NULL);
 	if ((*BATatoms[type].atomPut)(b, &loc, src) == (var_t) -1)
 		return GDK_FAIL;
-	if (ATOMunfix(type, dst) != GDK_SUCCEED)
-		return GDK_FAIL;
 	ATOMdel(type, b->tvheap, dst);
 	*dst = loc;
-	return ATOMfix(type, src);
+	return GDK_SUCCEED;
 }
 
 /* string heaps:

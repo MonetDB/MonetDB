@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -68,7 +70,7 @@ mapiuri_valid( const char *uri)
 
 /* mapiuri_uri prefix including database name */
 const char *
-mapiuri_uri( const char *uri, sql_allocator *sa)
+mapiuri_uri( const char *uri, allocator *sa)
 {
 	const char *p = uri, *b = uri, *e;
 
@@ -83,7 +85,7 @@ mapiuri_uri( const char *uri, sql_allocator *sa)
 }
 
 const char *
-mapiuri_database( const char *uri, sql_allocator *sa)
+mapiuri_database( const char *uri, allocator *sa)
 {
 	const char *p = uri, *b, *e;
 
@@ -100,7 +102,7 @@ mapiuri_database( const char *uri, sql_allocator *sa)
 }
 
 const char *
-mapiuri_schema( const char *uri, sql_allocator *sa, const char *fallback)
+mapiuri_schema( const char *uri, allocator *sa, const char *fallback)
 {
 	const char *p = uri, *b, *e;
 
@@ -120,7 +122,7 @@ mapiuri_schema( const char *uri, sql_allocator *sa, const char *fallback)
 }
 
 const char *
-mapiuri_table( const char *uri, sql_allocator *sa, const char *fallback)
+mapiuri_table( const char *uri, allocator *sa, const char *fallback)
 {
 	const char *p = uri, *b;
 

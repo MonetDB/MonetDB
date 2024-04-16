@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -16,7 +18,7 @@
  */
 #include "monetdb_config.h"
 #include "opt_remap.h"
-#include "opt_macro.h"
+#include "opt_inline.h"
 #include "opt_multiplex.h"
 
 static int
@@ -78,18 +80,18 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 			getBatType(getArgType(mb, p, 1)) != TYPE_oid
 			&& (getBatType(getArgType(mb, p, 2)) != TYPE_oid
 				&& !(isVarConstant(mb, getArg(p, 2))
-					 && getArgType(mb, p, 2) == TYPE_bat))) {
+					 && isaBatType(getArgType(mb, p, 2) )))) {
 			/* add candidate lists */
 			if (isaBatType(getArgType(mb, p, 1)))
-				p = pushNil(mb, p, TYPE_bat);
+				p = pushNilBat(mb, p);
 			if (isaBatType(getArgType(mb, p, 2)))
-				p = pushNil(mb, p, TYPE_bat);
+				p = pushNilBat(mb, p);
 		}
 	}
 
 	/* now see if we can resolve the instruction */
 	typeChecker(scope, mb, p, idx, TRUE);
-	if (p->typechk == TYPE_UNKNOWN) {
+	if (!p->typeresolved) {
 		freeInstruction(p);
 		return 0;
 	}
@@ -212,17 +214,18 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 			&& getArgType(mq, q, 0) == TYPE_void
 			&& !isaBatType(getArgType(mq, q, 1))) {
 			/* handle nil assignment */
-			if (ATOMcmp
-				(getArgGDKType(mq, q, 1),
-				 VALptr(&getVar(mq, getArg(q, 1))->value),
-				 ATOMnilptr(getArgType(mq, q, 1))) == 0) {
+			if (ATOMcmp(getArgGDKType(mq, q, 1),
+						VALptr(&getVar(mq, getArg(q, 1))->value),
+						ATOMnilptr(getArgType(mq, q, 1))) == 0) {
 				ValRecord cst;
-				int tpe = newBatType(getArgType(mq, q, 1));
+				int tpe = getArgType(mq, q, 1);
 
-				setVarType(mq, getArg(q, 0), tpe);
-				cst.vtype = TYPE_bat;
+				cst.vtype = tpe;
+				cst.bat = true;
 				cst.val.bval = bat_nil;
 				cst.len = 0;
+				tpe = newBatType(tpe);
+				setVarType(mq, getArg(q, 0), tpe);
 				m = defConstant(mq, tpe, &cst);
 				if (m >= 0) {
 					getArg(q, 1) = m;
@@ -255,7 +258,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 				if (getModuleId(q)) {
 					snprintf(buf, 1024, "bat%s", getModuleId(q));
 					setModuleId(q, putName(buf));
-					q->typechk = TYPE_UNKNOWN;
+					q->typeresolved = false;
 					if (q->retc == 1 &&
 						((getModuleId(q) == batcalcRef
 						  && (getFunctionId(q) == mulRef
@@ -271,9 +274,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 							&& getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
 							/* add candidate lists */
 							if (isaBatType(getArgType(mq, q, 1)))
-								q = pushNil(mq, q, TYPE_bat);
+								q = pushNilBat(mq, q);
 							if (isaBatType(getArgType(mq, q, 2)))
-								q = pushNil(mq, q, TYPE_bat);
+								q = pushNilBat(mq, q);
 						} else if (q->argc == 4
 								   && getBatType(getArgType(mq, q, 3)) == TYPE_bit
 								   /* these two filter out unary
@@ -285,16 +288,16 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 							q->argc--;
 							/* add candidate lists */
 							if (isaBatType(getArgType(mq, q, 1)))
-								q = pushNil(mq, q, TYPE_bat);
+								q = pushNilBat(mq, q);
 							if (isaBatType(getArgType(mq, q, 2)))
-								q = pushNil(mq, q, TYPE_bat);
+								q = pushNilBat(mq, q);
 							q = pushArgument(mq, q, a);
 						}
 					}
 
 					/* now see if we can resolve the instruction */
 					typeChecker(cntxt->usermodule, mq, q, i, TRUE);
-					if (q->typechk == TYPE_UNKNOWN)
+					if (!q->typeresolved)
 						goto terminateMX;
 					break;
 				}
@@ -307,9 +310,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 					mq->stmt[i] = q;
 					getArg(q, 1) = refbat;
 
-					q->typechk = TYPE_UNKNOWN;
+					q->typeresolved = false;
 					typeChecker(cntxt->usermodule, mq, q, i, TRUE);
-					if (q->typechk == TYPE_UNKNOWN)
+					if (!q->typeresolved)
 						goto terminateMX;
 					break;
 				}
@@ -327,7 +330,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 		msg = OPTmultiplexSimple(cntxt, s->def);
 		if (msg)
 			freeException(msg);
-		s->def->inlineProp = 0;
+		if (s->kind == FUNCTIONsymbol)
+			s->def->inlineProp = 0;
 		return 0;
 	}
 	/*
@@ -443,7 +447,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
 			Symbol s = findSymbolInModule(getModule(putName(mod)), putName(fcn));
 
-			if (s && s->def->inlineProp) {
+			if (s && s->kind == FUNCTIONsymbol && s->def->inlineProp) {
 				pushInstruction(mb, p);
 				if (OPTmultiplexInline(cntxt, mb, p, mb->stop - 1)) {
 					actions++;
@@ -536,8 +540,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(avg, 0) = getArg(p, 0);
 			avg = pushArgument(mb, avg, getDestVar(sum));
 			avg = pushArgument(mb, avg, getDestVar(cnt));
-			avg = pushNil(mb, avg, TYPE_bat);
-			avg = pushNil(mb, avg, TYPE_bat);
+			avg = pushNilBat(mb, avg);
+			avg = pushNilBat(mb, avg);
 			freeInstruction(p);
 			pushInstruction(mb, avg);
 		} else {

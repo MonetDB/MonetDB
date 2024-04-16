@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -58,7 +60,7 @@ unshare_varsized_heap(BAT *b)
  * of inserting individual strings.  See the comments in the code for
  * more information. */
 static gdk_return
-insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool mayshare, lng timeoffset)
+insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool mayshare, QryCtx *qry_ctx)
 {
 	size_t toff = ~(size_t) 0;	/* tail offset */
 	BUN p, r;		/* loop variables */
@@ -139,7 +141,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				}
 
 				MT_lock_set(&b->theaplock);
-				if (HEAPgrow(&b->tvheap, toff + ni->vh->size, force) != GDK_SUCCEED) {
+				if (HEAPgrow(&b->tvheap, toff + ni->vhfree, force) != GDK_SUCCEED) {
 					MT_lock_unset(&b->theaplock);
 					return GDK_FAIL;
 				}
@@ -188,7 +190,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 
 		MT_thread_setalgorithm("copy offset values");
 		r = b->batCount;
-		TIMEOUT_LOOP(cnt, timeoffset) {
+		TIMEOUT_LOOP(cnt, qry_ctx) {
 			p = canditer_next(ci) - ni->b->hseqbase;
 			switch (ni->width) {
 			case 1:
@@ -245,7 +247,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		r = b->batCount;
 		oid hseq = ni->b->hseqbase;
 		MT_thread_setalgorithm("insert string values");
-		TIMEOUT_LOOP(cnt, timeoffset) {
+		TIMEOUT_LOOP(cnt, qry_ctx) {
 			p = canditer_next(ci) - hseq;
 			tp = BUNtvar(*ni, p);
 			if (tfastins_nocheckVAR(b, r, tp) != GDK_SUCCEED) {
@@ -262,7 +264,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		 * offset, otherwise we insert normally.  */
 		r = b->batCount;
 		MT_thread_setalgorithm("insert string values with check");
-		TIMEOUT_LOOP(cnt, timeoffset) {
+		TIMEOUT_LOOP(cnt, qry_ctx) {
 			p = canditer_next(ci) - ni->b->hseqbase;
 			off = BUNtvaroff(*ni, p); /* the offset */
 			tp = ni->vh->base + off; /* the string */
@@ -305,7 +307,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			r++;
 		}
 	}
-	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(GDK_FAIL));
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(GDK_FAIL, qry_ctx));
 	MT_rwlock_wrlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, oldcnt + ci->ncand);
@@ -430,7 +432,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			BBPrelease(oh->parentid);
 		HEAPdecref(oh, false);
 	}
-	if (BATcount(b) == 0 && BATatoms[b->ttype].atomFix == NULL &&
+	if (BATcount(b) == 0 &&
 	    ci->tpe == cand_dense && ci->ncand == ni->count) {
 		/* just copy the heaps */
 		MT_lock_set(&b->theaplock);
@@ -663,7 +665,7 @@ append_msk_bat(BAT *b, BATiter *ni, struct canditer *ci)
 /* Append the contents of BAT n (subject to the optional candidate
  * list s) to BAT b.  If b is empty, b will get the seqbase of s if it
  * was passed in, and else the seqbase of n. */
-gdk_return
+static gdk_return
 BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 {
 	struct canditer ci;
@@ -700,11 +702,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			  ATOMname(BATttype(n)), ATOMname(BATttype(b)));
 	}
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	BATiter ni = bat_iterator(n);
 
@@ -740,6 +738,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		    atomcmp(BUNtail(ni, ni.minpos), minbound) < 0) {
 			assert(0);
 			GDKerror("value out of bounds\n");
+			MT_lock_unset(&b->theaplock);
 			goto bailout;
 		}
 	}
@@ -751,6 +750,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		    atomcmp(BUNtail(ni, ni.maxpos), maxbound) >= 0) {
 			assert(0);
 			GDKerror("value out of bounds\n");
+			MT_lock_unset(&b->theaplock);
 			goto bailout;
 		}
 	}
@@ -803,6 +803,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				if (minbound && n->tseqbase + ci.seq - hseq < *(const oid *)minbound) {
 					assert(0);
 					GDKerror("value not within bounds\n");
+					MT_lock_unset(&b->theaplock);
 					goto bailout;
 				}
 				BATtseqbase(b, n->tseqbase + ci.seq - hseq);
@@ -810,6 +811,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			if (maxbound && b->tseqbase + BATcount(b) + ci.ncand >= *(const oid *)maxbound) {
 				assert(0);
 				GDKerror("value not within bounds\n");
+				MT_lock_unset(&b->theaplock);
 				goto bailout;
 			}
 			BATsetcount(b, BATcount(b) + ci.ncand);
@@ -822,6 +824,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			if (notnull) {
 				assert(0);
 				GDKerror("NULL value not within bounds\n");
+				MT_lock_unset(&b->theaplock);
 				goto bailout;
 			}
 			BATtseqbase(b, oid_nil);
@@ -895,7 +898,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	}
 	MT_lock_unset(&b->theaplock);
 	if (b->ttype == TYPE_str) {
-		if (insert_string_bat(b, &ni, &ci, force, mayshare, timeoffset) != GDK_SUCCEED) {
+		if (insert_string_bat(b, &ni, &ci, force, mayshare, qry_ctx) != GDK_SUCCEED) {
 			goto bailout;
 		}
 	} else if (ATOMvarsized(b->ttype)) {
@@ -923,8 +926,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 		MT_rwlock_wrlock(&b->thashlock);
 		hlocked = true;
-		if (BATatoms[b->ttype].atomFix == NULL &&
-		    b->ttype != TYPE_void &&
+		if (b->ttype != TYPE_void &&
 		    ni.type != TYPE_void &&
 		    ci.tpe == cand_dense) {
 			/* use fast memcpy if we can */
@@ -937,7 +939,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			}
 		} else {
 			const void *atomnil = ATOMnilptr(b->ttype);
-			TIMEOUT_LOOP(ci.ncand, timeoffset) {
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				BUN p = canditer_next(&ci) - hseq;
 				const void *t = BUNtail(ni, p);
 				bool isnil = atomcmp(t, atomnil) == 0;
@@ -964,7 +966,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 					HASHappend_locked(b, r, t);
 				r++;
 			}
-			TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		}
 		BUN nunique;
 		nunique = b->thash ? b->thash->nunique : 0;
@@ -1010,7 +1012,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 gdk_return
 BATdel(BAT *b, BAT *d)
 {
-	gdk_return (*unfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 	void (*atmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 	MT_lock_set(&b->theaplock);
 	BATiter bi = bat_iterator_nolock(b);
@@ -1045,14 +1046,11 @@ BATdel(BAT *b, BAT *d)
 			c = b->hseqbase + BATcount(b) - o;
 		if (c == 0)
 			return GDK_SUCCEED;
-		if (unfix || atmdel) {
+		if (atmdel) {
 			BUN p = o - b->hseqbase;
 			BUN q = p + c;
 			while (p < q) {
-				if (unfix && (*unfix)(BUNtail(bi, p)) != GDK_SUCCEED)
-					return GDK_FAIL;
-				if (atmdel)
-					(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, p));
+				(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, p));
 				p++;
 			}
 		}
@@ -1109,8 +1107,6 @@ BATdel(BAT *b, BAT *d)
 			p = Tloc(b, pos);
 		while (c > 0 && *o < b->hseqbase + BATcount(b)) {
 			size_t n;
-			if (unfix)
-				(*unfix)(BUNtail(bi, *o - b->hseqbase));
 			if (atmdel)
 				(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, *o - b->hseqbase));
 			o++;
@@ -1392,7 +1388,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			default:
 				MT_UNREACHABLE();
 			}
-			if (ATOMreplaceVAR(b, &d, new) != GDK_SUCCEED) {
+			MT_lock_set(&b->theaplock);
+			gdk_return rc = ATOMreplaceVAR(b, &d, new);
+			MT_lock_unset(&b->theaplock);
+			if (rc != GDK_SUCCEED) {
 				goto bailout;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
@@ -1784,12 +1783,14 @@ BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 	return BATappend_or_update(b, p, NULL, n, true, false, force);
 }
 
+#if 0				/* not used */
 /* like BATreplace, but the positions are given by an array of oid values */
 gdk_return
 BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 {
 	return BATappend_or_update(b, NULL, positions, n, false, autoincr, force);
 }
+#endif
 
 /* like BATreplace, but the positions are given by an array of oid
  * values, and they may specify locations beyond the end of b */
@@ -1826,15 +1827,12 @@ BATslice(BAT *b, BUN l, BUN h)
 
 	BATcheck(b, NULL);
 	BATiter bi = bat_iterator(b);
+	if (l > bi.count)
+		l = bi.count;
 	if (h > bi.count)
 		h = bi.count;
 	if (h < l)
 		h = l;
-
-	if (l > BUN_MAX || h > BUN_MAX) {
-		GDKerror("boundary out of range\n");
-		goto doreturn;
-	}
 
 	if (complex_cand(b)) {
 		/* slicing a candidate list with exceptions */
@@ -1900,8 +1898,7 @@ BATslice(BAT *b, BUN l, BUN h)
 
 		if (bn->ttype == TYPE_void) {
 			BATsetcount(bn, h - l);
-		} else if (bn->tvheap == NULL &&
-			   BATatoms[bn->ttype].atomFix == NULL) {
+		} else if (bn->tvheap == NULL) {
 			assert(BATatoms[bn->ttype].atomPut == NULL);
 			memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
 			       (q - p) << bn->tshift);
@@ -2151,7 +2148,7 @@ BATordered(BAT *b)
 	bat pbid = VIEWtparent(b);
 	MT_lock_unset(&b->theaplock);
 	if (pbid) {
-		BAT *pb = BBP_cache(pbid);
+		BAT *pb = BBP_desc(pbid);
 		MT_lock_set(&pb->theaplock);
 		if (bi.count == BATcount(pb) &&
 		    bi.h == pb->theap &&
@@ -2270,7 +2267,7 @@ BATordered_rev(BAT *b)
 	bat pbid = VIEWtparent(b);
 	MT_lock_unset(&b->theaplock);
 	if (pbid) {
-		BAT *pb = BBP_cache(pbid);
+		BAT *pb = BBP_desc(pbid);
 		MT_lock_set(&pb->theaplock);
 		if (bi.count == BATcount(pb) &&
 		    bi.h == pb->theap &&

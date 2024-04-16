@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -28,6 +30,8 @@ typedef struct Column_t {
 	const char *name;			/* column title */
 	const char *sep;
 	const char *rsep;
+	char decsep;
+	char decskip;
 	int seplen;
 	const char *type;
 	int adt;					/* type index */
@@ -78,9 +82,8 @@ mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 							const char *tabnam, bool escape);
 mal_export str TABLETcreate_bats(Tablet *as, BUN est);
 mal_export str TABLETcollect(BAT **bats, Tablet *as);
-mal_export str TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset);
 mal_export void TABLETdestroy_format(Tablet *as);
-mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
+mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in);
 mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci);
 mal_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk,

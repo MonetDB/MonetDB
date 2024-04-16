@@ -4,9 +4,11 @@
 .\" License, v. 2.0.  If a copy of the MPL was not distributed with this
 .\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
 .\"
-.\" Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+.\" Copyright 2024 MonetDB Foundation;
+.\" Copyright August 2008 - 2023 MonetDB B.V.;
+.\" Copyright 1997 - July 2008 CWI.
 .\"
-.TH MCLIENT 1 2023-06-22 MonetDB "MonetDB Applications"
+.TH MCLIENT 1 2023-12-21 MonetDB "MonetDB Applications"
 .SH NAME
 mclient \- the MonetDB command-line tool
 .SH SYNOPSIS
@@ -58,7 +60,7 @@ or if the
 option is given,
 .I mclient
 interprets lines starting with
-.B \e
+.B \[rs]
 (backslash) specially.
 See the section BACKSLASH COMMANDS below.
 .PP
@@ -105,6 +107,9 @@ To disable reading the
 file, set the variable
 .B DOTMONETDBFILE
 to the empty string in the environment.
+.PP
+When working interactively, an interrupt (usually control-C) will clear
+any query being edited and will stop any running query.
 .SH OPTIONS
 .SS
 General Options
@@ -126,7 +131,7 @@ option but not to the contents of files specified on the command line
 (except for
 .B \-
 which refers to standard input) or files specified using the
-.B \e<
+.B \[rs]<
 command (those must be encoded using UTF-8).
 The default encoding is taken from the locale.
 .TP
@@ -149,7 +154,7 @@ The \fB\-d\fP can be omitted if an equally named file does not exist in
 the current directory.
 As such, the first non-option argument will be interpreted as database
 to connect to if the argument does not exist as file.
-Valid URIs are as returned by `monetdb discover`, see
+Valid URIs are as returned by ``monetdb discover'', see
 .IR monetdb (1),
 and look like
 \fBmapi:monetdb://\fP\fIhostname\fP\fB:\fP\fIport\fP\fB/\fP\fIdatabase\fP.
@@ -167,7 +172,7 @@ Specify the portnumber of the server (default:
 .TP
 \fB\-\-interactive\fP (\fB\-i\fP)
 When reading from standard input, interpret lines starting with
-.B \e
+.B \[rs]
 (backslash) specially.
 See the section BACKSLASH COMMANDS below.
 .TP
@@ -175,13 +180,13 @@ See the section BACKSLASH COMMANDS below.
 The \fItimer\fP command controls the format of the time reported for queries.
 The default mode is \fBnone\fP which turns off timing reporting.
 The timer mode \fBclock\fP reports the client-side wall-clock time
-("\fBclk\fP") in a human-friendly format.
+(``\fBclk\fP'') in a human-friendly format.
 The timer mode \fBperformance\fP reports client-side wall-clock time
-("\fBclk\fP") as well as detailed server-side timings, all in milliseconds
+(``\fBclk\fP'') as well as detailed server-side timings, all in milliseconds
 (ms): the time to parse the SQL query, optimize the logical relational plan
-and create the initial physical (MAL) plan ("\fBsql\fP"); the time to
-optimize the physical (MAL) plan ("\fBopt\fP"); the time to execute the
-physical (MAL) plan ("\fBrun\fP").
+and create the initial physical (MAL) plan (``\fBsql\fP''); the time to
+optimize the physical (MAL) plan (``\fBopt\fP''); the time to execute the
+physical (MAL) plan (``\fBrun\fP'').
 All timings are reported on stderr.
 .br
 \fBNote\fP that the client-measured wall-clock time is reported per query
@@ -212,7 +217,7 @@ The possible values are
 .BR expanded ,
 .BR x ,
 .BR csv ,
-.BR csv-noquote ,
+.BR csv\-noquote ,
 .BR tab ,
 .BR raw ,
 .BR xml ,
@@ -221,7 +226,7 @@ and
 .BR rowcount .
 .B csv
 is comma-separated values;
-.B csv-noquote
+.B csv\-noquote
 is comma-separated values without escaping any quotes;
 .B tab
 is tab-separated values;
@@ -248,7 +253,7 @@ is a variation on
 where only the number of affected rows is printed.
 Normal \fBcsv\fP and \fBtab\fP formatting will use double quotes
 around any fields that contain double quotes, white space or the
-separator.  The \fBcsv-noquote\fP format will prevent that and dump
+separator.  The \fBcsv\-noquote\fP format will prevent that and dump
 the contents of the field without any interpretation.
 In addition to plain \fBcsv\fP, two other forms are possible.
 \fBcsv=\fP\fIc\fP uses \fIc\fP as column separator; \fBcsv+\fP\fIc\fP
@@ -296,11 +301,11 @@ SQL Options
 \fB\-\-null=\fP\fInullstr\fP (\fB\-n\fP \fInullstr\fP)
 Set the string to be used as NULL representation when using the
 sql, csv, or tab output formats.
-If not used, NULL values are represented by the string \(dqnull\(dq in
+If not used, NULL values are represented by the string \[dq]null\[dq] in
 the sql output format, and as the empty string in the csv and tab
 output formats.
 Note that an argument is required, so in order to use the empty
-string, use \fB\-n \(dq\(dq\fP (with the space) or \fB\-\-null=\fP.
+string, use \fB\-n \[dq]\[dq]\fP (with the space) or \fB\-\-null=\fP.
 .TP
 \fB\-\-autocommit\fP (\fB\-a\fP)
 Switch autocommit mode off.
@@ -340,25 +345,25 @@ the dump.
 .SS
 General Commands
 .TP
-\fB\e?\fP
+\fB\[rs]?\fP
 Show a help message explaining the backslash commands.
 .TP
-\fB\eq\fP
+\fB\[rs]q\fP
 Exit
 .IR mclient .
 .TP
-\fB\e<\fP \fIfile\fP
+\fB\[rs]<\fP \fIfile\fP
 Read input from the named
 .IR file .
 .TP
-\fB\e>\fP \fIfile\fP
+\fB\[rs]>\fP \fIfile\fP
 Write output to the named
 .IR file .
 If no
 .I file
 is specified, write to standard output.
 .TP
-\fB\e|\fP \fIcommand\fP
+\fB\[rs]|\fP \fIcommand\fP
 Pipe output to the given
 .IR command .
 Each query is piped to a new invocation of the
@@ -367,28 +372,28 @@ If no
 .I command
 is given, revert to writing output to standard output.
 .TP
-\fB\eh\fP
+\fB\[rs]h\fP
 Show the
 .IR readline (3)
 history.
 .TP
-\fB\eL\fP \fIfile\fP
+\fB\[rs]L\fP \fIfile\fP
 Log client/server interaction in the given
 .IR file .
 If no
 .I file
 is specified, stop logging information.
 .TP
-\fB\eX\fP
+\fB\[rs]X\fP
 Trace what
 .I mclient
 is doing.
 This is mostly for debugging purposes.
 .TP
-\fB\ee\fP
+\fB\[rs]e\fP
 Echo the query in SQL formatting mode.
 .TP
-\fB\ef\fP \fIformat\fP
+\fB\[rs]f\fP \fIformat\fP
 Use the specified
 .I format
 mode to format the output.
@@ -397,7 +402,7 @@ Possible modes the same as for the
 .RB ( \-f )
 option.
 .TP
-\fB\ew\fP \fIwidth\fP
+\fB\[rs]w\fP \fIwidth\fP
 Set the maximum page width for rendering in the
 .B sql
 formatting mode.
@@ -416,7 +421,7 @@ is greater than
 .BR 0 ,
 use the given width.
 .TP
-\fB\er\fP \fIrows\fP
+\fB\[rs]r\fP \fIrows\fP
 Use an internal pager using
 .I rows
 per page.
@@ -432,19 +437,19 @@ use the height of the terminal.
 .SS
 SQL Commands
 .TP
-\fB\eD\fP
+\fB\[rs]D\fP
 Dump the complete database.
 This is equivalent to using the program
 .IR msqldump (1).
 .TP
-\fB\eD\fP \fItable\fP
+\fB\[rs]D\fP \fItable\fP
 Dump the given
 .IR table .
 .TP
-\fB\ed\fP
-Alias for \edvt.
+\fB\[rs]d\fP
+Alias for \[rs]dvt.
 .TP
-\fB\ed[Stvsfn]+\fP
+\fB\[rs]d[Stvsfn]+\fP
 List database objects of the given type.
 Multiple type specifiers can be used at the same time.
 The specifiers \fIS\fP, \fIt\fP, \fIv\fP, \fIs\fP, \fIf\fP and \fIn\fP
@@ -453,7 +458,7 @@ respectively.
 Note that \fIS\fP simply switches on viewing system catalog objects,
 which is orthogonal to the other specifiers.
 .TP
-\fB\ed[Stvsfn]+\fP \fIobject\fP
+\fB\[rs]d[Stvsfn]+\fP \fIobject\fP
 Describe the given
 .I object
 in the database using SQL statements that reconstruct the object.
@@ -469,21 +474,21 @@ and
 that represent zero or more, and exactly one character respectively.
 An object name is converted to lowercase, unless the object name is
 quoted by double quotes
-.RB ( \(dq ).
+.RB ( \[dq] ).
 Examples of this, are e.g.
 .IR *.mytable ,
 .IR tabletype* ,
 or
-.IR \(dqmyschema.FOO\(dq .
+.IR \[dq]myschema.FOO\[dq] .
 Note that wildcard characters do not work in quoted objects.
 Quoting follows SQL quoting rules.
 Arbitrary parts can be quoted, and two quotes following each other in
 a quoted string represent the quote itself.
 .TP
-\fB\eA\fP
+\fB\[rs]A\fP
 Enable auto commit mode.
 .TP
-\fB\ea\fP
+\fB\[rs]a\fP
 Disable auto commit mode.
 .SH EXAMPLES
 Efficiently import data from a CSV (comma-separated values) file into
@@ -497,7 +502,7 @@ is the name of the table,
 .I $db
 is the name of the database.
 .PP
-mclient \-d $db \-s \(dqCOPY INTO $table FROM '$file' USING DELIMITERS ',',E'\e\en','\e\(dq'\(dq
+mclient \-d $db \-s \[dq]COPY INTO $table FROM \[aq]$file\[aq] USING DELIMITERS \[aq],\[aq],E\[aq]\[rs]\[rs]n\[aq],\[aq]\[rs]\[dq]\[aq]\[dq]
 .PP
 Efficiently import data from a CSV file into a table when the file is
 to be read by
@@ -510,7 +515,7 @@ is the name of the table,
 .I $db
 is the name of the database.
 .PP
-mclient \-d $db \-s \(dqCOPY INTO $table FROM STDIN USING DELIMITERS ',',E'\e\en','\e\(dq'\(dq \- < $file
+mclient \-d $db \-s \[dq]COPY INTO $table FROM STDIN USING DELIMITERS \[aq],\[aq],E\[aq]\[rs]\[rs]n\[aq],\[aq]\[rs]\[dq]\[aq]\[dq] \- < $file
 .PP
 Note that in this latter case, if a count of records is supplied, it
 should be at least as large as the number of records actually present
@@ -521,7 +526,7 @@ as SQL queries.
 Another, easier method to have the client read the file content is as
 follows:
 .PP
-mclient \-d $db \-s \(dqCOPY INTO $table FROM '$file' ON CLIENT USING DELIMITERS ',',E'\e\en',\e\(dq'\(dq
+mclient \-d $db \-s \[dq]COPY INTO $table FROM \[aq]$file\[aq] ON CLIENT USING DELIMITERS \[aq],\[aq],E\[aq]\[rs]\[rs]n\[aq],\[rs]\[dq]\[aq]\[dq]
 .PP
 In this case the value of
 .I $file
@@ -539,7 +544,7 @@ in the above query can also be a URL.  It then has to have the form
 .IR e . g .,
 .IR https://www.example.org/dumpdata.csv .
 .PP
-See https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/
+See https://www.monetdb.org/documentation/user\-guide/sql\-manual/data\-loading/copy\-from/
 for more information about the COPY INTO query.
 .SH SEE ALSO
 .IR msqldump (1),

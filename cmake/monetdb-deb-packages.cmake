@@ -5,10 +5,12 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MonetDB BV <info@monetdb.org>")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MonetDB Foundation <info@monetdb.org>")
 set(CPACK_DEB_COMPONENT_INSTALL ON)
 set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS OFF)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)

@@ -14,7 +14,7 @@ query IT rowsort
 SELECT * FROM bugtest
 ----
 1
-Andr@
+André
 1
 test
 

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -20,9 +22,11 @@
 #include <iconv.h>
 #endif
 
-/* In order to make avaialble a bulk version of a string function with candidates, all possible combinations of scalar/vector
-	version of each argument must be avaiable for the function. Obviously this won't scale for functions with a large number of
-	arguments, so we keep a blacklist for functions without candidate versions. */
+/* In order to make available a bulk version of a string function with
+ * candidates, all possible combinations of scalar/vector version of
+ * each argument must be avaiable for the function. Obviously this won't
+ * scale for functions with a large number of arguments, so we keep a
+ * blacklist for functions without candidate versions. */
 static const char *batstr_funcs_with_no_cands[8] =
 		{ "lpad3", "rpad3", "splitpart", "substitute", "locate3", "insert",
 "replace", NULL };
@@ -74,7 +78,7 @@ str_prefix(str *buf, size_t *buflen, const char *s, int l)
 
 static str
 do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  const char *name, int (*func)(const char *restrict))
+			  const char *name, int (*func)(const char *))
 {
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
@@ -1805,7 +1809,7 @@ STRbatRpad3_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 static str
 prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-				 const char *name, bit (*func)(const char *, const char *, int),
+				 const char *name, int (*func)(const char *, const char *, int),
 				 bit *icase)
 {
 	 (void) cntxt;
@@ -1864,7 +1868,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	} else {
@@ -1878,7 +1882,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	}
@@ -1933,7 +1937,7 @@ BATSTRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-					 const char *name, bit (*func)(const char *, const char *,
+					 const char *name, int (*func)(const char *, const char *,
 												   int), bit *icase)
 {
 	 (void) cntxt;
@@ -1951,8 +1955,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int ynil, ylen;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
-			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		assert(isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
@@ -1976,7 +1979,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	ynil = strNil(y);
-	ylen = str_strlen(y);
+	ylen = ynil ? 0 : str_strlen(y); /* not used if nil */
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -1986,7 +1989,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, ylen);
+				vals[i] = func(x, y, ylen) == 0;
 			}
 		}
 	} else {
@@ -1998,7 +2001,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, ylen);
+				vals[i] = func(x, y, ylen) == 0;
 			}
 		}
 	}
@@ -2056,7 +2059,7 @@ BATSTRcontains_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-						const char *name, bit (*func)(const char *,
+						const char *name, int (*func)(const char *,
 													  const char *, int),
 						bit *icase)
 {
@@ -2076,8 +2079,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int xnil;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
-			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		assert(isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
@@ -2110,7 +2112,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	} else {
@@ -2122,7 +2124,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y, str_strlen(y)) == 0;
 			}
 		}
 	}
@@ -2327,8 +2329,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int ynil, ylen;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
-			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		assert(isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
@@ -2352,7 +2353,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	ynil = strNil(y);
-	ylen = str_strlen(y);
+	ylen = ynil ? 0 : str_strlen(y); /* not used if nil */
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -2446,8 +2447,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int xnil;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
-			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		assert(isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 

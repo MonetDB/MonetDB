@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -315,7 +317,9 @@ bat_max_length(hge, hge)
 		} else if (*s == '+'){											\
 			s++;														\
 		}																\
-		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
+		for (i = 0; *s && *s != c->decsep && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
+			if (c->decskip && *s == c->decskip)							\
+				continue;												\
 			if (!isdigit((unsigned char) *s))							\
 				break;													\
 			res *= 10;													\
@@ -323,12 +327,18 @@ bat_max_length(hge, hge)
 			if (res)													\
 				i++;													\
 		}																\
-		if (*s == '.') {												\
+		if (*s == c->decsep) {											\
 			s++;														\
-			while (*s && isdigit((unsigned char) *s) && scale > 0) {	\
-				res *= 10;												\
-				res += *s++ - '0';										\
-				scale--;												\
+			while (*s && scale > 0) {									\
+				if (isdigit((unsigned char) *s)) {						\
+					res *= 10;											\
+					res += *s++ - '0';									\
+					scale--;											\
+				} else if (c->decskip && *s == c->decskip) {			\
+					s++;												\
+				} else {												\
+					break;												\
+				}														\
 			}															\
 		}																\
 		while(*s && isspace((unsigned char) *s))						\
@@ -354,6 +364,8 @@ bat_max_length(hge, hge)
 static void *
 dec_frstr(Column *c, int type, const char *s)
 {
+	assert(c->decsep != '\0');
+
 	/* support dec map to bte, sht, int and lng */
 	if( strcmp(s,"nil")== 0)
 		return NULL;
@@ -393,7 +405,11 @@ sec_frstr(Column *c, int type, const char *s)
 		neg = 0;
 		s++;
 	}
-	for (i = 0; i < (19 - 3) && *s && *s != '.'; i++, s++) {
+	for (i = 0; i < (19 - 3) && *s && *s != c->decsep; i++, s++) {
+		if (c->decskip && *s == c->decskip) {
+			i--;
+			continue;
+		}
 		if (!isdigit((unsigned char) *s))
 			return NULL;
 		res *= 10;
@@ -401,10 +417,14 @@ sec_frstr(Column *c, int type, const char *s)
 	}
 	i = 0;
 	if (*s) {
-		if (*s != '.')
+		if (*s != c->decsep)
 			return NULL;
 		s++;
 		for (; *s && i < 3; i++, s++) {
+			if (c->decskip && *s == c->decskip) {
+				i--;
+				continue;
+			}
 			if (!isdigit((unsigned char) *s))
 				return NULL;
 			res *= 10;
@@ -425,6 +445,64 @@ sec_frstr(Column *c, int type, const char *s)
 	else
 		*r = res;
 	return (void *) r;
+}
+
+static void *
+fltdbl_frStr(Column *c, int type, const char *s)
+{
+	// The regular fltFromStr/dblFromStr functions do not take decimal commas
+	// and thousands separators into account. When these are in use, this
+	// function first converts them to decimal dots and empty strings,
+	// respectively. We use a fixed size buffer so abnormally long floats such
+	// as
+	// +00000000000000000000000000000000000000000000000000000000000000000000001.5e1
+	// will be rejected.
+
+	// According to Stack Overflow https://stackoverflow.com/questions/1701055/what-is-the-maximum-length-in-chars-needed-to-represent-any-double-value
+	// 24 bytes is a reasonable buffer but we'll make it a bit larger.
+	char tmp[120];
+	if (c->decskip || c->decsep != '.') {
+		char *p = &tmp[0];
+
+		while (GDKisspace(*s))
+			s++;
+		while (*s != '\0') {
+			if (p >= tmp + sizeof(tmp) - 1) {
+				// If the input is this big it's probably an error.
+				// Exception: only whitespace remains.
+				while (GDKisspace(*s))
+					s++;
+				if (*s == '\0') {
+					// there was only trailing whitespace
+					break;
+				} else {
+					// not just trailing whitespace, abort!
+					return NULL;
+				}
+			}
+			char ch = *s++;
+			if (ch == c->decskip) {
+				continue;
+			} else if (ch == c->decsep) {
+				ch = '.';
+			} else if (ch == '.') {
+				// We're mapping c->decsep to '.', if there are already
+				// periods in the input we're losing information
+				return NULL;
+			}
+			*p++ = ch;
+		}
+		// If we're here either we either encountered the end of s or the buffer is
+		// full. In the latter case we still need to write the NUL.
+		// We left room for it.
+		*p = '\0';
+
+		// now process the converted text rather than the original
+		s = &tmp[0];
+	}
+
+	ssize_t len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data, false);
+	return (len > 0) ? c->data : NULL;
 }
 
 /* Literal parsing for SQL all pass through this routine */
@@ -530,7 +608,7 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape, const char *decsep, const char *decskip)
 {
 	int i = 0, j;
 	node *n;
@@ -579,6 +657,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].sep = (n->next) ? sep : rsep;
 			fmt[i].rsep = rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
+			fmt[i].decsep = decsep[0],
+			fmt[i].decskip = decskip != NULL ? decskip[0] : '\0',
 			fmt[i].type = sql_subtype_string(m->ta, &col->type);
 			fmt[i].adt = ATOMindex(col->type.type->impl);
 			fmt[i].tostr = &_ASCIIadt_toStr;
@@ -608,6 +688,9 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			} else if (col->type.type->eclass == EC_SEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &sec_frstr;
+			} else if (col->type.type->eclass == EC_FLT) {
+				// no need to override .tostr, only .frstr
+				fmt[i].frstr = &fltdbl_frStr;
 			}
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
@@ -658,7 +741,7 @@ mvc_export_warning(stream *s, str w)
 }
 
 static int
-mvc_export_binary_bat(stream *s, BAT* bn)
+mvc_export_binary_bat(stream *s, BAT* bn, bstream *in)
 {
 	BATiter bni = bat_iterator(bn);
 	bool sendtheap = bni.type != TYPE_void, sendtvheap = sendtheap && bni.vh;
@@ -701,6 +784,8 @@ mvc_export_binary_bat(stream *s, BAT* bn)
 		}
 	}
 	bat_iterator_end(&bni);
+	if (bstream_getoob(in))
+		return -5;
 	return 0;
 }
 
@@ -726,7 +811,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 	sql_subtype *t;
 	sql_rel *r = q->rel;
 
-	if (!btype || !bdigits || !bscale || !bschema || !btable || !bcolumn) {
+	if (!btype || !bimpl || !bdigits || !bscale || !bschema || !btable || !bcolumn) {
 		error = -1;
 		goto wrapup;
 	}
@@ -1132,7 +1217,7 @@ mvc_export_row(backend *b, stream *s, res_table *t, const char *btag, const char
 }
 
 static int
-mvc_export_table_columnar(stream *s, res_table *t)
+mvc_export_table_columnar(stream *s, res_table *t, bstream *in)
 {
 	int i, res = 0;
 
@@ -1149,7 +1234,7 @@ mvc_export_table_columnar(stream *s, res_table *t)
 		if (b == NULL)
 			return -2;
 
-		res = mvc_export_binary_bat(s, b);
+		res = mvc_export_binary_bat(s, b, in);
 		BBPunfix(b->batCacheid);
 		if (res < 0)
 			return res;
@@ -1282,7 +1367,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		}
 	}
 	if (i == t->nr_cols + 1)
-		ok = TABLEToutput_file(&as, NULL, s);
+		ok = TABLEToutput_file(&as, NULL, s, m->scanner.rs);
 	for (i = 0; i <= t->nr_cols; i++) {
 		fmt[i].sep = NULL;
 		fmt[i].rsep = NULL;
@@ -1293,10 +1378,10 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		bat_iterator_end(&fmt[i].ci);
 	TABLETdestroy_format(&as);
 	GDKfree(tres);
-	if (mnstr_errnr(s) != MNSTR_NO__ERROR)
-		return -4;
 	if (ok < 0)
 		return ok;
+	if (mnstr_errnr(s) != MNSTR_NO__ERROR)
+		return -4;
 	return 0;
 }
 
@@ -1736,7 +1821,7 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (b->client->protocol == PROTOCOL_COLUMNAR) {
 		if (mnstr_flush(s, MNSTR_FLUSH_DATA) < 0)
 			return -4;
-		return mvc_export_table_columnar(s, t);
+		return mvc_export_table_columnar(s, t, m->scanner.rs);
 	}
 
 	count = m->reply_size;
@@ -1829,14 +1914,14 @@ int
 mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, BAT *b)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, TYPE_bat, b, false) ? 0 : -1;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, true, b->ttype, b, false) ? 0 : -1;
 }
 
 int
 mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, mtype, p, false) ? 0 : -1;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, false, mtype, p, false) ? 0 : -1;
 }
 
 /* Translate error code from export function to error string */
@@ -1845,16 +1930,18 @@ mvc_export_error(backend *be, stream *s, int err_code)
 {
 	(void) be;
 	switch (err_code) {
-		case -1: /* Allocation failure */
-			return MAL_MALLOC_FAIL;
-		case -2: /* BAT descriptor error */
-			return RUNTIME_OBJECT_MISSING;
-		case -3: /* GDK error */
-			return GDKerrbuf;
-		case -4: /* Stream error */
-			return mnstr_peek_error(s);
-		default: /* Unknown, must be a bug */
-			return "Unknown internal error";
+	case -1: /* Allocation failure */
+		return MAL_MALLOC_FAIL;
+	case -2: /* BAT descriptor error */
+		return RUNTIME_OBJECT_MISSING;
+	case -3: /* GDK error */
+		return GDKerrbuf;
+	case -4: /* Stream error */
+		return mnstr_peek_error(s);
+	case -5:
+		return "Query aborted";
+	default: /* Unknown, must be a bug */
+		return "Unknown internal error";
 	}
 }
 

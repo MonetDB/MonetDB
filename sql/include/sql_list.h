@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef LIST_H
@@ -24,7 +26,7 @@ typedef struct node {
 typedef void (*fdestroy) (void *gdata, void *ndata); /* gdata is passed to the list_destroy2 function */
 
 typedef struct list {
-	sql_allocator *sa;
+	allocator *sa;
 	sql_hash *ht;
 	fdestroy destroy;
 	node *h;
@@ -37,10 +39,10 @@ typedef int (*traverse_func) (void *clientdata, int seqnr, void *data);
 typedef int (*prop_check_func) (void *data);
 
 extern list *list_create(fdestroy destroy);
-sql_export list *sa_list(sql_allocator *sa);
-extern list *list_new(sql_allocator *sa, fdestroy destroy);
+sql_export list *sa_list(allocator *sa);
+extern list *list_new(allocator *sa, fdestroy destroy);
 
-extern list *sa_list_append( sql_allocator *sa, list *l, void *data);
+extern list *sa_list_append( allocator *sa, list *l, void *data);
 extern list *list_add( list *l, void *data);
 
 extern void list_destroy(list *l);
@@ -72,7 +74,7 @@ typedef void *(*fvalidate) (void *v1, void *v2, void *extra);
 typedef int (*fcmp2) (void *data, void *v1, void *v2);
 typedef void *(*fdup) (void *data);
 typedef void *(*freduce) (void *v1, void *v2);
-typedef void *(*freduce2) (sql_allocator *sa, void *v1, void *v2);
+typedef void *(*freduce2) (allocator *sa, void *v1, void *v2);
 typedef void *(*fmap) (void *data, void *clientdata);
 
 extern void *list_transverse_with_validate(list *l, void *data, void *extra, fvalidate cmp);
@@ -85,7 +87,7 @@ extern list *list_select(list *l, void *key, fcmp cmp, fdup dup);
 extern list *list_order(list *l, fcmp cmp, fdup dup);
 extern list *list_distinct(list *l, fcmp cmp, fdup dup);
 extern void *list_reduce(list *l, freduce red, fdup dup);
-extern void *list_reduce2(list *l, freduce2 red, sql_allocator *sa);
+extern void *list_reduce2(list *l, freduce2 red, allocator *sa);
 extern list *list_map(list *l, void *data, fmap f);
 extern int list_cmp(list *l1, list *l2, fcmp cmp);
 /* cmp the lists in link order */

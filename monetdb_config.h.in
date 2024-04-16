@@ -5,8 +5,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
+
 /* monetdb_config.h.in.  Generated from CMakeLists.txt  */
 
 #ifndef MT_SEEN_MONETDB_CONFIG_H
@@ -154,6 +157,7 @@
 #cmakedefine HAVE_POSIX_FALLOCATE 1
 #cmakedefine HAVE_POSIX_MADVISE 1
 #cmakedefine HAVE_PUTENV 1
+#cmakedefine HAVE_SETTHREADDESCRIPTION 1
 #cmakedefine HAVE_SETSID 1
 #cmakedefine HAVE_SHUTDOWN 1
 #cmakedefine HAVE_SIGACTION 1
@@ -168,8 +172,10 @@
 #cmakedefine HAVE_TIMES 1
 #cmakedefine HAVE_TM_GMTOFF 1
 #cmakedefine HAVE_UNAME 1
+#cmakedefine HAVE_WCWIDTH 1
 // #cmakedefine HAVE_SEMTIMEDOP
 #cmakedefine HAVE_PTHREAD_KILL 1
+#cmakedefine HAVE_PTHREAD_SETNAME_NP 1
 #cmakedefine HAVE_PTHREAD_SIGMASK 1
 #cmakedefine HAVE_GETOPT 1
 // End Section: monetdb configure defines

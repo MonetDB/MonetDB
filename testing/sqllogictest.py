@@ -6,10 +6,23 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 # skipif <system>
 # onlyif <system>
+
+# The skipif/onlyif mechanism has been slightly extended.  Recognized
+# "system"s are:
+# MonetDB, arch=<architecture>, system=<system>, bits=<bits>,
+# threads=<threads>, has-hugeint, knownfail
+# where <architecture> is generally what the Python call
+# platform.machine() returns (i.e. x86_64, i686, aarch64, ppc64,
+# ppc64le, note 'AMD64' is translated to 'x86_64' and 'arm64' to
+# 'aarch64'); <system> is whatever platform.system() returns
+# (i.e. Linux, Darwin, Windows); <bits> is either 32bit or 64bit;
+# <threads> is the number of threads.
 
 # statement (ok|ok rowcount|error) [arg]
 # query (I|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
@@ -40,13 +53,27 @@ import importlib
 import MonetDBtesting.utils as utils
 from pathlib import Path
 from typing import Optional
+import difflib
+
+# this stuff is for geos pre 3.12: 3.12 introduced an extra set of
+# parentheses in MULTIPOINT values
+geosre = re.compile(r'MULTIPOINT *\((?P<points>[^()]*)\)')
+ptsre = re.compile(r'-?\d+(?:\.\d+)? -?\d+(?:\.\d+)?')
+geoszre = re.compile(r'MULTIPOINT *Z *\((?P<points>[^()]*)\)')
+ptszre = re.compile(r'-?\d+(?:\.\d+)? -?\d+(?:\.\d+)? -?\d+(?:\.\d+)?')
 
 architecture = platform.machine()
 if architecture == 'AMD64':     # Windows :-(
     architecture = 'x86_64'
 if architecture == 'arm64':     # MacOS :-(
     architecture = 'aarch64'
+bits = platform.architecture()[0]
+if bits == '32bit' and architecture == 'x86_64':
+    architecture = 'i686'
+elif architecture == 'x86':     # Windows
+    architecture = 'i686'
 system = platform.system()
+hashge = False                  # may get updated at start of testing
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
@@ -120,12 +147,13 @@ class SQLLogic:
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo',
-                language='sql', timeout=None):
+                language='sql', timeout=None, alltests=False):
         self.language = language
         self.hostname = hostname
         self.port = port
         self.database = database
         self.timeout = timeout
+        self.alltests = alltests
         if language == 'sql':
             self.dbh = pymonetdb.connect(username=username,
                                      password=password,
@@ -334,10 +362,17 @@ class SQLLogic:
                                     nval.append(c)
                             else:
                                 for c in str(row[i]):
-                                    if ' ' <= c <= '~':
-                                        nval.append(c)
-                                    else:
+# sqllogictest original:
+                                    # if ' ' <= c <= '~':
+                                    #     nval.append(c)
+                                    # else:
+                                    #     nval.append('@')
+# our variant, don't map printables:
+                                    if c < ' ' or '\u007f' <= c <= '\u009f':
+                                        # control characters
                                         nval.append('@')
+                                    else:
+                                        nval.append(c)
                             nrow.append(''.join(nval))
                     elif columns[i] == 'R':
                         nrow.append('%.3f' % row[i])
@@ -365,21 +400,6 @@ class SQLLogic:
               file=self.out)
         print("query text:", file=self.out)
         print(query, file=self.out)
-        print('', file=self.out)
-        if data is not None:
-            if len(data) < 100:
-                print('query result:', file=self.out)
-            else:
-                print('truncated query result:', file=self.out)
-            for row in data[:100]:
-                sep=''
-                for col in row:
-                    if col is None:
-                        print(sep, 'NULL', sep='', end='', file=self.out)
-                    else:
-                        print(sep, col, sep='', end='', file=self.out)
-                    sep = '|'
-                print('', file=self.out)
 
     def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
         err = False
@@ -394,7 +414,7 @@ class SQLLogic:
         except KeyboardInterrupt:
             raise
         except:
-            type, value, traceback = sys.exc_info()
+            tpe, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
             return ['statement', 'error'], []
         try:
@@ -402,9 +422,25 @@ class SQLLogic:
         except KeyboardInterrupt:
             raise
         except:
-            type, value, traceback = sys.exc_info()
+            tpe, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
             return ['statement', 'error'], []
+        ndata = []
+        for row in data:
+            nrow = []
+            for col in row:
+                if isinstance(col, str):
+                    res = geosre.search(col)
+                    if res is not None:
+                        points = ptsre.sub(r'(\g<0>)', res.group('points'))
+                        col = col[:res.start('points')] + points + col[res.end('points'):]
+                    res = geoszre.search(col)
+                    if res is not None:
+                        points = ptszre.sub(r'(\g<0>)', res.group('points'))
+                        col = col[:res.start('points')] + points + col[res.end('points'):]
+                nrow.append(col)
+            ndata.append(nrow)
+        data = ndata
         if crs.description:
             rescols = []
             for desc in crs.description:
@@ -457,12 +493,15 @@ class SQLLogic:
             for col in ndata:
                 if expected is not None:
                     if i < len(expected) and col != expected[i]:
-                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
+                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
                         err = True
                     i += 1
-                m.update(bytes(col, encoding='ascii'))
+                m.update(bytes(col, encoding='utf-8'))
                 m.update(b'\n')
                 result.append(col)
+            if err and expected is not None:
+                print('Differences:', file=self.out)
+                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
             if resdata is not None:
                 result = []
                 ndata = []
@@ -471,7 +510,7 @@ class SQLLogic:
                         ndata.append(col)
                 ndata.sort()
                 for col in ndata:
-                    resm.update(bytes(col, encoding='ascii'))
+                    resm.update(bytes(col, encoding='utf-8'))
                     resm.update(b'\n')
                     result.append(col)
         elif sorting == 'python':
@@ -500,9 +539,10 @@ class SQLLogic:
                 except NameError:
                     self.query_error(query, 'cannot find filter function')
                     err = True
+            ndata = data
             if not err:
                 try:
-                    data = pyfnc(data)
+                    ndata = pyfnc(data)
                 except:
                     self.query_error(query, 'filter function failed')
                     err = True
@@ -512,33 +552,41 @@ class SQLLogic:
                     except:
                         resdata = None
             ncols = 1
-            if (len(data)):
-                ncols = len(data[0])
-            if len(data)*ncols != nresult:
-                self.query_error(query, 'received {} rows, expected {} rows'.format(len(data)*ncols, nresult), data=data)
+            if (len(ndata)):
+                ncols = len(ndata[0])
+            if len(ndata)*ncols != nresult:
+                self.query_error(query, 'received {} rows, expected {} rows'.format(len(ndata)*ncols, nresult), data=data)
                 err = True
-            for row in data:
+            for row in ndata:
                 for col in row:
                     if expected is not None:
                         if i < len(expected) and col != expected[i]:
-                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
+                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
                             err = True
                         i += 1
-                    m.update(bytes(col, encoding='ascii'))
+                    m.update(bytes(col, encoding='utf-8'))
                     m.update(b'\n')
                     result.append(col)
+            if err and expected is not None:
+                recv = []
+                for row in ndata:
+                    for col in row:
+                        recv.append(col)
+                print('Differences:', file=self.out)
+                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in recv])))
             if resdata is not None:
                 result = []
                 for row in resdata:
                     for col in row:
-                        resm.update(bytes(col, encoding='ascii'))
+                        resm.update(bytes(col, encoding='utf-8'))
                         resm.update(b'\n')
                         result.append(col)
         else:
+            ndata = data
             if sorting == 'rowsort':
-                data.sort()
+                ndata = sorted(data)
             err_msg_buff = []
-            for row in data:
+            for row in ndata:
                 for col in row:
                     if expected is not None:
                         if i < len(expected) and col != expected[i]:
@@ -546,20 +594,42 @@ class SQLLogic:
                             #self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
                             err = True
                         i += 1
-                    m.update(bytes(col, encoding='ascii'))
+                    m.update(bytes(col, encoding='utf-8'))
                     m.update(b'\n')
                     result.append(col)
-            if err:
-                self.query_error(query, '\n'.join(err_msg_buff), data=data)
+            if err and expected is not None:
+                self.query_error(query, '\n'.join(err_msg_buff))
+                recv = []
+                for row in ndata:
+                    for col in row:
+                        recv.append(col + '\n')
+                print('Differences:', file=self.out)
+                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], recv)))
             if resdata is not None:
                 if sorting == 'rowsort':
                     resdata.sort()
                 result = []
                 for row in resdata:
                     for col in row:
-                        resm.update(bytes(col, encoding='ascii'))
+                        resm.update(bytes(col, encoding='utf-8'))
                         resm.update(b'\n')
                         result.append(col)
+        if err:
+            if data is not None:
+                if len(data) < 100:
+                    print('Query result:', file=self.out)
+                else:
+                    print('Truncated query result:', file=self.out)
+                for row in data[:100]:
+                    sep=''
+                    for col in row:
+                        if col is None:
+                            print(sep, 'NULL', sep='', end='', file=self.out)
+                        else:
+                            print(sep, col, sep='', end='', file=self.out)
+                        sep = '|'
+                    print(file=self.out)
+            print(file=self.out)
         h = m.hexdigest()
         if resdata is not None:
             resh = resm.hexdigest()
@@ -611,8 +681,12 @@ class SQLLogic:
             self.lines.append((origline, line))
         return line
 
-    def writeline(self, line='', replace=False):
+    def writeline(self, line=None, replace=False):
         if self.approve:
+            if line is None:
+                line = ''
+            elif line == '':
+                return
             if not line and self.__last == '':
                 return
             self.__last = line
@@ -668,6 +742,8 @@ class SQLLogic:
         nthreads = None
         if self.language == 'sql':
             self.crs.execute(f'call sys.setsessiontimeout({self.timeout or 0})')
+            global hashge
+            hashge = self.crs.execute("select * from sys.types where sqlname = 'hugeint'") == 1
         else:
             self.crs.execute(f'clients.setsessiontimeout({self.timeout or 0}:int)')
         while True:
@@ -696,7 +772,7 @@ class SQLLogic:
                 continue
             while words[0] == 'skipif' or words[0] == 'onlyif':
                 if words[0] == 'skipif':
-                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}'):
+                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
                         skipping = True
                     elif words[1].startswith('threads='):
                         if nthreads is None:
@@ -704,15 +780,28 @@ class SQLLogic:
                             nthreads = self.crs.fetchall()[0][0]
                         if words[1] == f'threads={nthreads}':
                             skipping = True
+                    elif words[1] == 'has-hugeint':
+                        if hashge:
+                            skipping = True
+                    elif words[1] == 'knownfail':
+                        if not self.alltests:
+                            skipping = True
                 elif words[0] == 'onlyif':
-                    if words[1] not in ('MonetDB', f'arch={architecture}', f'system={system}'):
-                        skipping = True
+                    skipping = True
+                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
+                        skipping = False
                     elif words[1].startswith('threads='):
                         if nthreads is None:
                             self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
                             nthreads = self.crs.fetchall()[0][0]
-                        if words[1] != f'threads={nthreads}':
-                            skipping = True
+                        if words[1] == f'threads={nthreads}':
+                            skipping = False
+                    elif words[1] == 'has-hugeint':
+                        if hashge:
+                            skipping = False
+                    elif words[1] == 'knownfail':
+                        if self.alltests:
+                            skipping = False
                 self.writeline(line.rstrip())
                 line = self.readline()
                 words = line.split(maxsplit=2)
@@ -854,12 +943,14 @@ if __name__ == '__main__':
     parser.add_argument('--define', action='append',
                         help='define substitution for $var as var=replacement'
                         ' (can be repeated)')
+    parser.add_argument('--alltests', action='store_true',
+                        help='also executed "knownfail" tests')
     parser.add_argument('tests', nargs='*', help='tests to be run')
     opts = parser.parse_args()
     args = opts.tests
     sql = SQLLogic(report=opts.report)
     sql.res = opts.results
-    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language, username=opts.user, password=opts.password)
+    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language, username=opts.user, password=opts.password, alltests=opts.alltests)
     for test in args:
         try:
             if not opts.nodrop:

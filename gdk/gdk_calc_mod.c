@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -27,14 +29,10 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -48,9 +46,9 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] % rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -64,7 +62,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				dst[k] = (TYPE3) lft[i] % rgt[j];	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -80,14 +78,10 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 {									\
 	BUN nils = 0;							\
 	BUN i = 0, j = 0, ncand = ci1->ncand;				\
-	lng timeoffset = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (qry_ctx != NULL) {						\
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
-	}								\
 									\
 	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next_dense(ci1) - candoff1; \
 			if (incr2)					\
@@ -102,9 +96,9 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						      (TYPE3) rgt[j]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
-		TIMEOUT_LOOP_IDX_DECL(k, ncand, timeoffset) {		\
+		TIMEOUT_LOOP_IDX_DECL(k, ncand, qry_ctx) {		\
 			if (incr1)					\
 				i = canditer_next(ci1) - candoff1;	\
 			if (incr2)					\
@@ -119,7 +113,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 						      (TYPE3) rgt[j]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
 	return nils;							\
 }
@@ -1290,6 +1284,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp)
 gdk_return
 VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
+	ret->bat = false;
 	if (mod_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,

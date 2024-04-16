@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 static inline str
@@ -14,6 +16,7 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 	ValRecord v1, v2;
 
 	VALset(&v1, TPE(TP1), &val);
+	v2.bat = false;
 	v2.vtype = TPE(TP2);
 	if (VARconvert(&v2, &v1, s1, s2, p) != GDK_SUCCEED)
 		throw(SQL, STRNG(FUN(,TP1,_2_,TP2)), GDK_EXCEPTION);

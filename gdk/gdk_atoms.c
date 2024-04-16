@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -122,28 +124,29 @@ hgeHash(const hge *v)
 }
 #endif
 
+static BUN
+fltHash(const flt *v)
+{
+	if (is_flt_nil(*v))
+		return (BUN) mix_int(GDK_int_min);
+	if (*v == 0)
+		return (BUN) mix_int(0);
+	return (BUN) mix_int(*(const unsigned int *) v);
+}
+
+static BUN
+dblHash(const dbl *v)
+{
+	if (is_dbl_nil(*v))
+		return (BUN) mix_lng(GDK_lng_min);
+	if (*v == 0)
+		return (BUN) mix_lng(0);
+	return (BUN) mix_lng(*(const ulng *) v);
+}
+
 /*
  * @+ Standard Atoms
  */
-static gdk_return
-batFix(const bat *b)
-{
-	if (!is_bat_nil(*b) && BBPretain(*b) == 0) {
-		GDKerror("batFix failed\n");
-		return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
-
-static gdk_return
-batUnfix(const bat *b)
-{
-	if (!is_bat_nil(*b) && BBPrelease(*b) < 0) {
-		GDKerror("batUnfix failed\n");
-		return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
 
 /*
  * @+ Atomic Type Interface
@@ -227,9 +230,6 @@ ATOMindex(const char *nme)
 			return t;
 		}
 
-	}
-	if (strcmp(nme, "bat") == 0) {
-		return TYPE_bat;
 	}
 	return -j;
 }
@@ -328,7 +328,7 @@ ATOMprint(int t, const void *p, stream *s)
 	if (p && t >= 0 && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		size_t sz;
 
-		if (t != TYPE_bat && t < TYPE_date) {
+		if (t < TYPE_date) {
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 
 			sz = dblStrlen;
@@ -934,7 +934,6 @@ mskRead(msk *A, size_t *dstlen, stream *s, size_t cnt)
 	return a;
 }
 
-atom_io(bat, Int, int)
 atom_io(bit, Bte, bte)
 
 atomtostr(bte, "%hhd", )
@@ -1705,21 +1704,6 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomCmp = (int (*)(const void *, const void *)) shtCmp,
 		.atomHash = (BUN (*)(const void *)) shtHash,
 	},
-	[TYPE_bat] = {
-		.name = "BAT",
-		.storage = TYPE_int,
-		.linear = true,
-		.size = sizeof(bat),
-		.atomNull = (void *) &int_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) batFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) batToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) batRead,
-		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) batWrite,
-		.atomCmp = (int (*)(const void *, const void *)) intCmp,
-		.atomHash = (BUN (*)(const void *)) intHash,
-		.atomFix = (gdk_return (*)(const void *)) batFix,
-		.atomUnfix = (gdk_return (*)(const void *)) batUnfix,
-	},
 	[TYPE_int] = {
 		.name = "int",
 		.storage = TYPE_int,
@@ -1784,7 +1768,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) fltRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) fltWrite,
 		.atomCmp = (int (*)(const void *, const void *)) fltCmp,
-		.atomHash = (BUN (*)(const void *)) intHash,
+		.atomHash = (BUN (*)(const void *)) fltHash,
 	},
 	[TYPE_dbl] = {
 		.name = "dbl",
@@ -1797,7 +1781,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) dblRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) dblWrite,
 		.atomCmp = (int (*)(const void *, const void *)) dblCmp,
-		.atomHash = (BUN (*)(const void *)) lngHash,
+		.atomHash = (BUN (*)(const void *)) dblHash,
 	},
 	[TYPE_lng] = {
 		.name = "lng",

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -39,7 +41,6 @@ static bool option_enable_mprotect = false;
 const char *longjmp_enableflag = "enable_longjmp";
 static bool option_enable_longjmp = false;
 
-struct _allocated_region;
 typedef struct _allocated_region {
 	struct _allocated_region *next;
 } allocated_region;
@@ -54,8 +55,11 @@ typedef struct _mprotected_region {
 
 static char *mprotect_region(void *addr, size_t len,
 							 mprotected_region **regions);
-static allocated_region *allocated_regions[THREADS];
-static jmp_buf jump_buffer[THREADS];
+struct capi_tls_s {
+	allocated_region *ar;
+	jmp_buf jb;
+};
+static MT_TLS_t capi_tls_key;
 
 typedef char *(*jitted_function)(void **inputs, void **outputs,
 								 malloc_function_ptr malloc, free_function_ptr free);
@@ -94,6 +98,7 @@ static str CUDFprelude(void)
 		cudf_initialized = true;
 		option_enable_mprotect = GDKgetenv_istrue(mprotect_enableflag) || GDKgetenv_isyes(mprotect_enableflag);
 		option_enable_longjmp = GDKgetenv_istrue(longjmp_enableflag) || GDKgetenv_isyes(longjmp_enableflag);
+		MT_alloc_tls(&capi_tls_key);
 	}
 	return MAL_SUCCEED;
 }
@@ -111,13 +116,12 @@ static bool WriteTextToFile(FILE *f, const char *data)
 
 static _Noreturn void handler(int sig, siginfo_t *si, void *unused)
 {
-	MT_Id tid = MT_getpid();
-
 	(void)sig;
 	(void)si;
 	(void)unused;
 
-	longjmp(jump_buffer[tid-1], 1);
+	struct capi_tls_s *tls = MT_tls_get(capi_tls_key);
+	longjmp(tls->jb, 1);
 }
 
 static bool can_mprotect_region(void* addr) {
@@ -173,18 +177,18 @@ static void *jump_GDK_malloc(size_t size)
 		return NULL;
 	void *ptr = GDKmalloc(size);
 	if (!ptr && option_enable_longjmp) {
-		longjmp(jump_buffer[MT_getpid()-1], 2);
+		struct capi_tls_s *tls = MT_tls_get(capi_tls_key);
+		longjmp(tls->jb, 2);
 	}
 	return ptr;
 }
 
-static void *add_allocated_region(void *ptr)
+static inline void *add_allocated_region(void *ptr)
 {
-	allocated_region *region;
-	MT_Id tid = MT_getpid();
-	region = (allocated_region *)ptr;
-	region->next = allocated_regions[tid-1];
-	allocated_regions[tid-1] = region;
+	allocated_region *region = (allocated_region *)ptr;
+	struct capi_tls_s *tls = MT_tls_get(capi_tls_key);
+	region->next = tls->ar;
+	tls->ar = region;
 	return (char *)ptr + sizeof(allocated_region);
 }
 
@@ -215,7 +219,10 @@ static void wrapped_GDK_free(void* ptr) {
 		}                                                                      \
 		b = COLnew(0, TYPE_##tpename, count, TRANSIENT);                       \
 		if (!b) {                                                              \
-			if (option_enable_longjmp) longjmp(jump_buffer[MT_getpid()-1], 2); \
+			if (option_enable_longjmp) {                                       \
+				struct capi_tls_s *tls = MT_tls_get(capi_tls_key);             \
+				longjmp(tls->jb, 2);                                           \
+			}                                                                  \
 			else return;                                                       \
 		}                                                                      \
 		self->bat = (void*) b;                                                 \
@@ -480,7 +487,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BUN expression_hash = 0, funcname_hash = 0;
 	cached_functions *cached_function;
 	char *function_parameters = NULL;
-	MT_Id tid = MT_getpid();
 	size_t input_size = 0;
 	bit non_grouped_aggregate = 0;
 
@@ -490,9 +496,12 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	size_t extra_inputs = 0;
 
-	(void)cntxt;
+	struct capi_tls_s tls;
 
-	allocated_regions[tid-1] = NULL;
+	tls.ar = NULL;
+	MT_tls_set(capi_tls_key, &tls);
+
+	(void)cntxt;
 
 	if (!GDKgetenv_istrue("embedded_c") && !GDKgetenv_isyes("embedded_c"))
 		throw(MAL, "cudf.eval", "Embedded C has not been enabled. "
@@ -1325,7 +1334,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	// this longjmp point is used for some error handling in the C function
 	// such as failed mallocs
 	if (option_enable_longjmp) {
-		ret = setjmp(jump_buffer[tid-1]);
+		struct capi_tls_s *tls = MT_tls_get(capi_tls_key);
+		ret = setjmp(tls->jb);
 		if (ret < 0) {
 			// error value
 			msg = createException(MAL, "cudf.eval", "Failed setjmp: %s",
@@ -1588,6 +1598,7 @@ wrapup:
 	GDKfree(fname);
 	GDKfree(oname);
 	GDKfree(libname);
+	MT_tls_set(capi_tls_key, NULL);
 	if (option_enable_mprotect) {
 		if (sa.sa_sigaction) {
 			(void) sigaction(SIGSEGV, &oldsa, NULL);
@@ -1603,10 +1614,10 @@ wrapup:
 			regions = next;
 		}
 	}
-	while (allocated_regions[tid-1]) {
-		allocated_region *next = allocated_regions[tid-1]->next;
-		GDKfree(allocated_regions[tid-1]);
-		allocated_regions[tid-1] = next;
+	while (tls.ar != NULL) {
+		allocated_region *next = tls.ar->next;
+		GDKfree(tls.ar);
+		tls.ar = next;
 	}
 	if (option_enable_mprotect) {
 		// block segfaults and bus errors again after we exit

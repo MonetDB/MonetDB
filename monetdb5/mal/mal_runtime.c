@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* Author(s) M.L. Kersten
@@ -346,43 +348,19 @@ mal_runtime_reset(void)
 	dropUSRstats();
 }
 
-/*
- * Each MAL instruction is executed by a single thread, which means we can
- * keep a simple working set around to make Stethscope attachement easy.
- * The entries are privately accessed and only can be influenced by a starting stehoscope to emit work in progress.
- */
-Workingset workingset[THREADS];
-
 /* At the start of each MAL stmt */
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					RuntimeProfile prof)
 {
-	MT_Id tid = MT_getpid();
-	lng clk = GDKusec();
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
 
 	assert(pci);
-	/* keep track on the instructions taken in progress for stethoscope */
-	if (tid > 0 && tid <= THREADS) {
-		tid--;
-		if (profilerStatus) {
-			MT_lock_set(&mal_profileLock);
-			workingset[tid].cntxt = cntxt;
-			workingset[tid].mb = mb;
-			workingset[tid].stk = stk;
-			workingset[tid].pci = pci;
-			workingset[tid].clock = clk;
-			MT_lock_unset(&mal_profileLock);
-		} else {
-			workingset[tid].cntxt = cntxt;
-			workingset[tid].mb = mb;
-			workingset[tid].stk = stk;
-			workingset[tid].pci = pci;
-			workingset[tid].clock = clk;
-		}
-	}
 	/* always collect the MAL instruction execution time */
-	prof->ticks = clk;
+	prof->ticks = GDKusec();
 }
 
 /* At the end of each MAL stmt */
@@ -390,20 +368,7 @@ void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				   RuntimeProfile prof)
 {
-	MT_Id tid = MT_getpid();
 	lng ticks = GDKusec();
-
-	/* keep track on the instructions in progress */
-	if (tid > 0 && tid <= THREADS) {
-		tid--;
-		if (profilerStatus) {
-			MT_lock_set(&mal_profileLock);
-			workingset[tid] = (struct WORKINGSET) { 0 };
-			MT_lock_unset(&mal_profileLock);
-		} else {
-			workingset[tid] = (struct WORKINGSET) { 0 };
-		}
-	}
 
 	if (profilerStatus > 0)
 		profilerEvent(&(struct MalEvent) { cntxt, mb, stk, pci, ticks,
@@ -459,7 +424,7 @@ getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	i = rd ? pci->retc : 0;
 
 	for (; i < limit; i++) {
-		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
+		if (stk->stk[getArg(pci, i)].bat) {
 			oid cnt = 0;
 
 			b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval);

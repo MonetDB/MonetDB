@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -51,6 +53,7 @@
 #include "msabaoth.h"		/* msab_getUUID */
 #include "muuid.h"
 #include "rel_remote.h"
+#include "rel_physical.h"
 #include "sql_user.h"
 
 int
@@ -104,17 +107,15 @@ table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes)
 	return q;
 }
 
-void
-relational_func_create_result_part1(mvc *sql, sql_rel **f, int *nargs)
+sql_rel *
+relational_func_create_result_part1(mvc *sql, sql_rel *r, int *nargs)
 {
-	sql_rel *r = *f;
-
 	if (is_topn(r->op) || is_sample(r->op))
 		r = r->l;
 	if (!is_project(r->op))
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	*nargs = list_length(r->exps);
-	*f = r;
+	return r;
 }
 
 InstrPtr
@@ -288,7 +289,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	backend_reset(be);
 
 	int nargs;
-	relational_func_create_result_part1(m, &r, &nargs);
+	sql_rel *nr = relational_func_create_result_part1(m, r, &nargs);
 	nargs += (call && call->type == st_list) ? list_length(call->op4.lval) : rel_ops ? list_length(rel_ops) : 0;
 
 	c->curprg = newFunctionArgs(putName(mod), putName(name), FUNCTIONsymbol, nargs);
@@ -299,7 +300,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		sql_error(m, 10, "%s", m->sa->eb.msg);
 		freeSymbol(c->curprg);
 		goto bailout;
-	} else if (_create_relational_function_body(m, r, call, rel_ops, inline_func) < 0) {
+	} else if (_create_relational_function_body(m, nr, call, rel_ops, inline_func) < 0) {
 		goto bailout;
 	}
 	*be = bebackup;
@@ -353,7 +354,9 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	Client c = MCgetClient(m->clientid);
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
-	sqlid table_id = prp->id;
+	tid_uri *tu = ((list*)prp->value.pval)->h->data;
+	sqlid table_id = tu->id;
+	assert(table_id);
 	node *n;
 	int i, q, v, res = -1, added_to_cache = 0, *lret, *rret;
 	size_t len = 1024, nr, pwlen = 0;
@@ -388,6 +391,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 
 	sql_table *rt = sql_trans_find_table(m->session->tr, table_id);
 	const char *uri = mapiuri_uri(rt->query, m->sa);
+	assert(strcmp(tu->uri, uri) == 0);
 	if (!rt) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
@@ -927,8 +931,12 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	Symbol symbackup = c->curprg;
 	exception_buffer ebsave = m->sa->eb;
 
-	if (prp->id == 0) {
-		sql_error(m, 003, SQLSTATE(42000) "Missing property on the input relation");
+	if (list_empty(prp->value.pval)) {
+		sql_error(m, 003, SQLSTATE(42000) "Missing REMOTE property on the input relation");
+		goto bailout;
+	}
+	if (list_length(prp->value.pval) != 1) {
+		sql_error(m, 003, SQLSTATE(42000) "REMOTE property on the input relation is NOT unique");
 		goto bailout;
 	}
 	if (strlen(mod) >= IDLENGTH) {
@@ -942,8 +950,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* create stub */
 	int nargs;
-	sql_rel *rel2 = rel;
-	relational_func_create_result_part1(m, &rel2, &nargs);
+	sql_rel *rel2 = relational_func_create_result_part1(m, rel, &nargs);
 	if (call && call->type == st_list)
 		nargs += list_length(call->op4.lval);
 	c->curprg = newFunctionArgs(putName(mod), putName(name), FUNCTIONsymbol, nargs);
@@ -1058,17 +1065,6 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
-		pushInstruction(mb, q);
-	}
-	/* generate a dummy return assignment for functions */
-	if (getArgType(mb, getInstrPtr(mb, 0), 0) != TYPE_void && getInstrPtr(mb, mb->stop - 1)->barrier != RETURNsymbol) {
-		q = newAssignment(mb);
-		if (q == NULL) {
-			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return -1;
-		}
-		getArg(q, 0) = getArg(getInstrPtr(mb, 0), 0);
-		q->barrier = RETURNsymbol;
 		pushInstruction(mb, q);
 	}
 	if (add_end)
@@ -1285,19 +1281,39 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 		*side_effect = 0;
 		return 1;
 	}
+	if (strcmp(fname, "timestamp_to_str") == 0 ||
+	    strcmp(fname, "time_to_str") == 0 ||
+	    strcmp(fname, "str_to_timestamp") == 0 ||
+	    strcmp(fname, "str_to_time") == 0 ||
+	    strcmp(fname, "str_to_date") == 0) {
+		*side_effect = 0;
+		return 1;
+	}
 
 	c = MCgetClient(clientID);
 	MT_lock_set(&sql_gencodeLock);
 	for (m = findModule(c->usermodule, mname); m; m = m->link) {
 		for (Symbol s = findSymbolInModule(m, fname); s; s = s->peer) {
-			InstrPtr sig = getSignature(s);
-			int argc = sig->argc - sig->retc, nfargs = list_length(f->ops), nfres = list_length(f->res);
+			int argc = 0, retc = 0, varargs = 0, unsafe = 0;
+			if (s->kind == FUNCTIONsymbol) {
+				InstrPtr sig = getSignature(s);
+				retc = sig->retc;
+				argc = sig->argc - sig->retc;
+				varargs = (sig->varargs & VARARGS) == VARARGS;
+				unsafe = s->def->unsafeProp;
+			} else {
+				retc = s->func->retc;
+				argc = s->func->argc - s->func->retc;
+				varargs = s->func->vargs;
+				unsafe = s->func->unsafe;
+			}
+			int nfargs = list_length(f->ops), nfres = list_length(f->res);
 
-			if ((sig->varargs & VARARGS) == VARARGS || f->vararg || f->varres) {
-				*side_effect = (bool) s->def->unsafeProp;
+			if (varargs || f->vararg || f->varres) {
+				*side_effect = (bool) unsafe;
 				MT_lock_unset(&sql_gencodeLock);
 				return 1;
-			} else if (nfargs == argc && (nfres == sig->retc || (sig->retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
+			} else if (nfargs == argc && (nfres == retc || (retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
 				/* I removed this code because, it was triggering many errors on te SQL <-> MAL translation */
 				/* Check for types of inputs and outputs. SQL procedures and filter functions always return 1 value in the MAL implementation
 				bool all_match = true;
@@ -1331,7 +1347,7 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 					}
 				}
 				if (all_match)*/
-				*side_effect = (bool) s->def->unsafeProp;
+				*side_effect = (bool) unsafe;
 				MT_lock_unset(&sql_gencodeLock);
 				return 1;
 			}
@@ -1420,9 +1436,10 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 }
 
 int
-backend_create_mal_func(mvc *m, sql_func *f)
+backend_create_mal_func(mvc *m, sql_subfunc *sf)
 {
 	char *F = NULL, *fn = NULL;
+	sql_func *f = sf->func;
 	bool old_side_effect = f->side_effect, new_side_effect = 0;
 	int clientid = m->clientid;
 	str fimp = NULL;
@@ -1470,8 +1487,10 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	sql_rel *r;
 
 	r = rel_parse(m, f->s, f->query, prepare?m_prepare:m_instantiate);
-	if (r)
+	if (r) {
 		r = sql_processrelation(m, r, 0, 1, 1, 0);
+		r = rel_physical(m, r);
+	}
 	if (!r) {
 		goto cleanup;
 	}
@@ -1611,12 +1630,13 @@ cleanup:
 }
 
 static int
-backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
+backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 {
 	mvc *m = be->mvc;
 	Client c = be->client;
 	Symbol symbackup = c->curprg;
 	backend bebackup = *be;		/* backup current backend */
+	sql_func *f = sf->func;
 	bool prepare = f->imp;
 	const char *sql_shared_module = putName(sql_shared_module_name);
 	const char *sql_private_module = putName(sql_private_module_name);
@@ -1661,9 +1681,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 }
 
 static int
-backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
+backend_create_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 {
-	switch(f->lang) {
+	switch(sf->func->lang) {
 	case FUNC_LANG_INT:
 	case FUNC_LANG_R:
 	case FUNC_LANG_PY:
@@ -1672,9 +1692,9 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_CPP:
 		return 0; /* these languages don't require internal instantiation */
 	case FUNC_LANG_MAL:
-		return backend_create_mal_func(be->mvc, f);
+		return backend_create_mal_func(be->mvc, sf);
 	case FUNC_LANG_SQL:
-		return backend_create_sql_func(be, f, restypes, ops);
+		return backend_create_sql_func(be, sf, restypes, ops);
 	default:
 		sql_error(be->mvc, 10, SQLSTATE(42000) "Function language without a MAL backend");
 		return -1;
@@ -1684,7 +1704,7 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 int
 backend_create_subfunc(backend *be, sql_subfunc *f, list *ops)
 {
-	return backend_create_func(be, f->func, f->res, ops);
+	return backend_create_func(be, f, f->res, ops);
 }
 
 void
@@ -1698,7 +1718,7 @@ _rel_print(mvc *sql, sql_rel *rel)
 
 void
 _exp_print(mvc *sql, sql_exp *e) {
-	exp_print(sql, GDKstdout, e, 0, NULL, 1, 0);
+	exp_print(sql, GDKstdout, e, 0, NULL, 1, 0, 1);
 	mnstr_printf(GDKstdout, "\n");
 }
 
@@ -1740,7 +1760,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 			nl, nl);
 	mnstr_printf(fd, "%% .plan # table_name\n");
 	mnstr_printf(fd, "%% rel # name\n");
-	mnstr_printf(fd, "%% clob # type\n");
+	mnstr_printf(fd, "%% varchar # type\n");
 	mnstr_printf(fd, "%% %zu # length\n", len - 1 /* remove = */);
 
 	/* output the data */

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -131,7 +133,7 @@ bat_utils_init(void)
 	char name[32];
 
 	for (t=1; t<GDKatomcnt; t++) {
-		if (t != TYPE_bat && BATatoms[t].name[0]) {
+		if (BATatoms[t].name[0]) {
 			ebats[t] = bat_new(t, 0, SYSTRANS);
 			if(ebats[t] == NULL) {
 				for (t = t - 1; t >= 1; t--)

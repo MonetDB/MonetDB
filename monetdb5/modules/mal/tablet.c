@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -185,53 +187,6 @@ TABLETcollect(BAT **bats, Tablet *as)
 	return MAL_SUCCEED;
 }
 
-str
-TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
-{
-	Column *fmt = as->format;
-	BUN i, j;
-	BUN cnt = 0;
-
-	for (i = 0; i < as->nr_attrs && !cnt; i++)
-		if (!fmt[i].skip)
-			cnt = BATcount(fmt[i].c);
-	for (i = 0, j = 0; i < as->nr_attrs; i++) {
-		BAT *b, *bv = NULL;
-		if (fmt[i].skip)
-			continue;
-		b = fmt[i].c;
-		b->tsorted = b->trevsorted = false;
-		b->tkey = false;
-		BATsettrivprop(b);
-		if ((b = BATsetaccess(b, BAT_READ)) == NULL) {
-			fmt[i].c = NULL;
-			throw(SQL, "copy",
-				  "Failed to set access at tablet part " BUNFMT "\n", cnt);
-		}
-		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
-		bats[j] = bv;
-
-		b->tkey = (offset > 0) ? FALSE : bv->tkey;
-		b->tnonil &= bv->tnonil;
-		if (b->tsorted != bv->tsorted)
-			b->tsorted = false;
-		if (b->trevsorted != bv->trevsorted)
-			b->trevsorted = false;
-		if (BATtdense(b))
-			b->tkey = true;
-
-		if (offset > 0) {
-			BBPunfix(bv->batCacheid);
-			bats[j] = BATslice(b, offset, BATcount(b));
-		}
-		if (cnt != BATcount(b))
-			throw(SQL, "copy", "Count " BUNFMT " differs from " BUNFMT "\n",
-				  BATcount(b), cnt);
-		j++;
-	}
-	return MAL_SUCCEED;
-}
-
 // the starting quote character has already been skipped
 
 static char *
@@ -395,31 +350,6 @@ output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd,
 	return 0;
 }
 
-/* returns TRUE if there is/might be more */
-static bool
-tablet_read_more(bstream *in, stream *out, size_t n)
-{
-	if (out) {
-		do {
-			/* query is not finished ask for more */
-			/* we need more query text */
-			if (bstream_next(in) < 0)
-				return false;
-			if (in->eof) {
-				if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
-					mnstr_flush(out, MNSTR_FLUSH_DATA);
-				in->eof = false;
-				/* we need more query text */
-				if (bstream_next(in) <= 0)
-					return false;
-			}
-		} while (in->len <= in->pos);
-	} else if (bstream_read(in, n) <= 0) {
-		return false;
-	}
-	return true;
-}
-
 /*
  * Fast Load
  * To speedup the CPU intensive loading of files we have to break
@@ -467,7 +397,7 @@ tablet_read_more(bstream *in, stream *out, size_t n)
  */
 
 static int
-output_file_default(Tablet *as, BAT *order, stream *fd)
+output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
@@ -484,10 +414,12 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 	}
 	for (q = offset + as->nr, p = offset, id = order->hseqbase + offset; p < q;
 		 p++, id++) {
+		if (((p - offset) & 8191) == 8191 && bstream_getoob(in)) {
+			res = -5;
+			break;
+		}
 		if ((res = output_line(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs, id)) < 0) {
-			GDKfree(buf);
-			GDKfree(localbuf);
-			return res;
+			break;
 		}
 	}
 	GDKfree(localbuf);
@@ -496,7 +428,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 }
 
 static int
-output_file_dense(Tablet *as, stream *fd)
+output_file_dense(Tablet *as, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
@@ -510,10 +442,12 @@ output_file_dense(Tablet *as, stream *fd)
 		return -1;
 	}
 	for (i = 0; i < as->nr; i++) {
+		if ((i & 8191) == 8191 && bstream_getoob(in)) {
+			res = -5;			/* "Query aborted" */
+			break;
+		}
 		if ((res = output_line_dense(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
-			GDKfree(buf);
-			GDKfree(localbuf);
-			return res;
+			break;
 		}
 	}
 	GDKfree(localbuf);
@@ -522,7 +456,7 @@ output_file_dense(Tablet *as, stream *fd)
 }
 
 static int
-output_file_ordered(Tablet *as, BAT *order, stream *fd)
+output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ;
 	int res = 0;
@@ -536,6 +470,10 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd)
 	for (q = offset + as->nr, p = offset; p < q; p++, i++) {
 		oid h = order->hseqbase + p;
 
+		if (((p - offset) & 8191) == 8191 && bstream_getoob(in)) {
+			res = -5;
+			break;
+		}
 		if ((res = output_line_lookup(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
 			GDKfree(buf);
 			return res;
@@ -546,7 +484,7 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd)
 }
 
 int
-TABLEToutput_file(Tablet *as, BAT *order, stream *s)
+TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in)
 {
 	oid base = oid_nil;
 	int ret = 0;
@@ -566,11 +504,11 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 	base = check_BATs(as);
 	if (!order || !is_oid_nil(base)) {
 		if (!order || order->hseqbase == base)
-			ret = output_file_dense(as, s);
+			ret = output_file_dense(as, s, in);
 		else
-			ret = output_file_ordered(as, order, s);
+			ret = output_file_ordered(as, order, s, in);
 	} else {
-		ret = output_file_default(as, order, s);
+		ret = output_file_default(as, order, s, in);
 	}
 	return ret;
 }
@@ -648,8 +586,41 @@ typedef struct {
 	char ***fields;
 	bte *rowerror;
 	int errorcnt;
+	bool aborted;
 	bool set_qry_ctx;
 } READERtask;
+
+/* returns TRUE if there is/might be more */
+static bool
+tablet_read_more(READERtask *task)
+{
+	bstream *in = task->b;
+	stream *out = task->out;
+	size_t n =  task->b->size;
+	if (out) {
+		do {
+			/* query is not finished ask for more */
+			/* we need more query text */
+			if (bstream_next(in) < 0)
+				return false;
+			if (in->eof) {
+				if (bstream_getoob(in)) {
+					task->aborted = true;
+					return false;
+				}
+				if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
+					mnstr_flush(out, MNSTR_FLUSH_DATA);
+				in->eof = false;
+				/* we need more query text */
+				if (bstream_next(in) <= 0)
+					return false;
+			}
+		} while (in->len <= in->pos);
+	} else if (bstream_read(in, n) <= 0) {
+		return false;
+	}
+	return true;
+}
 
 /* note, the column value that is passed here is the 0 based value; the
  * lineno value on the other hand is 1 based */
@@ -1290,10 +1261,17 @@ SQLproducer(void *p)
 	}
 	for (;;) {
 		startlineno = lineno;
-		ateof[cur] = !tablet_read_more(task->b, task->out, task->b->size);
+		ateof[cur] = !tablet_read_more(task);
 
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
+		if (task->aborted || ((lineno & 8191) == 0 && bstream_getoob(task->cntxt->fdin))) {
+			tablet_error(task, rowno, lineno, int_nil,
+						 "problem reported by client", s);
+			ateof[cur] = true;
+			goto reportlackofinput;
+		}
+
 		if (ateof[cur] && partial) {
 			if (unlikely(partial)) {
 				tablet_error(task, rowno, lineno, int_nil,
@@ -1321,8 +1299,7 @@ SQLproducer(void *p)
 		s = task->input[cur];
 		base = end;
 		/* avoid too long records */
-		if (unlikely
-			(end - s + task->b->len - task->b->pos >= task->rowlimit[cur])) {
+		if (unlikely(end - s + task->b->len - task->b->pos >= task->rowlimit[cur])) {
 			/* the input buffer should be extended, but 'base' is not shared
 			   between the threads, which we can not now update.
 			   Mimick an ateof instead; */

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -69,7 +71,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define getArgReference_bat(s, pci, k)				\
 	({												\
 		ValRecord *v = &(s)->stk[(pci)->argv[k]];	\
-		assert(v->vtype == TYPE_bat);				\
+		assert(v->bat);								\
 		&v->val.bval;								\
 	})
 #define getArgReference_int(s, pci, k)				\

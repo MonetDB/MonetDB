@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -24,8 +26,6 @@ Symbol
 newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 {
 	Symbol s;
-	InstrPtr p;
-	int varid;
 
 	if (mod == NULL || nme == NULL)
 		return NULL;
@@ -34,25 +34,27 @@ newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 	if (s == NULL)
 		return NULL;
 
-	varid = newVariable(s->def, nme, strlen(nme), TYPE_any);
-	if (varid < 0) {
-		freeSymbol(s);
-		return NULL;
-	}
-
-	if (args > 0) {
-		p = newInstructionArgs(NULL, mod, nme, args);
-		if (p == NULL) {
+	if (kind == FUNCTIONsymbol) {
+		int varid = newVariable(s->def, nme, strlen(nme), TYPE_any);
+		if (varid < 0) {
 			freeSymbol(s);
 			return NULL;
 		}
-		p->token = kind;
-		p->barrier = 0;
-		setDestVar(p, varid);
-		pushInstruction(s->def, p);
-		if (s->def->errors) {
-			freeSymbol(s);
-			return NULL;
+
+		if (args > 0) {
+			InstrPtr p = newInstructionArgs(NULL, mod, nme, args);
+			if (p == NULL) {
+				freeSymbol(s);
+				return NULL;
+			}
+			p->token = kind;
+			p->barrier = 0;
+			setDestVar(p, varid);
+			pushInstruction(s->def, p);
+			if (s->def->errors) {
+				freeSymbol(s);
+				return NULL;
+			}
 		}
 	}
 	return s;
@@ -62,28 +64,6 @@ Symbol
 newFunction(const char *mod, const char *nme, int kind)
 {
 	return newFunctionArgs(mod, nme, kind, MAXARG);
-}
-
-/*
- * Optimizers may be interested in the function definition
- * for obtaining properties. Rather than polution of the
- * instruction record with a scope reference, we use a lookup function until it
- * becomes a performance hindrance.
- */
-Symbol
-getFunctionSymbol(Module scope, InstrPtr p)
-{
-	Module m;
-	Symbol s;
-
-	for (m = findModule(scope, getModuleId(p)); m; m = m->link)
-		if (idcmp(m->name, getModuleId(p)) == 0) {
-			s = m->space[getSymbolIndex(getFunctionId(p))];
-			for (; s; s = s->peer)
-				if (getSignature(s)->fcn == p->fcn)
-					return s;
-		}
-	return 0;
 }
 
 int
@@ -116,6 +96,7 @@ chkFlow(MalBlkPtr mb)
 	int endseen = 0, retseen = 0;
 	InstrPtr p, sig;
 	str msg = MAL_SUCCEED;
+	char name[IDLENGTH] = { 0 };
 
 	if (mb->errors != MAL_SUCCEED)
 		return mb->errors;
@@ -139,8 +120,7 @@ chkFlow(MalBlkPtr mb)
 				if (v == var[j])
 					throw(MAL, "chkFlow",
 						  "%s.%s recursive %s[%d] shields %s[%d]",
-						  getModuleId(sig), getFunctionId(sig), getVarName(mb,
-																		   v),
+						  getModuleId(sig), getFunctionId(sig), getVarNameIntoBuffer(mb, v, name),
 						  pc[j], getFcnName(mb), pc[i]);
 
 			btop++;
@@ -150,12 +130,12 @@ chkFlow(MalBlkPtr mb)
 			if (btop > 0 && var[btop - 1] != v)
 				throw(MAL, "chkFlow",
 					  "%s.%s exit-label '%s' doesnot match '%s'",
-					  getModuleId(sig), getFunctionId(sig), getVarName(mb, v),
-					  getVarName(mb, var[btop - 1]));
+					  getModuleId(sig), getFunctionId(sig), getVarNameIntoBuffer(mb, v, name),
+					  getVarNameIntoBuffer(mb, var[btop - 1], name));
 			if (btop == 0)
 				throw(MAL, "chkFlow",
 					  "%s.%s exit-label '%s' without begin-label",
-					  getModuleId(sig), getFunctionId(sig), getVarName(mb, v));
+					  getModuleId(sig), getFunctionId(sig), getVarNameIntoBuffer(mb, v, name));
 			/* search the matching block */
 			for (j = btop - 1; j >= 0; j--)
 				if (var[j] == v)
@@ -185,7 +165,7 @@ chkFlow(MalBlkPtr mb)
 				if (var[j] == v)
 					break;
 			if (j < 0) {
-				str nme = getVarName(mb, v);
+				str nme = getVarNameIntoBuffer(mb, v, name);
 				throw(MAL, "chkFlow", "%s.%s label '%s' not in guarded block",
 					  getModuleId(sig), getFunctionId(sig), nme);
 			}
@@ -196,7 +176,7 @@ chkFlow(MalBlkPtr mb)
 			if (ps->retc != p->retc) {
 				throw(MAL, "chkFlow", "%s.%s invalid return target!",
 					  getModuleId(sig), getFunctionId(sig));
-			} else if (ps->typechk == TYPE_RESOLVED)
+			} else if (ps->typeresolved)
 				for (e = 0; e < p->retc; e++) {
 					if (resolvedType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
 						str tpname = getTypeName(getArgType(mb, p, e));
@@ -241,7 +221,7 @@ chkFlow(MalBlkPtr mb)
 
 	if (endseen && btop > 0)
 		throw(MAL, "chkFlow", "barrier '%s' without exit in %s[%d]",
-			  getVarName(mb, var[btop - 1]), getFcnName(mb), i);
+			  getVarNameIntoBuffer(mb, var[btop - 1], name), getFcnName(mb), i);
 	p = getInstrPtr(mb, 0);
 	if (!isaSignature(p))
 		throw(MAL, "chkFlow", "%s.%s signature missing", getModuleId(sig),
@@ -287,30 +267,21 @@ getBarrierEnvelop(MalBlkPtr mb)
 static void
 replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t)
 {
-	int j, i, x, y;
-
-	for (j = 0; j < mb->stop; j++) {
+	for (int j = 0; j < mb->stop; j++) {
 		p = getInstrPtr(mb, j);
-		if (p->polymorphic)
-			for (i = 0; i < p->argc; i++)
-				if (isPolymorphic(x = getArgType(mb, p, i))) {
+		if (p->polymorphic) {
+			for (int i = 0; i < p->argc; i++) {
+				int x = getArgType(mb, p, i);
+				if (isPolymorphic(x) && getTypeIndex(x) == v) {
 					if (isaBatType(x)) {
-						int tail;
-						int tx;
-						tail = getBatType(x);
-						tx = getTypeIndex(x);
-						if (v && tx == v && tail == TYPE_any) {
-							tx = 0;
-							tail = t;
-						}
-						y = newBatType(tail);
-						setTypeIndex(y, tx);
-						setArgType(mb, p, i, y);
-					} else if (getTypeIndex(x) == v) {
-						setArgType(mb, p, i, t);
+						int tail = newBatType(t);
+						setArgType(mb, p, i, tail);
 					} else {
+						setArgType(mb, p, i, t);
 					}
 				}
+			}
+		}
 	}
 }
 
@@ -319,18 +290,11 @@ replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t)
 static void
 insertSymbolBefore(Module scope, Symbol prg, Symbol before)
 {
-	InstrPtr sig;
 	int t;
 	Symbol s;
 
 	assert(strcmp(prg->name, before->name) == 0);
-	sig = getSignature(prg);
-	if (getModuleId(sig) && getModuleId(sig) != scope->name) {
-		Module c = findModule(scope, getModuleId(sig));
-		if (c)
-			scope = c;
-	}
-	t = getSymbolIndex(getFunctionId(sig));
+	t = getSymbolIndex(prg->name);
 	assert(scope->space != NULL);
 	assert(scope->space[t] != NULL);
 	s = scope->space[t];
@@ -365,8 +329,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	InstrPtr pp;
 	str msg = MAL_SUCCEED;
 
-	new = newFunctionArgs(scope->name, proc->name, getSignature(proc)->token,
-						  -1);
+	new = newFunctionArgs(scope->name, proc->name, proc->kind, -1);
 	if (new == NULL) {
 		return NULL;
 	}
@@ -382,12 +345,13 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 		if (isPolymorphic(v = getArgType(new->def, pp, i))) {
 			int t = getArgType(mb, p, i);
 
-			if (v == TYPE_any)
+			if (v == TYPE_any) {
+				assert(0);
 				replaceTypeVar(new->def, pp, v, t);
+			}
 			if (isaBatType(v)) {
 				if (getTypeIndex(v))
-					replaceTypeVar(new->def, pp, getTypeIndex(v),
-								   getBatType(t));
+					replaceTypeVar(new->def, pp, getTypeIndex(v), getBatType(t));
 			} else
 				replaceTypeVar(new->def, pp, getTypeIndex(v), t);
 		}
@@ -396,7 +360,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	/* clear polymorphic and type to force analysis */
 	for (i = 0; i < new->def->stop; i++) {
 		pp = getInstrPtr(new->def, i);
-		pp->typechk = TYPE_UNKNOWN;
+		pp->typeresolved = false;
 		pp->polymorphic = 0;
 	}
 	/* clear type fixations */
@@ -483,7 +447,6 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first,
 
 	assert(size >= 0);
 	assert(first >= 0 && first < mb->stop);
-	renameVariables(mb);
 	if (flg & LIST_MAL_MAPI) {
 		size_t len = 0;
 		str ps;
@@ -508,25 +471,6 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first,
 		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }
 
-
-void
-renameVariables(MalBlkPtr mb)
-{
-	int i;
-	char *s;
-
-	/* Temporary variables get their name from the position in the symbol table */
-	/* However, also MAL input may contain temporary names. At some point you need to clean it up to avoid clashes */
-	/* Certainly when you are about to print the MAL function */
-	/* During optimization they may be copied around, which means there name should be re-establised */
-	/* rename all temporaries for ease of variable table interpretation */
-	/* this code should not be necessary is variables always keep their position */
-	for (i = 0; i < mb->vtop; i++) {
-		s = getVarName(mb, i);
-		if (s[1] == '_' && (*s == 'C' || *s == 'X'))
-			snprintf(s + 2, IDLENGTH - 2, "%d", i);
-	}
-}
 
 void
 printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
@@ -750,6 +694,7 @@ chkDeclarations(MalBlkPtr mb)
 	short blks[MAXDEPTH], top = 0, blkId = 1;
 	int dflow = -1;
 	str msg = MAL_SUCCEED;
+	char name[IDLENGTH] = { 0 };
 
 	if (mb->errors)
 		return GDKstrdup(mb->errors);
@@ -792,8 +737,7 @@ chkDeclarations(MalBlkPtr mb)
 						   && !isVarInit(mb, l)) {
 					throw(MAL, "chkFlow",
 						  "%s.%s '%s' may not be used before being initialized",
-						  getModuleId(sig), getFunctionId(sig), getVarName(mb,
-																		   l));
+						  getModuleId(sig), getFunctionId(sig), getVarNameIntoBuffer(mb, l, name));
 				}
 			} else if (!isVarInit(mb, l)) {
 				/* is the block still active ? */
@@ -802,8 +746,7 @@ chkDeclarations(MalBlkPtr mb)
 						break;
 				if (i > top || blks[i] != getVarScope(mb, l))
 					throw(MAL, "chkFlow", "%s.%s '%s' used outside scope",
-						  getModuleId(sig), getFunctionId(sig), getVarName(mb,
-																		   l));
+						  getModuleId(sig), getFunctionId(sig), getVarNameIntoBuffer(mb, l, name));
 			}
 			if (blockCntrl(p) || blockStart(p))
 				setVarInit(mb, l);

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -66,7 +68,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			 * doesn't fail */
 			BBP_status_off(bid, BBPNEW);
 			BBP_status_on(bid, BBPEXISTING);
-		} else if (BBP_status(bid) & BBPDELETED) {
+		} else if ((BBP_status(bid) & (BBPDELETED|BBPLOADED)) == (BBPDELETED|BBPLOADED)) {
 			/* check mmap modes of bats that are now
 			 * transient. this has to be done after the
 			 * commit succeeded, because the mmap modes
@@ -77,17 +79,15 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			 * but didn't due to the failure, would be a
 			 * consistency risk.
 			 */
-			b = BBP_cache(bid);
-			if (b) {
-				/* check mmap modes */
-				MT_lock_set(&b->theaplock);
-				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					GDKwarning("BATcheckmodes failed\n");
-				MT_lock_unset(&b->theaplock);
-			}
+			b = BBP_desc(bid);
+			/* check mmap modes */
+			MT_lock_set(&b->theaplock);
+			if (BATcheckmodes(b, true) != GDK_SUCCEED)
+				GDKwarning("BATcheckmodes failed\n");
+			MT_lock_unset(&b->theaplock);
 		}
 		b = BBP_desc(bid);
-		if (b && b->ttype >= 0 && ATOMvarsized(b->ttype)) {
+		if (b->batCacheid != 0 && b->ttype >= 0 && ATOMvarsized(b->ttype)) {
 			MT_lock_set(&b->theaplock);
 			ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
 			if (p != NULL) {
@@ -144,7 +144,7 @@ TMcommit(void)
 
 	/* commit with the BBP globally locked */
 	BBPlock();
-	if (BBPsync(getBBPsize(), NULL, NULL, getBBPlogno(), getBBPtransid()) == GDK_SUCCEED) {
+	if (BBPsync(getBBPsize(), NULL, NULL, getBBPlogno()) == GDK_SUCCEED) {
 		epilogue(getBBPsize(), NULL, true);
 		ret = GDK_SUCCEED;
 	}
@@ -156,7 +156,7 @@ TMcommit(void)
  * @- TMsubcommit
  *
  * Create a new checkpoint that is equal to the previous, with the
- * exception that for the passed list of batnames, the current state
+ * exception that for the passed list of bats, the current state
  * will be reflected in the new checkpoint.
  *
  * On the bats in this list we assume exclusive access during the
@@ -179,7 +179,7 @@ TMcommit(void)
  * a real global TMcommit.
  */
 gdk_return
-TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid)
+TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno)
 {
 	int xx;
 	gdk_return ret = GDK_FAIL;
@@ -191,7 +191,7 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 		return GDK_SUCCEED;
 
 	/* sort the list on BAT id */
-	GDKqsort(subcommit + 1, sizes ? sizes + 1 : NULL, NULL, cnt - 1, sizeof(bat), sizes ? sizeof(BUN) : 0, TYPE_bat, false, false);
+	GDKqsort(subcommit + 1, sizes ? sizes + 1 : NULL, NULL, cnt - 1, sizeof(bat), sizes ? sizeof(BUN) : 0, TYPE_int, false, false);
 
 	assert(cnt == 1 || subcommit[1] > 0);  /* all values > 0 */
 	/* de-duplication of BAT ids in subcommit list
@@ -213,41 +213,10 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 	BBPtmlock();
 	if (logno < 0)
 		logno = getBBPlogno();
-	if (transid < 0)
-		transid = getBBPtransid();
-	if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
+	if (BBPsync(cnt, subcommit, sizes, logno) == GDK_SUCCEED) { /* write BBP.dir (++) */
 		epilogue(cnt, subcommit, false);
 		ret = GDK_SUCCEED;
 	}
 	BBPtmunlock();
-	return ret;
-}
-
-gdk_return
-TMsubcommit(BAT *b)
-{
-	int cnt = 1;
-	gdk_return ret = GDK_FAIL;
-	bat *subcommit;
-	BUN p, q;
-
-	subcommit = GDKmalloc((BATcount(b) + 1) * sizeof(bat));
-	if (subcommit == NULL)
-		return GDK_FAIL;
-
-	BATiter bi = bat_iterator(b);
-	subcommit[0] = 0;	/* BBP artifact: slot 0 in the array will be ignored */
-	/* collect the list and save the new bats outside any
-	 * locking */
-	BATloop(b, p, q) {
-		bat bid = BBPindex((str) BUNtvar(bi, p));
-
-		if (bid)
-			subcommit[cnt++] = bid;
-	}
-	bat_iterator_end(&bi);
-
-	ret = TMsubcommit_list(subcommit, NULL, cnt, -1, -1);
-	GDKfree(subcommit);
 	return ret;
 }

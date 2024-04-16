@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -153,7 +155,7 @@ loadLibrary(const char *filename, int flag)
 	is_mod = (!is_monetdb5 && strcmp(filename, "embedded") != 0);
 
 	if (lastfile == 0 && is_mod) {	/* first load reference to local functions */
-		str msg = loadLibrary("monetdb5", flag);
+		str msg = loadLibrary("monetdb5", flag>=0?flag:0);
 		if (msg != MAL_SUCCEED)
 			return msg;
 	}
@@ -182,7 +184,9 @@ loadLibrary(const char *filename, int flag)
 	if (mod_path == NULL) {
 		int len;
 
-		if (is_mod)
+		if (is_mod && flag < 0)
+			len = snprintf(nme, FILENAME_MAX, ".%c%s_%s%s", DIR_SEP, SO_PREFIX, s, SO_EXT);
+		else if (is_mod)
 			len = snprintf(nme, FILENAME_MAX, "%s_%s%s", SO_PREFIX, s, SO_EXT);
 		else
 			len = snprintf(nme, FILENAME_MAX, "%s%s%s", SO_PREFIX, s, SO_EXT);
@@ -196,7 +200,7 @@ loadLibrary(const char *filename, int flag)
 		handle = dlopen(is_monetdb5 ? NULL : nme, RTLD_NOW | RTLD_GLOBAL);
 #endif
 		if (!handle) {
-			if (flag)
+			if (flag>0)
 				throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", s);
 			return MAL_SUCCEED;
 		}

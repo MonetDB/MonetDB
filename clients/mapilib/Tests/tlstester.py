@@ -6,7 +6,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
@@ -26,6 +28,8 @@ from threading import Thread
 import threading
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+# Our TLS implementation never uses anything less than TLSv1.3.
+assert ssl.HAS_TLSv1_3
 
 import warnings
 with warnings.catch_warnings():
@@ -173,7 +177,9 @@ class Certs:
         noncritical_extensions: List[x509.ExtensionType] = [],
         keycrt=False,
     ):
-        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=UserWarning)
+            key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
         if parent_name:
             issuer_name = parent_name
@@ -434,10 +440,14 @@ def make_context(allowtlsv12 = False):
 
     if hasattr(context, 'minimum_version'):
         context.maximum_version = ssl.TLSVersion.TLSv1_3
-        if allowtlsv12:
-            context.minimum_version = ssl.TLSVersion.TLSv1_2
-        else:
-            context.minimum_version = ssl.TLSVersion.TLSv1_3
+        try:
+            if allowtlsv12:
+                context.minimum_version = ssl.TLSVersion.TLSv1_2
+            else:
+                context.minimum_version = ssl.TLSVersion.TLSv1_3
+        except ValueError as e:
+            log.error(f"Setting context.minimum_version caused ValueError. Python version {sys.version!r}, linked to OpenSSL {ssl.OPENSSL_VERSION} ({ssl.OPENSSL_VERSION_NUMBER:#x})")
+            raise e
 
     return context
 
@@ -547,7 +557,7 @@ class MapiHandler(socketserver.BaseRequestHandler):
                     cert = self.tlstester.certs.get_file(f"{self.redirect}.der")
                     algo = 'sha256'
                     digest = hashlib.new(algo, cert).hexdigest()
-                    fingerprint = "{" + algo + "}" + digest
+                    fingerprint = algo + ":" + digest
                     msg = f"^monetdbs://{host}:{port}?certhash={fingerprint}\n"
                     self.send_message(bytes(msg, 'ascii'))
                     log.debug(

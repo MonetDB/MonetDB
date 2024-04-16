@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -22,7 +24,7 @@
 #define psm_zero_or_one(exp) \
 	do { \
 		if (exp && exp->card > CARD_AGGR) { \
-			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(exp), NULL, F_AGGR, true); \
+			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(exp), NULL, F_AGGR, true, true); \
 			assert(zero_or_one); \
 			exp = exp_aggr1(sql->sa, exp, zero_or_one, 0, 0, CARD_ATOM, has_nil(exp)); \
 		} \
@@ -31,7 +33,7 @@
 static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
 sql_rel *
-rel_psm_block(sql_allocator *sa, list *l)
+rel_psm_block(allocator *sa, list *l)
 {
 	if (l) {
 		sql_rel *r = rel_create(sa);
@@ -47,7 +49,7 @@ rel_psm_block(sql_allocator *sa, list *l)
 }
 
 sql_rel *
-rel_psm_stmt(sql_allocator *sa, sql_exp *e)
+rel_psm_stmt(allocator *sa, sql_exp *e)
 {
 	if (e) {
 		list *l = sa_list(sa);
@@ -361,7 +363,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 
 			psm_zero_or_one(when_value);
 			if (!when_value ||
-			   (cond = rel_binop_(sql, rel, v, when_value, "sys", "=", card_value)) == NULL ||
+			   (cond = rel_binop_(sql, rel, v, when_value, "sys", "=", card_value, false)) == NULL ||
 			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
 				return NULL;
 			}
@@ -762,7 +764,7 @@ create_type_list(mvc *sql, dlist *params, int param)
 }
 
 static sql_rel*
-rel_create_function(sql_allocator *sa, const char *sname, sql_func *f, int replace)
+rel_create_function(allocator *sa, const char *sname, sql_func *f, int replace)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -839,7 +841,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 	type_list = create_type_list(sql, params, 1);
 
-	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type, true)) != NULL && create) {
+	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type, true, true)) != NULL && create) {
 		if (sf->func->private) { /* cannot create a function using a private name or replace a existing one */
 			list_destroy(type_list);
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
@@ -874,7 +876,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 	if (create && (type == F_FUNC || type == F_AGGR || type == F_FILT)) {
 		sql_subfunc *found = NULL;
-		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC, true))) {
+		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC, true, true))) {
 			list_destroy(type_list);
 			if (found->func->private) /* cannot create a function using a private name or replace a existing one */
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
@@ -1040,7 +1042,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 }
 
 static sql_rel*
-rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr, sql_ftype type, int action)
+rel_drop_function(allocator *sa, const char *sname, const char *name, int nr, sql_ftype type, int action)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1075,11 +1077,11 @@ resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql
 		sql_subfunc *sub_func;
 
 		type_list = create_type_list(sql, typelist, 0);
-		sub_func = sql_bind_func_(sql, sname, name, type_list, type, false);
+		sub_func = sql_bind_func_(sql, sname, name, type_list, type, false, true);
 		if (!sub_func && type == F_FUNC) {
 			sql->session->status = 0; /* if the function was not found clean the error */
 			sql->errstr[0] = '\0';
-			sub_func = sql_bind_func_(sql, sname, name, type_list, F_UNION, false);
+			sub_func = sql_bind_func_(sql, sname, name, type_list, F_UNION, false, true);
 			type = sub_func?F_UNION:F_FUNC;
 		}
 		if ( sub_func && sub_func->func->type == type)
@@ -1463,7 +1465,7 @@ psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 			list_append(tl, exp_subtype(tname_exp));
 	}
 	if (!columns) {
-		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true)))
+		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true, false)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
 		if (!execute_priv(sql, f->func))
 			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
@@ -1471,7 +1473,7 @@ psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 	} else {
 		if (!sname || !tname)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze schema or table name missing");
-		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true)))
+		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true, false)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
 		if (!execute_priv(sql, f->func))
 			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -19,7 +21,7 @@
 /********** Geo Update Start **********/
 #ifdef HAVE_RTREE
 static str
-filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_geom, mbr *const_mbr, double distance, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
+filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_geom, mbr *const_mbr, double distance, bit anti, char (*func) (GEOSContextHandle_t handle, const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
 {
 	BAT *out = NULL, *b = NULL, *s = NULL;
 	BATiter b_iter;
@@ -29,7 +31,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 	//Get BAT, BATiter and candidate list
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (sid && !is_bat_nil(*sid) && !(s = BATdescriptor(*sid))) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
@@ -45,7 +47,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 	}
 
 	//Get a candidate list from searching on the rtree with the constant mbr
-	BUN* results_rtree = RTREEsearch(b,(mbr_t*)const_mbr, b->batCount);
+	BUN* results_rtree = RTREEsearch(b, const_mbr, b->batCount);
 	if (results_rtree == NULL) {
 		BBPunfix(b->batCacheid);
 		if (s)
@@ -68,9 +70,9 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL)
 			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
-		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
-			GEOSGeom_destroy(col_geom);
-			GEOSGeom_destroy(const_geom);
+		if (GEOSGetSRID_r(geoshandle, col_geom) != GEOSGetSRID_r(geoshandle, const_geom)) {
+			GEOSGeom_destroy_r(geoshandle, col_geom);
+			GEOSGeom_destroy_r(geoshandle, const_geom);
 			bat_iterator_end(&b_iter);
 			BBPunfix(b->batCacheid);
 			if (s)
@@ -79,11 +81,11 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 		}
 		//GEOS function returns 1 on true, 0 on false and 2 on exception
-		bit cond = ((*func)(col_geom, const_geom, distance) == 1);
+		bit cond = ((*func)(geoshandle, col_geom, const_geom, distance) == 1);
 		if (cond != anti) {
 			if (BUNappend(out, (oid*) &cand, false) != GDK_SUCCEED) {
-				GEOSGeom_destroy(col_geom);
-				GEOSGeom_destroy(const_geom);
+				GEOSGeom_destroy_r(geoshandle, col_geom);
+				GEOSGeom_destroy_r(geoshandle, const_geom);
 				bat_iterator_end(&b_iter);
 				BBPunfix(b->batCacheid);
 				if (s)
@@ -92,9 +94,9 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
-		GEOSGeom_destroy(col_geom);
+		GEOSGeom_destroy_r(geoshandle, col_geom);
 	}
-	GEOSGeom_destroy(const_geom);
+	GEOSGeom_destroy_r(geoshandle, const_geom);
 	bat_iterator_end(&b_iter);
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -106,7 +108,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 #endif
 
 static str
-filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, double distance, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
+filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, double distance, bit anti, char (*func) (GEOSContextHandle_t handle, const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
 {
 	BAT *out = NULL, *b = NULL, *s = NULL;
 	BATiter b_iter;
@@ -125,7 +127,7 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 	//Get BAT, BATiter and candidate list
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (sid && !is_bat_nil(*sid) && !(s = BATdescriptor(*sid))) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
@@ -145,9 +147,9 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL)
 			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
-		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
-			GEOSGeom_destroy(col_geom);
-			GEOSGeom_destroy(const_geom);
+		if (GEOSGetSRID_r(geoshandle, col_geom) != GEOSGetSRID_r(geoshandle, const_geom)) {
+			GEOSGeom_destroy_r(geoshandle, col_geom);
+			GEOSGeom_destroy_r(geoshandle, const_geom);
 			bat_iterator_end(&b_iter);
 			BBPunfix(b->batCacheid);
 			if (s)
@@ -156,13 +158,13 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 		}
 		//GEOS function returns 1 on true, 0 on false and 2 on exception
-		bit cond = ((*func)(col_geom, const_geom, distance) == 1);
+		bit cond = ((*func)(geoshandle, col_geom, const_geom, distance) == 1);
 		if (cond != anti) {
 			if (BUNappend(out, (oid*) &cand, false) != GDK_SUCCEED) {
 				if (col_geom)
-					GEOSGeom_destroy(col_geom);
+					GEOSGeom_destroy_r(geoshandle, col_geom);
 				if (const_geom)
-					GEOSGeom_destroy(const_geom);
+					GEOSGeom_destroy_r(geoshandle, const_geom);
 				bat_iterator_end(&b_iter);
 				BBPunfix(b->batCacheid);
 				if (s)
@@ -171,10 +173,10 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
-		GEOSGeom_destroy(col_geom);
+		GEOSGeom_destroy_r(geoshandle, col_geom);
 	}
 
-	GEOSGeom_destroy(const_geom);
+	GEOSGeom_destroy_r(geoshandle, const_geom);
 	bat_iterator_end(&b_iter);
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -188,7 +190,7 @@ str
 wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
 #ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
-	if (RTREEexists_bid((bat*)bid)) {
+	if (RTREEexists_bid(*bid)) {
 		//Calculate MBR of constant geometry first
 		GEOSGeom const_geom;
 		if ((const_geom = wkb2geos(*wkb_const)) == NULL) {
@@ -203,12 +205,12 @@ wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_
 		mbr *const_mbr = NULL;
 		wkbMBR(&const_mbr,wkb_const);
 
-		return filterSelectRTree(outid,bid,sid,const_geom,const_mbr,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectRTree");
+		return filterSelectRTree(outid,bid,sid,const_geom,const_mbr,0,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsSelectRTree");
 	}
 	else
-		return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+		return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsSelectNoIndex");
 #else
-	return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsSelectNoIndex");
 #endif
 }
 
@@ -216,7 +218,7 @@ str
 wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, dbl* distance, bit *anti) {
 #ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
-	if (RTREEexists_bid((bat*)bid)) {
+	if (RTREEexists_bid(*bid)) {
 		//Calculate MBR of constant geometry first
 		GEOSGeom const_geom;
 		if ((const_geom = wkb2geos(*wkb_const)) == NULL) {
@@ -240,27 +242,27 @@ wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_con
 		const_mbr->xmax +=(*distance);
 		const_mbr->ymax +=(*distance);
 
-		return filterSelectRTree(outid,bid,sid,const_geom,const_mbr,*distance,*anti,GEOSDistanceWithin,"geom.wkbDWithinSelectRTree");
+		return filterSelectRTree(outid,bid,sid,const_geom,const_mbr,*distance,*anti,GEOSDistanceWithin_r,"geom.wkbDWithinSelectRTree");
 	}
 	else
-		return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin,"geom.wkbDWithinSelectNoIndex");
+		return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin_r,"geom.wkbDWithinSelectNoIndex");
 #else
-	return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin,"geom.wkbDWithinSelectNoIndex");
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin_r,"geom.wkbDWithinSelectNoIndex");
 #endif
 }
 
 str
 wkbIntersectsSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
-	return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsSelectNoIndex");
 }
 
 str
 wkbDWithinSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double *distance, bit *anti) {
-	return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsSelectNoIndex");
 }
 
 static str
-filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng estimate, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
+filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng estimate, bit anti, char (*func) (GEOSContextHandle_t handle, const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
 {
 	BAT *lres = NULL, *rres = NULL, *l = NULL, *r = NULL, *ls = NULL, *rs = NULL;
 	BUN estimate_safe;
@@ -279,7 +281,7 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//get the candidate lists
-	if (ls_id && !is_bat_nil(*ls_id) && !(ls = BATdescriptor(*ls_id)) && rs_id && !is_bat_nil(*rs_id) && !(rs = BATdescriptor(*rs_id))) {
+	if (ls_id && !is_bat_nil(*ls_id) && (ls = BATdescriptor(*ls_id)) == NULL && rs_id && !is_bat_nil(*rs_id) && (rs = BATdescriptor(*rs_id)) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
@@ -351,14 +353,14 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 				else
 					continue;
 			}
-			if (GEOSGetSRID(l_geom) != GEOSGetSRID(r_geom)) {
+			if (GEOSGetSRID_r(geoshandle, l_geom) != GEOSGetSRID_r(geoshandle, r_geom)) {
 				msg = createException(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 				bat_iterator_end(&l_iter);
 				bat_iterator_end(&r_iter);
 				goto free;
 			}
 			//Apply the (Geom, Geom, double) -> bit function
-			bit cond = (*func)(l_geom, r_geom, double_flag) == 1;
+			bit cond = (*func)(geoshandle, l_geom, r_geom, double_flag) == 1;
 			if (cond != anti) {
 				if (BUNappend(lres, &l_oid, false) != GDK_SUCCEED || BUNappend(rres, &r_oid, false) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -371,13 +373,13 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 	}
 	if (l_geoms) {
 		for (BUN i = 0; i < l_ci.ncand; i++) {
-			GEOSGeom_destroy(l_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
 		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
-			GEOSGeom_destroy(r_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
 		GDKfree(r_geoms);
 	}
@@ -397,13 +399,13 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 free:
 	if (l_geoms) {
 		for (BUN i = 0; i < l_ci.ncand; i++) {
-			GEOSGeom_destroy(l_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
 		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
-			GEOSGeom_destroy(r_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
 		GDKfree(r_geoms);
 	}
@@ -422,7 +424,7 @@ free:
 
 #ifdef HAVE_RTREE
 static str
-filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng estimate, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name) {
+filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng estimate, bit anti, char (*func) (GEOSContextHandle_t handle, const GEOSGeometry *, const GEOSGeometry *, double), const char *name) {
 	BAT *lres = NULL, *rres = NULL, *l = NULL, *r = NULL, *ls = NULL, *rs = NULL, *inner_res = NULL, *outer_res = NULL, *inner_b = NULL;
 	BUN estimate_safe;
 	BATiter l_iter, r_iter;
@@ -440,7 +442,7 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//get the candidate lists
-	if (ls_id && !is_bat_nil(*ls_id) && !(ls = BATdescriptor(*ls_id)) && rs_id && !is_bat_nil(*rs_id) && !(rs = BATdescriptor(*rs_id))) {
+	if (ls_id && !is_bat_nil(*ls_id) && (ls = BATdescriptor(*ls_id)) == NULL && rs_id && !is_bat_nil(*rs_id) && (rs = BATdescriptor(*rs_id)) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
@@ -520,7 +522,7 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 
 		//Calculate the MBR for the constant geometry
 		mbr *outer_mbr = mbrFromGeos(outer_geom);
-		BUN* results_rtree = RTREEsearch(inner_b,(mbr_t*)outer_mbr, outer_ci.ncand);
+		BUN* results_rtree = RTREEsearch(inner_b, outer_mbr, outer_ci.ncand);
 		if (results_rtree == NULL) {
 			msg = createException(MAL, name, "RTreesearch failed, returned NULL candidates");
 			goto free;
@@ -549,12 +551,12 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 				else
 					continue;
 			}
-			if (GEOSGetSRID(outer_geom) != GEOSGetSRID(inner_geom)) {
+			if (GEOSGetSRID_r(geoshandle, outer_geom) != GEOSGetSRID_r(geoshandle, inner_geom)) {
 				msg = createException(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 				goto free;
 			}
 			//Apply the (Geom, Geom, double) -> bit function
-			bit cond = (*func)(inner_geom, outer_geom, double_flag) == 1;
+			bit cond = (*func)(geoshandle, inner_geom, outer_geom, double_flag) == 1;
 			if (cond != anti) {
 				if (BUNappend(inner_res, &inner_oid, false) != GDK_SUCCEED || BUNappend(outer_res, &outer_oid, false) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -565,13 +567,13 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 	}
 	if (l_geoms) {
 		for (BUN i = 0; i < l_ci.ncand; i++) {
-			GEOSGeom_destroy(l_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
 		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
-			GEOSGeom_destroy(r_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
 		GDKfree(r_geoms);
 	}
@@ -589,13 +591,13 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 free:
 	if (l_geoms) {
 		for (BUN i = 0; i < l_ci.ncand; i++) {
-			GEOSGeom_destroy(l_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
 		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
-			GEOSGeom_destroy(r_geoms[i]);
+			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
 		GDKfree(r_geoms);
 	}
@@ -617,36 +619,36 @@ str
 wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
 #ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
-	if (RTREEexists_bid((bat*)l_id) && RTREEexists_bid((bat*)r_id))
-		return filterJoinRTree(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin,"geom.wkbIntersectsJoinRTree");
+	if (RTREEexists_bid(*l_id) && RTREEexists_bid(*r_id))
+		return filterJoinRTree(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsJoinRTree");
 	else
-		return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin,"geom.wkbIntersectsJoinNoIndex");
+		return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsJoinNoIndex");
 
 #else
-	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin,"geom.wkbIntersectsJoinNoIndex");
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsJoinNoIndex");
 #endif
 }
 
 str
 wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, dbl *distance, bit *nil_matches, lng *estimate, bit *anti) {
 #ifdef HAVE_RTREE
-	if (RTREEexists_bid((bat*)l_id) && RTREEexists_bid((bat*)r_id))
-		return filterJoinRTree(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin,"geom.wkbDWithinJoinRTree");
+	if (RTREEexists_bid(*l_id) && RTREEexists_bid(*r_id))
+		return filterJoinRTree(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbDWithinJoinRTree");
 	else
-		return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin,"geom.wkbDWithinJoinNoIndex");
+		return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbDWithinJoinNoIndex");
 #else
-	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin,"geom.wkbDWithinJoinNoIndex");
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbDWithinJoinNoIndex");
 #endif
 }
 
 str
 wkbIntersectsJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
-	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin,"geom.wkbIntersectsJoinNoIndex");
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsJoinNoIndex");
 }
 
 str
 wkbDWithinJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate, bit *anti) {
-	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin,"geom.wkbDWithinJoinNoIndex");
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbDWithinJoinNoIndex");
 }
 
 //MBR bulk function
@@ -773,7 +775,7 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 	}
 
 	//check for candidate lists
-	if (s_id && !is_bat_nil(*s_id) && !(s = BATdescriptor(*s_id))) {
+	if (s_id && !is_bat_nil(*s_id) && (s = BATdescriptor(*s_id)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		BBPunfix(outBAT->batCacheid);
 		proj_destroy(P);
@@ -787,19 +789,10 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 		oid p = (canditer_next(&ci) - inBAT->hseqbase);
 		geomWKB = (wkb *) BUNtvar(inBAT_iter, p);
 
-		if (geomWKB == NULL) {
-			bat_iterator_end(&inBAT_iter);
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			if (s)
-				BBPunfix(s->batCacheid);
-			throw(MAL, "batgeom.Transform", SQLSTATE(38000) "One of the wkb geometries is null");
-		}
-
 		/* get the geosGeometry from the wkb */
 		geosGeometry = wkb2geos(geomWKB);
 		/* get the type of the geometry */
-		geometryType = GEOSGeomTypeId(geosGeometry) + 1;
+		geometryType = GEOSGeomTypeId_r(geoshandle, geosGeometry) + 1;
 
 		//TODO: No collection?
 		switch (geometryType) {
@@ -827,7 +820,7 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 
 		if (err == MAL_SUCCEED && transformedGeosGeometry) {
 			/* set the new srid */
-			GEOSSetSRID(transformedGeosGeometry, *srid_dst);
+			GEOSSetSRID_r(geoshandle, transformedGeosGeometry, *srid_dst);
 			/* get the wkb */
 			if ((transformedWKB = geos2wkb(transformedGeosGeometry)) == NULL)
 				throw(MAL, "batgeom.Transform", SQLSTATE(38000) "Geos operation geos2wkb failed");
@@ -838,10 +831,10 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 			}
 
 			/* destroy the geos geometries */
-			GEOSGeom_destroy(transformedGeosGeometry);
+			GEOSGeom_destroy_r(geoshandle, transformedGeosGeometry);
 
 		}
-		GEOSGeom_destroy(geosGeometry);
+		GEOSGeom_destroy_r(geoshandle, geosGeometry);
 	}
 	proj_destroy(P);
 	bat_iterator_end(&inBAT_iter);
@@ -882,11 +875,11 @@ wkbDistanceGeographic_bat_cand(bat *out_id, const bat *a_id, const bat *b_id, co
 		goto clean;
 	}
 	//check for candidate lists
-	if (s1_id && !is_bat_nil(*s1_id) && !(s1 = BATdescriptor(*s1_id))) {
+	if (s1_id && !is_bat_nil(*s1_id) && (s1 = BATdescriptor(*s1_id)) == NULL) {
 		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto clean;
 	}
-	if (s2_id && !is_bat_nil(*s2_id) && !(s2 = BATdescriptor(*s2_id))) {
+	if (s2_id && !is_bat_nil(*s2_id) && (s2 = BATdescriptor(*s2_id)) == NULL) {
 		msg = createException(MAL, "batgeom.DistanceGeographic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		if (s1)
 			BBPunfix(s1->batCacheid);
@@ -930,16 +923,12 @@ wkbDistanceGeographic_bat_cand(bat *out_id, const bat *a_id, const bat *b_id, co
 bailout:
 	bat_iterator_end(&a_iter);
 	bat_iterator_end(&b_iter);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 clean:
-	if (a)
-		BBPunfix(a->batCacheid);
-	if (b)
-		BBPunfix(b->batCacheid);
-	BBPunfix(out->batCacheid);
+	BBPreclaim(a);
+	BBPreclaim(b);
+	BBPreclaim(out);
 	return msg;
 }
 
@@ -973,7 +962,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 	off = b->hseqbase;
 	canditer_init(&ci, b, s);
 	//create a new BAT, aligned with input BAT
-	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), ci.ncand, TRANSIENT))) {
+	if ((dst = COLnew(ci.hseq, ATOMindex("wkb"), ci.ncand, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1062,7 +1051,7 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 	off = b->hseqbase;
 	canditer_init(&ci, b, s);
 	//create a new BAT, aligned with input BAT
-	if (!(dst = COLnew(ci.hseq, ATOMindex("wkb"), ci.ncand, TRANSIENT))) {
+	if ((dst = COLnew(ci.hseq, ATOMindex("wkb"), ci.ncand, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}

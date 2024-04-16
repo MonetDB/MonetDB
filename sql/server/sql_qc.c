@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -17,7 +19,7 @@
 #include "gdk_time.h"
 
 qc *
-qc_create(sql_allocator *sa, int clientid, int seqnr)
+qc_create(allocator *sa, int clientid, int seqnr)
 {
 	qc *r = SA_NEW(sa, qc);
 	if (!r)
@@ -126,7 +128,7 @@ qc_find(qc *cache, int id)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *cmd, int no_mitosis)
+qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *cmd, int no_mitosis)
 {
 	int namelen;
 	sql_func *f = SA_NEW(sa, sql_func);

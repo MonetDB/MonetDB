@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -97,18 +99,24 @@ sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_depe
 	return log_res;
 }
 
-/*It returns a list with depend_id_1, depend_type_1, depend_id_2, depend_type_2, ....*/
+/*It returns a list with depend_id_1, depend_type_1,
+                         depend_id_2, depend_type_2, ....*/
 list*
-sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, list * ignore_ids)
+sql_trans_get_dependents(sql_trans* tr, sqlid id,
+						 sql_dependency dependent_type,
+						 list * ignore_ids)
 {
 	sqlstore *store = tr->store;
-	void *v;
+	table_functions table_api = store->table_api;
 	sql_schema *s = find_sql_schema(tr, "sys");
 	sql_table *deps = find_sql_table(tr, s, "dependencies");
 	sql_column *dep_id, *dep_dep_id, *dep_dep_type, *tri_id, *table_id;
-	list *dep_list = list_create((fdestroy) _free);
+	list *dep_list = list_create((fdestroy)_free),
+		*schema_tables = NULL;
+	void *v;
 	oid rid;
 	rids *rs;
+	sqlid low_id = id, high_id = -1;
 
 	if (!dep_list)
 		return NULL;
@@ -117,15 +125,64 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 	dep_dep_id = find_sql_column(deps, "depend_id");
 	dep_dep_type = find_sql_column(deps, "depend_type");
 
-	rs = store->table_api.rids_select(tr, dep_id, &id, &id, NULL);
+	if (dependent_type == SCHEMA_DEPENDENCY) {
+		sql_schema *s = find_sql_schema_id(tr, id);
+		assert(s);
+		schema_tables = list_create((fdestroy)_free);
+		if (schema_tables == NULL) {
+			list_destroy(dep_list);
+			return NULL;
+		}
+		struct os_iter oi;
+		os_iterator(&oi, s->tables, tr, NULL);
+		bool first = true;
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sqlid* local_id = MNEW(sqlid);
+			if (local_id == NULL) {
+				list_destroy(dep_list);
+				return NULL;
+			}
+			*local_id = b->id;
+			if (list_append(schema_tables, local_id) == NULL) {
+				list_destroy(dep_list);
+				list_destroy(schema_tables);
+				return NULL;
+			}
+			if (first) {
+				low_id = b->id;
+				first = false;
+			}
+			high_id = b->id;
+		}
+	}
+
+	rs = table_api.rids_select(tr, dep_id, &low_id,
+							   high_id == -1 ? &low_id :
+							   low_id == high_id ? &low_id : &high_id,
+							   NULL);
 	if (rs == NULL) {
 		list_destroy(dep_list);
+		list_destroy(schema_tables);
 		return NULL;
 	}
-	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)){
-		if (!(v = store->table_api.column_find_value(tr, dep_dep_id, rid))) {
+
+	for (rid = table_api.rids_next(rs); !is_oid_nil(rid); rid = table_api.rids_next(rs)){
+		if (dependent_type == SCHEMA_DEPENDENCY) {
+			if (!(v = table_api.column_find_value(tr, dep_id, rid))) {
+				list_destroy(dep_list);
+				list_destroy(schema_tables);
+				table_api.rids_destroy(rs);
+				return NULL;
+			}
+			if (list_find_id(schema_tables, *(sqlid*)v) == NULL) {
+				_DELETE(v);
+				continue;
+			}
+		}
+		if (!(v = table_api.column_find_value(tr, dep_dep_id, rid))) {
 			list_destroy(dep_list);
-			store->table_api.rids_destroy(rs);
+			list_destroy(schema_tables);
+			table_api.rids_destroy(rs);
 			return NULL;
 		}
 		id = *(sqlid*)v;
@@ -133,64 +190,71 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 			if (list_append(dep_list, v) == NULL) {
 				_DELETE(v);
 				list_destroy(dep_list);
-				store->table_api.rids_destroy(rs);
+				list_destroy(schema_tables);
+				table_api.rids_destroy(rs);
 				return NULL;
 			}
-			if (!(v = store->table_api.column_find_value(tr, dep_dep_type, rid))) {
+			if (!(v = table_api.column_find_value(tr, dep_dep_type, rid))) {
 				list_destroy(dep_list);
-				store->table_api.rids_destroy(rs);
+				list_destroy(schema_tables);
+				table_api.rids_destroy(rs);
 				return NULL;
 			}
 			if (list_append(dep_list, v) == NULL) {
 				_DELETE(v);
 				list_destroy(dep_list);
-				store->table_api.rids_destroy(rs);
+				list_destroy(schema_tables);
+				table_api.rids_destroy(rs);
 				return NULL;
 			}
 		} else {
 			_DELETE(v);
 		}
 	}
-	store->table_api.rids_destroy(rs);
+	table_api.rids_destroy(rs);
 
-	if (depend_type == TABLE_DEPENDENCY) {
+	if (dependent_type == SCHEMA_DEPENDENCY)
+		list_destroy(schema_tables);
+
+	if (dependent_type == TABLE_DEPENDENCY) {
 		sql_table *triggers = find_sql_table(tr, s, "triggers");
 		table_id = find_sql_column(triggers, "table_id");
 		tri_id = find_sql_column(triggers, "id");
-		depend_type = TRIGGER_DEPENDENCY;
+		dependent_type = TRIGGER_DEPENDENCY;
 
-		rs = store->table_api.rids_select(tr, table_id, &id, &id, NULL);
+		rs = table_api.rids_select(tr, table_id, &id, &id, NULL);
 		if (rs == NULL) {
 			list_destroy(dep_list);
 			return NULL;
 		}
-		for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
-			if (!(v = store->table_api.column_find_value(tr, tri_id, rid))) {
+		for (rid = table_api.rids_next(rs); !is_oid_nil(rid); rid = table_api.rids_next(rs)) {
+			if (!(v = table_api.column_find_value(tr, tri_id, rid))) {
 				list_destroy(dep_list);
-				store->table_api.rids_destroy(rs);
+				table_api.rids_destroy(rs);
 				return NULL;
 			}
 			if (list_append(dep_list, v) == NULL) {
 				_DELETE(v);
 				list_destroy(dep_list);
-				store->table_api.rids_destroy(rs);
+				table_api.rids_destroy(rs);
 				return NULL;
 			}
 			if (!(v = MNEW(sht))) {
 				list_destroy(dep_list);
-				store->table_api.rids_destroy(rs);
+				table_api.rids_destroy(rs);
 				return NULL;
 			}
-			*(sht *) v = (sht) depend_type;
+			*(sht *) v = (sht) dependent_type;
 			if (list_append(dep_list, v) == NULL) {
 				_DELETE(v);
 				list_destroy(dep_list);
-				store->table_api.rids_destroy(rs);
+				table_api.rids_destroy(rs);
 				return NULL;
 			}
 		}
-		store->table_api.rids_destroy(rs);
+		table_api.rids_destroy(rs);
 	}
+
 	return dep_list;
 }
 
@@ -278,6 +342,12 @@ sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 		list_append(l,v);
 	}
 	store->table_api.rids_destroy(users);
+
+	if (list_length(l) == 0) {
+		list_destroy(l);
+		l = NULL;
+	}
+
 	return l;
 }
 

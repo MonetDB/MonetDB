@@ -3,7 +3,7 @@ SELECT 1 AS number
 ----
 1
 
-query TTTTTTTTTT rowsort
+query TTTTTIIITT rowsort
 SELECT * FROM (
  	SELECT 'demo' AS "TABLE_CAT",
 		"schemas"."name" AS "TABLE_SCHEM",
@@ -30,7 +30,7 @@ SELECT 2 AS number
 ----
 2
 
-query TTTTTTTTTT rowsort
+query TTTTTIIITT rowsort
 SELECT * FROM (
 -- 	SELECT 'demo' AS "TABLE_CAT",
 -- 		"schemas"."name" AS "TABLE_SCHEM",
@@ -164,7 +164,7 @@ SELECT 3 AS number
 ----
 3
 
-query TTTTTTTTTT rowsort
+query TTTTTIIITT rowsort
 SELECT * FROM (
 	SELECT 'demo' AS "TABLE_CAT",
 		"schemas"."name" AS "TABLE_SCHEM",

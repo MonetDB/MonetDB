@@ -26,22 +26,22 @@ select * from foo
 00i'v
 2
 171067
-arde@ch
+ardèch
 2
 182773
-a@
+aﬁ
 1
 41561
-2015@
+2015‎
 1
 45804
-21@
+21π
 1
 51981
-24hours@
+24hours‬
 1
 607808
-poverty@
+poverty‪
 1
 
 statement ok

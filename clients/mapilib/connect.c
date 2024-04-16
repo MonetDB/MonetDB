@@ -5,9 +5,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
-
 
 #include "monetdb_config.h"
 #include "stream.h"		/* include before mapi.h */
@@ -111,7 +112,9 @@ scan_sockets(Mapi mid)
 		errmsg = allocated_errmsg;
 	}
 	if (errmsg) {
-		return mapi_setError(mid, errmsg, __func__, MERROR);
+		MapiMsg err = mapi_setError(mid, errmsg, __func__, MERROR);
+		free(allocated_errmsg);
+		return err;
 	}
 	return establish_connection(mid);
 }
@@ -450,6 +453,17 @@ mapi_handshake(Mapi mid)
 		}
 	}
 
+	/* search for OOBINTR option,
+	 * NOTE this consumes the rest of the challenge */
+	char *rest = strtok_r(NULL, ":", &strtok_state);
+	while (rest != NULL) {
+		if (strcmp(rest, "OOBINTR=1") == 0) {
+			mid->oobintr = true;
+			break;
+		}
+		rest = strtok_r(NULL, ":", &strtok_state);
+	}
+
 	/* hash password, if not already */
 	if (password[0] != '\1') {
 		char *pwdhash = NULL;
@@ -697,11 +711,13 @@ mapi_handshake(Mapi mid)
 			) {
 				mapi_close_handle(hdl);
 				close_connection(mid);
-				return mapi_printError(
+				MapiMsg err = mapi_printError(
 					mid, __func__, MERROR,
 					"%s: %s",
 					error_message ? error_message : "invalid redirect",
 					red);
+				free(error_message);
+				return err;
 			}
 
 			if (strncmp("mapi:merovingian", red, 16) == 0) {

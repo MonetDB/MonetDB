@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* multi version catalog */
@@ -50,7 +52,7 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_trans_alter_null(m->session->tr, c, 0);
 }
 
-sql_table *
+static sql_table *
 mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 {
 	sql_table *t = NULL;
@@ -767,7 +769,7 @@ _free(void *dummy, void *data)
 }
 
 mvc *
-mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
+mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 {
 	mvc *m;
 	str sys_str = NULL;
@@ -842,6 +844,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	}
 	m->schema_path_has_sys = true;
 	m->schema_path_has_tmp = false;
+	m->no_int128 = false;
 	m->store = store;
 
 	m->session = sql_session_create(m->store, m->pa, 1 /*autocommit on*/);
@@ -1058,7 +1061,7 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 }
 
 int
-mvc_create_func(sql_func **f, mvc *m, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
+mvc_create_func(sql_func **f, mvc *m, allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
 				const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
 {
 	int lres = LOG_OK;
@@ -1294,8 +1297,9 @@ mvc_create_remote(sql_table **t, mvc *m, sql_schema *s, const char *name, int pe
 }
 
 static str
-remote_drop(mvc *m, sqlid id)
+remote_drop(mvc *m, sql_table *t)
 {
+	sqlid id = t->base.id;
 	int log_res = 0;
 	sql_trans *tr = m->session->tr;
 	sqlstore *store = tr->store;
@@ -1303,7 +1307,9 @@ remote_drop(mvc *m, sqlid id)
 	sql_table *remote_user_info = find_sql_table(tr, sys, REMOTE_USER_INFO);
 	sql_column *remote_user_info_id = find_sql_column(remote_user_info, "table_id");
 	oid rid = store->table_api.column_find_row(tr, remote_user_info_id, &id, NULL);
-	if (is_oid_nil(rid) || (log_res = store->table_api.table_delete(tr, remote_user_info, rid)) != 0)
+	if (is_oid_nil(rid)) {
+		TRC_WARNING(SQL_TRANS, "Drop table: %s %s no remote info\n", t->s->base.name, t->base.name);
+	} else if ((log_res = store->table_api.table_delete(tr, remote_user_info, rid)) != 0)
 		throw(SQL, "sql.drop_table", SQLSTATE(42000) "Drop table failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
@@ -1314,7 +1320,7 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 	char *msg = NULL;
 	TRC_DEBUG(SQL_TRANS, "Drop table: %s %s\n", s->base.name, t->base.name);
 
-	if (isRemote(t) && (msg = remote_drop(m, t->base.id)) != NULL)
+	if (isRemote(t) && (msg = remote_drop(m, t)) != NULL)
 		return msg;
 
 	switch (sql_trans_drop_table(m->session->tr, s, t->base.name, drop_action ? DROP_CASCADE_START : DROP_RESTRICT)) {
@@ -1416,19 +1422,21 @@ mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids)
 			break;
 		case SCHEMA_DEPENDENCY:
 			dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
+			if (!dep_list)
+				dep_list = sql_trans_get_dependents(m->session->tr, id, SCHEMA_DEPENDENCY, NULL);
 			break;
 		case TABLE_DEPENDENCY:
-			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
+			dep_list = sql_trans_get_dependents(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 			break;
 		case VIEW_DEPENDENCY:
-			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
+			dep_list = sql_trans_get_dependents(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 			break;
 		case FUNC_DEPENDENCY:
 		case PROC_DEPENDENCY:
-			dep_list = sql_trans_get_dependencies(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
+			dep_list = sql_trans_get_dependents(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
 			break;
 		default:
-			dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
+			dep_list =  sql_trans_get_dependents(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
 	}
 
 	if (!dep_list)
@@ -1556,8 +1564,12 @@ mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger **tres)
 sql_rel *
 sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
+	int emode = sql->emode;
+	if (!instantiate)
+		sql->emode = m_deps;
 	if (rel)
 		rel = rel_unnest(sql, rel);
+	sql->emode = emode;
 	if (rel)
 		rel = rel_optimizer(sql, rel, profile, instantiate, value_based_opt, storage_based_opt);
 	return rel;

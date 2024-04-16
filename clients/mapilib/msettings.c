@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -153,6 +155,11 @@ mparm_is_core(mparm parm)
 	}
 }
 
+struct string {
+	char *str;
+	bool must_free;
+};
+
 struct msettings {
 	// Must match EXACTLY the order of enum mparm
 	bool dummy_start_bool;
@@ -168,23 +175,23 @@ struct msettings {
 	long dummy_end_long;
 
 	// Must match EXACTLY the order of enum mparm
-	char *dummy_start_string;
-	char *sock;
-	char *sockdir;
-	char *cert;
-	char *clientkey;
-	char *clientcert;
-	char *host;
-	char *database;
-	char *tableschema;
-	char *table;
-	char *certhash;
-	char *user;
-	char *password;
-	char *language;
-	char *schema;
-	char *binary;
-	char *dummy_end_string;
+	struct string dummy_start_string;
+	struct string sock;
+	struct string sockdir;
+	struct string cert;
+	struct string clientkey;
+	struct string clientcert;
+	struct string host;
+	struct string database;
+	struct string tableschema;
+	struct string table;
+	struct string certhash;
+	struct string user;
+	struct string password;
+	struct string language;
+	struct string schema;
+	struct string binary;
+	struct string dummy_end_string;
 
 	char **unknown_parameters;
 	size_t nr_unknown;
@@ -207,20 +214,8 @@ const msettings msettings_default_values = {
 	.timezone = 0,
 	.replysize = 100,
 
-	.sock = NULL,
-	.cert = NULL,
-	.clientkey = NULL,
-	.clientcert = NULL,
-	.host = NULL,
-	.database = NULL,
-	.tableschema = NULL,
-	.table = NULL,
-	.certhash = NULL,
-	.user = NULL,
-	.password = NULL,
-	.language = NULL,
-	.schema = NULL,
-	.binary = NULL,
+	.sockdir = { "/tmp", false },
+	.binary = { "on", false },
 
 	.unknown_parameters = NULL,
 	.nr_unknown = 0,
@@ -262,13 +257,13 @@ msettings *msettings_clone(const msettings *orig)
 	// now we have to very carefully duplicate the strings.
 	// taking care to only free our own ones if that fails
 
-	char **start = &mp->dummy_start_string;
-	char **end = &mp->dummy_end_string;
-	char **p = start;
+	struct string *start = &mp->dummy_start_string;
+	struct string *end = &mp->dummy_end_string;
+	struct string *p = start;
 	while (p < end) {
-		if (*p != NULL) {
-			*p = strdup(*p);
-			if (*p == NULL)
+		if (p->must_free) {
+			p->str = strdup(p->str);
+			if (p->str == NULL)
 				goto bailout;
 		}
 		p++;
@@ -285,8 +280,9 @@ msettings *msettings_clone(const msettings *orig)
 	return mp;
 
 bailout:
-	for (char **q = start; q < p; q++)
-		free(*q);
+	for (struct string *q = start; q < p; q++)
+		if (q->must_free)
+			free(q->str);
 	for (size_t i = 0; i < 2 * mp->nr_unknown; i++)
 		free(mp->unknown_parameters[i]);
 	free(mp->unix_sock_name_buffer);
@@ -300,8 +296,9 @@ msettings_destroy(msettings *mp)
 	if (mp == NULL)
 		return NULL;
 
-	for (char **p = &mp->dummy_start_string + 1; p < &mp->dummy_end_string; p++) {
-		free(*p);
+	for (struct string *p = &mp->dummy_start_string + 1; p < &mp->dummy_end_string; p++) {
+		if (p->must_free)
+			free(p->str);
 	}
 	for (size_t i = 0; i < mp->nr_unknown; i++) {
 		free(mp->unknown_parameters[2 * i]);
@@ -320,10 +317,10 @@ msetting_string(const msettings *mp, mparm parm)
 	if (mparm_classify(parm) != MPCLASS_STRING)
 		FATAL();
 	int i = parm - MP__STRING_START;
-	char * const *p = &mp->dummy_start_string + 1 + i;
+	struct string const *p = &mp->dummy_start_string + 1 + i;
 	if (p >=  &mp->dummy_end_string)
 		FATAL();
-	char *s = *p;
+	char *s = p->str;
 
 	if (s == NULL) {
 		if (parm == MP_LANGUAGE)
@@ -344,15 +341,17 @@ msetting_set_string(msettings *mp, mparm parm, const char* value)
 	if (mparm_classify(parm) != MPCLASS_STRING)
 		FATAL();
 	int i = parm - MP__STRING_START;
-	char **p = &mp->dummy_start_string + 1 + i;
+	struct string *p = &mp->dummy_start_string + 1 + i;
 	if (p >=  &mp->dummy_end_string)
 		FATAL();
 
 	char *v = strdup(value);
 	if (!v)
 		return "malloc failed";
-	free(*p);
-	*p = v;
+	if (p->must_free)
+		free(p->str);
+	p->str = v;
+	p->must_free = true;
 
 	switch (parm) {
 		case MP_USER:
@@ -560,10 +559,10 @@ validate_certhash(msettings *mp)
 	if (*certhash == '\0')
 		return NULL;
 
-	if (strncmp(certhash, "{sha256}", 8) == 0) {
-		certhash += 8;
+	if (strncmp(certhash, "sha256:", 7) == 0) {
+		certhash += 7;
 	} else {
-		return "expected certhash to start with '{sha256}'";
+		return "expected certhash to start with 'sha256:'";
 	}
 
 	size_t i = 0;
@@ -575,7 +574,7 @@ validate_certhash(msettings *mp)
 		if (i < sizeof(mp->certhash_digits_buffer) - 1)
 			mp->certhash_digits_buffer[i++] = tolower(*r);
 	}
-	mp->certhash_digits_buffer[i++] = '\0';
+	mp->certhash_digits_buffer[i] = '\0';
 	if (i == 0)
 		return "certhash: need at least one digit";
 
@@ -634,7 +633,7 @@ msettings_validate(msettings *mp, char **errmsg)
 		return false;
 	}
 
-	// 5. If **certhash** is not empty, it must be of the form `{sha256}hexdigits`
+	// 5. If **certhash** is not empty, it must be of the form `sha256:hexdigits`
 	//    where hexdigits is a non-empty sequence of 0-9, a-f, A-F and colons.
 	const char *certhash_msg = validate_certhash(mp);
 	if (certhash_msg) {
@@ -675,8 +674,14 @@ msettings_validate(msettings *mp, char **errmsg)
 		return false;
 	}
 
+	// 9. If **clientcert** is set, **clientkey** must also be set.
+	if (nonempty(mp, MP_CLIENTCERT) && empty(mp, MP_CLIENTKEY)) {
+		*errmsg = allocprintf("clientcert can only be set together with clientkey");
+		return false;
+	}
+
 	// compute this here so the getter function can take const msettings*
-	const char *sockdir = msettings_connect_sockdir(mp);
+	const char *sockdir = msetting_string(mp, MP_SOCKDIR);
 	long effective_port = msettings_connect_port(mp);
 	free(mp->unix_sock_name_buffer);
 	mp->unix_sock_name_buffer = allocprintf("%s/.s.monetdb.%ld", sockdir, effective_port);
@@ -704,16 +709,6 @@ msettings_connect_scan(const msettings *mp)
 		return false;
 
 	return true;
-}
-
-const char *
-msettings_connect_sockdir(const msettings *mp)
-{
-	const char *dir = msetting_string(mp, MP_SOCKDIR);
-	if (dir[0] != '\0')
-		return dir;
-	else
-		return "/tmp";
 }
 
 const char *
@@ -780,6 +775,22 @@ msettings_connect_tls_verify(const msettings *mp)
 }
 
 const char*
+msettings_connect_clientkey(const msettings *mp)
+{
+	return msetting_string(mp, MP_CLIENTKEY);
+}
+
+const char*
+msettings_connect_clientcert(const msettings *mp)
+{
+	const char *cert = msetting_string(mp, MP_CLIENTCERT);
+	if (*cert)
+		return cert;
+	else
+		return msetting_string(mp, MP_CLIENTKEY);
+}
+
+const char*
 msettings_connect_certhash_digits(const msettings *mp)
 {
 	return mp->certhash_digits_buffer;
@@ -792,10 +803,6 @@ msettings_connect_binary(const msettings *mp)
 	const long sufficiently_large = 65535;
 	const char *binary = msetting_string(mp, MP_BINARY);
 
-	// empty is same as true
-	if (binary[0] == '\0')
-		return sufficiently_large;
-
 	// may be bool
 	int b = msetting_parse_bool(binary);
 	if (b == 0)
@@ -806,7 +813,7 @@ msettings_connect_binary(const msettings *mp)
 
 	char *end;
 	long level = strtol(binary, &end, 10);
-	if (*end == '\0')
+	if (end != binary && *end == '\0')
 		return level;
 
 	return -1;
@@ -839,4 +846,3 @@ msettings_lang_is_sql(const msettings *mp)
 {
 	return mp->lang_is_sql;
 }
-

@@ -141,6 +141,7 @@ meltdown
 savepoints1
 savepoints2
 union
+union-corresponding
 ## Queries from the old AS3AP benchmark.
 ## Since we don't have the data, let's just execute the queries here
 as3ap

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* (c) M.L. Kersten
@@ -294,10 +296,6 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (profilerUser != MAL_ADMIN && profilerUser != cntxt->user)
 		return NULL;
 
-	/* align the variable namings with EXPLAIN and TRACE */
-	if (pci->pc == 1)
-		renameVariables(mb);
-
 	logbuf = (struct logbuf) { 0 };
 
 	mclk = (uint64_t) clk - ((uint64_t) startup_time.tv_sec * 1000000 -
@@ -340,6 +338,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (profilerMode == 0 && stk) {
 			if (!logadd(&logbuf, ",\"args\":["))
 				goto cleanup_and_exit;
+			char name[IDLENGTH] = { 0 };
 			for (j = 0; j < pci->argc; j++) {
 				int tpe = getVarType(mb, getArg(pci, j));
 				str tname = 0, cv;
@@ -357,9 +356,9 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 				if (!logadd(&logbuf, "\"%s\":%d,\"var\":\"%s\"",
 							j < pci->retc ? "ret" : "arg", j,
-							getVarName(mb, getArg(pci, j))))
+							getVarNameIntoBuffer(mb, getArg(pci, j), name)))
 					goto cleanup_and_exit;
-				c = getVarName(mb, getArg(pci, j));
+				//c = getVarName(mb, getArg(pci, j), name);
 				if (getVarSTC(mb, getArg(pci, j))) {
 					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb, getArg(pci, j)));
 					if (stc && getModuleId(stc)
@@ -399,12 +398,9 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						cnt = di.count;
 						if (isVIEW(d)) {
 							BAT *v = BBP_desc(VIEWtparent(d));
-							bool vtransient = true;
-							if (v) {
-								MT_lock_set(&v->theaplock);
-								vtransient = v->batTransient;
-								MT_lock_unset(&v->theaplock);
-							}
+							MT_lock_set(&v->theaplock);
+							bool vtransient = v->batTransient;
+							MT_lock_unset(&v->theaplock);
 							if (!logadd(&logbuf,
 										",\"view\":\"true\""
 										",\"parent\":%d"
@@ -418,9 +414,8 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 								goto cleanup_and_exit;
 							}
 						} else {
-							if (!logadd
-								(&logbuf, ",\"mode\":\"%s\"",
-								 (di.transient ? "transient" : "persistent"))) {
+							if (!logadd(&logbuf, ",\"mode\":\"%s\"",
+										(di.transient ? "transient" : "persistent"))) {
 								BBPunfix(d->batCacheid);
 								goto cleanup_and_exit;
 							}
@@ -514,8 +509,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (!ok)
 						goto cleanup_and_exit;
 				}
-				if (!logadd
-					(&logbuf, ",\"eol\":%d", getVarEolife(mb, getArg(pci, j))))
+				if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb, getArg(pci, j))))
 					goto cleanup_and_exit;
 				// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return NULL;
 				if (!logadd(&logbuf, "}"))
@@ -721,8 +715,6 @@ profilerEvent(MalEvent *me, NonMalEvent *nme)
 str
 openProfilerStream(Client cntxt, int m)
 {
-	int j;
-
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	prevUsage = infoUsage;
@@ -759,29 +751,6 @@ openProfilerStream(Client cntxt, int m)
 	maleventstream = cntxt->fdout;
 	profilerUser = cntxt->user;
 
-	// Ignore the JSON rendering mode, use compiled time version
-
-	/* show all in progress instructions for stethoscope startup */
-	/* wait a short time for instructions to finish updating their thread admin
-	 * and then follow the locking scheme */
-
-	MT_sleep_ms(200);
-
-	for (j = 0; j < THREADS; j++) {
-		struct MalEvent me = {
-			.cntxt = workingset[j].cntxt,
-			.mb = workingset[j].mb,
-			.stk = workingset[j].stk,
-			.pci = workingset[j].pci,
-			.clk = workingset[j].clock,
-		};
-		if (me.cntxt && me.mb && me.stk && me.pci) {
-			/* show the event  assuming the quintuple is aligned */
-			MT_lock_unset(&mal_profileLock);
-			profilerEvent(&me, NULL);
-			MT_lock_set(&mal_profileLock);
-		}
-	}
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
@@ -915,6 +884,12 @@ TRACEtable(Client cntxt, BAT **r)
 	r[2] = COLcopy(cntxt->profevents, cntxt->profevents->ttype, false,
 				   TRANSIENT);
 	MT_lock_unset(&mal_profileLock);
+	if (r[0] == NULL || r[1] == NULL || r[2] == NULL) {
+		BBPreclaim(r[0]);
+		BBPreclaim(r[1]);
+		BBPreclaim(r[2]);
+		return -1;
+	}
 	return 3;
 }
 

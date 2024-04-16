@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -65,20 +67,27 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (int j = 0; j < MAXSCOPE; j++) {
 			if (s->space[j]) {
 				for (Symbol t = s->space[j]; t != NULL; t = t->peer) {
-					if (t->def->stmt[0]->fcnname[0] == '#')
+					if (t->kind == FUNCTIONsymbol && t->def->stmt[0]->fcnname[0] == '#')
 						continue;
 					char buf[1024];
-					(void) fcnDefinition(t->def, getInstrPtr(t->def, 0),
-										 buf, TRUE, buf, sizeof(buf));
-					char *tt = strstr(buf, "address ");
+					char *comment = NULL;
+					if (t->kind == FUNCTIONsymbol) {
+						comment = t->def->help;
+						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, TRUE, buf, sizeof(buf));
+					} else {
+						assert(t->func);
+						comment = t->func->comment;
+						(void) cfcnDefinition(t, buf, TRUE, buf, sizeof(buf));
+					}
+					char *tt = strstr(buf, " address ");
 					if (tt) {
 						*tt = 0;
-						tt += 8;
+						tt += 9;
 					}
-					if (BUNappend(mod, t->def->stmt[0]->modname, false) != GDK_SUCCEED
-						|| BUNappend(fcn, t->def->stmt[0]->fcnname,
+					if (BUNappend(mod, s->name, false) != GDK_SUCCEED
+						|| BUNappend(fcn, t->name,
 									 false) != GDK_SUCCEED
-						|| BUNappend(com, t->def->help ? t->def->help : "",
+						|| BUNappend(com, comment ? comment : "",
 									 false) != GDK_SUCCEED
 						|| BUNappend(sig, buf, false) != GDK_SUCCEED
 						|| BUNappend(adr, tt ? tt : "",

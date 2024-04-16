@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -224,7 +226,8 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		goto bailout;
 	}
 	newstk->up = 0;
-	newstk->stk[arg].vtype = TYPE_bat;
+	newstk->stk[arg].vtype = b->ttype;
+	newstk->stk[arg].bat = true;
 	newstk->stk[arg].val.bval = b->batCacheid;
 	BBPretain(newstk->stk[arg].val.bval);
 	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);

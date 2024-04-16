@@ -6,7 +6,7 @@ select c.name, c.type, c.type_digits, c.type_scale, c."null", c."default", c.num
 ----
 medi
 int
-32
+31
 0
 1
 NULL

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -240,11 +242,8 @@ int
 getIntConstant(MalBlkPtr mb, int val)
 {
 	int _t;
-	ValRecord cst;
+	ValRecord cst = { .vtype = TYPE_int, .val.ival = val };
 
-	cst.vtype = TYPE_int;
-	cst.val.ival = val;
-	cst.len = 0;
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0)
 		_t = defConstant(mb, TYPE_int, &cst);
@@ -255,13 +254,10 @@ InstrPtr
 pushInt(MalBlkPtr mb, InstrPtr q, int val)
 {
 	int _t;
-	ValRecord cst;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_int;
-	cst.val.ival = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_int, .val.ival = val };
 	_t = defConstant(mb, TYPE_int, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
@@ -272,11 +268,8 @@ int
 getBteConstant(MalBlkPtr mb, bte val)
 {
 	int _t;
-	ValRecord cst;
+	ValRecord cst = { .vtype = TYPE_bte, .val.btval = val };
 
-	cst.vtype = TYPE_bte;
-	cst.val.btval = val;
-	cst.len = 0;
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0)
 		_t = defConstant(mb, TYPE_bte, &cst);
@@ -287,13 +280,10 @@ InstrPtr
 pushBte(MalBlkPtr mb, InstrPtr q, bte val)
 {
 	int _t;
-	ValRecord cst;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_bte;
-	cst.val.btval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_bte, .val.btval = val };
 	_t = defConstant(mb, TYPE_bte, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
@@ -304,11 +294,8 @@ int
 getOidConstant(MalBlkPtr mb, oid val)
 {
 	int _t;
-	ValRecord cst;
 
-	cst.vtype = TYPE_oid;
-	cst.val.oval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_oid, .val.oval = val };
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0)
 		_t = defConstant(mb, TYPE_oid, &cst);
@@ -319,13 +306,10 @@ InstrPtr
 pushOid(MalBlkPtr mb, InstrPtr q, oid val)
 {
 	int _t;
-	ValRecord cst;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_oid;
-	cst.val.oval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_oid, .val.oval = val };
 	_t = defConstant(mb, TYPE_oid, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
@@ -336,13 +320,10 @@ InstrPtr
 pushVoid(MalBlkPtr mb, InstrPtr q)
 {
 	int _t;
-	ValRecord cst;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_void;
-	cst.val.oval = oid_nil;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_void, .val.oval = oid_nil };
 	_t = defConstant(mb, TYPE_void, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
@@ -353,11 +334,8 @@ int
 getLngConstant(MalBlkPtr mb, lng val)
 {
 	int _t;
-	ValRecord cst;
 
-	cst.vtype = TYPE_lng;
-	cst.val.lval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_lng, .val.lval = val };
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0)
 		_t = defConstant(mb, TYPE_lng, &cst);
@@ -368,13 +346,10 @@ InstrPtr
 pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 {
 	int _t;
-	ValRecord cst;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_lng;
-	cst.val.lval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_lng, .val.lval = val };
 	_t = defConstant(mb, TYPE_lng, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
@@ -385,11 +360,8 @@ int
 getShtConstant(MalBlkPtr mb, sht val)
 {
 	int _t;
-	ValRecord cst;
 
-	cst.vtype = TYPE_sht;
-	cst.val.shval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_sht, .val.shval = val };
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0)
 		_t = defConstant(mb, TYPE_sht, &cst);
@@ -400,13 +372,10 @@ InstrPtr
 pushSht(MalBlkPtr mb, InstrPtr q, sht val)
 {
 	int _t;
-	ValRecord cst;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_sht;
-	cst.val.shval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_sht, .val.shval = val };
 	_t = defConstant(mb, TYPE_sht, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
@@ -418,11 +387,8 @@ int
 getHgeConstant(MalBlkPtr mb, hge val)
 {
 	int _t;
-	ValRecord cst;
 
-	cst.vtype = TYPE_oid;
-	cst.val.hval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_hge, .val.hval = val };
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0)
 		_t = defConstant(mb, TYPE_hge, &cst);
@@ -433,13 +399,10 @@ InstrPtr
 pushHge(MalBlkPtr mb, InstrPtr q, hge val)
 {
 	int _t;
-	ValRecord cst;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_hge;
-	cst.val.hval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_hge, .val.hval = val };
 	_t = defConstant(mb, TYPE_hge, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
@@ -451,11 +414,8 @@ int
 getDblConstant(MalBlkPtr mb, dbl val)
 {
 	int _t;
-	ValRecord cst;
 
-	cst.vtype = TYPE_dbl;
-	cst.val.dval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_dbl, .val.dval = val };
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0)
 		_t = defConstant(mb, TYPE_dbl, &cst);
@@ -466,13 +426,10 @@ InstrPtr
 pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
 {
 	int _t;
-	ValRecord cst;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_dbl;
-	cst.val.dval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_dbl, .val.dval = val };
 	_t = defConstant(mb, TYPE_dbl, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
@@ -483,11 +440,8 @@ int
 getFltConstant(MalBlkPtr mb, flt val)
 {
 	int _t;
-	ValRecord cst;
 
-	cst.vtype = TYPE_flt;
-	cst.val.fval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_flt, .val.fval = val };
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0)
 		_t = defConstant(mb, TYPE_flt, &cst);
@@ -498,13 +452,10 @@ InstrPtr
 pushFlt(MalBlkPtr mb, InstrPtr q, flt val)
 {
 	int _t;
-	ValRecord cst;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_flt;
-	cst.val.fval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_flt, .val.fval = val };
 	_t = defConstant(mb, TYPE_flt, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
@@ -553,11 +504,8 @@ int
 getBitConstant(MalBlkPtr mb, bit val)
 {
 	int _t;
-	ValRecord cst;
 
-	cst.vtype = TYPE_bit;
-	cst.val.btval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_bit, .val.btval = val };
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0)
 		_t = defConstant(mb, TYPE_bit, &cst);
@@ -568,13 +516,10 @@ InstrPtr
 pushBit(MalBlkPtr mb, InstrPtr q, bit val)
 {
 	int _t;
-	ValRecord cst;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_bit;
-	cst.val.btval = val;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_bit, .val.btval = val };
 	_t = defConstant(mb, TYPE_bit, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
@@ -585,12 +530,11 @@ InstrPtr
 pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 {
 	int _t;
-	ValRecord cst;
+	ValRecord cst = { .len = 0 };
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.len = 0;
-	if (!isaBatType(tpe) && tpe != TYPE_bat) {
+	if (!isaBatType(tpe)) {
 		assert(tpe < MAXATOMS);	/* in particular, tpe!=TYPE_any */
 		if (tpe == TYPE_void) {
 			cst.vtype = TYPE_void;
@@ -605,9 +549,10 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 		}
 		_t = defConstant(mb, tpe, &cst);
 	} else {
-		cst.vtype = TYPE_bat;
+		cst.vtype = TYPE_void;
+		cst.bat = true;
 		cst.val.bval = bat_nil;
-		_t = defConstant(mb, TYPE_bat, &cst);
+		_t = defConstant(mb, newBatType(TYPE_void), &cst);
 		getVarType(mb, _t) = tpe;
 	}
 	if (_t >= 0) {
@@ -617,10 +562,26 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 }
 
 InstrPtr
+pushNilBat(MalBlkPtr mb, InstrPtr q)
+{
+	int _t;
+	ValRecord cst = { .bat = true, .vtype = TYPE_void, .val.bval = bat_nil };
+
+	if (q == NULL || mb->errors)
+		return q;
+	_t = defConstant(mb, newBatType(TYPE_void), &cst);
+	getVarType(mb, _t) = newBatType(TYPE_any);
+	if (_t >= 0) {
+		q = pushArgument(mb, q, _t);
+	}
+	return q;
+}
+
+
+InstrPtr
 pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 {
 	int _t, idx;
-	ValRecord cst;
 	str msg;
 
 	if (q == NULL || mb->errors)
@@ -630,9 +591,8 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 		msg = createException(MAL, "pushNilType",
 							  "Can not allocate type variable");
 	} else {
-		cst.vtype = TYPE_void;
-		cst.val.oval = oid_nil;
-		cst.len = 0;
+		ValRecord cst = { .vtype = TYPE_void, .val.oval = oid_nil };
+
 		msg = convertConstant(idx, &cst);
 		if (msg == MAL_SUCCEED) {
 			_t = defConstant(mb, idx, &cst);
@@ -652,14 +612,11 @@ InstrPtr
 pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 {
 	int _t;
-	ValRecord cst;
 	str msg;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_void;
-	cst.val.oval = oid_nil;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_void, .val.oval = oid_nil };
 	msg = convertConstant(tpe, &cst);
 	if (msg != MAL_SUCCEED) {
 		addMalException(mb, msg);
@@ -677,14 +634,11 @@ InstrPtr
 pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 {
 	int _t;
-	ValRecord cst;
 	str msg;
 
 	if (q == NULL || mb->errors)
 		return q;
-	cst.vtype = TYPE_int;
-	cst.val.ival = 0;
-	cst.len = 0;
+	ValRecord cst = { .vtype = TYPE_int, .val.ival = 0 };
 	msg = convertConstant(tpe, &cst);
 	if (msg != MAL_SUCCEED) {
 		addMalException(mb, msg);
@@ -698,7 +652,7 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 }
 
 InstrPtr
-pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
+pushValue(MalBlkPtr mb, InstrPtr q, const ValRecord *vr)
 {
 	int _t;
 	ValRecord cst;
@@ -710,7 +664,8 @@ pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 		addMalException(mb, msg);
 		freeException(msg);
 	} else {
-		_t = defConstant(mb, cst.vtype, &cst);
+		int type = cst.bat?newBatType(cst.vtype):cst.vtype;
+		_t = defConstant(mb, type, &cst);
 		if (_t >= 0)
 			return pushArgument(mb, q, _t);
 	}

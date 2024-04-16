@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -60,8 +62,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	p = NULL;
 	for (i = 0; i < limit; i++) {
 		p = getInstrPtr(mb, i);
-		p->gc &= ~GARBAGECONTROL;
-		p->typechk = TYPE_UNKNOWN;
+		p->gc = false;
+		p->typeresolved = false;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
 		if (p->token == ENDsymbol)
@@ -75,7 +77,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			  SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	/* move sanity check to other optimizer */
-	getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;
+	getInstrPtr(mb, 0)->gc = true;
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);

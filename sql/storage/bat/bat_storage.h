@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef BATSTORAGE_H
@@ -15,7 +17,7 @@
 #include "bat_logger.h"
 
 typedef struct column_storage {
-	int refcnt;
+	ATOMIC_TYPE refcnt;
 	int bid;
 	int ebid;		/* extra bid */
 	int uibid;		/* bat with positions of updates */
