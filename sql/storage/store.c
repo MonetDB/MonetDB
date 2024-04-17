@@ -3832,6 +3832,9 @@ sql_trans_destroy(sql_trans *tr)
 static sql_trans *
 sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 {
+	if (name && !parent)		/* unlikely */
+		return NULL;
+
 	sql_trans *tr = ZNEW(sql_trans);
 
 	if (!tr)
@@ -3839,10 +3842,6 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	MT_lock_init(&tr->lock, "trans_lock");
 	tr->parent = parent;
 	if (name) {
-		if (!parent) {
-			sql_trans_destroy(tr);
-			return NULL;
-		}
 		_DELETE(parent->name);
 		parent->name = _STRDUP(name);
 	}

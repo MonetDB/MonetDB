@@ -1197,7 +1197,7 @@ BBPchkfarms(void)
 	const char *dir = NULL;
 	uint32_t rolemask = 0;
 	if ((BBPfarms[0].roles & 1) == 0) {
-		GDKerror("Must at least call BBPaddfarms for once for persistent data\n");
+		GDKerror("Must call BBPaddfarms at least once for persistent data\n");
 		return GDK_FAIL;
 	}
 	for (int i = 0; i < MAXFARMS; i++) {
