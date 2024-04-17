@@ -178,6 +178,7 @@ sql_trans_get_dependents(sql_trans* tr, sqlid id,
 				_DELETE(v);
 				continue;
 			}
+			_DELETE(v);
 		}
 		if (!(v = table_api.column_find_value(tr, dep_dep_id, rid))) {
 			list_destroy(dep_list);
