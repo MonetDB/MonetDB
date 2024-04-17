@@ -861,7 +861,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		return bn;
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
-		 * setting slowcopy to false) */
+		 * setting slowcopy to true) */
 		if (ATOMsize(tt) != ATOMsize(bi.type)) {
 			/* oops, void materialization */
 			slowcopy = true;
