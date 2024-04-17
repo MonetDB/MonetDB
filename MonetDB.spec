@@ -896,9 +896,6 @@ install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
 install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 
 # remove unwanted stuff
-# .la files
-rm -f %{buildroot}%{_libdir}/*.la
-rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_udf*.so
