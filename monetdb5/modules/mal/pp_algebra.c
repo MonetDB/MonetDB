@@ -2102,7 +2102,6 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
-			assert(r->tvheap->parentid == r->batCacheid);
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
@@ -2914,6 +2913,79 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return err;
 }
 
+static str
+//compute_avg(bat *ravg, bat *avg, bat *rem, bat *cnt)
+compute_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bat *ravg = getArgReference_bat(stk, pci, 0);
+	bat *avg = getArgReference_bat(stk, pci, 1);
+	bat *rem = getArgReference_bat(stk, pci, 2);
+	bat *cnt = getArgReference_bat(stk, pci, 3);
+	str err = NULL;
+
+	BAT *a = BATdescriptor(*avg);
+	BAT *r = BATdescriptor(*rem);
+	BAT *c = BATdescriptor(*cnt);
+
+	if (!a || !r || !c)
+		err = createException(MAL, "pp aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	if (!err) {
+		BUN n = BATcount(a);
+		assert(n == BATcount(r) && n == BATcount(c));
+		BAT *res = COLnew(0, TYPE_dbl, n, TRANSIENT);
+
+		if (!res) {
+			err = createException(MAL, "pp aggr.avg", MAL_MALLOC_FAIL);
+			goto bail;
+		}
+
+		lng *cr = Tloc(r, 0), *cc = Tloc(c, 0);
+		dbl *cres = Tloc(res, 0);
+
+		if (a->ttype == TYPE_bte) {
+			bte *ca = Tloc(a, 0);
+			for(BUN i = 0; i<n; i++)
+				cres[i] = cc[i] ? ((dbl)ca[i]) + ((dbl)cr[i])/cc[i] : dbl_nil;
+		} else if (a->ttype == TYPE_sht) {
+			sht *ca = Tloc(a, 0);
+			for(BUN i = 0; i<n; i++)
+				cres[i] = cc[i] ? ((dbl)ca[i]) + ((dbl)cr[i])/cc[i] : dbl_nil;
+		} else if (a->ttype == TYPE_int) {
+			int *ca = Tloc(a, 0);
+			for(BUN i = 0; i<n; i++)
+				cres[i] = cc[i] ? ((dbl)ca[i]) + ((dbl)cr[i])/cc[i] : dbl_nil;
+		} else if (a->ttype == TYPE_lng) {
+			lng *ca = Tloc(a, 0);
+			for(BUN i = 0; i<n; i++)
+				cres[i] = cc[i] ? ((dbl)ca[i]) + ((dbl)cr[i])/cc[i] : dbl_nil;
+		}
+#if HAVE_HGE
+		else if (a->ttype == TYPE_hge) {
+			lng *ca = Tloc(a, 0);
+			for(BUN i = 0; i<n; i++)
+				cres[i] = cc[i] ? ((dbl)ca[i]) + ((dbl)cr[i])/cc[i] : 0;
+		}
+#endif
+		else {
+			err = createException(MAL, "pp aggr.avg", "Only supports integer input types");
+			BBPreclaim(res);
+			goto bail;
+		}
+		BATsetcount(res, n);
+		BATnegateprops(res);
+		*ravg = res->batCacheid;
+		BBPkeepref(res);
+	}
+bail:
+	BBPreclaim(a);
+	BBPreclaim(r);
+	BBPreclaim(c);
+	return err;
+}
+
 /* TODO handle nil based on argument 'skipnil' */
 #define gfunc(Type, f) \
 	if (tt == TYPE_##Type) { \
@@ -3103,7 +3175,6 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
-			assert(r->tvheap->parentid == r->batCacheid);
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
@@ -3261,7 +3332,6 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
-			assert(r->tvheap->parentid == r->batCacheid);
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
@@ -3537,6 +3607,7 @@ static mel_func pp_algebra_init_funcs[] = {
  pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,7, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("aggr", "avg", LALGavg, false, "avg per group.", args(2,7, batarg("ravg", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,9, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "compute_avg", compute_avg, false, "compute avg from integer avg + rest/count.", args(1,4, batarg("ravg",dbl), batarg("avg", 1), batarg("remainder", lng), batarg("cnt", lng))),
  command("aggr", "min", LALGmin, false, "Min per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "max", LALGmax, false, "Max per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
 

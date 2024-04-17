@@ -271,21 +271,23 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 	assert(BATcount(g) == BATcount(d));
 
 	MT_lock_set(&m->theaplock);
-	switch(d->twidth) {
-	case 1:
-		mat_project(bte);
-	case 2:
-		mat_project(sht);
-	case 4:
-		mat_project(int);
-	case 8:
-		mat_project(lng);
+	if (BATcount(d)) {
+		switch(d->twidth) {
+		case 1:
+			mat_project(bte);
+		case 2:
+			mat_project(sht);
+		case 4:
+			mat_project(int);
+		case 8:
+			mat_project(lng);
 #ifdef HAVE_HGE
-	case 16:
-		mat_project(hge);
+		case 16:
+			mat_project(hge);
 #endif
-	default:
-		err = createException(MAL, "mat.project", SQLSTATE(HY002) "invalid BAT width");
+		default:
+			err = createException(MAL, "mat.project", SQLSTATE(HY002) "invalid BAT width");
+		}
 	}
 	MT_lock_unset(&m->theaplock);
 	if (err)

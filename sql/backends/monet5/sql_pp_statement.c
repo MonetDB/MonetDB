@@ -25,7 +25,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 	InstrPtr q = NULL;
 	const char *mod, *aggrfunc;
 	sql_subtype *res = op->res->h->data;
-	int restype = res->type->localtype;
+	int restype = res->type->localtype, intype = 0;
 	bool complex_aggr = false;
 	int *stmt_nr = NULL;
 	int avg = 0;
@@ -40,6 +40,16 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 	if (LANG_INT_OR_MAL(op->func->lang)) {
 		if (strcmp(aggrfunc, "avg") == 0)
 			avg = 1;
+
+
+		if (op1->type == st_list) {
+			stmt *s = op1->op4.lval->h->data;
+			intype = tail_type(s)->type->localtype;
+		} else {
+			intype = tail_type(op1)->type->localtype;
+		}
+		if (avg && restype == TYPE_dbl && intype != TYPE_dbl && intype != TYPE_flt)
+			restype = intype;
 
 		/* For the single value aggregates, we use the incremental
  		 * aggr. functions from the module 'iaggr' */

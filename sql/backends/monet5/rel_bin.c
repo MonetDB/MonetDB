@@ -1566,7 +1566,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
 				return exp2bin_named_placeholders(be, e);
 		}
-		if (0 && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
+		if (0 && SQLrunning && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
 			return rel2bin_copyparpipe(be, NULL, NULL, e, false);
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
@@ -4487,7 +4487,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
 	bool value_partition = SQLrunning && rel->parallel && !_2phases && rel_groupby_partition(be, rel);
-	bool df2 = (SQLrunning && rel->parallel && !value_partition && rel_groupby_pp(rel, _2phases));
+	bool df2 = (SQLrunning && rel->parallel && !value_partition && rel_groupby_can_pp(rel, _2phases));
 	int neededpp = rel->partition && get_and_disable_need_pipeline(be);
 
 	if (value_partition)
@@ -4538,7 +4538,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	}
 
 	/* groupby columns */
-
 	if (aggrresults)
 		m = aggrresults->h;
 
@@ -4651,6 +4650,12 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				if (strcmp(sf->func->base.name, "avg") == 0) {
 					getArg(aggrstmt->q, 1) = *(int*)m->data;
 					m = m->next;
+					sql_subtype *res = sf->res->h->data;
+					int restype = res->type->localtype;
+					if (restype != tail_type(aggrstmt->op1)->type->localtype || restype != TYPE_dbl) {
+						getArg(aggrstmt->q, 2) = *(int*)m->data;
+						m = m->next;
+					}
 				}
 			}
 		}
@@ -4666,8 +4671,13 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		list_append(l, aggrstmt);
 	}
 	stmt_set_nrcols(cursub);
-	if (pp)
-		cursub = rel_pp_groupby(be, rel, gbexps, grp, ext, cnt, cursub, pp, shared, _2phases);
+	if (pp) {
+		(void)stmt_pp_jump(be, pp, be->nrparts);
+		if (_2phases)
+			cursub = rel_groupby_combine_pp(be, rel, gbexps, grp, ext, cnt, cursub, pp, shared);
+		(void)stmt_pp_end(be, pp);
+		cursub = rel_groupby_finish_pp(be, rel, cursub, _2phases);
+	}
 	if (pp && is_base && !rel->r && cursub) { /* for now just piggy back global aggregation on basetables */
 		for( n = aggrs->h, m = cursub->op4.lval->h; n && m; n = n->next, m = m->next ) {
 			sql_exp *aggrexp = n->data;
