@@ -151,7 +151,6 @@ BuildRequires: pkgconfig(libR)
 # BuildRequires: pkgconfig(gdal)        # -DSHP=ON
 # BuildRequires: pkgconfig(netcdf)      # -DNETCDF=ON
 # BuildRequires: pkgconfig(proj)        # -DWITH_PROJ=ON
-# BuildRequires: pkgconfig(snappy)      # -DWITH_SNAPPY=ON
 # BuildRequires: pkgconfig(valgrind)    # -DWITH_VALGRIND=ON
 
 %if (0%{?fedora} >= 22)
@@ -869,7 +868,6 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
         -DWITH_PCRE=ON \
         -DWITH_PROJ=OFF \
         -DWITH_READLINE=ON \
-        -DWITH_SNAPPY=OFF \
         -DWITH_VALGRIND=OFF \
         -DWITH_XML2=ON \
         -DWITH_ZLIB=ON
