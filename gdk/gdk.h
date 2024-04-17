@@ -1050,15 +1050,15 @@ typedef struct BATiter {
 	Heap *vh;
 	BUN count;
 	BUN baseoff;
-	uint16_t width;
-	uint8_t shift;
-	int8_t type;
 	oid tseq;
 	BUN hfree, vhfree;
 	BUN nokey[2];
 	BUN nosorted, norevsorted;
 	BUN minpos, maxpos;
 	double unique_est;
+	uint16_t width;
+	uint8_t shift;
+	int8_t type;
 	bool key:1,
 		nonil:1,
 		nil:1,
