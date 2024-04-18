@@ -517,42 +517,6 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 						pushArgument(be->mb, q, cnt);
 						pushInstruction(be->mb, q);
 
-						/*
-						InstrPtr r, t;
-						q = newStmtArgs(be->mb, batcalcRef, "dbl", 2);
-						setVarType(be->mb, getArg(q, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, q, rem);
-						pushInstruction(be->mb, q);
-
-						t = newStmtArgs(be->mb, batcalcRef, "dbl", 2);
-						setVarType(be->mb, getArg(t, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, t, cnt);
-						pushInstruction(be->mb, t);
-
-						r = newStmtArgs(be->mb, batcalcRef, "/", 5);
-						setVarType(be->mb, getArg(r, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, r, getArg(q, 0));
-						//pushArgument(be->mb, r, cnt);
-						pushArgument(be->mb, r, getArg(t, 0));
-						pushNilBat(be->mb, r);
-						pushNilBat(be->mb, r);
-						pushInstruction(be->mb, r);
-
-						t = newStmtArgs(be->mb, batcalcRef, "dbl", 2);
-						setVarType(be->mb, getArg(t, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, t, avg);
-						pushInstruction(be->mb, t);
-
-						q = newStmtArgs(be->mb, batcalcRef, "+", 5);
-						setVarType(be->mb, getArg(q, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, q, getArg(t, 0));
-						//pushArgument(be->mb, q, avg);
-						pushArgument(be->mb, q, getArg(r, 0));
-						pushNilBat(be->mb, q);
-						pushNilBat(be->mb, q);
-						pushInstruction(be->mb, q);
-						*/
-
 						s = stmt_none(be);
 						s->op4.typeval = *tpe;
 						s->nr = getArg(q, 0);
