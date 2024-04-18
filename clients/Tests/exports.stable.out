@@ -120,7 +120,6 @@ BAT *BATdescriptor(bat i);
 BAT *BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool not_in, BUN estimate);
 BAT *BATdiffcand(BAT *a, BAT *b);
 gdk_return BATextend(BAT *b, BUN newcap) __attribute__((__warn_unused_result__));
-void BATfakeCommit(BAT *b);
 gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct) __attribute__((__warn_unused_result__));
 restrict_t BATgetaccess(BAT *b);
 ValPtr BATgetprop(BAT *b, enum prop_t idx);

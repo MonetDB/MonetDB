@@ -2090,8 +2090,6 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  *  @multitable @columnfractions 0.08 0.6
  * @item BAT *
  * @tab BATcommit (BAT *b)
- * @item BAT *
- * @tab BATfakeCommit (BAT *b)
  * @end multitable
  *
  * The BAT keeps track of updates with respect to a 'previous state'.
@@ -2104,17 +2102,8 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  * BATcommit make the current BAT state the new 'stable state'.  This
  * happens inside the global TMcommit on all persistent BATs previous
  * to writing all bats to persistent storage using a BBPsync.
- *
- * EXPERT USE ONLY: The routine BATfakeCommit updates the delta
- * information on BATs and clears the dirty bit. This avoids any
- * copying to disk.  Expert usage only, as it bypasses the global
- * commit protocol, and changes may be lost after quitting or crashing
- * MonetDB.
- *
- * BATabort undo-s all changes since the previous state.
  */
 gdk_export void BATcommit(BAT *b, BUN size);
-gdk_export void BATfakeCommit(BAT *b);
 
 /*
  * @+ BAT Alignment and BAT views
