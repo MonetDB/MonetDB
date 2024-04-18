@@ -1883,10 +1883,9 @@ BATslice(BAT *b, BUN l, BUN h)
 	}
 	if (bi.restricted == BAT_READ &&
 	    (!VIEWtparent(b) || prestricted == BAT_READ)) {
-		bn = VIEWcreate(b->hseqbase + low, b);
+		bn = VIEWcreate(b->hseqbase + low, b, l, h);
 		if (bn == NULL)
 			goto doreturn;
-		VIEWboundsbi(&bi, bn, l, h);
 	} else {
 		/* create a new BAT and put everything into it */
 		BUN p = l;

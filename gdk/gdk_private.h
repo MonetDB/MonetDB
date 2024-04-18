@@ -282,8 +282,6 @@ gdk_return TMcommit(void)
 gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void VIEWboundsbi(BATiter *bi, BAT *view, BUN l, BUN h)
-	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)

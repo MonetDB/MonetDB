@@ -2116,7 +2116,7 @@ gdk_export void BATcommit(BAT *b, BUN size);
  * @tab ALIGNrelated (BAT *b1, BAT *b2)
  *
  * @item BAT*
- * @tab VIEWcreate   (oid seq, BAT *b)
+ * @tab VIEWcreate   (oid seq, BAT *b, BUN lo, BUN hi)
  * @item int
  * @tab isVIEW   (BAT *b)
  * @item bat
@@ -2145,7 +2145,7 @@ gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 
 gdk_export void BATassertProps(BAT *b);
 
-gdk_export BAT *VIEWcreate(oid seq, BAT *b);
+gdk_export BAT *VIEWcreate(oid seq, BAT *b, BUN l, BUN h);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 #define ALIGNapp(x, f, e)						\

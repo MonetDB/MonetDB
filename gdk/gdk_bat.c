@@ -834,7 +834,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	    (bi.h == NULL ||
 	     bi.h->parentid == b->batCacheid ||
 	     BBP_desc(bi.h->parentid)->batRestricted == BAT_READ)) {
-		bn = VIEWcreate(b->hseqbase, b);
+		bn = VIEWcreate(b->hseqbase, b, 0, BUN_MAX);
 		if (bn == NULL) {
 			goto bunins_failed;
 		}
