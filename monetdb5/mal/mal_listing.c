@@ -509,7 +509,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 		if (p->barrier == LEAVEsymbol ||
 			p->barrier == REDOsymbol ||
 			p->barrier == RETURNsymbol || p->barrier == RAISEsymbol) {
-			if (!copystring(&t, "    ", &len))
+			if (!copystring(&t, "  ", &len))
 				return base;
 		}
 		arg = operatorName(p->barrier);

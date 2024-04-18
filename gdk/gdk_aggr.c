@@ -1859,7 +1859,7 @@ BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty,
 				if (gids)				\
 					gid = gids[i] - min;		\
 				else					\
-					gid = (oid) i;			\
+					gid = (oid) i + g->tseqbase;	\
 				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = lng_nil;	\
@@ -1897,7 +1897,7 @@ BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty,
 				if (gids)				\
 					gid = gids[i] - min;		\
 				else					\
-					gid = (oid) i;			\
+					gid = (oid) i + g->tseqbase;	\
 				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = lng_nil;	\
@@ -1959,6 +1959,7 @@ BATgroupavg2(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, BUN
 		GDKerror("%s\n", err);
 		return GDK_FAIL;
 	}
+	min = 0;
 	if (ngrp == BUN_NONE || ngrp < i)
 		ngrp = i;
 	if (g == NULL) {
