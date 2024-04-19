@@ -1743,8 +1743,13 @@ BBPtrim(bool aggressive, bat nbat)
 			MT_lock_set(&b->theaplock);
 			if (!BATshared(b) &&
 			    !isVIEW(b) &&
-			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
-			    (b->batRole == PERSISTENT && BBP_lrefs(bid) <= 2)) {
+			    (!BATdirty(b) ||
+			     (aggressive &&
+			      b->theap->storage == STORE_MMAP &&
+			      (b->tvheap == NULL ||
+			       b->tvheap->storage == STORE_MMAP)) ||
+			     (b->batRole == PERSISTENT &&
+			      BBP_lrefs(bid) <= 2))) {
 				BBP_status_on(bid, BBPUNLOADING);
 				swap = true;
 				waitctr += BATdirty(b) ? 9 : 1;
