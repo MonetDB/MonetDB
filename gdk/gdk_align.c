@@ -96,10 +96,11 @@ VIEWboundsbi(BATiter *bi, BAT *view, BUN l, BUN h)
 	if (h < l)
 		h = l;
 	cnt = h - l;
-	view->batInserted = 0;
 	if (view->ttype != TYPE_void) {
 		view->tbaseoff = baseoff + l;
 	}
+	if (!is_oid_nil(view->tseqbase))
+		view->tseqbase += l;
 	BATsetcount(view, cnt);
 	BATsetcapacity(view, cnt);
 	if (view->tnosorted > l && view->tnosorted < l + cnt)
@@ -127,6 +128,7 @@ VIEWboundsbi(BATiter *bi, BAT *view, BUN l, BUN h)
 	else
 		view->tmaxpos = BUN_NONE;
 	view->tkey |= cnt <= 1;
+	view->tnil = false;	/* we don't know */
 }
 
 void

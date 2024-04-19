@@ -1824,8 +1824,6 @@ BATslice(BAT *b, BUN l, BUN h)
 {
 	BUN low = l;
 	BAT *bn = NULL;
-	BATiter bni;
-	oid foid;		/* first oid value if oid column */
 
 	BATcheck(b, NULL);
 	BATiter bi = bat_iterator(b);
@@ -1893,12 +1891,13 @@ BATslice(BAT *b, BUN l, BUN h)
 		BUN p = l;
 		BUN q = h;
 
-		bn = COLnew((oid) (b->hseqbase + low), BATtdensebi(&bi) ? TYPE_void : b->ttype, h - l, TRANSIENT);
+		bn = COLnew((oid) (b->hseqbase + low), BATtdensebi(&bi) || (b->ttype == TYPE_oid && h == l) ? TYPE_void : b->ttype, h - l, TRANSIENT);
 		if (bn == NULL)
 			goto doreturn;
 
 		if (bn->ttype == TYPE_void) {
 			BATsetcount(bn, h - l);
+			BATtseqbase(bn, is_oid_nil(bi.tseq) ? oid_nil : h == l ? 0 : (oid) (bi.tseq + low));
 		} else if (bn->tvheap == NULL) {
 			assert(BATatoms[bn->ttype].atomPut == NULL);
 			memcpy(Tloc(bn, 0), (const char *) bi.base + (p << bi.shift),
@@ -1915,53 +1914,28 @@ BATslice(BAT *b, BUN l, BUN h)
 			}
 		}
 		bn->theap->dirty = true;
-		bn->tsorted = bi.sorted;
-		bn->trevsorted = bi.revsorted;
-		bn->tkey = bi.key;
+		bn->tsorted = bi.sorted || bn->batCount <= 1;
+		bn->trevsorted = bi.revsorted || bn->batCount <= 1;
+		bn->tkey = bi.key || bn->batCount <= 1;
 		bn->tnonil = bi.nonil;
-		if (bi.nosorted > l && bi.nosorted < h)
+		bn->tnil = false; /* we don't know */
+		if (bi.nosorted > l && bi.nosorted < h && !bn->tsorted)
 			bn->tnosorted = bi.nosorted - l;
 		else
 			bn->tnosorted = 0;
-		if (bi.norevsorted > l && bi.norevsorted < h)
+		if (bi.norevsorted > l && bi.norevsorted < h && !bn->trevsorted)
 			bn->tnorevsorted = bi.norevsorted - l;
 		else
 			bn->tnorevsorted = 0;
 		if (bi.nokey[0] >= l && bi.nokey[0] < h &&
 		    bi.nokey[1] >= l && bi.nokey[1] < h &&
-		    bi.nokey[0] != bi.nokey[1]) {
+		    bi.nokey[0] != bi.nokey[1] &&
+		    !bn->tkey) {
 			bn->tnokey[0] = bi.nokey[0] - l;
 			bn->tnokey[1] = bi.nokey[1] - l;
 		} else {
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
-	}
-	bn->tnonil = bi.nonil || bn->batCount == 0;
-	bn->tnil = false;	/* we just don't know */
-	bn->tnosorted = 0;
-	bn->tnokey[0] = bn->tnokey[1] = 0;
-	bni = bat_iterator_nolock(bn);
-	if (BATtdensebi(&bi)) {
-		BATtseqbase(bn, (oid) (bi.tseq + low));
-	} else if (bn->ttype == TYPE_oid) {
-		if (BATcount(bn) == 0) {
-			BATtseqbase(bn, 0);
-		} else if (!is_oid_nil((foid = *(oid *) BUNtloc(bni, 0))) &&
-			   (BATcount(bn) == 1 ||
-			    (bn->tkey &&
-			     bn->tsorted &&
-			     foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BATcount(bn) - 1)))) {
-			BATtseqbase(bn, foid);
-		}
-	}
-	if (bn->batCount <= 1) {
-		bn->tsorted = ATOMlinear(b->ttype);
-		bn->trevsorted = ATOMlinear(b->ttype);
-		BATkey(bn, true);
-	} else {
-		bn->tsorted = bi.sorted;
-		bn->trevsorted = bi.revsorted;
-		BATkey(bn, bi.key);
 	}
   doreturn:
 	bat_iterator_end(&bi);
