@@ -4908,41 +4908,29 @@ BBPtmunlock(void)
 void
 BBPprintinfo(void)
 {
-	size_t tmem = 0, tvm = 0;
-	size_t pmem = 0, pvm = 0;
-	int tn = 0;
-	int pn = 0;
-	int nh = 0;
+	/* 32 categories for the bats, not all are expected to be filled */
+	struct counters {
+		size_t sz;
+		size_t vmsz;
+		int nr;
+	} bats[2][2][2][2][2] = {0};
+	int nbats = 0;
 
 	BBPtmlock();
 	bat sz = (bat) ATOMIC_GET(&BBPsize);
 	for (bat i = 1; i < sz; i++) {
 		MT_lock_set(&GDKswapLock(i));
-		if (BBP_refs(i) > 0 || BBP_lrefs(i) > 0) {
+		int r;
+		if ((r = BBP_refs(i)) > 0 || BBP_lrefs(i) > 0) {
 			BAT *b = BBP_desc(i);
 			if (b != NULL) {
-				ATOMIC_BASE_TYPE status = BBP_status(i);
-				nh += (status & BBPHOT) != 0;
+				nbats++;
 				MT_lock_set(&b->theaplock);
-				if (status & BBPPERSISTENT) {
-					pn++;
-					pmem += HEAPmemsize(b->theap);
-					pvm += HEAPvmsize(b->theap);
-					pmem += HEAPmemsize(b->tvheap);
-					pvm += HEAPvmsize(b->tvheap);
-				} else {
-					tn++;
-					if (b->theap &&
-					    b->theap->parentid == b->batCacheid) {
-						tmem += HEAPmemsize(b->theap);
-						tvm += HEAPvmsize(b->theap);
-					}
-					if (b->tvheap &&
-					    b->tvheap->parentid == b->batCacheid) {
-						tmem += HEAPmemsize(b->tvheap);
-						tvm += HEAPvmsize(b->tvheap);
-					}
-				}
+				ATOMIC_BASE_TYPE status = BBP_status(i);
+				struct counters *bt = &bats[r > 0][BATdirty(b)][(status & BBPPERSISTENT) != 0][(status & BBPHOT) != 0][(status & BBPLOADED) != 0];
+				bt->nr++;
+				bt->sz += HEAPmemsize(b->theap) + HEAPmemsize(b->tvheap);
+				bt->vmsz += HEAPvmsize(b->theap) + HEAPvmsize(b->tvheap);
 				MT_lock_unset(&b->theaplock);
 			}
 		}
@@ -4950,11 +4938,71 @@ BBPprintinfo(void)
 	}
 	uint32_t nfree = BBP_nfree;
 	BBPtmunlock();
-	printf("%d persistent bats using %zu virtual memory (%zu malloced)\n",
-	       pn, pvm, pmem);
-	printf("%d transient bats using %zu virtual memory (%zu malloced)\n",
-	       tn, tvm, tmem);
-	printf("%d bats are \"hot\" (i.e. currently or recently used)\n", nh);
-	printf("%d bats total, %"PRIu32" free bats in common shared list\n",
-	       sz - 1, nfree);
+	if (bats[1][1][1][1][1].nr > 0)
+		printf("fix, dirty, persistent, hot, loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][1][1][1][1].nr, bats[1][1][1][1][1].vmsz, bats[1][1][1][1][1].sz);
+	if (bats[1][1][1][1][0].nr > 0)
+		printf("fix, dirty, persistent, hot, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][1][1][1][0].nr, bats[1][1][1][1][0].vmsz, bats[1][1][1][1][0].sz);
+	if (bats[1][1][1][0][1].nr > 0)
+		printf("fix, dirty, persistent, cold, loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][1][1][0][1].nr, bats[1][1][1][0][1].vmsz, bats[1][1][1][0][1].sz);
+	if (bats[1][1][1][0][0].nr > 0)
+		printf("fix, dirty, persistent, cold, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][1][1][0][0].nr, bats[1][1][1][0][0].vmsz, bats[1][1][1][0][0].sz);
+	if (bats[1][1][0][1][1].nr > 0)
+		printf("fix, dirty, transient, hot, loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][1][0][1][1].nr, bats[1][1][0][1][1].vmsz, bats[1][1][0][1][1].sz);
+	if (bats[1][1][0][1][0].nr > 0)
+		printf("fix, dirty, transient, hot, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][1][0][1][0].nr, bats[1][1][0][1][0].vmsz, bats[1][1][0][1][0].sz);
+	if (bats[1][1][0][0][1].nr > 0)
+		printf("fix, dirty, transient, cold, loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][1][0][0][1].nr, bats[1][1][0][0][1].vmsz, bats[1][1][0][0][1].sz);
+	if (bats[1][1][0][0][0].nr > 0)
+		printf("fix, dirty, transient, cold, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][1][0][0][0].nr, bats[1][1][0][0][0].vmsz, bats[1][1][0][0][0].sz);
+	if (bats[1][0][1][1][1].nr > 0)
+		printf("fix, clean, persistent, hot, loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][0][1][1][1].nr, bats[1][0][1][1][1].vmsz, bats[1][0][1][1][1].sz);
+	if (bats[1][0][1][1][0].nr > 0)
+		printf("fix, clean, persistent, hot, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][0][1][1][0].nr, bats[1][0][1][1][0].vmsz, bats[1][0][1][1][0].sz);
+	if (bats[1][0][1][0][1].nr > 0)
+		printf("fix, clean, persistent, cold, loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][0][1][0][1].nr, bats[1][0][1][0][1].vmsz, bats[1][0][1][0][1].sz);
+	if (bats[1][0][1][0][0].nr > 0)
+		printf("fix, clean, persistent, cold, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][0][1][0][0].nr, bats[1][0][1][0][0].vmsz, bats[1][0][1][0][0].sz);
+	if (bats[1][0][0][1][1].nr > 0)
+		printf("fix, clean, transient, hot, loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][0][0][1][1].nr, bats[1][0][0][1][1].vmsz, bats[1][0][0][1][1].sz);
+	if (bats[1][0][0][1][0].nr > 0)
+		printf("fix, clean, transient, hot, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][0][0][1][0].nr, bats[1][0][0][1][0].vmsz, bats[1][0][0][1][0].sz);
+	if (bats[1][0][0][0][1].nr > 0)
+		printf("fix, clean, transient, cold, loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][0][0][0][1].nr, bats[1][0][0][0][1].vmsz, bats[1][0][0][0][1].sz);
+	if (bats[1][0][0][0][0].nr > 0)
+		printf("fix, clean, transient, cold, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[1][0][0][0][0].nr, bats[1][0][0][0][0].vmsz, bats[1][0][0][0][0].sz);
+	if (bats[0][1][1][1][1].nr > 0)
+		printf("no fix, dirty, persistent, hot, loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][1][1][1][1].nr, bats[0][1][1][1][1].vmsz, bats[0][1][1][1][1].sz);
+	if (bats[0][1][1][1][0].nr > 0)
+		printf("no fix, dirty, persistent, hot, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][1][1][1][0].nr, bats[0][1][1][1][0].vmsz, bats[0][1][1][1][0].sz);
+	if (bats[0][1][1][0][1].nr > 0)
+		printf("no fix, dirty, persistent, cold, loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][1][1][0][1].nr, bats[0][1][1][0][1].vmsz, bats[0][1][1][0][1].sz);
+	if (bats[0][1][1][0][0].nr > 0)
+		printf("no fix, dirty, persistent, cold, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][1][1][0][0].nr, bats[0][1][1][0][0].vmsz, bats[0][1][1][0][0].sz);
+	if (bats[0][1][0][1][1].nr > 0)
+		printf("no fix, dirty, transient, hot, loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][1][0][1][1].nr, bats[0][1][0][1][1].vmsz, bats[0][1][0][1][1].sz);
+	if (bats[0][1][0][1][0].nr > 0)
+		printf("no fix, dirty, transient, hot, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][1][0][1][0].nr, bats[0][1][0][1][0].vmsz, bats[0][1][0][1][0].sz);
+	if (bats[0][1][0][0][1].nr > 0)
+		printf("no fix, dirty, transient, cold, loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][1][0][0][1].nr, bats[0][1][0][0][1].vmsz, bats[0][1][0][0][1].sz);
+	if (bats[0][1][0][0][0].nr > 0)
+		printf("no fix, dirty, transient, cold, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][1][0][0][0].nr, bats[0][1][0][0][0].vmsz, bats[0][1][0][0][0].sz);
+	if (bats[0][0][1][1][1].nr > 0)
+		printf("no fix, clean, persistent, hot, loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][0][1][1][1].nr, bats[0][0][1][1][1].vmsz, bats[0][0][1][1][1].sz);
+	if (bats[0][0][1][1][0].nr > 0)
+		printf("no fix, clean, persistent, hot, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][0][1][1][0].nr, bats[0][0][1][1][0].vmsz, bats[0][0][1][1][0].sz);
+	if (bats[0][0][1][0][1].nr > 0)
+		printf("no fix, clean, persistent, cold, loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][0][1][0][1].nr, bats[0][0][1][0][1].vmsz, bats[0][0][1][0][1].sz);
+	if (bats[0][0][1][0][0].nr > 0)
+		printf("no fix, clean, persistent, cold, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][0][1][0][0].nr, bats[0][0][1][0][0].vmsz, bats[0][0][1][0][0].sz);
+	if (bats[0][0][0][1][1].nr > 0)
+		printf("no fix, clean, transient, hot, loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][0][0][1][1].nr, bats[0][0][0][1][1].vmsz, bats[0][0][0][1][1].sz);
+	if (bats[0][0][0][1][0].nr > 0)
+		printf("no fix, clean, transient, hot, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][0][0][1][0].nr, bats[0][0][0][1][0].vmsz, bats[0][0][0][1][0].sz);
+	if (bats[0][0][0][0][1].nr > 0)
+		printf("no fix, clean, transient, cold, loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][0][0][0][1].nr, bats[0][0][0][0][1].vmsz, bats[0][0][0][0][1].sz);
+	if (bats[0][0][0][0][0].nr > 0)
+		printf("no fix, clean, transient, cold, not loaded: %d bats, %zu virtual, %zu malloc\n", bats[0][0][0][0][0].nr, bats[0][0][0][0][0].vmsz, bats[0][0][0][0][0].sz);
+
+	printf("%d bats total, %d in use, %"PRIu32" free bats in common shared list\n",
+	       sz - 1, nbats, nfree);
 }
