@@ -1323,6 +1323,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 
 			bool isnil = atomcmp(new, nil) == 0;
 			anynil |= isnil;
+			MT_lock_set(&b->theaplock);
 			if (old == NULL ||
 			    (b->tnil &&
 			     !anynil &&
@@ -1335,6 +1336,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			b->tnonil &= !isnil;
 			b->tnil |= isnil;
+			MT_lock_unset(&b->theaplock);
 			if (bi.maxpos != BUN_NONE) {
 				if (!isnil &&
 				    atomcmp(BUNtvar(bi, bi.maxpos), new) < 0) {
