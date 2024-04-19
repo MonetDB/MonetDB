@@ -50,3 +50,4 @@ CMDgen_group-Bug-7486
 sql_init_subtype-Bug-7487
 orderby-max-over-rows-Bug-7488
 rel2bin_select-Bug-7496
+multicolumn_IN_value_list-Bug-7497
