@@ -57,8 +57,8 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 			     strcmp(aggrfunc, "min") == 0 ||
 			     strcmp(aggrfunc, "max") == 0)) /* incremental versions TODO do for other aggr functions */
 			mod = putName("iaggr");
-		else if (!grp && avg && restype == TYPE_dbl)
-			mod = putName("batcalc");
+		//else if (!grp && avg && restype == TYPE_dbl)
+			//mod = putName("batcalc");
 
 		if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 			|| strcmp(aggrfunc, "str_group_concat") == 0)
@@ -81,11 +81,9 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 		if (q == NULL)
 			return NULL;
 		setVarType(mb, getArg(q, 0), newBatType(restype));
-		if (avg) { /* for avg also return rest and count */
-			/* TODO: check with the 'new-avg' branch (?). We'll
- 			 * want to choose between avg/rest and avg+cnt */
-			if (restype != TYPE_dbl)
-				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
+		if (avg) { /* for avg also return remainder (or error) and count */
+			//if (grp || restype != TYPE_dbl)
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(restype == TYPE_dbl ? TYPE_dbl : TYPE_lng)));
 			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 		}
 	} else {
@@ -95,11 +93,9 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 			return NULL;
 		if (complex_aggr) {
 			setVarType(mb, getArg(q, 0), (grp|| nrargs>1)?newBatType(restype):restype);
-			if (avg) { /* for avg also return rest and count */
-				/* TODO: check with the 'new-avg' branch (?). We'll
-				 * want to choose between avg/rest and avg+cnt */
-				if (restype != TYPE_dbl)
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
+			if (avg) { /* for avg also return remainder (or error) and count */
+				//if (grp || restype != TYPE_dbl)
+					q = pushReturn(mb, q, newTmpVariable(mb, restype == TYPE_dbl ? TYPE_dbl : TYPE_lng));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 			}
 		}

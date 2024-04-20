@@ -190,6 +190,7 @@ extern stmt *stmt_atom_string_nil(backend *be);
 extern stmt *stmt_atom_int(backend *be, int i);
 extern stmt *stmt_atom_lng(backend *be, lng i);
 extern stmt *stmt_atom_lng_nil(backend *be);
+extern stmt *stmt_atom_dbl(backend *be, dbl d);
 extern stmt *stmt_bool(backend *be, int b);
 
 extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti, int is_semantics);
