@@ -21,6 +21,8 @@
 struct decimal_parms {
 	int digits;
 	int scale;
+	char sep;
+	char skip;
 };
 
 

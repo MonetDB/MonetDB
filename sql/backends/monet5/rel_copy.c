@@ -457,6 +457,12 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom, bo
 	str fixed_width = take_parameter(&n, TYPE_str)->val.sval;
 	int on_client = take_parameter(&n, TYPE_int)->val.ival;
 	bool escape = 0 != take_parameter(&n, TYPE_int)->val.ival;
+	str dec_sep = take_parameter(&n, TYPE_str)->val.sval;
+	str dec_skip = take_parameter(&n, TYPE_str)->val.sval;
+	if (dec_sep == NULL)
+		dec_sep = (str)str_nil;
+	if (dec_skip == NULL)
+		dec_skip = (str)str_nil;
 
 	int var_col_sep = getStrConstant(mb, col_sep);
 	int var_line_sep = getStrConstant(mb, line_sep);
@@ -613,6 +619,8 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom, bo
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
+				q = pushStr(mb, q, dec_sep);
+				q = pushStr(mb, q, dec_skip);
 				pushInstruction(mb, q);
 				break;
 			case EC_STRING:

@@ -82,7 +82,9 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 		s++;
 	}
 
-	for (int i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < integer_digits); s++) {
+	for (int i = 0; *s && (*s != parms->sep) && ((res == 0 && *s == '0') || i < integer_digits); s++) {
+		if (*s == parms->skip)
+			continue;
 		if (!isdigit((unsigned char) *s))
 			break;
 		res *= 10;
@@ -90,11 +92,13 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 		if (res)
 			i++;
 	}
-	if (*s == '.') {
+	if (*s == parms->sep) {
 		s++;
-		while (*s && isdigit((unsigned char) *s) && scale > 0) {
+		for ( ;*s && (isdigit((unsigned char) *s) || (*s == parms->skip)) && scale > 0; s++) {
+			if (*s == parms->skip)
+				continue;
 			res *= 10;
-			res += *s++ - '0';
+			res += *s - '0';
 			scale--;
 		}
 	}
@@ -167,6 +171,8 @@ TMPL_SUFFIXED(COPYparse_decimal) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	lng starting_row = *getArgReference_lng(stk, pci, 7);
 	int col_no = *getArgReference_int(stk, pci, 8);
 	str col_name = *getArgReference_str(stk, pci, 9);
+	str dec_sep = *getArgReference_str(stk, pci, 10);
+	str dec_skip = *getArgReference_str(stk, pci, 11);
 
 	struct error_handling errors;
 	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
@@ -174,6 +180,8 @@ TMPL_SUFFIXED(COPYparse_decimal) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	struct decimal_parms myparms = {
 		.digits = digits,
 		.scale = scale,
+		.sep = strNil(dec_sep) ? '.' : dec_sep[0],
+		.skip = strNil(dec_skip) ? '\0' : dec_skip[0],
 	};
 
 	// Does this number of digits fit in the result type?

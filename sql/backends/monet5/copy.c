@@ -569,26 +569,26 @@ static mel_func copy_init_funcs[] = {
 	batarg("", str),
 	batarg("block", bte), batarg("offsets", int), arg("maxlen", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "parse_decimal", COPYparse_decimal_bte, false, "Parse as a decimal", args(1, 10,
+ pattern("copy", "parse_decimal", COPYparse_decimal_bte, false, "Parse as a decimal", args(1, 12,
 	 batarg("", bte),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", bte), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", bte), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
- pattern("copy", "parse_decimal", COPYparse_decimal_sht, false, "Parse as a decimal", args(1, 10,
+ pattern("copy", "parse_decimal", COPYparse_decimal_sht, false, "Parse as a decimal", args(1, 12,
 	 batarg("", sht),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", sht), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", sht), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
- pattern("copy", "parse_decimal", COPYparse_decimal_int, false, "Parse as a decimal", args(1, 10,
+ pattern("copy", "parse_decimal", COPYparse_decimal_int, false, "Parse as a decimal", args(1, 12,
 	 batarg("", int),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
- pattern("copy", "parse_decimal", COPYparse_decimal_lng, false, "Parse as a decimal", args(1, 10,
+ pattern("copy", "parse_decimal", COPYparse_decimal_lng, false, "Parse as a decimal", args(1, 12,
 	 batarg("", lng),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", lng), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", lng), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
  #ifdef HAVE_HGE
- pattern("copy", "parse_decimal", COPYparse_decimal_hge, false, "Parse as a decimal", args(1, 10,
+ pattern("copy", "parse_decimal", COPYparse_decimal_hge, false, "Parse as a decimal", args(1, 12,
 	 batarg("", hge),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", hge), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", hge), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
 #endif
 
