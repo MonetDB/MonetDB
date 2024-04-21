@@ -88,11 +88,9 @@ rel_groupby_partition(backend *be, sql_rel *rel)
 	}
 	/* check size */
 	BUN est = get_rel_count(rel);
-	if (est == BUN_NONE) {
-		printf("relational cardinality isn't known\n");
+	if (est == BUN_NONE)
 		return partition;
-	}
-	if (est >= 1000000)
+	if (est >= 10000000)
 		return true;
 	return partition;
 }
@@ -366,8 +364,6 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs)
 
 	stmt *pp = NULL;
 	InstrPtr part = NULL;
-
-	printf("partition\n");
 
 	mats = partition_groupby_prepare(be, rel, &part);
 	if (!mats)

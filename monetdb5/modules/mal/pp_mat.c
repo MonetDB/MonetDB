@@ -27,7 +27,6 @@ typedef struct part_t {
 BAT *
 pack_mat(BAT *b)
 {
-	printf("pack mat\n");
 	mat_t *mp = (mat_t*)b->T.sink;
 	BUN cap = 0;
 
