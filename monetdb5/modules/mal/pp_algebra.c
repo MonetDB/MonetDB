@@ -1358,7 +1358,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	}
 
 #define agroup(Type) \
-	if (tt == TYPE_##Type) { \
+	if (ATOMvarsized(tt)) { \
 		int slots = 0; \
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
@@ -1436,8 +1436,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			gp[i] = g-1; \
 		} \
 		bat_iterator_end(&bi); \
-	} else \
-	if (ATOMvarsized(tt)) { \
+	} else { \
 		int slots = 0; \
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
@@ -1565,26 +1564,27 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 			vgroup()
-			group(bit)
-			group(bte)
-			group(sht)
-			group(int)
-			group(date)
-			group(lng)
-			group(oid)
-			group(daytime)
-			group(timestamp)
+			else group(bit)
+			else group(bte)
+			else group(sht)
+			else group(int)
+			else group(date)
+			else group(lng)
+			else group(oid)
+			else group(daytime)
+			else group(timestamp)
 #ifdef HAVE_HGE
-			group(hge)
+			else group(hge)
 #endif
-			fgroup(flt, int)
-			fgroup(dbl, lng)
-			if (local_storage) {
-				agroup_(str, p)
+			else fgroup(flt, int)
+			else fgroup(dbl, lng)
+			else if (ATOMvarsized(tt)) {
+				if (local_storage) {
+					agroup_(str, p)
+				} else {
+					agroup(str)
+				}
 			} else {
-				agroup(str)
-			}
-			if (ATOMstorage(tt) > TYPE_str) {
 				err = createException(MAL, "pp group.group", "Type (%s) not handled yet\n", ATOMname(tt));
 			}
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp group.group", RUNTIME_QRY_TIMEOUT));
@@ -1737,7 +1737,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	}
 
 #define aderive(Type) \
-	if (tt == TYPE_##Type) { \
+	if (ATOMvarsized(tt)) { \
 		int slots = 0; \
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
@@ -1817,8 +1817,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			gp[i] = g-1; \
 		} \
 		bat_iterator_end(&bi); \
-	} else \
-	if (ATOMvarsized(tt)) { \
+	} else { \
 		int slots = 0; \
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
@@ -1960,24 +1959,28 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 			vderive()
-			derive(bit)
-			derive(bte)
-			derive(sht)
-			derive(int)
-			derive(date)
-			derive(lng)
-			derive(oid)
-			derive(daytime)
-			derive(timestamp)
+			else derive(bit)
+			else derive(bte)
+			else derive(sht)
+			else derive(int)
+			else derive(date)
+			else derive(lng)
+			else derive(oid)
+			else derive(daytime)
+			else derive(timestamp)
 #ifdef HAVE_HGE
-			derive(hge)
+			else derive(hge)
 #endif
-			fderive(flt, int)
-			fderive(dbl, lng)
-			if (local_storage) {
-				aderive_(str,p)
+			else fderive(flt, int)
+			else fderive(dbl, lng)
+			else if (ATOMvarsized(tt)) {
+				if (local_storage) {
+					aderive_(str,p)
+				} else {
+					aderive(str)
+				}
 			} else {
-				aderive(str)
+				err = createException(MAL, "pp group.derive", "Type (%s) not handled yet\n", ATOMname(tt));
 			}
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp group.group(derive)", RUNTIME_QRY_TIMEOUT));
 		}
