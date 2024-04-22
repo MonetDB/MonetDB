@@ -34,6 +34,24 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 		s++;
 	}
 
+	if (*s == 'E' || *s == 'e') {
+		int exp = 0;
+		s++;
+		while (isdigit((unsigned char) *s)) {
+			// int is safe because of promotion rules
+			int digit = *s - '0';
+			int new_exp = 10 * exp + digit;
+			exp = new_exp;
+			s++;
+		}
+		TMPL_TYPE m = 1;
+		while (exp > 0) {
+			m *= 10;
+			exp--;
+		}
+		acc *= m;
+		/* overflow check missing */
+	}
 	if (*s == '.') {
 		s++;
 		while (*s == '0')
