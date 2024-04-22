@@ -44990,27 +44990,27 @@ COPYget_parallel;
 get the id of the current COPY INTO implementation
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:bte, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:bte]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:bte, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:bte]
 COPYparse_decimal_bte;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:hge, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:hge]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:hge, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:hge]
 COPYparse_decimal_hge;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:int, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:int]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:int, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:int]
 COPYparse_decimal_int;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:lng, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:lng]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:lng, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:lng]
 COPYparse_decimal_lng;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:sht, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:sht]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:sht, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:sht]
 COPYparse_decimal_sht;
 Parse as a decimal
 copy
