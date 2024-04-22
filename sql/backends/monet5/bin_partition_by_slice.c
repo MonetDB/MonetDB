@@ -183,14 +183,11 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 				return NULL;
 			append(shared, &cc->nr);
 
-			if (avg) {
-				/* remainder and count */
-				if (!EC_APPNUM(t->type->eclass)) {
-					cc = const_column(be, stmt_atom_lng(be, 0));
-					if (!cc)
-						return NULL;
-					append(shared, &cc->nr);
-				}
+			if (avg) { /* remainder (or compensation) and count */
+				cc = const_column(be, EC_APPNUM(t->type->eclass) ? stmt_atom_dbl(be, 0) : stmt_atom_lng(be, 0));
+				if (!cc)
+					return NULL;
+				append(shared, &cc->nr);
 
 				cc = const_column(be, stmt_atom_lng(be, 0));
 				if (!cc)
@@ -274,14 +271,12 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			append(shared, q->argv);
 			append(*aggrresults, q->argv);
 
-			if (avg) {
-				if (!EC_APPNUM(t->type->eclass)) {
-					q = stmt_bat_new(be, TYPE_lng, estimate*1.1);
-					if (q == NULL)
-						return NULL;
-					append(shared, q->argv);
-					append(*aggrresults, q->argv);
-				}
+			if (avg) { /* remainder (or compensation) and count */
+				q = stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? TYPE_dbl : TYPE_lng, estimate*1.1);
+				if (q == NULL)
+					return NULL;
+				append(shared, q->argv);
+				append(*aggrresults, q->argv);
 
 				q = stmt_bat_new(be, TYPE_lng, estimate*1.1);
 				if (q == NULL)
@@ -366,22 +361,18 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			if (avg && EC_APPNUM(tpe->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 				tpe = it;
 			InstrPtr q = newStmt(be->mb, getName("lockedaggr"), getName(name));
-			if (avg) {
-				if (!EC_APPNUM(tpe->type->eclass)) {
-					m = m->next;
-					q = pushReturn(be->mb, q, *(int*)m->data);
-				}
+			if (avg) { /* remainder (or compensation) and count */
+				m = m->next;
+				q = pushReturn(be->mb, q, *(int*)m->data);
 				m = m->next;
 				q = pushReturn(be->mb, q, *(int*)m->data);
 				q->inout = 0;
 			}
 			q = pushArgument(be->mb, q, getArg(pp->q, 2));
 			q = pushArgument(be->mb, q, i->nr);
-			if (avg) {
-				/* remainder and count */
+			if (avg) { /* remainder (or compensation) and count */
 				q = pushArgument(be->mb, q, getArg(i->q, 1));
-				if (!EC_APPNUM(tpe->type->eclass))
-					q = pushArgument(be->mb, q, getArg(i->q, 2));
+				q = pushArgument(be->mb, q, getArg(i->q, 2));
 			}
 			pushInstruction(be->mb, q);
 			getArg(q, 0) = *v;
@@ -403,14 +394,12 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			sql_exp *e = n->data;
 			stmt *gstmt = m->data;
 
-			//stmt *groupby = stmt_group_locked(be, gstmt, grp, ext, cnt, pp);
 			stmt *groupby = be->pipeline? stmt_group_partitioned(be, gstmt, grp, ext, cnt) : stmt_group(be, gstmt, grp, ext, cnt, 0);
 			/* reuse extend ! */
 			getArg(groupby->q, 1) = *(int*)o->data;
 			groupby->q->inout = 1;
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);
-			//cnt = stmt_result(be, groupby, 2);
 			gstmt = stmt_alias(be, gstmt, exp_find_rel_name(e), exp_name(e));
 			list_append(ngbstmts, gstmt);
 		}
@@ -445,26 +434,21 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 				if (avg && EC_APPNUM(tpe->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 					tpe = it;
 				q = newStmt(be->mb, getName("aggr"), getName(name));
-				if (avg) {
-					if (!EC_APPNUM(tpe->type->eclass)) {
-						m = m->next;
-						q = pushReturn(be->mb, q, *(int*)m->data);
-					}
+				if (avg) { /* remainder (or compensation) and count */
+					m = m->next;
+					q = pushReturn(be->mb, q, *(int*)m->data);
 					m = m->next;
 					q = pushReturn(be->mb, q, *(int*)m->data);
 					q->inout = 0;
 				}
 				q = pushArgument(be->mb, q, grp->nr);
 				q = pushArgument(be->mb, q, i->nr);
-				if (avg) {
-					/* remainder and count */
+				if (avg) { /* remainder (or compensation) and count */
 					q = pushArgument(be->mb, q, getArg(i->q, 1));
-					if (!EC_APPNUM(tpe->type->eclass))
-						q = pushArgument(be->mb, q, getArg(i->q, 2));
+					q = pushArgument(be->mb, q, getArg(i->q, 2));
 				}
 				q = pushArgument(be->mb, q, getArg(pp->q, 2));
 				q = pushArgument(be->mb, q, grp->nr);
-				//q = pushArgument(be->mb, q, ext->nr);
 			} else {
 				q = newStmt(be->mb, getName("algebra"), projectionRef);
 				q = pushArgument(be->mb, q, grp->nr);
@@ -504,63 +488,24 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 				sql_subfunc *sf = e->f;
 				sql_subtype *tpe = exp_subtype(e);
 				if (strcmp(sf->func->base.name, "avg") == 0 && EC_APPNUM(tpe->type->eclass)) {
-					sql_subtype *it = first_arg_subtype(e);
-					if (!EC_APPNUM(it->type->eclass)) {
-						stmt *s = n->data;
-						InstrPtr q = s->q;
-						int avg = getArg(q, 0), rem = getArg(q, 1), cnt = getArg(q, 2);
+					stmt *s = n->data;
+					InstrPtr q = s->q;
+					int avg = getArg(q, 0), rem = getArg(q, 1), cnt = getArg(q, 2);
 
-						q = newStmtArgs(be->mb, aggrRef, "compute_avg", 4);
-						setVarType(be->mb, getArg(q, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, q, avg);
-						pushArgument(be->mb, q, rem);
-						pushArgument(be->mb, q, cnt);
-						pushInstruction(be->mb, q);
+					q = newStmtArgs(be->mb, aggrRef, "compute_avg", 4);
+					setVarType(be->mb, getArg(q, 0), newBatType(TYPE_dbl));
+					pushArgument(be->mb, q, avg);
+					pushArgument(be->mb, q, rem);
+					pushArgument(be->mb, q, cnt);
+					pushInstruction(be->mb, q);
 
-						/*
-						InstrPtr r, t;
-						q = newStmtArgs(be->mb, batcalcRef, "dbl", 2);
-						setVarType(be->mb, getArg(q, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, q, rem);
-						pushInstruction(be->mb, q);
-
-						t = newStmtArgs(be->mb, batcalcRef, "dbl", 2);
-						setVarType(be->mb, getArg(t, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, t, cnt);
-						pushInstruction(be->mb, t);
-
-						r = newStmtArgs(be->mb, batcalcRef, "/", 5);
-						setVarType(be->mb, getArg(r, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, r, getArg(q, 0));
-						//pushArgument(be->mb, r, cnt);
-						pushArgument(be->mb, r, getArg(t, 0));
-						pushNilBat(be->mb, r);
-						pushNilBat(be->mb, r);
-						pushInstruction(be->mb, r);
-
-						t = newStmtArgs(be->mb, batcalcRef, "dbl", 2);
-						setVarType(be->mb, getArg(t, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, t, avg);
-						pushInstruction(be->mb, t);
-
-						q = newStmtArgs(be->mb, batcalcRef, "+", 5);
-						setVarType(be->mb, getArg(q, 0), newBatType(TYPE_dbl));
-						pushArgument(be->mb, q, getArg(t, 0));
-						//pushArgument(be->mb, q, avg);
-						pushArgument(be->mb, q, getArg(r, 0));
-						pushNilBat(be->mb, q);
-						pushNilBat(be->mb, q);
-						pushInstruction(be->mb, q);
-						*/
-
-						s = stmt_none(be);
-						s->op4.typeval = *tpe;
-						s->nr = getArg(q, 0);
-						s->q = q;
-						s->key = s->nrcols = exp_card(e);
-						s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
-						n->data = s;
-					}
+					s = stmt_none(be);
+					s->op4.typeval = *tpe;
+					s->nr = getArg(q, 0);
+					s->q = q;
+					s->key = s->nrcols = exp_card(e);
+					s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
+					n->data = s;
 				}
 			}
 		}

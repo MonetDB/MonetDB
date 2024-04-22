@@ -174,6 +174,15 @@ stmt_atom_lng_nil(backend *be)
 }
 
 stmt *
+stmt_atom_dbl(backend *be, dbl d)
+{
+	sql_subtype t;
+
+	sql_find_subtype(&t, "double", 53, 0);
+	return stmt_atom(be, atom_float(be->mvc->sa, &t, d));
+}
+
+stmt *
 stmt_bool(backend *be, int b)
 {
 	sql_subtype t;

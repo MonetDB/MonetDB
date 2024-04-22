@@ -165,6 +165,26 @@ AGGRavg24_dbl;
 Grouped tail average on sht, also returns count
 aggr
 avg
+command aggr.avg(X_0:bat[:dbl]) (X_1:dbl, X_2:dbl, X_3:lng)
+ALGfsum;
+Return the Kahan/Neumaier summation.
+aggr
+avg
+command aggr.avg(X_0:bat[:flt]) (X_1:dbl, X_2:dbl, X_3:lng)
+ALGfsum;
+Return the Kahan/Neumaier summation.
+aggr
+avg
+command aggr.avg(X_0:bat[:dbl], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
+ALGfsum_skipnil;
+Return the Kahan/Neumaier summation or nil.
+aggr
+avg
+command aggr.avg(X_0:bat[:flt], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
+ALGfsum_skipnil;
+Return the Kahan/Neumaier summation or nil.
+aggr
+avg
 pattern aggr.avg(X_0:bat[:bte], X_1:bat[:oid], X_2:bit) (X_3:bte, X_4:lng, X_5:lng)
 CMDBATavg3;
 Calculate aggregate average of B.
@@ -225,22 +245,22 @@ CMDcalcavg;
 Gives the avg of all tail values
 aggr
 avg
-pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:lng], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:any_1], X_7:bat[:lng], X_8:bat[:lng]) 
+pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:dbl], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:dbl], X_7:bat[:dbl], X_8:bat[:lng])
 LALGavg;
 avg per group.
 aggr
 avg
-pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:lng], X_3:ptr, X_4:bat[:oid]) (X_5:bat[:dbl], X_6:bat[:lng]) 
+pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:lng], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:any_1], X_7:bat[:lng], X_8:bat[:lng])
 LALGavg;
 avg per group.
 aggr
 avg
-pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:any_1], X_5:bat[:lng], X_6:bat[:lng]) 
+pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:any_1], X_5:bat[:lng], X_6:bat[:lng])
 LALGavg;
 avg per group.
 aggr
 avg
-pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:dbl], X_5:bat[:lng]) 
+pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
 LALGavg;
 avg per group.
 aggr
@@ -248,6 +268,21 @@ cardinality
 command aggr.cardinality(X_0:bat[:any_2]):lng
 ALGcard;
 Return the cardinality of the BAT tail values.
+aggr
+compute_avg
+pattern aggr.compute_avg(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:lng]):bat[:dbl]
+compute_avg;
+compute avg from integer avg + rest/count.
+aggr
+compute_avg
+pattern aggr.compute_avg(X_0:bat[:dbl], X_1:bat[:dbl], X_2:bat[:lng]):bat[:dbl]
+compute_avg;
+compute avg from floating point (sum + error)/count.
+aggr
+compute_sum
+pattern aggr.compute_sum(X_0:bat[:dbl], X_1:bat[:dbl]):bat[:dbl]
+compute_sum;
+compute Kahan/Neumaier summation.
 aggr
 corr
 command aggr.corr(X_0:bat[:bte], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:any_1]):bat[:dbl]
@@ -320,12 +355,12 @@ ALGcount_nil;
 Return the number of elements currently in a BAT ignores@BUNs with nil-tail iff ignore_nils==TRUE.
 aggr
 count
-command aggr.count(X_0:bat[:oid], X_1:bat[:any_1], X_2:bit, X_3:ptr, X_4:bat[:oid]):bat[:lng] 
+command aggr.count(X_0:bat[:oid], X_1:bat[:any_1], X_2:bit, X_3:ptr, X_4:bat[:oid]):bat[:lng]
 LALGcount;
 Count per group.
 aggr
 count
-command aggr.count(X_0:bat[:oid], X_1:ptr, X_2:bat[:oid]):bat[:lng] 
+command aggr.count(X_0:bat[:oid], X_1:ptr, X_2:bat[:oid]):bat[:lng]
 LALGcountstar;
 count per group.
 aggr
@@ -460,7 +495,7 @@ ALGmaxany_skipnil;
 Return the highest tail value or nil.
 aggr
 max
-command aggr.max(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]):bat[:any_1] 
+command aggr.max(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]):bat[:any_1]
 LALGmax;
 Max per group.
 aggr
@@ -490,7 +525,7 @@ ALGminany_skipnil;
 Return the lowest tail value or nil.
 aggr
 min
-command aggr.min(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]):bat[:any_1] 
+command aggr.min(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]):bat[:any_1]
 LALGmin;
 Min per group.
 aggr
@@ -1065,7 +1100,7 @@ CMDBATprod;
 Calculate aggregate product of B.
 aggr
 prod
-pattern aggr.prod(X_0:bat[:oid], X_1:bat[:any_2], X_2:ptr, X_3:bat[:oid]):bat[:any_1] 
+pattern aggr.prod(X_0:bat[:oid], X_1:bat[:any_2], X_2:ptr, X_3:bat[:oid]):bat[:any_1]
 LALGprod;
 product per group.
 aggr
@@ -2715,6 +2750,26 @@ AGGRsum3_sht;
 Grouped tail sum on sht
 aggr
 sum
+command aggr.sum(X_0:bat[:dbl]) (X_1:dbl, X_2:dbl, X_3:lng)
+ALGfsum;
+Return the Kahan/Neumaier summation.
+aggr
+sum
+command aggr.sum(X_0:bat[:flt]) (X_1:dbl, X_2:dbl, X_3:lng)
+ALGfsum;
+Return the Kahan/Neumaier summation.
+aggr
+sum
+command aggr.sum(X_0:bat[:dbl], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
+ALGfsum_skipnil;
+Return the Kahan/Neumaier summation or nil.
+aggr
+sum
+command aggr.sum(X_0:bat[:flt], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
+ALGfsum_skipnil;
+Return the Kahan/Neumaier summation or nil.
+aggr
+sum
 pattern aggr.sum(X_0:bat[:bte]):bte
 CMDBATsum;
 Calculate aggregate sum of B.
@@ -3295,7 +3350,17 @@ CMDBATsum;
 Calculate aggregate sum of B.
 aggr
 sum
-pattern aggr.sum(X_0:bat[:oid], X_1:bat[:any_2], X_2:ptr, X_3:bat[:oid]):bat[:any_1] 
+pattern aggr.sum(X_0:bat[:oid], X_1:bat[:dbl], X_2:bat[:dbl], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:dbl], X_7:bat[:dbl], X_8:bat[:lng])
+LALGavg;
+Kahan/Neumaier summation per group.
+aggr
+sum
+pattern aggr.sum(X_0:bat[:oid], X_1:bat[:dbl], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
+LALGavg;
+Kahan/Neumaier summation per group.
+aggr
+sum
+pattern aggr.sum(X_0:bat[:oid], X_1:bat[:any_2], X_2:ptr, X_3:bat[:oid]):bat[:any_1]
 LALGsum;
 sum per group.
 aggr
@@ -3600,7 +3665,7 @@ ALGprojection;
 Project left input onto right input.
 algebra
 projection
-command algebra.projection(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr):bat[:any_1] 
+command algebra.projection(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr):bat[:any_1]
 LALGproject;
 Project.
 algebra
@@ -3720,7 +3785,7 @@ ALGsubslice_lng;
 Return the oids of the slice with the BUNs at position x till y.
 algebra
 subslice
-command algebra.subslice(X_0:bat[:any_1], X_1:lng, X_2:lng, X_3:ptr) (X_4:bat[:oid], X_5:bat[:oid], X_6:bat[:oid]) 
+command algebra.subslice(X_0:bat[:any_1], X_1:lng, X_2:lng, X_3:ptr) (X_4:bat[:oid], X_5:bat[:oid], X_6:bat[:oid])
 LALGsubslice;
 Returns the slice of a pipelined result
 algebra
@@ -3745,12 +3810,12 @@ ALGunique;
 Select all unique values from the tail of the first input.@Input is a dense-headed BAT, the second input is a@dense-headed BAT with sorted tail, output is a dense-headed@BAT with in the tail the head value of the input BAT that was@selected.  The output BAT is sorted on the tail value.  The@second input BAT is a list of candidates.
 algebra
 unique
-command algebra.unique(X_0:ptr, X_1:bat[:any_3], X_2:bat[:oid], X_3:bat[:oid]) (X_4:bat[:oid], X_5:bat[:any_3]) 
+command algebra.unique(X_0:ptr, X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid]) (X_4:bat[:oid], X_5:bat[:any_1])
 LALGgroup_unique;
 Unique per group rows.
 algebra
 unique
-command algebra.unique(X_0:ptr, X_1:bat[:any_3], X_2:bat[:oid]) (X_3:bat[:oid], X_4:bat[:any_3]) 
+command algebra.unique(X_0:ptr, X_1:bat[:any_1], X_2:bat[:oid]) (X_3:bat[:oid], X_4:bat[:any_1])
 LALGunique;
 Unique rows.
 bat
@@ -44015,27 +44080,27 @@ CMDvarNOT;
 Unary bitwise not of V
 calc
 num_div
-pattern calc.num_div(X_0:bte, X_1:lng):bte 
+pattern calc.num_div(X_0:bte, X_1:lng):bte
 CMDvarDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 calc
 num_div
-pattern calc.num_div(X_0:hge, X_1:lng):hge 
+pattern calc.num_div(X_0:hge, X_1:lng):hge
 CMDvarDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 calc
 num_div
-pattern calc.num_div(X_0:int, X_1:lng):int 
+pattern calc.num_div(X_0:int, X_1:lng):int
 CMDvarDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 calc
 num_div
-pattern calc.num_div(X_0:lng, X_1:lng):lng 
+pattern calc.num_div(X_0:lng, X_1:lng):lng
 CMDvarDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 calc
 num_div
-pattern calc.num_div(X_0:sht, X_1:lng):sht 
+pattern calc.num_div(X_0:sht, X_1:lng):sht
 CMDvarDIV2;
 Return (V1+(V2-1)/2) / V2, nil on divide by zero
 calc
@@ -44895,157 +44960,157 @@ CLRycc;
 Converts an YCC triplets to a color atom
 copy
 buf2str
-command copy.buf2str(X_0:bat[:bte]):str 
+command copy.buf2str(X_0:bat[:bte]):str
 COPYbuf2str;
 turn bat[:bte] into str
 copy
 defer_close
-unsafe command copy.defer_close(X_0:streams):bat[:bit] 
+unsafe command copy.defer_close(X_0:streams):bat[:bit]
 COPYdefer_close_stream;
 close stream when returned bat is destroyed
 copy
 fixlines
-unsafe pattern copy.fixlines(X_0:bat[:bte], X_1:bat[:bte], X_2:str, X_3:str, X_4:bit, X_5:bat[:oid], X_6:lng, X_7:lng) (X_8:bat[:bte], X_9:bat[:bte], X_10:lng) 
+unsafe pattern copy.fixlines(X_0:bat[:bte], X_1:bat[:bte], X_2:str, X_3:str, X_4:bit, X_5:bat[:oid], X_6:lng, X_7:lng) (X_8:bat[:bte], X_9:bat[:bte], X_10:lng)
 COPYfixlines;
 Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied
 copy
 from_stdin
-unsafe pattern copy.from_stdin(X_0:lng, X_1:lng, X_2:bit, X_3:str, X_4:str, X_5:bit):streams 
+unsafe pattern copy.from_stdin(X_0:lng, X_1:lng, X_2:bit, X_3:str, X_4:str, X_5:bit):streams
 COPYfrom_stdin;
 read FROM STDIN
 copy
 get_blocksize
-unsafe command copy.get_blocksize():int 
+unsafe command copy.get_blocksize():int
 COPYget_blocksize;
 get the COPY block size
 copy
 get_parallel
-unsafe command copy.get_parallel():int 
+unsafe command copy.get_parallel():int
 COPYget_parallel;
 get the id of the current COPY INTO implementation
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:bte, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:bte] 
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:bte, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:bte]
 COPYparse_decimal_bte;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:hge, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:hge] 
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:hge, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:hge]
 COPYparse_decimal_hge;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:int, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:int] 
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:int, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:int]
 COPYparse_decimal_int;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:lng, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:lng] 
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:lng, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:lng]
 COPYparse_decimal_lng;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:sht, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:sht] 
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:sht, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:sht]
 COPYparse_decimal_sht;
 Parse as a decimal
 copy
 parse_generic
-pattern copy.parse_generic(X_0:bat[:bte], X_1:bat[:int], X_2:any_1, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:any_1] 
+pattern copy.parse_generic(X_0:bat[:bte], X_1:bat[:int], X_2:any_1, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:any_1]
 COPYparse_generic;
 Parse using GDK's atomFromStr
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:bte, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:bte] 
+pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:bte, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:bte]
 COPYparse_integer_bte;
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:hge, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:hge] 
+pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:hge, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:hge]
 COPYparse_integer_hge;
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:int] 
+pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:int]
 COPYparse_integer_int;
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:lng, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:lng] 
+pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:lng, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:lng]
 COPYparse_integer_lng;
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:sht, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:sht] 
+pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:sht, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:sht]
 COPYparse_integer_sht;
 Parse as an integer
 copy
 parse_string
-pattern copy.parse_string(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:str] 
+pattern copy.parse_string(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:str]
 COPYparse_string;
 Parse as a string with given max width
 copy
 read
-unsafe command copy.read(X_0:streams, X_1:lng, X_2:bat[:bte]):streams 
+unsafe command copy.read(X_0:streams, X_1:lng, X_2:bat[:bte]):streams
 COPYread;
 Read 'block_size' bytes into 'block' from 's'
 copy
 request_upload
-unsafe pattern copy.request_upload(X_0:str, X_1:bit):streams 
+unsafe pattern copy.request_upload(X_0:str, X_1:bit):streams
 COPYrequest_upload;
 request MAPI file upload
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:bte], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:bte] 
+unsafe pattern copy.scale(X_0:bat[:bte], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:bte]
 COPYscale_bte;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:hge], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:hge] 
+unsafe pattern copy.scale(X_0:bat[:hge], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:hge]
 COPYscale_hge;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:int], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:int] 
+unsafe pattern copy.scale(X_0:bat[:int], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:int]
 COPYscale_int;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:lng], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:lng] 
+unsafe pattern copy.scale(X_0:bat[:lng], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:lng]
 COPYscale_lng;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:sht], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:sht] 
+unsafe pattern copy.scale(X_0:bat[:sht], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:sht]
 COPYscale_sht;
 scale by a power of 10
 copy
 set_blocksize
-unsafe command copy.set_blocksize(X_0:int):int 
+unsafe command copy.set_blocksize(X_0:int):int
 COPYset_blocksize;
 set the COPY block size
 copy
 set_parallel
-unsafe command copy.set_parallel(X_0:int):bit 
+unsafe command copy.set_parallel(X_0:int):bit
 COPYset_parallel;
 switch between different COPY INTO implementations
 copy
 skiplines
-unsafe command copy.skiplines(X_0:bat[:bte], X_1:lng):lng 
+unsafe command copy.skiplines(X_0:bat[:bte], X_1:lng):lng
 COPYskiplines;
 Skip the first N lines in the buffer
 copy
 splitlines
-pattern copy.splitlines(X_0:bat[:bte], X_1:lng, X_2:lng, X_3:str, X_4:str, X_5:str, X_6:str, X_7:bat[:oid], X_8:bit):bat[:int]... 
+pattern copy.splitlines(X_0:bat[:bte], X_1:lng, X_2:lng, X_3:str, X_4:str, X_5:str, X_6:str, X_7:bat[:oid], X_8:bit):bat[:int]...
 COPYsplitlines;
 Find the fields of the individual columns
 copy
 str2buf
-command copy.str2buf(X_0:str):bat[:bte] 
+command copy.str2buf(X_0:str):bat[:bte]
 COPYstr2buf;
 turn str into bat[:bte]
 copy
 trackrowids
-unsafe command copy.trackrowids(X_0:bat[:oid], X_1:lng, X_2:oid, X_3:bat[:oid]) (X_4:lng, X_5:bat[:oid]) 
+unsafe command copy.trackrowids(X_0:bat[:oid], X_1:lng, X_2:oid, X_3:bat[:oid]) (X_4:lng, X_5:bat[:oid])
 COPYtrackrowids;
 keep track of newly claimed rows
 csv
@@ -46375,12 +46440,12 @@ GRPgroup4;
 (empty)
 group
 group
-command group.group(X_0:ptr, X_1:bat[:oid], X_2:bat[:any_5], X_3:bat[:any_3]) (X_4:bat[:oid], X_5:bat[:any_3]) 
+command group.group(X_0:ptr, X_1:bat[:oid], X_2:bat[:any_2], X_3:bat[:any_1]) (X_4:bat[:oid], X_5:bat[:any_1])
 LALGderive;
 Sub Group input.
 group
 group
-command group.group(X_0:ptr, X_1:bat[:any_4]) (X_2:bat[:oid], X_3:bat[:any_3]) 
+command group.group(X_0:ptr, X_1:bat[:any_2]) (X_2:bat[:oid], X_3:bat[:any_1])
 LALGgroup;
 Group input.
 group
@@ -46540,77 +46605,77 @@ GRPsubgroup9;
 (empty)
 hash
 new
-pattern hash.new(X_0:any_1, X_1:int):bat[:any_1] 
+pattern hash.new(X_0:any_1, X_1:int):bat[:any_1]
 UHASHnew;
 (empty)
 hash
 new
-pattern hash.new(X_0:any_1, X_1:int, X_2:bat[:any_2]):bat[:any_1] 
+pattern hash.new(X_0:any_1, X_1:int, X_2:bat[:any_2]):bat[:any_1]
 UHASHnew;
 (empty)
 heapn
 new
-pattern heapn.new(X_0:lng, X_1:any...):bat[:oid] 
+pattern heapn.new(X_0:lng, X_1:any...):bat[:oid]
 HEAPnew;
 return new heap sink
 heapn
 projection
-command heapn.projection(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:any_1], X_4:lng, X_5:ptr):bat[:any_1] 
+command heapn.projection(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:any_1], X_4:lng, X_5:ptr):bat[:any_1]
 HEAPproject;
 Project.
 heapn
 topn
-pattern heapn.topn(X_0:lng, X_1:any...) (X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:oid]) 
+pattern heapn.topn(X_0:lng, X_1:any...) (X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:oid])
 HEAPtopn;
 Return a candidate list with the trail of changes of the heap encoded in the deleted/inserted rows
 iaggr
 count
-command iaggr.count(X_0:bat[:any], X_1:bat[:oid]):lng 
+command iaggr.count(X_0:bat[:any], X_1:bat[:oid]):lng
 ALGcountCND_bat;
 Return the current size (in number of elements) in a BAT.
 iaggr
 count
-command iaggr.count(X_0:bat[:any], X_1:bat[:oid], X_2:bit):lng 
+command iaggr.count(X_0:bat[:any], X_1:bat[:oid], X_2:bit):lng
 ALGcountCND_nil;
 Return the number of elements currently in a BAT ignores@BUNs with nil-tail iff ignore_nils==TRUE.
 iaggr
 count
-command iaggr.count(X_0:bat[:any]):lng 
+command iaggr.count(X_0:bat[:any]):lng
 ALGcount_bat;
 Return the current size (in number of elements) in a BAT.
 iaggr
 count
-command iaggr.count(X_0:bat[:any], X_1:bit):lng 
+command iaggr.count(X_0:bat[:any], X_1:bit):lng
 ALGcount_nil;
 Return the number of elements currently in a BAT ignores@BUNs with nil-tail iff ignore_nils==TRUE.
 iaggr
 count_no_nil
-command iaggr.count_no_nil(X_0:bat[:any_2], X_1:bat[:oid]):lng 
+command iaggr.count_no_nil(X_0:bat[:any_2], X_1:bat[:oid]):lng
 ALGcountCND_no_nil;
 Return the number of elements currently@in a BAT ignoring BUNs with nil-tail
 iaggr
 count_no_nil
-command iaggr.count_no_nil(X_0:bat[:any_2]):lng 
+command iaggr.count_no_nil(X_0:bat[:any_2]):lng
 ALGcount_no_nil;
 Return the number of elements currently@in a BAT ignoring BUNs with nil-tail
 iaggr
 max
-command iaggr.max(X_0:bat[:any_2]):any_2 
+command iaggr.max(X_0:bat[:any_2]):any_2
 ALGmaxany;
 Return the highest tail value or nil.
 iaggr
 max
-command iaggr.max(X_0:bat[:any_2], X_1:bit):any_2 
+command iaggr.max(X_0:bat[:any_2], X_1:bit):any_2
 ALGmaxany_skipnil;
 Return the highest tail value or nil.
 iaggr
 min
-command iaggr.min(X_0:bat[:any_2]):any_2 
+command iaggr.min(X_0:bat[:any_2]):any_2
 ALGminany;
 Return the lowest tail value or nil.
 iaggr
 min
-command iaggr.min(X_0:bat[:any_2], X_1:bit):any_2 
+command iaggr.min(X_0:bat[:any_2], X_1:bit):any_2
 ALGminany_skipnil;
 Return the lowest tail value or nil.
 identifier
@@ -47115,67 +47180,77 @@ MALpass;
 Cheap instruction to disgard storage while retaining the dataflow dependency
 language
 pipelines
-pattern language.pipelines(X_0:int) (X_1:bit, X_2:int, X_3:ptr) 
+pattern language.pipelines(X_0:int) (X_1:bit, X_2:int, X_3:ptr)
 MALpipelines;
 The current guarded block in Parallel Pipelines
 lockedaggr
 avg
-unsafe pattern lockedaggr.avg(X_0:ptr, X_1:any_1, X_2:lng) (X_3:bat[:any_1], X_4:bat[:lng]) 
+unsafe pattern lockedaggr.avg(X_0:ptr, X_1:any_1, X_2:lng) (X_3:bat[:any_1], X_4:bat[:lng])
 LOCKEDAGGRavg;
 avg values into bat (bat has value, update), using the bat lock
 lockedaggr
 avg
-unsafe pattern lockedaggr.avg(X_0:ptr, X_1:any_1, X_2:lng, X_3:lng) (X_4:bat[:any_1], X_5:bat[:lng], X_6:bat[:lng]) 
+unsafe pattern lockedaggr.avg(X_0:ptr, X_1:any_1, X_2:lng, X_3:lng) (X_4:bat[:any_1], X_5:bat[:lng], X_6:bat[:lng])
 LOCKEDAGGRavg;
 avg values into bat (bat has value, update), using the bat lock
 lockedaggr
+avg
+unsafe pattern lockedaggr.avg(X_0:ptr, X_1:dbl, X_2:dbl, X_3:lng) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
+LOCKEDAGGRavg;
+Kahan/neumaier summation, using the bat lock
+lockedaggr
 max
-unsafe pattern lockedaggr.max(X_0:ptr, X_1:any_1):bat[:any_1] 
+unsafe pattern lockedaggr.max(X_0:ptr, X_1:any_1):bat[:any_1]
 LOCKEDAGGRmax;
 max values into bat (bat has value, update), using the bat lock
 lockedaggr
 min
-unsafe pattern lockedaggr.min(X_0:ptr, X_1:any_1):bat[:any_1] 
+unsafe pattern lockedaggr.min(X_0:ptr, X_1:any_1):bat[:any_1]
 LOCKEDAGGRmin;
 min values into bat (bat has value, update), using the bat lock
 lockedaggr
 prod
-unsafe pattern lockedaggr.prod(X_0:ptr, X_1:any_2):bat[:any_1] 
+unsafe pattern lockedaggr.prod(X_0:ptr, X_1:any_2):bat[:any_1]
 LOCKEDAGGRprod;
 product of all values, using the bat lock
 lockedaggr
 sum
-command lockedaggr.sum(X_0:ptr, X_1:bat[:hge], X_2:bat[:oid], X_3:bat[:any_1]):bat[:hge] 
+command lockedaggr.sum(X_0:ptr, X_1:bat[:hge], X_2:bat[:oid], X_3:bat[:any_1]):bat[:hge]
 LAGGRsum3_hge;
 Grouped tail sum on hge
 lockedaggr
 sum
-command lockedaggr.sum(X_0:ptr, X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:any_1]):bat[:lng] 
+command lockedaggr.sum(X_0:ptr, X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:any_1]):bat[:lng]
 LAGGRsum3_lng;
 Grouped tail sum on lng
 lockedaggr
 sum
-unsafe pattern lockedaggr.sum(X_0:ptr, X_1:any_1):bat[:any_1] 
+unsafe pattern lockedaggr.sum(X_0:ptr, X_1:dbl, X_2:dbl, X_3:lng) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
+LOCKEDAGGRavg;
+Kahan/neumaier summation, using the bat lock
+lockedaggr
+sum
+unsafe pattern lockedaggr.sum(X_0:ptr, X_1:any_1):bat[:any_1]
 LOCKEDAGGRsum;
 sum values into bat (bat has value, update), using the bat lock
 lockedalgebra
 projection
-command lockedalgebra.projection(X_0:ptr, X_1:bat[:oid], X_2:bat[:any_3]):bat[:any_3] 
+command lockedalgebra.projection(X_0:ptr, X_1:bat[:oid], X_2:bat[:any_1]):bat[:any_1]
 LALGprojection;
 Project left input onto right input.
 lockedgroup
 group
-command lockedgroup.group(X_0:ptr, X_1:bat[:any_1]) (X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:lng]) 
+command lockedgroup.group(X_0:ptr, X_1:bat[:any_1]) (X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:lng])
 LGRPgroup1;
 (empty)
 lockedgroup
 group
-command lockedgroup.group(X_0:ptr, X_1:bat[:any_1]) (X_2:bat[:oid], X_3:bat[:oid]) 
+command lockedgroup.group(X_0:ptr, X_1:bat[:any_1]) (X_2:bat[:oid], X_3:bat[:oid])
 LGRPgroup3;
 (empty)
 lockedgroup
 subgroupdone
-command lockedgroup.subgroupdone(X_0:ptr, X_1:bat[:any_1], X_2:bat[:oid]) (X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:lng]) 
+command lockedgroup.subgroupdone(X_0:ptr, X_1:bat[:any_1], X_2:bat[:oid]) (X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:lng])
 LGRPsubgroup2;
 (empty)
 logging
@@ -47525,17 +47600,17 @@ MSKumask;
 (empty)
 mat
 add
-command mat.add(X_0:bat[:any_1], X_1:int):bat[:any_1] 
+command mat.add(X_0:bat[:any_1], X_1:int):bat[:any_1]
 MATadd;
 add i-th bat to mat
 mat
 fetch
-command mat.fetch(X_0:bat[:any_1], X_1:int):bat[:any_1] 
+command mat.fetch(X_0:bat[:any_1], X_1:int):bat[:any_1]
 MATfetch;
 return i-th bat from mat
 mat
 new
-pattern mat.new(X_0:any_1, X_1:int):bat[:any_1] 
+pattern mat.new(X_0:any_1, X_1:int):bat[:any_1]
 MATnew;
 Create mat for partitioning
 mat
@@ -47565,7 +47640,7 @@ MATpackIncrement;
 Prepare incremental mat pack
 mat
 project
-command mat.project(X_0:bat[:lng], X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:any_1]):bat[:any_1] 
+command mat.project(X_0:bat[:lng], X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:any_1]):bat[:any_1]
 MATproject;
 project over the partitions
 mdb
@@ -48775,17 +48850,17 @@ OPTwrapper;
 Fake optimizer
 part
 new
-pattern part.new(X_0:int):bat[:oid] 
+pattern part.new(X_0:int):bat[:oid]
 PARTnew;
 Create part for partitioning
 part
 partition
-command part.partition(X_0:bat[:oid], X_1:bat[:lng]):bat[:lng] 
+command part.partition(X_0:bat[:oid], X_1:bat[:lng]):bat[:lng]
 PARTpartition;
 Claim result positions for the given group lengths, returns first pos of each group
 part
 prefixsum
-command part.prefixsum(X_0:bat[:lng], X_1:lng):bat[:lng] 
+command part.prefixsum(X_0:bat[:lng], X_1:lng):bat[:lng]
 PARTprefixsum;
 Count per group id
 pcre
@@ -48830,22 +48905,22 @@ PCREsql2pcre;
 Convert a SQL like pattern with the given escape character into a PCRE pattern.
 pipeline
 channel
-unsafe pattern pipeline.channel(X_0:any_1) (X_1:any_1, X_2:int) 
+unsafe pattern pipeline.channel(X_0:any_1) (X_1:any_1, X_2:int)
 PPchannel;
 create a new channel
 pipeline
 counter
-unsafe pattern pipeline.counter(X_0:ptr):int 
+unsafe pattern pipeline.counter(X_0:ptr):int
 PPcounter;
 return next atomic number [0..n>
 pipeline
 recv
-unsafe pattern pipeline.recv(X_0:ptr, X_1:any_1, X_2:int):any_1 
+unsafe pattern pipeline.recv(X_0:ptr, X_1:any_1, X_2:int):any_1
 PPrecv;
 receive from channel
 pipeline
 send
-unsafe pattern pipeline.send(X_0:ptr, X_1:any_1, X_2:int, X_3:any_1):bit 
+unsafe pattern pipeline.send(X_0:ptr, X_1:any_1, X_2:int, X_3:any_1):bit
 PPsend;
 send through channel
 profiler
@@ -49200,12 +49275,12 @@ SHPloadSchema;
 Import an ESRI Shapefile into a new table, on a certain schema
 slicer
 no_slices
-pattern slicer.no_slices(X_0:bat[:any_1]):int 
+pattern slicer.no_slices(X_0:bat[:any_1]):int
 SLICERno_slices;
 Returns the number of slices into which the input BAT is to be sliced
 slicer
 nth_slice
-pattern slicer.nth_slice(X_0:int) (X_1:bat[:any_1], X_2:bat[:any_1]) 
+pattern slicer.nth_slice(X_0:int) (X_1:bat[:any_1], X_2:bat[:any_1])
 SLICERnth_slice;
 Return the n-th slice, of SLICE_SIZE rrows, from the input BAT
 sql
