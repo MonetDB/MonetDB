@@ -52,6 +52,8 @@
 
 #include "mutils.h"
 
+static ATOMIC_TYPE GDKthreadid = ATOMIC_VAR_INIT(1);
+
 #ifdef LOCK_STATS
 
 ATOMIC_TYPE GDKlockcnt = ATOMIC_VAR_INIT(0);
@@ -218,6 +220,9 @@ static struct mtthread {
 	HANDLE hdl;
 	DWORD wtid;
 #endif
+#ifdef HAVE_GETTID
+	pid_t lwptid;
+#endif
 	MT_Id tid;
 	uintptr_t sp;
 	char *errbuf;
@@ -227,6 +232,7 @@ struct mtthread mainthread = {
 	.threadname = "main thread",
 	.exited = ATOMIC_VAR_INIT(0),
 	.refs = 1,
+	.tid = 1,
 };
 #ifdef HAVE_PTHREAD_H
 static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -285,9 +291,22 @@ dump_threads(void)
 		MT_Cond *cn = t->condwait;
 		struct mtthread *jn = t->joinwait;
 		int pos = snprintf(buf, sizeof(buf),
-				   "%s, tid %zu, %"PRIu32" free bats, waiting for %s%s, working on %.200s",
+				   "%s, tid %zu, "
+#ifdef HAVE_PTHREAD_H
+				   "Thread 0x%lx, "
+#endif
+#ifdef HAVE_GETTID
+				   "LWP %ld, "
+#endif
+				   "%"PRIu32" free bats, waiting for %s%s, working on %.200s",
 				   t->threadname,
 				   t->tid,
+#ifdef HAVE_PTHREAD_H
+				   (long) t->hdl,
+#endif
+#ifdef HAVE_GETTID
+				   (long) t->lwptid,
+#endif
 				   t->freebats.nfreebats,
 				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
 				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
@@ -330,6 +349,9 @@ MT_thread_init(void)
 {
 	if (thread_initialized)
 		return true;
+#ifdef HAVE_GETTID
+	mainthread.lwptid = gettid();
+#endif
 #ifdef HAVE_PTHREAD_H
 	int ret;
 
@@ -357,7 +379,6 @@ MT_thread_init(void)
 	}
 	InitializeCriticalSection(&winthread_cs);
 #endif
-	mainthread.tid = (MT_Id) &mainthread;
 	mainthread.next = NULL;
 	mtthreads = &mainthread;
 	thread_initialized = true;
@@ -366,8 +387,6 @@ MT_thread_init(void)
 bool
 MT_thread_register(void)
 {
-	MT_Id mtid;
-
 	assert(thread_initialized);
 	if (!thread_initialized)
 		return false;
@@ -387,7 +406,6 @@ MT_thread_register(void)
 	if (self == NULL)
 		return false;
 
-	mtid = (MT_Id) self;
 	*self = (struct mtthread) {
 		.detached = false,
 #ifdef HAVE_PTHREAD_H
@@ -396,7 +414,7 @@ MT_thread_register(void)
 		.wtid = GetCurrentThreadId(),
 #endif
 		.refs = 1,
-		.tid = mtid,
+		.tid = ATOMIC_INC(&GDKthreadid),
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
 	ATOMIC_INIT(&self->exited, 0);
@@ -736,6 +754,9 @@ thread_starter(void *arg)
 	struct mtthread *self = (struct mtthread *) arg;
 	void *data = self->data;
 
+#ifdef HAVE_GETTID
+	self->lwptid = gettid();
+#endif
 #ifdef HAVE_PTHREAD_H
 #ifdef HAVE_PTHREAD_SETNAME_NP
 	/* name can be at most 16 chars including \0 */
@@ -849,7 +870,6 @@ int
 MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, const char *threadname)
 {
 	struct mtthread *self;
-	MT_Id mtid;
 
 	assert(thread_initialized);
 	join_threads();
@@ -883,7 +903,6 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 #endif
 		return -1;
 	}
-	mtid = (MT_Id) self;
 
 	*self = (struct mtthread) {
 		.func = f,
@@ -891,7 +910,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.waiting = false,
 		.detached = (d == MT_THR_DETACHED),
 		.refs = 1,
-		.tid = mtid,
+		.tid = ATOMIC_INC(&GDKthreadid),
 	};
 	MT_lock_set(&thread_init_lock);
 	/* remember the list of callback functions we need to call for
@@ -927,7 +946,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		/* overwrite XXXX with thread ID; bottom three bits are
 		 * likely 0, so skip those */
 		char buf[5];
-		snprintf(buf, 5, "%04zu", (mtid >> 3) % 9999);
+		snprintf(buf, 5, "%04zu", self->tid % 9999);
 		memcpy(p, buf, 4);
 	}
 	TRC_DEBUG(THRD, "Create thread \"%s\"\n", self->threadname);
@@ -961,7 +980,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	}
 #endif
 	/* must not fail after this: the thread has been started */
-	*t = mtid;
+	*t = self->tid;
 	thread_lock();
 	self->next = mtthreads;
 	mtthreads = self;

@@ -278,7 +278,7 @@ DFLOWworker(void *T)
 		while (1) {
 			MT_thread_set_qry_ctx(NULL);
 			if (fnxt == 0) {
-				MT_thread_setworking(NULL);
+				MT_thread_setworking("waiting for work");
 				cntxt = ATOMIC_PTR_GET(&t->cntxt);
 				fe = q_dequeue(todo, cntxt);
 				if (fe == NULL) {
@@ -428,6 +428,7 @@ DFLOWworker(void *T)
 		t->next = free_workers;
 		free_workers = t;
 		MT_lock_unset(&dataflowLock);
+		MT_thread_setworking("idle, waiting for new client");
 		MT_sema_down(&t->s);
 		if (GDKexiting() || ATOMIC_GET(&exiting))
 			break;
