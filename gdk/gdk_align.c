@@ -258,6 +258,7 @@ BATmaterialize(BAT *b, BUN cap)
 		.farmid = BBPselectfarm(b->batRole, TYPE_oid, offheap),
 		.parentid = b->batCacheid,
 		.dirty = true,
+		.refs = ATOMIC_VAR_INIT(1),
 	};
 	settailname(tail, BBP_physical(b->batCacheid), TYPE_oid, 0);
 	if (HEAPalloc(tail, cap, sizeof(oid)) != GDK_SUCCEED) {
@@ -273,7 +274,6 @@ BATmaterialize(BAT *b, BUN cap)
 		for (p = 0; p < q; p++)
 			x[p] = t++;
 	}
-	ATOMIC_INIT(&tail->refs, 1);
 	/* point of no return */
 	MT_lock_set(&b->theaplock);
 	assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) > 0);

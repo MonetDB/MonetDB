@@ -173,20 +173,20 @@ new_segment(segment *o, sql_trans *tr, size_t cnt)
 
 	assert(tr);
 	if (n) {
-		n->ts = tr->tid;
-		n->oldts = 0;
-		n->deleted = false;
+		*n = (segment) {
+			.ts = tr->tid,
+			.oldts = 0,
+			.deleted = false,
+			.start = 0,
+			.end = cnt,
+			.next = ATOMIC_PTR_VAR_INIT(NULL),
+			.prev = NULL,
+		};
 		if (o) {
-			n->start = o->end;
-			n->end = o->end + cnt;
-		} else {
-			n->start = 0;
-			n->end = cnt;
-		}
-		ATOMIC_PTR_INIT(&n->next, NULL);
-		n->prev = NULL;
-		if (o)
+			n->start += o->end;
+			n->end += o->end;
 			ATOMIC_PTR_SET(&o->next, n);
+		}
 	}
 	return n;
 }
@@ -3266,7 +3266,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		bat = ZNEW(sql_delta);
 		if (!bat)
 			return LOG_ERR;
-		ATOMIC_PTR_SET(&ni->data, bat);
+		ATOMIC_PTR_INIT(&ni->data, bat);
 		ATOMIC_INIT(&bat->cs.refcnt, 1);
 	}
 
@@ -3444,7 +3444,7 @@ create_del(sql_trans *tr, sql_table *t)
 		bat = ZNEW(storage);
 		if(!bat)
 			return LOG_ERR;
-		ATOMIC_PTR_SET(&t->data, bat);
+		ATOMIC_PTR_INIT(&t->data, bat);
 		ATOMIC_INIT(&bat->cs.refcnt, 1);
 		bat->cs.ts = tr->tid;
 	}

@@ -2359,6 +2359,11 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		return NULL;
 	}
 
+	if (snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP) >= FILENAME_MAX) {
+		TRC_CRITICAL(GDK, "filename is too large\n");
+		return NULL;
+	}
+
 	lg = GDKmalloc(sizeof(struct logger));
 	if (lg == NULL) {
 		TRC_CRITICAL(GDK, "allocating logger structure failed\n");
@@ -2380,20 +2385,16 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 
 		.id = 0,
 		.saved_id = getBBPlogno(),	/* get saved log numer from bbp */
+		.nr_flushers = ATOMIC_VAR_INIT(0),
+		.fn = GDKstrdup(fn),
+		.dir = GDKstrdup(filename),
+		.rbufsize = 64 * 1024,
+		.rbuf = GDKmalloc(64 * 1024),
+		.wbufsize = 64 * 1024,
+		.wbuf = GDKmalloc(64 * 1024),
 	};
 
 	/* probably open file and check version first, then call call old logger code */
-	if (snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP) >= FILENAME_MAX) {
-		TRC_CRITICAL(GDK, "filename is too large\n");
-		GDKfree(lg);
-		return NULL;
-	}
-	lg->fn = GDKstrdup(fn);
-	lg->dir = GDKstrdup(filename);
-	lg->rbufsize = 64 * 1024;
-	lg->rbuf = GDKmalloc(lg->rbufsize);
-	lg->wbufsize = 64 * 1024;
-	lg->wbuf = GDKmalloc(lg->wbufsize);
 	if (lg->fn == NULL ||
 	    lg->dir == NULL ||
 	    lg->rbuf == NULL ||
@@ -2412,7 +2413,6 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	MT_lock_init(&lg->rotation_lock, "rotation_lock");
 	MT_lock_init(&lg->flush_lock, "flush_lock");
 	MT_cond_init(&lg->excl_flush_cv);
-	ATOMIC_INIT(&lg->nr_flushers, 0);
 
 	if (log_load(fn, logdir, lg, filename) == GDK_SUCCEED) {
 		return lg;

@@ -106,10 +106,10 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 			.parentid = old->parentid,
 			.wasempty = old->wasempty,
 			.hasfile = old->hasfile,
+			.refs = ATOMIC_VAR_INIT(1 | (refs & HEAPREMOVE)),
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
 		if (HEAPalloc(new, size, 1) == GDK_SUCCEED) {
-			ATOMIC_INIT(&new->refs, 1 | (refs & HEAPREMOVE));
 			new->free = old->free;
 			new->cleanhash = old->cleanhash;
 			if (old->free > 0 &&
@@ -497,6 +497,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		.dirty = true,
 		.parentid = old->parentid,
 		.wasempty = old->wasempty,
+		.refs = ATOMIC_VAR_INIT(1 | (ATOMIC_GET(&old->refs) & HEAPREMOVE)),
 	};
 	settailname(new, BBP_physical(b->batCacheid), b->ttype, width);
 	if (HEAPalloc(new, newsize, 1) != GDK_SUCCEED) {
@@ -505,7 +506,6 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	}
 	/* HEAPalloc initialized .free, so we need to set it after */
 	new->free = old->free << (shift - b->tshift);
-	ATOMIC_INIT(&new->refs, 1 | (ATOMIC_GET(&old->refs) & HEAPREMOVE));
 	/* per the above, width > b->twidth, so certain combinations are
 	 * impossible */
 	switch (width) {

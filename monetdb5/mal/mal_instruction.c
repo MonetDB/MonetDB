@@ -137,13 +137,13 @@ newMalBlk(int elements)
 		.var = v,
 		.vsize = elements,
 		.maxarg = MAXARG,		/* the minimum for each instruction */
+		.workers = ATOMIC_VAR_INIT(1),
 	};
 	if (newMalBlkStmt(mb, elements) < 0) {
 		GDKfree(mb->var);
 		GDKfree(mb);
 		return NULL;
 	}
-	ATOMIC_INIT(&mb->workers, 1);
 	return mb;
 }
 

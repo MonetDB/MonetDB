@@ -396,9 +396,9 @@ MT_thread_register(void)
 #endif
 		.refs = 1,
 		.tid = mtid,
+		.exited = ATOMIC_VAR_INIT(0),
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
-	ATOMIC_INIT(&self->exited, 0);
 	thread_setself(self);
 	thread_lock();
 	self->next = mtthreads;
@@ -891,6 +891,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.detached = (d == MT_THR_DETACHED),
 		.refs = 1,
 		.tid = mtid,
+		.exited = ATOMIC_VAR_INIT(0),
 	};
 	MT_lock_set(&thread_init_lock);
 	/* remember the list of callback functions we need to call for
@@ -919,7 +920,6 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	}
 	MT_lock_unset(&thread_init_lock);
 
-	ATOMIC_INIT(&self->exited, 0);
 	strcpy_len(self->threadname, threadname, sizeof(self->threadname));
 	char *p;
 	if ((p = strstr(self->threadname, "XXXX")) != NULL) {

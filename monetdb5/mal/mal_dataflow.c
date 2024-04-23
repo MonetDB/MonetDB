@@ -488,8 +488,8 @@ DFLOWinitialize(void)
 		}
 		*t = (struct worker) {
 			.flag = RUNNING,
+			.cntxt = ATOMIC_PTR_VAR_INIT(NULL),
 		};
-		ATOMIC_PTR_INIT(&t->cntxt, NULL);
 		MT_sema_init(&t->s, 0, "DFLOWsema"); /* placeholder name */
 		if (MT_create_thread(&t->id, DFLOWworker, t,
 							 MT_THR_JOINABLE, "DFLOWworkerXXXX") < 0) {
@@ -829,8 +829,8 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 		if (t != NULL) {
 			*t = (struct worker) {
 				.flag = WAITING,
+				.cntxt = ATOMIC_PTR_VAR_INIT(cntxt),
 			};
-			ATOMIC_PTR_INIT(&t->cntxt, cntxt);
 			MT_sema_init(&t->s, 0, "DFLOWsema"); /* placeholder name */
 			if (MT_create_thread(&t->id, DFLOWworker, t,
 								 MT_THR_JOINABLE, "DFLOWworkerXXXX") < 0) {
@@ -856,48 +856,44 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	if (flow == NULL)
 		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	flow->cntxt = cntxt;
-	flow->mb = mb;
-	flow->stk = stk;
-	flow->set_qry_ctx = MT_thread_get_qry_ctx() != NULL;
+	size = DFLOWgraphSize(mb, startpc, stoppc);
+	size += stoppc - startpc;
 
-	/* keep real block count, exclude brackets */
-	flow->start = startpc + 1;
-	flow->stop = stoppc;
+	*flow = (DataFlowRec) {
+		.cntxt = cntxt,
+		.mb = mb,
+		.stk = stk,
+		.set_qry_ctx = MT_thread_get_qry_ctx() != NULL,
+		/* keep real block count, exclude brackets */
+		.start = startpc + 1,
+		.stop = stoppc,
+		.done = q_create("flow->done"),
+		.status = (FlowEvent) GDKzalloc((stoppc - startpc + 1) *
+										sizeof(FlowEventRec)),
+		.error = ATOMIC_PTR_VAR_INIT(NULL),
+		.nodes = (int *) GDKzalloc(sizeof(int) * size),
+		.edges = (int *) GDKzalloc(sizeof(int) * size),
+	};
 
-	flow->done = q_create("flow->done");
 	if (flow->done == NULL) {
+		GDKfree(flow->status);
+		GDKfree(flow->nodes);
+		GDKfree(flow->edges);
 		GDKfree(flow);
 		throw(MAL, "dataflow",
 			  "runMALdataflow(): Failed to create flow->done queue");
 	}
 
-	flow->status = (FlowEvent) GDKzalloc((stoppc - startpc + 1) *
-										 sizeof(FlowEventRec));
-	if (flow->status == NULL) {
+	if (flow->status == NULL || flow->nodes == NULL || flow->edges == NULL) {
 		q_destroy(flow->done);
-		GDKfree(flow);
-		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	size = DFLOWgraphSize(mb, startpc, stoppc);
-	size += stoppc - startpc;
-	flow->nodes = (int *) GDKzalloc(sizeof(int) * size);
-	if (flow->nodes == NULL) {
 		GDKfree(flow->status);
-		q_destroy(flow->done);
-		GDKfree(flow);
-		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	flow->edges = (int *) GDKzalloc(sizeof(int) * size);
-	if (flow->edges == NULL) {
 		GDKfree(flow->nodes);
-		GDKfree(flow->status);
-		q_destroy(flow->done);
+		GDKfree(flow->edges);
 		GDKfree(flow);
 		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+
 	MT_lock_init(&flow->flowlock, "flow->flowlock");
-	ATOMIC_PTR_INIT(&flow->error, NULL);
 	msg = DFLOWinitBlk(flow, mb, size);
 
 	if (msg == MAL_SUCCEED)
