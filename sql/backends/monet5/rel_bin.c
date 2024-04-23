@@ -4931,12 +4931,10 @@ sql_insert_check(backend *be, sql_key *key, sql_rel *inserts, list *refs)
 	inserts = rel_copy(sql, inserts, 1);
 	list* exps = inserts->exps;
 
-	sql_subtype *bt = sql_bind_localtype("bit");
-
-	for (n = key->columns->h, m = exps->h; n && m;
+	for (n = ol_first_node(key->t->columns), m = exps->h; n && m;
 		n = n->next, m = m->next) {
 		sql_exp *i = m->data;
-		sql_column *c = ((sql_kc*) n->data)->c;
+		sql_column *c = n->data;
 		i->alias.rname= sa_strdup(sql->sa, c->t->base.name);
 		i->alias.name= sa_strdup(sql->sa, c->base.name);
 	}
@@ -4945,6 +4943,7 @@ sql_insert_check(backend *be, sql_key *key, sql_rel *inserts, list *refs)
 	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
 	rel->l = inserts;
 	stmt* s = subrel_bin(be, rel, refs);
+	sql_subtype *bt = sql_bind_localtype("bit");
 	s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
