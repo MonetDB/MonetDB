@@ -65,10 +65,6 @@ if(WITH_PROJ)
   find_package(Proj 6.0)
 endif()
 
-if(WITH_SNAPPY)
-  find_package(Snappy)
-endif()
-
 if(WITH_VALGRIND)
   find_package(Valgrind)
 endif()

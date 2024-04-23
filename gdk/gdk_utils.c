@@ -1266,9 +1266,6 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 
 int GDKnr_threads = 0;
 static ATOMIC_TYPE GDKnrofthreads = ATOMIC_VAR_INIT(0);
-struct threadStruct {
-	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
-};
 
 bool
 GDKexiting(void)

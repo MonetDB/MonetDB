@@ -55,21 +55,18 @@ static str
 ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 {
 	BAT *b, *view;
-	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "chop.newChunk", INTERNAL_BAT_ACCESS);
 	}
-	cnt = BATcount(b);
-	view = VIEWcreate(b->hseqbase, b);
+	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
+	 *granule, MIN(BATcount(b),(BUN) *granule)); */
+	view = VIEWcreate(b->hseqbase, b, 0, (BUN) *granule);
 	if (view == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "chop.newChunk", GDK_EXCEPTION);
 	}
 
-	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
-	 *granule, MIN(cnt,(BUN) *granule)); */
-	VIEWbounds(b, view, 0, MIN(cnt, (BUN) *granule));
 	*vid = view->batCacheid;
 	BBPkeepref(view);
 	BBPunfix(b->batCacheid);

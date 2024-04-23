@@ -191,7 +191,6 @@
 #cmakedefine HAVE_LIBZ 1
 #cmakedefine HAVE_LIBLZ4 1
 #cmakedefine HAVE_PROJ 1
-#cmakedefine HAVE_SNAPPY 1
 #cmakedefine HAVE_FITS 1
 #cmakedefine HAVE_VALGRIND 1
 #cmakedefine HAVE_NETCDF 1

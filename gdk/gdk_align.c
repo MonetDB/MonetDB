@@ -82,8 +82,65 @@ ALIGNsynced(BAT *b1, BAT *b2)
  * cannot physically share the batBuns heap with the parent, as they
  * need a modified version.
  */
+static void
+VIEWboundsbi(BATiter *bi, BAT *view, BUN l, BUN h)
+{
+	BUN cnt;
+	BUN baseoff;
+
+	if (bi == NULL || view == NULL)
+		return;
+	if (h > bi->count)
+		h = bi->count;
+	baseoff = bi->baseoff;
+	if (h < l)
+		h = l;
+	cnt = h - l;
+	if (view->ttype != TYPE_void) {
+		view->tbaseoff = baseoff + l;
+	}
+	if (!is_oid_nil(view->tseqbase))
+		view->tseqbase += l;
+	BATsetcount(view, cnt);
+	BATsetcapacity(view, cnt);
+	if (view->tnosorted > l && view->tnosorted < l + cnt)
+		view->tnosorted -= l;
+	else
+		view->tnosorted = 0;
+	if (view->tnorevsorted > l && view->tnorevsorted < l + cnt)
+		view->tnorevsorted -= l;
+	else
+		view->tnorevsorted = 0;
+	if (view->tnokey[0] >= l && view->tnokey[0] < l + cnt &&
+	    view->tnokey[1] >= l && view->tnokey[1] < l + cnt &&
+	    view->tnokey[0] != view->tnokey[1]) {
+		view->tnokey[0] -= l;
+		view->tnokey[1] -= l;
+	} else {
+		view->tnokey[0] = view->tnokey[1] = 0;
+	}
+	if (view->tminpos >= l && view->tminpos < l + cnt)
+		view->tminpos -= l;
+	else
+		view->tminpos = BUN_NONE;
+	if (view->tmaxpos >= l && view->tmaxpos < l + cnt)
+		view->tmaxpos -= l;
+	else
+		view->tmaxpos = BUN_NONE;
+	view->tkey |= cnt <= 1;
+	view->tnil = false;	/* we don't know */
+}
+
+void
+VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
+{
+	BATiter bi = bat_iterator(b);
+	VIEWboundsbi(&bi, view, l, h);
+	bat_iterator_end(&bi);
+}
+
 BAT *
-VIEWcreate(oid seq, BAT *b)
+VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 {
 	BAT *bn;
 	bat tp = 0;
@@ -92,7 +149,11 @@ VIEWcreate(oid seq, BAT *b)
 
 	if (b->ttype == TYPE_void) {
 		/* we don't do views on void bats */
-		return BATdense(seq, b->tseqbase, b->batCount);
+		if (h > b->batCount)
+			h = b->batCount;
+		if (l > h)
+			l = h = 0;
+		return BATdense(seq, b->tseqbase + l, h - l);
 	}
 
 	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT, 0);
@@ -101,40 +162,43 @@ VIEWcreate(oid seq, BAT *b)
 	assert(bn->theap == NULL);
 
 	MT_lock_set(&b->theaplock);
+	BATiter bi = bat_iterator_nolock(b);
 	bn->batInserted = 0;
-	bn->batCount = b->batCount;
+	bn->batCount = bi.count;
 	bn->batCapacity = b->batCapacity;
 	bn->batRestricted = BAT_READ;
 
 	/* the T column descriptor is fully copied except for the
 	 * accelerator data. We need copies because in case of a mark,
 	 * we are going to override a column with a void. */
-	bn->tkey = b->tkey;
-	bn->tseqbase = b->tseqbase;
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->twidth = b->twidth;
-	bn->tshift = b->tshift;
-	bn->tnonil = b->tnonil;
-	bn->tnil = b->tnil;
-	bn->tnokey[0] = b->tnokey[0];
-	bn->tnokey[1] = b->tnokey[1];
-	bn->tnosorted = b->tnosorted;
-	bn->tnorevsorted = b->tnorevsorted;
-	bn->tminpos = b->tminpos;
-	bn->tmaxpos = b->tmaxpos;
-	bn->tunique_est = b->tunique_est;
-	bn->theap = b->theap;
-	bn->tbaseoff = b->tbaseoff;
-	bn->tvheap = b->tvheap;
+	bn->tkey = bi.key;
+	bn->tseqbase = bi.tseq;
+	bn->tsorted = bi.sorted;
+	bn->trevsorted = bi.revsorted;
+	bn->twidth = bi.width;
+	bn->tshift = bi.shift;
+	bn->tnonil = bi.nonil;
+	bn->tnil = bi.nil;
+	bn->tnokey[0] = bi.nokey[0];
+	bn->tnokey[1] = bi.nokey[1];
+	bn->tnosorted = bi.nosorted;
+	bn->tnorevsorted = bi.norevsorted;
+	bn->tminpos = bi.minpos;
+	bn->tmaxpos = bi.maxpos;
+	bn->tunique_est = bi.unique_est;
+	bn->theap = bi.h;
+	bn->tbaseoff = bi.baseoff;
+	bn->tvheap = bi.vh;
 
 	tp = VIEWtparent(b);
 	if (tp == 0 && b->ttype != TYPE_void)
 		tp = b->batCacheid;
 	assert(b->ttype != TYPE_void || !tp);
-	HEAPincref(b->theap);
-	if (b->tvheap)
-		HEAPincref(b->tvheap);
+	HEAPincref(bi.h);
+	if (bi.vh)
+		HEAPincref(bi.vh);
+	if (l != 0 || h < bi.count)
+		VIEWboundsbi(&bi, bn, l, h);
 	MT_lock_unset(&b->theaplock);
 
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
@@ -150,8 +214,8 @@ VIEWcreate(oid seq, BAT *b)
 	BBPretain(bn->theap->parentid);
 	if (bn->tvheap)
 		BBPretain(bn->tvheap->parentid);
-	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT "\n",
-		  ALGOBATPAR(b), ALGOBATPAR(bn));
+	TRC_DEBUG(ALGO, ALGOBATFMT " " BUNFMT "," BUNFMT " -> " ALGOBATFMT "\n",
+		  ALGOBATPAR(b), l, h, ALGOBATPAR(bn));
 	return bn;
 }
 
@@ -270,65 +334,6 @@ BATmaterialize(BAT *b, BUN cap)
 	}
 
 	return GDK_SUCCEED;
-}
-
-/*
- * The remainder are utilities to manipulate the BAT view and not to
- * forget some details in the process.  It expects a position range in
- * the underlying BAT and compensates for outliers.
- */
-void
-VIEWboundsbi(BATiter *bi, BAT *view, BUN l, BUN h)
-{
-	BUN cnt;
-	BUN baseoff;
-
-	if (bi == NULL || view == NULL)
-		return;
-	if (h > bi->count)
-		h = bi->count;
-	baseoff = bi->baseoff;
-	if (h < l)
-		h = l;
-	cnt = h - l;
-	view->batInserted = 0;
-	if (view->ttype != TYPE_void) {
-		view->tbaseoff = baseoff + l;
-	}
-	BATsetcount(view, cnt);
-	BATsetcapacity(view, cnt);
-	if (view->tnosorted > l && view->tnosorted < l + cnt)
-		view->tnosorted -= l;
-	else
-		view->tnosorted = 0;
-	if (view->tnorevsorted > l && view->tnorevsorted < l + cnt)
-		view->tnorevsorted -= l;
-	else
-		view->tnorevsorted = 0;
-	if (view->tnokey[0] >= l && view->tnokey[0] < l + cnt &&
-	    view->tnokey[1] >= l && view->tnokey[1] < l + cnt &&
-	    view->tnokey[0] != view->tnokey[1]) {
-		view->tnokey[0] -= l;
-		view->tnokey[1] -= l;
-	} else {
-		view->tnokey[0] = view->tnokey[1] = 0;
-	}
-	if (view->tminpos >= l && view->tminpos < l + cnt)
-		view->tminpos -= l;
-	else
-		view->tminpos = BUN_NONE;
-	if (view->tmaxpos >= l && view->tmaxpos < l + cnt)
-		view->tmaxpos -= l;
-	else
-		view->tmaxpos = BUN_NONE;
-	view->tkey |= cnt <= 1;
-}
-void
-VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
-{
-	BATiter bi = bat_iterator(b);
-	VIEWboundsbi(&bi, view, l, h);
-	bat_iterator_end(&bi);
 }
 
 /*
