@@ -61,7 +61,6 @@ RTREEdecref(BAT *b)
 	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&b->trtree->refs);
 	//If RTree is marked for destruction and there are no refs, destroy the RTree
 	if (b->trtree->destroy && refs == 0) {
-		ATOMIC_DESTROY(&b->trtree->refs);
 		rtree_destroy(b->trtree->rtree);
 		b->trtree->rtree = NULL;
 		GDKfree(b->trtree);

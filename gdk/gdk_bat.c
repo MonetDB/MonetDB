@@ -708,7 +708,6 @@ void
 BATdestroy(BAT *b)
 {
 	if (b->tvheap) {
-		ATOMIC_DESTROY(&b->tvheap->refs);
 		GDKfree(b->tvheap);
 	}
 	PROPdestroy_nolock(b);
@@ -716,7 +715,6 @@ BATdestroy(BAT *b)
 	MT_lock_destroy(&b->batIdxLock);
 	MT_rwlock_destroy(&b->thashlock);
 	if (b->theap) {
-		ATOMIC_DESTROY(&b->theap->refs);
 		GDKfree(b->theap);
 	}
 	if (b->oldtail) {

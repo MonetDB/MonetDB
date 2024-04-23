@@ -2319,8 +2319,6 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 	logbat_destroy(lg->seqs_id);
 	logbat_destroy(lg->seqs_val);
 	logbat_destroy(lg->dseqs);
-	ATOMIC_DESTROY(&lg->current->refcount);
-	ATOMIC_DESTROY(&lg->nr_flushers);
 	MT_lock_destroy(&lg->lock);
 	MT_lock_destroy(&lg->rotation_lock);
 	GDKfree(lg->fn);
@@ -2462,10 +2460,6 @@ log_destroy(logger *lg)
 	log_close_output(lg);
 	for (logged_range * p = lg->pending; p; p = lg->pending) {
 		lg->pending = p->next;
-		ATOMIC_DESTROY(&p->refcount);
-		ATOMIC_DESTROY(&p->last_ts);
-		ATOMIC_DESTROY(&p->flushed_ts);
-		ATOMIC_DESTROY(&p->drops);
 		GDKfree(p);
 	}
 	if (LOG_DISABLED(lg)) {
@@ -2500,7 +2494,6 @@ log_destroy(logger *lg)
 	MT_lock_destroy(&lg->lock);
 	MT_lock_destroy(&lg->rotation_lock);
 	MT_lock_destroy(&lg->flush_lock);
-	ATOMIC_DESTROY(&lg->nr_flushers);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->rbuf);

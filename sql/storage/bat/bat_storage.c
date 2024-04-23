@@ -1969,7 +1969,6 @@ destroy_delta(sql_delta *b, bool recursive)
 		temp_destroy(b->cs.bid);
 	if (b->cs.ebid)
 		temp_destroy(b->cs.ebid);
-	ATOMIC_DESTROY(&b->cs.refcnt);
 	b->cs.bid = b->cs.ebid = b->cs.uibid = b->cs.uvbid = 0;
 	_DELETE(b);
 }
@@ -2596,7 +2595,6 @@ destroy_storage(storage *bat)
 		temp_destroy(bat->cs.uvbid);
 	if (bat->cs.bid)
 		temp_destroy(bat->cs.bid);
-	ATOMIC_DESTROY(&bat->cs.refcnt);
 	bat->cs.bid = bat->cs.uibid = bat->cs.uvbid = 0;
 	_DELETE(bat);
 }

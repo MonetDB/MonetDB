@@ -289,7 +289,6 @@ freeMalBlk(MalBlkPtr mb)
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
 	freeException(mb->errors);
-	ATOMIC_DESTROY(&mb->workers);
 	GDKfree(mb);
 }
 

@@ -697,7 +697,6 @@ HEAPdecref(Heap *h, bool remove)
 	//printf("dec ref(%d) %p %d\n", (int)h->refs, h, h->parentid);
 	switch (refs & HEAPREFS) {
 	case 0:
-		ATOMIC_DESTROY(&h->refs);
 		HEAPfree(h, (bool) (refs & HEAPREMOVE));
 		GDKfree(h);
 		break;

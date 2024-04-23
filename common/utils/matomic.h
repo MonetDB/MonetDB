@@ -18,7 +18,6 @@
  * The following operations are defined:
  * ATOMIC_VAR_INIT -- initializer for the variable (not necessarily atomic!);
  * ATOMIC_INIT -- initialize the variable (not necessarily atomic!);
- * ATOMIC_DESTROY -- destroy the variable
  * ATOMIC_GET -- return the value of a variable;
  * ATOMIC_SET -- set the value of a variable;
  * ATOMIC_XCG -- set the value of a variable, return original value;
@@ -114,7 +113,6 @@ typedef unsigned long ATOMIC_BASE_TYPE;
 #endif
 
 #define ATOMIC_INIT(var, val)	atomic_init(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_DESTROY(var)		((void) 0)
 #define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) *(var))
 #define ATOMIC_SET(var, val)	(*(var) = (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_XCG(var, val)	atomic_exchange(var, (ATOMIC_BASE_TYPE) (val))
@@ -173,7 +171,6 @@ typedef __declspec(align(8)) volatile ATOMIC_BASE_TYPE ATOMIC_TYPE;
 
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
-#define ATOMIC_DESTROY(var)		((void) 0)
 
 #if SIZEOF_SIZE_T == 8
 
@@ -276,7 +273,6 @@ typedef volatile ATOMIC_BASE_TYPE ATOMIC_TYPE __attribute__((__aligned__ (8)));
 
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
-#define ATOMIC_DESTROY(var)	((void) 0)
 
 #define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) __atomic_load_n(var, __ATOMIC_SEQ_CST))
 #define ATOMIC_SET(var, val)	__atomic_store_n(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)

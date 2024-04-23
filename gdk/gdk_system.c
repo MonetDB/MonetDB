@@ -320,7 +320,6 @@ rm_mtthread(struct mtthread *t)
 		;
 	if (*pt)
 		*pt = t->next;
-	ATOMIC_DESTROY(&t->exited);
 	free(t);
 	thread_unlock();
 }
