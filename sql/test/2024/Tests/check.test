@@ -1,0 +1,20 @@
+statement ok
+create table bar (i int, j int CHECK (j > 0));
+
+statement ok
+insert into bar values (1,10), (2, 20), (3, 30);
+
+statement error
+update bar set j = -30 where i = 3;
+
+statement error
+update bar set j = -j;
+
+statement error
+insert into bar values (4, -40);
+
+statement ok
+insert into bar select * from bar
+
+statement error
+insert into bar select 4, -40;
