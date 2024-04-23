@@ -391,6 +391,30 @@ cleanup:
 	return res;
 }
 
+static
+key_type token2key_type(int token) {
+		switch (token) {
+		case SQL_UNIQUE: 					return ukey;
+		case SQL_UNIQUE_NULLS_NOT_DISTINCT:	return unndkey;
+		case SQL_PRIMARY_KEY:				return pkey;
+		case SQL_CHECK:						return ckey;
+		}
+		assert(0);
+		return -1;
+}
+
+static
+str serialize_check_plan(sql_query *query, symbol *s, sql_table *t) {
+
+	mvc *sql = query->sql;
+	exp_kind ek = {type_value, card_value, FALSE};
+	sql_rel* rel = rel_basetable(sql, t, t->base.name);
+	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel, ek);
+	rel = rel_project_exp(sql, e);
+	str check = rel2str(sql, rel);
+	return check;
+}
+
 static int
 column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
 {
@@ -404,8 +428,9 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 	switch (s->token) {
 	case SQL_UNIQUE:
 	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
-	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_UNIQUE) ? ukey : (s->token == SQL_UNIQUE_NULLS_NOT_DISTINCT) ? unndkey : pkey;
+	case SQL_PRIMARY_KEY:
+	case SQL_CHECK: {
+		key_type kt = token2key_type(s->token);
 		sql_key *k;
 		const char *ns = name;
 
@@ -431,7 +456,13 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: an index named '%s' already exists, and it would conflict with the key", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
-		switch (mvc_create_ukey(&k, sql, t, name, kt)) {
+		char* check = NULL;
+		if (kt == ckey) {
+			if ((check = serialize_check_plan(query, s, t)) == NULL) {
+				/*TODO error*/
+			}
+		}
+		switch (mvc_create_ukey(&k, sql, t, name, kt, check)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return res;
@@ -596,27 +627,6 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 			case -2:
 			case -3:
 				(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
-				return SQL_ERR;
-			default:
-				break;
-		}
-		res = SQL_OK;
-	} 	break;
-	case SQL_CHECK: {
-		
-		exp_kind ek = {type_value, card_value, FALSE};
-		sql_rel* rel3 = rel_basetable(sql, t, t->base.name);
-		sql_exp *e = rel_logical_value_exp(query, &rel3, s->data.sym, sql_sel, ek);
-		sql_rel *rel = rel_project_exp(sql, e);
-		char* check = rel2str(sql, rel);
-
-		switch (mvc_check(sql, cs, check)) {
-			case -1:
-				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				return SQL_ERR;
-			case -2:
-			case -3:
-				(void) sql_error(sql, 02, SQLSTATE(42000) "CHECK CONSTRAINT: transaction conflict detected");
 				return SQL_ERR;
 			default:
 				break;
@@ -879,15 +889,17 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 }
 
 static int
-table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t)
+table_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
+	mvc *sql = query->sql;
 	int res = SQL_OK;
 
 	switch (s->token) {
 	case SQL_UNIQUE:
 	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
-	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : s->token == SQL_UNIQUE ? ukey : unndkey);
+	case SQL_PRIMARY_KEY:
+	case SQL_CHECK: {
+		key_type kt = token2key_type(s->token);
 		dnode *nms = s->data.lval->h;
 		sql_key *k;
 		const char *ns = name;
@@ -914,8 +926,14 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: an index named '%s' already exists, and it would conflict with the key", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
+		char* check = NULL;
+		if (kt == ckey) {
+			if ((check = serialize_check_plan(query, s, t)) == NULL) {
+				/*TODO error*/
+			}
+		}
 
-		switch (mvc_create_ukey(&k, sql, t, name, kt)) {
+		switch (mvc_create_ukey(&k, sql, t, name, kt, check)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return SQL_ERR;
@@ -926,6 +944,7 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 			default:
 				break;
 		}
+		/* TODO: iterate over all columns in case of CHECK constraint*/
 		for (; nms; nms = nms->next) {
 			char *nm = nms->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, nm);
@@ -963,10 +982,6 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 	case SQL_FOREIGN_KEY:
 		res = table_foreign_key(sql, name, s, ss, t);
 		break;
-	case SQL_CHECK: {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported");
-		return SQL_ERR;
-	} 	break;
 	default:
 		res = SQL_ERR;
 	}
@@ -978,8 +993,9 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 }
 
 static int
-table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
+table_constraint(sql_query *query, symbol *s, sql_schema *ss, sql_table *t)
 {
+	mvc *sql = query->sql;
 	int res = SQL_OK;
 
 	if (s->token == SQL_CONSTRAINT) {
@@ -991,7 +1007,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 			opt_name = table_constraint_name(sql, sym, t);
 		if (opt_name == NULL)
 			return SQL_ERR;
-		res = table_constraint_type(sql, opt_name, sym, ss, t);
+		res = table_constraint_type(query, opt_name, sym, ss, t);
 	}
 
 	if (res != SQL_OK) {
@@ -1115,7 +1131,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		res = create_column(query, s, ss, t, alter, isDeclared);
 		break;
 	case SQL_CONSTRAINT:
-		res = table_constraint(sql, s, ss, t);
+		res = table_constraint(query, s, ss, t);
 		break;
 	case SQL_COLUMN_OPTIONS:
 	{

@@ -44,7 +44,7 @@ sql_create_comments(mvc *m, sql_schema *s)
 
 	mvc_create_table(&t, m, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(&c, m, t, "id", "int", 32);
-	sql_trans_create_ukey(&k, m->session->tr, t, "comments_id_pkey", pkey);
+	sql_trans_create_ukey(&k, m->session->tr, t, "comments_id_pkey", pkey, NULL);
 	sql_trans_create_kc(m->session->tr, k, c);
 	sql_trans_key_done(m->session->tr, k);
 	sql_trans_create_dependency(m->session->tr, c->base.id, k->idx->base.id, INDEX_DEPENDENCY);
@@ -1104,15 +1104,15 @@ mvc_drop_schema(mvc *m, sql_schema * s, int drop_action)
 }
 
 int
-mvc_create_ukey(sql_key **kres, mvc *m, sql_table *t, const char *name, key_type kt)
+mvc_create_ukey(sql_key **kres, mvc *m, sql_table *t, const char *name, key_type kt, const char* check)
 {
 	int res = LOG_OK;
 
 	TRC_DEBUG(SQL_TRANS, "Create ukey: %s %u\n", t->base.name, (unsigned) kt);
 	if (t->persistence == SQL_DECLARED_TABLE)
-		*kres = create_sql_ukey(m->store, m->sa, t, name, kt);
+		*kres = create_sql_ukey(m->store, m->sa, t, name, kt, check);
 	else
-		res = sql_trans_create_ukey(kres, m->session->tr, t, name, kt);
+		res = sql_trans_create_ukey(kres, m->session->tr, t, name, kt, check);
 	return res;
 }
 
@@ -1495,18 +1495,6 @@ mvc_storage(mvc *m, sql_column *col, char *storage)
 		return 0;
 	} else {
 		return sql_trans_alter_storage(m->session->tr, col, storage);
-	}
-}
-
-int
-mvc_check(mvc *m, sql_column *col, char *check)
-{
-	TRC_DEBUG(SQL_TRANS, "Check: %s %s\n", col->base.name, check);
-	if (col->t->persistence == SQL_DECLARED_TABLE) {
-		col->check = check?sa_strdup(m->sa, check):NULL;
-		return 0;
-	} else {
-		return sql_trans_alter_check(m->session->tr, col, check);
 	}
 }
 

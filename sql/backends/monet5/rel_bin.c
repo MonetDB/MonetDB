@@ -4923,7 +4923,7 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 }
 
 static void
-sql_insert_check(backend *be, sql_table *t, sql_rel *inserts, list *refs)
+sql_insert_check(backend *be, sql_key *key, sql_rel *inserts, list *refs)
 {
 	mvc *sql = be->mvc;
 	node *m, *n;
@@ -4933,25 +4933,23 @@ sql_insert_check(backend *be, sql_table *t, sql_rel *inserts, list *refs)
 
 	sql_subtype *bt = sql_bind_localtype("bit");
 
-	for (n = ol_first_node(t->columns), m = exps->h; n && m;
+	for (n = key->columns->h, m = exps->h; n && m;
 		n = n->next, m = m->next) {
 		sql_exp *i = m->data;
-		sql_column *c = n->data;
-		if (c->check) {
-			i->alias.rname= sa_strdup(sql->sa, t->base.name);
-			i->alias.name= sa_strdup(sql->sa, c->base.name);
-
-			int pos = 0;
-			sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, c->check), &pos, sa_list(sql->sa));
-			rel->l = inserts;
-			stmt* s = subrel_bin(be, rel, refs);
-			s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
-			sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
-			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
-			char *msg = sa_message(sql->sa, SQLSTATE(40002) "INSERT INTO: CHECK constraint violated for column %s.%s", c->t->base.name, c->base.name);
-			(void)stmt_exception(be, s, msg, 00001);
-		}
+		sql_column *c = ((sql_kc*) n->data)->c;
+		i->alias.rname= sa_strdup(sql->sa, c->t->base.name);
+		i->alias.name= sa_strdup(sql->sa, c->base.name);
 	}
+
+	int pos = 0;
+	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
+	rel->l = inserts;
+	stmt* s = subrel_bin(be, rel, refs);
+	s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+	char *msg = sa_message(sql->sa, SQLSTATE(40002) "INSERT INTO: CHECK constraint violated: %s", key->base.name);
+	(void)stmt_exception(be, s, msg, 00001);
 }
 
 static sql_table *
@@ -5032,7 +5030,11 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
-	sql_insert_check(be, t, rel->r, refs);
+	for (n = ol_first_node(t->keys); n; n = n->next) {
+		sql_key * key = n->data;
+		if (key->type == ckey)
+			sql_insert_check(be, key, rel->r, refs);
+	}
 
 	if (!sql_insert_check_null(be, t, inserts->op4.lval))
 		return NULL;
@@ -5916,28 +5918,22 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 }
 
 static void
-sql_update_check(backend *be, sql_table *t, sql_rel *rupdates, stmt **updates, list *refs)
+sql_update_check(backend *be, sql_key * key, sql_rel *rupdates, list *refs)
 {
+	/*  TODO: this won't work for general table check constraints involving updates to a strict subset of check columns*/
 	mvc *sql = be->mvc;
-	node *n;
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	sql_subtype *bt = sql_bind_localtype("bit");
 
-	for (n = ol_first_node(t->columns); n; n = n->next) {
-		sql_column *c = n->data;
 
-		if (updates[c->colnr] && c->check) {
-
-			int pos = 0;
-			sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, c->check), &pos, sa_list(sql->sa));
-			rel->l = rupdates;
-			stmt* s = subrel_bin(be, rel, refs);
-			s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
-			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
-			char *msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: CHECK constraint violated for column %s.%s", c->t->base.name, c->base.name);
-			(void)stmt_exception(be, s, msg, 00001);
-		}
-	}
+	int pos = 0;
+	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
+	rel->l = rupdates;
+	stmt* s = subrel_bin(be, rel, refs);
+	s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
+	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+	char *msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: CHECK constraint violated: %s", key->base.name);
+	(void)stmt_exception(be, s, msg, 00001);
 }
 
 static void
@@ -6069,7 +6065,12 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		if (c)
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
 	}
-	sql_update_check(be, t, rel->r, updates, refs);
+
+	for (m = ol_first_node(t->keys); m; m = m->next) {
+		sql_key * key = m->data;
+		if (key->type == ckey)
+			sql_update_check(be, key, rel->r, refs);
+	}
 	sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */

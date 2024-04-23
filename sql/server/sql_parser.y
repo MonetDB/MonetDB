@@ -2169,7 +2169,6 @@ table_constraint_type:
 			{ $$ = _symbol_create_list( SQL_PRIMARY_KEY, $3); }
  |  FOREIGN KEY column_commalist_parens
     REFERENCES qname opt_column_list opt_match opt_ref_action
-
 			{ dlist *l = L();
 			  append_list(l, $5 );
 			  append_list(l, $3 );
@@ -2178,6 +2177,7 @@ table_constraint_type:
 			  append_int(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
  /*TODO: Implement domain_constraint_type*/
+ |	CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 domain_constraint_type:
