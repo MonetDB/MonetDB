@@ -4875,9 +4875,14 @@ BBPprintinfo(void)
 			ATOMIC_BASE_TYPE status = BBP_status(i);
 			struct counters *bt = &bats[r > 0][BATdirty(b)][(status & BBPPERSISTENT) != 0][(status & BBPLOADED) != 0][(status & BBPHOT) != 0];
 			bt->nr++;
-			bt->sz += HEAPmemsize(b->theap) + HEAPmemsize(b->tvheap);
-			bt->vmsz += HEAPvmsize(b->theap) + HEAPvmsize(b->tvheap);
-			MT_lock_unset(&b->theaplock);
+			if (b->theap && b->batCacheid == b->theap->parentid) {
+				bt->sz += HEAPmemsize(b->theap);
+				bt->vmsz += HEAPvmsize(b->theap);
+			}
+			if (b->tvheap && b->batCacheid == b->tvheap->parentid) {
+				bt->sz += HEAPmemsize(b->tvheap);
+				bt->vmsz += HEAPvmsize(b->tvheap);
+			}
 			MT_lock_unset(&b->theaplock);
 		}
 		MT_lock_unset(&GDKswapLock(i));
