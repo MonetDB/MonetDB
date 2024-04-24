@@ -1,7 +1,7 @@
 import pymonetdb, sys, threading, os
 
 query = '''
-select count(*) from tables;
+--select count(*) from tables;
 create table t1(i int);
 insert into t1 values(1);
 insert into t1 values(2);
