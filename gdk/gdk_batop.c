@@ -34,6 +34,7 @@ unshare_varsized_heap(BAT *b)
 		*h = (Heap) {
 			.parentid = b->batCacheid,
 			.farmid = BBPselectfarm(b->batRole, TYPE_str, varheap),
+			.refs = ATOMIC_VAR_INIT(1),
 		};
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
@@ -42,7 +43,6 @@ unshare_varsized_heap(BAT *b)
 			GDKfree(h);
 			return GDK_FAIL;
 		}
-		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
 		Heap *oh = b->tvheap;
 		b->tvheap = h;
@@ -415,6 +415,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		*h = (Heap) {
 			.parentid = b->batCacheid,
 			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
+			.refs = ATOMIC_VAR_INIT(1),
 		};
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
@@ -423,7 +424,6 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			GDKfree(h);
 			return GDK_FAIL;
 		}
-		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
 		Heap *oh = b->tvheap;
 		b->tvheap = h;
@@ -2731,7 +2731,6 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 					       ords,
 					       pbi.count * sizeof(oid));
 				}
-				ATOMIC_INIT(&m->refs, 1);
 				pb->torderidx = m;
 				persistOIDX(pb);
 			} else {
