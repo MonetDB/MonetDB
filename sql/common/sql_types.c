@@ -232,8 +232,8 @@ base_init(allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name)
 		.id = id,
 		.new = isnew,
 		.name = (name) ? SA_STRDUP(sa, name) : NULL,
+		.refcnt = ATOMIC_VAR_INIT(1),
 	};
-	ATOMIC_INIT(&b->refcnt, 1);
 }
 
 void

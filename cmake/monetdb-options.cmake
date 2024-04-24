@@ -133,10 +133,6 @@ option(WITH_PCRE
   "Include pcre support"
   ON)
 
-option(WITH_SNAPPY
-  "Include snappy support"
-  ON)
-
 option(WITH_VALGRIND
   "Include valgrind support"
   ON)

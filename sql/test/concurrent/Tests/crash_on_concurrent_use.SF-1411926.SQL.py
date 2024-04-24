@@ -36,7 +36,8 @@ class Client(threading.Thread):
 
     def output(self):
         if self.error == 0 and self.result != [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (0,)]:
-            sys.stderr.write('[(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (0,)] expected')
+            print(f'received: {self.result}', file=sys.stderr)
+            print('expected: [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (0,)]', file=sys.stderr)
 
 def main():
         C = []

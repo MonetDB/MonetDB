@@ -1,0 +1,38 @@
+statement ok
+create view columns_7496 as select
+  s."name" as table_schema,
+  t."name" as table_name,
+  c."name" as column_name,
+  cast(1 + c."number" as int) as ordinal_position,
+  c."default" as column_default,
+  cast(sys.ifthenelse(c."null", 'YES', 'NO') as varchar(3)) as is_nullable,
+  cast(sys."describe_type"(c."type", c."type_digits", c."type_scale") as varchar(1024)) as data_type,
+  cast(sys.ifthenelse(seq."name" is null, 'NO', 'YES') as varchar(3)) as is_identity,
+  seq."name" as identity_generation,
+  seq."start" as identity_start,
+  seq."increment" as identity_increment,
+  seq."maxvalue" as identity_maximum,
+  seq."minvalue" as identity_minimum,
+  cast(sys.ifthenelse(seq."cycle", 'YES', 'NO') as varchar(3)) as identity_cycle,
+  cast(sys.ifthenelse(seq."name" is null, 'NO', 'YES') as varchar(3)) as is_generated,
+  cast(sys.ifthenelse(seq."name" is null, null, c."default") as varchar(1024)) as generation_expression,
+  cm."remark" as comments
+  from sys."columns" c
+  inner join sys."tables" t on c."table_id" = t."id"
+  inner join sys."schemas" s on t."schema_id" = s."id"
+  left outer join sys."comments" cm on c."id" = cm."id"
+  left outer join sys."sequences" seq on ((seq."name"||'"') = substring(c."default", 3 + sys."locate"('"."seq_',c."default",14)))
+  order by s."name", t."name", c."number"
+
+query TI nosort
+SELECT "is_generated", length("is_generated") as data_length FROM columns_7496 WHERE "identity_generation" IS NOT NULL AND length("is_generated") > 2
+----
+
+-- next query causes: sql/backends/monet5/rel_bin.c:4355: rel2bin_select: Assertion `sql->session->status == -10' failed
+skipif knownfail
+query TI nosort
+SELECT "is_generated", length("is_generated") as data_length FROM columns_7496 WHERE "is_generated" IS NOT NULL AND length("is_generated") > 2
+----
+
+statement ok
+drop view columns_7496

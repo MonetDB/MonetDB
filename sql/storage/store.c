@@ -2305,12 +2305,6 @@ store_exit(sqlstore *store)
 	MT_lock_unset(&store->flush);
 	MT_lock_unset(&store->lock);
 	sa_destroy(sa);
-	ATOMIC_DESTROY(&store->nr_active);
-	ATOMIC_DESTROY(&store->lastactive);
-	ATOMIC_DESTROY(&store->timestamp);
-	ATOMIC_DESTROY(&store->transaction);
-	ATOMIC_DESTROY(&store->function_counter);
-	ATOMIC_DESTROY(&store->oldest);
 	MT_lock_destroy(&store->lock);
 	MT_lock_destroy(&store->commit);
 	MT_lock_destroy(&store->flush);
@@ -3832,6 +3826,9 @@ sql_trans_destroy(sql_trans *tr)
 static sql_trans *
 sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 {
+	if (name && !parent)		/* unlikely */
+		return NULL;
+
 	sql_trans *tr = ZNEW(sql_trans);
 
 	if (!tr)
@@ -3839,10 +3836,6 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	MT_lock_init(&tr->lock, "trans_lock");
 	tr->parent = parent;
 	if (name) {
-		if (!parent) {
-			sql_trans_destroy(tr);
-			return NULL;
-		}
 		_DELETE(parent->name);
 		parent->name = _STRDUP(name);
 	}
