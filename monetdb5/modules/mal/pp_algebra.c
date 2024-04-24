@@ -3320,7 +3320,6 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		assert(b->ttype == TYPE_dbl);
 		int overflow = 0;
 		if (ATOMbasetype(b->ttype) == TYPE_flt) {
 			flt *vals = Tloc(b, 0);
