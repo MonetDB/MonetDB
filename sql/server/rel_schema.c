@@ -410,7 +410,9 @@ str serialize_check_plan(sql_query *query, symbol *s, sql_table *t) {
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_rel* rel = rel_basetable(sql, t, t->base.name);
 	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel, ek);
-	rel = rel_project_exp(sql, e);
+	list *pexps = sa_list(sql->sa);
+	pexps = append(pexps, e);
+	rel = rel_project(sql->sa, rel, pexps);
 	str check = rel2str(sql, rel);
 	return check;
 }
