@@ -414,7 +414,7 @@ MT_thread_register(void)
 		.wtid = GetCurrentThreadId(),
 #endif
 		.refs = 1,
-		.tid = ATOMIC_INC(&GDKthreadid),
+		.tid = (MT_Id) ATOMIC_INC(&GDKthreadid),
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
 	ATOMIC_INIT(&self->exited, 0);
@@ -910,7 +910,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.waiting = false,
 		.detached = (d == MT_THR_DETACHED),
 		.refs = 1,
-		.tid = ATOMIC_INC(&GDKthreadid),
+		.tid = (MT_Id) ATOMIC_INC(&GDKthreadid),
 	};
 	MT_lock_set(&thread_init_lock);
 	/* remember the list of callback functions we need to call for
