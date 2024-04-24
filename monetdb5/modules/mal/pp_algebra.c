@@ -478,51 +478,40 @@ mulmod(lng a, lng b, lng c)
 		*(lng*)Tloc(c, 0) = n2;												\
 	} while (0)
 
-#define sum_aggr_float(T, a1, a2, e2)									\
-	do {																\
-		if (is_##T##_nil(a2)) {											\
-			a2 = a1;													\
-			e2 = 0;														\
-		} else if (!is_##T##_nil(a1)) {									\
-			dbl t = a2 + a1;											\
-			if (fabs(a2) >= fabs(a1))									\
-				e2 += (a2 - t) + a1;									\
-			else														\
-				e2 += (a1 - t) + a2;									\
-			a2 = t;														\
-		}																\
-	} while(0)
-
-#define avg_aggr_float(T, a1, a2, e2, n2)									\
+#define avg_aggr_float(T1, T2, a1, a2, e2, n2)								\
 	do {																	\
-		if (is_##T##_nil(a2)) {												\
+		if (is_##T2##_nil(a2)) {											\
 			a2 = a1;														\
 			e2 = 0;															\
-			n2 = !(is_##T##_nil(a1));										\
-		} else if (!is_##T##_nil(a1)) {										\
-			dbl t = a2 + a1;												\
+			overflow += n2;													\
+			n2 = !(is_##T1##_nil(a1));										\
+		} else if (!is_##T1##_nil(a1)) {									\
+			T2 t = a2 + a1;													\
 			if (fabs(a2) >= fabs(a1))										\
 				e2 += (a2 - t) + a1;										\
 			else															\
 				e2 += (a1 - t) + a2;										\
 			a2 = t;															\
+			overflow += isinf(t);											\
 			n2++;															\
 		}																	\
 	} while(0)
 
-#define avg_aggr_float_comb(a1, e1, n1, a2, e2, n2)							\
+#define avg_aggr_float_comb(T, a1, e1, n1, a2, e2, n2)						\
 	do {																	\
-		if (is_dbl_nil(a2)) {												\
+		if (is_##T##_nil(a2)) {												\
 			a2 = a1;														\
 			e2 = e1;														\
+			overflow += n2;													\
 			n2 = n1;														\
-		} else if (!is_dbl_nil(a1)) {										\
-		    dbl t = a2 + a1;												\
+		} else if (!is_##T##_nil(a1)) {										\
+		    T t = a2 + a1;													\
 			if (fabs(a2) >= fabs(a1))										\
 				e2 += (a2 - t) + a1;										\
 			else															\
 				e2 += (a1 - t) + a2;										\
 			a2 = t;															\
+			overflow += isinf(t);											\
 			e2 += e1;														\
 			n2 += n1;														\
 		}																	\
@@ -583,14 +572,37 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				avg_aggr_acc(hge);
 				break;
 #endif
+			case TYPE_flt: {
+				int overflow = 0;
+				flt a1 = *getArgReference_flt(stk, pci, pci->retc + 1);
+				flt r1 = *getArgReference_flt(stk, pci, pci->retc + 2);
+				lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);
+				flt a2 = *(flt*)Tloc(b, 0);
+				flt r2 = *(flt*)Tloc(r, 0);
+				lng n2 = *(lng*)Tloc(c, 0);
+				avg_aggr_float_comb(flt, a1, r1, n1, a2, r2, n2);
+				if (overflow) {
+					err = createException(SQL, "pp aggr.avg", "Overflow in avg()");
+					goto error;
+				}
+				*(flt*)Tloc(b, 0) = a2;
+				*(flt*)Tloc(r, 0) = r2;
+				*(lng*)Tloc(c, 0) = n2;
+				break;
+			}
 			case TYPE_dbl: {
+				int overflow = 0;
 				dbl a1 = *getArgReference_dbl(stk, pci, pci->retc + 1);
 				dbl r1 = *getArgReference_dbl(stk, pci, pci->retc + 2);
 				lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);
 				dbl a2 = *(dbl*)Tloc(b, 0);
 				dbl r2 = *(dbl*)Tloc(r, 0);
 				lng n2 = *(lng*)Tloc(c, 0);
-				avg_aggr_float_comb(a1, r1, n1, a2, r2, n2);
+				avg_aggr_float_comb(dbl, a1, r1, n1, a2, r2, n2);
+				if (overflow) {
+					err = createException(SQL, "pp aggr.avg", "Overflow in avg()");
+					goto error;
+				}
 				*(dbl*)Tloc(b, 0) = a2;
 				*(dbl*)Tloc(r, 0) = r2;
 				*(lng*)Tloc(c, 0) = n2;
@@ -2846,6 +2858,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+		int overflow = 0;
 		switch (ATOMbasetype(b->ttype)) {
 			case TYPE_flt: {
 				flt *vals = Tloc(b, 0);
@@ -2855,7 +2868,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					rerrs[i] = 0;
 				}
 				TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
-					avg_aggr_float(flt, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
+					avg_aggr_float(flt, dbl, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
 				}
 				break;
 			}
@@ -2867,12 +2880,14 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					rerrs[i] = 0;
 				}
 				TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
-					avg_aggr_float(dbl, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
+					avg_aggr_float(dbl, dbl, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
 				}
 				break;
 			}
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.avg", RUNTIME_QRY_TIMEOUT));
+		if (overflow)
+			err = createException(SQL, "pp aggr.avg", "Overflow in avg()");
 		if (err) goto error;
 
 		pipeline_lock2(bn);
@@ -2908,6 +2923,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+		int overflow = 0;
 		assert(b->ttype == TYPE_dbl);
 		for (oid i = bn->batCount; i < max; i++) {
 			rvals[i] = dbl_nil;
@@ -2915,8 +2931,10 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			rerrs[i] = 0;
 		}
 		TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
-			avg_aggr_float_comb(vals[i], errs[i], cnts[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
+			avg_aggr_float_comb(dbl, vals[i], errs[i], cnts[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
 		}
+		if (overflow)
+			err = createException(SQL, "pp aggr.avg", "Overflow in avg()");
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.avg", RUNTIME_QRY_TIMEOUT));
 		if (err) goto error;
 
@@ -3167,6 +3185,229 @@ bail:
 	BBPreclaim(a);
 	BBPreclaim(r);
 	BBPreclaim(c);
+	return err;
+}
+
+static str
+LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *rid = getArgReference_bat(stk, pci, 0);
+	bat *rrem = getArgReference_bat(stk, pci, 1);
+	bat *rcid = getArgReference_bat(stk, pci, 2);
+	bat *gid = getArgReference_bat(stk, pci, 3);
+	bat *bid = getArgReference_bat(stk, pci, 4);
+	bat *rem = pci->argc == 9 ? getArgReference_bat(stk, pci, 5) : NULL;
+	bat *cid = pci->argc == 9 ? getArgReference_bat(stk, pci, 6) : NULL;
+	Pipeline *p = (Pipeline *) *getArgReference_ptr(stk, pci, pci->argc - 2);
+	bat *pgid = getArgReference_bat(stk, pci, pci->argc - 1);
+	BAT *b = BATdescriptor(*bid);
+	BAT *g = BATdescriptor(*gid);
+	BAT *c = cid ? BATdescriptor(*cid) : NULL;
+	BAT *r = rem ? BATdescriptor(*rem) : NULL;
+	BAT *bn = (*rid && !is_bat_nil(*rid)) ? BATdescriptor(*rid) : NULL;
+	BAT *cn = bn ? BATdescriptor(*rcid) : NULL;
+	BAT *rn = bn ? BATdescriptor(*rrem) : NULL;
+	bool private = (bn == NULL || bn->T.private_bat), locked = false;
+	str err = NULL;
+
+	if (!private) {
+		pipeline_lock1(bn);
+		locked = true;
+	}
+
+	if (b == NULL ||
+	    g == NULL ||
+	    (cid && c == NULL) ||
+	    (rem && r == NULL) ||
+	    ((*rid && !is_bat_nil(*rid)) && bn == NULL) ||
+	    (bn && cn == NULL) ||
+	    ((bn && rrem) && rn == NULL)) {
+		err = createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	BAT *pg = BATdescriptor(*pgid);
+	if (pg == NULL) {
+		err = createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	oid max = BATcount(pg) ? pg->T.maxval : 0;
+	BBPunfix(pg->batCacheid);
+
+	if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 7) {
+		/* float sum core */
+		if (!bn) {
+			bn = COLnew(0, b->ttype, max, TRANSIENT);
+			cn = COLnew(0, TYPE_lng, max, TRANSIENT);
+			rn = COLnew(0, b->ttype, max, TRANSIENT);
+			if (bn == NULL || cn == NULL || rn == NULL) {
+				err = createException(MAL, "pp aggr.sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			}
+			bn->T.private_bat = 1;
+			cn->T.private_bat = 1;
+			rn->T.private_bat = 1;
+		}
+		if (bn->batCount < max &&
+			(BATextend(bn, max) != GDK_SUCCEED ||
+			 BATextend(cn, max) != GDK_SUCCEED ||
+			 BATextend(rn, max) != GDK_SUCCEED)) {
+			err = createException(MAL, "pp aggr.sum", GDK_EXCEPTION);
+			goto error;
+		}
+		lng *rcnts = Tloc(cn, 0);
+		oid *grps = Tloc(g, 0);
+
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+		int overflow = 0;
+		if (ATOMbasetype(b->ttype) == TYPE_flt) {
+			flt *vals = Tloc(b, 0);
+			flt *rerrs = Tloc(rn, 0);
+			flt *rvals = Tloc(bn, 0);
+			for (oid i = bn->batCount; i < max; i++) {
+				rvals[i] = flt_nil;
+				rcnts[i] = 0;
+				rerrs[i] = 0;
+			}
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
+				avg_aggr_float(flt, flt, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
+			}
+		} else {
+			dbl *vals = Tloc(b, 0);
+			dbl *rerrs = Tloc(rn, 0);
+			dbl *rvals = Tloc(bn, 0);
+			for (oid i = bn->batCount; i < max; i++) {
+				rvals[i] = dbl_nil;
+				rcnts[i] = 0;
+				rerrs[i] = 0;
+			}
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
+				avg_aggr_float(dbl, dbl, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
+			}
+		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.sum", RUNTIME_QRY_TIMEOUT));
+		if (overflow)
+			err = createException(SQL, "pp aggr.sum", "Overflow in sum()");
+		if (err) goto error;
+
+		pipeline_lock2(bn);
+		BATnegateprops(bn);
+		pipeline_unlock2(bn);
+		pipeline_lock2(rn);
+		BATnegateprops(rn);
+		pipeline_unlock2(rn);
+		pipeline_lock2(cn);
+		BATnegateprops(cn);
+		pipeline_unlock2(cn);
+		if (BATcount(bn) < max) {
+			BATsetcount(bn, max);
+			BATsetcount(rn, max);
+			BATsetcount(cn, max);
+		}
+	} else if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 9) {
+		/* float avg combine */
+		if (bn->batCount < max &&
+			(BATextend(bn, max) != GDK_SUCCEED ||
+			 BATextend(cn, max) != GDK_SUCCEED ||
+			 BATextend(rn, max) != GDK_SUCCEED)) {
+			err = createException(MAL, "pp aggr.avg", GDK_EXCEPTION);
+			goto error;
+		}
+		lng *cnts = Tloc(c, 0);
+		lng *rcnts = Tloc(cn, 0);
+		oid *grps = Tloc(g, 0);
+
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+		assert(b->ttype == TYPE_dbl);
+		int overflow = 0;
+		if (ATOMbasetype(b->ttype) == TYPE_flt) {
+			flt *vals = Tloc(b, 0);
+			flt *errs = Tloc(r, 0);
+			flt *rerrs = Tloc(rn, 0);
+			flt *rvals = Tloc(bn, 0);
+			for (oid i = bn->batCount; i < max; i++) {
+				rvals[i] = flt_nil;
+				rcnts[i] = 0;
+				rerrs[i] = 0;
+			}
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
+				avg_aggr_float_comb(flt, vals[i], errs[i], cnts[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
+			}
+		} else {
+			dbl *vals = Tloc(b, 0);
+			dbl *errs = Tloc(r, 0);
+			dbl *rerrs = Tloc(rn, 0);
+			dbl *rvals = Tloc(bn, 0);
+			for (oid i = bn->batCount; i < max; i++) {
+				rvals[i] = dbl_nil;
+				rcnts[i] = 0;
+				rerrs[i] = 0;
+			}
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
+				avg_aggr_float_comb(dbl, vals[i], errs[i], cnts[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
+			}
+		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.avg", RUNTIME_QRY_TIMEOUT));
+		if (overflow)
+			err = createException(SQL, "pp aggr.sum", "Overflow in sum()");
+		if (err) goto error;
+
+		pipeline_lock2(bn);
+		BATnegateprops(bn);
+		pipeline_unlock2(bn);
+		pipeline_lock2(rn);
+		BATnegateprops(rn);
+		pipeline_unlock2(rn);
+		pipeline_lock2(cn);
+		BATnegateprops(cn);
+		pipeline_unlock2(cn);
+		if (BATcount(bn) < max) {
+			BATsetcount(bn, max);
+			BATsetcount(rn, max);
+			BATsetcount(cn, max);
+		}
+	}
+
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
+	if (c)
+		BBPunfix(c->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
+	if (bn) {
+		*rid = bn->batCacheid;
+		BBPkeepref(bn);
+	}
+	if (cn) {
+		*rcid = cn->batCacheid;
+		BBPkeepref(cn);
+	}
+	if (rn) {
+		*rrem = rn->batCacheid;
+		BBPkeepref(rn);
+	}
+
+	if (!private)
+		pipeline_unlock1(bn);
+	else
+		bn->T.private_bat = true; /* in case it's a new one, set the bit */
+
+	(void)p;
+
+	(void)cntxt;
+	(void)mb;
+	return MAL_SUCCEED;
+  error:
+	if (locked) pipeline_unlock1(bn);
+	if (b) BBPunfix(b->batCacheid);
+	if (g) BBPunfix(g->batCacheid);
+	if (c) BBPunfix(c->batCacheid);
+	if (r) BBPunfix(r->batCacheid);
+	if (bn) BBPunfix(bn->batCacheid);
+	if (cn) BBPunfix(cn->batCacheid);
+	if (rn) BBPunfix(rn->batCacheid);
 	return err;
 }
 
@@ -3825,6 +4066,59 @@ ALGmaxany(ptr result, const bat *bid)
 }
 
 static str
+ALGfsum_skipnil_flt(flt *result, flt *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
+{
+	BAT *b;
+	str err = MAL_SUCCEED;
+
+	if (result == NULL || rcom == NULL || (b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "iaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	assert(*skipnil == TRUE);
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+	if (b->ttype != TYPE_flt) {
+		err = createException(MAL, "iaggr.sum", "Kahan/Neumaier summation can only be done with floating point numbers");
+	} else if (BATcount(b) == 0) {
+		/* nothing needed */
+	} else {
+		flt *v = Tloc(b, 0);
+		flt r = *result, c = *rcom;
+		lng cc = *rcnt;
+		if (is_flt_nil(r)) {
+			r = 0;
+			c = 0;
+			cc = 0;
+		}
+		TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
+			flt val = v[i];
+			if (!is_flt_nil(val)) {
+				flt t = r + val;
+				if (fabs(r) >= fabs(val))
+					c += (r - t) + val;
+				else
+					c += (val - t) + r;
+				r = t;
+				cc++;
+			}
+		}
+		*result = r;
+		*rcom = c;
+		*rcnt = cc;
+	}
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.sum", RUNTIME_QRY_TIMEOUT));
+	BBPunfix(b->batCacheid);
+	return err;
+}
+
+static str
+ALGfsum_flt(flt *result, flt *com, lng *cnt, const bat *bid)
+{
+	bit skipnil = TRUE;
+	return ALGfsum_skipnil_flt(result, com, cnt, bid, &skipnil);
+}
+
+static str
 ALGfsum_skipnil(dbl *result, dbl *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
@@ -3906,6 +4200,7 @@ static mel_func pp_algebra_init_funcs[] = {
  pattern("lockedaggr", "prod", LOCKEDAGGRprod, true, "product of all values, using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 2))),
  pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(2,5, sharedbatargany("", 1), sharedbatarg("rcnt", lng), arg("pipeline", ptr), argany("val", 1), arg("cnt", lng))),
  pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(3,7, sharedbatargany("", 1), sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), arg("pipeline", ptr), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),
+ pattern("lockedaggr", "sum", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,7, sharedbatarg("rsum", flt), sharedbatarg("rcom", flt), sharedbatarg("rcnt", lng), arg("pipeline", ptr), arg("sum", flt), arg("com", flt), arg("cnt", lng))),
  pattern("lockedaggr", "sum", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,7, sharedbatarg("rsum", dbl), sharedbatarg("rcom", dbl), sharedbatarg("rcnt", lng), arg("pipeline", ptr), arg("sum", dbl), arg("com", dbl), arg("cnt", lng))),
  pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,7, sharedbatarg("ravg", dbl), sharedbatarg("rcem", dbl), sharedbatarg("rcnt", lng), arg("pipeline", ptr), arg("val", dbl), arg("com", dbl), arg("cnt", lng))),
  pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
@@ -3920,20 +4215,24 @@ static mel_func pp_algebra_init_funcs[] = {
  command("aggr", "count", LALGcountstar, false, "count per group.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("aggr", "sum", LALGsum, false, "sum per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
  /* sum core */
- pattern("aggr", "sum", LALGavg, false, "Kahan/Neumaier summation per group.", args(3,7, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("val", dbl), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,7, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("val", flt), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,7, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("val", dbl), arg("pipeline", ptr), batarg("pid", oid))),
  /* sum combine */
- pattern("aggr", "sum", LALGavg, false, "Kahan/Neumaier summation per group.", args(3,9, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", dbl), batarg("com", dbl), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,9, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", flt), batarg("com", flt), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,9, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", dbl), batarg("com", dbl), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
  /* sum finish */
+ pattern("aggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",flt), batarg("sum", flt), batarg("com", flt))),
  pattern("aggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",dbl), batarg("sum", dbl), batarg("com", dbl))),
  pattern("aggr", "prod", LALGprod, false, "product per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
  /* avg core */
  pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,7, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
-
- pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,9, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("error", dbl), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
  /* avg combine */
+ pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,9, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("error", dbl), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ /* avg integers/decimals core */
  pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,7, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ /* avg integers/decimals combine */
  pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,9, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
- /* avg finish */
+ /* avg integer and doubles finish */
  pattern("aggr", "compute_avg", compute_avg, false, "compute avg from integer avg + rest/count.", args(1,4, batarg("ravg",dbl), batargany("avg", 1), batarg("remainder", lng), batarg("cnt", lng))),
  pattern("aggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl), batarg("error", dbl), batarg("cnt", lng))),
  command("aggr", "min", LALGmin, false, "Min per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
@@ -3950,6 +4249,8 @@ static mel_func pp_algebra_init_funcs[] = {
  command("iaggr", "min", ALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
  command("iaggr", "max", ALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
  command("iaggr", "max", ALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
+ command("aggr", "sum", ALGfsum_flt, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt))),
+ command("aggr", "sum", ALGfsum_skipnil_flt, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
  command("aggr", "sum", ALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
  command("aggr", "sum", ALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
  command("aggr", "sum", ALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),

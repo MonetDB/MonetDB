@@ -28,7 +28,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 	int restype = res->type->localtype, intype = 0;
 	bool complex_aggr = false;
 	int *stmt_nr = NULL;
-	int avg = 0;
+	int avg = 0, sum = 0;
 
 	if (op1->nr < 0)
 		return NULL;
@@ -40,6 +40,8 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 	if (LANG_INT_OR_MAL(op->func->lang)) {
 		if (strcmp(aggrfunc, "avg") == 0)
 			avg = 1;
+		if (strcmp(aggrfunc, "sum") == 0)
+			sum = 1;
 
 
 		if (op1->type == st_list) {
@@ -50,6 +52,8 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 		}
 		if (avg && restype == TYPE_dbl && intype != TYPE_dbl && intype != TYPE_flt)
 			restype = intype;
+		if (sum && restype != TYPE_dbl && restype != TYPE_flt)
+			sum = 0;
 
 		/* For the single value aggregates, we use the incremental
  		 * aggr. functions from the module 'iaggr' */
@@ -67,6 +71,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 
 	int argc = 1
 		+ 2 * avg
+		+ 2 * sum
 		+ (LANG_EXT(op->func->lang) != 0)
 		+ 2 * (op->func->lang == FUNC_LANG_C || op->func->lang == FUNC_LANG_CPP)
 		+ (op->func->lang == FUNC_LANG_PY || op->func->lang == FUNC_LANG_R)
@@ -81,9 +86,8 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 		if (q == NULL)
 			return NULL;
 		setVarType(mb, getArg(q, 0), newBatType(restype));
-		if (avg) { /* for avg also return remainder (or error) and count */
-			//if (grp || restype != TYPE_dbl)
-				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(restype == TYPE_dbl ? TYPE_dbl : TYPE_lng)));
+		if (avg || sum) { /* for avg also return remainder (or error) and count */
+			q = pushReturn(mb, q, newTmpVariable(mb, newBatType((restype == TYPE_dbl || restype == TYPE_flt)? restype : TYPE_lng)));
 			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 		}
 	} else {
@@ -93,9 +97,8 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 			return NULL;
 		if (complex_aggr) {
 			setVarType(mb, getArg(q, 0), (grp|| nrargs>1)?newBatType(restype):restype);
-			if (avg) { /* for avg also return remainder (or error) and count */
-				//if (grp || restype != TYPE_dbl)
-					q = pushReturn(mb, q, newTmpVariable(mb, restype == TYPE_dbl ? TYPE_dbl : TYPE_lng));
+			if (avg || sum) { /* for avg also return remainder (or error) and count */
+				q = pushReturn(mb, q, newTmpVariable(mb, (restype == TYPE_dbl || restype == TYPE_flt) ? restype : TYPE_lng));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 			}
 		}

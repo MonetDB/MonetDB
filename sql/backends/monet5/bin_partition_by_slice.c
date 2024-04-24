@@ -172,6 +172,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			sql_subtype *t = exp_subtype(e), *it = NULL;
 			int tt = t->type->localtype;
 			int avg = e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0;
+			int sum = e->type == e_aggr && strcmp(sf->func->base.name, "sum") == 0 && EC_APPNUM(t->type->eclass);
 
 			if (avg)
 				it = first_arg_subtype(e);
@@ -183,8 +184,8 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 				return NULL;
 			append(shared, &cc->nr);
 
-			if (avg) { /* remainder (or compensation) and count */
-				cc = const_column(be, EC_APPNUM(t->type->eclass) ? stmt_atom_dbl(be, 0) : stmt_atom_lng(be, 0));
+			if (avg || sum) { /* remainder (or compensation) and count */
+				cc = const_column(be, EC_APPNUM(t->type->eclass) ? stmt_atom(be, atom_float(be->mvc->sa, t, 0)) : stmt_atom_lng(be, 0));
 				if (!cc)
 					return NULL;
 				append(shared, &cc->nr);
@@ -259,6 +260,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			sql_subfunc *sf = e->f;
 			sql_subtype *t = exp_subtype(e), *it = NULL;
 			int avg = e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0;
+			int sum = e->type == e_aggr && strcmp(sf->func->base.name, "sum") == 0 && EC_APPNUM(t->type->eclass);
 
 			if (avg)
 				it = first_arg_subtype(e);
@@ -271,8 +273,8 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			append(shared, q->argv);
 			append(*aggrresults, q->argv);
 
-			if (avg) { /* remainder (or compensation) and count */
-				q = stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? TYPE_dbl : TYPE_lng, estimate*1.1);
+			if (avg || sum) { /* remainder (or compensation) and count */
+				q = stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? t->type->localtype : TYPE_lng, estimate*1.1);
 				if (q == NULL)
 					return NULL;
 				append(shared, q->argv);
@@ -345,23 +347,24 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 
 			assert(e->type == e_aggr);
 			char *name = NULL;
-			int avg = 0;
+			int avg = 0, sum = 0;
 			if (strcmp(sf->func->base.name, "min") == 0 ||
 			    strcmp(sf->func->base.name, "max") == 0 ||
 			    (avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
-			    strcmp(sf->func->base.name, "sum") == 0 ||
+				(sum= (strcmp(sf->func->base.name, "sum") == 0)) ||
 			    strcmp(sf->func->base.name, "prod") == 0) {
 				name = sf->func->base.name;
 			} else {
 				assert(strcmp(sf->func->base.name, "count") == 0);
 				name = "sum";
 			}
+			sum &= EC_APPNUM(tpe->type->eclass);
 			if (avg)
 				it = first_arg_subtype(e);
 			if (avg && EC_APPNUM(tpe->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 				tpe = it;
 			InstrPtr q = newStmt(be->mb, getName("lockedaggr"), getName(name));
-			if (avg) { /* remainder (or compensation) and count */
+			if (avg || sum) { /* remainder (or compensation) and count */
 				m = m->next;
 				q = pushReturn(be->mb, q, *(int*)m->data);
 				m = m->next;
@@ -370,7 +373,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			}
 			q = pushArgument(be->mb, q, getArg(pp->q, 2));
 			q = pushArgument(be->mb, q, i->nr);
-			if (avg) { /* remainder (or compensation) and count */
+			if (avg || sum) { /* remainder (or compensation) and count */
 				q = pushArgument(be->mb, q, getArg(i->q, 1));
 				q = pushArgument(be->mb, q, getArg(i->q, 2));
 			}
@@ -418,23 +421,24 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 
 			if (e->type == e_aggr) {
 				char *name = NULL;
-				int avg = 0;
+				int avg = 0, sum = 0;
 				if (strcmp(sf->func->base.name, "min") == 0 ||
 					strcmp(sf->func->base.name, "max") == 0 ||
 					(avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
-					strcmp(sf->func->base.name, "sum") == 0 ||
+					(sum= (strcmp(sf->func->base.name, "sum") == 0)) ||
 					strcmp(sf->func->base.name, "prod") == 0) {
 					name = sf->func->base.name;
 				} else {
 					assert(strcmp(sf->func->base.name, "count") == 0);
 					name = "sum";
 				}
+				sum &= EC_APPNUM(tpe->type->eclass);
 				if (avg)
 					it = first_arg_subtype(e);
 				if (avg && EC_APPNUM(tpe->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 					tpe = it;
 				q = newStmt(be->mb, getName("aggr"), getName(name));
-				if (avg) { /* remainder (or compensation) and count */
+				if (avg || sum) { /* remainder (or compensation) and count */
 					m = m->next;
 					q = pushReturn(be->mb, q, *(int*)m->data);
 					m = m->next;
@@ -443,7 +447,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 				}
 				q = pushArgument(be->mb, q, grp->nr);
 				q = pushArgument(be->mb, q, i->nr);
-				if (avg) { /* remainder (or compensation) and count */
+				if (avg || sum) { /* remainder (or compensation) and count */
 					q = pushArgument(be->mb, q, getArg(i->q, 1));
 					q = pushArgument(be->mb, q, getArg(i->q, 2));
 				}
@@ -487,7 +491,27 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 			if (is_aggr(e->type)) {
 				sql_subfunc *sf = e->f;
 				sql_subtype *tpe = exp_subtype(e);
-				if (strcmp(sf->func->base.name, "avg") == 0 && EC_APPNUM(tpe->type->eclass)) {
+				if (/*!list_empty(rel->r) &&*/ strcmp(sf->func->base.name, "sum") == 0 && EC_APPNUM(tpe->type->eclass)) {
+					stmt *s = n->data;
+					InstrPtr q = s->q;
+					int sum = getArg(q, 0), rem = getArg(q, 1);
+
+					q = newStmtArgs(be->mb, batcalcRef, "+", 5); // todo use compute_sum
+					setVarType(be->mb, getArg(q, 0), newBatType(tpe->type->localtype));
+					pushArgument(be->mb, q, sum);
+					pushArgument(be->mb, q, rem);
+					pushNilBat(be->mb, q);
+					pushNilBat(be->mb, q);
+					pushInstruction(be->mb, q);
+
+					s = stmt_none(be);
+					s->op4.typeval = *tpe;
+					s->nr = getArg(q, 0);
+					s->q = q;
+					s->key = s->nrcols = exp_card(e);
+					s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
+					n->data = s;
+				} else if (strcmp(sf->func->base.name, "avg") == 0 && EC_APPNUM(tpe->type->eclass)) {
 					stmt *s = n->data;
 					InstrPtr q = s->q;
 					int avg = getArg(q, 0), rem = getArg(q, 1), cnt = getArg(q, 2);

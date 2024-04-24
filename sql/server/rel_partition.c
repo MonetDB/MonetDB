@@ -295,7 +295,7 @@ has_groupby(sql_rel *rel)
 }
 
 static bool
-rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
+rel_groupby_partition_safe(sql_rel *rel)
 {
 	for(node *n = rel->exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
@@ -309,19 +309,6 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 				  strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
 				 (sum = (strcmp(sf->func->base.name, "sum") == 0)) || strcmp(sf->func->base.name, "prod") == 0))
 				return false;
-			if (sum && list_length(e->l) == 1 && !mvc_debug_on(sql, 32)) {
-				list *l = e->l;
-				sql_exp *i = l->h->data;
-				sql_subtype *t = exp_subtype(i);
-
-				/* Summing over dbl/flt, the current parallel impl. can lose
-				 * precision. Hence, don't do parallel. */
-				// TODO: if the precision-loss is within a (to be defined) safe
-				//       range or if the user explicitly wants the parallel
-				//       version, then we could still do simple dbl/float sums
-				if (EC_APPNUM(t->type->eclass))
-					return false;
-			}
 		}
 	}
 	return true;
@@ -345,7 +332,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			res = REL_PARTITION;
 		}
 	} else if (is_groupby(rel->op)) {
-		bool safe = rel_groupby_partition_safe(sql, rel) && !rel_is_ref(rel);
+		bool safe = rel_groupby_partition_safe(rel) && !rel_is_ref(rel);
 		if (rel->l)
 			/* if `safe`, process this GROUP BY + subtree in a `pb`. */
 			res = rel_partition_(sql, rel->l, safe?SPB:0);
