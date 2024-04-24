@@ -40,30 +40,38 @@ FROM (
 	  FROM v,p
 ) AS tmp
 
+query IR rowsort
+select * from r 
+----            
+0
+2.283
+1
+1.005
+2
+0.900
+
 query T nosort
 PLAN select * from r
 ----
 project (
 | project (
-| | project (
-| | | crossproduct (
-| | | | table("sys"."v") [ "v"."a1" UNIQUE, "v"."a2" ],
-| | | | project (
-| | | | | crossproduct (
-| | | | | | project (
-| | | | | | | select (
-| | | | | | | | table("sys"."input_double") [ "input_double"."a1" UNIQUE, "input_double"."a2" UNIQUE ]
-| | | | | | | ) [ ("input_double"."a1" UNIQUE) = (varchar "latitude") ]
-| | | | | | ) [ "input_double"."a2" UNIQUE as "tmp_2"."a2" ],
-| | | | | | project (
-| | | | | | | select (
-| | | | | | | | table("sys"."input_double") [ "input_double"."a1" UNIQUE, "input_double"."a2" UNIQUE ]
-| | | | | | | ) [ ("input_double"."a1" UNIQUE) = (varchar "longitude") ]
-| | | | | | ) [ "input_double"."a2" UNIQUE as "tmp_3"."a2" ]
-| | | | | ) [  ]
-| | | | ) [ "sys"."st_point"("tmp_2"."a2", "tmp_3"."a2") as "a1" ]
-| | | ) [  ]
-| | ) [ "v"."a1", "v"."a2", "a1" as "p"."a1" ]
+| | crossproduct (
+| | | table("sys"."v") [ "v"."a1" UNIQUE, "v"."a2" ],
+| | | project (
+| | | | crossproduct (
+| | | | | project (
+| | | | | | select (
+| | | | | | | table("sys"."input_double") [ "input_double"."a1" UNIQUE, "input_double"."a2" UNIQUE ]
+| | | | | | ) [ ("input_double"."a1" UNIQUE) = (varchar "latitude") ]
+| | | | | ) [ "input_double"."a2" UNIQUE as "tmp_2"."a2" ],
+| | | | | project (
+| | | | | | select (
+| | | | | | | table("sys"."input_double") [ "input_double"."a1" UNIQUE, "input_double"."a2" UNIQUE ]
+| | | | | | ) [ ("input_double"."a1" UNIQUE) = (varchar "longitude") ]
+| | | | | ) [ "input_double"."a2" UNIQUE as "tmp_3"."a2" ]
+| | | | ) [  ]
+| | | ) [ "sys"."st_point"("tmp_2"."a2", "tmp_3"."a2") as "p"."a1" ]
+| | ) [  ]
 | ) [ "v"."a1" as "a1", "sys"."st_distance"("v"."a2", "p"."a1") as "prob" ]
 ) [ "a1" as "r"."a1", "prob" as "r"."prob" ]
 
