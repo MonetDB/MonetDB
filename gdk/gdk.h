@@ -887,9 +887,6 @@ mskGetVal(BAT *b, BUN p)
  * @item int
  * @tab
  *  HEAPcopy (Heap *dst,*src);
- * @item int
- * @tab
- *  HEAPwarm (Heap *h);
  * @end multitable
  *
  *
@@ -1053,15 +1050,15 @@ typedef struct BATiter {
 	Heap *vh;
 	BUN count;
 	BUN baseoff;
-	uint16_t width;
-	uint8_t shift;
-	int8_t type;
 	oid tseq;
 	BUN hfree, vhfree;
 	BUN nokey[2];
 	BUN nosorted, norevsorted;
 	BUN minpos, maxpos;
 	double unique_est;
+	uint16_t width;
+	uint8_t shift;
+	int8_t type;
 	bool key:1,
 		nonil:1,
 		nil:1,
@@ -1962,9 +1959,6 @@ VALptr(const ValRecord *v)
 
 #define THREADS		1024	/* maximum value for gdk_nr_threads */
 
-typedef struct threadStruct *Thread;
-
-
 gdk_export stream *GDKstdout;
 gdk_export stream *GDKstdin;
 
@@ -2096,8 +2090,6 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  *  @multitable @columnfractions 0.08 0.6
  * @item BAT *
  * @tab BATcommit (BAT *b)
- * @item BAT *
- * @tab BATfakeCommit (BAT *b)
  * @end multitable
  *
  * The BAT keeps track of updates with respect to a 'previous state'.
@@ -2110,17 +2102,8 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  * BATcommit make the current BAT state the new 'stable state'.  This
  * happens inside the global TMcommit on all persistent BATs previous
  * to writing all bats to persistent storage using a BBPsync.
- *
- * EXPERT USE ONLY: The routine BATfakeCommit updates the delta
- * information on BATs and clears the dirty bit. This avoids any
- * copying to disk.  Expert usage only, as it bypasses the global
- * commit protocol, and changes may be lost after quitting or crashing
- * MonetDB.
- *
- * BATabort undo-s all changes since the previous state.
  */
 gdk_export void BATcommit(BAT *b, BUN size);
-gdk_export void BATfakeCommit(BAT *b);
 
 /*
  * @+ BAT Alignment and BAT views
@@ -2133,7 +2116,7 @@ gdk_export void BATfakeCommit(BAT *b);
  * @tab ALIGNrelated (BAT *b1, BAT *b2)
  *
  * @item BAT*
- * @tab VIEWcreate   (oid seq, BAT *b)
+ * @tab VIEWcreate   (oid seq, BAT *b, BUN lo, BUN hi)
  * @item int
  * @tab isVIEW   (BAT *b)
  * @item bat
@@ -2162,7 +2145,7 @@ gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 
 gdk_export void BATassertProps(BAT *b);
 
-gdk_export BAT *VIEWcreate(oid seq, BAT *b);
+gdk_export BAT *VIEWcreate(oid seq, BAT *b, BUN l, BUN h);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 #define ALIGNapp(x, f, e)						\

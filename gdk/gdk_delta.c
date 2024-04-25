@@ -47,18 +47,3 @@ BATcommit(BAT *b, BUN size)
 	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
 }
-
-/*
- * BATfakeCommit() flushed the delta info, but leaves the BAT marked
- * clean.
- */
-void
-BATfakeCommit(BAT *b)
-{
-	if (b) {
-		BATcommit(b, BUN_NONE);
-		b->theap->dirty = false;
-		if (b->tvheap)
-			b->tvheap->dirty = false;
-	}
-}

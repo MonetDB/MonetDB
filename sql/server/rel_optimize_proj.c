@@ -737,7 +737,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		for (n = rel->exps->h; n && !fnd; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type != e_aggr && e->type != e_column && e->type != e_atom) {
+			if (e->type != e_aggr && e->type != e_column && e->type != e_atom && e->card > CARD_ATOM) {
 				fnd = 1;
 			}
 		}
@@ -1509,6 +1509,7 @@ rel_project_cse(visitor *v, sql_rel *rel)
 						sql_exp *ne = exp_alias(v->sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_unique(e2), is_intern(e1));
 
 						ne = exp_propagate(v->sql->sa, ne, e1);
+						set_selfref(ne);
 						exp_prop_alias(v->sql->sa, ne, e1);
 						e1 = ne;
 						break;

@@ -686,7 +686,6 @@ os_destroy(objectset *os, sql_store store)
 	if (ATOMIC_DEC(&os->refcnt) > 0)
 		return;
 	MT_rwlock_destroy(&os->rw_lock);
-	ATOMIC_DESTROY(&os->refcnt);
 	versionhead* n=os->id_based_h;
 	while(n) {
 		objectversion *ov = n->ov;
