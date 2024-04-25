@@ -827,7 +827,6 @@ add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel)
 		e = ne;
 	}
 	e = exp_ref(sql, e);
-	set_selfref(e);
 	return e;
 }
 
