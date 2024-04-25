@@ -49,6 +49,11 @@ jobs:
 
       - name: install pymonetdb cryptography
         run: pip3 install --user --upgrade pymonetdb cryptography
+        if: runner.os == 'Linux'
+
+      - name: install pymonetdb cryptography
+        run: pip3 install --user --break-system-packages --upgrade pymonetdb cryptography
+        if: runner.os == 'macOS'
 
       - name: make MonetDB on linux
         run: |
@@ -83,7 +88,23 @@ jobs:
             -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison \
             -DCMAKE_SUMMARY=ON
           make install -j3
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' and runner.arch == 'x64'
+
+      - name: make MonetDB on macos
+        run: |
+          mkdir build
+          cd build 
+          cmake .. \
+            -DCMAKE_INSTALL_PREFIX=$HOME/MDB \
+            -DPY3INTEGRATION=OFF \
+            -DRINTEGRATION=OFF  \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DASSERT=OFF \
+            -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+            -DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison \
+            -DCMAKE_SUMMARY=ON
+          make install -j3
+        if: runner.os == 'macOS' and runner.arch == 'arm64'
 
       - name: choco packages
         run: |
