@@ -58,8 +58,6 @@ const char *ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
 void ATOMunknown_clean(void)
 	__attribute__((__visibility__("hidden")));
-gdk_return BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
-	__attribute__((__visibility__("hidden")));
 bool BATcheckhash(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool BATcheckimprints(BAT *b)
@@ -112,8 +110,6 @@ bat BBPallocbat(int tt)
 	__attribute__((__visibility__("hidden")));
 void BBPprintinfo(void)
 	__attribute__((__visibility__("hidden")));
-void BBPrelinquish(void)
-	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
@@ -156,9 +152,6 @@ FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *ext
 	__attribute__((__visibility__("hidden")));
 char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
 	__attribute__((__visibility__("hidden")));
-void GDKlog(_In_z_ _Printf_format_string_ FILE * fl, const char *format, ...)
-	__attribute__((__format__(__printf__, 2, 3)))
-	__attribute__((__visibility__("hidden")));
 gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2, bool report)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -190,8 +183,6 @@ BUN HASHappend(BAT *b, BUN i, const void *v)
 void HASHappend_locked(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHfree(BAT *b)
-	__attribute__((__visibility__("hidden")));
-bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 BUN HASHdelete(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
@@ -228,11 +219,6 @@ void HEAP_recover(Heap *, const var_t *, BUN)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
-gdk_return HEAPshrink(Heap *h, size_t size)
-	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
-int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 void IMPSdecref(Imprints *imprints, bool remove)
 	__attribute__((__visibility__("hidden")));
@@ -295,8 +281,6 @@ gdk_return TMcommit(void)
 	__attribute__((__visibility__("hidden")));
 gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
-void VIEWboundsbi(BATiter *bi, BAT *view, BUN l, BUN h)
 	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -460,14 +444,6 @@ struct Strimps {
 	strimp_masks_t *masks;  /* quick access to masks for
 				 * bitstring construction */
 };
-
-#ifdef HAVE_RTREE
-struct RTree {
-	ATOMIC_TYPE refs; 	/* counter for logical references to the rtree */
-	rtree_t *rtree; 	/* rtree structure */
-	bool destroy;		/* destroy rtree when there are no more logical references */
-};
-#endif
 
 typedef struct {
 	MT_Lock swap;

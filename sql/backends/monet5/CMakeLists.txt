@@ -18,7 +18,6 @@ set(sql_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/sql_stack.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/sql_catalog.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/sql_relation.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/exception_buffer.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/sql_keyword.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../common/sql_types.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../common/sql_string.h>
@@ -55,7 +54,6 @@ set(sql_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_stack.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_catalog.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_relation.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/exception_buffer.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_keyword.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_types.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_string.h>

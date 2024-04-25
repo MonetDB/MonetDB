@@ -837,7 +837,6 @@ IMPSdecref(Imprints *imprints, bool remove)
 		ATOMIC_OR(&imprints->imprints.refs, HEAPREMOVE);
 	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&imprints->imprints.refs);
 	if ((refs & HEAPREFS) == 0) {
-		ATOMIC_DESTROY(&imprints->imprints.refs);
 		HEAPfree(&imprints->imprints, (bool) (refs & HEAPREMOVE));
 		GDKfree(imprints);
 	}

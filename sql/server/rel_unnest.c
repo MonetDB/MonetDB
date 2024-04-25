@@ -1049,7 +1049,7 @@ push_up_topn_and_sample(mvc *sql, sql_rel *rel)
 
 		if (r && (is_topn(r->op) || is_sample(r->op))) {
 			/* remove old topn/sample */
-			sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
+			sql_rel *(*func) (allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
 			rel->r = rel_dup(r->l);
 			rel = func(sql->sa, rel, r->exps);
 			set_processed(rel);
@@ -1591,6 +1591,8 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 					id = exp_ref(sql, id);
 				} else {
 					l->l = rel_dup(d);
+					if (is_project(l->op))
+						rel_bind_vars(sql, l, l->exps);
 				}
 			} else {
 				tf->l = rel_dup(d);
@@ -2315,7 +2317,7 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 }
 
 static sql_exp *
-exp_set_type(sql_allocator *sa, sql_exp *te, sql_exp *e)
+exp_set_type(allocator *sa, sql_exp *te, sql_exp *e)
 {
 	if (te->type == e_convert) {
 		if (e->type == e_column)  {
@@ -2359,6 +2361,8 @@ rel_set_type(visitor *v, sql_rel *rel)
 						if (l->type == e_column) {
 							sql_rel *sl = rel->l;
 							sql_exp *e = rel_find_exp(sl, l);
+							if (!e)
+								continue;
 							if (is_groupby(sl->op) && exp_equal(e, l) == 0) {
 								sql_exp *e2 = list_find_exp(sl->r, l);
 								if (e2) {
@@ -4343,23 +4347,58 @@ rel_simplify_exp_and_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
+static inline sql_rel *
+run_exp_rewriter(visitor *v, sql_rel *rel, exp_rewrite_fptr rewriter, bool direction, const char *name)
+{
+	(void)name;
+	/*
+#ifndef NDEBUG
+	int changes = v->changes;
+	lng clk = GDKusec();
+	rel = rel_exp_visitor_bottomup(v, rel, rewriter, direction);
+	printf("%s %d " LLFMT "\n", name, (v->changes - changes), (GDKusec() - clk));
+	return rel;
+#else
+*/
+	return rel_exp_visitor_bottomup(v, rel, rewriter, direction);
+//#endif
+}
+
+static inline sql_rel *
+run_rel_rewriter(visitor *v, sql_rel *rel, rel_rewrite_fptr rewriter, const char *name)
+{
+	(void)name;
+	/*
+#ifndef NDEBUG
+	int changes = v->changes;
+	lng clk = GDKusec();
+	rel = rel_visitor_bottomup(v, rel, rewriter);
+	printf("%s %d " LLFMT "\n", name, (v->changes - changes), (GDKusec() - clk));
+	return rel;
+#else
+*/
+	return rel_visitor_bottomup(v, rel, rewriter);
+//#endif
+}
+
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_exp_and_rank, false);
-	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_simplify);
+	rel = run_exp_rewriter(&v, rel, &rel_simplify_exp_and_rank, false, "simplify_exp_and_rank");
+	rel = run_rel_rewriter(&v, rel, &rel_unnest_simplify, "unnest_simplify");
+//if (0) {
+	rel = run_exp_rewriter(&v, rel, &rewrite_complex, true, "rewrite_complex");
+	rel = run_exp_rewriter(&v, rel, &rewrite_ifthenelse, false, "rewrite_ifthenelse"); /* add isnull handling */
+	rel = run_exp_rewriter(&v, rel, &rewrite_exp_rel, true, "rewrite_exp_rel");
 
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel, true);
-
-	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_comparison_rewriters);
-	rel = rel_visitor_bottomup(&v, rel, &_rel_unnest);
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
-	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_projects);
-	rel = rel_exp_visitor_bottomup(&v, rel, &exp_reset_card_and_freevar_set_physical_type, false);
+	rel = run_rel_rewriter(&v, rel, &rel_unnest_comparison_rewriters, "unnest_comparison_rewriters");
+	rel = run_rel_rewriter(&v, rel, &_rel_unnest, "unnest");
+	rel = run_rel_rewriter(&v, rel, &rewrite_fix_count, "fix_count");	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
+	rel = run_rel_rewriter(&v, rel, &rel_unnest_projects, "unnest_projects");
+//}
+	rel = run_exp_rewriter(&v, rel, &exp_reset_card_and_freevar_set_physical_type, false, "exp_reset_card_and_freevar_set_physical_type");
 	rel = rel_visitor_topdown(&v, rel, &rel_set_type);
 	return rel;
 }

@@ -51,7 +51,7 @@
 #endif
 
 str
-sql_update_var(mvc *m, sql_schema *s, const char *name, ValPtr ptr)
+sql_update_var(mvc *m, sql_schema *s, const char *name, const ValRecord *ptr)
 {
 	if (strcmp(s->base.name, "sys") == 0) {
 		if (strcmp(name, "debug") == 0 || strcmp(name, "current_timezone") == 0 || strcmp(name, "sql_optimizer") == 0) {

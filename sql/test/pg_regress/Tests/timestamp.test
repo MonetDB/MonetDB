@@ -1,4 +1,7 @@
 statement ok
+SET TIME ZONE INTERVAL '1' HOUR
+
+statement ok
 CREATE TABLE TIMESTAMP_TBL ( d1 timestamp(2) )
 
 statement ok

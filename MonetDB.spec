@@ -91,7 +91,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Dec2023-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2023-SP2/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -151,7 +151,6 @@ BuildRequires: pkgconfig(libR)
 # BuildRequires: pkgconfig(gdal)        # -DSHP=ON
 # BuildRequires: pkgconfig(netcdf)      # -DNETCDF=ON
 # BuildRequires: pkgconfig(proj)        # -DWITH_PROJ=ON
-# BuildRequires: pkgconfig(snappy)      # -DWITH_SNAPPY=ON
 # BuildRequires: pkgconfig(valgrind)    # -DWITH_VALGRIND=ON
 
 %if (0%{?fedora} >= 22)
@@ -679,7 +678,6 @@ This package contains files needed to develop SQL extensions.
 
 %files SQL-server5-devel
 %defattr(-,root,root)
-%{_includedir}/monetdb/exception_buffer.h
 %{_includedir}/monetdb/opt_backend.h
 %{_includedir}/monetdb/rel_*.h
 %{_includedir}/monetdb/sql*.h
@@ -808,9 +806,7 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-# use /var/run/monetdb since that's what it says in the monetdb.fc file
-# it says that because /run/monetdb for some reason doesn't work
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb /var/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -839,6 +835,13 @@ fi
 %setup -q
 
 %build
+# from Fedora 40, selinux uses /run where before it used /var/run
+# the code is now for Fedora 40 but needs a patch for older versions
+%if (0%{?fedora} < 40)
+sed -i 's;@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb;@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/run/monetdb;' misc/selinux/monetdb.fc.in
+sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
+%endif
+
 %cmake3 \
         -DCMAKE_INSTALL_RUNSTATEDIR=/run \
         -DRELEASE_VERSION=ON \
@@ -864,7 +867,6 @@ fi
         -DWITH_PCRE=ON \
         -DWITH_PROJ=OFF \
         -DWITH_READLINE=ON \
-        -DWITH_SNAPPY=OFF \
         -DWITH_VALGRIND=OFF \
         -DWITH_XML2=ON \
         -DWITH_ZLIB=ON
@@ -891,9 +893,6 @@ install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
 install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 
 # remove unwanted stuff
-# .la files
-rm -f %{buildroot}%{_libdir}/*.la
-rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_udf*.so
@@ -917,6 +916,31 @@ fi
 %endif
 
 %changelog
+* Tue Apr 09 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- Rebuilt.
+- GH#7469: Crash when using `CONTAINS`
+- GH#7479: MonetDB server crashes in `exp_ref`
+- GH#7490: commonTerms optimizer no longer works
+- GH#7495: Crash when simultaneously querying and updating a string column.
+
+* Thu Mar 28 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- gdk: Threads have their own list of free bats.  The list was not returned
+  to the system when a thread exited, meaning that the free bats that
+  were in the list would not be reused by any thread.  This has been
+  fixed.
+
+* Tue Mar 19 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- monetdb5: Fixed interaction between mserver5 and remote mserver5 when only one
+  of the two has 128 bit integer support.
+
+* Tue Mar 19 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- sql: Fixed issue where equal column aliases were created. When those
+  aliases were parsed on the remote side it could give crashes.
+
+* Mon Mar 18 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
+- gdk: Fixed a couple of deadlock situations, one actually observed, one
+  never observed.
+
 * Tue Mar 12 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.5-20240312
 - Rebuilt.
 - GH#7390: Some MonetDB Server crashes found

@@ -819,7 +819,7 @@ static struct function_properties functions_list[35] = {
 };
 
 void
-initialize_sql_functions_lookup(sql_allocator *sa)
+initialize_sql_functions_lookup(allocator *sa)
 {
 	int nentries = sizeof(functions_list) / sizeof(functions_list[0]);
 

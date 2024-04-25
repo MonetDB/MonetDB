@@ -994,7 +994,6 @@ STRMPdecref(Strimps *strimps, bool remove)
 	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s to " BUNFMT "\n",
 		  strimps->strimps.filename, (BUN) (refs & HEAPREFS));
 	if ((refs & HEAPREFS) == 0) {
-		ATOMIC_DESTROY(&strimps->strimps.refs);
 		HEAPfree(&strimps->strimps, (bool) (refs & HEAPREMOVE));
 		GDKfree(strimps->masks);
 		GDKfree(strimps);

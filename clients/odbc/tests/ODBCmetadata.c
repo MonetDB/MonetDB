@@ -186,6 +186,11 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLRowCount()");
 	pos += snprintf(outp + pos, outp_len - pos, "Resultset with %"PRId64" rows\n", (int64_t) rows);
 
+	/* detect if special handling of data returned by second TRACE resultset is needed */
+	if (columns == 2 && (strncmp("TRACE(2) ", functionname, 9) == 0)) {
+		replaceTraceData = 1;
+	}
+
 	/* get Result Column Names and print them */
 	for (col = 1; col <= columns; col++) {
 		ret = SQLDescribeCol(stmt, col, (SQLCHAR *) buf, sizeof(buf),
@@ -214,7 +219,7 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 		case SQL_BINARY:
 		case SQL_VARBINARY:
 		case SQL_LONGVARBINARY:
-			if (columnSize != 0) {
+			if (columnSize != 0 && replaceTraceData == 0) {
 				if (decimalDigits != 0) {
 					pos += snprintf(outp + pos, outp_len - pos,
 						"(%d,%d)", (int) columnSize, (int) decimalDigits);
@@ -237,11 +242,6 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 			if (strncmp("SPECIFIC_NAME", buf, 13) == 0)
 				replaceId = 1;
 		}
-	}
-
-	/* detect if special handling of data returned by second TRACE resultset is needed */
-	if (columns == 2 && (strncmp("TRACE(2) ", functionname, 9) == 0)) {
-		replaceTraceData = 1;
 	}
 
 	/* Loop through the rows in the result-set */
@@ -1594,7 +1594,7 @@ main(int argc, char **argv)
 			"Resultset with 2 columns\n"
 			"Resultset with 12 rows\n"
 			"usec	statement\n"
-			"BIGINT	WVARCHAR(213)\n"
+			"BIGINT	WVARCHAR\n"
 			"4	variable output\n"
 			"4	variable output\n"
 			"4	variable output\n"
@@ -1611,7 +1611,7 @@ main(int argc, char **argv)
 			"Resultset with 2 columns\n"
 			"Resultset with 11 rows\n"
 			"usec	statement\n"
-			"BIGINT	WVARCHAR(213)\n"
+			"BIGINT	WVARCHAR\n"
 			"4	variable output\n"
 			"4	variable output\n"
 			"4	variable output\n"

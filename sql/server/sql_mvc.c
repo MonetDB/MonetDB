@@ -769,7 +769,7 @@ _free(void *dummy, void *data)
 }
 
 mvc *
-mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
+mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 {
 	mvc *m;
 	str sys_str = NULL;
@@ -844,6 +844,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	}
 	m->schema_path_has_sys = true;
 	m->schema_path_has_tmp = false;
+	m->no_int128 = false;
 	m->store = store;
 
 	m->session = sql_session_create(m->store, m->pa, 1 /*autocommit on*/);
@@ -1060,7 +1061,7 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 }
 
 int
-mvc_create_func(sql_func **f, mvc *m, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
+mvc_create_func(sql_func **f, mvc *m, allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
 				const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
 {
 	int lres = LOG_OK;
@@ -1421,19 +1422,21 @@ mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids)
 			break;
 		case SCHEMA_DEPENDENCY:
 			dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
+			if (!dep_list)
+				dep_list = sql_trans_get_dependents(m->session->tr, id, SCHEMA_DEPENDENCY, NULL);
 			break;
 		case TABLE_DEPENDENCY:
-			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
+			dep_list = sql_trans_get_dependents(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 			break;
 		case VIEW_DEPENDENCY:
-			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
+			dep_list = sql_trans_get_dependents(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 			break;
 		case FUNC_DEPENDENCY:
 		case PROC_DEPENDENCY:
-			dep_list = sql_trans_get_dependencies(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
+			dep_list = sql_trans_get_dependents(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
 			break;
 		default:
-			dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
+			dep_list =  sql_trans_get_dependents(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
 	}
 
 	if (!dep_list)

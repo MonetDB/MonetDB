@@ -97,5 +97,21 @@ rel_physical(mvc *sql, sql_rel *rel)
 
 	rel = rel_visitor_bottomup(&v, rel, &rel_add_orderby);
 	rel = rel_exp_visitor_topdown(&v, rel, &exp_timezone, true);
+
+#ifdef HAVE_HGE
+	if (rel && sql->no_int128) {
+		sql_rel *r = rel;
+		if (is_topn(r->op))
+				r = r->l;
+		if (r && is_project(r->op) && !list_empty(r->exps)) {
+			for (node *n = r->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (exp_subtype(e)->type->localtype == TYPE_hge) /* down cast */
+					e = n->data = exp_convert(sql->sa, e, exp_subtype(e), sql_bind_localtype("lng"));
+			}
+		}
+	}
+#endif
 	return rel;
 }

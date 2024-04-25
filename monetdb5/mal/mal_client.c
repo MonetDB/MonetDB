@@ -61,11 +61,6 @@ void
 mal_client_reset(void)
 {
 	if (mal_clients) {
-		for (int i = 0; i < MAL_MAXCLIENTS; i++) {
-			ATOMIC_DESTROY(&mal_clients[i].lastprint);
-			ATOMIC_DESTROY(&mal_clients[i].workers);
-			ATOMIC_DESTROY(&mal_clients[i].qryctx.datasize);
-		}
 		GDKfree(mal_clients);
 		mal_clients = NULL;
 	}
@@ -356,7 +351,7 @@ MCshutdowninprogress(void)
  * When a client needs to be terminated then the file descriptors for
  * its input/output are simply closed.  This leads to a graceful
  * degradation, but may take some time when the client is busy.  A more
- * forcefull method is to kill the client thread, but this may leave
+ * forceful method is to kill the client thread, but this may leave
  * locks and semaphores in an undesirable state.
  *
  * The routine freeClient ends a single client session, but through side
@@ -443,7 +438,7 @@ MCcloseClient(Client c)
 
 /*
  * If a client disappears from the scene (eof on stream), we should
- * terminate all its children. This is in principle a forcefull action,
+ * terminate all its children. This is in principle a forceful action,
  * because the children may be ignoring the primary IO streams.
  * (Instead they may be blocked in an infinite loop)
  *

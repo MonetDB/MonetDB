@@ -1306,7 +1306,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			sql_rel *gp = inner;
 			while (gp && is_select(gp->op))
 				gp = gp->l;
-			if (gp && gp->l && !(exp = rel_bind_column(sql, gp->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+			if (gp && !is_basetable(gp->op) && gp->l && !(exp = rel_bind_column(sql, gp->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		}
 		if (!exp && query && query_has_outer(query)) {
@@ -1402,7 +1402,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			sql_rel *gp = inner;
 			while (gp && is_select(gp->op))
 				gp = gp->l;
-			if (gp && gp->l && !(exp = rel_bind_column3(sql, gp->l, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+			if (gp && !is_basetable(gp->op) && gp->l && !(exp = rel_bind_column3(sql, gp->l, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		}
 		if (!exp && query && query_has_outer(query)) {
@@ -3927,7 +3927,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 static sql_exp *
 rel_selection_ref(sql_query *query, sql_rel **rel, char *name, dlist *selection)
 {
-	sql_allocator *sa = query->sql->sa;
+	allocator *sa = query->sql->sa;
 	dlist *nl;
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_exp *res = NULL;
@@ -4028,7 +4028,7 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 }
 
 static list*
-list_power_set(sql_allocator *sa, list* input) /* cube */
+list_power_set(allocator *sa, list* input) /* cube */
 {
 	list *res = sa_list(sa);
 	/* N stores total number of subsets */
@@ -4050,7 +4050,7 @@ list_power_set(sql_allocator *sa, list* input) /* cube */
 }
 
 static list*
-list_rollup(sql_allocator *sa, list* input)
+list_rollup(allocator *sa, list* input)
 {
 	list *res = sa_list(sa);
 
@@ -4082,7 +4082,7 @@ list_equal(list* list1, list* list2)
 }
 
 static list*
-lists_cartesian_product_and_distinct(sql_allocator *sa, list *l1, list *l2)
+lists_cartesian_product_and_distinct(allocator *sa, list *l1, list *l2)
 {
 	list *res = sa_list(sa);
 
@@ -4143,7 +4143,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 						if (e->type != e_column) { /* store group by expressions in the stack */
 							if (is_sql_group_totals(f))
 								return sql_error(sql, 02, SQLSTATE(42000) "GROUP BY: grouping expressions not possible with ROLLUP, CUBE and GROUPING SETS");
-							if (!frame_push_groupby_expression(sql, grp, e))
+							if (!exp_has_rel(e) && !frame_push_groupby_expression(sql, grp, e))
 								return NULL;
 						}
 						list_append(next_tuple, e);
@@ -5188,36 +5188,34 @@ group_merge_exps(mvc *sql, list *gexps, list *exps)
 {
 	int nexps = list_length(gexps) + list_length(exps);
 
-	if (nexps < 5) {
-		return list_distinct(list_merge(gexps, exps, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
-	} else { /* for longer lists, use hashing */
-		sql_hash *ht = hash_new(sql->ta, nexps, (fkeyvalue)&exp_key);
+	sql_hash *ht = hash_new(sql->ta, nexps, (fkeyvalue)&exp_key);
 
-		for (node *n = gexps->h; n ; n = n->next) { /* first add grouping expressions */
-			sql_exp *e = n->data;
-			int key = ht->key(e);
+	for (node *n = gexps->h; n ; n = n->next) { /* first add grouping expressions */
+		sql_exp *e = n->data;
+		int key = ht->key(e);
 
-			hash_add(ht, key, e);
-		}
-
-		for (node *n = exps->h; n ; n = n->next) { /* then test if the new grouping expressions are already there */
-			sql_exp *e = n->data;
-			int key = ht->key(e);
-			sql_hash_e *he = ht->buckets[key&(ht->size-1)];
-			bool duplicates = false;
-
-			for (; he && !duplicates; he = he->chain) {
-				sql_exp *f = he->value;
-
-				if (!exp_equal(e, f))
-					duplicates = true;
-			}
-			hash_add(ht, key, e);
-			if (!duplicates)
-				list_append(gexps, e);
-		}
-		return gexps;
+		hash_add(ht, key, e);
 	}
+
+	for (node *n = exps->h; n ; n = n->next) { /* then test if the new grouping expressions are already there */
+		sql_exp *e = n->data;
+		int key = ht->key(e);
+		sql_hash_e *he = ht->buckets[key&(ht->size-1)];
+		bool duplicates = false;
+
+		for (; he && !duplicates; he = he->chain) {
+			sql_exp *f = he->value;
+
+			if (!exp_equal(e, f))
+				duplicates = true;
+		}
+		hash_add(ht, key, e);
+		if (!duplicates) {
+			list_append(gexps, e);
+			n->data = exp_ref(sql, e);
+		}
+	}
+	return gexps;
 }
 
 static list *
@@ -5870,7 +5868,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		list *outexps = new_exp_list(sql->sa), *exps;
 		node *m;
 
-		rnme = number2name(rname, sizeof(rname), ++sql->label);
+		rnme = sa_strdup(sql->sa, number2name(rname, sizeof(rname), ++sql->label));
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 			sql_exp *cond, *ls, *rs;

@@ -55,21 +55,18 @@ static str
 ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 {
 	BAT *b, *view;
-	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "chop.newChunk", INTERNAL_BAT_ACCESS);
 	}
-	cnt = BATcount(b);
-	view = VIEWcreate(b->hseqbase, b);
+	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
+	 *granule, MIN(BATcount(b),(BUN) *granule)); */
+	view = VIEWcreate(b->hseqbase, b, 0, (BUN) *granule);
 	if (view == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "chop.newChunk", GDK_EXCEPTION);
 	}
 
-	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
-	 *granule, MIN(cnt,(BUN) *granule)); */
-	VIEWbounds(b, view, 0, MIN(cnt, (BUN) *granule));
 	*vid = view->batCacheid;
 	BBPkeepref(view);
 	BBPunfix(b->batCacheid);
@@ -279,10 +276,10 @@ ITRnext_dbl(dbl *i, dbl *step, dbl *last)
 
 #include "mel.h"
 mel_func iterator_init_funcs[] = {
- command("iterator", "new", ITRnewChunk, false, "Create an iterator with fixed granule size.\nThe result is a view.", args(2,4, arg("",lng),batargany("",2),batargany("b",2),arg("size",lng))),
- command("iterator", "next", ITRnextChunk, false, "Produce the next chunk for processing.", args(2,4, arg("",lng),batargany("",2),batargany("b",2),arg("size",lng))),
- pattern("iterator", "new", ITRbunIterator, false, "Process the buns one by one extracted from a void table.", args(2,3, arg("h",oid),argany("t",2),batargany("b",2))),
- pattern("iterator", "next", ITRbunNext, false, "Produce the next bun for processing.", args(2,3, arg("h",oid),argany("t",2),batargany("b",2))),
+ command("iterator", "new", ITRnewChunk, false, "Create an iterator with fixed granule size.\nThe result is a view.", args(2,4, arg("",lng),batargany("",1),batargany("b",1),arg("size",lng))),
+ command("iterator", "next", ITRnextChunk, false, "Produce the next chunk for processing.", args(2,4, arg("",lng),batargany("",1),batargany("b",1),arg("size",lng))),
+ pattern("iterator", "new", ITRbunIterator, false, "Process the buns one by one extracted from a void table.", args(2,3, arg("h",oid),argany("t",1),batargany("b",1))),
+ pattern("iterator", "next", ITRbunNext, false, "Produce the next bun for processing.", args(2,3, arg("h",oid),argany("t",1),batargany("b",1))),
  command("iterator", "next", ITRnext_oid, false, "", args(1,3, arg("",oid),arg("step",oid),arg("last",oid))),
  command("iterator", "next", ITRnext_sht, false, "", args(1,3, arg("",sht),arg("step",sht),arg("last",sht))),
  command("iterator", "next", ITRnext_int, false, "", args(1,3, arg("",int),arg("step",int),arg("last",int))),

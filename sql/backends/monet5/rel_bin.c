@@ -34,10 +34,10 @@ static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 static stmt *check_types(backend *be, sql_subtype *fromtype, stmt *s, check_type tpe);
 
 static void
-clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
+clean_mal_statements(backend *be, int oldstop, int oldvtop)
 {
 	MSresetInstructions(be->mb, oldstop);
-	freeVariables(be->client, be->mb, NULL, oldvtop, oldvid);
+	freeVariables(be->client, be->mb, NULL, oldvtop);
 	be->mvc->session->status = 0; /* clean possible generated error */
 	be->mvc->errstr[0] = '\0';
 }
@@ -143,7 +143,7 @@ refs_update_stmt(list *refs, sql_rel *rel, stmt *s)
 
 
 static void
-print_stmtlist(sql_allocator *sa, stmt *l)
+print_stmtlist(allocator *sa, stmt *l)
 {
 	node *n;
 	if (l) {
@@ -1684,7 +1684,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}	break;
 	case e_cmp: {
 		stmt *l = NULL, *r = NULL, *r2 = NULL;
-		int swapped = 0, is_select = 0, oldvtop, oldstop, oldvid;
+		int swapped = 0, is_select = 0, oldvtop, oldstop;
 		sql_exp *re = e->r, *re2 = e->f;
 
 		/* general predicate, select and join */
@@ -1701,12 +1701,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			for (n = args->h; n; n = n->next) {
 				oldvtop = be->mb->vtop;
 				oldstop = be->mb->stop;
-				oldvid = be->mb->vid;
 				s = NULL;
 				if (!swapped)
 					s = exp_bin(be, n->data, left, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 				if (!s && (first || swapped)) {
-					clean_mal_statements(be, oldstop, oldvtop, oldvid);
+					clean_mal_statements(be, oldstop, oldvtop);
 					s = exp_bin(be, n->data, right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 					swapped = 1;
 				}
@@ -1768,31 +1767,29 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 		oldvtop = be->mb->vtop;
 		oldstop = be->mb->stop;
-		oldvid = be->mb->vid;
 		if (!l) {
 			l = exp_bin(be, e->l, left, (!reduce)?right:NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			swapped = 0;
 		}
 		if (!l && right) {
-			clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			clean_mal_statements(be, oldstop, oldvtop);
 			l = exp_bin(be, e->l, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			swapped = 1;
 		}
 
 		oldvtop = be->mb->vtop;
 		oldstop = be->mb->stop;
-		oldvid = be->mb->vid;
 		if (swapped || !right || !reduce)
 			r = exp_bin(be, re, left, (!reduce)?right:NULL, grp, ext, cnt, sel, depth+1, 0, push);
 		else
 			r = exp_bin(be, re, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 		if (!r && !swapped) {
-			clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			clean_mal_statements(be, oldstop, oldvtop);
 			r = exp_bin(be, re, left, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			is_select = 1;
 		}
 		if (!r && swapped) {
-			clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			clean_mal_statements(be, oldstop, oldvtop);
 			r = exp_bin(be, re, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			is_select = 1;
 		}
@@ -3120,7 +3117,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 				/* handle possible index lookups, expressions are in index order! */
 				if (!join && (p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
 					sql_idx *i = p->value.pval;
-					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
+					int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 
 					join = s = rel2bin_hash_lookup(be, rel, left, right, i, en);
 					if (s) {
@@ -3130,7 +3127,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 						used_hash = 1;
 					} else {
 						/* hash lookup cannot be used, clean leftover mal statements */
-						clean_mal_statements(be, oldstop, oldvtop, oldvid);
+						clean_mal_statements(be, oldstop, oldvtop);
 					}
 				}
 
@@ -3544,14 +3541,14 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 					break;
 
 				if (equality_only) {
-					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid, swap = 0;
+					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, swap = 0;
 					stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
 
 					if (l && left && l->nrcols==0 && left->nrcols >0)
 						l = stmt_const(be, bin_find_smallest_column(be, left), l);
 					if (!l) {
 						swap = 1;
-						clean_mal_statements(be, oldstop, oldvtop, oldvid);
+						clean_mal_statements(be, oldstop, oldvtop);
 						l = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
 					}
 					r = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0);
@@ -4173,11 +4170,11 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		return NULL;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
-		int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
+		int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 		stmt *s = exp_bin(be, exp, sub, NULL /*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
 
 		if (!s) { /* try with own projection as well, but first clean leftover statements */
-			clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			clean_mal_statements(be, oldstop, oldvtop);
 			s = exp_bin(be, exp, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
 		}
 		if (!s) /* error */
@@ -4340,11 +4337,11 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 
 		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL && !is_anti(e)) {
 			sql_idx *i = p->value.pval;
-			int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
+			int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 
 			if (!(sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en))) {
 				/* hash lookup cannot be used, clean leftover mal statements */
-				clean_mal_statements(be, oldstop, oldvtop, oldvid);
+				clean_mal_statements(be, oldstop, oldvtop);
 			}
 		}
 	}
@@ -4449,7 +4446,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	for (n = aggrs->h; n; n = n->next) {
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;
-		int oldvtop, oldstop, oldvid;
+		int oldvtop, oldstop;
 
 		/* first look in the current aggr list (l) and group by column list */
 		if (l && !aggrstmt && aggrexp->type == e_column)
@@ -4465,14 +4462,13 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 		oldvtop = be->mb->vtop;
 		oldstop = be->mb->stop;
-		oldvid = be->mb->vid;
 		if (!aggrstmt)
 			aggrstmt = exp_bin(be, aggrexp, sub, NULL, grp, ext, cnt, NULL, 0, 0, 0);
 		/* maybe the aggr uses intermediate results of this group by,
 		   therefore we pass the group by columns too
 		 */
 		if (!aggrstmt) {
-			clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			clean_mal_statements(be, oldstop, oldvtop);
 			aggrstmt = exp_bin(be, aggrexp, sub, cursub, grp, ext, cnt, NULL, 0, 0, 0);
 		}
 		if (!aggrstmt) {
@@ -4520,22 +4516,21 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		const char *cname = column_name(sql->sa, sc);
 		const char *tname = table_name(sql->sa, sc);
 		list *newl = sa_list(sql->sa);
-		int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
+		int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 
 		if (le)
 			l = exp_bin(be, le, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		if (!l) {
-			clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			clean_mal_statements(be, oldstop, oldvtop);
 			l = stmt_atom_lng_nil(be);
 		}
 
 		oldvtop = be->mb->vtop;
 		oldstop = be->mb->stop;
-		oldvid = be->mb->vid;
 		if (oe)
 			o = exp_bin(be, oe, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		if (!o) {
-			clean_mal_statements(be, oldstop, oldvtop, oldvid);
+			clean_mal_statements(be, oldstop, oldvtop);
 			o = stmt_atom_lng(be, 0);
 		}
 		if (!l || !o)
@@ -5589,7 +5584,7 @@ cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids)
 {
 	/* now iterate over all keys */
 	sql_trans *tr = be->mvc->session->tr;
-	list *keys = sql_trans_get_dependencies(tr, k->base.id, FKEY_DEPENDENCY, NULL);
+	list *keys = sql_trans_get_dependents(tr, k->base.id, FKEY_DEPENDENCY, NULL);
 	if (keys) {
 		for (node *n = keys->h; n; n = n->next->next) {
 			sqlid fkey_id = *(sqlid*)n->data;
@@ -6166,7 +6161,7 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_trans *tr = be->mvc->session->tr;
-	list *keys = sql_trans_get_dependencies(tr, k->base.id, FKEY_DEPENDENCY, NULL);
+	list *keys = sql_trans_get_dependents(tr, k->base.id, FKEY_DEPENDENCY, NULL);
 
 	if (keys) {
 		for (node *n = keys->h; n; n = n->next->next) {
@@ -6350,7 +6345,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 			sql_key *k = n->data;
 
 			if (k->type == ukey || k->type == pkey) {
-				list *keys = sql_trans_get_dependencies(tr, k->base.id, FKEY_DEPENDENCY, NULL);
+				list *keys = sql_trans_get_dependents(tr, k->base.id, FKEY_DEPENDENCY, NULL);
 
 				if (keys) {
 					for (node *nn = keys->h; nn; nn = nn->next->next) {
