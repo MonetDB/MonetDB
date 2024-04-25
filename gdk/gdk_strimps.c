@@ -1,11 +1,14 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
-
 
 /* Author: Panagiotis Koutsourakis
  *
@@ -83,7 +86,36 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#include "gdk_strimps.h"
+#include <stdint.h>
+#include <inttypes.h>
+
+#define STRIMP_VERSION (uint64_t)2
+#define STRIMP_HISTSIZE (256*256)
+#define STRIMP_HEADER_SIZE 64
+#define STRIMP_PAIRS (STRIMP_HEADER_SIZE - 1)
+#define STRIMP_CREATION_THRESHOLD				\
+	((BUN) ((ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)? 100 : 5000))
+
+typedef struct {
+#ifdef UTF8STRIMPS
+	uint8_t *pbytes;
+#else
+	uint8_t pbytes[2];
+#endif //UTF8STRIMPSX
+	uint8_t psize;
+	size_t idx;
+	uint64_t mask;
+} CharPair;
+
+typedef struct {
+	size_t pos;
+	size_t lim;
+	const char *s;
+} PairIterator;
+
+typedef struct {
+	uint64_t cnt;
+} PairHistogramElem;
 
 
 /* Macros for accessing metadada of a strimp. These are recorded in the
@@ -92,15 +124,16 @@
 #define NPAIRS(d) (size_t)(((d) >> 8) & 0xff)
 #define HSIZE(d) (size_t)(((d) >> 16) & 0xffff)
 
-#undef UTF8STRIMPS 		/* Not using utf8 for now */
+#undef UTF8STRIMPS		/* Not using utf8 for now */
 #ifdef UTF8STRIMPS
 static bool
-pair_equal(CharPair *p1, CharPair *p2) {
+pair_equal(const CharPair *p1, const CharPair *p2)
+{
 	if(p1->psize != p2->psize)
 		return false;
 
 	for(size_t i = 0; i < p1->psize; i++)
-		if (*(p1->pbytes + i) != *(p2->pbytes + i))
+		if (p1->pbytes[i] != p2->pbytes[i])
 			return false;
 
 	return true;
@@ -120,36 +153,31 @@ pair_equal(CharPair *p1, CharPair *p2) {
 #define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
 #define pairToIndex(b1, b2) (size_t)(((uint16_t)b2)<<8 | ((uint16_t)b1))
 
-inline static bool
-pair_equal(CharPair *p1, CharPair *p2)
-{
-	return p1->pbytes[0] == p2->pbytes[0] &&
-		p1->pbytes[1] == p2->pbytes[1];
-
-}
-
 inline static size_t
-histogram_index(PairHistogramElem *hist, size_t hsize, CharPair *p)
+bytes2histindex(uint8_t *bytes, uint8_t psize)
 {
-	(void) hist;
-	(void) hsize;
-	return pairToIndex(p->pbytes[0], p->pbytes[1]);
+	(void)psize;
+	return pairToIndex(bytes[0], bytes[1]);
 }
 
 inline static bool
-pair_at(PairIterator *pi, CharPair *p)
+pair_at(const PairIterator *pi, CharPair *p)
 {
-	if (pi->pos >= pi->lim)
+	if (pi->pos >= pi->lim - 1)
 		return false;
-	p->pbytes = (uint8_t*)pi->s + pi->pos;
+
+	p->pbytes[0] = (uint8_t)tolower((unsigned char) pi->s[pi->pos]);
+	p->pbytes[1] = (uint8_t)tolower((unsigned char) pi->s[pi->pos + 1]);
+
 	p->psize = 2;
+	p->idx = pairToIndex(p->pbytes[0], p->pbytes[1]);
 	return true;
 }
 
 inline static bool
 next_pair(PairIterator *pi)
 {
-	if (pi->pos >= pi->lim)
+	if (pi->pos >= pi->lim - 1)
 		return false;
 	pi->pos++;
 	return true;
@@ -158,41 +186,37 @@ next_pair(PairIterator *pi)
 /* Returns true if the specified char is ignored.
  */
 inline static bool
-ignored(CharPair *p, uint8_t elm)
+ignored(const CharPair *p, uint8_t elm)
 {
 	assert(elm == 0 || elm == 1);
 	return isIgnored(p->pbytes[elm]);
 }
 
-#endif // UTF8STRIMPS
-
-/* Looks up a given pair in the strimp header. Returns the index of the
- * pair, or -1 if it is not found.
- *
- * NOTE: This routine assumes that there are no more than 128 pairs.
- */
-static int8_t
-STRMPpairLookup(Strimps *s, CharPair *p)
+inline static strimp_masks_t
+STRMPget_mask(const Strimps *r, uint64_t idx)
 {
-	size_t idx = 0;
-	size_t npairs = NPAIRS(((uint64_t *)s->strimps.base)[0]);
-	size_t offset = 0;
-	CharPair sp;
-
-	// The return type implies that we have no more than 128 pairs
-	// in the header.
-	assert(npairs <= 128);
-
-	for (idx = 0; idx < npairs; idx++) {
-		sp.psize = s->sizes_base[idx];
-		sp.pbytes = s->pairs_base + offset;
-		if (pair_equal(&sp, p))
-			return (int8_t)idx;
-		offset += sp.psize;
-	}
-
-	return -1;
+	return r->masks[idx];
 }
+
+inline static void
+STRMPset_mask(Strimps *r, uint64_t idx, strimp_masks_t val)
+{
+	r->masks[idx] = val;
+}
+
+/* Looks up a given pair in the strimp header and returns the index as a
+ * 64 bit integer. The return value has a bit on in the position
+ * corresponding to the index of the pair in the strimp header, or is 0
+ * if the pair does not occur.
+ */
+inline static uint64_t
+STRMPpairLookup(const Strimps *s, const CharPair *p)
+{
+	return STRMPget_mask(s, p->idx);
+}
+
+
+#endif // UTF8STRIMPS
 
 
 /* Computes the bitstring of a string s with respect to the strimp r.
@@ -202,7 +226,7 @@ static uint64_t
 STRMPmakebitstring(const char *s, Strimps *r)
 {
 	uint64_t ret = 0;
-	int8_t pair_idx = 0;
+	/* int8_t pair_idx = 0; */
 	PairIterator pi;
 	CharPair cp;
 
@@ -210,10 +234,12 @@ STRMPmakebitstring(const char *s, Strimps *r)
 	pi.pos = 0;
 	pi.lim = strlen(s);
 
+	if (pi.lim < 2) {
+		return ret;
+	}
+
 	while(pair_at(&pi, &cp)) {
-		pair_idx = STRMPpairLookup(r, &cp);
-		if (pair_idx >= 0)
-			ret |= ((uint64_t)0x1 << pair_idx);
+		ret |= STRMPpairLookup(r, &cp);
 		next_pair(&pi);
 	}
 
@@ -227,26 +253,10 @@ STRMPmakebitstring(const char *s, Strimps *r)
 		((TPE *) _a)[_j] = _t;			\
 	} while(0)
 
-/* Finds the indices of the STRIMP_HEADER_SIZE largest counts in a given
- * a histogram. It returns them in the cp pointer.
- *
- * We make one scan of histogram and every time we find a count that is
- * greater than the current minimum of the STRIMP_HEADER_SIZE, we bubble
- * it up in the header until we find a count that is greater. We carry
- * the index in the histogram because this is the information we are
- * actually interested in keeping.
- *
- * At the end of this process we have the indices of STRIMP_HEADER_SIZE
- * largest counts in the histogram. This process is O(n) in time since
- * we are doing constant work (at most STRIMP_HEADER_SIZE-1 comparisons
- * and swaps) for each item in the histogram and as such is
- * (theoretically) more efficient than sorting (O(nlog n))and taking the
- * STRIMP_HEADER_SIZE largest elements. This depends on the size of the
- * histogram n. For some small n sorting might be more efficient, but
- * for such inputs the difference should not be noticeable.
- */
+
+
 static void
-STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
+STRMPchoosePairs(const PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 {
 	lng t0 = 0;
 	size_t i;
@@ -268,10 +278,14 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 		}
 	}
 
-	for(i = 0; i < STRIMP_HEADER_SIZE; i++) {
-		cp[i].pbytes = hist[indices[i]].p->pbytes;
-		cp[i].psize = hist[indices[i]].p->psize;
+	for(i = 0; i < STRIMP_PAIRS; i++) {
+		cp[i].pbytes[1] = (uint8_t)(indices[i] & 0xFF);
+		cp[i].pbytes[0] = (uint8_t)((indices[i] >> 8) & 0xFF);
+		cp[i].idx = indices[i];
+		cp[i].psize = 2;
+		cp[i].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - i - 1);
 	}
+	cp[STRIMP_PAIRS] = (CharPair) {.psize = 2};
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
 }
@@ -292,8 +306,8 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	oid x;
 	size_t hlen;
 	PairHistogramElem *hist;
-	PairIterator pi, *pip;
-	CharPair cp, *cpp;
+	PairIterator pi;
+	CharPair cp;
 	struct canditer ci;
 	size_t values = 0;
 	bool res;
@@ -307,19 +321,12 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	}
 
 	hlen = STRIMP_HISTSIZE;
-	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
+	if ((hist = (PairHistogramElem *)GDKzalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
 		return false;
-	}
-
-	for(hidx = 0; hidx < hlen; hidx++) {
-		hist[hidx].p = NULL;
-		hist[hidx].cnt = 0;
 	}
 
 	// Create Histogram
 	bi = bat_iterator(b);
-	pip = &pi;
-	cpp = &cp;
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
 		const char *cs = BUNtvar(bi, x);
@@ -327,14 +334,17 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 			pi.s = cs;
 			pi.pos = 0;
 			pi.lim = strlen(pi.s);
-			while (pair_at(pip, cpp)) {
-				if(ignored(cpp, 1)) {
+			if (pi.lim < 2) {
+				continue;
+			}
+			while (pair_at(&pi, &cp)) {
+				if(ignored(&cp, 1)) {
 					/* Skip this AND the next pair
 					 * if the second char of the
 					 * pair is ignored.
 					 */
-					next_pair(pip);
-				} else if (ignored(cpp, 0)) {
+					next_pair(&pi);
+				} else if (ignored(&cp, 0)) {
 					/* Skip this pair if the first
 					 * char is ignored. This should
 					 * only happen at the beginnig
@@ -345,7 +355,8 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 					;
 
 				} else {
-					hidx = histogram_index(hist, hlen, cpp);
+					/* hidx = histogram_index(hist, hlen, &cp); */
+					hidx = cp.idx;
 #ifndef UTF8STRINGS
 					assert(hidx < hlen);
 #else
@@ -354,22 +365,11 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 						continue;
 					}
 #endif
-					hist[hidx].cnt++;
-					if (hist[hidx].p == NULL) {
+					if (!hist[hidx].cnt)
 						values++;
-						hist[hidx].p = (CharPair *)GDKmalloc(sizeof(CharPair));
-						if (!hist[hidx].p) {
-							bat_iterator_end(&bi);
-							for (hidx = 0; hidx < hlen; hidx++)
-								GDKfree(hist[hidx].p);
-							GDKfree(hist);
-							return false;
-						}
-						hist[hidx].p->psize = cpp->psize;
-						hist[hidx].p->pbytes = cpp->pbytes;
-					}
+					hist[hidx].cnt++;
 				}
-				next_pair(pip);
+				next_pair(&pi);
 			}
 		}
 	}
@@ -381,12 +381,6 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 		STRMPchoosePairs(hist, hlen, hpairs);
 	}
 
-	for (hidx = 0; hidx < hlen; hidx++) {
-		if (hist[hidx].p) {
-			GDKfree(hist[hidx].p);
-			hist[hidx].p = NULL;
-		}
-	}
 	GDKfree(hist);
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
@@ -433,6 +427,7 @@ BATcheckstrimps(BAT *b)
 			strconcat_len(hp->strimps.filename,
 				      sizeof(hp->strimps.filename),
 				      nme, ".tstrimps", NULL);
+			hp->strimps.parentid = b->batCacheid;
 
 			/* check whether a persisted strimp can be found */
 			if ((fd = GDKfdlocate(hp->strimps.farmid, nme, "rb+", "tstrimps")) >= 0) {
@@ -466,14 +461,34 @@ BATcheckstrimps(BAT *b)
 					hp->sizes_base = (uint8_t *)hp->strimps.base + 8; /* sizes just after the descriptor */
 					hp->pairs_base = hp->sizes_base + STRIMP_HEADER_SIZE;   /* pairs just after the offsets. */
 					hp->bitstrings_base = hp->strimps.base + hsize;   /* bitmasks just after the pairs */
+					hp->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t));
+					if (hp->masks != NULL) {
+						/* init */
+						size_t offset = 0;
+						for (size_t idx = 0; idx < STRIMP_PAIRS; idx++) {
+							strimp_masks_t mask = ((strimp_masks_t)0x1) << (STRIMP_PAIRS - idx - 1);
+							uint8_t pair_size = hp->sizes_base[idx];
+							uint8_t *pair = hp->pairs_base + offset;
 
-					close(fd);
-					ATOMIC_INIT(&hp->strimps.refs, 1);
-					hp->strimps.parentid = b->batCacheid;
-					b->tstrimps = hp;
-					hp->strimps.hasfile = true;
-					TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
-					return true;
+							size_t i = bytes2histindex(pair, pair_size);
+							STRMPset_mask(hp, i, mask);
+
+							offset += pair_size;
+
+						}
+
+						close(fd);
+						ATOMIC_INIT(&hp->strimps.refs, 1);
+						b->tstrimps = hp;
+						hp->strimps.hasfile = true;
+						TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
+						return true;
+					}
+					/* We failed to allocate the
+					 * masks field. In principle we
+					 * can try to re-create the
+					 * strimp from scratch.
+					 */
 				}
 				close(fd);
 				/* unlink unusable file */
@@ -537,7 +552,9 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if (isVIEW(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BATdescriptor(VIEWtparent(b));
+		if (pb == NULL)
+			return NULL;
 	}
 	else {
 		pb = b;
@@ -555,7 +572,10 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 	canditer_init(&ci, b, s);
 	if (ci.ncand == 0) {
 		STRMPdecref(strmps, false);
-		return BATdense(b->hseqbase, 0, 0);
+		r = BATdense(b->hseqbase, 0, 0);
+		if (pb != b)
+			BBPunfix(pb->batCacheid);
+		return r;
 	}
 	r = COLnew(b->hseqbase, TYPE_oid, ci.ncand, TRANSIENT);
 	if (r == NULL) {
@@ -565,6 +585,8 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 
 	qbmask = STRMPmakebitstring(q, strmps);
 	assert((qbmask & ((uint64_t)0x1 << (STRIMP_HEADER_SIZE - 1))) == 0);
+	TRC_DEBUG(ACCELERATOR, "strimp filtering with pattern '%s' bitmap: %#016" PRIx64 "\n",
+		  q, qbmask);
 	bitstring_array = (uint64_t *)strmps->bitstrings_base;
 	rvals = Tloc(r, 0);
 
@@ -582,13 +604,18 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 	r->tnonil = true;
 	TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " BUNFMT
 		  " items took " LLFMT " usec. Keeping " BUNFMT
-		  " items (%.2f%%).\n", ci.ncand, GDKusec()-t0, r->batCount,
+		  " items (%.2f%%).\n",
+		  ci.ncand, GDKusec()-t0, r->batCount,
 		  100*r->batCount/(double)ci.ncand);
 	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	STRMPdecref(strmps, false);
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return virtualize(r);
 
  sfilter_fail:
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return NULL;
 }
 
@@ -610,7 +637,7 @@ BATstrimpsync(BAT *b)
 					((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;
 					if (write(fd, hp->base, sizeof(uint64_t)) >= 0) {
 						failed = "";
-						if (!(GDKdebug & NOSYNCMASK)) {
+						if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
@@ -627,7 +654,7 @@ BATstrimpsync(BAT *b)
 				}
 			} else {
 				((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;
-				if (!(GDKdebug & NOSYNCMASK) &&
+				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, sizeof(uint64_t)) < 0) {
 					((uint64_t *)hp->base)[0] &= ~((uint64_t) 1 << 32);
 				} else {
@@ -675,8 +702,11 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	uint64_t descriptor;
 	size_t i;
 	uint16_t sz;
-	CharPair hpairs[STRIMP_HEADER_SIZE];
+	CharPair *hpairs = (CharPair*)GDKzalloc(sizeof(CharPair)*STRIMP_HEADER_SIZE);
 	const char *nme;
+
+	if (!hpairs)
+		return NULL;
 
 	if ((r = b->tstrimps) == NULL &&
 		STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put
@@ -701,13 +731,25 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		if ((r = GDKzalloc(sizeof(Strimps))) == NULL ||
 		    (r->strimps.farmid =
 		     BBPselectfarm(b->batRole, b->ttype, strimpheap)) < 0 ||
+		    (r->strimps.parentid = b->batCacheid) <= 0 ||
 		    strconcat_len(r->strimps.filename, sizeof(r->strimps.filename),
 				  nme, ".tstrimps",
 				  NULL) >= sizeof(r->strimps.filename) ||
 		    HEAPalloc(&r->strimps, BATcount(b) * sizeof(uint64_t) + sz,
-			      sizeof(uint8_t), 0) != GDK_SUCCEED) {
+			      sizeof(uint8_t)) != GDK_SUCCEED) {
+			GDKfree(r);
+			GDKfree(hpairs);
+			return NULL;
+		}
+
+		if ((r->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t))) == NULL) {
+			HEAPfree(&r->strimps, true);
 			GDKfree(r);
 			return NULL;
+		}
+
+		for (size_t i = 0; i < STRIMP_PAIRS; i++) {
+			r->masks[hpairs[i].idx] = hpairs[i].mask;
 		}
 
 		descriptor = STRIMP_VERSION | ((uint64_t)(STRIMP_PAIRS)) << 8 |
@@ -728,6 +770,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		r->rec_cnt = 0;
 		ATOMIC_INIT(&r->strimps.refs, 1);
 	}
+	GDKfree(hpairs);
 	return r;
 }
 
@@ -739,7 +782,7 @@ BAThasstrimps(BAT *b)
 	BAT *pb;
 	bool ret;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BATdescriptor(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
@@ -749,6 +792,8 @@ BAThasstrimps(BAT *b)
 	ret = pb->tstrimps != NULL;
 	MT_lock_unset(&pb->batIdxLock);
 
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return ret;
 
 }
@@ -762,14 +807,16 @@ BATsetstrimps(BAT *b)
 {
 	BAT *pb;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BATdescriptor(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
 	}
 
 	if (pb->batCount < STRIMP_CREATION_THRESHOLD) {
-		GDKerror("Cannot create strimps index on columns with fewer than %ud elements\n", STRIMP_CREATION_THRESHOLD);
+		GDKerror("Cannot create strimps index on columns with fewer than " BUNFMT " elements\n", STRIMP_CREATION_THRESHOLD);
+		if (pb != b)
+			BBPunfix(pb->batCacheid);
 		return GDK_FAIL;
 	}
 
@@ -780,6 +827,8 @@ BATsetstrimps(BAT *b)
 	}
 	MT_lock_unset(&pb->batIdxLock);
 
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return GDK_SUCCEED;
 }
 
@@ -789,10 +838,10 @@ BATsetstrimps(BAT *b)
  * in the BAT.
  */
 #define STRIMP_COMPLETE(b)						\
-	(b)->tstrimps != NULL &&					\
-		(b)->tstrimps != (Strimps *)1 &&			\
-		(b)->tstrimps != (Strimps *)2 &&			\
-		(((b)->tstrimps->strimps.free - ((char *)(b)->tstrimps->bitstrings_base - (b)->tstrimps->strimps.base)) == (b)->batCount*sizeof(uint64_t))
+	((b)->tstrimps != NULL &&					\
+	 (b)->tstrimps != (Strimps *)1 &&				\
+	 (b)->tstrimps != (Strimps *)2 &&				\
+	 (((b)->tstrimps->strimps.free - ((char *)(b)->tstrimps->bitstrings_base - (b)->tstrimps->strimps.base)) == (b)->batCount*sizeof(uint64_t)))
 
 
 /* Strimp creation.
@@ -831,11 +880,16 @@ STRMPcreate(BAT *b, BAT *s)
 	}
 
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BATdescriptor(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
 	}
+
+	/* First thread to take the lock will read the strimp from disk
+	 * or construct the strimp header.
+	 */
+	MT_lock_set(&pb->batIdxLock);
 
 	/* Strimp creation was requested. There are three cases:
 	 *  - The strimp is on disk (pb->tstrimps == 1)
@@ -843,10 +897,6 @@ STRMPcreate(BAT *b, BAT *s)
 	 *  - Finally the pointer might have been changed to NULL in another thread.
 	 */
 	if (pb->tstrimps == NULL || pb->tstrimps == (Strimps*)1 || pb->tstrimps == (Strimps*)2) {
-		/* First thread to take the lock will read the strimp
-		 * from disk or construct the strimp header.
-		 */
-		MT_lock_set(&pb->batIdxLock);
 		/* The strimp needs to be created. The rest of the
 		 * creation code assumes that the pointer to the strimps
 		 * is NULL. Make it so.
@@ -856,6 +906,8 @@ STRMPcreate(BAT *b, BAT *s)
 		if (pb->tstrimps == NULL || pb->tstrimps == (Strimps*)1) {
 			if (BATcheckstrimps(pb)) {
 				MT_lock_unset(&pb->batIdxLock);
+				if (pb != b)
+					BBPunfix(pb->batCacheid);
 				return GDK_SUCCEED;
 			}
 
@@ -876,14 +928,18 @@ STRMPcreate(BAT *b, BAT *s)
 				 */
 				pb->tstrimps = (Strimps *)2;
 				MT_lock_unset(&pb->batIdxLock);
+				if (pb != b)
+					BBPunfix(pb->batCacheid);
 				return GDK_FAIL;
 			}
 			pb->tstrimps = r;
 		}
-		MT_lock_unset(&pb->batIdxLock);
 	}
 
 	if (STRIMP_COMPLETE(pb)) {
+		MT_lock_unset(&pb->batIdxLock);
+		if (pb != b)
+			BBPunfix(pb->batCacheid);
 		return GDK_SUCCEED;
 	}
 
@@ -892,6 +948,10 @@ STRMPcreate(BAT *b, BAT *s)
 	MT_thread_setalgorithm("create strimp index");
 	r = pb->tstrimps;
 	STRMPincref(r);
+	if (pb != b) {
+		MT_lock_unset(&pb->batIdxLock);
+		MT_lock_set(&b->batIdxLock);
+	}
 	dh = (uint64_t *)r->bitstrings_base + b->hseqbase;
 	canditer_init(&ci, b, s);
 
@@ -906,16 +966,21 @@ STRMPcreate(BAT *b, BAT *s)
 	}
 	bat_iterator_end(&bi);
 
-	MT_lock_set(&b->batIdxLock);
+	if (pb != b) {
+		MT_lock_unset(&b->batIdxLock);
+		MT_lock_set(&pb->batIdxLock);
+	}
 	r->strimps.free += b->batCount*sizeof(uint64_t);
 	/* The thread that reaches this point last needs to write the strimp to disk. */
 	if ((r->strimps.free - ((char *)r->bitstrings_base - r->strimps.base)) == b->batCount*sizeof(uint64_t)) {
 		persistStrimp(pb);
 	}
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&pb->batIdxLock);
 	STRMPdecref(r, false);
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return GDK_SUCCEED;
 }
 
@@ -931,6 +996,7 @@ STRMPdecref(Strimps *strimps, bool remove)
 	if ((refs & HEAPREFS) == 0) {
 		ATOMIC_DESTROY(&strimps->strimps.refs);
 		HEAPfree(&strimps->strimps, (bool) (refs & HEAPREMOVE));
+		GDKfree(strimps->masks);
 		GDKfree(strimps);
 	}
 
@@ -955,6 +1021,8 @@ STRMPdestroy(BAT *b)
 				  BATDIR,
 				  BBP_physical(b->batCacheid),
 				  "tstrimps");
+		} else if (b->tstrimps == (Strimps *)2) {
+			b->tstrimps = NULL;
 		} else if (b->tstrimps != NULL) {
 			STRMPdecref(b->tstrimps, b->tstrimps->strimps.parentid == b->batCacheid);
 			b->tstrimps = NULL;
@@ -1007,7 +1075,7 @@ STRMPappendBitstring(BAT *b, const char *s)
 	}
 
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BATdescriptor(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
@@ -1015,6 +1083,8 @@ STRMPappendBitstring(BAT *b, const char *s)
 
 	if (!BATcheckstrimps(pb)) {
 		GDKerror("Strimp missing, cannot append value\n");
+		if (pb != b)
+			BBPunfix(pb->batCacheid);
 		return GDK_FAIL;
 	}
 	MT_lock_set(&pb->batIdxLock);
@@ -1027,6 +1097,8 @@ STRMPappendBitstring(BAT *b, const char *s)
 		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) != GDK_SUCCEED) {
 			MT_lock_unset(&pb->batIdxLock);
 			GDKerror("Cannot extend heap\n");
+			if (pb != b)
+				BBPunfix(pb->batCacheid);
 			return GDK_FAIL;
 		}
 		strmp->sizes_base = (uint8_t *)strmp->strimps.base + sizes_offset;
@@ -1041,6 +1113,8 @@ STRMPappendBitstring(BAT *b, const char *s)
 	MT_lock_unset(&pb->batIdxLock);
 
 	TRC_DEBUG(ACCELERATOR, "appending to strimp took " LLFMT " usec\n", GDKusec()-t0);
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return GDK_SUCCEED;
 }
 #endif

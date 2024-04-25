@@ -270,7 +270,7 @@ call dict_compress('sys', 'lineitem', 'l_discount', true)
 
 # testing l_tax now with for compression.
 # not dict call dict_compress('sys', 'lineitem', 'l_tax', true);
-# 
+#
 statement ok
 call for_compress('sys', 'lineitem', 'l_tax')
 

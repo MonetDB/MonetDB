@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef LIBGEOM_H
@@ -26,12 +30,12 @@
 #define libgeom_export extern
 #endif
 
+#define GEOS_USE_ONLY_R_API 1
 #include <geos_c.h>
-
 #ifdef HAVE_PROJ
-#define ACCEPT_USE_OF_DEPRECATED_PROJ_API_H
-#include <proj_api.h> //it is needed to transform from one srid to another
+#include <proj.h>
 #endif
+
 
 /* geos does not support 3d envelope */
 typedef struct mbr {
@@ -94,7 +98,11 @@ Type values:
 
 */
 
+libgeom_export GEOSContextHandle_t libgeom_tls(void);
+#define geoshandle (libgeom_tls())
+
 typedef enum wkb_type {
+    // TODO: deprecated	type REMOVE
 	//wkbGeometry_mbd = 0,
 	wkbPoint_mdb = 1,
 	wkbLineString_mdb = 2,
@@ -111,12 +119,12 @@ libgeom_export const char *geom_type2str(int t, int flag);
 typedef struct wkb {
 	int len;
 	int srid;
-	char data[FLEXIBLE_ARRAY_MEMBER];
+	char data[];
 } wkb;
 
 typedef struct wkba {
 	int itemsNum; //the number of wkbs
-	wkb* data[FLEXIBLE_ARRAY_MEMBER]; //the wkbs
+	wkb* data[]; //the wkbs
 } wkba;
 
 typedef struct {
@@ -126,22 +134,11 @@ typedef struct {
 	wkb wkb;
 } geom_geometry;
 
-libgeom_export void libgeom_init(void);
-libgeom_export void libgeom_exit(void);
+libgeom_export gdk_return libgeom_init(void);
 
-
-/* Macro wkb2geos
- * Returns a GEOSGeom, created from a geom_geometry.
- * On failure, returns NULL.
- */
-//#define wkb2geos( geom ) is_wkb_nil((geom))? NULL: GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
 #define mbr_nil mbrFromGeos(NULL);
 
 libgeom_export bool is_wkb_nil(const wkb *wkbp);
-libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);
-libgeom_export int getMbrGeom(mbr *res, wkb *geom);
 libgeom_export GEOSGeom wkb2geos(const wkb *geomWKB);
-
-//libgeom_export str geomerty_2_geometry(wkb *res, wkb **geom, int* columnType, int* columnSRID, int* valueSRID);
 
 #endif /* LIBGEOM_H */

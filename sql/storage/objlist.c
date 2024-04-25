@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -20,7 +24,7 @@ node_key( node *n )
 }
 
 objlist *
-ol_new(sql_allocator *sa, destroy_fptr destroy, sql_store store)
+ol_new(allocator *sa, destroy_fptr destroy, sql_store store)
 {
 	objlist *ol = SA_NEW(sa, objlist);
 	*ol = (objlist) {
@@ -56,6 +60,8 @@ ol_add(objlist *ol, sql_base *data)
 	if (ol->h->size <= sz) {
 		hash_destroy(ol->h);
 		ol->h = hash_new(ol->l->sa, 4*sz, (fkeyvalue)&node_key);
+		if (ol->h == NULL)
+			return -1;
 		for (node *n = ol->l->h; n; n = n->next) {
 			if (hash_add(ol->h, base_key(n->data), n) == NULL)
 				/* No need to clean, ie expect a full transaction rollback */

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -42,7 +46,7 @@ getTypeName(malType tpe)
 	if (isaBatType(tpe)) {
 		k = getTypeIndex(tpe);
 		if (k)
-			snprintf(buf, sizeof(buf), "bat[:any_%d]",  k);
+			snprintf(buf, sizeof(buf), "bat[:any_%d]", k);
 		else if (getBatType(tpe) == TYPE_any)
 			snprintf(buf, sizeof(buf), "bat[:any]");
 		else
@@ -55,27 +59,29 @@ getTypeName(malType tpe)
 	}
 	return GDKstrdup(ATOMname(tpe));
 }
+
 /*
  * It might be handy to encode the type information in an identifier
  * string for ease of comparison later.
  */
 str
-getTypeIdentifier(malType tpe){
-	str s,t,v;
-	s= getTypeName(tpe);
+getTypeIdentifier(malType tpe)
+{
+	str s, t, v;
+	s = getTypeName(tpe);
 	if (s == NULL)
 		return NULL;
-	for ( t=s; *t; t++)
-		if ( !isalnum((unsigned char) *t) )
-			*t='_';
+	for (t = s; *t; t++)
+		if (!isalnum((unsigned char) *t))
+			*t = '_';
 	t--;
 	if (*t == '_')
 		*t = 0;
-	for (v=s, t=s+1; *t; t++){
-		if (  !(*t == '_' && *v == '_' ) )
+	for (v = s, t = s + 1; *t; t++) {
+		if (!(*t == '_' && *v == '_'))
 			*++v = *t;
 	}
-	*++v =0;
+	*++v = 0;
 	return s;
 }
 
@@ -112,8 +118,6 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 				return TYPE_any;
 			break;
 		case 'b':
-			if (qt("bat"))
-				return TYPE_bat;
 			if (qt("bit"))
 				return TYPE_bit;
 			if (qt("bte"))
@@ -159,8 +163,7 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 			if (qt("sht"))
 				return TYPE_sht;
 			break;
-		}
-	else if (len == 4 && strncmp(nme, "void", len) == 0)
+	} else if (len == 4 && strncmp(nme, "void", len) == 0)
 		return TYPE_void;
 	else if (len == 4 && strncmp(nme, "date", len) == 0)
 		return TYPE_date;
@@ -183,10 +186,8 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 inline int
 findGDKtype(int type)
 {
-	if (type == TYPE_any || type== TYPE_void)
+	if (type == TYPE_any || type == TYPE_void)
 		return TYPE_void;
-	if (isaBatType(type))
-		return TYPE_bat;
 	return ATOMtype(type);
 }
 

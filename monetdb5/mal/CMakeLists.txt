@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 set(mal_public_headers
@@ -15,6 +19,7 @@ set(mal_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_function.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_import.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_instruction.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_builder.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_linker.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_listing.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_module.h
@@ -32,11 +37,9 @@ target_sources(mal
   mal.c
   mal_atom.c mal_atom.h
   mal_authorize.c
-  mal_builder.c mal_builder.h
+  mal_builder.c
   mal_client.c
-  mal_debugger.c mal_debugger.h
   mal_exception.c
-  mal_factory.c mal_factory.h
   mal_function.c mal_function.h
   mal_import.c
   mal_runtime.c mal_runtime.h

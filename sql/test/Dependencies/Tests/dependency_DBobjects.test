@@ -1,3 +1,5 @@
+hash-threshold 400
+
 statement ok
 CREATE TABLE t1(id int, name varchar(1024), age int, PRIMARY KEY(id))
 
@@ -66,7 +68,7 @@ statement ok
 CREATE TRIGGER trigger_test_4 AFTER INSERT ON t1
 	INSERT INTO t3 values(1)
 
-query TTT rowsort
+query TTT nosort
 SELECT s.name, u.name, 'DEP_USER' from sys.schemas as s, users u where u.default_schema = s.id order by s.name, u.name
 ----
 sys
@@ -79,9 +81,12 @@ test
 monet_test
 DEP_USER
 
-query TTT rowsort
+query TTT nosort
 SELECT a.name, s.name, 'DEP_SCHEMA' from sys.schemas as s, auths a where s.owner = a.id order by a.name, s.name
 ----
+monetdb
+information_schema
+DEP_SCHEMA
 monetdb
 json
 DEP_SCHEMA
@@ -101,7 +106,7 @@ monetdb
 tmp
 DEP_SCHEMA
 
-query TTT rowsort
+query TTT nosort
 SELECT t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1 order by t.name, v.name
 ----
 t1
@@ -111,19 +116,16 @@ v1
 v2
 DEP_VIEW
 
-query TTT rowsort
+query TTT nosort
 SELECT t.name, i.name, 'DEP_INDEX' from sys.tables as t, sys.idxs as i where i.table_id = t.id and i.name not in (select name from sys.keys) and t.type = 0 order by t.name, i.name
 ----
 t1
 id_index
 DEP_INDEX
 
-query TTT rowsort
+query TTT nosort
 (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from sys.tables as t, sys.triggers as tri where tri.table_id = t.id) UNION (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from sys.triggers tri, sys.tables t, sys.dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8) order by name, trigname
 ----
-_tables
-system_update_tables
-DEP_TRIGGER
 schemas
 system_update_schemas
 DEP_TRIGGER
@@ -140,14 +142,14 @@ t3
 trigger_test_4
 DEP_TRIGGER
 
-query TTT rowsort
+query TTT nosort
 SELECT t.name, fk.name, 'DEP_FKEY' from sys.tables as t, sys.keys as k, sys.keys as fk where fk.rkey = k.id and k.table_id = t.id order by t.name, fk.name
 ----
 t1
 t2_id_t1_fkey
 DEP_FKEY
 
-query TTT rowsort
+query TTT nosort
 SELECT t.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.tables as t, sys.dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type IN (0, 10) ORDER BY t.name, f.name
 ----
 _columns
@@ -158,6 +160,9 @@ describe_columns
 DEP_FUNC
 _tables
 describe_table
+DEP_FUNC
+_tables
+get_remote_table_expressions
 DEP_FUNC
 comments
 describe_columns
@@ -183,6 +188,9 @@ DEP_FUNC
 functions
 describe_function
 DEP_FUNC
+remote_user_info
+get_remote_table_expressions
+DEP_FUNC
 schemas
 describe_columns
 DEP_FUNC
@@ -191,6 +199,9 @@ describe_function
 DEP_FUNC
 schemas
 describe_table
+DEP_FUNC
+schemas
+get_remote_table_expressions
 DEP_FUNC
 spatial_ref_sys
 getproj4
@@ -204,11 +215,8 @@ DEP_FUNC
 table_types
 describe_table
 DEP_FUNC
-types
-describe_type
-DEP_FUNC
 
-query TTT rowsort
+query TTT nosort
 SELECT c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1 order by c.name, v.name
 ----
 age
@@ -227,7 +235,7 @@ name
 v1
 DEP_VIEW
 
-query TTT rowsort
+query TTT nosort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c, sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
 ----
 action_id
@@ -288,19 +296,324 @@ table_type_name
 table_types_table_type_name_unique
 DEP_KEY
 
-query TTT rowsort
+query TTT nosort
 SELECT c.name, i.name, 'DEP_INDEX' from sys.columns as c, sys.objects as kc, sys.idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from sys.keys) order by c.name, i.name
 ----
 id
 id_index
 DEP_INDEX
 
-query TTT rowsort
+query TTT nosort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-282 values hashing to 8d0090d6eae4b3d86a5e259f1a9eea58
+access
+describe_table
+DEP_FUNC
+age
+f2
+DEP_FUNC
+authorization
+describe_function
+DEP_FUNC
+column_id
+get_merge_table_partition_expressions
+DEP_FUNC
+commit_action
+describe_table
+DEP_FUNC
+default
+describe_columns
+DEP_FUNC
+expression
+get_merge_table_partition_expressions
+DEP_FUNC
+func
+describe_function
+DEP_FUNC
+function_type_id
+describe_function
+DEP_FUNC
+function_type_keyword
+describe_function
+DEP_FUNC
+function_type_name
+describe_function
+DEP_FUNC
+id
+describe_columns
+DEP_FUNC
+id
+describe_columns
+DEP_FUNC
+id
+describe_columns
+DEP_FUNC
+id
+describe_columns
+DEP_FUNC
+id
+describe_function
+DEP_FUNC
+id
+describe_function
+DEP_FUNC
+id
+describe_function
+DEP_FUNC
+id
+describe_table
+DEP_FUNC
+id
+describe_table
+DEP_FUNC
+id
+describe_table
+DEP_FUNC
+id
+f2
+DEP_FUNC
+id
+get_merge_table_partition_expressions
+DEP_FUNC
+id
+get_merge_table_partition_expressions
+DEP_FUNC
+id
+get_remote_table_expressions
+DEP_FUNC
+id
+get_remote_table_expressions
+DEP_FUNC
+language
+describe_function
+DEP_FUNC
+language_id
+describe_function
+DEP_FUNC
+language_keyword
+describe_function
+DEP_FUNC
+language_name
+describe_function
+DEP_FUNC
+mod
+describe_function
+DEP_FUNC
+name
+db_users
+DEP_FUNC
+name
+describe_columns
+DEP_FUNC
+name
+describe_columns
+DEP_FUNC
+name
+describe_columns
+DEP_FUNC
+name
+describe_function
+DEP_FUNC
+name
+describe_function
+DEP_FUNC
+name
+describe_table
+DEP_FUNC
+name
+describe_table
+DEP_FUNC
+name
+f2
+DEP_FUNC
+name
+get_merge_table_partition_expressions
+DEP_FUNC
+name
+get_remote_table_expressions
+DEP_FUNC
+name
+get_remote_table_expressions
+DEP_FUNC
+null
+describe_columns
+DEP_FUNC
+number
+describe_columns
+DEP_FUNC
+o
+dump_database
+DEP_FUNC
+o
+dump_database
+DEP_FUNC
+o
+dump_database
+DEP_FUNC
+owner
+describe_function
+DEP_FUNC
+password
+get_remote_table_expressions
+DEP_FUNC
+proj4text
+getproj4
+DEP_FUNC
+query
+describe_table
+DEP_FUNC
+query
+get_remote_table_expressions
+DEP_FUNC
+remark
+describe_columns
+DEP_FUNC
+remark
+describe_function
+DEP_FUNC
+remark
+describe_table
+DEP_FUNC
+s
+dump_database
+DEP_FUNC
+schema_id
+describe_columns
+DEP_FUNC
+schema_id
+describe_function
+DEP_FUNC
+schema_id
+describe_table
+DEP_FUNC
+schema_id
+get_remote_table_expressions
+DEP_FUNC
+semantics
+describe_function
+DEP_FUNC
+side_effect
+describe_function
+DEP_FUNC
+srid
+getproj4
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+stmt
+dump_database
+DEP_FUNC
+storage
+describe_columns
+DEP_FUNC
+system
+describe_function
+DEP_FUNC
+system
+describe_function
+DEP_FUNC
+system
+describe_table
+DEP_FUNC
+table_id
+describe_columns
+DEP_FUNC
+table_id
+get_merge_table_partition_expressions
+DEP_FUNC
+table_id
+get_remote_table_expressions
+DEP_FUNC
+table_type_id
+describe_table
+DEP_FUNC
+table_type_name
+describe_table
+DEP_FUNC
+type
+describe_columns
+DEP_FUNC
+type
+describe_function
+DEP_FUNC
+type
+describe_table
+DEP_FUNC
+type
+get_merge_table_partition_expressions
+DEP_FUNC
+type_digits
+describe_columns
+DEP_FUNC
+type_scale
+describe_columns
+DEP_FUNC
+username
+get_remote_table_expressions
+DEP_FUNC
+vararg
+describe_function
+DEP_FUNC
+varres
+describe_function
+DEP_FUNC
 
-query TTT rowsort
+query TTT nosort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.triggers as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
 ----
 age_v1
@@ -316,7 +629,7 @@ id_t1
 trigger_test
 DEP_TRIGGER
 
-query TTT rowsort
+query TTT nosort
 SELECT v.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type IN (1, 11) ORDER BY v.name, f.name
 ----
 columns
@@ -386,28 +699,22 @@ v1
 f2
 DEP_FUNC
 
-query TTT rowsort
+query TTT nosort
 SELECT v.name, i.name, 'DEP_INDEX' from sys.tables as v, sys.idxs as i where i.table_id = v.id and i.name not in (select name from sys.keys) and v.type = 1 order by v.name, i.name
 ----
 
-query TTT rowsort
+query TTT nosort
 SELECT v.name, tri.name, 'DEP_TRIGGER' from sys.tables as v, sys.triggers as tri, sys.dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type = 1 order by v.name, tri.name
 ----
 
-query TTT rowsort
+query TTT nosort
 SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name
 ----
 describe_type
 describe_columns
 DEP_FUNC
-dq
-get_merge_table_partition_expressions
-DEP_FUNC
-dq
-prepare_esc
-DEP_FUNC
-dq
-schema_guard
+sql_datatype
+describe_type
 DEP_FUNC
 dump_table_data
 dump_database
@@ -415,36 +722,48 @@ DEP_FUNC
 f1
 f2
 DEP_FUNC
+dq
+get_merge_table_partition_expressions
+DEP_FUNC
+decypher
+get_remote_table_expressions
+DEP_FUNC
+sq
+get_remote_table_expressions
+DEP_FUNC
+ms_trunc
+ms_round
+DEP_FUNC
+dq
+prepare_esc
+DEP_FUNC
+regexp_replace
+regexp_replace
+DEP_FUNC
+dq
+schema_guard
+DEP_FUNC
+st_numgeometries
+st_numpatches
+DEP_FUNC
+st_geometryn
+st_patchn
+DEP_FUNC
 getproj4
 st_transform
 DEP_FUNC
 internaltransform
 st_transform
 DEP_FUNC
-ms_trunc
-ms_round
-DEP_FUNC
-remote_table_credentials
-get_remote_table_expressions
-DEP_FUNC
-sq
-get_remote_table_expressions
-DEP_FUNC
-st_geometryn
-st_patchn
-DEP_FUNC
-st_numgeometries
-st_numpatches
-DEP_FUNC
 st_srid
 st_transform
 DEP_FUNC
 
-query TTT rowsort
+query TTT nosort
 SELECT f.name, tri.name, 'DEP_TRIGGER' from sys.functions as f, sys.triggers as tri, sys.dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by f.name, tri.name
 ----
 
-query TTT rowsort
+query TTT nosort
 SELECT k.name, fk.name, 'DEP_FKEY' from sys.keys as k, sys.keys as fk where fk.rkey = k.id order by k.name, fk.name
 ----
 t1_id_pkey

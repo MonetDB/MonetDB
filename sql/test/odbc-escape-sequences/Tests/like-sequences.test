@@ -1,0 +1,5 @@
+query I rowsort
+SELECT 'ma%a' LIKE 'm%a%%a' {ESCAPE '%'} as "true"
+----
+1
+

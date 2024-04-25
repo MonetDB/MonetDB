@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -48,9 +52,10 @@ const char *VALID_EXTENSIONS[] = {
 
 static char*
 snapshot_database_stream_helper(
-	void *priv, const char *filename,
+	void *priv, const char *filename, bool binary,
 	 const void *data, size_t size)
 {
+	(void)binary; // old servers request ascii because the protocol didn't support binary yet
 	if (size == 0)
 		return NULL;
 
@@ -115,7 +120,7 @@ snapshot_database_stream(char *dbname, stream *s)
 		goto bailout;
 	}
 
-	mapi_setfilecallback(conn, NULL, snapshot_database_stream_helper, &ss);
+	mapi_setfilecallback2(conn, NULL, snapshot_database_stream_helper, &ss);
 
 	handle = mapi_prepare(conn, "CALL sys.hot_snapshot('/root/dummy', 0)");
 	if (handle == NULL || mapi_error(conn)) {
@@ -743,9 +748,7 @@ read_tar_block(stream *s, char *block, err *error)
 	if (nread <= 0) {
 		if (mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			/* failure */
-			char *err = mnstr_error(s);
-			*error = newErr("Read error (%zd): %s", nread, err);
-			free(err);
+			*error = newErr("Read error (%zd): %s", nread, mnstr_peek_error(s));
 		} else {
 			*error = NULL;
 		}

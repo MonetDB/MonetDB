@@ -1,15 +1,44 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
 #include "mapi_prompt.h"
+
+static ssize_t
+byte_counting_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
+{
+	uint64_t *counter = (uint64_t*) s->stream_data.p;
+	ssize_t nwritten = s->inner->write(s->inner, buf, elmsize, cnt);
+	if (nwritten >= 0) {
+		*counter += elmsize * nwritten;
+	}
+	return nwritten;
+}
+
+
+stream *
+byte_counting_stream(stream *wrapped, uint64_t *counter)
+{
+	stream *s = create_wrapper_stream(NULL, wrapped);
+	if (!s)
+		return NULL;
+	s->stream_data.p = counter;
+	s->write = &byte_counting_write;
+	s->destroy = &destroy_stream;
+	return s;
+}
+
 
 
 static void
@@ -24,15 +53,15 @@ discard(stream *s)
 	}
 }
 
-struct mapi_recv_upload {
+struct mapi_filetransfer {
 	stream *from_client; // set to NULL after sending MAPI_PROMPT3
 	stream *to_client; // set to NULL when client sends empty
 };
 
 static ssize_t
-recv_upload_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+upload_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
-	struct mapi_recv_upload *state = s->stream_data.p;
+	struct mapi_filetransfer *state = s->stream_data.p;
 
 	if (state->from_client == NULL) {
 		assert(s->eof);
@@ -69,9 +98,9 @@ recv_upload_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t 
 }
 
 static void
-recv_upload_close(stream *s)
+upload_close(stream *s)
 {
-	struct mapi_recv_upload *state = s->stream_data.p;
+	struct mapi_filetransfer *state = s->stream_data.p;
 
 	stream *from = state->from_client;
 	if (from)
@@ -79,25 +108,49 @@ recv_upload_close(stream *s)
 
 	stream *to = state->to_client;
 	mnstr_write(to, PROMPT3, strlen(PROMPT3), 1);
-	mnstr_flush(to, MNSTR_FLUSH_ALL);
+	mnstr_flush(to, MNSTR_FLUSH_DATA);
+}
+
+static ssize_t
+download_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
+{
+	struct mapi_filetransfer *state = s->stream_data.p;
+	stream *to = state->to_client;
+	return to->write(to, buf, elmsize, cnt);
 }
 
 static void
-recv_upload_destroy(stream *s)
+download_close(stream *s)
 {
-	struct mapi_recv_upload *state = s->stream_data.p;
+	struct mapi_filetransfer *state = s->stream_data.p;
+
+	stream *to = state->to_client;
+	stream *from = state->from_client;
+	if (to)
+		mnstr_flush(to, MNSTR_FLUSH_DATA);
+	if (from)
+		discard(from);
+}
+
+static void
+destroy(stream *s)
+{
+	struct mapi_filetransfer *state = s->stream_data.p;
 	free(state);
 	destroy_stream(s);
 }
 
 
-stream*
-mapi_request_upload(const char *filename, bool binary, bstream *bs, stream *ws)
+static stream*
+setup_transfer(const char *req, const char *filename, bstream *bs, stream *ws)
 {
 	const char *msg = NULL;
 	stream *s = NULL;
-	struct mapi_recv_upload *state = NULL;
+	struct mapi_filetransfer *state = NULL;
 	ssize_t nwritten;
+	ssize_t nread;
+	bool ok;
+	int oob = 0;
 
 	while (!bs->eof)
 		bstream_next(bs);
@@ -105,10 +158,7 @@ mapi_request_upload(const char *filename, bool binary, bstream *bs, stream *ws)
 	assert(isa_block_stream(ws));
 	assert(isa_block_stream(rs));
 
-	if (binary)
-		nwritten = mnstr_printf(ws, "%srb %s\n", PROMPT3, filename);
-	else
-		nwritten = mnstr_printf(ws, "%sr 0 %s\n", PROMPT3, filename);
+	nwritten = mnstr_printf(ws, PROMPT3 "%s %s\n", req, filename);
 	if (nwritten <= 0) {
 		msg = mnstr_peek_error(ws);
 		goto end;
@@ -119,8 +169,20 @@ mapi_request_upload(const char *filename, bool binary, bstream *bs, stream *ws)
 	}
 
 	char buf[256];
-	if (mnstr_readline(rs, buf, sizeof(buf)) != 1 || buf[0] != '\n') {
-		msg = buf;
+	nread = mnstr_readline(rs, buf, sizeof(buf));
+	ok = ((nread == 0 || (nread == 1 && buf[0] == '\n')) && !(oob = mnstr_getoob(rs)));
+	if (!ok) {
+		switch (oob) {
+		case 1:					/* client side interrupt */
+			msg = "Query aborted";
+			break;
+		case 2:
+			msg = "Read error on client";
+			break;
+		default:
+			msg = nread > 0 ? buf : "Unknown error";
+			break;
+		}
 		discard(rs);
 		goto end;
 	}
@@ -133,16 +195,13 @@ mapi_request_upload(const char *filename, bool binary, bstream *bs, stream *ws)
 	}
 	s = create_stream("ONCLIENT");
 	if (!s) {
+		free(state);			/* no chance to free through destroy function */
 		msg = mnstr_peek_error(NULL);
 		goto end;
 	}
 	state->from_client = rs;
 	state->to_client = ws;
 	s->stream_data.p = state;
-	s->binary= binary;
-	s->read = recv_upload_read;
-	s->close = recv_upload_close;
-	s->destroy = recv_upload_destroy;
 end:
 	if (msg) {
 		mnstr_destroy(s);
@@ -151,4 +210,37 @@ end:
 	} else {
 		return s;
 	}
+}
+
+stream*
+mapi_request_upload(const char *filename, bool binary, bstream *bs, stream *ws)
+{
+	const char *req = binary ? "rb" : "r 0";
+	stream *s = setup_transfer(req, filename, bs, ws);
+	if (s == NULL)
+		return NULL;
+
+	s->binary = binary;
+	s->read = upload_read;
+	s->close = upload_close;
+	s->destroy = destroy;
+
+	return s;
+}
+
+stream*
+mapi_request_download(const char *filename, bool binary, bstream *bs, stream *ws)
+{
+	const char *req = binary ? "wb" : "w";
+	stream *s = setup_transfer(req, filename, bs, ws);
+	if (s == NULL)
+		return NULL;
+
+	s->binary = binary;
+	s->readonly = false;
+	s->write = download_write;
+	s->close = download_close;
+	s->destroy = destroy;
+
+	return s;
 }

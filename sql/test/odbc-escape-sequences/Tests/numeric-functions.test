@@ -1,0 +1,95 @@
+query I rowsort
+select { fn abs(-3) }
+----
+3
+
+query R rowsort
+select { fn acos(0.5) }
+----
+1.047
+
+query R rowsort
+select { fn asin(0.5) }
+----
+0.524
+
+query R rowsort
+select { fn atan(0.5) }
+----
+0.464
+
+query R nosort
+select { fn atan2(1,2) }
+----
+0.464
+
+query R nosort
+select { fn ceiling(0.55) }
+----
+1.000
+
+query R nosort
+select { fn cos(0) }
+----
+1.000
+
+query R nosort
+select { fn cot(0.5) }
+----
+1.830
+
+query R nosort
+select { fn degrees(3.14159265359*1) }
+----
+180.000
+
+query R nosort
+select { fn exp(1) }
+----
+2.718
+
+query R nosort
+select { fn floor(1.45) }
+----
+1.000
+
+query R nosort
+select { fn log(2.718) }
+----
+1.000
+
+query R nosort
+select { fn log10(10) }
+----
+1.000
+
+query I nosort
+select { fn mod(3, 2) }
+----
+1
+
+query R nosort
+select { fn pi() }
+----
+3.142
+
+query R nosort
+select { fn power(2, 2) }
+----
+4.000
+
+query R nosort
+select { fn radians(180/(select pi())) }
+----
+1.000
+
+query R nosort
+select { fn round((select pi()), 3) }
+----
+3.142
+
+query R nosort
+select { fn truncate((select pi()), 3) }
+----
+3.141
+

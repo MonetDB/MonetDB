@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -61,7 +65,7 @@ monet_version(void)
 	printf("This is an unreleased version\n");
 #endif
 	printf("Copyright (c) 1993 - July 2008 CWI\n"
-	       "Copyright (c) August 2008 - 2022 MonetDB B.V., all rights reserved\n");
+	       "Copyright (c) August 2008 - 2023 MonetDB B.V., all rights reserved\n");
 	printf("Visit https://www.monetdb.org/ for further information\n");
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
 			sz_mem_gb, cores, cores != 1 ? "s" : "");
@@ -91,4 +95,5 @@ monet_version(void)
 	printf("Compiled by: %s (%s)\n", "@builtby@", HOST);
 	printf("Compilation: %s\n", "@compilercall@");
 	printf("Linking    : %s\n", "@linkercall@");
+	fflush(stdout);
 }

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -102,7 +106,7 @@
 		if (ci.tpe == cand_dense) {				\
 			if (grps) {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, groups"); \
-				TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next_dense(&ci) - hseqb; \
 					INIT_1;				\
 					if (ngrp == 0 || grps[r] != prev || DIFFER) { \
@@ -115,11 +119,11 @@
 					KEEP;				\
 					prev = grps[r];			\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			} else {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, !groups"); \
-				TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next_dense(&ci) - hseqb; \
 					INIT_1;				\
 					if (ngrp == 0 || DIFFER) {	\
@@ -131,13 +135,13 @@
 					}				\
 					KEEP;				\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			}						\
 		} else {						\
 			if (grps) {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, groups"); \
-				TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next(&ci) - hseqb;	\
 					INIT_1;				\
 					if (ngrp == 0 || grps[r] != prev || DIFFER) { \
@@ -150,11 +154,11 @@
 					KEEP;				\
 					prev = grps[r];			\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			} else {					\
 				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, !groups"); \
-				TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) { \
+				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next(&ci) - hseqb;	\
 					INIT_1;				\
 					if (ngrp == 0 || DIFFER) {	\
@@ -166,8 +170,8 @@
 					}				\
 					KEEP;				\
 				}					\
-				TIMEOUT_CHECK(timeoffset,		\
-					      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+				TIMEOUT_CHECK(qry_ctx,			\
+					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			}						\
 		}							\
 	} while(0)
@@ -205,7 +209,7 @@
 		j = 0;							\
 		if (ci.tpe == cand_dense) {				\
 			MT_thread_setalgorithm("GRP_subscan_old_groups, dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
 				if (ngrp != 0 && EQUAL) {		\
@@ -243,11 +247,11 @@
 				/* start a new group */			\
 				GRPnotfound();				\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
 			MT_thread_setalgorithm("GRP_subscan_old_groups, !dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\
 				if (ngrp != 0 && EQUAL) {		\
@@ -285,8 +289,8 @@
 				/* start a new group */			\
 				GRPnotfound();				\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		}							\
 	} while(0)
 
@@ -306,7 +310,7 @@
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
-		    	TYPE pw = 0			,	\
+			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
 	/* EQUAL  */	TYPE##_equ(w[p], pw)		,	\
 	/* KEEP   */	pw = w[p]				\
@@ -341,7 +345,7 @@
 		assert(grps == NULL);					\
 		if (ci.tpe == cand_dense) {				\
 			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, dense, parent hash" : "GRP_use_existing_hash_table, dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next_dense(&ci);	\
 				p = o - hseqb + lo;			\
 				INIT_1;					\
@@ -373,11 +377,11 @@
 					GRPnotfound();			\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
 			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, !dense, parent hash" : "GRP_use_existing_hash_table, !dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next(&ci);		\
 				p = o - hseqb + lo;			\
 				INIT_1;					\
@@ -409,8 +413,8 @@
 					GRPnotfound();			\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		}							\
 	} while(0)
 
@@ -493,7 +497,7 @@ ctz(oid x)
 	do {								\
 		if (ci.tpe == cand_dense) {				\
 			MT_thread_setalgorithm("GRP_create_partial_hash_table, dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
 				prb = HASH;				\
@@ -523,11 +527,11 @@ ctz(oid x)
 					HASHput(hs, prb, p);		\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
 			MT_thread_setalgorithm("GRP_create_partial_hash_table, !dense"); \
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\
 				prb = HASH;				\
@@ -557,8 +561,8 @@ ctz(oid x)
 					HASHput(hs, prb, p);		\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(error)); \
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		}							\
 	} while (0)
 #define GCGRPTST(i, j)	if (grps[i] != grps[j]) { hb = BUN_NONE; break; }
@@ -605,7 +609,7 @@ ctz(oid x)
 		ngrp = 0;						\
 		gn->tsorted = true;					\
 		if (ci.tpe == cand_dense) {				\
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next_dense(&ci);	\
 				p = o - hseqb;				\
 				uint##BG##_t x = GV;			\
@@ -622,7 +626,7 @@ ctz(oid x)
 					cnts[v]++;			\
 			}						\
 		} else {						\
-			TIMEOUT_LOOP_IDX(r, ci.ncand, timeoffset) {	\
+			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next(&ci);		\
 				p = o - hseqb;				\
 				uint##BG##_t x = GV;			\
@@ -639,8 +643,8 @@ ctz(oid x)
 					cnts[v]++;			\
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(error));	\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 	} while (0)
 
 gdk_return
@@ -669,11 +673,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	const char *algomsg = "";
 	bool locked = false;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if (b == NULL) {
@@ -847,12 +847,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps = b->thash->nunique;
 	MT_rwlock_rdunlock(&b->thashlock);
 	if (maxgrps == BUN_NONE) {
-		MT_lock_set(&b->theaplock);
-		if (bi.unique_est != 0)
+		if (bi.unique_est != 0) {
 			maxgrps = (BUN) bi.unique_est;
-		else
+			if (maxgrps > ci.ncand)
+				maxgrps = ci.ncand;
+		} else
 			maxgrps = ci.ncand / 10;
-		MT_lock_unset(&b->theaplock);
 	}
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
@@ -1039,7 +1039,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		     BAThash(b) == GDK_SUCCEED) ||
 		    (/* DISABLES CODE */ (0) &&
 		     (parent = VIEWtparent(b)) != 0 &&
-		     BATcheckhash(BBP_cache(parent))))) {
+/* if enabled, need to fix/unfix parent bat */
+		     BATcheckhash(BBP_desc(parent))))) {
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table;
@@ -1056,7 +1057,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, lo+BATcount(b))
 			 * in the parent that b uses */
-			BAT *b2 = BBP_cache(parent);
+/* if enabled, need to fix/unfix parent bat */
+			BAT *b2 = BBP_desc(parent);
 			MT_rwlock_rdunlock(&b->thashlock);
 			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
@@ -1171,8 +1173,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GDKerror("cannot allocate hash table\n");
 			goto error;
 		}
-		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
-		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
+		hs->heapbckt.parentid = b->batCacheid;
+		hs->heaplink.parentid = b->batCacheid;
+		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
+		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heapbckt.filename) ||
 		    HASHnew(hs, bi.type, BATcount(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
@@ -1322,12 +1326,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (locked)
 		MT_rwlock_rdunlock(&b->thashlock);
-	if (gn)
-		BBPunfix(gn->batCacheid);
-	if (en)
-		BBPunfix(en->batCacheid);
-	if (hn)
-		BBPunfix(hn->batCacheid);
+	BBPreclaim(gn);
+	BBPreclaim(en);
+	BBPreclaim(hn);
 	return GDK_FAIL;
 }
 

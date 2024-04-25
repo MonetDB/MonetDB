@@ -9,21 +9,31 @@ CREATE FUNCTION mapped_query() returns table (i integer) LANGUAGE PYTHON_MAP
     return(1)
 }
 
-statement error
+query I rowsort
 SELECT * FROM mapped_query()
+----
+1
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+query I rowsort
 SELECT * FROM pyapi19_integers
+----
+0
+1
+2
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 CREATE FUNCTION mapped_result_query() returns table (i integer) LANGUAGE PYTHON_MAP
 {
     res = _conn.execute('SELECT * FROM pyapi19_integers;')
     return res['i']
 }
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+query I rowsort
 SELECT * FROM mapped_result_query()
+----
+0
+1
+2
 
 statement ok
 ROLLBACK
@@ -47,8 +57,10 @@ CREATE FUNCTION pyapi19_load_table() returns table (i integer) LANGUAGE PYTHON_M
 statement ok
 CREATE TABLE pyapi19_integers AS SELECT * FROM pyapi19_create_table() WITH DATA
 
-statement error
+query I rowsort
 SELECT COUNT(i) FROM pyapi19_load_table()
+----
+100000
 
 statement ok
 ROLLBACK
@@ -69,8 +81,12 @@ CREATE FUNCTION mapped_result_query() returns table (i STRING) LANGUAGE PYTHON_M
     return res['s']
 }
 
-statement error
+query T rowsort
 SELECT * FROM mapped_result_query()
+----
+33
+hello
+hello world
 
 statement ok
 ROLLBACK
@@ -91,8 +107,12 @@ CREATE FUNCTION mapped_result_query() returns table (d DATE) LANGUAGE PYTHON_MAP
     return res
 }
 
-statement error
+query T rowsort
 SELECT * FROM mapped_result_query()
+----
+2000-03-24
+2014-10-03
+2033-11-22
 
 statement ok
 ROLLBACK
@@ -125,8 +145,10 @@ CREATE FUNCTION pyapi19_load_table() returns table (i integer, j integer, k doub
 statement ok
 CREATE TABLE pyapi19_integers AS SELECT * FROM pyapi19_create_table() WITH DATA
 
-statement error
-SELECT * FROM pyapi19_load_table() LIMIT 100
+query I rowsort
+SELECT count(*) FROM pyapi19_load_table() LIMIT 100
+----
+100000
 
 statement ok
 ROLLBACK

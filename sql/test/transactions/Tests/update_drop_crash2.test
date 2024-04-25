@@ -1,0 +1,29 @@
+statement ok
+create table t1 (i int)
+
+statement ok
+insert into t1 values (1), (2), (3), (9)
+
+@connection(id=drop)
+statement ok
+start transaction
+
+@connection(id=update)
+statement ok
+start transaction
+
+@connection(id=update)
+statement ok
+update t1 set i=10 where i=2
+
+@connection(id=drop)
+statement ok
+drop table t1
+
+@connection(id=drop)
+statement ok
+commit
+
+@connection(id=update)
+statement ok
+commit

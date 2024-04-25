@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -24,19 +28,19 @@ bstream_create(stream *s, size_t size)
 		return NULL;
 	if ((b = malloc(sizeof(*b))) == NULL)
 		return NULL;
+	if (size == 0)
+		size = BUFSIZ;
 	*b = (bstream) {
 		.mode = size,
 		.s = s,
 		.eof = false,
+		.size = size,
+		.buf = malloc(size + 1 + 1),
 	};
-	if (size == 0)
-		size = BUFSIZ;
-	b->buf = malloc(size + 1 + 1);
 	if (b->buf == NULL) {
 		free(b);
 		return NULL;
 	}
-	b->size = size;
 	return b;
 }
 
@@ -196,3 +200,10 @@ bstream_destroy(bstream *s)
 	}
 }
 
+int
+bstream_getoob(bstream *s)
+{
+	if (s && s->s)
+		return mnstr_getoob(s->s);
+	return 0;
+}

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _SQL_PRIV_H_
@@ -40,10 +44,9 @@ extern char *sql_revoke_role(mvc *m, str grantee, str auth, sqlid grantor, int a
 extern int sql_create_privileges(mvc *m, sql_schema *s, const char *initpasswd);
 extern int sql_schema_has_user(mvc *m, sql_schema *s);
 
-extern char * sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role);
+extern char * sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role);
 extern char * sql_drop_user(mvc *sql, char *user);
-extern char * sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd, char *role);
+extern char * sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers);
 extern char * sql_rename_user(mvc *sql, char *olduser, char *newuser);
-extern void sql_set_user_api_hooks(mvc *m);
 
 #endif /*_SQL_PRIV_H_ */

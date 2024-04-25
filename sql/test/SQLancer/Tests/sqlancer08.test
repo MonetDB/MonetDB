@@ -414,7 +414,7 @@ COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 805478917
 94
 
-statement error 42000!Digits out of bounds
+statement ok
 select round(t2.tc0, 88) from t2
 
 statement ok

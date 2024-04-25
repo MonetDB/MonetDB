@@ -1,0 +1,97 @@
+-- select * through individual user perms
+
+statement ok
+create user kate with password '123kate' name 'Kate' schema sys
+
+@connection(id=tc, username=kate, password=123kate)
+statement error 42000!SELECT: access denied for kate to table 'sys.allparts'
+select * from allparts
+
+statement ok
+grant select on allparts to kate
+
+@connection(id=tc, username=kate, password=123kate)
+query IT rowsort
+select * from allparts
+----
+1
+alice
+2
+bob
+
+-- select (cols) through individual user perms
+
+@connection(id=tc, username=kate, password=123kate)
+statement error 42000!SELECT: access denied for kate to table 'sys.allparts_2'
+select n from allparts_2
+
+statement ok
+grant select (n) on allparts_2 to kate
+
+@connection(id=tc, username=kate, password=123kate)
+query I rowsort
+select * from allparts_2
+----
+1
+2
+
+@connection(id=tc, username=kate, password=123kate)
+query I rowsort
+select n from allparts_2
+----
+1
+2
+
+@connection(id=tc, username=kate, password=123kate)
+statement error SELECT: identifier 'm' unknown
+select m from allparts_2
+
+-- select * through role
+
+statement ok
+create role reader
+
+statement ok
+grant select on allparts to reader
+
+statement ok
+create user tom with password '123tom' name 'Tom' schema sys
+
+statement ok
+alter user tom default role reader
+
+@connection(id=tc2, username=tom, password=123tom)
+query IT rowsort
+select * from allparts
+----
+1
+alice
+2
+bob
+
+-- select (cols) through role
+
+statement ok
+grant select (n) on allparts_2 to reader
+
+statement ok
+alter user tom default role reader
+
+@connection(id=tc2, username=tom, password=123tom)
+query I rowsort
+select * from allparts_2
+----
+1
+2
+
+@connection(id=tc2, username=tom, password=123tom)
+query I rowsort
+select n from allparts_2
+----
+1
+2
+
+@connection(id=tc2, username=tom, password=123tom)
+statement error SELECT: identifier 'm' unknown
+select m from allparts_2
+

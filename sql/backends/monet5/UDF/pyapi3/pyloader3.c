@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -14,7 +18,6 @@
 
 #include "unicode.h"
 #include "pytypes.h"
-#include "gdk_interprocess.h"
 #include "type_conversion.h"
 #include "formatinput.h"
 
@@ -183,8 +186,15 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			assert(n);
 			cols[i].def = n->data;
 			n = n->next;
-			cols[i].b =
-				COLnew(0, tpe->type->localtype, 0, TRANSIENT);
+			cols[i].b = COLnew(0, tpe->type->localtype, 0, TRANSIENT);
+			if (cols[i].b == NULL || cols[i].name == NULL) {
+				do {
+					BBPreclaim(cols[i].b);
+					GDKfree(cols[i].name);
+				} while (i-- > 0);
+				msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
+				goto wrapup;
+			}
 			n2 = n2->next;
 			cols[i].b->tnil = false;
 			cols[i].b->tnonil = false;
@@ -198,7 +208,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		create_table = true;
 	}
 
-	pConnection = Py_Connection_Create(cntxt, 0, 0, 0);
+	pConnection = Py_Connection_Create(cntxt, 0, 0);
 	pEmit = PyEmit_Create(cols, ncols);
 	if (!pConnection || !pEmit) {
 		msg = createException(MAL, "pyapi3.eval_loader",
@@ -232,7 +242,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		// Now we will add the UDF to the main module
 		d = PyModule_GetDict(pModule);
 		if (code_object == NULL) {
-			v = PyRun_StringFlags(pycall, Py_file_input, d, d, NULL);
+			v = PyRun_StringFlags(pycall, Py_file_input, d, NULL, NULL);
 			if (v == NULL) {
 				msg = PyError_CreateException("Could not parse Python code",
 											  pycall);
@@ -309,9 +319,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 wrapup:
 	if (cols) {
 		for (i = 0; i < ncols; i++) {
-			if (cols[i].b) {
-				BBPunfix(cols[i].b->batCacheid);
-			}
+			BBPreclaim(cols[i].b);
 			if (cols[i].name) {
 				GDKfree(cols[i].name);
 			}

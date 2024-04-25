@@ -93,15 +93,15 @@ statement ok
 DROP TABLE z
 
 -- these functions return xml so they depend on it and were removed by the drop cascade statement
-statement error 42000!DROP FUNCTION: no such function 'parse' (clob, clob, clob)
+statement error 42000!DROP FUNCTION: no such function 'parse' (varchar, varchar, varchar)
 DROP FUNCTION parse (STRING, STRING, STRING)
 
-statement error 42000!DROP FUNCTION: no such function 'pi' (clob, clob)
+statement error 42000!DROP FUNCTION: no such function 'pi' (varchar, varchar)
 DROP FUNCTION pi (STRING, STRING)
 
-statement error 42000!DROP FUNCTION: no such function 'attribute' (clob, clob)
+statement error 42000!DROP FUNCTION: no such function 'attribute' (varchar, varchar)
 DROP FUNCTION attribute (STRING, STRING)
 
-statement error 42000!DROP FUNCTION: no such function 'isdocument' (clob)
+statement error 42000!DROP FUNCTION: no such function 'isdocument' (varchar)
 DROP FUNCTION isdocument (STRING)
 

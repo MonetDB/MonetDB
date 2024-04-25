@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* Generic stream handling code such as init and close */
@@ -29,7 +33,7 @@ static ssize_t
 ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
-	ICONV_CONST char *inbuf;
+	char *inbuf;
 	size_t inbytesleft = elmsize * cnt;
 	char *bf = NULL;
 
@@ -53,7 +57,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 		inbytesleft += ic->buflen;
 		ic->buflen = 0;
 	}
-	inbuf = (ICONV_CONST char *) buf;
+	inbuf = (char *) buf;
 	while (inbytesleft > 0) {
 		char *outbuf = ic->buffer;
 		size_t outbytesleft = sizeof(ic->buffer);
@@ -90,8 +94,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 				/* not enough space in output buffer */
 				break;
 			default:
-				/* cannot happen (according to manual) */
-				mnstr_set_error(s, MNSTR_WRITE_ERROR, "iconv internal error %d", errno);
+				mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "iconv reported an error");
 				goto bailout;
 			}
 		}
@@ -115,7 +118,7 @@ static ssize_t
 ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
-	ICONV_CONST char *inbuf;
+	char *inbuf;
 	size_t inbytesleft;
 	char *outbuf;
 	size_t outbytesleft;
@@ -153,7 +156,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			}
 			if (iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft) == (size_t) -1) {
 				/* some error occurred */
-				mnstr_set_error(s, MNSTR_READ_ERROR, "unspecified iconv error occurred");
+				mnstr_set_error_errno(s, MNSTR_READ_ERROR, "iconv reported an error");
 				return -1;
 			}
 			goto exit_func;	/* double break */
@@ -176,8 +179,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				 * the buffer */
 				goto exit_func;
 			default:
-				/* cannot happen (according to manual) */
-				mnstr_set_error(s, MNSTR_READ_ERROR, "inconv stream: internal error");
+				mnstr_set_error_errno(s, MNSTR_READ_ERROR, "iconv reported an error");
 				return -1;
 			}
 		}

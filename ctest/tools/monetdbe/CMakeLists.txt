@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 add_executable(example1 example1.c)
@@ -80,12 +84,6 @@ target_link_libraries(example_connections
     monetdbe)
 add_test(run_example_connections example_connections)
 
-add_executable(example_proxy example_proxy.c)
-target_link_libraries(example_proxy
-  PRIVATE
-    monetdb_config_header
-    monetdbe)
-
 if(WITH_CMOCKA)
   add_executable(cmocka_test cmocka_test.c test_helper.c)
   target_include_directories(cmocka_test PRIVATE "${CMOCKA_INCLUDE_DIR}")
@@ -99,6 +97,12 @@ if(WITH_CMOCKA)
 endif()
 
 if (TESTING)
+  add_executable(example_proxy example_proxy.c)
+  target_link_libraries(example_proxy
+    PRIVATE
+    monetdb_config_header
+    monetdbe)
+
   install(TARGETS
     example_proxy
     DESTINATION ${CMAKE_INSTALL_BINDIR}

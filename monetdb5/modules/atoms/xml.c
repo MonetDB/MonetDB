@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -112,7 +116,7 @@ XMLunquotestring(const char **p, char q, char *buf)
 			} else if (*s == '#') {
 				char *e;
 				int base;
-				unsigned long n; /* type unsigned long returned by strtoul() */
+				unsigned long n;	/* type unsigned long returned by strtoul() */
 
 				s++;
 				if (*s == 'x' || *s == 'X') {
@@ -219,7 +223,8 @@ XMLxmltext(str *s, xml *x)
 		xmlFreeDoc(doc);
 	} else if (**x == 'C') {
 		doc = xmlParseMemory("<doc/>", 6);
-		xmlParseInNodeContext(xmlDocGetRootElement(doc), *x + 1, (int) strlen(*x + 1), 0, &elem);
+		xmlParseInNodeContext(xmlDocGetRootElement(doc), *x + 1,
+							  (int) strlen(*x + 1), 0, &elem);
 		content = (str) xmlNodeGetContent(elem);
 		xmlFreeNodeList(elem);
 		xmlFreeDoc(doc);
@@ -305,8 +310,9 @@ XMLcontent(xml *x, str *val)
 	}
 	/* call the libxml2 library to perform the test */
 	doc = xmlParseMemory("<doc/>", 6);
-	err = xmlParseInNodeContext(xmlDocGetRootElement(doc), *val, (int) strlen(*val), 0, &elem);
-	if (err != XML_ERR_OK) {
+	err = xmlParseInNodeContext(xmlDocGetRootElement(doc), *val,
+								(int) strlen(*val), 0, &elem);
+	if (err !=XML_ERR_OK) {
 		xmlFreeDoc(doc);
 		throw(MAL, "xml.content", "Content parse error");
 	}
@@ -388,7 +394,8 @@ XMLpi(xml *ret, str *target, str *value)
 			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	if (xmlValidateName((xmlChar *) *target, 0) != 0 || strcasecmp(*target, "xml") == 0)
+	if (xmlValidateName((xmlChar *) *target, 0) != 0
+		|| strcasecmp(*target, "xml") == 0)
 		throw(MAL, "xml.attribute", "invalid processing instruction target");
 	len = strlen(*target) + 6;
 	if (strNil(*value) || **value == 0) {
@@ -508,7 +515,7 @@ XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
 	   "C" + "<" + name + (nspace ? " " + nspace : "") + (attr ? " " + attr : "") + (val ? ">" + val + "</" + name + ">" : "/>")
 	 */
 	namelen = strlen(*name);
-	len = namelen + 5;	/* "C", "<", "/", ">", terminating NUL */
+	len = namelen + 5;			/* "C", "<", "/", ">", terminating NUL */
 	if (nspace && !strNil(*nspace)) {
 		if (**nspace != 'A')
 			throw(MAL, "xml.element", "illegal namespace");
@@ -570,13 +577,14 @@ XMLconcat(xml *ret, xml *left, xml *right)
 			throw(MAL, "xml.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(buf, len, "A%s %s", *left + 1, *right + 1);
 	} else if (**left == 'C') {
-		len = strlen(*left) + strlen(*right) +2;
+		len = strlen(*left) + strlen(*right) + 2;
 		buf = GDKmalloc(len);
 		if (buf == NULL)
 			throw(MAL, "xml.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(buf, len, "C%s%s", *left + 1, *right + 1);
 	} else
-		throw(MAL, "xml.concat", "can only concatenate attributes and element content");
+		throw(MAL, "xml.concat",
+			  "can only concatenate attributes and element content");
 	if (buf == NULL)
 		throw(MAL, "xml.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = buf;
@@ -635,7 +643,7 @@ XMLprelude(void)
 str
 XMLepilogue(void *ret)
 {
-	(void)ret;
+	(void) ret;
 	xmlCleanupParser();
 	return MAL_SUCCEED;
 }
@@ -644,7 +652,7 @@ static ssize_t
 XMLfromString(const char *src, size_t *len, void **X, bool external)
 {
 	xml *x = (xml *) X;
-	if (*x){
+	if (*x) {
 		GDKfree(*x);
 		*x = NULL;
 	}
@@ -660,7 +668,7 @@ XMLfromString(const char *src, size_t *len, void **X, bool external)
 		return 1;
 	} else {
 		char *err = XMLstr2xml(x, &src);
-		if (err != MAL_SUCCEED) {
+		if (err !=MAL_SUCCEED) {
 			GDKerror("%s", getExceptionMessageAndState(err));
 			freeException(err);
 			return -1;
@@ -696,7 +704,9 @@ XMLtoString(str *s, size_t *len, const void *SRC, bool external)
 
 #define NO_LIBXML_FATAL "xml: MonetDB was built without libxml, but what you are trying to do requires it."
 
-static ssize_t XMLfromString(const char *src, size_t *len, void **x, bool external) {
+static ssize_t
+XMLfromString(const char *src, size_t *len, void **x, bool external)
+{
 	(void) src;
 	(void) len;
 	(void) x;
@@ -704,7 +714,10 @@ static ssize_t XMLfromString(const char *src, size_t *len, void **x, bool extern
 	GDKerror("not implemented\n");
 	return -1;
 }
-static ssize_t XMLtoString(str *s, size_t *len, const void *src, bool external) {
+
+static ssize_t
+XMLtoString(str *s, size_t *len, const void *src, bool external)
+{
 	(void) s;
 	(void) len;
 	(void) src;
@@ -712,73 +725,115 @@ static ssize_t XMLtoString(str *s, size_t *len, const void *src, bool external) 
 	GDKerror("not implemented\n");
 	return -1;
 }
-str XMLxml2str(str *s, xml *x) {
+
+str
+XMLxml2str(str *s, xml *x)
+{
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.xml2str", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLstr2xml(xml *x, const char **s) {
+
+str
+XMLstr2xml(xml *x, const char **s)
+{
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.xml2str", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLxmltext(str *s, xml *x) {
+
+str
+XMLxmltext(str *s, xml *x)
+{
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.xmltext", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLxml2xml(xml *x, xml *s) {
+
+str
+XMLxml2xml(xml *x, xml *s)
+{
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.xml2xml", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLdocument(xml *x, str *s) {
+
+str
+XMLdocument(xml *x, str *s)
+{
 	(void) s;
 	(void) x;
-	return createException(MAL, "xml.document", SQLSTATE(HY005) NO_LIBXML_FATAL);
+	return createException(MAL, "xml.document",
+						   SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLcontent(xml *x, str *s) {
+
+str
+XMLcontent(xml *x, str *s)
+{
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.content", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLisdocument(bit *x, str *s) {
+
+str
+XMLisdocument(bit *x, str *s)
+{
 	(void) s;
 	(void) x;
-	return createException(MAL, "xml.isdocument", SQLSTATE(HY005) NO_LIBXML_FATAL);
+	return createException(MAL, "xml.isdocument",
+						   SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLcomment(xml *x, str *s) {
+
+str
+XMLcomment(xml *x, str *s)
+{
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.comment", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLpi(xml *x, str *target, str *s) {
+
+str
+XMLpi(xml *x, str *target, str *s)
+{
 	(void) s;
 	(void) target;
 	(void) x;
 	return createException(MAL, "xml.pi", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLroot(xml *x, xml *v, str *version, str *standalone) {
+
+str
+XMLroot(xml *x, xml *v, str *version, str *standalone)
+{
 	(void) x;
 	(void) v;
 	(void) version;
 	(void) standalone;
 	return createException(MAL, "xml.root", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLparse(xml *x, str *doccont, str *s, str *option) {
+
+str
+XMLparse(xml *x, str *doccont, str *s, str *option)
+{
 	(void) x;
 	(void) doccont;
 	(void) s;
 	(void) option;
 	return createException(MAL, "xml.parse", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLattribute(xml *ret, str *name, str *val) {
+
+str
+XMLattribute(xml *ret, str *name, str *val)
+{
 	(void) ret;
 	(void) name;
 	(void) val;
-	return createException(MAL, "xml.attribute", SQLSTATE(HY005) NO_LIBXML_FATAL);
+	return createException(MAL, "xml.attribute",
+						   SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val) {
+
+str
+XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
+{
 	(void) ret;
 	(void) name;
 	(void) nspace;
@@ -786,44 +841,64 @@ str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val) {
 	(void) val;
 	return createException(MAL, "xml.element", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLelementSmall(xml *ret, str *name, xml *val) {
+
+str
+XMLelementSmall(xml *ret, str *name, xml *val)
+{
 	(void) ret;
 	(void) name;
 	(void) val;
-	return createException(MAL, "xml.elementSmall", SQLSTATE(HY005) NO_LIBXML_FATAL);
+	return createException(MAL, "xml.elementSmall",
+						   SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLconcat(xml *ret, xml *left, xml *right) {
+
+str
+XMLconcat(xml *ret, xml *left, xml *right)
+{
 	(void) ret;
 	(void) left;
 	(void) right;
 	return createException(MAL, "xml.concat", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) {
+
+str
+XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) p;
 	return createException(MAL, "xml.forest", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
-size_t XMLquotestring(const char *s, char *buf, size_t len) {
+
+size_t
+XMLquotestring(const char *s, char *buf, size_t len)
+{
 	(void) s;
 	(void) buf;
 	(void) len;
 	return 0;
 }
-size_t XMLunquotestring(const char **p, char q, char *buf) {
+
+size_t
+XMLunquotestring(const char **p, char q, char *buf)
+{
 	(void) p;
 	(void) q;
 	(void) buf;
 	return 0;
 }
+
 static str
-XMLprelude(void) {
-	return MAL_SUCCEED; /* to not break init */
+XMLprelude(void)
+{
+	return MAL_SUCCEED;			/* to not break init */
 }
 
-str XMLepilogue(void *ret) {
-	(void)ret;
+str
+XMLepilogue(void *ret)
+{
+	(void) ret;
 	return MAL_SUCCEED;
 }
 

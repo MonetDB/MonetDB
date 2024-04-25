@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -60,10 +64,9 @@ skip_scheme(const char *uri)
 {
 	if (('a' <= *uri && *uri <= 'z') || ('A' <= *uri && *uri <= 'Z')) {
 		uri++;
-		while (('a' <= *uri && *uri <= 'z') ||
-			   ('A' <= *uri && *uri <= 'Z') ||
-			   isdigit((unsigned char) *uri) ||
-			   *uri == '+' || *uri == '-' || *uri == '.')
+		while (('a' <= *uri && *uri <= 'z') || ('A' <= *uri && *uri <= 'Z')
+			   || isdigit((unsigned char) *uri) || *uri == '+' || *uri == '-'
+			   || *uri == '.')
 			uri++;
 		if (*uri == ':')
 			return uri + 1;
@@ -87,17 +90,18 @@ skip_scheme(const char *uri)
  * to start of user, password, host, and port, if provided; input:
  * result of skip_scheme() */
 static const char *
-skip_authority(const char *uri, const char **userp, const char **passp, const char **hostp, const char **portp)
+skip_authority(const char *uri, const char **userp, const char **passp,
+			   const char **hostp, const char **portp)
 {
 	const char *user = NULL, *pass = NULL, *host = NULL, *port = NULL;
 
 	if (uri[0] == '/' && uri[1] == '/') {
 		uri += 2;
 		user = host = uri;
-		while (isunreserved(*uri) ||
-			   (*uri == '%' && ishex(uri[1]) && ishex(uri[2])) ||
-			   *uri == ';' || *uri == ':' || *uri == '=' || *uri == '+'|| *uri == '$' || *uri == ',' ||
-			   *uri == '@') {
+		while (isunreserved(*uri)
+			   || (*uri == '%' && ishex(uri[1]) && ishex(uri[2])) || *uri == ';'
+			   || *uri == ':' || *uri == '=' || *uri == '+' || *uri == '$'
+			   || *uri == ',' || *uri == '@') {
 			if (*uri == ':') {
 				if (user == host)
 					port = pass = uri + 1;
@@ -139,11 +143,10 @@ skip_path(const char *uri, const char **basep, const char **extp)
 	if (*uri == '/') {
 		uri++;
 		base = uri;
-		while (isunreserved(*uri) ||
-			   (*uri == '%' && ishex(uri[1]) && ishex(uri[2])) ||
-			   *uri == ':' || *uri == '@' || *uri == '&' || *uri == '=' || *uri == '+' || *uri == '$' || *uri == ',' ||
-			   *uri == ';' ||
-			   *uri == '/') {
+		while (isunreserved(*uri)
+			   || (*uri == '%' && ishex(uri[1]) && ishex(uri[2])) || *uri == ':'
+			   || *uri == '@' || *uri == '&' || *uri == '=' || *uri == '+'
+			   || *uri == '$' || *uri == ',' || *uri == ';' || *uri == '/') {
 			if (*uri == '/') {
 				base = uri + 1;
 				ext = NULL;
@@ -167,8 +170,8 @@ skip_search(const char *uri)
 {
 	if (*uri == '?') {
 		uri++;
-		while (isreserved(*uri) || isunreserved(*uri) ||
-			   (*uri == '%' && ishex(uri[1]) && ishex(uri[2]))) {
+		while (isreserved(*uri) || isunreserved(*uri)
+			   || (*uri == '%' && ishex(uri[1]) && ishex(uri[2]))) {
 			uri += *uri == '%' ? 3 : 1;
 		}
 	}
@@ -191,11 +194,13 @@ x2c(char *what)
 	return (digit);
 }
 
-static int needEscape(char c){
-	if( isalnum((unsigned char)c) )
+static int
+needEscape(char c)
+{
+	if (isalnum((unsigned char) c))
 		return 0;
-	if( c == '#' || c == '-' || c == '_' || c == '.' || c == '!' ||
-		c == '~' || c == '*' || c == '\'' || c == '(' || c == ')' )
+	if (c == '#' || c == '-' || c == '_' || c == '.' || c == '!' || c == '~'
+		|| c == '*' || c == '\'' || c == '(' || c == ')')
 		return 0;
 	return 1;
 }
@@ -223,14 +228,14 @@ escape_str(str *retval, str s)
 	if (!s)
 		throw(ILLARG, "url.escape", "url missing");
 
-	if (!( res = (str) GDKmalloc( strlen(s) * 3 ) ))
+	if (!(res = (str) GDKmalloc(strlen(s) * 3)))
 		throw(MAL, "url.escape", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (x = 0, y = 0; s[x]; ++x, ++y) {
 		if (needEscape(s[x])) {
 			if (s[x] == ' ') {
 				res[y] = '+';
 			} else {
-				sprintf(res+y, "%%%2x", (uint8_t) s[x]);
+				sprintf(res + y, "%%%2x", (uint8_t) s[x]);
 				y += 2;
 			}
 		} else {
@@ -239,7 +244,7 @@ escape_str(str *retval, str s)
 	}
 	res[y] = '\0';
 
-	if ((*retval = GDKrealloc(res, strlen(res)+1)) == NULL) {
+	if ((*retval = GDKrealloc(res, strlen(res) + 1)) == NULL) {
 		GDKfree(res);
 		throw(MAL, "url.escape", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -272,7 +277,7 @@ unescape_str(str *retval, str s)
 	}
 	res[y] = '\0';
 
-	if ((*retval = GDKrealloc(res, strlen(res)+1)) == NULL) {
+	if ((*retval = GDKrealloc(res, strlen(res) + 1)) == NULL) {
 		GDKfree(res);
 		throw(MAL, "url.unescape", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -349,10 +354,10 @@ URLgetAnchor(str *retval, url *val)
 	if (strNil(*val)) {
 		s = str_nil;
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-			(s = skip_path(s, NULL, NULL)) == NULL ||
-			(s = skip_search(s)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
+			|| (s = skip_path(s, NULL, NULL)) == NULL
+			|| (s = skip_search(s)) == NULL)
 			throw(ILLARG, "url.getAnchor", "bad url");
 		if (*s == '#')
 			s++;
@@ -381,9 +386,9 @@ URLgetBasename(str *retval, url *val)
 	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-			(s = skip_path(s, &b, &e)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
+			|| (s = skip_path(s, &b, &e)) == NULL)
 			throw(ILLARG, "url.getBasename", "bad url");
 		if (b == NULL) {
 			*retval = GDKstrdup(str_nil);
@@ -420,9 +425,9 @@ URLgetContext(str *retval, url *val)
 	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(p = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-			(s = skip_path(p, NULL, NULL)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (p = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
+			|| (s = skip_path(p, NULL, NULL)) == NULL)
 			throw(ILLARG, "url.getContext", "bad url");
 		if (p == s) {
 			*retval = GDKstrdup(str_nil);
@@ -450,9 +455,9 @@ URLgetExtension(str *retval, url *val)
 	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-			(s = skip_path(s, NULL, &e)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
+			|| (s = skip_path(s, NULL, &e)) == NULL)
 			throw(ILLARG, "url.getExtension", "bad url");
 		if (e == NULL) {
 			*retval = GDKstrdup(str_nil);
@@ -485,9 +490,9 @@ URLgetFile(str *retval, url *val)
 	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-			(s = skip_path(s, &b, NULL)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
+			|| (s = skip_path(s, &b, NULL)) == NULL)
 			throw(ILLARG, "url.getFile", "bad url");
 		if (b == NULL) {
 			*retval = GDKstrdup(str_nil);
@@ -521,8 +526,8 @@ URLgetHost(str *retval, url *val)
 	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
 			throw(ILLARG, "url.getHost", "bad url");
 		if (h == NULL) {
 			*retval = GDKstrdup(str_nil);
@@ -560,8 +565,8 @@ URLgetDomain(str *retval, url *val)
 	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
 			throw(ILLARG, "url.getDomain", "bad url");
 		if (h == NULL) {
 			*retval = GDKstrdup(str_nil);
@@ -602,8 +607,8 @@ URLgetPort(str *retval, url *val)
 	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(s = skip_authority(s, NULL, NULL, NULL, &p)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (s = skip_authority(s, NULL, NULL, NULL, &p)) == NULL)
 			throw(ILLARG, "url.getPort", "bad url");
 		if (p == NULL) {
 			*retval = GDKstrdup(str_nil);
@@ -662,10 +667,10 @@ URLgetQuery(str *retval, url *val)
 	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL ||
-			(q = skip_path(s, NULL, NULL)) == NULL ||
-			(s = skip_search(q)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
+			|| (q = skip_path(s, NULL, NULL)) == NULL
+			|| (s = skip_search(q)) == NULL)
 			throw(ILLARG, "url.getQuery", "bad url");
 		if (*q == '?') {
 			size_t l;
@@ -699,8 +704,8 @@ URLgetRobotURL(str *retval, url *val)
 	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL)
 			throw(ILLARG, "url.getQuery", "bad url");
 		l = s - *val;
 
@@ -727,8 +732,8 @@ URLgetUser(str *retval, url *val)
 	if (strNil(*val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		if ((s = skip_scheme(*val)) == NULL ||
-			(s = skip_authority(s, &u, &p, &h, NULL)) == NULL)
+		if ((s = skip_scheme(*val)) == NULL
+			|| (s = skip_authority(s, &u, &p, &h, NULL)) == NULL)
 			throw(ILLARG, "url.getHost", "bad url");
 		if (u == NULL || h == NULL) {
 			*retval = GDKstrdup(str_nil);
@@ -777,19 +782,6 @@ URLnew(url *u, str *val)
 static str
 URLnew3(url *u, str *protocol, str *server, str *file)
 {
-	size_t l;
-
-	l = strLen(*file) + strLen(*server) + strLen(*protocol) + 10;
-	*u = GDKmalloc(l);
-	if (*u == NULL)
-		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	snprintf(*u, l, "%s://%s/%s", *protocol, *server, *file);
-	return MAL_SUCCEED;
-}
-
-static str
-URLnew4(url *u, str *protocol, str *server, int *port, str *file)
-{
 	str Protocol = *protocol;
 	str Server = *server;
 	str File = *file;
@@ -803,15 +795,43 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 		Server = "";
 	if (strNil(Protocol))
 		Protocol = "";
+	l = strlen(File) + strlen(Server) + strlen(Protocol) + 10;
+	*u = GDKmalloc(l);
+	if (*u == NULL)
+		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	snprintf(*u, l, "%s://%s/%s", Protocol, Server, File);
+	return MAL_SUCCEED;
+}
+
+static str
+URLnew4(url *u, str *protocol, str *server, int *port, str *file)
+{
+	str Protocol = *protocol;
+	str Server = *server;
+	int Port = *port;
+	str File = *file;
+	size_t l;
+
+	if (strNil(File))
+		File = "";
+	else if (*File == '/')
+		File++;
+	if (strNil(Server))
+		Server = "";
+	if (is_int_nil(Port))
+		Port = 0;
+	if (strNil(Protocol))
+		Protocol = "";
 	l = strlen(File) + strlen(Server) + strlen(Protocol) + 20;
 	*u = GDKmalloc(l);
 	if (*u == NULL)
 		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	snprintf(*u, l, "%s://%s:%d/%s", Protocol, Server, *port, File);
+	snprintf(*u, l, "%s://%s:%d/%s", Protocol, Server, Port, File);
 	return MAL_SUCCEED;
 }
 
-static str URLnoop(url *u, url *val)
+static str
+URLnoop(url *u, url *val)
 {
 	*u = GDKstrdup(*val);
 	if (*u == NULL)
@@ -831,11 +851,10 @@ extractURLHost(str *retval, str *url, bit *no_www)
 	const char *h = NULL;
 	const char *p = NULL;
 
-	if ((url != NULL || *url != NULL) && !strNil(*url)) {
-		if ((s = skip_scheme(*url)) != NULL &&
-			(s = skip_authority(s, NULL, NULL, &h, &p)) != NULL &&
-			h != NULL)
-		{
+	if (url != NULL && *url != NULL && !strNil(*url)) {
+		if ((s = skip_scheme(*url)) != NULL
+			&& (s = skip_authority(s, NULL, NULL, &h, &p)) != NULL
+			&& h != NULL) {
 			ssize_t l;
 			const char *pos = s;
 			const char *domain = NULL;
@@ -853,8 +872,8 @@ extractURLHost(str *retval, str *url, bit *no_www)
 				l = s - h;
 			}
 			if (*no_www && !strncmp(h, "www.", 4)) {
-				h +=4;
-				l -=4;
+				h += 4;
+				l -= 4;
 			}
 			if (domain && l > 3) {
 				if ((*retval = GDKmalloc(l + 1)) != NULL)
@@ -876,7 +895,8 @@ extractURLHost(str *retval, str *url, bit *no_www)
 
 
 static inline str
-str_buf_copy(str *buf, size_t *buflen, const char *s, size_t l) {
+str_buf_copy(str *buf, size_t *buflen, const char *s, size_t l)
+{
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, l, "url.str_buf_copy");
 	strcpy_len(*buf, s, l);
 	return MAL_SUCCEED;
@@ -902,7 +922,8 @@ BATextractURLHost(bat *res, const bat *bid, bit *no_www)
 
 	if (!(b = BATdescriptor(*bid))) {
 		GDKfree(buf);
-		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "baturl.extractURLHost",
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
 		GDKfree(buf);
@@ -915,15 +936,15 @@ BATextractURLHost(bat *res, const bat *bid, bit *no_www)
 		const char *url = (const char *) BUNtvar(bi, p);
 		if (strNil(url)) {
 			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED) {
-				msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+				msg = createException(MAL, "baturl.extractURLHost",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
 			nils = true;
 		} else {
-			if ((s = skip_scheme(url)) != NULL &&
-				(s = skip_authority(s, NULL, NULL, &host, &port)) != NULL &&
-				host != NULL)
-			{
+			if ((s = skip_scheme(url)) != NULL
+				&& (s = skip_authority(s, NULL, NULL, &host, &port)) != NULL
+				&& host != NULL) {
 				ssize_t l;
 				const char *pos = s;
 				const char *domain = NULL;
@@ -947,11 +968,14 @@ BATextractURLHost(bat *res, const bat *bid, bit *no_www)
 					}
 					if (l > 0) {
 						// if ((msg = str_Sub_String(&buf, &buflen, host, 0, l)) != MAL_SUCCEED)
-						// 	break;
-						if ((msg = str_buf_copy(&buf, &buflen, host, (size_t) (l + 1))) != MAL_SUCCEED)
+						//  break;
+						if ((msg = str_buf_copy(&buf, &buflen, host,
+												(size_t) (l + 1))) != MAL_SUCCEED)
 							break;
 						if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED) {
-							msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+							msg = createException(MAL, "baturl.extractURLHost",
+												  SQLSTATE(HY013)
+												  MAL_MALLOC_FAIL);
 							break;
 						}
 						continue;
@@ -960,7 +984,8 @@ BATextractURLHost(bat *res, const bat *bid, bit *no_www)
 			}
 			// fall back insert nil str if no valid host
 			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED) {
-				msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
+				msg = createException(MAL, "baturl.extractURLHost",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
 			nils = true;

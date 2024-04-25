@@ -1,0 +1,24 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TEMPORARY TABLE t1 (keyc INT, c1 VARCHAR(100), c2 VARCHAR(100), PRIMARY KEY(keyc))
+
+statement ok
+CREATE TABLE c1(c2 DECIMAL(9,4) NOT NULL)
+
+statement ok
+SAVEPOINT a_a
+
+statement ok
+TRUNCATE TABLE t1
+
+statement error
+DELETE FROM w
+
+statement ok
+ROLLBACK
+
+statement ok
+SELECT 1
+

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -226,27 +230,33 @@ int BatType_ToPyType(int type)
 
 bool PyType_IsPandasDataFrame(PyObject *object)
 {
-	PyObject *str = PyObject_Str(PyObject_Type(object));
+	PyObject *type = PyObject_Type(object);
+	PyObject *str = PyObject_Str(type);
 	bool ret = strcmp(PyUnicode_AsUTF8(str),
 					  "<class 'pandas.core.frame.DataFrame'>") == 0;
 	Py_DECREF(str);
+	Py_DECREF(type);
 	return ret;
 }
 
 bool PyType_IsNumpyMaskedArray(PyObject *object)
 {
-	PyObject *str = PyObject_Str(PyObject_Type(object));
+	PyObject *type = PyObject_Type(object);
+	PyObject *str = PyObject_Str(type);
 	bool ret = strcmp(PyUnicode_AsUTF8(str),
 					  "<class 'numpy.ma.core.MaskedArray'>") == 0;
 	Py_DECREF(str);
+	Py_DECREF(type);
 	return ret;
 }
 
 bool PyType_IsLazyArray(PyObject *object)
 {
-	PyObject *str = PyObject_Str(PyObject_Type(object));
+	PyObject *type = PyObject_Type(object);
+	PyObject *str = PyObject_Str(type);
 	bool ret = strcmp(PyUnicode_AsUTF8(str), "<class 'lazyarray'>") == 0;
 	Py_DECREF(str);
+	Py_DECREF(type);
 	return ret;
 }
 

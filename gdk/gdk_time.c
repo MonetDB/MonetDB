@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -90,27 +94,27 @@ date_year(date dt)
 	return date_extract_year(dt);
 }
 
-int
+bte
 date_quarter(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	return (date_extract_month(dt) - 1) / 3 + 1;
 }
 
-int
+bte
 date_month(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	return date_extract_month(dt);
 }
 
-int
+bte
 date_day(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	return date_extract_day(dt);
 }
 
@@ -206,11 +210,11 @@ date_diff(date d1, date d2)
  * day-of-week calculation below from this fact */
 #define DOW_OFF (7 - (((21 + (2019+CNT_OFF)*365 + (2019+CNT_OFF-1)/4 - (2019+CNT_OFF-1)/100 + (2019+CNT_OFF-1)/400 + 90) % 7) + 1))
 /* return day of week of given date; Monday = 1, Sunday = 7 */
-int
+bte
 date_dayofweek(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	/* calculate number of days since the start of the year -CNT_OFF */
 	int d = date_countdays(dt);
 	/* then simply take the remainder from 7 and convert to correct
@@ -222,11 +226,11 @@ date_dayofweek(date dt)
  * January 1 to 3 fall in the week before the 4th, they are in the
  * last week of the previous year; the last days of the year may fall
  * in week 1 of the following year */
-int
+bte
 date_weekofyear(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	int y = date_extract_year(dt);
 	int m = date_extract_month(dt);
 	int d = date_extract_day(dt);
@@ -247,11 +251,11 @@ date_weekofyear(date dt)
 
 /* In the US they have to do it differently, of course.
  * Week 1 is the week (Sunday to Saturday) in which January 1 falls */
-int
+bte
 date_usweekofyear(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	int y = date_extract_year(dt);
 	int m = date_extract_month(dt);
 	/* day of year (date_dayofyear without nil check) */
@@ -263,11 +267,11 @@ date_usweekofyear(date dt)
 	return (doy + jan1dow - 1) / 7 + 1;
 }
 
-int
+sht
 date_dayofyear(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return sht_nil;
 	int m = date_extract_month(dt);
 	return date_extract_day(dt) + cumdays[m-1]
 		+ (m > 2 && isleapyear(date_extract_year(dt)));
@@ -288,19 +292,19 @@ daytime_diff(daytime d1, daytime d2)
 	return (d1 - d2) / 1000;
 }
 
-int
+bte
 daytime_hour(daytime tm)
 {
 	if (is_daytime_nil(tm))
-		return int_nil;
+		return bte_nil;
 	return daytime_extract_hour(tm);
 }
 
-int
+bte
 daytime_min(daytime tm)
 {
 	if (is_daytime_nil(tm))
-		return int_nil;
+		return bte_nil;
 	return daytime_extract_minute(tm);
 }
 
@@ -650,7 +654,16 @@ date_fromstr(const char *buf, size_t *len, date **d, bool external)
 		if( *d == NULL)
 			return -1;
 	}
-	return parse_date(buf, *d, external);
+	ssize_t n = 0;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	ssize_t l = parse_date(buf + n, *d, external);
+	if (l < 0)
+		return l;
+	n += l;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	return n;
 }
 
 static ssize_t
@@ -773,16 +786,26 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		if (*ret == NULL)
 			return -1;
 	}
-	return parse_daytime(buf, *ret, external);
+	ssize_t n = 0;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	ssize_t l = parse_daytime(buf + n, *ret, external);
+	if (l < 0)
+		return l;
+	n += l;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	return n;
 }
 
-ssize_t
-daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
+static ssize_t
+daytime_tz_fromstr_internal(const char *buf, size_t *len, daytime **ret, long tz_sec, bool tzlocal, bool external)
 {
 	const char *s = buf;
 	ssize_t pos;
 	daytime val;
 	int offset = 0;
+	bool has_tz = false;
 
 	pos = daytime_fromstr(s, len, ret, external);
 	if (pos < 0 || is_daytime_nil(**ret))
@@ -804,16 +827,36 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		if (s[0] == '+')
 			offset = -offset;	/* East of Greenwich */
 		s += pos;
+		has_tz = true;
 	}
-	/* convert to UTC */
-	val = **ret + offset * LL_CONSTANT(1000000);
+	val = **ret;
+	(void)tz_sec;
+	if (!tzlocal && has_tz) /* convert into utc */
+		val += offset * LL_CONSTANT(1000000);
+	if (!tzlocal && !has_tz) /* convert into utc */
+		val -= tz_sec * LL_CONSTANT(1000000);
 	if (val < 0)
 		val += DAY_USEC;
 	else if (val >= DAY_USEC)
 		val -= DAY_USEC;
 	/* and return */
 	**ret = val;
+	while (*s && GDKisspace(*s))
+		s++;
 	return (ssize_t) (s - buf);
+}
+
+ssize_t
+daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
+{
+	return daytime_tz_fromstr_internal(buf, len, ret, 0, false, external);
+}
+
+ssize_t
+sql_daytime_fromstr(const char *buf, daytime *ret, long tz_sec, bool tclocal)
+{
+	size_t len = sizeof(daytime);
+	return daytime_tz_fromstr_internal(buf, &len, &ret, tz_sec, tclocal, false);
 }
 
 static ssize_t
@@ -884,8 +927,8 @@ daytime_tostr(str *buf, size_t *len, const daytime *val, bool external)
 	return daytime_precision_tostr(buf, len, *val, 6, external);
 }
 
-ssize_t
-timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+static ssize_t
+timestamp_fromstr_internal(const char *buf, size_t *len, timestamp **ret, bool external, bool parse_offset)
 {
 	const char *s = buf;
 	ssize_t pos;
@@ -898,7 +941,9 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 		if (*ret == NULL)
 			return -1;
 	}
-	pos = parse_date(buf, &dt, external);
+	while (*s && GDKisspace(*s))
+		s++;
+	pos = parse_date(s, &dt, external);
 	if (pos < 0)
 		return pos;
 	if (is_date_nil(dt)) {
@@ -928,32 +973,43 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 		lng offset = 0;
 
 		**ret = mktimestamp(dt, tm);
-		while (GDKisspace(*s))
-			s++;
-		/* in case of gmt we need to add the time zone */
-		if (fleximatch(s, "gmt", 0) == 3) {
-			s += 3;
+		if (parse_offset) {
+			while (GDKisspace(*s))
+				s++;
+			/* in case of gmt we need to add the time zone */
+			if (fleximatch(s, "gmt", 0) == 3) {
+				s += 3;
+			}
+			if ((s[0] == '-' || s[0] == '+') &&
+				GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos = 4]) &&
+				((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos = 3]))) {
+				offset = (((s[1] - '0') * LL_CONSTANT(10) + (s[2] - '0')) * LL_CONSTANT(60) + (s[pos] - '0') * LL_CONSTANT(10) + (s[pos + 1] - '0')) * LL_CONSTANT(60000000);
+				pos += 2;
+				if (s[0] != '-')
+					offset = -offset;
+				s += pos;
+			}
+			**ret = timestamp_add_usec(**ret, offset);
 		}
-		if ((s[0] == '-' || s[0] == '+') &&
-		    GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos = 4]) &&
-		    ((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos = 3]))) {
-			offset = (((s[1] - '0') * LL_CONSTANT(10) + (s[2] - '0')) * LL_CONSTANT(60) + (s[pos] - '0') * LL_CONSTANT(10) + (s[pos + 1] - '0')) * LL_CONSTANT(60000000);
-			pos += 2;
-			if (s[0] != '-')
-				offset = -offset;
-			s += pos;
-		}
-		**ret = timestamp_add_usec(**ret, offset);
 	}
+	while (*s && GDKisspace(*s))
+		s++;
 	return (ssize_t) (s - buf);
 }
 
 ssize_t
-timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+{
+	return timestamp_fromstr_internal(buf, len, ret, external, true);
+}
+
+static ssize_t
+timestamp_tz_fromstr_internal(const char *buf, size_t *len, timestamp **ret, long tz_sec, bool tzlocal, bool external)
 {
 	const char *s = buf;
-	ssize_t pos = timestamp_fromstr(s, len, ret, external);
+	ssize_t pos = timestamp_fromstr_internal(s, len, ret, external, false);
 	lng offset = 0;
+	bool has_tz = false;
 
 	if (pos < 0 || is_timestamp_nil(**ret))
 		return pos;
@@ -974,9 +1030,29 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool externa
 		if (s[0] != '-')
 			offset = -offset;
 		s += pos;
+		has_tz = true;
 	}
-	**ret = timestamp_add_usec(**ret, offset);
+	if (!tzlocal && has_tz) /* convert into utc */
+		**ret = timestamp_add_usec(**ret, offset);
+	if (!tzlocal && !has_tz)
+		**ret = timestamp_add_usec(**ret, -tz_sec * LL_CONSTANT(1000000));
+	while (*s && GDKisspace(*s))
+		s++;
 	return (ssize_t) (s - buf);
+}
+
+ssize_t
+timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+{
+	return timestamp_tz_fromstr_internal(buf, len, ret, 0, false, external);
+}
+
+/* timestamp from str (return timestamp in local time */
+ssize_t
+sql_timestamp_fromstr(const char *buf, timestamp *ret, long tz_sec, bool tzlocal)
+{
+	size_t len = sizeof(timestamp);
+	return timestamp_tz_fromstr_internal(buf, &len, &ret, tz_sec, tzlocal, false);
 }
 
 ssize_t

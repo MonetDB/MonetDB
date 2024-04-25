@@ -1,5 +1,5 @@
 CREATE TABLE "sys"."tbls" (
-	"id"            INTEGER,
+	"id"            INTEGER PRIMARY KEY,
 	"name"          VARCHAR(1024),
 	"schema_id"     INTEGER,
 	"query"         VARCHAR(2048),
@@ -52,12 +52,12 @@ COPY 39 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 
 create table rr (id int);
 insert into rr values (1),(2),(3);
-prepare select * from rr limit ?;
+prepare select * from rr order by id limit ?;
 exec ** (1);
 
 drop table rr;
 
-prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tbls limit 24;
+prepare select name, schema_id, query, type, system, commit_action, readonly, temporary from tbls order by id limit 24;
 exec ** ();
 
 drop table tbls;

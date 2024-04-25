@@ -105,9 +105,6 @@ select ifthenelse(('a' = 'b'), 1, 2) as two
 ----
 2
 
-statement error
-select ifnull('aa', 'b') as aa
-
 query T rowsort
 select ifthenelse(('aa' IS NULL), cast('b' as varchar(2)), 'aa') as aa
 ----
@@ -118,20 +115,55 @@ select coalesce('aa', 'b') as aa
 ----
 aa
 
-statement error
+query T rowsort
 select ifnull('aa', 'b') as aa
+----
+aa
 
-statement error
-select ifnull(null, 'b') as b
+query T rowsort
+select ifnull(null, 'ams') as ams
+----
+ams
 
-statement error
+query I rowsort
 select ifnull(null, null) as nul
+----
+NULL
 
-statement error
-select ifnull('aa', null) as nul
+query T rowsort
+select ifnull('aa', null) as aa
+----
+aa
 
-statement error
-select ifnull(true, null) as nul
+query I rowsort
+select ifnull(true, null) as tru
+----
+1
+
+query T rowsort
+select {fn IFNULL('aa', 'b')} as aa
+----
+aa
+
+query T rowsort
+select {fn IFNULL(NULL, 'ams')} as ams
+----
+ams
+
+query I rowsort
+select {fn IFNULL(NULL, NULL)} as nul
+----
+NULL
+
+query T rowsort
+select {fn IFNULL('aa', NULL)} as aa
+----
+aa
+
+query I rowsort
+select {fn IFNULL(TRUE, NULL)} as tru
+----
+1
 
 statement ok
 drop table if exists t6933
@@ -142,14 +174,85 @@ create table t6933 (i int, c varchar(8))
 statement ok
 insert into t6933 values (1, 'aa1'), (2, null), (null, 'bb2'), (null, null)
 
-statement error
+query ITITT rowsort
 select i, c, ifnull(i, 2*3) as "ifnull(i,2*3)", ifnull(c, 'has null') as "ifnull(i,'x')", ifnull(i, c) as "ifnull(i,c)" from t6933
+----
+1
+aa1
+1
+aa1
+1
+2
+NULL
+2
+has null
+2
+NULL
+NULL
+6
+has null
+NULL
+NULL
+bb2
+6
+bb2
+bb2
 
-statement error
+query TIT rowsort
 select c, i, ifnull(c, i) as "ifnull(c,i)" from t6933
+----
+NULL
+2
+2
+NULL
+NULL
+NULL
+aa1
+1
+aa1
+bb2
+NULL
+bb2
 
-statement error
+query TIT rowsort
 select c, i, ifnull(c, cast(i as char)) as "ifnull(c,i)" from t6933
+----
+NULL
+2
+2
+NULL
+NULL
+NULL
+aa1
+1
+aa1
+bb2
+NULL
+bb2
+
+query ITITT rowsort
+select i, c, {fn ifnull(i, 2*3)} as "ifnull(i,2*3)", { fn ifnull(c, 'has null') } as "ifnull(i,'x')", { fn ifnull(i, c)} as "ifnull(i,c)" from t6933
+----
+1
+aa1
+1
+aa1
+1
+2
+NULL
+2
+has null
+2
+NULL
+NULL
+6
+has null
+NULL
+NULL
+bb2
+6
+bb2
+bb2
 
 query ITITT rowsort
 select i, c, coalesce(i, 2*3) as "ifnull(i,2*3)", coalesce(c, 'has null') as "ifnull(i,'x')", coalesce(i, c) as "ifnull(i,c)" from t6933
@@ -200,7 +303,45 @@ bb2
 bb2
 
 query TIT rowsort
+select c, i, {fn IFNULL(c, i) } as "IFNULL(c,i)" from t6933
+----
+NULL
+2
+2
+NULL
+NULL
+NULL
+aa1
+1
+aa1
+bb2
+NULL
+bb2
+
+query TIT rowsort
 select c, i, coalesce(c, i) as "ifnull(c,i)" from t6933
+----
+NULL
+2
+2
+NULL
+NULL
+NULL
+aa1
+1
+aa1
+bb2
+NULL
+bb2
+
+statement error
+select c, i, {fn ifnull(c, {fn cast(i as char)})} as "ifnull(c,i)" from t6933
+
+statement error
+select c, i, {fn ifnull(c, {fn cast(i as SQL_char)})} as "ifnull(c,i)" from t6933
+
+query TIT rowsort
+select c, i, {fn ifnull(c, {fn convert(i, SQL_char)})} as "ifnull(c,i)" from t6933
 ----
 NULL
 2
@@ -351,6 +492,19 @@ select isnull('aa') as fals
 ----
 0
 
+statement error
+select like('aabbccdd', '%bc_d%', '', false) as tru
+
+query I rowsort
+select "like"('aabbccdd', '%bc_d%', '', false) as tru
+----
+1
+
+query I rowsort
+select "like"('aabbccdd', '%bc_d%', '', true) as tru
+----
+1
+
 query I rowsort
 select not_like('abc', '%b%', '', false) as fals
 ----
@@ -494,7 +648,7 @@ select not_like('abc', '_c#_', '#', false) as tru
 1
 
 query I rowsort
-select not_like('aabbccdd', '%bc\\_d%', '\\', false) as tru
+select not_like('aabbccdd', R'%bc\_d%', R'\', false) as tru
 ----
 1
 
@@ -504,7 +658,7 @@ select not_like('aabbccdd', '%bc_d%', '', false) as fals
 0
 
 query I rowsort
-select not_like('aabbccdd', '%bc\\_d%', '\\', false) as tru
+select not_like('aabbccdd', R'%bc\_d%', R'\', false) as tru
 ----
 1
 
@@ -554,20 +708,7 @@ select not_like('aabbccdd', '%bc_d%', '', true) as fals
 0
 
 query I rowsort
-select not_like('aabbccdd', '%bc\\_d%', '\\', true) as tru
-----
-1
-
-statement error
-select like('aabbccdd', '%bc_d%', '', false) as tru
-
-query I rowsort
-select "like"('aabbccdd', '%bc_d%', '', false) as tru
-----
-1
-
-query I rowsort
-select "like"('aabbccdd', '%bc_d%', '', true) as tru
+select not_like('aabbccdd', R'%bc\_d%', R'\', true) as tru
 ----
 1
 
@@ -707,28 +848,28 @@ plan select nullif(null, null)
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."nullif"(smallint(16) NULL, smallint(16) NULL) ]
+) [ "sys"."nullif"(smallint(15) NULL, smallint(15) NULL) ]
 
 query T nosort
 plan select CASE WHEN null = null THEN NULL ELSE null END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"(boolean(1) NULL, smallint(16) NULL, smallint(16) NULL) ]
+) [ "sys"."case"(boolean(1) NULL, smallint(15) NULL, smallint(15) NULL) ]
 
 query T nosort
 plan select nullif('ac', 'ac')
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."nullif"(char(2) "ac", char(2) "ac") ]
+) [ "sys"."nullif"(varchar(2) "ac", varchar(2) "ac") ]
 
 query T nosort
 plan select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"("sys"."="(char(2) "ac", char(2) "ac") NOT NULL, char NULL, char "ac") ]
+) [ "sys"."case"("sys"."="(varchar(2) "ac", varchar(2) "ac") NOT NULL, varchar NULL, varchar "ac") ]
 
 query T nosort
 plan select nullif(9, 9)
@@ -742,7 +883,7 @@ plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"("sys"."="(tinyint(4) "9", tinyint(4) "9") NOT NULL, tinyint(8) NULL, tinyint(8) "9") ]
+) [ "sys"."case"("sys"."="(tinyint(4) "9", tinyint(4) "9") NOT NULL, tinyint(7) NULL, tinyint(7) "9") ]
 
 query I rowsort
 select 'db' between 'abc' and 'db' as tru
@@ -779,7 +920,7 @@ select 'db' not between SYMMETRIC 'db' and 'abc' as fals
 ----
 0
 
-statement error
+statement ok
 select 'a' IS DISTINCT FROM 'b' as tru
 
 query I rowsort

@@ -7,3 +7,6 @@ mergetable-deps-crash
 view-deps
 chaining
 truncate-insert-restart
+update_drop_crash
+update_drop_crash2
+insert_drop_crash

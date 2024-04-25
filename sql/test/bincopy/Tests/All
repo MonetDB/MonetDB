@@ -41,6 +41,8 @@ bincopy_json_objects_on_server
 bincopy_uuids_on_client
 bincopy_uuids_on_server
 
+bincopy_nulls
+
 bincopy_invalid_json
 
 bincopy_little_endians_on_client
@@ -49,3 +51,12 @@ bincopy_big_endians_on_client
 bincopy_big_endians_on_server
 bincopy_native_endians_on_client
 bincopy_native_endians_on_server
+bincopy_blobs_on_client
+bincopy_blobs_on_server
+
+bincopy_default_values
+
+bincopycollist-prepare
+bincopycollist
+bincopy_decimal_range
+bincopy_string_width

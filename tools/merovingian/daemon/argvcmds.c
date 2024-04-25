@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -437,10 +441,9 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 			(meropid = atoi(buf)) != 0 &&
 			kill(meropid, SIGHUP) == -1)
 		{
-			fprintf(stderr, "sending SIGHUP to monetdbd[%d] failed: %s\n",
+			/* maybe monetdbd crashed and did not get the chance to clean up */
+			fprintf(stderr, "WARNING: sending SIGHUP to monetdbd[%d] failed: %s\n",
 					(int)meropid, strerror(errno));
-			fclose(pfile);
-			return(1);
 		}
 		fclose(pfile);
 	}

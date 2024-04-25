@@ -1,4 +1,4 @@
-# for the regex options look into `man 3 pcreapi` 
+# for the regex options look into `man 3 pcreapi`
 
 # basic
 query T rowsort
@@ -8,7 +8,7 @@ fooXYXY
 
 # regex options - capture groups
 query T rowsort
-select regexp_replace('foobarbaz', 'b(..)', 'X\\1Y')
+select regexp_replace('foobarbaz', 'b(..)', R'X\1Y')
 ----
 fooXarYXazY
 
@@ -26,25 +26,25 @@ fooXYXY
 
 # regex options - no dotall
 query T rowsort
-select regexp_replace('foo\nbar', 'foo.+', 'XYZ')
+select regexp_replace(E'foo\nbar', 'foo.+', 'XYZ')
 ----
 foo@bar
 
 # regex options - dotall
 query T rowsort
-select regexp_replace('foo\nbar', 'foo.+', 'XYZ', 's')
+select regexp_replace(E'foo\nbar', 'foo.+', 'XYZ', 's')
 ----
 XYZ
 
 # regex options - no multiline
 query T rowsort
-select regexp_replace('foo\nbar', '^(foo).*$', 'XYZ')
+select regexp_replace(E'foo\nbar', '^(foo).*$', 'XYZ')
 ----
 foo@bar
 
 # regex options - multiline
 query T rowsort
-select regexp_replace('foo\nbar', '^(foo).*$', 'XYZ', 'm')
+select regexp_replace(E'foo\nbar', '^(foo).*$', 'XYZ', 'm')
 ----
 XYZ@bar
 
@@ -86,3 +86,4 @@ query T rowsort
 select regexp_replace('abc', 'k?|b', '-', 'e')
 ----
 -a-b-c-
+

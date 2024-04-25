@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _STREAM_H_
@@ -28,6 +32,11 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <limits.h>
+
+#ifdef HAVE_OPENSSL
+#include <openssl/ssl.h>
+#endif
+
 
 /* avoid using "#ifdef WIN32" so that this file does not need our config.h */
 #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
@@ -73,6 +82,7 @@ typedef enum mnstr_error_kind {
 	MNSTR_OPEN_ERROR,
 	MNSTR_READ_ERROR,
 	MNSTR_WRITE_ERROR,
+	MNSTR_INTERRUPT,
 	MNSTR_TIMEOUT,
 	MNSTR_UNEXPECTED_EOF,
 } mnstr_error_kind;
@@ -141,12 +151,14 @@ stream_export int mnstr_flush(stream *s, mnstr_flush_level flush_level); // used
 stream_export int mnstr_fsync(stream *s); // used in gdk_logger.c and store.c
 stream_export int mnstr_fgetpos(stream *restrict s, fpos_t *restrict p); // unused
 stream_export int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p); // unused
-stream_export char *mnstr_name(const stream *s); // used when wrapping in mclient.c
+stream_export const char *mnstr_name(const stream *s); // used when wrapping in mclient.c
 stream_export bool mnstr_isbinary(const stream *s); // unused
 stream_export bool mnstr_get_swapbytes(const stream *s); // sql_result.c/mapi10
 stream_export void mnstr_set_bigendian(stream *s, bool bigendian); // used in mapi.c and mal_session.c
 stream_export void mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void *), void *data); // used in mapi.c and mal_session.c
 stream_export int mnstr_isalive(const stream *s); // used once in mal_interpreter.c
+stream_export int mnstr_getoob(const stream *s);
+stream_export int mnstr_putoob(const stream *s, char val);
 stream_export bool mnstr_eof(const stream *s); // stream saw end-of-file
 
 stream_export stream *open_rstream(const char *filename); // used in mclient.c, gdk_logger.c, store.c, snapshot.c
@@ -159,8 +171,6 @@ stream_export stream *open_rastream(const char *filename); // used 13 times
 stream_export stream *open_wastream(const char *filename); // used in mclient.c, mapi.c, mal_io.c, sql.c
 
 stream_export void close_stream(stream *s);
-
-stream_export stream *open_urlstream(const char *url); // mclient.c, future copy from remote
 
 stream_export stream *file_rstream(FILE *restrict fp, bool binary, const char *restrict name); // unused
 stream_export stream *file_wstream(FILE *restrict fp, bool binary, const char *restrict name); // unused
@@ -243,8 +253,9 @@ typedef struct bstream {
 
 stream_export bstream *bstream_create(stream *rs, size_t chunk_size); // used all over
 stream_export void bstream_destroy(bstream *s); // all over
-stream_export ssize_t bstream_read(bstream *s, size_t size); // tablet.c, tokenizer.c
+stream_export ssize_t bstream_read(bstream *s, size_t size); // tablet.c
 stream_export ssize_t bstream_next(bstream *s); // all over
+stream_export int bstream_getoob(bstream *s);
 
 /* Callback stream is a stream where the read and write functions are
  * provided by the caller.  close and destroy are also provided.  The
@@ -265,5 +276,15 @@ stream_export stream *stream_fwf_create(stream *restrict s, size_t num_fields, s
 stream_export stream *create_text_stream(stream *s);
 
 stream_export stream *mapi_request_upload(const char *filename, bool binary, bstream *rs, stream *ws);
+stream_export stream *mapi_request_download(const char *filename, bool binary, bstream *rs, stream *ws);
+
+// write-only
+stream_export stream *byte_counting_stream(stream *wrapped, uint64_t *counter);
+
+#ifdef HAVE_OPENSSL
+stream_export stream *openssl_rstream(const char *hostname, BIO *bio);
+stream_export stream *openssl_wstream(const char *hostname, BIO *bio);
+#endif
+
 
 #endif /*_STREAM_H_*/

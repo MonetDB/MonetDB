@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 BISON_TARGET(sqlparser
@@ -16,6 +20,7 @@ add_library(sqlserver STATIC)
 
 set(sqlserver_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/sql_parser.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/rel_file_loader.h
   ${CMAKE_CURRENT_SOURCE_DIR}/sql_mvc.h)
 
 target_sources(sqlserver
@@ -59,6 +64,7 @@ target_sources(sqlserver
   rel_psm.c
   rel_xml.c
   rel_dump.c
+  rel_file_loader.c
   rel_dump.h rel_exp.h rel_rel.h
   rel_basetable.h
   rel_rewriter.h
@@ -88,6 +94,7 @@ target_sources(sqlserver
   sql_symbol.h
   sql_tokens.h
   sql_partition.h
+  rel_file_loader.h
   ${BISON_sqlparser_OUTPUT_HEADER}
   ${BISON_sqlparser_OUTPUT_SOURCE}
   PUBLIC

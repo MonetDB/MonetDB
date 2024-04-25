@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _SQL_SEMANTIC_H_
@@ -17,6 +21,7 @@ typedef struct exp_kind_t {
 	bte type;
 	bte card;
 	bit reduce;
+	bit aggr;	/* passed from outer query */
 } exp_kind;
 
 extern sql_schema *cur_schema(mvc *sql);
@@ -32,15 +37,12 @@ extern bool find_variable_on_scope(mvc *sql, const char *sname, const char *name
 
 /* These functions find catalog functions according to scoping rules */
 /* The private flag tells to attempt to bind functions that cannot be seen by users */
-extern sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private, sql_subfunc *prev);
-extern sql_subfunc *sql_bind_member(mvc *sql, const char *sname, const char *fname, sql_subtype *tp, sql_ftype type, int nrargs, bool private, sql_subfunc *prev);
-extern sql_subfunc *sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type, bool private);
+sql_export sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private, sql_subfunc *prev);
+extern sql_subfunc *sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type, bool private, bool exact);
 extern sql_subfunc *sql_bind_func3(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type, bool private);
 extern sql_subfunc *sql_bind_func_result(mvc *sql, const char *sname, const char *fname, sql_ftype type, bool private, sql_subtype *res, int nargs, ...);
-extern sql_subfunc *sql_bind_func_(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private);
-extern sql_subfunc *sql_resolve_function_with_undefined_parameters(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private);
+extern sql_subfunc *sql_bind_func_(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private, bool exact);
 
-extern list *sql_find_funcs(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private);
 extern list *sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype type, bool private);
 
 extern char *qname_schema(dlist *qname);
@@ -49,7 +51,6 @@ extern char *qname_catalog(dlist *qname);
 #define qname_module(qname) qname_schema(qname)
 
 extern sql_subtype *result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r);
-extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
 
 typedef enum {
 	type_set,	/* set operations have very limiting coersion rules */
@@ -62,11 +63,13 @@ typedef enum {
  * functions and procedures are kept in the param list.  */
 
 extern void sql_add_param(mvc *sql, const char *name, sql_subtype *st);
-extern sql_arg *sql_bind_param(mvc *sql, const char *name);
+extern int sql_bind_param(mvc *sql, const char *name); /* -1 error, 0 nr-1, param */
+extern sql_arg *sql_bind_paramnr(mvc *sql, int nr);
 /* once the type of the '?' parameters is known it's set using the set_type
  * function */
 extern int set_type_param(mvc *sql, sql_subtype *type, int nr);
 extern void sql_destroy_params(mvc *sql);	/* used in backend */
+extern sql_arg *sql_find_param(mvc *sql, char *name);
 
 extern char *symbol2string(mvc *sql, symbol *s, int expression, char **err);
 //extern char *dlist2string(mvc *sql, dlist *s, int expression, char **err);

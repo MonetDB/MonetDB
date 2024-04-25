@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -26,6 +30,8 @@ typedef struct Column_t {
 	const char *name;			/* column title */
 	const char *sep;
 	const char *rsep;
+	char decsep;
+	char decskip;
 	int seplen;
 	const char *type;
 	int adt;					/* type index */
@@ -40,7 +46,8 @@ typedef struct Column_t {
 	int fieldstart;				/* Fixed character field load positions */
 	int fieldwidth;
 	int scale, precision;
-	ssize_t (*tostr)(void *extra, char **buf, size_t *len, int type, const void *a);
+	ssize_t (*tostr)(void *extra, char **buf, size_t *len, int type,
+					 const void *a);
 	void *(*frstr)(struct Column_t *fmt, int type, const char *s);
 	void *extra;
 	void *data;
@@ -61,7 +68,7 @@ typedef struct Column_t {
 typedef struct Table_t {
 	BUN offset;
 	BUN nr;						/* allocated space for table loads */
-	BUN nr_attrs;				/* attributes found sofar */
+	BUN nr_attrs;				/* attributes found so far */
 	Column *format;				/* remove later */
 	str error;					/* last error */
 	int tryall;					/* skip erroneous lines */
@@ -69,13 +76,17 @@ typedef struct Table_t {
 	BAT *complaints;			/* lines that did not match the required input */
 } Tablet;
 
-mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam, bool escape);
+mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
+							const char *csep, const char *rsep, char quote,
+							lng skip, lng maxrow, int best, bool from_stdin,
+							const char *tabnam, bool escape);
 mal_export str TABLETcreate_bats(Tablet *as, BUN est);
 mal_export str TABLETcollect(BAT **bats, Tablet *as);
-mal_export str TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset);
 mal_export void TABLETdestroy_format(Tablet *as);
-mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
-mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in);
+mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						   InstrPtr pci);
+mal_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+								 InstrPtr pci);
 
 #endif

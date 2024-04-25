@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -225,9 +229,9 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 
 	if (n >= cnt) {
 		/* trivial: return all candidates */
-		if (lastp)
-			*lastp = 0;
 		bn = canditer_slice(&ci, 0, ci.ncand);
+		if (bn && lastp)
+			*lastp = oid_nil;
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (trivial -- " LLFMT " usec)\n",
@@ -1059,7 +1063,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BATiter *bi, BAT *s, BUN n, bool asc, 
 			BBPunfix(bn1->batCacheid);
 			if (bn == NULL)
 				return GDK_FAIL;
-		} else {
+		} else if (last != oid_nil) {
 			BAT *bn1, *bn2;
 
 			bn1 = bn;

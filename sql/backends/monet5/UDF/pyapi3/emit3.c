@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -11,7 +15,6 @@
 #include "conversion.h"
 #include "convert_loops.h"
 #include "type_conversion.h"
-#include "gdk_interprocess.h"
 #include "gdk_time.h"
 
 #include "unicode.h"
@@ -296,7 +299,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 								msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
 								goto wrapup;
 							}
-						} break;
+							break;
+						}
 					}
 				}
 			} else {
@@ -326,6 +330,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				/* we're not maintaining properties */
 				self->cols[i].b->tsorted = false;
 				self->cols[i].b->trevsorted = false;
+				self->cols[i].b->tkey = false;
 
 				switch (self->cols[i].b->ttype) {
 					case TYPE_bit:

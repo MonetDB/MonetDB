@@ -1,12 +1,17 @@
+.\" SPDX-License-Identifier: MPL-2.0
+.\"
 .\" This Source Code Form is subject to the terms of the Mozilla Public
 .\" License, v. 2.0.  If a copy of the MPL was not distributed with this
 .\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
 .\"
-.\" Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+.\" Copyright 2024 MonetDB Foundation;
+.\" Copyright August 2008 - 2023 MonetDB B.V.;
+.\" Copyright 1997 - July 2008 CWI.
+.\"
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 "NOVEMBER 2012" MonetDB "MonetDB Applications"
+.TH MONETDB 1 2023-12-21 MonetDB "MonetDB Applications"
 .SH NAME
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS
@@ -107,7 +112,7 @@ steps before releasing it to users, unless the
 .B \-p
 argument is supplied.  See also
 .BR "monetdb lock" .
-The name of the database must match the expression [A\-Za\-z0\-9\-_]+.
+The name of the database must match the expression [A\-Za\-z0\-9_\-]+.
 .RS
 .TP
 \fB\-m\fP \fIpattern\fP
@@ -154,8 +159,10 @@ database, bring it down first using the
 command.
 .RE
 .TP
-\fBlock\fP \fIdatabase\fP [\fIdatabase\fP ...]
-Puts the given database in maintenance mode.  A database under
+\fBlock\fP [\fB\-a\fP] \fIdatabase\fP [\fIdatabase\fP ...]
+Puts the given database(s), or, when
+.B \-a
+is supplied, all databases in maintenance mode.  A database under
 maintenance can only be connected to by an administrator account
 (by default the
 .I monetdb
@@ -169,8 +176,10 @@ database which is under maintenance for administrator access, the
 .B start
 command can be used.
 .TP
-\fBrelease\fP \fIdatabase\fP [\fIdatabase\fP ...]
-Brings back a database from maintenance mode.  A released database is
+\fBrelease\fP [\fB\-a\fP] \fIdatabase\fP [\fIdatabase\fP ...]
+Brings the given database(s), or, when
+.B \-a
+is supplied, all databases back from maintenance mode. A released database is
 available again for normal use by any client, and is started on demand.
 Use the
 .B lock
@@ -376,8 +385,8 @@ database.  For each property its source and value are printed.  Source
 indicates where the current value comes from, e.g. the configuration
 file, or a local override.
 .TP
-\fBset\fP \fIproperty\fP\fB=\fP\fIvalue\fP \fIdatabase\fP [\fIdatabase\fP ...]
-Sets property to value for the given database.  For a list of
+\fBset\fP \fIproperty\fP\fB=\fP\fIvalue\fP [\fIdatabase\fP ...]
+Sets property to value for the given database(s), or all. For a list of
 properties, run
 .BR "monetdb get all" .
 Most properties require the database to be stopped when set.
@@ -405,6 +414,17 @@ processing.  Normally, this number equals the number of available CPU
 cores in the system.  Reducing this number forces the server to use less
 parallelism when executing queries, or none at all if set to
 .BR 1 .
+.TP
+\fBncopyintothreads=\fP\fInumber\fP 
+Defines the maximum number of worker threads the server should use to
+perform COPY INTO from a CSV file.  The actual number of threads used is
+never higher than the number of columns, and is \fB1\fP if the number of
+rows is small.  Normally, this number is equal to the value of the
+\fBnthreads\fP property.  Using this number forces the server to use
+more or less parallelism when executing COPY INTO.  Note, COPY INTO
+threads are created in addition to normal worker threads for each COPY
+INTO query that is being executed and therefore contend for the CPU
+with other queries.
 .TP
 \fBoptpipe=\fP\fIstring\fP
 Each server operates with a given optimizer pipeline.  While the default
@@ -443,9 +463,9 @@ to a \fB\-\-loadmodule=\fP\fImodule\fP option to
 for each of the modules in the list.
 .RE
 .TP
-\fBinherit\fP \fIproperty\fP \fIdatabase\fP [\fIdatabase\fP ...]
+\fBinherit\fP \fIproperty\fP [\fIdatabase\fP ...]
 Like set, but unsets the database-local value, and reverts to inherit
-from the default again.
+from the default again for the given database(s), or all.
 .TP
 \fBdiscover\fP [\fIexpression\fP]
 Returns a list of remote monetdbds and database URIs
@@ -462,7 +482,7 @@ section
 Next to database URIs the hostnames and ports for monetdbds that
 allow to be controlled remotely can be found in the discover list masked
 with an asterisk.  These entries can easily be filtered out using an
-expression (e.g. "mapi:monetdb:*") if desired.  The control entries come
+expression (e.g. ``mapi:monetdb:*'') if desired.  The control entries come
 in handy when one wants to get an overview of available monetdbds in
 e.g. a local cluster.  Note that for
 .I monetdbd
@@ -494,9 +514,9 @@ These expressions are
 limited shell-globbing like, where the * in any position is expanded to
 an arbitrary string.  The * can occur multiple times in the expression,
 allowing for more advanced matches.  Note that the empty string also
-matches the *, hence "de*mo" can return "demo" as match.  To match the
-literal '*' character, one has to escape it using a backslash, e.g.
-"\e*".
+matches the *, hence ``de*mo'' can return ``demo'' as match.  To match the
+literal ``*'' character, one has to escape it using a backslash, e.g.
+``\[rs]*''.
 .SH RETURN VALUE
 The
 .I monetdb

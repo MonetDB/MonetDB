@@ -80,7 +80,7 @@ project (
 | | | | ) [ ("%6"."%6" NOT NULL) ! <= (tinyint(3) "1") ! <= ("%6"."%6" NOT NULL), (tinyint(3) "3") <= ("%6"."%6" NOT NULL) <= (tinyint(3) "5") ]
 | | | ) [ "%6"."%6" NOT NULL as "v0"."vc0" ]
 | | ) [ "v0"."vc0" NOT NULL ]
-| ) [ "sys"."sql_max"(tinyint(1) "1", tinyint(1) "1") NOT NULL as "v20"."vc0" ]
+| ) [ "sys"."sql_max"(tinyint(1) "1", tinyint(1) "1") NOT NULL as "%20"."%20" ]
 ) [ tinyint(1) "1" ]
 
 statement ok
@@ -363,7 +363,7 @@ create or replace view v30(vc0) as (select cast(null as clob))
 query I nosort
 select json."isvalid"(CAST(v30.vc0 AS JSON)) FROM v30
 ----
-1
+NULL
 
 statement ok
 ROLLBACK
@@ -648,12 +648,10 @@ least(3, sub0.c1) FROM vx JOIN (SELECT 4, vy.vc0 FROM vy) AS sub0(c1,c2) ON TRUE
 project (
 | crossproduct (
 | | table("sys"."rt0") [ "rt0"."%TID%" NOT NULL UNIQUE ],
-| | project (
-| | | crossproduct (
-| | | |  [ boolean(1) "true" as "%1"."%1" ],
-| | | |  [ boolean(1) "true" as "%2"."%2" ]
-| | | ) [  ]
-| | ) [ "sys"."casewhen"(tinyint(2) "2", tinyint(3) "4", char(1) "c", char(1) NULL) as "sub0"."c0" ]
+| | crossproduct (
+| | |  [ boolean(1) "true" as "%1"."%1" ],
+| | |  [ boolean(1) "true" as "%3"."%3" ]
+| | ) [  ]
 | ) [  ]
 ) [ tinyint(1) "1" ]
 

@@ -7,7 +7,6 @@ tst005
 tst006
 tst007
 tst008
-tst009
 tst010
 tst011
 tst012
@@ -46,7 +45,7 @@ tst045
 tst046
 tst047
 tst048
-tst049
+HAVE_LIBPCRE?tst049
 tst050
 tst051
 tst052
@@ -121,19 +120,10 @@ tst234
 tst235
 tst237
 tst250
-tst2500
-tst2501
-tst2502
-tst2503
-tst2504
-tst2505
-tst2510
 tst251
 tst252
 tst255
-tst2550
 tst256
-tst2570
 tst272
 #tst275	# incorrect hash
 tst280
@@ -164,14 +154,12 @@ tst750
 tst755
 tst760
 tst770
-tst780
 tst802
 tst804
 tst810
 tst819
 tst840
 tst850
-tst866
 tst870
 tst880
 tst890
@@ -184,7 +172,6 @@ tst906
 tst907
 tst908
 #tst911 micro benchmark, should move ..
-tst912
 tst913
 tst914
 tst960
@@ -199,3 +186,4 @@ pithole
 malids
 # Tracer
 # # tracer00 Output is call dependent
+HAVE_HGE?mal_int128

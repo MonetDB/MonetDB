@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -15,19 +19,23 @@ static sql_exp *
 comparison_find_column(sql_exp *input, sql_exp *e)
 {
 	switch (input->type) {
-		case e_convert: {
-			list *types = (list *)input->r;
-			sql_class from = ((sql_subtype*)types->h->data)->type->eclass, to = ((sql_subtype*)types->h->next->data)->type->eclass;
-			if (from == to)
-				return comparison_find_column(input->l, e) ? input : NULL;
-			return NULL;
-		}
-		case e_column:
-			return exp_match(e, input) ? input : NULL;
-		default:
-			return NULL;
+	case e_convert: {
+		list *types = (list *)input->r;
+		sql_class from = ((sql_subtype*)types->h->data)->type->eclass, to = ((sql_subtype*)types->h->next->data)->type->eclass;
+		if (from == to)
+			return comparison_find_column(input->l, e) ? input : NULL;
+		return NULL;
+	}
+	case e_column:
+		return exp_match(e, input) ? input : NULL;
+	default:
+		return NULL;
 	}
 }
+
+/* multi lo <= col <= hi, maybe still be false even if lo or hi are NULL, possibly similar for filter on multiple
+ * columns */
+#define comp_single_column(c) (!c->f)
 
 static sql_exp *
 rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
@@ -62,10 +70,10 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 					if (comp->type == e_cmp) {
 						if (is_theta_exp(comp->flag) && ((lne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e)) || (fe && (fne = comparison_find_column(fe, e))))) {
 							atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX),
-								 *rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
+								*rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 
 							/* not semantics found or if explicitly filtering not null values from the column */
-							found_without_semantics |= !is_semantics(comp) || (comp->flag == cmp_equal && lne && is_anti(comp) && exp_is_null(re));
+							found_without_semantics |= (!is_semantics(comp) && comp_single_column(comp)) || (comp->flag == cmp_equal && lne && is_anti(comp) && exp_is_null(re));
 							still_unique |= comp->flag == cmp_equal && is_unique(le) && is_unique(re); /* unique if only equi-joins on unique columns are there */
 							if (is_full(rel->op) || (is_left(rel->op) && found_left) || (is_right(rel->op) && found_right)) /* on outer joins, min and max cannot be propagated on some cases */
 								continue;
@@ -115,16 +123,16 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 							} else if (lval_min && lval_max && rval_min && rval_max && atom_cmp(rval_max, lval_min) >= 0 && atom_cmp(rval_min, lval_max) <= 0) {
 								/* both min and max must be set and the intervals must overlap */
 								switch (comp->flag) {
-								case cmp_equal: { /* for equality reduce */
+								case cmp_equal: /* for equality reduce */
 									set_minmax_property(sql, e, PROP_MAX, is_anti(comp) ? statistics_atom_max(sql, lval_max, rval_max) : statistics_atom_min(sql, lval_max, rval_max));
 									set_minmax_property(sql, e, PROP_MIN, is_anti(comp) ? statistics_atom_min(sql, lval_min, rval_min) : statistics_atom_max(sql, lval_min, rval_min));
-								} break;
-								case cmp_notequal: { /* for inequality expand */
+									break;
+								case cmp_notequal: /* for inequality expand */
 									set_minmax_property(sql, e, PROP_MAX, is_anti(comp) ? statistics_atom_min(sql, lval_max, rval_max) : statistics_atom_max(sql, lval_max, rval_max));
 									set_minmax_property(sql, e, PROP_MIN, is_anti(comp) ? statistics_atom_max(sql, lval_min, rval_min) : statistics_atom_min(sql, lval_min, rval_min));
-								} break;
+									break;
 								case cmp_gt:
-								case cmp_gte: {
+								case cmp_gte:
 									if (!is_anti(comp) && lne) { /* min is max from both min */
 										prop *p = find_prop(e->p, PROP_MIN);
 										set_minmax_property(sql, e, PROP_MIN, p ? statistics_atom_max(sql, rval_min, p->value.pval) : rval_min);
@@ -132,9 +140,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 										prop *p = find_prop(e->p, PROP_MAX);
 										set_minmax_property(sql, e, PROP_MAX, p ? statistics_atom_min(sql, lval_max, p->value.pval) : lval_max);
 									}
-								} break;
+									break;
 								case cmp_lt:
-								case cmp_lte: {
+								case cmp_lte:
 									if (!is_anti(comp) && lne) { /* max is min from both max */
 										prop *p = find_prop(e->p, PROP_MAX);
 										set_minmax_property(sql, e, PROP_MAX, p ? statistics_atom_min(sql, rval_max, p->value.pval) : rval_max);
@@ -142,7 +150,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 										prop *p = find_prop(e->p, PROP_MIN);
 										set_minmax_property(sql, e, PROP_MIN, p ? statistics_atom_max(sql, lval_min, p->value.pval) : lval_min);
 									}
-								} break;
+									break;
 								default: /* Maybe later I can do cmp_in and cmp_notin */
 									break;
 								}
@@ -185,7 +193,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 						prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 						p->value.dval = 1;
 					} else if (((is_basetable(rel->op) || is_except(rel->op) || is_inter(rel->op) || is_simple_project(rel->op) ||
-								(is_groupby(rel->op) && exps_find_exp(rel->r, e))) &&
+								 (is_groupby(rel->op) && exps_find_exp(rel->r, e))) &&
 								(est = find_prop(found->p, PROP_NUNIQUES)) && !find_prop(e->p, PROP_NUNIQUES))) {
 						prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 						p->value.dval = est->value.dval;
@@ -197,7 +205,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		}
 		case op_topn:
 		case op_sample:
-			 return rel_propagate_column_ref_statistics(sql, rel->l, e);
+			return rel_propagate_column_ref_statistics(sql, rel->l, e);
 		default:
 			break;
 		}
@@ -206,7 +214,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 }
 
 static atom *
-atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValRecord *v)
+atom_from_valptr( allocator *sa, sql_subtype *tpe, ValRecord *v)
 {
 	atom *a = SA_NEW(sa, atom);
 
@@ -216,39 +224,69 @@ atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValRecord *v)
 	return a;
 }
 
-static inline void
+void
+sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e)
+{
+	bool nonil = false, unique = false;
+	double unique_est = 0.0;
+	ValRecord min, max;
+	int ok = mvc_col_stats(sql, c, &nonil, &unique, &unique_est, &min, &max);
+
+	if (has_nil(e) && nonil)
+		set_has_no_nil(e);
+	if (!is_unique(e) && unique)
+		set_unique(e);
+	if (unique_est != 0.0) {
+		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+		p->value.dval = unique_est;
+	}
+	unsigned int digits = 0;
+	sql_subtype *et = exp_subtype(e);
+	if (et->type->eclass == EC_DEC || et->type->eclass == EC_NUM)
+		digits = et->digits;
+	if ((ok & 2) == 2) {
+		if (!VALisnil(&max)) {
+			prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
+			p->value.pval = atom_from_valptr(sql->sa, &c->type, &max);
+			if (digits) {
+				unsigned int nd = atom_digits(p->value.pval);
+				if (nd < digits)
+					digits = nd;
+				if (!digits)
+					digits = 1;
+			}
+		}
+		VALclear(&max);
+	}
+	if ((ok & 1) == 1) {
+		if (!VALisnil(&min)) {
+			prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
+			p->value.pval = atom_from_valptr(sql->sa, &c->type, &min);
+			if (digits) {
+				unsigned int nd = atom_digits(p->value.pval);
+				if (nd > digits) /* possibly set to low by max value */
+					digits = nd;
+				if (!digits)
+					digits = 1;
+			}
+		}
+		VALclear(&min);
+	}
+	if (digits)
+		et->digits = digits;
+	if (et->type->eclass == EC_DEC && et->digits <= et->scale)
+		et->digits = et->scale + 1;
+}
+
+static void
 rel_basetable_column_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 {
+	if (e->p)
+		return;
 	sql_column *c = NULL;
 
 	if ((c = name_find_column(rel, exp_relname(e), exp_name(e), -2, NULL))) {
-		bool nonil = false, unique = false;
-		double unique_est = 0.0;
-		ValRecord min, max;
-		int ok = mvc_col_stats(sql, c, &nonil, &unique, &unique_est, &min, &max);
-
-		if (has_nil(e) && nonil)
-			set_has_no_nil(e);
-		if (!is_unique(e) && unique)
-			set_unique(e);
-		if (unique_est != 0.0) {
-			prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
-			p->value.dval = unique_est;
-		}
-		if ((ok & 2) == 2) {
-			if (!VALisnil(&max)) {
-				prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
-				p->value.pval = atom_from_valptr(sql->sa, &c->type, &max);
-			}
-			VALclear(&max);
-		}
-		if ((ok & 1) == 1) {
-			if (!VALisnil(&min)) {
-				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
-				p->value.pval = atom_from_valptr(sql->sa, &c->type, &min);
-			}
-			VALclear(&min);
-		}
+		sql_column_get_statistics(sql, c, e);
 	}
 }
 
@@ -257,7 +295,7 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 {
 	sql_exp *le = list_fetch(lexps, i), *re = list_fetch(rexps, i);
 	atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX),
-		 *rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
+		*rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 	prop *est;
 
 	/* for the intersection, if both expresssions don't overlap, it can be pruned */
@@ -315,7 +353,7 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	(void) depth;
 	switch(e->type) {
-	case e_column: {
+	case e_column:
 		switch (rel->op) { /* set relations don't call rel_propagate_statistics */
 		case op_join:
 		case op_left:
@@ -326,14 +364,16 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			sql_exp *found = rel_propagate_column_ref_statistics(sql, rel->l, e);
 			if (!found)
 				(void) rel_propagate_column_ref_statistics(sql, rel->r, e);
-		} break;
+			break;
+		}
 		case op_select:
 		case op_project:
 		case op_groupby: {
 			sql_exp *found = rel_propagate_column_ref_statistics(sql, rel->l, e); /* labels may be found on the same projection, ugh */
 			if (!found && is_simple_project(rel->op))
 				(void) rel_propagate_column_ref_statistics(sql, rel, e);
-		} break;
+			break;
+		}
 		case op_insert:
 		case op_update:
 		case op_delete:
@@ -342,7 +382,7 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		default:
 			break;
 		}
-	} break;
+		break;
 	case e_convert: {
 		sql_subtype *to = exp_totype(e), *from = exp_fromtype(e);
 		sql_exp *l = e->l;
@@ -370,7 +410,8 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		}
 		if (!has_nil(l))
 			set_has_no_nil(e);
-	} break;
+		break;
+	}
 	case e_aggr:
 	case e_func: {
 		BUN lv;
@@ -402,8 +443,9 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			}
 			set_unique(e);
 		}
-	} break;
-	case e_atom: {
+		break;
+	}
+	case e_atom:
 		if (e->l) {
 			atom *a = (atom*) e->l;
 			if (!a->isnull) {
@@ -454,7 +496,7 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 			p->value.dval = 1;
 		}
-	} break;
+		break;
 	case e_cmp:
 		/* TODO? propagating min/max/unique of booleans is not very worth it */
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -497,6 +539,8 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 		if (is_single(l))
 			return rel->exps;
 	}
+	if (!list_empty(rel->attr))
+		return rel->exps;
 	for (node *n = rel->exps->h ; n ; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -521,7 +565,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 				always_true |= !has_nil(le) && !has_nil(re) && !has_nil(fe) &&
 					lval_min && lval_max && rval_min && rval_max && fval_min && fval_max &&
 					(is_anti(e) ? ((lower == cmp_gte ? atom_cmp(rval_min, lval_max) > 0 : atom_cmp(rval_min, lval_max) >= 0) || (higher == cmp_lte ? atom_cmp(lval_min, fval_max) > 0 : atom_cmp(lval_min, fval_max) >= 0) || atom_cmp(rval_min, fval_max) > 0) :
-					((lower == cmp_gte ? atom_cmp(lval_min, rval_max) >= 0 : atom_cmp(lval_min, rval_max) > 0) && (higher == cmp_lte ? atom_cmp(fval_min, lval_max) >= 0 : atom_cmp(fval_min, lval_max) > 0)));
+					 ((lower == cmp_gte ? atom_cmp(lval_min, rval_max) >= 0 : atom_cmp(lval_min, rval_max) > 0) && (higher == cmp_lte ? atom_cmp(fval_min, lval_max) >= 0 : atom_cmp(fval_min, lval_max) > 0)));
 			} else if (!fe) {
 				if (!is_semantics(e)) /* trival not null cmp null case */
 					always_false |= !is_anti(e) && ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)));
@@ -566,7 +610,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 					if (lval_max && rval_min)
 						always_true |= !has_nil(le) && !has_nil(re) && (is_anti(e) ? atom_cmp(lval_max, rval_min) > 0 : atom_cmp(lval_max, rval_min) <= 0);
 					break;
-				default: /* Maybe later I can do cmp_in, cmp_notin, mark_in and mark_notin, but don't forget to remove is_theta_exp check up there */
+				default: /* Maybe later I can do cmp_in and cmp_notin but don't forget to remove is_theta_exp check up there */
 					break;
 				}
 			}
@@ -670,7 +714,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		return rel;
 	rel->used |= statistics_gathered;
 
-	switch(rel->op){
+	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = (sql_table *) rel->l;
 		sqlstore *store = v->sql->session->tr->store;
@@ -682,7 +726,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		/* Set table row count. TODO? look for remote tables. Don't look at storage for declared tables, because it won't be cleaned */
 		if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
 			set_count_prop(v->sql->sa, rel, (BUN)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, 10));
-	} break;
+		break;
+	}
 	case op_union:
 	case op_inter:
 	case op_except: {
@@ -761,7 +806,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			rel_destroy(rel->r);
 			rel->r = NULL;
 			for (node *n = rel->exps->h ; n ; n = n->next) {
-				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 				exp_prop_alias(v->sql->sa, a, e);
 				n->data = a;
 			}
@@ -777,7 +822,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			set_nodistinct(rel); /* set relations may have distinct flag set */
 			v->changes++;
 		}
-	} break;
+		break;
+	}
 	case op_join:
 	case op_left:
 	case op_right:
@@ -859,12 +905,13 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			} else if (lv != BUN_NONE && rv != BUN_NONE) {
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX / lv)) ? BUN_MAX : (lv * rv)); /* overflow check */
 			}
-		} break;
-		case op_anti: {
+			break;
+		}
+		case op_anti:
 			set_count_prop(v->sql->sa, rel, get_rel_count(l));
-		} break;
+			break;
 		case op_semi:
-		case op_select: {
+		case op_select:
 			/* TODO calculate cardinalities using selectivities */
 			if (list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
 				set_count_prop(v->sql->sa, rel, 0);
@@ -877,19 +924,21 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 						/* simple expressions first */
 						if (e->type == e_cmp && e->flag == cmp_equal && exp_is_atom(er)) {
 							/* use selectivity */
-							prop *p = NULL;
+							prop *p;
 							if ((p = find_prop(el->p, PROP_NUNIQUES))) {
 								u = (BUN) p->value.dval;
+								break;
 							}
 						}
 					}
-					set_count_prop(v->sql->sa, rel, cnt/u);
+					/* u is an *estimate*, so don't set count_prop to 0 unless cnt is 0 */
+					set_count_prop(v->sql->sa, rel, cnt == 0 ? 0 : u == 0 || u > cnt ? 1 : cnt/u);
 				} else {
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}
 			}
-		} break;
-		case op_project: {
+			break;
+		case op_project:
 			if (l) {
 				if (need_distinct(rel)) {
 					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(v->sql, l, rel->exps));
@@ -907,18 +956,19 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				}
 				set_count_prop(v->sql->sa, rel, card);
 			}
-		} break;
-		case op_groupby: {
+			break;
+		case op_groupby:
 			if (list_empty(rel->r)) {
 				set_count_prop(v->sql->sa, rel, 1);
 			} else {
 				set_count_prop(v->sql->sa, rel, rel_calc_nuniques(v->sql, l, rel->r));
 			}
-		} break;
+			break;
 		default:
 			break;
 		}
-	} break;
+		break;
+	}
 	case op_topn: {
 		BUN lv = get_rel_count(rel->l);
 
@@ -934,7 +984,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			}
 			set_count_prop(v->sql->sa, rel, lv);
 		}
-	} break;
+		break;
+	}
 	case op_sample: {
 		BUN lv = get_rel_count(rel->l);
 
@@ -952,7 +1003,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			}
 			set_count_prop(v->sql->sa, rel, lv);
 		}
-	} break;
+		break;
+	}
 	case op_table: {
 		sql_exp *op = rel->r;
 		if (rel->flag != TRIGGER_WRAPPER && op) {
@@ -966,29 +1018,30 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			} else if (f->func->lang == FUNC_LANG_MAL && strncmp(f->func->base.name, "querylog", 8) == 0) {
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of querylog */);
 			} else if (f->func->lang == FUNC_LANG_MAL &&
-						(strcmp(f->func->base.name, "queue") == 0 ||
-						 strcmp(f->func->base.name, "optimizers") == 0 ||
-						 strcmp(f->func->base.name, "env") == 0 ||
-						 strcmp(f->func->base.name, "keywords") == 0 ||
-						 strcmp(f->func->base.name, "statistics") == 0 ||
-						 strcmp(f->func->base.name, "rejects") == 0 ||
-						 strcmp(f->func->base.name, "schemastorage") == 0 ||
-						 strncmp(f->func->base.name, "storage", 7) == 0 ||
-						 strcmp(f->func->base.name, "sessions") == 0) ) {
+					   (strcmp(f->func->base.name, "queue") == 0 ||
+						strcmp(f->func->base.name, "optimizers") == 0 ||
+						strcmp(f->func->base.name, "env") == 0 ||
+						strcmp(f->func->base.name, "keywords") == 0 ||
+						strcmp(f->func->base.name, "statistics") == 0 ||
+						strcmp(f->func->base.name, "rejects") == 0 ||
+						strcmp(f->func->base.name, "schemastorage") == 0 ||
+						strncmp(f->func->base.name, "storage", 7) == 0 ||
+						strcmp(f->func->base.name, "sessions") == 0) ) {
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of queue */);
-			/*} else {
-				printf("%%func needs stats : %s\n", f->func->base.name);
-				*/
 			}
+			/* else {
+				printf("%%func needs stats : %s\n", f->func->base.name);
+			} */
 		}
-	} break;
+		break;
+	}
 	/*These relations are less important for now
-	TODO later we can tune it
+	  TODO later we can tune it */
 	case op_insert:
 	case op_update:
 	case op_delete:
 	case op_truncate:
-	case op_ddl:*/
+	case op_ddl:
 	default:
 		break;
 	}
@@ -1011,7 +1064,7 @@ run_optimizer
 bind_get_statistics(visitor *v, global_props *gp)
 {
 	(void) v;
-	return gp->opt_level == 1 ? rel_get_statistics : NULL;
+	return (gp->opt_level == 1 && !gp->cnt[op_insert]) ? rel_get_statistics : NULL;
 }
 
 
@@ -1049,7 +1102,7 @@ rel_push_select_up(visitor *v, sql_rel *rel)
 	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) || is_semi(rel->op)) && !is_single(rel)) {
 		sql_rel *l = rel->l, *r = rel->r;
 		bool can_pushup_left = is_select(l->op) && !rel_is_ref(l) && !is_single(l) && (is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op)),
-			 can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_single(r) && (is_innerjoin(rel->op) || is_right(rel->op));
+			can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_single(r) && (is_innerjoin(rel->op) || is_right(rel->op));
 
 		if (can_pushup_left || can_pushup_right) {
 			if (can_pushup_left)
@@ -1084,30 +1137,29 @@ sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_ba
 	if (!t)
 		return 0;
 	switch (ATOMstorage(t->type->localtype)) {
-		case TYPE_bte:
-			return 150 - 8;
-		case TYPE_sht:
-			return 150 - 16;
-		case TYPE_int:
-			return 150 - 32;
-		case TYPE_void:
-		case TYPE_lng:
-			return 150 - 64;
-		case TYPE_uuid:
+	case TYPE_bte:
+		return 150 - 8;
+	case TYPE_sht:
+		return 150 - 16;
+	case TYPE_int:
+		return 150 - 32;
+	case TYPE_void:
+	case TYPE_lng:
+		return 150 - 64;
+	case TYPE_uuid:
 #ifdef HAVE_HGE
-		case TYPE_hge:
+	case TYPE_hge:
 #endif
-			return 150 - 128;
-		case TYPE_flt:
-			return 75 - 24;
-		case TYPE_dbl:
-			return 75 - 53;
-		default: {
-			if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)))
-				return 150 - de * 8;
-			/* strings and blobs not duplicate eliminated don't get any points here */
-			return 0;
-		}
+		return 150 - 128;
+	case TYPE_flt:
+		return 75 - 24;
+	case TYPE_dbl:
+		return 75 - 53;
+	default:
+		if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)))
+			return 150 - de * 8;
+		/* strings and blobs not duplicate eliminated don't get any points here */
+		return 0;
 	}
 }
 
@@ -1165,6 +1217,8 @@ rel_select_order(visitor *v, sql_rel *rel)
 
 		for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
 			exps[i] = n->data;
+			if (find_prop(exps[i]->p, PROP_HASHCOL))
+				return rel;
 			scores[i] = score_se(v, rel, n->data);
 		}
 		GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
@@ -1176,7 +1230,7 @@ rel_select_order(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* Compute the efficiency of using this expression earl	y in a group by list */
+/* Compute the efficiency of using this expression early in a group by list */
 static int
 score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 {
@@ -1249,8 +1303,8 @@ rel_final_optimization_loop_(visitor *v, sql_rel *rel)
 	rel = rel_select_order(v, rel);
 
 	/* TODO? Maybe later add rel_simplify_count, rel_join2semijoin, rel_simplify_fk_joins,
-		rel_distinct_project2groupby, rel_simplify_predicates, rel_simplify_math,
-		rel_distinct_aggregate_on_unique_values */
+	   rel_distinct_project2groupby, rel_simplify_predicates, rel_simplify_math,
+	   rel_distinct_aggregate_on_unique_values */
 
 	rel = rel_groupby_order(v, rel);
 	return rel;

@@ -26,11 +26,11 @@ query IT rowsort
 io.print(f)
 ----
 0
-[1]
+1
 1
 []
 2
-[1]
+1
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,1)
@@ -39,11 +39,11 @@ query IT rowsort
 io.print(f)
 ----
 0
-["f2"]
+"f2"
 1
 []
 2
-["f2"]
+"f2"
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,2)
@@ -52,9 +52,9 @@ query IT rowsort
 io.print(f)
 ----
 0
-[2]
+2
 1
 []
 2
-[2]
+2
 

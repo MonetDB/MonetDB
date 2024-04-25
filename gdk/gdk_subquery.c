@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -446,8 +450,9 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
 		res->trevsorted = BATcount(res) <= 1;
-		res->tnil = hasnil != 0;
-		res->tnonil = hasnil == 0;
+		(void)hasnil;
+		res->tnil = false ;//hasnil != 0;
+		res->tnonil = false ;//hasnil == 0;
 	}
 
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",g=" ALGOBATFMT
@@ -498,7 +503,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 		if ((res = COLnew(min, TYPE_bit, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 		ret = (bit *) Tloc(res, 0);
-		memset(ret, FALSE, ngrp * sizeof(bit));
+		memset(ret, TRUE, ngrp * sizeof(bit));
 
 		if (!g || BATtdense(g))
 			gids = NULL;

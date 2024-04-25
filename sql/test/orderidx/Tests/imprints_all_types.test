@@ -124,12 +124,12 @@ select * from all_types
 -1 day, 23:59:50
 1988-07-15 07:30:00
 1988-07-15 07:30:00
-1988-07-15 08:30:00+01:00
-1988-07-15 08:30:00+01:00
+1988-07-15 07:30:00+01:00
+1988-07-15 07:30:00+01:00
 06:30:00
 06:30:00
-07:30:00+01:00
-07:30:00+01:00
+06:30:00+01:00
+06:30:00+01:00
 01234567
 01234567
 0123456
@@ -139,8 +139,8 @@ Avarchar
 A012345678
 120.0.0.0
 120.120.120.129
-{"A": -123}
-{"B": -456}
+{"A":-123}
+{"B":-456}
 https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
 https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 76236890-f4e2-4d4f-a02b-ec7a02c3cb50
@@ -173,12 +173,12 @@ https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 0:00:10
 1995-07-15 07:30:00
 1995-07-15 07:30:00
-1995-07-15 08:30:00+01:00
-1995-07-15 08:30:00+01:00
+1995-07-15 07:30:00+01:00
+1995-07-15 07:30:00+01:00
 07:30:00
 07:30:00
-08:30:00+01:00
-08:30:00+01:00
+07:30:00+01:00
+07:30:00+01:00
 123456
 123456
 123456
@@ -188,8 +188,8 @@ varchar
 0123456789
 127.0.0.0
 127.127.127.255
-{"a": 123}
-{"b": 456}
+{"a":123}
+{"b":456}
 www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
 www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 ae106ad4-81fd-4f1a-85e8-5efface60da4
@@ -200,7 +200,7 @@ insert into all_types select * from all_types
 query IIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types
 ----
-196 values hashing to 107441753e80c5ea264bfc9d155b6eb4
+196 values hashing to 5cf55d376197e5c814e0b0ff6807486b
 
 query TIIIIIT rowsort
 select name, schema_id, type, system, commit_action, access, query from sys._tables where name = 'all_types'
@@ -669,18 +669,18 @@ select "timestamp5" from all_types order by "timestamp5" ASC
 query T rowsort
 select "timestampzone" from all_types order by "timestampzone" ASC
 ----
-1988-07-15 08:30:00+01:00
-1988-07-15 08:30:00+01:00
-1995-07-15 08:30:00+01:00
-1995-07-15 08:30:00+01:00
+1988-07-15 07:30:00+01:00
+1988-07-15 07:30:00+01:00
+1995-07-15 07:30:00+01:00
+1995-07-15 07:30:00+01:00
 
 query T rowsort
 select "timestamp5zone" from all_types order by "timestamp5zone" ASC
 ----
-1988-07-15 08:30:00+01:00
-1988-07-15 08:30:00+01:00
-1995-07-15 08:30:00+01:00
-1995-07-15 08:30:00+01:00
+1988-07-15 07:30:00+01:00
+1988-07-15 07:30:00+01:00
+1995-07-15 07:30:00+01:00
+1995-07-15 07:30:00+01:00
 
 query T rowsort
 select "time" from all_types order by "time" ASC
@@ -701,18 +701,18 @@ select "time5" from all_types order by "time5" ASC
 query T rowsort
 select "timezone" from all_types order by "timezone" ASC
 ----
+06:30:00+01:00
+06:30:00+01:00
 07:30:00+01:00
 07:30:00+01:00
-08:30:00+01:00
-08:30:00+01:00
 
 query T rowsort
 select "time5zone" from all_types order by "time5zone" ASC
 ----
+06:30:00+01:00
+06:30:00+01:00
 07:30:00+01:00
 07:30:00+01:00
-08:30:00+01:00
-08:30:00+01:00
 
 query T rowsort
 select "blob" from all_types order by "blob" ASC
@@ -789,18 +789,18 @@ select "inet9" from all_types order by "inet9" ASC
 query T rowsort
 select "json" from all_types order by "json" ASC
 ----
-{"A": -123}
-{"A": -123}
-{"a": 123}
-{"a": 123}
+{"A":-123}
+{"A":-123}
+{"a":123}
+{"a":123}
 
 query T rowsort
 select "json10" from all_types order by "json10" ASC
 ----
-{"B": -456}
-{"B": -456}
-{"b": 456}
-{"b": 456}
+{"B":-456}
+{"B":-456}
+{"b":456}
+{"b":456}
 
 query T rowsort
 select "url" from all_types order by "url" ASC
@@ -1061,18 +1061,18 @@ select "timestamp5" from all_types order by "timestamp5" DESC
 query T rowsort
 select "timestampzone" from all_types order by "timestampzone" DESC
 ----
-1988-07-15 08:30:00+01:00
-1988-07-15 08:30:00+01:00
-1995-07-15 08:30:00+01:00
-1995-07-15 08:30:00+01:00
+1988-07-15 07:30:00+01:00
+1988-07-15 07:30:00+01:00
+1995-07-15 07:30:00+01:00
+1995-07-15 07:30:00+01:00
 
 query T rowsort
 select "timestamp5zone" from all_types order by "timestamp5zone" DESC
 ----
-1988-07-15 08:30:00+01:00
-1988-07-15 08:30:00+01:00
-1995-07-15 08:30:00+01:00
-1995-07-15 08:30:00+01:00
+1988-07-15 07:30:00+01:00
+1988-07-15 07:30:00+01:00
+1995-07-15 07:30:00+01:00
+1995-07-15 07:30:00+01:00
 
 query T rowsort
 select "time" from all_types order by "time" DESC
@@ -1093,18 +1093,18 @@ select "time5" from all_types order by "time5" DESC
 query T rowsort
 select "timezone" from all_types order by "timezone" DESC
 ----
+06:30:00+01:00
+06:30:00+01:00
 07:30:00+01:00
 07:30:00+01:00
-08:30:00+01:00
-08:30:00+01:00
 
 query T rowsort
 select "time5zone" from all_types order by "time5zone" DESC
 ----
+06:30:00+01:00
+06:30:00+01:00
 07:30:00+01:00
 07:30:00+01:00
-08:30:00+01:00
-08:30:00+01:00
 
 query T rowsort
 select "blob" from all_types order by "blob" DESC
@@ -1181,18 +1181,18 @@ select "inet9" from all_types order by "inet9" DESC
 query T rowsort
 select "json" from all_types order by "json" DESC
 ----
-{"A": -123}
-{"A": -123}
-{"a": 123}
-{"a": 123}
+{"A":-123}
+{"A":-123}
+{"a":123}
+{"a":123}
 
 query T rowsort
 select "json10" from all_types order by "json10" DESC
 ----
-{"B": -456}
-{"B": -456}
-{"b": 456}
-{"b": 456}
+{"B":-456}
+{"B":-456}
+{"b":456}
+{"b":456}
 
 query T rowsort
 select "url" from all_types order by "url" DESC
@@ -1224,7 +1224,7 @@ insert into all_types select * from all_types
 query IIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types order by 11,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10
 ----
-392 values hashing to 724732f91f937eb11f577fbaedfc1b3b
+392 values hashing to 5fbd5da37f5732507e66ce463dd6f8af
 
 query IT rowsort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name

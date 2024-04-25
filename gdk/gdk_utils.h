@@ -1,15 +1,22 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
 #include <setjmp.h>
+
+gdk_export void GDKprintinforegister(void (*func)(void));
+gdk_export void GDKprintinfo(void);
 
 gdk_export const char *GDKgetenv(const char *name);
 
@@ -75,7 +82,7 @@ gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 
 gdk_export void *GDKmmap(const char *path, int mode, size_t len)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return GDKmunmap(void *addr, size_t len);
+gdk_export gdk_return GDKmunmap(void *addr, int mode, size_t len);
 
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
@@ -102,7 +109,7 @@ gdk_export size_t GDKmallocated(const void *s);
 
 gdk_export void MT_init(void);	/*  init the package. */
 struct opt;
-gdk_export gdk_return GDKinit(struct opt *set, int setlen, bool embedded);
+gdk_export gdk_return GDKinit(struct opt *set, int setlen, bool embedded, const char *caller_revision);
 
 /* used for testing only */
 gdk_export void GDKsetmallocsuccesscount(lng count);
@@ -112,7 +119,6 @@ gdk_export void GDKsetmallocsuccesscount(lng count);
  * the transient BATs should be removed.  The buffer pool manager
  * takes care of this.
  */
-gdk_export void GDKexit(int status);
 gdk_export bool GDKexiting(void);
 
 gdk_export void GDKprepareExit(void);
@@ -167,7 +173,7 @@ gdk_export int GDKms(void);
 	({							\
 		void *_ptr = (p);				\
 		size_t _size = (s);				\
-		char _buf[12];					\
+		char _buf[2*sizeof(void*)+3];			\
 		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
 		void *_res = GDKrealloc(_ptr, _size);		\
 		TRC_DEBUG(ALLOC, "GDKrealloc(%s,%zu) -> %p\n",	\
@@ -210,13 +216,15 @@ gdk_export int GDKms(void);
 			  _res);					\
 		_res;							\
 	 })
-#define GDKmunmap(p, l)						\
-	({	void *_ptr = (p);				\
+#define GDKmunmap(p, m, l)					\
+	({							\
+		void *_ptr = (p);				\
+		int _mode = (m);				\
 		size_t _len = (l);				\
-		gdk_return _res = GDKmunmap(_ptr, _len);	\
+		gdk_return _res = GDKmunmap(_ptr, _mode, _len);	\
 		TRC_DEBUG(ALLOC,				\
-			  "GDKmunmap(%p,%zu) -> %u\n",		\
-			  _ptr, _len, _res);			\
+			  "GDKmunmap(%p,0x%x,%zu) -> %u\n",	\
+			  _ptr, _mode, _len, _res);		\
 		_res;						\
 	})
 #define malloc(s)					\
@@ -312,14 +320,14 @@ GDKmmap_debug(const char *path, int mode, size_t len)
 }
 #define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l))
 static inline gdk_return
-GDKmunmap_debug(void *ptr, size_t len)
+GDKmunmap_debug(void *ptr, int mode, size_t len)
 {
-	gdk_return res = GDKmunmap(ptr, len);
-	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
-			   	  ptr, len, (int) res);
+	gdk_return res = GDKmunmap(ptr, mode, len);
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,0x%x%zu) -> %d\n",
+		  ptr, mode, len, (int) res);
 	return res;
 }
-#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))
+#define GDKmunmap(p, m, l)	GDKmunmap_debug((p), (m), (l))
 static inline void *
 malloc_debug(size_t size)
 {

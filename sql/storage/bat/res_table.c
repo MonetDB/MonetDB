@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -24,9 +28,8 @@ bat_decref(bat bid)
 }
 
 res_table *
-res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t type, res_table *next, void *O)
+res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t type, res_table *next)
 {
-	BAT *order = (BAT*)O;
 	res_table *t = MNEW(res_table);
 	res_col *tcols = ZNEW_ARRAY(res_col, nr_cols);
 
@@ -46,16 +49,11 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_quer
 		.next = next,
 	};
 
-	if (order) {
-		t->order = order->batCacheid;
-		bat_incref(t->order);
-		t->nr_rows = BATcount(order);
-	}
 	return t;
 }
 
 res_col *
-res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *val, bool cached)
+res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, bool isbat, char mtype, void *val, bool cached)
 {
 	res_col *c = t->cols + t->cur_col;
 	BAT *b;
@@ -72,8 +70,10 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	c->b = 0;
 	c->p = NULL;
 	c->mtype = mtype;
-	if (mtype == TYPE_bat) {
+	if (isbat) {
 		b = (BAT*)val;
+		if (b && t->cur_col == 0)
+			t->nr_rows = BATcount(b);
 	} else { // wrap scalar values in BATs for result consistency
 		b = COLnew(0, mtype, 1, TRANSIENT);
 		if (b == NULL) {
@@ -87,20 +87,8 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 			_DELETE(c->name);
 			return NULL;
 		}
-		/* we need to set the order bat otherwise mvc_export_result won't work with single-row result sets containing BATs */
-		if (!t->order) {
-			oid zero = 0;
-			BAT *o = BATconstant(0, TYPE_oid, &zero, 1, TRANSIENT);
-			if (o == NULL) {
-				BBPreclaim(b);
-				_DELETE(c->tn);
-				_DELETE(c->name);
-				return NULL;
-			}
-			t->order = o->batCacheid;
+		if (t->cur_col == 0)
 			t->nr_rows = 1;
-			BBPkeepref(o);
-		}
 		cached = true; /* simply keep memory pointer for this small bat */
 	}
 	c->b = b->batCacheid;
@@ -139,8 +127,6 @@ res_table_destroy(res_table *t)
 		if (c)
 			res_col_destroy(c);
 	}
-	if (t->order)
-		bat_decref(t->order);
 	_DELETE(t->cols);
 	_DELETE(t);
 }

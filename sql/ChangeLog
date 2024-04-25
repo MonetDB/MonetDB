@@ -1,8 +1,27 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Thu Aug 25 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Removed code for Workload Capture and Replace.  The code was
-  experimental, and it didn't work out.  A different approach will
-  be taken.
+* Wed Apr 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Make schema renaming more permissive. A schema can be renamed if it
+  does not contain objects that are a dependency for objects outside
+  the schema. If such dependencies exist, they are shown in the
+  table sys.dependencies.
+
+* Tue Apr  8 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Add a DECIMAL AS clause to COPY INTO that configures the decimal separator
+  and thousands separator for decimals, temporal types and floats.
+
+* Thu Mar 21 2024 Yunus Koning <yunus.koning@monetdbsolutions.com>
+- Introduce IS [NOT] DISTINCT FROM syntax. The syntax allows two values
+  to be compared. The comparison always returns boolean FALSE or TRUE
+  never NULL.
+
+* Wed Mar  6 2024 Yunus Koning <yunus.koning@monetdbsolutions.com>
+- SQL2023 feature: Introduce UNIQUE NULLS [NOT] DISTINCT syntax which
+  allows for NULLS to be treated as unique, i.e. a column with this
+  contraint can have one NULL value at most.
+
+- SQL2023 feature: Allow project and ORDER BY expressions on
+  UNIQUE constrained columns when the primary key column is
+  used in a GROUP BY expression.
 

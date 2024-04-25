@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -71,21 +75,24 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 		if (NameLength2 > 0) {
 			sch = ODBCParsePV("s", "name",
 					  (const char *) SchemaName,
-					  (size_t) NameLength2);
+					  (size_t) NameLength2,
+					  stmt->Dbc);
 			if (sch == NULL)
 				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			prc = ODBCParsePV("p", "name",
 					  (const char *) ProcName,
-					  (size_t) NameLength3);
+					  (size_t) NameLength3,
+					  stmt->Dbc);
 			if (prc == NULL)
 				goto nomem;
 		}
 		if (NameLength4 > 0) {
 			col = ODBCParsePV("a", "name",
 					  (const char *) ColumnName,
-					  (size_t) NameLength4);
+					  (size_t) NameLength4,
+					  stmt->Dbc);
 			if (col == NULL)
 				goto nomem;
 		}
@@ -114,7 +121,7 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 6500 + (sch ? strlen(sch) : 0) + (prc ? strlen(prc) : 0) +
+	querylen = 6700 + (sch ? strlen(sch) : 0) + (prc ? strlen(prc) : 0) +
 		(col ? strlen(col) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
@@ -223,7 +230,6 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 		stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = a.id" : "",
 		/* where clause: */
 		F_FUNC, F_PROC, F_UNION);
-	assert(pos < 6400);
 
 	/* depending on the input parameter values we must add a
 	   variable selection condition dynamically */
@@ -254,6 +260,8 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 
 	/* add the ordering (exclude procedure_cat as it is the same for all rows) */
 	pos += strcpy_len(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\", \"COLUMN_TYPE\", \"ORDINAL_POSITION\"", querylen - pos);
+	if (pos >= querylen)
+		fprintf(stderr, "pos >= querylen, %zu > %zu\n", pos, querylen);
 	assert(pos < querylen);
 
 	/* debug: fprintf(stdout, "SQLProcedureColumns query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */

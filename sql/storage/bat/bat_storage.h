@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef BATSTORAGE_H
@@ -13,7 +17,7 @@
 #include "bat_logger.h"
 
 typedef struct column_storage {
-	int refcnt;
+	ATOMIC_TYPE refcnt;
 	int bid;
 	int ebid;		/* extra bid */
 	int uibid;		/* bat with positions of updates */
@@ -38,7 +42,7 @@ typedef struct segment {
 	ulng ts;		/* timestamp on this segment, ie tid of some active transaction or commit time of append/delete or
 					   rollback time, ie ready for reuse */
 	ulng oldts;		/* keep previous ts, for rollbacks */
-	struct segment *next;	/* usualy one should be enough */
+	ATOMIC_PTR_TYPE next;	/* usualy one should be enough */
 	struct segment *prev;	/* used in destruction list */
 } segment;
 
@@ -57,5 +61,8 @@ typedef struct storage {
 
 /* initialize bat storage call back functions interface */
 extern void bat_storage_init( store_functions *sf );
+
+storage *
+bind_del_data(sql_trans *tr, sql_table *t, bool *clear);
 
 #endif /*BATSTORAGE_H */

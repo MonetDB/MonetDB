@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -79,14 +83,16 @@ MNDBProcedures(ODBCStmt *stmt,
 		if (NameLength2 > 0) {
 			sch = ODBCParsePV("s", "name",
 					  (const char *) SchemaName,
-					  (size_t) NameLength2);
+					  (size_t) NameLength2,
+					  stmt->Dbc);
 			if (sch == NULL)
 				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			pro = ODBCParsePV("p", "name",
 					  (const char *) ProcName,
-					  (size_t) NameLength3);
+					  (size_t) NameLength3,
+					  stmt->Dbc);
 			if (pro == NULL)
 				goto nomem;
 		}

@@ -1,0 +1,22 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE liketable (
+	str varchar(32)
+)
+
+statement ok
+INSERT INTO liketable VALUES ('PENDING_CLIENT1_IT_S_34_5643_O'), ('PENDING_CLIENT1_IT_S_34_15643_O')
+
+query T rowsort
+SELECT * FROM liketable WHERE str LIKE 'PENDING^_CLIENT1^_IT^_%^_5643^_O' ESCAPE '^'
+----
+PENDING_CLIENT1_IT_S_34_5643_O
+
+query T rowsort
+SELECT * FROM liketable WHERE str LIKE 'PENDING^_CLIENT1^_IT^_%5643^_O' ESCAPE '^'
+----
+PENDING_CLIENT1_IT_S_34_15643_O
+PENDING_CLIENT1_IT_S_34_5643_O
+

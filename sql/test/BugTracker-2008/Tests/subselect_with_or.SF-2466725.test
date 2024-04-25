@@ -1,18 +1,18 @@
 statement ok
-create table t1 ( a int, b int ) 
+create table t1 ( a int, b int )
 
 statement ok
-create table t2 ( a int, b int ) 
+create table t2 ( a int, b int )
 
 statement ok
-insert into t1 values ( 1, 1 ), ( 2, 2 ) 
+insert into t1 values ( 1, 1 ), ( 2, 2 )
 
 statement ok
-insert into t2 values ( 1, 1 ) 
+insert into t2 values ( 1, 1 )
 
 query II rowsort
 select * from t1 where exists( select * from t2 where t2.a = t1.a ) or t1.b
-> 0 
+> 0
 ----
 1
 1
@@ -21,7 +21,7 @@ select * from t1 where exists( select * from t2 where t2.a = t1.a ) or t1.b
 
 query II rowsort
 select * from t1 where exists( select * from t2 where t2.a = t1.a ) and
-t1.b > 0 
+t1.b > 0
 ----
 1
 1

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -82,8 +86,13 @@ sql_add_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 
 		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
-			set_minmax_property(sql, e, PROP_MAX, res1);
-			set_minmax_property(sql, e, PROP_MIN, res2);
+			if (atom_cmp(res1, res2) > 0) {
+				set_minmax_property(sql, e, PROP_MAX, res1);
+				set_minmax_property(sql, e, PROP_MIN, res2);
+			} else {
+				set_minmax_property(sql, e, PROP_MAX, res2);
+				set_minmax_property(sql, e, PROP_MIN, res1);
+			}
 		}
 		freeException(msg1);
 		freeException(msg2);
@@ -187,13 +196,10 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 
 		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
-			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
-			int cmp1 = atom_cmp(lmax, zero1), cmp2 = atom_cmp(lmin, zero1), cmp3 = atom_cmp(rmin, zero2), cmp4 = atom_cmp(rmax, zero2);
-
-			if (cmp1 >= 0 && cmp2 >= 0 && cmp3 >= 0 && cmp4 >= 0) { /* if all positive then propagate */
+			if (atom_cmp(res1, res2) > 0) {
 				set_minmax_property(sql, e, PROP_MAX, res1);
 				set_minmax_property(sql, e, PROP_MIN, res2);
-			} else if (cmp1 < 0 && cmp2 < 0 && cmp3 < 0 && cmp4 < 0) { /* if all negative propagate by swapping min and max */
+			} else {
 				set_minmax_property(sql, e, PROP_MAX, res2);
 				set_minmax_property(sql, e, PROP_MIN, res1);
 			}
@@ -405,7 +411,11 @@ sql_sign_propagate_statistics(mvc *sql, sql_exp *e)
 		atom *zero1 = atom_zero_value(sql->sa, &(omin->tpe));
 		int cmp1 = atom_cmp(omax, zero1), cmp2 = atom_cmp(omin, zero1);
 
-		if (cmp1 >= 0 && cmp2 >= 0) {
+		if (cmp1 == 0 && cmp2 == 0) {
+			set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, bte, 0));
+			set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, bte, 0));
+			properties_set = true;
+		} else if (cmp1 > 0 && cmp2 > 0) {
 			set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, bte, 1));
 			set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, bte, 1));
 			properties_set = true;
@@ -716,6 +726,8 @@ static void
 sql_min_max_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
+	if (list_empty(l))
+		return;
 	sql_exp *first = l->h->data;
 	atom *omin, *omax;
 
@@ -807,7 +819,7 @@ static struct function_properties functions_list[35] = {
 };
 
 void
-initialize_sql_functions_lookup(sql_allocator *sa)
+initialize_sql_functions_lookup(allocator *sa)
 {
 	int nentries = sizeof(functions_list) / sizeof(functions_list[0]);
 

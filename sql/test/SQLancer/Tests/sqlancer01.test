@@ -41,7 +41,7 @@ statement ok
 UPDATE t0 SET a2 = (- (- (t0.a1))), a3 = (ascii(CAST(ascii('}悂Y8K*韖5<c>^n8_X1X|p(''bX') AS STRING(920)))) WHERE NOT (((0.27023923567918073) NOT IN (0.9149447665258329)) = FALSE)
 
 statement ok
-insert into integers(i) values(((length(reverse('8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}')))>>(((- (- (528640982)))&(ascii('528640982'))))))
+insert into integers(i) values(((length(reverse(E'8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}')))>>(((- (- (528640982)))&(ascii('528640982'))))))
 
 query I rowsort
 SELECT i from integers order by i
@@ -50,9 +50,9 @@ SELECT i from integers order by i
 NULL
 
 query T rowsort
-select reverse('8 \\rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}')
+select reverse(E'8 \\rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}')
 ----
-}*4nR<!@s5j4@YMe1pb[@rcr\ 8
+}*4nR<!뮯s5j4쫺YMe1pb[੧rcr\ 8
 
 query I rowsort
 select true in (1 in (1))

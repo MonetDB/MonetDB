@@ -1,0 +1,138 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
+
+statement ok
+COPY BINARY INTO intvals (x, y, z) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+COPY BINARY INTO intvals (z) FROM (E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+COPY BINARY INTO intvals (z, y) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
+
+query I nosort
+SELECT count(*) FROM intvals
+----
+30
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals(x INTEGER, y INTEGER)
+
+statement ok
+COPY BIG ENDIAN BINARY INTO intvals FROM (E'$QTSTTRGDIR/123.be', E'$QTSTTRGDIR/456.be')
+
+statement ok
+COPY BIG ENDIAN BINARY INTO intvals(y, x) FROM (E'$QTSTTRGDIR/123.be', E'$QTSTTRGDIR/456.be')
+
+query II nosort
+SELECT x, y FROM intvals
+----
+1
+4
+2
+5
+3
+6
+4
+1
+5
+2
+6
+3
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
+
+statement error
+COPY BINARY INTO intvals (x, x) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
+
+statement error
+COPY BINARY INTO intvals (a) FROM (E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
+
+statement error
+COPY BINARY INTO intvals FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
+
+statement error
+COPY BINARY INTO intvals FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER)
+
+statement error
+COPY BINARY INTO intvals FROM (E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER)
+
+statement error
+COPY BINARY INTO intvals FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
+
+statement error
+COPY BINARY INTO intvals (a) FROM (E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+ROLLBACK
+

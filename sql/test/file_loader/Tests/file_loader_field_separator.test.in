@@ -1,0 +1,134 @@
+# tests to load cars (4 columns, 4 rows) data files with different field separators: comma , (.csv), pipe | (.psv), tab (.tsv), semicolon ; (.csv)
+
+query ITTI nosort
+select * from '$QTSTSRCDIR/cars.csv'
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
+statement error 42000!SELECT: The number of aliases don't match the number of columns (1 != 4)
+select * from '$QTSTSRCDIR/cars.csv' cars(c)
+----
+
+query ITTI nosort
+select * from file_loader(r'$QTSTSRCDIR/cars.csv')
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
+statement error 42000!syntax error, unexpected YEAR in: "select * from file_loader(...
+select * from file_loader(R'$QTSTSRCDIR/cars.csv') file(id, brand, model, year)
+----
+
+query ITTI nosort
+select * from file_loader(r'$QTSTSRCDIR/cars.csv') as cars(id, brand, model, "year")
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
+statement error 42000!SELECT: The number of aliases don't match the number of columns (1 != 4)
+select * from file_loader('$QTSTSRCDIR/cars.csv') cars(cols)
+----
+
+query ITTI nosort
+select * from file_loader(r'$QTSTSRCDIR/cars.psv') as cars(id, brand, model, "year")
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
+query ITTI nosort
+select * from file_loader(r'$QTSTSRCDIR/cars.tsv') as cars(id, brand, model, "year")
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+
+query ITTI nosort
+select * from file_loader(r'$QTSTSRCDIR/cars_semicolon.csv') as cars(id, brand, model, "year")
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+

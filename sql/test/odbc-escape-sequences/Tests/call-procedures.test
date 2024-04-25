@@ -1,0 +1,3 @@
+statement ok
+{call setworkerlimit(12)}
+

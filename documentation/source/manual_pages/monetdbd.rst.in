@@ -94,6 +94,12 @@ Server, and retrieving or setting options.
    running *monetdbd* to reload the properties file (if running). For an
    explanation of the properties, see the *CONFIGURATION* section below.
 
+**help** [ *command* ]
+   Shows general help, or short help for a given command.
+
+**version**
+   Shows the version and release information of *monetdbd*.
+
 CONFIGURATION
 =============
 
@@ -107,6 +113,14 @@ using the **set** command. The following properties can be set:
    to. It is relative to the dbfarm directory, but can be absolute to
    point to e.g. another medium. Changing this property takes effect
    immediately at runtime.
+
+**loglevel**
+   This property defines the level of what messages should be logged. It
+   can be: error or warning or information or debug. Defaut is
+   information. When loglevel is error, only errors are logged. When
+   loglevel is warning, errors and warnings are logged. When loglevel is
+   information, errors and warnings and information messages are logged.
+   When loglevel is debug, all messages are logged.
 
 **pidfile**
    *Monetdbd* stores the process ID of the background server in the file
@@ -218,8 +232,8 @@ using the **set** command. The following properties can be set:
    effect immediately at runtime.
 
 **forward**
-   *monetdbd* has two ways in which it can "attach" a connecting client
-   to the target database. The first method, **redirect**, uses a
+   *monetdbd* has two ways in which it can \``attach'' a connecting
+   client to the target database. The first method, **redirect**, uses a
    redirect sent to the client with the responsible mserver process. The
    second method, **proxy,** proxies the client to the mserver over
    *monetdbd*. While **redirect** is more efficient, it requires the
@@ -263,10 +277,10 @@ addition to the database name, and only understood by other
 Tags are arbitrary ASCII-strings matching the pattern [A-Za-z0-9./]+.
 There are no assumed semantics in the tag, which allows for multiple
 approaches when using the tag. The tag is always used in combination
-with the database name. For this, the \`/' character is used as
+with the database name. For this, the \``/'' character is used as
 separator, which hence suggests the user to use that character as
 separator for multilevel tags. *Monetdbd* allows common path globbing
-using \`*' on tags, which allows for many use-cases. Consider for
+using \``\*'' on tags, which allows for many use-cases. Consider for
 instance the following three databases with their tag:
 
    dbX/master/tableQ
@@ -277,18 +291,18 @@ instance the following three databases with their tag:
 
    dbZ/slave/tableQ
 
-A default match has implicit \`/*' added to the search, making more
+A default match has implicit \``/\*'' added to the search, making more
 generic search strings match more specific ones. Hence, a connect with
 database *dbX* is the same as *dbX/\** and hence matches
 *dbX/master/tableQ*. Similar, a database connect for *\*/master* matches
-the same database as before. Note that the implicit \`/*' is not added
-if that would cause no matches, such as for *\*/master/tableQ* which
-would return all masters for *tableQ*, which in our hypothetical example
-is only *dbX*. In contrast, a database connect for *\*/slave/tableQ*
-matches with either *dbY* or *dbZ*. *Monetdbd* returns the two options
-to the client in a round-robin fashion, such that subsequent connects
-for the same pattern result in a load-balanced connect to either of both
-databases.
+the same database as before. Note that the implicit \``/\*'' is not
+added if that would cause no matches, such as for *\*/master/tableQ*
+which would return all masters for *tableQ*, which in our hypothetical
+example is only *dbX*. In contrast, a database connect for
+*\*/slave/tableQ* matches with either *dbY* or *dbZ*. *Monetdbd* returns
+the two options to the client in a round-robin fashion, such that
+subsequent connects for the same pattern result in a load-balanced
+connect to either of both databases.
 
 With tags in use, one can possibly make distinction between databases,
 if setup like that. The previous example could hence also be setup like
@@ -341,7 +355,7 @@ databases in one single answer that it sends back to the client.
 However, this combining is without any smart logic, that is, the
 multiplexer does not evaluate the query it is running, but just combines
 all answers it receives from the databases. This results in e.g. as many
-return tuples for a **SELECT COUNT(*)** query, as there are databases
+return tuples for a **SELECT COUNT(\*)** query, as there are databases
 defined.
 
 Due to the two above mentioned characteristics, a multiplex-funnel has
@@ -359,8 +373,8 @@ used with the funnel, as the results will be undefined due to the
 limited query buffer. Applications using the funnel should aim for short
 and single-statement queries that require no transactions.
 
-See the **create** command in the *monetdb*\ (1) man-page for details on
-how to setup a multiplex-funnel.
+See the **create** command in *monetdb*\ (1) for details on how to setup
+a multiplex-funnel.
 
 SIGNALS
 =======

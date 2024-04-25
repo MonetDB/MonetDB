@@ -1,8 +1,10 @@
 debian/tmp/usr/bin/ODBCStmtAttr usr/bin
 debian/tmp/usr/bin/ODBCgetInfo usr/bin
 debian/tmp/usr/bin/ODBCmetadata usr/bin
+debian/tmp/usr/bin/ODBCtester usr/bin
 debian/tmp/usr/bin/arraytest usr/bin
 debian/tmp/usr/bin/bincopydata usr/bin
+debian/tmp/usr/bin/murltest usr/bin
 debian/tmp/usr/bin/odbcsample1 usr/bin
 debian/tmp/usr/bin/sample0 usr/bin
 debian/tmp/usr/bin/sample1 usr/bin

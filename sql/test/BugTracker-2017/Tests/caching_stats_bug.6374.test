@@ -43,7 +43,7 @@ project (
 | group by (
 | | select (
 | | | table("sys"."sub2") [ "sub2"."i" NOT NULL UNIQUE as "mt"."i" ]
-| | ) [ (int(32) "5") <= ("mt"."i" NOT NULL UNIQUE) < (int(32) "12") ]
+| | ) [ (int(31) "5") <= ("mt"."i" NOT NULL UNIQUE) < (int(31) "12") ]
 | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
@@ -73,12 +73,12 @@ project (
 | | | group by (
 | | | | select (
 | | | | | table("sys"."sub1") [ "sub1"."i" NOT NULL UNIQUE as "mt"."i" ]
-| | | | ) [ (int(32) "5") <= ("mt"."i" NOT NULL UNIQUE) < (int(32) "12") ]
+| | | | ) [ (int(31) "5") <= ("mt"."i" NOT NULL UNIQUE) < (int(31) "12") ]
 | | | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ],
 | | | group by (
 | | | | select (
 | | | | | table("sys"."sub2") [ "sub2"."i" NOT NULL UNIQUE as "mt"."i" ]
-| | | | ) [ (int(32) "5") <= ("mt"."i" NOT NULL UNIQUE) < (int(32) "12") ]
+| | | | ) [ (int(31) "5") <= ("mt"."i" NOT NULL UNIQUE) < (int(31) "12") ]
 | | | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
 | | ) [ "%1"."%1" NOT NULL ]
 | ) [  ] [ "sys"."sum" no nil ("%1"."%1" NOT NULL) NOT NULL UNIQUE as "%1"."%1" ]

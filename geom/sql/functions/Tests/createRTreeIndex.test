@@ -1,0 +1,18 @@
+statement ok
+CREATE TABLE geometries_rtree (id serial, geom geometry)
+
+statement ok
+INSERT INTO geometries_rtree (geom) VALUES (ST_WKTToSQL('POLYGON((10 10, 20 10, 20 20, 10 20, 10 10))'))
+
+statement ok
+INSERT INTO geometries_rtree (geom) VALUES (ST_WKTToSQL('POLYGON((10 10, 20 10, 10 20, 10 10))'))
+
+statement ok
+INSERT INTO geometries_rtree (geom) VALUES (ST_WKTToSQL('POLYGON((10 20, 20 10, 20 20, 10 20))'))
+
+statement ok
+INSERT INTO geometries_rtree (geom) VALUES (ST_WKTToSQL('POLYGON((0 20, 10 20, 20 20, 20 10, 0 20))'))
+
+statement ok
+SELECT mbr(geom) FROM geometries_rtree
+

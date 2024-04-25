@@ -1,8 +1,12 @@
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 import subprocess
 import os
@@ -163,6 +167,54 @@ class _BufferedPipe:
                 break
         return self._empty.join(ret)
 
+# signals that by default produce a core dump, i.e. bad
+# this of course doesn't work on Windows
+_coresigs = set()
+try:
+    _coresigs.add(signal.SIGABRT)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGBUS)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGFPE)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGILL)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGIOT)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGQUIT)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGSEGV)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGSYS)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGTRAP)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGXCPU)
+except AttributeError:
+    pass
+try:
+    _coresigs.add(signal.SIGXFSZ)
+except AttributeError:
+    pass
+
 class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
@@ -179,6 +231,8 @@ class Popen(subprocess.Popen):
         self.terminate()
         self._clean_dotmonetdbfile()
         super().__exit__(exc_type, value, traceback)
+        if self.returncode and self.returncode < 0 and -self.returncode in _coresigs:
+            raise RuntimeError('process exited with coredump generating signal %r' % signal.Signals(-self.returncode))
 
     def __del__(self):
         if self._child_created:
@@ -368,7 +422,7 @@ class server(Popen):
         cmd = _server[:]
         if not cmd:
             cmd = ['mserver5',
-                   '--set', ipv6 and 'mapi_listenaddr=all' or 'mapi_listenaddr=0.0.0.0',
+                   '--set', 'mapi_listenaddr=all' if ipv6 else 'mapi_listenaddr=0.0.0.0',
                    '--set', 'gdk_nr_threads=1']
         if os.getenv('NOWAL'):
             cmd.extend(['--set', 'sql_debug=128'])
@@ -423,6 +477,9 @@ class server(Popen):
             dbfarm = _dbfarm
         dbpath = os.path.join(dbfarm, dbname)
         cmd.append('--dbpath=%s' % dbpath)
+        if os.path.exists(os.path.join(dbpath, '.vaultkey')):
+            cmd.extend(['--set',
+                        'monet_vault_key={}'.format(os.path.join(dbpath, '.vaultkey'))])
         for i in range(len(cmd)):
             if cmd[i].startswith('--dbextra='):
                 dbextra_path = cmd[i][10:]

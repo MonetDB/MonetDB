@@ -6,9 +6,6 @@ comment-on
 comment-auth-1
 USER=user_a&PASSWD=user_a?comment-auth-2
 
-bincopycollist-prepare
-bincopycollist
-
 example
 #example-queries
 #example-drop
@@ -58,7 +55,8 @@ joins
 default
 HAVE_GEOM?keys
 
-like_tests
+HAVE_LIBPCRE?like_tests
+more_like_tests
 
 news
 timezone
@@ -72,6 +70,7 @@ create_in_schema
 null-byte-hang
 orderby_limit
 orderby_non_selection_column
+limit_offset_fetchfirst
 
 psm
 
@@ -130,7 +129,7 @@ HAVE_LIBZ&!NOWAL?hot_snapshot_gz
 HAVE_LIBBZ2&!NOWAL?hot_snapshot_bz2
 HAVE_LIBLZMA&!NOWAL?hot_snapshot_xz
 HAVE_PYTHON_LZ4&HAVE_LIBLZ4&!NOWAL?hot_snapshot_lz4
-!HAVE_PYTHON_LZ4&HAVE_PYMONETDB&HAVE_LIBLZ4&!NOWAL?hot_snapshot_lz4_lite
+!HAVE_PYTHON_LZ4&HAVE_LIBLZ4&!NOWAL?hot_snapshot_lz4_lite
 
 # The following tests are some old tests moved from sql/test
 ## FOREIGN KEY reference to the same table
@@ -142,9 +141,11 @@ meltdown
 savepoints1
 savepoints2
 union
+union-corresponding
 ## Queries from the old AS3AP benchmark.
 ## Since we don't have the data, let's just execute the queries here
 as3ap
 
 orderby-nulls-first-last
 
+blob_query

@@ -1,0 +1,187 @@
+-- tests  [ LIMIT y ]  [ OFFSET x ]
+
+statement ok
+drop table if exists limittest
+
+statement ok
+create table limittest as select * from "sys"."generate_series"(1, 221)
+
+query I nosort
+select * from limittest ORDER BY value LIMIT 5
+----
+1
+2
+3
+4
+5
+
+statement error
+select * from limittest LIMIT +5
+
+statement error
+select * from limittest LIMIT 0
+
+statement error
+select * from limittest LIMIT -5
+
+statement error
+select * from limittest LIMIT 20, 50
+
+statement error
+select * from limittest LIMIT OFFSET 20, 50
+
+statement error
+select * from limittest OFFSET 20 LIMIT 50
+
+query I nosort
+select * from limittest ORDER BY value LIMIT 5 OFFSET 20
+----
+21
+22
+23
+24
+25
+
+statement error
+select * from limittest LIMIT 5 OFFSET 20 ROWS
+
+statement error
+select * from limittest LIMIT 5 ROWS OFFSET 20
+
+-- tests  [ OFFSET pos_lng [ {ROW|ROWS} ] ]  [ FETCH {FIRST|NEXT} nonzero_lng {ROW|ROWS} ONLY ]
+
+statement error
+select * from limittest OFFSET
+
+statement error
+select * from limittest OFFSET ROW
+
+query I nosort
+select * from limittest ORDER BY value OFFSET 218
+----
+219
+220
+
+query I nosort
+select * from limittest ORDER BY value OFFSET 219 ROW
+----
+220
+
+query I nosort
+select * from limittest ORDER BY value OFFSET 218 ROWS
+----
+219
+220
+
+statement error
+select * from limittest OFFSET (200 + 18) ROWS
+
+statement error
+select * from limittest FETCH ROWS
+
+statement error
+select * from limittest FETCH ROWS ONLY
+
+statement error
+select * from limittest FETCH 0 ROWS ONLY
+
+query I nosort
+select * from limittest ORDER BY value FETCH NEXT ROW ONLY
+----
+1
+
+query I nosort
+select * from limittest ORDER BY value FETCH FIRST 4 ROWS ONLY
+----
+1
+2
+3
+4
+
+query I nosort
+select * from limittest ORDER BY value OFFSET 5 FETCH FIRST 4 ROWS ONLY
+----
+6
+7
+8
+9
+
+query I nosort
+select * from limittest ORDER BY value OFFSET 5 FETCH NEXT 4 ROWS ONLY
+----
+6
+7
+8
+9
+
+query I nosort
+select * from limittest ORDER BY value FETCH FIRST ROW ONLY
+----
+1
+
+query I nosort
+select * from limittest ORDER BY value FETCH FIRST 3 ROWS ONLY
+----
+1
+2
+3
+
+query I nosort
+select * from limittest ORDER BY value OFFSET 10 FETCH FIRST 3 ROWS ONLY
+----
+11
+12
+13
+
+query I nosort
+select * from limittest ORDER BY value OFFSET 218
+----
+219
+220
+
+query I nosort
+select * from limittest ORDER BY value OFFSET 220
+----
+
+query I nosort
+select * from limittest ORDER BY value OFFSET 222
+----
+
+statement error
+select * from limittest LIMIT 6 OFFSET 5 FETCH NEXT 4 ROWS ONLY
+
+statement error
+select * from limittest LIMIT 6 FETCH NEXT 4 ROWS ONLY
+
+statement error
+select * from limittest FETCH NEXT 4 ROWS ONLY LIMIT 6
+
+statement error
+select * from limittest FETCH NEXT 4 ROWS ONLY OFFSET 5
+
+query I nosort
+select * from limittest ORDER BY value FETCH FIRST 3 ROWS ONLY
+----
+1
+2
+3
+
+query I nosort
+select * from (select * from limittest ORDER BY value OFFSET 50 ROWS FETCH FIRST 10 ROWS ONLY) t ORDER BY value OFFSET 5 ROW FETCH FIRST 4 ROWS ONLY
+----
+56
+57
+58
+59
+
+query I rowsort
+select * from (select * from limittest order by 1 desc OFFSET 50 ROWS FETCH FIRST 10 ROWS ONLY) t order by 1 asc OFFSET 5 ROW FETCH FIRST 4 ROWS ONLY
+----
+166
+167
+168
+169
+
+statement ok
+drop table if exists limittest
+

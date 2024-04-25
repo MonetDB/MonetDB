@@ -34,3 +34,10 @@ concurrent_merge_tables
 
 mergetabledependencies
 replicatabledependencies
+merge-tables-limitations
+
+mergetable00
+mergetable01
+
+mergetable-perms-base
+mergetable-select-perms

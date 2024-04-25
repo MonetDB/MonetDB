@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -45,25 +49,26 @@ static str
 MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
-	bat *ret = getArgReference_bat(stk,p,0);
-	BAT *b, *bn;
+	bat *ret = getArgReference_bat(stk, p, 0);
+	BAT *b, *bn = NULL;
 	BUN cap = 0;
 	int tt = TYPE_any;
 	int rt = getArgType(mb, p, 0), unmask = 0;
 	(void) cntxt;
 
 	for (i = 1; i < p->argc; i++) {
-		bat bid = stk->stk[getArg(p,i)].val.bval;
+		bat bid = stk->stk[getArg(p, i)].val.bval;
 		b = BBPquickdesc(bid);
-		if( b ){
+		if (b) {
 			if (tt == TYPE_any)
 				tt = b->ttype;
-			if ((tt != TYPE_void && b->ttype != TYPE_void && b->ttype != TYPE_msk) && tt != b->ttype)
+			if ((tt != TYPE_void && b->ttype != TYPE_void
+				 && b->ttype != TYPE_msk) && tt != b->ttype)
 				throw(MAL, "mat.pack", "incompatible arguments");
 			cap += BATcount(b);
 		}
 	}
-	if (tt == TYPE_any){
+	if (tt == TYPE_any) {
 		*ret = bat_nil;
 		return MAL_SUCCEED;
 	}
@@ -77,7 +82,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 1; i < p->argc; i++) {
-		if (!(b = BATdescriptor(stk->stk[getArg(p,i)].val.ival))) {
+		if (!(b = BATdescriptor(stk->stk[getArg(p, i)].val.ival))) {
 			BBPreclaim(bn);
 			throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -103,7 +108,8 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	if (bn->tnil && bn->tnonil) {
 		BBPreclaim(bn);
-		throw(MAL, "mat.pack", "INTERNAL ERROR" "bn->tnil or  bn->tnonil fails ");
+		throw(MAL, "mat.pack",
+			  "INTERNAL ERROR" "bn->tnil or  bn->tnonil fails ");
 	}
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
@@ -117,31 +123,34 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 static str
 MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	bat *ret = getArgReference_bat(stk,p,0);
-	int	pieces;
+	bat *ret = getArgReference_bat(stk, p, 0);
+	int pieces;
 	BAT *b, *bb, *bn;
 	size_t newsize;
 
 	(void) cntxt;
-	b = BATdescriptor( stk->stk[getArg(p,1)].val.ival);
-	if ( b == NULL)
+	b = BATdescriptor(stk->stk[getArg(p, 1)].val.ival);
+	if (b == NULL)
 		throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if ( getArgType(mb,p,2) == TYPE_int){
+	if (getArgType(mb, p, 2) == TYPE_int) {
 		/* first step, estimate with some slack */
-		pieces = stk->stk[getArg(p,2)].val.ival;
+		pieces = stk->stk[getArg(p, 2)].val.ival;
 		int tt = ATOMtype(b->ttype);
 		if (b->ttype == TYPE_msk)
 			tt = TYPE_oid;
-		bn = COLnew(b->hseqbase, tt, (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
+		bn = COLnew(b->hseqbase, tt, (BUN) (1.2 * BATcount(b) * pieces),
+					TRANSIENT);
 		if (bn == NULL) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		/* allocate enough space for the vheap, but not for strings,
-		 * since BATappend does clever things for strings */
-		if ( b->tvheap && bn->tvheap && ATOMstorage(b->ttype) != TYPE_str){
-			newsize =  b->tvheap->size * pieces;
+		 * since BATappend does clever things for strings, and not for
+		 * vheap views since they may well get shared */
+		if (b->tvheap && b->tvheap->parentid == b->batCacheid && bn->tvheap
+			&& ATOMstorage(b->ttype) != TYPE_str) {
+			newsize = b->tvheap->size * pieces;
 			if (HEAPextend(bn->tvheap, newsize, true) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPreclaim(bn);
@@ -163,19 +172,20 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
-		bn->unused = (pieces-1); /* misuse "unused" field */
-		BATsettrivprop(bn);
+		bn->unused = (pieces - 1);	/* misuse "unused" field */
 		BBPunfix(b->batCacheid);
 		if (bn->tnil && bn->tnonil) {
 			BBPreclaim(bn);
-			throw(MAL, "mat.pack", "INTERNAL ERROR" " bn->tnil %d bn->tnonil %d", bn->tnil, bn->tnonil);
+			throw(MAL, "mat.pack",
+				  "INTERNAL ERROR" " bn->tnil %d bn->tnonil %d", bn->tnil,
+				  bn->tnonil);
 		}
 		*ret = bn->batCacheid;
 		BBPretain(bn->batCacheid);
 		BBPunfix(bn->batCacheid);
 	} else {
 		/* remaining steps */
-		if (!(bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival))) {
+		if (!(bb = BATdescriptor(stk->stk[getArg(p, 2)].val.ival))) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -203,10 +213,10 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		if (b->tnil && b->tnonil) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "mat.pack", "INTERNAL ERROR" " b->tnil or  b->tnonil fails ");
+			throw(MAL, "mat.pack",
+				  "INTERNAL ERROR" " b->tnil or  b->tnonil fails ");
 		}
 		*ret = b->batCacheid;
-		BATsettrivprop(b);
 		BBPretain(b->batCacheid);
 		BBPunfix(b->batCacheid);
 	}
@@ -216,7 +226,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 static str
 MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	return MATpackInternal(cntxt,mb,stk,p);
+	return MATpackInternal(cntxt, mb, stk, p);
 }
 
 static str
@@ -227,21 +237,21 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *bn;
 
 	(void) cntxt;
-	type = getArgType(mb,p,first);
+	type = getArgType(mb, p, first);
 	bn = COLnew(0, type, p->argc, TRANSIENT);
-	if( bn == NULL)
+	if (bn == NULL)
 		throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (ATOMextern(type)) {
-		for(i = first; i < p->argc; i++)
-			if (BUNappend(bn, stk->stk[getArg(p,i)].val.pval, false) != GDK_SUCCEED)
+		for (i = first; i < p->argc; i++)
+			if (BUNappend(bn, stk->stk[getArg(p, i)].val.pval, false) != GDK_SUCCEED)
 				goto bailout;
 	} else {
-		for(i = first; i < p->argc; i++)
+		for (i = first; i < p->argc; i++)
 			if (BUNappend(bn, getArgReference(stk, p, i), false) != GDK_SUCCEED)
 				goto bailout;
 	}
-	ret= getArgReference_bat(stk,p,0);
+	ret = getArgReference_bat(stk, p, 0);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
@@ -252,12 +262,12 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 #include "mel.h"
 mel_func mat_init_funcs[] = {
- pattern("mat", "new", MATpack, false, "Define a Merge Association Table (MAT). Fall back to the pack operation\nwhen this is called ", args(1,2, batargany("",2),batvarargany("b",2))),
- pattern("bat", "pack", MATpackValues, false, "Materialize the values into a BAT. Avoiding a clash with mat.pack() in mergetable", args(1,2, batargany("",2),varargany("",2))),
- pattern("mat", "pack", MATpackValues, false, "Materialize the MAT (of values) into a BAT", args(1,2, batargany("",2),varargany("",2))),
- pattern("mat", "pack", MATpack, false, "Materialize the MAT into a BAT", args(1,2, batargany("",2),batvarargany("b",2))),
- pattern("mat", "packIncrement", MATpackIncrement, false, "Prepare incremental mat pack", args(1,3, batargany("",2),batargany("b",2),arg("pieces",int))),
- pattern("mat", "packIncrement", MATpackIncrement, false, "Prepare incremental mat pack", args(1,3, batargany("",2),batargany("b",2),batargany("c",2))),
+ pattern("mat", "new", MATpack, false, "Define a Merge Association Table (MAT). Fall back to the pack operation\nwhen this is called ", args(1,2, batargany("",1),batvarargany("b",1))),
+ pattern("bat", "pack", MATpackValues, false, "Materialize the values into a BAT. Avoiding a clash with mat.pack() in mergetable", args(1,2, batargany("",1),varargany("",1))),
+ pattern("mat", "pack", MATpackValues, false, "Materialize the MAT (of values) into a BAT", args(1,2, batargany("",1),varargany("",1))),
+ pattern("mat", "pack", MATpack, false, "Materialize the MAT into a BAT", args(1,2, batargany("",1),batvarargany("b",1))),
+ pattern("mat", "packIncrement", MATpackIncrement, false, "Prepare incremental mat pack", args(1,3, batargany("",1),batargany("b",1),arg("pieces",int))),
+ pattern("mat", "packIncrement", MATpackIncrement, false, "Prepare incremental mat pack", args(1,3, batargany("",1),batargany("b",1),batargany("c",1))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -1,0 +1,15 @@
+statement ok
+CREATE TABLE geometries (id serial, geom geometry)
+
+statement ok
+INSERT INTO geometries (geom) VALUES (ST_WKTToSQL('POLYGON((10 10, 20 10, 20 20, 10 20, 10 10))'))
+
+statement ok
+INSERT INTO geometries (geom) VALUES (ST_WKTToSQL('POLYGON((10 10, 20 10, 10 20, 10 10))'))
+
+statement ok
+INSERT INTO geometries (geom) VALUES (ST_WKTToSQL('POLYGON((10 20, 20 10, 20 20, 10 20))'))
+
+statement ok
+INSERT INTO geometries (geom) VALUES (ST_WKTToSQL('POLYGON((0 20, 10 20, 20 20, 20 10, 0 20))'))
+

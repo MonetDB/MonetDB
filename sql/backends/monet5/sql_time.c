@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -118,10 +122,8 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -243,10 +245,8 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -286,26 +286,26 @@ nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static inline str
-str_2time_daytimetz_internal_imp(daytime *ret, const char *next, ssize_t (*fromstr_func)(const char *, size_t *, daytime **, bool),
+str_2time_daytimetz_internal_imp(daytime *ret, const char *next, ssize_t (*fromstr_func)(const char *, daytime *, long, bool),
 #ifdef HAVE_HGE
-hge shift, hge divider, hge multiplier
+hge shift, hge divider, hge multiplier, long tz_off
 #else
-lng shift, lng divider, lng multiplier
+lng shift, lng divider, lng multiplier, long tz_off
 #endif
 )
 {
 	ssize_t pos = 0;
-	daytime dt = 0, *conv = &dt;
+	daytime dt = 0;
 
-	pos = fromstr_func(next, &(size_t){sizeof(daytime)}, &conv, false);
-	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_daytime_nil(*conv))
+	pos = fromstr_func(next, &dt, tz_off, false);
+	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_daytime_nil(dt))
 		return createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(22007) "Daytime '%s' has incorrect format", next);
-	*ret = daytime_2time_daytime_imp(*conv, shift, divider, multiplier);
+	*ret = daytime_2time_daytime_imp(dt, shift, divider, multiplier);
 	return MAL_SUCCEED;
 }
 
 static str
-str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digits, int tz)
+str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digits, lng tz)
 {
 	str msg = MAL_SUCCEED;
 	BAT *b = NULL, *s = NULL, *res = NULL;
@@ -313,7 +313,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 	int d = (digits) ? digits - 1 : 0;
 	bool is_a_bat = false, nils = false;
 	bat *r = NULL;
-	ssize_t (*fromstr_func)(const char *, size_t *, daytime **, bool) = tz ? daytime_tz_fromstr : daytime_fromstr;
+	ssize_t (*fromstr_func)(const char *, daytime *, long, bool) = sql_daytime_fromstr;
 	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
@@ -372,7 +372,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 					ret[i] = daytime_nil;
 					nils = true;
 				} else {
-					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		} else {
@@ -384,7 +384,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 					ret[i] = daytime_nil;
 					nils = true;
 				} else {
-					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		}
@@ -394,14 +394,12 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 		if (strNil(next))
 			*ret = daytime_nil;
 		else
-			msg = str_2time_daytimetz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier);
+			msg = str_2time_daytimetz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -420,8 +418,8 @@ str
 str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1),
-		digits = *getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2),
-		tz = *getArgReference_int(stk, pci, pci->argc == 5 ? 4 : 3);
+		digits = *getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2);
+	lng tz = *getArgReference_lng(stk, pci, pci->argc == 5 ? 4 : 3);
 	bat *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2) : NULL;
 	(void) cntxt;
 	return str_2time_daytimetz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), sid, tpe, digits, tz);
@@ -546,10 +544,8 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -624,10 +620,8 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -752,10 +746,8 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -795,26 +787,26 @@ nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static inline str
-str_2time_timestamptz_internal_imp(timestamp *ret, const char *next, ssize_t (*fromstr_func)(const char *, size_t *, timestamp **, bool),
+str_2time_timestamptz_internal_imp(timestamp *ret, const char *next, ssize_t (*fromstr_func)(const char *, timestamp *, long, bool),
 #ifdef HAVE_HGE
-hge shift, hge divider, hge multiplier
+hge shift, hge divider, hge multiplier, lng tz_off
 #else
-lng shift, lng divider, lng multiplier
+lng shift, lng divider, lng multiplier, lng tz_off
 #endif
 )
 {
 	ssize_t pos = 0;
-	timestamp tp = 0, *conv = &tp;
+	timestamp tp = 0;
 
-	pos = fromstr_func(next, &(size_t){sizeof(timestamp)}, &conv, false);
-	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_timestamp_nil(*conv))
+	pos = fromstr_func(next, &tp, (long)tz_off, false);
+	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_timestamp_nil(tp))
 		return createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(22007) "Timestamp '%s' has incorrect format", next);
-	*ret = timestamp_2time_timestamp_imp(*conv, shift, divider, multiplier);
+	*ret = timestamp_2time_timestamp_imp(tp, shift, divider, multiplier);
 	return MAL_SUCCEED;
 }
 
 static str
-str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int digits, int tz)
+str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int digits, lng tz)
 {
 	str msg = MAL_SUCCEED;
 	BAT *b = NULL, *s = NULL, *res = NULL;
@@ -822,7 +814,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 	int d = (digits) ? digits - 1 : 0;
 	bool is_a_bat = false, nils = false;
 	bat *r = NULL;
-	ssize_t (*fromstr_func)(const char *, size_t *, timestamp **, bool) = tz ? timestamp_tz_fromstr : timestamp_fromstr;
+	ssize_t (*fromstr_func)(const char *, timestamp *, long, bool) = sql_timestamp_fromstr;
 	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
@@ -881,7 +873,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 					ret[i] = timestamp_nil;
 					nils = true;
 				} else {
-					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		} else {
@@ -893,7 +885,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 					ret[i] = timestamp_nil;
 					nils = true;
 				} else {
-					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		}
@@ -903,14 +895,12 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 		if (strNil(next))
 			*ret = timestamp_nil;
 		else
-			msg = str_2time_timestamptz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier);
+			msg = str_2time_timestamptz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -929,14 +919,14 @@ str
 str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1),
-		digits = *getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2),
-		tz = *getArgReference_int(stk, pci, pci->argc == 5 ? 4 : 3);
+		digits = *getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2);
+	lng tz = *getArgReference_lng(stk, pci, pci->argc == 5 ? 4 : 3);
 	(void) cntxt;
 	return str_2time_timestamptz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe, digits, tz);
 }
 
 str
-batstr_2time_timestamptz(bat *res, const bat *bid, const bat *sid, const int *digits, int *tz)
+batstr_2time_timestamptz(bat *res, const bat *bid, const bat *sid, const int *digits, const lng *tz)
 {
 	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, *tz);
 }
@@ -1040,10 +1030,8 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -1140,10 +1128,8 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -1316,10 +1302,8 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -1454,10 +1438,8 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;
@@ -1566,10 +1548,8 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (res && !msg) {
 		BATsetcount(res, ci.ncand);
 		res->tnil = nils;

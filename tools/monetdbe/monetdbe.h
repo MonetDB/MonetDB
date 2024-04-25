@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MONETDBE_LIB_
@@ -113,6 +117,7 @@ typedef struct {
 	int querytimeout;  // graceful terminate query after a few seconds
 	int sessiontimeout;  // graceful terminate the session after a few seconds
 	int nr_threads;  // maximum number of worker treads, limits level of parallelism
+	bool no_int128;	 // client has no int128 support
 	monetdbe_remote* remote;
 	monetdbe_mapi_server* mapi_server;
 	const char *trace_file;		// file to which log output should be written
@@ -177,6 +182,8 @@ monetdbe_export char* monetdbe_append(monetdbe_database dbhdl, const char* schem
 monetdbe_export const void* monetdbe_null(monetdbe_database dbhdl, monetdbe_types t);
 
 monetdbe_export char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, monetdbe_column **columns);
+
+monetdbe_export char* monetdbe_load_extension(monetdbe_database dbhdl, const char *file);
 
 monetdbe_export char* monetdbe_dump_database(monetdbe_database dbhdl, const char *backupfile);
 monetdbe_export char* monetdbe_dump_table(monetdbe_database dbhdl, const char *schema_name, const char *table_name, const char *backupfile);

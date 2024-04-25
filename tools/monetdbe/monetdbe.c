@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -15,6 +19,7 @@
 #include "mal_embedded.h"
 #include "mal_backend.h"
 #include "mal_builder.h"
+#include "mal_linker.h"
 #include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
@@ -31,6 +36,7 @@
 #include "remote.h"
 #include "sql.h"
 #include "sql_result.h"
+#include "mutils.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -86,6 +92,7 @@ embedded_type(int t) {
 typedef struct {
 	Client c;
 	char *msg;
+	int registered_thread;	/* 1 = registered in monetdbe_open, 2 = done by GDK (also deregister done there) */
 	monetdbe_data_blob blob_null;
 	monetdbe_data_date date_null;
 	monetdbe_data_time time_null;
@@ -215,6 +222,8 @@ validate_database_handle_noerror(monetdbe_database_internal *mdbe)
 {
 	if (!monetdbe_embedded_initialized || !MCvalid(mdbe->c))
 		return 0;
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	clear_error(mdbe);
 	return 1;
 }
@@ -283,8 +292,8 @@ cleanup:
 }
 
 static char*
-monetdbe_get_results(monetdbe_result** result, monetdbe_database_internal *mdbe) {
-
+monetdbe_get_results(monetdbe_result** result, monetdbe_database_internal *mdbe)
+{
 	backend *be = NULL;
 
 	*result = NULL;
@@ -378,6 +387,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_internal", "Could not setup query stream"));
 		goto cleanup;
 	}
+	c->qryctx.bs = c->fdin;
 	query_stream = NULL;
 	if (bstream_next(c->fdin) < 0) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_internal", "Internal error while starting the query"));
@@ -404,13 +414,11 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		goto cleanup;
 	if (prepare_id)
 		m->emode = m_prepare;
-	if ((mdbe->msg = SQLparser(c)) != MAL_SUCCEED)
+	c->fdout = NULL;
+	if ((mdbe->msg = SQLengine_(c)) != MAL_SUCCEED)
 		goto cleanup;
 	if (m->emode == m_prepare && prepare_id)
-		*prepare_id = b->q->id;
-	c->fdout = NULL;
-	if ((mdbe->msg = SQLengine(c)) != MAL_SUCCEED)
-		goto cleanup;
+		*prepare_id = b->result_id;
 	if (!b->results && b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;
 
@@ -433,6 +441,7 @@ cleanup:
 	if (fdin_changed) { //c->fdin was set
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
+		c->qryctx.bs = old_bstream;
 	}
 	if (query_stream)
 		close_stream(query_stream);
@@ -542,6 +551,13 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Embedded MonetDB is not started"));
 		goto cleanup;
 	}
+	if (!mdbe->registered_thread) {
+		if (!MT_thread_register()) {
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Embedded MonetDB is not started"));
+			goto cleanup;
+		}
+		mdbe->registered_thread = 1;
+	}
 	mdbe->c = MCinitClient((oid) 0, 0, 0);
 	if (!MCvalid(mdbe->c)) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Failed to initialize client"));
@@ -558,7 +574,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Failed to initialize client MAL module"));
 		goto cleanup;
 	}
-	if ((mdbe->msg = SQLinitClient(mdbe->c)) != MAL_SUCCEED ||
+	if ((mdbe->msg = SQLinitClient(mdbe->c, NULL, NULL, NULL)) != MAL_SUCCEED ||
 		(mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
 	m->session->auto_commit = 1;
@@ -572,6 +588,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		set_error(mdbe, createException(SQL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL));
 		goto cleanup;
 	}
+	m->no_int128 = opts?opts->no_int128:false;
 cleanup:
 	if (mdbe->msg)
 		return -2;
@@ -622,6 +639,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 
 	if (monetdbe_embedded_initialized) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "MonetDBe is already initialized"));
+		GDKfataljumpenable = 0;
 		return;
 	}
 
@@ -739,7 +757,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 			goto cleanup;
 		}
 	}
-	gdk_res = GDKinit(set, setlen, true);
+	gdk_res = GDKinit(set, setlen, true, mercurial_revision());
 	mo_free_options(set, setlen);
 	if (gdk_res != GDK_SUCCEED) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "GDKinit() failed"));
@@ -753,8 +771,8 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 	monetdbe_embedded_url = dbdir?GDKstrdup(dbdir):NULL;
 	if (dbdir && !monetdbe_embedded_url)
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL));
-	GDKfataljumpenable = 0;
 cleanup:
+	GDKfataljumpenable = 0;
 	if (mdbe->msg)
 		monetdbe_shutdown_internal();
 }
@@ -834,8 +852,15 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		c->curprg= NULL;
 		return -2;
 	}
+	pushInstruction(mb, p);
 
 	q = newInstruction(mb, NULL, NULL);
+	if (q == NULL) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
+		freeSymbol(c->curprg);
+		c->curprg= NULL;
+		return -2;
+	}
 	q->barrier= RETURNsymbol;
 	q = pushReturn(mb, q, getArg(p, 0));
 
@@ -854,7 +879,8 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		return -2;
 	}
 	stk->keepAlive = TRUE;
-	mb->starttime = GDKusec();
+	c->qryctx.starttime = GDKusec();
+	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);
@@ -908,13 +934,14 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 		 */
 		assert(!is_remote||url==NULL);
 		monetdbe_startup(mdbe, url, opts);
+		mdbe->registered_thread = 2;
 	} else if (!is_remote && !urls_matches(monetdbe_embedded_url, url)) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open", "monetdbe_open currently only one active database is supported"));
 	}
 	if (!mdbe->msg)
 		res = monetdbe_open_internal(mdbe, opts);
 
-	if (res == 0 && is_remote)
+	if (res == 0 && is_remote && !mdbe->msg)
 		res = monetdbe_open_remote(mdbe, opts);
 
 	MT_lock_unset(&embedded_lock);
@@ -932,13 +959,19 @@ monetdbe_close(monetdbe_database dbhdl)
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
 	int err = 0;
+	int registered_thread = mdbe->registered_thread;
 
+	if (mdbe->c)
+		MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	MT_lock_set(&embedded_lock);
 	if (mdbe->mid)
 		err = monetdbe_close_remote(mdbe);
 
 	err = (monetdbe_close_internal(mdbe) || err);
 
+	if (registered_thread == 1) {
+		MT_thread_deregister();
+	}
 	if (!open_dbs)
 		monetdbe_shutdown_internal();
 	MT_lock_unset(&embedded_lock);
@@ -958,6 +991,26 @@ monetdbe_error(monetdbe_database dbhdl)
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	return mdbe->msg;
+}
+
+char*
+monetdbe_load_extension(monetdbe_database dbhdl, const char *file)
+{
+	if (!dbhdl)
+		return 0;
+
+	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+
+	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
+		return mdbe->msg;
+	}
+	char *modules[2];
+	modules[0] = (char*)file;
+	modules[1] = NULL;
+	char *msg = loadLibrary(file, -1);
+	if (msg)
+		return msg;
+	return malIncludeModules(mdbe->c, modules, 0, true, NULL);
 }
 
 char*
@@ -1038,7 +1091,7 @@ monetdbe_set_autocommit(monetdbe_database dbhdl, int value)
 
 	if (!validate_database_handle_noerror(mdbe)) {
 
-		return 0;
+		return NULL;
 	}
 
 	mvc *m = ((backend *) mdbe->c->sqlcontext)->mvc;
@@ -1096,15 +1149,7 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 		return error;
 	}
 
-	BAT* order = BATdense(0, 0, BATcount(b_0));
-	if (!order) {
-		BBPunfix(b_0->batCacheid);
-		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) MAL_MALLOC_FAIL);
-		return error;
-	}
-
-	int res = mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order);
-	BBPunfix(order->batCacheid);
+	int res = mvc_result_table(be, 0, (int) nr_results, Q_TABLE);
 	if (res < 0) {
 		BBPunfix(b_0->batCacheid);
 		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot create result table");
@@ -1192,7 +1237,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	InstrPtr o = NULL, e = NULL, r = NULL;
 	sql_rel* rel = NULL;
 	list *args = NULL, *rets = NULL;
-	sql_allocator* sa = NULL;
+	allocator* sa = NULL;
 	ValRecord v = { .len=0 };
 	ptr vp = NULL;
 	struct callback_context* ccontext= NULL;
@@ -1234,7 +1279,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		assert (((backend*)  mdbe->c->sqlcontext)->remote < INT_MAX);
 		char nme[16]		= {0};
 		const char* name	= number2name(nme, sizeof(nme), ++((backend*)  mdbe->c->sqlcontext)->remote);
-		prg					= newFunction(userRef, putName(name), FUNCTIONsymbol);
+		prg					= newFunctionArgs(userRef, putName(name), FUNCTIONsymbol, (int) nparams + 1);
 	}
 
 	resizeMalBlk(prg->def, (int) nparams + 3 /*function declaration + remote.exec + return statement*/);
@@ -1244,6 +1289,10 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	o->retc = o->argc = 0;
 
 	e = newInstructionArgs(mb, remoteRef, execRef, (int)(nparams + 5));
+	if (e == NULL) {
+		msg = createException(MAL, "monetdbe.monetdbe_prepare_cb", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 	setDestVar(e, newTmpVariable(mb, TYPE_any));
 	e = pushStr(mb, e, mdbe->mid);
 	e = pushStr(mb, e, userRef);
@@ -1272,6 +1321,10 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	e = pushValue(mb, e, &v);
 
 	r = newInstruction(mb, NULL, NULL);
+	if (r == NULL) {
+		msg = createException(MAL, "monetdbe.monetdbe_prepare_cb", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 	r->barrier= RETURNsymbol;
 	r->argc= r->retc=0;
 
@@ -1304,9 +1357,14 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 			o = pushArgument(mb, o, idx);
 
 			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
+			if (p == NULL) {
+				msg = createException(MAL, "monetdbe.monetdbe_prepare_cb", MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
 			setArgType(mb, p, 0, TYPE_str);
 			p = pushStr(mb, p, mdbe->mid);
 			p = pushArgument(mb, p, idx);
+			pushInstruction(mb, p);
 
 			e = pushArgument(mb, e, getArg(p, 0));
 		}
@@ -1320,6 +1378,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	}
 	pushInstruction(mb, e);
 	pushInstruction(mb, r);
+	e = r = NULL;
 
 	if ( (mdbe->msg = chkProgram(mdbe->c->usermodule, mb)) != MAL_SUCCEED ) {
 		msg = mdbe->msg;
@@ -1338,17 +1397,19 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	 */
 	prg->def = NULL;
 	freeSymbol(prg);
-	if ((prg = newFunction(userRef, putName(be->q->name), FUNCTIONsymbol)) == NULL) {
+	if ((prg = newFunctionArgs(userRef, putName(be->q->name), FUNCTIONsymbol, -1)) == NULL) {
 		msg = createException(MAL, "monetdbe.monetdbe_prepare_cb", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
+	freeMalBlk(prg->def);
 	prg->def = mb;
-	setFunctionId(getSignature(prg), be->q->name);
 
 	// finally add this beautiful new function to the local user module.
 	insertSymbol(mdbe->c->usermodule, prg);
 
 cleanup:
+	freeInstruction(e);
+	freeInstruction(r);
 	if (bcolumn) {
 		bat_iterator_end(&btype_iter);
 		bat_iterator_end(&bcolumn_iter);
@@ -1356,13 +1417,13 @@ cleanup:
 		bat_iterator_end(&bimpl_iter);
 	}
 	// clean these up
-	if (btype)		BBPunfix(btype->batCacheid);
-	if (bimpl)		BBPunfix(bimpl->batCacheid);
-	if (bdigits)	BBPunfix(bdigits->batCacheid);
-	if (bscale)		BBPunfix(bscale->batCacheid);
-	if (bschema)	BBPunfix(bschema->batCacheid);
-	if (btable)		BBPunfix(btable->batCacheid);
-	if (bcolumn)	BBPunfix(bcolumn->batCacheid);
+	BBPreclaim(btype);
+	BBPreclaim(bimpl);
+	BBPreclaim(bdigits);
+	BBPreclaim(bscale);
+	BBPreclaim(bschema);
+	BBPreclaim(btable);
+	BBPreclaim(bcolumn);
 
 	if (msg && rcb) GDKfree(rcb);
 	if (msg && ccontext) GDKfree(ccontext);
@@ -1396,6 +1457,11 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	o = newStmt(mb, remoteRef, putRef);
 	o = pushStr(mb, o, mdbe->mid);
 	o = pushBit(mb, o, TRUE);
+	if (o == NULL) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_remote", MAL_MALLOC_FAIL));
+		goto finalize;
+	}
+	pushInstruction(mb, o);
 
 	if (prepare_id) {
 		size_t query_len, input_query_len, prep_len = 0;
@@ -1418,9 +1484,18 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	p = newStmt(mb, remoteRef, putRef);
 	p = pushStr(mb, p, mdbe->mid);
 	p = pushStr(mb, p, query);
+	if (p == NULL) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_remote", MAL_MALLOC_FAIL));
+		goto finalize;
+	}
+	pushInstruction(mb, p);
 
 
 	e = newInstruction(mb, remoteRef, execRef);
+	if (e == NULL) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_remote", MAL_MALLOC_FAIL));
+		goto finalize;
+	}
 	setDestVar(e, newTmpVariable(mb, TYPE_any));
 	e = pushStr(mb, e, mdbe->mid);
 	e = pushStr(mb, e, sqlRef);
@@ -1470,6 +1545,10 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	pushInstruction(mb, e);
 
 	r = newInstruction(mb, NULL, NULL);
+	if (r == NULL) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_remote", MAL_MALLOC_FAIL));
+		goto finalize;
+	}
 	r->barrier= RETURNsymbol;
 	r->argc= r->retc=0;
 	pushInstruction(mb, r);
@@ -1494,7 +1573,6 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 		else
 			((monetdbe_result_internal*) *result)->type = (be->results) ? be->results->query_type : m->type;
 
-
 		if (!be->results && be->rowcnt >= 0 && affected_rows)
 			*affected_rows = be->rowcnt;
 	}
@@ -1511,6 +1589,8 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 		return NULL;
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (mdbe->mid) {
 		mdbe->msg = monetdbe_query_remote(mdbe, query, result, affected_rows, NULL);
 	}
@@ -1530,6 +1610,8 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 
 	int prepare_id = 0;
 
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (!stmt) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_prepare", "Parameter stmt is NULL"));
 		assert(mdbe->msg != MAL_SUCCEED); /* help Coverity */
@@ -1547,6 +1629,7 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 
 		if (q && stmt_internal) {
 			Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
+			assert(s->def);
 			InstrPtr p = s->def->stmt[0];
 			stmt_internal->mdbe = mdbe;
 			stmt_internal->q = q;
@@ -1657,6 +1740,8 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	cq *q = stmt_internal->q;
 	Symbol s = NULL;
 
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		return mdbe->msg;
 
@@ -1669,7 +1754,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	}
 
 	s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
-	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0)) != MAL_SUCCEED)
+	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args)) != MAL_SUCCEED)
 		goto cleanup;
 
 	if (b->rowcnt >= 0 && affected_rows)
@@ -1680,8 +1765,13 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 			goto cleanup;
 		}
 
-		(*(monetdbe_result_internal**) result)->type = (b->results) ? Q_TABLE : Q_UPDATE;
 		res_internal = *(monetdbe_result_internal**)result;
+		res_internal->type = (b->results) ? Q_TABLE : Q_UPDATE;
+		if (res_internal->monetdbe_resultset && res_internal->monetdbe_resultset->query_type == Q_TABLE) {
+			res_internal->type = Q_TABLE;
+			if (affected_rows)
+				*affected_rows = res_internal->monetdbe_resultset->nr_rows;
+		}
 	}
 
 cleanup:
@@ -1699,6 +1789,8 @@ monetdbe_cleanup_statement(monetdbe_database dbhdl, monetdbe_statement *stmt)
 
 	assert(!stmt_internal->mdbe || mdbe == stmt_internal->mdbe);
 
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	for (size_t i = 0; i < stmt_internal->res.nparam + 1; i++) {
 		ValPtr data = &stmt_internal->data[i];
 		VALclear(data);
@@ -1720,9 +1812,10 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	monetdbe_result_internal* res = (monetdbe_result_internal *) result;
 
-
+	assert(mdbe->c);
+	MT_thread_set_qry_ctx(&mdbe->c->qryctx);
 	if (!result) {
-		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_cleanup_result_internal", "Parameter result is NULL"));
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_cleanup_result", "Parameter result is NULL"));
 	} else {
 		mdbe->msg = monetdbe_cleanup_result_internal(mdbe, res);
 	}
@@ -1733,14 +1826,14 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 static inline void
 cleanup_get_columns_result(size_t column_count, monetdbe_column* columns)
 {
-		if (columns) for (size_t c = 0; c < column_count; c++) {
-			 GDKfree(columns[c].name);
-			 GDKfree(columns[c].sql_type.name);
+	if (columns) {
+		for (size_t c = 0; c < column_count; c++) {
+			GDKfree(columns[c].name);
+			GDKfree(columns[c].sql_type.name);
 		}
-
 		GDKfree(columns);
-
 		columns = NULL;
+	}
 }
 
 static char *
@@ -2002,44 +2095,24 @@ append_create_remote_append_mal_program(
 	assert(prg);
 
 	*prg	= NULL;
-	_prg	= newFunction(userRef, putName(remote_program_name), FUNCTIONsymbol); // remote program
+	_prg	= newFunctionArgs(userRef, putName(remote_program_name), FUNCTIONsymbol, (int) ccount + 1); // remote program
 	mb		= _prg->def;
-
-	{ // START OF HACK
-		/*
-		 * This is a hack to make sure that the serialized remote program is correctly parsed on the remote side.
-		 * Since the mal serializer (mal_listing) on the local side will use generated variable names,
-		 * The parsing process on the remote side can and will clash with generated variable names on the remote side.
-		 * Because serialiser and the parser will both use the same namespace of generated variable names.
-		 * Adding an offset to the counter that generates the variable names on the local side
-		 * circumvents this shortcoming in the MAL parser.
-		 */
-
-		assert(mb->vid == 0);
-
-		/*
-			* Comments generate variable names during parsing:
-			* sql.mvc has one comment and for each column there is one sql.append statement plus comment.
-			*/
-		const int nr_of_comments = (int) (1 + ccount);
-		/*
-			* constant terms generate variable names during parsing:
-			* Each sql.append has three constant terms: schema + table + column_name.
-			* There is one sql.append stmt for each column.
-			*/
-		const int nr_of_constant_terms =  (int)  (3 * ccount);
-		mb->vid = nr_of_comments + nr_of_constant_terms;
-	} // END OF HACK
 
 	f = getInstrPtr(mb, 0);
 	f->retc = f->argc = 0;
 	f = pushReturn(mb, f, newTmpVariable(mb, TYPE_int));
 	v = newFcnCall(mb, sqlRef, mvcRef);
+	if (v == NULL) {
+		msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	pushInstruction(mb, v);
 	setArgType(mb, v, 0, TYPE_int);
 
 	mvc_id = getArg(v, 0);
 
-	sqlstore *store = m->session->tr->store;
+	sqlstore *store;
+	store = m->session->tr->store;
 	for (size_t i = 0; i < ccount; i++) {
 		sql_column *col = NULL;
 		sql_type *tpe = SA_ZNEW(m->sa, sql_type);
@@ -2075,17 +2148,26 @@ append_create_remote_append_mal_program(
 		f = pushArgument(mb, f, idx);
 
 		a = newFcnCall(mb, sqlRef, appendRef);
+		if (a == NULL) {
+			msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
 		setArgType(mb, a, 0, TYPE_int);
 		a = pushArgument(mb, a, mvc_id);
 		a = pushStr(mb, a, schema ? schema : "sys"); /* TODO this should be better */
 		a = pushStr(mb, a, table);
 		a = pushStr(mb, a, columns[i].name);
 		a = pushArgument(mb, a, idx);
+		pushInstruction(mb, a);
 
 		mvc_id = getArg(a, 0);
 	}
 
 	r = newInstruction(mb, NULL, NULL);
+	if (r == NULL) {
+		msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 	r->barrier= RETURNsymbol;
 	r->retc = r->argc = 0;
 	r = pushReturn(mb, r, mvc_id);
@@ -2289,11 +2371,11 @@ remote_cleanup:
 			char *prev_base;
 			size_t prev_size;
 			prev_base = bn->theap->base;
-			prev_size = bn->theap->size;
+			prev_size = bn->theap->free;
 
 			//BAT heap base to input[i]->data
 			bn->theap->base = input[i]->data;
-			bn->theap->size = tailsize(bn, cnt);
+			bn->theap->free = tailsize(bn, cnt);
 
 			//BATsetdims(bn); called in COLnew
 			BATsetcapacity(bn, cnt);
@@ -2310,16 +2392,16 @@ remote_cleanup:
 				bn->tnil = false;
 			}
 
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, bn, cnt, TYPE_bat) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, bn, cnt, true, bn->ttype) != 0) {
 				bn->theap->base = prev_base;
-				bn->theap->size = prev_size;
+				bn->theap->free = prev_size;
 				BBPreclaim(bn);
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append BAT"));
 				goto cleanup;
 			}
 
 			bn->theap->base = prev_base;
-			bn->theap->size = prev_size;
+			bn->theap->free = prev_size;
 			BBPreclaim(bn);
 		} else if (mtype == TYPE_str) {
 			char **d = (char**)v;
@@ -2332,7 +2414,7 @@ remote_cleanup:
 					goto cleanup;
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				goto cleanup;
 			}
@@ -2354,7 +2436,7 @@ remote_cleanup:
 					d[j] = timestamp_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2379,7 +2461,7 @@ remote_cleanup:
 					d[j] = date_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2404,7 +2486,7 @@ remote_cleanup:
 					d[j] = time_from_data(&mdt);
 				}
 			}
-			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2438,7 +2520,7 @@ remote_cleanup:
 					d[j] = b;
 				}
 			}
-			if (!err && store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, mtype) != 0) {
+			if (!err && store->storage_api.append_col(m->session->tr, c, offset, pos, d, cnt, false, mtype) != 0) {
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append values"));
 				err = 1;
 			}
@@ -2470,12 +2552,24 @@ remote_cleanup:
 		f->retc = f->argc = 0;
 
 		InstrPtr r = newFcnCall(mb, remoteRef, registerRef);
+		if (r == NULL) {
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
+			freeSymbol(prg);
+			goto cleanup;
+		}
+
 		setArgType(mb, r, 0, TYPE_str);
 		r = pushStr(mb, r, mdbe->mid);
 		r = pushStr(mb, r, userRef);
 		r = pushStr(mb, r, putName(remote_prg->name));
+		pushInstruction(mb, r);
 
 		InstrPtr e = newInstructionArgs(mb, remoteRef, execRef, 4 + ol_length(t->columns));
+		if (e == NULL) {
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
+			freeSymbol(prg);
+			goto cleanup;
+		}
 		setDestVar(e, newTmpVariable(mb, TYPE_any));
 		e = pushStr(mb, e, mdbe->mid);
 		e = pushStr(mb, e, userRef);
@@ -2491,16 +2585,22 @@ remote_cleanup:
 			}
 
 			int idx = newTmpVariable(mb, newBatType(c->type.type->localtype));
-			ValRecord v = { .vtype = TYPE_bat, .len = ATOMlen(TYPE_bat, &b->batCacheid), .val.bval = b->batCacheid};
+			ValRecord v = { .bat = true, .vtype = b->ttype, .len = sizeof(int), .val.bval = b->batCacheid};
 			getVarConstant(mb, idx) = v;
 			setVarConstant(mb, idx);
 			BBPunfix(b->batCacheid);
 
 			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
-			;
+			if (p == NULL) {
+				set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
+				freeInstruction(e);
+				freeSymbol(prg);
+				goto cleanup;
+			}
 			setArgType(mb, p, 0, TYPE_str);
 			p = pushStr(mb, p, mdbe->mid);
 			p = pushArgument(mb, p, idx);
+			pushInstruction(mb, p);
 
 			e = pushArgument(mb, e, getArg(p, 0));
 		}
@@ -2508,6 +2608,11 @@ remote_cleanup:
 		pushInstruction(mb, e);
 
 		InstrPtr ri = newInstruction(mb, NULL, NULL);
+		if (ri == NULL) {
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
+			freeSymbol(prg);
+			goto cleanup;
+		}
 		ri->barrier= RETURNsymbol;
 		ri->retc = ri->argc = 0;
 		pushInstruction(mb, ri);
@@ -2778,8 +2883,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	if (column_result)
 		column_result->name = result->monetdbe_resultset->cols[column_index].name;
 cleanup:
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	if (mdbe->msg) {
 		if (res)
 			*res = NULL;

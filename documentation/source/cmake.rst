@@ -1,8 +1,12 @@
+.. SPDX-License-Identifier: MPL-2.0
+..
 .. This Source Code Form is subject to the terms of the Mozilla Public
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+.. Copyright 2024 MonetDB Foundation;
+.. Copyright August 2008 - 2023 MonetDB B.V.;
+.. Copyright 1997 - July 2008 CWI.
 
 =====
 CMake
@@ -182,6 +186,6 @@ You need to install the wixtoolset (with chocolaty): ::
 
 Then you can run the following command from the build directory: ::
 
-  "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\CPack" -G WIX -C Debug --config CPackConfig.cmake
+  "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\CPack" -G WIX -C Debug --config CPackConfig.cmake
 
 This will create the "msi" file.

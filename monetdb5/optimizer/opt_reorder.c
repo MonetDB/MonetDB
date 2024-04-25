@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -32,7 +36,7 @@
 #include "opt_mitosis.h"
 
 
-#define MAXSLICES 1024		/* to be refined */
+#define MAXSLICES 1024			/* to be refined */
 
 /* Insert the instruction immediately after a previous instruction that
  * generated an argument needed.
@@ -40,73 +44,75 @@
  * Be aware of side-effect instructions, they may not be skipped.
  */
 str
-OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						 InstrPtr pci)
 {
-	int i,j,k, blkcnt = 1, pc = 0, actions = 0;
-	InstrPtr p= NULL, *old = NULL;
+	int i, j, k, blkcnt = 1, pc = 0, actions = 0;
+	InstrPtr p = NULL, *old = NULL;
 	int limit, slimit, *depth = NULL;
 	str msg = MAL_SUCCEED;
-	InstrPtr *blocks[MAXSLICES] = {0};
-	int top[MAXSLICES] = {0};
-	int barriers[MAXSLICES] = {0}, btop = 0, off = 0;
+	InstrPtr *blocks[MAXSLICES] = { 0 };
+	int top[MAXSLICES] = { 0 };
+	int barriers[MAXSLICES] = { 0 }, btop = 0, off = 0;
 
-	for(i=0; i< MAXSLICES; i++)
+	for (i = 0; i < MAXSLICES; i++)
 		top[i] = 0;
-	if( isOptimizerUsed(mb, pci, mitosisRef) <= 0){
+	if (isOptimizerUsed(mb, pci, mitosisRef) <= 0) {
 		goto wrapup;
 	}
 	(void) cntxt;
 	(void) stk;
 
-	limit= mb->stop;
-	slimit= mb->ssize;
+	limit = mb->stop;
+	slimit = mb->ssize;
 	old = mb->stmt;
 
-	depth = (int*) GDKzalloc(mb->vtop * sizeof(int));
-	if( depth == NULL){
-		throw(MAL,"optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	depth = (int *) GDKzalloc(mb->vtop * sizeof(int));
+	if (depth == NULL) {
+		throw(MAL, "optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
+	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(depth);
-		throw(MAL,"optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	actions = 1;
 	/* Mark the parameters as constants as beloning to depth 0; */
-	for( i =0; i< limit; i++){
+	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if( !p) {
+		if (!p) {
 			//mnstr_printf(cntxt->fdout, "empty stmt:pc %d \n", i);
 			continue;
 		}
-		if( p->token == ENDsymbol)
+		if (p->token == ENDsymbol)
 			break;
 		k = off;
-		if( getModuleId(p) == sqlRef && getFunctionId(p) == tidRef && p->argc == 6){
-			if (depth[getArg(p,0)] == 0){
-				k =  getVarConstant(mb, getArg(p, p->argc-2)).val.ival;
-				assert( k < MAXSLICES);
-				depth[getArg(p,0)] = k;
-				depth[getArg(p,p->retc)] = k; /* keep order of mvc input var */
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == tidRef
+			&& p->argc == 6) {
+			if (depth[getArg(p, 0)] == 0) {
+				k = getVarConstant(mb, getArg(p, p->argc - 2)).val.ival;
+				assert(k < MAXSLICES);
+				depth[getArg(p, 0)] = k;
+				depth[getArg(p, p->retc)] = k;	/* keep order of mvc input var */
 			}
-		} else
-		if( getModuleId(p) == sqlRef && getFunctionId(p) == bindRef && p->argc == 8){
-			if (depth[getArg(p,0)] == 0){
-				k =  getVarConstant(mb, getArg(p, p->argc-2)).val.ival;
-				assert( k < MAXSLICES);
-				depth[getArg(p,0)] = k;
-				depth[getArg(p,p->retc)] = k; /* keep order of mvc input var */
+		} else if (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef
+				   && p->argc == 8) {
+			if (depth[getArg(p, 0)] == 0) {
+				k = getVarConstant(mb, getArg(p, p->argc - 2)).val.ival;
+				assert(k < MAXSLICES);
+				depth[getArg(p, 0)] = k;
+				depth[getArg(p, p->retc)] = k;	/* keep order of mvc input var */
 			}
 		} else {
-			for(j= p->retc; j <p->argc; j++){
-				if (depth[getArg(p,j)] > k)
-					k = depth[getArg(p,j)];
+			for (j = p->retc; j < p->argc; j++) {
+				if (depth[getArg(p, j)] > k)
+					k = depth[getArg(p, j)];
 			}
-			assert( k < MAXSLICES);
-			for(j=0; j< p->retc; j++)
-				if( depth[getArg(p,j)] == 0)
-					depth[getArg(p,j)] = k;
+			assert(k < MAXSLICES);
+			for (j = 0; j < p->retc; j++)
+				if (depth[getArg(p, j)] == 0)
+					depth[getArg(p, j)] = k;
 			/* In addition to the input variables of the statements al statements within a barrier also
 			 * depend on the barriers variable */
 			if (blockStart(p)) {
@@ -121,36 +127,40 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			}
 		}
 
-		if( top[k] == 0){
+		if (top[k] == 0) {
 			blocks[k] = GDKzalloc(limit * sizeof(InstrPtr));
-			if( blocks[k] == NULL){
-				for(i=0; i< blkcnt; i++)
-					if( top[i])
+			if (blocks[k] == NULL) {
+				for (i = 0; i < blkcnt; i++)
+					if (top[i])
 						GDKfree(blocks[i]);
 				GDKfree(depth);
-				GDKfree(old);
-				throw(MAL,"optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				GDKfree(mb->stmt);
+				mb->stop = limit;
+				mb->ssize = slimit;
+				mb->stmt = old;
+				throw(MAL, "optimizer.reorder",
+					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		blocks[k][top[k]] = p;
-		top[k]= top[k] +1;
+		top[k] = top[k] + 1;
 		//mnstr_printf(cntxt->fdout, "block[%d] :%d:",i, k);
 		//printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
-		if( k > blkcnt)
+		if (k > blkcnt)
 			blkcnt = k;
 	}
 
-	for(k =0; k <= blkcnt; k++)
-		for(j=0; j < top[k]; j++){
-			p =  blocks[k][j];
+	for (k = 0; k <= blkcnt; k++)
+		for (j = 0; j < top[k]; j++) {
+			p = blocks[k][j];
 			p->pc = pc++;
 			pushInstruction(mb, p);
 		}
 
-	for(; i<limit; i++)
+	for (; i < limit; i++)
 		if (old[i])
-			pushInstruction(mb,old[i]);
-	for(; i<slimit; i++)
+			pushInstruction(mb, old[i]);
+	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
 
@@ -163,15 +173,14 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* keep all actions taken as a post block comment */
 	//mnstr_printf(cntxt->fdout,"REORDER RESULT ");
 	//printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-wrapup:
-	for(i=0; i<= blkcnt; i++)
-		if( top[i])
+  wrapup:
+	for (i = 0; i <= blkcnt; i++)
+		if (top[i])
 			GDKfree(blocks[i]);
 
-	/* keep actions taken as a fake argument*/
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	GDKfree(depth);
 	GDKfree(old);
 	return msg;
 }
-

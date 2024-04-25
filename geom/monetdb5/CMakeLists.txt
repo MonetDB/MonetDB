@@ -1,15 +1,20 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 if(GEOS_FOUND)
   add_library(geomodule MODULE)
 
   set(include_sql_files
+    39_spatial_ref_sys
     40_geom)
 
   create_include_object(
@@ -21,8 +26,9 @@ if(GEOS_FOUND)
   target_sources(geomodule
     PRIVATE
     geom.c
+    geod.c
+    geom_atoms.c
     geomBulk.c
-    geom_upgrade.c
     ${MONETDB_CURRENT_SQL_SOURCES}
     PUBLIC
     ${geomodule_public_headers})

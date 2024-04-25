@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -124,7 +128,7 @@ GDKmmap(const char *path, int mode, size_t size)
 }
 
 gdk_return
-GDKmunmap(void *p, size_t size)
+GDKmunmap(void *p, int mode, size_t size)
 {
 	int failed;
 	__coverity_free__(p);
@@ -137,7 +141,7 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *p = GDKmmap(path, mode, new_size);
 	if (p) {
-		(void) GDKmunmap(old_address, old_size);
+		(void) GDKmunmap(old_address, mode, old_size);
 	}
 	return p;
 }

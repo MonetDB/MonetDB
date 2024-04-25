@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -61,7 +65,7 @@ typedef struct _inet {
 #endif
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
-static const inet inet_nil = {{{0,0,0,0,0,0,0,1}}};
+static const inet inet_nil = { {{0, 0, 0, 0, 0, 0, 0, 1}} };
 
 /**
  * Creates a new inet from the given string.
@@ -74,7 +78,7 @@ INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
 {
 	inet **retval = (inet **) RETVAL;
 	int i, last, type;
-	long parse; /* type long returned by strtol() */
+	long parse;					/* type long returned by strtol() */
 	char *endptr;
 	char sep = '.';
 
@@ -84,13 +88,13 @@ INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
 	if (*len < sizeof(inet) || *retval == NULL) {
 		GDKfree(*retval);
 		*retval = GDKzalloc(sizeof(inet));
-		if( *retval == NULL){
+		if (*retval == NULL) {
 			*len = 0;
 			return -1;
 		}
 		*len = sizeof(inet);
 	} else {
-		**retval = (inet) {.q1 = 0,};
+		**retval = (inet) {.q1 = 0, };
 	}
 
 	/* handle the nil string */
@@ -188,6 +192,7 @@ INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
 	in_setnil(*retval);
 	return -1;
 }
+
 /**
  * Returns the string representation of the given inet value.
  * Warning: GDK function
@@ -196,12 +201,12 @@ INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
 static ssize_t
 INETtoString(str *retval, size_t *len, const void *handle, bool external)
 {
-	const inet *value = (const inet *)handle;
+	const inet *value = (const inet *) handle;
 
 	if (*len < 20 || *retval == NULL) {
 		GDKfree(*retval);
 		*retval = GDKmalloc(sizeof(char) * (*len = 20));
-		if( *retval == NULL)
+		if (*retval == NULL)
 			return -1;
 	}
 	if (is_inet_nil(value)) {
@@ -218,6 +223,7 @@ INETtoString(str *retval, size_t *len, const void *handle, bool external)
 						value->mask);
 	}
 }
+
 /**
  * Returns a inet, parsed from a string.  The fromStr function is used
  * to parse the string.
@@ -246,6 +252,7 @@ INET_isnil(bit *retval, const inet *val)
 
 	return (MAL_SUCCEED);
 }
+
 /**
  * Returns whether val1 and val2 are equal.
  */
@@ -264,6 +271,7 @@ INET_comp_EQ(bit *retval, const inet *val1, const inet *val2)
 
 	return (MAL_SUCCEED);
 }
+
 /**
  * Returns whether val1 and val2 are not equal.
  */
@@ -282,6 +290,7 @@ INET_comp_NEQ(bit *retval, const inet *val1, const inet *val2)
 
 	return (MAL_SUCCEED);
 }
+
 /**
  * Returns whether val1 is smaller than val2.
  */
@@ -314,6 +323,7 @@ INET_comp_LT(bit *retval, const inet *val1, const inet *val2)
 
 	return (MAL_SUCCEED);
 }
+
 /**
  * Returns whether val1 is greater than val2.
  */
@@ -322,6 +332,7 @@ INET_comp_GT(bit *retval, const inet *val1, const inet *val2)
 {
 	return (INET_comp_LT(retval, val2, val1));
 }
+
 /**
  * Returns whether val1 is smaller than or equal to val2.
  */
@@ -337,6 +348,7 @@ INET_comp_LE(bit *retval, const inet *val1, const inet *val2)
 	*retval = ret;
 	return (MAL_SUCCEED);
 }
+
 /**
  * Returns whether val1 is smaller than or equal to val2.
  */
@@ -354,6 +366,7 @@ INET_comp_GE(bit *retval, const inet *val1, const inet *val2)
 	*retval = ret;
 	return (MAL_SUCCEED);
 }
+
 /**
  * Returns whether val1 is contained within val2
  */
@@ -383,12 +396,12 @@ INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
 		/*
-		TRC_DEBUG(MAL_SERVER,
-			"%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
-		   	m[0], m[1], m[2], m[3], val1->q1, val1->q2,
-		   	val1->q3, val1->q4, val2->q1, val2->q2, val2->q3,
-		   	val2->q4);
-		*/
+		   TRC_DEBUG(MAL_SERVER,
+		   "%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
+		   m[0], m[1], m[2], m[3], val1->q1, val1->q2,
+		   val1->q3, val1->q4, val2->q1, val2->q2, val2->q3,
+		   val2->q4);
+		 */
 
 		if ((val1->q1 & m[0]) == (val2->q1 & m[0]) &&
 			(val1->q2 & m[1]) == (val2->q2 & m[1]) &&
@@ -413,6 +426,7 @@ INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 	}
 	return (MAL_SUCCEED);
 }
+
 /**
  * Returns whether val1 is contained within or equal to val2
  */
@@ -429,6 +443,7 @@ INET_comp_CWE(bit *retval, const inet *val1, const inet *val2)
 	*retval = ret;
 	return (MAL_SUCCEED);
 }
+
 /**
  * Returns whether val1 is contains val2
  */
@@ -438,6 +453,7 @@ INET_comp_CS(bit *retval, const inet *val1, const inet *val2)
 	/* swap the input arguments and call the contained within function */
 	return (INET_comp_CW(retval, val2, val1));
 }
+
 /**
  * Returns whether val1 contains or is equal to val2
  */
@@ -491,12 +507,12 @@ INETbroadcast(inet *retval, const inet *val)
 		m[2] = (mask >> 8) & 0xFF;
 		m[3] = mask & 0xFF;
 
-	/*
-		TRC_DEBUG(MAL_SERVER,
-			"%x %x %x %x => %x %x %x %x\n",
-			m[0], m[1], m[2], m[3], val->q1, val->q2,
-		   	val->q3, val->q4);
-	*/
+		/*
+		   TRC_DEBUG(MAL_SERVER,
+		   "%x %x %x %x => %x %x %x %x\n",
+		   m[0], m[1], m[2], m[3], val->q1, val->q2,
+		   val->q3, val->q4);
+		 */
 
 		/* apply the inverted mask, so we get the broadcast */
 		retval->q1 |= m[0];
@@ -514,6 +530,7 @@ INETbroadcast(inet *retval, const inet *val)
 	}
 	return (MAL_SUCCEED);
 }
+
 /**
  * Extract only the IP address as text.  Unlike the toString function,
  * this function never returns the netmask length.
@@ -525,17 +542,18 @@ INEThost(str *retval, const inet *val)
 
 	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
-		if( *retval == NULL)
-			throw(MAL,"INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (*retval == NULL)
+			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 16);
-		if( ip == NULL)
-			throw(MAL,"INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (ip == NULL)
+			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		sprintf(ip, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
 		*retval = ip;
 	}
 	return (MAL_SUCCEED);
 }
+
 /**
  * Extract netmask length.
  */
@@ -549,6 +567,7 @@ INETmasklen(int *retval, const inet *val)
 	}
 	return (MAL_SUCCEED);
 }
+
 /**
  * Set netmask length for inet value.
  */
@@ -556,7 +575,8 @@ static str
 INETsetmasklen(inet *retval, const inet *val, const int *mask)
 {
 	if (*mask < 0 || *mask > 32)
-		throw(ILLARG, "inet.setmask", "Illegal netmask length value: %d", *mask);
+		throw(ILLARG, "inet.setmask", "Illegal netmask length value: %d",
+			  *mask);
 
 	*retval = *val;
 	if (!is_inet_nil(val))
@@ -564,6 +584,7 @@ INETsetmasklen(inet *retval, const inet *val, const int *mask)
 
 	return (MAL_SUCCEED);
 }
+
 /**
  * Construct netmask for network.
  */
@@ -599,6 +620,7 @@ INETnetmask(inet *retval, const inet *val)
 	}
 	return (MAL_SUCCEED);
 }
+
 /**
  * Construct host mask for network.
  */
@@ -623,6 +645,7 @@ INEThostmask(inet *retval, const inet *val)
 
 	return (MAL_SUCCEED);
 }
+
 /**
  * Extract network part of address, returns the same inet if the netmask
  * is equal to 32.  This function basically zeros out values that are
@@ -661,6 +684,7 @@ INETnetwork(inet *retval, const inet *val)
 	}
 	return (MAL_SUCCEED);
 }
+
 /**
  * Extract IP address and netmask length as text.  Unlike the toStr
  * function, this function always prints the netmask length.
@@ -672,19 +696,20 @@ INETtext(str *retval, const inet *val)
 
 	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
-		if( *retval == NULL)
-			throw(MAL,"INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (*retval == NULL)
+			throw(MAL, "INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 20);
-		if( ip == NULL)
-			throw(MAL,"INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (ip == NULL)
+			throw(MAL, "INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		snprintf(ip, sizeof(char) * 20, "%d.%d.%d.%d/%d",
-				val->q1, val->q2, val->q3, val->q4, val->mask);
+				 val->q1, val->q2, val->q3, val->q4, val->mask);
 		*retval = ip;
 	}
 	return (MAL_SUCCEED);
 }
+
 /**
  * Abbreviated display format as text.  The abbreviation is only made if
  * the value has no bits set to right of mask.  Otherwise the return of
@@ -716,8 +741,7 @@ INETabbrev(str *retval, const inet *val)
 
 		if ((val->q1 & m[0]) != 0 ||
 			(val->q2 & m[1]) != 0 ||
-			(val->q3 & m[2]) != 0 ||
-			(val->q4 & m[3]) != 0) {
+			(val->q3 & m[2]) != 0 || (val->q4 & m[3]) != 0) {
 			mask = 32;
 		} else {
 			mask = val->mask;
@@ -754,18 +778,20 @@ INETabbrev(str *retval, const inet *val)
 	}
 	return (MAL_SUCCEED);
 }
+
 static str
 INET_inet(inet *d, const inet *s)
 {
 	*d = *s;
 	return MAL_SUCCEED;
 }
+
 static str
 INET_fromstr(inet *ret, str *s)
 {
 	size_t len = sizeof(inet);
 	if (INETfromString(*s, &len, (void **) &ret, false) < 0)
-		throw(MAL, "inet.inet",  GDK_EXCEPTION);
+		throw(MAL, "inet.inet", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 

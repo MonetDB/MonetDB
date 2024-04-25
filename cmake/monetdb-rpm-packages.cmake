@@ -1,9 +1,13 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 include(os_release_info)
@@ -15,7 +19,7 @@ endif()
 set(CPACK_RPM_COMPONENT_INSTALL ON)
 #set(CPACK_RPM_FILENAME RPM-DEFAULT)
 set(CPACK_RPM_PACKAGE_SUMMARY "MonetDB - Monet Database Management System")
-set(CPACK_RPM_PACKAGE_VENDOR "MonetDB BV <info@monetdb.org>")
+set(CPACK_RPM_PACKAGE_VENDOR "MonetDB Foundation <info@monetdb.org>")
 set(CPACK_RPM_PACKAGE_LICENSE "MPLv2.0")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Databases")
 set(CPACK_RPM_PACKAGE_URL "https://www.monetdb.org/")
@@ -169,7 +173,7 @@ if(CFITSIO_FOUND)
 endif()
 
 if(GEOS_FOUND)
-  LIST(APPEND buildrequireslist "geos-devel > 3.4.0")
+  LIST(APPEND buildrequireslist "geos-devel >= 3.10.0")
 endif()
 
 if(CURL_FOUND)

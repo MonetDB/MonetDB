@@ -129,6 +129,16 @@ NULL
 0
 0
 
+query II rowsort
+select distinct a, a = NULL as "a = NULL" from b
+----
+0
+NULL
+1
+NULL
+NULL
+NULL
+
 query IIIIIIII rowsort
 select b.*, a and b, "and"(a,b), a or b, "or"(a,b), not a, "xor"(a,b) from b
 ----
@@ -205,8 +215,45 @@ NULL
 NULL
 NULL
 
+statement error
+select a, b, "all"(a, b, a) as "all(a, b, a)", "all"(a, b, b) as "all(a, b, b)" from b
+
+statement error
+select a, b, "any"(a, b, a) as "any(a, b, a)", "any"(a, b, b) as "any(a, b, b)" from b
+
 query III rowsort
 select a, b, coalesce(a, b) as "coalesce(a,b)" from b
+----
+0
+0
+0
+0
+1
+0
+0
+NULL
+0
+1
+0
+1
+1
+1
+1
+1
+NULL
+1
+NULL
+0
+0
+NULL
+1
+1
+NULL
+NULL
+NULL
+
+query III rowsort
+select a, b, {fn IFNULL(a, b)} as "IFNULL(a,b)" from b
 ----
 0
 0
@@ -399,6 +446,90 @@ NULL
 NULL
 NULL
 NULL
+
+# see request: https://github.com/MonetDB/MonetDB/issues/7332
+# next case should return similar result as: a IS NOT DISTINCT FROM b syntax
+query III rowsort
+select a, b, CASE
+  WHEN a IS NOT NULL AND b IS NOT NULL
+    THEN a = b
+  WHEN a IS NOT NULL AND b IS NULL
+    THEN false
+  WHEN a IS NULL AND b IS NULL
+    THEN true
+  ELSE false
+END as "a_equals_b" from b
+order by a NULLS LAST, b NULLS last
+----
+0
+0
+1
+0
+1
+0
+0
+NULL
+0
+1
+0
+0
+1
+1
+1
+1
+NULL
+0
+NULL
+0
+0
+NULL
+1
+0
+NULL
+NULL
+1
+
+# see request: https://github.com/MonetDB/MonetDB/issues/7332
+# next case should return similar result as: a IS DISTINCT FROM b syntax
+query III rowsort
+select a, b, CASE
+  WHEN a IS NOT NULL AND b IS NOT NULL
+    THEN a <> b
+  WHEN a IS NOT NULL AND b IS NULL
+    THEN true
+  WHEN a IS NULL AND b IS NULL
+    THEN false
+  ELSE true
+END as "a_notequals_b" from b
+order by a NULLS LAST, b NULLS last
+----
+0
+0
+0
+0
+1
+1
+0
+NULL
+1
+1
+0
+1
+1
+1
+0
+1
+NULL
+1
+NULL
+0
+1
+NULL
+1
+1
+NULL
+NULL
+0
 
 statement ok
 drop view if exists b3

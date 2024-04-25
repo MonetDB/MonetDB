@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -32,22 +36,6 @@ rel_properties(visitor *v, sql_rel *rel)
 		/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
 		gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
 		gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
-	} else if (is_join(rel->op)) {
-		/* check for setjoin rewrite */
-		if (!list_empty(rel->attr)) {
-			gp->needs_setjoin_rewrite = 1;
-			return rel;
-		}
-		if (!list_empty(rel->exps)) {
-			for (node *n = rel->exps->h; n ; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
-					gp->needs_setjoin_rewrite = 1;
-					return rel;
-				}
-			}
-		}
 	}
 	return rel;
 }
@@ -82,18 +70,15 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 		sql_part *pd = nt->data;
 		sql_table *pt = find_sql_table_id(v->sql->session->tr, mt->s, pd->member);
 		sqlstore *store = v->sql->session->tr->store;
-		int skip = 0, allowed = 1;
+		int skip = 0;
 
 		/* At the moment we throw an error in the optimizer, but later this rewriter should move out from the optimizers */
 		if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members))
-			return sql_error(v->sql, 02, SQLSTATE(42000) "The %s '%s.%s' should have at least one table associated",
-							 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
+			return sql_error(v->sql, 02, SQLSTATE(42000) "%s '%s'.'%s' should have at least one table associated",
+							TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
 		/* Do not include empty partitions */
 		if (isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, 10)) /* count active rows only */
 			continue;
-
-		if (!table_privs(v->sql, pt, PRIV_SELECT)) /* Test for privileges */
-			allowed = 0;
 
 		for (node *n = mt_rel->exps->h; n && !skip; n = n->next) { /* for each column of the child table */
 			sql_exp *e = n->data;
@@ -107,12 +92,10 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			if (cname[0] == '%') /* Ignore TID and indexes here */
 				continue;
 
-			mt_col = ol_find_name(mt->columns, exp_name(e))->data;
+			mt_col = ol_find_name(mt->columns, cname)->data;
 			col = ol_fetch(pt->columns, mt_col->colnr);
 			assert(e && e->type == e_column && col);
-			if (!allowed && !column_privs(v->sql, col, PRIV_SELECT))
-				return sql_error(v->sql, 02, SQLSTATE(42000) "The user %s SELECT permissions on table '%s.%s' don't match %s '%s.%s'", get_string_global_var(v->sql, "current_user"),
-								 pt->s->base.name, pt->base.name, TABLE_TYPE_DESCRIPTION(mt->type, mt->properties), mt->s->base.name, mt->base.name);
+
 			if (isTable(pt) && info && !list_empty(info->cols) && ATOMlinear(exp_subtype(e)->type->localtype)) {
 				for (node *nn = info->cols->h ; nn && !skip; nn = nn->next) { /* test if it passes all predicates around it */
 					if (nn->data == e) {
@@ -360,7 +343,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 		set_processed(nrel);
 
 		for (node *n = mt_rel->exps->h ; n ; n = n->next) {
-			sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+			sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 			exp_prop_alias(v->sql->sa, a, e);
 			list_append(converted, a);
 		}
@@ -507,125 +490,6 @@ bind_merge_table_rewrite(visitor *v, global_props *gp)
 	return gp->needs_mergetable_rewrite ? rel_merge_table_rewrite : NULL;
 }
 
-
-static sql_rel *
-rel_setjoins_2_joingroupby_(visitor *v, sql_rel *rel)
-{
-	if (rel && is_join(rel->op) && (!list_empty(rel->exps) || !list_empty(rel->attr))) {
-		sql_exp *me = NULL;
-		bool needed = false;
-
-		if (!list_empty(rel->exps)) {
-			for (node *n = rel->exps->h; n && !needed; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
-					me = e;
-					needed = true;
-				}
-			}
-		}
-		if (needed && rel->op == op_join && list_empty(rel->attr)) {
-			rel->op = (me->flag == mark_in)?op_semi:op_anti;
-			return rel;
-		}
-		if (needed || !list_empty(rel->attr)) {
-			assert(needed || !list_empty(rel->attr));
-			sql_exp *nequal = NULL;
-			sql_exp *lid = NULL, *rid = NULL;
-			sql_rel *l = rel->l, *p = rel;
-			sql_rel *pp = NULL; /* maybe one project in between (TODO keep list) */
-
-			if (me && rel->op == op_left) {
-				/* find parent of join involving the right hand side of the mark expression */
-				sql_rel *c = p->r;
-				while (c) {
-					if (is_join(c->op) && !is_processed(c) && rel_find_exp(c->r, me->r)) {
-						p = c;
-						c = p->r;
-					} if (!pp && is_project(c->op) && c->l && rel_find_exp(c->l, me->r)) {
-						pp = c;
-						c = c->l;
-					} else {
-						c = NULL;
-					}
-				}
-			}
-			if (p && p->r == pp)
-				pp = NULL;
-
-			if (!(rel->l = l = rel_add_identity(v->sql, l, &lid)))
-				return NULL;
-			if (rel->op == op_left) {
-				if (!(p->r = rel_add_identity(v->sql, p->r, &rid)))
-					return NULL;
-				if (pp)
-					list_append(pp->exps, exp_ref(v->sql, rid));
-			}
-
-			list *aexps = sa_list(v->sql->sa);
-			if (!list_empty(rel->exps)) {
-				for (node *n = rel->exps->h; n;) {
-					node *next = n->next;
-					sql_exp *e = n->data;
-
-					if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
-						sql_exp *le = e->l, *re = e->r, *ne = NULL;
-						sql_subfunc *ea = sql_bind_func3(v->sql, "sys", e->flag==mark_in?"anyequal":"allnotequal",
-														 exp_subtype(le), exp_subtype(re), rid ? exp_subtype(rid) : NULL, F_AGGR, true);
-
-						if (rid) {
-							sql_exp *rid_ref = exp_ref(v->sql, rid);
-							ne = exp_aggr3(v->sql->sa, le, re, rid_ref, ea, 0, 0, CARD_AGGR, has_nil(le));
-						} else {
-							ne = exp_aggr2(v->sql->sa, le, re, ea, 0, 0, CARD_AGGR, has_nil(le));
-						}
-						append(aexps, ne);
-						nequal = ne;
-						list_remove_node(rel->exps, NULL, n);
-					}
-					n = next;
-				}
-			}
-
-			if (!list_empty(rel->attr)) {
-				sql_exp *a = rel->attr->h->data;
-
-				exp_setname(v->sql->sa, nequal, exp_find_rel_name(a), exp_name(a));
-				rel->attr = NULL;
-			} else {
-				exp_label(v->sql->sa, nequal, ++v->sql->label);
-			}
-			list *lexps = rel_projections(v->sql, l, NULL, 1, 1);
-			aexps = list_merge(aexps, lexps, (fdup)NULL);
-			if (rel_is_ref(rel)) {
-				sql_rel *l = rel_dup_copy(v->sql->sa, rel);
-				rel = rel_inplace_groupby(rel, l, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)), aexps);
-			} else {
-				rel = rel_groupby(v->sql, rel, list_append(sa_list(v->sql->sa), exp_ref(v->sql, lid)));
-				rel->exps = aexps;
-				set_processed(rel);
-			}
-		}
-	}
-	return rel;
-}
-
-static sql_rel *
-rel_setjoins_2_joingroupby(visitor *v, global_props *gp, sql_rel *rel)
-{
-	(void) gp;
-	return rel_visitor_bottomup(v, rel, &rel_setjoins_2_joingroupby_);
-}
-
-run_optimizer
-bind_setjoins_2_joingroupby(visitor *v, global_props *gp)
-{
-	(void) v;
-	return gp->needs_setjoin_rewrite ? rel_setjoins_2_joingroupby : NULL;
-}
-
-
 /* these optimizers/rewriters run in a cycle loop */
 const sql_optimizer pre_sql_optimizers[] = {
 	{ 0, "split_select", bind_split_select},
@@ -655,7 +519,6 @@ const sql_optimizer pre_sql_optimizers[] = {
 
 /* these optimizers/rewriters only run once after the cycle loop */
 const sql_optimizer post_sql_optimizers[] = {
-	{22, "setjoins_2_joingroupby", bind_setjoins_2_joingroupby},
 	/* Merge table rewrites may introduce remote or replica tables */
 	/* At the moment, make sure the remote table rewriters always run after the merge table one */
 	{23, "rewrite_remote", bind_rewrite_remote},
@@ -754,7 +617,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 	if (!(rel = rel_keep_renames(sql, rel)))
 		return rel;
 
-	sql->runs = !(GDKdebug & FORCEMITOMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
+	sql->runs = !(ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
 	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
 		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle, .has_special_modify = gp.has_special_modify};

@@ -1,0 +1,75 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE foo(i INT)
+
+statement ok
+COPY LITTLE ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/maxint.le'
+
+statement ok
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/123.be'
+
+statement ok
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/maxint.be'
+
+query I nosort
+SELECT i FROM foo
+----
+2147483647
+2147483647
+2147483647
+1
+2
+3
+2147483647
+2147483647
+2147483647
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE foo(d DECIMAL(8,2))
+
+statement ok
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/123.be'
+
+query T nosort
+SELECT CAST(d AS TEXT) FROM foo
+----
+0.01
+0.02
+0.03
+
+statement error
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/maxint.be'
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE foo(d DECIMAL(8,2))
+
+statement ok
+COPY LITTLE ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/123.le'
+
+query T nosort
+SELECT CAST(d AS TEXT) FROM foo
+----
+0.01
+0.02
+0.03
+
+statement error
+COPY LITTLE ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/maxint.le'
+
+statement ok
+ROLLBACK
+

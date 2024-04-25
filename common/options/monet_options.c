@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -85,7 +89,7 @@ mo_print_options(opt *set, int setlen)
 }
 
 
-char *
+const char *
 mo_find_option(opt *set, int setlen, const char *name)
 {
 	opt *o = NULL;
@@ -103,7 +107,7 @@ mo_find_option(opt *set, int setlen, const char *name)
 }
 
 static int
-mo_config_file(opt **Set, int setlen, char *file)
+mo_config_file(opt **Set, int setlen, const char *file)
 {
 	char buf[BUFSIZ];
 	FILE *fd = NULL;
@@ -137,8 +141,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 		val = strchr(s, '=');
 		if (val == NULL) {
 			fprintf(stderr, "mo_config_file: syntax error in %s at %s\n", file, s);
-			fclose(fd);
-			exit(1);
+			break;
 		}
 		*val = 0;
 
@@ -160,8 +163,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 		}
 		if (quote) {
 			fprintf(stderr, "mo_config_file: wrong number of quotes in %s at %s\n", file, val);
-			fclose(fd);
-			exit(1);
+			break;
 		}
 		/* remove trailing white space */
 		while (isspace((unsigned char) t[-1]))
@@ -172,10 +174,18 @@ mo_config_file(opt **Set, int setlen, char *file)
 		if (t <= val)
 			val = t - 1;
 
-		set = (opt *) realloc(set, (setlen + 1) * sizeof(opt));
+		opt *tmp = realloc(set, (setlen + 1) * sizeof(opt));
+		if (tmp == NULL)
+			break;
+		*Set = set = tmp;
 		set[setlen].kind = opt_config;
 		set[setlen].name = strdup(s);
 		set[setlen].value = malloc((size_t) (t - val));
+		if (set[setlen].name == NULL || set[setlen].value == NULL) {
+			free(set[setlen].name);
+			free(set[setlen].value);
+			break;
+		}
 		for (t = val, s = set[setlen].value; *t; t++)
 			if (*t != '"')
 				*s++ = *t;
@@ -183,14 +193,13 @@ mo_config_file(opt **Set, int setlen, char *file)
 		setlen++;
 	}
 	(void) fclose(fd);
-	*Set = set;
 	return setlen;
 }
 
 int
 mo_system_config(opt **Set, int setlen)
 {
-	char *cfg;
+	const char *cfg;
 
 	if (Set == NULL) {
 		if (default_set == NULL) {
@@ -222,30 +231,55 @@ mo_builtin_settings(opt **Set)
 	if (set == NULL)
 		return 0;
 
+	*Set = set;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbpath");
 	set[i].value = strdup(LOCALSTATEDIR DIR_SEP_STR "monetdb5" DIR_SEP_STR
 			      "dbfarm" DIR_SEP_STR "demo");
+	if (set[i].name == NULL || set[i].value == NULL) {
+		free(set[i].name);
+		free(set[i].value);
+		return i;
+	}
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_port");
 	set[i].value = strdup(MAPI_PORT_STR);
+	if (set[i].name == NULL || set[i].value == NULL) {
+		free(set[i].name);
+		free(set[i].value);
+		return i;
+	}
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_optimizer");
 	set[i].value = strdup("default_pipe");
+	if (set[i].name == NULL || set[i].value == NULL) {
+		free(set[i].name);
+		free(set[i].value);
+		return i;
+	}
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_debug");
 	set[i].value = strdup("0");
+	if (set[i].name == NULL || set[i].value == NULL) {
+		free(set[i].name);
+		free(set[i].value);
+		return i;
+	}
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("raw_strings");
 	set[i].value = strdup("false");
+	if (set[i].name == NULL || set[i].value == NULL) {
+		free(set[i].name);
+		free(set[i].value);
+		return i;
+	}
 	i++;
 
 	assert(i == N_OPTIONS);
-	*Set = set;
 	return i;
 }
 
@@ -262,11 +296,18 @@ mo_add_option(opt **Set, int setlen, opt_kind kind, const char *name, const char
 			setlen = default_setlen;
 		Set = &default_set;
 	}
-	set = (opt *) realloc(*Set, (setlen + 1) * sizeof(opt));
+	opt *tmp = (opt *) realloc(*Set, (setlen + 1) * sizeof(opt));
+	if (tmp == NULL)
+		return setlen;
+	*Set = set = tmp;
 	set[setlen].kind = kind;
 	set[setlen].name = strdup(name);
 	set[setlen].value = strdup(value);
-	*Set = set;
+	if (set[setlen].name == NULL || set[setlen].value == NULL) {
+		free(set[setlen].name);
+		free(set[setlen].value);
+		return setlen;
+	}
 	return setlen + 1;
 }
 

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -11,7 +15,7 @@
 #include "sql_list.h"
 
 static node *
-node_create(sql_allocator *sa, void *data)
+node_create(allocator *sa, void *data)
 {
 	node *n = (sa)?SA_NEW(sa, node):MNEW(node);
 
@@ -24,7 +28,7 @@ node_create(sql_allocator *sa, void *data)
 }
 
 static list *
-list_init(list *l, sql_allocator *sa, fdestroy destroy)
+list_init(list *l, allocator *sa, fdestroy destroy)
 {
 	if (l) {
 		*l = (list) {
@@ -42,7 +46,7 @@ list_create(fdestroy destroy)
 }
 
 list *
-sa_list(sql_allocator *sa)
+sa_list(allocator *sa)
 {
 	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
 	return list_init(l, sa, NULL);
@@ -58,7 +62,7 @@ _free(void *dummy, void *data)
 */
 
 list *
-sa_list_append(sql_allocator *sa, list *l, void *data)
+sa_list_append(allocator *sa, list *l, void *data)
 {
 	if (!l)
 		l = SA_LIST(sa, NULL);
@@ -66,7 +70,15 @@ sa_list_append(sql_allocator *sa, list *l, void *data)
 }
 
 list *
-list_new(sql_allocator *sa, fdestroy destroy)
+list_add(list *l, void *data)
+{
+	if (!l)
+		l = list_create(NULL);
+	return list_append(l, data);
+}
+
+list *
+list_new(allocator *sa, fdestroy destroy)
 {
 	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
 	return list_init(l, sa, destroy);
@@ -92,7 +104,7 @@ list_empty(list *l)
 }
 
 static void
-node_destroy(list *l, void *data, node *n)
+node_destroy_(list *l, void *data, node *n)
 {
 	if (n->data && l->destroy) {
 		l->destroy(data, n->data);
@@ -114,7 +126,7 @@ list_destroy2(list *l, void *data)
 				node *t = n;
 
 				n = t->next;
-				node_destroy(l, data, t);
+				node_destroy_(l, data, t);
 			}
 		}
 
@@ -165,6 +177,8 @@ list_append_node(list *l, node *n)
 list *
 list_append(list *l, void *data)
 {
+	if (l == NULL)
+		return NULL;
 	node *n = node_create(l->sa, data);
 
 	if (n == NULL)
@@ -185,7 +199,7 @@ list_append_with_validate(list *l, void *data, void *extra, fvalidate cmp)
 			err = cmp(m->data, data, extra);
 			if(err) {
 				n->data = NULL;
-				node_destroy(l, NULL, n);
+				node_destroy_(l, NULL, n);
 				return err;
 			}
 		}
@@ -222,7 +236,7 @@ list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 			err = cmp(m->data, data, extra, &comp);
 			if(err) {
 				n->data = NULL;
-				node_destroy(l, NULL, n);
+				node_destroy_(l, NULL, n);
 				return err;
 			}
 			if(comp < 0)
@@ -353,7 +367,7 @@ list_remove_node(list *l, void *gdata, node *n)
 {
 	node *p = list_remove_node_(l, n);
 
-	node_destroy(l, gdata, n);
+	node_destroy_(l, gdata, n);
 	return p;
 }
 
@@ -416,6 +430,23 @@ list_check_prop_all(list *l, prop_check_func f)
 		for (node *n = l->h; n && res; n = n->next)
 			res &= f(n->data);
 	return res;
+}
+
+void
+list_revert(list *l)
+{
+	node *c = NULL;
+
+	l->t = l->h;
+	for (node *o = l->h; o; ) {
+		node *nxt = o->next;
+
+		o->next = c;
+		c = o;
+
+		o = nxt;
+	}
+	l->h = c;
 }
 
 int
@@ -677,7 +708,7 @@ list_reduce(list *l, freduce red, fdup dup)
 }
 
 void *
-list_reduce2(list *l, freduce2 red, sql_allocator *sa)
+list_reduce2(list *l, freduce2 red, allocator *sa)
 {
 	void *res = NULL;
 	node *n = l->h;
@@ -755,13 +786,15 @@ list_dup(list *l, fdup dup)
 }
 
 list *
-list_flaten(list *l)
+list_flatten(list *l)
 {
 	list *res = list_new_(l);
-	for (node *n = l->h ; n ; n = n->next) {
-		list *ll = (list*) n->data;
-		for (node *m = ll->h ; m ; m = m->next)
-			list_append(res, m->data);
+	if (res) {
+		for (node *n = l->h ; n ; n = n->next) {
+			list *ll = (list*) n->data;
+			for (node *m = ll->h ; m ; m = m->next)
+				list_append(res, m->data);
+		}
 	}
 	return res;
 }

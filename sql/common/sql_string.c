@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -107,27 +111,8 @@ sql_strdup(char *s)
 	return r;
 }
 
-char *
-sql_escape_str(sql_allocator *sa, const char *s)
-{
-	size_t l = strlen(s);
-	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
-
-	res = r;
-	if (res) {
-		while (*s) {
-			if (*s == '\'' || *s == '\\') {
-				*r++ = '\\';
-			}
-			*r++ = *s++;
-		}
-		*r = '\0';
-	}
-	return res;
-}
-
 const char *
-sql_escape_ident(sql_allocator *sa, const char *s)
+sql_escape_ident(allocator *sa, const char *s)
 {
 	size_t l = strlen(s);
 	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
@@ -156,7 +141,7 @@ char *sql_message( const char *format, ... )
 	return GDKstrdup(buf);
 }
 
-char *sa_message( sql_allocator *sa, const char *format, ... )
+char *sa_message( allocator *sa, const char *format, ... )
 {
 	char buf[BUFSIZ];
 	va_list	ap;

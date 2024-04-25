@@ -1,13 +1,17 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 # Detect required packages
-find_package(BISON REQUIRED)
+find_package(BISON 3.0 REQUIRED)
 find_package(Iconv)
 find_package(Threads)
 
@@ -16,6 +20,10 @@ if(${CMAKE_VERSION} VERSION_LESS "3.14.0")
   find_package(NumPy)
 else()
   find_package(Python3 COMPONENTS Interpreter Development NumPy)
+endif()
+
+if(WITH_RTREE)
+  find_package(RTree)
 endif()
 
 if(WITH_LZMA)
@@ -28,6 +36,9 @@ endif()
 
 if(WITH_CMOCKA)
   find_package(CMocka)
+  if (TARGET cmocka::cmocka)
+    set(CMOCKA_LIBRARY cmocka::cmocka)
+  endif()
 endif()
 
 if(WITH_PCRE)
@@ -51,7 +62,7 @@ if(WITH_LZ4)
 endif()
 
 if(WITH_PROJ)
-  find_package(Proj)
+  find_package(Proj 6.0)
 endif()
 
 if(WITH_SNAPPY)
@@ -77,7 +88,7 @@ endif()
 find_package(KVM)
 
 if(GEOM)
-  find_package(Geos)
+  find_package(Geos 3.10.0)
 endif()
 
 if(SHP)
@@ -116,6 +127,10 @@ if(WITH_MALLOC)
         IMPORTED_LINK_INTERFACE_LANGUAGES "C" IMPORTED_LOCATION "${MALLOC_LIBRARY}")
     endif()
   endif()
+endif()
+
+if(WITH_OPENSSL)
+  find_package(OpenSSL 1.1.1)
 endif()
 
 find_package(Sphinx)

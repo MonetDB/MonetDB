@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* streams working on a disk file */
@@ -32,8 +36,9 @@ file_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	}
 
 	if (elmsize && cnt) {
+		errno = 0;
 		if ((rc = fread(buf, elmsize, cnt, fp)) == 0 && ferror(fp)) {
-			mnstr_set_error_errno(s, MNSTR_READ_ERROR, "read error");
+			mnstr_set_error_errno(s, errno == EINTR ? MNSTR_INTERRUPT : MNSTR_READ_ERROR, "read error");
 			return -1;
 		}
 		s->eof |= rc == 0 && feof(fp);
@@ -262,7 +267,7 @@ cvfilename(const char *filename)
 		if (cd != (iconv_t) -1) {
 			size_t len = strlen(filename);
 			size_t size = 4 * len;
-			ICONV_CONST char *from = (ICONV_CONST char *) filename;
+			char *from = (char *) filename;
 			char *r = malloc(size + 1);
 			char *p = r;
 

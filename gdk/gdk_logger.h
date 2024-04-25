@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _LOGGER_H_
@@ -44,7 +48,6 @@ typedef int log_id;
 
 /* interface for the "old" logger */
 typedef struct old_logger old_logger;
-gdk_export gdk_return old_logger_load(logger *lg, const char *fn, const char *logdir, FILE *fp, int version, const char *filename);
 gdk_export log_bid old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id);
 
 gdk_export logger *log_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
@@ -76,5 +79,7 @@ gdk_export gdk_return log_tflush(logger *lg, ulng log_file_id, ulng commit_ts); 
 
 gdk_export gdk_return log_tsequence(logger *lg, int seq, lng id);
 gdk_export log_bid log_find_bat(logger *lg, log_id id);
+
+gdk_export void log_printinfo(logger *lg);
 
 #endif /*_LOGGER_H_*/

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -120,28 +124,29 @@ hgeHash(const hge *v)
 }
 #endif
 
+static BUN
+fltHash(const flt *v)
+{
+	if (is_flt_nil(*v))
+		return (BUN) mix_int(GDK_int_min);
+	if (*v == 0)
+		return (BUN) mix_int(0);
+	return (BUN) mix_int(*(const unsigned int *) v);
+}
+
+static BUN
+dblHash(const dbl *v)
+{
+	if (is_dbl_nil(*v))
+		return (BUN) mix_lng(GDK_lng_min);
+	if (*v == 0)
+		return (BUN) mix_lng(0);
+	return (BUN) mix_lng(*(const ulng *) v);
+}
+
 /*
  * @+ Standard Atoms
  */
-static gdk_return
-batFix(const bat *b)
-{
-	if (!is_bat_nil(*b) && BBPretain(*b) == 0) {
-		GDKerror("batFix failed\n");
-		return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
-
-static gdk_return
-batUnfix(const bat *b)
-{
-	if (!is_bat_nil(*b) && BBPrelease(*b) < 0) {
-		GDKerror("batUnfix failed\n");
-		return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
 
 /*
  * @+ Atomic Type Interface
@@ -225,9 +230,6 @@ ATOMindex(const char *nme)
 			return t;
 		}
 
-	}
-	if (strcmp(nme, "bat") == 0) {
-		return TYPE_bat;
 	}
 	return -j;
 }
@@ -326,7 +328,7 @@ ATOMprint(int t, const void *p, stream *s)
 	if (p && t >= 0 && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		size_t sz;
 
-		if (t != TYPE_bat && t < TYPE_date) {
+		if (t < TYPE_date) {
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 
 			sz = dblStrlen;
@@ -426,45 +428,8 @@ TYPE##ToStr(char **dst, size_t *len, const TYPE *src, bool external)	\
 	return snprintf(*dst, *len, FMT, FMTCAST *src);			\
 }
 
-static const bool xdigit[256] = {
-	false,false,false,false,false,false,false,false, /* NUL-BEL */
-	false,false,false,false,false,false,false,false, /* BS-SI */
-	false,false,false,false,false,false,false,false, /* DLE-ETB */
-	false,false,false,false,false,false,false,false, /* CAN-US */
-	false,false,false,false,false,false,false,false, /* SPACE-'\'' */
-	false,false,false,false,false,false,false,false, /* '('-'/' */
-	true, true, true, true, true, true, true, true,	 /* '0'-'7' */
-	true, true, false,false,false,false,false,false, /* '8'-'?' */
-	false,true, true, true, true, true, true, false, /* '@'-'G' */
-	false,false,false,false,false,false,false,false, /* 'H'-'O' */
-	false,false,false,false,false,false,false,false, /* 'P'-'W' */
-	false,false,false,false,false,false,false,false, /* 'X'-'_' */
-	false,true, true, true, true, true, true, false, /* '`'-'g' */
-	false,false,false,false,false,false,false,false, /* 'h'-'o' */
-	false,false,false,false,false,false,false,false, /* 'p'-'w' */
-	false,false,false,false,false,false,false,false, /* 'x'-DEL */
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-	false,false,false,false,false,false,false,false,
-};
-
-#define num10(x)	((x) >= '0' && (x) <= '9')
 #define base10(x)	((x) - '0')
 
-#define num16(x)	xdigit[(unsigned char) (x)]
 #define base16(x)	(((x) >= 'a' && (x) <= 'f') ? ((x) - 'a' + 10) : ((x) >= 'A' && (x) <= 'F') ? ((x) - 'A' + 10) : (x) - '0')
 #define mult16(x)	((x) << 4)
 
@@ -759,7 +724,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 
 	while (GDKisspace(*p))
 		p++;
-	if (!num10(*p)) {
+	if (!GDKisdigit(*p)) {
 		switch (*p) {
 		case 'n':
 			if (external) {
@@ -779,7 +744,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 			p++;
 			break;
 		}
-		if (!num10(*p)) {
+		if (!GDKisdigit(*p)) {
 			GDKerror("not a number");
 			goto bailout;
 		}
@@ -793,13 +758,13 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 		}
 		base = 10 * base + dig;
 		p++;
-	} while (num10(*p));
-	if ((*p == 'e' || *p == 'E') && num10(p[1])) {
+	} while (GDKisdigit(*p));
+	if ((*p == 'e' || *p == 'E') && GDKisdigit(p[1])) {
 		p++;
 		if (base == 0) {
 			/* if base is 0, any exponent will do, the
 			 * result is still 0 */
-			while (num10(*p))
+			while (GDKisdigit(*p))
 				p++;
 		} else {
 			int exp = 0;
@@ -811,7 +776,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 					goto overflow;
 				}
 				p++;
-			} while (num10(*p));
+			} while (GDKisdigit(*p));
 			if (base > maxdiv[exp].maxval) {
 				/* overflow */
 				goto overflow;
@@ -872,7 +837,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 	return (ssize_t) (p - src);
 
   overflow:
-	while (num10(*p))
+	while (GDKisdigit(*p))
 		p++;
 	GDKerror("overflow: \"%.*s\" does not fit in %s\n",
 		 (int) (p - src), src, ATOMname(tp));
@@ -969,7 +934,6 @@ mskRead(msk *A, size_t *dstlen, stream *s, size_t cnt)
 	return a;
 }
 
-atom_io(bat, Int, int)
 atom_io(bit, Bte, bte)
 
 atomtostr(bte, "%hhd", )
@@ -1038,11 +1002,11 @@ ptrFromStr(const char *src, size_t *len, ptr **dst, bool external)
 		if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
 			p += 2;
 		}
-		if (!num16(*p)) {
+		if (!GDKisxdigit(*p)) {
 			GDKerror("not a number\n");
 			return -1;
 		}
-		while (num16(*p)) {
+		while (GDKisxdigit(*p)) {
 			if (base >= ((size_t) 1 << (8 * sizeof(size_t) - 4))) {
 				GDKerror("overflow\n");
 				return -1;
@@ -1318,6 +1282,8 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 		**retval = uuid_nil;
 		return 1;
 	}
+	while (GDKisspace(*s))
+		s++;
 	/* we don't use uuid_parse since we accept UUIDs without hyphens */
 	uuid u;
 	for (int i = 0, j = 0; i < UUID_SIZE; i++) {
@@ -1348,6 +1314,8 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 		s++;
 		j++;
 	}
+	while (GDKisspace(*s))
+		s++;
 	if (*s != 0)
 		goto bailout;
 	**retval = u;
@@ -1403,7 +1371,7 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 			assert(*len >= strlen("nil") + 1);
 			strcpy(*retval, "nil");
 			return 3;
- 		}
+		}
 		assert(*len >= strlen(str_nil) + 1);
 		strcpy(*retval, str_nil);
 		return 1;
@@ -1524,7 +1492,7 @@ BLOBput(BAT *b, var_t *bun, const void *VAL)
 	char *base = NULL;
 
 	*bun = HEAP_malloc(b, blobsize(val->nitems));
- 	base = b->tvheap->base;
+	base = b->tvheap->base;
 	if (*bun != (var_t) -1) {
 		memcpy(&base[*bun], val, blobsize(val->nitems));
 		b->tvheap->dirty = true;
@@ -1597,14 +1565,9 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 
 	/* count hexits and check for hexits/space */
 	for (i = nitems = 0; instr[i]; i++) {
-		if (xdigit[(unsigned char) instr[i]])
+		if (GDKisxdigit(instr[i]))
 			nitems++;
-		else if (instr[i] != ' ' &&
-				 instr[i] != '\n' &&
-				 instr[i] != '\t' &&
-				 instr[i] != '\r' &&
-				 instr[i] != '\f' &&
-				 instr[i] != '\v') {
+		else if (!GDKisspace(instr[i])) {
 			GDKerror("Illegal char in blob\n");
 			return -1;
 		}
@@ -1640,7 +1603,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 			} else if (*s >= 'a' && *s <= 'f') {
 				res = 10 + *s - 'a';
 			} else {
-				assert(isspace((unsigned char) *s));
+				assert(GDKisspace(*s));
 				s++;
 				continue;
 			}
@@ -1656,7 +1619,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 			} else if (*s >= 'a' && *s <= 'f') {
 				res += 10 + *s - 'a';
 			} else {
-				assert(isspace((unsigned char) *s));
+				assert(GDKisspace(*s));
 				s++;
 				continue;
 			}
@@ -1666,6 +1629,8 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 
 		result->data[i] = res;
 	}
+	while (GDKisspace(*s))
+		s++;
 
 	return (ssize_t) (s - instr);
 }
@@ -1739,21 +1704,6 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomCmp = (int (*)(const void *, const void *)) shtCmp,
 		.atomHash = (BUN (*)(const void *)) shtHash,
 	},
-	[TYPE_bat] = {
-		.name = "BAT",
-		.storage = TYPE_int,
-		.linear = true,
-		.size = sizeof(bat),
-		.atomNull = (void *) &int_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) batFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) batToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) batRead,
-		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) batWrite,
-		.atomCmp = (int (*)(const void *, const void *)) intCmp,
-		.atomHash = (BUN (*)(const void *)) intHash,
-		.atomFix = (gdk_return (*)(const void *)) batFix,
-		.atomUnfix = (gdk_return (*)(const void *)) batUnfix,
-	},
 	[TYPE_int] = {
 		.name = "int",
 		.storage = TYPE_int,
@@ -1818,7 +1768,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) fltRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) fltWrite,
 		.atomCmp = (int (*)(const void *, const void *)) fltCmp,
-		.atomHash = (BUN (*)(const void *)) intHash,
+		.atomHash = (BUN (*)(const void *)) fltHash,
 	},
 	[TYPE_dbl] = {
 		.name = "dbl",
@@ -1831,7 +1781,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) dblRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) dblWrite,
 		.atomCmp = (int (*)(const void *, const void *)) dblCmp,
-		.atomHash = (BUN (*)(const void *)) lngHash,
+		.atomHash = (BUN (*)(const void *)) dblHash,
 	},
 	[TYPE_lng] = {
 		.name = "lng",

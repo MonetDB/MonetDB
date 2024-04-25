@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -107,7 +111,7 @@
 		p = (tpe*) Tloc(b, 0);											\
 		for( j = 0; j < cnt; j++, p++){								    \
 			*p = mapfun((tpe) access_fun(s)[j]);						\
-			if (na_check){ b->tnil = true; 	b->tnonil = false; 	*p= tpe##_nil;} \
+			if (na_check){ b->tnil = true; b->tnonil = false; *p= tpe##_nil;} \
 			if (j > 0){													\
 				if (b->trevsorted && !is_##tpe##_nil(*p) && (is_##tpe##_nil(prev) || *p > prev)){ \
 					b->trevsorted = false;								\
@@ -169,17 +173,16 @@ bat_to_sexp(BAT* b, int type)
 		case TYPE_int:
 			//Storage is int but the actual defined type may be different
 			switch (type) {
-				case TYPE_int: {
-					// special case: memcpy for int-to-int conversion without NULLs
+			case TYPE_int:
+				// special case: memcpy for int-to-int conversion without NULLs
+				BAT_TO_INTSXP(b, bi, int, varvalue, 1);
+				break;
+			default:
+				if (type == ATOMindex("date")) {
+					BAT_TO_DATESXP(b, bi, int, varvalue, 0);
+				} else {
+					//Type stored as int but no implementation to decode into native R type
 					BAT_TO_INTSXP(b, bi, int, varvalue, 1);
-				} break;
-				default: {
-					if (type == ATOMindex("date")) {
-						BAT_TO_DATESXP(b, bi, int, varvalue, 0);
-					} else {
-						//Type stored as int but no implementation to decode into native R type
-						BAT_TO_INTSXP(b, bi, int, varvalue, 1);
-					}
 				}
 			}
 			break;
@@ -254,7 +257,8 @@ bat_to_sexp(BAT* b, int type)
 				}
 			}
 		}
-	} 	break;
+		break;
+	}
 	}
 	bat_iterator_end(&bi);
 	return varvalue;
@@ -884,8 +888,7 @@ RAPIloopback(void *query) {
 				BAT *b = BATdescriptor(output->cols[i].b);
 				if (b == NULL || !(varvalue = bat_to_sexp(b, TYPE_any))) {
 					UNPROTECT(i + 3);
-					if (b)
-						BBPunfix(b->batCacheid);
+					BBPreclaim(b);
 					return ScalarString(RSTR("Conversion error"));
 				}
 				BBPunfix(b->batCacheid);
@@ -919,6 +922,7 @@ static str RAPIprelude(void) {
 		}
 		MT_lock_unset(&rapiLock);
 		printf("# MonetDB/R   module loaded\n");
+		fflush(stdout);
 	}
 	return MAL_SUCCEED;
 }

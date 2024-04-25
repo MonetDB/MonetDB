@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -82,16 +86,16 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	path = GDKmalloc(pathlen);
 	if (path == NULL)
 		return NULL;
- 	if (farmid == NOFARM) {
+	if (farmid == NOFARM) {
 		strconcat_len(path, pathlen,
 			      dir ? dir : "", sep, name,
 			      ext ? "." : NULL, ext, NULL);
- 	} else {
+	} else {
 		strconcat_len(path, pathlen,
 			      BBPfarms[farmid].dirname, DIR_SEP_STR,
 			      dir ? dir : "", sep, name,
 			      ext ? "." : NULL, ext, NULL);
- 	}
+	}
 	return path;
 }
 
@@ -182,7 +186,7 @@ GDKremovedir(int farmid, const char *dirname)
 	closedir(dirp);
 	ret = MT_rmdir(dirnamestr);
 	if (ret != 0)
-		GDKsyserror("rmdir(%s) failed.\n", dirnamestr);
+		GDKsyserror("rmdir(%s) failed\n", dirnamestr);
 	TRC_DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
 	GDKfree(dirnamestr);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
@@ -324,7 +328,8 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 {
 	char *path1;
 	char *path2;
-	int ret, t0 = GDKms();
+	int ret;
+	lng t0 = GDKusec();
 
 	if (nme1 == NULL || *nme1 == 0) {
 		GDKerror("no file specified\n");
@@ -337,7 +342,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 		if (ret < 0 && report)
 			GDKsyserror("cannot rename %s to %s\n", path1, path2);
 
-		TRC_DEBUG(IO_, "Move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
+		TRC_DEBUG(IO_, "Move %s %s = %d ("LLFMT" usec)\n", path1, path2, ret, GDKusec() - t0);
 	} else {
 		ret = -1;
 	}
@@ -351,7 +356,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 {
 	struct stat stb;
 	int rt = 0;
-	int t0 = GDKms();
+	lng t0 = GDKusec();
 
 	assert(!GDKinmemory(0));
 #ifdef __COVERITY__
@@ -395,9 +400,9 @@ GDKextendf(int fd, size_t size, const char *fn)
 				GDKsyserror("ftruncate to old size");
 		}
 	}
-	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu %dms%s\n",
+	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu "LLFMT" usec%s\n",
 		  fn, (size_t) stb.st_size, size,
-		  GDKms() - t0, rt != 0 ? " (failed)" : "");
+		  GDKusec() - t0, rt != 0 ? " (failed)" : "");
 	/* posix_fallocate returns != 0 on failure, fallocate and
 	 * ftruncate return -1 on failure, but all three return 0 on
 	 * success */
@@ -444,7 +449,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 
 	assert(!GDKinmemory(farmid));
 	if (mode == STORE_MMAP) {
-		if (dosync && size && !(GDKdebug & NOSYNCMASK))
+		if (dosync && size && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 			err = MT_msync(buf, size);
 		if (err)
 			GDKerror("error on: name=%s, ext=%s, mode=%d\n",
@@ -482,7 +487,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 					  (unsigned) MIN(1 << 30, size),
 					  ret);
 			}
-			if (dosync && !(GDKdebug & NOSYNCMASK)
+			if (dosync && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
 #if defined(NATIVE_WIN32)
 			    && _commit(fd) < 0
 #elif defined(HAVE_FDATASYNC)
@@ -547,7 +552,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
 					if (n < 0)
-						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, %zu bytes missing.\n", nme, ext ? ext : "", (size_t) n_expected);
+						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, expected %zu, %zd bytes missing\n", nme, ext ? ext : "", size, n_expected);
 #ifndef __COVERITY__
 					/* Coverity doesn't seem to
 					 * recognize that we're just
@@ -564,7 +569,8 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					/* we couldn't read all, error
 					 * already generated */
 					GDKfree(ret);
-					GDKerror("short read from heap %s%s%s, expected %zu, missing %zd\n", nme, ext ? "." : "", ext ? ext : "", size, n_expected);
+					if (n >= 0) /* don't report error twice  */
+						GDKerror("short read from heap %s%s%s, expected %zu, missing %zd\n", nme, ext ? "." : "", ext ? ext : "", size, n_expected);
 					ret = NULL;
 				}
 #ifndef NDEBUG
@@ -636,7 +642,7 @@ DESCload(int i)
 
 	b = BBP_desc(i);
 
-	if (b == NULL) {
+	if (b->batCacheid == 0) {
 		GDKerror("no descriptor for BAT %d\n", i);
 		return NULL;
 	}
@@ -661,36 +667,41 @@ DESCload(int i)
 }
 
 gdk_return
-BATsave_locked(BAT *b, BATiter *bi, BUN size)
+BATsave_iter(BAT *b, BATiter *bi, BUN size)
 {
 	gdk_return err = GDK_SUCCEED;
-	const char *nme;
 	bool dosync;
+	bool locked = false;
 
 	BATcheck(b, GDK_FAIL);
+
+	if (MT_rwlock_rdtry(&b->thashlock))
+		locked = true;
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 	assert(!GDKinmemory(bi->h->farmid));
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b)) {
+		if (locked)
+			MT_rwlock_rdunlock(&b->thashlock);
 		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
 		return GDK_FAIL;
 	}
 	if (!BATdirtybi(*bi)) {
+		if (locked)
+			MT_rwlock_rdunlock(&b->thashlock);
 		return GDK_SUCCEED;
 	}
 
 	/* start saving data */
-	nme = BBP_physical(b->batCacheid);
-	const char *tail = BATITERtailname(bi);
 	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
-		if (dosync && !(GDKdebug & NOSYNCMASK)) {
-			int fd = GDKfdlocate(bi->h->farmid, nme, "rb+", tail);
+		if (dosync && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
+			int fd = GDKfdlocate(bi->h->farmid, bi->h->filename, "rb+", NULL);
 			if (fd < 0) {
-				GDKsyserror("cannot open file %s.%s for sync\n",
-					    nme, tail);
+				GDKsyserror("cannot open file %s for sync\n",
+					    bi->h->filename);
 				err = GDK_FAIL;
 			} else {
 				if (
@@ -702,15 +713,15 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 					fsync(fd) < 0
 #endif
 					)
-					GDKsyserror("sync failed for %s.%s\n",
-						    nme, tail);
+					GDKsyserror("sync failed for %s\n",
+						    bi->h->filename);
 				close(fd);
 			}
 			if (bi->vh) {
-				fd = GDKfdlocate(bi->vh->farmid, nme, "rb+", "theap");
+				fd = GDKfdlocate(bi->vh->farmid, bi->vh->filename, "rb+", NULL);
 				if (fd < 0) {
-					GDKsyserror("cannot open file %s.theap for sync\n",
-						    nme);
+					GDKsyserror("cannot open file %s for sync\n",
+						    bi->vh->filename);
 					err = GDK_FAIL;
 				} else {
 					if (
@@ -722,15 +733,18 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 						fsync(fd) < 0
 #endif
 						)
-						GDKsyserror("sync failed for %s.theap\n", nme);
+						GDKsyserror("sync failed for %s\n", bi->vh->filename);
 					close(fd);
 				}
 			}
 		}
 	} else {
-		if (!bi->copiedtodisk || bi->hdirty)
-			if (err == GDK_SUCCEED && bi->type)
-				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
+		const char *nme = BBP_physical(b->batCacheid);
+		if ((!bi->copiedtodisk || bi->hdirty)
+		    && (err == GDK_SUCCEED && bi->type)) {
+			const char *tail = strchr(bi->h->filename, '.') + 1;
+			err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
+		}
 		if (bi->vh
 		    && (!bi->copiedtodisk || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
@@ -743,24 +757,27 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 		if (b->theap != bi->h) {
 			assert(b->theap->dirty);
 			b->theap->wasempty = bi->h->wasempty;
+			b->theap->hasfile |= bi->h->hasfile;
 		}
 		if (b->tvheap && b->tvheap != bi->vh) {
 			assert(b->tvheap->dirty);
 			b->tvheap->wasempty = bi->vh->wasempty;
+			b->tvheap->hasfile |= bi->vh->hasfile;
 		}
-		if (size != b->batCount || b->batInserted < b->batCount) {
-			/* if the sizes don't match, the BAT must be dirty */
-			b->batCopiedtodisk = false;
+		if (size != b->batCount) {
+			/* if the size doesn't match, the BAT must be dirty */
 			b->theap->dirty = true;
 			if (b->tvheap)
 				b->tvheap->dirty = true;
-		} else {
-			b->batCopiedtodisk = true;
 		}
+		/* there is something on disk now */
+		b->batCopiedtodisk = true;
 		MT_lock_unset(&b->theaplock);
-		if (b->thash && b->thash != (Hash *) 1)
+		if (locked &&  b->thash && b->thash != (Hash *) 1)
 			BAThashsave(b, dosync);
 	}
+	if (locked)
+		MT_rwlock_rdunlock(&b->thashlock);
 	return err;
 }
 
@@ -770,9 +787,7 @@ BATsave(BAT *b)
 	gdk_return rc;
 
 	BATiter bi = bat_iterator(b);
-	MT_rwlock_rdlock(&b->thashlock);
-	rc = BATsave_locked(b, &bi, bi.count);
-	MT_rwlock_rdunlock(&b->thashlock);
+	rc = BATsave_iter(b, &bi, bi.count);
 	bat_iterator_end(&bi);
 	return rc;
 }
@@ -801,7 +816,7 @@ BATload_intern(bat bid, bool lock)
 	if (b->ttype != TYPE_void) {
 		b->theap->storage = b->theap->newstorage = STORE_INVALID;
 		if ((b->batCount == 0 ?
-		     HEAPalloc(b->theap, b->batCapacity, b->twidth, ATOMsize(b->ttype)) :
+		     HEAPalloc(b->theap, b->batCapacity, b->twidth) :
 		     HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ)) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			return NULL;
@@ -865,20 +880,12 @@ BATload_intern(bat bid, bool lock)
 void
 BATdelete(BAT *b)
 {
-	bat bid = b->batCacheid;
-	BAT *loaded = BBP_cache(bid);
-	char o[12];
-
-	assert(bid > 0);
-	snprintf(o, sizeof(o), "%o", (unsigned) bid);
-	if (loaded) {
-		b = loaded;
-	}
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy_nolock(b);
 	STRMPdestroy(b);
+	RTREEdestroy(b);
 	if (b->theap) {
 		HEAPfree(b->theap, true);
 	}
@@ -933,14 +940,6 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		if (i > 0)
 			mnstr_write(s, "\t", 1, 1);
-		const char *nm = argv[i]->tident;
-		mnstr_write(s, nm, 1, strlen(nm));
-	}
-	mnstr_write(s, "  # name\n", 1, 9);
-	mnstr_write(s, "# ", 1, 2);
-	for (i = 0; i < argc; i++) {
-		if (i > 0)
-			mnstr_write(s, "\t", 1, 1);
 		const char *nm = ATOMname(argv[i]->ttype);
 		mnstr_write(s, nm, 1, strlen(nm));
 	}
@@ -983,10 +982,8 @@ BATprint(stream *fdout, BAT *b)
 
 		mnstr_printf(fdout,
 			     "#--------------------------#\n"
-			     "# h\t%s  # name\n"
 			     "# void\toid  # type\n"
-			     "#--------------------------#\n",
-			     b->tident);
+			     "#--------------------------#\n");
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid o = canditer_next(&ci);
 			mnstr_printf(fdout,
@@ -1002,9 +999,7 @@ BATprint(stream *fdout, BAT *b)
 	argv[0] = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
 	if (argv[0]) {
 		argv[1] = b;
-		ret = BATroles(argv[0], "h");
-		if (ret == GDK_SUCCEED)
-			ret = BATprintcolumns(fdout, 2, argv);
+		ret = BATprintcolumns(fdout, 2, argv);
 		BBPunfix(argv[0]->batCacheid);
 	}
 	return ret;

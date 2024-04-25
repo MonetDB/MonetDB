@@ -1,3 +1,6 @@
+statement ok
+CREATE TABLE my_vardim ("var_id"  INTEGER,"dim_id"  INTEGER,"dimpos"  INTEGER)
+
 query TT rowsort
 select
   ref_78.mod as c0,
@@ -18,7 +21,7 @@ from
         on (ref_38.type_digits = ref_75.srid )
       left join sys.schemas as ref_80
           inner join sys.schemas as ref_81
-            left join sys.netcdf_vardim as ref_95
+            left join my_vardim as ref_95
               inner join sys._columns as ref_96
               on (ref_95.dim_id = ref_96.id )
             on (ref_81.owner = ref_96.id )
@@ -39,4 +42,7 @@ from
 where ref_38.table_id is NULL
 limit 63
 ----
+
+statement ok
+DROP TABLE my_vardim
 

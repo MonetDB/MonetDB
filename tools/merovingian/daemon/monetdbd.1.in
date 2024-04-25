@@ -1,12 +1,17 @@
+.\" SPDX-License-Identifier: MPL-2.0
+.\"
 .\" This Source Code Form is subject to the terms of the Mozilla Public
 .\" License, v. 2.0.  If a copy of the MPL was not distributed with this
 .\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
 .\"
-.\" Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+.\" Copyright 2024 MonetDB Foundation;
+.\" Copyright August 2008 - 2023 MonetDB B.V.;
+.\" Copyright 1997 - July 2008 CWI.
+.\"
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDBD 1 "2021-04-12" MonetDB "MonetDB Applications"
+.TH MONETDBD 1 2023-12-21 MonetDB "MonetDB Applications"
 .SH NAME
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -349,7 +354,7 @@ Changing this property takes effect immediately at runtime.
 .TP
 .B forward
 .I monetdbd
-has two ways in which it can "attach" a connecting client to the
+has two ways in which it can ``attach'' a connecting client to the
 target database.
 The first method,
 .BR redirect ,
@@ -418,10 +423,10 @@ Tags are arbitrary ASCII-strings matching the pattern [A\-Za\-z0\-9./]+.
 There are no assumed semantics in the tag, which allows for multiple
 approaches when using the tag.
 The tag is always used in combination with the database name.
-For this, the `/' character is used as separator, which hence suggests
+For this, the ``/'' character is used as separator, which hence suggests
 the user to use that character as separator for multilevel tags.
 .I Monetdbd
-allows common path globbing using `*' on tags, which allows for many
+allows common path globbing using ``*'' on tags, which allows for many
 use-cases.
 Consider for instance the following three databases with their tag:
 .PP
@@ -435,7 +440,7 @@ dbY/slave/tableQ
 dbZ/slave/tableQ
 .RE
 .PP
-A default match has implicit `/*' added to the search, making more
+A default match has implicit ``/*'' added to the search, making more
 generic search strings match more specific ones.
 Hence, a connect with database
 .I dbX
@@ -446,7 +451,7 @@ and hence matches
 Similar, a database connect for
 .I */master
 matches the same database as before.
-Note that the implicit `/*' is not added if that would cause no
+Note that the implicit ``/*'' is not added if that would cause no
 matches, such as for
 .I */master/tableQ
 which would return all masters for 
@@ -551,9 +556,9 @@ single-statement queries that require no transactions.
 .P
 See the
 .B create
-command in the
+command in
 .IR monetdb (1)
-man-page for details on how to setup a multiplex-funnel.
+for details on how to setup a multiplex-funnel.
 .SH SIGNALS
 .I Monetdbd
 acts upon a number of signals as is common for a daemon.

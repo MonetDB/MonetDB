@@ -27,7 +27,7 @@ dce_bug-6177
 default-insert-update.Bug-6249
 crash_on_NULL_ptr.Bug-6130
 sqlsmith01
-HAVE_GEOM&HAVE_NETCDF?sqlsmith02
+HAVE_GEOM?sqlsmith02
 HAVE_GEOM?sqlsmith03
 sqlsmith04
 nested_with.Bug-6187
@@ -80,7 +80,7 @@ exists.Bug-6392
 case.Bug-6386
 sqllitelogistest_case.Bug-6335
 udf_crash_subquery_scalar_paramters.Bug-6399
-HAVE_HGE?side-effect.Bug-6397
+side-effect.Bug-6397
 copy_into_crash.Bug-6404
 null_matches_in_outer.Bug-6398
 corr_coersion.Bug-6287

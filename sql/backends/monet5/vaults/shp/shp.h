@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _SHP_
@@ -19,9 +23,9 @@
 #include <gdal.h>
 #include <ogr_api.h>
 
-OGRErr OSRExportToProj4 (OGRSpatialReferenceH, char **);
-OGRErr OSRExportToWkt (OGRSpatialReferenceH, char **);
-const char * OSRGetAttrValue (OGRSpatialReferenceH hSRS, const char *pszName, int iChild);
+OGRErr OSRExportToProj4(OGRSpatialReferenceH, char **);
+OGRErr OSRExportToWkt(OGRSpatialReferenceH, char **);
+const char *OSRGetAttrValue(OGRSpatialReferenceH hSRS, const char *pszName, int iChild);
 
 /* CURRENT_TIMESTAMP() ?*/
 #define INSFILE \
@@ -38,34 +42,36 @@ const char * OSRGetAttrValue (OGRSpatialReferenceH hSRS, const char *pszName, in
 #define INSTD \
 	"INSERT INTO %s (%s) VALUES (%s);"
 
-typedef struct {
-	const char * fieldName;
-	const char * fieldType;
+typedef struct
+{
+	const char *fieldName;
+	const char *fieldType;
 } GDALWSimpleFieldDef;
 
-typedef struct {
-	char * source;
+typedef struct
+{
+	char *source;
 	OGRDataSourceH handler;
-	const char * layername;
+	const char *layername;
 	OGRLayerH layer;
 	OGRSFDriverH driver;
-	OGRFieldDefnH * fieldDefinitions;
+	OGRFieldDefnH *fieldDefinitions;
 	int numFieldDefinitions;
 } GDALWConnection;
 
-typedef struct {
+typedef struct
+{
 	int epsg;
-	const char * authName;
-	const char * srsText;
-	const char * proj4Text;
-}GDALWSpatialInfo;
+	const char *authName;
+	const char *srsText;
+	const char *proj4Text;
+} GDALWSpatialInfo;
 
-GDALWConnection * GDALWConnect(char *);
-GDALWSimpleFieldDef * GDALWGetSimpleFieldDefinitions(GDALWConnection);
+GDALWConnection *GDALWConnect(char *);
+GDALWSimpleFieldDef *GDALWGetSimpleFieldDefinitions(GDALWConnection);
 GDALWSpatialInfo GDALWGetSpatialInfo(GDALWConnection);
 void GDALWPrintRecords(GDALWConnection);
 void GDALWClose(GDALWConnection *);
-
 
 #ifdef WIN32
 #ifndef LIBGTIFF /* change it! */
@@ -77,7 +83,8 @@ void GDALWClose(GDALWConnection *);
 #define shp_export extern
 #endif
 
-shp_export str SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-shp_export str SHPimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-shp_export str SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions);
+str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions, GDALWSpatialInfo spatial_info);
+str SHPloadSchema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif

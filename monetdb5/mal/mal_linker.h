@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MAL_LINKER_H
@@ -23,7 +27,8 @@
 mal_export MALfcn getAddress(const char *modname, const char *fcnname);
 mal_export char *MSP_locate_sqlscript(const char *mod_name, bit recurse);
 mal_export str loadLibrary(const char *modulename, int flag);
-mal_export char *locate_file(const char *basename, const char *ext, bit recurse);
+mal_export char *locate_file(const char *basename, const char *ext,
+							 bit recurse);
 mal_export int malLibraryEnabled(const char *name);
-mal_export char* malLibraryHowToEnable(const char *name);
+mal_export char *malLibraryHowToEnable(const char *name);
 #endif /* _MAL_LINKER_H */

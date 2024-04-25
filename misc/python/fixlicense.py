@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
 
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 import os, sys, argparse, stat
 
 license = [
+    'SPDX-License-Identifier: MPL-2.0',
+    '',
     'This Source Code Form is subject to the terms of the Mozilla Public',
     'License, v. 2.0.  If a copy of the MPL was not distributed with this',
     'file, You can obtain one at http://mozilla.org/MPL/2.0/.',
     '',
-    'Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.',
+    'Copyright 2024 MonetDB Foundation;',
+    'Copyright August 2008 - 2023 MonetDB B.V.;',
+    'Copyright 1997 - July 2008 CWI.',
     ]
 
 def main():
@@ -76,7 +84,7 @@ suffixrules = {
     # start: at start of each line of license text
     # end: at end of each line of license text
     # nl: whether a blank line should be added after license text
-    '.1':     ('',      '',    '.\\" ','',  False), # manual page source
+    '.1':     ('',      '.\\"','.\\" ','', False), # manual page source
     '.bash':  ('',      '',    '# ',   '',  True),  # shell script
     '.bat':   ('',      '',    '@REM ','',  True),  # Windows cmd batch script
     '.c':     ('/*',    ' */', ' * ',  '',  True),  # C source
@@ -91,6 +99,7 @@ suffixrules = {
     '.java':  ('/*',    ' */', ' * ',  '',  True),  # Java source
     '.l':     ('/*',    ' */', ' * ',  '',  True),  # (f)lex source
     '.mal':   ('',      '',    '# ',   '',  True),  # MonetDB Assembly Language
+    '.pc':    ('',      '',    '# ',   '',  True),  # Package config source
     '.php':   ('<?php', '?>',  '# ',   '',  True),  # PHP source
     '.pl':    ('',      '',    '# ',   '',  True),  # Perl source
     '.pm':    ('',      '',    '# ',   '',  True),  # Perl module source
@@ -133,7 +142,14 @@ def getcomments(file, pre=None, post=None, start=None, end=None, nl=True):
                 line = f.readline()
                 f.close()
                 if line[:2] == '#!':
-                    ext = '.sh'
+                    if 'bash' in line or '/sh' in line:
+                        ext = '.sh'
+                    elif 'python' in line or 'PYTHON' in line:
+                        ext = '.py'
+                    elif 'perl' in line:
+                        ext = '.pl'
+                    elif 'make' in line:
+                        ext = 'Makefile'
                 else:
                     return '', '', '', '', '', True
         pre, post, start, end, nl = suffixrules[ext]

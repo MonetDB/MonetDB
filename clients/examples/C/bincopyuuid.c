@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "bincopydata.h"
@@ -41,8 +45,9 @@ random_uuid(struct rng *rng, my_uuid *u)
 }
 
 void
-gen_bin_uuids(FILE *f, bool byteswap, long nrecs)
+gen_bin_uuids(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	struct rng rng = my_favorite_rng();
 	my_uuid uu = { .u = { 0 }};
 	for (long i = 0; i < nrecs; i++) {
@@ -55,8 +60,9 @@ gen_bin_uuids(FILE *f, bool byteswap, long nrecs)
 }
 
 void
-gen_text_uuids(FILE *f, bool byteswap, long nrecs)
+gen_text_uuids(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	struct rng rng = my_favorite_rng();
 	my_uuid uu = { .u = { 0 }};
 	for (long i = 0; i < nrecs; i++) {

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -24,7 +28,8 @@
  */
 
 str
-OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+								  InstrPtr pci)
 {
 	int i, limit;
 	InstrPtr p;
@@ -32,7 +37,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
-	if ( mb->inlineProp)
+	if (mb->inlineProp)
 		goto wrapup;
 
 	limit = mb->stop;
@@ -40,43 +45,44 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	// move SQL query definition to the front for event profiling tools
 	p = NULL;
-	for(i = 0; i < limit; i++)
-		if(mb->stmt[i] && getModuleId(mb->stmt[i]) == querylogRef && getFunctionId(mb->stmt[i]) == defineRef ){
-			p = getInstrPtr(mb,i);
+	for (i = 0; i < limit; i++)
+		if (mb->stmt[i] && getModuleId(mb->stmt[i]) == querylogRef
+			&& getFunctionId(mb->stmt[i]) == defineRef) {
+			p = getInstrPtr(mb, i);
 			break;
 		}
 
-	if( p != NULL){
-		for(  ; i > 1; i--)
-			mb->stmt[i] = mb->stmt[i-1];
+	if (p != NULL) {
+		for (; i > 1; i--)
+			mb->stmt[i] = mb->stmt[i - 1];
 		mb->stmt[1] = p;
 		actions = 1;
 	}
-
 	// Actual garbage collection stuff, just mark them for re-assessment
 	p = NULL;
 	for (i = 0; i < limit; i++) {
 		p = getInstrPtr(mb, i);
-		p->gc &=  ~GARBAGECONTROL;
-		p->typechk = TYPE_UNKNOWN;
+		p->gc = false;
+		p->typeresolved = false;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
-		if ( p->token == ENDsymbol)
+		if (p->token == ENDsymbol)
 			break;
 	}
 
 	//mnstr_printf(cntxt->fdout,"garbacollector limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 	/* A good MAL plan should end with an END instruction */
-	if( p && p->token != ENDsymbol){
-		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
+	if (p && p->token != ENDsymbol) {
+		throw(MAL, "optimizer.garbagecollector",
+			  SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	/* move sanity check to other optimizer */
-	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
+	getInstrPtr(mb, 0)->gc = true;
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
 	/* Defense line against incorrect plans */
-	if( actions > 0){
+	if (actions > 0) {
 		if (!msg)
 			msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
@@ -85,8 +91,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			msg = chkDeclarations(mb);
 	}
 	/* keep all actions taken as a post block comment */
-wrapup:
-	/* keep actions taken as a fake argument*/
+  wrapup:
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }

@@ -1,0 +1,61 @@
+query IIII rowsort
+SELECT 0xFFFF, 0xFFFF-1, 0o755, 0b11001111
+----
+65535
+65534
+493
+207
+
+query III rowsort
+SELECT 1_000_000, 0x_FFFF_FFFF, 0x_FFFF_FFFF-1
+----
+1000000
+4294967295
+4294967294
+
+query R rowsort
+SELECT 10_1.34_45 + 0b_1_1_0 + 10_2.6_555
+----
+210.000
+
+query R rowsort
+SELECT .25+ 0.2_5 + 0.50
+----
+1.000
+
+query R rowsort
+SELECT 2_0.5_0e1_0+1
+----
+205000000001.000
+
+query R rowsort
+SELECT 2_0.5_0e+1_0+1
+----
+205000000001.000
+
+query I rowsort
+SELECT 1_0. + 10.
+----
+20
+
+statement error
+SELECT _100
+
+statement error
+SELECT 100_
+
+statement error
+SELECT 10__0
+
+statement error
+SELECT 0xff_
+
+statement error
+SELECT 0xf__f
+
+statement error
+SELECT 0o34_f
+
+statement error
+SELECT 0o34f
+

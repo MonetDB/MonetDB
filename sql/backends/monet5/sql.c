@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -17,39 +21,40 @@
 #include "sql.h"
 #include "mapi_prompt.h"
 #include "sql_result.h"
-#include "sql_gencode.h"
 #include "sql_storage.h"
 #include "sql_scenario.h"
 #include "store_sequence.h"
-#include "sql_optimizer.h"
-#include "sql_datetime.h"
 #include "sql_partition.h"
-#include "rel_unnest.h"
-#include "rel_optimizer.h"
-#include "rel_statistics.h"
 #include "rel_partition.h"
-#include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
-#include "rel_dump.h"
-#include "rel_bin.h"
+#include "rel_physical.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
-#include "mal_module.h"
-#include "mal_session.h"
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_profiler.h"
 #include "bat5.h"
 #include "opt_pipes.h"
-#include "orderidx.h"
 #include "clients.h"
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
 #include "gdk_cand.h"
+
+static inline void
+BBPnreclaim(int nargs, ...)
+{
+	va_list valist;
+	va_start(valist, nargs);
+	for (int i = 0; i < nargs; i++) {
+		BAT *b = va_arg(valist, BAT *);
+		BBPreclaim(b);
+	}
+	va_end(valist);
+}
 
 static int
 rel_is_table(sql_rel *rel)
@@ -89,6 +94,10 @@ rel_no_mitosis(mvc *sql, sql_rel *rel)
 	}
 	if (is_topn(rel->op) || is_sample(rel->op) || is_simple_project(rel->op))
 		return rel_no_mitosis(sql, rel->l);
+	if (is_ddl(rel->op) && rel->flag == ddl_output) {
+		// COPY SELECT ... INTO
+		return rel_no_mitosis(sql, rel->l);
+	}
 	if ((is_delete(rel->op) || is_truncate(rel->op)) && rel->card <= CARD_AGGR)
 		return 1;
 	if ((is_insert(rel->op) || is_update(rel->op)) && rel->card <= CARD_AGGR)
@@ -127,7 +136,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	lng Tbegin, Tend;
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
-	Client c = getClientContext();
+	Client c = be->client;
 
 	Tbegin = GDKusec();
 	rel = rel_semantic(query, sym);
@@ -145,6 +154,8 @@ sql_symbol2relation(backend *be, symbol *sym)
 		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
+	if (rel /*&& (be->mvc->emode != m_plan || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0)*/)
+		rel = rel_physical(be->mvc, rel);
 	Tend = GDKusec();
 	be->reloptimizer = Tend - Tbegin;
 
@@ -282,7 +293,7 @@ SQLset_protocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp, int replace)
 {
-	sql_allocator *osa;
+	allocator *osa;
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL, *ot;
 	node *n;
@@ -328,7 +339,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			break;
 	}
 	osa = sql->sa;
-	sql->sa = sql->ta;
+	allocator *nsa = sql->sa = sa_create(NULL);
 	/* first check default values */
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
@@ -338,13 +349,14 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			const char *next_value_for = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
 
-			sql->sa = sql->ta;
+			sa_reset(nsa);
+			sql->sa = nsa;
 			r = rel_parse(sql, s, sa_message(sql->ta, "select %s;", c->def), m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 ||
 				exp_check_type(sql, &c->type, r, r->exps->h->data, type_equal) == NULL) {
 				if (r)
 					rel_destroy(r);
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 					throw(SQL, "sql.catalog", "%s", sql->errstr);
@@ -356,12 +368,11 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			if (strncmp(c->def, next_value_for, strlen(next_value_for)) != 0) {
 				list *blist = rel_dependencies(sql, r);
 				if (mvc_create_dependencies(sql, blist, nt->base.id, FUNC_DEPENDENCY)) {
-					rel_destroy(r);
-					sa_reset(sql->sa);
+					sa_destroy(nsa);
+					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
-			rel_destroy(r);
 			sa_reset(sql->sa);
 		}
 	}
@@ -371,12 +382,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		switch (mvc_copy_column(sql, nt, c, &copied)) {
 			case -1:
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			case -2:
 			case -3:
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
 			default:
@@ -389,19 +400,22 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 		char *err = NULL;
 
 		_DELETE(nt->part.pexp->exp);
-		nt->part.pexp->exp = SA_STRDUP(sql->session->tr->sa, t->part.pexp->exp);
+		nt->part.pexp->exp = _STRDUP(t->part.pexp->exp);
 		err = bootstrap_partition_expression(sql, nt, 1);
-		sa_reset(sql->ta);
 		if (err) {
+			sa_destroy(nsa);
 			sql->sa = osa;
 			return err;
 		}
+		sa_reset(nsa);
 	}
 	check = sql_trans_set_partition_table(sql->session->tr, nt);
 	if (check == -4) {
+		sa_destroy(nsa);
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
 	} else if (check) {
+		sa_destroy(nsa);
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
 	}
@@ -412,10 +426,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			switch (mvc_copy_idx(sql, nt, i, NULL)) {
 				case -1:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s index conflicts", s->base.name, t->base.name, i->base.name);
 				default:
@@ -429,22 +445,26 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			char *err = NULL;
 
 			err = sql_partition_validate_key(sql, nt, k, "CREATE");
-			sa_reset(sql->ta);
 			if (err) {
+				sa_destroy(nsa);
 				sql->sa = osa;
 				return err;
 			}
+			sa_reset(sql->sa);
 			switch (mvc_copy_key(sql, nt, k, NULL)) {
 				case -1:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s constraint conflicts", s->base.name, t->base.name, k->base.name);
 				default:
 					break;
 			}
+			sa_reset(sql->sa);
 		}
 	}
 	if (t->triggers) {
@@ -453,10 +473,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			switch (mvc_copy_trigger(sql, nt, tr, NULL)) {
 				case -1:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					sa_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s trigger conflicts", s->base.name, t->base.name, nt->base.name);
 				default:
@@ -468,26 +490,28 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 	if (nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 
+		sa_reset(nsa);
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(sql, r);
 			if (mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY)) {
-				sa_reset(sql->ta);
+				sa_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
-		sa_reset(sql->ta);
+		sql->sa = osa;
 		if (!r) {
-			sql->sa = osa;
+			sa_destroy(nsa);
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.catalog", "%s", sql->errstr);
 			else
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 		}
 	}
+	sa_destroy(nsa);
 	sql->sa = osa;
 	return MAL_SUCCEED;
 }
@@ -508,7 +532,7 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	const char *sname = *getArgReference_str(stk, pci, 3);
 	const char *tname = *getArgReference_str(stk, pci, 4);
-	lng cnt = *(lng*)getArgReference_lng(stk, pci, 5);
+	lng cnt = *getArgReference_lng(stk, pci, 5);
 	BAT *pos = NULL;
 	sql_schema *s;
 	sql_table *t;
@@ -545,7 +569,7 @@ mvc_add_dependency_change(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	mvc *m = NULL;
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *tname = *getArgReference_str(stk, pci, 2);
-	lng cnt = *(lng*)getArgReference_lng(stk, pci, 3);
+	lng cnt = *getArgReference_lng(stk, pci, 3);
 	sql_schema *s;
 	sql_table *t;
 
@@ -587,7 +611,7 @@ mvc_add_column_predicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
 		throw(SQL, "sql.column_predicate", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.column_predicate", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.column_predicate", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 
 	if ((m->session->level & tr_snapshot) == tr_snapshot || isNew(c) || !isGlobal(c->t) || isGlobalTemp(c->t))
 		return MAL_SUCCEED;
@@ -633,7 +657,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		sql_column *col = NULL;
 
 		if (!strcmp(atomname, "str"))
-			sql_find_subtype(&tpe, "clob", 0, 0);
+			sql_find_subtype(&tpe, "varchar", 0, 0);
 		else {
 			sql_subtype *t = sql_bind_localtype(atomname);
 			if (!t)
@@ -984,7 +1008,7 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_sequence *seq;
 	bat *res = getArgReference_bat(stk, pci, 0);
-	BUN card = *(BUN*)getArgReference_lng(stk, pci, 1);
+	BUN card = (BUN)*getArgReference_lng(stk, pci, 1);
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *seqname = *getArgReference_str(stk, pci, 3);
 	BAT *r = NULL;
@@ -1119,14 +1143,10 @@ bailout1:
 	bat_iterator_end(&schi);
 	bat_iterator_end(&seqi);
 bailout:
-	if (scheb)
-		BBPunfix(scheb->batCacheid);
-	if (sches)
-		BBPunfix(sches->batCacheid);
-	if (seqb)
-		BBPunfix(seqb->batCacheid);
-	if (seqs)
-		BBPunfix(seqs->batCacheid);
+	BBPreclaim(scheb);
+	BBPreclaim(sches);
+	BBPreclaim(seqb);
+	BBPreclaim(seqs);
 	if (bn && !msg) {
 		BATsetcount(bn, ci1.ncand);
 		bn->tnil = nils;
@@ -1327,8 +1347,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			int coltype = getBatType(getArgType(mb, pci, 0));
 			b = store->storage_api.bind_col(m->session->tr, c, access);
+			if (b == NULL)
+				throw(SQL, "sql.bind", SQLSTATE(42000) "Cannot bind column %s.%s.%s", sname, tname, cname);
 
-			if (b && b->ttype && b->ttype != coltype) {
+			if (b->ttype && b->ttype != coltype) {
 				BBPunfix(b->batCacheid);
 				throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,cname);
 			}
@@ -1358,8 +1380,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else { /*unpartitioned access to base column*/
 		int coltype = getBatType(getArgType(mb, pci, 0));
 		b = store->storage_api.bind_col(m->session->tr, c, access);
+		if (b == NULL)
+			throw(SQL, "sql.bin", "Couldn't bind column");
 
-		if (b && b->ttype && b->ttype != coltype) {
+		if (b->ttype && b->ttype != coltype) {
 			BBPunfix(b->batCacheid);
 			throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,cname);
 		}
@@ -1707,8 +1731,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else { /*unpartitioned access to base index*/
 		int idxtype = getBatType(getArgType(mb, pci, 0));
 		b = store->storage_api.bind_idx(m->session->tr, i, access);
+		if (b == NULL)
+			throw(SQL,"sql.bindidx", "Couldn't bind index");
 
-		if (b && b->ttype && b->ttype != idxtype) {
+		if (b->ttype && b->ttype != idxtype) {
 			BBPunfix(b->batCacheid);
 			throw(SQL,"sql.bindidx",SQLSTATE(42000) "Index type mismatch %s.%s.%s",sname,tname,iname);
 		}
@@ -1722,9 +1748,9 @@ str
 mvc_append_column(sql_trans *t, sql_column *c, BUN offset, BAT *pos, BAT *ins)
 {
 	sqlstore *store = t->store;
-	int res = store->storage_api.append_col(t, c, offset, pos, ins, BATcount(ins), TYPE_bat);
+	int res = store->storage_api.append_col(t, c, offset, pos, ins, BATcount(ins), true, ins->ttype);
 	if (res != LOG_OK) /* the conflict case should never happen, but leave it here */
-		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed %s", res == LOG_CONFLICT ? "due to conflict with another transaction" : GDKerrbuf);
 	return MAL_SUCCEED;
 }
 
@@ -1736,6 +1762,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat Tid = *getArgReference_bat(stk, pci, 1);
 	ptr Ins = getArgReference(stk, pci, 2);
 	int tpe = getArgType(mb, pci, 2);
+	bool isbat = false;
 	BAT *tid = 0, *ins = 0;
 	size_t cnt = 1;
 	oid v = 0;
@@ -1744,9 +1771,9 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = 0;
 	if ((tid = BATdescriptor(Tid)) == NULL)
 		throw(SQL, "sql.grow", SQLSTATE(HY005) "Cannot access descriptor");
-	if (tpe > GDKatomcnt)
-		tpe = TYPE_bat;
-	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) Ins)) == NULL) {
+	if (isaBatType(tpe))
+		isbat = true;
+	if (isbat && (ins = BATdescriptor(*(bat *) Ins)) == NULL) {
 		BBPunfix(Tid);
 		throw(SQL, "sql.grow", SQLSTATE(HY005) "Cannot access descriptor");
 	}
@@ -1778,10 +1805,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	const char *cname = *getArgReference_str(stk, pci, 4);
-	BUN offset = *(BUN*)getArgReference_oid(stk, pci, 5);
+	BUN offset = (BUN)*getArgReference_oid(stk, pci, 5);
 	bat Pos = *getArgReference_bat(stk, pci, 6);
 	ptr ins = getArgReference(stk, pci, 7);
 	int tpe = getArgType(mb, pci, 7), log_res = LOG_OK;
+	bool isbat = false;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
@@ -1794,18 +1822,29 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (tpe > GDKatomcnt)
-		tpe = TYPE_bat;
+	if (isaBatType(tpe)) {
+		isbat = true;
+		tpe = getBatType(tpe);
+	}
 	if (Pos != bat_nil && (pos = BATdescriptor(Pos)) == NULL)
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access append positions descriptor");
-	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) ins)) == NULL) {
+	if (isbat && (ins = BATdescriptor(*(bat *) ins)) == NULL) {
 		bat_destroy(pos);
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access append values descriptor");
 	}
-	if (ATOMextern(tpe) && !ATOMvarsized(tpe))
+	if (!isbat && ATOMextern(tpe) && !ATOMvarsized(tpe))
 		ins = *(ptr *) ins;
-	if ( tpe == TYPE_bat)
+	if (isbat) {
 		b =  (BAT*) ins;
+		if (VIEWtparent(b) || VIEWvtparent(b)) {
+			/* note, b == (BAT*)ins */
+			b = COLcopy(b, b->ttype, true, TRANSIENT);
+			BBPreclaim(ins);
+			ins = b;
+			if (b == NULL)
+				throw(SQL, "sql.append", GDK_EXCEPTION);
+		}
+	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
 		bat_destroy(pos);
@@ -1827,9 +1866,9 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = BATcount(b);
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, tpe);
+		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, isbat, tpe);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
-		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, tpe);
+		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, isbat, tpe);
 	} else {
 		bat_destroy(pos);
 		bat_destroy(b);
@@ -1838,7 +1877,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_destroy(pos);
 	bat_destroy(b);
 	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
-		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed %s", log_res == LOG_CONFLICT ? "due to conflict with another transaction" : GDKerrbuf);
 	return MAL_SUCCEED;
 }
 
@@ -1856,6 +1895,7 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat Upd = *getArgReference_bat(stk, pci, 6);
 	BAT *tids, *upd;
 	int tpe = getArgType(mb, pci, 6), log_res = LOG_OK;
+	bool isbat = false;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
@@ -1866,11 +1906,11 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (tpe > TYPE_any)
-		tpe = TYPE_bat;
+	if (isaBatType(tpe))
+		isbat = true;
 	else
 		assert(0);
-	if (tpe != TYPE_bat)
+	if (!isbat)
 		throw(SQL, "sql.update", SQLSTATE(HY005) "Update values is not a BAT input");
 	if ((tids = BATdescriptor(Tids)) == NULL)
 		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access update positions descriptor");
@@ -1897,9 +1937,9 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
+		log_res = store->storage_api.update_col(m->session->tr, c, tids, upd, isbat);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
-		log_res = store->storage_api.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
+		log_res = store->storage_api.update_idx(m->session->tr, i, tids, upd, isbat);
 	} else {
 		BBPunfix(tids->batCacheid);
 		BBPunfix(upd->batCacheid);
@@ -1989,6 +2029,7 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	ptr ins = getArgReference(stk, pci, 4);
 	int tpe = getArgType(mb, pci, 4), log_res;
+	bool isbat = false;
 	BAT *b = NULL;
 	sql_schema *s;
 	sql_table *t;
@@ -1998,36 +2039,31 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (tpe > TYPE_any)
-		tpe = TYPE_bat;
-	if (tpe == TYPE_bat && (b = BATdescriptor(*(bat *) ins)) == NULL)
+	if (isaBatType(tpe))
+		isbat = true;
+	if (isbat && (b = BATdescriptor(*(bat *) ins)) == NULL)
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
-	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void && b->ttype != TYPE_msk)) {
-		if (b)
-			BBPunfix(b->batCacheid);
+	if (!isbat || (b->ttype != TYPE_oid && b->ttype != TYPE_void && b->ttype != TYPE_msk)) {
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(3F000) "Schema missing %s",sname);
 	}
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
 	if (!isTable(t)) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	}
 	sqlstore *store = m->session->tr->store;
-	log_res = store->storage_api.delete_tab(m->session->tr, t, b, tpe);
-	if (b)
-		BBPunfix(b->batCacheid);
+	log_res = store->storage_api.delete_tab(m->session->tr, t, b, isbat);
+	BBPreclaim(b);
 	if (log_res != LOG_OK)
 		throw(SQL, "sql.delete", SQLSTATE(42000) "Delete failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
@@ -2263,14 +2299,12 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			 * values */
 			if (!nu_val || (res = setwritable(res)) == NULL ||
 			    BATreplace(res, os, nu_val, false) != GDK_SUCCEED) {
-				if (res)
-					BBPunfix(res->batCacheid);
+				BBPreclaim(res);
 				BBPunfix(os->batCacheid);
 				BBPunfix(s->batCacheid);
 				BBPunfix(u_id->batCacheid);
 				BBPunfix(u_val->batCacheid);
-				if (nu_val)
-					BBPunfix(nu_val->batCacheid);
+				BBPreclaim(nu_val);
 				throw(MAL, "sql.delta", GDK_EXCEPTION);
 			}
 			BBPunfix(nu_val->batCacheid);
@@ -2304,14 +2338,10 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 	r = BATdescriptor(*R);
 	res = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 	if (!c || !l || !r || !res) {
-		if (c)
-			BBPunfix(c->batCacheid);
-		if (l)
-			BBPunfix(l->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (res)
-			BBPunfix(res->batCacheid);
+		BBPreclaim(c);
+		BBPreclaim(l);
+		BBPreclaim(r);
+		BBPreclaim(res);
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	p = (oid*)Tloc(res,0);
@@ -2436,7 +2466,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
 		goto wrapup_result_set;
 	}
-	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, b);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE);
 	BBPunfix(b->batCacheid);
 	if (res < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2478,10 +2508,13 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&iterdig);
 	bat_iterator_end(&iterscl);
 	/* now send it to the channel cntxt->fdout */
-	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize)) < 0)
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
+	if (bstream_getoob(cntxt->fdin))
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY000) "Query aboted");
+	else if (!msg && (ok = mvc_export_result(be, cntxt->fdout, res, true, cntxt->qryctx.starttime, mb->optimize)) < 0)
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, cntxt->fdout, ok));
   wrapup_result_set:
-	mb->starttime = 0;
+	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2519,7 +2552,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
 	backend *be;
 	mvc *m = NULL;
-	BAT *order = NULL, *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
+	BAT *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
 	res_table *t = NULL;
 	bool tostdout;
 	char buf[80];
@@ -2537,12 +2570,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	bid = *getArgReference_bat(stk,pci,13);
-	order = BATdescriptor(bid);
-	if ( order == NULL) {
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
-		goto wrapup_result_set1;
-	}
-	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, order);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE);
 	t = be->results;
 	if (res < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2618,11 +2646,12 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto wrapup_result_set1;
 		}
 	}
-	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, tostdout, mb->starttime, mb->optimize)) < 0) {
+	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, tostdout, cntxt->qryctx.starttime, mb->optimize)) < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
 		if (!onclient && !tostdout)
 			close_stream(s);
-		goto wrapup_result_set1;
+		if (ok != -5)
+			goto wrapup_result_set1;
 	}
 	if (onclient) {
 		mnstr_flush(s, MNSTR_FLUSH_DATA);
@@ -2635,9 +2664,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		close_stream(s);
 	}
   wrapup_result_set1:
-	mb->starttime = 0;
+	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
-	if( order) BBPunfix(order->batCacheid);
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
 	if( tpe) BBPunfix(tpeId);
@@ -2669,7 +2698,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, NULL);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE);
 	if (res < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
@@ -2715,10 +2744,11 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&itertpe);
 	bat_iterator_end(&iterdig);
 	bat_iterator_end(&iterscl);
-	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize)) < 0)
+	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, cntxt->qryctx.starttime, mb->optimize)) < 0)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
   wrapup_result_set:
-	mb->starttime = 0;
+	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2772,7 +2802,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto wrapup_result_set;
 	}
 
-	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, NULL);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE);
 
 	t = be->results;
 	if (res < 0){
@@ -2851,7 +2881,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto wrapup_result_set;
 		}
 	}
-	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, strcmp(filename, "stdout") == 0, mb->starttime, mb->optimize)) < 0) {
+	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, strcmp(filename, "stdout") == 0, cntxt->qryctx.starttime, mb->optimize)) < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
 		if (!onclient && !tostdout)
 			close_stream(s);
@@ -2868,7 +2898,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		close_stream(s);
 	}
   wrapup_result_set:
-	mb->starttime = 0;
+	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2882,30 +2913,28 @@ str
 mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str res = MAL_SUCCEED;
-	BAT *order;
 	backend *be = NULL;
 	str msg;
 	int *res_id;
 	int nr_cols;
 	mapi_query_t qtype;
-	bat order_bid;
 
 	if ( pci->argc > 6)
 		return mvc_result_set_wrap(cntxt,mb,stk,pci);
 
+	assert(0);
 	res_id = getArgReference_int(stk, pci, 0);
 	nr_cols = *getArgReference_int(stk, pci, 1);
 	qtype = (mapi_query_t) *getArgReference_int(stk, pci, 2);
-	order_bid = *getArgReference_bat(stk, pci, 3);
+	bat order_bid = *getArgReference_bat(stk, pci, 3);
+	(void)order_bid;
+	/* TODO remove use */
 
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	if ((order = BATdescriptor(order_bid)) == NULL)
-		throw(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
-	*res_id = mvc_result_table(be, mb->tag, nr_cols, qtype, order);
+	*res_id = mvc_result_table(be, mb->tag, nr_cols, qtype);
 	if (*res_id < 0)
 		res = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	BBPunfix(order->batCacheid);
 	return res;
 }
 
@@ -2928,8 +2957,9 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(mtype == TYPE_lng);
 	nr = *getArgReference_lng(stk, pci, 2);
 	b = cntxt->sqlcontext;
-	ok = mvc_export_affrows(b, b->out, nr, "", mb->tag, mb->starttime, mb->optimize);
-	mb->starttime = 0;
+	ok = mvc_export_affrows(b, b->out, nr, "", mb->tag, cntxt->qryctx.starttime, mb->optimize);
+	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.affectedRows", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, b->out, ok));
@@ -2949,8 +2979,9 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	ok = mvc_export_head(b, *s, res_id, FALSE, TRUE, mb->starttime, mb->optimize);
-	mb->starttime = 0;
+	ok = mvc_export_head(b, *s, res_id, FALSE, TRUE, cntxt->qryctx.starttime, mb->optimize);
+	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportHead", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, *s, ok));
@@ -2971,8 +3002,9 @@ mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	b = cntxt->sqlcontext;
 	sout = pci->argc > 5 ? cntxt->fdout : *s;
-	ok = mvc_export_result(b, sout, res_id, false, mb->starttime, mb->optimize);
-	mb->starttime = 0;
+	ok = mvc_export_result(b, sout, res_id, false, cntxt->qryctx.starttime, mb->optimize);
+	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportResult", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, sout, ok));
@@ -3011,15 +3043,17 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	backend *b = NULL;
 	str msg;
-	int ok;
+	int ok = 0;
 
 	(void) stk;		/* NOT USED */
 	(void) pci;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	ok = mvc_export_operation(b, b->out, "", mb->starttime, mb->optimize);
-	mb->starttime = 0;
+	if (b->out)
+		ok = mvc_export_operation(b, b->out, "", cntxt->qryctx.starttime, mb->optimize);
+	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportOperation", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, b->out, ok));
@@ -3047,23 +3081,27 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 
 	// scalar values are single-column result sets
-	if ((res_id = mvc_result_table(be, mb->tag, 1, Q_TABLE, NULL)) < 0) {
-		mb->starttime = 0;
+	if ((res_id = mvc_result_table(be, mb->tag, 1, Q_TABLE)) < 0) {
+		cntxt->qryctx.starttime = 0;
+		cntxt->qryctx.endtime = 0;
 		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((ok = mvc_result_value(be, tn, cn, type, digits, scale, p, mtype)) < 0) {
-		mb->starttime = 0;
+		cntxt->qryctx.starttime = 0;
+		cntxt->qryctx.endtime = 0;
 		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
 	}
 	if (be->output_format == OFMT_NONE) {
-		mb->starttime = 0;
+		cntxt->qryctx.starttime = 0;
+		cntxt->qryctx.endtime = 0;
 		mb->optimize = 0;
 		return MAL_SUCCEED;
 	}
-	ok = mvc_export_result(be, be->out, res_id, true, mb->starttime, mb->optimize);
-	mb->starttime = 0;
+	ok = mvc_export_result(be, be->out, res_id, true, cntxt->qryctx.starttime, mb->optimize);
+	cntxt->qryctx.starttime = 0;
+	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
@@ -3102,6 +3140,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 9);
 	int onclient = *getArgReference_int(stk, pci, pci->retc + 10);
 	bool escape = *getArgReference_int(stk, pci, pci->retc + 11);
+	const char *decsep = *getArgReference_str(stk, pci, pci->retc + 12);
+	const char *decskip = *getArgReference_str(stk, pci, pci->retc + 13);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
@@ -3111,6 +3151,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (onclient && !cntxt->filetrans)
 		throw(MAL, "sql.copy_from", SQLSTATE(42000) "Cannot transfer files from client");
+	if (strNil(decsep))
+		throw(MAL, "sql.copy_from", SQLSTATE(42000) "decimal separator cannot be nil");
+	if (strNil(decskip))
+		decskip = NULL;
 
 	be = cntxt->sqlcontext;
 	/* The CSV parser expects ssep to have the value 0 if the user does not
@@ -3122,7 +3166,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
-		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape);
+		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape, decsep, decskip);
 	} else {
 		if (onclient) {
 			ss = mapi_request_upload(fname, false, be->mvc->scanner.rs, be->mvc->scanner.ws);
@@ -3180,7 +3224,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			close_stream(ss);
 			throw(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape);
+		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape, decsep, decskip);
 		// This also closes ss:
 		bstream_destroy(s);
 	}
@@ -3477,12 +3521,10 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (TRACEtable(cntxt, t) != 3)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
-	for(i=0; i < 3; i++)
-	if( t[i]){
+	for (i = 0; i < 3; i++) {
 		*getArgReference_bat(stk, pci, i) = t[i]->batCacheid;
 		BBPkeepref(t[i]);
-	} else
-		throw(SQL,"dump_trace", SQLSTATE(45000) "Missing trace BAT ");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -3490,64 +3532,6 @@ static str
 sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return CLTsessions(cntxt, mb, stk, pci);
-}
-
-str
-sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *urib = NULL, *unameb = NULL, *hashb = NULL;
-	bat *uri = getArgReference_bat(stk, pci, 0);
-	bat *uname = getArgReference_bat(stk, pci, 1);
-	bat *hash = getArgReference_bat(stk, pci, 2);
-	str *table = getArgReference_str(stk, pci, 3);
-	str uris = NULL, unames = NULL, hashs = NULL;
-	str msg = MAL_SUCCEED;
-	(void)mb;
-	(void)cntxt;
-
-	urib = COLnew(0, TYPE_str, 0, TRANSIENT);
-	unameb = COLnew(0, TYPE_str, 0, TRANSIENT);
-	hashb = COLnew(0, TYPE_str, 0, TRANSIENT);
-
-	if (urib == NULL || unameb == NULL || hashb == NULL) {
-		msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	if ((msg = AUTHgetRemoteTableCredentials(*table, &uris, &unames, &hashs)) != MAL_SUCCEED)
-		goto bailout;
-
-	MT_lock_set(&mal_contextLock);
-	if (BUNappend(urib, uris? uris: str_nil, false) != GDK_SUCCEED)
-		goto lbailout;
-	if (BUNappend(unameb, unames? unames: str_nil , false) != GDK_SUCCEED)
-		goto lbailout;
-	if (BUNappend(hashb, hashs? hashs: str_nil, false) != GDK_SUCCEED)
-		goto lbailout;
-	MT_lock_unset(&mal_contextLock);
-	*uri = urib->batCacheid;
-	BBPkeepref(urib);
-	*uname = unameb->batCacheid;
-	BBPkeepref(unameb);
-	*hash = hashb->batCacheid;
-	BBPkeepref(hashb);
-
-	GDKfree(uris);
-	GDKfree(unames);
-	GDKfree(hashs);
-	return MAL_SUCCEED;
-
-  lbailout:
-	MT_lock_unset(&mal_contextLock);
-	msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-  bailout:
-	GDKfree(uris);
-	GDKfree(unames);
-	GDKfree(hashs);
-	if (urib) BBPunfix(urib->batCacheid);
-	if (unameb) BBPunfix(unameb->batCacheid);
-	if (hashb) BBPunfix(hashb->batCacheid);
-	return msg;
 }
 
 str
@@ -3856,7 +3840,7 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (!(b = store->storage_api.bind_col(m->session->tr, c, RDONLY)))
 			throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
-		if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+		if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 			BBPunfix(b->batCacheid);
 			if (!(b = BATdescriptor(nb->batCacheid)))
 				throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -4004,86 +3988,86 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								goto bailout;
 							}
 
-							bat_iterator_end(&bsi);
 							bsi = bat_iterator(bs);
 							/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 							if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
 							    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
 							    BUNappend(col, bc->name, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 							if (c->t->access == TABLE_WRITABLE) {
 								if (BUNappend(mode, "writable", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							} else if (c->t->access == TABLE_APPENDONLY) {
 								if (BUNappend(mode, "appendonly", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							} else if (c->t->access == TABLE_READONLY) {
 								if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							} else {
 								if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							}
 							if (BUNappend(type, c->type.type->base.name, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							/*printf(" cnt "BUNFMT, bsi.count); */
 							sz = bsi.count;
 							if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
 							if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 							/*printf(" width %d", bsi.width); */
 							w = bsi.width;
 							if (BUNappend(atom, &w, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = bsi.count << bsi.shift;
 							if (BUNappend(size, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = heapinfo(bs->tvheap, bs->batCacheid);
 							if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							MT_rwlock_rdlock(&bs->thashlock);
 							sz = hashinfo(bs->thash, bs->batCacheid);
 							MT_rwlock_rdunlock(&bs->thashlock);
 							if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							bitval = 0; /* HASHispersistent(bs); */
 							if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = IMPSimprintsize(bs);
 							if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
 							/*printf("\n"); */
 							bitval = bsi.sorted;
 							if (!bitval && bsi.nosorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							bitval = bsi.revsorted;
 							if (!bitval && bsi.norevsorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							bitval = BATtkey(bs);
 							if (!bitval && bsi.nokey[0] == 0 && bsi.nokey[1] == 0)
 								bitval = bit_nil;
 							if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
 							if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
+							bat_iterator_end(&bsi);
 						}
 					}
 
@@ -4101,82 +4085,82 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								if( cname && strcmp(bc->name, cname) )
 									continue;
-								bat_iterator_end(&bsi);
 								bsi = bat_iterator(bs);
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 								if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
 								    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
 								    BUNappend(col, bc->name, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								if (c->t->access == TABLE_WRITABLE) {
 									if (BUNappend(mode, "writable", false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								} else if (c->t->access == TABLE_APPENDONLY) {
 									if (BUNappend(mode, "appendonly", false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								} else if (c->t->access == TABLE_READONLY) {
 									if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								} else {
 									if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								}
 								if (BUNappend(type, "oid", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								/*printf(" cnt "BUNFMT, bsi.count); */
 								sz = bsi.count;
 								if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
 								if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								/*printf(" width %d", bsi.width); */
 								w = bsi.width;
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								/*printf(" size "BUNFMT, tailsize(bs,bsi.count) + (bs->tvheap? bs->tvheap->size:0)); */
 								sz = tailsize(bs, bsi.count);
 								if (BUNappend(size, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								sz = bs->tvheap ? bs->tvheap->size : 0;
 								if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								MT_rwlock_rdlock(&bs->thashlock);
 								sz = bs->thash && bs->thash != (Hash *) 1 ? bs->thash->heaplink.size + bs->thash->heapbckt.size : 0; /* HASHsize() */
 								MT_rwlock_rdunlock(&bs->thashlock);
 								if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								bitval = 0; /* HASHispersistent(bs); */
 								if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								sz = IMPSimprintsize(bs);
 								if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
 								/*printf("\n"); */
 								bitval = bsi.sorted;
 								if (!bitval && bsi.nosorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								bitval = bsi.revsorted;
 								if (!bitval && bsi.norevsorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								bitval = BATtkey(bs);
 								if (!bitval && bsi.nokey[0] == 0 && bsi.nokey[1] == 0)
 									bitval = bit_nil;
 								if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
 								if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
+								bat_iterator_end(&bsi);
 							}
 						}
 					}
@@ -4185,7 +4169,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	bat_iterator_end(&bsi);
 	*rsch = sch->batCacheid;
 	BBPkeepref(sch);
 	*rtab = tab->batCacheid;
@@ -4222,49 +4205,33 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(oidx);
 	return MAL_SUCCEED;
 
-  bailout:
+  bailout1:
 	bat_iterator_end(&bsi);
-	if (sch)
-		BBPunfix(sch->batCacheid);
-	if (tab)
-		BBPunfix(tab->batCacheid);
-	if (col)
-		BBPunfix(col->batCacheid);
-	if (mode)
-		BBPunfix(mode->batCacheid);
-	if (loc)
-		BBPunfix(loc->batCacheid);
-	if (cnt)
-		BBPunfix(cnt->batCacheid);
-	if (type)
-		BBPunfix(type->batCacheid);
-	if (atom)
-		BBPunfix(atom->batCacheid);
-	if (size)
-		BBPunfix(size->batCacheid);
-	if (heap)
-		BBPunfix(heap->batCacheid);
-	if (indices)
-		BBPunfix(indices->batCacheid);
-	if (phash)
-		BBPunfix(phash->batCacheid);
-	if (imprints)
-		BBPunfix(imprints->batCacheid);
-	if (sort)
-		BBPunfix(sort->batCacheid);
-	if (revsort)
-		BBPunfix(revsort->batCacheid);
-	if (key)
-		BBPunfix(key->batCacheid);
-	if (oidx)
-		BBPunfix(oidx->batCacheid);
+  bailout:
+	BBPreclaim(sch);
+	BBPreclaim(tab);
+	BBPreclaim(col);
+	BBPreclaim(mode);
+	BBPreclaim(loc);
+	BBPreclaim(cnt);
+	BBPreclaim(type);
+	BBPreclaim(atom);
+	BBPreclaim(size);
+	BBPreclaim(heap);
+	BBPreclaim(indices);
+	BBPreclaim(phash);
+	BBPreclaim(imprints);
+	BBPreclaim(sort);
+	BBPreclaim(revsort);
+	BBPreclaim(key);
+	BBPreclaim(oidx);
 	if (!msg)
 		msg = createException(SQL, "sql.storage", GDK_EXCEPTION);
 	return msg;
 }
 
 void
-freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
+freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop)
 {
 	for (int i = oldvtop; i < mb->vtop;) {
 		if (glb) {
@@ -4278,8 +4245,8 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
 		clearVariable(mb, i);
 		i++;
 	}
+	assert(oldvtop <= mb->vsize);
 	mb->vtop = oldvtop;
-	mb->vid = oldvid;
 }
 
 str
@@ -4309,24 +4276,8 @@ SQLsuspend_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-/*SQLhot_snapshot(void *ret, const str *tarfile_arg)*/
+/*SQLhot_snapshot(void *ret, const str *tarfile_arg [, bool onserver ])*/
 SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	char *tarfile = *getArgReference_str(stk, pci, 1);
-	mvc *mvc;
-
-	char *msg = getSQLContext(cntxt, mb, &mvc, NULL);
-	if (msg)
-		return msg;
-	lng result = store_hot_snapshot(mvc->session->tr->store, tarfile);
-	if (result)
-		return MAL_SUCCEED;
-	else
-		throw(SQL, "sql.hot_snapshot", GDK_EXCEPTION);
-}
-
-str
-SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *filename;
 	bool onserver;
@@ -4339,7 +4290,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng result;
 
 	filename = *getArgReference_str(stk, pci, 1);
-	onserver = *getArgReference_bit(stk, pci, 2);
+	onserver = pci->argc == 3 ? *getArgReference_bit(stk, pci, 2) : true;
 
 	msg = getSQLContext(cntxt, mb, &mvc, NULL);
 	if (msg)
@@ -4374,7 +4325,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// tell client to open file, copy pasted from mvc_export_table_wrap
 	mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
-	mnstr_printf(s, "w %s\n", filename);
+	mnstr_printf(s, "wb %s\n", filename);
 	mnstr_flush(s, MNSTR_FLUSH_DATA);
 	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
 		/* non-empty line indicates failure on client */
@@ -4406,6 +4357,158 @@ end:
 	return msg;
 }
 
+MT_Lock lock_persist_unlogged = MT_LOCK_INITIALIZER(lock_persist_unlogged);
+
+str
+SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)stk;
+	(void)pci;
+
+	assert(pci->argc == 5);
+
+	bat *o0 = getArgReference_bat(stk, pci, 0),
+		*o1 = getArgReference_bat(stk, pci, 1),
+		*o2 = getArgReference_bat(stk, pci, 2);
+	str sname = *getArgReference_str(stk, pci, 3),
+		tname = *getArgReference_str(stk, pci, 4),
+		msg = MAL_SUCCEED;
+
+	mvc *m = NULL;
+	msg = getSQLContext(cntxt, mb, &m, NULL);
+
+	if (msg)
+		return msg;
+
+	sqlstore *store = store = m->session->tr->store;
+
+	sql_schema *s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(3F000) "Schema missing %s.", sname);
+
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(42000) "Access denied for %s to schema '%s'.",
+			  get_string_global_var(m, "current_user"), s->base.name);
+
+	sql_table *t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+
+	if (!isUnloggedTable(t) || t->access != TABLE_APPENDONLY)
+		throw(SQL, "sql.persist_unlogged", "Unlogged and Insert Only mode combination required for table %s.%s", sname, tname);
+
+	lng count = 0;
+
+	sql_trans *tr = m->session->tr;
+	storage *t_del = bind_del_data(tr, t, NULL);
+
+	BAT *d = BATdescriptor(t_del->cs.bid);
+
+	if (t_del == NULL || d == NULL)
+		throw(SQL, "sql.persist_unlogged", "Cannot access %s column storage.", tname);
+
+	MT_lock_set(&lock_persist_unlogged);
+	BATiter d_bi = bat_iterator(d);
+
+	if (BBP_status(d->batCacheid) & BBPEXISTING) {
+
+		assert(d->batInserted <= d_bi.count);
+
+		if (d->batInserted < d_bi.count) {
+
+			int n = 100;
+			bat *commit_list = GDKzalloc(sizeof(bat) * (n + 1));
+			BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 1));
+
+			if (commit_list == NULL || sizes == NULL) {
+				MT_lock_unset(&lock_persist_unlogged);
+				GDKfree(commit_list);
+				GDKfree(sizes);
+				throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+			}
+
+			commit_list[0] = 0;
+			sizes[0] = 0;
+			int i = 1;
+
+			for (node *ncol = ol_first_node(t->columns); ncol; ncol = ncol->next) {
+
+				sql_column *c = (sql_column *) ncol->data;
+				BAT *b = store->storage_api.bind_col(tr, c, QUICK);
+
+				if (b == NULL) {
+					MT_lock_unset(&lock_persist_unlogged);
+					GDKfree(commit_list);
+					GDKfree(sizes);
+					throw(SQL, "sql.persist_unlogged", "Cannot access column descriptor.");
+				}
+
+				if (i == n && ncol->next) {
+					n = n * 2;
+					commit_list = GDKrealloc(commit_list, sizeof(bat) * n);
+					sizes = GDKrealloc(sizes, sizeof(BUN) * n);
+				}
+
+				if (commit_list == NULL || sizes == NULL) {
+					MT_lock_unset(&lock_persist_unlogged);
+					GDKfree(commit_list);
+					GDKfree(sizes);
+					throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+				}
+
+				commit_list[i] = b->batCacheid;
+				sizes[i] = d_bi.count;
+				i++;
+			}
+
+			commit_list[i] = d->batCacheid;
+			sizes[i] = d_bi.count;
+			i++;
+
+			if (TMsubcommit_list(commit_list, sizes, i, -1) != GDK_SUCCEED) {
+				MT_lock_unset(&lock_persist_unlogged);
+				GDKfree(commit_list);
+				GDKfree(sizes);
+				throw(SQL, "sql.persist_unlogged", "Lower level commit operation failed");
+			}
+
+			GDKfree(commit_list);
+			GDKfree(sizes);
+		}
+
+		count = d_bi.count;
+	}
+
+	bat_iterator_end(&d_bi);
+	MT_lock_unset(&lock_persist_unlogged);
+	BBPreclaim(d);
+
+	BAT *table = COLnew(0, TYPE_str, 0, TRANSIENT),
+		*tableid = COLnew(0, TYPE_int, 0, TRANSIENT),
+		*rowcount = COLnew(0, TYPE_lng, 0, TRANSIENT);
+
+	if (table == NULL || tableid == NULL || rowcount == NULL) {
+		BBPnreclaim(3, table, tableid, rowcount);
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+	}
+
+	if (BUNappend(table, tname, false) != GDK_SUCCEED ||
+		BUNappend(tableid, &(t->base.id), false) != GDK_SUCCEED ||
+		BUNappend(rowcount, &count, false) != GDK_SUCCEED) {
+		BBPnreclaim(3, table, tableid, rowcount);
+		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
+	}
+
+	*o0 = table->batCacheid;
+	*o1 = tableid->batCacheid;
+	*o2 = rowcount->batCacheid;
+	BBPkeepref(table);
+	BBPkeepref(tableid);
+	BBPkeepref(rowcount);
+
+	return msg;
+}
+
 str
 SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -4415,7 +4518,7 @@ SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	bat *i = getArgReference_bat(stk,pci,2);
 	bat *s = getArgReference_bat(stk,pci,3);
 	bat *c = getArgReference_bat(stk,pci,4);
-	str msg = MAL_SUCCEED, usr;
+	str msg = MAL_SUCCEED;
 	mvc *sql = NULL;
 	cq *q = NULL;
 
@@ -4445,11 +4548,9 @@ SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			goto bailout;
 		}
 
-		msg = AUTHgetUsername(&usr, cntxt);
 		if (msg != MAL_SUCCEED)
 			goto bailout;
-		bun_res = BUNappend(user, usr, false);
-		GDKfree(usr);
+		bun_res = BUNappend(user, cntxt->username, false);
 		if (bun_res != GDK_SUCCEED) {
 			msg = createException(SQL, "sql.session_prepared_statements", GDK_EXCEPTION);
 			goto bailout;
@@ -4625,7 +4726,7 @@ bailout:
 	return msg;
 }
 
-/* input id,row-input-values
+/* input id, row-input-values
  * for each id call function(with row-input-values) return table
  * return for each id the table, ie id (*length of table) and table results
  */
@@ -4639,10 +4740,13 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!nmb)
 		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	nmb->starttime = mb->starttime;
 	mod = *getArgReference_str(stk, pci, arg++);
 	fcn = *getArgReference_str(stk, pci, arg++);
 	npci = newStmtArgs(nmb, mod, fcn, pci->argc);
+	if (npci == NULL) {
+		freeMalBlk(nmb);
+		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	for (int i = 1; i < pci->retc; i++) {
 		int type = getArgType(mb, pci, i);
@@ -4657,9 +4761,10 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		npci = pushNil(nmb, npci, type);
 	}
+	pushInstruction(nmb, npci);
 	/* check program to get the proper malblk */
 	if (chkInstruction(cntxt->usermodule, nmb, npci)) {
-		freeInstruction(npci);
+		freeMalBlk(nmb);
 		return createException(MAL, "sql.unionfunc", SQLSTATE(42000) PROGRAM_GENERAL);
 	}
 
@@ -4684,6 +4789,13 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bat *b = getArgReference_bat(stk, pci, j);
 			if (!(input[i] = BATdescriptor(*b))) {
 				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+				while (i > 0) {
+					i--;
+					bat_iterator_end(&bi[i]);
+					BBPunfix(input[i]->batCacheid);
+				}
+				GDKfree(input);
+				input = NULL;
 				goto finalize;
 			}
 			bi[i] = bat_iterator(input[i]);
@@ -4704,7 +4816,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 
-		if (npci->blk->stop > 1) {
+		if (npci->blk && npci->blk->stop > 1) {
 			omb = nmb;
 			if (!(nmb = copyMalBlk(npci->blk))) {
 				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4729,14 +4841,13 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					ValPtr lhs = &nstk->stk[q->argv[ii]];
 					ptr rhs = (ptr)BUNtail(bi[i], cur);
 
-					assert(lhs->vtype != TYPE_bat);
 					if (VALset(lhs, input[i]->ttype, rhs) == NULL)
 						ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				if (!ret && ii == q->argc) {
 					BAT *fres = NULL;
 					if (!omb && npci->fcn)
-						ret = npci->fcn(cntxt, nmb, nstk, npci);
+						ret = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))npci->fcn)(cntxt, nmb, nstk, npci);
 					else
 						ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
 
@@ -4791,14 +4902,15 @@ finalize:
 				}
 			}
 		GDKfree(res);
-		if (input)
+		if (input) {
 			for (int i = 0; i<nrinput; i++) {
 				if (input[i]) {
 					bat_iterator_end(&bi[i]);
 					BBPunfix(input[i]->batCacheid);
 				}
 			}
-		GDKfree(input);
+			GDKfree(input);
+		}
 		GDKfree(bi);
 	}
 	return ret;
@@ -4834,8 +4946,7 @@ do_str_column_vacuum(sql_trans *tr, sql_column *c, char *sname, char *tname, cha
 		}
 	}
 	BBPunfix(b->batCacheid);
-	if (bn)
-		BBPunfix(bn->batCacheid);
+	BBPreclaim(bn);
 	return MAL_SUCCEED;
 }
 
@@ -4874,7 +4985,7 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isTempTable(t))
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 	if (c->storage_type)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
@@ -4888,7 +4999,7 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 	char *sname = (char *) argv[1];
 	char *tname = (char *) argv[2];
 	char *cname = (char *) argv[3];
-	sql_allocator *sa = NULL;
+	allocator *sa = NULL;
 	sql_session *session = NULL;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -4899,7 +5010,7 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 	(void) argc;
 
 	if ((sa = sa_create(NULL)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create sql_allocator!");
+		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create allocator!");
 		return GDK_FAIL;
 	}
 
@@ -5011,7 +5122,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (isTempTable(t))
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 	if (c->storage_type)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
@@ -5023,8 +5134,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};
 
-	gdk_return res;
-	if((res = gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval)) != GDK_SUCCEED) {
+	if (gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval) != GDK_SUCCEED) {
 		str_column_vacuum_callback_args_free(4, argv);
 		throw(SQL, "sql.str_column_auto_vacuum", "adding vacuum callback failed!");
 	}
@@ -5066,7 +5176,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (isTempTable(t))
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 
 	if(gdk_remove_callback("str_column_vacuum", str_column_vacuum_callback_args_free) != GDK_SUCCEED)
 		throw(SQL, "sql.str_column_stop_vacuum", "removing vacuum callback failed!");
@@ -5090,7 +5200,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "mel.h"
 
 
-str
+static str
 SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
@@ -5113,6 +5223,23 @@ SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+SQLdecypher(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	str *pwhash = getArgReference_str(stk, pci, 0);
+	const char *cypher = *getArgReference_str(stk, pci, 1);
+
+	(void) pwhash;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	return AUTHdecypherValue(pwhash, cypher);
+}
+
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",sht),arg("force",bit))),
@@ -5132,7 +5259,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz) file", args(1,2, arg("",void),arg("tarfile",str))),
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
- pattern("sql", "hot_snapshot", SQLhot_snapshot_wrap, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
+ pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
+ pattern("sql", "persist_unlogged", SQLpersist_unlogged, true, "Persist deltas on append only table in schema s table t", args(3, 5, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng), arg("s", str), arg("t", str))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
  pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),
@@ -5164,8 +5292,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
- command("sql", "delta", DELTAbat, false, "Return column bat with delta's applied.", args(1,4, batargany("",3),batargany("col",3),batarg("uid",oid),batargany("uval",3))),
- command("sql", "projectdelta", DELTAproject, false, "Return column bat with delta's applied.", args(1,5, batargany("",3),batarg("select",oid),batargany("col",3),batarg("uid",oid),batargany("uval",3))),
+ command("sql", "delta", DELTAbat, false, "Return column bat with delta's applied.", args(1,4, batargany("",1),batargany("col",1),batarg("uid",oid),batargany("uval",1))),
+ command("sql", "projectdelta", DELTAproject, false, "Return column bat with delta's applied.", args(1,5, batargany("",1),batarg("select",oid),batargany("col",1),batarg("uid",oid),batargany("uval",1))),
  command("sql", "subdelta", DELTAsub, false, "Return a single bat of selected delta.", args(1,5, batarg("",oid),batarg("col",oid),batarg("cand",oid),batarg("uid",oid),batarg("uval",oid))),
  command("sql", "project", BATleftproject, false, "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)", args(1,4, batarg("",oid),batarg("col",oid),batarg("l",oid),batarg("r",oid))),
  command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
@@ -5189,12 +5317,13 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "exportChunk", mvc_export_chunk_wrap, true, "Export a chunk of the result set (in order) to stream s", args(1,3, arg("",void),arg("s",streams),arg("res_id",int))),
  pattern("sql", "exportChunk", mvc_export_chunk_wrap, true, "Export a chunk of the result set (in order) to stream s", args(1,5, arg("",void),arg("s",streams),arg("res_id",int),arg("offset",int),arg("nr",int))),
  pattern("sql", "exportOperation", mvc_export_operation_wrap, true, "Export result of schema/transaction queries", args(1,1, arg("",void))),
+ pattern("sql", "export_bin_column", mvc_bin_export_column_wrap, true, "export column as binary", args(1, 5, arg("", lng), batargany("col", 1), arg("byteswap", bit), arg("filename", str), arg("onclient", int))),
+ pattern("sql", "export_bin_column", mvc_bin_export_column_wrap, true, "export column as binary", args(1, 5, arg("", lng), argany("val", 1), arg("byteswap", bit), arg("filename", str), arg("onclient", int))),
  pattern("sql", "affectedRows", mvc_affected_rows_wrap, true, "export the number of affected rows by the current query", args(1,3, arg("",int),arg("mvc",int),arg("nr",lng))),
- pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,13, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
+ pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,15, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int),arg("decsep",str),arg("decskip",str))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
- pattern("sql", "importTable", mvc_bin_import_table_wrap, true, "Import a table from the files (fname)", args(1,6, batvarargany("",0),arg("sname",str),arg("tname",str),arg("onclient",int),arg("bswap",bit),vararg("fname",str))),
- pattern("sql", "importColumn", mvc_bin_import_column_wrap, false, "Import a column from the given file", args(2, 7, batargany("", 0),arg("", oid), arg("method",str),arg("bswap",bit),arg("path",str),arg("onclient",int),arg("nrows",oid))),
+ pattern("sql", "importColumn", mvc_bin_import_column_wrap, false, "Import a column from the given file", args(2, 8, batargany("", 0),arg("", oid), arg("method",str),arg("width",int),arg("bswap",bit),arg("path",str),arg("onclient",int),arg("nrows",oid))),
  command("aggr", "not_unique", not_unique, false, "check if the tail sorted bat b doesn't have unique tail values", args(1,2, arg("",bit),batarg("b",oid))),
  command("sql", "optimizers", getPipeCatalog, false, "", args(3,3, batarg("",str),batarg("",str),batarg("",str))),
  pattern("sql", "optimizer_updates", SQLoptimizersUpdate, false, "", noargs),
@@ -5203,7 +5332,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "sql_variables", sql_variables, false, "return the table with session variables", args(4,4, batarg("sname",str),batarg("name",str),batarg("type",str),batarg("value",str))),
  pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status", args(9,9, batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optmizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int))),
 pattern("sql", "password", SQLuser_password, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
- pattern("sql", "rt_credentials", sql_rt_credentials_wrap, false, "Return the remote table credentials for the given table", args(3,4, batarg("uri",str),batarg("username",str),batarg("hash",str),arg("tablename",str))),
+pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", args(1,2, arg("",str),arg("hash",str))),
  pattern("sql", "dump_cache", dump_cache, false, "dump the content of the query cache", args(2,2, batarg("query",str),batarg("count",int))),
  pattern("sql", "dump_opt_stats", dump_opt_stats, false, "dump the optimizer rewrite statistics", args(2,2, batarg("rewrite",str),batarg("count",int))),
  pattern("sql", "dump_trace", dump_trace, false, "dump the trace statistics", args(3,3, batarg("ticks",lng),batarg("stmt",str),batarg("stmt",str))),
@@ -5211,6 +5340,9 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for schema", args(1,2, arg("",void),arg("sch",str))),
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for table", args(1,3, arg("",void),arg("sch",str),arg("tbl",str))),
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for column", args(1,4, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str))),
+ pattern("sql", "set_count_distinct", sql_set_count_distinct, true, "Set count distinct for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),arg("val",lng))),
+ pattern("sql", "set_min", sql_set_min, true, "Set min for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),argany("val",1))),
+ pattern("sql", "set_max", sql_set_max, true, "Set max for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),argany("val",1))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information", args(13,13, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular schema", args(13,14, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular table", args(13,15, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str),arg("tname",str))),
@@ -5361,19 +5493,18 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("batcalc", "lng", batstr_2dec_lng, false, "cast to dec(lng) and check for overflow", args(1,5, batarg("",lng),batarg("v",str),batarg("s",oid),arg("digits",int),arg("scale",int))),
  pattern("calc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",void),arg("digits",int))),
  pattern("batcalc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, batarg("",timestamp),batarg("v",oid),arg("digits",int))),
- pattern("batcalc", "timestamp", nil_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",oid),arg("digits",int),batarg("r",bat))),
  pattern("calc", "timestamp", str_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",str),arg("digits",int))),
- pattern("calc", "timestamp", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("has_tz",int))),
+ pattern("calc", "timestamptz", str_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,4, arg("",timestamp),arg("v",str),arg("digits",int),arg("tz_msec",lng))),
  pattern("calc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",timestamp),arg("digits",int))),
  command("batcalc", "timestamp", batstr_2time_timestamp, false, "cast to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",str),batarg("s",oid),arg("digits",int))),
- command("batcalc", "timestamp", batstr_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,5, batarg("",timestamp),batarg("v",str),batarg("s",oid),arg("digits",int),arg("has_tz",int))),
+ command("batcalc", "timestamptz", batstr_2time_timestamptz, false, "cast to timestamp and check for overflow", args(1,5, batarg("",timestamp),batarg("v",str),batarg("s",oid),arg("digits",int),arg("tz_msec",lng))),
  pattern("batcalc", "timestamp", timestamp_2time_timestamp, false, "cast timestamp to timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",timestamp),batarg("s",oid),arg("digits",int))),
  pattern("batcalc", "daytime", nil_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, batarg("",daytime),batarg("v",oid),arg("digits",int))),
  pattern("calc", "daytime", str_2time_daytime, false, "cast to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",str),arg("digits",int))),
- pattern("calc", "daytime", str_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, arg("",daytime),arg("v",str),arg("digits",int),arg("has_tz",int))),
+ pattern("calc", "daytimetz", str_2time_daytimetz, false, "cast to daytime and check for overflow", args(1,4, arg("",daytime),arg("v",str),arg("digits",int),arg("tz_msec",lng))),
  pattern("calc", "daytime", daytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,3, arg("",daytime),arg("v",daytime),arg("digits",int))),
  command("batcalc", "daytime", batstr_2time_daytime, false, "cast to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",str),batarg("s",oid),arg("digits",int))),
- pattern("batcalc", "daytime", str_2time_daytimetz, false, "cast daytime to daytime and check for overflow", args(1,5, batarg("",daytime),batarg("v",str),batarg("s",oid),arg("digits",int),arg("has_tz",int))),
+ pattern("batcalc", "daytimetz", str_2time_daytimetz, false, "cast daytime to daytime and check for overflow", args(1,5, batarg("",daytime),batarg("v",str),batarg("s",oid),arg("digits",int),arg("tz_msec",lng))),
  pattern("batcalc", "daytime", daytime_2time_daytime, false, "cast daytime to daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",daytime),batarg("s",oid),arg("digits",int))),
  command("sql", "date_trunc", bat_date_trunc, false, "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)", args(1,3, batarg("",timestamp),arg("scale",str),batarg("v",timestamp))),
  command("sql", "date_trunc", date_trunc, false, "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)", args(1,3, arg("",timestamp),arg("scale",str),arg("v",timestamp))),
@@ -5382,6 +5513,7 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("calc", "date", nil_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",void))),
  pattern("batcalc", "date", nil_2_date, false, "cast to date", args(1,2, batarg("",date),batarg("v",oid))),
  pattern("calc", "str", SQLstr_cast, false, "cast to string and check for overflow", args(1,7, arg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),argany("v",1),arg("digits",int))),
+ pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow, no candidate list", args(1,7, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),arg("digits",int))),
  pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,8, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),batarg("s",oid),arg("digits",int))),
  pattern("calc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",str),arg("ek",int),arg("sk",int))),
  pattern("batcalc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,5, batarg("",int),batarg("v",str),batarg("s",oid),arg("ek",int),arg("sk",int))),
@@ -5587,277 +5719,206 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("batsql", "diff", SQLdiff, false, "return true if cur != prev row", args(1,3, batarg("",bit),batarg("p",bit),argany("b",1))),
  pattern("batsql", "diff", SQLdiff, false, "return true if cur != prev row", args(1,3, batarg("",bit),batarg("p",bit),batargany("b",1))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",bte))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",bte))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",bte))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",bte))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",sht))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",sht))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",sht))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",sht))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",int))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",int))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",int))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",int))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",lng))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",lng))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",lng))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",lng))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",flt))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",flt))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",flt))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",flt))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",dbl))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",dbl))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",dbl))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",dbl))),
  pattern("sql", "row_number", SQLrow_number, false, "return the row_numer-ed groups", args(1,4, arg("",int),argany("b",1),arg("p",bit),arg("o",bit))),
- pattern("batsql", "row_number", SQLrow_number, false, "return the row_numer-ed groups", args(1,4, batarg("",int),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("batsql", "row_number", SQLrow_number, false, "return the row_numer-ed groups", args(1,4, batarg("",int),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "rank", SQLrank, false, "return the ranked groups", args(1,4, arg("",int),argany("b",1),arg("p",bit),arg("o",bit))),
- pattern("batsql", "rank", SQLrank, false, "return the ranked groups", args(1,4, batarg("",int),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("batsql", "rank", SQLrank, false, "return the ranked groups", args(1,4, batarg("",int),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "dense_rank", SQLdense_rank, false, "return the densely ranked groups", args(1,4, arg("",int),argany("b",1),arg("p",bit),arg("o",bit))),
- pattern("batsql", "dense_rank", SQLdense_rank, false, "return the densely ranked groups", args(1,4, batarg("",int),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("batsql", "dense_rank", SQLdense_rank, false, "return the densely ranked groups", args(1,4, batarg("",int),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "percent_rank", SQLpercent_rank, false, "return the percentage into the total number of groups for each row", args(1,4, arg("",dbl),argany("b",1),arg("p",bit),arg("o",bit))),
- pattern("batsql", "percent_rank", SQLpercent_rank, false, "return the percentage into the total number of groups for each row", args(1,4, batarg("",dbl),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("batsql", "percent_rank", SQLpercent_rank, false, "return the percentage into the total number of groups for each row", args(1,4, batarg("",dbl),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "cume_dist", SQLcume_dist, false, "return the accumulated distribution of the number of rows per group to the total number of partition rows", args(1,4, arg("",dbl),argany("b",1),arg("p",bit),arg("o",bit))),
- pattern("batsql", "cume_dist", SQLcume_dist, false, "return the accumulated distribution of the number of rows per group to the total number of partition rows", args(1,4, batarg("",dbl),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("batsql", "cume_dist", SQLcume_dist, false, "return the accumulated distribution of the number of rows per group to the total number of partition rows", args(1,4, batarg("",dbl),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "lag", SQLlag, false, "return the value in the previous row in the partition or NULL if non existent", args(1,4, argany("",1),argany("b",1),arg("p",bit),arg("o",bit))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous row in the partition or NULL if non existent", args(1,4, batargany("",1),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous row in the partition or NULL if non existent", args(1,4, batargany("",1),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or NULL if non existent", args(1,5, argany("",1),argany("b",1),argany("l",0),arg("p",bit),arg("o",bit))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),batargany("b",1),argany("l",0),argany("p",2),argany("o",3))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),argany("b",1),batargany("l",0),argany("p",2),argany("o",3))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),batargany("b",1),batargany("l",0),argany("p",2),argany("o",3))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),optbatargany("b",1),optbatargany("l",0),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, argany("",1),argany("b",1),argany("l",0),argany("d",1),arg("p",bit),arg("o",bit))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),argany("l",0),argany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),batargany("l",0),argany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),batargany("l",0),argany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),argany("l",0),batargany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),argany("l",0),batargany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),batargany("l",0),batargany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),batargany("l",0),batargany("d",1),argany("p",2),argany("o",3))),
+ pattern("batsql", "lag", SQLlag, false, "return the value in the previous 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),optbatargany("b",1),optbatargany("l",0),optbatargany("d",1),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "lead", SQLlead, false, "return the value in the next row in the partition or NULL if non existent", args(1,4, argany("",1),argany("b",1),arg("p",bit),arg("o",bit))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next row in the partition or NULL if non existent", args(1,4, batargany("",1),batargany("b",1),argany("p",2),argany("o",3))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next row in the partition or NULL if non existent", args(1,4, batargany("",1),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or NULL if non existent", args(1,5, argany("",1),argany("b",1),argany("l",0),arg("p",bit),arg("o",bit))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),batargany("b",1),argany("l",0),argany("p",2),argany("o",3))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),argany("b",1),batargany("l",0),argany("p",2),argany("o",3))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),batargany("b",1),batargany("l",0),argany("p",2),argany("o",3))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or NULL if non existent", args(1,5, batargany("",1),optbatargany("b",1),optbatargany("l",0),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, argany("",1),argany("b",1),argany("l",0),argany("d",1),arg("p",bit),arg("o",bit))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),argany("l",0),argany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),batargany("l",0),argany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),batargany("l",0),argany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),argany("l",0),batargany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),argany("l",0),batargany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),argany("b",1),batargany("l",0),batargany("d",1),argany("p",2),argany("o",3))),
- pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),batargany("b",1),batargany("l",0),batargany("d",1),argany("p",2),argany("o",3))),
+ pattern("batsql", "lead", SQLlead, false, "return the value in the next 'l' row in the partition or 'd' if non existent", args(1,6, batargany("",1),optbatargany("b",1),optbatargany("l",0),optbatargany("d",1),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "ntile", SQLntile, false, "return the groups divided as equally as possible", args(1,5, argany("",1),argany("b",0),argany("n",1),arg("p",bit),arg("o",bit))),
- pattern("batsql", "ntile", SQLntile, false, "return the groups divided as equally as possible", args(1,5, batargany("",1),batargany("b",0),argany("n",1),argany("p",2),argany("o",3))),
- pattern("batsql", "ntile", SQLntile, false, "return the groups divided as equally as possible", args(1,5, batargany("",1),argany("b",0),batargany("n",1),argany("p",2),argany("o",3))),
- pattern("batsql", "ntile", SQLntile, false, "return the groups divided as equally as possible", args(1,5, batargany("",1),batargany("b",0),batargany("n",1),argany("p",2),argany("o",3))),
-
+ pattern("batsql", "ntile", SQLntile, false, "return the groups divided as equally as possible", args(1,5, batargany("",1),optbatargany("b",0),optbatargany("n",1),optbatarg("p",bit),optbatarg("o",bit))),
  /* these window functions support frames */
  pattern("sql", "first_value", SQLfirst_value, false, "return the first value of groups", args(1,7, argany("",1),argany("b",1),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "first_value", SQLfirst_value, false, "return the first value of groups", args(1,7, batargany("",1),batargany("b",1),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "first_value", SQLfirst_value, false, "return the first value of groups", args(1,7, batargany("",1),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "last_value", SQLlast_value, false, "return the last value of groups", args(1,7, argany("",1),argany("b",1),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "last_value", SQLlast_value, false, "return the last value of groups", args(1,7, batargany("",1),batargany("b",1),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "last_value", SQLlast_value, false, "return the last value of groups", args(1,7, batargany("",1),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,8, argany("",1),argany("b",1),arg("n",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,8, batargany("",1),batargany("b",1),arg("n",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,8, batargany("",1),argany("b",1),batarg("n",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,8, batargany("",1),batargany("b",1),batarg("n",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "nth_value", SQLnth_value, false, "return the nth value of each group", args(1,8, batargany("",1),optbatargany("b",1),optbatarg("n",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "min", SQLmin, false, "return the minimum of groups", args(1,7, argany("",1),argany("b",1),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "min", SQLmin, false, "return the minimum of groups", args(1,7, batargany("",1),batargany("b",1),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "min", SQLmin, false, "return the minimum of groups", args(1,7, batargany("",1),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "max", SQLmax, false, "return the maximum of groups", args(1,7, argany("",1),argany("b",1),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "max", SQLmax, false, "return the maximum of groups",args(1,7, batargany("",1),batargany("b",1),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "max", SQLmax, false, "return the maximum of groups",args(1,7, batargany("",1),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "count", SQLbasecount, false, "return count of basetable", args(1,3, arg("",lng),arg("sname",str),arg("tname",str))),
  pattern("sql", "count", SQLcount, false, "return count of groups", args(1,8, arg("",lng),argany("b",1),arg("ignils",bit),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "count", SQLcount, false,"return count of groups",args(1,8, batarg("",lng),batargany("b",1),arg("ignils",bit),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "count", SQLcount, false,"return count of groups",args(1,8, batarg("",lng),batargany("b",1),arg("ignils",bit),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",lng),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",lng),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",lng),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",lng),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",lng),batarg("b",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",lng),batarg("b",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",lng),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",lng),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",lng),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",lng),arg("b",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",lng),batarg("b",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",lng),batarg("b",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",flt),arg("b",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",flt),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",flt),batarg("b",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",dbl),arg("b",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",dbl),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",dbl),batarg("b",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",dbl),arg("b",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",dbl),batarg("b",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",dbl),batarg("b",dbl),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  /* sql.sum for month intervals */
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",int),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",int),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",int),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",lng),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",lng),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",lng),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",lng),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",lng),batarg("b",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",lng),batarg("b",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",lng),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",lng),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",lng),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",lng),arg("b",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",lng),batarg("b",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",lng),batarg("b",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",flt),arg("b",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",flt),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",flt),batarg("b",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",dbl),arg("b",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",dbl),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",dbl),batarg("b",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",dbl),arg("b",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",dbl),batarg("b",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",dbl),batarg("b",dbl),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,7, arg("",dbl),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,7, arg("",dbl),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,7, arg("",dbl),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,7, arg("",dbl),arg("b",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,7, arg("",dbl),arg("b",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,7, arg("",dbl),arg("b",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",dbl),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, arg("",bte),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, batarg("",bte),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, batarg("",bte),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, arg("",sht),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, batarg("",sht),batarg("b",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, batarg("",sht),batarg("b",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, arg("",int),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, batarg("",int),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, batarg("",int),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, arg("",lng),arg("b",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, batarg("",lng),batarg("b",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, batarg("",lng),batarg("b",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, arg("",dbl),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, arg("",dbl),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, arg("",dbl),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, arg("",dbl),arg("b",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, arg("",dbl),arg("b",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, arg("",dbl),arg("b",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",dbl),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, arg("",dbl),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, arg("",dbl),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, arg("",dbl),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, arg("",dbl),arg("b",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, arg("",dbl),arg("b",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, arg("",dbl),arg("b",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",dbl),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, arg("",dbl),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, arg("",dbl),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, arg("",dbl),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, arg("",dbl),arg("b",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, arg("",dbl),arg("b",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, arg("",dbl),arg("b",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",dbl),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, arg("",dbl),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, arg("",dbl),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, arg("",dbl),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, arg("",dbl),arg("b",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, arg("",dbl),arg("b",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, arg("",dbl),arg("b",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",dbl),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, arg("",dbl),arg("b",bte),arg("c",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),arg("b",bte),batarg("c",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",bte),arg("c",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",bte),batarg("c",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),optbatarg("b",bte),optbatarg("c",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, arg("",dbl),arg("b",sht),arg("c",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),arg("b",sht),batarg("c",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",sht),arg("c",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",sht),batarg("c",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),optbatarg("b",sht),optbatarg("c",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, arg("",dbl),arg("b",int),arg("c",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),arg("b",int),batarg("c",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",int),arg("c",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",int),batarg("c",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),optbatarg("b",int),optbatarg("c",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, arg("",dbl),arg("b",lng),arg("c",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),arg("b",lng),batarg("c",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",lng),arg("c",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",lng),batarg("c",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),optbatarg("b",lng),optbatarg("c",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, arg("",dbl),arg("b",flt),arg("c",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),arg("b",flt),batarg("c",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",flt),arg("c",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",flt),batarg("c",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),optbatarg("b",flt),optbatarg("c",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, arg("",dbl),arg("b",dbl),arg("c",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),arg("b",dbl),batarg("c",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",dbl),arg("c",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",dbl),batarg("c",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),optbatarg("b",dbl),optbatarg("c",dbl),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, arg("",dbl),arg("b",bte),arg("c",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),arg("b",bte),batarg("c",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",bte),arg("c",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",bte),batarg("c",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),optbatarg("b",bte),optbatarg("c",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, arg("",dbl),arg("b",sht),arg("c",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),arg("b",sht),batarg("c",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",sht),arg("c",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",sht),batarg("c",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),optbatarg("b",sht),optbatarg("c",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, arg("",dbl),arg("b",int),arg("c",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),arg("b",int),batarg("c",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",int),arg("c",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",int),batarg("c",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),optbatarg("b",int),optbatarg("c",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, arg("",dbl),arg("b",lng),arg("c",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),arg("b",lng),batarg("c",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",lng),arg("c",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",lng),batarg("c",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),optbatarg("b",lng),optbatarg("c",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, arg("",dbl),arg("b",flt),arg("c",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),arg("b",flt),batarg("c",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",flt),arg("c",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",flt),batarg("c",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),optbatarg("b",flt),optbatarg("c",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, arg("",dbl),arg("b",dbl),arg("c",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),arg("b",dbl),batarg("c",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",dbl),arg("c",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",dbl),batarg("c",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),optbatarg("b",dbl),optbatarg("c",dbl),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, arg("",dbl),arg("b",bte),arg("c",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),arg("b",bte),batarg("c",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",bte),arg("c",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",bte),batarg("c",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),optbatarg("b",bte),optbatarg("c",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, arg("",dbl),arg("b",sht),arg("c",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),arg("b",sht),batarg("c",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",sht),arg("c",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",sht),batarg("c",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),optbatarg("b",sht),optbatarg("c",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, arg("",dbl),arg("b",int),arg("c",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),arg("b",int),batarg("c",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",int),arg("c",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",int),batarg("c",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),optbatarg("b",int),optbatarg("c",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, arg("",dbl),arg("b",lng),arg("c",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),arg("b",lng),batarg("c",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",lng),arg("c",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",lng),batarg("c",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),optbatarg("b",lng),optbatarg("c",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, arg("",dbl),arg("b",flt),arg("c",flt),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),arg("b",flt),batarg("c",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",flt),arg("c",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",flt),batarg("c",flt),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),optbatarg("b",flt),optbatarg("c",flt),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, arg("",dbl),arg("b",dbl),arg("c",dbl),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),arg("b",dbl),batarg("c",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",dbl),arg("c",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",dbl),batarg("c",dbl),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),optbatarg("b",dbl),optbatarg("c",dbl),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups", args(1,7, arg("",str),arg("b",str),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups", args(1,7, batarg("",str),batarg("b",str),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups", args(1,7, batarg("",str),batarg("b",str),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,8, arg("",str),arg("b",str),arg("sep",str),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,8, batarg("",str),arg("b",str),batarg("sep",str),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,8, batarg("",str),batarg("b",str),arg("sep",str),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,8, batarg("",str),batarg("b",str),batarg("sep",str),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,8, batarg("",str),optbatarg("b",str),optbatarg("sep",str),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  /* sql_subquery */
  command("aggr", "zero_or_one", zero_or_one, false, "if col contains exactly one value return this. Incase of more raise an exception else return nil", args(1,2, argany("",1),batargany("col",1))),
  command("aggr", "zero_or_one", zero_or_one_error, false, "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil", args(1,3, argany("",1),batargany("col",1),arg("err",bit))),
@@ -5917,6 +5978,7 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("sqlcatalog", "create_schema", SQLcreate_schema, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
  pattern("sqlcatalog", "drop_schema", SQLdrop_schema, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("sqlcatalog", "create_table", SQLcreate_table, false, "Catalog operation create_table", args(0,4, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("temp",int))),
+ pattern("sqlcatalog", "create_table", SQLcreate_table, false, "Catalog operation create_table", args(0,6, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("pw_encrypted",int),arg("username",str),arg("passwd",str))),
  pattern("sqlcatalog", "create_view", SQLcreate_view, false, "Catalog operation create_view", args(0,5, arg("sname",str),arg("vname",str),arg("tbl",ptr),arg("temp",int),arg("replace",int))),
  pattern("sqlcatalog", "drop_table", SQLdrop_table, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("sqlcatalog", "drop_view", SQLdrop_view, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
@@ -5933,7 +5995,7 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,10, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("fullname",str), arg("max_memory", lng), arg("max_workers", int), arg("optimizer", str), arg("default_role", str))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,2, arg("sname",str),arg("action",int))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
- pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,7, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("oldpasswrd",str),arg("role",str))),
+ pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,9, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("oldpasswrd",str),arg("role",str),arg("max_memory",lng),arg("max_workers",int))),
  pattern("sqlcatalog", "rename_user", SQLrename_user, false, "Catalog operation rename_user", args(0,3, arg("sname",str),arg("newnme",str),arg("action",int))),
  pattern("sqlcatalog", "create_role", SQLcreate_role, false, "Catalog operation create_role", args(0,3, arg("sname",str),arg("role",str),arg("grator",int))),
  pattern("sqlcatalog", "drop_role", SQLdrop_role, false, "Catalog operation drop_role", args(0,3, arg("auth",str),arg("role",str),arg("action",int))),
@@ -5946,9 +6008,12 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("sqlcatalog", "alter_add_table", SQLalter_add_table, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
  pattern("sqlcatalog", "alter_del_table", SQLalter_del_table, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
  pattern("sqlcatalog", "alter_set_table", SQLalter_set_table, false, "Catalog operation alter_set_table", args(0,3, arg("sname",str),arg("tnme",str),arg("access",int))),
- pattern("sqlcatalog", "alter_add_range_partition", SQLalter_add_range_partition, false, "Catalog operation alter_add_range_partition", args(0,8, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),argany("min",1),argany("max",1),arg("nills",bit),arg("update",int))),
- pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,6, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int))),
- pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,7, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),varargany("arg",0))),
+ pattern("sqlcatalog", "alter_add_range_partition", SQLalter_add_range_partition, false, "Catalog operation alter_add_range_partition", args(0,9, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),argany("min",1),argany("max",1),arg("nills",bit),arg("update",int),arg("assert",lng))),
+ pattern("sqlcatalog", "alter_add_range_partition", SQLalter_add_range_partition, false, "Catalog operation alter_add_range_partition", args(0,9, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),argany("min",1),argany("max",1),arg("nills",bit),arg("update",int),batarg("assert",lng))),
+ pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,7, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),arg("assert",lng))),
+ pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,8, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),arg("assert",lng), varargany("arg",0))),
+ pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,7, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),batarg("assert",lng))),
+ pattern("sqlcatalog", "alter_add_value_partition", SQLalter_add_value_partition, false, "Catalog operation alter_add_value_partition", args(0,8, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),batarg("assert",lng), varargany("arg",0))),
  pattern("sqlcatalog", "comment_on", SQLcomment_on, false, "Catalog operation comment_on", args(0,2, arg("objid",int),arg("remark",str))),
  pattern("sqlcatalog", "rename_schema", SQLrename_schema, false, "Catalog operation rename_schema", args(0,2, arg("sname",str),arg("newnme",str))),
  pattern("sqlcatalog", "rename_table", SQLrename_table, false, "Catalog operation rename_table", args(0,4, arg("osname",str),arg("nsname",str),arg("otname",str),arg("ntname",str))),
@@ -6056,56 +6121,48 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  command("batcalc", "dbl", bathge_dec2_dbl, false, "cast decimal(hge) to dbl and check for overflow", args(1,4, batarg("",dbl),arg("s1",int),batarg("v",hge),batarg("s",oid))),
  command("batcalc", "dbl", bathge_dec2dec_dbl, false, "cast decimal(hge) to decimal(dbl) and check for overflow", args(1,6, batarg("",dbl),arg("s1",int),batarg("v",hge),batarg("s",oid),arg("d2",int),arg("s2",int))),
  /* sql_rank_hge */
- pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
- pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("start",hge))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("start",hge))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",hge))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",hge))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",hge))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",hge))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",hge),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",hge),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",hge),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",hge),arg("b",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",hge),arg("b",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",hge),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",hge),batarg("b",bte),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",hge),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",hge),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",hge),batarg("b",sht),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",hge),batarg("b",sht),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",hge),arg("b",int),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",hge),batarg("b",int),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",hge),batarg("b",int),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",hge),arg("b",lng),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",hge),batarg("b",lng),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",hge),batarg("b",lng),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "prod", SQLprod, false, "return the product of groups", args(1,7, arg("",hge),arg("b",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",hge),batarg("b",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "prod", SQLprod, false, "return the product of groups", args(1,7, batarg("",hge),batarg("b",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavg, false, "return the average of groups", args(1,7, arg("",dbl),arg("b",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavg, false, "return the average of groups", args(1,7, batarg("",dbl),batarg("b",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, arg("",hge),arg("b",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, batarg("",hge),batarg("b",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "avg", SQLavginteger, false, "return the average of groups", args(1,7, batarg("",hge),batarg("b",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, arg("",dbl),arg("b",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdev", SQLstddev_samp, false, "return the standard deviation sample of groups", args(1,7, batarg("",dbl),batarg("b",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, arg("",dbl),arg("b",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "stdevp", SQLstddev_pop, false, "return the standard deviation population of groups", args(1,7, batarg("",dbl),batarg("b",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, arg("",dbl),arg("b",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variance", SQLvar_samp, false, "return the variance sample of groups", args(1,7, batarg("",dbl),batarg("b",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, arg("",dbl),arg("b",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "variancep", SQLvar_pop, false, "return the variance population of groups", args(1,7, batarg("",dbl),batarg("b",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, arg("",dbl),arg("b",hge),arg("c",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),arg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",hge),arg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),batarg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariance", SQLcovar_samp, false, "return the covariance sample value of groups", args(1,8, batarg("",dbl),optbatarg("b",hge),optbatarg("c",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, arg("",dbl),arg("b",hge),arg("c",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),arg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",hge),arg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),batarg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "covariancep", SQLcovar_pop, false, "return the covariance population value of groups", args(1,8, batarg("",dbl),optbatarg("b",hge),optbatarg("c",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, arg("",dbl),arg("b",hge),arg("c",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),arg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),arg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
- pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),batarg("b",hge),batarg("c",hge),argany("p",0),argany("o",0),arg("t",int),argany("s",0),argany("e",0))),
+ pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),optbatarg("b",hge),optbatarg("c",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
 #endif
  pattern("sql", "vacuum", SQLstr_column_vacuum, true, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "vacuum", SQLstr_column_auto_vacuum, true, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),

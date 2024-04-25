@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -114,20 +118,20 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		ANALYTICAL_DIFF_IMP(hge);
 		break;
 #endif
-	case TYPE_flt: {
+	case TYPE_flt:
 		if (bi.nonil) {
 			ANALYTICAL_DIFF_IMP(flt);
 		} else { /* Because of NaN values, use this path */
 			ANALYTICAL_DIFF_FLOAT_IMP(flt);
 		}
-	} break;
-	case TYPE_dbl: {
+		break;
+	case TYPE_dbl:
 		if (bi.nonil) {
 			ANALYTICAL_DIFF_IMP(dbl);
 		} else { /* Because of NaN values, use this path */
 			ANALYTICAL_DIFF_FLOAT_IMP(dbl);
 		}
-	} break;
+		break;
 	default:{
 		const void *v = BUNtail(bi, 0), *next;
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(tpe);
@@ -197,7 +201,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 	do {								\
 		if (p) {						\
 			for (; i < cnt; i++) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 				  rows##TPE##IMP##CARD:			\
 					ANALYTICAL_WINDOW_BOUNDS_ROWS##IMP(TPE, LIMIT, UPCAST);	\
 				}					\
@@ -253,7 +257,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 	do {								\
 		if (p) {						\
 			for (; i < cnt; i++) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 				  groups##TPE##IMP##CARD:		\
 					ANALYTICAL_WINDOW_BOUNDS_GROUPS##IMP(TPE, LIMIT, UPCAST); \
 				}					\
@@ -369,7 +373,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		const TPE1 *restrict bp = (TPE1*)bi.base;		\
 		if (np) {						\
 			for (; i < cnt; i++) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 				  range##TPE1##TPE2##IMP##CARD:		\
 					IMP(TPE1, LIMIT, TPE2);		\
 				}					\
@@ -513,7 +517,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 							break;		\
 					}				\
 					rb[k] = j;			\
-				} 					\
+				}					\
 			}						\
 		}							\
 	} while(0)
@@ -562,7 +566,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		const TPE1 *restrict bp = (TPE1*)bi.base;		\
 		if (p) {						\
 			for (; i < cnt; i++) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 				  rangemtime##TPE1##TPE2##IMP##CARD:	\
 					IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
 				}					\
@@ -687,7 +691,7 @@ GDKanalyticalallbounds(BAT *r, BAT *b, BAT *p, bool preceding)
 		const TPE *restrict bp = (TPE*)bi.base;			\
 		if (p) {						\
 			for (; i < cnt; i++) {				\
-				if (np[i]) 	{			\
+				if (np[i]) {				\
 				  peers##TPE##IMP:			\
 					ANALYTICAL_WINDOW_BOUNDS_PEERS_FIXED##IMP(TPE, NAN_CHECK); \
 				}					\
@@ -712,57 +716,57 @@ GDKanalyticalpeers(BAT *r, BAT *b, BAT *p, bool preceding) /* used in range when
 	bool last = false;
 
 	switch (ATOMbasetype(bi.type)) {
-	case TYPE_bte: {
+	case TYPE_bte:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, bte, NO_NAN_CHECK);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, bte, NO_NAN_CHECK);
 		}
-	} break;
-	case TYPE_sht: {
+		break;
+	case TYPE_sht:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, sht, NO_NAN_CHECK);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, sht, NO_NAN_CHECK);
 		}
-	} break;
-	case TYPE_int: {
+		break;
+	case TYPE_int:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, int, NO_NAN_CHECK);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, int, NO_NAN_CHECK);
 		}
-	} break;
-	case TYPE_lng: {
+		break;
+	case TYPE_lng:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, lng, NO_NAN_CHECK);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, lng, NO_NAN_CHECK);
 		}
-	} break;
+		break;
 #ifdef HAVE_HGE
-	case TYPE_hge: {
+	case TYPE_hge:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, hge, NO_NAN_CHECK);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, hge, NO_NAN_CHECK);
 		}
-	} break;
+		break;
 #endif
-	case TYPE_flt: {
+	case TYPE_flt:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, flt, && (!is_flt_nil(next) || !is_flt_nil(prev)));
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, flt, && (!is_flt_nil(next) || !is_flt_nil(prev)));
 		}
-	} break;
-	case TYPE_dbl: {
+		break;
+	case TYPE_dbl:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, dbl, && (!is_dbl_nil(next) || !is_dbl_nil(prev)));
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, dbl, && (!is_dbl_nil(next) || !is_dbl_nil(prev)));
 		}
-	} break;
+		break;
 	default: {
 		const void *prev, *next;
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(bi.type);
@@ -939,7 +943,8 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 #else
 			limit = (lng) (*(lng *) bound);
 #endif
-		} break;
+			break;
+		}
 #ifdef HAVE_HGE
 		case TYPE_hge: {
 			hge nval = *(hge *) bound;
@@ -953,6 +958,7 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		if (limit == GDK_lng_max) {
 			bat_iterator_end(&pi);
 			bat_iterator_end(&bi);
+			bat_iterator_end(&li);
 			return GDKanalyticalallbounds(r, b, p, preceding);
 		} else if (is_lng_nil(limit) || limit < 0) { /* this check is needed if the input is empty */
 			goto invalid_bound;
@@ -1158,7 +1164,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				break;
 			}
 			default:
-				assert(0);
+				MT_UNREACHABLE();
 			}
 			if (is_lng_nil(limit) || limit < 0 || is_int_nil(int_limit) || int_limit < 0) {
 				goto invalid_bound;
@@ -1384,7 +1390,8 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 #else
 			limit = (lng) (*(lng *) bound);
 #endif
-		} break;
+			break;
+		}
 #ifdef HAVE_HGE
 		case TYPE_hge: {
 			hge nval = *(hge *) bound;
@@ -1442,7 +1449,7 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 	case 2:
 		return GDKanalyticalgroupsbounds(r, b, p, l, bound, tp2, preceding);
 	default:
-		assert(0);
+		MT_UNREACHABLE();
 	}
 	GDKerror("42000!unit type %d not supported (this is a bug).\n", unit);
 	return GDK_FAIL;

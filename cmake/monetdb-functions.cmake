@@ -1,63 +1,14 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
-
-function(monetdb_hg_revision)
-  # Get the current version control revision
-  if(EXISTS "${CMAKE_SOURCE_DIR}/.hg_archival.txt")
-    file(READ "${CMAKE_SOURCE_DIR}/.hg_archival.txt" HG_ARCHIVAL)
-    if(HG_ARCHIVAL MATCHES ".*node:.*")
-      string(REGEX REPLACE ".*node: ([0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]).*" "\\1" HG_NODE "${HG_ARCHIVAL}")
-      if(HG_ARCHIVAL MATCHES ".*local:.*")
-        string(REGEX REPLACE ".*local: ([0-9][0-9]*).*" "\\1" HG_LOCAL "${HG_ARCHIVAL}")
-        set(MERCURIAL_ID "${HG_NODE} ${HG_LOCAL}" PARENT_SCOPE)
-      else()
-        set(MERCURIAL_ID "${HG_NODE}" PARENT_SCOPE)
-      endif()
-    else()
-      message(WARNING "Failed to find mercurial ID")
-      set(MERCURIAL_ID "Unknown" PARENT_SCOPE)
-    endif()
-  elseif(EXISTS "${CMAKE_SOURCE_DIR}/.hg")
-    find_package(Hg)
-    if(HG_FOUND)
-      message("hg found: ${HG_EXECUTABLE}")
-    else()
-      message(WARNING "Failed to find mercurial")
-      set(MERCURIAL_ID "Unknown" PARENT_SCOPE)
-    endif()
-    execute_process(COMMAND "${HG_EXECUTABLE}" "id" "-i" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" RESULT_VARIABLE HG_RETURN_CODE
-      OUTPUT_VARIABLE HG_OUPUT_RES OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(HG_RETURN_CODE EQUAL 0 AND HG_OUPUT_RES)
-      set(MERCURIAL_ID "${HG_OUPUT_RES}" PARENT_SCOPE)
-    else()
-      message(WARNING "Failed to find mercurial ID")
-      set(MERCURIAL_ID "Unknown" PARENT_SCOPE)
-    endif()
-  elseif(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-    find_package(Git)
-    if(GIT_FOUND)
-      message("git found: ${GIT_EXECUTABLE}")
-    else()
-      message(WARNING "Failed to find git")
-      set(MERCURIAL_ID "Unknown" PARENT_SCOPE)
-    endif()
-    execute_process(COMMAND "${GIT_EXECUTABLE}" "rev-parse" "--short" "HEAD" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-      RESULT_VARIABLE GIT_RETURN_CODE OUTPUT_VARIABLE GIT_OUPUT_RES OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(GIT_RETURN_CODE EQUAL 0 AND GIT_OUPUT_RES)
-      set(MERCURIAL_ID "${GIT_OUPUT_RES}" PARENT_SCOPE)
-    else()
-      message(WARNING "Failed to find git ID")
-      set(MERCURIAL_ID "Unknown" PARENT_SCOPE)
-    endif()
-  else()
-    set(MERCURIAL_ID "Unknown" PARENT_SCOPE)
-  endif()
-endfunction()
 
 function(add_option_if_available Flag)
   string(REGEX REPLACE "[-/=,]" "" FLAG_TEST "${Flag}")
@@ -156,6 +107,7 @@ function(monetdb_cmake_summary)
   message(STATUS "Netcdf library: ${NETCDF_FOUND}")
   message(STATUS "Readline library: ${READLINE_FOUND}")
   message(STATUS "R library: ${LIBR_FOUND}")
+  message(STATUS "OpenSSL: ${OPENSSL_FOUND}")
   message(STATUS "ODBC: ${ODBC_FOUND}")
   message(STATUS "Sphinx: ${SPHINX_FOUND}")
   message(STATUS "Createrepo: ${CREATEREPO_FOUND}")

@@ -92,6 +92,9 @@ sys_pkeys = [
 
     ('queue', 'tag'),
     ('sessions', 'sessionid'),
+
+    ('fkey_actions', 'action_id'),
+    ('fkeys', 'id'),
 ]
 
 sys_akeys = [
@@ -129,6 +132,9 @@ sys_akeys = [
     ('table_partitions WHERE column_id IS NOT NULL', 'table_id, column_id'),
     ('table_partitions WHERE "expression" IS NOT NULL', 'table_id, "expression"'),
     ('range_partitions', 'table_id, partition_id, "maximum"'),
+
+    ('fkey_actions', 'action_name'),
+    ('fkeys', 'table_id, name'),
 ]
 
 sys_fkeys = [
@@ -230,6 +236,13 @@ sys_fkeys = [
     ('range_partitions', 'partition_id', 'id', 'table_partitions'),
     ('value_partitions', 'table_id', 'id', '_tables'),
     ('value_partitions', 'partition_id', 'id', 'table_partitions'),
+
+    ('keys WHERE action >= 0 AND ', 'cast(((action >> 8) & 255) as smallint)', 'action_id', 'fkey_actions'),
+    ('keys WHERE action >= 0 AND ', 'cast((action & 255) as smallint)', 'action_id', 'fkey_actions'),
+    ('fkeys', 'id, table_id, type, name, rkey', 'id, table_id, type, name, rkey', 'keys'),
+    ('fkeys', 'update_action_id', 'action_id', 'fkey_actions'),
+    ('fkeys', 'delete_action_id', 'action_id', 'fkey_actions'),
+
 ]
 
 sys_notnull = [
@@ -405,6 +418,18 @@ sys_notnull = [
     ('value_partitions', 'table_id'),
     ('value_partitions', 'partition_id'),
     ('value_partitions', 'value'),
+
+    ('fkey_actions', 'action_id'),
+    ('fkey_actions', 'action_name'),
+    ('fkeys', 'id'),
+    ('fkeys', 'table_id'),
+    ('fkeys', 'type'),
+    ('fkeys', 'name'),
+    ('fkeys', 'rkey'),
+    ('fkeys', 'update_action_id'),
+    ('fkeys', 'update_action'),
+    ('fkeys', 'delete_action_id'),
+    ('fkeys', 'delete_action')
 ]
 
 # add queries to dump the system tables, but avoid dumping IDs since
@@ -418,7 +443,7 @@ select 'sys.schemas', s.name, a1.name as authorization, a2.name as owner, system
 -- _tables
 select 'sys._tables', s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, E'--.*\n*', '', ''), E'[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access, c.remark as comment from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id left outer join sys.comments c on c.id = t.id order by s.name, t.name;
 -- _columns
-select 'sys._columns', t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage, r.remark as comment from sys._tables t, sys._columns c left outer join sys.comments r on r.id = c.id where t.id = c.table_id order by t.name, c.number;
+select 'sys._columns', s.name, t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage, r.remark as comment from sys.schemas s, sys._tables t, sys._columns c left outer join sys.comments r on r.id = c.id where s.id = t.schema_id and t.id = c.table_id order by s.name, t.name, c.number;
 -- partitioned tables (these three should be empty)
 select 'sys.table_partitions', t.name, c.name, p.expression from sys.table_partitions p left outer join sys._tables t on p.table_id = t.id left outer join sys._columns c on p.column_id = c.id;
 select 'sys.range_partitions', t.name, p.expression, r.minimum, r.maximum, r.with_nulls from sys.range_partitions r left outer join sys._tables t on t.id = r.table_id left outer join sys.table_partitions p on r.partition_id = p.id;
@@ -480,7 +505,7 @@ select 'sys.objects', o.name, case when nr < 2000 then cast(nr as string) else s
 --  schemas
 select 'default schema of user', s.name, u.name from sys.schemas s, sys.users u where s.id = u.default_schema order by s.name, u.name;
 --  tables
-select 'grant on table', t.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where t.id = p.obj_id and p.auth_id = a.id order by t.name, a.name;
+select 'grant on table', t.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where t.id = p.obj_id and p.auth_id = a.id order by t.name, a.name, g.name nulls first;
 --  columns
 select 'grant on column', t.name, c.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
 --  functions

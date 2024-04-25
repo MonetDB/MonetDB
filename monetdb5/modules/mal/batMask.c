@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -37,9 +41,10 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "bat.mask", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if( !b->tkey || !b->tsorted ) {
+	if (!b->tkey || !b->tsorted) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "bat.mask", SQLSTATE(HY002) "Input should be unique and in ascending order");
+		throw(SQL, "bat.mask",
+			  SQLSTATE(HY002) "Input should be unique and in ascending order");
 	}
 	if (BATcount(b) == 0) {
 		dst = COLnew(0, TYPE_msk, 0, TRANSIENT);
@@ -49,7 +54,8 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN max = 0;
 		if (b->tsorted) {
 			fst = BUNtoid(b, 0);
-			dst = COLnew(fst, TYPE_msk, BUNtoid(b, BATcount(b) - 1) + 1 - fst, TRANSIENT);
+			dst = COLnew(fst, TYPE_msk, BUNtoid(b, BATcount(b) - 1) + 1 - fst,
+						 TRANSIENT);
 		} else {
 			fst = 0;
 			dst = COLnew(0, TYPE_msk, BATcount(b), TRANSIENT);
@@ -88,7 +94,7 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (dst == NULL)
 		throw(MAL, "mask.mask", GDK_EXCEPTION);
 
-	*ret=  dst->batCacheid;
+	*ret = dst->batCacheid;
 	BBPkeepref(dst);
 	return MAL_SUCCEED;
 }
@@ -115,7 +121,7 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	if (dst == NULL)
 		throw(MAL, "mask.umask", GDK_EXCEPTION);
-	*ret=  dst->batCacheid;
+	*ret = dst->batCacheid;
 	BBPkeepref(dst);
 	return MAL_SUCCEED;
 }

@@ -1,7 +1,7 @@
 query TTT rowsort
 select splitpart('%Fz晟2墁', '', 1), splitpart('%Fz晟2墁', '', 2), splitpart('%Fz晟2墁', '', 1271186887)
 ----
-%Fz@2@@
+%Fz晟2墁
 (empty)
 (empty)
 
@@ -110,102 +110,102 @@ COPY 29 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 query TTTTT rowsort
 select "insert"('屁{珙', 1, 1, '1'), "insert"('屁{珙', 1, 1, '抔'), "insert"('屁抔珙', 1, 1, 'ಜ'), "insert"('a', 0, 1, 'ಜ'), "insert"('a', 0, 0, 'ಜ')
 ----
-@1@
-@@@
-@@@
-@
-@a
+屁1珙
+屁抔珙
+屁ಜ珙
+ಜ
+ಜa
 
 query TTT rowsort
 select "insert"('屁{珙', 1, 1, '1'), "insert"('屁{珙', 1, 1, '抔'), "insert"('屁抔珙', 1, 1, 'ಜ') from t0
 ----
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
-@1@
-@@@
-@@@
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
+屁1珙
+屁抔珙
+屁ಜ珙
 
 statement ok
 ROLLBACK
@@ -320,7 +320,7 @@ START TRANSACTION
 
 statement ok
 CREATE TABLE "sys"."t0" (
-	"c0" DECIMAL(18,3) NOT NULL DEFAULT cast(cast("sys"."sql_sub"("sys"."sql_neg"(1933820187),"sys"."charindex"(cast(0.235784 as clob(182)),"sys"."concat"('rt\\b&oOT',1174691962),"sys"."locate"('!oLqvKg恺','!G+tZ9\'A\'LZ*滻mW^',1174691962))) as int) as decimal(18,3)),
+	"c0" DECIMAL(18,3) NOT NULL DEFAULT cast(cast("sys"."sql_sub"("sys"."sql_neg"(1933820187),"sys"."charindex"(cast(0.235784 as clob(182)),"sys"."concat"(R'rt\b&oOT',1174691962),"sys"."locate"('!oLqvKg恺','!G+tZ9''A''LZ*滻mW^',1174691962))) as int) as decimal(18,3)),
 	"c1" DECIMAL(18,3),
 	"c2" CHARACTER LARGE OBJECT,
 	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),
@@ -855,7 +855,7 @@ statement ok
 CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3))
 
 statement ok
-COMMENT ON COLUMN "sys"."t0"."c0" IS 'jc~\006}ℵH{\015﻿^aBPxpf+sP'
+COMMENT ON COLUMN "sys"."t0"."c0" IS E'jc~\006}ℵH{\015﻿^aBPxpf+sP'
 
 statement ok rowcount 8
 COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'

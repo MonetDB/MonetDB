@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 import http.server
 import io
@@ -10,18 +9,12 @@ import time
 
 OUTPUT = io.StringIO()
 
-def pickport():
-        # pick a free port number
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(('', 0))
-        port = s.getsockname()[1]
-        s.close()
-        return port
-
-
-def wait_for_server(port, timeout):
+def wait_for_server(timeout):
     deadline = time.time() + timeout
     while time.time() < deadline:
+        if port == 0:
+            time.sleep(0.25)
+            continue
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(0.1)
         try:
@@ -31,7 +24,8 @@ def wait_for_server(port, timeout):
             time.sleep(0.1)
         finally:
             s.close()
-    print(f'Warning: waited {timeout} seconds for the server to start but could still not connect', file=OUTPUT)
+    else:
+        print(f'Warning: waited {timeout} seconds for the server to start but could still not connect', file=OUTPUT)
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -72,17 +66,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'NOT FOUND\n')
 
-def runserver(port):
-    addr = ('', port)
-    print(f"Listening on {port}", file=OUTPUT)
+def runserver():
+    global port
+    addr = ('127.0.0.1', 0)
     srv = http.server.HTTPServer(addr, Handler)
+    port = srv.server_port
+    print(f"Listening on {port}", file=OUTPUT)
     srv.serve_forever()
 
 # Start the http server
-port = pickport()
-t = threading.Thread(target=lambda: runserver(port), daemon=True)
+port = 0
+t = threading.Thread(target=lambda: runserver(), daemon=True)
 t.start()
-wait_for_server(port, 5.0)
+wait_for_server(5.0)
 
 url = f'http://localhost:{port}'
 

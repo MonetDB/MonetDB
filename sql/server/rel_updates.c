@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -26,7 +30,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 {
 	mvc *sql = query->sql;
 	if (s->token == SQL_NULL) {
-		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
 			sql_exp *e = rel_parse_val(sql, c->t->s, c->def, &c->type, sql->emode, NULL);
@@ -95,7 +99,12 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	assert(is_project(ins->op) || ins->op == op_table);
 	if (list_length(i->columns) <= 1 || non_updatable_index(i->type)) {
 		/* dummy append */
-		inserts->r = ins = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 1, 1));
+		list *exps = rel_projections(sql, ins, NULL, 1, 1);
+		if (!exps)
+			return NULL;
+		inserts->r = ins = rel_project(sql->sa, ins, exps);
+		if (!ins)
+			return NULL;
 		list_append(ins->exps, exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label));
 		return inserts;
 	}
@@ -171,7 +180,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
 
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
@@ -210,7 +219,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
+		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
 		exp_setname(sql->sa, e, alias, iname);
 		append(_nlls->exps, e);
 	} else {
@@ -242,8 +251,6 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 static sql_rel *
 rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 {
-	sql_rel *p = inserts->r;
-
 	if (!ol_length(t->idxs))
 		return inserts;
 
@@ -252,22 +259,12 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 		sql_idx *i = n->data;
 
 		if (hash_index(i->type) || non_updatable_index(i->type)) {
-			rel_insert_hash_idx(sql, alias, i, inserts);
+			if (rel_insert_hash_idx(sql, alias, i, inserts) == NULL)
+				return NULL;
 		} else if (i->type == join_idx) {
-			rel_insert_join_idx(sql, alias, i, inserts);
+			if (rel_insert_join_idx(sql, alias, i, inserts) == NULL)
+				return NULL;
 		}
-	}
-	if (inserts->r != p) {
-		sql_rel *r = rel_create(sql->sa);
-		if(!r)
-			return NULL;
-
-		r->op = op_insert;
-		r->l = rel_dup(p);
-		r->r = inserts;
-		r->card = inserts->card;
-		r->flag |= UPD_COMP; /* mark as special update */
-		return r;
 	}
 	return inserts;
 }
@@ -374,7 +371,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 					if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL)
 						return NULL;
 				} else {
-					atom *a = atom_general(sql->sa, &c->type, NULL);
+					atom *a = atom_general(sql->sa, &c->type, NULL, 0);
 					e = exp_atom(sql->sa, a);
 				}
 				if (!e)
@@ -829,7 +826,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true);
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
 		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *lnl, *rnl, *je;
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
 			/* TODO add access error */
@@ -870,7 +867,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
+		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
 		exp_setname(sql->sa, e, alias, iname);
 		append(_nlls->exps, e);
 	} else {
@@ -1124,7 +1121,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (!exp_is_atom(v) || outer)
 					v = exp_ref(sql, v);
 				if (!v) /* check for NULL */
-					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 				if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 					return NULL;
 				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, 0));
@@ -1157,7 +1154,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				}
 			}
 			if (!v)
-				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 			if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 				return NULL;
 			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, 0));
@@ -1230,7 +1227,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 }
 
 sql_rel *
-rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes)
+rel_delete(allocator *sa, sql_rel *t, sql_rel *deletes)
 {
 	sql_rel *r = rel_create(sa);
 	if(!r)
@@ -1244,7 +1241,7 @@ rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes)
 }
 
 sql_rel *
-rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_action)
+rel_truncate(allocator *sa, sql_rel *t, int restart_sequences, int drop_action)
 {
 	sql_rel *r = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1308,7 +1305,7 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 }
 
 static sql_rel *
-rel_merge(sql_allocator *sa, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
+rel_merge(allocator *sa, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
 {
 	sql_rel *r = rel_create(sa);
 
@@ -1454,7 +1451,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 }
 
 static list *
-table_column_types(sql_allocator *sa, sql_table *t)
+table_column_types(allocator *sa, sql_table *t)
 {
 	node *n;
 	list *types = sa_list(sa);
@@ -1468,7 +1465,7 @@ table_column_types(sql_allocator *sa, sql_table *t)
 }
 
 static list *
-table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
+table_column_names_and_defaults(allocator *sa, sql_table *t)
 {
 	node *n;
 	list *types = sa_list(sa);
@@ -1482,25 +1479,25 @@ table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int best_effort, dlist *fwf_widths, int onclient, int escape)
+rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int best_effort, dlist *fwf_widths, int onclient, int escape, const char* decsep, const char *decskip)
 {
 	sql_rel *res;
 	list *exps, *args;
 	node *n;
 	sql_subtype tpe;
 	sql_exp *import;
-	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 12, F_UNION, true, NULL);
+	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 14, F_UNION, true, NULL);
 	char *fwf_string = NULL;
 
 	assert(f); /* we do expect copyfrom to be there */
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&tpe, "varchar", 0, 0);
-	args = append( append( append( append( append( new_exp_list(sql->sa),
-		exp_atom_ptr(sql->sa, t)),
-		exp_atom_str(sql->sa, tsep, &tpe)),
-		exp_atom_str(sql->sa, rsep, &tpe)),
-		exp_atom_str(sql->sa, ssep, &tpe)),
-		exp_atom_str(sql->sa, ns, &tpe));
+	args = new_exp_list(sql->sa);
+	append(args, exp_atom_ptr(sql->sa, t));
+	append(args, exp_atom_str(sql->sa, tsep, &tpe));
+	append(args, exp_atom_str(sql->sa, rsep, &tpe));
+	append(args, exp_atom_str(sql->sa, ssep, &tpe));
+	append(args, exp_atom_str(sql->sa, ns, &tpe));
 
 	if (fwf_widths && dlist_length(fwf_widths) > 0) {
 		dnode *dn;
@@ -1518,20 +1515,17 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 		*fwf_string_cur = '\0';
 	}
 
-	append( args, exp_atom_str(sql->sa, filename, &tpe));
-	import = exp_op(sql->sa,
-					append(
-						append(
-							append(
-								append(
-									append(
-										append(args,
-											   exp_atom_lng(sql->sa, nr)),
-										exp_atom_lng(sql->sa, offset)),
-									exp_atom_int(sql->sa, best_effort)),
-								exp_atom_str(sql->sa, fwf_string, &tpe)),
-							exp_atom_int(sql->sa, onclient)),
-						exp_atom_int(sql->sa, escape)), f);
+	append(args, exp_atom_str(sql->sa, filename, &tpe));
+	append(args, exp_atom_lng(sql->sa, nr));
+	append(args, exp_atom_lng(sql->sa, offset));
+	append(args, exp_atom_int(sql->sa, best_effort));
+	append(args, exp_atom_str(sql->sa, fwf_string, &tpe));
+	append(args, exp_atom_int(sql->sa, onclient));
+	append(args, exp_atom_int(sql->sa, escape));
+	append(args, exp_atom_str(sql->sa, decsep, &tpe));
+	append(args, exp_atom_str(sql->sa, decskip, &tpe));
+
+	import = exp_op(sql->sa, args, f);
 
 	exps = new_exp_list(sql->sa);
 	for (n = ol_first_node(t->columns); n; n = n->next) {
@@ -1543,8 +1537,23 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	return res;
 }
 
+static bool
+valid_decsep(const char *s)
+{
+	if (strlen(s) != 1)
+		return false;
+	int c = s[0];
+	if (c <= ' ' || c >= 127)
+		return false;
+	if (c == '-' || c == '+')
+		return false;
+	if (c >= '0' && c <= '9')
+		return false;
+	return true;
+}
+
 static sql_rel *
-copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int best_effort, dlist *fwf_widths, int onclient, int escape)
+copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int best_effort, dlist *fwf_widths, int onclient, int escape, dlist *decimal_seps)
 {
 	mvc *sql = query->sql;
 	sql_rel *rel = NULL;
@@ -1559,6 +1568,9 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
 	list *collist;
 	int reorder = 0;
+	const char *decsep = decimal_seps->h->data.sval;
+	const char *decskip = decimal_seps->h->next ? decimal_seps->h->next->data.sval: NULL;
+
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 
@@ -1571,6 +1583,13 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				"COPY INTO: record separator contains '\\r\\n' but "
 				"that will never match, use '\\n' instead");
 	}
+
+	if (!valid_decsep(decsep))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: invalid decimal separator");
+	if (decskip && !valid_decsep(decskip))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: invalid thousands separator");
+	if (decskip && strcmp(decsep, decskip) == 0)
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: decimal separator and thousands separator must be different");
 
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
@@ -1658,7 +1677,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return NULL;
 			}
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape, decsep, decskip);
 
 			if (!rel)
 				rel = nrel;
@@ -1671,7 +1690,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		}
 	} else {
 		assert(onclient == 0);
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, best_effort, NULL, onclient, escape);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, best_effort, NULL, onclient, escape, decsep, decskip);
 	}
 	if (headers) {
 		dnode *n;
@@ -1697,7 +1716,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				char *fname = sa_alloc(sql->sa, l+8);
 
 				snprintf(fname, l+8, "str_to_%s", strcmp(cs->type.type->base.name, "timestamptz") == 0 ? "timestamp" : cs->type.type->base.name);
-				sql_find_subtype(&st, "clob", 0, 0);
+				sql_find_subtype(&st, "varchar", 0, 0);
 				if (!(f = sql_bind_func_result(sql, "sys", fname, F_FUNC, true, &cs->type, 2, &st, &st)))
 					return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: '%s' missing for type %s", fname, cs->type.type->base.name);
 				append(args, e);
@@ -1744,9 +1763,9 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	list *exps, *args;
 	sql_subtype strtpe;
 	sql_exp *import;
-	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 3, F_UNION, true, NULL);
+	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrombinary", 3, F_UNION, true, NULL);
 	list *collist;
-	int i;
+	list *typelist;
 
 	assert(f);
 	if (!copy_allowed(sql, 1))
@@ -1759,18 +1778,28 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	if (files == NULL)
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: must specify files");
 
+	bool do_byteswap = (endian != endian_native && endian != OUR_ENDIANNESS);
+
+	typelist = sa_list(sql->sa);
 	collist = check_table_columns(sql, t, columns, "COPY BINARY INTO", tname);
-	if (!collist)
+	if (!collist || !typelist)
 		return NULL;
 
-	bool do_byteswap =
-		#ifdef WORDS_BIGENDIAN
-			endian == endian_little;
-		#else
-			endian == endian_big;
-		#endif
+	int column_count = list_length(collist);
+	int file_count = dlist_length(files);
+	if (column_count != file_count) {
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY BINARY INTO: "
+			"number of files does not match number of columns: "
+			"%d files, %d columns",
+			file_count, column_count);
+	}
 
-	f->res = table_column_types(sql->sa, t);
+	for (node *n = collist->h; n; n = n->next) {
+		sql_column *c = n->data;
+		sa_list_append(sql->sa, typelist, &c->type);
+	}
+	f->res = typelist;
+
  	sql_find_subtype(&strtpe, "varchar", 0, 0);
 	args = append( append( append( append( new_exp_list(sql->sa),
 		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &strtpe)),
@@ -1778,35 +1807,25 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 		exp_atom_int(sql->sa, onclient)),
 		exp_atom_bool(sql->sa, do_byteswap));
 
-	// create the list of files that is passed to the function as parameter
-	for (i = 0; i < ol_length(t->columns); i++) {
-		// we have one file per column, however, because we have column selection that file might be NULL
-		// first, check if this column number is present in the passed in the parameters
-		int found = 0;
-		dn = files->h;
-		for (n = collist->h; n && dn; n = n->next, dn = dn->next) {
-			sql_column *c = n->data;
-			if (i == c->colnr) {
-				// this column number was present in the input arguments; pass in the file name
-				append(args, exp_atom_str(sql->sa, dn->data.sval, &strtpe));
-				found = 1;
-				break;
-			}
-		}
-		if (!found) {
-			// this column was not present in the input arguments; pass in NULL
-			append(args, exp_atom_str(sql->sa, NULL, &strtpe));
-		}
+	for (dn = files->h; dn; dn = dn->next) {
+		char *filename = dn->data.sval;
+		append(args, exp_atom_str(sql->sa, filename, &strtpe));
 	}
 
 	import = exp_op(sql->sa,  args, f);
 
 	exps = new_exp_list(sql->sa);
-	for (n = ol_first_node(t->columns); n; n = n->next) {
+	for (n = collist->h; n; n = n->next) {
 		sql_column *c = n->data;
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
+
+	exps = rel_inserts(sql, t, res, collist, 1, 1, "COPY BINARY INTO");
+	if(!exps)
+		return NULL;
+	res = rel_project(sql->sa, res, exps);
+
 	res = rel_insert_table(query, t, t->base.name, res);
 	return res;
 }
@@ -1853,32 +1872,6 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 }
 
 static sql_rel *
-rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file, sql_exp *onclient)
-{
-	sql_rel *rel = rel_create(sql->sa);
-	list *exps = new_exp_list(sql->sa);
-	if(!rel || !exps)
-		return NULL;
-
-	append(exps, sep);
-	append(exps, rsep);
-	append(exps, ssep);
-	append(exps, null_string);
-	if (file) {
-		append(exps, file);
-		append(exps, onclient);
-	}
-	rel->l = l;
-	rel->r = NULL;
-	rel->op = op_ddl;
-	rel->flag = ddl_output;
-	rel->exps = exps;
-	rel->card = 0;
-	rel->nrcols = 0;
-	return rel;
-}
-
-static sql_rel *
 copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const char *null_string, int onclient)
 {
 	mvc *sql = query->sql;
@@ -1917,7 +1910,84 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 					 "exists: %s", filename);
 	}
 
-	return rel_output(sql, r, tsep_e, rsep_e, ssep_e, ns_e, fname_e, oncl_e);
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
+	if(!rel || !exps)
+		return NULL;
+
+	// With regular COPY INTO <file>, the first argument is a string.
+	// With COPY INTO BINARY, it is an int.
+	append(exps, tsep_e);
+	append(exps, rsep_e);
+	append(exps, ssep_e);
+	append(exps, ns_e);
+	if (fname_e) {
+		append(exps, fname_e);
+		append(exps, oncl_e);
+	}
+	rel->l = r;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = ddl_output;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+bincopyto(sql_query *query, symbol *qry, endianness endian, dlist *filenames, int on_client)
+{
+	mvc *sql = query->sql;
+
+	// First emit code for the subquery.
+	// Don't know what this is for, copy pasted it from copyto():
+	exp_kind ek = { type_value, card_relation, TRUE};
+	sql_rel *sub = rel_subquery(query, qry, ek);
+	if (!sub)
+		return NULL;
+	// Again, copy-pasted. copyto() uses this to check for duplicate column names
+	// but we don't care about that here.
+	sub = rel_project(sql->sa, sub, rel_projections(sql, sub, NULL, 1, 0));
+
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
+	if (!rel || !exps)
+		return NULL;
+
+	// With regular COPY INTO <file>, the first argument is a string.
+	// With COPY INTO BINARY, it is an int.
+	append(exps, exp_atom_int(sql->sa, endian));
+	append(exps, exp_atom_int(sql->sa, on_client));
+
+	for (dnode *n = filenames->h; n != NULL; n = n->next) {
+		const char *filename = n->data.sval;
+		// Again, copied from copyto()
+		if (!on_client && filename) {
+			struct stat fs;
+			if (!copy_allowed(sql, 0))
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
+						"COPY INTO file requires database administrator rights, "
+						"use 'COPY ... INTO file ON CLIENT' instead");
+			if (filename && !MT_path_absolute(filename))
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO ON SERVER: filename must "
+						"have absolute path: %s", filename);
+			if (lstat(filename, &fs) == 0)
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO ON SERVER: file already "
+						"exists: %s", filename);
+		}
+		append(exps, exp_atom_clob(sql->sa, filename));
+	}
+
+	rel->l = sub;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = ddl_output;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+
+	return rel;
 }
 
 sql_exp *
@@ -2027,7 +2097,8 @@ rel_updates(sql_query *query, symbol *s)
 				l->h->next->next->next->next->next->next->next->data.i_val,
 				l->h->next->next->next->next->next->next->next->next->data.lval,
 				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->data.i_val);
+				l->h->next->next->next->next->next->next->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->next->next->next->next->next->next->data.lval);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -2051,12 +2122,24 @@ rel_updates(sql_query *query, symbol *s)
 		sql->type = Q_SCHEMA;
 	}
 		break;
-	case SQL_COPYTO:
+	case SQL_COPYINTO:
 	{
 		dlist *l = s->data.lval;
 
 		ret = copyto(query, l->h->data.sym, l->h->next->data.sval, l->h->next->next->data.lval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
+	}
+		break;
+	case SQL_BINCOPYINTO:
+	{
+		dlist *l = s->data.lval;
+		symbol *qry = l->h->data.sym;
+		endianness endian = l->h->next->data.i_val;
+		dlist *files = l->h->next->next->data.lval;
+		int on_client = l->h->next->next->next->data.i_val;
+
+		ret = bincopyto(query, qry, endian, files, on_client);
+		sql->type = Q_UPDATE; // doesn't really update but it sure doesn't return a result set
 	}
 		break;
 	case SQL_INSERT:

@@ -11,6 +11,15 @@ HAVE_GEOM?ST_GeomFromText
 HAVE_GEOM?dropTestWKT
 
 HAVE_GEOM?ST_MakePoint
+HAVE_GEOM?ST_Collect
+HAVE_GEOM?ST_MakeLine
+HAVE_GEOM?loadTestPolygons
+HAVE_GEOM?ST_Intersects
+HAVE_GEOM?ST_DWithin
+
+HAVE_GEOM?createRTreeIndex
+HAVE_GEOM?ST_IntersectsRTree
+HAVE_GEOM?ST_DWithinRTree
 
 HAVE_GEOM?loadTestGeometries
 
@@ -20,7 +29,7 @@ HAVE_GEOM?ST_AsText
 
 HAVE_GEOM?ST_IsClosed
 HAVE_GEOM?ST_IsEmpty
-HAVE_GEOM&GEOS_VERSION>=3.8?ST_IsSimple
+HAVE_GEOM?ST_IsSimple
 HAVE_GEOM?ST_IsValid
 HAVE_GEOM?ST_IsRing
 
@@ -41,7 +50,7 @@ HAVE_GEOM?ST_Contains
 
 #HAVE_GEOM?equals
 
-HAVE_GEOM?ST_Boundary
+HAVE_GEOM&GEOS_VERSION>=3.11.1?ST_Boundary
 
 HAVE_GEOM?ST_Dimension
 HAVE_GEOM?ST_CoordDim
@@ -66,7 +75,8 @@ HAVE_GEOM?ST_MakeBox2D
 #HAVE_GEOM?mbr_overlap_or_below
 #HAVE_GEOM?mbr_distance
 
-
 HAVE_GEOM?dropTestGeometries
+HAVE_GEOM?ST_DWithin2
+HAVE_GEOM&HAVE_PROJ?ST_Transform
 
 HAVE_GEOM?geomcasts

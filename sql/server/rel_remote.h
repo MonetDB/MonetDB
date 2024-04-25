@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _REL_REMOTE_H_
@@ -12,9 +16,9 @@
 #include "sql_relation.h"
 
 extern int mapiuri_valid( const char *uri);
-extern const char *mapiuri_uri(const char *uri, sql_allocator *sa);
-extern const char *mapiuri_database(const char *uri, sql_allocator *sa);
-extern const char *mapiuri_schema(const char *uri, sql_allocator *sa, const char *fallback);
-extern const char *mapiuri_table(const char *uri, sql_allocator *sa, const char *fallback);
+extern const char *mapiuri_uri(const char *uri, allocator *sa);
+extern const char *mapiuri_database(const char *uri, allocator *sa);
+extern const char *mapiuri_schema(const char *uri, allocator *sa, const char *fallback);
+extern const char *mapiuri_table(const char *uri, allocator *sa, const char *fallback);
 
 #endif /*_REL_REMOTE_H_*/

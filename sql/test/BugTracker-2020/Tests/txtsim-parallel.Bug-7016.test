@@ -1,22 +1,32 @@
 statement ok
-START TRANSACTION
+CREATE TABLE t7016(s1 VARCHAR(500), s2 VARCHAR(500))
 
 statement ok
-CREATE TABLE t_199999 as (select cast("value" as string) as "s1", cast("value" as string) as "s2" from generate_series(0, 199999))
+INSERT INTO t7016(s1, s2) VALUES
+('Virg','Minn'),
+('Texa','New '),
+('Utah','Ariz'),
+('Wash','Minn'),
+('Cali','Neva'),
+('Miss','Geor'),
+('Neva','Nich'),
+('Cali','Minn'),
+('Utah','Cali'),
+('Mass','Mich')
 
-statement ok
-CREATE TABLE t_200000 as (select cast("value" as string) as "s1", cast("value" as string) as "s2" from generate_series(0, 200000))
+statement error 42000!SELECT: no such binary operator 'similarity'(varchar,varchar)
+select count(*) from t7016 where similarity(s1, s2)> 0.5
 
-query I rowsort
-select count(1) from t_199999 where similarity(s1, s2)> 0.5
+query I nosort
+select count(*) from t7016 where difference(s1, s2)< 2
 ----
-199999
+2
 
-query I rowsort
-select count(1) from t_200000 where similarity(s1, s2)> 0.5
+query I nosort
+select count(1) from t7016 where difference(s1, s2)< 2
 ----
-200000
+2
 
 statement ok
-ROLLBACK
+DROP TABLE t7016
 

@@ -9,19 +9,21 @@ INSERT INTO mytable VALUES (1, 1), (2, 2), (3, 3), (4, 4), (5, 5)
 
 statement ok
 CREATE FUNCTION myfunc() RETURNS TABLE(n STRING) LANGUAGE PYTHON_MAP {
-   res = _conn.execute("SELECT max(d) FROM mytable;")
+   res = _conn.execute("SELECT max(d) as i FROM mytable;")
    result = dict()
-   result['n'] = str(res)
+   result['n'] = str(res['i'][0])
    return result
 }
 
-statement error
-SELECT * FROM myfunc()
+query T rowsort
+SELECT n FROM myfunc()
+----
+5.0
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 DROP TABLE mytable
 
-statement error 25005!Current transaction is aborted (please ROLLBACK)
+statement ok
 DROP FUNCTION myfunc
 
 statement ok

@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -21,39 +25,48 @@
 MT_Lock mal_namespaceLock = MT_LOCK_INITIALIZER(mal_namespaceLock);
 
 /* taken from gdk_atoms */
-#define NME_HASH(_key,y,K)								\
-	do {												\
-		size_t _i;										\
-		for (_i = y = 0; _i < K && _key[_i]; _i++) {	\
-			y += _key[_i];								\
-			y += (y << 10);								\
-			y ^= (y >> 6);								\
-		}												\
-		y += (y << 3);									\
-		y ^= (y >> 11);									\
-		y += (y << 15);									\
-		y = y & HASHMASK;								\
-	} while (0)
+static inline size_t __attribute__((__pure__))
+		nme_hash(const char *key, size_t len)
+{
+	size_t y = 0;
 
-typedef struct NAME{
+	for (size_t i = 0; i < len && key[i]; i++) {
+		y += key[i];
+		y += (y << 10);
+		y ^= (y >> 6);
+	}
+	y += (y << 3);
+	y ^= (y >> 11);
+	y += (y << 15);
+	return y & HASHMASK;
+}
+
+typedef struct NAME {
 	struct NAME *next;
 	char nme[IDLENGTH + 1];
 	unsigned short length;
 } *NamePtr;
 
 static NamePtr hash[MAXIDENTIFIERS];
+const char *optimizerRef;
+const char *totalRef;
 
 static struct namespace {
 	struct namespace *next;
 	int count;
 	struct NAME data[4096];
-} *namespace;
+} namespace1, *namespace = &namespace1;
 
-void initNamespace(void) {
-	namespace = NULL;
+void
+initNamespace(void)
+{
+	optimizerRef = putName("optimizer");
+	totalRef = putName("total");
 }
 
-void mal_namespace_reset(void) {
+void
+mal_namespace_reset(void)
+{
 	struct namespace *ns;
 
 	/* assume we are at the end of the server session */
@@ -61,9 +74,13 @@ void mal_namespace_reset(void) {
 	memset(hash, 0, sizeof(hash));
 	while (namespace) {
 		ns = namespace->next;
-		GDKfree(namespace);
+		if (namespace != &namespace1)
+			GDKfree(namespace);
 		namespace = ns;
 	}
+	namespace1.count = 0;
+	namespace1.next = NULL;
+	namespace = &namespace1;
 	MT_lock_unset(&mal_namespaceLock);
 }
 
@@ -74,7 +91,8 @@ void mal_namespace_reset(void) {
  * is conflict free.
  */
 
-static const char *findName(const char *nme, size_t len, bool allocate)
+static const char *
+findName(const char *nme, size_t len, bool allocate)
 {
 	NamePtr *n, m;
 	size_t key;
@@ -85,31 +103,13 @@ static const char *findName(const char *nme, size_t len, bool allocate)
 	if (len > IDLENGTH) {
 		len = IDLENGTH;
 	}
-	NME_HASH(nme, key, len);
+	key = nme_hash(nme, len);
 	MT_lock_set(&mal_namespaceLock);
 	for (n = &hash[key]; *n; n = &(*n)->next) {
-#ifdef KEEP_SORTED
-		/* keep each list sorted on length, then name */
-		if (len < (*n)->length)
-			continue;
-		if (len == (*n)->length) {
-			int c;
-			if ((c = strncmp(nme, (*n)->nme, len)) < 0)
-				continue;
-			if (c == 0) {
-				MT_lock_unset(&mal_namespaceLock);
-				return (*n)->nme;
-			}
-			break;
-		}
-		break;
-#else
-		/* append entries to list */
 		if (len == (*n)->length && strncmp(nme, (*n)->nme, len) == 0) {
 			MT_lock_unset(&mal_namespaceLock);
 			return (*n)->nme;
 		}
-#endif
 	}
 	/* item not found */
 	if (!allocate) {
@@ -119,53 +119,48 @@ static const char *findName(const char *nme, size_t len, bool allocate)
 	if (namespace == NULL || namespace->count == 4096) {
 		struct namespace *ns = GDKmalloc(sizeof(struct namespace));
 		if (ns == NULL) {
-			/* error we cannot recover from */
-			TRC_CRITICAL(MAL_SERVER, MAL_MALLOC_FAIL "\n");
-			mal_exit(1);
+			MT_lock_unset(&mal_namespaceLock);
+			return NULL;
 		}
 		ns->next = namespace;
 		ns->count = 0;
 		namespace = ns;
 	}
 	m = &namespace->data[namespace->count++];
-	strncpy(m->nme, nme, len);
+	if (m->nme != nme)
+		strncpy(m->nme, nme, len);
 	m->nme[len] = 0;
 	m->length = (unsigned short) len;
 	m->next = *n;
 	*n = m;
 	MT_lock_unset(&mal_namespaceLock);
-	return (*n)->nme;
+	return m->nme;
 }
 
-const char *getName(const char *nme) {
-	return findName(nme, strlen(nme), false);
+const char *
+getName(const char *nme)
+{
+	if (nme != NULL)
+		nme = findName(nme, strlen(nme), false);
+	return nme;
 }
 
-const char *getNameLen(const char *nme, size_t len)
+const char *
+getNameLen(const char *nme, size_t len)
 {
 	return findName(nme, len, false);
 }
-/*
- * Name deletion from the namespace is tricky, because there may
- * be multiple threads active on the structure. Moreover, the
- * symbol may be picked up by a concurrent thread and stored
- * somewhere.
- * To avoid all these problems, the namespace should become
- * private to each Client, but this would mean expensive look ups
- * deep into the kernel to access the context.
- */
-void delName(const char *nme, size_t len){
-	const char *n;
-	n= getNameLen(nme,len);
-	if( nme[0]==0 || n == 0) return ;
-	/*Namespace garbage collection not available yet */
+
+const char *
+putName(const char *nme)
+{
+	if (nme != NULL)
+		nme = findName(nme, strlen(nme), true);
+	return nme;
 }
 
-const char *putName(const char *nme) {
-	return findName(nme, strlen(nme), true);
-}
-
-const char *putNameLen(const char *nme, size_t len)
+const char *
+putNameLen(const char *nme, size_t len)
 {
 	return findName(nme, len, true);
 }

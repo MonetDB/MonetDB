@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -39,11 +43,7 @@ BATunique(BAT *b, BAT *s)
 	const char *algomsg = "";
 	lng t0 = 0;
 
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -116,7 +116,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: byte-sized atoms";
 		uint32_t seen[256 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			val = ((const uint8_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -131,8 +131,8 @@ BATunique(BAT *b, BAT *s)
 				}
 			}
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (ATOMbasetype(bi.type) == TYPE_sht ||
 		   (bi.width == 2 &&
 		    ATOMstorage(bi.type) == TYPE_str &&
@@ -142,7 +142,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: short-sized atoms";
 		uint32_t seen[65536 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			val = ((const uint16_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -157,12 +157,12 @@ BATunique(BAT *b, BAT *s)
 				}
 			}
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
 		algomsg = "unique: sorted";
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			if (prev == NULL || (*cmp)(v, prev) != 0) {
@@ -171,8 +171,8 @@ BATunique(BAT *b, BAT *s)
 			}
 			prev = v;
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (BATcheckhash(b) ||
 		   ((!bi.transient ||
 		     (b->batRole == PERSISTENT && GDKinmemory(0))) &&
@@ -190,7 +190,7 @@ BATunique(BAT *b, BAT *s)
 			MT_rwlock_rdunlock(&b->thashlock);
 			goto lost_hash;
 		}
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			BUN p;
 
 			o = canditer_next(&ci);
@@ -216,8 +216,8 @@ BATunique(BAT *b, BAT *s)
 			}
 		}
 		MT_rwlock_rdunlock(&b->thashlock);
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else {
 		BUN prb;
 		BUN p;
@@ -242,17 +242,19 @@ BATunique(BAT *b, BAT *s)
 			GDKerror("cannot allocate hash table\n");
 			goto bunins_failed;
 		}
+		hs->heapbckt.parentid = b->batCacheid;
+		hs->heaplink.parentid = b->batCacheid;
 		if ((hs->heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
 		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
-		    snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
-		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshunib%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
+		    snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
+		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshunib%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heapbckt.filename) ||
 		    HASHnew(hs, bi.type, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("cannot allocate hash table\n");
 			goto bunins_failed;
 		}
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			prb = HASHprobe(hs, v);
@@ -271,8 +273,8 @@ BATunique(BAT *b, BAT *s)
 				HASHput(hs, prb, p);
 			}
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
+		TIMEOUT_CHECK(qry_ctx,
+			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);

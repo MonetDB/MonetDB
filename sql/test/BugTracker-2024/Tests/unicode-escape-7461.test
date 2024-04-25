@@ -1,0 +1,30 @@
+statement ok
+CREATE TABLE t0(c0 BOOLEAN, c1 BOOLEAN, PRIMARY KEY(c0))
+
+statement ok
+CREATE TABLE t1(c0 INTEGER, c1 INT, PRIMARY KEY(c0))
+
+statement error
+INSERT INTO t0(c1) VALUES (-2041868105), (true)
+
+statement ok
+INSERT INTO t0(c1, c0) VALUES (-1820721628, -337528041)
+
+statement error
+INSERT INTO t0(c1) VALUES (true)
+
+statement ok
+INSERT INTO t1(c0) VALUES (true)
+
+statement ok
+SELECT * FROM t1, t0
+
+statement error
+SELECT * FROM t1, t0 WHERE (CASE t0.c0 WHEN (t0.c0 IN (((t1.c0)<=(true)))) THEN (((-953136241) IS NOT NULL) NOT BETWEEN (CASE true WHEN '_hf4{r' THEN t0.c0 WHEN '\Uwc0g8g' THEN t1.c1 WHEN false THEN '' ELSE t1.c1 END ) AND 1239880767) ELSE t0.c1 END )
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+

@@ -1,0 +1,54 @@
+statement ok
+create schema test
+
+statement ok
+drop schema test cascade
+
+statement ok
+create schema test
+
+statement ok
+set schema test
+
+statement ok
+CREATE TABLE test (sect int NOT NULL auto_increment, PRIMARY KEY (sect))
+
+statement ok
+create trigger count after delete on test for each row insert into test values (1)
+
+statement ok
+delete from test
+
+statement ok
+set schema sys
+
+statement ok
+drop schema test cascade
+
+statement ok
+create schema test
+
+statement ok
+drop schema test cascade
+
+statement ok
+create schema test
+
+statement ok
+set schema test
+
+statement ok
+CREATE TABLE test (sect int NOT NULL auto_increment, PRIMARY KEY (sect))
+
+statement ok
+create trigger count after delete on test for each row insert into test values (1)
+
+statement ok
+delete from test
+
+statement ok
+set schema sys
+
+statement ok
+drop schema test cascade
+

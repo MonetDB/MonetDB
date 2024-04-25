@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -21,9 +25,9 @@ log_base2(unsigned int n)
 }
 
 sql_hash *
-hash_new(sql_allocator *sa, int size, fkeyvalue key)
+hash_new(allocator *sa, int size, fkeyvalue key)
 {
-	sql_hash *ht = (sa)?SA_NEW(sa, sql_hash):MNEW(sql_hash);
+	sql_hash *ht = SA_NEW(sa, sql_hash);
 
 	if (ht == NULL)
 		return NULL;
@@ -120,4 +124,3 @@ hash_destroy(sql_hash *h) /* this code should be called for hash tables created 
 	_DELETE(h->buckets);
 	_DELETE(h);
 }
-

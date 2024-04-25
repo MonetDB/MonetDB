@@ -1,9 +1,13 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -38,6 +42,9 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
 	fprintf(stderr, " -u user     | --user=user        user id\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
+	fprintf(stderr, " -o filename | --output=filename  write dump to filename\n");
+	fprintf(stderr, " -O dir      | --outputdir=dir    write multi-file dump to dir\n");
+	fprintf(stderr, " -x ext      | --compression=ext  compression method ext for multi-file dump\n");
 	fprintf(stderr, " -f          | --functions        dump functions\n");
 	fprintf(stderr, " -t table    | --table=table      dump a database table\n");
 	fprintf(stderr, " -D          | --describe         describe database\n");
@@ -47,6 +54,9 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
 	fprintf(stderr, "--functions and --table are mutually exclusive\n");
+	fprintf(stderr, "--output and --outputdir are mutually exclusive\n");
+	fprintf(stderr, "--inserts and --outputdir are mutually exclusive\n");
+	fprintf(stderr, "--compression only has effect with --outputdir\n");
 	exit(xit);
 }
 
@@ -58,10 +68,13 @@ main(int argc, char **argv)
 #endif
 {
 	int port = 0;
-	char *user = NULL;
-	char *passwd = NULL;
-	char *host = NULL;
-	char *dbname = NULL;
+	const char *user = NULL;
+	const char *passwd = NULL;
+	const char *host = NULL;
+	const char *dbname = NULL;
+	const char *output = NULL;
+	const char *outputdir = NULL;
+	const char *ext = NULL;
 	DotMonetdb dotfile = {0};
 	bool trace = false;
 	bool describe = false;
@@ -78,6 +91,9 @@ main(int argc, char **argv)
 		{"host", 1, 0, 'h'},
 		{"port", 1, 0, 'p'},
 		{"database", 1, 0, 'd'},
+		{"output", 1, 0, 'o'},
+		{"outputdir", 1, 0, 'O'},
+		{"compression", 1, 0, 'x'},
 		{"describe", 0, 0, 'D'},
 		{"functions", 0, 0, 'f'},
 		{"table", 1, 0, 't'},
@@ -106,18 +122,16 @@ main(int argc, char **argv)
 #endif
 
 	parse_dotmonetdb(&dotfile);
-        user = dotfile.user;
-        passwd = dotfile.passwd;
-        dbname = dotfile.dbname;
+	user = dotfile.user;
+	passwd = dotfile.passwd;
+	dbname = dotfile.dbname;
 	host = dotfile.host;
 	port = dotfile.port;
 
-	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NeXu:qv?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "h:p:d:o:O:x:Dft:NeXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
-			if (user)
-				free(user);
-			user = strdup(optarg);
+			user = optarg;
 			user_set_as_flag = true;
 			break;
 		case 'h':
@@ -128,9 +142,18 @@ main(int argc, char **argv)
 			port = atoi(optarg);
 			break;
 		case 'd':
-			if (dbname)
-				free(dbname);
-			dbname = strdup(optarg);
+			dbname = optarg;
+			break;
+		case 'o':
+			output = optarg;
+			outputdir = NULL;
+			break;
+		case 'O':
+			outputdir = optarg;
+			output = NULL;
+			break;
+		case 'x':
+			ext = optarg;
 			break;
 		case 'D':
 			describe = true;
@@ -168,6 +191,7 @@ main(int argc, char **argv)
 				printf(" (hg id: %s)", rev);
 #endif
 			printf("\n");
+			destroy_dotmonetdb(&dotfile);
 			return 0;
 		}
 		case '?':
@@ -180,8 +204,12 @@ main(int argc, char **argv)
 		}
 	}
 
+	if ((output != NULL || useinserts) && outputdir) {
+		usage(argv[0], -1);
+	}
+
 	if (optind == argc - 1)
-		dbname = strdup(argv[optind]);
+		dbname = argv[optind];
 	else if (optind != argc)
 		usage(argv[0], -1);
 
@@ -193,20 +221,35 @@ main(int argc, char **argv)
 		printf("msqldump, please specify a database\n");
 		usage(argv[0], -1);
 	}
-	if (user == NULL)
-		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-	if (passwd == NULL)
-		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
+	char *user_allocated = NULL;
+	if (user == NULL) {
+		user_allocated = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+		user = user_allocated;
+	}
+	char *passwd_allocated = NULL;
+	if (passwd == NULL) {
+		passwd_allocated = simple_prompt("password", BUFSIZ, 0, NULL);
+		passwd = passwd_allocated;
+	}
 
-	mid = mapi_mapi(host, port, user, passwd, "sql", dbname);
-	if (user)
-		free(user);
-	if (passwd)
-		free(passwd);
-	if (dbname)
-		free(dbname);
+	if (dbname != NULL && strchr(dbname, ':') != NULL) {
+		mid = mapi_mapiuri(dbname, user, passwd, "sql");
+	} else {
+		mid = mapi_mapi(host, port, user, passwd, "sql", dbname);
+	}
+	free(user_allocated);
+	user_allocated = NULL;
+	free(passwd_allocated);
+	passwd_allocated = NULL;
+	user = NULL;
+	passwd = NULL;
+	dbname = NULL;
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
+		exit(2);
+	}
+	if (mapi_error(mid)) {
+		mapi_explain(mid, stderr);
 		exit(2);
 	}
 	mapi_set_time_zone(mid, 0);
@@ -224,9 +267,38 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	mapi_cache_limit(mid, -1);
 
-	out = stdout_wastream();
+	if (output) {
+		out = open_wastream(output);
+	} else if (outputdir) {
+		size_t fnl = strlen(outputdir) + 10;
+		if (ext)
+			fnl += strlen(ext) + 1;
+		char *fn = malloc(fnl);
+		if (fn == NULL) {
+			fprintf(stderr, "malloc failure\n");
+			exit(2);
+		}
+		if (MT_mkdir(outputdir) == -1 && errno != EEXIST) {
+			perror("cannot create output directory");
+			exit(2);
+		}
+		snprintf(fn, fnl, "%s%cdump.sql", outputdir, DIR_SEP);
+		out = open_wastream(fn);
+		free(fn);
+		(void) ext;
+	} else {
+		out = stdout_wastream();
+	}
 	if (out == NULL) {
-		fprintf(stderr, "failed to allocate stream: %s\n", mnstr_peek_error(NULL));
+		if (output)
+			fprintf(stderr, "cannot open file: %s: %s\n",
+					output, mnstr_peek_error(NULL));
+		else if (outputdir)
+			fprintf(stderr, "cannot open file: %s%cdump.sql: %s\n",
+					outputdir, DIR_SEP, mnstr_peek_error(NULL));
+		else
+			fprintf(stderr, "failed to allocate stream: %s\n",
+					mnstr_peek_error(NULL));
 		exit(2);
 	}
 	if (!quiet) {
@@ -268,20 +340,21 @@ main(int argc, char **argv)
 		mnstr_printf(out, "COMMIT;\n");
 	} else if (table) {
 		mnstr_printf(out, "START TRANSACTION;\n");
-		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false, noescape);
+		c = dump_table(mid, NULL, table, out, outputdir, ext, describe, true, useinserts, false, noescape, true);
 		mnstr_printf(out, "COMMIT;\n");
 	} else
-		c = dump_database(mid, out, describe, useinserts, noescape);
+		c = dump_database(mid, out, outputdir, ext, describe, useinserts, noescape);
 	mnstr_flush(out, MNSTR_FLUSH_DATA);
 
 	mapi_destroy(mid);
 	if (mnstr_errnr(out) != MNSTR_NO__ERROR) {
-		char *err = mnstr_error(out);
-		fprintf(stderr, "%s: %s\n", argv[0], err);
-		free(err);
-		return 1;
+		fprintf(stderr, "%s: %s\n", argv[0], mnstr_peek_error(out));
+		c = 1;
 	}
 
-	mnstr_destroy(out);
+	close_stream(out);
+
+	destroy_dotmonetdb(&dotfile);
+
 	return c;
 }

@@ -6,7 +6,7 @@ subselect-contradiction.Bug-6683
 insert-replica-table.Bug-6684
 subselect-count.Bug-6686
 subselect.Bug-6688
-duplicates-not-eliminated-long-CASE-stmt.Bug-6697
+HAVE_LIBPCRE?duplicates-not-eliminated-long-CASE-stmt.Bug-6697
 subselect.Bug-6700
 alter_table_set_schema.Bug-6701
 crash-in-rel_dependencies.Bug-6703
@@ -23,7 +23,7 @@ select-distinct.Bug-6728
 table-duplicate-column.Bug-6729
 view-too-few-rows.Bug-6736
 slow-inner-join.Bug-6737
-HAVE_HGE?sum-over-hge.Bug.6738
+sum-over-hge.Bug.6738
 sequence-first-next-value.Bug-6743
 sequences-defaults.Bug-6744
 sequences-types.Bug-6745
