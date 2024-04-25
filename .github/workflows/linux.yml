@@ -88,7 +88,7 @@ jobs:
             -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison \
             -DCMAKE_SUMMARY=ON
           make install -j3
-        if: runner.os == 'macOS' and runner.arch == 'x64'
+        if: runner.os == 'macOS' && runner.arch == 'x64'
 
       - name: make MonetDB on macos
         run: |
@@ -104,7 +104,7 @@ jobs:
             -DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison \
             -DCMAKE_SUMMARY=ON
           make install -j3
-        if: runner.os == 'macOS' and runner.arch == 'arm64'
+        if: runner.os == 'macOS' && runner.arch == 'arm64'
 
       - name: choco packages
         run: |
