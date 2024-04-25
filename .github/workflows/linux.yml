@@ -49,7 +49,7 @@ jobs:
 
       - name: install pymonetdb cryptography
         run: pip3 install --user --upgrade pymonetdb cryptography
-        if: runner.os == 'Linux'
+        if: runner.os != 'macOS'
 
       - name: install pymonetdb cryptography
         run: pip3 install --user --break-system-packages --upgrade pymonetdb cryptography
