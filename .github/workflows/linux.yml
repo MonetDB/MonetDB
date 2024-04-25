@@ -48,7 +48,7 @@ jobs:
           ref: ${{ github.ref }}
 
       - name: install pymonetdb cryptography
-        run: pip3 install pymonetdb cryptography
+        run: pip3 install --break-system-packages pymonetdb cryptography
 
       - name: make MonetDB on linux
         run: |
