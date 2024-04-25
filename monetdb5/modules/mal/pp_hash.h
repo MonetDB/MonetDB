@@ -118,6 +118,10 @@ typedef struct hash_table {
 	hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
 	gid *pgids;			/* id of the parent hash */
 
+	/* Only allocated when specific join ops need them. */
+	ATOMIC_TYPE *frequency; /* frequencies of GIDs in the hashed column */
+	bool *matched;          /* for outer joins: has it been matched with the probe side? */
+
 	struct hash_table *p;	/* parent hash */
 	int bits;
 	ATOMIC_TYPE last;
@@ -137,7 +141,6 @@ typedef struct hash_payload {
 	int rehash;
 
 	void *payload;		/* hash(ed) payload values */
-	ATOMIC_TYPE *frequency;	/* how many times a slot ID appeared in the hashed column */
 
 	hash_table *parent;
 	int bits;
@@ -149,7 +152,7 @@ typedef struct hash_payload {
 } hash_payload;
 
 extern lng str_hsh(str v);
-extern hash_table *ht_create(int type, int size, hash_table *p);
+extern hash_table *ht_create(int type, int size, bool freq, hash_table *p);
 extern void ht_rehash(hash_table *ht);
 
 extern hash_payload *hp_create(int type, size_t nr_slots, size_t nr_payloads, hash_table *p);
