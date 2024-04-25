@@ -251,7 +251,7 @@ MNDBConnect(ODBCDbc *dbc,
 	}
 	if (mid == NULL || mapi_error(mid)) {
 		/* Client unable to establish connection */
-		addDbcError(dbc, "08001", NULL, 0);
+		addDbcError(dbc, "08001", mid ? mapi_error_str(mid) : NULL, 0);
 		rc = SQL_ERROR;
 		/* clean up */
 		if (mid)

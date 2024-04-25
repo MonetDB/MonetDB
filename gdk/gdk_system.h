@@ -323,8 +323,6 @@ gdk_export char *GDKgetbuf(void);
 		else if (GDKlocklist == (l))			\
 			GDKlocklist = (l)->next;		\
 		ATOMIC_CLEAR(&GDKlocklistlock);			\
-		ATOMIC_DESTROY(&(l)->contention);		\
-		ATOMIC_DESTROY(&(l)->sleep);			\
 	} while (0)
 
 #else
@@ -575,7 +573,6 @@ typedef struct MT_RWLock {
 #define MT_rwlock_destroy(l)				\
 	do {						\
 		pthread_mutex_destroy(&(l)->lock);	\
-		ATOMIC_DESTROY(&(l)->readers);		\
 	} while (0)
 
 #define MT_rwlock_rdlock(l)				\

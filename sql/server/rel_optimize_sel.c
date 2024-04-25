@@ -3493,8 +3493,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 							/* the column in 'like' filters is stored inside a list */
 							if (e->flag == cmp_filter) {
 								column = ((list*)e->l)->h->data;
-							}
-							else {
+							} else {
 								column = e->l;
 							}
 

@@ -11,9 +11,9 @@
 # Copyright 1997 - July 2008 CWI.
 
 import pymonetdb
-import sys
+import sys, os
 
-dbh = pymonetdb.connect(port=int(sys.argv[1]),database=sys.argv[2],hostname=sys.argv[3],autocommit=True)
+dbh = pymonetdb.connect(port=int(os.getenv('MAPIPORT')),database=os.getenv('TSTDB'),hostname=os.getenv('MAPIHOST'),autocommit=True)
 
 cursor = dbh.cursor()
 

@@ -1,0 +1,61 @@
+statement ok
+CREATE TABLE l (l1 INT, l2 INT, l3 INT);
+
+statement ok
+INSERT INTO l VALUES (42, 44, 11), (41, 45, 22), (43, 42, 33);
+
+statement ok
+CREATE TABLE s (s1 INT, s2 INT, s3 INT);
+
+statement ok
+INSERT INTO s VALUES (41, 44, 10), (42, 44, 20), (34, 44, 30), (41, 45, 40), (34, 45, 50), (34, 44, 60), (42, 44, 70), (42, 44, 80);
+
+skipif knownfail
+query III nosort
+SELECT * FROM s WHERE (s1, s2) IN ((42,44), (41,45), (43,42)) ORDER BY s3;
+----
+42
+44
+20
+41
+45
+40
+42
+44
+70
+42
+44
+80
+
+query III nosort
+SELECT * FROM s WHERE (s1, s2) IN (VALUES (42,44), (41,45), (43,42)) ORDER BY s3;
+----
+42
+44
+20
+41
+45
+40
+42
+44
+70
+42
+44
+80
+
+query III nosort
+SELECT * FROM s WHERE (s1, s2) IN (SELECT l1, l2 FROM l) ORDER BY s3;
+----
+42
+44
+20
+41
+45
+40
+42
+44
+70
+42
+44
+80
+

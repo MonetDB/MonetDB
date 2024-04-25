@@ -339,7 +339,7 @@ GDKcopyenv(BAT **key, BAT **val, bool writable)
  * Single-lined comments can now be logged safely, together with
  * process, thread and user ID, and the current time.
  */
-void
+static void __attribute__((__format__(__printf__, 2, 3)))
 GDKlog(FILE *lockFile, const char *format, ...)
 {
 	va_list ap;
@@ -1266,9 +1266,6 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 
 int GDKnr_threads = 0;
 static ATOMIC_TYPE GDKnrofthreads = ATOMIC_VAR_INIT(0);
-struct threadStruct {
-	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
-};
 
 bool
 GDKexiting(void)
