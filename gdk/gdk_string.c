@@ -1453,8 +1453,12 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	return GDK_FAIL;
 }
 
-/* The two case conversion tables are specially crafted from the
+/* The three case conversion tables are specially crafted from the
  * UnicodeData.txt file for efficient lookup.
+ *
+ * The lowercase and uppercase tables are derived from the
+ * UnicodeData.txt file (the respective columns from that file), the
+ * casefold table is derived from the CaseFold.txt file.
  *
  * For the first byte of a UTF-8 encoding, use the value as index into
  * the table.  If the value is zero, there are no conversions for any
@@ -1469,7 +1473,10 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
  * The process then repeats: if zero, no conversions for any sequence
  * starting with the bytes looked up so far, if non-zero, if this is the
  * last byte of a sequence, it is the converted codepoint, and otherwise
- * a (new) offset into the same table. */
+ * a (new) offset into the same table.
+ * Only for the casefold table, if the converted codepoint is negative,
+ * it is actually an escape into the specialcase table.  The absolute
+ * value is the index. */
 static const char *const specialcase[] = {
 	NULL,
 	"ss",
@@ -7086,6 +7093,12 @@ GDKstrcasestr(const char *haystack, const char *needle)
 	return NULL;
 }
 
+/* The asciify table uses the same technique as the case conversion
+ * tables, except that the value that is calculated is not a codepoint.
+ * Instead it is the index into the valtab table which contains the
+ * string that is to be used to replace the asciified character.
+ * This combination of tables is derived from the command
+ * ``iconv -futf-8 -tASCII//TRANSLIT`` */
 static const char *const valtab[] = {
 	NULL,
 	[1] = " ",
