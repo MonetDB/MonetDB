@@ -421,22 +421,29 @@ subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 {
 	if (!t1->type || !t2->type)
 		return -1;
-
-	if (t1->type->eclass == t2->type->eclass && t1->type->eclass == EC_SEC)
-		return 0;
-	if (t1->type->eclass == t2->type->eclass && t1->type->eclass == EC_MONTH)
-		return 0;
-	if ( !(t1->type->eclass == t2->type->eclass &&
-	      (EC_INTERVAL(t1->type->eclass) || t1->type->eclass == EC_NUM)) &&
-	      (t1->digits != t2->digits ||
-	      (!(t1->type->eclass == t2->type->eclass &&
-	       t1->type->eclass == EC_FLT) &&
-	       t1->scale != t2->scale)) )
+	if (t1->type->eclass != t2->type->eclass)
 		return -1;
+	switch (t1->type->eclass) {
+		case EC_SEC:
+		case EC_MONTH:
+			if (t1->digits != t2->digits)
+				return -1;
+			return 0;
+		case EC_NUM:
+			break;
+		case EC_FLT:
+			if (t1->digits != t2->digits)
+				return -1;
+			break;
+		default:
+			if (t1->digits != t2->digits)
+				return -1;
+			if (t1->scale != t2->scale)
+				return -1;
+			break;
+	}
 
-	/* subtypes are only equal iff
-	   they map onto the same systemtype */
-	return (type_cmp(t1->type, t2->type));
+	return type_cmp(t1->type, t2->type);
 }
 
 int
