@@ -180,7 +180,8 @@ static const struct interval intervals[] = {
 	 * derived;
 	 * ranges with width==2 represent all codepoints in the East Asian
 	 * Wide (W) or East Asian Full-width (F) category as defined in the
-	 * EastAsianWidth.txt file */
+	 * EastAsianWidth.txt file;
+	 * also see clients/mapiclient/mclient.c which has a copy of this */
 	{ 0x0300, 0x036F, 0 }, { 0x0483, 0x0489, 0 }, { 0x0591, 0x05BD, 0 },
 	{ 0x05BF, 0x05BF, 0 }, { 0x05C1, 0x05C2, 0 }, { 0x05C4, 0x05C5, 0 },
 	{ 0x05C7, 0x05C7, 0 }, { 0x0600, 0x0605, 0 }, { 0x0610, 0x061A, 0 },
