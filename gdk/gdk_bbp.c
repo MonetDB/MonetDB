@@ -1198,7 +1198,7 @@ BBPchkfarms(void)
 	const char *dir = NULL;
 	uint32_t rolemask = 0;
 	if ((BBPfarms[0].roles & 1) == 0) {
-		GDKerror("Must at least call BBPaddfarms for once for persistent data\n");
+		GDKerror("Must call BBPaddfarms at least once for persistent data\n");
 		return GDK_FAIL;
 	}
 	for (int i = 0; i < MAXFARMS; i++) {
@@ -1764,8 +1764,13 @@ BBPtrim(bool aggressive, bat nbat)
 			MT_lock_set(&b->theaplock);
 			if (!BATshared(b) &&
 			    !isVIEW(b) &&
-			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) &&
-			    (b->batRole == PERSISTENT && BBP_lrefs(bid) <= 2)) {
+			    (!BATdirty(b) ||
+			     (aggressive &&
+			      b->theap->storage == STORE_MMAP &&
+			      (b->tvheap == NULL ||
+			       b->tvheap->storage == STORE_MMAP)) ||
+			     (b->batRole == PERSISTENT &&
+			      BBP_lrefs(bid) <= 2))) {
 				BBP_status_on(bid, BBPUNLOADING);
 				swap = true;
 				waitctr += BATdirty(b) ? 9 : 1;
@@ -2466,7 +2471,8 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 			}
 		}
 	}
-	if (BBP_status(bid) & BBPPERSISTENT) {
+	if (bi) {
+		assert(BBP_status(bid) & BBPPERSISTENT);
 		if (new_bbpentry(nbbpf, bid, size, bi) != GDK_SUCCEED)
 			goto bailout;
 	}
@@ -3873,12 +3879,7 @@ BBPbackup(BAT *b, bool subcommit)
 		bi.h = b->oldtail;
 		bi.hdirty = b->oldtail->dirty;
 	}
-#ifndef NDEBUG
-	bi.locked = true;
-#endif
-	HEAPincref(bi.h);
-	if (bi.vh)
-		HEAPincref(bi.vh);
+	bat_iterator_incref(&bi);
 	MT_lock_unset(&b->theaplock);
 
 	/* determine location dir and physical suffix */
@@ -4040,9 +4041,15 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 
 	ret = BBPprepare(subcommit != NULL);
 
-	/* PHASE 1: safeguard everything in a backup-dir */
+	if (ret == GDK_SUCCEED) {
+		ret = BBPdir_first(subcommit != NULL, logno, &obbpf, &nbbpf);
+	}
+
 	for (int idx = 1; ret == GDK_SUCCEED && idx < cnt; idx++) {
 		bat i = subcommit ? subcommit[idx] : idx;
+		BUN size = sizes ? sizes[idx] : BUN_NONE;
+		BATiter bi, *bip;
+
 		const bat bid = i;
 		if (lock)
 			MT_lock_set(&GDKswapLock(bid));
@@ -4060,41 +4067,55 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 			if (lock)
 				MT_lock_set(&GDKswapLock(bid));
 		}
-		BAT *b = dirty_bat(&i, subcommit != NULL);
-		if (i <= 0 ||
-		    (BBP_status(bid) & BBPEXISTING &&
-		     b != NULL &&
-		     b->batInserted > 0 &&
-		     BBPbackup(b, subcommit != NULL) != GDK_SUCCEED)) {
-			ret = GDK_FAIL;
+		if (subcommit) {
+			/* move any tail/theap files we find for this bat that
+			 * are in the BACKUP directory to the SUBCOMMIT
+			 * directory */
+			char fname[16];	/* plenty big enough */
+			if (snprintf(fname, sizeof(fname), "%o", i) < 16) {
+				/* the snprintf never fails, any of the
+				 * below may fail */
+				if (GDKmove(0, BAKDIR, fname, "tail", SUBDIR, fname, "tail", false) == GDK_SUCCEED)
+					TRC_DEBUG(BAT_, "moved %s.tail from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+				if (GDKmove(0, BAKDIR, fname, "tail1", SUBDIR, fname, "tail1", false) == GDK_SUCCEED)
+					TRC_DEBUG(BAT_, "moved %s.tail1 from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+				if (GDKmove(0, BAKDIR, fname, "tail2", SUBDIR, fname, "tail2", false) == GDK_SUCCEED)
+					TRC_DEBUG(BAT_, "moved %s.tail2 from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+#if SIZEOF_VAR_T == 8
+				if (GDKmove(0, BAKDIR, fname, "tail4", SUBDIR, fname, "tail4", false) == GDK_SUCCEED)
+					TRC_DEBUG(BAT_, "moved %s.tail4 from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+#endif
+				if (GDKmove(0, BAKDIR, fname, "theap", SUBDIR, fname, "theap", false) == GDK_SUCCEED)
+					TRC_DEBUG(BAT_, "moved %s.theap from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+			}
 		}
+		BAT *b = dirty_bat(&i, subcommit != NULL);
+		if (i <= 0)
+			ret = GDK_FAIL;
+		else if (BBP_status(bid) & BBPEXISTING &&
+			 b != NULL &&
+			 b->batInserted > 0)
+			ret = BBPbackup(b, subcommit != NULL);
+
 		if (lock)
 			MT_lock_unset(&GDKswapLock(bid));
-	}
-	TRC_DEBUG(PERF, "move time "LLFMT" usec, %d files\n", (t1 = GDKusec()) - t0, backup_files);
 
-	/* PHASE 2: save the repository and write new BBP.dir file */
-	if (ret == GDK_SUCCEED) {
-		ret = BBPdir_first(subcommit != NULL, logno, &obbpf, &nbbpf);
-	}
-
-	for (int idx = 1; ret == GDK_SUCCEED && idx < cnt; idx++) {
-		bat i = subcommit ? subcommit[idx] : idx;
-		BUN size = sizes ? sizes[idx] : BUN_NONE;
-		BATiter bi;
+		if (ret != GDK_SUCCEED)
+			break;
 
 		if (BBP_status(i) & BBPPERSISTENT) {
-			BAT *b = dirty_bat(&i, subcommit != NULL);
-			if (i <= 0) {
-				ret = GDK_FAIL;
-				break;
-			}
-			bi = bat_iterator(BBP_desc(i));
+			MT_lock_set(&BBP_desc(i)->theaplock);
+			bi = bat_iterator_nolock(BBP_desc(i));
+			bat_iterator_incref(&bi);
 			assert(sizes == NULL || size <= bi.count);
 			assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
 			if (size > bi.count) /* includes sizes==NULL */
 				size = bi.count;
-			MT_lock_set(&bi.b->theaplock);
 			bi.b->batInserted = size;
 			if (bi.b->ttype >= 0 && ATOMvarsized(bi.b->ttype)) {
 				/* see epilogue() for other part of this */
@@ -4129,15 +4150,17 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 				ret = BATsave_iter(b, &bi, size);
 				BBP_status_off(i, BBPSAVING);
 			}
+			bip = &bi;
 		} else {
-			bi = bat_iterator(NULL);
+			bip = NULL;
 		}
 		if (ret == GDK_SUCCEED) {
-			n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, &bi);
+			n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, bip);
 			if (n < -1)
 				ret = GDK_FAIL;
 		}
-		bat_iterator_end(&bi);
+		if (bip)
+			bat_iterator_end(bip);
 		/* we once again have a saved heap */
 	}
 
@@ -4861,46 +4884,105 @@ BBPtmunlock(void)
 void
 BBPprintinfo(void)
 {
-	size_t tmem = 0, tvm = 0;
-	size_t pmem = 0, pvm = 0;
-	int tn = 0;
-	int pn = 0;
-	int nh = 0;
+	/* 32 categories for the bats, not all are expected to be filled */
+	struct counters {
+		size_t sz;
+		size_t vmsz;
+		int nr;
+	} bats[2][2][2][2][2] = {0};
+	int nbats = 0;
 
 	BBPtmlock();
-	for (bat i = 1, sz = (bat) ATOMIC_GET(&BBPsize); i < sz; i++) {
+	bat sz = (bat) ATOMIC_GET(&BBPsize);
+	for (bat i = 1; i < sz; i++) {
 		MT_lock_set(&GDKswapLock(i));
-		if (BBP_refs(i) > 0 || BBP_lrefs(i) > 0) {
+		int r;
+		if ((r = BBP_refs(i)) > 0 || BBP_lrefs(i) > 0) {
 			BAT *b = BBP_desc(i);
-			ATOMIC_BASE_TYPE status = BBP_status(i);
-			nh += (status & BBPHOT) != 0;
+			nbats++;
 			MT_lock_set(&b->theaplock);
-			if (status & BBPPERSISTENT) {
-				pn++;
-				pmem += HEAPmemsize(b->theap);
-				pvm += HEAPvmsize(b->theap);
-				pmem += HEAPmemsize(b->tvheap);
-				pvm += HEAPvmsize(b->tvheap);
-			} else {
-				tn++;
-				if (b->theap &&
-				    b->theap->parentid == b->batCacheid) {
-					tmem += HEAPmemsize(b->theap);
-					tvm += HEAPvmsize(b->theap);
-				}
-				if (b->tvheap &&
-				    b->tvheap->parentid == b->batCacheid) {
-					tmem += HEAPmemsize(b->tvheap);
-					tvm += HEAPvmsize(b->tvheap);
-				}
+			ATOMIC_BASE_TYPE status = BBP_status(i);
+			struct counters *bt = &bats[r > 0][BATdirty(b)][(status & BBPPERSISTENT) != 0][(status & BBPLOADED) != 0][(status & BBPHOT) != 0];
+			bt->nr++;
+			if (b->theap && b->batCacheid == b->theap->parentid) {
+				bt->sz += HEAPmemsize(b->theap);
+				bt->vmsz += HEAPvmsize(b->theap);
+			}
+			if (b->tvheap && b->batCacheid == b->tvheap->parentid) {
+				bt->sz += HEAPmemsize(b->tvheap);
+				bt->vmsz += HEAPvmsize(b->tvheap);
 			}
 			MT_lock_unset(&b->theaplock);
 		}
 		MT_lock_unset(&GDKswapLock(i));
 	}
+	uint32_t nfree = BBP_nfree;
 	BBPtmunlock();
-	printf("%d persistent bats using %zu virtual memory (%zu malloced)\n", pn, pvm, pmem);
-	printf("%d transient bats using %zu virtual memory (%zu malloced)\n", tn, tvm, tmem);
-	printf("%d bats are \"hot\" (i.e. currently or recently used)\n", nh);
-	printf("%"PRIu32" bats are in global free list\n", BBP_nfree);
+	if (bats[1][1][1][1][1].nr > 0)
+		printf("fix, dirty, persistent, loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[1][1][1][1][1].nr, bats[1][1][1][1][1].vmsz, bats[1][1][1][1][1].sz);
+	if (bats[1][1][1][1][0].nr > 0)
+		printf("fix, dirty, persistent, not loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[1][1][1][1][0].nr, bats[1][1][1][1][0].vmsz, bats[1][1][1][1][0].sz);
+	if (bats[1][1][1][0][1].nr > 0)
+		printf("fix, dirty, persistent, loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[1][1][1][0][1].nr, bats[1][1][1][0][1].vmsz, bats[1][1][1][0][1].sz);
+	if (bats[1][1][1][0][0].nr > 0)
+		printf("fix, dirty, persistent, not loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[1][1][1][0][0].nr, bats[1][1][1][0][0].vmsz, bats[1][1][1][0][0].sz);
+	if (bats[1][1][0][1][1].nr > 0)
+		printf("fix, dirty, transient, loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[1][1][0][1][1].nr, bats[1][1][0][1][1].vmsz, bats[1][1][0][1][1].sz);
+	if (bats[1][1][0][1][0].nr > 0)
+		printf("fix, dirty, transient, not loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[1][1][0][1][0].nr, bats[1][1][0][1][0].vmsz, bats[1][1][0][1][0].sz);
+	if (bats[1][1][0][0][1].nr > 0)
+		printf("fix, dirty, transient, loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[1][1][0][0][1].nr, bats[1][1][0][0][1].vmsz, bats[1][1][0][0][1].sz);
+	if (bats[1][1][0][0][0].nr > 0)
+		printf("fix, dirty, transient, not loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[1][1][0][0][0].nr, bats[1][1][0][0][0].vmsz, bats[1][1][0][0][0].sz);
+	if (bats[1][0][1][1][1].nr > 0)
+		printf("fix, clean, persistent, loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[1][0][1][1][1].nr, bats[1][0][1][1][1].vmsz, bats[1][0][1][1][1].sz);
+	if (bats[1][0][1][1][0].nr > 0)
+		printf("fix, clean, persistent, not loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[1][0][1][1][0].nr, bats[1][0][1][1][0].vmsz, bats[1][0][1][1][0].sz);
+	if (bats[1][0][1][0][1].nr > 0)
+		printf("fix, clean, persistent, loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[1][0][1][0][1].nr, bats[1][0][1][0][1].vmsz, bats[1][0][1][0][1].sz);
+	if (bats[1][0][1][0][0].nr > 0)
+		printf("fix, clean, persistent, not loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[1][0][1][0][0].nr, bats[1][0][1][0][0].vmsz, bats[1][0][1][0][0].sz);
+	if (bats[1][0][0][1][1].nr > 0)
+		printf("fix, clean, transient, loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[1][0][0][1][1].nr, bats[1][0][0][1][1].vmsz, bats[1][0][0][1][1].sz);
+	if (bats[1][0][0][1][0].nr > 0)
+		printf("fix, clean, transient, not loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[1][0][0][1][0].nr, bats[1][0][0][1][0].vmsz, bats[1][0][0][1][0].sz);
+	if (bats[1][0][0][0][1].nr > 0)
+		printf("fix, clean, transient, loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[1][0][0][0][1].nr, bats[1][0][0][0][1].vmsz, bats[1][0][0][0][1].sz);
+	if (bats[1][0][0][0][0].nr > 0)
+		printf("fix, clean, transient, not loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[1][0][0][0][0].nr, bats[1][0][0][0][0].vmsz, bats[1][0][0][0][0].sz);
+	if (bats[0][1][1][1][1].nr > 0)
+		printf("no fix, dirty, persistent, loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[0][1][1][1][1].nr, bats[0][1][1][1][1].vmsz, bats[0][1][1][1][1].sz);
+	if (bats[0][1][1][1][0].nr > 0)
+		printf("no fix, dirty, persistent, not loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[0][1][1][1][0].nr, bats[0][1][1][1][0].vmsz, bats[0][1][1][1][0].sz);
+	if (bats[0][1][1][0][1].nr > 0)
+		printf("no fix, dirty, persistent, loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[0][1][1][0][1].nr, bats[0][1][1][0][1].vmsz, bats[0][1][1][0][1].sz);
+	if (bats[0][1][1][0][0].nr > 0)
+		printf("no fix, dirty, persistent, not loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[0][1][1][0][0].nr, bats[0][1][1][0][0].vmsz, bats[0][1][1][0][0].sz);
+	if (bats[0][1][0][1][1].nr > 0)
+		printf("no fix, dirty, transient, loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[0][1][0][1][1].nr, bats[0][1][0][1][1].vmsz, bats[0][1][0][1][1].sz);
+	if (bats[0][1][0][1][0].nr > 0)
+		printf("no fix, dirty, transient, not loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[0][1][0][1][0].nr, bats[0][1][0][1][0].vmsz, bats[0][1][0][1][0].sz);
+	if (bats[0][1][0][0][1].nr > 0)
+		printf("no fix, dirty, transient, loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[0][1][0][0][1].nr, bats[0][1][0][0][1].vmsz, bats[0][1][0][0][1].sz);
+	if (bats[0][1][0][0][0].nr > 0)
+		printf("no fix, dirty, transient, not loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[0][1][0][0][0].nr, bats[0][1][0][0][0].vmsz, bats[0][1][0][0][0].sz);
+	if (bats[0][0][1][1][1].nr > 0)
+		printf("no fix, clean, persistent, loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[0][0][1][1][1].nr, bats[0][0][1][1][1].vmsz, bats[0][0][1][1][1].sz);
+	if (bats[0][0][1][1][0].nr > 0)
+		printf("no fix, clean, persistent, not loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[0][0][1][1][0].nr, bats[0][0][1][1][0].vmsz, bats[0][0][1][1][0].sz);
+	if (bats[0][0][1][0][1].nr > 0)
+		printf("no fix, clean, persistent, loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[0][0][1][0][1].nr, bats[0][0][1][0][1].vmsz, bats[0][0][1][0][1].sz);
+	if (bats[0][0][1][0][0].nr > 0)
+		printf("no fix, clean, persistent, not loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[0][0][1][0][0].nr, bats[0][0][1][0][0].vmsz, bats[0][0][1][0][0].sz);
+	if (bats[0][0][0][1][1].nr > 0)
+		printf("no fix, clean, transient, loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[0][0][0][1][1].nr, bats[0][0][0][1][1].vmsz, bats[0][0][0][1][1].sz);
+	if (bats[0][0][0][1][0].nr > 0)
+		printf("no fix, clean, transient, not loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[0][0][0][1][0].nr, bats[0][0][0][1][0].vmsz, bats[0][0][0][1][0].sz);
+	if (bats[0][0][0][0][1].nr > 0)
+		printf("no fix, clean, transient, loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[0][0][0][0][1].nr, bats[0][0][0][0][1].vmsz, bats[0][0][0][0][1].sz);
+	if (bats[0][0][0][0][0].nr > 0)
+		printf("no fix, clean, transient, not loaded, cold: %d bats, %zu virtual, %zu malloc\n", bats[0][0][0][0][0].nr, bats[0][0][0][0][0].vmsz, bats[0][0][0][0][0].sz);
+
+	printf("%d bats total, %d in use, %"PRIu32" free bats in common shared list\n",
+	       sz - 1, nbats, nfree);
 }

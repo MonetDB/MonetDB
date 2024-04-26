@@ -686,7 +686,6 @@ os_destroy(objectset *os, sql_store store)
 	if (ATOMIC_DEC(&os->refcnt) > 0)
 		return;
 	MT_rwlock_destroy(&os->rw_lock);
-	ATOMIC_DESTROY(&os->refcnt);
 	versionhead* n=os->id_based_h;
 	while(n) {
 		objectversion *ov = n->ov;
@@ -968,7 +967,9 @@ os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 
 static int
 os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov) {
+
 	versionhead  *id_based_node;
+
 	if (ov->name_based_older && ov->name_based_older->b->id == id)
 		id_based_node = ov->name_based_older->id_based_head;
 	else // Previous id based objectversion is of a different name, so now we do have to perform an extensive look up
@@ -1029,7 +1030,7 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 }
 
 int
-os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
+os_del(objectset *os, sql_trans *tr, const char *name, sql_base *b)
 {
 	store_lock(tr->store);
 	int res = os_del_(os, tr, name, b);

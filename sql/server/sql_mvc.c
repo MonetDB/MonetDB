@@ -1422,19 +1422,21 @@ mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids)
 			break;
 		case SCHEMA_DEPENDENCY:
 			dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
+			if (!dep_list)
+				dep_list = sql_trans_get_dependents(m->session->tr, id, SCHEMA_DEPENDENCY, NULL);
 			break;
 		case TABLE_DEPENDENCY:
-			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
+			dep_list = sql_trans_get_dependents(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 			break;
 		case VIEW_DEPENDENCY:
-			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
+			dep_list = sql_trans_get_dependents(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 			break;
 		case FUNC_DEPENDENCY:
 		case PROC_DEPENDENCY:
-			dep_list = sql_trans_get_dependencies(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
+			dep_list = sql_trans_get_dependents(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
 			break;
 		default:
-			dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
+			dep_list =  sql_trans_get_dependents(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
 	}
 
 	if (!dep_list)

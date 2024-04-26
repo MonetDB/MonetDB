@@ -1320,6 +1320,7 @@ BATnegcands(BUN nr, BAT *odels)
 		.farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap),
 		.parentid = bn->batCacheid,
 		.dirty = true,
+		.refs = ATOMIC_VAR_INIT(1),
 	};
 	strconcat_len(dels->filename, sizeof(dels->filename),
 		      nme, ".theap", NULL);
@@ -1330,7 +1331,6 @@ BATnegcands(BUN nr, BAT *odels)
 		BBPreclaim(bn);
 		return NULL;
 	}
-	ATOMIC_INIT(&dels->refs, 1);
 	c = (ccand_t *) dels->base;
 	*c = (ccand_t) {
 		.type = CAND_NEGOID,
@@ -1388,6 +1388,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		.farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap),
 		.parentid = bn->batCacheid,
 		.dirty = true,
+		.refs = ATOMIC_VAR_INIT(1),
 	};
 	strconcat_len(msks->filename, sizeof(msks->filename),
 		      nme, ".theap", NULL);
@@ -1438,7 +1439,6 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		cnt += candmask_pop(r[i]);
 	}
 	if (cnt > 0) {
-		ATOMIC_INIT(&msks->refs, 1);
 		assert(bn->tvheap == NULL);
 		bn->tvheap = msks;
 		bn->tseqbase += (oid) c->firstbit;
@@ -1504,6 +1504,7 @@ BATunmask(BAT *b)
 			.farmid = BBPselectfarm(TRANSIENT, TYPE_void, varheap),
 			.parentid = bn->batCacheid,
 			.dirty = true,
+			.refs = ATOMIC_VAR_INIT(1),
 		};
 		strconcat_len(dels->filename, sizeof(dels->filename),
 			      BBP_physical(bn->batCacheid), ".theap", NULL);
@@ -1538,7 +1539,6 @@ BATunmask(BAT *b)
 		} else {
 			dels->free = sizeof(ccand_t) + n * sizeof(oid);
 			dels->dirty = true;
-			ATOMIC_INIT(&dels->refs, 1);
 			assert(bn->tvheap == NULL);
 			bn->tvheap = dels;
 		}

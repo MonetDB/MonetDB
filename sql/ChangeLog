@@ -1,6 +1,16 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Apr 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Make schema renaming more permissive. A schema can be renamed if it
+  does not contain objects that are a dependency for objects outside
+  the schema. If such dependencies exist, they are shown in the
+  table sys.dependencies.
+
+* Tue Apr  8 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Add a DECIMAL AS clause to COPY INTO that configures the decimal separator
+  and thousands separator for decimals, temporal types and floats.
+
 * Thu Mar 21 2024 Yunus Koning <yunus.koning@monetdbsolutions.com>
 - Introduce IS [NOT] DISTINCT FROM syntax. The syntax allows two values
   to be compared. The comparison always returns boolean FALSE or TRUE

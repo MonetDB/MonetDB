@@ -232,8 +232,8 @@ base_init(allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name)
 		.id = id,
 		.new = isnew,
 		.name = (name) ? SA_STRDUP(sa, name) : NULL,
+		.refcnt = ATOMIC_VAR_INIT(1),
 	};
-	ATOMIC_INIT(&b->refcnt, 1);
 }
 
 void
@@ -421,22 +421,29 @@ subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 {
 	if (!t1->type || !t2->type)
 		return -1;
-
-	if (t1->type->eclass == t2->type->eclass && t1->type->eclass == EC_SEC)
-		return 0;
-	if (t1->type->eclass == t2->type->eclass && t1->type->eclass == EC_MONTH)
-		return 0;
-	if ( !(t1->type->eclass == t2->type->eclass &&
-	      (EC_INTERVAL(t1->type->eclass) || t1->type->eclass == EC_NUM)) &&
-	      (t1->digits != t2->digits ||
-	      (!(t1->type->eclass == t2->type->eclass &&
-	       t1->type->eclass == EC_FLT) &&
-	       t1->scale != t2->scale)) )
+	if (t1->type->eclass != t2->type->eclass)
 		return -1;
+	switch (t1->type->eclass) {
+		case EC_SEC:
+		case EC_MONTH:
+			if (t1->digits != t2->digits)
+				return -1;
+			return 0;
+		case EC_NUM:
+			break;
+		case EC_FLT:
+			if (t1->digits != t2->digits)
+				return -1;
+			break;
+		default:
+			if (t1->digits != t2->digits)
+				return -1;
+			if (t1->scale != t2->scale)
+				return -1;
+			break;
+	}
 
-	/* subtypes are only equal iff
-	   they map onto the same systemtype */
-	return (type_cmp(t1->type, t2->type));
+	return type_cmp(t1->type, t2->type);
 }
 
 int
@@ -1684,8 +1691,8 @@ sqltypeinit( allocator *sa)
 	sql_create_func(sa, "character_length", "str", "length", FALSE, FALSE, SCALE_NONE, 0, INT, 1, STR);
 	sql_create_func(sa, "octet_length", "str", "nbytes", FALSE, FALSE, SCALE_NONE, 0, INT, 1, STR);
 
-	/* copyfrom fname (arg 12) */
-	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", TRUE, SCALE_FIX, 0, TABLE, 12, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT);
+	/* copyfrom fname (arg 15) */
+	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", TRUE, SCALE_FIX, 0, TABLE, 14, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT, STR, STR);
 	f->varres = 1;
 
 	/* bincopyfrom */

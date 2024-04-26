@@ -16,8 +16,8 @@ insert into points_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)'
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT (10 10, 20 20)
-MULTIPOINT (30 30, 40 40)
+MULTIPOINT ((10 10), (20 20))
+MULTIPOINT ((30 30), (40 40))
 
 statement ok
 drop table points_tbl
@@ -40,7 +40,7 @@ insert into points_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)'
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT (20 20, 30 30)
+MULTIPOINT ((20 20), (30 30))
 
 statement ok
 drop table points_tbl
@@ -63,8 +63,8 @@ insert into points_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 3
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT Z (10 10 10, 20 20 20)
-MULTIPOINT Z (30 30 30, 40 40 40)
+MULTIPOINT Z ((10 10 10), (20 20 20))
+MULTIPOINT Z ((30 30 30), (40 40 40))
 
 statement ok
 drop table points_tbl
@@ -87,7 +87,7 @@ insert into points_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 3
 query T rowsort
 select * from points_tbl
 ----
-MULTIPOINT Z (20 20 20, 30 30 30)
+MULTIPOINT Z ((20 20 20), (30 30 30))
 
 statement ok
 drop table points_tbl
@@ -104,7 +104,7 @@ select st_mpointfromtext(geom) from geometriesTxt WHERE id=3
 query T rowsort
 select st_mpointfromtext(geom) from geometriesTxt WHERE id=4
 ----
-MULTIPOINT (10 20, 30 40)
+MULTIPOINT ((10 20), (30 40))
 
 statement error
 select st_mpointfromtext(geom) from geometriesTxt WHERE id=5

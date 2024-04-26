@@ -24,3 +24,5 @@ insert-delete-insert-crash-7415
 orderby-debug-crash-7416
 newurl-issue-7417
 rel_order_by-assertion-7418
+HAVE_LIBPY3?aggregate-vararg.Bug-7422
+interval-day-and-second.Bug-7353

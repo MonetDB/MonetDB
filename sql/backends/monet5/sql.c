@@ -3140,6 +3140,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 9);
 	int onclient = *getArgReference_int(stk, pci, pci->retc + 10);
 	bool escape = *getArgReference_int(stk, pci, pci->retc + 11);
+	const char *decsep = *getArgReference_str(stk, pci, pci->retc + 12);
+	const char *decskip = *getArgReference_str(stk, pci, pci->retc + 13);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
@@ -3149,6 +3151,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (onclient && !cntxt->filetrans)
 		throw(MAL, "sql.copy_from", SQLSTATE(42000) "Cannot transfer files from client");
+	if (strNil(decsep))
+		throw(MAL, "sql.copy_from", SQLSTATE(42000) "decimal separator cannot be nil");
+	if (strNil(decskip))
+		decskip = NULL;
 
 	be = cntxt->sqlcontext;
 	/* The CSV parser expects ssep to have the value 0 if the user does not
@@ -3160,7 +3166,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
-		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape);
+		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape, decsep, decskip);
 	} else {
 		if (onclient) {
 			ss = mapi_request_upload(fname, false, be->mvc->scanner.rs, be->mvc->scanner.ws);
@@ -3218,7 +3224,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			close_stream(ss);
 			throw(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape);
+		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape, decsep, decskip);
 		// This also closes ss:
 		bstream_destroy(s);
 	}
@@ -5314,7 +5320,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "export_bin_column", mvc_bin_export_column_wrap, true, "export column as binary", args(1, 5, arg("", lng), batargany("col", 1), arg("byteswap", bit), arg("filename", str), arg("onclient", int))),
  pattern("sql", "export_bin_column", mvc_bin_export_column_wrap, true, "export column as binary", args(1, 5, arg("", lng), argany("val", 1), arg("byteswap", bit), arg("filename", str), arg("onclient", int))),
  pattern("sql", "affectedRows", mvc_affected_rows_wrap, true, "export the number of affected rows by the current query", args(1,3, arg("",int),arg("mvc",int),arg("nr",lng))),
- pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,13, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
+ pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,15, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int),arg("decsep",str),arg("decskip",str))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
  pattern("sql", "importColumn", mvc_bin_import_column_wrap, false, "Import a column from the given file", args(2, 8, batargany("", 0),arg("", oid), arg("method",str),arg("width",int),arg("bswap",bit),arg("path",str),arg("onclient",int),arg("nrows",oid))),
@@ -5713,41 +5719,29 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  pattern("batsql", "diff", SQLdiff, false, "return true if cur != prev row", args(1,3, batarg("",bit),batarg("p",bit),argany("b",1))),
  pattern("batsql", "diff", SQLdiff, false, "return true if cur != prev row", args(1,3, batarg("",bit),batarg("p",bit),batargany("b",1))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",bte))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",bte))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",bte))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",bte))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",bte))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",sht))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",sht))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",sht))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",sht))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",sht))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",int))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",int))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",int))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",int))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",int))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",lng))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",lng))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",lng))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",lng))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",lng))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",flt))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",flt))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",flt))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",flt))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",flt))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",dbl))),
  pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",dbl))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",dbl))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("limit",dbl))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",dbl))),
  pattern("sql", "row_number", SQLrow_number, false, "return the row_numer-ed groups", args(1,4, arg("",int),argany("b",1),arg("p",bit),arg("o",bit))),
  pattern("batsql", "row_number", SQLrow_number, false, "return the row_numer-ed groups", args(1,4, batarg("",int),batargany("b",1),optbatarg("p",bit),optbatarg("o",bit))),
  pattern("sql", "rank", SQLrank, false, "return the ranked groups", args(1,4, arg("",int),argany("b",1),arg("p",bit),arg("o",bit))),
@@ -6127,12 +6121,10 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  command("batcalc", "dbl", bathge_dec2_dbl, false, "cast decimal(hge) to dbl and check for overflow", args(1,4, batarg("",dbl),arg("s1",int),batarg("v",hge),batarg("s",oid))),
  command("batcalc", "dbl", bathge_dec2dec_dbl, false, "cast decimal(hge) to decimal(dbl) and check for overflow", args(1,6, batarg("",dbl),arg("s1",int),batarg("v",hge),batarg("s",oid),arg("d2",int),arg("s2",int))),
  /* sql_rank_hge */
- pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
- pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("start",hge))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("start",hge))),
- pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),batarg("start",hge))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, arg("",oid),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",hge))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,6, batarg("",oid),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",hge))),
+ pattern("sql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, arg("",oid),arg("p",bit),argany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),arg("limit",hge))),
+ pattern("batsql", "window_bound", SQLwindow_bound, false, "computes window ranges for each row", args(1,7, batarg("",oid),batarg("p",bit),batargany("b",1),arg("unit",int),arg("bound",int),arg("excl",int),optbatarg("limit",hge))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",hge),arg("b",bte),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "sum", SQLsum, false, "return the sum of groups", args(1,7, batarg("",hge),batarg("b",bte),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  pattern("sql", "sum", SQLsum, false, "return the sum of groups", args(1,7, arg("",hge),arg("b",sht),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),

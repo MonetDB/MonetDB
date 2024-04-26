@@ -30,17 +30,17 @@ create table "changed"."testme" (oneval int)
 statement ok
 insert into "changed"."testme" values (1), (2), (NULL)
 
-statement error
-alter schema "changeme" rename to "another"
+statement ok
+alter schema "changed" rename to "another"
 
 statement error
-alter schema "changed" rename to "another"
+select oneval from "changed"."testme"
 
 statement error
 select oneval from "changeme"."testme"
 
 query I rowsort
-select oneval from "changed"."testme"
+select oneval from "another"."testme"
 ----
 1
 2
@@ -49,16 +49,39 @@ NULL
 statement error
 drop table "changeme"."testme"
 
-statement ok
+statement error
 drop table "changed"."testme"
 
 statement error
 drop schema "changeme"
 
-statement ok
+statement error
 drop schema "changed"
 
+statement ok
+drop schema "another" cascade
+
 query TI rowsort
-select "name", "system" from sys.schemas where "name" in ('changeme', 'changed')
+select "name", "system" from sys.schemas where "name" in ('changeme', 'changed', 'another')
 ----
 
+statement ok
+create schema foo
+
+statement ok
+create table foo.a as select * from generate_series(0,10)
+
+statement ok
+create schema bar
+
+statement ok
+create view bar.av as select * from foo.a
+
+statement error 2BM37!ALTER SCHEMA: unable to rename schema 'foo', there are database objects which depend on it
+alter schema foo rename to foofoo
+
+statement ok
+drop schema foo cascade
+
+statement ok
+drop schema bar cascade

@@ -61,7 +61,6 @@ RTREEdecref(BAT *b)
 	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&b->trtree->refs);
 	//If RTree is marked for destruction and there are no refs, destroy the RTree
 	if (b->trtree->destroy && refs == 0) {
-		ATOMIC_DESTROY(&b->trtree->refs);
 		rtree_destroy(b->trtree->rtree);
 		b->trtree->rtree = NULL;
 		GDKfree(b->trtree);
@@ -140,9 +139,11 @@ BATcheckrtree(BAT *b)
 			return GDK_FAIL;
 		}
 		b->trtree = GDKmalloc(sizeof(struct RTree));
-		b->trtree->rtree = rtree;
-		b->trtree->destroy = false;
-		ATOMIC_INIT(&b->trtree->refs, 1);
+		*b->trtree = (struct RTree) {
+			.rtree = rtree,
+			.destroy = false,
+			.refs = ATOMIC_VAR_INIT(1),
+		};
 		fclose(file_stream);
 		return GDK_SUCCEED;
 	}
@@ -254,9 +255,11 @@ BATrtree(BAT *wkb, BAT *mbrb)
 		}
 		bat_iterator_end(&bi);
 		pb->trtree = GDKmalloc(sizeof(struct RTree));
-		pb->trtree->rtree = rtree;
-		pb->trtree->destroy = false;
-		ATOMIC_INIT(&pb->trtree->refs, 1);
+		*pb->trtree = (struct RTree) {
+			.rtree = rtree,
+			.destroy = false,
+			.refs = ATOMIC_VAR_INIT(1),
+		};
 		persistRtree(pb);
 		MT_lock_unset(&pb->batIdxLock);
 	}

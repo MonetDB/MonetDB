@@ -390,6 +390,7 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 	int offset = 0;
 	int len_result = 0;
 	int addlen;
+	int empty_match_correction = 0;
 	char *tmp;
 
 	do {
@@ -397,7 +398,12 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 						  exec_options, ovector, ovecsize);
 		if (j <= 0)
 			break;
-		addlen = ovector[0] - offset + (nbackrefs == 0 ? len_replacement : 0);
+
+		empty_match_correction = ovector[0] == ovector[1] ? 1 : 0;
+
+		// calculate the length of the string that will be appended to result
+		addlen = ovector[0] - offset
+				+ (nbackrefs == 0 ? len_replacement : 0) + empty_match_correction;
 		if (len_result + addlen >= *max_result) {
 			tmp = GDKrealloc(result, len_result + addlen + 1);
 			if (tmp == NULL) {
@@ -407,11 +413,13 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 			result = tmp;
 			*max_result = len_result + addlen + 1;
 		}
+		// append to the result the parts of the original string that are left unchanged
 		if (ovector[0] > offset) {
 			strncpy(result + len_result, origin_str + offset,
 					ovector[0] - offset);
 			len_result += ovector[0] - offset;
 		}
+		// append to the result the replacement of the matched string
 		if (nbackrefs == 0) {
 			strncpy(result + len_result, replacement, len_replacement);
 			len_result += len_replacement;
@@ -464,8 +472,18 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 				len_result += addlen;
 			}
 		}
-		offset = ovector[1];
-	} while (offset < len_origin_str && global);
+		// In case of an empty match just advance the offset by 1
+		offset = ovector[1] + empty_match_correction;
+		// and copy the character that we just advanced over
+		if (empty_match_correction) {
+			strncpy(result + len_result, origin_str + ovector[1], 1);
+			++len_result;
+		}
+		// before we loop around check with the offset - 1 if we had an empty match
+		// since we manually advanced the offset by one. otherwise we gonna skip a
+		// replacement at the end of the string
+	} while ((offset - empty_match_correction) < len_origin_str && global);
+
 	if (offset < len_origin_str) {
 		addlen = len_origin_str - offset;
 		if (len_result + addlen >= *max_result) {

@@ -74,6 +74,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		*h = (Heap) {
 			.farmid = BBPselectfarm(role, tt, offheap),
 			.dirty = true,
+			.refs = ATOMIC_VAR_INIT(1),
 		};
 
 		if (ATOMneedheap(tt)) {
@@ -84,6 +85,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 			*vh = (Heap) {
 				.farmid = BBPselectfarm(role, tt, varheap),
 				.dirty = true,
+				.refs = ATOMIC_VAR_INIT(1),
 			};
 		}
 	}
@@ -125,13 +127,11 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 
 	if (bn->theap) {
 		bn->theap->parentid = bn->batCacheid;
-		ATOMIC_INIT(&bn->theap->refs, 1);
 		const char *nme = BBP_physical(bn->batCacheid);
 		settailname(bn->theap, nme, tt, width);
 
 		if (bn->tvheap) {
 			bn->tvheap->parentid = bn->batCacheid;
-			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			strconcat_len(bn->tvheap->filename,
 				      sizeof(bn->tvheap->filename),
 				      nme, ".theap", NULL);
@@ -604,6 +604,7 @@ BATclear(BAT *b, bool force)
 				.parentid = b->tvheap->parentid,
 				.dirty = true,
 				.hasfile = b->tvheap->hasfile,
+				.refs = ATOMIC_VAR_INIT(1),
 			};
 			strcpy_len(th->filename, b->tvheap->filename, sizeof(th->filename));
 			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED) {
@@ -611,7 +612,6 @@ BATclear(BAT *b, bool force)
 				return GDK_FAIL;
 			}
 			tvp = b->tvheap->parentid;
-			ATOMIC_INIT(&th->refs, 1);
 			HEAPdecref(b->tvheap, false);
 			b->tvheap = th;
 		}
@@ -709,7 +709,6 @@ void
 BATdestroy(BAT *b)
 {
 	if (b->tvheap) {
-		ATOMIC_DESTROY(&b->tvheap->refs);
 		GDKfree(b->tvheap);
 	}
 	PROPdestroy_nolock(b);
@@ -717,7 +716,6 @@ BATdestroy(BAT *b)
 	MT_lock_destroy(&b->batIdxLock);
 	MT_rwlock_destroy(&b->thashlock);
 	if (b->theap) {
-		ATOMIC_DESTROY(&b->theap->refs);
 		GDKfree(b->theap);
 	}
 	if (b->oldtail) {
@@ -799,6 +797,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	bool slowcopy = false;
 	BAT *bn = NULL;
 	BATiter bi;
+	char strhash[GDK_STRHASHSIZE];
 
 	BATcheck(b, NULL);
 
@@ -811,7 +810,19 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		return NULL;
 	}
 
-	bi = bat_iterator(b);
+	/* in case of a string bat, we save the string heap hash table
+	 * while we have the lock so that we can restore it in the copy;
+	 * this is because during our operation, a parallel thread could
+	 * be adding strings to the vheap which would modify the hash
+	 * table and that would result in buckets containing values
+	 * beyond the original vheap that we're copying */
+	MT_lock_set(&b->theaplock);
+	bi = bat_iterator_nolock(b);
+	if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE)
+		memcpy(strhash, b->tvheap->base, GDK_STRHASHSIZE);
+
+	bat_iterator_incref(&bi);
+	MT_lock_unset(&b->theaplock);
 
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
@@ -822,7 +833,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	    (bi.h == NULL ||
 	     bi.h->parentid == b->batCacheid ||
 	     BBP_desc(bi.h->parentid)->batRestricted == BAT_READ)) {
-		bn = VIEWcreate(b->hseqbase, b);
+		bn = VIEWcreate(b->hseqbase, b, 0, BUN_MAX);
 		if (bn == NULL) {
 			goto bunins_failed;
 		}
@@ -840,7 +851,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		return bn;
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
-		 * setting slowcopy to false) */
+		 * setting slowcopy to true) */
 		if (ATOMsize(tt) != ATOMsize(bi.type)) {
 			/* oops, void materialization */
 			slowcopy = true;
@@ -889,6 +900,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				bn->tvheap->free = bi.vhfree;
 				bn->tvheap->dirty = true;
 				bn->tascii = bi.ascii;
+				if (ATOMstorage(b->ttype) == TYPE_str && bi.vhfree >= GDK_STRHASHSIZE)
+					memcpy(bn->tvheap->base, strhash, GDK_STRHASHSIZE);
 			}
 
 			/* make sure we use the correct capacity */
