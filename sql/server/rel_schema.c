@@ -404,17 +404,17 @@ key_type token2key_type(int token) {
 }
 
 static
-str serialize_check_plan(sql_query *query, symbol *s, sql_table *t) {
+sql_rel* create_check_plan(sql_query *query, symbol *s, sql_table *t) {
 
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_rel* rel = rel_basetable(sql, t, t->base.name);
 	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel, ek);
+	rel->exps = rel_base_projection(sql, rel, 0);
 	list *pexps = sa_list(sql->sa);
 	pexps = append(pexps, e);
 	rel = rel_project(sql->sa, rel, pexps);
-	str check = rel2str(sql, rel);
-	return check;
+	return rel;
 }
 
 static int
@@ -460,9 +460,12 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 		}
 		char* check = NULL;
 		if (kt == ckey) {
-			if ((check = serialize_check_plan(query, s, t)) == NULL) {
+			sql_rel* check_rel = NULL;
+			if ((check_rel = create_check_plan(query, s, t)) == NULL) {
 				/*TODO error*/
 			}
+
+			check = rel2str(sql, check_rel);
 		}
 		switch (mvc_create_ukey(&k, sql, t, name, kt, check)) {
 			case -1:
@@ -929,10 +932,13 @@ table_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema 
 			return SQL_ERR;
 		}
 		char* check = NULL;
+		sql_rel* check_rel = NULL;
 		if (kt == ckey) {
-			if ((check = serialize_check_plan(query, s, t)) == NULL) {
+			if ((check_rel = create_check_plan(query, s, t)) == NULL) {
 				/*TODO error*/
 			}
+
+			check = rel2str(sql, check_rel);
 		}
 
 		switch (mvc_create_ukey(&k, sql, t, name, kt, check)) {
@@ -946,9 +952,26 @@ table_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema 
 			default:
 				break;
 		}
-		/* TODO: iterate over all columns in case of CHECK constraint*/
-		for (; nms; nms = nms->next) {
-			char *nm = nms->data.sval;
+		node* n = NULL;
+		if (check) {
+			sql_rel* btrel = check_rel->l;
+			n = btrel->exps->h;
+		}
+		while (true) {
+			const char *nm;
+			if (check) {
+				if (!n)
+					break;
+				sql_exp* e = n->data;
+				nm = e->alias.name;
+				n = n->next;
+			}
+			else {
+				if (!nms)
+					break;
+				nm = nms->data.sval;
+				nms = nms->next;
+			}
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
