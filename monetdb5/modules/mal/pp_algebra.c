@@ -97,7 +97,7 @@
 	}
 
 static str
-LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+LOCKEDAGGRsum1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *res = getArgReference_bat(stk, pci, 0);
 	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 1);
@@ -492,7 +492,7 @@ mulmod(lng a, lng b, lng c)
 			else															\
 				e2 += (a1 - t) + a2;										\
 			a2 = t;															\
-			overflow += isinf(t);											\
+			overflow += (isinf(t) || isnan(t));								\
 			n2++;															\
 		}																	\
 	} while(0)
@@ -503,6 +503,7 @@ mulmod(lng a, lng b, lng c)
 			a2 = a1;														\
 			e2 = e1;														\
 			overflow += n2;													\
+			overflow += (is_##T##_nil(a1)?n1:0);							\
 			n2 = n1;														\
 		} else if (!is_##T##_nil(a1)) {										\
 		    T t = a2 + a1;													\
@@ -511,16 +512,17 @@ mulmod(lng a, lng b, lng c)
 			else															\
 				e2 += (a1 - t) + a2;										\
 			a2 = t;															\
-			overflow += isinf(t);											\
+			overflow += (isinf(t) || isnan(t));								\
 			e2 += e1;														\
 			n2 += n1;														\
 		}																	\
 	} while(0)
 
 static str
-LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+LOCKEDAGGRsum_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool sum)
 {
 	(void)cntxt;
+	const char *fcn = (sum)?"lockedaggr.sum": "lockedaggr.avg";
 	bat *res = getArgReference_bat(stk, pci, 0);
 	bat *rcnt = getArgReference_bat(stk, pci, pci->retc - 1);
 	bat *rrem = pci->retc == 3 ? getArgReference_bat(stk, pci, 1) : NULL;
@@ -535,23 +537,23 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 			type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
 			type != TYPE_flt && type != TYPE_dbl)
-			return createException(SQL, "lockedaggr.avg", "Wrong input type (%d)", type);
+			return createException(SQL, fcn, "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
 	if (is_bat_nil(*res)) {
-		err = createException(SQL, "lockedaggr.avg", "Result is not initialized");
+		err = createException(SQL, fcn, "Result is not initialized");
 		goto error;
 	}
 	b = BATdescriptor(*res);
 	c = BATdescriptor(*rcnt);
 	if (b == NULL || c == NULL) {
-		err = createException(MAL, "lockedaggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, fcn, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
 	if (pci->retc == 3) {
 		if ((r = BATdescriptor(*rrem)) == NULL) {
-			err = createException(MAL, "lockedaggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, fcn, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 		switch (b->ttype) {
@@ -581,7 +583,7 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				flt r2 = *(flt*)Tloc(r, 0);
 				lng n2 = *(lng*)Tloc(c, 0);
 				avg_aggr_float_comb(flt, a1, r1, n1, a2, r2, n2);
-				if (overflow) {
+				if (overflow || isinf(a1) || (!n1 && isnan(a1))) {
 					err = createException(SQL, "pp aggr.avg", "Overflow in avg()");
 					goto error;
 				}
@@ -599,7 +601,7 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dbl r2 = *(dbl*)Tloc(r, 0);
 				lng n2 = *(lng*)Tloc(c, 0);
 				avg_aggr_float_comb(dbl, a1, r1, n1, a2, r2, n2);
-				if (overflow) {
+				if (overflow || isinf(a1) || (!n1 && isnan(a1))) {
 					err = createException(SQL, "pp aggr.avg", "Overflow in avg()");
 					goto error;
 				}
@@ -652,6 +654,17 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return err;
 }
 
+static str
+LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return LOCKEDAGGRsum_avg(cntxt, mb, stk, pci, true);
+}
+
+static str
+LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return LOCKEDAGGRsum_avg(cntxt, mb, stk, pci, false);
+}
 #define vmin(a,b) ((cmp(a,b) < 0)?a:b)
 #define vmax(a,b) ((cmp(a,b) > 0)?a:b)
 
@@ -4195,12 +4208,12 @@ ALGfsum(dbl *result, dbl *com, lng *cnt, const bat *bid)
 
 #include "mel.h"
 static mel_func pp_algebra_init_funcs[] = {
- pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "sum values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
+ pattern("lockedaggr", "sum", LOCKEDAGGRsum1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  pattern("lockedaggr", "prod", LOCKEDAGGRprod, true, "product of all values, using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 2))),
  pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(2,5, sharedbatargany("", 1), sharedbatarg("rcnt", lng), arg("pipeline", ptr), argany("val", 1), arg("cnt", lng))),
  pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(3,7, sharedbatargany("", 1), sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), arg("pipeline", ptr), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),
- pattern("lockedaggr", "sum", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,7, sharedbatarg("rsum", flt), sharedbatarg("rcom", flt), sharedbatarg("rcnt", lng), arg("pipeline", ptr), arg("sum", flt), arg("com", flt), arg("cnt", lng))),
- pattern("lockedaggr", "sum", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,7, sharedbatarg("rsum", dbl), sharedbatarg("rcom", dbl), sharedbatarg("rcnt", lng), arg("pipeline", ptr), arg("sum", dbl), arg("com", dbl), arg("cnt", lng))),
+ pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "Kahan/neumaier summation, using the bat lock", args(3,7, sharedbatarg("rsum", flt), sharedbatarg("rcom", flt), sharedbatarg("rcnt", lng), arg("pipeline", ptr), arg("sum", flt), arg("com", flt), arg("cnt", lng))),
+ pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "Kahan/neumaier summation, using the bat lock", args(3,7, sharedbatarg("rsum", dbl), sharedbatarg("rcom", dbl), sharedbatarg("rcnt", lng), arg("pipeline", ptr), arg("sum", dbl), arg("com", dbl), arg("cnt", lng))),
  pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,7, sharedbatarg("ravg", dbl), sharedbatarg("rcem", dbl), sharedbatarg("rcnt", lng), arg("pipeline", ptr), arg("val", dbl), arg("com", dbl), arg("cnt", lng))),
  pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
