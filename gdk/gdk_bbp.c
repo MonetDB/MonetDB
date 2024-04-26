@@ -4114,7 +4114,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			 * are in the BACKUP directory to the SUBCOMMIT
 			 * directory */
 			char fname[16];	/* plenty big enough */
-			if (snprintf(fname, sizeof(fname), "%o", i) < 16) {
+			if (snprintf(fname, sizeof(fname), "%o", (unsigned) i) < 16) {
 				/* the snprintf never fails, any of the
 				 * below may fail */
 				if (GDKmove(0, BAKDIR, fname, "tail", SUBDIR, fname, "tail", false) == GDK_SUCCEED)
