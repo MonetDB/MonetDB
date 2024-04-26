@@ -4472,7 +4472,7 @@ tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
 
 		d->next = NULL;
@@ -4512,7 +4512,7 @@ tc_gc_upd_col( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
 
 		d->next = NULL;
@@ -4552,7 +4552,7 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
 
 		d->next = NULL;
@@ -4592,7 +4592,7 @@ tc_gc_upd_idx( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
 
 		d->next = NULL;
