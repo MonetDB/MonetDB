@@ -1958,8 +1958,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	return BUN_NONE;
 }
 
-/* return the latest reject table, to be on the safe side we should
- * actually create copies within a critical section. Ignored for now. */
+/* return the latest reject table */
 str
 COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1971,10 +1970,27 @@ COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	create_rejects_table(cntxt);
 	if (cntxt->error_row == NULL)
 		throw(MAL, "sql.rejects", "No reject table available");
-	BBPretain(*row = cntxt->error_row->batCacheid);
-	BBPretain(*fld = cntxt->error_fld->batCacheid);
-	BBPretain(*msg = cntxt->error_msg->batCacheid);
-	BBPretain(*inp = cntxt->error_input->batCacheid);
+	MT_lock_set(&errorlock);
+	BAT *bn1 = COLcopy(cntxt->error_row, cntxt->error_row->ttype, true, TRANSIENT);
+	BAT *bn2 = COLcopy(cntxt->error_fld, cntxt->error_fld->ttype, true, TRANSIENT);
+	BAT *bn3 = COLcopy(cntxt->error_msg, cntxt->error_msg->ttype, true, TRANSIENT);
+	BAT *bn4 = COLcopy(cntxt->error_input, cntxt->error_input->ttype, true, TRANSIENT);
+	MT_lock_unset(&errorlock);
+	if (bn1 == NULL || bn2 == NULL || bn3 == NULL || bn4 == NULL) {
+		BBPreclaim(bn1);
+		BBPreclaim(bn2);
+		BBPreclaim(bn3);
+		BBPreclaim(bn4);
+		throw(MAL, "sql.rejects", GDK_EXCEPTION);
+	}
+	*row = bn1->batCacheid;
+	*fld = bn2->batCacheid;
+	*msg = bn3->batCacheid;
+	*inp = bn4->batCacheid;
+	BBPkeepref(bn1);
+	BBPkeepref(bn2);
+	BBPkeepref(bn3);
+	BBPkeepref(bn4);
 	(void) mb;
 	return MAL_SUCCEED;
 }

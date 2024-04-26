@@ -4065,6 +4065,33 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 			if (lock)
 				MT_lock_set(&GDKswapLock(bid));
 		}
+		if (subcommit) {
+			/* move any tail/theap files we find for this bat that
+			 * are in the BACKUP directory to the SUBCOMMIT
+			 * directory */
+			char fname[16];	/* plenty big enough */
+			if (snprintf(fname, sizeof(fname), "%o", i) < 16) {
+				/* the snprintf never fails, any of the
+				 * below may fail */
+				if (GDKmove(0, BAKDIR, fname, "tail", SUBDIR, fname, "tail", false) == GDK_SUCCEED)
+					TRC_DEBUG(BAT_, "moved %s.tail from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+				if (GDKmove(0, BAKDIR, fname, "tail1", SUBDIR, fname, "tail1", false) == GDK_SUCCEED)
+					TRC_DEBUG(BAT_, "moved %s.tail1 from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+				if (GDKmove(0, BAKDIR, fname, "tail2", SUBDIR, fname, "tail2", false) == GDK_SUCCEED)
+					TRC_DEBUG(BAT_, "moved %s.tail2 from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+#if SIZEOF_VAR_T == 8
+				if (GDKmove(0, BAKDIR, fname, "tail4", SUBDIR, fname, "tail4", false) == GDK_SUCCEED)
+					TRC_DEBUG(BAT_, "moved %s.tail4 from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+#endif
+				if (GDKmove(0, BAKDIR, fname, "theap", SUBDIR, fname, "theap", false) == GDK_SUCCEED)
+					TRC_DEBUG(BAT_, "moved %s.theap from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+			}
+		}
 		BAT *b = dirty_bat(&i, subcommit != NULL);
 		if (i <= 0)
 			ret = GDK_FAIL;
