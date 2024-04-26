@@ -493,6 +493,8 @@ segs_end( segments *segs, sql_trans *tr, sql_table *table)
 {
 	size_t cnt = 0;
 
+	/* because a table can grow rows over the time a transaction is running, we need to find the last valid segment, to
+	 * keep all of the parts aligned */
 	lock_table(tr->store, table->base.id);
 	segment *s = segs->h, *l = NULL;
 
