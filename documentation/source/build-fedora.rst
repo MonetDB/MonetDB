@@ -4,7 +4,9 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+.. Copyright 2024 MonetDB Foundation;
+.. Copyright August 2008 - 2023 MonetDB B.V.;
+.. Copyright 1997 - July 2008 CWI.
 
 ===============
 Build on Fedora
@@ -16,7 +18,7 @@ These packages are required.
 
 | cmake			# version >= 3.12
 | bison
-| gettext-devel
+| gcc
 | libxml2-devel
 | mercurial
 
@@ -44,5 +46,4 @@ These packages are optional.
 | lz4-devel		# optional: read and write .lz4 compressed files
 | netcdf-devel		# optional: read NetCDF files
 | proj-devel		# optional, only optionally used in geom module
-| snappy-devel		# optional: unused
 | valgrind-devel	# optional: --with-valgrind configuration (debug)

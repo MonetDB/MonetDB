@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -83,7 +85,7 @@ rel_create_view_ddl(mvc *sql, int cat_type, const char *sname, sql_table *t, int
 }
 
 static sql_rel *
-rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *sname2, char *tname2, int action)
+rel_alter_table(allocator *sa, int cattype, char *sname, char *tname, char *sname2, char *tname2, int action)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -325,6 +327,9 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 		case SQL_UNIQUE:
 			suffix = "unique";
 			break;
+		case SQL_UNIQUE_NULLS_NOT_DISTINCT:
+			suffix = "nndunique";
+			break;
 		case SQL_PRIMARY_KEY:
 			suffix = "pkey";
 			break;
@@ -366,8 +371,9 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 	}
 	switch (s->token) {
 	case SQL_UNIQUE:
+	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
 	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
+		key_type kt = (s->token == SQL_UNIQUE) ? ukey : (s->token == SQL_UNIQUE_NULLS_NOT_DISTINCT) ? unndkey : pkey;
 		sql_key *k;
 		const char *ns = name;
 
@@ -610,10 +616,12 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					}
 					used |= (1<<COL_DEFAULT);
 
-					if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT) {
+					if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT || sym->token == SQL_NEXT) {
 						exp_kind ek = {type_value, card_value, FALSE};
 						sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
 
+						if (!e)
+							return SQL_ERR;
 						if (e && is_atom(e->type)) {
 							atom *a = exp_value(sql, e);
 
@@ -828,8 +836,9 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 
 	switch (s->token) {
 	case SQL_UNIQUE:
+	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
 	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
+		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : s->token == SQL_UNIQUE ? ukey : unndkey);
 		dnode *nms = s->data.lval->h;
 		sql_key *k;
 		const char *ns = name;
@@ -1084,6 +1093,34 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		if (!c) {
 			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
+		}
+		if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT || sym->token == SQL_NEXT) {
+				exp_kind ek = {type_value, card_value, FALSE};
+				sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
+
+				if (!e)
+					return SQL_ERR;
+				if (e && is_atom(e->type)) {
+					atom *a = exp_value(sql, e);
+
+					if (a && atom_null(a)) {
+						switch (mvc_default(sql, c, NULL)) {
+						case -1:
+							(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+							return SQL_ERR;
+						case -2:
+						case -3:
+							(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
+							return SQL_ERR;
+						default:
+							break;
+					}
+					break;
+				}
+			}
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
 		}
 		r = symbol2string(sql, sym, 0, &err);
 		if (!r) {
@@ -1546,7 +1583,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 }
 
 static sql_rel *
-rel_schema2(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
+rel_schema2(allocator *sa, int cat_type, char *sname, char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1567,7 +1604,7 @@ rel_schema2(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
-rel_schema3(sql_allocator *sa, int cat_type, char *sname, char *tname, char *name)
+rel_schema3(allocator *sa, int cat_type, char *sname, char *tname, char *name)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1632,7 +1669,7 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
+rel_drop(allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1655,7 +1692,7 @@ rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *se
 }
 
 static sql_rel *
-rel_create_schema_dll(sql_allocator *sa, char *sname, char *auth, int nr)
+rel_create_schema_dll(allocator *sa, char *sname, char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1930,7 +1967,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		if (c->def) {
 			e = rel_parse_val(sql, nt->s, c->def, &c->type, sql->emode, NULL);
 		} else {
-			e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+			e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 		}
 		if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
 			rel_destroy(r);
@@ -1947,7 +1984,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 }
 
 static sql_rel *
-rel_role(sql_allocator *sa, char *grantee, char *auth, int grantor, int admin, int type)
+rel_role(allocator *sa, char *grantee, char *auth, int grantor, int admin, int type)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1991,7 +2028,7 @@ rel_grant_or_revoke_roles(mvc *sql, dlist *roles, dlist *grantees, int grant, in
 }
 
 static sql_rel *
-rel_priv(sql_allocator *sa, char *sname, char *name, char *grantee, int privs, char *cname, int grant, int grantor, int type)
+rel_priv(allocator *sa, char *sname, char *name, char *grantee, int privs, char *cname, int grant, int grantor, int type)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2017,7 +2054,7 @@ rel_priv(sql_allocator *sa, char *sname, char *name, char *grantee, int privs, c
 }
 
 static sql_rel *
-rel_func_priv(sql_allocator *sa, char *sname, int func, char *grantee, int privs, int grant, int grantor, int type)
+rel_func_priv(allocator *sa, char *sname, int func, char *grantee, int privs, int grant, int grantor, int type)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2272,7 +2309,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 }
 
 static sql_rel *
-rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role)
+rel_create_user(allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2300,7 +2337,7 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 }
 
 static sql_rel *
-rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
+rel_alter_user(allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2527,7 +2564,7 @@ rel_find_designated_object(mvc *sql, symbol *sym, sql_schema **schema_out)
 }
 
 static sql_rel *
-rel_comment_on(sql_allocator *sa, sqlid obj_id, const char *remark)
+rel_comment_on(allocator *sa, sqlid obj_id, const char *remark)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2582,24 +2619,38 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	sql_schema *s;
 	sql_rel *rel;
 	list *exps;
-	sql_trans *tr = sql->session->tr;
 
 	assert(old_name && new_name);
 	if (!(s = mvc_bind_schema(sql, old_name))) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000)
+						 "ALTER SCHEMA: no such schema '%s'", old_name);
 	}
+
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: access denied for %s to schema '%s'",
+						 get_string_global_var(sql, "current_user"), old_name);
+
 	if (s->system)
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr))
-		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: cannot rename a system schema");
+
 	if (strNil(new_name) || *new_name == '\0')
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: invalid new schema name");
+
 	if (mvc_bind_schema(sql, new_name))
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+		return sql_error(sql, 02, SQLSTATE(3F000)
+						 "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+
+	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) != NO_DEPENDENCY) {
+		return sql_error(sql, 02,
+						 SQLSTATE(2BM37) "ALTER SCHEMA: unable to"
+						 " rename schema '%s', there are database objects"
+						 " which depend on it", old_name);
+	}
 
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);
@@ -2608,6 +2659,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	rel->op = op_ddl;
 	rel->flag = ddl_rename_schema;
 	rel->exps = exps;
+
 	return rel;
 }
 

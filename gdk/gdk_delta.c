@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -44,19 +46,4 @@ BATcommit(BAT *b, BUN size)
 	b->batInserted = size < BATcount(b) ? size : BATcount(b);
 	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
-}
-
-/*
- * BATfakeCommit() flushed the delta info, but leaves the BAT marked
- * clean.
- */
-void
-BATfakeCommit(BAT *b)
-{
-	if (b) {
-		BATcommit(b, BUN_NONE);
-		b->theap->dirty = false;
-		if (b->tvheap)
-			b->tvheap->dirty = false;
-	}
 }

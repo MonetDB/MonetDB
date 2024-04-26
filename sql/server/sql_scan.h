@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _SQL_SCAN_H_
@@ -33,6 +35,7 @@ struct scanner {
 	prot mode;		/* which mode (line (1,N), blocked) */
 	char *schema;	/* Keep schema name of create statement, needed AUTO_INCREMENT, SERIAL */
 	char *errstr;	/* error message from the bowels of the scanner */
+	bool aborted;
 
 
 	/* Currently, MonetDB interprets \ specially in strings.  This is contrary
@@ -62,7 +65,7 @@ struct scanner {
 
 #define QUERY(scanner) (scanner.rs->buf+scanner.rs->pos)
 
-extern char *query_cleaned(sql_allocator *sa, const char *query);
+extern char *query_cleaned(allocator *sa, const char *query);
 extern void scanner_init(struct scanner *s, bstream *rs, stream *ws);
 sql_export void scanner_query_processed(struct scanner *s);
 

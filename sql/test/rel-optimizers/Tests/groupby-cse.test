@@ -45,7 +45,7 @@ project (
 | ) [ "foo"."c1" ] [ "foo"."c1", "sys"."count" no nil ("foo"."c3") NOT NULL as "%1"."%1" ]
 ) [ "foo"."c1" UNIQUE, "foo"."c1" UNIQUE, "%1"."%1" NOT NULL ]
 
-query III nosort gb-over-bt
+query III rowsort
 SELECT
     c1,
     c1,
@@ -125,8 +125,9 @@ GROUP BY
 ----
 project (
 | group by (
-| | table ("sys"."tablereturnudf"(), 
-| | ) [ "%1"."a1", "%1"."a2", "%1"."a3" ]
+| | project (
+| | | table("sys"."foo") [ "foo"."c1", "foo"."c3" ]
+| | ) [ "foo"."c1" as "%1"."a1", "foo"."c3" as "%1"."a3" ]
 | ) [ "%1"."a1" ] [ "%1"."a1", "sys"."count" no nil ("%1"."a3") NOT NULL as "%2"."%2" ]
 ) [ "%1"."a1" UNIQUE, "%1"."a1" UNIQUE, "%2"."%2" NOT NULL ]
 

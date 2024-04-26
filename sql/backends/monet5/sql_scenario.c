@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -85,6 +87,13 @@ static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 static str SQLinit(Client c, const char *initpasswd);
 static str master_password = NULL;
 
+static void
+SQLprintinfo(void)
+{
+	/* we need to start printing SQL info here... */
+	store_printinfo(SQLstore);
+}
+
 str
 //SQLprelude(void *ret)
 SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -105,7 +114,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	(void) mb;
 	(void) stk;
 	(void) pci;
 	if (!s)
@@ -153,6 +161,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fprintf(stdout, "# MonetDB/SQL module loaded\n");
 		fflush(stdout);		/* make merovingian see this *now* */
 	}
+	GDKprintinforegister(SQLprintinfo);
 	if (GDKinmemory(0) || GDKembedded()) {
 		s->name = "sql";
 		ms->name = "msql";
@@ -243,9 +252,8 @@ SQLexecPostLoginTriggers(Client c)
 					// cache state
 					int oldvtop = c->curprg->def->vtop;
 					int oldstop = c->curprg->def->stop;
-					int oldvid = c->curprg->def->vid;
 					Symbol curprg = c->curprg;
-					sql_allocator *sa = m->sa;
+					allocator *sa = m->sa;
 
 					if (!(m->sa = sa_create(m->pa))) {
 						m->sa = sa;
@@ -265,7 +273,7 @@ SQLexecPostLoginTriggers(Client c)
 
 					setVarType(c->curprg->def, 0, 0);
 					if (backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0) {
-						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+						freeVariables(c, c->curprg->def, NULL, oldvtop);
 						c->curprg = curprg;
 						sa_destroy(m->sa);
 						m->sa = sa;
@@ -282,7 +290,7 @@ SQLexecPostLoginTriggers(Client c)
 					// restore previous state
 					be->out = out;
 					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+					freeVariables(c, c->curprg->def, NULL, oldvtop);
 					sqlcleanup(be, 0);
 					c->curprg = curprg;
 					sa_destroy(m->sa);
@@ -360,7 +368,7 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 	str msg = MAL_SUCCEED;
 
 	if (c->sqlcontext == 0) {
-		sql_allocator *sa = sa_create(NULL);
+		allocator *sa = sa_create(NULL);
 		if (sa == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout2;
@@ -501,7 +509,7 @@ SQLresetClient(Client c)
 	if (c->sqlcontext == NULL)
 		throw(SQL, "SQLexitClient", SQLSTATE(42000) "MVC catalogue not available");
 	if (c->sqlcontext) {
-		sql_allocator *pa = NULL;
+		allocator *pa = NULL;
 		backend *be = c->sqlcontext;
 		mvc *m = be->mvc;
 
@@ -1059,11 +1067,14 @@ SQLreader(Client c, backend *be)
 				}
 				in->eof = false;
 			}
+			while (bstream_getoob(in) > 0)
+				;
+			m->scanner.aborted = false;
 			if (in->buf == NULL) {
 				more = false;
 				go = false;
 			} else if (go && (rd = bstream_next(in)) <= 0) {
-				if (rd == 0 && in->eof) {
+				if (rd == 0 && in->eof && !mnstr_eof(in->s)) {
 					/* we hadn't seen the EOF before, so just try again
 					   (this time with prompt) */
 					more = true;
@@ -1233,13 +1244,19 @@ SQLparser_body(Client c, backend *be)
 	m->emod = mod_none;
 	c->query = NULL;
 	c->qryctx.starttime = Tbegin = Tend = GDKusec();
+	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
 	if ((err = sqlparse(m)) ||
+		m->scanner.aborted ||
+		((m->scanner.aborted |= bstream_getoob(m->scanner.rs) != 0) != false) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
-		if (!err &&m->scanner.started)	/* repeat old errors, with a parsed query */
+		if (!err && m->scanner.started)	/* repeat old errors, with a parsed query */
 			err = mvc_status(m);
-		if (err && *m->errstr) {
+		if (m->scanner.aborted) {
+			msg = createException(PARSE, "SQLparser", "Query aborted");
+			*m->errstr = 0;
+		} else if (err && *m->errstr) {
 			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
@@ -1313,11 +1330,9 @@ SQLparser_body(Client c, backend *be)
 			goto finalize;
 		}
 
-		int oldvid = c->curprg->def->vid;
 		int oldvtop = c->curprg->def->vtop;
 		int oldstop = c->curprg->def->stop;
 		be->vtop = oldvtop;
-		be->vid = oldvid;
 		(void)runtimeProfileSetTag(c); /* generate and set the tag in the mal block of the clients current program. */
 		if (m->emode != m_prepare || (m->emode == m_prepare && (m->emod & mod_exec) && is_ddl(r->op)) /* direct execution prepare */) {
 			scanner_query_processed(&(m->scanner));
@@ -1346,7 +1361,7 @@ SQLparser_body(Client c, backend *be)
 					msg = handle_error(m, 0, msg);
 					err = 1;
 					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+					freeVariables(c, c->curprg->def, NULL, oldvtop);
 				}
 				r = r->l;
 				m->emode = m_normal;
@@ -1356,7 +1371,7 @@ SQLparser_body(Client c, backend *be)
 				msg = handle_error(m, 0, msg);
 				err = 1;
 				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+				freeVariables(c, c->curprg->def, NULL, oldvtop);
 				freeException(c->curprg->def->errors);
 				c->curprg->def->errors = NULL;
 			} else
@@ -1389,7 +1404,7 @@ SQLparser_body(Client c, backend *be)
 						str other = c->curprg->def->errors;
 						c->curprg->def->errors = 0;
 						MSresetInstructions(c->curprg->def, oldstop);
-						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+						freeVariables(c, c->curprg->def, NULL, oldvtop);
 						if (other != msg)
 							freeException(other);
 						goto finalize;
@@ -1402,7 +1417,7 @@ SQLparser_body(Client c, backend *be)
 					c->curprg->def->errors = 0;
 					/* restore the state */
 					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+					freeVariables(c, c->curprg->def, NULL, oldvtop);
 					if (msg == NULL && *m->errstr){
 						if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 							msg = createException(PARSE, "SQLparser", "%s", m->errstr);

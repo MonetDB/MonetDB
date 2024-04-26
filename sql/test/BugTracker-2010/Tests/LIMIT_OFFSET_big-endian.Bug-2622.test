@@ -29,7 +29,7 @@ query T nosort
 project (
 | top N (
 | | table("sys"."oblo") [ "oblo"."a" ]
-| ) [ bigint(64) NULL, bigint(64) "2" ]
+| ) [ bigint(63) NULL, bigint(63) "2" ]
 ) [ "oblo"."a" ]
 
 query T nosort
@@ -38,7 +38,7 @@ query T nosort
 project (
 | top N (
 | | table("sys"."oblo") [ "oblo"."a" ]
-| ) [ bigint(64) "2" ]
+| ) [ bigint(63) "2" ]
 ) [ "oblo"."a" ]
 
 query T nosort
@@ -47,7 +47,7 @@ query T nosort
 project (
 | top N (
 | | table("sys"."oblo") [ "oblo"."a" ]
-| ) [ bigint(64) "1", bigint(64) "2" ]
+| ) [ bigint(63) "1", bigint(63) "2" ]
 ) [ "oblo"."a" ]
 
 query T nosort
@@ -56,7 +56,7 @@ query T nosort
 project (
 | top N (
 | | table("sys"."oblo") [ "oblo"."a" ]
-| ) [ bigint(64) "2", bigint(64) "1" ]
+| ) [ bigint(63) "2", bigint(63) "1" ]
 ) [ "oblo"."a" ]
 
 query T nosort
@@ -73,7 +73,7 @@ top N (
 | project (
 | | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
-) [ bigint(64) NULL, bigint(64) "2" ]
+) [ bigint(63) NULL, bigint(63) "2" ]
 
 query T nosort
    PLAN select * from oblo ORDER BY a LIMIT 2
@@ -82,7 +82,7 @@ top N (
 | project (
 | | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
-) [ bigint(64) "2" ]
+) [ bigint(63) "2" ]
 
 query T nosort
    PLAN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
@@ -91,7 +91,7 @@ top N (
 | project (
 | | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
-) [ bigint(64) "2", bigint(64) "1" ]
+) [ bigint(63) "2", bigint(63) "1" ]
 
 query T nosort
    PLAN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
@@ -100,7 +100,7 @@ top N (
 | project (
 | | table("sys"."oblo") [ "oblo"."a" ]
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
-) [ bigint(64) "1", bigint(64) "2" ]
+) [ bigint(63) "1", bigint(63) "2" ]
 
 query T python .explain.function_histogram
 EXPLAIN select * from oblo
@@ -341,29 +341,6 @@ query I rowsort
 2
 3
 4
-
-query I rowsort
-        select * from oblo OFFSET 2
-----
-1
-2
-
-query I rowsort
-        select * from oblo LIMIT 2
-----
-3
-4
-
-query I rowsort
-        select * from oblo LIMIT 1 OFFSET 2
-----
-2
-
-query I rowsort
-        select * from oblo LIMIT 2 OFFSET 1
-----
-2
-3
 
 query I rowsort
         select * from oblo ORDER BY a

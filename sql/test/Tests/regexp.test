@@ -1,4 +1,4 @@
-# for the regex options look into `man 3 pcreapi` 
+# for the regex options look into `man 3 pcreapi`
 
 # basic
 query T rowsort
@@ -54,9 +54,36 @@ select regexp_replace('foo', 'f o o', 'XYZ')
 ----
 foo
 
-# regex option - not extended
+# regex option - extended
 query T rowsort
 select regexp_replace('foo', 'f o o', 'XYZ', 'x')
 ----
 XYZ
+
+# regex option - not emtpy match
+query T rowsort
+select regexp_replace('foobar', 'k?', 'XY')
+----
+foobar
+
+# regex option - emtpy match
+query T rowsort
+select regexp_replace('foobar', 'k?', '-', 'e')
+----
+-f-o-o-b-a-r-
+
+# regex option - empty match w alternative v1
+query T rowsort
+select regexp_replace('abc', 'b|k?', '-', 'e')
+----
+-a--c-
+
+# regex option - empty match w alternative v2
+# even though you would expect -a--c- the pcre lib does not return 
+# the longest match for this particular pattern in offset 1 ('b') but 
+# an empty string match ¯\_(ツ)_/¯ 
+query T rowsort
+select regexp_replace('abc', 'k?|b', '-', 'e')
+----
+-a-b-c-
 

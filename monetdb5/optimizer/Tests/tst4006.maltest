@@ -1,4 +1,4 @@
-statement ok
+statement error
 function getz(p:int):bat[:int];
     x := bat.new(:int);
 	z := bat.new(:int);

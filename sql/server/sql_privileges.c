@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -1095,9 +1097,9 @@ sql_create_privileges(mvc *m, sql_schema *s, const char *initpasswd)
 
 
 	p = PRIV_EXECUTE;
-	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION, true);
+	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION, true, true);
 	store->table_api.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
-	f = sql_bind_func_(m, s->base.name, "var", NULL, F_UNION, true);
+	f = sql_bind_func_(m, s->base.name, "var", NULL, F_UNION, true, true);
 	store->table_api.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
 
 	/* owned by the users anyway

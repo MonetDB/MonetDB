@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -412,7 +414,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	mvc_create_column_(&col, m, t, "name", "varchar", 1024);
 	mvc_create_column_(&col, m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(&col, m, t, "default_schema", "int", 9);
-	mvc_create_column_(&col, m, t, "schema_path", "clob", 0);
+	mvc_create_column_(&col, m, t, "schema_path", "varchar", 0);
 	mvc_create_column_(&col, m, t, "max_memory", "bigint", 64);
 	mvc_create_column_(&col, m, t, "max_workers", "int", 32);
 	mvc_create_column_(&col, m, t, "optimizer", "varchar", 1024);

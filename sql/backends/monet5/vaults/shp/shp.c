@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -368,7 +370,7 @@ str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWCo
 	}
 
 	for (i = 0; i < colsNum; i++) {
-		if (store->storage_api.append_col(m->session->tr, cols[i], offset, pos, colsBAT[i], BATcount(colsBAT[i]), TYPE_bat) != LOG_OK) {
+		if (store->storage_api.append_col(m->session->tr, cols[i], offset, pos, colsBAT[i], BATcount(colsBAT[i]), true, colsBAT[i]->ttype) != LOG_OK) {
 			bat_destroy(pos);
 			msg = createException(MAL, "shp.load", SQLSTATE(38000) "Geos append column failed");
 			goto unfree;

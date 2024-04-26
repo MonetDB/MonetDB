@@ -5,7 +5,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 # For now these tests only work on special docker containers.
@@ -29,7 +31,6 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/detect-proj.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-netcdf.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-readline.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-libr.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/detect-snappy.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-fits.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-valgrind.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-geos.cmake)

@@ -5,9 +5,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
-
 
 /* Author: Panagiotis Koutsourakis
  *
@@ -837,10 +838,10 @@ BATsetstrimps(BAT *b)
  * in the BAT.
  */
 #define STRIMP_COMPLETE(b)						\
-	(b)->tstrimps != NULL &&					\
-		(b)->tstrimps != (Strimps *)1 &&			\
-		(b)->tstrimps != (Strimps *)2 &&			\
-		(((b)->tstrimps->strimps.free - ((char *)(b)->tstrimps->bitstrings_base - (b)->tstrimps->strimps.base)) == (b)->batCount*sizeof(uint64_t))
+	((b)->tstrimps != NULL &&					\
+	 (b)->tstrimps != (Strimps *)1 &&				\
+	 (b)->tstrimps != (Strimps *)2 &&				\
+	 (((b)->tstrimps->strimps.free - ((char *)(b)->tstrimps->bitstrings_base - (b)->tstrimps->strimps.base)) == (b)->batCount*sizeof(uint64_t)))
 
 
 /* Strimp creation.
@@ -885,16 +886,17 @@ STRMPcreate(BAT *b, BAT *s)
 		pb = b;
 	}
 
+	/* First thread to take the lock will read the strimp from disk
+	 * or construct the strimp header.
+	 */
+	MT_lock_set(&pb->batIdxLock);
+
 	/* Strimp creation was requested. There are three cases:
 	 *  - The strimp is on disk (pb->tstrimps == 1)
 	 *  - The strimp needs to be created (pb->tstrimps == 2)
 	 *  - Finally the pointer might have been changed to NULL in another thread.
 	 */
 	if (pb->tstrimps == NULL || pb->tstrimps == (Strimps*)1 || pb->tstrimps == (Strimps*)2) {
-		/* First thread to take the lock will read the strimp
-		 * from disk or construct the strimp header.
-		 */
-		MT_lock_set(&pb->batIdxLock);
 		/* The strimp needs to be created. The rest of the
 		 * creation code assumes that the pointer to the strimps
 		 * is NULL. Make it so.
@@ -932,10 +934,10 @@ STRMPcreate(BAT *b, BAT *s)
 			}
 			pb->tstrimps = r;
 		}
-		MT_lock_unset(&pb->batIdxLock);
 	}
 
 	if (STRIMP_COMPLETE(pb)) {
+		MT_lock_unset(&pb->batIdxLock);
 		if (pb != b)
 			BBPunfix(pb->batCacheid);
 		return GDK_SUCCEED;
@@ -946,6 +948,10 @@ STRMPcreate(BAT *b, BAT *s)
 	MT_thread_setalgorithm("create strimp index");
 	r = pb->tstrimps;
 	STRMPincref(r);
+	if (pb != b) {
+		MT_lock_unset(&pb->batIdxLock);
+		MT_lock_set(&b->batIdxLock);
+	}
 	dh = (uint64_t *)r->bitstrings_base + b->hseqbase;
 	canditer_init(&ci, b, s);
 
@@ -960,13 +966,16 @@ STRMPcreate(BAT *b, BAT *s)
 	}
 	bat_iterator_end(&bi);
 
-	MT_lock_set(&b->batIdxLock);
+	if (pb != b) {
+		MT_lock_unset(&b->batIdxLock);
+		MT_lock_set(&pb->batIdxLock);
+	}
 	r->strimps.free += b->batCount*sizeof(uint64_t);
 	/* The thread that reaches this point last needs to write the strimp to disk. */
 	if ((r->strimps.free - ((char *)r->bitstrings_base - r->strimps.base)) == b->batCount*sizeof(uint64_t)) {
 		persistStrimp(pb);
 	}
-	MT_lock_unset(&b->batIdxLock);
+	MT_lock_unset(&pb->batIdxLock);
 	STRMPdecref(r, false);
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
@@ -985,7 +994,6 @@ STRMPdecref(Strimps *strimps, bool remove)
 	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s to " BUNFMT "\n",
 		  strimps->strimps.filename, (BUN) (refs & HEAPREFS));
 	if ((refs & HEAPREFS) == 0) {
-		ATOMIC_DESTROY(&strimps->strimps.refs);
 		HEAPfree(&strimps->strimps, (bool) (refs & HEAPREMOVE));
 		GDKfree(strimps->masks);
 		GDKfree(strimps);

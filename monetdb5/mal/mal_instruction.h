@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MAL_INSTR_H
@@ -54,7 +56,7 @@ setFunctionId(InstrPtr p, const char *s)
 	p->fcnname = s;
 }
 #endif
-#define garbageControl(P)	((P)->gc & GARBAGECONTROL)
+#define garbageControl(P)	((P)->gc)
 
 #define getInstrPtr(M,I)	(M)->stmt[I]
 #define putInstrPtr(M,I,P)	(M)->stmt[I] = P
@@ -67,7 +69,7 @@ setFunctionId(InstrPtr p, const char *s)
 
 #define getVar(M,I)			(&(M)->var[I])
 #define getVarType(M,I)		((M)->var[I].type)
-mal_export char *getVarName(MalBlkPtr mb, int idx);
+mal_export char *getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf);
 
 #define getVarKind(M,I)		((M)->var[I].kind)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I].type)
@@ -134,7 +136,8 @@ mal_export char *getVarName(MalBlkPtr mb, int idx);
 #define getDestType(M,P)	destinationType(M,P)
 #define getArg(P,I)			(P)->argv[I]
 #define setArg(P,I,R)		((P)->argv[I] = (R))
-#define getArgName(M,P,I)	getVarName((M),(P)->argv[I])
+#define getArgName(M,P,I)	(M)->var[(P)->argv[I]].name
+#define getArgNameIntoBuffer(M,P,I,B)	getVarNameIntoBuffer((M),(P)->argv[I], B)
 #define getArgType(M,P,I)	getVarType((M),(P)->argv[I])
 #define getArgGDKType(M,P,I) getVarGDKType((M),(P)->argv[I])
 #define getGDKType(T)		((T) <= TYPE_str ? (T) : ((T) == TYPE_any ? TYPE_void : findGDKtype(T)))
@@ -145,8 +148,8 @@ mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme,
 								   const char *fcnnme);
 mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme,
 									   const char *fcnnme, int args);
-mal_export InstrPtr copyInstruction(InstrPtr p);
-mal_export InstrPtr copyInstructionArgs(InstrPtr p, int args);
+mal_export InstrPtr copyInstruction(const InstrRecord *p);
+mal_export InstrPtr copyInstructionArgs(const InstrRecord *p, int args);
 mal_export void clrInstruction(InstrPtr p);
 mal_export void freeInstruction(InstrPtr p);
 mal_export void clrFunction(InstrPtr p);
@@ -162,10 +165,6 @@ mal_export int newMalBlkStmt(MalBlkPtr mb, int elements);
 mal_export int resizeMalBlk(MalBlkPtr mb, int elements);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
-mal_export void addtoMalBlkHistory(MalBlkPtr mb);
-mal_export void removeMalBlkHistory(MalBlkPtr mb);
-mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
-mal_export MalBlkPtr getMalBlkOptimized(MalBlkPtr mb, const char *name);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 mal_export void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
@@ -175,7 +174,6 @@ mal_export str operatorName(int i);
 
 mal_export int findVariable(MalBlkPtr mb, const char *name);
 mal_export int findVariableLength(MalBlkPtr mb, const char *name, int len);
-mal_export malType getType(MalBlkPtr mb, const char *nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len,
 						   malType type);

@@ -6,7 +6,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 import os, sys, argparse, stat
 
@@ -17,7 +19,9 @@ license = [
     'License, v. 2.0.  If a copy of the MPL was not distributed with this',
     'file, You can obtain one at http://mozilla.org/MPL/2.0/.',
     '',
-    'Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.',
+    'Copyright 2024 MonetDB Foundation;',
+    'Copyright August 2008 - 2023 MonetDB B.V.;',
+    'Copyright 1997 - July 2008 CWI.',
     ]
 
 def main():
@@ -95,6 +99,7 @@ suffixrules = {
     '.java':  ('/*',    ' */', ' * ',  '',  True),  # Java source
     '.l':     ('/*',    ' */', ' * ',  '',  True),  # (f)lex source
     '.mal':   ('',      '',    '# ',   '',  True),  # MonetDB Assembly Language
+    '.pc':    ('',      '',    '# ',   '',  True),  # Package config source
     '.php':   ('<?php', '?>',  '# ',   '',  True),  # PHP source
     '.pl':    ('',      '',    '# ',   '',  True),  # Perl source
     '.pm':    ('',      '',    '# ',   '',  True),  # Perl module source
@@ -136,8 +141,15 @@ def getcomments(file, pre=None, post=None, start=None, end=None, nl=True):
                 f = open(file)      # can raise IOError
                 line = f.readline()
                 f.close()
-                if line[:2] == '#!':
-                    ext = '.sh'
+                if line.startswith('#!'):
+                    if 'bash' in line or '/sh' in line:
+                        ext = '.sh'
+                    elif 'python' in line or 'PYTHON' in line:
+                        ext = '.py'
+                    elif 'perl' in line:
+                        ext = '.pl'
+                    elif 'make' in line:
+                        ext = 'Makefile'
                 else:
                     return '', '', '', '', '', True
         pre, post, start, end, nl = suffixrules[ext]
@@ -224,7 +236,7 @@ def addlicense(file, pre=None, post=None, start=None, end=None, verbose=False):
         if pre:
             g.write(pre + '\n')
         for l in license:
-            if l[:1] == '\t' or (not l and (not end or end[:1] == '\t')):
+            if l.startswith('\t') or (not l and (not end or end.startswith('\t'))):
                 # if text after start begins with tab, remove spaces from start
                 g.write(start.rstrip() + l + end + '\n')
             else:

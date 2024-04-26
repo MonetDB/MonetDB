@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -62,10 +64,88 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#define check_bte() (s > 0 ? f > l : f < l)
+#define check_sht() (s > 0 ? f > l : f < l)
+#define check_int() (s > 0 ? f > l : f < l)
+#if SIZEOF_BUN < SIZEOF_LNG
+#define check_lng() (s > 0 ? f > l || s > (lng) BUN_MAX : f < l || s < -(lng) BUN_MAX)
+#else
+#define check_lng() (s > 0 ? f > l : f < l)
+#endif
+#ifdef HAVE_HGE
+#define check_hge() (s > 0 ? f > l || s > (lng) BUN_MAX : f < l || s < -(lng) BUN_MAX)
+#endif
+
 /*
  * The base line consists of materializing the generator iterator value
  */
 #define VLTmaterialize(TPE)												\
+	do {																\
+		TPE *v, f, l, s;												\
+		f = *getArgReference_##TPE(stk, pci, 1);						\
+		l = *getArgReference_##TPE(stk, pci, 2);						\
+		if ( pci->argc == 3)											\
+			s = f<=l? (TPE) 1: (TPE)-1;									\
+		else s =  *getArgReference_##TPE(stk,pci, 3);					\
+		if (s == 0 || is_##TPE##_nil(f) || is_##TPE##_nil(l) || check_##TPE()) \
+			throw(MAL, "generator.table",								\
+			      SQLSTATE(42000) "Illegal generator range");			\
+		if (f == l)														\
+			n = 0;														\
+		else if (f > l) {												\
+			/* n = f - l */												\
+			if (l < 1) {												\
+				if ((lng) BUN_MAX + l < f)								\
+					throw(MAL, "generator.table",						\
+						  SQLSTATE(42000) "Illegal generator range");	\
+				else if (GDK_##TPE##_max + l < f)						\
+					n = (BUN) ((lng) f - l);							\
+				else													\
+					n = (BUN) (f - l);									\
+			} else {													\
+				if (-(lng)BUN_MAX + l > f)								\
+					throw(MAL, "generator.table",						\
+						  SQLSTATE(42000) "Illegal generator range");	\
+				else if (-GDK_##TPE##_max + l > f)						\
+					n = (BUN) ((lng) f - l);							\
+				else													\
+					n = (BUN) (f - l);									\
+			}															\
+		} else {														\
+			/* n = l - f */												\
+			if (f < 1) {												\
+				if ((lng) BUN_MAX + f < l)								\
+					throw(MAL, "generator.table",						\
+						  SQLSTATE(42000) "Illegal generator range");	\
+				else if (GDK_##TPE##_max + f < l)						\
+					n = (BUN) ((lng) l - f);							\
+				else													\
+					n = (BUN) (l - f);									\
+			} else {													\
+				if (-(lng)BUN_MAX + f > l)								\
+					throw(MAL, "generator.table",						\
+						  SQLSTATE(42000) "Illegal generator range");	\
+				else if (-GDK_##TPE##_max + f > l)						\
+					n = (BUN) ((lng) l - f);							\
+				else													\
+					n = (BUN) (l - f);									\
+			}															\
+		}																\
+		step = (BUN) (s < 0 ? -s : s);									\
+		n = n/step;														\
+		if ((TPE) (n * s + f) != l)										\
+			n++;														\
+		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);						\
+		if (bn == NULL)													\
+			throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		v = (TPE*) Tloc(bn, 0);											\
+		for (c = 0; c < n; c++)											\
+			*v++ = (TPE) (f + c * s);									\
+		bn->tsorted = s > 0 || n <= 1;									\
+		bn->trevsorted = s < 0 || n <= 1;								\
+	} while (0)
+
+#define VLTmaterialize_flt(TPE)											\
 	do {																\
 		TPE *v, f, l, s;												\
 		f = *getArgReference_##TPE(stk, pci, 1);						\
@@ -76,7 +156,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || is_##TPE##_nil(f) || is_##TPE##_nil(l)) \
 			throw(MAL, "generator.table",								\
 			      SQLSTATE(42000) "Illegal generator range");			\
-		n = (BUN) ((l - f) / s);										\
+		n = (BUN) ((l - f) / s);                                        \
 		if ((TPE) (n * s + f) != l)										\
 			n++;														\
 		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);						\
@@ -92,7 +172,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BUN c, n;
+	BUN c, n, step;
 	BAT *bn;
 	int tpe;
 	(void) cntxt;
@@ -118,10 +198,10 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		break;
 #endif
 	case TYPE_flt:
-		VLTmaterialize(flt);
+		VLTmaterialize_flt(flt);
 		break;
 	case TYPE_dbl:
-		VLTmaterialize(dbl);
+		VLTmaterialize_flt(dbl);
 		break;
 	default:
 		if (tpe == TYPE_timestamp) {

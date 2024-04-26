@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -32,7 +34,7 @@ str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
 
 str malAtomDefinition(const char *name,int tpe)
 	__attribute__((__visibility__("hidden")));
-str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
+str malAtomProperty(mel_func *f)
 	__attribute__((__visibility__("hidden")));
 
 #ifdef MAXSCOPE
@@ -78,3 +80,10 @@ void mal_runtime_reset(void)
 
 char *dupError(const char *err)
 	__attribute__((__visibility__("hidden"), __returns_nonnull__));
+
+void MCprintinfo(void)
+	__attribute__((__visibility__("hidden")));
+
+void
+setPoly(mel_func *f, malType tpe)
+	__attribute__((__visibility__("hidden")));

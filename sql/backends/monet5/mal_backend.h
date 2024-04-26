@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef MAL_BACKEND_H
@@ -50,7 +52,6 @@ typedef struct backend {
 	int 	mvc_var;	/* current variable holding the latest query context (used to create dependencies in mal statements) */
 	int 	rowcount;	/* when multiple insert/update/delete/truncate statements are present, use an accumulator to hold the total number of rows affected */
 	int		vtop;			/* top of the variable stack before the current function */
-	int		vid;			/* old variable id top before the current function */
 	int 	join_idx;	/* number of index joins (used in rel_bin) */
 	lng 	reloptimizer;	/* timer for optimizer phase */
 

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -60,20 +62,6 @@
 		mnstr_printf(cntxt->fdout,"#Monet Debugger off\n"); \
 	else if(stk->cmd==0 && X) \
 		mnstr_printf(cntxt->fdout,"#Monet Debugger on\n");
-
-static int
-pseudo(bat *ret, BAT *b, const char *X1, const char *X2, const char *X3)
-{
-	char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "%s_%s_%s", X1, X2, X3);
-	if (BBPindex(buf) <= 0 && BBPrename(b, buf) != 0)
-		return -1;
-	if (BATroles(b, X2) != GDK_SUCCEED)
-		return -1;
-	*ret = b->batCacheid;
-	BBPkeepref(b);
-	return 0;
-}
 
 static str
 MDBgetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -249,8 +237,7 @@ MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 }
 
 static str
-MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth,
-			const char *name)
+MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *name)
 {
 	ValPtr v;
 	int i;
@@ -260,11 +247,13 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth,
 		depth--;
 		s = s->up;
 	}
-	if (s != 0)
+	if (s != 0) {
+		char namebuf[IDLENGTH];
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
-			if ((buf = ATOMformat(v->vtype, VALptr(v))) == NULL ||
-				BUNappend(b, getVarName(mb, i), false) != GDK_SUCCEED ||
+			if ((v->bat && (buf = ATOMformat(TYPE_int, &v->val.ival)) == NULL) ||
+			    (!v->bat && (buf = ATOMformat(v->vtype, VALptr(v))) == NULL) ||
+				BUNappend(b, getVarNameIntoBuffer(mb, i, namebuf), false) != GDK_SUCCEED ||
 				BUNappend(bn, buf, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
@@ -274,6 +263,7 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth,
 			GDKfree(buf);
 			buf = NULL;
 		}
+	}
 	return MAL_SUCCEED;
 }
 
@@ -297,16 +287,10 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(bn);
 		return err;
 	}
-	if (pseudo(ret, b, "view", "stk", "frame")) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.getStackFrame", GDK_EXCEPTION);
-	}
-	if (pseudo(ret2, bn, "view", "stk", "frame")) {
-		BBPrelease(*ret);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.getStackFrame", GDK_EXCEPTION);
-	}
+	*ret = b->batCacheid;
+	BBPkeepref(b);
+	*ret2 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -338,16 +322,10 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(bn);
 		return err;
 	}
-	if (pseudo(ret, b, "view", "stk", "frame")) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.getStackFrameN", GDK_EXCEPTION);
-	}
-	if (pseudo(ret2, bn, "view", "stk", "frameB")) {
-		BBPrelease(*ret);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.getStackFrameN", GDK_EXCEPTION);
-	}
+	*ret = b->batCacheid;
+	BBPkeepref(b);
+	*ret2 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -432,16 +410,10 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		GDKfree(msg);
 	}
 	GDKfree(buf);
-	if (pseudo(ret, b, "view", "stk", "trace")) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.setTrace", GDK_EXCEPTION);
-	}
-	if (pseudo(ret2, bn, "view", "stk", "traceB")) {
-		BBPrelease(*ret);
-		BBPunfix(bn->batCacheid);
-		throw(MAL, "mdb.setTrace", GDK_EXCEPTION);
-	}
+	*ret = b->batCacheid;
+	BBPkeepref(b);
+	*ret2 = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -516,11 +488,12 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * arbitrary functions.
  */
 static void
-printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index)
+printStackHdr(stream *f, MalBlkPtr mb, const ValRecord *v, int index)
 {
+	char name[IDLENGTH] = { 0 };
 	if (v == 0 && isVarConstant(mb, index))
 		v = &getVarConstant(mb, index);
-	mnstr_printf(f, "#[%2d] %5s", index, getVarName(mb, index));
+	mnstr_printf(f, "#[%2d] %5s", index, getVarNameIntoBuffer(mb, index, name));
 	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb, index),
 				 getLastUpdate(mb, index), getEndScope(mb, index));
 	if (v)
@@ -582,14 +555,14 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 }
 
 static void
-printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
+printStackElm(stream *f, MalBlkPtr mb, const ValRecord *v, int index, BUN cnt, BUN first)
 {
 	str nme, nmeOnStk;
 	VarPtr n = getVar(mb, index);
 
 	printStackHdr(f, mb, v, index);
 
-	if (v && v->vtype == TYPE_bat) {
+	if (v && v->bat) {
 		bat i = v->val.bval;
 		BAT *b = BBPquickdesc(i);
 
@@ -614,8 +587,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	mnstr_printf(f, "\n");
 	GDKfree(nmeOnStk);
 
-	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat)
-		&& !is_bat_nil(v->val.bval)) {
+	if (cnt && v && (isaBatType(n->type) || v->bat) && !is_bat_nil(v->val.bval)) {
 		printBATelm(f, v->val.bval, cnt, first);
 	}
 }
@@ -692,10 +664,8 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		}
 		GDKfree(ps);
 	}
-	if (pseudo(ret, b, "view", "fcn", "stmt")) {
-		BBPreclaim(b);
-		throw(MAL, "mdb.getDefinition", GDK_EXCEPTION);
-	}
+	*ret = b->batCacheid;
+	BBPkeepref(b);
 
 	return MAL_SUCCEED;
 }

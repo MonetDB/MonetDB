@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef SQL_STACK_H
@@ -23,13 +25,13 @@
 #include "sql_mem.h"
 
 typedef struct sql_stack {
-	sql_allocator *sa;
+	allocator *sa;
 	int size;
 	int top;
 	void **values;
 } sql_stack;
 
-extern sql_stack *sql_stack_new(sql_allocator *sa, int size);
+extern sql_stack *sql_stack_new(allocator *sa, int size);
 extern void sql_stack_push(sql_stack *s, void *v);
 extern void *sql_stack_pop(sql_stack *s);
 extern void *sql_stack_peek(sql_stack *s, int pos); /* top == pos 0 */

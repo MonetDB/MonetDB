@@ -5,9 +5,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
-
 
 #include "monetdb_config.h"
 #include "stream.h"		/* include before mapi.h */
@@ -34,7 +35,7 @@ scan_unix_sockets(Mapi mid)
 	DIR *dir = NULL;
 	struct dirent *entry;
 
-	const char *sockdir = msettings_connect_sockdir(mid->settings);
+	const char *sockdir = msetting_string(mid->settings, MP_SOCKDIR);
 	size_t len = strlen(sockdir);
 	char *namebuf = malloc(len + 50);
 	if (namebuf == NULL)
@@ -70,6 +71,7 @@ scan_unix_sockets(Mapi mid)
 			candidates[ncandidates].port = port;
 			candidates[ncandidates++].priority = st.st_uid == me ? 0 : 1;
 		}
+		closedir(dir);
 	}
 
 	mapi_log_record(mid, "CONN", "Found %d Unix domain sockets", ncandidates);
@@ -180,5 +182,3 @@ connect_socket_unix(Mapi mid)
 
 	return wrap_socket(mid, s);
 }
-
-

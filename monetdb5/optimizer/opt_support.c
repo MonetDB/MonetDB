@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
  /* (c) M. Kersten
@@ -182,12 +184,14 @@ isUnsafeFunction(InstrPtr q)
 {
 	InstrPtr p;
 
+	if (q->unsafeProp)
+		return TRUE;
 	if (q->fcn == 0 || getFunctionId(q) == 0 || q->blk == NULL)
 		return FALSE;
 	p = getInstrPtr(q->blk, 0);
 	if (p->retc == 0)
 		return TRUE;
-	return q->blk->unsafeProp;
+	return FALSE;
 }
 
 /*

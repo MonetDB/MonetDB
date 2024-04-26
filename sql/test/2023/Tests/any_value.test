@@ -1,21 +1,21 @@
-statement ok                                                                                                                       
-CREATE TABLE foo(i, j) AS VALUES (10, 1), (20, 2), (30, 1), (20, 2), (40, 1);
+statement ok
+CREATE TABLE foo(i, j) AS VALUES (10, 1), (20, 2), (30, 1), (20, 2), (40, 1)
 
-query I rowsort                                                                                                                       
-SELECT any_value(i) FROM foo;
+query I rowsort
+SELECT any_value(i) FROM foo
 ----
 10
 
-query II rowsort                                                                                                                       
-SELECT any_value(i), j FROM foo GROUP BY j;
+query II rowsort
+SELECT any_value(i), j FROM foo GROUP BY j
 ----
 10
 1
 20
 2
 
-query II rowsort                                                                                                                       
-SELECT i, any_value(i) OVER (ORDER BY i) FROM foo;
+query II rowsort
+SELECT i, any_value(i) OVER (ORDER BY i) FROM foo
 ----
 10
 10
@@ -27,3 +27,4 @@ SELECT i, any_value(i) OVER (ORDER BY i) FROM foo;
 10
 40
 10
+

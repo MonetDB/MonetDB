@@ -7,7 +7,7 @@ select * from file_loader('FileNotFound')
 statement error 42000!SELECT: file_loader function failed 'File not found'
 select * from file_loader('/tmp/FileNotFound.csv')
 
-statement error 42000!SELECT: file_loader function failed 'Filename extension 'gz' missing'
+statement error 42000!SELECT: file_loader function failed 'File not found'
 select * from file_loader('/tmp/FileNotFound.gz')
 
 statement error 42000!SELECT: file_loader function failed 'File not found'
@@ -25,13 +25,12 @@ select * from file_loader('/tmp/FileNotFound.csv.gz') as file(col1, col2)
 statement error 42000!SELECT: file_loader function failed 'File not found'
 select * from file_loader('/tmp/FileNotFound.csv') file(col1, col2)
 
-
-statement error 42000!SELECT: no such table returning function 'sys'.'file_loader'(char)
+statement error 42000!SELECT: no such table returning function 'sys'.'file_loader'(varchar)
 select * from sys.file_loader('')
 
-statement error 42000!SELECT: no such table returning function 'sys'.'file_loader'(char(12))
+statement error 42000!SELECT: no such table returning function 'sys'.'file_loader'(varchar(12))
 select * from sys.file_loader('FileNotFound')
 
-statement error 42000!SELECT: no such table returning function 'sys'.'file_loader'(char(16))
+statement error 42000!SELECT: no such table returning function 'sys'.'file_loader'(varchar(16))
 select * from sys.file_loader('FileNotFound.csv')
 

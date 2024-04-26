@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -46,13 +48,6 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 			throw(SQL, "sql.zero_or_one", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		memcpy(*(ptr *) ret, p, _s);
-	} else if (b->ttype == TYPE_bat) {
-		bat bid = *(bat *) p;
-		if ((*(BAT **) ret = BATdescriptor(bid)) == NULL){
-			bat_iterator_end(&bi);
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
-		}
 	} else if (_s == 4) {
 		*(int *) ret = *(int *) p;
 	} else if (_s == 1) {

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -36,12 +38,12 @@
 #include "orderidx.h"
 #include "sql_user.h"
 
-#define initcontext() \
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\
-		return msg;\
-	if ((msg = checkSQLContext(cntxt)) != NULL)\
-		return msg;\
-	if (store_readonly(sql->session->tr->store))\
+#define initcontext()													\
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)			\
+		return msg;														\
+	if ((msg = checkSQLContext(cntxt)) != NULL)							\
+		return msg;														\
+	if (store_readonly(sql->session->tr->store))						\
 		throw(SQL,"sql.cat",SQLSTATE(25006) "Schema statements cannot be executed on a readonly database.");
 
 static char *
@@ -226,9 +228,10 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	return msg;
 }
 
+
 static char *
 alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, ptr min, ptr max,
-								bit with_nills, int update)
+								bit with_nills, int update, lng cnt)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	sql_part *err = NULL;
@@ -237,8 +240,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	size_t length = 0;
 	sql_subtype tpe;
 
-	if ((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname,
-											 &mt, &pt, update))) {
+	if ((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt, update))) {
 		return msg;
 	} else if (!isRangePartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
@@ -264,6 +266,16 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	if (!min_null && !max_null && ATOMcmp(tp1, min, max) == 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is equal to the maximum value");
 		goto finish;
+	}
+
+	if (cnt) {
+		if (isPartitionedByColumnTable(mt)) {
+			throw(SQL, "sql.alter_table_add_range_partition", SQLSTATE(M0M29) "ALTER TABLE: there are values in column %s outside the partition range", mt->part.pcol->base.name);
+		} else if (isPartitionedByExpressionTable(mt)) {
+			throw(SQL, "sql.alter_table_add_range_partition", SQLSTATE(M0M29) "ALTER TABLE: there are values in the expression outside the partition range");
+		} else {
+			assert(0);
+		}
 	}
 
 	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tpe, min, max, with_nills, update, &err);
@@ -364,7 +376,7 @@ finish:
 
 static char *
 alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname,
-								char *ptname, bit with_nills, int update)
+								char *ptname, bit with_nills, int update, lng cnt)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED;
@@ -390,13 +402,24 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 	find_partition_type(&tpe, mt);
-	ninserts = pci->argc - pci->retc - 6;
+	ninserts = pci->argc - pci->retc - 7;
 	if (ninserts <= 0 && !with_nills) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
 		goto finish;
 	}
+
+	if (cnt) {
+		if (isPartitionedByColumnTable(mt)) {
+			throw(SQL, "sql.alter_table_add_value_partition", SQLSTATE(M0M29) "ALTER TABLE: there are values in column %s outside the partition list of values", mt->part.pcol->base.name);
+		} else if (isPartitionedByExpressionTable(mt)) {
+			throw(SQL, "sql.alter_table_add_value_partition", SQLSTATE(M0M29) "ALTER TABLE: there are values in the expression outside the partition list of values");
+		} else {
+			assert(0);
+		}
+	}
+
 	values = list_create((fdestroy) &part_value_destroy);
-	for ( i = pci->retc+6; i < pci->argc; i++){
+	for ( i = pci->retc+7; i < pci->argc; i++){
 		sql_part_value *nextv = NULL;
 		ValRecord *vnext = &(stk)->stk[(pci)->argv[i]];
 		ptr pnext = VALget(vnext);
@@ -570,7 +593,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		default: {
 			char *buf;
 			sql_rel *r = NULL;
-			sql_allocator *sa = sql->sa;
+			allocator *sa = sql->sa;
 
 			if (!(sql->sa = sa_create(sql->pa))) {
 				sql->sa = sa;
@@ -752,7 +775,8 @@ IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void 
 
 	if (!b)
 		throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
-	if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
+	if (VIEWtparent(b)) {
+		nb = BBP_desc(VIEWtparent(b));
 		BBPunfix(b->batCacheid);
 		if (!(b = BATdescriptor(nb->batCacheid)))
 			throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
@@ -1009,7 +1033,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			}
 		}
 
-		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type, false)) != NULL) {
+		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type, false, true)) != NULL) {
 			sql_func *sff = sf->func;
 
 			if (!sff->s || sff->system)
@@ -1056,7 +1080,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	case FUNC_LANG_SQL: {
 		char *buf;
 		sql_rel *r = NULL;
-		sql_allocator *sa = sql->sa;
+		allocator *sa = sql->sa;
 
 		assert(nf->query);
 		if (!(sql->sa = sa_create(sql->pa))) {
@@ -1126,11 +1150,19 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	node *n;
 
 	if (!(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.alter_table", SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
-	if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP))
-		throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.alter_table",
+			  SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
+
+	if (!mvc_schema_privs(sql, s) &&
+		!(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP))
+		throw(SQL,"sql.alter_table",
+			  SQLSTATE(42000) "ALTER TABLE: insufficient privileges for"
+			  " user '%s' in schema '%s'",
+			  get_string_global_var(sql, "current_user"), s->base.name);
+
 	if (!(nt = mvc_bind_table(sql, s, t->base.name)))
-		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
+		throw(SQL,"sql.alter_table",
+			  SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
 
 	sql_table *gt = NULL;
 	if (nt && isTempTable(nt)) {
@@ -1148,7 +1180,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (!i->base.new || i->base.deleted)
 					continue;
 				if (i->key && i->key->type == pkey)
-					throw(SQL,"sql.alter_table", SQLSTATE(40000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+					throw(SQL,"sql.alter_table",
+						  SQLSTATE(40000) "CONSTRAINT PRIMARY KEY: a"
+						  " table can have only one PRIMARY KEY\n");
 			}
 		}
 	}
@@ -1167,7 +1201,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					throw(SQL,"sql.alter_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
-					throw(SQL,"sql.alter_table",SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
+					throw(SQL,"sql.alter_table",
+						  SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
 				default:
 					break;
 			}
@@ -1281,7 +1316,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				sql_kc *ic = i->columns->h->data;
 				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
-				if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
+				if (VIEWtparent(b)) {
+					nb = BBP_desc(VIEWtparent(b));
 					BBPunfix(b->batCacheid);
 					if (!(b = BATdescriptor(nb->batCacheid)))
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
@@ -1298,7 +1334,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				sql_kc *ic = i->columns->h->data;
 				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
-				if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
+				if (VIEWtparent(b)) {
+					nb = BBP_desc(VIEWtparent(b));
 					BBPunfix(b->batCacheid);
 					if (!(b = BATdescriptor(nb->batCacheid)))
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
@@ -1964,9 +2001,20 @@ SQLalter_add_range_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	ValRecord *max = &(stk)->stk[(pci)->argv[6]];
 	bit with_nills = *getArgReference_bit(stk, pci, 7);
 	int update = *getArgReference_int(stk, pci, 8);
+	lng cnt = 0;
+
+	if (getArgType(mb, pci, 9) == TYPE_lng) {
+		cnt = *getArgReference_lng(stk, pci, 9);
+	} else {
+		BAT *c = BATdescriptor(*getArgReference_bat(stk, pci, 9));
+		if (c && BATcount(c) == 1)
+			cnt = *(lng*)Tloc(c, 0);
+		if (c)
+			BBPunfix(c->batCacheid);
+	}
 
 	initcontext();
-	msg = alter_table_add_range_partition(sql, sname, mtname, psname, ptname, VALget(min), VALget(max), with_nills, update);
+	msg = alter_table_add_range_partition(sql, sname, mtname, psname, ptname, VALget(min), VALget(max), with_nills, update, cnt);
 	return msg;
 }
 
@@ -1980,9 +2028,20 @@ SQLalter_add_value_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *ptname = SaveArgReference(stk, pci, 4);
 	bit with_nills = *getArgReference_bit(stk, pci, 5);
 	int update = *getArgReference_int(stk, pci, 6);
+	lng cnt = 0;
+
+	if (getArgType(mb, pci, 7) == TYPE_lng) {
+		cnt = *getArgReference_lng(stk, pci, 7);
+	} else {
+		BAT *c = BATdescriptor(*getArgReference_bat(stk, pci, 7));
+		if (c && BATcount(c) == 1)
+			cnt = *(lng*)Tloc(c, 0);
+		if (c)
+			BBPunfix(c->batCacheid);
+	}
 
 	initcontext();
-	msg = alter_table_add_value_partition(sql, stk, pci, sname, mtname, psname, ptname, with_nills, update);
+	msg = alter_table_add_value_partition(sql, stk, pci, sname, mtname, psname, ptname, with_nills, update, cnt);
 	return msg;
 }
 
@@ -2080,34 +2139,57 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 
 	initcontext();
-	sql_trans *tr = sql->session->tr;
 	sql_schema *cur = cur_schema(sql);
 
 	if (!(s = mvc_bind_schema(sql, old_name)))
-		throw(SQL, "sql.rename_schema", SQLSTATE(42S02) "ALTER SCHEMA: no such schema '%s'", old_name);
+		throw(SQL, "sql.rename_schema", SQLSTATE(42S02)
+			  "ALTER SCHEMA: no such schema '%s'", old_name);
+
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL, "sql.rename_schema", SQLSTATE(42000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
+		throw(SQL, "sql.rename_schema", SQLSTATE(42000)
+			  "ALTER SCHEMA: access denied for %s to schema '%s'",
+			  get_string_global_var(sql, "current_user"), old_name);
+
 	if (s->system)
-		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr))
-		throw(SQL, "sql.rename_schema", SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000)
+			  "ALTER SCHEMA: cannot rename a system schema");
+
 	if (strNil(new_name) || *new_name == '\0')
-		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000)
+			  "ALTER SCHEMA: invalid new schema name");
+
 	if (mvc_bind_schema(sql, new_name))
-		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000)
+			  "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+
+	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) == HAS_DEPENDENCY) {
+		throw(SQL, "sql.rename_schema", "ALTER SCHEMA: unable to"
+			  " rename schema '%s', there are database objects"
+			  " which depend on it", old_name);
+	}
 
 	switch (sql_trans_rename_schema(sql->session->tr, s->base.id, new_name)) {
 		case -1:
 			throw(SQL,"sql.rename_schema", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:
 		case -3:
-			throw(SQL,"sql.rename_schema", SQLSTATE(42000) "ALTER SCHEMA: transaction conflict detected");
+			throw(SQL,"sql.rename_schema", SQLSTATE(42000)
+				  "ALTER SCHEMA: transaction conflict detected");
 		default:
 			break;
 	}
-	if (cur && s->base.id == cur->base.id) /* change current session schema name */
+
+	if (cur && s->base.id == cur->base.id) {
 		if (!mvc_set_schema(sql, new_name))
 			throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		s = mvc_bind_schema(sql, "sys");
+		assert(s);
+
+		if (!sqlvar_set_string(find_global_var(sql, s, "current_schema"), new_name))
+			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
 	return msg;
 }
 

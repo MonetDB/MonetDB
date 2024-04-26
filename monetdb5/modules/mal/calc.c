@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -42,9 +44,9 @@ CMDvarSUB(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcsub
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcsub(&stk->stk[getArg(pci, 0)],
+				   &stk->stk[getArg(pci, 1)],
+				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.-", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -56,9 +58,9 @@ CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcadd
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcadd(&stk->stk[getArg(pci, 0)],
+				   &stk->stk[getArg(pci, 1)],
+				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.+", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -114,9 +116,9 @@ CMDvarMUL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcmul
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcmul(&stk->stk[getArg(pci, 0)],
+				   &stk->stk[getArg(pci, 1)],
+				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.*", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -128,9 +130,9 @@ CMDvarDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcdiv
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcdiv(&stk->stk[getArg(pci, 0)],
+				   &stk->stk[getArg(pci, 1)],
+				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc./", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -142,9 +144,9 @@ CMDvarMOD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcmod
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcmod(&stk->stk[getArg(pci, 0)],
+				   &stk->stk[getArg(pci, 1)],
+				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.%", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -156,9 +158,9 @@ CMDvarLSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalclsh
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalclsh(&stk->stk[getArg(pci, 0)],
+				   &stk->stk[getArg(pci, 1)],
+				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.<<", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -170,9 +172,9 @@ CMDvarRSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcrsh
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcrsh(&stk->stk[getArg(pci, 0)],
+				   &stk->stk[getArg(pci, 1)],
+				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.>>", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -184,9 +186,9 @@ CMDvarAND(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcand
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcand(&stk->stk[getArg(pci, 0)],
+				   &stk->stk[getArg(pci, 1)],
+				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.and", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -198,9 +200,9 @@ CMDvarOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcor
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcor(&stk->stk[getArg(pci, 0)],
+				  &stk->stk[getArg(pci, 1)],
+				  &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.or", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -212,9 +214,9 @@ CMDvarXOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcxor
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcxor(&stk->stk[getArg(pci, 0)],
+				   &stk->stk[getArg(pci, 1)],
+				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.xor", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -226,9 +228,9 @@ CMDvarLT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalclt
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalclt(&stk->stk[getArg(pci, 0)],
+				  &stk->stk[getArg(pci, 1)],
+				  &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.<", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -240,9 +242,9 @@ CMDvarLE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcle
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcle(&stk->stk[getArg(pci, 0)],
+				  &stk->stk[getArg(pci, 1)],
+				  &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.<=", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -254,9 +256,9 @@ CMDvarGT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcgt
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcgt(&stk->stk[getArg(pci, 0)],
+				  &stk->stk[getArg(pci, 1)],
+				  &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.>", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -301,8 +303,7 @@ CMDvarNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (VARcalcne(&stk->stk[getArg(pci, 0)],
 				  &stk->stk[getArg(pci, 1)],
 				  &stk->stk[getArg(pci, 2)],
-				  pci->argc == 3 ? false : *getArgReference_bit(stk, pci, 3)
-		) != GDK_SUCCEED)
+				  pci->argc == 3 ? false : *getArgReference_bit(stk, pci, 3)) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.!=", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -314,9 +315,9 @@ CMDvarCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalccmp
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
-		 &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalccmp(&stk->stk[getArg(pci, 0)],
+				   &stk->stk[getArg(pci, 1)],
+				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.cmp", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }

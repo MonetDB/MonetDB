@@ -6,5 +6,5 @@ select '  '
 query T rowsort
 select '  ﻿'
 ----
-  @
+  ﻿
 

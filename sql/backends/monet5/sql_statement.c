@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -137,7 +139,7 @@ stmt_atom_string_nil(backend *be)
 {
 	sql_subtype t;
 
-	sql_find_subtype(&t, "clob", 0, 0);
+	sql_find_subtype(&t, "varchar", 0, 0);
 	return stmt_atom(be, atom_string(be->mvc->sa, &t, NULL));
 }
 
@@ -165,7 +167,7 @@ stmt_atom_lng_nil(backend *be)
 	sql_subtype t;
 
 	sql_find_subtype(&t, "bigint", 64, 0);
-	return stmt_atom(be, atom_general(be->mvc->sa, &t, NULL));
+	return stmt_atom(be, atom_general(be->mvc->sa, &t, NULL, 0));
 }
 
 stmt *
@@ -185,7 +187,7 @@ stmt_bool(backend *be, int b)
 }
 
 static stmt *
-stmt_create(sql_allocator *sa, st_type type)
+stmt_create(allocator *sa, st_type type)
 {
 	stmt *s = SA_NEW(sa, stmt);
 
@@ -262,7 +264,7 @@ stmt_unique(backend *be, stmt *s)
 		goto bailout;
 
 	q = pushArgument(mb, q, s->nr);
-	q = pushNil(mb, q, TYPE_bat); /* candidate list */
+	q = pushNilBat(mb, q); /* candidate list */
 
 	bool enabled = be->mvc->sa->eb.enabled;
 	be->mvc->sa->eb.enabled = false;
@@ -307,7 +309,7 @@ create_bat(MalBlkPtr mb, int tt)
 }
 
 static int *
-dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
+dump_table(allocator *sa, MalBlkPtr mb, sql_table *t)
 {
 	int i = 0;
 	node *n;
@@ -593,7 +595,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	if (t && isTable(t) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
-		BUN rows = (BUN) store->storage_api.count_col(tr, ol_first_node(t->columns)->data, QUICK);
+		BUN rows = (BUN) store->storage_api.count_col(tr, ol_first_node(t->columns)->data, RDONLY);
 		setRowCnt(mb,getArg(q,0),rows);
 	}
 
@@ -1262,11 +1264,11 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		if (p)
 			q = pushArgument(mb, q, p);
 		else
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		if (g)
 			q = pushArgument(mb, q, g);
 		else
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		q = pushArgument(mb, q, topn);
 		q = pushBit(mb, q, dir);
 		q = pushBit(mb, q, nullslast);
@@ -1635,7 +1637,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		if (sub)
 			q = pushArgument(mb, q, sub->nr);
 		else
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 
 		for (n = rops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
@@ -1729,12 +1731,12 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		if (sub && (op1->cand || op2->cand)) {
 			if (op1->cand && !op2->cand) {
 				if (op1->nrcols > 0)
-					q = pushNil(mb, q, TYPE_bat);
+					q = pushNilBat(mb, q);
 				q = pushArgument(mb, q, sub->nr);
 			} else if (!op1->cand && op2->cand) {
 				q = pushArgument(mb, q, sub->nr);
 				if (op2->nrcols > 0)
-					q = pushNil(mb, q, TYPE_bat);
+					q = pushNilBat(mb, q);
 			}
 			sub = NULL;
 		}
@@ -1784,7 +1786,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				q = pushArgument(mb, q, sub->nr);
 			} else {
 				assert(!sub || op1->cand == sub);
-				q = pushNil(mb, q, TYPE_bat);
+				q = pushNilBat(mb, q);
 				sub = NULL;
 			}
 			q = pushArgument(mb, q, r);
@@ -1926,18 +1928,18 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		/* cands */
 		if ((sub && !reduce) || op1->cand || op2->cand || op3->cand) { /* some already handled the previous selection */
 			if (op1->cand && op1->nrcols)
-				p = pushNil(mb, p, TYPE_bat);
+				p = pushNilBat(mb, p);
 			else if (op1->nrcols)
 				p = pushArgument(mb, p, sub->nr);
 			if (op2->nrcols) {
 				if (op2->cand)
-					p = pushNil(mb, p, TYPE_bat);
+					p = pushNilBat(mb, p);
 				else if (op2->nrcols)
 					p = pushArgument(mb, p, sub->nr);
 			}
 			if (op3->nrcols) {
 				if (op3->cand)
-					p = pushNil(mb, p, TYPE_bat);
+					p = pushNilBat(mb, p);
 				else if (op3->nrcols)
 					p = pushArgument(mb, p, sub->nr);
 			}
@@ -2019,8 +2021,8 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 			q = pushArgument(mb, q, r2);
 		}
 		if (type == st_join2) {
-			q = pushNil(mb, q, TYPE_bat);
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
+			q = pushNilBat(mb, q);
 		}
 
 		switch (cmp & 3) {
@@ -2148,8 +2150,8 @@ stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, l->nr); /* left ids */
 	q = pushArgument(mb, q, r->nr); /* mark info mask */
-	q = pushNil(mb, q, TYPE_bat);
-	q = pushNil(mb, q, TYPE_bat);
+	q = pushNilBat(mb, q);
+	q = pushNilBat(mb, q);
 	q = pushNil(mb, q, TYPE_lng);
 	pushInstruction(mb, q);
 
@@ -2245,8 +2247,8 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	if (lcand)
 		q = pushArgument(mb, q, lcand->nr); /* left */
 	else
-		q = pushNil(mb, q, TYPE_bat); /* left candidate */
-	q = pushNil(mb, q, TYPE_bat); /* right candidate */
+		q = pushNilBat(mb, q); /* left candidate */
+	q = pushNilBat(mb, q); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
 	q = pushBit(mb, q, FALSE);    /* do not clear nils */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
@@ -2292,8 +2294,8 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	if (lcand)
 		q = pushArgument(mb, q, lcand->nr); /* left */
 	else
-		q = pushNil(mb, q, TYPE_bat); /* left candidate */
-	q = pushNil(mb, q, TYPE_bat); /* right candidate */
+		q = pushNilBat(mb, q); /* left candidate */
+	q = pushNilBat(mb, q); /* right candidate */
 	q = pushBit(mb, q, FALSE);     /* nil matches */
 	q = pushBit(mb, q, TRUE);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
@@ -2336,8 +2338,8 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 		goto bailout;
 	q = pushArgument(mb, q, op1->nr); /* left */
 	q = pushArgument(mb, q, op2->nr); /* right */
-	q = pushNil(mb, q, TYPE_bat); /* left candidate */
-	q = pushNil(mb, q, TYPE_bat); /* right candidate */
+	q = pushNilBat(mb, q); /* left candidate */
+	q = pushNilBat(mb, q); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
 	q = pushBit(mb, q, single?TRUE:FALSE);    /* max_one */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
@@ -2395,11 +2397,11 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
 		if (!lcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, lcand->nr);
 		if (!rcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, rcand->nr);
 		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
@@ -2418,11 +2420,11 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
 		if (!lcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, lcand->nr);
 		if (!rcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, rcand->nr);
 		if (inner)
@@ -2444,11 +2446,11 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
 		if (!lcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, lcand->nr);
 		if (!rcand)
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, rcand->nr);
 		if (cmptype == cmp_lt)
@@ -2471,8 +2473,8 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
 		if (!inner) {
-			q = pushNil(mb, q, TYPE_bat);
-			q = pushNil(mb, q, TYPE_bat);
+			q = pushNilBat(mb, q);
+			q = pushNilBat(mb, q);
 		}
 		q = pushBit(mb, q, single?TRUE:FALSE); /* max_one */
 		assert(!lcand && !rcand);
@@ -2534,11 +2536,11 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	if (lcand)
 		q = pushArgument(mb, q, lcand->nr);
 	else
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 	if (rcand)
 		q = pushArgument(mb, q, rcand->nr);
 	else
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 	q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 	q = pushBit(mb, q, single?TRUE:FALSE); /* max_one */
 	q = pushNil(mb, q, TYPE_lng);
@@ -2836,8 +2838,8 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 
 		q = pushArgument(mb, q, op->nr);
 	}
-	q = pushNil(mb, q, TYPE_bat); /* candidate lists */
-	q = pushNil(mb, q, TYPE_bat); /* candidate lists */
+	q = pushNilBat(mb, q); /* candidate lists */
+	q = pushNilBat(mb, q); /* candidate lists */
 	q = pushBit(mb, q, TRUE);     /* nil_matches */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 	q = pushBit(mb, q, anti?TRUE:FALSE); /* 'not' matching */
@@ -3737,13 +3739,121 @@ tail_set_type(mvc *m, stmt *st, sql_subtype *t)
 #define trivial_string_conversion(x) ((x) == EC_BIT || (x) == EC_CHAR || (x) == EC_STRING || (x) == EC_NUM || (x) == EC_POS || (x) == EC_FLT \
 									  || (x) == EC_DATE || (x) == EC_BLOB || (x) == EC_MONTH)
 
+static stmt *
+temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t, bool before)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+	const char *convert = t->type->impl, *mod = mtimeRef;
+	bool add_tz = false, pushed = (v->cand && v->cand == sel);
+
+	if (before) {
+		if (f->type->eclass == EC_TIMESTAMP_TZ && (t->type->eclass == EC_TIMESTAMP || t->type->eclass == EC_TIME)) {
+			/* call timestamp+local_timezone */
+			convert = "timestamp_add_msec_interval";
+			add_tz = true;
+		} else if (f->type->eclass == EC_TIMESTAMP_TZ && t->type->eclass == EC_DATE) {
+			/* call convert timestamp with tz to date */
+			convert = "datetz";
+			mod = calcRef;
+			add_tz = true;
+		} else if (f->type->eclass == EC_TIMESTAMP && t->type->eclass == EC_TIMESTAMP_TZ) {
+			/* call timestamp+local_timezone */
+			convert = "timestamp_sub_msec_interval";
+			add_tz = true;
+		} else if (f->type->eclass == EC_TIME_TZ && (t->type->eclass == EC_TIME || t->type->eclass == EC_TIMESTAMP)) {
+			/* call times+local_timezone */
+			convert = "time_add_msec_interval";
+			add_tz = true;
+		} else if (f->type->eclass == EC_TIME && t->type->eclass == EC_TIME_TZ) {
+			/* call times+local_timezone */
+			convert = "time_sub_msec_interval";
+			add_tz = true;
+		} else if (EC_VARCHAR(f->type->eclass) && EC_TEMP_TZ(t->type->eclass)) {
+			if (t->type->eclass == EC_TIME_TZ)
+				convert = "daytimetz";
+			else
+				convert = "timestamptz";
+			mod = calcRef;
+			add_tz = true;
+		} else {
+			return v;
+		}
+	} else {
+		if (f->type->eclass == EC_DATE && t->type->eclass == EC_TIMESTAMP_TZ) {
+			convert = "timestamp_sub_msec_interval";
+			add_tz = true;
+		} else if (f->type->eclass == EC_DATE && t->type->eclass == EC_TIME_TZ) {
+			convert = "time_sub_msec_interval";
+			add_tz = true;
+		} else {
+			return v;
+		}
+	}
+
+	if (v->nrcols == 0 && (!sel || sel->nrcols == 0)) {	/* simple calc */
+		q = newStmtArgs(mb, mod, convert, 13);
+		if (q == NULL)
+			goto bailout;
+	} else {
+		if (sel && !pushed && v->nrcols == 0) {
+			pushed = 1;
+			v = stmt_project(be, sel, v);
+			v->cand = sel;
+		}
+		q = newStmtArgs(mb, mod==calcRef?batcalcRef:batmtimeRef, convert, 13);
+		if (q == NULL)
+			goto bailout;
+	}
+	q = pushArgument(mb, q, v->nr);
+
+	if (EC_VARCHAR(f->type->eclass))
+		q = pushInt(mb, q, t->digits);
+
+	if (add_tz)
+			q = pushLng(mb, q, be->mvc->timezone);
+
+	if (sel && !pushed && !v->cand) {
+		q = pushArgument(mb, q, sel->nr);
+		pushed = 1;
+	} else if (v->nrcols > 0) {
+		q = pushNilBat(mb, q);
+	}
+
+	bool enabled = be->mvc->sa->eb.enabled;
+	be->mvc->sa->eb.enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_convert);
+	be->mvc->sa->eb.enabled = enabled;
+	if(!s) {
+		freeInstruction(q);
+		goto bailout;
+	}
+	s->op1 = v;
+	s->nrcols = 0;	/* function without arguments returns single value */
+	s->key = v->key;
+	s->nrcols = v->nrcols;
+	s->aggr = v->aggr;
+	s->op4.typeval = *t;
+	s->nr = getDestVar(q);
+	s->q = q;
+	s->cand = pushed ? sel : NULL;
+	pushInstruction(mb, q);
+	return s;
+
+  bailout:
+	if (be->mvc->sa->eb.enabled)
+		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+}
+
 stmt *
 stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *convert = t->type->impl;
+	const char *convert = t->type->impl, *mod = calcRef;
 	int pushed = (v->cand && v->cand == sel), no_candidates = 0;
+	bool add_tz = false;
 	/* convert types and make sure they are rounded up correctly */
 
 	if (v->nr < 0)
@@ -3773,11 +3883,19 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 
 	no_candidates = t->type->eclass == EC_EXTERNAL && strcmp(convert, "uuid") != 0; /* uuids conversions support candidate lists */
 
+	if ((type_has_tz(f) && !type_has_tz(t) && !EC_VARCHAR(t->type->eclass)) || (!type_has_tz(f) && type_has_tz(t))) {
+		v = temporal_convert(be, v, sel, f, t, true);
+		sel = NULL;
+		pushed = 0;
+		if (EC_VARCHAR(f->type->eclass))
+			return v;
+	}
+
 	/* Lookup the sql convert function, there is no need
 	 * for single value vs bat, this is handled by the
 	 * mal function resolution */
 	if (v->nrcols == 0 && (!sel || sel->nrcols == 0)) {	/* simple calc */
-		q = newStmtArgs(mb, calcRef, convert, 13);
+		q = newStmtArgs(mb, mod, convert, 13);
 		if (q == NULL)
 			goto bailout;
 	} else if ((v->nrcols > 0 || (sel && sel->nrcols > 0)) && no_candidates) {
@@ -3793,7 +3911,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		if (q == NULL)
 			goto bailout;
 		setVarType(mb, getArg(q, 0), newBatType(type));
-		q = pushStr(mb, q, convertMultiplexMod(calcRef, convert));
+		q = pushStr(mb, q, convertMultiplexMod(mod, convert));
 		q = pushStr(mb, q, convertMultiplexFcn(convert));
 	} else {
 		if (v->nrcols == 0 && sel && !pushed) {
@@ -3801,7 +3919,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 			v = stmt_project(be, sel, v);
 			v->cand = sel;
 		}
-		q = newStmtArgs(mb, batcalcRef, convert, 13);
+		q = newStmtArgs(mb, mod==calcRef?batcalcRef:batmtimeRef, convert, 13);
 		if (q == NULL)
 			goto bailout;
 	}
@@ -3820,13 +3938,15 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushInt(mb, q, 3);
 	}
 	q = pushArgument(mb, q, v->nr);
+	if (add_tz)
+			q = pushLng(mb, q, be->mvc->timezone);
 	if (sel && !pushed && !v->cand) {
 		q = pushArgument(mb, q, sel->nr);
 		pushed = 1;
 	} else if (v->nrcols > 0 && !no_candidates) {
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 	}
-	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
+	if (!add_tz && (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass))) {
 		/* digits, scale of the result decimal */
 		q = pushInt(mb, q, t->digits);
 		if (!EC_TEMP_FRAC(t->type->eclass))
@@ -3837,7 +3957,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushInt(mb, q, t->digits);
 	/* convert a string to a time(stamp) with time zone */
 	if (EC_VARCHAR(f->type->eclass) && EC_TEMP_TZ(t->type->eclass))
-		q = pushInt(mb, q, type_has_tz(t));
+		//q = pushInt(mb, q, type_has_tz(t));
+		q = pushLng(mb, q, be->mvc->timezone);
 	if (t->type->eclass == EC_GEOM) {
 		/* push the type and coordinates of the column */
 		q = pushInt(mb, q, t->digits);
@@ -3878,6 +3999,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	s->q = q;
 	s->cand = pushed ? sel : NULL;
 	pushInstruction(mb, q);
+	if ((!type_has_tz(f) && type_has_tz(t)))
+		return temporal_convert(be, s, NULL, f, t, false);
 	return s;
 
   bailout:
@@ -3967,17 +4090,17 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			q = pushArgument(mb, q, e1->nr);
 			pushInstruction(mb, q);
 		}
-		push_cands = can_push_cands(sel, mod, fimp);
+		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 	}
 	if (q == NULL) {
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			goto bailout;
 		mod = sql_func_mod(f->func);
 		fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
-		push_cands = can_push_cands(sel, mod, fimp);
+		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
-			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
+			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
 			default_nargs++;
 		}
 
@@ -4034,13 +4157,13 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* push candidate lists if that's the case */
-		if (f->func->type == F_FUNC && push_cands) {
+		if (push_cands) {
 			for (node *n = ops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
 
 				if (op->nrcols > 0) {
 					if (op->cand && op->cand == sel) {
-						q = pushNil(mb, q, TYPE_bat);
+						q = pushNilBat(mb, q);
 					} else {
 						q = pushArgument(mb, q, sel->nr);
 					}
@@ -4124,8 +4247,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		goto bailout;
 
 	int nargs;
-	sql_rel *r = rel;
-	relational_func_create_result_part1(be->mvc, &r, &nargs);
+	sql_rel *r = relational_func_create_result_part1(be->mvc, rel, &nargs);
 	if (ops)
 		nargs += list_length(ops->op4.lval);
 	if (f_union)
@@ -4147,7 +4269,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		}
 	}
 
-	sql_allocator *sa = be->mvc->sa;
+	allocator *sa = be->mvc->sa;
 	bool enabled = be->mvc->sa->eb.enabled;
 	be->mvc->sa->eb.enabled = false;
 	stmt *o = NULL, *s = stmt_create(sa, st_func);
@@ -4293,7 +4415,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		q = pushArgument(mb, q, ext->nr);
 		if (LANG_INT_OR_MAL(op->func->lang)) {
 			if (avg) /* push nil candidates */
-				q = pushNil(mb, q, TYPE_bat);
+				q = pushNilBat(mb, q);
 			q = pushBit(mb, q, no_nil);
 		}
 	} else if (LANG_INT_OR_MAL(op->func->lang) && no_nil && strncmp(aggrfunc, "count", 5) == 0) {
@@ -4301,7 +4423,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	} else if (LANG_INT_OR_MAL(op->func->lang) && !nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
 	} else if (LANG_INT_OR_MAL(op->func->lang) && avg) { /* push candidates */
-		q = pushNil(mb, q, TYPE_bat);
+		q = pushNilBat(mb, q);
 		q = pushBit(mb, q, no_nil);
 	}
 
@@ -4478,7 +4600,7 @@ stmt_has_null(stmt *s)
 }
 
 static const char *
-func_name(sql_allocator *sa, const char *n1, const char *n2)
+func_name(allocator *sa, const char *n1, const char *n2)
 {
 	size_t l1 = _strlen(n1), l2;
 
@@ -4503,10 +4625,10 @@ func_name(sql_allocator *sa, const char *n1, const char *n2)
 	}
 }
 
-static const char *_column_name(sql_allocator *sa, stmt *st);
+static const char *_column_name(allocator *sa, stmt *st);
 
 const char *
-column_name(sql_allocator *sa, stmt *st)
+column_name(allocator *sa, stmt *st)
 {
 	if (!st->cname)
 		st->cname = _column_name(sa, st);
@@ -4514,7 +4636,7 @@ column_name(sql_allocator *sa, stmt *st)
 }
 
 static const char *
-_column_name(sql_allocator *sa, stmt *st)
+_column_name(allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_order:
@@ -4580,14 +4702,14 @@ _column_name(sql_allocator *sa, stmt *st)
 }
 
 const char *
-table_name(sql_allocator *sa, stmt *st)
+table_name(allocator *sa, stmt *st)
 {
 	(void)sa;
 	return st->tname;
 }
 
 const char *
-schema_name(sql_allocator *sa, stmt *st)
+schema_name(allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_const:
@@ -4647,9 +4769,9 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		goto bailout;
 	if (anti) {
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
-		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true);
-		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true);
+		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
+		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true, true);
+		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true, true);
 		cond = stmt_binop(be,
 			stmt_unop(be, cond, NULL, not),
 			stmt_unop(be, cond, NULL, isnull), NULL, or);

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -211,7 +213,7 @@ logbat_new(int tt, BUN size, role_t role)
 		if (role == PERSISTENT)
 			BATmode(nb, false);
 	} else {
-		TRC_CRITICAL(GDK, "creating new BAT[void:%s]#" BUNFMT " failed\n", ATOMname(tt), size);
+		TRC_CRITICAL(GDK, "creating new BAT[%s]#" BUNFMT " failed\n", ATOMname(tt), size);
 	}
 	return nb;
 }
@@ -1786,14 +1788,14 @@ old_logger_destroy(old_logger *lg)
 		GDKfree(subcommit);
 		return rc;
 	}
-	if ((rc = log_create_types_file(lg->lg, lg->filename, true)) != GDK_SUCCEED) {
+	if ((rc = log_create_types_file(lg->lg, lg->filename)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		GDKfree(subcommit);
 		return rc;
 	}
 	lg->lg->id = (ulng) lg->id;
 	lg->lg->saved_id = lg->lg->id;
-	rc = TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id, lg->lg->saved_tid);
+	rc = TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id);
 	GDKfree(subcommit);
 	if (rc != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");

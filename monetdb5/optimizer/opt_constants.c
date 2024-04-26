@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -88,8 +90,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					y = cst[k];
 					if (x->type == y->type && x->rowcnt == y->rowcnt
 						&& x->value.vtype == y->value.vtype
-						&& ATOMcmp(x->value.vtype, VALptr(&x->value),
-								   VALptr(&y->value)) == 0) {
+						&& (x->value.vtype == TYPE_any
+						|| ATOMcmp(x->value.vtype, VALptr(&x->value),
+								   VALptr(&y->value)) == 0)) {
 
 						/* re-use a constant */
 						alias[i] = index[k];

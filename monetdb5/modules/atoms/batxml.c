@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -50,6 +52,7 @@
 		(X)->tsorted =  false;										\
 		(X)->trevsorted =  false;									\
 		(X)->tnonil = true;											\
+		(X)->tkey = false;											\
 	} while (0)
 
 #define finalizeResult(X,Y,Z)					\
@@ -1286,7 +1289,9 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if (g && BATtdense(g)) {
 		/* singleton groups: return group ID's (g's tail) and original
 		 * values from b */
-		bn = VIEWcreate(g->tseqbase, b);
+		bn = VIEWcreate(g->tseqbase, b, 0, BUN_MAX);
+		if (bn == NULL)
+			err = GDK_EXCEPTION;
 		goto out;
 	}
 

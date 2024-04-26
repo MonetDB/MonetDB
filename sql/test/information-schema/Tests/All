@@ -3,4 +3,9 @@ schemata
 tables
 views
 columns
-
+check_constraints
+table_constraints
+referential_constraints
+routines
+parameters
+sequences

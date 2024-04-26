@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -731,6 +733,7 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 	int offset = 0;
 	int len_result = 0;
 	int addlen;
+	int empty_match_correction = 0;
 	char *tmp;
 
 	do {
@@ -738,7 +741,12 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 						  exec_options, ovector, ovecsize);
 		if (j <= 0)
 			break;
-		addlen = ovector[0] - offset + (nbackrefs == 0 ? len_replacement : 0);
+
+		empty_match_correction = ovector[0] == ovector[1] ? 1 : 0;
+
+		// calculate the length of the string that will be appended to result
+		addlen = ovector[0] - offset
+				+ (nbackrefs == 0 ? len_replacement : 0) + empty_match_correction;
 		if (len_result + addlen >= *max_result) {
 			tmp = GDKrealloc(result, len_result + addlen + 1);
 			if (tmp == NULL) {
@@ -748,11 +756,13 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 			result = tmp;
 			*max_result = len_result + addlen + 1;
 		}
+		// append to the result the parts of the original string that are left unchanged
 		if (ovector[0] > offset) {
 			strncpy(result + len_result, origin_str + offset,
 					ovector[0] - offset);
 			len_result += ovector[0] - offset;
 		}
+		// append to the result the replacement of the matched string
 		if (nbackrefs == 0) {
 			strncpy(result + len_result, replacement, len_replacement);
 			len_result += len_replacement;
@@ -805,8 +815,18 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 				len_result += addlen;
 			}
 		}
-		offset = ovector[1];
-	} while (offset < len_origin_str && global);
+		// In case of an empty match just advance the offset by 1
+		offset = ovector[1] + empty_match_correction;
+		// and copy the character that we just advanced over
+		if (empty_match_correction) {
+			strncpy(result + len_result, origin_str + ovector[1], 1);
+			++len_result;
+		}
+		// before we loop around check with the offset - 1 if we had an empty match
+		// since we manually advanced the offset by one. otherwise we gonna skip a
+		// replacement at the end of the string
+	} while ((offset - empty_match_correction) < len_origin_str && global);
+
 	if (offset < len_origin_str) {
 		addlen = len_origin_str - offset;
 		if (len_result + addlen >= *max_result) {
@@ -1380,9 +1400,8 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 	int v[3];
 
 	v[0] = v[1] = *res = 0;
-	if (pcre_exec
-		(pattern, NULL, *s, (int) strlen(*s), 0, PCRE_NO_UTF8_CHECK, v,
-		 3) >= 0) {
+	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0,
+				  PCRE_NO_UTF8_CHECK, v, 3) >= 0) {
 		*res = v[1];
 	}
 	return MAL_SUCCEED;
@@ -1968,16 +1987,16 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				  anti, #TEST);											\
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = p;									\
 			}															\
 		} else {														\
 			for (; p < ncands; p++) {									\
-				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
@@ -2010,13 +2029,7 @@ pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 	str msg = MAL_SUCCEED;
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
-	}
 
 	if ((msg = pcre_like_build(&re, &ex, pat, caseignore, ci->ncand)) != MAL_SUCCEED)
 		goto bailout;
@@ -2047,13 +2060,7 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 	str msg = MAL_SUCCEED;
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
-	}
 
 	if ((msg = re_like_build(&re, &wpat, pat, caseignore, use_strcmp, ascii_pattern,
 							 esc)) != MAL_SUCCEED)
@@ -2245,8 +2252,14 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 			BAT *rev;
 			if (old_s) {
 				rev = BATdiffcand(old_s, bn);
-				assert(BATintersectcand(old_s, bn)->batCount == bn->batCount);
+#ifndef NDEBUG
+				BAT *is = BATintersectcand(old_s, bn);
+				if (is) {
+					assert(is->batCount == bn->batCount);
+					BBPreclaim(is);
+				}
 				assert(rev->batCount == old_s->batCount - bn->batCount);
+#endif
 			}
 
 			else
@@ -2292,8 +2305,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 #define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND)						\
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
-			GDK_CHECK_TIMEOUT(timeoffset, counter,						\
-							  GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
+			GDK_CHECK_TIMEOUT(qry_ctx, counter,							\
+							  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
 			nl = 0;														\
@@ -2408,13 +2421,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 #endif
 
 	size_t counter = 0;
-	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime
-					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
-												   qry_ctx->querytimeout) : 0;
-	}
 
 	TRC_DEBUG(ALGO,
 			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"

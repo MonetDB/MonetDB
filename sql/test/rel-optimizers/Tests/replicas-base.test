@@ -1,0 +1,27 @@
+statement ok
+create table foo_local (n int, m text)
+
+statement ok
+insert into foo_local values (1, 'hello'), (2, 'world'), (3, '!!'), (1, 'again')
+
+statement ok
+create remote table foo_r2 (n int, m text) on 'mapi:monetdb://localhost:50002/node2'
+
+statement ok
+create remote table foo_r3 (n int, m text) on 'mapi:monetdb://localhost:50003/node3'
+
+statement ok
+create table bar_local (n int, m text)
+
+statement ok
+insert into bar_local values (10, 'alice'), (20, 'bob'), (30, 'tom'), (20, 'mary')
+
+statement ok
+create remote table bar_r2 (n int, m text) on 'mapi:monetdb://localhost:50002/node2'
+
+statement ok
+create remote table bar_r3 (n int, m text) on 'mapi:monetdb://localhost:50003/node3'
+
+statement ok
+create remote table buz_rmt (l int) on 'mapi:monetdb://localhost:50002/node2'
+

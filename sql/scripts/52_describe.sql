@@ -4,147 +4,74 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+-- Copyright 2024 MonetDB Foundation;
+-- Copyright August 2008 - 2023 MonetDB B.V.;
+-- Copyright 1997 - July 2008 CWI.
+
+CREATE FUNCTION sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean)
+  RETURNS varchar(1024)
+BEGIN
+  RETURN
+    CASE mtype
+    WHEN 'char' THEN sys.ifthenelse(nameonly OR digits <= 1, sys.ifthenelse(shortname, 'CHAR', 'CHARACTER'), sys.ifthenelse(shortname, 'CHAR(', 'CHARACTER(') || digits || ')')
+    WHEN 'varchar' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'VARCHAR', 'CHARACTER VARYING'), sys.ifthenelse(shortname, 'VARCHAR(', 'CHARACTER VARYING(') || digits || ')')
+    WHEN 'clob' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'CLOB', 'CHARACTER LARGE OBJECT'), sys.ifthenelse(shortname, 'CLOB(', 'CHARACTER LARGE OBJECT(') || digits || ')')
+    WHEN 'blob' THEN sys.ifthenelse(nameonly OR digits = 0, sys.ifthenelse(shortname, 'BLOB', 'BINARY LARGE OBJECT'), sys.ifthenelse(shortname, 'BLOB(', 'BINARY LARGE OBJECT(') || digits || ')')
+    WHEN 'int' THEN 'INTEGER'
+    WHEN 'bigint' THEN 'BIGINT'
+    WHEN 'smallint' THEN 'SMALLINT'
+    WHEN 'tinyint' THEN 'TINYINT'
+    WHEN 'hugeint' THEN 'HUGEINT'
+    WHEN 'boolean' THEN 'BOOLEAN'
+    WHEN 'date' THEN 'DATE'
+    WHEN 'time' THEN sys.ifthenelse(nameonly OR digits = 1, 'TIME', 'TIME(' || (digits -1) || ')')
+    WHEN 'timestamp' THEN sys.ifthenelse(nameonly OR digits = 7, 'TIMESTAMP', 'TIMESTAMP(' || (digits -1) || ')')
+    WHEN 'timestamptz' THEN sys.ifthenelse(nameonly OR digits = 7, 'TIMESTAMP WITH TIME ZONE', 'TIMESTAMP(' || (digits -1) || ') WITH TIME ZONE')
+    WHEN 'timetz' THEN sys.ifthenelse(nameonly OR digits = 1, 'TIME WITH TIME ZONE', 'TIME(' || (digits -1) || ') WITH TIME ZONE')
+    WHEN 'decimal' THEN sys.ifthenelse(nameonly OR digits = 0, 'DECIMAL', 'DECIMAL(' || digits || sys.ifthenelse(tscale = 0, '', ',' || tscale) || ')')
+    WHEN 'double' THEN sys.ifthenelse(nameonly OR (digits = 53 AND tscale = 0), sys.ifthenelse(shortname, 'DOUBLE', 'DOUBLE PRECISION'), 'FLOAT(' || digits || ')')
+    WHEN 'real' THEN sys.ifthenelse(nameonly OR (digits = 24 AND tscale = 0), 'REAL', 'FLOAT(' || digits || ')')
+    WHEN 'day_interval' THEN 'INTERVAL DAY'
+    WHEN 'month_interval' THEN CASE digits WHEN 1 THEN 'INTERVAL YEAR' WHEN 2 THEN 'INTERVAL YEAR TO MONTH' WHEN 3 THEN 'INTERVAL MONTH' END
+    WHEN 'sec_interval' THEN
+	CASE digits
+	WHEN 4 THEN 'INTERVAL DAY'
+	WHEN 5 THEN 'INTERVAL DAY TO HOUR'
+	WHEN 6 THEN 'INTERVAL DAY TO MINUTE'
+	WHEN 7 THEN 'INTERVAL DAY TO SECOND'
+	WHEN 8 THEN 'INTERVAL HOUR'
+	WHEN 9 THEN 'INTERVAL HOUR TO MINUTE'
+	WHEN 10 THEN 'INTERVAL HOUR TO SECOND'
+	WHEN 11 THEN 'INTERVAL MINUTE'
+	WHEN 12 THEN 'INTERVAL MINUTE TO SECOND'
+	WHEN 13 THEN 'INTERVAL SECOND'
+	END
+    WHEN 'oid' THEN 'OID'
+    WHEN 'json' THEN sys.ifthenelse(nameonly OR digits = 0, 'JSON', 'JSON(' || digits || ')')
+    WHEN 'url' THEN sys.ifthenelse(nameonly OR digits = 0, 'URL', 'URL(' || digits || ')')
+    WHEN 'xml' THEN sys.ifthenelse(nameonly OR digits = 0, 'XML', 'XML(' || digits || ')')
+    WHEN 'geometry' THEN
+	sys.ifthenelse(nameonly, 'GEOMETRY',
+	CASE digits
+	WHEN 4 THEN 'GEOMETRY(POINT' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 8 THEN 'GEOMETRY(LINESTRING' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 16 THEN 'GEOMETRY(POLYGON' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 20 THEN 'GEOMETRY(MULTIPOINT' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 24 THEN 'GEOMETRY(MULTILINESTRING' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 28 THEN 'GEOMETRY(MULTIPOLYGON' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	WHEN 32 THEN 'GEOMETRY(GEOMETRYCOLLECTION' || sys.ifthenelse(tscale = 0, ')', ',' || tscale || ')')
+	ELSE 'GEOMETRY'
+        END)
+    ELSE sys.ifthenelse(mtype = lower(mtype), upper(mtype), '"' || mtype || '"') || sys.ifthenelse(nameonly OR digits = 0, '', '(' || digits || sys.ifthenelse(tscale = 0, '', ',' || tscale) || ')')
+    END;
+END;
+
+GRANT EXECUTE ON FUNCTION sys.sql_datatype(varchar(999), integer, integer, boolean, boolean) TO PUBLIC;
 
 CREATE FUNCTION sys.describe_type(ctype string, digits integer, tscale integer)
   RETURNS string
 BEGIN
-  RETURN
-    CASE ctype
-      WHEN 'bigint' THEN 'BIGINT'
-      WHEN 'blob' THEN
-	CASE digits
-	  WHEN 0 THEN 'BINARY LARGE OBJECT'
-	  ELSE 'BINARY LARGE OBJECT(' || digits || ')'
-	END
-      WHEN 'boolean' THEN 'BOOLEAN'
-      WHEN 'char' THEN
-        CASE digits
-          WHEN 1 THEN 'CHARACTER'
-          ELSE 'CHARACTER(' || digits || ')'
-        END
-      WHEN 'clob' THEN
-	CASE digits
-	  WHEN 0 THEN 'CHARACTER LARGE OBJECT'
-	  ELSE 'CHARACTER LARGE OBJECT(' || digits || ')'
-	END
-      WHEN 'date' THEN 'DATE'
-      WHEN 'day_interval' THEN 'INTERVAL DAY'
-      WHEN ctype = 'decimal' THEN
-  	CASE
-	  WHEN (digits = 1 AND tscale = 0) OR digits = 0 THEN 'DECIMAL'
-	  WHEN tscale = 0 THEN 'DECIMAL(' || digits || ')'
-	  WHEN digits = 39 THEN 'DECIMAL(' || 38 || ',' || tscale || ')'
-	  WHEN digits = 19 AND (SELECT COUNT(*) = 0 FROM sys.types WHERE sqlname = 'hugeint' ) THEN 'DECIMAL(' || 18 || ',' || tscale || ')'
-	  ELSE 'DECIMAL(' || digits || ',' || tscale || ')'
-	END
-      WHEN 'double' THEN
-	CASE
-	  WHEN digits = 53 and tscale = 0 THEN 'DOUBLE'
-	  WHEN tscale = 0 THEN 'FLOAT(' || digits || ')'
-	  ELSE 'FLOAT(' || digits || ',' || tscale || ')'
-	END
-      WHEN 'geometry' THEN
-	CASE digits
-	  WHEN 4 THEN 'GEOMETRY(POINT' ||
-            CASE tscale
-              WHEN 0 THEN ''
-              ELSE ',' || tscale
-            END || ')'
-	  WHEN 8 THEN 'GEOMETRY(LINESTRING' ||
-            CASE tscale
-              WHEN 0 THEN ''
-              ELSE ',' || tscale
-            END || ')'
-	  WHEN 16 THEN 'GEOMETRY(POLYGON' ||
-            CASE tscale
-              WHEN 0 THEN ''
-              ELSE ',' || tscale
-            END || ')'
-	  WHEN 20 THEN 'GEOMETRY(MULTIPOINT' ||
-            CASE tscale
-              WHEN 0 THEN ''
-              ELSE ',' || tscale
-            END || ')'
-	  WHEN 24 THEN 'GEOMETRY(MULTILINESTRING' ||
-            CASE tscale
-              WHEN 0 THEN ''
-              ELSE ',' || tscale
-            END || ')'
-	  WHEN 28 THEN 'GEOMETRY(MULTIPOLYGON' ||
-            CASE tscale
-              WHEN 0 THEN ''
-              ELSE ',' || tscale
-            END || ')'
-	  WHEN 32 THEN 'GEOMETRY(GEOMETRYCOLLECTION' ||
-            CASE tscale
-              WHEN 0 THEN ''
-              ELSE ',' || tscale
-            END || ')'
-	  ELSE 'GEOMETRY'
-        END
-      WHEN 'hugeint' THEN 'HUGEINT'
-      WHEN 'int' THEN 'INTEGER'
-      WHEN 'month_interval' THEN
-	CASE digits
-	  WHEN 1 THEN 'INTERVAL YEAR'
-	  WHEN 2 THEN 'INTERVAL YEAR TO MONTH'
-	  WHEN 3 THEN 'INTERVAL MONTH'
-	END
-      WHEN 'real' THEN
-	CASE
-	  WHEN digits = 24 and tscale = 0 THEN 'REAL'
-	  WHEN tscale = 0 THEN 'FLOAT(' || digits || ')'
-	  ELSE 'FLOAT(' || digits || ',' || tscale || ')'
-	END
-      WHEN 'sec_interval' THEN
-	CASE digits
-	  WHEN 4 THEN 'INTERVAL DAY'
-	  WHEN 5 THEN 'INTERVAL DAY TO HOUR'
-	  WHEN 6 THEN 'INTERVAL DAY TO MINUTE'
-	  WHEN 7 THEN 'INTERVAL DAY TO SECOND'
-	  WHEN 8 THEN 'INTERVAL HOUR'
-	  WHEN 9 THEN 'INTERVAL HOUR TO MINUTE'
-	  WHEN 10 THEN 'INTERVAL HOUR TO SECOND'
-	  WHEN 11 THEN 'INTERVAL MINUTE'
-	  WHEN 12 THEN 'INTERVAL MINUTE TO SECOND'
-	  WHEN 13 THEN 'INTERVAL SECOND'
-	END
-      WHEN 'smallint' THEN 'SMALLINT'
-      WHEN 'time' THEN
-	CASE digits
-	  WHEN 1 THEN 'TIME'
-	  ELSE 'TIME(' || (digits - 1) || ')'
-	END
-      WHEN 'timestamp' THEN
-	CASE digits
-	  WHEN 7 THEN 'TIMESTAMP'
-	  ELSE 'TIMESTAMP(' || (digits - 1) || ')'
-	END
-      WHEN 'timestamptz' THEN
-	CASE digits
-	  WHEN 7 THEN 'TIMESTAMP'
-	  ELSE 'TIMESTAMP(' || (digits - 1) || ')'
-	END || ' WITH TIME ZONE'
-      WHEN 'timetz' THEN
-	CASE digits
-	  WHEN 1 THEN 'TIME'
-	  ELSE 'TIME(' || (digits - 1) || ')'
-	END || ' WITH TIME ZONE'
-      WHEN 'tinyint' THEN 'TINYINT'
-      WHEN 'varchar' THEN 'CHARACTER VARYING(' || digits || ')'
-      ELSE
-        CASE
-          WHEN lower(ctype) = ctype THEN upper(ctype)
-          ELSE '"' || ctype || '"'
-        END || CASE digits
-	  WHEN 0 THEN ''
-          ELSE '(' || digits || CASE tscale
-	    WHEN 0 THEN ''
-            ELSE ',' || tscale
-          END || ')'
-	END
-    END;
+  RETURN sys.sql_datatype(ctype, digits, tscale, false, false);
 END;
 
 CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;

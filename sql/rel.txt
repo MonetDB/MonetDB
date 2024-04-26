@@ -110,7 +110,7 @@ e_atom 	(card ATOM)
 	or
 	-> r	parameter ( ->r = sql_var_name -> { ->name variable name, ->sname schema of the variable }, ->type = subtype, ->flag = level)
 	or
-	-> f	list of atom expressions
+	-> f	list of atom expressions, represents set of values
 	or
 	-> 	numbered variable ( ->flag = nr, ->type = subtype)
 

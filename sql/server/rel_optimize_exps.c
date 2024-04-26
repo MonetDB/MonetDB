@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -148,12 +150,12 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						/* (x*c1)*c2 -> x * (c1*c2) */
 						sql_exp *ne = NULL;
 
-						if (!(le = rel_binop_(sql, NULL, lre, re, "sys", "sql_mul", card_value))) {
+						if (!(le = rel_binop_(sql, NULL, lre, re, "sys", "sql_mul", card_value, true))) {
 							sql->session->status = 0;
 							sql->errstr[0] = '\0';
 							return e; /* error, fallback to original expression */
 						}
-						if (!(ne = rel_binop_(sql, NULL, lle, le, "sys", "sql_mul", card_value))) {
+						if (!(ne = rel_binop_(sql, NULL, lle, le, "sys", "sql_mul", card_value, true))) {
 							sql->session->status = 0;
 							sql->errstr[0] = '\0';
 							return e; /* error, fallback to original expression */
@@ -452,7 +454,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 		sql_exp *le = n->data;
 		sql_exp *re = n->next->data;
 
-		if (exp_is_atom(le) && exp_is_atom(re) && le->type == e_atom && le->l && re->type == e_atom && re->l) {
+		if (exp_is_atom(le) && !exp_is_null(le) && exp_is_atom(re) && le->type == e_atom && le->l && re->type == e_atom && re->l) {
 			n = n->next->next;
 			if (exp_match_exp(le, re)) { /* x==y -> a */
 				sql_exp *res = n->data;
@@ -575,7 +577,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 #else
 							arg2 = exp_atom_lng(v->sql->sa, val);
 #endif
-							if ((f = sql_bind_func(v->sql, "sys", "scale_down", exp_subtype(arg1), exp_subtype(arg2), F_FUNC, true))) {
+							if ((f = sql_bind_func(v->sql, "sys", "scale_down", exp_subtype(arg1), exp_subtype(arg2), F_FUNC, true, true))) {
 								e = exp_compare(v->sql->sa, le->l, exp_binop(v->sql->sa, arg1, arg2, f), e->flag);
 								if (anti) set_anti(e);
 								v->changes++;
@@ -652,7 +654,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 							assert(list_length(args) == 1);
 							l = args->h->data;
 							if (exp_subtype(l)) {
-								r = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(l), NULL));
+								r = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(l), NULL, 0));
 								e = exp_compare(v->sql->sa, l, r, e->flag);
 								if (e && !flag)
 									set_anti(e);

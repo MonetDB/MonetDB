@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -164,7 +166,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	q = pushArgument(mb,q, k);
-	q = pushStr(mb,q,"clob");
+	q = pushStr(mb,q,"varchar");
 	pushInstruction(mb, q);
 
 	resultset = pushArgument(mb,resultset, getArg(q,0));
@@ -247,7 +249,6 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	pushInstruction(mb,resultset);
 	pushEndInstruction(mb);
 	msg = chkTypes(cntxt->usermodule, mb, TRUE);
-	renameVariables(mb);
 	return msg;
 }
 
@@ -341,7 +342,7 @@ SQLescapeString(str s)
 str
 SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit output, res_table **result)
 {
-	int status = 0, err = 0, oldvtop, oldstop = 1, oldvid, inited = 0, ac, sizeframes, topframes;
+	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
 	unsigned int label;
 	mvc *o = NULL, *m = NULL;
 	sql_frame **frames;
@@ -490,7 +491,6 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		}
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
-		oldvid = c->curprg->def->vid;
 		r = sql_symbol2relation(sql, m->sym);
 
 		assert(m->emode != m_prepare);
@@ -505,7 +505,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			sqlcleanup(sql, err);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, c->glb, oldvtop, oldvid);
+			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			goto endofcompile;
 		}
@@ -530,7 +530,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			sqlcleanup(sql, err);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, c->glb, oldvtop, oldvid);
+			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			goto endofcompile;
 		}
@@ -541,8 +541,11 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			be->depth++;
 			msg = SQLrun(c,m);
 			be->depth--;
-			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+			if (c->curprg->def->stop > 1) {
+				assert(0);
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop);
+			}
 			sqlcleanup(sql, 0);
 			if (!execute)
 				goto endofcompile;
@@ -623,7 +626,7 @@ SQLengineIntern(Client c, backend *be)
 		m->session->status = -10;
 	sqlcleanup(be, (!msg) ? 0 : -1);
 	MSresetInstructions(c->curprg->def, 1);
-	freeVariables(c, c->curprg->def, NULL, be->vtop, be->vid);
+	freeVariables(c, c->curprg->def, NULL, be->vtop);
 	//be->language = oldlang;
 	/*
 	 * Any error encountered during execution should block further processing
@@ -674,7 +677,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
 	if (*opt && rel)
-		rel = sql_processrelation(m, rel, 0, 0, 0, 0);
+		rel = sql_processrelation(m, rel, 0, 1, 0, 0);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement", "%s", m->errstr);
@@ -739,6 +742,25 @@ RAstatement2_return(backend *be, mvc *m, int nlevels, struct global_var_entry *g
 	}
 	sa_reset(m->ta);
 	return RAcommit_statement(be, msg);
+}
+
+static void
+subtype_from_string(mvc *sql, sql_subtype *st, char *type)
+{
+	unsigned digits = 0, scale = 0;
+
+	char *end = strchr(type, '(');
+	if (end) {
+		end[0] = 0;
+		digits = strtol(end+1, &end, 10);
+		if (end && end[0] == ',')
+			scale = strtol(end+1, NULL, 10);
+	}
+	if (!sql_find_subtype(st, type, digits, scale)) {
+		sql_type *t = mvc_bind_type(sql, type);
+		if (t)
+			sql_init_subtype(st, t, 0, 0);
+	}
 }
 
 str
@@ -871,7 +893,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	refs = sa_list(m->sa);
 	rel = rel_read(m, expr, &pos, refs);
 	if (rel)
-		rel = sql_processrelation(m, rel, 0, 0, 0, 0);
+		rel = sql_processrelation(m, rel, 0, 1, 0, 0);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement2", "%s", m->errstr);
@@ -890,14 +912,20 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else {
 			int i = 1;
 			for (node *n = rel->exps->h, *m = types_list->h ; n && m && !msg ; n = n->next, m = m->next) {
-				sql_exp *e = (sql_exp *) n->data;
-				sql_subtype *t = exp_subtype(e);
-				str got = sql_subtype_string(be->mvc->ta, t), expected = (str) m->data;
+				sql_exp *e = n->data, *ne = NULL;
+				sql_subtype *t = exp_subtype(e), et;
 
-				if (!got)
-					msg = createException(SQL, "RAstatement2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				else if (strcmp(expected, got) != 0)
+				subtype_from_string(be->mvc, &et, m->data);
+				if (!is_subtype(t, &et) && (ne = exp_check_type(be->mvc, &et, rel, e, type_equal)) == NULL) {
+					str got = sql_subtype_string(be->mvc->ta, t), expected = (str) m->data;
+					if (!got)
+						msg = createException(SQL, "RAstatement2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "Parameter %d has wrong SQL type, expected %s, but got %s instead", i, expected, got);
+				}
+				if (ne) {
+					exp_setname(be->mvc->sa, ne, exp_relname(e), exp_name(e));
+					n->data = ne;
+				}
 				i++;
 			}
 		}

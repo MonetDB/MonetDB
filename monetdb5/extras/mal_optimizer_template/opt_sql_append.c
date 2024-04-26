@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -292,11 +294,8 @@ OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		mb = s->def;
 		stk= 0;
 	}
-	if( mb->errors ){
-		/* when we have errors, we still want to see them */
-		addtoMalBlkHistory(mb);
+	if (mb->errors)
 		return MAL_SUCCEED;
-	}
 	actions = OPTsql_appendImplementation(cntxt, mb,stk,p);
 
 	/* Defense line against incorrect plans */

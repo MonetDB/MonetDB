@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef SQL_RELATION_H
@@ -44,7 +46,8 @@ typedef struct expression {
 	void *l;
 	void *r;
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
-	unsigned int flag; /* cmp types, PSM types/level */
+	unsigned short flag; /* cmp types, PSM types/level */
+	unsigned short tmp;
 	unsigned int
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:4,	/* free variable, ie binds to the upper dependent join */

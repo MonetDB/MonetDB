@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef LIBGEOM_H
@@ -28,10 +30,12 @@
 #define libgeom_export extern
 #endif
 
+#define GEOS_USE_ONLY_R_API 1
 #include <geos_c.h>
 #ifdef HAVE_PROJ
 #include <proj.h>
 #endif
+
 
 /* geos does not support 3d envelope */
 typedef struct mbr {
@@ -94,6 +98,9 @@ Type values:
 
 */
 
+libgeom_export GEOSContextHandle_t libgeom_tls(void);
+#define geoshandle (libgeom_tls())
+
 typedef enum wkb_type {
     // TODO: deprecated	type REMOVE
 	//wkbGeometry_mbd = 0,
@@ -127,8 +134,7 @@ typedef struct {
 	wkb wkb;
 } geom_geometry;
 
-libgeom_export void libgeom_init(void);
-libgeom_export void libgeom_exit(void);
+libgeom_export gdk_return libgeom_init(void);
 
 #define mbr_nil mbrFromGeos(NULL);
 

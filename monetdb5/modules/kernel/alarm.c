@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -38,106 +40,34 @@ ALARMusec(lng *ret)
 
 #define SLEEP_SINGLE(TPE)												\
 	do {																\
-		TPE *res = (TPE*) getArgReference(stk, pci, 0), *msecs = (TPE*) getArgReference(stk,pci,1); \
+		TPE *res = getArgReference_##TPE(stk, pci, 0);					\
+		const TPE *msecs = getArgReference_##TPE(stk,pci,1);			\
 		if (is_##TPE##_nil(*msecs))										\
-			throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
+			throw(MAL, "alarm.sleep", "NULL values not allowed for sleeping time"); \
 		if (*msecs < 0)													\
-			throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
+			throw(MAL, "alarm.sleep", "Cannot sleep for a negative time"); \
 		MT_sleep_ms((unsigned int) *msecs);								\
 		*res = *msecs;													\
-	} while (0)
-
-#define SLEEP_MULTI(TPE)												\
-	do {																\
-		for (i = 0; i < j ; i++) {										\
-			if (is_##TPE##_nil(bb[i])) {								\
-				bat_iterator_end(&bi);									\
-				BBPreclaim(r);											\
-				BBPunfix(b->batCacheid);								\
-				throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
-			}															\
-			if (bb[i] < 0) {											\
-				bat_iterator_end(&bi);									\
-				BBPreclaim(r);											\
-				BBPunfix(b->batCacheid);								\
-				throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
-			}															\
-		}																\
-		for (i = 0; i < j ; i++) {										\
-			MT_sleep_ms((unsigned int) bb[i]);							\
-			rb[i] = bb[i];												\
-		}																\
 	} while (0)
 
 static str
 ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *r = NULL, *b = NULL;
-	int *restrict rb, *restrict bb, tpe;
-	BUN i, j;
-
 	(void) cntxt;
-	if (getArgType(mb, pci, 0) != TYPE_void
-		&& isaBatType(getArgType(mb, pci, 1))) {
-		bat *res = getArgReference_bat(stk, pci, 0);
-		bat *bid = getArgReference_bat(stk, pci, 1);
-		tpe = getArgType(mb, pci, 1);
-
-		if (!(b = BATdescriptor(*bid)))
-			throw(MAL, "alarm.sleepr",
-				  SQLSTATE(HY005) "Cannot access column descriptor");
-
-		BATiter bi = bat_iterator(b);
-		j = bi.count;
-		bb = bi.base;
-
-		if (!(r = COLnew(0, tpe, j, TRANSIENT))) {
-			bat_iterator_end(&bi);
-			BBPunfix(b->batCacheid);
-			throw(MAL, "alarm.sleepr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		rb = Tloc(r, 0);
-
-		switch (tpe) {
-		case TYPE_bte:
-			SLEEP_MULTI(bte);
-			break;
-		case TYPE_sht:
-			SLEEP_MULTI(sht);
-			break;
-		case TYPE_int:
-			SLEEP_MULTI(int);
-			break;
-		default:{
-			bat_iterator_end(&bi);
-			BBPreclaim(r);
-			BBPunfix(b->batCacheid);
-			throw(MAL, "alarm.sleepr",
-				  SQLSTATE(42000) "Sleep function not available for type %s",
-				  ATOMname(tpe));
-		}
-		}
-		bat_iterator_end(&bi);
-
-		BBPunfix(b->batCacheid);
-		*res = r->batCacheid;
-		BBPkeepref(r);
-	} else {
-		switch (getArgType(mb, pci, 1)) {
-		case TYPE_bte:
-			SLEEP_SINGLE(bte);
-			break;
-		case TYPE_sht:
-			SLEEP_SINGLE(sht);
-			break;
-		case TYPE_int:
-			SLEEP_SINGLE(int);
-			break;
-		default:
-			throw(MAL, "alarm.sleepr",
-				  SQLSTATE(42000) "Sleep function not available for type %s",
-				  ATOMname(getArgType(mb, pci, 1)));
-		}
+	switch (getArgType(mb, pci, 1)) {
+	case TYPE_bte:
+		SLEEP_SINGLE(bte);
+		break;
+	case TYPE_sht:
+		SLEEP_SINGLE(sht);
+		break;
+	case TYPE_int:
+		SLEEP_SINGLE(int);
+		break;
+	default:
+		throw(MAL, "alarm.sleep",
+			  SQLSTATE(42000) "Sleep function not available for type %s",
+			  ATOMname(getArgType(mb, pci, 1)));
 	}
 	return MAL_SUCCEED;
 }
@@ -183,7 +113,6 @@ ALARMtime(int *res)
 mel_func alarm_init_funcs[] = {
  pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds", args(1,2, arg("",void),argany("msecs",1))),
  pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds and return the slept value", args(1,2, argany("",1),argany("msecs",1))),
- pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds and return the slept value", args(1,2, batargany("",1),batargany("msecs",1))),
  command("alarm", "usec", ALARMusec, true, "Return time since Jan 1, 1970 in microseconds.", args(1,1, arg("",lng))),
  command("alarm", "time", ALARMtime, true, "Return time since program start in milliseconds.", args(1,1, arg("",int))),
  command("alarm", "epoch", ALARMepoch, true, "Return time since Jan 1, 1970 in seconds.", args(1,1, arg("",int))),

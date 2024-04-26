@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -140,28 +142,28 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	return res;
 }
 
-#define column_find_tpe(TPE) \
-static TPE \
-column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
-{ \
-	BUN q = BUN_NONE; \
-	BAT *b; \
-	TPE res = -1; \
- \
-	b = full_column(tr, c); \
-	if (b) { \
-		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b)) \
-			q = BUN_NONE; \
-		else \
-			q = rid - b->hseqbase; \
-	} \
-	if (q != BUN_NONE) { \
-		BATiter bi = bat_iterator(b); \
-		res = *(TPE*)BUNtloc(bi, q); \
-		bat_iterator_end(&bi); \
-	} \
-	bat_destroy(b); \
-	return res; \
+#define column_find_tpe(TPE)										\
+static TPE															\
+column_find_##TPE(sql_trans *tr, sql_column *c, oid rid)			\
+{																	\
+	BUN q = BUN_NONE;												\
+	BAT *b;															\
+	TPE res = -1;													\
+																	\
+	b = full_column(tr, c);											\
+	if (b) {														\
+		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))	\
+			q = BUN_NONE;											\
+		else														\
+			q = rid - b->hseqbase;									\
+	}																\
+	if (q != BUN_NONE) {											\
+		BATiter bi = bat_iterator(b);								\
+		res = *(TPE*)BUNtloc(bi, q);								\
+		bat_iterator_end(&bi);										\
+	}																\
+	bat_destroy(b);													\
+	return res;														\
 }
 
 column_find_tpe(sqlid)
@@ -205,7 +207,7 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store->storage_api.update_col(tr, c, &rid, value, c->type.type->localtype);
+	return store->storage_api.update_col(tr, c, &rid, value, false);
 }
 
 static int
@@ -232,7 +234,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		val = va_arg(va, void *);
 		if (!val)
 			break;
-		ok = store->storage_api.append_col(tr, c, offset, NULL, val, 1, c->type.type->localtype);
+		ok = store->storage_api.append_col(tr, c, offset, NULL, val, 1, false, c->type.type->localtype);
 		if (ok != LOG_OK) {
 			va_end(va);
 			return ok;
@@ -255,7 +257,7 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store->storage_api.delete_tab(tr, t, &rid, TYPE_oid);
+	return store->storage_api.delete_tab(tr, t, &rid, false);
 }
 
 static res_table *
@@ -317,6 +319,13 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 
 		l = BATproject(cr, lcb); /* project because cr is join result */
 		bat_destroy(lcb);
+		if (l == NULL) {
+			bat_destroy(cl);
+			bat_destroy(cr);
+			bat_destroy(cr2);
+			bat_destroy(rcb);
+			return NULL;
+		}
 		lcb = l;
 		ret = BATjoin(&l, &r, lcb, rcb, NULL, cr2, false, BATcount(lcb));
 		bat_destroy(cr2);
@@ -385,6 +394,8 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 	bat_destroy(cl);
 	bat_destroy(cr);
 	bat_destroy(cr2);
+	if (r == NULL)
+		return NULL;
 	cl = r;
 	/* project all in the new order */
 	res_table *rt = res_table_create(tr, 1/*result_id*/, 1/*query_id*/, ol_length(t->columns), Q_TABLE, NULL);
@@ -398,16 +409,14 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 
 		o = n->data;
 		b = full_column(tr, o);
-		if (b)
-			rc = BATproject(cl, b);
-		bat_destroy(b);
-		if (!b || !rc) {
+		if (b == NULL || (rc = BATproject(cl, b)) == NULL) {
 			bat_destroy(cl);
 			bat_destroy(b);
 			res_table_destroy(rt);
 			return NULL;
 		}
-		if (!res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, TYPE_bat, rc, NULL, true)) {
+		bat_destroy(b);
+		if (!res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, true, rc->ttype, rc, NULL, true)) {
 			bat_destroy(cl);
 			res_table_destroy(rt);
 			return NULL;

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _MAL_BUILDER_
@@ -48,10 +50,11 @@ mal_export InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);
 mal_export InstrPtr pushMsk(MalBlkPtr mb, InstrPtr q, bit val);
 mal_export InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, bit val);
 mal_export InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
+mal_export InstrPtr pushNilBat(MalBlkPtr mb, InstrPtr q);
 mal_export InstrPtr pushType(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 mal_export InstrPtr pushZero(MalBlkPtr mb, InstrPtr q, int tpe);
-mal_export InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, ValPtr cst);
+mal_export InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, const ValRecord *cst);
 
 mal_export int getIntConstant(MalBlkPtr mb, int val);
 mal_export int getLngConstant(MalBlkPtr mb, lng val);

@@ -5,7 +5,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 # This function should only run find functions. The resulting
@@ -83,6 +85,7 @@ function(monetdb_configure_defines)
     check_symbol_exists("getopt_long" "getopt.h" HAVE_GETOPT_LONG)
   cmake_pop_check_state()
   check_function_exists("getrlimit" HAVE_GETRLIMIT)
+  check_function_exists("gettid" HAVE_GETTID)
   check_function_exists("gettimeofday" HAVE_GETTIMEOFDAY)
   check_function_exists("getuid" HAVE_GETUID)
   check_symbol_exists("gmtime_r" "time.h" HAVE_GMTIME_R)
@@ -116,13 +119,16 @@ function(monetdb_configure_defines)
   check_function_exists("task_info" HAVE_TASK_INFO)
   check_function_exists("times" HAVE_TIMES)
   check_function_exists("uname" HAVE_UNAME)
+  check_symbol_exists("wcwidth" "wchar.h" HAVE_WCWIDTH)
   # Some libc versions on Linux distributions don't have it
   check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP)
   cmake_push_check_state()
     set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
     check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
+    check_function_exists("pthread_setname_np" HAVE_PTHREAD_SETNAME_NP)
     check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
   cmake_pop_check_state()
+  check_function_exists("SetThreadDescription" HAVE_SETTHREADDESCRIPTION)
   check_symbol_exists("regcomp" "regex.h" HAVE_POSIX_REGEX)
 endfunction()
 
@@ -141,7 +147,6 @@ macro(monetdb_macro_variables)
   set(HAVE_LIBZ ${ZLIB_FOUND})
   set(HAVE_LIBLZ4 ${LZ4_FOUND})
   set(HAVE_PROJ ${PROJ_FOUND})
-  set(HAVE_SNAPPY ${SNAPPY_FOUND})
   set(HAVE_FITS ${CFITSIO_FOUND})
   set(HAVE_VALGRIND ${VALGRIND_FOUND})
   set(HAVE_NETCDF ${NETCDF_FOUND})

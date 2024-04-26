@@ -5,11 +5,13 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 # Detect required packages
-find_package(BISON REQUIRED 3.2)
+find_package(BISON 3.0 REQUIRED)
 find_package(Iconv)
 find_package(Threads)
 
@@ -61,10 +63,6 @@ endif()
 
 if(WITH_PROJ)
   find_package(Proj 6.0)
-endif()
-
-if(WITH_SNAPPY)
-  find_package(Snappy)
 endif()
 
 if(WITH_VALGRIND)

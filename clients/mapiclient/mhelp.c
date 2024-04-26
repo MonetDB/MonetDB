@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /**
@@ -90,10 +92,10 @@ SQLhelp sqlhelp1[] = {
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"ANALYZE",
-	 "Collect column/table/schema data statistics for analysis and optimizer usage",
-	 "ANALYZE ident [ . ident [ column_list ] ] [SAMPLE size] [MINMAX]",
+	 "Analyze and update column data statistics of column(s) of one or all tables in a schema",
+	 "ANALYZE ident [ . ident [ column_list ] ]",
 	 "ident,column_list",
-	 "See also https://www.monetdb.org/documentation/admin-guide/monitoring/table-statistics/"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/analyze-statement/"},
 	{"CALL",
 	 "Call a stored procedure",
 	 "CALL qname '(' [ scalar_expression [',' ...] ] ')' | CALL ident '.' ident",

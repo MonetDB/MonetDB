@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -272,6 +274,7 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 				lhs->vtype = getVarGDKType(mb, i);	\
 				lhs->val.pval = 0;					\
 				lhs->len = 0;						\
+				lhs->bat = isaBatType(getVarType(mb, i));		\
 			}										\
 		}											\
 	} while (0)
@@ -368,10 +371,16 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		garbageCollector(cntxt, mb, stk, env != stk);
 	if (stk && stk != env)
 		freeStack(stk);
-	if (ret == MAL_SUCCEED && cntxt->qryctx.querytimeout
-		&& cntxt->qryctx.starttime
-		&& GDKusec() - cntxt->qryctx.starttime > cntxt->qryctx.querytimeout)
-		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+	if (ret == MAL_SUCCEED) {
+		switch (cntxt->qryctx.endtime) {
+		case QRY_TIMEOUT:
+			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+		case QRY_INTERRUPT:
+			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
+		default:
+			break;
+		}
+	}
 	return ret;
 }
 
@@ -446,7 +455,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 			lhs = &stk->stk[pci->argv[i]];
 			if (VALcopy(lhs, argv[i]) == NULL)
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			if (lhs->vtype == TYPE_bat)
+			if (lhs->bat)
 				BBPretain(lhs->val.bval);
 		}
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
@@ -458,10 +467,16 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 	}
 	if (stk)
 		garbageCollector(cntxt, mb, stk, TRUE);
-	if (ret == MAL_SUCCEED && cntxt->qryctx.querytimeout
-		&& cntxt->qryctx.starttime
-		&& GDKusec() - cntxt->qryctx.starttime > cntxt->qryctx.querytimeout)
-		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+	if (ret == MAL_SUCCEED) {
+		switch (cntxt->qryctx.endtime) {
+		case QRY_TIMEOUT:
+			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+		case QRY_INTERRUPT:
+			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
+		default:
+			break;
+		}
+	}
 	return ret;
 }
 
@@ -628,7 +643,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			for (int i = 0; i < pci->argc; i++) {
 				int a = getArg(pci, i);
 
-				if (stk->stk[a].vtype == TYPE_bat && getEndScope(mb, a) == stkpc
+				if (stk->stk[a].bat && getEndScope(mb, a) == stkpc
 					&& isNotUsedIn(pci, i + 1, a))
 					garbage[i] = a;
 				else
@@ -658,12 +673,14 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			for (int k = 0, i = pci->retc; k < pci->retc && i < pci->argc;
 				 i++, k++) {
 				lhs = &stk->stk[pci->argv[k]];
+				assert(lhs->bat == isaBatType(getArgType(mb, pci, k)));
 				rhs = &stk->stk[pci->argv[i]];
+				assert(rhs->bat == isaBatType(getArgType(mb, pci, i)));
 				if (VALcopy(lhs, rhs) == NULL) {
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
-				} else if (lhs->vtype == TYPE_bat && !is_bat_nil(lhs->val.bval))
+				} else if (lhs->bat && !is_bat_nil(lhs->val.bval))
 					BBPretain(lhs->val.bval);
 			}
 			break;
@@ -688,14 +705,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 						if (isaBatType(t)) {
 							bat bid = stk->stk[a].val.bval;
-							BAT *_b = BATdescriptor(bid);
+							BAT *_b;
 							t = getBatType(t);
-							assert(stk->stk[a].vtype == TYPE_bat);
+							assert(stk->stk[a].bat);
 							assert(is_bat_nil(bid) ||
 								   t == TYPE_any ||
-								   ATOMtype(_b->ttype) == ATOMtype(t));
-							if (_b)
-								BBPunfix(bid);
+								   ((_b = BBP_desc(bid)) != NULL &&
+									ATOMtype(_b->ttype) == ATOMtype(t)));
 						} else {
 							assert(t == stk->stk[a].vtype);
 						}
@@ -720,7 +736,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					if (isaBatType(t)) {
 						//bat bid = stk->stk[a].val.bval;
 						t = getBatType(t);
-						assert(stk->stk[a].vtype == TYPE_bat);
+						assert(stk->stk[a].bat);
 						//assert( !is_bat_nil(bid));
 						assert(t != TYPE_any);
 						//assert( ATOMtype(BBP_desc(bid)->ttype) == ATOMtype(t));
@@ -778,7 +794,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
-				} else if (lhs->vtype == TYPE_bat)
+				} else if (lhs->bat)
 					BBPretain(lhs->val.bval);
 			}
 			if (ret == MAL_SUCCEED && ii == pci->argc) {
@@ -788,7 +804,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				arg = q->retc;
 				for (ii = pci->retc; ii < pci->argc; ii++, arg++) {
 					lhs = &nstk->stk[q->argv[arg]];
-					if (lhs->vtype == TYPE_bat)
+					if (lhs->bat)
 						BBPrelease(lhs->val.bval);
 				}
 				GDKfree(nstk);
@@ -803,12 +819,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							   &runtimeProfileFunction);
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
-			if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-				&& GDKusec() - cntxt->qryctx.starttime >
-				cntxt->qryctx.querytimeout) {
+			if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
 				freeException(ret);	/* overrule exception */
-				ret = createException(MAL, "mal.interpreter",
-									  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				break;
+			} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
+				freeException(ret);	/* overrule exception */
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 				break;
 			}
 			stkpc = mb->stop;	// force end of loop
@@ -829,12 +846,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 									  "failed instruction2str");
 			}
 			// runtimeProfileBegin already sets the time in the instruction
-			if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-				&& GDKusec() - cntxt->qryctx.starttime >
-				cntxt->qryctx.querytimeout) {
-				freeException(ret);	/* in case it's set */
-				ret = createException(MAL, "mal.interpreter",
-									  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+			if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
+				freeException(ret);	/* overrule exception */
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				break;
+			} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
+				freeException(ret);	/* overrule exception */
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 				break;
 			}
 
@@ -855,13 +873,9 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if (ret == MAL_SUCCEED) {
 			for (int i = 0; i < pci->retc; i++) {
 				lhs = &backup[i];
-				if (BATatoms[lhs->vtype].atomUnfix &&
-					(*BATatoms[lhs->vtype].atomUnfix) (VALget(lhs)) != GDK_SUCCEED) {
-					if (ret == MAL_SUCCEED)
-						ret = createException(MAL, "mal.propertyCheck",
-											  GDK_EXCEPTION);
-				}
-				if (ATOMextern(lhs->vtype) &&
+				if (lhs->bat) {
+					BBPrelease(lhs->val.bval);
+				} else if (ATOMextern(lhs->vtype) &&
 					lhs->val.pval &&
 					lhs->val.pval != ATOMnilptr(lhs->vtype) &&
 					lhs->val.pval != stk->stk[getArg(pci, i)].val.pval)
@@ -872,7 +886,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				for (int i = 0; i < pci->retc; i++) {
 					if (garbage[i] == -1
-						&& stk->stk[getArg(pci, i)].vtype == TYPE_bat
+						&& stk->stk[getArg(pci, i)].bat
 						&& !is_bat_nil(stk->stk[getArg(pci, i)].val.bval)) {
 						assert(stk->stk[getArg(pci, i)].val.bval > 0);
 						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
@@ -943,12 +957,12 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
-				if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-					&& GDKusec() - cntxt->qryctx.starttime >
-					cntxt->qryctx.querytimeout) {
-					freeException(ret);
-					ret = createException(MAL, "mal.interpreter",
-										  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
+					freeException(ret);	/* overrule exception */
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
+					freeException(ret);	/* overrule exception */
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 				}
 				stkpc = mb->stop;
 				continue;
@@ -978,19 +992,20 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (j = 0; j < l->retc; j++)
 						if (getArg(l, j) == exceptionVar)
 							break;
-						else if (strcmp(getArgName(mb, l, j), "ANYexception") == 0)
+						else if (getArgName(mb, l, j) && strcmp(getArgName(mb, l, j), "ANYexception") == 0)
 							break;
 					if (j < l->retc)
 						break;
 				}
 			}
 			if (stkpc == mb->stop) {
-				if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-					&& GDKusec() - cntxt->qryctx.starttime >
-					cntxt->qryctx.querytimeout) {
-					freeException(ret);
-					ret = createException(MAL, "mal.interpreter",
-										  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
+					freeException(ret);	/* overrule exception */
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+					stkpc = mb->stop;
+				} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
+					freeException(ret);	/* overrule exception */
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 					stkpc = mb->stop;
 				}
 				continue;
@@ -1049,11 +1064,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (strNil(v->val.sval))
 					stkpc = pci->jump;
 				break;
-			default:
+			default: {
+				char name[IDLENGTH] = { 0 };
 				ret = createException(MAL, "mal.interpreter",
-									  "%s: Unknown barrier type", getVarName(mb,
+									  "%s: Unknown barrier type", getVarNameIntoBuffer(mb,
 																			 getDestVar
-																			 (pci)));
+																			 (pci), name));
+					 }
 			}
 			stkpc++;
 			break;
@@ -1163,7 +1180,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (j = 0; j < l->retc; j++)
 						if (getArg(l, j) == exceptionVar)
 							break;
-						else if (strcmp(getArgName(mb, l, j), "ANYexception") == 0)
+						else if (getArgName(mb, l, j) && strcmp(getArgName(mb, l, j), "ANYexception") == 0)
 							break;
 					if (j < l->retc)
 						break;
@@ -1188,7 +1205,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						ret = createException(MAL, "mal.interpreter",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						break;
-					} else if (lhs->vtype == TYPE_bat)
+					} else if (lhs->bat)
 						BBPretain(lhs->val.bval);
 				}
 				if (garbageControl(getInstrPtr(mb, 0)))
@@ -1203,12 +1220,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		default:
 			stkpc++;
 		}
-		if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime
-			&& GDKusec() - cntxt->qryctx.starttime >
-			cntxt->qryctx.querytimeout) {
+		if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
 			if (ret == MAL_SUCCEED)
-				ret = createException(MAL, "mal.interpreter",
-									  SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+			stkpc = mb->stop;
+		} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
+			if (ret == MAL_SUCCEED)
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 			stkpc = mb->stop;
 		}
 	}
@@ -1345,7 +1363,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * an error raised deeply inside the system.
  *
  * The policy is to require all C-functions to return a string-pointer.
- * Upon a successfull call, it is a NULL string. Otherwise it contains an
+ * Upon a successful call, it is a NULL string. Otherwise it contains an
  * encoding of the exceptional state encountered. This message
  * starts with the exception identifer, followed by contextual details.
  */
@@ -1360,7 +1378,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * A key issue is to deal with temporary BATs in an efficient way.
  * References to bats in the buffer pool may cause dangling references
  * at the language level. This appears as soons as your share
- * a reference and delete the BAT from one angle. If not carefull, the
+ * a reference and delete the BAT from one angle. If not careful, the
  * dangling pointer may subsequently be associated with another BAT
  *
  * All string values are private to the VALrecord, which means they
@@ -1372,11 +1390,7 @@ void
 garbageElement(Client cntxt, ValPtr v)
 {
 	(void) cntxt;
-	if (ATOMstorage(v->vtype) == TYPE_str) {
-		GDKfree(v->val.sval);
-		v->val.sval = NULL;
-		v->len = 0;
-	} else if (v->vtype == TYPE_bat) {
+	if (v->bat) {
 		/*
 		 * All operations are responsible to properly set the
 		 * reference count of the BATs being produced or destroyed.
@@ -1389,10 +1403,15 @@ garbageElement(Client cntxt, ValPtr v)
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid)); */
 		v->val.bval = bat_nil;
+		v->bat = false;
 		if (is_bat_nil(bid))
 			return;
 		BBPcold(bid);
 		BBPrelease(bid);
+	} else if (ATOMstorage(v->vtype) == TYPE_str) {
+		GDKfree(v->val.sval);
+		v->val.sval = NULL;
+		v->len = 0;
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
 		GDKfree(v->val.pval);
 		v->val.pval = 0;
@@ -1426,10 +1445,13 @@ garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	(void) cntxt;
 	for (int k = 0; k < stk->stktop; k++) {
 		//  if (isVarCleanup(mb, k) ){
-		ValPtr v;
-		garbageElement(cntxt, v = &stk->stk[k]);
-		v->vtype = TYPE_int;
-		v->val.ival = int_nil;
+		ValPtr v = &stk->stk[k];
+		garbageElement(cntxt, v);
+		*v = (ValRecord) {
+			.vtype = TYPE_int,
+			.val.ival = int_nil,
+			.bat = false,
+		};
 		//  }
 	}
 }

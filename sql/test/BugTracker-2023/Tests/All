@@ -1,4 +1,8 @@
+ifnull-6933
+HAVE_GEOM?empty-result-aggr-crash-7274
+timestamp_to_str-7370
 ambiguous-identifiers-7372
+date_time-7374
 temp-table-foreign-key-crash-7378
 update-mask-id-crash-7379
 blob-crash-7380
@@ -10,5 +14,14 @@ rollback-alter-drop-col-crash-7385
 view-on-alias-crash-7386
 alter-inc-seq-crash-7387
 misc-crashes-7390
+greatest-least-multi-arg-7391
 union-query-7401
 join-on-row_number-over-7403
+parse_interval-crash-7412
+between-crash-7413
+corr-issue-7414
+insert-delete-insert-crash-7415
+orderby-debug-crash-7416
+newurl-issue-7417
+rel_order_by-assertion-7418
+HAVE_LIBPY3?aggregate-vararg.Bug-7422

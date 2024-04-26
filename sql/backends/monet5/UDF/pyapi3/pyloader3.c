@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -184,8 +186,15 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			assert(n);
 			cols[i].def = n->data;
 			n = n->next;
-			cols[i].b =
-				COLnew(0, tpe->type->localtype, 0, TRANSIENT);
+			cols[i].b = COLnew(0, tpe->type->localtype, 0, TRANSIENT);
+			if (cols[i].b == NULL || cols[i].name == NULL) {
+				do {
+					BBPreclaim(cols[i].b);
+					GDKfree(cols[i].name);
+				} while (i-- > 0);
+				msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
+				goto wrapup;
+			}
 			n2 = n2->next;
 			cols[i].b->tnil = false;
 			cols[i].b->tnonil = false;

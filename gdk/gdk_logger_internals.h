@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef _LOGGER_INTERNALS_H_
@@ -21,6 +23,7 @@ typedef struct logged_range_t {
 	ATOMIC_TYPE refcount;
 	struct logged_range_t *next;
 	stream *output_log;
+	BUN cnt;
 } logged_range;
 
 struct logger {
@@ -39,19 +42,25 @@ struct logger {
 	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
 
 	// CHECK writer only
-	lng end;
-	ulng* writer_end;
-	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
+	lng total_cnt;          /* When logging the content of a bats in
+				 * multiple runs, total_cnt is used the
+				 * very first to signal this and keep
+				 * track in the logging*/
 	void *rbuf;
 	size_t rbufsize;
 	void *wbuf;
 	size_t wbufsize;
+	lng max_dropped;        /* default 100000 */
+	lng file_age;           /* log file age */
+	lng max_file_age;       /* default 10 mins */
+	lng max_file_size;      /* default 2 GiB */
 
 	// synchronized by combination of store->flush and rotation_lock
 	ulng id;		/* current log output file id */
 	ulng saved_id;		/* id of last fully handled log file */
 	int tid;		/* current transaction id */
-	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
+	int saved_tid;		/* id of transaction which was flushed
+				 * out (into BBP storage) */
 
 	// synchronized by rotation_lock
 	logged_range *current;
@@ -59,7 +68,6 @@ struct logger {
 
 	// atomic
 	ATOMIC_TYPE nr_flushers;
-	ATOMIC_TYPE nr_open_files;
 
 	// synchronized by store->flush
 	bool flushnow;
@@ -74,8 +82,6 @@ struct logger {
 	BAT *catalog_cnt;	/* count of ondisk buns (transient) */
 	BAT *catalog_lid;	/* last tid, after which it gets released/destroyed */
 	BAT *dcatalog;		/* deleted from catalog table */
-	BUN cnt;		/* number of persistent bats, incremented on log flushing */
-	BUN deleted;		/* number of destroyed persistent bats, needed for catalog vacuum */
 	BAT *seqs_id;		/* int id column */
 	BAT *seqs_val;		/* lng value column */
 	BAT *dseqs;		/* deleted from seqs table */
@@ -118,6 +124,6 @@ struct old_logger {
 };
 
 gdk_return old_logger_load(logger *lg, const char *fn, const char *logdir, FILE *fp, int version, const char *filename);
-gdk_return log_create_types_file(logger *lg, const char *filename, bool append);
+gdk_return log_create_types_file(logger *lg, const char *filename);
 
 #endif /* _LOGGER_INTERNALS_H_ */

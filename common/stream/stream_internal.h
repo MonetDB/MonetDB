@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 // All this used to be at the top of stream.c. Much of it is probably
@@ -170,6 +172,8 @@ struct stream {
 	int (*fsetpos)(stream *restrict s, fpos_t *restrict p);
 	void (*update_timeout)(stream *s);
 	int (*isalive)(const stream *s);
+	int (*getoob)(const stream *s);
+	int (*putoob)(const stream *s, char val);
 	mnstr_error_kind errkind;
 	char errmsg[1024]; // avoid allocation on error. We don't have THAT many streams..
 };

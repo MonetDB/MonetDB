@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifndef __string_H__
@@ -139,9 +141,9 @@
 	} while (0)
 
 mal_export bool batstr_func_has_candidates(const char *func);
-mal_export int UTF8_strwidth(const char *restrict s);
-mal_export int UTF8_strlen(const char *restrict s);
-mal_export int str_strlen(const char *restrict s);
+mal_export int UTF8_strwidth(const char *s);
+mal_export int UTF8_strlen(const char *s);
+mal_export int str_strlen(const char *s);
 
 /* For str returning functions, the result is passed as the input parameter buf. The returned str indicates
    if the function succeeded (ie malloc failure or invalid unicode character). str_wchr_at function also
@@ -154,17 +156,17 @@ extern str str_from_wchr(str *buf, size_t *buflen, int c)
 extern str str_wchr_at(int *res, const char *s, int at)
 		__attribute__((__visibility__("hidden")));
 
-extern bit str_is_prefix(const char *s, const char *prefix, int plen)
+extern int str_is_prefix(const char *s, const char *prefix, int plen)
 		__attribute__((__visibility__("hidden")));
-extern bit str_is_iprefix(const char *s, const char *prefix, int plen)
+extern int str_is_iprefix(const char *s, const char *prefix, int plen)
 		__attribute__((__visibility__("hidden")));
-extern bit str_is_suffix(const char *s, const char *suffix, int sul)
+extern int str_is_suffix(const char *s, const char *suffix, int sul)
 		__attribute__((__visibility__("hidden")));
-extern bit str_is_isuffix(const char *s, const char *suffix, int sul)
+extern int str_is_isuffix(const char *s, const char *suffix, int sul)
 		__attribute__((__visibility__("hidden")));
-extern bit str_contains(const char *h, const char *n, int nlen)
+extern int str_contains(const char *h, const char *n, int nlen)
 		__attribute__((__visibility__("hidden")));
-extern bit str_icontains(const char *h, const char *n, int nlen)
+extern int str_icontains(const char *h, const char *n, int nlen)
 		__attribute__((__visibility__("hidden")));
 
 extern str str_tail(str *buf, size_t *buflen, const char *s, int off)

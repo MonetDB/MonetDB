@@ -1,12 +1,12 @@
 statement ok
 CREATE TABLE wi (oid oid GENERATED ALWAYS AS IDENTITY, i INT,
                  n1 int, n2 int, n3 int, n4 int,
-                 n5 int, n6 int, n7 int, n8 int)  
+                 n5 int, n6 int, n7 int, n8 int)
 
 statement ok
 CREATE TABLE wo (i INT,
                  n1 int, n2 int, n3 int, n4 int,
-                 n5 int, n6 int, n7 int, n8 int)  
+                 n5 int, n6 int, n7 int, n8 int)
 
 statement ok
 INSERT INTO wi (i) VALUES (1)

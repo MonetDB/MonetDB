@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -147,6 +149,7 @@ createOIDXheap(BAT *b, bool stable)
 		.farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap),
 		.parentid = b->batCacheid,
 		.dirty = true,
+		.refs = ATOMIC_VAR_INIT(1),
 	};
 	strconcat_len(m->filename, sizeof(m->filename),
 		      BBP_physical(b->batCacheid), ".torderidx", NULL);
@@ -220,7 +223,6 @@ BATorderidx(BAT *b, bool stable)
 					return GDK_FAIL;
 				}
 				memcpy((oid *) m->base + ORDERIDXOFF, Tloc(on, 0), BATcount(on) * sizeof(oid));
-				ATOMIC_INIT(&m->refs, 1);
 				b->torderidx = m;
 				persistOIDX(b);
 			}
@@ -382,6 +384,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		.farmid = BBPselectfarm(b->batRole, bi.type, orderidxheap),
 		.parentid = b->batCacheid,
 		.dirty = true,
+		.refs = ATOMIC_VAR_INIT(1),
 	};
 	strconcat_len(m->filename, sizeof(m->filename),
 		      nme, ".torderidx", NULL);
@@ -495,7 +498,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		GDKfree(q);
 	}
 
-	ATOMIC_INIT(&m->refs, 1);
 	b->torderidx = m;
 #ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&

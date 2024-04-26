@@ -4,7 +4,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 import logging
 from collections import namedtuple
@@ -437,8 +439,8 @@ class MapiCursor(object):
                     continue
 
                 description = []
-                for i in range(len(column_name)):
-                    description.append(Description(column_name[i], type_[i], 10, 10, 10, 3, 0))
+                for i in range(len(type_)):
+                    description.append(Description(f'col{i}', type_[i], 10, 10, 10, 3, 0))
                 self.description = description
                 self._offset = 0
                 self._query_id = 0

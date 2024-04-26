@@ -6,7 +6,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 #TODO:
 #=====
@@ -1166,7 +1168,7 @@ def RunTest(env, test, oktests, pSrvr):
         reason = "as MAPIPORT=%s is not available." % env['MAPIPORT']
     else:
         #test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
-        test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\.(?!stable).*)?$", re.MULTILINE)
+        test_rgx = re.compile("^"+TST+r"((_[sp][0-9][0-9])?\.(?!stable).*)?$", re.MULTILINE)
         for f in listdir(TSTSRCDIR):
             if test_rgx.match(f):
                 try:
@@ -1477,7 +1479,7 @@ def killProc(proc, outfile = None, cmd = None):
                 sym = r'c:\Symbols;'
         elif os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'):
             cdb = r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'
-            if os.path.exists('c:\WINDOWS\Symbols'):
+            if os.path.exists(r'c:\WINDOWS\Symbols'):
                 sym = r'c:\WINDOWS\Symbols;'
         else:
             cdb = None
@@ -1994,11 +1996,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
 
     # Try to detect segfaults and the like
     # Try to detect aborts due to too deep recursion
-    for (regexp, msg) in [("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))",
+    for (regexp, msg) in [("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Aborted|Assertion (|.* )failed[:\\.]|!FATAL: BATSIGabort:)([ \t]|$))",
                            'segfault'),
                           ("aborted too deep recursion",
                            'recursion'),
-                          ("mal_mapi\.listen:operation failed: bind to stream socket port",
+                          (r"mal_mapi\.listen:operation failed: bind to stream socket port",
                            'socket')]:
         TO = re.compile(regexp, re.MULTILINE)
         # FIXME: this begs for a much nicer solution (100% copy of below)
@@ -2193,7 +2195,7 @@ os.environ['MAPIHOST'] = HOST
 if os.name == "nt":
     SYST    = "Windows"
     RELEASE = "5.0"
-    r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
+    r = re.compile(r'^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
     if procdebug:
         print('starting process "cmd" "/c" "ver" (inpipe,outpipe)\n')
     proc = process.Popen('cmd /c ver', stdin=process.PIPE,
@@ -2303,7 +2305,7 @@ if SYST == "Linux":
     elif os.path.isfile('/etc/debian_version'):
         LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
     if not LINUX_DIST:
-        LINUX_DIST = SYST+':'+re.match('^([0-9\.]*)([^0-9\.].*)$', RELEASE).group(1)
+        LINUX_DIST = SYST+':'+re.match(r'^([0-9\.]*)([^0-9\.].*)$', RELEASE).group(1)
     DIST,VERSION = LINUX_DIST.split(':', 1)
 elif SYST == "SunOS" and os.path.isfile('/etc/release'):
     (DIST,VERSION,rest) = open('/etc/release').readline().strip().split(' ',2)
@@ -2552,7 +2554,7 @@ def main(argv) :
                              stdout=process.PIPE, stderr=process.PIPE,
                              text=True)
         ruby_out, ruby_err = proc.communicate()
-        ruby_reg = re.compile("^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
+        ruby_reg = re.compile(r"^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
         ruby_ver = ruby_reg.match(ruby_out)
         if ruby_ver and \
            100 * int(ruby_ver.group(1)) + int(ruby_ver.group(2)) >= 109:

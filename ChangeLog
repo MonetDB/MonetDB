@@ -1,20 +1,3 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
-* Mon Oct 30 2023 Sjoerd Mullender <sjoerd@acm.org>
-- The ranges of merge partitions are now pushed down into the low
-  level GDK operations, giving them a handle to sometimes execute more
-  efficiently.
-
-* Thu Jul 27 2023 Niels Nes <niels@cwi.nl>
-- Removed the PYTHON MAP external language option, as after a fork the
-  synchronization primitives could be in any state, leading to deadlocks.
-  During the upgrade function definitions will fallback to the normal
-  PYTHON language option.
-
-* Mon Jul 17 2023 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
-- Implemented direct masking for strimp construction. The strimps
-  datastructure now keeps an array of 65K 64-bit integers that is zero
-  everywhere except at the indexes that correspond to header pairs. The
-  entry for the nth pair in order has the nth bit of the bitstring
-  on. These can be used to quickly construct bitstrings.

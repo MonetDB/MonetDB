@@ -4,7 +4,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 
 """
 This is the python implementation of the mapi protocol.
@@ -67,7 +69,7 @@ def handle_error(error):
 
     """
 
-    if error[:13] == 'SQLException:':
+    if error.startswith('SQLException:'):
         idx = str.index(error, ':', 14)
         error = error[idx + 10:]
     if len(error) > 5 and error[:5] in errors:
@@ -102,7 +104,7 @@ class Connection(object):
         unix_socket is used if hostname is not defined.
         """
 
-        if hostname and hostname[:1] == '/' and not unix_socket:
+        if hostname and hostname.startswith('/') and not unix_socket:
             unix_socket = '%s/.s.monetdb.%d' % (hostname, port)
             hostname = None
         if not unix_socket and os.path.exists("/tmp/.s.monetdb.%i" % port):

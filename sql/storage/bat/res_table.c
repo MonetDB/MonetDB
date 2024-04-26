@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -51,7 +53,7 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_quer
 }
 
 res_col *
-res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *val, void *null, bool cached)
+res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, bool isbat, char mtype, void *val, void *null, bool cached)
 {
 	res_col *c = t->cols + t->cur_col;
 	BAT *b = NULL, *nullmask = NULL;
@@ -70,7 +72,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	c->b = 0;
 	c->p = NULL;
 	c->mtype = mtype;
-	if (mtype == TYPE_bat) {
+	if (isbat) {
 		b = (BAT*)val;
 		nullmask = (BAT*)null;
 		if (b && t->cur_col == 0)

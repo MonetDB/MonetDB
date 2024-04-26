@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -15,7 +17,7 @@
 #include "sql_atom.h"
 
 prop *
-prop_create( sql_allocator *sa, rel_prop kind, prop *pre )
+prop_create( allocator *sa, rel_prop kind, prop *pre )
 {
 	prop *p = SA_NEW(sa, prop);
 
@@ -29,7 +31,7 @@ prop_create( sql_allocator *sa, rel_prop kind, prop *pre )
 }
 
 prop *
-prop_copy( sql_allocator *sa, prop *p )
+prop_copy( allocator *sa, prop *p )
 {
 	prop *np = NULL;
 
@@ -115,7 +117,7 @@ propkind2string( prop *p)
 }
 
 char *
-propvalue2string(sql_allocator *sa, prop *p)
+propvalue2string(allocator *sa, prop *p)
 {
 	char buf [BUFSIZ];
 
@@ -138,10 +140,18 @@ propvalue2string(sql_allocator *sa, prop *p)
 		}
 	} break;
 	case PROP_REMOTE: {
-		char *uri = p->value.pval;
-
-		if (uri)
-			return sa_strdup(sa, uri);
+		list *tids_uris = p->value.pval;
+		if (!list_empty(tids_uris)) {
+			size_t offset = 0;
+			for (node *n = ((list*)p->value.pval)->h; n; n = n->next) {
+				tid_uri *tu = n->data;
+				if (tu->uri)
+					offset += snprintf(buf + offset, BUFSIZ, "%s%s",
+					                   sql_escape_ident(sa, offset?" ":""),
+					                   sql_escape_ident(sa, tu->uri));
+			}
+			return sa_strdup(sa, buf);
+		}
 	} break;
 	case PROP_MIN:
 	case PROP_MAX: {

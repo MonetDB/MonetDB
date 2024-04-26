@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #ifdef _MSC_VER
@@ -618,7 +620,7 @@ const struct {
 		.info = SQL_INFO_SCHEMA_VIEWS,
 		.name = "SQL_INFO_SCHEMA_VIEWS",
 		.type = INTEGER,
-		.i = SQL_ISV_CHARACTER_SETS | SQL_ISV_COLUMNS | SQL_ISV_SCHEMATA | SQL_ISV_TABLES | SQL_ISV_VIEWS,
+		.i = SQL_ISV_CHARACTER_SETS | SQL_ISV_CHECK_CONSTRAINTS | SQL_ISV_COLUMNS | SQL_ISV_REFERENTIAL_CONSTRAINTS | SQL_ISV_SCHEMATA | SQL_ISV_TABLE_CONSTRAINTS | SQL_ISV_TABLES | SQL_ISV_VIEWS,
 	},
 	{
 		.info = SQL_INSERT_STATEMENT,

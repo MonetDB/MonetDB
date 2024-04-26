@@ -1,8 +1,12 @@
+.. SPDX-License-Identifier: MPL-2.0
+..
 .. This Source Code Form is subject to the terms of the Mozilla Public
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+.. Copyright 2024 MonetDB Foundation;
+.. Copyright August 2008 - 2023 MonetDB B.V.;
+.. Copyright 1997 - July 2008 CWI.
 
 ************************
 Binary Result set format
@@ -27,7 +31,7 @@ behaves the same but uses a binary format that may be more efficient to parse.
 The server advertises its support for ``Xexportbin`` in the eighth field of its
 connect challenge. For example,
 
-    bL1sNfkaa:mserver:9:RIPEMD160,SHA512,SHA384,SHA256,SHA224,SHA1,COMPRESSION_SNAPPY,COMPRESSION_LZ4:LIT:SHA512:sql=6:**BINARY=1**:
+    bL1sNfkaa:mserver:9:RIPEMD160,SHA512,SHA384,SHA256,SHA224,SHA1,COMPRESSION_LZ4:LIT:SHA512:sql=6:**BINARY=1**:
 
 Currently it sends ``BINARY=1``. In the future it may send a higher number if
 variants are added.

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -590,12 +592,14 @@ MNDBGetInfo(ODBCDbc *dbc,
 		break;
 	case SQL_INFO_SCHEMA_VIEWS:
 		nValue = SQL_ISV_CHARACTER_SETS |
+			SQL_ISV_CHECK_CONSTRAINTS |
 			SQL_ISV_COLUMNS |
+			SQL_ISV_REFERENTIAL_CONSTRAINTS |
 			SQL_ISV_SCHEMATA |
+			SQL_ISV_TABLE_CONSTRAINTS |
 			SQL_ISV_TABLES |
 			SQL_ISV_VIEWS;
 		/* SQL_ISV_ASSERTIONS |
-		 * SQL_ISV_CHECK_CONSTRAINTS |
 		 * SQL_ISV_COLLATIONS |
 		 * SQL_ISV_COLUMN_DOMAIN_USAGE |
 		 * SQL_ISV_COLUMN_PRIVILEGES |
@@ -604,9 +608,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 		 * SQL_ISV_DOMAIN_CONSTRAINTS |
 		 * SQL_ISV_DOMAINS |
 		 * SQL_ISV_KEY_COLUMN_USAGE |
-		 * SQL_ISV_REFERENTIAL_CONSTRAINTS |
 		 * SQL_ISV_SQL_LANGUAGES |
-		 * SQL_ISV_TABLE_CONSTRAINTS |
 		 * SQL_ISV_TABLE_PRIVILEGES |
 		 * SQL_ISV_TRANSLATIONS |
 		 * SQL_ISV_USAGE_PRIVILEGES |

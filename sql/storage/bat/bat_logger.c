@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -21,6 +23,7 @@
 #define CATALOG_OCT2020 52205	/* first in Oct2020 */
 #define CATALOG_JUL2021 52300	/* first in Jul2021 */
 #define CATALOG_JAN2022 52301	/* first in Jan2022 */
+#define CATALOG_SEP2022 52302	/* first in Sep2022 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -81,6 +84,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_SEP2022
+	if (oldversion == CATALOG_SEP2022) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
@@ -93,6 +104,8 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 {
 	gdk_return rc;
 	newcol = BATsetaccess(newcol, BAT_READ);
+	if (newcol == NULL)
+		return GDK_FAIL;
 	if (old_lg != NULL) {
 		if ((rc = BUNappend(old_lg->del, &oldcolid, false)) == GDK_SUCCEED &&
 			(rc = BUNappend(old_lg->add, &newcol->batCacheid, false)) == GDK_SUCCEED &&
@@ -112,7 +125,6 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 						MT_rwlock_rdunlock(&cii.b->thashlock);
 						return GDK_FAIL;
 					}
-					lg->deleted++;
 					break;
 				}
 			}
@@ -123,7 +135,6 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 				(rc = BUNappend(lg->catalog_cnt, &(lng){BATcount(newcol)}, false)) == GDK_SUCCEED) {
 				BBPretain(newcol->batCacheid);
 			}
-			lg->cnt++;
 		}
 	}
 	return rc;
@@ -2521,6 +2532,10 @@ bl_postversion(void *Store, void *Lg)
 			/* and type = 'char' */
 			b3 = BATselect(b1, b2, "char", NULL, true, false, false);
 			bat_destroy(b2);
+			if (b3 == NULL) {
+				bat_destroy(b1);
+				return GDK_FAIL;
+			}
 			if (BATcount(b3) > 0) {
 				if (BUNfnd(old_lg->add, &b1->batCacheid) == BUN_NONE) {
 					/* replace sys.args.type with a copy that we can modify */
@@ -3483,7 +3498,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 	gdk_return ret = GDK_FAIL;
 	int lineno = 0;
 	bat bbpsize = 0;
-	lng logno, transid;
+	lng logno;
 	unsigned bbpversion;
 
 	len = snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
@@ -3501,7 +3516,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Could not open %s for reading: %s", bbpdir, mnstr_peek_error(NULL));
 		return GDK_FAIL;
 	}
-	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid, false);
+	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, false);
 	if (bbpversion == 0)
 		goto end;
 	assert(bbpversion == GDKLIBRARY);

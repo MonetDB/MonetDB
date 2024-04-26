@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -37,7 +39,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 		strcat(msg, "(");
 	len = strlen(msg);
 	for (k = 0; k < p->retc; k++) {
-		sprintf(msg + len, "%s", getVarName(mb, getArg(p, k)));
+		getVarNameIntoBuffer(mb, getArg(p, k), msg + len);
 		if (k < p->retc - 1)
 			strcat(msg, ",");
 		len = strlen(msg);
@@ -65,7 +67,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 				}
 
 			} else
-				sprintf(msg + len, "%s", getVarName(mb, getArg(p, k)));
+				getVarNameIntoBuffer(mb, getArg(p, k), msg + len);
 			if (k < p->argc - 1)
 				strcat(msg, ",");
 			len = strlen(msg);
@@ -143,7 +145,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 				}														\
 				getArg(q, 0) = newTmpVariable(mb, TYPE_void);			\
 				q = pushArgument(mb, q, location[getArg(p, j)]);		\
-				q = pushStr(mb, q, getVarName(mb, getArg(p, j)));		\
+				q = pushStr(mb, q, getVarNameIntoBuffer(mb, getArg(p, j), name));		\
 				q = pushArgument(mb, q, getArg(p, j));					\
 				pushInstruction(mb, q);									\
 			}															\
@@ -176,7 +178,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int *location;
 	DBalias *dbalias;
 	int dbtop;
-	char buf[BUFSIZ], *s, *db;
+	char buf[BUFSIZ], *s, *db, name[IDLENGTH];
 	ValRecord cst;
 	str msg = MAL_SUCCEED;
 
@@ -337,7 +339,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						getArg(q, 0) = getArg(p, j);
 						q = pushArgument(mb, q, location[getArg(p, j)]);
 						snprintf(buf, BUFSIZ, "io.print(%s);",
-								 getVarName(mb, getArg(p, j)));
+								 getVarNameIntoBuffer(mb, getArg(p, j), name));
 						q = pushStr(mb, q, buf);
 						pushInstruction(mb, q);
 					}
@@ -372,7 +374,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						}
 						getArg(q, 0) = newTmpVariable(mb, TYPE_void);
 						q = pushArgument(mb, q, remoteSite);
-						q = pushStr(mb, q, getVarName(mb, getArg(p, j)));
+						q = pushStr(mb, q, getVarNameIntoBuffer(mb, getArg(p, j), name));
 						q = pushArgument(mb, q, getArg(p, j));
 						pushInstruction(mb, q);
 					}

@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -49,9 +51,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			&& isVarConstant(mb, getArg(p, 2))
 			&& getVarConstant(mb, getArg(p, 2)).val.sval != NULL
 			&&
-			(strstr
-			 (getVarConstant(mb, getArg(p, 2)).val.sval,
-			  "PRIMARY KEY constraint")
+			(strstr(getVarConstant(mb, getArg(p, 2)).val.sval,
+					"PRIMARY KEY constraint")
 			 || strstr(getVarConstant(mb, getArg(p, 2)).val.sval,
 					   "UNIQUE constraint"))) {
 			pieces = 0;

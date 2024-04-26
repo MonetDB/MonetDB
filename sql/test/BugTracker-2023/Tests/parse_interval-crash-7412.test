@@ -1,0 +1,9 @@
+statement error GDK reported error: INETfromString: Error while parsing, unexpected string '::192.168.1.226'
+SELECT CAST ( '::192.168.1.226' AS inet )
+
+statement error 42000!Wrong format (::192.168.1.226)
+SELECT CAST ( '::192.168.1.226' AS INTERVAL HOUR TO SECOND )
+
+statement error 42000!Wrong format (::192.168.1.226)
+SELECT CAST ( '::192.168.1.226' AS INTERVAL HOUR ( 3 ) TO SECOND )
+

@@ -1,0 +1,33 @@
+statement ok
+CREATE TABLE t0(c0 INTEGER, c1 BOOLEAN, PRIMARY KEY(c0))
+
+statement ok
+CREATE TABLE t1(c1 INTEGER)
+
+statement ok
+INSERT INTO t1 (c1) VALUES (null)
+
+statement ok
+INSERT INTO t0 (c0, c1) VALUES (-1, false)
+
+query I nosort
+SELECT t0.c0             FROM t0 INNER  JOIN t1 ON (t0.c1 NOT BETWEEN t1.c1 AND t0.c0)
+----
+-1
+
+query I nosort
+SELECT (t1.c1>1) IS NULL FROM t0 INNER  JOIN t1 ON (t0.c1 NOT BETWEEN t1.c1 AND t0.c0)
+----
+1
+
+query I nosort
+SELECT t0.c0             FROM t0 INNER  JOIN t1 ON (t0.c1 NOT BETWEEN t1.c1 AND t0.c0) WHERE (t1.c1>1) IS NULL
+----
+-1
+
+statement ok
+DROP TABLE t0 CASCADE
+
+statement ok
+DROP TABLE t1 CASCADE
+

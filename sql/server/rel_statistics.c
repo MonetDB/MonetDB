@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -30,6 +32,10 @@ comparison_find_column(sql_exp *input, sql_exp *e)
 		return NULL;
 	}
 }
+
+/* multi lo <= col <= hi, maybe still be false even if lo or hi are NULL, possibly similar for filter on multiple
+ * columns */
+#define comp_single_column(c) (!c->f)
 
 static sql_exp *
 rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
@@ -67,7 +73,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 								*rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 
 							/* not semantics found or if explicitly filtering not null values from the column */
-							found_without_semantics |= !is_semantics(comp) || (comp->flag == cmp_equal && lne && is_anti(comp) && exp_is_null(re));
+							found_without_semantics |= (!is_semantics(comp) && comp_single_column(comp)) || (comp->flag == cmp_equal && lne && is_anti(comp) && exp_is_null(re));
 							still_unique |= comp->flag == cmp_equal && is_unique(le) && is_unique(re); /* unique if only equi-joins on unique columns are there */
 							if (is_full(rel->op) || (is_left(rel->op) && found_left) || (is_right(rel->op) && found_right)) /* on outer joins, min and max cannot be propagated on some cases */
 								continue;
@@ -208,7 +214,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 }
 
 static atom *
-atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValRecord *v)
+atom_from_valptr( allocator *sa, sql_subtype *tpe, ValRecord *v)
 {
 	atom *a = SA_NEW(sa, atom);
 
@@ -218,39 +224,69 @@ atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValRecord *v)
 	return a;
 }
 
-static inline void
+void
+sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e)
+{
+	bool nonil = false, unique = false;
+	double unique_est = 0.0;
+	ValRecord min, max;
+	int ok = mvc_col_stats(sql, c, &nonil, &unique, &unique_est, &min, &max);
+
+	if (has_nil(e) && nonil)
+		set_has_no_nil(e);
+	if (!is_unique(e) && unique)
+		set_unique(e);
+	if (unique_est != 0.0) {
+		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+		p->value.dval = unique_est;
+	}
+	unsigned int digits = 0;
+	sql_subtype *et = exp_subtype(e);
+	if (et->type->eclass == EC_DEC || et->type->eclass == EC_NUM)
+		digits = et->digits;
+	if ((ok & 2) == 2) {
+		if (!VALisnil(&max)) {
+			prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
+			p->value.pval = atom_from_valptr(sql->sa, &c->type, &max);
+			if (digits) {
+				unsigned int nd = atom_digits(p->value.pval);
+				if (nd < digits)
+					digits = nd;
+				if (!digits)
+					digits = 1;
+			}
+		}
+		VALclear(&max);
+	}
+	if ((ok & 1) == 1) {
+		if (!VALisnil(&min)) {
+			prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
+			p->value.pval = atom_from_valptr(sql->sa, &c->type, &min);
+			if (digits) {
+				unsigned int nd = atom_digits(p->value.pval);
+				if (nd > digits) /* possibly set to low by max value */
+					digits = nd;
+				if (!digits)
+					digits = 1;
+			}
+		}
+		VALclear(&min);
+	}
+	if (digits)
+		et->digits = digits;
+	if (et->type->eclass == EC_DEC && et->digits <= et->scale)
+		et->digits = et->scale + 1;
+}
+
+static void
 rel_basetable_column_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 {
+	if (e->p)
+		return;
 	sql_column *c = NULL;
 
 	if ((c = name_find_column(rel, exp_relname(e), exp_name(e), -2, NULL))) {
-		bool nonil = false, unique = false;
-		double unique_est = 0.0;
-		ValRecord min, max;
-		int ok = mvc_col_stats(sql, c, &nonil, &unique, &unique_est, &min, &max);
-
-		if (has_nil(e) && nonil)
-			set_has_no_nil(e);
-		if (!is_unique(e) && unique)
-			set_unique(e);
-		if (unique_est != 0.0) {
-			prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
-			p->value.dval = unique_est;
-		}
-		if ((ok & 2) == 2) {
-			if (!VALisnil(&max)) {
-				prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
-				p->value.pval = atom_from_valptr(sql->sa, &c->type, &max);
-			}
-			VALclear(&max);
-		}
-		if ((ok & 1) == 1) {
-			if (!VALisnil(&min)) {
-				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
-				p->value.pval = atom_from_valptr(sql->sa, &c->type, &min);
-			}
-			VALclear(&min);
-		}
+		sql_column_get_statistics(sql, c, e);
 	}
 }
 
@@ -770,7 +806,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			rel_destroy(rel->r);
 			rel->r = NULL;
 			for (node *n = rel->exps->h ; n ; n = n->next) {
-				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL));
+				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 				exp_prop_alias(v->sql->sa, a, e);
 				n->data = a;
 			}
@@ -1194,7 +1230,7 @@ rel_select_order(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* Compute the efficiency of using this expression earl	y in a group by list */
+/* Compute the efficiency of using this expression early in a group by list */
 static int
 score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 {

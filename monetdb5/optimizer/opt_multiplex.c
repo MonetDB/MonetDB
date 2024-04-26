@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
@@ -243,7 +245,7 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 		for (i = 0; i < mb->stop; i++) {
 			p = getInstrPtr(mb, i);
 			if (isMultiplex(p)) {
-				p->typechk = TYPE_UNKNOWN;
+				p->typeresolved = false;
 				doit++;
 			}
 		}
@@ -289,7 +291,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (msg == MAL_SUCCEED && isMultiplex(p)) {
 			if (MANIFOLDtypecheck(cntxt, mb, p, 0) != NULL) {
 				setFunctionId(p, manifoldRef);
-				p->typechk = TYPE_UNKNOWN;
+				p->typeresolved = false;
 				pushInstruction(mb, p);
 				actions++;
 				continue;

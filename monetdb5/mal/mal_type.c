@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -116,16 +118,10 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 				return TYPE_any;
 			break;
 		case 'b':
-			if (qt("bat"))
-				return TYPE_bat;
 			if (qt("bit"))
 				return TYPE_bit;
 			if (qt("bte"))
 				return TYPE_bte;
-			break;
-		case 'B':
-			if (qt("BAT"))
-				return TYPE_bat;
 			break;
 		case 'd':
 			if (qt("dbl"))
@@ -192,8 +188,6 @@ findGDKtype(int type)
 {
 	if (type == TYPE_any || type == TYPE_void)
 		return TYPE_void;
-	if (isaBatType(type))
-		return TYPE_bat;
 	return ATOMtype(type);
 }
 

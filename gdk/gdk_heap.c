@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -73,9 +75,6 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 	return base;
 }
 
-static gdk_return HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc);
-static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free, MT_Lock *lock);
-
 static char *
 decompose_filename(str nme)
 {
@@ -107,10 +106,10 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 			.parentid = old->parentid,
 			.wasempty = old->wasempty,
 			.hasfile = old->hasfile,
+			.refs = ATOMIC_VAR_INIT(1 | (refs & HEAPREMOVE)),
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
 		if (HEAPalloc(new, size, 1) == GDK_SUCCEED) {
-			ATOMIC_INIT(&new->refs, 1 | (refs & HEAPREMOVE));
 			new->free = old->free;
 			new->cleanhash = old->cleanhash;
 			if (old->free > 0 &&
@@ -218,6 +217,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			return GDK_FAIL;
 		}
 		GDKfree(nme);
+		TRC_DEBUG(HEAP, "%s %zu %p (mmap)\n", h->filename, size, h->base);
 	}
 	h->newstorage = h->storage;
 	return GDK_SUCCEED;
@@ -439,57 +439,6 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	return GDK_FAIL;
 }
 
-gdk_return
-HEAPshrink(Heap *h, size_t size)
-{
-	char *p = NULL;
-
-	assert(size >= h->free);
-	assert(size <= h->size);
-	if (h->storage == STORE_MEM) {
-		p = GDKrealloc(h->base, size);
-		TRC_DEBUG(HEAP, "Shrinking malloced heap %s %zu %zu %p %p\n",
-			  h->filename, h->size, size, h->base, p);
-	} else {
-		char *path;
-
-		assert(h->hasfile);
-		/* shrink memory mapped file */
-		/* round up to multiple of GDK_mmap_pagesize with
-		 * minimum of one */
-		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
-		if (size == 0)
-			size = GDK_mmap_pagesize;
-		if (size >= h->size) {
-			/* don't grow */
-			return GDK_SUCCEED;
-		}
-		if ((path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL)) == NULL)
-			return GDK_FAIL;
-		p = GDKmremap(path,
-			      h->storage == STORE_PRIV ?
-				MMAP_COPY | MMAP_READ | MMAP_WRITE :
-				MMAP_READ | MMAP_WRITE,
-			      h->base, h->size, &size);
-		GDKfree(path);
-		TRC_DEBUG(HEAP, "Shrinking %s mmapped "
-			  "heap (%s) %zu %zu %p %p\n",
-			  h->storage == STORE_MMAP ? "shared" : "privately",
-			  h->filename, h->size, size, h->base, p);
-	}
-	if (p) {
-		if (h->farmid == 1) {
-			QryCtx *qc = MT_thread_get_qry_ctx();
-			if (qc)
-				ATOMIC_SUB(&qc->datasize, h->size - size);
-		}
-		h->size = size;
-		h->base = p;
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
 /* grow the string offset heap so that the value v fits (i.e. wide
  * enough to fit the value), and it has space for at least cap elements;
  * copy ncopy BUNs, or up to the heap size, whichever is smaller */
@@ -548,6 +497,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		.dirty = true,
 		.parentid = old->parentid,
 		.wasempty = old->wasempty,
+		.refs = ATOMIC_VAR_INIT(1 | (ATOMIC_GET(&old->refs) & HEAPREMOVE)),
 	};
 	settailname(new, BBP_physical(b->batCacheid), b->ttype, width);
 	if (HEAPalloc(new, newsize, 1) != GDK_SUCCEED) {
@@ -556,7 +506,6 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	}
 	/* HEAPalloc initialized .free, so we need to set it after */
 	new->free = old->free << (shift - b->tshift);
-	ATOMIC_INIT(&new->refs, 1 | (ATOMIC_GET(&old->refs) & HEAPREMOVE));
 	/* per the above, width > b->twidth, so certain combinations are
 	 * impossible */
 	switch (width) {
@@ -748,7 +697,6 @@ HEAPdecref(Heap *h, bool remove)
 	//printf("dec ref(%d) %p %d\n", (int)h->refs, h, h->parentid);
 	switch (refs & HEAPREFS) {
 	case 0:
-		ATOMIC_DESTROY(&h->refs);
 		HEAPfree(h, (bool) (refs & HEAPREMOVE));
 		GDKfree(h);
 		break;
@@ -775,13 +723,14 @@ HEAPincref(Heap *h)
  *
  * If we find file X.new, we move it over X (if present) and open it.
  */
-static gdk_return
-HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc)
+gdk_return
+HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 {
 	size_t minsize;
 	int ret = 0;
 	char *srcpath, *dstpath;
 	lng t0;
+	const char suffix[] = ".new";
 
 	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID) {
 		size_t allocated;
@@ -890,12 +839,6 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	return GDK_SUCCEED;
 }
 
-gdk_return
-HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
-{
-	return HEAPload_intern(h, nme, ext, ".new", trunc);
-}
-
 /*
  * @- HEAPsave
  *
@@ -911,12 +854,13 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
  * After GDKsave returns successfully (>=0), we assume the heaps are
  * safe on stable storage.
  */
-static gdk_return
-HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync, BUN free, MT_Lock *lock)
+gdk_return
+HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 {
 	storage_t store = h->newstorage;
 	long_str extension;
 	gdk_return rc;
+	const char suffix[] = ".new";
 
 	if (h->base == NULL) {
 		GDKerror("no heap to save\n");
@@ -964,28 +908,6 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	if (lock)
 		MT_lock_unset(lock);
 	return rc;
-}
-
-gdk_return
-HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
-{
-	return HEAPsave_intern(h, nme, ext, ".new", dosync, free, lock);
-}
-
-int
-HEAPwarm(Heap *h)
-{
-	int bogus_result = 0;
-
-	if (h->storage != STORE_MEM) {
-		/* touch the heap sequentially */
-		int *cur = (int *) h->base;
-		int *lim = (int *) (h->base + h->free) - 4096;
-
-		for (; cur < lim; cur += 4096)	/* try to schedule 4 parallel memory accesses */
-			bogus_result |= cur[0] | cur[1024] | cur[2048] | cur[3072];
-	}
-	return bogus_result;
 }
 
 
@@ -1185,15 +1107,12 @@ HEAP_malloc(BAT *b, size_t nbytes)
 
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
-		MT_lock_set(&b->theaplock);
 		if (HEAPgrow(&b->tvheap, newsize, false) != GDK_SUCCEED) {
-			MT_lock_unset(&b->theaplock);
 			return (var_t) -1;
 		}
 		heap = b->tvheap;
 		heap->free = newsize;
 		heap->dirty = true;
-		MT_lock_unset(&b->theaplock);
 		hheader = HEAP_index(heap, 0, HEADER);
 
 		blockp = HEAP_index(heap, block, CHUNK);
@@ -1248,6 +1167,13 @@ HEAP_malloc(BAT *b, size_t nbytes)
 void
 HEAP_free(Heap *heap, var_t mem)
 {
+/* we cannot free pieces of the heap because we may have used
+ * append_varsized_bat to create the heap; if we did, there may be
+ * multiple locations in the offset heap that refer to the same entry in
+ * the vheap, so we cannot free any until we free all */
+	(void) heap;
+	(void) mem;
+#if 0
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 	CHUNK *beforep;
 	CHUNK *blockp;
@@ -1319,6 +1245,7 @@ HEAP_free(Heap *heap, var_t mem)
 		 */
 		hheader->head = block;
 	}
+#endif
 }
 
 void

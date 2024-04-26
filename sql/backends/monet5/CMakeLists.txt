@@ -5,7 +5,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+# Copyright 2024 MonetDB Foundation;
+# Copyright August 2008 - 2023 MonetDB B.V.;
+# Copyright 1997 - July 2008 CWI.
 #]]
 
 set(sql_public_headers
@@ -16,7 +18,6 @@ set(sql_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/sql_stack.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/sql_catalog.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/sql_relation.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/exception_buffer.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/sql_keyword.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../common/sql_types.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../common/sql_string.h>
@@ -53,7 +54,6 @@ set(sql_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_stack.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_catalog.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_relation.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/exception_buffer.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_keyword.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_types.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_string.h>

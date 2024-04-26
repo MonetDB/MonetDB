@@ -5,7 +5,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
+ * Copyright 2024 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
  */
 
 /*
@@ -523,7 +525,7 @@ BATimprints(BAT *b)
 		imprints->imprints.parentid = b->batCacheid;
 
 #define SMP_SIZE 2048
-		s1 = BATsample_with_seed(b, SMP_SIZE, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
+		s1 = BATsample(b, SMP_SIZE);
 		if (s1 == NULL) {
 			GDKfree(imprints);
 			bat_iterator_end(&bi);
@@ -835,7 +837,6 @@ IMPSdecref(Imprints *imprints, bool remove)
 		ATOMIC_OR(&imprints->imprints.refs, HEAPREMOVE);
 	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&imprints->imprints.refs);
 	if ((refs & HEAPREFS) == 0) {
-		ATOMIC_DESTROY(&imprints->imprints.refs);
 		HEAPfree(&imprints->imprints, (bool) (refs & HEAPREMOVE));
 		GDKfree(imprints);
 	}
