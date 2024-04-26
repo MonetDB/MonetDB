@@ -4468,10 +4468,10 @@ tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, c->base.id);
@@ -4508,10 +4508,10 @@ tc_gc_upd_col( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, c->base.id);
@@ -4548,10 +4548,10 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, i->base.id);
@@ -4588,10 +4588,10 @@ tc_gc_upd_idx( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, i->base.id);
