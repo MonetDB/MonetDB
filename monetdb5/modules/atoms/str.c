@@ -1057,9 +1057,9 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 
 /* returns number of bytes to remove from left to strip the codepoints in rm */
 static size_t
-lstrip(const char *s, size_t len, const int *rm, size_t nrm)
+lstrip(const char *s, size_t len, const uint32_t *rm, size_t nrm)
 {
-	int c;
+	uint32_t c;
 	size_t i, n, skip = 0;
 
 	while (len > 0) {
@@ -1082,9 +1082,9 @@ lstrip(const char *s, size_t len, const int *rm, size_t nrm)
 /* returns the resulting length of s after stripping codepoints in rm
  * from the right */
 static size_t
-rstrip(const char *s, size_t len, const int *rm, size_t nrm)
+rstrip(const char *s, size_t len, const uint32_t *rm, size_t nrm)
 {
-	int c;
+	uint32_t c;
 	size_t i, n;
 
 	while (len > 0) {
@@ -1102,7 +1102,7 @@ rstrip(const char *s, size_t len, const int *rm, size_t nrm)
 	return len;
 }
 
-const int whitespace[] = {
+const uint32_t whitespace[] = {
 	' ',						/* space */
 	'\t',						/* tab (character tabulation) */
 	'\n',						/* line feed */
@@ -1126,6 +1126,11 @@ const int whitespace[] = {
 	0x202F,						/* narrow no-break space */
 	0x205F,						/* medium mathematical space */
 	0x3000,						/* ideographic space */
+/* below the code points that have the Unicode Zl (line separator) property */
+	0x2028,						/* line separator */
+/* below the code points that have the Unicode Zp (paragraph separator)
+ * property */
+	0x2029,						/* paragraph separator */
 };
 
 #define NSPACES		(sizeof(whitespace) / sizeof(whitespace[0]))
@@ -1294,10 +1299,10 @@ str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
 		if ((msg = trimchars(buf, buflen, &n3, s2, n2, "str.strip2")) != MAL_SUCCEED)
 			return msg;
 		len = strlen(s);
-		n = lstrip(s, len, *(int **) buf, n3);
+		n = lstrip(s, len, *(uint32_t **) buf, n3);
 		s += n;
 		len -= n;
-		n = rstrip(s, len, *(int **) buf, n3);
+		n = rstrip(s, len, *(uint32_t **) buf, n3);
 
 		n++;
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.strip2");
@@ -1351,7 +1356,7 @@ str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 		if ((msg = trimchars(buf, buflen, &n3, s2, n2, "str.ltrim2")) != MAL_SUCCEED)
 			return msg;
 		len = strlen(s);
-		n = lstrip(s, len, *(int **) buf, n3);
+		n = lstrip(s, len, *(uint32_t **) buf, n3);
 		nallocate = len - n + 1;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, nallocate, "str.ltrim2");
@@ -1405,7 +1410,7 @@ str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 		if ((msg = trimchars(buf, buflen, &n3, s2, n2, "str.ltrim2")) != MAL_SUCCEED)
 			return msg;
 		len = strlen(s);
-		n = rstrip(s, len, *(int **) buf, n3);
+		n = rstrip(s, len, *(uint32_t **) buf, n3);
 		n++;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.rtrim2");
