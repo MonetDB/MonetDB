@@ -7214,13 +7214,11 @@ sql_session_destroy(sql_session *s)
 int
 sql_session_reset(sql_session *s, int ac)
 {
-	char *def_schema_name = SA_STRDUP(s->sa, "sys");
-
-	if (!s->tr || !def_schema_name)
+	if (!s->tr)
 		return 0;
 
 	assert(s->tr && s->tr->active == 0);
-	s->schema_name = def_schema_name;
+	s->schema_name = s->def_schema_name;
 	s->schema = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
 	s->level = tr_serializable;
@@ -7236,7 +7234,11 @@ sql_trans_begin(sql_session *s)
 	store_lock(store);
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	tr->ts = store_timestamp(store);
-	if (!(s->schema = find_sql_schema(tr, s->schema_name))) {
+	if (s->schema_name && !(s->schema = find_sql_schema(tr, s->schema_name)))
+		s->schema_name = s->def_schema_name;
+	if (!s->schema_name)
+		s->schema_name = "sys";
+	if (s->schema_name && !(s->schema = find_sql_schema(tr, s->schema_name))) {
 		TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT " with error, the schema %s was not found\n", tr->tid, s->schema_name);
 		store_unlock(store);
 		return -3;
@@ -7268,6 +7270,7 @@ sql_trans_end(sql_session *s, int ok)
 	s->tr->active = 0;
 	s->tr->status = 0;
 	s->auto_commit = s->ac_on_commit;
+	s->schema = NULL;
 	list_remove_data(store->active, NULL, s->tr);
 	ATOMIC_SET(&store->lastactive, GDKusec());
 	ATOMIC_DEC(&store->nr_active);
