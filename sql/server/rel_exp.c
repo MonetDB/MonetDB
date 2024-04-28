@@ -19,6 +19,19 @@
 #include "rel_basetable.h"
 #include "rel_prop.h"
 
+sql_subtype*
+first_arg_subtype(sql_exp *e)
+{
+	if (e->type == e_aggr || e->type == e_func) {
+		list *ops = e->l;
+		if (!list_empty(ops)) {
+			sql_exp *e = ops->h->data;
+			return exp_subtype(e);
+		}
+	}
+	return NULL;
+}
+
 comp_type
 compare_str2type(const char *compare_op)
 {

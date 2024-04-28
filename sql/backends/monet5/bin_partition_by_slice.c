@@ -142,19 +142,6 @@ rel_groupby_can_pp(sql_rel *rel, bool _2phases)
 	return true;
 }
 
-static sql_subtype*
-first_arg_subtype(sql_exp *e)
-{
-	if (e->type == e_aggr) {
-		list *ops = e->l;
-		if (!list_empty(ops)) {
-			sql_exp *e = ops->h->data;
-			return exp_subtype(e);
-		}
-	}
-	return NULL;
-}
-
 /* initialize the result variable for the parallel execution */
 list *
 rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
