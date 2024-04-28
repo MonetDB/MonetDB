@@ -204,6 +204,7 @@ int yydebug=1;
 	aggr_or_window_ref
 	alter_statement
 	alter_table_element
+	analyze_statement
 	and_exp
 	assignment
 	atom
@@ -959,6 +960,16 @@ declare:
     DECLARE
 
 	/* schema definition language */
+analyze_statement:
+   ANALYZE qname opt_column_list opt_sample opt_minmax
+		{ dlist *l = L();
+		append_list(l, $2);
+		append_list(l, $3);
+		append_symbol(l, $4);
+		append_int(l, $5);
+		$$ = _symbol_create_list( SQL_ANALYZE, l); }
+ ;
+
 sql:
     schema
  |  grant
@@ -968,14 +979,8 @@ sql:
  |  alter_statement
  |  declare_statement
  |  set_statement
- |  ANALYZE qname opt_column_list opt_sample opt_minmax
-		{ dlist *l = L();
-		append_list(l, $2);
-		append_list(l, $3);
-		append_symbol(l, $4);
-		append_int(l, $5);
-		$$ = _symbol_create_list( SQL_ANALYZE, l); }
  |  call_procedure_statement
+ |  analyze_statement
  |  comment_on_statement
  ;
 
@@ -2389,6 +2394,9 @@ procedure_statement:
     |   declare_statement
     |   set_statement
     |	control_statement
+    |   call_procedure_statement
+    |	call_statement
+    |   analyze_statement
     |   select_statement_single_row
     ;
 
@@ -2400,13 +2408,14 @@ trigger_procedure_statement:
     |   declare_statement
     |   set_statement
     |	control_statement
+    |   call_procedure_statement
+    |	call_statement
+    |   analyze_statement
     |   select_statement_single_row
     ;
 
 control_statement:
-	call_procedure_statement
-    |	call_statement
-    |   while_statement
+        while_statement
     |   if_statement
     |   case_statement
     |	return_statement
