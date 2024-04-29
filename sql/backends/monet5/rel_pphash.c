@@ -67,8 +67,9 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 	*HSHres_hts = sa_list(sql->sa);
 	for (node *n = exps_hsh_ht->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
+		bit freq = (n->next == NULL); /* last ht also computes frequencies */
 
-		InstrPtr q = stmt_hash_new(be, t->type->localtype, hsh_est * 1.1, curhash);
+		InstrPtr q = stmt_hash_new(be, t->type->localtype, hsh_est * 1.1, freq, curhash);
 		if (q == NULL) return err;
 		q->inout = 0;
 		curhash = getArg(q, 0);
@@ -141,19 +142,6 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	prb_hps = rel_projections(sql, rel_prb, 0, 1, 0);
 	assert(hsh_hps->cnt||prb_hps->cnt); /* at least one column will be projected */
 
-	/* Example: EXPLAIN SELECT l1+r3, r2 FROM r, l WHERE r1 = l1 AND r2 = l2;
-	 *
-	 * init the global variables:
-	 *  !X_5:bat[:int] := bat.new(nil:int, 3:int);   # l1
-	 *  !X_8:bat[:int] := bat.new(nil:int, 3:int);   # l2
-	 *  !X_9:bat[:int] := bat.new(nil:int, 3:int);   # r1
-	 *  !X_10:bat[:int] := bat.new(nil:int, 3:int);  # r2
-	 *  !X_11:bat[:int] := bat.new(nil:int, 3:int);  # r3
-	 *  !X_12:bat[:int] := hash.new(nil:int, 3:int); # l1
-	 *  !X_13:bat[:int] := hash.new(nil:int, 3:int, X_12:bat[:int]); # l2
-	 *  !X_14:bat[:int] := hash.new_payload(nil:int, 3:lng, 3:lng, X_13:bat[:int], X_13:bat[:int]); # l1
-	 *  !X_17:bat[:int] := hash.new_payload(nil:int, 3:lng, 3:lng, X_13:bat[:int], X_14:bat[:int]); # l2
-	 */
 	(void)rel2bin_pphash_prepare(be, rel_hsh, rel_prb, &HSHres_hts, &HSHres_hps,
 			//&JNres_hshs, &JNres_prbs,
 			hsh_hts, hsh_hps);//, prb_hps);
@@ -163,21 +151,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	//assert(JNres_prbs->cnt == prb_hps->cnt);
 
 	/*** HASH PHASE ***/
-	/* Generates the parallel block to compute a hash table:
-	 *
-	 * barrier (X_18:bit, X_19:int, X_20:ptr) := language.pipelines(2:int);
-	 *   leave X_18:bit := calc.>=(X_19:int, 2:int);
-	 *   ...
-	 *   X_37:bat[:int] := algebra.projection(...); # l1
-	 *   X_38:bat[:int] := algebra.projection(...); # l2
-	 *   (X_39:bat[:oid], !X_12:bat[:int]) := hash.build_table(X_37:bat[:int], X_20:ptr);
-	 *   (X_40:bat[:oid], !X_13:bat[:int]) := hash.build_combined_table(X_38:bat[:int], X_39:bat[:oid], X_12:bat[:int], X_20:ptr);
-	 *   !X_14:bat[:int] := hash.add_payload(X_37:bat[:int], X_40:bat[:oid], X_13:bat[:int], X_20:ptr);
-	 *   !X_17:bat[:int] := hash.add_payload(X_38:bat[:int], X_40:bat[:oid], X_13:bat[:int], X_20:ptr);
-	 *   X_19:int := pipeline.counter(X_20:ptr);
-	 *   redo X_18:bit := calc.<(X_19:int, 2:int);
-	 * exit X_18:bit;
-	 */
+	/* Generates the parallel block to compute a hash table */
 	if (get_pipeline(be)) {
         sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
 		return NULL;
@@ -201,7 +175,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 
-	int prnt_slts = 0, prnt_ht = 0;
+	int prnt_slts = 0, prnt_ht = 0, prnt_tt = TYPE_void;
 	for (node *n = hsh_hts->h, *inout = HSHres_hts->h; n && inout;
 	     n = n->next, inout = inout->next) {
 		stmt *k = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -217,16 +191,38 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		if (q == NULL) return NULL;
 		prnt_slts = getDestVar(q);
 		prnt_ht = sink;
+		prnt_tt = tail_type(k)->type->localtype;
 	}
+	/* NB: after the hash.build_[combined_]table(), prnt_* point to the last ht-column */
+
+	// TODO put this in a function? and pass stmt * iso numbers?
+	/* START hash.add_frequencies() with or without payload_pos */
+	InstrPtr stmt_freq = newStmt(be->mb, putName("hash"), putName("add_frequencies"));
+	if (stmt_freq == NULL)
+		return NULL;
+	if (hsh_hps->cnt == 0) {
+		setVarType(be->mb, getArg(stmt_freq, 0), newBatType(prnt_tt));
+		getArg(stmt_freq, 0) = prnt_ht;
+		stmt_freq->inout = 0;
+	} else {
+		setVarType(be->mb, getArg(stmt_freq, 0), newBatType(TYPE_oid));
+		stmt_freq = pushReturn(be->mb, stmt_freq, prnt_ht);
+		stmt_freq->inout = 1;
+	}
+	stmt_freq = pushArgument(be->mb, stmt_freq, prnt_slts);
+	stmt_freq = pushArgument(be->mb, stmt_freq, getArg(pp->q, 2) /* pipeline ptr*/);
+	pushInstruction(be->mb, stmt_freq);
+	/* END */
 
 	assert(prnt_slts); /* must be set */
+	int payload_pos = getArg(stmt_freq, 0);
 	list *l_hps = sa_list(sql->sa);
 	for (node *n = hsh_hps->h, *inout = HSHres_hps->h; n && inout;
 	     n = n->next, inout = inout->next) {
 		stmt *payload = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(payload); /* must find */
 		InstrPtr sink = inout->data;
-		stmt *hp = stmt_hash_add_payload(be, sink, payload, prnt_slts, prnt_ht, pp);
+		stmt *hp = stmt_hash_add_payload(be, sink, payload, payload_pos, pp);
 		if (hp == NULL) return NULL;
 		append(l_hps, hp);
 	}
@@ -238,37 +234,6 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	/*** PROBE PHASE ***/
 	/* Generates the parallel block to probe the hash table and produce the
 	 *   parallel-hash-join results.
-	 *
-	 * barrier (X_46:bit, X_47:int, X_48:ptr) := language.pipelines(2:int);
-	 *   leave X_46:bit := calc.>=(X_47:int, 2:int);
-	 *   ...
-	 *   X_73:bat[:int] := algebra.projection(...); # r1
-	 *   X_74:bat[:int] := algebra.projection(...); # r2
-	 *   X_75:bat[:int] := algebra.projection(...); # r3
-	 *   ### First LHS join column:
-	 *   X_76:bat[:lng] := hash.hash(X_73:bat[:int], X_48:ptr);
-	 *   (X_77:bat[:oid], X_78:bat[:oid]) := hash.probe(X_73:bat[:int], X_76:bat[:lng], X_12:bat[:int], X_48:ptr);
-	 *   ### Subsequent LHS join columns:
-	 *   X_79:bat[:lng] := hash.combined_hash(X_74:bat[:int], X_77:bat[:oid], X_78:bat[:oid], X_48:ptr);
-	 *   (X_80:bat[:oid], X_81:bat[:oid]) := hash.combined_probe(X_74:bat[:int], X_79:bat[:lng], X_77:bat[:oid], X_13:bat[:int], X_48:ptr);
-	 *
-	 *   ### Generate output
-	 *   # For the RHS columns, fetch values from hash-payload
-	 *   (X_82:bat[:oid], X_83:bat[:int]) := hash.fetch_payload(X_81:bat[:oid], X_14:bat[:int], true:bit, X_48:ptr);
-	 *   (X_85:bat[:oid], X_86:bat[:int]) := hash.fetch_payload(X_81:bat[:oid], X_17:bat[:int], false:bit, X_48:ptr);
-	 *   # For the LHS columns, repeat each matched value.
-	 *   (X_88:bat[:oid], X_89:bat[:int]) := hash.expand(X_73:bat[:int], X_80:bat[:oid], X_81:bat[:oid], X_14:bat[:int], false:bit, X_48:ptr);
-	 *   (X_90:bat[:oid], X_91:bat[:int]) := hash.expand(X_74:bat[:int], X_80:bat[:oid], X_81:bat[:oid], X_14:bat[:int], false:bit, X_48:ptr);
-	 *   (X_92:bat[:oid], X_93:bat[:int]) := hash.expand(X_75:bat[:int], X_80:bat[:oid], X_81:bat[:oid], X_14:bat[:int], false:bit, X_48:ptr);
-	 *   # Put them all int the global BATs. NB, there are no holes, so, no thetaselect needed.
-	 *   !X_5:bat[:int] := algebra.projection(X_82:bat[:oid], X_83:bat[:int], X_48:ptr);
-	 *   !X_8:bat[:int] := algebra.projection(X_82:bat[:oid], X_86:bat[:int], X_48:ptr);
-	 *   !X_9:bat[:int] := algebra.projection(X_82:bat[:oid], X_89:bat[:int], X_48:ptr);
-	 *   !X_10:bat[:int] := algebra.projection(X_82:bat[:oid], X_91:bat[:int], X_48:ptr);
-	 *   !X_11:bat[:int] := algebra.projection(X_82:bat[:oid], X_93:bat[:int], X_48:ptr);
-	 *   X_47:int := pipeline.counter(X_48:ptr);
-	 *   redo X_46:bit := calc.<(X_47:int, 2:int);
-	 * exit X_46:bit;
 	 */
 	if (pp_can_not_start(be->mvc, rel_prb)) {
 		set_need_pipeline(be);
@@ -316,10 +281,11 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	/* Construct result relations */
 	assert(matched && rhs_slts); /* must be set */
 	bit first = 1;
+	int prnt_sink = stmt_freq->retc == 1? getArg(stmt_freq, 0) : getArg(stmt_freq, 1);
 	list *l = sa_list(sql->sa);
 	//list *lh = sa_list(sql->sa); /* fetch hash-side values */
 	for (node *n = HSHres_hps->h, *o = hsh_hps->h; n && o; n = n->next, o = o->next) {
-		InstrPtr q = stmt_hash_fetch_payload(be, rhs_slts, n->data, first, pp);
+		InstrPtr q = stmt_hash_fetch_payload(be, rhs_slts, n->data, prnt_sink, first, pp);
 		if (q == NULL) return NULL;
 		first = 0;
 

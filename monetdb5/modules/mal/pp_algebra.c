@@ -1495,7 +1495,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
+		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, NULL);
 		if (u->T.sink == NULL) {
 			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
@@ -1886,7 +1886,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			goto error;
 		}
 		/* Lookup parent hash */
-		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->T.sink);
+		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, (hash_table*)H->T.sink);
 		if (u->T.sink == NULL) {
 			BBPunfix(H->batCacheid);
 			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);

@@ -406,7 +406,7 @@ stmt_unique_sharedout(backend *be, stmt *s, int output)
 }
 
 InstrPtr
-stmt_hash_new(backend *be, int tt, lng estimate, int parent)
+stmt_hash_new(backend *be, int tt, lng estimate, bit freq, int parent)
 {
 	InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
 
@@ -416,6 +416,7 @@ stmt_hash_new(backend *be, int tt, lng estimate, int parent)
 	q = pushType(be->mb, q, tt);
 	assert (estimate >= 0);
 	q = pushInt(be->mb, q, (int)estimate);
+	q = pushBit(be->mb, q, freq);
 	if (parent)
 		q = pushArgument(be->mb, q, parent);
 	pushInstruction(be->mb, q);
@@ -486,12 +487,8 @@ stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_slts,
 	return q;
 }
 
-/* Generates:
- *   hp_sink         := hash.add_payload(payload,        parent_slotid,  parent_ht,      PTR)
- *   !X_14:bat[:int] := hash.add_payload(X_37:bat[:int], X_40:bat[:oid], X_13:bat[:int], X_20:ptr);
- */
 stmt *
-stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int prnt_slts, int prnt_ht, stmt *pp)
+stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int payload_pos, stmt *pp)
 {
 	MalBlkPtr mb = be->mb;
 	mvc *sql = be->mvc;
@@ -504,8 +501,7 @@ stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int prnt_slt
 	setVarType(mb, getArg(q, 0), newBatType(tt));
 	getArg(q, 0) = *ht_sink->argv;
 	q = pushArgument(mb, q, payload->nr);
-	q = pushArgument(mb, q, prnt_slts);
-	q = pushArgument(mb, q, prnt_ht);
+	q = pushArgument(mb, q, payload_pos);
 	q = pushArgument(mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	q->inout = 0;
 	pushInstruction(mb, q);
@@ -636,12 +632,8 @@ stmt_hash_expand(backend *be, stmt *col, int sel, int prnt, int rhp, bit first, 
 	return q;
 }
 
-/* Generates:
- *   (pos,            RHS_val_expnd)  := hash.fetch_payload(RHS_slotid,     RHS_hp,         first,    PTR)
- *   (X_82:bat[:oid], X_83:bat[:int]) := hash.fetch_payload(X_81:bat[:oid], X_14:bat[:int], true:bit, X_48:ptr);
- */
 InstrPtr
-stmt_hash_fetch_payload(backend *be, int slt, stmt *hp, bit first, stmt *pp)
+stmt_hash_fetch_payload(backend *be, int slt, stmt *hp, int prnt_ht, bit first, stmt *pp)
 {
 	int tt = tail_type(hp)->type->localtype;
 
@@ -652,6 +644,7 @@ stmt_hash_fetch_payload(backend *be, int slt, stmt *hp, bit first, stmt *pp)
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
 	q = pushArgument(be->mb, q, slt);
 	q = pushArgument(be->mb, q, hp->nr);
+	q = pushArgument(be->mb, q, prnt_ht);
 	q = pushBit(be->mb, q, first);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
