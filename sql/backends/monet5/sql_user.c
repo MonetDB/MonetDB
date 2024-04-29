@@ -849,6 +849,8 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 	}
 
 	/* while getting the session's schema, set the search path as well */
+	/* new default schema */
+	m->session->def_schema_name = schema;
 	if (!(ok = mvc_set_schema(m, schema)) || (path_err = parse_schema_path_str(m, schema_path, true)) != MAL_SUCCEED) {
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
