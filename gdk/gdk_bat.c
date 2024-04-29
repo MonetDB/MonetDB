@@ -2575,6 +2575,7 @@ BATmode(BAT *b, bool transient)
 
 	BATiter bi = bat_iterator(b);
 	bool mustrelease = false;
+	bool mustretain = false;
 	bat bid = b->batCacheid;
 
 	if (transient != bi.transient) {
@@ -2591,16 +2592,20 @@ BATmode(BAT *b, bool transient)
 			}
 		}
 
-		/* persistent BATs get a logical reference */
+		/* we need to delay the calls to BBPretain and
+		 * BBPrelease until after we have released our reference
+		 * to the heaps (i.e. until after bat_iterator_end),
+		 * because in either case, BBPfree can be called (either
+		 * directly here or in BBPtrim) which waits for the heap
+		 * reference to come down.  BBPretain calls incref which
+		 * waits until the trim that is waiting for us is done,
+		 * so that causes deadlock, and BBPrelease can call
+		 * BBPfree which causes deadlock with a single thread */
 		if (!transient) {
-			BBPretain(bid);
+			/* persistent BATs get a logical reference */
+			mustretain = true;
 		} else if (!bi.transient) {
-			/* we need to delay the release because if there
-			 * is no fix and the bat is loaded, BBPrelease
-			 * can call BBPfree which calls BATfree which
-			 * may hang while waiting for the heap reference
-			 * that we have because of the BAT iterator to
-			 * come down, in other words, deadlock */
+			/* transient BATs loose their logical reference */
 			mustrelease = true;
 		}
 		MT_lock_set(&GDKswapLock(bid));
@@ -2632,8 +2637,10 @@ BATmode(BAT *b, bool transient)
 		MT_lock_unset(&GDKswapLock(bid));
 	}
 	bat_iterator_end(&bi);
-	/* release after bat_iterator_end because of refs to heaps */
-	if (mustrelease)
+	/* retain/release after bat_iterator_end because of refs to heaps */
+	if (mustretain)
+		BBPretain(bid);
+	else if (mustrelease)
 		BBPrelease(bid);
 	return GDK_SUCCEED;
 }
