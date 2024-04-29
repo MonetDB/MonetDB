@@ -1691,6 +1691,9 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 			const char *nme;
 
 			nme = ATOMunknown_name(b->ttype);
+			int tt = ATOMindex(nme);
+			if (tt >= 0)
+				b->ttype = tt;
 			if (strcmp(nme, "json") != 0)
 				continue;
 		} else if (b->ttype != JSON_type) {
