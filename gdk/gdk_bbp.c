@@ -1711,6 +1711,9 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 			const char *nme;
 
 			nme = ATOMunknown_name(b->ttype);
+			int tt = ATOMindex(nme);
+			if (tt >= 0)
+				b->ttype = tt;
 			if (strcmp(nme, "json") != 0)
 				continue;
 		} else if (b->ttype != JSON_type) {
@@ -4065,34 +4068,41 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 			if (lock)
 				MT_lock_set(&GDKswapLock(bid));
 		}
-		if (subcommit) {
+		BAT *b = BBP_desc(bid);
+		if (subcommit && b->ttype != TYPE_void) {
 			/* move any tail/theap files we find for this bat that
 			 * are in the BACKUP directory to the SUBCOMMIT
 			 * directory */
 			char fname[16];	/* plenty big enough */
-			if (snprintf(fname, sizeof(fname), "%o", i) < 16) {
+			if (snprintf(fname, sizeof(fname), "%o", (unsigned) bid) < 16) {
 				/* the snprintf never fails, any of the
 				 * below may fail */
-				if (GDKmove(0, BAKDIR, fname, "tail", SUBDIR, fname, "tail", false) == GDK_SUCCEED)
-					TRC_DEBUG(BAT_, "moved %s.tail from %s to %s\n",
+				uint8_t stpe = ATOMstorage(b->ttype);
+				if ((b->ttype != TYPE_str || b->twidth >= 8) &&
+				    GDKmove(0, BAKDIR, fname, "tail", SUBDIR, fname, "tail", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO_, "moved %s.tail from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
-				if (GDKmove(0, BAKDIR, fname, "tail1", SUBDIR, fname, "tail1", false) == GDK_SUCCEED)
-					TRC_DEBUG(BAT_, "moved %s.tail1 from %s to %s\n",
+				if (stpe == TYPE_str &&
+				    GDKmove(0, BAKDIR, fname, "tail1", SUBDIR, fname, "tail1", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO_, "moved %s.tail1 from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
-				if (GDKmove(0, BAKDIR, fname, "tail2", SUBDIR, fname, "tail2", false) == GDK_SUCCEED)
-					TRC_DEBUG(BAT_, "moved %s.tail2 from %s to %s\n",
+				if (stpe == TYPE_str && b->twidth >= 2 &&
+				    GDKmove(0, BAKDIR, fname, "tail2", SUBDIR, fname, "tail2", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO_, "moved %s.tail2 from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
 #if SIZEOF_VAR_T == 8
-				if (GDKmove(0, BAKDIR, fname, "tail4", SUBDIR, fname, "tail4", false) == GDK_SUCCEED)
-					TRC_DEBUG(BAT_, "moved %s.tail4 from %s to %s\n",
+				if (stpe == TYPE_str && b->twidth >= 4 &&
+				    GDKmove(0, BAKDIR, fname, "tail4", SUBDIR, fname, "tail4", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO_, "moved %s.tail4 from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
 #endif
-				if (GDKmove(0, BAKDIR, fname, "theap", SUBDIR, fname, "theap", false) == GDK_SUCCEED)
-					TRC_DEBUG(BAT_, "moved %s.theap from %s to %s\n",
+				if (ATOMvarsized(b->ttype) &&
+				    GDKmove(0, BAKDIR, fname, "theap", SUBDIR, fname, "theap", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO_, "moved %s.theap from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
 			}
 		}
-		BAT *b = dirty_bat(&i, subcommit != NULL);
+		b = dirty_bat(&i, subcommit != NULL);
 		if (i <= 0)
 			ret = GDK_FAIL;
 		else if (BBP_status(bid) & BBPEXISTING &&

@@ -759,6 +759,7 @@ typedef struct sql_session {
 	allocator *sa;
 	sql_trans *tr; 		/* active transaction */
 
+	char *def_schema_name; /* users default schema name */
 	char *schema_name; /* transaction's schema name */
 	sql_schema *schema;
 
