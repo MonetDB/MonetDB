@@ -211,7 +211,7 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *pht = NULL;
 	bool freq = false;
 
-	if (p->argc == 4) {
+	if (p->argc >= 4) {
 		freq = *getArgReference_bit(s, p, 3);
 	}
 	if (p->argc == 5) {
@@ -1242,9 +1242,9 @@ error:
 	return err;
 }
 
-/* !X_nn:bat[:any1] := hash.add_frequencies(X_nn:bat[:oid], ptr); */
+/* !X_nn:bat[:any1] := hash.compute_frequencies(X_nn:bat[:oid], ptr); */
 static str
-HASHadd_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
+HASHcompute_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	str err = NULL;
@@ -1255,7 +1255,7 @@ HASHadd_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
 	hts = BATdescriptor(*ht_sink);
 	slt = BATdescriptor(*slot_id);
 	if (!hts || !slt) {
-		err = createException(MAL, "hash.add_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "hash.compute_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	hash_table *ht = (hash_table*)hts->T.sink;
@@ -1273,11 +1273,11 @@ HASHadd_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 			ATOMIC_INC(&freqs[sltid[i]]);
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.add_frequencies", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.compute_frequencies", RUNTIME_QRY_TIMEOUT));
 	}
 	if (err || p->p->status) {
 		if (!err)
-			err = createException(MAL, "hash.add_frequencies", "pipeline execution error");
+			err = createException(MAL, "hash.compute_frequencies", "pipeline execution error");
 		goto error;
 	}
 
@@ -1291,7 +1291,7 @@ error:
 }
 
 static str
-HASHadd_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr *H)
+HASHcompute_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	str err = NULL;
@@ -1302,7 +1302,7 @@ HASHadd_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr 
 	hts = BATdescriptor(*ht_sink);
 	slt = BATdescriptor(*slot_id);
 	if (!hts || !slt) {
-		err = createException(MAL, "hash.add_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "hash.compute_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	hash_table *ht = (hash_table*)hts->T.sink;
@@ -1313,7 +1313,7 @@ HASHadd_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr 
 	BUN cnt = BATcount(slt);
 	res = COLnew(slt->hseqbase, TYPE_oid, cnt, TRANSIENT);
 	if (!res) {
-			err = createException(MAL, "hash.add_frequencies", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "hash.compute_frequencies", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 	}
 	if (cnt) {
@@ -1329,11 +1329,11 @@ HASHadd_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr 
 			/* TODO: how can we make sure the result hash is unique? */
 			ppos[i] = (gid)combine(old_freq, _hash_lng(sltid[i]), prime)&ht->mask;
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.add_frequencies", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.compute_frequencies", RUNTIME_QRY_TIMEOUT));
 	}
 	if (err || p->p->status) {
 		if (!err)
-			err = createException(MAL, "hash.add_frequencies", "pipeline execution error");
+			err = createException(MAL, "hash.compute_frequencies", "pipeline execution error");
 		goto error;
 	}
 
@@ -2089,7 +2089,7 @@ error:
 	} while (0)
 
 static str
-HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *ht_sink, bit *first, const ptr *H)
+HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *first, const ptr *H)
 {
 	BAT *o = NULL, *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt = 0;
@@ -2098,7 +2098,7 @@ HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *h
 	k = BATdescriptor(*key);
 	s = BATdescriptor(*selected);
 	l = BATdescriptor(*slotid);
-	h = BATdescriptor(*ht_sink);
+	h = BATdescriptor(*freq_sink);
 	if (!k || !s || !l || !h) {
 		err = createException(SQL, "hash.expand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
@@ -2254,7 +2254,7 @@ error:
 	} while (0)
 
 static str
-HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *prnt_sink, bit *first, const ptr *H)
+HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq_sink, bit *first, const ptr *H)
 {
 	BAT *o = NULL, *p = NULL, *l = NULL, *hps = NULL, *hts = NULL;
 	BUN cnt, rescnt =  0;
@@ -2262,7 +2262,7 @@ HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *prnt_s
 
 	l = BATdescriptor(*slotid);
 	hps = BATdescriptor(*hp_sink);
-	hts = BATdescriptor(*prnt_sink);
+	hts = BATdescriptor(*freq_sink);
 	if (!l || !hps || !hts) {
 		err = createException(SQL, "hash.fetch_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
@@ -2399,8 +2399,8 @@ static mel_func pp_hash_init_funcs[] = {
  command("hash", "build_table", UHASHbuild_table, false, "Build a hash table for the given column. Returns the slot ID for each key and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
  command("hash", "build_combined_table", UHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
 
- command("hash", "add_frequencies", HASHadd_frequencies, false, "Add the frequencies of the given slot IDs to the hash-table", args(1,3, batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
- command("hash", "add_frequencies", HASHadd_frequencies_pos, false, "Add the frequencies of the given slot IDs to the hash-table. In addition, return combined_hash(slot_id, freq) for payload_pos", args(2,4, batarg("payload_pos",oid),batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
+ command("hash", "compute_frequencies", HASHcompute_frequencies, false, "Add the frequencies of the given slot IDs to the hash-table", args(1,3, batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
+ command("hash", "compute_frequencies", HASHcompute_frequencies_pos, false, "Add the frequencies of the given slot IDs to the hash-table. In addition, return combined_hash(slot_id, freq) for payload_pos", args(2,4, batarg("payload_pos",oid),batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
 
  command("hash", "add_payload", HASHadd_payload, false, "Add 'payload' at 'position' in 'hp_sink'", args(1,4, batargany("hp_sink",1),batargany("payload",1),batarg("payload_pos",oid),arg("pipeline",ptr))),
 
@@ -2410,8 +2410,8 @@ static mel_func pp_hash_init_funcs[] = {
  command("hash", "probe", UHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
  command("hash", "combined_probe", UHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
- command("hash", "expand", HASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(2,8, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("ht_sink",2),arg("first",bit),arg("pipeline",ptr))),
- command("hash", "fetch_payload", HASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash payload.", args(2,7, batarg("pos",oid),batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),batargany("prnt_sink",2),arg("first",bit),arg("pipeline",ptr))),
+ command("hash", "expand", HASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(2,8, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
+ command("hash", "fetch_payload", HASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(2,7, batarg("pos",oid),batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -608,12 +608,8 @@ stmt_hash_combined_probe(backend *be, int key, int hsh, int sel, int rht, stmt *
 	return q;
 }
 
-/* Generates:
- *   (pos,            LHS_val_expnd)  := hash.expand(LHS_col,        LHS_selected,   RHS_prnt_slotid, RHS_hp,         first,     PTR)
- *   (X_88:bat[:oid], X_89:bat[:int]) := hash.expand(X_73:bat[:int], X_80:bat[:oid], X_81:bat[:oid],  X_14:bat[:int], false:bit, X_48:ptr);
- */
 InstrPtr
-stmt_hash_expand(backend *be, stmt *col, int sel, int prnt, int rhp, bit first, stmt *pp)
+stmt_hash_expand(backend *be, stmt *col, int sel, int slotid, int freq_sink, bit first, stmt *pp)
 {
 	int tt = tail_type(col)->type->localtype;
 
@@ -624,8 +620,8 @@ stmt_hash_expand(backend *be, stmt *col, int sel, int prnt, int rhp, bit first, 
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
 	q = pushArgument(be->mb, q, col->nr);
 	q = pushArgument(be->mb, q, sel);
-	q = pushArgument(be->mb, q, prnt);
-	q = pushArgument(be->mb, q, rhp);
+	q = pushArgument(be->mb, q, slotid);
+	q = pushArgument(be->mb, q, freq_sink);
 	q = pushBit(be->mb, q, first);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
@@ -633,7 +629,7 @@ stmt_hash_expand(backend *be, stmt *col, int sel, int prnt, int rhp, bit first, 
 }
 
 InstrPtr
-stmt_hash_fetch_payload(backend *be, int slt, stmt *hp, int prnt_ht, bit first, stmt *pp)
+stmt_hash_fetch_payload(backend *be, int slt, stmt *hp, int freq_sink, bit first, stmt *pp)
 {
 	int tt = tail_type(hp)->type->localtype;
 
@@ -644,7 +640,7 @@ stmt_hash_fetch_payload(backend *be, int slt, stmt *hp, int prnt_ht, bit first, 
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
 	q = pushArgument(be->mb, q, slt);
 	q = pushArgument(be->mb, q, hp->nr);
-	q = pushArgument(be->mb, q, prnt_ht);
+	q = pushArgument(be->mb, q, freq_sink);
 	q = pushBit(be->mb, q, first);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);

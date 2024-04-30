@@ -193,11 +193,14 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		prnt_ht = sink;
 		prnt_tt = tail_type(k)->type->localtype;
 	}
-	/* NB: after the hash.build_[combined_]table(), prnt_* point to the last ht-column */
+	/* NB: after this for-loop, prnt_* point to the last ht-column.
+	 *     DO NOT modify those pointers, as they are used below.
+	 */
+	assert(prnt_slts && prnt_ht); /* must be set */
 
-	// TODO put this in a function? and pass stmt * iso numbers?
-	/* START hash.add_frequencies() with or without payload_pos */
-	InstrPtr stmt_freq = newStmt(be->mb, putName("hash"), putName("add_frequencies"));
+	// TODO put this in a function? and pass (stmt *) iso numbers?
+	/* START hash.compute_frequencies() with or without payload_pos */
+	InstrPtr stmt_freq = newStmt(be->mb, putName("hash"), putName("compute_frequencies"));
 	if (stmt_freq == NULL)
 		return NULL;
 	if (hsh_hps->cnt == 0) {
@@ -214,7 +217,6 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	pushInstruction(be->mb, stmt_freq);
 	/* END */
 
-	assert(prnt_slts); /* must be set */
 	int payload_pos = getArg(stmt_freq, 0);
 	list *l_hps = sa_list(sql->sa);
 	for (node *n = hsh_hps->h, *inout = HSHres_hps->h; n && inout;
@@ -281,11 +283,10 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	/* Construct result relations */
 	assert(matched && rhs_slts); /* must be set */
 	bit first = 1;
-	int prnt_sink = stmt_freq->retc == 1? getArg(stmt_freq, 0) : getArg(stmt_freq, 1);
 	list *l = sa_list(sql->sa);
 	//list *lh = sa_list(sql->sa); /* fetch hash-side values */
 	for (node *n = HSHres_hps->h, *o = hsh_hps->h; n && o; n = n->next, o = o->next) {
-		InstrPtr q = stmt_hash_fetch_payload(be, rhs_slts, n->data, prnt_sink, first, pp);
+		InstrPtr q = stmt_hash_fetch_payload(be, rhs_slts, n->data, prnt_ht, first, pp);
 		if (q == NULL) return NULL;
 		first = 0;
 
@@ -304,11 +305,10 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	}
 
 	//list *lp = sa_list(sql->sa); /* fetch probe-side values */
-	int rhp = ((stmt *)HSHres_hps->h->data)->nr;
 	for (node *n = prb_hps->h; n; n = n->next) {
 		stmt *key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
-		InstrPtr q = stmt_hash_expand(be, key, matched, rhs_slts, rhp, first, pp);
+		InstrPtr q = stmt_hash_expand(be, key, matched, rhs_slts, prnt_ht, first, pp);
 		if (q == NULL) return NULL;
 		first = 0;
 
