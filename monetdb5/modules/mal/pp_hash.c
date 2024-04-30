@@ -51,28 +51,11 @@ log_base2(unsigned int n)
 	return l ;
 }
 
-/*
-static unsigned int
-compute_mask(unsigned int n)
-{
-	unsigned int nn = n * 1.2 * 2.1; // this magic is copied from UHASHnew
-	if (nn < HT_MIN_SIZE)
-		nn = HT_MIN_SIZE;
-	if (nn > HT_MAX_SIZE)
-		nn = HT_MAX_SIZE;
-
-	unsigned int bits = log_base2(nn - 1);
-	if (bits >= GIDBITS)
-		bits = GIDBITS - 1;
-
-	return (1 << bits) - 1;
-}
-*/
-
 static unsigned int
 find_hash_prime(unsigned int n)
 {
-	unsigned int nn = n * 1.2 * 2.1; // this magic is copied from UHASHnew
+	// TODO better size estimation
+	unsigned int nn = n * 1.2 * 2.1;
 	if (nn < HT_MIN_SIZE)
 		nn = HT_MIN_SIZE;
 	if (nn > HT_MAX_SIZE)
@@ -325,7 +308,6 @@ hp_rehash(hash_payload *hp)
 		ht_rehash(hp->parent);
 }
 
-/* X_nn:bat[:any1] := hash.new_payload(X_nn:bat[:any1], 42:lng, 42:lng, X_nn:bat[:any2]); */
 static str
 UHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
@@ -643,12 +625,10 @@ error:
 		} \
 	} while (0)
 
-/* (X_nn:bat[:oid], !X_nn:bat[:any1]) := hash.build_table(X_nn:bat[:any1], ptr); */
 static str
 UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
-	/* private or not */
 	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
 	str err = NULL;
 	BAT *u, *b = NULL;
@@ -1057,7 +1037,6 @@ error:
 		} \
 	} while (0)
 
-/* (X_nn:bat[:oid], !X_nn:bat[:any1]) := hash.build_combined_table(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:any2], ptr); */
 static str
 UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, bat *parent_ht, const ptr *H)
 {
@@ -1242,7 +1221,6 @@ error:
 	return err;
 }
 
-/* !X_nn:bat[:any1] := hash.compute_frequencies(X_nn:bat[:oid], ptr); */
 static str
 HASHcompute_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
 {
@@ -1260,8 +1238,6 @@ HASHcompute_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
 	}
 	hash_table *ht = (hash_table*)hts->T.sink;
 	assert(ht && ht->s.type == HASH_SINK);
-	//assert(p->wid < p->p->nr_workers);
-	//assert(ht->allocators && ht->allocators[p->wid]);
 
 	BUN cnt = BATcount(slt);
 	if (cnt) {
@@ -1307,8 +1283,6 @@ HASHcompute_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const 
 	}
 	hash_table *ht = (hash_table*)hts->T.sink;
 	assert(ht && ht->s.type == HASH_SINK);
-	//assert(p->wid < p->p->nr_workers);
-	//assert(ht->allocators && ht->allocators[p->wid]);
 
 	BUN cnt = BATcount(slt);
 	res = COLnew(slt->hseqbase, TYPE_oid, cnt, TRANSIENT);
@@ -1339,7 +1313,9 @@ HASHcompute_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const 
 
 	BBPunfix(slt->batCacheid);
 	BATsetcount(res, cnt);
-	BATnegateprops(res); // TODO check and indicate unique
+	/* payload_pos MUST always be unique. */
+	// TODO check and indicate unique
+	BATnegateprops(res);
 	*payload_pos = res->batCacheid;
 	BBPkeepref(res);
 	BBPkeepref(hts);
@@ -1511,7 +1487,7 @@ error:
 #define vhash() \
 	do { \
 		gid *hs = Tloc(h, 0); \
-		gid hsh = (gid)_hash_oid(k->tseqbase) /*& mask*/; \
+		gid hsh = (gid)_hash_oid(k->tseqbase); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = hsh; \
@@ -1524,7 +1500,7 @@ error:
 		gid *hs = Tloc(h, 0); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			hs[i] = (gid)_hash_##Type(ky[i]) /*& mask*/; \
+			hs[i] = (gid)_hash_##Type(ky[i]); \
 		} \
 	} while (0)
 
@@ -1534,11 +1510,10 @@ error:
 		gid *hs = Tloc(h, 0); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			hs[i] = (gid)_hash_##Type(*(((BaseType*)ky)+i)) /*& mask*/; \
+			hs[i] = (gid)_hash_##Type(*(((BaseType*)ky)+i)); \
 		} \
 	} while (0)
 
-/* X_nn:bat[:lng] := hash.hash(X_nn:bat[:any1]); */
 static str
 UHASHhash(bat *hsh, bat *key, const ptr *H)
 {
@@ -1560,8 +1535,6 @@ UHASHhash(bat *hsh, bat *key, const ptr *H)
 	}
 
 	if (cnt) {
-		//unsigned int mask = compute_mask(cnt);
-
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
@@ -1641,7 +1614,7 @@ error:
 		gid hsh = _hash_oid(k->tseqbase); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			hs[i] = (gid)combine(ps[i], hsh, prime) /* & mask */; \
+			hs[i] = (gid)combine(ps[i], hsh, prime); \
 		} \
 	} while (0)
 
@@ -1651,7 +1624,7 @@ error:
 		gid *hs = Tloc(h, 0); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			hs[i] = (gid)combine(ps[i], _hash_##Type(ky[sl[i]]), prime) /* & mask */; \
+			hs[i] = (gid)combine(ps[i], _hash_##Type(ky[sl[i]]), prime); \
 		} \
 	} while (0)
 
@@ -1661,11 +1634,10 @@ error:
 		gid *hs = Tloc(h, 0); \
 	\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			hs[i] = (gid)combine(ps[i], _hash_##Type(*(((BaseType*)ky)+sl[i])), prime) /* & mask */; \
+			hs[i] = (gid)combine(ps[i], _hash_##Type(*(((BaseType*)ky)+sl[i])), prime); \
 		} \
 	} while (0)
 
-/* X_nn:bat[:lng] := hash.combined_hash(X_nn:bat[:any1], X_nn:bat[:oid], X_nn:bat[:oid]); */
 static str
 UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const ptr *H)
 {
@@ -1694,7 +1666,6 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const 
 	if (cnt) {
 		oid  *sl = Tloc(s, 0);
 		gid  *ps = Tloc(p, 0);
-		//unsigned int mask = compute_mask(cnt);
 		unsigned int prime = find_hash_prime(cnt);
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1797,7 +1768,6 @@ error:
 		} \
 	} while (0)
 
-/* (X_nn:bat[:oid], X_nn:bat[:oid]) := hash.probe(X_nn:bat[:any1], X_nn:bat[:lng], X_nn:bat[:any2]); */
 static str
 UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, const ptr *H)
 {
@@ -1944,7 +1914,6 @@ error:
 		} \
 	} while (0)
 
-/* (X_nn:bat[:oid], X_nn:bat[:oid]) := hash.combined_probe(X_nn:bat[:any1], X_nn:bat[:lng], X_nn:bat[:oid], X_nn:bat[:any2]); */
 static str
 UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht, const ptr *H)
 {
