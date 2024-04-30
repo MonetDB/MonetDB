@@ -78,7 +78,7 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 
 	/* hash-table payload-columns */
 	*HSHres_hps = sa_list(sql->sa);
-	int previous = 0;
+	int previous = curhash;
 	for (node *n = exps_hsh_hp->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 
@@ -223,8 +223,8 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	     n = n->next, inout = inout->next) {
 		stmt *payload = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(payload); /* must find */
-		InstrPtr sink = inout->data;
-		stmt *hp = stmt_hash_add_payload(be, sink, payload, payload_pos, pp);
+		InstrPtr hp_sink = inout->data;
+		stmt *hp = stmt_hash_add_payload(be, hp_sink, payload, payload_pos, pp);
 		if (hp == NULL) return NULL;
 		append(l_hps, hp);
 	}

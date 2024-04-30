@@ -15,14 +15,14 @@ extern InstrPtr stmt_hash_new(backend *be, int tt, lng estimate, bit freq, int p
 extern InstrPtr stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent, int previous);
 extern InstrPtr stmt_hash_build_table(backend *be, int ht_sink, int key, stmt *pp);
 extern InstrPtr stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_sltid, int prnt_ht, stmt *pp);
-extern stmt *stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int payload_pos, stmt *pp);
+extern stmt *stmt_hash_add_payload(backend *be, InstrPtr hp_sink, stmt *payload, int payload_pos, stmt *pp);
 
 extern InstrPtr stmt_hash_hash(backend *be, int key, stmt *pp);
-extern InstrPtr stmt_hash_probe(backend *be, int key, int hsh, int rht, stmt *pp);
-extern InstrPtr stmt_hash_combined_hash(backend *be, int key, int sel, int prnt, stmt *pp);
-extern InstrPtr stmt_hash_combined_probe(backend *be, int key, int hsh, int sel, int rht, stmt *pp);
+extern InstrPtr stmt_hash_probe(backend *be, int lhs_key, int lhs_hsh, int rhs_ht, stmt *pp);
+extern InstrPtr stmt_hash_combined_hash(backend *be, int key, int sel, int prnt_sltid, stmt *pp);
+extern InstrPtr stmt_hash_combined_probe(backend *be, int lhs_key, int lhs_hsh, int lhs_sel, int rhs_ht, stmt *pp);
 extern InstrPtr stmt_hash_expand(backend *be, stmt *col, int sel, int slotid, int freq_sink, bit first, stmt *pp);
-extern InstrPtr stmt_hash_fetch_payload(backend *be, int slt, stmt* hp, int freq_sink, bit first, stmt *pp);
+extern InstrPtr stmt_hash_fetch_payload(backend *be, int slotid, stmt* hp_sink, int freq_sink, bit first, stmt *pp);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);

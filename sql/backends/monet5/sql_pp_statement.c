@@ -409,12 +409,13 @@ InstrPtr
 stmt_hash_new(backend *be, int tt, lng estimate, bit freq, int parent)
 {
 	InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(tt));
-	q = pushType(be->mb, q, tt);
+
 	assert (estimate >= 0);
+
+	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* ht_sink */
+	q = pushType(be->mb, q, tt);
 	q = pushInt(be->mb, q, (int)estimate);
 	q = pushBit(be->mb, q, freq);
 	if (parent)
@@ -423,41 +424,30 @@ stmt_hash_new(backend *be, int tt, lng estimate, bit freq, int parent)
 	return q;
 }
 
-/* Generates:
- *   pld            := hash.new_payload(tt,      nrSlts, pld_sz, parent,         previous)
- *   X_14:bat[:int] := hash.new_payload(nil:int, 42:int, 42:int, X_13:bat[:int], X_13:bat[:int]);
- * TODO previous is just a dummy parameter to work around the commomTerms optimiser
- */
 InstrPtr
 stmt_hash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent, int previous)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), new_payloadRef, 5);
 	if (q == NULL) return NULL;
 
-	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* hp_sink */
 	q = pushType(be->mb, q, tt);
 	q = pushLng(be->mb, q, nr_slots);
 	q = pushLng(be->mb, q, pld_size);
 	q = pushArgument(be->mb, q, parent);
-	if (!previous)
-		q = pushArgument(be->mb, q, parent);
-	else
-		q = pushArgument(be->mb, q, previous);
+	// TODO find a better way than 'previous' to work around the commomTerms optimiser
+	q = pushArgument(be->mb, q, previous);
 	pushInstruction(be->mb, q);
 	return q;
 }
 
-/* Generates:
- *   (slot_id,        ht_sink)         := hash.build_table(key,            PTR)
- *   (X_39:bat[:oid], !X_12:bat[:int]) := hash.build_table(X_37:bat[:int], X_20:ptr);
- */
 InstrPtr
 stmt_hash_build_table(backend *be, int ht_sink, int key, stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("build_table"), 4);
 	if (q == NULL) return NULL;
 
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
 	q = pushReturn(be->mb, q, ht_sink);
 	q = pushArgument(be->mb, q, key);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
@@ -466,17 +456,13 @@ stmt_hash_build_table(backend *be, int ht_sink, int key, stmt *pp)
 	return q;
 }
 
-/* Generates:
- *   (slot_id,        ht_sink)         := hash.build_combined_table(key,            parent_slotid,  parent_ht,      PTR)
- *   (X_40:bat[:oid], !X_13:bat[:int]) := hash.build_combined_table(X_38:bat[:int], X_39:bat[:oid], X_12:bat[:int], X_20:ptr);
- */
 InstrPtr
 stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_slts, int prnt_ht, stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("build_combined_table"), 6);
 	if (q == NULL) return NULL;
 
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
 	q = pushReturn(be->mb, q, ht_sink);
 	q = pushArgument(be->mb, q, key);
 	q = pushArgument(be->mb, q, prnt_slts);
@@ -488,7 +474,7 @@ stmt_hash_build_combined_table(backend *be, int ht_sink, int key, int prnt_slts,
 }
 
 stmt *
-stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int payload_pos, stmt *pp)
+stmt_hash_add_payload(backend *be, InstrPtr hp_sink, stmt *payload, int payload_pos, stmt *pp)
 {
 	MalBlkPtr mb = be->mb;
 	mvc *sql = be->mvc;
@@ -499,7 +485,7 @@ stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int payload_
 
 	int tt = tail_type(payload)->type->localtype;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
-	getArg(q, 0) = *ht_sink->argv;
+	getArg(q, 0) = *hp_sink->argv;
 	q = pushArgument(mb, q, payload->nr);
 	q = pushArgument(mb, q, payload_pos);
 	q = pushArgument(mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
@@ -528,81 +514,63 @@ stmt_hash_add_payload(backend *be, InstrPtr ht_sink, stmt *payload, int payload_
 	return NULL;
 }
 
-/* Generates:
- *   hsh            := hash.hash(key,            PTR)
- *   X_76:bat[:lng] := hash.hash(X_73:bat[:int], X_48:ptr);
- */
 InstrPtr
 stmt_hash_hash(backend *be, int key, stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("hash"), 3);
 	if (q == NULL)
 		return NULL;
+
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_lng)); /* hsh */
 	q = pushArgument(be->mb, q, key);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_lng));
 	pushInstruction(be->mb, q);
 	return q;
 }
 
-/* Generates:
- *   # LHS_matched: OIDs of the matched items of LHS_key
- *   # RHS_slotid: for each LHS_matched, the slot_id of its counterpart in RHS,
- *   #             hence |LHS_matched| == |RHS_slotid|
- *   (LHS_matched,     RHS_slotid)    := hash.probe(LHS_key,        LHS_hash,       RHS_ht,         PTR)
- *   (X_77:bat[:oid], X_78:bat[:oid]) := hash.probe(X_73:bat[:int], X_76:bat[:lng], X_12:bat[:int], X_48:PTR);
- */
 InstrPtr
-stmt_hash_probe(backend *be, int key, int hsh, int rht, stmt *pp)
+stmt_hash_probe(backend *be, int lhs_key, int lhs_hsh, int rhs_ht, stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("probe"), 6);
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
-	q = pushArgument(be->mb, q, key);
-	q = pushArgument(be->mb, q, hsh);
-	q = pushArgument(be->mb, q, rht);
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* LHS_matched */
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid))); /* RHS_slotid */
+	q = pushArgument(be->mb, q, lhs_key);
+	q = pushArgument(be->mb, q, lhs_hsh);
+	q = pushArgument(be->mb, q, rhs_ht);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 	return q;
 }
 
-/* Generates:
- *   hsh            := hash.combined_hash(LHS_key,        LHS_selected,   RHS_prnt_slotid, PTR)
- *   X_79:bat[:lng] := hash.combined_hash(X_74:bat[:int], X_77:bat[:oid], X_78:bat[:oid],  X_48:PTR);
- */
 InstrPtr
-stmt_hash_combined_hash(backend *be, int key, int sel, int prnt, stmt *pp)
+stmt_hash_combined_hash(backend *be, int key, int sel, int prnt_sltid, stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("combined_hash"), 5);
 	if (q == NULL)
 		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_lng)); /* hsh */
 	q = pushArgument(be->mb, q, key);
 	q = pushArgument(be->mb, q, sel);
-	q = pushArgument(be->mb, q, prnt);
+	q = pushArgument(be->mb, q, prnt_sltid);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_lng));
 	pushInstruction(be->mb, q);
 	return q;
 }
 
-/* Generates:
- *   (LHS_matched,    RHS_slotid)     := hash.combined_probe(LHS_key,        LHS_hash,       LHS_selected,    RHS_ht,         PTR)
- *   (X_80:bat[:oid], X_81:bat[:oid]) := hash.combined_probe(X_74:bat[:int], X_79:bat[:lng], X_77:bat[:oid],  X_13:bat[:int], X_48:PTR);
- */
 InstrPtr
-stmt_hash_combined_probe(backend *be, int key, int hsh, int sel, int rht, stmt *pp)
+stmt_hash_combined_probe(backend *be, int lhs_key, int lhs_hsh, int lhs_sel, int rhs_ht, stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("combined_probe"), 7);
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
-	q = pushArgument(be->mb, q, key);
-	q = pushArgument(be->mb, q, hsh);
-	q = pushArgument(be->mb, q, sel);
-	q = pushArgument(be->mb, q, rht);
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* LHS_matched */
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid))); /* RHS_slotid */
+	q = pushArgument(be->mb, q, lhs_key);
+	q = pushArgument(be->mb, q, lhs_hsh);
+	q = pushArgument(be->mb, q, lhs_sel);
+	q = pushArgument(be->mb, q, rhs_ht);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 	return q;
@@ -616,8 +584,8 @@ stmt_hash_expand(backend *be, stmt *col, int sel, int slotid, int freq_sink, bit
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("expand"), 8);
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* pos */
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt))); /* expanded */
 	q = pushArgument(be->mb, q, col->nr);
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, slotid);
@@ -629,17 +597,17 @@ stmt_hash_expand(backend *be, stmt *col, int sel, int slotid, int freq_sink, bit
 }
 
 InstrPtr
-stmt_hash_fetch_payload(backend *be, int slt, stmt *hp, int freq_sink, bit first, stmt *pp)
+stmt_hash_fetch_payload(backend *be, int slotid, stmt *hp_sink, int freq_sink, bit first, stmt *pp)
 {
-	int tt = tail_type(hp)->type->localtype;
+	int tt = tail_type(hp_sink)->type->localtype;
 
 	InstrPtr q = newStmtArgs(be->mb, putName("hash"), putName("fetch_payload"), 6);
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
-	q = pushArgument(be->mb, q, slt);
-	q = pushArgument(be->mb, q, hp->nr);
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* pos */
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt))); /* payload */
+	q = pushArgument(be->mb, q, slotid);
+	q = pushArgument(be->mb, q, hp_sink->nr);
 	q = pushArgument(be->mb, q, freq_sink);
 	q = pushBit(be->mb, q, first);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);

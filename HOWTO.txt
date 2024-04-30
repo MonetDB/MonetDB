@@ -42,17 +42,32 @@ select r1, count(l1), sum(s1)  from l, r, s where r1 = l1 and r1 = s1 group by r
 3.1 load your own tpc-h data, probably an SF smaller than 1GB
 3.2 remove the keys:
 
-alter table orders rename to orders_key;
 alter table customer rename to customer_key;
 alter table lineitem rename to lineitem_key;
+alter table nation   rename to nation_key;
+alter table orders   rename to orders_key;
+alter table part     rename to part_key;
+alter table partsupp rename to partsupp_key;
+alter table region   rename to region_key;
+alter table supplier rename to supplier_key;
 
-create table orders (like orders_key);
 create table customer (like customer_key);
 create table lineitem (like lineitem_key);
+create table nation   (like nation_key);
+create table orders   (like orders_key);
+create table part     (like part_key);
+create table partsupp (like partsupp_key);
+create table region   (like region_key);
+create table supplier (like supplier_key);
 
-insert into orders select * from orders_key;
 insert into customer select * from customer_key;
 insert into lineitem select * from lineitem_key;
+insert into nation   select * from nation_key;
+insert into orders   select * from orders_key;
+insert into part     select * from part_key;
+insert into partsupp select * from partsupp_key;
+insert into region   select * from region_key;
+insert into supplier select * from supplier_key;
 
 3.3 run 03.sql:
 
