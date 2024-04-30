@@ -1,20 +1,35 @@
 statement ok
-create table bar (i int, j int CHECK (j > 0));
+create table foo (i int CHECK (i > 0), j int CHECK (j > 0))
 
 statement ok
-insert into bar values (1,10), (2, 20), (3, 30);
+insert into foo values (1,10), (2, 20), (3, 30)
 
 statement error
-update bar set j = -30 where i = 3;
+update foo set j = -30 where i = 3
 
 statement error
-update bar set j = -j;
+update foo set j = -j
 
 statement error
-insert into bar values (4, -40);
+insert into foo values (4, -40)
 
 statement ok
-insert into bar select * from bar
+insert into foo select * from foo
 
 statement error
-insert into bar select 4, -40;
+insert into foo select 4, -40
+
+statement ok
+create table bar (i int, j int, constraint check_i_j CHECK (i < j))
+
+statement error
+insert into bar values (30, 20)
+
+statement ok
+insert into bar values (10,20), (20, 30), (30, 40)
+
+statement error
+update bar set i = 50 where i = 30
+
+statement error
+update bar set i = 50, j = 40 where i = 30
