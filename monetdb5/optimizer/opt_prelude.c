@@ -176,7 +176,6 @@ const char *mulRef;
 const char *multiplexRef;
 const char *mvcRef;
 const char *newRef;
-const char *new_payloadRef;
 const char *nextRef;
 const char *no_slicesRef;
 const char *not_likeRef;
@@ -441,7 +440,6 @@ optimizerInit(void)
 	multiplexRef = putName("multiplex");
 	mvcRef = putName("mvc");
 	newRef = putName("new");
-	new_payloadRef = putName("new_payload");
 	nextRef = putName("next");
 	no_slicesRef = putName("no_slices");
 	not_likeRef = putName("not_like");

@@ -427,7 +427,7 @@ stmt_oahash_new(backend *be, int tt, lng estimate, bit freq, int parent)
 InstrPtr
 stmt_oahash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent, int previous)
 {
-	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), new_payloadRef, 5);
+	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("new_payload"), 5);
 	if (q == NULL) return NULL;
 
 	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* hp_sink */
