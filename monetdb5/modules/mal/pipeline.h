@@ -8,16 +8,6 @@
 
 #ifndef _PIPELINE_H_
 #define _PIPELINE_H_
-//#include "monetdb_config.h"
-//#include "gdk.h"
-//#include "gdk_atoms.h"
-//#include "gdk_time.h"
-//#include "mal_exception.h"
-//#include "mal_interpreter.h"
-//#include "mal_pipelines.h"
-//#include "pp_mem.h"
-//#include "pp_hash.h"
-//#include "algebra.h"
 
 #define pipeline_lock(p) MT_lock_set(&p->p->l)
 #define pipeline_unlock(p) MT_lock_unset(&p->p->l)
