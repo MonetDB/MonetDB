@@ -24,7 +24,7 @@
 	{ 										\
 		p->p->status = 1; 							\
 		ht_rehash(ht); 								\
-		err = createException(MAL, "hash.rehash", "hash table needs rehash"); 	\
+		err = createException(MAL, "oahash.rehash", "hash table needs rehash"); 	\
 		break; 									\
 	}
 

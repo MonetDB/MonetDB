@@ -211,7 +211,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 					estimate = 85000000;
 				}
 
-				InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, false, 0); /* pushed already */
+				InstrPtr q = stmt_oahash_new(be, t->type->localtype, estimate, false, 0); /* pushed already */
 				if (q == NULL)
 					return NULL;
 				assert(!e->shared);
@@ -245,7 +245,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			if (card > INT_MAX)
 				card = INT_MAX;
 
-			InstrPtr q = stmt_hash_new(be, t->type->localtype, card, false, curhash);
+			InstrPtr q = stmt_oahash_new(be, t->type->localtype, card, false, curhash);
 			if (q == NULL)
 				return NULL;
 			curhash = getArg(q,0);
@@ -298,7 +298,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 					estimate = (lng) est;
 				}
 
-				InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, false, curhash);
+				InstrPtr q = stmt_oahash_new(be, t->type->localtype, estimate, false, curhash);
 				if (q == NULL)
 					return NULL;
 				assert(!e->shared);

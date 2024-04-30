@@ -69,7 +69,7 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 		bit freq = (n->next == NULL); /* last ht also computes frequencies */
 
-		InstrPtr q = stmt_hash_new(be, t->type->localtype, hsh_est * 1.1, freq, curhash);
+		InstrPtr q = stmt_oahash_new(be, t->type->localtype, hsh_est * 1.1, freq, curhash);
 		if (q == NULL) return err;
 		q->inout = 0;
 		curhash = getArg(q, 0);
@@ -83,7 +83,7 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 
 		// TODO better and separate est. for nr_slots and pld_size
-		InstrPtr q = stmt_hash_new_payload(be, t->type->localtype, hsh_est * 1.1, hsh_est * 1.1, curhash, previous);
+		InstrPtr q = stmt_oahash_new_payload(be, t->type->localtype, hsh_est * 1.1, hsh_est * 1.1, curhash, previous);
 		if (q == NULL) return err;
 		q->inout = 0;
 		append(*HSHres_hps, q);
@@ -184,9 +184,9 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		int key = k->nr;
 		InstrPtr q = NULL;
 		if (prnt_slts == 0) {
-			q = stmt_hash_build_table(be, sink, key, pp);
+			q = stmt_oahash_build_table(be, sink, key, pp);
 		} else {
-			q = stmt_hash_build_combined_table(be, sink, key, prnt_slts, prnt_ht, pp);
+			q = stmt_oahash_build_combined_table(be, sink, key, prnt_slts, prnt_ht, pp);
 		}
 		if (q == NULL) return NULL;
 		prnt_slts = getDestVar(q);
@@ -199,8 +199,8 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	assert(prnt_slts && prnt_ht); /* must be set */
 
 	// TODO put this in a function? and pass (stmt *) iso numbers?
-	/* START hash.compute_frequencies() with or without payload_pos */
-	InstrPtr stmt_freq = newStmt(be->mb, putName("hash"), putName("compute_frequencies"));
+	/* START oahash.compute_frequencies() with or without payload_pos */
+	InstrPtr stmt_freq = newStmt(be->mb, putName("oahash"), putName("compute_frequencies"));
 	if (stmt_freq == NULL)
 		return NULL;
 	if (hsh_hps->cnt == 0) {
@@ -224,7 +224,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		stmt *payload = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(payload); /* must find */
 		InstrPtr hp_sink = inout->data;
-		stmt *hp = stmt_hash_add_payload(be, hp_sink, payload, payload_pos, pp);
+		stmt *hp = stmt_oahash_add_payload(be, hp_sink, payload, payload_pos, pp);
 		if (hp == NULL) return NULL;
 		append(l_hps, hp);
 	}
@@ -266,13 +266,13 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		int rht = getDestVar((InstrPtr)m->data);
 		InstrPtr q = NULL;
 		if (!matched) {
-			q = stmt_hash_hash(be, key, pp);
+			q = stmt_oahash_hash(be, key, pp);
 			if (q == NULL) return NULL;
-			q = stmt_hash_probe(be, key, getDestVar(q), rht, pp);
+			q = stmt_oahash_probe(be, key, getDestVar(q), rht, pp);
 		} else {
-			q = stmt_hash_combined_hash(be, key, matched, rhs_slts, pp);
+			q = stmt_oahash_combined_hash(be, key, matched, rhs_slts, pp);
 			if (q == NULL) return NULL;
-			q = stmt_hash_combined_probe(be, key, getDestVar(q), matched, rht, pp);
+			q = stmt_oahash_combined_probe(be, key, getDestVar(q), matched, rht, pp);
 		}
 		if (q == NULL) return NULL;
 		matched = getArg(q, 0);
@@ -286,13 +286,13 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	list *l = sa_list(sql->sa);
 	//list *lh = sa_list(sql->sa); /* fetch hash-side values */
 	for (node *n = HSHres_hps->h, *o = hsh_hps->h; n && o; n = n->next, o = o->next) {
-		InstrPtr q = stmt_hash_fetch_payload(be, rhs_slts, n->data, prnt_ht, first, pp);
+		InstrPtr q = stmt_oahash_fetch_payload(be, rhs_slts, n->data, prnt_ht, first, pp);
 		if (q == NULL) return NULL;
 		first = 0;
 
 		/* TODO: once we're sure that the `pos` result of a
-		   hash.fetch_payload() is not needed,the following code should be
-		   integrated into stmt_hash_fetch_payload and cleaned up
+		   oahash.fetch_payload() is not needed,the following code should be
+		   integrated into stmt_oahash_fetch_payload and cleaned up
 		*/
 		sql_exp *e = o->data;
 		stmt *s = stmt_none(be);
@@ -308,13 +308,13 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	for (node *n = prb_hps->h; n; n = n->next) {
 		stmt *key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
-		InstrPtr q = stmt_hash_expand(be, key, matched, rhs_slts, prnt_ht, first, pp);
+		InstrPtr q = stmt_oahash_expand(be, key, matched, rhs_slts, prnt_ht, first, pp);
 		if (q == NULL) return NULL;
 		first = 0;
 
 		/* TODO: once we're sure that the `pos` result of a
-		   hash.expand() is not needed,the following code should be
-		   integrated into stmt_hash_expand and cleaned up
+		   oahash.expand() is not needed,the following code should be
+		   integrated into stmt_oahash_expand and cleaned up
 		*/
 		sql_exp *e = n->data;
 		stmt *s = stmt_none(be);

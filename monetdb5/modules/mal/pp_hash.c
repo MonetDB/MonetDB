@@ -183,7 +183,7 @@ ht_rehash(hash_table *ht)
 }
 
 static str
-UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
+OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	(void)cntxt;
 
@@ -200,20 +200,20 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (p->argc == 5) {
 		bat pid = *getArgReference_bat(s, p, 4);
 		if ((pht = BATdescriptor(pid)) == NULL)
-			return createException(MAL, "hash.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			return createException(MAL, "oahash.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		parent = (hash_table*)pht->T.sink;
 	}
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
 	if (b == NULL) {
 		BBPreclaim(pht);
-		return createException(MAL, "hash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	b->T.sink = (Sink*)ht_create(tt, size*1.2*2.1, freq, parent);
 	BBPreclaim(pht);
 	if (b->T.sink == NULL) {
 		BBPunfix(b->batCacheid);
-		return createException(MAL, "hash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*res = b->batCacheid;
 	BBPkeepref(b);
@@ -309,7 +309,7 @@ hp_rehash(hash_payload *hp)
 }
 
 static str
-UHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
+OAHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	(void)cntxt;
 
@@ -322,18 +322,18 @@ UHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
 	if (b == NULL)
-		return createException(MAL, "hash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return createException(MAL, "oahash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	BAT *prnt = BATdescriptor(pid);
 	if (prnt == NULL) {
-		err = createException(MAL, "hash.new_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "oahash.new_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	hash_table *parent = (hash_table*)prnt->T.sink;
 
 	b->T.sink = (Sink *)hp_create(tt, nslots*1.2*2.1, nplds*1.2*2.1, parent);
 	if (!b->T.sink) {
-		err = createException(MAL, "hash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(MAL, "oahash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 	BBPunfix(prnt->batCacheid);
@@ -626,7 +626,7 @@ error:
 	} while (0)
 
 static str
-UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
+OAHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
@@ -635,17 +635,17 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 
    	b = BATdescriptor(*key);
 	if (!b)
-		return createException(SQL, "hash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		return createException(SQL, "oahash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (private && *ht_sink && is_bat_nil(*ht_sink)) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		if (!u) {
-			err = createException(MAL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		// TODO: when do we need 'freq'?
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, NULL);
 		if (u->T.sink == NULL) {
-			err = createException(MAL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		u->T.private_bat = 1;
@@ -654,7 +654,7 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 	}
 	if (!u) {
 		BBPunfix(*key);
-		return createException(SQL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return createException(SQL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	private = u->T.private_bat;
 
@@ -671,7 +671,7 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
 			if (!h->allocators) {
 				pipeline_unlock(p);
-				err = createException(MAL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			} else
 				h->nr_allocators = p->p->nr_workers;
@@ -681,7 +681,7 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = ma_create();
 			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -698,7 +698,7 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 		BUN cnt = BATcount(b);
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 		if (g == NULL) {
-			err = createException(MAL, "hash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 
@@ -759,10 +759,10 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 				}
 				break;
 			default:
-				err = createException(MAL, "hash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "oahash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 			}
 			if (!err)
-				TIMEOUT_CHECK(qry_ctx, throw(MAL, "hash.build_table", RUNTIME_QRY_TIMEOUT));
+				TIMEOUT_CHECK(qry_ctx, throw(MAL, "oahash.build_table", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
 			BBPunfix(g->batCacheid);
@@ -770,7 +770,7 @@ UHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 			 * p->p->status doesn't carry much info. yet.
 			 */
 			if (!err)
-				err = createException(MAL, "hash.build_table", "pipeline execution error");
+				err = createException(MAL, "oahash.build_table", "pipeline execution error");
 			goto error;
 		}
 		BATsetcount(g, cnt);
@@ -1038,7 +1038,7 @@ error:
 	} while (0)
 
 static str
-UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, bat *parent_ht, const ptr *H)
+OAHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, bat *parent_ht, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
@@ -1048,19 +1048,19 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 	BAT *b = BATdescriptor(*key);
 	BAT *G = BATdescriptor(*parent_slotid);
 	if (!b || !G) {
-		err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (private && *ht_sink && is_bat_nil(*ht_sink)) { /* TODO ... create but how big ??? */
 		BAT *H = BATdescriptor(*parent_ht);
 		if (!H) {
-			err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		if (!u) {
 			BBPunfix(H->batCacheid);
-			err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		/* Lookup parent hash */
@@ -1068,7 +1068,7 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, (hash_table*)H->T.sink);
 		if (u->T.sink == NULL) {
 			BBPunfix(H->batCacheid);
-			err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		u->T.private_bat = 1;
@@ -1076,7 +1076,7 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 	} else {
 		u = BATdescriptor(*ht_sink);
 		if (!u) {
-			err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -1095,7 +1095,7 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
 			if (!h->allocators) {
 				pipeline_unlock(p);
-				err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			} else
 				h->nr_allocators = p->p->nr_workers;
@@ -1105,7 +1105,7 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 		if (!h->allocators[p->wid]) {
 			h->allocators[p->wid] = ma_create();
 			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -1121,7 +1121,7 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 		BUN cnt = BATcount(b);
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 		if (g == NULL) {
-			err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 
@@ -1186,15 +1186,15 @@ UHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slot
 				}
 				break;
 			default:
-				err = createException(MAL, "hash.build_combined_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 			}
 			if (!err)
-				TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.build_combined_table", RUNTIME_QRY_TIMEOUT));
+				TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.build_combined_table", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
 			BBPunfix(g->batCacheid);
 			if (!err)
-				err = createException(MAL, "hash.build_combined_table", "pipeline execution error");
+				err = createException(MAL, "oahash.build_combined_table", "pipeline execution error");
 			goto error;
 		}
 		BATsetcount(g, cnt);
@@ -1222,7 +1222,7 @@ error:
 }
 
 static str
-HASHcompute_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
+OAHASHcompute_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	str err = NULL;
@@ -1233,7 +1233,7 @@ HASHcompute_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
 	hts = BATdescriptor(*ht_sink);
 	slt = BATdescriptor(*slot_id);
 	if (!hts || !slt) {
-		err = createException(MAL, "hash.compute_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "oahash.compute_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	hash_table *ht = (hash_table*)hts->T.sink;
@@ -1249,11 +1249,11 @@ HASHcompute_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 			ATOMIC_INC(&freqs[sltid[i]]);
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.compute_frequencies", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.compute_frequencies", RUNTIME_QRY_TIMEOUT));
 	}
 	if (err || p->p->status) {
 		if (!err)
-			err = createException(MAL, "hash.compute_frequencies", "pipeline execution error");
+			err = createException(MAL, "oahash.compute_frequencies", "pipeline execution error");
 		goto error;
 	}
 
@@ -1267,7 +1267,7 @@ error:
 }
 
 static str
-HASHcompute_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr *H)
+OAHASHcompute_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	str err = NULL;
@@ -1278,7 +1278,7 @@ HASHcompute_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const 
 	hts = BATdescriptor(*ht_sink);
 	slt = BATdescriptor(*slot_id);
 	if (!hts || !slt) {
-		err = createException(MAL, "hash.compute_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "oahash.compute_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	hash_table *ht = (hash_table*)hts->T.sink;
@@ -1287,7 +1287,7 @@ HASHcompute_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const 
 	BUN cnt = BATcount(slt);
 	res = COLnew(slt->hseqbase, TYPE_oid, cnt, TRANSIENT);
 	if (!res) {
-			err = createException(MAL, "hash.compute_frequencies", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "oahash.compute_frequencies", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 	}
 	if (cnt) {
@@ -1303,11 +1303,11 @@ HASHcompute_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const 
 			/* TODO: how can we make sure the result hash is unique? */
 			ppos[i] = (gid)combine(old_freq, _hash_lng(sltid[i]), prime)&ht->mask;
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.compute_frequencies", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.compute_frequencies", RUNTIME_QRY_TIMEOUT));
 	}
 	if (err || p->p->status) {
 		if (!err)
-			err = createException(MAL, "hash.compute_frequencies", "pipeline execution error");
+			err = createException(MAL, "oahash.compute_frequencies", "pipeline execution error");
 		goto error;
 	}
 
@@ -1335,7 +1335,7 @@ error:
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			if (ppos[i] >= (gid)hp->nr_slots) { \
 				hp->rehash = 1; \
-				err = createException(MAL, "hash.add_payload", "hash payload needs rehash"); \
+				err = createException(MAL, "oahash.add_payload", "hash payload needs rehash"); \
 				goto error; \
 			} \
 			hpvals[ppos[i]] = pvals[i]; \
@@ -1343,7 +1343,7 @@ error:
 	} while (0)
 
 static str
-HASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
+OAHASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool local_storage = false;
@@ -1356,7 +1356,7 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 	pld = BATdescriptor(*payload);
 	pos = BATdescriptor(*payload_pos);
 	if (!res || !pld || !pos) {
-		err = createException(MAL, "hash.add_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "oahash.add_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	assert(BATcount(pld) == BATcount(pos));
@@ -1375,7 +1375,7 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 			hp->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
 			if (!hp->allocators) {
 				pipeline_unlock(p);
-				err = createException(MAL, "hash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "oahash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			} else
 				hp->nr_allocators = p->p->nr_workers;
@@ -1385,7 +1385,7 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 		if (!hp->allocators[p->wid]) {
 			hp->allocators[p->wid] = ma_create();
 			if (!hp->allocators[p->wid]) {
-				err = createException(MAL, "hash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "oahash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -1411,7 +1411,7 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 				// TODO not sure if this is the correct way to handle TYPE_void, so give an error for now
 				//((oid*)hp->payload)[0] = pld->tseqbase;
 				//break;
-				err =  createException(MAL, "hash.add_payload", "TODO: TYPE_void");
+				err =  createException(MAL, "oahash.add_payload", "TODO: TYPE_void");
 				goto error;
 			case TYPE_bit:
 				addpld(bit);
@@ -1459,17 +1459,17 @@ HASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 				//}
 				//break;
 				(void) local_storage;
-				err =  createException(MAL, "hash.add_payload", "TODO: TYPE_str");
+				err =  createException(MAL, "oahash.add_payload", "TODO: TYPE_str");
 				goto error;
 			default:
-				err = createException(MAL, "hash.add_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "oahash.add_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.add_payload", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.add_payload", RUNTIME_QRY_TIMEOUT));
 	}
 	if (err || p->p->status) {
 		if (!err)
-			err = createException(MAL, "hash.add_payload", "pipeline execution error");
+			err = createException(MAL, "oahash.add_payload", "pipeline execution error");
 		goto error;
 	}
 
@@ -1515,7 +1515,7 @@ error:
 	} while (0)
 
 static str
-UHASHhash(bat *hsh, bat *key, const ptr *H)
+OAHASHhash(bat *hsh, bat *key, const ptr *H)
 {
 	BAT *h = NULL, *k = NULL;
 	BUN cnt;
@@ -1525,12 +1525,12 @@ UHASHhash(bat *hsh, bat *key, const ptr *H)
 
 	k = BATdescriptor(*key);
 	if (!k)
-		return createException(SQL, "hash.hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		return createException(SQL, "oahash.hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	cnt = BATcount(k);
 	h = COLnew(k->hseqbase, TYPE_lng, cnt, TRANSIENT);
 	if (!h) {
-		err = createException(SQL, "hash.hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "oahash.hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 
@@ -1587,13 +1587,13 @@ UHASHhash(bat *hsh, bat *key, const ptr *H)
 				//	ahash(str);
 				//}
 				//break;
-				err =  createException(MAL, "hash.hash", "TODO: TYPE_str");
+				err =  createException(MAL, "oahash.hash", "TODO: TYPE_str");
 				goto error;
 			default:
-				err = createException(MAL, "hash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "oahash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.hash", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.hash", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -1639,7 +1639,7 @@ error:
 	} while (0)
 
 static str
-UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const ptr *H)
+OAHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const ptr *H)
 {
 	BAT *h = NULL, *k = NULL, *s = NULL, *p = NULL;
 	BUN cnt;
@@ -1651,7 +1651,7 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const 
 	s = BATdescriptor(*selected);
 	p = BATdescriptor(*parent_slotid);
 	if (!k || !s || !p) {
-		err = createException(SQL, "hash.combined_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(SQL, "oahash.combined_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
@@ -1659,7 +1659,7 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const 
 	cnt = BATcount(s);
 	h = COLnew(k->hseqbase, TYPE_lng, cnt, TRANSIENT);
 	if (!h) {
-		err = createException(SQL, "hash.combined_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "oahash.combined_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 
@@ -1720,13 +1720,13 @@ UHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const 
 				//	ahash_combined(str);
 				//}
 				//break;
-				err =  createException(MAL, "hash.combined_hash", "TODO: TYPE_str");
+				err =  createException(MAL, "oahash.combined_hash", "TODO: TYPE_str");
 				goto error;
 			default:
-				err = createException(MAL, "hash.combined_hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "oahash.combined_hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.combined_hash", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.combined_hash", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -1769,7 +1769,7 @@ error:
 	} while (0)
 
 static str
-UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, const ptr *H)
+OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, const ptr *H)
 {
 	BAT *m = NULL, *s = NULL, *k = NULL, *h = NULL, *t = NULL;
 	BUN keycnt, mtdcnt = 0;
@@ -1781,7 +1781,7 @@ UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *
 	h = BATdescriptor(*LHS_hash);
 	t = BATdescriptor(*RHS_ht);
 	if (!k || !h || !t) {
-		err = createException(SQL, "hash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
@@ -1789,7 +1789,7 @@ UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *
 	m = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
 	s = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
 	if (!m || !s) {
-		err = createException(SQL, "hash.probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "oahash.probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 
@@ -1804,7 +1804,7 @@ UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *
 			case TYPE_void:
 				//vprobe();
 				//break;
-				err =  createException(MAL, "hash.probe", "TODO: TYPE_void");
+				err =  createException(MAL, "oahash.probe", "TODO: TYPE_void");
 				goto error;
 			case TYPE_bit:
 				probe(bit);
@@ -1851,13 +1851,13 @@ UHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *
 				//	aprobe(str);
 				//}
 				//break;
-				err =  createException(MAL, "hash.probe", "TODO: TYPE_str");
+				err =  createException(MAL, "oahash.probe", "TODO: TYPE_str");
 				goto error;
 			default:
-				err = createException(MAL, "hash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "oahash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.probe", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.probe", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -1915,7 +1915,7 @@ error:
 	} while (0)
 
 static str
-UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht, const ptr *H)
+OAHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht, const ptr *H)
 {
 	BAT *res_m = NULL, *res_s = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
@@ -1928,7 +1928,7 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 	m = BATdescriptor(*LHS_selected);
 	t = BATdescriptor(*RHS_ht);
 	if (!k || !h || !m || !t) {
-		err = createException(SQL, "hash.combined_probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(SQL, "oahash.combined_probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
@@ -1936,7 +1936,7 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 	res_m = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
 	res_s = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
 	if (!res_m || !res_s) {
-		err = createException(SQL, "hash.combined_probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "oahash.combined_probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 
@@ -1950,7 +1950,7 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 			case TYPE_void:
 				//vcombined_probe();
 				//break;
-				err =  createException(MAL, "hash.combined_probe", "TODO: TYPE_void");
+				err =  createException(MAL, "oahash.combined_probe", "TODO: TYPE_void");
 				goto error;
 			case TYPE_bit:
 				combined_probe(bit);
@@ -1997,13 +1997,13 @@ UHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_ha
 				//	acombined_probe(str);
 				//}
 				//break;
-				err =  createException(MAL, "hash.combined_probe", "TODO: TYPE_str");
+				err =  createException(MAL, "oahash.combined_probe", "TODO: TYPE_str");
 				goto error;
 			default:
-				err = createException(MAL, "hash.combined_probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "oahash.combined_probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.combined_probe", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.combined_probe", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -2058,7 +2058,7 @@ error:
 	} while (0)
 
 static str
-HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *first, const ptr *H)
+OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *first, const ptr *H)
 {
 	BAT *o = NULL, *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
 	BUN cnt, rescnt = 0;
@@ -2069,7 +2069,7 @@ HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *f
 	l = BATdescriptor(*slotid);
 	h = BATdescriptor(*freq_sink);
 	if (!k || !s || !l || !h) {
-		err = createException(SQL, "hash.expand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(SQL, "oahash.expand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
@@ -2085,7 +2085,7 @@ HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *f
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 			rescnt += ht->frequency[sid[i]];
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.expand", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -2093,7 +2093,7 @@ HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *f
 	int tt = k->ttype;
 	e = COLnew(k->hseqbase, tt?tt:TYPE_oid, rescnt, TRANSIENT);
 	if (!e) {
-		err = createException(SQL, "hash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 
@@ -2150,13 +2150,13 @@ HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *f
 				//	aexpand(str);
 				//}
 				//break;
-				err =  createException(MAL, "hash.expand", "TODO: TYPE_str");
+				err =  createException(MAL, "oahash.expand", "TODO: TYPE_str");
 				goto error;
 			default:
-				err = createException(MAL, "hash.expand", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "oahash.expand", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.expand", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 
@@ -2169,7 +2169,7 @@ HASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *f
 	oid tseq = (*first)? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
 	o = BATdense(0, tseq, rescnt);
 	if (!o) {
-		err = createException(SQL, "hash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 	o->T.maxval = tseq + rescnt;
@@ -2223,7 +2223,7 @@ error:
 	} while (0)
 
 static str
-HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq_sink, bit *first, const ptr *H)
+OAHASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq_sink, bit *first, const ptr *H)
 {
 	BAT *o = NULL, *p = NULL, *l = NULL, *hps = NULL, *hts = NULL;
 	BUN cnt, rescnt =  0;
@@ -2233,7 +2233,7 @@ HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq_s
 	hps = BATdescriptor(*hp_sink);
 	hts = BATdescriptor(*freq_sink);
 	if (!l || !hps || !hts) {
-		err = createException(SQL, "hash.fetch_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
@@ -2247,7 +2247,7 @@ HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq_s
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 			rescnt += ht->frequency[sid[i]];
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.fetch_payload", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.fetch_payload", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -2255,7 +2255,7 @@ HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq_s
 	int tt = hp->type;
 	p = COLnew(hps->hseqbase, tt?tt:TYPE_oid, rescnt, TRANSIENT);
 	if (!p) {
-		err = createException(SQL, "hash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 
@@ -2311,13 +2311,13 @@ HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq_s
 				//	afetch(str);
 				//}
 				//break;
-				err =  createException(MAL, "hash.fetch_payload", "TODO: TYPE_str");
+				err =  createException(MAL, "oahash.fetch_payload", "TODO: TYPE_str");
 				goto error;
 			default:
-				err = createException(MAL, "hash.fetch_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				err = createException(MAL, "oahash.fetch_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				goto error;
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "hash.fetch_payload", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.fetch_payload", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 
@@ -2330,7 +2330,7 @@ HASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq_s
 	oid tseq = (*first)? ATOMIC_ADD(&hps->T.maxval, rescnt) : 0;
 	o = BATdense(0, tseq, rescnt);
 	if (!o) {
-		err = createException(SQL, "hash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 	o->T.maxval = tseq + rescnt;
@@ -2359,28 +2359,28 @@ error:
 }
 
 #include "mel.h"
-static mel_func pp_hash_init_funcs[] = {
- pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",int))),
- pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",int),arg("freq",bit))),
- pattern("hash", "new", UHASHnew, false, "", args(1,5, batargany("ht_sink",1),argany("tt",1),arg("size",int),arg("freq",bit),batargany("p",2))),
- pattern("hash", "new_payload", UHASHnew_payload, false, "", args(1,6, batargany("hp_sink",1),argany("tt",1),arg("nr_slots",lng),arg("nr_payloads",lng),batargany("parent",2), batargany("dummy",3))),
+static mel_func oa_hash_init_funcs[] = {
+ pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",int))),
+ pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",int),arg("freq",bit))),
+ pattern("oahash", "new", OAHASHnew, false, "", args(1,5, batargany("ht_sink",1),argany("tt",1),arg("size",int),arg("freq",bit),batargany("p",2))),
+ pattern("oahash", "new_payload", OAHASHnew_payload, false, "", args(1,6, batargany("hp_sink",1),argany("tt",1),arg("nr_slots",lng),arg("nr_payloads",lng),batargany("parent",2), batargany("dummy",3))),
 
- command("hash", "build_table", UHASHbuild_table, false, "Build a hash table for the given column. Returns the slot ID for each key and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
- command("hash", "build_combined_table", UHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
+ command("oahash", "build_table", OAHASHbuild_table, false, "Build a hash table for the given column. Returns the slot ID for each key and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
+ command("oahash", "build_combined_table", OAHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
 
- command("hash", "compute_frequencies", HASHcompute_frequencies, false, "Add the frequencies of the given slot IDs to the hash-table", args(1,3, batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
- command("hash", "compute_frequencies", HASHcompute_frequencies_pos, false, "Add the frequencies of the given slot IDs to the hash-table. In addition, return combined_hash(slot_id, freq) for payload_pos", args(2,4, batarg("payload_pos",oid),batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
+ command("oahash", "compute_frequencies", OAHASHcompute_frequencies, false, "Add the frequencies of the given slot IDs to the hash-table", args(1,3, batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
+ command("oahash", "compute_frequencies", OAHASHcompute_frequencies_pos, false, "Add the frequencies of the given slot IDs to the hash-table. In addition, return combined_hash(slot_id, freq) for payload_pos", args(2,4, batarg("payload_pos",oid),batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
 
- command("hash", "add_payload", HASHadd_payload, false, "Add 'payload' at 'position' in 'hp_sink'", args(1,4, batargany("hp_sink",1),batargany("payload",1),batarg("payload_pos",oid),arg("pipeline",ptr))),
+ command("oahash", "add_payload", OAHASHadd_payload, false, "Add 'payload' at 'position' in 'hp_sink'", args(1,4, batargany("hp_sink",1),batargany("payload",1),batarg("payload_pos",oid),arg("pipeline",ptr))),
 
- command("hash", "hash", UHASHhash, false, "Compute the hashs for the given column", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
- command("hash", "combined_hash", UHASHcombined_hash, false, "Compute the hashs for the selected items in the given column in combination with the slot IDs of a parent column", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
+ command("oahash", "hash", OAHASHhash, false, "Compute the hashs for the given column", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
+ command("oahash", "combined_hash", OAHASHcombined_hash, false, "Compute the hashs for the selected items in the given column in combination with the slot IDs of a parent column", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
- command("hash", "probe", UHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
- command("hash", "combined_probe", UHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
+ command("oahash", "probe", OAHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
+ command("oahash", "combined_probe", OAHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
- command("hash", "expand", HASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(2,8, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
- command("hash", "fetch_payload", HASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(2,7, batarg("pos",oid),batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
+ command("oahash", "expand", OAHASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(2,8, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
+ command("oahash", "fetch_payload", OAHASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(2,7, batarg("pos",oid),batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"
@@ -2389,4 +2389,4 @@ static mel_func pp_hash_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_pipeline_mal)
-{ mal_module("pp_hash", NULL, pp_hash_init_funcs); }
+{ mal_module("oa_hash", NULL, oa_hash_init_funcs); }
