@@ -25,7 +25,7 @@
 #include <strings.h>
 #endif
 
-#define FATAL() do { fprintf(stderr, "\n\n abort in params.c: %s\n\n", __func__); abort(); } while (0)
+#define FATAL() do { fprintf(stderr, "\n\n abort in msettings.c: %s\n\n", __func__); abort(); } while (0)
 
 int msetting_parse_bool(const char *text)
 {
