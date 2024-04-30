@@ -751,6 +751,7 @@ enum msetting_tls_verify msettings_connect_tls_verify(const msettings *mp);
 const char *msettings_connect_unix(const msettings *mp);
 msettings *msettings_create(void);
 msettings *msettings_destroy(msettings *mp);
+bool msettings_malloc_failed(msettings_error err);
 bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer);
 bool msettings_validate(msettings *mp, char **errmsg);
 const char *wsaerror(int);

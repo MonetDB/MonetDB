@@ -107,6 +107,7 @@ typedef struct msettings msettings;
 
 /* NULL means OK. non-NULL is error message. Valid until next call. Do not free. */
 typedef const char *msettings_error;
+mapi_export bool msettings_malloc_failed(msettings_error err);
 
 /* returns NULL if could not allocate */
 mapi_export msettings *msettings_create(void);

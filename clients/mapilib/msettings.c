@@ -27,6 +27,16 @@
 
 #define FATAL() do { fprintf(stderr, "\n\n abort in msettings.c: %s\n\n", __func__); abort(); } while (0)
 
+static const char * const MALLOC_FAILED = "malloc failed";
+
+bool
+msettings_malloc_failed(msettings_error err)
+{
+	return ((const char*)err == (const char*)MALLOC_FAILED);
+}
+
+
+
 int msetting_parse_bool(const char *text)
 {
 	static struct { const char *word; bool value; } variants[] = {
@@ -347,7 +357,7 @@ msetting_set_string(msettings *mp, mparm parm, const char* value)
 
 	char *v = strdup(value);
 	if (!v)
-		return "malloc failed";
+		return MALLOC_FAILED;
 	if (p->must_free)
 		free(p->str);
 	p->str = v;
@@ -506,7 +516,7 @@ msetting_set_ignored(msettings *mp, const char *key, const char *value)
 		free(my_key);
 		free(my_value);
 		free(new_unknowns);
-		return "malloc failed while setting ignored parameter";
+		return MALLOC_FAILED;
 	}
 
 	new_unknowns[2 * n] = my_key;
