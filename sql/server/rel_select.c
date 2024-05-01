@@ -3221,6 +3221,8 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	char *sname = qname_schema(l->data.lval);
 
 	if (!sname && strcmp(fname, "field") == 0) { /* map into join */
+		if (err)
+			return NULL;
 		sql_exp *le = exps->h->data;
 		set_freevar(le, 1);
 		list_remove_data(exps, NULL, le);
