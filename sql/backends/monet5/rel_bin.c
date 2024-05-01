@@ -6661,7 +6661,15 @@ static stmt *
 rel2bin_merge(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	sql_rel *join = rel->l, *r = rel->r;
+	sql_rel *join;
+
+	if (is_project(((sql_rel*)rel->l)->op)) {
+		join = ((sql_rel*)rel->l)->l;
+	} else {
+		join = rel->l;
+	}
+
+	sql_rel *r = rel->r;
 	stmt *join_st, *bt_stmt, *target_stmt, *jl, *jr, *ld, *rd = NULL, *ns;
 	list *slist = sa_list(sql->sa);
 

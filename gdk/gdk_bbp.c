@@ -4073,6 +4073,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 			/* move any tail/theap files we find for this bat that
 			 * are in the BACKUP directory to the SUBCOMMIT
 			 * directory */
+			assert(b->ttype > 0); /* no unknown types allowed */
 			char fname[16];	/* plenty big enough */
 			if (snprintf(fname, sizeof(fname), "%o", (unsigned) bid) < 16) {
 				/* the snprintf never fails, any of the
