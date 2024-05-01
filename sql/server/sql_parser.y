@@ -529,6 +529,8 @@ int yydebug=1;
 	triggered_statement
 	typelist
 	value_commalist
+	values
+	values_commalist
 	named_value_commalist
 	variable_list
 	variable_ref
@@ -3266,6 +3268,16 @@ value_commalist:
 			{ $$ = append_symbol($1, $3); }
  ;
 
+values:
+    '(' value_commalist ')' { $$ = $2; }
+ ;
+
+values_commalist:
+    values		{ $$ = append_list(L(), $1); }
+ |  values_commalist ',' values
+			{ $$ = append_list($1, $3); }
+ ;
+
 named_value_commalist:
     ident value		{ $$ = append_string(append_symbol(L(), $2), $1); }
  |  named_value_commalist ',' ident value
@@ -4047,6 +4059,7 @@ test_for_null:
  |  pred_exp IS sqlNULL     { $$ = _symbol_create_symbol( SQL_IS_NULL, $1 ); }
  ;
 
+
 in_predicate:
     pred_exp NOT_IN '(' value_commalist ')'
 		{ dlist *l = L();
@@ -4058,15 +4071,25 @@ in_predicate:
 		  append_symbol(l, $1);
 		  append_list(l, $4);
 		  $$ = _symbol_create_list(SQL_IN, l ); }
- |  '(' pred_exp_list ')' NOT_IN '(' value_commalist ')'
+ |  '(' pred_exp_list ')' NOT_IN '(' values_commalist ')'
 		{ dlist *l = L();
 		  append_list(l, $2);
 		  append_list(l, $6);
 		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
- |  '(' pred_exp_list ')' sqlIN '(' value_commalist ')'
+ |  '(' pred_exp_list ')' sqlIN '(' values_commalist ')'
 		{ dlist *l = L();
 		  append_list(l, $2);
 		  append_list(l, $6);
+		  $$ = _symbol_create_list(SQL_IN, l ); }
+ |  '(' pred_exp_list ')' NOT_IN subquery
+		{ dlist *l = L();
+		  append_list(l, $2);
+		  append_list(l, append_symbol(L(), $5));
+		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
+ |  '(' pred_exp_list ')' sqlIN subquery
+		{ dlist *l = L();
+		  append_list(l, $2);
+		  append_list(l, append_symbol(L(), $5));
 		  $$ = _symbol_create_list(SQL_IN, l ); }
  ;
 
