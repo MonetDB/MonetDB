@@ -59,22 +59,19 @@ char* allocprintf(const char *fmt, ...)
 char *
 allocprintf(const char *fmt, ...)
 {
-	size_t buflen = 80;
-	while (1) {
-		char *buf = malloc(buflen);
-		if (buf == NULL)
-			return NULL;
-		va_list ap;
-		va_start(ap, fmt);
-		int n = vsnprintf(buf, buflen, fmt, ap);
-		va_end(ap);
-		if (n >= 0 && (size_t)n < buflen)
-			return buf;
-		free(buf);
-		if (n < 0)
-			return NULL;
-		buflen = n + 1;
-	}
+	va_list ap;
+	char *buf = NULL;
+	size_t pos = 0, cap = 0;
+	int n;
+
+	va_start(ap, fmt);
+	n = vreallocprintf(&buf, &pos, &cap, fmt, ap);
+	va_end(ap);
+
+	if (n >= 0)
+		return buf;
+	free(buf);
+	return NULL;
 }
 
 
