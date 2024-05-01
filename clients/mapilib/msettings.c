@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 
 #include "msettings.h"
+#include "mstring.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -116,6 +117,15 @@ mparm_parse(const char *name)
 			return by_name[i].parm;
 
 	return strchr(name, '_') ? MP_IGNORE : MP_UNKNOWN;
+}
+
+mparm
+mparm_enumerate(int i)
+{
+	int n = sizeof(by_name) / sizeof(by_name[0]);
+	if (i < 0 || i >= n)
+		return MP_UNKNOWN;
+	return by_name[i].parm;
 }
 
 const char *
@@ -488,7 +498,7 @@ msetting_parse(msettings *mp, mparm parm, const char *text)
 }
 
 char *
-msetting_as_string(msettings *mp, mparm parm)
+msetting_as_string(const msettings *mp, mparm parm)
 {
 	bool b;
 	long l;
@@ -496,7 +506,7 @@ msetting_as_string(msettings *mp, mparm parm)
 	switch (mparm_classify(parm)) {
 		case MPCLASS_BOOL:
 			b = msetting_bool(mp, parm);
-			return strdup(b ? "true" : " false");
+			return strdup(b ? "true" : "false");
 		case MPCLASS_LONG:
 			l = msetting_long(mp, parm);
 			int n = 40;

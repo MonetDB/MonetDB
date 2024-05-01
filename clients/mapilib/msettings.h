@@ -92,6 +92,7 @@ mparm_classify(mparm parm)
 /* returns NULL if not found, pointer to mparm if found */
 mapi_export mparm mparm_parse(const char *name);
 const char *mparm_name(mparm parm);
+mparm mparm_enumerate(int i);
 bool mparm_is_core(mparm parm);
 
 
