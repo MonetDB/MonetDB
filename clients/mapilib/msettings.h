@@ -131,7 +131,7 @@ msettings_error msetting_set_bool(msettings *mp, mparm parm, bool value);
 
 /* parse into the appropriate type, or format into newly malloc'ed string (NULL means malloc failed) */
 msettings_error msetting_parse(msettings *mp, mparm parm, const char *text);
-char *msetting_as_string(msettings *mp, mparm parm);
+char *msetting_as_string(const msettings *mp, mparm parm);
 
 /* store ignored parameter */
 msettings_error msetting_set_ignored(msettings *mp, const char *key, const char *value);
