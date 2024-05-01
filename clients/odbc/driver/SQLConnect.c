@@ -137,6 +137,33 @@ getConfig(
 	}
 }
 
+// Helper function for use in MNDBConnect.
+// Try to set the setting from a data source field, return false on error.
+static bool
+ds_setting(msettings *settings, const char *dsn, const char **err_state, const char **explanation, mparm parm, const char *entry)
+{
+	assert(*err_state == NULL);
+	assert(*explanation == NULL);
+
+	char *value = getConfig(NULL, 0, dsn, entry, "");
+	if (value == NULL)
+		return false; // allocation failed
+	if (*value == '\0') {
+		free(value);
+		return true; // nothing to do
+	}
+
+	msettings_error err = msetting_parse(settings, parm, value);
+	free(value);
+	if (!err)
+		return true;
+	if (!msettings_malloc_failed(err)) {
+		*err_state = "HY009"; // invalid argument
+		*explanation = err;
+	}
+	return false;
+}
+
 SQLRETURN
 MNDBConnect(ODBCDbc *dbc,
 	    const SQLCHAR *ServerName,
@@ -270,6 +297,7 @@ MNDBConnect(ODBCDbc *dbc,
 		goto failure;
 
 	settings = msettings_create();
+	// Move the currently known parameters into the settings object.
 	if (false
 		|| (error_explanation = msetting_set_string(settings, MP_DATABASE, db))
 		|| (error_explanation = msetting_set_string(settings, MP_HOST, hostdup))
@@ -281,6 +309,24 @@ MNDBConnect(ODBCDbc *dbc,
 			error_explanation = NULL; // it's a malloc failure
 		else
 			error_state = "HY009";   // it's otherwise invalid
+		goto failure;
+	}
+
+	// The other parameters can only be set from the data source.
+	// We have made a helper function for that.
+	if (false
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_SOCK, "Unix Socket")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_TLS, "Encrypt")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CERT, "Server Certificate")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CERTHASH, "Server Certificate Hash")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CLIENTKEY, "Client Key")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CLIENTCERT, "Client Certificate")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_AUTOCOMMIT, "Autocommit")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_SCHEMA, "Schema")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_TIMEZONE, "Time Zone")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_REPLYSIZE, "Reply Size")
+
+	) {
 		goto failure;
 	}
 
