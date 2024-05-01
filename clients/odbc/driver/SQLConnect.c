@@ -33,6 +33,8 @@
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
 #include <time.h>
+#include "msettings.h"
+#include "mstring.h"
 
 #ifdef HAVE_ODBCINST_H
 #include <odbcinst.h>
@@ -160,7 +162,9 @@ MNDBConnect(ODBCDbc *dbc,
 	char *db = NULL;
 	char *hostdup = NULL;
 	char *portdup = NULL;
+	char *logbuf = NULL;
 	Mapi mid = NULL;
+	msettings *settings = NULL;
 
 	// These do not need to be free'd
 	const char *mapiport_env;
@@ -265,15 +269,50 @@ MNDBConnect(ODBCDbc *dbc,
 	if (hostdup == NULL)
 		goto failure;
 
+	settings = msettings_create();
+	if (false
+		|| (error_explanation = msetting_set_string(settings, MP_DATABASE, db))
+		|| (error_explanation = msetting_set_string(settings, MP_HOST, hostdup))
+		|| (error_explanation = msetting_set_long(settings, MP_PORT, port))
+		|| (error_explanation = msetting_set_string(settings, MP_USER, uid))
+		|| (error_explanation = msetting_set_string(settings, MP_PASSWORD, pwd))
+	) {
+		if (msettings_malloc_failed(error_explanation))
+			error_explanation = NULL; // it's a malloc failure
+		else
+			error_state = "HY009";   // it's otherwise invalid
+		goto failure;
+	}
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d database=%s\n",
-		dsn, uid, pwd, hostdup, port, db);
+	{
+		size_t pos = 0;
+		size_t cap = 1024;
+		reallocprintf(&logbuf, &pos, &cap, "SQLConnect: DSN=%s", dsn);
+		mparm parm;
+		for (int i = 0; (parm = mparm_enumerate(i)) != MP_UNKNOWN ; i++) {
+			if (parm == MP_TABLE || parm == MP_TABLESCHEMA)
+				continue;
+			char *value = msetting_as_string(settings, parm);
+			char *default_value = msetting_as_string(msettings_default, parm);
+			if (!value || !default_value)
+				goto failure;
+			if (mparm_is_core(parm) || strcmp(value, default_value) != 0) {
+				reallocprintf(&logbuf, &pos, &cap, ", %s=%s", mparm_name(parm), value);
+			}
+			free(value);
+			free(default_value);
+		}
+		if (pos > cap)
+			goto failure;
+		ODBCLOG("%s\n", logbuf);
+	}
 #endif
 
 	// Create mid and execute a bunch of commands before checking for errors.
-	mid = mapi_mapi(hostdup, port, uid, pwd, "sql", db);
+	mid = mapi_settings(settings);
 	if (mid) {
+		settings = NULL; // it has moved into 'mid' and must not be freed.
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		mapi_set_size_header(mid, true);
 		mapi_reconnect(mid);
@@ -320,8 +359,10 @@ end:
 	free(db);
 	free(hostdup);
 	free(portdup);
+	free(logbuf);
 	if (mid)
 		mapi_destroy(mid);
+	msettings_destroy(settings);
 
 	return error_state == NULL ? SQL_SUCCESS : SQL_ERROR;
 }
