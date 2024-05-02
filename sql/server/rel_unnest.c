@@ -2251,17 +2251,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	if (!e || (e->type != e_func && e->type != e_convert) || !e->l)
 		return e;
 
-	if (e->type == e_convert) {
-		sql_subtype *ft = exp_fromtype(e);
-		sql_subtype *tt = exp_totype(e);
-
-		/* complex conversion matrix */
-		if (ft->type->eclass == EC_SEC && tt->type->eclass == EC_SEC && ft->type->digits > tt->type->digits) {
-			/* no conversion needed, just time adjustment */
-			ne = e->l;
-			ne->tpe = *tt; // ugh
-		}
-	} else {
+	if (e->type != e_convert) {
 		list *args = e->l;
 		sql_subfunc *f = e->f;
 
@@ -3130,8 +3120,10 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					v->changes++;
 					return le;
 				}
-			} else if (!lsq && !exps_have_rel_exp(re->f)) {
+			} else if (!lsq && !exps_have_rel_exp(re->f) && !is_tuple) {
 				return e; /* leave as is, handled later */
+			} else if (!lsq && re->f && !exps_have_rel_exp(re->f) && exps_are_atoms(re->f) && is_tuple) {
+				return exp_in(sql->sa, le, re->f, is_anyequal(sf) ? cmp_in : cmp_notin);
 			}
 
 			if (is_atom(re->type) && re->f) { /* exp_values */
@@ -3225,41 +3217,41 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				set_has_nil(re); /* outer joins could have introduced nils */
 				return exp_compare(v->sql->sa, le, re, is_anyequal(sf)?cmp_equal:cmp_notequal);
 			} else {
+				sql_rel *rewrite = NULL;
 				if (lsq) {
-					sql_rel *rewrite = NULL;
 					(void)rewrite_inner(sql, rel, lsq, rel->card<=CARD_ATOM?op_left:op_join, &rewrite);
 					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 				if (rsq) {
-					sql_rel *rewrite = NULL;
-					operator_type op = !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti;
+					operator_type op = is_anyequal(sf)?op_semi:op_anti;
 					(void)rewrite_inner(sql, rel, rsq, op, &rewrite);
 					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
+				if (!rewrite)
+					return NULL;
 				if (is_tuple) {
 					list *t = le->f;
-					list *l = sa_list(sql->sa);
-					list *r = sa_list(sql->sa);
 					int s1 = list_length(t), s2 = list_length(rsq->exps);
 
 					/* find out list of right expression */
 					if (s1 != s2)
 						return sql_error(sql, 02, SQLSTATE(42000) "Subquery has too %s columns", (s2 < s1) ? "few" : "many");
-					for (node *n = t->h, *m = rsq->exps->h; n && m; n = n->next, m = m->next ) {
-						sql_exp *le = n->data;
-						sql_exp *re = m->data;
-
-						append(l, le);
-						re = exp_ref(sql, re);
-						append(r, re);
-					}
+					if (!rewrite->exps)
+						rewrite->exps = sa_list(sql->sa);
+					for (node *n = t->h, *m = rsq->exps->h; n && m; n = n->next, m = m->next )
+						append(rewrite->exps, exp_compare(sql->sa, n->data, exp_ref(sql, m->data), cmp_equal));
 					v->changes++;
-					return exp_in_func(sql, exp_values(sql->sa, l), exp_values(sql->sa, r), is_anyequal(sf), 1);
+					return exp_atom_bool(sql->sa, 1);
 				} else {
 					if (exp_has_freevar(sql, le))
 						rel_bind_var(sql, rel, le);
+					if (!rewrite)
+						return NULL;
+					if (!rewrite->exps)
+						rewrite->exps = sa_list(sql->sa);
+					append(rewrite->exps, exp_compare(sql->sa, le, exp_ref(sql, re), cmp_equal));
 					v->changes++;
-					return exp_in_func(sql, le, re, is_anyequal(sf), 0);
+					return exp_atom_bool(sql->sa, 1);
 				}
 			}
 		}

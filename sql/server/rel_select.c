@@ -830,45 +830,84 @@ exp_tuples_set_supertype(mvc *sql, list *tuple_values, sql_exp *tuples)
 
 	for (node *m = vals->h; m; m = m->next) {
 		sql_exp *tuple = m->data;
-		sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, tuple);
+		if (is_values(tuple)) {
+			list *exps = tuple->f;
+			for(n = exps->h, i = 0; n; n = n->next, i++) {
+				sql_subtype *tpe;
+				sql_exp *e = n->data;
 
-		for(n = tuple_relation->exps->h, i = 0; n; n = n->next, i++) {
-			sql_subtype *tpe;
-			sql_exp *e = n->data;
-
-			if (has_type[i] && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
-				if (set_type_param(sql, types+i, e->flag) == 0)
-					e->tpe = types[i];
-				else
+				if (has_type[i] && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+					if (set_type_param(sql, types+i, e->flag) == 0)
+						e->tpe = types[i];
+					else
+						return NULL;
+				}
+				tpe = exp_subtype(e);
+				if (!tpe)
 					return NULL;
+				if (has_type[i] && tpe) {
+					supertype(types+i, types+i, tpe);
+				} else {
+					has_type[i] = 1;
+					types[i] = *tpe;
+				}
 			}
-			tpe = exp_subtype(e);
-			if (!tpe)
-				return NULL;
-			if (has_type[i] && tpe) {
-				cmp_supertype(types+i, types+i, tpe);
-			} else {
-				has_type[i] = 1;
-				types[i] = *tpe;
+		} else {
+			sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, tuple);
+
+			for(n = tuple_relation->exps->h, i = 0; n; n = n->next, i++) {
+				sql_subtype *tpe;
+				sql_exp *e = n->data;
+
+				if (has_type[i] && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+					if (set_type_param(sql, types+i, e->flag) == 0)
+						e->tpe = types[i];
+					else
+						return NULL;
+				}
+				tpe = exp_subtype(e);
+				if (!tpe)
+					return NULL;
+				if (has_type[i] && tpe) {
+					cmp_supertype(types+i, types+i, tpe);
+				} else {
+					has_type[i] = 1;
+					types[i] = *tpe;
+				}
 			}
 		}
 	}
 
 	for (node *m = vals->h; m; m = m->next) {
 		sql_exp *tuple = m->data;
-		sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, tuple);
+		if (is_values(tuple)) {
+			list *exps = tuple->f;
+			list *nexps = sa_list(sql->sa);
+			for(n = exps->h, i = 0; n; n = n->next, i++) {
+				sql_exp *e = n->data;
 
-		list *nexps = sa_list(sql->sa);
-		for(n = tuple_relation->exps->h, i = 0; n; n = n->next, i++) {
-			sql_exp *e = n->data;
+				e = exp_check_type(sql, types+i, NULL, e, type_equal);
+				if (!e)
+					return NULL;
+				exp_label(sql->sa, e, ++sql->label);
+				append(nexps, e);
+			}
+			tuple->f = nexps;
+		} else {
+			sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, tuple);
 
-			e = exp_check_type(sql, types+i, NULL, e, type_equal);
-			if (!e)
-				return NULL;
-			exp_label(sql->sa, e, ++sql->label);
-			append(nexps, e);
+			list *nexps = sa_list(sql->sa);
+			for(n = tuple_relation->exps->h, i = 0; n; n = n->next, i++) {
+				sql_exp *e = n->data;
+
+				e = exp_check_type(sql, types+i, NULL, e, type_equal);
+				if (!e)
+					return NULL;
+				exp_label(sql->sa, e, ++sql->label);
+				append(nexps, e);
+			}
+			tuple_relation->exps = nexps;
 		}
-		tuple_relation->exps = nexps;
 	}
 	return tuples;
 }
@@ -896,20 +935,36 @@ tuples_check_types(mvc *sql, list *tuple_values, sql_exp *tuples)
 {
 	list *tuples_list = exp_get_values(tuples);
 	sql_exp *first_tuple = tuples_list->h->data;
-	sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, first_tuple);
-
-	assert(list_length(tuple_values) == list_length(tuple_relation->exps));
 	list *nvalues = sa_list(sql->sa);
-	for (node *n = tuple_values->h, *m = tuple_relation->exps->h; n && m; n = n->next, m = m->next) {
-		sql_exp *le = n->data, *re = m->data;
+	if (is_values(first_tuple)) {
+		list *vals = first_tuple->f;
 
-		if (rel_binop_check_types(sql, NULL, le, re, 0) < 0)
-			return NULL;
-		if ((le = exp_check_type(sql, exp_subtype(re), NULL, le, type_equal)) == NULL)
-			return NULL;
-		append(nvalues, le);
+		for (node *n = tuple_values->h, *m = vals->h; n && m; n = n->next, m = m->next) {
+			sql_exp *le = n->data, *re = m->data;
+
+			if (rel_binop_check_types(sql, NULL, le, re, 0) < 0)
+				return NULL;
+			if ((le = exp_check_type(sql, exp_subtype(re), NULL, le, type_equal)) == NULL)
+				return NULL;
+			append(nvalues, le);
+		}
+		return nvalues;
+	} else {
+		sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, first_tuple);
+
+		assert(list_length(tuple_values) == list_length(tuple_relation->exps));
+		for (node *n = tuple_values->h, *m = tuple_relation->exps->h; n && m; n = n->next, m = m->next) {
+			sql_exp *le = n->data, *re = m->data;
+
+			if (rel_binop_check_types(sql, NULL, le, re, 0) < 0)
+				return NULL;
+			if ((le = exp_check_type(sql, exp_subtype(re), NULL, le, type_equal)) == NULL)
+				return NULL;
+			append(nvalues, le);
+		}
+		return nvalues;
 	}
-	return nvalues;
+	return tuple_values;
 }
 
 static sql_rel *
@@ -2032,9 +2087,14 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		le = exp_values(sql->sa, ll);
 		exp_label(sql->sa, le, ++sql->label);
 		ek.type = list_length(ll);
-		is_tuple = 1;
+		is_tuple = list_length(ll);
 	}
 	/* list of values or subqueries */
+	/* 3 right hand side cases,
+	 *	1 - value/tuple list of atoms
+	 *	2 - list of scalar sub queries (needs check on 1 row/column per query)
+	 *	3 - single tabular ie. multi column, multi row query
+	 */
 	if (n->type == type_list) {
 		sql_exp *values;
 		list *vals = sa_list(sql->sa);
@@ -2043,12 +2103,26 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		n = n->data.lval->h;
 
 		for (; n; n = n->next) {
-			re = rel_value_exp(query, rel, n->data.sym, f|sql_farg, ek);
+			if (n->type == type_list) {
+				dnode *m = n->data.lval->h;
+				list *rl = sa_list(sql->sa);
+				for (; m; m = m->next) {
+					assert(m->type == type_symbol);
+					sql_exp *re = rel_value_exp(query, rel, m->data.sym, f|sql_farg, ek);
+					if (!re)
+						return NULL;
+					append(rl, re);
+				}
+				re = exp_values(sql->sa, rl);
+			} else {
+				assert(n->type == type_symbol);
+				re = rel_value_exp(query, rel, n->data.sym, f|sql_farg, ek);
+			}
 			if (!re)
 				return NULL;
-			if (is_tuple && !exp_is_rel(re))
+			if (is_tuple && (!exp_is_rel(re) && !is_values(re)))
 				return sql_error(sql, 02, SQLSTATE(42000) "Cannot match a tuple to a single value");
-			if (is_tuple) {
+			if (is_tuple && exp_is_rel(re)) {
 				sql_rel *r = exp_rel_get_rel(sql->sa, re);
 
 				if (!r)
@@ -2063,6 +2137,8 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					set_dependent((*rel));
 				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
 					re = r->exps->h->data;
+			} else if (is_values(re) && is_tuple != list_length(exp_get_values(re))) {
+				return sql_error(sql, 02, SQLSTATE(42000) "Tuple sizes do not match");
 			}
 			append(vals, re);
 		}
@@ -3228,6 +3304,10 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	char *sname = qname_schema(l->data.lval);
 
 	if (!sname && strcmp(fname, "field") == 0) { /* map into join */
+		if (err)
+			return NULL;
+		if (list_length(exps) < 2)
+			return sql_error(sql, 02, SQLSTATE(42000) "Field function called with not enough arguments");
 		sql_exp *le = exps->h->data;
 		set_freevar(le, 1);
 		list_remove_data(exps, NULL, le);
@@ -3994,6 +4074,15 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, TRUE};
 	sql_exp *e = rel_value_exp2(lquery, rel, grp, f, ek);
+
+	if (e && exp_is_atom(e)) {
+		sql_subtype *tpe = exp_subtype(e);
+		if (!tpe || tpe->type->eclass != EC_NUM) {
+			if (!tpe)
+				return sql_error(sql, 02, SQLSTATE(42000) "Cannot have a parameter (?) for group by column");
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: non-integer constant in GROUP BY");
+		}
+	}
 
 	if (!e) {
 		char buf[ERRSIZE], *name;

@@ -446,8 +446,65 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 }
 
 static stmt *
+handle_in_tuple_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, bool in, int depth, int reduce, int push)
+{
+	mvc *sql = be->mvc;
+	stmt *s = NULL;
+
+	list *lvals = ce->f, *lstmts = sa_list(sql->sa);
+	for(node *n = lvals->h; n; n = n->next) {
+		sql_exp *ce = n->data;
+		stmt *c = exp_bin(be, ce, left, right, grp, ext, cnt, NULL, depth+1, 0, push);
+
+		if (c && reduce && c->nrcols == 0)
+			c = stmt_const(be, bin_find_smallest_column(be, left), c);
+		if(!c)
+			return NULL;
+		lstmts = append(lstmts, c);
+	}
+
+	sql_subtype *bt = sql_bind_localtype("bit");
+	sql_subfunc *and = sql_bind_func(sql, "sys", "and", bt, bt, F_FUNC, true, true);
+	sql_subfunc *or = sql_bind_func(sql, "sys", "or", bt, bt, F_FUNC, true, true);
+	for (node *n = nl->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		list *vals = e->f;
+		stmt *cursel = NULL;
+
+		for (node *m = vals->h, *o = lstmts->h; m && o; m = m->next, o = o->next) {
+			stmt *c = o->data;
+			sql_subfunc *cmp = (in)
+				?sql_bind_func(sql, "sys", "=", tail_type(c), tail_type(c), F_FUNC, true, true)
+				:sql_bind_func(sql, "sys", "<>", tail_type(c), tail_type(c), F_FUNC, true, true);
+			sql_exp *e = m->data;
+
+			stmt *i = exp_bin(be, e, left, right, grp, ext, cnt, NULL, depth+1, 0, push);
+			if(!i)
+				return NULL;
+
+			i = stmt_binop(be, c, i, NULL, cmp);
+			if (cursel)
+				cursel = stmt_binop(be, cursel, i, NULL, in?and:or);
+			else
+				cursel = i;
+		}
+		if (s)
+			s = stmt_binop(be, s, cursel, NULL, in?or:and);
+		else
+			s = cursel;
+	}
+	if (sel && !(depth || !reduce))
+		s = stmt_uselect(be,
+			s->nrcols == 0?stmt_const(be, bin_find_smallest_column(be, left), s): s,
+			stmt_bool(be, 1), cmp_equal, sel, 0, 0);
+	return s;
+}
+
+static stmt *
 handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, bool in, int depth, int reduce, int push)
 {
+	if (ce && is_values(ce))
+		return handle_in_tuple_exps(be, ce, nl, left, right, grp, ext, cnt, sel, in, depth, reduce, push);
 	mvc *sql = be->mvc;
 	node *n;
 	stmt *s = NULL, *c = exp_bin(be, ce, left, right, grp, ext, cnt, NULL, depth+1, 0, push);
@@ -1518,8 +1575,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		if (!l)
 			return NULL;
-		s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
-	}	break;
+		if (from->type->eclass == EC_SEC && to->type->eclass == EC_SEC) {
+			// trivial conversion because EC_SEC is always in milliseconds
+			s = l;
+		} else {
+			s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
+		}
+	} 	break;
 	case e_func: {
 		node *en;
 		list *l = sa_list(sql->sa), *exps = e->l;
@@ -6722,7 +6784,15 @@ static stmt *
 rel2bin_merge(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	sql_rel *join = rel->l, *r = rel->r;
+	sql_rel *join;
+
+	if (is_project(((sql_rel*)rel->l)->op)) {
+		join = ((sql_rel*)rel->l)->l;
+	} else {
+		join = rel->l;
+	}
+
+	sql_rel *r = rel->r;
 	stmt *join_st, *bt_stmt, *target_stmt, *jl, *jr, *ld, *rd = NULL, *ns;
 	list *slist = sa_list(sql->sa);
 

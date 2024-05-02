@@ -1777,6 +1777,11 @@ mapi_new(msettings *settings)
 	Mapi mid;
 	static ATOMIC_TYPE index = ATOMIC_VAR_INIT(0);
 
+	if (!ATOMIC_TAS(&mapi_initialized)) {
+		if (mnstr_init() < 0)
+			return NULL;
+	}
+
 	mid = malloc(sizeof(*mid));
 	if (mid == NULL)
 		return NULL;
@@ -1885,11 +1890,6 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 {
 	Mapi mid;
 
-	if (!ATOMIC_TAS(&mapi_initialized)) {
-		if (mnstr_init() < 0)
-			return NULL;
-	}
-
 	mid = mapi_new(NULL);
 	if (mid == NULL)
 		return NULL;
@@ -1943,11 +1943,6 @@ mapi_mapi(const char *host, int port, const char *username,
 	  const char *password, const char *lang, const char *dbname)
 {
 	Mapi mid;
-
-	if (!ATOMIC_TAS(&mapi_initialized)) {
-		if (mnstr_init() < 0)
-			return NULL;
-	}
 
 	mid = mapi_new(NULL);
 	if (mid == NULL)
