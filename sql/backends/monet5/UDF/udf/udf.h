@@ -33,7 +33,7 @@
 
 /* export MAL wrapper functions */
 
-udf_export str UDFreverse(str *ret, const str *arg);
+udf_export str UDFreverse(str *ret, const char *const *arg);
 udf_export str UDFBATreverse(bat *ret, const bat *arg);
 
 /* using C macro for convenient type-expansion */

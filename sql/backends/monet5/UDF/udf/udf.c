@@ -77,9 +77,10 @@ UDFreverse_(str *buf, size_t *buflen, const char *src)
 
 /* MAL wrapper */
 str
-UDFreverse(str *res, const str *arg)
+UDFreverse(str *res, const char *const *arg)
 {
-	str msg = MAL_SUCCEED, s;
+	str msg = MAL_SUCCEED;
+	const char *s;
 
 	/* assert calling sanity */
 	assert(res && arg);

@@ -1080,10 +1080,10 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat,
 #ifdef HAVE_LIBPCRE
 	const char *err_p = NULL;
 	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
+	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_DOTALL;
 	pcre *re;
 #else
-	int options = REG_NOSUB;
+	int options = REG_NOSUB | REG_EXTENDED;
 	regex_t re;
 	int errcode;
 	int retval;
@@ -1304,22 +1304,22 @@ pat2pcre(str *r, const char *pat)
  */
 
 static str
-PCREreplace_wrap(str *res, const str *or, const str *pat, const str *repl,
-				 const str *flags)
+PCREreplace_wrap(str *res, const char *const *or, const char *const *pat,
+				 const char *const *repl, const char *const *flags)
 {
 	return pcre_replace(res, *or, *pat, *repl, *flags, true);
 }
 
 static str
-PCREreplacefirst_wrap(str *res, const str *or, const str *pat, const str *repl,
-					  const str *flags)
+PCREreplacefirst_wrap(str *res, const char *const *or, const char *const *pat,
+					  const char *const *repl, const char *const *flags)
 {
 	return pcre_replace(res, *or, *pat, *repl, *flags, false);
 }
 
 static str
-PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl,
-					 const str *flags)
+PCREreplace_bat_wrap(bat *res, const bat *bid, const char *const *pat,
+					 const char *const *repl, const char *const *flags)
 {
 	BAT *b, *bn = NULL;
 	str msg;
@@ -1336,8 +1336,8 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl,
 }
 
 static str
-PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const str *pat,
-						  const str *repl, const str *flags)
+PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const char *const *pat,
+						  const char *const *repl, const char *const *flags)
 {
 	BAT *b, *bn = NULL;
 	str msg;
@@ -1354,29 +1354,19 @@ PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const str *pat,
 }
 
 static str
-PCREmatch(bit *ret, const str *val, const str *pat)
+PCREmatch(bit *ret, const char *const *val, const char *const *pat)
 {
-	return pcre_match_with_flags(ret, *val, *pat,
-#ifdef HAVE_LIBPCRE
-								 "s"
-#else
-								 "x"
-#endif
-			);
+	return pcre_match_with_flags(ret, *val, *pat, "");
 }
 
 static str
-PCREimatch(bit *ret, const str *val, const str *pat)
+PCREimatch(bit *ret, const char *const *val, const char *const *pat)
 {
-	return pcre_match_with_flags(ret, *val, *pat, "i"
-#ifndef HAVE_LIBPCRE
-								 "x"
-#endif
-			);
+	return pcre_match_with_flags(ret, *val, *pat, "i");
 }
 
 static str
-PCREindex(int *res, const pcre *pattern, const str *s)
+PCREindex(int *res, const pcre *pattern, const char *const *s)
 {
 #ifdef HAVE_LIBPCRE
 	int v[3];
@@ -1396,7 +1386,7 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 }
 
 static str
-PCREpatindex(int *ret, const str *pat, const str *val)
+PCREpatindex(int *ret, const char *const *pat, const char *const *val)
 {
 #ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
@@ -1426,7 +1416,7 @@ PCREpatindex(int *ret, const str *pat, const str *val)
 }
 
 static str
-PCREquote(str *ret, const str *val)
+PCREquote(str *ret, const char *const *val)
 {
 	char *p;
 	const char *s = *val;
@@ -1448,7 +1438,7 @@ PCREquote(str *ret, const str *val)
 }
 
 static str
-PCREsql2pcre(str *ret, const str *pat, const str *esc)
+PCREsql2pcre(str *ret, const char *const *pat, const char *const *esc)
 {
 	return sql2pcre(ret, *pat, *esc);
 }
@@ -1504,8 +1494,8 @@ choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty,
 }
 
 static str
-PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc,
-			 const bit *isens)
+PCRElike_imp(bit *ret, const char *const *s, const char *const *pat,
+			 const char *const *esc, const bit *isens)
 {
 	str res = MAL_SUCCEED;
 	char *ppat = NULL;
@@ -1539,7 +1529,7 @@ PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc,
 					: re_match_no_ignore(*s, re);
 		}
 	} else {
-		res = *isens ? PCREimatch(ret, s, &ppat) : PCREmatch(ret, s, &ppat);
+		res = pcre_match_with_flags(ret, *s, ppat, *isens ? "i" : "");
 	}
 
 	if (re)
@@ -1549,15 +1539,15 @@ PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc,
 }
 
 static str
-PCRElike(bit *ret, const str *s, const str *pat, const str *esc,
-		 const bit *isens)
+PCRElike(bit *ret, const char *const *s, const char *const *pat,
+		 const char *const *esc, const bit *isens)
 {
 	return PCRElike_imp(ret, s, pat, esc, isens);
 }
 
 static str
-PCREnotlike(bit *ret, const str *s, const str *pat, const str *esc,
-			const bit *isens)
+PCREnotlike(bit *ret, const char *const *s, const char *const *pat,
+			const char *const *esc, const bit *isens)
 {
 	str tmp;
 	bit r;
@@ -1762,7 +1752,7 @@ pcre_clean(
 
 static str
 BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-				const str *esc, const bit *isens, const bit *not)
+				const char *const *esc, const bit *isens, const bit *not)
 {
 	str msg = MAL_SUCCEED;
 	BAT *b = NULL, *pbn = NULL, *bn = NULL;
@@ -1943,21 +1933,21 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 static str
 BATPCRElike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	const str *esc = getArgReference_str(stk, pci, 3);
+	const char *esc = *getArgReference_str(stk, pci, 3);
 	const bit *ci = getArgReference_bit(stk, pci, 4);
 	bit no = FALSE;
 
-	return BATPCRElike_imp(cntxt, mb, stk, pci, esc, ci, &no);
+	return BATPCRElike_imp(cntxt, mb, stk, pci, &esc, ci, &no);
 }
 
 static str
 BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	const str *esc = getArgReference_str(stk, pci, 3);
+	const char *esc = *getArgReference_str(stk, pci, 3);
 	const bit *ci = getArgReference_bit(stk, pci, 4);
 	bit yes = TRUE;
 
-	return BATPCRElike_imp(cntxt, mb, stk, pci, esc, ci, &yes);
+	return BATPCRElike_imp(cntxt, mb, stk, pci, &esc, ci, &yes);
 }
 
 /* scan select loop with or without candidates */
@@ -2119,8 +2109,8 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 }
 
 static str
-PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
-			   const str *esc, const bit *caseignore, const bit *anti)
+PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const char *const *pat,
+			   const char *const *esc, const bit *caseignore, const bit *anti)
 {
 	BAT *b, *s = NULL, *bn = NULL, *old_s = NULL;
 	str msg = MAL_SUCCEED;

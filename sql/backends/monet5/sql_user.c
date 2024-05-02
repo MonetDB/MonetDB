@@ -911,7 +911,7 @@ monet5_user_get_limits(mvc *m, int user, lng *maxmem, int *maxwrk)
 /* move into mvc_remote_create */
 /* and mvc_remote_drop */
 str
-remote_create(mvc *m, sqlid id, const str username, const str password, int pw_encrypted)
+remote_create(mvc *m, sqlid id, const char *username, const char *password, int pw_encrypted)
 {
 	int log_res = 0;
 	sql_trans *tr = m->session->tr;
@@ -919,7 +919,7 @@ remote_create(mvc *m, sqlid id, const str username, const str password, int pw_e
 	sql_schema *sys = find_sql_schema(tr, "sys");
 	sql_table *remote_user_info = find_sql_table(tr, sys, REMOTE_USER_INFO);
 
-	char *pwhash = password, *cypher = NULL;
+	char *pwhash = NULL, *cypher = NULL;
 	if (!pw_encrypted) {
 		if((pwhash = mcrypt_BackendSum(password, strlen(password))) == NULL)
 			throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
@@ -934,8 +934,8 @@ remote_create(mvc *m, sqlid id, const str username, const str password, int pw_e
 			throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
 		}
 	}
-	str msg = AUTHcypherValue(&cypher, pwhash);
-	if (pwhash != password) {
+	str msg = AUTHcypherValue(&cypher, pwhash ? pwhash : password);
+	if (pwhash != NULL) {
 		if (!pw_encrypted)
 			free(pwhash);
 		else
