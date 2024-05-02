@@ -629,34 +629,19 @@ static str
 OAHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
-	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
+	bool private = 0, local_storage = false;
 	str err = NULL;
-	BAT *u, *b = NULL;
+	BAT *g = NULL, *u = NULL, *b = NULL;
+
+	/* for now we only work with shared ht_sink in the build phase */
+	assert(*ht_sink && !is_bat_nil(*ht_sink));
 
    	b = BATdescriptor(*key);
-	if (!b)
-		return createException(SQL, "oahash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (private && *ht_sink && is_bat_nil(*ht_sink)) { /* TODO ... create but how big ??? */
-		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
-		if (!u) {
-			err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto error;
-		}
-		// TODO: when do we need 'freq'?
-		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, NULL);
-		if (u->T.sink == NULL) {
-			err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto error;
-		}
-		u->T.private_bat = 1;
-	} else {
-		u = BATdescriptor(*ht_sink);
+	u = BATdescriptor(*ht_sink);
+	if (!b || !u) {
+		err = createException(SQL, "oahash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
 	}
-	if (!u) {
-		BBPunfix(*key);
-		return createException(SQL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	private = u->T.private_bat;
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
@@ -696,7 +681,7 @@ OAHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 	if (h) {
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
-		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
+		g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 		if (g == NULL) {
 			err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
@@ -792,6 +777,7 @@ OAHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 error:
 	BBPreclaim(b);
 	BBPreclaim(u);
+	BBPreclaim(g);
 	return err;
 }
 
@@ -1041,46 +1027,21 @@ static str
 OAHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, bat *parent_ht, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
-	bool private = (!*ht_sink || is_bat_nil(*ht_sink)), local_storage = false;
+	bool private = 0, local_storage = false;
 	str err = NULL;
-	BAT *u =  NULL;
+	BAT *u = NULL, *b = NULL, *G = NULL, *g = NULL;
 
-	BAT *b = BATdescriptor(*key);
-	BAT *G = BATdescriptor(*parent_slotid);
-	if (!b || !G) {
+	/* for now we only work with shared ht_sink in the build phase */
+	assert(*ht_sink && !is_bat_nil(*ht_sink));
+	(void) parent_ht;
+
+	u = BATdescriptor(*ht_sink);
+	b = BATdescriptor(*key);
+	G = BATdescriptor(*parent_slotid);
+	if (!b || !G || !u) {
 		err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (private && *ht_sink && is_bat_nil(*ht_sink)) { /* TODO ... create but how big ??? */
-		BAT *H = BATdescriptor(*parent_ht);
-		if (!H) {
-			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto error;
-		}
-		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
-		if (!u) {
-			BBPunfix(H->batCacheid);
-			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto error;
-		}
-		/* Lookup parent hash */
-		// TODO: when do we need 'freq'?
-		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, (hash_table*)H->T.sink);
-		if (u->T.sink == NULL) {
-			BBPunfix(H->batCacheid);
-			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto error;
-		}
-		u->T.private_bat = 1;
-		BBPunfix(*parent_ht);
-	} else {
-		u = BATdescriptor(*ht_sink);
-		if (!u) {
-			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto error;
-		}
-	}
-	private = u->T.private_bat;
 
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
@@ -1119,7 +1080,7 @@ OAHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slo
 	}
 	if (h) {
 		BUN cnt = BATcount(b);
-		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
+		g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 		if (g == NULL) {
 			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
@@ -1218,6 +1179,7 @@ error:
 	BBPreclaim(u);
 	BBPreclaim(b);
 	BBPreclaim(G);
+	BBPreclaim(g);
 	return err;
 }
 
