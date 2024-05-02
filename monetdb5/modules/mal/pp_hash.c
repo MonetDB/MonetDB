@@ -267,11 +267,7 @@ _hp_create(int type, size_t nslots, size_t nplds, hash_table *parent)
 	}
 	hp->parent = parent;
 
-	// TODO: need better size estimations
-	if (type == TYPE_void)
-		hp->payload = (char *)GDKmalloc((size_t)hp->width * 1);
-	else
-		hp->payload = (char *)GDKmalloc((size_t)hp->width * hp->nr_payloads);
+	hp->payload = (char *)GDKmalloc((size_t)hp->width * hp->nr_payloads);
 	if (!hp->payload) {
 		GDKfree(hp);
 		return NULL;
@@ -389,15 +385,19 @@ error:
 
 #define vgroup() \
 	do { \
+		assert(BATtdense(b) || \
+				/* A not-dense void BAT must contain only oid_nil.
+				 * Otherwise it's a candidate list, which should never have
+				 * reached this place. */ \
+				(!BATtdense(b) && b->tseqbase == oid_nil && cnt)); \
+		\
+		int slots = 0; \
+		gid slot = 0; \
+		oid bpi = b->tseqbase; \
+		oid *vals = h->vals; \
 		if (!BATtdense(b)) { \
-			assert(cnt); \
-			int slots = 0; \
-			gid slot = 0; \
-			oid bpi = b->tseqbase; \
-			oid *vals = h->vals; \
-			\
 			bool fnd = 0; \
-			gid k = (gid)_hash_oid(oid_nil)&h->mask; \
+			gid k = (gid)_hash_oid(bpi)&h->mask; \
 			gid g = 0; \
 			\
 			while (!fnd) { \
@@ -422,17 +422,11 @@ error:
 				} \
 				fnd = 1; \
 			} \
-			for(BUN i = 0; i<cnt; i++, bpi++) { \
+			for(BUN i = 0; i<cnt; i++) { \
 				gp[i] = g-1; \
 			} \
 		} else { \
-			assert(BATtdense(b)); \
-			int slots = 0; \
-			gid slot = 0; \
-			oid bpi = b->tseqbase; \
-			oid *vals = h->vals; \
-			\
-			for(BUN i = 0; i<cnt; i++, bpi++) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
 				gid k = (gid)_hash_oid(bpi)&h->mask; \
 				gid g = 0; \
@@ -460,6 +454,7 @@ error:
 					fnd = 1; \
 				} \
 				gp[i] = g-1; \
+				bpi++; \
 			} \
 		} \
 	} while (0)
@@ -822,6 +817,12 @@ error:
 
 #define vderive() \
 	do { \
+		assert(BATtdense(b) || \
+				/* A not-dense void BAT must contain only oid_nil.
+				 * Otherwise it's a candidate list, which should never have
+				 * reached this place. */ \
+				(!BATtdense(b) && b->tseqbase == oid_nil && cnt)); \
+		\
 		int slots = 0; \
 		gid slot = 0; \
 		oid bpi = b->tseqbase; \
@@ -844,18 +845,20 @@ error:
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 						if (((slot*100)/70) >= (gid)h->size) \
-							hash_rehash(h, p, err); \
+						hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = bpi; \
 					pgids[g] = gi[i]; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
-						continue; \
+					continue; \
 				} \
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
+			/* if b->tseqbase == oid_nil, all bpi-s are oid_nil */ \
+			bpi += (b->tseqbase != oid_nil); \
 		} \
 	} while (0)
 
@@ -1289,6 +1292,31 @@ error:
 	return err;
 }
 
+#define vaddpld() \
+	do { \
+		assert(BATtdense(pld) || \
+				/* A not-dense void BAT must contain only oid_nil.
+				 * Otherwise it's a candidate list, which should never have
+				 * reached this place. */ \
+				(!BATtdense(pld) && pld->tseqbase == oid_nil && cnt)); \
+		\
+		oid pvals = pld->tseqbase; \
+		oid *hpvals = hp->payload; \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			if (ppos[i] >= (gid)hp->nr_slots) { \
+				hp->rehash = 1; \
+				err = createException(MAL, "oahash.add_payload", "hash payload needs rehash"); \
+				goto error; \
+			} \
+			/* TODO more memory efficient way to store TYPE_void payload.
+			 * This materialisation seems rather overkill.
+			 */ \
+			hpvals[ppos[i]] = pvals; \
+			pvals += (pld->tseqbase != oid_nil); \
+		} \
+	} while (0)
+
 #define addpld(Type) \
 	do { \
 		Type *pvals = Tloc(pld, 0); \
@@ -1370,11 +1398,8 @@ OAHASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 
 		switch(tt) {
 			case TYPE_void:
-				// TODO not sure if this is the correct way to handle TYPE_void, so give an error for now
-				//((oid*)hp->payload)[0] = pld->tseqbase;
-				//break;
-				err =  createException(MAL, "oahash.add_payload", "TODO: TYPE_void");
-				goto error;
+				vaddpld();
+				break;
 			case TYPE_bit:
 				addpld(bit);
 				break;
@@ -1448,11 +1473,21 @@ error:
 
 #define vhash() \
 	do { \
+		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && cnt)); \
+		\
+		oid ky = k->tseqbase; \
 		gid *hs = Tloc(h, 0); \
-		gid hsh = (gid)_hash_oid(k->tseqbase); \
-	\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			hs[i] = hsh; \
+		\
+		if (!BATtdense(k)) { \
+			gid hsh = (gid)_hash_oid(ky); \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				hs[i] = hsh; \
+			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				hs[i] = (gid)_hash_oid(ky); \
+				ky += (k->tseqbase != oid_nil); \
+			} \
 		} \
 	} while (0)
 
@@ -1572,9 +1607,11 @@ error:
 
 #define vhash_combined() \
 	do { \
+		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && cnt)); \
+		\
 		gid *hs = Tloc(h, 0); \
 		gid hsh = _hash_oid(k->tseqbase); \
-	\
+		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)combine(ps[i], hsh, prime); \
 		} \
