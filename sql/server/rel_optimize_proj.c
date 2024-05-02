@@ -53,14 +53,6 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 	return nexps;
 }
 
-static int
-data_equal( sql_exp *e1, sql_exp *e2)
-{
-	if (e1 == e2)
-		return 0;
-	return -1;
-}
-
 /* move projects down with the goal op removing them completely (ie push renames/reduced lists into basetable)
  * for some cases we can directly remove iff renames rename into same alias
  * */
@@ -90,45 +82,7 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
 			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) ||
 				((v->parent && is_project(v->parent->op)) &&
-				 (is_mset(l->op) || is_select(l->op) || is_join(l->op) || is_semi(l->op) || is_topn(l->op) || is_sample(l->op)))) {
-				rel->l = NULL;
-				rel_destroy(rel);
-				v->changes++;
-				return l;
-			}
-		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_rename)) {
-			/* TODO for positional (setops), if not top relation, rename in order of the inner */
-			/* check for selfrefs, ie if l has self refs we cannot reduce (or rename) the expressions */
-			if (is_simple_project(l->op) && !l->r) {
-				list *nexps = sa_list(v->sql->sa);
-
-				/* first find all required expressions */
-				for(node *n = rel->exps->h; n; n = n->next) {
-					sql_exp *e = n->data, *ne = NULL;
-
-					if (e->l)
-						ne = exps_bind_column2(l->exps, e->l, e->r, NULL);
-					if (!ne && !e->l)
-						ne = exps_bind_column(l->exps, e->r, NULL, NULL, 1);
-					if (!ne)
-						return rel;
-					if (ne && exp_has_selfref(v->sql, ne))
-						return rel;
-					/* make sure we don't have duplicates */
-					if (list_find(nexps, ne, (fcmp)&data_equal))
-						return rel;
-					append(nexps, ne);
-				}
-				/* rename using outer expressions */
-				for(node *n = rel->exps->h, *m = nexps->h; n && m; n = n->next, m = m->next) {
-					sql_exp *e = n->data, *ne = m->data;
-
-					exp_setname(v->sql->sa, ne, exp_relname(e), exp_name(e));
-					exp_propagate(v->sql->sa, ne, e);
-				}
-				/* reset hash after renaming */
-				list_hash_clear(nexps);
-				l->exps = nexps;
+				 (is_mset(l->op) || is_set(l->op) || is_select(l->op) || is_join(l->op) || is_semi(l->op) || is_topn(l->op) || is_sample(l->op)))) {
 				rel->l = NULL;
 				rel_destroy(rel);
 				v->changes++;
