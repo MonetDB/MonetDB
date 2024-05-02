@@ -91,7 +91,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Dec2023-SP2/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2023-SP3/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -916,6 +916,25 @@ fi
 %endif
 
 %changelog
+* Thu May 02 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.9-20240502
+- Rebuilt.
+- GH#7422: Aggregate functions with variadic arguments
+- GH#7472: MonetDB server crashes in `tail_type`
+- GH#7473: MonetDB server crashes in `SQLunionfunc`
+- GH#7478: MonetDB server crashes in `exp_equal`
+- GH#7496: Query on view fails to produce a resultset. Assertion triggered
+  in rel2bin_select.
+- GH#7499: create schema + set schema inside a transaction that is rolled
+  back causes the connection to be aborted
+- GH#7501: files remain in backup causing problems at restart
+- GH#7503: MonetDB server crashes using `WHEN MATCHED THEN UPDATE`
+- GH#7504: possible deadlock when a bat is made persistent when it is also
+  getting unloaded
+- GH#7506: MonetDB Dec2023-SP2 crashes at `rel_value_exp2`
+- GH#7507: BBPextend: ERROR: trying to extend BAT pool beyond the limit
+  (163840000)
+- GH#7508: MonetDB Dec2023-SP2 crashes at `exp_ref`
+
 * Tue Apr 09 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
 - Rebuilt.
 - GH#7469: Crash when using `CONTAINS`
