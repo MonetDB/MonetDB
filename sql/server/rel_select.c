@@ -3299,6 +3299,8 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	if (!sname && strcmp(fname, "field") == 0) { /* map into join */
 		if (err)
 			return NULL;
+		if (list_length(exps) < 2)
+			return sql_error(sql, 02, SQLSTATE(42000) "Field function called with not enough arguments");
 		sql_exp *le = exps->h->data;
 		set_freevar(le, 1);
 		list_remove_data(exps, NULL, le);
