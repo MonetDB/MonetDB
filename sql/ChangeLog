@@ -1,6 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu May  2 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- The ANALYZE statement can now be used in procedures, functions and triggers.
+
 * Wed Apr 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
 - Make schema renaming more permissive. A schema can be renamed if it
   does not contain objects that are a dependency for objects outside
