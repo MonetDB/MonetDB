@@ -1,0 +1,11 @@
+query TTI nosort
+SELECT
+    CAST(CAST(value AS TEXT) AS INTERVAL HOUR)    AS hours_col,
+    CAST(CAST(value AS TEXT) AS INTERVAL SECOND)  AS seconds_col,
+    42 AS fortytwo
+FROM sys.generate_series(1, 2);
+----
+1:00:00
+0:00:01
+42
+

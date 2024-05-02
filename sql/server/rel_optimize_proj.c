@@ -1781,6 +1781,8 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 					sql_exp *e1_in_exps = (e1->l && e1->alias.rname == e1->l && e1->alias.name == e1->r) ?
 						exps_bind_column2(rel->exps, e1->l, e1->r, NULL) :
 						exps_bind_column(rel->exps, e1->alias.name, NULL, NULL, 0);
+					if (!e1_in_exps)
+						continue;
 					assert(e1_in_exps);
 
 					/* write e2 as an e1 alias since the expressions are the same */
@@ -2983,10 +2985,41 @@ rel_groupjoin(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+/* select k1 from bla where k1 = const -> select const from bla where k1 = const */
+static sql_rel *
+rel_project_select_exp(visitor *v, sql_rel *rel)
+{
+	if (is_simple_project(rel->op) && rel->exps && rel->l) {
+		sql_rel *l = rel->l;
+		if (is_select(l->op) && l->exps) {
+			for(node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *col = n->data;
+				if (col->type == e_column) {
+					for(node *m = l->exps->h; m; m = m->next) {
+						sql_exp *cmp = m->data;
+						if (cmp->type == e_cmp && cmp->flag == cmp_equal && !is_anti(cmp) && !is_semantics(cmp) && exp_is_atom(cmp->r)) {
+							sql_exp *l = cmp->l;
+							if(l->type == e_column && ((!col->l && !l->l) || (col->l && l->l && strcmp(col->l, l->l) == 0)) && strcmp(col->r, l->r) == 0) {
+								/* replace column with the constant */
+								sql_exp *e = n->data = exp_copy(v->sql, cmp->r);
+								exp_setname(v->sql->sa, e, exp_relname(col), exp_name(col));
+								exp_propagate(v->sql->sa, e, col);
+								list_hash_clear(rel->exps);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return rel;
+}
+
 static sql_rel *
 rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
 	rel = rel_project_cse(v, rel);
+	rel = rel_project_select_exp(v, rel);
 
 	if (!rel || !is_groupby(rel->op))
 		return rel;

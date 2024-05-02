@@ -1,0 +1,14 @@
+statement ok
+CREATE TABLE logs(id int, activity varchar(255) NOT NULL)
+
+statement ok
+CREATE TABLE stats(activity varchar(255) NOT NULL, absolute_reworks int)
+
+statement ok
+WITH rework_stats AS (SELECT activity, count(*) AS frequency FROM (SELECT activity,	count(*) AS reworks FROM logs GROUP BY	activity HAVING	count(*) > 1) AS case_reworks GROUP BY activity) MERGE INTO	stats USING rework_stats on rework_stats.activity = stats.activity WHEN MATCHED THEN UPDATE SET absolute_reworks = rework_stats.frequency
+
+statement ok
+DROP TABLE logs
+
+statement ok
+DROP TABLE stats
