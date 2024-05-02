@@ -4068,6 +4068,15 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 	exp_kind ek = {type_value, card_value, TRUE};
 	sql_exp *e = rel_value_exp2(lquery, rel, grp, f, ek);
 
+	if (e && exp_is_atom(e)) {
+		sql_subtype *tpe = exp_subtype(e);
+		if (!tpe || tpe->type->eclass != EC_NUM) {
+			if (!tpe)
+				return sql_error(sql, 02, SQLSTATE(42000) "Cannot have a parameter (?) for group by column");
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: non-integer constant in GROUP BY");
+		}
+	}
+
 	if (!e) {
 		char buf[ERRSIZE], *name;
 		int status = sql->session->status;

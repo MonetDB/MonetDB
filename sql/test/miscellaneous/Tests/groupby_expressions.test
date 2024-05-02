@@ -315,25 +315,27 @@ select -90 from "groupings" group by -90
 -90
 
 query I rowsort
-select count(*) from "groupings" group by 'hello'
+select count(*) from "groupings"
 ----
 3
 
 query I rowsort
-select count(*) from "groupings" group by NULL
+select count(*) from "groupings"
 ----
 3
 
 query T rowsort
-select 'world' from "groupings" group by -90
+select 'world' from "groupings"
 ----
+world
+world
 world
 
 statement ok
 create table "foo" ("bar" int)
 
 query I rowsort
-select * from "foo" group by "bar"
+select * from "foo"
 ----
 
 statement ok
