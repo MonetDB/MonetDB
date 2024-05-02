@@ -9,9 +9,6 @@
 #ifndef _PP_MAT_H_
 #define _PP_MAT_H_
 
-#define PART_SINK 4
-#define MAT_SINK 5
-
 typedef struct mat_t {
 	Sink s;
 	int nr;

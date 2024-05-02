@@ -11,7 +11,6 @@
 
 #include "pp_mem.h"
 
-#define HASH_SINK 1
 #define GIDBITS 63
 
 #define HT_MIN_SIZE 1024*64*8

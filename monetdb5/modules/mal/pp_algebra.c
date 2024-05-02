@@ -914,7 +914,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	}
 
 	hash_table *h = (hash_table*)u->T.sink;
-	assert(h && h->s.type == HASH_SINK);
+	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
@@ -1129,7 +1129,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	}
 
 	hash_table *h = (hash_table*)u->T.sink;
-	assert(h && h->s.type == HASH_SINK);
+	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
@@ -1514,7 +1514,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	//(void)sid;
 
 	hash_table *h = (hash_table*)u->T.sink;
-	assert(h && h->s.type == HASH_SINK);
+	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
@@ -1906,7 +1906,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	//(void)sid;
 
 	hash_table *h = (hash_table*)u->T.sink;
-	assert(h && h->s.type == HASH_SINK);
+	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {

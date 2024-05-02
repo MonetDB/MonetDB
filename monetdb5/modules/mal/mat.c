@@ -34,7 +34,9 @@
 #include "mal_resolve.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include "mal_pipelines.h"
 #include "pp_mat.h"
+#include "pipeline.h"
 
 /*
  * The pack is an ordinary multi BAT insert. Oid synchronistion

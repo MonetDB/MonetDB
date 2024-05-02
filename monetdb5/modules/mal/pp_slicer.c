@@ -14,7 +14,6 @@
 #include "mal_pipelines.h"
 #include "pipeline.h"
 
-#define TOPN_SINK 2
 typedef struct topn_t {
 	Sink s;
 	lng start;

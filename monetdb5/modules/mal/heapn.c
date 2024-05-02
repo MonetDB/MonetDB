@@ -561,8 +561,6 @@ heap_type(hge)
 heap_type(flt)
 heap_type(dbl)
 
-#define HEAP_SINK 3
-
 static void
 subheap_destroy( subheap *h)
 {

@@ -78,7 +78,7 @@ _ht_init(hash_table *h, bool freq)
 		if (h->vals == NULL || h->gids == NULL)
 			goto error;
 		if (h->p) {
-			assert(h->s.type == HASH_SINK);
+			assert(h->s.type == OA_HASH_TABLE_SINK);
 			h->pgids = (gid*)GDKmalloc(sizeof(gid)* h->size);
 			if (h->pgids == NULL)
 				goto error;
@@ -136,7 +136,7 @@ _ht_create( int type, int size, bool freq, hash_table *p)
 	if (!type)
 		type = TYPE_oid;
 	h->s.destroy = (sink_destroy)&ht_destroy;
-	h->s.type = HASH_SINK;
+	h->s.type = OA_HASH_TABLE_SINK;
 	if (bits >= GIDBITS)
 		bits = GIDBITS-1;
 	h->bits = bits;
@@ -246,7 +246,7 @@ _hp_create(int type, size_t nslots, size_t nplds, hash_table *parent)
 	int atype = type?type:TYPE_oid;
 
 	hp->s.destroy = (sink_destroy)&hp_destroy;
-	hp->s.type = HASH_SINK;
+	hp->s.type = OA_HASH_PAYLOAD_SINK;
 	if (bits >= GIDBITS)
 		bits = GIDBITS-1;
 	hp->bits = bits;
@@ -659,7 +659,7 @@ OAHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 	private = u->T.private_bat;
 
 	hash_table *h = (hash_table*)u->T.sink;
-	assert(h && h->s.type == HASH_SINK);
+	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
@@ -1083,7 +1083,7 @@ OAHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slo
 	private = u->T.private_bat;
 
 	hash_table *h = (hash_table*)u->T.sink;
-	assert(h && h->s.type == HASH_SINK);
+	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
@@ -1237,7 +1237,7 @@ OAHASHcompute_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
 		goto error;
 	}
 	hash_table *ht = (hash_table*)hts->T.sink;
-	assert(ht && ht->s.type == HASH_SINK);
+	assert(ht && ht->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(slt);
 	if (cnt) {
@@ -1282,7 +1282,7 @@ OAHASHcompute_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, cons
 		goto error;
 	}
 	hash_table *ht = (hash_table*)hts->T.sink;
-	assert(ht && ht->s.type == HASH_SINK);
+	assert(ht && ht->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(slt);
 	res = COLnew(slt->hseqbase, TYPE_oid, cnt, TRANSIENT);
@@ -1362,7 +1362,7 @@ OAHASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 	assert(BATcount(pld) == BATcount(pos));
 
 	hash_payload *hp = (hash_payload*)res->T.sink;
-	assert(hp && hp->s.type == HASH_SINK);
+	assert(hp && hp->s.type == OA_HASH_PAYLOAD_SINK);
 
 	MT_lock_set(&res->theaplock);
 	MT_lock_set(&pld->theaplock);

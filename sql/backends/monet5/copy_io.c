@@ -10,7 +10,9 @@
 #include "gdk.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include "mal_pipelines.h"
 #include "mel.h"
+#include "pipeline.h"
 
 #include "mapi_prompt.h"
 #include "copy.h"
@@ -22,8 +24,6 @@ struct copy_destructor {
 	Sink sink;
 	stream *stream_to_destroy;
 };
-
-#define COPY_SINK 42
 
 static void
 defer_close(void *sink)

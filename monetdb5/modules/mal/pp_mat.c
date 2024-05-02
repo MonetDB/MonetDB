@@ -15,7 +15,9 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_instruction.h"
+#include "mal_pipelines.h"
 #include "pp_mat.h"
+#include "pipeline.h"
 
 typedef struct part_t {
 	Sink s;

@@ -18,6 +18,15 @@
 #define pipeline_lock2(r) MT_lock_set(&r->theaplock)
 #define pipeline_unlock2(r) MT_lock_unset(&r->theaplock)
 
+// TODO a better way to define/add/register sinks, similar to types
+#define OA_HASH_TABLE_SINK 1
+#define OA_HASH_PAYLOAD_SINK 2
+#define TOPN_SINK 3
+#define HEAP_SINK 4
+#define PART_SINK 5
+#define MAT_SINK  6
+#define COPY_SINK 42
+
 extern int BATupgrade(BAT *r, BAT *b, bool locked);
 extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
 
