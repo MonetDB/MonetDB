@@ -61,11 +61,6 @@ void
 mal_client_reset(void)
 {
 	if (mal_clients) {
-		for (int i = 0; i < MAL_MAXCLIENTS; i++) {
-			ATOMIC_DESTROY(&mal_clients[i].lastprint);
-			ATOMIC_DESTROY(&mal_clients[i].workers);
-			ATOMIC_DESTROY(&mal_clients[i].qryctx.datasize);
-		}
 		GDKfree(mal_clients);
 		mal_clients = NULL;
 	}

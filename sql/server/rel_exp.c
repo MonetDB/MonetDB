@@ -19,6 +19,19 @@
 #include "rel_basetable.h"
 #include "rel_prop.h"
 
+sql_subtype*
+first_arg_subtype(sql_exp *e)
+{
+	if (e->type == e_aggr || e->type == e_func) {
+		list *ops = e->l;
+		if (!list_empty(ops)) {
+			sql_exp *e = ops->h->data;
+			return exp_subtype(e);
+		}
+	}
+	return NULL;
+}
+
 comp_type
 compare_str2type(const char *compare_op)
 {
@@ -2036,7 +2049,7 @@ exp_is_atom( sql_exp *e )
 	switch (e->type) {
 	case e_atom:
 		if (e->f) /* values list */
-			return 0;
+			return exps_are_atoms(e->f);
 		return 1;
 	case e_convert:
 		return exp_is_atom(e->l);
@@ -2964,7 +2977,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 	sql_subtype *lt = exp_subtype(l);
 	sql_subtype *rt = exp_subtype(r);
 
-	if (lt->type->scale == SCALE_FIX && (lt->scale || rt->scale) &&
+	if (!EC_INTERVAL(lt->type->eclass) && lt->type->scale == SCALE_FIX && (lt->scale || rt->scale) &&
 		strcmp(sql_func_imp(f->func), "/") == 0) {
 		sql_subtype *res = f->res->h->data;
 		unsigned int scale, digits, digL, scaleL;

@@ -1,10 +1,10 @@
-skipif knownfail
 query T nosort
 WITH x AS ( SELECT NULL ) SELECT 'x' IN ( SELECT * FROM x GROUP BY 'x' )
 ----
+NULL
 
-skipif knownfail
 query T nosort
 SELECT ( WITH x AS ( SELECT NULL ) SELECT 'x' IN ( SELECT * FROM x GROUP BY 'x' ) )
 ----
+NULL
 

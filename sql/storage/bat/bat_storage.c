@@ -173,20 +173,20 @@ new_segment(segment *o, sql_trans *tr, size_t cnt)
 
 	assert(tr);
 	if (n) {
-		n->ts = tr->tid;
-		n->oldts = 0;
-		n->deleted = false;
+		*n = (segment) {
+			.ts = tr->tid,
+			.oldts = 0,
+			.deleted = false,
+			.start = 0,
+			.end = cnt,
+			.next = ATOMIC_PTR_VAR_INIT(NULL),
+			.prev = NULL,
+		};
 		if (o) {
-			n->start = o->end;
-			n->end = o->end + cnt;
-		} else {
-			n->start = 0;
-			n->end = cnt;
-		}
-		ATOMIC_PTR_INIT(&n->next, NULL);
-		n->prev = NULL;
-		if (o)
+			n->start += o->end;
+			n->end += o->end;
 			ATOMIC_PTR_SET(&o->next, n);
+		}
 	}
 	return n;
 }
@@ -493,6 +493,8 @@ segs_end( segments *segs, sql_trans *tr, sql_table *table)
 {
 	size_t cnt = 0;
 
+	/* because a table can grow rows over the time a transaction is running, we need to find the last valid segment, to
+	 * keep all of the parts aligned */
 	lock_table(tr->store, table->base.id);
 	segment *s = segs->h, *l = NULL;
 
@@ -1969,7 +1971,6 @@ destroy_delta(sql_delta *b, bool recursive)
 		temp_destroy(b->cs.bid);
 	if (b->cs.ebid)
 		temp_destroy(b->cs.ebid);
-	ATOMIC_DESTROY(&b->cs.refcnt);
 	b->cs.bid = b->cs.ebid = b->cs.uibid = b->cs.uvbid = 0;
 	_DELETE(b);
 }
@@ -2596,7 +2597,6 @@ destroy_storage(storage *bat)
 		temp_destroy(bat->cs.uvbid);
 	if (bat->cs.bid)
 		temp_destroy(bat->cs.bid);
-	ATOMIC_DESTROY(&bat->cs.refcnt);
 	bat->cs.bid = bat->cs.uibid = bat->cs.uvbid = 0;
 	_DELETE(bat);
 }
@@ -3268,7 +3268,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		bat = ZNEW(sql_delta);
 		if (!bat)
 			return LOG_ERR;
-		ATOMIC_PTR_SET(&ni->data, bat);
+		ATOMIC_PTR_INIT(&ni->data, bat);
 		ATOMIC_INIT(&bat->cs.refcnt, 1);
 	}
 
@@ -3446,7 +3446,7 @@ create_del(sql_trans *tr, sql_table *t)
 		bat = ZNEW(storage);
 		if(!bat)
 			return LOG_ERR;
-		ATOMIC_PTR_SET(&t->data, bat);
+		ATOMIC_PTR_INIT(&t->data, bat);
 		ATOMIC_INIT(&bat->cs.refcnt, 1);
 		bat->cs.ts = tr->tid;
 	}
@@ -4474,10 +4474,10 @@ tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, c->base.id);
@@ -4514,10 +4514,10 @@ tc_gc_upd_col( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, c->base.id);
@@ -4554,10 +4554,10 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, i->base.id);
@@ -4594,10 +4594,10 @@ tc_gc_upd_idx( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, i->base.id);

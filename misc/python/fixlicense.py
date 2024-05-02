@@ -141,7 +141,7 @@ def getcomments(file, pre=None, post=None, start=None, end=None, nl=True):
                 f = open(file)      # can raise IOError
                 line = f.readline()
                 f.close()
-                if line[:2] == '#!':
+                if line.startswith('#!'):
                     if 'bash' in line or '/sh' in line:
                         ext = '.sh'
                     elif 'python' in line or 'PYTHON' in line:
@@ -236,7 +236,7 @@ def addlicense(file, pre=None, post=None, start=None, end=None, verbose=False):
         if pre:
             g.write(pre + '\n')
         for l in license:
-            if l[:1] == '\t' or (not l and (not end or end[:1] == '\t')):
+            if l.startswith('\t') or (not l and (not end or end.startswith('\t'))):
                 # if text after start begins with tab, remove spaces from start
                 g.write(start.rstrip() + l + end + '\n')
             else:

@@ -31,7 +31,7 @@ behaves the same but uses a binary format that may be more efficient to parse.
 The server advertises its support for ``Xexportbin`` in the eighth field of its
 connect challenge. For example,
 
-    bL1sNfkaa:mserver:9:RIPEMD160,SHA512,SHA384,SHA256,SHA224,SHA1,COMPRESSION_SNAPPY,COMPRESSION_LZ4:LIT:SHA512:sql=6:**BINARY=1**:
+    bL1sNfkaa:mserver:9:RIPEMD160,SHA512,SHA384,SHA256,SHA224,SHA1,COMPRESSION_LZ4:LIT:SHA512:sql=6:**BINARY=1**:
 
 Currently it sends ``BINARY=1``. In the future it may send a higher number if
 variants are added.

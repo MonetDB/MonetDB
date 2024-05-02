@@ -46,5 +46,4 @@ These packages are optional.
 | lz4-devel		# optional: read and write .lz4 compressed files
 | netcdf-devel		# optional: read NetCDF files
 | proj-devel		# optional, only optionally used in geom module
-| snappy-devel		# optional: unused
 | valgrind-devel	# optional: --with-valgrind configuration (debug)

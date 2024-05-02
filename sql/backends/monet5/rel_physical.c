@@ -126,7 +126,6 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 }
 
 
-/* TODO for count we need remove useless 'converts' etc */
 /* rewrite avg into sum/count */
 static sql_rel *
 rel_avg_rewrite(visitor *v, sql_rel *rel)
@@ -137,7 +136,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 		list *aexps = new_exp_list(sql->sa); /* alias list */
 		node *m, *n;
 
-		if (/*list_empty(rel->r) ||*/ mvc_debug_on(sql, 64))
+		if (mvc_debug_on(sql, 64)) /* disable rewriter with sql_debug=64 */
 			return rel;
 
 		/* Find all avg's */
@@ -148,8 +147,13 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 				sql_subfunc *a = e->f;
 
 				if (strcmp(a->func->base.name, "avg") == 0) {
-					append(avgs, e);
-					continue;
+					sql_subtype *rt = exp_subtype(e);
+					sql_subtype *it = first_arg_subtype(e);
+					if ((EC_APPNUM(rt->type->eclass) && !EC_APPNUM(it->type->eclass)) || /* always rewrite floating point average */
+						(rt->type->localtype > it->type->localtype)) {	/* always rewrite if result type is large enough */
+						append(avgs, e);
+						continue;
+					}
 				}
 			}
 			/* alias for local aggr exp */

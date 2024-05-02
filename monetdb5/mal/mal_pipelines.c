@@ -313,8 +313,6 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
 	str err = ATOMIC_PTR_GET(&s->error);
-	ATOMIC_DESTROY(&s->counter);
-	ATOMIC_DESTROY(&s->workers);
 	ATOMIC_PTR_DESTROY(&s->error);
 	MT_cond_destroy(&s->cond);
 	restart = (!err && s->status);

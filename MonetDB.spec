@@ -151,7 +151,6 @@ BuildRequires: pkgconfig(libR)
 # BuildRequires: pkgconfig(gdal)        # -DSHP=ON
 # BuildRequires: pkgconfig(netcdf)      # -DNETCDF=ON
 # BuildRequires: pkgconfig(proj)        # -DWITH_PROJ=ON
-# BuildRequires: pkgconfig(snappy)      # -DWITH_SNAPPY=ON
 # BuildRequires: pkgconfig(valgrind)    # -DWITH_VALGRIND=ON
 
 %if (0%{?fedora} >= 22)
@@ -868,7 +867,6 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
         -DWITH_PCRE=ON \
         -DWITH_PROJ=OFF \
         -DWITH_READLINE=ON \
-        -DWITH_SNAPPY=OFF \
         -DWITH_VALGRIND=OFF \
         -DWITH_XML2=ON \
         -DWITH_ZLIB=ON
@@ -895,9 +893,6 @@ install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
 install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 
 # remove unwanted stuff
-# .la files
-rm -f %{buildroot}%{_libdir}/*.la
-rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_udf*.so
