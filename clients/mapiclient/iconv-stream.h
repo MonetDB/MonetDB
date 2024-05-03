@@ -3,7 +3,8 @@
 struct ic_priv_t {
 	stream *s;
 	iconv_t cd;
-	bool eof;
+	bool eof:1;
+	bool err:1;
 	size_t buflen;
 	char buffer[BUFSIZ];
 };
@@ -22,7 +23,7 @@ ic_read(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 	while (outbytesleft > 0 && !ic->eof) {
 		if (ic->buflen == sizeof(ic->buffer)) {
 			/* ridiculously long multibyte sequence, return error */
-			fprintf(stderr, "multibyte sequence too long");
+			fprintf(stderr, "multibyte sequence too long\n");
 			return -1;
 		}
 
@@ -37,12 +38,12 @@ ic_read(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 			ic->eof = true;
 			if (ic->buflen > 0) {
 				/* incomplete input */
-				fprintf(stderr, "incomplete input");
+				fprintf(stderr, "incomplete input\n");
 				return -1;
 			}
 			if (iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft) == (size_t) -1) {
 				/* some error occurred */
-				fprintf(stderr, "iconv reported an error");
+				fprintf(stderr, "iconv reported an error\n");
 				return -1;
 			}
 			goto exit_func;	/* double break */
@@ -56,7 +57,7 @@ ic_read(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 		if (iconv(ic->cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft) == (size_t) -1) {
 			switch (errno) {
 			case EILSEQ:
-				fprintf(stderr, "invalid multibyte sequence");
+				fprintf(stderr, "invalid multibyte sequence\n");
 				return -1;
 			case EINVAL:
 				/* incomplete multibyte sequence encountered */
@@ -67,7 +68,7 @@ ic_read(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 				 * the buffer */
 				goto exit_func;
 			default:
-				fprintf(stderr, "iconv reported an error");
+				fprintf(stderr, "iconv reported an error\n");
 				return -1;
 			}
 		}
@@ -100,8 +101,17 @@ ic_write(void *restrict private, const void *restrict buf, size_t elmsize, size_
 	char *bf = NULL;
 
 	if (ic == NULL) {
-		fprintf(stderr, "stream already ended");
-		goto bailout;
+		fprintf(stderr, "stream already ended\n");
+		return -1;
+	}
+
+	if (ic->err) {
+		for (size_t i = 0; i < inbytesleft; i++)
+			if (inbuf[i] == '\n') {
+				ic->err = false;
+				break;
+			}
+		return -1;
 	}
 
 	/* if unconverted data from a previous call remains, add it to
@@ -110,12 +120,12 @@ ic_write(void *restrict private, const void *restrict buf, size_t elmsize, size_
 		bf = malloc(ic->buflen + inbytesleft);
 		if (bf == NULL) {
 			/* cannot allocate memory */
-			fprintf(stderr, "out of memory");
+			fprintf(stderr, "out of memory\n");
 			goto bailout;
 		}
 		memcpy(bf, ic->buffer, ic->buflen);
 		memcpy(bf + ic->buflen, buf, inbytesleft);
-		buf = bf;
+		inbuf = bf;
 		inbytesleft += ic->buflen;
 		ic->buflen = 0;
 	}
@@ -127,7 +137,7 @@ ic_write(void *restrict private, const void *restrict buf, size_t elmsize, size_
 			switch (errno) {
 			case EILSEQ:
 				/* invalid multibyte sequence encountered */
-				fprintf(stderr, "invalid multibyte sequence");
+				fprintf(stderr, "invalid multibyte sequence\n");
 				goto bailout;
 			case EINVAL:
 				/* incomplete multibyte sequence
@@ -135,7 +145,7 @@ ic_write(void *restrict private, const void *restrict buf, size_t elmsize, size_
 				 * converted */
 				if (outbytesleft < sizeof(ic->buffer) &&
 				    mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0) {
-					fprintf(stderr, "incomplete multibyte sequence");
+					fprintf(stderr, "incomplete multibyte sequence\n");
 					goto bailout;
 				}
 				/* remember what hasn't been converted */
@@ -143,7 +153,7 @@ ic_write(void *restrict private, const void *restrict buf, size_t elmsize, size_
 					/* ridiculously long multibyte
 					 * sequence, so return
 					 * error */
-					fprintf(stderr, "multibyte sequence too long");
+					fprintf(stderr, "multibyte sequence too long\n");
 					goto bailout;
 				}
 				memcpy(ic->buffer, inbuf, inbytesleft);
@@ -155,7 +165,7 @@ ic_write(void *restrict private, const void *restrict buf, size_t elmsize, size_
 				/* not enough space in output buffer */
 				break;
 			default:
-				fprintf(stderr, "iconv reported an error");
+				fprintf(stderr, "iconv reported an error\n");
 				goto bailout;
 			}
 		}
@@ -174,6 +184,7 @@ ic_write(void *restrict private, const void *restrict buf, size_t elmsize, size_
   bailout:
 	if (bf)
 		free(bf);
+	ic->err = true;
 	return -1;
 }
 
