@@ -38,7 +38,8 @@ target_sources(mclient
   ReadlineTools.c
   ReadlineTools.h
   mhelp.c
-  mhelp.h)
+  mhelp.h
+  curl-stream.h)
 
 target_include_directories(mclient
   PRIVATE

@@ -43,6 +43,10 @@ target_link_libraries(smack01
 add_executable(streamcat
   streamcat.c)
 
+target_include_directories(streamcat
+  PRIVATE
+  ../../mapiclient)
+
 target_link_libraries(streamcat
   PRIVATE
   monetdb_config_header
