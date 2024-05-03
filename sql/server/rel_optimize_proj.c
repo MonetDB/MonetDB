@@ -1404,6 +1404,7 @@ rel_optimize_unions_bottomup(visitor *v, global_props *gp, sql_rel *rel)
 static sql_rel *
 rel_optimize_munions_bottomup_(visitor *v, sql_rel *rel)
 {
+	// TODO: implement rel_remove_munion_partitions
 	rel = rel_merge_munion(v, rel);
 	return rel;
 }
@@ -3685,6 +3686,7 @@ static sql_rel *
 rel_optimize_unions_topdown_(visitor *v, sql_rel *rel)
 {
 	rel = rel_push_project_down_union(v, rel);
+	// TODO: implement rel_push_join_down_munion
 	rel = rel_push_join_down_union(v, rel);
 	return rel;
 }
@@ -3700,9 +3702,7 @@ run_optimizer
 bind_optimize_unions_topdown(visitor *v, global_props *gp)
 {
 	(void) v;
-	// TODO: remove this and default to munion
-	int op = mvc_debug_on(v->sql, 32) ? gp->cnt[op_munion] : gp->cnt[op_union];
-	return gp->opt_level == 1 && op ? rel_optimize_unions_topdown : NULL;
+	return gp->opt_level == 1 && gp->cnt[op_munion] ? rel_optimize_unions_topdown : NULL;
 }
 
 
