@@ -103,9 +103,6 @@ typedef int64_t timertype;
 
 static timertype t0, t1;	/* used for timing */
 
-#define UTF8BOM		"\xEF\xBB\xBF"	/* UTF-8 encoding of Unicode BOM */
-#define UTF8BOMLENGTH	3	/* length of above */
-
 /* Pagination and simple ASCII-based rendering is provided for SQL
  * sessions. The result set size is limited by the cache size of the
  * Mapi Library. It is sufficiently large to accommodate most result
@@ -172,6 +169,53 @@ static char *nullstring = default_nullstring;
 
 #include <ctype.h>
 #include "mhelp.h"
+
+/* The code starting here, and up to and including the function decode
+ * below are copyright Bjoern Hoehrmann per the below notice.
+ *
+ * The function decode provides a fast way to check for valid UTF-8
+ * sequences and returns the value of the codepoint as well.  */
+
+// Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
+// See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ for details.
+
+#define UTF8_ACCEPT 0
+#define UTF8_REJECT 12
+
+static const uint8_t utf8d[] = {
+	// The first part of the table maps bytes to character classes that
+	// to reduce the size of the transition table and create bitmasks.
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+	 7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	 8,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+	10,3,3,3,3,3,3,3,3,3,3,3,3,4,3,3, 11,6,6,6,5,8,8,8,8,8,8,8,8,8,8,8,
+
+	// The second part is a transition table that maps a combination
+	// of a state of the automaton and a character class to a state.
+	 0,12,24,36,60,96,84,12,12,12,48,72, 12,12,12,12,12,12,12,12,12,12,12,12,
+	12, 0,12,12,12,12,12, 0,12, 0,12,12, 12,24,12,12,12,12,12,24,12,24,12,12,
+	12,12,12,12,12,12,12,24,12,12,12,12, 12,24,12,12,12,12,12,12,12,24,12,12,
+	12,12,12,12,12,12,12,36,12,36,12,12, 12,36,12,12,12,12,12,36,12,36,12,12,
+	12,36,12,12,12,12,12,12,12,12,12,12,
+};
+
+static inline uint32_t
+decode(uint32_t *state, uint32_t *codep, uint32_t byte)
+{
+	uint32_t type = utf8d[byte];
+
+	*codep = (*state != UTF8_ACCEPT) ?
+		(byte & 0x3fu) | (*codep << 6) :
+		(0xff >> type) & (byte);
+
+	*state = utf8d[256 + *state + type];
+	return *state;
+}
+/* end code copyright by Bjoern Hoehrmann */
 
 static timertype
 gettime(void)
@@ -590,69 +634,32 @@ static size_t
 utf8strlenmax(char *s, char *e, size_t max, char **t)
 {
 	size_t len = 0, len0 = 0;
-	int c;
-	int n;
 	char *t0 = s;
 
 	assert(max == 0 || t != NULL);
 	if (s == NULL)
 		return 0;
-	c = 0;
-	n = 0;
-	while (*s != 0 && (e == NULL || s < e)) {
-		if (*s == '\n') {
-			assert(n == 0);
-			if (max) {
-				*t = s;
-				return len;
+
+	uint32_t state = 0, codepoint = 0;
+	while (*s && (e == NULL || s < e)) {
+		switch (decode(&state, &codepoint, (uint8_t) *s++)) {
+		case UTF8_ACCEPT:
+			if (codepoint == '\n') {
+				if (max) {
+					*t = s;
+					return len;
+				}
+				len++;
+			} else if (codepoint == '\t') {
+				len++;			/* rendered as single space */
+			} else if (codepoint <= 0x1F || codepoint == 0177) {
+				len += 4;		/* control, rendered as "\\%03o" */
+			} else if (0x80 <= codepoint && codepoint <= 0x9F) {
+				len += 6;		/* control, rendered as "u\\%04x" */
+			} else {
+				/* charwidth() returning -1 is caught by the above */
+				len += charwidth(codepoint);
 			}
-			len++;
-			n = 0;
-		} else if (*s == '\t') {
-			assert(n == 0);
-			len++;	/* rendered as single space */
-			n = 0;
-		} else if ((unsigned char) *s <= 0x1F || *s == '\177') {
-			assert(n == 0);
-			len += 4;
-			n = 0;
-		} else if ((*s & 0x80) == 0) {
-			assert(n == 0);
-			len++;
-			n = 0;
-		} else if ((*s & 0xC0) == 0x80) {
-			c = (c << 6) | (*s & 0x3F);
-			if (--n == 0) {
-				/* last byte of a multi-byte character */
-				n = charwidth(c);
-				if (n >= 0)
-					len += n;
-				else
-					len++;		/* assume width 1 if unprintable */
-				n = 0;
-			}
-		} else if ((*s & 0xE0) == 0xC0) {
-			assert(n == 0);
-			n = 1;
-			c = *s & 0x1F;
-		} else if ((*s & 0xF0) == 0xE0) {
-			assert(n == 0);
-			n = 2;
-			c = *s & 0x0F;
-		} else if ((*s & 0xF8) == 0xF0) {
-			assert(n == 0);
-			n = 3;
-			c = *s & 0x07;
-		} else if ((*s & 0xFC) == 0xF8) {
-			assert(n == 0);
-			n = 4;
-			c = *s & 0x03;
-		} else {
-			assert(0);
-			n = 0;
-		}
-		s++;
-		if (n == 0) {
 			if (max != 0) {
 				if (len > max) {
 					*t = t0;
@@ -665,6 +672,13 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 			}
 			t0 = s;
 			len0 = len;
+			break;
+		case UTF8_REJECT:
+			/* shouldn't happen */
+			assert(0);
+			break;
+		default:
+			break;
 		}
 	}
 	if (max != 0)
@@ -787,10 +801,19 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
+								/* U+0080 - U+009F control character */
 								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
-							} else
+							} else if (((unsigned char) *p & 0x80) == 0) {
 								mnstr_write(toConsole, p, 1, 1);
+							} else {
+								/* do a complete UTF-8 character
+								 * sequence in one go */
+								char *q = p;
+								while (((unsigned char) *++p & 0xC0) == 0x80)
+									;
+								mnstr_write(toConsole, q, p-- - q, 1);
+							}
 						}
 						mnstr_printf(toConsole, "...%*s",
 							     len[i] - 2 - (int) utf8strlen(rest[i], t),
@@ -805,10 +828,19 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
+								/* U+0080 - U+009F control character */
 								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
-							} else
+							} else if (((unsigned char) *p & 0x80) == 0) {
 								mnstr_write(toConsole, p, 1, 1);
+							} else {
+								/* do a complete UTF-8 character
+								 * sequence in one go */
+								char *q = p;
+								while (((unsigned char) *++p & 0xC0) == 0x80)
+									;
+								mnstr_write(toConsole, q, p-- - q, 1);
+							}
 						}
 						mnstr_write(toConsole, " ", 1, 1);
 						if (!numeric[i])
@@ -839,24 +871,32 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 							     rest[i]);
 					}
 					if (!numeric[i]) {
-						char *p;
 						/* replace tabs with a
 						 * single space to
 						 * avoid screwup the
 						 * width
 						 * calculations */
 						mnstr_write(toConsole, " ", 1, 1);
-						for (p = rest[i]; *p; p++) {
+						for (char *p = rest[i]; *p; p++) {
 							if (*p == '\t')
 								mnstr_write(toConsole, " ", 1, 1);
 							else if ((unsigned char) *p <= 0x1F || *p == '\177')
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
+								/* U+0080 - U+009F control character */
 								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
-							} else
+							} else if (((unsigned char) *p & 0x80) == 0) {
 								mnstr_write(toConsole, p, 1, 1);
+							} else {
+								/* do a complete UTF-8 character
+								 * sequence in one go */
+								char *q = p;
+								while (((unsigned char) *++p & 0xC0) == 0x80)
+									;
+								mnstr_write(toConsole, q, p-- - q, 1);
+							}
 						}
 						mnstr_printf(toConsole, " %*s",
 							     (int) (len[i] - ulen),
@@ -887,32 +927,37 @@ XMLprdata(const char *val)
 {
 	if (val == NULL)
 		return;
-	while (*val) {
-		if (*val == '&')
-			mnstr_printf(toConsole, "&amp;");
-		else if (*val == '<')
-			mnstr_printf(toConsole, "&lt;");
-		else if (*val == '>')
-			mnstr_printf(toConsole, "&gt;");
-		else if (*val == '"')
-			mnstr_printf(toConsole, "&quot;");
-		else if (*val == '\'')
-			mnstr_printf(toConsole, "&apos;");
-		else if ((*val & 0xFF) < 0x20)	/* control character */
-			mnstr_printf(toConsole, "&#%d;", *val & 0xFF);
-		else if ((*val & 0x80) != 0 /* && encoding != NULL */ ) {
-			int n;
-			unsigned int m;
-			unsigned int c = *val & 0x7F;
-
-			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
-				c &= ~m;
-			while (--n >= 0)
-				c = (c << 6) | (*++val & 0x3F);
-			mnstr_printf(toConsole, "&#x%x;", c);
-		} else
-			mnstr_write(toConsole, val, 1, 1);
-		val++;
+	for (uint32_t state = 0, codepoint = 0; *val; val++) {
+		if (decode(&state, &codepoint, (uint8_t) *val) == UTF8_ACCEPT) {
+			switch (codepoint) {
+			case '&':
+				mnstr_printf(toConsole, "&amp;");
+				break;
+			case '<':
+				mnstr_printf(toConsole, "&lt;");
+				break;
+			case '>':
+				mnstr_printf(toConsole, "&gt;");
+				break;
+			case '"':
+				mnstr_printf(toConsole, "&quot;");
+				break;
+			case '\'':
+				mnstr_printf(toConsole, "&apos;");
+				break;
+			default:
+				if ((codepoint & ~0x80) <= 0x1F || codepoint == 0177) {
+					/* control character */
+					mnstr_printf(toConsole, "&#%d;", codepoint);
+				} else if (codepoint < 0x80) {
+					/* ASCII */
+					mnstr_printf(toConsole, "%c", codepoint);
+				} else {
+					mnstr_printf(toConsole, "&#x%x;", codepoint);
+				}
+				break;
+			}
+		}
 	}
 }
 
