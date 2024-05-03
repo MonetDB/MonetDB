@@ -67,10 +67,10 @@ statement ok
 alter table part2 set read only
 
 statement ok
-analyze sys.part1 (x,y,z) minmax
+analyze sys.part1 (x,y,z)
 
 statement ok
-analyze sys.part2 (x,y,z) minmax
+analyze sys.part2 (x,y,z)
 
 query RRR rowsort
 SELECT * FROM complete where x>=0.0 AND x <=1.0
@@ -111,7 +111,7 @@ project (
 | select (
 | | table("sys"."part1") [ "part1"."x" NOT NULL as "complete"."x", "part1"."y" NOT NULL as "complete"."y", "part1"."z" NOT NULL as "complete"."z" ]
 | ) [ ("complete"."x" NOT NULL) = (double(53) "0") ]
-) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
+) [ double(53) "0" as "complete"."x", "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 
 query RRR rowsort
 SELECT * FROM complete where x = 0.0
@@ -130,7 +130,7 @@ project (
 | select (
 | | table("sys"."part2") [ "part2"."x" NOT NULL as "complete"."x", "part2"."y" NOT NULL as "complete"."y", "part2"."z" NOT NULL as "complete"."z" ]
 | ) [ ("complete"."x" NOT NULL) = (double(53) "3") ]
-) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
+) [ double(53) "3" as "complete"."x", "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 
 query RRR rowsort
 SELECT * FROM complete where x = 3.0

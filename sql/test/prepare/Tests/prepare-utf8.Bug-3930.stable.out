@@ -69,12 +69,12 @@ stdout of test 'prepare-utf8.Bug-3930` in directory 'sql/test/BugTracker-2016` i
 #prepare select * from bug3930 where a = ?;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	varchar,	varchar, varchar # type
+% varchar,     int,    int,    varchar,        varchar,        varchar # type
 % 7,	1,	1,	0,	7,	1 # length
 [ "varchar",	4,	0,	"",	"bug3930",	"a"	]
 [ "varchar",	4,	0,	NULL,	NULL,	NULL	]
 #exec  2('ä123');
-% sys.bug3930 # table_name
+% .bug3930 # table_name
 % a # name
 % varchar # type
 % 0 # length

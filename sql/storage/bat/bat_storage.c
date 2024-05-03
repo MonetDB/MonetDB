@@ -493,6 +493,8 @@ segs_end( segments *segs, sql_trans *tr, sql_table *table)
 {
 	size_t cnt = 0;
 
+	/* because a table can grow rows over the time a transaction is running, we need to find the last valid segment, to
+	 * keep all of the parts aligned */
 	lock_table(tr->store, table->base.id);
 	segment *s = segs->h, *l = NULL;
 
@@ -4472,10 +4474,10 @@ tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, c->base.id);
@@ -4512,10 +4514,10 @@ tc_gc_upd_col( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, c->base.id);
@@ -4552,10 +4554,10 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, i->base.id);
@@ -4592,10 +4594,10 @@ tc_gc_upd_idx( sql_store Store, sql_change *change, ulng oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
 		// d is oldest reachable delta
-		if (d->cs.merged && d->next) // Unreachable can immediately be destroyed.
+		if (d->cs.merged && d->next) { // Unreachable can immediately be destroyed.
 			destroy_delta(d->next, true);
-
-		d->next = NULL;
+			d->next = NULL;
+		}
 		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, i->base.id);

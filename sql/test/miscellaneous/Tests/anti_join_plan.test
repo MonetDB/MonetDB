@@ -1,0 +1,89 @@
+# init
+statement ok
+CREATE TABLE Test (k1 int, k2 int, k3 int, v int)
+
+statement ok
+INSERT INTO Test SELECT value % 10 as k1, value % 100 as k2, value % 1000 as k3, value as v FROM generate_series(1, 100000)
+
+statement ok
+set optimizer='sequential_pipe'
+
+# unoptimized anti join
+query T python .explain.function_histogram
+explain select * from test
+where (k1, k2) not in (
+    select k1, k2
+    from test
+    where k1 = 1
+)
+----
+algebra.difference
+2
+algebra.join
+1
+algebra.project
+1
+algebra.projection
+9
+algebra.projectionpath
+3
+algebra.select
+1
+algebra.thetaselect
+2
+bat.mirror
+1
+bat.pack
+5
+batcalc.ifthenelse
+1
+batcalc.not
+1
+querylog.define
+1
+sql.bind
+4
+sql.mvc
+1
+sql.resultSet
+1
+sql.tid
+1
+user.main
+1
+
+# optimized anti join
+query T python .explain.function_histogram
+explain select * from test
+where k2 not in (
+    select k2
+    from test
+    where k1 = 1
+)
+----
+algebra.difference
+1
+algebra.projection
+3
+algebra.projectionpath
+3
+algebra.thetaselect
+1
+bat.pack
+5
+querylog.define
+1
+sql.bind
+4
+sql.mvc
+1
+sql.resultSet
+1
+sql.tid
+1
+user.main
+1
+
+statement ok
+set optimizer='default_pipe'
+

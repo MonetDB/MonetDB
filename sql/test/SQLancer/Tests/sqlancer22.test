@@ -635,17 +635,6 @@ select c1 from t4 where (c0,3) in (select 2,3 union all select 3,4)
 2
 
 query I nosort
-select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),(select 2,3 union all select 6,7))
-----
-2
-
-query I rowsort
-select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),(select 3,3 union all select 5,4))
-----
-2
-3
-
-query I nosort
 select c1 from t4 where (c0,3) in (select 2,3 where false)
 ----
 
@@ -714,6 +703,9 @@ SELECT EXISTS (SELECT 1 FROM (SELECT DISTINCT 1) y(y) WHERE x.x = ANY(VALUES (y.
 ----
 0
 0
+
+statement error 42000!syntax error, unexpected ',' in: "select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),"
+select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),(select 2,3 union all select 6,7))
 
 statement ok
 ROLLBACK

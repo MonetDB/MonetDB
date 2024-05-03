@@ -2036,7 +2036,7 @@ exp_is_atom( sql_exp *e )
 	switch (e->type) {
 	case e_atom:
 		if (e->f) /* values list */
-			return 0;
+			return exps_are_atoms(e->f);
 		return 1;
 	case e_convert:
 		return exp_is_atom(e->l);

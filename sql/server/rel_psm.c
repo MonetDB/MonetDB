@@ -614,6 +614,65 @@ has_return( list *l )
 }
 
 static list *
+psm_analyze(sql_query *query, dlist *qname, dlist *columns)
+{
+	mvc *sql = query->sql;
+	const char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
+	list *tl = sa_list(sql->sa), *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
+	sql_subfunc *f = NULL;
+	sql_subtype tpe;
+
+	if (!sql_find_subtype(&tpe, "varchar", 1024, 0))
+		return sql_error(sql, 02, SQLSTATE(HY013) "varchar type missing?");
+
+	if (sname && tname) {
+		sql_table *t = NULL;
+
+		if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "ANALYZE", false)))
+			return NULL;
+		if (isDeclaredTable(t))
+			return sql_error(sql, 02, SQLSTATE(42000) "Cannot analyze a declared table");
+		sname = t->s->base.name;
+	}
+	/* call analyze( [schema, [ table ]] ) */
+	if (sname) {
+		sql_exp *sname_exp = exp_atom_str(sql->sa, sname, &tpe);
+
+		list_append(exps, sname_exp);
+		list_append(tl, exp_subtype(sname_exp));
+	}
+	if (tname) {
+		sql_exp *tname_exp = exp_atom_str(sql->sa, tname, &tpe);
+
+		list_append(exps, tname_exp);
+		list_append(tl, exp_subtype(tname_exp));
+
+		if (columns)
+			list_append(tl, exp_subtype(tname_exp));
+	}
+	if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true, false)))
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
+	if (!execute_priv(sql, f->func))
+		return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
+	if (!columns) {
+		list_append(analyze_calls, exp_op(sql->sa, exps, f));
+	} else {
+		if (!sname || !tname)
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze schema or table name missing");
+		for(dnode *n = columns->h; n; n = n->next) {
+			const char *cname = n->data.sval;
+			list *nexps = list_dup(exps, NULL);
+			sql_exp *cname_exp = exp_atom_str(sql->sa, cname, &tpe);
+
+			list_append(nexps, cname_exp);
+			/* call analyze(sname, tname, cname) */
+			list_append(analyze_calls, exp_op(sql->sa, nexps, f));
+		}
+	}
+	return analyze_calls;
+}
+
+static list *
 sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_label, int is_func)
 {
 	mvc *sql = query->sql;
@@ -654,6 +713,11 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 		case SQL_CASE:
 			res = rel_psm_case(query, restype, restypelist, s->data.lval->h, is_func);
 			break;
+		case SQL_ANALYZE: {
+			dlist *l = s->data.lval;
+
+			reslist = psm_analyze(query, l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */);
+		} 	break;
 		case SQL_CALL:
 			assert(s->type == type_symbol);
 			res = rel_psm_call(query, s->data.sym);
@@ -1427,69 +1491,6 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 	return rel_drop_trigger(sql, tr->t->s->base.name, tname, if_exists);
 }
 
-static sql_rel *
-psm_analyze(sql_query *query, dlist *qname, dlist *columns)
-{
-	mvc *sql = query->sql;
-	const char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
-	list *tl = sa_list(sql->sa), *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
-	sql_subfunc *f = NULL;
-	sql_subtype tpe;
-
-	if (!sql_find_subtype(&tpe, "varchar", 1024, 0))
-		return sql_error(sql, 02, SQLSTATE(HY013) "varchar type missing?");
-
-	if (sname && tname) {
-		sql_table *t = NULL;
-
-		if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "ANALYZE", false)))
-			return NULL;
-		if (isDeclaredTable(t))
-			return sql_error(sql, 02, SQLSTATE(42000) "Cannot analyze a declared table");
-		sname = t->s->base.name;
-	}
-	/* call analyze( [schema, [ table ]] ) */
-	if (sname) {
-		sql_exp *sname_exp = exp_atom_str(sql->sa, sname, &tpe);
-
-		list_append(exps, sname_exp);
-		list_append(tl, exp_subtype(sname_exp));
-	}
-	if (tname) {
-		sql_exp *tname_exp = exp_atom_str(sql->sa, tname, &tpe);
-
-		list_append(exps, tname_exp);
-		list_append(tl, exp_subtype(tname_exp));
-
-		if (columns)
-			list_append(tl, exp_subtype(tname_exp));
-	}
-	if (!columns) {
-		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true, false)))
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
-		if (!execute_priv(sql, f->func))
-			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
-		list_append(analyze_calls, exp_op(sql->sa, exps, f));
-	} else {
-		if (!sname || !tname)
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze schema or table name missing");
-		if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true, false)))
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
-		if (!execute_priv(sql, f->func))
-			return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
-		for(dnode *n = columns->h; n; n = n->next) {
-			const char *cname = n->data.sval;
-			list *nexps = list_dup(exps, NULL);
-			sql_exp *cname_exp = exp_atom_str(sql->sa, cname, &tpe);
-
-			list_append(nexps, cname_exp);
-			/* call analyze( opt_minmax, opt_sample_size, sname, tname, cname) */
-			list_append(analyze_calls, exp_op(sql->sa, nexps, f));
-		}
-	}
-	return rel_psm_block(sql->sa, analyze_calls);
-}
-
 static sql_rel*
 create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 {
@@ -1630,7 +1631,8 @@ rel_psm(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		/* Jan2022 update: The 'sample' and 'minmax' parameters are now ignored because they are no longer used in the backend */
-		ret = psm_analyze(query, l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */);
+		list *calls = psm_analyze(query, l->h->data.lval /* qualified table name */, l->h->next->data.lval /* opt list of column */);
+		ret = rel_psm_block(sql->sa, calls);
 		sql->type = Q_UPDATE;
 	} 	break;
 	default:

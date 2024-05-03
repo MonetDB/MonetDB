@@ -348,8 +348,7 @@ nullif(0.322, 4.3)), 0.31),
 
 statement ok
 create view v32(vc0, vc1) as (select distinct cast(((-4)*(-4)) as tinyint), coalesce(nullif('p', 'E]T'),
-sql_max('f)6_', '.u'), cast(true as string(679)), case -3 when -5 then '94' end)
-group by substr('FALSE', 2))
+sql_max('f)6_', '.u'), cast(true as string(679)), case -3 when -5 then '94' end))
 
 query T nosort
 select sum(all abs(interval '-27135172' second)) from v27 full outer join (select all 131.2
