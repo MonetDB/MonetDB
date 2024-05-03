@@ -828,38 +828,71 @@ error:
 		oid bpi = b->tseqbase; \
 		oid *vals = h->vals; \
 		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			bool fnd = 0; \
-			gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
-			gid g = 0; \
-			\
-			while (!fnd) { \
-				g = ATOMIC_GET(h->gids+k); \
-				while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
-					k++; \
-					k &= h->mask; \
+		if (!BATtdense(b)) { \
+			gid hsh = _hash_oid(bpi); \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				bool fnd = 0; \
+				gid k = (gid)combine(gi[i], hsh, prime)&h->mask; \
+				gid g = 0; \
+				\
+				while (!fnd) { \
 					g = ATOMIC_GET(h->gids+k); \
-				} \
-				if (!g) { \
-					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
-						hash_rehash(h, p, err); \
+					while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
+						k++; \
+						k &= h->mask; \
+						g = ATOMIC_GET(h->gids+k); \
 					} \
-					slots--; \
-					g = ++slot; \
-					vals[g] = bpi; \
-					pgids[g] = gi[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
-					continue; \
+					if (!g) { \
+						if (slots == 0) { \
+							slots = private?1:PRE_CLAIM; \
+							slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+							if (((slot*100)/70) >= (gid)h->size) \
+								hash_rehash(h, p, err); \
+						} \
+						slots--; \
+						g = ++slot; \
+						vals[g] = bpi; \
+						pgids[g] = gi[i]; \
+						if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+					} \
+					fnd = 1; \
 				} \
-				fnd = 1; \
+				gp[i] = g-1; \
 			} \
-			gp[i] = g-1; \
-			/* if b->tseqbase == oid_nil, all bpi-s are oid_nil */ \
-			bpi += (b->tseqbase != oid_nil); \
-		} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				bool fnd = 0; \
+				gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
+				gid g = 0; \
+				\
+				while (!fnd) { \
+					g = ATOMIC_GET(h->gids+k); \
+					while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
+						k++; \
+						k &= h->mask; \
+						g = ATOMIC_GET(h->gids+k); \
+					} \
+					if (!g) { \
+						if (slots == 0) { \
+							slots = private?1:PRE_CLAIM; \
+							slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+							if (((slot*100)/70) >= (gid)h->size) \
+								hash_rehash(h, p, err); \
+						} \
+						slots--; \
+						g = ++slot; \
+						vals[g] = bpi; \
+						pgids[g] = gi[i]; \
+						if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+					} \
+					fnd = 1; \
+				} \
+				gp[i] = g-1; \
+				bpi++; \
+			} \
+		}\
 	} while (0)
 
 #define fderive(Type, BaseType) \
@@ -1486,7 +1519,7 @@ error:
 		} else { \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				hs[i] = (gid)_hash_oid(ky); \
-				ky += (k->tseqbase != oid_nil); \
+				ky++; \
 			} \
 		} \
 	} while (0)
@@ -1607,13 +1640,21 @@ error:
 
 #define vhash_combined() \
 	do { \
-		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && cnt)); \
+		assert(BATtdense(k) || \
+				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
 		\
+		oid ky = k->tseqbase; \
 		gid *hs = Tloc(h, 0); \
-		gid hsh = _hash_oid(k->tseqbase); \
-		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			hs[i] = (gid)combine(ps[i], hsh, prime); \
+		if (!BATtdense(k)) { \
+			gid hsh = _hash_oid(ky); \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				hs[i] = (gid)combine(ps[i], hsh, prime); \
+			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				hs[i] = (gid)combine(ps[i], _hash_oid(ky), prime); \
+				ky++; \
+			} \
 		} \
 	} while (0)
 
@@ -1621,7 +1662,7 @@ error:
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
-	\
+		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)combine(ps[i], _hash_##Type(ky[sl[i]]), prime); \
 		} \
@@ -1631,7 +1672,7 @@ error:
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
-	\
+		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)combine(ps[i], _hash_##Type(*(((BaseType*)ky)+sl[i])), prime); \
 		} \
@@ -2036,10 +2077,23 @@ error:
 
 #define vexpand() \
 	do { \
+		assert(BATtdense(k) || \
+				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
+		\
 		oid val = k->tseqbase; \
 		oid *res = Tloc(e, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
-			res[i] = val; \
+		if (!BATtdense(k)) { \
+			TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
+				res[i] = val; \
+			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				gid freq = (gid)ht->frequency[sid[i]]; \
+				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
+					res[idx++] = val; \
+				} \
+				val++; \
+			} \
 		} \
 	} while (0)
 
@@ -2198,6 +2252,7 @@ error:
 	return err;
 }
 
+/*
 #define vfetch() \
 	do { \
 		oid val = ((oid*)hp->payload)[0]; \
@@ -2206,6 +2261,7 @@ error:
 			res[i] = val; \
 		} \
 	} while (0)
+*/
 
 #define fetch(Type) \
 	do { \
@@ -2263,7 +2319,7 @@ OAHASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq
 
 		switch(tt) {
 			case TYPE_void:
-				vfetch();
+				fetch(oid);
 				break;
 			case TYPE_bit:
 				fetch(bit);
