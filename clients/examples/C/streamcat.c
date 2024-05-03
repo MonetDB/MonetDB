@@ -473,6 +473,40 @@ opener_wastream(char *filename)
 }
 
 
+#ifdef HAVE_ICONV
+#include "iconv-stream.h"
+#else
+static stream *
+iconv_rstream(stream *restrict ss, const char *restrict charset, const char *restrict name)
+{
+	if (ss == NULL || charset == NULL || name == NULL)
+		return NULL;
+	if (ss->isutf8 ||
+	    strcmp(charset, "utf-8") == 0 ||
+	    strcmp(charset, "UTF-8") == 0 ||
+	    strcmp(charset, "UTF8") == 0)
+		return ss;
+
+	fprintf(stderr, "ICONV support has been left out of this MonetDB");
+	return NULL;
+}
+
+static stream *
+iconv_wstream(stream *restrict ss, const char *restrict charset, const char *restrict name)
+{
+	if (ss == NULL || charset == NULL || name == NULL)
+		return NULL;
+	if (ss->isutf8 ||
+	    strcmp(charset, "utf-8") == 0 ||
+	    strcmp(charset, "UTF-8") == 0 ||
+	    strcmp(charset, "UTF8") == 0)
+		return ss;
+
+	fprintf(stderr, "ICONV support has been left out of this MonetDB");
+	return NULL;
+}
+#endif
+
 static stream *
 wrapper_read_iconv(stream *s, char *enc)
 {

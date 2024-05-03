@@ -1680,8 +1680,6 @@ FILE *getFile(stream *s);
 int getFileNo(stream *s);
 size_t getFileSize(stream *s);
 stream *gz_stream(stream *inner, int preset);
-stream *iconv_rstream(stream *restrict ss, const char *restrict charset, const char *restrict name);
-stream *iconv_wstream(stream *restrict ss, const char *restrict charset, const char *restrict name);
 bool isa_block_stream(const stream *s);
 stream *lz4_stream(stream *inner, int preset);
 stream *mapi_request_download(const char *filename, bool binary, bstream *rs, stream *ws);

@@ -47,11 +47,8 @@
 
 #include <locale.h>
 
-#ifdef HAVE_ICONV
-#include <iconv.h>
 #ifdef HAVE_NL_LANGINFO
 #include <langinfo.h>
-#endif
 #endif
 
 #ifndef S_ISCHR
@@ -75,9 +72,6 @@ static const char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
 static bool echoquery = false;
-#ifdef HAVE_ICONV
-static char *encoding;
-#endif
 static bool errseen = false;
 static bool allow_remote = false;
 static const char *curfile = NULL;
@@ -538,6 +532,12 @@ charwidth(uint32_t c)
 	}
 	return 1;
 }
+
+#ifdef HAVE_ICONV
+static char *encoding;
+
+#include "iconv-stream.h"
+#endif
 
 /* The Mapi library eats away the comment lines, which we need to
  * detect end of debugging. We overload the routine to our liking. */
@@ -3216,6 +3216,40 @@ struct privdata {
 #define READSIZE	(1 << 16)
 //#define READSIZE	(1 << 20)
 
+static char *
+cvfilename(const char *filename)
+{
+#ifdef HAVE_ICONV
+	if (encoding) {
+		iconv_t cd = iconv_open(encoding, "UTF-8");
+
+		if (cd != (iconv_t) -1) {
+			size_t len = strlen(filename);
+			size_t size = 4 * len;
+			char *from = (char *) filename;
+			char *r = malloc(size + 1);
+			char *p = r;
+
+			if (r) {
+				if (iconv(cd, &from, &len, &p, &size) != (size_t) -1) {
+					iconv_close(cd);
+					*p = 0;
+					return r;
+				}
+				free(r);
+			}
+			iconv_close(cd);
+		}
+	}
+#endif
+	/* couldn't use iconv for whatever reason; alternative is to
+	 * use utf8towchar above to convert to a wide character string
+	 * (wcs) and convert that to the locale-specific encoding
+	 * using wcstombs or wcsrtombs (but preferably only if the
+	 * locale's encoding is not UTF-8) */
+	return strdup(filename);
+}
+
 static const char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	"abcdefghijklmnopqrstuvwxyz";
 
@@ -3227,6 +3261,7 @@ getfile(void *data, const char *filename, bool binary,
 	char *buf;
 	struct privdata *priv = data;
 	ssize_t s;
+	char *fname = NULL;
 
 	if (size)
 		*size = 0;	/* most returns require this */
@@ -3237,12 +3272,15 @@ getfile(void *data, const char *filename, bool binary,
 	}
 	buf = priv->buf;
 	if (filename != NULL) {
+		fname = cvfilename(filename);
+		if (fname == NULL)
+			return "allocation failed in client";
 		if (binary) {
-			f = open_rstream(filename);
+			f = open_rstream(fname);
 			assert(offset <= 1);
 			offset = 0;
 		} else {
-			f = open_rastream(filename);
+			f = open_rastream(fname);
 			if (f == NULL) {
 				size_t x;
 				/* simplistic check for URL
@@ -3254,11 +3292,16 @@ getfile(void *data, const char *filename, bool binary,
 #ifdef HAVE_CURL
 					if (allow_remote) {
 						f = open_urlstream(filename, priv->errbuf);
-						if (f == NULL && priv->errbuf[0])
+						if (f == NULL && priv->errbuf[0]) {
+							free(fname);
 							return priv->errbuf;
+						}
 					} else
 #endif
+					{
+						free(fname);
 						return "client refuses to retrieve remote content";
+					}
 				}
 			}
 #ifdef HAVE_ICONV
@@ -3279,16 +3322,19 @@ getfile(void *data, const char *filename, bool binary,
 					p = q;
 #endif
 				if (p != NULL) {
-					size_t x = (size_t) (p - curfile) + strlen(filename) + 2;
+					size_t x = (size_t) (p - curfile) + strlen(fname) + 2;
 					char *b = malloc(x);
-					snprintf(b, x, "%.*s/%s", (int) (p - curfile), curfile, filename);
+					snprintf(b, x, "%.*s/%s", (int) (p - curfile), curfile, fname);
 					f = binary ? open_rstream(b) : open_rastream(b);
 					free(b);
 				}
 			}
-			if (f == NULL)
+			if (f == NULL) {
+				free(fname);
 				return (char*) mnstr_peek_error(NULL);
+			}
 		}
+		free(fname);
 		while (offset > 1) {
 			if (state == INTERRUPT) {
 				close_stream(f);
@@ -3342,9 +3388,14 @@ static char *
 putfile(void *data, const char *filename, bool binary, const void *buf, size_t bufsize)
 {
 	struct privdata *priv = data;
+	char *fname = NULL;
 
 	if (filename != NULL) {
-		stream *s = binary ? open_wstream(filename) : open_wastream(filename);
+		fname = cvfilename(filename);
+		if (fname == NULL)
+			return "allocation failed in client";
+		stream *s = binary ? open_wstream(fname) : open_wastream(fname);
+		free(fname);
 		if (s == NULL)
 			return (char*)mnstr_peek_error(NULL);
 		priv->f = s;
