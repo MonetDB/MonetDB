@@ -1422,6 +1422,8 @@ bind_optimize_unions_bottomup(visitor *v, global_props *gp)
 	int flag = v->sql->sql_optimizer;
 	return gp->opt_level == 1 && gp->cnt[op_munion] && (flag & optimize_unions_bottomup)
 		   ? rel_optimize_munions_bottomup : NULL;
+	// TODO: remove the next return
+	return rel_optimize_unions_bottomup;
 }
 
 
