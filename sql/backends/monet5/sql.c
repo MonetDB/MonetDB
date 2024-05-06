@@ -4367,8 +4367,10 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr = m->session->tr;
 	storage *t_del = bind_del_data(tr, t, NULL);
 
-	BAT *d = BATdescriptor(t_del->cs.bid);
+	BAT *d = NULL;
 
+	if (t_del)
+		d = BATdescriptor(t_del->cs.bid);
 	if (t_del == NULL || d == NULL)
 		throw(SQL, "sql.persist_unlogged", "Cannot access %s column storage.", tname);
 
@@ -4380,15 +4382,17 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(d->batInserted <= d_bi.count);
 
 		if (d->batInserted < d_bi.count) {
+			int n = ol_length(t->columns);
 
-			int n = 100;
-			bat *commit_list = GDKzalloc(sizeof(bat) * (n + 1));
-			BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 1));
+			bat *commit_list = GDKzalloc(sizeof(bat) * (n + 2));
+			BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 2));
 
 			if (commit_list == NULL || sizes == NULL) {
+				bat_iterator_end(&d_bi);
 				MT_lock_unset(&lock_persist_unlogged);
 				GDKfree(commit_list);
 				GDKfree(sizes);
+				BBPreclaim(d);
 				throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 			}
 
@@ -4396,51 +4400,41 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sizes[0] = 0;
 			int i = 1;
 
-			for (node *ncol = ol_first_node(t->columns); ncol; ncol = ncol->next) {
+			for (node *ncol = ol_first_node(t->columns); ncol; ncol = ncol->next, i++) {
 
 				sql_column *c = (sql_column *) ncol->data;
 				BAT *b = store->storage_api.bind_col(tr, c, QUICK);
 
 				if (b == NULL) {
+					bat_iterator_end(&d_bi);
 					MT_lock_unset(&lock_persist_unlogged);
 					GDKfree(commit_list);
 					GDKfree(sizes);
+					BBPreclaim(d);
 					throw(SQL, "sql.persist_unlogged", "Cannot access column descriptor.");
-				}
-
-				if (i == n && ncol->next) {
-					n = n * 2;
-					commit_list = GDKrealloc(commit_list, sizeof(bat) * n);
-					sizes = GDKrealloc(sizes, sizeof(BUN) * n);
-				}
-
-				if (commit_list == NULL || sizes == NULL) {
-					MT_lock_unset(&lock_persist_unlogged);
-					GDKfree(commit_list);
-					GDKfree(sizes);
-					throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 				}
 
 				commit_list[i] = b->batCacheid;
 				sizes[i] = d_bi.count;
-				i++;
 			}
 
+			assert(i<n+2);
 			commit_list[i] = d->batCacheid;
 			sizes[i] = d_bi.count;
 			i++;
 
 			if (TMsubcommit_list(commit_list, sizes, i, -1, -1) != GDK_SUCCEED) {
+				bat_iterator_end(&d_bi);
 				MT_lock_unset(&lock_persist_unlogged);
 				GDKfree(commit_list);
 				GDKfree(sizes);
+				BBPreclaim(d);
 				throw(SQL, "sql.persist_unlogged", "Lower level commit operation failed");
 			}
 
 			GDKfree(commit_list);
 			GDKfree(sizes);
 		}
-
 		count = d_bi.count;
 	}
 
@@ -4452,25 +4446,19 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*tableid = COLnew(0, TYPE_int, 0, TRANSIENT),
 		*rowcount = COLnew(0, TYPE_lng, 0, TRANSIENT);
 
-	if (table == NULL || tableid == NULL || rowcount == NULL) {
-		BBPnreclaim(3, table, tableid, rowcount);
-		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
-	}
-
-	if (BUNappend(table, tname, false) != GDK_SUCCEED ||
+	if (table == NULL || tableid == NULL || rowcount == NULL ||
+		BUNappend(table, tname, false) != GDK_SUCCEED ||
 		BUNappend(tableid, &(t->base.id), false) != GDK_SUCCEED ||
 		BUNappend(rowcount, &count, false) != GDK_SUCCEED) {
 		BBPnreclaim(3, table, tableid, rowcount);
 		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 	}
-
 	*o0 = table->batCacheid;
 	*o1 = tableid->batCacheid;
 	*o2 = rowcount->batCacheid;
 	BBPkeepref(table);
 	BBPkeepref(tableid);
 	BBPkeepref(rowcount);
-
 	return msg;
 }
 
