@@ -293,7 +293,7 @@ QLOGenable(void *ret)
 }
 
 str
-QLOGenableThreshold(void *ret, int *threshold)
+QLOGenableThreshold(void *ret, const int *threshold)
 {
 	(void) ret;
 	QLOGtrace = true;

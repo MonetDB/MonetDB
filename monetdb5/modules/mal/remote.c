@@ -345,7 +345,7 @@ RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * created).
  */
 str
-RMTdisconnect(void *ret, str *conn)
+RMTdisconnect(void *ret, const char *const *conn)
 {
 	connection c, t;
 
