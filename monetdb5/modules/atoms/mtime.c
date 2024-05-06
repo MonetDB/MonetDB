@@ -650,7 +650,7 @@ func1(MTIMEmsec_extract_epoch_ms, "epoch_ms", lng, lng, msec_since_epoch,
 	  COPYFLAGS, func1_noexcept, DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT,
 	  GET_NEXT_VAR)
 static inline str
-date_fromstr_func(date *ret, str s)
+date_fromstr_func(date *ret, const char *s)
 {
 	if (date_fromstr(s, &(size_t) { sizeof(date) }, &ret, false) < 0) {
 		if (strNil(s))
@@ -662,7 +662,7 @@ date_fromstr_func(date *ret, str s)
 	return MAL_SUCCEED;
 }
 
-func1(MTIMEdate_fromstr, "date", str, date,
+func1(MTIMEdate_fromstr, "date", char * const, date,
 	  date_fromstr_func, SETFLAGS, func1_except,
 	  DEC_ITER, DEC_VAR_R, INIT_ITERIN, INIT_VAROUT, GET_NEXT_ITER)
 #define date_date(m) m
@@ -673,14 +673,14 @@ func1(MTIMEtimestamp_extract_date, "date", timestamp, date,
 	  timestamp_date, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 static inline str
-timestamp_fromstr_func(timestamp *ret, str s)
+timestamp_fromstr_func(timestamp *ret, const char *s)
 {
 	if (timestamp_fromstr(s, &(size_t) { sizeof(timestamp) }, &ret, false) < 0)
 		throw(MAL, "mtime.timestamp_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
-func1(MTIMEtimestamp_fromstr, "timestamp", str, timestamp,
+func1(MTIMEtimestamp_fromstr, "timestamp", char * const, timestamp,
 	  timestamp_fromstr_func, SETFLAGS, func1_except,
 	  DEC_ITER, DEC_VAR_R, INIT_ITERIN, INIT_VAROUT, GET_NEXT_ITER)
 #define timestamp_timestamp(m) m
@@ -718,14 +718,14 @@ func1(MTIMEtimestamp_frommsec, "timestamp", lng, timestamp,
 	  mktsfrommsec, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 static inline str
-daytime_fromstr_func(daytime *ret, str s)
+daytime_fromstr_func(daytime *ret, const char *s)
 {
 	if (daytime_fromstr(s, &(size_t) { sizeof(daytime) }, &ret, false) < 0)
 		throw(MAL, "mtime.daytime_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
-func1(MTIMEdaytime_fromstr, "daytime", str, daytime,
+func1(MTIMEdaytime_fromstr, "daytime", char * const, daytime,
 	  daytime_fromstr_func, SETFLAGS, func1_except,
 	  DEC_ITER, DEC_VAR_R, INIT_ITERIN, INIT_VAROUT, GET_NEXT_ITER)
 #define daytime_daytime(m) m
@@ -827,7 +827,7 @@ MTIMElocal_timezone_msec(lng *ret)
 }
 
 static str
-timestamp_to_str(str *buf, const timestamp *d, str *format, const char *type,
+timestamp_to_str(str *buf, const timestamp *d, const char *const *format, const char *type,
 				 const char *malfunc)
 {
 	date dt;
@@ -856,7 +856,7 @@ timestamp_to_str(str *buf, const timestamp *d, str *format, const char *type,
 }
 
 static str
-str_to_timestamp(timestamp *ret, str *s, str *format, const char *type,
+str_to_timestamp(timestamp *ret, const char *const *s, const char *const *format, const char *type,
 				 const char *malfunc)
 {
 	struct tm tm = (struct tm) { 0 };
@@ -902,7 +902,7 @@ str_to_timestamp(timestamp *ret, str *s, str *format, const char *type,
 }
 
 static inline str
-str_to_date(date *ret, str s, str format)
+str_to_date(date *ret, const char *s, const char *format)
 {
 	str msg = MAL_SUCCEED;
 	timestamp ts;
@@ -914,13 +914,13 @@ str_to_date(date *ret, str s, str format)
 }
 
 func2(MTIMEstr_to_date, "str_to_date",
-	  str, str, date, str_to_date, func2_except,
+	  char * const, char * const, date, str_to_date, func2_except,
 	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT,
 	  INIT_ITERIN, INIT_ITERIN, INIT_VAROUT,
 	  GET_NEXT_ITER, GET_NEXT_ITER,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 static inline str
-str_to_time(daytime *ret, str s, str format)
+str_to_time(daytime *ret, const char *s, const char *format)
 {
 	str msg = MAL_SUCCEED;
 	timestamp ts;
@@ -932,59 +932,59 @@ str_to_time(daytime *ret, str s, str format)
 }
 
 func2(MTIMEstr_to_time, "str_to_time",
-	  str, str, daytime, str_to_time, func2_except,
+	  char * const, char * const, daytime, str_to_time, func2_except,
 	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT,
 	  INIT_ITERIN, INIT_ITERIN, INIT_VAROUT,
 	  GET_NEXT_ITER, GET_NEXT_ITER,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 static inline str
-str_to_timestamp_func(timestamp *ret, str s, str format)
+str_to_timestamp_func(timestamp *ret, const char *s, const char *format)
 {
 	return str_to_timestamp(ret, &s, &format, "timestamp",
 							"mtime.str_to_timestamp");
 }
 
 func2(MTIMEstr_to_timestamp, "str_to_timestamp",
-	  str, str, timestamp, str_to_timestamp_func, func2_except,
+	  char * const, char * const, timestamp, str_to_timestamp_func, func2_except,
 	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT,
 	  INIT_ITERIN, INIT_ITERIN, INIT_VAROUT,
 	  GET_NEXT_ITER, GET_NEXT_ITER,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 static inline str
-date_to_str(str *ret, date d, str format)
+date_to_str(str *ret, date d, const char *format)
 {
 	timestamp ts = timestamp_create(d, timestamp_daytime(timestamp_current()));
 	return timestamp_to_str(ret, &ts, &format, "date", "mtime.date_to_str");
 }
 
 func2(MTIMEdate_to_str, "date_to_str",
-	  date, str, str, date_to_str, func2_except,
+	  date, char * const, str, date_to_str, func2_except,
 	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER,
 	  INIT_VARIN, INIT_ITERIN, INIT_NOTHING,
 	  GET_NEXT_VAR, GET_NEXT_ITER,
 	  APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 static inline str
-time_to_str(str *ret, daytime d, str format)
+time_to_str(str *ret, daytime d, const char *format)
 {
 	timestamp ts = timestamp_create(timestamp_date(timestamp_current()), d);
 	return timestamp_to_str(ret, &ts, &format, "time", "mtime.time_to_str");
 }
 
 func2(MTIMEtime_to_str, "time_to_str",
-	  daytime, str, str, time_to_str, func2_except,
+	  daytime, char * const, str, time_to_str, func2_except,
 	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER,
 	  INIT_VARIN, INIT_ITERIN, INIT_NOTHING,
 	  GET_NEXT_VAR, GET_NEXT_ITER,
 	  APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 static inline str
-timestamp_to_str_func(str *ret, timestamp d, str format)
+timestamp_to_str_func(str *ret, timestamp d, const char *format)
 {
 	return timestamp_to_str(ret, &d, &format, "timestamp",
 							"mtime.timestamp_to_str");
 }
 
 func2(MTIMEtimestamp_to_str, "timestamp_to_str",
-	  timestamp, str, str, timestamp_to_str_func, func2_except,
+	  timestamp, char * const, str, timestamp_to_str_func, func2_except,
 	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER,
 	  INIT_VARIN, INIT_ITERIN, INIT_NOTHING,
 	  GET_NEXT_VAR, GET_NEXT_ITER,

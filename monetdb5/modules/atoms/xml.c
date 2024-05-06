@@ -169,7 +169,7 @@ XMLunquotestring(const char **p, char q, char *buf)
 }
 
 str
-XMLxml2str(str *s, xml *x)
+XMLxml2str(str *s, const xml *x)
 {
 	if (strNil(*x)) {
 		*s = GDKstrdup(str_nil);
@@ -181,7 +181,7 @@ XMLxml2str(str *s, xml *x)
 }
 
 str
-XMLstr2xml(xml *x, const char **val)
+XMLstr2xml(xml *x, const char *const*val)
 {
 	const char *t = *val;
 	str buf;
@@ -204,7 +204,7 @@ XMLstr2xml(xml *x, const char **val)
 }
 
 str
-XMLxmltext(str *s, xml *x)
+XMLxmltext(str *s, const xml *x)
 {
 	xmlDocPtr doc;
 	xmlNodePtr elem;
@@ -255,7 +255,7 @@ XMLxmltext(str *s, xml *x)
 }
 
 str
-XMLxml2xml(xml *s, xml *x)
+XMLxml2xml(xml *s, const xml *x)
 {
 	*s = GDKstrdup(*x);
 	if (*s == NULL)
@@ -264,7 +264,7 @@ XMLxml2xml(xml *s, xml *x)
 }
 
 str
-XMLdocument(xml *x, str *val)
+XMLdocument(xml *x, const char * const *val)
 {
 	xmlDocPtr doc;
 
@@ -293,7 +293,7 @@ XMLdocument(xml *x, str *val)
 }
 
 str
-XMLcontent(xml *x, str *val)
+XMLcontent(xml *x, const char * const *val)
 {
 	xmlDocPtr doc;
 	xmlNodePtr elem;
@@ -331,7 +331,7 @@ XMLcontent(xml *x, str *val)
 }
 
 str
-XMLisdocument(bit *x, str *s)
+XMLisdocument(bit *x, const char * const *s)
 {
 	xmlDocPtr doc;
 
@@ -348,7 +348,7 @@ XMLisdocument(bit *x, str *s)
 }
 
 str
-XMLcomment(xml *x, str *s)
+XMLcomment(xml *x, const char * const *s)
 {
 	size_t len;
 	str buf;
@@ -371,7 +371,7 @@ XMLcomment(xml *x, str *s)
 }
 
 str
-XMLparse(xml *x, str *doccont, str *val, str *option)
+XMLparse(xml *x, const char * const *doccont, const char * const *val, const char * const *option)
 {
 	(void) option;
 	if (strcmp(*doccont, "content") == 0)
@@ -382,7 +382,7 @@ XMLparse(xml *x, str *doccont, str *val, str *option)
 }
 
 str
-XMLpi(xml *ret, str *target, str *value)
+XMLpi(xml *ret, const char * const *target, const char * const *value)
 {
 	size_t len;
 	str buf;
@@ -423,7 +423,7 @@ XMLpi(xml *ret, str *target, str *value)
 }
 
 str
-XMLroot(xml *ret, xml *val, str *version, str *standalone)
+XMLroot(xml *ret, const xml *val, const char * const *version, const char * const *standalone)
 {
 	size_t len = 0, i = 0;
 	str buf;
@@ -460,7 +460,7 @@ XMLroot(xml *ret, xml *val, str *version, str *standalone)
 		i += snprintf(buf + i, len - i, " standalone=\"%s\"", *standalone);
 	snprintf(buf + i, len - i, "?>%s", *val + 1);
 	buf++;
-	XMLisdocument(&isdoc, &buf);	/* check well-formedness */
+	XMLisdocument(&isdoc, &(const char *){buf});	/* check well-formedness */
 	buf--;
 	if (!isdoc) {
 		GDKfree(buf);
@@ -471,9 +471,9 @@ XMLroot(xml *ret, xml *val, str *version, str *standalone)
 }
 
 str
-XMLattribute(xml *x, str *name, str *val)
+XMLattribute(xml *x, const char * const *name, const char * const *val)
 {
-	str t = *val;
+	const char *t = *val;
 	str buf;
 	size_t len;
 
@@ -502,7 +502,7 @@ XMLattribute(xml *x, str *name, str *val)
 }
 
 str
-XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
+XMLelement(xml *ret, const char * const *name, const xml *nspace, const xml *attr, const xml *val)
 {
 	size_t len, i, namelen;
 	str buf;
@@ -552,13 +552,13 @@ XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
 }
 
 str
-XMLelementSmall(xml *ret, str *name, xml *val)
+XMLelementSmall(xml *ret, const char * const *name, const xml *val)
 {
 	return XMLelement(ret, name, NULL, NULL, val);
 }
 
 str
-XMLconcat(xml *ret, xml *left, xml *right)
+XMLconcat(xml *ret, const xml *left, const xml *right)
 {
 	size_t len;
 	str buf;
@@ -727,7 +727,7 @@ XMLtoString(str *s, size_t *len, const void *src, bool external)
 }
 
 str
-XMLxml2str(str *s, xml *x)
+XMLxml2str(str *s, const xml *x)
 {
 	(void) s;
 	(void) x;
@@ -743,7 +743,7 @@ XMLstr2xml(xml *x, const char **s)
 }
 
 str
-XMLxmltext(str *s, xml *x)
+XMLxmltext(str *s, const xml *x)
 {
 	(void) s;
 	(void) x;
@@ -751,7 +751,7 @@ XMLxmltext(str *s, xml *x)
 }
 
 str
-XMLxml2xml(xml *x, xml *s)
+XMLxml2xml(xml *x, const xml *s)
 {
 	(void) s;
 	(void) x;
@@ -759,7 +759,7 @@ XMLxml2xml(xml *x, xml *s)
 }
 
 str
-XMLdocument(xml *x, str *s)
+XMLdocument(xml *x, const char * const *s)
 {
 	(void) s;
 	(void) x;
@@ -768,7 +768,7 @@ XMLdocument(xml *x, str *s)
 }
 
 str
-XMLcontent(xml *x, str *s)
+XMLcontent(xml *x, const char * const *s)
 {
 	(void) s;
 	(void) x;
@@ -776,7 +776,7 @@ XMLcontent(xml *x, str *s)
 }
 
 str
-XMLisdocument(bit *x, str *s)
+XMLisdocument(bit *x, const char * const *s)
 {
 	(void) s;
 	(void) x;
@@ -785,7 +785,7 @@ XMLisdocument(bit *x, str *s)
 }
 
 str
-XMLcomment(xml *x, str *s)
+XMLcomment(xml *x, const char * const *s)
 {
 	(void) s;
 	(void) x;
@@ -793,7 +793,7 @@ XMLcomment(xml *x, str *s)
 }
 
 str
-XMLpi(xml *x, str *target, str *s)
+XMLpi(xml *x, const char * const *target, const char * const *s)
 {
 	(void) s;
 	(void) target;
@@ -802,7 +802,7 @@ XMLpi(xml *x, str *target, str *s)
 }
 
 str
-XMLroot(xml *x, xml *v, str *version, str *standalone)
+XMLroot(xml *x, const xml *v, const char * const *version, const char * const *standalone)
 {
 	(void) x;
 	(void) v;
@@ -812,7 +812,7 @@ XMLroot(xml *x, xml *v, str *version, str *standalone)
 }
 
 str
-XMLparse(xml *x, str *doccont, str *s, str *option)
+XMLparse(xml *x, const char * const *doccont, const char * const *s, const char * const *option)
 {
 	(void) x;
 	(void) doccont;
@@ -822,7 +822,7 @@ XMLparse(xml *x, str *doccont, str *s, str *option)
 }
 
 str
-XMLattribute(xml *ret, str *name, str *val)
+XMLattribute(xml *ret, const char * const *name, const char * const *val)
 {
 	(void) ret;
 	(void) name;
@@ -832,7 +832,7 @@ XMLattribute(xml *ret, str *name, str *val)
 }
 
 str
-XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
+XMLelement(xml *ret, const char * const *name, const xml *nspace, const xml *attr, const xml *val)
 {
 	(void) ret;
 	(void) name;
@@ -843,7 +843,7 @@ XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
 }
 
 str
-XMLelementSmall(xml *ret, str *name, xml *val)
+XMLelementSmall(xml *ret, const char * const *name, const xml *val)
 {
 	(void) ret;
 	(void) name;
@@ -853,7 +853,7 @@ XMLelementSmall(xml *ret, str *name, xml *val)
 }
 
 str
-XMLconcat(xml *ret, xml *left, xml *right)
+XMLconcat(xml *ret, const xml *left, const xml *right)
 {
 	(void) ret;
 	(void) left;

@@ -233,7 +233,7 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 	return msg;
 }
 
-static str JSONstr2json(json *ret, const char **j);
+static str JSONstr2json(json *ret, const char *const*j);
 
 static ssize_t
 JSONfromString(const char *src, size_t *len, void **J, bool external)
@@ -338,7 +338,7 @@ JSONtoString(str *s, size_t *len, const void *SRC, bool external)
 }
 
 static BAT *
-JSONdumpInternal(JSON *jt, int depth)
+JSONdumpInternal(const JSON *jt, int depth)
 {
 	int i, idx;
 	JSONterm *je;
@@ -464,7 +464,7 @@ JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	bat *ret = getArgReference_bat(stk, pci, 0);
-	json *val = (json *) getArgReference(stk, pci, 1);
+	const json *val = (json *) getArgReference(stk, pci, 1);
 	JSON *jt = JSONparse(*val);
 
 	CHECK_JSON(jt);
@@ -503,7 +503,7 @@ JSON2json(json *ret, const json *j)
 }
 
 static str
-JSONstr2json(json *ret, const char **j)
+JSONstr2json(json *ret, const char *const*j)
 {
 	str msg = MAL_SUCCEED;
 	json buf = NULL;
@@ -541,7 +541,7 @@ JSONstr2json(json *ret, const char **j)
 }
 
 static str
-JSONisvalid(bit *ret, str *j)
+JSONisvalid(bit *ret, const char *const *j)
 {
 	if (strNil(*j)) {
 		*ret = bit_nil;
@@ -556,12 +556,12 @@ JSONisvalid(bit *ret, str *j)
 }
 
 static str
-JSONisobject(bit *ret, json *js)
+JSONisobject(bit *ret, const json *js)
 {
 	if (strNil(*js)) {
 		*ret = bit_nil;
 	} else {
-		char *j = *js;
+		const char *j = *js;
 
 		skipblancs(j);
 		*ret = *j == '{';
@@ -570,12 +570,12 @@ JSONisobject(bit *ret, json *js)
 }
 
 static str
-JSONisarray(bit *ret, json *js)
+JSONisarray(bit *ret, const json *js)
 {
 	if (strNil(*js)) {
 		*ret = bit_nil;
 	} else {
-		char *j = *js;
+		const char *j = *js;
 
 		skipblancs(j);
 		*ret = *j == '[';
@@ -604,7 +604,7 @@ jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
 	if ((a = BATatoms[TYPE_str].atomRead(a, dstlen, s, cnt)) == NULL)
 		return NULL;
 
-	if ((msg = JSONstr2json(&out, (const char **) &a)) != MAL_SUCCEED) {
+	if ((msg = JSONstr2json(&out, &(const char *){a})) != MAL_SUCCEED) {
 		freeException(msg);
 		GDKfree(a);
 		return NULL;
@@ -612,9 +612,7 @@ jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
 	*dstlen = strlen(out) + 1;
 	GDKfree(a);
 
-	a = out;
-
-	return a;
+	return out;
 }
 
 #endif
@@ -714,10 +712,10 @@ typedef struct {
 } pattern;
 
 static str
-JSONcompile(char *expr, pattern terms[])
+JSONcompile(const char *expr, pattern terms[])
 {
 	int t = 0;
-	char *s, *beg;
+	const char *s, *beg;
 
 	for (s = expr; *s; s++) {
 		terms[t].token = CHILD_STEP;
@@ -801,7 +799,7 @@ JSONcompile(char *expr, pattern terms[])
 }
 
 static str
-JSONgetValue(JSON *jt, int idx)
+JSONgetValue(const JSON *jt, int idx)
 {
 	str s;
 
@@ -842,7 +840,7 @@ JSONglue(str res, str r, char sep)
 
 /* return NULL on no match, return (str) -1 on (malloc) failure, (str) -2 on stack overflow */
 static str
-JSONmatch(JSON *jt, int ji, pattern *terms, int ti, bool accumulate)
+JSONmatch(JSON *jt, int ji, const pattern *terms, int ti, bool accumulate)
 {
 	str r = NULL, res = NULL;
 	int i;
@@ -954,7 +952,7 @@ JSONmatch(JSON *jt, int ji, pattern *terms, int ti, bool accumulate)
 }
 
 static str
-JSONfilterInternal(json *ret, json *js, str *expr, str other)
+JSONfilterInternal(json *ret, const json *js, const char *const *expr, const char *other)
 {
 	pattern terms[MAXTERMS];
 	int tidx = 0;
@@ -1491,7 +1489,7 @@ JSONparse(const char *j)
 }
 
 static str
-JSONlength(int *ret, json *j)
+JSONlength(int *ret, const json *j)
 {
 	int i, cnt = 0;
 	JSON *jt;
@@ -1511,7 +1509,7 @@ JSONlength(int *ret, json *j)
 }
 
 static str
-JSONfilterArrayDefault(json *ret, json *js, lng index, str other)
+JSONfilterArrayDefault(json *ret, const json *js, lng index, const char *other)
 {
 	char expr[BUFSIZ], *s = expr;
 
@@ -1519,11 +1517,11 @@ JSONfilterArrayDefault(json *ret, json *js, lng index, str other)
 		throw(MAL, "json.filter",
 			  SQLSTATE(42000) "Filter index cannot be negative");
 	snprintf(expr, BUFSIZ, "[" LLFMT "]", index);
-	return JSONfilterInternal(ret, js, &s, other);
+	return JSONfilterInternal(ret, js, &(const char *){s}, other);
 }
 
 static str
-JSONfilterArray_bte(json *ret, json *js, bte *index)
+JSONfilterArray_bte(json *ret, const json *js, const bte *index)
 {
 	if (strNil(*js) || is_bte_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1534,7 +1532,7 @@ JSONfilterArray_bte(json *ret, json *js, bte *index)
 }
 
 static str
-JSONfilterArrayDefault_bte(json *ret, json *js, bte *index, str *other)
+JSONfilterArrayDefault_bte(json *ret, const json *js, const bte *index, const char *const *other)
 {
 	if (strNil(*js) || is_bte_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1545,7 +1543,7 @@ JSONfilterArrayDefault_bte(json *ret, json *js, bte *index, str *other)
 }
 
 static str
-JSONfilterArray_sht(json *ret, json *js, sht *index)
+JSONfilterArray_sht(json *ret, const json *js, const sht *index)
 {
 	if (strNil(*js) || is_sht_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1556,7 +1554,7 @@ JSONfilterArray_sht(json *ret, json *js, sht *index)
 }
 
 static str
-JSONfilterArrayDefault_sht(json *ret, json *js, sht *index, str *other)
+JSONfilterArrayDefault_sht(json *ret, const json *js, const sht *index, const char *const *other)
 {
 	if (strNil(*js) || is_sht_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1567,7 +1565,7 @@ JSONfilterArrayDefault_sht(json *ret, json *js, sht *index, str *other)
 }
 
 static str
-JSONfilterArray_int(json *ret, json *js, int *index)
+JSONfilterArray_int(json *ret, const json *js, const int *index)
 {
 	if (strNil(*js) || is_int_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1578,7 +1576,7 @@ JSONfilterArray_int(json *ret, json *js, int *index)
 }
 
 static str
-JSONfilterArrayDefault_int(json *ret, json *js, int *index, str *other)
+JSONfilterArrayDefault_int(json *ret, const json *js, const int *index, const char *const *other)
 {
 	if (strNil(*js) || is_int_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1589,7 +1587,7 @@ JSONfilterArrayDefault_int(json *ret, json *js, int *index, str *other)
 }
 
 static str
-JSONfilterArray_lng(json *ret, json *js, lng *index)
+JSONfilterArray_lng(json *ret, const json *js, const lng *index)
 {
 	if (strNil(*js) || is_lng_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1600,7 +1598,7 @@ JSONfilterArray_lng(json *ret, json *js, lng *index)
 }
 
 static str
-JSONfilterArrayDefault_lng(json *ret, json *js, lng *index, str *other)
+JSONfilterArrayDefault_lng(json *ret, const json *js, const lng *index, const char *const *other)
 {
 	if (strNil(*js) || is_lng_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1612,7 +1610,7 @@ JSONfilterArrayDefault_lng(json *ret, json *js, lng *index, str *other)
 
 #ifdef HAVE_HGE
 static str
-JSONfilterArray_hge(json *ret, json *js, hge *index)
+JSONfilterArray_hge(json *ret, const json *js, const hge *index)
 {
 	if (strNil(*js) || is_hge_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1625,7 +1623,7 @@ JSONfilterArray_hge(json *ret, json *js, hge *index)
 }
 
 static str
-JSONfilterArrayDefault_hge(json *ret, json *js, hge *index, str *other)
+JSONfilterArrayDefault_hge(json *ret, const json *js, const hge *index, const char *const *other)
 {
 	if (strNil(*js) || is_hge_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1639,7 +1637,7 @@ JSONfilterArrayDefault_hge(json *ret, json *js, hge *index, str *other)
 #endif
 
 static str
-JSONfilter(json *ret, json *js, str *expr)
+JSONfilter(json *ret, const json *js, const char *const *expr)
 {
 	if (strNil(*js) || strNil(*expr)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1653,7 +1651,7 @@ JSONfilter(json *ret, json *js, str *expr)
 // The json string should be valid
 
 static str
-JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep,
+JSONplaintext(char **r, size_t *l, size_t *ilen, const JSON *jt, int idx, const char *sep,
 			  size_t sep_len)
 {
 	int i;
@@ -1808,7 +1806,7 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep,
 }
 
 static str
-JSONjson2textSeparator(str *ret, json *js, str *sep)
+JSONjson2textSeparator(str *ret, const json *js, const char *const *sep)
 {
 	size_t l, ilen, sep_len;
 	str s, msg;
@@ -1843,14 +1841,14 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 }
 
 static str
-JSONjson2text(str *ret, json *js)
+JSONjson2text(str *ret, const json *js)
 {
-	char *sep = " ";
+	const char *sep = " ";
 	return JSONjson2textSeparator(ret, js, &sep);
 }
 
 static str
-JSONjson2numberInternal(void **ret, json *js,
+JSONjson2numberInternal(void **ret, const json *js,
 						void (*str2num)(void **ret, const char *nptr,
 										size_t len))
 {
@@ -1913,7 +1911,7 @@ strtol_wrapper(void **ret, const char *nptr, size_t len)
 }
 
 static str
-JSONjson2number(dbl *ret, json *js)
+JSONjson2number(dbl *ret, const json *js)
 {
 	dbl val = 0;
 	dbl *val_ptr = &val;
@@ -1935,7 +1933,7 @@ JSONjson2number(dbl *ret, json *js)
 }
 
 static str
-JSONjson2integer(lng *ret, json *js)
+JSONjson2integer(lng *ret, const json *js)
 {
 	lng val = 0;
 	lng *val_ptr = &val;
@@ -2018,7 +2016,7 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 }
 
 static str
-JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
+JSONunfoldInternal(bat *od, bat *key, bat *val, const json *js)
 {
 	BAT *bo = NULL, *bk, *bv;
 	oid o = 0;
@@ -2085,7 +2083,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 
 
 static str
-JSONkeyTable(bat *ret, json *js)
+JSONkeyTable(bat *ret, const json *js)
 {
 	BAT *bn;
 	char *r;
@@ -2120,7 +2118,7 @@ JSONkeyTable(bat *ret, json *js)
 }
 
 static str
-JSONkeyArray(json *ret, json *js)
+JSONkeyArray(json *ret, const json *js)
 {
 	char *result = NULL;
 	str r;
@@ -2185,7 +2183,7 @@ JSONkeyArray(json *ret, json *js)
 
 
 static str
-JSONvalueTable(bat *ret, json *js)
+JSONvalueTable(bat *ret, const json *js)
 {
 	BAT *bn;
 	char *r;
@@ -2223,7 +2221,7 @@ JSONvalueTable(bat *ret, json *js)
 }
 
 static str
-JSONvalueArray(json *ret, json *js)
+JSONvalueArray(json *ret, const json *js)
 {
 	char *result = NULL;
 	str r;
@@ -3161,8 +3159,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 }
 
 static str
-JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
-				bit *skip_nils)
+JSONsubjsoncand(bat *retval, const bat *bid, const bat *gid, const bat *eid,
+				const bat *sid, const bit *skip_nils)
 {
 	BAT *b, *g, *e, *s, *bn = NULL;
 	const char *err;
@@ -3190,7 +3188,8 @@ JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
 }
 
 static str
-JSONsubjson(bat *retval, bat *bid, bat *gid, bat *eid, bit *skip_nils)
+JSONsubjson(bat *retval, const bat *bid, const bat *gid, const bat *eid,
+			const bit *skip_nils)
 {
 	return JSONsubjsoncand(retval, bid, gid, eid, NULL, skip_nils);
 }

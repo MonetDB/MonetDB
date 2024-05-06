@@ -166,7 +166,7 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 /* Toggle the debug flags on/off */
 static str
-MDBsetDebugStr_(int *ret, str *flg)
+MDBsetDebugStr_(int *ret, const char *const *flg)
 {
 	ATOMIC_BASE_TYPE debug = ATOMIC_GET(&GDKdebug);
 	if (strcmp("threads", *flg) == 0)
@@ -200,12 +200,12 @@ MDBsetDebugStr_(int *ret, str *flg)
 static str
 MDBsetDebugStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str *flg = (str *) getArgReference(stk, p, 1);
+	const char *flg = *getArgReference_str(stk, p, 1);
 	int *ret = (int *) getArgReference(stk, p, 0);
 
 	(void) cntxt;
 	(void) mb;
-	return MDBsetDebugStr_(ret, flg);
+	return MDBsetDebugStr_(ret, &flg);
 }
 
 /*
@@ -669,7 +669,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 }
 
 static str
-MDBgetExceptionVariable(str *ret, str *msg)
+MDBgetExceptionVariable(str *ret, const char *const *msg)
 {
 	str tail;
 
@@ -687,7 +687,7 @@ MDBgetExceptionVariable(str *ret, str *msg)
 }
 
 static str
-MDBgetExceptionContext(str *ret, str *msg)
+MDBgetExceptionContext(str *ret, const char *const *msg)
 {
 	str tail, tail2;
 
@@ -709,7 +709,7 @@ MDBgetExceptionContext(str *ret, str *msg)
 }
 
 static str
-MDBgetExceptionReason(str *ret, str *msg)
+MDBgetExceptionReason(str *ret, const char *const *msg)
 {
 	str tail;
 

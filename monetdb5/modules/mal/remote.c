@@ -118,7 +118,7 @@ static inline str RMTquery(MapiHdl *ret, const char *func, Mapi conn,
  * merovingian is not running, this function throws an error.
  */
 static str
-RMTresolve(bat *ret, str *pat)
+RMTresolve(bat *ret, const char *const *pat)
 {
 #ifdef NATIVE_WIN32
 	(void) ret;
@@ -199,7 +199,7 @@ static size_t connection_id = 0;
  */
 static str
 RMTconnectScen(str *ret,
-			   str *ouri, str *user, str *passwd, str *scen, bit *columnar)
+			   const char *const *ouri, const char *const *user, const char *const *passwd, const char *const *scen, bit *columnar)
 {
 	connection c;
 	char conn[BUFSIZ];
@@ -327,16 +327,16 @@ RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	str *ret = getArgReference_str(stk, pci, 0);
-	str *uri = getArgReference_str(stk, pci, 1);
-	str *user = getArgReference_str(stk, pci, 2);
-	str *passwd = getArgReference_str(stk, pci, 3);
+	const char *uri = *getArgReference_str(stk, pci, 1);
+	const char *user = *getArgReference_str(stk, pci, 2);
+	const char *passwd = *getArgReference_str(stk, pci, 3);
 
-	str scen = "msql";
+	const char *scen = "msql";
 
 	if (pci->argc >= 5)
 		scen = *getArgReference_str(stk, pci, 4);
 
-	return RMTconnectScen(ret, uri, user, passwd, &scen, NULL);
+	return RMTconnectScen(ret, &uri, &user, &passwd, &scen, NULL);
 }
 
 /**
@@ -1650,7 +1650,7 @@ RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * Best effort implementation on top of mapi using a ping.
  */
 static str
-RMTisalive(int *ret, str *conn)
+RMTisalive(int *ret, const char *const *conn)
 {
 	str tmp;
 	connection c;
@@ -1671,7 +1671,7 @@ RMTisalive(int *ret, str *conn)
 
 // This is basically a no op
 static str
-RMTregisterSupervisor(int *ret, str *sup_uuid, str *query_uuid)
+RMTregisterSupervisor(int *ret, const char *const *sup_uuid, const char *const *query_uuid)
 {
 	(void) sup_uuid;
 	(void) query_uuid;
