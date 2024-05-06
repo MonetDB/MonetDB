@@ -475,7 +475,7 @@ STRlike(const char *s, const char *pat, const char *esc)
 }
 
 static str
-STRlikewrap3(bit *ret, const str *s, const str *pat, const str *esc)
+STRlikewrap3(bit *ret, const char *const *s, const char *const *pat, const char *const *esc)
 {
 	if (strNil(*s) || strNil(*pat) || strNil(*esc))
 		*ret = bit_nil;
@@ -485,7 +485,7 @@ STRlikewrap3(bit *ret, const str *s, const str *pat, const str *esc)
 }
 
 static str
-STRlikewrap(bit *ret, const str *s, const str *pat)
+STRlikewrap(bit *ret, const char *const *s, const char *const *pat)
 {
 	if (strNil(*s) || strNil(*pat))
 		*ret = bit_nil;
@@ -495,7 +495,7 @@ STRlikewrap(bit *ret, const str *s, const str *pat)
 }
 
 static str
-STRtostr(str *res, const str *src)
+STRtostr(str *res, const char *const *src)
 {
 	if (*src == 0)
 		*res = GDKstrdup(str_nil);
@@ -507,7 +507,7 @@ STRtostr(str *res, const str *src)
 }
 
 static str
-STRLength(int *res, const str *arg1)
+STRLength(int *res, const char *const *arg1)
 {
 	const char *s = *arg1;
 
@@ -516,7 +516,7 @@ STRLength(int *res, const str *arg1)
 }
 
 static str
-STRBytes(int *res, const str *arg1)
+STRBytes(int *res, const char *const *arg1)
 {
 	const char *s = *arg1;
 
@@ -540,7 +540,7 @@ str_tail(str *buf, size_t *buflen, const char *s, int off)
 }
 
 static str
-STRTail(str *res, const str *arg1, const int *offset)
+STRTail(str *res, const char *const *arg1, const int *offset)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -596,7 +596,7 @@ str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 }
 
 static str
-STRSubString(str *res, const str *arg1, const int *offset, const int *length)
+STRSubString(str *res, const char *const *arg1, const int *offset, const int *length)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -685,13 +685,13 @@ str_wchr_at(int *res, const char *s, int at)
 }
 
 static str
-STRWChrAt(int *res, const str *arg1, const int *at)
+STRWChrAt(int *res, const char *const *arg1, const int *at)
 {
 	return str_wchr_at(res, *arg1, *at);
 }
 
 static inline str
-doStrConvert(str *res, const str *arg1, gdk_return (*func)(char **restrict, size_t *restrict, const char *restrict))
+doStrConvert(str *res, const char *const *arg1, gdk_return (*func)(char **restrict, size_t *restrict, const char *restrict))
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -719,19 +719,19 @@ doStrConvert(str *res, const str *arg1, gdk_return (*func)(char **restrict, size
 }
 
 static inline str
-STRlower(str *res, const str *arg1)
+STRlower(str *res, const char *const *arg1)
 {
 	return doStrConvert(res, arg1, GDKtolower);
 }
 
 static inline str
-STRupper(str *res, const str *arg1)
+STRupper(str *res, const char *const *arg1)
 {
 	return doStrConvert(res, arg1, GDKtoupper);
 }
 
 static inline str
-STRcasefold(str *res, const str *arg1)
+STRcasefold(str *res, const char *const *arg1)
 {
 	return doStrConvert(res, arg1, GDKcasefold);
 }
@@ -897,16 +897,16 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	bit *res = getArgReference(stk, pci, 0);
-	const str *haystack = getArgReference(stk, pci, 1),
-		*needle = getArgReference(stk, pci, 2);
+	const char *haystack = *getArgReference_str(stk, pci, 1);
+	const char *needle = *getArgReference_str(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
-	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
-	if (strNil(s) || strNil(h)) {
+	char *msg = MAL_SUCCEED;
+	if (strNil(haystack) || strNil(needle)) {
 		*res = bit_nil;
 	} else {
 		*res = icase ?
-			str_isearch(s, h) :
-			str_search(s, h);
+			str_isearch(haystack, needle) :
+			str_search(haystack, needle);
 	}
 	return msg;
 }
@@ -1002,7 +1002,7 @@ str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f)
 }
 
 static str
-STRsplitpart(str *res, str *haystack, str *needle, int *field)
+STRsplitpart(str *res, const char *const *haystack, const char *const *needle, const int *field)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *haystack, *s2 = *needle;
@@ -1127,7 +1127,7 @@ str_strip(str *buf, size_t *buflen, const char *s)
 
 /* remove all whitespace from either side of arg1 */
 static str
-STRStrip(str *res, const str *arg1)
+STRStrip(str *res, const char *const *arg1)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -1168,7 +1168,7 @@ str_ltrim(str *buf, size_t *buflen, const char *s)
 
 /* remove all whitespace from the start (left) of arg1 */
 static str
-STRLtrim(str *res, const str *arg1)
+STRLtrim(str *res, const char *const *arg1)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -1209,7 +1209,7 @@ str_rtrim(str *buf, size_t *buflen, const char *s)
 
 /* remove all whitespace from the end (right) of arg1 */
 static str
-STRRtrim(str *res, const str *arg1)
+STRRtrim(str *res, const char *const *arg1)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -1289,7 +1289,7 @@ str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
 /* remove the longest string containing only characters from arg2 from
  * either side of arg1 */
 static str
-STRStrip2(str *res, const str *arg1, const str *arg2)
+STRStrip2(str *res, const char *const *arg1, const char *const *arg2)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
@@ -1343,7 +1343,7 @@ str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 /* remove the longest string containing only characters from arg2 from
  * the start (left) of arg1 */
 static str
-STRLtrim2(str *res, const str *arg1, const str *arg2)
+STRLtrim2(str *res, const char *const *arg1, const char *const *arg2)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
@@ -1397,7 +1397,7 @@ str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 /* remove the longest string containing only characters from arg2 from
  * the end (right) of arg1 */
 static str
-STRRtrim2(str *res, const str *arg1, const str *arg2)
+STRRtrim2(str *res, const char *const *arg1, const char *const *arg2)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
@@ -1497,7 +1497,7 @@ str_lpad(str *buf, size_t *buflen, const char *s, int len)
  * Result: '   hi'
  */
 static str
-STRLpad(str *res, const str *arg1, const int *len)
+STRLpad(str *res, const char *const *arg1, const int *len)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -1538,7 +1538,7 @@ str_rpad(str *buf, size_t *buflen, const char *s, int len)
  * Result: 'hi   '
  */
 static str
-STRRpad(str *res, const str *arg1, const int *len)
+STRRpad(str *res, const char *const *arg1, const int *len)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -1579,7 +1579,7 @@ str_lpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
  * Result: xyxhi
  */
 static str
-STRLpad3(str *res, const str *arg1, const int *len, const str *arg2)
+STRLpad3(str *res, const char *const *arg1, const int *len, const char *const *arg2)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
@@ -1621,7 +1621,7 @@ str_rpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
  * Result: hixyx
  */
 static str
-STRRpad3(str *res, const str *arg1, const int *len, const str *arg2)
+STRRpad3(str *res, const char *const *arg1, const int *len, const char *const *arg2)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
@@ -1694,7 +1694,7 @@ str_substitute(str *buf, size_t *buflen, const char *s, const char *src,
 }
 
 static str
-STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3,
+STRSubstitute(str *res, const char *const *arg1, const char *const *arg2, const char *const *arg3,
 			  const bit *g)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
@@ -1723,7 +1723,7 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3,
 }
 
 static str
-STRascii(int *ret, const str *s)
+STRascii(int *ret, const char *const *s)
 {
 	return str_wchr_at(ret, *s, 0);
 }
@@ -1738,7 +1738,7 @@ str_substring_tail(str *buf, size_t *buflen, const char *s, int start)
 }
 
 static str
-STRsubstringTail(str *res, const str *arg1, const int *start)
+STRsubstringTail(str *res, const char *const *arg1, const int *start)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -1776,7 +1776,7 @@ str_sub_string(str *buf, size_t *buflen, const char *s, int start, int l)
 }
 
 static str
-STRsubstring(str *res, const str *arg1, const int *start, const int *ll)
+STRsubstring(str *res, const char *const *arg1, const int *start, const int *ll)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -1805,7 +1805,7 @@ STRsubstring(str *res, const str *arg1, const int *start, const int *ll)
 }
 
 static str
-STRprefix(str *res, const str *arg1, const int *ll)
+STRprefix(str *res, const char *const *arg1, const int *ll)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -1841,7 +1841,7 @@ str_suffix(str *buf, size_t *buflen, const char *s, int l)
 }
 
 static str
-STRsuffix(str *res, const str *arg1, const int *ll)
+STRsuffix(str *res, const char *const *arg1, const int *ll)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -1882,7 +1882,7 @@ str_locate2(const char *needle, const char *haystack, int start)
 }
 
 static str
-STRlocate3(int *ret, const str *needle, const str *haystack, const int *start)
+STRlocate3(int *ret, const char *const *needle, const char *const *haystack, const int *start)
 {
 	const char *s = *needle, *s2 = *haystack;
 	int st = *start;
@@ -1894,7 +1894,7 @@ STRlocate3(int *ret, const str *needle, const str *haystack, const int *start)
 }
 
 static str
-STRlocate(int *ret, const str *needle, const str *haystack)
+STRlocate(int *ret, const char *const *needle, const char *const *haystack)
 {
 	const char *s = *needle, *s2 = *haystack;
 
@@ -1935,8 +1935,8 @@ str_insert(str *buf, size_t *buflen, const char *s, int strt, int l,
 }
 
 static str
-STRinsert(str *res, const str *input, const int *start, const int *nchars,
-		  const str *input2)
+STRinsert(str *res, const char *const *input, const int *start, const int *nchars,
+		  const char *const *input2)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *input, *s2 = *input2;
@@ -1965,7 +1965,7 @@ STRinsert(str *res, const str *input, const int *start, const int *nchars,
 }
 
 static str
-STRreplace(str *ret, const str *s1, const str *s2, const str *s3)
+STRreplace(str *ret, const char *const *s1, const char *const *s2, const char *const *s3)
 {
 	bit flag = TRUE;
 	return STRSubstitute(ret, s1, s2, s3, &flag);
@@ -1989,7 +1989,7 @@ str_repeat(str *buf, size_t *buflen, const char *s, int c)
 }
 
 static str
-STRrepeat(str *res, const str *arg1, const int *c)
+STRrepeat(str *res, const char *const *arg1, const int *c)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -2047,7 +2047,7 @@ STRspace(str *res, const int *ll)
 }
 
 static str
-STRasciify(str *r, const str *s)
+STRasciify(str *r, const char *const *s)
 {
 	char *buf = NULL;
 	size_t buflen = 0;
@@ -2155,7 +2155,7 @@ str_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 static str
 STRselect(bat *r_id, const bat *b_id, const bat *cb_id, const char *key,
 			  const bit anti, int (*str_cmp)(const char *, const char *, int),
-			  const str fname)
+			  const char *fname)
 {
 	str msg = MAL_SUCCEED;
 
@@ -2699,7 +2699,8 @@ batstr_strlower(BAT *b)
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		str vb = BUNtail(bi, p), vb_low = NULL;
+		const char *vb = BUNtail(bi, p);
+		char *vb_low = NULL;
 		if (STRlower(&vb_low, &vb)) {
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
@@ -2719,7 +2720,8 @@ batstr_strlower(BAT *b)
 
 static str
 str_join_nested(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
-				bit anti, int (*str_cmp)(const char *, const char *, int), str fname)
+				bit anti, int (*str_cmp)(const char *, const char *, int),
+				const char *fname)
 {
 	str msg = MAL_SUCCEED;
 
@@ -2802,7 +2804,8 @@ exit:
 
 static str
 contains_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr, bit anti,
-			  int (*str_cmp)(const char *, const char *, int), const str fname)
+			  int (*str_cmp)(const char *, const char *, int),
+			  const char *fname)
 {
 	str msg = MAL_SUCCEED;
 
@@ -2893,7 +2896,8 @@ exit:
 
 static str
 startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
-				bit anti, int (*str_cmp)(const char *, const char *, int), str fname)
+				bit anti, int (*str_cmp)(const char *, const char *, int),
+				const char *fname)
 {
 	str msg = MAL_SUCCEED;
 	gdk_return rc;
@@ -3058,7 +3062,7 @@ exit:
 static str
 STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 		const bat cl_id, const bat cr_id, const bit anti, bool icase,
-		int (*str_cmp)(const char *, const char *, int), const str fname)
+		int (*str_cmp)(const char *, const char *, int), const char *fname)
 {
 	str msg = MAL_SUCCEED;
 

@@ -580,7 +580,7 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * with a message from the interpreter.
  * This value should be set to minutes to avoid a lengthly log */
 static str
-CLTsetPrintTimeout(void *ret, int *secs)
+CLTsetPrintTimeout(void *ret, const int *secs)
 {
 	(void) ret;
 	if (is_int_nil(*secs))
@@ -591,7 +591,7 @@ CLTsetPrintTimeout(void *ret, int *secs)
 }
 
 static str
-CLTmd5sum(str *ret, str *pw)
+CLTmd5sum(str *ret, const char *const *pw)
 {
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
@@ -609,7 +609,7 @@ CLTmd5sum(str *ret, str *pw)
 }
 
 static str
-CLTsha1sum(str *ret, str *pw)
+CLTsha1sum(str *ret, const char *const *pw)
 {
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
@@ -627,7 +627,7 @@ CLTsha1sum(str *ret, str *pw)
 }
 
 static str
-CLTripemd160sum(str *ret, str *pw)
+CLTripemd160sum(str *ret, const char *const *pw)
 {
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
@@ -645,7 +645,7 @@ CLTripemd160sum(str *ret, str *pw)
 }
 
 static str
-CLTsha2sum(str *ret, str *pw, int *bits)
+CLTsha2sum(str *ret, const char *const *pw, const int *bits)
 {
 	if (strNil(*pw) || is_int_nil(*bits)) {
 		*ret = GDKstrdup(str_nil);
@@ -680,7 +680,7 @@ CLTsha2sum(str *ret, str *pw, int *bits)
 }
 
 static str
-CLTbackendsum(str *ret, str *pw)
+CLTbackendsum(str *ret, const char *const *pw)
 {
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);

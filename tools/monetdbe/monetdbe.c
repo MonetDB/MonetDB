@@ -461,7 +461,7 @@ monetdbe_close_remote(monetdbe_database_internal *mdbe)
 		clear_error(mdbe);
 	}
 
-	if ( (mdbe->msg = RMTdisconnect(NULL, &(mdbe->mid))) != MAL_SUCCEED) {
+	if ( (mdbe->msg = RMTdisconnect(NULL, &(const char *){mdbe->mid})) != MAL_SUCCEED) {
 		err = 1;
 		clear_error(mdbe);
 	}

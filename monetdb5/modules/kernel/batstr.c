@@ -38,7 +38,7 @@ batstr_func_has_candidates(const char *func)
 }
 
 static inline void
-finalize_output(bat *res, BAT *bn, str msg, bool nils, BUN q)
+finalize_output(bat *res, BAT *bn, const char *msg, bool nils, BUN q)
 {
 	if (bn && !msg) {
 		BATsetcount(bn, q);
@@ -85,12 +85,12 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
 
 	(void) cntxt;
 	(void) mb;
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -172,12 +172,12 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
 
 	(void) cntxt;
 	(void) mb;
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, "batstr.unicodeAt",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -237,7 +237,7 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
 	BATiter bi;
 
@@ -248,7 +248,7 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, "batstr.unicode",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -336,7 +336,7 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
 	BATiter bi;
 
@@ -347,7 +347,7 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, "batstr.space",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -433,7 +433,7 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
 
 	(void) cntxt;
@@ -442,7 +442,7 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -530,7 +530,7 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
 	(void) cntxt;
@@ -539,7 +539,7 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -627,7 +627,7 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 2),
+		bid = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
 	(void) cntxt;
@@ -636,7 +636,7 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -723,8 +723,8 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*l2 = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 1),
+		l2 = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
@@ -734,7 +734,7 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*l2))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(l2))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -838,7 +838,7 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
 	(void) cntxt;
@@ -847,7 +847,7 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -936,7 +936,7 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 2),
+		bid = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 	BATiter bi;
 
@@ -946,7 +946,7 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -1036,8 +1036,8 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*n = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 1),
+		n = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 	BATiter bi;
@@ -1048,7 +1048,7 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*n))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(n))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -1154,7 +1154,7 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
+		l = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
 	(void) cntxt;
@@ -1163,7 +1163,7 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(l))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -1254,8 +1254,8 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*n = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 1),
+		n = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 	BATiter bi;
@@ -1266,7 +1266,7 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*n))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(n))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -1372,8 +1372,8 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*l2 = getArgReference_bat(stk, pci, 3),
+		l = *getArgReference_bat(stk, pci, 1),
+		l2 = *getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 
@@ -1383,7 +1383,7 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*l2))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(l2))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -1489,9 +1489,9 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*n = getArgReference_bat(stk, pci, 2),
-		*l2 = getArgReference_bat(stk, pci, 3),
+		l = *getArgReference_bat(stk, pci, 1),
+		n = *getArgReference_bat(stk, pci, 2),
+		l2 = *getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 7 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 7 ? getArgReference_bat(stk, pci, 5) : NULL,
 		*sid3 = pci->argc == 7 ? getArgReference_bat(stk, pci, 6) : NULL;
@@ -1502,8 +1502,8 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(arg1 = BATdescriptor(*l)) || !(arg2 = BATdescriptor(*n))
-		|| !(arg3 = BATdescriptor(*l2))) {
+	if (!(arg1 = BATdescriptor(l)) || !(arg2 = BATdescriptor(n))
+		|| !(arg3 = BATdescriptor(l2))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -1849,12 +1849,12 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 1),
+		r = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase ? 4 : 3) : NULL,
 		*sid2 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase ? 5 : 4) : NULL;
 
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(r))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
@@ -1972,12 +1972,13 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	bit *restrict vals;
-	str y = *getArgReference_str(stk, pci, 2), msg = MAL_SUCCEED;
+	const char *y = *getArgReference_str(stk, pci, 2);
+	char *msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-			*bid = getArgReference_bat(stk, pci, 1), *sid1 = NULL;
+			bid = *getArgReference_bat(stk, pci, 1), *sid1 = NULL;
 	int ynil, ylen;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
@@ -1985,7 +1986,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
@@ -2095,13 +2096,13 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	bit *restrict vals;
-	char *x = *getArgReference_str(stk, pci, 1);
+	const char *x = *getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-			*bid = getArgReference_bat(stk, pci, 2), *sid1 = NULL;
+			bid = *getArgReference_bat(stk, pci, 2), *sid1 = NULL;
 	int xnil;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
@@ -2109,7 +2110,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
@@ -2223,12 +2224,12 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 1),
+		r = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase ? 4 : 3) : NULL,
 		*sid2 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase ? 5 : 4) : NULL;
 
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(r))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
@@ -2350,7 +2351,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = NULL;
 	int ynil;
 
@@ -2359,7 +2360,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
@@ -2456,19 +2457,19 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						 int (*func)(const char *, const char *),
 						 bit *icase)
 {
-	 (void) cntxt;
+	(void) cntxt;
 	(void) mb;
 
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	int *restrict vals;
-	char *x = *getArgReference_str(stk, pci, 1);
+	const char *x = *getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-			*bid = getArgReference_bat(stk, pci, 2), *sid1 = NULL;
+			bid = *getArgReference_bat(stk, pci, 2), *sid1 = NULL;
 	int xnil;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
@@ -2476,7 +2477,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
@@ -2581,8 +2582,8 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 1),
+		r = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
@@ -2593,7 +2594,7 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(r))) {
 		msg = createException(MAL, "batstr.unicodeAt",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -2671,7 +2672,7 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
+		l = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
 	(void) cntxt;
@@ -2681,7 +2682,7 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(l))) {
 		msg = createException(MAL, "batstr.unicodeAt",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -2743,7 +2744,7 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 	BATiter bi;
 
@@ -2754,7 +2755,7 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(l))) {
 		msg = createException(MAL, "batstr.unicodeAt",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -2819,7 +2820,7 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
+		l = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
 	(void) cntxt;
@@ -2828,7 +2829,7 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(l))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -2939,7 +2940,7 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
+		l = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
 	(void) cntxt;
@@ -2949,7 +2950,7 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(l))) {
 		msg = createException(MAL, "batstr.repeat",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -3036,7 +3037,7 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 	BATiter bi;
 
@@ -3046,7 +3047,7 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(l))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -3157,7 +3158,7 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 	BATiter bi;
 
@@ -3168,7 +3169,7 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(l))) {
 		msg = createException(MAL, "batstr.repeat",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -3256,8 +3257,8 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 1),
+		r = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 	BATiter bi;
@@ -3268,7 +3269,7 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(r))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -3393,8 +3394,8 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 1),
+		r = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 	BATiter bi;
@@ -3406,7 +3407,7 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(r))) {
 		msg = createException(MAL, "batstr.repeat",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -3510,7 +3511,7 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == cand_nargs ? getArgReference_bat(stk, pci, cand_nargs - 1) : NULL;
 
 	if (!buf) {
@@ -3518,7 +3519,7 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, "batstr.substritute",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -3613,10 +3614,10 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 }, ci4 = { 0 };
 	oid off1, off2, off3, off4;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 2),
-		*s = getArgReference_bat(stk, pci, 3),
-		*rep = getArgReference_bat(stk, pci, 4),
+		l = *getArgReference_bat(stk, pci, 1),
+		r = *getArgReference_bat(stk, pci, 2),
+		s = *getArgReference_bat(stk, pci, 3),
+		rep = *getArgReference_bat(stk, pci, 4),
 		*sid1 = pci->argc == 9 ? getArgReference_bat(stk, pci, 5) : NULL,
 		*sid2 = pci->argc == 9 ? getArgReference_bat(stk, pci, 6) : NULL,
 		*sid3 = pci->argc == 9 ? getArgReference_bat(stk, pci, 7) : NULL,
@@ -3628,8 +3629,8 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(arg1 = BATdescriptor(*l)) || !(arg2 = BATdescriptor(*r))
-		|| !(arg3 = BATdescriptor(*s)) || !(arg4 = BATdescriptor(*rep))) {
+	if (!(arg1 = BATdescriptor(l)) || !(arg2 = BATdescriptor(r))
+		|| !(arg3 = BATdescriptor(s)) || !(arg4 = BATdescriptor(rep))) {
 		msg = createException(MAL, "batstr.substritute",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -3754,7 +3755,7 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
 	(void) cntxt;
@@ -3764,7 +3765,7 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, "batstr.splitpart",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -3851,8 +3852,8 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
-		*fid = getArgReference_bat(stk, pci, 3),
+		bid = *getArgReference_bat(stk, pci, 1),
+		fid = *getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 
@@ -3861,7 +3862,7 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid)) || !(f = BATdescriptor(*fid))) {
+	if (!(b = BATdescriptor(bid)) || !(f = BATdescriptor(fid))) {
 		msg = createException(MAL, "batstr.splitpart",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -3965,8 +3966,8 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
-		*nid = getArgReference_bat(stk, pci, 2),
+		bid = *getArgReference_bat(stk, pci, 1),
+		nid = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 
@@ -3977,7 +3978,7 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid)) || !(n = BATdescriptor(*nid))) {
+	if (!(b = BATdescriptor(bid)) || !(n = BATdescriptor(nid))) {
 		msg = createException(MAL, "batstr.splitpart",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -4078,9 +4079,9 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 2),
-		*t = getArgReference_bat(stk, pci, 3),
+		l = *getArgReference_bat(stk, pci, 1),
+		r = *getArgReference_bat(stk, pci, 2),
+		t = *getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 7 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 7 ? getArgReference_bat(stk, pci, 5) : NULL,
 		*sid3 = pci->argc == 7 ? getArgReference_bat(stk, pci, 6) : NULL;
@@ -4093,8 +4094,8 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(arg1 = BATdescriptor(*l)) || !(arg2 = BATdescriptor(*r))
-		|| !(arg3 = BATdescriptor(*t))) {
+	if (!(arg1 = BATdescriptor(l)) || !(arg2 = BATdescriptor(r))
+		|| !(arg3 = BATdescriptor(t))) {
 		msg = createException(MAL, "batstr.splitpart",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -4214,9 +4215,9 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*s = getArgReference_bat(stk, pci, 2),
-		*s2 = getArgReference_bat(stk, pci, 3),
+		l = *getArgReference_bat(stk, pci, 1),
+		s = *getArgReference_bat(stk, pci, 2),
+		s2 = *getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 7 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 7 ? getArgReference_bat(stk, pci, 5) : NULL,
 		*sid3 = pci->argc == 7 ? getArgReference_bat(stk, pci, 6) : NULL;
@@ -4228,8 +4229,8 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(arg1 = BATdescriptor(*l)) || !(arg2 = BATdescriptor(*s))
-		|| !(arg3 = BATdescriptor(*s2))) {
+	if (!(arg1 = BATdescriptor(l)) || !(arg2 = BATdescriptor(s))
+		|| !(arg3 = BATdescriptor(s2))) {
 		msg = createException(MAL, "batstr.replace",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -4341,10 +4342,10 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 }, ci4 = { 0 };
 	oid off1, off2, off3, off4;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*s = getArgReference_bat(stk, pci, 2),
-		*chars = getArgReference_bat(stk, pci, 3),
-		*s2 = getArgReference_bat(stk, pci, 4),
+		l = *getArgReference_bat(stk, pci, 1),
+		s = *getArgReference_bat(stk, pci, 2),
+		chars = *getArgReference_bat(stk, pci, 3),
+		s2 = *getArgReference_bat(stk, pci, 4),
 		*sid1 = pci->argc == 9 ? getArgReference_bat(stk, pci, 5) : NULL,
 		*sid2 = pci->argc == 9 ? getArgReference_bat(stk, pci, 6) : NULL,
 		*sid3 = pci->argc == 9 ? getArgReference_bat(stk, pci, 7) : NULL,
@@ -4357,8 +4358,8 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(left = BATdescriptor(*l)) || !(start = BATdescriptor(*s))
-		|| !(nchars = BATdescriptor(*chars)) || !(right = BATdescriptor(*s2))) {
+	if (!(left = BATdescriptor(l)) || !(start = BATdescriptor(s))
+		|| !(nchars = BATdescriptor(chars)) || !(right = BATdescriptor(s2))) {
 		msg = createException(MAL, "batstr.insert",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -4483,7 +4484,7 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 
 	(void) cntxt;
@@ -4493,7 +4494,7 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, "batstr.insert",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -4583,7 +4584,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
+		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
 	(void) cntxt;
@@ -4593,7 +4594,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -4679,7 +4680,7 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 3),
+		bid = *getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 	BATiter bi;
 
@@ -4690,7 +4691,7 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -4777,7 +4778,7 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 2),
+		bid = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 	BATiter bi;
 
@@ -4788,7 +4789,7 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid))) {
+	if (!(b = BATdescriptor(bid))) {
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -4874,8 +4875,8 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 2),
-		*l = getArgReference_bat(stk, pci, 3),
+		bid = *getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 	BATiter bi;
@@ -4888,7 +4889,7 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid)) || !(lb = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(bid)) || !(lb = BATdescriptor(l))) {
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -4991,8 +4992,8 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
-		*l = getArgReference_bat(stk, pci, 3),
+		bid = *getArgReference_bat(stk, pci, 1),
+		l = *getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 
@@ -5003,7 +5004,7 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid)) || !(lb = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(bid)) || !(lb = BATdescriptor(l))) {
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -5104,8 +5105,8 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*bid = getArgReference_bat(stk, pci, 1),
-		*l = getArgReference_bat(stk, pci, 2),
+		bid = *getArgReference_bat(stk, pci, 1),
+		l = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 5) : NULL;
 
@@ -5116,7 +5117,7 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(b = BATdescriptor(*bid)) || !(lb = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(bid)) || !(lb = BATdescriptor(l))) {
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -5218,9 +5219,9 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 2),
-		*t = getArgReference_bat(stk, pci, 3),
+		l = *getArgReference_bat(stk, pci, 1),
+		r = *getArgReference_bat(stk, pci, 2),
+		t = *getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 7 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 7 ? getArgReference_bat(stk, pci, 5) : NULL,
 		*sid3 = pci->argc == 7 ? getArgReference_bat(stk, pci, 6) : NULL;
@@ -5232,8 +5233,8 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(left = BATdescriptor(*l)) || !(start = BATdescriptor(*r))
-		|| !(length = BATdescriptor(*t))) {
+	if (!(left = BATdescriptor(l)) || !(start = BATdescriptor(r))
+		|| !(length = BATdescriptor(t))) {
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -5345,12 +5346,12 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
+		l = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
 	(void) cntxt;
 	(void) mb;
-	if (!(b = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(l))) {
 		msg = createException(MAL, "batstr.locate",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -5414,12 +5415,12 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
 	(void) cntxt;
 	(void) mb;
-	if (!(b = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(l))) {
 		msg = createException(MAL, "batstr.locate",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -5482,14 +5483,14 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 2),
+		l = *getArgReference_bat(stk, pci, 1),
+		r = *getArgReference_bat(stk, pci, 2),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
 	(void) cntxt;
 	(void) mb;
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(r))) {
 		msg = createException(MAL, "batstr.locate",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -5568,12 +5569,12 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
+		l = *getArgReference_bat(stk, pci, 1),
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
 
 	(void) cntxt;
 	(void) mb;
-	if (!(b = BATdescriptor(*l))) {
+	if (!(b = BATdescriptor(l))) {
 		msg = createException(MAL, "batstr.locate2",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -5637,17 +5638,17 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
 	bat *res = getArgReference_bat(stk, pci, 0),
-		*l = getArgReference_bat(stk, pci, 1),
-		*r = getArgReference_bat(stk, pci, 2),
-		*s = getArgReference_bat(stk, pci, 3),
+		l = *getArgReference_bat(stk, pci, 1),
+		r = *getArgReference_bat(stk, pci, 2),
+		s = *getArgReference_bat(stk, pci, 3),
 		*sid1 = pci->argc == 7 ? getArgReference_bat(stk, pci, 4) : NULL,
 		*sid2 = pci->argc == 7 ? getArgReference_bat(stk, pci, 5) : NULL,
 		*sid3 = pci->argc == 7 ? getArgReference_bat(stk, pci, 6) : NULL;
 
 	(void) cntxt;
 	(void) mb;
-	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))
-		|| !(start = BATdescriptor(*s))) {
+	if (!(left = BATdescriptor(l)) || !(right = BATdescriptor(r))
+		|| !(start = BATdescriptor(s))) {
 		msg = createException(MAL, "batstr.locate2",
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
