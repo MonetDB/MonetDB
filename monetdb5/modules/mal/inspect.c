@@ -499,7 +499,7 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 }
 
 static str
-INSPECTgetEnvironmentKey(str *ret, str *key)
+INSPECTgetEnvironmentKey(str *ret, const char *const *key)
 {
 	const char *s;
 	*ret = 0;
@@ -517,7 +517,7 @@ INSPECTgetEnvironmentKey(str *ret, str *key)
 static str
 INSPECTgetDatabaseName(str *ret)
 {
-	char *key = "gdk_dbname";
+	const char *key = "gdk_dbname";
 	return INSPECTgetEnvironmentKey(ret, &key);
 }
 
@@ -603,12 +603,12 @@ static str
 INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *ret = getArgReference_lng(stk, pci, 0);
-	str *mod = getArgReference_str(stk, pci, 1);
-	str *fcn = getArgReference_str(stk, pci, 2);
+	const char *mod = *getArgReference_str(stk, pci, 1);
+	const char *fcn = *getArgReference_str(stk, pci, 2);
 	Symbol s;
 	(void) mb;
 
-	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, getName(mod), putName(fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getSize", RUNTIME_SIGNATURE_MISSING);
 	*ret = INSPECTcalcSize(s->def);

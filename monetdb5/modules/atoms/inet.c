@@ -229,7 +229,7 @@ INETtoString(str *retval, size_t *len, const void *handle, bool external)
  * to parse the string.
  */
 static str
-INETnew(inet *retval, str *in)
+INETnew(inet *retval, const char *const *in)
 {
 	ssize_t pos;
 	size_t len = sizeof(inet);
@@ -787,7 +787,7 @@ INET_inet(inet *d, const inet *s)
 }
 
 static str
-INET_fromstr(inet *ret, str *s)
+INET_fromstr(inet *ret, const char *const *s)
 {
 	size_t len = sizeof(inet);
 	if (INETfromString(*s, &len, (void **) &ret, false) < 0)

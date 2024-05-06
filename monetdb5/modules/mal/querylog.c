@@ -170,7 +170,7 @@ static bat commitlist[MAXCOMMITLIST];
 static int committop = 1;
 
 static BAT *
-QLOGcreate(str hnme, str tnme, int tt)
+QLOGcreate(const char *hnme, const char *tnme, int tt)
 {
 	BAT *b;
 	char buf[128];
@@ -400,7 +400,7 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr)
+QLOGdefineNaive(void *ret, const char *const *qry, const char *const *opt, const int *nr)
 {
 	// Nothing else to be done.
 	(void) ret;
@@ -411,7 +411,7 @@ QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr)
 }
 
 static str
-QLOGcontextNaive(void *ret, str *release, str *version, str *revision, str *uri)
+QLOGcontextNaive(void *ret, const char *const *release, const char *const *version, const char *const *revision, const char *const *uri)
 {
 	// Nothing else to be done.
 	(void) ret;
