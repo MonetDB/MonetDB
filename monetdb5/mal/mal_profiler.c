@@ -399,7 +399,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						 * without further locking */
 						MT_lock_unset(&d->theaplock);
 						cnt = di.count;
-						if (isVIEW(d)) {
+						if (VIEWtparent(d)) {
 							BAT *v = BBP_desc(VIEWtparent(d));
 							bool vtransient = true;
 							if (v) {

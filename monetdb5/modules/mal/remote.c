@@ -1536,7 +1536,7 @@ RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sendtheap = b->ttype != TYPE_void;
 	sendtvheap = sendtheap && b->tvheap;
-	if (isVIEW(b) && sendtvheap && VIEWvtparent(b)
+	if (sendtvheap && VIEWvtparent(b)
 		&& BATcount(b) < BATcount(BBP_desc(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);

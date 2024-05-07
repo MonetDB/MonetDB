@@ -2712,7 +2712,7 @@ dcount_col(sql_trans *tr, sql_column *c)
 static BAT *
 bind_no_view(BAT *b, bool quick)
 {
-	if (isVIEW(b)) { /* If it is a view get the parent BAT */
+	if (VIEWtparent(b)) { /* If it is a view get the parent BAT */
 		BAT *nb = BBP_desc(VIEWtparent(b));
 		bat_destroy(b);
 		if (!(b = quick ? quick_descriptor(nb->batCacheid) : temp_descriptor(nb->batCacheid)))

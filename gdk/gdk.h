@@ -906,9 +906,10 @@ gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 
-#define isVIEW(x)							\
-	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
-	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
+#define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
+#define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
+
+#define isVIEW(x)	(VIEWtparent(x) != 0 || VIEWvtparent(x) != 0)
 
 /*
  * @+ BAT Buffer Pool
@@ -1091,7 +1092,7 @@ bat_iterator_nolock(BAT *b)
 {
 	/* does not get matched by bat_iterator_end */
 	if (b) {
-		bool isview = isVIEW(b);
+		bool isview = VIEWtparent(b);
 		return (BATiter) {
 			.b = b,
 			.h = b->theap,
@@ -2190,9 +2191,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 			MT_lock_unset(&(x)->theaplock);			\
 		}							\
 	} while (false)
-
-#define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
-#define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
 
 /*
  * @+ BAT Iterators
