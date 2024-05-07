@@ -691,12 +691,11 @@ STRWChrAt(int *res, const char *const *arg1, const int *at)
 }
 
 static inline str
-doStrConvert(str *res, const char *const *arg1, gdk_return (*func)(char **restrict, size_t *restrict, const char *restrict))
+doStrConvert(str *res, const char *arg1, gdk_return (*func)(char **restrict, size_t *restrict, const char *restrict))
 {
 	str buf = NULL, msg = MAL_SUCCEED;
-	const char *s = *arg1;
 
-	if (strNil(s)) {
+	if (strNil(arg1)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -704,7 +703,7 @@ doStrConvert(str *res, const char *const *arg1, gdk_return (*func)(char **restri
 		*res = NULL;
 		if (!(buf = GDKmalloc(buflen)))
 			throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((*func)(&buf, &buflen, s) != GDK_SUCCEED) {
+		if ((*func)(&buf, &buflen, arg1) != GDK_SUCCEED) {
 			GDKfree(buf);
 			throw(MAL, "str.lower", GDK_EXCEPTION);
 		}
@@ -721,19 +720,19 @@ doStrConvert(str *res, const char *const *arg1, gdk_return (*func)(char **restri
 static inline str
 STRlower(str *res, const char *const *arg1)
 {
-	return doStrConvert(res, arg1, GDKtolower);
+	return doStrConvert(res, *arg1, GDKtolower);
 }
 
 static inline str
 STRupper(str *res, const char *const *arg1)
 {
-	return doStrConvert(res, arg1, GDKtoupper);
+	return doStrConvert(res, *arg1, GDKtoupper);
 }
 
 static inline str
 STRcasefold(str *res, const char *const *arg1)
 {
-	return doStrConvert(res, arg1, GDKcasefold);
+	return doStrConvert(res, *arg1, GDKcasefold);
 }
 
 /* returns whether arg1 starts with arg2 */
@@ -795,24 +794,16 @@ str_icontains(const char *h, const char *n, int nlen)
 	return GDKstrcasestr(h, n) == NULL;
 }
 
-#define STR_MAPARGS(STK, PCI, R, S1, S2, ICASE)							\
-	do{																	\
-		R = getArgReference(STK, PCI, 0);								\
-		S1 = *getArgReference_str(STK, PCI, 1);							\
-		S2 = *getArgReference_str(STK, PCI, 2);							\
-		icase = PCI->argc == 4 && *getArgReference_bit(STK, PCI, 3);	\
-	} while(0)
-
 static str
 STRstartswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
 
-	str s1, s2;
-	bit *r, icase;
-
-	STR_MAPARGS(stk, pci, r, s1, s2, icase);
+	bit *r = getArgReference_bit(stk, pci, 0);
+	const char *s1 = *getArgReference_str(stk, pci, 1);
+	const char *s2 = *getArgReference_str(stk, pci, 2);
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
 
 	if (strNil(s1) || strNil(s2)) {
 		*r = bit_nil;
@@ -831,10 +822,10 @@ STRendswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	str s1, s2;
-	bit *r, icase;
-
-	STR_MAPARGS(stk, pci, r, s1, s2, icase);
+	bit *r = getArgReference_bit(stk, pci, 0);
+	const char *s1 = *getArgReference_str(stk, pci, 1);
+	const char *s2 = *getArgReference_str(stk, pci, 2);
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
 
 	if (strNil(s1) || strNil(s2)) {
 		*r = bit_nil;
@@ -854,10 +845,10 @@ STRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	str s1, s2;
-	bit *r, icase;
-
-	STR_MAPARGS(stk, pci, r, s1, s2, icase);
+	bit *r = getArgReference_bit(stk, pci, 0);
+	const char *s1 = *getArgReference_str(stk, pci, 1);
+	const char *s2 = *getArgReference_str(stk, pci, 2);
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
 
 	if (strNil(s1) || strNil(s2)) {
 		*r = bit_nil;
@@ -900,7 +891,7 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *haystack = *getArgReference_str(stk, pci, 1);
 	const char *needle = *getArgReference_str(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
-	char *msg = MAL_SUCCEED;
+
 	if (strNil(haystack) || strNil(needle)) {
 		*res = bit_nil;
 	} else {
@@ -908,7 +899,7 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			str_isearch(haystack, needle) :
 			str_search(haystack, needle);
 	}
-	return msg;
+	return MAL_SUCCEED;
 }
 
 int
@@ -2069,106 +2060,50 @@ BBPnreclaim(int nargs, ...)
 	va_end(valist);
 }
 
-/* scan select loop with or without candidates */
-#define scanloop(TEST, KEEP_NULLS)									    \
-	do {																\
-		TRC_DEBUG(ALGO,													\
-				  "scanselect(b=%s#"BUNFMT",anti=%d): "					\
-				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  anti, #TEST);											\
-		if (!s || BATtdense(s)) {										\
-			for (; p < q; p++) {										\
-				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
-				const char *restrict v = BUNtvar(bi, p - off);			\
-				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
-					vals[cnt++] = p;									\
-			}															\
-		} else {														\
-			for (; p < ncands; p++) {									\
-				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
-				oid o = canditer_next(ci);								\
-				const char *restrict v = BUNtvar(bi, o - off);			\
-				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
-					vals[cnt++] = o;									\
-			}															\
-		}																\
+#define HANDLE_TIMEOUT(qc)									\
+	do {													\
+		TIMEOUT_ERROR(qc, __FILE__, __func__, __LINE__);	\
+		msg = createException(MAL, fname, GDK_EXCEPTION);	\
 	} while (0)
 
-/* scan select loop with or without candidates */
-#define scanloop_anti(TEST, KEEP_NULLS)									\
-	do {																\
-		TRC_DEBUG(ALGO,													\
-				  "scanselect(b=%s#"BUNFMT",anti=%d): "					\
-				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  anti, #TEST);											\
-		if (!s || BATtdense(s)) {										\
-			for (; p < q; p++) {										\
-				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
-				const char *restrict v = BUNtvar(bi, p - off);			\
-				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
-					vals[cnt++] = p;									\
-			}															\
-		} else {														\
-			for (; p < ncands; p++) {									\
-				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
-				oid o = canditer_next(ci);								\
-				const char *restrict v = BUNtvar(bi, o - off);			\
-				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
-					vals[cnt++] = o;									\
-			}															\
-		}																\
+#define scanloop(TEST, canditer_next)						\
+	do {													\
+		const oid off = b->hseqbase;						\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {					\
+			oid o = canditer_next(&ci);						\
+			const char *restrict v = BUNtvar(bi, o - off);	\
+			assert(rcnt < BATcapacity(bn));					\
+			if (TEST)										\
+				vals[rcnt++] = o;							\
+		}													\
 	} while (0)
 
 static str
-str_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
-				 BUN *rcnt, const char *key, bool anti,
-				 int (*str_cmp)(const char *, const char *, int),
-				 bool keep_nulls)
-{
-	if (strNil(key))
-		return MAL_SUCCEED;
-
-	BATiter bi = bat_iterator(b);
-	BUN cnt = 0, ncands = ci->ncand;
-	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
-	str msg = MAL_SUCCEED;
-	int klen = str_strlen(key);
-
-	size_t counter = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-
-	if (anti)					/* keep nulls ? (use false for now) */
-		scanloop_anti(!strNil(v) && str_cmp(v, key, klen) != 0, keep_nulls);
-	else
-		scanloop(!strNil(v) && str_cmp(v, key, klen) == 0, keep_nulls);
-
-  bailout:
-	bat_iterator_end(&bi);
-	*rcnt = cnt;
-	return msg;
-}
-
-static str
-STRselect(bat *r_id, const bat *b_id, const bat *cb_id, const char *key,
-			  const bit anti, int (*str_cmp)(const char *, const char *, int),
-			  const char *fname)
+STRselect(MalStkPtr stk, InstrPtr pci,
+		  int (*str_icmp)(const char *, const char *, int),
+		  int (*str_cmp)(const char *, const char *, int),
+		  const char *fname)
 {
 	str msg = MAL_SUCCEED;
 
-	BAT *b, *cb = NULL, *r = NULL, *old_s = NULL;;
-	BUN p = 0, q = 0, rcnt = 0;
+	bat *r_id = getArgReference_bat(stk, pci, 0);
+	bat b_id = *getArgReference_bat(stk, pci, 1);
+	bat cb_id = *getArgReference_bat(stk, pci, 2);
+	const char *key = *getArgReference_str(stk, pci, 3);
+	bit icase = pci->argc != 5;
+	bit anti = pci->argc == 5 ? *getArgReference_bit(stk, pci, 4) :
+		*getArgReference_bit(stk, pci, 5);
+
+	BAT *b, *cb = NULL, *bn = NULL, *old_s = NULL;;
+	BUN rcnt = 0;
 	struct canditer ci;
 	bool with_strimps = false,
 		with_strimps_anti = false;
 
-	if (!(b = BATdescriptor(*b_id)))
+	if (!(b = BATdescriptor(b_id)))
 		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
 
-	if (cb_id && !is_bat_nil(*cb_id) && !(cb = BATdescriptor(*cb_id))) {
+	if (!is_bat_nil(cb_id) && !(cb = BATdescriptor(cb_id))) {
 		BBPreclaim(b);
 		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
 	}
@@ -2176,17 +2111,16 @@ STRselect(bat *r_id, const bat *b_id, const bat *cb_id, const char *key,
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
 	if (BAThasstrimps(b)) {
-		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
-			BAT *tmp_s = STRMPfilter(b, cb, key, anti);
-			if (tmp_s) {
-				old_s = cb;
-				cb = tmp_s;
-				if (!anti)
-					with_strimps = true;
-				else
-					with_strimps_anti = true;
-			}
+		BAT *tmp_s;
+		if (STRMPcreate(b, NULL) == GDK_SUCCEED && (tmp_s = STRMPfilter(b, cb, key, anti)) != NULL) {
+			old_s = cb;
+			cb = tmp_s;
+			if (!anti)
+				with_strimps = true;
+			else
+				with_strimps_anti = true;
 		} else {
+			/* strimps failed, continue without */
 			GDKclrerr();
 		}
 	}
@@ -2198,83 +2132,78 @@ STRselect(bat *r_id, const bat *b_id, const bat *cb_id, const char *key,
 							: "string_select: strcmp function with no accelerator"));
 
 	canditer_init(&ci, b, cb);
-	if (!(r = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
+	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
 		BBPnreclaim(2, b, cb);
 		throw(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	if (!cb || BATtdense(cb)) {
-		if (cb) {
-			assert(BATtdense(cb));
-			p = (BUN) cb->tseqbase;
-			q = p + BATcount(cb);
-			if ((oid) p < b->hseqbase)
-				p = b->hseqbase;
-			if ((oid) q > b->hseqbase + BATcount(b))
-				q = b->hseqbase + BATcount(b);
-		} else {
-			p = b->hseqbase;
-			q = BATcount(b) + b->hseqbase;
-		}
+	BATiter bi = bat_iterator(b);
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (icase)
+		str_cmp = str_icmp;
+	oid *vals = Tloc(bn, 0);
+	const int klen = str_strlen(key);
+	if (ci.tpe == cand_dense) {
+		if (with_strimps_anti)
+			scanloop(strNil(v) || str_cmp(v, key, klen) == 0, canditer_next_dense);
+		else if (anti)
+			scanloop(!strNil(v) && str_cmp(v, key, klen) != 0, canditer_next_dense);
+		else
+			scanloop(!strNil(v) && str_cmp(v, key, klen) == 0, canditer_next_dense);
+	} else {
+		if (with_strimps_anti)
+			scanloop(strNil(v) || str_cmp(v, key, klen) == 0, canditer_next);
+		else if (anti)
+			scanloop(!strNil(v) && str_cmp(v, key, klen) != 0, canditer_next);
+		else
+			scanloop(!strNil(v) && str_cmp(v, key, klen) == 0, canditer_next);
 	}
-
-	msg = str_select(r, b, cb, &ci, p, q, &rcnt, key, anti
-					 && !with_strimps_anti, str_cmp, with_strimps_anti);
+	bat_iterator_end(&bi);
+	TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT(qry_ctx));
 
 	if (!msg) {
-		BATsetcount(r, rcnt);
-		r->tsorted = true;
-		r->trevsorted = r->batCount <= 1;
-		r->tkey = true;
-		r->tnil = false;
-		r->tnonil = true;
-		r->tseqbase = rcnt == 0 ?
+		BATsetcount(bn, rcnt);
+		bn->tsorted = true;
+		bn->trevsorted = bn->batCount <= 1;
+		bn->tkey = true;
+		bn->tnil = false;
+		bn->tnonil = true;
+		bn->tseqbase = rcnt == 0 ?
 			0 : rcnt == 1 ?
-			*(const oid *) Tloc(r, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
+			*(const oid *) Tloc(bn, 0) : rcnt == ci.ncand && ci.tpe == cand_dense ? ci.hseq : oid_nil;
 
 		if (with_strimps_anti) {
 			BAT *rev;
 			if (old_s) {
-				rev = BATdiffcand(old_s, r);
+				rev = BATdiffcand(old_s, bn);
 #ifndef NDEBUG
-				BAT *is = BATintersectcand(old_s, r);
+				BAT *is = BATintersectcand(old_s, bn);
 				if (is) {
-					assert(is->batCount == r->batCount);
+					assert(is->batCount == bn->batCount);
 					BBPreclaim(is);
 				}
-				assert(rev->batCount == old_s->batCount - r->batCount);
+				assert(rev->batCount == old_s->batCount - bn->batCount);
 #endif
 			} else
-				rev = BATnegcands(b->batCount, r);
+				rev = BATnegcands(b->batCount, bn);
 
-			BBPreclaim(r);
-			r = rev;
-			if (r == NULL)
+			BBPreclaim(bn);
+			bn = rev;
+			if (bn == NULL)
 				msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
-	if (r && !msg) {
-		*r_id = r->batCacheid;
-		BBPkeepref(r);
+	if (bn && !msg) {
+		*r_id = bn->batCacheid;
+		BBPkeepref(bn);
 	} else {
-		BBPreclaim(r);
+		BBPreclaim(bn);
 	}
 
 	BBPnreclaim(3, b, cb, old_s);
 	return msg;
 }
-
-#define STRSELECT_MAPARGS(STK, PCI, R_ID, B_ID, CB_ID, KEY, ICASE, ANTI) \
-	do {																\
-		R_ID = getArgReference(STK, PCI, 0);							\
-		B_ID = getArgReference(STK, PCI, 1);							\
-		CB_ID = getArgReference(STK, PCI, 2);							\
-		KEY = *getArgReference_str(STK, PCI, 3);						\
-		ICASE = PCI->argc != 5;											\
-		ANTI = PCI->argc == 5 ? *getArgReference_bit(STK, PCI, 4) :		\
-			*getArgReference_bit(STK, PCI, 5);							\
-	} while (0)
 
 /**
  * @r_id: result oid
@@ -2289,14 +2218,8 @@ STRstartswithselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
-
-	bat *r_id = NULL, *b_id = NULL, *cb_id = NULL;
-	char *key = NULL;
-	bit icase = 0, anti = 0;
-
-	STRSELECT_MAPARGS(stk, pci, r_id, b_id, cb_id, key, icase, anti);
-	return STRselect(r_id, b_id, cb_id, key, anti,
-					 icase ? str_is_iprefix : str_is_prefix, "str.startswithselect");
+	return STRselect(stk, pci,
+					 str_is_iprefix, str_is_prefix, "str.startswithselect");
 }
 
 /**
@@ -2312,14 +2235,8 @@ STRendswithselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
-
-	bat *r_id = NULL, *b_id = NULL, *cb_id = NULL;
-	char *key = NULL;
-	bit icase = 0, anti = 0;
-
-	STRSELECT_MAPARGS(stk, pci, r_id, b_id, cb_id, key, icase, anti);
-	return STRselect(r_id, b_id, cb_id, key, anti,
-					 icase ? str_is_isuffix : str_is_suffix, "str.endswithselect");
+	return STRselect(stk, pci,
+					 str_is_isuffix, str_is_suffix, "str.endswithselect");
 }
 
 /**
@@ -2335,14 +2252,8 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
-
-	bat *r_id = NULL, *b_id = NULL, *cb_id = NULL;
-	char *key = NULL;
-	bit icase = 0, anti = 0;
-
-	STRSELECT_MAPARGS(stk, pci, r_id, b_id, cb_id, key, icase, anti);
-	return STRselect(r_id, b_id, cb_id, key, anti,
-					 icase ? str_icontains : str_contains, "str.containsselect");
+	return STRselect(stk, pci,
+					 str_icontains, str_contains, "str.containsselect");
 }
 
 #define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
