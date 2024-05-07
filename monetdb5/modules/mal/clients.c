@@ -479,9 +479,11 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng timeout_micro = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK
 				&& qto == 1 ? 1000 : (lng) qto * 1000000;
 		mal_clients[idx].querytimeout = timeout_micro;
-		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		if (qry_ctx) {
-			qry_ctx->endtime = qry_ctx->starttime && timeout_micro ? qry_ctx->starttime + timeout_micro : 0;
+		if (timeout_micro != 1000) {
+			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+			if (qry_ctx) {
+				qry_ctx->endtime = qry_ctx->starttime && timeout_micro ? qry_ctx->starttime + timeout_micro : 0;
+			}
 		}
 	}
 	MT_lock_unset(&mal_contextLock);
