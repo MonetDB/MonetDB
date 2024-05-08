@@ -6870,6 +6870,7 @@ GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2)
 		if (x2 == NULL && *s2 == 0)
 			return 1;
 
+		v1 = v2 = 0;
 		/* get next character from str1 */
 		if (x1 == NULL) {
 			v1 = casefold[*s1++];
