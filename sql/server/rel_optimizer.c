@@ -607,8 +607,8 @@ run_optimizer_set(visitor *v, sql_optimizer_run *runs, sql_rel *rel, global_prop
 
 /* 'profile' means to benchmark each individual optimizer run */
 /* 'instantiate' means to rewrite logical tables: (merge, remote, replica tables) */
-sql_rel *
-rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
+static sql_rel *
+rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
 	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0,
 									  .has_special_modify = rel && is_modify(rel->op) && rel->flag&UPD_COMP};
@@ -634,4 +634,33 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 	/* these optimizers run statistics gathered by the last optimization cycle */
 	rel = run_optimizer_set(&v, sql->runs, rel, &gp, post_sql_optimizers);
 	return rel;
+}
+
+static sql_exp *
+exp_optimize_one(visitor *v, sql_rel *rel, sql_exp *e, int depth )
+{
+       (void)rel;
+       (void)depth;
+       if (e->type == e_psm && e->flag == PSM_REL && e->l) {
+               e->l = rel_optimizer_one(v->sql, e->l, 0, v->changes, v->value_based_opt, v->storage_based_opt);
+       }
+       return e;
+}
+
+sql_rel *
+rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
+{
+	if (rel && rel->op == op_ddl && rel->flag == ddl_psm) {
+		if (!list_empty(rel->exps)) {
+			bool changed = 0;
+			visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = instantiate };
+			for(node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				exp_visitor(&v, rel, e, 1, exp_optimize_one, true, true, true, &changed);
+			}
+		}
+		return rel;
+	} else {
+		return rel_optimizer_one(sql, rel, profile, instantiate, value_based_opt, storage_based_opt);
+	}
 }
