@@ -55,6 +55,8 @@ typedef struct {
 	sql_rel *sel;
 } merge_table_prune_info;
 
+static sql_rel *merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_info *info);
+
 static sql_rel *
 rel_wrap_select_around_mt_child(visitor *v, sql_rel *t, merge_table_prune_info *info)
 {
@@ -62,8 +64,8 @@ rel_wrap_select_around_mt_child(visitor *v, sql_rel *t, merge_table_prune_info *
 	sql_table *subt = (sql_table *)t->l;
 
 	if (isMergeTable(subt)) {
-		// TODO: handle it
-		return NULL;
+		if ((t = merge_table_prune_and_unionize(v, t, info)) == NULL)
+			return NULL;
 	}
 
 	if (info) {
