@@ -56,7 +56,7 @@ typedef struct {
 } merge_table_prune_info;
 
 static sql_rel *
-rel_wrap_select_around_table(visitor *v, sql_rel *t, merge_table_prune_info *info)
+rel_wrap_select_around_mt_child(visitor *v, sql_rel *t, merge_table_prune_info *info)
 {
 	// TODO: it has to be a table (merge table component) add checks
 	sql_table *subt = (sql_table *)t->l;
@@ -89,9 +89,9 @@ rel_unionize_mt_tables_balanced(visitor *v, sql_rel* mt, list* tables, merge_tab
 	/* merge (via union) every *two* consequtive nodes of the list */
 	for (node *n = tables->h; n && n->next; n = n->next->next) {
 		/* first (left) node */
-		sql_rel *tl = rel_wrap_select_around_table(v, n->data, info);
+		sql_rel *tl = rel_wrap_select_around_mt_child(v, n->data, info);
 		/* second (right) node */
-		sql_rel *tr = rel_wrap_select_around_table(v, n->next->data, info);
+		sql_rel *tr = rel_wrap_select_around_mt_child(v, n->next->data, info);
 		/* create the union */
 		sql_rel *tu = rel_setop(v->sql->sa, tl, tr, op_union);
 		rel_setop_set_exps(v->sql, tu, rel_projections(v->sql, mt, NULL, 1, 1), true);
@@ -112,7 +112,7 @@ rel_unionize_mt_tables_munion(visitor *v, sql_rel* mt, list* tables, merge_table
 	/* create the list of all the operand rels */
 	list *rels = sa_list(v->sql->sa);
 	for (node *n = tables->h; n; n = n->next) {
-		sql_rel *r = rel_wrap_select_around_table(v, n->data, info);
+		sql_rel *r = rel_wrap_select_around_mt_child(v, n->data, info);
 		append(rels, r);
 	}
 
@@ -422,7 +422,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 		if (mvc_debug_on(v->sql, 16)) {
 			/* In case of a single table there in nothing to unionize */
 			if (tables->cnt == 1) {
-				nrel = rel_wrap_select_around_table(v, tables->h->data, info);
+				nrel = rel_wrap_select_around_mt_child(v, tables->h->data, info);
 			} else {
 				//nrel = rel_unionize_mt_tables_balanced(v, mt_rel, tables, info);
 				nrel = rel_setop_n_ary(v->sql->sa, tables, op_munion);
@@ -451,7 +451,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			}
 		} else {
 			if (tables->cnt == 1) {
-				nrel = rel_wrap_select_around_table(v, tables->h->data, info);
+				nrel = rel_wrap_select_around_mt_child(v, tables->h->data, info);
 			} else {
 				nrel = rel_unionize_mt_tables_munion(v, mt_rel, tables, info);
 			}
