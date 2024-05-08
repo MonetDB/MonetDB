@@ -6859,7 +6859,7 @@ GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2)
 	const uint8_t *s2 = (const uint8_t *) str2;
 	const uint8_t *x1 = NULL, *x2 = NULL;
 	int n1, n2;
-	int v1, v2;
+	int v1 = 0, v2 = 0;
 
 	for (;;) {
 		/* check for the end */
@@ -6870,7 +6870,6 @@ GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2)
 		if (x2 == NULL && *s2 == 0)
 			return 1;
 
-		v1 = v2 = 0;
 		/* get next character from str1 */
 		if (x1 == NULL) {
 			v1 = casefold[*s1++];
@@ -6929,19 +6928,23 @@ GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2)
 				n2++;
 		}
 
-		/* At this point, if x1 != NULL (then v1 == 0), it
-		 * points to the end of a sequence of length n1 that is
-		 * (part of) the first string to be compared and if *x1
-		 * != 0, it points to the next character to be compared
-		 * (in the next iteration, else we continue with s1);
-		 * else if v1 == 0, s1 points to the end of a sequence
-		 * of length n1 that is (part of) the string to be
-		 * compared; else v1 is the codepoint to be compared.
-		 * In any case, s1 points to the start of the next
-		 * character to be compared (after x1 is exhausted).
-		 * The value in l1 is the remaining length of the first
-		 * string (i.e. what s1 points to).  The same for x2,
-		 * s2, n2, l2, and v2. */
+		/* At this point, there are three possibilities:
+		 * x1 != NULL && v1 == 0:
+		 *     x1 points to the byte behind a UTF-8 sequence of
+		 *     length n1 that is to be compared (so x1-n1 is the
+		 *     start);
+		 * x1 == NULL && v1 == 0:
+		 *     s1 points to the byte behind a UTF-8 sequence of
+		 *     length n1 that is to be compared (so s1-n1 is the
+		 *     start);
+		 * x1 == NULL && v1 != 0:
+		 *     v1 is the codepoint value that is to be compared.
+		 * Note that x1 != NULL && v1 != 0 cannot happen.
+		 * In all cases, s1 points to the start of the next
+		 * UTF-8 sequence, and l1 is the number of bytes left
+		 * that are to be compared (can be zero).
+		 *
+		 * The same goes for s2/x2/v2/n2/l2. */
 
 		/* compare */
 		if (v1 == 0) {
