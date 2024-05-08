@@ -543,11 +543,6 @@ Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
-Obsoletes: MonetDB5-server-hugeint < 11.38.0
-%if %{with hugeint}
-Provides: %{name}-server-hugeint%{?_isa} = %{version}-%{release}
-Provides: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
-%endif
 Obsoletes: MonetDB5-server < 11.50.0
 Provides: MonetDB5-server = %{version}-%{release}
 Provides: MonetDB5-server%{?_isa} = %{version}-%{release}
@@ -630,10 +625,6 @@ used from the MAL level.
 Summary: MonetDB SQL server modules
 Group: Applications/Databases
 Requires(pre): %{name}-server%{?_isa} = %{version}-%{release}
-Obsoletes: MonetDB-SQL-server5-hugeint < 11.38.0
-%if %{with hugeint}
-Provides: %{name}-SQL-hugeint%{?_isa} = %{version}-%{release}
-%endif
 Obsoletes: MonetDB-SQL-server5 < 11.50.0
 Provides: %{name}-SQL-server5 = %{version}-%{release}
 Provides: %{name}-SQL-server5%{?_isa} = %{version}-%{release}

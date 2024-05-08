@@ -206,8 +206,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, adduser,
  libmonetdb28 (= ${source:Version}),
 Recommends: monetdb-sql (= ${source:Version})
 Suggests: monetdb-client (= ${source:Version})
-Conflicts: monetdb5-server-hugeint (<< 11.38.0)
-Replaces: monetdb5-server-hugeint (<< 11.38.0)
 Replaces: monetdb5-server (<< 11.50.0)
 Break: monetdb5-server (<< 11.50.0)
 Description: MonetDB database server
@@ -254,8 +252,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb-client26 (= ${source:Version}),
  libmonetdb-stream26 (= ${source:Version}),
  monetdb-server (= ${source:Version})
-Conflicts: monetdb5-sql-hugeint (<< 11.38.0)
-Replaces: monetdb5-sql-hugeint (<< 11.38.0)
 Replaces: monetdb5-sql (<< 11.50.0)
 Break: monetdb5-sql (<< 11.50.0)
 Suggests: monetdb-client (= ${source:Version})
