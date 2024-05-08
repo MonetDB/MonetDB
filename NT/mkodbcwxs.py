@@ -35,6 +35,7 @@ def main():
     if len(sys.argv) != 4:
         print(r'Usage: mkodbcwxs.py version bits installdir')
         return 1
+    version = sys.argv[1]
     if sys.argv[2] == '64':
         folder = r'ProgramFiles64Folder'
         arch = 'x64'
@@ -64,7 +65,7 @@ def main():
     features = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
-    print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB ODBC Driver" UpgradeCode="{}" Version="{}">'.format(upgradecode[arch], sys.argv[1]))
+    print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB ODBC Driver" UpgradeCode="{}" Version="{}">'.format(upgradecode[arch], version))
     print(r'    <Package Id="*" Comments="MonetDB ODBC Driver" Compressed="yes" InstallerVersion="301" Keywords="MonetDB SQL ODBC" Languages="1033" Manufacturer="MonetDB Foundation" Platform="{}"/>'.format(arch))
     print(r'    <MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="A later version of [ProductName] is already installed." AllowSameVersionUpgrades="no"/>')
     print(r'    <WixVariable Id="WixUILicenseRtf" Value="share\license.rtf"/>')
@@ -88,10 +89,10 @@ def main():
     id = 1
     print(r'            <Directory Id="lib" Name="lib">')
     id = comp(features, id, 14,
-              [r'bin\mapi.dll', r'lib\mapi.pdb',
+              [rf'bin\mapi{version}.dll', rf'lib\mapi{version}.pdb',
                r'lib\MonetODBC.dll', r'lib\MonetODBC.pdb',
                r'lib\MonetODBCs.dll', r'lib\MonetODBCs.pdb',
-               r'bin\stream.dll', r'lib\stream.pdb',
+               rf'bin\stream{version}.dll', rf'lib\stream{version}.pdb',
                vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll

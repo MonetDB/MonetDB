@@ -34,5 +34,5 @@ set_target_properties(csv
 
 install(TARGETS
     csv
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5${MONETDB_VERSION}
     COMPONENT server)

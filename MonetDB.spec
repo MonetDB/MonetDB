@@ -176,7 +176,7 @@ more client packages.
 %files
 %license COPYING
 %defattr(-,root,root)
-%{_libdir}/libbat.so.*
+%{_libdir}/libbat*.so.*
 
 %package devel
 Summary: MonetDB development files
@@ -202,7 +202,7 @@ functionality of MonetDB.
 %{_includedir}/monetdb/mstring.h
 %exclude %{_includedir}/monetdb/monetdbe.h
 %{_includedir}/monetdb/monet*.h
-%{_libdir}/libbat.so
+%{_libdir}/libbat*.so
 %{_libdir}/pkgconfig/monetdb-gdk.pc
 
 %package stream
@@ -223,7 +223,7 @@ various other components.
 %files stream
 %license COPYING
 %defattr(-,root,root)
-%{_libdir}/libstream.so.*
+%{_libdir}/libstream*.so.*
 
 %package stream-devel
 Summary: MonetDB stream library
@@ -245,7 +245,7 @@ library.
 %files stream-devel
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
-%{_libdir}/libstream.so
+%{_libdir}/libstream*.so
 %{_includedir}/monetdb/stream.h
 %{_includedir}/monetdb/stream_socket.h
 %{_libdir}/pkgconfig/monetdb-stream.pc
@@ -273,7 +273,7 @@ you will very likely need this package.
 %files client-lib
 %license COPYING
 %defattr(-,root,root)
-%{_libdir}/libmapi.so.*
+%{_libdir}/libmapi*.so.*
 
 %package client
 Summary: MonetDB - Monet Database Management System Client Programs
@@ -298,8 +298,8 @@ MonetDB, you will very likely need this package.
 %files client
 %license COPYING
 %defattr(-,root,root)
-%{_bindir}/mclient
-%{_bindir}/msqldump
+%{_bindir}/mclient*
+%{_bindir}/msqldump*
 %{_mandir}/man1/mclient.1*
 %{_mandir}/man1/msqldump.1*
 
@@ -321,7 +321,7 @@ This package contains the files needed to develop with the
 %files client-devel
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
-%{_libdir}/libmapi.so
+%{_libdir}/libmapi*.so
 %{_includedir}/monetdb/mapi*.h
 %{_includedir}/monetdb/msettings.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
@@ -433,7 +433,7 @@ extensions for %{name}-server.
 
 %files geom
 %defattr(-,root,root)
-%{_libdir}/monetdb5/lib_geom.so
+%{_libdir}/monetdb5*/lib_geom.so
 %endif
 
 %if %{with rintegration}
@@ -457,8 +457,8 @@ install it.
 
 %files R
 %defattr(-,root,root)
-%{_libdir}/monetdb5/rapi.R
-%{_libdir}/monetdb5/lib_rapi.so
+%{_libdir}/monetdb5*/rapi.R
+%{_libdir}/monetdb5*/lib_rapi.so
 %endif
 
 %if %{with py3integration}
@@ -483,7 +483,7 @@ install it.
 
 %files python3
 %defattr(-,root,root)
-%{_libdir}/monetdb5/lib_pyapi3.so
+%{_libdir}/monetdb5*/lib_pyapi3.so
 %endif
 
 %if %{with fits}
@@ -503,7 +503,7 @@ format.
 
 %files cfitsio
 %defattr(-,root,root)
-%{_libdir}/monetdb5/lib_fits.so
+%{_libdir}/monetdb5*/lib_fits.so
 %endif
 
 %package libs
@@ -528,14 +528,14 @@ embedded library (%{name}-embedded).
 
 %files libs
 %defattr(-,root,root)
-%{_libdir}/libmonetdb5.so.*
-%{_libdir}/libmonetdbsql.so*
-%dir %{_libdir}/monetdb5
+%{_libdir}/libmonetdb5*.so.*
+%{_libdir}/libmonetdbsql*.so*
+%dir %{_libdir}/monetdb5%{version}
 %if %{with cintegration}
-%{_libdir}/monetdb5/lib_capi.so
+%{_libdir}/monetdb5*/lib_capi.so
 %endif
-%{_libdir}/monetdb5/lib_csv.so
-%{_libdir}/monetdb5/lib_generator.so
+%{_libdir}/monetdb5*/lib_csv.so
+%{_libdir}/monetdb5*/lib_generator.so
 
 %package server
 Summary: MonetDB - Monet Database Management System
@@ -590,7 +590,7 @@ exit 0
 %attr(2750,monetdb,monetdb) %dir %{_localstatedir}/lib/monetdb
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
-%{_bindir}/mserver5
+%{_bindir}/mserver5*
 %{_mandir}/man1/mserver5.1*
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
@@ -618,7 +618,7 @@ used from the MAL level.
 %defattr(-,root,root)
 %{_includedir}/monetdb/mal*.h
 %{_includedir}/monetdb/mel.h
-%{_libdir}/libmonetdb5.so
+%{_libdir}/libmonetdb5*.so
 %{_libdir}/pkgconfig/monetdb5.pc
 
 %package SQL
@@ -653,8 +653,7 @@ configuration.
 
 %files SQL
 %defattr(-,root,root)
-%{_bindir}/monetdb
-%{_bindir}/monetdbd
+%{_bindir}/monetdb*
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %dir %attr(775,monetdb,monetdb) %{_rundir}/monetdb
 # RHEL >= 7, and all current Fedora
@@ -813,7 +812,7 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd* %{_bindir}/mserver5* %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -826,7 +825,7 @@ if [ $1 -eq 0 ] ; then
   do
     /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
   done
-  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd* %{_bindir}/mserver5* %{_unitdir}/monetdbd.service &> /dev/null || :
   if [ $active = active ]; then
     /usr/bin/systemctl start monetdbd.service
   fi
@@ -900,11 +899,16 @@ install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
 install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 
 # remove unwanted stuff
-rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
-rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
-rm -f %{buildroot}%{_libdir}/monetdb5/lib_udf*.so
+rm -f %{buildroot}%{_libdir}/monetdb5*/lib_opt_sql_append.so
+rm -f %{buildroot}%{_libdir}/monetdb5*/lib_microbenchmark*.so
+rm -f %{buildroot}%{_libdir}/monetdb5*/lib_udf*.so
 rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
 rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
+
+for f in monetdbd monetdb mserver5 mclient msqldump; do
+    mv %{buildroot}%{_bindir}/${f} %{buildroot}%{_bindir}/${f}%{version}
+    ln -s ${f}%{version} %{buildroot}%{_bindir}/${f}
+done
 
 if [ -x /usr/sbin/hardlink ]; then
     /usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux

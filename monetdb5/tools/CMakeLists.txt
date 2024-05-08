@@ -32,6 +32,7 @@ target_link_libraries(monetdb5
 
 set_target_properties(monetdb5
   PROPERTIES
+  OUTPUT_NAME monetdb5${MONETDB_VERSION}
   VERSION ${MONETDB5_VERSION}
   SOVERSION ${MONETDB5_VERSION_MAJOR})
 
