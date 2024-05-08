@@ -344,6 +344,44 @@ error:
 
 /* ***** HASH OPERATORS ***** */
 
+#define aprep_heap(BT, SB, SK, FName) \
+	do { \
+		MT_lock_set(&SB->theaplock); \
+		MT_lock_set(&BT->theaplock); \
+		if (!VIEWvtparent(BT)) { /* TODO this VIEWvtparent probably doesn't need the locks */ \
+			MT_lock_unset(&BT->theaplock); \
+			MT_lock_unset(&SB->theaplock); \
+			local_storage = true; \
+			pipeline_lock(p); \
+			if (!SK->allocators) { \
+				SK->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*)); \
+				if (!SK->allocators) { \
+					pipeline_unlock(p); \
+					err = createException(MAL, FName, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					goto error; \
+				} else { \
+					SK->nr_allocators = p->p->nr_workers; \
+				} \
+			} \
+			pipeline_unlock(p); \
+			assert(p->wid < p->p->nr_workers); \
+			if (!SK->allocators[p->wid]) { \
+				SK->allocators[p->wid] = ma_create(); \
+				if (!SK->allocators[p->wid]) { \
+					err = createException(MAL, FName, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					goto error; \
+				} \
+			} \
+		} else if (BATcount(BT) && BATcount(SB) == 0 && SB->tvheap->parentid == SB->batCacheid) { \
+			MT_lock_unset(&BT->theaplock); \
+			MT_lock_unset(&SB->theaplock); \
+			BATswap_heaps(SB, BT, p); \
+		} else { \
+			MT_lock_unset(&BT->theaplock); \
+			MT_lock_unset(&SB->theaplock); \
+		} \
+	} while(0)
+
 #define PRE_CLAIM 256
 #define group(Type) \
 	do { \
@@ -498,16 +536,16 @@ error:
 		} \
 	} while (0)
 
-#define agroup(Type) \
+#define agroup() \
 	do { \
 		int slots = 0; \
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
-		Type *vals = h->vals; \
+		char **vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
-			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 			gid k = (gid)h->hsh(bpi)&h->mask; \
 			gid g = 0; \
 			\
@@ -538,18 +576,17 @@ error:
 		bat_iterator_end(&bi); \
 	} while (0)
 
-#define agroup_(Type,P) \
+#define agroup_(P) \
 	do { \
+		int slots = 0; \
+		gid slot = 0; \
+		BATiter bi = bat_iterator(b); \
+		char **vals = h->vals; \
+		mallocator *ma = h->allocators[P->wid]; \
 		if (ATOMstorage(tt) == TYPE_str) { \
-			int slots = 0; \
-			gid slot = 0; \
-			BATiter bi = bat_iterator(b); \
-			Type *vals = h->vals; \
-			mallocator *ma = h->allocators[P->wid]; \
-			\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
-				Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+				char *bpi = (char *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 				gid k = (gid)str_hsh(bpi)&h->mask; \
 				gid g = 0; \
 				\
@@ -577,15 +614,7 @@ error:
 				} \
 				gp[i] = g-1; \
 			} \
-			bat_iterator_end(&bi); \
-		} else \
-		if (ATOMvarsized(tt)) { \
-			int slots = 0; \
-			gid slot = 0; \
-			BATiter bi = bat_iterator(b); \
-			char **vals = h->vals; \
-			mallocator *ma = h->allocators[P->wid]; \
-			\
+		} else { /* other ATOMvarsized, e.g. BLOB */ \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
 				void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
@@ -616,8 +645,8 @@ error:
 				} \
 				gp[i] = g-1; \
 			} \
-			bat_iterator_end(&bi); \
 		} \
+		bat_iterator_end(&bi); \
 	} while (0)
 
 static str
@@ -637,59 +666,25 @@ OAHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 		err = createException(SQL, "oahash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
-	MT_lock_set(&u->theaplock);
-	MT_lock_set(&b->theaplock);
-	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
-		local_storage = true;
-		MT_lock_unset(&b->theaplock);
-		MT_lock_unset(&u->theaplock);
-		pipeline_lock(p);
-		if (!h->allocators) {
-			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
-			if (!h->allocators) {
-				pipeline_unlock(p);
-				err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto error;
-			} else
-				h->nr_allocators = p->p->nr_workers;
-		}
-		pipeline_unlock(p);
-		assert(p->wid < p->p->nr_workers);
-		if (!h->allocators[p->wid]) {
-			h->allocators[p->wid] = ma_create();
-			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto error;
-			}
-		}
-	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		MT_lock_unset(&b->theaplock);
-		MT_lock_unset(&u->theaplock);
-		BATswap_heaps(u, b, p);
-	} else {
-		MT_lock_unset(&b->theaplock);
-		MT_lock_unset(&u->theaplock);
+
+	BUN cnt = BATcount(b);
+	g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
+	if (g == NULL) {
+		err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
 	}
-	if (h) {
+
+	if (cnt) {
 		ATOMIC_BASE_TYPE expected = 0;
-		BUN cnt = BATcount(b);
-		g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
-		if (g == NULL) {
-			err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto error;
-		}
+		int tt = b->ttype;
+		gid *gp = Tloc(g, 0);
 
-		if (cnt && !err) {
-			int tt = b->ttype;
-			gid *gp = Tloc(g, 0);
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-
-			switch(tt) {
+		switch(tt) {
 			case TYPE_void:
 				vgroup();
 				break;
@@ -731,43 +726,40 @@ OAHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 			case TYPE_dbl:
 				fgroup(dbl, lng);
 				break;
-			case TYPE_str:
-				if (local_storage) {
-					agroup_(str, p);
-				} else {
-					agroup(str);
-				}
-				break;
 			default:
-				err = createException(MAL, "oahash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-			}
-			if (!err)
-				TIMEOUT_CHECK(qry_ctx, throw(MAL, "oahash.build_table", RUNTIME_QRY_TIMEOUT));
+				if (ATOMvarsized(tt)) {
+					aprep_heap(b, u, h, "oahash.build_table");
+					if (local_storage) {
+						agroup_(p);
+					} else {
+						agroup();
+					}
+				} else {
+					err = createException(MAL, "oahash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				}
 		}
-		if (err || p->p->status) {
-			BBPunfix(g->batCacheid);
-			/* We don't want to overwrite existing error message.
-			 * p->p->status doesn't carry much info. yet.
-			 */
-			if (!err)
-				err = createException(MAL, "oahash.build_table", "pipeline execution error");
-			goto error;
-		}
-		BATsetcount(g, cnt);
-		pipeline_lock2(g);
-		BATnegateprops(g);
-		pipeline_unlock2(g);
-		/* props */
-		gid last = ATOMIC_GET(&h->last);
-		/* pass max id */
-		g->T.maxval = last;
-		g->tkey = FALSE;
-		*ht_sink = u->batCacheid;
-		*slot_id = g->batCacheid;
-		BBPkeepref(u);
-		BBPkeepref(g);
+		if (!err) 
+			TIMEOUT_CHECK(qry_ctx, throw(MAL, "oahash.build_table", RUNTIME_QRY_TIMEOUT));
+	}
+	if (err || p->p->status) {
+		if (!err)
+			err = createException(MAL, "oahash.build_table", "pipeline execution error");
+		goto error;
 	}
 	BBPunfix(b->batCacheid);
+	BATsetcount(g, cnt);
+	pipeline_lock2(g);
+	BATnegateprops(g);
+	pipeline_unlock2(g);
+	/* props */
+	gid last = ATOMIC_GET(&h->last);
+	/* pass max id */
+	g->T.maxval = last;
+	g->tkey = FALSE;
+	*ht_sink = u->batCacheid;
+	*slot_id = g->batCacheid;
+	BBPkeepref(u);
+	BBPkeepref(g);
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(b);
@@ -934,16 +926,16 @@ error:
 		} \
 	} while (0)
 
-#define aderive(Type) \
+#define aderive() \
 	do { \
 		int slots = 0; \
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
-		Type *vals = h->vals; \
+		char **vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
-			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 			gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
 			gid g = 0; \
 			\
@@ -975,18 +967,17 @@ error:
 		bat_iterator_end(&bi); \
 	} while (0)
 
-#define aderive_(Type, P) \
+#define aderive_(P) \
 	do { \
+		int slots = 0; \
+		gid slot = 0; \
+		BATiter bi = bat_iterator(b); \
+		char **vals = h->vals; \
+		mallocator *ma = h->allocators[P->wid]; \
 		if (ATOMstorage(tt) == TYPE_str) { \
-			int slots = 0; \
-			gid slot = 0; \
-			BATiter bi = bat_iterator(b); \
-			Type *vals = h->vals; \
-			mallocator *ma = h->allocators[P->wid]; \
-			\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
-				Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+				char *bpi = (char *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 				gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
 				gid g = 0; \
 				\
@@ -1016,17 +1007,11 @@ error:
 				gp[i] = g-1; \
 			} \
 			bat_iterator_end(&bi); \
-		} else \
-		if (ATOMvarsized(tt)) { \
-			int slots = 0; \
-			gid slot = 0; \
-			BATiter bi = bat_iterator(b); \
-			Type *vals = h->vals; \
+		} else { /* other ATOMvarsized, e.g. BLOB */ \
 			mallocator *ma = h->allocators[P->wid]; \
-			\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
-				Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+				void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
 				gid g = 0; \
 				\
@@ -1078,62 +1063,28 @@ OAHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slo
 		err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-
 	hash_table *h = (hash_table*)u->T.sink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
-	MT_lock_set(&u->theaplock);
-	MT_lock_set(&b->theaplock);
-	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
-		local_storage = true;
-		MT_lock_unset(&b->theaplock);
-		MT_lock_unset(&u->theaplock);
-		pipeline_lock(p);
-		if (!h->allocators) {
-			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
-			if (!h->allocators) {
-				pipeline_unlock(p);
-				err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto error;
-			} else
-				h->nr_allocators = p->p->nr_workers;
-		}
-		pipeline_unlock(p);
-		assert(p->wid < p->p->nr_workers);
-		if (!h->allocators[p->wid]) {
-			h->allocators[p->wid] = ma_create();
-			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto error;
-			}
-		}
-	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		MT_lock_unset(&b->theaplock);
-		MT_lock_unset(&u->theaplock);
-		BATswap_heaps(u, b, p);
-	} else {
-		MT_lock_unset(&b->theaplock);
-		MT_lock_unset(&u->theaplock);
+
+	BUN cnt = BATcount(b);
+	g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
+	if (g == NULL) {
+		err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
 	}
-	if (h) {
-		BUN cnt = BATcount(b);
-		g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
-		if (g == NULL) {
-			err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto error;
-		}
 
-		if (cnt && !err) {
-			ATOMIC_BASE_TYPE expected = 0;
-			int tt = b->ttype;
-			gid *gp = Tloc(g, 0);
-			gid *gi = Tloc(G, 0);
-			gid *pgids = h->pgids;
-			int prime = hash_prime_nr[h->bits-5];
+	if (cnt) {
+		ATOMIC_BASE_TYPE expected = 0;
+		int tt = b->ttype;
+		gid *gp = Tloc(g, 0);
+		gid *gi = Tloc(G, 0);
+		gid *pgids = h->pgids;
+		int prime = hash_prime_nr[h->bits-5];
 
-			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-			switch(tt) {
+		switch(tt) {
 			case TYPE_void:
 				vderive();
 				break;
@@ -1175,39 +1126,40 @@ OAHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slo
 			case TYPE_dbl:
 				fderive(dbl, lng);
 				break;
-			case TYPE_str:
-				if (local_storage) {
-					aderive_(str,p);
-				} else {
-					aderive(str);
-				}
-				break;
 			default:
-				err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-			}
-			if (!err)
-				TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.build_combined_table", RUNTIME_QRY_TIMEOUT));
+				if (ATOMvarsized(tt)) {
+					aprep_heap(b, u, h, "oahash.build_combined_table");
+					if (local_storage) {
+						aderive_(p);
+					} else {
+						aderive();
+					}
+				} else {
+					err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				}
 		}
-		if (err || p->p->status) {
-			BBPunfix(g->batCacheid);
-			if (!err)
-				err = createException(MAL, "oahash.build_combined_table", "pipeline execution error");
-			goto error;
-		}
-		BATsetcount(g, cnt);
-		pipeline_lock2(g);
-		BATnegateprops(g);
-		pipeline_unlock2(g);
-		/* props */
-		gid last = ATOMIC_GET(&h->last);
-		/* pass max id */
-		g->T.maxval = last;
-		g->tkey = FALSE;
-		*ht_sink = u->batCacheid;
-		*slot_id = g->batCacheid;
-		BBPkeepref(u);
-		BBPkeepref(g);
+		if (!err)
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.build_combined_table", RUNTIME_QRY_TIMEOUT));
 	}
+	if (err || p->p->status) {
+		if (!err)
+			err = createException(MAL, "oahash.build_combined_table", "pipeline execution error");
+		goto error;
+	}
+	BATsetcount(g, cnt);
+	pipeline_lock2(g);
+	BATnegateprops(g);
+	pipeline_unlock2(g);
+	/* props */
+	gid last = ATOMIC_GET(&h->last);
+	/* pass max id */
+	g->T.maxval = last;
+	g->tkey = FALSE;
+	*ht_sink = u->batCacheid;
+	*slot_id = g->batCacheid;
+	BBPkeepref(u);
+	BBPkeepref(g);
+
 	BBPunfix(b->batCacheid);
 	BBPunfix(G->batCacheid);
 	return MAL_SUCCEED;
@@ -1325,6 +1277,15 @@ error:
 	return err;
 }
 
+#define hp_check_rehash() \
+	do { \
+		if (ppos[i] >= (gid)hp->nr_slots) { \
+			hp->rehash = 1; \
+			err = createException(MAL, "oahash.add_payload", "hash payload needs rehash"); \
+			goto error; \
+		} \
+	} while (0)
+
 #define vaddpld() \
 	do { \
 		assert(BATtdense(pld) || \
@@ -1337,11 +1298,7 @@ error:
 		oid *hpvals = hp->payload; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			if (ppos[i] >= (gid)hp->nr_slots) { \
-				hp->rehash = 1; \
-				err = createException(MAL, "oahash.add_payload", "hash payload needs rehash"); \
-				goto error; \
-			} \
+			hp_check_rehash(); \
 			/* TODO more memory efficient way to store TYPE_void payload.
 			 * This materialisation seems rather overkill.
 			 */ \
@@ -1356,13 +1313,42 @@ error:
 		Type *hpvals = hp->payload; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			if (ppos[i] >= (gid)hp->nr_slots) { \
-				hp->rehash = 1; \
-				err = createException(MAL, "oahash.add_payload", "hash payload needs rehash"); \
-				goto error; \
-			} \
+			hp_check_rehash(); \
 			hpvals[ppos[i]] = pvals[i]; \
 		} \
+	} while (0)
+
+#define a_addpld() \
+	do { \
+		BATiter bi = bat_iterator(pld); \
+		char **hpvals = hp->payload; \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			hp_check_rehash(); \
+			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			hpvals[ppos[i]] = bpi; \
+		} \
+		bat_iterator_end(&bi); \
+	} while (0)
+
+#define a_addpld_(P) \
+	do { \
+		BATiter bi = bat_iterator(pld); \
+		char **hpvals = hp->payload; \
+		mallocator *ma = hp->allocators[P->wid]; \
+		if (ATOMstorage(tt) == TYPE_str) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				hp_check_rehash(); \
+				char *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+				hpvals[ppos[i]] = ma_strdup(ma, bpi); \
+			} \
+		} else { /* other ATOMvarsized, e.g. BLOB */ \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				hp_check_rehash(); \
+				char *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+				hpvals[ppos[i]] = ma_copy(ma, bpi, hp->len(bpi)); \
+			} \
+		} \
+		bat_iterator_end(&bi); \
 	} while (0)
 
 static str
@@ -1383,43 +1369,8 @@ OAHASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 		goto error;
 	}
 	assert(BATcount(pld) == BATcount(pos));
-
 	hash_payload *hp = (hash_payload*)res->T.sink;
 	assert(hp && hp->s.type == OA_HASH_PAYLOAD_SINK);
-
-	MT_lock_set(&res->theaplock);
-	MT_lock_set(&pld->theaplock);
-	if (ATOMvarsized(res->ttype) && !VIEWvtparent(pld)) {
-		local_storage = true;
-		MT_lock_unset(&pld->theaplock);
-		MT_lock_unset(&res->theaplock);
-		pipeline_lock(p);
-		if (!hp->allocators) {
-			hp->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
-			if (!hp->allocators) {
-				pipeline_unlock(p);
-				err = createException(MAL, "oahash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto error;
-			} else
-				hp->nr_allocators = p->p->nr_workers;
-		}
-		pipeline_unlock(p);
-		assert(p->wid < p->p->nr_workers);
-		if (!hp->allocators[p->wid]) {
-			hp->allocators[p->wid] = ma_create();
-			if (!hp->allocators[p->wid]) {
-				err = createException(MAL, "oahash.add_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto error;
-			}
-		}
-	} else if (ATOMvarsized(res->ttype) && BATcount(pld) && BATcount(res) == 0 && res->tvheap->parentid == res->batCacheid) {
-		MT_lock_unset(&pld->theaplock);
-		MT_lock_unset(&res->theaplock);
-		BATswap_heaps(res, pld, p);
-	} else {
-		MT_lock_unset(&pld->theaplock);
-		MT_lock_unset(&res->theaplock);
-	}
 
 	BUN cnt = BATcount(pld);
 	if (cnt) {
@@ -1471,19 +1422,18 @@ OAHASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 			case TYPE_dbl:
 				addpld(dbl);
 				break;
-			case TYPE_str:
-				//if (local_storage) {
-				//	aaddpld_(str,p);
-				//} else {
-				//	aaddpld(str);
-				//}
-				//break;
-				(void) local_storage;
-				err =  createException(MAL, "oahash.add_payload", "TODO: TYPE_str");
-				goto error;
 			default:
-				err = createException(MAL, "oahash.add_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-				goto error;
+				if (ATOMvarsized(tt)) {
+					aprep_heap(pld, res, hp, "oahash.add_payload");
+					if (local_storage) {
+						a_addpld_(p);
+					} else {
+						a_addpld();
+					}
+				} else {
+					err = createException(MAL, "oahash.add_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+					goto error;
+				}
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.add_payload", RUNTIME_QRY_TIMEOUT));
 	}
@@ -1528,7 +1478,7 @@ error:
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
-	\
+		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)_hash_##Type(ky[i]); \
 		} \
@@ -1538,10 +1488,22 @@ error:
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
-	\
+		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hs[i] = (gid)_hash_##Type(*(((BaseType*)ky)+i)); \
 		} \
+	} while (0)
+
+#define ahash() \
+	do { \
+		BATiter bi = bat_iterator(k); \
+		gid *hs = Tloc(h, 0); \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			hs[i] = (gid)str_hsh(bpi); \
+		} \
+		bat_iterator_end(&bi); \
 	} while (0)
 
 static str
@@ -1565,10 +1527,11 @@ OAHASHhash(bat *hsh, bat *key, const ptr *H)
 	}
 
 	if (cnt) {
+		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-		switch(k->ttype) {
+		switch(tt) {
 			case TYPE_void:
 				vhash();
 				break;
@@ -1610,18 +1573,13 @@ OAHASHhash(bat *hsh, bat *key, const ptr *H)
 			case TYPE_dbl:
 				fhash(dbl, lng);
 				break;
-			case TYPE_str:
-				//if (local_storage) {
-				//	ahash_(str, p);
-				//} else {
-				//	ahash(str);
-				//}
-				//break;
-				err =  createException(MAL, "oahash.hash", "TODO: TYPE_str");
-				goto error;
 			default:
-				err = createException(MAL, "oahash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-				goto error;
+				if (ATOMvarsized(tt)) {	
+					ahash();
+				} else {
+					err = createException(MAL, "oahash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+					goto error;
+				}
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.hash", RUNTIME_QRY_TIMEOUT));
 		if (err)
@@ -1678,6 +1636,18 @@ error:
 		} \
 	} while (0)
 
+#define ahash_combined() \
+	do { \
+		BATiter bi = bat_iterator(k); \
+		gid *hs = Tloc(h, 0); \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			hs[i] = (gid)combine(ps[i], str_hsh(bpi), prime); \
+		} \
+		bat_iterator_end(&bi); \
+	} while (0)
+
 static str
 OAHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const ptr *H)
 {
@@ -1704,6 +1674,7 @@ OAHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const
 	}
 
 	if (cnt) {
+		int tt = k->ttype;
 		oid  *sl = Tloc(s, 0);
 		gid  *ps = Tloc(p, 0);
 		unsigned int prime = find_hash_prime(cnt);
@@ -1711,7 +1682,7 @@ OAHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-		switch(k->ttype) {
+		switch(tt) {
 			case TYPE_void:
 				vhash_combined();
 				break;
@@ -1753,18 +1724,13 @@ OAHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const
 			case TYPE_dbl:
 				fhash_combined(dbl, lng);
 				break;
-			case TYPE_str:
-				//if (local_storage) {
-				//	ahash_combined_(str, p);
-				//} else {
-				//	ahash_combined(str);
-				//}
-				//break;
-				err =  createException(MAL, "oahash.combined_hash", "TODO: TYPE_str");
-				goto error;
 			default:
-				err = createException(MAL, "oahash.combined_hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-				goto error;
+				if (ATOMvarsized(tt)) {
+					ahash_combined();
+				} else {
+					err = createException(MAL, "oahash.combined_hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+					goto error;
+				}
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.combined_hash", RUNTIME_QRY_TIMEOUT));
 		if (err)
@@ -1842,10 +1808,8 @@ OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat 
 
 		switch(k->ttype) {
 			case TYPE_void:
-				//vprobe();
-				//break;
-				err =  createException(MAL, "oahash.probe", "TODO: TYPE_void");
-				goto error;
+				probe(oid);
+				break;
 			case TYPE_bit:
 				probe(bit);
 				break;
@@ -1988,10 +1952,8 @@ OAHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_h
 
 		switch(k->ttype) {
 			case TYPE_void:
-				//vcombined_probe();
-				//break;
-				err =  createException(MAL, "oahash.combined_probe", "TODO: TYPE_void");
-				goto error;
+				combined_probe(oid);
+				break;
 			case TYPE_bit:
 				combined_probe(bit);
 				break;
