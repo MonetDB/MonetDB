@@ -2,6 +2,9 @@
 # This file is updated with Maddlog
 
 * Wed May  8 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Some of the Debian/Ubuntu packages have been renamed.  The old monetdb5
+  names have been changed to plain monetdb, and libmonetdb5-server-*
+  packages have been renamed monetdb-*.
 - The names of some of the provided RPM files have been changed.
   References to the old MonetDB5 name have been removed.  All packages
   are now just MonetDB.
