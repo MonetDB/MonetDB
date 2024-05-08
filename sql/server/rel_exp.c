@@ -1169,7 +1169,8 @@ exp_equal( sql_exp *e1, sql_exp *e2)
 	if (e1 == e2)
 		return 0;
 	if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0)
-		return strcmp(e1->alias.name, e2->alias.name);
+		if (e1->alias.name && e2->alias.name && strcmp(e1->alias.name, e2->alias.name) == 0)
+			return 0;
 	if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name)
 		return strcmp(e1->alias.name, e2->alias.name);
 	return -1;

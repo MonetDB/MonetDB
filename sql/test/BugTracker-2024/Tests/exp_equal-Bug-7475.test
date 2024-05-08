@@ -10,7 +10,6 @@ WITH x AS ( SELECT 1 x ) SELECT 1 , ( SELECT x FROM x ) FROM ( x NATURAL JOIN x 
 1
 1
 
-skipif knownfail
 query II nosort
 SELECT * FROM ( WITH x AS ( SELECT 1 x ) SELECT 1 , ( SELECT x FROM x ) FROM x WHERE x ) y
 ----
@@ -23,7 +22,6 @@ SELECT * FROM ( WITH x AS ( SELECT 1 x ) SELECT 1 , x FROM ( x NATURAL JOIN x y 
 1
 1
 
-skipif knownfail
 query II nosort
 SELECT * FROM ( WITH x AS ( SELECT 1 x ) SELECT 1 , ( SELECT x FROM x ) FROM ( x NATURAL JOIN x y ) WHERE x ) y
 ----
