@@ -5609,7 +5609,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 		if (ce) {
 			if (inner && inner->flag && is_groupby(inner->op)) {
-				int found = 0, nratom = 0;
+				int found = 0;
 				list *gbe = inner->r;
 				/* flag == 2 just add to group by/ aggrs and ref-to pexps*/
 				/* flag == 1 find group by exp referencing this column nr */
@@ -5630,7 +5630,6 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 						if (is_atom(e->type) && !e->alias.name) {
 							atom *a = e->l;
 							int nr = (int)atom_get_int(a);
-							nratom++;
 							if (nr == (list_length(pexps) + 1)) {
 								n->data = ce;
 								ce = exp_ref(sql, ce);
