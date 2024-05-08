@@ -52,7 +52,7 @@ analyze sys.mt2 (id,posX)
 query T nosort
 plan select * from test where id between 1 and 10000
 ----
-union (
+munion (
 | project (
 | | table("sys"."mt1") [ "mt1"."id" NOT NULL UNIQUE as "test"."id", "mt1"."posx" NOT NULL UNIQUE as "test"."posx" ]
 | ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL UNIQUE ],
@@ -71,7 +71,7 @@ project (
 query T nosort
 plan select * from test where id between 1 and 10000
 ----
-union (
+munion (
 | project (
 | | table("sys"."mt1") [ "mt1"."id" NOT NULL UNIQUE as "test"."id", "mt1"."posx" NOT NULL UNIQUE as "test"."posx" ]
 | ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL UNIQUE ],
@@ -90,7 +90,7 @@ project (
 query T nosort
 plan select * from test where id between 1 and 1000*10
 ----
-union (
+munion (
 | project (
 | | table("sys"."mt1") [ "mt1"."id" NOT NULL UNIQUE as "test"."id", "mt1"."posx" NOT NULL UNIQUE as "test"."posx" ]
 | ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL UNIQUE ],
@@ -102,7 +102,7 @@ union (
 query T nosort
 plan select * from test where id between 1 and 100*10
 ----
-union (
+munion (
 | project (
 | | select (
 | | | table("sys"."mt1") [ "mt1"."id" NOT NULL UNIQUE as "test"."id", "mt1"."posx" NOT NULL UNIQUE as "test"."posx" ]
@@ -118,7 +118,7 @@ union (
 query T nosort
 plan select * from test where id in (1, 1022)
 ----
-union (
+munion (
 | project (
 | | select (
 | | | table("sys"."mt1") [ "mt1"."id" NOT NULL UNIQUE as "test"."id", "mt1"."posx" NOT NULL UNIQUE as "test"."posx" ]
