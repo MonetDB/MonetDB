@@ -201,10 +201,12 @@ SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 statement error GDK reported error: selectjoin: more than one match
 SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
 
-statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+query I nosort
 SELECT 1 FROM (SELECT 2) x(x) JOIN (SELECT 3) y(y) ON (SELECT max((SELECT x.x)))
+----
+1
 
-statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+statement error GDK reported error: selectjoin: more than one match
 SELECT 1 FROM (SELECT 2) x(x) JOIN (SELECT 3) y(y) ON ((SELECT max((SELECT x.x))) UNION (SELECT 4))
 
 statement error 42000!MAX: aggregate functions not allowed in JOIN conditions
@@ -216,8 +218,10 @@ SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON max((((SELECT (SELECT x.x)
 statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
 SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (SELECT 1 FROM (SELECT max(x.x) FROM (SELECT 1) z(z)) z(z))
 
-statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
+query I nosort
 SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (SELECT 1 FROM (SELECT max((SELECT (SELECT x.x))) FROM (SELECT 1) z(z)) z(z))
+----
+1
 
 statement error 42000!SELECT: aggregate functions not allowed in JOIN conditions
 SELECT 1 FROM (SELECT 1) x(x) JOIN (SELECT 1) y(y) ON (EXISTS (SELECT max(x.x)))

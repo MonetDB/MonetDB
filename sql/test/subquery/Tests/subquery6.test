@@ -114,12 +114,18 @@ SELECT CAST(SUM((SELECT (SELECT col1 + col2))) AS BIGINT) FROM another_t
 query I rowsort
 SELECT CAST((SELECT SUM((SELECT col1))) AS BIGINT) FROM another_t
 ----
-1234
+1
+11
+111
+1111
 
 query I rowsort
 SELECT CAST((SELECT SUM((SELECT col1 + col2))) AS BIGINT) FROM another_t
 ----
-3702
+3
+33
+333
+3333
 
 query I rowsort
 SELECT (SELECT 1 FROM another_t t1 WHERE 'aa' LIKE t2.product_category) FROM tbl_ProductSales t2

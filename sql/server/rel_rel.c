@@ -971,6 +971,10 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 		for (en = groupbyexps->h; en; en = en->next) {
 			sql_exp *e = en->data, *ne;
 
+			if (exp_is_atom(e) && !e->alias.name) { /* numeric lookup done later */
+				rel->flag = 1;
+				continue;
+			}
 			/* after the group by the cardinality reduces */
 			e->card = MIN(e->card, rel->card); /* if the column is an atom, the cardinality should not change */
 			ne = exp_ref(sql, e);
