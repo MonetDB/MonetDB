@@ -5,7 +5,7 @@ WITH x AS ( SELECT 1 x ) SELECT 1 , ( SELECT x FROM x ) FROM x WHERE x
 1
 
 query II nosort
-WITH x AS ( SELECT 1 x ) SELECT 1 , ( SELECT x FROM x ) FROM ( x NATURAL JOIN x ) WHERE x
+WITH x AS ( SELECT 1 x ) SELECT 1 , ( SELECT x FROM x ) FROM ( x NATURAL JOIN x y ) WHERE x
 ----
 1
 1
@@ -18,14 +18,14 @@ SELECT * FROM ( WITH x AS ( SELECT 1 x ) SELECT 1 , ( SELECT x FROM x ) FROM x W
 1
 
 query II nosort
-SELECT * FROM ( WITH x AS ( SELECT 1 x ) SELECT 1 , x FROM ( x NATURAL JOIN x ) WHERE x ) y
+SELECT * FROM ( WITH x AS ( SELECT 1 x ) SELECT 1 , x FROM ( x NATURAL JOIN x y ) WHERE x ) y
 ----
 1
 1
 
 skipif knownfail
 query II nosort
-SELECT * FROM ( WITH x AS ( SELECT 1 x ) SELECT 1 , ( SELECT x FROM x ) FROM ( x NATURAL JOIN x ) WHERE x ) y
+SELECT * FROM ( WITH x AS ( SELECT 1 x ) SELECT 1 , ( SELECT x FROM x ) FROM ( x NATURAL JOIN x y ) WHERE x ) y
 ----
 1
 1
