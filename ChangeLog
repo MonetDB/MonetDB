@@ -1,3 +1,10 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Wed May  8 2024 Niels Nes <niels@cwi.nl>
+- Add support for select exp, count(*) group by 1 order by 1; ie. using
+  numeric references Added support for group by all and order by all. The
+  later is ordering on all columns of the selection.  The group by all
+  finds all expressions from the selections which aren't aggregations
+  and groups on those.  All can also be replaced by '*'.
+
