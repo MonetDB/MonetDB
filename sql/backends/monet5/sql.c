@@ -5208,6 +5208,8 @@ SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 	}
 	*password = monet5_password_hash(m, username);
+	if (!(*password))
+		throw(SQL, "mvc", SQLSTATE(42000) "SELECT: Failed to retrieve password hash");
 	return MAL_SUCCEED;
 }
 

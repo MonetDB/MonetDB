@@ -1,0 +1,5 @@
+statement error conversion of string '' to type int failed.
+SELECT GET_MERGE_TABLE_PARTITION_EXPRESSIONS('')
+
+statement ok
+SELECT GET_MERGE_TABLE_PARTITION_EXPRESSIONS(0)

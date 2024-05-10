@@ -1420,9 +1420,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
 			if (v && !exp) {
 				if (*rel)
-					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
+					*rel = rel_crossproduct(sql->sa, *rel, rel_dup(v), op_join);
 				else
-					*rel = v;
+					*rel = rel_dup(v);
 				exp = rel_bind_column(sql, *rel, name, f, 0);
 			}
 		}
