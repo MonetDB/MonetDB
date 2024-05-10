@@ -53,4 +53,5 @@ rel2bin_select-Bug-7496
 multicolumn_IN_value_list-Bug-7497
 field-arg-error-Bug-7506
 7511-password-hash-missing-error
+7512-concurrent-globaltmp-instantiate-crash
 7513-uri-authority-parse-issue

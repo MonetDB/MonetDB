@@ -3197,9 +3197,6 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	t->sz = ot->sz;
 	ATOMIC_PTR_INIT(&t->data, NULL);
 
-	if ((res = os_add(isLocalTemp(t) ? tr->localtmps : t->s->tables, tr, t->base.name, &t->base)))
-		goto cleanup;
-
 	if (isPartitionedByExpressionTable(ot)) {
 		t->part.pexp = ZNEW(sql_expression);
 		t->part.pexp->exp =_STRDUP(ot->part.pexp->exp);
@@ -3257,6 +3254,8 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 			ATOMIC_PTR_SET(&t->data, store->storage_api.del_dup(ot));
 		}
 	}
+	if ((res = os_add(isLocalTemp(t) ? tr->localtmps : t->s->tables, tr, t->base.name, &t->base)))
+		goto cleanup;
 
 cleanup:
 	if (res) {

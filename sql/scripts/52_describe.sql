@@ -315,7 +315,6 @@ CREATE VIEW sys.describe_foreign_keys AS
 		AND ((fkk."action" >> 8) & 255)  = ou.id
 		ORDER BY fkk.name, fkkc.nr;
 
---TODO: CRASHES when this function gets inlined into describe_tables
 CREATE FUNCTION sys.get_merge_table_partition_expressions(tid INT) RETURNS STRING
 BEGIN
 	RETURN
