@@ -1169,7 +1169,8 @@ exp_equal( sql_exp *e1, sql_exp *e2)
 	if (e1 == e2)
 		return 0;
 	if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0)
-		return strcmp(e1->alias.name, e2->alias.name);
+		if (e1->alias.name && e2->alias.name && strcmp(e1->alias.name, e2->alias.name) == 0)
+			return 0;
 	if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name)
 		return strcmp(e1->alias.name, e2->alias.name);
 	return -1;
@@ -2056,6 +2057,99 @@ exp_is_atom( sql_exp *e )
 		return 0;
 	}
 	return 0;
+}
+
+static int
+exps_are_aggr(sql_rel *r, list *exps)
+{
+	int aggr = 1;
+	if (!list_empty(exps))
+		for(node *n=exps->h; n && aggr; n=n->next)
+			aggr &= exp_is_aggr(r, n->data);
+	return aggr;
+}
+
+/* is expression e an aggregated result of r */
+int
+exp_is_aggr(sql_rel *r, sql_exp *e)
+{
+	sql_exp *ne = NULL;
+
+	switch (e->type) {
+	case e_atom:
+		return true;
+	case e_convert:
+		return exp_is_aggr(r, e->l);
+	case e_func:
+		return exps_are_aggr(r, e->l);
+	case e_aggr:
+		return true;
+	case e_cmp:
+		if (e->card != CARD_ATOM)
+			return false;
+		if (e->flag == cmp_or || e->flag == cmp_filter)
+			return exps_are_aggr(r, e->l) && exps_are_aggr(r, e->r);
+		if (e->flag == cmp_in || e->flag == cmp_notin)
+			return exp_is_aggr(r, e->l) && exps_are_aggr(r, e->r);
+		return exp_is_aggr(r, e->l) && exp_is_aggr(r, e->r) && (!e->f || exp_is_aggr(r, e->f));
+	case e_column:
+		if (e->freevar)
+			return true;
+		ne = rel_find_exp(r, e);
+		if (ne) /* found local */
+			return true;
+		else
+			return false;
+	case e_psm:
+		return false;
+	}
+	return false;
+}
+
+static int
+exps_have_aggr(sql_rel *r, list *exps)
+{
+	int aggr = 0;
+	if (!list_empty(exps))
+		for(node *n=exps->h; n && !aggr; n=n->next)
+			aggr |= exp_has_aggr(r, n->data);
+	return aggr;
+}
+
+int
+exp_has_aggr(sql_rel *r, sql_exp *e )
+{
+	sql_exp *ne = NULL;
+
+	switch (e->type) {
+	case e_atom:
+		return false;
+	case e_convert:
+		return exp_has_aggr(r, e->l);
+	case e_func:
+		return exps_have_aggr(r, e->l);
+	case e_aggr:
+		return true;
+	case e_cmp:
+		if (e->card != CARD_ATOM)
+			return false;
+		if (e->flag == cmp_or || e->flag == cmp_filter)
+			return exps_have_aggr(r, e->l) && exps_have_aggr(r, e->r);
+		if (e->flag == cmp_in || e->flag == cmp_notin)
+			return exp_has_aggr(r, e->l) && exps_have_aggr(r, e->r);
+		return exp_has_aggr(r, e->l) && exp_has_aggr(r, e->r) && (!e->f || exp_has_aggr(r, e->f));
+	case e_column:
+		if (e->freevar)
+			return false;
+		ne = rel_find_exp(r->l, e);
+		if (ne) /* found lower */
+			return false;
+		else
+			return true;
+	case e_psm:
+		return false;
+	}
+	return false;
 }
 
 int

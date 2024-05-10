@@ -7,15 +7,18 @@ statement error 42000!SELECT: cannot use non GROUP BY column 'x' in query result
 WITH x ( x ) AS ( SELECT 1 ) SELECT x FROM x GROUP BY x + 1
 ----
 
-skipif knownfail
-statement error 42000!SELECT: cannot use non GROUP BY column 'x' in query results without an aggregate function
+query I nosort
 WITH x ( x ) AS ( SELECT 1 ) SELECT x FROM x GROUP BY x + 1 , x
+----
+1
 
-skipif knownfail
-statement error 42000!SELECT: cannot use non GROUP BY column 'x' in query results without an aggregate function
+query I nosort
 WITH x ( x ) AS ( SELECT 1 ) SELECT ( x ) FROM x WHERE ( SELECT x FROM x GROUP BY x + 1 , x )
+----
+1
 
-skipif knownfail
-statement error 42000!SELECT: cannot use non GROUP BY column 'x' in query results without an aggregate function
+query I nosort
 SELECT ( WITH x ( x ) AS ( SELECT 1 ) SELECT ( x ) FROM x WHERE ( SELECT x FROM x GROUP BY x + 1 , x ) )
+----
+1
 

@@ -3712,9 +3712,15 @@ opt_table_name:
  |  table_name  { $$ = $1; }
  ;
 
+all:
+    ALL
+ |  '*'
+ ;
+
 opt_group_by_clause:
-	/* empty */               { $$ = NULL; }
- |  sqlGROUP BY group_by_list { $$ = _symbol_create_list(SQL_GROUPBY, $3); }
+	/* empty */             { $$ = NULL; }
+ |  sqlGROUP BY all 		{ $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
+ |  sqlGROUP BY group_by_list 	{ $$ = _symbol_create_list(SQL_GROUPBY, $3); }
  ;
 
 group_by_list:
@@ -3782,9 +3788,9 @@ and_exp:
  ;
 
 opt_order_by_clause:
-    /* empty */			  { $$ = NULL; }
- |  ORDER BY sort_specification_list
-		{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
+    /* empty */			  	{ $$ = NULL; }
+ |  ORDER BY all		  	{ $$ = _symbol_create_list( SQL_ORDERBY, NULL); }
+ |  ORDER BY sort_specification_list 	{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
  ;
 
 first_next:
