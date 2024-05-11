@@ -45,7 +45,7 @@ PERCENT_RANK() OVER ( PARTITION BY trip ORDER BY tonnage nulls first ) as Percen
 PERCENT_RANK() OVER ( PARTITION BY trip ORDER BY tonnage nulls last ) as PercentRankGroup2
 FROM voyages WHERE particulars LIKE '%_recked%'
 ----
-3580 values hashing to d9abc22d57fbc867138a99831b426fa8
+3580 values hashing to 0fb84c30b86984999eb17deaf134a592
 
 query RRRR rowsort
 SELECT
