@@ -1094,12 +1094,6 @@ DEP_FUNC
 schema_id
 get_remote_table_expressions
 DEP_FUNC
-semantics
-describe_function
-DEP_FUNC
-side_effect
-describe_function
-DEP_FUNC
 srid
 getproj4
 DEP_FUNC
