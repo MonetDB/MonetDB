@@ -8,8 +8,12 @@
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
-%global name MonetDB
 %global version 11.50.0
+
+%bcond_with compat
+
+%global name MonetDB%{?with_compat:%version}
+
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -91,7 +95,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Dec2023-SP3/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2023-SP3/MonetDB-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -117,7 +121,9 @@ BuildRequires: unixODBC-devel
 BuildRequires: readline-devel
 %else
 BuildRequires: pkgconfig(bzip2)
+%if %{without compat}
 BuildRequires: pkgconfig(odbc)
+%endif
 BuildRequires: pkgconfig(readline)
 %endif
 %if %{with fits}
@@ -178,6 +184,7 @@ more client packages.
 %defattr(-,root,root)
 %{_libdir}/libbat*.so.*
 
+%if %{without compat}
 %package devel
 Summary: MonetDB development files
 Group: Applications/Databases
@@ -204,6 +211,7 @@ functionality of MonetDB.
 %{_includedir}/monetdb/monet*.h
 %{_libdir}/libbat*.so
 %{_libdir}/pkgconfig/monetdb-gdk.pc
+%endif
 
 %package stream
 Summary: MonetDB stream library
@@ -225,6 +233,7 @@ various other components.
 %defattr(-,root,root)
 %{_libdir}/libstream*.so.*
 
+%if %{without compat}
 %package stream-devel
 Summary: MonetDB stream library
 Group: Applications/Databases
@@ -249,6 +258,7 @@ library.
 %{_includedir}/monetdb/stream.h
 %{_includedir}/monetdb/stream_socket.h
 %{_libdir}/pkgconfig/monetdb-stream.pc
+%endif
 
 %package client-lib
 Summary: MonetDB - Monet Database Management System Client Programs
@@ -300,9 +310,12 @@ MonetDB, you will very likely need this package.
 %defattr(-,root,root)
 %{_bindir}/mclient*
 %{_bindir}/msqldump*
+%if %{without compat}
 %{_mandir}/man1/mclient.1*
 %{_mandir}/man1/msqldump.1*
+%endif
 
+%if %{without compat}
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
@@ -325,7 +338,9 @@ This package contains the files needed to develop with the
 %{_includedir}/monetdb/mapi*.h
 %{_includedir}/monetdb/msettings.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
+%endif
 
+%if %{without compat}
 %package client-odbc
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
@@ -364,7 +379,9 @@ fi
 %defattr(-,root,root)
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
+%endif
 
+%if %{without compat}
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
@@ -412,6 +429,7 @@ developer.
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
+%endif
 
 %if %{with geos}
 %package geom
@@ -586,16 +604,21 @@ exit 0
 
 %files server
 %defattr(-,root,root)
+%if %{without compat}
 %{_sysusersdir}/monetdb.conf
 %attr(2750,monetdb,monetdb) %dir %{_localstatedir}/lib/monetdb
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
+%endif
 %{_bindir}/mserver5*
+%if %{without compat}
 %{_mandir}/man1/mserver5.1*
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
 %{_datadir}/doc/MonetDB/*
+%endif
 
+%if %{without compat}
 %package server-devel
 Summary: MonetDB development files
 Group: Applications/Databases
@@ -620,6 +643,7 @@ used from the MAL level.
 %{_includedir}/monetdb/mel.h
 %{_libdir}/libmonetdb5*.so
 %{_libdir}/pkgconfig/monetdb5.pc
+%endif
 
 %package SQL
 Summary: MonetDB SQL server modules
@@ -654,6 +678,7 @@ configuration.
 %files SQL
 %defattr(-,root,root)
 %{_bindir}/monetdb*
+%if %{without compat}
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %dir %attr(775,monetdb,monetdb) %{_rundir}/monetdb
 # RHEL >= 7, and all current Fedora
@@ -667,7 +692,9 @@ configuration.
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
+%endif
 
+%if %{without compat}
 %package SQL-devel
 Summary: MonetDB SQL server modules development files
 Group: Applications/Databases
@@ -688,7 +715,9 @@ This package contains files needed to develop SQL extensions.
 %{_includedir}/monetdb/rel_*.h
 %{_includedir}/monetdb/sql*.h
 %{_includedir}/monetdb/store_*.h
+%endif
 
+%if %{without compat}
 %package embedded
 Summary: MonetDB as an embedded library
 Group: Applications/Databases
@@ -754,7 +783,9 @@ Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: python3dist(pymonetdb)
 BuildArch: noarch
+%endif
 
+%if %{without compat}
 %description testing-python
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
@@ -774,7 +805,9 @@ developer, but if you do want to test, this is the package you need.
 %{_bindir}/sqllogictest.py
 %dir %{python3_sitelib}/MonetDBtesting
 %{python3_sitelib}/MonetDBtesting/*
+%endif
 
+%if %{without compat}
 %package selinux
 Summary: SELinux policy files for MonetDB
 Group: Applications/Databases
@@ -836,9 +869,10 @@ fi
 %docdir %{_datadir}/doc/MonetDB-selinux
 %{_datadir}/doc/MonetDB-selinux/*
 %{_datadir}/selinux/*/monetdb.pp
+%endif
 
 %prep
-%setup -q
+%setup -q -n MonetDB-%{version}
 
 %build
 # from Fedora 40, selinux uses /run where before it used /var/run
@@ -857,7 +891,7 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
         -DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
         -DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
         -DNETCDF=OFF \
-        -DODBC=ON \
+        -DODBC=%{!?with_compat:ON}%{?with_compat:OFF} \
         -DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
         -DRINTEGRATION=%{?with_rintegration:ON}%{!?with_rintegration:OFF} \
         -DSANITIZER=OFF \
@@ -924,6 +958,23 @@ fi
 %else
     # EPEL does not, but we can use the script directly
     /usr/bin/pathfix.py -pni "%{__python3} -s" %{buildroot}%{_bindir}/*.py
+%endif
+
+%if %{with compat}
+# delete files that are not going to be installed in compat packages
+rm %{buildroot}%{_bindir}/{M{convert.py,test.py,z.py},bincopydata,example_proxy,m{alsample.pl,client,ktest.py,onetdb{,d},s{erver5,qldump},urltest},s{ample{0,1,4},hutdowntest,mack0{0,1},ql{logictest.py,sample.p{hp,l}},treamcat},testcondvar}
+rm -r %{buildroot}%{_datadir}/doc/MonetDB*
+rm %{buildroot}%{_datadir}/selinux/*/monetdb.pp
+rm -r %{buildroot}%{_includedir}/monetdb
+rm %{buildroot}%{_libdir}/*.so %{buildroot}%{_libdir}/libmonetdbe.so.*
+rm -r %{buildroot}%{_libdir}/pkgconfig
+rm -r %{buildroot}%{_localstatedir}/lib/monetdb %{buildroot}%{_localstatedir}/monetdb5
+rm -r %{buildroot}%{_mandir}/man1
+rm -r %{buildroot}%{python3_sitelib}/MonetDBtesting
+rm %{buildroot}%{_sysconfdir}/logrotate.d/monetdbd
+rm %{buildroot}%{_sysusersdir}/monetdb.conf
+rm %{buildroot}%{_tmpfilesdir}/monetdbd.conf
+rm %{buildroot}%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
