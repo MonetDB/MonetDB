@@ -275,7 +275,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			v = (date *) Tloc(bn, 0);
 			for (c = 0; c < n && f < l; c++) {
 				*v++ = f;
-				f = date_add_day(f, s);
+				f = date_add_day(f, (int) s);
 				if (is_date_nil(f)) {
 					BBPreclaim(bn);
 					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
@@ -635,7 +635,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						n++;
 					}
 				}
-				tsf = date_add_day(tsf, tss);
+				tsf = date_add_day(tsf, (int) tss);
 				if (is_date_nil(tsf)) {
 					BBPreclaim(cand);
 					BBPreclaim(bn);
@@ -1052,7 +1052,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 						c++;
 					}
 				}
-				val = date_add_day(val, s);
+				val = date_add_day(val, (int) s);
 				if (is_date_nil(val)) {
 					BBPreclaim(cand);
 					BBPreclaim(bn);
@@ -1308,7 +1308,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			for(; cnt-- > 0; o++){
 				t = ((int) (ol == NULL ? o : ol[o])) * s;
-				val = date_add_day(f, t);
+				val = date_add_day(f, (int) t);
 				if (is_date_nil(val)) {
 					BBPunfix(b->batCacheid);
 					BBPreclaim(bn);
