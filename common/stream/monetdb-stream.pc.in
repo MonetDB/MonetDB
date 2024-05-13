@@ -18,6 +18,6 @@ URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
 Requires.private: @PKG_ZLIB@ @PKG_BZIP2@ @PKG_LZMA@
 
-Libs: -L${libdir} -lstream
+Libs: -L${libdir} -lstream@MONETDB_VERSION@
 Libs.private: @SOCKET_LIBS@
 Cflags: -I${includedir}/monetdb

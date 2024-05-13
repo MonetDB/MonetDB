@@ -6596,6 +6596,46 @@ sql_update_dec2023_sp1(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
+sql_update_dec2023_sp4(Client c, mvc *sql, sql_schema *s)
+{
+	char *err;
+	res_table *output;
+	BAT *b;
+
+	(void) sql;
+	(void) s;
+
+	/* SQL optimizer fixes make that some "dependencies" are no longer
+	 * dependencies (functions that depend on all columns of a table
+	 * when it only actually uses a subset of the columns); while we're
+	 * at it, also fix some ancient dependency changes where view did
+	 * the same thing (i.e. the second delete will normally not delete
+	 * anything) */
+	err = SQLstatementIntern(c, "select * from sys.dependencies where (id, depend_id) in (select c.id, f.id from sys.functions f, sys._tables t, sys._columns c, sys.dependencies d where c.table_id = t.id and f.id = d.depend_id and c.id = d.id and f.schema_id = 2000 and t.schema_id = 2000 and (f.name, t.name, c.name) in (values ('describe_columns', '_columns', 'storage')));\n", "update", true, false, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			const char query[] = "delete from sys.dependencies where (id, depend_id) in (select c.id, f.id from sys.functions f, sys._tables t, sys._columns c, sys.dependencies d where c.table_id = t.id and f.id = d.depend_id and c.id = d.id and f.schema_id = 2000 and t.schema_id = 2000 and (f.name, t.name, c.name) in (values ('describe_columns', '_columns', 'storage'), ('describe_function', 'function_languages', 'language_name'), ('describe_function', 'function_types', 'function_type_name'), ('describe_function', 'functions', 'func'), ('describe_function', 'functions', 'mod'), ('describe_function', 'functions', 'semantics'), ('describe_function', 'functions', 'side_effect'), ('describe_function', 'functions', 'system'), ('describe_function', 'functions', 'vararg'), ('describe_function', 'functions', 'varres'), ('describe_function', 'schemas', 'authorization'), ('describe_function', 'schemas', 'owner'), ('describe_function', 'schemas', 'system'), ('describe_table', '_tables', 'access'), ('describe_table', '_tables', 'commit_action'), ('describe_table', '_tables', 'system')));\n"
+				"delete from sys.dependencies where (id, depend_id) in (select c.id, v.id from sys._tables v, sys._tables t, sys._columns c, sys.dependencies d where c.table_id = t.id and v.id = d.depend_id and c.id = d.id and v.schema_id = 2000 and t.schema_id = 2000 and (v.name, t.name, c.name) in (values ('dependency_columns_on_indexes', '_columns', 'name'), ('dependency_columns_on_indexes', '_columns', 'number'), ('dependency_columns_on_indexes', '_columns', 'storage'), ('dependency_columns_on_indexes', '_columns', 'table_id'), ('dependency_columns_on_indexes', '_columns', 'type_digits'), ('dependency_columns_on_indexes', 'keys', 'id'), ('dependency_columns_on_indexes', 'triggers', 'name'), ('dependency_columns_on_indexes', 'triggers', 'orientation'), ('dependency_columns_on_indexes', 'triggers', 'table_id'), ('dependency_columns_on_indexes', 'triggers', 'time'), ('dependency_columns_on_keys', '_columns', 'name'), ('dependency_columns_on_keys', '_columns', 'table_id'), ('dependency_columns_on_keys', '_columns', 'type'), ('dependency_columns_on_keys', '_columns', 'type_digits'), ('dependency_columns_on_keys', '_columns', 'type_scale'), ('dependency_columns_on_keys', 'triggers', 'name'), ('dependency_columns_on_keys', 'triggers', 'orientation'), ('dependency_columns_on_keys', 'triggers', 'table_id'), ('dependency_columns_on_keys', 'triggers', 'time'), ('dependency_columns_on_triggers', 'keys', 'name'), ('dependency_columns_on_triggers', 'keys', 'rkey'), ('dependency_columns_on_triggers', 'keys', 'type'), ('dependency_functions_on_triggers', 'keys', 'action'), ('dependency_functions_on_triggers', 'keys', 'name'), ('dependency_functions_on_triggers', 'keys', 'rkey'), ('dependency_functions_on_triggers', 'keys', 'type'), ('dependency_keys_on_foreignkeys', '_columns', 'default'), ('dependency_keys_on_foreignkeys', '_columns', 'name'), ('dependency_keys_on_foreignkeys', '_columns', 'table_id'), ('dependency_keys_on_foreignkeys', '_columns', 'type'), ('dependency_keys_on_foreignkeys', '_columns', 'type_digits'), ('dependency_keys_on_foreignkeys', '_columns', 'type_scale'), ('dependency_tables_on_foreignkeys', '_columns', 'default'), ('dependency_tables_on_foreignkeys', '_columns', 'name'), ('dependency_tables_on_foreignkeys', '_columns', 'table_id'), ('dependency_tables_on_foreignkeys', '_columns', 'type'), ('dependency_tables_on_foreignkeys', '_columns', 'type_digits'), ('dependency_tables_on_foreignkeys', '_columns', 'type_scale'), ('dependency_tables_on_indexes', '_columns', 'name'), ('dependency_tables_on_indexes', '_columns', 'number'), ('dependency_tables_on_indexes', '_columns', 'storage'), ('dependency_tables_on_indexes', '_columns', 'table_id'), ('dependency_tables_on_indexes', '_columns', 'type_digits'), ('dependency_tables_on_indexes', 'keys', 'id'), ('dependency_tables_on_triggers', 'keys', 'action'), ('dependency_tables_on_triggers', 'keys', 'name'), ('dependency_tables_on_triggers', 'keys', 'rkey'), ('dependency_tables_on_triggers', 'keys', 'type')));\n"
+				/* the "chain" upgrade check tests fail with a duplicate
+				 * entry in sys.dependencies, but running this query
+				 * results in NULL values in sys.dependencies in some of
+				 * the upgrade tests, so it is disabled */
+				/*"create temporary table d as (select distinct * from sys.dependencies);\ndelete from sys.dependencies;\ninsert into sys.dependencies (select * from d);\n"*/;
+			assert(BATcount(b) == 1);
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	return err;
+}
+
+static str
 sql_update_default(Client c, mvc *sql, sql_schema *s)
 {
 	char *err;
@@ -7215,6 +7255,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_dec2023_sp1(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_dec2023_sp4(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

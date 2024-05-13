@@ -2,6 +2,9 @@
 # This file is updated with Maddlog
 
 * Wed May  8 2024 Sjoerd Mullender <sjoerd@acm.org>
+- The shared library (.dll aka .so files) now have the version number
+  as part of the name.  This should allow the building of compatibility
+  versions that can be installed in parallel to the latest version.
 - Some of the Debian/Ubuntu packages have been renamed.  The old monetdb5
   names have been changed to plain monetdb, and libmonetdb5-server-*
   packages have been renamed monetdb-*.

@@ -306,20 +306,11 @@ DEP_INDEX
 query TTT nosort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-access
-describe_table
-DEP_FUNC
 age
 f2
 DEP_FUNC
-authorization
-describe_function
-DEP_FUNC
 column_id
 get_merge_table_partition_expressions
-DEP_FUNC
-commit_action
-describe_table
 DEP_FUNC
 default
 describe_columns
@@ -327,16 +318,10 @@ DEP_FUNC
 expression
 get_merge_table_partition_expressions
 DEP_FUNC
-func
-describe_function
-DEP_FUNC
 function_type_id
 describe_function
 DEP_FUNC
 function_type_keyword
-describe_function
-DEP_FUNC
-function_type_name
 describe_function
 DEP_FUNC
 id
@@ -393,12 +378,6 @@ DEP_FUNC
 language_keyword
 describe_function
 DEP_FUNC
-language_name
-describe_function
-DEP_FUNC
-mod
-describe_function
-DEP_FUNC
 name
 db_users
 DEP_FUNC
@@ -450,9 +429,6 @@ DEP_FUNC
 o
 dump_database
 DEP_FUNC
-owner
-describe_function
-DEP_FUNC
 password
 get_remote_table_expressions
 DEP_FUNC
@@ -488,12 +464,6 @@ describe_table
 DEP_FUNC
 schema_id
 get_remote_table_expressions
-DEP_FUNC
-semantics
-describe_function
-DEP_FUNC
-side_effect
-describe_function
 DEP_FUNC
 srid
 getproj4
@@ -558,18 +528,6 @@ DEP_FUNC
 stmt
 dump_database
 DEP_FUNC
-storage
-describe_columns
-DEP_FUNC
-system
-describe_function
-DEP_FUNC
-system
-describe_function
-DEP_FUNC
-system
-describe_table
-DEP_FUNC
 table_id
 describe_columns
 DEP_FUNC
@@ -605,12 +563,6 @@ describe_columns
 DEP_FUNC
 username
 get_remote_table_expressions
-DEP_FUNC
-vararg
-describe_function
-DEP_FUNC
-varres
-describe_function
 DEP_FUNC
 
 query TTT nosort

@@ -74,6 +74,7 @@ target_link_libraries(stream
 
 set_target_properties(stream
   PROPERTIES
+  OUTPUT_NAME stream${MONETDB_VERSION}
   VERSION ${STREAM_VERSION}
   SOVERSION ${STREAM_VERSION_MAJOR}
   PUBLIC_HEADER "${stream_public_headers}")
