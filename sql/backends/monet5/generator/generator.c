@@ -12,7 +12,7 @@
 
 /*
  * (c) Martin Kersten, Sjoerd Mullender
- * Series generating module for integer, decimal, real, double and timestamps.
+ * Series generating module for integer, decimal, real, double, date and timestamps.
  */
 
 #include "monetdb_config.h"
@@ -51,11 +51,21 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_flt: VLTnoop(flt); break;
 	case TYPE_dbl: VLTnoop(dbl); break;
 	default:
-		if (tpe == TYPE_timestamp){
+		if (tpe == TYPE_date) {
+			/* with date, step is of SQL type "interval month or day",
+			 * i.e., MAL / C type "int" or "lng" */
+			int steptpe = pci->argc==4 ? getArgType(mb,pci,3) : 0;
+			if (steptpe == TYPE_int)
+				VLTnoop(int);
+			else /* default interval days */
+				VLTnoop(lng);
+		} else if (tpe == TYPE_timestamp) {
 			/* with timestamp, step is of SQL type "interval seconds",
 			 * i.e., MAL / C type "lng" */
 			 VLTnoop(lng);
-		} else throw(MAL,"generator.noop", SQLSTATE(42000) "unknown data type %d", getArgType(mb,pci,1));
+		} else {
+			throw(MAL,"generator.noop", SQLSTATE(42000) "unknown data type %d", getArgType(mb,pci,1));
+		}
 	}
 	if( zeroerror)
 		throw(MAL,"generator.noop", SQLSTATE(42000) "Zero step size not allowed");
@@ -204,7 +214,77 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		VLTmaterialize_flt(dbl);
 		break;
 	default:
-		if (tpe == TYPE_timestamp) {
+		if (tpe == TYPE_date && pci->argc == 3)
+			throw(MAL,"generator.table", SQLSTATE(42000) "Date step missing");
+		if (tpe == TYPE_date && getArgType(mb, pci, 3) == TYPE_int) { /* months */
+			date *v,f,l;
+			int s;
+			ValRecord ret;
+			if (VARcalccmp(&ret, &stk->stk[pci->argv[1]],
+				       &stk->stk[pci->argv[2]]) != GDK_SUCCEED)
+				throw(MAL, "generator.table",
+				      SQLSTATE(42000) "Illegal generator expression range");
+			f = *getArgReference_TYPE(stk, pci, 1, date);
+			l = *getArgReference_TYPE(stk, pci, 2, date);
+			s = *getArgReference_int(stk, pci, 3);
+			if (s == 0 ||
+			    (s > 0 && ret.val.btval > 0) ||
+			    (s < 0 && ret.val.btval < 0) ||
+				is_date_nil(f) || is_date_nil(l))
+				throw(MAL, "generator.table",
+				      SQLSTATE(42000) "Illegal generator range");
+			n = (BUN) (date_diff(l, f) / (s *28)); /* n maybe too large now */
+			bn = COLnew(0, TYPE_date, n + 1, TRANSIENT);
+			if (bn == NULL)
+				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			v = (date *) Tloc(bn, 0);
+			for (c = 0; c < n && f < l; c++) {
+				*v++ = f;
+				f = date_add_month(f, s);
+				if (is_date_nil(f)) {
+					BBPreclaim(bn);
+					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
+				}
+			}
+			n = c;
+			bn->tsorted = s > 0 || n <= 1;
+			bn->trevsorted = s < 0 || n <= 1;
+		} else if (tpe == TYPE_date) { /* days */
+			date *v,f,l;
+			lng s;
+			ValRecord ret;
+			if (VARcalccmp(&ret, &stk->stk[pci->argv[1]],
+				       &stk->stk[pci->argv[2]]) != GDK_SUCCEED)
+				throw(MAL, "generator.table",
+				      SQLSTATE(42000) "Illegal generator expression range");
+			f = *getArgReference_TYPE(stk, pci, 1, date);
+			l = *getArgReference_TYPE(stk, pci, 2, date);
+			s = *getArgReference_lng(stk, pci, 3);
+			if (s == 0 ||
+			    (s > 0 && ret.val.btval > 0) ||
+			    (s < 0 && ret.val.btval < 0) ||
+				is_date_nil(f) || is_date_nil(l))
+				throw(MAL, "generator.table",
+				      SQLSTATE(42000) "Illegal generator range");
+			s /= 24*60*60*1000;
+			/* check if s is really in nr of days or usecs */
+			n = (BUN) (date_diff(l, f) / s) + 1; /* n maybe too large now */
+			bn = COLnew(0, TYPE_date, n + 1, TRANSIENT);
+			if (bn == NULL)
+				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			v = (date *) Tloc(bn, 0);
+			for (c = 0; c < n && f < l; c++) {
+				*v++ = f;
+				f = date_add_day(f, s);
+				if (is_date_nil(f)) {
+					BBPreclaim(bn);
+					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
+				}
+			}
+			n = c;
+			bn->tsorted = s > 0 || n <= 1;
+			bn->trevsorted = s < 0 || n <= 1;
+		} else if (tpe == TYPE_timestamp) {
 			timestamp *v,f,l;
 			lng s;
 			ValRecord ret;
@@ -421,7 +501,158 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_flt: calculate_range(flt, dbl); break;
 	case TYPE_dbl: calculate_range(dbl, dbl); break;
 	default:
-		if(  tpe == TYPE_timestamp){
+		if (p->argc == 3) {
+			BBPreclaim(cand);
+			throw(MAL,"generator.table", SQLSTATE(42000) "Date step missing");
+		}
+		if (tpe == TYPE_date && getArgType(mb, p, 3) == TYPE_int) { /* months */
+			date tsf,tsl;
+			date tlow,thgh;
+			int tss;
+			oid *ol;
+
+			tsf = *getArgReference_TYPE(stk, p, 1, date);
+			tsl = *getArgReference_TYPE(stk, p, 2, date);
+			tss = *getArgReference_int(stk, p, 3);
+			if ( tss == 0 ||
+				is_date_nil(tsf) || is_date_nil(tsl) ||
+				 (tss > 0 && tsf > tsl ) ||
+				 (tss < 0 && tsf < tsl )
+				) {
+				BBPreclaim(cand);
+				throw(MAL, "generator.select",  SQLSTATE(42000) "Illegal generator range");
+			}
+
+			tlow = *getArgReference_TYPE(stk,pci,i, date);
+			thgh = *getArgReference_TYPE(stk,pci,i+1, date);
+
+			if (!is_date_nil(tlow) && tlow == thgh)
+				hi = li;
+			if( hi && !is_date_nil(thgh)) {
+				thgh = date_add_month(thgh, 1);
+				if (is_date_nil(thgh)) {
+					BBPreclaim(cand);
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+				}
+			}
+			if( !li && !is_date_nil(tlow)) {
+				tlow = date_add_month(tlow, 1);
+				if (is_date_nil(tlow)) {
+					BBPreclaim(cand);
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+				}
+			}
+
+			o2 = (BUN) (date_diff(tsl, tsf) / (tss*28));
+			bn = COLnew(0, TYPE_oid, o2 + 1, TRANSIENT);
+			if (bn == NULL) {
+				BBPreclaim(cand);
+				throw(MAL, "generator.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+
+			// simply enumerate the sequence and filter it by predicate and candidate list
+			ol = (oid *) Tloc(bn, 0);
+			for (o1=0; o1 <= o2; o1++) {
+				if(((is_date_nil(tlow) || tsf >= tlow) &&
+				    (is_date_nil(thgh) || tsf < thgh)) != anti ){
+					/* could be improved when no candidate list is available into a void/void BAT */
+					if( cand == NULL || canditer_contains(&ci, o1)) {
+						*ol++ = o1;
+						n++;
+					}
+				}
+				tsf = date_add_month(tsf, tss);
+				if (is_date_nil(tsf)) {
+					BBPreclaim(cand);
+					BBPreclaim(bn);
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+				}
+			}
+			BBPreclaim(cand);
+			BATsetcount(bn, n);
+			bn->tsorted = true;
+			bn->trevsorted = BATcount(bn) <= 1;
+			bn->tkey = true;
+			bn->tnil = false;
+			bn->tnonil = true;
+			* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
+			BBPkeepref(bn);
+			return MAL_SUCCEED;
+		} else if (tpe == TYPE_date) { /* days */
+			date tsf,tsl;
+			date tlow,thgh;
+			lng tss;
+			oid *ol;
+
+			tsf = *getArgReference_TYPE(stk, p, 1, date);
+			tsl = *getArgReference_TYPE(stk, p, 2, date);
+			tss = *getArgReference_lng(stk, p, 3);
+			if ( tss == 0 ||
+				is_date_nil(tsf) || is_date_nil(tsl) ||
+				 (tss > 0 && tsf > tsl ) ||
+				 (tss < 0 && tsf < tsl )
+				) {
+				BBPreclaim(cand);
+				throw(MAL, "generator.select",  SQLSTATE(42000) "Illegal generator range");
+			}
+			tss /= 24*60*60*1000;
+
+			tlow = *getArgReference_TYPE(stk,pci,i, date);
+			thgh = *getArgReference_TYPE(stk,pci,i+1, date);
+
+			if (!is_date_nil(tlow) && tlow == thgh)
+				hi = li;
+			if( hi && !is_date_nil(thgh)) {
+				thgh = date_add_month(thgh, 1);
+				if (is_date_nil(thgh)) {
+					BBPreclaim(cand);
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+				}
+			}
+			if( !li && !is_date_nil(tlow)) {
+				tlow = date_add_month(tlow, 1);
+				if (is_date_nil(tlow)) {
+					BBPreclaim(cand);
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+				}
+			}
+
+			o2 = (BUN) (date_diff(tsl, tsf) / tss) + 1;
+			bn = COLnew(0, TYPE_oid, o2 + 1, TRANSIENT);
+			if (bn == NULL) {
+				BBPreclaim(cand);
+				throw(MAL, "generator.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+
+			// simply enumerate the sequence and filter it by predicate and candidate list
+			ol = (oid *) Tloc(bn, 0);
+			for (o1=0; o1 <= o2; o1++) {
+				if(((is_date_nil(tlow) || tsf >= tlow) &&
+				    (is_date_nil(thgh) || tsf < thgh)) != anti ){
+					/* could be improved when no candidate list is available into a void/void BAT */
+					if( cand == NULL || canditer_contains(&ci, o1)) {
+						*ol++ = o1;
+						n++;
+					}
+				}
+				tsf = date_add_day(tsf, tss);
+				if (is_date_nil(tsf)) {
+					BBPreclaim(cand);
+					BBPreclaim(bn);
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+				}
+			}
+			BBPreclaim(cand);
+			BATsetcount(bn, n);
+			bn->tsorted = true;
+			bn->trevsorted = BATcount(bn) <= 1;
+			bn->tkey = true;
+			bn->tnil = false;
+			bn->tnonil = true;
+			* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
+			BBPkeepref(bn);
+			return MAL_SUCCEED;
+		} else if (tpe == TYPE_timestamp) {
 			timestamp tsf,tsl;
 			timestamp tlow,thgh;
 			lng tss;
@@ -429,7 +660,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			tsf = *getArgReference_TYPE(stk, p, 1, timestamp);
 			tsl = *getArgReference_TYPE(stk, p, 2, timestamp);
-			if ( p->argc == 3) {
+			if (p->argc == 3) {
 				BBPreclaim(cand);
 				throw(MAL,"generator.table", SQLSTATE(42000) "Timestamp step missing");
 			}
@@ -675,7 +906,160 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	case TYPE_dbl: VLTthetasubselect(dbl,fabs);break;
 	break;
 	default:
-		if ( tpe == TYPE_timestamp){
+		if (tpe == TYPE_date && p->argc == 3) {
+			BBPreclaim(cand);
+			throw(MAL,"generator.table", SQLSTATE(42000) "Timestamp step missing");
+		}
+		if (tpe == TYPE_date && getArgType(mb, p, 3) == TYPE_int) { /* months */
+			date f,l, val, low, hgh;
+			int  s;
+			oid *v;
+
+			f = *getArgReference_TYPE(stk,p, 1, date);
+			l = *getArgReference_TYPE(stk,p, 2, date);
+			s = *getArgReference_int(stk,p, 3);
+			if ( s == 0 ||
+				 (s > 0 && f > l) ||
+				 (s < 0 && f < l)
+				) {
+				BBPreclaim(cand);
+				throw(MAL, "generator.select", SQLSTATE(42000) "Illegal generator range");
+			}
+
+			hgh = low = date_nil;
+			if ( strcmp(oper,"<") == 0){
+				hgh= *getArgReference_TYPE(stk,pci,3, date);
+				hgh = date_add_month(hgh, -1);
+				if (is_date_nil(hgh)) {
+					BBPreclaim(cand);
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+				}
+			} else
+			if ( strcmp(oper,"<=") == 0){
+				hgh= *getArgReference_TYPE(stk,pci,3, date) ;
+			} else
+			if ( strcmp(oper,">") == 0){
+				low= *getArgReference_TYPE(stk,pci,3, date);
+				low = date_add_month(low, 1);
+				if (is_date_nil(low)) {
+					BBPreclaim(cand);
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+				}
+			} else
+			if ( strcmp(oper,">=") == 0){
+				low= *getArgReference_TYPE(stk,pci,3, date);
+			} else
+			if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){
+				hgh= low= *getArgReference_TYPE(stk,pci,3, date);
+				anti = 1;
+			} else
+			if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){
+				hgh= low= *getArgReference_TYPE(stk,pci,3, date);
+			} else {
+				BBPreclaim(cand);
+				throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");
+			}
+
+			cap = (BUN) (date_diff(l, f) / (s*28));
+			bn = COLnew(0, TYPE_oid, cap, TRANSIENT);
+			if( bn == NULL) {
+				BBPreclaim(cand);
+				throw(MAL,"generator.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			v = (oid*) Tloc(bn,0);
+
+			val = f;
+			for(j = 0; j< cap; j++,  o++){
+				if (((is_date_nil(low) || val >= low) &&
+				     (is_date_nil(hgh) || val <= hgh)) != anti){
+					if(cand == NULL || canditer_contains(&ci, o)){
+						*v++ = o;
+						c++;
+					}
+				}
+				val = date_add_month(val, s);
+				if (is_date_nil(val)) {
+					BBPreclaim(cand);
+					BBPreclaim(bn);
+					throw(MAL, "generator.thetaselect", SQLSTATE(22003) "overflow in calculation");
+				}
+			}
+		} else if (tpe == TYPE_date) { /* days */
+			date f,l, val, low, hgh;
+			lng  s;
+			oid *v;
+
+			f = *getArgReference_TYPE(stk,p, 1, date);
+			l = *getArgReference_TYPE(stk,p, 2, date);
+			s = *getArgReference_lng(stk,p, 3);
+			if ( s == 0 ||
+				 (s > 0 && f > l) ||
+				 (s < 0 && f < l)
+				) {
+				BBPreclaim(cand);
+				throw(MAL, "generator.select", SQLSTATE(42000) "Illegal generator range");
+			}
+			s /= 24*60*60*1000;
+
+			hgh = low = date_nil;
+			if ( strcmp(oper,"<") == 0){
+				hgh= *getArgReference_TYPE(stk,pci,3, date);
+				hgh = date_add_day(hgh, -1);
+				if (is_date_nil(hgh)) {
+					BBPreclaim(cand);
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+				}
+			} else
+			if ( strcmp(oper,"<=") == 0){
+				hgh= *getArgReference_TYPE(stk,pci,3, date) ;
+			} else
+			if ( strcmp(oper,">") == 0){
+				low= *getArgReference_TYPE(stk,pci,3, date);
+				low = date_add_month(low, 1);
+				if (is_date_nil(low)) {
+					BBPreclaim(cand);
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+				}
+			} else
+			if ( strcmp(oper,">=") == 0){
+				low= *getArgReference_TYPE(stk,pci,3, date);
+			} else
+			if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){
+				hgh= low= *getArgReference_TYPE(stk,pci,3, date);
+				anti = 1;
+			} else
+			if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){
+				hgh= low= *getArgReference_TYPE(stk,pci,3, date);
+			} else {
+				BBPreclaim(cand);
+				throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");
+			}
+
+			cap = (BUN) (date_diff(l, f) / s) + 1;
+			bn = COLnew(0, TYPE_oid, cap, TRANSIENT);
+			if( bn == NULL) {
+				BBPreclaim(cand);
+				throw(MAL,"generator.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			v = (oid*) Tloc(bn,0);
+
+			val = f;
+			for(j = 0; j< cap; j++,  o++){
+				if (((is_date_nil(low) || val >= low) &&
+				     (is_date_nil(hgh) || val <= hgh)) != anti){
+					if(cand == NULL || canditer_contains(&ci, o)){
+						*v++ = o;
+						c++;
+					}
+				}
+				val = date_add_day(val, s);
+				if (is_date_nil(val)) {
+					BBPreclaim(cand);
+					BBPreclaim(bn);
+					throw(MAL, "generator.thetaselect", SQLSTATE(22003) "overflow in calculation");
+				}
+			}
+		} else if ( tpe == TYPE_timestamp){
 			timestamp f,l, val, low, hgh;
 			lng  s;
 			oid *v;
@@ -855,7 +1239,92 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	case TYPE_flt:  VLTprojection(flt); break;
 	case TYPE_dbl:  VLTprojection(dbl); break;
 	default:
-		if ( tpe == TYPE_timestamp){
+		if (tpe == TYPE_date && p->argc == 3) {
+			BBPunfix(b->batCacheid);
+			throw(MAL,"generator.table", SQLSTATE(42000) "Timestamp step missing");
+		}
+		if (tpe == TYPE_date && getArgType(mb, p, 3) == TYPE_int) { /* months */
+			date f,l, val;
+			int s,t;
+			date *v;
+			f = *getArgReference_TYPE(stk,p, 1, date);
+			l = *getArgReference_TYPE(stk,p, 2, date);
+			s =  *getArgReference_int(stk,p, 3);
+			if ( s == 0 ||
+			     (s< 0 && f < l) ||
+			     (s> 0 && l < f) ) {
+				BBPunfix(b->batCacheid);
+				throw(MAL,"generator.projection", SQLSTATE(42000) "Illegal range");
+			}
+
+			bn = COLnew(0, TYPE_date, cnt, TRANSIENT);
+			if( bn == NULL){
+				BBPunfix(b->batCacheid);
+				throw(MAL,"generator.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+
+			v = (date*) Tloc(bn,0);
+
+			for(; cnt-- > 0; o++){
+				t = ((int) (ol == NULL ? o : ol[o])) * s;
+				val = date_add_month(f, t);
+				if (is_date_nil(val)) {
+					BBPunfix(b->batCacheid);
+					BBPreclaim(bn);
+					throw(MAL, "generator.projection", SQLSTATE(22003) "overflow in calculation");
+				}
+
+				if ( is_date_nil(val))
+					continue;
+				if (s > 0 && (val < f || val >= l) )
+					continue;
+				if (s < 0 && (val <= l || val > f) )
+					continue;
+				*v++ = val;
+				c++;
+			}
+		} else if (tpe == TYPE_date) { /* days */
+			date f,l, val;
+			lng s,t;
+			date *v;
+			f = *getArgReference_TYPE(stk,p, 1, date);
+			l = *getArgReference_TYPE(stk,p, 2, date);
+			s =  *getArgReference_lng(stk,p, 3);
+			if ( s == 0 ||
+			     (s< 0 && f < l) ||
+			     (s> 0 && l < f) ) {
+				BBPunfix(b->batCacheid);
+				throw(MAL,"generator.projection", SQLSTATE(42000) "Illegal range");
+			}
+			s /= 24*60*60*1000;
+
+			bn = COLnew(0, TYPE_date, cnt, TRANSIENT);
+			if( bn == NULL){
+				BBPunfix(b->batCacheid);
+				throw(MAL,"generator.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+
+			v = (date*) Tloc(bn,0);
+
+			for(; cnt-- > 0; o++){
+				t = ((int) (ol == NULL ? o : ol[o])) * s;
+				val = date_add_day(f, t);
+				if (is_date_nil(val)) {
+					BBPunfix(b->batCacheid);
+					BBPreclaim(bn);
+					throw(MAL, "generator.projection", SQLSTATE(22003) "overflow in calculation");
+				}
+
+				if ( is_date_nil(val))
+					continue;
+				if (s > 0 && (val < f || val >= l) )
+					continue;
+				if (s < 0 && (val <= l || val > f) )
+					continue;
+				*v++ = val;
+				c++;
+			}
+		} else if ( tpe == TYPE_timestamp){
 			timestamp f,l, val;
 			lng s,t;
 			timestamp *v;
@@ -1035,8 +1504,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_flt: VLTjoin(flt,fabsf); break;
 	case TYPE_dbl: VLTjoin(dbl,fabs); break;
 	default:
-		if( tpe == TYPE_timestamp){
-			// it is easier to produce the timestamp series
+		if(tpe == TYPE_date || tpe == TYPE_timestamp){
+			// it is easier to produce the date or timestamp series
 			// then to estimate the possible index
 			}
 		BBPunfix(bln->batCacheid);
@@ -1194,8 +1663,8 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	case TYPE_flt: VLTrangejoin(flt,fabsf,floorf); break;
 	case TYPE_dbl: VLTrangejoin(dbl,fabs,floor); break;
 	default:
-		if( tpe == TYPE_timestamp){
-			// it is easier to produce the timestamp series
+		if( tpe == TYPE_date || tpe == TYPE_timestamp){
+			// it is easier to produce the date or timestamp series
 			// then to estimate the possible index
 			}
 		BBPreclaim(bln);
@@ -1243,6 +1712,8 @@ static mel_func generator_init_funcs[] = {
  pattern("generator", "series", VLTgenerator_table, false, "", args(1,4, batarg("",lng),arg("first",lng),arg("limit",lng),arg("step",lng))),
  pattern("generator", "series", VLTgenerator_table, false, "", args(1,4, batarg("",flt),arg("first",flt),arg("limit",flt),arg("step",flt))),
  pattern("generator", "series", VLTgenerator_table, false, "Create and materialize a generator table", args(1,4, batarg("",dbl),arg("first",dbl),arg("limit",dbl),arg("step",dbl))),
+ pattern("generator", "series", VLTgenerator_table, false, "date generator with step size in months", args(1,4, batarg("",date),arg("first",date),arg("limit",date),arg("step",int))),
+ pattern("generator", "series", VLTgenerator_table, false, "date generator with step size in days", args(1,4, batarg("",date),arg("first",date),arg("limit",date),arg("step",lng))),
  pattern("generator", "series", VLTgenerator_table, false, "", args(1,4, batarg("",timestamp),arg("first",timestamp),arg("limit",timestamp),arg("step",lng))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",bte),arg("first",bte),arg("limit",bte),arg("step",bte))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",sht),arg("first",sht),arg("limit",sht),arg("step",sht))),
@@ -1250,6 +1721,8 @@ static mel_func generator_init_funcs[] = {
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",lng),arg("first",lng),arg("limit",lng),arg("step",lng))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",flt),arg("first",flt),arg("limit",flt),arg("step",flt))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,4, batarg("",dbl),arg("first",dbl),arg("limit",dbl),arg("step",dbl))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "Retain the table definition, but don't materialize (months)", args(1,4, batarg("",date),arg("first",date),arg("limit",date),arg("step",int))),
+ pattern("generator", "parameters", VLTgenerator_noop, false, "Retain the table definition, but don't materialize (days)", args(1,4, batarg("",date),arg("first",date),arg("limit",date),arg("step",lng))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "Retain the table definition, but don't materialize", args(1,4, batarg("",timestamp),arg("first",timestamp),arg("limit",timestamp),arg("step",lng))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",bte),arg("first",bte),arg("limit",bte))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",sht),arg("first",sht),arg("limit",sht))),
@@ -1263,6 +1736,7 @@ static mel_func generator_init_funcs[] = {
  pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",lng),batarg("cnd",oid),arg("low",lng),arg("oper",str))),
  pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",flt),batarg("cnd",oid),arg("low",flt),arg("oper",str))),
  pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",dbl),batarg("cnd",oid),arg("low",dbl),arg("oper",str))),
+ pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "Overloaded selection routine", args(1,5, batarg("",oid),batarg("b",date),batarg("cnd",oid),arg("low",date),arg("oper",str))),
  pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "Overloaded selection routine", args(1,5, batarg("",oid),batarg("b",timestamp),batarg("cnd",oid),arg("low",timestamp),arg("oper",str))),
  pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",bte),arg("low",bte),arg("high",bte),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",sht),arg("low",sht),arg("high",sht),arg("li",bit),arg("hi",bit),arg("anti",bit))),
@@ -1270,6 +1744,7 @@ static mel_func generator_init_funcs[] = {
  pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",lng),arg("low",lng),arg("high",lng),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",flt),arg("low",flt),arg("high",flt),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",dbl),arg("low",dbl),arg("high",dbl),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,7, batarg("",oid),batarg("b",date),arg("low",date),arg("high",date),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "select", VLTgenerator_subselect, false, "Overloaded selection routine", args(1,7, batarg("",oid),batarg("b",timestamp),arg("low",timestamp),arg("high",timestamp),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",bte),batarg("cand",oid),arg("low",bte),arg("high",bte),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",sht),batarg("cand",oid),arg("low",sht),arg("high",sht),arg("li",bit),arg("hi",bit),arg("anti",bit))),
@@ -1277,6 +1752,7 @@ static mel_func generator_init_funcs[] = {
  pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",lng),batarg("cand",oid),arg("low",lng),arg("high",lng),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",flt),batarg("cand",oid),arg("low",flt),arg("high",flt),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",dbl),batarg("cand",oid),arg("low",dbl),arg("high",dbl),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ pattern("generator", "select", VLTgenerator_subselect, false, "", args(1,8, batarg("",oid),batarg("b",date),batarg("cand",oid),arg("low",date),arg("high",date),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "select", VLTgenerator_subselect, false, "Overloaded selection routine", args(1,8, batarg("",oid),batarg("b",timestamp),batarg("cand",oid),arg("low",timestamp),arg("high",timestamp),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",bte),batarg("b",oid),batarg("cand",bte))),
  pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",sht),batarg("b",oid),batarg("cand",sht))),
@@ -1284,6 +1760,7 @@ static mel_func generator_init_funcs[] = {
  pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",lng),batarg("b",oid),batarg("cand",lng))),
  pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",flt),batarg("b",oid),batarg("cand",flt))),
  pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",dbl),batarg("b",oid),batarg("cand",dbl))),
+ pattern("generator", "projection", VLTgenerator_projection, false, "", args(1,3, batarg("",date),batarg("b",oid),batarg("cand",date))),
  pattern("generator", "projection", VLTgenerator_projection, false, "Overloaded projection operation", args(1,3, batarg("",timestamp),batarg("b",oid),batarg("cand",timestamp))),
  pattern("generator", "join", VLTgenerator_join, false, "", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",bte),batarg("gen",bte))),
  pattern("generator", "join", VLTgenerator_join, false, "", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",sht),batarg("gen",sht))),
