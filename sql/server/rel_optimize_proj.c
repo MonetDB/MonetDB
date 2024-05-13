@@ -3524,7 +3524,8 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			nl = rel_project(v->sql->sa, nl, rel_projections(v->sql, nl, NULL, 1, 1));
 			nr = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
 			v->changes++;
-			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
+			return rel_inplace_setop(v->sql, rel, nl, nr, op_union,
+					rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (is_union(l->op) && !need_distinct(l) && !is_single(l) &&
 			   is_union(r->op) && !need_distinct(r) && !is_single(r) && je) {
 			sql_rel *nl, *nr;
@@ -3679,6 +3680,102 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 				v->changes++;
 				return rel_inplace_project(v->sql->sa, rel, nl, rel_projections(v->sql, rel, NULL, 1, 1));
 			}
+		}
+	}
+	return rel;
+}
+
+/*
+ * Push (semi)joins down unions, this is basically for merge tables, where
+ * we know that the fk-indices are split over two clustered merge tables.
+ */
+static inline sql_rel *
+rel_push_join_down_munion(visitor *v, sql_rel *rel)
+{
+	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
+		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
+		list *exps = rel->exps, *attr = rel->attr;
+		sql_exp *je = NULL;
+
+		/* we would like to optimize in place reference rels which point
+		 * to replica tables and let the replica optimizer handle those
+		 * later. otherwise we miss the push join down optimization due
+		 * to the rel_is_ref bailout
+		 */
+		if (rel_is_ref(l) && is_basetable(l->op) && l->l && isReplicaTable((sql_table*)l->l)) {
+			rel->l = rel_copy(v->sql, l, true);
+			rel_destroy(l);
+		}
+		if (rel_is_ref(r) && is_basetable(r->op) && r->l && isReplicaTable((sql_table*)r->l)) {
+			rel->r = rel_copy(v->sql, r, true);
+			rel_destroy(r);
+		}
+
+		// TODO: do we need to check if it's l/r are refs?
+		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
+			return rel;
+		if (l->op == op_project)
+			l = l->l;
+		if (r->op == op_project)
+			r = r->l;
+
+		/* both sides only if we have a join index ASSUMING pkey-fkey are aligned */
+		// TODO: we could also check if the join cols are (not) unique
+		bool aligned_pk_fk = true;
+		if (!l || !r || (is_munion(l->op) && is_munion(r->op) &&
+			!(je = rel_is_join_on_pkey(rel, aligned_pk_fk))))
+			return rel;
+
+		// TODO: why? bailout for no semijoin without pkey joins
+		if (is_semi(rel->op) && is_munion(l->op) && !je)
+			return rel;
+
+		if (is_munion(l->op) && !need_distinct(l) && !is_single(l) &&
+		   !is_munion(r->op)){
+			/* join(munion(a,b,c), d) -> munion(join(a,d), join(b,d), join(c,d)) */
+			for (node *n = ((list*)l->l)->h; n; n = n->next) {
+				sql_rel *pc = rel_dup(n->data);
+				if (!is_project(pc->op))
+					pc = rel_project(v->sql->sa, pc, rel_projections(v->sql, pc, NULL, 1, 1));
+				rel_rename_exps(v->sql, l->exps, pc->exps);
+				if (l != ol) {
+					pc = rel_project(v->sql->sa, pc, NULL);
+					pc->exps = exps_copy(v->sql, ol->exps);
+					set_processed(pc);
+				}
+				pc = rel_crossproduct(v->sql->sa, pc, rel_dup(or), rel->op);
+				pc->exps = exps_copy(v->sql, exps);
+				pc->attr = exps_copy(v->sql, attr);
+				set_processed(pc);
+				pc = rel_project(v->sql->sa, pc, rel_projections(v->sql, pc, NULL, 1, 1));
+				n->data = pc;
+			}
+			v->changes++;
+			return rel_inplace_setop_n_ary(v->sql, rel, l->l, op_munion,
+					                       rel_projections(v->sql, rel, NULL, 1, 1));
+		} else if (is_munion(l->op) && !need_distinct(l) && !is_single(l) &&
+			       is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
+			       je) {
+			/* join(munion(a,b,c), union(d,e,f)) -> munion(join(a,d), join(b,e), join(c,f)) */
+			// TODO
+		} else if (!is_munion(l->op) &&
+			        is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
+			       !is_semi(rel->op)) {
+			/* join(a, munion(b,c,d)) -> munion(join(a,b), join(a,c), join(a,d)) */
+			// TODO
+		} else if (!is_munion(l->op) &&
+			        is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
+			        is_semi(rel->op) && je) {
+			/* {semi}join ( A1, munion (B, A2, C)) [A1.partkey = A2.partkey] ->
+			 * {semi}join ( A1, A2 )
+			 * (ie a single part on n-th munion operand)
+			 *
+			 * How to detect that a relation isn't matching?
+			 * 		partitioning is currently done only on pkey/fkey's
+			 * 		ie only matching per part if join is on pkey/fkey (parts)
+			 * 		and part numbers should match.
+			 * */
+			// TODO
 		}
 	}
 	return rel;
