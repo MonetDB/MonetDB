@@ -26,9 +26,17 @@ target_link_libraries(arraytest
   PRIVATE
   ODBC::ODBC)
 
+add_executable(odbcbrowse
+  odbcbrowse.c)
+
+target_link_libraries(odbcbrowse
+  PRIVATE
+  ODBC::ODBC)
+
 install(TARGETS
   odbcsample1
   arraytest
+  odbcbrowse
   RUNTIME
   DESTINATION
   ${CMAKE_INSTALL_BINDIR}
@@ -38,6 +46,7 @@ if(WIN32)
   install(FILES
     $<TARGET_PDB_FILE:odbcsample1>
     $<TARGET_PDB_FILE:arraytest>
+    $<TARGET_PDB_FILE:odbcbrowse>
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     OPTIONAL)
 endif()
