@@ -44980,6 +44980,16 @@ VLTgenerator_noop;
 (empty)
 generator
 parameters
+pattern generator.parameters(X_0:date, X_1:date, X_2:int):bat[:date]
+VLTgenerator_noop;
+Retain the table definition, but don't materialize (months)
+generator
+parameters
+pattern generator.parameters(X_0:date, X_1:date, X_2:lng):bat[:date]
+VLTgenerator_noop;
+Retain the table definition, but don't materialize (days)
+generator
+parameters
 pattern generator.parameters(X_0:dbl, X_1:dbl):bat[:dbl]
 VLTgenerator_noop;
 (empty)
@@ -45050,6 +45060,11 @@ VLTgenerator_projection;
 (empty)
 generator
 projection
+pattern generator.projection(X_0:bat[:oid], X_1:bat[:date]):bat[:date]
+VLTgenerator_projection;
+(empty)
+generator
+projection
 pattern generator.projection(X_0:bat[:oid], X_1:bat[:dbl]):bat[:dbl]
 VLTgenerator_projection;
 (empty)
@@ -45091,6 +45106,16 @@ VLTgenerator_subselect;
 generator
 select
 pattern generator.select(X_0:bat[:bte], X_1:bte, X_2:bte, X_3:bit, X_4:bit, X_5:bit):bat[:oid]
+VLTgenerator_subselect;
+(empty)
+generator
+select
+pattern generator.select(X_0:bat[:date], X_1:bat[:oid], X_2:date, X_3:date, X_4:bit, X_5:bit, X_6:bit):bat[:oid]
+VLTgenerator_subselect;
+(empty)
+generator
+select
+pattern generator.select(X_0:bat[:date], X_1:date, X_2:date, X_3:bit, X_4:bit, X_5:bit):bat[:oid]
 VLTgenerator_subselect;
 (empty)
 generator
@@ -45175,6 +45200,16 @@ VLTgenerator_table;
 (empty)
 generator
 series
+pattern generator.series(X_0:date, X_1:date, X_2:int):bat[:date]
+VLTgenerator_table;
+date generator with step size in months
+generator
+series
+pattern generator.series(X_0:date, X_1:date, X_2:lng):bat[:date]
+VLTgenerator_table;
+date generator with step size in days
+generator
+series
 pattern generator.series(X_0:dbl, X_1:dbl):bat[:dbl]
 VLTgenerator_table;
 (empty)
@@ -45243,6 +45278,11 @@ thetaselect
 pattern generator.thetaselect(X_0:bat[:bte], X_1:bat[:oid], X_2:bte, X_3:str):bat[:oid]
 VLTgenerator_thetasubselect;
 (empty)
+generator
+thetaselect
+pattern generator.thetaselect(X_0:bat[:date], X_1:bat[:oid], X_2:date, X_3:str):bat[:oid]
+VLTgenerator_thetasubselect;
+Overloaded selection routine
 generator
 thetaselect
 pattern generator.thetaselect(X_0:bat[:dbl], X_1:bat[:oid], X_2:dbl, X_3:str):bat[:oid]
