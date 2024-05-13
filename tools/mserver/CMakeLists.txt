@@ -103,6 +103,10 @@ if(TESTING)
   endif()
 endif()
 
+set_target_properties(mserver5
+  PROPERTIES
+  VERSION ${MONETDB_VERSION})
+
 install(TARGETS
   mserver5
   RUNTIME

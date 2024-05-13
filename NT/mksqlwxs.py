@@ -102,12 +102,12 @@ def main():
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     print(r'    <Property Id="GEOMMALEXISTS">')
-    print(rf'      <DirectorySearch Id="CheckFileDir3" Path="[INSTALLDIR]\lib\monetdb5{version}" Depth="0">')
+    print(rf'      <DirectorySearch Id="CheckFileDir3" Path="[INSTALLDIR]\lib\monetdb5-{version}" Depth="0">')
     print(r'        <FileSearch Id="CheckFile3" Name="geom.mal"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     print(r'    <Property Id="GEOMLIBEXISTS">')
-    print(rf'      <DirectorySearch Id="CheckFileDir4" Path="[INSTALLDIR]\lib\monetdb5{version}" Depth="0">')
+    print(rf'      <DirectorySearch Id="CheckFileDir4" Path="[INSTALLDIR]\lib\monetdb5-{version}" Depth="0">')
     print(r'        <FileSearch Id="CheckFile4" Name="_geom.dll"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
@@ -153,12 +153,12 @@ def main():
               [r'bin\mclient.exe',
                r'bin\mserver5.exe',
                r'bin\msqldump.exe',
-               rf'bin\bat{version}.dll',
-               rf'bin\mapi{version}.dll',
-               rf'bin\monetdb5{version}.dll',
+               rf'bin\bat-{version}.dll',
+               rf'bin\mapi-{version}.dll',
+               rf'bin\monetdb5-{version}.dll',
                r'bin\monetdbe.dll',
-               rf'bin\monetdbsql{version}.dll',
-               rf'bin\stream{version}.dll',
+               rf'bin\monetdbsql-{version}.dll',
+               rf'bin\stream-{version}.dll',
                vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
@@ -174,11 +174,11 @@ def main():
               [r'bin\mclient.pdb',
                r'bin\mserver5.pdb',
                r'bin\msqldump.pdb',
-               rf'lib\bat{version}.pdb',
-               rf'lib\mapi{version}.pdb',
-               rf'lib\monetdb5{version}.pdb',
-               rf'lib\monetdbsql{version}.pdb',
-               rf'lib\stream{version}.pdb'])
+               rf'lib\bat-{version}.pdb',
+               rf'lib\mapi-{version}.pdb',
+               rf'lib\monetdb5-{version}.pdb',
+               rf'lib\monetdbsql-{version}.pdb',
+               rf'lib\stream-{version}.pdb'])
     id = comp(geom, id, 14,
               [vcpkg.format(r'bin\geos_c.dll'),
                vcpkg.format(r'bin\geos.dll')])
@@ -205,21 +205,21 @@ def main():
     print(r'            <Directory Id="lib" Name="lib">')
     print(r'              <Directory Id="monetdb5" Name="monetdb5">')
     id = comp(features, id, 16,
-              [rf'lib\monetdb5{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5{version}'))))])
+              [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
     id = comp(debug, id, 16,
-              [rf'lib\monetdb5{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5{version}'))))])
+              [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
     id = comp(geom, id, 16,
-              [rf'lib\monetdb5{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5{version}'))))])
+              [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
     id = comp(pyapi3, id, 16,
-              [rf'lib\monetdb5{version}\_pyapi3.dll'])
+              [rf'lib\monetdb5-{version}\_pyapi3.dll'])
     print(r'              </Directory>')
     id = comp(extend, id, 14,
-              [rf'lib\bat{version}.lib',
-               rf'lib\mapi{version}.lib',
-               rf'lib\monetdb5{version}.lib',
+              [rf'lib\bat-{version}.lib',
+               rf'lib\mapi-{version}.lib',
+               rf'lib\monetdb5-{version}.lib',
                r'lib\monetdbe.lib',
-               rf'lib\monetdbsql{version}.lib',
-               rf'lib\stream{version}.lib',
+               rf'lib\monetdbsql-{version}.lib',
+               rf'lib\stream-{version}.lib',
                vcpkg.format(r'lib\iconv.lib'),
                vcpkg.format(r'lib\bz2.lib'),
                vcpkg.format(r'lib\charset.lib'),

@@ -71,12 +71,12 @@ set_target_properties(microbenchmark
 
 install(TARGETS
   microbenchmark
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5${MONETDB_VERSION}
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
   COMPONENT microbenchmark)
 
 if(WIN32)
   install(FILES
     $<TARGET_PDB_FILE:microbenchmark>
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5${MONETDB_VERSION}
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     OPTIONAL)
 endif()

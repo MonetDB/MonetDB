@@ -83,6 +83,10 @@ target_link_libraries(msqldump
   mprompt
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
 
+set_target_properties(mclient msqldump
+  PROPERTIES
+  VERSION ${MONETDB_VERSION})
+
 install(TARGETS
   mclient
   msqldump

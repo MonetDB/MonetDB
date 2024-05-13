@@ -548,7 +548,7 @@ embedded library (%{name}-embedded).
 %defattr(-,root,root)
 %{_libdir}/libmonetdb5*.so.*
 %{_libdir}/libmonetdbsql*.so*
-%dir %{_libdir}/monetdb5%{version}
+%dir %{_libdir}/monetdb5-%{version}
 %if %{with cintegration}
 %{_libdir}/monetdb5*/lib_capi.so
 %endif
@@ -938,11 +938,6 @@ rm -f %{buildroot}%{_libdir}/monetdb5*/lib_microbenchmark*.so
 rm -f %{buildroot}%{_libdir}/monetdb5*/lib_udf*.so
 rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
 rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
-
-for f in monetdbd monetdb mserver5 mclient msqldump; do
-    mv %{buildroot}%{_bindir}/${f} %{buildroot}%{_bindir}/${f}%{version}
-    ln -s ${f}%{version} %{buildroot}%{_bindir}/${f}
-done
 
 if [ -x /usr/sbin/hardlink ]; then
     /usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux

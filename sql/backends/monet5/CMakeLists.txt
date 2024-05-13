@@ -195,7 +195,7 @@ target_link_libraries(sql
 
 set_target_properties(sql
   PROPERTIES
-  OUTPUT_NAME monetdbsql${MONETDB_VERSION}
+  OUTPUT_NAME monetdbsql-${MONETDB_VERSION}
   VERSION ${SQL_VERSION}
   SOVERSION ${SQL_VERSION_MAJOR}
   PUBLIC_HEADER "${sql_public_headers}")

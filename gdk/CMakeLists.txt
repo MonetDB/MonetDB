@@ -126,7 +126,7 @@ target_compile_definitions(bat
 
 set_target_properties(bat
   PROPERTIES
-  OUTPUT_NAME bat${MONETDB_VERSION}
+  OUTPUT_NAME bat-${MONETDB_VERSION}
   VERSION ${GDK_VERSION}
   SOVERSION ${GDK_VERSION_MAJOR}
   PUBLIC_HEADER "${gdk_public_headers}")
