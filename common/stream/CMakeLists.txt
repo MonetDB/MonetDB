@@ -38,7 +38,6 @@ target_sources(stream
   callback.c
   blackhole.c
   fwf.c
-  iconv_stream.c
   text_stream.c
   $<$<BOOL:${OPENSSL_FOUND}>:openssl_stream.c>
   pump.c
@@ -52,7 +51,6 @@ target_sources(stream
 
 target_include_directories(stream
   PRIVATE
-  $<$<BOOL:${Iconv_IS_BUILT_IN}>:${CMAKE_REQUIRED_INCLUDES}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>
@@ -68,7 +66,6 @@ target_link_libraries(stream
   $<$<BOOL:${BZIP2_FOUND}>:BZip2::BZip2>
   $<$<BOOL:${LIBLZMA_FOUND}>:LibLZMA::LibLZMA>
   $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
-  $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
   matomic
   monetdb_config_header
@@ -97,13 +94,6 @@ if (NOT WIN32)
 
   if(LIBLZMA_FOUND)
     set(PKG_LZMA "liblzma")
-  endif()
-
-  if(ICONV_FOUND AND NOT Iconv_IS_BUILT_IN)
-    get_filename_component(ICONV_LIBRARIES_PATH
-      "${ICONV_LIBRARIES}"
-      DIRECTORY)
-    set(PKG_LIBICONV "-L${ICONV_LIBRARIES_PATH} -l${ICONV_LIBRARIES}")
   endif()
 
   configure_file(monetdb-stream.pc.in

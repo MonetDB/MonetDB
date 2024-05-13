@@ -241,8 +241,8 @@ utf8towchar(const char *src)
 				| (src[j+2] & 0x3F) << 6
 				| (src[j+3] & 0x3F);
 #if SIZEOF_WCHAR_T == 2
-			dest[i++] = 0xD800 | ((c - 0x10000) >> 10);
-			dest[i++] = 0xDE00 | (c & 0x3FF);
+			dest[i++] = 0xD7C0 + (c >> 10);
+			dest[i++] = 0xDC00 + (c & 0x03FF);
 #else
 			dest[i++] = c;
 #endif
@@ -251,44 +251,6 @@ utf8towchar(const char *src)
 	}
 	dest[i] = 0;
 	return dest;
-}
-
-#else
-
-static char *
-cvfilename(const char *filename)
-{
-#if defined(HAVE_NL_LANGINFO) && defined(HAVE_ICONV)
-	char *code_set = nl_langinfo(CODESET);
-
-	if (code_set != NULL && strcmp(code_set, "UTF-8") != 0) {
-		iconv_t cd = iconv_open("UTF-8", code_set);
-
-		if (cd != (iconv_t) -1) {
-			size_t len = strlen(filename);
-			size_t size = 4 * len;
-			char *from = (char *) filename;
-			char *r = malloc(size + 1);
-			char *p = r;
-
-			if (r) {
-				if (iconv(cd, &from, &len, &p, &size) != (size_t) -1) {
-					iconv_close(cd);
-					*p = 0;
-					return r;
-				}
-				free(r);
-			}
-			iconv_close(cd);
-		}
-	}
-#endif
-	/* couldn't use iconv for whatever reason; alternative is to
-	 * use utf8towchar above to convert to a wide character string
-	 * (wcs) and convert that to the locale-specific encoding
-	 * using wcstombs or wcsrtombs (but preferably only if the
-	 * locale's encoding is not UTF-8) */
-	return strdup(filename);
 }
 #endif
 
@@ -317,14 +279,7 @@ open_stream(const char *restrict filename, const char *restrict flags)
 			free(wflags);
 	}
 #else
-	{
-		char *fname = cvfilename(filename);
-		if (fname) {
-			fp = fopen(fname, flags);
-			free(fname);
-		} else
-			fp = NULL;
-	}
+	fp = fopen(filename, flags);
 #endif
 	if (fp == NULL) {
 		mnstr_set_open_error(filename, errno, "open failed");
@@ -519,11 +474,7 @@ file_remove(const char *filename)
 		free(wfname);
 	}
 #else
-	char *fname = cvfilename(filename);
-	if (fname) {
-		rc = remove(fname);
-		free(fname);
-	}
+	rc = remove(filename);
 #endif
 	return rc;
 }

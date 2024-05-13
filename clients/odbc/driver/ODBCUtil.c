@@ -255,12 +255,12 @@ ODBCutf82wchar(const SQLCHAR *src,
 			if (c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
 				return "Illegal code point";
 #if SIZEOF_SQLWCHAR == 2
-				if (i + 2 >= buflen)
-					break;
-				buf[i++] = 0xD800 | ((c - 0x10000) >> 10);
-				buf[i++] = 0xDC00 | (c & 0x3FF);
+			if (i + 2 >= buflen)
+				break;
+			buf[i++] = 0xD7C0 + (c >> 10);
+			buf[i++] = 0xDC00 + (c & 0x03FF);
 #else
-				buf[i++] = c;
+			buf[i++] = c;
 #endif
 			j += 4;
 		} else {

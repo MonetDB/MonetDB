@@ -1,48 +1,20 @@
-onlyif system=Linux
 query T nosort
 select asciify('Olá Mundo!')
 ----
 Ola Mundo!
 
-onlyif system=Linux
 query T nosort
 select asciify('João')
 ----
 Joao
 
-onlyif system=Linux
 query T nosort
 select asciify('Parabéns Ri!')
 ----
 Parabens Ri!
 
-onlyif system=Linux
 query T nosort
 select asciify('Müller')
 ----
 Muller
-
-skipif system=Linux
-query T
-select asciify('Olá Mundo!')
-----
-Ol'a Mundo!
-
-skipif system=Linux
-query T
-select asciify('João')
-----
-Jo~ao
-
-skipif system=Linux
-query T
-select asciify('Parabéns Ri!')
-----
-Parab'ens Ri!
-
-skipif system=Linux
-query T
-select asciify('Müller')
-----
-M"uller
 

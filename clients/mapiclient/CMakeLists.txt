@@ -38,10 +38,13 @@ target_sources(mclient
   ReadlineTools.c
   ReadlineTools.h
   mhelp.c
-  mhelp.h)
+  mhelp.h
+  iconv-stream.h
+  curl-stream.h)
 
 target_include_directories(mclient
   PRIVATE
+  $<$<BOOL:${Iconv_IS_BUILT_IN}>:${CMAKE_REQUIRED_INCLUDES}>
   $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>)
 
 target_link_libraries(mclient

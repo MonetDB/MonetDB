@@ -34319,6 +34319,16 @@ pattern batstr.asciify(X_0:bat[:str], X_1:bat[:oid]):bat[:str]
 BATSTRasciify;
 Transform BAT of strings from UTF8 to ASCII
 batstr
+caseFold
+pattern batstr.caseFold(X_0:bat[:str]):bat[:str]
+STRbatCaseFold;
+Fold the case of a string.
+batstr
+caseFold
+pattern batstr.caseFold(X_0:bat[:str], X_1:bat[:oid]):bat[:str]
+STRbatCaseFold;
+Fold the case of a string.
+batstr
 contains
 pattern batstr.contains(X_0:bat[:str], X_1:bat[:str]):bat[:bit]
 BATSTRcontains;
@@ -50299,6 +50309,11 @@ command str.asciify(X_0:str):str
 STRasciify;
 Transform string from UTF8 to ASCII
 str
+caseFold
+command str.caseFold(X_0:str):str
+STRcasefold;
+Fold the case of a string.
+str
 contains
 pattern str.contains(X_0:str, X_1:str):bit
 STRcontains;
@@ -50378,11 +50393,6 @@ endswithselect
 pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid]
 STRendswithselect;
 Select all head values of the first input BAT for which the@tail value end with the given suffix + icase.
-str
-epilogue
-command str.epilogue():void
-STRepilogue;
-(empty)
 str
 insert
 command str.insert(X_0:str, X_1:int, X_2:int, X_3:str):str
