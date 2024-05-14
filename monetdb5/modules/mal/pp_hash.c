@@ -615,6 +615,7 @@ error:
 				gp[i] = g-1; \
 			} \
 		} else { /* other ATOMvarsized, e.g. BLOB */ \
+			int (*atomcmp)(const void *, const void *) = ATOMcompare(tt); \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
 				void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
@@ -623,7 +624,7 @@ error:
 				\
 				while (!fnd) { \
 					g = ATOMIC_GET(h->gids+k); \
-					while (g && (vals[g] && h->cmp(vals[g], bpi) != 0)) { \
+					while (g && (vals[g] && atomcmp(vals[g], bpi) != 0)) { \
 						k++; \
 						k &= h->mask; \
 						g = ATOMIC_GET(h->gids+k); \
@@ -1008,7 +1009,7 @@ error:
 			} \
 			bat_iterator_end(&bi); \
 		} else { /* other ATOMvarsized, e.g. BLOB */ \
-			mallocator *ma = h->allocators[P->wid]; \
+			int (*atomcmp)(const void *, const void *) = ATOMcompare(tt); \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
 				void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
@@ -1017,7 +1018,7 @@ error:
 				\
 				while (!fnd) { \
 					g = ATOMIC_GET(h->gids+k); \
-					while (g && (pgids[g] != gi[i] || (vals[g] && h->cmp(vals[g], bpi) != 0))) { \
+					while (g && (pgids[g] != gi[i] || (vals[g] && atomcmp(vals[g], bpi) != 0))) { \
 						k++; \
 						k &= h->mask; \
 						g = ATOMIC_GET(h->gids+k); \
@@ -1501,6 +1502,7 @@ error:
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			/* TODO might need to pass the HT for this str_hsh func */ \
 			hs[i] = (gid)str_hsh(bpi); \
 		} \
 		bat_iterator_end(&bi); \
@@ -1642,7 +1644,7 @@ error:
 		gid *hs = Tloc(h, 0); \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,sl[i])); \
 			hs[i] = (gid)combine(ps[i], str_hsh(bpi), prime); \
 		} \
 		bat_iterator_end(&bi); \
@@ -1774,6 +1776,32 @@ error:
 		} \
 	} while (0)
 
+#define aprobe() \
+	do { \
+		BATiter bi = bat_iterator(k); \
+		gid *hs = Tloc(h, 0); \
+		char **vals = ht->vals; \
+		oid *mtd = Tloc(m, 0); \
+		oid *slt = Tloc(s, 0); \
+		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			gid k = hs[i]&ht->mask; \
+			gid slot = ht->gids[k]; \
+			char *val = (bi).vh->base+BUNtvaroff(bi,i); \
+			while (slot && atomcmp(vals[slot], val) != 0) { \
+				k++; \
+				k &= ht->mask; \
+				slot = ht->gids[k]; \
+			} \
+			if (slot) { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = slot - 1; \
+				mtdcnt++; \
+			} \
+		} \
+		bat_iterator_end(&bi); \
+	} while (0)
+
 static str
 OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, const ptr *H)
 {
@@ -1801,12 +1829,11 @@ OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat 
 
 	if (keycnt) {
 		hash_table *ht = (hash_table*)t->T.sink;
-
-
+		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-		switch(k->ttype) {
+		switch(tt) {
 			case TYPE_void:
 				probe(oid);
 				break;
@@ -1848,18 +1875,13 @@ OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat 
 			case TYPE_dbl:
 				probe(dbl);
 				break;
-			case TYPE_str:
-				//if (local_storage) {
-				//	aprobe_(str, p);
-				//} else {
-				//	aprobe(str);
-				//}
-				//break;
-				err =  createException(MAL, "oahash.probe", "TODO: TYPE_str");
-				goto error;
 			default:
-				err = createException(MAL, "oahash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-				goto error;
+				if (ATOMvarsized(tt)) {
+					aprobe();
+				} else {
+					err = createException(MAL, "oahash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+					goto error;
+				}
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.probe", RUNTIME_QRY_TIMEOUT));
 		if (err)
@@ -1897,14 +1919,12 @@ error:
 		gid *hs = Tloc(h, 0); \
 		oid *mt = Tloc(m, 0); \
 		Type *vals = ht->vals; \
-		gid hsh; \
-		Type val; \
 		oid *mtd = Tloc(res_m, 0); \
 		oid *slt = Tloc(res_s, 0); \
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
-			hsh = hs[mt[i]]&ht->mask; \
-			val = ky[mt[i]]; \
+			gid hsh = hs[mt[i]]&ht->mask; \
 			gid slot = ht->gids[hsh]; \
+			Type val = ky[mt[i]]; \
 			while (slot && vals[slot] != val) { \
 				hsh++; \
 				hsh &= ht->mask; \
@@ -1916,6 +1936,33 @@ error:
 				mtdcnt2++; \
 			} \
 		} \
+	} while (0)
+
+#define combined_aprobe() \
+	do { \
+		BATiter bi = bat_iterator(k); \
+		gid *hs = Tloc(h, 0); \
+		oid *mt = Tloc(m, 0); \
+		char **vals = ht->vals; \
+		oid *mtd = Tloc(res_m, 0); \
+		oid *slt = Tloc(res_s, 0); \
+		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
+		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
+			gid hsh = hs[mt[i]]&ht->mask; \
+			gid slot = ht->gids[hsh]; \
+			char *val = (bi).vh->base+BUNtvaroff(bi,mt[i]); \
+			while (slot && atomcmp(vals[slot], val) != 0) { \
+				hsh++; \
+				hsh &= ht->mask; \
+				slot = ht->gids[hsh]; \
+			} \
+			if (slot) { \
+				mtd[mtdcnt2] = i; \
+				slt[mtdcnt2] = slot - 1; \
+				mtdcnt2++; \
+			} \
+		} \
+		bat_iterator_end(&bi); \
 	} while (0)
 
 static str
@@ -1946,11 +1993,11 @@ OAHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_h
 
 	if (mtdcnt) {
 		hash_table *ht = (hash_table*)t->T.sink;
-
+		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-		switch(k->ttype) {
+		switch(tt) {
 			case TYPE_void:
 				combined_probe(oid);
 				break;
@@ -1992,18 +2039,13 @@ OAHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_h
 			case TYPE_dbl:
 				combined_probe(dbl);
 				break;
-			case TYPE_str:
-				//if (local_storage) {
-				//	acombined_probe_(str, p);
-				//} else {
-				//	acombined_probe(str);
-				//}
-				//break;
-				err =  createException(MAL, "oahash.combined_probe", "TODO: TYPE_str");
-				goto error;
 			default:
-				err = createException(MAL, "oahash.combined_probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-				goto error;
+				if (ATOMvarsized(tt)) {
+					combined_aprobe();
+				} else {
+					err = createException(MAL, "oahash.combined_probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+					goto error;
+				}
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.combined_probe", RUNTIME_QRY_TIMEOUT));
 		if (err)
@@ -2045,8 +2087,8 @@ error:
 		oid val = k->tseqbase; \
 		oid *res = Tloc(e, 0); \
 		if (!BATtdense(k)) { \
-			TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
-				res[i] = val; \
+			TIMEOUT_LOOP_IDX(idx, rescnt, qry_ctx) { \
+				res[idx] = val; \
 			} \
 		} else { \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
@@ -2071,6 +2113,51 @@ error:
 			} \
 		} \
 	} while (0)
+
+#define aexpand() \
+	do { \
+		BATiter bi = bat_iterator(k); \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
+			gid freq = (gid)ht->frequency[sid[i]]; \
+			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
+				if (BUNappend(e, v, false) != GDK_SUCCEED) { \
+					err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					break; \
+				} \
+				idx++; \
+			} \
+		} \
+		bat_iterator_end(&bi); \
+	} while (0)
+
+#if 0
+// TODO maybe we should use BUNappend iso of res[idx]?
+#define aexpand_(P) \
+	do { \
+		BATiter bi = bat_iterator(k); \
+		char **res = Tloc(e, 0); \
+		mallocator *ma = ht->allocators[P->wid]; \
+		if (ATOMstorage(tt) == TYPE_str) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
+				gid freq = (gid)ht->frequency[sid[i]]; \
+				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
+					res[idx++] = ma_strdup(ma, v); \
+				} \
+			} \
+		} else { /* other ATOMvarsized, e.g. BLOB */ \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
+				gid freq = (gid)ht->frequency[sid[i]]; \
+				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
+					res[idx++] = ma_copy(ma, v, ht->len(v)); \
+				} \
+			} \
+		} \
+		bat_iterator_end(&bi); \
+	} while (0)
+#endif
 
 static str
 OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *first, const ptr *H)
@@ -2158,18 +2245,12 @@ OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat 
 			case TYPE_dbl:
 				expand(dbl);
 				break;
-			case TYPE_str:
-				//if (local_storage) {
-				//	aexpand_(str,p);
-				//} else {
-				//	aexpand(str);
-				//}
-				//break;
-				err =  createException(MAL, "oahash.expand", "TODO: TYPE_str");
-				goto error;
 			default:
-				err = createException(MAL, "oahash.expand", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-				goto error;
+				if (ATOMvarsized(tt)) {
+					aexpand();
+				} else {
+					err = createException(MAL, "oahash.expand", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				}
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
@@ -2214,27 +2295,44 @@ error:
 	return err;
 }
 
-/*
+#if 0
 #define vfetch() \
 	do { \
 		oid val = ((oid*)hp->payload)[0]; \
 		oid *res = Tloc(p, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
-			res[i] = val; \
+		TIMEOUT_LOOP_IDX(idx, rescnt, qry_ctx) { \
+			res[idx] = val; \
 		} \
 	} while (0)
-*/
+#endif
 
 #define fetch(Type) \
 	do { \
 		int prime = hash_prime_nr[ht->bits-5]; \
-		Type *val = hp->payload; \
+		Type *vals = hp->payload; \
 		Type *res = Tloc(p, 0); \
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			gid freq = (gid)ht->frequency[sid[i]]; \
 			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 				gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&ht->mask; \
-				res[idx++] = val[hsh]; \
+				res[idx++] = vals[hsh]; \
+			} \
+		} \
+	} while (0)
+
+#define afetch() \
+	do { \
+		int prime = hash_prime_nr[ht->bits-5]; \
+		char **vals = hp->payload; \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			gid freq = (gid)ht->frequency[sid[i]]; \
+			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
+				gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&ht->mask; \
+				if (BUNappend(p, vals[hsh], false) != GDK_SUCCEED) { \
+					err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					break; \
+				}\
+				idx++; \
 			} \
 		} \
 	} while (0)
@@ -2321,18 +2419,12 @@ OAHASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq
 			case TYPE_dbl:
 				fetch(dbl);
 				break;
-			case TYPE_str:
-				//if (local_storage) {
-				//	afetch_(str,p);
-				//} else {
-				//	afetch(str);
-				//}
-				//break;
-				err =  createException(MAL, "oahash.fetch_payload", "TODO: TYPE_str");
-				goto error;
 			default:
-				err = createException(MAL, "oahash.fetch_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-				goto error;
+				if (ATOMvarsized(tt)) {
+					afetch();
+				} else {
+					err = createException(MAL, "oahash.fetch_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				}
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.fetch_payload", RUNTIME_QRY_TIMEOUT));
 		if (err)

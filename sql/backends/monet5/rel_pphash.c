@@ -33,10 +33,10 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 	BUN prb_est = get_rel_count(rel_prb);
 
 	// TODO better estimation
-	if (hsh_est == BUN_NONE || (ulng) hsh_est > (ulng) GDK_lng_max) {
+	if (hsh_est == BUN_NONE || (ulng) hsh_est >= (ulng) GDK_lng_max - 1) {
 		hsh_est = 85000000;
 	}
-	if (prb_est == BUN_NONE || (ulng) prb_est > (ulng) GDK_lng_max) {
+	if (prb_est == BUN_NONE || (ulng) prb_est >= (ulng) GDK_lng_max - 1) {
 		prb_est = 85000000;
 	}
 
@@ -45,7 +45,7 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 	*JNres_hshs = sa_list(sql->sa);
 	for (node *n = exps_hsh_hp->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
-		InstrPtr q = stmt_bat_new(be, t->type->localtype, hsh_est * 1.1);
+		InstrPtr q = stmt_bat_new(be, t->type->localtype, hsh_est);
 		if (q == NULL) return err;
 		q->inout = 0;
 		append(*JNres_hshs, q);
@@ -56,7 +56,7 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 	*JNres_prbs = sa_list(sql->sa);
 	for (node *n = exps_prb_hp->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
-		InstrPtr q = stmt_bat_new(be, t->type->localtype, prb_est * 1.1);
+		InstrPtr q = stmt_bat_new(be, t->type->localtype, prb_est);
 		if (q == NULL) return err;
 		q->inout = 0;
 		append(*JNres_prbs, q);
@@ -69,7 +69,7 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 		bit freq = (n->next == NULL); /* last ht also computes frequencies */
 
-		InstrPtr q = stmt_oahash_new(be, t->type->localtype, hsh_est * 1.1, freq, curhash);
+		InstrPtr q = stmt_oahash_new(be, t->type->localtype, hsh_est, freq, curhash);
 		if (q == NULL) return err;
 		q->inout = 0;
 		curhash = getArg(q, 0);
@@ -83,7 +83,7 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 
 		// TODO better and separate est. for nr_slots and pld_size
-		InstrPtr q = stmt_oahash_new_payload(be, t->type->localtype, hsh_est * 1.1, hsh_est * 1.1, curhash, previous);
+		InstrPtr q = stmt_oahash_new_payload(be, t->type->localtype, hsh_est, hsh_est, curhash, previous);
 		if (q == NULL) return err;
 		q->inout = 0;
 		append(*HSHres_hps, q);
