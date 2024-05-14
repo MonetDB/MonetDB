@@ -346,7 +346,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		if (c->def) {
 			/* TODO please don't place an auto incremented sequence in the default value */
-			const char *next_value_for = "next value for \"sys\".\"seq_";
+			const char next_value_for[] = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
 
 			sa_reset(nsa);
@@ -1983,7 +1983,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", clear_res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
 	if (restart_sequences) { /* restart the sequences if it's the case */
 		sql_trans *tr = m->session->tr;
-		const char *next_value_for = "next value for ";
+		const char next_value_for[] = "next value for ";
 
 		for (node *n = ol_first_node(t->columns); n; n = n->next) {
 			sql_column *col = n->data;

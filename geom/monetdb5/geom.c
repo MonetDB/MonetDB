@@ -2648,7 +2648,7 @@ wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
 {
 	size_t len = 0;
 	char *wkt = NULL;
-	const char *sridTxt = "SRID:";
+	const char sridTxt[] = "SRID:";
 
 	if (is_wkb_nil(*geomWKB) || (withSRID && is_int_nil(*withSRID))) {
 		if ((*txt = GDKstrdup(str_nil)) == NULL)

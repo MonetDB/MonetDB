@@ -372,7 +372,7 @@ file_wstream(FILE *restrict fp, bool binary, const char *restrict name)
 stream *
 stdin_rastream(void)
 {
-	const char *name = "<stdin>";
+	const char name[] = "<stdin>";
 	// Make an attempt to skip a BOM marker.
 	// It would be nice to integrate this with with the BOM removal code
 	// in text_stream.c but that is complicated. In text_stream,
@@ -403,7 +403,7 @@ stdin_rastream(void)
 stream *
 stdout_wastream(void)
 {
-	const char *name = "<stdout>";
+	const char name[] = "<stdout>";
 #ifdef _MSC_VER
 	if (isatty(fileno(stdout)))
 		return win_console_out_stream(name);
@@ -414,7 +414,7 @@ stdout_wastream(void)
 stream *
 stderr_wastream(void)
 {
-	const char *name = "<stderr>";
+	const char name[] = "<stderr>";
 #ifdef _MSC_VER
 	if (isatty(fileno(stderr)))
 		return win_console_out_stream(name);

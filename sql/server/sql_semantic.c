@@ -182,7 +182,7 @@ find_table_or_view_on_scope(mvc *sql, sql_schema *s, const char *sname, const ch
 sql_sequence *
 find_sequence_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	const char *objstr = "sequence";
+	const char objstr[] = "sequence";
 	sql_sequence *res = NULL;
 
 	search_object_on_path(res = find_sql_sequence(sql->session->tr, next, name), DO_NOTHING, ;, SQLSTATE(42000));
@@ -192,7 +192,7 @@ find_sequence_on_scope(mvc *sql, const char *sname, const char *name, const char
 sql_idx *
 find_idx_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	const char *objstr = "index";
+	const char objstr[] = "index";
 	sql_idx *res = NULL;
 
 	search_object_on_path(res = mvc_bind_idx(sql, next, name), DO_NOTHING, ;, SQLSTATE(42S12));
@@ -202,7 +202,7 @@ find_idx_on_scope(mvc *sql, const char *sname, const char *name, const char *err
 sql_type *
 find_type_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	const char *objstr = "type";
+	const char objstr[] = "type";
 	sql_type *res = NULL;
 
 	search_object_on_path(res = schema_bind_type(sql, next, name), DO_NOTHING, ;, SQLSTATE(42S01));
@@ -212,7 +212,7 @@ find_type_on_scope(mvc *sql, const char *sname, const char *name, const char *er
 sql_trigger *
 find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	const char *objstr = "trigger";
+	const char objstr[] = "trigger";
 	sql_trigger *res = NULL;
 
 	search_object_on_path(res = mvc_bind_trigger(sql, next, name), DO_NOTHING, ;, SQLSTATE(3F000));
@@ -251,7 +251,7 @@ find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char 
 bool
 find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *error)
 {
-	const char *objstr = "variable";
+	const char objstr[] = "variable";
 	bool res = false;
 	int nr = 0;
 
@@ -406,7 +406,7 @@ sql_subfunc *
 sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_ftype type, bool private, sql_subfunc *prev)
 {
 	char *F = NULL, *objstr = NULL;
-	const char *error = "CATALOG";
+	const char error[] = "CATALOG";
 	sql_subfunc *res = NULL;
 
 	FUNC_TYPE_STR(type, F, objstr);
@@ -704,7 +704,7 @@ sql_subfunc *
 sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_ftype type, bool private, bool exact)
 {
 	char *F = NULL, *objstr = NULL;
-	const char *error = "CATALOG";
+	const char error[] = "CATALOG";
 	sql_subfunc *res = NULL;
 
 	FUNC_TYPE_STR(type, F, objstr);
@@ -809,7 +809,7 @@ sql_subfunc *
 sql_bind_func_result(mvc *sql, const char *sname, const char *name, sql_ftype type, bool private, sql_subtype *r_res, int nargs, ...)
 {
 	char *F = NULL, *objstr = NULL;
-	const char *error = "CATALOG";
+	const char error[] = "CATALOG";
 	sql_subfunc *res = NULL;
 	list *ops = sa_list(sql->sa);
 	va_list valist;
@@ -900,7 +900,7 @@ list *
 sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype type, bool private)
 {
 	char *F = NULL, *objstr = NULL;
-	const char *error = "CATALOG";
+	const char error[] = "CATALOG";
 	list *res = NULL;
 
 	FUNC_TYPE_STR(type, F, objstr);
@@ -1263,7 +1263,7 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		return res;
 	}
 	default: {
-		const char *msg = "SQL feature not yet available for expressions and default values: ";
+		const char msg[] = "SQL feature not yet available for expressions and default values: ";
 		char *tok_str = token2string(se->token);
 		if ((*err = SA_NEW_ARRAY(sql->ta, char, strlen(msg) + strlen(tok_str) + 1)))
 			stpcpy(stpcpy(*err, msg), tok_str);
