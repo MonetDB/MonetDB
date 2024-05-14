@@ -681,7 +681,7 @@ main(int argc, char **av)
 				*p = '\0';
 				for (int i = 0; libdirs[i] != NULL; i++) {
 					int len = snprintf(prmodpath, sizeof(prmodpath),
-									   "%s%c%s%cmonetdb5%s",
+									   "%s%c%s%cmonetdb5-%s",
 									   binpath, DIR_SEP, libdirs[i], DIR_SEP,
 									   MONETDB_VERSION);
 					if (len == -1 || len >= FILENAME_MAX)
