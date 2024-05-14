@@ -3726,8 +3726,12 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 			!(je = rel_is_join_on_pkey(rel, aligned_pk_fk))))
 			return rel;
 
-		// TODO: why? bailout for no semijoin without pkey joins
+		// TODO: why? bailout for union semijoin without pkey joins expressions
 		if (is_semi(rel->op) && is_munion(l->op) && !je)
+			return rel;
+
+		/* if both sides are munions we assume that they will have the same number of children */
+		if (is_munion(l->op) && is_munion(r->op) && list_length(l->l) != list_length(r->l))
 			return rel;
 
 		if (is_munion(l->op) && !need_distinct(l) && !is_single(l) &&
@@ -3756,8 +3760,41 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 		} else if (is_munion(l->op) && !need_distinct(l) && !is_single(l) &&
 			       is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
 			       je) {
-			/* join(munion(a,b,c), union(d,e,f)) -> munion(join(a,d), join(b,e), join(c,f)) */
-			// TODO
+			/* join(munion(a,b,c), munion(d,e,f)) -> munion(join(a,d), join(b,e), join(c,f)) */
+			list *cps = sa_list(v->sql->sa);
+			/* create pairwise joins between left and right parts. assume eq num of parts (see earlier bailout) */
+			for (node *n = ((list*)l->l)->h, *m=((list*)r->l)->h; n && m; n = n->next, m = m->next) {
+				/* left part */
+				sql_rel *lp = rel_dup(n->data);
+				if (!is_project(lp->op))
+					lp = rel_project(v->sql->sa, lp, rel_projections(v->sql, lp, NULL, 1, 1));
+				rel_rename_exps(v->sql, l->exps, lp->exps);
+				if (l != ol) {
+					lp = rel_project(v->sql->sa, lp, NULL);
+					lp->exps = exps_copy(v->sql, ol->exps);
+					set_processed(lp);
+				}
+				/* right part */
+				sql_rel *rp = rel_dup(m->data);
+				if (!is_project(rp->op))
+					rp = rel_project(v->sql->sa, rp, rel_projections(v->sql, rp, NULL, 1, 1));
+				rel_rename_exps(v->sql, l->exps, rp->exps);
+				if (l != ol) {
+					rp = rel_project(v->sql->sa, rp, NULL);
+					rp->exps = exps_copy(v->sql, ol->exps);
+					set_processed(rp);
+				}
+				/* combine them */
+				sql_rel *cp = rel_crossproduct(v->sql->sa, lp, rp, rel->op);
+				cp->exps = exps_copy(v->sql, exps);
+				cp->attr = exps_copy(v->sql, attr);
+				set_processed(cp);
+				cp = rel_project(v->sql->sa, cp, rel_projections(v->sql, cp, NULL, 1, 1));
+				cps = append(cps, cp);
+			}
+			v->changes++;
+			return rel_inplace_setop_n_ary(v->sql, rel, cps, op_munion,
+										   rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (!is_munion(l->op) &&
 			        is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
 			       !is_semi(rel->op)) {
