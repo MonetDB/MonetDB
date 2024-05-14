@@ -57,7 +57,7 @@ rewireFunc("q", quit, "base")
 rm(rewireFunc)
 
 loopback_query <- function(query) {
-	dyn.load(file.path(MONETDB_LIBDIR, paste0("monetdb5", MONETDB_VERSION), "lib_rapi.so"))
+	dyn.load(file.path(MONETDB_LIBDIR, paste0("monetdb5-", MONETDB_VERSION), "lib_rapi.so"))
 	res <- .Call("RAPIloopback", paste0(query, "\n;"), package="lib_rapi")
 	if (is.character(res)) {
 		stop(res)
