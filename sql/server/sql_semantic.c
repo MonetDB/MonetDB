@@ -121,7 +121,6 @@ tmp_schema(mvc *sql)
 	do { \
 		sql_schema *next = NULL; \
  \
-		assert(objstr); \
 		if (sname) { /* user has explicitly typed the schema, so either the object is there or we return error */ \
 			if (!(next = mvc_bind_schema(sql, sname))) \
 				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", error, sname); \
