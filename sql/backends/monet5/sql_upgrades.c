@@ -327,7 +327,7 @@ static str
 sql_create_shp(Client c)
 {
 	//Create the new SHPload procedures
-	const char *query = "create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;\n"
+	const char query[] = "create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;\n"
 		"create procedure SHPLoad(fname string, tablename string) external name shp.load;\n"
 		"update sys.functions set system = true where schema_id = 2000 and name in ('shpload');";
 	printf("Running database upgrade commands:\n%s\n", query);
@@ -340,7 +340,7 @@ static str
 sql_drop_shp(Client c)
 {
 	//Drop the old SHP procedures (upgrade from version before shpload upgrade)
-	const char *query = "drop procedure if exists SHPattach(string) cascade;\n"
+	const char query[] = "drop procedure if exists SHPattach(string) cascade;\n"
 		"drop procedure if exists SHPload(integer) cascade;\n"
 		"drop procedure if exists SHPload(integer, geometry) cascade;\n";
 	printf("Running database upgrade commands:\n%s\n", query);
@@ -351,7 +351,7 @@ sql_drop_shp(Client c)
 static str
 sql_update_generator(Client c)
 {
-	const char *query = "update sys.args set name = 'limit' where name = 'last' and func_id in (select id from sys.functions where schema_id = 2000 and name = 'generate_series' and func like '% last %');\n"
+	const char query[] = "update sys.args set name = 'limit' where name = 'last' and func_id in (select id from sys.functions where schema_id = 2000 and name = 'generate_series' and func like '% last %');\n"
 		"update sys.functions set func = replace(func, ' last ', ' \"limit\" ') where schema_id = 2000 and name = 'generate_series' and func like '% last %';\n";
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
@@ -3287,7 +3287,7 @@ sql_update_jan2022(Client c, mvc *sql)
 			list_append(l, &tp);
 			if (sql_bind_func_(sql, s->base.name, "strimp_create", l, F_PROC, true, true)) {
 				/* do the upgrade by removing the two functions */
-				const char *query =
+				const char query[] =
 					"drop filter function sys.strimp_filter(string, string) cascade;\n"
 					"drop procedure sys.strimp_create(string, string, string) cascade;\n";
 				printf("Running database upgrade commands:\n%s\n", query);
@@ -5198,7 +5198,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 			if (wr)
 				wr->system = 0;
 
-			const char *query =
+			const char query[] =
 				"drop procedure if exists wlc.master() cascade;\n"
 				"drop procedure if exists wlc.master(string) cascade;\n"
 				"drop procedure if exists wlc.stop() cascade;\n"
@@ -5555,7 +5555,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	if (!sql_bind_func(sql, "sys", "pause", &t1, &t2, F_PROC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
-		const char *query =
+		const char query[] =
 			"create function sys.queue(username string) returns table(\"tag\" bigint, \"sessionid\" int, \"username\" string, \"started\" timestamp, \"status\" string, \"query\" string, \"finished\" timestamp, \"maxworkers\" int, \"footprint\" int) external name sysmon.queue;\n"
 			"create procedure sys.pause(tag bigint, username string) external name sysmon.pause;\n"
 			"create procedure sys.resume(tag bigint, username string) external name sysmon.resume;\n"
@@ -5568,7 +5568,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 
 	/* sys.settimeout and sys.setsession where removed */
 	if (sql_bind_func(sql, "sys", "settimeout", &t1, NULL, F_PROC, true, true)) {
-		const char *query =
+		const char query[] =
 			"drop procedure sys.settimeout(bigint) cascade;\n"
 			"drop procedure sys.settimeout(bigint, bigint) cascade;\n"
 			"drop procedure sys.setsession(bigint) cascade;\n";
@@ -5852,7 +5852,7 @@ sql_update_dec2023_geom(Client c, mvc *sql, sql_schema *s)
 			sql_table *t;
 			if ((t = mvc_bind_table(sql, s, "geometry_columns")) != NULL)
 				t->system = 0;
-			const char *query =
+			const char query[] =
 				"drop function if exists sys.st_intersects(geometry, geometry) cascade;\n"
 				"drop function if exists sys.st_dwithin(geometry, geometry, double) cascade;\n"
 				"drop view if exists sys.geometry_columns cascade;\n"
@@ -5914,7 +5914,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
 	if (sql_bind_func(sql, s->base.name, "similarity", &tp, &tp, F_FUNC, true, true)) {
-		const char *query = "drop function sys.similarity(string, string) cascade;\n";
+		const char query[] = "drop function sys.similarity(string, string) cascade;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
@@ -5926,7 +5926,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 	if (mvc_bind_table(sql, s, "describe_accessible_tables") == NULL) {
 		sql->session->status = 0; /* if the view was not found clean the error */
 		sql->errstr[0] = '\0';
-		const char *query =
+		const char query[] =
 		"CREATE VIEW sys.describe_accessible_tables AS\n"
 		" SELECT\n"
 		" schemas.name AS schema,\n"
@@ -5955,10 +5955,10 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		if (err == MAL_SUCCEED) {
-			query = "alter table sys.function_languages set read only;\n";
-			printf("Running database upgrade commands:\n%s\n", query);
+			const char query2[] = "alter table sys.function_languages set read only;\n";
+			printf("Running database upgrade commands:\n%s\n", query2);
 			fflush(stdout);
-			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			err = SQLstatementIntern(c, query2, "update", true, false, NULL);
 		}
 	}
 
@@ -5973,7 +5973,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 			if ((t = mvc_bind_table(sql, s, "dump_comments")) != NULL)
 				t->system = 0;
 
-			const char *cmds =
+			const char cmds[] =
 			"DROP FUNCTION IF EXISTS sys.dump_database(BOOLEAN) CASCADE;\n"
 			"DROP VIEW IF EXISTS sys.dump_comments CASCADE;\n"
 			"DROP VIEW IF EXISTS sys.describe_comments CASCADE;\n"
@@ -6061,7 +6061,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 			list_append(l, &t2);
 			list_append(l, &t2);
 			if (!sql_bind_func_(sql, s->base.name, "sql_datatype", l, F_FUNC, true, true)) {
-				const char *cmds =
+				const char cmds[] =
 				"CREATE FUNCTION sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean)\n"
 				"  RETURNS varchar(1024)\n"
 				"BEGIN\n"
@@ -6139,7 +6139,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 	if (info == NULL) {
 		sql->session->status = 0; /* if the schema was not found clean the error */
 		sql->errstr[0] = '\0';
-		const char *cmds =
+		const char cmds[] =
 		"CREATE SCHEMA INFORMATION_SCHEMA;\n"
 		"COMMENT ON SCHEMA INFORMATION_SCHEMA IS 'ISO/IEC 9075-11 SQL/Schemata';\n"
 		"update sys.schemas set system = true where name = 'information_schema';\n"
@@ -6547,7 +6547,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 	if (!sql_bind_func(sql, s->base.name, "persist_unlogged", &tp, &tp, F_UNION, true, true)) {
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
-		const char *query =
+		const char query[] =
 			"CREATE FUNCTION sys.persist_unlogged(sname STRING, tname STRING)\n"
 			"RETURNS TABLE(\"table\" STRING, \"table_id\" INT, \"rowcount\" BIGINT)\n"
 			"EXTERNAL NAME sql.persist_unlogged;\n"
@@ -6579,7 +6579,7 @@ sql_update_dec2023_sp1(Client c, mvc *sql, sql_schema *s)
 	b = BATdescriptor(output->cols[0].b);
 	if (b) {
 		if (BATcount(b) > 0) {
-			const char *query = "drop function json.isvalid(json);\n"
+			const char query[] = "drop function json.isvalid(json);\n"
 				"create function json.isvalid(js json)\n"
 				"returns bool begin return case when js is NULL then NULL else true end; end;\n"
 				"GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;\n"
@@ -6642,8 +6642,6 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	res_table *output;
 	BAT *b;
 
-	(void) sql;
-	(void) s;
 	err = SQLstatementIntern(c, "SELECT id FROM sys.functions WHERE schema_id = 2000 AND name = 'describe_type' AND func LIKE '%sql_datatype%';\n", "update", true, false, &output);
 	if (err)
 		return err;
@@ -6652,7 +6650,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		if (BATcount(b) == 0) {
 			/* do update */
 			sql_table *t;
-			const char *query =
+			const char query[] =
 				"update sys._columns set type_digits = 7 where type = 'tinyint' and type_digits <> 7;\n"
 				"update sys._columns set type_digits = 15 where type = 'smallint' and type_digits <> 15;\n"
 				"update sys._columns set type_digits = 31 where type = 'int' and type_digits <> 31;\n"
@@ -7063,6 +7061,34 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		BBPunfix(b->batCacheid);
 	}
 	res_table_destroy(output);
+	allocator *old_sa = sql->sa;
+	if ((sql->sa = sa_create(sql->pa)) != NULL) {
+		list *l;
+		if ((l = sa_list(sql->sa)) != NULL) {
+			sql_subtype tp1, tp2;
+			sql_find_subtype(&tp1, "date", 0, 0);
+			list_append(l, &tp1);
+			list_append(l, &tp1);
+			sql_find_subtype(&tp2, "day_interval", 0, 0);
+			list_append(l, &tp2);
+			if (!sql_bind_func_(sql, s->base.name, "generate_series", l, F_UNION, true, true)) {
+				const char query[] = "create function sys.generate_series(first date, \"limit\" date, stepsize interval month)\n"
+					"returns table (value date)\n"
+					"external name generator.series;\n"
+					"create function sys.generate_series(first date, \"limit\" date, stepsize interval day)\n"
+					"returns table (value date)\n"
+					"external name generator.series;\n"
+					"update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;\n";
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				printf("Running database upgrade commands:\n%s\n", query);
+				fflush(stdout);
+				err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			}
+		}
+		sa_destroy(sql->sa);
+	}
+	sql->sa = old_sa;
 	return err;
 }
 

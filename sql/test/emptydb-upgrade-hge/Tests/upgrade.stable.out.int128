@@ -383,3 +383,12 @@ GRANT SELECT ON sys.describe_functions TO PUBLIC;
 update sys.functions set system = true where not system and schema_id = 2000 and name in ('dump_database', 'describe_columns', 'describe_type');
 update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_comments', 'dump_tables', 'dump_functions', 'dump_function_grants', 'describe_functions', 'describe_privileges', 'describe_comments', 'fully_qualified_functions', 'describe_tables');
 
+Running database upgrade commands:
+create function sys.generate_series(first date, "limit" date, stepsize interval month)
+returns table (value date)
+external name generator.series;
+create function sys.generate_series(first date, "limit" date, stepsize interval day)
+returns table (value date)
+external name generator.series;
+update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;
+
