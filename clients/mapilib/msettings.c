@@ -261,8 +261,9 @@ msettings *msettings_clone(const msettings *orig)
 {
 	msettings *mp = malloc(sizeof(*mp));
 	char **unknowns = calloc(2 * orig->nr_unknown, sizeof(char*));
-	char *cloned_name_buffer = strdup(orig->unix_sock_name_buffer);
-	if (!mp || !unknowns || !cloned_name_buffer) {
+	const char *namebuf = orig->unix_sock_name_buffer;
+	char *cloned_name_buffer = namebuf ? strdup(namebuf) : NULL;
+	if (!mp || !unknowns || (namebuf && !cloned_name_buffer)) {
 		free(mp);
 		free(unknowns);
 		free(cloned_name_buffer);
