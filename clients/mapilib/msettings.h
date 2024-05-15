@@ -52,6 +52,7 @@ typedef enum mparm {
         MP_PORT = MP__LONG_START,
         MP_TIMEZONE,
         MP_REPLYSIZE,
+	MP_MAPTOLONGVARCHAR,   // specific to ODBC
 
         // string
         MP_SOCK = MP__STRING_START,

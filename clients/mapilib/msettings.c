@@ -89,6 +89,7 @@ by_name[] = {
 	{ .name="database", .parm=MP_DATABASE },
 	{ .name="host", .parm=MP_HOST },
 	{ .name="language", .parm=MP_LANGUAGE },
+	{ .name="map_to_long_varchar", .parm=MP_MAPTOLONGVARCHAR },
 	{ .name="password", .parm=MP_PASSWORD },
 	{ .name="port", .parm=MP_PORT },
 	{ .name="replysize", .parm=MP_REPLYSIZE },
@@ -143,6 +144,7 @@ mparm_name(mparm parm)
 		case MP_HOST: return "host";
 		case MP_LANGUAGE: return "language";
 		case MP_LOGFILE: return "logfile";
+		case MP_MAPTOLONGVARCHAR: return "map_to_long_varchar";
 		case MP_PASSWORD: return "password";
 		case MP_PORT: return "port";
 		case MP_REPLYSIZE: return "replysize";
@@ -191,6 +193,7 @@ struct msettings {
 	long port;
 	long timezone;
 	long replysize;
+	long map_to_long_varchar;
 	long dummy_end_long;
 
 	// Must match EXACTLY the order of enum mparm
