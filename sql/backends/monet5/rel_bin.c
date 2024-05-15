@@ -4560,9 +4560,11 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		sql_rel *rl = rel->l;
 
 		if (rl->op == op_project) {
-			if (rel_is_ref(rl))
+			if (rel_is_ref(rl)) {
 				sub = refs_find_rel(refs, rl);
-			else
+				if (!sub)
+					sub = rel2bin_project(be, rl, refs, rel);
+			} else
 				sub = rel2bin_project(be, rl, refs, rel);
 		} else {
 			sub = subrel_bin(be, rl, refs);
