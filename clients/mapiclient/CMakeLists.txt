@@ -54,6 +54,7 @@ target_link_libraries(mclient
   mprompt
   moptions
   mutils
+  mutf8
   mapi
   stream
   $<$<BOOL:${READLINE_FOUND}>:Readline::Readline>
