@@ -4374,6 +4374,8 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int nee
 		if (!found) {
 			if (needs_distinct)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
+			if (!is_simple_project(r->op))
+				*R = r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
 			append(r->exps, e);
 		} else {
 			e = found;
