@@ -373,6 +373,10 @@ MNDBConnect(ODBCDbc *dbc,
 			goto failure;
 	}
 
+	error_explanation = msetting_set_long(settings, MP_MAPTOLONGVARCHAR, mapToLongVarchar);
+	if (error_explanation)
+		goto failure;
+
 #ifdef ODBCDEBUG
 	{
 		free(scratch);
@@ -381,38 +385,16 @@ MNDBConnect(ODBCDbc *dbc,
 	}
 #endif
 
-	// Create mid and execute a bunch of commands before checking for errors.
-	mid = mapi_settings(settings);
-	if (mid) {
-		settings = NULL; // it has moved into 'mid' and must not be freed.
-		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
-		mapi_set_size_header(mid, true);
-		mapi_reconnect(mid);
-	}
-	if (mid == NULL || mapi_error(mid)) {
-		error_state = "08001";
-		error_explanation = mid ? mapi_error_str(mid) : NULL;
-		goto failure;
-	}
-
-	/* store internal information and clean up buffers */
-	dbc->Connected = true;
-	dbc->mapToLongVarchar = mapToLongVarchar;
-
-	// Move strings into the dbc struct, clearing whatever was there
-	// and leaving the original location NULL so they don't accidentally
-	// get free'd.
-	if (dbc->mid)
-		mapi_destroy(dbc->mid);
-	dbc->mid = mid;
-	mid = NULL;   // it has moved into 'dbc' and must not be freed.
-
-	get_serverinfo(dbc);
-	/* set timeout after we're connected */
-	mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout * 1000);
-
 	assert(error_state == NULL);
 	assert(error_explanation == NULL);
+
+	SQLRETURN ret;
+
+	ret = MNDBConnectSettings(dbc, settings);
+	if (SQL_SUCCEEDED(ret)) {
+		settings = NULL; // must not be free'd now
+	}
+
 	goto end;
 
 failure:
@@ -423,8 +405,9 @@ failure:
 			error_state = "HY009"; // invalid argument
 	}
 	addDbcError(dbc, error_state, error_explanation, 0);
-	// fallthrough
+	ret = SQL_ERROR;
 
+	// fallthrough
 end:
 	free(dsn);
 	free(scratch);
@@ -432,8 +415,41 @@ end:
 		mapi_destroy(mid);
 	msettings_destroy(settings);
 
-	return error_state == NULL ? SQL_SUCCESS : SQL_ERROR;
+	return ret;
 }
+
+SQLRETURN
+MNDBConnectSettings(ODBCDbc *dbc, msettings *settings)
+{
+	Mapi mid = mapi_settings(settings);
+	if (mid) {
+		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
+		mapi_set_size_header(mid, true);
+		mapi_reconnect(mid);
+	}
+	if (mid == NULL || mapi_error(mid)) {
+		const char *error_state = "08001";
+		const char *error_explanation = mid ? mapi_error_str(mid) : NULL;
+		addDbcError(dbc, error_state, error_explanation, 0);
+		return SQL_ERROR;
+	}
+
+	dbc->Connected = true;
+	dbc->mapToLongVarchar = msetting_long(settings, MP_MAPTOLONGVARCHAR);
+
+	if (dbc->mid)
+		mapi_destroy(dbc->mid);
+	dbc->mid = mid;
+
+	get_serverinfo(dbc);
+	/* set timeout after we're connected */
+	mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout * 1000);
+
+	return SQL_SUCCESS;
+}
+
+
+
 
 SQLRETURN SQL_API
 SQLConnect(SQLHDBC ConnectionHandle,

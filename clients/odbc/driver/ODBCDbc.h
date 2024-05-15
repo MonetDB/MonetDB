@@ -169,4 +169,7 @@ SQLRETURN MNDBSetConnectAttr(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER Valu
  */
 extern char *ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN noscan);
 
+extern SQLRETURN MNDBConnectSettings(ODBCDbc *dbc, msettings *settings);
+
+
 #endif
