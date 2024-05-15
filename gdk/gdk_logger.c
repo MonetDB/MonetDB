@@ -3528,7 +3528,6 @@ log_printinfo(logger *lg)
 	rotation_lock(lg);
 	printf("current log file "ULLFMT", last handled log file "ULLFMT"\n",
 	       lg->id, lg->saved_id);
-	rotation_unlock(lg);
 	printf("current transaction id %d, saved transaction id %d\n",
 	       lg->tid, lg->saved_tid);
 	printf("number of flushers: %d\n", (int) ATOMIC_GET(&lg->nr_flushers));
@@ -3541,4 +3540,5 @@ log_printinfo(logger *lg)
 			buf[0] = 0;
 		printf("pending range "ULLFMT": drops %"PRIu64", last_ts %"PRIu64", flushed_ts %"PRIu64", refcount %"PRIu64"%s%s\n", p->id, (uint64_t) ATOMIC_GET(&p->drops), (uint64_t) ATOMIC_GET(&p->last_ts), (uint64_t) ATOMIC_GET(&p->flushed_ts), (uint64_t) ATOMIC_GET(&p->refcount), buf, p == lg->current ? " (current)" : "");
 	}
+	rotation_unlock(lg);
 }
