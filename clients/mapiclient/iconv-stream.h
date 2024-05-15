@@ -195,12 +195,14 @@ ic_close(void *private)
 	if (ic->cd != (iconv_t) -1)
 		iconv_close(ic->cd);
 	ic->cd = (iconv_t) -1;
+	mnstr_close(ic->s);
 }
 
 static void
 ic_destroy(void *private)
 {
 	ic_close(private);
+	mnstr_destroy(((struct ic_priv_t *) private)->s);
 	free(private);
 }
 
