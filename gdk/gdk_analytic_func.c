@@ -157,6 +157,7 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 #else
 			ANALYTICAL_NTILE_SINGLE_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, BUN);
 #endif
+			break;
 #endif
 		default:
 			goto nosupport;
@@ -186,7 +187,7 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 #else
 			ANALYTICAL_NTILE_MULTI_IMP(hge, val > (hge) GDK_lng_max ? GDK_lng_max : (lng) val, BUN);
 #endif
-		break;
+			break;
 #endif
 		default:
 			goto nosupport;
