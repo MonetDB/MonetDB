@@ -4436,6 +4436,16 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(sizes);
 		}
 		count = d_bi.count;
+	} else {
+		/* special case of log_tstart: third arg == NULL with second arg
+		 * true is request to rotate log file ASAP */
+		store->logger_api.log_tstart(store, true, NULL);
+		/* special case for sql->debug: if 1024 bit is set,
+		 * store_manager doesn't wait for 30 seconds of idle time before
+		 * attempting to rotate */
+		MT_lock_set(&store->flush);
+		store->debug |= 1024;
+		MT_lock_unset(&store->flush);
 	}
 
 	bat_iterator_end(&d_bi);

@@ -3474,6 +3474,12 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 {
 	rotation_lock(lg);
 	if (flushnow) {
+		if (file_id == NULL) {
+			/* special case: ask store_manager to rotate log file */
+			lg->file_age = 0;
+			rotation_unlock(lg);
+			return GDK_SUCCEED;
+		}
 		/* I am now the exclusive flusher */
 		if (ATOMIC_GET(&lg->nr_flushers)) {
 			/* I am waiting until all existing flushers are done */

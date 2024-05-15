@@ -2420,7 +2420,10 @@ store_manager(sqlstore *store)
 
 	for (;;) {
 		const int idle = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5000 : IDLE_TIME * 1000000;
-		if (store->debug&128 || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
+		/* if debug bit 1024 is set, attempt immediate log activation
+		 * and clear the bit */
+		if (store->debug&(128|1024) || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
+			store->debug &= ~1024;
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
