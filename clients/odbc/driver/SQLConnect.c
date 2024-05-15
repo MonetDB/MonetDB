@@ -32,6 +32,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
+#include "ODBCAttrs.h"
 #include <time.h>
 #include "msettings.h"
 #include "mstring.h"
@@ -43,6 +44,42 @@
 #ifndef HAVE_SQLGETPRIVATEPROFILESTRING
 #define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((int) strcpy_len(buffer,default,bufferlen))
 #endif
+
+
+const struct attr_setting attr_settings[] = {
+	{ "uid", "User", MP_USER },
+	{ "pwd", "Password", MP_PASSWORD },
+	{ "database", "Database", MP_DATABASE },
+	{ "port", "Port", MP_PORT },
+	{ "host", "Host", MP_HOST },
+	{ "sock", "Unix Socket", MP_SOCK },
+	{ "tls", "Encrypt", MP_TLS },
+	{ "cert", "Server Certificate", MP_CERT },
+	{ "certhash", "Server Certificate Hash", MP_CERTHASH },
+	{ "clientkey", "Client Key", MP_CLIENTKEY },
+	{ "clientcert", "Client Certificate", MP_CLIENTCERT },
+	{ "autocommit", "Autocommit", MP_AUTOCOMMIT },
+	{ "schema", "Schema", MP_SCHEMA },
+	{ "timezone", "Time Zone", MP_TIMEZONE },
+	{ "replysize", "Reply Size", MP_REPLYSIZE },
+	{ "logfile", "Log File", MP_LOGFILE },
+};
+
+const int attr_setting_count = sizeof(attr_settings) / sizeof(attr_settings[0]);
+
+int
+attr_setting_lookup(const char *attr_name)
+{
+	for (int i = 0; i < attr_setting_count; i++) {
+		const struct attr_setting *entry = &attr_settings[i];
+		if (strcasecmp(attr_name, entry->name) == 0)
+			return i;
+		if (entry->alt_name && strcasecmp(attr_name, entry->alt_name) == 0)
+			return i;
+	}
+	return -1;
+}
+
 
 static void
 get_serverinfo(ODBCDbc *dbc)
@@ -84,84 +121,146 @@ get_serverinfo(ODBCDbc *dbc)
 	mapi_close_handle(hdl);
 }
 
-// Return a newly allocated NUL-terminated config value from either the argument
-// or the data source. Return 'default_value' if no value can be found, NULL on
-// allocation error.
+
+// Ensure '*argument' is either NULL or a NUL-terminated string,
+// taking into account 'argument_len' being either a proper string length
+// or one of the special values SQL_NULL_DATA or SQL_NTS.
 //
-// If non-NULL, parameter 'argument' points to an argument that may or may not
-// be NUL-terminated. The length parameter 'argument_len' can either be the
-// length of the argument or one of the following special values:
+// Return 'true' on success and 'false' on allocation failure.
 //
-//    SQL_NULL_DATA: consider the argument NULL
-//    SQL_NTS:       the argument is actually NUL-terminated
+// If memory needs to be allocated and 'scratch' is not NULL,
+// a pointer to the allocated memory will be stored in '*scratch'
+// and the previous value of '*scratch' will be free'd.
 //
-// Parameters 'dsn' and 'entry', if not NULL and not empty, indicate which data
-// source field to look up in "odbc.ini".
-static char*
-getConfig(
-	const void *argument, ssize_t argument_len,
-	const char *dsn, const char *entry,
-	const char *default_value)
+// '*argument' is never free'd.
+static bool
+make_nul_terminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch)
 {
-	if (argument != NULL && argument_len != SQL_NULL_DATA) {
-		// argument is present..
-		if (argument_len == SQL_NTS) {
-			// .. and it's already NUL-terminated
-			return strdup((const char*)argument);
-		} else {
-			// .. but we need to create a NUL-terminated copy
-			char *value = malloc(argument_len + 1);
-			if (value == NULL)
-				return NULL;
-			memmove(value, argument, argument_len);
-			value[argument_len] = '\0';
-			return value;
-		}
-	} else if (dsn && *dsn && entry && *entry) {
-		// look up in the data source
-		size_t size = 1024; // should be plenty
-		char *buffer = malloc(size);
-		if (buffer == NULL)
-			return NULL;
-		int n = SQLGetPrivateProfileString(dsn, entry, "", buffer, size, "odbc.ini");
-		if (n > 0) {
-			// found some
-			return buffer;
-		} else {
-			// found none
-			free(buffer);
-			return strdup(default_value);
-		}
-	} else {
-		return strdup(default_value);
+	assert(argument != NULL);
+
+	if (*argument == NULL || argument_len == SQL_NTS)
+		return true;
+	if (argument_len == SQL_NULL_DATA) {
+		*argument = NULL;
+		return true;
 	}
+
+	SQLCHAR *value = malloc(argument_len + 1);
+	if (value == NULL)
+		return false;
+	memmove(value, argument, argument_len);
+	value[argument_len] = '\0';
+
+	*argument = value;
+	if (scratch) {
+		free(*scratch);
+		*scratch = value;
+	}
+
+	return value;
 }
 
-// Helper function for use in MNDBConnect.
-// Try to set the setting from a data source field, return false on error.
-static bool
-ds_setting(msettings *settings, const char *dsn, const char **err_state, const char **explanation, mparm parm, const char *entry)
+#ifdef ODBCDEBUG
+static char*
+display_connect_string(const char *dsn, const msettings *settings)
 {
-	assert(*err_state == NULL);
-	assert(*explanation == NULL);
 
-	char *value = getConfig(NULL, 0, dsn, entry, "");
-	if (value == NULL)
-		return false; // allocation failed
-	if (*value == '\0') {
+	size_t pos = 0;
+	size_t cap = 1024;
+	char *buf = malloc(cap);  // reallocprintf will deal with allocation failures
+	char *sep = "";
+	char *value = NULL;
+	char *default_value = NULL;
+	bool ok = false;
+
+	if (dsn) {
+		if (reallocprintf(&buf, &pos, &cap, "DSN=%s", dsn) < 0)
+			goto end;
+		sep = "; ";
+	}
+
+	for (int i = 0; i < attr_setting_count; i++) {
+		const struct attr_setting *entry = &attr_settings[i];
+		mparm parm = entry->parm;
+
+		if (parm == MP_TABLE || parm == MP_TABLESCHEMA)
+			continue;
+
 		free(value);
-		return true; // nothing to do
+		value = msetting_as_string(settings, parm);
+		if (!value)
+			goto end;
+
+		bool show_this = true;
+		if (parm == MP_USER || parm == MP_PASSWORD) {
+			show_this = true;
+		} else if (parm == MP_PORT && msetting_long(settings, MP_PORT) <= 0) {
+			show_this = false;
+		} else if (parm == MP_TLS) {
+			show_this = msetting_bool(settings, MP_TLS);
+		} else if (mparm_is_core(parm)) {
+			show_this = true;
+		} else {
+			// skip if still default
+			free(default_value);
+			default_value = msetting_as_string(msettings_default, parm);
+			if (!default_value)
+				goto end;
+			show_this = (strcmp(value, default_value) != 0);
+		}
+		if (show_this) {
+			if (reallocprintf(&buf, &pos, &cap, "%s%s=%s", sep, entry->name, value) < 0)
+				goto end;
+			sep = "; ";
+		}
 	}
 
-	msettings_error err = msetting_parse(settings, parm, value);
+	ok = true;
+
+end:
 	free(value);
-	if (!err)
-		return true;
-	if (!msettings_malloc_failed(err)) {
-		*err_state = "HY009"; // invalid argument
-		*explanation = err;
+	free(default_value);
+	if (ok) {
+		return buf;
+	} else {
+		free(buf);
+		return NULL;
 	}
-	return false;
+}
+#endif
+
+static int
+lookup(const char *dsn, const struct attr_setting *entry, char *buf, size_t bufsize)
+{
+	int n;
+	assert(entry->name);
+	n = SQLGetPrivateProfileString(dsn, entry->name, "", buf, bufsize, "odbc.ini");
+	if (n > 0)
+		return n;
+	if (entry->alt_name)
+		n = SQLGetPrivateProfileString(dsn, entry->alt_name, "", buf, bufsize, "odbc.ini");
+	return n;
+}
+
+static const char*
+take_settings_from_data_source(msettings *settings, const char *dsn)
+{
+	char buf[1024] = { 0 };
+
+	for (int i = 0; i < attr_setting_count; i++) {
+		const struct attr_setting *entry = &attr_settings[i];
+		mparm parm = entry->parm;
+		int n = lookup(dsn, entry, buf, sizeof(buf));
+		if (n > 0) {
+			if (sizeof(buf) - n <= 1)
+				return "01004"; // truncated
+			const char *msg = msetting_parse(settings, parm, buf);
+			if (msg != NULL)
+				return msg;
+		}
+	}
+
+	return NULL;
 }
 
 SQLRETURN
@@ -184,157 +283,101 @@ MNDBConnect(ODBCDbc *dbc,
 
 	// These will be free'd / destroyed at the 'end' label at the bottom of this function
 	char *dsn = NULL;
-	char *uid = NULL;
-	char *pwd = NULL;
-	char *db = NULL;
-	char *hostdup = NULL;
-	char *portdup = NULL;
-	char *logbuf = NULL;
 	Mapi mid = NULL;
 	msettings *settings = NULL;
+	void *scratch = NULL;
 
 	// These do not need to be free'd
 	const char *mapiport_env;
 
-	/* check connection state, should not be connected */
+	// Check connection state, should not be connected
 	if (dbc->Connected) {
 		error_state = "08002";
 		goto failure;
 	}
 
-	dsn = getConfig(ServerName, NameLength1, NULL, NULL, "");
+	// Modify a copy so the original remains unchanged when we return an error
+	settings = msettings_clone(dbc->settings);
+	if (settings == NULL)
+		goto failure;
+
+	// ServerName is really the Data Source name
+	if (!make_nul_terminated(&ServerName, NameLength1, &scratch))
+		goto failure;
+	dsn = strdup((char*)ServerName);
 	if (dsn == NULL)
 		goto failure;
 
+	// data source settings take precedence over existing ones
+	if (*dsn) {
+		error_state = take_settings_from_data_source(settings, dsn);
+		if (error_state != NULL)
+			goto failure;
+	}
+
 #ifdef ODBCDEBUG
-	if ((ODBCdebug == NULL || *ODBCdebug == 0) && dsn && *dsn) {
-		char logfile[2048];
-		int n = SQLGetPrivateProfileString(dsn, "logfile", "",
-					       logfile, sizeof(logfile),
-					       "odbc.ini");
-		if (n > 0)
+	if (ODBCdebug == NULL || *ODBCdebug == 0) {
+		const char *logfile = msetting_string(settings, MP_LOGFILE);
+		if (*logfile)
 			setODBCdebug(logfile, false);
 	}
 #endif
 
-	uid = getConfig(UserName, NameLength2, dsn, "uid", "monetdb");
-	if (uid == NULL)
-		goto failure;
-	if (*uid == '\0') {
-		error_state = "28000";
-		error_explanation = "user name not set";
-		goto failure;
-	}
+	// The dedicated parameters for user name, password, host, port and database name
+	// override the pre-existing values and whatever came from the data source.
+	// We also take the MAPIPORT environment variable into account.
 
-	pwd = getConfig(Authentication, NameLength3, dsn, "pwd", "monetdb");
-	if (pwd == NULL)
+	if (!make_nul_terminated(&UserName, NameLength2, &scratch))
 		goto failure;
-	if (*pwd == '\0') {
-		error_state = "28000";
-		error_explanation = "password not set";
-		goto failure;
-	}
-
-	// In the old code, the dbname precedence was:
-	// 1. 'dbname' parameter
-	// 2. existing database name
-	// 3. database name from data source
-	//
-	// That seemed odd, so now it's
-	// 1. 'dbname' parameter
-	// 2. database name from data source
-	// 3. existing database name
-	db = getConfig(dbname, SQL_NTS, dsn, "database", dbc->dbname ? dbc->dbname : "");
-	if (db == NULL)
-		goto failure;
-
-	// In the old code we had Windows-specific code that
-	// ran _wgetenv(L"MAPIPORT").
-	// However, even on Windows getenv() is probably fine for a variable that's
-	// supposed to only hold digits.
-	mapiport_env = getenv("MAPIPORT");
-
-	// Port precedence:
-	// 2. 'port' parameter
-	// 1. MAPIPORT env var
-	// 3. data source
-	// 4. MAPI_PORT_STR ("50000")
-	if (port == 0) {
-		portdup = getConfig(mapiport_env, SQL_NTS, dsn, "port", MAPI_PORT_STR);
-		if (portdup == NULL)
-			goto failure;
-		char *end;
-		long longport = strtol(portdup, &end, 10);
-		if (*portdup == '\0' || *end != '\0' || longport < 1 || longport > 65535) {
-			error_state = "HY009"; // invalid argument
-			error_explanation = mapiport_env != NULL
-				? "invalid port setting in MAPIPORT environment variable"
-				: "invalid port setting in data source";
+	if (UserName) {
+		if (!*UserName) {
+			error_state = "28000";
+			error_explanation = "user name not set";
 			goto failure;
 		}
-		port = longport;
+		error_explanation = msetting_set_string(settings, MP_USER, (char*)UserName);
+		if (error_explanation != NULL)
+			goto failure;
 	}
 
-	hostdup = getConfig(host, SQL_NTS, dsn, "host", "localhost");
-	if (hostdup == NULL)
+	if (!make_nul_terminated(&Authentication, NameLength3, &scratch))
 		goto failure;
-
-	settings = msettings_create();
-	// Move the currently known parameters into the settings object.
-	if (false
-		|| (error_explanation = msetting_set_string(settings, MP_DATABASE, db))
-		|| (error_explanation = msetting_set_string(settings, MP_HOST, hostdup))
-		|| (error_explanation = msetting_set_long(settings, MP_PORT, port))
-		|| (error_explanation = msetting_set_string(settings, MP_USER, uid))
-		|| (error_explanation = msetting_set_string(settings, MP_PASSWORD, pwd))
-	) {
-		if (msettings_malloc_failed(error_explanation))
-			error_explanation = NULL; // it's a malloc failure
-		else
-			error_state = "HY009";   // it's otherwise invalid
-		goto failure;
+	if (Authentication) {
+		if (!*Authentication) {
+			error_state = "28000";
+			error_explanation = "password not set";
+			goto failure;
+		}
+		error_explanation = msetting_set_string(settings, MP_PASSWORD, (char*)Authentication);
+		if (error_explanation != NULL)
+			goto failure;
 	}
 
-	// The other parameters can only be set from the data source.
-	// We have made a helper function for that.
-	if (false
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_SOCK, "Unix Socket")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_TLS, "Encrypt")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CERT, "Server Certificate")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CERTHASH, "Server Certificate Hash")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CLIENTKEY, "Client Key")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CLIENTCERT, "Client Certificate")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_AUTOCOMMIT, "Autocommit")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_SCHEMA, "Schema")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_TIMEZONE, "Time Zone")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_REPLYSIZE, "Reply Size")
+	if (host != NULL) {
+		error_explanation = msetting_set_string(settings, MP_HOST, host);
+		if (error_explanation != NULL)
+			goto failure;
+	}
 
-	) {
+	mapiport_env = getenv("MAPIPORT");
+	if (port > 0)
+		error_explanation = msetting_set_long(settings, MP_PORT, port);
+	else if (mapiport_env != NULL)
+		error_explanation = msetting_parse(settings, MP_PORT, mapiport_env);
+	if (error_explanation != NULL)
 		goto failure;
+
+	if (dbname != NULL) {
+		error_explanation = msetting_set_string(settings, MP_DATABASE, dbname);
+		if (error_explanation != NULL)
+			goto failure;
 	}
 
 #ifdef ODBCDEBUG
 	{
-		size_t pos = 0;
-		size_t cap = 1024;
-		reallocprintf(&logbuf, &pos, &cap, "SQLConnect: DSN=%s", dsn);
-		mparm parm;
-		for (int i = 0; (parm = mparm_enumerate(i)) != MP_UNKNOWN ; i++) {
-			if (parm == MP_TABLE || parm == MP_TABLESCHEMA)
-				continue;
-			char *value = msetting_as_string(settings, parm);
-			char *default_value = msetting_as_string(msettings_default, parm);
-			if (!value || !default_value)
-				goto failure;
-			if (mparm_is_core(parm) || strcmp(value, default_value) != 0) {
-				reallocprintf(&logbuf, &pos, &cap, ", %s=%s", mparm_name(parm), value);
-			}
-			free(value);
-			free(default_value);
-		}
-		if (pos > cap)
-			goto failure;
-		ODBCLOG("%s\n", logbuf);
+		free(scratch);
+		char *connstring = scratch = display_connect_string(dsn, settings);
+		ODBCLOG("SQLConnect: %s\n", connstring);
 	}
 #endif
 
@@ -359,13 +402,10 @@ MNDBConnect(ODBCDbc *dbc,
 	// Move strings into the dbc struct, clearing whatever was there
 	// and leaving the original location NULL so they don't accidentally
 	// get free'd.
-	#define MOVE_CONF(free_, dst, src)  do { if (dst) free_(dst); dst = src; src = NULL;  } while (0)
-	MOVE_CONF(mapi_destroy, dbc->mid, mid);
-	MOVE_CONF(free, dbc->dsn, dsn);
-	MOVE_CONF(free, dbc->uid, uid);
-	MOVE_CONF(free, dbc->pwd, pwd);
-	MOVE_CONF(free, dbc->host, hostdup);
-	MOVE_CONF(free, dbc->dbname, db);
+	if (dbc->mid)
+		mapi_destroy(dbc->mid);
+	dbc->mid = mid;
+	mid = NULL;   // it has moved into 'dbc' and must not be freed.
 
 	get_serverinfo(dbc);
 	/* set timeout after we're connected */
@@ -376,19 +416,18 @@ MNDBConnect(ODBCDbc *dbc,
 	goto end;
 
 failure:
-	if (error_state == NULL)
-		error_state = "HY001";
+	if (error_state == NULL) {
+		if (error_explanation == NULL || msettings_malloc_failed(error_explanation))
+			error_state = "HY001"; // allocation failure
+		else
+			error_state = "HY009"; // invalid argument
+	}
 	addDbcError(dbc, error_state, error_explanation, 0);
 	// fallthrough
 
 end:
 	free(dsn);
-	free(uid);
-	free(pwd);
-	free(db);
-	free(hostdup);
-	free(portdup);
-	free(logbuf);
+	free(scratch);
 	if (mid)
 		mapi_destroy(mid);
 	msettings_destroy(settings);

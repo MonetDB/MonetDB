@@ -48,11 +48,21 @@ ODBCDbc *
 newODBCDbc(ODBCEnv *env)
 {
 	ODBCDbc *dbc;
+	msettings *settings;
 
 	assert(env);
 
 	dbc = (ODBCDbc *) malloc(sizeof(ODBCDbc));
-	if (dbc == NULL) {
+	settings = msettings_create();
+
+	if (
+		dbc == NULL
+		|| settings == NULL
+		|| msetting_set_string(settings, MP_USER, "monetdb") != NULL
+		|| msetting_set_string(settings, MP_PASSWORD, "monetdb") != NULL
+	) {
+		free(dbc);
+		msettings_destroy(settings);
 		/* Memory allocation error */
 		addEnvError(env, "HY001", NULL, 0);
 		return NULL;
@@ -60,6 +70,7 @@ newODBCDbc(ODBCEnv *env)
 
 	*dbc = (ODBCDbc) {
 		.Env = env,
+		.settings = settings,
 		.sql_attr_autocommit = SQL_AUTOCOMMIT_ON,	/* default is autocommit */
 		.sql_attr_metadata_id = SQL_FALSE,
 		/* add this dbc to start of the administrative linked dbc list */
@@ -173,16 +184,12 @@ destroyODBCDbc(ODBCDbc *dbc)
 
 	/* cleanup own managed data */
 	deleteODBCErrorList(&dbc->Error);
-	if (dbc->dsn)
-		free(dbc->dsn);
-	if (dbc->uid)
-		free(dbc->uid);
-	if (dbc->pwd)
-		free(dbc->pwd);
-	if (dbc->host)
-		free(dbc->host);
-	if (dbc->dbname)
-		free(dbc->dbname);
+	msettings_destroy(dbc->settings);
+	free(dbc->dsn);
+	free(dbc->uid);
+	free(dbc->pwd);
+	free(dbc->host);
+	free(dbc->dbname);
 
 	free(dbc);
 }

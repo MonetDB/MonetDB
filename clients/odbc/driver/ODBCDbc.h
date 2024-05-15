@@ -39,6 +39,7 @@
 #include "ODBCEnv.h"
 #include "ODBCError.h"
 #include "mapi.h"
+#include "msettings.h"
 
 
 typedef struct tODBCDRIVERDBC {
@@ -51,6 +52,7 @@ typedef struct tODBCDRIVERDBC {
 	int RetrievedErrors;	/* # of errors already retrieved by SQLError */
 
 	/* connection information */
+	msettings *settings;	/* All connection parameters */
 	char *dsn;		/* Data source name or NULL */
 	char *uid;		/* User ID or NULL */
 	char *pwd;		/* Password for User ID or NULL */
