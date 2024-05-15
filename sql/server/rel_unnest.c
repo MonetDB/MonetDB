@@ -2239,7 +2239,7 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 		switch(e->type) {
 		case e_aggr:
 		case e_func: {
-			e->card = list_empty(e->l)?CARD_MULTI:exps_card(e->l);
+			e->card = list_empty(e->l)?rel?rel->card:CARD_MULTI:exps_card(e->l);
 		} break;
 		case e_column: {
 			sql_exp *le = NULL, *re = NULL;
@@ -2632,7 +2632,6 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	(void)depth;
 	/* ranks/window functions only exist in the projection */
 	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data;
-	e->card = (rel->card == CARD_AGGR) ? CARD_AGGR : CARD_MULTI; /* After the unnesting, the cardinality of the window function becomes larger */
 
 	int needed = (gbe || obe);
 	if (l)
@@ -2842,8 +2841,6 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 		exp_label(sql->sa, ve, ++sql->label); /* an alias is needed */
 		if (exp_has_rel(ve)) {
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
-			if (sq)
-				freevar = rel_has_freevar(sql,sq);
 		} else {
 			sq = rel_project(sql->sa, NULL, append(sa_list(sql->sa), ve));
 			if (!exp_is_atom(ve))
