@@ -68,13 +68,13 @@ const struct attr_setting attr_settings[] = {
 const int attr_setting_count = sizeof(attr_settings) / sizeof(attr_settings[0]);
 
 int
-attr_setting_lookup(const char *attr_name)
+attr_setting_lookup(const char *attr_name, bool allow_alt_name)
 {
 	for (int i = 0; i < attr_setting_count; i++) {
 		const struct attr_setting *entry = &attr_settings[i];
 		if (strcasecmp(attr_name, entry->name) == 0)
 			return i;
-		if (entry->alt_name && strcasecmp(attr_name, entry->alt_name) == 0)
+		if (allow_alt_name && entry->alt_name && strcasecmp(attr_name, entry->alt_name) == 0)
 			return i;
 	}
 	return -1;

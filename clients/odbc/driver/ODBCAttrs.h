@@ -31,7 +31,7 @@ extern const struct attr_setting attr_settings[];
 extern const int attr_setting_count;
 
 // look up attr_setting entry by name or alt_name, -1 if not found
-int attr_setting_lookup(const char *attr_name);
+int attr_setting_lookup(const char *attr_name, bool allow_alt_name);
 
 
 
