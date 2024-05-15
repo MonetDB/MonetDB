@@ -186,9 +186,9 @@ MNDBConnect(ODBCDbc *dbc,
 	char *dsn = NULL;
 	char *uid = NULL;
 	char *pwd = NULL;
-	char *db = NULL;
 	char *hostdup = NULL;
 	char *portdup = NULL;
+	char *db = NULL;
 	char *logbuf = NULL;
 	Mapi mid = NULL;
 	msettings *settings = NULL;
@@ -315,16 +315,16 @@ MNDBConnect(ODBCDbc *dbc,
 	// The other parameters can only be set from the data source.
 	// We have made a helper function for that.
 	if (false
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_SOCK, "Unix Socket")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_SOCK, "UnixSocket")
 		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_TLS, "Encrypt")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CERT, "Server Certificate")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CERTHASH, "Server Certificate Hash")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CLIENTKEY, "Client Key")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CLIENTCERT, "Client Certificate")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CERT, "ServerCertificate")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CERTHASH, "ServerCertificateHash")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CLIENTKEY, "ClientKey")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_CLIENTCERT, "ClientCertificate")
 		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_AUTOCOMMIT, "Autocommit")
 		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_SCHEMA, "Schema")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_TIMEZONE, "Time Zone")
-		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_REPLYSIZE, "Reply Size")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_TIMEZONE, "TimeZone")
+		|| !ds_setting(settings, dsn, &error_state, &error_explanation, MP_REPLYSIZE, "ReplySize")
 
 	) {
 		goto failure;
@@ -394,7 +394,7 @@ MNDBConnect(ODBCDbc *dbc,
 
 failure:
 	if (error_state == NULL)
-		error_state = "HY001";
+		error_state = "HY001";	/* Memory allocation error */
 	addDbcError(dbc, error_state, error_explanation, 0);
 	// fallthrough
 
