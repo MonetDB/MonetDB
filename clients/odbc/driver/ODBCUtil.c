@@ -2624,41 +2624,5 @@ translateCompletionType(SQLSMALLINT CompletionType)
 	}
 }
 
-#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
-void
-ODBCLOG(const char *fmt, ...)
-{
-	va_list ap;
 
-	va_start(ap, fmt);
-	if (ODBCdebug == NULL) {
-#ifdef NATIVE_WIN32
-		if ((ODBCdebug = _wgetenv(L"ODBCDEBUG")) == NULL)
-			ODBCdebug = _wcsdup(L"");
-		else
-			ODBCdebug = _wcsdup(ODBCdebug);
-#else
-		if ((ODBCdebug = getenv("ODBCDEBUG")) == NULL)
-			ODBCdebug = strdup("");
-		else
-			ODBCdebug = strdup(ODBCdebug);
-#endif
-	}
-	if (ODBCdebug != NULL && *ODBCdebug != 0) {
-		FILE *f;
-
-#ifdef NATIVE_WIN32
-		f = _wfopen(ODBCdebug, L"a");
-#else
-		f = fopen(ODBCdebug, "a");
-#endif
-		if (f) {
-			vfprintf(f, fmt, ap);
-			fclose(f);
-		} else
-			vfprintf(stderr, fmt, ap);
-	}
-	va_end(ap);
-}
-#endif
 #endif
