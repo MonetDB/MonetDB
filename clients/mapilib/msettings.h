@@ -69,6 +69,7 @@ typedef enum mparm {
         MP_LANGUAGE,
         MP_SCHEMA,		// TODO implement this
         MP_BINARY,
+	MP_LOGFILE,
 } mparm;
 
 typedef enum mparm_class {

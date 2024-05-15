@@ -102,9 +102,10 @@ by_name[] = {
 	{ .name="tls", .parm=MP_TLS },
 	{ .name="user", .parm=MP_USER },
 	//
+	{ .name="logfile", .parm=MP_LOGFILE },
+	//
 	{ .name="hash", .parm=MP_IGNORE },
 	{ .name="debug", .parm=MP_IGNORE },
-	{ .name="logfile", .parm=MP_IGNORE },
 };
 
 mparm
@@ -141,6 +142,7 @@ mparm_name(mparm parm)
 		case MP_DATABASE: return "database";
 		case MP_HOST: return "host";
 		case MP_LANGUAGE: return "language";
+		case MP_LOGFILE: return "logfile";
 		case MP_PASSWORD: return "password";
 		case MP_PORT: return "port";
 		case MP_REPLYSIZE: return "replysize";
@@ -208,6 +210,7 @@ struct msettings {
 	struct string language;
 	struct string schema;
 	struct string binary;
+	struct string logfile;
 	struct string dummy_end_string;
 
 	char **unknown_parameters;
