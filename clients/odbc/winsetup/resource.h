@@ -23,6 +23,18 @@
 #define IDC_EDIT_PORT                   2005
 #define IDC_EDIT_DATABASE               2006
 #define IDC_EDIT_LOGFILE                2007
+// new from Jun2024
+#define IDC_EDIT_AUTOCOMMIT             2011
+#define IDC_EDIT_REPLYSIZE              2012
+#define IDC_EDIT_SCHEMA                 2013
+#define IDC_EDIT_TIMEZONE               2014
+// Secure connections using TLS
+#define IDC_EDIT_TLS                    2021
+#define IDC_EDIT_SERVERCERT             2022
+#define IDC_EDIT_SERVERCERTHASH         2023
+#define IDC_EDIT_CLIENTKEY              2024
+#define IDC_EDIT_CLIENTCERT             2025
+
 #define IDC_BUTTON_CANCEL               2008
 
 // Next default values for new objects
