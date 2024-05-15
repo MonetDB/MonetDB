@@ -61,7 +61,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	int n;
 	SQLRETURN rc;
 #ifdef ODBCDEBUG
-	bool allocated = false;
+	bool odbcdebug_changed = false;
 #endif
 
 	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
@@ -113,34 +113,10 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			mapToLongVarchar = atoi(attr);
 			free(attr);
 #ifdef ODBCDEBUG
-		} else if (strcasecmp(key, "logfile") == 0 &&
-#ifdef NATIVE_WIN32
-			   _wgetenv(L"ODBCDEBUG")
-#else
-			   getenv("ODBCDEBUG")
-#endif
-			   == NULL) {
-			/* environment trumps everything */
-			if (ODBCdebug)
-				free((void *) ODBCdebug); /* discard const */
-#ifdef NATIVE_WIN32
-			size_t attrlen = strlen(attr);
-			SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
-			if (ODBCutf82wchar(attr,
-					   (SQLINTEGER) attrlen,
-					   wattr,
-					   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
-					   NULL,
-					   NULL)) {
-				free(wattr);
-				wattr = NULL;
-			}
-			ODBCdebug = wattr;
+		} else if (strcasecmp(key, "logfile") == 0) {
+			setODBCdebug(attr, false);
 			free(attr);
-#else
-			ODBCdebug = attr;
-#endif
-			allocated = true;
+			odbcdebug_changed = true;
 #endif
 		} else
 			free(attr);
@@ -189,35 +165,12 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			}
 		}
 #ifdef ODBCDEBUG
-		if (!allocated &&
-#ifdef NATIVE_WIN32
-		    _wgetenv(L"ODBCDEBUG")
-#else
-		    getenv("ODBCDEBUG")
-#endif
-		    == NULL) {
+		if (!odbcdebug_changed) {
 			/* if not set from InConnectionString argument
 			 * or environment, look in profile */
 			n = SQLGetPrivateProfileString(dsn, "logfile", "", buf, sizeof(buf), "odbc.ini");
 			if (n > 0 && buf[0]) {
-				if (ODBCdebug)
-					free((void *) ODBCdebug); /* discard const */
-#ifdef NATIVE_WIN32
-				size_t attrlen = strlen(buf);
-				SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
-				if (ODBCutf82wchar(buf,
-						   (SQLINTEGER) attrlen,
-						   wattr,
-						   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
-						   NULL,
-						   NULL)) {
-					free(wattr);
-					wattr = NULL;
-				}
-				ODBCdebug = wattr;
-#else
-				ODBCdebug = strdup(buf);
-#endif
+				setODBCdebug(buf, false);
 			}
 		}
 #endif

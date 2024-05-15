@@ -361,31 +361,9 @@ MNDBDriverConnect(ODBCDbc *dbc,
 			mapToLongVarchar = atoi(attr);
 			free(attr);
 #ifdef ODBCDEBUG
-#ifdef NATIVE_WIN32
-		} else if (strcasecmp(key, "logfile") == 0 &&
-			   _wgetenv(L"ODBCDEBUG") == NULL) {
-			if (ODBCdebug)
-				free((void *) ODBCdebug); /* discard const */
-			size_t attrlen = strlen(attr);
-			SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
-			if (ODBCutf82wchar(attr,
-					   (SQLINTEGER) attrlen,
-					   wattr,
-					   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
-					   NULL,
-					   NULL)) {
-				free(wattr);
-				wattr = NULL;
-			}
+		} else if (strcasecmp(key, "logfile") == 0) {
+			setODBCdebug(attr, false);
 			free(attr);
-			ODBCdebug = wattr;
-#else
-		} else if (strcasecmp(key, "logfile") == 0 &&
-			   getenv("ODBCDEBUG") == NULL) {
-			if (ODBCdebug)
-				free((void *) ODBCdebug); /* discard const */
-			ODBCdebug = attr;
-#endif
 #endif
 		} else
 			free(attr);

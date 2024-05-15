@@ -212,25 +212,8 @@ MNDBConnect(ODBCDbc *dbc,
 		int n = SQLGetPrivateProfileString(dsn, "logfile", "",
 					       logfile, sizeof(logfile),
 					       "odbc.ini");
-		if (n > 0) {
-			free((void *) ODBCdebug); /* discard const */
-#ifdef NATIVE_WIN32
-			size_t attrlen = strlen(logfile);
-			SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
-			if (ODBCutf82wchar(logfile,
-					   (SQLINTEGER) attrlen,
-					   wattr,
-					   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
-					   NULL,
-					   NULL)) {
-				free(wattr);
-				wattr = NULL;
-			}
-			ODBCdebug = wattr;
-#else
-			ODBCdebug = strdup(logfile);
-#endif
-		}
+		if (n > 0)
+			setODBCdebug(logfile, false);
 	}
 #endif
 

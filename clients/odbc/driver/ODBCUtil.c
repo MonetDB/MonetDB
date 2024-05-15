@@ -2624,5 +2624,38 @@ translateCompletionType(SQLSMALLINT CompletionType)
 	}
 }
 
+void
+setODBCdebug(const char *filename, bool overrideEnvVar)
+{
+	if (!overrideEnvVar) {
+#ifdef NATIVE_WIN32
+		void *value = _wgetenv(L"ODBCDEBUG");
+#else
+		void *value = getenv("ODBCDEBUG");
+#endif
+		if (value != NULL)
+			return;    // do not override
+	}
+
+	free((void*)ODBCdebug);
+
+#ifdef NATIVE_WIN32
+	size_t attrlen = strlen(filename);
+	SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
+	if (ODBCutf82wchar(filename,
+				(SQLINTEGER) attrlen,
+				wattr,
+				(SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
+				NULL,
+				NULL)) {
+		free(wattr);
+		wattr = NULL;
+	}
+	ODBCdebug = wattr;
+#else
+	ODBCdebug = strdup(filename);
+#endif
+}
+
 
 #endif
