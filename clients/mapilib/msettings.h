@@ -91,9 +91,9 @@ mparm_classify(mparm parm)
 
 /* returns NULL if not found, pointer to mparm if found */
 mapi_export mparm mparm_parse(const char *name);
-const char *mparm_name(mparm parm);
-mparm mparm_enumerate(int i);
-bool mparm_is_core(mparm parm);
+mapi_export const char *mparm_name(mparm parm);
+mapi_export mparm mparm_enumerate(int i);
+mapi_export bool mparm_is_core(mparm parm);
 
 
 /////////////////////////////////////////////////////////////////////
@@ -112,8 +112,8 @@ mapi_export bool msettings_malloc_failed(msettings_error err);
 
 /* returns NULL if could not allocate */
 mapi_export msettings *msettings_create(void);
-msettings *msettings_clone(const msettings *mp);
-extern const msettings *msettings_default;
+mapi_export msettings *msettings_clone(const msettings *mp);
+mapi_export const msettings *msettings_default;
 
 /* always returns NULL */
 mapi_export msettings *msettings_destroy(msettings *mp);
@@ -121,21 +121,21 @@ mapi_export msettings *msettings_destroy(msettings *mp);
 /* retrieve and set; call abort() on type error */
 
 mapi_export const char* msetting_string(const msettings *mp, mparm parm);
-msettings_error msetting_set_string(msettings *mp, mparm parm, const char* value)
+mapi_export msettings_error msetting_set_string(msettings *mp, mparm parm, const char* value)
 	__attribute__((__nonnull__(3)));
 
 mapi_export long msetting_long(const msettings *mp, mparm parm);
-msettings_error msetting_set_long(msettings *mp, mparm parm, long value);
+mapi_export msettings_error msetting_set_long(msettings *mp, mparm parm, long value);
 
 mapi_export bool msetting_bool(const msettings *mp, mparm parm);
-msettings_error msetting_set_bool(msettings *mp, mparm parm, bool value);
+mapi_export msettings_error msetting_set_bool(msettings *mp, mparm parm, bool value);
 
 /* parse into the appropriate type, or format into newly malloc'ed string (NULL means malloc failed) */
-msettings_error msetting_parse(msettings *mp, mparm parm, const char *text);
-char *msetting_as_string(const msettings *mp, mparm parm);
+mapi_export msettings_error msetting_parse(msettings *mp, mparm parm, const char *text);
+mapi_export char *msetting_as_string(const msettings *mp, mparm parm);
 
 /* store ignored parameter */
-msettings_error msetting_set_ignored(msettings *mp, const char *key, const char *value);
+mapi_export msettings_error msetting_set_ignored(msettings *mp, const char *key, const char *value);
 
 /* store named parameter */
 mapi_export msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value);
