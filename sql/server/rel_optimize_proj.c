@@ -3737,6 +3737,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 		if (is_munion(l->op) && !need_distinct(l) && !is_single(l) &&
 		   !is_munion(r->op)){
 			/* join(munion(a,b,c), d) -> munion(join(a,d), join(b,d), join(c,d)) */
+			list *js = sa_list(v->sql->sa);
 			for (node *n = ((list*)l->l)->h; n; n = n->next) {
 				sql_rel *pc = rel_dup(n->data);
 				if (!is_project(pc->op))
@@ -3752,10 +3753,10 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 				pc->attr = exps_copy(v->sql, attr);
 				set_processed(pc);
 				pc = rel_project(v->sql->sa, pc, rel_projections(v->sql, pc, NULL, 1, 1));
-				n->data = pc;
+				js = append(js, pc);
 			}
 			v->changes++;
-			return rel_inplace_setop_n_ary(v->sql, rel, l->l, op_munion,
+			return rel_inplace_setop_n_ary(v->sql, rel, js, op_munion,
 					                       rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (is_munion(l->op) && !need_distinct(l) && !is_single(l) &&
 			       is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
@@ -3799,6 +3800,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 			        is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
 			       !is_semi(rel->op)) {
 			/* join(a, munion(b,c,d)) -> munion(join(a,b), join(a,c), join(a,d)) */
+			list *js = sa_list(v->sql->sa);
 			for (node *n = ((list*)r->l)->h; n; n = n->next) {
 				sql_rel *pc = rel_dup(n->data);
 				if (!is_project(pc->op))
@@ -3814,10 +3816,10 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 				pc->attr = exps_copy(v->sql, attr);
 				set_processed(pc);
 				pc = rel_project(v->sql->sa, pc, rel_projections(v->sql, pc, NULL, 1, 1));
-				n->data = pc;
+				js = append(js, pc);
 			}
 			v->changes++;
-			return rel_inplace_setop_n_ary(v->sql, rel, r->l, op_munion,
+			return rel_inplace_setop_n_ary(v->sql, rel, js, op_munion,
 					                       rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (!is_munion(l->op) &&
 			        is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
