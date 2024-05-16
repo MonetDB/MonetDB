@@ -97,12 +97,12 @@ struct data {
 	char *port;
 	char *database;
 	char *schema;
-	bool autocommit = true;
+	bool autocommit;
 	long replysize;
 	long timezone;
 	char *logfile;
 	// TLS settings
-	bool use_tls = false;
+	bool use_tls;
 	char *servercert;
 	char *servercerthash;
 	char *clientkey;
