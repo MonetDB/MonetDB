@@ -75,8 +75,8 @@ main(int argc, char **argv)
 {
 	int exit_code;
 	SQLRETURN ret;
-	SQLHANDLE env;
-	SQLHANDLE conn;
+	SQLHANDLE env = NULL;
+	SQLHANDLE conn = NULL;
 	char *connection_string;
 	SQLCHAR prompt[1024];
 	SQLSMALLINT prompt_size = (SQLSMALLINT) sizeof(prompt);
