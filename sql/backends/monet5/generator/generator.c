@@ -74,83 +74,93 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define check_bte() (s > 0 ? f > l : f < l)
-#define check_sht() (s > 0 ? f > l : f < l)
-#define check_int() (s > 0 ? f > l : f < l)
+#define check_bte() ((void)0)
+#define check_sht() ((void)0)
 #if SIZEOF_BUN < SIZEOF_LNG
-#define check_lng() (s > 0 ? f > l || s > (lng) BUN_MAX : f < l || s < -(lng) BUN_MAX)
+#define check_int()												\
+	do {														\
+		if (cnt > (unsigned int) BUN_MAX)						\
+			throw(MAL, "generator.table",						\
+				  SQLSTATE(42000) "Illegal generator range");	\
+	} while (0)
 #else
-#define check_lng() (s > 0 ? f > l : f < l)
+#define check_int() ((void)0)
 #endif
+#define check_lng()												\
+	do {														\
+		if (cnt > (ulng) BUN_MAX)								\
+			throw(MAL, "generator.table",						\
+				  SQLSTATE(42000) "Illegal generator range");	\
+	} while (0)
 #ifdef HAVE_HGE
-#define check_hge() (s > 0 ? f > l || s > (lng) BUN_MAX : f < l || s < -(lng) BUN_MAX)
+#define check_hge()												\
+	do {														\
+		if (cnt > (uhge) BUN_MAX)								\
+			throw(MAL, "generator.table",						\
+				  SQLSTATE(42000) "Illegal generator range");	\
+	} while (0)
 #endif
 
-/*
- * The base line consists of materializing the generator iterator value
- */
-#define VLTmaterialize(TPE)												\
+#define VLTmaterialize(TPE, uTPE)										\
 	do {																\
-		TPE *v, f, l, s;												\
+		TPE f, l, s;													\
+		uTPE cnt;														\
+																		\
 		f = *getArgReference_##TPE(stk, pci, 1);						\
 		l = *getArgReference_##TPE(stk, pci, 2);						\
 		if ( pci->argc == 3)											\
-			s = f<=l? (TPE) 1: (TPE)-1;									\
-		else s =  *getArgReference_##TPE(stk,pci, 3);					\
-		if (s == 0 || is_##TPE##_nil(f) || is_##TPE##_nil(l) || check_##TPE()) \
+			s = f <= l ? (TPE) 1 : (TPE) -1;							\
+		else															\
+			s =  *getArgReference_##TPE(stk,pci, 3);					\
+		if (s == 0 || is_##TPE##_nil(f) || is_##TPE##_nil(l) || is_##TPE##_nil(s)) \
 			throw(MAL, "generator.table",								\
 			      SQLSTATE(42000) "Illegal generator range");			\
-		if (f == l)														\
-			n = 0;														\
-		else if (f > l) {												\
-			/* n = f - l */												\
-			if (l < 1) {												\
-				if ((lng) BUN_MAX + l < f)								\
-					throw(MAL, "generator.table",						\
-						  SQLSTATE(42000) "Illegal generator range");	\
-				else if (GDK_##TPE##_max + l < f)						\
-					n = (BUN) ((lng) f - l);							\
-				else													\
-					n = (BUN) (f - l);									\
+		if (f == l) {													\
+			cnt = 0;													\
+		} else if (f < l) {												\
+			/* cnt = l - f */											\
+			if (s <= 0)													\
+				throw(MAL, "generator.table",							\
+					  SQLSTATE(42000) "Illegal generator range");		\
+			if (f >= 0 || l <= 0) {										\
+				/* no chance of any kind of overflow */					\
+				cnt = l - f;											\
 			} else {													\
-				if (-(lng)BUN_MAX + l > f)								\
-					throw(MAL, "generator.table",						\
-						  SQLSTATE(42000) "Illegal generator range");	\
-				else if (-GDK_##TPE##_max + l > f)						\
-					n = (BUN) ((lng) f - l);							\
-				else													\
-					n = (BUN) (f - l);									\
+				/* f < 0 && l > 0, do calculation is unsigned type */	\
+				cnt = (uTPE) l + (uTPE) -f;								\
 			}															\
+			uTPE i = cnt / (uTPE) s;									\
+			if (i * (uTPE) s != cnt)									\
+				i++;													\
+			cnt = i;													\
 		} else {														\
-			/* n = l - f */												\
-			if (f < 1) {												\
-				if ((lng) BUN_MAX + f < l)								\
-					throw(MAL, "generator.table",						\
-						  SQLSTATE(42000) "Illegal generator range");	\
-				else if (GDK_##TPE##_max + f < l)						\
-					n = (BUN) ((lng) l - f);							\
-				else													\
-					n = (BUN) (l - f);									\
+			/* l < f; cnt = f - l */									\
+			if (s >= 0)													\
+				throw(MAL, "generator.table",							\
+					  SQLSTATE(42000) "Illegal generator range");		\
+			if (l >= 0 || f <= 0) {										\
+				/* no chance of any kind of overflow */					\
+				cnt = f - l;											\
 			} else {													\
-				if (-(lng)BUN_MAX + f > l)								\
-					throw(MAL, "generator.table",						\
-						  SQLSTATE(42000) "Illegal generator range");	\
-				else if (-GDK_##TPE##_max + f > l)						\
-					n = (BUN) ((lng) l - f);							\
-				else													\
-					n = (BUN) (l - f);									\
+				/* f > 0 && l < 0, do calculation is unsigned type */	\
+				cnt = (uTPE) f + (uTPE) -l;								\
 			}															\
+			uTPE i = cnt / (uTPE) -s;									\
+			if (i * (uTPE) -s != cnt)									\
+				i++;													\
+			cnt = i;													\
 		}																\
-		step = (BUN) (s < 0 ? -s : s);									\
-		n = n/step;														\
-		if ((TPE) (n * s + f) != l)										\
-			n++;														\
+		check_##TPE();													\
+		n = (BUN) cnt;													\
 		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);						\
 		if (bn == NULL)													\
 			throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		v = (TPE*) Tloc(bn, 0);											\
-		for (c = 0; c < n; c++)											\
-			*v++ = (TPE) (f + c * s);									\
+		TPE *v = (TPE *) Tloc(bn, 0);									\
+		while (cnt > 0) {												\
+			*v++ = f;													\
+			f += s;														\
+			cnt--;														\
+		}																\
 		bn->tsorted = s > 0 || n <= 1;									\
 		bn->trevsorted = s < 0 || n <= 1;								\
 	} while (0)
@@ -166,14 +176,14 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || is_##TPE##_nil(f) || is_##TPE##_nil(l)) \
 			throw(MAL, "generator.table",								\
 			      SQLSTATE(42000) "Illegal generator range");			\
-		n = (BUN) ((l - f) / s);                                        \
+		BUN n = (BUN) ((l - f) / s);									\
 		if ((TPE) (n * s + f) != l)										\
 			n++;														\
 		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);						\
 		if (bn == NULL)													\
 			throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		v = (TPE*) Tloc(bn, 0);											\
-		for (c = 0; c < n; c++)											\
+		for (BUN c = 0; c < n; c++)										\
 			*v++ = (TPE) (f + c * s);									\
 		bn->tsorted = s > 0 || n <= 1;									\
 		bn->trevsorted = s < 0 || n <= 1;								\
@@ -182,29 +192,29 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BUN c, n, step;
 	BAT *bn;
 	int tpe;
 	(void) cntxt;
+	BUN n;
 
 	*result = NULL;
 	tpe = getArgType(mb, pci, 1);
 	switch (tpe) {
 	case TYPE_bte:
-		VLTmaterialize(bte);
+		VLTmaterialize(bte, uint8_t);
 		break;
 	case TYPE_sht:
-		VLTmaterialize(sht);
+		VLTmaterialize(sht, uint16_t);
 		break;
 	case TYPE_int:
-		VLTmaterialize(int);
+		VLTmaterialize(int, unsigned);
 		break;
 	case TYPE_lng:
-		VLTmaterialize(lng);
+		VLTmaterialize(lng, ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		VLTmaterialize(hge);
+		VLTmaterialize(hge, uhge);
 		break;
 #endif
 	case TYPE_flt:
@@ -238,7 +248,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			if (bn == NULL)
 				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			v = (date *) Tloc(bn, 0);
-			for (c = 0; c < n && f < l; c++) {
+			for (BUN c = 0; c < n && f < l; c++) {
 				*v++ = f;
 				f = date_add_month(f, s);
 				if (is_date_nil(f)) {
@@ -246,7 +256,6 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
 				}
 			}
-			n = c;
 			bn->tsorted = s > 0 || n <= 1;
 			bn->trevsorted = s < 0 || n <= 1;
 		} else if (tpe == TYPE_date) { /* days */
@@ -273,7 +282,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			if (bn == NULL)
 				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			v = (date *) Tloc(bn, 0);
-			for (c = 0; c < n && f < l; c++) {
+			for (BUN c = 0; c < n && f < l; c++) {
 				*v++ = f;
 				f = date_add_day(f, (int) s);
 				if (is_date_nil(f)) {
@@ -281,7 +290,6 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
 				}
 			}
-			n = c;
 			bn->tsorted = s > 0 || n <= 1;
 			bn->trevsorted = s < 0 || n <= 1;
 		} else if (tpe == TYPE_timestamp) {
@@ -312,7 +320,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			if (bn == NULL)
 				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			v = (timestamp *) Tloc(bn, 0);
-			for (c = 0; c < n; c++) {
+			for (BUN c = 0; c < n; c++) {
 				*v++ = f;
 				f = timestamp_add_usec(f, s);
 				if (is_timestamp_nil(f)) {
@@ -331,7 +339,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		}
 		break;
 	}
-	BATsetcount(bn, c);
+	BATsetcount(bn, n);
 	bn->tkey = true;
 	bn->tnil = false;
 	bn->tnonil = true;
