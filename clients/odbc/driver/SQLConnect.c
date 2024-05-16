@@ -175,7 +175,7 @@ buildConnectionString(const char *dsn, const msettings *settings)
 	if (dsn) {
 		if (reallocprintf(&buf, &pos, &cap, "DSN=%s", dsn) < 0)
 			goto end;
-		sep = "; ";
+		sep = ";";
 	}
 
 	for (int i = 0; i < attr_setting_count; i++) {
@@ -210,7 +210,7 @@ buildConnectionString(const char *dsn, const msettings *settings)
 		if (show_this) {
 			if (reallocprintf(&buf, &pos, &cap, "%s%s=%s", sep, entry->name, value) < 0)
 				goto end;
-			sep = "; ";
+			sep = ";";
 		}
 	}
 
