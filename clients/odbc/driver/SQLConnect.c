@@ -47,22 +47,22 @@
 
 
 const struct attr_setting attr_settings[] = {
-	{ "uid", "User", MP_USER },
-	{ "pwd", "Password", MP_PASSWORD },
-	{ "database", "Database", MP_DATABASE },
-	{ "port", "Port", MP_PORT },
-	{ "host", "Host", MP_HOST },
-	{ "sock", "Unix Socket", MP_SOCK },
-	{ "tls", "Encrypt", MP_TLS },
-	{ "cert", "Server Certificate", MP_CERT },
-	{ "certhash", "Server Certificate Hash", MP_CERTHASH },
-	{ "clientkey", "Client Key", MP_CLIENTKEY },
-	{ "clientcert", "Client Certificate", MP_CLIENTCERT },
-	{ "autocommit", "Autocommit", MP_AUTOCOMMIT },
-	{ "schema", "Schema", MP_SCHEMA },
-	{ "timezone", "Time Zone", MP_TIMEZONE },
-	{ "replysize", "Reply Size", MP_REPLYSIZE },
-	{ "logfile", "Log File", MP_LOGFILE },
+	{ "UID", "User", MP_USER },
+	{ "PWD", "Password", MP_PASSWORD },
+	{ "DATABASE", "Database", MP_DATABASE },
+	{ "PORT", "Port", MP_PORT },
+	{ "HOST", "Host", MP_HOST },
+	{ "SOCK", "Unix Socket", MP_SOCK },
+	{ "TLS", "Encrypt", MP_TLS },
+	{ "CERT", "Server Certificate", MP_CERT },
+	{ "CERTHASH", "Server Certificate Hash", MP_CERTHASH },
+	{ "CLIENTKEY", "Client Key", MP_CLIENTKEY },
+	{ "CLIENTCERT", "Client Certificate", MP_CLIENTCERT },
+	{ "AUTOCOMMIT", "Autocommit", MP_AUTOCOMMIT },
+	{ "SCHEMA", "Schema", MP_SCHEMA },
+	{ "TIMEZONE", "Time Zone", MP_TIMEZONE },
+	{ "REPLYSIZE", "Reply Size", MP_REPLYSIZE },
+	{ "LOGFILE", "Log File", MP_LOGFILE },
 };
 
 const int attr_setting_count = sizeof(attr_settings) / sizeof(attr_settings[0]);
