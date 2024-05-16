@@ -510,7 +510,7 @@ SQLDriverConnectW(SQLHDBC ConnectionHandle,
 		   addDbcError, dbc, return SQL_ERROR);
 
 	rc = MNDBDriverConnect(dbc, WindowHandle, in, SQL_NTS, NULL, 0, &n,
-			       DriverCompletion, 1);
+			       DriverCompletion, 1);  // Try Only
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	clearDbcErrors(dbc);
