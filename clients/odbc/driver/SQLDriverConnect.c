@@ -312,6 +312,8 @@ MNDBDriverConnect(ODBCDbc *dbc,
 	const char *sqlstate = NULL;
 	size_t out_len;
 	const char *scratch_no_alloc;
+	const SQLCHAR *cursor;
+	SQLSMALLINT n;
 
 	// These will be free'd at the end label
 	msettings *settings = NULL;
@@ -352,7 +354,9 @@ MNDBDriverConnect(ODBCDbc *dbc,
 
 	// figure out the DSN and load its settings
 	dsn = NULL;
-	while (ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr) > 0) {
+	cursor = InConnectionString;
+	n = StringLength1;
+	while (ODBCGetKeyAttr(&cursor, &n, &key, &attr) > 0) {
 		if (strcasecmp(key, "dsn") == 0) {
 			dsn = attr;
 			attr = NULL;  // avoid double free
@@ -376,7 +380,9 @@ MNDBDriverConnect(ODBCDbc *dbc,
 	}
 
 	// Override with settings from the connect string itself
-	while (ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr) > 0) {
+	cursor = InConnectionString;
+	n = StringLength1;
+	while (ODBCGetKeyAttr(&cursor, &n, &key, &attr) > 0) {
 		int i = attr_setting_lookup(key, true);
 		if (i >= 0) {
 			mparm parm = attr_settings[i].parm;
