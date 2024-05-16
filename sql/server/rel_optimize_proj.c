@@ -3822,16 +3822,42 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 		} else if (!is_munion(l->op) &&
 			        is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
 			        is_semi(rel->op) && je) {
-			/* {semi}join ( A1, munion (B, A2, C)) [A1.partkey = A2.partkey] ->
-			 * {semi}join ( A1, A2 )
-			 * (ie a single part on n-th munion operand)
+			/* {semi}join ( A1, munion (B, A2a, C, A2b)) [A1.partkey = A2.partkey] ->
+			 * {semi}join ( A1, munion (A2a, A2b))
+			 * (ie some parts of an n-th munion operand)
 			 *
 			 * How to detect that a relation isn't matching?
 			 * 		partitioning is currently done only on pkey/fkey's
 			 * 		ie only matching per part if join is on pkey/fkey (parts)
 			 * 		and part numbers should match.
 			 * */
-			// TODO
+			int lpnr = rel_part_nr(l, je);
+			if (lpnr < 0)
+				return rel;
+
+			list *ups = sa_list(v->sql->sa);
+			for (node *n = ((list*)r->l)->h; n; n = n->next) {
+				if (rel_uses_part_nr(n->data, je, lpnr)) {
+					sql_rel *pc = rel_dup(n->data);
+					/*if (!is_project(pc->op))*/
+						/*pc = rel_project(v->sql->sa, pc,*/
+										 /*rel_projections(v->sql, pc, NULL, 1, 1));*/
+					/*rel_rename_exps(v->sql, r->exps, pc->exps);*/
+					/*if (r != or) {*/
+						/*pc = rel_project(v->sql->sa, pc, NULL);*/
+						/*pc->exps = exps_copy(v->sql, or->exps);*/
+						/*set_processed(pc);*/
+					/*}*/
+					/*pc = rel_crossproduct(v->sql->sa, rel_dup(ol), pc, rel->op);*/
+					/*pc->exps = exps_copy(v->sql, exps);*/
+					/*pc->attr = exps_copy(v->sql, attr);*/
+					/*set_processed(pc);*/
+					ups = append(ups, pc);
+				}
+			}
+			v->changes++;
+			return rel_inplace_setop_n_ary(v->sql, r, ups, op_munion,
+					                              rel_projections(v->sql, rel, NULL, 1, 1));
 		}
 	}
 	return rel;
@@ -3842,7 +3868,7 @@ rel_optimize_unions_topdown_(visitor *v, sql_rel *rel)
 {
 	rel = rel_push_project_down_union(v, rel);
 	// TODO: implement rel_push_join_down_munion
-	rel = rel_push_join_down_union(v, rel);
+	rel = rel_push_join_down_munion(v, rel);
 	return rel;
 }
 
