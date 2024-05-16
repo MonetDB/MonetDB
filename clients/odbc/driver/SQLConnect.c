@@ -302,12 +302,14 @@ MNDBConnect(ODBCDbc *dbc,
 	// ServerName is really the Data Source name
 	if (!makeNulTerminated(&ServerName, NameLength1, &scratch))
 		goto failure;
-	dsn = strdup((char*)ServerName);
-	if (dsn == NULL)
-		goto failure;
+	if (ServerName != NULL) {
+		dsn = strdup((char*)ServerName);
+		if (dsn == NULL)
+			goto failure;
+	}
 
 	// data source settings take precedence over existing ones
-	if (*dsn) {
+	if (dsn && *dsn) {
 		error_state = takeSettingsFromDS(settings, dsn);
 		if (error_state != NULL)
 			goto failure;
