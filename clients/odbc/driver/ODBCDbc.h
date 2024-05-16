@@ -171,5 +171,9 @@ extern char *ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length,
 
 extern SQLRETURN MNDBConnectSettings(ODBCDbc *dbc, msettings *settings);
 
+extern bool makeNulTerminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch);
+extern const char* takeSettingsFromDS(msettings *settings, const char *dsn);
+extern char* buildConnectionString(const char *dsn, const msettings *settings);
+
 
 #endif

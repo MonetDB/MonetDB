@@ -133,8 +133,8 @@ get_serverinfo(ODBCDbc *dbc)
 // and the previous value of '*scratch' will be free'd.
 //
 // '*argument' is never free'd.
-static bool
-make_nul_terminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch)
+bool
+makeNulTerminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch)
 {
 	assert(argument != NULL);
 
@@ -160,9 +160,8 @@ make_nul_terminated(const SQLCHAR **argument, ssize_t argument_len, void **scrat
 	return value;
 }
 
-#ifdef ODBCDEBUG
-static char*
-display_connect_string(const char *dsn, const msettings *settings)
+char*
+buildConnectionString(const char *dsn, const msettings *settings)
 {
 
 	size_t pos = 0;
@@ -227,7 +226,6 @@ end:
 		return NULL;
 	}
 }
-#endif
 
 static int
 lookup(const char *dsn, const struct attr_setting *entry, char *buf, size_t bufsize)
@@ -242,8 +240,8 @@ lookup(const char *dsn, const struct attr_setting *entry, char *buf, size_t bufs
 	return n;
 }
 
-static const char*
-take_settings_from_data_source(msettings *settings, const char *dsn)
+const char*
+takeSettingsFromDS(msettings *settings, const char *dsn)
 {
 	char buf[1024] = { 0 };
 
@@ -302,7 +300,7 @@ MNDBConnect(ODBCDbc *dbc,
 		goto failure;
 
 	// ServerName is really the Data Source name
-	if (!make_nul_terminated(&ServerName, NameLength1, &scratch))
+	if (!makeNulTerminated(&ServerName, NameLength1, &scratch))
 		goto failure;
 	dsn = strdup((char*)ServerName);
 	if (dsn == NULL)
@@ -310,7 +308,7 @@ MNDBConnect(ODBCDbc *dbc,
 
 	// data source settings take precedence over existing ones
 	if (*dsn) {
-		error_state = take_settings_from_data_source(settings, dsn);
+		error_state = takeSettingsFromDS(settings, dsn);
 		if (error_state != NULL)
 			goto failure;
 	}
@@ -319,7 +317,7 @@ MNDBConnect(ODBCDbc *dbc,
 	if (ODBCdebug == NULL || *ODBCdebug == 0) {
 		const char *logfile = msetting_string(settings, MP_LOGFILE);
 		if (*logfile)
-			setODBCdebug(logfile, false);
+			setODBCdebug(logfile, true);
 	}
 #endif
 
@@ -327,7 +325,7 @@ MNDBConnect(ODBCDbc *dbc,
 	// override the pre-existing values and whatever came from the data source.
 	// We also take the MAPIPORT environment variable into account.
 
-	if (!make_nul_terminated(&UserName, NameLength2, &scratch))
+	if (!makeNulTerminated(&UserName, NameLength2, &scratch))
 		goto failure;
 	if (UserName) {
 		if (!*UserName) {
@@ -340,7 +338,7 @@ MNDBConnect(ODBCDbc *dbc,
 			goto failure;
 	}
 
-	if (!make_nul_terminated(&Authentication, NameLength3, &scratch))
+	if (!makeNulTerminated(&Authentication, NameLength3, &scratch))
 		goto failure;
 	if (Authentication) {
 		if (!*Authentication) {
@@ -380,7 +378,9 @@ MNDBConnect(ODBCDbc *dbc,
 #ifdef ODBCDEBUG
 	{
 		free(scratch);
-		char *connstring = scratch = display_connect_string(dsn, settings);
+		char *connstring = scratch = buildConnectionString(dsn, settings);
+		if (!connstring)
+			goto failure;
 		ODBCLOG("SQLConnect: %s\n", connstring);
 	}
 #endif

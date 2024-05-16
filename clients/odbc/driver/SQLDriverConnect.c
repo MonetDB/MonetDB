@@ -32,6 +32,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
+#include "ODBCAttrs.h"
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* for strcasecmp */
 #else
@@ -305,21 +306,27 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		  SQLUSMALLINT DriverCompletion,
 		  int tryOnly)
 {
-	char *key, *attr;
-	char *dsn = 0, *uid = 0, *pwd = 0, *host = 0, *database = 0;
-	int port = 0, mapToLongVarchar = 0;
-	SQLRETURN rc;
-	int n;
+	(void) WindowHandle;
 
-	(void) WindowHandle;		/* Stefan: unused!? */
+	SQLRETURN rc = SQL_SUCCESS;
+	const char *sqlstate = NULL;
+	size_t out_len;
+	const char *scratch_no_alloc;
+
+	// These will be free'd at the end label
+	msettings *settings = NULL;
+	char *scratch_alloc;
+	char *key = NULL, *attr = NULL, *dsn = NULL;
 
 	/* check connection state, should not be connected */
 	if (dbc->Connected) {
-		/* Connection name in use */
-		addDbcError(dbc, "08002", NULL, 0);
-		return SQL_ERROR;
+		sqlstate = "08002";
+		goto failure;
 	}
-	assert(!dbc->Connected);
+
+	settings = msettings_clone(dbc->settings);
+	if (!settings)
+		goto failure;
 
 	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT,
 		      addDbcError, dbc, return SQL_ERROR);
@@ -339,72 +346,102 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		break;
 	default:
 		/* Invalid attribute/option identifier */
-		addDbcError(dbc, "HY092", NULL, 0);
-		return SQL_ERROR;
+		sqlstate = "HY092";
+		goto failure;
 	}
 
-	while ((n = ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) > 0) {
-		if (strcasecmp(key, "dsn") == 0 && dsn == NULL)
+	// figure out the DSN and load its settings
+	dsn = NULL;
+	while (ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr) > 0) {
+		if (strcasecmp(key, "dsn") == 0) {
 			dsn = attr;
-		else if (strcasecmp(key, "uid") == 0 && uid == NULL)
-			uid = attr;
-		else if (strcasecmp(key, "pwd") == 0 && pwd == NULL)
-			pwd = attr;
-		else if (strcasecmp(key, "host") == 0 && host == NULL)
-			host = attr;
-		else if (strcasecmp(key, "database") == 0 && database == NULL)
-			database = attr;
-		else if (strcasecmp(key, "port") == 0 && port == 0) {
-			port = atoi(attr);
-			free(attr);
-		} else if (strcasecmp(key, "mapToLongVarchar") == 0 && mapToLongVarchar == 0) {
-			mapToLongVarchar = atoi(attr);
-			free(attr);
-#ifdef ODBCDEBUG
-		} else if (strcasecmp(key, "logfile") == 0) {
-			setODBCdebug(attr, false);
-			free(attr);
-#endif
-		} else
-			free(attr);
+			attr = NULL;  // avoid double free
+			free(key);
+			break;
+		}
 		free(key);
+		key = NULL;
+		free(attr);
+		attr = NULL;
+	}
+	if (dsn) {
+		if (strlen(dsn) > SQL_MAX_DSN_LENGTH) {
+			/* Data source name too long */
+			sqlstate = "IM010";
+			goto failure;
+		}
+		sqlstate = takeSettingsFromDS(settings, dsn);
+		if (sqlstate)
+			goto failure;
 	}
 
-	if (n < 0) {
-		/* Memory allocation error */
-		addDbcError(dbc, "HY001", NULL, 0);
+	// Override with settings from the connect string itself
+	while (ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr) > 0) {
+		int i = attr_setting_lookup(key, true);
+		if (i >= 0) {
+			mparm parm = attr_settings[i].parm;
+			scratch_no_alloc = msetting_parse(settings, parm, attr);
+			if (scratch_no_alloc) {
+				addDbcError(dbc, "HY009", scratch_no_alloc, 0);
+				rc = SQL_ERROR;
+				goto end;
+			}
+		}
+		free(key);
+		key = NULL;
+		free(attr);
+		attr = NULL;
+	}
+
+	scratch_no_alloc = msetting_string(settings, MP_LOGFILE);
+	if (*scratch_no_alloc)
+		setODBCdebug(scratch_no_alloc, false);
+
+	if (!msettings_validate(settings, &scratch_alloc)) {
+		addDbcError(dbc, "HY009", scratch_alloc, 0);
 		rc = SQL_ERROR;
-	} else if (dsn && strlen(dsn) > SQL_MAX_DSN_LENGTH) {
-		/* Data source name too long */
-		addDbcError(dbc, "IM010", NULL, 0);
-		rc = SQL_ERROR;
-	} else if (tryOnly) {
-		rc = SQL_SUCCESS;
-	} else {
-		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS,
-				 (SQLCHAR *) uid, SQL_NTS,
-				 (SQLCHAR *) pwd, SQL_NTS,
-				 host, port, database,
-				 mapToLongVarchar);
+		goto end;
 	}
 
-	if (SQL_SUCCEEDED(rc)) {
-		rc = ODBCConnectionString(rc, dbc, OutConnectionString,
-					  BufferLength, StringLength2Ptr,
-					  dsn, uid, pwd, host, port, database,
-					  mapToLongVarchar);
+	if (tryOnly) {
+		assert(sqlstate == NULL);
+		goto end;
 	}
 
-	if (dsn)
-		free(dsn);
-	if (uid)
-		free(uid);
-	if (pwd)
-		free(pwd);
-	if (host)
-		free(host);
-	if (database)
-		free(database);
+	rc = MNDBConnectSettings(dbc, settings);
+	if (!SQL_SUCCEEDED(rc))
+		goto end; // not to 'failure', all errors have already been logged
+
+	settings = NULL; // do not free now
+
+	// Build a connect string for the current connection
+	// and put it in the buffer.
+	scratch_alloc = buildConnectionString(dsn ? dsn : "DEFAULT", dbc->settings);
+	if (!scratch_alloc)
+		goto failure;
+	out_len = strcpy_len((char*)OutConnectionString, scratch_alloc, BufferLength);
+	if (StringLength2Ptr)
+		*StringLength2Ptr = out_len;
+	if (out_len + 1 > (size_t)BufferLength) {
+		addDbcError(dbc, "01004", NULL, 0);
+		rc = SQL_SUCCESS_WITH_INFO;
+	}
+
+	goto end;
+
+failure:
+	if (sqlstate == NULL)
+		sqlstate = "HY001"; // malloc failure
+	rc = SQL_ERROR;
+	// fallthrough
+end:
+	if (sqlstate != NULL)
+		addDbcError(dbc, sqlstate, NULL, 0);
+	msettings_destroy(settings);
+	free(scratch_alloc);
+	free(dsn);
+	free(key);
+	free(attr);
 	return rc;
 }
 
