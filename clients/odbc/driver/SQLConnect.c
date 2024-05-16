@@ -337,7 +337,7 @@ MNDBConnect(ODBCDbc *dbc,
 		reallocprintf(&logbuf, &pos, &cap, "SQLConnect: DSN=%s", dsn);
 		mparm parm;
 		for (int i = 0; (parm = mparm_enumerate(i)) != MP_UNKNOWN ; i++) {
-			if (parm == MP_TABLE || parm == MP_TABLESCHEMA)
+			if (parm == MP_IGNORE || parm == MP_TABLE || parm == MP_TABLESCHEMA)
 				continue;
 			char *value = msetting_as_string(settings, parm);
 			char *default_value = msetting_as_string(msettings_default, parm);
