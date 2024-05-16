@@ -3811,7 +3811,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 					pc->exps = exps_copy(v->sql, ol->exps);
 					set_processed(pc);
 				}
-				pc = rel_crossproduct(v->sql->sa, pc, rel_dup(or), rel->op);
+				pc = rel_crossproduct(v->sql->sa, pc, rel_dup(ol), rel->op);
 				pc->exps = exps_copy(v->sql, exps);
 				pc->attr = exps_copy(v->sql, attr);
 				set_processed(pc);
