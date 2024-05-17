@@ -248,7 +248,8 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			if (bn == NULL)
 				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			v = (date *) Tloc(bn, 0);
-			for (BUN c = 0; c < n && f < l; c++) {
+			BUN c;
+			for (c = 0; c < n && f < l; c++) {
 				*v++ = f;
 				f = date_add_month(f, s);
 				if (is_date_nil(f)) {
@@ -256,6 +257,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
 				}
 			}
+			n = c;
 			bn->tsorted = s > 0 || n <= 1;
 			bn->trevsorted = s < 0 || n <= 1;
 		} else if (tpe == TYPE_date) { /* days */
@@ -282,7 +284,8 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			if (bn == NULL)
 				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			v = (date *) Tloc(bn, 0);
-			for (BUN c = 0; c < n && f < l; c++) {
+			BUN c;
+			for (c = 0; c < n && f < l; c++) {
 				*v++ = f;
 				f = date_add_day(f, (int) s);
 				if (is_date_nil(f)) {
@@ -290,6 +293,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
 				}
 			}
+			n = c;
 			bn->tsorted = s > 0 || n <= 1;
 			bn->trevsorted = s < 0 || n <= 1;
 		} else if (tpe == TYPE_timestamp) {
