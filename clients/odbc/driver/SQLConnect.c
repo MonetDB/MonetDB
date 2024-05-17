@@ -182,7 +182,7 @@ buildConnectionString(const char *dsn, const msettings *settings)
 		const struct attr_setting *entry = &attr_settings[i];
 		mparm parm = entry->parm;
 
-		if (parm == MP_TABLE || parm == MP_TABLESCHEMA)
+		if (parm == MP_IGNORE || parm == MP_TABLE || parm == MP_TABLESCHEMA)
 			continue;
 
 		free(value);

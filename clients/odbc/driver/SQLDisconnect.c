@@ -63,11 +63,31 @@ SQLDisconnect(SQLHDBC ConnectionHandle)
 	mapi_destroy(dbc->mid);
 
 	dbc->mid = NULL;
+	dbc->Connected = false;
 	dbc->cachelimit = 0;
 	dbc->Mdebug = 0;
-	dbc->Connected = false;
 	dbc->has_comment = false;
 	dbc->raw_strings = false;
+	if (dbc->dsn) {
+		free(dbc->dsn);
+		dbc->dsn = NULL;
+	}
+	if (dbc->uid) {
+		free(dbc->uid);
+		dbc->uid = NULL;
+	}
+	if (dbc->pwd) {
+		free(dbc->pwd);
+		dbc->pwd = NULL;
+	}
+	if (dbc->host) {
+		free(dbc->host);
+		dbc->host = NULL;
+	}
+	if (dbc->dbname) {
+		free(dbc->dbname);
+		dbc->dbname = NULL;
+	}
 
 	return SQL_SUCCESS;
 }

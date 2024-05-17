@@ -96,7 +96,17 @@ struct data {
 	char *host;
 	char *port;
 	char *database;
+	char *schema;
+	bool autocommit;
+	long replysize;
+	long timezone;
 	char *logfile;
+	// TLS settings
+	bool use_tls;
+	char *servercert;
+	char *servercerthash;
+	char *clientkey;
+	char *clientcert;
 	HWND parent;
 	WORD request;
 };
@@ -235,6 +245,18 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	data.port = NULL;
 	data.database = NULL;
 	data.logfile = NULL;
+	data.schema = NULL;
+	data.autocommit = true;
+//	data.replysize = 1000;
+//	data.timezone;
+	data.logfile = NULL;
+	// TLS settings
+	data.use_tls = false;
+	data.servercert = NULL;
+	data.servercerthash = NULL;
+	data.clientkey = NULL;
+	data.clientcert = NULL;
+
 	data.parent = parent;
 	data.request = request;
 
