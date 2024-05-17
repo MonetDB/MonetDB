@@ -52,7 +52,7 @@ const struct attr_setting attr_settings[] = {
 	{ "PWD", "Password", MP_PASSWORD },
 	{ "DATABASE", "Database", MP_DATABASE },
 	{ "PORT", "Port", MP_PORT },
-	{ "HOST", "Host", MP_HOST },
+	{ "HOST", "Server", MP_HOST },
 	{ "SOCK", "Unix Socket", MP_SOCK },
 	{ "TLS", "Encrypt", MP_TLS, .suggest_values = SUGGEST_BOOLEAN },
 	{ "CERT", "Server Certificate", MP_CERT },
@@ -496,6 +496,12 @@ end:
 SQLRETURN
 MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 {
+	msettings *clone = msettings_clone(settings);
+	if (clone == NULL) {
+		addDbcError(dbc, "HY001", NULL, 0);
+		return SQL_ERROR;
+	}
+
 	Mapi mid = mapi_settings(settings);
 	if (mid) {
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
@@ -512,14 +518,19 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 	free(dbc->dsn);
 	dbc->dsn = dsn ? strdup(dsn) : NULL;
 
-	dbc->Connected = true;
-	dbc->mapToLongVarchar = msetting_long(settings, MP_MAPTOLONGVARCHAR);
-
 	if (dbc->mid)
 		mapi_destroy(dbc->mid);
 	dbc->mid = mid;
 
+	msettings_destroy(dbc->settings);
+	dbc->settings = clone;
+
+	dbc->mapToLongVarchar = msetting_long(settings, MP_MAPTOLONGVARCHAR);
+
+	dbc->Connected = true;
+
 	get_serverinfo(dbc);
+
 	/* set timeout after we're connected */
 	mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout * 1000);
 
