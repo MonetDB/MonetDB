@@ -61,13 +61,13 @@ if(GDAL_FOUND)
 
   install(TARGETS
     shp
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     COMPONENT server)
 
   if(WIN32)
     install(FILES
       $<TARGET_PDB_FILE:shp>
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
       OPTIONAL)
   endif()
 endif()

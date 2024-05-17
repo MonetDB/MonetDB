@@ -760,7 +760,7 @@ BATXMLroot(bat *ret, const bat *bid, const char *const *version,
 							  *standalone);
 			snprintf(buf + i, len - i, "?>%s", t + 1);
 			buf++;
-			XMLisdocument(&isdoc, &buf);	/* check well-formedness */
+			XMLisdocument(&isdoc, &(const char *){buf});	/* check well-formedness */
 			buf--;
 			if (!isdoc) {
 				err = XML_NOT_WELL_FORMED;

@@ -2654,9 +2654,9 @@ bailout:
 int
 dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool describe, bool useInserts, bool noescape)
 {
-	const char *start_trx = "START TRANSACTION";
-	const char *end = "ROLLBACK";
-	const char *types =
+	const char start_trx[] = "START TRANSACTION";
+	const char end[] = "ROLLBACK";
+	const char types[] =
 		"SELECT s.name, "
 		       "t.systemname, "
 		       "t.sqlname "
@@ -2708,13 +2708,13 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND ui.name <> 'monetdb' "
 		  "AND ui.name <> '.snapshot' "
 		"ORDER BY ui.name";
-	const char *roles =
+	const char roles[] =
 		"SELECT name "
 		"FROM sys.auths "
 		"WHERE name NOT IN (SELECT name FROM sys.db_user_info) "
 		  "AND grantor <> 0 "
 		"ORDER BY name";
-	const char *grants =
+	const char grants[] =
 		/* all grants granting roles to users excepting the default role */
 		"SELECT a1.name, "
 		       "a2.name "
@@ -2727,7 +2727,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND a1.name = ui.name "
 		  "AND a2.id <> ui.default_role "
 		"ORDER BY a1.name, a2.name";
-	const char *table_grants =
+	const char table_grants[] =
 		"SELECT s.name, t.name, "
 		       "a.name, "
 		       "sum(p.privileges), "
@@ -2744,7 +2744,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND p.grantable = go.id "
 		"GROUP BY s.name, t.name, a.name, g.name, go.opt "
 		"ORDER BY s.name, t.name, a.name, g.name, go.opt";
-	const char *column_grants =
+	const char column_grants[] =
 		"SELECT s.name, t.name, "
 		       "c.name, a.name, "
 		       "pc.privilege_code_name, "
@@ -2766,7 +2766,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND p.privileges = pc.privilege_code_id "
 		  "AND p.grantable = go.id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
-	const char *function_grants =
+	const char function_grants[] =
 		"SELECT f.id, "
 			   "s.name, "
 			   "f.name, "
@@ -2803,7 +2803,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 				 "f.id, "
 				 "a.inout DESC, "
 				 "a.number";
-	const char *global_grants =
+	const char global_grants[] =
 		"SELECT a.name, pc.grnt, g.name, go.opt "
 		"FROM sys.privileges p, "
 		     "sys.auths a, "
@@ -2816,22 +2816,22 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND p.privileges = pc.id "
 		  "AND p.grantable = go.id "
 		"ORDER BY a.name, g.name, go.opt";
-	const char *schemas =
+	const char schemas[] =
 		"SELECT s.name, a.name, rem.remark "
 		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
 		     "sys.auths a "
 		"WHERE s.\"authorization\" = a.id "
 		  "AND s.system = FALSE "
 		"ORDER BY s.name";
-	const char *sequences1 =
+	const char sequences1[] =
 		"SELECT sch.name, seq.name, rem.remark "
 		"FROM sys.schemas sch, "
 		     "sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id "
 		"WHERE sch.id = seq.schema_id "
 		"ORDER BY sch.name, seq.name";
-	const char *sequences2 =
+	const char sequences2[] =
 		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";
-	const char *tables =
+	const char tables[] =
 		"SELECT t.id AS id, "
 			   "s.name AS sname, "
 			   "t.name AS name, "
@@ -2891,7 +2891,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"ORDER BY t1.id, t2.id";
 	/* we must dump views, functions/procedures and triggers in order
 	 * of creation since they can refer to each other */
-	const char *views_functions_triggers =
+	const char views_functions_triggers[] =
 		"with vft (sname, name, id, query, remark) AS ("
 			"SELECT s.name AS sname, " /* views */
 			       "t.name AS name, "

@@ -201,7 +201,7 @@ SQLexit(Client c)
 str
 SQLepilogue(void *ret)
 {
-	const char *s = "sql", *m = "msql";
+	const char s[] = "sql", m[] = "msql";
 	char *msg;
 
 	(void) ret;
