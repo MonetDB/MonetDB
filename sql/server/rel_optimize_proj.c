@@ -907,7 +907,7 @@ rel_split_project_(visitor *v, sql_rel *rel, int top)
 	}
 	if (is_set(rel->op) || is_basetable(rel->op))
 		return rel;
-	if (rel->l) {
+	if (rel->l && (rel->op != op_table || rel->flag != TRIGGER_WRAPPER)) {
 		rel->l = rel_split_project_(v, rel->l, (is_topn(rel->op)||is_sample(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
 		if (!rel->l)
 			return NULL;

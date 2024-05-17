@@ -3741,7 +3741,7 @@ drop_del(sql_trans *tr, sql_table *t)
 
 	if (!isNew(t)) {
 		storage *bat = ATOMIC_PTR_GET(&t->data);
-		trans_add_obj(tr, &t->base, bat, &tc_gc_del, &commit_destroy_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_destroy_del);
+		trans_add_obj(tr, &t->base, bat, &tc_gc_del, &commit_destroy_del, isTempTable(t) ? NULL : &log_destroy_del);
 	}
 	return ok;
 }
@@ -3751,7 +3751,7 @@ drop_col(sql_trans *tr, sql_column *c)
 {
 	assert(!isNew(c));
 	sql_delta *d = ATOMIC_PTR_GET(&c->data);
-	trans_add(tr, &c->base, d, &tc_gc_col, &commit_destroy_del, NOT_TO_BE_LOGGED(c->t) ? NULL : &log_destroy_col);
+	trans_add(tr, &c->base, d, &tc_gc_col, &commit_destroy_del, isTempTable(c->t) ? NULL : &log_destroy_col);
 	return LOG_OK;
 }
 
@@ -3760,7 +3760,7 @@ drop_idx(sql_trans *tr, sql_idx *i)
 {
 	assert(!isNew(i));
 	sql_delta *d = ATOMIC_PTR_GET(&i->data);
-	trans_add(tr, &i->base, d, &tc_gc_idx, &commit_destroy_del, NOT_TO_BE_LOGGED(i->t) ? NULL : &log_destroy_idx);
+	trans_add(tr, &i->base, d, &tc_gc_idx, &commit_destroy_del, isTempTable(i->t) ? NULL : &log_destroy_idx);
 	return LOG_OK;
 }
 

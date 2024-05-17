@@ -1515,9 +1515,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname, cname);
 			if (v && !exp) {
 				if (*rel)
-					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
+					*rel = rel_crossproduct(sql->sa, *rel, rel_dup(v), op_join);
 				else
-					*rel = v;
+					*rel = rel_dup(v);
 				if (!(exp = rel_bind_column3(sql, *rel, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 					return NULL;
 			}
