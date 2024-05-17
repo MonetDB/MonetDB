@@ -4988,6 +4988,9 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			assert(se->token == SQL_SELECT);
 			exp_kind nek = ek;
 			nek.aggr = is_sql_aggr(f);
+			if (is_sql_no_subquery(f))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery not allowed");
+
 			r = rel_subquery(query, se, nek);
 		}
 		if (rel && *rel) {

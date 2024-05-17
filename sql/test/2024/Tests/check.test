@@ -33,3 +33,9 @@ update bar set i = 50 where i = 30
 
 statement error
 update bar set i = 50, j = 40 where i = 30
+
+statement error
+create table baz(j int check (j > (select max(i) from foo)))
+
+statement error
+create table baz(j int check (j in (select i from foo)))

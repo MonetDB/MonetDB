@@ -22,6 +22,7 @@
 #include "rel_psm.h"
 #include "rel_dump.h"
 #include "rel_propagate.h"
+#include "rel_unnest.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
@@ -409,8 +410,8 @@ sql_rel* create_check_plan(sql_query *query, symbol *s, sql_table *t) {
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_rel* rel = rel_basetable(sql, t, t->base.name);
-	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel, ek);
-	rel->exps = rel_base_projection(sql, rel, 0);
+	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel | sql_no_subquery, ek);
+	rel->exps = rel_base_projection(sql, rel, 0);	
 	list *pexps = sa_list(sql->sa);
 	pexps = append(pexps, e);
 	rel = rel_project(sql->sa, rel, pexps);
