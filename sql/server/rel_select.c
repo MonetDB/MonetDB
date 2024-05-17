@@ -4744,6 +4744,23 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: window functions cannot be nested", toUpperCopy(uaname, aname));
 	}
+	if (window_function->token == SQL_UNOP || window_function->token == SQL_OP) {
+		window_function->token = SQL_NOP;
+		dn->next->next->data.lval = dlist_append_symbol(sql->sa, dlist_create( sql->sa ), dn->next->next->data.sym); /* make a list */
+	}
+	if (window_function->token == SQL_BINOP) {
+		window_function->token = SQL_NOP;
+		dn->next->next->data.lval = dlist_append_symbol(sql->sa, dlist_append_symbol(sql->sa, dlist_create( sql->sa ), dn->next->next->data.sym), dn->next->next->next->data.sym); /* make a list */
+		dn->next->next->next = dn->next->next->next->next; /* skip second arg */
+	}
+	if (window_function->token == SQL_AGGR)
+		dn->next->next->data.lval = dlist_append_symbol(sql->sa, dlist_create( sql->sa ), dn->next->next->data.sym); /* make a list */
+	if (window_function->token == SQL_NOP)
+		window_function->token = SQL_AGGR;
+	if (window_function->token != SQL_RANK && window_function->token != SQL_AGGR) {
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s' unknown", toUpperCopy(uaname, aname));
+	}
 
 	/* window operations are only allowed in the projection */
 	if (!is_sql_sel(f))
@@ -4814,7 +4831,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 	} else { /* aggregation function call */
 		distinct = dn->next->data.i_val;
-		for (dargs = dn->next->next ; dargs && dargs->data.sym ; dargs = dargs->next) {
+		for (dargs = dn->next->next->data.lval->h ; dargs && dargs->data.sym ; dargs = dargs->next) {
 			exp_kind ek = {type_value, card_column, FALSE};
 			sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 
