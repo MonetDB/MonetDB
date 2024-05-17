@@ -29,7 +29,7 @@
 #define IDC_EDIT_SCHEMA                 2013
 #define IDC_EDIT_TIMEZONE               2014
 // Secure connections using TLS
-#define IDC_EDIT_TLS                    2021
+#define IDC_EDIT_USETLS                 2021
 #define IDC_EDIT_SERVERCERT             2022
 #define IDC_EDIT_SERVERCERTHASH         2023
 #define IDC_EDIT_CLIENTKEY              2024
