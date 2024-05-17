@@ -19,6 +19,7 @@
 #define MP__BOOL_START (100)
 #define MP__LONG_START (200)
 #define MP__STRING_START (300)
+#define MP__MAX (400)
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,6 +72,8 @@ typedef enum mparm {
         MP_SCHEMA,		// TODO implement this
         MP_BINARY,
 	MP_LOGFILE,
+
+	// !! Make sure to keep them all below MP__MAX !!
 } mparm;
 
 typedef enum mparm_class {
