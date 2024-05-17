@@ -1203,11 +1203,11 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 								size_t repl3len = 0;
 								if (repl == NULL) {
 									if (strcmp(func->name, "user") == 0) {
-										repl = dbc->uid;
+										repl = msetting_string(dbc->settings, MP_USER);
 										p1 = p2 = "";
 										quote = "'";
 									} else if (strcmp(func->name, "database") == 0) {
-										repl = dbc->dbname;
+										repl = msetting_string(dbc->settings, MP_DATABASE);
 										p1 = p2 = "";
 										quote = "'";
 									} else if (strcmp(func->name, "convert") == 0) {

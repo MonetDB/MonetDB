@@ -211,7 +211,7 @@ MNDBForeignKeys(ODBCStmt *stmt,
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && PKCatalogName != NULL) {
 		/* filtering requested on catalog name */
-		if (strcmp((char *) PKCatalogName, stmt->Dbc->dbname) != 0) {
+		if (strcmp((char *) PKCatalogName, msetting_string(stmt->Dbc->settings, MP_DATABASE)) != 0) {
 			/* catalog name does not match the database name, so return no rows */
 			pos += snprintf(query + pos, querylen - pos, " and 1=2");
 		}
@@ -228,7 +228,7 @@ MNDBForeignKeys(ODBCStmt *stmt,
 	}
 	if (NameLength4 > 0 && FKCatalogName != NULL) {
 		/* filtering requested on catalog name */
-		if (strcmp((char *) FKCatalogName, stmt->Dbc->dbname) != 0) {
+		if (strcmp((char *) FKCatalogName, msetting_string(stmt->Dbc->settings, MP_DATABASE)) != 0) {
 			/* catalog name does not match the database name, so return no rows */
 			pos += snprintf(query + pos, querylen - pos, " and 1=2");
 		}

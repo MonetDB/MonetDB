@@ -104,11 +104,7 @@ get_serverinfo(ODBCDbc *dbc)
 			dbc->raw_strings = strcmp(v, "true") == 0;
 		} else {
 			assert(strcmp(n, "gdk_dbname") == 0);
-			assert(dbc->dbname == NULL ||
-			       strcmp(dbc->dbname, v) == 0);
-			if (dbc->dbname)
-				free(dbc->dbname);
-			dbc->dbname = strdup(v);
+			msetting_set_string(dbc->settings, MP_DATABASE, v);
 		}
 	}
 	mapi_close_handle(hdl);

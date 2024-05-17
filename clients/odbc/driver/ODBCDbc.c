@@ -187,10 +187,6 @@ destroyODBCDbc(ODBCDbc *dbc)
 	deleteODBCErrorList(&dbc->Error);
 	msettings_destroy(dbc->settings);
 	free(dbc->dsn);
-	free(dbc->uid);
-	free(dbc->pwd);
-	free(dbc->host);
-	free(dbc->dbname);
 
 	free(dbc);
 }

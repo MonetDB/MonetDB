@@ -54,11 +54,6 @@ typedef struct tODBCDRIVERDBC {
 	/* connection information */
 	msettings *settings;	/* All connection parameters */
 	char *dsn;		/* Data source name or NULL */
-	char *uid;		/* User ID or NULL */
-	char *pwd;		/* Password for User ID or NULL */
-	char *host;		/* Server host */
-	int port;		/* Server port */
-	char *dbname;		/* Database Name or NULL */
 	bool Connected;		/* whether we are connecte to a server */
 	bool has_comment;	/* whether the server has sys.comments */
 	bool allow_hugeint;	/* whether the application deals with HUGEINT */

@@ -72,22 +72,5 @@ SQLDisconnect(SQLHDBC ConnectionHandle)
 	free(dbc->dsn);
 	dbc->dsn = NULL;
 
-	if (dbc->uid) {
-		free(dbc->uid);
-		dbc->uid = NULL;
-	}
-	if (dbc->pwd) {
-		free(dbc->pwd);
-		dbc->pwd = NULL;
-	}
-	if (dbc->host) {
-		free(dbc->host);
-		dbc->host = NULL;
-	}
-	if (dbc->dbname) {
-		free(dbc->dbname);
-		dbc->dbname = NULL;
-	}
-
 	return SQL_SUCCESS;
 }
