@@ -55,12 +55,7 @@ newODBCDbc(ODBCEnv *env)
 	dbc = (ODBCDbc *) malloc(sizeof(ODBCDbc));
 	settings = msettings_create();
 
-	if (
-		dbc == NULL
-		|| settings == NULL
-		|| msetting_set_string(settings, MP_USER, "monetdb") != NULL
-		|| msetting_set_string(settings, MP_PASSWORD, "monetdb") != NULL
-	) {
+	if (dbc == NULL || settings == NULL) {
 		free(dbc);
 		msettings_destroy(settings);
 		/* Memory allocation error */
