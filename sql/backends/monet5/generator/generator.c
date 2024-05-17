@@ -176,7 +176,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || is_##TPE##_nil(f) || is_##TPE##_nil(l)) \
 			throw(MAL, "generator.table",								\
 			      SQLSTATE(42000) "Illegal generator range");			\
-		BUN n = (BUN) ((l - f) / s);									\
+		n = (BUN) ((l - f) / s);										\
 		if ((TPE) (n * s + f) != l)										\
 			n++;														\
 		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);						\
