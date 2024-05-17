@@ -45,6 +45,7 @@
 #define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((int) strcpy_len(buffer,default,bufferlen))
 #endif
 
+#define SUGGEST_BOOLEAN "{True,False}"
 
 const struct attr_setting attr_settings[] = {
 	{ "UID", "User", MP_USER },
@@ -53,12 +54,12 @@ const struct attr_setting attr_settings[] = {
 	{ "PORT", "Port", MP_PORT },
 	{ "HOST", "Host", MP_HOST },
 	{ "SOCK", "Unix Socket", MP_SOCK },
-	{ "TLS", "Encrypt", MP_TLS },
+	{ "TLS", "Encrypt", MP_TLS, .suggest_values = SUGGEST_BOOLEAN },
 	{ "CERT", "Server Certificate", MP_CERT },
 	{ "CERTHASH", "Server Certificate Hash", MP_CERTHASH },
 	{ "CLIENTKEY", "Client Key", MP_CLIENTKEY },
 	{ "CLIENTCERT", "Client Certificate", MP_CLIENTCERT },
-	{ "AUTOCOMMIT", "Autocommit", MP_AUTOCOMMIT },
+	{ "AUTOCOMMIT", "Autocommit", MP_AUTOCOMMIT, .suggest_values = SUGGEST_BOOLEAN },
 	{ "SCHEMA", "Schema", MP_SCHEMA },
 	{ "TIMEZONE", "Time Zone", MP_TIMEZONE },
 	{ "REPLYSIZE", "Reply Size", MP_REPLYSIZE },
@@ -241,7 +242,7 @@ lookup(const char *dsn, const struct attr_setting *entry, char *buf, size_t bufs
 }
 
 const char*
-takeSettingsFromDS(msettings *settings, const char *dsn)
+takeFromDataSource(ODBCDbc *dbc, msettings *settings, const char *dsn)
 {
 	char buf[1024] = { 0 };
 
@@ -255,11 +256,87 @@ takeSettingsFromDS(msettings *settings, const char *dsn)
 			const char *msg = msetting_parse(settings, parm, buf);
 			if (msg != NULL)
 				return msg;
+			dbc->setting_touched[(int)parm] = 1;
 		}
 	}
 
 	return NULL;
 }
+
+SQLRETURN
+takeFromConnString(
+	ODBCDbc *dbc,
+	msettings *settings,
+	const SQLCHAR *InConnectionString,
+	SQLSMALLINT StringLength1,
+	char **dsn_out)
+{
+	SQLRETURN rc = SQL_SUCCESS;
+	const char *sqlstate = NULL;
+	const char *sql_explanation = NULL;
+	const SQLCHAR *cursor;
+	SQLSMALLINT n;
+	char *dsn = NULL, *key = NULL, *attr = NULL;
+
+	// figure out the DSN and load its settings
+	cursor = InConnectionString;
+	n = StringLength1;
+	while (ODBCGetKeyAttr(&cursor, &n, &key, &attr) > 0) {
+		if (strcasecmp(key, "dsn") == 0) {
+			dsn = attr;
+			free(key);
+			break;
+		}
+		free(key);
+		free(attr);
+	}
+	key = NULL;
+	attr = NULL;
+	if (dsn) {
+		if (strlen(dsn) > SQL_MAX_DSN_LENGTH)
+			sqlstate = "IM010";    // Data source name too long
+		else
+			sqlstate = takeFromDataSource(dbc, settings, dsn);
+	}
+	if (sqlstate)
+		goto end;
+
+	// Override with settings from the connect string itself
+	cursor = InConnectionString;
+	n = StringLength1;
+	while (ODBCGetKeyAttr(&cursor, &n, &key, &attr) > 0) {
+		int i = attr_setting_lookup(key, true);
+		if (i >= 0) {
+			mparm parm = attr_settings[i].parm;
+			sql_explanation = msetting_parse(settings, parm, attr);
+			if (sql_explanation)
+				goto end;
+			dbc->setting_touched[(int)parm] = 1;
+		}
+		free(key);
+		free(attr);
+	}
+	key = NULL;
+	attr = NULL;
+
+	if (dsn && dsn_out) {
+		*dsn_out = dsn;
+		dsn = NULL;
+	}
+
+end:
+	if (sql_explanation && !sqlstate)
+		sqlstate = "HY009";
+	if (sqlstate) {
+		addDbcError(dbc, sqlstate, sql_explanation, 0);
+		rc = SQL_ERROR;
+	}
+	free(key);
+	free(attr);
+	free(dsn);
+	return rc;
+}
+
 
 SQLRETURN
 MNDBConnect(ODBCDbc *dbc,
@@ -310,7 +387,7 @@ MNDBConnect(ODBCDbc *dbc,
 
 	// data source settings take precedence over existing ones
 	if (dsn && *dsn) {
-		error_state = takeSettingsFromDS(settings, dsn);
+		error_state = takeFromDataSource(dbc, settings, dsn);
 		if (error_state != NULL)
 			goto failure;
 	}

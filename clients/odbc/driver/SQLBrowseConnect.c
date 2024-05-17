@@ -32,6 +32,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
+#include "ODBCAttrs.h"
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* strcasecmp */
 #endif
@@ -44,6 +45,24 @@
 #define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((int) strcpy_len(buffer,default,bufferlen))
 #endif
 
+static void
+suggest_settings(ODBCDbc *dbc, char **buf, size_t *pos, size_t *cap, char touched_as, const char *prefix)
+{
+	for (int i = 0; i < attr_setting_count; i++) {
+		const struct attr_setting *entry = &attr_settings[i];
+		mparm parm = entry->parm;
+		if (dbc->setting_touched[(int)parm] == touched_as) {
+			const char *sep = *pos > 0 ? ";" : "";
+			const char *values = entry->suggest_values ? entry->suggest_values : "?";
+			reallocprintf(
+				buf, pos, cap,
+				"%s%s%s:%s=%s",
+				sep, prefix, entry->name, entry->alt_name, values);
+		}
+	}
+}
+
+
 
 static SQLRETURN
 MNDBBrowseConnect(ODBCDbc *dbc,
@@ -53,179 +72,53 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 		  SQLSMALLINT BufferLength,
 		  SQLSMALLINT *StringLength2Ptr)
 {
-	char *key, *attr;
-	char *dsn, *uid, *pwd, *host, *dbname;
-	int port, mapToLongVarchar;
-	SQLSMALLINT len = 0;
-	char buf[1024];
-	int n;
 	SQLRETURN rc;
-#ifdef ODBCDEBUG
-	bool odbcdebug_changed = false;
-#endif
 
-	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
+	rc = MNDBDriverConnect(
+		dbc, NULL,
+		InConnectionString, StringLength1,
+		OutConnectionString, BufferLength, StringLength2Ptr,
+		SQL_DRIVER_NOPROMPT,
+		0
+	);
 
-#ifdef ODBCDEBUG
-	ODBCLOG(" \"%.*s\"\n", (int) StringLength1, (char*) InConnectionString);
-#endif
-
-	/* check connection state, should not be connected */
-	if (dbc->Connected) {
-		/* Connection name in use */
-		addDbcError(dbc, "08002", NULL, 0);
-		return SQL_ERROR;
+	if (SQL_SUCCEEDED(rc)) {
+		return rc;
 	}
 
-	dsn = dbc->dsn ? strdup(dbc->dsn) : NULL;
-	uid = dbc->uid ? strdup(dbc->uid) : NULL;
-	pwd = dbc->pwd ? strdup(dbc->pwd) : NULL;
-	host = dbc->host ? strdup(dbc->host) : NULL;
-	port = dbc->port;
-	dbname = dbc->dbname ? strdup(dbc->dbname) : NULL;
-	mapToLongVarchar = dbc->mapToLongVarchar;
+	// 0 = never touched, show it
+	// 1 = touched, do not show it
+	// 2 = show as mandatory
 
-	while ((n = ODBCGetKeyAttr(&InConnectionString, &StringLength1, &key, &attr)) > 0) {
-		if (strcasecmp(key, "dsn") == 0 && dsn == NULL) {
-			if (dsn)
-				free(dsn);
-			dsn = attr;
-		} else if (strcasecmp(key, "uid") == 0 && uid == NULL) {
-			if (uid)
-				free(uid);
-			uid = attr;
-		} else if (strcasecmp(key, "pwd") == 0 && pwd == NULL) {
-			if (pwd)
-				free(pwd);
-			pwd = attr;
-		} else if (strcasecmp(key, "host") == 0 && host == NULL) {
-			if (host)
-				free(host);
-			host = attr;
-		} else if (strcasecmp(key, "port") == 0 && port == 0) {
-			port = atoi(attr);
-			free(attr);
-		} else if (strcasecmp(key, "database") == 0 && dbname == NULL) {
-			if (dbname)
-				free(dbname);
-			dbname = attr;
-		} else if (strcasecmp(key, "mapToLongVarchar") == 0 && mapToLongVarchar == 0) {
-			mapToLongVarchar = atoi(attr);
-			free(attr);
-#ifdef ODBCDEBUG
-		} else if (strcasecmp(key, "logfile") == 0) {
-			setODBCdebug(attr, false);
-			free(attr);
-			odbcdebug_changed = true;
-#endif
-		} else
-			free(attr);
-		free(key);
-	}
-	if (n < 0)
-		goto nomem;
+	if (dbc->setting_touched[MP_USER] != 1)
+		dbc->setting_touched[MP_USER] = 2;
+	if (dbc->setting_touched[MP_PASSWORD] != 1)
+		dbc->setting_touched[MP_PASSWORD] = 2;
 
-	if (dsn) {
-		if (uid == NULL) {
-			n = SQLGetPrivateProfileString(dsn, "uid", "", buf, sizeof(buf), "odbc.ini");
-			if (n > 0 && buf[0]) {
-				uid = strdup(buf);
-				if (uid == NULL)
-					goto nomem;
-			}
-		}
-		if (pwd == NULL) {
-			n = SQLGetPrivateProfileString(dsn, "pwd", "", buf, sizeof(buf), "odbc.ini");
-			if (n > 0 && buf[0]) {
-				pwd = strdup(buf);
-				if (pwd == NULL)
-					goto nomem;
-			}
-		}
-		if (host == NULL) {
-			n = SQLGetPrivateProfileString(dsn, "host", "", buf, sizeof(buf), "odbc.ini");
-			if (n > 0 && buf[0]) {
-				host = strdup(buf);
-				if (host == NULL)
-					goto nomem;
-			}
-		}
-		if (port == 0) {
-			n = SQLGetPrivateProfileString(dsn, "port", "", buf, sizeof(buf), "odbc.ini");
-			if (n > 0 && buf[0]) {
-				port = atoi(buf);
-			}
-		}
-		if (dbname == NULL) {
-			n = SQLGetPrivateProfileString(dsn, "database", "", buf, sizeof(buf), "odbc.ini");
-			if (n > 0 && buf[0]) {
-				dbname = strdup(buf);
-				if (dbname == NULL)
-					goto nomem;
-			}
-		}
-#ifdef ODBCDEBUG
-		if (!odbcdebug_changed) {
-			/* if not set from InConnectionString argument
-			 * or environment, look in profile */
-			n = SQLGetPrivateProfileString(dsn, "logfile", "", buf, sizeof(buf), "odbc.ini");
-			if (n > 0 && buf[0]) {
-				setODBCdebug(buf, false);
-			}
-		}
-#endif
+	// Make MP_DATABASE mandatory if monetdbd asks for it.
+	for (ODBCError *err = dbc->Error; err != NULL; err = getErrorRec(err, 2)) {
+		if (strcmp("08001", getSqlState(err)) != 0)
+			continue;
+		if (strstr(getMessage(err), "monetdbd: please specify a database") == NULL)
+			continue;
+		dbc->setting_touched[MP_DATABASE] = 2;
 	}
 
-	if (uid != NULL && pwd != NULL) {
-		rc = MNDBConnect(dbc, (SQLCHAR *) dsn, SQL_NTS,
-				 (SQLCHAR *) uid, SQL_NTS,
-				 (SQLCHAR *) pwd, SQL_NTS,
-				 host, port, dbname,
-				 mapToLongVarchar);
-		if (SQL_SUCCEEDED(rc)) {
-			rc = ODBCConnectionString(rc, dbc, OutConnectionString,
-						  BufferLength,
-						  StringLength2Ptr,
-						  dsn, uid, pwd, host, port,
-						  dbname, mapToLongVarchar);
-		}
-	} else {
-		len = (SQLSMALLINT) strconcat_len(
-			(char *) OutConnectionString, BufferLength,
-			uid ? "" : "UID:Login ID=?;",
-			pwd ? "" : "PWD:Password=?;",
-			host ? "" : "*HOST:Server=?;",
-			port ? "" : "*PORT:Port=?;",
-			dbname ? "" : "*DATABASE:Database=?;",
-#ifdef ODBCDEBUG
-			ODBCdebug ? "" : "*LOGFILE:Logfile=?;",
-#endif
-			NULL);
+	char *buf = NULL;
+	size_t pos = 0;
+	size_t cap = 0;
+	suggest_settings(dbc, &buf, &pos, &cap, 2, "");    // mandatory first
+	suggest_settings(dbc, &buf, &pos, &cap, 0, "*");   // then optional
 
+	if (buf && pos) {
+		size_t n = strcpy_len((char*)OutConnectionString, buf, BufferLength);
 		if (StringLength2Ptr)
-			*StringLength2Ptr = len;
-
-		rc = SQL_NEED_DATA;
+			*StringLength2Ptr = n;
 	}
 
-  bailout:
-	if (dsn)
-		free(dsn);
-	if (uid)
-		free(uid);
-	if (pwd)
-		free(pwd);
-	if (host)
-		free(host);
-	if (dbname)
-		free(dbname);
-	return rc;
-
-  nomem:
-	/* Memory allocation error */
-	addDbcError(dbc, "HY001", NULL, 0);
-	rc = SQL_ERROR;
-	goto bailout;
+	free(buf);
+	clearDbcErrors(dbc);
+	return SQL_NEED_DATA;
 }
 
 SQLRETURN SQL_API

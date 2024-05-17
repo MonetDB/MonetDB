@@ -295,7 +295,7 @@ translateDriverCompletion(SQLUSMALLINT DriverCompletion)
 }
 #endif
 
-static SQLRETURN
+SQLRETURN
 MNDBDriverConnect(ODBCDbc *dbc,
 		  SQLHWND WindowHandle,
 		  const SQLCHAR *InConnectionString,
@@ -312,13 +312,11 @@ MNDBDriverConnect(ODBCDbc *dbc,
 	const char *sqlstate = NULL;
 	size_t out_len;
 	const char *scratch_no_alloc;
-	const SQLCHAR *cursor;
-	SQLSMALLINT n;
 
 	// These will be free'd at the end label
 	msettings *settings = NULL;
-	char *scratch_alloc;
-	char *key = NULL, *attr = NULL, *dsn = NULL;
+	char *scratch_alloc = NULL;
+	char *dsn = NULL;
 
 	/* check connection state, should not be connected */
 	if (dbc->Connected) {
@@ -352,56 +350,9 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		goto failure;
 	}
 
-	// figure out the DSN and load its settings
-	dsn = NULL;
-	cursor = InConnectionString;
-	n = StringLength1;
-	while (ODBCGetKeyAttr(&cursor, &n, &key, &attr) > 0) {
-		if (strcasecmp(key, "dsn") == 0) {
-			dsn = attr;
-			attr = NULL;  // avoid double free
-			free(key);
-			break;
-		}
-		free(key);
-		key = NULL;
-		free(attr);
-		attr = NULL;
-	}
-	if (dsn) {
-		if (strlen(dsn) > SQL_MAX_DSN_LENGTH) {
-			/* Data source name too long */
-			sqlstate = "IM010";
-			goto failure;
-		}
-		sqlstate = takeSettingsFromDS(settings, dsn);
-		if (sqlstate)
-			goto failure;
-	}
-
-	// Override with settings from the connect string itself
-	cursor = InConnectionString;
-	n = StringLength1;
-	while (ODBCGetKeyAttr(&cursor, &n, &key, &attr) > 0) {
-		int i = attr_setting_lookup(key, true);
-		if (i >= 0) {
-			mparm parm = attr_settings[i].parm;
-			scratch_no_alloc = msetting_parse(settings, parm, attr);
-			if (scratch_no_alloc) {
-				addDbcError(dbc, "HY009", scratch_no_alloc, 0);
-				rc = SQL_ERROR;
-				goto end;
-			}
-		}
-		free(key);
-		key = NULL;
-		free(attr);
-		attr = NULL;
-	}
-
-	scratch_no_alloc = msetting_string(settings, MP_LOGFILE);
-	if (*scratch_no_alloc)
-		setODBCdebug(scratch_no_alloc, false);
+	rc = takeFromConnString(dbc, settings, InConnectionString, StringLength1, &dsn);
+	if (!SQL_SUCCEEDED(rc))
+		goto end;
 
 	if (!msettings_validate(settings, &scratch_alloc)) {
 		addDbcError(dbc, "HY009", scratch_alloc, 0);
@@ -413,6 +364,10 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		assert(sqlstate == NULL);
 		goto end;
 	}
+
+	scratch_no_alloc = msetting_string(settings, MP_LOGFILE);
+	if (*scratch_no_alloc)
+		setODBCdebug(scratch_no_alloc, false);
 
 	rc = MNDBConnectSettings(dbc, settings);
 	if (!SQL_SUCCEEDED(rc))
@@ -446,8 +401,6 @@ end:
 	msettings_destroy(settings);
 	free(scratch_alloc);
 	free(dsn);
-	free(key);
-	free(attr);
 	return rc;
 }
 

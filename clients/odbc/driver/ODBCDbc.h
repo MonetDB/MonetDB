@@ -81,6 +81,7 @@ typedef struct tODBCDRIVERDBC {
 	/* can't use ODBCStmt *FirstStmt here because of ordering of
 	   include files */
 	struct tODBCDRIVERSTMT *FirstStmt;	/* first in list or NULL */
+	char setting_touched[MP__MAX];  /* for SQLBrowseConnect. set 0 on init, 1 on touch, other is up to SQLBrowseConnect */
 } ODBCDbc;
 
 
@@ -170,9 +171,11 @@ SQLRETURN MNDBSetConnectAttr(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER Valu
 extern char *ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN noscan);
 
 extern SQLRETURN MNDBConnectSettings(ODBCDbc *dbc, msettings *settings);
+extern SQLRETURN MNDBDriverConnect(ODBCDbc *dbc, SQLHWND WindowHandle, const SQLCHAR *InConnectionString, SQLSMALLINT StringLength1, SQLCHAR *OutConnectionString, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength2Ptr, SQLUSMALLINT DriverCompletion, int tryOnly);
 
 extern bool makeNulTerminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch);
-extern const char* takeSettingsFromDS(msettings *settings, const char *dsn);
+extern const char* takeFromDataSource(ODBCDbc *dbc, msettings *settings, const char *dsn);
+extern SQLRETURN takeFromConnString(ODBCDbc *dbc, msettings *settings, const SQLCHAR *InConnectionString, SQLSMALLINT StringLength1, char  **dsn_out);
 extern char* buildConnectionString(const char *dsn, const msettings *settings);
 
 

@@ -64,6 +64,7 @@ SQLDisconnect(SQLHDBC ConnectionHandle)
 
 	dbc->mid = NULL;
 	dbc->Connected = false;
+	memset(dbc->setting_touched, 0, sizeof(dbc->setting_touched));
 	dbc->cachelimit = 0;
 	dbc->Mdebug = 0;
 	dbc->has_comment = false;

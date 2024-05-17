@@ -116,9 +116,11 @@ main(int argc, char **argv)
 			exit_code = 1;
 			goto end;
 		}
-		printf("%s\n", (char*)prompt);
+		printf("\n%s\n\n", (char*)prompt);
 		exit_code = 2;
 		goto end;
+	} else if (SQL_SUCCEEDED(ret)) {
+		printf("\nOK\n\n");
 	}
 
 	exit_code = check(ret, SQL_HANDLE_DBC, conn, "SQLBrowseConnectA");

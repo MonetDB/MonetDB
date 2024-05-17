@@ -76,6 +76,7 @@ newODBCDbc(ODBCEnv *env)
 		/* add this dbc to start of the administrative linked dbc list */
 		.next = env->FirstDbc,
 		.Type = ODBC_DBC_MAGIC_NR,	/* set it valid */
+		.setting_touched = { 0 },
 	};
 	env->FirstDbc = dbc;
 	return dbc;
