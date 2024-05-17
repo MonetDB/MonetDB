@@ -369,7 +369,7 @@ MNDBDriverConnect(ODBCDbc *dbc,
 	if (*scratch_no_alloc)
 		setODBCdebug(scratch_no_alloc, false);
 
-	rc = MNDBConnectSettings(dbc, settings);
+	rc = MNDBConnectSettings(dbc, dsn, settings);
 	if (!SQL_SUCCEEDED(rc))
 		goto end; // not to 'failure', all errors have already been logged
 

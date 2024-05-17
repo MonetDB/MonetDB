@@ -469,7 +469,7 @@ MNDBConnect(ODBCDbc *dbc,
 
 	SQLRETURN ret;
 
-	ret = MNDBConnectSettings(dbc, settings);
+	ret = MNDBConnectSettings(dbc, dsn, settings);
 	if (SQL_SUCCEEDED(ret)) {
 		settings = NULL; // must not be free'd now
 	}
@@ -498,7 +498,7 @@ end:
 }
 
 SQLRETURN
-MNDBConnectSettings(ODBCDbc *dbc, msettings *settings)
+MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 {
 	Mapi mid = mapi_settings(settings);
 	if (mid) {
@@ -512,6 +512,9 @@ MNDBConnectSettings(ODBCDbc *dbc, msettings *settings)
 		addDbcError(dbc, error_state, error_explanation, 0);
 		return SQL_ERROR;
 	}
+
+	free(dbc->dsn);
+	dbc->dsn = dsn ? strdup(dsn) : NULL;
 
 	dbc->Connected = true;
 	dbc->mapToLongVarchar = msetting_long(settings, MP_MAPTOLONGVARCHAR);

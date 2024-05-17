@@ -69,10 +69,9 @@ SQLDisconnect(SQLHDBC ConnectionHandle)
 	dbc->Mdebug = 0;
 	dbc->has_comment = false;
 	dbc->raw_strings = false;
-	if (dbc->dsn) {
-		free(dbc->dsn);
-		dbc->dsn = NULL;
-	}
+	free(dbc->dsn);
+	dbc->dsn = NULL;
+
 	if (dbc->uid) {
 		free(dbc->uid);
 		dbc->uid = NULL;

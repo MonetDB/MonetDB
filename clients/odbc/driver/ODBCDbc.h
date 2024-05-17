@@ -170,7 +170,7 @@ SQLRETURN MNDBSetConnectAttr(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER Valu
  */
 extern char *ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN noscan);
 
-extern SQLRETURN MNDBConnectSettings(ODBCDbc *dbc, msettings *settings);
+extern SQLRETURN MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings);
 extern SQLRETURN MNDBDriverConnect(ODBCDbc *dbc, SQLHWND WindowHandle, const SQLCHAR *InConnectionString, SQLSMALLINT StringLength1, SQLCHAR *OutConnectionString, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength2Ptr, SQLUSMALLINT DriverCompletion, int tryOnly);
 
 extern bool makeNulTerminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch);
