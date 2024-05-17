@@ -525,7 +525,7 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 		hints.ai_family = AF_INET6;
 		ipv6_vs6only = 0;
 	}
-	char sport[8];				/* max "65535" */
+	char sport[16];				/* max "65535", but compiler doesn't know */
 	snprintf(sport, sizeof(sport), "%d", *portp);
 	for (;;) {					/* max twice */
 		int check = getaddrinfo(listenaddr, sport, &hints, &result);
