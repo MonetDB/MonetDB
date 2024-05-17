@@ -3779,10 +3779,10 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 				sql_rel *rp = rel_dup(m->data);
 				if (!is_project(rp->op))
 					rp = rel_project(v->sql->sa, rp, rel_projections(v->sql, rp, NULL, 1, 1));
-				rel_rename_exps(v->sql, l->exps, rp->exps);
-				if (l != ol) {
+				rel_rename_exps(v->sql, r->exps, rp->exps);
+				if (r != or) {
 					rp = rel_project(v->sql->sa, rp, NULL);
-					rp->exps = exps_copy(v->sql, ol->exps);
+					rp->exps = exps_copy(v->sql, or->exps);
 					set_processed(rp);
 				}
 				/* combine them */
@@ -3805,13 +3805,13 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 				sql_rel *pc = rel_dup(n->data);
 				if (!is_project(pc->op))
 					pc = rel_project(v->sql->sa, pc, rel_projections(v->sql, pc, NULL, 1, 1));
-				rel_rename_exps(v->sql, l->exps, pc->exps);
-				if (l != ol) {
+				rel_rename_exps(v->sql, r->exps, pc->exps);
+				if (r != or) {
 					pc = rel_project(v->sql->sa, pc, NULL);
-					pc->exps = exps_copy(v->sql, ol->exps);
+					pc->exps = exps_copy(v->sql, or->exps);
 					set_processed(pc);
 				}
-				pc = rel_crossproduct(v->sql->sa, pc, rel_dup(ol), rel->op);
+				pc = rel_crossproduct(v->sql->sa, rel_dup(ol), pc, rel->op);
 				pc->exps = exps_copy(v->sql, exps);
 				pc->attr = exps_copy(v->sql, attr);
 				set_processed(pc);
