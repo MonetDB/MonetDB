@@ -382,7 +382,7 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		goto failure;
 	out_len = strcpy_len((char*)OutConnectionString, scratch_alloc, BufferLength);
 	if (StringLength2Ptr)
-		*StringLength2Ptr = out_len;
+		*StringLength2Ptr = (SQLSMALLINT)out_len;
 	if (out_len + 1 > (size_t)BufferLength) {
 		addDbcError(dbc, "01004", NULL, 0);
 		rc = SQL_SUCCESS_WITH_INFO;

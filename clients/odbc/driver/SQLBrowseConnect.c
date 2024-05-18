@@ -113,7 +113,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	if (buf && pos) {
 		size_t n = strcpy_len((char*)OutConnectionString, buf, BufferLength);
 		if (StringLength2Ptr)
-			*StringLength2Ptr = n;
+			*StringLength2Ptr = (SQLSMALLINT)n;
 	}
 
 	free(buf);
