@@ -1803,7 +1803,8 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 			cleanup++;
 			if (lids[p] == -1)
 				continue;
-			if (BUNappend(dcatalog, &(oid){p}, true) != GDK_SUCCEED) {
+			if (BUNfnd(dcatalog, &(oid){p}) == BUN_NONE &&
+			    BUNappend(dcatalog, &(oid){p}, true) != GDK_SUCCEED) {
 				while (BATcount(dcatalog) > dcnt) {
 					if (BUNdelete(dcatalog, BATcount(dcatalog) - 1) != GDK_SUCCEED) {
 						TRC_CRITICAL(WAL, "delete after failed append failed\n");
