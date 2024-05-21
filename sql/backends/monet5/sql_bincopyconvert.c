@@ -333,7 +333,7 @@ static str
 load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 {
 	(void)byteswap;
-	const char *mal_operator = "sql.importColumn";
+	const char mal_operator[] = "sql.importColumn";
 	str msg = MAL_SUCCEED;
 	bstream *bs = NULL;
 	int tpe = BATttype(bat);
@@ -369,7 +369,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 			}
 			if (tpe == TYPE_str) {
 					if (width > 0) {
-						int w = UTF8_strwidth(start);
+						int w = UTF8_strlen(start);
 						if (w > width) {
 							msg = createException(SQL, "sql.importColumn", "string too wide for column");
 							goto end;
@@ -411,7 +411,7 @@ static str
 dump_zero_terminated_text(BAT *bat, stream *s, BUN start, BUN length, bool byteswap)
 {
 	(void)byteswap;
-	const char *mal_operator = "sql.export_bin_column";
+	const char mal_operator[] = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
 	int tpe = BATttype(bat);
 	assert(ATOMstorage(tpe) == TYPE_str); (void)tpe;
@@ -462,7 +462,7 @@ static str
 load_blob(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 {
 	(void)width;
-	const char *mal_operator = "sql.importColumn";
+	const char mal_operator[] = "sql.importColumn";
 	str msg = MAL_SUCCEED;
 	const blob *nil_value = ATOMnilptr(TYPE_blob);
 	blob *buffer = NULL;
@@ -549,7 +549,7 @@ end:
 static str
 dump_blob(BAT *bat, stream *s, BUN start, BUN length, bool byteswap)
 {
-	const char *mal_operator = "sql.export_bin_column";
+	const char mal_operator[] = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
 	int tpe = BATttype(bat);
 	assert(ATOMstorage(tpe) == TYPE_blob); (void)tpe;

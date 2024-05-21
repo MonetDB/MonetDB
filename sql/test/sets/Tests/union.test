@@ -1,0 +1,39 @@
+statement ok
+CREATE TABLE capitals (city VARCHAR, country VARCHAR)
+
+statement ok
+INSERT INTO capitals VALUES ('Amsterdam', 'NL'), ('Berlin', 'Germany')
+
+statement ok
+CREATE TABLE weather (city VARCHAR, degrees INTEGER, date DATE)
+
+statement ok
+INSERT INTO weather VALUES ('Amsterdam', 10, '2022-10-14'), ('Seattle', 8, '2022-10-12')
+
+query T
+SELECT * FROM capitals UNION ALL CORRESPONDING SELECT * FROM weather
+----
+Amsterdam
+Berlin
+Amsterdam
+Seattle
+
+query TTIT
+SELECT * FROM capitals OUTER UNION ALL CORRESPONDING SELECT * FROM weather
+----
+Amsterdam
+NL
+NULL
+NULL
+Berlin
+Germany
+NULL
+NULL
+Amsterdam
+NULL
+10
+2022-10-14
+Seattle
+NULL
+8
+2022-10-12

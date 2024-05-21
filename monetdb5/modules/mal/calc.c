@@ -67,7 +67,7 @@ CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDvarADDstr(str *ret, str *s1, str *s2)
+CMDvarADDstr(str *ret, const char *const *s1, const char *const *s2)
 {
 	str s;
 	size_t l1;
@@ -89,7 +89,7 @@ CMDvarADDstr(str *ret, str *s1, str *s2)
 
 
 static str
-CMDvarADDstrint(str *ret, str *s1, int *i)
+CMDvarADDstrint(str *ret, const char *const *s1, const int *i)
 {
 	str s;
 	size_t len;
@@ -345,7 +345,7 @@ CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDstrlength(int *ret, str *v)
+CMDstrlength(int *ret, const char *const *v)
 {
 	size_t l = strlen(*v);
 

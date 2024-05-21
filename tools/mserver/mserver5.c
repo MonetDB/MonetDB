@@ -680,10 +680,19 @@ main(int argc, char **av)
 			if (p != NULL) {
 				*p = '\0';
 				for (int i = 0; libdirs[i] != NULL; i++) {
-					int len =
-							snprintf(prmodpath, sizeof(prmodpath),
-									 "%s%c%s%cmonetdb5",
-									 binpath, DIR_SEP, libdirs[i], DIR_SEP);
+					int len = snprintf(prmodpath, sizeof(prmodpath),
+									   "%s%c%s%cmonetdb5-%s",
+									   binpath, DIR_SEP, libdirs[i], DIR_SEP,
+									   MONETDB_VERSION);
+					if (len == -1 || len >= FILENAME_MAX)
+						continue;
+					if (MT_stat(prmodpath, &sb) == 0) {
+						modpath = prmodpath;
+						break;
+					}
+					len = snprintf(prmodpath, sizeof(prmodpath),
+									   "%s%c%s%cmonetdb5",
+									   binpath, DIR_SEP, libdirs[i], DIR_SEP);
 					if (len == -1 || len >= FILENAME_MAX)
 						continue;
 					if (MT_stat(prmodpath, &sb) == 0) {

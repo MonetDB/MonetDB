@@ -54,6 +54,14 @@ create function sys.generate_series(first decimal(10,2), "limit" decimal(10,2), 
 returns table (value decimal(10,2))
 external name generator.series;
 
+create function sys.generate_series(first date, "limit" date, stepsize interval month)
+returns table (value date)
+external name generator.series;
+
+create function sys.generate_series(first date, "limit" date, stepsize interval day)
+returns table (value date)
+external name generator.series;
+
 create function sys.generate_series(first timestamp, "limit" timestamp, stepsize interval second)
 returns table (value timestamp)
 external name generator.series;

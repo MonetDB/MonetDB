@@ -1007,8 +1007,7 @@ SQLload_parse_row(READERtask *task, int idx)
 			/* check for user defined NULL string */
 			if ((!quote || !fmt->null_length) && fmt->nullstr
 				&& task->fields[i][idx]
-				&& strncasecmp(task->fields[i][idx], fmt->nullstr,
-							   fmt->null_length + 1) == 0)
+				&& GDKstrcasecmp(task->fields[i][idx], fmt->nullstr) == 0)
 				task->fields[i][idx] = 0;
 		}
 	} else {
@@ -1045,8 +1044,7 @@ SQLload_parse_row(READERtask *task, int idx)
 			;
 			/* check for user defined NULL string */
 			if (fmt->nullstr && task->fields[i][idx]
-				&& strncasecmp(task->fields[i][idx], fmt->nullstr,
-							   fmt->null_length + 1) == 0) {
+				&& GDKstrcasecmp(task->fields[i][idx], fmt->nullstr) == 0) {
 				task->fields[i][idx] = 0;
 			}
 		}

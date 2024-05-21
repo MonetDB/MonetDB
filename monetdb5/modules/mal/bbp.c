@@ -132,7 +132,7 @@ CMDgetPageSize(int *ret)
 }
 
 static str
-CMDbbpName(str *ret, bat *bid)
+CMDbbpName(str *ret, const bat *bid)
 {
 	*ret = (str) GDKstrdup(BBP_logical(*bid));
 	if (*ret == NULL)
@@ -372,14 +372,14 @@ CMDbbpLRefCount(bat *ret)
 }
 
 static str
-CMDbbpgetIndex(int *res, bat *bid)
+CMDbbpgetIndex(int *res, const bat *bid)
 {
 	*res = *bid;
 	return MAL_SUCCEED;
 }
 
 static str
-CMDgetBATrefcnt(int *res, bat *bid)
+CMDgetBATrefcnt(int *res, const bat *bid)
 {
 	BAT *b;
 
@@ -392,7 +392,7 @@ CMDgetBATrefcnt(int *res, bat *bid)
 }
 
 static str
-CMDgetBATlrefcnt(int *res, bat *bid)
+CMDgetBATlrefcnt(int *res, const bat *bid)
 {
 	BAT *b;
 
@@ -515,7 +515,7 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 }
 
 static str
-CMDsetName(str *rname, const bat *bid, str *name)
+CMDsetName(str *rname, const bat *bid, const char *const *name)
 {
 	BAT *b;
 	if ((b = BATdescriptor(*bid)) == NULL) {

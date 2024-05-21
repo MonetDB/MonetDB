@@ -59,6 +59,7 @@ target_compile_definitions(mapi
 
 set_target_properties(mapi
   PROPERTIES
+  OUTPUT_NAME mapi-${MONETDB_VERSION}
   VERSION ${MAPI_VERSION}
   SOVERSION ${MAPI_VERSION_MAJOR}
   PUBLIC_HEADER "mapi.h;mapi_querytype.h;msettings.h")

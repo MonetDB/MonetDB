@@ -624,31 +624,31 @@ query I rowsort
 SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2)
 ----
 
-statement error 42000!Cannot match a tuple to a single value
+statement error 42000!syntax error, unexpected sqlINT, expecting SELECT or '(' or VALUES or WITH in: "select (1,2) in (1"
 SELECT (1,2) IN (1,2)
 
-statement error 42000!Cannot match a tuple to a single value
+statement error 42000!syntax error, unexpected sqlINT, expecting SELECT or '(' or VALUES or WITH in: "select (1,2) in (1"
 SELECT (1,2) IN (1)
 
 statement error 42000!Subquery has too few columns
 SELECT (col1, col2) IN (VALUES (1)) FROM another_T
 
-statement error 42000!Cannot match a tuple to a single value
+statement error 42000!syntax error, unexpected sqlINT, expecting SELECT or '(' or VALUES or WITH in: "select (col1, col2) in (1"
 SELECT (col1, col2) IN (1) FROM another_T
 
-statement error 42000!Cannot match a tuple to a single value
+statement error 42000!syntax error, unexpected sqlINT, expecting SELECT or '(' or VALUES or WITH in: "select col1 from another_t where (col2, col3) in (1"
 SELECT col1 FROM another_T WHERE (col2, col3) IN (1,2,3)
 
-statement error 42000!Cannot match a tuple to a single value
+statement error 42000!Subquery has too few columns
 SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1)
 
-statement error 42000!Cannot match a tuple to a single value
+statement error 42000!Subquery has too few columns
 SELECT col1 FROM another_T WHERE (col2, 1) IN (SELECT 1)
 
-statement error 42000!Cannot match a tuple to a single value
+statement error 42000!Subquery has too few columns
 SELECT col1 FROM another_T WHERE (1, col2) IN (SELECT 1)
 
-statement error 42000!Cannot match a tuple to a single value
+statement error 42000!Subquery has too few columns
 SELECT col1 FROM another_T WHERE (1, 1) IN (SELECT 1)
 
 statement error 42000!SELECT: subquery must return only one column

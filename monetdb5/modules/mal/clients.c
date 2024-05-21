@@ -479,9 +479,11 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng timeout_micro = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK
 				&& qto == 1 ? 1000 : (lng) qto * 1000000;
 		mal_clients[idx].querytimeout = timeout_micro;
-		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		if (qry_ctx) {
-			qry_ctx->endtime = qry_ctx->starttime && timeout_micro ? qry_ctx->starttime + timeout_micro : 0;
+		if (timeout_micro != 1000) {
+			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+			if (qry_ctx) {
+				qry_ctx->endtime = qry_ctx->starttime && timeout_micro ? qry_ctx->starttime + timeout_micro : 0;
+			}
 		}
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -580,7 +582,7 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * with a message from the interpreter.
  * This value should be set to minutes to avoid a lengthly log */
 static str
-CLTsetPrintTimeout(void *ret, int *secs)
+CLTsetPrintTimeout(void *ret, const int *secs)
 {
 	(void) ret;
 	if (is_int_nil(*secs))
@@ -591,7 +593,7 @@ CLTsetPrintTimeout(void *ret, int *secs)
 }
 
 static str
-CLTmd5sum(str *ret, str *pw)
+CLTmd5sum(str *ret, const char *const *pw)
 {
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
@@ -609,7 +611,7 @@ CLTmd5sum(str *ret, str *pw)
 }
 
 static str
-CLTsha1sum(str *ret, str *pw)
+CLTsha1sum(str *ret, const char *const *pw)
 {
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
@@ -627,7 +629,7 @@ CLTsha1sum(str *ret, str *pw)
 }
 
 static str
-CLTripemd160sum(str *ret, str *pw)
+CLTripemd160sum(str *ret, const char *const *pw)
 {
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
@@ -645,7 +647,7 @@ CLTripemd160sum(str *ret, str *pw)
 }
 
 static str
-CLTsha2sum(str *ret, str *pw, int *bits)
+CLTsha2sum(str *ret, const char *const *pw, const int *bits)
 {
 	if (strNil(*pw) || is_int_nil(*bits)) {
 		*ret = GDKstrdup(str_nil);
@@ -680,7 +682,7 @@ CLTsha2sum(str *ret, str *pw, int *bits)
 }
 
 static str
-CLTbackendsum(str *ret, str *pw)
+CLTbackendsum(str *ret, const char *const *pw)
 {
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);

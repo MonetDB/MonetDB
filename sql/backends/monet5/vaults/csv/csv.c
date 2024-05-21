@@ -77,7 +77,7 @@ detect_quote(const char *buf)
 static char
 detect_delimiter(const char *buf, char q, int *nr_fields)
 {
-	const char *delimiter = ",|;\t";
+	const char delimiter[] = ",|;\t";
 	int cnts[DLEN][2] = { 0 }, l = 0;
 
 	const char *cur = buf;
@@ -568,4 +568,3 @@ static mel_func csv_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_csv_mal)
 { mal_module("csv", NULL, csv_init_funcs); }
-

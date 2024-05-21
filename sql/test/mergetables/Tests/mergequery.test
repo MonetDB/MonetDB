@@ -67,10 +67,10 @@ statement ok
 alter table part2 set read only
 
 statement ok
-analyze sys.part1 (x,y,z) minmax
+analyze sys.part1 (x,y,z)
 
 statement ok
-analyze sys.part2 (x,y,z) minmax
+analyze sys.part2 (x,y,z)
 
 query RRR rowsort
 SELECT * FROM complete where x>=0.0 AND x <=1.0
