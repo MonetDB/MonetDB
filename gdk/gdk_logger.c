@@ -1038,6 +1038,7 @@ log_read_types_file(logger *lg, FILE *fp)
 {
 	int id = 0;
 	char atom_name[IDLENGTH];
+	bool seen_geom = false;
 
 	/* scanf should use IDLENGTH somehow */
 	while (fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
@@ -1047,9 +1048,17 @@ log_read_types_file(logger *lg, FILE *fp)
 			GDKerror("unknown type in log file '%s'\n", atom_name);
 			return GDK_FAIL;
 		}
+		seen_geom |= strcmp(atom_name, "mbr") == 0 || strcmp(atom_name, "wkb") == 0;
 		lg->type_id[i] = (int8_t) id;
 		lg->type_nr[id < 0 ? 256 + id : id] = i;
 	}
+#ifdef HAVE_GEOM
+	if (!seen_geom && ATOMindex("mbr") > 0) {
+		GDKerror("incompatible database: server supports GEOM, but database does not\n");
+		return GDK_FAIL;
+	}
+#endif
+	(void) seen_geom;
 	return GDK_SUCCEED;
 }
 
