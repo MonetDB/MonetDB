@@ -24,6 +24,7 @@
 #define CATALOG_JUL2021 52300	/* first in Jul2021 */
 #define CATALOG_JAN2022 52301	/* first in Jan2022 */
 #define CATALOG_SEP2022 52302	/* first in Sep2022 */
+#define CATALOG_FIRST_AFTER_DEC2023 52303	/* first after Dec2023 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
