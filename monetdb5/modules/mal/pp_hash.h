@@ -143,7 +143,6 @@ typedef struct hash_payload {
 
 	hash_table *parent;
 	int bits;
-	size_t nr_slots;
 	size_t nr_payloads;
 	gid mask;
 	mallocator **allocators;
@@ -151,10 +150,10 @@ typedef struct hash_payload {
 } hash_payload;
 
 extern lng str_hsh(str v);
-extern hash_table *ht_create(int type, int size, bool freq, hash_table *p);
+extern hash_table *ht_create(int type, size_t size, bool freq, hash_table *p);
 extern void ht_rehash(hash_table *ht);
 
-extern hash_payload *hp_create(int type, size_t nr_slots, size_t nr_payloads, hash_table *p);
+extern hash_payload *hp_create(int type, size_t nr_payloads, hash_table *p);
 extern void hp_rehash(hash_payload *hp);
 
 #endif /*_PP_HASH_H_*/

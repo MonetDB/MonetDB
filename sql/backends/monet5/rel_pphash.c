@@ -18,6 +18,28 @@
 #include "bin_partition_by_value.h"
 #include "opt_prelude.h"
 
+static lng
+get_max_bt_count(mvc *sql, sql_rel *rel, lng max)
+{
+	lng cur_max = max;
+
+	if (rel->op == op_basetable) {
+		sql_table *t = rel->l;
+		if (t && isTable(t)) {
+			sqlstore *store = sql->session->tr->store;
+			lng nr =  (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
+			assert(nr >= 0);
+			return nr > max? nr : max;
+		}
+	} else {
+		if (rel->l)
+			cur_max = get_max_bt_count(sql, rel->l, cur_max);
+		if (rel->r)
+			cur_max = get_max_bt_count(sql, rel->r, cur_max);
+	}
+	return cur_max;
+}
+
 /* Initiate the global variables for the hash-table results (HSHres_hts and
  * HSHres_hps) and the hash-join results (JNres_hshs and JNres_prbs).
  */
@@ -29,15 +51,15 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 	mvc *sql = be->mvc;
 	int curhash = 0;
 	int err = 1;
-	BUN hsh_est = get_rel_count(rel_hsh);
-	BUN prb_est = get_rel_count(rel_prb);
+	lng hsh_est = get_max_bt_count(be->mvc, rel_hsh, 0);
+	lng prb_est = get_max_bt_count(be->mvc, rel_prb, 0);
 
 	// TODO better estimation
-	if (hsh_est == BUN_NONE || (ulng) hsh_est >= (ulng) GDK_lng_max - 1) {
+	if (hsh_est == 0 || hsh_est >= GDK_int_max) {
 		hsh_est = 85000000;
 	}
-	if (prb_est == BUN_NONE || (ulng) prb_est >= (ulng) GDK_lng_max - 1) {
-		prb_est = 85000000;
+	if (prb_est == 0 || prb_est >= GDK_int_max) {
+		prb_est = 4200000;
 	}
 
 	/* hash-side join-res */
@@ -82,8 +104,8 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 	for (node *n = exps_hsh_hp->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 
-		// TODO better and separate est. for nr_slots and pld_size
-		InstrPtr q = stmt_oahash_new_payload(be, t->type->localtype, hsh_est, hsh_est, curhash, previous);
+		// TODO better and separate est. for pld_size
+		InstrPtr q = stmt_oahash_new_payload(be, t->type->localtype, hsh_est, curhash, previous);
 		if (q == NULL) return err;
 		q->inout = 0;
 		append(*HSHres_hps, q);

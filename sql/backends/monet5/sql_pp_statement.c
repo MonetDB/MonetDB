@@ -409,7 +409,7 @@ stmt_unique_sharedout(backend *be, stmt *s, int output)
 }
 
 InstrPtr
-stmt_oahash_new(backend *be, int tt, lng estimate, bit freq, int parent)
+stmt_oahash_new(backend *be, int tt, int estimate, bit freq, int parent)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), newRef);
 	if (q == NULL)
@@ -419,7 +419,7 @@ stmt_oahash_new(backend *be, int tt, lng estimate, bit freq, int parent)
 
 	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* ht_sink */
 	q = pushType(be->mb, q, tt);
-	q = pushInt(be->mb, q, (int)estimate);
+	q = pushInt(be->mb, q, estimate);
 	q = pushBit(be->mb, q, freq);
 	if (parent)
 		q = pushArgument(be->mb, q, parent);
@@ -428,15 +428,14 @@ stmt_oahash_new(backend *be, int tt, lng estimate, bit freq, int parent)
 }
 
 InstrPtr
-stmt_oahash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent, int previous)
+stmt_oahash_new_payload(backend *be, int tt, int pld_size, int parent, int previous)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("new_payload"), 5);
 	if (q == NULL) return NULL;
 
 	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* hp_sink */
 	q = pushType(be->mb, q, tt);
-	q = pushLng(be->mb, q, nr_slots);
-	q = pushLng(be->mb, q, pld_size);
+	q = pushInt(be->mb, q, pld_size);
 	q = pushArgument(be->mb, q, parent);
 	// TODO find a better way than 'previous' to work around the commomTerms optimiser
 	q = pushArgument(be->mb, q, previous);

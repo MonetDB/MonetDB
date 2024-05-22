@@ -11,8 +11,8 @@
 #ifndef _SQL_PP_STATEMENT_H_
 #define _SQL_PP_STATEMENT_H_
 
-extern InstrPtr stmt_oahash_new(backend *be, int tt, lng estimate, bit freq, int parent);
-extern InstrPtr stmt_oahash_new_payload(backend *be, int tt, lng nr_slots, lng pld_size, int parent, int previous);
+extern InstrPtr stmt_oahash_new(backend *be, int tt, int estimate, bit freq, int parent);
+extern InstrPtr stmt_oahash_new_payload(backend *be, int tt, int pld_size, int parent, int previous);
 extern InstrPtr stmt_oahash_build_table(backend *be, int ht_sink, int key, stmt *pp);
 extern InstrPtr stmt_oahash_build_combined_table(backend *be, int ht_sink, int key, int prnt_sltid, int prnt_ht, stmt *pp);
 extern stmt *stmt_oahash_add_payload(backend *be, InstrPtr hp_sink, stmt *payload, int payload_pos, stmt *pp);

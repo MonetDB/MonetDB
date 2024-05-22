@@ -126,7 +126,7 @@ ht_destroy(hash_table *ht)
 }
 
 static hash_table *
-_ht_create( int type, int size, bool freq, hash_table *p)
+_ht_create( int type, size_t size, bool freq, hash_table *p)
 {
 	hash_table *h = (hash_table*)GDKzalloc(sizeof(hash_table));
 	if (!h)
@@ -165,7 +165,7 @@ _ht_create( int type, int size, bool freq, hash_table *p)
 }
 
 hash_table *
-ht_create(int type, int size, bool freq, hash_table *p)
+ht_create(int type, size_t size, bool freq, hash_table *p)
 {
 	if (size < HT_MIN_SIZE)
 		size = HT_MIN_SIZE;
@@ -237,7 +237,7 @@ hp_destroy(hash_payload *hp)
 }
 
 static hash_payload *
-_hp_create(int type, size_t nslots, size_t nplds, hash_table *parent)
+_hp_create(int type, size_t nplds, hash_table *parent)
 {
 	hash_payload *hp = (hash_payload *)GDKzalloc(sizeof(hash_payload));
 	if (!hp) return NULL;
@@ -250,7 +250,6 @@ _hp_create(int type, size_t nslots, size_t nplds, hash_table *parent)
 	if (bits >= GIDBITS)
 		bits = GIDBITS-1;
 	hp->bits = bits;
-	hp->nr_slots = nslots;
 	hp->nr_payloads = (gid)1<<bits;
 	hp->mask = hp->nr_payloads-1;
 	hp->type = type;
@@ -278,22 +277,15 @@ _hp_create(int type, size_t nslots, size_t nplds, hash_table *parent)
 /* Returns NULL if a memory allocation has failed.
  */
 hash_payload *
-hp_create(int type, size_t nslots, size_t nplds, hash_table *parent)
+hp_create(int type, size_t nplds, hash_table *parent)
 {
-	if (nslots < parent->last)
-		nslots = parent->last;
-	if (nslots < HP_MIN_SIZE)
-		nslots = HP_MIN_SIZE;
-	if (nslots > HP_MAX_SIZE)
-		nslots = HP_MAX_SIZE;
-
 	if (nplds < parent->size)
 		nplds = parent->size;
 	if (nplds < HP_MIN_SIZE)
 		nplds = HP_MIN_SIZE;
 	if (nplds > HP_MAX_SIZE)
 		nplds = HP_MAX_SIZE;
-	return _hp_create(type, nslots, nplds, parent);
+	return _hp_create(type, nplds, parent);
 }
 
 void
@@ -311,9 +303,8 @@ OAHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	bat *res = getArgReference_bat(s, p, 0);
 	int tt = getArgType(m, p, 1);
-	size_t nslots = *getArgReference_lng(s, p, 2);
-	size_t nplds = *getArgReference_lng(s, p, 3);
-	bat pid = *getArgReference_bat(s, p, 4);
+	int nplds = *getArgReference_int(s, p, 2);
+	bat pid = *getArgReference_bat(s, p, 3);
 	str err = NULL;
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
@@ -327,7 +318,7 @@ OAHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	}
 	hash_table *parent = (hash_table*)prnt->T.sink;
 
-	b->T.sink = (Sink *)hp_create(tt, nslots*1.2*2.1, nplds*1.2*2.1, parent);
+	b->T.sink = (Sink *)hp_create(tt, nplds*1.2*2.1, parent);
 	if (!b->T.sink) {
 		err = createException(MAL, "oahash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
@@ -739,7 +730,7 @@ OAHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 					err = createException(MAL, "oahash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				}
 		}
-		if (!err) 
+		if (!err)
 			TIMEOUT_CHECK(qry_ctx, throw(MAL, "oahash.build_table", RUNTIME_QRY_TIMEOUT));
 	}
 	if (err || p->p->status) {
@@ -1280,7 +1271,7 @@ error:
 
 #define hp_check_rehash() \
 	do { \
-		if (ppos[i] >= (gid)hp->nr_slots) { \
+		if (ppos[i] >= (gid)hp->nr_payloads) { \
 			hp->rehash = 1; \
 			err = createException(MAL, "oahash.add_payload", "hash payload needs rehash"); \
 			goto error; \
@@ -1576,7 +1567,7 @@ OAHASHhash(bat *hsh, bat *key, const ptr *H)
 				fhash(dbl, lng);
 				break;
 			default:
-				if (ATOMvarsized(tt)) {	
+				if (ATOMvarsized(tt)) {
 					ahash();
 				} else {
 					err = createException(MAL, "oahash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
@@ -2472,7 +2463,7 @@ static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",int))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",int),arg("freq",bit))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,5, batargany("ht_sink",1),argany("tt",1),arg("size",int),arg("freq",bit),batargany("p",2))),
- pattern("oahash", "new_payload", OAHASHnew_payload, false, "", args(1,6, batargany("hp_sink",1),argany("tt",1),arg("nr_slots",lng),arg("nr_payloads",lng),batargany("parent",2), batargany("dummy",3))),
+ pattern("oahash", "new_payload", OAHASHnew_payload, false, "", args(1,5, batargany("hp_sink",1),argany("tt",1),arg("nr_payloads",int),batargany("parent",2), batargany("dummy",3))),
 
  command("oahash", "build_table", OAHASHbuild_table, false, "Build a hash table for the given column. Returns the slot ID for each key and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
  command("oahash", "build_combined_table", OAHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
