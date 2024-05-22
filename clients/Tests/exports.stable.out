@@ -752,6 +752,7 @@ mparm mparm_parse(const char *name);
 char *msetting_as_string(const msettings *mp, mparm parm);
 bool msetting_bool(const msettings *mp, mparm parm);
 long msetting_long(const msettings *mp, mparm parm);
+const char *msetting_parm_name(const msettings *mp, mparm parm);
 msettings_error msetting_parse(msettings *mp, mparm parm, const char *text);
 int msetting_parse_bool(const char *text);
 msettings_error msetting_set_bool(msettings *mp, mparm parm, bool value);
@@ -775,6 +776,7 @@ const msettings *msettings_default;
 msettings *msettings_destroy(msettings *mp);
 bool msettings_malloc_failed(msettings_error err);
 bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer);
+void msettings_set_localizer(msettings *mp, const char *(*localizer)(const void *data, mparm parm), void *data);
 bool msettings_validate(msettings *mp, char **errmsg);
 const char *wsaerror(int);
 
