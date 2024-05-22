@@ -82,14 +82,15 @@ attr_setting_lookup(const char *attr_name, bool allow_alt_name)
 }
 
 
-static void
+static SQLRETURN
 get_serverinfo(ODBCDbc *dbc)
 {
-	MapiHdl hdl;
+	MapiHdl hdl = NULL;
+	SQLRETURN rc; // intentionally uninitialized
 	char *n, *v;
 
 	if ((hdl = mapi_query(dbc->mid, "select name, value from sys.env() where name in ('monet_version', 'gdk_dbname', 'max_clients', 'raw_strings')")) == NULL)
-		return;
+		goto end;
 	dbc->raw_strings = false;
 	while (mapi_fetch_row(hdl)) {
 		n = mapi_fetch_field(hdl, 0);
@@ -107,15 +108,27 @@ get_serverinfo(ODBCDbc *dbc)
 			msetting_set_string(dbc->settings, MP_DATABASE, v);
 		}
 	}
+	if (mapi_error(dbc->mid))
+		goto end;
 	mapi_close_handle(hdl);
 	if ((hdl = mapi_query(dbc->mid, "select id from sys._tables where name = 'comments' and schema_id = (select id from sys.schemas where name = 'sys')")) == NULL)
-		return;
+		goto end;
+	if (mapi_error(dbc->mid))
+		goto end;
 	n = NULL;
 	while (mapi_fetch_row(hdl)) {
 		n = mapi_fetch_field(hdl, 0);
 	}
 	dbc->has_comment = n != NULL;
+
+	rc = SQL_SUCCESS;
+end:
+	if (mapi_error(dbc->mid)) {
+		addDbcError(dbc, "08001", mapi_error_str(dbc->mid), 0);
+		rc = SQL_ERROR;
+	}
 	mapi_close_handle(hdl);
+	return rc;
 }
 
 
@@ -496,7 +509,9 @@ end:
 SQLRETURN
 MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 {
+	SQLRETURN rc;
 	msettings *clone = msettings_clone(settings);
+
 	if (clone == NULL) {
 		addDbcError(dbc, "HY001", NULL, 0);
 		return SQL_ERROR;
@@ -529,7 +544,9 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 
 	dbc->Connected = true;
 
-	get_serverinfo(dbc);
+	rc = get_serverinfo(dbc);
+	if (!SQL_SUCCEEDED(rc))
+		return rc;
 
 	/* set timeout after we're connected */
 	mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout * 1000);
