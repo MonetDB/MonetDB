@@ -64,6 +64,8 @@ const struct attr_setting attr_settings[] = {
 	{ "TIMEZONE", "Time Zone", MP_TIMEZONE },
 	{ "REPLYSIZE", "Reply Size", MP_REPLYSIZE },
 	{ "LOGFILE", "Log File", MP_LOGFILE },
+	{ "LOGINTIMEOUT", "Login Timeout", MP_CONNECT_TIMEOUT},
+	{ "CONNECTIONTIMEOUT", "Connection Timeout", MP_REPLY_TIMEOUT},
 };
 
 const int attr_setting_count = sizeof(attr_settings) / sizeof(attr_settings[0]);
