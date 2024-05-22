@@ -39,3 +39,23 @@ create table baz(j int check (j > (select max(i) from foo)))
 
 statement error
 create table baz(j int check (j in (select i from foo)))
+
+-- exported from check-constraint.Bug-3335
+
+statement ok
+create table t3335(x integer check(x > 0 and x < 2))
+
+statement ok
+insert into t3335 values(1)
+
+statement error
+insert into t3335 values(0)
+
+statement error
+insert into t3335 values(2)
+
+statement error
+insert into t3335 values(-1)
+
+statement error
+insert into t3335 values(3)
