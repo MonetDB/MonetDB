@@ -61,7 +61,6 @@ typedef struct tODBCDRIVERDBC {
 	int mapToLongVarchar;	/* when > 0 we map WVARCHAR to WLONGVARCHAR, default 0 */
 	SQLUINTEGER sql_attr_autocommit;
 	SQLUINTEGER sql_attr_metadata_id;
-	SQLUINTEGER sql_attr_connection_timeout;
 
 	/* MonetDB connection handle & status information */
 	Mapi mid;		/* connection with server */

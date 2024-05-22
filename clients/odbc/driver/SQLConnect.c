@@ -550,9 +550,6 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 
-	/* set timeout after we're connected */
-	mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout * 1000);
-
 	return SQL_SUCCESS;
 }
 
