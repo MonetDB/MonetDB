@@ -86,6 +86,7 @@ by_name[] = {
 	{ .name="certhash", .parm=MP_CERTHASH },
 	{ .name="clientcert", .parm=MP_CLIENTCERT },
 	{ .name="clientkey", .parm=MP_CLIENTKEY },
+	{ .name="connect_timeout", .parm=MP_CONNECT_TIMEOUT },
 	{ .name="database", .parm=MP_DATABASE },
 	{ .name="host", .parm=MP_HOST },
 	{ .name="language", .parm=MP_LANGUAGE },
@@ -93,6 +94,7 @@ by_name[] = {
 	{ .name="password", .parm=MP_PASSWORD },
 	{ .name="port", .parm=MP_PORT },
 	{ .name="replysize", .parm=MP_REPLYSIZE },
+	{ .name="reply_timeout", .parm=MP_REPLY_TIMEOUT },
 	{ .name="fetchsize", .parm=MP_REPLYSIZE },
 	{ .name="schema", .parm=MP_SCHEMA },
 	{ .name="sock", .parm=MP_SOCK },
@@ -140,6 +142,7 @@ mparm_name(mparm parm)
 		case MP_CERTHASH: return "certhash";
 		case MP_CLIENTCERT: return "clientcert";
 		case MP_CLIENTKEY: return "clientkey";
+		case MP_CONNECT_TIMEOUT: return "connect_timeout";
 		case MP_DATABASE: return "database";
 		case MP_HOST: return "host";
 		case MP_LANGUAGE: return "language";
@@ -147,7 +150,8 @@ mparm_name(mparm parm)
 		case MP_MAPTOLONGVARCHAR: return "map_to_long_varchar";
 		case MP_PASSWORD: return "password";
 		case MP_PORT: return "port";
-		case MP_REPLYSIZE: return "replysize";
+		case MP_REPLY_TIMEOUT: return "reply_timeout";  // underscore present means specific to this client library
+		case MP_REPLYSIZE: return "replysize";  // no underscore means mandatory for all client libraries
 		case MP_SCHEMA: return "schema";
 		case MP_SOCK: return "sock";
 		case MP_SOCKDIR: return "sockdir";
@@ -194,6 +198,8 @@ struct msettings {
 	long timezone;
 	long replysize;
 	long map_to_long_varchar;
+	long connect_timeout;
+	long reply_timeout;
 	long dummy_end_long;
 
 	// Must match EXACTLY the order of enum mparm

@@ -48,12 +48,18 @@ typedef enum mparm {
         // bool
         MP_TLS = MP__BOOL_START,
         MP_AUTOCOMMIT,
+	// Note: if you change anything about this enum whatsoever, make sure to
+	// make the corresponding change to struct msettings in msettings.c as well.
 
         // long
         MP_PORT = MP__LONG_START,
         MP_TIMEZONE,
         MP_REPLYSIZE,
 	MP_MAPTOLONGVARCHAR,   // specific to ODBC
+	MP_CONNECT_TIMEOUT,
+	MP_REPLY_TIMEOUT,
+	// Note: if you change anything about this enum whatsoever, make sure to
+	// make the corresponding change to struct msettings in msettings.c as well.
 
         // string
         MP_SOCK = MP__STRING_START,
@@ -72,6 +78,8 @@ typedef enum mparm {
         MP_SCHEMA,		// TODO implement this
         MP_BINARY,
 	MP_LOGFILE,
+	// Note: if you change anything about this enum whatsoever, make sure to
+	// make the corresponding change to struct msettings in msettings.c as well.
 
 	// !! Make sure to keep them all below MP__MAX !!
 } mparm;
