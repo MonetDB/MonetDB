@@ -1687,8 +1687,6 @@ dup_sql_column(allocator *sa, sql_table *t, sql_column *c)
 		col->storage_type = SA_STRDUP(sa, c->storage_type);
 	if (ol_add(t->columns, &col->base))
 		return NULL;
-	if (ol_add(t->columns, &col->base))
-		return NULL;
 	return col;
 }
 
