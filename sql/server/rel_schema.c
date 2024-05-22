@@ -254,7 +254,7 @@ mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *t
 }
 
 static char *
-table_constraint_name(mvc *sql, symbol *s, sql_table *t)
+table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 {
 	/* create a descriptive name like table_col_pkey */
 	char *suffix;		/* stores the type of this constraint */
@@ -277,8 +277,17 @@ table_constraint_name(mvc *sql, symbol *s, sql_table *t)
 			break;
 		case SQL_CHECK:
 			suffix = "_check";
-			nms = s->data.lval->h;	/* list of check constraint conditions */
-			break;
+			char name[512], name2[512], *nme, *nme2;
+			bool found;
+			do {
+				nme = number2name(name, sizeof(name), ++sql->label);
+				buflen = snprintf(name2, sizeof(name2), "%s_%s%s", t->base.name, nme, suffix);
+				nme2 = name2;
+				found = ol_find_name(t->keys, nme2) || mvc_bind_key(sql, ss, nme2);
+			} while (found);
+			buf = SA_NEW_ARRAY(sql->ta, char, buflen);
+			strcpy(buf, nme2);
+			return buf;
 		default:
 			suffix = "_?";
 			nms = NULL;
@@ -1030,7 +1039,8 @@ table_constraint(sql_query *query, symbol *s, sql_schema *ss, sql_table *t)
 		symbol *sym = l->h->next->data.sym;
 
 		if (!opt_name)
-			opt_name = table_constraint_name(sql, sym, t);
+			opt_name = table_constraint_name(sql, sym, ss, t);
+		else if (s->token)
 		if (opt_name == NULL)
 			return SQL_ERR;
 		res = table_constraint_type(query, opt_name, sym, ss, t);
