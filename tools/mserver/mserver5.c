@@ -342,6 +342,7 @@ main(int argc, char **av)
 
 		{"read-password-initialize-and-exit", no_argument, NULL, 0},
 		{"loadmodule", required_argument, NULL, 0},
+		{"without-geom", no_argument, NULL, 0},
 
 		{NULL, 0, NULL, 0}
 	};
@@ -524,6 +525,19 @@ main(int argc, char **av)
 				else
 					fprintf(stderr,
 							"ERROR: maximum number of modules reached\n");
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "without-geom") == 0) {
+				for (int i = 0; i < mods; i++) {
+					if (strcmp(modules[i], "geom") == 0) {
+						while (i + 1 < mods) {
+							modules[i] = modules[i + 1];
+							i++;
+						}
+						mods--;
+						break;
+					}
+				}
 				break;
 			}
 			usage(prog, -1);
