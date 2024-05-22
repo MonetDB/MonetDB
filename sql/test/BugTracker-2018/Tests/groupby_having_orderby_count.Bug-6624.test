@@ -10,7 +10,7 @@ int
 smallint
 6
 varchar
-14
+15
 
 query TI rowsort
 SELECT type,COUNT(id) FROM cols_6624 GROUP BY type HAVING COUNT(id)>5 ORDER BY 2 DESC
@@ -20,7 +20,7 @@ int
 smallint
 6
 varchar
-14
+15
 
 query TI rowsort
 SELECT type,COUNT(id) as cnt FROM cols_6624 GROUP BY type HAVING COUNT(id)>5 ORDER BY cnt DESC
@@ -30,7 +30,7 @@ int
 smallint
 6
 varchar
-14
+15
 
 statement ok
 DROP TABLE cols_6624

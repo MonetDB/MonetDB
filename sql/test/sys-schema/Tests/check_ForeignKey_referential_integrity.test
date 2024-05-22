@@ -94,35 +94,35 @@ query ITIITTTI rowsort
 SELECT * FROM sys.ids WHERE obj_type IN ('key', 'index') AND id NOT IN (SELECT id FROM sys.objects)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM sys.keys WHERE id NOT IN (SELECT id FROM sys.objects)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys.tables)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys._tables)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM tmp.keys WHERE table_id NOT IN (SELECT id FROM tmp._tables)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM sys.keys WHERE type NOT IN (SELECT key_type_id FROM sys.key_types)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM tmp.keys WHERE type NOT IN (SELECT key_type_id FROM sys.key_types)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM sys.keys WHERE rkey <> -1 AND rkey NOT IN (SELECT id FROM sys.keys)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM tmp.keys WHERE rkey <> -1 AND rkey NOT IN (SELECT id FROM tmp.keys)
 ----
 

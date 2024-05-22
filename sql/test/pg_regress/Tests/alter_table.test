@@ -451,10 +451,10 @@ DROP TABLE PKTABLE cascade
 statement ok
 create table atacc1 ( test int )
 
-statement error
+statement ok
 alter table atacc1 add constraint atacc_test1 check (test>3)
 
-statement ok
+statement error
 insert into atacc1 (test) values (2)
 
 statement ok
@@ -469,7 +469,7 @@ create table atacc1 ( test int )
 statement ok
 insert into atacc1 (test) values (2)
 
-statement error
+statement ok
 alter table atacc1 add constraint atacc_test1 check (test>3)
 
 statement ok
@@ -490,10 +490,10 @@ drop table atacc1
 statement ok
 create table atacc1 ( test int, test2 int, test3 int)
 
-statement error
+statement ok
 alter table atacc1 add constraint atacc_test1 check (test+test2<test3*4)
 
-statement ok
+statement error
 insert into atacc1 (test,test2,test3) values (4,4,2)
 
 statement ok
@@ -502,16 +502,16 @@ insert into atacc1 (test,test2,test3) values (4,4,5)
 statement ok
 drop table atacc1
 
-statement error
+statement ok
 create table atacc1 (test int check (test>3), test2 int)
 
-statement error
+statement ok
 alter table atacc1 add check (test2>test)
 
 statement error
 insert into atacc1 (test2, test) values (3, 4)
 
-statement error
+statement ok
 drop table atacc1
 
 statement ok
@@ -523,10 +523,10 @@ create table atacc2 (test2 int)
 statement ok
 create table atacc3 (test int, test2 int, test3 int)
 
-statement error
+statement ok
 alter table atacc2 add constraint foo check (test2>0)
 
-statement ok
+statement error
 insert into atacc2 (test2) values (-3)
 
 statement ok
@@ -556,10 +556,10 @@ create table atacc2 (test2 int)
 statement ok
 create table atacc3 (test int, test2 int, test3 int)
 
-statement error
+statement ok
 alter table   atacc2 add constraint foo check (test2>0)
 
-statement ok
+statement error
 insert into atacc2 (test2) values (-3)
 
 statement ok

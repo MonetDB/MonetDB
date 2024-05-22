@@ -298,27 +298,27 @@ query TIIIT rowsort
 SELECT "name", * FROM "sys"."idxs" WHERE "name" IS NULL OR "name" = ''
 ----
 
-query IIIITII rowsort
+query IIIITIIT rowsort
 SELECT "id", * FROM "sys"."keys" WHERE "id" IS NULL
 ----
 
-query IIIITII rowsort
+query IIIITIIT rowsort
 SELECT "table_id", * FROM "sys"."keys" WHERE "table_id" IS NULL
 ----
 
-query IIIITII rowsort
+query IIIITIIT rowsort
 SELECT "type", * FROM "sys"."keys" WHERE "type" IS NULL
 ----
 
-query TIIITII rowsort
+query TIIITIIT rowsort
 SELECT "name", * FROM "sys"."keys" WHERE "name" IS NULL OR "name" = ''
 ----
 
-query IIIITII rowsort
+query IIIITIIT rowsort
 SELECT "rkey", * FROM "sys"."keys" WHERE "rkey" IS NULL
 ----
 
-query IIIITII rowsort
+query IIIITIIT rowsort
 SELECT "action", * FROM "sys"."keys" WHERE "action" IS NULL
 ----
 
