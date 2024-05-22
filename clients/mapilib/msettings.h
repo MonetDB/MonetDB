@@ -131,6 +131,9 @@ mapi_export const msettings *msettings_default;
 /* always returns NULL */
 mapi_export msettings *msettings_destroy(msettings *mp);
 
+mapi_export const char *msetting_parm_name(const msettings *mp, mparm parm);
+mapi_export void msettings_set_localizer(msettings *mp, const char* (*localizer)(const void *data, mparm parm), void *data);
+
 /* retrieve and set; call abort() on type error */
 
 mapi_export const char* msetting_string(const msettings *mp, mparm parm);

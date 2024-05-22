@@ -232,6 +232,8 @@ struct msettings {
 	char *unix_sock_name_buffer;
 	char certhash_digits_buffer[64 + 2 + 1]; // fit more than required plus trailing '\0'
 	bool validated;
+	const char* (*localizer)(const void *data, mparm parm);
+	void *localizer_data;
 	char error_message[256];
 };
 
@@ -355,6 +357,22 @@ format_error(msettings *mp, const char *fmt, ...)
 
 	return mp->error_message;
 }
+
+const char *msetting_parm_name(const msettings *mp, mparm parm)
+{
+	const char *localized = NULL;
+	if (mp->localizer)
+		localized = (mp->localizer)(mp->localizer_data, parm);
+	return localized ? localized : mparm_name(parm);
+}
+
+void msettings_set_localizer(msettings *mp, const char* (*localizer)(const void *data, mparm parm), void *data)
+{
+	mp->localizer = localizer;
+	mp->localizer_data = data;
+}
+
+
 
 const char*
 msetting_string(const msettings *mp, mparm parm)
@@ -492,15 +510,15 @@ msetting_parse(msettings *mp, mparm parm, const char *text)
 		case MPCLASS_BOOL:
 			b = msetting_parse_bool(text);
 			if (b < 0)
-				return format_error(mp, "%s: invalid boolean value", mparm_name(parm));
+				return format_error(mp, "%s: invalid boolean value", msetting_parm_name(mp, parm));
 			return msetting_set_bool(mp, parm, b);
 		case MPCLASS_LONG:
 			if (text[0] == '\0')
-				return format_error(mp, "%s: integer parameter cannot be empty string", mparm_name(parm));
+				return format_error(mp, "%s: integer parameter cannot be empty string", msetting_parm_name(mp, parm));
 			char *end;
 			long l = strtol(text, &end, 10);
 			if (*end != '\0')
-				return format_error(mp, "%s: invalid integer", mparm_name(parm));
+				return format_error(mp, "%s: invalid integer", msetting_parm_name(mp, parm));
 			return msetting_set_long(mp, parm, l);
 		case MPCLASS_STRING:
 			return msetting_set_string(mp, parm, text);
@@ -574,7 +592,7 @@ msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *
 		return msetting_set_ignored(mp, key, value);
 
 	if (!allow_core && mparm_is_core(parm))
-		return format_error(mp, "%s: parameter not allowed here", mparm_name(parm));
+		return format_error(mp, "%s: parameter not allowed here", msetting_parm_name(mp, parm));
 
 	return msetting_parse(mp, parm, value);
 }
@@ -607,7 +625,7 @@ validate_certhash(msettings *mp)
 	if (strncmp(certhash, "sha256:", 7) == 0) {
 		certhash += 7;
 	} else {
-		return "certhash: expected to start with 'sha256:'";
+		return format_error(mp, "%s: expected to start with 'sha256:'", msetting_parm_name(mp, MP_CERTHASH));
 	}
 
 	size_t i = 0;
@@ -615,13 +633,13 @@ validate_certhash(msettings *mp)
 		if (*r == ':')
 			continue;
 		if (!isxdigit(*r))
-			return "certhash: invalid hex digit";
+			return format_error(mp, "%s: invalid hex digit", msetting_parm_name(mp, MP_CERTHASH));
 		if (i < sizeof(mp->certhash_digits_buffer) - 1)
 			mp->certhash_digits_buffer[i++] = tolower(*r);
 	}
 	mp->certhash_digits_buffer[i] = '\0';
 	if (i == 0)
-		return "certhash: need at least one digit";
+		return format_error(mp, "%s: need at least one digit", msetting_parm_name(mp, MP_CERTHASH));
 
 	return NULL;
 }

@@ -34,9 +34,21 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
+#include "ODBCAttrs.h"
 
 #define ODBC_DBC_MAGIC_NR  1365	/* for internal sanity check only */
 
+static const char*
+parm_localizer(const void *data, mparm parm)
+{
+	(void)data;
+	for (int i = 0; i < attr_setting_count; i++) {
+		const struct attr_setting *entry = &attr_settings[i];
+		if (entry->parm == parm)
+			return entry->name;
+	}
+	return NULL;
+}
 
 /*
  * Creates a new allocated ODBCDbc object and initializes it.
@@ -62,6 +74,8 @@ newODBCDbc(ODBCEnv *env)
 		addEnvError(env, "HY001", NULL, 0);
 		return NULL;
 	}
+
+	msettings_set_localizer(settings, parm_localizer, NULL);
 
 	*dbc = (ODBCDbc) {
 		.Env = env,
