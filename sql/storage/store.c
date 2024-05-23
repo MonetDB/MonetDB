@@ -2417,7 +2417,10 @@ store_manager(sqlstore *store)
 
 	for (;;) {
 		const int idle = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5000 : IDLE_TIME * 1000000;
-		if (store->debug&128 || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
+		/* if debug bit 1024 is set, attempt immediate log activation
+		 * and clear the bit */
+		if (store->debug&(128|1024) || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
+			store->debug &= ~1024;
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
@@ -3191,9 +3194,6 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name,
 	t->sz = ot->sz;
 	ATOMIC_PTR_INIT(&t->data, NULL);
 
-	if ((res = os_add(isLocalTemp(t) ? tr->localtmps : t->s->tables, tr, t->base.name, &t->base)))
-		goto cleanup;
-
 	if (isPartitionedByExpressionTable(ot)) {
 		t->part.pexp = ZNEW(sql_expression);
 		t->part.pexp->exp =_STRDUP(ot->part.pexp->exp);
@@ -3251,6 +3251,8 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name,
 			ATOMIC_PTR_SET(&t->data, store->storage_api.del_dup(ot));
 		}
 	}
+	if ((res = os_add(isLocalTemp(t) ? tr->localtmps : t->s->tables, tr, t->base.name, &t->base)))
+		goto cleanup;
 
 cleanup:
 	if (res) {
@@ -4473,7 +4475,7 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 static int
 sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 {
-	const char *next_value_for = "next value for ";
+	const char next_value_for[] = "next value for ";
 	int res = LOG_OK;
 
 	/* Drop sequence for generated column if it's the case */

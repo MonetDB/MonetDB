@@ -1054,6 +1054,7 @@ rel_dce_(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+
 /* Remove unused expressions */
 sql_rel *
 rel_dce(visitor *v, global_props *gp, sql_rel *rel)

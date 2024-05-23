@@ -117,3 +117,9 @@ SELECT * FROM fal WHERE x LIKE 'Daniel%'
 Daniel Sims
 Daniel Sullivan
 
+query T nosort
+SELECT * FROM fal WHERE startswith(x, 'Daniel')
+----
+Daniel Sims
+Daniel Sullivan
+

@@ -817,6 +817,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		bn->ttype = r1i.type;
 		bn->twidth = r1i.width;
 		bn->tshift = r1i.shift;
+		bn->tascii = r1i.ascii;
 	}
 
 	if (!BATtdensebi(&r1i) || (r2 && !BATtdensebi(&r2i)))
@@ -1074,8 +1075,9 @@ BATprojectchain(BAT **bats)
 		}
 		if (stringtrick) {
 			bn->tnil = false;
-			bn->tnonil = b->tnonil;
+			bn->tnonil = bi.nonil;
 			bn->tkey = false;
+			bn->tascii = bi.ascii;
 			assert(bn->tvheap == NULL);
 			bn->tvheap = bi.vh;
 			HEAPincref(bi.vh);

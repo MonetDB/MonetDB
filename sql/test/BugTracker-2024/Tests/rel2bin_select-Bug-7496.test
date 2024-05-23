@@ -29,7 +29,6 @@ SELECT "is_generated", length("is_generated") as data_length FROM columns_7496 W
 ----
 
 -- next query causes: sql/backends/monet5/rel_bin.c:4355: rel2bin_select: Assertion `sql->session->status == -10' failed
-skipif knownfail
 query TI nosort
 SELECT "is_generated", length("is_generated") as data_length FROM columns_7496 WHERE "is_generated" IS NOT NULL AND length("is_generated") > 2
 ----

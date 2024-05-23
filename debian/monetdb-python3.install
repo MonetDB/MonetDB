@@ -1,1 +1,1 @@
-debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_pyapi3.so usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5*/lib_pyapi3.so usr/lib/x86_64-linux-gnu/monetdb5

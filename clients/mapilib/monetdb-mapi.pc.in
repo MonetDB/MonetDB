@@ -18,5 +18,5 @@ URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
 Requires.private: monetdb-stream = @MONETDB_VERSION@
 
-Libs: -L${libdir} -lmapi
+Libs: -L${libdir} -lmapi-@MONETDB_VERSION@
 Cflags: -I${includedir}/monetdb

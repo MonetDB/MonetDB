@@ -579,7 +579,6 @@ int yydebug=1;
 	opt_index_type
 	opt_match
 	opt_match_type
-	opt_minmax
 	opt_on_commit
 	opt_outer
 	opt_ref_action
@@ -720,7 +719,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
+%token ANALYZE SQL_EXPLAIN SQL_PLAN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -963,12 +962,10 @@ declare:
 
 	/* schema definition language */
 analyze_statement:
-   ANALYZE qname opt_column_list opt_sample opt_minmax
+   ANALYZE qname opt_column_list
 		{ dlist *l = L();
 		append_list(l, $2);
 		append_list(l, $3);
-		append_symbol(l, $4);
-		append_int(l, $5);
 		$$ = _symbol_create_list( SQL_ANALYZE, l); }
  ;
 
@@ -984,11 +981,6 @@ sql:
  |  call_procedure_statement
  |  analyze_statement
  |  comment_on_statement
- ;
-
-opt_minmax:
-   /* empty */		{ $$ = 0; }
- | MINMAX		{ $$ = 1; }
  ;
 
 declare_statement:
@@ -3720,9 +3712,15 @@ opt_table_name:
  |  table_name  { $$ = $1; }
  ;
 
+all:
+    ALL
+ |  '*'
+ ;
+
 opt_group_by_clause:
-	/* empty */               { $$ = NULL; }
- |  sqlGROUP BY group_by_list { $$ = _symbol_create_list(SQL_GROUPBY, $3); }
+	/* empty */             { $$ = NULL; }
+ |  sqlGROUP BY all 		{ $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
+ |  sqlGROUP BY group_by_list 	{ $$ = _symbol_create_list(SQL_GROUPBY, $3); }
  ;
 
 group_by_list:
@@ -3790,9 +3788,9 @@ and_exp:
  ;
 
 opt_order_by_clause:
-    /* empty */			  { $$ = NULL; }
- |  ORDER BY sort_specification_list
-		{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
+    /* empty */			  	{ $$ = NULL; }
+ |  ORDER BY all		  	{ $$ = _symbol_create_list( SQL_ORDERBY, NULL); }
+ |  ORDER BY sort_specification_list 	{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
  ;
 
 first_next:
@@ -5988,7 +5986,6 @@ non_reserved_word:
 | MAX_MEMORY	{ $$ = sa_strdup(SA, "max_memory"); }
 | MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }
 | MAX_WORKERS	{ $$ = sa_strdup(SA, "max_workers"); }
-| MINMAX	{ $$ = sa_strdup(SA, "minmax"); }
 | MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }
 | sqlNAME	{ $$ = sa_strdup(SA, "name"); }
 | NATIVE	{ $$ = sa_strdup(SA, "native"); }

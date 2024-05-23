@@ -150,6 +150,31 @@ set_target_properties(mprompt
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER mprompt.h)
 
+add_library(mutf8 STATIC)
+
+target_sources(mutf8
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/mutf8.h
+  PRIVATE
+  mutf8.c)
+
+target_include_directories(mutf8
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
+
+target_link_libraries(mutf8
+  monetdb_config_header)
+
+target_compile_definitions(mutf8
+  PRIVATE
+  LIBMUTF8)
+
+set_target_properties(mutf8
+  PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  PUBLIC_HEADER mutf8.h)
+
 add_library(copybinary INTERFACE)
 
 target_include_directories(copybinary

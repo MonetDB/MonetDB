@@ -18,7 +18,7 @@
 mal_export str QLOGcatalog(BAT **r);
 mal_export str QLOGcalls(BAT **r);
 mal_export str QLOGenable(void *ret);
-mal_export str QLOGenableThreshold(void *ret, int *threshold);
+mal_export str QLOGenableThreshold(void *ret, const int *threshold);
 mal_export str QLOGdisable(void *ret);
 mal_export int QLOGisset(void);
 mal_export str QLOGempty(void *ret);

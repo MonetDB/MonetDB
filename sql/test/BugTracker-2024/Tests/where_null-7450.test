@@ -5,7 +5,7 @@ statement ok
 INSERT INTO t0 ( c0) VALUES (false)
 
 statement ok
-CREATE VIEW v0(c0) AS SELECT true FROM t0 WHERE NULL GROUP BY t0.c0, true
+CREATE VIEW v0(c0) AS SELECT true FROM t0 WHERE NULL GROUP BY t0.c0
 
 query I nosort
 SELECT * FROM v0

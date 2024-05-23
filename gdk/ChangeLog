@@ -1,6 +1,13 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Fri May  3 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Various changes were made having to do with things like case-insensitive
+  comparisons and converting to upper or lower case.  Case insensitive
+  comparison (i.e. the ILIKE operator) uses case folding which is similar
+  to converting to lower case, but changes more characters, also sometimes
+  to multiple characters (e.g. German sharp s (ß) comparse equal to SS).
+
 * Tue Mar 26 2024 Sjoerd Mullender <sjoerd@acm.org>
 - Made some changes to how BAT descriptors are allocated.  They are now
   allocated in bulk, meaning fewer malloc/free calls during processing.

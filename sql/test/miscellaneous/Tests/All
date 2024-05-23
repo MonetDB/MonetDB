@@ -30,3 +30,4 @@ temp_tables
 anti_join_plan
 table_alias_on_cte
 special_character_names
+group_by_all

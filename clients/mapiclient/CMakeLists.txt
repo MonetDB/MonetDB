@@ -38,10 +38,13 @@ target_sources(mclient
   ReadlineTools.c
   ReadlineTools.h
   mhelp.c
-  mhelp.h)
+  mhelp.h
+  iconv-stream.h
+  curl-stream.h)
 
 target_include_directories(mclient
   PRIVATE
+  $<$<BOOL:${Iconv_IS_BUILT_IN}>:${CMAKE_REQUIRED_INCLUDES}>
   $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>)
 
 target_link_libraries(mclient
@@ -51,6 +54,7 @@ target_link_libraries(mclient
   mprompt
   moptions
   mutils
+  mutf8
   mapi
   stream
   $<$<BOOL:${READLINE_FOUND}>:Readline::Readline>
@@ -79,6 +83,10 @@ target_link_libraries(msqldump
   stream
   mprompt
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
+
+set_target_properties(mclient msqldump
+  PROPERTIES
+  VERSION ${MONETDB_VERSION})
 
 install(TARGETS
   mclient

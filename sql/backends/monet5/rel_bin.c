@@ -1739,7 +1739,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			   and/or an attribute to count */
 			if (grp) {
 				as = grp;
-			} else if (left) {
+			} else if (left && !list_empty(left->op4.lval)) {
 				as = bin_find_smallest_column(be, left);
 				as = exp_count_no_nil_arg(e, ext, NULL, as);
 			} else {
@@ -5182,7 +5182,12 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (df2 && rl->op == op_project && !list_empty(rl->r)) {
 			return rel2bin_ordered_topn(be, rl, refs, rel, all, oe?o:NULL, l, projectresults);
 		} else if (rl->op == op_project) {
-			sub = rel2bin_project(be, rl, refs, rel);
+			if (rel_is_ref(rl)) {
+				sub = refs_find_rel(refs, rl);
+				if (!sub)
+					sub = rel2bin_project(be, rl, refs, rel);
+			} else
+				sub = rel2bin_project(be, rl, refs, rel);
 		} else {
 			sub = subrel_bin(be, rl, refs);
 		}

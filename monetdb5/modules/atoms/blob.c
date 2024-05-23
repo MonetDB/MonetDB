@@ -130,7 +130,7 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-BLOBtoblob(blob **retval, str *s)
+BLOBtoblob(blob **retval, const char *const *s)
 {
 	size_t len = strLen(*s);
 	blob *b = (blob *) GDKmalloc(blobsize(len));
@@ -144,7 +144,7 @@ BLOBtoblob(blob **retval, str *s)
 }
 
 static str
-BLOBblob_blob(blob **d, blob **s)
+BLOBblob_blob(blob **d, const blob *const*s)
 {
 	size_t len = blobsize((*s)->nitems);
 	blob *b;
@@ -238,7 +238,7 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 }
 
 static str
-BLOBblob_fromstr(blob **b, const char **s)
+BLOBblob_fromstr(blob **b, const char *const*s)
 {
 	size_t len = 0;
 

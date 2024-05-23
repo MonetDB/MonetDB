@@ -22,10 +22,10 @@
 #define DLL ".dll"
 #endif
 
-static const char *DriverName = "MonetDB ODBC Driver";
-static const char *DataSourceName = "MonetDB";
-static const char *DriverDLL = "MonetODBC" DLL;
-static const char *DriverDLLs = "MonetODBCs" DLL;
+static const char DriverName[] = "MonetDB ODBC Driver";
+static const char DataSourceName[] = "MonetDB";
+static const char DriverDLL[] = "MonetODBC" DLL;
+static const char DriverDLLs[] = "MonetODBCs" DLL;
 
 /* General error handler for installer functions */
 
@@ -85,7 +85,7 @@ InstallMyDriver(const char *driverpath, const char *drivername)
 	/* the correct format of driver keywords are
 	 * "DriverName\0Driver=...\xxxxxx.DLL\0Setup=...\xxxxxx.DLL\0\0" */
 
-	size_t driverlen = strlen(drivername) + 2 * strlen(driverpath) + strlen(DriverDLL) + strlen(DriverDLLs) + 90;
+	size_t driverlen = strlen(drivername) + 2 * strlen(driverpath) + sizeof(DriverDLL) + sizeof(DriverDLLs) + 90;
 	char *driver = malloc(driverlen);
 	snprintf(driver, driverlen,
 			 "%s;Driver=%s\\%s;Setup=%s\\%s;APILevel=1;"

@@ -44,10 +44,10 @@ statement ok
 alter table mt2 set read only
 
 statement ok
-analyze sys.mt1 (id,posX) minmax
+analyze sys.mt1 (id,posX)
 
 statement ok
-analyze sys.mt2 (id,posX) minmax
+analyze sys.mt2 (id,posX)
 
 query T nosort
 plan select * from test where id between 1 and 10000

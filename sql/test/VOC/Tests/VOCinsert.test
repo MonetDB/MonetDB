@@ -2734,7 +2734,7 @@ COPY 8115 RECORDS INTO "voc"."voyages" FROM stdin USING DELIMITERS E'\t',E'\n','
 2744	""	5	""	"STAD LEIDEN"	"Wouter van Dijk"	1140	NULL	"1718"	NULL	NULL	"A"	"A"	1728-06-23	"Texel"	1728-10-21	1728-11-18	true	1729-02-09	"Batavia"	6767	NULL
 2745	""	4	""	"CASTRICUM"	"Thomas Fletcher"	1150	NULL	"1722"	NULL	NULL	"A"	"A"	1728-10-28	"Texel"	1729-02-23	1729-03-19	true	1729-06-13	"Batavia"	6762	NULL
 2746	""	6	""	"HUTS DE VLOTTER"	"Jan Molentijn"	528	"fluit"	"1713"	NULL	NULL	"A"	"A"	1728-10-28	"Texel"	1729-03-29	1729-04-20	true	1729-07-12	"Batavia"	6787	NULL
-2747	""	5	""	"BORSSELE"	"Jakob Jongerheld"	800	NULL	"1715"	NULL	NULL	"Z"	"Z"	1728-10-29	"Rammekens"	1729-02-23	1729-03-19	true	1129-05-19	"Batavia"	NULL	"Wrecked between Persia and Batavia in 1731."
+2747	""	5	""	"BORSSELE"	"Jakob Jongerheld"	800	NULL	"1715"	NULL	NULL	"Z"	"Z"	1728-10-29	"Rammekens"	1729-02-23	1729-03-19	true	1729-05-19	"Batavia"	NULL	"Wrecked between Persia and Batavia in 1731."
 2748	""	1	""	"DUINBEEK"	"Marinus Commerse"	800	NULL	"1727"	NULL	NULL	"Z"	"Z"	1728-10-29	"Rammekens"	1729-02-21	1729-03-12	true	1729-05-19	"Batavia"	6829	NULL
 2749	""	3	""	"HERSTELLING"	"Jan van der Quade"	600	NULL	"1721"	NULL	NULL	"D"	"R"	1728-10-29	"Goeree"	1729-04-07	1729-04-27	true	1729-11-27	"Batavia"	6791	"passengers came aboard."
 2750	""	3	""	"LANGERODE"	"Kornelis van der Kolster"	600	NULL	"1723"	NULL	NULL	"D"	"D"	1728-10-29	"Goeree"	1729-02-23	1729-03-19	true	1729-06-11	"Batavia"	6766	NULL
@@ -3049,7 +3049,7 @@ COPY 8115 RECORDS INTO "voc"."voyages" FROM stdin USING DELIMITERS E'\t',E'\n','
 3059	""	3	""	"ZORGWIJK"	"Kornelis van der Marie"	650	NULL	"1732"	NULL	NULL	"A"	"A"	1737-03-10	"Texel"	1737-06-18	1737-06-30	true	1737-09-16	"Batavia"	7014	"3059/7014 Is the third voyage of the ZORGWIJK, which during its first voyage (see 2896/-) was called VOORDUIN."
 3060	""	5	""	"KLARABEEK"	"Jan Bijland"	705	NULL	"1721"	NULL	NULL	"Z"	"Z"	1737-03-11	"Rammekens"	1737-07-15	1737-08-06	true	1737-10-19	"Batavia"	7007	"During the voyage one of the soldiers became a seafarer. The passengers included 11 slaves (6 males and 5 females)."
 3061	""	2	""	"HUIS TE RENSBURG"	"Jan de Bruin"	850	NULL	"1733"	NULL	NULL	"Z"	"Z"	1737-03-11	"Rammekens"	1737-07-09	1737-07-21	true	1737-09-23	"Batavia"	7094	"23-06 till 08-07-1737 the ship was at Saldanha Bay."
-3062	""	1	""	"ARNESTUN"	"Willem Hendriksz. van Roffe"	575	NULL	"1736"	NULL	NULL	"Z"	"Z"	1737-03-12	"Rammekens"	1737-06-20	1737-07-06	true	1937-09-17	"Batavia"	7008	"During the voyage one of the soldiers became a seafarer. The passengers who embarked at the Cape included eight slaves: two (married) couples with two children each."
+3062	""	1	""	"ARNESTUN"	"Willem Hendriksz. van Roffe"	575	NULL	"1736"	NULL	NULL	"Z"	"Z"	1737-03-12	"Rammekens"	1737-06-20	1737-07-06	true	1737-09-17	"Batavia"	7008	"During the voyage one of the soldiers became a seafarer. The passengers who embarked at the Cape included eight slaves: two (married) couples with two children each."
 3063	""	3	""	"MARIA ADRIANA"	"Willem de Wijs"	650	NULL	"1730"	NULL	NULL	"R"	"R"	1737-03-12	"Goeree"	1737-06-17	1737-07-02	true	1737-09-07	"Batavia"	7055	NULL
 3064	""	8	""	"ZOETELINGSKERKE"	"Huibrecht op den Dijk"	1100	NULL	"1721"	NULL	NULL	"Z"	"Z"	1737-03-12	"Rammekens"	1737-06-17	1737-07-07	true	1737-09-23	"Batavia"	NULL	"Laid up at Ceylon, 12-01-1740. One of the passengers was a slave."
 3065	""	6	""	"PATMOS"	"Samuel Hoppestijn van Leeuwen"	810	NULL	"1722"	NULL	NULL	"R"	"D"	1737-04-11	"Goeree"	1737-08-06	1737-08-21	true	1737-11-26	"Batavia"	7028	NULL
@@ -4578,7 +4578,7 @@ COPY 8115 RECORDS INTO "voc"."voyages" FROM stdin USING DELIMITERS E'\t',E'\n','
 4588	""	1	""	"DRECHTERLAND"	"Pieter Johan Muller"	1150	NULL	"1784"	NULL	NULL	"H"	"H"	1787-12-19	"Texel"	1788-04-02	1788-04-30	true	1788-08-13	"Batavia"	8395	"According to K.A. 4304 the departing crew consisted of 329 men. See the VERWACHTING (4570)."
 4589	""	1	""	"GOUVERNEUR-GENERAAL MAATSUIJKER"	"Gerrit Esman"	1150	NULL	"1786"	NULL	NULL	"A"	"A"	1787-12-19	"Texel"	1788-03-30	1788-04-30	true	1788-07-04	"Batavia"	8244	"China. See the PHOENICIER (4564)."
 4590	""	1	""	"WIRTZLUST"	"Karel Volkman"	590	NULL	NULL	NULL	NULL	NULL	"A"	1787-12-19	"Texel"	1788-03-30	1788-04-30	true	1788-07-16	"Batavia"	8237	"See the PHOENICIER (4564)."
-4591	""	1	""	"VROUWE AGATHA"	"Albert Kornelisz."	900	"fluit"	NULL	NULL	NULL	NULL	"Z"	1787-12-22	"Rammekens"	1788-04-29	NULL	true	11788-04-29	"The Cape"	8221	"(4593)."
+4591	""	1	""	"VROUWE AGATHA"	"Albert Kornelisz."	900	"fluit"	NULL	NULL	NULL	NULL	"Z"	1787-12-22	"Rammekens"	1788-04-29	NULL	true	1788-04-29	"The Cape"	8221	"(4593)."
 4592	""	1	""	"BLITTERSWIJK"	"Lodewijk Elgenhuizen"	1150	NULL	"1785"	NULL	NULL	"Z"	"Z"	1787-12-22	"Rammekens"	1788-04-06	8-05-17	true	1788-07-18	"Batavia"	8245	"Batavia."
 4593	""	1	""	"GATENISSE"	"Hans Klaassen"	660	NULL	NULL	NULL	NULL	NULL	"Z"	1787-12-22	"Rammekens"	1788-03-28	1788-05-05	true	1788-07-17	"Batavia"	8248	"When sailing from Rammekens the GATENISSE, the VROUWE AGATHA (4591), and the BLITTERSWIJK (4592) were accompanied by a Dutch man-of-war."
 4594	""	2	""	"BEVERWIJK"	"Axel Land"	1150	NULL	"1784"	NULL	NULL	"A"	"A"	1788-01-31	"Texel"	1788-05-26	1788-06-23	true	1788-08-31	"Batavia"	8307	"The BEVERWIJK called at Duins, 03 till 08-02-1788. See the PHOENICIER (4564)."
@@ -7352,7 +7352,7 @@ COPY 8115 RECORDS INTO "voc"."voyages" FROM stdin USING DELIMITERS E'\t',E'\n','
 7609	""	4	""	"KIEVITSHEUVEL"	"Markus Tetting"	1150	NULL	"1749"	NULL	NULL	"A"	"A"	1761-11-02	"Batavia"	1761-12-19	1762-02-01	true	1762-06-02	"Texel"	3800	"Crew at the Cape: 120."
 7610	""	2	""	"LAPIENENBURG"	"Holland"	1150	NULL	"1753"	NULL	NULL	"A"	"A"	1761-11-02	"Batavia"	1761-12-27	1762-03-02	true	1762-06-26	"Texel"	3774	"Crew at the Cape: 112."
 7611	""	2	""	"LEKKERLAND"	"Johan Sigismund Hoeve"	1150	NULL	"1753"	NULL	NULL	"A"	"A"	1761-11-02	"Batavia"	1761-12-27	1762-02-01	true	1762-06-02	"Texel"	3755	"of this ship, which during its preceding voyage was called MARIENBOS (3605/7508)."
-7612	""	1	""	"NIJENBORG"	"Isaak van den Berg"	880	NULL	"1757"	NULL	NULL	"H"	"H"	1761-11-02	"Batavia"	1762-01-07	1762-03-02	true	21762-06-26	"Texel"	3759	"to the NIEUW NIEUWERKERK, sailing to Batavia in 1761/2 (3815)."
+7612	""	1	""	"NIJENBORG"	"Isaak van den Berg"	880	NULL	"1757"	NULL	NULL	"H"	"H"	1761-11-02	"Batavia"	1762-01-07	1762-03-02	true	1762-06-26	"Texel"	3759	"to the NIEUW NIEUWERKERK, sailing to Batavia in 1761/2 (3815)."
 7613	""	3	""	"SCHAGEN"	"Klaas Ariensz."	880	NULL	"1753"	NULL	NULL	"H"	"H"	1761-11-02	"Batavia"	1762-01-07	1762-02-01	true	1762-06-02	"Texel"	3809	"Crew at the Cape: 105."
 7614	""	3	""	"SNOEK"	"Willem Klump"	880	NULL	"1750"	NULL	NULL	"Z"	"Z"	1761-11-02	"Batavia"	1762-01-07	1762-03-02	true	1762-06-24	"Rammekens"	3780	"Crew at the Cape: 106."
 7615	""	4	""	"STRALEN"	"Adriaan Arkebout"	850	NULL	"1748"	NULL	NULL	"E"	"E"	1761-11-02	"Batavia"	1762-01-07	1762-02-01	true	1762-06-02	"Texel"	3804	"Cape: 97"

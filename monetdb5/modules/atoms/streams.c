@@ -24,7 +24,7 @@
 #include "mal_exception.h"
 
 static str
-mnstr_open_rstreamwrap(Stream *S, str *filename)
+mnstr_open_rstreamwrap(Stream *S, const char *const *filename)
 {
 	stream *s;
 
@@ -42,7 +42,7 @@ mnstr_open_rstreamwrap(Stream *S, str *filename)
 }
 
 static str
-mnstr_open_wstreamwrap(Stream *S, str *filename)
+mnstr_open_wstreamwrap(Stream *S, const char *const *filename)
 {
 	stream *s;
 
@@ -60,7 +60,7 @@ mnstr_open_wstreamwrap(Stream *S, str *filename)
 }
 
 static str
-mnstr_open_rastreamwrap(Stream *S, str *filename)
+mnstr_open_rastreamwrap(Stream *S, const char *const *filename)
 {
 	stream *s;
 
@@ -78,7 +78,7 @@ mnstr_open_rastreamwrap(Stream *S, str *filename)
 }
 
 static str
-mnstr_open_wastreamwrap(Stream *S, str *filename)
+mnstr_open_wastreamwrap(Stream *S, const char *const *filename)
 {
 	stream *s;
 
@@ -96,7 +96,7 @@ mnstr_open_wastreamwrap(Stream *S, str *filename)
 }
 
 static str
-mnstr_write_stringwrap(void *ret, Stream *S, str *data)
+mnstr_write_stringwrap(void *ret, const Stream *S, const char *const *data)
 {
 	stream *s = *(stream **) S;
 	(void) ret;
@@ -108,7 +108,7 @@ mnstr_write_stringwrap(void *ret, Stream *S, str *data)
 }
 
 static str
-mnstr_writeIntwrap(void *ret, Stream *S, int *data)
+mnstr_writeIntwrap(void *ret, const Stream *S, const int *data)
 {
 	stream *s = *(stream **) S;
 	(void) ret;
@@ -120,7 +120,7 @@ mnstr_writeIntwrap(void *ret, Stream *S, int *data)
 }
 
 static str
-mnstr_readIntwrap(int *ret, Stream *S)
+mnstr_readIntwrap(int *ret, const Stream *S)
 {
 	stream *s = *(stream **) S;
 
@@ -132,7 +132,7 @@ mnstr_readIntwrap(int *ret, Stream *S)
 
 #define CHUNK (64 * 1024)
 static str
-mnstr_read_stringwrap(str *res, Stream *S)
+mnstr_read_stringwrap(str *res, const Stream *S)
 {
 	stream *s = *(stream **) S;
 	ssize_t len = 0;
@@ -164,7 +164,7 @@ mnstr_read_stringwrap(str *res, Stream *S)
 }
 
 static str
-mnstr_flush_streamwrap(void *ret, Stream *S)
+mnstr_flush_streamwrap(void *ret, const Stream *S)
 {
 	stream *s = *(stream **) S;
 	(void) ret;
@@ -176,7 +176,7 @@ mnstr_flush_streamwrap(void *ret, Stream *S)
 }
 
 static str
-mnstr_close_streamwrap(void *ret, Stream *S)
+mnstr_close_streamwrap(void *ret, const Stream *S)
 {
 	(void) ret;
 
@@ -186,7 +186,7 @@ mnstr_close_streamwrap(void *ret, Stream *S)
 }
 
 static str
-open_block_streamwrap(Stream *S, Stream *is)
+open_block_streamwrap(Stream *S, const Stream *is)
 {
 	if ((*(stream **) S = block_stream(*(stream **) is)) == NULL)
 		throw(IO, "bstreams.open", "failed to open block stream");
@@ -195,7 +195,7 @@ open_block_streamwrap(Stream *S, Stream *is)
 }
 
 static str
-bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
+bstream_create_wrapwrap(Bstream *Bs, const Stream *S, const int *bufsize)
 {
 	if ((*(bstream **) Bs = bstream_create(*(stream **) S,
 										   (size_t) *bufsize)) == NULL)
@@ -205,7 +205,7 @@ bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
 }
 
 static str
-bstream_destroy_wrapwrap(void *ret, Bstream *BS)
+bstream_destroy_wrapwrap(void *ret, const Bstream *BS)
 {
 	(void) ret;
 
@@ -215,7 +215,7 @@ bstream_destroy_wrapwrap(void *ret, Bstream *BS)
 }
 
 static str
-bstream_read_wrapwrap(int *res, Bstream *BS, int *size)
+bstream_read_wrapwrap(int *res, const Bstream *BS, const int *size)
 {
 	*res = (int) bstream_read(*(bstream **) BS, (size_t) *size);
 

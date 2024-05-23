@@ -635,7 +635,7 @@ select min(case 2 when 3 then uuid 'dbC4da54-8C0B-4b83-E74E-30242dA0a5fF' end) f
 NULL
 
 query T rowsort
-select min(case (select 2 where false) when 3 then uuid 'dbC4da54-8C0B-4b83-E74E-30242dA0a5fF' end) from t2 group by 0.88
+select min(case (select 2 where false) when 3 then uuid 'dbC4da54-8C0B-4b83-E74E-30242dA0a5fF' end) from t2
 ----
 NULL
 
@@ -665,7 +665,7 @@ INSERT INTO "t2" VALUES ('55c1fcb5-9a6d-bbd0-adad-63bd0bdceb6c', 1643235318), (N
 ('c235ee8f-3ade-64b3-df8e-0aa8b72e9ee8', 1643235318), (NULL, 1643235318), (NULL, 1643235318), ('e991e02d-81e5-8e1b-f619-bb2c3d0ee13e', 1643235318), ('62f0ffc6-d452-5f88-fb8a-fd752b88db3e', 1643235318)
 
 query I rowsort
-SELECT count(*) FROM t1 GROUP BY t1.c0, least(COALESCE(7, 0.0021309160474272115237681646249257028102874755859375, t1.c0), 1024325040), BLOB '', BLOB 'E0'
+SELECT count(*) FROM t1 GROUP BY t1.c0, least(COALESCE(7, 0.0021309160474272115237681646249257028102874755859375, t1.c0), 1024325040)
 ----
 1
 1
@@ -678,17 +678,17 @@ SELECT count(*) FROM t1 GROUP BY t1.c0, least(COALESCE(7, 0.00213091604742721152
 1
 
 query I rowsort
-SELECT count(*) FROM t1 GROUP BY t1.c0, least(COALESCE(7, 0.0021309160474272115237681646249257028102874755859375, t1.c0), 1024325040), BLOB '', BLOB 'E0'
+SELECT count(*) FROM t1 GROUP BY t1.c0, least(COALESCE(7, 0.0021309160474272115237681646249257028102874755859375, t1.c0), 1024325040)
 HAVING ((SELECT DISTINCT least(FALSE, TRUE) FROM t1 AS l1t1, t0 AS l1t0, t2 AS l1t2 WHERE TRUE) EXCEPT ALL (SELECT DISTINCT least(FALSE, FALSE) FROM t2 AS l1t2, t1 AS l1t1, t0 AS l1t0 WHERE TRUE)) ORDER BY 0.656665542677417 ASC NULLS FIRST
 ----
 
 query I rowsort
-SELECT count(*) FROM t1 GROUP BY t1.c0, least(COALESCE(7, 0.0021309160474272115237681646249257028102874755859375, t1.c0), 1024325040), BLOB '', BLOB 'E0'
+SELECT count(*) FROM t1 GROUP BY t1.c0, least(COALESCE(7, 0.0021309160474272115237681646249257028102874755859375, t1.c0), 1024325040)
 HAVING NOT (((SELECT DISTINCT least(FALSE, TRUE) FROM t1 AS l1t1, t0 AS l1t0, t2 AS l1t2 WHERE TRUE) EXCEPT ALL (SELECT DISTINCT least(FALSE, FALSE) FROM t2 AS l1t2, t1 AS l1t1, t0 AS l1t0 WHERE TRUE))) ORDER BY 0.656665542677417 ASC NULLS FIRST
 ----
 
 query I rowsort
-SELECT count(*) FROM t1 GROUP BY t1.c0, least(COALESCE(7, 0.0021309160474272115237681646249257028102874755859375, t1.c0), 1024325040), BLOB '', BLOB 'E0'
+SELECT count(*) FROM t1 GROUP BY t1.c0, least(COALESCE(7, 0.0021309160474272115237681646249257028102874755859375, t1.c0), 1024325040)
 HAVING (((SELECT DISTINCT least(FALSE, TRUE) FROM t1 AS l1t1, t0 AS l1t0, t2 AS l1t2 WHERE TRUE) EXCEPT ALL (SELECT DISTINCT least(FALSE, FALSE) FROM t2 AS l1t2, t1 AS l1t1, t0 AS l1t0 WHERE TRUE))) IS NULL ORDER BY 0.656665542677417 ASC NULLS FIRST
 ----
 1
@@ -936,7 +936,7 @@ select 1 from t0 having min(t0.c0) > 2 order by null asc nulls last, '0.9' desc 
 query TI nosort
 select interval '4' month, count(*) from t2, t0, t1 cross join (select t2.c0, case when least(false, true) then 2 when (date '1970-01-01') is not null then 3.2 when (values (true), (true))
 then sql_max(0.54, 0.15) end from t1, t2, t0 full outer join (select (select 0.16 from t1 as l2t1, t2 as l2t2 where true) from t0 as l1t0, t1 as l1t1, t2 as l1t2 where false) as sub0 on case blob ''
-when blob '14' then false when blob '15' then false end where ((t2.c2)ilike(t2.c2))) as sub0 where ((nullif(t2.c2, t2.c2))ilike((select l2t2.c2 from t2 as l2t2, t1 as l2t1 where true))) group by 5
+when blob '14' then false when blob '15' then false end where ((t2.c2)ilike(t2.c2))) as sub0 where ((nullif(t2.c2, t2.c2))ilike((select l2t2.c2 from t2 as l2t2, t1 as l2t1 where true)))
 having (min(case when ((t2.c2)ilike(t2.c2)) then t0.c0 end)) between asymmetric (cast(0.42 as smallint)) and (least(-3, 0.31)) order by null asc nulls last, lower('0.4') desc nulls last
 ----
 
