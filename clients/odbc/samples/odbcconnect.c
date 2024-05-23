@@ -9,6 +9,12 @@
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
+#ifdef _MSC_VER
+/* suppress deprecation warning for snprintf */
+#define _CRT_SECURE_NO_WARNINGS
+
+#include <WTypes.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
