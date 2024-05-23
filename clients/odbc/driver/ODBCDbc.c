@@ -39,7 +39,7 @@
 #define ODBC_DBC_MAGIC_NR  1365	/* for internal sanity check only */
 
 static const char*
-parm_localizer(const void *data, mparm parm)
+odbc_parm_localizer(const void *data, mparm parm)
 {
 	(void)data;
 	for (int i = 0; i < attr_setting_count; i++) {
@@ -75,7 +75,7 @@ newODBCDbc(ODBCEnv *env)
 		return NULL;
 	}
 
-	msettings_set_localizer(settings, parm_localizer, NULL);
+	msettings_set_localizer(settings, odbc_parm_localizer, NULL);
 
 	*dbc = (ODBCDbc) {
 		.Env = env,

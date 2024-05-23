@@ -41,7 +41,6 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 		   SQLINTEGER StringLength)
 {
 	(void) StringLength;	/* Stefan: unused!? */
-	long timeout;
 
 	switch (Attribute) {
 	case SQL_ATTR_AUTOCOMMIT:		/* SQLUINTEGER */
@@ -67,7 +66,7 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 		addDbcError(dbc, "IM001", NULL, 0);
 		return SQL_ERROR;
 	case SQL_ATTR_CONNECTION_TIMEOUT:	/* SQLUINTEGER */
-		timeout = 1000 * (long)(uintptr_t) ValuePtr;
+		long timeout = 1000 * (long)(uintptr_t) ValuePtr;
 		msetting_set_long(dbc->settings, MP_CONNECT_TIMEOUT, timeout);
 		if (dbc->mid)
 			mapi_timeout(dbc->mid, timeout);

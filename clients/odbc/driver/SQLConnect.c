@@ -203,7 +203,7 @@ buildConnectionString(const char *dsn, const msettings *settings)
 		if (!value)
 			goto end;
 
-		bool show_this = true;
+		bool show_this;  // intentionally uninitialized
 		if (parm == MP_USER || parm == MP_PASSWORD) {
 			show_this = true;
 		} else if (parm == MP_PORT && msetting_long(settings, MP_PORT) <= 0) {

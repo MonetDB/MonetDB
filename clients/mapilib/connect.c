@@ -330,7 +330,7 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 			port = -1;
 			addrtext = NULL;
 		}
-		mapi_log_record(mid, "CONN", "Trying IP %s port %d", addrtext ? addrtext : "<UNKNOWN>", port);
+		mapi_log_record(mid, "CONN", "Trying IP %s port %d wih timeout %ld", addrtext ? addrtext : "<UNKNOWN>", port, timeout);
 	}
 
 
