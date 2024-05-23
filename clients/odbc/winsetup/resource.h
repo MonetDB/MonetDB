@@ -17,17 +17,22 @@
 #define IDD_SETUP_DIALOG                106
 #define IDB_BANNER                      2000
 #define IDC_EDIT_DSN                    2001
-#define IDC_EDIT_UID                    2002
-#define IDC_EDIT_PWD                    2003
-#define IDC_EDIT_HOST                   2004
-#define IDC_EDIT_PORT                   2005
-#define IDC_EDIT_DATABASE               2006
-#define IDC_EDIT_LOGFILE                2007
-// new from Jun2024
-#define IDC_EDIT_AUTOCOMMIT             2011
-#define IDC_EDIT_REPLYSIZE              2012
-#define IDC_EDIT_SCHEMA                 2013
-#define IDC_EDIT_TIMEZONE               2014
+#define IDC_EDIT_DESC                   2002
+#define IDC_EDIT_UID                    2003
+#define IDC_EDIT_PWD                    2004
+#define IDC_EDIT_HOST                   2005
+#define IDC_EDIT_PORT                   2006
+#define IDC_EDIT_DATABASE               2007
+
+// Advanced settings (new from Jun2024)
+#define IDC_EDIT_SCHEMA                 2011
+#define IDC_EDIT_LOGINTIMEOUT           2012
+#define IDC_EDIT_REPLYTIMEOUT           2013
+#define IDC_EDIT_REPLYSIZE              2014
+#define IDC_EDIT_AUTOCOMMIT             2015
+#define IDC_EDIT_TIMEZONE               2016
+#define IDC_EDIT_LOGFILE                2017
+
 // Secure connections using TLS
 #define IDC_EDIT_USETLS                 2021
 #define IDC_EDIT_SERVERCERT             2022
@@ -35,7 +40,7 @@
 #define IDC_EDIT_CLIENTKEY              2024
 #define IDC_EDIT_CLIENTCERT             2025
 
-#define IDC_BUTTON_CANCEL               2008
+#define IDC_BUTTON_CANCEL               2031
 
 // Next default values for new objects
 //

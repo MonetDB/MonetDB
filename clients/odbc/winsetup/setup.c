@@ -89,14 +89,17 @@ ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg, WOR
 
 struct data {
 	char *dsn;
+	char *desc;
 	char *uid;
 	char *pwd;
 	char *host;
 	char *port;
 	char *database;
 	char *schema;
-	char *autocommit;
+	char *logintimeout;
+	char *replytimeout;
 	char *replysize;
+	char *autocommit;
 	char *timezone;
 	char *logfile;
 	// TLS settings
@@ -149,14 +152,17 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		/* fill in text fields */
 		SetDlgItemText(hwndDlg, IDC_EDIT_DSN, datap->dsn ? datap->dsn : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_DESC, datap->desc ? datap->desc : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_UID, datap->uid ? datap->uid : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_PWD, datap->pwd ? datap->pwd : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_HOST, datap->host ? datap->host : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_PORT, datap->port ? datap->port : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_DATABASE, datap->database ? datap->database : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_SCHEMA, datap->schema ? datap->schema : "");
-		SetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, datap->autocommit ? datap->autocommit : "on");
+		SetDlgItemText(hwndDlg, IDC_EDIT_LOGINTIMEOUT, datap->logintimeout ? datap->logintimeout : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_REPLYTIMEOUT, datap->replytimeout ? datap->replytimeout : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_REPLYSIZE, datap->replysize ? datap->replysize : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, datap->autocommit ? datap->autocommit : "on");
 		SetDlgItemText(hwndDlg, IDC_EDIT_TIMEZONE, datap->timezone ? datap->timezone : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_LOGFILE, datap->logfile ? datap->logfile : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_USETLS, datap->use_tls ? datap->use_tls : "off");
@@ -182,6 +188,10 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					free(datap->dsn);
 				datap->dsn = strdup(buf);
 			}
+			GetDlgItemText(hwndDlg, IDC_EDIT_DESC, buf, sizeof(buf));
+			if (datap->desc)
+				free(datap->desc);
+			datap->desc = strdup(buf);
 			GetDlgItemText(hwndDlg, IDC_EDIT_UID, buf, sizeof(buf));
 			if (datap->uid)
 				free(datap->uid);
@@ -206,14 +216,22 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (datap->schema)
 				free(datap->schema);
 			datap->schema = strdup(buf);
-			GetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, buf, sizeof(buf));
-			if (datap->autocommit)
-				free(datap->autocommit);
-			datap->autocommit = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_LOGINTIMEOUT, buf, sizeof(buf));
+			if (datap->logintimeout)
+				free(datap->logintimeout);
+			datap->logintimeout = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_REPLYTIMEOUT, buf, sizeof(buf));
+			if (datap->replytimeout)
+				free(datap->replytimeout);
+			datap->replytimeout = strdup(buf);
 			GetDlgItemText(hwndDlg, IDC_EDIT_REPLYSIZE, buf, sizeof(buf));
 			if (datap->replysize)
 				free(datap->replysize);
 			datap->replysize = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, buf, sizeof(buf));
+			if (datap->autocommit)
+				free(datap->autocommit);
+			datap->autocommit = strdup(buf);
 			GetDlgItemText(hwndDlg, IDC_EDIT_TIMEZONE, buf, sizeof(buf));
 			if (datap->timezone)
 				free(datap->timezone);
@@ -278,6 +296,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	}
 
 	data.dsn = NULL;
+	data.desc = NULL;
 	data.uid = NULL;
 	data.pwd = NULL;
 	data.host = NULL;
@@ -285,8 +304,10 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	data.database = NULL;
 	data.logfile = NULL;
 	data.schema = NULL;
-	data.autocommit = NULL;
+	data.logintimeout = NULL;
+	data.replytimeout = NULL;
 	data.replysize = NULL;
+	data.autocommit = NULL;
 	data.timezone = NULL;
 	data.logfile = NULL;
 	// TLS settings
@@ -310,7 +331,9 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		if (strncasecmp("dsn=", attributes, value - attributes) == 0) {
 			dsn = value;
 			data.dsn = strdup(value);
-		} else if (strncasecmp("uid=", attributes, value - attributes) == 0)
+		} else if (strncasecmp("description=", attributes, value - attributes) == 0)
+			data.desc = strdup(value);
+		else if (strncasecmp("uid=", attributes, value - attributes) == 0)
 			data.uid = strdup(value);
 		else if (strncasecmp("pwd=", attributes, value - attributes) == 0)
 			data.pwd = strdup(value);
@@ -322,10 +345,14 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			data.database = strdup(value);
 		else if (strncasecmp("schema=", attributes, value - attributes) == 0)
 			data.schema = strdup(value);
-		else if (strncasecmp("autocommit=", attributes, value - attributes) == 0)
-			data.autocommit = strdup(value);
+		else if (strncasecmp("logintimeout=", attributes, value - attributes) == 0)
+			data.logintimeout = strdup(value);
+		else if (strncasecmp("replytimeout=", attributes, value - attributes) == 0)
+			data.replytimeout = strdup(value);
 		else if (strncasecmp("replysize=", attributes, value - attributes) == 0)
 			data.replysize = strdup(value);
+		else if (strncasecmp("autocommit=", attributes, value - attributes) == 0)
+			data.autocommit = strdup(value);
 		else if (strncasecmp("timezone=", attributes, value - attributes) == 0)
 			data.timezone = strdup(value);
 		else if (strncasecmp("logfile=", attributes, value - attributes) == 0)
@@ -353,14 +380,17 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		goto finish;
 	}
 
-	MergeFromProfileString(data.dsn, &data.uid, "uid", "monetdb");
-	MergeFromProfileString(data.dsn, &data.pwd, "pwd", "monetdb");
+	MergeFromProfileString(data.dsn, &data.desc, "description", "");
+	MergeFromProfileString(data.dsn, &data.uid, "uid", "");
+	MergeFromProfileString(data.dsn, &data.pwd, "pwd", "");
 	MergeFromProfileString(data.dsn, &data.host, "host", "localhost");
 	MergeFromProfileString(data.dsn, &data.port, "port", MAPI_PORT_STR);
 	MergeFromProfileString(data.dsn, &data.database, "database", "");
 	MergeFromProfileString(data.dsn, &data.schema, "schema", "");
-	MergeFromProfileString(data.dsn, &data.autocommit, "autocommit", "on");
+	MergeFromProfileString(data.dsn, &data.logintimeout, "logintimeout", "30");
+	MergeFromProfileString(data.dsn, &data.replytimeout, "replytimeout", "300");
 	MergeFromProfileString(data.dsn, &data.replysize, "replysize", "");
+	MergeFromProfileString(data.dsn, &data.autocommit, "autocommit", "on");
 	MergeFromProfileString(data.dsn, &data.timezone, "timezone", "");
 	MergeFromProfileString(data.dsn, &data.logfile, "logfile", "");
 	MergeFromProfileString(data.dsn, &data.use_tls, "tls", "off");
@@ -369,7 +399,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	MergeFromProfileString(data.dsn, &data.clientkey, "clientkey", "");
 	MergeFromProfileString(data.dsn, &data.clientcert, "clientcert", "");
 
-	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s schema=%s autocommit=%s replysize=%s timezone=%s logfile=%s tls=%s cert=%s certhash=%s clientkey=%s clientcert=%s\n",
+	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s schema=%s logintimeout=%s replytimeout=%s replysize=%s autocommit=%s timezone=%s logfile=%s tls=%s cert=%s certhash=%s clientkey=%s clientcert=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
@@ -377,8 +407,10 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		data.port ? data.port : "(null)",
 		data.database ? data.database : "(null)",
 		data.schema ? data.schema : "(null)",
-		data.autocommit ? data.autocommit : "(null)",
+		data.logintimeout ? data.logintimeout : "(null)",
+		data.replytimeout ? data.replytimeout : "(null)",
 		data.replysize ? data.replysize : "(null)",
+		data.autocommit ? data.autocommit : "(null)",
 		data.timezone ? data.timezone : "(null)",
 		data.logfile ? data.logfile : "(null)",
 		data.use_tls ? data.use_tls : "(null)",
@@ -451,7 +483,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			goto finish;
 		}
 	}
-	ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s schema=%s autocommit=%s replysize=%s timezone=%s logfile=%s tls=%s cert=%s certhash=%s clientkey=%s clientcert=%s\n",
+	ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s schema=%s logintimeout=%s replytimeout=%s replysize=%s autocommit=%s timezone=%s logfile=%s tls=%s cert=%s certhash=%s clientkey=%s clientcert=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
@@ -459,8 +491,10 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		data.port ? data.port : "(null)",
 		data.database ? data.database : "(null)",
 		data.schema ? data.schema : "(null)",
-		data.autocommit ? data.autocommit : "(null)",
+		data.logintimeout ? data.logintimeout : "(null)",
+		data.replytimeout ? data.replytimeout : "(null)",
 		data.replysize ? data.replysize : "(null)",
+		data.autocommit ? data.autocommit : "(null)",
 		data.timezone ? data.timezone : "(null)",
 		data.logfile ? data.logfile : "(null)",
 		data.use_tls ? data.use_tls : "(null)",
@@ -481,9 +515,12 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		goto finish;
 	}
 
-	if (!SQLWritePrivateProfileString(data.dsn, "schema", data.schema, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "autocommit", data.autocommit, "odbc.ini")
+	if (!SQLWritePrivateProfileString(data.dsn, "description", data.desc, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "schema", data.schema, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "logintimeout", data.logintimeout, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "replytimeout", data.replytimeout, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "replysize", data.replysize, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "autocommit", data.autocommit, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "timezone", data.timezone, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "logfile", data.logfile, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "tls", data.use_tls, "odbc.ini")
@@ -499,6 +536,8 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
   finish:
 	if (data.dsn)
 		free(data.dsn);
+	if (data.desc)
+		free(data.desc);
 	if (data.uid)
 		free(data.uid);
 	if (data.pwd)
@@ -511,10 +550,14 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		free(data.database);
 	if (data.schema)
 		free(data.schema);
-	if (data.autocommit)
-		free(data.autocommit);
+	if (data.logintimeout)
+		free(data.logintimeout);
+	if (data.replytimeout)
+		free(data.replytimeout);
 	if (data.replysize)
 		free(data.replysize);
+	if (data.autocommit)
+		free(data.autocommit);
 	if (data.timezone)
 		free(data.timezone);
 	if (data.logfile)
