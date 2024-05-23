@@ -530,6 +530,7 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 		const char *error_state = "08001";
 		const char *error_explanation = mid ? mapi_error_str(mid) : NULL;
 		addDbcError(dbc, error_state, error_explanation, 0);
+		msettings_destroy(clone);
 		return SQL_ERROR;
 	}
 
@@ -543,7 +544,7 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 	msettings_destroy(dbc->settings);
 	dbc->settings = clone;
 
-	dbc->mapToLongVarchar = msetting_long(settings, MP_MAPTOLONGVARCHAR);
+	dbc->mapToLongVarchar = msetting_long(dbc->settings, MP_MAPTOLONGVARCHAR);
 
 	dbc->Connected = true;
 

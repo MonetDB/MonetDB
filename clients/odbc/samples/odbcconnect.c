@@ -111,6 +111,7 @@ main(int argc, char **argv)
 	SQLDisconnect(conn);
 	SQLFreeHandle(SQL_HANDLE_DBC, conn);
 	SQLFreeHandle(SQL_HANDLE_DBC, env);
+	free(targets);
 
 	return ret;
 }
