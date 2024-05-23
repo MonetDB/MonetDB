@@ -356,9 +356,10 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 			.tv_sec = timeout / 1000,
 			.tv_usec = timeout % 1000,
 		};
+		/* cast to char * for Windows, no harm on "normal" systems */
 		if (
-			setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) == SOCKET_ERROR
-			|| setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) == SOCKET_ERROR
+			setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof(tv)) == SOCKET_ERROR
+			|| setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(tv)) == SOCKET_ERROR
 		) {
 			closesocket(s);
 			return mapi_printError(
