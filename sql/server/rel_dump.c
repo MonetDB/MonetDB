@@ -2030,7 +2030,9 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				skipWS(r, pos);
 				if (!(s = mvc_bind_schema(sql, sname)))
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", sname);
-				if (!(t = mvc_bind_table(sql, s, tname)))
+				if (stack_has_frame(sql, "ALTER TABLE ADD CONSTRAINT CHECK") && !(t = frame_find_table(sql, tname)))
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
+				if (!t && !(t = mvc_bind_table(sql, s, tname)))
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
 				if (isMergeTable(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");

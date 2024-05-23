@@ -5988,7 +5988,15 @@ sql_update_check(backend *be, sql_key * key, sql_rel *updates, list *refs)
 {
 	mvc *sql = be->mvc;
 	int pos = 0;
+
+
+	stack_push_frame(be->mvc, "ALTER TABLE ADD CONSTRAINT CHECK");
+	sql_schema* ss = key->t->s;
+	frame_push_table(sql, key->t);
+	key->t->s = ss; // recover the schema because frame_push_table removes it
+
 	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
+	stack_pop_frame(sql);
 	sql_rel* base = rel->l;
 	assert(strcmp(((sql_exp*) updates->exps->h->data)->alias.name, TID) == 0);
 	list_append(base->exps, exp_copy(sql, updates->exps->h->data));
