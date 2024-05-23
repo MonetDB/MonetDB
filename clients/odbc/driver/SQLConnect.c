@@ -240,7 +240,7 @@ end:
 }
 
 static int
-lookup(const char *dsn, const struct attr_setting *entry, char *buf, size_t bufsize)
+lookup(const char *dsn, const struct attr_setting *entry, char *buf, int bufsize)
 {
 	int n;
 	assert(entry->name);
