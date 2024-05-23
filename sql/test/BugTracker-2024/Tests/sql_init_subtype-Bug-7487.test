@@ -8,13 +8,11 @@ SELECT levenshtein ( 'Xint' , '2014-10-25 UTC' )
 ----
 14
 
-skipif knownfail
 query I nosort
 SELECT levenshtein ( 'int' , 'X2014-10-25 UTC' )
 ----
-14
+15
 
-skipif knownfail
 query I nosort
 SELECT levenshtein ( 'int' , '2014-10-25 UTC' )
 ----

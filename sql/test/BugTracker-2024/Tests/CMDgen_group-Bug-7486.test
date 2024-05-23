@@ -5,7 +5,6 @@ NULL
 NULL
 NULL
 
-skipif knownfail
 query I nosort
 WITH x AS ( SELECT * FROM generate_series ( 32989 , 8100 ) EXCEPT SELECT * FROM generate_series ( 44 , 3 ) ) SELECT CASE WHEN NULL IN ( 69 , MAX ( CASE WHEN 97 THEN 66 END ) OVER ( ) + ( SELECT COUNT ( * ) ) ) THEN 41 END FROM x LIMIT 3
 ----
@@ -13,8 +12,7 @@ NULL
 NULL
 NULL
 
-skipif knownfail
-query I nosort
+statement error GDK reported error: BATsubcross: more than one match
 SELECT ( WITH x AS ( SELECT * FROM generate_series ( 32989 , 8100 ) EXCEPT SELECT * FROM generate_series ( 44 , 3 ) ) SELECT CASE WHEN NULL IN ( 69 , MAX ( CASE WHEN 97 THEN 66 END ) OVER ( ) + ( SELECT COUNT ( * ) ) ) THEN 41 END FROM x )
 ----
 

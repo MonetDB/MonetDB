@@ -185,17 +185,6 @@ extern str str_suffix(str *buf, size_t *buflen, const char *s, int l)
 extern str str_repeat(str *buf, size_t *buflen, const char *s, int c)
 		__attribute__((__visibility__("hidden")));
 
-extern str str_case_hash_lock(bool upper)
-		__attribute__((__visibility__("hidden")));
-extern void str_case_hash_unlock(bool upper)
-		__attribute__((__visibility__("hidden")));
-/* Make sure the UTF8_toLowerFrom hash is locked! */
-extern str str_lower(str *buf, size_t *buflen, const char *s)
-		__attribute__((__visibility__("hidden")));
-/* Make sure the UTF8_toUpperFrom hash is locked! */
-extern str str_upper(str *buf, size_t *buflen, const char *s)
-		__attribute__((__visibility__("hidden")));
-
 extern str str_strip(str *buf, size_t *buflen, const char *s)
 		__attribute__((__visibility__("hidden")));
 extern str str_ltrim(str *buf, size_t *buflen, const char *s)
@@ -219,15 +208,13 @@ extern str str_rpad3(str *buf, size_t *buflen, const char *s, int len,
 					 const char *s2)
 		__attribute__((__visibility__("hidden")));
 
-extern int str_search(const char *s, const char *needle, int needle_len)
+extern int str_search(const char *s, const char *needle)
 		__attribute__((__visibility__("hidden")));
-extern int str_isearch(const char *s, const char *needle, int needle_len)
+extern int str_isearch(const char *s, const char *needle)
 		__attribute__((__visibility__("hidden")));
-extern int str_reverse_str_search(const char *s, const char *needle,
-								  int needle_len)
+extern int str_reverse_str_search(const char *s, const char *needle)
 		__attribute__((__visibility__("hidden")));
-extern int str_reverse_str_isearch(const char *s, const char *needle,
-								   int needle_len)
+extern int str_reverse_str_isearch(const char *s, const char *needle)
 		__attribute__((__visibility__("hidden")));
 extern int str_locate2(const char *needle, const char *haystack, int start)
 		__attribute__((__visibility__("hidden")));

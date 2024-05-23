@@ -821,6 +821,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		return 0;
 	}
 
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 	TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 		oid x = canditer_next(ci) - candoff;
 		const char *s = BUNtvar(*bi, x);
@@ -834,7 +835,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 				goto conversion_failed;
 			}
 			assert(len == ATOMsize(tp));
-			if (ATOMcmp(tp, dst, nil) == 0)
+			if (atomcmp(dst, nil) == 0)
 				nils++;
 		}
 		dst = (void *) ((char *) dst + len);

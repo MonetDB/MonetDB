@@ -918,6 +918,7 @@ static str RAPIprelude(void) {
 					  "failed to initialize R environment (%s)", initstatus);
 			}
 			Rf_defineVar(Rf_install("MONETDB_LIBDIR"), ScalarString(RSTR(LIBDIR)), R_GlobalEnv);
+			Rf_defineVar(Rf_install("MONETDB_VERSION"), ScalarString(RSTR(MONETDB_VERSION)), R_GlobalEnv);
 
 		}
 		MT_lock_unset(&rapiLock);

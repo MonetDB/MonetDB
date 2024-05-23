@@ -183,7 +183,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					int access = c->storage_type && c->storage_type[0] == 'D' ? RD_EXT : RDONLY;
 					if (!(b = store->storage_api.bind_col(tr, c, access)))
 						continue; /* At the moment we ignore the error, but maybe we can change this */
-					if (isVIEW(b)) { /* If it is a view get the parent BAT */
+					if (VIEWtparent(b)) { /* If it is a view get the parent BAT */
 						BAT *nb = BATdescriptor(VIEWtparent(b));
 						BBPunfix(b->batCacheid);
 						b = nb;
@@ -370,7 +370,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								goto bailout;
 							}
 							BATiter rei = bat_iterator(re);
-							if (isVIEW(re)) { /* If it is a view get the parent BAT */
+							if (VIEWtparent(re)) { /* If it is a view get the parent BAT */
 								BAT *nb = BATdescriptor(VIEWtparent(re));
 								BBPunfix(re->batCacheid);
 								re = nb;
@@ -423,7 +423,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 									goto bailout;
 								}
-								if (isVIEW(fb)) { /* If it is a view get the parent BAT */
+								if (VIEWtparent(fb)) { /* If it is a view get the parent BAT */
 									BAT *nb = BATdescriptor(VIEWtparent(fb));
 									BBPunfix(fb->batCacheid);
 									fb = nb;

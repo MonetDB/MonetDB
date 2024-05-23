@@ -1,10 +1,10 @@
 query T nosort
-WITH x AS ( SELECT NULL ) SELECT 'x' IN ( SELECT * FROM x GROUP BY 'x' )
+WITH x AS ( SELECT NULL ) SELECT 'x' IN ( SELECT * FROM x)
 ----
 NULL
 
 query T nosort
-SELECT ( WITH x AS ( SELECT NULL ) SELECT 'x' IN ( SELECT * FROM x GROUP BY 'x' ) )
+SELECT ( WITH x AS ( SELECT NULL ) SELECT 'x' IN ( SELECT * FROM x) )
 ----
 NULL
 

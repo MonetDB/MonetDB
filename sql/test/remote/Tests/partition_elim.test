@@ -94,19 +94,19 @@ select y from test4 where y between 0 and -1
 ----
 
 query R rowsort
-analyze sys.test1 minmax
+analyze sys.test1
 ----
 
 query R rowsort
-analyze sys.test2 minmax
+analyze sys.test2
 ----
 
 query R rowsort
-analyze sys.test3 minmax
+analyze sys.test3
 ----
 
 query R rowsort
-analyze sys.test4 minmax
+analyze sys.test4
 ----
 
 query T python .explain.function_histogram

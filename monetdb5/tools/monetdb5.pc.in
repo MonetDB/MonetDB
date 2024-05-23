@@ -18,5 +18,5 @@ URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
 Requires.private: monetdb-gdk = @MONETDB_VERSION@ monetdb-stream = @MONETDB_VERSION@ @PKG_LIBXML2@ @PKG_PCRE@
 
-Libs: -L${libdir} -lmonetdb5
+Libs: -L${libdir} -lmonetdb5-@MONETDB_VERSION@
 Cflags: -I${includedir}/monetdb

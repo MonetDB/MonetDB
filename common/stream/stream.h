@@ -188,9 +188,6 @@ stream_export FILE *getFile(stream *s); // gdk_logger.c progress messages
 stream_export int getFileNo(stream *s);	/* fileno(getFile(s)) */ // mclient.c, gdk_logger.c progress messages
 stream_export size_t getFileSize(stream *s); // mal_import.c, sql_scenario.c, store.c, bat_logger.c
 
-stream_export stream *iconv_rstream(stream *restrict ss, const char *restrict charset, const char *restrict name); // mclient.c stdin
-stream_export stream *iconv_wstream(stream *restrict ss, const char *restrict charset, const char *restrict name); // mclient.c stdout
-
 typedef struct buffer {
 	char *buf;
 	size_t pos;

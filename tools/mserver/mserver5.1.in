@@ -121,6 +121,18 @@ Load extra module in the form of a dynamic link library (.dll or .so
 file) which should be located in the lib/monetdb5 directory.
 This option can be repeated for different modules.
 .TP
+.B \-\-without\-geom
+Start the server without 
+.I geom
+support, even if it is available.
+Normally the server will refuse to start if
+.I geom
+is loaded, but the
+database was created by a server without
+.I geom
+support.
+With this option it is possible to start the server anyway.
+.TP
 .B \-\-help
 Print list of options.
 .TP

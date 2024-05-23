@@ -8,8 +8,8 @@
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
-@CMAKE_INSTALL_FULL_BINDIR@/monetdbd				--	gen_context(system_u:object_r:monetdbd_exec_t,s0)
-@CMAKE_INSTALL_FULL_BINDIR@/mserver5				--	gen_context(system_u:object_r:mserver5_exec_t,s0)
+@CMAKE_INSTALL_FULL_BINDIR@/monetdbd*				--	gen_context(system_u:object_r:monetdbd_exec_t,s0)
+@CMAKE_INSTALL_FULL_BINDIR@/mserver5*				--	gen_context(system_u:object_r:mserver5_exec_t,s0)
 @CMAKE_INSTALL_FULL_LIBDIR@/systemd/system/monetdbd.*			gen_context(system_u:object_r:monetdbd_unit_file_t,s0)
 @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/log/monetdb(/.*)?					gen_context(system_u:object_r:monetdbd_log_t,s0)
 @CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb(/.*)?					gen_context(system_u:object_r:monetdbd_var_run_t,s0)

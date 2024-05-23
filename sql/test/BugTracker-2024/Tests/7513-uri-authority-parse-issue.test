@@ -1,0 +1,15 @@
+
+query T
+SELECT GETHOST('https://me:pw@www.monetdb.org/Doc');
+----
+www.monetdb.org
+
+query T
+SELECT GETHOST('https://me:pw@www.monetdb.org/Doc');
+----
+www.monetdb.org
+
+query T
+SELECT GETHOST('https://me:pw@www.monetdb.org/Doc');
+----
+www.monetdb.org

@@ -47,15 +47,8 @@
 
 #include <locale.h>
 
-#ifdef HAVE_WCWIDTH
-#include <wchar.h>
-#endif
-
-#ifdef HAVE_ICONV
-#include <iconv.h>
 #ifdef HAVE_NL_LANGINFO
 #include <langinfo.h>
-#endif
 #endif
 
 #ifndef S_ISCHR
@@ -79,9 +72,6 @@ static const char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
 static bool echoquery = false;
-#ifdef HAVE_ICONV
-static char *encoding;
-#endif
 static bool errseen = false;
 static bool allow_remote = false;
 static const char *curfile = NULL;
@@ -112,9 +102,6 @@ bool noquote = false;		/* don't use quotes in CSV format */
 typedef int64_t timertype;
 
 static timertype t0, t1;	/* used for timing */
-
-#define UTF8BOM		"\xEF\xBB\xBF"	/* UTF-8 encoding of Unicode BOM */
-#define UTF8BOMLENGTH	3	/* length of above */
 
 /* Pagination and simple ASCII-based rendering is provided for SQL
  * sessions. The result set size is limited by the cache size of the
@@ -182,6 +169,7 @@ static char *nullstring = default_nullstring;
 
 #include <ctype.h>
 #include "mhelp.h"
+#include "mutf8.h"
 
 static timertype
 gettime(void)
@@ -332,6 +320,12 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, bool s
 	return;
 }
 
+#ifdef HAVE_ICONV
+static char *encoding;
+
+#include "iconv-stream.h"
+#endif
+
 /* The Mapi library eats away the comment lines, which we need to
  * detect end of debugging. We overload the routine to our liking. */
 
@@ -383,205 +377,32 @@ static size_t
 utf8strlenmax(char *s, char *e, size_t max, char **t)
 {
 	size_t len = 0, len0 = 0;
-	int c;
-	int n;
 	char *t0 = s;
 
 	assert(max == 0 || t != NULL);
 	if (s == NULL)
 		return 0;
-	c = 0;
-	n = 0;
-	while (*s != 0 && (e == NULL || s < e)) {
-		if (*s == '\n') {
-			assert(n == 0);
-			if (max) {
-				*t = s;
-				return len;
-			}
-			len++;
-			n = 0;
-		} else if (*s == '\t') {
-			assert(n == 0);
-			len++;	/* rendered as single space */
-			n = 0;
-		} else if ((unsigned char) *s <= 0x1F || *s == '\177') {
-			assert(n == 0);
-			len += 4;
-			n = 0;
-		} else if ((*s & 0x80) == 0) {
-			assert(n == 0);
-			len++;
-			n = 0;
-		} else if ((*s & 0xC0) == 0x80) {
-			c = (c << 6) | (*s & 0x3F);
-			if (--n == 0) {
-				/* last byte of a multi-byte character */
-#ifdef HAVE_WCWIDTH
-				n = wcwidth(c);
-				if (n >= 0)
-					len += n;
-				else
-					len++;		/* assume width 1 if unprintable */
-				n = 0;
-#else
+
+	uint32_t state = 0, codepoint = 0;
+	while (*s && (e == NULL || s < e)) {
+		switch (decode(&state, &codepoint, (uint8_t) *s++)) {
+		case UTF8_ACCEPT:
+			if (codepoint == '\n') {
+				if (max) {
+					*t = s;
+					return len;
+				}
 				len++;
-				/* this list was created by combining
-				 * the code points marked as
-				 * Emoji_Presentation in
-				 * /usr/share/unicode/emoji/emoji-data.txt
-				 * and code points marked either F or
-				 * W in EastAsianWidth.txt; this list
-				 * is up-to-date with Unicode 11.0 */
-				if ((0x0300 <= c && c <= 0x036F) ||
-					(0x0483 <= c && c <= 0x0489) ||
-					(0x0653 <= c && c <= 0x0655) ||
-					(0x1AB0 <= c && c <= 0x1AFF) ||
-					(0x1DC0 <= c && c <= 0x1DFF) ||
-					(0x20D0 <= c && c <= 0x20FF) ||
-					(0x2DE0 <= c && c <= 0x2DFF) ||
-					(0xA66F <= c && c <= 0xA672) ||
-					(0xA674 <= c && c <= 0xA67D) ||
-					(0xA69E <= c && c <= 0xA69F) ||
-					(0xA8E0 <= c && c <= 0xA8F1) ||
-					(0xFE20 <= c && c <= 0xFE2F) ||
-					c == 0x3099 || c == 0x309A)
-					len--;		/* combining mark */
-				else if ((0x1100 <= c && c <= 0x115F) ||
-				    (0x231A <= c && c <= 0x231B) ||
-				    (0x2329 <= c && c <= 0x232A) ||
-				    (0x23E9 <= c && c <= 0x23EC) ||
-				    c == 0x23F0 ||
-				    c == 0x23F3 ||
-				    (0x25FD <= c && c <= 0x25FE) ||
-				    (0x2614 <= c && c <= 0x2615) ||
-				    (0x2648 <= c && c <= 0x2653) ||
-				    c == 0x267F ||
-				    c == 0x2693 ||
-				    c == 0x26A1 ||
-				    (0x26AA <= c && c <= 0x26AB) ||
-				    (0x26BD <= c && c <= 0x26BE) ||
-				    (0x26C4 <= c && c <= 0x26C5) ||
-				    c == 0x26CE ||
-				    c == 0x26D4 ||
-				    c == 0x26EA ||
-				    (0x26F2 <= c && c <= 0x26F3) ||
-				    c == 0x26F5 ||
-				    c == 0x26FA ||
-				    c == 0x26FD ||
-				    c == 0x2705 ||
-				    (0x270A <= c && c <= 0x270B) ||
-				    c == 0x2728 ||
-				    c == 0x274C ||
-				    c == 0x274E ||
-				    (0x2753 <= c && c <= 0x2755) ||
-				    c == 0x2757 ||
-				    (0x2795 <= c && c <= 0x2797) ||
-				    c == 0x27B0 ||
-				    c == 0x27BF ||
-				    (0x2B1B <= c && c <= 0x2B1C) ||
-				    c == 0x2B50 ||
-				    c == 0x2B55 ||
-				    (0x2E80 <= c && c <= 0x2E99) ||
-				    (0x2E9B <= c && c <= 0x2EF3) ||
-				    (0x2F00 <= c && c <= 0x2FD5) ||
-				    (0x2FF0 <= c && c <= 0x2FFB) ||
-				    (0x3000 <= c && c <= 0x303E) ||
-				    (0x3041 <= c && c <= 0x3096) ||
-				    (0x3099 <= c && c <= 0x30FF) ||
-				    (0x3105 <= c && c <= 0x312F) ||
-				    (0x3131 <= c && c <= 0x318E) ||
-				    (0x3190 <= c && c <= 0x31BA) ||
-				    (0x31C0 <= c && c <= 0x31E3) ||
-				    (0x31F0 <= c && c <= 0x321E) ||
-				    (0x3220 <= c && c <= 0x3247) ||
-				    (0x3250 <= c && c <= 0x32FE) ||
-				    (0x3300 <= c && c <= 0x4DBF) ||
-				    (0x4E00 <= c && c <= 0xA48C) ||
-				    (0xA490 <= c && c <= 0xA4C6) ||
-				    (0xA960 <= c && c <= 0xA97C) ||
-				    (0xAC00 <= c && c <= 0xD7A3) ||
-				    (0xF900 <= c && c <= 0xFAFF) ||
-				    (0xFE10 <= c && c <= 0xFE19) ||
-				    (0xFE30 <= c && c <= 0xFE52) ||
-				    (0xFE54 <= c && c <= 0xFE66) ||
-				    (0xFE68 <= c && c <= 0xFE6B) ||
-				    (0xFF01 <= c && c <= 0xFF60) ||
-				    (0xFFE0 <= c && c <= 0xFFE6) ||
-				    (0x16FE0 <= c && c <= 0x16FE1) ||
-				    (0x17000 <= c && c <= 0x187F1) ||
-				    (0x18800 <= c && c <= 0x18AF2) ||
-				    (0x1B000 <= c && c <= 0x1B11E) ||
-				    (0x1B170 <= c && c <= 0x1B2FB) ||
-				    c == 0x1F004 ||
-				    c == 0x1F0CF ||
-				    c == 0x1F18E ||
-				    (0x1F191 <= c && c <= 0x1F19A) ||
-				    (0x1F200 <= c && c <= 0x1F202) ||
-				    (0x1F210 <= c && c <= 0x1F23B) ||
-				    (0x1F240 <= c && c <= 0x1F248) ||
-				    (0x1F250 <= c && c <= 0x1F251) ||
-				    (0x1F260 <= c && c <= 0x1F265) ||
-				    (0x1F300 <= c && c <= 0x1F320) ||
-				    (0x1F32D <= c && c <= 0x1F335) ||
-				    (0x1F337 <= c && c <= 0x1F37C) ||
-				    (0x1F37E <= c && c <= 0x1F393) ||
-				    (0x1F3A0 <= c && c <= 0x1F3CA) ||
-				    (0x1F3CF <= c && c <= 0x1F3D3) ||
-				    (0x1F3E0 <= c && c <= 0x1F3F0) ||
-				    c == 0x1F3F4 ||
-				    (0x1F3F8 <= c && c <= 0x1F43E) ||
-				    c == 0x1F440 ||
-				    (0x1F442 <= c && c <= 0x1F4FC) ||
-				    (0x1F4FF <= c && c <= 0x1F53D) ||
-				    (0x1F54B <= c && c <= 0x1F54E) ||
-				    (0x1F550 <= c && c <= 0x1F567) ||
-				    c == 0x1F57A ||
-				    (0x1F595 <= c && c <= 0x1F596) ||
-				    c == 0x1F5A4 ||
-				    (0x1F5FB <= c && c <= 0x1F64F) ||
-				    (0x1F680 <= c && c <= 0x1F6C5) ||
-				    c == 0x1F6CC ||
-				    (0x1F6D0 <= c && c <= 0x1F6D2) ||
-				    (0x1F6EB <= c && c <= 0x1F6EC) ||
-				    (0x1F6F4 <= c && c <= 0x1F6F9) ||
-				    (0x1F910 <= c && c <= 0x1F93E) ||
-				    (0x1F940 <= c && c <= 0x1F970) ||
-				    (0x1F973 <= c && c <= 0x1F976) ||
-				    c == 0x1F97A ||
-				    (0x1F97C <= c && c <= 0x1F9A2) ||
-				    (0x1F9B0 <= c && c <= 0x1F9B9) ||
-				    (0x1F9C0 <= c && c <= 0x1F9C2) ||
-				    (0x1F9D0 <= c && c <= 0x1F9FF) ||
-				    (0x20000 <= c && c <= 0x2FFFD) ||
-				    (0x30000 <= c && c <= 0x3FFFD))
-					len++;
-				else if (0x0080 <= c && c <= 0x009F)
-					len += 5;
-#endif
+			} else if (codepoint == '\t') {
+				len++;			/* rendered as single space */
+			} else if (codepoint <= 0x1F || codepoint == 0177) {
+				len += 4;		/* control, rendered as "\\%03o" */
+			} else if (0x80 <= codepoint && codepoint <= 0x9F) {
+				len += 6;		/* control, rendered as "u\\%04x" */
+			} else {
+				/* charwidth() returning -1 is caught by the above */
+				len += charwidth(codepoint);
 			}
-		} else if ((*s & 0xE0) == 0xC0) {
-			assert(n == 0);
-			n = 1;
-			c = *s & 0x1F;
-		} else if ((*s & 0xF0) == 0xE0) {
-			assert(n == 0);
-			n = 2;
-			c = *s & 0x0F;
-		} else if ((*s & 0xF8) == 0xF0) {
-			assert(n == 0);
-			n = 3;
-			c = *s & 0x07;
-		} else if ((*s & 0xFC) == 0xF8) {
-			assert(n == 0);
-			n = 4;
-			c = *s & 0x03;
-		} else {
-			assert(0);
-			n = 0;
-		}
-		s++;
-		if (n == 0) {
 			if (max != 0) {
 				if (len > max) {
 					*t = t0;
@@ -594,6 +415,13 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 			}
 			t0 = s;
 			len0 = len;
+			break;
+		case UTF8_REJECT:
+			/* shouldn't happen */
+			assert(0);
+			break;
+		default:
+			break;
 		}
 	}
 	if (max != 0)
@@ -716,10 +544,19 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
+								/* U+0080 - U+009F control character */
 								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
-							} else
+							} else if (((unsigned char) *p & 0x80) == 0) {
 								mnstr_write(toConsole, p, 1, 1);
+							} else {
+								/* do a complete UTF-8 character
+								 * sequence in one go */
+								char *q = p;
+								while (((unsigned char) *++p & 0xC0) == 0x80)
+									;
+								mnstr_write(toConsole, q, p-- - q, 1);
+							}
 						}
 						mnstr_printf(toConsole, "...%*s",
 							     len[i] - 2 - (int) utf8strlen(rest[i], t),
@@ -734,10 +571,19 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
+								/* U+0080 - U+009F control character */
 								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
-							} else
+							} else if (((unsigned char) *p & 0x80) == 0) {
 								mnstr_write(toConsole, p, 1, 1);
+							} else {
+								/* do a complete UTF-8 character
+								 * sequence in one go */
+								char *q = p;
+								while (((unsigned char) *++p & 0xC0) == 0x80)
+									;
+								mnstr_write(toConsole, q, p-- - q, 1);
+							}
 						}
 						mnstr_write(toConsole, " ", 1, 1);
 						if (!numeric[i])
@@ -768,24 +614,32 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 							     rest[i]);
 					}
 					if (!numeric[i]) {
-						char *p;
 						/* replace tabs with a
 						 * single space to
 						 * avoid screwup the
 						 * width
 						 * calculations */
 						mnstr_write(toConsole, " ", 1, 1);
-						for (p = rest[i]; *p; p++) {
+						for (char *p = rest[i]; *p; p++) {
 							if (*p == '\t')
 								mnstr_write(toConsole, " ", 1, 1);
 							else if ((unsigned char) *p <= 0x1F || *p == '\177')
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
+								/* U+0080 - U+009F control character */
 								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
-							} else
+							} else if (((unsigned char) *p & 0x80) == 0) {
 								mnstr_write(toConsole, p, 1, 1);
+							} else {
+								/* do a complete UTF-8 character
+								 * sequence in one go */
+								char *q = p;
+								while (((unsigned char) *++p & 0xC0) == 0x80)
+									;
+								mnstr_write(toConsole, q, p-- - q, 1);
+							}
 						}
 						mnstr_printf(toConsole, " %*s",
 							     (int) (len[i] - ulen),
@@ -816,32 +670,37 @@ XMLprdata(const char *val)
 {
 	if (val == NULL)
 		return;
-	while (*val) {
-		if (*val == '&')
-			mnstr_printf(toConsole, "&amp;");
-		else if (*val == '<')
-			mnstr_printf(toConsole, "&lt;");
-		else if (*val == '>')
-			mnstr_printf(toConsole, "&gt;");
-		else if (*val == '"')
-			mnstr_printf(toConsole, "&quot;");
-		else if (*val == '\'')
-			mnstr_printf(toConsole, "&apos;");
-		else if ((*val & 0xFF) < 0x20)	/* control character */
-			mnstr_printf(toConsole, "&#%d;", *val & 0xFF);
-		else if ((*val & 0x80) != 0 /* && encoding != NULL */ ) {
-			int n;
-			unsigned int m;
-			unsigned int c = *val & 0x7F;
-
-			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
-				c &= ~m;
-			while (--n >= 0)
-				c = (c << 6) | (*++val & 0x3F);
-			mnstr_printf(toConsole, "&#x%x;", c);
-		} else
-			mnstr_write(toConsole, val, 1, 1);
-		val++;
+	for (uint32_t state = 0, codepoint = 0; *val; val++) {
+		if (decode(&state, &codepoint, (uint8_t) *val) == UTF8_ACCEPT) {
+			switch (codepoint) {
+			case '&':
+				mnstr_printf(toConsole, "&amp;");
+				break;
+			case '<':
+				mnstr_printf(toConsole, "&lt;");
+				break;
+			case '>':
+				mnstr_printf(toConsole, "&gt;");
+				break;
+			case '"':
+				mnstr_printf(toConsole, "&quot;");
+				break;
+			case '\'':
+				mnstr_printf(toConsole, "&apos;");
+				break;
+			default:
+				if ((codepoint & ~0x80) <= 0x1F || codepoint == 0177) {
+					/* control character */
+					mnstr_printf(toConsole, "&#%d;", codepoint);
+				} else if (codepoint < 0x80) {
+					/* ASCII */
+					mnstr_printf(toConsole, "%c", codepoint);
+				} else {
+					mnstr_printf(toConsole, "&#x%x;", codepoint);
+				}
+				break;
+			}
+		}
 	}
 }
 
@@ -3145,6 +3004,40 @@ struct privdata {
 #define READSIZE	(1 << 16)
 //#define READSIZE	(1 << 20)
 
+static char *
+cvfilename(const char *filename)
+{
+#ifdef HAVE_ICONV
+	if (encoding) {
+		iconv_t cd = iconv_open(encoding, "UTF-8");
+
+		if (cd != (iconv_t) -1) {
+			size_t len = strlen(filename);
+			size_t size = 4 * len;
+			char *from = (char *) filename;
+			char *r = malloc(size + 1);
+			char *p = r;
+
+			if (r) {
+				if (iconv(cd, &from, &len, &p, &size) != (size_t) -1) {
+					iconv_close(cd);
+					*p = 0;
+					return r;
+				}
+				free(r);
+			}
+			iconv_close(cd);
+		}
+	}
+#endif
+	/* couldn't use iconv for whatever reason; alternative is to
+	 * use utf8towchar above to convert to a wide character string
+	 * (wcs) and convert that to the locale-specific encoding
+	 * using wcstombs or wcsrtombs (but preferably only if the
+	 * locale's encoding is not UTF-8) */
+	return strdup(filename);
+}
+
 static const char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	"abcdefghijklmnopqrstuvwxyz";
 
@@ -3156,6 +3049,7 @@ getfile(void *data, const char *filename, bool binary,
 	char *buf;
 	struct privdata *priv = data;
 	ssize_t s;
+	char *fname = NULL;
 
 	if (size)
 		*size = 0;	/* most returns require this */
@@ -3166,12 +3060,15 @@ getfile(void *data, const char *filename, bool binary,
 	}
 	buf = priv->buf;
 	if (filename != NULL) {
+		fname = cvfilename(filename);
+		if (fname == NULL)
+			return "allocation failed in client";
 		if (binary) {
-			f = open_rstream(filename);
+			f = open_rstream(fname);
 			assert(offset <= 1);
 			offset = 0;
 		} else {
-			f = open_rastream(filename);
+			f = open_rastream(fname);
 			if (f == NULL) {
 				size_t x;
 				/* simplistic check for URL
@@ -3183,11 +3080,16 @@ getfile(void *data, const char *filename, bool binary,
 #ifdef HAVE_CURL
 					if (allow_remote) {
 						f = open_urlstream(filename, priv->errbuf);
-						if (f == NULL && priv->errbuf[0])
+						if (f == NULL && priv->errbuf[0]) {
+							free(fname);
 							return priv->errbuf;
+						}
 					} else
 #endif
+					{
+						free(fname);
 						return "client refuses to retrieve remote content";
+					}
 				}
 			}
 #ifdef HAVE_ICONV
@@ -3208,16 +3110,19 @@ getfile(void *data, const char *filename, bool binary,
 					p = q;
 #endif
 				if (p != NULL) {
-					size_t x = (size_t) (p - curfile) + strlen(filename) + 2;
+					size_t x = (size_t) (p - curfile) + strlen(fname) + 2;
 					char *b = malloc(x);
-					snprintf(b, x, "%.*s/%s", (int) (p - curfile), curfile, filename);
+					snprintf(b, x, "%.*s/%s", (int) (p - curfile), curfile, fname);
 					f = binary ? open_rstream(b) : open_rastream(b);
 					free(b);
 				}
 			}
-			if (f == NULL)
+			if (f == NULL) {
+				free(fname);
 				return (char*) mnstr_peek_error(NULL);
+			}
 		}
+		free(fname);
 		while (offset > 1) {
 			if (state == INTERRUPT) {
 				close_stream(f);
@@ -3271,9 +3176,14 @@ static char *
 putfile(void *data, const char *filename, bool binary, const void *buf, size_t bufsize)
 {
 	struct privdata *priv = data;
+	char *fname = NULL;
 
 	if (filename != NULL) {
-		stream *s = binary ? open_wstream(filename) : open_wastream(filename);
+		fname = cvfilename(filename);
+		if (fname == NULL)
+			return "allocation failed in client";
+		stream *s = binary ? open_wstream(fname) : open_wastream(fname);
+		free(fname);
 		if (s == NULL)
 			return (char*)mnstr_peek_error(NULL);
 		priv->f = s;

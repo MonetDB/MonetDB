@@ -1,0 +1,24 @@
+query T nosort
+select * from generate_series(date '2023-01-01',date '2024-01-01', interval '1' month) where value < date '2023-06-06'
+----
+2023-01-01
+2023-02-01
+2023-03-01
+2023-04-01
+2023-05-01
+
+query T nosort
+select * from generate_series(date '2023-01-01',date '2024-01-01', interval '15' day) where value < date '2023-06-06'
+----
+2023-01-01
+2023-01-16
+2023-01-31
+2023-02-15
+2023-03-02
+2023-03-17
+2023-04-01
+2023-04-16
+2023-05-01
+2023-05-16
+2023-05-31
+

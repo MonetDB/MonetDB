@@ -253,13 +253,20 @@ find_sql_table(sql_trans *tr, sql_schema *s, const char *tname)
 	}
 
 	if (t && isTempTable(t) && tr->tmp == s) {
+		sqlstore *store = tr->store;
 		assert(isGlobal(t));
 
 		sql_table* lt = (sql_table*) os_find_name(tr->localtmps, tr, tname);
 		if (lt)
 			return lt;
+		MT_lock_set(&store->table_locks[t->base.id&(NR_TABLE_LOCKS-1)]);
 
-		t = globaltmp_instantiate(tr, t);
+		lt = (sql_table*) os_find_name(tr->localtmps, tr, tname);
+		if (!lt)
+			t = globaltmp_instantiate(tr, t);
+		else
+			t = lt;
+		MT_lock_unset(&store->table_locks[t->base.id&(NR_TABLE_LOCKS-1)]);
 		return t;
 	}
 
@@ -276,13 +283,19 @@ find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id)
 	}
 
 	if (t && isTempTable(t) && tr->tmp == s) {
+		sqlstore *store = tr->store;
 		assert(isGlobal(t));
 
 		sql_table* lt = (sql_table*) os_find_id(tr->localtmps, tr, id);
 		if (lt)
 			return lt;
-
-		t = globaltmp_instantiate(tr, t);
+		MT_lock_set(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
+		lt = (sql_table*) os_find_id(tr->localtmps, tr, id);
+		if (!lt)
+			t = globaltmp_instantiate(tr, t);
+		else
+			t = lt;
+		MT_lock_unset(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
 		return t;
 	}
 	return t;

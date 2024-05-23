@@ -98,12 +98,13 @@ gdk_export gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st
 	do { /* taken from https://www.vldb.org/pvldb/vol8/p1058-leis.pdf */ \
 		oid begin = START, tend = END;				\
 		CAST computed;						\
-									\
 		INIT_AGGREGATE(ARG1, ARG2, ARG3);			\
+		if (begin < tend)					\
 		for (oid level = 0; level < nlevels; level++) {		\
 			CAST *tlevel = (CAST *) segment_tree + levels_offset[level]; \
 			oid parent_begin = begin / SEGMENT_TREE_FANOUT; \
 			oid parent_end = tend / SEGMENT_TREE_FANOUT;	\
+									\
 									\
 			if (parent_begin == parent_end) {		\
 				for (oid pos = begin; pos < tend; pos++) \

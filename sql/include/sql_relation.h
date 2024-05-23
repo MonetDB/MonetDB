@@ -50,7 +50,7 @@ typedef struct expression {
 	unsigned short tmp;
 	unsigned int
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
-	 freevar:4,	/* free variable, ie binds to the upper dependent join */
+	 freevar:8,	/* free variable, ie binds to the upper dependent join */
 	 intern:1,
 	 selfref:1,		/* set when the expression references a expression in the same projection list */
 	 anti:1,
@@ -298,7 +298,7 @@ typedef struct relation {
 	int nrcols;	/* nr of cols */
 	unsigned int
 	 flag:16,
-	 card:4,	/* 0, 1 (row), 2 aggr, 3 */
+	 card:2,	/* 0, 1 (row), 2 aggr, 3 */
 	 dependent:1, 	/* dependent join */
 	 distinct:1,
 	 processed:1,   /* fully processed or still in the process of building */

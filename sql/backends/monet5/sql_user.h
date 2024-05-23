@@ -24,7 +24,7 @@ extern int monet5_user_get_limits(mvc *m, int user /* sql user id */, lng *maxme
 
 extern str monet5_password_hash(mvc *m, const char *username);
 
-extern str remote_create(mvc *sql, sqlid id, const str username, const str password, int pw_encrypted);
+extern str remote_create(mvc *sql, sqlid id, const char *username, const char *password, int pw_encrypted);
 extern str remote_get(mvc *sql, sqlid id, str *username, str *pwhash);
 
 #endif /* _SQL_USER_H_ */

@@ -8,7 +8,6 @@ SELECT CASE WHEN COUNT ( ) OVER ( ) THEN ( 63 ) END
 ----
 63
 
-skipif knownfail
 query II nosort
 SELECT 50 , CASE WHEN COUNT ( ) OVER ( ) THEN ( 63 ) END
 ----

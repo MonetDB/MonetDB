@@ -93,7 +93,7 @@ IDtoString(char **retval, size_t *len, const void *HANDLE, bool external)
  * to parse the string.
  */
 static str
-IDentifier(identifier *retval, str *in)
+IDentifier(identifier *retval, const char *const *in)
 {
 	size_t len = 0;
 

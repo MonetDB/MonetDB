@@ -3,8 +3,7 @@ SELECT 0.100000 FROM dependencies ORDER BY max ( 'y' )
 ----
 0.100
 
-skipif knownfail
 query R nosort
-SELECT 0.100000 FROM dependencies ORDER BY max ( 'y' ) OVER ( ROWS BETWEEN 1.100000 PRECEDING AND 8 PRECEDING )
+SELECT 0.100000 FROM dependencies ORDER BY max ( 'y' ) OVER ( ROWS BETWEEN 1.100000 PRECEDING AND 8 PRECEDING ) limit 1
 ----
 0.100

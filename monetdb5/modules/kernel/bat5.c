@@ -588,7 +588,7 @@ oidtostr(oid i, char *p, size_t len)
 }
 
 static gdk_return
-infoHeap(BAT *bk, BAT *bv, Heap *hp, str nme)
+infoHeap(BAT *bk, BAT *bv, Heap *hp, const char *nme)
 {
 	char buf[1024], *p = buf;
 
@@ -623,7 +623,7 @@ infoHeap(BAT *bk, BAT *bv, Heap *hp, str nme)
 #define COLLISION (8 * sizeof(size_t))
 
 static gdk_return
-HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
+HASHinfo(BAT *bk, BAT *bv, Hash *h, const char *s)
 {
 	BUN i;
 	BUN j;
