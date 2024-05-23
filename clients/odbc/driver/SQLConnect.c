@@ -70,6 +70,7 @@ const struct attr_setting attr_settings[] = {
 
 const int attr_setting_count = sizeof(attr_settings) / sizeof(attr_settings[0]);
 
+
 int
 attr_setting_lookup(const char *attr_name, bool allow_alt_name)
 {
