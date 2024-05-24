@@ -112,7 +112,7 @@ main(int argc, char **argv)
 	for (int i = 0; i < ntargets; i++) {
 		SQLCHAR *t = targets[i];
 		if (verbose)
-			fprintf(stderr, "\nTarget: %s\n", t);
+			printf("\nTarget: %s\n", t);
 		outbuf[0] = '\0';
 		int ret = action(t);
 		if (ret)
@@ -135,7 +135,7 @@ ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret
 		case SQL_SUCCESS:
 		case SQL_NEED_DATA:
 			if (verbose)
-				fprintf(stderr, "Succeeded: %s\n", message);
+				printf("Succeeded: %s\n", message);
 			class = "Info";
 			break;
 		case SQL_SUCCESS_WITH_INFO:
@@ -145,7 +145,7 @@ ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret
 			class = "Error";
 			break;
 		default:
-			fprintf(stderr, "Internal error: %s: unknown SQLRETURN %d", message, ret);
+			printf("Internal error: %s: unknown SQLRETURN %d", message, ret);
 			break;
 	}
 
@@ -161,10 +161,10 @@ ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret
 		if (!SQL_SUCCEEDED(diag_ret))
 			break;
 		if (class) {
-			fprintf(stderr, "%s: %s\n", class, message);
+			printf("%s: %s\n", class, message);
 			class = NULL;
 		}
-		fprintf(stderr, "    - %s: %s\n", state, explanation);
+		printf("    - %s: %s\n", state, explanation);
 	}
 
 	if (!SQL_SUCCEEDED(ret) && ret != SQL_NEED_DATA) {
