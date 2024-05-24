@@ -126,6 +126,7 @@ mapi_export bool msettings_malloc_failed(msettings_error err);
 /* returns NULL if could not allocate */
 mapi_export msettings *msettings_create(void);
 mapi_export msettings *msettings_clone(const msettings *mp);
+mapi_export void msettings_reset(msettings *mp);
 mapi_export const msettings *msettings_default;
 
 /* always returns NULL */

@@ -264,7 +264,6 @@ msettings *msettings_create(void)
 {
 	msettings *mp = malloc(sizeof(*mp));
 	if (!mp) {
-		free(mp);
 		return NULL;
 	}
 	*mp = msettings_default_values;
@@ -321,6 +320,37 @@ bailout:
 	free(mp->unix_sock_name_buffer);
 	free(mp);
 	return NULL;
+}
+
+void
+msettings_reset(msettings *mp)
+{
+	// free modified string settings
+	struct string *start = &mp->dummy_start_string;
+	struct string *end = &mp->dummy_end_string;
+	for (struct string *p = start; p < end; p++) {
+		if (p->must_free)
+			free(p->str);
+	}
+
+	// free unknown parameters
+	if (mp->nr_unknown) {
+		for (size_t i = 0; i < 2 * mp->nr_unknown; i++)
+			free(mp->unknown_parameters[i]);
+		free(mp->unknown_parameters);
+	}
+
+	// free the buffer
+	free(mp->unix_sock_name_buffer);
+
+	// keep the localizer
+	void *localizer = mp->localizer;
+	void *localizer_data = mp->localizer_data;
+
+	// now overwrite the whole thing
+	*mp = *msettings_default;
+	mp->localizer = localizer;
+	mp->localizer_data = localizer_data;
 }
 
 msettings *
