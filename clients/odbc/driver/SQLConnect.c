@@ -482,9 +482,7 @@ MNDBConnect(ODBCDbc *dbc,
 	SQLRETURN ret;
 
 	ret = MNDBConnectSettings(dbc, dsn, settings);
-	if (SQL_SUCCEEDED(ret)) {
-		settings = NULL; // must not be free'd now
-	}
+	settings = NULL; // must not be free'd now
 
 	goto end;
 
@@ -522,6 +520,7 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 
 	Mapi mid = mapi_settings(settings);
 	if (mid) {
+		settings = NULL; // will be free'd as part of 'mid' now
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		mapi_set_size_header(mid, true);
 		mapi_reconnect(mid);
@@ -530,6 +529,9 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 		const char *error_state = "08001";
 		const char *error_explanation = mid ? mapi_error_str(mid) : NULL;
 		addDbcError(dbc, error_state, error_explanation, 0);
+		if (mid)
+			mapi_destroy(mid);
+		msettings_destroy(settings);
 		msettings_destroy(clone);
 		return SQL_ERROR;
 	}

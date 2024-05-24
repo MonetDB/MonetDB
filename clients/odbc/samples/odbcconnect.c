@@ -50,6 +50,17 @@ SQLHANDLE conn = NULL;
 
 SQLCHAR outbuf[4096];
 
+static void
+cleanup(void)
+{
+	if (conn) {
+		SQLDisconnect(conn);
+		SQLFreeHandle(SQL_HANDLE_DBC, conn);
+	}
+	if (env)
+		SQLFreeHandle(SQL_HANDLE_DBC, env);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -108,10 +119,8 @@ main(int argc, char **argv)
 			break;
 	}
 
-	SQLDisconnect(conn);
-	SQLFreeHandle(SQL_HANDLE_DBC, conn);
-	SQLFreeHandle(SQL_HANDLE_DBC, env);
 	free(targets);
+	cleanup();
 
 	return ret;
 }
@@ -137,7 +146,7 @@ ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret
 			break;
 		default:
 			fprintf(stderr, "Internal error: %s: unknown SQLRETURN %d", message, ret);
-			exit(1);
+			break;
 	}
 
 	SQLCHAR state[6];
@@ -156,6 +165,11 @@ ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret
 			class = NULL;
 		}
 		fprintf(stderr, "    - %s: %s\n", state, explanation);
+	}
+
+	if (!SQL_SUCCEEDED(ret)) {
+		cleanup();
+		exit(1);
 	}
 }
 

@@ -370,10 +370,10 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		setODBCdebug(scratch_no_alloc, false);
 
 	rc = MNDBConnectSettings(dbc, dsn, settings);
+	settings = NULL; // do not free now
 	if (!SQL_SUCCEEDED(rc))
 		goto end; // not to 'failure', all errors have already been logged
 
-	settings = NULL; // do not free now
 
 	// Build a connect string for the current connection
 	// and put it in the buffer.
