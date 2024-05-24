@@ -130,13 +130,12 @@ static void
 ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret)
 {
 
-	char *class;
+	char *class = "Info";
 	switch (ret) {
 		case SQL_SUCCESS:
 		case SQL_NEED_DATA:
 			if (verbose)
 				printf("Succeeded: %s\n", message);
-			class = "Info";
 			break;
 		case SQL_SUCCESS_WITH_INFO:
 			class = "Warning";
