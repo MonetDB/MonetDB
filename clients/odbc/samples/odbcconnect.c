@@ -167,7 +167,7 @@ ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret
 		fprintf(stderr, "    - %s: %s\n", state, explanation);
 	}
 
-	if (!SQL_SUCCEEDED(ret)) {
+	if (!SQL_SUCCEEDED(ret) && ret != SQL_NEED_DATA) {
 		cleanup();
 		exit(1);
 	}
