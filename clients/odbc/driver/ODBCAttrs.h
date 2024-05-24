@@ -21,11 +21,11 @@
 #include "msettings.h"
 
 struct attr_setting {
-	const char *name;                // canonical attribute name
-	const char *alt_name;            // user-facing attribute name
-	mparm parm;
-	// optional
-	const char *suggest_values;      // SQLBrowseConnect suggestion, or NULL for "?"
+	const char *name;          // canonical attribute name
+	const char *alt_name;      // user-facing attribute name
+	mparm parm;                // the corresponding msetting parameter
+	bool is_enum;              // fixed set of values
+	const char **values;       // NULL or NULL-terminated array of options
 };
 
 // defined in SQLConnect.c, also used in SQLBrowseConnect.c

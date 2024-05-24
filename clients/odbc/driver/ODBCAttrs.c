@@ -17,22 +17,30 @@
 #include <odbcinst.h>
 #endif
 
+static const char *suggest_on_off[] = {
+	"On",
+	"Off",
+	NULL,
+};
 
-#define SUGGEST_BOOLEAN "{True,False}"
+static const char *suggest_monetdb[] = {
+	"monetdb",
+	NULL,
+};
 
 const struct attr_setting attr_settings[] = {
-	{ "UID", "User", MP_USER },
-	{ "PWD", "Password", MP_PASSWORD },
+	{ "UID", "User", MP_USER, .is_enum = false, .values = suggest_monetdb },
+	{ "PWD", "Password", MP_PASSWORD, .is_enum = false, .values = suggest_monetdb },
 	{ "DATABASE", "Database", MP_DATABASE },
 	{ "PORT", "Port", MP_PORT },
-	{ "HOST", "Server", MP_HOST },
+	{ "HOST", "Server", MP_HOST, },
 	{ "SOCK", "Unix Socket", MP_SOCK },
-	{ "TLS", "Encrypt", MP_TLS, .suggest_values = SUGGEST_BOOLEAN },
+	{ "TLS", "Encrypt", MP_TLS, .is_enum = true, .values = suggest_on_off },
 	{ "CERT", "Server Certificate", MP_CERT },
 	{ "CERTHASH", "Server Certificate Hash", MP_CERTHASH },
 	{ "CLIENTKEY", "Client Key", MP_CLIENTKEY },
 	{ "CLIENTCERT", "Client Certificate", MP_CLIENTCERT },
-	{ "AUTOCOMMIT", "Autocommit", MP_AUTOCOMMIT, .suggest_values = SUGGEST_BOOLEAN },
+	{ "AUTOCOMMIT", "Autocommit", MP_AUTOCOMMIT, .is_enum = true, .values = suggest_on_off },
 	{ "SCHEMA", "Schema", MP_SCHEMA },
 	{ "TIMEZONE", "Time Zone", MP_TIMEZONE },
 	{ "REPLYSIZE", "Reply Size", MP_REPLYSIZE },

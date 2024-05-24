@@ -53,11 +53,18 @@ suggest_settings(ODBCDbc *dbc, char **buf, size_t *pos, size_t *cap, char touche
 		mparm parm = entry->parm;
 		if (dbc->setting_touched[(int)parm] == touched_as) {
 			const char *sep = *pos > 0 ? ";" : "";
-			const char *values = entry->suggest_values ? entry->suggest_values : "?";
-			reallocprintf(
-				buf, pos, cap,
-				"%s%s%s:%s=%s",
-				sep, prefix, entry->name, entry->alt_name, values);
+			reallocprintf(buf, pos, cap, "%s%s%s:%s=?", sep, prefix, entry->name, entry->alt_name);
+			if (entry->is_enum) {
+				assert(entry->values != NULL);
+				*pos -= 1;  // eat the '?'
+				sep = "{";
+				for (const char **p = entry->values; *p; p++) {
+					const char *item = *p;
+					reallocprintf(buf, pos, cap, "%s%s", sep, item);
+					sep = ",";
+				}
+				reallocprintf(buf, pos, cap, "}");
+			}
 		}
 	}
 }
