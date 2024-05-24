@@ -117,7 +117,6 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	}
 
 	free(buf);
-	clearDbcErrors(dbc);
 	return SQL_NEED_DATA;
 }
 
