@@ -65,12 +65,12 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 		/* Driver does not support this function */
 		addDbcError(dbc, "IM001", NULL, 0);
 		return SQL_ERROR;
-	case SQL_ATTR_CONNECTION_TIMEOUT:	/* SQLUINTEGER */
+	case SQL_ATTR_CONNECTION_TIMEOUT: {	/* SQLUINTEGER */
 		long timeout = 1000 * (long)(uintptr_t) ValuePtr;
 		msetting_set_long(dbc->settings, MP_CONNECT_TIMEOUT, timeout);
 		if (dbc->mid)
 			mapi_timeout(dbc->mid, timeout);
-		break;
+	}	 break;
 	case SQL_ATTR_LOGIN_TIMEOUT:		/* SQLUINTEGER */
 		/* currently only value 0 (no timeout) is accepted
 		 * as mapilib currently does not provide a way to set login timeout */
