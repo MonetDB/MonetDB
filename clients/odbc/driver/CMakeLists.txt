@@ -20,6 +20,7 @@ add_library(MonetODBC
 target_sources(MonetODBC
   PRIVATE
   ODBCAttrs.h
+  ODBCAttrs.c
   ODBCConvert.c
   ODBCDbc.c
   ODBCDbc.h

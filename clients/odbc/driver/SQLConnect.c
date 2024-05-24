@@ -45,46 +45,6 @@
 #define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((int) strcpy_len(buffer,default,bufferlen))
 #endif
 
-#define SUGGEST_BOOLEAN "{True,False}"
-
-const struct attr_setting attr_settings[] = {
-	{ "UID", "User", MP_USER },
-	{ "PWD", "Password", MP_PASSWORD },
-	{ "DATABASE", "Database", MP_DATABASE },
-	{ "PORT", "Port", MP_PORT },
-	{ "HOST", "Server", MP_HOST },
-	{ "SOCK", "Unix Socket", MP_SOCK },
-	{ "TLS", "Encrypt", MP_TLS, .suggest_values = SUGGEST_BOOLEAN },
-	{ "CERT", "Server Certificate", MP_CERT },
-	{ "CERTHASH", "Server Certificate Hash", MP_CERTHASH },
-	{ "CLIENTKEY", "Client Key", MP_CLIENTKEY },
-	{ "CLIENTCERT", "Client Certificate", MP_CLIENTCERT },
-	{ "AUTOCOMMIT", "Autocommit", MP_AUTOCOMMIT, .suggest_values = SUGGEST_BOOLEAN },
-	{ "SCHEMA", "Schema", MP_SCHEMA },
-	{ "TIMEZONE", "Time Zone", MP_TIMEZONE },
-	{ "REPLYSIZE", "Reply Size", MP_REPLYSIZE },
-	{ "LOGFILE", "Log File", MP_LOGFILE },
-	{ "LOGINTIMEOUT", "Login Timeout", MP_CONNECT_TIMEOUT},
-	{ "CONNECTIONTIMEOUT", "Connection Timeout", MP_REPLY_TIMEOUT},
-};
-
-const int attr_setting_count = sizeof(attr_settings) / sizeof(attr_settings[0]);
-
-
-int
-attr_setting_lookup(const char *attr_name, bool allow_alt_name)
-{
-	for (int i = 0; i < attr_setting_count; i++) {
-		const struct attr_setting *entry = &attr_settings[i];
-		if (strcasecmp(attr_name, entry->name) == 0)
-			return i;
-		if (allow_alt_name && entry->alt_name && strcasecmp(attr_name, entry->alt_name) == 0)
-			return i;
-	}
-	return -1;
-}
-
-
 static SQLRETURN
 get_serverinfo(ODBCDbc *dbc)
 {
