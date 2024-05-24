@@ -3485,7 +3485,6 @@ log_segments(sql_trans *tr, segments *segs, sqlid id)
 		unlock_table(tr->store, id);
 		if (seg->ts == tr->tid && seg->end-seg->start) {
 			if (log_segment(tr, seg, id) != LOG_OK) {
-				unlock_table(tr->store, id);
 				return LOG_ERR;
 			}
 		}

@@ -3798,8 +3798,6 @@ sql_trans_destroy(sql_trans *tr)
 		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
 	os_destroy(tr->localtmps, store);
-	store_lock(store);
-	store_unlock(store);
 	MT_lock_destroy(&tr->lock);
 	if (!list_empty(tr->dropped))
 		list_destroy(tr->dropped);
