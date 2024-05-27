@@ -1590,7 +1590,7 @@ rel_simplify_sum(visitor *v, sql_rel *rel)
 
 						/* a column reference can be prepended to the inner relation, add it after all the check type calls succeed */
 						if (prepend)
-							list_prepend(l->exps, exp_ref(v->sql, col));
+							list_prepend(l->exps, col);
 
 						/* the new generate function calls are valid, update relations */
 						/* we need a new relation for the multiplication and addition/subtraction */

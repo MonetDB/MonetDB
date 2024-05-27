@@ -1992,6 +1992,8 @@ find_fk( mvc *sql, list *rels, list *exps)
 						i = rel_find_column(sql, orr, l->l, iname);
 						if (!t || !i)
 							continue;
+						t->p = NULL;
+						i->p = NULL;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					} else {
 						sql_exp *s = je->r, *l = je->l;
@@ -2000,6 +2002,8 @@ find_fk( mvc *sql, list *rels, list *exps)
 						i = rel_find_column(sql, olr, l->l, iname);
 						if (!t || !i)
 							continue;
+						t->p = NULL;
+						i->p = NULL;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					}
 

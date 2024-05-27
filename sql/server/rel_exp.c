@@ -807,13 +807,13 @@ exp_ref(mvc *sql, sql_exp *e)
 sql_exp *
 exp_ref_save(mvc *sql, sql_exp *e)
 {
+	if (e->type == e_column)
+		return e;
 	if (is_atom(e->type))
 		return exp_copy(sql, e);
-	if (!exp_name(e) || is_convert(e->type))
+	if (!e->alias.label || !exp_name(e))
 		exp_label(sql->sa, e, ++sql->label);
-	if (!e->alias.label)
-		exp_label(sql->sa, e, ++sql->label);
-	if (e->type != e_column)
+	if (e->type != e_column) /* ref as referenced within the (same) rank expression */
 		e->ref = 1;
 	sql_exp *ne = exp_ref(sql, e);
 	if (ne && is_freevar(e))
