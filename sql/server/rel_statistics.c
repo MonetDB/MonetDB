@@ -893,7 +893,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		for (node *n = rel->exps->h ; n ; n = n->next, i++)
 			rel_munion_get_statistics(v->sql, rel, nrels, n->data, i);
 
-		if (needs_pruning) {
+		if (needs_pruning && !rel_is_ref(rel)) {
 			v->changes++;
 			list *nl = sa_list(l->sa);
 
