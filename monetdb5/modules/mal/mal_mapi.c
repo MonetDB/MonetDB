@@ -172,7 +172,8 @@ doChallenge(void *data)
 {
 	struct challengedata *chdata = data;
 	char *buf = GDKmalloc(BLOCK + 1);
-	char peer[120] = { 0 };
+	char peerbuf[120] = { '[', 0 };
+	char *peer;
 	char challenge[13];
 
 	stream *fdin = chdata->in;
@@ -182,11 +183,30 @@ doChallenge(void *data)
 	protocol_version protocol = PROTOCOL_9;
 	size_t buflen = BLOCK;
 
-	if (chdata->peer.ss_family != AF_UNSPEC) {
-		getnameinfo(
+	if (chdata->peer.ss_family == AF_UNSPEC) {
+		peer = NULL;
+#ifdef AF_UNIX
+	} else if (chdata->peer.ss_family == AF_UNIX) {
+		peer = "<UNIX SOCKET>";
+#endif
+	} else {
+		char *peer_end = peerbuf + sizeof(peerbuf);
+		char *p = &peerbuf[1];
+		char service[20];
+		if (0 == getnameinfo(
 				(struct sockaddr*)&chdata->peer, chdata->peerlen,
-				peer, sizeof(peer), NULL, 0,
-				NI_NUMERICSERV | NI_NUMERICHOST);
+				p, peer_end - p - 10,
+				service, sizeof(service),
+				NI_NUMERICSERV | NI_NUMERICHOST)
+		) {
+			p += strlen(p);
+			*p++ = ']';
+			*p++ = ':';
+			strncpy(p, service, peer_end - p);
+			peer = peerbuf;
+		} else {
+			peer = NULL;
+		}
 	}
 
 	MT_thread_setworking("challenging client");

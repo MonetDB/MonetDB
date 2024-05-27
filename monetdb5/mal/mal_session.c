@@ -341,10 +341,8 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 
 	// at this point username should have being verified
 	c->username = GDKstrdup(user);
-	if (peer) {
+	if (peer)
 		c->peer = GDKstrdup(peer);
-		c->client_hostname = GDKstrdup(peer);
-	}
 
 	/* NOTE ABOUT STARTING NEW THREADS
 	 * At this point we have conducted experiments (Jun 2012) with
