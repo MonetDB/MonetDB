@@ -1910,60 +1910,62 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 		throw(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	BATiter bi = bat_iterator(b);
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (icase)
-		str_cmp = str_icmp;
-	oid *vals = Tloc(bn, 0);
-	const int klen = str_strlen(key);
-	if (ci.tpe == cand_dense) {
-		if (with_strimps_anti)
-			scanloop(strNil(v) || str_cmp(v, key, klen) == 0, canditer_next_dense);
-		else if (anti)
-			scanloop(!strNil(v) && str_cmp(v, key, klen) != 0, canditer_next_dense);
-		else
-			scanloop(!strNil(v) && str_cmp(v, key, klen) == 0, canditer_next_dense);
-	} else {
-		if (with_strimps_anti)
-			scanloop(strNil(v) || str_cmp(v, key, klen) == 0, canditer_next);
-		else if (anti)
-			scanloop(!strNil(v) && str_cmp(v, key, klen) != 0, canditer_next);
-		else
-			scanloop(!strNil(v) && str_cmp(v, key, klen) == 0, canditer_next);
-	}
-	bat_iterator_end(&bi);
-	TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT(qry_ctx));
+	if (!strNil(key)) {
+		BATiter bi = bat_iterator(b);
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		if (icase)
+			str_cmp = str_icmp;
+		oid *vals = Tloc(bn, 0);
+		const int klen = str_strlen(key);
+		if (ci.tpe == cand_dense) {
+			if (with_strimps_anti)
+				scanloop(strNil(v) || str_cmp(v, key, klen) == 0, canditer_next_dense);
+			else if (anti)
+				scanloop(!strNil(v) && str_cmp(v, key, klen) != 0, canditer_next_dense);
+			else
+				scanloop(!strNil(v) && str_cmp(v, key, klen) == 0, canditer_next_dense);
+		} else {
+			if (with_strimps_anti)
+				scanloop(strNil(v) || str_cmp(v, key, klen) == 0, canditer_next);
+			else if (anti)
+				scanloop(!strNil(v) && str_cmp(v, key, klen) != 0, canditer_next);
+			else
+				scanloop(!strNil(v) && str_cmp(v, key, klen) == 0, canditer_next);
+		}
+		bat_iterator_end(&bi);
+		TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT(qry_ctx));
 
-	if (!msg) {
-		BATsetcount(bn, rcnt);
-		bn->tsorted = true;
-		bn->trevsorted = bn->batCount <= 1;
-		bn->tkey = true;
-		bn->tnil = false;
-		bn->tnonil = true;
-		bn->tseqbase = rcnt == 0 ?
-			0 : rcnt == 1 ?
-			*(const oid *) Tloc(bn, 0) : rcnt == ci.ncand && ci.tpe == cand_dense ? ci.hseq : oid_nil;
+		if (!msg) {
+			BATsetcount(bn, rcnt);
+			bn->tsorted = true;
+			bn->trevsorted = bn->batCount <= 1;
+			bn->tkey = true;
+			bn->tnil = false;
+			bn->tnonil = true;
+			bn->tseqbase = rcnt == 0 ?
+				0 : rcnt == 1 ?
+				*(const oid *) Tloc(bn, 0) : rcnt == ci.ncand && ci.tpe == cand_dense ? ci.hseq : oid_nil;
 
-		if (with_strimps_anti) {
-			BAT *rev;
-			if (old_s) {
-				rev = BATdiffcand(old_s, bn);
+			if (with_strimps_anti) {
+				BAT *rev;
+				if (old_s) {
+					rev = BATdiffcand(old_s, bn);
 #ifndef NDEBUG
-				BAT *is = BATintersectcand(old_s, bn);
-				if (is) {
-					assert(is->batCount == bn->batCount);
-					BBPreclaim(is);
-				}
-				assert(rev->batCount == old_s->batCount - bn->batCount);
+					BAT *is = BATintersectcand(old_s, bn);
+					if (is) {
+						assert(is->batCount == bn->batCount);
+						BBPreclaim(is);
+					}
+					assert(rev->batCount == old_s->batCount - bn->batCount);
 #endif
-			} else
-				rev = BATnegcands(b->batCount, bn);
+				} else
+					rev = BATnegcands(b->batCount, bn);
 
-			BBPreclaim(bn);
-			bn = rev;
-			if (bn == NULL)
-				msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				BBPreclaim(bn);
+				bn = rev;
+				if (bn == NULL)
+					msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 	}
 
