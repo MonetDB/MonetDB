@@ -5997,33 +5997,36 @@ sql_update_check(backend *be, sql_key * key, sql_rel *updates, list *refs)
 
 	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
 	stack_pop_frame(sql);
-	sql_rel* base = rel->l;
-	assert(strcmp(((sql_exp*) updates->exps->h->data)->alias.name, TID) == 0);
-	list_append(base->exps, exp_copy(sql, updates->exps->h->data));
 
-	bool need_join = 0;
-	list* pexps = sa_list(sql->sa);
-	sql_exp* tid_exp = exp_copy(sql, updates->exps->h->data);
-	unsigned label = ++sql->label;
-	exp_setrelname(sql->sa, tid_exp, label);
-	list_append(pexps, tid_exp);
-	for (node* m = base->exps->h; m; m = m->next) {
-		if (exps_find_exp( updates->exps, m->data) == NULL) {
-			pexps = list_append(pexps, exp_copy(sql, m->data));
-			need_join = 1;
+	if (!key->base.new) {
+		sql_rel* base = rel->l;
+		assert(strcmp(((sql_exp*) updates->exps->h->data)->alias.name, TID) == 0);
+		list_append(base->exps, exp_copy(sql, updates->exps->h->data));
+
+		bool need_join = 0;
+		list* pexps = sa_list(sql->sa);
+		sql_exp* tid_exp = exp_copy(sql, updates->exps->h->data);
+		unsigned label = ++sql->label;
+		exp_setrelname(sql->sa, tid_exp, label);
+		list_append(pexps, tid_exp);
+		for (node* m = base->exps->h; m; m = m->next) {
+			if (exps_find_exp( updates->exps, m->data) == NULL) {
+				pexps = list_append(pexps, exp_copy(sql, m->data));
+				need_join = 1;
+			}
 		}
-	}
 
-	if (need_join) {
-		base = rel_project(sql->sa, base, pexps);
-		sql_rel* join = rel_crossproduct(sql->sa, base, updates, op_join);
-		sql_exp* join_cond = exp_compare(sql->sa, exp_ref(sql, base->exps->h->data), exp_ref(sql, updates->exps->h->data), cmp_equal);
-		join->exps = sa_list(sql->sa);
-		join->exps = list_append(join->exps, join_cond);
-		rel->l = join;
-	}
-	else {
-		rel->l = updates;
+		if (need_join) {
+			base = rel_project(sql->sa, base, pexps);
+			sql_rel* join = rel_crossproduct(sql->sa, base, updates, op_join);
+			sql_exp* join_cond = exp_compare(sql->sa, exp_ref(sql, base->exps->h->data), exp_ref(sql, updates->exps->h->data), cmp_equal);
+			join->exps = sa_list(sql->sa);
+			join->exps = list_append(join->exps, join_cond);
+			rel->l = join;
+		}
+		else {
+			rel->l = updates;
+		}
 	}
 
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
@@ -6138,9 +6141,15 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		t = rel_ddl_table_get(tr);
 
-		/* no columns to update (probably an new pkey!) */
-		if (!rel->exps)
+		/* no columns to update (probably an new pkey or ckey!) */
+		if (!rel->exps) {
+			for (m = ol_first_node(t->keys); m; m = m->next) {
+				sql_key * key = m->data;
+				if (key->type == ckey && key->base.new)
+					sql_update_check(be, key, rel->r, refs);
+			}
 			return ddl;
+		}
 	}
 
 	if (rel->r) /* first construct the update relation */
