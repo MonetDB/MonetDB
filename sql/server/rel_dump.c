@@ -377,7 +377,10 @@ cleanup:
 		buffer_destroy(b);
 	if(s)
 		close_stream(s);
-	return res;
+
+	char* fres = SA_STRDUP(sql->sa, res);
+	free (res);
+	return fres;
 }
 
 static void
