@@ -1352,7 +1352,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys._columns",	"sys",	"index_types",	"index_type_id",	"smallint",	15,	0,	NULL,	false,	0,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"index_types",	"index_type_name",	"varchar",	25,	0,	NULL,	false,	1,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"key_types",	"key_type_id",	"smallint",	15,	0,	NULL,	false,	0,	NULL,	NULL	]
-[ "sys._columns",	"sys",	"key_types",	"key_type_name",	"varchar",	15,	0,	NULL,	false,	1,	NULL,	NULL	]
+[ "sys._columns",	"sys",	"key_types",	"key_type_name",	"varchar",	35,	0,	NULL,	false,	1,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"keys",	"id",	"int",	31,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"keys",	"table_id",	"int",	31,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"keys",	"type",	"int",	31,	0,	NULL,	true,	2,	NULL,	NULL	]
@@ -1660,6 +1660,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys._columns",	"tmp",	"keys",	"name",	"varchar",	1024,	0,	NULL,	true,	3,	NULL,	NULL	]
 [ "sys._columns",	"tmp",	"keys",	"rkey",	"int",	31,	0,	NULL,	true,	4,	NULL,	NULL	]
 [ "sys._columns",	"tmp",	"keys",	"action",	"int",	31,	0,	NULL,	true,	5,	NULL,	NULL	]
+[ "sys._columns",	"tmp",	"keys",	"check",	"varchar",	2048,	0,	NULL,	true,	6,	NULL,	NULL	]
 [ "sys._columns",	"tmp",	"objects",	"id",	"int",	31,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"tmp",	"objects",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"tmp",	"objects",	"nr",	"int",	31,	0,	NULL,	true,	2,	NULL,	NULL	]
@@ -5442,9 +5443,11 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %1,	key_type_name # name
 % varchar,	varchar # type
 % 13,	11 # length
+[ "sys.key_types",	"Check Constraint"	]
 [ "sys.key_types",	"Foreign Key"	]
 [ "sys.key_types",	"Primary Key"	]
 [ "sys.key_types",	"Unique Key"	]
+[ "sys.key_types",	"Unique Key With Nulls Not Distinct"	]
 % .%1,	.index_types # table_name
 % %1,	index_type_name # name
 % varchar,	varchar # type
