@@ -7096,6 +7096,27 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		sa_destroy(sql->sa);
 	}
 	sql->sa = old_sa;
+
+	if (err)
+		return err;
+	sql_table *t;
+	if ((t = mvc_bind_table(sql, s, "key_types")) != NULL)
+		t->system = 0;
+	err = SQLstatementIntern(c,
+		"DROP TABLE sys.key_types;\n"
+		"CREATE TABLE sys.key_types (\n"
+		"	key_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
+		"	key_type_name VARCHAR(35) NOT NULL UNIQUE);\n"
+		"INSERT INTO sys.key_types VALUES\n"
+		"(0, 'Primary Key'),\n"
+		"(1, 'Unique Key'),\n"
+		"(2, 'Foreign Key'),\n"
+		"(3, 'Unique Key With Nulls Not Distinct'),\n"
+		"(4, 'Check Constraint');\n"
+		"ALTER TABLE sys.key_types SET READ ONLY;\n"
+		"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
+		"UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';\n"
+		, "update", true, false, NULL);
 	return err;
 }
 
