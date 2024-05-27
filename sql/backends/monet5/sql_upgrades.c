@@ -7096,6 +7096,53 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		sa_destroy(sql->sa);
 	}
 	sql->sa = old_sa;
+	if (err)
+		return err;
+
+	const char *query = "select id from args where func_id = (select id from functions where schema_id = 2000 and name = 'sessions');\n";
+	err = SQLstatementIntern(c, query, "update", true, false, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b && BATcount(b) < 15) {
+		query =
+			"drop view sys.sessions;\n"
+			"drop function sys.sessions();\n"
+			"create function sys.sessions()\n"
+			" returns table(\n"
+			"  \"sessionid\" int,\n"
+			"  \"username\" string,\n"
+			"  \"login\" timestamp,\n"
+			"  \"idle\" timestamp,\n"
+			"  \"optimizer\" string,\n"
+			"  \"sessiontimeout\" int,\n"
+			"  \"querytimeout\" int,\n"
+			"  \"workerlimit\" int,\n"
+			"  \"memorylimit\" int,\n"
+			"  \"language\" string,\n"
+			"  \"peer\" string,\n"
+			"  \"hostname\" string,\n"
+			"  \"application\" string,\n"
+			"  \"client\" string,\n"
+			"  \"clientpid\" bigint,\n"
+			"  \"remark\" string\n"
+			" )\n"
+			" external name sql.sessions;\n"
+			"create view sys.sessions as select * from sys.sessions();\n"
+			;
+		sql_schema *sys = mvc_bind_schema(sql, "sys");
+		sql_table *t = mvc_bind_table(sql, sys, "sessions");
+		t->system = 0; /* make it non-system else the drop view will fail */
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (!err) {
+			t = mvc_bind_table(sql, sys, "sessions");
+			t->system = true;
+
+		}
+	}
+	BBPunfix(b->batCacheid);
 	return err;
 }
 
