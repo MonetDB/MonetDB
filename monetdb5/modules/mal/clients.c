@@ -890,7 +890,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			if (BUNappend(mlimit, &c->memorylimit, false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(language, &str_nil, false) != GDK_SUCCEED)
+			if (BUNappend(language, getScenarioLanguage(c), false) != GDK_SUCCEED)
 				goto bailout;
 			if (BUNappend(peer, &str_nil, false) != GDK_SUCCEED)
 				goto bailout;
