@@ -28,7 +28,14 @@ returns table(
 	"sessiontimeout" int,
 	"querytimeout" int,
 	"workerlimit" int,
-	"memorylimit" int
+	"memorylimit" int,
+	"language" string,
+	"peer" string,
+	"hostname" string,
+	"application" string,
+	"client" string,
+	"clientpid" bigint,
+	"remark" string
 )
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();

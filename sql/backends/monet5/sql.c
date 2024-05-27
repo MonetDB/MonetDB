@@ -5330,7 +5330,31 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "argRecord", SQLargRecord, false, "Glue together the calling sequence", args(1,1, arg("",str))),
  pattern("sql", "argRecord", SQLargRecord, false, "Glue together the calling sequence", args(1,2, arg("",str),varargany("a",0))),
  pattern("sql", "sql_variables", sql_variables, false, "return the table with session variables", args(4,4, batarg("sname",str),batarg("name",str),batarg("type",str),batarg("value",str))),
- pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status", args(9,9, batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optmizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int))),
+
+
+
+
+ pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status",
+   args(16,16,
+     batarg("id",int),batarg("user",str),batarg("start",timestamp),
+	 batarg("idle",timestamp),batarg("optmizer",str),batarg("stimeout",int),
+	 batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int),
+		batarg("language", str),
+		batarg("peer", str),
+		batarg("hostname", str),
+		batarg("application", str),
+		batarg("client", str),
+		batarg("clientpid", lng),
+		batarg("remark", str),
+  )
+ ),
+
+
+
+
+
+
+
 pattern("sql", "password", SQLuser_password, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
 pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", args(1,2, arg("",str),arg("hash",str))),
  pattern("sql", "dump_cache", dump_cache, false, "dump the content of the query cache", args(2,2, batarg("query",str),batarg("count",int))),

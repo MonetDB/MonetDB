@@ -779,6 +779,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *id = NULL, *user = NULL, *login = NULL, *sessiontimeout = NULL,
 		*querytimeout = NULL, *idle = NULL;
 	BAT *opt = NULL, *wlimit = NULL, *mlimit = NULL;
+	BAT *language = NULL, *peer = NULL, *hostname = NULL, *application = NULL, *client = NULL, *clientpid = NULL, *remark = NULL;
 	bat *idId = getArgReference_bat(stk, pci, 0);
 	bat *userId = getArgReference_bat(stk, pci, 1);
 	bat *loginId = getArgReference_bat(stk, pci, 2);
@@ -788,6 +789,13 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *querytimeoutId = getArgReference_bat(stk, pci, 6);
 	bat *wlimitId = getArgReference_bat(stk, pci, 7);
 	bat *mlimitId = getArgReference_bat(stk, pci, 8);
+	bat *languageId = getArgReference_bat(stk, pci, 9);
+	bat *peerId = getArgReference_bat(stk, pci, 10);
+	bat *hostnameId = getArgReference_bat(stk, pci, 11);
+	bat *applicationId = getArgReference_bat(stk, pci, 12);
+	bat *clientId = getArgReference_bat(stk, pci, 13);
+	bat *clientpidId = getArgReference_bat(stk, pci, 14);
+	bat *remarkId = getArgReference_bat(stk, pci, 15);
 	Client c;
 	timestamp ret;
 	int timeout;
@@ -805,20 +813,36 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	wlimit = COLnew(0, TYPE_int, 0, TRANSIENT);
 	mlimit = COLnew(0, TYPE_int, 0, TRANSIENT);
 	idle = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
+	language = COLnew(0, TYPE_str, 0, TRANSIENT);
+	peer = COLnew(0, TYPE_str, 0, TRANSIENT);
+	hostname = COLnew(0, TYPE_str, 0, TRANSIENT);
+	application = COLnew(0, TYPE_str, 0, TRANSIENT);
+	client = COLnew(0, TYPE_str, 0, TRANSIENT);
+	clientpid = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	remark = COLnew(0, TYPE_str, 0, TRANSIENT);
 
 	if (id == NULL || user == NULL || login == NULL || sessiontimeout == NULL
 		|| idle == NULL || querytimeout == NULL || opt == NULL || wlimit == NULL
-		|| mlimit == NULL) {
+		|| mlimit == NULL || language == NULL || peer == NULL || hostname == NULL
+		|| application == NULL || client == NULL || clientpid == NULL
+		|| remark == NULL) {
 		BBPreclaim(id);
 		BBPreclaim(user);
 		BBPreclaim(login);
 		BBPreclaim(sessiontimeout);
 		BBPreclaim(querytimeout);
 		BBPreclaim(idle);
-
 		BBPreclaim(opt);
 		BBPreclaim(wlimit);
 		BBPreclaim(mlimit);
+		BBPreclaim(language);
+		BBPreclaim(peer);
+		BBPreclaim(hostname);
+		BBPreclaim(application);
+		BBPreclaim(client);
+		BBPreclaim(clientpid);
+		BBPreclaim(remark);
+
 		throw(SQL, "sql.sessions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -866,6 +890,20 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			if (BUNappend(mlimit, &c->memorylimit, false) != GDK_SUCCEED)
 				goto bailout;
+			if (BUNappend(language, &str_nil, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(peer, &str_nil, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(hostname, &str_nil, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(application, &str_nil, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(client, &str_nil, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(clientpid, &lng_nil, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(remark, &str_nil, false) != GDK_SUCCEED)
+				goto bailout;
 		}
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -888,6 +926,21 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(wlimit);
 	*mlimitId = mlimit->batCacheid;
 	BBPkeepref(mlimit);
+	*languageId = language->batCacheid;
+	BBPkeepref(language);
+	*peerId = peer->batCacheid;
+	BBPkeepref(peer);
+	*hostnameId = hostname->batCacheid;
+	BBPkeepref(hostname);
+	*applicationId = application->batCacheid;
+	BBPkeepref(application);
+	*clientId = client->batCacheid;
+	BBPkeepref(client);
+	*clientpidId = clientpid->batCacheid;
+	BBPkeepref(clientpid);
+	*remarkId = remark->batCacheid;
+	BBPkeepref(remark);
+
 	return MAL_SUCCEED;
 
   bailout:
@@ -902,6 +955,13 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(opt->batCacheid);
 	BBPunfix(wlimit->batCacheid);
 	BBPunfix(mlimit->batCacheid);
+	BBPunfix(language->batCacheid);
+	BBPunfix(peer->batCacheid);
+	BBPunfix(hostname->batCacheid);
+	BBPunfix(application->batCacheid);
+	BBPunfix(client->batCacheid);
+	BBPunfix(clientpid->batCacheid);
+	BBPunfix(remark->batCacheid);
 	return msg;
 }
 
