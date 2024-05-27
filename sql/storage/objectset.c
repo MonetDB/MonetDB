@@ -55,6 +55,7 @@ typedef struct objectset {
 	sql_allocator *sa;
 	destroy_fptr destroy;
 	MT_RWLock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
+	MT_Lock lock;	/* global objectset lock for os_add/del */
 	versionhead  *name_based_h;
 	versionhead  *name_based_t;
 	versionhead  *id_based_h;
@@ -668,6 +669,7 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, boo
 		};
 		os->destroy = destroy;
 		MT_rwlock_init(&os->rw_lock, "sa_readers_lock");
+		MT_lock_init(&os->lock, "single_writer_lock");
 	}
 
 	return os;
@@ -685,6 +687,7 @@ os_destroy(objectset *os, sql_store store)
 {
 	if (ATOMIC_DEC(&os->refcnt) > 0)
 		return;
+	MT_lock_destroy(&os->lock);
 	MT_rwlock_destroy(&os->rw_lock);
 	ATOMIC_DESTROY(&os->refcnt);
 	versionhead* n=os->id_based_h;
@@ -928,9 +931,9 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 int
 os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
-	store_lock(tr->store);
+	MT_lock_set(&os->lock);
 	int res = os_add_(os, tr, name, b);
-	store_unlock(tr->store);
+	MT_lock_unset(&os->lock);
 	return res;
 }
 
@@ -1031,9 +1034,9 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 int
 os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
-	store_lock(tr->store);
+	MT_lock_set(&os->lock);
 	int res = os_del_(os, tr, name, b);
-	store_unlock(tr->store);
+	MT_lock_unset(&os->lock);
 	return res;
 }
 
