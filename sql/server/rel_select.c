@@ -735,6 +735,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 					exp_label(sql->sa, e, ++sql->label);
 				//append(exps, e=exp_alias_or_copy(sql, tname, exp_name(e), NULL, e));
 				sql_exp *ne = exp_ref(sql, e);
+				/* allow for table functions with table input */
+				ne->card = CARD_ATOM;
 				exp_setname(sql, ne, tname, exp_name(e));
 				append(exps, ne);
 				append(tl, exp_subtype(e));
