@@ -401,6 +401,27 @@ MCcloseClient(Client c)
 		GDKfree(c->username);
 		c->username = 0;
 	}
+	if (c->peer) {
+		GDKfree(c->peer);
+		c->peer = 0;
+	}
+	if (c->client_hostname) {
+		GDKfree(c->client_hostname);
+		c->client_hostname = 0;
+	}
+	if (c->client_application) {
+		GDKfree(c->client_application);
+		c->client_application = 0;
+	}
+	if (c->client_library) {
+		GDKfree(c->client_library);
+		c->client_library = 0;
+	}
+	if (c->client_remark) {
+		GDKfree(c->client_remark);
+		c->client_remark = 0;
+	}
+	c->client_pid = 0;
 	c->mythread = NULL;
 	if (c->glb) {
 		freeStack(c->glb);

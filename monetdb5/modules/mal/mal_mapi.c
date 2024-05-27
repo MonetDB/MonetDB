@@ -160,6 +160,8 @@ generateChallenge(str buf, int min, int max)
 struct challengedata {
 	stream *in;
 	stream *out;
+	struct sockaddr_storage peer;
+	socklen_t peerlen;
 	char challenge[13];
 };
 
@@ -168,23 +170,31 @@ static str SERVERsetAlias(void *ret, const int *key, const char *const *dbalias)
 static void
 doChallenge(void *data)
 {
+	struct challengedata *chdata = data;
 	char *buf = GDKmalloc(BLOCK + 1);
+	char peer[120] = { 0 };
 	char challenge[13];
 
-	stream *fdin = ((struct challengedata *) data)->in;
-	stream *fdout = ((struct challengedata *) data)->out;
+	stream *fdin = chdata->in;
+	stream *fdout = chdata->out;
 	bstream *bs;
 	ssize_t len = 0;
 	protocol_version protocol = PROTOCOL_9;
 	size_t buflen = BLOCK;
 
+	if (chdata->peer.ss_family != AF_UNSPEC) {
+		getnameinfo(
+				(struct sockaddr*)&chdata->peer, chdata->peerlen,
+				peer, sizeof(peer), NULL, 0,
+				NI_NUMERICSERV | NI_NUMERICHOST);
+	}
+
 	MT_thread_setworking("challenging client");
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif
-	memcpy(challenge, ((struct challengedata *) data)->challenge,
-		   sizeof(challenge));
-	GDKfree(data);
+	memcpy(challenge, chdata->challenge, sizeof(challenge));
+	GDKfree(chdata);
 	if (buf == NULL) {
 		TRC_ERROR(MAL_SERVER, MAL_MALLOC_FAIL "\n");
 		close_stream(fdin);
@@ -225,7 +235,7 @@ doChallenge(void *data)
 		return;
 	}
 	bs->eof = true;
-	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen);
+	MSscheduleClient(buf, peer, challenge, bs, fdout, protocol, buflen);
 }
 
 static ATOMIC_TYPE nlistener = ATOMIC_VAR_INIT(0);	/* nr of listeners */
@@ -419,6 +429,9 @@ SERVERlistenThread(SOCKET *Sock)
 			TRC_ERROR(MAL_SERVER, MAL_MALLOC_FAIL "\n");
 			continue;
 		}
+		data->peerlen = sizeof(data->peer);
+		if (getpeername(msgsock, (struct sockaddr*)&data->peer, &data->peerlen) < 0)
+			data->peer.ss_family = AF_UNSPEC;
 		data->in = socket_rstream(msgsock, "Server read");
 		if (data->in == NULL) {
   stream_alloc_fail:

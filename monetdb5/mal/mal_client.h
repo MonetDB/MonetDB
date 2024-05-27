@@ -85,6 +85,12 @@ typedef struct CLIENT {
 	time_t login;				/* Time when this session started */
 	lng session;				/* usec since start of server */
 	time_t idle;				/* Time when the session became idle */
+	str peer;					/* Remote end of network connection */
+	str client_hostname;		/* Host name if reported by client, peer otherwise */
+	str client_application;		/* Application name reported by the client*/
+	str client_library;			/* MAPI client library reported by the client */
+	long client_pid;			/* client process id reported by the client */
+	str client_remark;					/* Other information reported by the client */
 
 	/*
 	 * For program debugging and performance trace we keep the actual resource claims.

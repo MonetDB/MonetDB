@@ -797,7 +797,9 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *clientpidId = getArgReference_bat(stk, pci, 14);
 	bat *remarkId = getArgReference_bat(stk, pci, 15);
 	Client c;
-	timestamp ret;
+	timestamp ts;
+	lng pid;
+	const char *s;
 	int timeout;
 	str msg = NULL;
 
@@ -855,8 +857,8 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				username = str_nil;
 			if (BUNappend(user, username, false) != GDK_SUCCEED)
 				goto bailout;
-			ret = timestamp_fromtime(c->login);
-			if (is_timestamp_nil(ret)) {
+			ts = timestamp_fromtime(c->login);
+			if (is_timestamp_nil(ts)) {
 				msg = createException(SQL, "sql.sessions",
 									  SQLSTATE(22003)
 									  "Failed to convert user logged time");
@@ -864,7 +866,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			if (BUNappend(id, &c->idx, false) != GDK_SUCCEED)
 				 goto bailout;
-			if (BUNappend(login, &ret, false) != GDK_SUCCEED)
+			if (BUNappend(login, &ts, false) != GDK_SUCCEED)
 				goto bailout;
 			timeout = (int) (c->logical_sessiontimeout);
 			if (BUNappend(sessiontimeout, &timeout, false) != GDK_SUCCEED)
@@ -873,16 +875,16 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
 				goto bailout;
 			if (c->idle) {
-				ret = timestamp_fromtime(c->idle);
-				if (is_timestamp_nil(ret)) {
+				ts = timestamp_fromtime(c->idle);
+				if (is_timestamp_nil(ts)) {
 					msg = createException(SQL, "sql.sessions",
 										  SQLSTATE(22003)
 										  "Failed to convert user logged time");
 					goto bailout;
 				}
 			} else
-				ret = timestamp_nil;
-			if (BUNappend(idle, &ret, false) != GDK_SUCCEED)
+				ts = timestamp_nil;
+			if (BUNappend(idle, &ts, false) != GDK_SUCCEED)
 				goto bailout;
 			if (BUNappend(opt, &c->optimizer, false) != GDK_SUCCEED)
 				 goto bailout;
@@ -892,17 +894,23 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			if (BUNappend(language, getScenarioLanguage(c), false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(peer, &str_nil, false) != GDK_SUCCEED)
+			s = c->peer ? c->peer : str_nil;
+			if (BUNappend(peer, s, false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(hostname, &str_nil, false) != GDK_SUCCEED)
+			s = c->client_hostname ? c->client_hostname : str_nil;
+			if (BUNappend(hostname, s, false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(application, &str_nil, false) != GDK_SUCCEED)
+			s = c->client_application ? c->client_application : str_nil;
+			if (BUNappend(application, s, false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(client, &str_nil, false) != GDK_SUCCEED)
+			s = c->client_library ? c->client_library : str_nil;
+			if (BUNappend(client, s, false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(clientpid, &lng_nil, false) != GDK_SUCCEED)
+			pid = c->client_pid;
+			if (BUNappend(clientpid, pid ? &pid : &lng_nil, false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(remark, &str_nil, false) != GDK_SUCCEED)
+			s = c->client_remark ? c->client_remark : str_nil;
+			if (BUNappend(remark, s, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 	}
