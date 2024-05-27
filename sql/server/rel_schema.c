@@ -370,36 +370,6 @@ foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
 		return lt->type->localtype == rt->type->localtype;
 	return lt->type->eclass == rt->type->eclass || (EC_VARCHAR(lt->type->eclass) && EC_VARCHAR(rt->type->eclass));
 }
-static str
-rel2str( mvc *sql, sql_rel *rel)
-{
-	buffer *b = NULL;
-	stream *s = NULL;
-	list *refs = NULL;
-	char *res = NULL;
-
-	b = buffer_create(1024);
-	if(b == NULL)
-		goto cleanup;
-	s = buffer_wastream(b, "rel_dump");
-	if(s == NULL)
-		goto cleanup;
-	refs = sa_list(sql->sa);
-	if (!refs)
-		goto cleanup;
-
-	rel_print_refs(sql, s, rel, 0, refs, 0);
-	rel_print_(sql, s, rel, 0, refs, 0);
-	mnstr_printf(s, "\n");
-	res = buffer_get_buf(b);
-
-cleanup:
-	if(b)
-		buffer_destroy(b);
-	if(s)
-		close_stream(s);
-	return res;
-}
 
 static
 key_type token2key_type(int token) {

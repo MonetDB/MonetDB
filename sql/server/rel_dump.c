@@ -348,6 +348,38 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, ", ");
 }
 
+
+str
+rel2str( mvc *sql, sql_rel *rel)
+{
+	buffer *b = NULL;
+	stream *s = NULL;
+	list *refs = NULL;
+	char *res = NULL;
+
+	b = buffer_create(1024);
+	if(b == NULL)
+		goto cleanup;
+	s = buffer_wastream(b, "rel_dump");
+	if(s == NULL)
+		goto cleanup;
+	refs = sa_list(sql->sa);
+	if (!refs)
+		goto cleanup;
+
+	rel_print_refs(sql, s, rel, 0, refs, 0);
+	rel_print_(sql, s, rel, 0, refs, 0);
+	mnstr_printf(s, "\n");
+	res = buffer_get_buf(b);
+
+cleanup:
+	if(b)
+		buffer_destroy(b);
+	if(s)
+		close_stream(s);
+	return res;
+}
+
 static void
 exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate)
 {
