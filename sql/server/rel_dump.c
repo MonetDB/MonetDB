@@ -121,6 +121,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (!e)
 		return;
 	/*mnstr_printf(fout, "%p ", e);*/
+	if (mvc_debug_on(sql, 16) && e->alias.label < 0)
+		mnstr_printf(fout, "%d: ", e->alias.label);
 	switch(e->type) {
 	case e_psm: {
 		if (e->flag & PSM_SET) {
@@ -246,6 +248,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	case e_column: {
 		if (is_freevar(e))
 			mnstr_printf(fout, "!!!FREE!!! ");
+		if (mvc_debug_on(sql, 16) && e->nid)
+			mnstr_printf(fout, "<%d", e->nid);
 		if (e->l)
 			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, (char*)e->l));
 		mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, (char*)e->r));
@@ -610,7 +614,7 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-		if (rel->op == op_table && rel->l) {
+		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER) {
 			rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 			if (rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 				rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
@@ -1115,6 +1119,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					exp = rel_bind_column2(sql, rrel, tname, cname, 0);
 			} else if (!exp) {
 				exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, 0, cname[0] == '%');
+				exp->alias.label = -(sql->nid++);
 			}
 		}
 		break;
@@ -1349,7 +1354,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					return sql_error(sql, -1, SQLSTATE(42000) "Convert: missing ']'\n");
 				(*pos)++;
 				skipWS(r, pos);
-				exp = exp_convert(sql->sa, exp, exp_subtype(exp), &tpe);
+				exp = exp_convert(sql, exp, exp_subtype(exp), &tpe);
 			} else {
 				if (!(exp = parse_atom(sql, r, pos, &tpe)))
 					return NULL;
@@ -1639,7 +1644,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		if (r[*pos] != '.') {
 			cname = tname;
 			tname = NULL;
-			exp_setname(sql->sa, exp, NULL, sa_strdup(sql->sa, cname));
+			exp_setname(sql, exp, NULL, sa_strdup(sql->sa, cname));
 			skipWS(r, pos);
 		} else {
 			(*pos)++;
@@ -1648,7 +1653,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			convertIdent(cname);
 			(*pos)++;
 			skipWS(r, pos);
-			exp_setname(sql->sa, exp, sa_strdup(sql->sa, tname), sa_strdup(sql->sa, cname));
+			exp_setname(sql, exp, sa_strdup(sql->sa, tname), sa_strdup(sql->sa, cname));
 		}
 		rlabel = try_update_label_count(sql, tname);
 		nlabel = try_update_label_count(sql, cname);
@@ -2005,6 +2010,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 						(*pos)++;
 
 					next = exp_column(sql->sa, nrname, ncname, &a->type, CARD_MULTI, 1, 0, 0);
+					next->alias.label = -(sql->nid++);
 					rlabel = try_update_label_count(sql, nrname);
 					nlabel = try_update_label_count(sql, ncname);
 					if (rlabel && rlabel == nlabel)

@@ -131,6 +131,7 @@ typedef struct stmt {
 	int flag;
 	int nr;			/* variable assignment */
 
+	int label;
 	const char *tname;
 	const char *cname;
 	InstrPtr q;
@@ -256,7 +257,8 @@ extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc
 
 extern stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 
-extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
+extern stmt *stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *name);
+extern stmt *stmt_as(backend *be, stmt *s, stmt *org);
 
 extern int stmt_output(backend *be, stmt *l);
 extern int stmt_affected_rows(backend *be, int lastnr);

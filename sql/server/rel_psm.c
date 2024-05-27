@@ -506,6 +506,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		res = exp_rel(sql, rel);
 	} else if (rel && restypelist) { /* handle return table-var */
 		list *exps = sa_list(sql->sa);
+		sql_rel *bt = rel_ddl_basetable_get(rel);
 		sql_table *t = rel_ddl_table_get(rel);
 		node *n, *m;
 		const char *tname = t->base.name;
@@ -516,6 +517,8 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			sql_column *c = n->data;
 			sql_arg *ce = m->data;
 			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			e->nid = rel_base_nid(bt, c);
+			e->alias.label = e->nid;
 
 			e = exp_check_type(sql, &ce->type, rel, e, type_equal);
 			if (!e)

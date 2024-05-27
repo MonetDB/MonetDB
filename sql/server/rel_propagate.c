@@ -63,7 +63,8 @@ rel_create_common_relation(mvc *sql, sql_rel *rel, sql_table *t)
 			sql_exp *before = m->data, *help;
 
 			help = exp_ref(sql, before);
-			exp_setname(sql->sa, help, t->base.name, col->base.name);
+			//exp_setname(sql, help, t->base.name, col->base.name);
+			exp_setalias(help, before->alias.label, t->base.name, col->base.name);
 			list_append(l, help);
 		}
 		return rel_dup(rel->r);
@@ -89,7 +90,8 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 			sql_exp *before = m->data, *help;
 
 			help = exp_ref(sql, before);
-			exp_setname(sql->sa, help, t->base.name, col->base.name);
+			//exp_setname(sql, help, t->base.name, col->base.name);
+			exp_setalias(help, before->alias.label, t->base.name, col->base.name);
 			list_append(l, help);
 		}
 	}
@@ -516,7 +518,8 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 		} break;
 	}
 	if (exp_relname(e) && !strcmp(exp_relname(e), oldt->base.name))
-		exp_setname(sql->sa, e, newt->base.name, NULL);
+		//exp_setname(sql, e, newt->base.name, NULL);
+		e->alias.rname = newt->base.name;
 	return e;
 }
 

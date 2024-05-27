@@ -88,7 +88,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				(*changes)++;
 				le = exp_zero(sql->sa, et);
 				if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
-					le = exp_convert(sql->sa, le, exp_subtype(le), exp_subtype(e));
+					le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, le, e);
 				return le;
@@ -98,7 +98,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				(*changes)++;
 				re = exp_zero(sql->sa, et);
 				if (subtype_cmp(exp_subtype(e), exp_subtype(re)) != 0)
-					re = exp_convert(sql->sa, re, exp_subtype(re), exp_subtype(e));
+					re = exp_convert(sql, re, exp_subtype(re), exp_subtype(e));
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, re, e);
 				return re;
@@ -113,7 +113,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					if (a && (a = atom_cast(sql->sa, a, exp_subtype(e)))) {
 						sql_exp *ne = exp_atom(sql->sa, a);
 						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
-							ne = exp_convert(sql->sa, ne, exp_subtype(ne), exp_subtype(e));
+							ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
 						(*changes)++;
 						if (exp_name(e))
 							exp_prop_alias(sql->sa, ne, e);
@@ -135,7 +135,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 							lre->l = a;
 							lre->r = NULL;
 							if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
-								le = exp_convert(sql->sa, le, exp_subtype(le), exp_subtype(e));
+								le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
 							(*changes)++;
 							if (exp_name(e))
 								exp_prop_alias(sql->sa, le, e);
@@ -161,7 +161,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 							return e; /* error, fallback to original expression */
 						}
 						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
-							ne = exp_convert(sql->sa, ne, exp_subtype(ne), exp_subtype(e));
+							ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
 						(*changes)++;
 						if (exp_name(e))
 							exp_prop_alias(sql->sa, ne, e);
@@ -175,7 +175,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			sql_exp *re = l->h->next->data;
 			if (exp_is_atom(le) && exp_is_zero(le)) {
 				if (subtype_cmp(exp_subtype(e), exp_subtype(re)) != 0)
-					re = exp_convert(sql->sa, re, exp_subtype(re), exp_subtype(e));
+					re = exp_convert(sql, re, exp_subtype(re), exp_subtype(e));
 				(*changes)++;
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, re, e);
@@ -183,7 +183,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			}
 			if (exp_is_atom(re) && exp_is_zero(re)) {
 				if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
-					le = exp_convert(sql->sa, le, exp_subtype(le), exp_subtype(e));
+					le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
 				(*changes)++;
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, le, e);
@@ -199,7 +199,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
 						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
-							ne = exp_convert(sql->sa, ne, exp_subtype(ne), exp_subtype(e));
+							ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
 						(*changes)++;
 						if (exp_name(e))
 							exp_prop_alias(sql->sa, ne, e);
@@ -251,7 +251,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
 						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
-							ne = exp_convert(sql->sa, ne, exp_subtype(ne), exp_subtype(e));
+							ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
 						(*changes)++;
 						if (exp_name(e))
 							exp_prop_alias(sql->sa, ne, e);
@@ -272,7 +272,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				}
 				ne = exp_atom(sql->sa, a);
 				if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
-					ne = exp_convert(sql->sa, ne, exp_subtype(ne), exp_subtype(e));
+					ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
 				(*changes)++;
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, ne, e);
@@ -287,7 +287,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					if (exp_equal(re, lre) == 0) {
 						/* (x+a)-a = x*/
 						if (subtype_cmp(exp_subtype(e), exp_subtype(lle)) != 0)
-							lle = exp_convert(sql->sa, lle, exp_subtype(lle), exp_subtype(e));
+							lle = exp_convert(sql, lle, exp_subtype(lle), exp_subtype(e));
 						if (exp_name(e))
 							exp_prop_alias(sql->sa, lle, e);
 						(*changes)++;

@@ -2591,6 +2591,7 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		s->q = q;
 		s->tname = op2->tname;
 		s->cname = op2->cname;
+		s->label = op2->label;
 		return s;
 	}
 	if (be->mvc->sa->eb.enabled)
@@ -4427,12 +4428,14 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 }
 
 static stmt *
-stmt_alias_(backend *be, stmt *op1, const char *tname, const char *alias)
+stmt_alias_(backend *be, stmt *op1, int label, const char *tname, const char *alias)
 {
+	assert(label);
 	stmt *s = stmt_create(be->mvc->sa, st_alias);
 	if(!s) {
 		return NULL;
 	}
+	s->label = label;
 	s->op1 = op1;
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
@@ -4446,13 +4449,22 @@ stmt_alias_(backend *be, stmt *op1, const char *tname, const char *alias)
 }
 
 stmt *
-stmt_alias(backend *be, stmt *op1, const char *tname, const char *alias)
+stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *alias)
 {
+	/*
 	if (((!op1->tname && !tname) ||
 	    (op1->tname && tname && strcmp(op1->tname, tname)==0)) &&
 	    op1->cname && strcmp(op1->cname, alias)==0)
 		return op1;
-	return stmt_alias_(be, op1, tname, alias);
+		*/
+	return stmt_alias_(be, op1, label, tname, alias);
+}
+
+stmt *
+stmt_as(backend *be, stmt *s, stmt *org)
+{
+	assert(org->type == st_alias);
+	return stmt_alias_(be, s, org->label, org->tname, org->cname);
 }
 
 sql_subtype *
@@ -5066,6 +5078,7 @@ stmt_fetch(backend *be, stmt *val)
 stmt *
 stmt_rename(backend *be, sql_exp *exp, stmt *s )
 {
+	int label = exp_get_label(exp);
 	const char *name = exp_name(exp);
 	const char *rname = exp_relname(exp);
 	stmt *o = s;
@@ -5073,7 +5086,7 @@ stmt_rename(backend *be, sql_exp *exp, stmt *s )
 	if (!name && exp_is_atom(exp))
 		name = sa_strdup(be->mvc->sa, "single_value");
 	assert(name);
-	s = stmt_alias(be, s, rname, name);
+	s = stmt_alias(be, s, label, rname, name);
 	if (o->flag & OUTER_ZERO)
 		s->flag |= OUTER_ZERO;
 	return s;

@@ -435,7 +435,9 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 				extra_tsep = true;
 			} else if (t) {
 				list_append(typelist, t);
-				list_append(res_exps, exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0));
+				sql_exp *ne = exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0);
+				ne->alias.label = -(sql->nid++);
+				list_append(res_exps, ne);
 			} else {
 				GDKfree(types);
 				throw(SQL, SQLSTATE(42000), "csv" "type %s not found\n", st);

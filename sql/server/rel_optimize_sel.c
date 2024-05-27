@@ -1988,16 +1988,16 @@ find_fk( mvc *sql, list *rels, list *exps)
 					if (swapped) {
 						sql_exp *s = je->l, *l = je->r;
 
-						t = rel_find_column(sql->sa, olr, s->l, TID);
-						i = rel_find_column(sql->sa, orr, l->l, iname);
+						t = rel_find_column(sql, olr, s->l, TID);
+						i = rel_find_column(sql, orr, l->l, iname);
 						if (!t || !i)
 							continue;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					} else {
 						sql_exp *s = je->r, *l = je->l;
 
-						t = rel_find_column(sql->sa, orr, s->l, TID);
-						i = rel_find_column(sql->sa, olr, l->l, iname);
+						t = rel_find_column(sql, orr, s->l, TID);
+						i = rel_find_column(sql, olr, l->l, iname);
 						if (!t || !i)
 							continue;
 						je = exp_compare(sql->sa, i, t, cmp_equal);

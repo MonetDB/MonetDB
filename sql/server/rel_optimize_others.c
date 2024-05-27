@@ -21,34 +21,37 @@ rel_no_rename_exps( list *exps )
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		exp_setalias(e, e->l, e->r);
+		exp_setalias(e, e->alias.label, e->l, e->r);
 	}
 	list_hash_clear(exps);
 }
 
+/* positional renames ! */
+/* get the names (aka aliases) from the src_exps list and rename the dest_exps list */
 void
-rel_rename_exps( mvc *sql, list *exps1, list *exps2)
+rel_rename_exps( mvc *sql, list *src_exps, list *dest_exps)
 {
-	int pos = 0;
 	node *n, *m;
 
 	(void)sql;
 	/* check if a column uses an alias earlier in the list */
-	for (n = exps1->h, m = exps2->h; n && m; n = n->next, m = m->next, pos++) {
+	/*
+	int pos = 0;
+	for (n = src_exps->h, m = dest_exps->h; n && m; n = n->next, m = m->next, pos++) {
 		sql_exp *e2 = m->data;
 
 		if (e2->type == e_column) {
 			sql_exp *ne = NULL;
 
 			if (e2->l)
-				ne = exps_bind_column2(exps2, e2->l, e2->r, NULL);
+				ne = exps_bind_column2(dest_exps, e2->l, e2->r, NULL);
 			if (!ne && !e2->l)
-				ne = exps_bind_column(exps2, e2->r, NULL, NULL, 1);
+				ne = exps_bind_column(dest_exps, e2->r, NULL, NULL, 1);
 			if (ne) {
-				int p = list_position(exps2, ne);
+				int p = list_position(dest_exps, ne);
 
 				if (p < pos) {
-					ne = list_fetch(exps1, p);
+					ne = list_fetch(src_exps, p);
 					if (e2->l)
 						e2->l = (void *) exp_relname(ne);
 					e2->r = (void *) exp_name(ne);
@@ -56,19 +59,22 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 			}
 		}
 	}
+	*/
 
-	assert(list_length(exps1) <= list_length(exps2));
-	for (n = exps1->h, m = exps2->h; n && m; n = n->next, m = m->next) {
-		sql_exp *e1 = n->data;
-		sql_exp *e2 = m->data;
-		const char *rname = exp_relname(e1);
+	assert(list_length(src_exps) <= list_length(dest_exps));
+	for (n = src_exps->h, m = dest_exps->h; n && m; n = n->next, m = m->next) {
+		sql_exp *s = n->data;
+		sql_exp *d = m->data;
+		const char *rname = exp_relname(s);
 
-		if (!rname && e1->type == e_column && e1->l && exp_relname(e2) &&
-		    strcmp(e1->l, exp_relname(e2)) == 0)
-			rname = exp_relname(e2);
-		exp_setalias(e2, rname, exp_name(e1));
+		/*
+		if (!rname && s->type == e_column && s->l && exp_relname(d) &&
+		    strcmp(s->l, exp_relname(d)) == 0)
+			rname = exp_relname(d);
+			*/
+		exp_setalias(d, s->alias.label, rname, exp_name(s));
 	}
-	list_hash_clear(exps2);
+	list_hash_clear(dest_exps);
 }
 
 sql_rel *
@@ -85,7 +91,7 @@ rel_find_ref( sql_rel *r)
 /* merge projection */
 
 /* push an expression through a projection.
- * The result should again used in a projection.
+ * The result should again be used in a projection.
  */
 static list *
 exps_push_down_prj(mvc *sql, list *exps, sql_rel *f, sql_rel *t, bool keepalias)
@@ -101,7 +107,7 @@ exps_push_down_prj(mvc *sql, list *exps, sql_rel *f, sql_rel *t, bool keepalias)
 			return NULL;
 		narg = exp_propagate(sql->sa, narg, arg);
 		if (!keepalias && narg->type == e_column)
-			exp_setalias(narg, narg->l, narg->r);
+			exp_setalias(narg, arg->alias.label, narg->l, narg->r);
 		append(nl, narg);
 	}
 	return nl;
@@ -116,10 +122,14 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 	switch(e->type) {
 	case e_column:
+		assert(e->nid);
+		ne = exps_bind_nid(f->exps, e->nid);
+		/*
 		if (e->l)
 			ne = exps_bind_column2(f->exps, e->l, e->r, NULL);
 		if (!ne && !e->l)
 			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
+			*/
 		if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 			return NULL;
 		while (ne && (has_label(ne) || is_selfref(ne) /*inside this list */) && is_simple_project(f->op) && ne->type == e_column) {
@@ -154,8 +164,13 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		}
 		if (ne->type == e_atom)
 			e = exp_copy(sql, ne);
-		else
-			e = exp_alias(sql->sa, exp_relname(e), exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
+		else {
+			//e = exp_alias(sql, exp_relname(e), exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
+			assert(ne->nid);
+			ne = exp_alias_nid(sql, ne);
+			exp_prop_alias(sql->sa, ne, e);
+			return ne;
+		}
 		return exp_propagate(sql->sa, e, ne);
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -189,7 +204,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_convert:
 		if (!(l = exp_push_down_prj(sql, e->l, f, t)))
 			return NULL;
-		ne = exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
+		ne = exp_convert(sql, l, exp_fromtype(e), exp_totype(e));
 		return exp_propagate(sql->sa, ne, e);
 	case e_aggr:
 	case e_func: {
@@ -415,7 +430,7 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 		for (i = len-1; i >= 0; i--) {
 			sql_exp *e = exps[i];
 
-			if (!is_project(rel->op) || e->used) {
+			if (!is_project(rel->op) || (e->used && !is_set(rel->op))) {
 				if (is_project(rel->op))
 					nr += exp_mark_used(rel, e, i);
 				nr += exp_mark_used(subrel, e, -2);
@@ -1097,7 +1112,7 @@ sum_limit_offset(mvc *sql, sql_rel *rel)
 	sql_exp *add = rel_binop_(sql, NULL, exp_copy(sql, rel->exps->h->data), exp_copy(sql, rel->exps->h->next->data), "sys", "sql_add", card_value, true);
 	/* for remote plans, make sure the output type is a bigint */
 	if (subtype_cmp(lng, exp_subtype(add)) != 0)
-		add = exp_convert(sql->sa, add, exp_subtype(add), lng);
+		add = exp_convert(sql, add, exp_subtype(add), lng);
 	return list_append(sa_list(sql->sa), add);
 }
 

@@ -122,7 +122,7 @@ view_rename_columns(mvc *sql, const char *name, sql_rel *sq, dlist *column_spec)
 		sql_exp *e = m->data;
 		sql_exp *n = e;
 
-		exp_setname(sql->sa, n, name, cname);
+		exp_setname(sql, n, name, cname);
 		set_basecol(n);
 	}
 	/* skip any intern columns */
@@ -1953,10 +1953,18 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	/* New columns need update with default values. Add one more element for new column */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (ol_length(nt->columns) + 1));
 	rel_base_use_tid(sql, bt);
+
+	e = basetable_get_tid_or_add_it(sql, bt);
+	e = exp_ref(sql, e);
+
+	/*
 	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e->alias.label = rel_base_nid(bt, NULL);
+	*/
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 
 	list *cols = new_exp_list(sql->sa);
+	sql_exp *ne;
 	for (node *n = ol_first_node(nt->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -1973,10 +1981,12 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			rel_destroy(r);
 			return NULL;
 		}
-		list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, 0));
+		list_append(cols, ne=exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, 0));
+		ne->alias.label = rel_base_nid(bt, c);
+		ne->nid = ne->alias.label;
 
 		assert(!updates[c->colnr]);
-		exp_setname(sql->sa, e, c->t->base.name, c->base.name);
+		exp_setname(sql, e, c->t->base.name, c->base.name);
 		updates[c->colnr] = e;
 	}
 	res = rel_update(sql, res, r, updates, list_length(cols)?cols:NULL);
@@ -2301,8 +2311,12 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	/* new columns need update with default values */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, ol_length(nt->columns));
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	sql_rel *bt = rel_ddl_basetable_get(res);
+	e->alias.label = rel_base_nid(bt, NULL);
+	e->nid = e->alias.label;
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 	res = rel_update(sql, res, r, updates, NULL);
 	return res;

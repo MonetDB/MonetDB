@@ -680,7 +680,7 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 
 			if ((p = find_prop(e->p, PROP_NUNIQUES))) {
 				euniques = (BUN) p->value.dval;
-			} else if (e->type == e_column && rel_find_exp_and_corresponding_rel(l, e, false, &bt, NULL) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
+			} else if (e->type == e_column && e->nid && rel_find_exp_and_corresponding_rel(l, e, false, &bt, NULL) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
 				euniques = (BUN) p->value.lval;
 			}
 			/* use min to max range to compute number of possible values in the domain for number types */

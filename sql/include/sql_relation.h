@@ -30,7 +30,7 @@ typedef enum expression_type {
 #define CARD_MULTI 3
 
 typedef struct sql_exp_name {
-	unsigned int label;
+	int label;
 	const char *name;
 	const char *rname;
 } sql_exp_name;
@@ -48,6 +48,7 @@ typedef struct expression {
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
 	unsigned short flag; /* cmp types, PSM types/level */
 	unsigned short tmp;
+	int nid;
 	unsigned int
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:8,	/* free variable, ie binds to the upper dependent join */
@@ -254,6 +255,9 @@ typedef enum operator_type {
 #define set_selfref(e) 		(e)->selfref = 1
 #define is_basecol(e) 		((e)->base)
 #define set_basecol(e) 		(e)->base = 1
+
+/* o is referenced by r */
+#define is_referenced_by(o,r)	(r->nid && o->alias.label == r->nid)
 
 #define has_label(e)  		((e)->alias.label > 0)
 

@@ -121,7 +121,7 @@ extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oex
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
-extern sql_exp *rel_find_column( allocator *sa, sql_rel *rel, const char *tname, const char *cname );
+extern sql_exp *rel_find_column(mvc *sql, sql_rel *rel, const char *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
 extern sql_rel *rel_parent(sql_rel *rel);

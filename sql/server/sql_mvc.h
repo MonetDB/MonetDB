@@ -160,6 +160,7 @@ typedef struct mvc {
 
 	/* during query needed flags */
 	unsigned int label;	/* numbers for relational projection labels */
+	unsigned int nid;	/* numbers for relational names */
 	list *cascade_action;  /* protection against recursive cascade actions */
 	list *schema_path; /* schema search path for object lookup */
 	uintptr_t sp;

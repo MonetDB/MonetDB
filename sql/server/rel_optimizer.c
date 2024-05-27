@@ -553,13 +553,15 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 	list *new_inner_exps = sa_list(sql->sa);
 	for(node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data, *ie, *oe;
+		//assert(e->alias.label);
+		if (!e->alias.label)
+			exp_label(sql->sa, e, ++sql->label);
 		const char *rname = exp_relname(e);
 		const char *name = exp_name(e);
 
-		exp_label(sql->sa, e, ++sql->label);
 		ie = e;
 		oe = exp_ref(sql, ie);
-		exp_setname(sql->sa, oe, rname, name);
+		exp_setname(sql, oe, rname, name);
 		append(new_inner_exps, ie);
 		append(new_outer_exps, oe);
 	}
