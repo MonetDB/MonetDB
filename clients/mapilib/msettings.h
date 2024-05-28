@@ -19,6 +19,7 @@
 #define MP__BOOL_START (100)
 #define MP__LONG_START (200)
 #define MP__STRING_START (300)
+#define MP__MAX (400)
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,11 +48,18 @@ typedef enum mparm {
         // bool
         MP_TLS = MP__BOOL_START,
         MP_AUTOCOMMIT,
+	// Note: if you change anything about this enum whatsoever, make sure to
+	// make the corresponding change to struct msettings in msettings.c as well.
 
         // long
         MP_PORT = MP__LONG_START,
         MP_TIMEZONE,
         MP_REPLYSIZE,
+	MP_MAPTOLONGVARCHAR,   // specific to ODBC
+	MP_CONNECT_TIMEOUT,
+	MP_REPLY_TIMEOUT,
+	// Note: if you change anything about this enum whatsoever, make sure to
+	// make the corresponding change to struct msettings in msettings.c as well.
 
         // string
         MP_SOCK = MP__STRING_START,
@@ -69,6 +77,11 @@ typedef enum mparm {
         MP_LANGUAGE,
         MP_SCHEMA,		// TODO implement this
         MP_BINARY,
+	MP_LOGFILE,
+	// Note: if you change anything about this enum whatsoever, make sure to
+	// make the corresponding change to struct msettings in msettings.c as well.
+
+	// !! Make sure to keep them all below MP__MAX !!
 } mparm;
 
 typedef enum mparm_class {
@@ -91,8 +104,9 @@ mparm_classify(mparm parm)
 
 /* returns NULL if not found, pointer to mparm if found */
 mapi_export mparm mparm_parse(const char *name);
-const char *mparm_name(mparm parm);
-bool mparm_is_core(mparm parm);
+mapi_export const char *mparm_name(mparm parm);
+mapi_export mparm mparm_enumerate(int i);
+mapi_export bool mparm_is_core(mparm parm);
 
 
 /////////////////////////////////////////////////////////////////////
@@ -107,33 +121,38 @@ typedef struct msettings msettings;
 
 /* NULL means OK. non-NULL is error message. Valid until next call. Do not free. */
 typedef const char *msettings_error;
+mapi_export bool msettings_malloc_failed(msettings_error err);
 
 /* returns NULL if could not allocate */
 mapi_export msettings *msettings_create(void);
-msettings *msettings_clone(const msettings *mp);
-extern const msettings *msettings_default;
+mapi_export msettings *msettings_clone(const msettings *mp);
+mapi_export void msettings_reset(msettings *mp);
+mapi_export const msettings *msettings_default;
 
 /* always returns NULL */
 mapi_export msettings *msettings_destroy(msettings *mp);
 
+mapi_export const char *msetting_parm_name(const msettings *mp, mparm parm);
+mapi_export void msettings_set_localizer(msettings *mp, const char* (*localizer)(const void *data, mparm parm), void *data);
+
 /* retrieve and set; call abort() on type error */
 
 mapi_export const char* msetting_string(const msettings *mp, mparm parm);
-msettings_error msetting_set_string(msettings *mp, mparm parm, const char* value)
+mapi_export msettings_error msetting_set_string(msettings *mp, mparm parm, const char* value)
 	__attribute__((__nonnull__(3)));
 
 mapi_export long msetting_long(const msettings *mp, mparm parm);
-msettings_error msetting_set_long(msettings *mp, mparm parm, long value);
+mapi_export msettings_error msetting_set_long(msettings *mp, mparm parm, long value);
 
 mapi_export bool msetting_bool(const msettings *mp, mparm parm);
-msettings_error msetting_set_bool(msettings *mp, mparm parm, bool value);
+mapi_export msettings_error msetting_set_bool(msettings *mp, mparm parm, bool value);
 
 /* parse into the appropriate type, or format into newly malloc'ed string (NULL means malloc failed) */
-msettings_error msetting_parse(msettings *mp, mparm parm, const char *text);
-char *msetting_as_string(msettings *mp, mparm parm);
+mapi_export msettings_error msetting_parse(msettings *mp, mparm parm, const char *text);
+mapi_export char *msetting_as_string(const msettings *mp, mparm parm);
 
 /* store ignored parameter */
-msettings_error msetting_set_ignored(msettings *mp, const char *key, const char *value);
+mapi_export msettings_error msetting_set_ignored(msettings *mp, const char *key, const char *value);
 
 /* store named parameter */
 mapi_export msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value);

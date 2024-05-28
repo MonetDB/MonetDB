@@ -230,7 +230,7 @@ store(msettings *mp, scanner *sc, mparm parm, const char *value)
 {
 	msettings_error msg = msetting_parse(mp, parm, value);
 	if (msg)
-		return complain(sc, "cannot set %s to '%s': %s",mparm_name(parm), value, msg);
+		return complain(sc, "%s: %s", msg, value);
 	else
 		return true;
 }
@@ -358,7 +358,7 @@ parse_modern(msettings *mp, scanner *sc)
 
 			msettings_error msg = msetting_set_named(mp, false, key, value);
 			if (msg)
-				return complain(sc, "%s: %s", key, msg);
+				return complain(sc, "%s", msg);
 		} while (sc->c == '&');
 	}
 
@@ -388,7 +388,7 @@ parse_classic_query_parameters(msettings *mp, scanner *sc)
 			case MP_LANGUAGE:
 				msg = msetting_set_string(mp, parm, value);
 				if (msg)
-					return complain(sc, "parameter '%s': %s", key, msg);
+					return complain(sc, "%s", msg);
 				break;
 			default:
 				// ignore

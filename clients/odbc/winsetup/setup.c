@@ -77,13 +77,11 @@ ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg, WOR
 	case ODBC_CONFIG_DRIVER:
 		break;
 	default:
-		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE,
-				      "Invalid request");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE, "Invalid request");
 		return FALSE;
 	}
 	if (strcmp(driver, DriverName) != 0) {
-		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
-				      "Invalid driver name");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME, "Invalid driver name");
 		return FALSE;
 	}
 	return TRUE;
@@ -91,12 +89,26 @@ ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg, WOR
 
 struct data {
 	char *dsn;
+	char *desc;
 	char *uid;
 	char *pwd;
 	char *host;
 	char *port;
 	char *database;
+	char *schema;
+	char *logintimeout;
+	char *replytimeout;
+	char *replysize;
+	char *autocommit;
+	char *timezone;
 	char *logfile;
+	// TLS settings
+	char *use_tls;
+	char *servercert;
+	char *servercerthash;
+	char *clientkey;
+	char *clientcert;
+
 	HWND parent;
 	WORD request;
 };
@@ -140,12 +152,24 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		/* fill in text fields */
 		SetDlgItemText(hwndDlg, IDC_EDIT_DSN, datap->dsn ? datap->dsn : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_DESC, datap->desc ? datap->desc : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_UID, datap->uid ? datap->uid : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_PWD, datap->pwd ? datap->pwd : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_HOST, datap->host ? datap->host : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_PORT, datap->port ? datap->port : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_DATABASE, datap->database ? datap->database : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_SCHEMA, datap->schema ? datap->schema : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_LOGINTIMEOUT, datap->logintimeout ? datap->logintimeout : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_REPLYTIMEOUT, datap->replytimeout ? datap->replytimeout : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_REPLYSIZE, datap->replysize ? datap->replysize : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, datap->autocommit ? datap->autocommit : "on");
+		SetDlgItemText(hwndDlg, IDC_EDIT_TIMEZONE, datap->timezone ? datap->timezone : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_LOGFILE, datap->logfile ? datap->logfile : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_USETLS, datap->use_tls ? datap->use_tls : "off");
+		SetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERT, datap->servercert ? datap->servercert : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERTHASH, datap->servercerthash ? datap->servercerthash : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTKEY, datap->clientkey ? datap->clientkey : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTCERT, datap->clientcert ? datap->clientcert : "");
 		if (datap->request == ODBC_ADD_DSN && datap->dsn && *datap->dsn)
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EDIT_DSN), FALSE);
 		return TRUE;
@@ -157,16 +181,17 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (datap->request != ODBC_ADD_DSN || datap->dsn == NULL || *datap->dsn == 0) {
 				GetDlgItemText(hwndDlg, IDC_EDIT_DSN, buf, sizeof(buf));
 				if (!SQLValidDSN(buf)) {
-					MessageBox(hwndDlg,
-						   "Invalid Datasource Name",
-						   NULL,
-						   MB_ICONERROR);
+					MessageBox(hwndDlg, "Invalid Datasource Name", NULL, MB_ICONERROR);
 					return TRUE;
 				}
 				if (datap->dsn)
 					free(datap->dsn);
 				datap->dsn = strdup(buf);
 			}
+			GetDlgItemText(hwndDlg, IDC_EDIT_DESC, buf, sizeof(buf));
+			if (datap->desc)
+				free(datap->desc);
+			datap->desc = strdup(buf);
 			GetDlgItemText(hwndDlg, IDC_EDIT_UID, buf, sizeof(buf));
 			if (datap->uid)
 				free(datap->uid);
@@ -187,10 +212,54 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (datap->database)
 				free(datap->database);
 			datap->database = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_SCHEMA, buf, sizeof(buf));
+			if (datap->schema)
+				free(datap->schema);
+			datap->schema = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_LOGINTIMEOUT, buf, sizeof(buf));
+			if (datap->logintimeout)
+				free(datap->logintimeout);
+			datap->logintimeout = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_REPLYTIMEOUT, buf, sizeof(buf));
+			if (datap->replytimeout)
+				free(datap->replytimeout);
+			datap->replytimeout = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_REPLYSIZE, buf, sizeof(buf));
+			if (datap->replysize)
+				free(datap->replysize);
+			datap->replysize = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, buf, sizeof(buf));
+			if (datap->autocommit)
+				free(datap->autocommit);
+			datap->autocommit = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_TIMEZONE, buf, sizeof(buf));
+			if (datap->timezone)
+				free(datap->timezone);
+			datap->timezone = strdup(buf);
 			GetDlgItemText(hwndDlg, IDC_EDIT_LOGFILE, buf, sizeof(buf));
 			if (datap->logfile)
 				free(datap->logfile);
 			datap->logfile = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_USETLS, buf, sizeof(buf));
+			if (datap->use_tls)
+				free(datap->use_tls);
+			datap->use_tls = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERT, buf, sizeof(buf));
+			if (datap->servercert)
+				free(datap->servercert);
+			datap->servercert = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERTHASH, buf, sizeof(buf));
+			if (datap->servercerthash)
+				free(datap->servercerthash);
+			datap->servercerthash = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_CLIENTKEY, buf, sizeof(buf));
+			if (datap->clientkey)
+				free(datap->clientkey);
+			datap->clientkey = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_CLIENTCERT, buf, sizeof(buf));
+			if (datap->clientcert)
+				free(datap->clientcert);
+			datap->clientcert = strdup(buf);
 			/* fall through */
 		case IDCANCEL:
 			EndDialog(hwndDlg, LOWORD(wParam));
@@ -213,8 +282,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	ODBCLOG("ConfigDSN %d %s %s 0x%" PRIxPTR "\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)", (uintptr_t) &data);
 
 	if (strcmp(driver, DriverName) != 0) {
-		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
-				      "Invalid driver name");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME, "Invalid driver name");
 		return FALSE;
 	}
 	switch (request) {
@@ -223,18 +291,32 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	case ODBC_REMOVE_DSN:
 		break;
 	default:
-		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE,
-				      "Invalid request");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE, "Invalid request");
 		return FALSE;
 	}
 
 	data.dsn = NULL;
+	data.desc = NULL;
 	data.uid = NULL;
 	data.pwd = NULL;
 	data.host = NULL;
 	data.port = NULL;
 	data.database = NULL;
 	data.logfile = NULL;
+	data.schema = NULL;
+	data.logintimeout = NULL;
+	data.replytimeout = NULL;
+	data.replysize = NULL;
+	data.autocommit = NULL;
+	data.timezone = NULL;
+	data.logfile = NULL;
+	// TLS settings
+	data.use_tls = NULL;
+	data.servercert = NULL;
+	data.servercerthash = NULL;
+	data.clientkey = NULL;
+	data.clientcert = NULL;
+
 	data.parent = parent;
 	data.request = request;
 
@@ -242,15 +324,16 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		char *value = strchr(attributes, '=');
 
 		if (value == NULL) {
-			SQLPostInstallerError(ODBC_ERROR_INVALID_KEYWORD_VALUE,
-					      "Invalid attributes string");
+			SQLPostInstallerError(ODBC_ERROR_INVALID_KEYWORD_VALUE, "Invalid attributes string");
 			return FALSE;
 		}
 		value++;
 		if (strncasecmp("dsn=", attributes, value - attributes) == 0) {
 			dsn = value;
 			data.dsn = strdup(value);
-		} else if (strncasecmp("uid=", attributes, value - attributes) == 0)
+		} else if (strncasecmp("description=", attributes, value - attributes) == 0)
+			data.desc = strdup(value);
+		else if (strncasecmp("uid=", attributes, value - attributes) == 0)
 			data.uid = strdup(value);
 		else if (strncasecmp("pwd=", attributes, value - attributes) == 0)
 			data.pwd = strdup(value);
@@ -260,15 +343,36 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			data.port = strdup(value);
 		else if (strncasecmp("database=", attributes, value - attributes) == 0)
 			data.database = strdup(value);
+		else if (strncasecmp("schema=", attributes, value - attributes) == 0)
+			data.schema = strdup(value);
+		else if (strncasecmp("logintimeout=", attributes, value - attributes) == 0)
+			data.logintimeout = strdup(value);
+		else if (strncasecmp("replytimeout=", attributes, value - attributes) == 0)
+			data.replytimeout = strdup(value);
+		else if (strncasecmp("replysize=", attributes, value - attributes) == 0)
+			data.replysize = strdup(value);
+		else if (strncasecmp("autocommit=", attributes, value - attributes) == 0)
+			data.autocommit = strdup(value);
+		else if (strncasecmp("timezone=", attributes, value - attributes) == 0)
+			data.timezone = strdup(value);
 		else if (strncasecmp("logfile=", attributes, value - attributes) == 0)
 			data.logfile = strdup(value);
+		else if (strncasecmp("tls=", attributes, value - attributes) == 0)
+			data.use_tls = strdup(value);
+		else if (strncasecmp("cert=", attributes, value - attributes) == 0)
+			data.servercert = strdup(value);
+		else if (strncasecmp("certhash=", attributes, value - attributes) == 0)
+			data.servercerthash = strdup(value);
+		else if (strncasecmp("clientkey=", attributes, value - attributes) == 0)
+			data.clientkey = strdup(value);
+		else if (strncasecmp("clientcert=", attributes, value - attributes) == 0)
+			data.clientcert = strdup(value);
 		attributes = value + strlen(value) + 1;
 	}
 
 	if (request == ODBC_REMOVE_DSN) {
 		if (data.dsn == NULL) {
-			SQLPostInstallerError(ODBC_ERROR_INVALID_KEYWORD_VALUE,
-					      "No DSN specified");
+			SQLPostInstallerError(ODBC_ERROR_INVALID_KEYWORD_VALUE,	"No DSN specified");
 			return FALSE;
 		}
 		rc = SQLRemoveDSNFromIni(data.dsn);
@@ -276,21 +380,44 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		goto finish;
 	}
 
-	MergeFromProfileString(data.dsn, &data.uid, "uid", "monetdb");
-	MergeFromProfileString(data.dsn, &data.pwd, "pwd", "monetdb");
+	MergeFromProfileString(data.dsn, &data.desc, "description", "");
+	MergeFromProfileString(data.dsn, &data.uid, "uid", "");
+	MergeFromProfileString(data.dsn, &data.pwd, "pwd", "");
 	MergeFromProfileString(data.dsn, &data.host, "host", "localhost");
 	MergeFromProfileString(data.dsn, &data.port, "port", MAPI_PORT_STR);
 	MergeFromProfileString(data.dsn, &data.database, "database", "");
+	MergeFromProfileString(data.dsn, &data.schema, "schema", "");
+	MergeFromProfileString(data.dsn, &data.logintimeout, "logintimeout", "30");
+	MergeFromProfileString(data.dsn, &data.replytimeout, "replytimeout", "300");
+	MergeFromProfileString(data.dsn, &data.replysize, "replysize", "");
+	MergeFromProfileString(data.dsn, &data.autocommit, "autocommit", "on");
+	MergeFromProfileString(data.dsn, &data.timezone, "timezone", "");
 	MergeFromProfileString(data.dsn, &data.logfile, "logfile", "");
+	MergeFromProfileString(data.dsn, &data.use_tls, "tls", "off");
+	MergeFromProfileString(data.dsn, &data.servercert, "cert", "");
+	MergeFromProfileString(data.dsn, &data.servercerthash, "certhash", "");
+	MergeFromProfileString(data.dsn, &data.clientkey, "clientkey", "");
+	MergeFromProfileString(data.dsn, &data.clientcert, "clientcert", "");
 
-	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s logfile=%s\n",
+	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s schema=%s logintimeout=%s replytimeout=%s replysize=%s autocommit=%s timezone=%s logfile=%s tls=%s cert=%s certhash=%s clientkey=%s clientcert=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
 		data.host ? data.host : "(null)",
 		data.port ? data.port : "(null)",
 		data.database ? data.database : "(null)",
-		data.logfile ? data.logfile : "(null)");
+		data.schema ? data.schema : "(null)",
+		data.logintimeout ? data.logintimeout : "(null)",
+		data.replytimeout ? data.replytimeout : "(null)",
+		data.replysize ? data.replysize : "(null)",
+		data.autocommit ? data.autocommit : "(null)",
+		data.timezone ? data.timezone : "(null)",
+		data.logfile ? data.logfile : "(null)",
+		data.use_tls ? data.use_tls : "(null)",
+		data.servercert ? data.servercert : "(null)",
+		data.servercerthash ? data.servercerthash : "(null)",
+		data.clientkey ? data.clientkey : "(null)",
+		data.clientcert ? data.clientcert : "(null)");
 
 	/* we're optimistic: default return value */
 	rc = TRUE;
@@ -305,8 +432,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			break;
 		default:
 			rc = FALSE;
-			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
-					      "Error creating configuration dialog");
+			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Error creating configuration dialog");
 			/* fall through */
 		case IDCANCEL:
 			goto finish;
@@ -317,12 +443,8 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		if (!SQLValidDSN(data.dsn)) {
 			rc = FALSE;
 			if (parent)
-				MessageBox(parent,
-					   "Invalid Datasource Name",
-					   NULL,
-					   MB_ICONERROR);
-			SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
-					      "Invalid driver name");
+				MessageBox(parent, "Invalid Datasource Name", NULL, MB_ICONERROR);
+			SQLPostInstallerError(ODBC_ERROR_INVALID_NAME, "Invalid driver name");
 			goto finish;
 		}
 		if (dsn == NULL || strcmp(dsn, data.dsn) != 0) {
@@ -333,21 +455,14 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			if (drv && *drv) {
 				free(drv);
 				if (parent &&
-				    MessageBox(parent,
-					       "Replace existing Datasource Name?",
-					       NULL,
-					       MB_OKCANCEL | MB_ICONQUESTION) != IDOK) {
+				    MessageBox(parent, "Replace existing Datasource Name?", NULL, MB_OKCANCEL | MB_ICONQUESTION) != IDOK) {
 					goto finish;
 				}
 				ODBCLOG("ConfigDSN removing dsn %s\n", data.dsn);
 				if (!SQLRemoveDSNFromIni(data.dsn)) {
 					rc = FALSE;
-					MessageBox(parent,
-						   "Failed to remove old Datasource Name",
-						   NULL,
-						   MB_ICONERROR);
-					SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
-							      "Failed to remove old Datasource Name");
+					MessageBox(parent, "Failed to remove old Datasource Name", NULL, MB_ICONERROR);
+					SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Failed to remove old Datasource Name");
 					goto finish;
 				}
 			} else if (drv)
@@ -356,63 +471,73 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		if (dsn && !SQLRemoveDSNFromIni(dsn)) {
 			rc = FALSE;
 			if (parent)
-				MessageBox(parent,
-					   "Failed to remove old Datasource Name",
-					   NULL,
-					   MB_ICONERROR);
-			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
-					      "Failed to remove old Datasource Name");
+				MessageBox(parent, "Failed to remove old Datasource Name", NULL, MB_ICONERROR);
+			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Failed to remove old Datasource Name");
 			goto finish;
 		}
 		if (!SQLWriteDSNToIni(data.dsn, driver)) {
 			rc = FALSE;
 			if (parent)
-				MessageBox(parent,
-					   "Failed to add new Datasource Name",
-					   NULL,
-					   MB_ICONERROR);
-			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
-					      "Failed to add new Datasource Name");
+				MessageBox(parent, "Failed to add new Datasource Name", NULL, MB_ICONERROR);
+			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Failed to add new Datasource Name");
 			goto finish;
 		}
 	}
-	ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s logfile=%s\n",
+	ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s schema=%s logintimeout=%s replytimeout=%s replysize=%s autocommit=%s timezone=%s logfile=%s tls=%s cert=%s certhash=%s clientkey=%s clientcert=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
 		data.host ? data.host : "(null)",
 		data.port ? data.port : "(null)",
 		data.database ? data.database : "(null)",
-		data.logfile ? data.logfile : "(null)");
+		data.schema ? data.schema : "(null)",
+		data.logintimeout ? data.logintimeout : "(null)",
+		data.replytimeout ? data.replytimeout : "(null)",
+		data.replysize ? data.replysize : "(null)",
+		data.autocommit ? data.autocommit : "(null)",
+		data.timezone ? data.timezone : "(null)",
+		data.logfile ? data.logfile : "(null)",
+		data.use_tls ? data.use_tls : "(null)",
+		data.servercert ? data.servercert : "(null)",
+		data.servercerthash ? data.servercerthash : "(null)",
+		data.clientkey ? data.clientkey : "(null)",
+		data.clientcert ? data.clientcert : "(null)");
 
-	if (!SQLWritePrivateProfileString(data.dsn, "uid", data.uid, "odbc.ini") ||
-	    !SQLWritePrivateProfileString(data.dsn, "pwd", data.pwd, "odbc.ini") ||
-	    !SQLWritePrivateProfileString(data.dsn, "host", data.host, "odbc.ini") ||
-	    !SQLWritePrivateProfileString(data.dsn, "port", data.port, "odbc.ini") ||
-	    !SQLWritePrivateProfileString(data.dsn, "database", data.database, "odbc.ini")) {
+	if (!SQLWritePrivateProfileString(data.dsn, "uid", data.uid, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "pwd", data.pwd, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "host", data.host, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "port", data.port, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "database", data.database, "odbc.ini")) {
 		rc = FALSE;
 		if (parent)
-			MessageBox(parent,
-				   "Error writing configuration data to registry",
-				   NULL,
-				   MB_ICONERROR);
-		SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
-				      "Error writing configuration data to registry");
+			MessageBox(parent, "Error writing configuration data to registry", NULL, MB_ICONERROR);
+		SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Error writing configuration data to registry");
 		goto finish;
 	}
 
-	if (!SQLWritePrivateProfileString(data.dsn, "logfile", data.logfile, "odbc.ini")) {
+	if (!SQLWritePrivateProfileString(data.dsn, "description", data.desc, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "schema", data.schema, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "logintimeout", data.logintimeout, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "replytimeout", data.replytimeout, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "replysize", data.replysize, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "autocommit", data.autocommit, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "timezone", data.timezone, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "logfile", data.logfile, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "tls", data.use_tls, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "cert", data.servercert, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "certhash", data.servercerthash, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "clientkey", data.clientkey, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "clientcert", data.clientcert, "odbc.ini")) {
 		if (parent)
-			MessageBox(parent,
-				   "Error writing logfile configuration data to registry",
-				   NULL,
-				   MB_ICONERROR);
+			MessageBox(parent, "Error writing optional configuration data to registry", NULL, MB_ICONERROR);
 		goto finish;
 	}
 
   finish:
 	if (data.dsn)
 		free(data.dsn);
+	if (data.desc)
+		free(data.desc);
 	if (data.uid)
 		free(data.uid);
 	if (data.pwd)
@@ -423,8 +548,30 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		free(data.port);
 	if (data.database)
 		free(data.database);
+	if (data.schema)
+		free(data.schema);
+	if (data.logintimeout)
+		free(data.logintimeout);
+	if (data.replytimeout)
+		free(data.replytimeout);
+	if (data.replysize)
+		free(data.replysize);
+	if (data.autocommit)
+		free(data.autocommit);
+	if (data.timezone)
+		free(data.timezone);
 	if (data.logfile)
 		free(data.logfile);
+	if (data.use_tls)
+		free(data.use_tls);
+	if (data.servercert)
+		free(data.servercert);
+	if (data.servercerthash)
+		free(data.servercerthash);
+	if (data.clientkey)
+		free(data.clientkey);
+	if (data.clientcert)
+		free(data.clientcert);
 	ODBCLOG("ConfigDSN returning %s\n", rc ? "TRUE" : "FALSE");
 	return rc;
 }

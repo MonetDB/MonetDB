@@ -248,8 +248,9 @@ handleClient(void *data)
 	}
 
 	if (database == NULL || *database == '\0') {
-		/* we need to have a database, if we haven't gotten one,
-		 * complain */
+		/* We need to have a database, if we haven't gotten one, complain.
+		 * Note: ODBC SQLBrowseConnect looks for this exact string, update it
+		 * if you change it! */
 		mnstr_printf(fout, "!monetdbd: please specify a database\n");
 		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);

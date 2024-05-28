@@ -259,7 +259,9 @@ socket_update_timeout(stream *s)
 	tv.tv_sec = s->timeout / 1000;
 	tv.tv_usec = (s->timeout % 1000) * 1000;
 	/* cast to char * for Windows, no harm on "normal" systems */
-	if (!s->readonly)
+	if (s->readonly)
+		(void) setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
+	else
 		(void) setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 }
 

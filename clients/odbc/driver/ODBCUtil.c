@@ -1203,11 +1203,11 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 								size_t repl3len = 0;
 								if (repl == NULL) {
 									if (strcmp(func->name, "user") == 0) {
-										repl = dbc->uid;
+										repl = msetting_string(dbc->settings, MP_USER);
 										p1 = p2 = "";
 										quote = "'";
 									} else if (strcmp(func->name, "database") == 0) {
-										repl = dbc->dbname;
+										repl = msetting_string(dbc->settings, MP_DATABASE);
 										p1 = p2 = "";
 										quote = "'";
 									} else if (strcmp(func->name, "convert") == 0) {
@@ -2624,41 +2624,38 @@ translateCompletionType(SQLSMALLINT CompletionType)
 	}
 }
 
-#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
 void
-ODBCLOG(const char *fmt, ...)
+setODBCdebug(const char *filename, bool overrideEnvVar)
 {
-	va_list ap;
-
-	va_start(ap, fmt);
-	if (ODBCdebug == NULL) {
+	if (!overrideEnvVar) {
 #ifdef NATIVE_WIN32
-		if ((ODBCdebug = _wgetenv(L"ODBCDEBUG")) == NULL)
-			ODBCdebug = _wcsdup(L"");
-		else
-			ODBCdebug = _wcsdup(ODBCdebug);
+		void *value = _wgetenv(L"ODBCDEBUG");
 #else
-		if ((ODBCdebug = getenv("ODBCDEBUG")) == NULL)
-			ODBCdebug = strdup("");
-		else
-			ODBCdebug = strdup(ODBCdebug);
+		void *value = getenv("ODBCDEBUG");
 #endif
+		if (value != NULL)
+			return;    // do not override
 	}
-	if (ODBCdebug != NULL && *ODBCdebug != 0) {
-		FILE *f;
+
+	free((void*)ODBCdebug);
 
 #ifdef NATIVE_WIN32
-		f = _wfopen(ODBCdebug, L"a");
-#else
-		f = fopen(ODBCdebug, "a");
-#endif
-		if (f) {
-			vfprintf(f, fmt, ap);
-			fclose(f);
-		} else
-			vfprintf(stderr, fmt, ap);
+	size_t attrlen = strlen(filename);
+	SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
+	if (ODBCutf82wchar(filename,
+				(SQLINTEGER) attrlen,
+				wattr,
+				(SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
+				NULL,
+				NULL)) {
+		free(wattr);
+		wattr = NULL;
 	}
-	va_end(ap);
+	ODBCdebug = wattr;
+#else
+	ODBCdebug = strdup(filename);
+#endif
 }
-#endif
+
+
 #endif

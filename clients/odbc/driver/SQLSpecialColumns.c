@@ -262,7 +262,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		/* add the selection condition */
 		if (NameLength1 > 0 && CatalogName != NULL) {
 			/* filtering requested on catalog name */
-			if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
+			if (strcmp((char *) CatalogName, msetting_string(stmt->Dbc->settings, MP_DATABASE)) != 0) {
 				/* catalog name does not match the database name, so return no rows */
 				pos += strcpy_len(query + pos, " and 1=2", querylen - pos);
 			}
