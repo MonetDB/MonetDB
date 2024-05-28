@@ -389,7 +389,7 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 		case UTF8_ACCEPT:
 			if (codepoint == '\n') {
 				if (max) {
-					*t = s;
+					*t = s - 1;	/* before the \n */
 					return len;
 				}
 				len++;
