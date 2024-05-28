@@ -328,44 +328,44 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			return FALSE;
 		}
 		value++;
-		if (strncasecmp("dsn=", attributes, value - attributes) == 0) {
+		if (strncasecmp("DSN=", attributes, value - attributes) == 0) {
 			dsn = value;
 			data.dsn = strdup(value);
-		} else if (strncasecmp("description=", attributes, value - attributes) == 0)
+		} else if (strncasecmp("Description=", attributes, value - attributes) == 0)
 			data.desc = strdup(value);
-		else if (strncasecmp("uid=", attributes, value - attributes) == 0)
+		else if (strncasecmp("UID=", attributes, value - attributes) == 0)
 			data.uid = strdup(value);
-		else if (strncasecmp("pwd=", attributes, value - attributes) == 0)
+		else if (strncasecmp("PWD=", attributes, value - attributes) == 0)
 			data.pwd = strdup(value);
-		else if (strncasecmp("host=", attributes, value - attributes) == 0)
+		else if (strncasecmp("Host=", attributes, value - attributes) == 0)
 			data.host = strdup(value);
-		else if (strncasecmp("port=", attributes, value - attributes) == 0)
+		else if (strncasecmp("Port=", attributes, value - attributes) == 0)
 			data.port = strdup(value);
-		else if (strncasecmp("database=", attributes, value - attributes) == 0)
+		else if (strncasecmp("Database=", attributes, value - attributes) == 0)
 			data.database = strdup(value);
-		else if (strncasecmp("schema=", attributes, value - attributes) == 0)
+		else if (strncasecmp("Schema=", attributes, value - attributes) == 0)
 			data.schema = strdup(value);
-		else if (strncasecmp("logintimeout=", attributes, value - attributes) == 0)
+		else if (strncasecmp("LoginTimeout=", attributes, value - attributes) == 0)
 			data.logintimeout = strdup(value);
-		else if (strncasecmp("replytimeout=", attributes, value - attributes) == 0)
+		else if (strncasecmp("ReplyTimeout=", attributes, value - attributes) == 0)
 			data.replytimeout = strdup(value);
-		else if (strncasecmp("replysize=", attributes, value - attributes) == 0)
+		else if (strncasecmp("ReplySize=", attributes, value - attributes) == 0)
 			data.replysize = strdup(value);
-		else if (strncasecmp("autocommit=", attributes, value - attributes) == 0)
+		else if (strncasecmp("AutoCommit=", attributes, value - attributes) == 0)
 			data.autocommit = strdup(value);
-		else if (strncasecmp("timezone=", attributes, value - attributes) == 0)
+		else if (strncasecmp("TimeZone=", attributes, value - attributes) == 0)
 			data.timezone = strdup(value);
-		else if (strncasecmp("logfile=", attributes, value - attributes) == 0)
+		else if (strncasecmp("LogFile=", attributes, value - attributes) == 0)
 			data.logfile = strdup(value);
-		else if (strncasecmp("tls=", attributes, value - attributes) == 0)
+		else if (strncasecmp("TLS=", attributes, value - attributes) == 0)
 			data.use_tls = strdup(value);
-		else if (strncasecmp("cert=", attributes, value - attributes) == 0)
+		else if (strncasecmp("Cert=", attributes, value - attributes) == 0)
 			data.servercert = strdup(value);
-		else if (strncasecmp("certhash=", attributes, value - attributes) == 0)
+		else if (strncasecmp("CertHash=", attributes, value - attributes) == 0)
 			data.servercerthash = strdup(value);
-		else if (strncasecmp("clientkey=", attributes, value - attributes) == 0)
+		else if (strncasecmp("ClientKey=", attributes, value - attributes) == 0)
 			data.clientkey = strdup(value);
-		else if (strncasecmp("clientcert=", attributes, value - attributes) == 0)
+		else if (strncasecmp("ClientCert=", attributes, value - attributes) == 0)
 			data.clientcert = strdup(value);
 		attributes = value + strlen(value) + 1;
 	}
@@ -380,26 +380,26 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		goto finish;
 	}
 
-	MergeFromProfileString(data.dsn, &data.desc, "description", "");
-	MergeFromProfileString(data.dsn, &data.uid, "uid", "");
-	MergeFromProfileString(data.dsn, &data.pwd, "pwd", "");
-	MergeFromProfileString(data.dsn, &data.host, "host", "localhost");
-	MergeFromProfileString(data.dsn, &data.port, "port", MAPI_PORT_STR);
-	MergeFromProfileString(data.dsn, &data.database, "database", "");
-	MergeFromProfileString(data.dsn, &data.schema, "schema", "");
-	MergeFromProfileString(data.dsn, &data.logintimeout, "logintimeout", "30");
-	MergeFromProfileString(data.dsn, &data.replytimeout, "replytimeout", "300");
-	MergeFromProfileString(data.dsn, &data.replysize, "replysize", "");
-	MergeFromProfileString(data.dsn, &data.autocommit, "autocommit", "on");
-	MergeFromProfileString(data.dsn, &data.timezone, "timezone", "");
-	MergeFromProfileString(data.dsn, &data.logfile, "logfile", "");
-	MergeFromProfileString(data.dsn, &data.use_tls, "tls", "off");
-	MergeFromProfileString(data.dsn, &data.servercert, "cert", "");
-	MergeFromProfileString(data.dsn, &data.servercerthash, "certhash", "");
-	MergeFromProfileString(data.dsn, &data.clientkey, "clientkey", "");
-	MergeFromProfileString(data.dsn, &data.clientcert, "clientcert", "");
+	MergeFromProfileString(data.dsn, &data.desc, "Description", "");
+	MergeFromProfileString(data.dsn, &data.uid, "UID", "");
+	MergeFromProfileString(data.dsn, &data.pwd, "PWD", "");
+	MergeFromProfileString(data.dsn, &data.host, "Host", "localhost");
+	MergeFromProfileString(data.dsn, &data.port, "Port", MAPI_PORT_STR);
+	MergeFromProfileString(data.dsn, &data.database, "Database", "");
+	MergeFromProfileString(data.dsn, &data.schema, "Schema", "");
+	MergeFromProfileString(data.dsn, &data.logintimeout, "LoginTimeout", "");
+	MergeFromProfileString(data.dsn, &data.replytimeout, "ReplyTimeout", "");
+	MergeFromProfileString(data.dsn, &data.replysize, "ReplySize", "");
+	MergeFromProfileString(data.dsn, &data.autocommit, "AutoCommit", "on");
+	MergeFromProfileString(data.dsn, &data.timezone, "TimeZone", "");
+	MergeFromProfileString(data.dsn, &data.logfile, "LogFile", "");
+	MergeFromProfileString(data.dsn, &data.use_tls, "TLS", "off");
+	MergeFromProfileString(data.dsn, &data.servercert, "Cert", "");
+	MergeFromProfileString(data.dsn, &data.servercerthash, "CertHash", "");
+	MergeFromProfileString(data.dsn, &data.clientkey, "ClientKey", "");
+	MergeFromProfileString(data.dsn, &data.clientcert, "ClientCert", "");
 
-	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s schema=%s logintimeout=%s replytimeout=%s replysize=%s autocommit=%s timezone=%s logfile=%s tls=%s cert=%s certhash=%s clientkey=%s clientcert=%s\n",
+	ODBCLOG("ConfigDSN values: DSN=%s UID=%s PWD=%s Host=%s Port=%s Database=%s Schema=%s LoginTimeout=%s ReplyTimeout=%s ReplySize=%s AutoCommit=%s TimeZone=%s LogFile=%s TLSs=%s Cert=%s CertHash=%s ClientKey=%s ClientCert=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
@@ -483,7 +483,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			goto finish;
 		}
 	}
-	ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s schema=%s logintimeout=%s replytimeout=%s replysize=%s autocommit=%s timezone=%s logfile=%s tls=%s cert=%s certhash=%s clientkey=%s clientcert=%s\n",
+	ODBCLOG("ConfigDSN writing values: DSN=%s UID=%s PWD=%s Host=%s Port=%s Database=%s Schema=%s LoginTimeout=%s ReplyTimeout=%s ReplySize=%s AutoCommit=%s TimeZone=%s LogFile=%s TLSs=%s Cert=%s CertHash=%s ClientKey=%s ClientCert=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
@@ -503,11 +503,11 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		data.clientkey ? data.clientkey : "(null)",
 		data.clientcert ? data.clientcert : "(null)");
 
-	if (!SQLWritePrivateProfileString(data.dsn, "uid", data.uid, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "pwd", data.pwd, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "host", data.host, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "port", data.port, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "database", data.database, "odbc.ini")) {
+	if (!SQLWritePrivateProfileString(data.dsn, "UID", data.uid, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "PWD", data.pwd, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "Host", data.host, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "Port", data.port, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "Database", data.database, "odbc.ini")) {
 		rc = FALSE;
 		if (parent)
 			MessageBox(parent, "Error writing configuration data to registry", NULL, MB_ICONERROR);
@@ -515,19 +515,19 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		goto finish;
 	}
 
-	if (!SQLWritePrivateProfileString(data.dsn, "description", data.desc, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "schema", data.schema, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "logintimeout", data.logintimeout, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "replytimeout", data.replytimeout, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "replysize", data.replysize, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "autocommit", data.autocommit, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "timezone", data.timezone, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "logfile", data.logfile, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "tls", data.use_tls, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "cert", data.servercert, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "certhash", data.servercerthash, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "clientkey", data.clientkey, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "clientcert", data.clientcert, "odbc.ini")) {
+	if (!SQLWritePrivateProfileString(data.dsn, "Description", data.desc, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "Schema", data.schema, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "LoginTimeout", data.logintimeout, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "ReplyTimeout", data.replytimeout, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "ReplySize", data.replysize, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "AutoCommit", data.autocommit, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "TimeZone", data.timezone, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "LogFile", data.logfile, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "TLS", data.use_tls, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "Cert", data.servercert, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "CertHash", data.servercerthash, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "ClientKey", data.clientkey, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "ClientCert", data.clientcert, "odbc.ini")) {
 		if (parent)
 			MessageBox(parent, "Error writing optional configuration data to registry", NULL, MB_ICONERROR);
 		goto finish;

@@ -166,7 +166,7 @@ static void
 CreateAttributeString(char *attrs, size_t len, const char *dsn)
 {
 	snprintf(attrs, len,
-			 "DSN=%s;Server=localhost;Database=;UID=monetdb;PWD=monetdb;Logfile=;",
+			 "DSN=%s;Server=localhost;Database=;UID=monetdb;PWD=monetdb;AutoCommit=on;TLS=off;",
 			 dsn);
 
 	for (; *attrs; attrs++)
@@ -230,9 +230,8 @@ Install(const char *driverpath, const char *dsn, const char *drivername)
 	}
 
 	rc = InstallMyDriver(driverpath, drivername);
-
 	if (rc) {
-		/* after the driver is installed create the new DSN */
+		/* after the driver is installed create the new System DSN */
 		rc = AddMyDSN(dsn, drivername);
 	}
 
