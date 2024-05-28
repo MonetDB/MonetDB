@@ -3338,7 +3338,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	node *n;
 
 	if (rel_is_ref(rel)) {
-		if (is_select(rel->op) && rel->exps) {
+		if (is_select(rel->op) && !list_empty(rel->exps)) {
 			/* add inplace empty select */
 			sql_rel *l = rel_select(v->sql->sa, rel->l, NULL);
 
