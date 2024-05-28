@@ -3036,7 +3036,7 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 						sql_exp *cmp = m->data;
 						if (cmp->type == e_cmp && cmp->flag == cmp_equal && !is_anti(cmp) && !is_semantics(cmp) && exp_is_atom(cmp->r)) {
 							sql_exp *l = cmp->l;
-							if(l->type == e_column && col->alias.label == l->nid /*((!col->l && !l->l) || (col->l && l->l && strcmp(col->l, l->l) == 0)) && strcmp(col->r, l->r) == 0*/) {
+							if(l->type == e_column && col->nid == l->nid /*((!col->l && !l->l) || (col->l && l->l && strcmp(col->l, l->l) == 0)) && strcmp(col->r, l->r) == 0*/) {
 								/* replace column with the constant */
 								sql_exp *e = n->data = exp_copy(v->sql, cmp->r);
 								exp_setalias(e, col->alias.label, exp_relname(col), exp_name(col));
