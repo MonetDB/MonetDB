@@ -19,6 +19,7 @@ struct interval {
 	int width;
 };
 
+/* this table was created using the script uniwidthtab.sh */
 static const struct interval intervals[] = {
 	/* sorted list of non-overlapping ranges:
 	 * ranges with width==0 represent all codepoints with
