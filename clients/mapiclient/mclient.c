@@ -174,7 +174,7 @@ static char *nullstring = default_nullstring;
 static timertype
 gettime(void)
 {
-	/* Return the time in milliseconds since an epoch.  The epoch
+	/* Return the time in microseconds since an epoch.  The epoch
 	   is roughly the time this program started. */
 #ifdef _MSC_VER
 	static LARGE_INTEGER freq, start;	/* automatically initialized to 0 */

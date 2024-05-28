@@ -34,9 +34,21 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
+#include "ODBCAttrs.h"
 
 #define ODBC_DBC_MAGIC_NR  1365	/* for internal sanity check only */
 
+static const char*
+odbc_parm_localizer(const void *data, mparm parm)
+{
+	(void)data;
+	for (int i = 0; i < attr_setting_count; i++) {
+		const struct attr_setting *entry = &attr_settings[i];
+		if (entry->parm == parm)
+			return entry->name;
+	}
+	return NULL;
+}
 
 /*
  * Creates a new allocated ODBCDbc object and initializes it.
@@ -48,23 +60,32 @@ ODBCDbc *
 newODBCDbc(ODBCEnv *env)
 {
 	ODBCDbc *dbc;
+	msettings *settings;
 
 	assert(env);
 
 	dbc = (ODBCDbc *) malloc(sizeof(ODBCDbc));
-	if (dbc == NULL) {
+	settings = msettings_create();
+
+	if (dbc == NULL || settings == NULL) {
+		free(dbc);
+		msettings_destroy(settings);
 		/* Memory allocation error */
 		addEnvError(env, "HY001", NULL, 0);
 		return NULL;
 	}
 
+	msettings_set_localizer(settings, odbc_parm_localizer, NULL);
+
 	*dbc = (ODBCDbc) {
 		.Env = env,
+		.settings = settings,
 		.sql_attr_autocommit = SQL_AUTOCOMMIT_ON,	/* default is autocommit */
 		.sql_attr_metadata_id = SQL_FALSE,
 		/* add this dbc to start of the administrative linked dbc list */
 		.next = env->FirstDbc,
 		.Type = ODBC_DBC_MAGIC_NR,	/* set it valid */
+		.setting_touched = { 0 },
 	};
 	env->FirstDbc = dbc;
 	return dbc;
@@ -173,16 +194,8 @@ destroyODBCDbc(ODBCDbc *dbc)
 
 	/* cleanup own managed data */
 	deleteODBCErrorList(&dbc->Error);
-	if (dbc->dsn)
-		free(dbc->dsn);
-	if (dbc->uid)
-		free(dbc->uid);
-	if (dbc->pwd)
-		free(dbc->pwd);
-	if (dbc->host)
-		free(dbc->host);
-	if (dbc->dbname)
-		free(dbc->dbname);
+	msettings_destroy(dbc->settings);
+	free(dbc->dsn);
 
 	free(dbc);
 }

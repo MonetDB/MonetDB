@@ -1,0 +1,24 @@
+# ChangeLog file for odbc
+# This file is updated with Maddlog
+
+* Fri May 24 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- ODBC now supports TLS. It can be configured through the following
+  DSN- or Connection String attributes (canonical name / user friendly name):
+    TLS / Encrypt = ON/OFF
+    CERT / Server Certificate = PATH
+    CERTHASH / Server Certificate Hash = sha256:HEXDIGITS
+    CLIENTKEY / Client Key = PATH
+    CLIENTCERT / Client Certificate = PATH
+    AUTOCOMMIT / Autocommit = ON/OFF
+- Several more connection properties have been made configurable:
+    SCHEMA / Schema = NAME
+    TIMEZONE / Time Zone = Minutes East Of UTC
+    REPLYSIZE / Reply Size = NUMBER
+    LOGFILE / Log File = PATH
+    LOGINTIMEOUT / Login Timeout = MILLISECONDS
+    CONNECTIONTIMEOUT / Connection Timeout = MILLISECONDS
+    SOCK / Unix Socket = PATH (unix only)
+- SQLBrowseConnect adds On/Off suggestions to boolean settings
+  and prioritizes the DATABASE attribute if it notices monetdbd
+  requires one. Apart from that only UID/User and PWD/Password
+  are required, all others have sensible defaults.

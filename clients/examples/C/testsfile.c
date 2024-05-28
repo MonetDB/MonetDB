@@ -85,7 +85,7 @@ handle_set_command(const char *location, const char *key, const char *value)
 {
 	msettings_error msg = msetting_set_named(mp, true, key, value);
 	if (msg) {
-		fprintf(stderr, "%s: cannot set '%s': %s\n", location, key, msg);
+		fprintf(stderr, "%s: %s\n", location, msg);
 		return false;
 	}
 	return true;
