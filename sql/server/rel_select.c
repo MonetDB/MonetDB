@@ -1423,8 +1423,10 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
+				/*
 				if (exp->alias.label == exp->nid)
 					exp->alias.label = -(sql->nid++);
+					*/
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
@@ -1521,8 +1523,10 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
+				/*
 				if (exp->alias.label == exp->nid)
 					exp->alias.label = -(sql->nid++);
+					*/
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
@@ -5134,6 +5138,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			exp_kind nek = ek;
 			nek.aggr = is_sql_aggr(f);
 			r = rel_subquery(query, se, nek);
+			if (r)
+				exps_label(sql, r->exps);
 		}
 		if (rel && *rel) {
 			*rel = query_pop_outer(query);

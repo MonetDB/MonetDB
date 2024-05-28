@@ -123,7 +123,7 @@ extern void exp_prop_alias(allocator *sa, sql_exp *e, sql_exp *oe);
 extern void noninternexp_setname(mvc *sql, sql_exp *e, const char *rname, const char *name );
 extern char* make_label(allocator *sa, int nr);
 extern sql_exp* exp_label(allocator *sa, sql_exp *e, int nr);
-extern list* exps_label(allocator *sa, list *exps, int nr);
+extern list* exps_label(mvc *sql, list *exps);
 
 extern sql_exp * exp_copy( mvc *sql, sql_exp *e);
 extern list * exps_copy( mvc *sql, list *exps);
@@ -149,6 +149,7 @@ extern int exp_refers( sql_exp *p, sql_exp *c);
 extern sql_exp *exps_refers( sql_exp *p, list *exps);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern sql_exp* exps_find_exp( list *l, sql_exp *e);
+extern sql_exp* exps_find_equal_exp( list *l, sql_exp *e);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
 extern int exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics);
 extern sql_exp* exps_any_match(list *l, sql_exp *e);

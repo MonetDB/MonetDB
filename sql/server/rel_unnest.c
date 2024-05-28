@@ -752,7 +752,6 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel) && ad) {
 		list *fd;
 		node *n, *m;
-		int nr;
 
 		sql_rel *l = rel->l, *r = rel->r, *inner_r;
 
@@ -781,7 +780,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 
 		r = rel_project(sql->sa, r, (is_semi(inner_r->op))?sa_list(sql->sa):rel_projections(sql, r->r, NULL, 1, 1));
 
-		if (!is_semi(inner_r->op))  { /* skip the free vars */
+		if (!is_semi(inner_r->op))  { /* Remove the freevars exps */
 			list *exps = sa_list(sql->sa);
 
 			for(node *n=r->exps->h; n; n = n->next) {
@@ -789,6 +788,11 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 
 				if (e->nid)
 					ne = exps_bind_nid(ad, e->nid);
+				if (or && is_groupby(or->op) && or->r) { /* is e a reference to an group by col */
+					sql_exp *gbe = exps_bind_nid(or->r, e->nid);
+					if (gbe)
+						ne = exps_bind_nid(ad, gbe->nid);
+				}
 				/*
 				if (e->l) {
 					ne = exps_bind_column2(ad, e->l, e->r, NULL);
@@ -803,9 +807,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		}
 
 		/* append ad + rename */
-		nr = sql->label+1;
-		sql->label += list_length(ad);
-		fd = exps_label(sql->sa, exps_copy(sql, ad), nr);
+		fd = exps_label(sql, exps_copy(sql, ad));
 		for (n = ad->h, m = fd->h; n && m; n = n->next, m = m->next) {
 			sql_exp *l = n->data, *r = m->data, *e;
 
@@ -3816,7 +3818,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 
 						for (node *nn = groups->h ; nn ; nn = nn->next) {
 							sql_exp *exp = (sql_exp*) nn->data;
-							if (!exps_find_exp(l, exp)) {
+							if (!exps_find_equal_exp(l, exp)) {
 								switch (ATOMstorage(a->data.vtype)) {
 									case TYPE_bte:
 										a->data.val.btval += (bte) (1 << counter);
@@ -3845,7 +3847,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 						ne = exp_atom(v->sql->sa, a);
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);
-					} else if (e->type == e_column && !exps_find_exp(l, e) && !has_label(e)) {
+					} else if (e->type == e_column && !exps_find_equal_exp(l, e) && !has_label(e)) {
 						/* do not include in the output of the group by, but add to the project as null */
 						ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 						if (exp_name(e))

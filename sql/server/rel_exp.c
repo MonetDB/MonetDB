@@ -1101,12 +1101,15 @@ exp_label(allocator *sa, sql_exp *e, int nr)
 }
 
 list*
-exps_label(allocator *sa, list *exps, int nr)
+exps_label(mvc *sql, list *exps)
 {
 	if (!exps)
 		return NULL;
+
+	int nr = sql->label+1;
+	sql->label += list_length(exps);
 	for (node *n = exps->h; n; n = n->next)
-		n->data = exp_label(sa, n->data, nr++);
+		n->data = exp_label(sql->sa, n->data, nr++);
 	list_hash_clear(exps);
 	return exps;
 }
@@ -1313,6 +1316,22 @@ exps_find_exp( list *l, sql_exp *e)
 
 	for(n=l->h; n; n = n->next) {
 		if (exp_match(n->data, e) || exp_refers(n->data, e))
+			return n->data;
+	}
+	return NULL;
+}
+
+sql_exp*
+exps_find_equal_exp( list *l, sql_exp *e)
+{
+	node *n;
+
+	if (!l || !l->h)
+		return NULL;
+
+	for(n=l->h; n; n = n->next) {
+		sql_exp *s = n->data;
+		if (exp_match(n->data, e) || (s->nid && s->nid == e->nid))
 			return n->data;
 	}
 	return NULL;
