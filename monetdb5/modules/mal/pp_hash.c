@@ -1744,6 +1744,50 @@ error:
 	return err;
 }
 
+#define vprobe() \
+	do { \
+		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && keycnt)); \
+		\
+		oid ky = k->tseqbase; \
+		gid *hs = Tloc(h, 0); \
+		oid *vals = ht->vals; \
+		oid *mtd = Tloc(m, 0); \
+		oid *slt = Tloc(s, 0); \
+		\
+		if (!BATtdense(k)) { \
+			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+				gid k = hs[i]&ht->mask; \
+				gid slot = ht->gids[k]; \
+				while (slot && vals[slot] != ky) { \
+					k++; \
+					k &= ht->mask; \
+					slot = ht->gids[k]; \
+				} \
+				if (slot) { \
+					mtd[mtdcnt] = i; \
+					slt[mtdcnt] = slot - 1; \
+					mtdcnt++; \
+				} \
+			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+				gid k = hs[i]&ht->mask; \
+				gid slot = ht->gids[k]; \
+				while (slot && vals[slot] != ky) { \
+					k++; \
+					k &= ht->mask; \
+					slot = ht->gids[k]; \
+				} \
+				if (slot) { \
+					mtd[mtdcnt] = i; \
+					slt[mtdcnt] = slot - 1; \
+					mtdcnt++; \
+				} \
+				ky++; \
+			} \
+		} \
+	} while (0)
+
 #define probe(Type) \
 	do { \
 		Type *ky = Tloc(k, 0); \
@@ -1826,7 +1870,7 @@ OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat 
 
 		switch(tt) {
 			case TYPE_void:
-				probe(oid);
+				vprobe();
 				break;
 			case TYPE_bit:
 				probe(bit);
@@ -1903,6 +1947,50 @@ error:
 	BBPreclaim(t);
 	return err;
 }
+
+#define combined_vprobe() \
+	do { \
+		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
+		\
+		oid ky = k->tseqbase; \
+		gid *hs = Tloc(h, 0); \
+		oid *mt = Tloc(m, 0); \
+		oid *vals = ht->vals; \
+		oid *mtd = Tloc(res_m, 0); \
+		oid *slt = Tloc(res_s, 0); \
+		\
+		if (!BATtdense(k)) { \
+			TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
+				gid hsh = hs[mt[i]]&ht->mask; \
+				gid slot = ht->gids[hsh]; \
+				while (slot && vals[slot] != ky) { \
+					hsh++; \
+					hsh &= ht->mask; \
+					slot = ht->gids[hsh]; \
+				} \
+				if (slot) { \
+					mtd[mtdcnt2] = i; \
+					slt[mtdcnt2] = slot - 1; \
+					mtdcnt2++; \
+				} \
+			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
+				gid hsh = hs[mt[i]]&ht->mask; \
+				gid slot = ht->gids[hsh]; \
+				while (slot && vals[slot] != (ky + mt[i])) { \
+					hsh++; \
+					hsh &= ht->mask; \
+					slot = ht->gids[hsh]; \
+				} \
+				if (slot) { \
+					mtd[mtdcnt2] = i; \
+					slt[mtdcnt2] = slot - 1; \
+					mtdcnt2++; \
+				} \
+			} \
+		} \
+	} while (0)
 
 #define combined_probe(Type) \
 	do { \
@@ -1990,7 +2078,7 @@ OAHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_h
 
 		switch(tt) {
 			case TYPE_void:
-				combined_probe(oid);
+				combined_vprobe();
 				break;
 			case TYPE_bit:
 				combined_probe(bit);

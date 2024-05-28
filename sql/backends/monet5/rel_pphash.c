@@ -157,8 +157,8 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	}
 	/* find projection columns */
 	// TODO remove join-only columns from hsh_hps
-	hsh_hps = rel_projections(sql, rel_hsh, 0, 1, 0);
-	prb_hps = rel_projections(sql, rel_prb, 0, 1, 0);
+	hsh_hps = rel_projections(sql, rel_hsh, 0, 1, 1);
+	prb_hps = rel_projections(sql, rel_prb, 0, 1, 1);
 	assert(hsh_hps->cnt||prb_hps->cnt); /* at least one column will be projected */
 
 	/* If no one 'neededpp' in the super-tree, we gather the join results */
