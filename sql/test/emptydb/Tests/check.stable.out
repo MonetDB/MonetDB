@@ -1359,6 +1359,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys._columns",	"sys",	"keys",	"name",	"varchar",	1024,	0,	NULL,	true,	3,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"keys",	"rkey",	"int",	31,	0,	NULL,	true,	4,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"keys",	"action",	"int",	31,	0,	NULL,	true,	5,	NULL,	NULL	]
+[ "sys._columns",	"sys",	"keys",	"check",	"varchar",	2048,	0,	NULL,	true,	6,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"keywords",	"keyword",	"varchar",	40,	0,	NULL,	false,	0,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"malfunctions",	"module",	"varchar",	0,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"malfunctions",	"function",	"varchar",	0,	0,	NULL,	true,	1,	NULL,	NULL	]
