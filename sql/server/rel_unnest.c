@@ -3241,17 +3241,21 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					return NULL;
 				re = rsq->exps->t->data;
 
+#if 0
 				if (!is_tuple) {
 					re = exp_label(v->sql->sa, re, ++v->sql->label); /* unique name */
 					list_hash_clear(rsq->exps);
 					re = exp_ref(v->sql, re);
 				}
+#endif
 				set_processed(rsq);
 			}
 
 			int is_cnt = 0;
-			if (rsq)
-				is_cnt = exp_is_count(re, rsq);
+			if (rsq) {
+				sql_exp *r = exps_bind_nid(rsq->exps, re->nid);
+				is_cnt = exp_is_count(r, rsq);
+			}
 			if (is_project(rel->op) || depth > 0 || quantifier || is_cnt) {
 				sql_rel *sq = lsq;
 
