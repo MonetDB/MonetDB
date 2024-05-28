@@ -7129,6 +7129,10 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			" )\n"
 			" external name sql.sessions;\n"
 			"create view sys.sessions as select * from sys.sessions();\n"
+			"create procedure sys.setclientinfo(property string, value string)\n"
+			" external name clients.setinfo;\n"
+			"grant execute on procedure sys.setclientinfo(string, string) to public;\n"
+			"update sys.functions set system = true where schema_id = 2000 and name = 'setclientinfo';";
 			;
 		sql_schema *sys = mvc_bind_schema(sql, "sys");
 		sql_table *t = mvc_bind_table(sql, sys, "sessions");

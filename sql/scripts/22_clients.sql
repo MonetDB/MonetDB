@@ -41,6 +41,10 @@ external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
 -- we won't grant sys.sessions to the public
 
+create procedure sys.setclientinfo(property string, value string)
+	external name clients.setinfo;
+grant execute on procedure sys.setclientinfo(string, string) to public;
+
 -- routines to bring the system down quickly
 create procedure sys.shutdown(delay tinyint)
 	external name sql.shutdown;

@@ -195,5 +195,6 @@ mal_export str MCawakeClient(int id);
 mal_export int MCpushClientInput(Client c, bstream *new_input, int listing,
 								 const char *prompt);
 mal_export int MCvalid(Client c);
+mal_export void MCsetClientInfo(Client c, const char *property, const char *value);
 
 #endif /* _MAL_CLIENT_H_ */

@@ -983,6 +983,17 @@ CLTgetSessionID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+CLTsetClientInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+	str property = *getArgReference_str(stk, pci, 1);
+	str value = *getArgReference_str(stk, pci, 2);
+
+	MCsetClientInfo(cntxt, property, value);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 mel_func clients_init_funcs[] = {
  pattern("clients", "setListing", CLTsetListing, true, "Turn on/off echo of MAL instructions:\n1 - echo input,\n2 - show mal instruction,\n4 - show details of type resolutoin, \n8 - show binding information.", args(1,2, arg("",int),arg("flag",int))),
@@ -1021,6 +1032,7 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "getPasswordHash", CLTgetPasswordHash, false, "Return the password hash of the given user", args(1,2, arg("",str),arg("user",str))),
  pattern("clients", "checkPermission", CLTcheckPermission, false, "Check permission for a user, requires hashed password (backendsum)", args(1,3, arg("",void),arg("usr",str),arg("pw",str))),
  pattern("clients", "current_sessionid", CLTgetSessionID, false, "return current session ID", args(1,1, arg("",int))),
+ pattern("clients", "setinfo", CLTsetClientInfo, true, "set a clientinfo property", args(1, 3, arg("",str), arg("property", str), arg("value", str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
