@@ -633,8 +633,11 @@ select * from (select 1 as a, 2 as b, 3 as c, 4 as d, 5 as e) as sub
 4
 5
 
-statement error
+query II rowsort
 select * from (select 1 as c0, max(k) as c0 from (select 2, 3) tst(k, name) group by name) as sub
+----
+1
+2
 
 query T rowsort
 select cast(interval '3' second as clob)
