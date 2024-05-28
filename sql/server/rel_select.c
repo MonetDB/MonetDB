@@ -1303,7 +1303,7 @@ bool group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp,const ch
 				continue;
 			}
 		}
-		if (pki && pki->columns->cnt == 1 &&  ((list*) inner->r)->cnt == 1) {
+		if (pki && pki->columns->cnt == 1 && inner->r && ((list*) inner->r)->cnt == 1) {
 			/* for now only check simple case where primary key and group by expression is a single column*/
 			sql_exp* gbe = ((list*) inner->r)->h->data;
 			assert(gbe->type == e_column);
