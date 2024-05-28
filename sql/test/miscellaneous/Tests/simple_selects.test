@@ -599,15 +599,30 @@ select * from myv limit 1
 statement ok
 rollback
 
-statement error
+query II
 select * from (select 1 as c0, 2 as c0) as sub
+----
+1
+2
 
-statement error
+query IIII
 select *,* from (select 1 as c0, 2 as c0) as sub
+----
+1
+2
+1
+2
 
 # for longer projection lists, we use hashing
 statement error
+query IIIII
 select * from (select 1 as a, 2 as b, 3 as c, 4 as d, 5 as d) as sub
+----
+1
+2
+3
+4
+5
 
 query IIIII rowsort
 select * from (select 1 as a, 2 as b, 3 as c, 4 as d, 5 as e) as sub
