@@ -910,6 +910,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			rel->l = nl;
 			if (list_length(nl) == 1) {
 				sql_rel *l = rel->l = nl->h->data; /* ugh */
+				rel->r = NULL;
 				rel->op = op_project;
 
 				for (node *n = rel->exps->h, *m = l->exps->h ; n && m ; n = n->next, m = m->next) {
