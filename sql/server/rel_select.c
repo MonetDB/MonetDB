@@ -2318,9 +2318,24 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	case SQL_COMPARE: {
 		dnode *cmp_n = sc->data.lval->h;
 		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */
+		if (cmp_n->next->next->next) {
+			switch(cmp_n->next->next->next->data.i_val)
+			{
+			case 0: /* negating ANY/ALL */
+				cmp_n->next->next->next->data.i_val = 1;
+				break;
+			case 1: /* negating ANY/ALL */
+				cmp_n->next->next->next->data.i_val = 0;
+				break;
+			case 2: /* negating IS [NOY] DINSTINCT FROM */
+				cmp_n->next->next->next->data.i_val = 3;
+				break;
+			case 3: /* negating IS [NOY] DINSTINCT FROM */
+				cmp_n->next->next->next->data.i_val = 2;
+				break;
+			}
+		}
 		cmp_n->next->data.sval = sa_strdup(sql->sa, compare_func(neg_cmp_type, 0));
-		if (cmp_n->next->next->next) /* negating ANY/ALL */
-			cmp_n->next->next->next->data.i_val = cmp_n->next->next->next->data.i_val == 0 ? 1 : 0;
 	} break;
 	case SQL_AND:
 	case SQL_OR: {

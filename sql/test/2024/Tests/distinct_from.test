@@ -34,9 +34,19 @@ SELECT NULL IS DISTINCT FROM NULL
 0
 
 query I nosort
+SELECT NOT (NULL IS DISTINCT FROM NULL)
+----
+1
+
+query I nosort
 SELECT NULL IS NOT DISTINCT FROM NULL
 ----
 1
+
+query I nosort
+SELECT NOT (NULL IS NOT DISTINCT FROM NULL)
+----
+0
 
 statement ok
 create table foo(s) as values (10), (20), (NULL)
