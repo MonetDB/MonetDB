@@ -3304,20 +3304,20 @@ bl_postversion(void *Store, void *Lg)
 				return GDK_FAIL;
 			tabins_first = false;
 			if (tabins(lg, old_lg, tabins_first, -1, 0,
-					2076, &(msk) {false},	/* sys._columns */
-					/* 2166 is tmp.keys.check */
-					2077, &(int) {2166},		/* sys._columns.id */
-					2078, "sub",				/* sys._columns.name */
-					2079, "int",				/* sys._columns.type */
-					2080, &(int) {32},		/* sys._columns.type_digits */
-					2081, &(int) {0},		/* sys._columns.type_scale */
-					/* 2135 is tmp.keys */
-					2082, &(int) {2135},		/* sys._columns.table_id */
-					2083, str_nil,			/* sys._columns.default */
-					2084, &(bit) {TRUE},		/* sys._columns.null */
-					2085, &(int) {3},		/* sys._columns.number */
-					2086, str_nil,			/* sys._columns.storage */
-				   0) != GDK_SUCCEED)
+					   2076, &(msk) {false},	/* sys._columns */
+					   /* 2165 is tmp.keys.check */
+					   2077, &(int) {2166},		/* sys._columns.id */
+					   2078, "check",			/* sys._columns.name */
+					   2079, "varchar",			/* sys._columns.type */
+					   2080, &(int) {2048},		/* sys._columns.type_digits */
+					   2081, &(int) {0},		/* sys._columns.type_scale */
+					   /* 2135 is tmp.keys */
+					   2082, &(int) {2135},		/* sys._columns.table_id */
+					   2083, str_nil,			/* sys._columns.default */
+					   2084, &(bit) {TRUE},		/* sys._columns.null */
+					   2085, &(int) {6},		/* sys._columns.number */
+					   2086, str_nil,			/* sys._columns.storage */
+					   0) != GDK_SUCCEED)
 				return GDK_FAIL;
 	}
 #endif
