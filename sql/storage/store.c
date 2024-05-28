@@ -160,6 +160,7 @@ key_destroy(sqlstore *store, sql_key *k)
 	if (ATOMIC_DEC(&k->base.refcnt) > 0)
 		return;
 	list_destroy2(k->columns, store);
+	_DELETE(k->check);
 	k->columns = NULL;
 	_DELETE(k->base.name);
 	_DELETE(k);
