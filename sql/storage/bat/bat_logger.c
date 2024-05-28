@@ -902,6 +902,13 @@ const struct table {
 	},
 	{
 		.schema = "sys",
+		.table = "keys",
+		.column = "check",
+		.fullname = "sys_keys_check",
+		.newid = 2165,
+	},
+	{
+		.schema = "sys",
 		.table = "idxs",
 		.fullname = "D_sys_idxs",
 		.newid = 2094,
@@ -1237,6 +1244,13 @@ const struct table {
 		.column = "action",
 		.fullname = "tmp_keys_action",
 		.newid = 2141,
+	},
+	{
+		.schema = "tmp",
+		.table = "keys",
+		.column = "check",
+		.fullname = "tmp_keys_action",
+		.newid = 2166,
 	},
 	{
 		.schema = "tmp",
