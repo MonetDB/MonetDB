@@ -7133,7 +7133,15 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			"create procedure sys.setclientinfo(property string, value string)\n"
 			" external name clients.setinfo;\n"
 			"grant execute on procedure sys.setclientinfo(string, string) to public;\n"
-			"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');";
+			"create table sys.clientinfo_properties(prop string);\n"
+			"insert into sys.clientinfo_properties values\n"
+			" ('ClientHostname'),\n"
+			" ('ApplicationName'),\n"
+			" ('ClientLibrary'),\n"
+			" ('ClientRemark'),\n"
+			" ('ClientPid');\n"
+			"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
+			"update sys._tables set system = true where schema_id = 2000 and name = 'clientinfo_properties';\n";
 			;
 		sql_schema *sys = mvc_bind_schema(sql, "sys");
 		sql_table *t = mvc_bind_table(sql, sys, "sessions");
