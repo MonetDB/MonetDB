@@ -59,3 +59,4 @@ field-arg-error-Bug-7506
 7512-concurrent-globaltmp-instantiate-crash
 7513-uri-authority-parse-issue
 7514-wrong-window-function
+7524-right-outer-join
