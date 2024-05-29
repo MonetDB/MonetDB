@@ -662,29 +662,29 @@ MCsetClientInfo(Client c, const char *property, const char *value)
 		case 'H':
 			if (strcasecmp(property, "ClientHostname") == 0) {
 				GDKfree(c->client_hostname);
-				c->client_hostname = GDKstrdup(value);
+				c->client_hostname = value ? GDKstrdup(value) : NULL;
 			}
 			break;
 		case 'A':
 			if (strcasecmp(property, "ApplicationName") == 0) {
 				GDKfree(c->client_application);
-				c->client_application = GDKstrdup(value);
+				c->client_application = value ? GDKstrdup(value) : NULL;
 			}
 			break;
 		case 'L':
 			if (strcasecmp(property, "ClientLibrary") == 0) {
 				GDKfree(c->client_library);
-				c->client_library = GDKstrdup(value);
+				c->client_library = value ? GDKstrdup(value) : NULL;
 			}
 			break;
 		case 'R':
 			if (strcasecmp(property, "ClientRemark") == 0) {
 				GDKfree(c->client_remark);
-				c->client_remark = GDKstrdup(value);
+				c->client_remark = value ? GDKstrdup(value) : NULL;
 			}
 			break;
 		case 'P':
-			if (strcasecmp(property, "ClientPid") == 0) {
+			if (strcasecmp(property, "ClientPid") == 0 && value != NULL) {
 				char *end;
 				long n = strtol(value, &end, 10);
 				if (*value && !*end)
