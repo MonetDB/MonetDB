@@ -2125,7 +2125,7 @@ void
 mapi_set_application_name(const char *name)
 {
 	if (name)
-		strncpy(mapi_application_name, name, sizeof(mapi_application_name));
+		strncpy(mapi_application_name, name, sizeof(mapi_application_name)-1);
 	else
 		mapi_application_name[0] = '\0';
 }
