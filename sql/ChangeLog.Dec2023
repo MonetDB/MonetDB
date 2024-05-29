@@ -1,3 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed May 15 2024 Sjoerd Mullender <sjoerd@acm.org>
+- When sys.persist_unlogged is called for a table, it may return that
+  zero rows were persisted.  If this is because the call was done too
+  early, i.e. the table was recently created and the write-ahead log
+  where this was logged has not been processed yet, the call will
+  request an immediate write-ahead log rotation.  This means that the
+  WAL will be processed as soon as possible and a new call to
+  sys.persist_unlogged soon after will likely return a positive result.
+

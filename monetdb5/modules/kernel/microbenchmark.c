@@ -25,7 +25,7 @@
 #include "mal.h"
 
 static gdk_return
-BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
+BATrandom(BAT **bn, const oid *base, const lng *size, const int *domain, int seed)
 {
 	const BUN n = (BUN) *size;
 	BUN i;
@@ -84,7 +84,7 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 }
 
 static gdk_return
-BATuniform(BAT **bn, oid *base, lng *size, int *domain)
+BATuniform(BAT **bn, const oid *base, const lng *size, const int *domain)
 {
 	const BUN n = (BUN) *size;
 	BUN i, r;
@@ -141,7 +141,7 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 }
 
 static gdk_return
-BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
+BATskewed(BAT **bn, const oid *base, const lng *size, const int *domain, const int *skew)
 {
 	const BUN n = (BUN) *size;
 	BUN i, r;
@@ -212,7 +212,7 @@ BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 #endif
 
 static gdk_return
-BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
+BATnormal(BAT **bn, const oid *base, const lng *size, const int *domain, const int *stddev, const int *mean)
 {
 	const BUN n = (BUN) *size;
 	BUN i, r;
@@ -320,7 +320,7 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
  */
 
 static str
-MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed)
+MBMrandom_seed(bat *ret, const oid *base, const lng *size, const int *domain, const int *seed)
 {
 	BAT *bn = NULL;
 
@@ -334,13 +334,13 @@ MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed)
 }
 
 static str
-MBMrandom(bat *ret, oid *base, lng *size, int *domain)
+MBMrandom(bat *ret, const oid *base, const lng *size, const int *domain)
 {
 	return MBMrandom_seed(ret, base, size, domain, &int_nil);
 }
 
 static str
-MBMuniform(bat *ret, oid *base, lng *size, int *domain)
+MBMuniform(bat *ret, const oid *base, const lng *size, const int *domain)
 {
 	BAT *bn = NULL;
 
@@ -354,7 +354,7 @@ MBMuniform(bat *ret, oid *base, lng *size, int *domain)
 }
 
 static str
-MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean)
+MBMnormal(bat *ret, const oid *base, const lng *size, const int *domain, const int *stddev, const int *mean)
 {
 	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
@@ -368,7 +368,7 @@ MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean)
 
 
 static str
-MBMmix(bat *bn, bat *batid)
+MBMmix(bat *bn, const bat *batid)
 {
 	BUN n, r, i;
 	BAT *b;
@@ -395,7 +395,7 @@ MBMmix(bat *bn, bat *batid)
 }
 
 static str
-MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew)
+MBMskewed(bat *ret, const oid *base, const lng *size, const int *domain, const int *skew)
 {
 	BAT *bn = NULL;
 

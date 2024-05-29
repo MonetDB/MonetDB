@@ -305,39 +305,37 @@ select 1 group by 1
 1
 
 query I rowsort
-select 1 group by 2
-----
-1
-
-query I rowsort
-select -90 from "groupings" group by -90
-----
--90
-
-query I rowsort
-select count(*) from "groupings" group by 'hello'
+select count(*) from "groupings"
 ----
 3
 
 query I rowsort
-select count(*) from "groupings" group by NULL
+select count(*) from "groupings"
 ----
 3
 
 query T rowsort
-select 'world' from "groupings" group by -90
+select 'world' from "groupings"
 ----
+world
+world
 world
 
 statement ok
 create table "foo" ("bar" int)
 
 query I rowsort
-select * from "foo" group by "bar"
+select * from "foo"
 ----
 
 statement ok
 rollback
+
+statement error 42000!SELECT: GROUP BY position 2 is not in select list
+select 1 group by 2
+
+42000!SELECT: non-integer constant in GROUP BY
+select -90 from "groupings" group by -90
 
 statement error
 select * from "groupings" group by "aa"

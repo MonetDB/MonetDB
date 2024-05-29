@@ -413,7 +413,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("LANGUAGE", LANGUAGE);
 
 	failed += keywords_insert("ANALYZE", ANALYZE);
-	failed += keywords_insert("MINMAX", MINMAX);
 	failed += keywords_insert("EXPLAIN", SQL_EXPLAIN);
 	failed += keywords_insert("PLAN", SQL_PLAN);
 	failed += keywords_insert("TRACE", SQL_TRACE);

@@ -38,7 +38,7 @@ expectsql = f'''+----------------------------------+
 +----------------------------------+
 2 tuples
 '''
-expecterr = 'write error: stream stdout: invalid multibyte sequence\n'
+expecterr = 'invalid multibyte sequence\n'
 
 out, err = client(['-s', 'create table utf8test (s varchar(50))'])
 out, err = client(['-s', f"insert into utf8test values ('{text1}')"])

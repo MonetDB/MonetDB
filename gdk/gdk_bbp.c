@@ -521,7 +521,7 @@ heapinit(BAT *b, const char *buf,
 	if (strcmp(type, "wkba") == 0)
 		GDKwarning("type wkba (SQL name: GeometryA) is deprecated\n");
 
-	if (properties & ~0x0F81) {
+	if (properties & ~0x1F81) {
 		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);
 		return -1;
 	}
@@ -559,6 +559,7 @@ heapinit(BAT *b, const char *buf,
 	b->tkey = (properties & 0x0100) != 0;
 	b->tnonil = (properties & 0x0400) != 0;
 	b->tnil = (properties & 0x0800) != 0;
+	b->tascii = (properties & 0x1000) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
 	b->tunique_est = 0.0;
@@ -1711,6 +1712,9 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 			const char *nme;
 
 			nme = ATOMunknown_name(b->ttype);
+			int tt = ATOMindex(nme);
+			if (tt >= 0)
+				b->ttype = tt;
 			if (strcmp(nme, "json") != 0)
 				continue;
 		} else if (b->ttype != JSON_type) {
@@ -2288,7 +2292,8 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 			   ((unsigned short) bi->key << 8) |
 		           ((unsigned short) BATtdensebi(bi) << 9) |
 			   ((unsigned short) bi->nonil << 10) |
-			   ((unsigned short) bi->nil << 11),
+			   ((unsigned short) bi->nil << 11) |
+			   ((unsigned short) bi->ascii << 12),
 		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[0],
 		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[1],
 		       bi->nosorted >= size ? 0 : bi->nosorted,
@@ -4065,34 +4070,42 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 			if (lock)
 				MT_lock_set(&GDKswapLock(bid));
 		}
-		if (subcommit) {
+		BAT *b = BBP_desc(bid);
+		if (subcommit && b->ttype != TYPE_void) {
 			/* move any tail/theap files we find for this bat that
 			 * are in the BACKUP directory to the SUBCOMMIT
 			 * directory */
+			assert(b->ttype > 0); /* no unknown types allowed */
 			char fname[16];	/* plenty big enough */
-			if (snprintf(fname, sizeof(fname), "%o", i) < 16) {
+			if (snprintf(fname, sizeof(fname), "%o", (unsigned) bid) < 16) {
 				/* the snprintf never fails, any of the
 				 * below may fail */
-				if (GDKmove(0, BAKDIR, fname, "tail", SUBDIR, fname, "tail", false) == GDK_SUCCEED)
-					TRC_DEBUG(BAT_, "moved %s.tail from %s to %s\n",
+				uint8_t stpe = ATOMstorage(b->ttype);
+				if ((b->ttype != TYPE_str || b->twidth >= 8) &&
+				    GDKmove(0, BAKDIR, fname, "tail", SUBDIR, fname, "tail", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO_, "moved %s.tail from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
-				if (GDKmove(0, BAKDIR, fname, "tail1", SUBDIR, fname, "tail1", false) == GDK_SUCCEED)
-					TRC_DEBUG(BAT_, "moved %s.tail1 from %s to %s\n",
+				if (stpe == TYPE_str &&
+				    GDKmove(0, BAKDIR, fname, "tail1", SUBDIR, fname, "tail1", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO_, "moved %s.tail1 from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
-				if (GDKmove(0, BAKDIR, fname, "tail2", SUBDIR, fname, "tail2", false) == GDK_SUCCEED)
-					TRC_DEBUG(BAT_, "moved %s.tail2 from %s to %s\n",
+				if (stpe == TYPE_str && b->twidth >= 2 &&
+				    GDKmove(0, BAKDIR, fname, "tail2", SUBDIR, fname, "tail2", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO_, "moved %s.tail2 from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
 #if SIZEOF_VAR_T == 8
-				if (GDKmove(0, BAKDIR, fname, "tail4", SUBDIR, fname, "tail4", false) == GDK_SUCCEED)
-					TRC_DEBUG(BAT_, "moved %s.tail4 from %s to %s\n",
+				if (stpe == TYPE_str && b->twidth >= 4 &&
+				    GDKmove(0, BAKDIR, fname, "tail4", SUBDIR, fname, "tail4", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO_, "moved %s.tail4 from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
 #endif
-				if (GDKmove(0, BAKDIR, fname, "theap", SUBDIR, fname, "theap", false) == GDK_SUCCEED)
-					TRC_DEBUG(BAT_, "moved %s.theap from %s to %s\n",
+				if (ATOMvarsized(b->ttype) &&
+				    GDKmove(0, BAKDIR, fname, "theap", SUBDIR, fname, "theap", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO_, "moved %s.theap from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
 			}
 		}
-		BAT *b = dirty_bat(&i, subcommit != NULL);
+		b = dirty_bat(&i, subcommit != NULL);
 		if (i <= 0)
 			ret = GDK_FAIL;
 		else if (BBP_status(bid) & BBPEXISTING &&

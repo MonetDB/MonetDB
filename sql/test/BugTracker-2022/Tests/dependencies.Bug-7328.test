@@ -123,10 +123,6 @@ FROM sys.dependency_columns_on_functions
 WHERE function_name LIKE 'mmtest04'
 ORDER BY name
 ----
-id
-mmtest04
-1
-7
 name
 mmtest04
 1

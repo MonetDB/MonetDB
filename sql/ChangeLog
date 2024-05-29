@@ -1,6 +1,17 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon May 13 2024 Niels Nes <niels.nes@monetdbsolutions.com>
+- Extended sys.generate_series() to generate dates. Added 2 new functions:
+  sys.generate_series(first date, "limit" date, stepsize interval month)
+  sys.generate_series(first date, "limit" date, stepsize interval day)
+
+* Thu May  2 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Removed the obsolete ANALYZE statement syntax options: SAMPLE nn and
+  MINMAX. Both options have been ignored since release Jan2022. Now they
+  are no longer accepted in the ANALYZE statement.
+- The ANALYZE statement can now be used in procedures, functions and triggers.
+
 * Wed Apr 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
 - Make schema renaming more permissive. A schema can be renamed if it
   does not contain objects that are a dependency for objects outside

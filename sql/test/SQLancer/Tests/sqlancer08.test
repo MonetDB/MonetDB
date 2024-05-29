@@ -341,7 +341,7 @@ cast(case when 62 then 0.34 when 51 then 0.3 when 34 then 0.4 end as string(274)
 cast(case 3 when 43 then 44 when 0.23 then 0.3 end as string)))))
 
 statement ok
-create view v1(vc0) as ((select abs(-4)) intersect distinct (select distinct + (radians(abs(0.4))) group by 3))
+create view v1(vc0) as ((select abs(-4)) intersect distinct (select distinct + (radians(abs(0.4)))))
 
 statement ok
 create view v2(vc0) as (select cast(('|S4 흮,8GQ') not between symmetric ('3840') and ('n') as int))

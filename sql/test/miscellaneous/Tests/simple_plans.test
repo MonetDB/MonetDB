@@ -60,7 +60,7 @@ project (
 | select (
 | | table("sys"."myx") [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 | ) [ ("myx"."x" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) ]
-) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
+) [ uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL UNIQUE as "myx"."x", "myx"."y" NOT NULL UNIQUE ]
 
 query T nosort
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967'

@@ -1,0 +1,70 @@
+statement ok
+CREATE SCHEMA test
+
+statement ok
+CREATE TABLE test.numbers (num bigint NOT NULL)
+
+statement ok
+INSERT INTO test.numbers VALUES (123), (345), (567), (8901), (5479)
+
+statement ok
+ANALYZE test.numbers
+
+-- (try to) use the ANALYZE statement in a procedure body:
+statement ok
+CREATE PROCEDURE test.update_stats1 () ANALYZE test.numbers
+
+statement ok
+CREATE PROCEDURE test.update_stats2 () BEGIN ANALYZE test.numbers; END
+
+statement ok
+CREATE PROCEDURE test.update_stats3 () BEGIN ATOMIC ANALYZE test.numbers; END
+
+statement ok
+CREATE PROCEDURE test.refresh_numbers1 (amount bigint)
+BEGIN
+   TRUNCATE TABLE test.numbers;
+   INSERT INTO test.numbers(num) SELECT value from sys.generate_series(1, amount+1);
+   ANALYZE test.numbers;
+END
+
+statement ok
+CALL test.refresh_numbers1 (123)
+
+
+-- (try to) use the ANALYZE statement in a function body:
+statement ok
+CREATE FUNCTION test.update_stats7 () RETURNS int BEGIN ANALYZE test.numbers; RETURN 7; END
+
+statement ok
+CREATE FUNCTION test.update_stats8 () RETURNS int BEGIN ATOMIC ANALYZE test.numbers; RETURN 8; END;
+
+statement ok
+CREATE FUNCTION test.refresh_numbers2 (amount bigint) RETURNS int
+BEGIN
+   TRUNCATE TABLE test.numbers;
+   INSERT INTO test.numbers(num) SELECT value from sys.generate_series(1, amount+1);
+   ANALYZE test.numbers;
+   RETURN amount;
+END;
+
+query I nosort
+SELECT test.refresh_numbers2 (1234)
+----
+1234
+
+
+-- (try to) use the ANALYZE statement in a trigger body:
+statement ok
+CREATE TRIGGER numbers_ins0 AFTER INSERT ON test.numbers ANALYZE test.numbers
+
+statement ok
+CREATE TRIGGER numbers_ins1 AFTER INSERT ON test.numbers BEGIN ATOMIC ANALYZE test.numbers; END
+
+statement ok
+INSERT INTO test.numbers VALUES (-99)
+
+
+-- cleanup
+statement ok
+DROP SCHEMA test CASCADE

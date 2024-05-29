@@ -34,7 +34,7 @@
 static str
 load_trivial(BAT *bat, stream *s, const char *filename, bincopy_validate_t validate, int width, BUN rows_estimate, int *eof_seen)
 {
-	const char *mal_operator = "sql.importColumn";
+	const char mal_operator[] = "sql.importColumn";
 	str msg = MAL_SUCCEED;
 	int tt = BATttype(bat);
 	const size_t asz = (size_t) ATOMsize(tt);
@@ -114,7 +114,7 @@ end:
 static str
 load_fixed_width(BAT *bat, stream *s, const char *filename, int width, bool byteswap, bincopy_decoder_t convert, bincopy_validate_t validate, size_t record_size, int *eof_reached)
 {
-	const char *mal_operator = "sql.importColumn";
+	const char mal_operator[] = "sql.importColumn";
 	str msg = MAL_SUCCEED;
 	bstream *bs = NULL;
 
@@ -184,7 +184,7 @@ end:
 static str
 load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width, bool byteswap, BUN rows_estimate, int *eof_reached)
 {
-	const char *mal_operator = "sql.importColumn";
+	const char mal_operator[] = "sql.importColumn";
 	BUN orig_count, new_count;
 	str msg = MAL_SUCCEED;
 	BUN rows_added;
@@ -328,7 +328,7 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 static str
 write_out(const char *start, const char *end, stream *s)
 {
-	const char *mal_operator = "sql.export_bin_column";
+	const char mal_operator[] = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
 
 	const char *p = start;
@@ -356,7 +356,7 @@ dump_trivial(BAT *b, stream *s, BUN start, BUN length)
 static str
 dump_fixed_width(BAT *b, stream *s, BUN start, BUN length, bool byteswap, bincopy_encoder_t encoder, size_t record_size)
 {
-	const char *mal_operator = "sql.export_bin_column";
+	const char mal_operator[] = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
 	char *buffer = NULL;
 
@@ -424,7 +424,7 @@ dump_binary_column(const struct type_record_t *rec, BAT *b, BUN start, BUN lengt
 static str
 export_column(backend *be, BAT *b, bool byteswap, str filename, bool onclient)
 {
-	const char *mal_operator = "sql.export_bin_column";
+	const char mal_operator[] = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
 	stream *s = NULL;
 
@@ -461,7 +461,7 @@ end:
 str
 mvc_bin_export_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	const char *mal_operator = "sql.export_bin_column";
+	const char mal_operator[] = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
 	BAT *b = NULL;
 	backend *be = cntxt->sqlcontext;

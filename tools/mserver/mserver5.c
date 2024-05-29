@@ -342,6 +342,7 @@ main(int argc, char **av)
 
 		{"read-password-initialize-and-exit", no_argument, NULL, 0},
 		{"loadmodule", required_argument, NULL, 0},
+		{"without-geom", no_argument, NULL, 0},
 
 		{NULL, 0, NULL, 0}
 	};
@@ -526,6 +527,19 @@ main(int argc, char **av)
 							"ERROR: maximum number of modules reached\n");
 				break;
 			}
+			if (strcmp(long_options[option_index].name, "without-geom") == 0) {
+				for (int i = 0; i < mods; i++) {
+					if (strcmp(modules[i], "geom") == 0) {
+						while (i + 1 < mods) {
+							modules[i] = modules[i + 1];
+							i++;
+						}
+						mods--;
+						break;
+					}
+				}
+				break;
+			}
 			usage(prog, -1);
 			/* not reached */
 		case 'c':
@@ -680,10 +694,19 @@ main(int argc, char **av)
 			if (p != NULL) {
 				*p = '\0';
 				for (int i = 0; libdirs[i] != NULL; i++) {
-					int len =
-							snprintf(prmodpath, sizeof(prmodpath),
-									 "%s%c%s%cmonetdb5",
-									 binpath, DIR_SEP, libdirs[i], DIR_SEP);
+					int len = snprintf(prmodpath, sizeof(prmodpath),
+									   "%s%c%s%cmonetdb5-%s",
+									   binpath, DIR_SEP, libdirs[i], DIR_SEP,
+									   MONETDB_VERSION);
+					if (len == -1 || len >= FILENAME_MAX)
+						continue;
+					if (MT_stat(prmodpath, &sb) == 0) {
+						modpath = prmodpath;
+						break;
+					}
+					len = snprintf(prmodpath, sizeof(prmodpath),
+									   "%s%c%s%cmonetdb5",
+									   binpath, DIR_SEP, libdirs[i], DIR_SEP);
 					if (len == -1 || len >= FILENAME_MAX)
 						continue;
 					if (MT_stat(prmodpath, &sb) == 0) {

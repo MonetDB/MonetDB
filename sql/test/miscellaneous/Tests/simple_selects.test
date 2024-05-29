@@ -41,10 +41,8 @@ query I rowsort
 select count(*) having -1 > 0
 ----
 
-query I rowsort
+statement error 42000!SELECT: aggregate functions are not allowed in GROUP BY
 select cast(sum(42) as bigint) group by 1
-----
-42
 
 query I rowsort
 select cast(sum(42) as bigint) limit 2
@@ -967,7 +965,7 @@ SELECT count(1) FROM (SELECT 0.642700575141694319114549216465093195438385009765 
 1
 
 query I nosort
-SELECT min(1) FROM (SELECT DISTINCT 1) x(x) GROUP BY 3 IS NOT NULL, 1 - CASE WHEN FALSE THEN 1 ELSE x.x END, 2 IS NULL
+SELECT min(1) FROM (SELECT DISTINCT 1) x(x) GROUP BY 1 - CASE WHEN FALSE THEN 1 ELSE x.x END
 ----
 1
 

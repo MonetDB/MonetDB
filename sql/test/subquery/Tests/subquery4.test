@@ -182,7 +182,7 @@ SELECT i FROM integers WHERE i IN ((SELECT 1), (SELECT i FROM another_t))
 2
 3
 
-statement error 42000!Subquery has too few columns
+statement error 42000!syntax error, unexpected ',' in: "select i from integers where (i,i) in ((select 1,2),"
 SELECT i FROM integers WHERE (i,i) IN ((SELECT 1,2), (SELECT i UNION ALL SELECT 2))
 
 query I rowsort

@@ -66,6 +66,7 @@ GROUPBY  (card ATOM (no group by exps), AGGR)
 	-> exps		is list of (groupby and) aggregate expressions
 	-> l		is relation
 	-> r 		is list of group by expressions
+	-> flag		1 has group by nr , 2 group by all
 
 TOPN	(card ATOM, AGGR, or MULTI (same card as lower relation))
 	-> exps 	(list) lng limit, [ lng offset ] -> if the limit is a NULL value, then it's ignored, ie only the offset will be used

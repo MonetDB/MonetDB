@@ -1,3 +1,21 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Wed May  8 2024 Sjoerd Mullender <sjoerd@acm.org>
+- The shared library (.dll aka .so files) now have the version number
+  as part of the name.  This should allow the building of compatibility
+  versions that can be installed in parallel to the latest version.
+- Some of the Debian/Ubuntu packages have been renamed.  The old monetdb5
+  names have been changed to plain monetdb, and libmonetdb5-server-*
+  packages have been renamed monetdb-*.
+- The names of some of the provided RPM files have been changed.
+  References to the old MonetDB5 name have been removed.  All packages
+  are now just MonetDB.
+
+* Wed May  8 2024 Niels Nes <niels@cwi.nl>
+- Add support for select exp, count(*) group by 1 order by 1; ie. using
+  numeric references Added support for group by all and order by all. The
+  later is ordering on all columns of the selection.  The group by all
+  finds all expressions from the selections which aren't aggregations
+  and groups on those.  All can also be replaced by '*'.
+

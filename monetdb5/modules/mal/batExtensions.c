@@ -212,7 +212,7 @@ CMDBATimprints(void *ret, bat *bid)
 }
 
 static str
-CMDBATimprintsize(lng *ret, bat *bid)
+CMDBATimprintsize(lng *ret, const bat *bid)
 {
 	BAT *b;
 

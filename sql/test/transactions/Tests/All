@@ -10,3 +10,4 @@ truncate-insert-restart
 update_drop_crash
 update_drop_crash2
 insert_drop_crash
+rollback_and_schema-Bug-7499

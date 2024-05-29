@@ -91,7 +91,7 @@ UUIDgenerateUuid(uuid *retval)
 }
 
 static str
-UUIDgenerateUuidInt(uuid *retval, int *d)
+UUIDgenerateUuidInt(uuid *retval, const int *d)
 {
 	(void) d;
 	return UUIDgenerateUuid(retval);
@@ -153,7 +153,7 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 }
 
 static str
-UUIDisaUUID(bit *retval, str *s)
+UUIDisaUUID(bit *retval, const char *const *s)
 {
 	*retval = isaUUID(*s);
 	if (*retval == false)
@@ -202,7 +202,7 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 }
 
 static str
-UUIDuuid2uuid(uuid *retval, uuid *i)
+UUIDuuid2uuid(uuid *retval, const uuid *i)
 {
 	*retval = *i;
 	return MAL_SUCCEED;
@@ -284,7 +284,7 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 }
 
 static str
-UUIDstr2uuid(uuid *retval, str *s)
+UUIDstr2uuid(uuid *retval, const char *const *s)
 {
 	size_t l = UUID_SIZE;
 

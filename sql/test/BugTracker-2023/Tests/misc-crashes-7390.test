@@ -111,7 +111,7 @@ CREATE TEMP TABLE Table0 (Col0 INT, PRIMARY KEY(Col0), FOREIGN KEY (Col0) REFERE
 
 -- 07.sql
 statement ok
-CREATE VIEW v0 AS SELECT CAST (NULL AS INT) EXCEPT SELECT CAST (NULL AS INT) GROUP BY NULL
+CREATE VIEW v0 AS SELECT CAST (NULL AS INT) EXCEPT SELECT CAST (NULL AS INT)
 
 statement ok
 DROP VIEW v0
@@ -363,18 +363,18 @@ x
 -- WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v1 * 0 / 77
 
 statement ok
-WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v0.v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v0.v1 * 0 / 77
+WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v0.v1 * 0 FROM v0 NATURAL JOIN v0 v, v0 as v1, v0 AS v2, v0 as v3, v0 AS v4 ORDER BY v0.v1 * 0 / 77
 
 query I nosort
 SELECT count(*) FROM v0
 ----
-131080
+16392
 
 -- after the second insert, rerun same query as above, since it used to crash the server
 query RT rowsort
 SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
 ----
-131080 values hashing to c051bd7cdccd1fd3636c9e0973aca08e
+32776 values hashing to b2c71832cf3b6b1cb7d9db5b58419143
 
 -- mul_bte_bte_bte: ERROR: 22003!overflow in calculation 87*39.
 
@@ -452,7 +452,7 @@ statement ok
 CREATE TABLE v0(v2 DOUBLE PRIMARY KEY, v1 VARCHAR(1))
 
 statement ok
-DELETE FROM v0 WHERE (SELECT v2 FROM v0 WHERE v0.v2 = v0.v1 GROUP BY 2.100000, v1) IN (10.100000, 10, 10 )
+DELETE FROM v0 WHERE (SELECT v2 FROM v0 WHERE v0.v2 = v0.v1 GROUP BY v1) IN (10.100000, 10, 10 )
 
 statement ok
 DROP TABLE v0
@@ -533,7 +533,7 @@ statement ok
 CREATE TABLE v0(v1 VARCHAR(30), v2 CHAR(20))
 
 statement ok
-DELETE FROM v0 WHERE (SELECT v1 WHERE (SELECT COUNT (*) OVER (ORDER BY v1 DESC NULLS LAST)) = v2 GROUP BY 2.100000 HAVING 0 NOT LIKE v2)
+DELETE FROM v0 WHERE (SELECT v1 WHERE (SELECT COUNT (*) OVER (ORDER BY v1 DESC NULLS LAST)) = v2)
 
 statement ok
 DROP TABLE v0

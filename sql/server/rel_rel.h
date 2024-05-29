@@ -142,6 +142,7 @@ typedef struct visitor {
 } visitor;
 
 typedef sql_exp *(*exp_rewrite_fptr)(visitor *v, sql_rel *rel, sql_exp *e, int depth /* depth of the nested expression */);
+extern sql_exp *exp_visitor(visitor *v, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_rewriter, bool topdown, bool relations_topdown, bool visit_relations_once, bool *changed);
 extern sql_rel *rel_exp_visitor_topdown(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool relations_topdown);
 extern sql_rel *rel_exp_visitor_bottomup(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool relations_topdown);
 

@@ -165,6 +165,8 @@ extern int exp_is_not_null(sql_exp *e);
 extern int exp_is_null(sql_exp *e);
 extern int exp_is_rel(sql_exp *e);
 extern int exps_one_is_rel(list *exps);
+extern int exp_is_aggr(sql_rel *r, sql_exp *e); /* check if e is aggregation result of r */
+extern int exp_has_aggr(sql_rel *r, sql_exp *e); /* check if group by expresssion has some aggregate function from r */
 extern int exp_has_rel(sql_exp *e);
 extern int exps_have_rel_exp(list *exps);
 extern int exps_have_func(list *exps);

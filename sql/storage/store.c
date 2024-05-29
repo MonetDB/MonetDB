@@ -2419,7 +2419,10 @@ store_manager(sqlstore *store)
 
 	for (;;) {
 		const int idle = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5000 : IDLE_TIME * 1000000;
-		if (store->debug&128 || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
+		/* if debug bit 1024 is set, attempt immediate log activation
+		 * and clear the bit */
+		if (store->debug&(128|1024) || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
+			store->debug &= ~1024;
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
@@ -3194,9 +3197,6 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name,
 	t->sz = ot->sz;
 	ATOMIC_PTR_INIT(&t->data, NULL);
 
-	if ((res = os_add(isLocalTemp(t) ? tr->localtmps : t->s->tables, tr, t->base.name, &t->base)))
-		goto cleanup;
-
 	if (isPartitionedByExpressionTable(ot)) {
 		t->part.pexp = ZNEW(sql_expression);
 		t->part.pexp->exp =_STRDUP(ot->part.pexp->exp);
@@ -3254,6 +3254,8 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name,
 			ATOMIC_PTR_SET(&t->data, store->storage_api.del_dup(ot));
 		}
 	}
+	if ((res = os_add(isLocalTemp(t) ? tr->localtmps : t->s->tables, tr, t->base.name, &t->base)))
+		goto cleanup;
 
 cleanup:
 	if (res) {
@@ -3818,8 +3820,6 @@ sql_trans_destroy(sql_trans *tr)
 		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
 	os_destroy(tr->localtmps, store);
-	store_lock(store);
-	store_unlock(store);
 	MT_lock_destroy(&tr->lock);
 	if (!list_empty(tr->dropped))
 		list_destroy(tr->dropped);
@@ -4477,7 +4477,7 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 static int
 sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 {
-	const char *next_value_for = "next value for ";
+	const char next_value_for[] = "next value for ";
 	int res = LOG_OK;
 
 	/* Drop sequence for generated column if it's the case */
@@ -7244,13 +7244,11 @@ sql_session_destroy(sql_session *s)
 int
 sql_session_reset(sql_session *s, int ac)
 {
-	char *def_schema_name = SA_STRDUP(s->sa, "sys");
-
-	if (!s->tr || !def_schema_name)
+	if (!s->tr)
 		return 0;
 
 	assert(s->tr && s->tr->active == 0);
-	s->schema_name = def_schema_name;
+	s->schema_name = s->def_schema_name;
 	s->schema = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
 	s->level = tr_serializable;
@@ -7266,7 +7264,11 @@ sql_trans_begin(sql_session *s)
 	store_lock(store);
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	tr->ts = store_timestamp(store);
-	if (!(s->schema = find_sql_schema(tr, s->schema_name))) {
+	if (s->schema_name && !(s->schema = find_sql_schema(tr, s->schema_name)))
+		s->schema_name = s->def_schema_name;
+	if (!s->schema_name)
+		s->schema_name = "sys";
+	if (s->schema_name && !(s->schema = find_sql_schema(tr, s->schema_name))) {
 		TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT " with error, the schema %s was not found\n", tr->tid, s->schema_name);
 		store_unlock(store);
 		return -3;
@@ -7298,6 +7300,7 @@ sql_trans_end(sql_session *s, int ok)
 	s->tr->active = 0;
 	s->tr->status = 0;
 	s->auto_commit = s->ac_on_commit;
+	s->schema = NULL;
 	list_remove_data(store->active, NULL, s->tr);
 	ATOMIC_SET(&store->lastactive, GDKusec());
 	ATOMIC_DEC(&store->nr_active);

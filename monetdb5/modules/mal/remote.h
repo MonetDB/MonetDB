@@ -29,6 +29,6 @@ typedef struct {
 				size_t nrcolumns);
 } columnar_result_callback;
 
-mal_export str RMTdisconnect(void *ret, str *conn);
+mal_export str RMTdisconnect(void *ret, const char *const *conn);
 
 #endif /* _REMOTE_DEF */

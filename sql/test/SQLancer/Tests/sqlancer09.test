@@ -348,8 +348,7 @@ nullif(0.322, 4.3)), 0.31),
 
 statement ok
 create view v32(vc0, vc1) as (select distinct cast(((-4)*(-4)) as tinyint), coalesce(nullif('p', 'E]T'),
-sql_max('f)6_', '.u'), cast(true as string(679)), case -3 when -5 then '94' end)
-group by substr('FALSE', 2))
+sql_max('f)6_', '.u'), cast(true as string(679)), case -3 when -5 then '94' end))
 
 query T nosort
 select sum(all abs(interval '-27135172' second)) from v27 full outer join (select all 131.2
@@ -548,7 +547,7 @@ join v18 on ((v18.vc0)>(cast(((0.33)
 -(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim('便竼E*P'),
 "concat"('?X', '沈pJqd')), replace('w', '95', '580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24)
 as sub0 on ((least(342, v18.vc0))<>(1))
-group by greatest(-432, ((24)|(32))), least((((('RJᦈ4[[h\340\272\246')like('9804')))and(not (false))),
+group by least((((('RJᦈ4[[h\340\272\246')like('9804')))and(not (false))),
 "isauuid"(cast(v18.vc0 as string(979))))
 ----
 -1

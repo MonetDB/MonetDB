@@ -155,6 +155,75 @@ checkUTF8(const char *v)
 	return true;
 }
 
+static inline int vreallocprintf(char **buf, size_t *pos, size_t *size, const char *fmt, va_list ap)
+	__attribute__((__format__(__printf__, 4, 0)));
+
+static inline int
+vreallocprintf(char **buf, size_t *pos, size_t *capacity, const char *fmt, va_list args)
+{
+	va_list ap;
+
+	assert(*pos <= *capacity);
+	assert(*buf == NULL || *capacity > 0);
+
+	size_t need_at_least = strlen(fmt);
+	need_at_least += 1; // trailing NUL
+	need_at_least += 80; // some space for the items
+	while (1) {
+		// Common cases:
+		// 1. buf=NULL, pos=cap=0: allocate reasonable amount
+		// 2. buf=NULL, pos=0, cap=something: start with allocating cap
+		// 3. buf not NULL, cap=something: allocate larger cap
+		if (*buf == NULL || need_at_least > *capacity - *pos) {
+			size_t cap1 = *pos + need_at_least;
+			size_t cap2 = *capacity;
+			if (*buf)
+				cap2 += cap2 / 2;
+			size_t new_cap = cap1 > cap2 ? cap1 : cap2;
+			char *new_buf = realloc(*buf, new_cap);
+			if (new_buf == 0)
+				return -1;
+			*buf = new_buf;
+			*capacity = new_cap;
+		}
+		assert(*buf);
+		assert(need_at_least <= *capacity - *pos);
+		char *output = &(*buf)[*pos];
+		size_t avail = *capacity - *pos;
+		assert(avail >= 1);
+
+		va_copy(ap, args);
+		int n = vsnprintf(output, avail, fmt, ap);
+		va_end(ap);
+
+		if (n < 0)
+			return n;
+		size_t needed = (size_t)n;
+		if (needed <= avail - 1) {
+			// it wanted to print n chars and it could
+			*pos += needed;
+			return n;
+		}
+		need_at_least = needed + 1;
+	}
+}
+
+static inline int reallocprintf(char **buf, size_t *pos, size_t *size, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 4, 5)));
+
+static inline int
+reallocprintf(char **buf, size_t *pos, size_t *capacity, const char *fmt, ...)
+{
+	int n;
+	va_list ap;
+	va_start(ap, fmt);
+	n = vreallocprintf(buf, pos, capacity, fmt, ap);
+	va_end(ap);
+	return n;
+}
+
+
+
 #ifndef __GNUC__
 #undef __builtin_expect
 #endif
