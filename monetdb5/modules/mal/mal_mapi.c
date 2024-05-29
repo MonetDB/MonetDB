@@ -195,7 +195,7 @@ doChallenge(void *data)
 		char service[20];
 		if (0 == getnameinfo(
 				(struct sockaddr*)&chdata->peer, chdata->peerlen,
-				p, peer_end - p - 10,
+				p, (int)(peer_end - p - 10),
 				service, sizeof(service),
 				NI_NUMERICSERV | NI_NUMERICHOST)
 		) {
