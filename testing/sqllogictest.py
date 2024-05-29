@@ -656,10 +656,11 @@ class SQLLogic:
             result2 = result
         return result1, result2
 
-    def initfile(self, f, defines):
+    def initfile(self, f, defines, run_until=None):
         self.name = f
         self.file = open(f, 'r', encoding='utf-8', errors='replace')
         self.line = 0
+        self.run_until = run_until
         self.hashes = {}
         defs = []
         if defines:
@@ -674,6 +675,8 @@ class SQLLogic:
 
     def readline(self):
         self.line += 1
+        if self.run_until and self.line >= self.run_until:
+            return ''
         origline = line = self.file.readline()
         for reg, val, key in self.defines:
             line = reg.sub(val.replace('\\', r'\\'), line)
@@ -736,9 +739,9 @@ class SQLLogic:
                 self.raise_error('invalid connection parameters definition, username or password missing!')
         return res
 
-    def parse(self, f, approve=None, verbose=False, defines=None):
+    def parse(self, f, approve=None, verbose=False, defines=None, run_until=None):
         self.approve = approve
-        self.initfile(f, defines)
+        self.initfile(f, defines, run_until=run_until)
         nthreads = None
         if self.language == 'sql':
             self.crs.execute(f'call sys.setsessiontimeout({self.timeout or 0})')
@@ -945,6 +948,8 @@ if __name__ == '__main__':
                         ' (can be repeated)')
     parser.add_argument('--alltests', action='store_true',
                         help='also executed "knownfail" tests')
+    parser.add_argument('--run-until', action='store', type=int,
+                        help='run tests until specified line')
     parser.add_argument('tests', nargs='*', help='tests to be run')
     opts = parser.parse_args()
     args = opts.tests
@@ -959,7 +964,7 @@ if __name__ == '__main__':
                 print('now testing {}'. format(test))
             try:
                 sql.parse(test, approve=opts.approve, verbose=opts.verbose,
-                          defines=opts.define)
+                          defines=opts.define, run_until=opts.run_until)
             except SQLLogicSyntaxError:
                 pass
         except BrokenPipeError:
