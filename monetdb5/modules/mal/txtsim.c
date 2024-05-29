@@ -16,6 +16,7 @@
 #include "mal.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include "mutf8.h"
 #include <string.h>
 #include <limits.h>
 
@@ -191,7 +192,7 @@ levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 {
 	unsigned int xlen, ylen, i = 0, j = 0;
 	unsigned int last_diagonal, old_diagonal;
-	int cx, cy;
+	uint32_t cx, cy;
 	unsigned int *column, min;
 
 	if (strNil(x) || strNil(y)) {
@@ -216,9 +217,13 @@ levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 		column[0] = j;
 		min = INT_MAX;
 		const char *x_iter = x;
-		UTF8_GETCHAR(cy, y);
+		y = nextchar(y, &cy);
+		if (y == NULL)
+			goto illegal;
 		for (i = 1, last_diagonal = j - 1; i <= xlen; i++) {
-			UTF8_GETCHAR(cx, x_iter);
+			x_iter = nextchar(x_iter, &cx);
+			if (x_iter == NULL)
+				goto illegal;
 			old_diagonal = column[i];
 			column[i] = MIN3(column[i] + insdel_cost,
 							 column[i - 1] + insdel_cost,
@@ -238,7 +243,6 @@ levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 	GDKfree(column);
 	return MAL_SUCCEED;
   illegal:
-	/* UTF8_GETCHAR bail */
 	GDKfree(column);
 	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
 }
@@ -251,7 +255,7 @@ levenshtein2(const char *x, const char *y, const size_t xlen, const size_t ylen,
 {
 	unsigned int i = 0, j = 0, min;;
 	unsigned int last_diagonal, old_diagonal;
-	int cx, cy;
+	uint32_t cx, cy;
 
 	if (strNil(x) || strNil(y))
 		return int_nil;
@@ -266,9 +270,13 @@ levenshtein2(const char *x, const char *y, const size_t xlen, const size_t ylen,
 		column[0] = j;
 		min = INT_MAX;
 		const char *x_iter = x;
-		UTF8_GETCHAR(cy, y);
+		y = nextchar(y, &cy);
+		if (y == NULL)
+			goto illegal;
 		for (i = 1, last_diagonal = j - 1; i <= xlen; i++) {
-			UTF8_GETCHAR(cx, x_iter);
+			x_iter = nextchar(x_iter, &cx);
+			if (x_iter == NULL)
+				goto illegal;
 			old_diagonal = column[i];
 			column[i] = MIN3(column[i] + insdel_cost,
 							 column[i - 1] + insdel_cost,
@@ -282,7 +290,6 @@ levenshtein2(const char *x, const char *y, const size_t xlen, const size_t ylen,
 	}
 	return column[xlen];
   illegal:
-	/* UTF8_GETCHAR bail */
 	return INT_MAX;
 }
 
@@ -472,22 +479,27 @@ str_item_lenrev_cmp(const void *a, const void *b)
 static str
 str_2_codepointseq(str_item *s)
 {
-	const char *p = s->val;
-	int c;
+	const uint8_t *p = (const uint8_t *) s->val;
 
 	s->cp_sequence = GDKmalloc(s->len * sizeof(int));
 	if (s->cp_sequence == NULL)
 		throw(MAL, "str_2_byteseq", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	for (int i = 0; i < s->len; i++) {
-		UTF8_GETCHAR(c, p);
-		if (c == 0)
+	uint32_t state = 0;
+	uint32_t codepoint;
+	uint32_t *buf = (uint32_t *) s->cp_sequence;
+	while (*p) {
+		switch (decode(&state, &codepoint, *p++)) {
+		case UTF8_ACCEPT:
+			*buf++ = codepoint;
 			break;
-		s->cp_sequence[i] = c;
+		case UTF8_REJECT:
+			throw(MAL, "str_2_byteseq", SQLSTATE(42000) "Illegal unicode code point");
+		default:
+			break;
+		}
 	}
 	return MAL_SUCCEED;
-  illegal:
-	throw(MAL, "str_2_byteseq", SQLSTATE(42000) "Illegal unicode code point");
 }
 
 static void

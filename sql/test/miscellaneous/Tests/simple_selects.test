@@ -41,10 +41,8 @@ query I rowsort
 select count(*) having -1 > 0
 ----
 
-query I rowsort
+statement error 42000!SELECT: aggregate functions are not allowed in GROUP BY
 select cast(sum(42) as bigint) group by 1
-----
-42
 
 query I rowsort
 select cast(sum(42) as bigint) limit 2

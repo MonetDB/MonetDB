@@ -43,11 +43,17 @@ target_link_libraries(smack01
 add_executable(streamcat
   streamcat.c)
 
+target_include_directories(streamcat
+  PRIVATE
+  $<$<BOOL:${Iconv_IS_BUILT_IN}>:${CMAKE_REQUIRED_INCLUDES}>
+  ../../mapiclient)
+
 target_link_libraries(streamcat
   PRIVATE
   monetdb_config_header
   stream
-  $<$<BOOL:${CURL_FOUND}>:CURL::libcurl>)
+  $<$<BOOL:${CURL_FOUND}>:CURL::libcurl>
+  $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>)
 
 add_executable(testcondvar
   testcondvar.c)

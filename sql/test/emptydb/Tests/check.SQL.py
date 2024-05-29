@@ -590,7 +590,7 @@ if check:
     stableout = 'check.stable.out.32bit' if os.getenv('TST_BITS', '') == '32bit' else 'check.stable.out.int128' if os.getenv('HAVE_HGE') else 'check.stable.out'
     stable = open(stableout).readlines()
     import difflib
-    for line in difflib.unified_diff(stable, output, fromfile='test', tofile=stableout):
+    for line in difflib.unified_diff([x for x in stable if not x.startswith('%')], [x for x in output if not x.startswith('%')], fromfile='test', tofile=stableout):
         sys.stderr.write(line)
         xit = 1
 elif approve:

@@ -107,8 +107,10 @@ skip_authority(const char *uri, const char **userp, const char **passp,
 					port = pass = uri + 1;
 				else
 					port = uri + 1;
-			} else if (*uri == '@')
+			} else if (*uri == '@') {
 				host = uri + 1;
+				port = NULL;
+			}
 			uri += *uri == '%' ? 3 : 1;
 		}
 		if (user == host) {

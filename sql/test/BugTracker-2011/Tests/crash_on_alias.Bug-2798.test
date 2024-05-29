@@ -12,10 +12,15 @@ PLAN
 SELECT a as d, MIN(b), (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
 ----
 project (
-| group by (
-| | table("sys"."dbg") [ "dbg"."a" UNIQUE, "dbg"."b" UNIQUE ]
-| ) [ "dbg"."a" UNIQUE as "d" ] [ "d" UNIQUE, "sys"."min" no nil ("dbg"."b" UNIQUE) as "%1"."%1" ]
-) [ "d" UNIQUE, "%1"."%1", "sys"."sql_mul"("sys"."sql_div"("%1"."%1", tinyint(2) "2"), tinyint(2) "2") as "f" ]
+| left outer join (
+| | group by (
+| | | table("sys"."dbg") [ "dbg"."a" UNIQUE, "dbg"."b" UNIQUE ]
+| | ) [ "dbg"."a" UNIQUE as "d" ] [ "d" UNIQUE, "sys"."min" no nil ("dbg"."b" UNIQUE) as "%1"."%1" ],
+| | project (
+| | |  [ boolean(1) "true" as "%2"."%2" ]
+| | ) [ tinyint(2) "2" as "%3"."%3" ]
+| ) [  ]
+) [ "d", "%1"."%1", "sys"."sql_mul"("sys"."sql_div"("%1"."%1", "%3"."%3"), tinyint(2) "2") as "f" ]
 
 statement ok
 set optimizer = 'sequential_pipe'
@@ -47,10 +52,15 @@ PLAN
 SELECT a as d, MIN(b) as e, (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
 ----
 project (
-| group by (
-| | table("sys"."dbg") [ "dbg"."a" UNIQUE, "dbg"."b" UNIQUE ]
-| ) [ "dbg"."a" UNIQUE as "d" ] [ "d" UNIQUE, "sys"."min" no nil ("dbg"."b" UNIQUE) as "%1"."%1" ]
-) [ "d" UNIQUE, "%1"."%1" as "e", "sys"."sql_mul"("sys"."sql_div"("%1"."%1", tinyint(2) "2"), tinyint(2) "2") as "f" ]
+| left outer join (
+| | group by (
+| | | table("sys"."dbg") [ "dbg"."a" UNIQUE, "dbg"."b" UNIQUE ]
+| | ) [ "dbg"."a" UNIQUE as "d" ] [ "d" UNIQUE, "sys"."min" no nil ("dbg"."b" UNIQUE) as "%1"."%1" ],
+| | project (
+| | |  [ boolean(1) "true" as "%2"."%2" ]
+| | ) [ tinyint(2) "2" as "%3"."%3" ]
+| ) [  ]
+) [ "d", "%1"."%1" as "e", "sys"."sql_mul"("sys"."sql_div"("%1"."%1", "%3"."%3"), tinyint(2) "2") as "f" ]
 
 statement ok
 set optimizer = 'sequential_pipe'

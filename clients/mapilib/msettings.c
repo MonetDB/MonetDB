@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 
 #include "msettings.h"
+#include "mstring.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -25,7 +26,17 @@
 #include <strings.h>
 #endif
 
-#define FATAL() do { fprintf(stderr, "\n\n abort in params.c: %s\n\n", __func__); abort(); } while (0)
+#define FATAL() do { fprintf(stderr, "\n\n abort in msettings.c: %s\n\n", __func__); abort(); } while (0)
+
+static const char * const MALLOC_FAILED = "malloc failed";
+
+bool
+msettings_malloc_failed(msettings_error err)
+{
+	return ((const char*)err == (const char*)MALLOC_FAILED);
+}
+
+
 
 int msetting_parse_bool(const char *text)
 {
@@ -49,22 +60,19 @@ char* allocprintf(const char *fmt, ...)
 char *
 allocprintf(const char *fmt, ...)
 {
-	size_t buflen = 80;
-	while (1) {
-		char *buf = malloc(buflen);
-		if (buf == NULL)
-			return NULL;
-		va_list ap;
-		va_start(ap, fmt);
-		int n = vsnprintf(buf, buflen, fmt, ap);
-		va_end(ap);
-		if (n >= 0 && (size_t)n < buflen)
-			return buf;
-		free(buf);
-		if (n < 0)
-			return NULL;
-		buflen = n + 1;
-	}
+	va_list ap;
+	char *buf = NULL;
+	size_t pos = 0, cap = 0;
+	int n;
+
+	va_start(ap, fmt);
+	n = vreallocprintf(&buf, &pos, &cap, fmt, ap);
+	va_end(ap);
+
+	if (n >= 0)
+		return buf;
+	free(buf);
+	return NULL;
 }
 
 
@@ -78,12 +86,15 @@ by_name[] = {
 	{ .name="certhash", .parm=MP_CERTHASH },
 	{ .name="clientcert", .parm=MP_CLIENTCERT },
 	{ .name="clientkey", .parm=MP_CLIENTKEY },
+	{ .name="connect_timeout", .parm=MP_CONNECT_TIMEOUT },
 	{ .name="database", .parm=MP_DATABASE },
 	{ .name="host", .parm=MP_HOST },
 	{ .name="language", .parm=MP_LANGUAGE },
+	{ .name="map_to_long_varchar", .parm=MP_MAPTOLONGVARCHAR },
 	{ .name="password", .parm=MP_PASSWORD },
 	{ .name="port", .parm=MP_PORT },
 	{ .name="replysize", .parm=MP_REPLYSIZE },
+	{ .name="reply_timeout", .parm=MP_REPLY_TIMEOUT },
 	{ .name="fetchsize", .parm=MP_REPLYSIZE },
 	{ .name="schema", .parm=MP_SCHEMA },
 	{ .name="sock", .parm=MP_SOCK },
@@ -94,9 +105,10 @@ by_name[] = {
 	{ .name="tls", .parm=MP_TLS },
 	{ .name="user", .parm=MP_USER },
 	//
+	{ .name="logfile", .parm=MP_LOGFILE },
+	//
 	{ .name="hash", .parm=MP_IGNORE },
 	{ .name="debug", .parm=MP_IGNORE },
-	{ .name="logfile", .parm=MP_IGNORE },
 };
 
 mparm
@@ -111,6 +123,15 @@ mparm_parse(const char *name)
 	return strchr(name, '_') ? MP_IGNORE : MP_UNKNOWN;
 }
 
+mparm
+mparm_enumerate(int i)
+{
+	int n = sizeof(by_name) / sizeof(by_name[0]);
+	if (i < 0 || i >= n)
+		return MP_UNKNOWN;
+	return by_name[i].parm;
+}
+
 const char *
 mparm_name(mparm parm)
 {
@@ -121,12 +142,16 @@ mparm_name(mparm parm)
 		case MP_CERTHASH: return "certhash";
 		case MP_CLIENTCERT: return "clientcert";
 		case MP_CLIENTKEY: return "clientkey";
+		case MP_CONNECT_TIMEOUT: return "connect_timeout";
 		case MP_DATABASE: return "database";
 		case MP_HOST: return "host";
 		case MP_LANGUAGE: return "language";
+		case MP_LOGFILE: return "logfile";
+		case MP_MAPTOLONGVARCHAR: return "map_to_long_varchar";
 		case MP_PASSWORD: return "password";
 		case MP_PORT: return "port";
-		case MP_REPLYSIZE: return "replysize";
+		case MP_REPLY_TIMEOUT: return "reply_timeout";  // underscore present means specific to this client library
+		case MP_REPLYSIZE: return "replysize";  // no underscore means mandatory for all client libraries
 		case MP_SCHEMA: return "schema";
 		case MP_SOCK: return "sock";
 		case MP_SOCKDIR: return "sockdir";
@@ -172,6 +197,9 @@ struct msettings {
 	long port;
 	long timezone;
 	long replysize;
+	long map_to_long_varchar;
+	long connect_timeout;
+	long reply_timeout;
 	long dummy_end_long;
 
 	// Must match EXACTLY the order of enum mparm
@@ -191,6 +219,7 @@ struct msettings {
 	struct string language;
 	struct string schema;
 	struct string binary;
+	struct string logfile;
 	struct string dummy_end_string;
 
 	char **unknown_parameters;
@@ -203,6 +232,9 @@ struct msettings {
 	char *unix_sock_name_buffer;
 	char certhash_digits_buffer[64 + 2 + 1]; // fit more than required plus trailing '\0'
 	bool validated;
+	const char* (*localizer)(const void *data, mparm parm);
+	void *localizer_data;
+	char error_message[256];
 };
 
 static
@@ -232,7 +264,6 @@ msettings *msettings_create(void)
 {
 	msettings *mp = malloc(sizeof(*mp));
 	if (!mp) {
-		free(mp);
 		return NULL;
 	}
 	*mp = msettings_default_values;
@@ -242,9 +273,10 @@ msettings *msettings_create(void)
 msettings *msettings_clone(const msettings *orig)
 {
 	msettings *mp = malloc(sizeof(*mp));
-	char **unknowns = calloc(2 * orig->nr_unknown, sizeof(char*));
-	char *cloned_name_buffer = strdup(orig->unix_sock_name_buffer);
-	if (!mp || !unknowns || !cloned_name_buffer) {
+	char **unknowns = orig->nr_unknown > 0 ? calloc(2 * orig->nr_unknown, sizeof(char*)) : NULL;
+	const char *namebuf = orig->unix_sock_name_buffer;
+	char *cloned_name_buffer = namebuf ? strdup(namebuf) : NULL;
+	if (!mp || (orig->nr_unknown > 0 && !unknowns) || (namebuf && !cloned_name_buffer)) {
 		free(mp);
 		free(unknowns);
 		free(cloned_name_buffer);
@@ -290,6 +322,37 @@ bailout:
 	return NULL;
 }
 
+void
+msettings_reset(msettings *mp)
+{
+	// free modified string settings
+	struct string *start = &mp->dummy_start_string;
+	struct string *end = &mp->dummy_end_string;
+	for (struct string *p = start; p < end; p++) {
+		if (p->must_free)
+			free(p->str);
+	}
+
+	// free unknown parameters
+	if (mp->nr_unknown) {
+		for (size_t i = 0; i < 2 * mp->nr_unknown; i++)
+			free(mp->unknown_parameters[i]);
+		free(mp->unknown_parameters);
+	}
+
+	// free the buffer
+	free(mp->unix_sock_name_buffer);
+
+	// keep the localizer
+	void *localizer = mp->localizer;
+	void *localizer_data = mp->localizer_data;
+
+	// now overwrite the whole thing
+	*mp = *msettings_default;
+	mp->localizer = localizer;
+	mp->localizer_data = localizer_data;
+}
+
 msettings *
 msettings_destroy(msettings *mp)
 {
@@ -310,6 +373,36 @@ msettings_destroy(msettings *mp)
 
 	return NULL;
 }
+
+static const char *format_error(msettings *mp, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
+
+static const char *
+format_error(msettings *mp, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(mp->error_message, sizeof(mp->error_message), fmt, ap);
+	va_end(ap);
+
+	return mp->error_message;
+}
+
+const char *msetting_parm_name(const msettings *mp, mparm parm)
+{
+	const char *localized = NULL;
+	if (mp->localizer)
+		localized = (mp->localizer)(mp->localizer_data, parm);
+	return localized ? localized : mparm_name(parm);
+}
+
+void msettings_set_localizer(msettings *mp, const char* (*localizer)(const void *data, mparm parm), void *data)
+{
+	mp->localizer = localizer;
+	mp->localizer_data = data;
+}
+
+
 
 const char*
 msetting_string(const msettings *mp, mparm parm)
@@ -347,7 +440,7 @@ msetting_set_string(msettings *mp, mparm parm, const char* value)
 
 	char *v = strdup(value);
 	if (!v)
-		return "malloc failed";
+		return MALLOC_FAILED;
 	if (p->must_free)
 		free(p->str);
 	p->str = v;
@@ -447,15 +540,15 @@ msetting_parse(msettings *mp, mparm parm, const char *text)
 		case MPCLASS_BOOL:
 			b = msetting_parse_bool(text);
 			if (b < 0)
-				return "invalid boolean value";
+				return format_error(mp, "%s: invalid boolean value", msetting_parm_name(mp, parm));
 			return msetting_set_bool(mp, parm, b);
 		case MPCLASS_LONG:
 			if (text[0] == '\0')
-				return "integer parameter cannot be empty string";
+				return format_error(mp, "%s: integer parameter cannot be empty string", msetting_parm_name(mp, parm));
 			char *end;
 			long l = strtol(text, &end, 10);
 			if (*end != '\0')
-				return "invalid integer";
+				return format_error(mp, "%s: invalid integer", msetting_parm_name(mp, parm));
 			return msetting_set_long(mp, parm, l);
 		case MPCLASS_STRING:
 			return msetting_set_string(mp, parm, text);
@@ -466,7 +559,7 @@ msetting_parse(msettings *mp, mparm parm, const char *text)
 }
 
 char *
-msetting_as_string(msettings *mp, mparm parm)
+msetting_as_string(const msettings *mp, mparm parm)
 {
 	bool b;
 	long l;
@@ -474,7 +567,7 @@ msetting_as_string(msettings *mp, mparm parm)
 	switch (mparm_classify(parm)) {
 		case MPCLASS_BOOL:
 			b = msetting_bool(mp, parm);
-			return strdup(b ? "true" : " false");
+			return strdup(b ? "true" : "false");
 		case MPCLASS_LONG:
 			l = msetting_long(mp, parm);
 			int n = 40;
@@ -506,7 +599,7 @@ msetting_set_ignored(msettings *mp, const char *key, const char *value)
 		free(my_key);
 		free(my_value);
 		free(new_unknowns);
-		return "malloc failed while setting ignored parameter";
+		return MALLOC_FAILED;
 	}
 
 	new_unknowns[2 * n] = my_key;
@@ -523,13 +616,13 @@ msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *
 {
 	mparm parm = mparm_parse(key);
 	if (parm == MP_UNKNOWN)
-		return "unknown parameter";
+		return format_error(mp, "%s: unknown parameter", key);
 
 	if (parm == MP_IGNORE)
 		return msetting_set_ignored(mp, key, value);
 
 	if (!allow_core && mparm_is_core(parm))
-		return "parameter not allowed here";
+		return format_error(mp, "%s: parameter not allowed here", msetting_parm_name(mp, parm));
 
 	return msetting_parse(mp, parm, value);
 }
@@ -562,7 +655,7 @@ validate_certhash(msettings *mp)
 	if (strncmp(certhash, "sha256:", 7) == 0) {
 		certhash += 7;
 	} else {
-		return "expected certhash to start with 'sha256:'";
+		return format_error(mp, "%s: expected to start with 'sha256:'", msetting_parm_name(mp, MP_CERTHASH));
 	}
 
 	size_t i = 0;
@@ -570,13 +663,13 @@ validate_certhash(msettings *mp)
 		if (*r == ':')
 			continue;
 		if (!isxdigit(*r))
-			return "certhash: invalid hex digit";
+			return format_error(mp, "%s: invalid hex digit", msetting_parm_name(mp, MP_CERTHASH));
 		if (i < sizeof(mp->certhash_digits_buffer) - 1)
 			mp->certhash_digits_buffer[i++] = tolower(*r);
 	}
 	mp->certhash_digits_buffer[i] = '\0';
 	if (i == 0)
-		return "certhash: need at least one digit";
+		return format_error(mp, "%s: need at least one digit", msetting_parm_name(mp, MP_CERTHASH));
 
 	return NULL;
 }

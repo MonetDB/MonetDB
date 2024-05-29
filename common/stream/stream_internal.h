@@ -63,13 +63,6 @@
 #include <lz4frame.h>
 #endif
 
-#ifdef HAVE_ICONV
-#include <iconv.h>
-#ifdef HAVE_NL_LANGINFO
-#include <langinfo.h>
-#endif
-#endif
-
 #ifndef SHUT_RD
 #define SHUT_RD		0
 #define SHUT_WR		1

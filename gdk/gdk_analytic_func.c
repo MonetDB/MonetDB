@@ -37,7 +37,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree,
 
 	assert(ncount > 0);
 	do { /* compute the next number of levels */
-		counter = (oid) ceil((dbl)counter / SEGMENT_TREE_FANOUT);
+		counter = (counter+(SEGMENT_TREE_FANOUT-1)) / SEGMENT_TREE_FANOUT;
 		next_tree_size += counter;
 		next_levels++;
 	} while (counter > 1);
@@ -157,6 +157,7 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 #else
 			ANALYTICAL_NTILE_SINGLE_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, BUN);
 #endif
+			break;
 #endif
 		default:
 			goto nosupport;
@@ -186,7 +187,7 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 #else
 			ANALYTICAL_NTILE_MULTI_IMP(hge, val > (hge) GDK_lng_max ? GDK_lng_max : (lng) val, BUN);
 #endif
-		break;
+			break;
 #endif
 		default:
 			goto nosupport;

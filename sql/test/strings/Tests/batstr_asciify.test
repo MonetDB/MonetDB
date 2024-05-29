@@ -17,7 +17,6 @@ TRUNCATE TABLE foo
 statement ok
 INSERT INTO foo VALUES ('Olá Mundo!'),('João'),('Parabéns Ri!'),('Müller')
 
-onlyif system=Linux
 query T nosort
 SELECT asciify(x) FROM foo
 ----
@@ -25,15 +24,6 @@ Ola Mundo!
 Joao
 Parabens Ri!
 Muller
-
-skipif system=Linux
-query T nosort
-SELECT asciify(x) FROM foo
-----
-Ol'a Mundo!
-Jo~ao
-Parab'ens Ri!
-M"uller
 
 statement ok
 DROP TABLE foo

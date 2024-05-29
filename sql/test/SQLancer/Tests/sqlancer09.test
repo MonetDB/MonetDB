@@ -547,7 +547,7 @@ join v18 on ((v18.vc0)>(cast(((0.33)
 -(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim('便竼E*P'),
 "concat"('?X', '沈pJqd')), replace('w', '95', '580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24)
 as sub0 on ((least(342, v18.vc0))<>(1))
-group by greatest(-432, ((24)|(32))), least((((('RJᦈ4[[h\340\272\246')like('9804')))and(not (false))),
+group by least((((('RJᦈ4[[h\340\272\246')like('9804')))and(not (false))),
 "isauuid"(cast(v18.vc0 as string(979))))
 ----
 -1

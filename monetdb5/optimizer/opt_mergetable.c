@@ -944,6 +944,68 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 }
 
 static int
+mat_rangejoin(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
+{
+	int tpe1 = getArgType(mb, p, 0), tpe2 = getArgType(mb, p, 1), k, nr = 1;
+	mat_t *mat = ml->v;
+	InstrPtr l;
+	InstrPtr r;
+
+	//printf("# %s.%s(%d,%d)", getModuleId(p), getFunctionId(p), m, n);
+
+	assert(m >= 0 && n >= 0 && mat[m].mi->argc == mat[n].mi->argc);
+	l = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc * mat[n].mi->argc);
+	r = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc * mat[n].mi->argc);
+	if (!l || !r) {
+		freeInstruction(l);
+		freeInstruction(r);
+		return -1;
+	}
+
+	getArg(l, 0) = getArg(p, 0);
+	getArg(r, 0) = getArg(p, 1);
+
+	for (k = 1; k < mat[m].mi->argc; k++) {
+		InstrPtr q = copyInstruction(p);
+
+		if (!q) {
+			freeInstruction(l);
+			freeInstruction(r);
+			return -1;
+		}
+
+		getArg(q, 0) = newTmpVariable(mb, tpe1);
+		getArg(q, 1) = newTmpVariable(mb, tpe2);
+
+		getArg(q, 3) = getArg(mat[m].mi, k);
+		getArg(q, 4) = getArg(mat[n].mi, k);
+		pushInstruction(mb, q);
+
+		if (mb->errors || propagatePartnr(ml, getArg(mat[m].mi, k), getArg(q, 0), nr)
+				       || propagatePartnr(ml, getArg(mat[n].mi, k), getArg(q, 1), nr)) {
+			freeInstruction(r);
+			freeInstruction(l);
+			return -1;
+		}
+
+		/* add result to mat */
+		l = pushArgument(mb, l, getArg(q, 0));
+		r = pushArgument(mb, r, getArg(q, 1));
+		nr++;
+	}
+	if (mb->errors || mat_add(ml, l, mat_none, getFunctionId(p))) {
+		freeInstruction(l);
+		freeInstruction(r);
+		return -1;
+	}
+	if (mat_add(ml, r, mat_none, getFunctionId(p))) {
+		freeInstruction(r);
+		return -1;
+	}
+	return 0;
+}
+
+static int
 join_split(Client cntxt, InstrPtr p, int args)
 {
 	char *name = NULL;
@@ -2420,6 +2482,15 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					goto cleanup;
 				}
 			} else {
+				if (bats + nilbats == 5 && !is_a_mat(getArg(p, p->retc), &ml) && match == 2) {
+					n = is_a_mat(getArg(p, p->retc + 1), &ml);
+					o = is_a_mat(getArg(p, p->retc + 2), &ml);
+					if (mat_rangejoin(mb, p, &ml, n, o)) {
+						msg = createException(MAL, "optimizer.mergetable",
+										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto cleanup;
+					}
+				} else
 				if (mat_joinNxM(cntxt, mb, p, &ml, bats)) {
 					msg = createException(MAL, "optimizer.mergetable",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);

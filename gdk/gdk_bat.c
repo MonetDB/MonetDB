@@ -111,6 +111,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.tnil = false,
 		.tsorted = ATOMlinear(tt),
 		.trevsorted = ATOMlinear(tt),
+		.tascii = tt == TYPE_str,
 		.tseqbase = oid_nil,
 		.tminpos = BUN_NONE,
 		.tmaxpos = BUN_NONE,
@@ -898,6 +899,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
 				bn->tvheap->free = bi.vhfree;
 				bn->tvheap->dirty = true;
+				bn->tascii = bi.ascii;
 				if (ATOMstorage(b->ttype) == TYPE_str && bi.vhfree >= GDK_STRHASHSIZE)
 					memcpy(bn->tvheap->base, strhash, GDK_STRHASHSIZE);
 			}
@@ -2628,6 +2630,17 @@ BATmode(BAT *b, bool transient)
 #define assert(test)	((void) ((test) || (TRC_CRITICAL_ENDIF(CHECK_, "Assertion `%s' failed\n", #test), 0)))
 #endif
 
+static void
+assert_ascii(const char *s)
+{
+	if (!strNil(s)) {
+		while (*s) {
+			assert((*s & 0x80) == 0);
+			s++;
+		}
+	}
+}
+
 /* Assert that properties are set correctly.
  *
  * A BAT can have a bunch of properties set.  Mostly, the property
@@ -2656,6 +2669,9 @@ BATmode(BAT *b, bool transient)
  *		and one before are not ordered correctly).
  * nokey	Pair of BUN positions that proof not all values are
  *		distinct (i.e. values at given locations are equal).
+ * ascii	Only valid for TYPE_str columns: all strings in the column
+ *		are ASCII, i.e. the UTF-8 encoding for all characters is a
+ *		single byte.
  *
  * Note that the functions BATtseqbase and BATkey also set more
  * properties than you might suspect.  When setting properties on a
@@ -2766,6 +2782,8 @@ BATassertProps(BAT *b)
 	assert(is_oid_nil(b->tseqbase) || b->ttype == TYPE_oid || b->ttype == TYPE_void);
 	/* a column cannot both have and not have NILs */
 	assert(!b->tnil || !b->tnonil);
+	/* only string columns can be ASCII */
+	assert(!b->tascii || ATOMstorage(b->ttype) == TYPE_str);
 	if (b->ttype == TYPE_void) {
 		assert(b->tshift == 0);
 		assert(b->twidth == 0);
@@ -2917,6 +2935,8 @@ BATassertProps(BAT *b)
 				assert(!b->tnonil || !isnil);
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
 				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
+				if (b->tascii)
+					assert_ascii(valp);
 				if (minbound && !isnil) {
 					cmp = cmpf(minbound, valp);
 					assert(cmp <= 0);
@@ -2997,6 +3017,8 @@ BATassertProps(BAT *b)
 				assert(!isnil || !notnull);
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
 				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
+				if (b->tascii)
+					assert_ascii(valp);
 				if (minbound && !isnil) {
 					cmp = cmpf(minbound, valp);
 					assert(cmp <= 0);

@@ -363,18 +363,18 @@ x
 -- WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v1 * 0 / 77
 
 statement ok
-WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v0.v1 * 0 FROM v0 NATURAL JOIN v0, v0, v0 AS v2, v0, v0 AS v3 ORDER BY v0.v1 * 0 / 77
+WITH v0 AS (SELECT 14, * FROM v0) INSERT INTO v0 SELECT v0.v1 * 0 FROM v0 NATURAL JOIN v0 v, v0 as v1, v0 AS v2, v0 as v3, v0 AS v4 ORDER BY v0.v1 * 0 / 77
 
 query I nosort
 SELECT count(*) FROM v0
 ----
-131080
+16392
 
 -- after the second insert, rerun same query as above, since it used to crash the server
 query RT rowsort
 SELECT * , 'x' FROM v0 WHERE (SELECT 39 WHERE (v1 + -32768 NOT IN (14, 255))) * 87 + 2147483647
 ----
-131080 values hashing to c051bd7cdccd1fd3636c9e0973aca08e
+32776 values hashing to b2c71832cf3b6b1cb7d9db5b58419143
 
 -- mul_bte_bte_bte: ERROR: 22003!overflow in calculation 87*39.
 

@@ -735,9 +735,9 @@ XMLxml2str(str *s, const xml *x)
 }
 
 str
-XMLstr2xml(xml *x, const char **s)
+XMLstr2xml(xml *x, const char *const*val)
 {
-	(void) s;
+	(void) val;
 	(void) x;
 	return createException(MAL, "xml.xml2str", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }

@@ -18,9 +18,6 @@
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 #include "str.h"
-#ifdef HAVE_ICONV
-#include <iconv.h>
-#endif
 
 /* In order to make available a bulk version of a string function with
  * candidates, all possible combinations of scalar/vector version of
@@ -147,7 +144,15 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 static str
 STRbatLength(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_batstr_int(cntxt, mb, stk, pci, "batstr.length", UTF8_strlen);
+	bat bid = *getArgReference_bat(stk, pci, 1);
+	BAT *b = BATdescriptor(bid);
+	str err;
+	if (b && b->tascii)
+		err = do_batstr_int(cntxt, mb, stk, pci, "batstr.bytes", str_strlen);
+	else
+		err = do_batstr_int(cntxt, mb, stk, pci, "batstr.length", UTF8_strlen);
+	BBPreclaim(b);
+	return err;
 }
 
 static str
@@ -1597,27 +1602,48 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 }
 
 static str
+STRbatConvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+			  BAT *(*func)(BAT *, BAT *), const char *malfunc)
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	bat *res = getArgReference_bat(stk, pci, 0),
+		*bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		BBPreclaim(b);
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	bn = (*func)(b, bs);
+	unfix_inputs(2, b, bs);
+	if (bn == NULL)
+		throw(MAL, malfunc, GDK_EXCEPTION);
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
+	return MAL_SUCCEED;
+}
+
+static str
 STRbatLower(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str msg = MAL_SUCCEED;
-
-	if ((msg = str_case_hash_lock(false)))
-		return msg;
-	msg = do_batstr_str(cntxt, mb, stk, pci, "batstr.lower", str_lower);
-	str_case_hash_unlock(false);
-	return msg;
+	return STRbatConvert(cntxt, mb, stk, pci, BATtolower, "batstr.toLower");
 }
 
 static str
 STRbatUpper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str msg = MAL_SUCCEED;
+	return STRbatConvert(cntxt, mb, stk, pci, BATtoupper, "batstr.toUpper");
+}
 
-	if ((msg = str_case_hash_lock(true)))
-		return msg;
-	msg = do_batstr_str(cntxt, mb, stk, pci, "batstr.upper", str_upper);
-	str_case_hash_unlock(true);
-	return msg;
+static str
+STRbatCaseFold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return STRbatConvert(cntxt, mb, stk, pci, BATcasefold, "batstr.caseFold");
 }
 
 static str
@@ -2184,8 +2210,8 @@ BATSTRcontains_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-				  const char *name, int (*func)(const char *, const char *,
-												int), bit *icase)
+				  const char *name, int (*func)(const char *, const char *),
+				  bit *icase)
 {
 	 (void) cntxt;
 	(void) mb;
@@ -2243,7 +2269,7 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y);
 			}
 		}
 	} else {
@@ -2257,7 +2283,7 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y);
 			}
 		}
 	}
@@ -2303,15 +2329,15 @@ BATSTRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	}
 	return search_string_bat(cntxt, mb, stk, pci, "batstr.r_search",
-							 (icase
-							  && *icase) ? str_reverse_str_isearch :
+							 (icase && *icase) ?
+							 str_reverse_str_isearch :
 							 str_reverse_str_search, icase);
 }
 
 static str
 search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-					  const char *name, int (*func)(const char *, const char *,
-													int), bit *icase)
+					  const char *name, int (*func)(const char *, const char *),
+					  bit *icase)
 {
 	 (void) cntxt;
 	(void) mb;
@@ -2327,7 +2353,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat *res = getArgReference_bat(stk, pci, 0),
 		bid = *getArgReference_bat(stk, pci, 1),
 		*sid1 = NULL;
-	int ynil, ylen;
+	int ynil;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
 		assert(isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
@@ -2354,7 +2380,6 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	ynil = strNil(y);
-	ylen = ynil ? 0 : str_strlen(y); /* not used if nil */
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -2364,7 +2389,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, ylen);
+				vals[i] = func(x, y);
 			}
 		}
 	} else {
@@ -2376,7 +2401,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, ylen);
+				vals[i] = func(x, y);
 			}
 		}
 	}
@@ -2429,7 +2454,7 @@ BATSTRrevstr_search_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						 InstrPtr pci, const char *name,
-						 int (*func)(const char *, const char *, int),
+						 int (*func)(const char *, const char *),
 						 bit *icase)
 {
 	(void) cntxt;
@@ -2481,7 +2506,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y);
 			}
 		}
 	} else {
@@ -2493,7 +2518,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y));
+				vals[i] = func(x, y);
 			}
 		}
 	}
@@ -5704,103 +5729,7 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BATSTRasciify(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-#ifdef HAVE_ICONV
-	(void) cntxt;
-	(void) mb;
-	bat *rid = getArgReference_bat(stk, pci, 0),
-			bid = *getArgReference_bat(stk, pci, 1),
-			*sid = pci->argc == 2 ? NULL : getArgReference_bat(stk, pci, 2);
-	BAT *b = NULL, *bs = NULL, *bn = NULL;
-	BATiter bi;
-	struct canditer ci = { 0 };
-	oid off;
-	bool nils = false, dense = false;
-	size_t prev_out_len = 0, in_len = 0, out_len = 0;
-	str s = NULL, out = NULL, in = NULL, msg = MAL_SUCCEED;
-	iconv_t cd;
-	const char *f = "UTF-8", *t = "ASCII//TRANSLIT";
-
-	/* man iconv; /TRANSLIT */
-	if ((cd = iconv_open(t, f)) == (iconv_t) (-1))
-		throw(MAL, "batstr.asciify", "ICONV: cannot convert from (%s) to (%s).",
-			  f, t);
-
-	if (!(b = BATdescriptor(bid))) {
-		iconv_close(cd);
-		throw(MAL, "batstr.asciify", RUNTIME_OBJECT_MISSING);
-	}
-
-	if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
-		iconv_close(cd);
-		BBPreclaim(b);
-		throw(MAL, "batstr.asciify", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-
-	canditer_init(&ci, b, bs);
-
-	if ((bn = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT)) == NULL) {
-		iconv_close(cd);
-		BBPreclaim(b);
-		BBPreclaim(bs);
-		throw(MAL, "batstr.asciify", GDK_EXCEPTION);
-	}
-
-	off = b->hseqbase;
-	bi = bat_iterator(b);
-
-	if ((s = out = GDKmalloc(64 * 1024)) == NULL) {
-		msg = createException(MAL, "batstr.asciify", MAL_MALLOC_FAIL);
-		goto exit;
-	}
-	prev_out_len = 64 * 1024;
-
-	dense = ci.tpe == cand_dense ? true : false;
-	for (BUN i = 0; i < ci.ncand; i++) {
-		oid p = dense ? (canditer_next_dense(&ci) - off) : (canditer_next(&ci) -
-															off);
-		in = BUNtvar(bi, p);
-		if (strNil(in)) {
-			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-				msg = createException(MAL, "batstr.asciify",
-									  "BUNappend failed.");
-				goto exit;
-			}
-			nils = true;
-			continue;
-		}
-		/* over sized as single utf8 symbols change into multiple ascii characters */
-		in_len = strlen(in), out_len = in_len * 4;
-		if (out_len > prev_out_len) {
-			if ((out = GDKrealloc(s, out_len)) == NULL) {
-				msg = createException(MAL, "batstr.asciify", MAL_MALLOC_FAIL);
-				goto exit;
-			}
-			prev_out_len = out_len;
-			s = out;
-		}
-		out = s;
-		if (iconv(cd, &in, &in_len, &out, &out_len) == (size_t) -1) {
-			msg = createException(MAL, "batstr.asciify",
-								  "ICONV: string conversion failed");
-			goto exit;
-		}
-		*out = '\0';
-		if (BUNappend(bn, s, false) != GDK_SUCCEED) {
-			msg = createException(MAL, "batstr.asciify", GDK_EXCEPTION);
-			goto exit;
-		}
-	}
-
-  exit:
-	GDKfree(s);
-	bat_iterator_end(&bi);
-	iconv_close(cd);
-	finalize_output(rid, bn, msg, nils, ci.ncand);
-	unfix_inputs(2, b, bs);
-	return msg;
-#else
-	throw(MAL, "batstr.asciify", "ICONV library not available.");
-#endif
+	return STRbatConvert(cntxt, mb, stk, pci, BATasciify, "batstr.asciify");
 }
 
 #include "mel.h"
@@ -5813,6 +5742,8 @@ mel_func batstr_init_funcs[] = {
 	pattern("batstr", "toLower", STRbatLower, false, "Convert a string to lower case.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
 	pattern("batstr", "toUpper", STRbatUpper, false, "Convert a string to upper case.", args(1,2, batarg("",str),batarg("s",str))),
 	pattern("batstr", "toUpper", STRbatUpper, false, "Convert a string to upper case.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
+	pattern("batstr", "caseFold", STRbatCaseFold, false, "Fold the case of a string.", args(1,2, batarg("",str),batarg("s",str))),
+	pattern("batstr", "caseFold", STRbatCaseFold, false, "Fold the case of a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
 	pattern("batstr", "trim", STRbatStrip, false, "Strip whitespaces around a string.", args(1,2, batarg("",str),batarg("s",str))),
 	pattern("batstr", "trim", STRbatStrip, false, "Strip whitespaces around a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
 	pattern("batstr", "ltrim", STRbatLtrim, false, "Strip whitespaces from start of a string.", args(1,2, batarg("",str),batarg("s",str))),

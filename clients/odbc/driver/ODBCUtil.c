@@ -35,6 +35,7 @@
 #include "ODBCUtil.h"
 #include "ODBCDbc.h"
 #include <float.h>
+#include "mutf8.h"
 
 
 #ifdef WIN32
@@ -199,7 +200,6 @@ ODBCutf82wchar(const SQLCHAR *src,
 {
 	SQLLEN i = 0;
 	SQLINTEGER j = 0;
-	uint32_t c;
 
 	if (buf == NULL)
 		buflen = 0;
@@ -220,51 +220,25 @@ ODBCutf82wchar(const SQLCHAR *src,
 	else if (length < 0)
 		return "Invalid length parameter";
 
+	uint32_t state = 0, codepoint = 0;
 	while (j < length && i + 1 < buflen && src[j]) {
-		if ((src[j+0] & 0x80) == 0) {
-			buf[i++] = src[j+0];
-			j += 1;
-		} else if (j + 1 < length
-			   && (src[j+0] & 0xE0) == 0xC0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+0] & 0x1E) != 0) {
-			buf[i++] = (src[j+0] & 0x1F) << 6
-				| (src[j+1] & 0x3F);
-			j += 2;
-		} else if (j + 2 < length
-			   && (src[j+0] & 0xF0) == 0xE0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x0F) != 0
-			       || (src[j+1] & 0x20) != 0)) {
-			buf[i++] = (src[j+0] & 0x0F) << 12
-				| (src[j+1] & 0x3F) << 6
-				| (src[j+2] & 0x3F);
-			j += 3;
-		} else if (j + 3 < length
-			   && (src[j+0] & 0xF8) == 0xF0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && (src[j+3] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x07) != 0
-			       || (src[j+1] & 0x30) != 0)) {
-			c = (src[j+0] & 0x07) << 18
-				| (src[j+1] & 0x3F) << 12
-				| (src[j+2] & 0x3F) << 6
-				| (src[j+3] & 0x3F);
-			if (c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
-				return "Illegal code point";
+		switch (decode(&state, &codepoint, (uint8_t) src[j++])) {
+		case UTF8_ACCEPT:
 #if SIZEOF_SQLWCHAR == 2
-				if (i + 2 >= buflen)
-					break;
-				buf[i++] = 0xD800 | ((c - 0x10000) >> 10);
-				buf[i++] = 0xDC00 | (c & 0x3FF);
+			if (codepoint <= 0xFFFF) {
+				buf[i++] = (SQLWCHAR) codepoint;
+			} else {
+				buf[i++] = (SQLWCHAR) (0xD7C0 + (codepoint >> 10));
+				buf[i++] = (SQLWCHAR) (0xDC00 + (codepoint & 0x3FF));
+			}
 #else
-				buf[i++] = c;
+			buf[i++] = (SQLWCHAR) codepoint;
 #endif
-			j += 4;
-		} else {
+			break;
+		case UTF8_REJECT:
 			return "Illegal code point";
+		default:
+			break;
 		}
 	}
 	if (buflen > 0)
@@ -272,40 +246,22 @@ ODBCutf82wchar(const SQLCHAR *src,
 	if (consumed)
 		*consumed = (size_t) j;
 	while (j < length && src[j]) {
-		i++;
-		if ((src[j+0] & 0x80) == 0) {
-			j += 1;
-		} else if (j + 1 < length
-			   && (src[j+0] & 0xE0) == 0xC0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+0] & 0x1E) != 0) {
-			j += 2;
-		} else if (j + 2 < length
-			   && (src[j+0] & 0xF0) == 0xE0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x0F) != 0
-			       || (src[j+1] & 0x20) != 0)) {
-			j += 3;
-		} else if (j + 3 < length
-			   && (src[j+0] & 0xF8) == 0xF0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && (src[j+3] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x07) != 0
-			       || (src[j+1] & 0x30) != 0)) {
-			c = (src[j+0] & 0x07) << 18
-				| (src[j+1] & 0x3F) << 12
-				| (src[j+2] & 0x3F) << 6
-				| (src[j+3] & 0x3F);
-			if (c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
-				return "Illegal code point";
+		switch (decode(&state, &codepoint, (uint8_t) src[j++])) {
+		case UTF8_ACCEPT:
 #if SIZEOF_SQLWCHAR == 2
+			if (codepoint <= 0xFFFF) {
+				i++;
+			} else {
+				i += 2;
+			}
+#else
 			i++;
 #endif
-			j += 4;
-		} else {
+			break;
+		case UTF8_REJECT:
 			return "Illegal code point";
+		default:
+			break;
 		}
 	}
 	if (buflenout)
@@ -1203,11 +1159,11 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 								size_t repl3len = 0;
 								if (repl == NULL) {
 									if (strcmp(func->name, "user") == 0) {
-										repl = dbc->uid;
+										repl = msetting_string(dbc->settings, MP_USER);
 										p1 = p2 = "";
 										quote = "'";
 									} else if (strcmp(func->name, "database") == 0) {
-										repl = dbc->dbname;
+										repl = msetting_string(dbc->settings, MP_DATABASE);
 										p1 = p2 = "";
 										quote = "'";
 									} else if (strcmp(func->name, "convert") == 0) {
@@ -2624,41 +2580,38 @@ translateCompletionType(SQLSMALLINT CompletionType)
 	}
 }
 
-#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
 void
-ODBCLOG(const char *fmt, ...)
+setODBCdebug(const char *filename, bool overrideEnvVar)
 {
-	va_list ap;
-
-	va_start(ap, fmt);
-	if (ODBCdebug == NULL) {
+	if (!overrideEnvVar) {
 #ifdef NATIVE_WIN32
-		if ((ODBCdebug = _wgetenv(L"ODBCDEBUG")) == NULL)
-			ODBCdebug = _wcsdup(L"");
-		else
-			ODBCdebug = _wcsdup(ODBCdebug);
+		void *value = _wgetenv(L"ODBCDEBUG");
 #else
-		if ((ODBCdebug = getenv("ODBCDEBUG")) == NULL)
-			ODBCdebug = strdup("");
-		else
-			ODBCdebug = strdup(ODBCdebug);
+		void *value = getenv("ODBCDEBUG");
 #endif
+		if (value != NULL)
+			return;    // do not override
 	}
-	if (ODBCdebug != NULL && *ODBCdebug != 0) {
-		FILE *f;
+
+	free((void*)ODBCdebug);
 
 #ifdef NATIVE_WIN32
-		f = _wfopen(ODBCdebug, L"a");
-#else
-		f = fopen(ODBCdebug, "a");
-#endif
-		if (f) {
-			vfprintf(f, fmt, ap);
-			fclose(f);
-		} else
-			vfprintf(stderr, fmt, ap);
+	size_t attrlen = strlen(filename);
+	SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
+	if (ODBCutf82wchar(filename,
+				(SQLINTEGER) attrlen,
+				wattr,
+				(SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
+				NULL,
+				NULL)) {
+		free(wattr);
+		wattr = NULL;
 	}
-	va_end(ap);
+	ODBCdebug = wattr;
+#else
+	ODBCdebug = strdup(filename);
+#endif
 }
-#endif
+
+
 #endif

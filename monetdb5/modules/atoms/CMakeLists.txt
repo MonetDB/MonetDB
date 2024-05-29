@@ -42,6 +42,7 @@ target_link_libraries(atoms
   stream
   monetdb_config_header
   mutils
+  mutf8
   bat
   mal)
 

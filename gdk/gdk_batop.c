@@ -91,6 +91,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		HEAPdecref(b->tvheap, bid == b->batCacheid);
 		HEAPincref(ni->vh);
 		b->tvheap = ni->vh;
+		b->tascii = ni->ascii;
 		MT_lock_unset(&b->theaplock);
 		BBPretain(ni->vh->parentid);
 		if (bid != b->batCacheid)
@@ -148,6 +149,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				memcpy(b->tvheap->base + toff, ni->vh->base, ni->vhfree);
 				b->tvheap->free = toff + ni->vhfree;
 				b->tvheap->dirty = true;
+				b->tascii &= ni->ascii;
 				MT_lock_unset(&b->theaplock);
 			}
 		}

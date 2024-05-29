@@ -2719,7 +2719,7 @@ dcount_col(sql_trans *tr, sql_column *c)
 static BAT *
 bind_no_view(BAT *b, bool quick)
 {
-	if (isVIEW(b)) { /* If it is a view get the parent BAT */
+	if (VIEWtparent(b)) { /* If it is a view get the parent BAT */
 		BAT *nb = BBP_desc(VIEWtparent(b));
 		bat_destroy(b);
 		if (!(b = quick ? quick_descriptor(nb->batCacheid) : temp_descriptor(nb->batCacheid)))
@@ -3492,7 +3492,6 @@ log_segments(sql_trans *tr, segments *segs, sqlid id)
 		unlock_table(tr->store, id);
 		if (seg->ts == tr->tid && seg->end-seg->start) {
 			if (log_segment(tr, seg, id) != LOG_OK) {
-				unlock_table(tr->store, id);
 				return LOG_ERR;
 			}
 		}
@@ -3741,7 +3740,7 @@ drop_del(sql_trans *tr, sql_table *t)
 
 	if (!isNew(t)) {
 		storage *bat = ATOMIC_PTR_GET(&t->data);
-		trans_add_obj(tr, &t->base, bat, &tc_gc_del, &commit_destroy_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_destroy_del);
+		trans_add_obj(tr, &t->base, bat, &tc_gc_del, &commit_destroy_del, isTempTable(t) ? NULL : &log_destroy_del);
 	}
 	return ok;
 }
@@ -3751,7 +3750,7 @@ drop_col(sql_trans *tr, sql_column *c)
 {
 	assert(!isNew(c));
 	sql_delta *d = ATOMIC_PTR_GET(&c->data);
-	trans_add(tr, &c->base, d, &tc_gc_col, &commit_destroy_del, NOT_TO_BE_LOGGED(c->t) ? NULL : &log_destroy_col);
+	trans_add(tr, &c->base, d, &tc_gc_col, &commit_destroy_del, isTempTable(c->t) ? NULL : &log_destroy_col);
 	return LOG_OK;
 }
 
@@ -3760,7 +3759,7 @@ drop_idx(sql_trans *tr, sql_idx *i)
 {
 	assert(!isNew(i));
 	sql_delta *d = ATOMIC_PTR_GET(&i->data);
-	trans_add(tr, &i->base, d, &tc_gc_idx, &commit_destroy_del, NOT_TO_BE_LOGGED(i->t) ? NULL : &log_destroy_idx);
+	trans_add(tr, &i->base, d, &tc_gc_idx, &commit_destroy_del, isTempTable(i->t) ? NULL : &log_destroy_idx);
 	return LOG_OK;
 }
 

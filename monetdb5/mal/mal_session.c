@@ -156,7 +156,7 @@ exit_streams(bstream *fin, stream *fout)
 		bstream_destroy(fin);
 }
 
-const char *mal_enableflag = "mal_for_all";
+static const char mal_enableflag[] = "mal_for_all";
 
 static bool
 is_exiting(void *data)

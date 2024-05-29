@@ -933,6 +933,8 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 					sql_exp *e = rel->exps->h->data;
 					sql_exp *oe = rel->attr->h->data;
 					rel_project_add_exp(sql, l, e);
+					if (exp_is_atom(oe) && exp_is_false(oe))
+						e->flag = cmp_notequal;
 					exp_setname(sql->sa, e, exp_relname(oe), exp_name(oe));
 				}
 				if (!list_empty(r->exps)) {
@@ -1779,7 +1781,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		}
 
 		if (!rel_has_freevar(sql, r)) {
-			if (rel_has_freevar(sql, l) && is_join(rel->op) && !rel->exps) {
+			if (rel_has_freevar(sql, l) && is_innerjoin(rel->op) && !rel->exps) {
 				rel->l = r;
 				rel->r = l;
 				l = rel->l;
@@ -2355,7 +2357,7 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 		switch(e->type) {
 		case e_aggr:
 		case e_func: {
-			e->card = list_empty(e->l)?CARD_MULTI:exps_card(e->l);
+			e->card = list_empty(e->l)?rel?rel->card:(unsigned)CARD_MULTI:exps_card(e->l);
 		} break;
 		case e_column: {
 			sql_exp *le = NULL, *re = NULL;
@@ -2764,7 +2766,6 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	(void)depth;
 	/* ranks/window functions only exist in the projection */
 	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data;
-	e->card = (rel->card == CARD_AGGR) ? CARD_AGGR : CARD_MULTI; /* After the unnesting, the cardinality of the window function becomes larger */
 
 	int needed = (gbe || obe);
 	if (l)
@@ -2976,8 +2977,6 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 		exp_label(sql->sa, ve, ++sql->label); /* an alias is needed */
 		if (exp_has_rel(ve)) {
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
-			if (sq)
-				freevar = rel_has_freevar(sql,sq);
 		} else {
 			sq = rel_project(sql->sa, NULL, append(sa_list(sql->sa), ve));
 			if (!exp_is_atom(ve))
@@ -4516,7 +4515,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 	rel = run_exp_rewriter(&v, rel, &rel_simplify_exp_and_rank, false, "simplify_exp_and_rank");
 	rel = run_rel_rewriter(&v, rel, &rel_unnest_simplify, "unnest_simplify");
-//if (0) {
 	rel = run_exp_rewriter(&v, rel, &rewrite_complex, true, "rewrite_complex");
 	rel = run_exp_rewriter(&v, rel, &rewrite_ifthenelse, false, "rewrite_ifthenelse"); /* add isnull handling */
 	rel = run_exp_rewriter(&v, rel, &rewrite_exp_rel, true, "rewrite_exp_rel");
@@ -4525,7 +4523,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = run_rel_rewriter(&v, rel, &_rel_unnest, "unnest");
 	rel = run_rel_rewriter(&v, rel, &rewrite_fix_count, "fix_count");	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = run_rel_rewriter(&v, rel, &rel_unnest_projects, "unnest_projects");
-//}
 	rel = run_exp_rewriter(&v, rel, &exp_reset_card_and_freevar_set_physical_type, false, "exp_reset_card_and_freevar_set_physical_type");
 	rel = rel_visitor_topdown(&v, rel, &rel_set_type);
 	return rel;

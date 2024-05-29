@@ -521,7 +521,7 @@ heapinit(BAT *b, const char *buf,
 	if (strcmp(type, "wkba") == 0)
 		GDKwarning("type wkba (SQL name: GeometryA) is deprecated\n");
 
-	if (properties & ~0x0F81) {
+	if (properties & ~0x1F81) {
 		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);
 		return -1;
 	}
@@ -559,6 +559,7 @@ heapinit(BAT *b, const char *buf,
 	b->tkey = (properties & 0x0100) != 0;
 	b->tnonil = (properties & 0x0400) != 0;
 	b->tnil = (properties & 0x0800) != 0;
+	b->tascii = (properties & 0x1000) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
 	b->tunique_est = 0.0;
@@ -2291,7 +2292,8 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 			   ((unsigned short) bi->key << 8) |
 		           ((unsigned short) BATtdensebi(bi) << 9) |
 			   ((unsigned short) bi->nonil << 10) |
-			   ((unsigned short) bi->nil << 11),
+			   ((unsigned short) bi->nil << 11) |
+			   ((unsigned short) bi->ascii << 12),
 		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[0],
 		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[1],
 		       bi->nosorted >= size ? 0 : bi->nosorted,

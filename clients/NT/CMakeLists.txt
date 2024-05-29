@@ -15,9 +15,13 @@
 # generator does not allow for absolute install paths. That is why we use
 # the "." as a relative path.
 if(WIN32)
+  configure_file(mclient.bat.in
+    ${CMAKE_CURRENT_BINARY_DIR}/mclient.bat @ONLY)
+  configure_file(msqldump.bat.in
+    ${CMAKE_CURRENT_BINARY_DIR}/msqldump.bat @ONLY)
   install(FILES
-    mclient.bat
-    msqldump.bat
+    ${CMAKE_CURRENT_BINARY_DIR}/mclient.bat
+    ${CMAKE_CURRENT_BINARY_DIR}/msqldump.bat
     DESTINATION "."
     COMPONENT server)
 endif()

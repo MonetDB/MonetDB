@@ -346,7 +346,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		if (c->def) {
 			/* TODO please don't place an auto incremented sequence in the default value */
-			const char *next_value_for = "next value for \"sys\".\"seq_";
+			const char next_value_for[] = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
 
 			sa_reset(nsa);
@@ -1983,7 +1983,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", clear_res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
 	if (restart_sequences) { /* restart the sequences if it's the case */
 		sql_trans *tr = m->session->tr;
-		const char *next_value_for = "next value for ";
+		const char next_value_for[] = "next value for ";
 
 		for (node *n = ol_first_node(t->columns); n; n = n->next) {
 			sql_column *col = n->data;
@@ -4471,6 +4471,16 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(sizes);
 		}
 		count = d_bi.count;
+	} else {
+		/* special case of log_tstart: third arg == NULL with second arg
+		 * true is request to rotate log file ASAP */
+		store->logger_api.log_tstart(store, true, NULL);
+		/* special case for sql->debug: if 1024 bit is set,
+		 * store_manager doesn't wait for 30 seconds of idle time before
+		 * attempting to rotate */
+		MT_lock_set(&store->flush);
+		store->debug |= 1024;
+		MT_lock_unset(&store->flush);
 	}
 
 	bat_iterator_end(&d_bi);
@@ -5208,6 +5218,8 @@ SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 	}
 	*password = monet5_password_hash(m, username);
+	if (!(*password))
+		throw(SQL, "mvc", SQLSTATE(42000) "SELECT: Failed to retrieve password hash");
 	return MAL_SUCCEED;
 }
 

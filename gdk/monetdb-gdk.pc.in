@@ -18,6 +18,6 @@ URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
 Requires.private: monetdb-stream = @MONETDB_VERSION@
 
-Libs: -L${libdir} -lbat
+Libs: -L${libdir} -lbat-@MONETDB_VERSION@
 Libs.private: -lm @CMAKE_THREAD_LIBS_INIT@ -l@CMAKE_DL_LIBS@
 Cflags: -I${includedir}/monetdb

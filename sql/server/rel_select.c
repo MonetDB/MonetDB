@@ -1310,7 +1310,7 @@ bool group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp,const ch
 				continue;
 			}
 		}
-		if (pki && pki->columns->cnt == 1 &&  ((list*) inner->r)->cnt == 1) {
+		if (pki && pki->columns->cnt == 1 && inner->r && ((list*) inner->r)->cnt == 1) {
 			/* for now only check simple case where primary key and group by expression is a single column*/
 			sql_exp* gbe = ((list*) inner->r)->h->data;
 			assert(gbe->type == e_column);
@@ -1363,7 +1363,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (!exp && inner)
 			if (!(exp = rel_bind_column(sql, inner, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
-		if (!exp && inner && is_sql_aggr(f) && (is_groupby(inner->op) || is_select(inner->op))) {
+		if (!exp && inner && ((is_sql_aggr(f) && (is_groupby(inner->op) || is_select(inner->op))) ||
+						     (is_groupby(inner->op) && inner->flag))) {
 			/* if inner is selection, ie having clause, get the left relation to reach group by */
 			sql_rel *gp = inner;
 			while (gp && is_select(gp->op))
@@ -1426,9 +1427,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
 			if (v && !exp) {
 				if (*rel)
-					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
+					*rel = rel_crossproduct(sql->sa, *rel, rel_dup(v), op_join);
 				else
-					*rel = v;
+					*rel = rel_dup(v);
 				exp = rel_bind_column(sql, *rel, name, f, 0);
 			}
 		}
@@ -1442,9 +1443,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 
 		if (!exp)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
-		if (exp && inner && inner->card <= CARD_AGGR && exp->card > CARD_AGGR && (is_sql_sel(f) || is_sql_having(f)) && !is_sql_aggr(f))
+		if (exp && inner && inner->card <= CARD_AGGR && exp->card > CARD_AGGR && (is_sql_sel(f) || is_sql_having(f)) && (!is_sql_aggr(f) && !(inner->flag)))
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
-		if (exp && inner && is_groupby(inner->op) && !is_sql_aggr(f) && !is_freevar(exp))
+		if (exp && inner && is_groupby(inner->op) && !is_sql_aggr(f) && !is_freevar(exp) && !inner->flag)
 			exp = rel_groupby_add_aggr(sql, inner, exp);
 	} else if (dlist_length(l) == 2 || dlist_length(l) == 3) {
 		const char *sname = NULL;
@@ -1521,9 +1522,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname, cname);
 			if (v && !exp) {
 				if (*rel)
-					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
+					*rel = rel_crossproduct(sql->sa, *rel, rel_dup(v), op_join);
 				else
-					*rel = v;
+					*rel = rel_dup(v);
 				if (!(exp = rel_bind_column3(sql, *rel, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 					return NULL;
 			}
@@ -2324,9 +2325,24 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	case SQL_COMPARE: {
 		dnode *cmp_n = sc->data.lval->h;
 		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */
+		if (cmp_n->next->next->next) {
+			switch(cmp_n->next->next->next->data.i_val)
+			{
+			case 0: /* negating ANY/ALL */
+				cmp_n->next->next->next->data.i_val = 1;
+				break;
+			case 1: /* negating ANY/ALL */
+				cmp_n->next->next->next->data.i_val = 0;
+				break;
+			case 2: /* negating IS [NOY] DINSTINCT FROM */
+				cmp_n->next->next->next->data.i_val = 3;
+				break;
+			case 3: /* negating IS [NOY] DINSTINCT FROM */
+				cmp_n->next->next->next->data.i_val = 2;
+				break;
+			}
+		}
 		cmp_n->next->data.sval = sa_strdup(sql->sa, compare_func(neg_cmp_type, 0));
-		if (cmp_n->next->next->next) /* negating ANY/ALL */
-			cmp_n->next->next->next->data.i_val = cmp_n->next->next->next->data.i_val == 0 ? 1 : 0;
 	} break;
 	case SQL_AND:
 	case SQL_OR: {
@@ -4077,7 +4093,7 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 
 	if (e && exp_is_atom(e)) {
 		sql_subtype *tpe = exp_subtype(e);
-		if (!tpe || tpe->type->eclass != EC_NUM) {
+		if (!is_atom(e->type) ||!tpe || tpe->type->eclass != EC_NUM) {
 			if (!tpe)
 				return sql_error(sql, 02, SQLSTATE(42000) "Cannot have a parameter (?) for group by column");
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: non-integer constant in GROUP BY");
@@ -4236,7 +4252,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 						sql_exp *e = rel_group_column(query, rel, grp, selection, exps, f);
 						if (!e)
 							return NULL;
-						if (e->type != e_column) { /* store group by expressions in the stack */
+						if (e->type != e_column && !exp_is_atom(e)) { /* store group by expressions in the stack */
 							if (is_sql_group_totals(f))
 								return sql_error(sql, 02, SQLSTATE(42000) "GROUP BY: grouping expressions not possible with ROLLUP, CUBE and GROUPING SETS");
 							if (!exp_has_rel(e) && !frame_push_groupby_expression(sql, grp, e))
@@ -4380,6 +4396,8 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int nee
 		if (!found) {
 			if (needs_distinct)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
+			if (!is_simple_project(r->op) && !is_groupby(r->op))
+				*R = r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
 			append(r->exps, e);
 		} else {
 			e = found;
@@ -4408,6 +4426,19 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct,
 	mvc *sql = query->sql;
 	sql_rel *rel = *R, *or = rel; /* the order by relation */
 	list *exps = new_exp_list(sql->sa);
+
+	if (!orderby->data.lval) { /* by all */
+		if (is_sql_orderby(f)) {
+			assert(is_project(rel->op));
+			for(node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				append(exps, exp_ref(sql, e));
+			}
+			return exps;
+		}
+		return NULL;
+	}
+
 	dnode *o = orderby->data.lval->h;
 	dlist *selection = NULL;
 
@@ -4735,6 +4766,23 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: window functions cannot be nested", toUpperCopy(uaname, aname));
 	}
+	if (window_function->token == SQL_UNOP || window_function->token == SQL_OP) {
+		window_function->token = SQL_NOP;
+		dn->next->next->data.lval = dlist_append_symbol(sql->sa, dlist_create( sql->sa ), dn->next->next->data.sym); /* make a list */
+	}
+	if (window_function->token == SQL_BINOP) {
+		window_function->token = SQL_NOP;
+		dn->next->next->data.lval = dlist_append_symbol(sql->sa, dlist_append_symbol(sql->sa, dlist_create( sql->sa ), dn->next->next->data.sym), dn->next->next->next->data.sym); /* make a list */
+		dn->next->next->next = dn->next->next->next->next; /* skip second arg */
+	}
+	if (window_function->token == SQL_AGGR)
+		dn->next->next->data.lval = dlist_append_symbol(sql->sa, dlist_create( sql->sa ), dn->next->next->data.sym); /* make a list */
+	if (window_function->token == SQL_NOP)
+		window_function->token = SQL_AGGR;
+	if (window_function->token != SQL_RANK && window_function->token != SQL_AGGR) {
+		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s' unknown", toUpperCopy(uaname, aname));
+	}
 
 	/* window operations are only allowed in the projection */
 	if (!is_sql_sel(f))
@@ -4805,7 +4853,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 	} else { /* aggregation function call */
 		distinct = dn->next->data.i_val;
-		for (dargs = dn->next->next ; dargs && dargs->data.sym ; dargs = dargs->next) {
+		for (dargs = dn->next->next->data.lval->h ; dargs && dargs->data.sym ; dargs = dargs->next) {
 			exp_kind ek = {type_value, card_column, FALSE};
 			sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 
@@ -5193,46 +5241,16 @@ exps_has_rank(list *exps)
 sql_exp *
 rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
-	SelectNode *sn = NULL;
-	sql_exp *e;
 	if (!se)
 		return NULL;
 
-	if (se->token == SQL_SELECT)
-		sn = (SelectNode*)se;
 	if (mvc_highwater(query->sql))
 		return sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	e = rel_value_exp2(query, rel, se, f, ek);
+	sql_exp *e = rel_value_exp2(query, rel, se, f, ek);
 	if (e && (se->token == SQL_SELECT || se->token == SQL_TABLE) && !exp_is_rel(e)) {
 		assert(*rel);
 		return rel_lastexp(query->sql, *rel);
-	}
-	if (exp_has_rel(e) && sn && !sn->from && !sn->where && (ek.card < card_set || ek.card == card_exists) && ek.type != type_relation) {
-		sql_rel *r = exp_rel_get_rel(query->sql->sa, e);
-		sql_rel *l = r->l;
-
-		if (r && is_simple_project(r->op) && l && is_simple_project(l->op) && !l->l && !exps_has_rank(r->exps) && list_length(r->exps) == 1) { /* should be a simple column or value */
-			if (list_length(r->exps) > 1) { /* Todo make sure the in handling can handle a list ( value lists), instead of just a list of relations */
-				e = exp_values(query->sql->sa, r->exps);
-			} else {
-				sql_exp *ne = r->exps->h->data;
-				if (rel && *rel && !exp_has_rel(ne)) {
-					e = ne;
-					rel_bind_var(query->sql, *rel, e);
-					unsigned int fv = exp_has_freevar(query->sql, e);
-					if (fv && is_sql_aggr(f)) {
-						if (fv <= query_has_outer(query)) {
-							sql_rel *outer = query_fetch_outer(query, fv-1);
-							query_outer_pop_last_used(query, fv-1);
-							reset_outer(outer);
-						} else {
-							reset_freevar(e);
-						}
-					}
-				}
-			}
-		}
 	}
 	return e;
 }
@@ -5400,18 +5418,25 @@ rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, int *gro
 	query_processed(query);
 
 	if (rel && sn->groupby) {
-		list *gbe, *sets = NULL;
-		for (dnode *o = sn->groupby->data.lval->h; o ; o = o->next) {
-			symbol *grouping = o->data.sym;
-			if (grouping->token == SQL_ROLLUP || grouping->token == SQL_CUBE || grouping->token == SQL_GROUPING_SETS) {
-				*group_totals |= sql_group_totals;
-				break;
+		list *gbe = NULL, *sets = NULL;
+		int all = 0;
+		if (sn->groupby->data.lval == NULL) { /* ALL */
+			all = 1;
+		} else {
+			for (dnode *o = sn->groupby->data.lval->h; o ; o = o->next) {
+				symbol *grouping = o->data.sym;
+				if (grouping->token == SQL_ROLLUP || grouping->token == SQL_CUBE || grouping->token == SQL_GROUPING_SETS) {
+					*group_totals |= sql_group_totals;
+					break;
+				}
 			}
+			gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby | *group_totals, false, &sets);
+			if (!gbe)
+				return NULL;
 		}
-		gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby | *group_totals, false, &sets);
-		if (!gbe)
-			return NULL;
 		rel = rel_groupby(sql, rel, gbe);
+		if (rel && all)
+			rel->flag = 2;
 		if (sets && list_length(sets) > 1) { /* if there is only one combination, there is no reason to generate unions */
 			prop *p = prop_create(sql->sa, PROP_GROUPINGS, rel->p);
 			p->value.pval = sets;
@@ -5538,7 +5563,7 @@ static sql_rel *
 join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, int l_nil, int r_nil)
 {
 	mvc *sql = query->sql;
-	int found = 0, full = (op != op_join);
+	int found = 0, full = (op == op_full), right = (op == op_right);
 	list *exps = rel_projections(sql, t1, NULL, 1, 0);
 	list *r_exps = rel_projections(sql, t2, NULL, 1, 0);
 	list *outexps = new_exp_list(sql->sa);
@@ -5562,18 +5587,22 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 			found = 1;
 			if (!(rel = rel_compare_exp(query, rel, le, re, "=", TRUE, 0, 0, 0, 0)))
 				return NULL;
+			list_remove_data(r_exps, NULL, re);
 			if (full) {
 				sql_exp *cond = rel_unop_(sql, rel, le, "sys", "isnull", card_value);
 				if (!cond)
 					return NULL;
 				set_has_no_nil(cond);
+				if (rel_convert_types(sql, NULL, NULL, &le, &re, 1, type_equal_no_any) < 0)
+					return NULL;
 				if (!(le = rel_nop_(sql, rel, cond, re, le, NULL, "sys", "ifthenelse", card_value)))
 					return NULL;
+			} else if (right) {
+				le = re;
 			}
 			exp_setname(sql->sa, le, rname, name);
 			set_not_unique(le);
 			append(outexps, le);
-			list_remove_data(r_exps, NULL, re);
 		} else {
 			if (l_nil)
 				set_has_nil(le);
@@ -5624,6 +5653,40 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals | (ek.aggr?sql_aggr:0));
 
 		if (ce) {
+			if (inner && inner->flag && is_groupby(inner->op)) {
+				int found = 0;
+				list *gbe = inner->r;
+				/* flag == 2 just add to group by/ aggrs and ref-to pexps*/
+				/* flag == 1 find group by exp referencing this column nr */
+				if (inner->flag == 2) {
+					if (ce->card > CARD_AGGR) {
+						if (!gbe)
+							inner->r = gbe = sa_list(sql->sa);
+						append(gbe, ce);
+						ce = exp_ref(sql, ce);
+						ce->card = CARD_AGGR;
+						list_append(inner->exps, ce);
+						ce = exp_ref(sql, ce);
+						found = 1;
+					}
+				} else {
+					for(node *n = gbe->h; n && !found; n = n->next) {
+						sql_exp *e = n->data;
+						if (is_atom(e->type) && !e->alias.name) {
+							atom *a = e->l;
+							int nr = (int)atom_get_int(a);
+							if (nr == (list_length(pexps) + 1)) {
+								n->data = ce;
+								ce = exp_ref(sql, ce);
+								ce->card = CARD_AGGR;
+								list_append(inner->exps, ce);
+								ce = exp_ref(sql, ce);
+								found = 1;
+							}
+						}
+					}
+				}
+			}
 			pexps = append(pexps, ce);
 			rel = inner;
 			continue;
@@ -5641,10 +5704,25 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 */
 		pexps = list_merge(pexps, te, (fdup)NULL);
 	}
-	if (rel && is_groupby(rel->op) && !sn->groupby && !is_processed(rel)) {
+	if (rel && is_groupby(rel->op) && rel->flag) {
+		list *gbe = rel->r;
+		if (!list_empty(gbe)) {
+			for (node *n=gbe->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				if (rel->flag == 1 && is_atom(e->type) && !e->alias.name) {
+					atom *a = e->l;
+					int nr = (int)atom_get_int(a);
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUP BY position %d is not in select list", nr);
+				}
+				if (exp_has_aggr(rel, e))
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: aggregate functions are not allowed in GROUP BY");
+			}
+		}
+	}
+	if (rel && is_groupby(rel->op) && (!sn->groupby || rel->flag) && !is_processed(rel)) {
 		for (node *n=pexps->h; n; n = n->next) {
 			sql_exp *ce = n->data;
-			if (rel->card < ce->card) {
+			if (rel->card < ce->card && !exp_is_aggr(rel, ce)) {
 				if (exp_name(ce) && !has_label(ce))
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ce));
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
@@ -5988,6 +6066,9 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		return NULL;
 
 	query_processed(query);
+	if (strcmp(rel_name(t1), rel_name(t2)) == 0) {
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: ERROR:  table name '%s' specified more than once", rel_name(t1));
+	}
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op);
 	if (!rel)
 		return NULL;

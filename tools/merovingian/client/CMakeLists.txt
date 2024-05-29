@@ -31,6 +31,10 @@ target_link_libraries(monetdb
   #$<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>)
   )
 
+set_target_properties(monetdb
+  PROPERTIES
+  VERSION ${MONETDB_VERSION})
+
 install(TARGETS
   monetdb
   RUNTIME

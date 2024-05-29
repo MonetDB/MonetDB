@@ -719,7 +719,8 @@ typedef struct {
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
-		revsorted:1;	/* column is sorted in descending order */
+		revsorted:1,	/* column is sorted in descending order */
+		ascii:1;	/* string column is fully ASCII (7 bit) */
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
@@ -813,6 +814,7 @@ typedef struct BAT {
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
+#define tascii		T.ascii
 #define torderidx	T.orderidx
 #define twidth		T.width
 #define tshift		T.shift
@@ -900,9 +902,10 @@ gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 
-#define isVIEW(x)							\
-	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
-	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
+#define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
+#define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
+
+#define isVIEW(x)	(VIEWtparent(x) != 0 || VIEWvtparent(x) != 0)
 
 /*
  * @+ BAT Buffer Pool
@@ -1067,7 +1070,8 @@ typedef struct BATiter {
 		hdirty:1,
 		vhdirty:1,
 		copiedtodisk:1,
-		transient:1;
+		transient:1,
+		ascii:1;
 	restrict_t restricted:2;
 #ifndef NDEBUG
 	bool locked:1;
@@ -1083,7 +1087,7 @@ bat_iterator_nolock(BAT *b)
 {
 	/* does not get matched by bat_iterator_end */
 	if (b) {
-		bool isview = isVIEW(b);
+		bool isview = VIEWtparent(b);
 		return (BATiter) {
 			.b = b,
 			.h = b->theap,
@@ -1114,6 +1118,7 @@ bat_iterator_nolock(BAT *b)
 			.nil = b->tnil,
 			.sorted = b->tsorted,
 			.revsorted = b->trevsorted,
+			.ascii = b->tascii,
 			/* only look at heap dirty flag if we own it */
 			.hdirty = b->theap->parentid == b->batCacheid && b->theap->dirty,
 			/* also, if there is no vheap, it's not dirty */
@@ -2162,9 +2167,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 		}							\
 	} while (false)
 
-#define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
-#define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
-
 /*
  * @+ BAT Iterators
  *  @multitable @columnfractions 0.15 0.7
@@ -2303,6 +2305,18 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
 	__attribute__((__warn_unused_result__));
 
 #include "gdk_calc.h"
+
+gdk_export gdk_return GDKtoupper(char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_export gdk_return GDKtolower(char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_export gdk_return GDKcasefold(char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_export int GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2);
+gdk_export int GDKstrcasecmp(const char *s1, const char *s2);
+gdk_export char *GDKstrcasestr(const char *haystack, const char *needle);
+gdk_export BAT *BATtoupper(BAT *b, BAT *s);
+gdk_export BAT *BATtolower(BAT *b, BAT *s);
+gdk_export BAT *BATcasefold(BAT *b, BAT *s);
+gdk_export gdk_return GDKasciify(char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_export BAT *BATasciify(BAT *b, BAT *s);
 
 /*
  * @- BAT sample operators

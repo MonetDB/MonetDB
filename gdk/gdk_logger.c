@@ -1038,6 +1038,7 @@ log_read_types_file(logger *lg, FILE *fp, int version)
 {
 	int id = 0;
 	char atom_name[IDLENGTH];
+	bool seen_geom = false;
 
 	/* scanf should use IDLENGTH somehow */
 	while (fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
@@ -1049,9 +1050,17 @@ log_read_types_file(logger *lg, FILE *fp, int version)
 			GDKerror("unknown type in log file '%s'\n", atom_name);
 			return GDK_FAIL;
 		}
+		seen_geom |= strcmp(atom_name, "mbr") == 0 || strcmp(atom_name, "wkb") == 0;
 		lg->type_id[i] = (int8_t) id;
 		lg->type_nr[id < 0 ? 256 + id : id] = i;
 	}
+#ifdef HAVE_GEOM
+	if (!seen_geom && ATOMindex("mbr") > 0) {
+		GDKerror("incompatible database: server supports GEOM, but database does not\n");
+		return GDK_FAIL;
+	}
+#endif
+	(void) seen_geom;
 	return GDK_SUCCEED;
 }
 
@@ -1802,7 +1811,8 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 			cleanup++;
 			if (lids[p] == -1)
 				continue;
-			if (BUNappend(dcatalog, &(oid){p}, true) != GDK_SUCCEED) {
+			if (BUNfnd(dcatalog, &(oid){p}) == BUN_NONE &&
+			    BUNappend(dcatalog, &(oid){p}, true) != GDK_SUCCEED) {
 				while (BATcount(dcatalog) > dcnt) {
 					if (BUNdelete(dcatalog, BATcount(dcatalog) - 1) != GDK_SUCCEED) {
 						TRC_CRITICAL(WAL, "delete after failed append failed\n");
@@ -3458,6 +3468,12 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 {
 	rotation_lock(lg);
 	if (flushnow) {
+		if (file_id == NULL) {
+			/* special case: ask store_manager to rotate log file */
+			lg->file_age = 0;
+			rotation_unlock(lg);
+			return GDK_SUCCEED;
+		}
 		/* I am now the exclusive flusher */
 		if (ATOMIC_GET(&lg->nr_flushers)) {
 			/* I am waiting until all existing flushers are done */
@@ -3512,7 +3528,6 @@ log_printinfo(logger *lg)
 	rotation_lock(lg);
 	printf("current log file "ULLFMT", last handled log file "ULLFMT"\n",
 	       lg->id, lg->saved_id);
-	rotation_unlock(lg);
 	printf("current transaction id %d, saved transaction id %d\n",
 	       lg->tid, lg->saved_tid);
 	printf("number of flushers: %d\n", (int) ATOMIC_GET(&lg->nr_flushers));
@@ -3525,4 +3540,5 @@ log_printinfo(logger *lg)
 			buf[0] = 0;
 		printf("pending range "ULLFMT": drops %"PRIu64", last_ts %"PRIu64", flushed_ts %"PRIu64", refcount %"PRIu64"%s%s\n", p->id, (uint64_t) ATOMIC_GET(&p->drops), (uint64_t) ATOMIC_GET(&p->last_ts), (uint64_t) ATOMIC_GET(&p->flushed_ts), (uint64_t) ATOMIC_GET(&p->refcount), buf, p == lg->current ? " (current)" : "");
 	}
+	rotation_unlock(lg);
 }

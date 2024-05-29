@@ -34319,6 +34319,16 @@ pattern batstr.asciify(X_0:bat[:str], X_1:bat[:oid]):bat[:str]
 BATSTRasciify;
 Transform BAT of strings from UTF8 to ASCII
 batstr
+caseFold
+pattern batstr.caseFold(X_0:bat[:str]):bat[:str]
+STRbatCaseFold;
+Fold the case of a string.
+batstr
+caseFold
+pattern batstr.caseFold(X_0:bat[:str], X_1:bat[:oid]):bat[:str]
+STRbatCaseFold;
+Fold the case of a string.
+batstr
 contains
 pattern batstr.contains(X_0:bat[:str], X_1:bat[:str]):bat[:bit]
 BATSTRcontains;
@@ -44970,6 +44980,16 @@ VLTgenerator_noop;
 (empty)
 generator
 parameters
+pattern generator.parameters(X_0:date, X_1:date, X_2:int):bat[:date]
+VLTgenerator_noop;
+Retain the table definition, but don't materialize (months)
+generator
+parameters
+pattern generator.parameters(X_0:date, X_1:date, X_2:lng):bat[:date]
+VLTgenerator_noop;
+Retain the table definition, but don't materialize (days)
+generator
+parameters
 pattern generator.parameters(X_0:dbl, X_1:dbl):bat[:dbl]
 VLTgenerator_noop;
 (empty)
@@ -45040,6 +45060,11 @@ VLTgenerator_projection;
 (empty)
 generator
 projection
+pattern generator.projection(X_0:bat[:oid], X_1:bat[:date]):bat[:date]
+VLTgenerator_projection;
+(empty)
+generator
+projection
 pattern generator.projection(X_0:bat[:oid], X_1:bat[:dbl]):bat[:dbl]
 VLTgenerator_projection;
 (empty)
@@ -45081,6 +45106,16 @@ VLTgenerator_subselect;
 generator
 select
 pattern generator.select(X_0:bat[:bte], X_1:bte, X_2:bte, X_3:bit, X_4:bit, X_5:bit):bat[:oid]
+VLTgenerator_subselect;
+(empty)
+generator
+select
+pattern generator.select(X_0:bat[:date], X_1:bat[:oid], X_2:date, X_3:date, X_4:bit, X_5:bit, X_6:bit):bat[:oid]
+VLTgenerator_subselect;
+(empty)
+generator
+select
+pattern generator.select(X_0:bat[:date], X_1:date, X_2:date, X_3:bit, X_4:bit, X_5:bit):bat[:oid]
 VLTgenerator_subselect;
 (empty)
 generator
@@ -45165,6 +45200,16 @@ VLTgenerator_table;
 (empty)
 generator
 series
+pattern generator.series(X_0:date, X_1:date, X_2:int):bat[:date]
+VLTgenerator_table;
+date generator with step size in months
+generator
+series
+pattern generator.series(X_0:date, X_1:date, X_2:lng):bat[:date]
+VLTgenerator_table;
+date generator with step size in days
+generator
+series
 pattern generator.series(X_0:dbl, X_1:dbl):bat[:dbl]
 VLTgenerator_table;
 (empty)
@@ -45233,6 +45278,11 @@ thetaselect
 pattern generator.thetaselect(X_0:bat[:bte], X_1:bat[:oid], X_2:bte, X_3:str):bat[:oid]
 VLTgenerator_thetasubselect;
 (empty)
+generator
+thetaselect
+pattern generator.thetaselect(X_0:bat[:date], X_1:bat[:oid], X_2:date, X_3:str):bat[:oid]
+VLTgenerator_thetasubselect;
+Overloaded selection routine
 generator
 thetaselect
 pattern generator.thetaselect(X_0:bat[:dbl], X_1:bat[:oid], X_2:dbl, X_3:str):bat[:oid]
@@ -50299,6 +50349,11 @@ command str.asciify(X_0:str):str
 STRasciify;
 Transform string from UTF8 to ASCII
 str
+caseFold
+command str.caseFold(X_0:str):str
+STRcasefold;
+Fold the case of a string.
+str
 contains
 pattern str.contains(X_0:str, X_1:str):bit
 STRcontains;
@@ -50378,11 +50433,6 @@ endswithselect
 pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid]
 STRendswithselect;
 Select all head values of the first input BAT for which the@tail value end with the given suffix + icase.
-str
-epilogue
-command str.epilogue():void
-STRepilogue;
-(empty)
 str
 insert
 command str.insert(X_0:str, X_1:int, X_2:int, X_3:str):str

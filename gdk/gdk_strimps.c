@@ -551,7 +551,7 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
-	if (isVIEW(b)) {
+	if (VIEWtparent(b)) {
 		pb = BATdescriptor(VIEWtparent(b));
 		if (pb == NULL)
 			return NULL;

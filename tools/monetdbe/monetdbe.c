@@ -814,7 +814,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 
 	assert(!c->curprg);
 
-	const char *mod = "user";
+	const char mod[] = "user";
 	char nme[16];
 	const char *name = number2name(nme, sizeof(nme), ++((backend*)  c->sqlcontext)->remote);
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
@@ -1434,7 +1434,7 @@ cleanup:
 static char*
 monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows, int *prepare_id)
 {
-	const char *mod = "user";
+	const char mod[] = "user";
 	char nme[16];
 
 	Client c = mdbe->c;
