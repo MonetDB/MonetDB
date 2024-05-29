@@ -385,7 +385,9 @@ PLAN SELECT 1 FROM view1 s INNER JOIN view2 h ON s.id_nr = h.id_nr LEFT JOIN vie
 ----
 project (
 | join (
-| | table("sys"."tabel3") [ "tabel3"."id_nr" as "a"."id_nr" ],
+| | project (
+| | | table("sys"."tabel3") [ "tabel3"."id_nr" as "a"."id_nr" ]
+| | ) [ "a"."id_nr" ],
 | | project (
 | | | left outer join (
 | | | | join (

@@ -1278,6 +1278,8 @@ exp_match( sql_exp *e1, sql_exp *e2)
 	if (exp_cmp(e1, e2) == 0)
 		return 1;
 	if (e1->type == e2->type && e1->type == e_column) {
+		if (e1->nid && e1->nid == e2->nid)
+			return 1;
 		if (e1->alias.label != e2->alias.label || !e1->alias.label || !e2->alias.label)
 			return 0;
 #if 0
