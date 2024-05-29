@@ -3456,6 +3456,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
  * Push (semi)joins down unions, this is basically for merge tables, where
  * we know that the fk-indices are split over two clustered merge tables.
  */
+#if 0
 static inline sql_rel *
 rel_push_join_down_union(visitor *v, sql_rel *rel)
 {
@@ -3684,6 +3685,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 	}
 	return rel;
 }
+#endif
 
 /*
  * Push (semi)joins down unions, this is basically for merge tables, where
