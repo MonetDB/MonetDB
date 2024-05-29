@@ -157,7 +157,8 @@ target_sources(mutf8
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/mutf8.h
   PRIVATE
-  mutf8.c)
+  mutf8.c
+  mwidth.c)
 
 target_include_directories(mutf8
   PUBLIC
