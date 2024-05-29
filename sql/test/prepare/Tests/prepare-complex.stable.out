@@ -17,11 +17,11 @@ stdout of test 'prepare-complex` in directory 'sql/test/prepare` itself:
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	3,	3 # length
-[ "decimal",	2,	1,	"",	"%22",	"%13"	]
-[ "int",	32,	0,	"",	"%22",	"c2"	]
+[ "decimal",	2,	1,	"",	"%20",	"%12"	]
+[ "int",	32,	0,	"",	"%20",	"c2"	]
 [ "decimal",	2,	1,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 #ROLLBACK;
 
