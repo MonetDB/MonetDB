@@ -93,17 +93,17 @@ struct data {
 	char *uid;
 	char *pwd;
 	char *host;
-	char *port;
+	char *port;		/* positive integer */
 	char *database;
 	char *schema;
-	char *logintimeout;
-	char *replytimeout;
-	char *replysize;
-	char *autocommit;
-	char *timezone;
+	char *logintimeout;	/* empty, 0 or positive integer (millisecs) */
+	char *replytimeout;	/* empty, 0 or positive integer (millisecs)  */
+	char *replysize;	/* empty, 0 or positive integer */
+	char *autocommit;	/* only on or off allowed */
+	char *timezone;		/* empty, 0 or signed integer (minutes) */
 	char *logfile;
 	// TLS settings
-	char *use_tls;
+	char *use_tls;		/* only on or off allowed */
 	char *servercert;
 	char *servercerthash;
 	char *clientkey;
@@ -181,7 +181,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (datap->request != ODBC_ADD_DSN || datap->dsn == NULL || *datap->dsn == 0) {
 				GetDlgItemText(hwndDlg, IDC_EDIT_DSN, buf, sizeof(buf));
 				if (!SQLValidDSN(buf)) {
-					MessageBox(hwndDlg, "Invalid Datasource Name", NULL, MB_ICONERROR);
+					MessageBox(hwndDlg, "Invalid or missing Data Source Name", NULL, MB_ICONERROR);
 					return TRUE;
 				}
 				if (datap->dsn)
@@ -264,6 +264,12 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case IDCANCEL:
 			EndDialog(hwndDlg, LOWORD(wParam));
 			return TRUE;
+		case IDC_BUTTON_TEST:
+			MessageBox(hwndDlg, "Test Connection not yet implemented", NULL, MB_ICONERROR);
+			return TRUE;
+		case IDC_BUTTON_HELP:
+			MessageBox(hwndDlg, "Help not yet implemented", NULL, MB_ICONERROR);
+			return TRUE;
 		}
 	default:
 		ODBCLOG("DialogProc 0x%x 0x%x 0x%x\n", uMsg, (unsigned) wParam, (unsigned) lParam);
@@ -277,7 +283,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 {
 	struct data data;
 	char *dsn = NULL;
-	BOOL rc;
+	BOOL rc = TRUE;  /* we're optimistic: default return value */
 
 	ODBCLOG("ConfigDSN %d %s %s 0x%" PRIxPTR "\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)", (uintptr_t) &data);
 
@@ -419,9 +425,6 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		data.clientkey ? data.clientkey : "(null)",
 		data.clientcert ? data.clientcert : "(null)");
 
-	/* we're optimistic: default return value */
-	rc = TRUE;
-
 	if (parent) {
 		switch (DialogBoxParam(instance,
 				       MAKEINTRESOURCE(IDD_SETUP_DIALOG),
@@ -443,7 +446,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		if (!SQLValidDSN(data.dsn)) {
 			rc = FALSE;
 			if (parent)
-				MessageBox(parent, "Invalid Datasource Name", NULL, MB_ICONERROR);
+				MessageBox(parent, "Invalid or missing Data Source Name", NULL, MB_ICONERROR);
 			SQLPostInstallerError(ODBC_ERROR_INVALID_NAME, "Invalid driver name");
 			goto finish;
 		}
@@ -455,14 +458,14 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			if (drv && *drv) {
 				free(drv);
 				if (parent &&
-				    MessageBox(parent, "Replace existing Datasource Name?", NULL, MB_OKCANCEL | MB_ICONQUESTION) != IDOK) {
+				    MessageBox(parent, "Replace existing Data Source Name?", NULL, MB_OKCANCEL | MB_ICONQUESTION) != IDOK) {
 					goto finish;
 				}
 				ODBCLOG("ConfigDSN removing dsn %s\n", data.dsn);
 				if (!SQLRemoveDSNFromIni(data.dsn)) {
 					rc = FALSE;
-					MessageBox(parent, "Failed to remove old Datasource Name", NULL, MB_ICONERROR);
-					SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Failed to remove old Datasource Name");
+					MessageBox(parent, "Failed to remove old Data Source Name", NULL, MB_ICONERROR);
+					SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Failed to remove old Data Source Name");
 					goto finish;
 				}
 			} else if (drv)
@@ -471,18 +474,38 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		if (dsn && !SQLRemoveDSNFromIni(dsn)) {
 			rc = FALSE;
 			if (parent)
-				MessageBox(parent, "Failed to remove old Datasource Name", NULL, MB_ICONERROR);
-			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Failed to remove old Datasource Name");
+				MessageBox(parent, "Failed to remove old Data Source Name", NULL, MB_ICONERROR);
+			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Failed to remove old Data Source Name");
 			goto finish;
 		}
 		if (!SQLWriteDSNToIni(data.dsn, driver)) {
 			rc = FALSE;
 			if (parent)
-				MessageBox(parent, "Failed to add new Datasource Name", NULL, MB_ICONERROR);
-			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Failed to add new Datasource Name");
+				MessageBox(parent, "Failed to add new Data Source Name", NULL, MB_ICONERROR);
+			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Failed to add new Data Source Name");
 			goto finish;
 		}
 	}
+	/* some data validation on entered strings */
+	if (data.autocommit) {
+		if (strcmp("on", data.autocommit) != 0
+		 && strcmp("off", data.autocommit) != 0) {
+			rc = FALSE;
+			if (parent)
+				MessageBox(parent, "Autocommit may only be set to on or off.", NULL, MB_ICONERROR);
+			goto finish;
+		}
+	}
+	if (data.use_tls) {
+		if (strcmp("on", data.use_tls) != 0
+		 && strcmp("off", data.use_tls) != 0) {
+			rc = FALSE;
+			if (parent)
+				MessageBox(parent, "TLS Encrypt may only be set to on or off.", NULL, MB_ICONERROR);
+			goto finish;
+		}
+	}
+
 	ODBCLOG("ConfigDSN writing values: DSN=%s UID=%s PWD=%s Host=%s Port=%s Database=%s Schema=%s LoginTimeout=%s ReplyTimeout=%s ReplySize=%s AutoCommit=%s TimeZone=%s LogFile=%s TLSs=%s Cert=%s CertHash=%s ClientKey=%s ClientCert=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
@@ -572,6 +595,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		free(data.clientkey);
 	if (data.clientcert)
 		free(data.clientcert);
+
 	ODBCLOG("ConfigDSN returning %s\n", rc ? "TRUE" : "FALSE");
 	return rc;
 }
