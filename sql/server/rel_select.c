@@ -1303,7 +1303,7 @@ bool group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp,const ch
 				continue;
 			}
 		}
-		if (pki && pki->columns->cnt == 1 &&  ((list*) inner->r)->cnt == 1) {
+		if (pki && pki->columns->cnt == 1 && inner->r && ((list*) inner->r)->cnt == 1) {
 			/* for now only check simple case where primary key and group by expression is a single column*/
 			sql_exp* gbe = ((list*) inner->r)->h->data;
 			assert(gbe->type == e_column);
@@ -2318,9 +2318,24 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 	case SQL_COMPARE: {
 		dnode *cmp_n = sc->data.lval->h;
 		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */
+		if (cmp_n->next->next->next) {
+			switch(cmp_n->next->next->next->data.i_val)
+			{
+			case 0: /* negating ANY/ALL */
+				cmp_n->next->next->next->data.i_val = 1;
+				break;
+			case 1: /* negating ANY/ALL */
+				cmp_n->next->next->next->data.i_val = 0;
+				break;
+			case 2: /* negating IS [NOY] DINSTINCT FROM */
+				cmp_n->next->next->next->data.i_val = 3;
+				break;
+			case 3: /* negating IS [NOY] DINSTINCT FROM */
+				cmp_n->next->next->next->data.i_val = 2;
+				break;
+			}
+		}
 		cmp_n->next->data.sval = sa_strdup(sql->sa, compare_func(neg_cmp_type, 0));
-		if (cmp_n->next->next->next) /* negating ANY/ALL */
-			cmp_n->next->next->next->data.i_val = cmp_n->next->next->next->data.i_val == 0 ? 1 : 0;
 	} break;
 	case SQL_AND:
 	case SQL_OR: {
@@ -5544,7 +5559,7 @@ static sql_rel *
 join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, int l_nil, int r_nil)
 {
 	mvc *sql = query->sql;
-	int found = 0, full = (op != op_join);
+	int found = 0, full = (op == op_full), right = (op == op_right);
 	list *exps = rel_projections(sql, t1, NULL, 1, 0);
 	list *r_exps = rel_projections(sql, t2, NULL, 1, 0);
 	list *outexps = new_exp_list(sql->sa);
@@ -5568,18 +5583,22 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 			found = 1;
 			if (!(rel = rel_compare_exp(query, rel, le, re, "=", TRUE, 0, 0, 0, 0)))
 				return NULL;
+			list_remove_data(r_exps, NULL, re);
 			if (full) {
 				sql_exp *cond = rel_unop_(sql, rel, le, "sys", "isnull", card_value);
 				if (!cond)
 					return NULL;
 				set_has_no_nil(cond);
+				if (rel_convert_types(sql, NULL, NULL, &le, &re, 1, type_equal_no_any) < 0)
+					return NULL;
 				if (!(le = rel_nop_(sql, rel, cond, re, le, NULL, "sys", "ifthenelse", card_value)))
 					return NULL;
+			} else if (right) {
+				le = re;
 			}
 			exp_setname(sql->sa, le, rname, name);
 			set_not_unique(le);
 			append(outexps, le);
-			list_remove_data(r_exps, NULL, re);
 		} else {
 			if (l_nil)
 				set_has_nil(le);

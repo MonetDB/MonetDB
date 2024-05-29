@@ -395,7 +395,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 		sValue = "N";	/* "Y" */
 		break;
 	case SQL_DATABASE_NAME:
-		sValue = dbc->dbname ? dbc->dbname : "";
+		sValue = msetting_string(dbc->settings, MP_DATABASE);
 		break;
 	case SQL_DATETIME_LITERALS:
 		nValue = SQL_DL_SQL92_DATE |
@@ -1121,7 +1121,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 		nValue = SQL_U_UNION | SQL_U_UNION_ALL;
 		break;
 	case SQL_USER_NAME:
-		sValue = dbc->uid ? dbc->uid : "";
+		sValue = msetting_string(dbc->settings, MP_USER);
 		break;
 	case SQL_XOPEN_CLI_YEAR: /* ? */
 		sValue = "";

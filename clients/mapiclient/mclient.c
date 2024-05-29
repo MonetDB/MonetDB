@@ -174,7 +174,7 @@ static char *nullstring = default_nullstring;
 static timertype
 gettime(void)
 {
-	/* Return the time in milliseconds since an epoch.  The epoch
+	/* Return the time in microseconds since an epoch.  The epoch
 	   is roughly the time this program started. */
 #ifdef _MSC_VER
 	static LARGE_INTEGER freq, start;	/* automatically initialized to 0 */
@@ -389,7 +389,7 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 		case UTF8_ACCEPT:
 			if (codepoint == '\n') {
 				if (max) {
-					*t = s;
+					*t = s - 1;	/* before the \n */
 					return len;
 				}
 				len++;
@@ -409,7 +409,11 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 					return len0;
 				}
 				if (len == max) {
-					*t = s;
+					/* add any following combining (zero width) characters */
+					do {
+						*t = s;
+						s = nextcharn(s, e == NULL ? 4 : (size_t) (e - s), &codepoint);
+					} while (codepoint > 0 && charwidth(codepoint) == 0);
 					return len;
 				}
 			}

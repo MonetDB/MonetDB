@@ -19,6 +19,8 @@ add_library(MonetODBC
 
 target_sources(MonetODBC
   PRIVATE
+  ODBCAttrs.h
+  ODBCAttrs.c
   ODBCConvert.c
   ODBCDbc.c
   ODBCDbc.h
@@ -131,6 +133,7 @@ target_link_libraries(MonetODBC
   monetdb_config_header
   mutils
   mapi
+  mutf8
   ${ODBCINST_LIBRARIES})
 
 install(TARGETS

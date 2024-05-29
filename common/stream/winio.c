@@ -214,7 +214,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 			mnstr_set_error(s, MNSTR_WRITE_ERROR, "encoding error %d", __LINE__);
 			return -1;
 		} else if (c->ch > 0xFFFF) {
-			c->wbuf[c->len++] = 0xD800 | ((c->ch >> 10) - (1 << 6));
+			c->wbuf[c->len++] = 0xD7C0 + (c->ch >> 10);
 			c->wbuf[c->len++] = 0xDC00 | (c->ch & 0x03FF);
 		} else {
 			c->wbuf[c->len++] = c->ch;
@@ -268,7 +268,7 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 			mnstr_set_error(s, MNSTR_WRITE_ERROR, "encoding error %d", __LINE__);
 			return -1;
 		} else if (ch > 0xFFFF) {
-			c->wbuf[c->len++] = 0xD800 | ((ch >> 10) - (1 << 6));
+			c->wbuf[c->len++] = 0xD7C0 + (ch >> 10);
 			c->wbuf[c->len++] = 0xDC00 | (ch & 0x03FF);
 		} else {
 			c->wbuf[c->len++] = ch;

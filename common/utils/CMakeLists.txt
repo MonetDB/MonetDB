@@ -28,7 +28,8 @@ target_include_directories(mutils
 
 target_link_libraries(mutils
   PRIVATE
-  monetdb_config_header)
+  monetdb_config_header
+  mutf8)
 
 target_compile_definitions(mutils PRIVATE
   LIBMUTILS
@@ -156,7 +157,8 @@ target_sources(mutf8
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/mutf8.h
   PRIVATE
-  mutf8.c)
+  mutf8.c
+  mwidth.c)
 
 target_include_directories(mutf8
   PUBLIC

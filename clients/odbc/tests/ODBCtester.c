@@ -232,7 +232,7 @@ main(int argc, char **argv)
 	}
 
 	ret = SQLAllocHandle(SQL_HANDLE_ENV, NULL, &env);
-	if (ret != SQL_SUCCESS) {
+	if (!SQL_SUCCEEDED(ret)) {
 		fprintf(stderr, "Cannot allocate ODBC environment handle!\n");
 		exit(1);
 	}
@@ -245,6 +245,10 @@ main(int argc, char **argv)
 
 	ret = SQLConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
+	if (!SQL_SUCCEEDED(ret)) {
+		fprintf(stderr, "Cannot connect!\n");
+		exit(1);
+	}
 
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle (STMT)");
