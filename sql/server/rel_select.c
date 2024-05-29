@@ -779,7 +779,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		for (m = sf->func->res->h; m; m = m->next) {
 			sql_arg *a = m->data;
 			sql_exp *e = exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0, 0);
-			e->alias.label = -(sql->nid++);
+			e->alias.label = -(int)(sql->nid++);
 
 			set_basecol(e);
 			append(exps, e);

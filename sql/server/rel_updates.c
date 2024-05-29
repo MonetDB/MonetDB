@@ -1562,7 +1562,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 		if (c->base.name[0] != '%') {
 			sql_exp *e = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
-			e->alias.label = -(sql->nid++);
+			e->alias.label = -(int) (sql->nid++);
 			append(exps, e);
 		}
 	}
@@ -1850,7 +1850,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	for (n = collist->h; n; n = n->next) {
 		sql_column *c = n->data;
 		sql_exp *e = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
-		e->alias.label = -(sql->nid++);
+		e->alias.label = -(int) (sql->nid++);
 		append(exps, e);
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
