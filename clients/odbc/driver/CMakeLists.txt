@@ -133,6 +133,7 @@ target_link_libraries(MonetODBC
   monetdb_config_header
   mutils
   mapi
+  mutf8
   ${ODBCINST_LIBRARIES})
 
 install(TARGETS
