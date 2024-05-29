@@ -717,6 +717,7 @@ int64_t mapi_rows_affected(MapiHdl hdl) __attribute__((__nonnull__(1)));
 MapiMsg mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence) __attribute__((__nonnull__(1)));
 MapiHdl mapi_send(Mapi mid, const char *cmd) __attribute__((__nonnull__(1)));
 MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit) __attribute__((__nonnull__(1)));
+void mapi_set_application_name(const char *name);
 MapiMsg mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol) __attribute__((__nonnull__(1)));
 MapiMsg mapi_set_size_header(Mapi mid, bool value) __attribute__((__nonnull__(1)));
 MapiMsg mapi_set_time_zone(Mapi mid, int seconds_east_of_utc) __attribute__((__nonnull__(1)));
