@@ -409,7 +409,11 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 					return len0;
 				}
 				if (len == max) {
-					*t = s;
+					/* add any following combining (zero width) characters */
+					do {
+						*t = s;
+						s = nextcharn(s, e == NULL ? 4 : (size_t) (e - s), &codepoint);
+					} while (codepoint > 0 && charwidth(codepoint) == 0);
 					return len;
 				}
 			}

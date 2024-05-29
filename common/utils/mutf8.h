@@ -63,3 +63,24 @@ nextchar(const char *s, uint32_t *c)
 	*c = 0;
 	return NULL;
 }
+
+/* like the above, but s is at most n bytes long */
+static inline char *
+nextcharn(const char *s, size_t n, uint32_t *c)
+{
+	uint32_t codepoint = 0, state = 0;
+	while (n-- > 0 && *s) {
+		switch (decode(&state, &codepoint, (uint8_t) *s++)) {
+		case UTF8_ACCEPT:
+			*c = codepoint;
+			return (char *) s;
+		case UTF8_REJECT:
+			*c = 0;
+			return NULL;
+		default:
+			break;
+		}
+	}
+	*c = 0;
+	return NULL;
+}
