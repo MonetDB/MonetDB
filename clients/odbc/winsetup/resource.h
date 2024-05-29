@@ -40,7 +40,6 @@
 #define IDC_EDIT_CLIENTKEY              2024
 #define IDC_EDIT_CLIENTCERT             2025
 
-//#define IDC_BUTTON_CANCEL               2031
 #define IDC_BUTTON_TEST                 2031
 #define IDC_BUTTON_HELP                 2032
 
