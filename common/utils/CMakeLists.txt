@@ -28,7 +28,8 @@ target_include_directories(mutils
 
 target_link_libraries(mutils
   PRIVATE
-  monetdb_config_header)
+  monetdb_config_header
+  mutf8)
 
 target_compile_definitions(mutils PRIVATE
   LIBMUTILS

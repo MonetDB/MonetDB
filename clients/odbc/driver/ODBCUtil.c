@@ -35,6 +35,7 @@
 #include "ODBCUtil.h"
 #include "ODBCDbc.h"
 #include <float.h>
+#include "mutf8.h"
 
 
 #ifdef WIN32
@@ -199,7 +200,6 @@ ODBCutf82wchar(const SQLCHAR *src,
 {
 	SQLLEN i = 0;
 	SQLINTEGER j = 0;
-	uint32_t c;
 
 	if (buf == NULL)
 		buflen = 0;
@@ -220,51 +220,25 @@ ODBCutf82wchar(const SQLCHAR *src,
 	else if (length < 0)
 		return "Invalid length parameter";
 
+	uint32_t state = 0, codepoint = 0;
 	while (j < length && i + 1 < buflen && src[j]) {
-		if ((src[j+0] & 0x80) == 0) {
-			buf[i++] = src[j+0];
-			j += 1;
-		} else if (j + 1 < length
-			   && (src[j+0] & 0xE0) == 0xC0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+0] & 0x1E) != 0) {
-			buf[i++] = (src[j+0] & 0x1F) << 6
-				| (src[j+1] & 0x3F);
-			j += 2;
-		} else if (j + 2 < length
-			   && (src[j+0] & 0xF0) == 0xE0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x0F) != 0
-			       || (src[j+1] & 0x20) != 0)) {
-			buf[i++] = (src[j+0] & 0x0F) << 12
-				| (src[j+1] & 0x3F) << 6
-				| (src[j+2] & 0x3F);
-			j += 3;
-		} else if (j + 3 < length
-			   && (src[j+0] & 0xF8) == 0xF0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && (src[j+3] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x07) != 0
-			       || (src[j+1] & 0x30) != 0)) {
-			c = (src[j+0] & 0x07) << 18
-				| (src[j+1] & 0x3F) << 12
-				| (src[j+2] & 0x3F) << 6
-				| (src[j+3] & 0x3F);
-			if (c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
-				return "Illegal code point";
+		switch (decode(&state, &codepoint, (uint8_t) src[j++])) {
+		case UTF8_ACCEPT:
 #if SIZEOF_SQLWCHAR == 2
-			if (i + 2 >= buflen)
-				break;
-			buf[i++] = 0xD7C0 + (c >> 10);
-			buf[i++] = 0xDC00 + (c & 0x03FF);
+			if (codepoint <= 0xFFFF) {
+				buf[i++] = (SQLWCHAR) codepoint;
+			} else {
+				buf[i++] = (SQLWCHAR) (0xD7C0 + (codepoint >> 10));
+				buf[i++] = (SQLWCHAR) (0xDC00 + (codepoint & 0x3FF));
+			}
 #else
-			buf[i++] = c;
+			buf[i++] = (SQLWCHAR) codepoint;
 #endif
-			j += 4;
-		} else {
+			break;
+		case UTF8_REJECT:
 			return "Illegal code point";
+		default:
+			break;
 		}
 	}
 	if (buflen > 0)
@@ -272,40 +246,22 @@ ODBCutf82wchar(const SQLCHAR *src,
 	if (consumed)
 		*consumed = (size_t) j;
 	while (j < length && src[j]) {
-		i++;
-		if ((src[j+0] & 0x80) == 0) {
-			j += 1;
-		} else if (j + 1 < length
-			   && (src[j+0] & 0xE0) == 0xC0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+0] & 0x1E) != 0) {
-			j += 2;
-		} else if (j + 2 < length
-			   && (src[j+0] & 0xF0) == 0xE0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x0F) != 0
-			       || (src[j+1] & 0x20) != 0)) {
-			j += 3;
-		} else if (j + 3 < length
-			   && (src[j+0] & 0xF8) == 0xF0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && (src[j+3] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x07) != 0
-			       || (src[j+1] & 0x30) != 0)) {
-			c = (src[j+0] & 0x07) << 18
-				| (src[j+1] & 0x3F) << 12
-				| (src[j+2] & 0x3F) << 6
-				| (src[j+3] & 0x3F);
-			if (c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
-				return "Illegal code point";
+		switch (decode(&state, &codepoint, (uint8_t) src[j++])) {
+		case UTF8_ACCEPT:
 #if SIZEOF_SQLWCHAR == 2
+			if (codepoint <= 0xFFFF) {
+				i++;
+			} else {
+				i += 2;
+			}
+#else
 			i++;
 #endif
-			j += 4;
-		} else {
+			break;
+		case UTF8_REJECT:
 			return "Illegal code point";
+		default:
+			break;
 		}
 	}
 	if (buflenout)
