@@ -398,6 +398,8 @@ send_all_clientinfo(Mapi mid)
 		hostname[sizeof(hostname) - 1] = '\0';
 	}
 	const char *application_name = msetting_string(mp, MP_CLIENT_APPLICATION);
+	if (!application_name[0])
+		application_name = mapi_application_name;
 	const char *client_library = "libmapi " MONETDB_VERSION;
 	const char *client_remark = msetting_string(mp, MP_CLIENT_REMARK);
 	long pid = getpid();

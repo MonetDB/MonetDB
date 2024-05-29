@@ -76,6 +76,9 @@ extern "C" {
 # endif
 #endif
 
+/* global state */
+mapi_export void mapi_set_application_name(const char *name);
+
 /* connection-oriented functions */
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 mapi_export Mapi mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang);
