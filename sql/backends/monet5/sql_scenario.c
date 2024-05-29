@@ -1205,7 +1205,7 @@ SQLchannelcmd(Client c, backend *be)
 		in->pos = in->len;	/* HACK: should use parsed length */
 		return MAL_SUCCEED;
 	}
-	if (strncmp(in->buf + in->pos, "clientinfo\n", 11) == 0) {
+	if (strncmp(in->buf + in->pos, "clientinfo ", 11) == 0) {
 		in->pos += 11;
 		char *end = in->buf + in->len;
 		char *key = in->buf + in->pos;
