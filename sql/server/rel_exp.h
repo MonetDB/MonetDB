@@ -147,7 +147,6 @@ extern int exp_refers( sql_exp *p, sql_exp *c);
 extern sql_exp *exps_refers( sql_exp *p, list *exps);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern sql_exp* exps_find_exp( list *l, sql_exp *e);
-extern sql_exp* exps_find_equal_exp( list *l, sql_exp *e);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
 extern int exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics);
 extern sql_exp* exps_any_match(list *l, sql_exp *e);

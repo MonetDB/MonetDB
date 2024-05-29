@@ -3793,7 +3793,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 
 						for (node *nn = groups->h ; nn ; nn = nn->next) {
 							sql_exp *exp = (sql_exp*) nn->data;
-							if (!exps_find_equal_exp(l, exp)) {
+							if (!exps_find_exp(l, exp)) {
 								switch (ATOMstorage(a->data.vtype)) {
 									case TYPE_bte:
 										a->data.val.btval += (bte) (1 << counter);
@@ -3822,7 +3822,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 						ne = exp_atom(v->sql->sa, a);
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);
-					} else if (e->type == e_column && !exps_find_equal_exp(l, e) && !has_label(e)) {
+					} else if (e->type == e_column && !exps_find_exp(l, e) && !has_label(e)) {
 						/* do not include in the output of the group by, but add to the project as null */
 						ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 						if (exp_name(e))

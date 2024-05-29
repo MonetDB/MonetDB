@@ -1264,23 +1264,6 @@ exps_find_exp( list *l, sql_exp *e)
 	return NULL;
 }
 
-sql_exp*
-exps_find_equal_exp( list *l, sql_exp *e)
-{
-	node *n;
-
-	if (!l || !l->h)
-		return NULL;
-
-	for(n=l->h; n; n = n->next) {
-		sql_exp *s = n->data;
-		if (exp_match(n->data, e) || (s->nid && s->nid == e->nid))
-			return n->data;
-	}
-	return NULL;
-}
-
-
 /* c refers to the parent p */
 int
 exp_refers( sql_exp *p, sql_exp *c)
