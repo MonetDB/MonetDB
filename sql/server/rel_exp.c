@@ -822,31 +822,6 @@ exp_ref_save(mvc *sql, sql_exp *e)
 }
 
 sql_exp *
-exp_alias_nid(mvc *sql, sql_exp *o)
-{
-	sql_exp *e = exp_create(sql->sa, e_column);
-
-	if (e == NULL)
-		return NULL;
-	e->card = o->card;
-	e->alias = o->alias;
-	e->nid = o->nid;
-	assert(e->nid);
-	e->r = (char*)o->r;
-	e->l = (char*)o->l;
-	sql_subtype *t = exp_subtype(o);
-	if (t)
-		e->tpe = *t;
-	if (!has_nil(o))
-		set_has_no_nil(e);
-	if (is_unique(o))
-		set_unique(e);
-	if (is_intern(o))
-		set_intern(e);
-	return exp_propagate(sql->sa, e, o);
-}
-
-sql_exp *
 exp_alias(mvc *sql, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern)
 {
 	sql_exp *e = exp_column(sql->sa, org_rname, org_cname, t, card, has_nils, unique, intern);
@@ -858,47 +833,19 @@ exp_alias(mvc *sql, const char *arname, const char *acname, const char *org_rnam
 	return e;
 }
 
-/* add_alias (cname) (or label) (to old) or copy */
-sql_exp *
-exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old)
-{
-	sql_exp *ne = NULL;
-
-	if (!tname)
-		tname = exp_relname(old);
-
-	if (!cname && exp_name(old) && has_label(old)) {
-		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_unique(old), is_intern(old));
-		ne->nid = old->alias.label;
-		return exp_propagate(sql->sa, ne, old);
-	} else if (!cname) {
-		exp_label(sql->sa, old, ++sql->label);
-		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_unique(old), is_intern(old));
-		ne->nid = old->alias.label;
-		return exp_propagate(sql->sa, ne, old);
-	} else if (cname && !old->alias.name) {
-		exp_setname(sql, old, tname, cname);
-	}
-	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel && old->card != CARD_ATOM?orel->card:CARD_ATOM, has_nil(old), is_unique(old), is_intern(old));
-	ne->nid = old->alias.label;
-	if ((tname && exp_relname(old) && strcmp(tname, exp_relname(old)) == 0) || (!tname && !exp_relname(old)))
-		if (cname && exp_name(old) && strcmp(cname, exp_name(old)) == 0)
-			ne->alias.label = ne->nid;
-	return exp_propagate(sql->sa, ne, old);
-}
-
 sql_exp *
 exp_alias_ref(mvc *sql, sql_exp *e)
 {
-	sql_exp *ne = NULL;
 	const char *tname = exp_relname(e);
 	const char *cname = exp_name(e);
 
 	if (!has_label(e))
 		exp_label(sql->sa, e, ++sql->label);
-	ne = exp_ref(sql, e);
+	sql_exp *ne = exp_ref(sql, e);
+	if (ne == NULL)
+		return NULL;
 	exp_setname(sql, ne, tname, cname);
-	return exp_propagate(sql->sa, ne, e);
+	return ne;
 }
 
 sql_exp *
@@ -1282,12 +1229,6 @@ exp_match( sql_exp *e1, sql_exp *e2)
 			return 1;
 		if (e1->alias.label != e2->alias.label || !e1->alias.label || !e2->alias.label)
 			return 0;
-#if 0
-		if (e1->l != e2->l && (!e1->l || !e2->l || strcmp(e1->l, e2->l) != 0))
-			return 0;
-		if (!e1->r || !e2->r || strcmp(e1->r, e2->r) != 0)
-			return 0;
-#endif
 		return 1;
 	}
 	if (e1->type == e2->type && e1->type == e_func) {
@@ -1344,29 +1285,8 @@ exps_find_equal_exp( list *l, sql_exp *e)
 int
 exp_refers( sql_exp *p, sql_exp *c)
 {
-	if (c->type == e_column) {
-		// at first they need to have the same expression names
-		if (c->nid) {
-			return c->nid == p->alias.label;
-		}
-		return 0;
-#if 0
-		if (!p->alias.name || !c->r || strcmp(p->alias.name, c->r) != 0)
-			return 0;
-		if (!c->l)
-			return 1;
-		// then compare the relation names
-		if (c->l && (p->alias.rname || p->l)) {
-			// if the parent has an alias for the relation name compare with the child's relation name
-			if (p->alias.rname && strcmp(p->alias.rname, c->l) != 0)
-				return 0;
-			// if the parent does NOT have a relation name alias compare his relation name with the child's
-			if (!p->alias.rname && p->l && (strcmp(p->l, c->l) != 0 || strcmp(p->alias.name, p->r) !=0))
-				return 0;
-			return 1;
-		}
-#endif
-	}
+	if (c->type == e_column && c->nid)
+		return c->nid == p->alias.label;
 	return 0;
 }
 
@@ -1853,25 +1773,11 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_r
 			assert(e->nid);
 			if (rel_base_has_nid(rel, e->nid))
 				ne = e;
-			/*
-			if (e->l) {
-				if (rel_base_bind_column2_(rel, e->l, e->r))
-					ne = e;
-			} else if (rel_base_bind_column_(rel, e->r))
-				ne = e;
-				*/
 		} else if ((!list_empty(rel->exps) && (is_project(rel->op) || is_base(rel->op))) ||
 					(!list_empty(rel->attr) && is_join(rel->op))) {
 			list *l = rel->attr ? rel->attr : rel->exps;
 			assert(e->nid);
 			ne = exps_bind_nid(l, e->nid);
-			/*
-			if (e->l) {
-				ne = exps_bind_column2(l, e->l, e->r, NULL);
-			} else {
-				ne = exps_bind_column(l, e->r, NULL, NULL, 1);
-			}
-			*/
 		}
 		if (ne && res)
 			*res = rel;
@@ -3074,12 +2980,6 @@ is_identity( sql_exp *e, sql_rel *r)
 			sql_exp *re = NULL;
 			assert(e->nid);
 			re = exps_bind_nid(r->exps, e->nid);
-			/*
-			if (e->l)
-				re = exps_bind_column2(r->exps, e->l, e->r, NULL);
-			if (!re && has_label(e))
-				re = exps_bind_column(r->exps, e->r, NULL, NULL, 1);
-				*/
 			if (re)
 				return is_identity(re, r->l);
 		}
@@ -3793,13 +3693,6 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, int nid, const cha
 
 		assert(nid);
 		e = exps_bind_nid(rel->exps, nid);
-#if 0
-		if (nrname && nename) { /* find the column reference and propagate type setting */
-			e = exps_bind_column2(rel->exps, nrname, nename, NULL);
-		} else if (nename) {
-			e = exps_bind_column(rel->exps, nename, NULL, NULL, 1);
-		}
-#endif
 		if (!e)
 			return 0; /* not found */
 		if (is_set(rel->op)) { /* TODO for set relations this needs further improvement */
@@ -3810,13 +3703,6 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, int nid, const cha
 		if (is_simple_project(rel->op) && !list_empty(rel->r)) {
 			sql_exp *ordere = NULL;
 			ordere = exps_bind_nid(rel->r, nid);
-			/*
-			if (nrname && nename) {
-				ordere = exps_bind_column2(rel->r, nrname, nename, NULL);
-			} else if (nename) {
-				ordere = exps_bind_column(rel->r, nename, NULL, NULL, 1);
-			}
-			*/
 			if (ordere && ordere->type == e_column)
 				ordere->tpe = *type;
 		}
@@ -3832,13 +3718,6 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, int nid, const cha
 		/* group by columns can have aliases! */
 		if (is_groupby(rel->op) && !list_empty(rel->r)) {
 			e = exps_bind_nid(rel->r, nid);
-			/*
-			if (nrname && nename) {
-				e = exps_bind_column2(rel->r, nrname, nename, NULL);
-			} else if (nename) {
-				e = exps_bind_column(rel->r, nename, NULL, NULL, 1);
-			}
-			*/
 			if (!e)
 				return res; /* don't search further */
 			if (e->type == e_column) {
@@ -3904,12 +3783,4 @@ list_find_exp( list *exps, sql_exp *e)
 	if (e->type != e_column)
 		return NULL;
 	return exps_bind_nid(exps, e->nid);
-	/*
-	sql_exp *ne = NULL;
-
-	if (( e->l && (ne=exps_bind_column2(exps, e->l, e->r, NULL)) != NULL) ||
-	   ((!e->l && (ne=exps_bind_column(exps, e->r, NULL, NULL, 1)) != NULL)))
-		return ne;
-	return NULL;
-	*/
 }

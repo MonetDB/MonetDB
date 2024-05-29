@@ -532,44 +532,6 @@ const sql_optimizer post_sql_optimizers[] = {
 };
 
 
-/* make sure the outer project (without order by or distinct) has all the aliases */
-static sql_rel *
-rel_keep_renames(mvc *sql, sql_rel *rel)
-{
-	if (!rel || !is_simple_project(rel->op) || (!rel->r && !need_distinct(rel)) || list_length(rel->exps) <= 1)
-		return rel;
-
-	int needed = 0;
-	for(node *n = rel->exps->h; n && !needed; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (exp_name(e) && (e->type != e_column || strcmp(exp_name(e), e->r) != 0))
-			needed = 1;
-	}
-	if (!needed)
-		return rel;
-
-	list *new_outer_exps = sa_list(sql->sa);
-	list *new_inner_exps = sa_list(sql->sa);
-	for(node *n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data, *ie, *oe;
-		//assert(e->alias.label);
-		if (!e->alias.label)
-			exp_label(sql->sa, e, ++sql->label);
-		const char *rname = exp_relname(e);
-		const char *name = exp_name(e);
-
-		ie = e;
-		oe = exp_ref(sql, ie);
-		exp_setname(sql, oe, rname, name);
-		append(new_inner_exps, ie);
-		append(new_outer_exps, oe);
-	}
-	rel->exps = new_inner_exps;
-	rel = rel_project(sql->sa, rel, new_outer_exps);
-	return rel;
-}
-
 /* for trivial queries don't run optimizers */
 static int
 calculate_opt_level(mvc *sql, sql_rel *rel)
@@ -615,9 +577,6 @@ rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int valu
 	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0,
 									  .has_special_modify = rel && is_modify(rel->op) && rel->flag&UPD_COMP};
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = 1, .data = &gp };
-
-	if (!(rel = rel_keep_renames(sql, rel)))
-		return rel;
 
 	sql->runs = !(ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
 	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {

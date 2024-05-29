@@ -304,11 +304,9 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 			if (!e && is_groupby(rel->op) && rel->r) {
 				sql_rel *l = rel->l;
-				//e = exps_bind_alias(rel->r, NULL, cname);
 				if (l)
 					e = rel_bind_column( sql, l, cname, 0, no_tname);
 				if (e) {
-					//e = exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname);
 					e = exps_refers(e, rel->r);
 					if (ambiguous || multi)
 						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
@@ -326,12 +324,8 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 				return e;
 			}
 		}
-		if (e) {
-			sql_exp *ne = exp_ref(sql, e);
-			//exp_setname(sql, ne, exp_relname(e), cname);
-			return ne;
-			//return exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
-		}
+		if (e)
+			return exp_ref(sql, e);
 	}
 	if (is_simple_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
@@ -395,17 +389,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 				sql_rel *l = rel->l;
 				if (l)
 					e = rel_bind_column2( sql, l, tname, cname, 0);
-				//e = exps_bind_alias(rel->r, tname, cname);
 				if (e) {
-					/* find expression in group by list which refers to e */
 					e = exps_refers(e, rel->r);
-					/*
-					const char *rname = exp_relname(e), *nname = exp_name(e);
-					if (rname)
-						e = exps_bind_column2(rel->exps, rname, nname, &multi);
-					else
-						e = exps_bind_column(rel->exps, nname, &ambiguous, &multi, 0);
-						*/
 					if (ambiguous || multi)
 						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s%s%s' ambiguous",
 										 tname ? tname : "", tname ? "." : "", cname);
@@ -425,12 +410,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 				return e;
 			}
 		}
-		if (e) {
-			sql_exp *ne = exp_ref(sql, e);
-			//exp_setname(sql, ne, tname, cname);
-			return ne;
-			//return exp_alias_or_copy(sql, tname, cname, rel, e);
-		}
+		if (e)
+			return exp_ref(sql, e);
 	}
 	if (is_simple_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
@@ -855,7 +836,6 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
 
-	//if (!exp_name(e))
 	if (!e->alias.label)
 		exp_label(sql->sa, e, ++sql->label);
 	if (is_simple_project(rel->op)) {
@@ -1166,10 +1146,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {
 			list *r = rel->r;
-			//int label = 0;
 
-		//	if (!settname)
-		//		label = ++sql->label;
 			exps = new_exp_list(sql->sa);
 			for (node *en = r->h; en; en = en->next) {
 				sql_exp *e = en->data;
@@ -1182,9 +1159,6 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 						exp_setname(sql, ne, tname, exp_name(e));
 					assert(ne->alias.label);
 					e = ne;
-					//e = exp_alias_or_copy(sql, settname?tname:NULL, has_label(e)?NULL:exp_name(e), rel, e);
-				//	if (!settname) /* noname use alias */
-				//		exp_setrelname(sql->sa, e, label);
 					append(exps, e);
 				}
 			}
@@ -1201,10 +1175,6 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		if (is_basetable(rel->op) && !rel->exps)
 			return rel_base_projection(sql, rel, intern);
 		if (rel->exps) {
-			//int label = 0;
-
-			//if (!settname)
-				//label = ++sql->label;
 			exps = new_exp_list(sql->sa);
 			for (node *en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
@@ -1219,9 +1189,6 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 						exp_setname(sql, ne, tname, exp_name(e));
 					assert(ne->alias.label);
 					e = ne;
-					//e = exp_alias_or_copy(sql, settname?tname:NULL, has_label(e)?NULL:exp_name(e), rel, e);
-					//if (!settname) /* noname use alias */
-						//exp_setrelname(sql->sa, e, label);
 					append(exps, e);
 				}
 			}
@@ -1737,7 +1704,6 @@ rel_find_column_(mvc *sql, list *exps, const char *tname, const char *cname)
 	if (!e && cname[0] == '%' && !tname)
 		e = exps_bind_column(exps, cname, &ambiguous, &multi, 0);
 	if (e && !ambiguous && !multi) {
-		//return exp_alias(sql, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
 		return exp_ref(sql, e);
 	}
 	return NULL;
@@ -1853,7 +1819,7 @@ rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 		list *exps = rel->exps;
 		for(node *n = exps->h; n; n=n->next) {
 			sql_exp *e = n->data;
-			if (e->alias.label == 0) //(!has_label(e))
+			if (e->alias.label == 0)
 				exp_label(sql->sa, e, ++sql->label);
 		}
 		set_single(rel);

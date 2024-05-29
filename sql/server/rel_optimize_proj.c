@@ -398,16 +398,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	switch(e->type) {
 	case e_column:
 		assert(e->nid);
-		if (e->nid)
-			ne = exps_bind_nid(f->exps, e->nid);
-#if 0
-		if (e->l) {
-			ne = exps_bind_column2(f->exps, e->l, e->r, NULL);
-			/* if relation name matches expressions relation name, find column based on column name alone */
-		} else {
-			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
-		}
-#endif
+		ne = exps_bind_nid(f->exps, e->nid);
 		if (!ne)
 			return e;
 		sql_exp *oe = e;
@@ -501,7 +492,6 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 							sql_exp *me = m->data;
 							if (me->alias.label != me->nid) {
 								sql_exp *ne = exp_ref(v->sql, m->data);
-								//exp_setname(v->sql, ne, exp_relname(e), exp_name(e));
 								exp_setalias(ne, e->alias.label, exp_relname(e), exp_name(e));
 								exp_propagate(v->sql->sa, ne, e);
 								set_selfref(ne);
@@ -1390,13 +1380,12 @@ rel_project_cse(visitor *v, sql_rel *rel)
 
 					if (exp_name(e2) && exp_match_exp(e1, e2) /*&& (e1->type != e_column || exps_bind_column2(nexps, exp_relname(e1), exp_name(e1), NULL) == e1)*/) {
 						assert(e2->alias.label);
-						//sql_exp *ne = exp_alias(v->sql, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_unique(e2), is_intern(e1));
 						sql_exp *ne = exp_ref(v->sql, e2);
 
 						ne = exp_propagate(v->sql->sa, ne, e1);
-						exp_setalias(ne, e2->alias.label, exp_relname(e1), exp_name(e1));
+						assert(!e1->ref);
+						exp_setalias(ne, e1->alias.label, exp_relname(e1), exp_name(e1));
 						set_selfref(ne);
-						exp_prop_alias(v->sql->sa, ne, e1);
 						assert(ne->nid);
 						e1 = ne;
 						break;
@@ -1741,7 +1730,6 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 						if (colf && list_position(l->exps, colf) < list_position(l->exps, tope)) {
 							n->data = exp_ref(v->sql, col);
 						} else if (!colf && is_simple_project(l->op) && list_empty(l->r) && !rel_is_ref(l) && !need_distinct(l)) { /* trivial case, it can be added */
-							//sql_exp *ne = exp_ref(v->sql, col);
 							sql_exp *ne = col;
 							list_prepend(l->exps, ne);
 							n->data = exp_ref(v->sql, ne);
@@ -2409,6 +2397,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 					}
 					rel->r = ngbe;
 					/* rewrite gbe and aggr, in the aggr list */
+					if (0)
 					for (m = rel->exps->h; m; m = m->next ){
 						sql_exp *e = m->data;
 						int fnd = 0;
@@ -2419,7 +2408,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 							if (scores[l] == -1 && exp_refers(gb, e)) {
 								/*
 								sql_exp *rs = exp_column(v->sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_unique(gb), is_intern(gb));
-								exp_setname(v->sql, rs, exp_find_rel_name(e), exp_name(e));
+								exp_setalias(rs, e->alias.label, exp_find_rel_name(e), exp_name(e));
 								e = rs;
 								*/
 								assert(e->alias.label == e->nid);
@@ -2667,7 +2656,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 			v = exp_column(v->sql->sa, exp_find_rel_name(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_unique(v), is_intern(v));
 			append(aggrs, v);
 			v = exp_aggr1(v->sql->sa, v, e->f, need_distinct(e), 1, e->card, 1);
-			exp_setname(v->sql, v, exp_find_rel_name(e), exp_name(e));
+			exp_setalias(v, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			append(naggrs, v);
 		} else if (e->type == e_aggr && !need_distinct(e)) {
 			sql_exp *v;
@@ -2683,7 +2672,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 			v = exp_aggr1(v->sql->sa, v, a, 0, 1, e->card, 1);
 			if (cnt)
 				set_zero_if_empty(v);
-			exp_setname(v->sql, v, exp_find_rel_name(e), exp_name(e));
+			exp_setalias(v, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			append(naggrs, v);
 		} else { /* group by col */
 			if (list_find_exp(gbes, e) || !list_find_exp(naggrs, e)) {
@@ -2911,7 +2900,6 @@ rel_basecount(visitor *v, sql_rel *rel)
 			sql_exp *ne = exp_op(v->sql->sa, exps, cf);
 
 			ne = exp_propagate(v->sql->sa, ne, e);
-			//exp_setname(v->sql, ne, exp_find_rel_name(e), exp_name(e));
 			exp_setalias(ne, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			rel_destroy(rel);
 			rel = rel_project(v->sql->sa, NULL, append(sa_list(v->sql->sa), ne));

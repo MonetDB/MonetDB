@@ -1111,7 +1111,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			if (top_exps) {
 				exp = exps_bind_column2(top_exps, tname, cname, NULL);
 				if (exp)
-					exp = exp_alias_or_copy(sql, tname, cname, lrel, exp);
+					exp = exp_ref(sql, exp);
 			}
 			if (!exp && lrel) {
 				exp = rel_bind_column2(sql, lrel, tname, cname, 0);
@@ -1565,7 +1565,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		if (top_exps) {
 			exp = exps_bind_column(top_exps, var_cname, &amb, &mul, 1);
 			if (exp)
-				exp = exp_alias_or_copy(sql, exp_relname(exp), var_cname, lrel, exp);
+				exp = exp_ref(sql, exp);
 		}
 		(void)amb;
 		(void)mul;

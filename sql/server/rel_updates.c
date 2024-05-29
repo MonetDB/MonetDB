@@ -876,7 +876,6 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
 		exp_setname(sql, e, alias, iname);
-		//exp_setalias(e, rel_base_idx_nid(rt, i), alias, iname);
 		append(_nlls->exps, e);
 	} else {
 		nnlls = ups;
@@ -1455,7 +1454,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
 
-			sql_rel *ibt = rel_dup(bt);//rel_basetable(sql, t, bt_name);
+			sql_rel *ibt = rel_dup(bt);
 			rel_base_use_all(query->sql, ibt);
 			ibt = rewrite_basetable(query->sql, ibt);
 			if (!(insert = rel_insert(query->sql, ibt, insert)))
@@ -1532,7 +1531,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	if (fwf_widths && dlist_length(fwf_widths) > 0) {
 		dnode *dn;
 		int ncol = 0;
-		char *fwf_string_cur = fwf_string = sa_alloc(sql->sa, 20 * dlist_length(fwf_widths) + 1); // a 64 bit int needs 19 characters in decimal representation plus the separator
+		char *fwf_string_cur = fwf_string = sa_alloc(sql->sa, 20 * dlist_length(fwf_widths) + 1); /* a 64 bit int needs 19 characters in decimal representation plus the separator */
 
 		if (!fwf_string)
 			return NULL;
@@ -1564,7 +1563,6 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 			sql_exp *e = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			e->alias.label = -(sql->nid++);
-			//exp_label(sql->sa, e, ++sql->label);
 			append(exps, e);
 		}
 	}
@@ -1596,7 +1594,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	char *tname = qname_schema_object(qname);
 	sql_table *t = NULL, *nt = NULL;
 	const char *tsep = seps->h->data.sval;
-	char *rsep = seps->h->next->data.sval; // not const, might need adjusting
+	char *rsep = seps->h->next->data.sval; /* not const, might need adjusting */
 	const char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
 	const char *ns = (null_string)?null_string:"null";
 	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
@@ -1610,7 +1608,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 
 	if (strcmp(rsep, "\r\n") == 0) {
-		// silently fix it
+		/* silently fix it */
 		rsep[0] = '\n';
 		rsep[1] = '\0';
 	} else if (strstr(rsep, "\r\n") != NULL) {
@@ -1757,8 +1755,6 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				append(args, exp_ref(sql, e));
 				append(args, exp_atom_clob(sql->sa, format));
 				ne = exp_op(sql->sa, args, f);
-				//if (exp_name(e))
-					//exp_prop_alias(sql->sa, ne, e);
 				exp_setalias(ne, e->alias.label, exp_relname(e), exp_name(e));
 			} else {
 				ne = exp_ref(sql, e);
@@ -1855,7 +1851,6 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 		sql_column *c = n->data;
 		sql_exp *e = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 		e->alias.label = -(sql->nid++);
-		//exp_label(sql->sa, e, ++sql->label);
 		append(exps, e);
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
@@ -1954,8 +1949,8 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 	if(!rel || !exps)
 		return NULL;
 
-	// With regular COPY INTO <file>, the first argument is a string.
-	// With COPY INTO BINARY, it is an int.
+	/* With regular COPY INTO <file>, the first argument is a string.
+	   With COPY INTO BINARY, it is an int. */
 	append(exps, tsep_e);
 	append(exps, rsep_e);
 	append(exps, ssep_e);
@@ -1979,14 +1974,14 @@ bincopyto(sql_query *query, symbol *qry, endianness endian, dlist *filenames, in
 {
 	mvc *sql = query->sql;
 
-	// First emit code for the subquery.
-	// Don't know what this is for, copy pasted it from copyto():
+	/* First emit code for the subquery.
+	   Don't know what this is for, copy pasted it from copyto(): */
 	exp_kind ek = { type_value, card_relation, TRUE};
 	sql_rel *sub = rel_subquery(query, qry, ek);
 	if (!sub)
 		return NULL;
-	// Again, copy-pasted. copyto() uses this to check for duplicate column names
-	// but we don't care about that here.
+	/* Again, copy-pasted. copyto() uses this to check for duplicate column names
+	   but we don't care about that here. */
 	sub = rel_project(sql->sa, sub, rel_projections(sql, sub, NULL, 1, 0));
 
 	sql_rel *rel = rel_create(sql->sa);
@@ -1994,14 +1989,14 @@ bincopyto(sql_query *query, symbol *qry, endianness endian, dlist *filenames, in
 	if (!rel || !exps)
 		return NULL;
 
-	// With regular COPY INTO <file>, the first argument is a string.
-	// With COPY INTO BINARY, it is an int.
+	/* With regular COPY INTO <file>, the first argument is a string.
+	   With COPY INTO BINARY, it is an int. */
 	append(exps, exp_atom_int(sql->sa, endian));
 	append(exps, exp_atom_int(sql->sa, on_client));
 
 	for (dnode *n = filenames->h; n != NULL; n = n->next) {
 		const char *filename = n->data.sval;
-		// Again, copied from copyto()
+		/* Again, copied from copyto() */
 		if (!on_client && filename) {
 			struct stat fs;
 			if (!copy_allowed(sql, 0))
@@ -2178,7 +2173,7 @@ rel_updates(sql_query *query, symbol *s)
 		int on_client = l->h->next->next->next->data.i_val;
 
 		ret = bincopyto(query, qry, endian, files, on_client);
-		sql->type = Q_UPDATE; // doesn't really update but it sure doesn't return a result set
+		sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_INSERT:

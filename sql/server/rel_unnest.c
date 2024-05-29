@@ -560,15 +560,7 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 
 			/* include project or just lookup */
 			assert(e->nid);
-			//if (e->nid) {
-				ne = exps_bind_nid(rel->exps, e->nid);
-				/*
-			} else if (e->l) {
-				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
-			} else {
-				ne = exps_bind_column(rel->exps, e->r, NULL, NULL, 1);
-			}
-			*/
+			ne = exps_bind_nid(rel->exps, e->nid);
 			if (ne) {
 				if (ne->type == e_column) {
 					/* deref alias */
@@ -793,13 +785,6 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 					if (gbe)
 						ne = exps_bind_nid(ad, gbe->nid);
 				}
-				/*
-				if (e->l) {
-					ne = exps_bind_column2(ad, e->l, e->r, NULL);
-				} else {
-					ne = exps_bind_column(ad, e->r, NULL, NULL, 1);
-				}
-				*/
 				if (!ne)
 					append(exps,e);
 			}
@@ -1184,7 +1169,6 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 				assert(id);
 			}
 
-			//assert(rel->op != op_anti);
 			if (rel->op == op_semi)
 				rel->op = op_join;
 			if (rel->op == op_anti) {
@@ -1621,7 +1605,6 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 				ne = exp_ref(sql, ne);
 
 				ne = exp_compare(sql->sa, id, ne, cmp_equal);
-				//set_semantics(e);
 				if (!rel->exps)
 					rel->exps = sa_list(sql->sa);
 				list_append(rel->exps, ne);
@@ -3023,7 +3006,6 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						exp_set_freevar(sql, re, rsq);
 					if (!is_tuple && !is_freevar(re)) {
 						assert(re->alias.label);
-						//re = exp_label(sql->sa, re, ++sql->label); /* unique name */
 						list_hash_clear(rsq->exps);
 						re = exp_ref(sql, re);
 					} else if (has_label(re)) {
@@ -3087,12 +3069,10 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					if (!join->attr)
 						join->attr = sa_list(sql->sa);
 					sql_exp *a = exp_atom_bool(v->sql->sa, !use_any?1:is_anyequal(sf));
-					//exp_setname(sql, a, exp_relname(e), exp_name(e));
 					if (!e->alias.label)
 						a = exp_label(v->sql->sa, a, ++v->sql->label); /* unique name */
 					else
 						exp_setalias(a, e->alias.label, exp_relname(e), exp_name(e));
-					//exp_prop_alias(v->sql->sa, a, e);
 					re = exp_ref(sql, a);
 					set_has_nil(re); /* outerjoins could have introduced nils */
 					re->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
@@ -3240,14 +3220,6 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (!rsq)
 					return NULL;
 				re = rsq->exps->t->data;
-
-#if 0
-				if (!is_tuple) {
-					re = exp_label(v->sql->sa, re, ++v->sql->label); /* unique name */
-					list_hash_clear(rsq->exps);
-					re = exp_ref(v->sql, re);
-				}
-#endif
 				set_processed(rsq);
 			}
 
@@ -3522,7 +3494,6 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						exp_label(v->sql->sa, a, ++v->sql->label);
 					else
 						exp_setalias(a, e->alias.label, exp_relname(e), exp_name(e));
-					//exp_prop_alias(v->sql->sa, a, e);
 					le = exp_ref(v->sql, a);
 					le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
 					append(join->attr, a);
@@ -3584,15 +3555,15 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 		if (!exp_has_rel(cond) && (exp_has_rel(then_exp) || exp_has_rel(else_exp))) {
 			bool single = false;
-			//return sql_error(v->sql, 10, SQLSTATE(42000) "time to rewrite into union\n");
-			// union(
-			// 	select(
-			// 		project [then]
-			//	)[cond]
-			// 	select(
-			// 		project [else]
-			//	)[not(cond) or cond is null]
-			//) [ cols ]
+			/* return sql_error(v->sql, 10, SQLSTATE(42000) "time to rewrite into union\n");
+			   union(
+			   	select(
+			   		project [then]
+			  	)[cond]
+			   	select(
+			   		project [else]
+			  	)[not(cond) or cond is null]
+			  ) [ cols ] */
 			sql_rel *lsq = NULL, *rsq = NULL, *usq = NULL;
 
 			if (exp_has_rel(then_exp)) {
@@ -3994,7 +3965,8 @@ add_null_projects(visitor *v, sql_rel *prel, sql_rel *irel, bool end)
 		if (!tp)
 			return sql_error(v->sql, 10, SQLSTATE(42000) "Cannot rewrite subquery because of parameter with unknown type");
 		ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, tp, NULL, 0));
-		exp_setname(v->sql, ne, exp_relname(e), exp_name(e));
+		assert(e->alias.label);
+		exp_setalias(ne, e->alias.label, exp_relname(e), exp_name(e));
 		if (end)
 			append(nilrel->exps, ne);
 		else
@@ -4255,7 +4227,6 @@ exp_inline_arg(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		if (n) {
 			sql_exp *val = list_fetch(args->exps, list_position(args->args, n->data));
 			val = exp_copy(v->sql, val);
-			//exp_setname(v->sql, val, exp_relname(e), exp_name(e));
 			exp_prop_alias(v->sql->sa, val, e);
 			if (level)
 				set_freevar(val, level-1);
@@ -4392,7 +4363,7 @@ run_exp_rewriter(visitor *v, sql_rel *rel, exp_rewrite_fptr rewriter, bool direc
 #else
 */
 	return rel_exp_visitor_bottomup(v, rel, rewriter, direction);
-//#endif
+/*#endif*/
 }
 
 static inline sql_rel *
@@ -4409,7 +4380,7 @@ run_rel_rewriter(visitor *v, sql_rel *rel, rel_rewrite_fptr rewriter, const char
 #else
 */
 	return rel_visitor_bottomup(v, rel, rewriter);
-//#endif
+/*#endif*/
 }
 
 sql_rel *

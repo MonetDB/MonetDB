@@ -124,12 +124,6 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_column:
 		assert(e->nid);
 		ne = exps_bind_nid(f->exps, e->nid);
-		/*
-		if (e->l)
-			ne = exps_bind_column2(f->exps, e->l, e->r, NULL);
-		if (!ne && !e->l)
-			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
-			*/
 		if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 			return NULL;
 		while (ne && (has_label(ne) || is_selfref(ne) /*inside this list */) && is_simple_project(f->op) && ne->type == e_column) {
@@ -162,16 +156,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 				return NULL;
 		}
-		if (ne->type == e_atom)
-			e = exp_copy(sql, ne);
-		else {
-			//e = exp_alias(sql, exp_relname(e), exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
-			assert(ne->nid);
-			ne = exp_alias_nid(sql, ne);
-			exp_prop_alias(sql->sa, ne, e);
-			return ne;
-		}
-		return exp_propagate(sql->sa, e, ne);
+		return exp_copy(sql, ne);
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			list *l = NULL, *r = NULL;

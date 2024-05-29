@@ -107,7 +107,6 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 						exp_setname(sql, ne, tname, exp_name(e));
 						append(exps, ne);
 					}
-						//append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
 				}
 				if (is_basecol(e) && !exp_relname(e) && e->l && strcmp(e->l, tname) == 0) {
 					if (rename)
@@ -139,7 +138,6 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 	assert(list_length(rel->exps));
 	if (rel->op == op_project) {
 		list_hash_clear(rel->exps);
-		//return exp_alias_or_copy(sql, NULL, NULL, rel, rel->exps->t->data);
 		return exp_ref(sql, rel->exps->t->data);
 	}
 	assert(is_project(rel->op));
@@ -733,7 +731,6 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 
 				if (!e->alias.label)
 					exp_label(sql->sa, e, ++sql->label);
-				//append(exps, e=exp_alias_or_copy(sql, tname, exp_name(e), NULL, e));
 				sql_exp *ne = exp_ref(sql, e);
 				/* allow for table functions with table input */
 				ne->card = CARD_ATOM;
@@ -913,8 +910,6 @@ exp_tuples_set_supertype(mvc *sql, list *tuple_values, sql_exp *tuples)
 				e = exp_check_type(sql, types+i, NULL, e, type_equal);
 				if (!e)
 					return NULL;
-				//assert(e->alias.label);
-				//exp_label(sql->sa, e, ++sql->label);
 				append(nexps, e);
 			}
 			tuple_relation->exps = nexps;
@@ -6285,7 +6280,6 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 		for (node *en = sq->exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 
-			//append(exps, e = exp_alias_or_copy(sql, NULL, exp_name(e), NULL, e));
 			append(exps, e = exp_ref(sql, e));
 			append(tl, exp_subtype(e));
 		}
