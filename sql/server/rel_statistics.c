@@ -933,6 +933,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				l = rel_select(v->sql->sa, l, exp_atom_bool(v->sql->sa, 0));
 				set_count_prop(v->sql->sa, l, 0);
 				rel->op = op_project;
+				rel->r = NULL;
 				rel->l = l;
 				rel->exps = rel_projections(v->sql, l, NULL, 1, 1);
 				set_count_prop(v->sql->sa, rel, 0);
