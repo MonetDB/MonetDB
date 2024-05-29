@@ -246,6 +246,7 @@ struct MapiStruct {
 	bool columnar_protocol;
 	bool sizeheader;
 	bool oobintr;
+	bool clientinfo_supported;
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 

@@ -84,6 +84,9 @@ by_name[] = {
 	{ .name="binary", .parm=MP_BINARY },
 	{ .name="cert", .parm=MP_CERT },
 	{ .name="certhash", .parm=MP_CERTHASH },
+	{ .name="client_application", .parm=MP_CLIENT_APPLICATION },
+	{ .name="client_info", .parm=MP_CLIENT_INFO },
+	{ .name="client_remark", .parm=MP_CLIENT_REMARK },
 	{ .name="clientcert", .parm=MP_CLIENTCERT },
 	{ .name="clientkey", .parm=MP_CLIENTKEY },
 	{ .name="connect_timeout", .parm=MP_CONNECT_TIMEOUT },
@@ -93,8 +96,8 @@ by_name[] = {
 	{ .name="map_to_long_varchar", .parm=MP_MAPTOLONGVARCHAR },
 	{ .name="password", .parm=MP_PASSWORD },
 	{ .name="port", .parm=MP_PORT },
-	{ .name="replysize", .parm=MP_REPLYSIZE },
 	{ .name="reply_timeout", .parm=MP_REPLY_TIMEOUT },
+	{ .name="replysize", .parm=MP_REPLYSIZE },
 	{ .name="fetchsize", .parm=MP_REPLYSIZE },
 	{ .name="schema", .parm=MP_SCHEMA },
 	{ .name="sock", .parm=MP_SOCK },
@@ -140,6 +143,9 @@ mparm_name(mparm parm)
 		case MP_BINARY: return "binary";
 		case MP_CERT: return "cert";
 		case MP_CERTHASH: return "certhash";
+		case MP_CLIENT_APPLICATION: return "client_application";
+		case MP_CLIENT_INFO: return "client_info";
+		case MP_CLIENT_REMARK: return "client_remark";
 		case MP_CLIENTCERT: return "clientcert";
 		case MP_CLIENTKEY: return "clientkey";
 		case MP_CONNECT_TIMEOUT: return "connect_timeout";
@@ -190,6 +196,7 @@ struct msettings {
 	bool dummy_start_bool;
 	bool tls;
 	bool autocommit;
+	bool client_info;
 	bool dummy_end_bool;
 
 	// Must match EXACTLY the order of enum mparm
@@ -220,6 +227,8 @@ struct msettings {
 	struct string schema;
 	struct string binary;
 	struct string logfile;
+	struct string client_application;
+	struct string client_remark;
 	struct string dummy_end_string;
 
 	char **unknown_parameters;
@@ -241,6 +250,7 @@ static
 const msettings msettings_default_values = {
 	.tls = false,
 	.autocommit = true,
+	.client_info = true,
 
 	.port = -1 ,
 	.timezone = 0,
@@ -255,6 +265,7 @@ const msettings msettings_default_values = {
 	.lang_is_mal = false,
 	.lang_is_sql = true,
 	.unix_sock_name_buffer = NULL,
+
 	.validated = false,
 };
 
