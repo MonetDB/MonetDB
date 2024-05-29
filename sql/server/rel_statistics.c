@@ -882,9 +882,15 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			/* we need new munion statistics */
 			/* propagate row count */
 			BUN rv = need_distinct(rel) ? rel_calc_nuniques(v->sql, r, r->exps) : get_rel_count(r);
+			/* if PROP_COUNT does not exist we assume at least a row (see get_rel_count def) */
+			if (rv == BUN_NONE) {
+				cnt++;
+				continue;
+			}
 			if (!rv && can_be_pruned)
 				needs_pruning = true;
-			if (rv > (BUN_MAX - cnt)) /* overflow check */
+			/* overflow check */
+			if (rv > (BUN_MAX - cnt))
 				rv = BUN_MAX;
 			else
 				cnt += rv;
