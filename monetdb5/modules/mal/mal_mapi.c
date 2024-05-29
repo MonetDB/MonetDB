@@ -225,7 +225,7 @@ doChallenge(void *data)
 	/* Send the challenge over the block stream
 	 * We can do binary transfers, and we can interrupt queries using
 	 * out-of-band messages */
-	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:BINARY=1:OOBINTR=1:",
+	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:BINARY=1:OOBINTR=1:CLIENTINFO:",
 				 challenge, mcrypt_getHashAlgorithms(),
 #ifdef WORDS_BIGENDIAN
 				 "BIG",

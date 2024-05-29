@@ -1205,6 +1205,26 @@ SQLchannelcmd(Client c, backend *be)
 		in->pos = in->len;	/* HACK: should use parsed length */
 		return MAL_SUCCEED;
 	}
+	if (strncmp(in->buf + in->pos, "clientinfo\n", 11) == 0) {
+		in->pos += 11;
+		char *end = in->buf + in->len;
+		char *key = in->buf + in->pos;
+		while (key < end) {
+			char *p = memchr(key, '\n', end - key);
+			if (!p)
+				return createException(SQL, "SQLparser", SQLSTATE(42000) "no trailing newline in clientinfo");
+			*p = '\0';
+			char *q = memchr(key, '=', p - key);
+			if (!q)
+				return createException(SQL, "SQLparser", SQLSTATE(42000) "found no = in clientinfo");
+			*q = '\0';
+			char *value = q + 1;
+			MCsetClientInfo(c, key, *value ? value : NULL);
+			key = p + 1;
+		}
+		in->pos = in->len;
+		return MAL_SUCCEED;
+	}
 	if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
 		c->mode = FINISHCLIENT;
 		in->pos = in->len;	/* HACK: should use parsed length */
