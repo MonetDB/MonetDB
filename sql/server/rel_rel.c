@@ -557,6 +557,7 @@ rel_inplace_setop_n_ary(mvc *sql, sql_rel *rel, list *rl, operator_type setop, l
 	rel_inplace_reset_props(rel);
 	/* rl should be a list of relations */
 	rel->l = rl;
+	rel->r = NULL;
 	rel->op = setop;
 	rel->card = CARD_MULTI;
 	rel_setop_n_ary_set_exps(sql, rel, exps, false);
