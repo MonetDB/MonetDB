@@ -1530,7 +1530,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			if (need_distinct || need_distinct(s))
 				set_distinct(ns);
 
-			if (is_join(rel->op)) {
+			if (is_join(rel->op) && !is_semi(rel->op)) {
 				list *sexps = sa_list(sql->sa), *dexps = rel_projections(sql, d, NULL, 1, 1);
 				for (node *m = dexps->h; m; m = m->next) {
 					sql_exp *e = m->data;
@@ -1542,8 +1542,8 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			/* add/remove projections to inner parts of the union (as we push a join or semijoin down) */
 			ns->l = rel_project(sql->sa, ns->l, rel_projections(sql, ns->l, NULL, 1, 1));
 			ns->r = rel_project(sql->sa, ns->r, rel_projections(sql, ns->r, NULL, 1, 1));
-			if (is_semi(rel->op))
-				ns->exps = rel_projections(sql, ns->r, NULL, 1, 1);
+			if (is_semi(rel->op)) /* only push left side of semi/anti join */
+				ns->exps = rel_projections(sql, ns->l, NULL, 1, 1);
 			if (rel->op == op_anti && s->op == op_union)
 				ns->op = op_inter;
 			if (rel->op == op_anti && s->op == op_inter)
