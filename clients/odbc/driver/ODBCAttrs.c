@@ -47,6 +47,9 @@ const struct attr_setting attr_settings[] = {
 	{ "LOGFILE", "Log File", MP_LOGFILE },
 	{ "LOGINTIMEOUT", "Login Timeout", MP_CONNECT_TIMEOUT},
 	{ "CONNECTIONTIMEOUT", "Connection Timeout", MP_REPLY_TIMEOUT},
+	{ "CLIENTINFO", "Send Client Info", MP_CLIENT_INFO },
+	{ "APPNAME", "Application Name", MP_CLIENT_APPLICATION },
+	{ "CLIENTREMARK", "Client Remark", MP_CLIENT_REMARK },
 };
 
 const int attr_setting_count = sizeof(attr_settings) / sizeof(attr_settings[0]);

@@ -17,11 +17,14 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <sql.h>
-#include <sqlext.h>
 #include <ctype.h>
 #include <inttypes.h>
 #include <wchar.h>
+
+/**** Define the ODBC Version our ODBC driver complies with ****/
+#define ODBCVER 0x0352		/* Important: this must be defined before include of sql.h and sqlext.h */
+#include <sql.h>
+#include <sqlext.h>
 
 static void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)

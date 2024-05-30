@@ -794,8 +794,6 @@ static void mapi_store_bind(struct MapiResultSet *result, int cr);
 
 static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
 
-char mapi_application_name[256] = { 0 };
-
 /*
  * Blocking
  * --------
@@ -2023,6 +2021,7 @@ mapi_destroy(Mapi mid)
 	free(mid->noexplain);
 	if (mid->errorstr && mid->errorstr != mapi_nomem)
 		free(mid->errorstr);
+	free(mid->clientprefix);
 
 	msettings_destroy(mid->settings);
 
@@ -2119,15 +2118,6 @@ mapi_disconnect(Mapi mid)
 
 	close_connection(mid);
 	return MOK;
-}
-
-void
-mapi_set_application_name(const char *name)
-{
-	if (name)
-		strncpy(mapi_application_name, name, sizeof(mapi_application_name)-1);
-	else
-		mapi_application_name[0] = '\0';
 }
 
 /* Set callback function to retrieve or send file content for COPY
@@ -2255,6 +2245,17 @@ mapi_setfilecallback(Mapi mid,
 	mid->filecontentprivate = mid;
 	mid->putfilecontent_old = putfilecontent;
 	mid->filecontentprivate_old = filecontentprivate;
+}
+
+void
+mapi_setclientprefix(Mapi mid, const char *prefix)
+{
+	free(mid->clientprefix);
+	if (prefix == NULL)
+		mid->clientprefix = NULL;
+	else
+		mid->clientprefix = strdup(prefix);
+
 }
 
 #define testBinding(hdl,fnr)						\

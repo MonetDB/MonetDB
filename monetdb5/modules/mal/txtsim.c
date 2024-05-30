@@ -592,6 +592,10 @@ TXTSIMjarowinkler(dbl *res, const char *const *x, const char *const *y)
 	str_item xi = { 0 }, yi = { 0 };
 	str msg = MAL_SUCCEED;
 
+	if (strNil(*x) || strNil(*y)) {
+		*res = dbl_nil;
+		return MAL_SUCCEED;
+	}
 	xi.val = *x;
 	xi.len = UTF8_strlen(*x);
 	if ((msg = str_2_codepointseq(&xi)) != MAL_SUCCEED)

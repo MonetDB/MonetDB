@@ -238,6 +238,7 @@ struct MapiStruct {
 	MapiMsg error;		/* Error occurred */
 	char *errorstr;		/* error from server */
 	const char *action;	/* pointer to constant string */
+	char *clientprefix;	/* prefix for 'client' clientinfo; NULL or allocated string */
 
 	struct BlockCache blk;
 	bool connected;
@@ -309,8 +310,6 @@ MapiMsg mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue);
 
 
 extern const struct MapiStruct MapiStructDefaults;
-
-extern char mapi_application_name[];
 
 // 'settings' will be newly allocated if NULL
 Mapi mapi_new(msettings *settings);
