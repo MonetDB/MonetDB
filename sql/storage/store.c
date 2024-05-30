@@ -3037,7 +3037,7 @@ key_dup(sql_trans *tr, sql_key *k, sql_table *t, sql_key **kres)
 
 		if (nk->type == pkey)
 			t->pkey = tk;
-		
+
 		if (nk->type == ckey)
 			nk->check = _STRDUP(k->check);
 	} else {
