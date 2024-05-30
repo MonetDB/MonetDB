@@ -48,6 +48,7 @@ typedef enum mparm {
         // bool
         MP_TLS = MP__BOOL_START,
         MP_AUTOCOMMIT,
+	MP_CLIENT_INFO,
 	// Note: if you change anything about this enum whatsoever, make sure to
 	// make the corresponding change to struct msettings in msettings.c as well.
 
@@ -78,6 +79,8 @@ typedef enum mparm {
         MP_SCHEMA,		// TODO implement this
         MP_BINARY,
 	MP_LOGFILE,
+	MP_CLIENT_APPLICATION,
+	MP_CLIENT_REMARK,
 	// Note: if you change anything about this enum whatsoever, make sure to
 	// make the corresponding change to struct msettings in msettings.c as well.
 
