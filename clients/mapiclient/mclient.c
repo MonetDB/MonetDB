@@ -3682,6 +3682,7 @@ main(int argc, char **argv)
 	} else {
 		mid = mapi_mapi(host, port, user, passwd, language, dbname);
 	}
+	mapi_set_application_name("mclient");
 	free(user_allocated);
 	user_allocated = NULL;
 	free(passwd_allocated);
