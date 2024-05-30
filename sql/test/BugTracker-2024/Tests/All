@@ -60,3 +60,4 @@ field-arg-error-Bug-7506
 7513-uri-authority-parse-issue
 7514-wrong-window-function
 7524-right-outer-join
+7528-jarowinkler-null
