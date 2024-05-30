@@ -34,6 +34,7 @@ target_link_libraries(mutils
 target_compile_definitions(mutils PRIVATE
   LIBMUTILS
   LIBGDK
+  LIBMAPI
   LIBMEROUTIL)
 
 set_target_properties(mutils
