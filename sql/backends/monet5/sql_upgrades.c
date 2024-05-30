@@ -6645,13 +6645,19 @@ sql_update_dec2023_sp4(Client c, mvc *sql, sql_schema *s)
 static str
 sql_update_default(Client c, mvc *sql, sql_schema *s)
 {
+	allocator *old_sa = sql->sa;
 	char *err;
 	res_table *output;
 	BAT *b;
 
+	if ((sql->sa = sa_create(sql->pa)) == NULL) {
+		sql->sa = old_sa;
+		return "sa_create failed";
+	}
+
 	err = SQLstatementIntern(c, "SELECT id FROM sys.functions WHERE schema_id = 2000 AND name = 'describe_type' AND func LIKE '%sql_datatype%';\n", "update", true, false, &output);
 	if (err)
-		return err;
+		goto end;
 	b = BATdescriptor(output->cols[0].b);
 	if (b) {
 		if (BATcount(b) == 0) {
@@ -7068,33 +7074,88 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		BBPunfix(b->batCacheid);
 	}
 	res_table_destroy(output);
-	allocator *old_sa = sql->sa;
-	if ((sql->sa = sa_create(sql->pa)) != NULL) {
-		list *l;
-		if ((l = sa_list(sql->sa)) != NULL) {
-			sql_subtype tp1, tp2;
-			sql_find_subtype(&tp1, "date", 0, 0);
-			list_append(l, &tp1);
-			list_append(l, &tp1);
-			sql_find_subtype(&tp2, "day_interval", 0, 0);
-			list_append(l, &tp2);
-			if (!sql_bind_func_(sql, s->base.name, "generate_series", l, F_UNION, true, true)) {
-				const char query[] = "create function sys.generate_series(first date, \"limit\" date, stepsize interval month)\n"
-					"returns table (value date)\n"
-					"external name generator.series;\n"
-					"create function sys.generate_series(first date, \"limit\" date, stepsize interval day)\n"
-					"returns table (value date)\n"
-					"external name generator.series;\n"
-					"update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;\n";
-				sql->session->status = 0;
-				sql->errstr[0] = '\0';
-				printf("Running database upgrade commands:\n%s\n", query);
-				fflush(stdout);
-				err = SQLstatementIntern(c, query, "update", true, false, NULL);
-			}
+	list *l;
+	if ((l = sa_list(sql->sa)) != NULL) {
+		sql_subtype tp1, tp2;
+		sql_find_subtype(&tp1, "date", 0, 0);
+		list_append(l, &tp1);
+		list_append(l, &tp1);
+		sql_find_subtype(&tp2, "day_interval", 0, 0);
+		list_append(l, &tp2);
+		if (!sql_bind_func_(sql, s->base.name, "generate_series", l, F_UNION, true, true)) {
+			const char query[] = "create function sys.generate_series(first date, \"limit\" date, stepsize interval month)\n"
+				"returns table (value date)\n"
+				"external name generator.series;\n"
+				"create function sys.generate_series(first date, \"limit\" date, stepsize interval day)\n"
+				"returns table (value date)\n"
+				"external name generator.series;\n"
+				"update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;\n";
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		}
-		sa_destroy(sql->sa);
 	}
+	if (err)
+		goto end;
+
+	const char *query = "select id from args where func_id = (select id from functions where schema_id = 2000 and name = 'sessions');\n";
+	err = SQLstatementIntern(c, query, "update", true, false, &output);
+	if (err)
+		goto end;
+	b = BATdescriptor(output->cols[0].b);
+	if (b && BATcount(b) < 15) {
+		query =
+			"drop view sys.sessions;\n"
+			"drop function sys.sessions();\n"
+			"create function sys.sessions()\n"
+			" returns table(\n"
+			"  \"sessionid\" int,\n"
+			"  \"username\" string,\n"
+			"  \"login\" timestamp,\n"
+			"  \"idle\" timestamp,\n"
+			"  \"optimizer\" string,\n"
+			"  \"sessiontimeout\" int,\n"
+			"  \"querytimeout\" int,\n"
+			"  \"workerlimit\" int,\n"
+			"  \"memorylimit\" int,\n"
+			"  \"language\" string,\n"
+			"  \"peer\" string,\n"
+			"  \"hostname\" string,\n"
+			"  \"application\" string,\n"
+			"  \"client\" string,\n"
+			"  \"clientpid\" bigint,\n"
+			"  \"remark\" string\n"
+			" )\n"
+			" external name sql.sessions;\n"
+			"create view sys.sessions as select * from sys.sessions();\n"
+			"create procedure sys.setclientinfo(property string, value string)\n"
+			" external name clients.setinfo;\n"
+			"grant execute on procedure sys.setclientinfo(string, string) to public;\n"
+			"create table sys.clientinfo_properties(prop string);\n"
+			"insert into sys.clientinfo_properties values\n"
+			" ('ClientHostname'),\n"
+			" ('ApplicationName'),\n"
+			" ('ClientLibrary'),\n"
+			" ('ClientRemark'),\n"
+			" ('ClientPid');\n"
+			"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
+			"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n";
+			;
+		sql_schema *sys = mvc_bind_schema(sql, "sys");
+		sql_table *t = mvc_bind_table(sql, sys, "sessions");
+		t->system = 0; /* make it non-system else the drop view will fail */
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
+	if (b)
+		BBPunfix(b->batCacheid);
+	res_table_destroy(output);
+
+end:
+	sa_destroy(sql->sa);
 	sql->sa = old_sa;
 
 	if (err)

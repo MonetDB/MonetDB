@@ -114,6 +114,7 @@ snapshot_database_stream(char *dbname, stream *s)
 		e = newErr("connection error: %s", mapi_error_str(conn));
 		goto bailout;
 	}
+	mapi_set_application_name("monetdbd");
 	mapi_reconnect(conn);
 	if (mapi_error(conn) != MOK) {
 		e = newErr("connection error: %s", mapi_error_str(conn));
