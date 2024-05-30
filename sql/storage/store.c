@@ -408,23 +408,30 @@ load_key(sql_trans *tr, sql_table *t, res_table *rt_keys, res_table *rt_keycols/
 	nk->columns = list_create((fdestroy) &kc_destroy);
 	nk->t = t;
 
-	if (ktype == ckey) {
+	switch (ktype) {
+	case ckey:
 		str ch = (char*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "check"));
 		if (!strNil(ch))
 			nk->check =_STRDUP(ch);
-	}
-	else if (ktype == ukey || ktype == pkey) {
+		break;
+	case ukey:
+	case unndkey:
+	case pkey: {
 		sql_ukey *uk = (sql_ukey *) nk;
 
 		if (ktype == pkey)
 			t->pkey = uk;
-	} else {
+		break;
+	}
+	case fkey: {
 		sql_fkey *fk = (sql_fkey *) nk;
 		int action = *(int*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "action"));
 		fk->on_delete = action & 255;
 		fk->on_update = (action>>8) & 255;
 
 		fk->rkey = *(sqlid*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "rkey"));
+		break;
+	}
 	}
 
 	for ( ; rt_keycols->cur_row < rt_keycols->nr_rows; rt_keycols->cur_row++) {

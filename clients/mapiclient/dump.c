@@ -1131,14 +1131,15 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "			/* 1 */
 				"k.name, "			/* 2 */
-				"kc.id "			/* 3 */
+				"kc.id, "			/* 3 */
+				"k.type "			/* 4 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k, "
 			      "sys.schemas s, "
 			      "sys._tables t "
 			 "WHERE kc.id = k.id "
 			   "AND k.table_id = t.id "
-			   "AND k.type = 1 "
+			   "AND k.type in (1, 3) "
 			   "AND t.schema_id = s.id "
 			   "AND s.name = '%s' "
 			   "AND t.name = '%s' "
@@ -1150,6 +1151,7 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		const char *c_column = mapi_fetch_field(hdl, 0);
 		const char *kc_nr = mapi_fetch_field(hdl, 1);
 		const char *k_name = mapi_fetch_field(hdl, 2);
+		const char *k_type = mapi_fetch_field(hdl, 4);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -1161,7 +1163,7 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				mnstr_printf(sqlf, "CONSTRAINT ");
 				dquoted_print(sqlf, k_name, " ");
 			}
-			mnstr_printf(sqlf, "UNIQUE (");
+			mnstr_printf(sqlf, "UNIQUE%s (", strcmp(k_type, "1") == 0 ? "" : " NULLS NOT DISTINCT");
 			cnt = 1;
 		} else
 			mnstr_printf(sqlf, ", ");
