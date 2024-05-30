@@ -7141,7 +7141,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			" ('ClientRemark'),\n"
 			" ('ClientPid');\n"
 			"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
-			"update sys._tables set system = true where schema_id = 2000 and name = 'clientinfo_properties';\n";
+			"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n";
 			;
 		sql_schema *sys = mvc_bind_schema(sql, "sys");
 		sql_table *t = mvc_bind_table(sql, sys, "sessions");
