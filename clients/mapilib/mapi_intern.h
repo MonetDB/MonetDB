@@ -310,8 +310,6 @@ MapiMsg mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue);
 
 extern const struct MapiStruct MapiStructDefaults;
 
-extern char mapi_application_name[];
-
 // 'settings' will be newly allocated if NULL
 Mapi mapi_new(msettings *settings);
 
