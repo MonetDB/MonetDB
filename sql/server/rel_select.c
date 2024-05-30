@@ -2349,10 +2349,10 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 			case 1: /* negating ANY/ALL */
 				cmp_n->next->next->next->data.i_val = 0;
 				break;
-			case 2: /* negating IS [NOY] DINSTINCT FROM */
+			case 2: /* negating IS [NOT] DINSTINCT FROM */
 				cmp_n->next->next->next->data.i_val = 3;
 				break;
-			case 3: /* negating IS [NOY] DINSTINCT FROM */
+			case 3: /* negating IS [NOT] DINSTINCT FROM */
 				cmp_n->next->next->next->data.i_val = 2;
 				break;
 			}
@@ -5147,6 +5147,9 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			assert(se->token == SQL_SELECT);
 			exp_kind nek = ek;
 			nek.aggr = is_sql_aggr(f);
+			if (is_sql_no_subquery(f))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery not allowed");
+
 			r = rel_subquery(query, se, nek);
 			if (r)
 				exps_label(sql, r->exps);

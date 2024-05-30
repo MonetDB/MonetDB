@@ -24,6 +24,7 @@
 #define CATALOG_JUL2021 52300	/* first in Jul2021 */
 #define CATALOG_JAN2022 52301	/* first in Jan2022 */
 #define CATALOG_SEP2022 52302	/* first in Sep2022 */
+#define CATALOG_FIRST_AFTER_DEC2023 52303	/* first after Dec2023 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -86,6 +87,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #ifdef CATALOG_SEP2022
 	if (oldversion == CATALOG_SEP2022) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_FIRST_AFTER_DEC2023
+	if (oldversion == CATALOG_FIRST_AFTER_DEC2023) {
 		/* upgrade to default releases */
 		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -893,6 +902,13 @@ const struct table {
 	},
 	{
 		.schema = "sys",
+		.table = "keys",
+		.column = "check",
+		.fullname = "sys_keys_check",
+		.newid = 2165,
+	},
+	{
+		.schema = "sys",
 		.table = "idxs",
 		.fullname = "D_sys_idxs",
 		.newid = 2094,
@@ -1228,6 +1244,13 @@ const struct table {
 		.column = "action",
 		.fullname = "tmp_keys_action",
 		.newid = 2141,
+	},
+	{
+		.schema = "tmp",
+		.table = "keys",
+		.column = "check",
+		.fullname = "tmp_keys_action",
+		.newid = 2166,
 	},
 	{
 		.schema = "tmp",
@@ -3236,6 +3259,66 @@ bl_postversion(void *Store, void *Lg)
 					0);
 		if (rc != GDK_SUCCEED)
 			return rc;
+	}
+#endif
+
+
+#ifdef CATALOG_FIRST_AFTER_DEC2023
+	if (store->catalog_version <= CATALOG_FIRST_AFTER_DEC2023) {
+			/* new STRING column sys.keys.check */
+			BAT *b = log_temp_descriptor(log_find_bat(lg, 2088)); /* sys.keys.id */
+			if (b == NULL)
+				return GDK_FAIL;
+			BAT *check = BATconstant(b->hseqbase, TYPE_str, ATOMnilptr(TYPE_str), BATcount(b), PERSISTENT);
+			bat_destroy(b);
+			if (check == NULL)
+				return GDK_FAIL;
+			if ((check = BATsetaccess(check, BAT_READ)) == NULL ||
+				/* 2165 is sys.keys.check */
+				BUNappend(lg->catalog_id, &(int) {2165}, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_bid, &check->batCacheid, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_cnt, &(lng){BATcount(check)}, false) != GDK_SUCCEED
+				) {
+				bat_destroy(check);
+				return GDK_FAIL;
+			}
+			BBPretain(check->batCacheid);
+			bat_destroy(check);
+
+			if (tabins(lg, old_lg, tabins_first, -1, 0,
+					   2076, &(msk) {false},	/* sys._columns */
+					   /* 2165 is sys.keys.check */
+					   2077, &(int) {2165},		/* sys._columns.id */
+					   2078, "check",			/* sys._columns.name */
+					   2079, "varchar",			/* sys._columns.type */
+					   2080, &(int) {2048},		/* sys._columns.type_digits */
+					   2081, &(int) {0},		/* sys._columns.type_scale */
+					   /* 2087 is sys.keys */
+					   2082, &(int) {2087},		/* sys._columns.table_id */
+					   2083, str_nil,			/* sys._columns.default */
+					   2084, &(bit) {TRUE},		/* sys._columns.null */
+					   2085, &(int) {6},		/* sys._columns.number */
+					   2086, str_nil,			/* sys._columns.storage */
+					   0) != GDK_SUCCEED)
+				return GDK_FAIL;
+			tabins_first = false;
+			if (tabins(lg, old_lg, tabins_first, -1, 0,
+					   2076, &(msk) {false},	/* sys._columns */
+					   /* 2165 is tmp.keys.check */
+					   2077, &(int) {2166},		/* sys._columns.id */
+					   2078, "check",			/* sys._columns.name */
+					   2079, "varchar",			/* sys._columns.type */
+					   2080, &(int) {2048},		/* sys._columns.type_digits */
+					   2081, &(int) {0},		/* sys._columns.type_scale */
+					   /* 2135 is tmp.keys */
+					   2082, &(int) {2135},		/* sys._columns.table_id */
+					   2083, str_nil,			/* sys._columns.default */
+					   2084, &(bit) {TRUE},		/* sys._columns.null */
+					   2085, &(int) {6},		/* sys._columns.number */
+					   2086, str_nil,			/* sys._columns.storage */
+					   0) != GDK_SUCCEED)
+				return GDK_FAIL;
 	}
 #endif
 
