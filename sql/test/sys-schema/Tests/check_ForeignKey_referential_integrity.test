@@ -282,7 +282,7 @@ query IITTTTTII rowsort
 SELECT * FROM sys.queue WHERE "username" NOT IN (SELECT name FROM sys.users)
 ----
 
-query ITTTTIIII rowsort
+query ITTTTIIIITTTTTIT rowsort
 SELECT * FROM sys.sessions WHERE "username" NOT IN (SELECT name FROM sys.users)
 ----
 

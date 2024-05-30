@@ -246,6 +246,7 @@ struct MapiStruct {
 	bool columnar_protocol;
 	bool sizeheader;
 	bool oobintr;
+	bool clientinfo_supported;
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 
@@ -308,6 +309,8 @@ MapiMsg mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue);
 
 
 extern const struct MapiStruct MapiStructDefaults;
+
+extern char mapi_application_name[];
 
 // 'settings' will be newly allocated if NULL
 Mapi mapi_new(msettings *settings);

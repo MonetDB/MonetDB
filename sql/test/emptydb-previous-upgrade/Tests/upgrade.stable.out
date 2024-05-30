@@ -997,3 +997,40 @@ returns table (value date)
 external name generator.series;
 update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;
 
+Running database upgrade commands:
+drop view sys.sessions;
+drop function sys.sessions();
+create function sys.sessions()
+ returns table(
+  "sessionid" int,
+  "username" string,
+  "login" timestamp,
+  "idle" timestamp,
+  "optimizer" string,
+  "sessiontimeout" int,
+  "querytimeout" int,
+  "workerlimit" int,
+  "memorylimit" int,
+  "language" string,
+  "peer" string,
+  "hostname" string,
+  "application" string,
+  "client" string,
+  "clientpid" bigint,
+  "remark" string
+ )
+ external name sql.sessions;
+create view sys.sessions as select * from sys.sessions();
+create procedure sys.setclientinfo(property string, value string)
+ external name clients.setinfo;
+grant execute on procedure sys.setclientinfo(string, string) to public;
+create table sys.clientinfo_properties(prop string);
+insert into sys.clientinfo_properties values
+ ('ClientHostname'),
+ ('ApplicationName'),
+ ('ClientLibrary'),
+ ('ClientRemark'),
+ ('ClientPid');
+update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');
+update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');
+
