@@ -1194,7 +1194,6 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 				assert(id);
 			}
 
-			//assert(rel->op != op_anti);
 			if (rel->op == op_semi)
 				rel->op = op_join;
 			if (rel->op == op_anti) {
@@ -1639,7 +1638,7 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 			if (need_distinct || need_distinct(s))
 				set_distinct(ns);
 
-			if (is_join(rel->op)) {
+			if (is_join(rel->op) && !is_semi(rel->op)) {
 				list *sexps = sa_list(sql->sa), *dexps = rel_projections(sql, d, NULL, 1, 1);
 				for (node *m = dexps->h; m; m = m->next) {
 					sql_exp *e = m->data;
@@ -1653,9 +1652,9 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 				sql_rel *sl = n->data;
 				n->data = rel_project(sql->sa, sl, rel_projections(sql, sl, NULL, 1, 1));
 			}
-			if (is_semi(rel->op)) {
-				assert(0);/* looks wrong */
-				ns->exps = rel_projections(sql, ns->r, NULL, 1, 1);
+			if (is_semi(rel->op)) { /* only project left of semi/anti join */
+				sql_rel *sf = rlist->h->data;
+				ns->exps = rel_projections(sql, sf, NULL, 1, 1);
 			}
 			if (rel->op == op_anti && s->op == op_munion) {
 				assert(0); /* needs to convert list in left/right again ! */
