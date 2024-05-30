@@ -1247,6 +1247,20 @@ int scanner_symbol(mvc * c, int cur)
 	case ';':
 		lc->started = 0;
 		return scanner_token(lc, SCOLON);
+	case '!':
+		lc->started = 1;
+		cur = scanner_getc(lc);
+		if (cur < 0)
+			return EOF;
+		else if (cur == '=') {
+			lc->rs->buf[lc->rs->pos + lc->yycur - 2] = '<';
+			lc->rs->buf[lc->rs->pos + lc->yycur - 1] = '>';
+			return scanner_token( lc, COMPARISON);
+		}
+		else
+			lc->yycur--;
+			cur = '!';
+		break;
 	case '<':
 		lc->started = 1;
 		cur = scanner_getc(lc);

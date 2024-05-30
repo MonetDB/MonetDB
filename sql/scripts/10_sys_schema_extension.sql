@@ -396,14 +396,16 @@ GRANT SELECT ON sys.function_languages TO PUBLIC;
 
 CREATE TABLE sys.key_types (
     key_type_id   SMALLINT NOT NULL PRIMARY KEY,
-    key_type_name VARCHAR(15) NOT NULL UNIQUE);
+    key_type_name VARCHAR(35) NOT NULL UNIQUE);
 
 -- Values taken from sql/include/sql_catalog.h see typedef enum
 -- key_type: pkey, ukey, fkey.
 INSERT INTO sys.key_types (key_type_id, key_type_name) VALUES
   (0, 'Primary Key'),
   (1, 'Unique Key'),
-  (2, 'Foreign Key');
+  (2, 'Foreign Key'),
+  (3, 'Unique Key With Nulls Not Distinct'),
+  (4, 'Check Constraint');
 
 ALTER TABLE sys.key_types SET READ ONLY;
 GRANT SELECT ON sys.key_types TO PUBLIC;

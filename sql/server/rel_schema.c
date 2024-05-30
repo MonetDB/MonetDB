@@ -20,7 +20,9 @@
 #include "rel_schema.h"
 #include "rel_remote.h"
 #include "rel_psm.h"
+#include "rel_dump.h"
 #include "rel_propagate.h"
+#include "rel_unnest.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
@@ -252,7 +254,7 @@ mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *t
 }
 
 static char *
-table_constraint_name(mvc *sql, symbol *s, sql_table *t)
+table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 {
 	/* create a descriptive name like table_col_pkey */
 	char *suffix;		/* stores the type of this constraint */
@@ -275,8 +277,17 @@ table_constraint_name(mvc *sql, symbol *s, sql_table *t)
 			break;
 		case SQL_CHECK:
 			suffix = "_check";
-			nms = s->data.lval->h;	/* list of check constraint conditions */
-			break;
+			char name[512], name2[512], *nme, *nme2;
+			bool found;
+			do {
+				nme = number2name(name, sizeof(name), ++sql->label);
+				buflen = snprintf(name2, sizeof(name2), "%s_%s%s", t->base.name, nme, suffix);
+				nme2 = name2;
+				found = ol_find_name(t->keys, nme2) || mvc_bind_key(sql, ss, nme2);
+			} while (found);
+			buf = SA_NEW_ARRAY(sql->ta, char, buflen);
+			strcpy(buf, nme2);
+			return buf;
 		default:
 			suffix = "_?";
 			nms = NULL;
@@ -360,9 +371,36 @@ foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
 	return lt->type->eclass == rt->type->eclass || (EC_VARCHAR(lt->type->eclass) && EC_VARCHAR(rt->type->eclass));
 }
 
+static
+key_type token2key_type(int token) {
+		switch (token) {
+		case SQL_UNIQUE: 					return ukey;
+		case SQL_UNIQUE_NULLS_NOT_DISTINCT:	return unndkey;
+		case SQL_PRIMARY_KEY:				return pkey;
+		case SQL_CHECK:						return ckey;
+		}
+		assert(0);
+		return -1;
+}
+
+static
+sql_rel* create_check_plan(sql_query *query, symbol *s, sql_table *t) {
+
+	mvc *sql = query->sql;
+	exp_kind ek = {type_value, card_value, FALSE};
+	sql_rel* rel = rel_basetable(sql, t, t->base.name);
+	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel | sql_no_subquery, ek);
+	rel->exps = rel_base_projection(sql, rel, 0);	
+	list *pexps = sa_list(sql->sa);
+	pexps = append(pexps, e);
+	rel = rel_project(sql->sa, rel, pexps);
+	return rel;
+}
+
 static int
-column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
+column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
 {
+	mvc *sql = query->sql;
 	int res = SQL_ERR;
 
 	if (isDeclared && (s->token != SQL_NULL && s->token != SQL_NOT_NULL)) {
@@ -372,8 +410,9 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 	switch (s->token) {
 	case SQL_UNIQUE:
 	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
-	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_UNIQUE) ? ukey : (s->token == SQL_UNIQUE_NULLS_NOT_DISTINCT) ? unndkey : pkey;
+	case SQL_PRIMARY_KEY:
+	case SQL_CHECK: {
+		key_type kt = token2key_type(s->token);
 		sql_key *k;
 		const char *ns = name;
 
@@ -399,7 +438,16 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: an index named '%s' already exists, and it would conflict with the key", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
-		switch (mvc_create_ukey(&k, sql, t, name, kt)) {
+		char* check = NULL;
+		if (kt == ckey) {
+			sql_rel* check_rel = NULL;
+			if ((check_rel = create_check_plan(query, s, t)) == NULL) {
+				/*TODO error*/
+			}
+
+			check = rel2str(sql, check_rel);
+		}
+		switch (mvc_create_ukey(&k, sql, t, name, kt, check)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return res;
@@ -570,10 +618,6 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		res = SQL_OK;
 	} 	break;
-	case SQL_CHECK: {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported");
-		return SQL_ERR;
-	} 	break;
 	default:{
 		res = SQL_ERR;
 	}
@@ -604,7 +648,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					if (!opt_name && !(default_name = column_constraint_name(sql, sym, cs, t)))
 						return SQL_ERR;
 
-					res = column_constraint_type(sql, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
+					res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
 				} 	break;
 				case SQL_DEFAULT: {
 					symbol *sym = s->data.sym;
@@ -830,15 +874,17 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 }
 
 static int
-table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t)
+table_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
+	mvc *sql = query->sql;
 	int res = SQL_OK;
 
 	switch (s->token) {
 	case SQL_UNIQUE:
 	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
-	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : s->token == SQL_UNIQUE ? ukey : unndkey);
+	case SQL_PRIMARY_KEY:
+	case SQL_CHECK: {
+		key_type kt = token2key_type(s->token);
 		dnode *nms = s->data.lval->h;
 		sql_key *k;
 		const char *ns = name;
@@ -865,8 +911,17 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: an index named '%s' already exists, and it would conflict with the key", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
+		char* check = NULL;
+		sql_rel* check_rel = NULL;
+		if (kt == ckey) {
+			if ((check_rel = create_check_plan(query, s, t)) == NULL) {
+				/*TODO error*/
+			}
 
-		switch (mvc_create_ukey(&k, sql, t, name, kt)) {
+			check = rel2str(sql, check_rel);
+		}
+
+		switch (mvc_create_ukey(&k, sql, t, name, kt, check)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return SQL_ERR;
@@ -877,8 +932,26 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 			default:
 				break;
 		}
-		for (; nms; nms = nms->next) {
-			char *nm = nms->data.sval;
+		node* n = NULL;
+		if (check) {
+			sql_rel* btrel = check_rel->l;
+			n = btrel->exps->h;
+		}
+		while (true) {
+			const char *nm;
+			if (check) {
+				if (!n)
+					break;
+				sql_exp* e = n->data;
+				nm = e->alias.name;
+				n = n->next;
+			}
+			else {
+				if (!nms)
+					break;
+				nm = nms->data.sval;
+				nms = nms->next;
+			}
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
@@ -914,10 +987,6 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 	case SQL_FOREIGN_KEY:
 		res = table_foreign_key(sql, name, s, ss, t);
 		break;
-	case SQL_CHECK: {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported");
-		return SQL_ERR;
-	} 	break;
 	default:
 		res = SQL_ERR;
 	}
@@ -929,8 +998,9 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 }
 
 static int
-table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
+table_constraint(sql_query *query, symbol *s, sql_schema *ss, sql_table *t)
 {
+	mvc *sql = query->sql;
 	int res = SQL_OK;
 
 	if (s->token == SQL_CONSTRAINT) {
@@ -939,10 +1009,11 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 		symbol *sym = l->h->next->data.sym;
 
 		if (!opt_name)
-			opt_name = table_constraint_name(sql, sym, t);
+			opt_name = table_constraint_name(sql, sym, ss, t);
+		else if (s->token)
 		if (opt_name == NULL)
 			return SQL_ERR;
-		res = table_constraint_type(sql, opt_name, sym, ss, t);
+		res = table_constraint_type(query, opt_name, sym, ss, t);
 	}
 
 	if (res != SQL_OK) {
@@ -1066,7 +1137,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		res = create_column(query, s, ss, t, alter, isDeclared);
 		break;
 	case SQL_CONSTRAINT:
-		res = table_constraint(sql, s, ss, t);
+		res = table_constraint(query, s, ss, t);
 		break;
 	case SQL_COLUMN_OPTIONS:
 	{

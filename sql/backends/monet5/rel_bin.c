@@ -16,6 +16,7 @@
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
+#include "rel_dump.h"
 #include "rel_psm.h"
 #include "rel_prop.h"
 #include "rel_select.h"
@@ -4988,6 +4989,35 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	return res;
 }
 
+static void
+sql_insert_check(backend *be, sql_key *key, sql_rel *inserts, list *refs)
+{
+	mvc *sql = be->mvc;
+	node *m, *n;
+
+	inserts = rel_copy(sql, inserts, 1);
+	list* exps = inserts->exps;
+
+	for (n = ol_first_node(key->t->columns), m = exps->h; n && m;
+		n = n->next, m = m->next) {
+		sql_exp *i = m->data;
+		sql_column *c = n->data;
+		i->alias.rname= sa_strdup(sql->sa, c->t->base.name);
+		i->alias.name= sa_strdup(sql->sa, c->base.name);
+	}
+
+	int pos = 0;
+	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
+	rel->l = inserts;
+	stmt* s = subrel_bin(be, rel, refs);
+	sql_subtype *bt = sql_bind_localtype("bit");
+	s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+	char *msg = sa_message(sql->sa, SQLSTATE(40002) "INSERT INTO: CHECK constraint violated: %s", key->base.name);
+	(void)stmt_exception(be, s, msg, 00001);
+}
+
 static sql_table *
 sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 {
@@ -5065,6 +5095,12 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
+
+	for (n = ol_first_node(t->keys); n; n = n->next) {
+		sql_key * key = n->data;
+		if (key->type == ckey)
+			sql_insert_check(be, key, rel->r, refs);
+	}
 
 	if (!sql_insert_check_null(be, t, inserts->op4.lval))
 		return NULL;
@@ -5948,6 +5984,61 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 }
 
 static void
+sql_update_check(backend *be, sql_key * key, sql_rel *updates, list *refs)
+{
+	mvc *sql = be->mvc;
+	int pos = 0;
+
+
+	stack_push_frame(be->mvc, "ALTER TABLE ADD CONSTRAINT CHECK");
+	sql_schema* ss = key->t->s;
+	frame_push_table(sql, key->t);
+	key->t->s = ss; // recover the schema because frame_push_table removes it
+
+	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
+	stack_pop_frame(sql);
+
+	if (!key->base.new) {
+		sql_rel* base = rel->l;
+		assert(strcmp(((sql_exp*) updates->exps->h->data)->alias.name, TID) == 0);
+		list_append(base->exps, exp_copy(sql, updates->exps->h->data));
+
+		bool need_join = 0;
+		list* pexps = sa_list(sql->sa);
+		sql_exp* tid_exp = exp_copy(sql, updates->exps->h->data);
+		unsigned label = ++sql->label;
+		exp_setrelname(sql->sa, tid_exp, label);
+		list_append(pexps, tid_exp);
+		for (node* m = base->exps->h; m; m = m->next) {
+			if (exps_find_exp( updates->exps, m->data) == NULL) {
+				pexps = list_append(pexps, exp_copy(sql, m->data));
+				need_join = 1;
+			}
+		}
+
+		if (need_join) {
+			base = rel_project(sql->sa, base, pexps);
+			sql_rel* join = rel_crossproduct(sql->sa, base, updates, op_join);
+			sql_exp* join_cond = exp_compare(sql->sa, exp_ref(sql, base->exps->h->data), exp_ref(sql, updates->exps->h->data), cmp_equal);
+			join->exps = sa_list(sql->sa);
+			join->exps = list_append(join->exps, join_cond);
+			rel->l = join;
+		}
+		else {
+			rel->l = updates;
+		}
+	}
+
+	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subtype *bt = sql_bind_localtype("bit");
+	stmt* s = subrel_bin(be, rel, refs);
+	s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
+	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+	char *msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: CHECK constraint violated: %s", key->base.name);
+	(void)stmt_exception(be, s, msg, 00001);
+}
+
+static void
 sql_update_check_null(backend *be, sql_table *t, stmt **updates)
 {
 	mvc *sql = be->mvc;
@@ -6050,9 +6141,15 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		t = rel_ddl_table_get(tr);
 
-		/* no columns to update (probably an new pkey!) */
-		if (!rel->exps)
+		/* no columns to update (probably an new pkey or ckey!) */
+		if (!rel->exps) {
+			for (m = ol_first_node(t->keys); m; m = m->next) {
+				sql_key * key = m->data;
+				if (key->type == ckey && key->base.new)
+					sql_update_check(be, key, rel->r, refs);
+			}
 			return ddl;
+		}
 	}
 
 	if (rel->r) /* first construct the update relation */
@@ -6075,6 +6172,12 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 		if (c)
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
+	}
+
+	for (m = ol_first_node(t->keys); m; m = m->next) {
+		sql_key * key = m->data;
+		if (key->type == ckey)
+			sql_update_check(be, key, rel->r, refs);
 	}
 	sql_update_check_null(be, t, updates);
 
