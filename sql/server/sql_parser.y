@@ -2153,8 +2153,7 @@ column_constraint_type:
 			  append_int(l, $4 );
 			  append_int(l, $5 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- /*TODO: Implement domain_constraint_type*/
- |	CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
+ |  CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 table_constraint_type:
@@ -2175,11 +2174,8 @@ table_constraint_type:
 			  append_int(l, $7 );
 			  append_int(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- /*TODO: Implement domain_constraint_type*/
- |	CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
- ;
-
-domain_constraint_type:
+ |  CHECK '(' search_condition ')' 
+			{ $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 ident_commalist:
