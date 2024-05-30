@@ -5597,7 +5597,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % .%1,	.key_types # table_name
 % %1,	key_type_name # name
 % varchar,	varchar # type
-% 13,	11 # length
+% 13,	34 # length
 [ "sys.key_types",	"Check Constraint"	]
 [ "sys.key_types",	"Foreign Key"	]
 [ "sys.key_types",	"Primary Key"	]
@@ -6057,26 +6057,26 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %237,	id,	id,	name,	schema_id,	table_id,	table_name,	obj_type,	sys_table,	system # name
 % varchar,	int,	int,	varchar,	int,	int,	varchar,	varchar,	varchar,	boolean # type
 % 0,	1,	1,	0,	1,	1,	0,	0,	0,	5 # length
-% .%5,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %5,	id,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	int,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
-% .%5,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %5,	table_id,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	int,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
-% .%13,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %13,	table_id,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	int,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
-% .%5,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %5,	type,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	int,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
-% .%5,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %5,	rkey,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	int,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
+% .%5,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %5,	id,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
+% .%5,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %5,	table_id,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
+% .%13,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %13,	table_id,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
+% .%5,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %5,	type,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
+% .%5,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %5,	rkey,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
 % .%5,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % %5,	id,	id,	table_id,	type,	name # name
 % varchar,	int,	int,	int,	int,	varchar # type
@@ -6353,14 +6353,14 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %5,	partition_id,	table_id,	partition_id,	value # name
 % varchar,	int,	int,	int,	varchar # type
 % 0,	1,	1,	1,	0 # length
-% .%10,	.%4,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
-% %10,	%4,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	smallint,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
-% .%10,	.%4,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
-% %10,	%4,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	smallint,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
+% .%10,	.%4,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
+% %10,	%4,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	smallint,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
+% .%10,	.%4,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
+% %10,	%4,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	smallint,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
 % .%30,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
 % %30,	id,	table_id,	type,	name,	rkey,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
 % varchar,	int,	int,	int,	varchar,	int,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
@@ -6597,30 +6597,30 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %1,	key_type_name,	key_type_id,	key_type_name # name
 % varchar,	varchar,	smallint,	varchar # type
 % 0,	0,	1,	0 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %1,	id,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	int,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %1,	table_id,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	int,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %1,	type,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	int,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %1,	name,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	varchar,	int,	int,	int,	varchar,	int,	int # type
-% 0,	0,	1,	1,	1,	0,	1,	1 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %1,	rkey,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	int,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
-% %1,	action,	id,	table_id,	type,	name,	rkey,	action # name
-% varchar,	int,	int,	int,	int,	varchar,	int,	int # type
-% 0,	1,	1,	1,	1,	0,	1,	1 # length
+% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %1,	id,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
+% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %1,	table_id,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
+% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %1,	type,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
+% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %1,	name,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	0,	1,	1,	1,	0,	1,	1,	0 # length
+% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %1,	rkey,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
+% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% %1,	action,	id,	table_id,	type,	name,	rkey,	action,	check # name
+% varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
+% 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
 % .%1,	.keywords,	.keywords # table_name
 % %1,	keyword,	keyword # name
 % varchar,	varchar,	varchar # type

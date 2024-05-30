@@ -188,6 +188,18 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					free(datap->dsn);
 				datap->dsn = strdup(buf);
 			}
+			/* validate entered string values */
+			GetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, buf, sizeof(buf));
+			if (strcmp("on", buf) != 0 && strcmp("off", buf) != 0) {
+				MessageBox(hwndDlg, "Autocommit must be set to on or off. Default is on.", NULL, MB_ICONERROR);
+				return TRUE;
+			}
+			GetDlgItemText(hwndDlg, IDC_EDIT_USETLS, buf, sizeof(buf));
+			if (strcmp("on", buf) != 0 && strcmp("off", buf) != 0) {
+				MessageBox(hwndDlg, "TLS Encrypt must be set to on or off. Default is off.", NULL, MB_ICONERROR);
+				return TRUE;
+			}
+
 			GetDlgItemText(hwndDlg, IDC_EDIT_DESC, buf, sizeof(buf));
 			if (datap->desc)
 				free(datap->desc);
@@ -265,9 +277,11 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EndDialog(hwndDlg, LOWORD(wParam));
 			return TRUE;
 		case IDC_BUTTON_TEST:
+			// TODO call SQLDriverConnect()
 			MessageBox(hwndDlg, "Test Connection not yet implemented", NULL, MB_ICONERROR);
 			return TRUE;
 		case IDC_BUTTON_HELP:
+			// TODO invoke webbrowser with url to webpage decribing this dialog.
 			MessageBox(hwndDlg, "Help not yet implemented", NULL, MB_ICONERROR);
 			return TRUE;
 		}
@@ -483,25 +497,6 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			if (parent)
 				MessageBox(parent, "Failed to add new Data Source Name", NULL, MB_ICONERROR);
 			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED, "Failed to add new Data Source Name");
-			goto finish;
-		}
-	}
-	/* some data validation on entered strings */
-	if (data.autocommit) {
-		if (strcmp("on", data.autocommit) != 0
-		 && strcmp("off", data.autocommit) != 0) {
-			rc = FALSE;
-			if (parent)
-				MessageBox(parent, "Autocommit may only be set to on or off.", NULL, MB_ICONERROR);
-			goto finish;
-		}
-	}
-	if (data.use_tls) {
-		if (strcmp("on", data.use_tls) != 0
-		 && strcmp("off", data.use_tls) != 0) {
-			rc = FALSE;
-			if (parent)
-				MessageBox(parent, "TLS Encrypt may only be set to on or off.", NULL, MB_ICONERROR);
 			goto finish;
 		}
 	}

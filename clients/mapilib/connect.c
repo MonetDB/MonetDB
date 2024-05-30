@@ -381,10 +381,27 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 	return s;
 }
 
+static const char *
+base_name(const char *file)
+{
+	char *p = strrchr(file, '/');
+#ifdef _MSC_VER
+	char *q = strrchr(file, '\\');
+	if (q != NULL) {
+		if (p == NULL || p < q)
+			p = q;
+	}
+#endif
+	if (p)
+		return p + 1;
+	return file;
+}
+
 static void
 send_all_clientinfo(Mapi mid)
 {
 	msettings *mp = mid->settings;
+	void *free_this = NULL;
 	if (!mid->clientinfo_supported)
 		return;
 	if (!msetting_bool(mp, MP_CLIENT_INFO))
@@ -398,9 +415,13 @@ send_all_clientinfo(Mapi mid)
 		hostname[sizeof(hostname) - 1] = '\0';
 	}
 	const char *application_name = msetting_string(mp, MP_CLIENT_APPLICATION);
-	if (!application_name[0])
-		application_name = mapi_application_name;
-	const char *client_library = "libmapi " MONETDB_VERSION;
+	if (!application_name[0]) {
+		application_name = get_bin_path();
+		if (application_name) {
+			free_this = strdup(application_name);
+			application_name = base_name(application_name);
+		}
+	}
 	const char *client_remark = msetting_string(mp, MP_CLIENT_REMARK);
 	long pid = getpid();
 
@@ -411,7 +432,10 @@ send_all_clientinfo(Mapi mid)
 		reallocprintf(&buf, &pos, &cap, "ClientHostName=%s\n", hostname);
 	if (application_name[0])
 		reallocprintf(&buf, &pos, &cap, "ApplicationName=%s\n", application_name);
-	reallocprintf(&buf, &pos, &cap, "ClientLibrary=%s\n", client_library);
+	reallocprintf(&buf, &pos, &cap, "ClientLibrary=");
+	if (mid->clientprefix)
+		reallocprintf(&buf, &pos, &cap, "%s / ", mid->clientprefix);
+	reallocprintf(&buf, &pos, &cap, "libmapi %s\n", MONETDB_VERSION);
 	if (client_remark[0])
 		reallocprintf(&buf, &pos, &cap, "ClientRemark=%s\n", client_remark);
 	if (pid > 0)
@@ -425,7 +449,9 @@ send_all_clientinfo(Mapi mid)
 
 	if (pos <= cap)
 		mapi_Xcommand(mid, "clientinfo", buf);
+
 	free(buf);
+	free(free_this);
 }
 
 static MapiMsg

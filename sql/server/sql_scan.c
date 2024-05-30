@@ -1256,11 +1256,10 @@ int scanner_symbol(mvc * c, int cur)
 			lc->rs->buf[lc->rs->pos + lc->yycur - 2] = '<';
 			lc->rs->buf[lc->rs->pos + lc->yycur - 1] = '>';
 			return scanner_token( lc, COMPARISON);
+		} else {
+			utf8_putchar(lc, cur); //put the char back
 		}
-		else
-			lc->yycur--;
-			cur = '!';
-		break;
+		return scanner_token(lc, '!');
 	case '<':
 		lc->started = 1;
 		cur = scanner_getc(lc);
