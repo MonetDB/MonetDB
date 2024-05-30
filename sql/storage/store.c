@@ -22,8 +22,8 @@
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
 
-/* version 05.23.02 of catalog */
-#define CATALOG_VERSION 52303	/* first after Dec2023 */
+/* version 05.23.03 of catalog */
+#define CATALOG_VERSION 52304	/* second after Dec2023 */
 
 ulng
 store_function_counter(sqlstore *store)
@@ -160,6 +160,7 @@ key_destroy(sqlstore *store, sql_key *k)
 	if (ATOMIC_DEC(&k->base.refcnt) > 0)
 		return;
 	list_destroy2(k->columns, store);
+	_DELETE(k->check);
 	k->columns = NULL;
 	_DELETE(k->base.name);
 	_DELETE(k);
@@ -407,7 +408,12 @@ load_key(sql_trans *tr, sql_table *t, res_table *rt_keys, res_table *rt_keycols/
 	nk->columns = list_create((fdestroy) &kc_destroy);
 	nk->t = t;
 
-	if (ktype == ukey || ktype == pkey) {
+	if (ktype == ckey) {
+		str ch = (char*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "check"));
+		if (!strNil(ch))
+			nk->check =_STRDUP(ch);
+	}
+	else if (ktype == ukey || ktype == pkey) {
 		sql_ukey *uk = (sql_ukey *) nk;
 
 		if (ktype == pkey)
@@ -2027,6 +2033,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "name", 2091, "varchar", 1024) == NULL ||
 		bootstrap_create_column(tr, t, "rkey", 2092, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "action", 2093, "int", 31) == NULL ||
+		bootstrap_create_column(tr, t, "check", 2165, "varchar", 2048) == NULL ||
 
 		(t = bootstrap_create_table(tr, s, "idxs", 2094)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2095, "int", 31) == NULL ||
@@ -2088,6 +2095,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "name", 2139, "varchar", 1024) == NULL ||
 		bootstrap_create_column(tr, t, "rkey", 2140, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "action", 2141, "int", 31) == NULL ||
+		bootstrap_create_column(tr, t, "check", 2166, "varchar", 2048) == NULL ||
 
 		(t = bootstrap_create_table(tr, s, "idxs", 2142)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2143, "int", 31) == NULL ||
@@ -3029,6 +3037,9 @@ key_dup(sql_trans *tr, sql_key *k, sql_table *t, sql_key **kres)
 
 		if (nk->type == pkey)
 			t->pkey = tk;
+
+		if (nk->type == ckey)
+			nk->check = _STRDUP(k->check);
 	} else {
 		sql_fkey *fk = (sql_fkey *) nk;
 		sql_fkey *ok = (sql_fkey *) k;
@@ -3409,7 +3420,9 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 	if (nk->type == fkey)
 		action = (fk->on_update<<8) + fk->on_delete;
 
-	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action)))
+	char *strnil = (char*)ATOMnilptr(TYPE_str);
+	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action
+	, (nk->type == ckey)? &nk->check : &strnil )))
 		return res;
 
 	if (nk->type == fkey) {
@@ -3439,7 +3452,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 		if (nk->type == fkey) {
 			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, FKEY_DEPENDENCY)))
 				return res;
-		} else if (nk->type == ukey) {
+		} else if (nk->type == ukey || nk->type == ckey) {
 			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY)))
 				return res;
 		} else if (nk->type == pkey) {
@@ -5891,7 +5904,7 @@ create_sql_kc(sqlstore *store, allocator *sa, sql_key *k, sql_column *c)
 }
 
 sql_key *
-create_sql_ukey(sqlstore *store, allocator *sa, sql_table *t, const char *name, key_type kt)
+create_sql_ukey(sqlstore *store, allocator *sa, sql_table *t, const char *name, key_type kt, const char* check)
 {
 	sql_key *nk = NULL;
 	sql_ukey *tk;
@@ -5905,6 +5918,7 @@ create_sql_ukey(sqlstore *store, allocator *sa, sql_table *t, const char *name, 
 	nk->columns = SA_LIST(sa, (fdestroy) NULL);
 	nk->idx = NULL;
 	nk->t = t;
+	nk->check = check ? SA_STRDUP(sa, check) : NULL;
 
 	if (nk->type == pkey)
 		t->pkey = tk;
@@ -6482,7 +6496,7 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 }
 
 int
-sql_trans_create_ukey(sql_key **kres, sql_trans *tr, sql_table *t, const char *name, key_type kt)
+sql_trans_create_ukey(sql_key **kres, sql_trans *tr, sql_table *t, const char *name, key_type kt, const char* check)
 {
 /* can only have keys between persistent tables */
 	sqlstore *store = tr->store;
@@ -6520,7 +6534,8 @@ sql_trans_create_ukey(sql_key **kres, sql_trans *tr, sql_table *t, const char *n
 		(isGlobal(t) && (res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base)))))
 		return res;
 
-	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action)))
+	const char *strnil = (const char*)ATOMnilptr(TYPE_str);
+	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action, (check) ? &check : &strnil)))
 		return res;
 	*kres = nk;
 	return res;
@@ -6676,7 +6691,7 @@ key_create_done(sql_trans *tr, allocator *sa, sql_key *k)
 	sql_idx *i;
 	sqlstore *store = tr->store;
 
-	if (k->type != fkey) {
+	if (k->type != fkey && k->type != ckey) {
 		if ((i = table_has_idx(k->t, k->columns)) != NULL) {
 			/* use available hash, or use the order */
 			if (hash_index(i->type)) {

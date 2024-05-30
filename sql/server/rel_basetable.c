@@ -567,9 +567,9 @@ rel_base_dump_exps( stream *fout, sql_rel *rel)
 		}
 	}
 	if (rel_base_is_used(ba, i)) {
-		mnstr_printf(fout, "%s\"%s\".\"%%TID\"", comma?", ":"", t->base.name);
+		mnstr_printf(fout, "%s\"%s\".\"%%TID%%\"", comma?", ":"", t->base.name);
 		if (ba->name)
-			mnstr_printf(fout, " as \"%s\".\"%%TID\"", ba->name);
+			mnstr_printf(fout, " as \"%s\".\"%%TID%%\"", ba->name);
 		comma = 1;
 	}
 	i++;

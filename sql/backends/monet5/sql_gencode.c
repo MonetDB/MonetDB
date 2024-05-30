@@ -316,36 +316,6 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	return -1;
 }
 
-static str
-rel2str( mvc *sql, sql_rel *rel)
-{
-	buffer *b = NULL;
-	stream *s = NULL;
-	list *refs = NULL;
-	char *res = NULL;
-
-	b = buffer_create(1024);
-	if(b == NULL)
-		goto cleanup;
-	s = buffer_wastream(b, "rel_dump");
-	if(s == NULL)
-		goto cleanup;
-	refs = sa_list(sql->sa);
-	if (!refs)
-		goto cleanup;
-
-	rel_print_refs(sql, s, rel, 0, refs, 0);
-	rel_print_(sql, s, rel, 0, refs, 0);
-	mnstr_printf(s, "\n");
-	res = buffer_get_buf(b);
-
-cleanup:
-	if(b)
-		buffer_destroy(b);
-	if(s)
-		close_stream(s);
-	return res;
-}
 
 /* stub and remote function */
 static int
@@ -360,7 +330,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	node *n;
 	int i, q, v, res = -1, added_to_cache = 0, *lret, *rret;
 	size_t len = 1024, nr, pwlen = 0;
-	char *lname = NULL, *buf = NULL, *mal_session_uuid, *err = NULL, *pwhash = NULL;
+	char *lname = NULL, *rel_str, *buf = NULL, *mal_session_uuid, *err = NULL, *pwhash = NULL;
 	str username = NULL, password = NULL, msg = NULL;
 	sql_rel *r = rel;
 
@@ -517,23 +487,21 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	pushInstruction(curBlk, o);
 	p = pushArgument(curBlk, p, getArg(o,0));
 
-	if (!(buf = rel2str(m, rel))) {
+	if (!(rel_str = rel2str(m, rel))) {
 		freeInstruction(p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	if (o == NULL) {
-		free(buf);
 		freeInstruction(p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	o = pushArgument(curBlk, o, q);
-	o = pushStr(curBlk, o, buf);	/* relational plan */
+	o = pushStr(curBlk, o, rel_str);	/* relational plan */
 	pushInstruction(curBlk, o);
 	p = pushArgument(curBlk, p, getArg(o,0));
-	free(buf);
 
 	if (!(buf = sa_alloc(m->ta, len))) {
 		freeInstruction(p);
