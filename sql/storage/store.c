@@ -409,11 +409,11 @@ load_key(sql_trans *tr, sql_table *t, res_table *rt_keys, res_table *rt_keycols/
 	nk->t = t;
 
 	switch (ktype) {
-	case ckey:
+	case ckey: {
 		str ch = (char*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "check"));
 		if (!strNil(ch))
 			nk->check =_STRDUP(ch);
-		break;
+	}	break;
 	case ukey:
 	case unndkey:
 	case pkey: {
