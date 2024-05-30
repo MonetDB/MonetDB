@@ -2020,8 +2020,8 @@ rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 
 	list *nl = sa_list(v->sql->sa);
 	for (node *n = ((list*)u->l)->h; n; n = n->next) {
-		r = n->data;
-		n->data = NULL; /* clean list as we steal the relation r, stealing is needed else (with multiple references) double project cleanup fails */
+		r = rel_dup(n->data);
+		//n->data = NULL; /* clean list as we steal the relation r, stealing is needed else (with multiple references) double project cleanup fails */
 		if (!is_project(r->op))
 			r = rel_project(v->sql->sa, r,
 				            rel_projections(v->sql, r, NULL, 1, 1));
@@ -2047,6 +2047,7 @@ rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 		r->nrcols = list_length(r->exps);
 		set_processed(r);
 
+		assert(r);
 		append(nl, r);
 	}
 
