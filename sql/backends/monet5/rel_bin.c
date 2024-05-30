@@ -3877,7 +3877,7 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 	list *l, *rstmts;
 	node *n, *m;
 	stmt *rel_stmt = NULL, *sub;
-	int i, len = 0;
+	int i, len = 0, nr_unions = list_length((list*)rel->l);
 
 	/* convert to stmt and store the munion operands in rstmts list */
 	rstmts = sa_list(sql->sa);
@@ -3904,13 +3904,13 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 		const char *rnme = table_name(sql->sa, s);
 		const char *nme = column_name(sql->sa, s);
 		/* create a const column also from the first stmt */
-		s = create_const_column(be, s);
+		s = stmt_pack(be, column(be, s), nr_unions);
 		/* for every other rstmt */
 		for (m = rstmts->h->next; m; m = m->next) {
 			stmt *t = list_fetch(((stmt*)m->data)->op4.lval, i);
-			if ( t == NULL)
+			if (t == NULL)
 				return NULL;
-			s = stmt_append(be, s, t);
+			s = stmt_pack_add(be, s, column(be, t));
 			if (s == NULL)
 				return NULL;
 		}
