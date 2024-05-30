@@ -381,6 +381,22 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 	return s;
 }
 
+static const char *
+base_name(const char *file)
+{
+	char *p = strrchr(file, '/');
+#ifdef _MSC_VER
+	char *q = strrchr(file, '\\');
+	if (q != NULL) {
+		if (p == NULL || p < q)
+			p = q;
+	}
+#endif
+	if (p)
+		return p + 1;
+	return file;
+}
+
 static void
 send_all_clientinfo(Mapi mid)
 {
@@ -403,7 +419,7 @@ send_all_clientinfo(Mapi mid)
 		application_name = get_bin_path();
 		if (application_name) {
 			free_this = strdup(application_name);
-			application_name = (const char*) basename((char*)application_name);
+			application_name = base_name(application_name);
 		}
 	}
 	const char *client_remark = msetting_string(mp, MP_CLIENT_REMARK);
