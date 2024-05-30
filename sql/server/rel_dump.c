@@ -348,6 +348,41 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, ", ");
 }
 
+
+str
+rel2str( mvc *sql, sql_rel *rel)
+{
+	buffer *b = NULL;
+	stream *s = NULL;
+	list *refs = NULL;
+	char *res = NULL;
+
+	b = buffer_create(1024);
+	if(b == NULL)
+		goto cleanup;
+	s = buffer_wastream(b, "rel_dump");
+	if(s == NULL)
+		goto cleanup;
+	refs = sa_list(sql->sa);
+	if (!refs)
+		goto cleanup;
+
+	rel_print_refs(sql, s, rel, 0, refs, 0);
+	rel_print_(sql, s, rel, 0, refs, 0);
+	mnstr_printf(s, "\n");
+	res = buffer_get_buf(b);
+
+cleanup:
+	if(b)
+		buffer_destroy(b);
+	if(s)
+		close_stream(s);
+
+	char* fres = SA_STRDUP(sql->sa, res);
+	free (res);
+	return fres;
+}
+
 static void
 exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate)
 {
@@ -2030,7 +2065,9 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				skipWS(r, pos);
 				if (!(s = mvc_bind_schema(sql, sname)))
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", sname);
-				if (!(t = mvc_bind_table(sql, s, tname)))
+				if (stack_has_frame(sql, "ALTER TABLE ADD CONSTRAINT CHECK") && !(t = frame_find_table(sql, tname)))
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
+				if (!t && !(t = mvc_bind_table(sql, s, tname)))
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
 				if (isMergeTable(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");

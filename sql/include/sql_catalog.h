@@ -535,7 +535,8 @@ typedef enum key_type {
 	pkey,
 	ukey, /* default behavior is that NULLS are distinct, e.g. there can be multiple null values in a column with regular UNIQUE constraint */
 	fkey,
-	unndkey /* NULLS are not distinct, i.e. NULLS act as regular values for uniqueness checks */
+	unndkey, /* NULLS are not distinct, i.e. NULLS act as regular values for uniqueness checks */
+	ckey     /* CHECK constraint behaves as a key type*/
 } key_type;
 
 typedef struct sql_kc {
@@ -572,6 +573,7 @@ typedef struct sql_key {	/* pkey, ukey, fkey */
 	sql_base base;
 	key_type type;		/* pkey, ukey, fkey */
 	sql_idx *idx;		/* idx to accelerate key check */
+	char *check; /* check condition*/
 
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;

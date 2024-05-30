@@ -19,6 +19,7 @@
 extern void rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate);
 extern void rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int decorate);
 
+extern str rel2str( mvc *sql, sql_rel *rel);
 extern sql_rel *rel_read(mvc *sql, char *ra, int *pos, list *refs);
 extern void exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias, int decorate);
 

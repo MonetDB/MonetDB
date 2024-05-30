@@ -234,7 +234,6 @@ int yydebug=1;
 	default
 	default_value
 	delete_stmt
-	domain_constraint_type
 	drop_statement
 	drop_table_element
 	exec
@@ -2154,8 +2153,7 @@ column_constraint_type:
 			  append_int(l, $4 );
 			  append_int(l, $5 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- /*TODO: Implement domain_constraint_type*/
- |  domain_constraint_type
+ |  CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 table_constraint_type:
@@ -2169,7 +2167,6 @@ table_constraint_type:
 			{ $$ = _symbol_create_list( SQL_PRIMARY_KEY, $3); }
  |  FOREIGN KEY column_commalist_parens
     REFERENCES qname opt_column_list opt_match opt_ref_action
-
 			{ dlist *l = L();
 			  append_list(l, $5 );
 			  append_list(l, $3 );
@@ -2177,11 +2174,8 @@ table_constraint_type:
 			  append_int(l, $7 );
 			  append_int(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- /*TODO: Implement domain_constraint_type*/
- ;
-
-domain_constraint_type:
-    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
+ |  CHECK '(' search_condition ')' 
+			{ $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 ident_commalist:
