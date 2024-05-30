@@ -1,10 +1,20 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Mon May 13 2024 Niels Nes <niels.nes@monetdbsolutions.com>
+* Mon May 13 2024 Niels Nes <niels@cwi.nl>
 - Extended sys.generate_series() to generate dates. Added 2 new functions:
-  sys.generate_series(first date, "limit" date, stepsize interval month)
-  sys.generate_series(first date, "limit" date, stepsize interval day)
+  sys.generate_series(first date, "limit" date, stepsize interval month) and
+  sys.generate_series(first date, "limit" date, stepsize interval day).
+
+* Wed May  8 2024 Niels Nes <niels@cwi.nl>
+- Added support for select exp, count(*) group by 1 order by 1;
+  ie. using numeric references in group by clause.
+- Added support for GROUP BY ALL. This finds all expressions from the
+  selections which aren't aggregations and groups on those.
+  At least one aggregation must be specified.
+  The ALL keyword can also be replaced by '*', so: GROUP BY *.
+- Added support for ORDER BY ALL. This orders on all columns of the selection.
+  The ALL keyword can also be replaced by '*', so: ORDER BY *.
 
 * Thu May  2 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Removed the obsolete ANALYZE statement syntax options: SAMPLE nn and
