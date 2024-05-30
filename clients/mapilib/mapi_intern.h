@@ -238,6 +238,7 @@ struct MapiStruct {
 	MapiMsg error;		/* Error occurred */
 	char *errorstr;		/* error from server */
 	const char *action;	/* pointer to constant string */
+	char *clientprefix;	/* prefix for 'client' clientinfo; NULL or allocated string */
 
 	struct BlockCache blk;
 	bool connected;

@@ -406,7 +406,6 @@ send_all_clientinfo(Mapi mid)
 			application_name = (const char*) basename((char*)application_name);
 		}
 	}
-	const char *client_library = "libmapi " MONETDB_VERSION;
 	const char *client_remark = msetting_string(mp, MP_CLIENT_REMARK);
 	long pid = getpid();
 
@@ -417,7 +416,10 @@ send_all_clientinfo(Mapi mid)
 		reallocprintf(&buf, &pos, &cap, "ClientHostName=%s\n", hostname);
 	if (application_name[0])
 		reallocprintf(&buf, &pos, &cap, "ApplicationName=%s\n", application_name);
-	reallocprintf(&buf, &pos, &cap, "ClientLibrary=%s\n", client_library);
+	reallocprintf(&buf, &pos, &cap, "ClientLibrary=");
+	if (mid->clientprefix)
+		reallocprintf(&buf, &pos, &cap, "%s / ", mid->clientprefix);
+	reallocprintf(&buf, &pos, &cap, "libmapi %s\n", MONETDB_VERSION);
 	if (client_remark[0])
 		reallocprintf(&buf, &pos, &cap, "ClientRemark=%s\n", client_remark);
 	if (pid > 0)

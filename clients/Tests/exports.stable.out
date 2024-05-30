@@ -721,6 +721,7 @@ MapiMsg mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol) __attribute
 MapiMsg mapi_set_size_header(Mapi mid, bool value) __attribute__((__nonnull__(1)));
 MapiMsg mapi_set_time_zone(Mapi mid, int seconds_east_of_utc) __attribute__((__nonnull__(1)));
 MapiMsg mapi_set_timeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data) __attribute__((__nonnull__(1)));
+void mapi_setclientprefix(Mapi mid, const char *prefix);
 void mapi_setfilecallback(Mapi mid, char *(*getfunc)(void *priv, const char *filename, bool binary, uint64_t offset, size_t *size), char *(*putfunc)(void *priv, const char *filename, const void *data, size_t size), void *priv) __attribute__((__nonnull__(1)));
 void mapi_setfilecallback2(Mapi mid, char *(*getfunc)(void *priv, const char *filename, bool binary, uint64_t offset, size_t *size), char *(*putfunc)(void *priv, const char *filename, bool binary, const void *data, size_t size), void *priv) __attribute__((__nonnull__(1)));
 Mapi mapi_settings(msettings *settings) __attribute__((__nonnull__(1)));

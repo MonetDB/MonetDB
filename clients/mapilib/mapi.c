@@ -2021,6 +2021,7 @@ mapi_destroy(Mapi mid)
 	free(mid->noexplain);
 	if (mid->errorstr && mid->errorstr != mapi_nomem)
 		free(mid->errorstr);
+	free(mid->clientprefix);
 
 	msettings_destroy(mid->settings);
 
@@ -2244,6 +2245,17 @@ mapi_setfilecallback(Mapi mid,
 	mid->filecontentprivate = mid;
 	mid->putfilecontent_old = putfilecontent;
 	mid->filecontentprivate_old = filecontentprivate;
+}
+
+void
+mapi_setclientprefix(Mapi mid, const char *prefix)
+{
+	free(mid->clientprefix);
+	if (prefix == NULL)
+		mid->clientprefix = NULL;
+	else
+		mid->clientprefix = strdup(prefix);
+
 }
 
 #define testBinding(hdl,fnr)						\
