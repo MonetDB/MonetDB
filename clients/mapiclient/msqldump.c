@@ -237,6 +237,7 @@ main(int argc, char **argv)
 	} else {
 		mid = mapi_mapi(host, port, user, passwd, "sql", dbname);
 	}
+	mapi_set_application_name("msqldump");
 	free(user_allocated);
 	user_allocated = NULL;
 	free(passwd_allocated);

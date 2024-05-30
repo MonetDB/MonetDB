@@ -33169,6 +33169,11 @@ unsafe pattern clients.setScenario(X_0:str):str
 CLTsetScenario;
 Switch to other scenario handler, return previous one.
 clients
+setinfo
+unsafe pattern clients.setinfo(X_0:str, X_1:str):str
+CLTsetClientInfo;
+set a clientinfo property
+clients
 setmemorylimit
 unsafe pattern clients.setmemorylimit(X_0:int):void
 CLTsetmemorylimit;
@@ -38070,7 +38075,7 @@ SQLrow_number;
 return the row_numer-ed groups
 sql
 sessions
-pattern sql.sessions() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:timestamp], X_3:bat[:timestamp], X_4:bat[:str], X_5:bat[:int], X_6:bat[:int], X_7:bat[:int], X_8:bat[:int])
+pattern sql.sessions() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:timestamp], X_3:bat[:timestamp], X_4:bat[:str], X_5:bat[:int], X_6:bat[:int], X_7:bat[:int], X_8:bat[:int], X_9:bat[:str], X_10:bat[:str], X_11:bat[:str], X_12:bat[:str], X_13:bat[:str], X_14:bat[:lng], X_15:bat[:str])
 sql_sessions_wrap;
 SQL export table of active sessions, their timeouts and idle status
 sql

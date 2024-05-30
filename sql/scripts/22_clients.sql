@@ -28,11 +28,29 @@ returns table(
 	"sessiontimeout" int,
 	"querytimeout" int,
 	"workerlimit" int,
-	"memorylimit" int
+	"memorylimit" int,
+	"language" string,
+	"peer" string,
+	"hostname" string,
+	"application" string,
+	"client" string,
+	"clientpid" bigint,
+	"remark" string
 )
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
 -- we won't grant sys.sessions to the public
+
+create procedure sys.setclientinfo(property string, value string)
+	external name clients.setinfo;
+grant execute on procedure sys.setclientinfo(string, string) to public;
+create table sys.clientinfo_properties(prop string);
+insert into sys.clientinfo_properties values
+	('ClientHostname'),
+	('ApplicationName'),
+	('ClientLibrary'),
+	('ClientRemark'),
+	('ClientPid');
 
 -- routines to bring the system down quickly
 create procedure sys.shutdown(delay tinyint)

@@ -24,6 +24,7 @@
 
 #ifdef HAVE_SYS_SOCKET_H
 # include <arpa/inet.h>			/* addr_in */
+# include <unistd.h>			/* gethostname() */
 #else /* UNIX specific */
 #ifdef HAVE_WINSOCK_H			/* Windows specific */
 # include <winsock.h>
@@ -380,6 +381,53 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 	return s;
 }
 
+static void
+send_all_clientinfo(Mapi mid)
+{
+	msettings *mp = mid->settings;
+	if (!mid->clientinfo_supported)
+		return;
+	if (!msetting_bool(mp, MP_CLIENT_INFO))
+		return;
+
+
+	static char hostname[120] = { 0 };
+	if (hostname[0] == '\0') {
+		if (gethostname(hostname, sizeof(hostname)) != 0)
+			hostname[0] = '\0';
+		hostname[sizeof(hostname) - 1] = '\0';
+	}
+	const char *application_name = msetting_string(mp, MP_CLIENT_APPLICATION);
+	if (!application_name[0])
+		application_name = mapi_application_name;
+	const char *client_library = "libmapi " MONETDB_VERSION;
+	const char *client_remark = msetting_string(mp, MP_CLIENT_REMARK);
+	long pid = getpid();
+
+	char *buf = NULL;
+	size_t pos = 0, cap = 200;
+
+	if (hostname[0])
+		reallocprintf(&buf, &pos, &cap, "ClientHostName=%s\n", hostname);
+	if (application_name[0])
+		reallocprintf(&buf, &pos, &cap, "ApplicationName=%s\n", application_name);
+	reallocprintf(&buf, &pos, &cap, "ClientLibrary=%s\n", client_library);
+	if (client_remark[0])
+		reallocprintf(&buf, &pos, &cap, "ClientRemark=%s\n", client_remark);
+	if (pid > 0)
+		reallocprintf(&buf, &pos, &cap, "ClientPid=%ld\n", pid);
+
+	if (pos > 1) {
+		assert(buf[pos - 1] == '\n');
+		pos--;
+		buf[pos] = '\0';
+	}
+
+	if (pos <= cap)
+		mapi_Xcommand(mid, "clientinfo", buf);
+	free(buf);
+}
+
 static MapiMsg
 mapi_handshake(Mapi mid)
 {
@@ -489,15 +537,22 @@ mapi_handshake(Mapi mid)
 		}
 	}
 
-	/* search for OOBINTR option,
-	 * NOTE this consumes the rest of the challenge */
-	char *rest = strtok_r(NULL, ":", &strtok_state);
-	while (rest != NULL) {
-		if (strcmp(rest, "OOBINTR=1") == 0) {
+	/* skip the binary option */
+	char *binary = strtok_r(NULL, ":", &strtok_state);
+	(void)binary;
+
+	char *oobintr = strtok_r(NULL, ":", &strtok_state);
+	if (oobintr) {
+		if (strcmp(oobintr, "OOBINTR=1") == 0) {
 			mid->oobintr = true;
-			break;
 		}
-		rest = strtok_r(NULL, ":", &strtok_state);
+	}
+
+	char *clientinfo = strtok_r(NULL, ":", &strtok_state);
+	if (clientinfo) {
+		if (strcmp(oobintr, "OOBINTR=1") == 0) {
+			mid->clientinfo_supported = true;
+		}
 	}
 
 	/* hash password, if not already */
@@ -810,6 +865,9 @@ mapi_handshake(Mapi mid)
 	if (mid->handshake_options <= MAPI_HANDSHAKE_TIME_ZONE) {
 		mapi_set_time_zone(mid, msetting_long(mid->settings, MP_TIMEZONE));
 	}
+
+	if (mid->error == MOK)
+		send_all_clientinfo(mid);
 
 	return mid->error;
 

@@ -793,6 +793,9 @@ static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
 
 static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
+
+char mapi_application_name[256] = { 0 };
+
 /*
  * Blocking
  * --------
@@ -2116,6 +2119,15 @@ mapi_disconnect(Mapi mid)
 
 	close_connection(mid);
 	return MOK;
+}
+
+void
+mapi_set_application_name(const char *name)
+{
+	if (name)
+		strncpy(mapi_application_name, name, sizeof(mapi_application_name)-1);
+	else
+		mapi_application_name[0] = '\0';
 }
 
 /* Set callback function to retrieve or send file content for COPY

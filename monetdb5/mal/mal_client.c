@@ -401,6 +401,27 @@ MCcloseClient(Client c)
 		GDKfree(c->username);
 		c->username = 0;
 	}
+	if (c->peer) {
+		GDKfree(c->peer);
+		c->peer = 0;
+	}
+	if (c->client_hostname) {
+		GDKfree(c->client_hostname);
+		c->client_hostname = 0;
+	}
+	if (c->client_application) {
+		GDKfree(c->client_application);
+		c->client_application = 0;
+	}
+	if (c->client_library) {
+		GDKfree(c->client_library);
+		c->client_library = 0;
+	}
+	if (c->client_remark) {
+		GDKfree(c->client_remark);
+		c->client_remark = 0;
+	}
+	c->client_pid = 0;
 	c->mythread = NULL;
 	if (c->glb) {
 		freeStack(c->glb);
@@ -620,4 +641,57 @@ MCprintinfo(void)
 	MT_lock_unset(&mal_contextLock);
 	printf("%d active clients, %d finishing clients, %d blocked clients\n",
 		   nrun, nfinish, nblock);
+}
+
+
+void
+MCsetClientInfo(Client c, const char *property, const char *value)
+{
+	if (strlen(property) < 7)
+		return;
+
+	// 012345 6 78...
+	// Client H ostname
+	// Applic a tionName
+	// Client L ibrary
+	// Client R emark
+	// Client P id
+	int discriminant = toupper(property[6]);
+
+	switch (discriminant) {
+		case 'H':
+			if (strcasecmp(property, "ClientHostname") == 0) {
+				GDKfree(c->client_hostname);
+				c->client_hostname = value ? GDKstrdup(value) : NULL;
+			}
+			break;
+		case 'A':
+			if (strcasecmp(property, "ApplicationName") == 0) {
+				GDKfree(c->client_application);
+				c->client_application = value ? GDKstrdup(value) : NULL;
+			}
+			break;
+		case 'L':
+			if (strcasecmp(property, "ClientLibrary") == 0) {
+				GDKfree(c->client_library);
+				c->client_library = value ? GDKstrdup(value) : NULL;
+			}
+			break;
+		case 'R':
+			if (strcasecmp(property, "ClientRemark") == 0) {
+				GDKfree(c->client_remark);
+				c->client_remark = value ? GDKstrdup(value) : NULL;
+			}
+			break;
+		case 'P':
+			if (strcasecmp(property, "ClientPid") == 0 && value != NULL) {
+				char *end;
+				long n = strtol(value, &end, 10);
+				if (*value && !*end)
+					c->client_pid = n;
+			}
+			break;
+		default:
+			break;
+	}
 }
