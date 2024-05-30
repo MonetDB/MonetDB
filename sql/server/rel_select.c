@@ -2327,10 +2327,10 @@ negate_symbol_tree(mvc *sql, symbol *sc)
 			case 1: /* negating ANY/ALL */
 				cmp_n->next->next->next->data.i_val = 0;
 				break;
-			case 2: /* negating IS [NOY] DINSTINCT FROM */
+			case 2: /* negating IS [NOT] DINSTINCT FROM */
 				cmp_n->next->next->next->data.i_val = 3;
 				break;
-			case 3: /* negating IS [NOY] DINSTINCT FROM */
+			case 3: /* negating IS [NOT] DINSTINCT FROM */
 				cmp_n->next->next->next->data.i_val = 2;
 				break;
 			}
