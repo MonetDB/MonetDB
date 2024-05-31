@@ -484,6 +484,8 @@ main(int argc, char *argv[])
 				s[i] = "mserver5"[i];
 			if (stat(_mero_mserver, &sb) == -1)
 				_mero_mserver = NULL;
+			else
+				_mero_mserver = strdup(_mero_mserver);
 		}
 	}
 	/* setup default database properties, constants: unlike historical
