@@ -383,6 +383,34 @@ cleanup:
 	return fres;
 }
 
+str
+exp2str( mvc *sql, sql_exp *exp)
+{
+	buffer *b = NULL;
+	stream *s = NULL;
+	char *res = NULL;
+
+	b = buffer_create(1024);
+	if(b == NULL)
+		goto cleanup;
+	s = buffer_wastream(b, "exp_dump");
+	if(s == NULL)
+		goto cleanup;
+
+	exp_print(sql, s, exp, 0, NULL, 0, 0, 0);
+	res = buffer_get_buf(b);
+
+cleanup:
+	if(b)
+		buffer_destroy(b);
+	if(s)
+		close_stream(s);
+
+	char* fres = SA_STRDUP(sql->sa, res);
+	free (res);
+	return fres;
+}
+
 static void
 exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate)
 {
