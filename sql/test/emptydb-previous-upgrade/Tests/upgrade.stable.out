@@ -1034,3 +1034,20 @@ insert into sys.clientinfo_properties values
 update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');
 update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');
 
+Running database upgrade commands:
+DROP TABLE sys.key_types;
+CREATE TABLE sys.key_types (
+	key_type_id   SMALLINT NOT NULL PRIMARY KEY,
+	key_type_name VARCHAR(35) NOT NULL UNIQUE);
+INSERT INTO sys.key_types VALUES
+(0, 'Primary Key'),
+(1, 'Unique Key'),
+(2, 'Foreign Key'),
+(3, 'Unique Key With Nulls Not Distinct'),
+(4, 'Check Constraint');
+GRANT SELECT ON sys.key_types TO PUBLIC;
+UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';
+
+Running database upgrade commands:
+ALTER TABLE sys.key_types SET READ ONLY;
+
