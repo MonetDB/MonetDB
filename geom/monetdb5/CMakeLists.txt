@@ -50,7 +50,6 @@ if(GEOS_FOUND)
 
   target_link_libraries(geomodule
     PRIVATE
-    mutils
     stream
     bat
     geomlib

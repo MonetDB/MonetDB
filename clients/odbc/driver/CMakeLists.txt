@@ -127,7 +127,6 @@ target_include_directories(MonetODBC
 target_link_libraries(MonetODBC
   PRIVATE
   monetdb_config_header
-  mutils
   mapi
   mutf8
   ${ODBCINST_LIBRARIES})
