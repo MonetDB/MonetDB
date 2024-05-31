@@ -3650,7 +3650,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				pos = binsearch(NULL, 0, bi.type, bi.base,
 						bi.vh ? bi.vh->base : NULL,
 						bi.width, 0, bi.count,
-						ATOMnilptr(bi.type), -1, 1);
+						ATOMnilptr(bi.type), -1, 0);
 				if (pos == 0)
 					pos = oid_nil;
 				else
