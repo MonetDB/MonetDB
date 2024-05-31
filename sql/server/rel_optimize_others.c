@@ -653,7 +653,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 
 				positional_exps_mark_used(rel, l);
 				rel_exps_mark_used(sql->sa, rel, l);
-				rel_mark_used(sql, rel->l, 0);
+				rel_mark_used(sql, l, 0);
 				/* based on child check set expression list */
 				if (first && is_project(l->op) && need_distinct(l))
 					positional_exps_mark_used(l, rel);
