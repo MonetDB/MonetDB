@@ -1789,6 +1789,10 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, bool subexp, sql_re
 		case op_table:
 		case op_basetable:
 			break;
+		case op_munion:
+			for (node* n = ((list*)rel->l)->h; n && !ne; n = n->next)
+				ne = rel_find_exp_and_corresponding_rel(n->data, e, subexp, res, under_join);
+			break;
 		default:
 			if (!is_project(rel->op) && rel->l)
 				ne = rel_find_exp_and_corresponding_rel(rel->l, e, subexp, res, under_join);
@@ -3609,7 +3613,7 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 		}
 		if (!e)
 			return 0; /* not found */
-		if (is_set(rel->op)) { /* TODO for set relations this needs further improvement */
+		if (is_mset(rel->op)) { /* TODO for set relations this needs further improvement */
 			(void) sql_error(sql, 10, SQLSTATE(42000) "Cannot set parameter types under set relations at the moment");
 			return -1;
 		}
@@ -3687,7 +3691,8 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, const char *relnam
 			break;
 		case op_union: /* TODO for set relations this needs further improvement */
 		case op_inter:
-		case op_except: {
+		case op_except:
+		case op_munion:	{
 			(void) sql_error(sql, 10, SQLSTATE(42000) "Cannot set parameter types under set relations at the moment");
 			return -1;
 		}

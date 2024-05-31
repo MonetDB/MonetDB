@@ -264,6 +264,8 @@ isUpdateInstruction(InstrPtr p)
 		&& (getFunctionId(p) == appendRef || getFunctionId(p) == replaceRef
 			|| getFunctionId(p) == deleteRef))
 		return TRUE;
+	if (getModuleId(p) == matRef)
+		return TRUE;
 	return FALSE;
 }
 

@@ -11,8 +11,8 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 12,	2,	1,	0,	3,	2 # length
-[ "boolean",	1,	0,	"",	"%10",	"c0"	]
-[ "sec_interval",	13,	0,	"",	"%10",	"%1"	]
+[ "boolean",	1,	0,	"",	"%7",	"c0"	]
+[ "sec_interval",	13,	0,	"",	"%7",	"%1"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 [ "sec_interval",	13,	0,	NULL,	NULL,	NULL	]
 #ROLLBACK;
@@ -28,8 +28,8 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	3,	3 # length
-[ "decimal",	2,	1,	"",	"%22",	"%13"	]
-[ "int",	31,	0,	"",	"%22",	"c2"	]
+[ "decimal",	2,	1,	"",	"%20",	"%12"	]
+[ "int",	31,	0,	"",	"%20",	"c2"	]
 [ "decimal",	2,	1,	NULL,	NULL,	NULL	]
 [ "int",	31,	0,	NULL,	NULL,	NULL	]
 [ "int",	31,	0,	NULL,	NULL,	NULL	]
@@ -75,7 +75,7 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	3,	2 # length
-[ "bigint",	63,	0,	"",	"%12",	"%4"	]
+[ "bigint",	63,	0,	"",	"%11",	"%4"	]
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 [ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
@@ -153,23 +153,23 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	3,	1,	0,	3,	3 # length
-[ "json",	0,	0,	"",	"%15",	"%15"	]
+[ "json",	0,	0,	"",	"%14",	"%14"	]
 [ "hugeint",	127,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	3,	1,	0,	3,	3 # length
-[ "json",	0,	0,	"",	"%15",	"%15"	]
+[ "json",	0,	0,	"",	"%14",	"%14"	]
 [ "hugeint",	127,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	3,	3 # length
-[ "varchar",	1,	0,	"",	"%22",	"%14"	]
+[ "varchar",	1,	0,	"",	"%20",	"%13"	]
 [ "varchar",	1,	0,	NULL,	NULL,	NULL	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
-% .%22 # table_name
-% %14 # name
+% .%20 # table_name
+% %13 # name
 % varchar # type
 % 1 # length
 [ "b"	]

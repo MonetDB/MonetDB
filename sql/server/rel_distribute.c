@@ -80,7 +80,13 @@ has_remote_or_replica( sql_rel *rel )
 	case op_insert:
 	case op_update:
 	case op_delete:
-		return has_remote_or_replica( rel->l) || has_remote_or_replica( rel->r );
+		return has_remote_or_replica( rel->l ) || has_remote_or_replica( rel->r );
+	case op_munion:
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			if (has_remote_or_replica(n->data))
+				return true;
+		}
+		break;
 	case op_project:
 	case op_select:
 	case op_groupby:
@@ -435,6 +441,9 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 				}
 			}
 		}
+		break;
+	case op_munion:
+		/*assert(0);*/
 		break;
 	case op_project:
 	case op_select:

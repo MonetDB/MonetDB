@@ -359,6 +359,14 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 		}
 		return NULL;
 
+	case op_munion:
+		if (pnr >= 0 || pnr == -2) {
+			for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+				if ((c = name_find_column(n->data, rname, name, pnr, bt)) != NULL)
+					return c;
+			}
+		}
+		return NULL;
 	case op_project:
 	case op_groupby:
 		if (!rel->exps)

@@ -2320,7 +2320,7 @@ order_joins(visitor *v, list *rels, list *exps)
 static int
 rel_neg_in_size(sql_rel *r)
 {
-	if (is_union(r->op) && r->nrcols == 0)
+	if ((is_union(r->op) /*|| is_munion(r->op)*/) && r->nrcols == 0)
 		return -1 + rel_neg_in_size(r->l);
 	if (is_project(r->op) && r->nrcols == 0)
 		return -1;
@@ -2502,6 +2502,11 @@ rel_join_order_(visitor *v, sql_rel *rel)
 	case op_merge:
 		rel->l = rel_join_order_(v, rel->l);
 		rel->r = rel_join_order_(v, rel->r);
+		break;
+	case op_munion:
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next)
+			n->data = rel_join_order_(v, n->data);
 		break;
 	case op_project:
 	case op_select:
@@ -3334,7 +3339,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	node *n;
 
 	if (rel_is_ref(rel)) {
-		if (is_select(rel->op) && rel->exps) {
+		if (is_select(rel->op) && !list_empty(rel->exps)) {
 			/* add inplace empty select */
 			sql_rel *l = rel_select(v->sql->sa, rel->l, NULL);
 
@@ -3546,6 +3551,29 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		set_processed(ur);
 
 		rel = rel_inplace_setop(v->sql, rel, ul, ur, u->op, rel_projections(v->sql, rel, NULL, 1, 1));
+		if (need_distinct(u))
+			set_distinct(rel);
+		v->changes++;
+	}
+	if (is_select(rel->op) && r && is_munion(r->op) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
+		sql_rel *u = r;
+		list *rels = u->l, *nrels = sa_list(v->sql->sa);
+		for(node *n = rels->h; n; n = n->next) {
+			sql_rel *ul = n->data;
+			ul = rel_dup(ul);
+			if (!is_project(ul->op))
+				ul = rel_project(v->sql->sa, ul,
+					rel_projections(v->sql, ul, NULL, 1, 1));
+			rel_rename_exps(v->sql, u->exps, ul->exps);
+
+			/* introduce selects under the set */
+			ul = rel_select(v->sql->sa, ul, NULL);
+			ul->exps = exps_copy(v->sql, exps);
+			set_processed(ul);
+			nrels = append(nrels, ul);
+		}
+
+		rel = rel_inplace_setop_n_ary(v->sql, rel, nrels, u->op, rel_projections(v->sql, rel, NULL, 1, 1));
 		if (need_distinct(u))
 			set_distinct(rel);
 		v->changes++;

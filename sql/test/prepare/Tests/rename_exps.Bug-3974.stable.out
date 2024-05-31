@@ -34,8 +34,8 @@ stdout of test 'rename_exps.Bug-3974` in directory 'sql/test/BugTracker-2016` it
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar, varchar # type
-% 6,	2,	1,	0,	3,	3 # length
-[ "bigint",	64,	0,	"",	"%10",	"%10"	]
+% 6,	2,	1,	0,	2,	2 # length
+[ "bigint",	64,	0,	"",	"%7",	"%7"	]
 #drop table foo;
 
 # 12:27:17 >  

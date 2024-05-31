@@ -81,15 +81,20 @@ extern sql_exp *rel_first_column(mvc *sql, sql_rel *rel);
 
 extern sql_rel *rel_inplace_basetable(sql_rel *rel, sql_rel *bt);
 extern sql_rel *rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps);
+extern sql_rel *rel_inplace_setop_n_ary(mvc *sql, sql_rel *rel, list *rl, operator_type setop, list *exps);
 extern sql_rel *rel_inplace_project(allocator *sa, sql_rel *rel, sql_rel *l, list *e);
 extern sql_rel *rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps);
 extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps );
+extern sql_rel *rel_inplace_munion(sql_rel *rel, list *rels);
 extern sql_rel *rel_dup_copy(allocator *sa, sql_rel *rel);
 
 extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, check_type tpe);
 extern sql_rel *rel_setop(allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
 extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
+extern sql_rel *rel_setop_n_ary(allocator *sa, list *rels, operator_type setop);
+extern sql_rel *rel_setop_n_ary_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
+extern void rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
 extern sql_rel *rel_crossproduct(allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
 
 /* in case e is an constant and rel is a simple project of only e, free rel */
@@ -159,5 +164,6 @@ extern sql_rel *rel_visitor_bottomup(visitor *v, sql_rel *rel, rel_rewrite_fptr 
 extern bool rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e);
 
 extern int exp_freevar_offset(mvc *sql, sql_exp *e);
+extern int exp_has_selfref(mvc *sql, sql_exp *e);
 
 #endif /* _REL_REL_H_ */

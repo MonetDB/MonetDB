@@ -2328,6 +2328,13 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 		args = rel2bin_args(be, rel->l, args);
 		args = rel2bin_args(be, rel->r, args);
 		break;
+	case op_munion:
+		if (rel->l) {
+			for (node* n = ((list*)rel->l)->h; n; n = n->next) {
+				args = rel2bin_args(be, n->data, args);
+			}
+		}
+		break;
 	case op_groupby:
 		if (rel->r)
 			args = exps2bin_args(be, rel->r, args);
@@ -3860,6 +3867,65 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 		}
 		sub = stmt_list(be, l);
 	}
+	return sub;
+}
+
+static stmt *
+rel2bin_munion(backend *be, sql_rel *rel, list *refs)
+{
+	mvc *sql = be->mvc;
+	list *l, *rstmts;
+	node *n, *m;
+	stmt *rel_stmt = NULL, *sub;
+	int i, len = 0, nr_unions = list_length((list*)rel->l);
+
+	/* convert to stmt and store the munion operands in rstmts list */
+	rstmts = sa_list(sql->sa);
+	for (n = ((list*)rel->l)->h; n; n = n->next) {
+		rel_stmt = subrel_bin(be, n->data, refs);
+		rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
+		if (!rel_stmt)
+			return NULL;
+		list_append(rstmts, rel_stmt);
+		if (!len || len > list_length(rel_stmt->op4.lval))
+			len = list_length(rel_stmt->op4.lval);
+	}
+
+	/* construct relation */
+	l = sa_list(sql->sa);
+
+	/* for every op4 lval node */
+	//len = list_length(((stmt*)rstmts->h->data)->op4.lval);
+	for (i = 0; i < len; i++) {
+		/* extract t and c name from the first stmt */
+		stmt *s = list_fetch(((stmt*)rstmts->h->data)->op4.lval, i);
+		if (s == NULL)
+			return NULL;
+		const char *rnme = table_name(sql->sa, s);
+		const char *nme = column_name(sql->sa, s);
+		/* create a const column also from the first stmt */
+		s = stmt_pack(be, column(be, s), nr_unions);
+		/* for every other rstmt */
+		for (m = rstmts->h->next; m; m = m->next) {
+			stmt *t = list_fetch(((stmt*)m->data)->op4.lval, i);
+			if (t == NULL)
+				return NULL;
+			s = stmt_pack_add(be, s, column(be, t));
+			if (s == NULL)
+				return NULL;
+		}
+		s = stmt_alias(be, s, rnme, nme);
+		if (s == NULL)
+			return NULL;
+		list_append(l, s);
+	}
+	sub = stmt_list(be, l);
+
+	sub = rel_rename(be, rel, sub);
+	if (need_distinct(rel))
+		sub = rel2bin_distinct(be, sub, NULL);
+	if (is_single(rel))
+		sub = rel2bin_single(be, sub);
 	return sub;
 }
 
@@ -7292,6 +7358,10 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_union:
 		s = rel2bin_union(be, rel, refs);
+		sql->type = Q_TABLE;
+		break;
+	case op_munion:
+		s = rel2bin_munion(be, rel, refs);
 		sql->type = Q_TABLE;
 		break;
 	case op_except:

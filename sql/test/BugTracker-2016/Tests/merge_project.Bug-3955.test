@@ -40,6 +40,16 @@ FROM (
 	  FROM v,p
 ) AS tmp
 
+query IR rowsort
+select * from r
+----
+0
+2.283
+1
+1.005
+2
+0.900
+
 query T nosort
 PLAN select * from r
 ----
