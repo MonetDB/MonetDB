@@ -49,16 +49,6 @@
 
 #define ODBCDEBUG	1
 
-#ifdef WIN32
-#ifndef LIBMONETODBC
-#define odbc_export extern __declspec(dllimport)
-#else
-#define odbc_export extern __declspec(dllexport)
-#endif
-#else
-#define odbc_export extern
-#endif
-
 /* standard ODBC driver include files */
 #include <sqltypes.h>		/* ODBC C typedefs */
 /* Note: sqlext.h includes sql.h so it is not needed here to be included */

@@ -22,10 +22,6 @@
 #define ALREADY_HAVE_WINDOWS_TYPE 1
 #include <sql.h>
 #include <sqlext.h>
-#ifdef EXPORT
-#undef EXPORT
-#endif
-#define EXPORT __declspec(dllexport)
 #include <odbcinst.h>
 #include "resource.h"
 
