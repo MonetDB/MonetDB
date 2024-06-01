@@ -923,8 +923,6 @@ readAtomString(int localtype, char *r, int *pos)
 	return res;
 }
 
-static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp);
-
 static sql_exp*
 read_prop(mvc *sql, sql_exp *exp, char *r, int *pos, bool *found)
 {
@@ -1168,7 +1166,7 @@ try_update_label_count(mvc *sql, const char *label)
 	return 0;
 }
 
-static sql_exp*
+sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp)
 {
 	int old, d=0, s=0, unique = 0, no_nils = 0, quote = 0, zero_if_empty = 0;
@@ -1856,7 +1854,7 @@ read_rel_properties(mvc *sql, sql_rel *rel, char *r, int *pos)
 sql_rel*
 rel_read(mvc *sql, char *r, int *pos, list *refs)
 {
-	sql_rel *rel = NULL, *nrel, *lrel, *rrel;
+	sql_rel *rel = NULL, *nrel, *lrel, *rrel = NULL;
 	list *exps, *gexps, *rels = NULL;
 	int distinct = 0, dependent = 0, single = 0;
 	operator_type j = op_basetable;
@@ -2507,4 +2505,93 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 	if (!(rel = read_rel_properties(sql, rel, r, pos)))
 		return NULL;
 	return rel;
+}
+
+static bool
+is_infix(sql_func *f)
+{
+	if (strlen(f->base.name) == 1) {
+		return true;
+	} else if (strlen(f->base.name) == 2) {
+		if (f->base.name[0] == '<' && f->base.name[1] == '>')
+			return true;
+		if (f->base.name[0] == '<' && f->base.name[1] == '=')
+			return true;
+		if (f->base.name[0] == '>' && f->base.name[1] == '=')
+			return true;
+		if (f->base.name[0] == '|' && f->base.name[1] == '|')
+			return true;
+	}
+	return false;
+}
+
+/* only simple expressions, ie recursive no psm */
+static void
+exp2sql_print(mvc *sql, stream *fout, sql_exp *e)
+{
+	switch (e->type) {
+		case e_func: {
+			sql_subfunc *sf = e->f;
+			list *args = e->l;
+			if (list_length(args) == 2 && is_infix(sf->func)) {
+				exp2sql_print(sql, fout, args->h->data);
+				mnstr_printf(fout, " %s ", sf->func->base.name);
+				exp2sql_print(sql, fout, args->h->next->data);
+			} else {
+				mnstr_printf(fout, "%s(", sf->func->base.name);
+				if (args)
+					for (node *n = args->h; n; n = n->next) {
+						exp2sql_print(sql, fout, n->data);
+						if (n->next)
+							mnstr_printf(fout, ", ");
+					}
+				mnstr_printf(fout, ")");
+			}
+		}	break;
+		case e_column:
+			mnstr_printf(fout, "%s", exp_name(e));
+			break;
+		case e_convert:
+			mnstr_printf(fout, "CAST (" );
+			exp2sql_print(sql, fout, e->l);
+			mnstr_printf(fout, "AS %s)", sql_subtype_string(sql->sa, exp_subtype(e)));
+			break;
+		case e_atom:
+			mnstr_printf(fout, "%s", atom2sql(sql->sa, e->l, 0));
+			break;
+		case e_aggr: /* fall-through */
+		case e_cmp: /* fall-through */
+		case e_psm:
+			assert(0);
+			break;
+	}
+}
+
+char *
+exp2sql( mvc *sql, sql_exp *exp)
+{
+	buffer *b = NULL;
+	stream *s = NULL;
+	char *res = NULL;
+
+	b = buffer_create(1024);
+	if(b == NULL)
+		goto cleanup;
+	s = buffer_wastream(b, "exp_dump");
+	if(s == NULL)
+		goto cleanup;
+
+	exp2sql_print(sql, s, exp);
+
+	res = buffer_get_buf(b);
+
+cleanup:
+	if(b)
+		buffer_destroy(b);
+	if(s)
+		close_stream(s);
+
+	char* fres = SA_STRDUP(sql->sa, res);
+	free (res);
+	return fres;
 }

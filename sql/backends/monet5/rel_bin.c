@@ -5143,25 +5143,22 @@ sql_insert_check(backend *be, sql_key *key, list *inserts)
 {
 	mvc *sql = be->mvc;
 	int pos = 0;
-	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa)), *br = rel->l;
+	sql_rel *rel = rel_basetable(sql, key->t, key->t->base.name);
+	sql_exp *exp = exp_read(sql, rel, NULL, NULL, sa_strdup(sql->sa, key->check), &pos, 0);
+	rel->exps = rel_base_projection(sql, rel, 0);
 
-	assert(is_basetable(br->op));
 	/* create new sub stmt with needed inserts */
 	list *ins = sa_list(sql->sa);
 	for(node *n = key->columns->h; n; n = n->next) {
 		sql_kc *kc = n->data;
 		stmt *in = list_fetch(inserts, kc->c->colnr);
 
-		sql_exp *e = rel_base_bind_column2(sql, br, kc->c->t->base.name, kc->c->base.name);
+		sql_exp *e = rel_base_bind_column2(sql, rel, kc->c->t->base.name, kc->c->base.name);
 		in = stmt_alias(be, in, e->alias.label, kc->c->t->base.name, kc->c->base.name);
 		append(ins, in);
 	}
 	stmt *sub = stmt_list(be, ins);
-	/* TODO: need exp here */
-	assert(list_length(rel->exps) == 1);
-	sql_exp *e = rel->exps->h->data;
-	stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-
+	stmt *s = exp_bin(be, exp, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	s = stmt_uselect(be, column(be, s), stmt_bool(be, 0), cmp_equal, NULL, 0, 1);
 	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
@@ -6159,22 +6156,9 @@ sql_update_check(backend *be, stmt **updates, sql_key *key, stmt *u_tids)
 {
 	mvc *sql = be->mvc;
 	int pos = 0;
-	sql_rel *rel = NULL;
-
-	if (key->t->persistence == SQL_DECLARED_TABLE) {
-		stack_push_frame(be->mvc, "ALTER TABLE ADD CONSTRAINT CHECK");
-		sql_schema* ss = key->t->s;
-		frame_push_table(sql, key->t);
-		key->t->s = ss; // recover the schema because frame_push_table removes it
-
-		rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
-		stack_pop_frame(sql);
-	} else {
-		rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
-	}
-
-	sql_rel *br = rel->l;
-	assert(is_basetable(br->op));
+	sql_rel *rel = rel_basetable(sql, key->t, key->t->base.name);
+	sql_exp *exp = exp_read(sql, rel, NULL, NULL, sa_strdup(sql->sa, key->check), &pos, 0);
+	rel->exps = rel_base_projection(sql, rel, 0);
 
 	/* create sub stmt with needed updates (or projected col from to be updated table) */
 	list *ups = sa_list(sql->sa);
@@ -6187,16 +6171,13 @@ sql_update_check(backend *be, stmt **updates, sql_key *key, stmt *u_tids)
 		} else {
 			upd = stmt_col(be, kc->c, u_tids, u_tids->partition);
 		}
-		sql_exp *e = rel_base_bind_column2(sql, br, kc->c->t->base.name, kc->c->base.name);
+		sql_exp *e = rel_base_bind_column2(sql, rel, kc->c->t->base.name, kc->c->base.name);
 		upd = stmt_alias(be, upd, e->alias.label, kc->c->t->base.name, kc->c->base.name);
 		append(ups, upd);
 	}
 
 	stmt *sub = stmt_list(be, ups);
-	/* TODO: need exp here */
-	assert(list_length(rel->exps) == 1);
-	sql_exp *e = rel->exps->h->data;
-	stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+	stmt *s = exp_bin(be, exp, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	s = stmt_uselect(be, column(be, s), stmt_bool(be, 0), cmp_equal, NULL, 0, 1);

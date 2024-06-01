@@ -371,8 +371,9 @@ foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
 	return lt->type->eclass == rt->type->eclass || (EC_VARCHAR(lt->type->eclass) && EC_VARCHAR(rt->type->eclass));
 }
 
-static
-key_type token2key_type(int token) {
+static key_type
+token2key_type(int token)
+{
 		switch (token) {
 		case SQL_UNIQUE: 					return ukey;
 		case SQL_UNIQUE_NULLS_NOT_DISTINCT:	return unndkey;
@@ -383,15 +384,15 @@ key_type token2key_type(int token) {
 		return -1;
 }
 
-static
-sql_rel* create_check_plan(sql_query *query, symbol *s, sql_table *t) {
-
+static sql_rel*
+create_check_plan(sql_query *query, symbol *s, sql_table *t)
+{
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
-	sql_rel* rel = rel_basetable(sql, t, t->base.name), *orel = rel;
+	sql_rel *rel = rel_basetable(sql, t, t->base.name);
 	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel | sql_no_subquery, ek);
-	assert(rel == orel);
-	(void)orel;
+	if (!e || !rel || !is_basetable(rel->op))
+		return NULL;
 	rel->exps = rel_base_projection(sql, rel, 0);
 	list *pexps = sa_list(sql->sa);
 	pexps = append(pexps, e);
@@ -444,10 +445,9 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 		if (kt == ckey) {
 			sql_rel* check_rel = NULL;
 			if ((check_rel = create_check_plan(query, s, t)) == NULL) {
-				/*TODO error*/
+				return -3;
 			}
-
-			check = rel2str(sql, check_rel);
+			check = exp2str(sql, check_rel->exps->h->data);
 		}
 		switch (mvc_create_ukey(&k, sql, t, name, kt, check)) {
 			case -1:
@@ -915,12 +915,12 @@ table_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema 
 		}
 		char* check = NULL;
 		sql_rel* check_rel = NULL;
+
 		if (kt == ckey) {
 			if ((check_rel = create_check_plan(query, s, t)) == NULL) {
-				/*TODO error*/
+				return -3;
 			}
-
-			check = rel2str(sql, check_rel);
+			check = exp2str(sql, check_rel->exps->h->data);
 		}
 
 		switch (mvc_create_ukey(&k, sql, t, name, kt, check)) {
@@ -947,8 +947,7 @@ table_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema 
 				sql_exp* e = n->data;
 				nm = e->alias.name;
 				n = n->next;
-			}
-			else {
+			} else {
 				if (!nms)
 					break;
 				nm = nms->data.sval;

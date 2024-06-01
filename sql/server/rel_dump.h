@@ -21,7 +21,9 @@ extern void rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list
 
 extern str rel2str( mvc *sql, sql_rel *rel);
 extern str exp2str( mvc *sql, sql_exp *exp);
+extern str exp2sql( mvc *sql, sql_exp *exp);
 extern sql_rel *rel_read(mvc *sql, char *ra, int *pos, list *refs);
+extern sql_exp *exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *ra, int *pos, int grp);
 extern void exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias, int decorate);
 
 #endif /*_REL_DUMP_H_*/

@@ -48969,6 +48969,11 @@ pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_
 mvc_bind_idxbat_wrap;
 Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
 sql
+check
+pattern sql.check(X_0:str, X_1:str):str
+SQLcheck;
+Return sql string of check constraint.
+sql
 claim
 unsafe pattern sql.claim(X_0:int, X_1:str, X_2:str, X_3:lng) (X_4:oid, X_5:bat[:oid])
 mvc_claim_wrap;
