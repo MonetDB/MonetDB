@@ -71,6 +71,13 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 		if (!is_processed(rel) && level == 0)
 			return rel_table_projections( sql, rel->l, tname, level+1);
 		/* fall through */
+	case op_munion:
+		if (!is_processed(rel) && level == 0) {
+			node *n = ((list*)rel->l)->h;
+			if (n)
+				return rel_table_projections(sql, n->data, tname, level+1);
+		}
+	/* fall through */
 	case op_table:
 	case op_basetable:
 		if (is_basetable(rel->op) && !rel->exps)
@@ -1159,7 +1166,7 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 			if (sql->emode != m_deps) {
 				assert(is_project(rel->op));
 				set_processed(rel);
-				if (is_set(rel->op) || is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r))) {
+				if (is_mset(rel->op) || is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r))) {
 					/* it's unsafe to set the projection names because of possible dependent sorting/grouping columns */
 					rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 0, 0));
 					set_processed(rel);
@@ -1290,7 +1297,7 @@ set_dependent_( sql_rel *r)
 
 static
 sql_rel* find_union(visitor *v, sql_rel *rel) {
-	if (rel->op == op_union)
+	if (rel->op == op_union || rel->op == op_munion)
 		v->data = rel;
 	return rel;
 }
@@ -5850,8 +5857,9 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 	return rel;
 }
 
+/* NOTE: does NOT "set" query but instead generate set ops (union, except, intersect) */
 static sql_rel *
-rel_setquery_corresponding(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int outer)
+rel_setquery_corresponding(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int outer, bool n_ary_op)
 {
 	mvc *sql = query->sql;
 	const char *opname = op==SQL_EXCEPT?"EXCEPT":op==SQL_INTERSECT?"INTERSECT":outer?"OUTER UNION":"UNION";
@@ -5917,7 +5925,9 @@ rel_setquery_corresponding(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols
 			}
 		}
 	}
-	return rel_setop_check_types(sql, l, r, lexps, rexps, (operator_type)op);
+	return n_ary_op ?
+		rel_setop_n_ary_check_types(sql, l, r, lexps, rexps, (operator_type)op) :
+		rel_setop_check_types(sql, l, r, lexps, rexps, (operator_type)op);
 }
 
 static sql_rel *
@@ -5937,13 +5947,52 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int
 		rs = rel_projections(sql, r, NULL, 0, 1);
 		rel = rel_setop_check_types(sql, l, r, ls, rs, (operator_type)op);
 	} else {
-		rel = rel_setquery_corresponding(query, l, r, cols, op, outer);
+		rel = rel_setquery_corresponding(query, l, r, cols, op, outer, false);
 	}
 	if (rel) {
 		rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
 		set_processed(rel);
 	}
 	return rel;
+}
+
+/* Generate n-ary set operator */
+static sql_rel *
+rel_setquery_n_ary_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int outer)
+{
+	/* even though this is for a general n-ary operators in this phase of the query
+	 * processing we gonna have only two operands (so technically it's binary). In
+	 * general this op supports arbitrary number of operands.
+	 */
+	// TODO: for now we support only multi-union
+	assert(op == op_munion);
+
+	mvc *sql = query->sql;
+	sql_rel *rel;
+
+	if (outer && !cols)
+			return sql_error(sql, 02, SQLSTATE(42000) "UNION: OUTER needs to be combined with CORRESPONDING [ BY ( column list ) ]");
+	if (!cols) {
+		// TODO: make rel_setop_n_ary_check_types to accept a list of rels
+		// and a list of lists of exps
+		list *ls, *rs;
+
+		l = rel_unique_names(sql, l);
+		r = rel_unique_names(sql, r);
+		ls = rel_projections(sql, l, NULL, 0, 1);
+		rs = rel_projections(sql, r, NULL, 0, 1);
+		rel = rel_setop_n_ary_check_types(sql, l, r, ls, rs, (operator_type)op);
+	} else {
+		rel = rel_setquery_corresponding(query, l, r, cols, op, outer, true);
+	}
+
+	if (rel) {
+		rel_setop_n_ary_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
+		set_processed(rel);
+	}
+
+	return rel;
+
 }
 
 static sql_rel *
@@ -5988,7 +6037,9 @@ rel_setquery(sql_query *query, symbol *q)
 			t1 = rel_distinct(t1);
 		if (t2 && distinct)
 			t2 = rel_distinct(t2);
-		res = rel_setquery_(query, t1, t2, corresponding, op_union, outer );
+		// TODO: this has to be fixed
+		/*res = rel_setquery_(query, t1, t2, corresponding, op_union, outer);*/
+		res = rel_setquery_n_ary_(query, t1, t2, corresponding, op_munion, outer);
 	} else if ( q->token == SQL_EXCEPT)
 		res = rel_setquery_(query, t1, t2, corresponding, op_except, 0);
 	else if ( q->token == SQL_INTERSECT)

@@ -388,8 +388,10 @@ sql_rel* create_check_plan(sql_query *query, symbol *s, sql_table *t) {
 
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
-	sql_rel* rel = rel_basetable(sql, t, t->base.name);
+	sql_rel* rel = rel_basetable(sql, t, t->base.name), *orel = rel;
 	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel | sql_no_subquery, ek);
+	assert(rel == orel);
+	(void)orel;
 	rel->exps = rel_base_projection(sql, rel, 0);
 	list *pexps = sa_list(sql->sa);
 	pexps = append(pexps, e);

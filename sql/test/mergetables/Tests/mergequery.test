@@ -196,7 +196,7 @@ SELECT * FROM complete where x > 1.0 AND x < 2.0
 query T nosort
 PLAN SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 ----
-union (
+munion (
 | project (
 | | select (
 | | | table("sys"."part1") [ "part1"."x" NOT NULL as "complete"."x", "part1"."y" NOT NULL as "complete"."y", "part1"."z" NOT NULL as "complete"."z" ]
@@ -228,7 +228,7 @@ SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 query T nosort
 PLAN SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
 ----
-union (
+munion (
 | project (
 | | table("sys"."part1") [ "part1"."x" NOT NULL as "complete"."x", "part1"."y" NOT NULL as "complete"."y", "part1"."z" NOT NULL as "complete"."z" ]
 | ) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ],

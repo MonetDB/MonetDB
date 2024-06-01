@@ -2365,6 +2365,13 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 		args = rel2bin_args(be, rel->l, args);
 		args = rel2bin_args(be, rel->r, args);
 		break;
+	case op_munion:
+		if (rel->l) {
+			for (node* n = ((list*)rel->l)->h; n; n = n->next) {
+				args = rel2bin_args(be, n->data, args);
+			}
+		}
+		break;
 	case op_groupby:
 		if (rel->r)
 			args = exps2bin_args(be, rel->r, args);
@@ -3922,6 +3929,66 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 }
 
 static stmt *
+rel2bin_munion(backend *be, sql_rel *rel, list *refs)
+{
+	mvc *sql = be->mvc;
+	list *l, *rstmts;
+	node *n, *m;
+	stmt *rel_stmt = NULL, *sub;
+	int i, len = 0, nr_unions = list_length((list*)rel->l);
+
+	/* convert to stmt and store the munion operands in rstmts list */
+	rstmts = sa_list(sql->sa);
+	for (n = ((list*)rel->l)->h; n; n = n->next) {
+		rel_stmt = subrel_bin(be, n->data, refs);
+		rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
+		if (!rel_stmt)
+			return NULL;
+		list_append(rstmts, rel_stmt);
+		if (!len || len > list_length(rel_stmt->op4.lval))
+			len = list_length(rel_stmt->op4.lval);
+	}
+
+	/* construct relation */
+	l = sa_list(sql->sa);
+
+	/* for every op4 lval node */
+	//len = list_length(((stmt*)rstmts->h->data)->op4.lval);
+	for (i = 0; i < len; i++) {
+		/* extract t and c name from the first stmt */
+		stmt *s = list_fetch(((stmt*)rstmts->h->data)->op4.lval, i);
+		if (s == NULL)
+			return NULL;
+		const char *rnme = table_name(sql->sa, s);
+		const char *nme = column_name(sql->sa, s);
+		int label = s->label;
+		/* create a const column also from the first stmt */
+		s = stmt_pack(be, column(be, s), nr_unions);
+		/* for every other rstmt */
+		for (m = rstmts->h->next; m; m = m->next) {
+			stmt *t = list_fetch(((stmt*)m->data)->op4.lval, i);
+			if (t == NULL)
+				return NULL;
+			s = stmt_pack_add(be, s, column(be, t));
+			if (s == NULL)
+				return NULL;
+		}
+		s = stmt_alias(be, s, label, rnme, nme);
+		if (s == NULL)
+			return NULL;
+		list_append(l, s);
+	}
+	sub = stmt_list(be, l);
+
+	sub = rel_rename(be, rel, sub);
+	if (need_distinct(rel))
+		sub = rel2bin_distinct(be, sub, NULL);
+	if (is_single(rel))
+		sub = rel2bin_single(be, sub);
+	return sub;
+}
+
+static stmt *
 rel2bin_union(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
@@ -5072,31 +5139,33 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 }
 
 static void
-sql_insert_check(backend *be, sql_key *key, sql_rel *inserts, list *refs)
+sql_insert_check(backend *be, sql_key *key, list *inserts)
 {
 	mvc *sql = be->mvc;
-	node *m, *n;
-
-	inserts = rel_copy(sql, inserts, 1);
-	list* exps = inserts->exps;
-
-	for (n = ol_first_node(key->t->columns), m = exps->h; n && m;
-		n = n->next, m = m->next) {
-		sql_exp *i = m->data;
-		sql_column *c = n->data;
-		i->alias.rname= sa_strdup(sql->sa, c->t->base.name);
-		i->alias.name= sa_strdup(sql->sa, c->base.name);
-	}
-
 	int pos = 0;
-	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
-	rel->l = inserts;
-	stmt* s = subrel_bin(be, rel, refs);
-	sql_subtype *bt = sql_bind_localtype("bit");
-	s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
+	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa)), *br = rel->l;
+
+	assert(is_basetable(br->op));
+	/* create new sub stmt with needed inserts */
+	list *ins = sa_list(sql->sa);
+	for(node *n = key->columns->h; n; n = n->next) {
+		sql_kc *kc = n->data;
+		stmt *in = list_fetch(inserts, kc->c->colnr);
+
+		sql_exp *e = rel_base_bind_column2(sql, br, kc->c->t->base.name, kc->c->base.name);
+		in = stmt_alias(be, in, e->alias.label, kc->c->t->base.name, kc->c->base.name);
+		append(ins, in);
+	}
+	stmt *sub = stmt_list(be, ins);
+	/* TODO: need exp here */
+	assert(list_length(rel->exps) == 1);
+	sql_exp *e = rel->exps->h->data;
+	stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	s = stmt_uselect(be, column(be, s), stmt_bool(be, 0), cmp_equal, NULL, 0, 1);
 	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
-	char *msg = sa_message(sql->sa, SQLSTATE(40002) "INSERT INTO: CHECK constraint violated: %s", key->base.name);
+	char *msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: CHECK constraint violated: %s", key->base.name);
 	(void)stmt_exception(be, s, msg, 00001);
 }
 
@@ -5181,13 +5250,11 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	for (n = ol_first_node(t->keys); n; n = n->next) {
 		sql_key * key = n->data;
 		if (key->type == ckey)
-			sql_insert_check(be, key, rel->r, refs);
+			sql_insert_check(be, key, inserts->op4.lval);
 	}
 
 	if (!sql_insert_check_null(be, t, inserts->op4.lval))
 		return NULL;
-
-	l = sa_list(sql->sa);
 
 	updates = table_update_stmts(sql, t, &len);
 	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
@@ -5208,6 +5275,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 	insert = NULL;
 
+	l = sa_list(sql->sa);
 	if (t->idxs) {
 		idx_m = m;
 		for (n = ol_first_node(t->idxs); n && m; n = n->next, m = m->next) {
@@ -5290,6 +5358,23 @@ is_idx_updated(sql_idx * i, stmt **updates)
 		sql_kc *ic = m->data;
 
 		if (updates[ic->c->colnr]) {
+			update = 1;
+			break;
+		}
+	}
+	return update;
+}
+
+static int
+is_check_updated(sql_key * k, stmt **updates)
+{
+	int update = 0;
+	node *m;
+
+	for (m = k->columns->h; m; m = m->next) {
+		sql_kc *kc = m->data;
+
+		if (updates[kc->c->colnr]) {
 			update = 1;
 			break;
 		}
@@ -6070,55 +6155,51 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 }
 
 static void
-sql_update_check(backend *be, sql_key * key, sql_rel *updates, list *refs)
+sql_update_check(backend *be, stmt **updates, sql_key *key, stmt *u_tids)
 {
 	mvc *sql = be->mvc;
 	int pos = 0;
+	sql_rel *rel = NULL;
 
+	if (key->t->persistence == SQL_DECLARED_TABLE) {
+		stack_push_frame(be->mvc, "ALTER TABLE ADD CONSTRAINT CHECK");
+		sql_schema* ss = key->t->s;
+		frame_push_table(sql, key->t);
+		key->t->s = ss; // recover the schema because frame_push_table removes it
 
-	stack_push_frame(be->mvc, "ALTER TABLE ADD CONSTRAINT CHECK");
-	sql_schema* ss = key->t->s;
-	frame_push_table(sql, key->t);
-	key->t->s = ss; // recover the schema because frame_push_table removes it
-
-	sql_rel* rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
-	stack_pop_frame(sql);
-
-	if (!key->base.new) {
-		sql_rel* base = rel->l;
-		assert(strcmp(((sql_exp*) updates->exps->h->data)->alias.name, TID) == 0);
-		list_append(base->exps, exp_copy(sql, updates->exps->h->data));
-
-		bool need_join = 0;
-		list* pexps = sa_list(sql->sa);
-		sql_exp* tid_exp = exp_copy(sql, updates->exps->h->data);
-		unsigned label = ++sql->label;
-		exp_setrelname(sql->sa, tid_exp, label);
-		list_append(pexps, tid_exp);
-		for (node* m = base->exps->h; m; m = m->next) {
-			if (exps_find_exp( updates->exps, m->data) == NULL) {
-				pexps = list_append(pexps, exp_copy(sql, m->data));
-				need_join = 1;
-			}
-		}
-
-		if (need_join) {
-			base = rel_project(sql->sa, base, pexps);
-			sql_rel* join = rel_crossproduct(sql->sa, base, updates, op_join);
-			sql_exp* join_cond = exp_compare(sql->sa, exp_ref(sql, base->exps->h->data), exp_ref(sql, updates->exps->h->data), cmp_equal);
-			join->exps = sa_list(sql->sa);
-			join->exps = list_append(join->exps, join_cond);
-			rel->l = join;
-		}
-		else {
-			rel->l = updates;
-		}
+		rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
+		stack_pop_frame(sql);
+	} else {
+		rel = rel_read(sql, sa_strdup(sql->sa, key->check), &pos, sa_list(sql->sa));
 	}
 
+	sql_rel *br = rel->l;
+	assert(is_basetable(br->op));
+
+	/* create sub stmt with needed updates (or projected col from to be updated table) */
+	list *ups = sa_list(sql->sa);
+	for(node *n = key->columns->h; n; n = n->next) {
+		sql_kc *kc = n->data;
+		stmt *upd = NULL;
+
+		if (updates && updates[kc->c->colnr]) {
+			upd = updates[kc->c->colnr];
+		} else {
+			upd = stmt_col(be, kc->c, u_tids, u_tids->partition);
+		}
+		sql_exp *e = rel_base_bind_column2(sql, br, kc->c->t->base.name, kc->c->base.name);
+		upd = stmt_alias(be, upd, e->alias.label, kc->c->t->base.name, kc->c->base.name);
+		append(ups, upd);
+	}
+
+	stmt *sub = stmt_list(be, ups);
+	/* TODO: need exp here */
+	assert(list_length(rel->exps) == 1);
+	sql_exp *e = rel->exps->h->data;
+	stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
-	sql_subtype *bt = sql_bind_localtype("bit");
-	stmt* s = subrel_bin(be, rel, refs);
-	s = stmt_uselect(be, column(be, s), stmt_atom(be, atom_zero_value(sql->sa, bt)), cmp_equal, NULL, 0, 1);
+	s = stmt_uselect(be, column(be, s), stmt_bool(be, 0), cmp_equal, NULL, 0, 1);
 	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 	char *msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: CHECK constraint violated: %s", key->base.name);
 	(void)stmt_exception(be, s, msg, 00001);
@@ -6229,10 +6310,11 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 		/* no columns to update (probably an new pkey or ckey!) */
 		if (!rel->exps) {
+			stmt *tids = stmt_tid(be, t, 0);
 			for (m = ol_first_node(t->keys); m; m = m->next) {
 				sql_key * key = m->data;
 				if (key->type == ckey && key->base.new)
-					sql_update_check(be, key, rel->r, refs);
+					sql_update_check(be, NULL, key, tids);
 			}
 			return ddl;
 		}
@@ -6262,8 +6344,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	for (m = ol_first_node(t->keys); m; m = m->next) {
 		sql_key * key = m->data;
-		if (key->type == ckey)
-			sql_update_check(be, key, rel->r, refs);
+		if (key->type == ckey && is_check_updated(key, updates))
+			sql_update_check(be, updates, key, tids);
 	}
 	sql_update_check_null(be, t, updates);
 
@@ -7381,6 +7463,10 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_union:
 		s = rel2bin_union(be, rel, refs);
+		sql->type = Q_TABLE;
+		break;
+	case op_munion:
+		s = rel2bin_munion(be, rel, refs);
 		sql->type = Q_TABLE;
 		break;
 	case op_except:

@@ -35,7 +35,6 @@ target_include_directories(sqlstorage
 target_link_libraries(sqlstorage
   PRIVATE
   monetdb_config_header
-  mutils
   bat
   sqlcommon
   sqlinclude)

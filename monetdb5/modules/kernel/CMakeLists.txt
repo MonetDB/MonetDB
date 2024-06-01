@@ -51,7 +51,6 @@ target_link_libraries(kernel
   PRIVATE
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   monetdb_config_header
-  mutils
   bat
   mal
   atoms)

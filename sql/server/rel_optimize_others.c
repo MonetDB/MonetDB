@@ -35,31 +35,6 @@ rel_rename_exps( mvc *sql, list *src_exps, list *dest_exps)
 
 	(void)sql;
 	/* check if a column uses an alias earlier in the list */
-	/*
-	int pos = 0;
-	for (n = src_exps->h, m = dest_exps->h; n && m; n = n->next, m = m->next, pos++) {
-		sql_exp *e2 = m->data;
-
-		if (e2->type == e_column) {
-			sql_exp *ne = NULL;
-
-			if (e2->l)
-				ne = exps_bind_column2(dest_exps, e2->l, e2->r, NULL);
-			if (!ne && !e2->l)
-				ne = exps_bind_column(dest_exps, e2->r, NULL, NULL, 1);
-			if (ne) {
-				int p = list_position(dest_exps, ne);
-
-				if (p < pos) {
-					ne = list_fetch(src_exps, p);
-					if (e2->l)
-						e2->l = (void *) exp_relname(ne);
-					e2->r = (void *) exp_name(ne);
-				}
-			}
-		}
-	}
-	*/
 
 	assert(list_length(src_exps) <= list_length(dest_exps));
 	for (n = src_exps->h, m = dest_exps->h; n && m; n = n->next, m = m->next) {
@@ -67,11 +42,6 @@ rel_rename_exps( mvc *sql, list *src_exps, list *dest_exps)
 		sql_exp *d = m->data;
 		const char *rname = exp_relname(s);
 
-		/*
-		if (!rname && s->type == e_column && s->l && exp_relname(d) &&
-		    strcmp(s->l, exp_relname(d)) == 0)
-			rname = exp_relname(d);
-			*/
 		exp_setalias(d, s->alias.label, rname, exp_name(s));
 	}
 	list_hash_clear(dest_exps);
@@ -347,7 +317,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 		break;
 	}
 	if (ne && e != ne) {
-		if (local_proj == -2 || ne->type != e_column || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')) || (subrel->l && !rel_find_exp(subrel->l, e)))
+		if (local_proj == -2 || ne->type != e_column || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')) || (subrel->l && !is_munion(subrel->op) && !rel_find_exp(subrel->l, e)))
 			ne->used = 1;
 		return ne->used;
 	}
@@ -495,6 +465,10 @@ rel_used(sql_rel *rel)
 	if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
 		rel_used(rel->l);
 		rel_used(rel->r);
+	} else if (rel->op == op_munion) {
+		list *l = rel->l;
+		for(node *n = l->h; n; n = n->next)
+			rel_used(n->data);
 	} else if (is_topn(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		rel_used(rel->l);
 		rel = rel->l;
@@ -631,6 +605,32 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		}
 		break;
 
+	case op_munion:
+		assert(rel->l);
+		// TODO: here we blindly follow the same logic as op_union. RE-evaluate
+		if (proj && (need_distinct(rel) || !rel->exps)) {
+			rel_used(rel);
+			if (!rel->exps) {
+				for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+					rel_used(n->data);
+					rel_mark_used(sql, n->data, 0);
+				}
+			}
+		} else if (proj && !need_distinct(rel)) {
+			bool first = true;
+			for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+				sql_rel *l = n->data;
+
+				positional_exps_mark_used(rel, l);
+				rel_exps_mark_used(sql->sa, rel, l);
+				rel_mark_used(sql, l, 0);
+				/* based on child check set expression list */
+				if (first && is_project(l->op) && need_distinct(l))
+					positional_exps_mark_used(l, rel);
+				first = false;
+			}
+		}
+		break;
 	case op_join:
 	case op_left:
 	case op_right:
@@ -750,6 +750,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_union:
 	case op_inter:
 	case op_except:
+	case op_munion:
 
 	case op_insert:
 	case op_update:
@@ -822,6 +823,11 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 			rel_dce_refs(sql, rel->l, refs);
 		if (rel->r)
 			rel_dce_refs(sql, rel->r, refs);
+		break;
+	case op_munion:
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next)
+			rel_dce_refs(sql, n->data, refs);
 		break;
 	case op_ddl:
 
@@ -900,6 +906,14 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 			rel_dce_sub(sql, rel);
 		return rel;
 
+	case op_munion:
+		if (skip_proj) {
+			for (node *n = ((list*)rel->l)->h; n; n = n->next)
+				n->data = rel_dce_down(sql, n->data, 0);
+		}
+		if (!skip_proj)
+			rel_dce_sub(sql, rel);
+		return rel;
 	case op_select:
 		if (rel->l)
 			rel->l = rel_dce_down(sql, rel->l, 0);
@@ -994,6 +1008,16 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 			if (!is_project(r->op) && !need_distinct(rel))
 				r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 			rel->r = rel_add_projects(sql, r);
+		}
+		return rel;
+	case op_munion:
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			sql_rel* r = n->data;
+			if (!is_project(r->op) && !need_distinct(rel))
+				r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+			r = rel_add_projects(sql, r);
+			n->data = r;
 		}
 		return rel;
 	case op_topn:

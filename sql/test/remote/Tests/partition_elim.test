@@ -116,10 +116,6 @@ algebra.projection
 6
 algebra.select
 3
-bat.append
-4
-bat.new
-2
 bat.pack
 5
 language.dataflow
@@ -127,7 +123,7 @@ language.dataflow
 language.pass
 6
 mat.packIncrement
-4
+8
 querylog.define
 1
 sql.bind
@@ -148,10 +144,6 @@ algebra.projection
 6
 algebra.select
 3
-bat.append
-4
-bat.new
-2
 bat.pack
 5
 language.dataflow
@@ -159,7 +151,7 @@ language.dataflow
 language.pass
 6
 mat.packIncrement
-4
+8
 querylog.define
 1
 sql.bind

@@ -3448,6 +3448,78 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 }
 
 stmt *
+stmt_pack(backend *be, stmt *c, int n)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (c == NULL || c->nr < 0)
+		goto bailout;
+	q = newStmtArgs(mb, matRef, packIncrementRef, 3);
+	if (q == NULL)
+		goto bailout;
+	q = pushArgument(mb, q, c->nr);
+	q = pushInt(mb, q, n);
+	bool enabled = be->mvc->sa->eb.enabled;
+	be->mvc->sa->eb.enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_append);
+	be->mvc->sa->eb.enabled = enabled;
+	if(!s) {
+		freeInstruction(q);
+		goto bailout;
+	}
+	s->op1 = c;
+	s->nrcols = c->nrcols;
+	s->key = c->key;
+	s->nr = getDestVar(q);
+	s->q = q;
+	pushInstruction(mb, q);
+	return s;
+
+  bailout:
+	if (be->mvc->sa->eb.enabled)
+		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+
+}
+
+stmt *
+stmt_pack_add(backend *be, stmt *c, stmt *a)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (c == NULL || a == NULL || c->nr < 0 || a->nr < 0)
+		goto bailout;
+	q = newStmtArgs(mb, matRef, packIncrementRef, 3);
+	if (q == NULL)
+		goto bailout;
+	q = pushArgument(mb, q, c->nr);
+	q = pushArgument(mb, q, a->nr);
+	bool enabled = be->mvc->sa->eb.enabled;
+	be->mvc->sa->eb.enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_append);
+	be->mvc->sa->eb.enabled = enabled;
+	if(!s) {
+		freeInstruction(q);
+		goto bailout;
+	}
+	s->op1 = c;
+	s->op2 = a;
+	s->nrcols = c->nrcols;
+	s->key = c->key;
+	s->nr = getDestVar(q);
+	s->q = q;
+	pushInstruction(mb, q);
+	return s;
+
+  bailout:
+	if (be->mvc->sa->eb.enabled)
+		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+}
+
+stmt *
 stmt_claim(backend *be, sql_table *t, stmt *cnt)
 {
 	MalBlkPtr mb = be->mb;

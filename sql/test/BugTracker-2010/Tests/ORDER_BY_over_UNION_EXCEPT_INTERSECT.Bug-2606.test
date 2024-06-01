@@ -70,7 +70,7 @@ query T nosort
 PLAN   select * from t2606a   union   select * from t2606b   order by a
 ----
 project (
-| distinct union (
+| distinct munion (
 | | project (
 | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
 | | ) [ "t2606a"."a" NOT NULL UNIQUE ],
@@ -97,7 +97,7 @@ query T nosort
 PLAN ( select * from t2606a   union   select * from t2606b ) order by a
 ----
 project (
-| distinct union (
+| distinct munion (
 | | project (
 | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
 | | ) [ "t2606a"."a" NOT NULL UNIQUE ],
@@ -124,7 +124,7 @@ query T nosort
 PLAN ( select * from t2606a ) union ( select * from t2606b ) order by a
 ----
 project (
-| distinct union (
+| distinct munion (
 | | project (
 | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
 | | ) [ "t2606a"."a" NOT NULL UNIQUE ],
@@ -277,7 +277,7 @@ query T nosort
 PLAN select * from (select * from t2606a union select * from t2606b) as t order by a
 ----
 project (
-| distinct union (
+| distinct munion (
 | | project (
 | | | table("sys"."t2606a") [ "t2606a"."a" NOT NULL UNIQUE ]
 | | ) [ "t2606a"."a" NOT NULL UNIQUE ],

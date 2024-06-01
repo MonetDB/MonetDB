@@ -124,14 +124,9 @@ target_include_directories(MonetODBC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
-target_compile_definitions(MonetODBC
-  PRIVATE
-  LIBMONETODBCS)
-
 target_link_libraries(MonetODBC
   PRIVATE
   monetdb_config_header
-  mutils
   mapi
   mutf8
   ${ODBCINST_LIBRARIES})

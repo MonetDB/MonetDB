@@ -387,6 +387,34 @@ cleanup:
 	return fres;
 }
 
+str
+exp2str( mvc *sql, sql_exp *exp)
+{
+	buffer *b = NULL;
+	stream *s = NULL;
+	char *res = NULL;
+
+	b = buffer_create(1024);
+	if(b == NULL)
+		goto cleanup;
+	s = buffer_wastream(b, "exp_dump");
+	if(s == NULL)
+		goto cleanup;
+
+	exp_print(sql, s, exp, 0, NULL, 0, 0, 0);
+	res = buffer_get_buf(b);
+
+cleanup:
+	if(b)
+		buffer_destroy(b);
+	if(s)
+		close_stream(s);
+
+	char* fres = SA_STRDUP(sql->sa, res);
+	free (res);
+	return fres;
+}
+
 static void
 exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate)
 {
@@ -550,6 +578,29 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		if (is_join(rel->op) && rel->attr) /* group joins */
 			exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate);
 		break;
+	case op_munion:
+		r = "munion";
+		if (is_dependent(rel))
+			mnstr_printf(fout, "dependent ");
+		if (need_distinct(rel))
+			mnstr_printf(fout, "distinct ");
+		mnstr_printf(fout, "%s (", r);
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			if (rel_is_ref(n->data)) {
+				int nr = find_ref(refs, n->data);
+				print_indent(sql, fout, depth+1, decorate);
+				mnstr_printf(fout, "& REF %d ", nr);
+			} else {
+				rel_print_rel(sql, fout, n->data, depth+1, refs, decorate);
+			}
+			if (n->next)
+				mnstr_printf(fout, ",");
+		}
+		print_indent(sql, fout, depth, decorate);
+		mnstr_printf(fout, ")");
+		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate);
+		break;
 	case op_project:
 	case op_select:
 	case op_groupby:
@@ -707,6 +758,18 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 			rel_print_rel(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
+		}
+		break;
+	case op_munion:
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			// TODO: do we need to check n->data?
+			if (n->data)
+				rel_print_refs(sql, fout, n->data, depth, refs, decorate);
+			if (n->data && rel_is_ref(n->data) && !find_ref(refs, n->data)) {
+				rel_print_rel(sql, fout, n->data, depth, refs, decorate);
+				list_append(refs, n->data);
+			}
 		}
 		break;
 	case op_insert:
@@ -1715,6 +1778,24 @@ rel_set_types(mvc *sql, sql_rel *rel)
 	return 0;
 }
 
+static int
+rel_set_types_n_ary(mvc *sql, sql_rel *rel)
+{
+	list *rels = rel->l;
+	list *iexps = rel_projections( sql, rels->h->data, NULL, 0, 1);
+	node *n, *m;
+
+	if (!iexps || list_length(iexps) > list_length(rel->exps))
+		return -1;
+	for(n=iexps->h, m=rel->exps->h; n && m; n = n->next, m = m->next) {
+		sql_exp *e = m->data;
+
+		if (!e->tpe.type)
+			e->tpe = *exp_subtype( n->data );
+	}
+	return 0;
+}
+
 static sql_rel*
 rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
 {
@@ -1776,7 +1857,7 @@ sql_rel*
 rel_read(mvc *sql, char *r, int *pos, list *refs)
 {
 	sql_rel *rel = NULL, *nrel, *lrel, *rrel;
-	list *exps, *gexps;
+	list *exps, *gexps, *rels = NULL;
 	int distinct = 0, dependent = 0, single = 0;
 	operator_type j = op_basetable;
 	bool groupjoin = false;
@@ -2323,6 +2404,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		}
 		set_processed(rel);
 		break;
+	case 'm':
+		if (strcmp(r+*pos, "munion") == 0 && j == op_basetable) {
+			*pos += (int) strlen("munion");
+			j = op_munion;
+		}
+		/* fall through */
 	case 'u':
 		if (j == op_basetable) {
 			*pos += (int) strlen("union");
@@ -2350,14 +2437,28 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		skipWS(r, pos);
 
-		if (r[*pos] != ',')
-			return sql_error(sql, -1, SQLSTATE(42000) "Setop: missing ','\n");
-		(*pos)++;
-		skipWS(r, pos);
-		if (!(rrel = rel_read(sql, r, pos, refs)))
-			return NULL;
+		if (j == op_munion) {
+			rels = sa_list(sql->sa);
+			append(rels, lrel);
 
-		skipWS(r, pos);
+			while (r[*pos] == ',') {
+				(*pos)++;
+				skipWS(r, pos);
+				if (!(rrel = rel_read(sql, r, pos, refs)))
+					return NULL;
+				skipWS(r, pos);
+				append(rels, rrel);
+			}
+		} else {
+			if (r[*pos] != ',')
+				return sql_error(sql, -1, SQLSTATE(42000) "Setop: missing ','\n");
+			(*pos)++;
+			skipWS(r, pos);
+			if (!(rrel = rel_read(sql, r, pos, refs)))
+				return NULL;
+			skipWS(r, pos);
+		}
+
 		if (r[*pos] != ')')
 			return sql_error(sql, -1, SQLSTATE(42000) "Setop: missing ')'\n");
 		(*pos)++;
@@ -2365,10 +2466,17 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0, 1)))
 			return NULL;
-		rel = rel_setop(sql->sa, lrel, rrel, j);
-		rel_setop_set_exps(sql, rel, exps, false);
-		if (rel_set_types(sql, rel) < 0)
-			return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
+		if (j == op_munion) {
+			rel = rel_setop_n_ary(sql->sa, rels, j);
+			rel_setop_n_ary_set_exps(sql, rel, exps, false);
+			if (rel_set_types_n_ary(sql, rel) < 0)
+				return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
+		} else {
+			rel = rel_setop(sql->sa, lrel, rrel, j);
+			rel_setop_set_exps(sql, rel, exps, false);
+			if (rel_set_types(sql, rel) < 0)
+				return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
+		}
 		set_processed(rel);
 		break;
 	case '[': /* projection of list of values */

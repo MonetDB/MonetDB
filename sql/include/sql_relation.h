@@ -163,6 +163,7 @@ typedef enum operator_type {
 	op_semi,
 	op_anti,
 	op_union,
+	op_munion,
 	op_inter,
 	op_except,
 	op_groupby,
@@ -201,11 +202,13 @@ typedef enum operator_type {
 #define is_joinop(op) 		(is_join(op) || is_semi(op))
 #define is_select(op) 		(op == op_select)
 #define is_set(op) 			(op == op_union || op == op_inter || op == op_except)
+#define is_mset(op) 		(op == op_munion || op == op_inter || op == op_except)
 #define is_union(op) 		(op == op_union)
 #define is_inter(op) 		(op == op_inter)
 #define is_except(op) 		(op == op_except)
+#define is_munion(op) 		(op == op_munion)
 #define is_simple_project(op) 	(op == op_project)
-#define is_project(op) 		(op == op_project || op == op_groupby || is_set(op))
+#define is_project(op) 		(op == op_project || op == op_groupby || is_set(op) || is_munion(op))
 #define is_groupby(op) 		(op == op_groupby)
 #define is_topn(op) 		(op == op_topn)
 #define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate || op == op_merge)

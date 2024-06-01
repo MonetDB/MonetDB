@@ -46,7 +46,6 @@ target_include_directories(udf
 
 target_link_libraries(udf
   PRIVATE
-  mutils
   bat
   monetdb5
   sql

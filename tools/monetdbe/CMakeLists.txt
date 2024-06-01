@@ -61,7 +61,6 @@ target_link_libraries(monetdbe
   monetdb_config_header
   matomic
   moptions
-  mutils
   mapi
   stream
   bat

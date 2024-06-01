@@ -58,7 +58,7 @@ id_r asc
 project (
 | project (
 | | group by (
-| | | union (
+| | | munion (
 | | | | group by (
 | | | | | project (
 | | | | | | select (
@@ -118,7 +118,7 @@ id_r asc
 project (
 | project (
 | | group by (
-| | | union (
+| | | munion (
 | | | | group by (
 | | | | | project (
 | | | | | | project (

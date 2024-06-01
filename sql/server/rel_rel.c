@@ -120,6 +120,12 @@ rel_destroy_(sql_rel *rel)
 		if (rel->r)
 			rel_destroy(rel->r);
 		break;
+	case op_munion:
+		/* the rel->l might be in purpose NULL see rel_merge_table_rewrite_() */
+		if (rel->l)
+			for (node *n = ((list*)rel->l)->h; n; n = n->next)
+				rel_destroy(n->data);
+		break;
 	case op_project:
 	case op_groupby:
 	case op_select:
@@ -200,6 +206,10 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 				rel->r = exps_copy(sql, i->r);
 			}
 		}
+		break;
+	case op_munion:
+		if (i->l)
+			rel->l = list_dup(i->l, (fdup) rel_dup);
 		break;
 	case op_ddl:
 		if (i->flag == ddl_output || i->flag == ddl_create_seq || i->flag == ddl_alter_seq || i->flag == ddl_alter_table || i->flag == ddl_create_table || i->flag == ddl_create_view) {
@@ -501,6 +511,7 @@ rel_first_column(mvc *sql, sql_rel *r)
 	return NULL;
 }
 
+/* rel_inplace_* used to convert a rel node into another flavor */
 static void
 rel_inplace_reset_props(sql_rel *rel)
 {
@@ -536,6 +547,22 @@ rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type 
 	rel->op = setop;
 	rel->card = CARD_MULTI;
 	rel_setop_set_exps(sql, rel, exps, false);
+	return rel;
+}
+
+sql_rel *
+rel_inplace_setop_n_ary(mvc *sql, sql_rel *rel, list *rl, operator_type setop, list *exps)
+{
+	// TODO: for now we only deal with munion
+	assert(setop == op_munion);
+	rel_destroy_(rel);
+	rel_inplace_reset_props(rel);
+	/* rl should be a list of relations */
+	rel->l = rl;
+	rel->r = NULL;
+	rel->op = setop;
+	rel->card = CARD_MULTI;
+	rel_setop_n_ary_set_exps(sql, rel, exps, false);
 	return rel;
 }
 
@@ -600,6 +627,29 @@ rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
 	return rel;
 }
 
+sql_rel *
+rel_inplace_munion(sql_rel *rel, list *rels)
+{
+	rel_destroy_(rel);
+	rel_inplace_reset_props(rel);
+	// TODO: what is the semantics of cardinality? is that right?
+	rel->card = CARD_MULTI;
+	rel->nrcols = 0;
+	if (rels)
+		rel->l = rels;
+	if (rels) {
+		for (node* n = rels->h; n; n = n->next) {
+			sql_rel *r = n->data;
+			// TODO: could we overflow the nrcols this way?
+			rel->nrcols += r->nrcols;
+		}
+	}
+	rel->r = NULL;
+	rel->exps = NULL;
+	rel->op = op_munion;
+	return rel;
+}
+
 /* this function is to be used with the above rel_inplace_* functions */
 sql_rel *
 rel_dup_copy(allocator *sa, sql_rel *rel)
@@ -644,6 +694,11 @@ rel_dup_copy(allocator *sa, sql_rel *rel)
 	case op_truncate:
 		if (nrel->l)
 			rel_dup(nrel->l);
+		break;
+	case op_munion:
+		// TODO: is that even right?
+		if (nrel->l)
+			nrel->l = list_dup(nrel->l, (fdup) rel_dup);
 		break;
 	}
 	return nrel;
@@ -727,6 +782,118 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 	}
 	rel->nrcols = l->nrcols;
 	rel->exps = exps;
+}
+
+sql_rel *
+rel_setop_n_ary(allocator *sa, list *rels, operator_type setop)
+{
+	// TODO: for now we support only n-ary union
+	assert(setop == op_munion);
+
+	if (!rels)
+		return NULL;
+
+	assert(list_length(rels) >= 2);
+	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
+
+	rel->l = rels;
+	rel->r = NULL;
+	rel->op = setop;
+	rel->exps = NULL;
+	rel->card = CARD_MULTI;
+	// TODO: properly introduce the assertion over rels elements
+	/*assert(l->nrcols == r->nrcols);*/
+	rel->nrcols = ((sql_rel*)rels->h->data)->nrcols;
+	return rel;
+}
+
+sql_rel *
+rel_setop_n_ary_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op)
+{
+	// TODO: for now we support only 2 relation in the list at ->l of
+	// the n-ary operator. In the future this function should be variadic (?)
+	// TODO: for now we support only n-ary union
+	assert(op == op_munion);
+
+	/* NOTE: this is copied logic from rel_setop_check_types. A DRY-er approach
+	 * would be to call rel_setop_check_types which will return a binary
+	 * setop from which we could extract ->l and ->r and add them in a list
+	 * for the op_munion. This is kind of ugly though...
+	 */
+	list *nls = new_exp_list(sql->sa);
+	list *nrs = new_exp_list(sql->sa);
+	node *n, *m;
+	list* rels;
+
+	if(!nls || !nrs)
+		return NULL;
+
+	for (n = ls->h, m = rs->h; n && m; n = n->next, m = m->next) {
+		sql_exp *le = n->data;
+		sql_exp *re = m->data;
+
+		if (rel_convert_types(sql, l, r, &le, &re, 1, type_set) < 0)
+			return NULL;
+		append(nls, le);
+		append(nrs, re);
+	}
+	l = rel_project(sql->sa, l, nls);
+	r = rel_project(sql->sa, r, nrs);
+	set_processed(l);
+	set_processed(r);
+
+	/* create a list with only 2 sql_rel entries for the n-ary set op */
+	rels = sa_list(sql->sa);
+	append(rels, l);
+	append(rels, r);
+
+	return rel_setop_n_ary(sql->sa, rels, op);
+}
+
+void
+rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
+{
+	list *rexps;
+	sql_rel *r;
+
+	/* set the exps properties first */
+	for (node *m = exps->h; m; m = m->next) {
+		/* the nil/no_nil property will be set in the next loop where
+		 * we go through the exps of every rel of the rels. For now no_nil
+		 */
+		sql_exp *e = (sql_exp*)m->data;
+		set_has_no_nil(e);
+		/* remove all the properties on unions on the general case */
+		if (!keep_props) {
+			e->p = NULL;
+			set_not_unique(e);
+		}
+	}
+
+	/* for every relation in the list of relations */
+	for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+		r = n->data;
+		rexps = r->exps;
+
+		if (!is_project(r->op))
+			rexps = rel_projections(sql, r, NULL, 0, 1);
+
+		/* go through the relation's exps */
+		for (node *m = exps->h, *o = rexps->h; m && o; m = m->next, o = o->next) {
+			sql_exp *e = m->data, *f = o->data;
+			/* for multi-union if any operand has nil then set the nil prop for the op exp */
+			if (is_munion(rel->op) && has_nil(f))
+				set_has_nil(e);
+			e->card = CARD_MULTI;
+		}
+	}
+
+	rel->exps = exps;
+	// TODO: probably setting nrcols is redundant as we have allready done
+	// that when we create the setop_n_ary. check rel_setop_n_ary()
+	rel->nrcols = ((sql_rel*)((list*)rel->l)->h->data)->nrcols;
 }
 
 sql_rel *
@@ -1114,10 +1281,13 @@ exps_reset_props(list *exps, bool setnil)
 	}
 }
 
+/* Return a list with all the projection expressions, that optionaly
+ * refer to the tname relation, anywhere in the relational tree
+ */
 list *
 _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
 {
-	list *lexps, *rexps = NULL, *exps;
+	list *lexps, *rexps = NULL, *exps = NULL, *rels;
 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1172,6 +1342,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_union:
 	case op_except:
 	case op_inter:
+	case op_munion:
 		if (is_basetable(rel->op) && !rel->exps)
 			return rel_base_projection(sql, rel, intern);
 		if (rel->exps) {
@@ -1194,6 +1365,40 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			}
 			return exps;
 		}
+		/* differentiate for the munion set op (for now) */
+		if (is_munion(rel->op)) {
+			sql_rel *r = NULL;
+			assert(rel->l);
+			/* get the exps from the first relation */
+			rels = rel->l;
+			if (rels->h)
+				r = rels->h->data;
+			if (r)
+				exps = _rel_projections(sql, r, tname, settname, intern, basecol);
+			/* for every other relation in the list */
+			// TODO: do we need the assertion here? for no-assert the loop is no-op
+			/*
+			for (node *n = rels->h->next; n; n = n->next) {
+				rexps = _rel_projections(sql, n->data, tname, settname, intern, basecol);
+				assert(list_length(exps) == list_length(rexps));
+			}
+			*/
+			/* it's a multi-union (expressions have to be the same in all the operands)
+			 * so we are ok only with the expressions of the first operand
+			 */
+			if (exps) {
+				for (node *en = exps->h; en; en = en->next) {
+					sql_exp *e = en->data;
+
+					e->card = rel->card;
+					if (!settname) /* noname use alias */
+						exp_setname(sql, e, exp_relname(e), exp_name(e));
+				}
+				if (!settname)
+					list_hash_clear(rel->l);
+			}
+			return exps;
+		}
 		/* I only expect set relations to hit here */
 		assert(is_set(rel->op));
 		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
@@ -1212,6 +1417,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				list_hash_clear(lexps);
 		}
 		return lexps;
+
 	case op_ddl:
 	case op_semi:
 	case op_anti:
@@ -1259,12 +1465,6 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 			assert(e->nid);
 			if (exps_bind_nid(rel->attr, e->nid))
 				found = 1;
-			/*
-			if (e->l && exps_bind_column2(rel->attr, e->l, e->r, NULL))
-				found = 1;
-			if (!found && !e->l && exps_bind_column(rel->attr, e->r, NULL, NULL, 1))
-				found = 1;
-				*/
 		}
 		break;
 	case op_semi:
@@ -1275,6 +1475,7 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		found = rel_bind_path_(sql, rel->l, e, path);
 		break;
 	case op_basetable:
+	case op_munion:
 	case op_union:
 	case op_inter:
 	case op_except:
@@ -1282,13 +1483,6 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_project:
 	case op_table:
 		if (is_basetable(rel->op) && !rel->exps) {
-			/*
-			if (e->l) {
-				if (rel_base_bind_column2_(rel, e->l, e->r))
-					found = 1;
-			} else if (rel_base_bind_column_(rel, e->r))
-				found = 1;
-				*/
 			assert(e->nid);
 			if (rel_base_has_nid(rel, e->nid))
 				found = 1;
@@ -1296,12 +1490,6 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 			assert(e->nid);
 			if (exps_bind_nid(rel->exps, e->nid))
 				found = 1;
-			/*
-			if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
-				found = 1;
-			if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, NULL, 1))
-				found = 1;
-				*/
 		}
 		break;
 	case op_insert:
@@ -1790,7 +1978,7 @@ rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 	if (ek.card < card_set && rel->card > CARD_ATOM) {
 		list *exps = rel->exps;
 
-		assert (is_simple_project(rel->op) || is_set(rel->op));
+		assert (is_simple_project(rel->op) || is_mset(rel->op));
 		rel = rel_groupby(sql, rel, NULL);
 		for(node *n = exps->h; n; n=n->next) {
 			sql_exp *e = n->data;
@@ -1814,7 +2002,7 @@ rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 	if (is_topn(rel->op) || is_sample(rel->op))
 		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
 	if (ek.card < card_set && rel->card > CARD_ATOM) {
-		assert (is_simple_project(rel->op) || is_set(rel->op));
+		assert (is_simple_project(rel->op) || is_mset(rel->op));
 
 		list *exps = rel->exps;
 		for(node *n = exps->h; n; n=n->next) {
@@ -2026,6 +2214,12 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		if (rel_deps(sql, r->l, refs, l) != 0 ||
 			rel_deps(sql, r->r, refs, l) != 0)
 			return -1;
+		break;
+	case op_munion:
+		for (node *n = ((list*)r->l)->h; n; n = n->next) {
+			if (rel_deps(sql, n->data, refs, l) != 0)
+				return -1;
+		}
 		break;
 	case op_project:
 	case op_select:
@@ -2254,6 +2448,12 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 			if ((rel->r = rel_exp_visitor(v, rel->r, exp_rewriter, topdown, relations_topdown)) == NULL)
 				return NULL;
 		break;
+	case op_munion:
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			if ((n->data = rel_exp_visitor(v, n->data, exp_rewriter, topdown, relations_topdown)) == NULL)
+				return NULL;
+		}
+		break;
 	case op_select:
 	case op_topn:
 	case op_sample:
@@ -2466,6 +2666,12 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 		if (rel->r)
 			if ((rel->r = func(v, rel->r, rel_rewriter)) == NULL)
 				return NULL;
+		break;
+	case op_munion:
+		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
+			if ((n->data = func(v, n->data, rel_rewriter)) == NULL)
+				return NULL;
+		}
 		break;
 	case op_select:
 	case op_topn:
