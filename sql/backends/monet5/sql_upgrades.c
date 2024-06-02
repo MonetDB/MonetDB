@@ -7041,6 +7041,10 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				"GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;\n"
 				"GRANT SELECT ON sys.describe_privileges TO PUBLIC;\n"
 				"GRANT SELECT ON sys.describe_functions TO PUBLIC;\n"
+				"\n"
+				"CREATE FUNCTION check_constraint(sname STRING, cname STRING) RETURNS STRING EXTERNAL NAME sql.\"check\";\n"
+				"grant execute on function check_constraint to public;\n"
+				"\n"
 				"update sys.functions set system = true where not system and schema_id = 2000 and name in ('dump_database', 'describe_columns', 'describe_type');\n"
 				"update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_comments', 'dump_tables', 'dump_functions', 'dump_function_grants', 'describe_functions', 'describe_privileges', 'describe_comments', 'fully_qualified_functions', 'describe_tables');\n";
 			if ((t = mvc_bind_table(sql, s, "dump_comments")) != NULL)
