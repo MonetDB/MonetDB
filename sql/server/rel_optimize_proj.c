@@ -3461,6 +3461,31 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static inline sql_rel *
+rel_merge_unions(visitor *v, sql_rel *rel)
+{
+	(void)v;
+	if (rel && is_munion(rel->op)) {
+		list *l = rel->l;
+		for(node *n = l->h; n; ) {
+			node *next = n->next;
+			sql_rel *i = n->data;
+			if (is_munion(i->op)) {
+				i = rel_dup(i);
+				list_remove_node(l, NULL, n);
+				l = list_merge(l, i->l, (fdup)NULL);
+				i->l = NULL;
+				rel_destroy(i);
+				if (!next)
+					next = l->h;
+			}
+			n = next;
+		}
+		rel->l = l;
+	}
+	return rel;
+}
+
 /*
  * Push (semi)joins down unions, this is basically for merge tables, where
  * we know that the fk-indices are split over two clustered merge tables.
@@ -3879,6 +3904,7 @@ static sql_rel *
 rel_optimize_unions_topdown_(visitor *v, sql_rel *rel)
 {
 	rel = rel_push_project_down_union(v, rel);
+	rel = rel_merge_unions(v, rel);
 	rel = rel_push_join_down_munion(v, rel);
 	return rel;
 }
