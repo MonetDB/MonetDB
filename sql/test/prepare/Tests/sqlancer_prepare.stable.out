@@ -153,13 +153,13 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 6,	2,	1,	0,	3,	3 # length
-[ "json",	0,	0,	"",	"%15",	"%15"	]
+[ "json",	0,	0,	"",	"%10",	"%10"	]
 [ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 6,	2,	1,	0,	3,	3 # length
-[ "json",	0,	0,	"",	"%15",	"%15"	]
+[ "json",	0,	0,	"",	"%10",	"%10"	]
 [ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
