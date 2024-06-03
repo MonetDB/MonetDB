@@ -3480,6 +3480,7 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 				rel_destroy(i);
 				if (!next)
 					next = l->h;
+				v->changes++;
 			}
 			n = next;
 		}
