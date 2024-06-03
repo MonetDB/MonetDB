@@ -362,5 +362,5 @@ BEGIN
   RETURN sys.dump_statements;
 END;
 
-CREATE FUNCTION check_constraint(sname STRING, cname STRING) RETURNS STRING EXTERNAL NAME sql."check";
-grant execute on function check_constraint to public;
+CREATE FUNCTION sys.check_constraint(sname STRING, cname STRING) RETURNS STRING EXTERNAL NAME sql."check";
+grant execute on function sys.check_constraint to public;

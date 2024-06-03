@@ -7002,7 +7002,6 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;\n"
-				"\n"
 				" --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s\n"
 				" FROM (\n"
@@ -7010,12 +7009,10 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				" UNION ALL\n"
 				" SELECT t.o, t.stmt FROM sys.dump_tables t\n"
 				" ) AS stmts(o, s);\n"
-				"\n"
 				" -- dump table data before adding constraints and fixing sequences\n"
 				" IF NOT DESCRIBE THEN\n"
 				" CALL sys.dump_table_data();\n"
 				" END IF;\n"
-				"\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;\n"
@@ -7027,13 +7024,10 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;\n"
-				"\n"
 				" --TODO Improve performance of dump_table_data.\n"
 				" --TODO loaders, procedures, window and filter sys.functions.\n"
 				" --TODO look into order dependent group_concat\n"
-				"\n"
 				" INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');\n"
-				"\n"
 				" RETURN sys.dump_statements;\n"
 				"END;\n"
 				"GRANT SELECT ON sys.describe_tables TO PUBLIC;\n"
@@ -7041,11 +7035,9 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				"GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;\n"
 				"GRANT SELECT ON sys.describe_privileges TO PUBLIC;\n"
 				"GRANT SELECT ON sys.describe_functions TO PUBLIC;\n"
-				"\n"
-				"CREATE FUNCTION check_constraint(sname STRING, cname STRING) RETURNS STRING EXTERNAL NAME sql.\"check\";\n"
-				"grant execute on function check_constraint to public;\n"
-				"\n"
-				"update sys.functions set system = true where not system and schema_id = 2000 and name in ('dump_database', 'describe_columns', 'describe_type');\n"
+				"CREATE FUNCTION sys.check_constraint(sname STRING, cname STRING) RETURNS STRING EXTERNAL NAME sql.\"check\";\n"
+				"grant execute on function sys.check_constraint to public;\n"
+				"update sys.functions set system = true where not system and schema_id = 2000 and name in ('dump_database', 'describe_columns', 'describe_type', 'check_constraint');\n"
 				"update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_comments', 'dump_tables', 'dump_functions', 'dump_function_grants', 'describe_functions', 'describe_privileges', 'describe_comments', 'fully_qualified_functions', 'describe_tables');\n";
 			if ((t = mvc_bind_table(sql, s, "dump_comments")) != NULL)
 				t->system = 0;
@@ -7118,9 +7110,8 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 						" ('ClientPid');\n"
 						"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
 						"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n";
-					;
-					sql_schema *sys = mvc_bind_schema(sql, "sys");
-					sql_table *t = mvc_bind_table(sql, sys, "sessions");
+
+					t = mvc_bind_table(sql, s, "sessions");
 					t->system = 0; /* make it non-system else the drop view will fail */
 					printf("Running database upgrade commands:\n%s\n", query3);
 					fflush(stdout);
@@ -7141,7 +7132,6 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 
 							"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
 							"UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';\n";
-						sql_table *t;
 						if ((t = mvc_bind_table(sql, s, "key_types")) != NULL)
 							t->system = 0;
 						printf("Running database upgrade commands:\n%s\n", query4);
