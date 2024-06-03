@@ -1050,11 +1050,8 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 	case e_column:
 		{
 			sql_exp *c = NULL;
-			if (e->l) {
-				c = exps_bind_column2(crefs, e->l, e->r, NULL);
-			} else {
-				c = exps_bind_column(crefs, e->r, NULL, NULL, 1);
-			}
+			if (e->nid)
+				c = exps_bind_nid(crefs, e->nid);
 			if (c) {
 				e->type = e_atom;
 				e->l = atom_general(sql->sa, &e->tpe, NULL, 0);

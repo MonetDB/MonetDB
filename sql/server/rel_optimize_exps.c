@@ -755,15 +755,12 @@ rel_remove_alias(visitor *v, sql_rel *rel, sql_exp *e)
 		if (l->op == op_project) {
 			sql_exp *ne = rel_find_exp(l, e);
 			if (ne && ne->type == e_column && is_selfref(ne)) {
-				sql_exp *nne = NULL;
 				/* found ne in projection, try to find reference in the same list */
-				if (ne->l)
-					nne = exps_bind_column2(l->exps, ne->l, ne->r, NULL);
-				else
-					nne = exps_bind_column(l->exps, ne->r, NULL, NULL, 1);
+				sql_exp *nne = exps_bind_nid(l->exps, ne->nid);
 				if (nne && nne != ne && list_position(l->exps, nne) < list_position(l->exps, ne)) {
 					e->l = (char*)exp_relname(nne);
 					e->r = (char*)exp_name(nne);
+					e->nid = nne->alias.label;
 					v->changes++;
 				}
 			}
@@ -777,14 +774,11 @@ rel_remove_alias(visitor *v, sql_rel *rel, sql_exp *e)
 				sql_exp *ne = rel_find_exp(l, e);
 				found = true;
 				if (ne && ne->type == e_column && is_selfref(ne)) {
-					sql_exp *nne = NULL;
-					if (ne->l)
-						nne = exps_bind_column2(l->exps, ne->l, ne->r, NULL);
-					else
-						nne = exps_bind_column(l->exps, ne->r, NULL, NULL, 1);
+					sql_exp *nne = exps_bind_nid(l->exps, ne->nid);
 					if (nne && nne != ne && list_position(l->exps, nne) < list_position(l->exps, ne)) {
 						e->l = (char*)exp_relname(nne);
 						e->r = (char*)exp_name(nne);
+						e->nid = nne->alias.label;
 						v->changes++;
 					}
 				}
@@ -796,14 +790,11 @@ rel_remove_alias(visitor *v, sql_rel *rel, sql_exp *e)
 				sql_exp *ne = rel_find_exp(l, e);
 				found = true;
 				if (ne && ne->type == e_column && is_selfref(ne)) {
-					sql_exp *nne = NULL;
-					if (ne->l)
-						nne = exps_bind_column2(l->exps, ne->l, ne->r, NULL);
-					else
-						nne = exps_bind_column(l->exps, ne->r, NULL, NULL, 1);
+					sql_exp *nne = exps_bind_nid(l->exps, ne->nid);
 					if (nne && nne != ne && list_position(l->exps, nne) < list_position(l->exps, ne)) {
 						e->l = (char*)exp_relname(nne);
 						e->r = (char*)exp_name(nne);
+						e->nid = nne->alias.label;
 						v->changes++;
 					}
 				}

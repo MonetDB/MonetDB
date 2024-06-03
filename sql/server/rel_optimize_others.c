@@ -101,10 +101,8 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 			e = ne;
 			ne = NULL;
-			if (e->l)
-				ne = exps_bind_column2(f->exps, e->l, e->r, NULL);
-			if (!ne && !e->l)
-				ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
+			if (e->nid)
+				ne = exps_bind_nid(f->exps, e->nid);
 			if (ne && ne != one && list_position(f->exps, ne) >= list_position(f->exps, one))
 				ne = NULL;
 			if (!ne || ne == one) {
@@ -118,10 +116,8 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		/* possibly a groupby/project column is renamed */
 		if (is_groupby(f->op) && !list_empty(f->r) && ne->type == e_column) {
 			sql_exp *gbe = NULL;
-			if (ne->l)
-				gbe = exps_bind_column2(f->r, ne->l, ne->r, NULL);
-			if (!gbe && !e->l)
-				gbe = exps_bind_column(f->r, ne->r, NULL, NULL, 1);
+			if (ne->nid)
+				gbe = exps_bind_nid(f->exps, ne->nid);
 			ne = gbe;
 			if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 				return NULL;
