@@ -44,7 +44,7 @@ next_delim(const char *s, const char *e, char delim, char quote)
 		else if (!inquote && *s == delim)
 			return s;
 	}
-	if (s < e)
+	if (s <= e)
 		return s;
 	return NULL;
 }
