@@ -1559,7 +1559,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 }
 
 static sql_rel *
-rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
+rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
 {
 	mvc *sql = query->sql;
 	const char *name = qname_schema_object(qname);
@@ -1571,10 +1571,19 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 	int create = (!instantiate && !deps);
 	sqlid pfoundid = 0, foundid = 0;
 	const char *base = replace ? "CREATE OR REPLACE VIEW" : "CREATE VIEW";
+	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 
 	(void) check;		/* Stefan: unused!? */
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (temp == SQL_GLOBAL_TEMP)
+		temp = SQL_PERSIST; /* just normal view */
+
+	if (temp == SQL_LOCAL_TEMP || temp == SQL_GLOBAL_TEMP) {
+		if (sname && strcmp(sname, "tmp") != 0)
+			return sql_error(sql, 02, SQLSTATE(3F000) "%s VIEW: %s temporary views should be stored in the 'tmp' schema",
+							 action, (temp == SQL_LOCAL_TEMP) ? "local" : "global");
+		s = tmp_schema(sql);
+	} else if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
@@ -1641,7 +1650,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 				rel_destroy(sq);
 				return NULL;
 			}
-			return rel_create_view_ddl(sql, ddl_create_view, s->base.name, t, SQL_PERSIST, replace);
+			return rel_create_view_ddl(sql, ddl_create_view, s->base.name, t, temp, replace);
 		}
 		if (!persistent && column_spec)
 			sq = view_rename_columns(sql, name, sq, column_spec);
@@ -2955,14 +2964,16 @@ rel_schemas(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		assert(l->h->next->next->next->type == type_int);
+		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->next->type == type_int);
-		ret = rel_create_view(query, l->h->data.lval,
+		assert(l->h->next->next->next->next->next->type == type_int);
+		ret = rel_create_view(query, l->h->data.i_val,
 							  l->h->next->data.lval,
-							  l->h->next->next->data.sym,
-							  l->h->next->next->next->data.i_val,
+							  l->h->next->next->data.lval,
+							  l->h->next->next->next->data.sym,
 							  l->h->next->next->next->next->data.i_val,
-							  l->h->next->next->next->next->next->data.i_val); /* or replace */
+							  l->h->next->next->next->next->next->data.i_val,
+							  l->h->next->next->next->next->next->next->data.i_val); /* or replace */
 	} 	break;
 	case SQL_DROP_TABLE:
 	{

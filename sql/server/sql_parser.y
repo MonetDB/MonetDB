@@ -1739,6 +1739,17 @@ table_def:
 	  append_int(l, $3);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+  | opt_temp VIEW qname opt_column_list AS query_expression_def opt_with_check_option
+	{  dlist *l = L();
+	  append_int(l, $1);
+	  append_list(l, $3);
+	  append_list(l, $4);
+	  append_symbol(l, $6);
+	  append_int(l, $7);
+	  append_int(l, TRUE);
+	  append_int(l, FALSE);
+	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
+	}
  ;
 
 partition_type:
@@ -2192,6 +2203,7 @@ like_table:
 view_def:
     create_or_replace VIEW qname opt_column_list AS query_expression_def opt_with_check_option
 	{  dlist *l = L();
+	  append_int(l, SQL_PERSIST);
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $6);
@@ -3414,6 +3426,7 @@ with_list:
 with_list_element:
     ident opt_column_list AS subquery_with_orderby
 	{  dlist *l = L();
+ 	  append_int(l, 0);
 	  append_list(l, append_string(L(), $1));
 	  append_list(l, $2);
 	  append_symbol(l, $4);

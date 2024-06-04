@@ -1624,7 +1624,7 @@ create_sql_table_with_id(allocator *sa, sqlid id, const char *name, sht type, bi
 
 	assert((persistence==SQL_PERSIST ||
 		persistence==SQL_DECLARED_TABLE ||
-		commit_action) && commit_action>=0);
+		commit_action || type) && commit_action>=0);
 	assert(id);
 	base_init(sa, &t->base, id, true, name);
 	t->type = type;

@@ -271,7 +271,7 @@ rel_with_query(sql_query *query, symbol *q )
 	/* first handle all with's (ie inlined views) */
 	for (d = d->data.lval->h; d; d = d->next) {
 		symbol *sym = d->data.sym;
-		dnode *dn = sym->data.lval->h;
+		dnode *dn = sym->data.lval->h->next;
 		char *rname = qname_schema_object(dn->data.lval);
 		sql_rel *nrel;
 
