@@ -875,45 +875,45 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
 %cmake3_build
 
 %install
-mkdir -p "%{buildroot}/usr"
-for d in etc var; do mkdir "%{buildroot}/$d"; ln -s ../$d "%{buildroot}/usr/$d"; done
+mkdir -p "${RPM_BUILD_ROOT}"/usr
+for d in etc var; do mkdir "${RPM_BUILD_ROOT}"/$d; ln -s ../$d "${RPM_BUILD_ROOT}"/usr/$d; done
 %cmake3_install
-rm "%{buildroot}/usr/var" "%{buildroot}/usr/etc"
+rm "${RPM_BUILD_ROOT}"/usr/var "${RPM_BUILD_ROOT}"/usr/etc
 
 # move file to correct location
-mkdir -p %{buildroot}%{_tmpfilesdir} %{buildroot}%{_sysusersdir}
-mv %{buildroot}%{_sysconfdir}/tmpfiles.d/monetdbd.conf %{buildroot}%{_tmpfilesdir}
-cat > %{buildroot}%{_sysusersdir}/monetdb.conf << EOF
+mkdir -p "${RPM_BUILD_ROOT}"%{_tmpfilesdir} "${RPM_BUILD_ROOT}"%{_sysusersdir}
+mv "${RPM_BUILD_ROOT}"%{_sysconfdir}/tmpfiles.d/monetdbd.conf "${RPM_BUILD_ROOT}"%{_tmpfilesdir}
+cat > "${RPM_BUILD_ROOT}"%{_sysusersdir}/monetdb.conf << EOF
 u monetdb - "MonetDB Server" /var/lib/monetdb
 EOF
-rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
+rmdir "${RPM_BUILD_ROOT}"%{_sysconfdir}/tmpfiles.d
 
-install -d -m 0750 %{buildroot}%{_localstatedir}/lib/monetdb
-install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
-install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
-install -d -m 0775 %{buildroot}%{_rundir}/monetdb
+install -d -m 0750 "${RPM_BUILD_ROOT}"%{_localstatedir}/lib/monetdb
+install -d -m 0770 "${RPM_BUILD_ROOT}"%{_localstatedir}/monetdb5/dbfarm
+install -d -m 0775 "${RPM_BUILD_ROOT}"%{_localstatedir}/log/monetdb
+install -d -m 0775 "${RPM_BUILD_ROOT}"%{_rundir}/monetdb
 
 # remove unwanted stuff
-rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
-rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
-rm -f %{buildroot}%{_libdir}/monetdb5/lib_udf*.so
-rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
-rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
+rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5/lib_opt_sql_append.so
+rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5/lib_microbenchmark*.so
+rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5/lib_udf*.so
+rm -f "${RPM_BUILD_ROOT}"%{_bindir}/monetdb_mtest.sh
+rm -rf "${RPM_BUILD_ROOT}"%{_datadir}/monetdb # /cmake
 
 if [ -x /usr/sbin/hardlink ]; then
-    /usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+    /usr/sbin/hardlink -cv "${RPM_BUILD_ROOT}"%{_datadir}/selinux
 else
     # Fedora 31
-    /usr/bin/hardlink -cv %{buildroot}%{_datadir}/selinux
+    /usr/bin/hardlink -cv "${RPM_BUILD_ROOT}"%{_datadir}/selinux
 fi
 
 # update shebang lines for Python scripts
 %if %{?py3_shebang_fix:1}%{!?py3_shebang_fix:0}
     # Fedora has py3_shebang_fix macro
-    %{py3_shebang_fix} %{buildroot}%{_bindir}/*.py
+    %{py3_shebang_fix} "${RPM_BUILD_ROOT}"%{_bindir}/*.py
 %else
     # EPEL does not, but we can use the script directly
-    /usr/bin/pathfix.py -pni "%{__python3} -s" %{buildroot}%{_bindir}/*.py
+    /usr/bin/pathfix.py -pni "%{__python3} -s" "${RPM_BUILD_ROOT}"%{_bindir}/*.py
 %endif
 
 %changelog
