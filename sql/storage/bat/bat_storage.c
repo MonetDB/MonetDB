@@ -4723,7 +4723,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 			in_transaction = true;
 		}
 		if (in_transaction && !NOT_TO_BE_LOGGED(t))
-			tr->logchanges += (int) total;
+			tr->logchanges += (lng) total;
 		if (*offsets) {
 			BAT *pos = *offsets;
 			assert(BATcount(pos) == total);
@@ -4803,7 +4803,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 			in_transaction = true;
 		}
 		if (in_transaction && !NOT_TO_BE_LOGGED(t))
-			tr->logchanges += (int) cnt;
+			tr->logchanges += (lng) cnt;
 		*offset = slot;
 	}
 	return ok;
