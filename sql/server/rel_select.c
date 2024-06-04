@@ -2830,14 +2830,41 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		char *compare_op = n->next->data.sval;
 		int quantifier = 0;
 		int is_semantics = 0;
+		bool is_distinct_from = false;
 
 		if (n->next->next->next)
 			quantifier = n->next->next->next->data.i_val + 1;
 		assert(quantifier == 0 || quantifier == 1 || quantifier == 2 || quantifier == 3 || quantifier == 4);
 
 		if (quantifier >= 3) {
+			if (quantifier == 4)
+				is_distinct_from = true;
 			quantifier = 0;
 			is_semantics = 1;
+		}
+		if (is_distinct_from) {
+			sql_exp* ls = rel_value_exp(query, &rel, lo, f|sql_farg, ek);
+			if (!ls)
+				return NULL;
+			sql_exp* rs = rel_value_exp(query, &rel, ro, f|sql_farg, ek);
+			if (!rs)
+				return NULL;
+
+			bool ls_is_non_null_atom = exp_is_atom(ls) && exp_is_not_null(ls);
+			bool rs_is_non_null_atom = exp_is_atom(rs) && exp_is_not_null(rs);
+
+			if (ls_is_non_null_atom || rs_is_non_null_atom) {
+				sql_rel* l = rel_compare(query, rel, sc, lo, ro, compare_op, f | sql_or, ek, quantifier, 0);
+				sql_subtype *t;
+				if (!(t = exp_subtype(rs_is_non_null_atom?ls:rs)))
+					return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter for IS NULL operator");
+				sql_exp* e = exp_compare(sql->sa, rs_is_non_null_atom?ls:rs, exp_atom(sql->sa, atom_general(sql->sa, t, NULL, 0)), cmp_equal);
+				set_has_no_nil(e);
+				set_semantics(e);
+				sql_rel* r = rel_select_push_compare_exp_down(sql, rel, e, e->l, e->r, NULL, f | sql_or);
+
+				return rel_or(sql, rel_dup(rel), l, r, NULL, NULL, NULL);
+			}
 		}
 
 		/* [NOT] DISTINCT FROM */
