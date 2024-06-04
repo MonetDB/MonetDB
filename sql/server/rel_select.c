@@ -438,7 +438,11 @@ rel_get_count(sql_rel *rel)
 	prop *p = NULL;
 	if (rel->p && (p = find_prop(rel->p, PROP_COUNT)) != NULL)
 		return p->value.lval;
-	else if(rel->l) {
+	else if(is_munion(rel->op)) {
+		list *l = rel->l;
+		sql_rel *f = l->h->data;
+		return rel_get_count(f);
+	} else if(rel->l) {
 		if (is_select(rel->op) || is_project(rel->op))
 			return rel_get_count(rel->l);
 	}
