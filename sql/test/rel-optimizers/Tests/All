@@ -10,3 +10,5 @@ local-replica
 local-replica-with-actual-remote
 remote-replica-plan
 remote-replica
+merge-unions-base
+merge-unions
