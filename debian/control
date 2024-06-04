@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: MonetDB Foundation <info@monetdb.org>
 Homepage: https://www.monetdb.org/
 Vcs-Browser: https://dev.monetdb.org/hg/MonetDB/
-Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/ -b default
+Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/ -b Aug2024
 Build-Depends: debhelper-compat (= 12), cmake (>= 3.12), bison,
  libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.10.0),
  libpcre3-dev, libreadline-dev, liblzma-dev, liblz4-dev (>= 1.8.0),
