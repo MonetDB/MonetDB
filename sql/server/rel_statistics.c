@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 #include "rel_optimizer_private.h"
 #include "rel_statistics.h"
+#include "rel_basetable.h"
 #include "rel_rewriter.h"
 
 static sql_exp *
@@ -286,7 +287,7 @@ rel_basetable_column_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		return;
 	sql_column *c = NULL;
 
-	if ((c = name_find_column(rel, exp_relname(e), exp_name(e), -2, NULL))) {
+	if ((c = rel_base_find_column(rel, e->nid))) {
 		sql_column_get_statistics(sql, c, e);
 	}
 }

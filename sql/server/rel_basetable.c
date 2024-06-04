@@ -72,6 +72,17 @@ rel_base_idx_nid(sql_rel *r, sql_idx *i)
 	return 0;
 }
 
+sql_column*
+rel_base_find_column(sql_rel *r, int nid)
+{
+	rel_base_t *ba = r->r;
+	sql_table *b = r->l;
+	nid = -nid;
+	if ((nid - ba->basenr) >= ol_length(b->columns))
+		return NULL;
+	return ol_fetch(b->columns, nid - ba->basenr);
+}
+
 int
 rel_base_nid(sql_rel *r, sql_column *c)
 {
@@ -572,6 +583,8 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 {
 	sql_exp *ne = NULL;
 	sql_table *mt = rel_base_table(mt_rel), *t = rel_base_table(p);
+	rel_base_t *mt_ba = mt_rel->r, *p_ba = p->r;
+	p_ba->basenr = mt_ba->basenr;
 
 	assert(!p->exps);
 	p->exps = sa_list(sql->sa);

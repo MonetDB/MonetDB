@@ -121,7 +121,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (!e)
 		return;
 	/*mnstr_printf(fout, "%p ", e);*/
-	if (mvc_debug_on(sql, 16) && e->alias.label < 0)
+	if (mvc_debug_on(sql, 4) && e->alias.label < 0)
 		mnstr_printf(fout, "%d: ", e->alias.label);
 	switch(e->type) {
 	case e_psm: {
@@ -248,7 +248,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	case e_column: {
 		if (is_freevar(e))
 			mnstr_printf(fout, "!!!FREE!!! ");
-		if (mvc_debug_on(sql, 16) && e->nid)
+		if (mvc_debug_on(sql, 4) && e->nid)
 			mnstr_printf(fout, "<%d", e->nid);
 		if (e->l)
 			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, (char*)e->l));

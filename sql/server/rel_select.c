@@ -439,9 +439,15 @@ rel_get_count(sql_rel *rel)
 	if (rel->p && (p = find_prop(rel->p, PROP_COUNT)) != NULL)
 		return p->value.lval;
 	else if(is_munion(rel->op)) {
+		lng cnt = 0;
 		list *l = rel->l;
-		sql_rel *f = l->h->data;
-		return rel_get_count(f);
+		for (node *n = l->h; n; n = n->next) {
+			lng lcnt = rel_get_count(n->data);
+			if (lcnt == BUN_MAX)
+				return BUN_MAX;
+			cnt += lcnt;
+		}
+		return cnt;
 	} else if(rel->l) {
 		if (is_select(rel->op) || is_project(rel->op))
 			return rel_get_count(rel->l);
