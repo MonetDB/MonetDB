@@ -464,6 +464,10 @@ str_2_codepointseq(str_item *s)
 	const char *p = s->val;
 	int c;
 
+	if (s->len == 0) {
+		s->cp_sequence = NULL;
+		return MAL_SUCCEED;
+	}
 	s->cp_sequence = GDKmalloc(s->len * sizeof(int));
 	if (s->cp_sequence == NULL)
 		throw(MAL, "str_2_byteseq", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -566,20 +570,29 @@ static str
 TXTSIMjarowinkler(dbl *res, const char *const *x, const char *const *y)
 {
 	int *x_flags = NULL, *y_flags = NULL;
-	str_item xi = { 0 }, yi = { 0 };
+	str_item xi, yi;
 	str msg = MAL_SUCCEED;
 
 	if (strNil(*x) || strNil(*y)) {
 		*res = dbl_nil;
 		return MAL_SUCCEED;
 	}
-	xi.val = *x;
-	xi.len = UTF8_strlen(*x);
+	xi = (str_item) {
+		.val = *x,
+		.len = UTF8_strlen(*x),
+	};
+	yi = (str_item) {
+		.val = *y,
+		.len = UTF8_strlen(*y),
+	};
+	if (xi.len == 0 || yi.len == 0) {
+		*res = 0;
+		return MAL_SUCCEED;
+	}
+
 	if ((msg = str_2_codepointseq(&xi)) != MAL_SUCCEED)
 		goto bailout;
 
-	yi.val = *y;
-	yi.len = UTF8_strlen(*y);
 	if ((msg = str_2_codepointseq(&yi)) != MAL_SUCCEED)
 		goto bailout;
 
