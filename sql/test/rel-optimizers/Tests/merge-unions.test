@@ -209,20 +209,18 @@ query I rowsort
 select * from f_merge_rec
 where n > 1 and n < 5
 ----
-1
 2
 2
 3
 3
 4
 4
-5
 
 query T nosort
 plan select * from f_merge_rec
      where n > 1 and n < 5
 ----
-tmunion (
+munion (
 | project (
 | | select (
 | | | table("sys"."f1") [ "f1"."n" UNIQUE as "f_merge_rec"."n" ]
@@ -258,5 +256,4 @@ select n, count(n) from f_merge_rec group by n
 2
 5
 1
-
 
