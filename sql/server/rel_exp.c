@@ -753,6 +753,8 @@ exp_propagate(allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_no_nil(ne);
 	if (!has_nil(oe))
 		set_has_no_nil(ne);
+	if (has_nil(oe))
+		set_has_nil(ne);
 	if (is_unique(oe))
 		set_unique(ne);
 	if (is_basecol(oe))
@@ -780,6 +782,8 @@ exp_ref_by_label(allocator *sa, sql_exp *o)
 		e->tpe = *t;
 	if (!has_nil(o))
 		set_has_no_nil(e);
+	if (has_nil(o))
+		set_has_nil(e);
 	if (is_unique(o))
 		set_unique(e);
 	if (is_intern(o))
@@ -1844,6 +1848,55 @@ sql_exp *
 rel_find_exp(sql_rel *rel, sql_exp *e)
 {
 	return rel_find_exp_and_corresponding_rel(rel, e, false, NULL, NULL);
+}
+
+bool
+rel_find_nid(sql_rel *rel, int nid)
+{
+	if (rel) {
+		switch(rel->op) {
+		case op_left:
+		case op_right:
+		case op_full:
+		case op_join:
+		case op_semi:
+		case op_anti:
+			if (rel_find_nid(rel->l, nid))
+				return true;
+			if (is_join(rel->op))
+				return rel_find_nid(rel->r, nid);
+			break;
+		case op_table:
+		case op_basetable:
+		case op_munion:
+		case op_union:
+		case op_inter:
+		case op_except:
+		case op_project:
+		case op_groupby:
+			if (rel->exps) {
+				if (exps_bind_nid(rel->exps, nid))
+					return true;
+			} else if (rel->op == op_basetable)
+				return rel_base_has_nid(rel, nid);
+			break;
+		case op_select:
+		case op_topn:
+		case op_sample:
+			if (rel_find_nid(rel->l, nid))
+				return true;
+			break;
+		case op_ddl:
+		case op_insert:
+		case op_update:
+		case op_delete:
+		case op_truncate:
+		case op_merge:
+			return false;
+
+		}
+	}
+	return false;
 }
 
 int

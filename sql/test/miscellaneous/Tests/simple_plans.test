@@ -385,23 +385,15 @@ PLAN SELECT 1 FROM view1 s INNER JOIN view2 h ON s.id_nr = h.id_nr LEFT JOIN vie
 ----
 project (
 | join (
-| | project (
-| | | table("sys"."tabel3") [ "tabel3"."id_nr" as "a"."id_nr" ]
-| | ) [ "a"."id_nr" ],
-| | project (
-| | | left outer join (
-| | | | join (
-| | | | | project (
-| | | | | | table("sys"."tabel1") [ "tabel1"."id_nr" UNIQUE as "a"."id_nr" ]
-| | | | | ) [ "a"."id_nr" UNIQUE as "s"."id_nr" ],
-| | | | | project (
-| | | | | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ]
-| | | | | ) [ "a"."id_nr" as "h"."id_nr" ]
-| | | | ) [ ("s"."id_nr" UNIQUE) = ("h"."id_nr") ],
+| | table("sys"."tabel3") [ "tabel3"."id_nr" as "a"."id_nr" ],
+| | left outer join (
+| | | join (
+| | | | table("sys"."tabel1") [ "tabel1"."id_nr" UNIQUE as "a"."id_nr" ],
 | | | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ]
-| | | ) [ ("h"."id_nr" NOT NULL) = ("a"."id_nr") ]
-| | ) [ "s"."id_nr" NOT NULL ]
-| ) [ ("a"."id_nr") = ("s"."id_nr" NOT NULL) ]
+| | | ) [ ("a"."id_nr" UNIQUE) = ("a"."id_nr") ],
+| | | table("sys"."tabel2") [ "tabel2"."id_nr" as "a"."id_nr" ]
+| | ) [ ("a"."id_nr" NOT NULL) = ("a"."id_nr") ]
+| ) [ ("a"."id_nr") = ("a"."id_nr" NOT NULL) ]
 ) [ tinyint(1) "1" ]
 
 statement ok

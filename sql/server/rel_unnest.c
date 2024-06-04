@@ -46,8 +46,7 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 			exps_set_freevar(sql, e->l, r);
 		break;
 	case e_column:
-		if ((e->l && rel_bind_column2(sql, r, e->l, e->r, 0)) ||
-		    (!e->l && rel_bind_column(sql, r, e->r, 0, 1)))
+		if (rel_find_nid(r, e->nid))
 			return;
 		set_freevar(e, 0);
 		break;

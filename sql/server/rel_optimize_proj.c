@@ -387,10 +387,8 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			return e;
 		sql_exp *oe = e;
 		e = NULL;
-		if (exp_name(ne) && ne->r && ne->l)
-			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
-		if (!e && ne->r)
-			e = rel_bind_column(sql, t, ne->r, 0, 1);
+		if (ne && ne->nid)
+			e = rel_find_exp(t, ne);
 		if (!e) {
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
@@ -398,7 +396,10 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				return ne;
 			return oe;
 		}
-		return exp_ref(sql, e);
+		ne = exp_ref(sql, e);
+		if (oe)
+			exp_propagate(sql->sa, ne, oe);
+		return ne;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			e->l = exps_rename(sql, e->l, f, t);
@@ -585,22 +586,6 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 			r_exps = rel_projections(v->sql, r, NULL, 1, 1);
 			if (rel->attr)
 				append(r_exps, exp_ref(v->sql, rel->attr->h->data));
-			if (0)
-			for(n = l_exps->h; n; n = n->next) {
-				sql_exp *e = n->data;
-				const char *rname = exp_relname(e);
-				const char *name = exp_name(e);
-
-				if (exp_is_atom(e))
-					continue;
-				if (e->alias.label && exps_bind_nid(r_exps, e->alias.label))
-					return rel;
-				if ((rname && exps_bind_column2(r_exps, rname, name, NULL) != NULL) ||
-				    (!rname && exps_bind_column(r_exps, name, NULL, NULL, 1) != NULL)) {
-			assert(0);
-					return rel;
-				}
-			}
 			t = (r->op == op_project && r->l)?r->l:r;
 			r_exps = rel_projections(v->sql, t, NULL, 1, 1);
 			/* conflict with new right expressions */
@@ -613,11 +598,6 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 					return rel;
 				if (e->alias.label && exps_bind_nid(r_exps, e->alias.label))
 					return rel;
-				if ((e->l && exps_bind_column2(r_exps, e->l, e->r, NULL) != NULL) ||
-				   (exps_bind_column(r_exps, e->r, NULL, NULL, 1) != NULL && (!e->l || !e->r))) {
-			//assert(0);
-					return rel;
-				}
 			}
 			/* conflict with new left expressions */
 			for(n = r_exps->h; n; n = n->next) {
@@ -629,11 +609,6 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 					return rel;
 				if (e->alias.label && exps_bind_nid(l_exps, e->alias.label))
 					return rel;
-				if ((e->l && exps_bind_column2(l_exps, e->l, e->r, NULL) != NULL) ||
-				   (exps_bind_column(l_exps, e->r, NULL, NULL, 1) != NULL && (!e->l || !e->r))) {
-			//assert(0);
-					return rel;
-				}
 			}
 		}
 
@@ -784,8 +759,7 @@ add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel)
 		sql_exp *ne = n->data;
 
 		if (rel && rel->l) {
-			if ((exp_relname(ne) && exp_name(ne) && rel_bind_column2(sql, rel->l, exp_relname(ne), exp_name(ne), 0)) ||
-			   (!exp_relname(ne) && exp_name(ne) && rel_bind_column(sql, rel->l, exp_name(ne), 0, 1))) {
+			if (ne && ne->alias.label && rel_find_nid(rel->l, ne->alias.label)) {
 				exp_label(sql->sa, e, ++sql->label);
 				append(rel->exps, e);
 				ne = e;
