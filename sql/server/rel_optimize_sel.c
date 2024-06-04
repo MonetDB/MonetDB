@@ -1050,11 +1050,8 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 	case e_column:
 		{
 			sql_exp *c = NULL;
-			if (e->l) {
-				c = exps_bind_column2(crefs, e->l, e->r, NULL);
-			} else {
-				c = exps_bind_column(crefs, e->r, NULL, NULL, 1);
-			}
+			if (e->nid)
+				c = exps_bind_nid(crefs, e->nid);
 			if (c) {
 				e->type = e_atom;
 				e->l = atom_general(sql->sa, &e->tpe, NULL, 0);
@@ -1988,18 +1985,22 @@ find_fk( mvc *sql, list *rels, list *exps)
 					if (swapped) {
 						sql_exp *s = je->l, *l = je->r;
 
-						t = rel_find_column(sql->sa, olr, s->l, TID);
-						i = rel_find_column(sql->sa, orr, l->l, iname);
+						t = rel_find_column(sql, olr, s->l, TID);
+						i = rel_find_column(sql, orr, l->l, iname);
 						if (!t || !i)
 							continue;
+						t->p = NULL;
+						i->p = NULL;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					} else {
 						sql_exp *s = je->r, *l = je->l;
 
-						t = rel_find_column(sql->sa, orr, s->l, TID);
-						i = rel_find_column(sql->sa, olr, l->l, iname);
+						t = rel_find_column(sql, orr, s->l, TID);
+						i = rel_find_column(sql, olr, l->l, iname);
 						if (!t || !i)
 							continue;
+						t->p = NULL;
+						i->p = NULL;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					}
 

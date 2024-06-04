@@ -718,7 +718,7 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 
 			if ((p = find_prop(e->p, PROP_NUNIQUES))) {
 				euniques = (BUN) p->value.dval;
-			} else if (e->type == e_column && rel_find_exp_and_corresponding_rel(l, e, false, &bt, NULL) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
+			} else if (e->type == e_column && e->nid && rel_find_exp_and_corresponding_rel(l, e, false, &bt, NULL) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
 				euniques = (BUN) p->value.lval;
 			}
 			/* use min to max range to compute number of possible values in the domain for number types */
@@ -922,7 +922,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				for (node *n = rel->exps->h, *m = l->exps->h ; n && m ; n = n->next, m = m->next) {
 					sql_exp *pe = n->data, *ie = m->data;
 					sql_exp *ne = exp_ref(v->sql, ie);
-					exp_setname(v->sql->sa, ne, exp_relname(pe), exp_name(pe));
+					exp_prop_alias(v->sql->sa, ne, pe);
 					n->data = ne;
 				}
 				list_hash_clear(rel->exps);

@@ -68,8 +68,10 @@ rel_name( sql_rel *r )
 		sql_exp *e = r->exps->h->data;
 		if (exp_relname(e))
 			return exp_relname(e);
-		if (e->type == e_column)
+		if (e->type == e_column) {
+			assert(0);
 			return e->l;
+		}
 	}
 	return NULL;
 }
@@ -311,9 +313,11 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 			if (ambiguous || multi)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 			if (!e && is_groupby(rel->op) && rel->r) {
-				e = exps_bind_alias(rel->r, NULL, cname);
+				sql_rel *l = rel->l;
+				if (l)
+					e = rel_bind_column( sql, l, cname, 0, no_tname);
 				if (e) {
-					e = exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname);
+					e = exps_refers(e, rel->r);
 					if (ambiguous || multi)
 						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 					return e;
@@ -331,7 +335,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 			}
 		}
 		if (e)
-			return exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
+			return exp_ref(sql, e);
 	}
 	if (is_simple_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
@@ -392,16 +396,14 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
 								 tname, cname);
 			if (!e && is_groupby(rel->op) && rel->r) {
-				e = exps_bind_alias(rel->r, tname, cname);
+				sql_rel *l = rel->l;
+				if (l)
+					e = rel_bind_column2( sql, l, tname, cname, 0);
 				if (e) {
-					const char *rname = exp_relname(e), *nname = exp_name(e);
-					if (rname)
-						e = exps_bind_column2(rel->exps, rname, nname, &multi);
-					else
-						e = exps_bind_column(rel->exps, nname, &ambiguous, &multi, 0);
+					e = exps_refers(e, rel->r);
 					if (ambiguous || multi)
 						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s%s%s' ambiguous",
-										 rname ? rname : "", rname ? "." : "", nname);
+										 tname ? tname : "", tname ? "." : "", cname);
 					if (e)
 						return e;
 				}
@@ -419,7 +421,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 			}
 		}
 		if (e)
-			return exp_alias_or_copy(sql, tname, cname, rel, e);
+			return exp_ref(sql, e);
 	}
 	if (is_simple_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
@@ -734,6 +736,10 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 
 		if (rel_convert_types(sql, l, r, &le, &re, 1, type_set) < 0)
 			return NULL;
+		if (!le->alias.label && le->type == e_convert)
+			exp_label(sql->sa, le, ++sql->label);
+		if (!re->alias.label && re->type == e_convert)
+			exp_label(sql->sa, re, ++sql->label);
 		append(nls, le);
 		append(nrs, re);
 	}
@@ -760,6 +766,8 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 	for (node *n = exps->h, *m = lexps->h, *o = rexps->h ; m && n && o ; n = n->next, m = m->next,o = o->next) {
 		sql_exp *e = n->data, *f = m->data, *g = o->data;
 
+		assert(e->alias.label);
+		e->nid = 0; /* setops are positional */
 		if (is_union(rel->op)) { /* propagate set_has_no_nil only if it's applicable to both sides of the union*/
 			if (has_nil(f) || has_nil(g))
 				set_has_nil(e);
@@ -973,7 +981,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 					nr = ++sql->label;
 					cnme = sa_strdup(sql->sa, number2name(cname, sizeof(cname), nr));
 				}
-				exp_setname(sql->sa, e, tnme, cnme );
+				exp_setname(sql, e, tnme, cnme );
 			}
 		}
 	}
@@ -984,7 +992,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 				nr = ++sql->label;
 				cnme = sa_strdup(sql->sa, number2name(cname, sizeof(cname), nr));
 			}
-			exp_setname(sql->sa, ne->data, tnme, cnme );
+			exp_setname(sql, ne->data, tnme, cnme );
 		}
 	}
 	return r;
@@ -995,7 +1003,7 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
 
-	if (!exp_name(e))
+	if (!e->alias.label)
 		exp_label(sql->sa, e, ++sql->label);
 	if (is_simple_project(rel->op)) {
 		sql_rel *l = rel->l;
@@ -1144,6 +1152,8 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 			}
 			/* after the group by the cardinality reduces */
 			e->card = MIN(e->card, rel->card); /* if the column is an atom, the cardinality should not change */
+			if (!e->alias.label)
+				exp_label(sql->sa, e, ++sql->label);
 			ne = exp_ref(sql, e);
 			ne = exp_propagate(sql->sa, ne, e);
 			append(aggrs, ne);
@@ -1278,7 +1288,6 @@ list *
 _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
 {
 	list *lexps, *rexps = NULL, *exps = NULL, *rels;
-	sql_rel *r = NULL;
 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1307,10 +1316,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {
 			list *r = rel->r;
-			int label = 0;
 
-			if (!settname)
-				label = ++sql->label;
 			exps = new_exp_list(sql->sa);
 			for (node *en = r->h; en; en = en->next) {
 				sql_exp *e = en->data;
@@ -1318,9 +1324,11 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e);
-					if (!settname) /* noname use alias */
-						exp_setrelname(sql->sa, e, label);
+					sql_exp *ne = exp_ref(sql, e);
+					if (settname && tname)
+						exp_setname(sql, ne, tname, exp_name(e));
+					assert(ne->alias.label);
+					e = ne;
 					append(exps, e);
 				}
 			}
@@ -1338,10 +1346,6 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		if (is_basetable(rel->op) && !rel->exps)
 			return rel_base_projection(sql, rel, intern);
 		if (rel->exps) {
-			int label = 0;
-
-			if (!settname)
-				label = ++sql->label;
 			exps = new_exp_list(sql->sa);
 			for (node *en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
@@ -1349,9 +1353,13 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e);
-					if (!settname) /* noname use alias */
-						exp_setrelname(sql->sa, e, label);
+					if (!e->alias.label)
+						en->data = e = exp_label(sql->sa, e, ++sql->label);
+					sql_exp *ne = exp_ref(sql, e);
+					if (settname && tname)
+						exp_setname(sql, ne, tname, exp_name(e));
+					assert(ne->alias.label);
+					e = ne;
 					append(exps, e);
 				}
 			}
@@ -1359,6 +1367,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		}
 		/* differentiate for the munion set op (for now) */
 		if (is_munion(rel->op)) {
+			sql_rel *r = NULL;
 			assert(rel->l);
 			/* get the exps from the first relation */
 			rels = rel->l;
@@ -1378,15 +1387,12 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			 * so we are ok only with the expressions of the first operand
 			 */
 			if (exps) {
-				int label = 0;
-				if (!settname)
-					label = ++sql->label;
 				for (node *en = exps->h; en; en = en->next) {
 					sql_exp *e = en->data;
 
 					e->card = rel->card;
 					if (!settname) /* noname use alias */
-						exp_setrelname(sql->sa, e, label);
+						exp_setname(sql, e, exp_relname(e), exp_name(e));
 				}
 				if (!settname)
 					list_hash_clear(rel->l);
@@ -1396,19 +1402,16 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		/* I only expect set relations to hit here */
 		assert(is_set(rel->op));
 		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
-		//rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
-		if (lexps/* && rexps*/) {
-			int label = 0;
+		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
+		if (lexps && rexps) {
 
-			if (!settname)
-				label = ++sql->label;
-			//assert(list_length(lexps) == list_length(rexps));
+			assert(list_length(lexps) == list_length(rexps));
 			for (node *en = lexps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
 				e->card = rel->card;
 				if (!settname) /* noname use alias */
-					exp_setrelname(sql->sa, e, label);
+					exp_setname(sql, e, exp_relname(e), exp_name(e));
 			}
 			if (!settname)
 				list_hash_clear(lexps);
@@ -1443,7 +1446,6 @@ static int
 rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 {
 	int found = 0;
-	list *rels;
 
 	if (mvc_highwater(sql)) {
 		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1460,9 +1462,8 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		if (!found)
 			found = rel_bind_path_(sql, rel->l, e, path);
 		if (!found && !list_empty(rel->attr)) {
-			if (e->l && exps_bind_column2(rel->attr, e->l, e->r, NULL))
-				found = 1;
-			if (!found && !e->l && exps_bind_column(rel->attr, e->r, NULL, NULL, 1))
+			assert(e->nid);
+			if (exps_bind_nid(rel->attr, e->nid))
 				found = 1;
 		}
 		break;
@@ -1474,6 +1475,7 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		found = rel_bind_path_(sql, rel->l, e, path);
 		break;
 	case op_basetable:
+	case op_munion:
 	case op_union:
 	case op_inter:
 	case op_except:
@@ -1481,25 +1483,12 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_project:
 	case op_table:
 		if (is_basetable(rel->op) && !rel->exps) {
-			if (e->l) {
-				if (rel_base_bind_column2_(rel, e->l, e->r))
-					found = 1;
-			} else if (rel_base_bind_column_(rel, e->r))
+			assert(e->nid);
+			if (rel_base_has_nid(rel, e->nid))
 				found = 1;
 		} else if (rel->exps) {
-			if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
-				found = 1;
-			if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, NULL, 1))
-				found = 1;
-		}
-		break;
-	case op_munion:
-		assert(rel->l);
-		rels = rel->l;
-		for (node *n = rels->h; n && !found; n = n->next) {
-			if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
-				found = 1;
-			if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, NULL, 1))
+			assert(e->nid);
+			if (exps_bind_nid(rel->exps, e->nid))
 				found = 1;
 		}
 		break;
@@ -1835,7 +1824,10 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	if (!e)
 		return sql_error(sql, 10, SQLSTATE(42000) "Query projection must have at least one parameter with known SQL type");
 
-	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_unique(e), is_intern(e));
+	sql_exp *ne = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_unique(e), is_intern(e));
+	ne->nid = e->alias.label;
+	assert(ne->nid);
+	e = ne;
 	e = exp_unop(sql->sa, e, sql_bind_func(sql, "sys", "identity", exp_subtype(e), NULL, F_FUNC, true, true));
 	set_intern(e);
 	set_has_no_nil(e);
@@ -1893,44 +1885,45 @@ rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
 }
 
 static sql_exp *
-rel_find_column_(allocator *sa, list *exps, const char *tname, const char *cname)
+rel_find_column_(mvc *sql, list *exps, const char *tname, const char *cname)
 {
 	int ambiguous = 0, multi = 0;
 	sql_exp *e = exps_bind_column2(exps, tname, cname, &multi);
 	if (!e && cname[0] == '%' && !tname)
 		e = exps_bind_column(exps, cname, &ambiguous, &multi, 0);
-	if (e && !ambiguous && !multi)
-		return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
+	if (e && !ambiguous && !multi) {
+		return exp_ref(sql, e);
+	}
 	return NULL;
 }
 
 sql_exp *
-rel_find_column(allocator *sa, sql_rel *rel, const char *tname, const char *cname )
+rel_find_column(mvc *sql, sql_rel *rel, const char *tname, const char *cname )
 {
 	sql_exp *e = NULL;
 
 	if (!rel)
 		return NULL;
-	if (rel->exps && (is_project(rel->op) || is_base(rel->op)) && (e = rel_find_column_(sa, rel->exps, tname, cname)))
+	if (rel->exps && (is_project(rel->op) || is_base(rel->op)) && (e = rel_find_column_(sql, rel->exps, tname, cname)))
 		return e;
 	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 		if (!is_processed(rel))
-			return rel_find_column(sa, rel->l, tname, cname);
+			return rel_find_column(sql, rel->l, tname, cname);
 	} else if (is_set(rel->op)) {
 		assert(is_processed(rel));
 		return NULL;
 	} else if (is_join(rel->op)) {
-		e = rel_find_column(sa, rel->l, tname, cname);
+		e = rel_find_column(sql, rel->l, tname, cname);
 
 		if (e && (is_right(rel->op) || is_full(rel->op)))
 			set_has_nil(e);
 		if (!e) {
-			e = rel_find_column(sa, rel->r, tname, cname);
+			e = rel_find_column(sql, rel->r, tname, cname);
 			if (e && (is_left(rel->op) || is_full(rel->op)))
 				set_has_nil(e);
 		}
 		if (!e && !list_empty(rel->attr))
-			e = rel_find_column_(sa, rel->attr, tname, cname);
+			e = rel_find_column_(sql, rel->attr, tname, cname);
 		if (e)
 			set_not_unique(e);
 		return e;
@@ -1939,7 +1932,7 @@ rel_find_column(allocator *sa, sql_rel *rel, const char *tname, const char *cnam
 		   is_topn(rel->op) ||
 		   is_sample(rel->op)) {
 		if (rel->l)
-			return rel_find_column(sa, rel->l, tname, cname);
+			return rel_find_column(sql, rel->l, tname, cname);
 	}
 	return NULL;
 }
@@ -2014,7 +2007,7 @@ rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 		list *exps = rel->exps;
 		for(node *n = exps->h; n; n=n->next) {
 			sql_exp *e = n->data;
-			if (!has_label(e))
+			if (e->alias.label == 0)
 				exp_label(sql->sa, e, ++sql->label);
 		}
 		set_single(rel);
@@ -2796,28 +2789,6 @@ exp_freevar_offset(mvc *sql, sql_exp *e)
 
 	(void) changed;
 	exp_visitor(&v, NULL, e, 0, &_exp_freevar_offset, true, true, true, &changed);
-	/* freevar offset is passed via changes */
-	return (v.changes);
-}
-
-static sql_exp *
-_exp_has_selfref(visitor *v, sql_rel *rel, sql_exp *e, int depth)
-{
-	(void)rel; (void)depth;
-	int vf = is_selfref(e);
-	if (v->changes < vf)
-		v->changes=vf;
-	return e;
-}
-
-int
-exp_has_selfref(mvc *sql, sql_exp *e)
-{
-	bool changed = false;
-	visitor v = { .sql = sql };
-
-	(void) changed;
-	exp_visitor(&v, NULL, e, 0, &_exp_has_selfref, true, true, true, &changed);
 	/* freevar offset is passed via changes */
 	return (v.changes);
 }

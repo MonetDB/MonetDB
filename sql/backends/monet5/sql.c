@@ -26,8 +26,10 @@
 #include "store_sequence.h"
 #include "sql_partition.h"
 #include "rel_partition.h"
+#include "rel_basetable.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
+#include "rel_dump.h"
 #include "rel_physical.h"
 #include "mal.h"
 #include "mal_client.h"
@@ -188,6 +190,7 @@ sqlcleanup(backend *be, int err)
 	if (err <0)
 		be->mvc->session->status = err;
 	be->mvc->label = 0;
+	be->mvc->nid = 1;
 	be->no_mitosis = 0;
 	scanner_query_processed(&(be->mvc->scanner));
 	return err;
@@ -5240,6 +5243,33 @@ SQLdecypher(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return AUTHdecypherValue(pwhash, cypher);
 }
 
+static str
+SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	str *r = getArgReference_str(stk, pci, 0);
+	const char *sname = *getArgReference_str(stk, pci, 1);
+	const char *cname = *getArgReference_str(stk, pci, 2);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	(void)sname;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	if (s) {
+		sql_key *k = mvc_bind_key(m, s, cname);
+		if (k->check) {
+			int pos = 0;
+			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
+			sql_exp *exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
+			*r = GDKstrdup(exp2sql(m, exp));
+		}
+	}
+	return MAL_SUCCEED;
+}
+
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",sht),arg("force",bit))),
@@ -6167,6 +6197,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "vacuum", SQLstr_column_vacuum, true, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "vacuum", SQLstr_column_auto_vacuum, true, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
  pattern("sql", "stop_vacuum", SQLstr_column_stop_vacuum, true, "stop auto vacuum", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

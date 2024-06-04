@@ -1735,10 +1735,10 @@ create table anothertab (atcol1 bigint GENERATED ALWAYS AS IDENTITY check (atcol
 statement ok
 insert into anothertab (atcol1, atcol2) values (default, true)
 
-statement error
+statement ok
 insert into anothertab (atcol1, atcol2) values (default, false)
 
-statement error
+statement ok
 insert into anothertab (atcol2) values (true)
 
 statement error

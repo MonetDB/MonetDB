@@ -923,7 +923,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "Parameter %d has wrong SQL type, expected %s, but got %s instead", i, expected, got);
 				}
 				if (ne) {
-					exp_setname(be->mvc->sa, ne, exp_relname(e), exp_name(e));
+					exp_setname(be->mvc, ne, exp_relname(e), exp_name(e));
 					n->data = ne;
 				}
 				i++;

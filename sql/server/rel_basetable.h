@@ -28,6 +28,9 @@ extern sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
 extern void rel_base_copy(mvc *sql, sql_rel *in, sql_rel *out);
 
 extern void rel_base_disallow(sql_rel *r);		/* set flag to check per column access */
+extern int rel_base_nid(sql_rel *t, sql_column *c);	/* return error on (read) access violation */
+extern int rel_base_idx_nid(sql_rel *t, sql_idx *i);	/* return error on (read) access violation */
+extern bool rel_base_has_nid(sql_rel *t, int nid);
 extern int rel_base_use(mvc *ql, sql_rel *rt, int nr);	/* return error on (read) access violation */
 extern void rel_base_use_tid(mvc *sql, sql_rel *rt);
 extern void rel_base_use_all(mvc *sql, sql_rel *rel);
@@ -35,6 +38,7 @@ extern char *rel_base_name(sql_rel *r);
 extern char *rel_base_rename(sql_rel *r, char *name);
 
 extern sql_exp * rel_base_bind_colnr( mvc *sql, sql_rel *rel, int nr);
+extern sql_exp * rel_base_find_label( mvc *sql, sql_rel *rel, int label);
 extern sql_rel *rel_base_bind_column_( sql_rel *rel, const char *cname);
 extern sql_exp *rel_base_bind_column( mvc *sql, sql_rel *rel, const char *cname, int no_tname);
 extern sql_rel *rel_base_bind_column2_( sql_rel *rel, const char *tname, const char *cname);

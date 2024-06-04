@@ -827,6 +827,7 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 	m->debug = debug;
 
 	m->label = 0;
+	m->nid = 1;
 	m->cascade_action = NULL;
 	m->runs = NULL;
 
