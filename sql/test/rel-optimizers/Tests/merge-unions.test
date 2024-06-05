@@ -257,3 +257,25 @@ select n, count(n) from f_merge_rec group by n
 5
 1
 
+query T nosort
+plan select n, count(n) from f_merge_rec group by n 
+----
+project (
+| group by (
+| | munion (
+| | | group by (
+| | | | table("sys"."f1") [ "f1"."n" UNIQUE as "f_merge_rec"."n" ]
+| | | ) [ "f_merge_rec"."n" UNIQUE ] [ "f_merge_rec"."n" UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" UNIQUE) NOT NULL as "%1"."%1" ],
+| | | group by (
+| | | | table("sys"."f2") [ "f2"."n" UNIQUE as "f_merge_rec"."n" ]
+| | | ) [ "f_merge_rec"."n" UNIQUE ] [ "f_merge_rec"."n" UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" UNIQUE) NOT NULL as "%1"."%1" ],
+| | | group by (
+| | | | table("sys"."f3") [ "f3"."n" UNIQUE as "f_merge_rec"."n" ]
+| | | ) [ "f_merge_rec"."n" UNIQUE ] [ "f_merge_rec"."n" UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" UNIQUE) NOT NULL as "%1"."%1" ],
+| | | group by (
+| | | | table("sys"."f4") [ "f4"."n" UNIQUE as "f_merge_rec"."n" ]
+| | | ) [ "f_merge_rec"."n" UNIQUE ] [ "f_merge_rec"."n" UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" UNIQUE) NOT NULL as "%1"."%1" ]
+| | ) [ "f_merge_rec"."n", "%1"."%1" NOT NULL ]
+| ) [ "f_merge_rec"."n" ] [ "f_merge_rec"."n", "sys"."sum" no nil ("%1"."%1" NOT NULL) NOT NULL as "%1"."%1" ]
+) [ "f_merge_rec"."n" UNIQUE, "%1"."%1" NOT NULL ]
+
