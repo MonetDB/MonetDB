@@ -2633,8 +2633,12 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		be->output_format = OFMT_CSV;
 	} else {
-		while (!m->scanner.rs->eof)
-			bstream_next(m->scanner.rs);
+		while (!m->scanner.rs->eof) {
+			if (bstream_next(m->scanner.rs) < 0) {
+				msg = createException(IO, "streams.open", "interrupted");
+				goto wrapup_result_set1;
+			}
+		}
 		s = m->scanner.ws;
 		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 		mnstr_printf(s, "w %s\n", filename);
@@ -2868,8 +2872,12 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto wrapup_result_set;
 		}
 	} else {
-		while (!m->scanner.rs->eof)
-			bstream_next(m->scanner.rs);
+		while (!m->scanner.rs->eof) {
+			if (bstream_next(m->scanner.rs) < 0) {
+				msg = createException(IO, "streams.open", "interrupted");
+				goto wrapup_result_set;
+			}
+		}
 		s = m->scanner.ws;
 		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 		mnstr_printf(s, "w %s\n", filename);
@@ -4310,7 +4318,8 @@ SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// sync with client, copy pasted from mvc_export_table_wrap
 	while (!mvc->scanner.rs->eof)
-		bstream_next(mvc->scanner.rs);
+		if (bstream_next(mvc->scanner.rs) < 0)
+			throw(SQL, "sql.hot_snapshot", "interrupted");
 
 	// The snapshot code flushes from time to time.
 	// Use a callback stream to suppress those.
