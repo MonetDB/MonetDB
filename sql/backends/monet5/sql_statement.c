@@ -4639,6 +4639,8 @@ stmt_has_null(stmt *s)
 	case st_uselect2:
 	case st_atom:
 		return 0;
+	case st_alias:
+		return stmt_has_null(s->op1);
 	case st_join:
 		return stmt_has_null(s->op2);
 	case st_bat:

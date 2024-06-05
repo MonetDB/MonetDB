@@ -3440,18 +3440,26 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_merge_unions(visitor *v, sql_rel *rel)
 {
-	(void)v;
+	/* stacked munion flattening e.g.
+	 * munion( munion(a, b, c), munion(d, e)) => munion(a,b,c,d,e)
+	 */
 	if (rel && is_munion(rel->op)) {
 		list *l = rel->l;
 		for(node *n = l->h; n; ) {
 			node *next = n->next;
-			sql_rel *i = n->data;
-			if (is_munion(i->op)) {
-				i = rel_dup(i);
+			sql_rel *oc = n->data;
+			sql_rel *c = oc;
+
+			/* acount for any group-bys pushed down between stacked munions */
+			if (oc->op == op_groupby)
+				c = oc->l;
+
+			if (is_munion(c->op)) {
+				c = rel_dup(c);
 				list_remove_node(l, NULL, n);
-				l = list_merge(l, i->l, (fdup)NULL);
-				i->l = NULL;
-				rel_destroy(i);
+				l = list_merge(l, c->l, (fdup)NULL);
+				c->l = NULL;
+				rel_destroy(oc);
 				if (!next)
 					next = l->h;
 				v->changes++;
