@@ -977,19 +977,6 @@ bind_project_reduce_casts(visitor *v, global_props *gp)
 	return gp->cnt[op_project] && (flag & project_reduce_casts) ? rel_project_reduce_casts : NULL;
 }
 
-#if 0
-static sql_rel *
-exp_skip_output_parts(sql_rel *rel)
-{
-	while ((is_topn(rel->op) || is_project(rel->op) || is_sample(rel->op)) && rel->l) {
-		if (is_union(rel->op) || is_munion(rel->op) || (is_groupby(rel->op) && list_empty(rel->r)))
-			return rel;			/* a group-by with no columns is a plain aggregate and hence always returns one row */
-		rel = rel->l;
-	}
-	return rel;
-}
-#endif
-
 static sql_column *
 exp_find_column_( sql_rel *rel, sql_exp *exp, int pnr, sql_rel **bt )
 {
@@ -1085,101 +1072,6 @@ rel_is_join_on_pkey(sql_rel *rel, bool pk_fk) /* pk_fk is used to verify is a jo
 	}
 	return NULL;
 }
-
-#if 0
-/* return true if the given expression is guaranteed to have no rows */
-static int
-exp_is_zero_rows(visitor *v, sql_rel *rel, sql_rel *sel)
-{
-	if (!rel || mvc_highwater(v->sql))
-		return 0;
-	rel = exp_skip_output_parts(rel);
-	if (is_select(rel->op) && rel->l) {
-		sel = rel;
-		rel = exp_skip_output_parts(rel->l);
-	}
-
-	sql_table *t = is_basetable(rel->op) && rel->l ? rel->l : NULL;
-	bool table_readonly = t && isTable(t) && t->access == TABLE_READONLY;
-
-	if (sel && !list_empty(sel->exps) && (v->value_based_opt || table_readonly)) {
-		for (node *n = sel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			/* if the expression is false, then the select is empty */
-			if (v->value_based_opt && (exp_is_false(e) || exp_is_null(e)))
-				return 1;
-			if (table_readonly && e->type == e_cmp && (e->flag == cmp_equal || e->f)) {
-				/* half-ranges are theoretically optimizable here, but not implemented */
-				sql_exp *c = e->l;
-				if (c->type == e_column) {
-					sql_exp *l = e->r;
-					sql_exp *h = e->f;
-
-					atom *lval = exp_flatten(v->sql, v->value_based_opt, l);
-					atom *hval = h ? exp_flatten(v->sql, v->value_based_opt, h) : lval;
-					if (lval && hval) {
-						sql_rel *bt;
-						sql_column *col = name_find_column(sel, exp_relname(c), exp_name(c), -2, &bt);
-						void *min = NULL, *max = NULL;
-						atom *amin, *amax;
-						sql_subtype *ct = exp_subtype(c);
-
-						if (col
-							&& col->t == t
-							&& sql_trans_ranges(v->sql->session->tr, col, &min, &max)
-							&& min && max
-							&& (amin = atom_general_ptr(v->sql->sa, ct, min)) && (amax = atom_general_ptr(v->sql->sa, ct, max))
-							&& !exp_range_overlap(amin, amax, lval, hval, false, false)) {
-							return 1;
-						}
-					}
-				}
-			}
-		}
-	}
-	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
-		sql_exp *je;
-
-		/* check non overlaping pk-fk join */
-		if ((je = rel_is_join_on_pkey(rel, true))) {
-			int lpnr = rel_part_nr(rel->l, je);
-
-			if (lpnr >= 0 && !rel_uses_part_nr(rel->r, je, lpnr))
-				return 1;
-		}
-		return (((is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op)) && exp_is_zero_rows(v, rel->l, sel)) ||
-			((is_innerjoin(rel->op) || is_right(rel->op)) && exp_is_zero_rows(v, rel->r, sel)));
-	}
-	/* global aggregates always return 1 row */
-	if (is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r)) || is_select(rel->op) ||
-		is_topn(rel->op) || is_sample(rel->op) || is_inter(rel->op) || is_except(rel->op)) {
-		if (rel->l)
-			return exp_is_zero_rows(v, rel->l, sel);
-	} else if (is_innerjoin(rel->op) && list_empty(rel->exps)) { /* cartesian product */
-		return exp_is_zero_rows(v, rel->l, sel) || exp_is_zero_rows(v, rel->r, sel);
-	}
-	return 0;
-}
-
-static int
-rel_match_projections(sql_rel *l, sql_rel *r)
-{
-	node *n, *m;
-	list *le = l->exps;
-	list *re = r->exps;
-
-	if (!le || !re)
-		return 0;
-	if (list_length(le) != list_length(re))
-		return 0;
-
-	for (n = le->h, m = re->h; n && m; n = n->next, m = m->next)
-		if (!exp_match(n->data, m->data))
-			return 0;
-	return 1;
-}
-#endif
 
 static int
 exps_has_predicate( list *l )
