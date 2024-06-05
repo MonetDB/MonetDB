@@ -243,7 +243,7 @@ levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
 }
 
-/* Levenshtein OP but with column externaly allocated */
+/* Levenshtein OP but with column externally allocated */
 static inline int
 levenshtein2(const char *x, const char *y, const size_t xlen, const size_t ylen,
 			 unsigned int *column, const int insdel_cost,

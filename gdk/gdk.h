@@ -1092,7 +1092,7 @@ bat_iterator_nolock(BAT *b)
 {
 	/* does not get matched by bat_iterator_end */
 	if (b) {
-		bool isview = VIEWtparent(b);
+		const bool isview = VIEWtparent(b) != 0;
 		return (BATiter) {
 			.b = b,
 			.h = b->theap,
