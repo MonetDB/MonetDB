@@ -1497,6 +1497,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 
 		/* left of rel should be a set */
 		if (d && is_distinct_set(sql, d, ad) && s && is_set(s->op)) {
+			assert(s->op != op_union);
 			sql_rel *sl = s->l, *sr = s->r, *ns;
 
 			sl = rel_project(sql->sa, rel_dup(sl), rel_projections(sql, sl, NULL, 1, 1));
@@ -1557,10 +1558,12 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 			ns->r = rel_project(sql->sa, ns->r, rel_projections(sql, ns->r, NULL, 1, 1));
 			if (is_semi(rel->op)) /* only push left side of semi/anti join */
 				ns->exps = rel_projections(sql, ns->l, NULL, 1, 1);
-			if (rel->op == op_anti && s->op == op_union)
-				ns->op = op_inter;
-			if (rel->op == op_anti && s->op == op_inter)
-				ns->op = op_union;
+			if (rel->op == op_anti && s->op == op_inter) {
+				list *urs = sa_list(sql->sa);
+				urs = append(urs, ns->l);
+				urs = append(urs, ns->r);
+				rel_inplace_setop_n_ary(sql, ns, urs, op_munion, ns->exps);
+			}
 			rel_destroy(rel);
 			return ns;
 		}
@@ -3005,8 +3008,11 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 		if (!u) {
 			u = sq;
 		} else {
-			u = rel_setop(sql->sa, u, sq, op_union);
-			rel_setop_set_exps(sql, u, exps, false);
+			list *urs = sa_list(sql->sa);
+			urs = append(urs, u);
+			urs = append(urs, sq);
+			u = rel_setop_n_ary(sql->sa, urs, op_munion);
+			rel_setop_n_ary_set_exps(sql, u, exps, false);
 			set_distinct(u);
 			set_processed(u);
 		}
@@ -3688,6 +3694,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			  	)[not(cond) or cond is null]
 			  ) [ cols ] */
 			sql_rel *lsq = NULL, *rsq = NULL, *usq = NULL;
+			list *urs = sa_list(v->sql->sa);
 
 			if (exp_has_rel(then_exp)) {
 				lsq = exp_rel_get_rel(v->sql->sa, then_exp);
@@ -3720,8 +3727,10 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			set_processed(rsq);
 			rsq = rel_select(v->sql->sa, rsq, not_cond);
 			set_processed(rsq);
-			usq = rel_setop(v->sql->sa, lsq, rsq, op_union);
-			rel_setop_set_exps(v->sql, usq, append(sa_list(v->sql->sa), exp_ref(v->sql, e)), false);
+			urs = append(urs, lsq);
+			urs = append(urs, rsq);
+			usq = rel_setop_n_ary(v->sql->sa, urs, op_munion);
+			rel_setop_n_ary_set_exps(v->sql, usq, append(sa_list(v->sql->sa), exp_ref(v->sql, e)), false);
 			if (single)
 				set_single(usq);
 			set_processed(usq);
@@ -3888,7 +3897,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 		/* ROLLUP, CUBE, GROUPING SETS cases */
 		if ((found = find_prop(rel->p, PROP_GROUPINGS))) {
 			list *sets = (list*) found->value.pval;
-			sql_rel *unions = NULL;
+			list *grpr = sa_list(v->sql->sa);
 
 			rel->p = prop_remove(rel->p, found); /* remove property */
 			for (node *n = sets->h ; n ; n = n->next) {
@@ -3980,27 +3989,20 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				}
 				nrel = rel_project(v->sql->sa, nrel, pexps);
 				set_processed(nrel);
+				grpr = append(grpr, nrel);
+			}
 
-				if (!unions)
-					unions = nrel;
-				else {
-					unions = rel_setop(v->sql->sa, unions, nrel, op_union);
-					rel_setop_set_exps(v->sql, unions, rel_projections(v->sql, rel, NULL, 1, 1), false);
-					set_processed(unions);
-				}
-				if (!unions)
-					return unions;
-			}
 			/* always do relation inplace, so it will be fine when the input group has more than 1 reference */
-			if (is_union(unions->op)) {
-				rel = rel_inplace_setop(v->sql, rel, unions->l, unions->r, op_union, unions->exps);
+			assert(list_length(grpr) > 0);
+			if (list_length(grpr) == 0) {
+				return NULL;
+			} else if (list_length(grpr) == 1) {
+				sql_rel *grp = grpr->h->data;
+				rel = rel_inplace_project(v->sql->sa, rel, grp, grp->exps);
 			} else {
-				assert(is_simple_project(unions->op));
-				rel = rel_inplace_project(v->sql->sa, rel, unions->l, unions->exps);
-				rel->card = exps_card(unions->exps);
+				rel = rel_inplace_setop_n_ary(v->sql, rel, grpr, op_munion, rel_projections(v->sql, rel, NULL, 1, 1));
 			}
-			unions->l = unions->r = NULL;
-			rel_destroy(unions);
+
 			v->changes++;
 			return rel;
 		} else {
@@ -4122,8 +4124,11 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			if (!nilrel)
 				return NULL;
 
-			sql_rel *nrel = rel_setop(v->sql->sa, prel, nilrel, op_union);
-			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
+			list *urs = sa_list(v->sql->sa);
+			urs = append(urs, prel);
+			urs = append(urs, nilrel);
+			sql_rel *nrel = rel_setop_n_ary(v->sql->sa, urs, op_munion);
+			rel_setop_n_ary_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(nrel);
 			if(is_single(rel))
 				set_single(nrel);
@@ -4145,8 +4150,11 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			if (!nilrel)
 				return NULL;
 
-			sql_rel *nrel = rel_setop(v->sql->sa, prel, nilrel, op_union);
-			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
+			list *urs = sa_list(v->sql->sa);
+			urs = append(urs, prel);
+			urs = append(urs, nilrel);
+			sql_rel *nrel = rel_setop_n_ary(v->sql->sa, urs, op_munion);
+			rel_setop_n_ary_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(nrel);
 			if(is_single(rel))
 				set_single(nrel);
@@ -4177,12 +4185,15 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			if (!rrel)
 				return NULL;
 
-			lrel = rel_setop(v->sql->sa, lrel, rrel, op_union);
-			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
+			list *urs = sa_list(v->sql->sa);
+			/* order matters (see caller logic) */
+			urs = append(urs, prel);
+			urs = append(urs, lrel);
+			urs = append(urs, rrel);
+			lrel = rel_setop_n_ary(v->sql->sa, urs, op_munion);
+			rel_setop_n_ary_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
 			set_processed(lrel);
-			lrel = rel_setop(v->sql->sa, prel, lrel, op_union);
-			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1), false);
-			set_processed(lrel);
+
 			if(is_single(rel))
 				set_single(lrel);
 			v->changes++;
@@ -4223,11 +4234,12 @@ flatten_values(visitor *v, sql_rel *rel)
 {
 	list *exps = sa_list(v->sql->sa);
 	sql_exp *e = rel->exps->h->data;
-	sql_rel *cur = NULL;
+	sql_rel *nrel = NULL;
 	list *vals = exp_get_values(e);
 	if (vals) {
+		list *urs = sa_list(v->sql->sa);
 		for(int i = 0; i<list_length(vals); i++) {
-			sql_rel *nrel = rel_project(v->sql->sa, NULL, sa_list(v->sql->sa));
+			nrel = rel_project(v->sql->sa, NULL, sa_list(v->sql->sa));
 			set_processed(nrel);
 			for(node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -4242,17 +4254,23 @@ flatten_values(visitor *v, sql_rel *rel)
 					rel_set_exps(nrel, nrel->exps);
 				}
 			}
-			if (cur) {
-				nrel = rel_setop(v->sql->sa, cur, nrel, op_union);
-				rel_setop_set_exps(v->sql, nrel, exps, false);
-				set_processed(nrel);
-			}
-			cur = nrel;
+			urs = append(urs, nrel);
 		}
-		if (is_single(rel))
-			set_single(cur);
-		rel_destroy(rel);
-		rel = cur;
+
+		if (list_length(urs) == 1) {
+			if (is_single(rel))
+				set_single(nrel);
+			rel_destroy(rel);
+			rel = nrel;
+		} else {
+			nrel = rel_setop_n_ary(v->sql->sa, urs, op_munion);
+			rel_setop_n_ary_set_exps(v->sql, nrel, exps, false);
+			if (is_single(rel))
+				set_single(nrel);
+			rel_destroy(rel);
+			rel = nrel;
+		}
+
 		v->changes++;
 	}
 	return rel;
@@ -4305,7 +4323,9 @@ rewrite_rel(visitor *v, sql_rel *rel)
 			if (!rel || or == rel)
 				return rel;
 			/* change referenced project into join with outer(ir) */
-			sql_rel *nr = rel->l;
+			/*sql_rel *nr = rel->l;*/
+			assert(is_munion(rel->op));
+			sql_rel *nr = ((list*)rel->l)->h->data;
 			assert(is_project(nr->op));
 			if (!rel_is_ref(nr))
 				nr = nr->l;
