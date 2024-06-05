@@ -144,6 +144,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			old[i] = NULL;
 			continue;
 		}
+		if (getModuleId(p) == matRef) { /* mat.packIncrement has requirement on number of instructions (or that needs an update */
+			pushInstruction(mb, p);
+			old[i] = NULL;
+			continue;
+		}
 
 		/* from here we have a candidate to look for a match */
 
