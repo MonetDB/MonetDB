@@ -192,13 +192,21 @@ GRANT SELECT ON TABLE INFORMATION_SCHEMA.COLUMNS TO PUBLIC WITH GRANT OPTION;
 
 -- The view CHECK_CONSTRAINTS contains all check constraints defined on a table,
 -- that are owned by a currently enabled role.
--- This view is currently empty as MonetDB does not support CHECK constraints yet.
+-- TODO: that the current user owns or has some privilege other than SELECT on.
 CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT
   cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,
-  cast(NULL AS varchar(1024)) AS CONSTRAINT_SCHEMA,
-  cast(NULL AS varchar(1024)) AS CONSTRAINT_NAME,
-  cast(NULL AS varchar(1024)) AS CHECK_CLAUSE
- WHERE 1=0;
+  s."name" AS CONSTRAINT_SCHEMA,
+  k."name" AS CONSTRAINT_NAME,
+  sys.check_constraint(s."name", k."name") AS CHECK_CLAUSE,
+  -- MonetDB column extensions
+  t."schema_id" AS schema_id,
+  t."id" AS table_id,
+  t."name" AS table_name,
+  k."id" AS key_id
+ FROM (SELECT sk."id", sk."table_id", sk."name" FROM sys."keys" sk WHERE sk."type" = 4 UNION ALL SELECT tk."id", tk."table_id", tk."name" FROM tmp."keys" tk WHERE tk."type" = 4) k
+ INNER JOIN (SELECT st."id", st."schema_id", st."name" FROM sys."_tables" st UNION ALL SELECT tt."id", tt."schema_id", tt."name" FROM tmp."_tables" tt) t ON k."table_id" = t."id"
+ INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
+ ORDER BY s."name", t."name", k."name";
 
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHECK_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;
 
@@ -211,7 +219,7 @@ CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT
   cast(NULL AS varchar(1)) AS TABLE_CATALOG,
   s."name" AS TABLE_SCHEMA,
   t."name" AS TABLE_NAME,
-  cast(CASE k."type" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' ELSE NULL END AS varchar(16)) AS CONSTRAINT_TYPE,
+  cast(CASE k."type" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' WHEN 3 THEN 'UNIQUE NULLS NOT DISTINCT' WHEN 4 THEN 'CHECK' ELSE NULL END AS varchar(26)) AS CONSTRAINT_TYPE,
   cast('NO' AS varchar(3)) AS IS_DEFERRABLE,
   cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,
   cast('YES' AS varchar(3)) AS ENFORCED,
