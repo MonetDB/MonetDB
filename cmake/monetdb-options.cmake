@@ -95,7 +95,7 @@ option(STRICT
 
 option(TAGS
   "Enable tags usage (ctags and/or cscope) )"
-  "${DEVELOPMENT}")
+  OFF)
 
 option(ASSERT
   "Enable asserts (default=ON for development sources, OFF for tarball installation)"
