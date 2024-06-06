@@ -197,7 +197,7 @@ CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT
   cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,
   s."name" AS CONSTRAINT_SCHEMA,
   k."name" AS CONSTRAINT_NAME,
-  sys.check_constraint(s."name", k."name") AS CHECK_CLAUSE,
+  cast(sys.check_constraint(s."name", k."name") AS varchar(2048)) AS CHECK_CLAUSE,
   -- MonetDB column extensions
   t."schema_id" AS schema_id,
   t."id" AS table_id,

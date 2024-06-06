@@ -7150,7 +7150,7 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 									"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
 									"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
 									"  k.\"name\" AS CONSTRAINT_NAME,\n"
-									"  sys.check_constraint(s.\"name\", k.\"name\") AS CHECK_CLAUSE,\n"
+									"  cast(sys.check_constraint(s.\"name\", k.\"name\") AS varchar(2048)) AS CHECK_CLAUSE,\n"
 									"  t.\"schema_id\" AS schema_id,\n"
 									"  t.\"id\" AS table_id,\n"
 									"  t.\"name\" AS table_name,\n"
