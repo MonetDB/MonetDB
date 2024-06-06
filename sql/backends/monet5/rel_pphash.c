@@ -46,7 +46,7 @@ get_max_bt_count(mvc *sql, sql_rel *rel, lng max)
 static int
 rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 	list **HSHres_hts, list **HSHres_hps, list *exps_hsh_ht, list *exps_hsh_hp,
-	list **JNres_hshs, list **JNres_prbs, list *exps_prb_hp, int final)
+	list **JNres_hshs, list **JNres_prbs, list *exps_prb_hp, int collect_res)
 {
 	mvc *sql = be->mvc;
 	int curhash = 0;
@@ -62,7 +62,7 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 		prb_est = 85000000;
 	}
 
-	if (final) {
+	if (collect_res) {
 		/* hash-side join-res */
 		*JNres_hshs = sa_list(sql->sa);
 		for (node *n = exps_hsh_hp->h; n; n = n->next) {
@@ -112,72 +112,16 @@ rel2bin_pphash_prepare(backend *be, sql_rel *rel_hsh, sql_rel *rel_prb,
 	return 0;
 }
 
-stmt *
-rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
+/* Generates the parallel block to compute the hash table */
+static int
+rel2bin_oahash_build(backend *be, sql_rel *rel_hsh, list *refs)
 {
-	mvc *sql = be->mvc;
-	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
+	int err = 1;
 	stmt *pp = NULL, *sub = NULL;
-	list *eq_exps = sa_list(sql->sa);
-	list *hsh_hts = sa_list(sql->sa), *prb_hts = sa_list(sql->sa); /* join column exps */
-	list *hsh_hps = sa_list(sql->sa), *prb_hps = sa_list(sql->sa); /* payload column exps */
-	list *HSHres_hts = NULL, *HSHres_hps = NULL;
-	list *JNres_hshs = NULL, *JNres_prbs = NULL;
-	int neededpp = get_need_pipeline(be); /* remember and reset previous info. */
 
-	/* find the hash- vs probe-side */
-	if (((sql_rel*)rel->l)->hashjoin) {
-		rel_hsh = rel->l;
-		rel_prb = rel->r;
-	} else {
-		assert(((sql_rel*)rel->r)->hashjoin);
-		rel_hsh = rel->r;
-		rel_prb = rel->l;
-	}
-
-	/* get equi-joins */
-	for (node *en = rel->exps->h; en; en = en->next) {
-		sql_exp *e = en->data;
-		if (e->type == e_cmp && e->flag == cmp_equal)
-			append(eq_exps, e);
-		else // TODO get no-equi-joins
-			assert(0);
-	}
-	/* find join column exps of hash- vs probe- side */
-	for (node *n = eq_exps->h; n; n = n->next) {
-		sql_exp *e = n->data, *cmpl = e->l, *cmpr = e->r;
-		if (rel_find_exp(rel_hsh, cmpl)) {
-			append(hsh_hts, cmpl);
-			append(prb_hts, cmpr);
-		} else {
-			assert(rel_find_exp(rel_hsh, cmpr));
-			append(hsh_hts, cmpr);
-			append(prb_hts, cmpl);
-		}
-	}
-	/* find projection columns */
-	// TODO remove join-only columns from hsh_hps
-	hsh_hps = rel_projections(sql, rel_hsh, 0, 1, 1);
-	prb_hps = rel_projections(sql, rel_prb, 0, 1, 1);
-	assert(hsh_hps->cnt||prb_hps->cnt); /* at least one column will be projected */
-
-	/* If no one 'neededpp' in the super-tree, we gather the join results */
-	// TODO delay gathering the join results until end of what can be parallelised
-	(void)rel2bin_pphash_prepare(be, rel_hsh, rel_prb,
-			 &HSHres_hts, &HSHres_hps, hsh_hts, hsh_hps,
-			&JNres_hshs, &JNres_prbs, prb_hps, !neededpp);
-	assert(HSHres_hts->cnt == hsh_hts->cnt);
-	assert(HSHres_hps->cnt == hsh_hps->cnt);
-	if (!neededpp) {
-		assert(JNres_hshs->cnt == hsh_hps->cnt);
-		assert(JNres_prbs->cnt == prb_hps->cnt);
-	}
-
-	/*** HASH PHASE ***/
-	/* Generates the parallel block to compute a hash table */
 	if (get_pipeline(be)) {
         sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
-		return NULL;
+		return err;
 	}
 	if (pp_can_not_start(be->mvc, rel_hsh)) {
 		set_need_pipeline(be);
@@ -189,7 +133,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	/* first construct the sub-relation */
 	sub = subrel_bin(be, rel_hsh, refs);
 	sub = subrel_project(be, sub, refs, rel_hsh);
-	if (!sub) return NULL;
+	if (!sub) return err;
 
 	pp = get_pipeline(be);
 	if (!pp) {
@@ -211,7 +155,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		} else {
 			q = stmt_oahash_build_combined_table(be, sink, key, prnt_slts, prnt_ht, pp);
 		}
-		if (q == NULL) return NULL;
+		if (q == NULL) return err;
 		prnt_slts = getDestVar(q);
 		prnt_ht = sink;
 		prnt_tt = tail_type(k)->type->localtype;
@@ -225,7 +169,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	/* START oahash.compute_frequencies() with or without payload_pos */
 	InstrPtr stmt_freq = newStmt(be->mb, putName("oahash"), putName("compute_frequencies"));
 	if (stmt_freq == NULL)
-		return NULL;
+		return err;
 	if (hsh_hps->cnt == 0) {
 		/* No payload at the hash-side, hence no need to compute payload_pos.
 		 * The oahash.expand() at the probe-side only needs the frequencies.
@@ -251,7 +195,7 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		assert(payload); /* must find */
 		InstrPtr hp_sink = inout->data;
 		stmt *hp = stmt_oahash_add_payload(be, hp_sink, payload, payload_pos, pp);
-		if (hp == NULL) return NULL;
+		if (hp == NULL) return err;
 		append(l_hps, hp);
 	}
 	HSHres_hps = l_hps; /* NB: HSHres_hps now contains stmt*-s iso InstrPtr-s */
@@ -259,10 +203,16 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
 
-	/*** PROBE PHASE ***/
-	/* Generates the parallel block to probe the hash table and produce the
-	 *   parallel-hash-join results.
-	 */
+	return 0;
+}
+
+/* Generates the parallel block to probe the hash table
+ */
+static int
+rel2bin_oahash_probe(backend *be, sql_rel *rel_prb, list *refs)
+{
+	int err = 1;
+
 	if (pp_can_not_start(be->mvc, rel_prb)) {
 		set_need_pipeline(be);
 	} else {
@@ -305,11 +255,21 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		rhs_slts = getArg(q, 1);
 	}
 
-	/*** FINAL PHASE ***/
-	/* Construct result relations */
+	return 0;
+}
+
+/* Construct result relations:
+ *  project only probe-side rows (semi-/anti-joins),
+ *	repeat matched rows (outer/equi-joins),
+ *  adding NULLs (outer joins),
+ *	collect partial results (if no further parrallel blocks)
+ */
+static stmt *
+rel2bin_oahash_finish(backend *be, ...)
+{
 	assert(matched && rhs_slts); /* must be set */
 	bit first = 1;
-	/* holds the stmts to be returned by this hashjoin: if 'neededpp', partial
+	/* holds the stmts to be returned by this oahash: if 'neededpp', partial
 	 * results of a pipeline worker; else complete results. */
 	list *l = sa_list(sql->sa);
 	list *lh = NULL, *lp = NULL;
@@ -416,10 +376,71 @@ rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs)
 		(void)stmt_pp_end(be, pp);
 	}
 
-	//if (neededpp) {
-		//set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
-		//sub = rel2bin_slicer(be, sub, 1);
-	//}
 	return sub;
+}
+
+stmt *
+rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
+{
+	mvc *sql = be->mvc;
+	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
+	stmt *pp = NULL, *sub = NULL;
+	list *hsh_hts = sa_list(sql->sa), *prb_hts = sa_list(sql->sa); /* join column exps */
+	list *hsh_hps = sa_list(sql->sa), *prb_hps = sa_list(sql->sa); /* payload column exps */
+	list *HSHres_hts = NULL, *HSHres_hps = NULL;
+	list *JNres_hshs = NULL, *JNres_prbs = NULL;
+	int neededpp = get_need_pipeline(be); /* remember and reset previous info. */
+
+	/* find the hash- vs probe-side */
+	if (rel->oahash == 1) {
+		rel_hsh = rel->l;
+		rel_prb = rel->r;
+	} else {
+		assert(rel->oahash == 2);
+		rel_hsh = rel->r;
+		rel_prb = rel->l;
+	}
+
+	/* find join column exps of hash- vs probe- side */
+	for (node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data, *cmpl = e->l, *cmpr = e->r;
+
+		assert(e->type == e_cmp && e->flag == cmp_equal);
+
+		if (rel_find_exp(rel_hsh, cmpl)) {
+			append(hsh_hts, cmpl);
+			append(prb_hts, cmpr);
+		} else {
+			assert(rel_find_exp(rel_hsh, cmpr));
+			append(hsh_hts, cmpr);
+			append(prb_hts, cmpl);
+		}
+	}
+	/* find projection columns */
+	// TODO remove join-only columns from hsh_hps
+	hsh_hps = rel_projections(sql, rel_hsh, 0, 1, 1);
+	prb_hps = rel_projections(sql, rel_prb, 0, 1, 1);
+	assert(hsh_hps->cnt||prb_hps->cnt); /* at least one column will be projected */
+
+	/* If no one 'neededpp' in the super-tree, we gather the join results */
+	// TODO delay gathering the join results until end of what can be parallelised
+	(void)rel2bin_pphash_prepare(be, rel_hsh, rel_prb,
+			 &HSHres_hts, &HSHres_hps, hsh_hts, hsh_hps,
+			&JNres_hshs, &JNres_prbs, prb_hps, !neededpp);
+	assert(HSHres_hts->cnt == hsh_hts->cnt);
+	assert(HSHres_hps->cnt == hsh_hps->cnt);
+	if (!neededpp) {
+		assert(JNres_hshs->cnt == hsh_hps->cnt);
+		assert(JNres_prbs->cnt == prb_hps->cnt);
+	}
+
+	/*** HASH PHASE ***/
+	(void) rel2bin_oahash_build(be, ...);
+
+	/*** PROBE PHASE ***/
+	(void) rel2bin_oahash_probe(be, ...);
+
+	/*** FINAL PHASE ***/
+	return rel2bin_oahash_finish(be, ...);
 }
 

@@ -309,8 +309,9 @@ typedef struct relation {
 	 parallel:1,	/* suitable for parallel pipeline? */
 	 partition:2,	/* partition input relation?
 					 * 0 (no), 1 (left relation), 2 (right relation) */
-	 hashjoin:1,	/* op_join: generate parallel hash join plan;
-					 * op_basetable: generate parallel hash table plan */
+	 oahash:2,	/* op_join: generate parallel OAHash join plan?
+				 * 0 (no), 1 (hash left), 2 (hash right)
+				 * op_basetable: generate parallel hash table plan */
 	 spb:1;			/* should this `rel` start a pipeline block? */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice

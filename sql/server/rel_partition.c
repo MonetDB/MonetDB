@@ -316,41 +316,28 @@ rel_groupby_partition_safe(sql_rel *rel)
 	return true;
 }
 
-static void
-mark_hashjoin(mvc *sql, sql_rel *rel)
+static int
+do_oahash_join(sql_rel *rel)
 {
-	ATOMIC_TYPE dohashjoin = (1U<<19);
-	if (!(GDKdebug & dohashjoin))
-		return;
+	ATOMIC_TYPE use_oahash = (1U<<19);
+	if (!(GDKdebug & use_oahash))
+		return 0;
 
-	/* For now, only generate paralle hash join plan for equi-joins.
-	 */
-	if ((rel->op != op_join) || !rel->exps)
-		return;
+	// TODO full outer and anti-join
+	if (rel->op == op_full || rel->op == op_anti)
+		return 0;
 
+	if (!rel->exps)
+		return 1;
+
+	/* only for equi-joins. */
 	for (node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		if (!is_compare(e->type) || e->flag != cmp_equal)
-			return;
+			return 0;
 	}
 
-	sql_rel *l = rel->l, *r = rel->r;
-	(void) rel_partition_(sql, l, 1);
-	(void) rel_partition_(sql, r, 1);
-
-	if (rel_getcount(sql, l) < rel_getcount(sql, r))
-		l->hashjoin = 1;
-	else
-		r->hashjoin = 1;
-
-	if(is_basetable(l->op))
-		l->partition = 1;
-
-	if(is_basetable(r->op))
-		r->partition = 1;
-
-	rel->hashjoin = 1;
-	rel->parallel = 1;
+	return 1;
 }
 
 static int
@@ -427,6 +414,10 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (res == REL_PARTITION)
 			rel->partition = 1;
 	} else if (is_semi(rel->op)) {
+		if (do_oahash_join(rel)) {
+			rel->oahash = 2;
+		}
+
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, pb);
 		if (!res)
@@ -466,10 +457,30 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (rel->r && rel->card <= CARD_AGGR)
 			res = rel_partition_(sql, rel->r, pb);
 	} else if (is_join(rel->op)) {
+		if (do_oahash_join(rel)) {
+
+			sql_rel *l = rel->l, *r = rel->r;
+			(void) rel_partition_(sql, l, 1);
+			(void) rel_partition_(sql, r, 1);
+
+			if (rel->op == op_left)
+				rel->oahash = 2;
+			else if (rel->op == op_right)
+				rel->oahash = 1;
+			else if (rel_getcount(sql, l) < rel_getcount(sql, r))
+				rel->oahash = 1;
+			else
+				rel->oahash = 2;
+
+			if(is_basetable(l->op))
+				l->partition = 1;
+			if(is_basetable(r->op))
+				r->partition = 1;
+			rel->parallel = 1;
+		}
+
 		if (pb && is_outerjoin(rel->op))
 			return 0;
-
-		mark_hashjoin(sql, rel);
 
 		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
 		if (0 && (l || r)) {

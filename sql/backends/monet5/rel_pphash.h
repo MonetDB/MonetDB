@@ -12,6 +12,6 @@
 #include "sql_statement.h"
 #include "mal_backend.h"
 
-extern stmt *rel2bin_pp_hashjoin(backend *be, sql_rel *rel, list *refs);
+extern stmt *rel2bin_oahash(backend *be, sql_rel *rel, list *refs);
 
 #endif /*_REL_PP_HASH_H_*/

@@ -1,7 +1,7 @@
-1. To enable hashjoin:
+1. To use OAHash for joins:
 
-select debug(524288); -- hashjoin == 1U<<19
-select debug(537395200); -- forcemito & hashjoin == 1U<<19 & 1U<<29
+select debug(524288); -- useOAHash == 1U<<19
+select debug(537395200); -- forcemito & useOAHash == 1U<<19 & 1U<<29
 
 2. Basic query:
 
