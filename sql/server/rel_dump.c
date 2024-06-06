@@ -2521,6 +2521,11 @@ is_infix(sql_func *f)
 			return true;
 		if (f->base.name[0] == '|' && f->base.name[1] == '|')
 			return true;
+		if (f->base.name[0] == 'o' && f->base.name[1] == 'r')
+			return true;
+	} else if (strlen(f->base.name) == 3) {
+		if (f->base.name[0] == 'a' && f->base.name[1] == 'n' && f->base.name[2] == 'd')
+			return true;
 	}
 	return false;
 }
