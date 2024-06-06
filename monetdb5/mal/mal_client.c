@@ -107,11 +107,13 @@ MCpushClientInput(Client c, bstream *new_input, int listing, const char *prompt)
 	ClientInput *x = (ClientInput *) GDKmalloc(sizeof(ClientInput));
 	if (x == 0)
 		return -1;
-	x->fdin = c->fdin;
-	x->yycur = c->yycur;
-	x->listing = c->listing;
-	x->prompt = c->prompt;
-	x->next = c->bak;
+	*x = (ClientInput) {
+		.fdin = c->fdin,
+		.yycur = c->yycur,
+		.listing = c->listing,
+		.prompt = c->prompt,
+		.next = c->bak,
+	};
 	c->bak = x;
 	c->fdin = new_input;
 	c->qryctx.bs = new_input;
@@ -567,7 +569,10 @@ MCreadClient(Client c)
 			if (!in->mode)		/* read one line at a time in line mode */
 				break;
 		}
-		if (in->mode) {			/* find last new line */
+		if (rd < 0) {
+			/* force end of stream handling below */
+			in->pos = in->len;
+		} else if (in->mode) {			/* find last new line */
 			char *p = in->buf + in->len - 1;
 
 			while (p > in->buf && *p != '\n') {

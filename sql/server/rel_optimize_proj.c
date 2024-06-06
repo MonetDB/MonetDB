@@ -977,18 +977,6 @@ bind_project_reduce_casts(visitor *v, global_props *gp)
 	return gp->cnt[op_project] && (flag & project_reduce_casts) ? rel_project_reduce_casts : NULL;
 }
 
-
-static sql_rel *
-exp_skip_output_parts(sql_rel *rel)
-{
-	while ((is_topn(rel->op) || is_project(rel->op) || is_sample(rel->op)) && rel->l) {
-		if (is_union(rel->op) || is_munion(rel->op) || (is_groupby(rel->op) && list_empty(rel->r)))
-			return rel;			/* a group-by with no columns is a plain aggregate and hence always returns one row */
-		rel = rel->l;
-	}
-	return rel;
-}
-
 static sql_column *
 exp_find_column_( sql_rel *rel, sql_exp *exp, int pnr, sql_rel **bt )
 {
@@ -1085,149 +1073,6 @@ rel_is_join_on_pkey(sql_rel *rel, bool pk_fk) /* pk_fk is used to verify is a jo
 	return NULL;
 }
 
-/* return true if the given expression is guaranteed to have no rows */
-static int
-exp_is_zero_rows(visitor *v, sql_rel *rel, sql_rel *sel)
-{
-	if (!rel || mvc_highwater(v->sql))
-		return 0;
-	rel = exp_skip_output_parts(rel);
-	if (is_select(rel->op) && rel->l) {
-		sel = rel;
-		rel = exp_skip_output_parts(rel->l);
-	}
-
-	sql_table *t = is_basetable(rel->op) && rel->l ? rel->l : NULL;
-	bool table_readonly = t && isTable(t) && t->access == TABLE_READONLY;
-
-	if (sel && !list_empty(sel->exps) && (v->value_based_opt || table_readonly)) {
-		for (node *n = sel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			/* if the expression is false, then the select is empty */
-			if (v->value_based_opt && (exp_is_false(e) || exp_is_null(e)))
-				return 1;
-			if (table_readonly && e->type == e_cmp && (e->flag == cmp_equal || e->f)) {
-				/* half-ranges are theoretically optimizable here, but not implemented */
-				sql_exp *c = e->l;
-				if (c->type == e_column) {
-					sql_exp *l = e->r;
-					sql_exp *h = e->f;
-
-					atom *lval = exp_flatten(v->sql, v->value_based_opt, l);
-					atom *hval = h ? exp_flatten(v->sql, v->value_based_opt, h) : lval;
-					if (lval && hval) {
-						sql_rel *bt;
-						sql_column *col = name_find_column(sel, exp_relname(c), exp_name(c), -2, &bt);
-						void *min = NULL, *max = NULL;
-						atom *amin, *amax;
-						sql_subtype *ct = exp_subtype(c);
-
-						if (col
-							&& col->t == t
-							&& sql_trans_ranges(v->sql->session->tr, col, &min, &max)
-							&& min && max
-							&& (amin = atom_general_ptr(v->sql->sa, ct, min)) && (amax = atom_general_ptr(v->sql->sa, ct, max))
-							&& !exp_range_overlap(amin, amax, lval, hval, false, false)) {
-							return 1;
-						}
-					}
-				}
-			}
-		}
-	}
-	if ((is_innerjoin(rel->op) || is_left(rel->op) || is_right(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
-		sql_exp *je;
-
-		/* check non overlaping pk-fk join */
-		if ((je = rel_is_join_on_pkey(rel, true))) {
-			int lpnr = rel_part_nr(rel->l, je);
-
-			if (lpnr >= 0 && !rel_uses_part_nr(rel->r, je, lpnr))
-				return 1;
-		}
-		return (((is_innerjoin(rel->op) || is_left(rel->op) || is_semi(rel->op)) && exp_is_zero_rows(v, rel->l, sel)) ||
-			((is_innerjoin(rel->op) || is_right(rel->op)) && exp_is_zero_rows(v, rel->r, sel)));
-	}
-	/* global aggregates always return 1 row */
-	if (is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r)) || is_select(rel->op) ||
-		is_topn(rel->op) || is_sample(rel->op) || is_inter(rel->op) || is_except(rel->op)) {
-		if (rel->l)
-			return exp_is_zero_rows(v, rel->l, sel);
-	} else if (is_innerjoin(rel->op) && list_empty(rel->exps)) { /* cartesian product */
-		return exp_is_zero_rows(v, rel->l, sel) || exp_is_zero_rows(v, rel->r, sel);
-	}
-	return 0;
-}
-
-/* discard sides of UNION or UNION ALL which cannot produce any rows, as per
-statistics, similarly to the merge table optimizer, e.g.
-	select * from a where x between 1 and 2 union all select * from b where x between 1 and 2
-->	select * from b where x between 1 and 2   [assuming a has no rows with 1<=x<=2]
-*/
-static inline sql_rel *
-rel_remove_union_partitions(visitor *v, sql_rel *rel)
-{
-	if (!is_union(rel->op) || rel_is_ref(rel))
-		return rel;
-	int left_zero_rows = !rel_is_ref(rel->l) && exp_is_zero_rows(v, rel->l, NULL);
-	int right_zero_rows = !rel_is_ref(rel->r) && exp_is_zero_rows(v, rel->r, NULL);
-
-	if (left_zero_rows && right_zero_rows) {
-		/* generate dummy relation */
-		list *converted = sa_list(v->sql->sa);
-		sql_rel *nrel = rel_project_exp(v->sql, exp_atom_bool(v->sql->sa, 1));
-		nrel = rel_select(v->sql->sa, nrel, exp_atom_bool(v->sql->sa, 0));
-		set_processed(nrel);
-
-		for (node *n = rel->exps->h ; n ; n = n->next) {
-			sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
-			exp_prop_alias(v->sql->sa, a, e);
-			list_append(converted, a);
-		}
-		rel_destroy(rel);
-		v->changes++;
-		return rel_project(v->sql->sa, nrel, converted);
-	} else if (left_zero_rows) {
-		sql_rel *r = rel->r;
-		if (!is_project(r->op))
-			r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
-		rel_rename_exps(v->sql, rel->exps, r->exps);
-		rel->r = NULL;
-		rel_destroy(rel);
-		v->changes++;
-		return r;
-	} else if (right_zero_rows) {
-		sql_rel *l = rel->l;
-		if (!is_project(l->op))
-			l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-		rel_rename_exps(v->sql, rel->exps, l->exps);
-		rel->l = NULL;
-		rel_destroy(rel);
-		v->changes++;
-		return l;
-	}
-	return rel;
-}
-
-static int
-rel_match_projections(sql_rel *l, sql_rel *r)
-{
-	node *n, *m;
-	list *le = l->exps;
-	list *re = r->exps;
-
-	if (!le || !re)
-		return 0;
-	if (list_length(le) != list_length(re))
-		return 0;
-
-	for (n = le->h, m = re->h; n && m; n = n->next, m = m->next)
-		if (!exp_match(n->data, m->data))
-			return 0;
-	return 1;
-}
-
 static int
 exps_has_predicate( list *l )
 {
@@ -1252,55 +1097,6 @@ rel_find_select( sql_rel *r)
 	return NULL;
 }
 
-static inline sql_rel *
-rel_merge_union(visitor *v, sql_rel *rel)
-{
-	sql_rel *l = rel->l;
-	sql_rel *r = rel->r;
-	sql_rel *ref = NULL;
-
-	if (is_union(rel->op) &&
-	    l && is_project(l->op) && !project_unsafe(l,0) &&
-	    r && is_project(r->op) && !project_unsafe(r,0) &&
-	    (ref = rel_find_ref(l)) != NULL && ref == rel_find_ref(r)) {
-		/* Find selects and try to merge */
-		sql_rel *ls = rel_find_select(l);
-		sql_rel *rs = rel_find_select(r);
-
-		/* can we merge ? */
-		if (!ls || !rs)
-			return rel;
-
-		/* merge any extra projects */
-		if (l->l != ls)
-			rel->l = l = rel_merge_projects_(v, l);
-		if (r->l != rs)
-			rel->r = r = rel_merge_projects_(v, r);
-
-		if (!rel_match_projections(l,r))
-			return rel;
-
-		/* for now only union(project*(select(R),project*(select(R))) */
-		if (ls != l->l || rs != r->l ||
-		    ls->l != rs->l || !rel_is_ref(ls->l))
-			return rel;
-
-		if (!ls->exps || !rs->exps ||
-		    exps_has_predicate(ls->exps) ||
-		    exps_has_predicate(rs->exps))
-			return rel;
-
-		/* merge, ie. add 'or exp' */
-		v->changes++;
-		ls->exps = append(new_exp_list(v->sql->sa), exp_or(v->sql->sa, ls->exps, rs->exps, 0));
-		rs->exps = NULL;
-		rel = rel_inplace_project(v->sql->sa, rel, rel_dup(rel->l), rel->exps);
-		set_processed(rel);
-		return rel;
-	}
-	return rel;
-}
-
 static bool
 rels_share_rel(list *l)
 {
@@ -1323,10 +1119,6 @@ rel_merge_munion(visitor *v, sql_rel *rel)
 	if (is_munion(rel->op) && rels_share_rel(rel->l)) {
 		list *rels = rel->l, *nrels = NULL;
 		sql_rel *cur = NULL, *curs = NULL;
-		/*
-	    l && is_project(l->op) && !project_unsafe(l,0) &&
-	    r && is_project(r->op) && !project_unsafe(r,0) &&
-		*/
 
 		/* Find selects and try to merge */
 		for(node *n = rels->h; n; n = n->next) {
@@ -1372,26 +1164,9 @@ rel_merge_munion(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-
-static sql_rel *
-rel_optimize_unions_bottomup_(visitor *v, sql_rel *rel)
-{
-	rel = rel_remove_union_partitions(v, rel);
-	rel = rel_merge_union(v, rel);
-	return rel;
-}
-
-static sql_rel *
-rel_optimize_unions_bottomup(visitor *v, global_props *gp, sql_rel *rel)
-{
-	(void) gp;
-	return rel_visitor_bottomup(v, rel, &rel_optimize_unions_bottomup_);
-}
-
 static sql_rel *
 rel_optimize_munions_bottomup_(visitor *v, sql_rel *rel)
 {
-	// TODO: implement rel_remove_munion_partitions
 	rel = rel_merge_munion(v, rel);
 	return rel;
 }
@@ -1409,8 +1184,6 @@ bind_optimize_unions_bottomup(visitor *v, global_props *gp)
 	int flag = v->sql->sql_optimizer;
 	return gp->opt_level == 1 && gp->cnt[op_munion] && (flag & optimize_unions_bottomup)
 		   ? rel_optimize_munions_bottomup : NULL;
-	// TODO: remove the next return
-	return rel_optimize_unions_bottomup;
 }
 
 
@@ -3313,126 +3086,75 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 		int need_distinct = need_distinct(rel);
 		sql_rel *u = rel->l;
 		sql_rel *p = rel;
-		sql_rel *ul = u->l;
-		sql_rel *ur = u->r;
 
 		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0))
 			return rel;
 
-		// TODO: for now we have to differentiate between union and munion
-		if (is_union(u->op)) {
-			/* don't push project down union of single values */
-			if ((is_project(ul->op) && !ul->l) || (is_project(ur->op) && !ur->l))
+		sql_rel *r;
+
+		/* don't push project down union of single values */
+		for (node *n = ((list*)u->l)->h; n; n = n->next) {
+			r = n->data;
+			// TODO: does this check make sense?
+			if (is_project(r->op) && !r->l)
 				return rel;
-
-			ul = rel_dup(ul);
-			ur = rel_dup(ur);
-
-			if (!is_project(ul->op))
-				ul = rel_project(v->sql->sa, ul,
-					rel_projections(v->sql, ul, NULL, 1, 1));
-			if (!is_project(ur->op))
-				ur = rel_project(v->sql->sa, ur,
-					rel_projections(v->sql, ur, NULL, 1, 1));
-			need_distinct = (need_distinct &&
-					(!exps_unique(v->sql, ul, ul->exps) || have_nil(ul->exps) ||
-					 !exps_unique(v->sql, ur, ur->exps) || have_nil(ur->exps)));
-			rel_rename_exps(v->sql, u->exps, ul->exps);
-			rel_rename_exps(v->sql, u->exps, ur->exps);
-
-			/* introduce projects under the set */
-			ul = rel_project(v->sql->sa, ul, NULL);
-			if (need_distinct)
-				set_distinct(ul);
-			ur = rel_project(v->sql->sa, ur, NULL);
-			if (need_distinct)
-				set_distinct(ur);
-
-			ul->exps = exps_copy(v->sql, p->exps);
-			set_processed(ul);
-			ur->exps = exps_copy(v->sql, p->exps);
-			set_processed(ur);
-
-			rel = rel_inplace_setop(v->sql, rel, ul, ur, op_union,
-				rel_projections(v->sql, rel, NULL, 1, 1));
-			if (need_distinct)
-				set_distinct(rel);
-			if (is_single(u))
-				set_single(rel);
-			v->changes++;
-			rel->l = rel_merge_projects_(v, rel->l);
-			rel->r = rel_merge_projects_(v, rel->r);
-			return rel;
-		} else if (is_munion(u->op)) {
-			sql_rel *r;
-
-			/* don't push project down union of single values */
-			for (node *n = ((list*)u->l)->h; n; n = n->next) {
-				r = n->data;
-				// TODO: does this check make sense?
-				if (is_project(r->op) && !r->l)
-					return rel;
-			}
-
-			for (node *n = ((list*)u->l)->h; n; n = n->next) {
-				r = rel_dup(n->data);
-
-				/* introduce projection around each operand if needed */
-				if (!is_project(r->op))
-					r = rel_project(v->sql->sa, r,
-							rel_projections(v->sql, r, NULL, 1, 1));
-				/* check if we need distinct */
-				need_distinct &=
-					(!exps_unique(v->sql, r, r->exps) || have_nil(r->exps));
-				rel_rename_exps(v->sql, u->exps, r->exps);
-
-				rel_destroy(n->data);
-				n->data = r;
-			}
-
-			/* once we have checked for need_distinct in every rel we can
-			 * introduce the projects under the munion which are gonna be
-			 * copies of the single project above munion */
-			for (node *n = ((list*)u->l)->h; n; n = n->next) {
-				r = rel_dup(n->data);
-
-				r = rel_project(v->sql->sa, r, NULL);
-				if (need_distinct)
-					set_distinct(r);
-				r->exps = exps_copy(v->sql, p->exps);
-				set_processed(r);
-
-				rel_destroy(n->data);
-				n->data = r;
-			}
-
-			/* turn the project-munion on top into munion. incr operand
-			 * rels count to make sure that they are not deleted by the
-			 * subsequent rel_inplace_setop_n_ary */
-			for (node *n = ((list*)u->l)->h; n; n = n->next)
-				rel_dup(n->data);
-			rel = rel_inplace_setop_n_ary(v->sql, rel, u->l, op_munion,
-					rel_projections(v->sql, rel, NULL, 1, 1));
-			if (need_distinct)
-				set_distinct(rel);
-			if (is_single(u))
-				set_single(rel);
-
-			v->changes++;
-
-			/* if any operand has two project above then squash them */
-			for (node *n = ((list*)u->l)->h; n; n = n->next) {
-				r = rel_dup(n->data);
-				r = rel_merge_projects_(v, r);
-				rel_destroy(n->data);
-				n->data = r;
-			}
-
-			return rel;
-		} else {
-			/* we need to have either union or munion */
-			assert(0);
 		}
+
+		for (node *n = ((list*)u->l)->h; n; n = n->next) {
+			r = rel_dup(n->data);
+
+			/* introduce projection around each operand if needed */
+			if (!is_project(r->op))
+				r = rel_project(v->sql->sa, r,
+						rel_projections(v->sql, r, NULL, 1, 1));
+			/* check if we need distinct */
+			need_distinct &=
+				(!exps_unique(v->sql, r, r->exps) || have_nil(r->exps));
+			rel_rename_exps(v->sql, u->exps, r->exps);
+
+			rel_destroy(n->data);
+			n->data = r;
+		}
+
+		/* once we have checked for need_distinct in every rel we can
+		 * introduce the projects under the munion which are gonna be
+		 * copies of the single project above munion */
+		for (node *n = ((list*)u->l)->h; n; n = n->next) {
+			r = rel_dup(n->data);
+
+			r = rel_project(v->sql->sa, r, NULL);
+			if (need_distinct)
+				set_distinct(r);
+			r->exps = exps_copy(v->sql, p->exps);
+			set_processed(r);
+
+			rel_destroy(n->data);
+			n->data = r;
+		}
+
+		/* turn the project-munion on top into munion. incr operand
+		 * rels count to make sure that they are not deleted by the
+		 * subsequent rel_inplace_setop_n_ary */
+		for (node *n = ((list*)u->l)->h; n; n = n->next)
+			rel_dup(n->data);
+		rel = rel_inplace_setop_n_ary(v->sql, rel, u->l, op_munion,
+				rel_projections(v->sql, rel, NULL, 1, 1));
+		if (need_distinct)
+			set_distinct(rel);
+		if (is_single(u))
+			set_single(rel);
+
+		v->changes++;
+
+		/* if any operand has two project above then squash them */
+		for (node *n = ((list*)u->l)->h; n; n = n->next) {
+			r = rel_dup(n->data);
+			r = rel_merge_projects_(v, r);
+			rel_destroy(n->data);
+			n->data = r;
+		}
+
+		return rel;
 	}
 	return rel;
 }
@@ -3471,239 +3193,6 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/*
- * Push (semi)joins down unions, this is basically for merge tables, where
- * we know that the fk-indices are split over two clustered merge tables.
- */
-#if 0
-static inline sql_rel *
-rel_push_join_down_union(visitor *v, sql_rel *rel)
-{
-	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
-		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
-		list *exps = rel->exps, *attr = rel->attr;
-		sql_exp *je = NULL;
-
-		/* we would like to optimize in place reference rels which point
-		 * to replica tables and let the replica optimizer handle those
-		 * later. otherwise we miss the push join down optimization due
-		 * to the rel_is_ref bailout
-		 */
-		if (rel_is_ref(l) && is_basetable(l->op) && l->l && isReplicaTable((sql_table*)l->l)) {
-			rel->l = rel_copy(v->sql, l, true);
-			rel_destroy(l);
-		}
-		if (rel_is_ref(r) && is_basetable(r->op) && r->l && isReplicaTable((sql_table*)r->l)) {
-			rel->r = rel_copy(v->sql, r, true);
-			rel_destroy(r);
-		}
-
-		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
-			return rel;
-		if (l->op == op_project)
-			l = l->l;
-		if (r->op == op_project)
-			r = r->l;
-
-		/* both sides only if we have a join index */
-		if (!l || !r || (is_union(l->op) && is_union(r->op) &&
-			!(je = rel_is_join_on_pkey(rel, true)))) /* aligned PKEY-FKEY JOIN */
-			return rel;
-		if (is_semi(rel->op) && is_union(l->op) && !je)
-			return rel;
-
-		if ((is_union(l->op) && !need_distinct(l) && !is_single(l)) && !is_union(r->op)){
-			sql_rel *nl, *nr;
-			sql_rel *ll = rel_dup(l->l), *lr = rel_dup(l->r);
-
-			/* join(union(a,b), c) -> union(join(a,c), join(b,c)) */
-			if (!is_project(ll->op))
-				ll = rel_project(v->sql->sa, ll,
-					rel_projections(v->sql, ll, NULL, 1, 1));
-			if (!is_project(lr->op))
-				lr = rel_project(v->sql->sa, lr,
-					rel_projections(v->sql, lr, NULL, 1, 1));
-			rel_rename_exps(v->sql, l->exps, ll->exps);
-			rel_rename_exps(v->sql, l->exps, lr->exps);
-			if (l != ol) {
-				ll = rel_project(v->sql->sa, ll, NULL);
-				ll->exps = exps_copy(v->sql, ol->exps);
-				set_processed(ll);
-				lr = rel_project(v->sql->sa, lr, NULL);
-				lr->exps = exps_copy(v->sql, ol->exps);
-				set_processed(lr);
-			}
-			nl = rel_crossproduct(v->sql->sa, ll, rel_dup(or), rel->op);
-			nr = rel_crossproduct(v->sql->sa, lr, rel_dup(or), rel->op);
-			nl->exps = exps_copy(v->sql, exps);
-			nl->attr = exps_copy(v->sql, attr);
-			nr->exps = exps_copy(v->sql, exps);
-			nr->attr = exps_copy(v->sql, attr);
-			set_processed(nl);
-			set_processed(nr);
-			nl = rel_project(v->sql->sa, nl, rel_projections(v->sql, nl, NULL, 1, 1));
-			nr = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
-			v->changes++;
-			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
-		} else if (is_union(l->op) && !need_distinct(l) && !is_single(l) &&
-			   is_union(r->op) && !need_distinct(r) && !is_single(r) && je) {
-			sql_rel *nl, *nr;
-			sql_rel *ll = rel_dup(l->l), *lr = rel_dup(l->r);
-			sql_rel *rl = rel_dup(r->l), *rr = rel_dup(r->r);
-
-			/* join(union(a,b), union(c,d)) -> union(join(a,c), join(b,d)) */
-			if (!is_project(ll->op))
-				ll = rel_project(v->sql->sa, ll,
-					rel_projections(v->sql, ll, NULL, 1, 1));
-			if (!is_project(lr->op))
-				lr = rel_project(v->sql->sa, lr,
-					rel_projections(v->sql, lr, NULL, 1, 1));
-			rel_rename_exps(v->sql, l->exps, ll->exps);
-			rel_rename_exps(v->sql, l->exps, lr->exps);
-			if (l != ol) {
-				ll = rel_project(v->sql->sa, ll, NULL);
-				ll->exps = exps_copy(v->sql, ol->exps);
-				set_processed(ll);
-				lr = rel_project(v->sql->sa, lr, NULL);
-				lr->exps = exps_copy(v->sql, ol->exps);
-				set_processed(lr);
-			}
-			if (!is_project(rl->op))
-				rl = rel_project(v->sql->sa, rl,
-					rel_projections(v->sql, rl, NULL, 1, 1));
-			if (!is_project(rr->op))
-				rr = rel_project(v->sql->sa, rr,
-					rel_projections(v->sql, rr, NULL, 1, 1));
-			rel_rename_exps(v->sql, r->exps, rl->exps);
-			rel_rename_exps(v->sql, r->exps, rr->exps);
-			if (r != or) {
-				rl = rel_project(v->sql->sa, rl, NULL);
-				rl->exps = exps_copy(v->sql, or->exps);
-				set_processed(rl);
-				rr = rel_project(v->sql->sa, rr, NULL);
-				rr->exps = exps_copy(v->sql, or->exps);
-				set_processed(rr);
-			}
-			nl = rel_crossproduct(v->sql->sa, ll, rl, rel->op);
-			nr = rel_crossproduct(v->sql->sa, lr, rr, rel->op);
-			nl->exps = exps_copy(v->sql, exps);
-			nl->attr = exps_copy(v->sql, attr);
-			nr->exps = exps_copy(v->sql, exps);
-			nr->attr = exps_copy(v->sql, attr);
-			set_processed(nl);
-			set_processed(nr);
-			nl = rel_project(v->sql->sa, nl, rel_projections(v->sql, nl, NULL, 1, 1));
-			nr = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
-			v->changes++;
-			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
-		} else if (!is_union(l->op) &&
-			   is_union(r->op) && !need_distinct(r) && !is_single(r) &&
-			   !is_semi(rel->op)) {
-			sql_rel *nl, *nr;
-			sql_rel *rl = rel_dup(r->l), *rr = rel_dup(r->r);
-
-			/* join(a, union(b,c)) -> union(join(a,b), join(a,c)) */
-			if (!is_project(rl->op))
-				rl = rel_project(v->sql->sa, rl,
-					rel_projections(v->sql, rl, NULL, 1, 1));
-			if (!is_project(rr->op))
-				rr = rel_project(v->sql->sa, rr,
-					rel_projections(v->sql, rr, NULL, 1, 1));
-			rel_rename_exps(v->sql, r->exps, rl->exps);
-			rel_rename_exps(v->sql, r->exps, rr->exps);
-			if (r != or) {
-				rl = rel_project(v->sql->sa, rl, NULL);
-				rl->exps = exps_copy(v->sql, or->exps);
-				set_processed(rl);
-				rr = rel_project(v->sql->sa, rr, NULL);
-				rr->exps = exps_copy(v->sql, or->exps);
-				set_processed(rr);
-			}
-			nl = rel_crossproduct(v->sql->sa, rel_dup(ol), rl, rel->op);
-			nr = rel_crossproduct(v->sql->sa, rel_dup(ol), rr, rel->op);
-			nl->exps = exps_copy(v->sql, exps);
-			nl->attr = exps_copy(v->sql, attr);
-			nr->exps = exps_copy(v->sql, exps);
-			nr->attr = exps_copy(v->sql, attr);
-			set_processed(nl);
-			set_processed(nr);
-			nl = rel_project(v->sql->sa, nl, rel_projections(v->sql, nl, NULL, 1, 1));
-			nr = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
-			v->changes++;
-			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
-		/* {semi}join ( A1, union (A2, B)) [A1.partkey = A2.partkey] ->
-		 * {semi}join ( A1, A2 )
-		 * and
-		 * {semi}join ( A1, union (B, A2)) [A1.partkey = A2.partkey] ->
-		 * {semi}join ( A1, A2 )
-		 * (ie a single part on the left)
-		 *
-		 * Howto detect that a relation isn't matching.
-		 *
-		 * partitioning is currently done only on pkey/fkey's
-		 * ie only matching per part if join is on pkey/fkey (parts)
-		 *
-		 * and part numbers should match.
-		 *
-		 * */
-		} else if (!is_union(l->op) &&
-			   is_union(r->op) && !need_distinct(r) && !is_single(r) &&
-			   is_semi(rel->op) && (je = rel_is_join_on_pkey(rel, true))) {
-			/* use first join expression, to find part nr */
-			int lpnr = rel_part_nr(l, je);
-			sql_rel *rl = r->l;
-			sql_rel *rr = r->r;
-
-			if (lpnr < 0)
-				return rel;
-			/* case 1: uses left not right */
-			if (rel_uses_part_nr(rl, je, lpnr) &&
-			   !rel_uses_part_nr(rr, je, lpnr)) {
-				sql_rel *nl;
-
-				rl = rel_dup(rl);
-				if (!is_project(rl->op))
-					rl = rel_project(v->sql->sa, rl,
-					rel_projections(v->sql, rl, NULL, 1, 1));
-				rel_rename_exps(v->sql, r->exps, rl->exps);
-				if (r != or) {
-					rl = rel_project(v->sql->sa, rl, NULL);
-					rl->exps = exps_copy(v->sql, or->exps);
-					set_processed(rl);
-				}
-				nl = rel_crossproduct(v->sql->sa, rel_dup(ol), rl, rel->op);
-				nl->exps = exps_copy(v->sql, exps);
-				nl->attr = exps_copy(v->sql, attr);
-				set_processed(nl);
-				v->changes++;
-				return rel_inplace_project(v->sql->sa, rel, nl, rel_projections(v->sql, rel, NULL, 1, 1));
-			/* case 2: uses right not left */
-			} else if (!rel_uses_part_nr(rl, je, lpnr) &&
-				    rel_uses_part_nr(rr, je, lpnr)) {
-				sql_rel *nl;
-
-				rr = rel_dup(rr);
-				if (!is_project(rr->op))
-					rr = rel_project(v->sql->sa, rr,
-						rel_projections(v->sql, rr, NULL, 1, 1));
-				rel_rename_exps(v->sql, r->exps, rr->exps);
-				if (r != or) {
-					rr = rel_project(v->sql->sa, rr, NULL);
-					rr->exps = exps_copy(v->sql, or->exps);
-					set_processed(rr);
-				}
-				nl = rel_crossproduct(v->sql->sa, rel_dup(ol), rr, rel->op);
-				nl->exps = exps_copy(v->sql, exps);
-				nl->attr = exps_copy(v->sql, attr);
-				set_processed(nl);
-				v->changes++;
-				return rel_inplace_project(v->sql->sa, rel, nl, rel_projections(v->sql, rel, NULL, 1, 1));
-			}
-		}
-	}
-	return rel;
-}
-#endif
 
 /*
  * Push (semi)joins down unions, this is basically for merge tables, where
@@ -3861,19 +3350,6 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 			for (node *n = ((list*)r->l)->h; n; n = n->next) {
 				if (rel_uses_part_nr(n->data, je, lpnr)) {
 					sql_rel *pc = rel_dup(n->data);
-					/*if (!is_project(pc->op))*/
-						/*pc = rel_project(v->sql->sa, pc,*/
-										 /*rel_projections(v->sql, pc, NULL, 1, 1));*/
-					/*rel_rename_exps(v->sql, r->exps, pc->exps);*/
-					/*if (r != or) {*/
-						/*pc = rel_project(v->sql->sa, pc, NULL);*/
-						/*pc->exps = exps_copy(v->sql, or->exps);*/
-						/*set_processed(pc);*/
-					/*}*/
-					/*pc = rel_crossproduct(v->sql->sa, rel_dup(ol), pc, rel->op);*/
-					/*pc->exps = exps_copy(v->sql, exps);*/
-					/*pc->attr = exps_copy(v->sql, attr);*/
-					/*set_processed(pc);*/
 					ups = append(ups, pc);
 				}
 			}

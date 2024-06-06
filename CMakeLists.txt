@@ -118,8 +118,14 @@ if(WIN32)
     ${CMAKE_CURRENT_BINARY_DIR}/unistd.h)
 endif()
 
-add_library(monetdb_config_header
-  INTERFACE)
+add_library(monetdb_config_header INTERFACE)
+
+if (CTAGS_PATH)
+  add_dependencies(monetdb_config_header tags)
+endif()
+if (CSCOPE_PATH)
+  add_dependencies(monetdb_config_header cscope)
+endif()
 
 target_include_directories(monetdb_config_header
   INTERFACE

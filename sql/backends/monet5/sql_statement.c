@@ -4633,7 +4633,6 @@ stmt_has_null(stmt *s)
 {
 	switch (s->type) {
 	case st_aggr:
-	case st_Nop:
 	case st_semijoin:
 	case st_uselect:
 	case st_uselect2:

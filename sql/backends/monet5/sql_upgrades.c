@@ -7142,6 +7142,59 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 							printf("Running database upgrade commands:\n%s\n", query5);
 							fflush(stdout);
 							err = SQLstatementIntern(c, query5, "update", true, false, NULL);
+							if (err == MAL_SUCCEED) {
+								const char query6[] =
+									"DROP VIEW information_schema.check_constraints CASCADE;\n"
+									"DROP VIEW information_schema.table_constraints CASCADE;\n"
+									"CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT\n"
+									"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
+									"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
+									"  k.\"name\" AS CONSTRAINT_NAME,\n"
+									"  cast(sys.check_constraint(s.\"name\", k.\"name\") AS varchar(2048)) AS CHECK_CLAUSE,\n"
+									"  t.\"schema_id\" AS schema_id,\n"
+									"  t.\"id\" AS table_id,\n"
+									"  t.\"name\" AS table_name,\n"
+									"  k.\"id\" AS key_id\n"
+									" FROM (SELECT sk.\"id\", sk.\"table_id\", sk.\"name\" FROM sys.\"keys\" sk WHERE sk.\"type\" = 4 UNION ALL SELECT tk.\"id\", tk.\"table_id\", tk.\"name\" FROM tmp.\"keys\" tk WHERE tk.\"type\" = 4) k\n"
+									" INNER JOIN (SELECT st.\"id\", st.\"schema_id\", st.\"name\" FROM sys.\"_tables\" st UNION ALL SELECT tt.\"id\", tt.\"schema_id\", tt.\"name\" FROM tmp.\"_tables\" tt) t ON k.\"table_id\" = t.\"id\"\n"
+									" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+									" ORDER BY s.\"name\", t.\"name\", k.\"name\";\n"
+									"GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHECK_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
+
+									"CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT\n"
+									"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
+									"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
+									"  k.\"name\" AS CONSTRAINT_NAME,\n"
+									"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
+									"  s.\"name\" AS TABLE_SCHEMA,\n"
+									"  t.\"name\" AS TABLE_NAME,\n"
+									"  cast(CASE k.\"type\" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' WHEN 3 THEN 'UNIQUE NULLS NOT DISTINCT' WHEN 4 THEN 'CHECK' ELSE NULL END AS varchar(26)) AS CONSTRAINT_TYPE,\n"
+									"  cast('NO' AS varchar(3)) AS IS_DEFERRABLE,\n"
+									"  cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,\n"
+									"  cast('YES' AS varchar(3)) AS ENFORCED,\n"
+									"  t.\"schema_id\" AS schema_id,\n"
+									"  t.\"id\" AS table_id,\n"
+									"  k.\"id\" AS key_id,\n"
+									"  k.\"type\" AS key_type,\n"
+									"  t.\"system\" AS is_system\n"
+									" FROM (SELECT sk.\"id\", sk.\"table_id\", sk.\"name\", sk.\"type\" FROM sys.\"keys\" sk UNION ALL SELECT tk.\"id\", tk.\"table_id\", tk.\"name\", tk.\"type\" FROM tmp.\"keys\" tk) k\n"
+									" INNER JOIN (SELECT st.\"id\", st.\"schema_id\", st.\"name\", st.\"system\" FROM sys.\"_tables\" st UNION ALL SELECT tt.\"id\", tt.\"schema_id\", tt.\"name\", tt.\"system\" FROM tmp.\"_tables\" tt) t ON k.\"table_id\" = t.\"id\"\n"
+									" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+									" ORDER BY s.\"name\", t.\"name\", k.\"name\";\n"
+									"GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
+									"\n"
+									"UPDATE sys._tables SET system = true where system <> true\n"
+									" and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')\n"
+									" and name in ('check_constraints','table_constraints');\n";
+								sql_schema *infoschema = mvc_bind_schema(sql, "information_schema");
+								if ((t = mvc_bind_table(sql, infoschema, "check_constraints")) != NULL)
+									t->system = 0; /* make it non-system else the drop view will fail */
+								if ((t = mvc_bind_table(sql, infoschema, "table_constraints")) != NULL)
+									t->system = 0;
+								printf("Running database upgrade commands:\n%s\n", query6);
+								fflush(stdout);
+								err = SQLstatementIntern(c, query6, "update", true, false, NULL);
+							}
 						}
 					}
 				}

@@ -3,3 +3,6 @@ delete_primarykey_1643845
 drop_column_1643542
 update_primarykey_1643375
 check_constraint.SF-1714829
+3568_check_not_enforced
+3335_check_no_error
+check_constraints

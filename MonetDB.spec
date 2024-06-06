@@ -417,6 +417,7 @@ developer.
 %{_bindir}/arraytest
 %{_bindir}/bincopydata
 %{_bindir}/murltest
+%{_bindir}/odbcconnect
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1

@@ -97,3 +97,20 @@ else()
     COMMAND
     ${CMAKE_COMMAND} -E echo 'Target not available because \"candle\" was not found.')
 endif()
+
+if(CTAGS_PATH)
+add_custom_target(tags
+  COMMAND ${CTAGS_PATH} -R --kinds-C=+pLl --fields=+iaS --exclude=*.js
+        ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/tags ${CMAKE_CURRENT_SOURCE_DIR}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
+if(CSCOPE_PATH)
+add_custom_target(cscope
+  COMMAND ${CSCOPE_PATH} -bcqR -s${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cscope.out ${CMAKE_CURRENT_SOURCE_DIR}/
+        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cscope.in.out ${CMAKE_CURRENT_SOURCE_DIR}/
+        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cscope.po.out ${CMAKE_CURRENT_SOURCE_DIR}/
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+endif()
