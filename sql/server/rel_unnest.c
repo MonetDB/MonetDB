@@ -1647,10 +1647,19 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 				sql_rel *sf = rlist->h->data;
 				ns->exps = rel_projections(sql, sf, NULL, 1, 1);
 			}
-			if (rel->op == op_anti && s->op == op_munion) {
-				assert(0); /* needs to convert list in left/right again ! */
+ 			if (rel->op == op_anti && s->op == op_munion) {
+				/* chain the munion list of relations into a pair-wise op_inter chain */
+				sql_rel *cl = rlist->h->data, *cr = rlist->h->next->data;
 				ns->op = op_inter;
-			}
+				if (list_length(rlist) > 2) {
+					for (node *n = rlist->h->next->next; n; n = n->next) {
+						cr = rel_setop(sql->sa, cr, n->data, op_inter);
+						cr->exps = exps_copy(sql, ns->exps);
+					}
+				}
+				ns->l = cl;
+				ns->r = cr;
+ 			}
 			rel_destroy(rel);
 			return ns;
 		}
