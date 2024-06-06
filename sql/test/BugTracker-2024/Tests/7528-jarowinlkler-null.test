@@ -1,7 +1,0 @@
-statement ok
-CREATE TABLE t0(c1 VARCHAR)
-
-query T nosort
-SELECT * FROM t0 WHERE NOT NULL ORDER BY JAROWINKLER('a', NULL) DESC
-----
-
