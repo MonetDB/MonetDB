@@ -1337,9 +1337,8 @@ bool group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp,const ch
 		if (pki && pki->columns->cnt == 1 && inner->r && ((list*) inner->r)->cnt == 1) {
 			/* for now only check simple case where primary key and group by expression is a single column*/
 			sql_exp* gbe = ((list*) inner->r)->h->data;
-			assert(gbe->type == e_column);
 			sql_column* pkc = ((sql_kc *)pki->columns->h->data)->c;
-			if (strcmp(gbe->alias.name, pkc->base.name) == 0) {
+			if (gbe->type == e_column && strcmp(gbe->alias.name, pkc->base.name) == 0) {
 				node *n;
 				for (n = ukil->h; n; n = n->next){
 					sql_idx* uki = n->data;
