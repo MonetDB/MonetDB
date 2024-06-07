@@ -16,8 +16,7 @@ import subprocess
 import sys
 import threading
 
-sys.path.append(os.environ.get('TSTSRCDIR','.'))
-import tlstester
+from MonetDBtesting import tlstester
 
 level = logging.WARNING
 # if sys.platform == 'win32':
