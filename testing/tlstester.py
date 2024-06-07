@@ -495,6 +495,10 @@ class WebHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
+    def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
+        # be silent
+        pass
+
 
 class MyTCPServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True

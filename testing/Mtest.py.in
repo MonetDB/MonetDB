@@ -3240,6 +3240,36 @@ def SetExecEnv(exe,port,verbose) :
         print(end='', flush=True)
 ### SetExecEnv(exe,port,procdebug) #
 
+def StartTlsTester(tsttrgdir):
+    try:
+        import cryptography
+    except:
+        # continue without so we can at least run the other tests
+        print("cryptography not found!", file=sys.stderr)
+        return None
+    from MonetDBtesting import tlstester
+    hostnames = ['localhost']
+    certs = tlstester.Certs(hostnames)
+    certsdir = os.path.join(tsttrgdir, "certs")
+    try:
+        os.mkdir(certsdir)
+    except FileExistsError:
+        pass
+    for name, content in certs.all().items():
+        with open(os.path.join(certsdir, name), "wb") as f:
+            f.write(content)
+    server = tlstester.TLSTester(
+        certs = certs,
+        listen_addr='localhost',
+        preassigned={},
+        sequential=False,
+        hostnames=hostnames)
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    return server.get_port('base')
+
+### StartTlsTester() #
+
 #############################################################################
 #       MAIN
 
@@ -3784,6 +3814,14 @@ def main(argv) :
     vars_.append('BINDIR')
     env['LIBDIR'] = _configure('@QXlibdir@')
     vars_.append('LIBDIR')
+
+    # start tlstester
+    if not env.get('TST_TLSTESTERPORT'):
+        tlstester_port = StartTlsTester(os.path.join(TSTTRGBASE, TSTPREF))
+        if tlstester_port:
+            env['TST_TLSTESTERPORT'] = str(tlstester_port)
+    if env.get('TST_TLSTESTERPORT'):
+        vars_.append('TST_TLSTESTERPORT')
 
     # export and display env
     print(file=sys.stderr, end='', flush=True)
