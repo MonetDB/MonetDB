@@ -79,6 +79,11 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 		if (rel->r)
 			find_basetables(sql, rel->r, tables);
 		break;
+	case op_munion:
+		assert(rel->l);
+		for (node *n = ((list*)rel->l)->h; n; n = n->next)
+			find_basetables(sql, n->data, tables);
+		break;
 	case op_semi:
 	case op_anti:
 	case op_groupby:
@@ -157,6 +162,11 @@ has_groupby(sql_rel *rel)
 
 		case op_merge:
 			return has_groupby(rel->l) || has_groupby(rel->r);
+		case op_munion:
+			for (node *n = ((list*)rel->l)->h; n; n = n->next)
+				if (has_groupby(n->data))
+					return 1;
+			return 0;
 		case op_project:
 		case op_select:
 		case op_topn:
@@ -213,6 +223,10 @@ rel_partition(mvc *sql, sql_rel *rel)
 			rel_partition(sql, rel->l);
 		if (rel->r)
 			rel_partition(sql, rel->r);
+		break;
+	case op_munion:
+		for (node *n = ((list*)rel->l)->h; n; n = n->next)
+			rel_partition(sql, n->data);
 		break;
 	case op_insert:
 	case op_update:

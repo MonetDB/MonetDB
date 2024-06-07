@@ -16,7 +16,7 @@
 
 /*
  * (c) Martin Kersten, Sjoerd Mullender
- * Series generating module for integer, decimal, real, double and timestamps.
+ * Series generating module for integer, decimal, real, double, date and timestamps.
  */
 
 #define errorCheck(P,IDX,MOD,I)										\
@@ -144,6 +144,9 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 			pushInstruction(mb, p);
 			old[i] = NULL;
+		} else if (getModuleId(p) == algebraRef && getFunctionId(p) == rangejoinRef
+				   && series[getArg(p, 2)]) {
+			errorCheck(p, i, algebraRef, getArg(p, 2));
 		} else if (getModuleId(p) == algebraRef && getFunctionId(p) == selectRef
 				   && series[getArg(p, 1)]) {
 			errorCheck(p, i, algebraRef, getArg(p, 1));

@@ -131,6 +131,7 @@ typedef struct stmt {
 	int flag;
 	int nr;			/* variable assignment */
 
+	int label;
 	const char *tname;
 	const char *cname;
 	InstrPtr q;
@@ -174,6 +175,8 @@ extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
 extern stmt *stmt_append_bulk(backend *be, stmt *c, list *l);
 extern stmt *stmt_replace(backend *be, stmt *c, stmt *id, stmt *val);
 extern stmt *stmt_table_clear(backend *be, sql_table *t, int restart_sequences);
+extern stmt *stmt_pack(backend *be, stmt *c, int nr);
+extern stmt *stmt_pack_add(backend *be, stmt *c, stmt *values);
 
 extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
 extern stmt *stmt_export_bin(backend *be, stmt *colstmt, bool byteswap, const char *filename, int on_client);
@@ -256,7 +259,8 @@ extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc
 
 extern stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 
-extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
+extern stmt *stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *name);
+extern stmt *stmt_as(backend *be, stmt *s, stmt *org);
 
 extern int stmt_output(backend *be, stmt *l);
 extern int stmt_affected_rows(backend *be, int lastnr);

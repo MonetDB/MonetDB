@@ -209,7 +209,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		}
 
 		/* construct the query */
-		querylen = 6100 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
+		querylen = 6130 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
 		query = malloc(querylen);
 		if (query == NULL)
 			goto nomem;
@@ -235,9 +235,9 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			"SELECT \"id\", \"table_id\" FROM \"sys\".\"keys\" WHERE \"type\" = 0 "
 			"UNION ALL "
 			/* and first unique constraint of a table when table has no pkey */
-			"SELECT \"id\", \"table_id\" FROM \"sys\".\"keys\" WHERE \"type\" = 1 "
+			"SELECT \"id\", \"table_id\" FROM \"sys\".\"keys\" WHERE \"type\" IN (1, 3) "
 			"AND \"table_id\" NOT IN (select \"table_id\" from \"sys\".\"keys\" where \"type\" = 0) "
-			"AND (\"table_id\", \"id\") IN (select \"table_id\", min(\"id\") from \"sys\".\"keys\" where \"type\" = 1 group by \"table_id\"))",
+			"AND (\"table_id\", \"id\") IN (select \"table_id\", min(\"id\") from \"sys\".\"keys\" where \"type\" IN (1, 3) group by \"table_id\"))",
 			querylen - pos);
 		if (inclTmpKey) {
 			/* we must also include the primary key or unique constraint of local temporary tables which are stored in tmp.keys */
@@ -246,9 +246,9 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			", tmpkeys as ("
 			"SELECT \"id\", \"table_id\" FROM \"tmp\".\"keys\" WHERE \"type\" = 0 "
 			"UNION ALL "
-			"SELECT \"id\", \"table_id\" FROM \"tmp\".\"keys\" WHERE \"type\" = 1 "
+			"SELECT \"id\", \"table_id\" FROM \"tmp\".\"keys\" WHERE \"type\" IN (1, 3) "
 			"AND \"table_id\" NOT IN (select \"table_id\" from \"tmp\".\"keys\" where \"type\" = 0) "
-			"AND (\"table_id\", \"id\") IN (select \"table_id\", min(\"id\") from \"tmp\".\"keys\" where \"type\" = 1 group by \"table_id\"))",
+			"AND (\"table_id\", \"id\") IN (select \"table_id\", min(\"id\") from \"tmp\".\"keys\" where \"type\" IN (1, 3) group by \"table_id\"))",
 			querylen - pos);
 		}
 		/* 3rd cte: tableids */
@@ -310,7 +310,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			"SELECT c.\"name\", c.\"type\", c.\"type_digits\", c.\"type_scale\", c.\"number\" "
 			"FROM tableids t "
 			"JOIN \"sys\".\"_columns\" c ON t.\"id\" = c.\"table_id\" "
-			"WHERE t.\"id\" NOT IN (SELECT \"table_id\" FROM \"sys\".\"keys\" WHERE \"type\" in (0, 1))",
+			"WHERE t.\"id\" NOT IN (SELECT \"table_id\" FROM \"sys\".\"keys\" WHERE \"type\" IN (0, 1, 3))",
 			querylen - pos);
 		/* add an extra selection when SQL_NO_NULLS is requested */
 		if (Nullable == SQL_NO_NULLS) {
@@ -322,7 +322,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			"SELECT c.\"name\", c.\"type\", c.\"type_digits\", c.\"type_scale\", c.\"number\" "
 			"FROM tableids t "
 			"JOIN \"tmp\".\"_columns\" c ON t.\"id\" = c.\"table_id\" "
-			"WHERE t.\"id\" NOT IN (SELECT \"table_id\" FROM \"tmp\".\"keys\" WHERE \"type\" in (0, 1))",
+			"WHERE t.\"id\" NOT IN (SELECT \"table_id\" FROM \"tmp\".\"keys\" WHERE \"type\" IN (0, 1, 3))",
 			querylen - pos);
 			/* add an extra selection when SQL_NO_NULLS is requested */
 			if (Nullable == SQL_NO_NULLS) {

@@ -838,7 +838,7 @@ get_bin_path(void)
 	uint32_t size = PATH_MAX;
 	if (_NSGetExecutablePath(buf, &size) == 0 &&
 			realpath(buf, _bin_path) != NULL)
-	return _bin_path;
+		return _bin_path;
 #elif defined(BSD) && defined(KERN_PROC_PATHNAME)  /* BSD */
 	int mib[4];
 	size_t cb = sizeof(_bin_path);

@@ -32,9 +32,7 @@ target_link_libraries(mutils
   mutf8)
 
 target_compile_definitions(mutils PRIVATE
-  LIBMUTILS
-  LIBGDK
-  LIBMEROUTIL)
+  LIBMUTILS)
 
 set_target_properties(mutils
   PROPERTIES
@@ -73,8 +71,6 @@ target_link_libraries(mcrypt
 
 target_compile_definitions(mcrypt
   PRIVATE
-  LIBMONETDB5
-  LIBMAPI
   LIBMCRYPT)
 
 set_target_properties(mcrypt
@@ -107,8 +103,7 @@ target_link_libraries(msabaoth
 
 target_compile_definitions(msabaoth
   PRIVATE
-  LIBMSABAOTH
-  LIBMONETDB5)
+  LIBMSABAOTH)
 
 set_target_properties(msabaoth
   PROPERTIES

@@ -2624,6 +2624,7 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		s->q = q;
 		s->tname = op2->tname;
 		s->cname = op2->cname;
+		s->label = op2->label;
 		return s;
 	}
 	if (be->mvc->sa->eb.enabled)
@@ -3466,6 +3467,78 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 	}
 	s->op1 = c;
 	s->op4.lval = l;
+	s->nrcols = c->nrcols;
+	s->key = c->key;
+	s->nr = getDestVar(q);
+	s->q = q;
+	pushInstruction(mb, q);
+	return s;
+
+  bailout:
+	if (be->mvc->sa->eb.enabled)
+		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+}
+
+stmt *
+stmt_pack(backend *be, stmt *c, int n)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (c == NULL || c->nr < 0)
+		goto bailout;
+	q = newStmtArgs(mb, matRef, packIncrementRef, 3);
+	if (q == NULL)
+		goto bailout;
+	q = pushArgument(mb, q, c->nr);
+	q = pushInt(mb, q, n);
+	bool enabled = be->mvc->sa->eb.enabled;
+	be->mvc->sa->eb.enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_append);
+	be->mvc->sa->eb.enabled = enabled;
+	if(!s) {
+		freeInstruction(q);
+		goto bailout;
+	}
+	s->op1 = c;
+	s->nrcols = c->nrcols;
+	s->key = c->key;
+	s->nr = getDestVar(q);
+	s->q = q;
+	pushInstruction(mb, q);
+	return s;
+
+  bailout:
+	if (be->mvc->sa->eb.enabled)
+		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+
+}
+
+stmt *
+stmt_pack_add(backend *be, stmt *c, stmt *a)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (c == NULL || a == NULL || c->nr < 0 || a->nr < 0)
+		goto bailout;
+	q = newStmtArgs(mb, matRef, packIncrementRef, 3);
+	if (q == NULL)
+		goto bailout;
+	q = pushArgument(mb, q, c->nr);
+	q = pushArgument(mb, q, a->nr);
+	bool enabled = be->mvc->sa->eb.enabled;
+	be->mvc->sa->eb.enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_append);
+	be->mvc->sa->eb.enabled = enabled;
+	if(!s) {
+		freeInstruction(q);
+		goto bailout;
+	}
+	s->op1 = c;
+	s->op2 = a;
 	s->nrcols = c->nrcols;
 	s->key = c->key;
 	s->nr = getDestVar(q);
@@ -4460,12 +4533,14 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 }
 
 static stmt *
-stmt_alias_(backend *be, stmt *op1, const char *tname, const char *alias)
+stmt_alias_(backend *be, stmt *op1, int label, const char *tname, const char *alias)
 {
+	assert(label);
 	stmt *s = stmt_create(be->mvc->sa, st_alias);
 	if(!s) {
 		return NULL;
 	}
+	s->label = label;
 	s->op1 = op1;
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
@@ -4480,13 +4555,22 @@ stmt_alias_(backend *be, stmt *op1, const char *tname, const char *alias)
 }
 
 stmt *
-stmt_alias(backend *be, stmt *op1, const char *tname, const char *alias)
+stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *alias)
 {
+	/*
 	if (((!op1->tname && !tname) ||
 	    (op1->tname && tname && strcmp(op1->tname, tname)==0)) &&
 	    op1->cname && strcmp(op1->cname, alias)==0)
 		return op1;
-	return stmt_alias_(be, op1, tname, alias);
+		*/
+	return stmt_alias_(be, op1, label, tname, alias);
+}
+
+stmt *
+stmt_as(backend *be, stmt *s, stmt *org)
+{
+	assert(org->type == st_alias);
+	return stmt_alias_(be, s, org->label, org->tname, org->cname);
 }
 
 sql_subtype *
@@ -4583,12 +4667,13 @@ stmt_has_null(stmt *s)
 {
 	switch (s->type) {
 	case st_aggr:
-	case st_Nop:
 	case st_semijoin:
 	case st_uselect:
 	case st_uselect2:
 	case st_atom:
 		return 0;
+	case st_alias:
+		return stmt_has_null(s->op1);
 	case st_join:
 		return stmt_has_null(s->op2);
 	case st_bat:
@@ -5100,6 +5185,7 @@ stmt_fetch(backend *be, stmt *val)
 stmt *
 stmt_rename(backend *be, sql_exp *exp, stmt *s )
 {
+	int label = exp_get_label(exp);
 	const char *name = exp_name(exp);
 	const char *rname = exp_relname(exp);
 	stmt *o = s;
@@ -5107,7 +5193,7 @@ stmt_rename(backend *be, sql_exp *exp, stmt *s )
 	if (!name && exp_is_atom(exp))
 		name = sa_strdup(be->mvc->sa, "single_value");
 	assert(name);
-	s = stmt_alias(be, s, rname, name);
+	s = stmt_alias(be, s, label, rname, name);
 	if (o->flag & OUTER_ZERO)
 		s->flag |= OUTER_ZERO;
 	return s;

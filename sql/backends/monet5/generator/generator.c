@@ -1643,8 +1643,16 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		BBPunfix(blow->batCacheid);
 		throw(MAL,"generator.rangejoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	li = *getArgReference_bit(stk,pci,5);
-	ri = *getArgReference_bit(stk,pci,6);
+	/* ToDo handle cands ie arguments 5,6 */
+	li = *getArgReference_bit(stk,pci,7);
+	ri = *getArgReference_bit(stk,pci,8);
+	bit anti = *getArgReference_bit(stk,pci,9);
+	bit nil = *getArgReference_bit(stk,pci,10);
+	lng estimate = *getArgReference_lng(stk,pci,11);
+	/* ToDo handle anti, symmetric and estimate */
+	(void)anti;
+	(void)nil;
+	(void)estimate;
 
 	cnt = BATcount(blow);
 	limit = 2 * cnt; //top off result before expansion
@@ -1780,12 +1788,12 @@ static mel_func generator_init_funcs[] = {
  pattern("generator", "join", VLTgenerator_join, false, "", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",lng),batarg("gen",lng))),
  pattern("generator", "join", VLTgenerator_join, false, "", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",flt),batarg("gen",flt))),
  pattern("generator", "join", VLTgenerator_join, false, "Overloaded join operation", args(2,4, batarg("l",oid),batarg("r",oid),batarg("b",dbl),batarg("gen",dbl))),
- pattern("generator", "join", VLTgenerator_rangejoin, false, "", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",bte),batarg("low",bte),batarg("hgh",bte),arg("li",bit),arg("ri",bit))),
- pattern("generator", "join", VLTgenerator_rangejoin, false, "", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",sht),batarg("low",sht),batarg("hgh",sht),arg("li",bit),arg("ri",bit))),
- pattern("generator", "join", VLTgenerator_rangejoin, false, "", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",int),batarg("low",int),batarg("hgh",int),arg("li",bit),arg("ri",bit))),
- pattern("generator", "join", VLTgenerator_rangejoin, false, "", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",lng),batarg("low",lng),batarg("hgh",lng),arg("li",bit),arg("ri",bit))),
- pattern("generator", "join", VLTgenerator_rangejoin, false, "", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",flt),batarg("low",flt),batarg("hgh",flt),arg("li",bit),arg("ri",bit))),
- pattern("generator", "join", VLTgenerator_rangejoin, false, "Overloaded range join operation", args(2,7, batarg("l",oid),batarg("r",oid),batarg("gen",dbl),batarg("low",dbl),batarg("hgh",dbl),arg("li",bit),arg("ri",bit))),
+ pattern("generator", "rangejoin", VLTgenerator_rangejoin, false, "", args(2,12, batarg("l",oid),batarg("r",oid),batarg("gen",bte),batarg("low",bte),batarg("hgh",bte),batarg("lc",oid),batarg("rc",oid),arg("li",bit),arg("ri",bit),arg("anti",bit),arg("sym",bit),arg("est",lng))),
+ pattern("generator", "rangejoin", VLTgenerator_rangejoin, false, "", args(2,12, batarg("l",oid),batarg("r",oid),batarg("gen",sht),batarg("low",sht),batarg("hgh",sht),batarg("lc",oid),batarg("rc",oid),arg("li",bit),arg("ri",bit),arg("anti",bit),arg("sym",bit),arg("est",lng))),
+ pattern("generator", "rangejoin", VLTgenerator_rangejoin, false, "", args(2,12, batarg("l",oid),batarg("r",oid),batarg("gen",int),batarg("low",int),batarg("hgh",int),batarg("lc",oid),batarg("rc",oid),arg("li",bit),arg("ri",bit),arg("anti",bit),arg("sym",bit),arg("est",lng))),
+ pattern("generator", "rangejoin", VLTgenerator_rangejoin, false, "", args(2,12, batarg("l",oid),batarg("r",oid),batarg("gen",lng),batarg("low",lng),batarg("hgh",lng),batarg("lc",oid),batarg("rc",oid),arg("li",bit),arg("ri",bit),arg("anti",bit),arg("sym",bit),arg("est",lng))),
+ pattern("generator", "rangejoin", VLTgenerator_rangejoin, false, "", args(2,12, batarg("l",oid),batarg("r",oid),batarg("gen",flt),batarg("low",flt),batarg("hgh",flt),batarg("lc",oid),batarg("rc",oid),arg("li",bit),arg("ri",bit),arg("anti",bit),arg("sym",bit),arg("est",lng))),
+ pattern("generator", "rangejoin", VLTgenerator_rangejoin, false, "Overloaded range join operation", args(2,12, batarg("l",oid),batarg("r",oid),batarg("gen",dbl),batarg("low",dbl),batarg("hgh",dbl),batarg("lc",oid),batarg("rc",oid),arg("li",bit),arg("ri",bit),arg("anti",bit),arg("sym",bit),arg("est",lng))),
 #ifdef HAVE_HGE
  pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",hge),arg("first",hge),arg("limit",hge))),
  pattern("generator", "series", VLTgenerator_table, false, "Create and materialize a generator table", args(1,4, batarg("",hge),arg("first",hge),arg("limit",hge),arg("step",hge))),

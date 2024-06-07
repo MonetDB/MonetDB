@@ -24,21 +24,21 @@
 #define IDC_EDIT_PORT                   2006
 #define IDC_EDIT_DATABASE               2007
 
-// Advanced settings (new from Jun2024)
-#define IDC_EDIT_SCHEMA                 2011
-#define IDC_EDIT_LOGINTIMEOUT           2012
-#define IDC_EDIT_REPLYTIMEOUT           2013
-#define IDC_EDIT_REPLYSIZE              2014
-#define IDC_EDIT_AUTOCOMMIT             2015
-#define IDC_EDIT_TIMEZONE               2016
-#define IDC_EDIT_LOGFILE                2017
-
 // Secure connections using TLS
-#define IDC_EDIT_USETLS                 2021
-#define IDC_EDIT_SERVERCERT             2022
-#define IDC_EDIT_SERVERCERTHASH         2023
-#define IDC_EDIT_CLIENTKEY              2024
-#define IDC_EDIT_CLIENTCERT             2025
+#define IDC_EDIT_USETLS                 2011
+#define IDC_EDIT_SERVERCERT             2012
+#define IDC_EDIT_SERVERCERTHASH         2013
+#define IDC_EDIT_CLIENTKEY              2014
+#define IDC_EDIT_CLIENTCERT             2015
+
+// Advanced settings
+#define IDC_EDIT_SCHEMA                 2021
+#define IDC_EDIT_LOGINTIMEOUT           2022
+#define IDC_EDIT_REPLYTIMEOUT           2023
+#define IDC_EDIT_REPLYSIZE              2024
+#define IDC_EDIT_AUTOCOMMIT             2025
+#define IDC_EDIT_TIMEZONE               2026
+#define IDC_EDIT_LOGFILE                2027
 
 #define IDC_BUTTON_TEST                 2031
 #define IDC_BUTTON_HELP                 2032

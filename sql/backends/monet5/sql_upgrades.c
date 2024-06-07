@@ -6643,27 +6643,21 @@ sql_update_dec2023_sp4(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, sql_schema *s)
+sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 {
-	allocator *old_sa = sql->sa;
 	char *err;
 	res_table *output;
 	BAT *b;
 
-	if ((sql->sa = sa_create(sql->pa)) == NULL) {
-		sql->sa = old_sa;
-		return "sa_create failed";
-	}
-
 	err = SQLstatementIntern(c, "SELECT id FROM sys.functions WHERE schema_id = 2000 AND name = 'describe_type' AND func LIKE '%sql_datatype%';\n", "update", true, false, &output);
 	if (err)
-		goto end;
+		return err;
 	b = BATdescriptor(output->cols[0].b);
 	if (b) {
 		if (BATcount(b) == 0) {
 			/* do update */
 			sql_table *t;
-			const char query[] =
+			const char query1[] =
 				"update sys._columns set type_digits = 7 where type = 'tinyint' and type_digits <> 7;\n"
 				"update sys._columns set type_digits = 15 where type = 'smallint' and type_digits <> 15;\n"
 				"update sys._columns set type_digits = 31 where type = 'int' and type_digits <> 31;\n"
@@ -7008,7 +7002,6 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;\n"
-				"\n"
 				" --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s\n"
 				" FROM (\n"
@@ -7016,12 +7009,10 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				" UNION ALL\n"
 				" SELECT t.o, t.stmt FROM sys.dump_tables t\n"
 				" ) AS stmts(o, s);\n"
-				"\n"
 				" -- dump table data before adding constraints and fixing sequences\n"
 				" IF NOT DESCRIBE THEN\n"
 				" CALL sys.dump_table_data();\n"
 				" END IF;\n"
-				"\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;\n"
@@ -7033,13 +7024,10 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;\n"
 				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;\n"
-				"\n"
 				" --TODO Improve performance of dump_table_data.\n"
 				" --TODO loaders, procedures, window and filter sys.functions.\n"
 				" --TODO look into order dependent group_concat\n"
-				"\n"
 				" INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');\n"
-				"\n"
 				" RETURN sys.dump_statements;\n"
 				"END;\n"
 				"GRANT SELECT ON sys.describe_tables TO PUBLIC;\n"
@@ -7047,7 +7035,9 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				"GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;\n"
 				"GRANT SELECT ON sys.describe_privileges TO PUBLIC;\n"
 				"GRANT SELECT ON sys.describe_functions TO PUBLIC;\n"
-				"update sys.functions set system = true where not system and schema_id = 2000 and name in ('dump_database', 'describe_columns', 'describe_type');\n"
+				"CREATE FUNCTION sys.check_constraint(sname STRING, cname STRING) RETURNS STRING EXTERNAL NAME sql.\"check\";\n"
+				"grant execute on function sys.check_constraint to public;\n"
+				"update sys.functions set system = true where not system and schema_id = 2000 and name in ('dump_database', 'describe_columns', 'describe_type', 'check_constraint');\n"
 				"update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_comments', 'dump_tables', 'dump_functions', 'dump_function_grants', 'describe_functions', 'describe_privileges', 'describe_comments', 'fully_qualified_functions', 'describe_tables');\n";
 			if ((t = mvc_bind_table(sql, s, "dump_comments")) != NULL)
 				t->system = 0;
@@ -7067,117 +7057,153 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				t->system = 0;
 			if ((t = mvc_bind_table(sql, s, "describe_tables")) != NULL)
 				t->system = 0;
-			printf("Running database upgrade commands:\n%s\n", query);
+			printf("Running database upgrade commands:\n%s\n", query1);
 			fflush(stdout);
-			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			err = SQLstatementIntern(c, query1, "update", true, false, NULL);
+			if (err == MAL_SUCCEED) {
+				const char query2[] = "create function sys.generate_series(first date, \"limit\" date, stepsize interval month)\n"
+					"returns table (value date)\n"
+					"external name generator.series;\n"
+					"create function sys.generate_series(first date, \"limit\" date, stepsize interval day)\n"
+					"returns table (value date)\n"
+					"external name generator.series;\n"
+					"update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;\n";
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				printf("Running database upgrade commands:\n%s\n", query2);
+				fflush(stdout);
+				err = SQLstatementIntern(c, query2, "update", true, false, NULL);
+				if (err == MAL_SUCCEED) {
+					const char query3[] =
+						"drop view sys.sessions;\n"
+						"drop function sys.sessions();\n"
+						"create function sys.sessions()\n"
+						" returns table(\n"
+						"  \"sessionid\" int,\n"
+						"  \"username\" string,\n"
+						"  \"login\" timestamp,\n"
+						"  \"idle\" timestamp,\n"
+						"  \"optimizer\" string,\n"
+						"  \"sessiontimeout\" int,\n"
+						"  \"querytimeout\" int,\n"
+						"  \"workerlimit\" int,\n"
+						"  \"memorylimit\" int,\n"
+						"  \"language\" string,\n"
+						"  \"peer\" string,\n"
+						"  \"hostname\" string,\n"
+						"  \"application\" string,\n"
+						"  \"client\" string,\n"
+						"  \"clientpid\" bigint,\n"
+						"  \"remark\" string\n"
+						" )\n"
+						" external name sql.sessions;\n"
+						"create view sys.sessions as select * from sys.sessions();\n"
+						"create procedure sys.setclientinfo(property string, value string)\n"
+						" external name clients.setinfo;\n"
+						"grant execute on procedure sys.setclientinfo(string, string) to public;\n"
+						"create table sys.clientinfo_properties(prop string);\n"
+						"insert into sys.clientinfo_properties values\n"
+						" ('ClientHostname'),\n"
+						" ('ApplicationName'),\n"
+						" ('ClientLibrary'),\n"
+						" ('ClientRemark'),\n"
+						" ('ClientPid');\n"
+						"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
+						"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n";
+
+					t = mvc_bind_table(sql, s, "sessions");
+					t->system = 0; /* make it non-system else the drop view will fail */
+					printf("Running database upgrade commands:\n%s\n", query3);
+					fflush(stdout);
+					err = SQLstatementIntern(c, query3, "update", true, false, NULL);
+
+					if (err == MAL_SUCCEED) {
+						const char query4[] =
+							"DROP TABLE sys.key_types;\n"
+							"CREATE TABLE sys.key_types (\n"
+							"	key_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
+							"	key_type_name VARCHAR(35) NOT NULL UNIQUE);\n"
+							"INSERT INTO sys.key_types VALUES\n"
+							"(0, 'Primary Key'),\n"
+							"(1, 'Unique Key'),\n"
+							"(2, 'Foreign Key'),\n"
+							"(3, 'Unique Key With Nulls Not Distinct'),\n"
+							"(4, 'Check Constraint');\n"
+
+							"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
+							"UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';\n";
+						if ((t = mvc_bind_table(sql, s, "key_types")) != NULL)
+							t->system = 0;
+						printf("Running database upgrade commands:\n%s\n", query4);
+						fflush(stdout);
+						err = SQLstatementIntern(c, query4, "update", true, false, NULL);
+						if (err == MAL_SUCCEED) {
+							const char query5[] = "ALTER TABLE sys.key_types SET READ ONLY;\n";
+							printf("Running database upgrade commands:\n%s\n", query5);
+							fflush(stdout);
+							err = SQLstatementIntern(c, query5, "update", true, false, NULL);
+							if (err == MAL_SUCCEED) {
+								const char query6[] =
+									"DROP VIEW information_schema.check_constraints CASCADE;\n"
+									"DROP VIEW information_schema.table_constraints CASCADE;\n"
+									"CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT\n"
+									"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
+									"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
+									"  k.\"name\" AS CONSTRAINT_NAME,\n"
+									"  cast(sys.check_constraint(s.\"name\", k.\"name\") AS varchar(2048)) AS CHECK_CLAUSE,\n"
+									"  t.\"schema_id\" AS schema_id,\n"
+									"  t.\"id\" AS table_id,\n"
+									"  t.\"name\" AS table_name,\n"
+									"  k.\"id\" AS key_id\n"
+									" FROM (SELECT sk.\"id\", sk.\"table_id\", sk.\"name\" FROM sys.\"keys\" sk WHERE sk.\"type\" = 4 UNION ALL SELECT tk.\"id\", tk.\"table_id\", tk.\"name\" FROM tmp.\"keys\" tk WHERE tk.\"type\" = 4) k\n"
+									" INNER JOIN (SELECT st.\"id\", st.\"schema_id\", st.\"name\" FROM sys.\"_tables\" st UNION ALL SELECT tt.\"id\", tt.\"schema_id\", tt.\"name\" FROM tmp.\"_tables\" tt) t ON k.\"table_id\" = t.\"id\"\n"
+									" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+									" ORDER BY s.\"name\", t.\"name\", k.\"name\";\n"
+									"GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHECK_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
+
+									"CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT\n"
+									"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
+									"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
+									"  k.\"name\" AS CONSTRAINT_NAME,\n"
+									"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
+									"  s.\"name\" AS TABLE_SCHEMA,\n"
+									"  t.\"name\" AS TABLE_NAME,\n"
+									"  cast(CASE k.\"type\" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' WHEN 3 THEN 'UNIQUE NULLS NOT DISTINCT' WHEN 4 THEN 'CHECK' ELSE NULL END AS varchar(26)) AS CONSTRAINT_TYPE,\n"
+									"  cast('NO' AS varchar(3)) AS IS_DEFERRABLE,\n"
+									"  cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,\n"
+									"  cast('YES' AS varchar(3)) AS ENFORCED,\n"
+									"  t.\"schema_id\" AS schema_id,\n"
+									"  t.\"id\" AS table_id,\n"
+									"  k.\"id\" AS key_id,\n"
+									"  k.\"type\" AS key_type,\n"
+									"  t.\"system\" AS is_system\n"
+									" FROM (SELECT sk.\"id\", sk.\"table_id\", sk.\"name\", sk.\"type\" FROM sys.\"keys\" sk UNION ALL SELECT tk.\"id\", tk.\"table_id\", tk.\"name\", tk.\"type\" FROM tmp.\"keys\" tk) k\n"
+									" INNER JOIN (SELECT st.\"id\", st.\"schema_id\", st.\"name\", st.\"system\" FROM sys.\"_tables\" st UNION ALL SELECT tt.\"id\", tt.\"schema_id\", tt.\"name\", tt.\"system\" FROM tmp.\"_tables\" tt) t ON k.\"table_id\" = t.\"id\"\n"
+									" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+									" ORDER BY s.\"name\", t.\"name\", k.\"name\";\n"
+									"GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
+									"\n"
+									"UPDATE sys._tables SET system = true where system <> true\n"
+									" and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')\n"
+									" and name in ('check_constraints','table_constraints');\n";
+								sql_schema *infoschema = mvc_bind_schema(sql, "information_schema");
+								if ((t = mvc_bind_table(sql, infoschema, "check_constraints")) != NULL)
+									t->system = 0; /* make it non-system else the drop view will fail */
+								if ((t = mvc_bind_table(sql, infoschema, "table_constraints")) != NULL)
+									t->system = 0;
+								printf("Running database upgrade commands:\n%s\n", query6);
+								fflush(stdout);
+								err = SQLstatementIntern(c, query6, "update", true, false, NULL);
+							}
+						}
+					}
+				}
+			}
 		}
 		BBPunfix(b->batCacheid);
 	}
 	res_table_destroy(output);
-	list *l;
-	if ((l = sa_list(sql->sa)) != NULL) {
-		sql_subtype tp1, tp2;
-		sql_find_subtype(&tp1, "date", 0, 0);
-		list_append(l, &tp1);
-		list_append(l, &tp1);
-		sql_find_subtype(&tp2, "day_interval", 0, 0);
-		list_append(l, &tp2);
-		if (!sql_bind_func_(sql, s->base.name, "generate_series", l, F_UNION, true, true)) {
-			const char query[] = "create function sys.generate_series(first date, \"limit\" date, stepsize interval month)\n"
-				"returns table (value date)\n"
-				"external name generator.series;\n"
-				"create function sys.generate_series(first date, \"limit\" date, stepsize interval day)\n"
-				"returns table (value date)\n"
-				"external name generator.series;\n"
-				"update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;\n";
-			sql->session->status = 0;
-			sql->errstr[0] = '\0';
-			printf("Running database upgrade commands:\n%s\n", query);
-			fflush(stdout);
-			err = SQLstatementIntern(c, query, "update", true, false, NULL);
-		}
-	}
-	if (err)
-		goto end;
 
-	const char *query = "select id from args where func_id = (select id from functions where schema_id = 2000 and name = 'sessions');\n";
-	err = SQLstatementIntern(c, query, "update", true, false, &output);
-	if (err)
-		goto end;
-	b = BATdescriptor(output->cols[0].b);
-	if (b && BATcount(b) < 15) {
-		query =
-			"drop view sys.sessions;\n"
-			"drop function sys.sessions();\n"
-			"create function sys.sessions()\n"
-			" returns table(\n"
-			"  \"sessionid\" int,\n"
-			"  \"username\" string,\n"
-			"  \"login\" timestamp,\n"
-			"  \"idle\" timestamp,\n"
-			"  \"optimizer\" string,\n"
-			"  \"sessiontimeout\" int,\n"
-			"  \"querytimeout\" int,\n"
-			"  \"workerlimit\" int,\n"
-			"  \"memorylimit\" int,\n"
-			"  \"language\" string,\n"
-			"  \"peer\" string,\n"
-			"  \"hostname\" string,\n"
-			"  \"application\" string,\n"
-			"  \"client\" string,\n"
-			"  \"clientpid\" bigint,\n"
-			"  \"remark\" string\n"
-			" )\n"
-			" external name sql.sessions;\n"
-			"create view sys.sessions as select * from sys.sessions();\n"
-			"create procedure sys.setclientinfo(property string, value string)\n"
-			" external name clients.setinfo;\n"
-			"grant execute on procedure sys.setclientinfo(string, string) to public;\n"
-			"create table sys.clientinfo_properties(prop string);\n"
-			"insert into sys.clientinfo_properties values\n"
-			" ('ClientHostname'),\n"
-			" ('ApplicationName'),\n"
-			" ('ClientLibrary'),\n"
-			" ('ClientRemark'),\n"
-			" ('ClientPid');\n"
-			"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
-			"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n";
-			;
-		sql_schema *sys = mvc_bind_schema(sql, "sys");
-		sql_table *t = mvc_bind_table(sql, sys, "sessions");
-		t->system = 0; /* make it non-system else the drop view will fail */
-		printf("Running database upgrade commands:\n%s\n", query);
-		fflush(stdout);
-		err = SQLstatementIntern(c, query, "update", true, false, NULL);
-	}
-	if (b)
-		BBPunfix(b->batCacheid);
-	res_table_destroy(output);
-
-end:
-	sa_destroy(sql->sa);
-	sql->sa = old_sa;
-
-	if (err)
-		return err;
-	sql_table *t;
-	if ((t = mvc_bind_table(sql, s, "key_types")) != NULL)
-		t->system = 0;
-	err = SQLstatementIntern(c,
-		"DROP TABLE sys.key_types;\n"
-		"CREATE TABLE sys.key_types (\n"
-		"	key_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
-		"	key_type_name VARCHAR(35) NOT NULL UNIQUE);\n"
-		"INSERT INTO sys.key_types VALUES\n"
-		"(0, 'Primary Key'),\n"
-		"(1, 'Unique Key'),\n"
-		"(2, 'Foreign Key'),\n"
-		"(3, 'Unique Key With Nulls Not Distinct'),\n"
-		"(4, 'Check Constraint');\n"
-		"ALTER TABLE sys.key_types SET READ ONLY;\n"
-		"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
-		"UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';\n"
-		, "update", true, false, NULL);
 	return err;
 }
 
@@ -7379,7 +7405,7 @@ SQLupgrades(Client c, mvc *m)
 		goto handle_error;
 	}
 
-	if ((err = sql_update_default(c, m, s)) != NULL) {
+	if ((err = sql_update_aug2024(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

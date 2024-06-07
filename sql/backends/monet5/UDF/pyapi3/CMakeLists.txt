@@ -55,7 +55,6 @@ if(HAVE_LIBPY3)
     Python3::Python
     $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.14.0>:Python3::NumPy>
     sql
-    mutils
     bat
     monetdb5
     monetdb_config_header)

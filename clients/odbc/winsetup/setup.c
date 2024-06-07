@@ -22,10 +22,6 @@
 #define ALREADY_HAVE_WINDOWS_TYPE 1
 #include <sql.h>
 #include <sqlext.h>
-#ifdef EXPORT
-#undef EXPORT
-#endif
-#define EXPORT __declspec(dllexport)
 #include <odbcinst.h>
 #include "resource.h"
 
@@ -158,6 +154,13 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SetDlgItemText(hwndDlg, IDC_EDIT_HOST, datap->host ? datap->host : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_PORT, datap->port ? datap->port : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_DATABASE, datap->database ? datap->database : "");
+		// Secure connections using TLS
+		SetDlgItemText(hwndDlg, IDC_EDIT_USETLS, datap->use_tls ? datap->use_tls : "off");
+		SetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERT, datap->servercert ? datap->servercert : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERTHASH, datap->servercerthash ? datap->servercerthash : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTKEY, datap->clientkey ? datap->clientkey : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTCERT, datap->clientcert ? datap->clientcert : "");
+		// Advanced settings
 		SetDlgItemText(hwndDlg, IDC_EDIT_SCHEMA, datap->schema ? datap->schema : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_LOGINTIMEOUT, datap->logintimeout ? datap->logintimeout : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_REPLYTIMEOUT, datap->replytimeout ? datap->replytimeout : "");
@@ -165,11 +168,6 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, datap->autocommit ? datap->autocommit : "on");
 		SetDlgItemText(hwndDlg, IDC_EDIT_TIMEZONE, datap->timezone ? datap->timezone : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_LOGFILE, datap->logfile ? datap->logfile : "");
-		SetDlgItemText(hwndDlg, IDC_EDIT_USETLS, datap->use_tls ? datap->use_tls : "off");
-		SetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERT, datap->servercert ? datap->servercert : "");
-		SetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERTHASH, datap->servercerthash ? datap->servercerthash : "");
-		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTKEY, datap->clientkey ? datap->clientkey : "");
-		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTCERT, datap->clientcert ? datap->clientcert : "");
 		if (datap->request == ODBC_ADD_DSN && datap->dsn && *datap->dsn)
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EDIT_DSN), FALSE);
 		return TRUE;
@@ -188,6 +186,18 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					free(datap->dsn);
 				datap->dsn = strdup(buf);
 			}
+			/* validate entered string values */
+			GetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, buf, sizeof(buf));
+			if (strcmp("on", buf) != 0 && strcmp("off", buf) != 0) {
+				MessageBox(hwndDlg, "Autocommit must be set to on or off. Default is on.", NULL, MB_ICONERROR);
+				return TRUE;
+			}
+			GetDlgItemText(hwndDlg, IDC_EDIT_USETLS, buf, sizeof(buf));
+			if (strcmp("on", buf) != 0 && strcmp("off", buf) != 0) {
+				MessageBox(hwndDlg, "TLS Encrypt must be set to on or off. Default is off.", NULL, MB_ICONERROR);
+				return TRUE;
+			}
+
 			GetDlgItemText(hwndDlg, IDC_EDIT_DESC, buf, sizeof(buf));
 			if (datap->desc)
 				free(datap->desc);
@@ -212,6 +222,28 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (datap->database)
 				free(datap->database);
 			datap->database = strdup(buf);
+			// Secure connections using TLS
+			GetDlgItemText(hwndDlg, IDC_EDIT_USETLS, buf, sizeof(buf));
+			if (datap->use_tls)
+				free(datap->use_tls);
+			datap->use_tls = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERT, buf, sizeof(buf));
+			if (datap->servercert)
+				free(datap->servercert);
+			datap->servercert = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERTHASH, buf, sizeof(buf));
+			if (datap->servercerthash)
+				free(datap->servercerthash);
+			datap->servercerthash = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_CLIENTKEY, buf, sizeof(buf));
+			if (datap->clientkey)
+				free(datap->clientkey);
+			datap->clientkey = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_CLIENTCERT, buf, sizeof(buf));
+			if (datap->clientcert)
+				free(datap->clientcert);
+			datap->clientcert = strdup(buf);
+			// Advanced settings
 			GetDlgItemText(hwndDlg, IDC_EDIT_SCHEMA, buf, sizeof(buf));
 			if (datap->schema)
 				free(datap->schema);
@@ -240,34 +272,16 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (datap->logfile)
 				free(datap->logfile);
 			datap->logfile = strdup(buf);
-			GetDlgItemText(hwndDlg, IDC_EDIT_USETLS, buf, sizeof(buf));
-			if (datap->use_tls)
-				free(datap->use_tls);
-			datap->use_tls = strdup(buf);
-			GetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERT, buf, sizeof(buf));
-			if (datap->servercert)
-				free(datap->servercert);
-			datap->servercert = strdup(buf);
-			GetDlgItemText(hwndDlg, IDC_EDIT_SERVERCERTHASH, buf, sizeof(buf));
-			if (datap->servercerthash)
-				free(datap->servercerthash);
-			datap->servercerthash = strdup(buf);
-			GetDlgItemText(hwndDlg, IDC_EDIT_CLIENTKEY, buf, sizeof(buf));
-			if (datap->clientkey)
-				free(datap->clientkey);
-			datap->clientkey = strdup(buf);
-			GetDlgItemText(hwndDlg, IDC_EDIT_CLIENTCERT, buf, sizeof(buf));
-			if (datap->clientcert)
-				free(datap->clientcert);
-			datap->clientcert = strdup(buf);
 			/* fall through */
 		case IDCANCEL:
 			EndDialog(hwndDlg, LOWORD(wParam));
 			return TRUE;
 		case IDC_BUTTON_TEST:
+			// TODO call SQLDriverConnect()
 			MessageBox(hwndDlg, "Test Connection not yet implemented", NULL, MB_ICONERROR);
 			return TRUE;
 		case IDC_BUTTON_HELP:
+			// TODO invoke webbrowser with url to webpage decribing this dialog.
 			MessageBox(hwndDlg, "Help not yet implemented", NULL, MB_ICONERROR);
 			return TRUE;
 		}
@@ -349,6 +363,16 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			data.port = strdup(value);
 		else if (strncasecmp("Database=", attributes, value - attributes) == 0)
 			data.database = strdup(value);
+		else if (strncasecmp("TLS=", attributes, value - attributes) == 0)
+			data.use_tls = strdup(value);
+		else if (strncasecmp("Cert=", attributes, value - attributes) == 0)
+			data.servercert = strdup(value);
+		else if (strncasecmp("CertHash=", attributes, value - attributes) == 0)
+			data.servercerthash = strdup(value);
+		else if (strncasecmp("ClientKey=", attributes, value - attributes) == 0)
+			data.clientkey = strdup(value);
+		else if (strncasecmp("ClientCert=", attributes, value - attributes) == 0)
+			data.clientcert = strdup(value);
 		else if (strncasecmp("Schema=", attributes, value - attributes) == 0)
 			data.schema = strdup(value);
 		else if (strncasecmp("LoginTimeout=", attributes, value - attributes) == 0)
@@ -363,16 +387,6 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			data.timezone = strdup(value);
 		else if (strncasecmp("LogFile=", attributes, value - attributes) == 0)
 			data.logfile = strdup(value);
-		else if (strncasecmp("TLS=", attributes, value - attributes) == 0)
-			data.use_tls = strdup(value);
-		else if (strncasecmp("Cert=", attributes, value - attributes) == 0)
-			data.servercert = strdup(value);
-		else if (strncasecmp("CertHash=", attributes, value - attributes) == 0)
-			data.servercerthash = strdup(value);
-		else if (strncasecmp("ClientKey=", attributes, value - attributes) == 0)
-			data.clientkey = strdup(value);
-		else if (strncasecmp("ClientCert=", attributes, value - attributes) == 0)
-			data.clientcert = strdup(value);
 		attributes = value + strlen(value) + 1;
 	}
 
@@ -392,6 +406,11 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	MergeFromProfileString(data.dsn, &data.host, "Host", "localhost");
 	MergeFromProfileString(data.dsn, &data.port, "Port", MAPI_PORT_STR);
 	MergeFromProfileString(data.dsn, &data.database, "Database", "");
+	MergeFromProfileString(data.dsn, &data.use_tls, "TLS", "off");
+	MergeFromProfileString(data.dsn, &data.servercert, "Cert", "");
+	MergeFromProfileString(data.dsn, &data.servercerthash, "CertHash", "");
+	MergeFromProfileString(data.dsn, &data.clientkey, "ClientKey", "");
+	MergeFromProfileString(data.dsn, &data.clientcert, "ClientCert", "");
 	MergeFromProfileString(data.dsn, &data.schema, "Schema", "");
 	MergeFromProfileString(data.dsn, &data.logintimeout, "LoginTimeout", "");
 	MergeFromProfileString(data.dsn, &data.replytimeout, "ReplyTimeout", "");
@@ -399,11 +418,6 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	MergeFromProfileString(data.dsn, &data.autocommit, "AutoCommit", "on");
 	MergeFromProfileString(data.dsn, &data.timezone, "TimeZone", "");
 	MergeFromProfileString(data.dsn, &data.logfile, "LogFile", "");
-	MergeFromProfileString(data.dsn, &data.use_tls, "TLS", "off");
-	MergeFromProfileString(data.dsn, &data.servercert, "Cert", "");
-	MergeFromProfileString(data.dsn, &data.servercerthash, "CertHash", "");
-	MergeFromProfileString(data.dsn, &data.clientkey, "ClientKey", "");
-	MergeFromProfileString(data.dsn, &data.clientcert, "ClientCert", "");
 
 	ODBCLOG("ConfigDSN values: DSN=%s UID=%s PWD=%s Host=%s Port=%s Database=%s Schema=%s LoginTimeout=%s ReplyTimeout=%s ReplySize=%s AutoCommit=%s TimeZone=%s LogFile=%s TLSs=%s Cert=%s CertHash=%s ClientKey=%s ClientCert=%s\n",
 		data.dsn ? data.dsn : "(null)",
@@ -486,25 +500,6 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			goto finish;
 		}
 	}
-	/* some data validation on entered strings */
-	if (data.autocommit) {
-		if (strcmp("on", data.autocommit) != 0
-		 && strcmp("off", data.autocommit) != 0) {
-			rc = FALSE;
-			if (parent)
-				MessageBox(parent, "Autocommit may only be set to on or off.", NULL, MB_ICONERROR);
-			goto finish;
-		}
-	}
-	if (data.use_tls) {
-		if (strcmp("on", data.use_tls) != 0
-		 && strcmp("off", data.use_tls) != 0) {
-			rc = FALSE;
-			if (parent)
-				MessageBox(parent, "TLS Encrypt may only be set to on or off.", NULL, MB_ICONERROR);
-			goto finish;
-		}
-	}
 
 	ODBCLOG("ConfigDSN writing values: DSN=%s UID=%s PWD=%s Host=%s Port=%s Database=%s Schema=%s LoginTimeout=%s ReplyTimeout=%s ReplySize=%s AutoCommit=%s TimeZone=%s LogFile=%s TLSs=%s Cert=%s CertHash=%s ClientKey=%s ClientCert=%s\n",
 		data.dsn ? data.dsn : "(null)",
@@ -539,18 +534,18 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	}
 
 	if (!SQLWritePrivateProfileString(data.dsn, "Description", data.desc, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "TLS", data.use_tls, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "Cert", data.servercert, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "CertHash", data.servercerthash, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "ClientKey", data.clientkey, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "ClientCert", data.clientcert, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "Schema", data.schema, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "LoginTimeout", data.logintimeout, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "ReplyTimeout", data.replytimeout, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "ReplySize", data.replysize, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "AutoCommit", data.autocommit, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "TimeZone", data.timezone, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "LogFile", data.logfile, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "TLS", data.use_tls, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "Cert", data.servercert, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "CertHash", data.servercerthash, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "ClientKey", data.clientkey, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "ClientCert", data.clientcert, "odbc.ini")) {
+	 || !SQLWritePrivateProfileString(data.dsn, "LogFile", data.logfile, "odbc.ini")) {
 		if (parent)
 			MessageBox(parent, "Error writing optional configuration data to registry", NULL, MB_ICONERROR);
 		goto finish;
@@ -571,6 +566,16 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		free(data.port);
 	if (data.database)
 		free(data.database);
+	if (data.use_tls)
+		free(data.use_tls);
+	if (data.servercert)
+		free(data.servercert);
+	if (data.servercerthash)
+		free(data.servercerthash);
+	if (data.clientkey)
+		free(data.clientkey);
+	if (data.clientcert)
+		free(data.clientcert);
 	if (data.schema)
 		free(data.schema);
 	if (data.logintimeout)
@@ -585,16 +590,6 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		free(data.timezone);
 	if (data.logfile)
 		free(data.logfile);
-	if (data.use_tls)
-		free(data.use_tls);
-	if (data.servercert)
-		free(data.servercert);
-	if (data.servercerthash)
-		free(data.servercerthash);
-	if (data.clientkey)
-		free(data.clientkey);
-	if (data.clientcert)
-		free(data.clientcert);
 
 	ODBCLOG("ConfigDSN returning %s\n", rc ? "TRUE" : "FALSE");
 	return rc;

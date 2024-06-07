@@ -408,23 +408,30 @@ load_key(sql_trans *tr, sql_table *t, res_table *rt_keys, res_table *rt_keycols/
 	nk->columns = list_create((fdestroy) &kc_destroy);
 	nk->t = t;
 
-	if (ktype == ckey) {
+	switch (ktype) {
+	case ckey: {
 		str ch = (char*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "check"));
 		if (!strNil(ch))
 			nk->check =_STRDUP(ch);
-	}
-	else if (ktype == ukey || ktype == pkey) {
+	}	break;
+	case ukey:
+	case unndkey:
+	case pkey: {
 		sql_ukey *uk = (sql_ukey *) nk;
 
 		if (ktype == pkey)
 			t->pkey = uk;
-	} else {
+		break;
+	}
+	case fkey: {
 		sql_fkey *fk = (sql_fkey *) nk;
 		int action = *(int*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "action"));
 		fk->on_delete = action & 255;
 		fk->on_update = (action>>8) & 255;
 
 		fk->rkey = *(sqlid*)store->table_api.table_fetch_value(rt_keys, find_sql_column(keys, "rkey"));
+		break;
+	}
 	}
 
 	for ( ; rt_keycols->cur_row < rt_keycols->nr_rows; rt_keycols->cur_row++) {
@@ -1619,7 +1626,7 @@ create_sql_table_with_id(allocator *sa, sqlid id, const char *name, sht type, bi
 
 	assert((persistence==SQL_PERSIST ||
 		persistence==SQL_DECLARED_TABLE ||
-		commit_action) && commit_action>=0);
+		commit_action || type) && commit_action>=0);
 	assert(id);
 	base_init(sa, &t->base, id, true, name);
 	t->type = type;
@@ -4067,7 +4074,7 @@ sql_trans_commit(sql_trans *tr)
 		const bool log = !tr->parent && tr->logchanges > 0;
 
 		if (log) {
-			const int min_changes = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5 : 1000000;
+			const lng min_changes = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5 : 1000000;
 			flush = (tr->logchanges > min_changes && list_empty(store->changes));
 		}
 
@@ -4379,6 +4386,11 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 			return res;
 	}
 
+	i->base.deleted = 1;
+	if (!isNew(i) && !isTempTable(i->t))
+		if ((res = store->storage_api.drop_idx(tr, (sql_idx*)dup_base(&i->base))))
+			return res;
+
 	/* remove idx from schema and table */
 	if (isGlobal(i->t) && (res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
 		return res;
@@ -4595,6 +4607,11 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	if ((res = sys_drop_default_object(tr, col, drop_action)))
 		return res;
 
+	col->base.deleted = 1;
+	if (!isNew(col) && !isTempTable(col->t))
+		if ((res = store->storage_api.drop_col(tr, (sql_column*)dup_base(&col->base))))
+			return res;
+
 	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, col->base.id, COLUMN_DEPENDENCY)))
 		return res;
 	if (col->type.type->s && (res = sql_trans_drop_dependency(tr, col->type.type->base.id, col->base.id, TYPE_DEPENDENCY)))
@@ -4804,6 +4821,10 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 		return res;
 	if ((res = sys_drop_columns(tr, t, drop_action)))
 		return res;
+
+	if (isTable(t) && !isNew(t))
+		if ((res = store->storage_api.drop_del(tr, t)))
+			return res;
 
 	if (drop_action && (res = sql_trans_drop_all_dependencies(tr, t->base.id, !isView(t) ? TABLE_DEPENDENCY : VIEW_DEPENDENCY)))
 		return res;
@@ -6078,11 +6099,6 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 	if (t != gt && (res = os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
 		return res;
 
-	sqlstore *store = tr->store;
-	if (isTable(t) && !isNew(t))
-		if ((res = store->storage_api.drop_del(tr, t)))
-			return res;
-
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
@@ -6285,11 +6301,6 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		return res;
 	if ((res = sys_drop_column(tr, col, drop_action)))
 		return res;
-
-	col->base.deleted = 1;
-	if (!isNew(col) && !isTempTable(col->t))
-		if ((res = store->storage_api.drop_col(tr, (sql_column*)dup_base(&col->base))))
-			return res;
 
 	if (isNew(col)) { /* remove create from changes */
 		trans_del(tr, &col->base);
@@ -6902,11 +6913,6 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		return res;
 	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql functions depending on the table */
 		return res;
-
-	i->base.deleted = 1;
-	if (!isNew(i) && !isTempTable(i->t))
-		if ((res = store->storage_api.drop_idx(tr, (sql_idx*)dup_base(&i->base))))
-			return res;
 
 	node *n = ol_find_name(i->t->idxs, i->base.name);
 	if (n)

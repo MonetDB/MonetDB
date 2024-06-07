@@ -614,8 +614,13 @@ tablet_read_more(READERtask *task)
 		do {
 			/* query is not finished ask for more */
 			/* we need more query text */
-			if (bstream_next(in) < 0)
+			if (bstream_next(in) < 0) {
+				if (mnstr_errnr(in->s) == MNSTR_INTERRUPT) {
+					task->aborted = true;
+					mnstr_clearerr(in->s);
+				}
 				return false;
+			}
 			if (in->eof) {
 				if (bstream_getoob(in)) {
 					task->aborted = true;
@@ -625,7 +630,14 @@ tablet_read_more(READERtask *task)
 					mnstr_flush(out, MNSTR_FLUSH_DATA);
 				in->eof = false;
 				/* we need more query text */
-				if (bstream_next(in) <= 0)
+				if (bstream_next(in) < 0) {
+					if (mnstr_errnr(in->s) == MNSTR_INTERRUPT) {
+						task->aborted = true;
+						mnstr_clearerr(in->s);
+					}
+					return false;
+				}
+				if (in->eof)
 					return false;
 			}
 		} while (in->len <= in->pos);

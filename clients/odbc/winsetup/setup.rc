@@ -65,8 +65,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION version(11,50,0)
- PRODUCTVERSION version(11,50,0)
+ FILEVERSION version(11,52,0)
+ PRODUCTVERSION version(11,52,0)
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -83,12 +83,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "MonetDB Foundation"
             VALUE "FileDescription", "MonetDB ODBC Setup DLL"
-            VALUE "FileVersion", sversion(11,50,0)
+            VALUE "FileVersion", sversion(11,52,0)
             VALUE "InternalName", "MonetODBCs.dll"
             VALUE "LegalCopyright", "Copyright (c) 2024 MonetDB Foundation"
             VALUE "OriginalFilename", "MonetODBCs.dll"
             VALUE "ProductName", "MonetDB SQL Server"
-            VALUE "ProductVersion", sversion(11,50,0)
+            VALUE "ProductVersion", sversion(11,52,0)
         END
     END
     BLOCK "VarFileInfo"
@@ -109,6 +109,13 @@ STYLE DS_MODALFRAME | WS_CAPTION
 CAPTION "MonetDB ODBC Data Source Setup"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
+    LTEXT           "Data Source Name:",IDC_STATIC,7,42,63,8
+    LTEXT           "Description:",IDC_STATIC,7,58,63,8
+    LTEXT           "User Name:",IDC_STATIC,7,74,63,8
+    LTEXT           "Password:",IDC_STATIC,7,90,63,8
+    LTEXT           "Server Host:",IDC_STATIC,7,106,63,8
+    LTEXT           "Port Number:",IDC_STATIC,7,122,63,8
+    LTEXT           "Database:",IDC_STATIC,7,138,63,8
     EDITTEXT        IDC_EDIT_DSN,80,40,134,14,ES_AUTOHSCROLL
     EDITTEXT        IDC_EDIT_DESC,80,56,134,14,ES_AUTOHSCROLL
     EDITTEXT        IDC_EDIT_UID,80,72,134,14,ES_AUTOHSCROLL
@@ -116,45 +123,38 @@ BEGIN
     EDITTEXT        IDC_EDIT_HOST,80,104,134,14,ES_AUTOHSCROLL
     EDITTEXT        IDC_EDIT_PORT,80,120,32,14,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_EDIT_DATABASE,80,136,134,14,ES_AUTOHSCROLL
-    LTEXT           "Data Source Name:",IDC_STATIC,7,42,63,8
-    LTEXT           "Description:",IDC_STATIC,7,58,63,8
-    LTEXT           "User Name:",IDC_STATIC,7,74,63,8
-    LTEXT           "Password:",IDC_STATIC,7,90,63,8
-    LTEXT           "Host:",IDC_STATIC,7,106,63,8
-    LTEXT           "Port:",IDC_STATIC,7,122,63,8
-    LTEXT           "Database:",IDC_STATIC,7,138,63,8
-    GROUPBOX        "Advanced Settings",IDC_STATIC,7,154,214,130
-    LTEXT           "Schema:",IDC_STATIC,12,170,63,8
-    LTEXT           "Login Timeout:",IDC_STATIC,12,186,63,8
-    LTEXT           "milliseconds",IDC_STATIC,130,186,63,8
-    LTEXT           "Reply Timeout:",IDC_STATIC,12,202,63,8
-    LTEXT           "milliseconds",IDC_STATIC,130,202,63,8
-    LTEXT           "Reply Size:",IDC_STATIC,12,218,63,8
-    LTEXT           "Autocommit on/off:",IDC_STATIC,12,234,63,8
-    LTEXT           "Time Zone:",IDC_STATIC,12,250,63,8
-    LTEXT           "minutes East of UTC",IDC_STATIC,150,250,63,8
-    LTEXT           "Log File:",IDC_STATIC,12,266,63,8
-    EDITTEXT        IDC_EDIT_SCHEMA,80,168,134,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_LOGINTIMEOUT,80,184,44,14,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_EDIT_REPLYTIMEOUT,80,200,44,14,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_EDIT_REPLYSIZE,80,216,44,14,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_EDIT_AUTOCOMMIT,80,232,24,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_TIMEZONE,80,248,64,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_LOGFILE,80,264,134,14,ES_AUTOHSCROLL
-    GROUPBOX        "Secure Connection",IDC_STATIC,7,292,214,98
-    LTEXT           "TLS Encrypt on/off:",IDC_STATIC,12,308,66,8
-    LTEXT           "Server Certificate:",IDC_STATIC,12,324,66,8
-    LTEXT           "Server Cert. Hash:",IDC_STATIC,12,340,63,8
-    LTEXT           "Client Key:",IDC_STATIC,12,356,63,8
-    LTEXT           "Client Certificate:",IDC_STATIC,12,372,66,8
-    EDITTEXT        IDC_EDIT_USETLS,80,306,24,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_SERVERCERT,80,322,134,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_SERVERCERTHASH,80,338,134,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_CLIENTKEY,80,354,134,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_CLIENTCERT,80,370,134,14,ES_AUTOHSCROLL
-    DEFPUSHBUTTON   "OK",IDOK,7,397,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,62,397,50,14
-    PUSHBUTTON      "Test",IDC_BUTTON_TEST,117,397,50,14
+    GROUPBOX        "Secure Connection",IDC_STATIC,7,154,214,98
+    LTEXT           "TLS Encrypt on/off:",IDC_STATIC,12,170,66,8
+    LTEXT           "Server Certificate:",IDC_STATIC,12,186,66,8
+    LTEXT           "Server Cert. Hash:",IDC_STATIC,12,202,63,8
+    LTEXT           "Client Key:",IDC_STATIC,12,218,63,8
+    LTEXT           "Client Certificate:",IDC_STATIC,12,234,66,8
+    EDITTEXT        IDC_EDIT_USETLS,80,168,24,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SERVERCERT,80,184,134,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SERVERCERTHASH,80,200,134,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_CLIENTKEY,80,216,134,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_CLIENTCERT,80,232,134,14,ES_AUTOHSCROLL
+    GROUPBOX        "Advanced Settings",IDC_STATIC,7,260,214,130
+    LTEXT           "Schema Name:",IDC_STATIC,12,276,63,8
+    LTEXT           "Login Timeout:",IDC_STATIC,12,292,63,8
+    LTEXT           "milliseconds",IDC_STATIC,128,292,63,8
+    LTEXT           "Reply Timeout:",IDC_STATIC,12,308,63,8
+    LTEXT           "milliseconds",IDC_STATIC,128,308,63,8
+    LTEXT           "Reply Size:",IDC_STATIC,12,324,63,8
+    LTEXT           "Autocommit on/off:",IDC_STATIC,12,340,63,8
+    LTEXT           "Time Zone:",IDC_STATIC,12,356,63,8
+    LTEXT           "minutes East of UTC",IDC_STATIC,128,356,66,8
+    LTEXT           "Log File:",IDC_STATIC,12,372,63,8
+    EDITTEXT        IDC_EDIT_SCHEMA,80,274,134,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_LOGINTIMEOUT,80,290,44,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_EDIT_REPLYTIMEOUT,80,306,44,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_EDIT_REPLYSIZE,80,322,44,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_EDIT_AUTOCOMMIT,80,338,24,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_TIMEZONE,80,354,44,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_LOGFILE,80,370,134,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Test",IDC_BUTTON_TEST,7,397,50,14
+    DEFPUSHBUTTON   "OK",IDOK,62,397,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,117,397,50,14
     PUSHBUTTON      "Help",IDC_BUTTON_HELP,172,397,50,14
     CONTROL         2000,IDC_STATIC,"Static",SS_BITMAP,0,0,240,37
 END

@@ -52,6 +52,7 @@
 #include "msabaoth.h"
 #include "mutils.h" /* MT_lockf */
 #include "mcrypt.h" /* mcrypt_BackendSum */
+#include "mstring.h"			/* strcpy_len */
 #include "utils/utils.h"
 #include "utils/properties.h"
 #include "utils/glob.h"
@@ -102,7 +103,10 @@ typedef struct _threadlist {
 /* globals */
 
 /* full path to the mserver5 binary */
-char *_mero_mserver = NULL;
+#ifndef PATH_MAX
+# define PATH_MAX 1024
+#endif
+char _mero_mserver[PATH_MAX];
 /* list of databases that we have started */
 dpair _mero_topdp = NULL;
 /* lock to _mero_topdp, initialised as recursive later on */
@@ -472,8 +476,12 @@ main(int argc, char *argv[])
 	/* where is the mserver5 binary we fork on demand?
 	 * first try to locate it based on our binary location, fall-back to
 	 * hardcoded bin-dir */
-	_mero_mserver = get_bin_path();
-	if (_mero_mserver != NULL) {
+	p = get_bin_path();
+	if (p != NULL) {
+		if (strcpy_len(_mero_mserver, p, sizeof(_mero_mserver)) >= sizeof(_mero_mserver)) {
+			Mlevelfprintf(ERROR, stderr, "fatal: monetdbd full path name is too long\n");
+			exit(1);
+		}
 		/* Find where the string monetdbd actually starts */
 		char *s = strstr(_mero_mserver, "monetdbd");
 		if (s != NULL) {
@@ -483,7 +491,7 @@ main(int argc, char *argv[])
 			for (int i = 0; i < 8; i++)
 				s[i] = "mserver5"[i];
 			if (stat(_mero_mserver, &sb) == -1)
-				_mero_mserver = NULL;
+				_mero_mserver[0] = 0;
 		}
 	}
 	/* setup default database properties, constants: unlike historical
@@ -697,8 +705,11 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (_mero_mserver == NULL) {
-		_mero_mserver = BINDIR "/mserver5";
+	if (_mero_mserver[0] == 0) {
+		if (strcpy_len(_mero_mserver, BINDIR "/mserver5", sizeof(_mero_mserver)) >= sizeof(_mero_mserver)) {
+			Mlevelfprintf(ERROR, stderr, "fatal: mserver5 full path name is too long\n");
+			MERO_EXIT_CLEAN(1);
+		}
 		if (stat(_mero_mserver, &sb) == -1) {
 			/* exit early if this is not going to work well */
 			Mlevelfprintf(ERROR, stderr, "cannot stat %s executable: %s\n",

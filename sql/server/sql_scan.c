@@ -714,9 +714,16 @@ scanner_read_more(struct scanner *lc, size_t n)
 			more = true;
 		}
 		/* we need more query text */
-		if (bstream_next(b) < 0 ||
-		    /* we asked for more data but didn't get any */
-		    (more && b->eof && b->len < b->pos + lc->yycur + n))
+		if (bstream_next(b) < 0) {
+			if (mnstr_errnr(b->s) == MNSTR_INTERRUPT) {
+				// now what?
+				lc->errstr = "Query aborted";
+				lc->aborted = true;
+				mnstr_clearerr(b->s);
+			}
+			return EOF;
+		} else if (/* we asked for more data but didn't get any */
+		    	   (more && b->eof && b->len < b->pos + lc->yycur + n))
 			return EOF;
 		if (more && b->pos + lc->yycur + 2 == b->len && b->buf[b->pos + lc->yycur] == '\200' && b->buf[b->pos + lc->yycur + 1] == '\n') {
 			lc->errstr = "Query aborted";

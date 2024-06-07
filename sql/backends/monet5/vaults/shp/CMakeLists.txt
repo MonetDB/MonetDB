@@ -43,7 +43,6 @@ if(GDAL_FOUND)
   target_link_libraries(shp
     PRIVATE
     monetdb_config_header
-    mutils
     bat
     monetdb5
     sqlinclude

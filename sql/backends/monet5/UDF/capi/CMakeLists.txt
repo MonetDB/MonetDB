@@ -34,7 +34,6 @@ if(CINTEGRATION)
 
   target_link_libraries(capi
     PRIVATE
-    mutils
     bat
     monetdb5
     monetdb_config_header)

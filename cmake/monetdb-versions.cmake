@@ -11,7 +11,7 @@
 #]]
 
 set(MONETDB_VERSION_MAJOR "11")
-set(MONETDB_VERSION_MINOR "50")
+set(MONETDB_VERSION_MINOR "52")
 set(MONETDB_VERSION_PATCH "0")
 
 if(RELEASE_VERSION)
@@ -53,7 +53,8 @@ set(MAPI_VERSION_MINOR "2")
 set(MAPI_VERSION_PATCH "2")
 set(MAPI_VERSION "${MAPI_VERSION_MAJOR}.${MAPI_VERSION_MINOR}.${MAPI_VERSION_PATCH}")
 
-# version of the MONETDB5 library (subdirectory monetdb5, not including extras or sql)
+# version of the MONETDB5 library (subdirectory monetdb5, not including
+# extras, and tools/utils/msabaoth.[ch])
 set(MONETDB5_VERSION_MAJOR "35")
 set(MONETDB5_VERSION_MINOR "0")
 set(MONETDB5_VERSION_PATCH "4")

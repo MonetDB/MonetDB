@@ -481,6 +481,7 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 	Mapi mid = mapi_settings(settings);
 	if (mid) {
 		settings = NULL; // will be free'd as part of 'mid' now
+		mapi_setclientprefix(mid, "ODBC " MONETDB_VERSION);
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		mapi_set_size_header(mid, true);
 		mapi_reconnect(mid);

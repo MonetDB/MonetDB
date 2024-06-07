@@ -37,7 +37,6 @@ target_include_directories(batstore
 target_link_libraries(batstore
   PRIVATE
   monetdb_config_header
-  mutils
   bat
   sqlcommon
   sqlinclude

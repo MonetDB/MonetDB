@@ -399,7 +399,7 @@ CREATE TABLE sys.key_types (
     key_type_name VARCHAR(35) NOT NULL UNIQUE);
 
 -- Values taken from sql/include/sql_catalog.h see typedef enum
--- key_type: pkey, ukey, fkey.
+-- key_type: pkey, ukey, fkey, unndkey, ckey.
 INSERT INTO sys.key_types (key_type_id, key_type_name) VALUES
   (0, 'Primary Key'),
   (1, 'Unique Key'),

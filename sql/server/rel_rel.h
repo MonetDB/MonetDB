@@ -81,15 +81,20 @@ extern sql_exp *rel_first_column(mvc *sql, sql_rel *rel);
 
 extern sql_rel *rel_inplace_basetable(sql_rel *rel, sql_rel *bt);
 extern sql_rel *rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps);
+extern sql_rel *rel_inplace_setop_n_ary(mvc *sql, sql_rel *rel, list *rl, operator_type setop, list *exps);
 extern sql_rel *rel_inplace_project(allocator *sa, sql_rel *rel, sql_rel *l, list *e);
 extern sql_rel *rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps);
 extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps );
+extern sql_rel *rel_inplace_munion(sql_rel *rel, list *rels);
 extern sql_rel *rel_dup_copy(allocator *sa, sql_rel *rel);
 
 extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, check_type tpe);
 extern sql_rel *rel_setop(allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
 extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
+extern sql_rel *rel_setop_n_ary(allocator *sa, list *rels, operator_type setop);
+extern sql_rel *rel_setop_n_ary_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
+extern void rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
 extern sql_rel *rel_crossproduct(allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
 
 /* in case e is an constant and rel is a simple project of only e, free rel */
@@ -123,7 +128,7 @@ extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oex
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
-extern sql_exp *rel_find_column( allocator *sa, sql_rel *rel, const char *tname, const char *cname );
+extern sql_exp *rel_find_column(mvc *sql, sql_rel *rel, const char *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
 extern sql_rel *rel_parent(sql_rel *rel);

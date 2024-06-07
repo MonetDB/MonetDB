@@ -30,7 +30,7 @@ typedef enum expression_type {
 #define CARD_MULTI 3
 
 typedef struct sql_exp_name {
-	unsigned int label;
+	int label;
 	const char *name;
 	const char *rname;
 } sql_exp_name;
@@ -48,6 +48,7 @@ typedef struct expression {
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
 	unsigned short flag; /* cmp types, PSM types/level */
 	unsigned short tmp;
+	int nid;
 	unsigned int
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:8,	/* free variable, ie binds to the upper dependent join */
@@ -162,6 +163,7 @@ typedef enum operator_type {
 	op_semi,
 	op_anti,
 	op_union,
+	op_munion,
 	op_inter,
 	op_except,
 	op_groupby,
@@ -200,11 +202,13 @@ typedef enum operator_type {
 #define is_joinop(op) 		(is_join(op) || is_semi(op))
 #define is_select(op) 		(op == op_select)
 #define is_set(op) 			(op == op_union || op == op_inter || op == op_except)
+#define is_mset(op) 		(op == op_munion || op == op_inter || op == op_except)
 #define is_union(op) 		(op == op_union)
 #define is_inter(op) 		(op == op_inter)
 #define is_except(op) 		(op == op_except)
+#define is_munion(op) 		(op == op_munion)
 #define is_simple_project(op) 	(op == op_project)
-#define is_project(op) 		(op == op_project || op == op_groupby || is_set(op))
+#define is_project(op) 		(op == op_project || op == op_groupby || is_set(op) || is_munion(op))
 #define is_groupby(op) 		(op == op_groupby)
 #define is_topn(op) 		(op == op_topn)
 #define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate || op == op_merge)
@@ -254,6 +258,9 @@ typedef enum operator_type {
 #define set_selfref(e) 		(e)->selfref = 1
 #define is_basecol(e) 		((e)->base)
 #define set_basecol(e) 		(e)->base = 1
+
+/* o is referenced by r */
+#define is_referenced_by(o,r)	(r->nid && o->alias.label == r->nid)
 
 #define has_label(e)  		((e)->alias.label > 0)
 
