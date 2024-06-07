@@ -2555,21 +2555,25 @@ exp2sql_dquoted(stream *fout, const char *pref, const char *val, const char *suf
 
 /* only simple expressions, ie recursive no psm */
 static void
-exp2sql_print(mvc *sql, stream *fout, sql_exp *e)
+exp2sql_print(mvc *sql, stream *fout, sql_exp *e, int depth)
 {
 	switch (e->type) {
 		case e_func: {
 			sql_subfunc *sf = e->f;
 			list *args = e->l;
 			if (list_length(args) == 2 && is_infix(sf->func)) {
-				exp2sql_print(sql, fout, args->h->data);
+				if (depth)
+					mnstr_printf(fout, "( " );
+				exp2sql_print(sql, fout, args->h->data, depth+1);
 				mnstr_printf(fout, " %s ", sf->func->base.name);
-				exp2sql_print(sql, fout, args->h->next->data);
+				exp2sql_print(sql, fout, args->h->next->data, depth+1);
+				if (depth)
+					mnstr_printf(fout, " )" );
 			} else {
 				exp2sql_dquoted(fout, NULL, sf->func->base.name, "(");
 				if (args)
 					for (node *n = args->h; n; n = n->next) {
-						exp2sql_print(sql, fout, n->data);
+						exp2sql_print(sql, fout, n->data, depth+1);
 						if (n->next)
 							mnstr_printf(fout, ", ");
 					}
@@ -2581,7 +2585,7 @@ exp2sql_print(mvc *sql, stream *fout, sql_exp *e)
 			break;
 		case e_convert:
 			mnstr_printf(fout, "CAST (" );
-			exp2sql_print(sql, fout, e->l);
+			exp2sql_print(sql, fout, e->l, depth+1);
 			mnstr_printf(fout, "AS %s)", sql_subtype_string(sql->sa, exp_subtype(e)));
 			break;
 		case e_atom:
@@ -2609,7 +2613,7 @@ exp2sql( mvc *sql, sql_exp *exp)
 	if(s == NULL)
 		goto cleanup;
 
-	exp2sql_print(sql, s, exp);
+	exp2sql_print(sql, s, exp, 0);
 
 	res = buffer_get_buf(b);
 
