@@ -2511,7 +2511,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		colname = BUNtvar(iteratr,o);
 		tpename = BUNtvar(itertpe,o);
 		b = BATdescriptor(bid);
-		if (b && b->ttype == TYPE_msk) {
+		if (b && (b->ttype == TYPE_msk || (b->ttype == TYPE_void && strcmp(tpename, "oid") != 0))) { /* expect mask before value */
 			bid = *getArgReference_bat(stk,pci,++i);
 			cand = b;
 			b = BATdescriptor(bid);

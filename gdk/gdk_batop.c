@@ -2814,7 +2814,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	if (v == NULL)
+	if (n && v == NULL)
 		return NULL;
 	bn = COLnew(hseq, tailtype, n, role);
 	if (bn != NULL && n > 0) {

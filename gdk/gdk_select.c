@@ -1198,10 +1198,11 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	BAT *pb = NULL;
 	int c;
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(bi->type);
+	const void *nilp = ATOMnilptr(bi->type);
 
-	if (tl && (*atomcmp)(tl, ATOMnilptr(bi->type)) == 0)
+	if (tl && nilp && (*atomcmp)(tl, nilp) == 0)
 		tl = NULL;
-	if (th && (*atomcmp)(th, ATOMnilptr(bi->type)) == 0)
+	if (th && nilp && (*atomcmp)(th, nilp) == 0)
 		th = NULL;
 	if (tl == NULL && th == NULL)
 		return range_contains; /* looking for everything */
@@ -1522,7 +1523,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			ti = lval;
 			lval = hval;
 			hval = ti;
-			lnil = ATOMcmp(t, tl, nil) == 0;
+			lnil = nil && ATOMcmp(t, tl, nil) == 0;
 			anti = false;
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d "
@@ -1754,7 +1755,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
 	if (equi) {
-		double cost = joincost(b, 1, &ci, &havehash, &phash, NULL);
+		double cost = (b->ttype > TYPE_msk)?joincost(b, 1, &ci, &havehash, &phash, NULL):0;
 		if (cost > 0 && cost < ci.ncand) {
 			wanthash = true;
 			if (havehash) {
@@ -2213,7 +2214,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 	BATcheck(op, NULL);
 
 	nil = ATOMnilptr(b->ttype);
-	if (ATOMcmp(b->ttype, val, nil) == 0)
+	if (nil && ATOMcmp(b->ttype, val, nil) == 0)
 		return BATdense(0, 0, 0);
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
 		/* "=" or "==" */

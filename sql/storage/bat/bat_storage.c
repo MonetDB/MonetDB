@@ -1940,13 +1940,15 @@ dup_cs(sql_trans *tr, column_storage *ocs, column_storage *cs, int type, int tem
 
 	if (temp) {
 		cs->bid = temp_copy(cs->bid, true, false);
-		if (cs->bid == BID_NIL)
+		if (cs->ebid)
+			cs->ebid = temp_copy(cs->ebid, true, false);
+		if (cs->bid == BID_NIL || (ocs->ebid && cs->ebid == BID_NIL))
 			return LOG_ERR;
 	} else {
 		temp_dup(cs->bid);
+		if (cs->ebid)
+			temp_dup(cs->ebid);
 	}
-	if (cs->ebid)
-		temp_dup(cs->ebid);
 	cs->ucnt = 0;
 	cs->uibid = e_bat(TYPE_oid);
 	cs->uvbid = e_bat(type);
@@ -3096,6 +3098,12 @@ log_create_delta(sql_trans *tr, sql_delta *bat, sqlid id)
 	bat_destroy(b);
 	if(res != LOG_OK)
 		return res;
+	if (bat->cs.ebid) {
+		BAT *b = temp_descriptor(bat->cs.ebid);
+		bat_set_access(b, BAT_READ);
+		ok = log_bat_persists(store->logger, b, -id);
+		bat_destroy(b);
+	}
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
@@ -3162,7 +3170,6 @@ create_col(sql_trans *tr, sql_column *c)
 		bat->cs.ts = tr->ts;
 		ok = load_cs(tr, &bat->cs, type, c->base.id);
 		if (nonull) {
-			assert(0);
 			int bid = log_find_bat(store->logger, -c->base.id);
 			if (bid <= 0)
 				return LOG_ERR;

@@ -1224,7 +1224,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				if (b->thash) {
 					HASHappend_locked(b, p, t);
 				}
-				if (atomcmp(t, atomnil) != 0) {
+				if (atomnil && atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
 						bi.minpos = bi.maxpos = 0;
 						minvalp = maxvalp = t;

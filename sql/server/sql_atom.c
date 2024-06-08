@@ -269,9 +269,8 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 	a->data.vtype = tpe->type->localtype;
 	assert(a->data.vtype >= 0);
 
+	int type = a->data.vtype;
 	if (!strNil(val)) {
-		int type = a->data.vtype;
-
 		if (type == TYPE_str) {
 			a->data.len = strLen(val);
 			a->data.val.sval = sa_alloc(sa, a->data.len);
@@ -287,9 +286,10 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 		} else {
 			ptr p = NULL;
 			ssize_t res = ATOMfromstr(type, &p, &a->data.len, val, false);
+			const void *nil = ATOMnilptr(type);
 
 			/* no result or nil means error (SQL has NULL not nil) */
-			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
+			if (res < 0 || !p || (nil && ATOMcmp(type, p, nil) == 0)) {
 				GDKfree(p);
 				GDKclrerr();
 				return NULL;
@@ -312,7 +312,9 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 			GDKfree(p);
 		}
 	} else {
-		VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
+		const void *nil = ATOMnilptr(type);
+		if (nil)
+			VALset(&a->data, a->data.vtype, (ptr) nil);
 		a->isnull = 1;
 	}
 	return a;

@@ -1762,21 +1762,40 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			assert(cmptype == cmp_equal || cmptype == cmp_notequal);
 			if (cmptype == cmp_notequal)
 				anti = !anti;
-			q = newStmtArgs(mb, algebraRef, selectRef, 9);
-			if (q == NULL)
-				goto bailout;
-			q = pushArgument(mb, q, l);
-			if (sub && !op1->cand) {
-				q = pushArgument(mb, q, sub->nr);
-			} else {
-				assert(!sub || op1->cand == sub);
-				sub = NULL;
+			if (!op1->cand || !sub || op1->cand == sub) {
+				q = newStmtArgs(mb, algebraRef, selectRef, 9);
+				if (q == NULL)
+					goto bailout;
+				q = pushArgument(mb, q, l);
+				if (sub && !op1->cand) {
+					q = pushArgument(mb, q, sub->nr);
+				} else {
+					assert(!sub || op1->cand == sub);
+					sub = NULL;
+				}
+				q = pushArgument(mb, q, r);
+				q = pushArgument(mb, q, r);
+				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, anti);
+			} else { /* nonull use nil mask */
+				stmt *cands = op1->cand;
+				q = newStmtArgs(mb, algebraRef, selectRef, 9);
+				if (q == NULL)
+					goto bailout;
+				q = pushArgument(mb, q, cands->nr);
+				if (sub) {
+					q = pushArgument(mb, q, sub->nr);
+				} else {
+					sub = NULL;
+				}
+				q = pushMsk(mb, q, TRUE); /* mask true */
+				q = pushMsk(mb, q, TRUE); /* mask true */
+
+				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, anti);
 			}
-			q = pushArgument(mb, q, r);
-			q = pushArgument(mb, q, r);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, anti);
 		} else {
 			q = newStmt(mb, algebraRef, thetaselectRef);
 			if (q == NULL)
@@ -3307,6 +3326,8 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 			tpePtr = pushStr(mb, tpePtr, (t->type->localtype == TYPE_void ? "char" : t->type->base.name));
 			lenPtr = pushInt(mb, lenPtr, t->digits);
 			scalePtr = pushInt(mb, scalePtr, t->scale);
+			if (c->cand)
+				list = pushArgument(mb,list,c->cand->nr);
 			list = pushArgument(mb,list,c->nr);
 		} else
 			return NULL;
