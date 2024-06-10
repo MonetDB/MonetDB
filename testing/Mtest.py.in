@@ -35,6 +35,8 @@ import socket
 import struct
 import signal
 import fnmatch
+import http
+import http.server
 import glob
 import pymonetdb # check for pymonetdb early: it is essential for our work
 
@@ -3240,13 +3242,26 @@ def SetExecEnv(exe,port,verbose) :
         print(end='', flush=True)
 ### SetExecEnv(exe,port,procdebug) #
 
-def StartTlsTester(tsttrgdir):
+def DummyTlsTester():
+    class DummyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
+        def handle(self):
+            self.requestline = ''
+            self.request_version = ''
+            self.command = ''
+            self.send_error(http.HTTPStatus.INTERNAL_SERVER_ERROR, f"{sys.argv[0]} is not running TLSTestter because the 'cryptography' module is not present")
+    server = http.server.HTTPServer(('localhost', 0), DummyHTTPRequestHandler)
+    port = server.server_address[1]
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    return port
+### DummyTlsTester(exe,port,procdebug) #
+
+def StartTlsTester():
     try:
         import cryptography
     except:
-        # continue without so we can at least run the other tests
-        print("cryptography not found!", file=sys.stderr)
-        return None
+        # Start a dummy server that only returns errors.
+        return DummyTlsTester()
     from MonetDBtesting import tlstester
     hostnames = ['localhost']
     certs = tlstester.Certs(hostnames)
@@ -3808,7 +3823,7 @@ def main(argv) :
 
     # start tlstester
     if not env.get('TST_TLSTESTERPORT'):
-        tlstester_port = StartTlsTester(os.path.join(TSTTRGBASE, TSTPREF))
+        tlstester_port = StartTlsTester()
         if tlstester_port:
             env['TST_TLSTESTERPORT'] = str(tlstester_port)
     if env.get('TST_TLSTESTERPORT'):
