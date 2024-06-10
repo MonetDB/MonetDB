@@ -3250,14 +3250,6 @@ def StartTlsTester(tsttrgdir):
     from MonetDBtesting import tlstester
     hostnames = ['localhost']
     certs = tlstester.Certs(hostnames)
-    certsdir = os.path.join(tsttrgdir, "certs")
-    try:
-        os.mkdir(certsdir)
-    except FileExistsError:
-        pass
-    for name, content in certs.all().items():
-        with open(os.path.join(certsdir, name), "wb") as f:
-            f.write(content)
     server = tlstester.TLSTester(
         certs = certs,
         listen_addr='localhost',
@@ -3267,7 +3259,6 @@ def StartTlsTester(tsttrgdir):
     server_thread = threading.Thread(target=server.serve_forever, daemon=True)
     server_thread.start()
     return server.get_port('base')
-
 ### StartTlsTester() #
 
 #############################################################################
