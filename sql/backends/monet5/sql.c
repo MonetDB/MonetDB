@@ -2430,6 +2430,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		nr_parts = *getArgReference_int(stk, pci, 5);
 	}
 	BAT *b = store->storage_api.bind_cands(tr, t, nr_parts, part_nr);
+	b->tunique_est = BATcount(b);
 	if (b) {
 		*res = b->batCacheid;
 		BBPkeepref(b);

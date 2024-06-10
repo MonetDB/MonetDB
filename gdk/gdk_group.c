@@ -1282,6 +1282,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		en->trevsorted = ngrp == 1;
 		en->tnonil = true;
 		en->tnil = false;
+		en->tunique_est = ngrp;
 		*extents = virtualize(en);
 	}
 	if (histo) {
@@ -1304,7 +1305,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	gn->tnonil = true;
 	gn->tnil = false;
 	gn->tmaxpos = maxgrppos;
+	gn->tunique_est = ngrp;
 	*groups = gn;
+	if (!g && !e && !s) {
+		b->tunique_est = ngrp;
+	}
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
 		  ",h=" ALGOOPTBATFMT ",subsorted=%s -> groups="
