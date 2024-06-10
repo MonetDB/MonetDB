@@ -14,9 +14,8 @@ import os
 import re
 import subprocess
 import sys
-import urllib.request
 
-from MonetDBtesting import tlstester
+from MonetDBtesting.tlstester import TLSTesterClient
 
 level = logging.WARNING
 # if sys.platform == 'win32':
@@ -31,50 +30,6 @@ tgtdir = os.environ['TSTTRGDIR']
 assert os.path.isdir(tgtdir)
 scratchdir = os.path.join(tgtdir, "scratch")
 logging.debug(f"scratchdir={scratchdir}")
-
-class TLSTesterClient:
-    """Connect to TLSTester to figure out port numbers and download certificates"""
-    def __init__(self, scratchdir, base_port=None, host='localhost'):
-        if not base_port:
-            base_port = os.environ['TST_TLSTESTERPORT']
-        self.url = f'http://{host}:{base_port}/'
-        self.scratch = scratchdir
-        try:
-            os.mkdir(scratchdir)
-        except FileExistsError:
-            pass
-        self.filenames = dict()
-        self.contents = dict()
-        self.portmap = dict()
-        for line in self.fetch('').splitlines():
-            name, port = str(line, 'ascii').split(':', 1)
-            self.portmap[name] = int(port)
-            logging.debug(f'port {name} = {port}')
-
-    def get_port(self, name):
-        return self.portmap[name]
-
-    def fetch(self, name):
-        cached = self.contents.get(name)
-        if cached is not None:
-            return cached
-        url = self.url + name
-        logging.debug(f'fetch {url}')
-        with urllib.request.urlopen(url) as response:
-            content = response.read()
-            self.contents[name] = content
-            return content
-
-    def download(self, name):
-        cached = self.filenames.get(name)
-        if cached:
-            return cached
-        content = self.fetch(name)
-        path = os.path.join(self.scratch, name)
-        with open(path, 'wb') as f:
-            f.write(content)
-        self.filenames[name] = path
-        return path
 
 tlstester = TLSTesterClient(scratchdir)
 
