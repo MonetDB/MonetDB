@@ -127,7 +127,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			 * double-eliminated area */
 			BUN ecnt = ci->ncand;
 			if (ni->b->tunique_est > 0 && ecnt > ni->b->tunique_est)
-				ecnt = ni->b->tunique_est;
+				ecnt = (BUN)ni->b->tunique_est;
 			if (r < ecnt)
 				len = GDK_ELIMLIMIT + (ecnt - r) * len;
 			else
