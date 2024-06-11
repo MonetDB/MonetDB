@@ -172,6 +172,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
+		bn->tunique_est = b->tunique_est;
 		bn->unused = (pieces - 1);	/* misuse "unused" field */
 		BBPunfix(b->batCacheid);
 		if (bn->tnil && bn->tnonil) {
@@ -208,6 +209,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
 		BBPunfix(bb->batCacheid);
+		b->tunique_est += bb->tunique_est;
 		b->unused--;
 		if (b->unused == 0 && (b = BATsetaccess(b, BAT_READ)) == NULL)
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
