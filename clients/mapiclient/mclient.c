@@ -3763,6 +3763,8 @@ main(int argc, char **argv)
 	}
 
 	mapi_destroy(mid);
+	if (toConsole != stdout_stream && toConsole != stderr_stream)
+		close_stream(toConsole);
 	mnstr_destroy(stdout_stream);
 	mnstr_destroy(stderr_stream);
 	if (priv.buf != NULL)
