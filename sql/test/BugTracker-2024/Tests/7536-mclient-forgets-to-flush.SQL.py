@@ -13,7 +13,6 @@ SELECT 'Donald Knuth';
 
 
 with tempfile.TemporaryDirectory('mtest') as dir:
-    dir = '/tmp/jvr'
     outputfile = os.path.join(dir, 'output.txt.gz')
     inputfile = os.path.join(dir, 'input.sql')
 
