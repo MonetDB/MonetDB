@@ -542,7 +542,7 @@ class WebHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
-    def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
+    def log_request(self, code = "-", size = "-"):
         # be silent
         pass
 
