@@ -38215,8 +38215,13 @@ SQLstddev_pop;
 return the standard deviation population of groups
 sql
 stop_vacuum
+unsafe pattern sql.stop_vacuum(X_0:str, X_1:str):void
+SQLstr_stop_vacuum;
+stop auto vacuum
+sql
+stop_vacuum
 unsafe pattern sql.stop_vacuum(X_0:str, X_1:str, X_2:str):void
-SQLstr_column_stop_vacuum;
+SQLstr_stop_vacuum;
 stop auto vacuum
 sql
 storage
@@ -38350,8 +38355,13 @@ SYSupdate_tables;
 Procedure triggered on update of the sys._tables table
 sql
 vacuum
+unsafe pattern sql.vacuum(X_0:str, X_1:str, X_2:int):void
+SQLstr_auto_vacuum;
+auto vacuum string column of given table with interval(sec)
+sql
+vacuum
 unsafe pattern sql.vacuum(X_0:str, X_1:str, X_2:str, X_3:int):void
-SQLstr_column_auto_vacuum;
+SQLstr_auto_vacuum;
 auto vacuum string column with interval(sec)
 sql
 vacuum

@@ -188,7 +188,8 @@ typedef void *(*del_dup_fptr) (sql_table *t);
 typedef int (*upgrade_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*upgrade_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*upgrade_del_fptr) (sql_trans *tr, sql_table *t);
-typedef int (*swap_bats_fptr) (sql_trans *tr, sql_column *c, BAT *b);
+typedef int (*vacuum_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*vacuum_tab_fptr) (sql_trans *tr, sql_table *t);
 
 /*
 -- free the storage resources for columns, indices and tables
@@ -277,7 +278,8 @@ typedef struct store_functions {
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;
 	upgrade_del_fptr upgrade_del;
-	swap_bats_fptr swap_bats;
+	vacuum_col_fptr vacuum_col;
+	vacuum_tab_fptr vacuum_tab;
 } store_functions;
 
 typedef int (*log_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);

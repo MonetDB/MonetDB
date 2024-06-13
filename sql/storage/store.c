@@ -7304,6 +7304,7 @@ sql_trans_end(sql_session *s, int ok)
 	int res = SQL_OK;
 	TRC_DEBUG(SQL_STORE, "End of transaction: " ULLFMT "\n", s->tr->tid);
 	if (ok == SQL_OK) {
+		assert(!s->status && !s->tr->status);
 		res = sql_trans_commit(s->tr);
 	}
 	if (ok == SQL_ERR || res != SQL_OK) /* if a conflict happened, it was already rollbacked */
