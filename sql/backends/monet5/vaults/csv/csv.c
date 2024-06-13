@@ -344,6 +344,12 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 			types = ntypes;
 		nr_lines++;
 	}
+	if (types) { /* NULL -> STRING */
+		for(int i = 0; i<nr_fields; i++) {
+			if (types[i].type == CSV_NULL)
+				types[i].type = CSV_STRING;
+		}
+	}
 	return types;
 }
 
