@@ -79,3 +79,8 @@ create procedure sys.vacuum(sname string, tname string, cname string, interval i
 external name sql.vacuum;
 create procedure sys.stop_vacuum(sname string, tname string, cname string)
 external name sql.stop_vacuum;
+
+create procedure sys.vacuum(sname string, tname string, interval int)
+external name sql.vacuum;
+create procedure sys.stop_vacuum(sname string, tname string)
+external name sql.stop_vacuum;
