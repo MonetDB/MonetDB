@@ -6286,6 +6286,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 
 		if ((res = new_column(tr, col, &dup)))
 			return res;
+		col = dup;
 		dup->null = isnull;
 
 		/* disallow concurrent updates on the column if not null is set */
@@ -6296,7 +6297,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 			return res;
 		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql functions depending on the table */
 			return res;
-		if (isNew(col) || isnull)
+		if (isNew(col) || isnull) /* new ie can still change, or persistent only widen semantics */
 			store->storage_api.col_not_null(tr, col, !isnull);
 	}
 	return res;
