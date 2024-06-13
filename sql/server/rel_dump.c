@@ -431,12 +431,13 @@ exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias,
 			if (expbrk && en->next!=NULL)
 				print_indent(sql, fout, depth+2, decorate);
 		}
-	if (expbrk)
+	int multi_exps = expbrk && (list_length(exps) > 1);
+	if (multi_exps)
 		print_indent(sql, fout, depth+1, decorate);
 	if (brackets)
 		mnstr_printf(fout, ")");
 	else
-		mnstr_printf(fout, expbrk?"]":" ]");
+		mnstr_printf(fout, multi_exps?"]":" ]");
 }
 
 static int
