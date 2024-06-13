@@ -4962,13 +4962,15 @@ do_str_table_vacuum(sql_trans *tr, sql_table *t)
 }
 
 static str
-SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLstr_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = NULL;
 	char *sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
-	char *cname = *getArgReference_str(stk, pci, 3);
+	char *cname = NULL;
+	if (pci->argc == 4)
+		cname = *getArgReference_str(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4981,26 +4983,31 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_column *c = NULL;
 
 	if (strNil(sname))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
 	if (strNil(tname))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
 	if (strNil(cname))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
+		throw(SQL, "sql.str_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
 	if (!isTable(t))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (isTempTable(t))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
-	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
-	if (c->storage_type)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
+	if (cname) {
+		if ((c = mvc_bind_column(m, t, cname)) == NULL)
+			throw(SQL, "sql.str_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
+		if (c->storage_type)
+			throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
+	}
 
-	return do_str_column_vacuum(tr, c);
+	if (c)
+		return do_str_column_vacuum(tr, c);
+	else
+		return do_str_table_vacuum(tr, t);
 }
 
 
@@ -6223,9 +6230,10 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, arg("",dbl),arg("b",hge),arg("c",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),optbatarg("b",hge),optbatarg("c",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
 #endif
- pattern("sql", "vacuum", SQLstr_column_vacuum, true, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "vacuum", SQLstr_vacuum, true, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "vacuum", SQLstr_auto_vacuum, true, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
  pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "vacuum", SQLstr_vacuum, true, "vacuum a string column", args(0,2, arg("sname",str),arg("tname",str))),
  pattern("sql", "vacuum", SQLstr_auto_vacuum, true, "auto vacuum string column of given table with interval(sec)", args(0,3, arg("sname",str),arg("tname",str),arg("interval", int))),
  pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,2, arg("sname",str),arg("tname",str))),
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
