@@ -6,7 +6,7 @@ import subprocess
 
 # This SQL script redirects the output to a file (the %s).
 # We will check that all output arrives there, even if it's a gzipped file.
-SCRIPT = f"""\
+SCRIPT = """\
 \>%s
 SELECT 'Donald Knuth';
 """
@@ -19,16 +19,13 @@ with tempfile.TemporaryDirectory('mtest') as dir:
     with open(inputfile, 'w') as f:
         f.write(SCRIPT % outputfile)
 
-    with open(inputfile) as f:
-        subprocess.check_call([
-            'mclient', '-i',
-            inputfile,
-            '-p', os.environ['MAPIPORT'],
-        ])
+    subprocess.check_call([
+        'mclient', '-i',
+        '-p', os.environ['MAPIPORT'],
+        inputfile,
+    ])
 
     with gzip.open(outputfile, 'rt', encoding='utf-8') as f:
         content = f.read()
-
-    # print(content)
 
     assert 'Donald Knuth' in content
