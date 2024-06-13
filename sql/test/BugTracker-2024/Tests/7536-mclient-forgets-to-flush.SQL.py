@@ -6,7 +6,7 @@ import subprocess
 
 # This SQL script redirects the output to a file (the %s).
 # We will check that all output arrives there, even if it's a gzipped file.
-SCRIPT = """\
+SCRIPT = r"""
 \>%s
 SELECT 'Donald Knuth';
 """
