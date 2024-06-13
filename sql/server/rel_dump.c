@@ -110,7 +110,7 @@ dump_sql_subtype(allocator *sa, sql_subtype *t)
 	return sa_strdup(sa, buf);
 }
 
-static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate);
+static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate, int expbrk);
 
 static void rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate);
 
@@ -153,14 +153,14 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		} else if (e->flag & PSM_WHILE) {
 			mnstr_printf(fout, "while ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0, decorate);
-			exps_print(sql, fout, e->r, depth, refs, 0, 0, decorate);
+			exps_print(sql, fout, e->r, depth, refs, 0, 0, decorate, 0);
 			alias = 0;
 		} else if (e->flag & PSM_IF) {
 			mnstr_printf(fout, "if ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0, decorate);
-			exps_print(sql, fout, e->r, depth, refs, 0, 0, decorate);
+			exps_print(sql, fout, e->r, depth, refs, 0, 0, decorate, 0);
 			if (e->f)
-				exps_print(sql, fout, e->f, depth, refs, 0, 0, decorate);
+				exps_print(sql, fout, e->f, depth, refs, 0, 0, decorate, 0);
 			alias = 0;
 		} else if (e->flag & PSM_REL) {
 			rel_print_rel(sql, fout, e->l, depth+10, refs, 1);
@@ -209,7 +209,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, vname->name));
 			} else if (e->f) {	/* values list */
 				list *l = e->f;
-				exps_print(sql, fout, l, depth, refs, 0, 0, decorate);
+				exps_print(sql, fout, l, depth, refs, 0, 0, decorate, 0);
 			} else { /* numbered arguments */
 				mnstr_printf(fout, "A%u", e->flag);
 			}
@@ -220,11 +220,11 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, "\"%s\".\"%s\"",
 				f->func->s?dump_escape_ident(sql->ta, f->func->s->base.name):"sys",
 				dump_escape_ident(sql->ta, f->func->base.name));
-		exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate);
+		exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 		if (e->r) { /* list of optional lists */
 			list *l = e->r;
 			for(node *n = l->h; n; n = n->next)
-				exps_print(sql, fout, n->data, depth, refs, 0, 1, decorate);
+				exps_print(sql, fout, n->data, depth, refs, 0, 1, decorate, 0);
 		}
 		if (e->flag && is_compare_func(f))
 			mnstr_printf(fout, " %s", e->flag==1?"ANY":"ALL");
@@ -241,7 +241,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		if (zero_if_empty(e))
 			mnstr_printf(fout, " zero if empty ");
 		if (e->l)
-			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate);
+			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 		else
 			mnstr_printf(fout, "()");
 	} break;
@@ -268,23 +268,23 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, e->flag);
-			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate);
+			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
 		} else if (e->flag == cmp_or) {
-			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate);
+			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, e->flag);
-			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate);
+			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
 		} else if (e->flag == cmp_filter) {
 			sql_subfunc *f = e->f;
 
-			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate);
+			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
 			mnstr_printf(fout, " FILTER \"%s\".\"%s\"",
 					f->func->s?dump_escape_ident(sql->ta, f->func->s->base.name):"sys",
 					dump_escape_ident(sql->ta, f->func->base.name));
-			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate);
+			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
 		} else if (e->f) {
 			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0, decorate);
@@ -416,7 +416,7 @@ cleanup:
 }
 
 static void
-exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate)
+exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate, int expbrk)
 {
 	node *en;
 
@@ -425,12 +425,18 @@ exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias,
 	else
 		mnstr_printf(fout, " [ ");
 	if (exps)
-		for (en = exps->h; en; en = en->next)
+		for (en = exps->h; en; en = en->next){
 			exp_print(sql, fout, en->data, depth+1, refs, (en->next!=NULL), alias, decorate);
+			/* break for each entry of the expression list */
+			if (expbrk && en->next!=NULL)
+				print_indent(sql, fout, depth+2, decorate);
+		}
+	if (expbrk)
+		print_indent(sql, fout, depth+1, decorate);
 	if (brackets)
 		mnstr_printf(fout, ")");
 	else
-		mnstr_printf(fout, " ]");
+		mnstr_printf(fout, expbrk?"]":" ]");
 }
 
 static int
@@ -488,7 +494,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 				isReplicaTable(t)?"REPLICA":"table",
 				dump_escape_ident(sql->ta, tname));
 		if (rel->exps)
-			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate);
+			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
 		else
 			rel_base_dump_exps(fout, rel);
 	} 	break;
@@ -506,7 +512,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
 		if (rel->exps)
-			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate);
+			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
 		break;
 	case op_ddl:
 		mnstr_printf(fout, "ddl");
@@ -515,7 +521,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->r)
 			rel_print_rel(sql, fout, rel->r, depth+1, refs, decorate);
 		if (rel->exps && (rel->flag == ddl_psm || rel->flag == ddl_exception || rel->flag == ddl_list))
-			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate);
+			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
 		break;
 	case op_join:
 	case op_left:
@@ -574,9 +580,9 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
-		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate);
+		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
 		if (is_join(rel->op) && rel->attr) /* group joins */
-			exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate);
+			exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate, 0);
 		break;
 	case op_munion:
 		r = "munion";
@@ -599,7 +605,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
-		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate);
+		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
 		break;
 	case op_project:
 	case op_select:
@@ -630,10 +636,10 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			mnstr_printf(fout, ")");
 		}
 		if (rel->op == op_groupby)  /* group by columns */
-			exps_print(sql, fout, rel->r, depth, refs, 1, 0, decorate);
-		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate);
+			exps_print(sql, fout, rel->r, depth, refs, 1, 0, decorate, 0);
+		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
 		if (rel->r && rel->op == op_project) /* order by columns */
-			exps_print(sql, fout, rel->r, depth, refs, 1, 0, decorate);
+			exps_print(sql, fout, rel->r, depth, refs, 1, 0, decorate, 0);
 		break;
 	case op_insert:
 	case op_update:
@@ -677,7 +683,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
 		if (rel->op != op_truncate && rel->op != op_merge && rel->exps)
-			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate);
+			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
 	} 	break;
 	default:
 		assert(0);
