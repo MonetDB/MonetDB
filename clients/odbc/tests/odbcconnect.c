@@ -28,14 +28,13 @@ static const char *USAGE =
 	"Usage:\n"
 	"        odbcconnect [-d | -c | -b ] [-v] [-u USER] [-p PASSWORD] TARGET..\n"
 	"Options:\n"
-	"        -d              Target is DSN, call SQLConnect()\n"
-	"        -c              Target is connection string, call SQLDriverConnect()\n"
+	"        -d              Target is connection string, call SQLDriverConnect()\n"
 	"        -b              Target is connection string, call SQLBrowseConnect()\n"
 	"        -l              List registered drivers and data sources\n"
 	"        -u USER\n"
 	"        -p PASSWORD\n"
 	"        -v              Be verbose\n"
-	"        TARGET          Connection String or DSN\n";
+	"        TARGET          DSN or with -d and -b, Connection String\n";
 
 typedef int (action_t)(SQLCHAR *);
 
@@ -84,8 +83,6 @@ main(int argc, char **argv)
 	for (int i = 1; i < argc; i++) {
 		char *arg = argv[i];
 		if (strcmp(arg, "-d") == 0)
-			action = do_sqlconnect;
-		else if (strcmp(arg, "-c") == 0)
 			action = do_sqldriverconnect;
 		else if (strcmp(arg, "-b") == 0)
 			action = do_sqlbrowseconnect;
