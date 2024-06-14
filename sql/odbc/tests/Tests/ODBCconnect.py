@@ -22,7 +22,9 @@ class Execution:
     def __init__(self, *odbcconnect_args):
         cmd = self.cmd = ['odbcconnect', *odbcconnect_args]
         proc = self.proc = subprocess.run(
-            cmd, capture_output=True, encoding='utf-8')
+            cmd,
+            stderr=subprocess.PIPE, stdout=subprocess.PIPE,
+            encoding='utf-8')
         self.expected_exitcode = 0
         self.remaining = proc.stdout.splitlines()
         self.checks = []
