@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Jun 14 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Extend CREATE USER MAX_MEMORY and ALTER USER MAX_MEMORY to accept
+  strings of the form '10MiB', '10G', etc.
+
 * Mon May 13 2024 Niels Nes <niels@cwi.nl>
 - Extended sys.generate_series() to generate dates. Added 2 new functions:
   sys.generate_series(first date, "limit" date, stepsize interval month) and
