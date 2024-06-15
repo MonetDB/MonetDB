@@ -2863,6 +2863,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			if (ls_is_non_null_atom || rs_is_non_null_atom) {
 				sql_rel *r = rel_dup(rel);
 				sql_rel* l = rel_compare(query, rel, sc, lo, ro, compare_op, f | sql_or, ek, quantifier, 0);
+				if (!l)
+					return NULL;
 				sql_subtype *t;
 				if (!(t = exp_subtype(rs_is_non_null_atom?ls:rs)))
 					return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter for IS NULL operator");
@@ -2871,7 +2873,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				set_semantics(e);
 
 				r = rel_select_push_compare_exp_down(sql, r, e, e->l, e->r, NULL, f | sql_or);
-
+				if (!r)
+					return NULL;
 				return rel_or(sql, rel, l, r, NULL, NULL, NULL);
 			}
 		}

@@ -65,3 +65,4 @@ field-arg-error-Bug-7506
 7535-create-view-groupby-func
 7536-mclient-forgets-to-flush
 7538-reduce-cast
+7539-is-distinct-from
