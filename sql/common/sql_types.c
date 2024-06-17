@@ -1050,6 +1050,13 @@ sqltypeinit( allocator *sa)
 		sql_create_func(sa, "right_shift", "geom", "mbrRight", TRUE, FALSE, SCALE_FIX, 0, BIT, 2, MBR, MBR);
 	}
 
+	*t++ = sql_create_type(sa, "UTINYINT",   8, SCALE_FIX, 2, EC_NUM, "ubte");
+	*t++ = sql_create_type(sa, "USMALLINT", 16, SCALE_FIX, 2, EC_NUM, "usht");
+	*t++ = sql_create_type(sa, "UINT",      32, SCALE_FIX, 2, EC_NUM, "uint");
+	*t++ = sql_create_type(sa, "UBIGINT",   64, SCALE_FIX, 2, EC_NUM, "ulng");
+#ifdef HAVE_HGE
+		*t++ = sql_create_type(sa, "UHUGEINT",  128, SCALE_FIX, 2, EC_NUM, "uhge");
+#endif
 	*t = NULL;
 
 	/* The grouping aggregate doesn't have a backend implementation. It gets replaced at rel_unnest */

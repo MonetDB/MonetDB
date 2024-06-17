@@ -431,15 +431,20 @@ enum {
 	TYPE_msk,		/* bit mask */
 	TYPE_bit,		/* TRUE, FALSE, or nil */
 	TYPE_bte,
+	TYPE_ubte,
 	TYPE_sht,
+	TYPE_usht,
 	TYPE_int,
+	TYPE_uint,
 	TYPE_oid,
 	TYPE_ptr,		/* C pointer! */
 	TYPE_flt,
 	TYPE_dbl,
 	TYPE_lng,
+	TYPE_ulng,
 #ifdef HAVE_HGE
 	TYPE_hge,
+	TYPE_uhge,
 #endif
 	TYPE_date,
 	TYPE_daytime,
@@ -718,6 +723,7 @@ typedef struct {
 	bool key:1,		/* no duplicate values present */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
+		nilmask:1,	/* bat has nils seperated */
 		sorted:1,	/* column is sorted in ascending order */
 		revsorted:1,	/* column is sorted in descending order */
 		ascii:1;	/* string column is fully ASCII (7 bit) */
