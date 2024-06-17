@@ -950,7 +950,7 @@ rel_project_reduce_casts(visitor *v, global_props *gp, sql_rel *rel)
 						atom *a = ha ? ha : ta;
 						atom *na = reduce_scale(v->sql, a);
 
-						if (na != a) {
+						if (na && na != a) {
 							int rs = a->tpe.scale - na->tpe.scale;
 							res->scale -= rs;
 							if (ha) {

@@ -61,4 +61,9 @@ field-arg-error-Bug-7506
 7514-wrong-window-function
 7524-right-outer-join
 7528-jarowinkler-null
+7534-is-distinct-from
 7535-create-view-groupby-func
+7536-mclient-forgets-to-flush
+7538-reduce-cast
+7539-is-distinct-from
+7537-prepare_stmt_with_dropped_table

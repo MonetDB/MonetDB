@@ -449,3 +449,46 @@ UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_type
 Running database upgrade commands:
 ALTER TABLE sys.key_types SET READ ONLY;
 
+Running database upgrade commands:
+DROP VIEW information_schema.check_constraints CASCADE;
+DROP VIEW information_schema.table_constraints CASCADE;
+CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT
+  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,
+  s."name" AS CONSTRAINT_SCHEMA,
+  k."name" AS CONSTRAINT_NAME,
+  cast(sys.check_constraint(s."name", k."name") AS varchar(2048)) AS CHECK_CLAUSE,
+  t."schema_id" AS schema_id,
+  t."id" AS table_id,
+  t."name" AS table_name,
+  k."id" AS key_id
+ FROM (SELECT sk."id", sk."table_id", sk."name" FROM sys."keys" sk WHERE sk."type" = 4 UNION ALL SELECT tk."id", tk."table_id", tk."name" FROM tmp."keys" tk WHERE tk."type" = 4) k
+ INNER JOIN (SELECT st."id", st."schema_id", st."name" FROM sys."_tables" st UNION ALL SELECT tt."id", tt."schema_id", tt."name" FROM tmp."_tables" tt) t ON k."table_id" = t."id"
+ INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
+ ORDER BY s."name", t."name", k."name";
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHECK_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;
+CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT
+  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,
+  s."name" AS CONSTRAINT_SCHEMA,
+  k."name" AS CONSTRAINT_NAME,
+  cast(NULL AS varchar(1)) AS TABLE_CATALOG,
+  s."name" AS TABLE_SCHEMA,
+  t."name" AS TABLE_NAME,
+  cast(CASE k."type" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' WHEN 3 THEN 'UNIQUE NULLS NOT DISTINCT' WHEN 4 THEN 'CHECK' ELSE NULL END AS varchar(26)) AS CONSTRAINT_TYPE,
+  cast('NO' AS varchar(3)) AS IS_DEFERRABLE,
+  cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,
+  cast('YES' AS varchar(3)) AS ENFORCED,
+  t."schema_id" AS schema_id,
+  t."id" AS table_id,
+  k."id" AS key_id,
+  k."type" AS key_type,
+  t."system" AS is_system
+ FROM (SELECT sk."id", sk."table_id", sk."name", sk."type" FROM sys."keys" sk UNION ALL SELECT tk."id", tk."table_id", tk."name", tk."type" FROM tmp."keys" tk) k
+ INNER JOIN (SELECT st."id", st."schema_id", st."name", st."system" FROM sys."_tables" st UNION ALL SELECT tt."id", tt."schema_id", tt."name", tt."system" FROM tmp."_tables" tt) t ON k."table_id" = t."id"
+ INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
+ ORDER BY s."name", t."name", k."name";
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;
+
+UPDATE sys._tables SET system = true where system <> true
+ and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')
+ and name in ('check_constraints','table_constraints');
+

@@ -110,18 +110,6 @@ int getErrorRecCount(ODBCError *error);
 void appendODBCError(ODBCError **head, ODBCError *err);
 
 
-#if 0				/* unused */
-/*
- * Prepends a valid ODBCError object 'this' to the front of the list
- * of a valid ODBCError object 'head' and return the new head.
- *
- * Precondition: both head and this must be valid (non NULL)
- * Returns: the new head (which is the same as the prepended 'this').
- */
-void prependODBCError(ODBCError **head, ODBCError *err);
-#endif
-
-
 /*
  * Frees the ODBCError object including its linked ODBCError objects.
  *
