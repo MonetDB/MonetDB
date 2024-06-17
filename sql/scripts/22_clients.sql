@@ -44,13 +44,13 @@ create view sys.sessions as select * from sys.sessions();
 create procedure sys.setclientinfo(property string, value string)
 	external name clients.setinfo;
 grant execute on procedure sys.setclientinfo(string, string) to public;
-create table sys.clientinfo_properties(prop string);
+create table sys.clientinfo_properties(prop string, session_attr string);
 insert into sys.clientinfo_properties values
-	('ClientHostname'),
-	('ApplicationName'),
-	('ClientLibrary'),
-	('ClientRemark'),
-	('ClientPid');
+	('ClientHostname', 'hostname'),
+	('ApplicationName', 'application'),
+	('ClientLibrary', 'client'),
+	('ClientRemark', 'remark'),
+	('ClientPid', 'clientpid');
 
 -- routines to bring the system down quickly
 create procedure sys.shutdown(delay tinyint)
