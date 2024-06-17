@@ -300,6 +300,8 @@ typedef struct sql_schema {
 } sql_schema;
 
 typedef struct sql_catalog {
+	ATOMIC_TYPE schema_version;
+
 	struct objectset *schemas;
 	struct objectset *objects;
 } sql_catalog;
@@ -753,6 +755,7 @@ typedef struct sql_session {
 	char *def_schema_name; /* users default schema name */
 	char *schema_name; /* transaction's schema name */
 	sql_schema *schema;
+	ATOMIC_TYPE schema_version;
 
 	char ac_on_commit;	/* if 1, auto_commit should be enabled on
 	                           commit, rollback, etc. */
