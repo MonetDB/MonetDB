@@ -3875,6 +3875,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 		store->cat = tr->cat = ZNEW(sql_catalog);
 		store->cat->schemas = os_new(NULL, (destroy_fptr) &schema_destroy, false, true, true, true, store);
 		store->cat->objects = os_new(NULL, (destroy_fptr) &key_destroy, false, false, true, false, store);
+		ATOMIC_INIT(&store->cat->schema_version, 0);
 	}
 	tr->tmp = store->tmp;
 	TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
@@ -6330,6 +6331,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 
 		if ((res = new_column(tr, col, &dup)))
 			return res;
+		col = dup;
 		dup->null = isnull;
 
 		/* disallow concurrent updates on the column if not null is set */
@@ -6340,7 +6342,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 			return res;
 		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql functions depending on the table */
 			return res;
-		if (isNew(col) || isnull)
+		if (isNew(col) || isnull) /* new ie can still change, or persistent only widen semantics */
 			store->storage_api.col_not_null(tr, col, !isnull);
 	}
 	return res;
@@ -7289,13 +7291,17 @@ sql_trans_begin(sql_session *s)
 	}
 	tr->active = 1;
 
+	int res = ATOMIC_GET(&s->schema_version) ?
+		ATOMIC_GET(&s->schema_version) != ATOMIC_GET(&tr->cat->schema_version) : 0;
+	ATOMIC_SET(&s->schema_version, tr->cat->schema_version);
+
 	ATOMIC_INC(&store->nr_active);
 	list_append(store->active, tr);
 
 	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	store_unlock(store);
 	s->status = tr->status = 0;
-	return 0;
+	return res;
 }
 
 int

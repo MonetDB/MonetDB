@@ -165,6 +165,27 @@ uescape_xform(char *restrict s, const char *restrict esc)
 	return s;
 }
 
+static lng
+size_unit(const char *suffix)
+{
+	if (suffix[0] == '\0')
+		return 1;
+	else if (strcasecmp("k", suffix) == 0)
+		return 1000L;
+	else if (strcasecmp("kib", suffix) == 0)
+		return 1024L;
+	else if (strcasecmp("m", suffix) == 0)
+		return 1000L * 1000L;
+	else if (strcasecmp("mib", suffix) == 0)
+		return 1024L * 1024L;
+	else if (strcasecmp("g", suffix) == 0)
+		return 1000L * 1000L * 1000L;
+	else if (strcasecmp("gib", suffix) == 0)
+		return 1024L * 1024L * 1024L;
+	else
+		return -1;
+}
+
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -1619,6 +1640,17 @@ opt_max_memory:
     /* empty */         { $$ = -1; }
  |  NO MAX_MEMORY       { $$ = 0; }
  |  MAX_MEMORY poslng   { $$ = $2; }
+ |  MAX_MEMORY string   {
+		char *end = NULL;
+		lng size = strtoll($2, &end, 10);
+		lng unit = size_unit(end);
+		if (unit < 0 || size < 0) {
+			$$ = -1;
+			yyerror(m, "Invalid size");
+			YYABORT;
+		}
+		$$ = size * unit;
+	}
  ;
 
 opt_max_workers:

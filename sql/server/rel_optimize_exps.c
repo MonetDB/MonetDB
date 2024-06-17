@@ -422,6 +422,8 @@ reduce_scale(mvc *sql, atom *a)
 		na = atom_int(sql->sa, &a->tpe, nval);
 		if (na->tpe.scale)
 			na->tpe.scale -= i;
+		else
+			return NULL;
 	}
 	return na;
 }
