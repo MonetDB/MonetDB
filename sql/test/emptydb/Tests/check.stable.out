@@ -935,6 +935,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys._columns",	"sys",	"auths",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"auths",	"grantor",	"int",	31,	0,	NULL,	true,	2,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"clientinfo_properties",	"prop",	"varchar",	0,	0,	NULL,	true,	0,	NULL,	NULL	]
+[ "sys._columns",	"sys",	"clientinfo_properties",	"session_attr",	"varchar",	0,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"columns",	"id",	"int",	31,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"columns",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"columns",	"type",	"varchar",	1024,	0,	NULL,	true,	2,	NULL,	NULL	]
