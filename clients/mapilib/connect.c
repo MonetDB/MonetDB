@@ -429,7 +429,7 @@ send_all_clientinfo(Mapi mid)
 	size_t pos = 0, cap = 200;
 
 	if (hostname[0])
-		reallocprintf(&buf, &pos, &cap, "ClientHostName=%s\n", hostname);
+		reallocprintf(&buf, &pos, &cap, "ClientHostname=%s\n", hostname);
 	if (application_name[0])
 		reallocprintf(&buf, &pos, &cap, "ApplicationName=%s\n", application_name);
 	reallocprintf(&buf, &pos, &cap, "ClientLibrary=");

@@ -2875,7 +2875,7 @@ ignorecase(const bat *ic_id, bool *icase, str fname)
 	if ((c = BATdescriptor(*ic_id)) == NULL)
 		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	assert(BATcount(c) == 1);
+	assert(BATcount(c) >= 1);
 
 	BATiter bi = bat_iterator(c);
 	*icase = *(bit *) BUNtloc(bi, 0);
