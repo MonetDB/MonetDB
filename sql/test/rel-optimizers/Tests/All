@@ -12,3 +12,5 @@ remote-replica-plan
 remote-replica
 merge-unions-base
 merge-unions
+select-cse-merge-ors-base
+select-cse-merge-ors

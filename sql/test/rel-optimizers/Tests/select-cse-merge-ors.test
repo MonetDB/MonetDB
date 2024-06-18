@@ -1,0 +1,164 @@
+query T nosort
+plan select * from f 
+where n = 1 
+   or n = 2 
+   or n = 3
+----
+project (
+| select (
+| | table("sys"."f") [ "f"."n", "f"."m" ]
+| ) [ ("f"."n") in (int(4) "1", int(4) "2", int(4) "3") ]
+) [ "f"."n", "f"."m" ]
+
+query II rowsort
+select * from f 
+where n = 1
+   or n = 2
+   or m = 40;
+----
+1
+20
+2
+0
+2
+40
+
+query II rowsort
+select * from f 
+where n = 1 
+   or m = 40
+   or n = 2;
+----
+1
+20
+2
+0
+2
+40
+
+query II rowsort
+select * from f 
+where m = 40
+   or n = 1
+   or n = 2;
+----
+1
+20
+2
+0
+2
+40
+
+## chained where-in for n  
+
+query T nosort
+plan select * from f 
+where n in (1, 2) 
+   or n in (3)
+----
+project (
+| select (
+| | table("sys"."f") [ "f"."n", "f"."m" ]
+| ) [ ("f"."n") in (int(4) "3", int(4) "1", int(4) "2") ]
+) [ "f"."n", "f"."m" ]
+
+query T nosort
+plan select * from f 
+where m = 60
+   or n in (1, 2) 
+   or n in (3)
+----
+KNOWN
+
+query T nosort
+plan select * from f 
+where n in (1, 2)
+   or m = 60
+   or n in (3)
+----
+KNOWN
+
+query T nosort
+plan select * from f 
+where n in (1, 2)
+   or n in (3)
+   or m = 60
+----
+KNOWN
+
+## chained cmp_equal-atom ors with lhs in [n, m]
+
+query T nosort
+plan select * from f 
+where n = 1
+   or n = 2
+   or m = 60;
+----
+project (
+| select (
+| | table("sys"."f") [ "f"."n", "f"."m" ]
+| ) [ (("f"."m") = (int(8) "60")) or (("f"."n") in (int(4) "1", int(4) "2")) ]
+) [ "f"."n", "f"."m" ]
+
+query T nosort
+plan select * from f 
+where n = 1 
+   or m = 60
+   or n = 2;
+----
+project (
+| select (
+| | table("sys"."f") [ "f"."n", "f"."m" ]
+| ) [ (("f"."m") = (int(8) "60")) or (("f"."n") in (int(4) "1", int(4) "2")) ]
+) [ "f"."n", "f"."m" ]
+
+query T nosort
+plan select * from f 
+where m = 60 
+   or n = 1
+   or n = 2;
+----
+project (
+| select (
+| | table("sys"."f") [ "f"."n", "f"."m" ]
+| ) [ (("f"."m") = (int(8) "60")) or (("f"."n") in (int(4) "1", int(4) "2")) ]
+) [ "f"."n", "f"."m" ]
+
+## chained ors with lhs in [n, (n && m)]
+
+query T nosort
+plan select * from f 
+where (n = 3 and m = 60) 
+   or n = 1
+   or n = 2;
+----
+project (
+| select (
+| | table("sys"."f") [ "f"."n", "f"."m" ]
+| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."n") = (int(4) "3"), ("f"."m") = (int(8) "60")), ("f"."n") in (int(4) "3", int(4) "1", int(4) "2") ]
+) [ "f"."n", "f"."m" ]
+
+query T nosort
+plan select * from f 
+where n = 1
+   or (n = 3 and m = 60)
+   or n = 2;
+----
+project (
+| select (
+| | table("sys"."f") [ "f"."n", "f"."m" ]
+| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."n") = (int(4) "3"), ("f"."m") = (int(8) "60")), ("f"."n") in (int(4) "3", int(4) "1", int(4) "2") ]
+) [ "f"."n", "f"."m" ]
+
+query T nosort
+plan select * from f 
+where n = 1
+   or n = 2
+   or (n = 3 and m = 60)
+----
+project (
+| select (
+| | table("sys"."f") [ "f"."n", "f"."m" ]
+| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."n") = (int(4) "3"), ("f"."m") = (int(8) "60")), ("f"."n") in (int(4) "3", int(4) "1", int(4) "2") ]
+) [ "f"."n", "f"."m" ]
+

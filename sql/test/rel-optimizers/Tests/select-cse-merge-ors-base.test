@@ -1,0 +1,6 @@
+statement ok
+create table f (n int, m int)
+
+statement ok
+insert into f values (1, 20), (2, 40), (2, 0), (3, 60), (9, 180)
+
