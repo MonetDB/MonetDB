@@ -472,9 +472,11 @@ equality_exps_2_in( mvc *sql, sql_exp *ce, list *l, list *r)
 static list *
 merge_ors(mvc *sql, list *exps, int *changes)
 {
+	/* n = 1 OR n = 2 ==> n in (1, 2) */
 	list *nexps = NULL;
 	int needed = 0;
 
+	// blindly looks for any cmp_or in the top list
 	for (node *n = exps->h; n && !needed; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -508,6 +510,154 @@ merge_ors(mvc *sql, list *exps, int *changes)
 	}
 
 	return nexps;
+}
+
+static inline int
+exp_unique_id(sql_exp *e)
+{
+	assert(e->nid);
+	return e->nid;
+}
+
+typedef struct exp_eq_atoms {
+	sql_exp* e;
+	list *l;
+} ea;
+
+static bool
+exp_or_chain_groups(mvc *sql, list *exps, list **ands, list **noneq, sql_hash *eqh)
+{
+	/* identify three different groups
+	 * 1. ands: lists of expressions (their inner association is AND)
+	 * 2. neq: non equality col expressions
+	 * 3. eqh: col = X (we store the different X values)
+	 *
+	 * return true if there is an exp with more than one cmp_eq
+	 */
+	bool multi_atom_cmp_eq = false;
+
+	if (list_length(exps) > 1) {
+		*ands = append(*ands, exps);
+	} else if (list_length(exps) == 1) {
+		sql_exp *se = exps->h->data;
+		sql_exp *le = se->l, *re = se->r;
+
+		if (se->type == e_cmp && se->flag == cmp_or && !is_anti(se)) {
+			/* for a cmp_or expression go down the tree */
+			multi_atom_cmp_eq |= exp_or_chain_groups(sql, (list*)le, ands, noneq, eqh);
+			multi_atom_cmp_eq |= exp_or_chain_groups(sql, (list*)re, ands, noneq, eqh);
+
+		} else if (se->type == e_cmp && se->flag == cmp_equal &&
+				   le->card != CARD_ATOM && is_column(le->type) &&
+				   re->card == CARD_ATOM && !is_semantics(se)) {
+			/* find the le in the hash and append the re in the hash value (ea->list) */
+			bool found = false;
+
+			int key = eqh->key(le);
+			sql_hash_e *he = eqh->buckets[key&(eqh->size-1)];
+
+			for (;he && !found; he = he->chain) {
+				ea *eas = he->value;
+				if(!exp_equal(le, eas->e)){
+					eas->l = append(eas->l, re);
+					found = multi_atom_cmp_eq = true;
+				}
+			}
+
+			if (!found) {
+				ea *eas = SA_NEW(sql->sa, ea);
+				eas->l = sa_list(sql->sa);
+				eas->l = append(eas->l, re);
+				eas->e = le;
+
+				hash_add(eqh, key, eas);
+			}
+		} else {
+			*noneq = append(*noneq, se);
+		}
+	}
+	return multi_atom_cmp_eq;
+}
+
+static list *
+merge_ors_NEW(mvc *sql, list *exps, int *changes)
+{
+	sql_hash *eqh = NULL;
+	list *neq, *ands, *ins = exps;
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
+			/* NOTE: ands is a list of lists since the AND association
+			 *       between expressions is expressed with a list
+			 *       e.g. [[e1, e2], [e3, e4, e5]] semantically translates
+			 *         to [(e1 AND e2), (e3 AND e4 AND e5)]
+			 *       those (internal) AND list can be then used to
+			 *       reconstructed an OR tree
+			 *       [[e1, e2], [e3, e4, e5]] =>
+			 *       (([e1, e2] OR [e3, e4, e5]) OR <whatever-else> )
+			 */
+			ands = new_exp_list(sql->sa);
+			neq = new_exp_list(sql->sa);
+			eqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 64*/, (fkeyvalue)&exp_unique_id);
+
+			/* if no multi-atom cmp_eq exps bailout, we don't need to gen cmp_in */
+			bool ma = false;
+			ma |= exp_or_chain_groups(sql, e->l, &ands, &neq, eqh);
+			ma |= exp_or_chain_groups(sql, e->r, &ands, &neq, eqh);
+			if (!ma)
+				continue;
+
+			/* from equality atoms in the hash generate "e_col in (...)" for
+			 * entries with multiple atoms (see exp_or_chain_groups())
+			 * */
+			ins = new_exp_list(sql->sa);
+			for (int i = 0; i < eqh->size; i++) {
+				sql_hash_e *he = eqh->buckets[i];
+
+				while (he) {
+					ea *eas = he->value;
+					/* only if there are multiple cmp_eq atoms for this col turn them into a cmp_in */
+					if (list_length(eas->l) > 1)
+						ins = append(ins, exp_in(sql->sa, eas->e, eas->l, cmp_in));
+					else
+						ins = append(ins, exp_compare(sql->sa, eas->e, eas->l->h->data, cmp_equal));
+					he = he->chain;
+				}
+			}
+
+			/* create the new OR tree */
+			assert(list_length(ins));
+			sql_exp *new = ins->h->data;
+			for (node *i = ins->h->next; i; i = i->next) {
+				list *l = new_exp_list(sql->sa);
+				list *r = new_exp_list(sql->sa);
+				l = append(l, new);
+				r = append(r, (sql_exp*)i->data);
+				new = exp_or(sql->sa, l, r, 0);
+			}
+
+			// TODO: we can recurse on ands
+			for (node *a = ands->h; a; a = a->next){
+				list *l = new_exp_list(sql->sa);
+				l = append(l, new);
+				new = exp_or(sql->sa, l, a->data, 0);
+			}
+
+			for (node *o = neq->h; o; o = o->next){
+				list *l = new_exp_list(sql->sa);
+				list *r = new_exp_list(sql->sa);
+				l = append(l, new);
+				r = append(r, (sql_exp*)o->data);
+				new = exp_or(sql->sa, l, r, 0);
+			}
+
+			list_remove_node(exps, NULL, n);
+			exps = append(exps, new);
+			changes++;
+		}
+	}
+	return exps;
 }
 
 #define TRIVIAL_NOT_EQUAL_CMP(e) \
@@ -744,8 +894,11 @@ rel_select_cse(visitor *v, sql_rel *rel)
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps) /* cleanup equal expressions */
 		rel->exps = cleanup_equal_exps(v->sql, rel, rel->exps, &v->changes); /* (a = b) and (a += b) */
 
-	if (is_select(rel->op) && rel->exps)
+	if (NULL && is_select(rel->op) && rel->exps)
 		rel->exps = merge_ors(v->sql, rel->exps, &v->changes); /* x = 1 or x = 2 => x in (1, 2)*/
+
+	if (is_select(rel->op) && rel->exps)
+		rel->exps = merge_ors_NEW(v->sql, rel->exps, &v->changes);
 
 	if (is_select(rel->op) && rel->exps)
 		rel->exps = merge_notequal(v->sql, rel->exps, &v->changes); /* x <> 1 and x <> 2 => x not in (1, 2)*/
