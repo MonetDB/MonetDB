@@ -1691,6 +1691,13 @@ _exp_print(mvc *sql, sql_exp *e) {
 }
 
 void
+_exps_print(mvc *sql, list *l) {
+	if (l)
+		for (node *n = l->h; n; n = n->next)
+			_exp_print(sql, n->data);
+}
+
+void
 rel_print(mvc *sql, sql_rel *rel, int depth)
 {
 	list *refs = sa_list(sql->sa);
