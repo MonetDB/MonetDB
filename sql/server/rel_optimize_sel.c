@@ -653,7 +653,7 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 
 			list_remove_node(exps, NULL, n);
 			exps = append(exps, new);
-			changes++;
+			(*changes)++;
 		}
 	}
 	return exps;
