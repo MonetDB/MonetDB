@@ -391,7 +391,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		return rc;
 	}
 
-	bn = BATselect(r, rci->s, v, NULL, true, true, false);
+	bn = BATselect(r, rci->s, v, NULL, true, true, false, false);
 	bat_iterator_end(&li);
 	if (bn == NULL) {
 		return GDK_FAIL;
@@ -518,7 +518,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			mark = 0;
 		} else {
 			/* no match, search for NIL in r */
-			BAT *n = BATselect(r, rci->s, ATOMnilptr(r->ttype), NULL, true, true, false);
+			BAT *n = BATselect(r, rci->s, ATOMnilptr(r->ttype), NULL, true, true, false, false);
 			if (n == NULL)
 				goto bailout;
 			mark = BATcount(n) == 0 ? 0 : bit_nil;
@@ -605,12 +605,12 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	/* at this point, the matchable values in r are [lo..hi) */
 	if (!nil_on_miss) {
 		assert(r3p == NULL);
-		r1 = BATselect(l, lci->s, &lo, &hi, true, false, only_misses);
+		r1 = BATselect(l, lci->s, &lo, &hi, true, false, only_misses, false);
 		if (r1 == NULL)
 			return GDK_FAIL;
 		if (only_misses && !l->tnonil) {
 			/* also look for NILs */
-			r2 = BATselect(l, lci->s, &oid_nil, NULL, true, false, false);
+			r2 = BATselect(l, lci->s, &oid_nil, NULL, true, false, false, false);
 			if (r2 == NULL) {
 				BBPreclaim(r1);
 				return GDK_FAIL;
