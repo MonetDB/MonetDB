@@ -38365,8 +38365,13 @@ SQLstr_auto_vacuum;
 auto vacuum string column with interval(sec)
 sql
 vacuum
+unsafe pattern sql.vacuum(X_0:str, X_1:str):void
+SQLstr_vacuum;
+vacuum a string column
+sql
+vacuum
 unsafe pattern sql.vacuum(X_0:str, X_1:str, X_2:str):void
-SQLstr_column_vacuum;
+SQLstr_vacuum;
 vacuum a string column
 sql
 variance
