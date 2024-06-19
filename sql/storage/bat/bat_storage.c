@@ -704,7 +704,7 @@ cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max pos
 			   (!BATtdense2(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt))) {
 					oid nil = oid_nil;
 					/* less then cnt */
-					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false);
+					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false, false);
 					if (!s) {
 						bat_destroy(b);
 						return NULL;

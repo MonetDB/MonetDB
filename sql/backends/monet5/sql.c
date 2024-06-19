@@ -1295,7 +1295,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
 
 			h--;
-			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
+			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false, false);
 			if(bn == NULL) {
 				BBPunfix(ui->batCacheid);
 				BBPunfix(uv->batCacheid);
@@ -1649,7 +1649,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
 
 			h--;
-			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
+			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false, false);
 			if(bn == NULL) {
 				BBPunfix(ui->batCacheid);
 				BBPunfix(uv->batCacheid);

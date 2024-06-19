@@ -886,18 +886,18 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (loi.type == TYPE_bte) {
 				bte lpos = (bte)p;
 				bte hpos = (bte)q;
-				bn =  BATselect(lo, lc, &lpos, &hpos, 1, hi, anti);
+				bn =  BATselect(lo, lc, &lpos, &hpos, true, hi, anti, false);
 			} else if (loi.type == TYPE_sht) {
 				sht lpos = (sht)p;
 				sht hpos = (sht)q;
-				bn =  BATselect(lo, lc, &lpos, &hpos, 1, hi, anti);
+				bn =  BATselect(lo, lc, &lpos, &hpos, true, hi, anti, false);
 			} else
 				assert(0);
 		} else {
 			bn = BATdense(0, 0, 0);
 		}
 	} else {
-		bn = BATselect(lv, NULL, l, h, li, hi, anti);
+		bn = BATselect(lv, NULL, l, h, li, hi, anti, false);
 
 		/* call dict convert */
 		if (bn) {
