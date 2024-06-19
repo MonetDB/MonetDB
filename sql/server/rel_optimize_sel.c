@@ -515,8 +515,7 @@ merge_ors(mvc *sql, list *exps, int *changes)
 static inline int
 exp_unique_id(sql_exp *e)
 {
-	assert(e->nid);
-	return e->nid;
+	return e->nid ? e->nid : e->alias.label;
 }
 
 typedef struct exp_eq_atoms {
