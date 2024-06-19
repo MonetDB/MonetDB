@@ -4986,7 +4986,7 @@ SQLstr_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
 	if (strNil(tname))
 		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
-	if (strNil(cname))
+	if (cname && strNil(cname))
 		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
