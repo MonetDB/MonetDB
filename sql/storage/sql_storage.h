@@ -188,8 +188,8 @@ typedef void *(*del_dup_fptr) (sql_table *t);
 typedef int (*upgrade_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*upgrade_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*upgrade_del_fptr) (sql_trans *tr, sql_table *t);
-typedef int (*vacuum_col_fptr) (sql_trans *tr, sql_column *c);
-typedef int (*vacuum_tab_fptr) (sql_trans *tr, sql_table *t);
+typedef int (*vacuum_col_fptr) (sql_trans *tr, sql_column *c, bool force);
+typedef int (*vacuum_tab_fptr) (sql_trans *tr, sql_table *t, bool force);
 
 /*
 -- free the storage resources for columns, indices and tables
