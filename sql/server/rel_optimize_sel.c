@@ -582,7 +582,7 @@ static list *
 merge_ors_NEW(mvc *sql, list *exps, int *changes)
 {
 	sql_hash *eqh = NULL;
-	list *neq, *ands, *ins = exps;
+	list *neq, *ands, *ins;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
