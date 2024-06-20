@@ -1502,12 +1502,12 @@ upgrade(old_logger *lg)
 		BAT *cand = bats[lookup].cands;
 		if (bats[lookup].parbat != NULL) {
 			/* further restrict search to parent object */
-			cand = BATselect(bats[lookup].parbat, cand, &parid, NULL, true, true, false);
+			cand = BATselect(bats[lookup].parbat, cand, &parid, NULL, true, true, false, false);
 			if (cand == NULL)
 				goto bailout;
 		}
 		/* look for name, should be one (or maybe zero) result */
-		BAT *b = BATselect(bats[lookup].nmbat, cand, name, NULL, true, true, false);
+		BAT *b = BATselect(bats[lookup].nmbat, cand, name, NULL, true, true, false, false);
 		if (cand != bats[lookup].cands)
 			bat_destroy(cand);
 		if (b == NULL)
@@ -1709,7 +1709,7 @@ upgrade(old_logger *lg)
 		if (cands == NULL)
 			goto bailout;
 	}
-	b = BATselect(lg->catalog_oid, cands, &(lng){0}, NULL, true, true, true);
+	b = BATselect(lg->catalog_oid, cands, &(lng){0}, NULL, true, true, true, false);
 	bat_destroy(cands);
 	if (b == NULL)
 		goto bailout;
@@ -1737,7 +1737,7 @@ upgrade(old_logger *lg)
 	 * of deleted rows to mask of deleted rows */
 	BAT *tabs;
 	/* 2164 is the largest fixed id, so select anything larger */
-	tabs = BATselect(lg->lg->catalog_id, NULL, &(int){2164}, &int_nil, false, true, false);
+	tabs = BATselect(lg->lg->catalog_id, NULL, &(int){2164}, &int_nil, false, true, false, false);
 	if (tabs == NULL)
 		goto bailout;
 	BAT *b1;
@@ -1826,13 +1826,13 @@ upgrade(old_logger *lg)
 	/* map schema/table/column ids in other system tables */
 	if (mapold) {
 		/* select tables in sys schema */
-		b1 = BATselect(bats[1].parbat, bats[1].cands, &(int){2000}, NULL, true, true, false);
+		b1 = BATselect(bats[1].parbat, bats[1].cands, &(int){2000}, NULL, true, true, false, false);
 		if (b1 == NULL)
 			goto bailout;
 		bids = Tloc(lg->lg->catalog_bid, 0);
 		for (int i = 0; mapids[i].column != NULL; i++) {
 			/* row ids for table in sys schema */
-			BAT *b2 = BATselect(bats[1].nmbat, b1, mapids[i].table, NULL, true, true, false);
+			BAT *b2 = BATselect(bats[1].nmbat, b1, mapids[i].table, NULL, true, true, false, false);
 			if (b2 == NULL) {
 				bat_destroy(b1);
 				goto bailout;
@@ -1852,7 +1852,7 @@ upgrade(old_logger *lg)
 				goto bailout;
 			}
 			/* row id for the column in the table we're looking for */
-			b3 = BATselect(bats[2].nmbat, b2, mapids[i].column, NULL, true, true, false);
+			b3 = BATselect(bats[2].nmbat, b2, mapids[i].column, NULL, true, true, false, false);
 			bat_destroy(b2);
 			if (b3 == NULL) {
 				bat_destroy(b1);
@@ -2104,7 +2104,7 @@ bl_postversion(void *Store, void *Lg)
 				return GDK_FAIL;
 			}
 			/* select * from sys.functions where schema_id = 2000; */
-			b = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false);
+			b = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false, false);
 			bat_destroy(func_schem);
 			bat_destroy(func_tid);
 			cands = b;
@@ -2154,7 +2154,7 @@ bl_postversion(void *Store, void *Lg)
 			}
 
 			/* find the (undeleted) functions defined on "sql" module */
-			BAT *sqlfunc = BATselect(func_mod, func_tid, "sql", NULL, true, true, false);
+			BAT *sqlfunc = BATselect(func_mod, func_tid, "sql", NULL, true, true, false, false);
 			bat_destroy(func_tid);
 			if (sqlfunc == NULL) {
 				bat_destroy(func_mod);
@@ -2168,7 +2168,7 @@ bl_postversion(void *Store, void *Lg)
 				return GDK_FAIL;
 			}
 			/* and are aggregates (3) */
-			BAT *sqlaggr_func = BATselect(func_type, sqlfunc, &(int) {3}, NULL, true, true, false);
+			BAT *sqlaggr_func = BATselect(func_type, sqlfunc, &(int) {3}, NULL, true, true, false, false);
 			bat_destroy(sqlfunc);
 			bat_destroy(func_type);
 			if (sqlaggr_func == NULL) {
@@ -2294,7 +2294,7 @@ bl_postversion(void *Store, void *Lg)
 				bat_destroy(objs_sub);
 				return GDK_FAIL;
 			}
-			b = BATselect(objs_nr, cands, &(int) {2000}, &int_nil, false, false, false);
+			b = BATselect(objs_nr, cands, &(int) {2000}, &int_nil, false, false, false, false);
 			bat_destroy(cands);
 			if (b == NULL) {
 				bat_destroy(objs_id);
@@ -2472,7 +2472,7 @@ bl_postversion(void *Store, void *Lg)
 				return GDK_FAIL;
 			}
 			/* mod = 'user' */
-			b1 = BATselect(b3, b2, "user", NULL, true, true, false);
+			b1 = BATselect(b3, b2, "user", NULL, true, true, false, false);
 			bat_destroy(b2);
 			if (b1 == NULL) {
 				bat_destroy(b3);
@@ -2533,7 +2533,7 @@ bl_postversion(void *Store, void *Lg)
 				return GDK_FAIL;
 			}
 			/* func_id > 2000 */
-			b1 = BATselect(b3, b2, &(int){2000}, &int_nil, false, false, false);
+			b1 = BATselect(b3, b2, &(int){2000}, &int_nil, false, false, false, false);
 			bat_destroy(b2);
 			bat_destroy(b3);
 			b3 = log_temp_descriptor(log_find_bat(lg, 2033)); /* sys.args.type_digits */
@@ -2543,7 +2543,7 @@ bl_postversion(void *Store, void *Lg)
 				return GDK_FAIL;
 			}
 			/* and type_digits = 0 */
-			b2 = BATselect(b3, b1, &(int){0}, NULL, true, false, false);
+			b2 = BATselect(b3, b1, &(int){0}, NULL, true, false, false, false);
 			bat_destroy(b3);
 			bat_destroy(b1);
 			b1 = log_temp_descriptor(log_find_bat(lg, 2032)); /* sys.args.type */
@@ -2553,7 +2553,7 @@ bl_postversion(void *Store, void *Lg)
 				return GDK_FAIL;
 			}
 			/* and type = 'char' */
-			b3 = BATselect(b1, b2, "char", NULL, true, false, false);
+			b3 = BATselect(b1, b2, "char", NULL, true, false, false, false);
 			bat_destroy(b2);
 			if (b3 == NULL) {
 				bat_destroy(b1);
@@ -2612,7 +2612,7 @@ bl_postversion(void *Store, void *Lg)
 				bat_destroy(tt);
 				return GDK_FAIL;
 			}
-			BAT *strm = BATselect(tt, cands, &(sht){4}, NULL, true, true, false);
+			BAT *strm = BATselect(tt, cands, &(sht){4}, NULL, true, true, false, false);
 			bat_destroy(cands);
 			bat_destroy(tt);
 			if (strm == NULL) {
@@ -2746,7 +2746,7 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* select * from sys.functions where schema_id = 2000 */
-		BAT *cands = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false);
+		BAT *cands = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false, false);
 		bat_destroy(func_schem);
 		if (cands == NULL) {
 			bat_destroy(func_tid);
@@ -2790,7 +2790,7 @@ bl_postversion(void *Store, void *Lg)
 		}
 		/* select * from sys.functions where schema_id = 2000 and name in (...)
 		 * and language = FUNC_LANG_SQL */
-		b = BATselect(func_lang, cands, &(int) {FUNC_LANG_SQL}, NULL, true, true, false);
+		b = BATselect(func_lang, cands, &(int) {FUNC_LANG_SQL}, NULL, true, true, false, false);
 		bat_destroy(cands);
 		cands = b;
 		if (cands == NULL) {
@@ -2832,7 +2832,7 @@ bl_postversion(void *Store, void *Lg)
 			bat_destroy(b2);
 			return GDK_FAIL;
 		}
-		cands = BATselect(func_lang, func_tid, &(int){FUNC_LANG_SQL}, NULL, true, true, false);
+		cands = BATselect(func_lang, func_tid, &(int){FUNC_LANG_SQL}, NULL, true, true, false, false);
 		bat_destroy(func_lang);
 		bat_destroy(func_tid);
 		if (cands == NULL) {
@@ -2879,7 +2879,7 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* select * from sys.functions where schema_id = 2000 */
-		BAT *cands = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false);
+		BAT *cands = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false, false);
 		bat_destroy(func_schem);
 		bat_destroy(func_tid);
 		if (cands == NULL) {
@@ -2937,7 +2937,7 @@ bl_postversion(void *Store, void *Lg)
 			bat_destroy(b);
 			return GDK_FAIL;
 		}
-		BAT *b2 = BATselect(func_name, cands, "env", NULL, true, true, false);
+		BAT *b2 = BATselect(func_name, cands, "env", NULL, true, true, false, false);
 		if (b2 == NULL || BATappend(b, b2, NULL, false) != GDK_SUCCEED) {
 			bat_destroy(cands);
 			bat_destroy(func_se);
@@ -2948,7 +2948,7 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		bat_destroy(b2);
-		b2 = BATselect(func_name, cands, "db_users", NULL, true, true, false);
+		b2 = BATselect(func_name, cands, "db_users", NULL, true, true, false, false);
 		bat_destroy(func_name);
 		if (b2 == NULL || BATappend(b, b2, NULL, false) != GDK_SUCCEED) {
 			bat_destroy(cands);
@@ -3043,7 +3043,7 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* select * from sys.sequences where increment = 0 */
-		BAT *inczero = BATselect(seq_inc, seq_tid, &(lng){0}, NULL, false, true, false);
+		BAT *inczero = BATselect(seq_inc, seq_tid, &(lng){0}, NULL, false, true, false, false);
 		if (inczero == NULL) {
 			bat_destroy(seq_tid);
 			bat_destroy(seq_min);
@@ -3089,7 +3089,7 @@ bl_postversion(void *Store, void *Lg)
 		}
 		bat_destroy(inczero);
 		/* select * from sys.sequences where increment > 0 */
-		BAT *incpos = BATselect(seq_inc, seq_tid, &(lng){0}, &lng_nil, false, true, false);
+		BAT *incpos = BATselect(seq_inc, seq_tid, &(lng){0}, &lng_nil, false, true, false, false);
 		bat_destroy(seq_inc);
 		if (incpos == NULL) {
 			bat_destroy(seq_tid);
@@ -3098,7 +3098,7 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* select * from sys.sequences where increment > 0 and maxvalue = 0 */
-		BAT *cands = BATselect(seq_max, incpos, &(lng) {0}, NULL, true, true, false);
+		BAT *cands = BATselect(seq_max, incpos, &(lng) {0}, NULL, true, true, false, false);
 		bat_destroy(incpos);
 		if (cands == NULL) {
 			bat_destroy(seq_tid);
@@ -3127,10 +3127,10 @@ bl_postversion(void *Store, void *Lg)
 		bat_destroy(seq_max);
 		bat_destroy(cands);
 		/* select * from sys.sequences where increment < 0 */
-		BAT *incneg = BATselect(seq_inc, seq_tid, &lng_nil, &(lng){0}, false, true, false);
+		BAT *incneg = BATselect(seq_inc, seq_tid, &lng_nil, &(lng){0}, false, true, false, false);
 		bat_destroy(seq_tid);
 		/* select * from sys.sequences where increment < 0 and minvalue = 0 */
-		cands = BATselect(seq_min, incneg, &(lng) {0}, NULL, true, true, false);
+		cands = BATselect(seq_min, incneg, &(lng) {0}, NULL, true, true, false, false);
 		bat_destroy(incneg);
 		if (cands == NULL) {
 			bat_destroy(seq_min);
@@ -3186,7 +3186,7 @@ bl_postversion(void *Store, void *Lg)
 			bat_destroy(del_tabs);
 			return GDK_FAIL;
 		}
-		BAT *cands = BATselect(b, del_tabs, &(int) {2000}, NULL, true, true, false);
+		BAT *cands = BATselect(b, del_tabs, &(int) {2000}, NULL, true, true, false, false);
 		bat_destroy(b);
 		bat_destroy(del_tabs);
 		/* cands contains undeleted rows from sys._tables for tables in
@@ -3198,7 +3198,7 @@ bl_postversion(void *Store, void *Lg)
 			bat_destroy(del_cols);
 			return GDK_FAIL;
 		}
-		b = BATselect(tabnme, cands, "db_user_info", NULL, true, true, false);
+		b = BATselect(tabnme, cands, "db_user_info", NULL, true, true, false, false);
 		if (b == NULL) {
 			bat_destroy(cands);
 			bat_destroy(tabnme);
@@ -3207,7 +3207,7 @@ bl_postversion(void *Store, void *Lg)
 		}
 		oid dbpos = BUNtoid(b, 0);
 		bat_destroy(b);
-		b = BATselect(tabnme, cands, "privileges", NULL, true, true, false);
+		b = BATselect(tabnme, cands, "privileges", NULL, true, true, false, false);
 		bat_destroy(tabnme);
 		bat_destroy(cands);
 		BAT *tabid = log_temp_descriptor(log_find_bat(lg, 2068)); /* sys._tables.id */

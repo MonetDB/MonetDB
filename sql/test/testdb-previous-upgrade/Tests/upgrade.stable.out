@@ -9,6 +9,7 @@ Running database upgrade commands:
 create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;
 create procedure SHPLoad(fname string, tablename string) external name shp.load;
 update sys.functions set system = true where schema_id = 2000 and name in ('shpload');
+
 Running database upgrade commands:
 drop function if exists sys.st_intersects(geometry, geometry) cascade;
 drop function if exists sys.st_dwithin(geometry, geometry, double) cascade;
@@ -1089,4 +1090,13 @@ GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT 
 UPDATE sys._tables SET system = true where system <> true
  and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')
  and name in ('check_constraints','table_constraints');
+
+Running database upgrade commands:
+create procedure sys.vacuum(sname string, tname string)
+external name sql.vacuum;
+create procedure sys.vacuum(sname string, tname string, interval int)
+external name sql.vacuum;
+create procedure sys.stop_vacuum(sname string, tname string)
+external name sql.stop_vacuum;
+update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum');
 

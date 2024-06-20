@@ -329,7 +329,7 @@ sql_create_shp(Client c)
 	//Create the new SHPload procedures
 	const char query[] = "create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;\n"
 		"create procedure SHPLoad(fname string, tablename string) external name shp.load;\n"
-		"update sys.functions set system = true where schema_id = 2000 and name in ('shpload');";
+		"update sys.functions set system = true where schema_id = 2000 and name in ('shpload');\n";
 	printf("Running database upgrade commands:\n%s\n", query);
 	fflush(stdout);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
@@ -7207,6 +7207,32 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 	return err;
 }
 
+static str
+sql_update_default(Client c, mvc *sql, sql_schema *s)
+{
+	char *err = MAL_SUCCEED;
+	sql_subtype tp;
+
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	if (!sql_bind_func(sql, s->base.name, "vacuum", &tp, &tp, F_PROC, true, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		const char query[] =
+			"create procedure sys.vacuum(sname string, tname string)\n"
+			"external name sql.vacuum;\n"
+			"create procedure sys.vacuum(sname string, tname string, interval int)\n"
+			"external name sql.vacuum;\n"
+			"create procedure sys.stop_vacuum(sname string, tname string)\n"
+			"external name sql.stop_vacuum;\n"
+			"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum');\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
+
+	return err;
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -7406,6 +7432,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_aug2024(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_default(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

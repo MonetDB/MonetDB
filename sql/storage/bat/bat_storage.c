@@ -704,7 +704,7 @@ cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max pos
 			   (!BATtdense2(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt))) {
 					oid nil = oid_nil;
 					/* less then cnt */
-					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false);
+					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false, false);
 					if (!s) {
 						bat_destroy(b);
 						return NULL;
@@ -5032,7 +5032,7 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 }
 
 static int
-vacuum_col(sql_trans *tr, sql_column *c)
+vacuum_col(sql_trans *tr, sql_column *c, bool force)
 {
 	if (segments_in_transaction(tr, c->t))
 		return LOG_CONFLICT;
@@ -5044,7 +5044,7 @@ vacuum_col(sql_trans *tr, sql_column *c)
 		return LOG_CONFLICT;
 
 	/* do we have enough to clean */
-	if ((d->nr_updates) < 1024)
+	if (!force && (d->nr_updates) < 1024)
 		return LOG_OK;
 
 	BAT *b = NULL, *bn = NULL;;
@@ -5062,7 +5062,7 @@ vacuum_col(sql_trans *tr, sql_column *c)
 }
 
 static int
-vacuum_tab(sql_trans *tr, sql_table *t)
+vacuum_tab(sql_trans *tr, sql_table *t, bool force)
 {
 	if (segments_in_transaction(tr, t))
 		return LOG_CONFLICT;
@@ -5083,8 +5083,8 @@ vacuum_tab(sql_trans *tr, sql_table *t)
 			return LOG_CONFLICT;
 
 		/* do we have enough to clean */
-		if ((d->nr_updates + s->segs->nr_reused) < 1024)
-			return LOG_OK;
+		if (!force && (d->nr_updates + s->segs->nr_reused) < 1024)
+			continue;
 
 		BAT *b = NULL, *bn = NULL;;
 		if ((b = bind_col(tr, c, 0)) == NULL)
