@@ -121,7 +121,7 @@ makeNulTerminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch
 	SQLCHAR *value = malloc(argument_len + 1);
 	if (value == NULL)
 		return false;
-	memmove(value, argument, argument_len);
+	memmove(value, *argument, argument_len);
 	value[argument_len] = '\0';
 
 	*argument = value;
