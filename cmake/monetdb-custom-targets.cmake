@@ -100,7 +100,7 @@ endif()
 
 if(CTAGS_PATH)
 add_custom_target(tags
-  COMMAND ${CTAGS_PATH} -R --kinds-C=+pLl --fields=+iaS --exclude=*.js
+  COMMAND ${CTAGS_PATH} -R --kinds-C=+pLl --fields=+iaS --exclude=*.js --exclude=build --exclude=install
         ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
         COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/tags ${CMAKE_CURRENT_SOURCE_DIR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
