@@ -17,6 +17,7 @@
 #endif
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -33,6 +34,7 @@ static const char *USAGE =
 	"        -l              List registered drivers and data sources\n"
 	"        -u USER\n"
 	"        -p PASSWORD\n"
+	"        -0              use counted strings rather than nul-terminated arguments\n"
 	"        -v              Be verbose\n"
 	"        TARGET          DSN or with -d and -b, Connection String\n";
 
@@ -49,10 +51,16 @@ static int do_listdsns(const char *prefix, SQLSMALLINT dir);
 
 static void ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret);
 
+#define MARGIN 100
+static SQLCHAR* sqldup_with_margin(const char *str);
+static void fuzz_sql_nts(SQLCHAR **str, SQLSMALLINT *len);
 
 int verbose = 0;
 SQLCHAR *user = NULL;
+SQLSMALLINT user_len = SQL_NTS;
 SQLCHAR *password = NULL;
+SQLSMALLINT password_len = SQL_NTS;
+bool use_counted_strings = false;
 
 SQLHANDLE env = NULL;
 SQLHANDLE conn = NULL;
@@ -89,13 +97,15 @@ main(int argc, char **argv)
 		else if (strcmp(arg, "-l") == 0)
 			action = NULL;
 		else if (strcmp(arg, "-u") == 0 && i + 1 < argc)
-			user = (SQLCHAR*)argv[++i];
+			user = sqldup_with_margin(argv[++i]);
 		else if (strcmp(arg, "-p") == 0 && i + 1 < argc)
-			password = (SQLCHAR*)argv[++i];
+			password = sqldup_with_margin(argv[++i]);
+		else if (strcmp(arg, "-0") == 0)
+			use_counted_strings = true;
 		else if (strcmp(arg, "-v") == 0)
 			verbose += 1;
 		else if (arg[0] != '-')
-			targets[ntargets++] = (SQLCHAR*)arg;
+			targets[ntargets++] = sqldup_with_margin(arg);
 		else {
 			fprintf(stderr, "\nERROR: invalid argument: %s\n%s", arg, USAGE);
 			ret = 1;
@@ -110,6 +120,11 @@ main(int argc, char **argv)
 	ensure_ok(
 		SQL_HANDLE_ENV, env, "set odbc version",
 		SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC3, 0));
+
+	if (use_counted_strings) {
+		fuzz_sql_nts(&user, &user_len);
+		fuzz_sql_nts(&password, &password_len);
+	}
 
 	if (action) {
 		if (ntargets == 0) {
@@ -130,6 +145,10 @@ main(int argc, char **argv)
 	}
 
 end:
+	free(user);
+	free(password);
+	for (int i = 0; i < ntargets; i++)
+		free(targets[i]);
 	free(targets);
 	cleanup();
 
@@ -207,9 +226,13 @@ do_actions(action_t action, int ntargets, SQLCHAR **targets)
 static int
 do_sqlconnect(SQLCHAR *target)
 {
+	SQLSMALLINT target_len = SQL_NTS;
+	if (use_counted_strings)
+		fuzz_sql_nts(&target, &target_len);
+
 	ensure_ok(
 		SQL_HANDLE_DBC, conn, "SQLConnect",
-		SQLConnect(conn, target, SQL_NTS, user, SQL_NTS, password, SQL_NTS));
+		SQLConnect(conn, target, target_len, user, user_len, password, password_len));
 	printf("OK\n");
 
 	return 0;
@@ -219,11 +242,15 @@ static int
 do_sqldriverconnect(SQLCHAR *target)
 {
 	SQLSMALLINT n;
+	SQLSMALLINT target_len = SQL_NTS;
+	if (use_counted_strings)
+		fuzz_sql_nts(&target, &target_len);
+
 	ensure_ok(
 		SQL_HANDLE_DBC, conn, "SQLDriverConnect",
 		SQLDriverConnect(
 			conn, NULL,
-			target, SQL_NTS,
+			target, target_len,
 			outbuf, sizeof(outbuf), &n,
 			SQL_DRIVER_NOPROMPT
 		));
@@ -236,9 +263,13 @@ static int
 do_sqlbrowseconnect(SQLCHAR *target)
 {
 	SQLSMALLINT n;
+	SQLSMALLINT target_len = SQL_NTS;
+	if (use_counted_strings)
+		fuzz_sql_nts(&target, &target_len);
+
 	SQLRETURN ret = SQLBrowseConnect(
 		conn,
-		target, SQL_NTS,
+		target, target_len,
 		outbuf, sizeof(outbuf), &n
 	);
 	ensure_ok(SQL_HANDLE_DBC, conn, "SQLBrowseConnect", ret);
@@ -302,3 +333,27 @@ do_listdsns(const char *prefix, SQLSMALLINT dir)
 	return 0;
 }
 
+
+static SQLCHAR*
+sqldup_with_margin(const char *str)
+{
+	size_t len = strlen(str);
+	char *buf = malloc(len + MARGIN);
+	memmove(buf, str, len);
+	memset(buf + len, 0, MARGIN);
+	return (SQLCHAR*)buf;
+}
+
+static void
+fuzz_sql_nts(SQLCHAR **str, SQLSMALLINT *len)
+{
+	if (*str != NULL) {
+		// append garbage so it's no longer properly NUL terminated,
+		// indicate original length through 'len'
+		size_t n = strlen((char*)*str);
+		const char *garbage = "GARBAGE";
+		size_t garblen = strlen(garbage);
+		memmove(*str + n, garbage, garblen + 1); // include the trailing NUL
+		*len = (SQLSMALLINT)n;
+	}
+}

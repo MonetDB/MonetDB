@@ -134,4 +134,15 @@ ex.expect('Error')
 ex.expect('28000:')  # 28000 bad credentials
 ex.end()
 
+# test non-NUL terminated strings
+
+ex = Execution(dbname, '-0')
+ex.expect('OK')
+ex.end()
+
+ex = Execution(dbname, '-0', '-u', 'monetdb', '-p', 'monetdb')
+ex.expect('OK')
+ex.end()
+
+
 ex = None
