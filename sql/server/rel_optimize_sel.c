@@ -536,7 +536,7 @@ typedef struct exp_eq_multi_cols_atoms {
 } mca;
 
 static bool
-detect_multivalue_cmp_eqs(mvc *sql, list *ands, sql_hash *meqh)
+detect_multivalue_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
 {
 	/* we get as input a list of AND associated expressions (hence the entries are lists themselves)
 	 * we need to detect cmp_eq-only AND-associated expressions with the same columns so we can
@@ -548,7 +548,7 @@ detect_multivalue_cmp_eqs(mvc *sql, list *ands, sql_hash *meqh)
 	 * e.g. in this example (n,k)
 	 */
 	bool multi_multivalue_cmp_eq = false;
-	for (node *n = ands->h; n; n = n->next) {
+	for (node *n = ceq_ands->h; n; n = n->next) {
 		bool eq_only = true;
 		list *l = n->data;
 
@@ -565,8 +565,8 @@ detect_multivalue_cmp_eqs(mvc *sql, list *ands, sql_hash *meqh)
 			/* sort the list of the cmp_eq expressions based on the col exp
 			 * NOTE: from now on we only work with the sorted list, sl */
 			list *sl = list_sort(l, (fkeyvalue)&exp_cmp_eq_unique_id, NULL);
-			list_append_before(ands, n, sl);
-			list_remove_node(ands, NULL, n);
+			list_append_before(ceq_ands, n, sl);
+			list_remove_node(ceq_ands, NULL, n);
 
 			/* make a hash key out of the concat str of (rname1, name1, rname2, name2..) */
 			char *cs = "";
@@ -591,7 +591,7 @@ detect_multivalue_cmp_eqs(mvc *sql, list *ands, sql_hash *meqh)
 						same_cols = false;
 				}
 				if (same_cols) {
-					/* we found the same multi cmp_eq exp in ands list multiple times! */
+					/* we found the same multi cmp_eq exp in ceq_ands list multiple times! */
 					found = multi_multivalue_cmp_eq = true;
 					/* gather all the values of the list and add them to the hash entry */
 					list *atms = sa_list(sql->sa);
@@ -622,35 +622,43 @@ detect_multivalue_cmp_eqs(mvc *sql, list *ands, sql_hash *meqh)
 
 				hash_add(meqh, key, mcas);
 			}
-
-			/* TODO: manage the entries: remove the entry of the ands list as we are going to reconstruct it later */
 		}
 	}
 	return multi_multivalue_cmp_eq;
 }
 
 static bool
-exp_or_chain_groups(mvc *sql, list *exps, list **ands, list **noneq, sql_hash *eqh)
+exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **ceq_ands, list **noneq, sql_hash *eqh)
 {
 	/* identify three different groups
-	 * 1. ands: lists of expressions (their inner association is AND)
-	 * 2. neq: non equality col expressions
-	 * 3. eqh: col = X (we store the different X values)
+	 * 1. gen_ands: lists of generic expressions (their inner association is AND)
+	 * 2. ceq_ands: lists of cmp_eq ONLY expressions (same^^^)
+	 * 3. neq: non equality col expressions
+	 * 4. eqh: col = X (we store the different X values)
 	 *
 	 * return true if there is an exp with more than one cmp_eq
 	 */
 	bool multi_atom_cmp_eq = false;
 
 	if (list_length(exps) > 1) {
-		*ands = append(*ands, exps);
+		bool eq_only = true;
+		for (node *n = exps->h; n && eq_only; n = n->next) {
+			sql_exp *e = n->data;
+			sql_exp *le = e->l, *re = e->r;
+			eq_only &= (e->type == e_cmp && e->flag == cmp_equal && le->card != CARD_ATOM && is_column(le->type) && re->card == CARD_ATOM && !is_semantics(e));
+		}
+		if (eq_only)
+			*ceq_ands = append(*ceq_ands, exps);
+		else
+			*gen_ands = append(*gen_ands, exps);
 	} else if (list_length(exps) == 1) {
 		sql_exp *se = exps->h->data;
 		sql_exp *le = se->l, *re = se->r;
 
 		if (se->type == e_cmp && se->flag == cmp_or && !is_anti(se)) {
 			/* for a cmp_or expression go down the tree */
-			multi_atom_cmp_eq |= exp_or_chain_groups(sql, (list*)le, ands, noneq, eqh);
-			multi_atom_cmp_eq |= exp_or_chain_groups(sql, (list*)re, ands, noneq, eqh);
+			multi_atom_cmp_eq |= exp_or_chain_groups(sql, (list*)le, gen_ands, ceq_ands, noneq, eqh);
+			multi_atom_cmp_eq |= exp_or_chain_groups(sql, (list*)re, gen_ands, ceq_ands, noneq, eqh);
 
 		} else if (se->type == e_cmp && se->flag == cmp_equal &&
 				   le->card != CARD_ATOM && is_column(le->type) &&
@@ -688,12 +696,12 @@ static list *
 merge_ors_NEW(mvc *sql, list *exps, int *changes)
 {
 	sql_hash *eqh = NULL, *meqh = NULL;
-	list *neq, *ands, *ins;
+	list *neq, *gen_ands, *ceq_ands, *ins;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
 		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
-			/* NOTE: ands is a list of lists since the AND association
+			/* NOTE: gen_ands and ceq_ands are both a list of lists since the AND association
 			 *       between expressions is expressed with a list
 			 *       e.g. [[e1, e2], [e3, e4, e5]] semantically translates
 			 *         to [(e1 AND e2), (e3 AND e4 AND e5)]
@@ -701,15 +709,17 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			 *       reconstructed an OR tree
 			 *       [[e1, e2], [e3, e4, e5]] =>
 			 *       (([e1, e2] OR [e3, e4, e5]) OR <whatever-else> )
+			 * TODO: Explain why we need gen_ands and ceq_ands
 			 */
-			ands = new_exp_list(sql->sa);
+			gen_ands = new_exp_list(sql->sa);
+			ceq_ands = new_exp_list(sql->sa);
 			neq = new_exp_list(sql->sa);
 			eqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 64*/, (fkeyvalue)&exp_unique_id);
 
 			/* if no multi-atom cmp_eq exps bailout, we don't need to gen cmp_in */
 			bool ma = false;
-			ma |= exp_or_chain_groups(sql, e->l, &ands, &neq, eqh);
-			ma |= exp_or_chain_groups(sql, e->r, &ands, &neq, eqh);
+			ma |= exp_or_chain_groups(sql, e->l, &gen_ands, &ceq_ands, &neq, eqh);
+			ma |= exp_or_chain_groups(sql, e->r, &gen_ands, &ceq_ands, &neq, eqh);
 			if (!ma)
 				continue;
 
@@ -732,9 +742,9 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			}
 
 			/* detect AND-chained cmp_eq-only exps with multiple values */
-			if (list_length(ands) > 1) {
+			if (list_length(ceq_ands) > 1) {
 				meqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 16*/, (fkeyvalue)&hash_key);
-				detect_multivalue_cmp_eqs(sql, ands, meqh);
+				detect_multivalue_cmp_eqs(sql, ceq_ands, meqh);
 			}
 
 			/* create the new OR tree */
@@ -748,8 +758,7 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 				new = exp_or(sql->sa, l, r, 0);
 			}
 
-			// TODO: we can recurse on ands
-			for (node *a = ands->h; a; a = a->next){
+			for (node *a = gen_ands->h; a; a = a->next){
 				list *l = new_exp_list(sql->sa);
 				l = append(l, new);
 				new = exp_or(sql->sa, l, a->data, 0);
