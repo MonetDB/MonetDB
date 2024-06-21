@@ -67,3 +67,4 @@ field-arg-error-Bug-7506
 7539-is-distinct-from
 7537-prepare_stmt_with_dropped_table
 7536-mclient-forgets-to-flush
+7541-levenshtein
