@@ -518,10 +518,116 @@ exp_unique_id(sql_exp *e)
 	return e->nid ? e->nid : e->alias.label;
 }
 
+static inline int
+exp_cmp_eq_unique_id(sql_exp *e)
+{
+	return exp_unique_id(e->l);
+}
+
 typedef struct exp_eq_atoms {
 	sql_exp* e;
 	list *l;
 } ea;
+
+typedef struct exp_eq_multi_cols_atoms {
+	char *cs; /* col(rname, name) concat str */
+	list *ces; /* list of col exps */
+	list *gvs; /* list of lists of atoms */
+} mca;
+
+static bool
+detect_multivalue_cmp_eqs(mvc *sql, list *ands, sql_hash *meqh)
+{
+	/* we get as input a list of AND associated expressions (hence the entries are lists themselves)
+	 * we need to detect cmp_eq-only AND-associated expressions with the same columns so we can
+	 * group together their values
+	 * e.g. [[n = 1, m = 10], [m = 20, k = 100, l = 3000], [m = 20, n = 2]] has
+	 *      - (m,k,l) group with a single value (20, 100, 3000)
+	 *      - (n,k) group with two values (1, 10) and (2, 20)
+	 * at the end we return true only if we have at least a group of columns with more than a single value
+	 * e.g. in this example (n,k)
+	 */
+	bool multi_multivalue_cmp_eq = false;
+	for (node *n = ands->h; n; n = n->next) {
+		bool eq_only = true;
+		list *l = n->data;
+
+		/* check if this list has only cmp_eq with a column lhs and an atom rhs */
+		for (node *m = l->h; m && eq_only; m = m->next) {
+			sql_exp *se = m->data;
+			sql_exp *le = se->l, *re = se->r;
+			eq_only &= (se->type == e_cmp && se->flag == cmp_equal && le->card != CARD_ATOM && is_column(le->type) && re->card == CARD_ATOM && !is_semantics(se));
+		}
+
+		if (!eq_only)
+			continue;
+		else {
+			/* sort the list of the cmp_eq expressions based on the col exp
+			 * NOTE: from now on we only work with the sorted list, sl */
+			list *sl = list_sort(l, (fkeyvalue)&exp_cmp_eq_unique_id, NULL);
+			list_append_before(ands, n, sl);
+			list_remove_node(ands, NULL, n);
+
+			/* make a hash key out of the concat str of (rname1, name1, rname2, name2..) */
+			char *cs = "";
+			for (node *m = sl->h; m; m = m->next) {
+				sql_exp *col_exp = ((sql_exp*)m->data)->l;
+				cs = strconcat(cs, strconcat(col_exp->alias.rname, col_exp->alias.name));
+			}
+
+			/* find the eq exp in the hash and append the values */
+			bool found = false;
+
+			int key = meqh->key(cs);
+			sql_hash_e *he = meqh->buckets[key&(meqh->size-1)];
+
+			for (;he && !found; he = he->chain) {
+				/* compare the values of the hash_entry with the cols under cmp_eq from the list */
+				bool same_cols = true;
+				mca *mcas = he->value;
+				for (node *m = sl->h, *k = mcas->ces->h; m && k && same_cols; m = m->next, k = k->next) {
+					sql_exp *col_exp = ((sql_exp*)m->data)->l;
+					if (exp_equal(col_exp, k->data))
+						same_cols = false;
+				}
+				if (same_cols) {
+					/* we found the same multi cmp_eq exp in ands list multiple times! */
+					found = multi_multivalue_cmp_eq = true;
+					/* gather all the values of the list and add them to the hash entry */
+					list *atms = sa_list(sql->sa);
+					for (node *m = sl->h; m; m = m->next) {
+						sql_exp *val_exp = ((sql_exp*)m->data)->r;
+						atms = append(atms, (atom*)val_exp->l);
+					}
+					mcas->gvs = append(mcas->gvs, atms);
+				}
+			}
+
+			if (!found) {
+				mca *mcas = SA_NEW(sql->sa, mca);
+				mcas->cs = cs;
+				mcas->ces = sa_list(sql->sa);
+				for (node *m = sl->h; m; m = m->next) {
+					sql_exp *col_exp = ((sql_exp*)m->data)->l;
+					mcas->ces = append(mcas->ces, col_exp);
+				}
+				/* for (group values) gv create a list and append it to the gvs list */
+				list *atms = sa_list(sql->sa);
+				for (node *m = sl->h; m; m = m->next) {
+					sql_exp *val_exp = ((sql_exp*)m->data)->r;
+					atms = append(atms, (atom*)val_exp->l);
+				}
+				mcas->gvs = sa_list(sql->sa);
+				mcas->gvs = append(mcas->gvs, atms);
+
+				hash_add(meqh, key, mcas);
+			}
+
+			/* TODO: manage the entries: remove the entry of the ands list as we are going to reconstruct it later */
+		}
+	}
+	return multi_multivalue_cmp_eq;
+}
 
 static bool
 exp_or_chain_groups(mvc *sql, list *exps, list **ands, list **noneq, sql_hash *eqh)
@@ -581,7 +687,7 @@ exp_or_chain_groups(mvc *sql, list *exps, list **ands, list **noneq, sql_hash *e
 static list *
 merge_ors_NEW(mvc *sql, list *exps, int *changes)
 {
-	sql_hash *eqh = NULL;
+	sql_hash *eqh = NULL, *meqh = NULL;
 	list *neq, *ands, *ins;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
@@ -623,6 +729,12 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 						ins = append(ins, exp_compare(sql->sa, eas->e, eas->l->h->data, cmp_equal));
 					he = he->chain;
 				}
+			}
+
+			/* detect AND-chained cmp_eq-only exps with multiple values */
+			if (list_length(ands) > 1) {
+				meqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 16*/, (fkeyvalue)&hash_key);
+				detect_multivalue_cmp_eqs(sql, ands, meqh);
 			}
 
 			/* create the new OR tree */
