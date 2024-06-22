@@ -595,10 +595,8 @@ detect_multivalue_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
 					found = multi_multivalue_cmp_eq = true;
 					/* gather all the values of the list and add them to the hash entry */
 					list *atms = sa_list(sql->sa);
-					for (node *m = sl->h; m; m = m->next) {
-						sql_exp *val_exp = ((sql_exp*)m->data)->r;
-						atms = append(atms, (atom*)val_exp->l);
-					}
+                    for (node *m = sl->h; m; m = m->next)
+                        atms = append(atms, ((sql_exp*)m->data)->r);
 					mcas->gvs = append(mcas->gvs, atms);
 				}
 			}
@@ -607,16 +605,12 @@ detect_multivalue_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
 				mca *mcas = SA_NEW(sql->sa, mca);
 				mcas->cs = cs;
 				mcas->ces = sa_list(sql->sa);
-				for (node *m = sl->h; m; m = m->next) {
-					sql_exp *col_exp = ((sql_exp*)m->data)->l;
-					mcas->ces = append(mcas->ces, col_exp);
-				}
+				for (node *m = sl->h; m; m = m->next)
+					mcas->ces = append(mcas->ces, ((sql_exp*)m->data)->l);
 				/* for (group values) gv create a list and append it to the gvs list */
 				list *atms = sa_list(sql->sa);
-				for (node *m = sl->h; m; m = m->next) {
-					sql_exp *val_exp = ((sql_exp*)m->data)->r;
-					atms = append(atms, (atom*)val_exp->l);
-				}
+				for (node *m = sl->h; m; m = m->next)
+					atms = append(atms, ((sql_exp*)m->data)->r);
 				mcas->gvs = sa_list(sql->sa);
 				mcas->gvs = append(mcas->gvs, atms);
 
@@ -696,7 +690,7 @@ static list *
 merge_ors_NEW(mvc *sql, list *exps, int *changes)
 {
 	sql_hash *eqh = NULL, *meqh = NULL;
-	list *neq, *gen_ands, *ceq_ands, *ins;
+	list *neq, *gen_ands, *ceq_ands, *ins, *mins;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -704,7 +698,7 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			/* NOTE: gen_ands and ceq_ands are both a list of lists since the AND association
 			 *       between expressions is expressed with a list
 			 *       e.g. [[e1, e2], [e3, e4, e5]] semantically translates
-			 *         to [(e1 AND e2), (e3 AND e4 AND e5)]
+			 *         to [(e1 AND e2), (e3 AND  e4 AND e5)]
 			 *       those (internal) AND list can be then used to
 			 *       reconstructed an OR tree
 			 *       [[e1, e2], [e3, e4, e5]] =>
@@ -720,7 +714,19 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			bool ma = false;
 			ma |= exp_or_chain_groups(sql, e->l, &gen_ands, &ceq_ands, &neq, eqh);
 			ma |= exp_or_chain_groups(sql, e->r, &gen_ands, &ceq_ands, &neq, eqh);
-			if (!ma)
+
+			// TODO: this has to be combined with the detect_multivalue_cmp_eqs result
+			/*if (!ma)*/
+				/*continue;*/
+
+			/* detect AND-chained cmp_eq-only exps with multiple values */
+			bool mas = false;
+			if (list_length(ceq_ands) > 1) {
+				meqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 16*/, (fkeyvalue)&hash_key);
+				mas = detect_multivalue_cmp_eqs(sql, ceq_ands, meqh);
+			}
+
+			if (!ma && !mas)
 				continue;
 
 			/* from equality atoms in the hash generate "e_col in (...)" for
@@ -741,16 +747,43 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 				}
 			}
 
-			/* detect AND-chained cmp_eq-only exps with multiple values */
-			if (list_length(ceq_ands) > 1) {
-				meqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 16*/, (fkeyvalue)&hash_key);
-				detect_multivalue_cmp_eqs(sql, ceq_ands, meqh);
+			/* from multivalue cmp_eq atoms in the hash generate
+			 * "(col1, col2, ...) in [(val10, val20, ...), (val11, val21, ...)]"
+			 * see detect_multivalue_cmp_eqs()
+			 */
+			mins = new_exp_list(sql->sa);
+			for (int i = 0; i < meqh->size; i++) {
+				sql_hash_e *he = meqh->buckets[i];
+				while (he) {
+                    mca *mcas = he->value;
+                    if (list_length(mcas->gvs) > 1) {
+                        sql_exp *mc = exp_label(sql->sa, exp_values(sql->sa, mcas->ces), ++sql->label);
+                        for (node *a = mcas->gvs->h; a; a = a->next)
+                        	a->data = exp_values(sql->sa, a->data);
+                        mins = append(mins, exp_in(sql->sa, mc, mcas->gvs, cmp_in));
+                    } else {
+                        /* TODO */
+                    }
+                    he = he->chain;
+                }
 			}
+
+			// TODO: ins and mins must be order e.g. if one is empty we should start the or chain with the other
 
 			/* create the new OR tree */
 			assert(list_length(ins));
 			sql_exp *new = ins->h->data;
 			for (node *i = ins->h->next; i; i = i->next) {
+				list *l = new_exp_list(sql->sa);
+				list *r = new_exp_list(sql->sa);
+				l = append(l, new);
+				r = append(r, (sql_exp*)i->data);
+				new = exp_or(sql->sa, l, r, 0);
+			}
+
+			/* keep chaining */
+            assert(list_length(mins));
+			for (node *i = mins->h; i; i = i->next) {
 				list *l = new_exp_list(sql->sa);
 				list *r = new_exp_list(sql->sa);
 				l = append(l, new);
