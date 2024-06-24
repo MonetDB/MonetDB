@@ -684,6 +684,54 @@ exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **ceq_ands, list
 }
 
 static list *
+generate_single_col_cmp_in(mvc *sql, sql_hash *eqh)
+{
+	/* from single col cmp_eq with multiple atoms in the hash generate
+	 * "e_col in (val0, val1, ...)" (see exp_or_chain_groups())
+	 */
+	list *ins = new_exp_list(sql->sa);
+	for (int i = 0; i < eqh->size; i++) {
+		sql_hash_e *he = eqh->buckets[i];
+
+		while (he) {
+			ea *eas = he->value;
+			/* only if there are multiple cmp_eq atoms for this col turn them into a cmp_in */
+			if (list_length(eas->l) > 1)
+				ins = append(ins, exp_in(sql->sa, eas->e, eas->l, cmp_in));
+			else
+				ins = append(ins, exp_compare(sql->sa, eas->e, eas->l->h->data, cmp_equal));
+			he = he->chain;
+		}
+	}
+	return ins;
+}
+
+static list *
+generate_multi_col_cmp_in(mvc *sql, sql_hash *eqh)
+{
+	/* from multivalue cmp_eq with multiple lists of atoms in the hash generate
+	 * "(col1, col2, ...) in [(val10, val20, ...), (val11, val21, ...), ... ]"
+	 * (see detect_multicol_cmp_eqs())
+	 */
+	ins = new_exp_list(sql->sa);
+	for (int i = 0; i < meqh->size; i++) {
+		sql_hash_e *he = meqh->buckets[i];
+		while (he) {
+			mca *mcas = he->value;
+			/* NOTE: multivalue cmp_eq expressions with a single entry are still in ceq_ands */
+			if (list_length(mcas->gvs) > 1) {
+				sql_exp *mc = exp_label(sql->sa, exp_values(sql->sa, mcas->ces), ++sql->label);
+				for (node *a = mcas->gvs->h; a; a = a->next)
+					a->data = exp_values(sql->sa, a->data);
+				ins = append(ins, exp_in(sql->sa, mc, mcas->gvs, cmp_in));
+			}
+			he = he->chain;
+		}
+	}
+	return ins;
+}
+
+static list *
 merge_ors_NEW(mvc *sql, list *exps, int *changes)
 {
 	sql_hash *eqh = NULL, *meqh = NULL;
@@ -721,47 +769,11 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			if (!col_multival && !multicol_multival)
 				continue;
 
-			if (col_multival) {
-				/* from equality atoms in the hash generate "e_col in (...)" for
-				 * entries with multiple atoms (see exp_or_chain_groups())
-				 * */
-				ins = new_exp_list(sql->sa);
-				for (int i = 0; i < eqh->size; i++) {
-					sql_hash_e *he = eqh->buckets[i];
+			if (col_multival)
+				ins = generate_single_col_cmp_in(sql, eqh);
 
-					while (he) {
-						ea *eas = he->value;
-						/* only if there are multiple cmp_eq atoms for this col turn them into a cmp_in */
-						if (list_length(eas->l) > 1)
-							ins = append(ins, exp_in(sql->sa, eas->e, eas->l, cmp_in));
-						else
-							ins = append(ins, exp_compare(sql->sa, eas->e, eas->l->h->data, cmp_equal));
-						he = he->chain;
-					}
-				}
-			}
-
-			if (multicol_multival) {
-				/* from multivalue cmp_eq atoms in the hash generate
-				 * "(col1, col2, ...) in [(val10, val20, ...), (val11, val21, ...), ... ]"
-				 * see detect_multicol_cmp_eqs()
-				 */
-				mins = new_exp_list(sql->sa);
-				for (int i = 0; i < meqh->size; i++) {
-					sql_hash_e *he = meqh->buckets[i];
-					while (he) {
-						mca *mcas = he->value;
-						/* NOTE: multivalue cmp_eq expressions with a single entry are still in ceq_ands */
-						if (list_length(mcas->gvs) > 1) {
-							sql_exp *mc = exp_label(sql->sa, exp_values(sql->sa, mcas->ces), ++sql->label);
-							for (node *a = mcas->gvs->h; a; a = a->next)
-								a->data = exp_values(sql->sa, a->data);
-							mins = append(mins, exp_in(sql->sa, mc, mcas->gvs, cmp_in));
-						}
-						he = he->chain;
-					}
-				}
-			}
+			if (multicol_multival)
+				mins = generate_multi_col_cmp_in(sql, meqh);
 
 			/* create the new OR tree */
 			sql_exp *new = (ins) ? ins->h->data : mins->h->data;
