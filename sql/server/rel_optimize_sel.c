@@ -720,11 +720,9 @@ generate_single_col_cmp_in(mvc *sql, sql_hash *eqh)
 
 		while (he) {
 			eq_cv *cv = he->value;
-			/* only if there are multiple cmp_eq atoms for this col turn them into a cmp_in */
+			/* NOTE: cmp_eq expressions with a single entry are still in eqs */
 			if (list_length(cv->vs) > 1)
 				ins = append(ins, exp_in(sql->sa, cv->col, cv->vs, cmp_in));
-			else
-				ins = append(ins, exp_compare(sql->sa, cv->col, cv->vs->h->data, cmp_equal));
 			he = he->chain;
 		}
 	}
