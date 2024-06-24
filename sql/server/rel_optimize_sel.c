@@ -623,7 +623,7 @@ exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **ceq_ands, list
 {
 	/* identify three different groups
 	 * 1. gen_ands: lists of generic expressions (their inner association is AND)
-	 * 2. ceq_ands: lists of cmp_eq ONLY expressions (same^^^)
+	 * 2. ceq_ands: lists of multi_colum cmp_eq ONLY expressions (same^^^)
 	 * 3. neq: non equality col expressions
 	 * 4. eqh: col = X (we store the different X values)
 	 *
@@ -707,13 +707,13 @@ generate_single_col_cmp_in(mvc *sql, sql_hash *eqh)
 }
 
 static list *
-generate_multi_col_cmp_in(mvc *sql, sql_hash *eqh)
+generate_multi_col_cmp_in(mvc *sql, sql_hash *meqh)
 {
 	/* from multivalue cmp_eq with multiple lists of atoms in the hash generate
 	 * "(col1, col2, ...) in [(val10, val20, ...), (val11, val21, ...), ... ]"
 	 * (see detect_multicol_cmp_eqs())
 	 */
-	ins = new_exp_list(sql->sa);
+	list *ins = new_exp_list(sql->sa);
 	for (int i = 0; i < meqh->size; i++) {
 		sql_hash_e *he = meqh->buckets[i];
 		while (he) {
