@@ -707,21 +707,21 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			neq = new_exp_list(sql->sa);
 			eqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 64*/, (fkeyvalue)&exp_unique_id);
 
-			bool ma = false;
-			ma |= exp_or_chain_groups(sql, e->l, &gen_ands, &ceq_ands, &neq, eqh);
-			ma |= exp_or_chain_groups(sql, e->r, &gen_ands, &ceq_ands, &neq, eqh);
+			bool col_multival = false;
+			col_multival |= exp_or_chain_groups(sql, e->l, &gen_ands, &ceq_ands, &neq, eqh);
+			col_multival |= exp_or_chain_groups(sql, e->r, &gen_ands, &ceq_ands, &neq, eqh);
 
 			/* detect AND-chained cmp_eq-only exps with multiple values */
-			bool mas = false;
+			bool multicol_multival = false;
 			if (list_length(ceq_ands) > 1) {
 				meqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 16*/, (fkeyvalue)&hash_key);
-				mas |= detect_multicol_cmp_eqs(sql, ceq_ands, meqh);
+				multicol_multival |= detect_multicol_cmp_eqs(sql, ceq_ands, meqh);
 			}
 
-			if (!ma && !mas)
+			if (!col_multival && !multicol_multival)
 				continue;
 
-			if (ma) {
+			if (col_multival) {
 				/* from equality atoms in the hash generate "e_col in (...)" for
 				 * entries with multiple atoms (see exp_or_chain_groups())
 				 * */
@@ -741,7 +741,7 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 				}
 			}
 
-			if (mas) {
+			if (multicol_multival) {
 				/* from multivalue cmp_eq atoms in the hash generate
 				 * "(col1, col2, ...) in [(val10, val20, ...), (val11, val21, ...), ... ]"
 				 * see detect_multicol_cmp_eqs()
