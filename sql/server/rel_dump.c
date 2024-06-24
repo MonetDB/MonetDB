@@ -638,7 +638,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		}
 		if (rel->op == op_groupby)  /* group by columns */
 			exps_print(sql, fout, rel->r, depth, refs, 1, 0, decorate, 0);
-		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
+		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, (mvc_debug_on(sql, 32768) && rel->op == op_select)?1:0);
 		if (rel->r && rel->op == op_project) /* order by columns */
 			exps_print(sql, fout, rel->r, depth, refs, 1, 0, decorate, 0);
 		break;

@@ -531,6 +531,7 @@ typedef struct exp_eq_atoms {
 
 typedef struct exp_eq_multi_cols_atoms {
 	char *cs; /* col(rname, name) concat str */
+	list *first;
 	list *ces; /* list of col exps */
 	list *gvs; /* list of lists of atoms */
 } mca;
@@ -552,6 +553,7 @@ detect_multivalue_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
 		bool eq_only = true;
 		list *l = n->data;
 
+		// TODO: remove this we already have what we want in cmp_eq
 		/* check if this list has only cmp_eq with a column lhs and an atom rhs */
 		for (node *m = l->h; m && eq_only; m = m->next) {
 			sql_exp *se = m->data;
@@ -598,12 +600,20 @@ detect_multivalue_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
                     for (node *m = sl->h; m; m = m->next)
                         atms = append(atms, ((sql_exp*)m->data)->r);
 					mcas->gvs = append(mcas->gvs, atms);
+					/* remove this and the previous occurrence (which means that's the first time
+					 * that we found the *same* multi cmp_eq exp)
+					 */
+					if (mcas->first)
+						list_remove_data(ceq_ands, NULL, mcas->first);
+					list_remove_data(ceq_ands, NULL, sl);
 				}
 			}
 
 			if (!found) {
 				mca *mcas = SA_NEW(sql->sa, mca);
 				mcas->cs = cs;
+				// TODO: explain!!
+				mcas->first = sl;
 				mcas->ces = sa_list(sql->sa);
 				for (node *m = sl->h; m; m = m->next)
 					mcas->ces = append(mcas->ces, ((sql_exp*)m->data)->l);
@@ -746,7 +756,7 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 
 			if (mas) {
 				/* from multivalue cmp_eq atoms in the hash generate
-				 * "(col1, col2, ...) in [(val10, val20, ...), (val11, val21, ...)]"
+				 * "(col1, col2, ...) in [(val10, val20, ...), (val11, val21, ...), ... ]"
 				 * see detect_multivalue_cmp_eqs()
 				 */
 				mins = new_exp_list(sql->sa);
@@ -754,13 +764,12 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 					sql_hash_e *he = meqh->buckets[i];
 					while (he) {
 						mca *mcas = he->value;
+						/* NOTE: multivalue cmp_eq expressions with a single entry are still in ceq_ands */
 						if (list_length(mcas->gvs) > 1) {
 							sql_exp *mc = exp_label(sql->sa, exp_values(sql->sa, mcas->ces), ++sql->label);
 							for (node *a = mcas->gvs->h; a; a = a->next)
 								a->data = exp_values(sql->sa, a->data);
 							mins = append(mins, exp_in(sql->sa, mc, mcas->gvs, cmp_in));
-						} else {
-							/* TODO */
 						}
 						he = he->chain;
 					}
@@ -781,12 +790,20 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			}
 
 			if (mins) {
-				for (node *i = ((!ins) ? mins->h->next : mins->h); i; i = i->next) {
+				for (node *i = ((ins) ? mins->h : mins->h->next); i; i = i->next) {
 					list *l = new_exp_list(sql->sa);
 					list *r = new_exp_list(sql->sa);
 					l = append(l, new);
 					r = append(r, (sql_exp*)i->data);
 					new = exp_or(sql->sa, l, r, 0);
+				}
+			}
+
+			if (list_length(ceq_ands)) {
+				for (node *i = ceq_ands->h; i; i = i->next) {
+					list *l = new_exp_list(sql->sa);
+					l = append(l, new);
+					new = exp_or(sql->sa, l, i->data, 0);
 				}
 			}
 
@@ -806,6 +823,8 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 
 			list_remove_node(exps, NULL, n);
 			exps = append(exps, new);
+
+			// TODO: should that be per col/multicol group?
 			(*changes)++;
 		}
 	}
