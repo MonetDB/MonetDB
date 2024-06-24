@@ -525,6 +525,7 @@ exp_cmp_eq_unique_id(sql_exp *e)
 }
 
 typedef struct exp_eq_atoms {
+	sql_exp* first;
 	sql_exp* e;
 	list *l;
 } ea;
@@ -556,10 +557,14 @@ detect_col_cmp_eqs(mvc *sql, list *eqs, sql_hash *eqh)
 				eas->l = append(eas->l, re);
 				found = col_multivalue_cmp_eq = true;
 			}
+			if (eas->first)
+				list_remove_data(eqs, NULL, eas->first);
+			list_remove_node(eqs, NULL, n);
 		}
 
 		if (!found) {
 			ea *eas = SA_NEW(sql->sa, ea);
+			eas->first = e;
 			eas->l = sa_list(sql->sa);
 			eas->l = append(eas->l, re);
 			eas->e = le;
@@ -799,6 +804,16 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 
 			if (ins) {
 				for (node *i = ins->h->next; i; i = i->next) {
+					list *l = new_exp_list(sql->sa);
+					list *r = new_exp_list(sql->sa);
+					l = append(l, new);
+					r = append(r, (sql_exp*)i->data);
+					new = exp_or(sql->sa, l, r, 0);
+				}
+			}
+
+			if (list_length(eqs)) {
+				for (node *i = eqs->h; i; i = i->next) {
 					list *l = new_exp_list(sql->sa);
 					list *r = new_exp_list(sql->sa);
 					l = append(l, new);
