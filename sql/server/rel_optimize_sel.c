@@ -531,7 +531,6 @@ typedef struct exp_eq_atoms {
 } ea;
 
 typedef struct exp_eq_multi_cols_atoms {
-	char *cs; /* col(rname, name) concat str */
 	list *first;
 	list *ces; /* list of col exps */
 	list *gvs; /* list of lists of atoms */
@@ -642,7 +641,6 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 
 		if (!found) {
 			mca *mcas = SA_NEW(sql->sa, mca);
-			mcas->cs = cs;
 			// TODO: explain!!
 			mcas->first = sl;
 			mcas->ces = sa_list(sql->sa);
