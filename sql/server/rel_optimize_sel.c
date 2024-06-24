@@ -550,82 +550,69 @@ detect_multivalue_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
 	 */
 	bool multi_multivalue_cmp_eq = false;
 	for (node *n = ceq_ands->h; n; n = n->next) {
-		bool eq_only = true;
 		list *l = n->data;
 
-		// TODO: remove this we already have what we want in cmp_eq
-		/* check if this list has only cmp_eq with a column lhs and an atom rhs */
-		for (node *m = l->h; m && eq_only; m = m->next) {
-			sql_exp *se = m->data;
-			sql_exp *le = se->l, *re = se->r;
-			eq_only &= (se->type == e_cmp && se->flag == cmp_equal && le->card != CARD_ATOM && is_column(le->type) && re->card == CARD_ATOM && !is_semantics(se));
+		/* sort the list of the cmp_eq expressions based on the col exp
+		 * NOTE: from now on we only work with the sorted list, sl */
+		list *sl = list_sort(l, (fkeyvalue)&exp_cmp_eq_unique_id, NULL);
+		list_append_before(ceq_ands, n, sl);
+		list_remove_node(ceq_ands, NULL, n);
+
+		/* make a hash key out of the concat str of (rname1, name1, rname2, name2..) */
+		char *cs = "";
+		for (node *m = sl->h; m; m = m->next) {
+			sql_exp *col_exp = ((sql_exp*)m->data)->l;
+			cs = strconcat(cs, strconcat(col_exp->alias.rname, col_exp->alias.name));
 		}
 
-		if (!eq_only)
-			continue;
-		else {
-			/* sort the list of the cmp_eq expressions based on the col exp
-			 * NOTE: from now on we only work with the sorted list, sl */
-			list *sl = list_sort(l, (fkeyvalue)&exp_cmp_eq_unique_id, NULL);
-			list_append_before(ceq_ands, n, sl);
-			list_remove_node(ceq_ands, NULL, n);
+		/* find the eq exp in the hash and append the values */
+		bool found = false;
 
-			/* make a hash key out of the concat str of (rname1, name1, rname2, name2..) */
-			char *cs = "";
-			for (node *m = sl->h; m; m = m->next) {
+		int key = meqh->key(cs);
+		sql_hash_e *he = meqh->buckets[key&(meqh->size-1)];
+
+		for (;he && !found; he = he->chain) {
+			/* compare the values of the hash_entry with the cols under cmp_eq from the list */
+			bool same_cols = true;
+			mca *mcas = he->value;
+			for (node *m = sl->h, *k = mcas->ces->h; m && k && same_cols; m = m->next, k = k->next) {
 				sql_exp *col_exp = ((sql_exp*)m->data)->l;
-				cs = strconcat(cs, strconcat(col_exp->alias.rname, col_exp->alias.name));
+				if (exp_equal(col_exp, k->data))
+					same_cols = false;
 			}
-
-			/* find the eq exp in the hash and append the values */
-			bool found = false;
-
-			int key = meqh->key(cs);
-			sql_hash_e *he = meqh->buckets[key&(meqh->size-1)];
-
-			for (;he && !found; he = he->chain) {
-				/* compare the values of the hash_entry with the cols under cmp_eq from the list */
-				bool same_cols = true;
-				mca *mcas = he->value;
-				for (node *m = sl->h, *k = mcas->ces->h; m && k && same_cols; m = m->next, k = k->next) {
-					sql_exp *col_exp = ((sql_exp*)m->data)->l;
-					if (exp_equal(col_exp, k->data))
-						same_cols = false;
-				}
-				if (same_cols) {
-					/* we found the same multi cmp_eq exp in ceq_ands list multiple times! */
-					found = multi_multivalue_cmp_eq = true;
-					/* gather all the values of the list and add them to the hash entry */
-					list *atms = sa_list(sql->sa);
-                    for (node *m = sl->h; m; m = m->next)
-                        atms = append(atms, ((sql_exp*)m->data)->r);
-					mcas->gvs = append(mcas->gvs, atms);
-					/* remove this and the previous occurrence (which means that's the first time
-					 * that we found the *same* multi cmp_eq exp)
-					 */
-					if (mcas->first)
-						list_remove_data(ceq_ands, NULL, mcas->first);
-					list_remove_data(ceq_ands, NULL, sl);
-				}
-			}
-
-			if (!found) {
-				mca *mcas = SA_NEW(sql->sa, mca);
-				mcas->cs = cs;
-				// TODO: explain!!
-				mcas->first = sl;
-				mcas->ces = sa_list(sql->sa);
-				for (node *m = sl->h; m; m = m->next)
-					mcas->ces = append(mcas->ces, ((sql_exp*)m->data)->l);
-				/* for (group values) gv create a list and append it to the gvs list */
+			if (same_cols) {
+				/* we found the same multi cmp_eq exp in ceq_ands list multiple times! */
+				found = multi_multivalue_cmp_eq = true;
+				/* gather all the values of the list and add them to the hash entry */
 				list *atms = sa_list(sql->sa);
 				for (node *m = sl->h; m; m = m->next)
 					atms = append(atms, ((sql_exp*)m->data)->r);
-				mcas->gvs = sa_list(sql->sa);
 				mcas->gvs = append(mcas->gvs, atms);
-
-				hash_add(meqh, key, mcas);
+				/* remove this and the previous occurrence (which means that's the first time
+				 * that we found the *same* multi cmp_eq exp)
+				 */
+				if (mcas->first)
+					list_remove_data(ceq_ands, NULL, mcas->first);
+				list_remove_data(ceq_ands, NULL, sl);
 			}
+		}
+
+		if (!found) {
+			mca *mcas = SA_NEW(sql->sa, mca);
+			mcas->cs = cs;
+			// TODO: explain!!
+			mcas->first = sl;
+			mcas->ces = sa_list(sql->sa);
+			for (node *m = sl->h; m; m = m->next)
+				mcas->ces = append(mcas->ces, ((sql_exp*)m->data)->l);
+			/* for (group values) gv create a list and append it to the gvs list */
+			list *atms = sa_list(sql->sa);
+			for (node *m = sl->h; m; m = m->next)
+				atms = append(atms, ((sql_exp*)m->data)->r);
+			mcas->gvs = sa_list(sql->sa);
+			mcas->gvs = append(mcas->gvs, atms);
+
+			hash_add(meqh, key, mcas);
 		}
 	}
 	return multi_multivalue_cmp_eq;
