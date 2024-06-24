@@ -537,7 +537,7 @@ typedef struct exp_eq_multi_cols_atoms {
 } mca;
 
 static bool
-detect_multivalue_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
+detect_multicol_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
 {
 	/* we get as input a list of AND associated expressions (hence the entries are lists themselves)
 	 * we need to detect cmp_eq-only AND-associated expressions with the same columns so we can
@@ -715,7 +715,7 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			bool mas = false;
 			if (list_length(ceq_ands) > 1) {
 				meqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 16*/, (fkeyvalue)&hash_key);
-				mas |= detect_multivalue_cmp_eqs(sql, ceq_ands, meqh);
+				mas |= detect_multicol_cmp_eqs(sql, ceq_ands, meqh);
 			}
 
 			if (!ma && !mas)
@@ -744,7 +744,7 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			if (mas) {
 				/* from multivalue cmp_eq atoms in the hash generate
 				 * "(col1, col2, ...) in [(val10, val20, ...), (val11, val21, ...), ... ]"
-				 * see detect_multivalue_cmp_eqs()
+				 * see detect_multicol_cmp_eqs()
 				 */
 				mins = new_exp_list(sql->sa);
 				for (int i = 0; i < meqh->size; i++) {
