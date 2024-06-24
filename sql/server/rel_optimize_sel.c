@@ -647,12 +647,11 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 
 		if (!found) {
 			eq_mcv *mcv = SA_NEW(sql->sa, eq_mcv);
-			// TODO: explain!!
 			mcv->first = sl;
 			mcv->cols = sa_list(sql->sa);
 			for (node *m = sl->h; m; m = m->next)
 				mcv->cols = append(mcv->cols, ((sql_exp*)m->data)->l);
-			/* for (group values) gv create a list and append it to the lvs list */
+			/* for the list of values (atoms) create a list and append it to the lvs list */
 			list *atms = sa_list(sql->sa);
 			for (node *m = sl->h; m; m = m->next)
 				atms = append(atms, ((sql_exp*)m->data)->r);
@@ -676,15 +675,16 @@ exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **mce_ands, list
 	 *
 	 * return true if there is an exp with more than one cmp_eq
 	 */
+    bool eq_only = true;
+    for (node *n = exps->h; n && eq_only; n = n->next) {
+        sql_exp *e = n->data;
+        sql_exp *le = e->l, *re = e->r;
+        eq_only &= (e->type == e_cmp && e->flag == cmp_equal &&
+                    le->card != CARD_ATOM && is_column(le->type) &&
+                    re->card == CARD_ATOM && !is_semantics(e));
+    }
+
 	if (list_length(exps) > 1) {
-		bool eq_only = true;
-		for (node *n = exps->h; n && eq_only; n = n->next) {
-			sql_exp *e = n->data;
-			sql_exp *le = e->l, *re = e->r;
-			eq_only &= (e->type == e_cmp && e->flag == cmp_equal &&
-					    le->card != CARD_ATOM && is_column(le->type) &&
-					    re->card == CARD_ATOM && !is_semantics(e));
-		}
 		if (eq_only)
 			*mce_ands = append(*mce_ands, exps);
 		else
@@ -698,9 +698,7 @@ exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **mce_ands, list
 			exp_or_chain_groups(sql, (list*)le, gen_ands, mce_ands, eqs, noneq);
 			exp_or_chain_groups(sql, (list*)re, gen_ands, mce_ands, eqs, noneq);
 
-		} else if (se->type == e_cmp && se->flag == cmp_equal &&
-				   le->card != CARD_ATOM && is_column(le->type) &&
-				   re->card == CARD_ATOM && !is_semantics(se)) {
+		} else if (eq_only) {
 			*eqs = append(*eqs, se);
 		} else {
 			*noneq = append(*noneq, se);
@@ -712,7 +710,7 @@ static list *
 generate_single_col_cmp_in(mvc *sql, sql_hash *eqh)
 {
 	/* from single col cmp_eq with multiple atoms in the hash generate
-	 * "e_col in (val0, val1, ...)" (see exp_or_chain_groups())
+	 * "e_col in (val0, val1, ...)" (see detect_col_cmp_eqs())
 	 */
 	list *ins = new_exp_list(sql->sa);
 	for (int i = 0; i < eqh->size; i++) {
@@ -768,10 +766,10 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			 *       e.g. [[e1, e2], [e3, e4, e5]] semantically translates
 			 *         to [(e1 AND e2), (e3 AND  e4 AND e5)]
 			 *       those (internal) AND list can be then used to
-			 *       reconstructed an OR tree
-			 *       [[e1, e2], [e3, e4, e5]] =>
+			 *       reconstructed an OR tree [[e1, e2], [e3, e4, e5]] =>
 			 *       (([e1, e2] OR [e3, e4, e5]) OR <whatever-else> )
-			 * TODO: Explain why we need gen_ands and mce_ands
+			 *       gen_ands includes general expressions associated with AND
+			 *       mce_ands includes only cmp_eq expressions associated with AND
 			 */
 			gen_ands = new_exp_list(sql->sa);
 			mce_ands = new_exp_list(sql->sa);
