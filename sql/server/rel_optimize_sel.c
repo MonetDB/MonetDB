@@ -557,8 +557,10 @@ detect_col_cmp_eqs(mvc *sql, list *eqs, sql_hash *eqh)
 				eas->l = append(eas->l, re);
 				found = col_multivalue_cmp_eq = true;
 			}
-			if (eas->first)
+			if (eas->first) {
 				list_remove_data(eqs, NULL, eas->first);
+				eas->first = NULL;
+			}
 			list_remove_node(eqs, NULL, n);
 		}
 
@@ -630,8 +632,10 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 				/* remove this and the previous occurrence (which means that's the first time
 				 * that we found the *same* multi cmp_eq exp)
 				 */
-				if (mcas->first)
+				if (mcas->first) {
 					list_remove_data(mce_ands, NULL, mcas->first);
+					mcas->first = NULL;
+				}
 				list_remove_data(mce_ands, NULL, sl);
 			}
 		}
