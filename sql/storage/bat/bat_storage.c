@@ -336,11 +336,8 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tnokey[1] = 0;
 	b->theap->dirty = true;
 	BUN cnt = BATcount(b);
-	MT_lock_unset(&b->theaplock);
 
 	uint32_t *restrict dst;
-	/* why hashlock ?? */
-	MT_rwlock_wrlock(&b->thashlock);
 	for (; s ; s=ATOMIC_PTR_GET(&s->next)) {
 		if (s->start >= nr)
 			break;
@@ -407,12 +404,10 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				cnt = s->end;
 		}
 	}
-	MT_rwlock_wrunlock(&b->thashlock);
 	if (nr > BATcount(b)) {
-		MT_lock_set(&b->theaplock);
 		BATsetcount(b, nr);
-		MT_lock_unset(&b->theaplock);
 	}
+	MT_lock_unset(&b->theaplock);
 
 	bat_destroy(b);
 	return LOG_OK;
