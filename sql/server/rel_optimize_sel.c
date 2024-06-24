@@ -524,17 +524,23 @@ exp_cmp_eq_unique_id(sql_exp *e)
 	return exp_unique_id(e->l);
 }
 
-typedef struct exp_eq_atoms {
+typedef struct exp_eq_col_values {
+	/* we need ->first in order to remove it from the list of cmp_eq exps
+	 * in case that we find another occurrence (with a different value)
+	 */
 	sql_exp* first;
-	sql_exp* e;
-	list *l;
-} ea;
+	sql_exp* col; /* column */
+	list *vs;     /* list of values */
+} eq_cv;
 
-typedef struct exp_eq_multi_cols_atoms {
+typedef struct exp_eq_multi_col_values {
+	/* we need ->first in order to remove it from the list of multi col
+	 * cmp_eq exps in case that we find another occurrence (with different values)
+	 */
 	list *first;
-	list *ces; /* list of col exps */
-	list *gvs; /* list of lists of atoms */
-} mca;
+	list *cols;  /* list of col exps */
+	list *lvs;   /* list of lists of values */
+} eq_mcv;
 
 static bool
 detect_col_cmp_eqs(mvc *sql, list *eqs, sql_hash *eqh)
@@ -551,26 +557,26 @@ detect_col_cmp_eqs(mvc *sql, list *eqs, sql_hash *eqh)
 		sql_hash_e *he = eqh->buckets[key&(eqh->size-1)];
 
 		for (;he && !found; he = he->chain) {
-			ea *eas = he->value;
-			if(!exp_equal(le, eas->e)){
-				eas->l = append(eas->l, re);
+			eq_cv *cv = he->value;
+			if(!exp_equal(le, cv->col)){
+				cv->vs = append(cv->vs, re);
 				found = col_multivalue_cmp_eq = true;
 			}
-			if (eas->first) {
-				list_remove_data(eqs, NULL, eas->first);
-				eas->first = NULL;
+			if (cv->first) {
+				list_remove_data(eqs, NULL, cv->first);
+				cv->first = NULL;
 			}
 			list_remove_node(eqs, NULL, n);
 		}
 
 		if (!found) {
-			ea *eas = SA_NEW(sql->sa, ea);
-			eas->first = e;
-			eas->l = sa_list(sql->sa);
-			eas->l = append(eas->l, re);
-			eas->e = le;
+			eq_cv *cv = SA_NEW(sql->sa, eq_cv);
+			cv->first = e;
+			cv->vs = sa_list(sql->sa);
+			cv->vs = append(cv->vs, re);
+			cv->col = le;
 
-			hash_add(eqh, key, eas);
+			hash_add(eqh, key, cv);
 		}
 	}
 	return col_multivalue_cmp_eq;
@@ -614,8 +620,8 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 		for (;he && !found; he = he->chain) {
 			/* compare the values of the hash_entry with the cols under cmp_eq from the list */
 			bool same_cols = true;
-			mca *mcas = he->value;
-			for (node *m = sl->h, *k = mcas->ces->h; m && k && same_cols; m = m->next, k = k->next) {
+			eq_mcv *mcv = he->value;
+			for (node *m = sl->h, *k = mcv->cols->h; m && k && same_cols; m = m->next, k = k->next) {
 				sql_exp *col_exp = ((sql_exp*)m->data)->l;
 				if (exp_equal(col_exp, k->data))
 					same_cols = false;
@@ -627,33 +633,33 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 				list *atms = sa_list(sql->sa);
 				for (node *m = sl->h; m; m = m->next)
 					atms = append(atms, ((sql_exp*)m->data)->r);
-				mcas->gvs = append(mcas->gvs, atms);
+				mcv->lvs = append(mcv->lvs, atms);
 				/* remove this and the previous occurrence (which means that's the first time
 				 * that we found the *same* multi cmp_eq exp)
 				 */
-				if (mcas->first) {
-					list_remove_data(mce_ands, NULL, mcas->first);
-					mcas->first = NULL;
+				if (mcv->first) {
+					list_remove_data(mce_ands, NULL, mcv->first);
+					mcv->first = NULL;
 				}
 				list_remove_data(mce_ands, NULL, sl);
 			}
 		}
 
 		if (!found) {
-			mca *mcas = SA_NEW(sql->sa, mca);
+			eq_mcv *mcv = SA_NEW(sql->sa, eq_mcv);
 			// TODO: explain!!
-			mcas->first = sl;
-			mcas->ces = sa_list(sql->sa);
+			mcv->first = sl;
+			mcv->cols = sa_list(sql->sa);
 			for (node *m = sl->h; m; m = m->next)
-				mcas->ces = append(mcas->ces, ((sql_exp*)m->data)->l);
-			/* for (group values) gv create a list and append it to the gvs list */
+				mcv->cols = append(mcv->cols, ((sql_exp*)m->data)->l);
+			/* for (group values) gv create a list and append it to the lvs list */
 			list *atms = sa_list(sql->sa);
 			for (node *m = sl->h; m; m = m->next)
 				atms = append(atms, ((sql_exp*)m->data)->r);
-			mcas->gvs = sa_list(sql->sa);
-			mcas->gvs = append(mcas->gvs, atms);
+			mcv->lvs = sa_list(sql->sa);
+			mcv->lvs = append(mcv->lvs, atms);
 
-			hash_add(meqh, key, mcas);
+			hash_add(meqh, key, mcv);
 		}
 	}
 	return multi_multivalue_cmp_eq;
@@ -713,12 +719,12 @@ generate_single_col_cmp_in(mvc *sql, sql_hash *eqh)
 		sql_hash_e *he = eqh->buckets[i];
 
 		while (he) {
-			ea *eas = he->value;
+			eq_cv *cv = he->value;
 			/* only if there are multiple cmp_eq atoms for this col turn them into a cmp_in */
-			if (list_length(eas->l) > 1)
-				ins = append(ins, exp_in(sql->sa, eas->e, eas->l, cmp_in));
+			if (list_length(cv->vs) > 1)
+				ins = append(ins, exp_in(sql->sa, cv->col, cv->vs, cmp_in));
 			else
-				ins = append(ins, exp_compare(sql->sa, eas->e, eas->l->h->data, cmp_equal));
+				ins = append(ins, exp_compare(sql->sa, cv->col, cv->vs->h->data, cmp_equal));
 			he = he->chain;
 		}
 	}
@@ -736,13 +742,13 @@ generate_multi_col_cmp_in(mvc *sql, sql_hash *meqh)
 	for (int i = 0; i < meqh->size; i++) {
 		sql_hash_e *he = meqh->buckets[i];
 		while (he) {
-			mca *mcas = he->value;
+			eq_mcv *mcv = he->value;
 			/* NOTE: multivalue cmp_eq expressions with a single entry are still in mce_ands */
-			if (list_length(mcas->gvs) > 1) {
-				sql_exp *mc = exp_label(sql->sa, exp_values(sql->sa, mcas->ces), ++sql->label);
-				for (node *a = mcas->gvs->h; a; a = a->next)
+			if (list_length(mcv->lvs) > 1) {
+				sql_exp *mc = exp_label(sql->sa, exp_values(sql->sa, mcv->cols), ++sql->label);
+				for (node *a = mcv->lvs->h; a; a = a->next)
 					a->data = exp_values(sql->sa, a->data);
-				ins = append(ins, exp_in(sql->sa, mc, mcas->gvs, cmp_in));
+				ins = append(ins, exp_in(sql->sa, mc, mcv->lvs, cmp_in));
 			}
 			he = he->chain;
 		}
