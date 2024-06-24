@@ -571,7 +571,7 @@ detect_col_cmp_eqs(mvc *sql, list *eqs, sql_hash *eqh)
 }
 
 static bool
-detect_multicol_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
+detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 {
 	/* we get as input a list of AND associated expressions (hence the entries are lists themselves)
 	 * we need to detect cmp_eq-only AND-associated expressions with the same columns so we can
@@ -583,14 +583,14 @@ detect_multicol_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
 	 * e.g. in this example (n,k)
 	 */
 	bool multi_multivalue_cmp_eq = false;
-	for (node *n = ceq_ands->h; n; n = n->next) {
+	for (node *n = mce_ands->h; n; n = n->next) {
 		list *l = n->data;
 
 		/* sort the list of the cmp_eq expressions based on the col exp
 		 * NOTE: from now on we only work with the sorted list, sl */
 		list *sl = list_sort(l, (fkeyvalue)&exp_cmp_eq_unique_id, NULL);
-		list_append_before(ceq_ands, n, sl);
-		list_remove_node(ceq_ands, NULL, n);
+		list_append_before(mce_ands, n, sl);
+		list_remove_node(mce_ands, NULL, n);
 
 		/* make a hash key out of the concat str of (rname1, name1, rname2, name2..) */
 		char *cs = "";
@@ -615,7 +615,7 @@ detect_multicol_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
 					same_cols = false;
 			}
 			if (same_cols) {
-				/* we found the same multi cmp_eq exp in ceq_ands list multiple times! */
+				/* we found the same multi cmp_eq exp in mce_ands list multiple times! */
 				found = multi_multivalue_cmp_eq = true;
 				/* gather all the values of the list and add them to the hash entry */
 				list *atms = sa_list(sql->sa);
@@ -626,8 +626,8 @@ detect_multicol_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
 				 * that we found the *same* multi cmp_eq exp)
 				 */
 				if (mcas->first)
-					list_remove_data(ceq_ands, NULL, mcas->first);
-				list_remove_data(ceq_ands, NULL, sl);
+					list_remove_data(mce_ands, NULL, mcas->first);
+				list_remove_data(mce_ands, NULL, sl);
 			}
 		}
 
@@ -653,11 +653,11 @@ detect_multicol_cmp_eqs(mvc *sql, list *ceq_ands, sql_hash *meqh)
 }
 
 static void
-exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **ceq_ands, list **eqs, list **noneq)
+exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **mce_ands, list **eqs, list **noneq)
 {
 	/* identify three different groups
 	 * 1. gen_ands: lists of generic expressions (their inner association is AND)
-	 * 2. ceq_ands: lists of multi_colum cmp_eq ONLY expressions (same^^^)
+	 * 2. mce_ands: lists of multi_colum cmp_eq ONLY expressions (same^^^)
 	 * 3. eqs: equality expressions
 	 * 4. neq: non equality col expressions
 	 *
@@ -673,7 +673,7 @@ exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **ceq_ands, list
 					    re->card == CARD_ATOM && !is_semantics(e));
 		}
 		if (eq_only)
-			*ceq_ands = append(*ceq_ands, exps);
+			*mce_ands = append(*mce_ands, exps);
 		else
 			*gen_ands = append(*gen_ands, exps);
 	} else if (list_length(exps) == 1) {
@@ -682,8 +682,8 @@ exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **ceq_ands, list
 
 		if (se->type == e_cmp && se->flag == cmp_or && !is_anti(se)) {
 			/* for a cmp_or expression go down the tree */
-			exp_or_chain_groups(sql, (list*)le, gen_ands, ceq_ands, eqs, noneq);
-			exp_or_chain_groups(sql, (list*)re, gen_ands, ceq_ands, eqs, noneq);
+			exp_or_chain_groups(sql, (list*)le, gen_ands, mce_ands, eqs, noneq);
+			exp_or_chain_groups(sql, (list*)re, gen_ands, mce_ands, eqs, noneq);
 
 		} else if (se->type == e_cmp && se->flag == cmp_equal &&
 				   le->card != CARD_ATOM && is_column(le->type) &&
@@ -730,7 +730,7 @@ generate_multi_col_cmp_in(mvc *sql, sql_hash *meqh)
 		sql_hash_e *he = meqh->buckets[i];
 		while (he) {
 			mca *mcas = he->value;
-			/* NOTE: multivalue cmp_eq expressions with a single entry are still in ceq_ands */
+			/* NOTE: multivalue cmp_eq expressions with a single entry are still in mce_ands */
 			if (list_length(mcas->gvs) > 1) {
 				sql_exp *mc = exp_label(sql->sa, exp_values(sql->sa, mcas->ces), ++sql->label);
 				for (node *a = mcas->gvs->h; a; a = a->next)
@@ -747,12 +747,12 @@ static list *
 merge_ors_NEW(mvc *sql, list *exps, int *changes)
 {
 	sql_hash *eqh = NULL, *meqh = NULL;
-	list *eqs = NULL, *neq = NULL, *gen_ands = NULL, *ceq_ands = NULL, *ins = NULL, *mins = NULL;
+	list *eqs = NULL, *neq = NULL, *gen_ands = NULL, *mce_ands = NULL, *ins = NULL, *mins = NULL;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
 		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
-			/* NOTE: gen_ands and ceq_ands are both a list of lists since the AND association
+			/* NOTE: gen_ands and mce_ands are both a list of lists since the AND association
 			 *       between expressions is expressed with a list
 			 *       e.g. [[e1, e2], [e3, e4, e5]] semantically translates
 			 *         to [(e1 AND e2), (e3 AND  e4 AND e5)]
@@ -760,16 +760,16 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			 *       reconstructed an OR tree
 			 *       [[e1, e2], [e3, e4, e5]] =>
 			 *       (([e1, e2] OR [e3, e4, e5]) OR <whatever-else> )
-			 * TODO: Explain why we need gen_ands and ceq_ands
+			 * TODO: Explain why we need gen_ands and mce_ands
 			 */
 			gen_ands = new_exp_list(sql->sa);
-			ceq_ands = new_exp_list(sql->sa);
+			mce_ands = new_exp_list(sql->sa);
 			eqs = new_exp_list(sql->sa);
 			neq = new_exp_list(sql->sa);
 
 			/* walk the OR tree */
-			exp_or_chain_groups(sql, e->l, &gen_ands, &ceq_ands, &eqs, &neq);
-			exp_or_chain_groups(sql, e->r, &gen_ands, &ceq_ands, &eqs, &neq);
+			exp_or_chain_groups(sql, e->l, &gen_ands, &mce_ands, &eqs, &neq);
+			exp_or_chain_groups(sql, e->r, &gen_ands, &mce_ands, &eqs, &neq);
 
 			/* detect col cmp_eq exps with multiple values */
 			bool col_multival = false;
@@ -780,9 +780,9 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 
 			/* detect mutli-col cmp_eq exps with multiple (lists of) values */
 			bool multicol_multival = false;
-			if (list_length(ceq_ands) > 1) {
+			if (list_length(mce_ands) > 1) {
 				meqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 16*/, (fkeyvalue)&hash_key);
-				multicol_multival = detect_multicol_cmp_eqs(sql, ceq_ands, meqh);
+				multicol_multival = detect_multicol_cmp_eqs(sql, mce_ands, meqh);
 			}
 
 			if (!col_multival && !multicol_multival)
@@ -817,8 +817,8 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 				}
 			}
 
-			if (list_length(ceq_ands)) {
-				for (node *i = ceq_ands->h; i; i = i->next) {
+			if (list_length(mce_ands)) {
+				for (node *i = mce_ands->h; i; i = i->next) {
 					list *l = new_exp_list(sql->sa);
 					l = append(l, new);
 					new = exp_or(sql->sa, l, i->data, 0);
