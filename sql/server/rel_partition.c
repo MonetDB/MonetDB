@@ -215,7 +215,7 @@ rel_mark_partition(sql_rel *rel)
 		break;
     case op_munion:
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
-			// TODO: how are we going to mark rel->partition?
+			// TODO: how are we going to mark (n->data)->partition?
 			res = rel_mark_partition(n->data);
 		}
 	}
