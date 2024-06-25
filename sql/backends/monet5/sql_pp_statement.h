@@ -13,16 +13,16 @@
 
 extern InstrPtr stmt_oahash_new(backend *be, int tt, int estimate, bit freq, int parent);
 extern InstrPtr stmt_oahash_new_payload(backend *be, int tt, int pld_size, int parent, int previous);
-extern InstrPtr stmt_oahash_build_table(backend *be, int ht_sink, int key, stmt *pp);
-extern InstrPtr stmt_oahash_build_combined_table(backend *be, int ht_sink, int key, int prnt_sltid, int prnt_ht, stmt *pp);
-extern stmt *stmt_oahash_add_payload(backend *be, InstrPtr hp_sink, stmt *payload, int payload_pos, stmt *pp);
+extern InstrPtr stmt_oahash_build_table(backend *be, stmt *ht_sink, stmt *key, stmt *pp);
+extern InstrPtr stmt_oahash_build_combined_table(backend *be, stmt *ht_sink, stmt *key, int prnt_slts, stmt *prnt_ht, stmt *pp);
+extern stmt *stmt_oahash_add_payload(backend *be, stmt *hp_sink, stmt *payload, int payload_pos, stmt *pp);
 
-extern InstrPtr stmt_oahash_hash(backend *be, int key, stmt *pp);
-extern InstrPtr stmt_oahash_probe(backend *be, int lhs_key, int lhs_hsh, int rhs_ht, stmt *pp);
-extern InstrPtr stmt_oahash_combined_hash(backend *be, int key, int sel, int prnt_sltid, stmt *pp);
-extern InstrPtr stmt_oahash_combined_probe(backend *be, int lhs_key, int lhs_hsh, int lhs_sel, int rhs_ht, stmt *pp);
-extern InstrPtr stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, int freq_sink, bit first, stmt *pp);
-extern InstrPtr stmt_oahash_fetch_payload(backend *be, int slotid, stmt* hp_sink, int freq_sink, bit first, stmt *pp);
+extern InstrPtr stmt_oahash_hash(backend *be, stmt *key, stmt *pp);
+extern InstrPtr stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, stmt *pp);
+extern InstrPtr stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, stmt *pp);
+extern InstrPtr stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int rhs_ht, stmt *pp);
+extern InstrPtr stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink, bit first, stmt *pp);
+extern InstrPtr stmt_oahash_fetch_payload(backend *be, int slotid, stmt *hp_sink, stmt *freq_sink, bit first, stmt *pp);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);
